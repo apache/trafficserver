@@ -1,0 +1,44 @@
+.TH "config:rni"
+.SH NAME
+config:rni \- Configures Real Networks protocol caching.
+.SH SYNOPSIS
+config:rni [options]
+.SH DESCRIPTION
+The config:rni command enables you to configure Real Networks protocol caching 
+through a variety of options. 
+You must use one of the options described below.
+.SH OPTIONS
+The following options are supported for the config:rni command:
+.SS "status <on | off>"
+Enables (on) or disables (off) the Real Networks protocol.
+.SS "verbosity <on | off>"
+Enables (on) or disables (off) the Real Networks verbosity feature.
+.SS "cache-port  <portno>"
+Specifies the cache port used by Real Networks.
+.SS "watcher-enabled <on | off>"
+Enables (on) or disables (off) the Real Networks watcher feature.
+.SS "control-port <portno>"
+Specifies the Real Networks control port.
+.SS "proxy-port <portno>"
+Specifies the Real Networks proxy port.
+.SS "pid-path <string>"
+Specifies the Real Networks PID path.
+.SS "restart-cmd <need info>"
+Specifies the restart command.
+.SS "restart-interval <integer>"
+Specifies the restart interval.
+.SS "service-name <string>"
+Specifies the service name.
+.SH EXAMPLES
+.SS "Example 1. Enabling Real Networks verbosity."
+.PP
+.nf
+traffic_shell> config:rni verbosity on
+traffic_shell> 
+.SS "Example 2. Specifying the proxy port number"
+.PP
+.nf
+traffic_shell> config:rni proxy-port 9231
+traffic_shell> 
+.SH "SEE ALSO"
+show:rni

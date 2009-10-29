@@ -1,0 +1,56 @@
+.TH "config:security"
+.SH NAME
+config:security \- This command enables you to apply Traffic Server and Traffic 
+Manager access configuration file settings to Traffic Server.
+.SH SYNOPSIS
+config:security [ip-allow | mgmt-allow | admin] [url-config-file]
+.SH DESCRIPTION
+The config:security command enables you to indicate from what URL Traffic Server 
+should retrieve the configuration file (IP_allow) that controls client access to 
+the Traffic Server proxy cache. The command also enables you to indicate from 
+what URL Traffic Server should retrieve the configuration file (mgmt_allow) that 
+controls remote host access to the Traffic Manager UI. Finally, the 
+config:security command enables you to indicate from what URL Traffic Server 
+should retrieve the configuration file (admin) (password) that controls 
+administrator access to Traffic Manager activities.
+.SH OPTIONS
+The following options are supported for the config:security command:
+.SS "ip-allow <url>"
+Specifies the configuration file that controls client access to the Traffic 
+Server proxy cache.
+.SS "mgmt-allow <url>"
+Specifies the configuration file that controls remote host access to the Traffic 
+Manager UI.
+.SS "admin <url>"
+Specifies the configuration file that controls administrator access to Traffic 
+Manager activities.
+.SS "password <string>"
+Specifies the administrator password that the administrator must use to access 
+the Traffic Manager UI.
+.SH EXAMPLES
+.SS "Example 1. Locating the access file to specify client access"
+.PP
+.nf
+traffic_shell> config:security ip-allow http://something.com/ip_allow.config
+traffic_shell> 
+.SS "Example 2. Locating the access file to specify remote host access to the Traffic Manager UI"
+.PP
+.nf
+traffic_shell> config:security mgmt-allow http://something.com/mgmt_allow.config
+traffic_shell> 
+.SS "Example 3. Locating the access file to specify administrators with access to the Traffic Manager UI"
+.PP
+.nf
+traffic_shell> config:security admin http://something.com/admin_access.config
+traffic_shell> 
+.SS "Example 4. Specifying the administrator's password"
+.PP
+.nf
+traffic_shell> config:security password
+Enter Old Password:
+Enter New Password:
+ReEnter New Password:
+Password Set
+traffic_shell> 
+.SH "SEE ALSO"
+show:security

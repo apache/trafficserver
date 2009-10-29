@@ -1,0 +1,136 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+/****************************************************************************
+
+  Freer.h
+
+  
+ ****************************************************************************/
+
+#if !defined(_Freer_h_)
+#define _Freer_h_
+
+
+#include "ink_resource.h"
+
+
+template<class C> struct DeleterContinuation:Continuation
+{
+public:                        // Needed by WinNT compiler (compiler bug)
+  C * p;
+  int dieEvent(int event, void *e)
+  {
+    (void) event;
+    (void) e;
+    if (p)
+      delete p;
+    delete this;
+      return EVENT_DONE;
+  }
+  DeleterContinuation(C * ap):Continuation(new_ProxyMutex()), p(ap)
+  {
+    SET_HANDLER(&DeleterContinuation::dieEvent);
+  }
+};
+
+template<class C> inline void
+new_Deleter(C * ap, ink_hrtime t)
+{
+  eventProcessor.schedule_in(NEW(new DeleterContinuation<C> (ap)), t, ET_CALL);
+}
+
+template<class C> struct FreeCallContinuation:Continuation
+{
+public:                        // Needed by WinNT compiler (compiler bug)
+  C * p;
+  int dieEvent(int event, void *e)
+  {
+    (void) event;
+    (void) e;
+    p->free();
+    delete this;
+      return EVENT_DONE;
+  }
+  FreeCallContinuation(C * ap):Continuation(NULL), p(ap)
+  {
+    SET_HANDLER(&FreeCallContinuation::dieEvent);
+  }
+};
+
+template<class C> inline void
+new_FreeCaller(C * ap, ink_hrtime t)
+{
+  eventProcessor.schedule_in(NEW(new FreeCallContinuation<C> (ap)), t, ET_CALL);
+}
+
+struct FreerContinuation;
+typedef int (FreerContinuation::*FreerContHandler) (int, void *);
+
+struct FreerContinuation:Continuation
+{
+  void *p;
+  int dieEvent(int event, Event * e)
+  {
+    (void) event;
+    (void) e;
+    xfree(p);
+    delete this;
+      return EVENT_DONE;
+  }
+  FreerContinuation(void *ap):Continuation(NULL), p(ap)
+  {
+    SET_HANDLER((FreerContHandler) & FreerContinuation::dieEvent);
+  }
+};
+
+inline void
+new_Freer(void *ap, ink_hrtime t)
+{
+  eventProcessor.schedule_in(NEW(new FreerContinuation(ap)), t, ET_CALL);
+}
+
+template<class C> struct DereferContinuation:Continuation
+{
+  C *p;
+  int dieEvent(int event, Event * e)
+  {
+    (void) event;
+    (void) e;
+    p->refcount_dec();
+    delete this;
+      return EVENT_DONE;
+  }
+  DereferContinuation(C * ap):Continuation(NULL), p(ap)
+  {
+    SET_HANDLER(&DereferContinuation::dieEvent);
+  }
+};
+
+template<class C> inline void
+new_Derefer(C * ap, ink_hrtime t)
+{
+  eventProcessor.schedule_in(NEW(new DereferContinuation<C> (ap)), t, ET_CALL);
+}
+
+#endif /* _Freer_h_ */

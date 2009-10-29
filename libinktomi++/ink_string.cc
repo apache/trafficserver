@@ -1,0 +1,451 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+/****************************************************************************
+ 
+  ink_string.c
+ 
+  String and text processing routines for libinktomi.a.
+ 
+ ****************************************************************************/
+
+#include <assert.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "inktomi++.h"   /* MAGIC_EDITING_TAG */
+
+#define INK_MAX_STRING_ARRAY_SIZE 128
+
+/*---------------------------------------------------------------------------*
+ 
+  char *ink_strncpy(char *dest, char *src, int n)
+ 
+  This routine is a safer version of strncpy which always NUL terminates
+  the destination string.  Note that this routine has the SAME semantics
+  as strncpy, such as copying exactly n bytes, padding dest with NULs
+  is necessary.  Use ink_string_copy for a non-padding version.
+ 
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_strncpy(char *dest, const char *src, int n)
+{
+  if (likely(src && dest)) {
+    if (n > 1)
+      strncpy(dest, src, (n - 1));
+    if (n > 0)
+      dest[n - 1] = '\0';
+  }
+
+  return (dest);
+}                               /* End ink_strncpy */
+
+
+/*---------------------------------------------------------------------------*
+ 
+  char *ink_string_concatenate_strings(char *dest, ...)
+ 
+  This routine concatenates a variable number of strings into the buffer
+  <dest>, returning the pointer to <dest>.  The sequence of strings must end
+  with NULL.
+ 
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_string_concatenate_strings(char *dest, ...)
+{
+  va_list ap;
+  register char *s, *d;
+
+  va_start(ap, dest);
+
+  d = dest;
+
+  while (1) {
+    s = va_arg(ap, char *);
+    if (s == NULL)
+      break;
+
+    while (*s)
+      *d++ = *s++;
+  }
+  *d++ = '\0';
+  va_end(ap);
+  return (dest);
+}                               /* End ink_string_concatenate_strings */
+
+
+/*---------------------------------------------------------------------------*
+ 
+  char *ink_string_concatenate_strings_n(char *dest, int n, ...)
+ 
+  This routine concatenates a variable number of strings into the buffer
+  <dest>, returning the pointer to <dest>.  The sequence of strings must end
+  with NULL.  A NUL will always be placed after <dest>, and no more than
+  <n> - 1 characters will ever be written to <dest>.
+ 
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_string_concatenate_strings_n(char *dest, int n, ...)
+{
+  va_list ap;
+  register char *s, *d;
+
+  va_start(ap, n);
+
+  d = dest;
+
+  while (n > 1) {
+    s = va_arg(ap, char *);
+    if (s == NULL)
+      break;
+    while (*s && (n > 1)) {
+      *d++ = *s++;
+      n--;
+    }
+  }
+  if (n >= 1)
+    *d = '\0';
+  va_end(ap);
+  return (dest);
+}                               /* End ink_string_concatenate_strings_n */
+
+
+/*---------------------------------------------------------------------------*
+ 
+  char *ink_string_append(char *dest, char *src, int n)
+ 
+  This routine appends <src> to the end of <dest>, but it insures the
+  string pointed to by <dest> never grows beyond <n> characters, including
+  the terminating NUL.  A NUL is always written if n > 0.
+ 
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_string_append(char *dest, char *src, int n)
+{
+  char *d, *s, *last_valid_char;
+
+  ink_assert(src != NULL);
+  ink_assert(dest != NULL);
+  ink_assert(n >= 0);
+
+  if (n == 0)
+    return (dest);
+
+  last_valid_char = dest + n - 1;
+
+  /* Scan For End Of Dest */
+
+  for (d = dest; (d <= last_valid_char) && (*d != '\0'); d++);
+
+  /* If At End Of String, NUL Terminate & Exit */
+
+  if (d > last_valid_char) {
+    dest[n - 1] = '\0';
+    return (dest);
+  }
+
+  /* Append src To String */
+
+  s = src;
+  while ((d < last_valid_char) && (*s != '\0'))
+    *d++ = *s++;
+
+  /* If At End Of String, NUL Terminate & Exit */
+
+  if (d > last_valid_char)
+    dest[n - 1] = '\0';
+  else
+    *d = '\0';
+
+  return (dest);
+}                               /* End ink_string_append */
+
+
+/*---------------------------------------------------------------------------*
+ 
+  char *ink_string_duplicate(char *ptr)
+ 
+  This routine allocates memory for the string <ptr>, and copies the string
+  into the new buffer.  The pointer to the new buffer is returned.
+ 
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_string_duplicate(char *ptr)
+{
+  char *n = NULL;
+
+  if (likely(ptr)) {
+    const size_t nSize = strlen(ptr) + 1;
+    n = (char *) ink_malloc(nSize);
+    ink_strncpy(n, ptr, nSize);
+  }
+  return (n);
+}                               /* End ink_string_duplicate */
+
+
+/*---------------------------------------------------------------------------*
+ 
+  char *ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
+ 
+  This routine takes a string <str>, copies the period-separated extension to
+  <ext> (up to <max_ext_len - 1> characters) NUL terminates <ext>, and
+  returns a pointer into the string <str> where the '.' of the extension
+  begins, or NULL if there is no extension.
+ 
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
+{
+  char *p = NULL;
+
+  if (ext) {
+    *ext = '\0';
+    if (str) {
+      for (p = (str + strlen(str)) - 1; p >= str; p--)
+        if (*p == '.')
+          break;
+
+      if (p <= str)
+        return (NULL);
+
+      ink_string_copy(ext, (p + 1), max_ext_len);
+    }
+  }
+  return (p);
+}                               /* End ink_string_find_dotted_extension */
+
+
+/*---------------------------------------------------------------------------*
+ 
+  char *ink_string_mpath(int nstrings, char *str1, bool free1, 
+    char *str2, bool free2, ...);
+ 
+  This routine joins multiple path components together to make 
+  a new path.  Each component can optionally start with a / in which
+  case all the preceeding components are ignored.
+ 
+  Each component can optionally be free()d.
+ 
+  Space is malloc()d to hold the resulting path.
+ 
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_string_mpath(int nstrings, ...)
+{
+  va_list ap;
+
+  char *e[INK_MAX_STRING_ARRAY_SIZE];
+  bool f[INK_MAX_STRING_ARRAY_SIZE];
+  size_t s[INK_MAX_STRING_ARRAY_SIZE];
+  int slash = 0;
+  size_t ts = 0;
+  char *ns = NULL;
+  char *p;
+  int i;
+
+  if (likely(nstrings < INK_MAX_STRING_ARRAY_SIZE)) {
+    va_start(ap, nstrings);
+
+    for (i = 0; i < nstrings; i++) {
+      e[i] = va_arg(ap, char *);
+      f[i] = va_arg(ap, int);
+    }
+
+    for (i = nstrings - 1; i >= 0; i--) {
+      if (!e[i])
+        continue;
+      s[i] = strlen(e[i]);
+      ts += s[i] + 1;
+      if (e[i][0] == '/') {
+        slash = i;
+        break;
+      }
+    }
+    if ((slash == nstrings - 1) && f[slash]) {
+      for (i = 0; i < nstrings - 1; i++) {
+        if (f[i])
+          xfree(e[i]);
+      }
+      va_end(ap);
+      return e[slash];
+    } else {
+      const size_t nsSize = ts + 1;
+      p = (ns = (char *) xmalloc(nsSize));
+      ink_assert(ns);
+      for (i = slash; i < nstrings - 1; i++) {
+        ink_strncpy(p, e[i], (nsSize - (p - ns)));
+        p += s[i];
+        *p++ = '/';
+      }
+      ink_strncpy(p, e[nstrings - 1], (nsSize - (p - ns)));
+    }
+    for (i = 0; i < nstrings; i++) {
+      if (f[i])
+        xfree(e[i]);
+    }
+    va_end(ap);
+  }
+  return ns;
+}
+
+/*---------------------------------------------------------------------------*
+ 
+  char *ink_string_mcopy(char *source);
+ 
+  This simply makes a copy of a string into freshly malloc()ed space.
+ 
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_string_mcopy(char *source)
+{
+  char *n = NULL;
+
+  if (likely(source)) {
+    const size_t nSize = strlen(source) + 1;
+    n = (char *) xmalloc(nSize);
+    ink_strncpy(n, source, nSize);
+  }
+  return n;
+}
+
+/*---------------------------------------------------------------------------*
+ 
+  char *ink_string_mjoin(int nstrings, char *str1, bool free1, 
+    char *str2, bool free2, ...);
+ 
+  This routine joins multiple strings components together to make 
+  a new string.  Each component can optionally be free()d.
+ 
+  Space is malloc()d to hold the resulting path.
+ 
+ *---------------------------------------------------------------------------*/
+
+char *
+ink_string_mjoin(int nstrings, ...)
+{
+  va_list ap;
+
+  char *e[INK_MAX_STRING_ARRAY_SIZE];
+  bool f[INK_MAX_STRING_ARRAY_SIZE];
+
+  size_t s[INK_MAX_STRING_ARRAY_SIZE];
+  int slash = 0;
+  size_t ts = 0;
+  char *ns = NULL;
+  char *p;
+  int i;
+
+  if (likely(nstrings < INK_MAX_STRING_ARRAY_SIZE)) {
+    va_start(ap, nstrings);
+
+    for (i = 0; i < nstrings; i++) {
+      e[i] = va_arg(ap, char *);
+      f[i] = va_arg(ap, int);
+      if (e[i]) {
+        s[i] = strlen(e[i]);
+        ts += s[i];
+      }
+    }
+    const size_t nsSize = ts + 1;
+    p = (ns = (char *) xmalloc(nsSize));
+    for (i = slash; i < nstrings - 1; i++) {
+      ink_strncpy(p, e[i], (nsSize - (p - ns)));
+      p += s[i];
+    }
+    ink_strncpy(p, e[nstrings - 1], (nsSize - (p - ns)));
+    for (i = 0; i < nstrings; i++) {
+      if (f[i])
+        xfree(e[i]);
+    }
+    va_end(ap);
+  }
+  return ns;
+}
+
+char *
+ink_strtok_r(char *s1, const char *s2, char **lasts)
+{
+  return strtok_r(s1, s2, lasts);
+}
+
+// XXX/lomew this might not be portable.  If not check in configure
+//   and always squash if no iconv available.
+#include <iconv.h>
+
+/*
+ * This is a front-end to iconv(3).
+ *
+ * latin-1 is a subset of utf-8 so the output string len you pass
+ * can be the same as the input string len.
+ */
+void
+ink_utf8_to_latin1(const char *in, int inlen, char *out, int *outlen)
+{
+  size_t inbytesleft, outbytesleft;
+  iconv_t ic;
+
+  // XXX/lomew should have a configure test for the first arg
+  ic = iconv_open("8859-1", "UTF-8");   // solaris
+  if (ic == (iconv_t) - 1) {
+    ic = iconv_open("iso-8859-1", "UTF-8");     // linux
+    if (ic == (iconv_t) - 1) {
+      goto strip;
+    }
+  }
+
+  inbytesleft = inlen;
+  outbytesleft = *outlen;
+  if (iconv(ic, (char **) &in, &inbytesleft, &out, &outbytesleft) == (size_t) - 1) {
+    iconv_close(ic);
+    goto strip;
+  }
+
+  *outlen -= outbytesleft;
+  iconv_close(ic);
+  return;
+
+strip:
+
+  /* Strip out chars with the high bit set.
+     This only happens if iconv can't convert. */
+  inbytesleft = inlen;
+  outbytesleft = *outlen;
+  while (inbytesleft && outbytesleft) {
+    if (!(*in & 0x80)) {
+      *out++ = *in;
+      outbytesleft--;
+    }
+    in++;
+    inbytesleft--;
+  }
+  *outlen -= outbytesleft;
+}

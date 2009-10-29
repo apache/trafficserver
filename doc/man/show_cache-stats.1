@@ -1,0 +1,45 @@
+.TH "show:cache-stats"
+.SH NAME
+show:cache-stats \- This command displays a summary of cache statistics.
+.SH SYNOPSIS
+show:cache-stats
+.SH DESCRIPTION
+The show:cache-stats command displays a summary of cache statistics, including 
+RAM cache, lookups, reads, writes, updates, and removes detail. The show:cache-
+stats command takes no options.
+.SH EXAMPLE
+When you execute the show:cache-stats command, you see results in the following 
+format:
+.PP
+.nf
+traffic_shell> show:cache-stats
+Bytes Used --- 0 GB
+Cache Size --- 0 GB
+--RAM Cache--
+Total Bytes -- 0
+Bytes Used --- 0
+Hits --------- 0
+Misses ------- 0
+--Lookups--
+In Progress -- 0
+Hits --------- 0
+Misses ------- 0
+--Reads--
+In Progress -- 0
+Hits --------- 0
+Misses ------- 0
+--Writes--
+In Progress -- 0
+Hits --------- 0
+Misses ------- 0
+--Updates--
+In Progress -- 0
+Hits --------- 0
+Misses ------- 0
+--Removes--
+In Progress -- 0
+Hits --------- 0
+Misses ------- 0
+traffic_shell> 
+.SH "SEE ALSO"
+show:cache, config:cache

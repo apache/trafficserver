@@ -1,0 +1,32 @@
+.TH "show:socks"
+.SH NAME
+show:socks \- This command displays SOCKS configuration information.
+.SH SYNOPSIS
+show:socks [rules]
+.SH DESCRIPTION
+Execute the show:socks command to view basic SOCKS configuration information, which include whether SOCKS is enabled, as well as default servers, version, and port values.
+.SH OPTION
+The following option is supported for the show:socks command:
+.SS "[ rules ]"
+The rules option displays SOCKS configuration detail from the socks.config file.
+.SH EXAMPLES
+.SS "Example 1. Displaying basic SOCKS configuration information"
+.PP
+.nf
+traffic_shell> show:socks
+SOCKS -------------------- off
+SOCKS Version ------------ 4
+SOCKS Default Servers ---- s1.example.com:1080;socks2:4080
+SOCKS Accept Enabled ----- off
+SOCKS Accept Port -------- 1080
+traffic_shell>
+.SS "Example 2. Displaying socks.config file rules"
+.PP
+.nf
+traffic_shell> show:socks rules
+socks.config rules
+-------------------
+(Displays rules from the socks.config file.)
+traffic_shell>
+.SH "SEE ALSO"
+config:socks

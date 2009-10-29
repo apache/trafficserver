@@ -1,0 +1,137 @@
+<!--  -->
+<html>
+
+<head>
+<title> DEFT FAQ</title>
+</head>
+
+<body bgcolor="White">
+
+<h2 align="center">  FAQ for DEFT </h2>
+
+<h3> Contents </h3>
+
+<ul>
+<li> <a href="#ts_config"> How do I write traffic_server config file
+foobar.config?</a></li>
+<li> <a href="#ts_service"> How do I tell traffic_server where to contact another test
+service?</a></li>
+<li><a href="#pkg_ts"> How do I make DEFT package for Traffic Server?</a></li>
+<li><a href="#debug"> My test package did not start up, how to do I
+debug it?</a></li>
+</ui>
+
+<h4> <a name="ts_config">
+How do I write traffic_server config file foobar.config? </a></h4>
+ 
+<p> You can write <b>any</b> Traffic Server config file by adding a
+section to the string you pass to <i>TestExec::pm_create_instance</i>
+under the <i>config</i> section.  All the details are at <a href
+a="http://internal.examle.com/">
+here</a>.  Here's a general example config string:</p>
+
+<pre>[records.config]
+
+proxy.config.diags.output.status      SE
+proxy.config.diags.output.note 	      SE
+proxy.config.diags.output.warning     SE
+proxy.config.diags.output.error       SE
+proxy.config.cache.storage_filename   storage.config
+proxy.config.proxy_name               deft.inktomi.com
+proxy.config.hostdb.size              50000
+add CONFIG proxy.config.core_limit INT -1
+
+[foobar.config]
+
+This text will appear in config/foo.bar.config
+</pre>
+
+<h4> <a name="ts_service">
+How do I tell traffic_server where to contact another test service?
+</a></h4>
+
+<p> To tell the TS where another service is (for example, jtest for a
+reverse proxy), start up that service first.  Then use a %%()
+substition of a port binding from that service in a appropriate place
+in jtest.config.  An example test case that does exactly this is
+<b>jtest-revproxy.pl</b>.</p>
+
+<h4> <a name="pkg_ts">
+How do I make DEFT package for Traffic Server?</a></h4>
+
+<p> There is a script and a Makefile target to automatically do this.
+It's available in the source tree at
+<b>traffic/test/deft_package_ts.pl</b>.  From the test directory, you
+can use: </p>
+<pre>  gmake pkg_ts </pre>
+<p> which will create Traffic Server package in
+<b>traffic/deft-install/packages</b>. </p>
+
+<p> If you want to package a release engineering build or any other
+build tree without running the Makfile target:
+<pre> deft_package_ts.pl -b &lt;top of build area&gt; </pre>
+
+<p> Currently, you must package on the same architecture as the TS was
+built on. </p>
+
+<p> While DEFT is completely capable of using TS packages, most
+existing scripts set <i>localpath</i> for Traffic Server to
+<i>%%(ts_localpath)</i>.  I've modified the example scripts to only 
+set localpath for TS if <i>%%(ts_localpath)</i> has been set but
+other tests will need to be converted. </p>
+
+<p> In order not to have <i>run_test.pl</i> automatically 
+set <i>ts_localpath</i>, do not pass the traffic_server build as the
+first argument.</p>
+
+<h4> <a name="debug">
+My test package did not start up, how to do I debug it? </a></h4>
+
+<p>  First look at the test log.  Depending on the parser for the
+package, you may get the releveant part of the test log dumped as an
+error or warning after the test has finished.  If you are not seeing
+an error or warning, go look at the raw test log.  You can get access
+to it either through the graphic log viewer which is invoked by
+starting <i>run_test.pl</i> with '-v' or by looking in
+<i>/inktest/&lt;username&gt;-0/log/test.log</i>.
+
+<p> If you still don't see anything helpful, run the test with some debug
+tags on in the test executor.  The most helpful one usually is
+<b>raf</b>.  Debug tags are invoked the same way they are for Traffic
+Server, using the '-T' option.  For raf, pass <b>'-T raf'</b> to
+run_test.pl.</p>
+
+<p> If you still can not tell what the problem, try starting up your
+installed test packages by hand.  Deft does not delete an
+instance directory until you run another test so it's easy to inspect
+and try to run your test process.  Just cd to
+<i>/inktest/&lt;username&gt;-0/run/&lt;instance_name&gt;</i>.  Then
+run your test process manually.  Don't forget to use an arguments that
+test script would start up the process with.</p> 
+
+<p> At this step, we are pulling out the heavy artillery.  We want to
+run the components of DEFT manually so we can get debug tags from the
+proc_manager and run dbx on the proc_manager if necessary.  The first
+thing you need to do is start up all the proc_managers manually.  This
+is much easier to do if you are running your test on localhost as you
+only have one start up. To start the proc_manager manually with all
+debug tags on (use your own base port
+and substitute a different architecture suffix if not running on sparc):</p>
+<pre>  cd /inktest/&lt;username&gt;-0/
+  ./proc_manager-SunOS -p 12400 -d . '-T.*'
+</pre>
+
+<p> If you don't want the debug tags, leave off '-T.*'.  In another
+window, start your test as you normally would but add '-m'.  For
+example:
+<pre>  ./run_test.pl -p 12400 -s jtest-example.pl -m</pre>
+
+<p> You won't have a log collator when starting up manually.  If you
+want to look at the log it will be in
+/inktest/&lt;username&gt;-0/log/log.&lt;proc_manager.pid&gt;. </p>
+
+<p> Starting up the components manually is really the keys to the
+kingdom since it allows you start any component.  You can run the log
+collator if you want to as well, but starting it manaully and using
+the '-L' option to the proc_manager to tell it where the log_collator
+is running. </p>

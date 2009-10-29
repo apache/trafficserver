@@ -1,0 +1,31 @@
+.TH "show:icp-stats"
+.SH NAME
+show:icp-stats \- This command displays ICP statistics.
+.SH SYNOPSIS
+show:icp-stats
+.SH DESCRIPTION
+The show:icp-stats command displays ICP statistics, including query, hit, and 
+miss values. The show:icp-stats command takes no options.
+.SH EXAMPLE
+.PP
+When you execute the show:icp-stats command, you see results in the following 
+format:
+.PP
+.nf
+traffic_shell> show:icp-stats
+--Queries Originating From This Node--
+Query Requests ----------------------------- 0
+Query Messages Sent ------------------------ 0
+Peer Hit Messages Received ----------------- 0
+Peer Miss Messages Received ---------------- 0
+Total Responses Received ------------------- 0
+Average ICP Message Response Time ---------- 0.000000 ms
+Average ICP Request Time ------------------- 0.000000 ms
+--Queries Originating from ICP Peers--
+Query Messages Received -------------------- 0
+Remote Query Hits -------------------------- 0
+Remote Query Misses ------------------------ 0
+Successful Response Message Sent to Peers -- 0
+traffic_shell>
+.SH "SEE ALSO"
+config:icp

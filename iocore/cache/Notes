@@ -1,0 +1,17 @@
+proxy/cluster/Cluster.h is now iocore/cluster/P_ClusterCache.h
+Clustering compiles but only works if this module is compiled with the entire
+TS because there are a lot of stuff required for clustering in proxy/http2 
+and proxy/NNTP.cc
+
+cache ifdefs
+FIXME_NONMODULAR -> this flaf needs to be turned on when compiling along 
+with the entire TS. Turning this flag on should automatically turn the 
+HTTP cache flag on.
+FIXME_HOSTDB -> Store ifdef to be turned off when HostDB stops using Store
+FIXME_MGMT   -> Interface for warnings on the manager
+FIXME_CLUSTER_ARGUMENTS -> runtime arguments for clustering etc. Needs
+to be added by Eric
+
+cluster ifdefs
+FIXME_WIRELESS_API -> RPC API's for wireless which is probably not going to 
+be used in the future

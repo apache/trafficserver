@@ -1,0 +1,22 @@
+.TH "config:get"
+.SH NAME
+config:get \- Displays a variable from the records.config file.
+.SH SYNOPSIS
+config:get [variable]
+.SH DESCRIPTION
+The config:get command enables you to display a variable and its value from the 
+records.config file. 
+.SH OPERANDS
+The following operand is supported:
+.SS "<variable>"
+You must type the name of the variable that you want to see.
+.SH EXAMPLES
+.SS "When you execute the config:get command, you see results "
+.SS "in the following format:"
+.PP
+.nf
+traffic_shell> config:get proxy.config.http.server_port
+proxy.config.http.server_port = 8080
+traffic_shell> 
+.SH "SEE ALSO"
+config:set

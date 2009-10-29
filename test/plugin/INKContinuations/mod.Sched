@@ -1,0 +1,98 @@
+
+/**************************************************************************
+Verification of INKqa06643
+
+Schedule a continuation that is simply called back with a later timeout
+value. Explicitly call INKContSchedule() without a mutex, the mutex should
+be created in InkAPI.cc/INKContSchedule. 
+
+This plug-in will not complete the client request (request times-out), 
+since the event routine calls INKContSchedule() in the event handler.  
+A simple change to the event routine can be made so that INKHttpTxnReenable() 
+is called in place of INKContSchedule().
+
+Entry points to the core now use either 
+	FORCE_PLUGIN_MUTEX 
+or
+	new_ProxyMutex() 
+
+to create/init a mutex. 
+
+**************************************************************************/
+
+
+#include <sys/types.h>
+#include <time.h>
+
+#include <InkAPI.h> 
+
+/* Verification code for: INKqa06643 */
+static int
+EventHandler(INKCont contp, INKEvent event, void *eData) 
+{
+	INKHttpTxn txn = (INKHttpTxn)eData; 
+	int iVal; 
+	time_t tVal ;
+
+	if (time(&tVal) != (time_t)(-1)) {
+		INKDebug("tag_sched6643",
+			"INKContSchedule: EventHandler: called at %s\n",
+			ctime(&tVal));
+	}
+
+	iVal = (int)INKContDataGet(contp);
+
+	INKDebug("tag_sched6643",
+	"INKContSchedule: handler called with value %d\n",iVal); 
+	
+	switch (event) {
+
+	case INK_EVENT_HTTP_OS_DNS:
+		INKDebug("tag_sched6643", 
+		"INKContSchedule: Seed event %s\n", "INK_EVENT_HTTP_OS_DNS");
+		break;
+
+	case INK_EVENT_TIMEOUT:
+		INKDebug("tag_sched6643",
+		"INKContSchedule: TIMEOUT event\n");
+		break;
+
+	default: 
+		INKDebug("tag_sched6643",
+		"INKContSchedule: Error: default event\n");
+		break;
+	}
+	
+	iVal += 100;	 /* seed + timeout val */
+	INKContDataSet(contp, (void*)iVal); 
+	INKContSchedule(contp,iVal); 
+
+	/* INKHttpTxnReenable(txn, INK_EVENT_HTTP_CONTINUE); */
+}
+
+static int
+EventHandler2(INKCont contp, INKEvent event, void *eData) 
+{
+}
+
+void
+INKPluginInit(int argc, const char* argv[])
+{
+	INKCont	contp, contp2;
+	int	timeOut = 10 ; 	
+
+	INKDebug("tag_sched6643",
+	"INKContSchedule: Initial data value for contp is %d\n",timeOut); 
+
+	/* contp = INKContCreate(EventHandler, INKMutexCreate() ); */
+	mymUtex = INKMutexCreate() ;
+
+	contp = INKContCreate(EventHandler, myMutex);
+	INKContDataSet(contp, (void*)timeOut); 
+
+	contp2 = INKContCreate(EventHandler2, myMutex);
+	INKContDataSet(contp2, (void*)contp); 
+
+	/* INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, contp); */
+	INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, contp2);
+}

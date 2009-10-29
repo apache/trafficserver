@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+#
+# Usage: package file.tar
+
+files="CLIENT_README InkBench.config inkbench_client inkbench_client_sun4 \
+api/Makefile api/ClientAPI.h api/hello_world.c api/options_process.c \
+api/options_process_finish.c api/connection_finish.c \
+api/plugin_finish.c api/request_create.c api/header_process.c \
+api/partial_body_process.c api/report.c api/SimInkBench.c \
+api/SimInkBenchCache.c api/BlackList.c \
+api/host.forbid api/host.allow \
+\
+synth_server/SYNTH_README synth_server/Synth_server.config \
+synth_server/synth_server synth_server/synth_server_sun4 \
+synth_server/api/Makefile synth_server/api/ServerAPI.h \
+synth_server/api/hello_world.c synth_server/api/options_process.c \
+synth_server/api/options_process_finish.c \
+synth_server/api/plugin_finish.c synth_server/api/response_prepare.c \
+synth_server/api/SimSynthServer.c synth_server/api/SimSynthServerCache.c \
+synth_server/api/LogRequest.c \
+\
+inkbench a.awk histogram.awk summarize.awk gnuplot-docsize \
+benchmark-o-matic make-server-content package \
+docsize.10 docsize.10000 docsize.100000 docsize.isp docsize.onefile \
+docsize.real docsize.specweb byterate.1000 byterate.3000 \
+byterate.fast byterate.specweb thinktime.0 thinktime.1sec thinktime.slow"
+
+CheckFile () {
+  file=$1
+  if [ ! -f $file ]; then
+    echo "Can't find file: " $file
+    exit 1
+  fi
+}
+
+# check to see if the files exist
+for file in $files ; do
+  CheckFile $file
+done
+
+# tar the files together
+cmd="tar cf $1 $files";
+exec $cmd
+
+
+
+
+
+

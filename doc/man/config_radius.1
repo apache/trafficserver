@@ -1,0 +1,40 @@
+.TH "config:radius"
+.SH NAME
+config:radius \- Configures Radius access control.
+.SH SYNOPSIS
+config:radius [options]
+.SH DESCRIPTION
+The config:radius command enables you to configure Radius access control
+through a variety of options. You must use one of the options described below.
+.SH OPTIONS
+The following options are supported for the config:radius command:
+.SS "status <on | off>"
+Enables (on) or disables (off) the proxy from serving Radius requests.
+.SS "primary-hostname <string>"
+Specifies the hostname of the primary Radius server.
+.SS "primary-port <integer>"
+Specifies the port number of the primary Radius server.
+.SS "primary-key"
+Specifies the key to use for encoding. Traffic Shell will prompt the
+user to enter the new key twice before accepting the new key.
+.SS "secondary-hostname <string>"
+Specifies the hostname of the secondary Radius server.
+.SS "secondary-port <integer>"
+Specifies the port number of the secondary Radius server.
+.SS "secondary-key"
+Specifies the key to use for encoding. Traffic Shell will prompt the
+user to enter the new key twice before accepting the new key.
+.SH EXAMPLES
+.SS "Example 1. Enabling the proxy to serve Radius requests"
+.PP
+.nf
+traffic_shell> config:radius status on
+traffic_shell> 
+.SS "Example 2. Specifying the primary Radius server hostname"
+.PP
+.nf
+traffic_shell> config:radius primary-hostname machine1.example.com
+traffic_shell> 
+.SH "SEE ALSO"
+show:radius
+

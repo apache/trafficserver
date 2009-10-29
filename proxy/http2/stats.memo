@@ -1,0 +1,248 @@
+HTTP Engine Configuration and Statistics Variables
+==================================================
+Date:   Feb 13, 1997
+
+        +----------------+
+        | Configurations |
+        +----------------+
+
+                  
+Proxy Schems:
+-------------
+  Name          :  SchemeEnabled
+  Type          :  A bit vector. a bit per scheme. 
+  Who It Affects:  HTTP Engine
+  Comments      :  Current schemes are { HTTP, FTP }
+                   Future Schemes { GOPHER, HTTPS, NNTP }
+
+  Name          :  TunnelingEnabled
+  Type          :  boolean
+  Who It Affects:  HTTP Engine               
+  Comments      :  support CONNECT request for SSL tunneling.
+
+
+Connections and Keep Alive:
+---------------------------
+
+  Name          :  MaxOpenConnectionsToServer
+  Type          :  int
+  Who It Affects:  HTTP Processor
+  Comments      :  maximum number of connections the proxy
+                   can open to a single origin server
+
+  Name          :  MaxConnectionsIn
+  Type          :  int
+  Who It Affects:  HTTP Processor
+  Comments      :  Limit the number of concurrent open connections
+                   to the proxy server.
+
+  Name          :  KeepAliveNoActivityTimeoutIn
+  Type          :  int
+  Who It Affects:  HTTP Processor
+  Comments      :  Minimum number of seconds to wait for a new request
+                   from a user agent on a keep-alive connection.
+                   Time is counted from the time the last byte of the
+                   response to the last request was sent to the user agent.
+                   If the time exceeds the timeout value the proxy closes
+                   the connection to the user agent.
+                   
+  Name          :  KeepAliveNoActivityTimeoutOut
+  Type          :  int
+  Who It Affects:  HTTP Processor
+  Comments      :  Minimum number of seconds to wait for a new request
+                   on an opened keep-alive connection between the proxy
+                   and an origin server. If the time exceeds the timeout
+                   value, the proxy closes this keep-alive connection
+                   to the origin server.
+
+  Name          :  MaxPendingKeepAliveOut
+  Type          :  int
+  Who It Affects:  HTTP Processor
+  Comments      :  Maximum number of pending keep alive
+                   requests on an outgoing keep alive connection.
+                   If the outgoing keep-alive queue is full and the number
+                   of connections opened to that server is less then
+                   'MaxOpenConnectionsToServer', then the proxy opens
+                   a new connection. Else it puts it in a standby queue.
+
+
+  Name          :  ServerPort
+  Type          :  integer
+  Who It Affects:  HTTP Processor
+  Comments      :
+
+  Name          :  HttpVersionIn
+  Type          :  integer
+  Who It Affects:  HTTP Processor
+  Comments      :  http version for this proxy for incoming connections.
+
+  Name          :  HttpVersionOut
+  Type          :  integer
+  Who It Affects:  HTTP Processor
+  Comments      :  http version for this proxy for outgoing connections.
+
+  Name          :  HTTP1_0_KeepAliveEnableIn
+  Type          :  boolean
+  Who It Affects:  HTTP Processor
+  Comments      :  enable keep alive for incoming connections
+
+  Name          :  HTTP1_0_KeepAliveEnableOut
+  Type          :  boolean
+  Who It Affects:  HTTP Processor
+  Comments      :  enable keep alive for outgoing connections
+    
+  
+                   
+                   
+Proxy - Processing a request:
+-----------------------------
+
+E:Name          :  ink_api_enable
+  Type          :  boolean
+  Who It Affects:  HTTP Engine
+  Comments      :  enable or disable calls to user defined ink_api
+                   functions.
+                   
+E:Name          :  AccessControlEnable
+  Type          :  boolean  
+  Who It Affects:  HTTP Engine
+  Comments      :  enable or disable site access control
+  
+  Name          :  AccessControlSiteFileName
+  Type          :  string
+  Who It Affects:  HTTP Engine
+  Comments      :  A file with sites for access control
+
+  Name          :  MimeTypeFileName
+  Type          :  string
+  Who It Affects:  HTTP Engine
+  Comments      :  A file with mime types  
+  
+  Name          :  UserGroups
+  Type          :  array of { strings, user_agent_ip, ?? }
+  Who It Affects:  HTTP Engine
+  Comments      :  Group names of users.
+
+  Name          :  RequestViaStr    
+  Type          :  string 
+  Who It Affects:  HTTP Engine
+  Comments      :  name to be appended to Via (e.g. "1.1 proxy-name")
+
+  Name          :  Language     
+  Type          :  string 
+  Who It Affects:  HTTP Engine
+  Comments      :  Language to be used for proxy errors and warnings
+
+  Name          :  RemoveFrom   
+  Type          :  boolean
+  Who It Affects:  HTTP Engine
+  Comments      :  Determines whether "from" field is removed from
+                   the request before it is sent out.
+
+  Name          :  RemoveReferer
+  Type          :  boolean
+  Who It Affects:  HTTP Engine
+  Comments      :  Determines whether "Referer" field is removed from
+                   the request before it is sent out.
+
+  Name          :  RemoveUserAgent
+  Type          :  boolean
+  Who It Affects:  HTTP Engine
+  Comments      :  Determines whether "User Agent" field is removed 
+                   from the request before it is sent out.
+
+Proxy - Processing a response:
+-----------------------------
+
+  Name          :  ResponseViaStr    
+  Type          :  string 
+  Who It Affects:  HTTP Engine
+  Comments      :  name to be appended to Via (e.g. "1.1 proxy-name")
+
+    
+
+Caching Policies:
+-----------------
+
+  Name          :  CacheOn
+  Type          :  boolean
+  Who It Affects:  HTTP Engine
+  Comments      :  If true caching is on, if false caching is off.
+
+  Name          :  HeuristicAgeFactor
+  Type          :  double 
+  Who It Affects:  HTTP Engine
+  Comments      :  Heuristic age of document= doc_date + (doc_date -
+                   last_mod_date)*HeuristicAgeFactor
+
+  Name          :  AlwaysRevalidateAfter
+  Type          :  int >= 0 (seconds)
+  Who It Affects:  HTTP Engine
+  Comments      :  Always validate the freshness of a cache copy
+                   if the cache has the document for AlwaysValidateAfter
+                   seconds or longer (will override client and
+                   server specification)
+
+  Name          :  AlwaysFreshBefore
+  Type          :  int >= 0 (seconds)
+  Who It Affects:  HTTP Engine
+  Comments      :  Allow a document to be served from cache as long
+                   as its age is less than or equal to
+		   AlwaysFreshBefore seconds.
+		   Overrides client and server specifications.
+
+  Name          :  CachableSchemes
+  Type          :  A bit vector
+  Who It Affects:  HTTP Engine
+  Comments      :  which schemes to cache. HTTP, FTP, etc.
+
+  Name          :  CachableMimeTypes
+  Type          :  A bit vector
+  Who It Affects:  HTTP Engine
+  Comments      :  which mime types to cache.
+  
+  Name          :  NoCacheDomain
+  Type          :  array of strings
+  Who It Affects:  HTTP Engine
+  Comments      :  A list of domains that should not be cached.
+                   For example a small cache may not want to cache
+                   local documents.
+                     
+
+Per Transaction Statisctics:
+---------------------------- 
+
+  Name     :  TransactionTotalTime
+  Type     :  integer
+  Internal :  External / Internal
+  Comments :  The time elapsed from the time the user agent opened
+              a connection to the proxy, or the time the first byte
+              of a request was read in a keep alive connection,
+              until the time the last byte of response was sent to
+              the user agent.
+
+  Name     :  TransactionThinkTime
+  Type     :  integer
+  Internal :  External / Internal
+  Comments :  The time spent inside the HTTP engine. This does not
+              include any I/O time.
+
+  Name     :  TransactionBytesIn
+  Type     :  integer
+  Internal :  External / Internal
+  Comments :  The size in bytes of the user agent's request
+
+  Name     :  TransactionBytesOut
+  Type     :  integer
+  Internal :  External / Internal
+  Comments :  The size in bytes of the response to the user agent.
+
+  Name     :  TransactionCacheResult
+  Type     :  enum { HIT, MISS, REVALIDATE_HIT, REVALIDATE_MISS }
+  Internal :  External / Internal
+  Comments :  Cache result.
+
+              
+
+
+

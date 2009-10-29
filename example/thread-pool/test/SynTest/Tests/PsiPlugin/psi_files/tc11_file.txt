@@ -1,0 +1,2 @@
+This body should not be transformed.
+include should still be between bars |<!--include=incfile1.txt-->| is it ok ?

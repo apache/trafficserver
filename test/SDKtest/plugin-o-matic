@@ -1,0 +1,224 @@
+#!/usr/bin/sh
+# 
+#  Usage: plugin-o-metic file
+#         the file in the argument should contain the plugins that we
+#         want to run in the following format: 
+#           p0.so a1 a2 ... aN , wait-time1\n
+#           p1.so a1 a2 ... aN [| p2.so a1 a2 ... aN ] , wait-time2\n
+#
+#  
+
+GetResult () {
+#  combined result is in 3rd to last comma-separated column
+  value=`grep "$1" $2/summary.csv | awk -F, '{print $(NF-2);}'`
+}
+    
+GetResult2 () {
+#  combined result is in 3rd to last comma-separated column
+  msec_per_op=`echo "scale = 4; 1000/$1" | bc`
+}
+
+GetParam () {
+  file=$1
+  param=$2
+  default=$3
+  value=`sed 's/#.*$//' < $file | grep "[ ]*$param[ ]*=" | tail -1 | sed 's/^[^=]*=[ ]*//g'`
+  if [ "$value" = "" ]; then
+     value=$default
+  fi
+  export value
+}
+
+
+# takes in a line in the following format:
+#   plugin1.so arg1 arg2 [| plugin2.so arg1 arg2],wait-time
+# and return 
+# sleeptime      - wait-time
+# chained_plugin - plugin1.so arg1 arg2 [| plugin2.so arg1 arg2]
+# plugin_name    - plugin1-plugin2
+
+ParseInputLine() {
+  a_line=$1
+  sleeptime=`echo "$a_line" | awk -F"," '{print $NF}'`
+  chained_plugin=`echo "$a_line" | awk -F"," '{print $1}'`
+  plugin_name=`echo "$chained_plugin" | perl -e '$i = 0; @names = (); @plugins = split /\|/, <STDIN>; for $plugin (@plugins) { chomp $plugin; $plugin =~ /\s*([a-zA-Z_0-9\-]+).so/; $names[$i++] = $1; }  $final = join "-", @names; print $final;'`
+ 
+  echo $sleeptime
+  echo $chained_plugin
+  echo $plugin_name
+
+  export sleeptime
+  export chained_plugin
+  export plugin_name
+}
+
+GetDecrease1() {
+  old=$1
+  new=$2
+  if [ $new -gt $old ]; then
+    degration1=0.0000
+  else
+    degration1=`echo "scale = 4; ($old-$new)*100/$old" | bc`
+  fi
+}
+
+GetDecrease2() {
+  old=$1
+  new=$2
+  degration2=`echo "scale = 4; ($new-$old)" | bc`
+}
+
+PutSetup() {
+  out_config=$1
+  out_file=$2
+  param=$3
+  GetParam $out_config $param ""
+  echo "$param = $value" >> $out_file
+}
+
+config_file=client/SDKtest_client.config
+summary=Results.`date '+%m-%d-%y-%H:%M:%S'` 
+storage="/net/granite/home/inktomi/TrafficServer/CompEngr/vtong"
+summary_files="$storage/all_results.txt"
+temp_config_file=plugin.config
+input_file=$1
+plugins=`sed -e 's/#.*$//' -e 's/ //g' $input_file`
+
+GetParam $config_file target_host ""
+target_host=$value
+
+if [ "$target_host" != "" ]; then
+  rsh="rsh $target_host"
+  rhost="$target_host:"
+  rcp="rcp"
+
+  # Run SDKtest without plugin #
+  ##############################
+  echo "Starting Traffic Server without plugin"
+  echo "" > $temp_config_file
+  traffic_server_dir=`$rsh cat /etc/traffic_server`
+  config_file="$rhost$traffic_server_dir/conf/yts/plugin.config"
+  $rcp $temp_config_file $config_file &
+
+  # clear cache
+  echo "sleep for 25 sec to let traffic server clear cache"
+  $rsh "cd $traffic_server_dir/bin; ./traffic_server -Cclear &"
+  sleep 25
+
+  # start traffic server
+  echo "sleep for 10 sec to let traffic server enable cache"
+  $rsh $traffic_server_dir/bin/start_traffic_server &
+  sleep 10
+
+  # run SDKtest script
+  output=output
+  if [ ! -d $output ]; then
+    mkdir $output
+  fi
+      
+  out=$output/no_plugin
+  out_config=$out/SDKtest_client.config.new
+
+  SDKtest output=$out warmup=1
+  echo "* SDKtest Setup *" >> $summary
+  echo "" >> $summary
+  PutSetup $out_config $summary target_host
+  PutSetup $out_config $summary target_port
+  PutSetup $out_config $summary clients
+  PutSetup $out_config $summary origin_servers
+  PutSetup $out_config $summary execution_interval
+  PutSetup $out_config $summary warmup
+  PutSetup $out_config $summary hitrate
+  PutSetup $out_config $summary users
+  PutSetup $out_config $summary hotset
+  PutSetup $out_config $summary docset
+  PutSetup $out_config $summary docsize_dist_file
+  PutSetup $out_config $summary byterate_dist_file
+  echo "" >> $summary 
+
+  GetResult 'Cumulative rate' $out
+  base_value=$value
+  GetResult2 $value
+  base_time_per_op=$msec_per_op
+  echo "Plugin: no_plugin   Op/sec: $base_value" >> $summary
+  echo "Plugin: no_plugin  msec/Op: $base_time_per_op" >> $summary
+  echo ""
+  echo "Results so far:"
+  cat $summary
+  echo ""
+
+  # kill the traffic server
+  echo "Start killing traffic server processes"
+  $rsh $traffic_server_dir/bin/stop_traffic_server &
+  $rsh echo ""
+  echo ""  
+  echo "sleep for 10 sec to kill traffic server"
+  sleep 10
+  rm $temp_config_file
+
+  # Run SDKtest with plugins #
+  ############################
+  for line in $plugins; do
+    one_line=`echo "$line" | sed 's// /g'` 
+    ParseInputLine "$one_line"
+    echo "$chained_plugin" | awk -F"|" '{ for (i=1;i<=NF;i++) print $i }' >> $temp_config_file
+    echo "Start Traffic Server with:"
+    cat $temp_config_file
+    echo ""
+    $rcp $temp_config_file $config_file &
+
+    # clear cache
+    echo "sleep for 25 sec to let traffic server clear cache"
+    $rsh "cd $traffic_server_dir/bin; ./traffic_server -Cclear &"
+    sleep 25
+
+    # start traffic server 
+    $rsh $traffic_server_dir/bin/start_traffic_server &
+    echo "sleep for $sleeptime sec to let traffic server enable cache"
+    sleep $sleeptime
+
+    # run SDKtest script
+    output=output
+    if [ ! -d $output ]; then
+      mkdir $output
+    fi
+      
+    name=$plugin_name;
+    out=$output/$name.plugin
+    SDKtest output=$out
+
+    GetResult 'Cumulative rate' $out
+    GetResult2 $value
+    GetDecrease1 $base_value $value
+    GetDecrease2 $base_time_per_op $msec_per_op
+    echo "Plugin: $name   Op/sec: $value        Decreased(op/sec%): $degration1%" >> $summary
+    echo "Plugin: $name  msec/Op: $msec_per_op  Increased(msec/op): $degration2" >> $summary
+    
+    echo ""
+    echo "Results so far:"
+    cat $summary
+    echo ""
+
+    # kill the traffic server
+    echo "Start killing traffic server processes"
+    $rsh $traffic_server_dir/bin/stop_traffic_server &
+    echo "sleep for 10 sec to kill traffic server"
+    sleep 10
+    echo ""  
+    rm $temp_config_file
+
+  done
+
+  mv $summary "$storage/data"
+  echo "$summary" >> $summary_files
+else
+  echo "No target_host specified"
+fi
+
+
+
+
+
+
+
+

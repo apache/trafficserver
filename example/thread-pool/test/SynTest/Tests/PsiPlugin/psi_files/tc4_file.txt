@@ -1,0 +1,5 @@
+2 includes in the body. One starting down there:
+<!--include=incfile1.txt-->
+One other down there:
+<!--include=incfile1.txt-->
+that's all folks !

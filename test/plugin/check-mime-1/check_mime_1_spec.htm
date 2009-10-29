@@ -1,0 +1,34 @@
+<html>
+<head>
+<title>Untitled Document</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000">
+<p align="center"><b><font size="+2">Plugin check-mime-1 Spec</font></b></p>
+<p>&nbsp;</p>
+<p><font size="+1"><b>Overview</b></font></p>
+<p> This plugin is composed of three parts:</p>
+<ol>
+  <li>Test the functions in INKMimeHdr* and INKMimeParser* categories.</li>
+  <li>Test the functions in INKHttpHdr* and INKUrl* categories.</li>
+  <li>Call INKHttpHdrReasonLookup and print out the default reason for each status.</li>
+</ol>
+<p><font size="+1"><b>Feature Description</b></font></p>
+<p>In INKPluginInit(), the plugin calls three functions:</p>
+<ul>
+  <li> mimeHdrHandler()</li>
+  <li>httpHdrHandler()</li>
+  <li>httpHdrReasonHandler()</li>
+</ul>
+<p>mimeHdrHandler() parses a MIME header and prints out the parsed header. It 
+  clones the parsed header the prints out the cloned header. Then it clones the 
+  Via field and copies the Content-Length field in the cloned header and prints 
+  out the modified cloned header. Finally, it does the clean up.</p>
+<p>httpHdrHandler() parses a MIME header, parsed a URL and set the parsed URL 
+  to the parsed HTTP header and prints out the modified HTTP header. It then clones 
+  the HTTP header and the URL, and prints out the cloned URL.</p>
+<p>httpHdrReasonHandler() calls INKHttpHdrReasonLookup for each status and prints 
+  out the default reason.</p>
+</body>
+</html>

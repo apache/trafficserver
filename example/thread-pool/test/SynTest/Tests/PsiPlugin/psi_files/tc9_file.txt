@@ -1,0 +1,2 @@
+include an empty file: should be no chars betwwen bars: |<!--include=incfile0.txt-->|
+OK ?

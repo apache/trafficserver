@@ -1,0 +1,3 @@
+include tag with a file that does not exist.this is a doc with a partial begin for include tag
+<!--include=non_existing_file.txt-->
+should remove the tag and include nothing

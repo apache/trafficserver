@@ -1,0 +1,20 @@
+.TH "show:hostdb-stats"
+.SH NAME
+show:hostdb-stats \- This command displays host database statistics.
+.SH SYNOPSIS
+show:hostdb-stats
+.SH DESCRIPTION
+The show:hostdb-stats command displays host database statistics, including hit 
+rate and DNS lookup detail. The show:hostdb-stats command takes no options.
+.SH EXAMPLE
+.PP
+When you execute the show:hostdb-stats command, you see results in the following format:
+.PP
+.nf
+traffic_shell> show:hostdb-stats
+Host Database hit Rate -- 99.988437%I    *
+DNS Lookups Per Second -- 0.000000
+* Value reprensents 10 second average.
+traffic_shell>
+.SH "SEE ALSO"
+config:hostdb

@@ -1,0 +1,64 @@
+.TH "config:wmt"
+.SH NAME
+config:wmt \- Configures Windows Media Technology protocol caching.
+.SH SYNOPSIS
+config:wmt [options]
+.SH DESCRIPTION
+The config:wmt command enables you to configure Windows Media Technology protocol caching 
+through a variety of options. 
+You must use one of the options described below.
+.SH OPTIONS
+The following options are supported for the config:wmt command:
+.SS "status <on | off>"
+Enables (on) or disables (off) the proxying of Windows Media Technology content.
+.SS "port <portno>"
+Specifies the port number for WMT.
+.SS "proxy-only <on | off>"
+Enables (on) or disables (off) whether WMT should be handled in proxy-only mode.
+.SS "prebuffering <milli seconds>"
+Specifies prebuffering in milliseconds.
+.SS "prebuffering-tcp <milli seconds>"
+Specifies prebuffering for TCP, in milliseconds.
+.SS "loadhost <string>"
+Specifies the loadlost name.
+.SS "loadpath <string>"
+Specifies the loadhost path.
+.SS "chunksize <seconds>"
+Specifies the chunksize in seconds.
+.SS "old-asx-behavior <seconds>"
+Specifies the old ASX behavior in seconds.
+.SS "debug <on | off>"
+Enables (on) or disables (off) WMT debug.
+.SS "asx-rewrite <on | off>"
+Enables (on) or disables (off) ASX rewrite.
+.SS "redirect <on | off>"
+Enables (on) or disables (off) redirect.
+.SS "rexmit-window <integer>"
+Specifes the rexmit window.
+.SS "monitor-version <version number>"
+Specifies the monitor version number.
+.SS "monitor-livehosts <string>"
+Specifies the monitor livehost names.
+.SS "monitor-name <string>"
+Specifies the monitor name.
+.SS "monitor-port <portno>"
+Specifies the monitor port number.
+.SS "media-bridge-name <string>"
+Specifies the Media Bridge name.
+.SS "media-bridge-port <portno>"
+Specifies the Media Bridge port number.
+.SS "media-bridge-mount <string>"
+Specifies the Media Bridge mount point.
+.SH EXAMPLES
+.SS "Example 1. Enabling WMT"
+.PP
+.nf
+traffic_shell> config:wmt status on
+traffic_shell> 
+.SS "Example 2. Specifying the WMT port number"
+.PP
+.nf
+traffic_shell> config:wmt port 1755
+traffic_shell> 
+.SH "SEE ALSO"
+show:wmt

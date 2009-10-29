@@ -1,0 +1,2230 @@
+FEATURE INTRODUCTION
+
+Feature name:
+
+	traffic_shell
+
+Synopsis of Feature:
+
+	traffic_shell is a true "command line interface."  It accepts
+commands in a unix shell-like fashion.  traffic_shell supports command
+completion, command history, man pages, and context sensitive help.
+Not only is this type of interface more familiar to network engineers
+everywhere, but it is also easier to document, maintain, and extend.
+	traffic_shell is TCL-based which simplifies the development of new
+commands.  It also supports scripting which means that a user can
+source and execute a file that contains traffic_shell commands. 
+	traffic_shell currently provides full configuration and monitoring
+functionality for Traffic Server and MIXT. 
+	traffic_shell is built on the same Management API as the
+Traffic Server WebUI.  The Management API (written in C code) handles
+updating config files and restarting TS or reloading config variables
+for changes to take effect. 
+ 
+Configurations of Traffic Server affected:
+
+	Platforms: Linux, Linux for OEMs, Solaris SPARC
+	Configurations: All TS and TS/MIXT configurations
+
+References on Feature:
+
+	Scroll down to the section of this document titled:
+	  COMPLETE COMMAND SET SPECIFICATION
+        This section contains an exhaustive list of all traffic_shell
+	commands, along with a description of syntax and sample output.
+
+ENGINEERING DESCRIPTION
+
+Modes of operation of Feature:
+
+	No special records.config setup is required.
+
+	The CLI supports the following operation modes.  Note that a
+	"user" can be a person, a script, or some other mechanism for remote
+	control of network devices via command line interface.
+
+   -- Interactive:
+         "traffic_shell"
+         Similar to unix shell, CLI can be the login shell for administrators.
+         User types command at a prompt.
+         CLI processes command and displays the result.
+         User can execute a file which contains a list of commands.
+
+   -- Execute file:
+         "traffic_shell -f filename" where file contains a list of CLI commands.
+         CLI runs commands and sends results to stdout.
+    
+	When entered at the Unix shell prompt, the "traffic_shell -f
+filename" command starts traffic_shell and runs a TCL script
+"filename" which typically contains traffic_shell commands.  Since
+traffic_shell is a TCL interpreter, the script can also contain any
+valid combination of TCL constructs.  If the TCL interpreter
+encounters the "exit" keyword, then control returns to the shell from
+which the user typed "traffic_shell -f <filename>".  If the
+interpreter reaches the end of script execution without encountering
+"exit", then the traffic_shell prompt appears and the user can
+continue to use traffic_shell interactively.
+
+Risk points of feature:
+
+	Certain configuration changes force a reset of Traffic
+	Server.  These restarts are performed by functions in the
+	Management API. 
+
+Effect on SDK/API:
+
+	None.  In the future, traffic_shell may be enhanced to provide
+	configurability of certain plugins.
+
+Module tests, diagnostic output, and statistics on feature
+
+	None.
+
+Engineering description of Feature:
+
+	The CLI is a standalone executable that is part of a Traffic
+	Server installation.  
+
+	The CLI is implemented in a combination of TCL and C++.  The
+	shell and parsing functionality uses TCL.  Commands themselves are
+	typically written in C++.  The CLI uses the traffic_manager Management
+	API to make Traffic Server configuration changes.
+
+ The overall CLI architecture is as follows:
+
+  - traffic_shell ---------------------------
+ |                                           |
+ |  ---------------------------------------  |
+ |  Shell and parser implemented in TCL/C++  |
+ |  ---------------------------------------  |
+ |                  ^                        |
+ |  ----------------|-------------------     |
+ |  CLI commands implemented in C++ (.a)     |
+ |  ------------------------------------     |
+ |                  ^                        |
+ |          --------|----------              |
+ |          Management API (.a)              |
+ |          -------------------              |
+ |                                           |
+  -------------------------------------------
+
+Notes and comments by developing engineer:
+
+	None.
+
+TESTS DESCRIPTIONS
+
+Test description:
+
+	QA developed expect scripts for each traffic_shell command to
+	simulate commands from user level, and also to check the output
+	of CLI.
+
+	Each script covers one command along with all of its
+	sub-commands and arguments. 
+
+  Each Config Command script has a flow as follows:
+  - Valid test:
+    . Send valid syntax command to CLI.
+    . Check the value of affected variable from either the CLI or 
+      from traffic_line -r <variable>.
+    . Set errors if the output of CLI does not match expected result.
+  - Negative test:
+    . Send commands with invalid arguments to CLI.
+    . CLI should handled unregconized arguments gracefully.
+    . Set error if CLI does not handle invalid arguments correctly.
+
+  Same logic flow for Show commands.
+
+
+   To run the test scripts:
+   ----------------------------
+   There are two files:
+	cli-config-tests.tar for config commands.
+	cli-show-tests.tar for show commands.
+
+Copy these files into a "cli" subdirectory of the traffic_server "bin"
+directory, and untar them.  Start traffic_server and run scripts
+within cli directory.
+
+- For Config, run cli-test.exp + <individual test>
+
+  For example:
+  cli% ./cli-test.exp config-name 
+  This will test config:name command
+      
+- For Show, run show-test.exp + <individual test>
+
+Test development notes:
+
+- These scripts are by no means complete.  Anyone can add more testcases 
+in by copying/modifying existing testcases. These tests are pretty primitive
+for now. 
+
+- When running tests, please make sure you enlarge your terminal as large as
+possible to accomodate the CLI output. The EOL character might affect string
+comparision in expect.
+
+- Some of variables are set to random values. So please be sure to save your
+config directory or install new traffic server after you complete CLI test :-)
+This will be make better in the future.
+
+*******************************************************
+COMPLETE COMMAND SET SPECIFICATION
+*******************************************************
+
+
+
+traffic_shell command set specification
+
+NOTE: This document does not distinguish phase-1 commands and functionality.
+
+There may be some inconsistencies between the command descriptions and the 
+actual implementation.  In particular, column alignment is not exactly specified 
+in this document.  Also, the values below are for example purposes only.
+
+==============
+CLI Features
+==============
+
+   1) CLI supports command completion i.e if the user types first one
+   or two characters of a valid command and presses tab key it completes
+   the command.
+
+   2) CLI supports command abbreviation i.e if user types first one or two
+   characters of a valid command and presses enter CLI will display all
+   the commands whic start with the abbreviation typed by user If there
+   is only one command matching the command abbreviation CLI directly
+   executes the command.
+
+   3) CLI supports history command which shows the history of previously
+   typed commands.
+
+   4) CLI supports up and down arrow keys to see through previous
+   commands.
+
+   5) All CLI commands can be classified in two catogories Show commands
+   and Config commands.  Show Commands display system information. Show
+   Commands can be executed in normal mode.  A list of possible show
+   commands described below can be seen by just typing show on command
+   line.
+
+   6) Config commands let the user configure or set system information
+   and settings Config commands can be executed in  privileged mode
+   enabled by admin password.  A list of possible  config commands
+   described below can be seen by just typing config on command line.
+
+
+================
+Command Overview
+================
+
+Normal mode commands
+  % prompt
+----------------------------
+
+enable		Enable privileged commands
+  Prompt for password.  Password can be blank.
+  syntax: enable
+  args:   none
+
+  ts> enable
+  Password: (no characters displayed)
+  ts#
+
+exit		Exit CLI
+  syntax: exit
+  args:   none
+
+  ts> exit
+
+help		Help
+  Display list of commands with one line description.
+  Or display help for a particular subcommand.
+  syntax: help [ subcommand ]
+  args:   subcommand (optional)
+
+show		Show system information
+
+  See "Show Command" below for list of subcommands.
+  syntax: show:< show-sub-command >
+  args:   show-sub-command = optional subcommand
+  behavior:  If show-sub-command is ommitted, then display the list of
+             possible show-sub-commands.
+
+Enable mode commands
+  includes all Normal mode commands
+  # prompt
+----------------------------
+
+config		Enter configuration mode
+  See "Configure Command" below for list of subcommands.
+  syntax: config:< config-sub-command >
+  args:   config-sub-command = optional subcommand
+  behavior:  If config-sub-command is ommitted, then display the list of
+             possible config-sub-commands.
+
+disable		Disable privileged commands
+  No parameters.  Puts CLI back into Normal Mode.
+  syntax: disable
+  args:   none
+  behavior:  Switch to Normal Mode.
+
+  ts# disable
+  ts>
+
+exit		Exit CLI
+  syntax: exit
+  args:   none
+
+help		Help
+  Same as Normal Mode but includes Configure Command.
+  Display list of commands with one line description.
+  Or display help for a particular subcommand.
+  syntax: help [ subcommand ]
+  args:   subcommand (optional)
+  
+show		Show system information
+  Same as Normal Mode but includes privileged commands.
+  See "Show Command" below for list of subcommands.
+  syntax: show:< show-sub-command >
+  args:   show-sub-command = optional subcommand
+  behavior:  If show-sub-command is ommitted, then display the list of
+             possible show-sub-commands.
+
+
+Show command
+------------
+Parameter		Description
+-----------------------------------
+status			Proxy status on/off
+  syntax: show:status
+  args:   none
+  behavior:  Display status as follows:
+
+    ts> show:status
+    Proxy -- on
+    ts>
+
+  implementation: Determine whether proxy is up and running.
+
+version			Traffic Server and Traffic Manager version
+  syntax: show:version
+  args:   none
+  behavior:  Display Traffic_Server and Traffic Manager version number as follows:
+
+    ts> show:version
+    traffic_server version --- 5.0.0
+    traffic_manager version -- 5.0.0
+    ts>
+
+security		Security Configuration (only in Enable Mode)
+			(TS IP allow, MGMT allow, Login allow)
+
+  syntax: show:security
+  args:   none
+  behavior:  Display IP address access lists for TS, MGMT, and login.
+
+    ts> show:security
+
+    Web Interface Port ----- 12    (proxy.config.admin.web_interface_port)
+    Overseer Port ---------- 345   (proxy.config.admin.overseer_port)
+
+    Traffic Server Access
+    (ip_allow.config contents)
+
+    Traffic Manager Access
+    (mgmt_allow.config contents)
+    ts>
+
+  implementation:
+    Traffic Server Access specified in ip_allow.config (use MGMT API)
+    Traffic Manager Access specified in mgmt_allow.config (use MGMT API)
+
+cluster                Cluster Configuration
+
+   syntax: show:cluster
+   args:   none
+   behavior: Display cluster port
+
+  ts> show:cluster
+ 
+      Cluster Port ----------- 14988 (proxy.config.cluster.cluster_port)
+      Cluster RS Port -------- 14990 (proxy.config.cluster.rsport)
+      Cluster MC Port -------- 14991 (proxy.config.cluster.mcport)
+
+http			HTTP Configuration
+			(timeout values, headers, authorization)
+
+  syntax: show:http
+  args:   none
+  behavior:  Display HTTP Configuration
+
+    ts> show:http
+    HTTP Caching ------------------ on      (proxy.config.http.cache.http)
+    HTTP Server Port -------------- 14980   (proxy.config.http.server_port)
+    HTTP Other Ports -------------- NULL    (proxy.config.http.server_other_ports)
+
+    Keep-Alive Timeout Inbound ---- 10 s    (proxy.config.http.keep_alive_no_activity_timeout_in)
+    Keep-Alive Timeout Outbound --- 10 s    (proxy.config.http.keep_alive_no_activity_timeout_out)
+    Inactivity Timeout Inbound ---- 120 s   (proxy.config.http.transaction_no_activity_timeout_in)
+    Inactivity Timeout Outbound --- 120 s   (proxy.config.http.transaction_no_activity_timeout_out)
+    Activity Timeout Inbound ------ 7200 s  (proxy.config.http.transaction_active_timeout_in)
+    Activity Timeout Outbound ----- 7200 s  (proxy.config.http.transaction_active_timeout_out)
+    Maximum Number of Alternates -- 3       (proxy.config.cache.limits.http.max_alts)
+    Remove the following common headers
+      From         (proxy.config.http.anonymize_remove_from)
+      Referer      (proxy.config.http.anonymize_remove_referer)
+      User-Agent   (proxy.config.http.anonymize_remove_user_agent)
+      Cookie       (proxy.config.http.anonymize_remove_cookie)
+    Remove additional headers
+      list         (proxy.config.http.anonymize_other_header_list)
+    Insert or Remove Client IP address
+      Insert       (proxy.config.http.anonymize_insert_client_ip)
+      Remove       (proxy.config.http.anonymize_remove_client_ip)
+    ts>
+    
+nntp			NNTP Configuration
+			(feeds, access control, servers, access)
+  syntax: show:nntp [ servers | access ]
+  args:   optional arg is either "servers" or "access"
+          
+  behavior:  with no args, Display basic NNTP Configuration
+
+    ts> show:nntp
+    NNTP Caching ---------------- on          (proxy.config.nntp.cache_enabled)
+    NNTP Server ----------------- off         (proxy.config.nntp.enabled)
+    NNTP Server Port ------------ 119         (proxy.config.nntp.server_port)
+    Connect Message (posting allowed) (proxy.config.nntp.posting_ok_message)
+      Inktomi NNTP server ready. posting ok
+    Connect Message (posting not allowed)  (proxy.config.nntp.posting_not_ok_message)
+      Inktomi NNTP server ready. no posting
+    NNTP Options:
+      Posting --------------------------- on  (proxy.config.nntp.posting_enabled)
+      Access Control -------------------- off (proxy.config.nntp.access_control_enabled)
+      NNTP V2 Authentication ------------ off (proxy.config.nntp.v2_authentication)
+      Run Local Authentication Server --- off (proxy.config.nntp.run_local_authentication_server)
+      Clustering ------------------------ on  (proxy.config.nntp.cluster_enabled)
+      Allow Feeds ----------------------- on  (proxy.config.nntp.feed_enabled)
+      Access Logs ----------------------- on  (proxy.config.nntp.logging_enabled)
+      Background Posting ---------------- off (proxy.config.nntp.background_posting_enabled)
+      Obey Cancel Control Messages ------ off (proxy.config.nntp.obey_control_cancel)
+      Obey NewGroups Control Messages --- off (proxy.config.nntp.obey_control_newgroup)
+      Obey RmGroups Control Messages ---- off (proxy.config.nntp.obey_control_rmgroup)
+    Inactivity Timeout ------------------ 600 s    (proxy.config.nntp.inactivity_timeout)
+    Check for New Groups Every ---------- 86400 s  (proxy.config.nntp.check_newgroups_every)
+    Check for Cancelled Articles Every -- 3600 s   (proxy.config.nntp.check_cancels_every)
+    Check Parent NNTP Server Every ------ 300 s    (proxy.config.nntp.group_check_parent_every)
+    Check Cluster Every ----------------- 60 s     (proxy.config.nntp.group_check_cluster_ever)
+    Check Pull Groups Every ------------- 600 s    (proxy.config.nntp.check_pull_every)
+    Authentication Server Host ---------- NULL     (proxy.config.nntp.authorization_hostname)
+    Authentication Server Port ---------- 0        (proxy.config.nntp.authorization_port)
+    Local Authentication Server Timeout - 50000 ms  (proxy.config.nntp.authorization_server_timeout)
+    Client Speed Throttle --------------- 0 bytes/sec  (proxy.config.nntp.client_speed_throttle)
+    ts>
+
+    ts> show:nntp servers
+    nntp_servers.config rules
+    -------------------------
+    (Display nntp_servers.config rules)
+    ts>
+
+    ts> show:nntp access
+    nntp_access.config rules
+    ------------------------
+    (Display nntp_access.config rules)
+    ts>
+
+ftp			FTP Configuration
+  syntax: show:ftp
+  args:   none
+  behavior:  Display FTP Configuration
+
+  ts> show:ftp
+  FTP Caching ---------------------- on        (proxy.config.http.cache.ftp)
+  FTP Cached Objects Expire After -- 259200 s  (proxy.config.http.ftp.cache.document_lifetime)
+  FTP Connection Mode -------------- PASV/PORT (proxy.config.ftp.data_connection_mode)
+  FTP Inactivity Timeout ----------- 300 s     (proxy.config.ftp.control_connection_timeout)
+  Anonymous FTP password ----------- admin     (proxy.config.http.ftp.anonymous_passwd)
+  ts>
+
+icp			ICP Configuration
+			(on/off, rules, port, timeouts)
+  syntax: show:icp [ peers ]
+  args:   optional "peers" argument
+  behavior:  Display ICP Configuration
+
+  ts> show:icp
+  ICP Mode --------------- off   (proxy.config.icp.enabled)
+  ICP Port --------------- 3130  (proxy.config.icp.icp_port)
+  ICP Multicast Enabled -- off   (proxy.config.icp.multicast_enabled)
+  ICP Query Timeout ------ 2 s   (proxy.config.icp.query_timeout)
+  ts>
+
+  ts> show:icp peers
+  icp.config rules
+  ----------------
+  (Display rules from icp.config)
+  ts>
+
+proxy			Proxy Configuration
+
+  syntax: show:proxy
+  args:   none
+  behavior:  Display basic proxy configuration
+
+  ts> show:proxy
+  Name -- foo         (proxy.config.proxy_name)
+  ts>
+
+cache			Cache Configuration
+			(active protocols, bypass, storage, freshness, 
+			expires, variable content, rules)
+  syntax: show:cache [ rules | storage ]
+  args:   optional "rules" or "storage"
+
+  ts> show:cache
+  HTTP Caching ------------------- on    (proxy.config.http.cache.http)
+  FTP Caching -------------------- on    (proxy.config.http.cache.ftp)
+  NNTP Caching ------------------- on    (proxy.config.nntp.cache_enabled)
+  Ignore User Requests To Bypass Cache --- off  (proxy.config.http.cache.ignore_client_no_cache)
+  Maximum HTTP/FTP Object Size --- NONE        (proxy.config.cache.max_doc_size)
+
+  Freshness
+    Verify Freshness By Checking --   (proxy.config.http.cache.when_to_revalidate)
+      When the object has expired
+    Minimum freshness information for a document to be cacheable --  (proxy.config.http.cache.required_headers)
+      Nothing
+    If object has no expiration date:
+      leave it in cache for at least ---- 3600 s   (proxy.config.http.cache.heuristic_min_lifetime)
+      but no more than ------------------ 86400 s  (proxy.config.http.cache.heuristic_max_lifetime)
+    FTP cached objects expire after ----- 259200 s (proxy.config.http.ftp.cache.document_lifetime)
+
+  Variable Content
+    Do not cache responses to URLs that contain "?", ";", "cgi" or end in ".asp"  (proxy.config.http.cache.cache_urls_that_look_dynamic value)
+    Alternates ------------ on    (proxy.config.http.cache.enable_default_vary_headers)
+    Vary on HTTP Header Fields:
+      Text ---------------- Cookie  (proxy.config.http.cache.vary_default_text)
+      Images -------------- NULL    (proxy.config.http.cache.vary_default_images)
+      Other --------------- NULL    (proxy.config.http.cache.vary_default_other)
+    Cache responses to requests containing cookies for:  (proxy.config.http.cache.cache_responses_to_cookies)
+      content-types which are not text
+  ts>
+
+  ts> show:cache rules
+  Display rules from cache.config
+  ts>
+
+  ts> show:cache storage
+  Display rules from storage.config
+  ts>
+
+virtual-ip		Virtual IP Address Configuration
+  syntax: show:virtual-ip
+  args:   none
+  behavior:  Display virtual IP configuration
+
+
+  ts_shell>show:virtual-ip 
+
+  2 Elements in Record
+
+  0 1.1.1.1 23 23
+  1 1.1.1.1 23 24
+
+  ts>
+
+
+hostdb			Host Database Configuration
+  syntax: show:hostdb
+  args:   none
+  behavior:  Display Host DB Configuration
+
+  ts> show:hostdb
+  Lookup Timeout ----------- 120 s   (proxy.config.hostdb.lookup_timeout)
+  Foreground Timeout ------- 1440 s  (proxy.config.hostdb.timeout)
+  Background Timeout ------- 720 s   (proxy.config.hostdb.verify_after)
+  Invalid Host Timeout ----- 0 s     (proxy.config.hostdb.fail.timeout)
+  Re-DNS on Reload --------- off     (proxy.config.hostdb.re_dns_on_reload)
+  Resolve Attempt Timeout -- 20 s    (proxy.config.dns.lookup_timeout)
+  Number of Retries -------- 5       (proxy.config.dns.retries)
+  ts>
+
+dns-resolver		DNS Resolver Configuration
+  syntax: show:dns-resolver
+  args:   none
+  behavior:  Display DNS Resolver Configuration
+
+  ts> show:dns-resolver
+  Local Domain Expansion -- on   (proxy.config.dns.search_default_domains)
+  .com Domain Expansion --- on   (proxy.config.http.enable_url_expandomatic)
+  ts>
+
+logging			Logging Configuration
+  syntax: show:logging
+  args: none
+  behavior:  Display Logging Configuration
+
+  ts> show:logging
+  Logging Mode ------------- xxx       (proxy.config.log2.logging_enabled)
+
+  Management  
+    Log Space Limit -------- 2000 MB  (proxy.config.log2.max_space_mb_for_logs)
+    Log Space Headroom ----- 10 MB    (proxy.config.log2.max_space_mb_headroom)
+
+  Log Collation ------------ off      (proxy.local.log2.collation_mode)
+    Host ------------------- NULL     (proxy.config.log2.collation_host)
+    Port ------------------- 8085     (proxy.config.log2.collation_port)
+    Secret ----------------- foobar   (proxy.config.log2.collation_secret)
+    Host Tagged ------------ off      (proxy.config.log2.collation_host_tagged)
+    Space Limit for Orphan Files -- 25 MB   (proxy.config.log2.max_space_mb_for_orphan_logs)
+
+  Squid Format ---- on             (proxy.config.log2.squid_log_enabled)
+    File Type ----- ASCII          (proxy.config.log2.squid_log_is_ascii)
+    File Name ----- squid          (proxy.config.log2.squid_log_name)
+    File Header --- NULL           (proxy.config.log2.squid_log_header)
+
+  Netscape Common -- off         (proxy.config.log2.common_log_enabled)
+    File Type ------ ASCII       (proxy.config.log2.common_log_is_ascii)
+    File Name ------ common      (proxy.config.log2.common_log_name)
+    File Header ---- NULL        (proxy.config.log2.common_log_header)
+
+  Netscape Extended -- off       (proxy.config.log2.extended_log_enabled)
+    File Type -------- ASCII     (proxy.config.log2.extended_log_is_ascii)
+    File Name -------- extended  (proxy.config.log2.extended_log_name)
+    File Header ------ NULL      (proxy.config.log2.extended_log_header)
+
+  Netscape Extended2 -- off       (proxy.config.log2.extended2_log_enabled)
+    File Type --------- ASCII     (proxy.config.log2.extended2_log_is_ascii)
+    File Name --------- extended2 (proxy.config.log2.extended2_log_name)
+    File Header ------- NULL      (proxy.config.log2.extended2_log_header)
+
+  Splitting
+    NNTP Log Splitting -- off       (proxy.config.log2.separate_nntp_logs)
+    ICP Log Splitting -- off        (proxy.config.log2.separate_icp_logs)
+    HTTP Host Log Splitting -- off  (proxy.config.log2.separate_host_logs)
+
+  Custom Logs -- off              (proxy.config.log2.custom_logs_enabled)
+  Custom Log Definition Format -- Traditional (proxy.config.log2.xml_logs_config)
+
+  Rolling -------- on               (proxy.config.log2.rolling_enabled)
+    Roll Offset Hour --- 0          (proxy.config.log2.rolling_offset_hr)
+    Roll Interval ------ 86400 s               (proxy.config.log2.rolling_interval_sec)
+  Auto-delete rolled files when space is low -- on  (proxy.config.log2.auto_delete_rolled_files)
+  ts>
+
+ssl			SSL Ports
+  syntax: show:ssl
+  args:   none
+  behavior:  Display SSL Port related configuration.
+
+  ts> show:ssl
+  Restrict SSL Connections to Ports -- 443 563   (proxy.config.http.ssl_ports)
+  ts>
+
+filter			Filter Rules
+  syntax: show:filter
+  args:   none
+  behavior:  Display filtering configuration.
+
+  ts> show:filter
+  filter.config rules
+  -------------------
+  (Display rules from filter.config)
+  ts> 
+
+parent			Parent Configuration
+			(on/off, parents, rules)
+  syntax: show:parent
+  args:   none
+  behavior:  Display Parent Configuration.
+
+  ts> show:parent
+  Parent Caching: OFF    (proxy.config.http.parent_proxy_routing_enable)
+  Parent Cache:   NONE   (proxy.config.http.parent_proxies)
+  ts>
+
+  syntax: show:parent rules
+  behavior: Display Parent configuration rules file.
+
+  ts> show:parent rules
+  parent.config rules
+  -------------------
+  Display rules from parent.config
+  ts>
+
+remap			Remap Rules
+  syntax: show:remap
+  args:   none
+  behavior:  Display remap configuration.
+
+  ts> show:remap
+  remap.config rules
+  ------------------
+  (Display rules from remap.config)
+  ts>
+
+snmp			SNMP Configuration
+			(on/off)
+  syntax: show:snmp
+  args:   none
+  behavior:  Display SNMP Configuration.
+
+  ts> show:snmp
+  SNMP Agent -- on    (proxy.config.snmp.master_agent_enabled)
+  ts>
+
+ldap			LDAP Configuration
+  syntax: show:ldap [ rules ]
+  args:   optional "rules" to show ldapsrvr.config rules
+  behavior:  Display LDAP Configuration.
+
+  ts> show:ldap                        (proxy.config.ldap.*)
+  LDAP ---------------------- on       (auth.enabled)
+  Cache Size ---------------- 5000     (cache.size)
+  TTL Value ----------------- 3000 ms  (auth.ttl_value)
+  Purge Cache On Auth Fail -- off      (auth.purge_cache_on_auth_fail)
+  ts>
+
+  ts> show:ldap rules
+  ldapsrvr.config rules
+  ---------------------
+  (Display rules from ldapsrvr.config)
+  ts>
+
+socks			SOCKS Configuration
+			(on/off, stats)
+  syntax: show:socks [ rules ]
+  args:   none
+  behavior:  Display SOCKS Configuration.
+
+  ts> show:socks
+  SOCKS -------------------- off      (proxy.config.socks.socks_needed)
+  SOCKS Default Servers ---- x.x.x.x  (proxy.config.socks.default_servers)
+  SOCKS Accept Port -------- 1080     (proxy.config.socks.accept_port)
+  SOCKS HTTP Port ---------- 80       (proxy.config.socks.http_port)
+  SOCKS Timeout ------------ 100 s    (proxy.config.socks.socks_timeout)
+  ts>
+
+  ts> show:socks rules
+  socks.config rules
+  ------------------
+  (Display socks.config rules)
+  ts>
+
+port-tunnels		Port Tunnelling Configuration
+
+  syntax: show:port-tunnels 
+
+  ts# show:port-tunnels
+ 
+  server-other-ports -- 7890
+  
+  To view the corresponding rule of the remap.config file in the following format
+      map tunnel://<proxy_ip>:<port_num>/tunnel://<dest_server>:<dest_port>
+      Use show:remap
+
+scheduled-update        Scheduled Update Configuration
+  syntax: show:scheduled-update [ rules ]
+  args:   show update.config file
+  behavior:  Display Scheduled Update Configuration.
+
+  ts> show:scheduled-update
+  Scheduled Update -------------- on   (proxy.config.update.enabled)
+  Update Error Retry Count ------ 10   (proxy.config.update.retry_count)
+  Update Error Retry Interval --- 2 s  (proxy.config.update.retry_interval)
+  Maximum Concurrent Updates ---- 100  (proxy.config.update.concurrent_updates)
+  Force Immediate Update -------- off  (proxy.config.update.force)
+  ts>
+
+  ts> show:scheduled-update rules
+  update.config rules
+  ------------------- 
+  (Display list of rules from update.config)
+  ts>
+
+radius			Radius Authentication Configuration
+
+  traffic_shell> show:radius     
+
+  Radius Authentication -------- on    (proxy.config.radius.auth.enabled)
+  Primary Hostname ------------- NULL  (proxy.config.radius.proc.radius.primary_server.name)
+  Primary Port ----------------- 1812  (proxy.config.radius.proc.radius.primary_server.auth_port)
+  Primary Key ------------------ NULL  (proxy.config.radius.proc.radius.primary_server.shared_key)
+  Secondary Hostname ----------- NULL  (proxy.config.radius.proc.radius.secondary_server.name)
+  Secondary Port --------------- 1812  (proxy.config.radius.proc.radius.secondary_server.auth_port)
+  Secondary Key ---------------- NULL  (proxy.config.radius.proc.radius.secondary_server.shared_key)
+
+  traffic_shell> 
+
+ntlm			NTLM Configuration
+
+  traffic_shell> show:ntlm
+
+  NTLM Authentication ------ on        (proxy.config.ntlm.auth.enabled)
+  Domain Controller(s) ----- NULL      (proxy.config.ntlm.dc.list)
+  NT Domain ---------------- NULL      (proxy.config.ntlm.nt_domain)
+  Load Balancing ----------- off       (proxy.config.ntlm.dc.load_balance)
+
+  traffic_shell> 
+
+
+Status subcommands
+------------------
+Parameter		Description
+-----------------------------------
+proxy-stats		Proxy Vital Stats 
+			oldCLI->root->monitor->node
+			(hit rate, bandwidth savings, open connections)
+  syntax: show:proxy-stats
+  args:   none
+  behavior:  Display statistics related to the overall proxy.
+
+  ts> show:proxy-stats
+  Document Hit Rate ------------ 0% *    (proxy.node.cache_hit_ratio)
+  Bandwidth Savings ------------ 0% *    (proxy.node.bandwidth_hit_ratio)
+  Cache Percent Free ----------- 0%      (proxy.node.cache.percent_free)
+
+  Open Server Connections ------ 0       (proxy.node.current_server_connections)
+  Open Client Connections ------ 0       (proxy.node.current_client_connections)
+  Cache Transfers In Progress -- 0       (proxy.node.current_cache_connections)
+
+  Client Throughput ------------ 0.00 MBit/Sec  (proxy.node.client_throughput_out)
+  Transactions Per Second ------ 0       (proxy.node.user_agent_xacts_per_second)
+
+  * Value represents 10 second average.
+  ts>
+
+http-trans-stats	HTTP Transaction Summary
+			(hits, misses, aborts, other)
+			oldCLI->root->monitor->protocols->http-trans
+  syntax: show:http-trans-state
+  args:   none
+  behavior:  Display statistics related to HTTP transactions.
+
+  ts> show:http-trans-stats
+  HTTP Transaction Frequency and Speeds     (proxy.node.http.transaction_*)
+  Transaction Type              Frequency  Speed (ms)
+  --Hits--
+  Fresh ----------------------- 0%         0    (frac_avg_10s.hit_fresh, 
+                                                 msec_avg_10s.hit_fresh)
+  Stale Revalidated ----------- 0%         0    (frac_avg_10s.hit_revalidated, 
+                                                 msec_avg_10s.hit_revalidated)
+  --Misses--
+  Now Cached ------------------ 0%         0    (frac_avg_10s.miss_cold, 
+                                                 msec_avg_10s.miss_cold)
+  Server No Cache ------------- 0%         0    (frac_avg_10s.miss_not_cacheable, 
+                                                 msec_avg_10s.miss_not_cacheable)
+  Stale Reloaded -------------- 0%         0    (frac_avg_10s.miss_changed, 
+                                                 msec_avg_10s.miss_changed)
+  Client No Cache ------------- 0%         0    (frac_avg_10s.miss_client_no_cache, 
+                                                 msec_avg_10s.miss_client_no_cache)
+  --Errors--
+  Connection Failures --------- 0%         0    (frac_avg_10s.errors.connect_failed,
+                                                 msec_avg_10s.errors.connect_failed)
+  Other Errors ---------------- 0%         0    (frac_avg_10s.errors.other,
+                                                 msec_avg_10s.errors.other)
+  --Aborted Transactions--
+  Client Aborts --------------- 0%         0    (frac_avg_10s.errors.aborts,
+                                                 msec_avg_10s.errors.aborts)
+  Questionable Client Aborts -- 0%         0    (frac_avg_10s.errors.possible_aborts,
+                                                 msec_avg_10s.errors.possible_aborts)
+  Partial Request Hangups ----- 0%         0    (frac_avg_10s.errors.early_hangups,
+                                                 msec_avg_10s.errors.early_hangups)
+  Pre-Request Hangups --------- 0%         0    (frac_avg_10s.errors.empty_hangups,
+                                                 msec_avg_10s.errors.empty_hangups)
+  Pre-Connect Hangups --------- 0%         0    (frac_avg_10s.errors.pre_accept_hangups,
+                                                 msec_avg_10s.errors.pre_accept_hangups)
+  --Other Transactions--
+  Unclassified ---------------- 0%         0    (frac_avg_10s.other.unclassified,
+                                                 msec_avg_10s.other.unclassified)  
+  ts>
+
+http-stats		HTTP Protocol Summary
+			oldCLI->root->monitor->protocols->http
+  syntax: show:http-stats
+  args:   none
+  behavior:  Display HTTP Protocol statistics.
+
+  ts> show:http-stats
+  --Client--                          (proxy.process.http.*)
+  Total Document Bytes ------ 150.5 MB  (user_agent_response_document_total_size)
+  Total Header Bytes -------- 23.5 MB   (user_agent_response_header_total_size)
+  Total Connections --------- 0         (current_client_connections)
+  Transactions In Progress -- 0         (current_client_transactions)
+  --Server--
+  Total Document Bytes ------ 150.4 MB  (origin_server_response_document_total_size)
+  Total Header Bytes -------- 16.3 MB   (origin_server_response_header_total_size)
+  Total Connections --------- 0         (current_server_connections)
+  Transactions In Progress -- 0         (current_server_transactions)
+  ts>
+
+nntp-stats		NNTP Statistics
+  syntax: show:nntp-stats
+  args:   none
+  behavior:  Display NNTP statistics.
+
+  ts> show:nntp-stats
+  --Client--                          (proxy.process.nntp.*)
+  Open Connections ---- 0               (client_connections_currently_open)
+  Bytes Read ---------- 538.2 MB        (client_bytes_read)
+  Bytes Written ------- 559.5 GB        (client_bytes_written)
+  --Server--
+  Open Connections ---- 0               (server_connections_currently_open)
+  Bytes Read ---------- 145.2 GB        (server_bytes_read)
+  Bytes Written ------- 143.1 MB        (server_bytes_written)
+  --Operations--
+  Article Hits ------ 17,434,502      (article_hits)
+  Article Misses ---- 6,053,508       (article_misses)
+  Overview Hits ------- 0               (overview_hits)
+  Overview Refreshes -- 0               (overview_refreshes)
+  Group Hits ---------- 0               (group_hits)
+  Group Refreshes ----- 0               (group_refreshes)
+  Posts --------------- 0               (posts)
+  Post Bytes ---------- 0               (post_bytes)
+  Pull Bytes ---------- 0               (pull_bytes)
+  Feed Bytes ---------- 0               (feed_bytes)
+  ts>
+
+ftp-stats		FTP Statistics
+  syntax: show:ftp-stats
+  args:   none
+  behavior:  Display FTP statistics.
+
+  ts> show:ftp-stats
+  Open Connections ------------ 0      (proxy.process.ftp.connections_currently_open)
+  PASV Connections Successes -- 1592   (proxy.process.ftp.connections_successful_pasv)
+  PASV Connections Failures --- 0      (proxy.process.ftp.connections_failed_pasv)
+  PORT Connections Successes -- 1      (proxy.process.ftp.connections_successful_port)
+  PORT Connections Failures --- 0      (proxy.process.ftp.connections_failed_port)
+  ts>
+
+icp-stats		ICP Statistics
+  syntax: show:icp-stats
+  args:   none
+  behavior:  Display ICP statistics.
+
+  ts> show:icp-stats
+  --Queries Originating From This Node--      (proxy.process.icp.*)
+  Query Requests ------------------------------ 0    (icp_query_requests)
+  Query Messages Sent ------------------------- 0    (total_udp_send_queries)
+  Peer Hit Messages Received ------------------ 0    (icp_query_hits)
+  Peer Miss Messages Received ----------------- 0    (icp_query_misses)
+  Total Responses Received -------------------- 0    (icp_remote_responses)
+  Average ICP Message Response Time ----------- 0.00 ms (total_icp_response_time)
+  Average ICP Request Time -------------------- 0.00 ms (total_icp_request_time)
+  --Queries Originating from ICP Peers--
+  Query Messages Received --------------------- 0    (icp_remote_query_requests)
+  Remote Query Hits --------------------------- 0    (cache_lookup_success)
+  Remote Query Misses ------------------------- 0    (cache_lookup_fail)
+  Successful Response Messages Sent to Peers -- 0  (query_response_write)
+  ts>
+
+cache-stats		Overall Cache Statistics
+			oldCLI->root->monitor->cache
+  syntax: show:cache-stats
+  args:   none
+  behavior:  Display overall cache statistics.
+
+  ts> show:cache-stats     (proxy.process.cache.*)
+  Bytes Used --- 42.3 GB     (bytes_used)
+  Cache Size --- 42.4 GB     (bytes_total)
+  --RAM Cache--
+  Bytes -------- 45443072  (ram_cache.bytes)
+  Hits --------- 31339939  (ram_cache.hits)
+  Misses ------- 18382137  (ram_cache.misses)
+  --Lookups--
+  In Progress -- 0           (lookup.active)
+  Hits --------- 0           (lookup.success)
+  Misses ------- 0           (lookup.failure)
+  --Reads--
+  In Progress -- 0           (read.active)
+  Hits --------- 30116923  (read.success)
+  Misses ------- 26817128  (read.failure)
+  --Writes--
+  In Progress -- 1           (write.active)
+  Successes ---- 25354918  (write.success)
+  Failures ----- 75520      (write.failure)
+  --Updates--
+  In Progress -- 0           (update.active)
+  Successes ---- 101888     (update.success)
+  Failures ----- 1753       (update.failure)
+  --Removes--
+  In Progress -- 0           (remove.active)
+  Successes ---- 0           (remove.success)
+  Failures ----- 0           (remove.failure)
+  ts>
+
+hostdb-stats		Host Database Statistics
+  syntax: show:hostdb-stats
+  args:   none
+  behavior:  Display Host Database statistics.
+
+  ts> show:hostdb-stats
+  Host Database Hit Rate -- 100% *  (proxy.node.hostdb.hit_ratio)
+  DNS Lookups Per Second -- 0.00    (proxy.node.dns.lookups_per_second)
+
+  *Value represents 10 second average.
+  ts>
+
+dns-stats		DNS Statistics
+  syntax: show:dns-stats
+  args:   none
+  behavior:  Display DNS statistics.
+
+  ts> show:dns-stats
+  DNS Lookups Per Second -- 0.00    (proxy.node.dns.lookups_per_second)
+  ts>
+
+logging-stats		Logging Statistics
+  syntax: show:logging-stats
+  args:   none
+  behavior:  Display Logging statistics.
+
+  ts> show:logging-stats
+  Currently Open Log Files --------- 0       (proxy.process.log2.log_files_open)
+  Space Used For Log Files --------- 0       (proxy.process.log2.log_files_space_used)
+  Number of Access Events Logged --- 0       (proxy.process.log2.event_log_access)
+  Number of Access Events Skipped -- 0       (proxy.process.log2.event_log_access_skip)
+  Number of Error Events Logged ---- 0       (proxy.process.log2.event_log_error)
+  ts>
+
+ldap-stats		LDAP Statistics
+  syntax: show:ldap-stats
+  args: none
+  behavior:  Display LDAP statistics.
+
+  ts> show:ldap-stats
+
+  Cache Hits----------------0 (proxy.process.ldap.cache.hits)
+  Cache Misses--------------0 (proxy.process.ldap.cache.misses)
+  Server Errors-------------0 (proxy.process.ldap.server.errors)
+  Authorization Denied------0 (proxy.process.ldap.denied.authorizations)
+  Authorization Timeouts----0 (proxy.process.ldap.auth.timed_out)
+  Authorization Cancelled---0 (proxy.process.ldap.cancelled.authentications)
+
+  ts>  
+
+ntlm-stats		NTLM Statistics
+
+   traffic_shell> show:ntlm-stats 
+
+   Cache Hits ----------------- 0   (proxy.process.ntlm.cache.hits)
+   Cache Misses --------------- 0   (proxy.process.ntlm.cache.misses)
+   Server Errors -------------- 0   (proxy.process.ntlm.server.errors)
+   Authorization Denied ------- 0   (proxy.process.ntlm.denied.authorizations)
+   Authentication Cancelled --- 0   (proxy.process.ntlm.cancelled.authentications)
+
+   traffic_shell> 
+
+
+network                Network Settings
+   syntax:  show:network
+   args:    none
+   behavior:  Display information about different Network Parameters
+
+   traffic_shell> show:network 
+
+   Hostname ---------------- foo.example.com
+   Default Gateway --------- 192.168.0.1
+   Search Domain ----------- example.com
+   DNS IP Addresses--------- 192.168.0.2
+
+   NIC eth0
+     Status ---------------- up
+     Start on Boot --------- onboot
+     Start Protocol -------- none
+     IP Address ------------ 192.168.0.10
+     Netmask --------------- 255.255.255.0
+     Gateway --------------- default
+
+   NIC eth1
+     Status ---------------- up
+     Start on Boot --------- onboot
+     Start Protocol -------- none
+     IP Address ------------ 192.168.0.11
+     Netmask --------------- 255.255.255.0
+     Gateway --------------- default
+
+   traffic_shell> 
+
+
+Configure submodes (from Enable mode)
+
+Some config commands require hard restart or restart for changes to take effect.
+In these cases, one of the following messages will appear onscreen.
+
+Restart required.
+  Change will take effect after next Restart.
+  Use the "config:restart" command to restart now.
+
+Hard Restart required.
+  Change will take effect after next Hard Restart.
+  Use the "config:hard-restart" command to restart now.
+
+-------------------------------------
+Parameter		Description
+-----------------------------------
+get			Get records.config variable value
+  syntax: config:get <variable>
+  args:   <variable> = variable from records.config
+  behavior:  Retrieve and display the variable from records.config.
+
+  ts# config:get proxy.config.http.server_port
+  proxy.config.http.server_port = 8080
+  ts#
+
+set			Set records.config variable value
+  syntax: config:set <variable> <value>
+  args:   <variable> = variable from records.config
+          <value> = value of variable
+  behavior:  Set the variable from records.config to the specified value.
+
+  ts# config:set proxy.config.http.server_port 8080
+  +OK
+  ts#
+
+name			Proxy Name
+  syntax: config:name <proxyname>
+  args:   <proxyname> = name of proxy
+  behavior:  Set proxyname to <proxyname>
+
+  ts# config:name config1
+  +OK
+  ts#
+
+  ts# config:name
+  config1
+  ts#
+
+start			Start Proxy Software
+  syntax: config:start
+  args:   none
+  behavior:  Run start_traffic_server.
+
+  ts# config:start
+  +OK
+  ts#
+
+stop			Stop Proxy Software
+  syntax: config:stop
+  args:   none
+  behavior:  Run stop_traffic_server.
+
+  ts# config:stop
+  +OK
+  ts#
+
+write			Write Upgrade File (IFC file)
+  syntax: config:write ifc-head ts-version <ts_version> build-date <date> platform <platform> nodes <no_of_nodes> 
+	  config:write feature <feature-string>
+	  config:write tar <tarfilelist>
+	  config:write tar-info <tarball-name> filelist <filelist>
+	  config:write tar-common <filelist>
+	  config:write bin-dir <dir-file-lists> 
+	  config:write bin-group <filelist>
+	  config:write bin-common <filelist>
+	  config:write lib-dir <dir-file-lists>
+	  config:write lib-group <filelist>
+	  config:write lib-common <filelist> 
+	  config:write config-dir <dir-file-filelists>
+	  config:write config-group <filelist>
+	  config:write config-common <filelist>
+	  config:write common <filelist>
+  args: 
+	<ts_version> = <int>.<int>.<int>
+	<date> = <mm>:<dd>:<yy>
+	<platform> = <string>
+	<no_of_nodes> = -1 (default) | 0 (single node) | n (n+1 nodes)
+	<feature-string> = <string>
+        <filelists> = list of files, separated by ,
+	<dir-file-filelists> =  list of subdirectory, followed by filelists in each subdirectory. Subdirectories are separated by ; and file lists are separated by ,
+	
+behavior: Write the text IFC file according to the current install status.
+
+
+read			Read Update File
+  syntax: config:read path <path> file <filename> 
+  args: <path> = <string>
+	<filename> = <string>
+
+behavior: Read the upgrade file and display it. For debugging purpose only.
+	
+reset-stats		Reset Statistics
+  syntax: config:reset-stats
+  args:   none
+  behavior:  Reset all statistics.
+
+  ts# config:reset-stats
+  +OK
+  ts#
+
+http			HTTP Configuration
+			(timeout values, headers, authorization)
+  syntax: config:http status <on | off>
+  record: (proxy.config.http.cache.http)
+    
+    ts# config:http status on
+    ts#
+
+  syntax: config:http <timeout> <seconds>
+  args:   <timeout> can be one of the following
+          keep-alive-timeout-in    (proxy.config.http.keep_alive_no_activity_timeout_in)
+          keep-alive-timeout-out   (proxy.config.http.keep_alive_no_activity_timeout_out)
+          inactive-timeout-in      (proxy.config.http.transaction_no_activity_timeout_in)
+          inactive-timeout-out     (proxy.config.http.transaction_no_activity_timeout_out)
+          active-timeout-in        (proxy.config.http.transaction_active_timeout_in)
+          active-timeout-out       (proxy.config.http.transaction_active_timeout_out)
+
+    ts# config:http keep-alive-timeout-in 10
+    ts#
+          
+  syntax: config:http <remove-from | remove-referer | remove-user | remove-cookie> <on | off>
+  behavior: remove the specified header
+  args:   <remove-from>            (proxy.config.http.anonymize_remove_from)
+          <remove-referer>         (proxy.config.http.anonymize_remove_referer)
+          <remove-user>            (proxy.config.http.anonymize_remove_user_agent)
+          (remove-cookie>          (proxy.config.http.anonymize_remove_cookie)
+
+    ts# config:http remove-from on
+    ts#
+
+  syntax: config:http remove-header <headers>
+  behavior: remove headers specified in list of headers
+  args:     <headers>              (proxy.config.http.anonymize_other_header_list)
+
+    ts# config:http remove-header "field1 field2"
+    ts#
+
+  syntax: config:http <insert-ip | remove-ip> <on | off>
+  behavior: insert or remove client IP from header
+  args:     <insert-ip>            (proxy.config.http.anonymize_insert_client_ip)
+            <remove-ip>            (proxy.config.http.anonymize_remove_client_ip)
+
+  syntax: config:http proxy <fwd | rev | fwd-rev>
+  behavior: enable http proxying in fwd/rev/fwd-rev modes
+
+    ts# config:http proxy
+    fwd
+    ts# config:http proxy rev
+    ts#
+
+
+ssl			SSL Configuration
+                        (on,off,port)
+  syntax: config:ssl status <on | off>
+  record: (proxy.config.ssl.enabled)
+
+    ts# config:ssl status on
+    ts# config:ssl status off
+
+  syntax: config:ssl port <portnum>
+  record: (proxy.config.ssl.server_port)
+    
+    ts# config:ssl port 1234
+    ts#
+   
+
+nntp			NNTP Configuration
+			(feeds, access control, servers, access)
+  syntax: config:nntp status <on | off>
+  record: (proxy.config.nntp.enabled)
+
+    ts# config:nntp status on
+    ts#
+
+  syntax: config:nntp port <portnum>
+  record: (proxy.config.nntp.server_port)
+
+    ts# config:nntp port 119
+    ts#
+
+  syntax: config:nntp connect-msg <posting | non-posting> <string>
+  record: <posting>      (proxy.config.nntp.posting_ok_message)
+          <non-posting>  (proxy.config.nntp.posting_not_ok_message)
+
+    ts# config:nntp connect-msg posting "Inktomi NNTP server. posting ok"
+    ts#
+
+  syntax: config:nntp <option> <on | off>
+  args:   <option> can be one of the following
+            <posting>            (proxy.config.nntp.posting_enabled)
+            <access-control>     (proxy.config.nntp.access_control_enabled)
+            <v2-auth>            (proxy.config.nntp.v2_authentication)
+            <local-auth>         (proxy.config.nntp.run_local_authentication_server)
+            <clustering>         (proxy.config.nntp.cluster_enabled)
+            <allow-feeds>        (proxy.config.nntp.feed_enabled)
+            <access-logs>        (proxy.config.nntp.logging_enabled)
+            <background-posting> (proxy.config.nntp.background_posting_enabled)
+            <obey-cancel>        (proxy.config.nntp.obey_control_cancel)
+            <obey-newgroups>     (proxy.config.nntp.obey_control_newgroup)
+            <obey-rmgroups>      (proxy.config.nntp.obey_control_rmgroup)
+
+    ts# config:nntp posting on v2-auth off access-logs on obey-rmgroups on
+    ts#
+
+  syntax: config:nntp <time_record> <seconds>
+  args:   <time_record> can be one of the following
+            <inactive-timeout>   (proxy.config.nntp.inactivity_timeout)
+            <check-new-groups>   (proxy.config.nntp.check_newgroups_every)
+            <check-cancelled>    (proxy.config.nntp.check_cancels_every)
+            <check-parent>       (proxy.config.nntp.group_check_parent_every)
+            <check-cluster>      (proxy.config.nntp.group_check_cluster_every)
+            <check-pull>         (proxy.config.nntp.check_pull_every)
+
+    ts# config:nntp inactive-timeout 10 check-parent 50 check-pull 100
+    ts#
+
+  syntax: config:nntp auth-server <servername> auth-port <portnum> auth-timeout <ms>
+  record: (proxy.config.nntp.authorization_hostname)
+          (proxy.config.nntp.authorization_port)
+          (proxy.config.nntp.authorization_server_timeout)
+
+    ts# config:nntp auth-server nntpserver.example.com auth-port 100 auth-timeout 5000
+    ts#
+
+  syntax: config:nntp client-throttle <bytespersecond>
+  record: (proxy.config.nntp.client_speed_throttle)
+
+    ts# config:nntp client-throttle 0
+
+  syntax: config:nntp <nntp-servers | nntp-access> <url>
+  behavior:  Retrieve nntp_servers.config or nntp_access.config file from URL.
+
+    ts# config:nntp-servers http://example.com/nntp_servers.config
+    ts#
+
+ftp			FTP Configuration
+  syntax: config:ftp mode <pasv-port | pasv | port>
+  record: (proxy.config.ftp.data_connection_mode value) 
+          pasv-port = 1, pasv = 3, port = 2
+
+    ts# config:ftp mode pasv-port
+    ts#
+
+  syntax: config:ftp inactive-timeout <seconds>
+  record: (proxy.config.ftp.control_connection_timeout)
+
+    ts# config:ftp inactive-timeout 500
+    ts#
+
+  syntax: config:ftp anonymous-password <password>
+  record: (proxy.config.http.ftp.anonymous_passwd)
+  NOTE: anonymous ftp password can be in cleartext
+  
+    ts# config:ftp anonymous-password admin@
+    ts#
+
+  syntax: config:ftp expire-after <seconds>
+  record: (proxy.config.http.ftp.cache.document_lifetime)
+
+    ts# config:ftp expire-after 50000
+    ts#
+
+icp			ICP Configuration
+			(on/off, rules, port, timeouts)
+  syntax: config:icp mode <receive | send-receive | disabled>
+  record: (proxy.config.icp.enabled value)
+          receive = 1, send-receive = 2, disabled = 0
+
+    ts# config:icp mode receive
+    ts#
+
+  syntax: config:icp port <portnum>
+  record: (proxy.config.icp.icp_port)
+
+    ts# config:icp port 3130
+    ts#
+
+  syntax: config:icp multicast <on | off>
+  record: (proxy.config.icp.multicast_enabled)
+  
+    ts# config:icp multicast on
+    ts#
+
+  syntax: config:icp query-timeout <seconds>
+  record: (proxy.config.icp.query_timeout)
+  
+    ts# config:icp query-timeout 2
+    ts#
+
+  syntax: config:icp peers <url>
+  behavior: Retrieve icp.config file from URL.
+
+    ts# config:icp peers http://example.com/icp.config
+    ts#
+
+cache			Cache Configuration
+			(active protocols, bypass, storage, freshness, 
+                         expires, variable content, rules, clear)
+  syntax: config:cache <protocol> <on | off>
+  args:   <protocol> = <http | nntp | ftp>
+          <on | off> specifies the given protocol is cached
+  behavior:  Enable/Disable caching of various protocols.
+
+    ts# config:cache http on      (proxy.config.http.cache.http)
+    +OK
+    ts#
+
+    ts# config:cache http
+    on
+    ts#
+
+    ts# config:cache nntp on      (proxy.config.nntp.cache_enabled)
+    +OK
+    ts#
+
+    ts# config:cache nntp
+    on
+    ts#
+
+    ts# config:cache ftp on       (proxy.config.http.cache.ftp)
+    +OK
+    ts#
+
+    ts# config:cache ftp
+    on
+    ts#
+
+  syntax: config:cache ignore-bypass <on | off>
+  args:   <on | off> turn ignore-bypass on/off.
+  
+    ts# config:cache ignore-bypass on   (proxy.config.http.cache.ignore_client_no_cache)
+    +OK
+    ts#
+
+    ts# config:cache ignore-bypass
+    on
+    ts#
+
+  syntax: config:cache max-object-size <bytes>
+  args:   if bytes=0 then there is no maximum
+
+    ts# config:cache max-object-size 0  (proxy.config.cache.max_doc_size)
+    +OK
+    ts#
+
+    ts# config:cache max-object-size
+    0
+    ts#
+
+  syntax: config:cache max-alternates <num>
+  args:   if num=0 then there is no maximum
+
+    ts# config:cache max-alternates 0
+    +OK
+    ts#
+
+    ts# config:cache max-alternates
+    0
+    ts#
+
+  syntax: config:cache file [url]
+  args:   [url] = location of remote cache.config file
+  behavior:  Retrieve and install cache.config file from URL.
+
+    ts# config:cache file http://example.com/cache.config
+    +OK
+    ts#
+
+  syntax: config:cache freshness verify <when-expired | no-date | always | never>
+  records.config: proxy.config.http.cache.when_to_revalidate
+  args: when-expired = 0, no-date=1, always=2, never=3
+
+    ts# config:cache freshness verify when-expired
+    +OK
+    ts#
+
+  syntax: config:cache freshness minimum <explicit | last-modified | nothing>
+  records.config: proxy.config.http.cache.required_headers
+  args:   explicit = 2, last-modified = 1, nothing = 0
+
+    ts# config:cache freshness minimum explicit
+    +OK
+    ts#
+
+  syntax: config:cache freshness no-expire-limit greater-than <seconds> less-than <seconds>
+  records.config: proxy.config.http.cache.heuristic_min_lifetime, heuristic_max_lifetime
+  args:   <seconds> is an integer
+
+    ts# config:cache freshness no-expire-limit greater-than 900 less-than 7200
+    +OK
+    ts#
+
+  syntax: config:cache dynamic <on | off>
+  records: proxy.config.http.cache.cache_urls_that_look_dynamic
+  
+    ts# config:cache dynamic on
+    +OK
+    ts#
+
+  syntax: config:cache alternates <on | off>
+  records: proxy.config.http.cache.enable_default_vary_headers
+
+    ts# config:cache alternates on
+    +OK
+    ts#
+
+  syntax: config:cache vary <text | images | other> <field>
+  records: proxy.config.http.cache.vary_default_(text,images,other)
+  args:   <field> is a string
+
+    ts# config:cache vary text Cookie
+    +OK
+    ts#
+
+  syntax: config:cache cookies <none | all | images | non-text>
+  records: proxy.config.http.cache.cache_responses_to_cookies
+  args: none = 0, all = 1, images = 2, non-text = 3
+
+    ts# config:cache cookies none
+    +OK
+    ts#
+
+  syntax: config:cache clear (clear cache and start traffic server)
+  args: none
+
+   ts# config:cache clear
+   Traffic Server is running.
+   Clear Cache failed.
+   ts# config:cache clear
+   +OK
+
+
+hostdb			Host Database Configuration
+  syntax:  config:hostdb lookup-timeout <seconds>
+  records: proxy.config.hostdb.lookup_timeout
+
+    ts# config:hostdb lookup-timeout 30
+    +OK
+    ts#
+
+  syntax:  config:hostdb foreground-timeout <seconds>
+  records: proxy.config.hostdb.timeout (seconds)
+
+    ts# config:hostdb foreground-timeout 12
+    +OK
+    ts#
+
+  syntax:  config:hostdb background-timeout <seconds>
+  records: proxy.config.hostdb.verify_after 24
+
+    ts# config:hostdb background-timeout 24
+    +OK
+    ts#
+
+  syntax:  config:hostdb invalid-host-timeout <seconds>
+  records: proxy.config.hostdb.fail.timeout
+
+    ts# config:hostdb invalid-host-timeout 30
+    +OK
+    ts#
+
+  syntax:  config:hostdb re-dns-on-reload <on | off>
+  records: proxy.config.hostdb.re_dns_on_reload
+
+    ts# config:hostdb re-dns-on-reload on
+    +OK
+    ts#
+
+  syntax: config:hostdb clear  (clear hostdb and start traffic server)
+  args: none
+
+   ts# config:hostdb clear
+   Traffic Server is running.
+   Clear HostDB failed.
+
+   ts# config:hostdb clear 
+   +OK
+   ts#
+
+dns			DNS Configuration
+  syntax:  config:dns proxy <on | off>
+  records: proxy.config.dns.proxy.enabled
+
+    ts# config:dns proxy on
+    +OK
+    ts#
+
+  syntax:  config:dns proxy-port <int>
+  records: proxy.config.dns.proxy_port
+
+    ts# config:dns proxy-port 5353
+    +OK
+    ts#
+
+  syntax:  config:dns resolve-timeout <seconds>
+  records: proxy.config.dns.lookup_timeout
+
+    ts# config:dns resolve-timeout 10
+    +OK
+    ts#
+
+  syntax:  config:dns retries <number>
+  records: proxy.config.dns.retries
+
+    ts# config:dns retries 3
+    +OK
+    ts#
+
+logging			Logging Configuration
+  syntax:  config:logging event <enabled | trans-only | error-only | disabled>
+  records: proxy.config.log2.logging_enabled
+
+    ts# config:logging event enabled
+    +OK
+    ts#
+
+    ts# config:logging event
+    enabled
+    ts#
+
+  syntax:  config:logging mgmt-directory <dir>
+  records: proxy.config.log2.logfile_dir
+
+    ts# config:logging mgmt-directory /usr/local/var/log/trafficserver
+    +OK
+    ts#
+
+  syntax:  config:logging space-limit <mb>
+  args:    <mb> = log space limit (MB)
+  records: proxy.config.log2.max_space_mb_for_logs
+
+    ts# config:logging space-limit 10
+    +OK
+    ts#
+
+  syntax:  config:logging space-headroom <mb>
+  args:    <mb> = log space headroom (MB)
+  records: proxy.config.log2.max_space_mb_headroom
+
+    ts# config:logging space-headroom 100
+    +OK
+    ts#
+
+  syntax:  config:logging collation-status <inactive | host | send-standard | send-custom | send-all>
+  args:    inactive = 0, host = 1, send-standard = 2, send-custom = 3, send-all = 4
+  records: proxy.local.log2.collation_mode
+
+    ts# config:logging collation-status inactive
+    +OK
+    ts#
+
+    ts# config:log collation-status send-custom 
+    +OK
+    ts#
+
+  syntax:  config:logging collation-host <host>
+  args:    <host> is a remote collation host
+  records: proxy.config.log2.collation_host
+
+    ts# config:log collation-host config1
+    +OK
+    ts#
+
+  syntax:  config:logging collation secret <secret> tagged <on | off> orphan-limit <orphan>
+  args:    <secret> = string
+           <orphan> = size in MB
+  records: <secret> = proxy.config.log2.collation_port
+           tagged   = proxy.config.log2.collation_host_tagged
+           <orphan> = proxy.config.log2.collation_secret
+
+    ts# config:logging collation secret foobar tagged on orphan-limit 10
+    +OK
+    ts#
+
+  syntax:  config:logging format <squid | netscape-common | netscape-ext | netscape-ext2> 
+                  <on | off> type <ascii | binary> file <file> header <header>
+
+  squid
+    args:    <on | off> = proxy.config.log2.squid_log_enabled
+             type       = proxy.config.log2.squid_log_is_ascii <ascii=1, binary=0>
+             file       = proxy.config.log2.squid_log_name
+             header     = proxy.config.log2.squid_log_header
+  netscape-common
+    args:    <on | off> = proxy.config.log2.common_log_enabled
+             type       = proxy.config.log2.common_log_is_ascii <ascii=1, binary=0>
+             file       = proxy.config.log2.common_log_name
+             header     = proxy.config.log2.common_log_header
+  netscape-ext
+    args:    <on | off> = proxy.config.log2.extended_log_enabled
+             type       = proxy.config.log2.extended_log_is_ascii <ascii=1, binary=0>
+             file       = proxy.config.log2.extended_log_name
+             header     = proxy.config.log2.extended_log_header
+  netscape-ext2
+    args:    <on | off> = proxy.config.log2.extended2_log_enabled
+             type       = proxy.config.log2.extended2_log_is_ascii <ascii=1, binary=0>
+             file       = proxy.config.log2.extended2_log_name
+             header     = proxy.config.log2.extended2_log_header
+
+    ts# config:log format squid on type ascii file squid.log
+    +OK
+    ts#
+
+  syntax:  config:logging splitting <nntp | icp | http> <on | off>
+  records:  proxy.config.log2.separate_nntp_logs <nntp>
+            proxy.config.log2.separate_icp_logs  <icp>
+            proxy.config.log2.separate_host_logs <http>
+
+    ts# config:log split nntp on
+    +OK
+    ts#
+
+  syntax:  config:logging custom <on | off> format <traditional | xml>
+  records:  proxy.config.log2.custom_logs_enabled
+            proxy.config.log2.xml_logs_config <traditional=0, xml=1>
+
+    ts# config:logging custom on format xml
+    +OK
+    ts#
+
+  syntax:  config:logging rolling <on | off> offset <hour> interval <num-hours> auto-delete <on | off>
+  records: proxy.config.log2.rolling_enabled
+           proxy.config.log2.rolling_offset_hr (24hour format)
+           proxy.config.log2.rolling_interval_sec (seconds)
+
+    ts# config:logging rolling on offset 0 interval 1 auto-delete off
+    +OK
+    ts#
+
+ssl			SSL Ports
+filter			Filter Rules
+  syntax: config:filter <url>
+
+    ts# config:filter http://example.com/filter.config
+    ts#
+
+security		Security Configuration
+			(TS IP allow, MGMT allow, Admin Access)
+  syntax: config:security ip-allow <url>
+  
+    ts# config:security ip-allow http://example.com/ip_allow.config
+    ts#
+
+  syntax: config:security mgmt-allow <url>
+
+    ts# config:security mgmt-allow http://example.com/mgmt_allow.config
+    ts#
+
+  syntax: config:security admin <url>
+
+    ts# config:security admin http://example.com/admin_access.config
+    ts#
+
+parent			Parent Configuration
+			(on/off, parents, rules)
+  syntax: config:parent status <on | off>
+          config:parent name <parent>
+          config:parent rules <url>
+  args:   <on | off> = proxy.config.http.parent_proxy_routing_enable
+          <parent> = proxy.config.http.parent_proxies
+          <url> = retrieve file and use as parent.config
+
+    ts# config:parent status on 
+    ts#
+
+    ts# config:parent name parent.example.com
+    ts#
+
+    ts# config:parent rules http://example.com/parent.config
+    ts#
+
+remap			Remap Rules
+  syntax: config:remap <url>
+  args:   <url> = retrieve file and use as remap.config
+
+    ts# config:remap http://example.com/remap.config
+    ts#
+
+ports			Ports used by Traffic Server
+*** config:ports command is not implemented or supported ***
+			(including mgmt port)
+  syntax: config:ports <http-server | http-other | webui | overseer | cluster
+                        cluster-rs | cluster-mc | nntp-server | ftp-server |
+                        ssl | socks-server | icp> <port | ports>
+  args:   some variables are single-port while other can be a list of ports
+          <http-server>     (proxy.config.http.server_port) single
+          <http-other>      (proxy.config.http.server_other_ports) list
+          <webui>           (proxy.config.admin.web_interface_port) single
+          <overseer>        (proxy.config.admin.overseer_port) single
+          <cluster>         (proxy.config.cluster_port) single
+          <cluster-rs>      (proxy.config.cluster.rsport) single
+          <cluster-mc>      (proxy.config.cluster.mcport) single
+          <nntp-server>     (proxy.config.nntp.server_port) single
+          <ftp-server>      (proxy.config.ftp.proxy_server_port) single
+          <ssl>             (proxy.config.http.ssl_ports) list
+          <socks-server>    (proxy.config.socks.socks_server_port) single
+          <icp>             (proxy.config.icp.icp_port) single
+
+snmp			SNMP Configuration
+			(on/off)
+  syntax: config:snmp status <on | off>
+  args:   <on | off>  (proxy.config.snmp.master_agent_enabled)
+
+ldap			LDAP Configuration
+  syntax: config:ldap status <on | off> 
+  syntax: config:ldap cache-size <cache> 
+  syntax: config:ldap ttl <ttl> 
+  syntax: config:ldap purge-fail <on | off>
+  syntax: config:ldap server-name <name>
+  syntax: config:ldap server-port <port_number>
+  syntax: config:ldap dn <distinguished name>
+
+  args:                    (proxy.config.ldap.*)
+          ldap             (auth.enabled)
+          cache-size       (cache.size)
+          ttl              (auth.ttl_value)
+          purge-fail       (auth.purge_cache_on_auth_fail)
+          server-name      (proc.ldap.server.name)
+          server-port      (proc.ldap.server.port)
+          dn               (proc.ldap.base.dn)
+
+  ts# config:ldap status on 
+  ts# 
+  ts# config:ldap cache-size 5000
+  ts# 
+  ts# config:ldap ttl 3000 
+  ts#
+  ts# config:ldap purge-fail off 
+  ts#
+  ts# config:ldap server-name blah
+  ts# config:ldap server-port 5150
+  ts# config:ldap dn blahblah
+
+  syntax: config:ldap file <url>
+  args    <url> retrieve ldapsrvr.config file from URL.
+
+  ts# config:ldap file http://example.com/ldapsrvr.config
+  ts#
+
+virtual-ip		Virtual IP Address Configuration
+
+  syntax: config:virtual-ip status <on | off>
+			    add ip <ip-address> device <device> sub-intf <sub-interface>
+	                    delete <ip number>
+
+
+  args:
+	<on | off>	(proxy.config.vmap.enabled)
+        add             (add entry to vmap.config)
+
+  ts# config:virtual-ip status on
+  ts#
+  ts# config:virtual-ip add ip 192.168.1.12 device eth2 sub-intf 28
+  ts$
+
+socks			SOCKS Configuration
+  syntax: config:socks status <on | off> version <int> default-servers <string> 
+                       accept <on | off> accept-port <port> 
+  args:   socks            (proxy.config.socks_socks_needed)
+          version          (proxy.config.socks.socks_version)
+          default-servers  (proxy.config.socks.default_servers)
+          accept           (proxy.config.socks.accept_enabled)
+          accept-port      (proxy.config.socks.accept_port)
+
+  ts# config:socks status on 
+  ts#
+  ts# config:socks version 4
+  ts#
+  ts# config:socks default-servers "s1.example.com:1080;socks2:4080"
+  ts#
+  ts# config:socks accept on
+  ts#
+  ts# config:socks accept-port 1080 
+  ts#
+
+port-tunnels		Port Tunnelling Configuration
+
+  syntax: config:port-tunnels server-other-ports <port>
+  args:   other-ports  (proxy.config.http.server_other_ports)
+
+  ts# config:port-tunnels 
+  ts# NULL
+  ts# config:port-tunnels other-ports 5678
+  ts# 
+
+
+
+
+scheduled-update        Scheduled Update Configuration
+  syntax: config:scheduled-update status <on | off>
+                                  retry-count <int>
+                                  retry-interval <sec>
+				  max-concurrent <value>
+				  force-immediate <on | off>
+				  rules <url>
+
+  args:   config update.config file
+  behavior: Scheduled Update Configuration.
+
+  ts> config:scheduled-update on
+  ts>
+
+  ts> config:scheduled-update retry-count 10 
+  ts>
+
+  ts> config:scheduled-update retry-interval 2
+
+  ts> config:scheduled-update force-immediate off
+  ts>
+
+  ts> config:scheduled-update rules http://example.com
+
+  ts> config:scheduled-update rules
+  update.config rules
+  ------------------- 
+  (Display list of rules from update.config)
+  ts>
+
+
+ntlm	NTLM Configuration
+
+   config:ntlm status <on | off>               (proxy.config.ntlm.auth.enabled)
+   config:ntlm domain-controller <hostnames>   (proxy.config.ntlm.dc.list)
+   config:ntlm nt-domain <domain>              (proxy.config.ntlm.nt_domain)
+   config:ntlm load-balancing <on | off>       (proxy.config.ntlm.dc.load_balance)
+
+
+radius   Radius Configuration
+
+   config:radius status <on | off>             (proxy.config.radius.auth.enabled)
+   config:radius primary-hostname <hostname>   (proxy.config.radius.proc.radius.primary_server.name)
+   config:radius primary-port <port>           (proxy.config.radius.proc.radius.primary_server.auth_port)
+   config:radius primary-key <key>             (proxy.config.radius.proc.radius.primary_server.shared_key)
+   config:radius secondary-hostname <hostname> (proxy.config.radius.proc.radius.secondary_server.name)
+   config:radius secondary-port <port>         (proxy.config.radius.proc.radius.secondary_server.auth_port)
+   config:radius secondary-key <key>           (proxy.config.radius.proc.radius.secondary_server.shared_key)
+
+
+Appliance-Specific commands (Linux only)
+========================================
+
+Normal Mode
+-----------
+  ping		Send ICMP ECHO_REQUEST packets to host.
+    syntax: ping <host>
+    args:   hostname
+
+    ts> ping foo
+    foo is alive
+    ts>
+
+  traceroute    Display the route packets take to host.
+    syntax: traceroute <host>
+    args:   hostname
+
+    ts> traceroute foo
+    Traceroute output appears here...
+    ts>
+
+Configure Mode
+--------------
+
+config:network	Make System Network configuration changes
+
+   traffic_shell> config:network
+
+   Command Syntax: 
+   config:network hostname <string>
+   config:network defaultrouter <x.x.x.x>
+   config:network search-domain <string>
+   config:network dns [a.a.a.a] [b.b.b.b] [c.c.c.c]
+   config:network int <interface>
+   config:network int <interface> down
+   config:network int <interface> up <onboot | not-onboot>
+                 <static | dhcp> <ip> <netmask> <gateway>
+   config:network int <interface> <onboot | not-onboot>
+   config:network int <interface> <static | dhcp>
+   config:network int <interface> ip <x.x.x.x>
+   config:network int <interface> netmask <x.x.x.x>
+   config:network int <interface> gateway <x.x.x.x | default>
+
+   traffic_shell> 
+
+  hostname      Specify appliance hostname
+    syntax: config:network hostname <name>
+    ts# config:network hostname xxxx
+    ts# config:network hostname
+    xxxx
+    ts#
+
+  defaultrouter  Specify default router
+    syntax: config:network defaultrouter <x.x.x.x>
+
+    ts# config:network defaultrouter x.x.x.x
+    ts# config:network defaultrouter
+    x.x.x.x
+    ts#
+
+  search-domain  Specify DNS search domain
+    syntax: config:network search-domain <x.x.x.x>
+
+    ts# config:network search-domain example.com
+    ts# config:network search-domain
+    example.com
+    ts#
+
+  dns		Specify one or more DNS servers
+    syntax: config:network dns <string of IP addresses>
+
+    ts# config:network dns "192.168.0.2 192.168.0.3"
+    ts# config:network dns
+    192.168.0.2 192.168.0.3
+    ts#
+
+  int		Configure Network Interface Card
+
+	config:network int
+		List network interface cards by name.
+
+	config:network int <interface>
+		Display NIC configuration.
+
+	config:network int <interface> down
+		Bring down the specified interface.
+
+	config:network int <interface> up <onboot | not-onboot>
+			   <static | dhcp> <ip> <netmask> <gateway>
+		Bring up a NIC with the specified parameters.
+
+	config:network int <interface> <onboot | not-onboot>
+		Change the boot start status of a NIC that is already up.
+
+	config:network int <interface> <static | dhcp>
+		Change the static/dhcp status of a NIC that is already up.
+
+	config:network int <interface> ip <x.x.x.x>
+		Change the IP address of a NIC that is already up.
+
+	config:network int <interface> netmask <x.x.x.x>
+		Change the netmask of a NIC that is already up.
+
+	config:network int <interface> gateway <x.x.x.x | default>
+		Change the gateway of a NIC that is already up.
+
+   traffic_shell> config:network int     
+   eth0
+   eth1
+   traffic_shell> config:network int eth0
+
+   NIC eth0
+     Status -------------- up
+     Start on Boot ------- onboot
+     Start Protocol ------ none
+     IP Address ---------- 192.168.0.10
+     Netmask ------------- 255.255.255.0
+     Gateway ------------- default
+
+   traffic_shell> 
+    
+
+  date		Specify system date.
+    syntax: config:clock date <date>
+    args:   <date> = mm/dd/yyyy
+
+    ts# config:clock date 01/01/2001
+    ts# config:clock date
+    01/01/2001
+    ts#
+  
+  time		Specify system time.
+    syntax: config time <time>
+    args:   <time> = hh:mm:ss
+
+    ts# config:clock time 14:00:00
+    ts# config:clock time
+    14:00:03
+    ts#
+
+  timezone	Specify time zone.
+    syntax: config:clock timezone [zone | list]
+    args:   [zone] optional time zone from numbered list
+            if not present, display current time zones
+	    [list] display list of time zone
+
+    ts# config:clock timezone
+    Display numbered current timezones.
+
+    ts# config:clock timezone 3
+    ts#
+    
+    ts# config:clock timezone list
+    Display list of time zone. (85 in total currently)
+
+  halt		Halt appliance.
+    syntax: halt
+
+    ts# halt
+
+  reboot	Reboot appliance.
+    syntax: reboot
+
+    ts# reboot
+
+Other
+=====
+Customizable Respose Pages
+------------------------------------------------------------------------------
+PART - II
+~~~~~~~~~
+MIXT specific commands.
+------------------------
+
+Windows media configuration
+----------------------------
+
+wmt			Windows Media Technologies
+config:wmt status <on | off>                 (proxy.config.wmt.enabled)
+config:wmt port <portno>                     (proxy.config.wmt.port)
+config:wmt proxy-only <on | off>             (proxy.config.wmt.proxyonly)
+config:wmt prebuffering <milli seconds>      (proxy.config.wmt.prebuffering_ms)
+config:wmt prebuffering-tcp <milli seconds>  (proxy.config.wmt.prebuffering_ms_tcp",)
+config:wmt loadhost <string>                 (proxy.config.wmt.loadhost)
+config:wmt loadpath <string>                 (proxy.config.wmt.loadpath)
+config:wmt chunksize <seconds>               (proxy.config.wmt.chunksize_sec)
+config:wmt old-asx-behavior <seconds>        (proxy.config.reverse_proxy.oldasxbehavior)
+config:wmt debug <on | off>                  (proxy.config.wmt.debug_tags.enabled)
+config:wmt asx-rewrite <on | off>            (proxy.config.wmt.asx_rewrite.enabled)
+config:wmt redirect <on | off>               (proxy.config.wmt.redirect.enabled)
+config:wmt rexmit-window <integer>           (proxy.config.wmt.rexmit.window)
+config:wmt monitor-version <version number>  (proxy.config.wmt.media_bridge.monitor.version)
+config:wmt monitor-livehosts <string>        (proxy.config.wmt.media_bridge.monitor.livehosts)
+config:wmt monitor-name <string>             (proxy.config.wmt.media_bridge.monitor.name)
+config:wmt monitor-port <portno>             (proxy.config.wmt.media_bridge.monitor.port)
+config:wmt media-bridge-name <string>        (proxy.config.wmt.media_bridge.name)
+config:wmt media-bridge-port <portno>        (proxy.config.wmt.media_bridge.port)
+config:wmt media-bridge-mount <string>       (proxy.config.wmt.media_bridge.mount_point)
+
+Quick time commands
+---------------------
+config:qt status <on | off>		     (proxy.config.qt.enabled)
+config:qt proxy-port <portno>                (proxy.config.mixt.rtsp_proxy_port)
+config:qt monitor-name <string>              (proxy.config.qt.media_bridge.monitor.name)
+config:qt monitor-port <portno>              (proxy.config.qt.media_bridge.monitor.port)
+config:qt name <string>                      (proxy.config.qt.media_bridge.name)
+config:qt port <portno>                      (proxy.config.qt.media_bridge.port)
+config:qt mount-point <string>               (proxy.config.qt.media_bridge.mount_point)
+
+
+Real config variables
+----------------------
+config:rni status <on | off>                 (proxy.config.rni.enabled)
+config:rni verbosity <on | off>              (proxy.config.rni.verbosity)
+config:rni cache-port  <portno>              (proxy.config.rni.cache_port)
+config:rni watcher-enabled <on | off>        (proxy.config.rni.watcher_enabled)
+config:rni control-port <portno>             (proxy.config.rni.control_port)
+config:rni proxy-port <portno>               (proxy.config.rni.proxy_port)
+config:rni pid-path <string>                 (proxy.config.rni.proxy_pid_path)
+config:rni restart-cmd <need info>           (proxy.config.rni.proxy_restart_cmd)
+config:rni restart-interval <integer>        (proxy.config.rni.proxy_restart_interval)
+config:rni service-name <string>             (proxy.config.rni.proxy_service_name)
+
+Status commands for Real proxy
+-------------------------------
+
+traffic_shell> show:rni-stats
+
+RNI:
+Object Count ---------------------- 0   (proxy.process.rni.object_count)
+Block Hit Count ------------------- 0   (proxy.process.rni.block_hit_count)
+Block Miss Count ------------------ 0   (proxy.process.rni.block_miss_count)
+Total Hits ------------------------ 0   (proxy.process.rni.byte_hit_sum)
+Total Miss ------------------------ 0   (proxy.process.rni.byte_miss_sum)
+Total Hit Time -------------------- 0   (proxy.process.rni.time_hit_sum)
+Total Miss Time ------------------- 0   (proxy.process.rni.time_miss_sum)
+Downstream Request Status --------- 0   (proxy.process.rni.downstream_requests)
+Downstream Request Bytes ---------- 0   (proxy.process.rni.downstream.request_bytes)
+Downstream Receive Bytes ---------- 0   (proxy.process.rni.downstream.response_bytes)
+Upstream Request Status ----------- 0   (proxy.process.rni.upstream_requests)
+Upstream Request Bytes ------------ 0   (proxy.process.rni.upstream.request_bytes)
+Upstream Receive Bytes ------------ 0   (proxy.process.rni.upstream.response_bytes)
+Client Connections ---------------- 0   (proxy.process.rni.current_client_connections)
+Cache Connections ----------------- 0   (proxy.process.rni.current_cache_connections)
+Server Connections ---------------- 0   (proxy.process.rni.current_server_connections)
+Total Aborts ---------------------- 0   (proxy.process.rni.errors.aborts)
+Failed Server Connections --------- 0   (proxy.process.rni.server.errors.connect_failed)
+Other Server Errors --------------- 0   (proxy.process.rni.server.errors.other)
+
+traffic_shell> show:rni
+
+RNI protocol ------- on       (proxy.config.rni.enabled)
+Verbosity ---------- on       (proxy.config.rni.verbosity)
+Cache port --------- 7802     (proxy.config.rni.cache_port)
+Watcher ------------ on       (proxy.config.rni.watcher_enabled)
+Control Port ------- 7803     (proxy.config.rni.control_port)
+Proxy Port --------- 9231     (proxy.config.rni.proxy_port)
+PID Path ----------- /usr/local/var/log/trafficserver/rmserver.pid   (proxy.config.rni.proxy_pid_path)
+Restart Command ---- /usr/local/bin/rmserver -m 94 --skip-cpu-test   (proxy.config.rni.proxy_restart_cmd)
+                     /usr/local/etc/rmproxy/rmserver.cfg
+Restart Interval --- 10       (proxy.config.rni.proxy_restart_interval)
+Service Name ------- RMProxy  (proxy.config.rni.proxy_service_name)
+
+traffic_shell> 
+
+
+Status command for WMT
+----------------------
+
+traffic_shell> show:wmt-stats
+
+WMT:
+Downstream Request Bytes ------------- 0   (proxy.process.wmt.downstream.request_bytes)
+Downstream Response Bytes ------------ 0   (proxy.process.wmt.downstream.response_bytes)
+Upstream Request Bytes --------------- 0   (proxy.process.wmt.upstream.request_bytes)
+Upstream Response Bytes -------------- 0   (proxy.process.wmt.upstream.response_bytes)
+Client Connections ------------------- 0   (proxy.process.wmt.current_client_connections)
+Server Connections ------------------- 0   (proxy.process.wmt.current_server_connections)
+
+traffic_shell> show:wmt
+
+WMT Caching ------------- on         (proxy.config.wmt.enabled)
+WMT Port ---------------- 1755       (proxy.config.wmt.port)
+Proxy only -------------- off        (proxy.config.wmt.proxyonly)
+Prebuffering ------------ 5000 ms    (proxy.config.wmt.prebuffering_ms)
+TCP Prebuffering -------- 200 ms     (proxy.config.wmt.prebuffering_ms_tcp)
+Loadpath ---------------- no-file    (proxy.config.wmt.loadpath)
+Loadhost ---------------- no-load-host-set.no-domain   (proxy.config.wmt.loadhost)
+Chunksize --------------- 10 s       (proxy.config.wmt.chunksize_sec)
+Old ASX behavior -------- 0 s        (proxy.config.reverse_proxy.oldasxbehavior)
+ASX Rewrite ------------- on         (proxy.config.wmt.debug_tags.enabled)
+Redirect ---------------- off        (proxy.config.wmt.redirect.enabled)
+Retransmit window ------- 65         (proxy.config.wmt.rexmit.window)
+Monitor Version --------- 0          (proxy.config.wmt.media_bridge.monitor.version")
+Monitor Livehosts ------- NULL       (proxy.config.wmt.media_bridge.monitor.livehosts)
+Monitor Name ------------ NULL       (proxy.config.wmt.media_bridge.monitor.name)
+Monitor Port ------------ 10088      (proxy.config.wmt.media_bridge.monitor.port)
+Media Bridge Name ------- NULL       (proxy.config.wmt.media_bridge.name)
+Media Bridge Port ------- 10022      (proxy.config.wmt.media_bridge.port)
+Media Bridge Mount ------ ffnet      (proxy.config.wmt.media_bridge.mount_point)
+
+traffic_shell> 
+
+
+Status commands for Quick time 
+---------------------------------
+
+traffic_shell> show:qt-stats
+
+Quicktime:
+Downstream Request Bytes ------------- 0       (proxy.process.qt.downstream.request_bytes)
+Downstream Response Bytes ------------ 0       (proxy.process.qt.downstream.response_bytes)
+Upstream Request Bytes --------------- 0       (proxy.process.qt.upstream.request_bytes)
+Upstream Response Bytes -------------- 0       (proxy.process.qt.upstream.response_bytes)
+Client Connections ------------------- 0       (proxy.process.qt.current_client_connections)
+Server Connections ------------------- 0       (proxy.process.qt.current_server_connections)
+Unique Live Streams ------------------ 0       (proxy.process.qt.unique_live_streams)
+Cache Bytes Read --------------------- 0       (proxy.process.qt.client.cache_bytes_read)
+Cache Cutoff ------------------------- 1048576 (proxy.config.cache.ram_cache_mixt_cutoffproxy.config.cache.ram_cache_mixt_cutoff)
+
+traffic_shell> show:qt
+
+Quicktime ------------ on         (proxy.config.qt.enabled)
+Proxy port ----------- 554        (proxy.config.mixt.rtsp_proxy_port)
+Monitor Name --------- NULL       (proxy.config.qt.media_bridge.monitor.name)
+Monitor Port --------- 10088      (proxy.config.qt.media_bridge.monitor.port)
+Media Bridge Name ---- NULL       (proxy.config.qt.media_bridge.name)
+Media Bridge Port ---- 10036      (proxy.config.qt.media_bridge.port)
+Media Bridge Mount --- ffnet      (proxy.config.qt.media_bridge.mount_point)
+
+traffic_shell> 
+

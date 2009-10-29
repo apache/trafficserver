@@ -1,0 +1,180 @@
+#
+# DEFT test group file
+#
+#    Syntax: one entry per line
+#      lines can either of the form
+#
+#      test_case <name> <script_file> <args>
+#      test_group <name> <test_case or test_group> <test_case or test_group> ...
+#
+#     
+#
+
+test_group http    \
+	jtest1 \
+	jtest2 
+
+# running syntest in DEFT will hang---syntest doesn't exit properly.
+test_case  syntest    syntest.pl
+test_case  jtest1     jtest-example.pl
+test_case  jtest2     jtest-simple-load.pl
+
+# ---------------------------------------------
+# section for SDK work 
+# ---------------------------------------------
+
+test_group SDK_samples \
+	hello \
+	add_header \
+	append-transform \
+	basic-auth \
+	blacklist \
+	null_transform \
+	bnull_transform \
+	file-1 \
+	gzip \
+	gunzip \
+	output-header \
+	session-1 \
+	thread_1 \
+	thread-pool
+
+
+test_group SDK_qa_regressions \
+	api-regression \
+	exercise-headers \
+	check-http-0 \
+	check-mime-0 \
+	check-url-0
+
+test_group SDK_full \
+        SDK_samples \
+        SDK_qa_regressions
+
+
+# SDK_samples
+test_case hello            plugins/hello/hello_functional.pl
+test_case add_header       plugins/add-header/add_functional.pl
+test_case append-transform plugins/append-transform/append_functional.pl
+test_case basic-auth       plugins/basic-auth/basic_functional.pl
+test_case blacklist        plugins/blacklist/blacklist_functional.pl
+test_case null_transform   plugins/null-transform/null_functional.pl
+test_case bnull_transform  plugins/null-transform/bnull_functional.pl
+test_case file-1           plugins/file-1/file_functional.pl
+test_case gzip             plugins/gzip-transform/gzip_functional.pl
+test_case gunzip           plugins/gzip-transform/gunzip_functional.pl
+test_case output-header    plugins/output-header/output-header_functional.pl
+test_case session-1        plugins/session-1/session_functional.pl
+test_case thread_1         plugins/thread-1/thread_functional.pl
+test_case thread-pool      plugins/thread-pool/pool_functional.pl
+
+# SDK_qa_regressions
+test_case api-regression   plugins/regression/api-regression_functional.pl
+test_case exercise-headers plugins/regression/exercise-headers_functional.pl
+test_case check-http-0     plugins/regression/check-http-0_functional.pl
+test_case check-mime-0     plugins/regression/check-mime-0_functional.pl
+test_case check-url-0      plugins/regression/check-url-0_functional.pl
+
+# ---------------------------------------------
+# section for ACC work 
+# ---------------------------------------------
+
+test_group ACC_full \
+	ACC_ldap \
+	ACC_ldap_auzn \
+	ACC_policy 
+
+test_group ACC_ldap_auzn \
+	acc_ldap_auzn_1a \
+	acc_ldap_auzn_1b 
+
+test_group ACC_ldap \
+	acc_ldap_sanity_1a \
+	acc_ldap_sanity_1b \
+	acc_ldap_errors_1a \
+	acc_ldap_bind_1a
+
+test_group ACC_policy \
+    acc_policy_time_ranges
+
+# acc ldap tests
+test_case acc_ldap_sanity_l  acc/http/ldap/ldap-1.pl localhost
+test_case acc_ldap_sanity_1a acc/http/ldap/ldap-1.pl bleep.inktomi.com
+test_case acc_ldap_sanity_1b acc/http/ldap/ldap-1.pl othello.climate.inktomi.com
+
+test_case acc_ldap_auzn_1a acc/http/ldap/ldap-auzn.pl bleep.inktomi.com
+test_case acc_ldap_auzn_1b acc/http/ldap/ldap-auzn.pl othello.climate.inktomi.com
+test_case acc_ldap_auzn_1c acc/http/ldap/ldap-auzn.pl ntlm.inktomi.com
+
+test_case acc_ldap_errors_1a acc/http/ldap/ldap-errors.pl bleep.inktomi.com
+
+test_case acc_ldap_bind_1a acc/http/ldap/ldap-bind.pl bleep.inktomi.com
+test_case acc_ldap_bind_1b acc/http/ldap/ldap-bind.pl othello.climate.inktomi.com
+test_case acc_ldap_ad_1a acc/http/ldap/ldap-2.pl ntlm.inktomi.com 1
+test_case acc_ldap_ad_1b acc/http/ldap/ldap-2.pl ntlm.inktomi.com 2
+test_case acc_ldap_ad_1c acc/http/ldap/ldap-2.pl ntlm.inktomi.com 3
+test_case acc_ldap_ad_1d acc/http/ldap/ldap-2.pl ntlm.inktomi.com 4
+test_case acc_ldap_ad_1e acc/http/ldap/ldap-2.pl ntlm.inktomi.com 5
+
+# Active Directory load
+test_group ACC_ad_load \
+	ad_load1a \
+	ad_load1b \
+	ad_load1c \
+	ad_load1d \
+	ad_load1e \
+
+test_case ad_load1a acc/http/group/ad-load.pl ntlm.inktomi.com 1
+test_case ad_load1b acc/http/group/ad-load.pl ntlm.inktomi.com 2
+test_case ad_load1c acc/http/group/ad-load.pl ntlm.inktomi.com 3
+test_case ad_load1d acc/http/group/ad-load.pl ntlm.inktomi.com 4
+test_case ad_load1e acc/http/group/ad-load.pl ntlm.inktomi.com 5
+
+test_group ACC_ad_load2 \
+	ad_load2a \
+	ad_load2b \
+	ad_load2c \
+	ad_load2d 
+
+test_case ad_load2a acc/http/group/ad-load2.pl cmu.climate.inktomi.com 1
+test_case ad_load2b acc/http/group/ad-load2.pl cmu.climate.inktomi.com 2
+test_case ad_load2c acc/http/group/ad-load2.pl cmu.climate.inktomi.com 3
+test_case ad_load2d acc/http/group/ad-load2.pl cmu.climate.inktomi.com 4
+
+# Attribute search
+test_group ACC_ad_attr \
+	ad_attr \
+
+test_case ad_attr acc/http/group/ad-attr.pl cmu.climate.inktomi.com 
+
+# acc policy tests
+test_case acc_policy_time_ranges acc/http/policy/time-ranges.pl
+
+# NTLM Authentication
+test_group NTLM_func \
+	ntlm_1 \
+	ntlm_2 \
+	ntlm_3 \
+	ntlm_4
+
+test_group NTLM_load \
+        ntlm_load0 \
+        ntlm_load1 \
+        ntlm_load2 \
+        ntlm_load3 \
+        ntlm_load4 \
+        ntlm_load5
+
+# NTLM functional tests
+test_case ntlm_1 acc/http/ntlm/ntlmload-1.pl 
+test_case ntlm_2 acc/http/ntlm/ntlmload-2.pl 
+test_case ntlm_3 acc/http/ntlm/ntlmload-3.pl 
+test_case ntlm_4 acc/http/ntlm/ntlmload-4.pl 
+
+# NTLM load tests
+test_case ntlm_load0 acc/http/ntlm/ntlmload-5.pl 0
+test_case ntlm_load1 acc/http/ntlm/ntlmload-5.pl 1
+test_case ntlm_load2 acc/http/ntlm/ntlmload-5.pl 2
+test_case ntlm_load3 acc/http/ntlm/ntlmload-5.pl 3
+test_case ntlm_load4 acc/http/ntlm/ntlmload-5.pl 4
+test_case ntlm_load5 acc/http/ntlm/ntlmload-5.pl 5

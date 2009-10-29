@@ -1,0 +1,31 @@
+.TH "config:dns"
+.SH NAME
+config:dns \- Configures DNS lookups.
+.SH SYNOPSIS
+config:dns [options]
+.SH DESCRIPTION
+Use the config:dns command to configure DNS proxying and DNS lookups. When you execute the 
+config:dns command, you must use one of the options described below.
+.SH OPTIONS
+The following options are supported for the config:dns command:
+.SS "proxy <on | off>"
+Enables (on) or disables (off) the DNS proxying feature.
+.SS "proxy-port <integer>"
+Specifies the port number used by the DNS proxy.
+.SS "resolve-timeout <seconds>"
+Specifies the DNS lookup timeout in seconds. (The default value is 20.)
+.SS "retries <number>"
+Specifies the number of DNS retries. (The default value is 5.)
+.SH EXAMPLES
+.SS "Example 1. Specifying 10 seconds as the DNS lookup timeout"
+.PP
+.nf
+traffic_shell> config:dns resolve-timeout 10
+traffic_shell> 
+.SS "Example 2. Specifying a value of three for DNS retries"
+.PP
+.nf
+traffic_shell> config:dns retries 3
+traffic_shell> 
+.SH "SEE ALSO"
+show:dns-resolver, show:dns-stats

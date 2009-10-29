@@ -1,0 +1,19 @@
+.TH "config:snmp"
+.SH NAME
+config:snmp \- Enables SNMP.
+.SH SYNOPSIS
+config:snmp status [on | off]
+.SH DESCRIPTION
+You use the config:snmp command to enable or disable the SNMP agent.
+.SH OPTIONS
+The following option is supported for the config:snmp command:
+.SS "status <on | off>"
+Enables (on) or disables (off) the SNMP agent. (The default value is on.)
+.SH EXAMPLES
+.SS "Example 1. Enabling SNMP"
+.PP
+.nf
+traffic_shell> config:snmp on 
+traffic_shell>
+.SH "SEE ALSO"
+show:snmp

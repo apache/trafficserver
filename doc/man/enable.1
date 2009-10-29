@@ -1,0 +1,27 @@
+.TH "enable"
+.SH NAME
+enable \- Enable privileged commands.
+.SH SYNOPSIS
+enable
+.SH DESCRIPTION
+If you are in Monitor mode and want to enter Configure mode, type 
+the enable command.  You will be prompted to enter the administrator password.
+.SH OPTIONS
+The following options are supported for the enable command:
+.SS "status"
+Display the enable status, on or off.
+.SH EXAMPLE 
+.TP
+.fi
+When you execute the enable command, you see the following:
+.PP
+.nf
+traffic_shell> enable status
+off
+traffic_shell> enable
+Password: (enter password)
+traffic_shell> enable status
+on
+traffic_shell>
+.SH "SEE ALSO"
+config:root, disable, exit

@@ -1,0 +1,48 @@
+#!/bin/sh
+#  function usage: GetResult metric directory
+#                  result return in $value
+GetResult () {
+#
+#  combined result is in 3rd to last comma-separated column
+  value=`grep "$1" $2/summary.csv | awk -F, '{print $(NF-2);}'`
+}
+
+summary=Results.all.$$
+
+
+for hitrate in 0 20 40 60 80 100 ; do
+  out=output/hitrate.$hitrate
+  inkbench hitrate=$hitrate output=$out
+  GetResult 'Cumulative rate' $out
+  echo "Hitrate: $hitrate   Op/sec: $value" >> $summary
+  echo ""
+  echo "Results so far:"
+  cat $summary
+  echo ""
+done
+
+echo "" >> $summary
+
+for users in 100 200 500 1000 2000 5000 10000 ; do
+  out=output/users.$users
+  inkbench users=$users output=$out
+  GetResult 'Cumulative rate' $out
+  echo "Users: $users   Op/sec: $value" >> $summary
+  echo ""
+  echo "Results so far:"
+  cat $summary
+  echo ""
+done
+
+echo "" >> $summary
+
+for hotset in 100 1000 10000 50000 100000 ; do
+  out=output/hotset.$hotset
+  inkbench hotset=$hotset output=$out
+  GetResult 'Cumulative rate' $out
+  echo "Hotset: $hotset   Op/sec: $value" >> $summary
+  echo ""
+  echo "Results so far:"
+  cat $summary
+  echo ""
+done

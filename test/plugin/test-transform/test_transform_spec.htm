@@ -1,0 +1,34 @@
+<html>
+<head>
+<title>Untitled Document</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000">
+<p align="center"><b><font size="+2">Plugin test-transform Spec</font></b></p>
+<p>&nbsp;</p>
+<p><font size="+1"><b>Overview</b></font></p>
+<p>This plugin is based on the null-transform sample plugin. It inserts several 
+  APIs in the INKIOBuffer*, INKVConn*, INKVIO* and other categories into the appropriate 
+  places for testing.</p>
+<p><font size="+1"><b>Feature Description</b></font></p>
+<p>In the INKPluginInit(), the plugin calls a test_iobuffer() function, which 
+  tests the IOBuffer functions in the following way:</p>
+<p>It creates an an IOBuffer and a full IOBufferBlock. Then it appends the block 
+  to the IOBuffer. Since the block in the IOBuffer is full, when INKIOBufferStart 
+  is called, it will add a new block to the IOBuffer and the its return value 
+  points to the new block. The plugin checks if this is true and prints out the 
+  pass/fail information to the log file. Then it gets the read avail of the first 
+  block and write avail of the second block of the IOBuffer and prints out the 
+  values to the log file.</p>
+<p>The plugin instructs the HTTP state machine to cache the transform version 
+  of the server response. It tries to get the transform response header and if 
+  it succeeds, it adds a Content-Encoding: null header field to the transform 
+  header.</p>
+<p>During the transformation process, the plugin gets the write VIO for the vconnection, 
+  and gets the mutex of the write VIO. This mutex should equal to the mutex of 
+  the continuation. If not, it prints out an error message to the log. It also 
+  gets the VConnection of the write VIO. It should equal to the continuation. 
+  If not, it prints out an error message to the log.</p>
+</body>
+</html>

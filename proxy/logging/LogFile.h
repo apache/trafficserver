@@ -1,0 +1,292 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+
+
+#ifndef LOG_FILE_H
+#define LOG_FILE_H
+
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "inktomi++.h"
+#include "LogFormatType.h"
+#include "LogBufferSink.h"
+
+class LogSock;
+class LogBuffer;
+class LogBufferHeader;
+class LogObject;
+
+#define LOGFILE_ROLLED_EXTENSION ".old"
+#define LOGFILE_SEPARATOR_STRING "_"
+
+/*-------------------------------------------------------------------------
+  MetaInfo
+
+  Meta information for LogFile
+
+  -------------------------------------------------------------------------*/
+
+class MetaInfo
+{
+public:
+  enum
+  {
+    DATA_FROM_METAFILE = 1,     // metadata was read (or attempted to)
+    // from metafile
+    VALID_CREATION_TIME = 2,    // creation time is valid
+    VALID_SIGNATURE = 4,        // signature is valid
+    PRE_PANDA_METAFILE = 8,     // metafile has pre-Panda format
+    // (i.e., creation time only)
+    FILE_OPEN_SUCCESSFUL = 16   // metafile was opened successfully
+  };
+
+  enum
+  {
+    BUF_SIZE = 640              // size of read/write buffer
+  };
+
+private:
+  char *_filename;              // the name of the meta file
+  time_t _creation_time;        // file creation time
+  inku64 _log_object_signature; // log object signature
+  int _flags;                   // metainfo status flags
+  char _buffer[BUF_SIZE];       // read/write buffer
+
+  void _read_from_file();
+  void _write_to_file();
+  void _build_name(const char *filename);
+
+public:
+    MetaInfo(char *filename):_flags(0)
+  {
+    _build_name(filename);
+    _read_from_file();
+  };
+
+  MetaInfo(char *filename, time_t creation, inku64 signature):_creation_time(creation),
+    _log_object_signature(signature), _flags(VALID_CREATION_TIME | VALID_SIGNATURE)
+  {
+
+    _build_name(filename);
+    _write_to_file();
+  };
+
+  ~MetaInfo() {
+    xfree(_filename);
+  }
+
+  bool get_creation_time(time_t * time)
+  {
+    if (_flags & VALID_CREATION_TIME) {
+      *time = _creation_time;
+      return true;
+    } else {
+      return false;
+    }
+  };
+  bool get_log_object_signature(inku64 * signature)
+  {
+    if (_flags & VALID_SIGNATURE) {
+      *signature = _log_object_signature;
+      return true;
+    } else {
+      return false;
+    }
+  };
+  bool data_from_metafile()
+  {
+    return (_flags & DATA_FROM_METAFILE ? true : false);
+  };
+  bool pre_panda_metafile()
+  {
+    return (_flags & PRE_PANDA_METAFILE ? true : false);
+  };
+  bool file_open_successful()
+  {
+    return (_flags & FILE_OPEN_SUCCESSFUL ? true : false);
+  };
+};
+
+/*-------------------------------------------------------------------------
+  LogFile
+  -------------------------------------------------------------------------*/
+
+class LogFile:public LogBufferSink
+{
+private:
+  LogFile(const LogFile &);
+public:
+  LogFile(const char *name, const char *header, LogFileFormat format, inku64 signature,
+#ifndef TS_MICRO
+          size_t ascii_buffer_size = 4 * 9216, size_t max_line_size = 9216,
+#else
+          size_t ascii_buffer_size = 1024, size_t max_line_size = 1024);
+#endif
+  size_t overspill_report_count = 1000);
+  ~ LogFile();
+
+  enum
+  {
+    LOG_FILE_NO_ERROR = 0,
+    LOG_FILE_NO_PIPE_READERS,
+    LOG_FILE_COULD_NOT_CREATE_PIPE,
+    LOG_FILE_PIPE_MODE_NOT_SUPPORTED,
+    LOG_FILE_COULD_NOT_OPEN_FILE,
+    LOG_FILE_FILESYSTEM_CHECKS_FAILED
+  };
+
+  int write(LogBuffer * lb, size_t * to_disk = 0, size_t * to_net = 0, size_t * to_pipe = 0);
+  int roll(long interval_start, long interval_end);
+  char *get_name()
+  {
+    return m_name;
+  }
+  void change_header(const char *header);
+  void change_name(char *new_name);
+  LogFileFormat get_format()
+  {
+    return m_file_format;
+  };
+  const char *get_format_name()
+  {
+    return (m_file_format == BINARY_LOG ? "binary" : (m_file_format == ASCII_PIPE ? "ascii_pipe" : "ascii"));
+  };
+  static int write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, char *path, char *alt_format = NULL);
+  int write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_format = NULL);
+  static bool rolled_logfile(char *file);
+  static bool exists(const char *pathname);
+
+  void display(FILE * fd = stdout);
+  int open_file();
+  bool size_limit_exceeded()
+  {
+    if (!m_filesystem_checks_done) {
+      do_filesystem_checks();
+    }
+    return (m_has_size_limit ? (inku64) m_size_bytes > m_size_limit_bytes : false);
+  };
+  int do_filesystem_checks();
+  off_t get_size_bytes()const
+  {
+    return m_size_bytes;
+  };
+
+private:
+  void init();
+  bool is_open()
+  {
+    return (m_fd >= 0);
+  };
+  void close_file();
+
+  void check_fd();
+  static int writeln(char *data, int len, int fd, char *path);
+  void read_metadata();
+
+private:
+  LogFileFormat m_file_format;
+  char *m_name;
+  char *m_header;
+  inku64 m_signature;           // signature of log object stored
+  MetaInfo *m_meta_info;
+
+  char *m_ascii_buffer;         // buffer for ascii output
+  size_t m_ascii_buffer_size;   // size of ascii buffer
+  size_t m_max_line_size;       // size of longest log line (record)
+  // (including newline)
+  char *m_overspill_buffer;     // buffer for data that did not fit
+  // the pipe buffer
+  size_t m_overspill_bytes;     // bytes in the overspill buffer
+  size_t m_overspill_written;   // bytes in overspill that have been
+  // transferred to pipe buffer
+  size_t m_attempts_to_write_overspill; // times transfer from overspill to
+  // pipe buffer has been attempted
+  size_t m_overspill_report_count;      // number of attempts at which
+  // overspill report is written to
+  // diags log
+
+  int m_fd;
+  long m_start_time;
+  long m_end_time;
+  inku64 m_bytes_written;
+  off_t m_size_bytes;           // current size of file in bytes
+  bool m_has_size_limit;        // true if file has a size limit
+  inku64 m_size_limit_bytes;    // maximum file size in bytes
+  bool m_filesystem_checks_done;        // file system checks have been done
+
+public:
+  Link<LogFile> link;
+
+private:
+  // -- member functions not allowed --
+  LogFile();
+  LogFile & operator=(const LogFile &);
+};
+
+/***************************************************************************
+ LogFileList IS NOT USED 
+****************************************************************************/
+#if 0
+
+/*------------------------------------------------------------------------- 
+  LogFileList
+  -------------------------------------------------------------------------*/
+
+class LogFileList
+{
+public:
+  LogFileList();
+  ~LogFileList();
+
+  void add(LogFile * out, bool copy = true);
+  void write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pipe);
+  void clear();
+  unsigned count();
+
+  LogFile *first()
+  {
+    return m_output_list.head;
+  }
+  LogFile *next(LogFile * here)
+  {
+    return (here->link).next;
+  }
+  LogFile *dequeue()
+  {
+    return m_output_list.dequeue();
+  }
+
+  void display(FILE * fd = stdout);
+
+private:
+  Queue<LogFile> m_output_list;
+
+  // -- member functions not allowed --
+  LogFileList(const LogFileList &);
+  LogFileList & operator=(const LogFileList &);
+};
+#endif
+
+#endif

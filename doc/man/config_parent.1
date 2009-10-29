@@ -1,0 +1,38 @@
+.TH "config:parent"
+.SH NAME
+config:parent \- Configure parent proxy caching.
+.SH SYNOPSIS
+config:parent [options]
+.SH DESCRIPTION
+You use the config:parent command to enable HTTP parent caching, specify a 
+parent cache, and indicate where the proxy should locate the parent.config file, 
+which contains specific parent cache configuration information.
+.SH OPTIONS
+The following options are supported for the config:parent command:
+.SS "status <on | off>"
+Enables (on) or disables (off) the HTTP parent caching option. (The default 
+value is off.)
+.SS "name <parent>"
+Specifies the parent cache. (The default value is NULL.)
+.SS "rules <url>"
+Specifies from which location (URL) the proxy should retrieve and install your 
+parent.config file.
+.SH EXAMPLES
+.SS "Example 1. Enabling HTTP parent caching"
+.PP
+.nf
+traffic_shell> config:parent status on 
+traffic_shell> 
+.SS "Example 2. Specifying the parent cache"
+.PP
+.nf
+traffic_shell> config:parent name jupiter.inktomi.com
+traffic_shell> 
+.SS "Example 3. Locating the access file to specify administrators"
+.SS "           with access to the Traffic Manager UI"
+.PP
+.nf
+traffic_shell> config:parent rules http://somedomain.com/path/parent.config 
+traffic_shell> 
+.SH "SEE ALSO"
+show:parent

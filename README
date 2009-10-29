@@ -1,3 +1,98 @@
-Traffic Server
+Apache Traffic Server
 
-testing123
+Traffic Server is a high-performance building block for cloud services.
+It's more than just a caching proxy server; it also has support for
+plugins to build large scale web applications.
+
+1. DISCLAIMER
+
+  Apache Traffic Server is an effort undergoing incubation at The
+  Apache Software Foundation (ASF), sponsored by The Apache Incubator.
+  Incubation is required of all newly accepted projects until a
+  further review indicates that the infrastructure, communications,
+  and decision making process have stabilized in a manner consistent
+  with other successful ASF projects. While incubation status is
+  not necessarily a reflection of the completeness or stability of
+  the code, it does indicate that the project has yet to be fully
+  endorsed by the ASF.
+
+2. DIRECTORY STRUCTURE
+
+  traffic/ ............... top src dir
+  |-- doc/ ............... generated documentation
+  |-- example/ ........... example plugins
+  |-- install/ ........... installation programs and scripts
+  |-- iocore/ ............ IO core
+  |-- libinktomi++/ ...... base library
+  |-- librecords/ ........ library for config files
+  |-- proxy/ ............. HTTP proxy logic
+  |-- test/ .............. functional tests
+  |-- .indent.pro ........ indent profile for coding style
+  |-- emacs-style ........ emacs style definition
+  |-- README ............. intro, links, build info
+  |-- LICENSE ............ full lincense text
+  |-- NOTICE ............. copyright notices
+  |-- configure.ac ....... autoconf configuration
+  `-- Makefile.am ........ top level automake configuration
+
+3. REQUIREMENTS
+
+  Fedora 11:
+    gcc-c++
+    glibc-devel.i586
+    db4-devel.i586
+    openssl-devel.i586
+    tcl-devel.i586
+    expat-devel.i586
+
+4. BUILDING FROM SVN REPO
+
+  mkdir -p ~/dev         # make yourself a development dir
+  cd ~/dev               # enter your development dir
+  svn checkout ...       # get the source code from ASF Subversion repo
+  cd traffic             # enter the checkout dir
+  autoreconf -i          # generate the configure script and Makefile.in files
+  ./configure            # configure the build environment to create Makfiles
+  make                   # execute the compile
+
+5. INSTALLATION
+
+  DEFAULT DIR                        CONTENTS
+  /usr/local/var/log/trafficserver   log files created at runtime
+  /usr/local/var/trafficserver       runtime files
+  /usr/local/etc/trafficserver       configuration files
+  /usr/local/bin                     executable binaries
+  /usr/local/libexec/trafficserver   plugins
+
+6. CRYPTO NOTICE
+
+  This distribution includes cryptographic software.  The country in
+  which you currently reside may have restrictions on the import,
+  possession, use, and/or re-export to another country, of
+  encryption software.  BEFORE using any encryption software, please
+  check your country's laws, regulations and policies concerning the
+  import, possession, or use, and re-export of encryption software, to
+  see if this is permitted.  See <http://www.wassenaar.org/> for more
+  information.
+
+  The U.S. Government Department of Commerce, Bureau of Industry and
+  Security (BIS), has classified this software as Export Commodity
+  Control Number (ECCN) 5D002.C.1, which includes information security
+  software using or performing cryptographic functions with asymmetric
+  algorithms.  The form and manner of this Apache Software Foundation
+  distribution makes it eligible for export under the License Exception
+  ENC Technology Software Unrestricted (TSU) exception (see the BIS
+  Export Administration Regulations, Section 740.13) for both object
+  code and source code.
+
+  The following provides more details on the included cryptographic
+  software:
+
+    The functionality of OpenSSL <http://www.openssl.org/> is
+    utilized in parts of the software.
+
+7. ADDITIONAL INFO
+
+  Wiki: http://cwiki.apache.org/TS/
+  User mailing list: trafficserver-user@incubator.apache.org
+

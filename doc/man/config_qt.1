@@ -1,0 +1,36 @@
+.TH "config:qt"
+.SH NAME
+config:qt \- Configures Quicktime protocol caching.
+.SH SYNOPSIS
+config:qt [options]
+.SH DESCRIPTION
+The config:qt command enables you to configure Quicktime protocol caching 
+through a variety of options. 
+You must use one of the options described below.
+.SH OPTIONS
+The following options are supported for the config:qt command:
+.SS "status <on | off>"
+Enables (on) or disables (off) the Quicktime protocol.
+.SS "monitor-name <string>"
+Specifies the monitor name.
+.SS "monitor-port <portno>"
+Specifies the monitor port number.
+.SS "name <string>"
+Specifies the Media Bridge Name.
+.SS "port <portno>"
+Specifies the Media Bridge port number.
+.SS "mount-point <string>"
+Specifies the Media Bridge mount point.
+.SH EXAMPLES
+.SS "Example 1. Specifying the Quicktime Media Bridge port number"
+.PP
+.nf
+traffic_shell> config:qt monitor-port 10088
+traffic_shell> 
+.SS "Example 2. Specifying the Quicktime Media Bridge mount point"
+.PP
+.nf
+traffic_shell> config:qt mount-point inktomi
+traffic_shell> 
+.SH "SEE ALSO"
+show:qt

@@ -1,0 +1,55 @@
+.TH "show:logging"
+.SH NAME
+show:logging \- This command displays logging configuration information.
+.SH SYNOPSIS
+show:logging
+.SH DESCRIPTION
+The show:logging command displays logging configuration information, including 
+collation, management, format, and rolling configuration (see example below). 
+The show:logging command takes no options.
+.SH EXAMPLE
+.PP
+When you execute the show:logging command, you see results in the following 
+format:
+.PP
+.nf
+traffic_shell> show:logging
+Logging Mode ----------------------------- errors and transactions
+Management
+  Log Space Limit ------------------------ 2000 MB
+  Log Space Headroom --------------------- 10 MB
+Log Collation ---------------------------- off
+  Host ----------------------------------- NULL
+  Port ----------------------------------- 8085
+  Secret --------------------------------- foobar
+  Host Tagged ---------------------------- off
+  Space Limit for Orphan Files ----------- 25 MB
+Squid Format ----------------------------- on
+  File Type ------------------------------ ASCII
+  File Name ------------------------------ squid
+  File Header ---------------------------- NULL
+Netscape Common -------------------------- off
+  File Type ------------------------------ ASCII
+  File Name ------------------------------ common
+  File Header ---------------------------- NULL
+Netscape Extended ------------------------ off
+  File Type ------------------------------ ASCII
+  File Name ------------------------------ extended
+  File Header ---------------------------- NULL
+Netscape Extended2 ----------------------- off
+  File Type ------------------------------ ASCII
+  File Name   ---------------------------- extended2
+  File Header ---------------------------- NULL
+Splitting
+  NNTP Log Splitting --------------------- off
+  ICP Log Splitting ---------------------- off
+  HTTP Host Log Splitting ---------------- off
+Custom Logs ------------------------------ off
+Custom Log Definition Format ------------- Traditional
+Rolling ---------------------------------- on
+  Roll Offset Hour ----------------------- 0
+  Roll Interval -------------------------- 86400 s
+  Auto-delete rolled files (low space) --- on
+traffic_shell>
+.SH "SEE ALSO"
+config:logging

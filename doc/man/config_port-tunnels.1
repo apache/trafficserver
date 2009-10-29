@@ -1,0 +1,20 @@
+.TH "config:port-tunnels"
+.SH NAME
+config:port-tunnels \- Configures port tunnels.
+.SH SYNOPSIS
+config:port-tunnels [server-other-ports]
+.SH DESCRIPTION
+Use the config:port-tunnels command to specify a port for the proxy to use for 
+tunneling.
+.SH OPTIONS
+The following option is supported for the config:port-tunnels command:
+.SS "server-other-ports <port>"
+Specifies a port for tunneling. (The default value is NULL.)
+.SH EXAMPLE
+.SS "Specifying a port for the proxy to use for tunneling"
+.PP
+.nf
+traffic_shell> config:port-tunnels server-other-ports 5678
+traffic_shell> 
+.SH "SEE ALSO"
+show:port-tunnels, show:remap

@@ -1,0 +1,3 @@
+tag similar to include but slightly different.
+<!--script=incfile1.txt-->
+should not remove the tag and include nothing

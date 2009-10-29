@@ -1,0 +1,22 @@
+.TH "show:filter"
+.SH NAME
+show:filter \- This command displays filtering configuration information.
+.SH SYNOPSIS
+show:filter
+.SH DESCRIPTION
+The show:filter command specifies which HTTP and FTP objects can be obtained 
+through Traffic Server and which cannot. The show:filter command takes no 
+options.
+.SH EXAMPLE
+.PP
+When you execute the show:filter command, you see results in the following 
+format:
+.PP
+.nf
+traffic_shell> show:filter
+filter.config rules
+-------------------
+(Display the filtering rules in the filter.config file.)
+traffic_shell>
+.SH "SEE ALSO"
+config:filter

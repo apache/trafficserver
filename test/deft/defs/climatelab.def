@@ -1,0 +1,17 @@
+%%define(ts1)(berkeley.climate.inktomi.com)
+%%define(ts2)(stanford.climate.inktomi.com)
+%%define(ts3)(pepperdine.climate.inktomi.com)
+%%define(ts4)(ucla.climate.inktomi.com)
+%%define(load1)(brown.climate.inktomi.com)
+%%define(load2)(penn.climate.inktomi.com)
+%%define(load3)(cornell.climate.inktomi.com)
+%%define(load4)(dartmouth.climate.inktomi.com)
+%%define(load5)(princetom.climate.inktomi.com)
+%%define(load6)(yale.climate.inktomi.com)
+%%define(load7)(columbia.climate.inktomi.com)
+%%define(load8)(harvard.climate.inktomi.com)
+%%define(load9)(brown.climate.inktomi.com)
+%%define(load10)(penn.climate.inktomi.com)
+
+
+

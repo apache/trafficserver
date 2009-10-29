@@ -1,0 +1,21 @@
+.TH "config:set"
+.SH NAME
+config:set \- Sets the value of a variable.
+.SH SYNOPSIS
+config:set [variable]
+.SH DESCRIPTION
+The config:set command enables you to set the value of a variable from the 
+records.config file. 
+.SH OPERANDS
+The following operand is supported:
+.SS "<variable> <value>"
+You must type the name of the records.config file variable for which you want to 
+set a value.
+.SH EXAMPLES
+When you execute the config:set command, you see results in the following format:
+.PP
+.nf
+traffic_shell> config:set proxy.config.http.server_port 8080
+traffic_shell>
+.SH "SEE ALSO"
+config:get

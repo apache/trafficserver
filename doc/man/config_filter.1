@@ -1,0 +1,20 @@
+.TH "config:filter"
+.SH NAME
+config:filter \- Specifies filter.config file location.
+.SH SYNOPSIS
+config:filter [url]
+.SH DESCRIPTION
+Use the config:filter command to specify from which location (URL) the proxy 
+should retrieve and install your filter.config file.
+.SH OPERANDS
+The following operand is supported for the config:filter command:
+.SS "<url>"
+Specifies the URL where the proxy locates your filter.config file.
+.SH EXAMPLE
+.SS "Specifying the location of your filter.config file"
+.PP
+.nf
+traffic_shell> config:filter http://somedomain.com/path/filter.config
+traffic_shell> 
+.SH "SEE ALSO"
+show:filter

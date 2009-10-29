@@ -1,0 +1,21 @@
+.TH "show:remap"
+.SH NAME
+show:remap \- This command displays logging configuration information.
+.SH SYNOPSIS
+show:remap
+.SH DESCRIPTION
+The show:remap command displays logging configuration information, including 
+collation, management, format, and rolling configuration (see example below). 
+The show:remap command takes no options.
+.SH EXAMPLE
+When you execute the show:remap command, you see results in the following format 
+(comments included with the format example):
+.PP
+.nf
+traffic_shell> show:remap
+remap.config rules
+-------------------
+(Displays rules from remap.config.)
+traffic_shell>
+.SH "SEE ALSO"
+config:remap

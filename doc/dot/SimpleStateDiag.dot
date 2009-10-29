@@ -1,0 +1,65 @@
+/* A simplified state diagram for HttpSM */
+/*   */
+
+digraph g {
+center=1;
+size = "7.5,10";
+fontsize="20";
+label = "Inktomi CONFIDENTIAL";
+orientation = "portrait";
+
+"ACCEPT" [ label = "accept" ];
+"RD_REQ_HDRS" [ label = "Read Req Headers" ];
+"DNS" [ label = "DNS" ];
+"C_LOOKUP" [ label = "Cache Lookup" ];
+"CACHE_LOCK" [ label = "Lock URL in Cache" ];
+"PICK_ADDR" [ label = "Pick Address" ];
+"CACHE_MATCH" [ label = "Cache Match" ];
+"CACHE_FRESH" [ label = "Cache Fresh" ];
+"SND_REQ_HDRS" [ label = "Send Req Headers" ];
+"SETUP_C_READ" [ label = "Setup Cache Read" ];
+"SND_C_HDRS" [ label = "Send Cached Headers" ];
+"CONNECT" [ label = "Try Connect" ];
+"SND_REQ_HDRS" [ label = "Send Req Headers" ];
+"RD_REP_HDRS" [ label = "Read Reply Headers" ];
+"VALID" [ label = "Check Valid" ];
+"SETUP_S_READ" [ label = "Setup Server Read" ];
+"SETUP_CACHE_WRITE" [ label = "Setup Cache Write" ];
+"SETUP_TRANS" [ label = "Setup Transform" ];
+"SETUP_REQ_TRANS" [ label = "Setup Request Transform" ];
+"SETUP_BODY_READ" [ label = "Setup POST/PUT Read" ];
+"TUNNEL" [ label = "Tunnel Response" ];
+"TUNNEL_REQ" [ label = "Tunnel Request Body" ];
+
+
+"ACCEPT" -> "RD_REQ_HDRS";
+"RD_REQ_HDRS" -> "DNS";
+"DNS" -> "C_LOOKUP";
+"C_LOOKUP" -> "CACHE_MATCH" [ label = "hit" ];
+"C_LOOKUP" -> "CACHE_LOCK" [ label = "miss" ];
+"CACHE_LOCK" -> "PICK_ADDR";
+"CACHE_MATCH" -> "CACHE_LOCK" [ label = "no match" ];
+"CACHE_MATCH" -> "CACHE_FRESH" [ label ="match" ];
+"CACHE_FRESH" -> "SND_C_HDRS" [ label ="fresh" ];
+"CACHE_FRESH" -> "CACHE_LOCK" [ label ="stale" ];
+"SND_C_HDRS" -> "SETUP_C_READ";
+"SETUP_C_READ" -> "SETUP_TRANS";
+"PICK_ADDR" -> "CONNECT";
+"CONNECT" -> "PICK_ADDR" [ label = "fail" ];
+"CONNECT" -> "SND_REQ_HDRS" [ label = "success" ];
+"SND_REQ_HDRS" -> "SETUP_BODY_READ" [label = "POST/PUT" ];
+"SETUP_BODY_READ" -> "SETUP_REQ_TRANS";
+"SETUP_REQ_TRANS" -> "TUNNEL_REQ";
+"TUNNEL_REQ" -> "RD_REP_HDRS";
+"SND_REQ_HDRS" -> "RD_REP_HDRS" [label = "GET" ];
+"RD_REP_HDRS" -> "VALID";
+"VALID" -> "PICK_ADDR" [ label = "no" ];
+"VALID" -> "SETUP_S_READ" [ label = "yes" ];
+"SETUP_S_READ" -> "SETUP_TRANS" [ label = "Uncachable" ];
+"SETUP_S_READ" -> "SETUP_CACHE_WRITE" [ label = "Cachable" ];
+"SETUP_CACHE_WRITE" -> "SETUP_TRANS";
+"SETUP_TRANS" -> "TUNNEL";
+"TUNNEL" -> "ACCEPT";
+
+}
+

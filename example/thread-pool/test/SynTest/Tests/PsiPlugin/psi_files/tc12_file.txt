@@ -1,0 +1,3 @@
+Server should abort before body is sent
+<!--include=incfile1.txt-->
+include should be up there.

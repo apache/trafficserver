@@ -1,0 +1,2 @@
+<!--include=incfile1.txt-->
+include should be up there.

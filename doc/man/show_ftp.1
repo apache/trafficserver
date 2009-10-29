@@ -1,0 +1,22 @@
+.TH "show:ftp"
+.SH NAME
+show:ftp \- This command displays FTP configuration.
+.SH SYNOPSIS
+show:ftp
+.SH DESCRIPTION
+The show:ftp command displays FTP configuration settings, including connectivity 
+and timeout and expiration values. The show:ftp command takes no options.
+.SH EXAMPLE
+.PP
+When you execute the show:ftp command, you see results in the following format:
+.PP
+.nf
+traffic_shell> show:ftp
+FTP Caching ----------------------- on
+FTP Cached Objects Expired After -- 259200 s
+FTP Connection Mode --------------- PASV/PORT
+FTP Inactivity Timeout ------------ 300 s
+Anonymous FTP password ------------ inktomi
+traffic_shell>
+.SH "SEE ALSO"
+show:ftp-stats, config:ftp

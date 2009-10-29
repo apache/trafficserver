@@ -1,0 +1,27 @@
+.TH "show:proxy-stats"
+.SH NAME
+show:proxy-stats \- This command displays a summary of proxy statistics.
+.SH SYNOPSIS
+show:proxy-stats
+.SH DESCRIPTION
+The show:proxy-stats command displays a summary of global proxy statistics, 
+including hit rate, bandwidth saving, open connections, and throughput. The 
+show:proxy-stats command takes no options.
+.SH EXAMPLE
+When you execute the show:proxy-stats command, you see results in the following 
+format:
+.PP
+.nf
+traffic_shell> show:proxy-stats
+Document Hit Rate -------- 0.000000%     *
+Bandwidth Saving --------- 0.000000%     *
+Cache Percent Free ------- 0.000000% 
+Open Server Connections -- 0
+Open Client Connections -- 0
+Open Cache Connections --- 0
+Client Throughput -------- 0.000000 MBit/Sec
+Transaction Per Second --- 0.100000
+* Value represents 10 second average.
+traffic_shell>
+.SH "SEE ALSO"
+show:cache, config:cache

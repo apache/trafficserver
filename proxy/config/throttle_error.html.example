@@ -1,0 +1,14 @@
+<!--  blank.html
+      This is an example of an error message which will be displayed to
+      users when the Traffic Server is overloaded.
+      Modify and copy/move this file to throttle_error.html. -->
+
+<html>
+<head>
+<title>Server Overloaded</title>
+</head>
+<body>
+<H1>Server Overloaded</H1>
+The server is temporarily overloaded. Please try again later.
+</body>
+</html>

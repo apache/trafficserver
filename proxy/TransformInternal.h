@@ -1,0 +1,223 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+#ifndef __TRANSFORM_INTERNAL_H__
+#define __TRANSFORM_INTERNAL_H__
+
+
+#include "HttpSM.h"
+#include "MIME.h"
+#include "Transform.h"
+#include "P_EventSystem.h"
+
+
+class TransformVConnection;
+
+
+class TransformTerminus:public VConnection
+{
+public:
+  TransformTerminus(TransformVConnection * tvc);
+
+  int handle_event(int event, void *edata);
+
+  VIO *do_io_read(Continuation * c, int nbytes, MIOBuffer * buf);
+
+  VIO *do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner = false);
+
+  void do_io_close(int lerrno = -1);
+
+  void do_io_shutdown(ShutdownHowTo_t howto);
+
+  void reenable(VIO * vio);
+
+public:
+    TransformVConnection * m_tvc;
+  VIO m_read_vio;
+  VIO m_write_vio;
+  volatile int m_event_count;
+  volatile int m_deletable;
+  volatile int m_closed;
+  int m_called_user;
+};
+
+
+class TransformVConnection:public VConnection
+{
+public:
+  TransformVConnection(Continuation * cont, APIHook * hooks);
+  ~TransformVConnection();
+
+  int handle_event(int event, void *edata);
+
+  VIO *do_io_read(Continuation * c, int nbytes, MIOBuffer * buf);
+
+  VIO *do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner = false);
+
+  void do_io_close(int lerrno = -1);
+
+  void do_io_shutdown(ShutdownHowTo_t howto);
+
+  void reenable(VIO * vio);
+
+public:
+    VConnection * m_transform;
+  Continuation *m_cont;
+  TransformTerminus m_terminus;
+  volatile int m_closed;
+};
+
+
+class TransformControl:public Continuation
+{
+public:
+  TransformControl();
+
+  int handle_event(int event, void *edata);
+
+public:
+    APIHooks m_hooks;
+  VConnection *m_tvc;
+  IOBufferReader *m_read_buf;
+  MIOBuffer *m_write_buf;
+};
+
+
+class NullTransform:public INKVConnInternal
+{
+public:
+  NullTransform(ProxyMutex * mutex);
+  ~NullTransform();
+
+  int handle_event(int event, void *edata);
+
+public:
+    MIOBuffer * m_output_buf;
+  IOBufferReader *m_output_reader;
+  VIO *m_output_vio;
+};
+
+
+class FtpListTransform:public INKVConnInternal
+{
+public:
+  FtpListTransform(ProxyMutex * mutex, HTTPHdr * req, IOBufferReader * ftp_message, const char *currentdir);
+   ~FtpListTransform();
+
+  int handle_event(int event, void *edata);
+
+  void add_header();
+  void add_trailer();
+  void add_date(struct tm *tp);
+  void add_parent_directory();
+  void add_entry(const char *s, const char *e);
+  void add_entries();
+  void parse_unix_listing(const char *s, const char *e, const char *cur);
+  void parse_ms_listing(const char *s, const char *e, const char *cur);
+  void send_error_message(const char *s, const char *e, const char *cur);
+  void write_html_link(const char *s, const char *e, const char *cur, int type,
+                       const char *ne, const char *ns, struct tm *tp, int size);
+
+public:
+    HTTPHdr * m_req;
+  IOBufferReader *m_ftp_message;
+  IOBufferReader *m_output_reader;
+  MIOBuffer *m_output_buf;
+  VIO *m_output_vio;
+  char *m_url;
+  int m_url_length;
+  int m_done;
+  int m_header_needed;
+  int m_trailer_needed;
+  int m_icon_needed;
+  MIMEScanner m_scanner;
+  const char *m_current_dir;
+  int parent_directory_added_flag;
+};
+
+
+class RangeTransform:public INKVConnInternal
+{
+public:
+  RangeTransform(ProxyMutex * mutex, MIMEField * range_field, HTTPInfo * cache_obj, HTTPHdr * transform_resp);
+  ~RangeTransform();
+
+  void parse_range_and_compare();
+  int handle_event(int event, void *edata);
+
+  void transform_to_range();
+  void add_boundary(bool end);
+  void add_sub_header(int index);
+  void change_response_header();
+  void calculate_output_cl();
+  bool is_this_range_not_handled()
+  {
+    return m_not_handle_range;
+  }
+  bool is_range_unsatisfiable()
+  {
+    return m_unsatisfiable_range;
+  }
+
+  typedef struct _RangeRecord
+  {
+    _RangeRecord()
+    {
+      _start = _end = _done_byte = -1;
+    }
+    int _start;
+    int _end;
+    int _done_byte;
+  } RangeRecord;
+
+public:
+  MIOBuffer * m_output_buf;
+  IOBufferReader *m_output_reader;
+  MIMEField *m_range_field;
+  HTTPHdr *m_transform_resp;
+  VIO *m_output_vio;
+  bool m_unsatisfiable_range;
+  bool m_not_handle_range;
+  int m_content_length;
+  int m_num_chars_for_cl;
+  int m_num_range_fields;
+  int m_current_range;
+  const char *m_content_type;
+  int m_content_type_len;
+  RangeRecord *m_ranges;
+  int m_output_cl;
+  int m_done;
+};
+
+#define PREFETCH
+#ifdef PREFETCH
+class PrefetchProcessor
+{
+public:
+  void start();
+};
+
+extern PrefetchProcessor prefetchProcessor;
+#endif //PREFETCH
+
+#endif /* __TRANSFORM_INTERNAL_H__ */

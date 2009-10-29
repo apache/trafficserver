@@ -1,0 +1,564 @@
+<!--  -->
+<html>
+
+<head>
+<title> Writing tests Traffic Server tests with DEFT </title>
+</head>
+
+<body bgcolor="White">
+
+<h2 align="center">  Writing Traffic Server tests with DEFT </h2>
+
+<h2> Test scripts </h2>
+
+<p> Test scripts are writting in perl though it should possible with
+some effort to use a different interpretor if necessary.  The testing
+framework is core written in C++ and exports functions to perl for
+controling test programs.  The log parser process are written in perl.
+</p>
+
+<h2> High level concepts </h2> 
+
+<p> To effectively write tests, we need to understand the high level
+building blocks of the test framework.  There are 5 processes run by
+the test framework. </p>
+
+<h3> Test framework processes </h3> 
+<ul>
+<li> <b> test_exec </b> - runs the test scripts.  Starts up
+proc_managers on each node used in the test.  Pushes test tool
+packages to proc_managers.  Starts up
+test_log_collate and the log_viewer.pl </li>
+<li> <b> proc_manager </b> - starts up and manages tests processes.
+There is one proc_manager started on each machine being used in the test. </li>
+<li> <b> test_log_collate </b> - collates the test log from each of
+the proc_managers.  This process is generally invisible to users of
+the system since it is automatically spawned by test_exec.</li>
+<li> <b> log_viewer.pl </b> - displays the test log in a window. </li>
+<li> <b> parse_test_log.pl </b> - processes the test log at the end of
+the tests and tallys up errors and warnings. </b>
+</ul>
+
+<h3> Test Process Management </h3>
+
+<p> Each process run under the test framework has different
+requirements for config files and start up.  For example, Traffic
+Server has a whole set of configuration files that need to be setup
+up to.  An <i> instantiator </i> script is used to manage test process
+setup.  The instantiator setups up any necessary files and
+directories, allocates ports and tells the process manager what
+command line to use to start up the process.  The instantiator can be
+sent test specific configuration through an argument 
+<b> pm_create_instance </b> function.  The configuration is treated as
+an opaque string that is passed to the instantiator. </p>
+
+<h3> Variable substiution </h3>
+
+<p> It's rather inconveient to hard code a test to specific machines and
+ports.  To avoid hard coding, the test framework will make variable
+substitutions on various parameters.  To have substitution made, use 
+<code> %%(varname)</code>.  Substitutions are defined by .defs file
+read in at the beginning of the test, command line agrument to
+test_exec, and port bindings issued by <i> instantiators</i>.  Note:
+currently is no escaping mechanism to say <code> %%( </code> and not
+have be a variable sustitution. </p>
+
+<p> In order to make tests easily reusable, the following convention
+exists for substitutions for machine names: </p>
+
+<ul>
+<li> For traffic_server machines: ts1, ts2, ts3, ts4 </li>
+<li> For load machines: load1, load2 ... load10 </li>
+</ul>
+
+<p> Most tests will only use ts1 and load1 to load 4.  But more
+complex tests that either need to generate very high loads or test
+cache hierachies through parenting or icp may use the entire set. </p>
+
+<p> The default defs file maps all hostnames to localhost.  You can
+generate your own defs files and use '-D' option to test_exec (or
+run_test.pl which passes through its agruments through to test_exec). </p>
+
+<p> The following characters are reserved and can not be used within a
+variable name: <code>':'</code> and <code>'/'</code>. </p>
+
+<h3> RAF </h3>
+
+<p> RAF (Remote Access Facility) is a simple protocol TCP based
+protocol that can be used to both query and control test processes.  
+Ideally, test tools are enhanced to include RAF support but RAF 
+is not a requirement. Details on RAF are avaiable 
+<a href=""> here </a>. </p>
+
+<hr>
+<h2> An example test </h2>
+
+<p> This test test that starts up traffic_server and a jtest and 
+issues an error if the ops per second are less than 5.   </p>
+
+<p> <code> "use TestExec" </code> loads the perl module that contains
+the the bindings to the underyling C++ functions of the testing
+framework. </p>
+
+<p>The $ts_config 
+var is set through a useful perl quoting syntax that makes everything
+quoted text until the marker is seen, in this case,<code> EOC </code>.
+</p>
+
+<pre>
+use TestExec;
+
+$ts_config = &lt;&lt;EOC;
+[records.config]
+
+proxy.config.cache.storage_filename   storage.config
+proxy.config.proxy_name		      example.com
+proxy.config.hostdb.size              50000
+
+[storage.config]
+
+. 700000
+EOC
+
+@ts_create_args = ("package", "ts",
+ 	           "localpath", "%%(ts_localpath)",
+		   "config", $ts_config);
+
+@jtest_create_args = ("package", "jtest",
+		      "config", "-P %%(ts1) -p %%(ts1:tsHttpPort) -c 5");
+
+@jtest_start_args = ("args", "-C");
+@empty_args = ();
+
+# Fire up Traffic Server
+$ts_inst_name = "ts1";
+TestExec::pm_create_instance("ts1", "%%(ts1)", \@ts_create_args);
+TestExec::pm_start_instance("ts1", \@empty_args);
+
+sleep(5);
+
+
+# Fire up jtest
+TestExec::pm_create_instance("jtest1", "%%(load1)", \@jtest_create_args);
+TestExec::pm_start_instance("jtest1", \@jtest_start_args);
+
+sleep(5);
+
+# Query jtest via RAF to get ops per second value
+@raf_args1 = "/stats/client_sec";
+@raf_result = TestExec::raf_instance("jtest1", "query", \@raf_args1);
+
+# Must do at five ops per second
+if ($raf_result[2] &lt; 5) {
+   TestExec::add_to_log("Error: insufficent jtest ops: $raf_result[2]"); 
+} else {
+   TestExec::add_to_log("Status: jtest ops: $raf_result[2]"); 
+}
+
+
+TestExec::pm_stop_instance("jtest1", \@empty_args);
+TestExec::pm_destroy_instance("jtest1", \@empty_args);
+
+TestExec::pm_stop_instance("ts1", \@empty_args);
+TestExec::pm_destroy_instance("ts1", \@empty_args);
+</pre>
+
+<h2> Function calls for managing test processes </h2>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>pm_create_instance</b>(String instance_name,  String, hostname,
+ArrayRef create_args) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i>
+0 on success, 1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i> Creates an process
+instance on the machine named by hostname.  Hostname has DEFT variable
+substitutions applied to it before it is used.  Will push a package if the package specified on 
+create_args does not exist on remote or if the local pacakge 
+is different from the remote package. Runs the instantiator for the
+package on the remote host. </td></tr>
+</table>
+
+<table width="100%">
+<tr> <td width="10%"> </td> <td>
+  <table width="100%" border="2">
+  <tr width="100%"> 
+    <th colspan="2" width="100%" align="center"> Array argruments to create  </th> 
+  </tr>
+  <tr width="100%">
+    <td width="20%"> localpath </td>
+    <td> Path to use find the process binaries.  Inhibits sending
+    packages.  DEFT variable substitutions are made on the content
+    of the argument before it is used. </td>
+  </tr>
+  <tr width="100%"> 
+    <td width="20%"> package </td> 
+    <td> package name for the new instance. </td> 
+  </tr>
+  <tr width="100%">
+    <td width="20%"> config </td>
+    <td> configuration bytes passed to the instantitor for the
+    process.  DEFT variable substitutions are made on the content
+    of the argument before it is used. </td>
+  </tr>
+  </table>
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>pm_start_instance</b>(String instance_name, ArrayRef start_args) </td></tr>
+<trwidth="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+0 on success, 1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i> Starts up an
+instance previous created through pm_create_instance. </td></tr>
+</table>
+
+<table width="100%">
+<tr> <td width="10%"> </td> <td>
+  <table width="100%" border="2">
+  <tr width="100%"> 
+    <th colspan="2" width="100%" align="center"> Array argruments to start </th> 
+  </tr>
+  <tr width="100%">
+    <td width="20%"> args </td>
+    <td> Additional command line arguments to pass when starting the
+    instance this time </td>
+  </tr>
+  </table>
+</td></tr>
+</table>
+<hr>
+
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>pm_stop_instance</b>(String instance_name, ArrayRef stop_args) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+0 on success, 1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i> Stops an
+instance previous created through pm_start_instance. Currently, there
+are no valid arguments in stop_args. </td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>pm_destroy_instance</b>(String instance_name, ArrayRef destroy_args) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+0 on success, 1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i> Destroys an
+instance previous created through pm_create_instance. Once destroyed,
+the instance name can no longer be used in pm_start_instance and
+pm_stop_instance commands.  Currently, there are no valid arguments in
+destroy_args. </td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>pm_run</b>(String hostname, String binary, String args, Int timeout) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+If timeout is < 0, returns the instance name of new process.
+If timeout >= 0, returns the exit status of new process.  If the
+process lives beyond the timeout, -1 is returned for it's status.  If
+there is an internal error or arguments to the function are invalid, -2
+is returned.</td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Starts a process using 'binary' on 'hostname'.  If 'binary' is not an
+absolute path, the PATH enviroment variable (from the remote host) is
+used to search for 'binary'.  'args' has DEFT variable substitution
+applied to it and this then used as the command line arguments to the
+new process.  If 'timeout' is less than 0, once the new process
+is started the function immediately returns and the callee is responsible for
+managing the process using <b>pm_stop_instance</b> and
+<b>pm_destroy_instance</b>.  If 'timeout' is 0, function waits indefinately
+for the process to exit.  If 'timeout' is greater than zero, the
+function will wait for 'timeout' milliseconds for the process to exit
+on its own accord.  If the process does exit within the timeout, it is
+stopped and the function returns.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>pm_run_slave</b>(String master_instance, String binary, String args, Int timeout) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+See <b> pm_run </b> return values.
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Similar functionality to <b>pm_run</b>.  The process is started on the
+host 'master_instance' is running on.  'binary' is relative to the run
+directory for 'master_instance' and the PATH enviroment variable is
+not searched for binary.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>pm_alloc_port</b>(String hostname) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+-1 on failue, a port number greater than zero on success </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+allocs a port from the DEFT port range on host 'hostname'.
+'Hostname' has DEFT variable substitution applied to it before it 
+is used.</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>add_to_log</b>(String log_line) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+0 on success, 1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i> adds a line to
+the test log.</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>set_log_parser</b>(String instance, String parser) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+0 on success, 1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i> Sets
+the log module used to parse to 'parser' for the output of 'instance' </td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>wait_for_server_port</b>(String instance, String port, Int timeout_ms) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+0 on success, -1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Tries to connect to the specified port on the machine 'instance' is
+on.  Port can be one of a port number in string form, deft substitution
+of the form %%(varname), or a string that is port binding label for
+'instance'.  Will keep trying until successfully connecting to the
+port or 'timeout_ms' milliseconds expire.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>wait_for_instance_death</b>(String instance, Int timeout_ms) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i>
+Returns the exit status of 'instance'.  If 'instance'
+lives beyond the timeout, -1 is returned for its status.  If
+there is an internal error or arguments to the function are invalid, -2
+is returned.
+</td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Waits 'timeout_ms' for 'instance' to exit.  If 'timeout_ms' is zero,
+waits in indefinately.  If more than 'timeout_ms' elaspses, the
+instance is stopped.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>is_instance_alive</b>(String instance) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+1 if instance is running, 0 is instance not running </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Checks to see if 'instance' is running.  An instance is running if
+is it's process is currently alive.  If the instance has been stopped,
+crashed or destoryed, it is not running.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>get_instance_file</b>(String instance, String filename) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+name of the local copy of the file success,  null on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Fetches a file from the machine 'instance' is on.  If 'filename' is 
+a relative path, file is located relative to instance's 'run_dir'.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>stat_instance_file</b>(String instance, String filename) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+array with stat information.  The array has element which is a tag
+followed by element with the value for the tag.  Current tags 
+are "size" which is the file size in bytes and "mod_time" which is the
+UNIX modification time for the file.</td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Stats a file from the machine 'instance' is on.  If 'filename' is 
+a relative path, file is located relative to instance's 'run_dir'.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>put_instance_file_raw</b>(String instance, String dest, String src) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+0 on success, 1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Copys file <i> src </i> to run directory of <i> instance </i> appened 
+with the path sepecified by dest <i> dest </i>.  Unless
+<i> src </i> is an absolute path, it's relative to the directory the test
+script is in.  The copied file is created with the name user, group
+and other permission as the original execpt the umask is not overriden.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>put_instance_file_subs</b>(String instance, String dest, String src) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+0 on success, 1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Generates a copy of <i> src </i> with DEFT variable substitutions made
+for %%() style variables.  Copies the substituted file to run directory of 
+<i> instance </i> appened  with the path sepecified by dest <i> dest
+</i>.  Unless <i> src </i> is an absolute path, it's relative to the directory the test
+script is in.  The copied file is created with the name user, group
+and other permission as the original execpt the umask is not overriden.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>get_var_value</b>(String var) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+DEFT variable value on success.  Empty string on failure</td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Gets the value of a DEFT substitution variable.  
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>set_var_value</b>(String var, String value) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> 
+0 on success, 1 on failure </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i>
+Set the value of a DEFT substitution variable.  If 'var' as ':' in it,
+then the part of the name before the ':' is taken as the instance name
+and the part after is a port binding for that instance.
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>raf_proc_manager</b>(String instance_name, String raf_cmd, ArrayRef raf_args) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> Array with raf
+result.  The 0 element contains the raf success or fail code. </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i> Issues a raf
+command to the proc_manager for instance_name.</td></tr>
+</table>
+
+<table width="100%">
+<tr> <td width="10%"> </td> <td>
+  <table width="100%" border="2">
+  <tr width="100%"> 
+    <th colspan="2" width="100%" align="center"> Array argruments to raf_proc_manager </th> 
+  </tr>
+  <tr width="100%">
+    <td colspan="2" width="100%"> Each argument is in the array is
+    appened in order to the raf request.  DEFT variable substitution
+    is done on all agruments in the array. </td>
+  </tr>
+  </table>
+</td></tr>
+</table>
+<hr>
+
+<table cellspacing="0" cellpadding="0" width="100%">
+<tr> <td colspan="2" width="100%"> 
+<b>raf_instance</b>(String instance_name, String raf_cmd, ArrayRef raf_args) </td></tr>
+<tr width="100%"> <td width="10%"> </td> <td>  <i>Return Value:</i> Array with raf
+result.  The 0 element contains the raf success or fail code. </td> </tr>
+<tr width="100%"> <td width="10%"> </td> <td> <i>Description:</i> Issues a raf
+command to instance_name.  The instantiator for instance must have
+issues a port binding name <b> rafPort </b> for the raf command to be issued.
+</td></tr>
+</table>
+
+<table width="100%">
+<tr> <td width="10%"> </td> <td>
+  <table width="100%" border="2">
+  <tr width="100%"> 
+    <th colspan="2" width="100%" align="center"> Array argruments to
+    raf_instance </th> 
+  </tr>
+  <tr width="100%">
+    <td colspan="2" width="100%"> Each argument is in the array is
+    appened in order to the raf request.  DEFT variable substitution
+    is done on all agruments in the array. </td>
+  </tr>
+  </table>
+</td></tr>
+</table>
+<hr>
+
+<h2> Tools and products already running under DEFT </h2>
+
+<ul>
+<li> <a href="test_tool_docs.html#ts"> Traffic Server </a>
+<li> <a href="test_tool_docs.html#jtest"> Jtest </a>
+<li> <a href="test_tool_docs.html#syntest"> Syntest </a>
+</ul>
+
+<h2> More on variable substitution </h2>
+
+<p> There are two additional topics for understanding variable
+substitution.</p>  
+
+<p> The first is how to substitute results from port
+bindings.  To substitute a port binding, the following form is used:
+</p>
+<pre>%%(instance_name:port_binding)</pre>
+
+<p> The second topic is modifiers to variable substitution.  The form
+for modifiers is: </p>
+<pre>%%(var_name/modifier)</pre>
+
+<p> A modifier is specified by a single character following the
+slash.  Currently, the only modifier is <code>/r</code> which says
+the result of the substitution should be passed to
+<code><b>gethostbyname()</b></code> and the resulting ip address should
+be used. </p>
+
+<h2> What's next </h2>
+
+<p> The next step is learning how about test groups and result
+reporting options.  Read  <a href="managing_tests.html">  
+Managing Tests </a> to learn how. </p>
+
+<h2> Helpful Links </h2>
+<ul>
+<li> <a href=""> Remote
+Access Facility (RAF) </a></li>
+</ul>
+
+<p> <a href="getting_started.html"> Back to getting started </a> </p>
+
+<p>
+<font size="-1">
+    
+    All rights Reserved.
+</font>
+</p>
+
+</body>
+</html>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+.TH "show:ldap-stats"
+.SH NAME
+show:ldap-stats \- This command displays LDAP protocol statistics.
+.SH SYNOPSIS
+show:ldap-stats
+.SH DESCRIPTION
+The show:ldap-stats command displays LDAP protocol statistics, including
+cache hits, cache misses, server errors, and authorization statistics. 
+The show:ldap-stats command takes no options.
+.SH EXAMPLE
+.PP
+When you execute the show:ldap-stats command, you see results in the following format:
+.PP
+.nf
+traffic_shell> show:ldap-stats 
+Cache Hits---------------- 0
+Cache Misses-------------- 0
+Server Errors------------- 0
+Authorization Denied------ 0
+Authorization Timeouts---- 0
+Authorization Cancelled--- 0
+traffic_shell>
+.SH "SEE ALSO"
+show:ldap, config:ldap

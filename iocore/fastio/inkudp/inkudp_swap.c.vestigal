@@ -1,0 +1,70 @@
+#include <sys/types.h>
+#include <sys/conf.h> 
+#include <sys/cmn_err.h>
+#include <sys/modctl.h>
+#include <sys/stream.h>
+#include <sys/kmem.h>
+#include <sys/ddi.h>
+#include <sys/socket.h>
+#include <sys/int_types.h>
+#include <sys/stropts.h>
+#include <inet/common.h>
+#include <inet/led.h>
+#include <inet/ip.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <netinet/if_ether.h>
+
+#include <sys/sunddi.h>
+#include "../include/fastio.h"
+#include "solstruct.h"
+#include "inkudp.h"
+
+
+/* Inkudp global data */
+extern int *bufbaseptr;
+extern int active;
+extern int blkcount;
+extern int blocksize; /* FIXME: pass this through shared memory */
+extern uint16_t * flist0, *flist1, *activefl;
+extern int blockbaseptr;
+extern int nextflentry;
+
+extern kmutex_t freemx;
+
+
+/*
+ *  Handle a INKUDP_SWAP ioctl
+ */
+int inkudp_ioctl_swap(mblk_t *mp, queue_t *q)
+{
+    
+/* make sure the ioctl message is valid */
+    if(!inkudp_ioctl_verify(mp,q))
+    {
+	return 1;
+    }
+
+    
+    /*cmn_err(CE_CONT, "inkudp: Swap freelists.\n");*/
+    
+    mutex_enter(&freemx);
+    nextflentry=0;
+    active=!active;
+    if(active)
+	activefl=flist1;
+    else
+	activefl=flist0;
+    
+  
+    mutex_exit(&freemx);
+   
+  
+/*     /*cmn_err(CE_CONT, "inkudp: Swap freelists.\n");*/
+   /*ack the ioctl */
+   inkudp_ioctl_ack(mp,q);
+
+   return 1;
+
+
+}

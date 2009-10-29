@@ -1,0 +1,1874 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+/****************************************************************************
+
+   CoreUtils.cc
+
+   Description:  Automated processing of core files on Sparc & Linux
+ ****************************************************************************/
+
+
+/*
+   Stack Unwinding procedure on ix86 architecture on Linux :
+   Get the first frame pointer in $ebp.
+   The value stored in $ebp is the address of prev frame pointer.
+   Keep on unwinding till it is Ox0.
+   $ebp+4 in each frame represents $eip.(PC)
+*/
+
+/*
+ *  Accessing arguments on 386 :
+ *  ----------------------------
+ *  We need to start from $ebp+4 and then keep on reading args
+ *  till we reach the base pointer for prev. frame
+ *
+ *
+ *        (high memory)
+ *    +                     +
+ *    | Callers Stack Frame |
+ *    +---------------------+
+ *    |   function call     |
+ *    |     arguments       |
+ *    +---------------------+
+ *    |   Return Address    +
+ *    +-------------------- +
+ *    |    Old base pointer + Base pointer BP
+ *    +-------------------- +
+ *    |                     |
+ *    |                     |
+ *    |                     | Local (automatic) variables
+ *    |                     |
+ *    |                     |
+ *    |                     |
+ *    |                     |
+ *    |                     |
+ *    |                     |
+ *    +---------------------+ Stack pointer SP
+ *    |     free stack      | (low memory, top of the stack)
+ *    |    begins here      |
+ *    +                     +
+ *
+ *
+ *	  +-----------------+     +-----------------+
+ *  FP -> | previous FP --------> | previous FP ------>...
+ *	  |                 |     |                 |
+ *        | return address  |     | return address  |
+ *        +-----------------+     +-----------------+
+ */
+
+/*
+   PORTING ISSUES:
+   read_core_memory read_core_memory II read_heap_header not used
+   -> figure out some way to make print_netstate useful!
+*/
+
+/* 32-bit arguments are pushed down stack in reverse syntactic order (hence accessed/popped in the right order), above the 32-bit near return address. %ebp, %esi, %edi, %ebx are callee-saved, other registers are caller-saved; %eax is to hold the result, or %edx:%eax for 64-bit results */
+
+/*    has -fomit-frame-pointer has any repercussions??
+      We assume that all the code is generated with frame pointers set.  */
+
+/* modify the "note" in process_core */
+/* Document properly */
+
+#if defined(sparc)
+// We need procfs data strucutures and they
+//   don't support large files
+#undef _LARGEFILE_SOURCE
+#undef _FILE_OFFSET_BITS
+#define is_debug_tag_set(_t) 1
+#include <sys/types.h>
+#include <sys/core.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <math.h>
+#include "inktomi++.h"
+#include "DynArray.h"
+#include "ink_bool.h"
+#include "CoreUtils.h"
+#include "Diags.h"
+#include "http2/HttpSM.h"
+#include "P_EventSystem.h"
+#include "I_Version.h"
+#include  <string.h>
+#include  <sys/elf.h>
+#include  <procfs.h>
+int lwpid;
+int moffset = (int) &(((HttpSM *) NULL)->magic);
+lwpTable default_lwpTable = { 0, 0 };
+DynArray<struct lwpTable>arrayLwp(&default_lwpTable, 0);
+#endif /* sparc */
+
+#if (HOST_OS == linux)
+#include "CoreUtils.h"
+
+#define __p_type p_type         //ugly hack? - see resolv.h
+#define D(x) x                  /* for debugging */
+int f1, f2;
+int framepointer = 0;
+int program_counter = 0;
+#endif  // linux check
+
+#ifdef READ_CORE_WMT
+#include "WMT-Debug.h"
+#include "WMT-ServerFileSM.h"
+#include "WMT-SM.h"
+#include "TunnelSM.h"
+#include "WMT-ClientServer.h"
+#include "WMT-Datapump.h"
+#endif
+
+//#include "FtpSM.h"
+#include "http2/HttpSM.h"
+
+bool inTable;
+FILE *fp;
+memTable default_memTable = { 0, 0, 0 };
+DynArray<struct memTable>arrayMem(&default_memTable, 0);
+
+char *event_int_to_string(int event, char buffer[32]);
+
+const int HDR_HEAP_HDR_SIZE = ROUND(sizeof(HdrHeap), HDR_PTR_SIZE);
+HTTPHdrImpl *global_http;
+HttpSM *last_seen_http_sm = NULL;
+FtpSM *last_seen_ftp_sm = NULL;
+
+#ifdef READ_CORE_WMT
+WMT_ServerFileSM *last_seen_wmt_sfsm = NULL;
+WMT_Top *last_seen_wmt_top = NULL;
+TunnelSM *last_seen_wmt_tunnel = NULL;
+WMT_ClientServer *last_seen_wmt_cssm = NULL;
+WMT_Datapump *last_seen_wmt_pump = NULL;
+#endif
+
+char ethread_ptr_str[256] = "";
+char netvc_ptr_str[256] = "";
+
+HdrHeap *swizzle_heap;
+char *ptr_data;
+
+
+// returns the index of the vaddr or the index after where it should be
+int
+CoreUtils::find_vaddr(int vaddr, int upper, int lower)
+{
+  int index = (int) floor((upper + lower) / 2);
+
+  // match in table, returns index to be inserted into
+  if (arrayMem[index].vaddr == vaddr) {
+    inTable = true;
+    return index + 1;
+    // no match
+  } else if (upper == lower) {
+    inTable = false;
+    return upper;
+    // no match
+  } else if (index == lower) {
+    inTable = false;
+    if ((index == 0) && (arrayMem[index].vaddr > vaddr))
+      return 0;
+    else
+      return index + 1;
+  } else {
+    if (arrayMem[index].vaddr > vaddr)
+      return find_vaddr(vaddr, index, lower);
+    else
+      return find_vaddr(vaddr, upper, index);
+  }
+  assert(0);
+  return -1;
+}
+
+// inserts virtual address struct into the list
+void
+CoreUtils::insert_table(int vaddr1, int offset1, int fsize1)
+{
+  memTable m;
+  m.vaddr = vaddr1;
+  m.offset = offset1;
+  m.fsize = fsize1;
+
+  if (arrayMem.length() == 0) {
+    arrayMem(0);
+    arrayMem[0].vaddr = vaddr1;
+    arrayMem[0].offset = offset1;
+    arrayMem[0].fsize = fsize1;
+  } else {
+    int index = find_vaddr(vaddr1, arrayMem.length(), 0);
+    if (index == arrayMem.length()) {
+      arrayMem(index);
+      arrayMem[index].vaddr = vaddr1;
+      arrayMem[index].offset = offset1;
+      arrayMem[index].fsize = fsize1;
+    } else if (index == 0) {
+      arrayMem(arrayMem.length());
+      for (int i = 0; i < arrayMem.length(); i++) {
+        arrayMem[arrayMem.length() - i - 1].vaddr = arrayMem[arrayMem.length() - i - 2].vaddr;
+        arrayMem[arrayMem.length() - i - 1].offset = arrayMem[arrayMem.length() - i - 2].offset;
+        arrayMem[arrayMem.length() - i - 1].fsize = arrayMem[arrayMem.length() - i - 2].fsize;
+      }
+      arrayMem[0].vaddr = vaddr1;
+      arrayMem[0].offset = offset1;
+      arrayMem[0].fsize = fsize1;
+    } else {
+      arrayMem(arrayMem.length());
+      for (int i = 1; i < arrayMem.length() - index; i++) {
+        arrayMem[arrayMem.length() - i].vaddr = arrayMem[arrayMem.length() - i - 1].vaddr;
+        arrayMem[arrayMem.length() - i].offset = arrayMem[arrayMem.length() - i - 1].offset;
+        arrayMem[arrayMem.length() - i].fsize = arrayMem[arrayMem.length() - i - 1].fsize;
+      }
+      arrayMem[index].vaddr = vaddr1;
+      arrayMem[index].offset = offset1;
+      arrayMem[index].fsize = fsize1;
+    }
+  }
+}
+
+
+// returns -1 if not found in table or fills the buffer with characters
+// from the beginning of the memory section
+int
+CoreUtils::read_core_memory(int vaddr, int length, char *buf, FILE * fp)
+{
+  int index = find_vaddr(vaddr, arrayMem.length(), 0);
+  if (inTable == false)
+    return -1;
+  else {
+    int offset = arrayMem[index].offset;
+
+    if (fseek(fp, offset, SEEK_SET) != -1) {
+      for (int j = 0; j < length; j++) {
+        *buf++ = (char) getc(fp);
+      }
+      buf -= length;
+    }
+    return 1;
+  }
+}
+
+// returns -1 if not found in table or fills the buffer with characters
+// from the beginning of the memory section + offset
+int
+CoreUtils::read_core_memory(int offset, int vaddr, int length, char *buf, FILE * fp)
+{
+  int index = find_vaddr(vaddr, arrayMem.length(), 0);
+  if (inTable == false)
+    return -1;
+  else {
+    int offset2 = arrayMem[index].offset;
+
+    if (fseek(fp, offset2 + offset, SEEK_SET) != -1) {
+      for (int j = 0; j < length; j++) {
+        *buf++ = (char) getc(fp);
+      }
+      buf -= length;
+    }
+    return 1;
+  }
+}
+
+
+// returns -1 on failure otherwise fills the buffer and
+// returns the number of bytes read
+int
+CoreUtils::read_from_core(int vaddr, int bytes, char *buf)
+{
+  int index = find_vaddr(vaddr, arrayMem.length(), 0);
+  int vadd = arrayMem[index - 1].vaddr;
+  int offset = arrayMem[index - 1].offset;
+  int size = arrayMem[index - 1].fsize;
+  int offset2 = abs(vaddr - vadd);
+  if (bytes > (size - offset2))
+    return -1;
+  else {
+    if (fseek(fp, offset2 + offset, SEEK_SET) != -1) {
+      char *frameoff;
+      if ((frameoff = (char *) malloc(sizeof(char) * bytes))) {
+        if (fread(frameoff, bytes, 1, fp) == 1) {
+          memcpy(buf, frameoff, bytes);
+          /*for(int j =0; j < bytes; j++) {
+           *buf++ = getc(fp);
+           }
+           buf -= bytes;*/
+          free(frameoff);
+          return bytes;
+        }
+        free(frameoff);
+      }
+    } else
+      return -1;
+  }
+
+  return -1;
+}
+
+/* SPARC specific functions */
+
+#if defined(sparc)
+// returns the active thread id
+int
+CoreUtils::get_active_thread_Id()
+{
+  return lwpid;
+}
+
+// copies stack info for the thread's base frame to the given
+// core_stack_state pointer
+void
+CoreUtils::get_base_frame(int threadId, core_stack_state * coress)
+{
+  int framep = arrayLwp[threadId - 1].framep;
+  // finds vaddress less than framep
+  int index = find_vaddr(framep, arrayMem.length(), 0);
+
+  int vadd = arrayMem[index - 1].vaddr;
+  int off = arrayMem[index - 1].offset;
+  int off2 = abs(vadd - framep);
+  int size = arrayMem[index - 1].fsize;
+
+  // seek to the framep offset
+  if (fseek(fp, off + off2, SEEK_SET) != -1) {
+    char *frameoff;
+    if ((frameoff = (char *) malloc(sizeof(char) * sizeof(rwindow)))) {
+      if (fread(frameoff, sizeof(rwindow), 1, fp) == 1) {
+        // memcpy rwindow struct and print out
+        struct rwindow regs, *r;
+        r = (struct rwindow *) frameoff;
+        memcpy(&regs, r, sizeof(struct rwindow));
+        coress->regs = regs;
+        framep = regs.rw_in[6];
+        coress->framep = framep;
+
+      }
+      free(frameoff);
+    } else {
+      printf("Failed to seek to top of the stack\n");
+    }
+    coress->stkbase = vadd + size;
+  }
+}
+
+// returns 0 if current frame is already at the top of the stack
+// or returns 1 and moves up the stack once
+int
+CoreUtils::get_next_frame(core_stack_state * coress)
+{
+  int framep = coress->framep;
+
+  if (framep >= coress->stkbase) {
+    if (is_debug_tag_set("stack")) {
+      printf("already at top of stack\n");
+    }
+    return 0;
+  } else {
+    if (is_debug_tag_set("stack")) {
+      printf("distance from end of the stack: %d\n", coress->stkbase - framep);
+    }
+    int index = find_vaddr(framep, arrayMem.length(), 0);
+
+    // finds vaddress less than framep
+    int vadd = arrayMem[index - 1].vaddr;
+    int off = arrayMem[index - 1].offset;
+    int off2 = abs(vadd - framep);
+
+    // seek to the framep offset
+    if (fseek(fp, off + off2, SEEK_SET) != -1) {
+      char *frameoff;
+      if ((frameoff = (char *) malloc(sizeof(char) * sizeof(rwindow)))) {
+        if (fread(frameoff, sizeof(rwindow), 1, fp) == 1) {
+
+          // memcpy rwindow struct and print out
+          struct rwindow regs, *r;
+          r = (struct rwindow *) frameoff;
+          memcpy(&regs, r, sizeof(struct rwindow));
+          coress->regs = regs;
+          framep = regs.rw_in[6];
+          coress->framep = framep;
+
+        }
+
+      }
+      free(frameoff);
+    }
+  }
+  return 1;
+}
+
+// prints the http header
+void
+CoreUtils::find_stuff(StuffTest_f f)
+{
+  core_stack_state coress;
+  int i;
+  void *test_val;
+
+  int id = get_active_thread_Id();
+  get_base_frame(id, &coress);
+
+  do {
+    // looping through all of the local and in registers
+    // all the way up the stack
+    for (int i = 0; i < 8; i++) {
+      test_val = (void *) coress.regs.rw_local[i];
+      f(test_val);
+    }
+    for (i = 0; i < 8; i++) {
+      test_val = (void *) coress.regs.rw_in[i];
+      f(test_val);
+    }
+  } while (get_next_frame(&coress) != 0);
+}
+
+#endif /* SPARC specific Stack unwinding */
+
+
+/* Linux Specific functions */
+
+#if (HOST_OS == linux)
+// copies stack info for the thread's base frame to the given
+// core_stack_state pointer
+void
+CoreUtils::get_base_frame(int framep, core_stack_state * coress)
+{
+  // finds vaddress less than framep
+  int index = find_vaddr(framep, arrayMem.length(), 0);
+  int vadd = arrayMem[index - 1].vaddr;
+  int off = arrayMem[index - 1].offset;
+  int off2 = abs(vadd - framep);
+  int size = arrayMem[index - 1].fsize;
+  int i = 0;
+
+  D(printf("stkbase=%#x\n", vadd + size));
+  // seek to the framep offset
+  if (fseek(fp, off + off2, SEEK_SET) != -1) {
+    void **frameoff;
+    if ((frameoff = (void **) malloc(sizeof(long)))) {
+      if (fread(frameoff, 4, 1, fp) == 1) {
+        coress->framep = (int) *frameoff;
+        if (fread(frameoff, 4, 1, fp) == 1) {
+          coress->pc = (int) *frameoff;
+
+        }
+        // read register arguments
+        for (i = 0; i < NO_OF_ARGS; i++) {
+          if (fread(frameoff, 4, 1, fp) == 1) {
+            coress->arg[i] = (int) *frameoff;
+          }
+        }
+      }
+      free(frameoff);
+    }
+  } else {
+    printf("Failed to seek to top of the stack\n");
+  }
+  //coress->stkbase = vadd+size;
+}
+
+// returns 0 if current frame is already at the top of the stack
+// or returns 1 and moves up the stack once
+int
+CoreUtils::get_next_frame(core_stack_state * coress)
+{
+  int i = 0;
+  int framep = coress->framep;
+
+  int index = find_vaddr(framep, arrayMem.length(), 0);
+
+  // finds vaddress less than framep
+  int vadd = arrayMem[index - 1].vaddr;
+  int off = arrayMem[index - 1].offset;
+  int off2 = abs(vadd - framep);
+
+  // seek to the framep offset
+  if (fseek(fp, off + off2, SEEK_SET) != -1) {
+    void **frameoff;
+    if ((frameoff = (void **) malloc(sizeof(long)))) {
+      if (fread(frameoff, 4, 1, fp) == 1) {
+        coress->framep = (int) *frameoff;
+        if (*frameoff == NULL) {
+          free(frameoff);
+          return 0;
+        }
+        if (fread(frameoff, 4, 1, fp) == 1) {
+          coress->pc = (int) *frameoff;
+        }
+        for (i = 0; i < NO_OF_ARGS; i++) {
+          if (fread(frameoff, 4, 1, fp) == 1) {
+            coress->arg[i] = (int) *frameoff;
+          }
+        }
+      }
+      free(frameoff);
+    }
+    return 1;
+  }
+
+  return 0;
+}
+
+// prints the http header
+void
+CoreUtils::find_stuff(StuffTest_f f)
+{
+  int framep = framepointer;
+  int pc = program_counter;
+  core_stack_state coress;
+  int i;
+  void *test_val;
+
+  // Unwinding the stack
+  D(printf("\nStack Trace:\n"));
+  int framecount = 0;
+  D(printf("stack frame#%d framep=%#x pc=%#x\n", framecount, framep, pc));
+  framecount++;
+  get_base_frame(framep, &coress);
+  f2 = framep;
+  do {
+    f1 = f2;
+    f2 = coress.framep;
+    D(printf
+      ("stack frame#%d framep=%#x pc=%#x f1-f2=%d coress=%#x %#x %#x %#x %#x\n", framecount, coress.framep, coress.pc,
+       f2 - f1, coress.arg[0], coress.arg[1], coress.arg[2], coress.arg[3], coress.arg[4]));
+
+    for (i = 0; i < NO_OF_ARGS; i++) {
+      test_val = (void *) coress.arg[i];
+      f(test_val);
+    }
+    framecount++;
+  } while (get_next_frame(&coress) != 0);
+}
+#endif  // linux check
+
+
+// test whether a given register is an HttpSM
+//   if it is, call process_HttpSM on it
+void
+CoreUtils::test_HdrHeap(void *arg)
+{
+  HdrHeap *hheap_test = (HdrHeap *) arg;
+
+  inku32 *magic_ptr = &(hheap_test->m_magic);
+  inku32 magic = 0;
+  if (read_from_core((int) magic_ptr, sizeof(inku32), (char *) &magic) != 0) {
+    if (magic == HDR_BUF_MAGIC_ALIVE ||
+        magic == HDR_BUF_MAGIC_DEAD || magic == HDR_BUF_MAGIC_CORRUPT || magic == HDR_BUF_MAGIC_MARSHALED) {
+      // This is not 64-bit correct ... /leif
+      printf("Found Hdr Heap @ 0x%X\n", (unsigned int) arg);
+    }
+  }
+}
+
+// test whether a given register is an HttpSM
+//   if it is, call process_HttpSM on it
+void
+CoreUtils::test_HttpSM_from_tunnel(void *arg)
+{
+  char *tmp = (char *) arg;
+  int offset = (int) &(((HttpTunnel *) NULL)->sm);
+  HttpSM **hsm_ptr = (HttpSM **) (tmp + offset);
+  HttpSM *hsm_test;
+
+  if (read_from_core((int) hsm_ptr, sizeof(HttpSM *), (char *) &hsm_test) == 0) {
+    return;
+  }
+
+  unsigned int *magic_ptr = &(hsm_test->magic);
+  unsigned int magic = 0;
+
+  if (read_from_core((int) magic_ptr, sizeof(int), (char *) &magic) != 0) {
+    if (magic == HTTP_SM_MAGIC_ALIVE || magic == HTTP_SM_MAGIC_DEAD) {
+      process_HttpSM(hsm_test);
+    }
+  }
+}
+
+// test whether a given register is an HttpSM
+//   if it is, call process_HttpSM on it
+void
+CoreUtils::test_HttpSM(void *arg)
+{
+  HttpSM *hsm_test = (HttpSM *) arg;
+
+  unsigned int *magic_ptr = &(hsm_test->magic);
+  unsigned int magic = 0;
+  if (read_from_core((int) magic_ptr, sizeof(int), (char *) &magic) != 0) {
+    if (magic == HTTP_SM_MAGIC_ALIVE || magic == HTTP_SM_MAGIC_DEAD) {
+      printf("test_HttpSM:******MATCH*****\n");
+      process_HttpSM(hsm_test);
+    }
+  }
+}
+
+
+// test whether a given register is an FtpSM
+//   if it is, call process_FtpSM on it
+void
+CoreUtils::test_FtpSM(void *arg)
+{
+  /*
+  FtpSM *fsm_test = (FtpSM *) arg;
+
+  int *magic_ptr = &(fsm_test->magic);
+  int magic = 0;
+  if (read_from_core((int) magic_ptr, sizeof(int), (char *) &magic) != 0) {
+    if (magic == FTP_SM_ALIVE || magic == FTP_SM_DEAD) {
+      printf("test_FtpSM:******MATCH*****\n");
+      process_FtpSM(fsm_test);
+    }
+  }
+  */
+  ink_release_assert(0);
+}
+
+
+#ifdef READ_CORE_WMT
+void
+CoreUtils::test_wmtTop(void *arg)
+{
+  WMT_Top *top_test = (WMT_Top *) arg;
+
+  int *magic_ptr = (int *) (&top_test->m_magic);
+  int magic = 0;
+
+  if (read_from_core((int) magic_ptr, sizeof(int), (char *) &magic) != 0) {
+    if (magic == WMT_TOP_MAGIC_ALIVE || magic == WMT_TOP_MAGIC_PENDING || magic == WMT_TOP_MAGIC_DEAD) {
+      process_WmtTop(top_test);
+    }
+  }
+}
+
+void
+CoreUtils::test_wmtTunnel(void *arg)
+{
+  TunnelSM *tunnel_test = (TunnelSM *) arg;
+
+  int *magic_ptr = (int *) (&tunnel_test->m_magic);
+  int magic = 0;
+
+  if (read_from_core((int) magic_ptr, sizeof(int), (char *) &magic) != 0) {
+    if (magic == WMT_TUNNEL_MAGIC_ALIVE || magic == WMT_TUNNEL_MAGIC_PENDING || magic == WMT_TUNNEL_MAGIC_DEAD) {
+      process_WmtTunnel(tunnel_test);
+    }
+  }
+}
+
+
+
+void
+CoreUtils::test_wmtServerFile(void *arg)
+{
+  WMT_ServerFileSM *wsfsm_test = (WMT_ServerFileSM *) arg;
+
+  int *magic_ptr = (int *) (&wsfsm_test->m_magic);
+  int magic = 0;
+
+  if (read_from_core((int) magic_ptr, sizeof(int), (char *) &magic) != 0) {
+    if (magic == WMT_SERVERF_MAGIC_ALIVE || magic == WMT_SERVERF_MAGIC_PENDING || magic == WMT_SERVERF_MAGIC_DEAD) {
+      process_WmtServerFileSM(wsfsm_test);
+    }
+  }
+}
+
+void
+CoreUtils::test_wmtClientServer(void *arg)
+{
+  WMT_ClientServer *wcs_test = (WMT_ClientServer *) arg;
+
+  int *magic_ptr = (int *) (&wcs_test->m_magic);
+  int magic = 0;
+
+  if (read_from_core((int) magic_ptr, sizeof(int), (char *) &magic) != 0) {
+    if (magic == WMT_CLISERV_MAGIC_ALIVE || magic == WMT_CLISERV_MAGIC_PENDING || magic == WMT_CLISERV_MAGIC_DEAD) {
+      process_WmtClientServer(wcs_test);
+    }
+  }
+}
+
+
+void
+CoreUtils::test_wmtDatapump(void *arg)
+{
+  WMT_Datapump *wdp_test = (WMT_Datapump *) arg;
+
+  int *magic_ptr = (int *) (&wdp_test->m_magic);
+  int magic = 0;
+
+  if (read_from_core((int) magic_ptr, sizeof(int), (char *) &magic) != 0) {
+    if (magic == WMT_DATAPUMP_MAGIC_ALIVE || magic == WMT_DATAPUMP_MAGIC_PENDING || magic == WMT_DATAPUMP_MAGIC_DEAD) {
+      process_WmtDatapump(wdp_test);
+    }
+  }
+}
+#endif /* READ_CORE_WMT */
+
+
+void
+CoreUtils::process_HttpSM(HttpSM * core_ptr)
+{
+
+#if defined(sparc)
+  int id = get_active_thread_Id();
+#endif
+
+  // extracting the HttpSM from the core file
+  if (last_seen_http_sm != core_ptr) {
+    HttpSM *http_sm = (HttpSM *) malloc(sizeof(HttpSM));
+
+    if (read_from_core((int) core_ptr, sizeof(HttpSM), (char *) http_sm) < 0) {
+      // This is not 64-bit correct ... /leif
+      printf("ERROR: Failed to read httpSM @ 0x%X from core\n", (unsigned int) core_ptr);
+      free(http_sm);
+      return;
+    }
+
+    if (http_sm->magic == HTTP_SM_MAGIC_ALIVE) {
+      last_seen_http_sm = core_ptr;
+
+      if (is_debug_tag_set("magic")) {
+#if (HOST_OS == linux)
+        printf("\n*****match-ALIVE*****\n");
+#endif
+#if defined(sparc)
+        printf("\n*****match-ALIVE*****!! lwpid: %d\n", arrayLwp[id].lwpId);
+#endif
+      }
+      // I don't think this is 64-bit correct. /leif
+      printf("---- Found HttpSM --- id %lld  ------ @ 0x%X -----\n\n", http_sm->sm_id, (unsigned int) http_sm);
+
+      print_http_hdr(&http_sm->t_state.hdr_info.client_request, "Client Request");
+      print_http_hdr(&http_sm->t_state.hdr_info.server_request, "Server Request");
+      print_http_hdr(&http_sm->t_state.hdr_info.server_response, "Server Response");
+      print_http_hdr(&http_sm->t_state.hdr_info.client_response, "Client Response");
+
+      dump_history(http_sm);
+
+      printf("------------------------------------------------\n\n\n");
+    } else if (http_sm->magic == HTTP_SM_MAGIC_DEAD) {
+      if (is_debug_tag_set("magic")) {
+#if (HOST_OS == linux)
+        printf("\n*****match-DEAD*****\n");
+#endif
+#if defined(sparc)
+        printf("\n*****match-DEAD*****!! lwpid: %d\n", arrayLwp[id].lwpId);
+#endif
+      }
+    } else {
+      if (is_debug_tag_set("magic")) {
+        // Nothing here? /leif
+        ;
+      }
+    }
+
+    free(http_sm);
+  } else
+    printf("process_HttpSM : last_seen_http_sm == core_ptr\n");
+}
+
+
+void
+CoreUtils::print_http_hdr(HTTPHdr * h, const char *name)
+{
+  HTTPHdr new_handle;
+
+  if (h->m_heap && h->m_http) {
+    int r = load_http_hdr(h, &new_handle);
+
+    if (r > 0) {
+      printf("----------- %s  ------------\n", name);
+      new_handle.m_mime = new_handle.m_http->m_fields_impl;
+      new_handle.print(NULL, 0, NULL, NULL);
+      printf("-----------------------------\n\n");
+    }
+  }
+}
+
+int
+CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
+{
+
+  // Load HdrHeap chain
+
+  HTTPHdr *http_hdr = core_hdr;
+  HdrHeap *heap = (HdrHeap *) core_hdr->m_heap;
+  HdrHeap *heap_ptr = (HdrHeap *) http_hdr->m_heap;
+  char *buf = (char *) malloc(sizeof(char) * sizeof(HdrHeap));
+  int ptr_heaps = 0;
+  int ptr_heap_size = 0;
+  int ptr_xl_size = 2;
+  int str_size = 0;
+  int str_heaps = 0;
+  MarshalXlate default_MarshalXlate = { 0, 0, 0 };
+  DynArray<struct MarshalXlate>ptr_xlation(&default_MarshalXlate, 2);
+  //MarshalXlate static_table[2];
+  //MarshalXlate* ptr_xlation = static_table;
+  int used;
+  int i;
+  int copy_size;
+  // extracting the header heap from the core file
+  do {
+    if (read_from_core((int) heap, sizeof(HdrHeap), buf) == -1) {
+      printf("Cannot read from core\n");
+      _exit(0);
+    }
+    heap = (HdrHeap *) buf;
+    copy_size = (int) (heap->m_free_start - heap->m_data_start);
+    ptr_heap_size += copy_size;
+    heap = heap->m_next;
+  } while (heap && ((int) heap != 0x1));
+
+  swizzle_heap = (HdrHeap *) malloc(sizeof(HdrHeap));
+  live_hdr->m_heap = swizzle_heap;
+  ptr_data = (char *) malloc(sizeof(char) * ptr_heap_size);
+  //heap = (HdrHeap*)http_hdr->m_heap;
+
+  //  Build Hdr Heap Translation Table
+  do {
+    if (read_from_core((int) heap_ptr, sizeof(HdrHeap), buf) == -1) {
+      printf("Cannot read from core\n");
+      _exit(0);
+    }
+    heap_ptr = (HdrHeap *) buf;
+    copy_size = (int) (heap_ptr->m_free_start - heap_ptr->m_data_start);
+
+    if (read_from_core((int) heap_ptr->m_data_start, copy_size, ptr_data) == -1) {
+      printf("Cannot read from core\n");
+      _exit(0);
+    }
+    // Expand ptr xlation table if necessary
+    if (ptr_heaps >= ptr_xl_size) {
+      ptr_xlation(ptr_heaps);
+    }
+
+    char *data, *free, *off;
+    data = heap_ptr->m_data_start;
+    free = heap_ptr->m_free_start;
+    off = (char *) (heap_ptr->m_data_start - ptr_data);
+
+    ptr_xlation[ptr_heaps].start = data;
+    ptr_xlation[ptr_heaps].end = free;
+    ptr_xlation[ptr_heaps].offset = off;
+    ptr_data += copy_size;
+    ptr_heaps++;
+    heap_ptr = heap_ptr->m_next;
+  } while (heap_ptr && ((int) heap_ptr != 0x1));
+
+  heap = (HdrHeap *) http_hdr->m_heap;
+  if (read_from_core((int) heap, sizeof(HdrHeap), buf) == -1) {
+    printf("Cannot read from core\n");
+    _exit(0);
+  }
+  heap = (HdrHeap *) buf;
+  // filling in the live_hdr
+  swizzle_heap->m_free_start = NULL;
+  swizzle_heap->m_data_start = (char *) ptr_data - ptr_heap_size;       // offset
+  swizzle_heap->m_magic = HDR_BUF_MAGIC_ALIVE;
+  swizzle_heap->m_writeable = false;
+  swizzle_heap->m_size = ptr_heap_size;
+  swizzle_heap->m_next = NULL;
+  swizzle_heap->m_free_size = 0;
+  swizzle_heap->m_read_write_heap.m_ptr = NULL;
+
+  // We'have one read-only string heap after marshalling
+  swizzle_heap->m_ronly_heap[0].m_heap_start = (char *) swizzle_heap->m_size;   // offset
+  swizzle_heap->m_ronly_heap[0].m_ref_count_ptr.m_ptr = NULL;
+
+  swizzle_heap->m_ronly_heap[1].m_heap_start = NULL;
+  swizzle_heap->m_ronly_heap[2].m_heap_start = NULL;
+
+  // Next order of business is to copy over string heaps
+  //   As we are copying over the string heaps, build
+  //   translation table for string marshaling in the heap
+  //   objects
+  MarshalXlate str_xlation[HDR_BUF_RONLY_HEAPS + 1];
+
+  // Local String Heaps, building translation table
+  if (heap->m_read_write_heap) {
+    HdrStrHeap *hdr = (HdrStrHeap *) heap->m_read_write_heap.m_ptr;
+    char *copy_start = ((char *) heap->m_read_write_heap.m_ptr) + sizeof(HdrStrHeap);
+    char *str_hdr = (char *) malloc(sizeof(char) * sizeof(HdrStrHeap));
+    if (read_from_core((int) hdr, sizeof(HdrStrHeap), str_hdr) == -1) {
+      printf("Cannot read from core\n");
+      _exit(0);
+    }
+
+    char *free_start = (char *) (((HdrStrHeap *) str_hdr)->m_free_start);
+    int nto_copy = abs((char *) copy_start - free_start);
+    free(str_hdr);
+    char rw_heap[sizeof(char) * nto_copy];
+    if (read_from_core((int) copy_start, nto_copy, rw_heap) == -1) {
+      printf("Cannot read from core\n");
+      _exit(0);
+    }
+    // FIX ME - possible offset overflow issues?
+    str_xlation[str_heaps].start = copy_start;
+    str_xlation[str_heaps].end = copy_start + nto_copy;
+    str_xlation[str_heaps].offset = (char *) (copy_start - rw_heap);
+
+    str_size += nto_copy;
+    str_heaps++;
+  }
+
+  for (i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
+    if (heap->m_ronly_heap[i].m_heap_start != NULL) {
+
+      char ro_heap[sizeof(char) * heap->m_ronly_heap[i].m_heap_len];
+      if (read_from_core((int) heap->m_ronly_heap[i].m_heap_start, heap->m_ronly_heap[i].m_heap_len, ro_heap) == -1) {
+        printf("Cannot read from core\n");
+        _exit(0);
+      }
+      // Add translation table entry for string heaps
+      str_xlation[str_heaps].start = heap->m_ronly_heap[i].m_heap_start;
+      str_xlation[str_heaps].end = heap->m_ronly_heap[i].m_heap_start + heap->m_ronly_heap[i].m_heap_len;
+      str_xlation[str_heaps].offset = (char *) (heap->m_ronly_heap[i].m_heap_start - ro_heap);
+
+      ink_assert(str_xlation[str_heaps].start <= str_xlation[str_heaps].end);
+
+      str_heaps++;
+      str_size += heap->m_ronly_heap[i].m_heap_len;
+    }
+  }
+
+  // Patch the str heap len
+  swizzle_heap->m_ronly_heap[0].m_heap_len = str_size;
+
+  char *obj_data = swizzle_heap->m_data_start;
+  char *mheap_end = swizzle_heap->m_data_start + swizzle_heap->m_size;
+
+  while (obj_data < mheap_end) {
+    HdrHeapObjImpl *obj = (HdrHeapObjImpl *) obj_data;
+    ink_assert(obj_is_aligned(obj));
+
+    switch (obj->m_type) {
+    case HDR_HEAP_OBJ_URL:
+      if (((URLImpl *) obj)->marshal(str_xlation, str_heaps) < 0) {
+        goto Failed;
+      }
+      break;
+    case HDR_HEAP_OBJ_HTTP_HEADER:
+      if (((HTTPHdrImpl *) obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
+        goto Failed;
+      }
+      live_hdr->m_http = (HTTPHdrImpl *) obj;
+      break;
+    case HDR_HEAP_OBJ_FIELD_BLOCK:
+      if (((MIMEFieldBlockImpl *) obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
+        goto Failed;
+      }
+      break;
+    case HDR_HEAP_OBJ_MIME_HEADER:
+      if (((MIMEHdrImpl *) obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps)) {
+        goto Failed;
+      }
+      break;
+    case HDR_HEAP_OBJ_EMPTY:
+      break;
+    case HDR_HEAP_OBJ_RAW:
+      // Check to make sure we aren't stuck
+      //   in an infinite loop
+      if (obj->m_length <= 0) {
+        ink_assert(0);
+        goto Failed;
+      }
+      // Nothing to do
+      break;
+    default:
+      ink_release_assert(0);
+    }
+    obj_data = obj_data + obj->m_length;
+  }
+
+  // Add up the total bytes used
+  used = ptr_heap_size + str_size + HDR_HEAP_HDR_SIZE;
+  used = ROUND(used, HDR_PTR_SIZE);
+
+  return used;
+
+Failed:
+  swizzle_heap->m_magic = HDR_BUF_MAGIC_CORRUPT;
+  return -1;
+
+}
+
+void
+CoreUtils::dump_history(HttpSM * hsm)
+{
+
+  printf("-------- Begin History -------------\n");
+
+  // Loop through the history and dump it
+  for (int i = 0; i < hsm->history_pos; i++) {
+    int r = (int) hsm->history[i].reentrancy;
+    int e = (int) hsm->history[i].event;
+    char *fileline = load_string(hsm->history[i].fileline);
+
+    fileline = (fileline != NULL) ? fileline : xstrdup("UNKNOWN");
+
+#if (HOST_OS == winnt)
+    // Visual C++ preprocessor is unable to stringify __LINE__
+    //   so we have to waste a ton a memory and store it
+    //   as an integer
+    printf("%d   %d   %s:%d", e, r, fileline, hsm->history[i].line);
+#else
+    printf("%d   %d   %s", e, r, fileline);
+#endif
+    char buffer[32];
+    char *msg = event_int_to_string(e, buffer);
+    printf("   event string: \"%s\"\n", msg);
+
+    xfree(fileline);
+  }
+
+  printf("-------- End History -----------\n\n");
+}
+
+int
+CoreUtils::read_heap_header(int vaddr, int bytes, HdrHeap h)
+{
+  int index = find_vaddr(vaddr, arrayMem.length(), 0);
+  int vadd = arrayMem[index - 1].vaddr;
+  int offset = arrayMem[index - 1].offset;
+  int size = arrayMem[index - 1].fsize;
+  int offset2 = abs(vaddr - vadd);
+  if (bytes > (size - offset2))
+    return -1;
+  else {
+    if (fseek(fp, offset2 + offset, SEEK_SET) != -1) {
+      if (fread(&h, sizeof(HdrHeap), 1, fp) > 0)
+        return bytes;
+      else
+        return -1;
+    }
+  }
+  return -1;
+}
+
+
+void
+CoreUtils::process_FtpSM(FtpSM * core_ptr)
+{
+/*
+#if defined(sparc)
+  int id = get_active_thread_Id();
+#endif
+  // extracting the FtpSM from the core file
+  if (last_seen_ftp_sm != core_ptr) {
+    FtpSM *ftp_sm = (FtpSM *) malloc(sizeof(FtpSM));;
+
+    if (read_from_core((int) core_ptr, sizeof(FtpSM), (char *) ftp_sm) < 0) {
+      // This is most likely not 64-bit safe. /leif
+      printf("ERROR: Failed to read FtpSM @ 0x%X from core\n", (unsigned int) core_ptr);
+      free(ftp_sm);
+      return;
+    }
+
+    if (ftp_sm->magic == FTP_SM_ALIVE) {
+      last_seen_ftp_sm = core_ptr;
+
+      if (is_debug_tag_set("magic")) {
+#if (HOST_OS == linux)
+        printf("\n*****match-ALIVE*****\n");
+#endif
+#if defined(sparc)
+        printf("\n*****match-ALIVE*****!! lwpid: %d\n", arrayLwp[id].lwpId);
+#endif
+      }
+      // This is probably not 64-bit correct. /leif
+      printf("---- Found FtpSM --- id %lld  ------ @ 0x%X -----\n\n", ftp_sm->sm_id, (unsigned int) ftp_sm);
+      FtpSM::print_ftpsm(ftp_sm);
+      printf("------------------------------------------------\n\n\n");
+    } else if (ftp_sm->magic == FTP_SM_DEAD) {
+      if (is_debug_tag_set("magic")) {
+#if (HOST_OS == linux)
+        printf("\n*****match-DEAD*****\n");
+#endif
+#if defined(sparc)
+        printf("\n*****match-DEAD*****!! lwpid: %d\n", arrayLwp[id].lwpId);
+#endif
+      }
+    } else {
+      if (is_debug_tag_set("magic")) {
+        // Nothing? /leif
+        ;
+      }
+    }
+
+    free(ftp_sm);
+  } else
+    printf("process_FtpSM : last_seen_http_sm == core_ptr\n");
+    */
+  ink_release_assert(0);
+}
+
+
+void
+CoreUtils::process_EThread(EThread * eth_test)
+{
+
+  char *buf = (char *) malloc(sizeof(char) * sizeof(EThread));
+
+  if (read_from_core((int) eth_test, sizeof(EThread), buf) != -1) {
+    EThread *loaded_eth = (EThread *) buf;
+
+    // This is not 64-bit correct. /leif
+    printf("----------- EThread @ 0x%x ----------\n", (unsigned int) eth_test);
+    printf("   thread_id: %d\n", (int) loaded_eth->tid);
+    //    printf("   NetHandler: 0x%x\n\n", (int) loaded_eth->netHandler);
+  }
+
+  free(buf);
+}
+
+static void
+print_netstate(NetState * n)
+{
+  // These might not be 64-bit correct. /leif
+  printf("      enabled: %d  priority: %d\n", n->enabled, n->priority);
+  printf("      op: %d  _cont: 0x%x\n", n->vio.op, (unsigned int) n->vio._cont);
+  printf("      nbytes: %d  done: %d\n", n->vio.nbytes, n->vio.ndone);
+  printf("      vc_server: 0x%x   mutex: 0x%x\n\n", (unsigned int) n->vio.vc_server, (unsigned int) n->vio.mutex.m_ptr);
+}
+
+void
+CoreUtils::process_NetVC(UnixNetVConnection * nvc_test)
+{
+  char *buf = (char *) malloc(sizeof(char) * sizeof(UnixNetVConnection));
+
+  if (read_from_core((int) nvc_test, sizeof(UnixNetVConnection), buf) != -1) {
+    UnixNetVConnection *loaded_nvc = (UnixNetVConnection *) buf;
+
+    // Probably not 64-bit safe. /leif
+    printf("----------- UnixNetVConnection @ 0x%x ----------\n", (unsigned int) nvc_test);
+    printf("     ip: %u.%u.%u.%u    port: %d\n",
+           ((unsigned char *) &loaded_nvc->ip)[0],
+           ((unsigned char *) &loaded_nvc->ip)[1],
+           ((unsigned char *) &loaded_nvc->ip)[2], ((unsigned char *) &loaded_nvc->ip)[3], loaded_nvc->port);
+    printf("     closed: %d\n\n", loaded_nvc->closed);
+    printf("     read state: \n");
+    print_netstate(&loaded_nvc->read);
+    printf("     write state: \n");
+    print_netstate(&loaded_nvc->write);
+  }
+
+  free(buf);
+}
+
+
+#ifdef READ_CORE_WMT
+void
+CoreUtils::process_WmtServerFileSM(WMT_ServerFileSM * wsfm_test)
+{
+
+  if (last_seen_wmt_sfsm != wsfm_test) {
+    last_seen_wmt_sfsm = wsfm_test;
+    char *buf = (char *) malloc(sizeof(char) * sizeof(WMT_ServerFileSM));
+
+    if (read_from_core((int) wsfm_test, sizeof(WMT_ServerFileSM), buf) != -1) {
+      WMT_ServerFileSM *loaded_sf = (WMT_ServerFileSM *) buf;
+
+      printf("---- Found WMT-ServerFileSM @ 0x%X -----\n\n", wsfm_test);
+
+      printf("   Magic Number 0x%X ---- \n", loaded_sf->m_magic);
+
+      char *host = load_string(loaded_sf->m_server_host);
+      int port = loaded_sf->m_server_port;
+      char *filename = load_string(loaded_sf->m_filename);
+      int ip = loaded_sf->m_ip;
+
+      printf("   Host: %s Ip: %u.%u.%u.%u, Port %d, File %s\n",
+             host,
+             ((unsigned char *) &ip)[0],
+             ((unsigned char *) &ip)[1], ((unsigned char *) &ip)[2], ((unsigned char *) &ip)[3], port, filename);
+
+      xfree(host);
+      xfree(filename);
+
+      printf("   m_sm: 0X%X    m_op: 0X%X\n", loaded_sf->m_sm.m_MixtPtr, loaded_sf->m_op);
+      printf("   m_fileid: %d, m_playIncarnation: %d\n", (int) loaded_sf->m_fileid, (int) loaded_sf->m_playIncarnation);
+      printf("   m_previous_op %d,  m_connectReadblockPhaseDone: %d\n\n",
+             (int) loaded_sf->m_previous_op, (int) loaded_sf->m_connectReadblockPhaseDone);
+
+
+      if (loaded_sf->m_magic == WMT_SERVERF_MAGIC_ALIVE || loaded_sf->m_magic == WMT_SERVERF_MAGIC_PENDING) {
+        wmt_dump_history(&loaded_sf->m_history);
+
+        printf("   MasterSM @  0x%X\n\n", loaded_sf->m_mastersm.m_MixtPtr);
+        test_wmtTop(loaded_sf->m_mastersm.m_MixtPtr);
+        test_wmtTunnel(loaded_sf->m_mastersm.m_MixtPtr);
+        test_wmtClientServer(loaded_sf->m_sm.m_MixtPtr);
+      }
+    }
+
+    free(buf);
+  }
+}
+
+static void
+process_afheader(char *af)
+{
+
+  // Try to load the  AF header from the pdu
+  char *hptr = af;
+  if (hptr) {
+    AF_HEADER_TYPE0 *loaded_af = (AF_HEADER_TYPE0 *) malloc(sizeof(AF_HEADER_TYPE0));
+    if (CoreUtils::read_from_core((int) hptr, sizeof(AF_HEADER_TYPE0), (char *) loaded_af) != -1) {
+      printf("    AF_HEADER_TYPE0\n");
+      printf("     PacketId: %d   BlockId: %d\n",
+             (int) (LE_TO_SHORT(loaded_af->id.PacketId)), (int) (LE_TO_SHORT(loaded_af->id.BlockId)));
+      printf("     Incarnation: %d   AFFlags: %d\n", (int) loaded_af->Incarnation, (int) loaded_af->AFFlags);
+      printf("     PacketSize: %d\n", (int) (LE_TO_SHORT(loaded_af->PacketSize)));
+    }
+    free(loaded_af);
+  }
+}
+
+static INCONTROLMSG_ENC *
+get_control_msg_in(char *cmsg)
+{
+
+  // Try to load the control msg from the pdu
+  char *msg_ptr = cmsg;
+  if (msg_ptr) {
+    INCONTROLMSG_ENC *loaded_msg = (INCONTROLMSG_ENC *) malloc(sizeof(INCONTROLMSG_ENC));
+    if (CoreUtils::read_from_core((int) msg_ptr, sizeof(INCONTROLMSG_ENC), (char *) loaded_msg) != -1) {
+      return loaded_msg;
+    }
+  }
+
+  return NULL;
+}
+
+static OUTCONTROLMSG *
+get_control_msg_out(char *cmsg)
+{
+
+  // Try to load the control msg from the pdu
+  char *msg_ptr = cmsg;
+  if (msg_ptr) {
+    OUTCONTROLMSG *loaded_msg = (OUTCONTROLMSG *) malloc(sizeof(OUTCONTROLMSG));
+    if (CoreUtils::read_from_core((int) msg_ptr, sizeof(OUTCONTROLMSG), (char *) loaded_msg) != -1) {
+      return loaded_msg;
+    }
+  }
+
+  return NULL;
+}
+
+static void
+print_read_block(OUTCONTROLMSG * o_msg)
+{
+
+  LinkViewerToMacReadBlockMessage *r_msg = &o_msg->u.ReadBlock;
+
+  printf("      openFileId: %d,  fileBlockId: %d \n", LE_TO_LONG(r_msg->openFileId), LE_TO_LONG(r_msg->fileBlockId));
+  printf("      offset: %d,  length: %d \n", LE_TO_LONG(r_msg->offset), LE_TO_LONG(r_msg->length));
+  printf("      flags: %d,  dummy: %d \n", LE_TO_LONG(r_msg->flags), LE_TO_LONG(r_msg->dummy));
+  printf("      Earliest: %e,  Deadline: %e \n",
+         LE_TO_INT64((ink64) r_msg->tEarliest), LE_TO_INT64((ink64) r_msg->tDeadline));
+  printf("      UserIncarnation: %d,  playSequence: %d \n",
+         LE_TO_LONG(r_msg->playIncarnation), LE_TO_LONG(r_msg->playSequence));
+}
+
+void
+CoreUtils::process_WmtClientServer(WMT_ClientServer * wcs_test)
+{
+
+  if (last_seen_wmt_cssm != wcs_test) {
+    last_seen_wmt_cssm = wcs_test;
+    char *buf = (char *) malloc(sizeof(char) * sizeof(WMT_ClientServer));
+
+    if (read_from_core((int) wcs_test, sizeof(WMT_ClientServer), buf) != -1) {
+      WMT_ClientServer *loaded_cs = (WMT_ClientServer *) buf;
+
+      printf("---- Found WMT-ClientServer @ 0x%X -----\n\n", wcs_test);
+
+      printf("   Magic Number 0x%X ---- \n", loaded_cs->m_magic);
+
+      printf("   master_sm: 0x%X ---- \n", loaded_cs->m_mastersm.m_MixtPtr);
+      printf("   m_isclient: %d, m_connected: %d, m_TSFileId: %d\n\n",
+             (int) loaded_cs->m_isclient, (int) loaded_cs->m_connected, (int) loaded_cs->m_TSFileId);
+
+
+      printf("   PDU Info: \n");
+      printf("     m_mid: 0x%X\n", (int) loaded_cs->m_pdu.m_mid);
+
+      if (loaded_cs->m_pdu.m_mid == LinkMacToViewerReportOpenFileMID) {
+        printf("      m_mid is LinkMacToViewerReportOpenFileMID\n");
+        INCONTROLMSG_ENC *loaded_msg = get_control_msg_in(loaded_cs->m_pdu.u.buf);
+        if (loaded_msg) {
+          LinkMacToViewerReportOpenFileMessage *m = &loaded_msg->u.ReportOpenFile;
+          printf("      hrResult: 0x%X\n", (int) (LE_TO_LONG(m->hr)));
+          printf("      filedId: %d\n", (int) (LE_TO_LONG(m->openFileId)));
+          free(loaded_msg);
+        }
+      } else if (loaded_cs->m_pdu.m_mid == LinkViewerToMacReadBlockMID) {
+        printf("      m_mid is LinkViewerToMacReadBlockMID\n");
+        OUTCONTROLMSG *loaded_msg = get_control_msg_out(loaded_cs->m_pdu.u.buf);
+        if (loaded_msg) {
+          print_read_block(loaded_msg);
+        }
+        free(loaded_msg);
+      } else {
+        process_afheader(loaded_cs->m_pdu.u.buf);
+      }
+
+      printf("\n\n");
+    }
+
+    free(buf);
+  }
+}
+
+
+void
+CoreUtils::process_WmtTop(WMT_Top * top_test)
+{
+
+  if (last_seen_wmt_top != top_test) {
+    last_seen_wmt_top = top_test;
+
+    char *buf = (char *) malloc(sizeof(char) * sizeof(WMT_Top));
+
+    if (read_from_core((int) top_test, sizeof(WMT_Top), buf) != -1) {
+      WMT_Top *loaded_top = (WMT_Top *) buf;
+
+      printf("---- Found WMT-Top @ 0x%X -----\n\n", top_test);
+
+      printf("   Magic Number 0x%X ---- \n", loaded_top->m_magic);
+
+
+      char *urlstr = load_string(loaded_top->m_urlstr);;
+      printf("   murl_str: %s \n", urlstr);
+      xfree(urlstr);
+      printf("   m_host: %s  m_redirhost: %s\n", loaded_top->m_host, loaded_top->m_redirhost);
+
+      char *subname = load_string(loaded_top->m_state_name);
+      printf("   sub_state: %d (%s)\n", (int) loaded_top->m_state, subname);
+      xfree(subname);
+
+      printf("   m_loginfo: \n");
+      printf("      m_url: %s \n", loaded_top->m_loginfo.m_url);
+      printf("      m_xuid: %s \n", loaded_top->m_loginfo.m_xuid);
+      printf("      m_server_host: %s \n", loaded_top->m_loginfo.m_server_host);
+      printf("      m_proxy_host: %s \n", loaded_top->m_loginfo.m_proxy_host);
+      printf("      m_client_host_ip_str: %s \n", loaded_top->m_loginfo.m_client_host_ip_str);
+      printf("      m_clientURL: %s \n", loaded_top->m_loginfo.m_clientURL);
+      printf("      m_streamtype: %d \n", loaded_top->m_loginfo.m_streamtype);
+      printf("      m_cachehitbytes: %d \n", loaded_top->m_loginfo.m_cachehitbytes);
+      printf("      m_origin_bytes_read: %d \n", loaded_top->m_loginfo.m_origin_bytes_read);
+      printf("      m_client_bytes_written: %d \n", loaded_top->m_loginfo.m_client_bytes_written);
+      printf("      m_filesize: %d \n\n", loaded_top->m_loginfo.m_filesize);
+
+
+
+      if (loaded_top->m_magic == WMT_TOP_MAGIC_ALIVE || loaded_top->m_magic == WMT_TOP_MAGIC_PENDING) {
+        wmt_dump_history(&loaded_top->m_history);
+      }
+
+      test_wmtServerFile(loaded_top->m_cacheloader.m_MixtPtr);
+      test_wmtClientServer(loaded_top->m_client.m_MixtPtr);
+    }
+
+    free(buf);
+  }
+}
+
+void
+CoreUtils::process_WmtTunnel(TunnelSM * tunnel_test)
+{
+
+  if (last_seen_wmt_tunnel != tunnel_test) {
+    last_seen_wmt_tunnel = tunnel_test;
+
+    char *buf = (char *) malloc(sizeof(char) * sizeof(TunnelSM));
+
+    if (read_from_core((int) tunnel_test, sizeof(TunnelSM), buf) != -1) {
+      TunnelSM *loaded_tunnel = (TunnelSM *) buf;
+
+      printf("---- Found WMT-Tunnel @ 0x%X -----\n\n", tunnel_test);
+
+      printf("   Magic Number 0x%X ---- \n", loaded_tunnel->m_magic);
+
+
+      if (loaded_tunnel->m_magic == WMT_TUNNEL_MAGIC_ALIVE || loaded_tunnel->m_magic == WMT_TUNNEL_MAGIC_PENDING) {
+        wmt_dump_history(&loaded_tunnel->m_history);
+      }
+    }
+
+    free(buf);
+  }
+}
+
+void
+CoreUtils::process_WmtDatapump(WMT_Datapump * wdp_test)
+{
+  if (last_seen_wmt_pump != wdp_test) {
+    last_seen_wmt_pump = wdp_test;
+
+    char *buf = (char *) malloc(sizeof(char) * sizeof(WMT_Datapump));
+
+    if (read_from_core((int) wdp_test, sizeof(WMT_Datapump), buf) != -1) {
+      WMT_Datapump *loaded_pump = (WMT_Datapump *) buf;
+
+      printf("---- Found WMT-Datapump @ 0x%X -----\n\n", wdp_test);
+
+      printf("   Magic Number 0x%X ---- \n", loaded_pump->m_magic);
+      printf("   m_deliveryStarted: %lld, m_Twan: %lld\n", loaded_pump->m_deliveryStarted, loaded_pump->m_Twan);
+      printf("   m_nextoffset: %lld, m_baseoffset: %lld\n", loaded_pump->m_nextoffset, loaded_pump->m_baseoffset);
+      printf("   m_startingDeliveryOffset: %lld, m_last_location %d\n\n",
+             loaded_pump->m_startingDeliveryOffset, loaded_pump->m_last_location);
+
+      if (loaded_pump->m_magic == WMT_DATAPUMP_MAGIC_ALIVE || loaded_pump->m_magic == WMT_DATAPUMP_MAGIC_PENDING) {
+        wmt_dump_history(&loaded_pump->m_history);
+      }
+
+      test_wmtTop(loaded_pump->m_mastersm.m_MixtPtr);
+      test_wmtTunnel(loaded_pump->m_mastersm.m_MixtPtr);
+    }
+
+    free(buf);
+  }
+}
+
+void
+CoreUtils::wmt_dump_history(evHistory * ehist)
+{
+
+  printf("   -------- Begin History -------------\n");
+
+  int num_hist = ehist->m_history_pos;
+
+  if (num_hist >= WMT_HISTORY_SLOTS) {
+    printf("   History Wrap Around: %d entries made\n", num_hist);
+    num_hist = WMT_HISTORY_SLOTS;
+  }
+  // Loop through the history and dump it
+  for (int i = 0; i < num_hist; i++) {
+    int e = (int) ehist->h[i].event;
+
+    char *fileline = load_string(ehist->h[i].fileline);
+    fileline = (fileline != NULL) ? fileline : xstrdup("UNKNOWN");
+
+    char *desc = load_string(ehist->h[i].desc);
+    fileline = (fileline != NULL) ? fileline : xstrdup("UNKNOWN");
+
+    printf("   %d %s %s\n", e, desc, fileline);
+
+    xfree(fileline);
+    xfree(desc);
+  }
+
+  printf("   -------- End History -----------\n\n");
+}
+#endif /* READ_CORE_WMT */
+
+
+char *
+CoreUtils::load_string(const char *addr)
+{
+  char buf[2048];
+  int index = 0;
+
+  if (addr == NULL) {
+    return xstrdup("NONE");
+  }
+
+  while (index < 2048) {
+    if (read_from_core((int) (addr + index), 1, buf + index) < 0) {
+      return NULL;
+    }
+
+    if (buf[index] == '\0') {
+      return xstrdup(buf);
+    }
+    index++;
+  }
+
+  return NULL;
+}
+
+// parses core file
+#if (HOST_OS == linux)
+void
+process_core(char *fname)
+{
+  Elf32_Ehdr ehdr;
+  Elf32_Phdr phdr;
+  int phoff, phnum, phentsize, phsize;
+  int framep = 0, pc = 0;
+
+  /* Open the input file */
+  if (!(fp = fopen(fname, "r"))) {
+    printf("cannot open file\n");
+    _exit(1);
+  }
+
+  /* Obtain the .shstrtab data buffer */
+  if (fread(&ehdr, sizeof ehdr, 1, fp) != 1) {
+    printf("Unable to read ehdr\n");
+    _exit(1);
+  }
+  // program header offset
+  phoff = ehdr.e_phoff;
+  // number of program headers
+  phnum = ehdr.e_phnum;
+  // size of each program header
+  phentsize = ehdr.e_phentsize;
+  phsize = phnum * phentsize;
+  for (int i = 0; i < phnum; i++) {
+
+    if (fseek(fp, ehdr.e_phoff + i * ehdr.e_phentsize, SEEK_SET) == -1) {
+      fprintf(stderr, "Unable to seek to Phdr %d\n", i);
+      _exit(1);
+    }
+
+    if (fread(&phdr, sizeof phdr, 1, fp) != 1) {
+      fprintf(stderr, "Unable to read Phdr %d\n", i);
+      _exit(1);
+    }
+    int poffset, psize;
+    int pvaddr;
+    /* This member gives the virtual address at which the first byte of the
+       segment resides in memory. */
+    pvaddr = phdr.p_vaddr;
+    /* This member gives the offset from the beginning of the file at which
+       the first byte of the segment resides. */
+    poffset = phdr.p_offset;
+    /* This member gives the number of bytes in the file image of the
+       segment; it may be zero. */
+    psize = phdr.p_filesz;
+
+    if (pvaddr != 0) {
+      CoreUtils::insert_table(pvaddr, poffset, psize);
+    }
+
+    if (is_debug_tag_set("phdr")) {
+      printf("\n******* PHDR %d *******\n", i);
+      printf("p_type = %d  ", phdr.p_type);
+      printf("p_offset = %d  ", phdr.p_offset);
+      printf("p_vaddr = %#x  ", pvaddr);
+
+      printf("p_paddr = %#x\n", phdr.p_paddr);
+      printf("p_filesz = %d  ", phdr.p_filesz);
+      printf("p_memsz = %d  ", phdr.p_memsz);
+      printf("p_flags = %d  ", phdr.p_flags);
+      printf("p_align = %d\n", phdr.p_align);
+    }
+
+    if (phdr.p_type == PT_NOTE) {
+      printf("NOTE\n");
+      if (fseek(fp, phdr.p_offset, SEEK_SET) != -1) {
+        Elf32_Nhdr *nhdr, *thdr;
+        if ((nhdr = (Elf32_Nhdr *) malloc(sizeof(Elf32_Nhdr) * phdr.p_filesz))) {
+          if (fread(nhdr, phdr.p_filesz, 1, fp) == 1) {
+            int size = phdr.p_filesz;
+            int sum = 0;
+            thdr = nhdr;
+            while (size) {
+              int len;
+
+              len = sizeof *thdr + ((thdr->n_namesz + 3) & ~3) + ((thdr->n_descsz + 3) & ~3);
+              // making sure the offset is byte aligned
+              char *offset = (char *) (thdr + 1) + ((thdr->n_namesz + 3) & ~3);
+
+              if (len<0 || len> size) {
+                _exit(1);
+              }
+              char *name;
+              name = (char *) (thdr + 1);
+              printf("size=%d, len=%d\n", size, len);
+
+              prstatus_t pstat;
+              prstatus_t *ps;
+              prpsinfo_t infostat, *ist;
+              elf_gregset_t rinfo;
+              unsigned int j;
+
+              switch (thdr->n_type) {
+
+              case NT_PRSTATUS:
+                ps = (prstatus_t *) offset;
+                memcpy(&pstat, ps, sizeof(prstatus_t));
+                printf("\n*** printing registers****\n");
+                for (j = 0; j < ELF_NGREG; j++) {
+                  rinfo[j] = pstat.pr_reg[j];
+                  // This is probably not 64-bit correct. /leif
+                  printf("%#x ", (unsigned int) rinfo[j]);
+                }
+                printf("\n");
+
+                //if (is_debug_tag_set("note")) {
+                printf("\n**** NT_PRSTATUS ****\n");
+
+                printf("Process id = %d\n", pstat.pr_pid);
+                printf("Parent Process id = %d\n", pstat.pr_ppid);
+
+                printf("Signal that caused this core dump is signal  = %d\n", pstat.pr_cursig);
+                // convert it using strsignal
+                //char *msg=strsignal(pstat.pr_cursig);
+
+                // Probably not 64-bit correct. /leif
+                printf("stack pointer = %#x\n", (unsigned int) pstat.pr_reg[SP_REGNUM]);        //UESP
+                framep = pstat.pr_reg[FP_REGNUM];
+                pc = pstat.pr_reg[PC_REGNUM];
+                // Probably not 64-bit correct. /leif
+                printf("frame pointer = %#x\n", (unsigned int) pstat.pr_reg[FP_REGNUM]);        //EBP
+                printf("program counter if no save = %#x\n", (unsigned int) pstat.pr_reg[PC_REGNUM]);
+                //}
+                break;
+
+              case NT_PRPSINFO:
+                ist = (prpsinfo_t *) offset;
+                memcpy(&infostat, ist, sizeof(prpsinfo_t));
+
+                if (is_debug_tag_set("note")) {
+                  printf("\n**** NT_PRPSINFO of active process****\n");
+                  printf("process state = %c\n", infostat.pr_state);
+                  printf("Name of the executable = %s\n", infostat.pr_fname);
+                  printf("Arg List = %s\n", infostat.pr_psargs);
+
+                  printf("process id = %d\n", infostat.pr_pid);
+                }
+                break;
+              }
+              thdr = (Elf32_Nhdr *) ((char *) thdr + len);
+              sum += len;
+              size -= len;
+            }
+          }
+          free(nhdr);
+        }
+      }
+    }
+  }
+  framepointer = framep;
+  program_counter = pc;
+
+  // Write your actual tests here
+  CoreUtils::find_stuff(&CoreUtils::test_HdrHeap);
+  CoreUtils::find_stuff(&CoreUtils::test_HttpSM);
+  CoreUtils::find_stuff(&CoreUtils::test_FtpSM);
+
+#ifdef READ_CORE_WMT
+  CoreUtils::find_stuff(&CoreUtils::test_wmtServerFile);
+  CoreUtils::find_stuff(&CoreUtils::test_wmtTop);
+  CoreUtils::find_stuff(&CoreUtils::test_wmtDatapump);
+  CoreUtils::find_stuff(&CoreUtils::test_wmtClientServer);
+  CoreUtils::find_stuff(&CoreUtils::test_HttpSM);
+#endif
+
+  fclose(fp);
+}
+#endif
+
+#if defined(sparc)
+void
+process_core(char *fname)
+{
+  Elf32_Ehdr ehdr;
+  Elf32_Phdr phdr;
+  int phoff, phnum, phentsize, phsize;
+
+  /* Open the input file */
+  if (!(fp = fopen(fname, "r"))) {
+    printf("cannot open file\n");
+    _exit(1);
+  }
+
+  /* Obtain the .shstrtab data buffer */
+  if (fread(&ehdr, sizeof ehdr, 1, fp) != 1) {
+    printf("Unable to read ehdr\n");
+    _exit(1);
+  }
+  // program header offset
+  phoff = ehdr.e_phoff;
+  // number of program headers
+  phnum = ehdr.e_phnum;
+  // size of each program header
+  phentsize = ehdr.e_phentsize;
+  phsize = phnum * phentsize;
+  for (int i = 0; i < phnum; i++) {
+
+    if (fseek(fp, ehdr.e_phoff + i * ehdr.e_phentsize, SEEK_SET) == -1) {
+      fprintf(stderr, "Unable to seek to Phdr %d\n", i);
+      _exit(1);
+    }
+
+    if (fread(&phdr, sizeof phdr, 1, fp) != 1) {
+      fprintf(stderr, "Unable to read Phdr %d\n", i);
+      _exit(1);
+    }
+    int poffset, psize;
+    int pvaddr;
+    pvaddr = phdr.p_vaddr;
+    poffset = phdr.p_offset;
+    psize = phdr.p_filesz;
+
+    if (pvaddr != 0) {
+      CoreUtils::insert_table(pvaddr, poffset, psize);
+    }
+
+    if (is_debug_tag_set("phdr")) {
+      printf("\n******* PHDR %d *******\n", i);
+      printf("p_type = %d  ", phdr.p_type);
+      printf("p_offset = %d  ", phdr.p_offset);
+      printf("p_vaddr = %#x  ", pvaddr);
+
+      printf("p_paddr = %#x\n", phdr.p_paddr);
+      printf("p_filesz = %d  ", phdr.p_filesz);
+      printf("p_memsz = %d  ", phdr.p_memsz);
+      printf("p_flags = %d  ", phdr.p_flags);
+      printf("p_align = %d\n", phdr.p_align);
+    }
+
+    if (phdr.p_type == PT_NOTE) {
+
+      if (fseek(fp, phdr.p_offset, SEEK_SET) != -1) {
+        Elf32_Nhdr *nhdr, *thdr;
+        if ((nhdr = (Elf32_Nhdr *) malloc(sizeof(Elf32_Nhdr) * phdr.p_filesz))) {
+          if (fread(nhdr, phdr.p_filesz, 1, fp) == 1) {
+            int size = phdr.p_filesz;
+            int sum = 0;
+            thdr = nhdr;
+            while (size) {
+              int len;
+
+              len = sizeof *thdr + ((thdr->n_namesz + 3) & ~3) + ((thdr->n_descsz + 3) & ~3);
+              // making sure the offset is byte aligned
+              char *offset = (char *) (thdr + 1) + ((thdr->n_namesz + 3) & ~3);
+
+              if (len<0 || len> size) {
+                _exit(1);
+              }
+              char *name;
+              name = (char *) (thdr + 1);
+
+              pstatus_t pstat;
+              pstatus_t *ps;
+              lwpstatus_t lwpstat, *lp;
+              lwpstatus_t lwpst;
+              prgreg_t rinfo[NPRGREG];
+              int j;
+              switch (thdr->n_type) {
+
+              case NT_PSTATUS:
+                ps = (pstatus_t *) offset;
+                memcpy(&pstat, ps, sizeof(pstatus_t));
+                lwpst = pstat.pr_lwp;
+                // get the active lwp id
+                lwpid = lwpst.pr_lwpid;
+
+                if (is_debug_tag_set("note")) {
+                  printf("\n**** NT_PSTATUS ****\n");
+                  printf("number of lwps in process = %d\n", pstat.pr_nlwp);
+                  printf("base of stack = %#x\n", pstat.pr_stkbase);
+                  printf("size of process stack = %d\n", pstat.pr_stksize);
+                  printf("lwp id = %d\n", lwpid);
+                }
+                break;
+
+              case NT_LWPSTATUS:
+                lp = (lwpstatus_t *) offset;
+                memcpy(&lwpstat, lp, sizeof(lwpstatus_t));
+
+                for (j = 0; j < NPRGREG; j++) {
+                  rinfo[j] = lwpstat.pr_reg[j];
+                }
+
+                arrayLwp(lwpstat.pr_lwpid - 1);
+                arrayLwp[lwpstat.pr_lwpid - 1].lwpId = lwpstat.pr_lwpid;
+                arrayLwp[lwpstat.pr_lwpid - 1].framep = lwpstat.pr_reg[30];
+
+                if (lwpstat.pr_lwpid == lwpid) {
+
+                  if (is_debug_tag_set("note")) {
+                    printf("\n**** NT_LWPSTATUS of active lwp****\n");
+                    printf("lwp status = 0x%x\n", lwpstat.pr_flags);
+                    printf("lwp id = %d\n", lwpstat.pr_lwpid);
+                    printf("pr_why = %#x\n", lwpstat.pr_why);
+                    printf("pr_what = %#x\n", lwpstat.pr_why);
+
+                    printf("stack pointer = %#x\n", lwpstat.pr_reg[14]);
+                    printf("frame pointer = %#x\n", lwpstat.pr_reg[30]);
+                    printf("program counter if no save = %#x\n", lwpstat.pr_reg[15]);
+                  }
+                }
+                break;
+
+              default:
+                break;
+              }
+              thdr = (Elf32_Nhdr *) ((char *) thdr + len);
+              sum += len;
+              size -= len;
+            }
+          }
+          free(nhdr);
+        }
+      }
+    }
+  }
+
+  if (is_debug_tag_set("core")) {
+    printf("    \tv. address\t\toffset\t\tend of region\t\tnum bytes\n");
+    printf("    \t----------\t\t------\t\t-------------\t\t---------\n");
+
+    for (unsigned int l = 0; l < arrayMem.length(); l++) {
+      printf("%4d)\t", l + 1);
+      printf("%10#x\t\t", arrayMem[l].vaddr);
+      printf("%8d\t%8d\t\t%8d\n", arrayMem[l].offset, arrayMem[l].offset + arrayMem[l].fsize, arrayMem[l].fsize);
+    }
+  }
+
+  if (is_debug_tag_set("arrayLwp")) {
+    for (unsigned int l = 0; l < arrayLwp.length(); l++) {
+      printf("%4d)\t", l + 1);
+      printf("%10d\t\t", arrayLwp[l].lwpId);
+      printf("%8d\n", arrayLwp[l].framep);
+    }
+  }
+
+  CoreUtils::find_stuff(&CoreUtils::test_HdrHeap);
+  CoreUtils::find_stuff(&CoreUtils::test_HttpSM);
+  CoreUtils::find_stuff(&CoreUtils::test_FtpSM);
+
+#ifdef READ_CORE_WMT
+  CoreUtils::find_stuff(&CoreUtils::test_wmtServerFile);
+  CoreUtils::find_stuff(&CoreUtils::test_wmtTop);
+  CoreUtils::find_stuff(&CoreUtils::test_wmtDatapump);
+  CoreUtils::find_stuff(&CoreUtils::test_wmtClientServer);
+  CoreUtils::find_stuff(&CoreUtils::test_HttpSM);
+#endif
+
+  fclose(fp);
+}
+#endif /* sparc */
+
+#if (HOST_OS != linux) && !defined(sparc)
+void
+process_core(char *fname)
+{
+  // do not make it fatal!!!!
+  Warning("Only supported on Sparc Solaris and Linux");
+}
+#endif

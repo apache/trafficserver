@@ -1,0 +1,35 @@
+.TH "show:ldap"
+.SH NAME
+show:ldap \- This command displays basic LDAP configuration information.
+.SH SYNOPSIS
+show:ldap [rules]
+.SH DESCRIPTION
+Execute the show:ldap command to view basic LDAP configuration information, which includes 
+whether LDAP is enabled, as well as cache size and time to live values.
+.SH OPTIONS
+The following options are supported for the show:ldap command:
+.SS rules
+The rules option displays LDAP configuration file detail.
+.SH EXAMPLES
+.SS "Example 1. Displaying basic LDAP configuration information"
+.PP
+.nf
+traffic_shell> show:ldap
+LDAP ---------------------- off
+Cache Size ---------------- 5000
+TTL Value ----------------- 3000 ms
+Purge Cache On Auth Fail -- off
+Server Name --------------- NULL
+Server Port --------------- 0
+Base DN ------------------- NULL
+traffic_shell>
+.SS "Example 2. Displaying filter.config file rules"
+.PP
+.nf
+traffic_shell> show:ldap rules
+filter.config rules
+-----------------------
+(Displays rules from the filter.config file used by the LDAP feature.)
+traffic_shell>
+.SH "SEE ALSO"
+config:ldap

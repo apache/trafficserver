@@ -1,0 +1,34 @@
+  
+  Climate plugin
+  Creation date: 09/06/01
+
+  Log information regarding transactions (headers, bytes,
+  timing) in a specific log file (climate.log).
+
+  Used by the Climate Lab log analysis that needs precise
+  timing information not available in custom logs.
+
+  Based on the profiler plug-in by Franck Chastagnol
+  and the output-header plug-in.
+
+
+Configuration:
+
+  add climate.so in the plugin.config file.
+
+
+Argument: 
+
+   None except if compiled with option ROLL_LOG. In this case
+   an optional argument can be passed to indicate the number of records
+   each profiler log file should contain (default is 1,000,000).
+
+
+Synopsis:
+
+  Generate a custom log file (climate.log) which include information like:
+  - full headers for client requests and server responses
+  - header and body bytes transferred for client and server requests and responses
+  - timing information
+
+

@@ -1,0 +1,1040 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+/****************************************************************************
+
+  HttpBodyFactory.cc
+
+  
+ ****************************************************************************/
+
+#include "HttpBodyFactory.h"
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include "HttpMessageBody.h"
+#include "URL.h"
+#include <logging/Log.h>
+#include <logging/LogAccess.h>
+#include <logging/LogAccessHttp.h>
+#include "HttpCompat.h"
+#include "inktomi++.h"
+
+//////////////////////////////////////////////////////////////////////
+// The HttpBodyFactory creates HTTP response page bodies, supported //
+// configurable customization and language-targeting.               //
+//                                                                  //
+// The body factory can be reconfigured dynamically by a manager    //
+// callback, so locking is required.  The callback takes a lock,    //
+// and the user entry points take a lock.  These locks may limit    //
+// the speed of error page generation.                              //
+//////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////
+//
+// User-Callable APIs --- locks will be taken internally
+//
+////////////////////////////////////////////////////////////////////////
+
+char *
+HttpBodyFactory::fabricate_with_old_api(char *type, HttpTransact::State * context,
+                                        int max_buffer_length, int *resulting_buffer_length,
+                                        char content_language_out[256],
+                                        char content_type_out[256],
+                                        HTTPStatus status_code, char *reason_or_null, char *format, va_list ap)
+{
+  char *buffer = NULL;
+  const char *lang_ptr = NULL;
+  const char *charset_ptr = NULL;
+  char url[1024];
+  const char *set = NULL;
+  bool found_requested_template = false;
+  bool plain_flag = false;
+
+  lock();
+
+  *resulting_buffer_length = 0;
+
+  ink_strncpy(content_language_out, "en", sizeof(content_language_out));
+  ink_strncpy(content_type_out, "text/html", sizeof(content_type_out));
+
+  ///////////////////////////////////////////////////////////////////
+  // if logging turned on, buffer up the URL string for simplicity //
+  ///////////////////////////////////////////////////////////////////
+  if (enable_logging && !context->traffic_net_req) {
+    url[0] = '\0';
+    URL *u = context->hdr_info.client_request.url_get();
+
+    if (u->valid()) {           /* if url exists, copy the string into buffer */
+      size_t i;
+      char *s = u->string_get(&context->arena);
+      for (i = 0; (i < sizeof(url) - 1) && s[i]; i++)
+        url[i] = s[i];
+      url[i] = '\0';
+      if (s)
+        context->arena.str_free(s);
+    }
+  }
+  ///////////////////////////////////////////////
+  // if suppressing this response, return NULL //
+  ///////////////////////////////////////////////
+  if (is_response_suppressed(context)) {
+    if (enable_logging && !context->traffic_net_req) {
+      Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
+    }
+    unlock();
+    return (NULL);
+  }
+  //////////////////////////////////////////////////////////////////////////////////
+  // if language-targeting activated, get client Accept-Language & Accept-Charset //
+  //////////////////////////////////////////////////////////////////////////////////
+
+  StrList acpt_language_list(false);
+  StrList acpt_charset_list(false);
+
+  if (enable_customizations == 2) {
+    context->hdr_info.client_request.value_get_comma_list(MIME_FIELD_ACCEPT_LANGUAGE, MIME_LEN_ACCEPT_LANGUAGE,
+                                                          &acpt_language_list);
+    context->hdr_info.client_request.value_get_comma_list(MIME_FIELD_ACCEPT_CHARSET, MIME_LEN_ACCEPT_CHARSET,
+                                                          &acpt_charset_list);
+  }
+  ///////////////////////////////////////////
+  // check if we don't need to format body //
+  ///////////////////////////////////////////
+  if (context->return_xbuf_plain && format) {
+    int l = ink_bvsprintf(NULL, format, ap);
+    if (l < max_buffer_length) {
+      buffer = (char *) xmalloc(l + 1);
+      *resulting_buffer_length = ink_bvsprintf(buffer, format, ap);
+      plain_flag = true;
+    }
+  }
+  /////////////////////////////////////////////////////////
+  // try to fabricate the desired type of error response //
+  /////////////////////////////////////////////////////////
+  if (buffer == NULL) {
+    buffer = fabricate(&acpt_language_list, &acpt_charset_list,
+                       type, context, resulting_buffer_length, &lang_ptr, &charset_ptr, &set);
+    found_requested_template = (buffer != NULL);
+  }
+  /////////////////////////////////////////////////////////////
+  // if failed, try to fabricate the default custom response //
+  /////////////////////////////////////////////////////////////
+  if (buffer == NULL) {
+    buffer = fabricate(&acpt_language_list, &acpt_charset_list,
+                       "default", context, resulting_buffer_length, &lang_ptr, &charset_ptr, &set);
+  }
+  ///////////////////////////////////
+  // enforce the max buffer length //
+  ///////////////////////////////////
+  if (buffer && (*resulting_buffer_length > max_buffer_length)) {
+    if (enable_logging && !context->traffic_net_req) {
+      Log::error(("BODY_FACTORY: template '%s/%s' consumed %d bytes, "
+                  "exceeding %d byte limit, using internal default"),
+                 set, type, *resulting_buffer_length, max_buffer_length);
+    }
+    *resulting_buffer_length = 0;
+    buffer = (char *) xfree_null(buffer);
+  }
+  /////////////////////////////////////////////////////////////////////
+  // handle return of instantiated template or internal default, and //
+  // generate the content language and content type return values    //
+  /////////////////////////////////////////////////////////////////////
+
+  if (buffer)                   // got an instantiated template
+  {
+    if (!plain_flag) {
+      snprintf(content_language_out, sizeof(content_language_out), "%s", lang_ptr);
+      snprintf(content_type_out, sizeof(content_type_out), "text/html; charset=%s", charset_ptr);
+    }
+
+    if (enable_logging && !context->traffic_net_req) {
+      if (found_requested_template)     // got exact template
+      {
+        Log::error(("BODY_FACTORY: using custom template "
+                    "'%s/%s' for url '%s' (language '%s', charset '%s')"), set, type, url, lang_ptr, charset_ptr);
+      } else                    // got default template
+      {
+        Log::error(("BODY_FACTORY: can't find custom template "
+                    "'%s/%s', using '%s/%s' for url '%s' (language '%s', charset '%s')"),
+                   set, type, set, "default", url, lang_ptr, charset_ptr);
+      }
+    }
+  } else                        // no template, using old style body
+  {
+    buffer = HttpMessageBody::MakeErrorBodyVA(max_buffer_length, resulting_buffer_length,
+                                              context->http_config_param, status_code, reason_or_null, format, ap);
+    if (enable_logging && !context->traffic_net_req) {
+      if (enable_customizations)        // we wanted a template
+      {
+        Log::error(("BODY_FACTORY: customization enabled "
+                    "but can't find templates '%s' or '%s', using hardcoded default body for url '%s'"),
+                   type, "default", url);
+      } else                    // we wanted an old-style body
+      {
+        Log::error(("BODY_FACTORY: using hardcoded default '%s' body for url '%s'"), type, url);
+      }
+    }
+  }
+  unlock();
+
+  return (buffer);
+}
+
+void
+HttpBodyFactory::dump_template_tables(FILE * fp)
+{
+  RawHashTable *h1, *h2;
+  RawHashTable_Key k1, k2;
+  RawHashTable_Value v1, v2;
+  RawHashTable_Binding *b1, *b2;
+  RawHashTable_IteratorState i1, i2;
+  HttpBodySet *body_set;
+
+  lock();
+
+  h1 = table_of_sets;
+
+  if (h1 != NULL) {
+    ///////////////////////////////////////////
+    // loop over set->body-types hash table //
+    ///////////////////////////////////////////
+
+    for (b1 = h1->firstBinding(&i1); b1 != NULL; b1 = h1->nextBinding(&i1)) {
+      k1 = table_of_sets->getKeyFromBinding(b1);
+      v1 = table_of_sets->getValueFromBinding(b1);
+      body_set = (HttpBodySet *) v1;
+
+      if (body_set != NULL) {
+        fprintf(fp, "set %s: name '%s', lang '%s', charset '%s'\n",
+                k1, body_set->set_name, body_set->content_language, body_set->content_charset);
+
+        ///////////////////////////////////////////
+        // loop over body-types->body hash table //
+        ///////////////////////////////////////////
+
+        ink_assert(body_set->is_sane());
+        h2 = body_set->table_of_pages;
+
+        for (b2 = h2->firstBinding(&i2); b2 != NULL; b2 = h2->nextBinding(&i2)) {
+          k2 = table_of_sets->getKeyFromBinding(b2);
+          v2 = table_of_sets->getValueFromBinding(b2);
+          HttpBodyTemplate *t = (HttpBodyTemplate *) v2;
+
+          fprintf(fp, "  %-30s: %d bytes\n", k2, t->byte_count);
+        }
+      }
+    }
+  }
+
+  unlock();
+}
+
+
+////////////////////////////////////////////////////////////////////////
+//
+// Configuration Change Callback
+//
+////////////////////////////////////////////////////////////////////////
+
+static int
+config_callback(const char *name, RecDataT data_type, RecData data, void *cookie)
+{
+  HttpBodyFactory *body_factory = (HttpBodyFactory *) cookie;
+  body_factory->reconfigure();
+  return (0);
+}
+
+//#ifdef MODULARIZED
+//void HttpBodyFactory::reconfigure(const char* name, RecDataT data_type,
+//                                  RecData data, void *cookie)
+//#else
+void
+HttpBodyFactory::reconfigure()
+//#endif
+{
+  RecInt e;
+  RecString s;
+  bool all_found;
+  int rec_err;
+
+  lock();
+  sanity_check();
+
+  if (!callbacks_established) {
+    unlock();
+    return;
+  }                             // callbacks not setup right
+
+  ////////////////////////////////////////////
+  // extract relevant records.config values //
+  ////////////////////////////////////////////
+
+  Debug("body_factory", "config variables changed, reconfiguring...");
+
+  all_found = true;
+
+  // enable_customizations if records.config set
+  rec_err = RecGetRecordInt("proxy.config.body_factory.enable_customizations", &e);
+  enable_customizations = ((rec_err == REC_ERR_OKAY) ? e : 0);
+  all_found = all_found && (rec_err == REC_ERR_OKAY);
+  Debug("body_factory", "enable_customizations = %d (found = %d)", enable_customizations, e);
+
+  rec_err = RecGetRecordInt("proxy.config.body_factory.enable_logging", &e);
+  enable_logging = ((rec_err == REC_ERR_OKAY) ? (e ? true : false) : false);
+  all_found = all_found && (rec_err == REC_ERR_OKAY);
+  Debug("body_factory", "enable_logging = %d (found = %d)", enable_logging, e);
+
+  rec_err = RecGetRecordInt("proxy.config.body_factory.response_suppression_mode", &e);
+  response_suppression_mode = ((rec_err == REC_ERR_OKAY) ? e : 0);
+  all_found = all_found && (rec_err == REC_ERR_OKAY);
+  Debug("body_factory", "response_suppression_mode = %d (found = %d)", response_suppression_mode, e);
+
+  rec_err = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
+  all_found = all_found && (rec_err == REC_ERR_OKAY);
+  if (rec_err == REC_ERR_OKAY) {
+    if (directory_of_template_sets) {
+      xfree(directory_of_template_sets);
+    }
+    directory_of_template_sets = s;
+  }
+
+  Debug("body_factory", "directory_of_template_sets = '%s' (found = %d)", directory_of_template_sets, e);
+
+  if (!all_found) {
+    Warning("config changed, but can't fetch all proxy.config.body_factory values");
+  }
+  /////////////////////////////////////////////
+  // clear out previous template hash tables //
+  /////////////////////////////////////////////
+
+  nuke_template_tables();
+
+  /////////////////////////////////////////////////////////////
+  // at this point, the body hash table is gone, so we start //
+  // building a new one, by scanning the template directory. //
+  /////////////////////////////////////////////////////////////
+
+  if (directory_of_template_sets)
+    table_of_sets = load_sets_from_directory(directory_of_template_sets);
+
+  unlock();
+}
+
+////////////////////////////////////////////////////////////////////////
+//
+// class HttpBodyFactory
+//
+////////////////////////////////////////////////////////////////////////
+
+HttpBodyFactory::HttpBodyFactory()
+{
+  int i;
+  bool status, no_registrations_failed;
+
+  ////////////////////////////////////
+  // initialize first-time defaults //
+  ////////////////////////////////////
+
+  magic = HTTP_BODY_FACTORY_MAGIC;
+  ink_mutex_init(&mutex, "HttpBodyFactory::lock");
+
+  table_of_sets = NULL;
+  directory_of_template_sets = NULL;
+  enable_customizations = 0;
+  enable_logging = true;
+  callbacks_established = false;
+
+  //////////////////////////////////////////////////////
+  // set up management configuration-change callbacks //
+  //////////////////////////////////////////////////////
+
+  static char *config_record_names[] = {
+    "proxy.config.body_factory.enable_customizations",
+    "proxy.config.body_factory.enable_logging",
+    "proxy.config.body_factory.template_sets_dir",
+    "proxy.config.body_factory.response_suppression_mode",
+    NULL
+  };
+
+  no_registrations_failed = true;
+  for (i = 0; config_record_names[i] != NULL; i++) {
+    status = HTTP_RegisterConfigUpdateFunc(config_record_names[i], config_callback, (void *) this);
+    if (status != REC_ERR_OKAY) {
+      Warning("couldn't register variable '%s', is records.config up to date?", config_record_names[i]);
+    }
+    no_registrations_failed = no_registrations_failed && (status == REC_ERR_OKAY);
+  }
+
+  if (no_registrations_failed == false) {
+    Warning("couldn't setup all body_factory callbacks, disabling body_factory");
+  } else {
+    Debug("body_factory", "all callbacks established successfully");
+    callbacks_established = true;
+    reconfigure();
+  }
+}
+
+
+HttpBodyFactory::~HttpBodyFactory()
+{
+  // FIX: need to implement destructor
+  delete table_of_sets;
+}
+
+
+// LOCKING: must be called with lock taken
+char *
+HttpBodyFactory::fabricate(StrList * acpt_language_list,
+                           StrList * acpt_charset_list,
+                           char *type, HttpTransact::State * context,
+                           int *buffer_length_return,
+                           const char **content_language_return,
+                           const char **content_charset_return, const char **set_return)
+{
+  char *buffer;
+  const char *set;
+  HttpBodyTemplate *t;
+  HttpBodySet *body_set;
+
+  if (set_return)
+    *set_return = "???";
+  *content_language_return = NULL;
+  *content_charset_return = NULL;
+
+  Debug("body_factory", "calling fabricate(type '%s')", type);
+  *buffer_length_return = 0;
+
+  // if error body suppressed, return NULL
+  if (is_response_suppressed(context)) {
+    Debug("body_factory", "  error suppression enabled, returning NULL template");
+    return (NULL);
+  }
+  // if custom error pages are disabled, return NULL
+  if (!enable_customizations) {
+    Debug("body_factory", "  customization disabled, returning NULL template");
+    return (NULL);
+  }
+  // what set should we use (language target if enable_customizations == 2)
+  if (enable_customizations == 2)
+    set = determine_set_by_language(acpt_language_list, acpt_charset_list);
+  else
+    set = "default";
+
+  if (set_return)
+    *set_return = set;
+
+  // see if we have a custom error page template
+  t = find_template(set, type, &body_set);
+  if (t == NULL) {
+    Debug("body_factory", "  can't find template, returning NULL template");
+    return (NULL);
+  }
+
+  *content_language_return = body_set->content_language;
+  *content_charset_return = body_set->content_charset;
+
+  // build the custom error page
+  buffer = t->build_instantiated_buffer(context, buffer_length_return);
+  return (buffer);
+}
+
+
+// LOCKING: must be called with lock taken
+const char *
+HttpBodyFactory::determine_set_by_language(StrList * acpt_language_list, StrList * acpt_charset_list)
+{
+  float Q_best;
+  const char *set_best;
+  int La_best, Lc_best, I_best;
+
+  set_best = HttpCompat::determine_set_by_language(table_of_sets, acpt_language_list, acpt_charset_list,
+                                                   &Q_best, &La_best, &Lc_best, &I_best);
+
+  return (set_best);
+}
+
+// LOCKING: must be called with lock taken
+HttpBodyTemplate *
+HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet ** body_set_return)
+{
+  RawHashTable_Value v;
+
+  Debug("body_factory", "calling find_template(%s,%s)", set, type);
+
+  *body_set_return = NULL;
+
+  if (table_of_sets == NULL)
+    return (NULL);
+  if (table_of_sets->getValue((RawHashTable_Key) set, &v)) {
+    HttpBodySet *body_set = (HttpBodySet *) v;
+    RawHashTable *table_of_types = body_set->table_of_pages;
+
+    if (table_of_types == NULL)
+      return (NULL);
+
+    if (table_of_types->getValue((RawHashTable_Key) type, &v)) {
+      HttpBodyTemplate *t = (HttpBodyTemplate *) v;
+      if ((t == NULL) || (!t->is_sane()))
+        return (NULL);
+      *body_set_return = body_set;
+
+      Debug("body_factory", "find_template(%s,%s) -> (file %s, length %d, lang '%s', charset '%s')",
+            set, type, t->template_pathname, t->byte_count, body_set->content_language, body_set->content_charset);
+
+      return (t);
+    }
+  }
+  Debug("body_factory", "find_template(%s,%s) -> NULL", set, type);
+
+  return (NULL);
+}
+
+
+// LOCKING: must be called with lock taken
+bool
+HttpBodyFactory::is_response_suppressed(HttpTransact::State * context)
+{
+  // Since a tunnel may not always be an SSL connection,
+  // we may want to return an error message.
+  // Even if it's an SSL connection, it won't cause any harm
+  // as the connection is going to be closed anyway.
+  /*
+     if (context->client_info.port_attribute == SERVER_PORT_BLIND_TUNNEL) {
+     // Blind SSL tunnels always supress error messages
+     return true;
+     } else
+   */
+  if (response_suppression_mode == 0) {
+    return (false);
+  } else if (response_suppression_mode == 1) {
+    return (true);
+  } else if (response_suppression_mode == 2) {
+    if (context->req_flavor == HttpTransact::REQ_FLAVOR_INTERCEPTED)
+      return (true);
+    else
+      return (false);
+  } else {
+    return (false);
+  }
+}
+
+
+// LOCKING: must be called with lock taken
+void
+HttpBodyFactory::nuke_template_tables()
+{
+  RawHashTable *h1, *h2;
+  RawHashTable_Value v1, v2;
+  RawHashTable_Binding *b1, *b2;
+  RawHashTable_IteratorState i1, i2;
+  HttpBodySet *body_set;
+  HttpBodyTemplate *hbt;
+
+  h1 = table_of_sets;
+
+  if (h1) {
+    Debug("body_factory", "deleting pre-existing template tables");
+  } else {
+    Debug("body_factory", "no pre-existing template tables");
+  }
+  if (h1 != NULL) {
+    ///////////////////////////////////////////
+    // loop over set->body-types hash table //
+    ///////////////////////////////////////////
+
+    for (b1 = h1->firstBinding(&i1); b1 != NULL; b1 = h1->nextBinding(&i1)) {
+      v1 = h1->getValueFromBinding(b1);
+
+      body_set = (HttpBodySet *) v1;
+      ink_assert(body_set->is_sane());
+      h2 = body_set->table_of_pages;
+
+      if (h2 != NULL) {
+        body_set->table_of_pages = NULL;
+
+        ///////////////////////////////////////////
+        // loop over body-types->body hash table //
+        ///////////////////////////////////////////
+
+        for (b2 = h2->firstBinding(&i2); b2 != NULL; b2 = h2->nextBinding(&i2)) {
+          v2 = h2->getValueFromBinding(b2);
+          if (v2) {
+            // need a cast here
+            hbt = (HttpBodyTemplate *) v2;
+            delete hbt;
+          }
+        }
+
+        delete h2;
+      }
+
+      delete body_set;
+    }
+    delete h1;
+  }
+
+  table_of_sets = NULL;
+}
+
+
+// LOCKING: must be called with lock taken
+RawHashTable *
+HttpBodyFactory::load_sets_from_directory(char *set_dir)
+{
+  DIR *dir;
+  struct dirent *entry_buffer, *result;
+  RawHashTable *new_table_of_sets;
+
+  if (set_dir == NULL)
+    return (NULL);
+
+  Debug("body_factory", "load_sets_from_directory(%s)", set_dir);
+
+  //////////////////////////////////////////////////
+  // try to open the requested template directory //
+  //////////////////////////////////////////////////
+
+  dir = ink_opendir(set_dir);
+  if (dir == NULL) {
+    Warning("can't open response template directory '%s' (%s)",
+            set_dir, (strerror(errno) ? strerror(errno) : "unknown reason"));
+    Warning("no response templates --- using default error pages");
+    return (NULL);
+  }
+
+  new_table_of_sets = NEW(new RawHashTable(RawHashTable_KeyType_String));
+  entry_buffer = (struct dirent *)
+    xmalloc(sizeof(struct dirent) + MAXPATHLEN + 1);
+
+  //////////////////////////////////////////
+  // loop over each language subdirectory //
+  //////////////////////////////////////////
+
+  while ((ink_readdir_r(dir, entry_buffer, &result) == 0) && (result != NULL)) {
+    int status;
+    struct stat stat_buf;
+    char subdir[MAXPATHLEN + 1];
+
+    //////////////////////////////////////////////////////
+    // ensure a subdirectory, and not starting with '.' //
+    //////////////////////////////////////////////////////
+
+    if ((entry_buffer->d_name)[0] == '.')
+      continue;
+    ink_snprintf(subdir, sizeof(subdir), "%s" DIR_SEP "%s", set_dir, entry_buffer->d_name);
+    status = stat(subdir, &stat_buf);
+    if (status != 0)
+      continue;                 // can't stat
+    if (!S_ISDIR(stat_buf.st_mode))
+      continue;                 // not a dir
+
+    ///////////////////////////////////////////////////////////
+    // at this point, 'subdir' might be a valid template dir //
+    ///////////////////////////////////////////////////////////
+
+    HttpBodySet *body_set = load_body_set_from_directory(entry_buffer->d_name, subdir);
+    if (body_set != NULL) {
+      Debug("body_factory", "  %s -> 0x%0X", entry_buffer->d_name, body_set);
+      new_table_of_sets->setValue((RawHashTable_Key) (entry_buffer->d_name), (RawHashTable_Value) body_set);
+    }
+  }
+
+  xfree(entry_buffer);
+  ink_closedir(dir);
+
+  return (new_table_of_sets);
+}
+
+
+// LOCKING: must be called with lock taken
+HttpBodySet *
+HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
+{
+  DIR *dir;
+  int status;
+  struct stat stat_buf;
+  char path[MAXPATHLEN + 1];
+  struct dirent *entry_buffer, *result;
+
+  ////////////////////////////////////////////////
+  // ensure we can open tmpl_dir as a directory //
+  ////////////////////////////////////////////////
+
+  Debug("body_factory", "  load_body_set_from_directory(%s)", tmpl_dir);
+  dir = ink_opendir(tmpl_dir);
+  if (dir == NULL)
+    return (NULL);
+
+  /////////////////////////////////////////////
+  // ensure a .body_factory_info file exists //
+  /////////////////////////////////////////////
+
+  ink_snprintf(path, sizeof(path), "%s" DIR_SEP ".body_factory_info", tmpl_dir);
+  status = stat(path, &stat_buf);
+  if ((status < 0) || !S_ISREG(stat_buf.st_mode)) {
+    ink_closedir(dir);
+    return (NULL);
+  }
+  Debug("body_factory", "    found '%s'", path);
+
+  /////////////////////////////////////////////////////////////////
+  // create body set, and loop over template files, loading them //
+  /////////////////////////////////////////////////////////////////
+
+  HttpBodySet *body_set = NEW(new HttpBodySet);
+  body_set->init(set_name, tmpl_dir);
+
+  Debug("body_factory", "  body_set = 0x%0X (set_name '%s', lang '%s', charset '%s')",
+        body_set, body_set->set_name, body_set->content_language, body_set->content_charset);
+  entry_buffer = (struct dirent *)
+    xmalloc(sizeof(struct dirent) + MAXPATHLEN + 1);
+
+  while ((ink_readdir_r(dir, entry_buffer, &result) == 0) && (result != NULL)) {
+    HttpBodyTemplate *tmpl;
+
+    ///////////////////////////////////////////////////////////////
+    // all template files have name of the form <type>#<subtype> //
+    ///////////////////////////////////////////////////////////////
+
+    if (strchr(entry_buffer->d_name, '#') == NULL)
+      continue;
+    ink_snprintf(path, sizeof(path), "%s/%s", tmpl_dir, entry_buffer->d_name);
+    status = stat(path, &stat_buf);
+    if (status != 0)
+      continue;                 // can't stat
+    if (!S_ISREG(stat_buf.st_mode))
+      continue;                 // not a file
+
+    ////////////////////////////////
+    // read in this template file //
+    ////////////////////////////////
+
+    tmpl = NEW(new HttpBodyTemplate());
+    if (!tmpl->load_from_file(tmpl_dir, entry_buffer->d_name)) {
+      delete tmpl;
+    } else {
+      Debug("body_factory", "      %s -> 0x%0X", entry_buffer->d_name, tmpl);
+      body_set->set_template_by_name(entry_buffer->d_name, tmpl);
+    }
+  }
+  xfree(entry_buffer);
+  ink_closedir(dir);
+  return (body_set);
+}
+
+
+////////////////////////////////////////////////////////////////////////
+//
+// class HttpBodySet
+//
+////////////////////////////////////////////////////////////////////////
+
+HttpBodySet::HttpBodySet()
+{
+  magic = HTTP_BODY_SET_MAGIC;
+
+  set_name = NULL;
+  content_language = NULL;
+  content_charset = NULL;
+
+  table_of_pages = NULL;
+}
+
+
+HttpBodySet::~HttpBodySet()
+{
+  if (set_name)
+    xfree(set_name);
+  if (content_language)
+    xfree(content_language);
+  if (content_charset)
+    xfree(content_charset);
+  if (table_of_pages)
+    delete table_of_pages;
+}
+
+
+int
+HttpBodySet::init(char *set, char *dir)
+{
+  int fd, lineno, lines_added = 0;
+  char info_path[MAXPATHLEN];
+
+  char buffer[1024], name[1025], value[1024];
+
+  ink_snprintf(info_path, sizeof(info_path), "%s" DIR_SEP ".body_factory_info", dir);
+  fd = ink_open(info_path, O_RDONLY | _O_ATTRIB_NORMAL);
+  if (fd < 0)
+    return (-1);
+
+  this->set_name = xstrdup(set);
+
+  if (this->table_of_pages)
+    delete(this->table_of_pages);
+  this->table_of_pages = NEW(new RawHashTable(RawHashTable_KeyType_String));
+
+  lineno = 0;
+
+  while (1) {
+    char *name_s, *name_e, *value_s, *value_e, *hash;
+
+    ++lineno;
+    int bytes = ink_file_fd_readline(fd, sizeof(buffer), buffer);
+    if (bytes <= 0)
+      break;
+
+    ///////////////////////////////////////////////
+    // chop anything on and after first '#' sign //
+    ///////////////////////////////////////////////
+
+    hash = index(buffer, '#');
+    if (hash)
+      *hash = '\0';
+
+    ////////////////////////////////
+    // find start and end of name //
+    ////////////////////////////////
+
+    name_s = buffer;
+    while (*name_s && ParseRules::is_wslfcr(*name_s))
+      ++name_s;
+
+    name_e = name_s;
+    while (*name_e && ParseRules::is_http_field_name(*name_e))
+      ++name_e;
+
+    if (name_s == name_e)
+      continue;                 // blank line
+
+    /////////////////////////////////
+    // find start and end of value //
+    /////////////////////////////////
+
+    value_s = name_e;
+    while (*value_s && (ParseRules::is_wslfcr(*value_s)))
+      ++value_s;
+    if (*value_s != ':') {
+      Warning("ignoring invalid body factory info line #%d in %s", info_path);
+      continue;
+    }
+    ++value_s;                  // skip the colon
+    while (*value_s && (ParseRules::is_wslfcr(*value_s)))
+      ++value_s;
+    value_e = buffer + strlen(buffer) - 1;
+    while ((value_e > value_s) && ParseRules::is_wslfcr(*(value_e - 1)))
+      --value_e;
+
+    /////////////////////////////////
+    // insert line into hash table //
+    /////////////////////////////////
+
+    memcpy(name, name_s, name_e - name_s);
+    name[name_e - name_s] = '\0';
+
+    memcpy(value, value_s, value_e - value_s);
+    value[value_e - value_s] = '\0';
+
+    //////////////////////////////////////////////////
+    // so far, we only support 2 pieces of metadata //
+    //////////////////////////////////////////////////
+
+    if (strcasecmp(name, "Content-Language") == 0) {
+      if (this->content_language)
+        xfree(this->content_language);
+      this->content_language = xstrdup(value);
+    } else if (strcasecmp(name, "Content-Charset") == 0) {
+      if (this->content_charset)
+        xfree(this->content_charset);
+      this->content_charset = xstrdup(value);
+    }
+  }
+
+  ////////////////////////////////////////////////////
+  // fill in default language & charset, if not set //
+  ////////////////////////////////////////////////////
+
+  if (!this->content_language) {
+    if (strcmp(set, "default") == 0)
+      this->content_language = xstrdup("en");
+    else
+      this->content_language = xstrdup(set);
+  }
+  if (!this->content_charset)
+    this->content_charset = xstrdup("iso-8859-1");
+
+  ink_close(fd);
+  return (lines_added);
+}
+
+
+HttpBodyTemplate *
+HttpBodySet::get_template_by_name(const char *name)
+{
+  RawHashTable_Value v;
+
+  Debug("body_factory", "    calling get_template_by_name(%s)", name);
+
+  if (table_of_pages == NULL)
+    return (NULL);
+
+  if (table_of_pages->getValue((RawHashTable_Key) name, &v)) {
+    HttpBodyTemplate *t = (HttpBodyTemplate *) v;
+    if ((t == NULL) || (!t->is_sane()))
+      return (NULL);
+    Debug("body_factory", "    get_template_by_name(%s) -> (file %s, length %d)",
+          name, t->template_pathname, t->byte_count);
+    return (t);
+  }
+  Debug("body_factory", "    get_template_by_name(%s) -> NULL", name);
+  return (NULL);
+}
+
+
+void
+HttpBodySet::set_template_by_name(const char *name, HttpBodyTemplate * t)
+{
+  table_of_pages->setValue((RawHashTable_Key) name, (RawHashTable_Value) t);
+}
+
+////////////////////////////////////////////////////////////////////////
+//
+// class HttpBodyTemplate
+//
+////////////////////////////////////////////////////////////////////////
+
+HttpBodyTemplate::HttpBodyTemplate()
+{
+  magic = HTTP_BODY_TEMPLATE_MAGIC;
+  byte_count = 0;
+  template_buffer = NULL;
+  template_pathname = NULL;
+}
+
+
+HttpBodyTemplate::~HttpBodyTemplate()
+{
+  reset();
+}
+
+
+void
+HttpBodyTemplate::reset()
+{
+  if (template_buffer != NULL)
+    xfree(template_buffer);
+  template_buffer = NULL;
+  byte_count = 0;
+  if (template_pathname != NULL)
+    xfree(template_pathname);
+}
+
+
+int
+HttpBodyTemplate::load_from_file(char *dir, char *file)
+{
+  int fd, status;
+  ssize_t bytes_read;
+  struct stat stat_buf;
+  char path[MAXPATHLEN + 1];
+  char *new_template_buffer;
+  unsigned int new_byte_count;
+
+  ////////////////////////////////////
+  // ensure this is actually a file //
+  ////////////////////////////////////
+
+  ink_snprintf(path, sizeof(path), "%s/%s", dir, file);
+  // coverity[fs_check_call]
+  status = stat(path, &stat_buf);
+  if (status != 0)
+    return (0);
+  if (!S_ISREG(stat_buf.st_mode))
+    return (0);
+
+  ///////////////////
+  // open the file //
+  ///////////////////
+
+  // coverity[toctou]
+  fd = ink_open(path, O_RDONLY | _O_ATTRIB_NORMAL);
+  if (fd < 0)
+    return (0);
+
+  ////////////////////////////////////////
+  // read in the template file contents //
+  ////////////////////////////////////////
+
+  new_byte_count = stat_buf.st_size;
+  new_template_buffer = (char *) xmalloc(new_byte_count + 1);
+  bytes_read = ink_read(fd, new_template_buffer, new_byte_count);
+  new_template_buffer[new_byte_count] = '\0';
+  ink_close(fd);
+
+  ///////////////////////////
+  // check for read errors //
+  ///////////////////////////
+
+  if (bytes_read != (int) new_byte_count) {
+    Warning("reading template file '%s', got %d bytes instead of %d (%s)",
+            path, bytes_read, new_byte_count, (strerror(errno) ? strerror(errno) : "unknown error"));
+    xfree(new_template_buffer);
+    return (0);
+  }
+
+  Debug("body_factory", "    read %d bytes from '%s'", new_byte_count, path);
+
+  /////////////////////////////////
+  // actually commit the changes //
+  /////////////////////////////////
+
+  reset();
+  template_buffer = new_template_buffer;
+  byte_count = new_byte_count;
+  size_t pathlen = strlen(path) + 1;
+  template_pathname = (char *) xmalloc(pathlen);
+  ink_strncpy(template_pathname, path, pathlen);
+
+  return (1);
+}
+
+char *
+HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int *buflen_return)
+{
+  char *buffer = NULL;
+#ifndef INK_NO_LOG
+  Debug("body_factory_instantiation", "    before instantiation: [%s]", template_buffer);
+
+  LogAccessHttp la(context->state_machine);
+  int ret = Log::access(&la);
+  NOWARN_UNUSED(ret);
+  buffer = resolve_logfield_string((LogAccess *) & la, template_buffer);
+
+  *buflen_return = ((buffer == NULL) ? 0 : strlen(buffer));
+  Debug("body_factory_instantiation", "    after instantiation: [%s]", buffer);
+
+  Debug("body_factory", "  returning %d byte instantiated buffer", *buflen_return);
+#endif
+  return (buffer);
+}

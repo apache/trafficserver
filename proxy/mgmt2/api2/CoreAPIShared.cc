@@ -1,0 +1,535 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+/*****************************************************************************
+ * Filename: CoreAPIShared.cc
+ * Purpose: This file contains functions that are shared by local and remote 
+ *          API; in particular it has helper functions used by INKMgmtAPI.cc
+ * Created: 01/20/00
+ * Created by: Lan Tran
+ *
+ * 
+ ***************************************************************************/
+
+#include "inktomi++.h"
+
+#include "CoreAPIShared.h"
+#include "MgmtSocket.h"
+
+// Forward declarations, used to be in the CoreAPIShared.h include file but
+// that doesn't make any sense since these are both statically declared. /leif
+#ifndef _WIN32
+static int poll_write(int fd, int timeout);
+static int poll_read(int fd, int timeout);
+#endif
+
+/* parseHTTPResponse
+ * - parse the response buffer into header and body and calculate
+ *   the correct size of the header and body.
+ * INPUT:  buffer   -- response buffer to be parsed
+ *         header   -- pointer to the head of the header
+ *         hdr_size -- size of the header
+ *         body     -- pointer to the head of the body
+ *         bdy_size -- size of the body
+ * OUTPUT: INKError -- error status
+ */
+INKError
+parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size)
+{
+  INKError err = INK_ERR_OKAY;
+  char *buf;
+
+  // locate HTTP divider
+  if (!(buf = strstr(buffer, HTTP_DIVIDER))) {
+    err = INK_ERR_FAIL;
+    goto END;
+  }
+  // calculate header info
+  if (header)
+    *header = buffer;
+  if (hdr_size)
+    *hdr_size = buf - buffer;
+
+  // calculate body info
+  buf += strlen(HTTP_DIVIDER);
+  if (body)
+    *body = buf;
+  if (bdy_size)
+    *bdy_size = strlen(buf);
+
+END:
+  return err;
+}
+
+/* readHTTPResponse
+ * - read from an openned socket to memory-allocated buffer and close the
+ *   socket regardless success or failure.
+ * INPUT:  sock -- the socket to read the response from
+ *         buffer -- the buffer to be filled with the HTTP response
+ *         bufsize -- the size allocated for the buffer
+ * OUTPUT: bool -- true if everything went well. false otherwise
+ */
+INKError
+readHTTPResponse(int sock, char *buffer, int bufsize, inku64 timeout)
+{
+#ifdef _WIN32
+  TimedIOStatus ret;
+  unsigned long bytesRead = 0L;
+
+  ret = TimedRead(sock, buffer, bufsize, &bytesRead, timeout);
+
+  if (ret != ERR_NONE) {
+    //      printf("(test) TimedRead failed: %d\n", ret);
+    goto error;
+  } else {
+    ink_close_socket(sock);
+    return INK_ERR_OKAY;
+  }
+#else
+  int err, idx;
+  idx = 0;
+  for (;;) {
+    //      printf("%d\n", idx);
+    if (idx >= bufsize) {
+      //      printf("(test) response is too large [%d] %d\n", idx, bufsize);
+      goto error;
+    }
+    //      printf("before poll_read\n");
+    err = poll_read(sock, timeout);
+    if (err < 0) {
+      //      printf("(test) poll read failed [%d '%s']\n", errno, strerror (errno));
+      goto error;
+    } else if (err == 0) {
+      //      printf("(test) read timeout\n");
+      goto error;
+    }
+    //      printf("before do\n");
+    do {
+      //      printf("in do\n");
+      err = read(sock, &buffer[idx], bufsize - idx);
+    } while ((err < 0) && ((errno == EINTR) || (errno == EAGAIN)));
+    //       printf("content: %s\n", buffer);
+
+    if (err < 0) {
+      //      printf("(test) read failed [%d '%s']\n", errno, strerror (errno));
+      goto error;
+    } else if (err == 0) {
+      buffer[idx] = '\0';
+      close(sock);
+      return INK_ERR_OKAY;
+    } else {
+      idx += err;
+    }
+  }
+#endif
+
+error:                         /* "Houston, we have a problem!" (Apollo 13) */
+  if (sock >= 0) {
+    ink_close_socket(sock);
+  }
+  return INK_ERR_NET_READ;
+}
+
+/* sendHTTPRequest
+ * - Compose a HTTP GET request and sent it via an openned socket.
+ * INPUT:  sock -- the socket to send the message to
+ *         req  -- the request to send
+ * OUTPUT: bool -- true if everything went well. false otherwise (and sock is
+ *                 closed)
+ */
+INKError
+sendHTTPRequest(int sock, char *req, inku64 timeout)
+{
+  char request[BUFSIZ];
+  char *requestPtr;
+  size_t length = 0;
+
+  memset(request, 0, BUFSIZ);
+  ink_snprintf(request, BUFSIZ, "GET %s HTTP/1.0\r\n\r\n", req);
+  length = strlen(request);
+
+#ifdef _WIN32
+  TimedIOStatus ret;
+  unsigned long bytesWritten = 0L;
+
+  // Write the request to the server.
+  ret = TimedWrite(sock, request, length, &bytesWritten, timeout);
+
+  if (ret != ERR_NONE || bytesWritten != length) {
+    //      print("(test) TimedWrite failed: %d\n", ret);
+    goto error;
+  }
+#else
+  int err = poll_write(sock, timeout);
+  if (err < 0) {
+    //      printf("(test) poll write failed [%d '%s']\n", errno, strerror (errno));
+    goto error;
+  } else if (err == 0) {
+    //      printf("(test) write timeout\n");
+    goto error;
+  }
+  // Write the request to the server.
+  requestPtr = request;
+  while (length > 0) {
+    do {
+      err = write(sock, request, length);
+    } while ((err < 0) && ((errno == EINTR) || (errno == EAGAIN)));
+
+    if (err < 0) {
+      //      printf("(test) write failed [%d '%s']\n", errno, strerror (errno));
+      goto error;
+    }
+    requestPtr += err;
+    length -= err;
+  }
+#endif
+
+  /* everything went well */
+  return INK_ERR_OKAY;
+
+error:                         /* "Houston, we have a problem!" (Apollo 13) */
+  if (sock >= 0) {
+    ink_close_socket(sock);
+  }
+  return INK_ERR_NET_WRITE;
+}
+
+
+
+/* Modified from TrafficCop.cc (open_socket) */
+int
+connectDirect(char *host, int port, inku64 timeout)
+{
+#ifdef _WIN32
+  TimedIOStatus ret;
+#endif
+  int sock;
+
+  // Create a socket
+  do {
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+  } while ((sock < 0) && ((errno == EINTR) || (errno == EAGAIN)));
+
+  if (sock < 0) {
+    //        printf("(test) unable to create socket [%d '%s']\n", errno, strerror(errno));
+    goto error;
+  }
+#ifdef _WIN32
+  struct hostent *pHostent;
+  pHostent = gethostbyname(host);
+  if (!pHostent) {
+    return -1;
+  }
+  ret = TimedConnect(sock, pHostent->h_addr, port, (int) timeout);
+  if (ret != ERR_NONE) {
+    //        printf("(test) TimedConnect failed: %d\n", ret);
+    goto error;
+  }
+#else
+  struct sockaddr_in name;
+  memset((void *) &name, 0, sizeof(sockaddr_in));
+
+  int err;
+
+  // Put the socket in non-blocking mode...just to be extra careful
+  // that we never block.
+  do {
+    err = fcntl(sock, F_SETFL, O_NONBLOCK);
+  } while ((err < 0) && ((errno == EINTR) || (errno == EAGAIN)));
+
+  if (err < 0) {
+    //        printf("(test) unable to put socket in non-blocking mode [%d '%s']\n", errno, strerror (errno));
+    goto error;
+  }
+  // Connect to the specified port on the machine we're running on.
+  name.sin_family = AF_INET;
+  name.sin_port = htons(port);
+  //name.sin_addr.s_addr = inet_addr ("127.0.0.1");
+  struct hostent *pHostent;
+  pHostent = gethostbyname(host);
+  if (!pHostent) {
+    goto error;
+  }
+  bcopy(pHostent->h_addr, (caddr_t) & (name.sin_addr), pHostent->h_length);
+
+  do {
+    err = connect(sock, (struct sockaddr *) &name, sizeof(name));
+  } while ((err < 0) && ((errno == EINTR) || (errno == EAGAIN)));
+
+  if ((err < 0) && (errno != EINPROGRESS)) {
+    //        printf("(test) unable to connect to server [%d '%s'] at port %d\n", errno, strerror (errno), port);
+    goto error;
+  }
+#endif
+  return sock;
+
+error:
+  if (sock >= 0) {
+    ink_close_socket(sock);
+  }
+  return -1;
+}                               /* connectDirect */
+
+/* COPIED direclty form TrafficCop.cc */
+#ifndef _WIN32
+static int
+poll_read(int fd, int timeout)
+{
+  struct pollfd info;
+  int err;
+
+  info.fd = fd;
+  info.events = POLLIN;
+  info.revents = 0;
+
+  do {
+    err = poll(&info, 1, timeout);
+  } while ((err < 0) && ((errno == EINTR) || (errno == EAGAIN)));
+
+  if ((err > 0) && (info.revents & POLLIN)) {
+    return 1;
+  }
+
+  return err;
+}
+
+static int
+poll_write(int fd, int timeout)
+{
+  struct pollfd info;
+  int err;
+
+  info.fd = fd;
+  info.events = POLLOUT;
+  info.revents = 0;
+
+  do {
+    err = poll(&info, 1, timeout);
+  } while ((err < 0) && ((errno == EINTR) || (errno == EAGAIN)));
+
+
+  if ((err > 0) && (info.revents & POLLOUT)) {
+    return 1;
+  }
+
+  return err;
+}
+
+#endif // !_WIN32
+
+/***************************************************************************
+ * socket_read_timeout
+ * 
+ * purpose: need timeout for socket after sending a request and waiting to 
+ *          read reply check to see if anything to read; 
+ *          but only wait for fixed time specified in timeout struct
+ * input: fd   - the socket to wait for
+ *        sec  - time to wait in secs
+ *        usec - time to wait in usecs
+ * output: returns 0 if time expires and the fd is not ready
+ *         return > 0 (actually 1) if fd is ready to read
+ * reason: the client could send a reply, but if TM is down or has
+ *         problems sending a reply then the client could end up hanging, 
+ *         waiting to read a replay from the local side
+ ***************************************************************************/
+int
+socket_read_timeout(int fd, int sec, int usec)
+{
+  struct timeval timeout;
+  fd_set readSet;
+  timeout.tv_sec = sec;
+  timeout.tv_usec = usec;
+
+  if (fd < 0)
+    return -1;                  //ERROR: invalid fd
+
+  FD_ZERO(&readSet);
+  FD_SET(fd, &readSet);
+
+  return (mgmt_select(fd + 1, &readSet, NULL, NULL, &timeout));
+}
+
+/***************************************************************************
+ * socket_write_timeout
+ * 
+ * purpose: checks if the specified socket is ready to be written too; only
+ *          checks for the specified time
+ * input: fd   - the socket to wait for
+ *        sec  - time to wait in secs
+ *        usec - time to wait in usecs
+ * output: return   0 if time expires and the fd is not ready to be written
+ *         return > 0 (actually 1) if fd is ready to be written
+ *         return < 0 if error
+ ***************************************************************************/
+int
+socket_write_timeout(int fd, int sec, int usec)
+{
+  struct timeval timeout;
+  fd_set writeSet;
+  timeout.tv_sec = sec;
+  timeout.tv_usec = usec;
+
+  if (fd < 0)
+    return -1;
+
+  FD_ZERO(&writeSet);
+  FD_SET(fd, &writeSet);
+
+  if (sec < 0 && usec < 0)
+    //blocking select; only returns when fd is ready to write
+    return (mgmt_select(fd + 1, NULL, &writeSet, NULL, NULL));
+  else
+    return (mgmt_select(fd + 1, NULL, &writeSet, NULL, &timeout));
+}
+
+
+
+/**********************************************************************
+ * Events
+ **********************************************************************/
+/**********************************************************************
+ * get_event_id
+ *
+ * Purpose: Given the event_name, returns the event's corresponding
+ *          event id 
+ * Note: this conversion is based on list defined in Alarms.h and 
+ *       the identical list defined in CoreAPIShared.cc 
+ *********************************************************************/
+int
+get_event_id(const char *event_name)
+{
+  if (strcmp("MGMT_ALARM_PROXY_PROCESS_DIED", event_name) == 0) {
+    return MGMT_ALARM_PROXY_PROCESS_DIED;
+  } else if (strcmp("MGMT_ALARM_PROXY_PROCESS_BORN", event_name) == 0) {
+    return MGMT_ALARM_PROXY_PROCESS_BORN;
+  } else if (strcmp("MGMT_ALARM_PROXY_PEER_BORN", event_name) == 0) {
+    return MGMT_ALARM_PROXY_PEER_BORN;
+  } else if (strcmp("MGMT_ALARM_PROXY_PEER_DIED", event_name) == 0) {
+    return MGMT_ALARM_PROXY_PEER_DIED;
+  } else if (strcmp("MGMT_ALARM_PROXY_CONFIG_ERROR", event_name) == 0) {
+    return MGMT_ALARM_PROXY_CONFIG_ERROR;
+  } else if (strcmp("MGMT_ALARM_PROXY_SYSTEM_ERROR", event_name) == 0) {
+    return MGMT_ALARM_PROXY_SYSTEM_ERROR;
+  } else if (strcmp("MGMT_ALARM_PROXY_LOG_SPACE_CRISIS", event_name) == 0) {
+    return MGMT_ALARM_PROXY_LOG_SPACE_CRISIS;
+  } else if (strcmp("MGMT_ALARM_PROXY_CACHE_ERROR", event_name) == 0) {
+    return MGMT_ALARM_PROXY_CACHE_ERROR;
+  } else if (strcmp("MGMT_ALARM_PROXY_CACHE_WARNING", event_name) == 0) {
+    return MGMT_ALARM_PROXY_CACHE_WARNING;
+  } else if (strcmp("MGMT_ALARM_PROXY_LOGGING_ERROR", event_name) == 0) {
+    return MGMT_ALARM_PROXY_LOGGING_ERROR;
+  } else if (strcmp("MGMT_ALARM_PROXY_LOGGING_WARNING", event_name) == 0) {
+    return MGMT_ALARM_PROXY_LOGGING_WARNING;
+  } else if (strcmp("MGMT_ALARM_PROXY_NNTP_ERROR", event_name) == 0) {
+    return MGMT_ALARM_PROXY_NNTP_ERROR;
+  } else if (strcmp("MGMT_ALARM_PROXY_FTP_ERROR", event_name) == 0) {
+    return MGMT_ALARM_PROXY_FTP_ERROR;
+  } else if (strcmp("MGMT_ALARM_MGMT_TEST", event_name) == 0) {
+    return MGMT_ALARM_MGMT_TEST;
+  } else if (strcmp("MGMT_ALARM_CONFIG_UPDATE_FAILED", event_name) == 0) {
+    return MGMT_ALARM_CONFIG_UPDATE_FAILED;
+  } else if (strcmp("MGMT_ALARM_WEB_ERROR", event_name) == 0) {
+    return MGMT_ALARM_WEB_ERROR;
+  } else if (strcmp("MGMT_ALARM_PING_FAILURE", event_name) == 0) {
+    return MGMT_ALARM_PING_FAILURE;
+  }
+
+  return -1;
+}
+
+/**********************************************************************
+ * get_event_id
+ *
+ * Purpose: based on alarm_id, determine the corresonding alarm name
+ * Note:    allocates memory for the name returned
+ *********************************************************************/
+char *
+get_event_name(int id)
+{
+  char name[MAX_EVENT_NAME_SIZE];
+
+  memset(name, 0, MAX_EVENT_NAME_SIZE);
+  switch (id) {
+  case MGMT_ALARM_PROXY_PROCESS_DIED:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_PROCESS_DIED", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_PROCESS_BORN:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_PROCESS_BORN", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_PEER_BORN:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_PEER_BORN", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_PEER_DIED:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_PEER_DIED", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_CONFIG_ERROR:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_CONFIG_ERROR", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_SYSTEM_ERROR:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_SYSTEM_ERROR", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_LOG_SPACE_CRISIS:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_LOG_SPACE_CRISIS", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_CACHE_ERROR:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_CACHE_ERROR", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_CACHE_WARNING:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_CACHE_WARNING", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_LOGGING_ERROR:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_LOGGING_ERROR", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_LOGGING_WARNING:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_LOGGING_WARNING", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_NNTP_ERROR:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_NNTP_ERROR", sizeof(name));
+    break;
+  case MGMT_ALARM_PROXY_FTP_ERROR:
+    ink_strncpy(name, "MGMT_ALARM_PROXY_FTP_ERROR", sizeof(name));
+    break;
+  case MGMT_ALARM_MGMT_TEST:
+    ink_strncpy(name, "MGMT_ALARM_MGMT_TEST", sizeof(name));
+    break;
+  case MGMT_ALARM_CONFIG_UPDATE_FAILED:
+    ink_strncpy(name, "MGMT_ALARM_CONFIG_UPDATE_FAILED", sizeof(name));
+    break;
+  case MGMT_ALARM_WEB_ERROR:
+    ink_strncpy(name, "MGMT_ALARM_WEB_ERROR", sizeof(name));
+    break;
+  case MGMT_ALARM_PING_FAILURE:
+    ink_strncpy(name, "MGMT_ALARM_PING_FAILURE", sizeof(name));
+    break;
+  case MGMT_ALARM_MGMT_CONFIG_ERROR:
+    ink_strncpy(name, "MGMT_ALARM_MGMT_CONFIG_ERROR", sizeof(name));
+    break;
+  case MGMT_ALARM_ADD_ALARM:
+    ink_strncpy(name, "MGMT_ALARM_ADD_ALARM", sizeof(name));
+    break;
+  default:
+    return NULL;
+  }
+
+  return xstrdup(name);
+}

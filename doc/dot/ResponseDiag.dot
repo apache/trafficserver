@@ -1,0 +1,70 @@
+/* response processing diagram HttpSM */
+/*    */
+
+digraph g {
+center=1;
+size = "7.5,10";
+fontsize="20";
+label = "Inktomi CONFIDENTIAL";
+orientation = "portrait";
+
+"READ_RESP_HDR" [ label = "Read Response Header" ];
+"CALL_HANDLE_RESP" [ label = "Call Handle Response" ];
+
+/* Proxy Internal Nodes */
+"PROXY_INTERNAL" [ label = "PROXY_INTERNAL*" ];
+"PI_HANDLE_CACHE_WORK" [ label = "handle cache work" ];
+"PI_RESP_HDR_API" [label = "call Send Response Hdr Hook" ];
+"PI_INTERNAL_TRANSFER" [ label = "Internal Transfer" ];
+
+/* Server Read Nodes */
+"SERVER_READ" [ label = "SERVER_READ*" ];
+"SER_HANDLE_CACHE_WORK" [ label = "handle cache work" ];
+"SER_TRANSFORM_Q" [ label = "transform?", shape = "diamond" ];
+"SER_NO_T_RESP_HDR_API" [label = "call Send Response Hdr Hook" ];
+"SER_NO_T_SERVER_TRANSFER" [ label = "Server Transfer" ];
+
+/* Transform Nodes */
+"INIT_XFER_TO_TRANS" [label = "Initiate Transfer to Transform" ];
+"WAIT_FOR_READ_READY" [label = "Wait for Transform Read Ready" ];
+"TRANFORM_RESP_HDR_API" [label = "call Send Response Hdr Hook" ];
+"TRANSFORM_TRANSFER" [ label = "Transform Transfer" ];
+
+/* Cache Read Nodes */
+"CACHE_READ" [ label = "CACHE_READ*" ];
+"CA_HANDLE_CACHE_WORK" [ label = "handle cache work" ];
+"CA_TRANSFORM_Q" [ label = "transform?", shape = "diamond" ];
+"CA_NO_T_RESP_HDR_API" [label = "call Send Response Hdr Hook" ];
+"CA_NO_T_SERVER_TRANSFER" [ label = "Cache Transfer" ];
+
+/* Common path */
+"READ_RESP_HDR" -> "CALL_HANDLE_RESP";
+"CALL_HANDLE_RESP" -> "SERVER_READ";
+"CALL_HANDLE_RESP" -> "CACHE_READ";
+"CALL_HANDLE_RESP" -> "PROXY_INTERNAL";
+
+/* Proxy Internal Path */
+"PROXY_INTERNAL" -> "PI_HANDLE_CACHE_WORK";
+"PI_HANDLE_CACHE_WORK" -> "PI_RESP_HDR_API";
+"PI_RESP_HDR_API" -> "PI_INTERNAL_TRANSFER";
+
+/* Server Read Path */
+"SERVER_READ" -> "SER_HANDLE_CACHE_WORK";
+"SER_HANDLE_CACHE_WORK" -> "SER_TRANSFORM_Q";
+"SER_TRANSFORM_Q" -> "SER_NO_T_RESP_HDR_API" [ label = "no" ];
+"SER_NO_T_RESP_HDR_API" -> "SER_NO_T_SERVER_TRANSFER";
+
+/* Cache Read Path" */
+"CACHE_READ" -> "CA_HANDLE_CACHE_WORK";
+"CA_HANDLE_CACHE_WORK" -> "CA_TRANSFORM_Q";
+"CA_TRANSFORM_Q" -> "CA_NO_T_RESP_HDR_API" [ label = "no" ];
+"CA_NO_T_RESP_HDR_API" -> "CA_NO_T_SERVER_TRANSFER";
+
+
+/* Transform Path */
+"SER_TRANSFORM_Q" -> "INIT_XFER_TO_TRANS" [ label = "yes" ];
+"CA_TRANSFORM_Q" -> "INIT_XFER_TO_TRANS" [ label = "yes" ];
+"INIT_XFER_TO_TRANS" -> "WAIT_FOR_READ_READY";
+"WAIT_FOR_READ_READY" -> "TRANFORM_RESP_HDR_API";
+"TRANFORM_RESP_HDR_API" -> "TRANSFORM_TRANSFER";
+}

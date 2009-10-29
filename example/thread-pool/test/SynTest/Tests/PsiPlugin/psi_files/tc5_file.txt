@@ -1,0 +1,3 @@
+this is a doc with an include that has no filename
+<!--include==-->
+should remove the tag and include nothing

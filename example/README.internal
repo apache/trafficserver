@@ -1,0 +1,64 @@
+Instructions for setting up sample code directories:  
+----------------------------------------------------
+
+Type the following commands:
+
+	aclocal
+	autoconf
+	autoconf configure.internal.in > configure.internal
+	chmod ugo+x configure.internal
+
+
+
+Instructions for updating sample code directories:
+-------------------------------------------------
+
+Adding internal plugins:
+	edit configure.internal.in
+	change your Makefile to a Makefile.in
+
+Adding shipping plugins:
+	edit configure.in
+	change your Makefile to a Makefile.in
+
+
+Please follow one of the sample codes when creating your
+Makefile.in.
+
+
+
+
+Details
+-------
+
+The shipping package is as shown below:
+
+			samples
+			  /Makefile.internal.in
+			   Makefile.in
+			   configure.internal
+			   configure
+			   config.guess
+			   config.sub
+			   |
+			   |
+	---------------------------------------
+	|                |                    |
+     hello-1      append-tranform         regression
+       /Makefile.in     /Makefile.in         /Makefile.in
+
+
+We ship configure and all Makefile.in's.  configure
+(configure.internal) generates platform specific Makefile's
+(Makefile.internal's).  Makefile.internal builds all non-shipping
+plugins, and then invokes Makefile to build the shipping plugins.
+
+
+
+Needed Improvements
+-------------------
+
+1.	All Makefiles need "clean" targets.
+
+2.	sample code Makefiles should use Make target variable instead
+	of hard-coding plugin name.

@@ -1,0 +1,23 @@
+.TH "show:ntlm-stats"
+.SH NAME
+show:ntlm-stats \- This command displays NTLM protocol statistics.
+.SH SYNOPSIS
+show:ntlm-stats
+.SH DESCRIPTION
+The show:ntlm-stats command displays NTLM protocol statistics, including 
+cache hits and misses, and errors. The show:ntlm-stats command 
+takes no options.
+.SH EXAMPLE
+.PP
+When you execute the show:ntlm-stats command, you see results in the following format:
+.PP
+.nf
+traffic_shell> show:ntlm-stats
+Cache Hits ----------------- 0
+Cache Misses --------------- 0
+Server Errors -------------- 0
+Authorization Denied ------- 0
+Authentication Cancelled --- 0
+traffic_shell>
+.SH "SEE ALSO"
+config:ntlm, show:ntlm

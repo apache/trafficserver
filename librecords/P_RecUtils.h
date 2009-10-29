@@ -1,0 +1,68 @@
+/** @file
+
+  Private record util declarations
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+#ifndef _P_REC_UTILS_H_
+#define _P_REC_UTILS_H_
+
+#include "Diags.h"
+#include "ink_atomic.h"
+#include "ink_defs.h"
+
+#include "P_RecDefs.h"
+
+//-------------------------------------------------------------------------
+// Macros
+//-------------------------------------------------------------------------
+
+#define REC_TYPE_IS_STAT(rec_type) \
+  (((rec_type) == RECT_PROCESS) || \
+   ((rec_type) == RECT_PLUGIN) || \
+   ((rec_type) == RECT_NODE) || \
+   ((rec_type) == RECT_CLUSTER))
+
+#define REC_TYPE_IS_CONFIG(rec_type) \
+  (((rec_type) == RECT_CONFIG) || \
+   ((rec_type) == RECT_LOCAL))
+
+#define REC_NOWARN_UNUSED(a) NOWARN_UNUSED(a)
+
+//-------------------------------------------------------------------------
+// RecData Utils
+//-------------------------------------------------------------------------
+
+RecRecord *RecAlloc(RecT rec_type, char *name, RecDataT data_type);
+void RecDataClear(RecDataT data_type, RecData * data);
+bool RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src);
+bool RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, ink64 data_ink64);
+bool RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float);
+bool RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string);
+
+//-------------------------------------------------------------------------
+// Logging
+//-------------------------------------------------------------------------
+
+void RecLog(DiagsLevel dl, const char *format_string, ...);
+void RecDebug(DiagsLevel dl, const char *format_string, ...);
+void RecDebugOff();
+
+#endif

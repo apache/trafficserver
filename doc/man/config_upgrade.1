@@ -1,0 +1,38 @@
+.TH "config:upgrade"
+.SH NAME
+config:upgrade \- Perform an over-the-wire software upgrade.
+.SH SYNOPSIS
+config:upgrade <upgrade-type> <url> [username] [password]
+.SH DESCRIPTION
+You use the config:upgrade command to perform over-the-wire software upgrades.
+This command supports three types of upgrades: silent, interactive, and reinstall.
+When you use this command, you must specify an upgrade server URL, 
+and optionally specify a username and password.  This command requires root privileges.
+Use the config:root command to switch to root user.
+.SH OPTIONS
+The following options are required for the config:upgrade command:
+.SS "<silent | interactive | reinstall>"
+Silent upgrade automatically chooses the appropriate upgrade from the upgrade server.
+Interactive upgrade allows you to choose the upgrade package from a list.
+Reinstall allows you to install an older version of software with default 
+configuration settings.
+.SS "<url>"
+Specifies the URL which is the location of the upgrade files on a remote server.  If
+the URL is for FTP, then a username and password are required.  If the URL is for HTTP or HTTPS,
+then username and password are optional.
+.SS "<username>"
+Specifies the username that is used to access the URL on the remote server.
+.SS "<password>"
+Specifies the password that is used to access the URL on the remote server. 
+If a username is specified, but the password is omitted, then the config:upgrade command
+will prompt you to enter a password.
+
+.SH EXAMPLES
+.SS "Example 1. Perform a silent upgrade"
+.PP
+.nf
+traffic_shell> config:upgrade silent http://upgradeserver.domain.com user password
+(Upgrade command status messages)
+traffic_shell>
+.SH "SEE ALSO"
+config:root

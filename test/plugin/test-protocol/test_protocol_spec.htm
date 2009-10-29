@@ -1,0 +1,103 @@
+<html>
+<head>
+<title>Untitled Document</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000">
+<p align="center"><font size="+2"><b>test-protocol Plugin Spec</b></font></p>
+<p align="center">&nbsp;</p>
+<p><font size="+1"><b>Overview</b></font></p>
+<p>test-protocol is a plugin to test the following categories of APIs:</p>
+<p><b>Net Processor API</b></p>
+<ul>
+  <li>INKNetAccept</li>
+</ul>
+<p><b>Protocol API</b></p>
+<ul>
+  <li>INKNetVConnRemoteIPGet</li>
+  <li>INKNetVConnRemotePortGet</li>
+  <li>INKIOBufferSizedCreate</li>
+  <li>INKIOBufferWaterMarkGet</li>
+  <li>INKIOBufferWaterMarkSet</li>
+  <li>INKIOBufferWrite</li>
+</ul>
+<p><b>Logging API</b></p>
+<ul>
+  <li>INKTextLogObjectCreate</li>
+  <li>INKTextLogObjectHeaderSet</li>
+  <li>INKTextLogObjectRollingEnabledSet</li>
+  <li>INKTextLogObjectRollingIntervalSecSet</li>
+  <li>INKTextLogObjectRollingOffsetHrSet</li>
+  <li>INKTextLogObjectWrite</li>
+  <li>INKTextLogObjectFlush</li>
+  <li>INKTextLogObjectDestroy</li>
+</ul>
+<p>It basically simulates the the server side in a client/server connection. We'll 
+  have a separate synthetic client which keeps sending requests to this server. 
+  The server receives the request, sends back the response to the client and logs 
+  the client's requests in a log file. During the process, it calls all the APIs 
+  listed above with different parameters and in different scenarios. </p>
+<p><b><font size="+1">Feature Description</font></b></p>
+<p><b>Client Description</b></p>
+<p>Before the plugin features are described, we need to first specify what requests 
+  the synthetic client sends to the plugin and what responses it expects to get 
+  back from the plugin. </p>
+<p>The client sends requests in the following format:</p>
+<blockquote>
+  <p><code>pattern number</code></p>
+</blockquote>
+<p><code>pattern</code> is a character string. <code>number</code> is the number 
+  of times the <code>pattern</code> is being repeated.</p>
+<p>The plugin gets <code>pattern</code> and <code>number</code>, repeats the <code>pattern</code> 
+  in <code>number</code> of times and sends it back to the client.</p>
+<p>The usage of the client is:</p>
+<blockquote>
+  <p><code>java ClientTest -P &lt;proxy&gt; -p &lt;proxy_port&gt; -a &lt;pattern&gt; 
+    -n &lt;number&gt; -l &lt;loop&gt;</code></p>
+</blockquote>
+<p><code>&lt;loop&gt;</code> is the number of requests the client sends to the 
+  proxy. If it's <code>-1</code>, the client will send requests in an infinite 
+  loop.</p>
+<p><b>Plugin Description</b></p>
+<p>The plugin will be configured in plugin.config as:</p>
+<p><code>test_protocol.so &lt;accept_port&gt;</code></p>
+<p><code>accept_port</code> is the port that the plugin listens and accepts the 
+  client's requests.</p>
+<p>The following are the steps the plugin performs:</p>
+<p>1) Create a text log object</p>
+<p>Create a text log object with INKTextLogObjectCreate, set its header with INKTextLogObjectHeaderSet, 
+  and set the rolling parameters with INKTextLogObjectRollingEnabledSet, INKTextLogObjectRollingIntervalSecSet 
+  and INKTextLogObjectRollingOffsetHrSet.</p>
+<p>2) Listen for and accept client requests</p>
+<p>It calls INKNetAccept to listen on a specific port and accepts the requests 
+  from the client. The handler function of the callback continuation for INKNetAccept 
+  checks if the connection has been established successfully (by checking if it's 
+  called back with the event INK_EVENT_NET_ACCEPT). The caller also checks the 
+  return value of INKNetAccept to see if it makes sense. </p>
+<p>3) Get the remote IP and port of the net vconnection.</p>
+<p>The callback function of INKNetAccept calls INKNetVConnRemoteIPGet and INKNetVConnRemotePortGet 
+  to get the remote IP and port of the net vconnection. It then schedules another 
+  continuation call to handle the following work.</p>
+<p>4) Read the client request content into a buffer</p>
+<p>Call INKVConnRead to read the client's request into an IOBuffer. Set the watermark 
+  of the client request IOBuffer with INKIOBufferWaterMarkSet. The IOBuffer calls 
+  back the continuation only when watermark amount of data is available. Use INKIOBufferWaterMarkGet 
+  to check if the watermark is set correctly.</p>
+<p>5) Parse the client's request</p>
+<p>Get the <i>pattern</i> and <i>number</i> from the client request and check 
+  if they exceed the length limits.</p>
+<p>6) Log the client's request</p>
+<p>Write the client request into the log with INKTextLogObjectWrite, flush the 
+  log with INKTextLogObjectFlush and destroy the log object with INKTextLogObjectDestroy.</p>
+<p>7) Create the response being sent to the client</p>
+<p>Repeat the <i>pattern</i> for <i>number</i> of times and saves it in a buffer. 
+  This will be the response sent back to the client.</p>
+<p>8) Send the response to the client</p>
+<p>Create an IOBuffer for client response with INKIOBufferSizedCreate, write the 
+  response to the IOBuffer with INKIOBufferWrite, then call INKVConnWrite to send 
+  the response to the client.</p>
+<p><b><font size="+1">Plugin Structure</font></b></p>
+<p><img src="test-protocol.JPG" width="959" height="719"></p>
+</body>
+</html>

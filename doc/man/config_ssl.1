@@ -1,0 +1,28 @@
+.TH "config:ssl"
+.SH NAME
+config:ssl \- Configures SSL protocol settings.
+.SH SYNOPSIS
+config:ssl [options]
+.SH DESCRIPTION
+The config:ssl command enables you to configure SSL protocol settings
+through a variety of options. 
+You must use one of the options described below.
+.SH OPTIONS
+The following options are supported for the config:ssl command:
+.SS "status <on | off>"
+Enables (on) or disables (off) SSL connections.
+.SS "ports <portno>"
+Specifies the port number for SSL.
+.SH EXAMPLES
+.SS "Example 1. Enabling SSL"
+.PP
+.nf
+traffic_shell> config:ssl status on
+traffic_shell> 
+.SS "Example 2. Specifying the SSL port number"
+.PP
+.nf
+traffic_shell> config:ssl port 4443
+traffic_shell> 
+.SH "SEE ALSO"
+show:ssl

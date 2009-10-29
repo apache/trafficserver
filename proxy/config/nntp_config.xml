@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+nntp_xml.config
+This is the configuration file for the Traffic Server NNTP module. The
+format of this file uses the XML format.
+
+
+-->
+
+<nntp>
+
+	<!--
+	Section: <servers/>
+	-->
+
+	<servers>
+		<server name="digink.inktomi.com" port="119" wildmat="*"/>
+	</servers>
+
+</nntp>

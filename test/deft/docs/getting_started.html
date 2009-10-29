@@ -1,0 +1,168 @@
+<!--  -->
+<html>
+
+<head>
+<title> Getting Started Testing Traffic Server with DEFT </title>
+</head>
+
+<body bgcolor="White">
+
+<h2 align="center">  Getting Started Testing Traffic Server with DEFT </h2>
+
+<h2> Introduction </h2>
+
+<p> DEFT stands for Distributed Extensible Framework (for) Testing.
+DEFT provides the ability to run test scripts written in perl,
+automatically install test packages on remote machines, manage
+the test processes on both local and remote machines and analyze 
+the results. </p> 
+
+<h2> Preparing machines </h2>
+
+<p> <b>Note</b>: cachedev, npdev, tsdev, proxydev, lindev, lundev &amp; dicer
+have already been setup. If you are using one of these machines,  you
+can skip ahead to <a href="#using"> "Using the Framework"</a></p>
+
+<p> Packages and setup work needed install the framework:</p>
+<ul>
+
+<li> ssh (for remote tests) </li>
+<li> bash </li>
+<li> /inktest link </li>
+<li> perl in /inktest/dist </li>
+</ul>
+
+<p> <b> SSH </b> is required to use remote nodes.  The process manager 
+for the testing system is pushed out and started using ssh.
+Installing and configuring ssh is the most difficult part of preparing 
+the machines.  Authenication by rsa keys must set up for the system to
+work.  The standard package is OpenSSH which is available at
+<a href="http://www.openssh.org"> openssh.org </a>.</p>
+
+<p> After installing ssh on the machine, you need use the
+<i>ssh-keygen</i> on the machine you plan to start the tests from to
+generate an rsa key.  The key will be put into
+<i>~/.ssh/identity.pub</i>.  Copy the <i>identity.pub</i> to
+<i>~/.ssh/authorized_keys</i> on your remote machines.  SSH is picky
+about the permissions of the your home directory, the .ssh directory
+and the authorized_keys file so make sure all writable only the user
+and not group or world.   To test your key setup, trying ssh'ing to
+all the remote hosts.  <i>ssh -v</i> useful for
+finding out why key based authentication failed.</p>
+
+<p> <b> bash </b> is used for both local and remote tests and ideally
+installed as /bin/bash or /usr/bin/bash. </p>
+
+<p> <b> /inktest </b> is the default location used for files and package
+installations during a test run.  Symlink /inktest to a location with some
+space available and make sure the directory it is symlinked to is
+writable by the userid you will be running the test as.  For shared
+machines, it's easiest to set the directory to 777 permissions. </p>
+
+<p> <b> perl </b> needs to be installed in <b> /inktest/dist</b>.
+It's best to use the same build as is used to link against the
+interpretor in the test framework to prevent weird problems.  Tar'ed
+distributions compiled for /inktest/dist are available </p>
+
+<a name="using">
+<h2> Using the framework </h2>
+
+<p> The easiest and quickest way to use the framework is straight out
+of the traffic_server source tree in the mainline.   If you have a
+recent checkout, you already have the source code since it's been
+added to the testing module.  If your checkout is crufty, you'll need
+to "cvs update -d test" (from the traffic/ dircectory) and then
+reconfigure your build area.  On Solaris, you need to have run configure
+with <code> --with-gcc </code> to build the framework.</p>
+
+<p> In your build area, enter test sub directory and <i>gmake</i>.  After
+the gmake completes, then <i>gmake install</i>.  The install will create a 
+<i>traffic/deft-install</i> directory which contains the components for
+testing.  The reason that deft-install directory is outside of your
+build area is to support running tests across multiple platforms. </p>
+ 
+<p> Now <i>cd</i> upto <i>traffic/deft-install</i>.  The two most
+important options for starting a test are <b> picking the base port
+</b> and knowing what test script to you want to run.  With the base port, you
+want a range of 100 ports that aren't being used by anyone else on the
+box.  For a our first example test, we'll run systest.</p>   
+
+<p> When firing up a test we need to let the testing system know where
+our traffic_server is located.  If our traffic_server is in our build
+tree, we can just specify the build dir, for example <b> sun_dbg </b>.
+If the traffic_server we want to test resides outside of our build
+tree, we need to provide the absolute path.</p>  
+
+<p>In either case, the directory that the Traffic Server install
+resides in (not the bin directory itself but the directory that
+contains the bin, config and logs subdirectories) must have <b>
+ts-instantiate.pl </b> in it.  If you are using TS from a build area
+with a recent mainline checkout, the <i> gmake install </i> for setting
+up traffic_server already placed the file.  If you are using TS
+installed from a customer package, or an earlier code branch, or you
+haven't updated your mainline tree recently, you need to manually copy
+<b> ts-instantiate.pl </b> from the <i> traffic/proxy </i> directory
+of a recent mainline checkout into your Traffic Server directory. </p>
+
+<p> There's a script for
+starting up test process called run_test.pl.  The first argument is
+the location of traffic_server and the remaining arguments are passed
+to the test_exec binary.  Assuming our port range starts at 15400,
+we'd use: </p>
+<pre>     ./run_test.pl sun_dbg -p 15400 -s syntest.pl </pre>
+
+<p> to fire up our example test.  If you want to see the test log as
+the test is being run, append <code> -v </code> to fire up a window
+based view of the log file. Once we start this process, we
+should see output that resembles the following:  </p>
+<pre>  [Feb  4 17:53:29.273] STATUS: test_exec v&#36;Revision: 1.25 &#36; running
+  [Feb  4 17:53:29.276] STATUS: Running test script syntest.pl
+  [Feb  4 17:53:29.294] STATUS: Starting proc_manager on localhost
+  Waiting for syntest1 to exit
+</pre>
+
+<p> Once the test completes, all the output from the test components
+will be passed to the test parser which will tell us how many warnings
+and errors the test generated.  Here's some example output:
+</p>
+
+<pre>  error: [Mon Feb  4 17:53:47.048 syntest1 stdout] ----- Test Tests/Bad-Servers/bad-server.cfg (bad-server.cfg, server doesn't send back any headers) ----- failed
+  error: [Mon Feb  4 17:54:27.324 syntest1 stdout] ----- Test Tests/Cache-Drop/2_2.cfg (test cache drop time, second request) ----- failed
+  error: [Mon Feb  4 17:55:55.141 syntest1 stdout] ----- Test Tests/Via-Loop/vialoop.cfg (test of self-loop checking) ----- failed
+  error: [Mon Feb  4 17:57:19.466 syntest1 stdout] ----- Test Tests/IMS-ims_verify.pl/4c_2.cfg (4c_2.cfg, client empty, TS stale, second (another) client request, server sends back 500) ----- failed
+  error: [Mon Feb  4 17:57:21.191 syntest1 stdout] ----- Test Tests/ImagesTest/2.cfg (Test Image file, Second Request.) ----- failed
+  warning: [Mon Feb  4 17:57:21.202 proc_manager Warning] Child process syntest1 (pid 18723) terminated abnormally with status 90
+
+  #### 5 Errors; 1  Warnings ####
+</pre>
+
+<h3> Where is my log file or core file? </h3>
+
+<p> All the files for a particular test run are located under the
+"stuff_path" which is set by the <code> -d </code> option.  The 
+default is <code> /inktest.</code>  To prevent tests from running
+into each other, a sub directory is made by concatinating the username
+running test and a uniquer string (which is set by the <code> -u
+</code> option and defaults to <code>-0</code>.   Under that subdirectory,
+you'll find a <code> run </code> sub directory containing further
+subdiretories with instance names.  If you are looking for a core
+file, it will be under the <code> run/&lt;instance_name&gt; </code>
+subdirectory unless your test process use <code> chdir </code> system
+call.  On the machine you started up the test on, your log file is at
+<code> log/test.log </code>.
+
+
+<h2> What's next </h2>
+
+<p> The next step is to look at the anatomy of a test script and
+<a href="writing_tests.html">  learn how to write new tests</a>. </p>
+
+<p>
+<font size="-1">
+    
+    All rights Reserved.
+</font>
+</p>
+
+</body>
+</html>

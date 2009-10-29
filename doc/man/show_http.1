@@ -1,0 +1,30 @@
+.TH "show:http"
+.SH NAME
+show:http \- This command displays HTTP configuration.
+.SH SYNOPSIS
+show:http
+.SH DESCRIPTION
+Execute the show:http command to view HTTP configuration information, such as 
+timeouts values, header insertions, and port specifications. The show:http command 
+takes no options.
+.SH EXAMPLE 
+.PP
+When you execute the show:http command, you see results in the following format:
+.PP
+.nf
+traffic_shell> show:http
+HTTP Caching ------------------ on
+HTTP Server Port -------------- 8080
+HTTP Other Ports -------------- NULL
+Keep-Alive Timeout Inbound ---- 10 s
+Keep-Alive Timeout Outbound --- 10 s
+Inactivity Timeout Inbound ---- 120 s
+Inactivity Timeout Outbound --- 120 s
+Activity Timeout Inbound ------ 7200 s
+Activity Timeout Outbound ----- 7200 s
+Maximum Number of Alternates -- 3
+Remove additional headers ----- NULL
+Insert Client IP Address into Header
+traffic_shell>
+.SH "SEE ALSO"
+show:cache, show:proxy, show:proxy-stats, show:cache-stats, config:reset-stats

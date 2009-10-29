@@ -1,0 +1,17 @@
+
+
+CGI scripts for the Inktomi assembly plugin demo 
+-------------------------------------------------
+
+Install these scripts in the cgi-bin directory
+of the webserver.
+Update the webserver name in the portal.cgi source code.
+
+Configure browser to use the proxy.
+Send some requests.
+Format of requests:
+  http://<webserver>/cgi-bin/portal.cgi?user=<username>&city=<city_name>&news=<sports|intl>
+
+Example:
+  http://helsinki.climate.inktomi.com/cgi-bin/portal.cgi?user=franck&city=SF&news=sports
+  http://helsinki.climate.inktomi.com/cgi-bin/portal.cgi?user=davep&city=NY&news=intl 

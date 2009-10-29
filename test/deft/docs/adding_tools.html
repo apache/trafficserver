@@ -1,0 +1,192 @@
+<!--  -->
+<html>
+
+<head>
+<title> Adding test tools to DEFT </title>
+</head>
+
+<body bgcolor="White">
+
+<h2 align="center">  Adding test tools to DEFT</h2>
+
+<h3> Understanding packages </h3>
+
+<p> Packages are gzipped tarballs of a test tool, it's configuration
+and data files and an instantiator script.  The naming scheme is more
+than just a convention. </p> 
+
+
+<ul>
+<li> "jtest" is the package name 
+<li> "SunOS" is the architecture of the package
+<li> "" is the user who created the package
+<li> "tb" is arbitrary versioning tag for the package
+<li> "02.07.14.22" is the date and time the package was made
+</ul>
+
+<p> Do NOT put extra hyphens withing components.  It breaks
+everything! </p>
+
+<p> Packages are made using the <code> mkrelease.tcl </code> script
+which is checked into the qa tools at <code> sqa/traffic/ts_test
+</code> in cvs.  The Makefile.am that has example targets for building
+the package. </p>
+
+<p> Each packages must have an <i> instantiator </i> script.  The
+instantiator must be named
+<code>&lt;pkg_name&gt;-instantiate.&lt;arbitrary_suffix&gt;</code>.  For jtest,
+the instantiator is named: <code> jtest-instantiate.pl </code>.
+Currently the suffix is not used to make any decisions within the
+proc_manager.  The instantiator can be written in any language
+(although /bin/sh has limitations on Solaris that keep it from working
+but bash is fine) and could be compiled program instead not a script. </p>
+
+
+<h3> Writing an <i> instantiator </i> </h3>
+
+<p> The instantitator must setup test process for running.  Processes
+are run out of a temporary area for testing know as the <b> run_dir
+</b>.  The instantiator must make any necessary binaries, config files
+and data available from the <b> run_dir </b>.  The location where the
+package was unpacked (or localpath was specified) is known as
+<b>bin_dir</b>.  It's not necessary for the instantiator to copy
+everything to the run directory.  It can symlink binaries or add
+command line arguments to tell the process where to find read-only
+data files. </p>
+
+<p> Communication between the proc_manager and the instantiator
+happens three ways: </p>
+
+<ul> 
+<li> name value input pairs are sent to the instantiator on stdin by
+the proc_manager </li>
+<li> name value output pairs from the instantiator to the proc_manager
+are sent on a pipe that opened by the proc_manager prior to forking
+the instantiator.  The file descriptor for the pipe is sent as first
+and only command line argument to the instantiator.  Stdout is not
+used for return information since subprocesses may send diagnostics to
+stdout.  </li>
+<li> The exit status of the instantitor is read by the proc_manager.
+The proc_manager intreprets a non-zero exit status, as failure and the
+creation of the instance fails.  </li>
+</ul>
+
+<p> The name value pairs both for input and ouput are of the form:
+</p>
+<pre>  &lt;name&gt;: &lt;value&gt;LF </pre>
+
+<p> The name can consist of any ascii character other than '\0', ':',
+CR or LF.  The value can be any ascii character other than '\0', CR, or
+LF. However, the use of printable 7bit characters is recommend in both
+cases. </p>
+
+<table width="100%" border="2" cellpadding="2"> 
+<tr> <th colspan="2" align="center"> Input Value Names</th> 
+<tr> <td width="10%"> config_file </td> 
+     <td> Absolute to path the file containing "config" argument given
+          to the create command.  Not prsent if the config argument
+          is not sent. </td> </tr>
+<tr> <td width="10%"> bin_dir </td>
+     <td> Absolute path to where the tool package was unpacked or
+     where localpath was set to.  Always sent.  </td> </tr>
+<tr> <td width="10%"> run_dir </td>
+     <td> Aboslute path to where the instantiator should prepare the
+          test process to be run from.  Sent unless "no_run_dir"
+	  argument was made to the create command.</td> </tr>
+<tr> <td width="10%"> no_run_dir </td>
+     <td> Informs the instantiator that there is no run directory and
+          the instantitor should prepare the process to be run from
+          the "bin_dir"</td> </tr>
+<tr> <td width="10%"> ports_avail </td>
+     <td> Hyphen separated continugous range of ports available for
+          the instantiator to allocate.  The instantiator must
+	  allocate ports in order, starting with the lowest first and report
+	  the number of ports used in it's output if any ports are
+          used. </td> </tr>
+</table>
+
+<p>
+</p>
+
+<table width="100%" border="2" cellpadding="2"> 
+<tr> <th colspan="2" align="center"> Output Value Names</th> 
+<tr> <td width="10%"> cmd_line </td>
+     <td> Command line to run the test process with starting with
+     absolute path the test process binary.  Command line arguments to
+     the process follow.  Arguments are broken up along whitespace
+     although double quotes and standarding escaping rules can be used
+     to create a argument contaning white space.</td> </tr>
+<tr> <td width="10%"> port_binding </td> 
+     <td> <p>White space separted list of name value pairs of which the
+     name consists of alphanumeric characters and the port is 16 bit
+     unsigned number in ascii.  More than one pair can be given.
+     Example:</p> 
+     <pre>  port_binding: server 12310 rafPort 12311\n</pre>
+     <p> <b> rafPort </b> is a special name which indicates the port 
+         <b> raf_instance() </b>will use for querying the process via
+	 RAF. </p></td> </tr>
+<tr> <td width="10%"> ports_used </td>
+     <td> positive interger value (in ascii) of ports used from the port
+          range passed as an input parameter to the instantiator. </td>
+	  </tr>
+<tr> <td width="10%"> env_vars </td>
+     <td> Space separated list of environment value pairs (of the form
+          name=value) to add to the test processes enviroment before
+          it is execed.  Standard quoting rules apply for allowing spaces
+          in the values.</td> </tr>
+</table>
+
+<h3> Parsing the output </h3>
+
+<p> All stderr and stdout output from every test process is stamped,
+and sent to the <b> test_log_collate </b> processes which merges all
+the streams into one file.  In addition, any calls <b> add_to_log()</b> 
+cause entries to be added to the log file.  Parsing the log file is
+the ONLY place where a pass or fail determination is made for a
+test.</p>
+
+<p> In order to facilitate easy testing writing but allow for complex
+parsing log, the log parser makes use of perl modules.  When adding a 
+tool to the framework, it's generally necessary to add a parsing
+module to it though for very simple tools the generic parser may do
+the job. </p>
+
+<p> A parser is perl module which defines the function <code>
+process_test_log_line(String $instance_id, String $level,
+StringRef $line) </code>.   <code> process_test_line </code> must return
+one of the following three values: </p>
+
+<ul>
+<li> <code> "ok" </code> - the line is neither a warning on an error </li>
+<li> <code> "warning" </code> - the line indicates a warning </li>
+<li> <code> "error" </code> - the line indicates an error </li>
+</ul>
+
+<p> The easiest way to write your own parser is to use an existing one
+from <code> traffic/test/parsers </code> as template. </p>
+
+<p> In order to prevent each test from having to specify a parser for
+each instance, instance name prefixes can be mapped to a parser by
+default.  The prefix is all alpha characters before an numeric
+characters in the name.  For example, if the instance name is 
+<code> syntest1 </code>the prefix is <code> syntest</code>.
+The default mappings are made in <code> parse_dispatcher.pm
+</code> in the <code>%predefined_mappings</code> hash.  If the there
+is no entry for the instance name prefix is
+<code>%predefined_mappings</code>, the <code> parse_generic.pm </code>
+is used for that instance. </p>
+
+<p> In the cases where the default parser isn't appropriate, 
+the test script can use <b>set_log_parser()</b> to override the 
+default. </p>
+
+<h3> The End </h3>
+
+<p> <a href="index.html"> Back to the index. </a> </p>
+
+<p>
+<font size="-1">
+    
+    All rights Reserved.
+</font>
+</p>

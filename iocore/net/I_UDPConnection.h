@@ -1,0 +1,116 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+/****************************************************************************
+
+  I_UDPConnection.h
+  UDPConnection interface
+  
+  
+ ****************************************************************************/
+
+#ifndef __I_UDPCONNECTION_H_
+#define __I_UDPCONNECTION_H_
+
+#include "I_EventSystem.h"
+#define INK_ETHERNET_MTU_SIZE 1472
+class UDPPacket;
+/**
+   UDP Connection endpoint
+   
+   You can schedule packet to be sent immediately or for the future, 
+   and set up a persistent receive() operation.
+ */
+
+class UDPConnection:public Continuation
+{
+public:
+  virtual ~ UDPConnection()
+  {
+  };
+
+  SOCKET getFd();
+  void setBinding(struct sockaddr_in *);
+  inkcoreapi int getBinding(struct sockaddr_in *);
+
+  void destroy();
+  int shouldDestroy();
+
+  int get_ntodo();
+  int get_ndone();
+  /* Returns the b/w allocated to this UDP connection in Mbps */
+  double get_allocatedBandwidth();
+  /**
+     <p>
+     <b>Callbacks:</b><br> 
+     cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, UDPPacket *) on error
+     <br>
+     no callback on success.
+     
+     @return Action* send can't be cancelled via this Action
+     @param c continuation to be called back
+     @param p packet to be sent.
+   */
+  Action *send(Continuation * c, UDPPacket * p);
+
+  /**
+     <p>
+     <b>Callbacks:</b><br> 
+     cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, UDPConnection *) on error
+     <br>
+     cont->handleEvent(NET_EVENT_DATAGRAM_READ_READY, Queue&lt;UDPPacketInternal&gt; *) on incoming packets.
+
+     @return Action* Always returns ACTION_RESULT_NONE.  Can't be
+     cancelled via this Action.
+     @param c continuation to be called back
+   */
+  Action *recv(Continuation * c);
+
+  void Release();
+  void AddRef();
+  int GetRefCount();
+
+  int getPortNum(void);
+
+  int GetSendGenerationNumber();        //const
+  void SetLastSentPktTSSeqNum(ink64 sentSeqNum);
+  ink64 cancel();
+  void setContinuation(Continuation * c);
+
+  /**
+     Put socket on net queue for read/write polling.
+
+     Not required for UDPConnections created with
+     UDPNetProcessor::UDPBind
+
+     Required for UDPNetProcessor::UDPCreatePortPairs  and
+     UDPNetProcessor::CreateUDPSocket.  They  don't do bindToThread()
+     automatically so that the sockets can be passed to other Continuations.
+  */
+  void bindToThread(Continuation * c);
+
+  virtual void UDPConnection_is_abstract() = 0;
+};
+
+INK_INLINE UDPConnection *new_UDPConnection(int fd);
+#endif //__I_UDPCONNECTION_H_

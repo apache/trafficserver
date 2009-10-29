@@ -1,0 +1,28 @@
+.TH "show:qt-stats"
+.SH NAME
+show:qt-stats \- This command displays Quicktime protocol statistics.
+.SH SYNOPSIS
+show:qt-stats
+.SH DESCRIPTION
+The show:qt-stats command displays Quicktime protocol statistics, including 
+downstream and upstream bytes, client/server connections, and live streams.
+The show:qt-stats command takes no options.
+.SH EXAMPLE
+.PP
+When you execute the show:qt-stats command, you see results in the following format:
+.PP
+.nf
+traffic_shell> show:qt-stats
+Quicktime:
+Downstream Request Bytes ---------- 0
+Downstream Response Bytes --------- 0
+Upstream Request Bytes ------------ 0
+Upstream Response Bytes ----------- 0
+Client Connections ---------------- 0
+Server Connections ---------------- 0
+Unique Live Streams --------------- 0
+Cache Bytes Read ------------------ 0
+Cache Cutoff ---------------------- 1048576
+traffic_shell>
+.SH "SEE ALSO"
+config:qt, show:qt

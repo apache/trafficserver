@@ -1,0 +1,94 @@
+#!/bin/sh 
+#
+# This script is for running inkbench directly against a real web server
+# which needs content in files.  This is not used for normal inkbench
+# tests for proxy caches.
+#
+# Usage: make-server-content base_directory docsize_dist_file max_hotset
+#
+#        Example: make-server-content /usr/www/ docsize.specweb 1000
+
+
+# To Do: option to create more actual files (to stress buffer cache)
+#          change max_hotset to max_hotset + max_real_files
+#          make sure max_real_files <= max_hotset
+
+if [ $# -ne 3 ]; then
+  echo "Usage: make-server-content base_directory docsize_dist_file max_hotset"
+  exit 1 
+fi
+
+base=$1
+file=$2
+hotset=$3
+
+
+if [ ! -f $file ]; then
+  echo "Can't find docsize file: " $file
+  exit 1
+fi
+
+
+if [ ! -d $base ]; then
+  mkdir $base
+  if [ -d $base ]; then
+    echo "created directory: $base"
+  else
+    echo "couldn't create directory $base.  Exiting."
+    exit 1
+  fi
+fi
+
+if [ -d $base/content ]; then
+   echo "using existing directory: $base/content"
+else
+  mkdir $base/content
+  if [ -d $base/content ]; then
+      echo "created directory: $base/content"
+  else 
+      echo "couldn't create directory $base/content.  Exiting."
+      exit 1
+  fi
+fi
+
+sizes=`awk '{print $1;}' $file`
+for size in $sizes; do
+  echo $size | awk '{printf "Creating file of size %7d:  ", $1;}'
+  rm -f $base/content/$size
+  echo $size | awk '{for(j=0;j<$1;j++) printf "X"; exit 1;}' > $base/content/$size
+  ls -l $base/content/$size
+done
+
+echo "Creating symbolic links to make hotset of size $hotset: "
+i=0
+j=0
+while [ $i -lt $hotset ] ; do
+  if [ -d $base/$j ]; then
+     echo -n "using existing directory: $base/$j"
+  else
+     mkdir $base/$j/
+     echo -n "created directory: $base/$j"
+  fi
+  for size in $sizes; do
+    rm -f $base/$j/length$size 
+    ln -s ../content/$size $base/$j/length$size 
+    i=`expr $i + 1`
+  done
+  j=`expr $j + 1`
+  echo "   $i links done "
+done
+echo ''
+echo 'done'
+echo ''
+echo 'When running inkbench:'
+echo '  use hitrate=100'
+echo "  use same document size distribution file: docsize_dist_file=$file"
+echo '  comment out target_host and target_port'
+echo '  comment out origin_autostart'
+echo '  specify document_base=dir  (for example, document_base=~inktomi/inkbench/)'
+echo ''
+
+
+
+
+

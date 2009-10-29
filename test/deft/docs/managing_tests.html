@@ -1,0 +1,58 @@
+<!--  -->
+<html>
+
+<head>
+<title> Managing tests with DEFT </title>
+</head>
+
+<body bgcolor="White">
+
+<h2 align="center">  Managing tests with DEFT </h2>
+
+<h2> Test groups </h2>
+
+<p> DEFT support test groups to make running a set of tests easy.  To
+run a test group, use the <b>-g</b> command line option.  For example,
+to run the 'http' test group: </p>
+<pre>  ./run_test.pl sun_dbg -g http </pre>
+<p> By the default, the test groups are read from the
+<b>defs/test_groups.deft</b> file.  An alternate file can be specified
+with the <b>-G</b> command line option.</p>
+
+<p> The format of <i>test_groups.deft</i> is simple.  It's parsed on a
+line by line basis with lines ending in '\' treated as continuation
+lines.  Two directives exists: <b>test_case</b> and <b>
+test_group</b>. Syntax for the lines are:</p>
+<pre>  test_case &lt;name> &lt;script_name> &lt;arg1> &lt;arg2> &lt;argN>
+  test_group &lt;name> &lt;test_case or test_group> &lt;test_case or  test_group&gt; ..
+</pre>
+
+<p> Here's an example file: </p>
+<pre>test_group http    \
+	jtest1 \
+	syntest
+
+
+test_case  syntest    syntest.pl
+test_case  jtest1     jtest-example.pl</pre>
+
+<h2> Tinderbox reporting & html test output </h2>
+
+<h3> <font color="red"> Comming Soon </font> </h3>
+
+<h2> What's next </h2>
+
+<p> The next step is learning how to add new testing tools to the testing 
+framework.  Read  <a href="adding_tools.html">  
+Adding Test Tools </a> to learn how. </p>
+
+<p><font size="-1">
+    
+    All rights Reserved.
+</font></p>
+
+</body>
+</html>
+
+</body>
+</html>

@@ -1,0 +1,40 @@
+.TH "show:http-trans-stats"
+.SH NAME
+show:http-trans-stats \- This command displays HTTP transaction statistics.
+.SH SYNOPSIS
+show:http-trans-stats
+.SH DESCRIPTION
+The show:http-trans-stats command displays HTTP transaction statistics, 
+including hit, miss, and abort details. The show:http-trans-stats command takes 
+no options.
+.SH EXAMPLE
+.PP
+When you execute the show:http-trans-stats command, you see results in the 
+following format:
+.PP
+.nf
+traffic_shell> show:http-trans-stats
+HTTP Transaction Frequency and Speeds
+Transaction Type              Frequency  Speed(ms)
+--Hits--
+Fresh ----------------------- 0.000000%  0
+Stale Revalidated ----------- 0.000000%  0
+--Misses--
+Now Cached ------------------ 0.000000%  0
+Server No Cache ------------- 0.000000%  0
+Stale Reloaded -------------- 0.000000%  0
+Client No Cache ------------- 0.000000%  0
+--Errors--
+Connection Failures --------- 0.000000%  0
+Other Errors ---------------- 0.000000%  0
+--Aborted Transactions--
+Client Aborts --------------- 0.000000%  0
+Questionable Client Aborts -- 0.000000%  0
+Partial Request Hangups ----- 0.000000%  0
+Pre-Request Hangups --------- 0.000000%  0
+Pre-Connect Hangups --------- 0.000000%  0
+--Other Transactions--
+Unclassified ---------------- 0.000000%  0
+traffic_shell>
+.SH "SEE ALSO"
+show:cache-stats, show:http-stats, config:http

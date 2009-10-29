@@ -1,0 +1,65 @@
+.TH "show:nntp"
+.SH NAME
+show:nntp \- This command displays NNTP configuration.
+.SH SYNOPSIS
+show:nttp [servers | access]
+.SH DESCRIPTION
+Execute the show:nntp command to view basic NNTP configuration information, or type the servers 
+or access options with the show:nntp command to display access.
+.SH OPTIONS
+The following options are supported for the show:nntp command:
+.SS servers
+The servers option describes the upstream servers for particular groups.
+.SS access
+The access option describes client access rules.
+.SH EXAMPLES
+.PP
+.SS "Example 1. Displaying basic NNTP configuration information"
+.PP
+.nf
+traffic_shell> show:nntp
+NNTP Caching --------------------------- on
+NNTP Server  --------------------------- off
+NNTP Server Port ----------------------- 119
+Connect Message ------------------------ Inktomi NNTP server ready. posting ok
+Connect Message ------------------------ Inktomi NNTP server ready. no posting
+NNTP Options:
+  Posting ------------------------------ on
+  Access Control ----------------------- off
+  V2 Authentication -------------------- off
+  Local Auth. Server ------------------- off
+  Clustering --------------------------- on
+  Allow feeds -------------------------- on
+  Access Logs -------------------------- on
+  Background Posting ------------------- off
+  Obey Cancel Control ------------------ off
+  Obey NewGroups Control --------------- off
+  Obey RmGroups Control ---------------- off
+Check for New Groups Every ------------- 86400 s
+Check for Cancelled Articles Every------ 3600 s
+Check Parent NNTP Server Every---------- 300 s
+Check Cluster Every -------------------- 60 s
+Check Pull Groups Every ---------------- 600 s
+Authentication Server Host ------------- NULL
+Authentication Server Port ------------- 0
+Local Authentication Server Timeout ---- 50000 ms
+Client Speed Throttle ------------------ 0 bytes/s
+traffic_shell>
+.SS "Example 2. Displaying nntp_servers.config rules"
+.PP
+.nf
+traffic_shell> show:nntp servers
+nntp_servers.config rules
+-------------------------
+(Displays nntp_servers.config rules)
+traffic_shell>
+.SS "Example 3. Displaying client access rules"
+.PP
+.nf
+traffic_shell> show:nntp access
+nntp_access.config rules
+------------------------
+(Displays nntp_access.config rules)
+traffic_shell>
+.SH "SEE ALSO"
+show:cache, show:cache-stats, config:nntp

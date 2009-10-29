@@ -1,0 +1,47 @@
+.TH "config:ftp"
+.SH NAME
+config:ftp \- Configures FTP caching, mode, and control.
+.SH SYNOPSIS
+config:ftp [options]
+.SH DESCRIPTION
+The config:ftp command enables you to configure FTP caching and control through 
+a variety of options. You must use one of the options described below.
+.SH OPTIONS
+The following options are supported for the config:ftp command:
+.SS "mode <pasv-port | pasv | port>"
+Specifies the FTP connection mode. The options are PASV then PORT, PASV only, 
+and PORT only. (The default value is PASV then PORT.)
+.SS "inactive-timeout <seconds>"
+Specifies how long the proxy waits for a response from the FTP server. (The 
+default is 300 seconds.)
+.SS "anonymous-password <password>"
+Specifies the anonymous password for FTP servers that require a password for 
+access. The anonymous password can be in cleartext.
+.SS "expire-after <seconds>"
+Specifies the maximum amount of time in seconds that an FTP document can stay in the proxy 
+cache. (The default value is 259200.)
+.SH EXAMPLES
+.SS "Example 1. Specifying the PASV then PORT FTP connection mode"
+.PP
+.nf
+traffic_shell> config:ftp mode pasv-port
+traffic_shell> 
+.SS "Example 2. Specifying duration proxy waits for FTP server"
+.SS "           response"
+.PP
+.nf
+traffic_shell> config:ftp inactive-timeout 500
+traffic_shell> 
+.SS "Example 3. Specifying anonymous password for FTP servers"
+.PP
+.nf
+traffic_shell> config:ftp anonymous-password admin@
+traffic_shell> 
+.SS "Example 4. Specifying maximum time that an FTP document"
+.SS "           can stay in the proxy cache"
+.PP
+.nf
+traffic_shell> config:ftp expire-after 50000
+traffic_shell> 
+.SH "SEE ALSO"
+show:ftp, show:ftp-stats

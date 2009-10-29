@@ -1,0 +1,24 @@
+#!/bin/sh 
+if [ $# -eq 0 ]; then
+  echo "Usage: gnuplot-docsize docsize.1 [[docsize.2] [...]]"
+  exit
+fi
+
+tempfile=/tmp/gnuplot.$$
+plot="plot \"$1\" with boxes"
+shift
+for docsize in "$@" ; do
+  plot=$plot," \"$docsize\" with boxes"
+done
+
+cat > $tempfile <<EOF
+ set logscale x
+ set boxwidth 0.02
+ set ylabel "probability"
+ set xlabel "document size"
+ $plot
+ pause 2
+ pause -1 "hit return in this window to quit"
+EOF
+gnuplot $tempfile
+rm $tempfile

@@ -1,0 +1,37 @@
+.TH "config:virtual-ip"
+.SH NAME
+config:virtual-ip \- Enables and configures virtual IP addressing.
+.SH SYNOPSIS
+config:virtual-ip [options]
+.SH DESCRIPTION
+You use the config:virtual-ip command to enable and configure virtual IP 
+addressing, including IP address, device, and subinterface.
+.SH OPTIONS
+The following options are supported for the config:virtual-ip command:
+.SS "status <on | off>"
+Enables (on) or disables (off) the virtual IP option. (The default value is 
+off.)
+.SS "list"
+List the virtual IP addresses in use.
+.SS "add <ip_address> device <string> sub-intf <integer>"
+Specifies IP address, device and subinterface.
+.SS "delete <integer>"
+Specified Virtual IP address element to be deleted.
+.SH EXAMPLES
+.SS "Example 1. Enabling the virtual IP option"
+.PP
+.nf
+traffic_shell> config:virtual-ip on 
+traffic_shell>
+.SS "Example 2. Specifying an IP address, device, and subinterface"
+.PP
+.nf
+traffic_shell> config:virtual-ip add ip 202.112.105.89 device hme0 sub-intf 28
+traffic_shell>
+.SS "Example 3. Deleting a virtual IP address."
+.PP
+.nf
+traffic_shell> config:virtual-ip delete 1
+traffic_shell>
+.SH "SEE ALSO"
+show:virtual-ip

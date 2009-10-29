@@ -1,0 +1,24 @@
+.TH "show:logging-stats"
+.SH NAME
+show:logging-stats \- This command displays logging statistics.
+.SH SYNOPSIS
+show:logging-stats
+.SH DESCRIPTION
+The show:logging-stats command displays logging statistics, including storage, 
+events logged, and events skipped. The show:logging-stats command takes no 
+options.
+.SH EXAMPLE
+.PP
+When you execute the show:logging-stats command, you see results in the 
+following format:
+.PP
+.nf
+traffic_shell> show:logging-stats
+Current Open Log Files ----------- 0
+Space Used For Log Files --------- 13697
+Number of Access Events Logged --- 0
+Number of Access Events Skipped -- 0
+Number of Error Events Logged ---- 0
+traffic_shell>
+.SH "SEE ALSO"
+config:logging

@@ -1,0 +1,18 @@
+#Entry type: userNameEntry
+#Format:  userAuthSnmpID  (octetString)
+#         userName  (text)
+#         userGroupName  (text)
+#         userTransportLabel  (text)
+#         userMemoryType  (nonVolatile, permanent, readOnly)
+userNameEntry  localSnmpID rootNoAuthTemplate noGroup - readOnly
+
+
+#Entry type: usmUserEntry
+#Format:  usmUserEngineID  (octetString)
+#         usmUserName  (text)
+#         usmUserAuthProtocol  (OID)
+#         usmUserPrivProtocol  (OID)
+#         usmUserStorageType  (nonVolatile, permanent, readOnly)
+#         usmTargetTag  (text)
+usmUserEntry  localSnmpID rootNoAuthTemplate usmNoAuthProtocol \
+    usmNoPrivProtocol readOnly -

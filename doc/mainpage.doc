@@ -1,0 +1,16 @@
+/*
+   This file is for the documentation that appears on the main page of
+   the Doxygen output.  Description of the code structure and layout
+   should go here.
+ */
+
+/** @mainpage
+
+   @section intro Introduction
+   
+   Traffic Server is an efficient caching proxy. Traffic Server provides
+   an extensible plug-in architecture, allowing properties to modify
+   its behavior when necessary.
+
+ */
+

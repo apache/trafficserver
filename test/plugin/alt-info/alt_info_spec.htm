@@ -1,0 +1,38 @@
+<html>
+<head>
+<title>Untitled Document</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000">
+<p align="center"><b><font size="+2">Plugin alt-info Spec</font></b></p>
+<p>&nbsp;</p>
+<p><font size="+1"><b>Overview</b></font></p>
+<p>The plugin is mainly for testing the functions in the INKHttpAltInfo* group. 
+  It also tests the following APIs:</p>
+<ul>
+  <li> INKHttpTxnCachedReqGet </li>
+  <li>INKHttpTxnSsnGet </li>
+  <li>INKHttpTxnParentProxySet </li>
+  <li>INKrealloc </li>
+</ul>
+<p><font size="+1"><b>Plugin Specification</b></font></p>
+<p>In INKPluginInit(), the pluign registers two handler functions on INK_HTTP_OS_DNS_HOOK 
+  and INK_HTTP_SELECT_ALT_HOOK respectively.</p>
+<p>On INK_HTTP_OS_DNS_HOOK, the plugin calls the following functions:</p>
+<ul>
+  <li> INKHttpTxnCachedReqGet </li>
+  <li>INKHttpTxnSsnGet </li>
+  <li>INKHttpTxnParentProxySet </li>
+  <li>INKrealloc </li>
+</ul>
+According to the return values of the functions, it prints out the status the 
+function calls: pass or fail. 
+<p>On INK_HTTP_SELECT_ALT_HOOK, the plugins gets client request, cached request 
+  and cached response from the alternate information. It then gets the Accept-Language 
+  field value from the client request and the Content-language field value from 
+  the cached response. If these two values are equivalent, the quality of this 
+  alternate is set to 1, otherwise the quality is set to 0. <br>
+</p>
+</body>
+</html>

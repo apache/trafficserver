@@ -1,0 +1,20 @@
+.TH "config:remap"
+.SH NAME
+config:remap \- Specify the location of your remap.config file.
+.SH SYNOPSIS
+config:remap [url]
+.SH DESCRIPTION
+You use the config:remap command to specify from which location (URL) the proxy 
+should retrieve and install your remap.config file.
+.SH OPERAND
+The following operand is supported for the config:remap command:
+.SS "<url>"
+Specifies the location of your remap.config file.
+.SH EXAMPLE
+.SS "Specifying the location of your remap.config file"
+.PP
+.nf
+traffic_shell> config:remap http://somedomain.com/path/remap.config 
+traffic_shell>
+.SH "SEE ALSO"
+show:remap

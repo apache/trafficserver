@@ -1,0 +1,17 @@
+%%define(ts1)(localhost)
+%%define(ts2)(localhost)
+%%define(ts3)(localhost)
+%%define(ts4)(localhost)
+%%define(load1)(localhost)
+%%define(load2)(localhost)
+%%define(load3)(localhost)
+%%define(load4)(localhost)
+%%define(load5)(localhost)
+%%define(load6)(localhost)
+%%define(load7)(localhost)
+%%define(load8)(localhost)
+%%define(load9)(localhost)
+%%define(load10)(localhost)
+
+
+

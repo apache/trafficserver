@@ -1,0 +1,129 @@
+Sent: Wednesday, October 11, 2000 10:50 PM
+Subject: RE: api for alternate selection
+
+see my responses below.
+
+>I need to read-up on Ch. 4. Sounds like a good
+>reference.
+>
+>Essentially, do the transformation (same as append)
+>on the content.
+>
+>Q: If a transformation is occuring, the default is
+>to not cache the transformed content. A call to:
+>
+>	INKHttpTxnUntransformedRespCache(txnp, 1)
+>
+>should allow caching of both types of content.
+
+I don't follow. My recollection is that if a transformation
+is occurring, the default is
+that transformed content, and only transformed content,
+is cached. (See the description of INKHttpTxnTransformedRespCache.)
+
+If you set INKHttpTxnUntransformedRespCache(txnp, 1),
+then untransformed content is cached. I believe the way
+to make sure that both transformed and untransformed
+content is cached is: to set both
+
+INKHttpTxnUntransformedRespCache(txnp, 1)
+and
+INKHttpTxnTransformedRespCache(txnp, 1)
+
+This is what the description of INKHttpTxnUntransformedRespCache
+seems to be saying. (It's directly from the engineer who designed it).
+- but I could be wrong. this part of the api has not been
+tested.
+
+>
+>Is this the same as:
+>
+>	INKHttpTxnTransformedRespCache(txnp, 1)
+>
+>Q:
+>Transformed/non-transformed content is made by
+>using INK_HTTP_SELECT_ALT hook. The "infop"
+>is passed in as a data parameter to the event
+>handler.
+>
+>I set the multiplier based on some criteria
+>that the plugin defines. Next I get the
+>required/appropriate header for this URL.
+>
+>I've struggled with this all afternoon. The docs
+>seem to be wrong about this:
+>
+>OK:
+>INKHttpAltInfoCachedReqGet()
+>Get the cached client req  hdr for this pAltInfo/multiplier value
+>
+>
+>INKHttpAltInfoCachedRespGet()
+>Wrong:
+>  Get the cached client resp hdr for this pAltInfo/multiplier value
+>Should be:
+>  Get the cached o.s.   resp hdr for this pAltInfo/multiplier value
+
+I agree. This is a mistake. I'll fix it.
+
+>
+>OK:
+>INKHttpAltInfoClientReqGet
+>Get the        client request hdr for this pAltInfo/multiplier value
+>
+>
+>It's not fun to have to struggle like this,
+>but that's what I have to work with.
+>Does this sound reasonable?
+
+Yes. Sorry. Hope it gets easier. I'll try to clarify these parts of the
+book.
+
+>
+>
+>>  - transform all responses but cache both transformed and
+>>     non-transformed versions
+>
+>
+>>  -----Original Message-----
+>>  Sent: Tuesday, October 10, 2000 4:15 PM
+>>  Subject: Re: api for alternate selection
+>>
+>>
+>>
+>>  No, I don't have samples. This is one of those parts of the api
+>>  that is being explored for the first time - lucky you! I would be
+>>  very interested in a sample, though, because the documentation
+>>  obviously needs one.
+>>
+>>  i think I might try to modify the append-transform plugin to
+>>  do what's suggested in the documentation, something like:
+>>
+>>  - transform all responses but cache both transformed and
+>>     non-transformed versions
+>>
+>>  - have the plugin check all client requests. If the client requests
+>>      have a particular IP, serve the transformed version, otherwise
+>>       serve the non-transformed version.
+>>
+>>  Are you trying something similar?
+>>
+>>  marjorie
+>>
+>>  >Hi,
+>>  >	I am writting a plug-in that uses all of the
+>>  >	global events of the api. Would you have any
+>>  >	coding samples for processing INK_HTTP_SELECT_ALT_HOOK.
+>>  >
+>>  >	I can register and receive the event, but I don't have
+>>  >	any other details on how to actually process this
+>>  >	event for what it was meant to do. Thanks.
+>>  >
+>>  >-- Miguel --
+>>  >Content-Type: application/octet-stream;
+>>  >	name="Miguel A Ramirez.vcf"
+>>  >Content-Disposition: attachment;
+>>  >	filename="Miguel A Ramirez.vcf"
+>>  >
+>>  >Attachment converted: zeo:Miguel A Ramirez.vcf 2 (????/----) (0001537F)
+>>

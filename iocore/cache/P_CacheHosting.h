@@ -1,0 +1,211 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+#ifndef __P_CACHE_HOSTING_H__
+#define __P_CACHE_HOSTING_H__
+#include "P_Cache.h"
+
+#define CACHE_MEM_FREE_TIMEOUT     HRTIME_SECONDS(1)
+
+class Part;
+class CachePart;
+
+struct CacheHostResult;
+//struct CacheHostRequestData;
+struct Cache;
+
+struct CacheHostRecord
+{
+
+  int Init(int typ);
+  int Init(matcher_line * line_info, int typ);
+  void UpdateMatch(CacheHostResult * r, char *rd);
+  void Print();
+   ~CacheHostRecord()
+  {
+    if (parts)
+      xfree(parts);
+    if (part_hash_table)
+      xfree(part_hash_table);
+    if (cp)
+      xfree(cp);
+  }
+
+  int type;
+  Part **parts;
+  volatile int good_num_part;
+  volatile int num_part;
+  int num_initialized;
+  unsigned short *part_hash_table;
+  CachePart **cp;
+  int num_cachepart;
+CacheHostRecord():
+  type(0), parts(NULL), good_num_part(0), num_part(0),
+    num_initialized(0), part_hash_table(0), cp(NULL), num_cachepart(0) {
+  }
+
+};
+
+void build_part_hash_table(CacheHostRecord * cp);
+
+struct CacheHostResult
+{
+
+  CacheHostRecord *record;
+
+    CacheHostResult():record(NULL)
+  {
+  }
+};
+
+
+class CacheHostMatcher
+{
+public:
+  CacheHostMatcher(const char *name, const char *filename, int typ);
+   ~CacheHostMatcher();
+  void Match(char *rdata, int rlen, CacheHostResult * result);
+  void AllocateSpace(int num_entries);
+  void NewEntry(matcher_line * line_info);
+  void Print();
+  int getNumElements()
+  {
+    return num_el;
+  };
+  CacheHostRecord *getDataArray()
+  {
+    return data_array;
+  };
+  HostLookup *getHLookup()
+  {
+    return host_lookup;
+  };
+private:
+  static void PrintFunc(void *opaque_data);
+  HostLookup *host_lookup;      // Data structure to do the lookups
+  CacheHostRecord *data_array;  // array of all data items
+  int array_len;                // the length of the arrays
+  int num_el;                   // the numbe of itmems in the tree
+  const char *matcher_name;     // Used for Debug/Warning/Error messages
+  const char *file_name;        // Used for Debug/Warning/Error messages
+  int type;
+};
+
+class CacheHostTable
+{
+public:
+  // Parameter name must not be deallocated before this
+  //  object is
+  CacheHostTable(Cache * c, int typ);
+   ~CacheHostTable();
+  int BuildTable();
+  int BuildTableFromString(char *str);
+  void Match(char *rdata, int rlen, CacheHostResult * result);
+  void Print();
+  int getEntryCount()
+  {
+    return m_numEntries;
+  }
+  CacheHostMatcher *getHostMatcher()
+  {
+    return hostMatch;
+  }
+
+  static int config_callback(const char *, RecDataT, RecData, void *);
+  void register_config_callback(CacheHostTable ** p)
+  {
+    IOCORE_RegisterConfigUpdateFunc("proxy.config.cache.hosting_filename", CacheHostTable::config_callback, (void *) p);
+  }
+
+
+  int type;
+  Cache *cache;
+  int m_numEntries;
+  CacheHostRecord gen_host_rec;
+
+private:
+  CacheHostMatcher * hostMatch;
+  const matcher_tags *config_tags;
+  char config_file_path[PATH_NAME_MAX];
+  const char *matcher_name;     // Used for Debug/Warning/Error messages
+
+};
+
+struct CacheHostTableConfig;
+typedef int (CacheHostTableConfig::*CacheHostTabHandler) (int, void *);
+struct CacheHostTableConfig:Continuation
+{
+  CacheHostTable **ppt;
+    CacheHostTableConfig(CacheHostTable ** appt)
+  : Continuation(NULL), ppt(appt)
+  {
+    SET_HANDLER((CacheHostTabHandler) & CacheHostTableConfig::mainEvent);
+  }
+  int mainEvent(int event, Event * e)
+  {
+    (void) e;
+    (void) event;
+    CacheHostTable *t = NEW(new CacheHostTable((*ppt)->cache, (*ppt)->type));
+    CacheHostTable *old = (CacheHostTable *) ink_atomic_swap_ptr(&t, ppt);
+    new_Deleter(old, CACHE_MEM_FREE_TIMEOUT);
+    return EVENT_DONE;
+  }
+};
+
+
+/* list of partitions in the partition.config file */
+struct ConfigPart
+{
+  int number;
+  int scheme;
+  int size;
+  bool in_percent;
+  int percent;
+  CachePart *cachep;
+    Link<ConfigPart> link;
+};
+
+struct ConfigPartitions
+{
+  int num_partitions;
+  int num_http_partitions;
+  int num_stream_partitions;
+    Queue<ConfigPart> cp_queue;
+  void read_config_file();
+  void BuildListFromString(char *config_file_path, char *file_buf);
+  void clear_all(void)
+  {
+    // remove all the partitions from the queue
+    for (int i = 0; i < num_partitions; i++)
+    {
+      cp_queue.pop();
+    }
+    // reset count variables
+    num_partitions = 0;
+    num_http_partitions = 0;
+    num_stream_partitions = 0;
+  }
+
+};
+
+#endif

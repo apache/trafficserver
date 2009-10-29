@@ -1,0 +1,260 @@
+traffic_shell  "a CLI for Traffic Server"
+
+==========
+Motivation
+==========
+
+The purpose of traffic_shell (command line interface, or CLI) is to
+improve the usability of Traffic Server in both OEM and direct sales
+environments. The CLI is a powerful, easy to use tool which can be
+used to configure and monitor individual Traffic Server machines.  Our
+goal is to make configuring Traffic Server as easy as configuring
+other network devices such as routers and switches. 
+
+The CLI accepts commands in a unix shell-like fashion.  Commands are
+organized in an easy to navigate hierarchy.  The CLI supports basic
+command completion, command history, and context sensitive help.  This
+format was designed to be familiar to network engineers everywhere,
+and also to be easier to document, maintain, and add features. 
+
+============
+Architecture
+============
+
+The CLI is a standalone executable which is part of a Traffic Server
+installation on the Linux platform. The CLI supports the following
+operation modes. Note that a "user" can be a person, a script, or some
+other mechanism for remote control of network devices via command line
+interface. 
+
+- Interactive mode:
+"traffic_shell"
+Similar to unix shell, the CLI can be the login shell for
+administrators.  The user types command at a prompt, and the CLI
+processes the command and displays the result.  While in interactive
+mode, the user can execute a file which contains a list of commands. 
+
+-- Execute file mode:
+"traffic_shell -f filename" where file contains a list of CLI commands.
+CLI runs commands and sends results to stdout.
+
+The CLI interface is implemented in a combination of TCL and C++.
+From the traffic_shell prompt, users can access the scripting
+capabilities of TCL.   
+
+The shell and parsing functionality will utilize TCL. Commands
+themselves will be written in C++. The CLI uses the traffic_manager
+Management API to make Traffic Server configuration changes.
+
+The overall CLI architecture is as follows:
+
+- traffic_shell ---------------------------
+|                                         |
+| --------------------------------------- |
+| Shell and parser implemented in TCL/C++ |
+| --------------------------------------- |
+|                 ^                       |
+| ----------------|-------------------    |
+| CLI commands implemented in C++         |
+| ------------------------------------    |
+|         ^                               |
+| --------|----------                     |
+| Management API (.a)                     |
+| -------------------                     |
+|                                         |
+-------------------------------------------
+
+=================
+Quick Start Guide
+=================
+
+There are two basic commands categories, "show" and "config".  Show
+commands are used to view configuration information and statistics.
+Config commands are used to configure Traffic Server.  To use the
+config commands, you must first enter "enable mode" by using the
+enable command, which asks for the admin password (same password as
+WebUI). 
+
+At any point you can access context sensitive help by specifying "-h"
+or "-help" after a command name.  The following is a list of commands
+and options:
+
+-------------
+Show Commands
+-------------
+
+show                         Show command
+show:status                  Proxy status
+show:version                 Version information
+show:security                Security information
+show:http                    HTTP protocol configuration
+show:nntp [servers|access]   NNTP protocol configuration
+show:ftp                     FTP protocol configuration
+show:icp [peer]              ICP protocol configuration
+show:proxy                   Proxy configuration
+show:cache [rules|storage]   Cache configuration
+show:virtual-ip              Virtual-ip configuration
+show:hostdb                  Host database configuration
+show:dns-resolver            DNS resolver configuration
+show:logging                 Logging configuration
+show:ssl                     SSL configuration
+show:filter                  Filter configuration
+show:parent                  Parent configuration
+show:remap                   Remap configuration
+show:snmp                    SNMP configuration
+show:ldap                    LDAP configuration
+show:socks                   SOCKS configuration
+show:port-tunnels            Port tunnels configuration
+show:scheduled-update        Scheduled update configuration
+show:proxy-stats             Proxy statistics
+show:http-trans-stats        HTTP transaction statistics
+show:http-stats              HTTP statistics
+show:nntp-stats              NNTP statistics
+show:ftp-stats               FTP statistics
+show:icp-stats               ICP statistics
+show:cache-stats             Cache statistics
+show:hostdb-stats            Host database statistics
+show:dns-stats               DNS statistics
+show:logging-stats           Logging statistics
+show:alarms                  Show active alarms
+
+---------------
+Config commands
+---------------
+
+config:get <variable>          Display a variable value
+config:set <variable> <value>  Set variable to specified value
+config:name <string>           Set proxy name <string>
+config:start                   Start proxy software
+config:stop                    Stop proxy software
+
+config:ssl <on | off>
+config:ssl ports <int>      
+
+config:filter <url>            Update filter.config rules <url>
+
+config:parent <on | off>    
+config:parent name <parent>
+config:parent rules <url>    
+
+config:remap <url>              Update remap configuration file <url>
+    
+config:snmp <on|off>    
+    
+config:clock date <mm/dd/yyyy>          
+config:clock time <hh:mm:ss>
+config:clock timezone <number from list>       
+    
+config:security <ip-allow | mgmt-allow | admin> <url-config-file>
+config:security password                 
+
+config:http <on | off>
+config:http <keep-alive-timeout-in | keep-alive-timeout-out> <seconds>
+config:http <inactive-timeout-in | inactive-timeout-out> <seconds>
+config:http <active-timeout-in | active-timeout-out> <seconds>
+config:http <remove-from | remove-referer> <on | off>
+config:http <remove-user | remove-cookie> <on | off>
+config:http <remove-header> <string>
+config:http <insert-ip | remove-ip> <on | off>
+config:http proxy <fwd | rev | fwd-rev>      
+
+config:ftp mode <pasv-port | port | pasv>
+config:ftp <inactivity-timeout | expire-after> <seconds>
+config:ftp anonymous-password <string>
+config:ftp proxy <fwd | rev | fwd-rev>       
+    
+config:icp mode <disabled | receive | send-receive>
+config:icp port <int>
+config:icp multicast <on | off>
+config:icp query-timeout <seconds>
+config:icp peers <url-config-file>           
+ 
+config:port-tunnels server-other-ports <port>
+
+config:scheduled-update mode <on | off>
+config:scheduled-update retry count <int> interval <int>
+config:scheduled-update max-concurrent <int>
+config:scheduled-update force-immediate <on | off>
+config:scheduled-update rules <url-config-file>  
+    
+config:socks <on | off>
+config:socks server-ip <x.x.x.x>
+config:socks port <int>
+config:socks timeout <seconds>      
+    
+    
+config:cache <on | off>
+config:cache <http | nntp | ftp> <on | off>
+config:cache ignore-bypass <on | off>
+config:cache <max-object-size | max-alternates> <int>
+config:cache file <url-config-file>
+config:cache freshness verify <when-expired | no-date | always | never>
+config:cache freshness minimum <explicit | last-modified | nothing>
+config:cache freshness no-expire-limit greater-than <sec> less-than <sec>
+config:cache <dynamic | alternates> <on | off>
+config:cache vary <text | images | other> <string>
+config:cache vary cookies <none | all | non-text>        
+    
+    
+config:hostdb <lookup-timeout | foreground-timeout> <seconds>
+config:hostdb <background-timeout | invalid-host-timeout> <seconds>
+config:hostdb <re-dns-on-reload> <on | off>,
+Configure Host Database
+    
+config:logging event <enabled | trans-only | error-only | disabled>
+config:logging mgmt-directory <string>
+config:logging <space-limit | space-headroom> <megabytes>
+config:logging collation-status <inactive | host | send-standard |
+                                 send-custom | send-all>
+config:logging collation-host <string>
+config:logging collation secret <string> tagged <on | off> orphan-limit <int>
+config:logging format <squid | netscape-common | netscape-ext | netscape-ext2>
+               type <ascii | binary> file <string> header <string>
+config:logging splitting <nntp | icp | http> <on | off>
+config:logging custom <on | off> format <traditional | xml>
+config:logging rolling <on | off> offset <hour> interval <hours>
+               auto-delete <on | off>,
+	
+config:dns resolve-timeout <seconds>
+config:dns retries <int>,
+
+config:virtual-ip <on | off>
+config:virtual-ip add <x.x.x.x> device <string> sub-intf <int>
+config:virtual-ip delete <virtual ip number>,
+
+config:network ip-address <x.x.x.x>      (Linux only)
+config:network hostname <string>         (Linux only)
+config:network netmask <x.x.x.x>         (Linux only)
+config:network domainname <string>       (Linux only)
+config:network dns-ip <x.x.x.x>          (Linux only)
+config:network defaultrouter <x.x.x.x>   (Linux only)
+
+config:nntp <on | off>
+config:nntp port <int>
+config:nntp connect-msg <posting | non-posting> <string>
+config:nntp <posting-status | access-control | v2-auth | local-auth> <on | off>
+config:nntp <clustering | allow-feeds | background-posting> <on | off>
+config:nntp <obey-cancel | obey-newgroups | obey-rmgroups> <on | off>
+config:nntp <inactive-timeout | check-new-groups | check-cancelled> <seconds>
+config:nntp <check-parent | check-cluster | check-pull> <seconds>
+config:nntp auth-server <string>
+config:nntp auth-port <seconds>
+config:nntp auth-timeout <seconds>
+config:nntp client-throttle <bytes per second | 0>
+config:nntp <nntp-servers | nntp-access> <url-config-file>,
+
+config:alarms resolve-name <string>
+config:alarms resolve-number <int>
+config:alarms resolve-all
+config:alarms notify <on | off>,
+
+----------------
+Utility commands
+----------------
+    
+enable              Enable Restricted Commands
+
+disable             Disable Restricted Commands
+ 
+debug <on|off>      Turn debugging print statements on/off
+

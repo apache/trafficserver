@@ -1,0 +1,14 @@
+<HTML>
+<HEAD>
+<TITLE>Bad FTP Request</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Bad FTP Request</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Unsupported FTP method .
+</B></FONT>
+<HR>
+</BODY>

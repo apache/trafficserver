@@ -1,0 +1,72 @@
+Readme for Samples for SDKtest_client Plugins
+=============================================
+
+hello_world.c
+- Example of the most basic routine of writing the SDKtest_client plugin.
+
+  This example simply prints a statement to standard error within the 
+  INKPluginInit() to make sure that the plugin is successfully loaded
+  when SDKtest_client starts running.
+
+SimSDKtest.c
+- Simulate the default way of generating requests by the SDKtest_client
+
+  The plugin reads in the origin_servers, hotset, docset, hitrate, and
+  docsize_dist_file options specified in the SDKtest_client.config 
+  by registering INKOptionsProcess().  Then it fills in the request
+  headers into the buffer based on the above criteria in
+  INKRequestCreate().  The request headers generated are in the
+  following format:
+   
+	GET [www.hostname.com:port]/serial_number/lengthxxx HTTP/1.0
+        Accept: */*
+        Host: hostname:port
+
+  Similar to SDKtest, it keeps track of the number of bytes received
+  and the number of successful requests and finally report the
+  result through registering INKReport().
+
+SimSDKtestCache.c
+- Simulate the default way of generating requests by the 
+  SDKtest_client with cachability specified in the client
+  request header in some percentage.  The way it generates
+  the requests is similar to SimSDKtest.c example.  It only differs
+  by adding a 'Cache-Control' header in the MIME field in request 
+  header.  
+
+  Added Options in SDKtest_client.config
+    cachability : percentage of cachable requests we want to generate
+
+BlackList.c
+- Generate requests to the web servers listed in the files specified 
+  by allowed_host_file and forbidden_host_file in some forbidden 
+  ratio specified in the configuration file.  This example is 
+  targeted to test the performance of proxy server with filtering 
+  functionality.
+
+  Added Options in SDKtest_client.config -
+    forbidden_ratio     : percentage of blacklisted requests we
+                          want to generate
+    allowed_host_file   : full path of the file that contains the 
+                          allowed sites
+    forbidden_host_file : full path of the file that contains the 
+                          forbidden sites
+
+  Note: This example can support multiple client machines only if
+        allowed_host_file and forbidden_host_file can be accessed by
+        the client machines through the same specified path in the
+        configuration file.
+
+CheckContentClient.c
+- Do sanity check on every byte in the responded documents.
+  Since we are expecting the documents that are sent by the
+  original server are in the following format:
+
+    01234567890123456789012...
+  ie. The nth byte of the document should be [(n-1)%10] character
+  at the position, we can check if we are getting back the right
+  content.   
+
+  Note: This example needs to work with the CheckContentServer 
+        plugin for SDKtest_server.
+

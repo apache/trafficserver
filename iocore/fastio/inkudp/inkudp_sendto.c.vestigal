@@ -1,0 +1,254 @@
+#include <sys/types.h>
+#include <sys/conf.h> 
+#include <sys/cmn_err.h>
+#include <sys/modctl.h>
+#include <sys/stream.h>
+#include <sys/kmem.h>
+#include <sys/ddi.h>
+#include <sys/socket.h>
+#include <sys/int_types.h>
+#include <sys/stropts.h>
+#include <inet/common.h>
+#include <inet/led.h>
+#include <inet/ip.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <netinet/if_ether.h>
+
+#include <sys/sunddi.h>
+#include "../include/fastio.h"
+#include "solstruct.h"
+#include "inkudp.h"
+
+#define NO_AGGREGATE
+
+
+/* Inkudp global data */
+extern int *bufbaseptr;
+extern int active;
+extern int blkcount;
+extern int blocksize; /* FIXME: pass this through shared memory */
+extern uint16_t * flist0, *flist1, *activefl;
+extern int blockbaseptr;
+extern int nextflentry;
+
+extern struct free_rtn * free_struct;
+
+
+/*
+ * Handle a sendto ioctl
+ */
+int inkudp_ioctl_sendto(mblk_t *mp, queue_t *q)
+{
+
+    int blockid;
+
+    /* for traversing the request */
+    struct fastIO_request * req;
+    struct fastIO_pkt * pkt;
+
+    struct free_rtn * freecb;
+
+    /* for debug stuff */
+    char *ip;
+    
+
+    mblk_t * head=0, *tail=0;
+
+
+#if 0
+    /* make sure the ioctl message is valid */
+    if(!inkudp_ioctl_verify(mp,q))
+    {
+	return 1;
+    }
+#endif
+    
+    cmn_err(CE_CONT, "inkudp_sendto: queue:0x%x", q);
+    
+    /* Get a pointer to the request block */
+    blockid = *((int *) mp->b_cont->b_rptr);
+/*    cmn_err(CE_CONT, "inkudp_sendto:  #%d\n", blockid);*/
+
+    req = (struct fastIO_request *) getBlockPtr((uint16_t)blockid);
+
+
+    /** Loop until we are at the logical end of the
+      * request block
+      **/
+    while(req->destIP != 0xffffffff && req->pktCount)
+    {
+	int i;
+	struct fastIO_pkt *pkt;
+
+	
+	struct udppkt udpreq;
+	
+	/* contains information about the destination */
+	mblk_t * dst_mblk;
+	struct datab * dst_dblock;
+
+
+	
+	
+
+	/* Generate debug output */
+#if 0
+	ip = (char *) &req->destIP;
+	cmn_err(CE_NOTE, "Destination IP: %d.%d.%d.%d, Port: %d, Packet Count: %d\n",
+		ip[3], ip[2],ip[1],ip[0], req->destPort, req->pktCount);
+#endif
+
+	pkt =  (struct fastIO_pkt *) (req +1);
+
+
+
+	/* generate a template mblk with the STREAMS udp request */
+	dst_mblk = (mblk_t *) inkudp_dstmsg_create(req->destIP, req->destPort);
+	if(!dst_mblk)
+	{
+	    cmn_err(CE_WARN, "inkudp: out of memory (inkudp_dstmsg_create failed)\n");
+	    return 0;
+	}
+	dst_dblock = dst_mblk->b_datap;
+
+	for(i=0; i < req->pktCount; i++)
+	{ 
+	    /* two messages, first one links to the second with b_cont */
+	    mblk_t  * msg_dest, * msg_data;
+	    
+	    /*cmn_err(CE_NOTE, "\tPacket: id:%d bytes:%d\n",
+		    pkt->blockID, pkt->pktsize);*/
+
+	    
+
+	    if(!canputnext(q))
+	    {
+		cmn_err(CE_CONT, "inkudp: Zikes!!!  Queue full!\n");
+		inkudp_ioctl_ack_retry(mp,q);
+		return 1;
+	    }
+
+	    /*
+	     *  Check and see if this packet has already been sent.
+	     *  If so, skip it
+	     */
+	    if(pkt->pktsize == 0xffff)
+		{
+		  
+		    pkt++;
+		    continue;
+		    
+		}
+
+    
+	    /* Setup the destination message block */
+	    /*msg_dest = allocb(0,0);*/
+	    msg_dest = (mblk_t *) dupb(dst_mblk); /*inkudp_dstmsg_create(req->destIP, req->destPort);*/
+	    
+	      
+	    if(!msg_dest)
+	    {
+		cmn_err(CE_WARN, "inkudp: out of memory (inkudp_dstmsg_create failed)\n");
+		return 0;
+	    }
+	    /* Setup the data message block */
+	    
+	    
+	    
+	    /*cmn_err(CE_NOTE, "free_struct[%d]<0x%x>", pkt->blockID, &free_struct[pkt->blockID]);*/
+
+	    msg_data = (mblk_t *) esballoc((char*) getBlockPtr(pkt->blockID), blocksize /*pkt->pktsize*/, 
+					  0, &free_struct[pkt->blockID]);
+	    
+	    if(!msg_data)
+	    {
+		cmn_err(CE_WARN, "inkudp: esballoc fails.\n");
+		return 0;
+	    }
+	    msg_data->b_datap->db_type=M_DATA;
+	    
+	    msg_data->b_wptr +=pkt->pktsize;
+
+	    /* link the two messages together */
+	    msg_dest->b_cont = msg_data;
+	    msg_data->b_cont=0;
+
+
+	    /* cmn_err(CE_CONT, "****** OUTPUT MESSAGE ********\n");
+	    inkudp_dump_mblk(msg_dest);*/
+	    
+
+#ifndef NO_AGGREGATE
+	    if(head)
+	    {
+		tail->b_next=msg_dest;
+		msg_dest->b_prev=tail;
+		tail=msg_dest;
+	    }
+	    else
+	    {
+		head=tail=msg_dest;
+	    }
+
+#else
+	    /* send the message */
+	    if(canputnext(q))
+	    {
+		putnext(q,msg_dest);
+	    }
+	    else
+	    {
+		cmn_err(CE_CONT, "inkudp: Unexpected transmission failure.\n");
+		return 1;
+	    }
+
+	    /* mark the work done */
+	    pkt->pktsize=0xffff;
+#endif
+
+	    
+	    /* advance to the next packet requested */
+	    pkt++; /*ptr arith */
+	      
+	}
+	/*
+	 * advance to the next request 
+	 * pkt always gets incremented coming out of the previous loop,
+	 * so this is safe
+	 */
+	req = (struct fastIO_request*) pkt;
+	
+#ifndef NO_AGGREGATE
+	 if(canputnext(q))
+	    {
+		putnext(q,head);
+	    }
+	    else
+	    {
+		cmn_err(CE_CONT, "inkudp: Unexpected transmission failure.\n");
+		return 1;
+	    }
+#endif
+
+
+	/* free the message we used to construct the destination messages */
+	freemsg(dst_mblk);
+
+	/* mark the request block as free */
+	inkudp_free_cb((char*) blockid);
+
+	/*
+	cmn_err(CE_NOTE, "sendto: free_struct[blockid].free_arg = %d", 
+		free_struct[blockid].free_arg);*/
+
+
+    }
+
+
+/* ack the ioctl */
+    inkudp_ioctl_ack(mp,q);
+    
+    return 1;
+    
+}

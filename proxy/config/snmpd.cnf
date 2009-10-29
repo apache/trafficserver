@@ -1,0 +1,201 @@
+# Entry type: sysDescr 
+# Entry format: octetString
+sysDescr  "Traffic Server"
+
+
+# Entry type: sysObjectID 
+# Entry format: OID
+sysObjectID  1.3.6.1.4.1.1967.1.1.2
+
+
+# Entry type: sysLocation 
+# Entry format: octetString
+sysLocation  "where Traffic Server is installed"
+
+
+# Entry type: sysContact 
+# Entry format: octetString
+sysContact  ""
+
+
+# Entry type: sysName 
+# Entry format: octetString
+sysName  "Traffic Server"
+
+
+# Entry type: snmpEnableAuthenTraps 
+# Entry format: integer
+snmpEnableAuthenTraps  1
+
+#Entry type: snmpCommunityEntry
+#Format:  snmpCommunityIndex  (text)
+#         snmpCommunityName  (text)
+#         snmpCommunitySecurityName  (text)
+#         snmpCommunityContextEngineID  (octetString)
+#         snmpCommunityContextName  (text)
+#         snmpCommunityTransportTag  (text)
+#         snmpCommunityStorageType  (nonVolatile, permanent, readOnly)
+snmpCommunityEntry  t0000000 public public localSnmpID - - nonVolatile
+
+# Entry type: snmpEngineBoots 
+# Entry format: integer
+snmpEngineBoots  0
+
+
+#Entry type: usmUserEntry
+#Format:  usmUserEngineID  (octetString)
+#         usmUserName  (text)
+#         usmUserAuthProtocol  (OID)
+#         usmUserPrivProtocol  (OID)
+#         usmUserStorageType  (nonVolatile, permanent, readOnly)
+#         usmTargetTag  (text)
+#         AuthKey  (octetString)
+#         PrivKey  (octetString)
+usmUserEntry  localSnmpID Guest usmNoAuthProtocol usmNoPrivProtocol \
+    nonVolatile ConferenceRoom
+usmUserEntry  localSnmpID AnneXPert usmNoAuthProtocol usmNoPrivProtocol \
+    nonVolatile Headquarters
+usmUserEntry  localSnmpID EarlERiser usmNoAuthProtocol usmNoPrivProtocol \
+    nonVolatile Headquarters
+usmUserEntry  localSnmpID WyleUSleep usmNoAuthProtocol usmNoPrivProtocol \
+    nonVolatile Headquarters
+usmUserEntry  localSnmpID TonyaTTyper usmNoAuthProtocol \
+    usmNoPrivProtocol nonVolatile StaffOffices
+usmUserEntry  localSnmpID CharlieDChief usmNoAuthProtocol \
+    usmNoPrivProtocol nonVolatile -
+usmUserEntry  localSnmpID BobBBookkeeper usmNoAuthProtocol \
+    usmNoPrivProtocol nonVolatile StaffOffices
+usmUserEntry  localSnmpID ShawnNShipping usmNoAuthProtocol \
+    usmNoPrivProtocol nonVolatile StaffOffices
+
+
+#Entry type: vacmAccessEntry
+#Format:  vacmGroupName  (text)
+#         vacmAccessContextPrefix  (text)
+#         vacmAccessSecurityModel  (snmpv1, snmpv2c, snmpv2s, usm)
+#         vacmAccessSecurityLevel  (noAuthNoPriv, authNoPriv, authPriv)
+#         vacmAccessContextMatch  (exact, prefix)
+#         vacmAccessReadViewName  (text)
+#         vacmAccessWriteViewName  (text)
+#         vacmAccessNotifyViewName  (text)
+#         vacmAccessStorageType  (nonVolatile, permanent, readOnly)
+vacmAccessEntry  Guest - usm noAuthNoPriv exact DemoRead DemoWrite DemoRead \
+    nonVolatile
+vacmAccessEntry  Staff - usm noAuthNoPriv exact Confidential Confidential \
+    Confidential nonVolatile
+vacmAccessEntry  Anyone - snmpv1 noAuthNoPriv exact All All All nonVolatile
+vacmAccessEntry  Anyone - snmpv2c noAuthNoPriv exact All All All nonVolatile
+vacmAccessEntry  HelpDesk - usm noAuthNoPriv exact Network Network Network \
+    nonVolatile
+vacmAccessEntry  DayOperator - usm noAuthNoPriv exact All All All nonVolatile
+vacmAccessEntry  DayOperator UPS usm noAuthNoPriv prefix All All All nonVolatile
+vacmAccessEntry  SystemAdmin - usm noAuthNoPriv exact All All All nonVolatile
+vacmAccessEntry  SystemAdmin UPS usm noAuthNoPriv prefix All All All nonVolatile
+vacmAccessEntry  NightOperator - usm noAuthNoPriv exact All All All nonVolatile
+vacmAccessEntry  NightOperator UPS usm noAuthNoPriv prefix All All All \
+    nonVolatile
+
+
+#Entry type: vacmSecurityToGroupEntry
+#Format:  vacmSecurityModel  (snmpv1, snmpv2c, snmpv2s, usm)
+#         vacmSecurityName  (text)
+#         vacmGroupName  (text)
+#         vacmSecurityToGroupStorageType  (nonVolatile, permanent, readOnly)
+vacmSecurityToGroupEntry  snmpv1 public Anyone nonVolatile
+vacmSecurityToGroupEntry  snmpv2c public Anyone nonVolatile
+vacmSecurityToGroupEntry  usm Guest Guest nonVolatile
+vacmSecurityToGroupEntry  usm AnneXPert HelpDesk nonVolatile
+vacmSecurityToGroupEntry  usm EarlERiser DayOperator nonVolatile
+vacmSecurityToGroupEntry  usm WyleUSleep NightOperator nonVolatile
+vacmSecurityToGroupEntry  usm TonyaTTyper Staff nonVolatile
+vacmSecurityToGroupEntry  usm CharlieDChief SystemAdmin nonVolatile
+vacmSecurityToGroupEntry  usm BobBBookkeeper Staff nonVolatile
+vacmSecurityToGroupEntry  usm ShawnNShipping Staff nonVolatile
+
+
+#Entry type: vacmViewTreeFamilyEntry
+#Format:  vacmViewTreeFamilyViewName  (text)
+#         vacmViewTreeFamilySubtree  (OID)
+#         vacmViewTreeFamilyMask  (octetString)
+#         vacmViewTreeFamilyType  (included, excluded)
+#         vacmViewTreeFamilyStorageType  (nonVolatile, permanent, readOnly)
+vacmViewTreeFamilyEntry  All iso - included nonVolatile
+vacmViewTreeFamilyEntry  Network mib_2 - included nonVolatile
+vacmViewTreeFamilyEntry  Network snmpTrap - included nonVolatile
+vacmViewTreeFamilyEntry  Network snmpTraps - included nonVolatile
+vacmViewTreeFamilyEntry  DemoRead system - included nonVolatile
+vacmViewTreeFamilyEntry  DemoRead srExamples - included nonVolatile
+vacmViewTreeFamilyEntry  DemoRead snmpTrap - included nonVolatile
+vacmViewTreeFamilyEntry  DemoRead snmpTraps - included nonVolatile
+vacmViewTreeFamilyEntry  DemoRead ifEntry.0.2 ff:bf included nonVolatile
+vacmViewTreeFamilyEntry  HtmlPage htmlpage - included nonVolatile
+vacmViewTreeFamilyEntry  Unsecure system - included nonVolatile
+vacmViewTreeFamilyEntry  Unsecure snmpTrap - included nonVolatile
+vacmViewTreeFamilyEntry  Unsecure snmpTraps - excluded nonVolatile
+vacmViewTreeFamilyEntry  DemoWrite srBasics - included nonVolatile
+vacmViewTreeFamilyEntry  Confidential enterprises - included nonVolatile
+vacmViewTreeFamilyEntry  Confidential system - included nonVolatile
+vacmViewTreeFamilyEntry  Confidential snmpTrap - included nonVolatile
+vacmViewTreeFamilyEntry  Confidential snmpTraps - included nonVolatile
+
+
+#Entry type: snmpNotifyEntry
+#Format:  snmpNotifyName  (text)
+#         snmpNotifyTag  (text)
+#         snmpNotifyType  (trap(1), inform(2))
+#         snmpNotifyStorageType  (nonVolatile, permanent, readOnly)
+snmpNotifyEntry  31 Console trap nonVolatile
+snmpNotifyEntry  32 TrapSink trap nonVolatile
+
+
+#Entry type: snmpTargetAddrEntry
+#Format:  snmpTargetAddrName  (text)
+#         snmpTargetAddrTDomain  (snmpUDPDomain, snmpIPXDomain, etc.)
+#         snmpTargetAddrTAddress  (transport address,i.e. 192.147.142.254:0)
+#         snmpTargetAddrTimeout  (integer)
+#         snmpTargetAddrRetryCount  (integer)
+#         snmpTargetAddrTagList  (text)
+#         snmpTargetAddrParams  (text)
+#         snmpTargetAddrStorageType  (nonVolatile, permanent, readOnly)
+snmpTargetAddrEntry  1 snmpUDPDomain 127.0.0.1:0 100 3 Console \
+    v1ExampleParams nonVolatile 255.255.255.255:0
+snmpTargetAddrEntry  2 snmpUDPDomain 127.0.0.1:0 100 3 Console \
+    v2cExampleParams nonVolatile 255.255.255.255:0
+snmpTargetAddrEntry  5 snmpUDPDomain 127.0.0.1:0 0 0 Headquarters - \
+    nonVolatile 255.255.255.255:0
+snmpTargetAddrEntry  7 snmpUDPDomain 127.0.0.1:0 0 0 StaffOffices - \
+    nonVolatile 255.255.255.255:0
+snmpTargetAddrEntry  9 snmpUDPDomain 127.0.0.1:0 0 0 ConferenceRoom - \
+    nonVolatile 255.255.255.255:0
+
+
+
+#Entry type: snmpTargetParamsEntry
+#Format:  snmpTargetParamsName  (text)
+#         snmpTargetParamsMessageProcessingModel  (integer)
+#         snmpTargetParamsSecurityModel  (snmpv1, snmpv2c, snmpv2s, usm)
+#         snmpTargetParamsSecurityName  (text)
+#         snmpTargetParamsSecurityLevel  (noAuthNoPriv,authNoPriv,authPriv)
+#         snmpTargetParamsStorageType  (nonVolatile, permanent, readOnly)
+snmpTargetParamsEntry  v1ExampleParams 0 snmpv1 public noAuthNoPriv \
+    nonVolatile
+snmpTargetParamsEntry  v2cExampleParams 1 snmpv2c public noAuthNoPriv \
+    nonVolatile
+snmpTargetParamsEntry  v3ExampleParams 3 usm CharlieDChief noAuthNoPriv \
+    nonVolatile
+
+
+#Entry type: snmpNotifyFilterProfileEntry
+#Format:  snmpTargetParamsName  (text)
+#         snmpNotifyFilterProfileName  (text)
+#         snmpNotifyFilterProfileStorageType  (nonVolatile,permanent,readOnly)
+
+
+#Entry type: snmpNotifyFilterEntry
+#Format:  snmpNotifyFilterProfileName  (text)
+#         snmpNotifyFilterSubtree  (OID)
+#         snmpNotifyFilterMask  (octetString)
+#         snmpNotifyFilterType  (included, excluded)
+#         snmpNotifyFilterStorageType  (nonVolatile, permanent, readOnly)
+
+

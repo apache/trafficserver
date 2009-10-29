@@ -1,0 +1,9 @@
+#Entry type: usmUserEntry
+#Format:  usmUserEngineID  (octetString)
+#         usmUserName  (text)
+#         usmUserAuthProtocol  (OID)
+#         usmUserPrivProtocol  (OID)
+#         usmUserStorageType  (nonVolatile, permanent, readOnly)
+#         usmTargetTag  (text)
+usmUserEntry  localSnmpID rootNoAuthTemplate usmNoAuthProtocol \
+    usmNoPrivProtocol readOnly -

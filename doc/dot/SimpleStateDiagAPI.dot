@@ -1,0 +1,86 @@
+/* A simplified state diagram for HttpSM with API callout points */
+/*   */
+
+
+digraph g {
+center=1;
+size = "7.5,10";
+fontsize="20";
+label = "Inktomi CONFIDENTIAL";
+orientation = "portrait";
+
+"ACCEPT" [ label = "Accept" ];
+"RD_REQ_HDRS" [ label = "Read Req Headers" ];
+"DNS" [ label = "DNS" ];
+"C_LOOKUP" [ label = "Cache Lookup" ];
+"CACHE_LOCK" [ label = "Lock URL in Cache" ];
+"PICK_ADDR" [ label = "Pick Address" ];
+"CACHE_MATCH" [ label = "Cache Match" ];
+"CACHE_FRESH" [ label = "Cache Fresh" ];
+"SND_REQ_HDRS" [ label = "Send Req Headers" ];
+"SETUP_C_READ" [ label = "Setup Cache Read" ];
+"SND_C_HDRS" [ label = "Send Cached Headers" ];
+"CONNECT" [ label = "Try Connect" ];
+"SND_REQ_HDRS" [ label = "Send Req Headers" ];
+"RD_REP_HDRS" [ label = "Read Reply Headers" ];
+"VALID" [ label = "Check Valid" ];
+"SETUP_S_READ" [ label = "Setup Server Read" ];
+"SETUP_CACHE_WRITE" [ label = "Setup Cache Write" ];
+"SETUP_TRANS" [ label = "Setup Transform" ];
+"SETUP_REQ_TRANS" [ label = "Setup Request Transform" ];
+"SETUP_BODY_READ" [ label = "Setup POST/PUT Read" ];
+"TUNNEL" [ label = "Tunnel Response" ];
+"TUNNEL_REQ" [ label = "Tunnel Request Body" ];
+"SND_REP_HDRS" [ label = "Send Reply Headers" ];
+
+"API_START" [ label = "API - Start" shape=box ];
+"API_RD_REQ_HDRS" [ label = "API - Read Req Headers" shape=box ];
+"API_DNS" [ label = "API - DNS" shape=box ];
+"API_CACHE_MATCH" [ label = "API - Cache Match" shape=box ];
+"API_CACHE_READ_HDR" [ label = "API - Cache Read Header" shape=box ];
+"API_SND_REQ_HDRS" [ label = "API - Send Req Headers" shape=box ];
+"API_RD_REP_HDRS" [ label = "API - Read Reply Headers" shape=box ];
+"API_SND_REP_HDRS" [ label = "API - Send Reply Headers" shape=box ];
+"API_SHUTDOWN" [ label = "API - Shutdown" shape=box ];
+
+"ACCEPT" -> "API_START";
+"API_START" -> "RD_REQ_HDRS";
+"RD_REQ_HDRS" -> "API_RD_REQ_HDRS";
+"API_RD_REQ_HDRS" -> "DNS";
+"DNS" -> "API_DNS";
+"API_DNS" -> "C_LOOKUP";
+"C_LOOKUP" -> "API_CACHE_MATCH" [ label = "hit" ];
+"C_LOOKUP" -> "CACHE_LOCK" [ label = "miss" ];
+"CACHE_LOCK" -> "PICK_ADDR";
+"API_CACHE_MATCH" -> "CACHE_MATCH";
+"CACHE_MATCH" -> "CACHE_LOCK" [ label = "no match" ];
+"CACHE_MATCH" -> "API_CACHE_READ_HDR" [ label ="match" ];
+"API_CACHE_READ_HDR" -> "CACHE_FRESH";
+"CACHE_FRESH" -> "SND_C_HDRS" [ label ="fresh" ];
+"CACHE_FRESH" -> "CACHE_LOCK" [ label ="stale" ];
+"SND_C_HDRS" -> "SETUP_C_READ";
+"SETUP_C_READ" -> "SETUP_TRANS";
+"PICK_ADDR" -> "CONNECT";
+"CONNECT" -> "PICK_ADDR" [ label = "fail" ];
+"CONNECT" -> "API_SND_REQ_HDRS" [ label = "success" ];
+"API_SND_REQ_HDRS" -> "SND_REQ_HDRS";
+"SND_REQ_HDRS" -> "SETUP_BODY_READ" [label = "POST/PUT" ];
+"SETUP_BODY_READ" -> "SETUP_REQ_TRANS";
+"SETUP_REQ_TRANS" -> "TUNNEL_REQ";
+"TUNNEL_REQ" -> "RD_REP_HDRS";
+"SND_REQ_HDRS" -> "RD_REP_HDRS" [label = "GET" ];
+"RD_REP_HDRS" -> "API_RD_REP_HDRS"
+"API_RD_REP_HDRS" -> "VALID";
+"VALID" -> "PICK_ADDR" [ label = "no" ];
+"VALID" -> "SETUP_S_READ" [ label = "yes" ];
+"SETUP_S_READ" -> "SETUP_TRANS" [ label = "Uncachable" ];
+"SETUP_S_READ" -> "SETUP_CACHE_WRITE" [ label = "Cachable" ];
+"SETUP_CACHE_WRITE" -> "SETUP_TRANS";
+"SETUP_TRANS" -> "API_SND_REP_HDRS";
+"API_SND_REP_HDRS" -> "SND_REP_HDRS";
+"SND_REP_HDRS" -> "TUNNEL";
+"TUNNEL" -> "API_SHUTDOWN"
+"API_SHUTDOWN" -> "ACCEPT";
+
+}
+

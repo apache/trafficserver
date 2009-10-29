@@ -1,0 +1,643 @@
+---------------------------------------------------------------------------------
+                                    STATS
+
+---------------------------------------------------------------------------------
+The following are the list of problems associated with the
+existing stat system:
+1) atomicity issues
+2) consistency and coupling issues
+3) clearing
+4) persistence
+5) aggregation and derivation
+6) relationship with manager.
+
+Specifically, some of the stats reported seemed incorrect.
+In the cases where individual stats were incorrect (e.g. 
+number of bytes transferred), it is suspected that atomicity
+issues played a role. For example, if the stat variable was
+64 bits long, were all 64 bits being read and written atomically?
+Is there the possibility that while the lower/higher 32 bits
+were being accessed, the other 32 bits were being changed?
+
+In stats which were computed based on other stats (e.g. hit
+rate is ratio of number of cache hits over total number of
+cache lookups), it is suspected that there were coupling problems.
+For example, if the number of cache hits is read and then
+before the number of cache lookups can be read, it is updated,
+the hit rate may appear incorrect.
+
+Some stats are interrelated with other stats (e.g. number of
+client requests and number of cache lookups). Inconsistencies
+between such stats may show up if for example one of the 
+values is accessed and before the other value is accessed, it
+is allowed to change. A single client request may then, for example,
+show two cache lookups.
+
+These issues can be aggravated by allowing administrators to
+clear stat values. This lead us to introduce persistence: 
+disallow clearing of stats. While this does deal with the problems
+associated with clearing, it does not address the coupling,
+inconsistency or atomicity problems. Those remain.
+
+The remaining issues, those of aggregation and interaction with
+the manager did not suffer from any fundamental design problems.
+They were more implementation related issues.
+
+A new stat system which deals correctly with the issues of
+atomicity, consistency and coupling will automatically address
+the clearing and persistence problem. Atomicity can be handled
+very simply by either of two techniques:
+1) make ALL accesses to stat variable atomic operations or
+2) protect ALL accesses to stat variables by placing them
+   within critical regions.
+
+The inconsistency and coupling problem is two-fold in nature.
+There is the problem of grouping - in that related stats (either
+indirectly, as illustrated by the inconsistency example, or
+directly as illustrated by the coupling example), may be grouped
+together. Access to either one of them, then, if controlled, will
+guarantee that the other is not concurrently modified. So, this
+will prevent values from changing while related values are being
+accessed. It will not, however, solve the problem of maintaining
+"transactional" consistency. Look at the number of request/
+number of cache lookup example again. If the stat for the number
+of requests is updated. Then the stat for the number of cache
+lookups is updated, with both updates being within critical regions,
+if the values of both stats are accessed in the time between when
+one is updated and when the other is updated, the inconsistency
+problem remains. So, even though the stats are grouped together in
+that they are accessed through the same mutex, for example, the
+inconsistency problem remains. It can be solved only if we introduce
+the notion of a transaction. All stats which are for the same
+transaction must be updated together. The values of these stats
+at any time, then, will be consistent. This is a more difficult
+problem, because not only does it introduce grouping in space,
+it introduces grouping in time as well. Unfortunately, an implementation
+requires the notion of "local" and "global" stats.
+
+Now, stats fall into three categories:
+1) transactional (dyanmic) stats: e.g. number of current origin server
+   connections,
+2) incremental stats: number of bytes from origin server,
+3) transactional stats: number of requests served.
+
+Stats of type 1) need to just be accessed atomically. They do not
+need to be cleared. Stats of type 2) need to also be accessed atomically,
+and may need to be cleared. They are not related to other stats, so they
+do not need to be grouped. Stats of type 3) need to be accessed atomically,
+but they are grouped and so must be accessed simultaneously in space-time.
+
+The three types of stats can be implemented with three different mechanisms,
+or a single mechanism can be defined which handles all three types. The latter
+approach is more elegant, but it raises questions about performance.
+
+Since transactional stats have to be accessed together, it is logical to
+control access to them through a single lock. A stat structure, then, can
+be defined to have a lock which controls access. For individual stats which
+require just atomic access, however, it may be better to allow direct
+access, without getting a lock. This may reduce lock contention.
+
+We ran two experiments to investigate the performance issue.
+The existing stat system allows for individual atomic access to all stats. 
+We compared the performance of this system with a system where instead of
+atomic access, all access requires getting a single lock. The results from
+inkbench are as follows.
+
+[keep_alive =4, 100% Hit rate, 4 client machines, 40 simultaneous users ]
+atomic: 526 ops/sec
+mutex: 499 ops/sec
+
+Changing the setup to proxy-only, which reduces the number of
+simultaneous accesses, gave:
+
+[keep_alive =4, proxy-only, 4 client machines, 40 simultaneous users ]
+atomic: 284 ops/sec
+mutex: 282 ops/sec
+
+We also ran the test with stats turned off, which gave unexpected results.
+It is unclear, however, how much we really turn the stats off (there were
+even compile-time problems and many of the stat reading/writing routines
+were still being called, etc.).
+
+In addition to the tests mentioned above, we spoke to Prof. Dirk
+Grunwald.  He said that the most expensive operations are the memory
+barriers. On the Alphas, atomic operations are implemented with
+load-locked, store- conditional and memory-barrier instructions. I
+think each operation is implemented with 2 mbs. Locks and Releases
+have one mb each. So, the number of mbs is much higher with atomic
+updates. Both atomic updates and mutex-based updates will have to pay
+similar cache loading costs (if we assume that the loads for the
+test-and-set and the loads for reads will fail, the stores will
+obviously hit). The difference, if any, will come from the contention
+for locks while all of the group elements are being updated and that
+has to be compared with the cost of as many mbs as the stats are being
+atomically updated. Context-switching while holding the lock may also
+result in a performance hit, but it may be possible to address this by
+doing "lazy" updates of global structures.
+
+The consensus, then is to have a single mechanism for access to stats:
+mutexes. This combined with a grouping scheme solves the atomicity,
+consistency, coupling, clearing and persistence problems.
+
+
+---------------------------------------------------------------------------------
+Brian's Rant:
+-------------
+In any case, I want to change the stats system once to address all the issues
+of clearing, persistence, monotonicity, coupled computations, cluster
+aggregation, etc.  Let's be sure we all understand the design issues and do
+the right thing one time.  We've gone through lots of band-aids in the past
+which got us nowhere, so let's get the design right.
+---------------------------------------------------------------------------------
+Issues:
+-------
+1) Clearing
+2) Persistence
+3) Monotonicity
+4) Coupled computations
+5) Cluster aggregation
+6) Inconsistencies between related stats
+
+- Want to be able to clear stats
+- Do not want to see inconsistencies between stats
+
+stats which increase and decrease (e.g. current open connections should
+not be clearable)
+
+persistent stats should not be clearable
+
+related stats should be updated together (updated/cleared)
+
+divide stats into 2 groups:
+1) dynamic stats - not clearable, read,written singly, atomically
+2) grouped stats - must be updated together
+
+---------------------------------------------------------------------------------
+Types Of Stats:
+---------------
+* event system stats
+	** average idle time per thread 
+	** variance of idle time per thread 
+	** average event exec rate per thread 
+	** variance of event exec rate per thread 
+	** average execution time per event 
+	** variance of execution time per event 
+	** average failed mutexes per event 
+	** variance of failed mutexes per event 
+	** average time lag per event
+	** variance of time lag per event
+	
+* ftp processor stats
+	** connections successful pasv
+	** connections failed pasv
+	** connections successful port
+	** connections failed port
+	** connections currently open
+
+* socks processor stats
+	** connections unsuccessful
+	** connections successful
+	** connections currently open
+
+---------------------------------------------------------------------------------
+* cache stats
+	*** total size in bytes
+	*** # cache operations in progress
+	*** Read bandwidth from the disk
+	*** Write bandwidth to the disk
+	*** RAM cache hit-rate.
+	*** Read operations per second.
+	*** Write operations per second.
+	*** Update operations per second.
+	*** Delete operations per second.
+	*** Operations per second.
+
+---------------------------------------------------------------------------------
+* ICP Stats
+proxy.process.icp.config_mgmt_callouts
+  - Manager callouts for ICP config changes
+
+proxy.process.icp.reconfig_polls
+  - ICP config change periodic polls
+
+proxy.process.icp.reconfig_events
+  - ICP config change polls which detected config changes
+
+proxy.process.icp.invalid_poll_data
+  - Negative event callouts with invalid poll data
+
+proxy.process.icp.no_data_read
+  - Read on ICP socket returned <= 0 bytes
+
+proxy.process.icp.short_read
+  - ICP msg len != bytes read
+
+proxy.process.icp.invalid_sender
+  - ICP msg sender unknown
+
+proxy.process.icp.read_not_v2_icp
+  - Sent ICP msg not version 2
+
+(UI) proxy.process.icp.icp_remote_query_requests
+  - Remote ICP query requests received
+
+    proxy.process.icp.icp_remote_responses
+  - ICP replies received for locally generated queries
+
+(UI) proxy.process.icp.cache_lookup_success
+  - ICP queries resulting in Cache lookup success 
+
+(UI) proxy.process.icp.cache_lookup_fail
+  - ICP queries resulting in Cache lookup failure 
+
+(UI) proxy.process.icp.query_response_write
+  - ICP query responses sent
+
+proxy.process.icp.query_response_partial_write
+  - ICP query responses which were short writes
+
+proxy.process.icp.no_icp_request_for_response
+  - Received ICP query responses associated with no ICP request
+
+proxy.process.icp.icp_response_request_nolock
+  - ICP request lock acquire miss
+
+proxy.process.icp.icp_start_icpoff
+  - Local ICP queries aborted due to ICP off
+
+proxy.process.icp.send_query_partial_write
+  - ICP query sends which were short writes
+
+proxy.process.icp.icp_queries_no_expected_replies
+  - Local ICP queries sent where no response was expected
+
+(UI) proxy.process.icp.icp_query_hits
+  - ICP hits received for locally generated queries
+
+(UI) proxy.process.icp.icp_query_misses
+  - ICP misses received for locally generated queries
+
+proxy.process.icp.invalid_icp_query_response
+  - ICP responses with invalid opcodes
+
+(UI) proxy.process.icp.icp_query_requests
+  - Locally generated ICP requests
+
+(UI) proxy.process.icp.total_icp_response_time
+  - Avg response time of each locally generated ICP query
+
+(UI) proxy.process.icp.total_udp_send_queries
+  - Total ICP query sends
+
+(UI) proxy.process.icp.total_icp_request_time
+  - Overall avg response time of locally generated ICP request
+---------------------------------------------------------------------------------
+* nntp stats
+		*** number of open client connections
+		*** number of open server connections
+		*** total number of client connections 
+		*** total number of server connections 
+		*** total # of client bytes
+		*** total # of server bytes
+		*** total # of client ops
+		*** total # of server ops
+		*** client ops/sec ??? is this computable??
+		*** high watermark number of simultaneous client connections
+		*** high watermark client connection time
+
+   we can add more of these as we see fit, perhaps you could send
+   me the new HTTP list, then I could see if we could make the NNTP
+   stats cover similar things.
+---------------------------------------------------------------------------------
+* hostdb/dns stats
+	** hostdb
+		*** total entries
+		*** total number of lookups
+		*** total number of hits
+		*** total number of misses
+		*** hit rate??? (or do we just compute this)
+	// to help tuning
+		*** average TTL remaining for hosts looked up
+		*** total number re-DNS because of re-DNS on reload
+		*** total number re-DNS because TTL expired
+	** dns
+		*** total number of lookups
+		*** total number of hits
+		*** total number of misses
+		*** average service time
+	// to help tuning
+		*** total number of retries
+		*** total number which failed with too many retries
+---------------------------------------------------------------------------------
+* network stats
+>	** incoming connections stats
+  shouldn't these stats be by protocol???
+>		*** average b/w for each connection
+  at the net level, I don't always know when I should be expecting bytes.
+  for example, a keepalive connection may expect more bytes and then not
+  get them.  When do I start and stop the timer???  This needs some thought
+>		*** average latency for each connection
+  same as above.  perhaps
+		*** latency to first byte on an accept
+  however for "latency to first by of a response" I would need to know when
+  the request was done, but that is a protocol level issue.
+>		*** number of documents/connection (keep-alive)
+  this is a protocol issue (http)
+>		*** number aborted
+  I could record how many received a do_io(VIO::ABORT) for what that
+  is worth... maybe this is also a protocol issue
+		*** high/low watermark number of simultaneous connections
+		*** high/low watermark number of connection time
+  is this last one useful??
+>	** outgoing connections stats
+>		*** average b/w for each connection
+>		*** average latency for each connection
+>		*** number of documents/connection (keep-alive)
+>		*** number aborted
+  see above
+		*** high/low watermark number of simultaneous connections
+		*** high/low watermark number of connection time
+>	** incoming connections stats
+  what does this mean??
+>		*** average b/w for each connection
+>		*** average latency for each connection
+>		*** number aborted
+	see above
+>		*** high/low watermark number of simultaneous connections
+>		*** high/low watermark number of connection time
+
+---------------------------------------------------------------------------------
+* Http Stats
+ 	** protocol stats
+ 		*** number of HTTP requests (need for ua->ts, ts->os)
+ 			**** GETs
+ 			**** HEADs
+ 			**** TRACEs
+ 			**** OPTIONs
+ 			**** POSTs
+ 			**** DELETEs
+ 			**** CONNECTs
+ 		*** number of FTP requests (needed only for ua->ts)
+                        **** PASV mode
+                        **** PORT mode
+ 		*** number of invalid requests 
+ 		*** number of broken client connections
+ 		*** number of proxied requests
+ 			**** user-specified
+ 			**** method-specified
+ 			**** config specified (config file)
+ 		*** number of requests with Cookies
+ 		*** number of cache lookups
+ 			**** number of alternates
+ 		*** number of cache hits
+                        cache hits, misses, etc. stats should be catagorized
+                        the same way they are categorized in WUTS (squid logs).
+ 			**** fresh hits
+ 			**** stale hits
+ 				***** heuristically stale
+ 				***** expired/max-aged
+		*** number of cache writes
+		*** number of cache updates
+		*** number of cache deletes
+ 		*** number of valid responses
+ 		*** number of invalid responses
+ 		*** number of retried requests
+ 		*** number of broken server connections
+
+	        *** For each response code, count the number of responses (need for ua->ts, ts->os)
+		*** Histogram of http version (need for ua->ts, ts->os)
+ 		*** number of responses with expires
+ 		*** number of responses with last-modified
+ 		*** number of responses with age
+ 		*** number of responses indicating server clock skew
+ 		*** number of responses preventing cache store
+ 			**** Set-Cookie
+ 			**** Cache-Control: no-store
+ 		*** number of responses proxied directly
+	** Timeouts and connection errors:
+		*** accept timeout (ua -> proxy only)
+		*** background fill timeout (os -> proxy only)
+		*** normal inactive timeout (both ua -> proxy and proxy -> os)
+		*** normal activity timeout (both ua -> proxy and proxy -> os)
+		*** keep-alive idle timeout (both ua -> proxy and proxy -> os)
+	** Connections and transactions time:
+		*** average requests count per connection (both ua and os).
+		*** average connection lifetime (both ua and os).
+		*** average connection utilization (connection time / transactions count).
+		*** average transaction time (from transaction start until transaction end).
+		*** average transaction time histogram per document sizes.
+		  sizes are:
+		    <= 100 bytes, <= 1K, <= 3K, <= 5K, <= 10L, <= 1M, <= infinity
+		*** average transaction processing time (think time).
+		*** average transaction processing time (think time) histogram per document sizes.
+	** Transfer rate:
+		*** bytes per second ua connection and os connection.
+		*** bytes per second ua connection and os connection histogram per document size.
+	** Cache Stats
+		*** cache lookup time hit
+		*** cache lookup time miss
+		*** cache open read time
+		*** cache open write time
+---------------------------------------------------------------------------------
+* loggin stats
+// bytes moved
+STAT(Sum,   log2_stat_bytes_buffered),
+STAT(Sum,   log2_stat_bytes_written_to_disk),
+STAT(Sum,   log2_stat_bytes_sent_to_network),
+STAT(Sum,   log2_stat_bytes_received_from_network),
+// I/O
+STAT(Count, log2_stat_log_files_open),			UI
+STAT(Count, log2_stat_log_files_space_used),		UI
+// events
+STAT(Count, log2_stat_event_log_error),			UI
+STAT(Count, log2_stat_event_log_access),		UI
+STAT(Count, log2_stat_event_log_access_fail),		
+STAT(Count, log2_stat_event_log_access_skip),		UI
+
+---------------------------------------------------------------------------------
+------------
+Here's my version of the 20-stats list for the UI. I gathered all of the
+stats proposed from our meeting last Thursday, added requests from Tait
+Kirkham and Brian Totty, then added a few based on pilot site questions and
+customer's monitoring scripts. Not all of these additional requests are
+necessarily possible to measure. Sorted the proposed statistics into groups
+based on the kind of information they provide the proxy administrator. Then I
+picked the ones that seemed most important to me for the top 20 list. From
+the top-level statistics page there should be links to pages with more detail
+in each operational area.
+
+A few notes:
+"Average" statistics should be calculated over an interval configurable as 1
+minute, 5 minutes or 15 minutes. This includes the cache hit rate. Probably
+the cache detail info page should have a value for the overall average.
+Numbers and measurements in the user interface are presented for the
+convenience of the customer, and should be organized to suit customer needs
+and interests. Statistics from the operating system, the HTTP state machine,
+and anywhere else may be combined to create info presented in the UI.
+-----------------------------------------------------------
+
+  Statistics in the Traffic Manager UI
+  Top "20" Recommended List
+
+Client Responsiveness
+avg/max total transaction time -- request received to last byte sent.
+number of client aborts
+network bytes/sec/client
+
+Proxy Activity
+total/max active client connections
+total/max active server connections
+total/max active cache connections
+total/max active parent proxy connections
+average transaction rate
+total transaction count per protocol {dns, http, nntp, ftp, rtsp}
+total bytes served to clients
+total bytes from origin servers
+total bytes from parent proxies
+bandwidth savings: %  -- bandwidth per interface, per route options?
+
+Cache
+cache utilization %
+avg cache hit rate
+cache revalidates
+
+-----------------------------------------------------------------------------------------------------------------
+
+  Statistics in the Traffic Manager
+  The Whole List
+
+Client Responsiveness
+avg/max time to first byte  -- request received to first byte sent.
+avg/max total transaction time -- request received to last byte sent.
+avg transaction time by type of transaction:
+     cache write
+     non-cached
+     client revalidate
+     proxy revalidate
+     proxy refresh
+number of client aborts
+network bytes/sec/client
+
+Proxy Activity
+total/max active client connections
+total/max active server connections
+total/max active cache connections
+number of active connections by connection status: ESTABLISHED, CLOSE_WAIT,
+TIME_WAIT, ...
+total transaction count per protocol {dns, http, nntp, ftp, rtsp}
+total/max active parent proxy connections
+total bytes served to clients
+total bytes from origin servers
+total bytes from parent proxies
+bandwidth savings: bytes / %
+number of TCP retransmits per client
+ps-like status report of Traffic Server operations
+
+System Utilization
+proxy network utilization %
+cpu utilization %
+disk utilization %
+memory (RAM) utilization %
+
+Cache
+total cache free space
+cache utilization %
+avg cache hit rate
+cache revalidates:
+     client-specified
+     expired (expire/max-age)
+     expired (heuristic)
+cache miss time
+cache hit time
+
+Logging
+total  logging space used
+
+Cluster
+cluster network utilization %
+
+ICP
+total icp responses
+icp hit rate
+total icp requests
+---------------------------------------------------------------------------------
+Subject: Re: Simple UI for TS100
+Date: Thu, 26 Mar 1998 11:48:15 -0800
+
+>From a Support standpoint, I do have some reservations about hacking
+information and function out of the Traffic Manager for TS Lite. Less
+information in the Monitor makes it more difficult to observe Traffic Server
+operation. Less functionality in Configure means more manual editting of
+config files and greater chance of admin errors. These factors could greatly
+increase our support problems and cost for "Lite" customers.
+
+Perhaps the TS Lite UI should just remove all cluster-related information
+and controls, and material related to any other features that simply will
+not be offered on TS Lite, like the maximum network connection limit. Other
+counters and controls that relate to functions and features that are
+operational in TS Lite could be left alone. There're already present in TS
+Classic, so it costs us nothing extra.
+
+-----------------------------------
+
+Within the framework of Adam's proposal, the "Monitor" manager reduces to a
+single screen. Great! With only one screen, gotta be sure that the key
+top-level statistics are visible. I suggest that cache free is not really a
+very interesting value for most sites. Bandwidth savings is the value we
+really want to emphasize, so it must not disappear. So the Dashboard should
+have its current "More Info" stats plus
+    cache size
+    DNS Hit rate
+    Bandwidth savings
+    tps count (the tps meter is nice, but can't be read very precisely)
+The More/Less detail option itself can disappear. The word "cluster" should
+not occur anywhere in the TS Lite UI.
+
+In Configure: Server the node on/off switch and the cluster restart button
+are redundant in TS Lite. Probably ought to lose the cluster button. A
+configurable Traffic Server name also seems useless when you can't have a
+cluster.
+
+For Configure: Logging, perhaps custom log formatting should not be offered
+for TS Lite?
+
+With reduced UI configuration capability, it may be appropriate to remove
+the Configure: Snapshots screen.
+
+Adam Beguelin wrote:
+
+> For TS100 we need a simplified UI.  Here's a first cut on how we should
+> simplify the UI.
+>
+> For most of the removed pages we will simply use the installed defaults.
+>
+> Comments?
+>
+>         Adam
+>
+> On the dashboard add these stats:
+>  o Cahce Free Space
+>  o Cache Size
+>  o DNS Hit rate
+>
+> Remove these monitor pages:
+>  o node
+>  o Graphs
+>  o Protocols
+>  o Cache
+>  o Other
+>
+> Remove these sections under configure:
+>  o Server/Throttling of Network Connections
+>  o Protocols/HTTP timeouts (Leave anon and IP)
+>  o Protocols/SSL
+>  o Protocols/FTP
+>  o Cache/Storage
+>  o Cache/Garbage Collection
+>  o Cache/Freshness
+>  o Cache/Variable Content
+>  o HostDB page
+>  o Logging/Log Collation
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------

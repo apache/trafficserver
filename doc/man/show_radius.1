@@ -1,0 +1,22 @@
+.TH "show:radius"
+.SH NAME
+show:radius \- This command displays Radius authentication configuration.
+.SH SYNOPSIS
+show:radius
+.SH DESCRIPTION
+The show:radius command displays Radius configuration information, including
+the primary and secondary host configuration.  The show:radius command takes no options.
+.SH EXAMPLE
+.PP
+When you execute the show:radius command, you see results in the following format:
+.PP
+.nf
+traffic_shell> show:radius
+Radius Authentication -------- on
+Primary Hostname ------------- NULL
+Primary Port ----------------- 1812
+Secondary Hostname ----------- NULL
+Secondary Port --------------- 1812
+traffic_shell>
+.SH "SEE ALSO"
+config:radius

@@ -1,0 +1,37 @@
+.TH "config:ldap"
+.SH NAME
+config:ldap \- Configures LDAP settings.
+.SH SYNOPSIS
+config:ldap [options]
+.SH DESCRIPTION
+The config:ldap command enables you to configure LDAP settings through a variety of options. 
+You must use one of the options described below.
+.SH OPTIONS
+The following options are supported for the config:ldap command:
+.SS "status <on | off>"
+Enables (on) or disables (off) the LDAP feature.
+.SS "cache-size <integer>"
+Specifies the size of the LDAP cache.
+.SS "ttl <ttl>"
+Specifies the time-to-live value for LDAP.
+.SS "purge-fail <on | off>"
+Enables (on) or disables (off) the purge-fail LDAP functionality.
+.SS "multiple <on | off>"
+Enables (on) or disables (off) the multiple LDAP functionality.
+.SS "bypass <on | off>"
+Enables (on) or disables (off) the bypass LDAP functionality.
+.SS "file <url>"
+Specifies the location of the filter.config file to be installed.
+.SH EXAMPLES
+.SS "Example 1. Enabling the proxy to serve LDAP requests"
+.PP
+.nf
+traffic_shell> config:ldap on
+traffic_shell> 
+.SS "Example 2. Specifying the cache-size for LDAP"
+.PP
+.nf
+traffic_shell> config:ldap cache-size 5000
+traffic_shell> 
+.SH "SEE ALSO"
+show:ldap, show:ldap-stats

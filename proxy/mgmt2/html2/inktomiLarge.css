@@ -1,0 +1,307 @@
+/*-------------------------------------------------------------------------
+  inktomi.css.ink
+  -------------------------------------------------------------------------*/
+
+.primaryColor {
+  background-color: #FFFFFF;
+}
+
+.unhilightColor {
+  background-color: #666688;
+}
+
+.hilightColor {
+  background-color: #AABBDD;
+}
+
+.tertiaryColor {
+  background-color: #000000;
+}
+
+.secondaryColor {
+  background-color: #003366;
+}
+
+.secondaryFont {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+  color: #333366;
+  text-decoration: none;
+  font-variant: normal;
+}
+
+.whiteColor {
+  background-color: #FFFFFF;
+}
+
+.helpBg {
+  background-color: #ccccdd;
+}
+
+.redLinks {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+  color: #CC0000;
+  text-decoration: none;
+  font-variant: normal;
+}
+
+.redLabel {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: bold;
+  color: #CC0000;
+  text-decoration: none;
+  font-variant: normal;
+}
+
+.blueLinks {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+  color: #0000CC;
+  text-decoration: none;
+  font-variant: normal;
+}
+
+.blueLabel {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: bold;
+  color: #0000CC;
+  text-decoration: none;
+  font-variant: normal;
+}
+
+.greyLinks {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+  color: #cccccc;
+  text-decoration: none;
+  font-variant: normal;
+}
+
+.whiteText {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: bold; color: #ffffff;
+  text-decoration: none;
+  font-variant: normal;
+}
+
+.blackLabel {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: bold;
+  color: #000000;
+  text-decoration: none;
+  font-variant: normal;
+}
+
+.blackItem {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+  color: #000000;
+  text-decoration: none;
+  font-variant: normal;
+}
+
+A:link {
+  text-decoration: none;
+  color: #cccccc;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+}
+
+A:visited {
+  text-decoration: none;
+  color: #cccccc;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+}
+
+A:hover {
+  text-decoration:none;
+  color:#ffcc00;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+}
+
+A.help:link {
+  text-decoration: none;
+  cursor: help;
+  color: #333366;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+}
+
+A.help:visited {
+  text-decoration: none;
+  cursor: help;
+  color: #333366;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+}
+
+A.help:hover {
+  text-decoration:none;
+  cursor: help;
+  color:#CC0000;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+}
+
+A.graph:link {
+  text-decoration: none;
+  color: #666699;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+}
+
+A.graph:visited {
+  text-decoration: none;
+  color: #666699;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+}
+
+A.graph:hover {
+  text-decoration:none;
+  color:#333366;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: bold;
+}
+
+.alarmLabel {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  color: #CCCCCC;
+  background-color: #CC0000;
+}
+
+.configureLabel {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  font-weight: bold;
+  color: #000000;
+  background-color: #EEEEEE;
+}
+
+.configureLabelSmall {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  color: #000000;
+  background-color: #EEEEEE;
+}
+
+.monitorLabel {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  color: #000000;
+  background-color: #E0E0F6;
+}
+
+.monitorLabelSmall {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: bold;
+  color: #000000;
+  background-color: #E0E0F6;
+}
+
+.configureHelp {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: #333333;
+}
+
+.configureBody {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  color: #000000;
+}
+
+.configureButton {
+  background-color: #666688;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 11pt;
+  color: #ffffff;
+  border-color: #666688;
+}
+
+.bodyText {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: #000000;
+}
+.bodyReadonlyText {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: #000000;
+  background-color: #FFFFFF;
+}
+
+.yellowButton {
+  background-color: #ffcc00;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 11pt;
+  color: #000000;
+  border-color: #ffcc33;
+}
+
+.alarmButton {
+  background-color: #CC5555;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 11pt;
+  color: #ffffff;
+  border-color: #CC5555;
+}
+
+.alarmColor {
+  background-color: #CC0000;
+  /* cursor: hand; */
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14pt;
+  font-weight: bold;
+  color: #FFFFFF
+}
+
+.warningColor {
+  background-color: #FFFFFF;
+  color: #CC0000;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14pt;
+}
