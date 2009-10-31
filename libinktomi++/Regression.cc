@@ -190,7 +190,7 @@ rprintf(RegressionTest * t, const char *format, ...)
   va_start(ap, format);
   l = ink_bvsprintf(buffer, format2, ap);
   va_end(ap);
-  fprintf(stderr, buffer);
+  fputs(stderr, buffer);
   return (l);
 }
 
