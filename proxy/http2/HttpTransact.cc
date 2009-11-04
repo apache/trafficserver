@@ -8156,13 +8156,10 @@ HttpTransact::handle_content_length_header(State * s, HTTPHdr * header, HTTPHdr 
         //   read-while-write mode and object hasn't been
         //   written into a cache completely.
         cl = s->cache_info.object_read->object_size_get();
-        if (cl == INT_MAX) {
+        if (cl == INT_MAX) { //INT_MAX cl in cache indicates rww in progress
           header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
           s->hdr_info.trust_response_cl = false;
           s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
-          if (s->client_info.http_version == HTTPVersion(1, 1)) {
-            s->client_info.receive_chunked_response = true;
-          }
         } else {
           header->set_content_length(cl);
           s->hdr_info.trust_response_cl = true;
@@ -8383,26 +8380,26 @@ HttpTransact::handle_response_keep_alive_headers(State * s, HTTPVersion ver, HTT
     // to the client to keep the connection alive.
     // Insert a Transfer-Encoding header in the response if necessary.
 
-    if ((s->source == SOURCE_HTTP_ORIGIN_SERVER &&
+    if (// check that the client is HTTP 1.1 and the conf allows chunking
+        s->client_info.http_version == HTTPVersion(1, 1) &&
+        ((s->http_config_param->chunking_enabled == 1 && s->remap_chunking_enabled != 0) ||
+         (s->http_config_param->chunking_enabled == 0 && s->remap_chunking_enabled == 1)) &&
          // we do not need chunked encoding for internal error messages
          // that are sent to the client if the server response is not valid.
+         ((s->source == SOURCE_HTTP_ORIGIN_SERVER &&
          s->hdr_info.server_response.valid() &&
          // if we receive a 304, we will serve the client from the
          // cache and thus do not need chunked encoding.
-         s->hdr_info.server_response.status_get() !=
-         HTTP_STATUS_NOT_MODIFIED && ((s->http_config_param->chunking_enabled == 1 && s->remap_chunking_enabled != 0) ||
-                                      (s->http_config_param->chunking_enabled == 0 && s->remap_chunking_enabled == 1))
-         && s->client_info.http_version == HTTPVersion(1, 1) &&
+         s->hdr_info.server_response.status_get() != HTTP_STATUS_NOT_MODIFIED &&
          (s->current.server->transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
           // we can use chunked encoding if we cannot trust the content
           // length (e.g. no Content-Length and Connection:close in HTTP/1.1 responses)
           s->hdr_info.trust_response_cl == false) && session_auth_close == false) ||
-        (s->source == SOURCE_CACHE && s->client_info.http_version == HTTPVersion(1, 1) &&
-         s->hdr_info.trust_response_cl == false)) {
+         // handle serve from cache (read-while-write) case
+         (s->source == SOURCE_CACHE && s->hdr_info.trust_response_cl == false))) {
 
       s->client_info.receive_chunked_response = true;
-      char *buf = "chunked";
-      heads->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, buf, strlen(buf), true);
+      heads->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED, HTTP_LEN_CHUNKED, true);
     } else {
       s->client_info.receive_chunked_response = false;
     }

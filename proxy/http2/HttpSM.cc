@@ -5966,10 +5966,10 @@ HttpSM::setup_cache_read_transfer()
                                               doc_size, buf_start, &HttpSM::tunnel_handler_cache_read, HT_CACHE_READ,
                                               "cache read");
   tunnel.add_consumer(ua_entry->vc, cache_sm.cache_read_vc, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
-  // if size of a cached item is not known, do chunking for HTTP/1.1 clients
+  // if size of a cached item is not known, we'll do chunking for keep-alive HTTP/1.1 clients
   // this only applies to read-while-write cases where origin server sends a dynamically generated chunked content
   // w/o providing a Content-Length header
-  if (t_state.client_info.http_version == HTTPVersion(1, 1) && t_state.hdr_info.trust_response_cl == false) {
+  if ( t_state.client_info.receive_chunked_response ) {
     tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT);
   }
   ua_entry->in_tunnel = true;
