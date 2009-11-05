@@ -63,6 +63,7 @@ typedef void (*VI_PFN) (int);
 /* Compiler Hints
  */
 #define	NOWARN_UNUSED(x)	(void)(x)
+#define	NOWARN_UNUSED_RETURN(x)	if (x) {}
 #ifdef __GNUC__
 // Enable this to get printf() style warnings on the Inktomi functions.
 //#define PRINTFLIKE(IDX, FIRST)  __attribute__((format (printf, IDX, FIRST)))

@@ -68,7 +68,6 @@ static int interactiveMode;
 static char readVar[255];
 static char setVar[255];
 static char varValue[255];
-static char alarmStr[255];      // OEM_ALARM
 static int reRead;
 static int Shutdown;
 static int BounceCluster;
@@ -94,10 +93,14 @@ handleArgInvocation(clientCLI * cli)
   Tokenizer respTok(";");
   const char *status = NULL;
   const char *resp = NULL;
+  int bufRemaining = sizeof(bufToLm) - 1;
+
+  // Do we really need to memset this, shouldn't it be enough to just do *bufToLm=0; ? /leif
+  memset(bufToLm, '\0', 1024);
 
   // Intialize request as non-interactive
-  memset(bufToLm, '\0', 1024);
-  ink_strncpy(bufToLm, "b ", sizeof(bufToLm));
+  ink_strncpy(bufToLm, "b ", bufRemaining);
+  --bufRemaining;
 
   // Following options must be sent over as their numeric 
   // equivalents that show up in the interactive menu
@@ -110,27 +113,37 @@ handleArgInvocation(clientCLI * cli)
       cli->disconnectFromLM();
       exit(1);
     } else {
-      strncat(bufToLm, "3", sizeof(bufToLm));   /* reread */
+      strncat(bufToLm, "3", bufRemaining);   /* reread */
+      --bufRemaining;
     }
   } else if (ShutdownMgmtCluster == 1) {
-    strncat(bufToLm, "9", sizeof(bufToLm));     /* restart_cluster */
+    strncat(bufToLm, "9", bufRemaining);     /* restart_cluster */
+    --bufRemaining;
   } else if (ShutdownMgmtLocal == 1) {
-    strncat(bufToLm, "8", sizeof(bufToLm));     /* restart_local */
+    strncat(bufToLm, "8", bufRemaining);     /* restart_local */
+    --bufRemaining;
   } else if (Shutdown == 1) {
-    strncat(bufToLm, "4", sizeof(bufToLm));     /* shutdown */
+    strncat(bufToLm, "4", bufRemaining);     /* shutdown */
+    --bufRemaining;
   } else if (BounceCluster == 1) {
-    strncat(bufToLm, "7", sizeof(bufToLm));     /* bounce_cluster */
+    strncat(bufToLm, "7", bufRemaining);     /* bounce_cluster */
+    --bufRemaining;
   } else if (BounceLocal == 1) {
-    strncat(bufToLm, "6", sizeof(bufToLm));     /* bounce_local */
+    strncat(bufToLm, "6", bufRemaining);     /* bounce_local */
+    --bufRemaining;
   } else if (Startup == 1) {
-    strncat(bufToLm, "5", sizeof(bufToLm));     /* startup */
+    strncat(bufToLm, "5", bufRemaining);     /* startup */
+    --bufRemaining;
   } else if (ClearCluster == 1) {
-    strncat(bufToLm, "10", sizeof(bufToLm));    /* clear_cluster */
+    strncat(bufToLm, "10", bufRemaining);    /* clear_cluster */
+    bufRemaining -= 2;
   } else if (ClearNode == 1) {
-    strncat(bufToLm, "11", sizeof(bufToLm));    /* clear_node */
+    strncat(bufToLm, "11", bufRemaining);    /* clear_node */
+    bufRemaining -= 2;
   } else if (QueryDeadhosts == 1) {
     printResponse = true;
-    strncat(bufToLm, "query_deadhosts", sizeof(bufToLm));
+    strncat(bufToLm, "query_deadhosts", bufRemaining);
+    bufRemaining -= 15;
   } else if (*readVar != '\0') {        // Handle a value read
     if (*setVar != '\0' || *varValue != '\0') {
       fprintf(stderr, "%s: Invalid Argument Combination: Can not read and set values at the same time\n", programName);
@@ -138,8 +151,10 @@ handleArgInvocation(clientCLI * cli)
       exit(1);
     } else {
       printResponse = true;
-      strncat(bufToLm, "get ", sizeof(bufToLm));
-      strncat(bufToLm, readVar, sizeof(bufToLm));
+      strncat(bufToLm, "get ", bufRemaining);
+      bufRemaining -= 4;
+      strncat(bufToLm, readVar, bufRemaining);
+      bufRemaining -= strlen(readVar);
     }
   } else if (*setVar != '\0') { // Setting a variable
     if (*varValue == '\0') {
@@ -147,18 +162,19 @@ handleArgInvocation(clientCLI * cli)
       cli->disconnectFromLM();
       exit(1);
     } else {
-      strncat(bufToLm, "set ", sizeof(bufToLm));
-      strncat(bufToLm, setVar, sizeof(bufToLm));
-      strncat(bufToLm, " ", sizeof(bufToLm));
-      strncat(bufToLm, varValue, sizeof(bufToLm));
+      strncat(bufToLm, "set ", bufRemaining);
+      bufRemaining -= 4;
+      strncat(bufToLm, setVar, bufRemaining);
+      bufRemaining -= strlen(setVar);
+      strncat(bufToLm, " ", bufRemaining);
+      --bufRemaining;
+      strncat(bufToLm, varValue, bufRemaining);
+      bufRemaining -= strlen(varValue);
     }
   } else if (*varValue != '\0') {       // We have a value but no variable to set
     fprintf(stderr, "%s: Must specify variable to set with -s when using -v\n", programName);
     cli->disconnectFromLM();
     exit(1);
-  } else if (*alarmStr != '\0') {       // OEM_ALARM: add customized alarm 
-    strncat(bufToLm, "add_alarm ", sizeof(bufToLm));
-    strncat(bufToLm, alarmStr, sizeof(bufToLm));
   } else if (timeout_arg > 0) { //INKqa10515
     timeLeft = timeout_arg * 1000;
   } else {
@@ -219,7 +235,7 @@ runInteractive(clientCLI * cli)
     }
 
     // get input from command line
-    fgets(buf, 512, stdin);
+    NOWARN_UNUSED_RETURN(fgets(buf, 512, stdin));
 
     // check status of 'stdin' after reading
     if (feof(stdin) != 0) {
@@ -281,7 +297,6 @@ main(int argc, char **argv)
   readVar[0] = '\0';
   setVar[0] = '\0';
   varValue[0] = '\0';
-  alarmStr[0] = '\0';           // OEM_ALARM
   reRead = 0;
   Shutdown = 0;
   BounceCluster = 0;
@@ -326,7 +341,6 @@ main(int argc, char **argv)
     {"bounce_local", 'b', "Bounce local traffic_server", "F", &BounceLocal, NULL, NULL},
     {"clear_cluster", 'C', "Clear Statistics (cluster wide)", "F", &ClearCluster, NULL, NULL},
     {"clear_node", 'c', "Clear Statistics (local node)", "F", &ClearNode, NULL, NULL}
-    /*{ "add_alarm", 'a', "Add custom alarm", "S255", &alarmStr, NULL, NULL }, */
     /* INKqa10624
        { "timeout", 'T', "Request timeout (seconds)", "I", &timeout_arg, NULL, NULL} */
 
