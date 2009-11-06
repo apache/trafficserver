@@ -2971,7 +2971,8 @@ ftpProcessSpawn(char *args[], char *output)
   size_t output_size = 4096;
   size_t count = 0;
 
-  pipe(stdoutPipe);
+  if (pipe(stdoutPipe) == (-1))
+    fprintf(stderr, "[ftpProcessSpawn] unable to create stdout pipe\n");
 
   pid = fork();
   if (pid == 0) {               // child process
@@ -3025,7 +3026,8 @@ tclCheckProcessSpawn(char *args[], char *output)
   size_t output_size = 256;
   size_t count = 0;
 
-  pipe(stdoutPipe);
+  if (pipe(stdoutPipe) == (-1))
+    fprintf(stderr, "[tclCheckProcessSpawn] unable to create stdout pipe\n");
 
   pid = fork();
   if (pid == 0) {               // child process
@@ -3143,7 +3145,7 @@ get_rmserver_path()
     if ((ts_file = fopen("/etc/traffic_server", "r")) == NULL) {
       ink_strncpy(ts_base_dir, "/home/trafficserver", sizeof(ts_base_dir));
     } else {
-      fgets(buffer, 1024, ts_file);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
       fclose(ts_file);
       while (!isspace(buffer[i])) {
         ts_base_dir[i] = buffer[i];
@@ -3241,7 +3243,7 @@ inkapi INKError rm_change_ip(int cnt, char **ip)
     return INK_ERR_WRITE_FILE;
   }
 
-  fgets(buf, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   while (!feof(fp)) {
     if (strstr(buf, "ProxyHost")) {
       //printf("%s \n",buf);
@@ -3261,7 +3263,7 @@ inkapi INKError rm_change_ip(int cnt, char **ip)
       //}
     } else
       fputs(buf, fp1);
-    fgets(buf, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   }
   fclose(fp);
   fclose(fp1);
@@ -3337,7 +3339,7 @@ inkapi INKError rm_remove_ip(int cnt, char **ip)
     return INK_ERR_WRITE_FILE;
   }
 
-  fgets(buf, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   while (!feof(fp)) {
     if (strstr(buf, "Address_01")) {
       //printf("%s \n",buf);
@@ -3358,7 +3360,7 @@ inkapi INKError rm_remove_ip(int cnt, char **ip)
         fputs(buf, fp1);
     } else
       fputs(buf, fp1);
-    fgets(buf, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   }
   fclose(fp);
   fclose(fp1);
@@ -3424,7 +3426,7 @@ inkapi INKError rm_change_hostname(INKString hostname)
     return INK_ERR_WRITE_FILE;
   }
 
-  fgets(buf, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   tmp1 = NULL;
   while (!feof(fp)) {
     if (strstr(buf, "Realm=")) {
@@ -3475,7 +3477,7 @@ inkapi INKError rm_change_hostname(INKString hostname)
       fprintf(fp1, "%s\"%s.%s", part1, hostname, part3);
     } else
       fputs(buf, fp1);
-    fgets(buf, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   }
   if (tmp1)
     free(tmp1);
@@ -3565,7 +3567,7 @@ closeAllFds()
     FILE *fd = popen(command, "r");
     if (fd) {
       while (!feof(fd)) {
-        fgets(buffer, BUFFLEN, fd);
+        NOWARN_UNUSED_RETURN(fgets(buffer, BUFFLEN, fd));
         num = atoi(buffer);
         if (num != fd->_fileno && num != 0 && num != 1 && num != 2) {   // for out put 
           //printf("closing fd (%d)\n", num); fflush(stdout);

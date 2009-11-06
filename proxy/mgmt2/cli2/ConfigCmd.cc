@@ -3682,7 +3682,8 @@ ConfigDate(char *datestr)
 
 
   Cli_Debug("Config:clock: get date\n");
-  system("date '+DATE: %m/%d/%Y'");
+  if (system("date '+DATE: %m/%d/%Y'") == (-1))
+    return CLI_ERROR;
 
   return CLI_OK;
 
@@ -3767,7 +3768,8 @@ ConfigTime(char *timestr)
   }
 
   Cli_Debug("Config:clock: get time\n");
-  system("date '+TIME: %H:%M:%S'");
+  if (system("date '+TIME: %H:%M:%S'") == (-1))
+    Cli_Error("ERROR: Unable to set date.\n");
 
   return CLI_OK;
 }
@@ -3796,7 +3798,7 @@ ConfigTimezone(int index, int setvar)
     printf("can not open the file\n");
     return CLI_ERROR;
   }
-  fgets(buffer, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   while (!feof(fp)) {
     if (buffer[0] != '#') {
       strtok(buffer, " \t");
@@ -3807,15 +3809,15 @@ ConfigTimezone(int index, int setvar)
       }
       fprintf(tmp, "%s\n", zone);
     }
-    fgets(buffer, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   }
   fclose(fp);
   fclose(tmp);
   remove("/tmp/zonetab");
-  system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab");
+  NOWARN_UNUSED_RETURN(system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab"));
 
   fp = fopen("/tmp/zonetab", "r");
-  fgets(buffer, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   int i = 0;
   while (!feof(fp)) {
     zone = buffer;
@@ -3827,7 +3829,7 @@ ConfigTimezone(int index, int setvar)
         ink_strncpy(new_zone, zone, sizeof(new_zone));
       }
     }
-    fgets(buffer, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
     i++;
   }
   fclose(fp);
@@ -3864,7 +3866,7 @@ ConfigTimezone(int index, int setvar)
 
     fp = fopen("/etc/sysconfig/clock", "r");
     tmp = fopen("/tmp/clock.tmp", "w");
-    fgets(buffer, 256, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
     while (!feof(fp)) {
       if (strstr(buffer, "ZONE") != NULL) {
         fprintf(tmp, "ZONE=\"%s\"\n", new_zone);
@@ -3873,14 +3875,16 @@ ConfigTimezone(int index, int setvar)
       } else {
         fputs(buffer, tmp);
       }
-      fgets(buffer, 256, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
     }
     fclose(fp);
     fclose(tmp);
-    system("/bin/mv /tmp/clock.tmp /etc/sysconfig/clock");
+    if (system("/bin/mv /tmp/clock.tmp /etc/sysconfig/clock") == (-1))
+      return CLI_ERROR;
 
     ink_snprintf(command, sizeof(command), "/bin/cp -f /usr/share/zoneinfo/%s /etc/localtime", new_zone);
-    system(command);
+    if (system(command) == (-1))
+      return CLI_ERROR;
 
     StartTrafficServer();
 
@@ -3906,7 +3910,7 @@ ConfigTimezoneList()
     printf("can not open the file\n");
     return CLI_ERROR;
   }
-  fgets(buffer, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   while (!feof(fp)) {
     if (buffer[0] != '#') {
       strtok(buffer, " \t");
@@ -3917,15 +3921,18 @@ ConfigTimezoneList()
       }
       fprintf(tmp, "%s\n", zone);
     }
-    fgets(buffer, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   }
   fclose(fp);
   fclose(tmp);
   remove("/tmp/zonetab");
-  system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab");
+  if (system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab") == (-1)) {
+    printf("can not sort zonetab.tmp\n");
+    return CLI_ERROR;
+  }
 
   fp = fopen("/tmp/zonetab", "r");
-  fgets(buffer, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   int i = 0;
   while (!feof(fp)) {
     zone = buffer;
@@ -3937,7 +3944,7 @@ ConfigTimezoneList()
     } else {
       Cli_Printf("%d   %s\n", i, zone);
     }
-    fgets(buffer, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
     i++;
   }
   fclose(fp);
@@ -5111,7 +5118,7 @@ getnameserver(char *nameserver, int len)
     return CLI_ERROR;
 
   do {
-    fgets(buff, sizeof(buff), fstr);
+    NOWARN_UNUSED_RETURN(fgets(buff, sizeof(buff), fstr));
   } while (!feof(fstr) && strncmp(buff, NAMESERVER_MARKER, strlen(NAMESERVER_MARKER)) != 0);
 
   if (feof(fstr)) {
@@ -5143,7 +5150,8 @@ setnameserver(char *nameserver)
     char resolventry[256];
 
 #if (HOST_OS == linux)
-    getdomainname(domain, 256);
+    if (getdomainname(domain, 256) == (-1))
+      return CLI_ERROR;
     snprintf((char *) &resolventry, sizeof(resolventry), "domain %s\nnameserver %s\n", domain, nameserver);
 #endif
 
@@ -5181,7 +5189,7 @@ getrouter(char *router, int len)
     return CLI_ERROR;
 
   do {
-    fgets(buff, sizeof(buff), fstr);
+    NOWARN_UNUSED_RETURN(fgets(buff, sizeof(buff), fstr));
   } while (!feof(fstr) && strncmp(buff, GATEWAY_MARKER, strlen(GATEWAY_MARKER)) != 0);
 
   if (feof(fstr)) {
@@ -5238,7 +5246,7 @@ getnetparms(char *ipnum, char *mask)
 
   /* Flush to the end of the line. Should never be necessary. */
   while (buff[0] != 0 && buff[strlen(buff) - 1] != '\n')
-    fgets(buff, BUFFLEN, ifconfig_data);
+    NOWARN_UNUSED_RETURN(fgets(buff, BUFFLEN, ifconfig_data));
 
   /* Get the second line. */
   if (fgets(buff, BUFFLEN, ifconfig_data) == NULL)
@@ -6323,7 +6331,7 @@ find_value(char *pathname, char *key, char *value, int value_len, char *delim, i
   }
   // coverity[toctou]
   if ((fp = fopen(pathname, "r")) != NULL) {
-    fgets(buffer, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
     while (!feof(fp)) {
       if (strstr(buffer, key) != NULL) {
         if (counter != no) {
@@ -6347,7 +6355,7 @@ find_value(char *pathname, char *key, char *value, int value_len, char *delim, i
           break;
         }
       }
-      fgets(buffer, 80, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 80, fp));
     }
     fclose(fp);
   }

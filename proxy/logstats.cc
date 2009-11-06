@@ -2019,7 +2019,11 @@ main(int argc, char *argv[])
       if (ymon_status == YMON_OK)
         ymon_status = YMON_WARNING;
     } else {
-      write(state_fd, &last_state, sizeof(last_state));
+      if (write(state_fd, &last_state, sizeof(last_state)) == (-1)) {
+        strncat(ymon_notice, " can't write state_fd ", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
+        if (ymon_status == YMON_OK)
+          ymon_status = YMON_WARNING;
+      }
     }
     flock(state_fd, LOCK_UN);
     close(main_fd);

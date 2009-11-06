@@ -212,7 +212,7 @@ disable_interface(char *nic_name)
     return 1;
   }
 
-  fgets(buf, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
 
   while (!feof(fp)) {
     if (strcasestr(buf, "DEVICE")) {
@@ -240,7 +240,7 @@ disable_interface(char *nic_name)
     } else
       fputs(buf, fp1);
 
-    fgets(buf, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   }
 
   fclose(fp);
@@ -307,7 +307,7 @@ set_interface(char *nic_name, char *ip, char *netmask, bool onboot, char *gatewa
     return 1;
   }
 
-  fgets(buf, sizeof(buf), fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
 
   while (!feof(fp)) {
     if (strcasestr(buf, "DEVICE")) {
@@ -347,7 +347,7 @@ set_interface(char *nic_name, char *ip, char *netmask, bool onboot, char *gatewa
     } else
       fputs(buf, fp1);
 
-    fgets(buf, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   }
 
   //now check which of the options is not set, and set it...
@@ -411,13 +411,13 @@ set_interface(char *nic_name, char *ip, char *netmask, bool onboot, char *gatewa
         }
       }
       bool found = false;
-      fgets(buf, 1024, fp);
+      NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
       while (!feof(fp)) {
         if (strcasestr(buf, "GATEWAY") && (strcasestr(buf, "GATEWAYDEV") == NULL)) {
           ink_strncpy(temp_buf, buf, sizeof(temp_buf));
           found = true;
         }
-        fgets(buf, 1024, fp);
+        NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
       }
       fclose(fp);
       if (found) {              //gateway was defined - let's compare to eth0 new gateway
@@ -480,13 +480,13 @@ set_interface_down(char *nic_name)
     return 1;
   }
 
-  fgets(buf, sizeof(buf), fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   while (!feof(fp)) {
     if (strcasestr(buf, "ONBOOT")) {
       fprintf(fp1, "ONBOOT=no\n");
     } else
       fputs(buf, fp1);
-    fgets(buf, sizeof(buf), fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   }
   fclose(fp);
   fclose(fp1);
@@ -731,7 +731,7 @@ up_interface(char *nic_name, bool static_ip, char *ip, char *netmask, bool onboo
           no_alias = 1;
         }
 
-        fgets(buf, sizeof(buf), fp);
+        NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
         while (!feof(fp)) {
           if (strcasestr(buf, hostname)) {
             //now create the new entry for the new host 
@@ -746,7 +746,7 @@ up_interface(char *nic_name, bool static_ip, char *ip, char *netmask, bool onboo
           } else {
             fputs(buf, fp1);
           }
-          fgets(buf, sizeof(buf), fp);
+          NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
         }
 
         //add the entry if it didn't exist before
@@ -852,7 +852,7 @@ mrtg_hostname_change(char *hostname, char *old_hostname)
         perror("[net_config] failed to open new mrtg file");
         return 1;
       }
-      fgets(buf, 1024, fp);
+      NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
       while (!feof(fp)) {
         if ((index = (strcasestr(buf, old_hostname))) != NULL) {
           pos = strlen(buf) - strlen(index);
@@ -864,7 +864,7 @@ mrtg_hostname_change(char *hostname, char *old_hostname)
           fprintf(fp1, "%s\n", tmp_buf);
         } else
           fputs(buf, fp1);
-        fgets(buf, sizeof(buf), fp);
+        NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
       }
       fclose(fp);
       fclose(fp1);
@@ -928,7 +928,7 @@ set_hostname(char *hostname, char *old_hostname, char *ip_addr)
     return 1;
   }
 
-  fgets(buf, sizeof(buf), fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   while (!feof(fp)) {
     if (strcasestr(buf, "HOSTNAME")) {
       fprintf(fp1, "HOSTNAME=%s\n", hostname);
@@ -936,7 +936,7 @@ set_hostname(char *hostname, char *old_hostname, char *ip_addr)
     } else {
       fputs(buf, fp1);
     }
-    fgets(buf, sizeof(buf), fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   }
 
   if (!hostname_flag)
@@ -981,7 +981,7 @@ set_hostname(char *hostname, char *old_hostname, char *ip_addr)
   *first_dot = '\0';
 
   hostname_flag = false;
-  fgets(buf, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   while (!feof(fp)) {
     if (strcasestr(buf, old_hostname)) {
       ink_strncpy(ip_address, strtok(buf, " \t"), sizeof(ip_address));  //here we change buf!!
@@ -997,7 +997,7 @@ set_hostname(char *hostname, char *old_hostname, char *ip_addr)
     } else {
       fputs(buf, fp1);
     }
-    fgets(buf, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   }
 
   //didn't find the host entry - add it as long as we have an external IP - fix for BZ48925
@@ -1057,7 +1057,7 @@ set_gateway(char *ip_address, char *old_ip_address)
   }
 
   bool changed = false;
-  fgets(buf, sizeof(buf), fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   while (!feof(fp)) {
     if ((strcasestr(buf, "GATEWAY")) && (strcasestr(buf, "GATEWAYDEV") == NULL)) {
       if (ip_address != NULL) {
@@ -1066,7 +1066,7 @@ set_gateway(char *ip_address, char *old_ip_address)
       }                         //if NULL we delete the old gateway - no new one
     } else
       fputs(buf, fp1);
-    fgets(buf, sizeof(buf), fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   }
   if (!changed) {               //gateway wasn't in there before
     fprintf(fp1, "GATEWAY=%s\n", ip_address);
@@ -1111,13 +1111,13 @@ set_gateway(char *ip_address, char *old_ip_address)
     }
 
     bool found = false;
-    fgets(buf, sizeof(buf), fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
     while (!feof(fp)) {
       if (strcasestr(buf, "GATEWAY") && (strcasestr(buf, "GATEWAYDEV") == NULL)) {
         ink_strncpy(temp_buf, buf, sizeof(temp_buf));
         found = true;
       }
-      fgets(buf, sizeof(buf), fp);
+      NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
     }
     fclose(fp);
     if (found) {                //gateway was defined - let's compare eth0 with old general gateway
@@ -1188,7 +1188,7 @@ set_dns_server(char *dns_server_ips)
     return 1;
   }
   //  bool changed = false;
-  fgets(buf, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   while (!feof(fp)) {
     if (strcasestr(buf, "nameserver")) {
       /*      if (!changed) {
@@ -1197,7 +1197,7 @@ set_dns_server(char *dns_server_ips)
          }
        */ } else
       fputs(buf, fp1);
-    fgets(buf, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   }
   dns_ip = strtok(dns_server_ips, " ");
   while (dns_ip) {
@@ -1263,14 +1263,14 @@ set_domain_name(char *domain_name)
     return 1;
   }
 
-  fgets(buf, sizeof(buf), fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   while (!feof(fp)) {
     if (strcasestr(buf, "domain")) {
       fprintf(fp1, "domain %s \n", domain_name);
       domain_flag = true;
     } else
       fputs(buf, fp1);
-    fgets(buf, sizeof(buf), fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   }
 
   if (!domain_flag)
@@ -1319,14 +1319,14 @@ set_search_domain(char *search_name)
     return 1;
   }
 
-  fgets(buf, sizeof(buf), fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   while (!feof(fp)) {
     if (strcasestr(buf, "search")) {
       fprintf(fp1, "search %s\n", search_name);
       search_flag = true;
     } else
       fputs(buf, fp1);
-    fgets(buf, sizeof(buf), fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   }
 
   if (!search_flag)
@@ -1650,7 +1650,7 @@ rm_stop_proxy()
     if ((ts_file = fopen("/etc/traffic_server", "r")) == NULL) {
       ink_strncpy(ts_base_dir, "/home/trafficserver", sizeof(ts_base_dir));
     } else {
-      fgets(buffer, sizeof(buffer), ts_file);
+      NOWARN_UNUSED_RETURN(fgets(buffer, sizeof(buffer), ts_file));
       fclose(ts_file);
       while (!isspace(buffer[i])) {
         ts_base_dir[i] = buffer[i];
@@ -1698,7 +1698,7 @@ rm_stop_proxy()
       return -1;
     }
 
-    fgets(buffer, 1024, pid_file);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, pid_file));
     fclose(pid_file);
     // coverity[secure_coding]
     if (sscanf(buffer, "%d\n", &old_pid) != 1) {
@@ -1718,7 +1718,7 @@ rm_stop_proxy()
       return -1;
     }
 
-    fgets(buffer, 1024, pid_file);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, pid_file));
     fclose(pid_file);
     // coverity[secure_coding]
     if (sscanf(buffer, "%d\n", &pid) != 1) {

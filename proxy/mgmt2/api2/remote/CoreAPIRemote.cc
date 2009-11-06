@@ -201,28 +201,27 @@ mgmt_record_set(char *rec_name, char *rec_val, INKActionNeedT * action_need)
 bool
 start_binary(const char *abs_bin_path)
 {
-  bool ret_value = false;
-
   INKDiags(INK_DIAG_NOTE, "[start_binary] abs_bin_path = %s", abs_bin_path);
   // before doing anything, check for existence of binary and its execute 
   // permissions
   if (access(abs_bin_path, F_OK) < 0) {
     // ERROR: can't find binary
     INKDiags(INK_DIAG_ERROR, "Cannot find executable %s", abs_bin_path);
-    goto DONE;
+    return false;
   }
   // binary exists, check permissions
   else if (access(abs_bin_path, R_OK | X_OK) < 0) {
     // ERROR: doesn't have proper permissions
     INKDiags(INK_DIAG_ERROR, "Cannot execute %s", abs_bin_path);
-    goto DONE;
+    return false;
   }
 
-  system(abs_bin_path);
-  return true;
+  if (system(abs_bin_path) == (-1)) {
+    INKDiags(INK_DIAG_ERROR, "Cannot system(%s)", abs_bin_path);
+    return false;
+  }
 
-DONE:
-  return ret_value;
+  return true;
 }
 
 /*-------------------------------------------------------------------------
@@ -252,7 +251,7 @@ get_root_dir()
   }
 
   if ((ts_file = fopen("/etc/traffic_server", "r")) != NULL) {
-    fgets(buffer, 1024, ts_file);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
     fclose(ts_file);
     while (!ParseRules::is_space(buffer[i])) {
       root_dir[i] = buffer[i];

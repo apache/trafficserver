@@ -217,7 +217,7 @@ Cli_DisplayRules(INKFileNameT fname)
     if (size) {
       // Fix INKqa12220: use printf directly since Cli_Printf may
       // not allocate enough buffer space to display the file contents
-      printf(text);
+      puts(text);
       xfree(text);
     } else {
       Cli_Printf("no rules\n");
@@ -595,7 +595,8 @@ StopTrafficServer()
     return CLI_ERROR;
   }
   snprintf(stop_ts, sizeof(stop_ts), "%s/bin/stop_traffic_server", ts_path);
-  system(stop_ts);
+  if (system(stop_ts) == (-1))
+    return CLI_ERROR;
 
   return 0;
 }
@@ -615,7 +616,8 @@ StartTrafficServer()
   } else {
     snprintf(start_ts, sizeof(start_ts), "%s/bin/start_traffic_server", ts_path);
   }
-  system(start_ts);
+  if (system(start_ts) == (-1))
+    return CLI_ERROR;
 
   return 0;
 }

@@ -1117,13 +1117,17 @@ MetaInfo::_write_to_file()
       n = ink_snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", (unsigned long) _creation_time);
       // TODO modify this runtime check so that it is not an assertion
       ink_release_assert(n <= BUF_SIZE);
-      write(fd, _buffer, n);
+      if (write(fd, _buffer, n) == (-1)) {
+        Warning("Could not write creation_time");
+      }
     }
     if (_flags & VALID_SIGNATURE) {
       n = ink_snprintf(_buffer, BUF_SIZE, "object_signature = %llu\n", _log_object_signature);
       // TODO modify this runtime check so that it is not an assertion
       ink_release_assert(n <= BUF_SIZE);
-      write(fd, _buffer, n);
+      if (write(fd, _buffer, n) == (-1)) {
+        Warning("Could not write object_signaure");
+      }
       Debug("log2-meta", "MetaInfo::_write_to_file\n"
             "\tfilename = %s\n"
             "\tsignature value = %llu\n" "\tsignature string = %s", _filename, _log_object_signature, _buffer);

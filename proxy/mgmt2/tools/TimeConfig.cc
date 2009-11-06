@@ -34,6 +34,8 @@
 #include <signal.h>
 #include <time.h>
 
+#include "ink_defs.h"
+
 #define CHANGE_ALL 	0
 #define CHANGE_TIME 	1
 #define CHANGE_DATE 	2
@@ -72,7 +74,7 @@ main(int argc, char *argv[])
     strncpy(buffer, env_path, 1023);
   } else {
     if ((fp = fopen("/etc/traffic_server", "r")) != NULL) {
-      fgets(buffer, 1024, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
       if (buffer[strlen(buffer) - 1] == '\n') {
         buffer[strlen(buffer) - 1] = '\0';
       }
@@ -97,7 +99,7 @@ main(int argc, char *argv[])
   restart = atoi(argv[1]);
 
   if (restart) {
-    system(stop_traffic_server);
+    NOWARN_UNUSED_RETURN(system(stop_traffic_server));
   }
 
   switch (atoi(argv[2])) {
@@ -139,7 +141,7 @@ main(int argc, char *argv[])
     tmp = fopen("/tmp/clock.tmp", "w");
     if (fp != NULL) {
       int zone_find = 0;
-      fgets(buffer, 1024, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
       while (!feof(fp)) {
         if (strstr(buffer, "ZONE") != NULL) {
           fprintf(tmp, "ZONE=\"%s\"\n", timezone);
@@ -147,7 +149,7 @@ main(int argc, char *argv[])
         } else {
           fputs(buffer, tmp);
         }
-        fgets(buffer, 1024, fp);
+        NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
       }
       fclose(fp);
       if (zone_find == 0) {
@@ -157,12 +159,12 @@ main(int argc, char *argv[])
       fprintf(tmp, "ZONE=\"%s\"\n", timezone);
     }
     fclose(tmp);
-    system("/bin/mv /tmp/clock.tmp /etc/sysconfig/clock");
+    NOWARN_UNUSED_RETURN(system("/bin/mv /tmp/clock.tmp /etc/sysconfig/clock"));
     strncat(zonepath, timezone, (sizeof(zonepath) - 1 - strlen(zonepath)));
     strncpy(command, "/bin/cp -f ", sizeof(command) - 1);
     strncat(command, zonepath, sizeof(command) - 1 - strlen(command));
     strncat(command, " /etc/localtime", sizeof(command) - 1 - strlen(command));
-    system(command);
+    NOWARN_UNUSED_RETURN(system(command));
   }
 
   memset(&v, 0, sizeof(struct timeval));
@@ -184,14 +186,14 @@ main(int argc, char *argv[])
     if ((v.tv_sec = mktime(mPtr)) > 0) {
       settimeofday(&v, NULL);
     }
-    system("/sbin/hwclock --systohc --utc");
+    NOWARN_UNUSED_RETURN(system("/sbin/hwclock --systohc --utc"));
 
 //Change the UTC option to be "true" because we have set the hwclock as UTC
     fp = fopen("/etc/sysconfig/clock", "r");
     tmp = fopen("/tmp/clock.tmp", "w");
     if (fp != NULL) {
       int utc_find = 0;
-      fgets(buffer, 1024, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
       while (!feof(fp)) {
         if (strstr(buffer, "UTC") != NULL) {
           fprintf(tmp, "UTC=true\n");
@@ -199,7 +201,7 @@ main(int argc, char *argv[])
         } else {
           fputs(buffer, tmp);
         }
-        fgets(buffer, 1024, fp);
+        NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
       }
       fclose(fp);
       if (utc_find == 0) {
@@ -209,7 +211,7 @@ main(int argc, char *argv[])
       fprintf(tmp, "UTC=true\n");
     }
     fclose(tmp);
-    system("/bin/mv /tmp/clock.tmp /etc/sysconfig/clock");
+    NOWARN_UNUSED_RETURN(system("/bin/mv /tmp/clock.tmp /etc/sysconfig/clock"));
 
   }
 
@@ -222,9 +224,9 @@ main(int argc, char *argv[])
     sigfillset(&newmask);
     sigprocmask(SIG_UNBLOCK, &newmask, &oldmask);
 
-    system("/sbin/service ntpd stop");
+    NOWARN_UNUSED_RETURN(system("/sbin/service ntpd stop"));
     snprintf(command, sizeof(command) - 1, "/usr/sbin/ntpdate -s -b -p 8 %s", ntpservers);
-    system(command);
+    NOWARN_UNUSED_RETURN(system(command));
     server[server_no] = pos = ntpservers;
     while ((pos = strchr(pos, ' ')) != NULL) {
       *pos = '\0';
@@ -242,12 +244,12 @@ main(int argc, char *argv[])
 
     fp = fopen("/etc/ntp.conf", "r");
     tmp = fopen("/tmp/ntpconf.tmp", "w");
-    fgets(buffer, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
     while (!feof(fp)) {
       if (strncmp(buffer, "server", 6) != 0) {
         fputs(buffer, tmp);
       }
-      fgets(buffer, 1024, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
     }
 
     for (int i = 0; i <= server_no; i++) {
@@ -255,16 +257,16 @@ main(int argc, char *argv[])
     }
     fclose(fp);
     fclose(tmp);
-    system("/bin/mv /tmp/ntpconf.tmp /etc/ntp.conf");
+    NOWARN_UNUSED_RETURN(system("/bin/mv /tmp/ntpconf.tmp /etc/ntp.conf"));
 
-    system("/sbin/chkconfig --level 2345 ntpd on");
-    system("/sbin/service ntpd start");
+    NOWARN_UNUSED_RETURN(system("/sbin/chkconfig --level 2345 ntpd on"));
+    NOWARN_UNUSED_RETURN(system("/sbin/service ntpd start"));
   }
 
   if (restart) {
 //INKqa12511 restart crond because it is sensetive on the time also.
-    system("/sbin/service crond restart");
-    system(start_traffic_server);
+    NOWARN_UNUSED_RETURN(system("/sbin/service crond restart"));
+    NOWARN_UNUSED_RETURN(system(start_traffic_server));
   }
 #endif
   exit(0);

@@ -308,7 +308,7 @@ signal_handler(int sig, siginfo_t * t, void *c)
   }
 #else
   snprintf(sig_msg, sizeof(sig_msg), "NOTE: Traffic Server received Sig %d: %s\n", sig, strsignal(sig));
-  write(2, sig_msg, strlen(sig_msg));
+  NOWARN_UNUSED_RETURN(write(2, sig_msg, strlen(sig_msg)));
   //syslog(LOG_ERR, sig_msg); 
 #endif
 

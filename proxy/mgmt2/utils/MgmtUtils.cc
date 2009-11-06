@@ -367,7 +367,7 @@ mgmt_log(const char *message_format, ...)
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "log ==> %s", message_format);
       vsprintf(message, extended_format, ap);
-      syslog(LOG_WARNING, message);
+      syslog(LOG_WARNING, "%s", message);
     } else {
       snprintf(extended_format, sizeof(extended_format), "[E. Mgmt] log ==> %s", message_format);
       vsprintf(message, extended_format, ap);

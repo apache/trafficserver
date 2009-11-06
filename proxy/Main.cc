@@ -1467,7 +1467,7 @@ find_install_dir(void)
   ink_strncpy(system_base_install, PREFIX, sizeof(system_base_install));
 
   // change the current working directory to the installed directory
-  chdir(system_base_install);
+  NOWARN_UNUSED_RETURN(chdir(system_base_install));
 }
 
 int

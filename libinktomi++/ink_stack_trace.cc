@@ -81,8 +81,10 @@ ink_stack_trace_dump(int sighandler_frame)
   char name[256];
   char *msg = " - STACK TRACE: \n";
   ink_strncpy(name, program_name, sizeof(name) - 2);
-  write(2, name, strlen(name));
-  write(2, msg, strlen(msg));
+  if (write(2, name, strlen(name)) == (-1))
+    return;
+  if (write(2, msg, strlen(msg)) == (-1))
+    return;
 
   void *stack[INK_STACK_TRACE_MAX_LEVELS + 1];
   memset(stack, 0, sizeof(stack));

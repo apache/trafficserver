@@ -168,7 +168,11 @@ Net_GetDefaultRouter(char *router, size_t router_len)
 
     ink_strncpy(command, "/sbin/route -n > /tmp/route_status", sizeof(command));
     remove(tmp_file);
-    system(command);
+    if (system(command) == (-1)) {
+      DPRINTF(("[Net_GetDefaultRouter] run route -n\n"));
+      return -1;
+    }
+        
     fp = fopen(tmp_file, "r");
     if (fp == NULL) {
       DPRINTF(("[Net_GetDefaultRouter] can not open the temp file\n"));
@@ -177,7 +181,7 @@ Net_GetDefaultRouter(char *router, size_t router_len)
 
     char *gw_start;
     bool find_UG = false;
-    fgets(buffer, 256, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
     while (!feof(fp)) {
       if (strstr(buffer, "UG") != NULL) {
         find_UG = true;
@@ -185,7 +189,7 @@ Net_GetDefaultRouter(char *router, size_t router_len)
         gw_start = strtok(NULL, " \t");
         break;
       }
-      fgets(buffer, 256, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
     }
     if (find_UG) {
       ink_strncpy(router, gw_start, router_len);
@@ -320,12 +324,9 @@ Net_GetNetworkIntCount()
 
   // for each NIC
   net_device = fopen("/proc/net/dev", "r");
-  for (int i = 0; i < 3; i++) {
-    fgets(buffer, 200, net_device);
-  }
-  fgets(buffer, 200, net_device);
+
   while (!feof(net_device)) {
-    fgets(buffer, 200, net_device);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 200, net_device));
     if (strstr(buffer, "eth"))  // only counts eth interface
       count++;
   }
@@ -344,13 +345,10 @@ Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)
   char *pos, *tmp;
 
   net_device = fopen("/proc/net/dev", "r");
-  for (int i = 0; i < 3; i++) {
-    fgets(buffer, 200, net_device);
-  }
-  fgets(buffer, 200, net_device);
+
   int i = 0;
   while (!feof(net_device) && i < int_num) {
-    fgets(buffer, 200, net_device);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 200, net_device));
     if (strstr(buffer, "eth"))  // only counts the eth interface
       i++;
   }
@@ -467,7 +465,10 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
       strncat(command, tmp_file, (sizeof(command) - strlen(command) - 1));
 
       remove(tmp_file);
-      system(command);
+      if (system(command) == (-1)) {
+        DPRINTF(("[Net_GetNIC_IP] can not run ifconfig\n"));
+        return -1;
+      }
       fp = fopen(tmp_file, "r");
       if (fp == NULL) {
         DPRINTF(("[Net_GetNIC_IP] can not open the temp file\n"));
@@ -475,7 +476,7 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
       }
 
       char *pos, *addr_end, *addr_start = NULL;
-      fgets(buffer, 256, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
       while (!feof(fp)) {
         if (strstr(buffer, "inet addr:") != NULL) {
           pos = strchr(buffer, ':');
@@ -484,7 +485,7 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
           *addr_end = '\0';
           break;
         }
-        fgets(buffer, 256, fp);
+        NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
       }
 
       if (addr_start)
@@ -521,7 +522,10 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
       strncat(command, tmp_file, (sizeof(command) - strlen(command) - 1));
 
       remove(tmp_file);
-      system(command);
+      if (system(command) == (-1)) {
+        DPRINTF(("[Net_GetNIC_Netmask] can not run ifconfig\n"));
+        return -1;
+      }
       fp = fopen(tmp_file, "r");
       if (fp == NULL) {
         DPRINTF(("[Net_GetNIC_Netmask] can not open the temp file\n"));
@@ -529,7 +533,7 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
       }
 
       char *pos, *mask_end, *mask_start = NULL;
-      fgets(buffer, 256, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
       while (!feof(fp)) {
         if (strstr(buffer, "Mask:") != NULL) {
           pos = strstr(buffer, "Mask:");
@@ -538,7 +542,7 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
           *mask_end = '\0';
           break;
         }
-        fgets(buffer, 256, fp);
+        NOWARN_UNUSED_RETURN(fgets(buffer, 256, fp));
       }
 
       if (mask_start)
@@ -798,7 +802,7 @@ find_value(char *pathname, char *key, char *value, size_t value_len, char *delim
   }
   // coverity[toctou]
   if ((fp = fopen(pathname, "r")) != NULL) {
-    fgets(buffer, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
 
     while (!feof(fp)) {
       if (!isLineCommented(buffer) &&   // skip if line is commented
@@ -844,7 +848,7 @@ find_value(char *pathname, char *key, char *value, size_t value_len, char *delim
           break;
         }
       }
-      fgets(buffer, 1024, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
     }
     fclose(fp);
   }
@@ -1031,7 +1035,7 @@ Time_SortTimezone()
     DPRINTF(("[Time_SortTimezone] Can not open the file\n"));
     return -1;
   }
-  fgets(buffer, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   while (!feof(fp)) {
     if (buffer[0] != '#') {
       strtok(buffer, " \t");
@@ -1042,12 +1046,12 @@ Time_SortTimezone()
       }
       fprintf(tmp, "%s\n", zone);
     }
-    fgets(buffer, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   }
   fclose(fp);
   fclose(tmp);
   remove("/tmp/zonetab");
-  system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab");
+  NOWARN_UNUSED_RETURN(system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab"));
   remove("/tmp/zonetab.tmp");
 
   return 0;
@@ -1228,7 +1232,7 @@ Time_GetNTP_Status(char *status, size_t status_len)
   ink_strncpy(status, "", status_len);
 
   fp = popen("/etc/init.d/ntpd status", "r");
-  fgets(buffer, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
   if (strstr(buffer, "running") != NULL) {
     ink_strncpy(status, "on", status_len);
   } else {
@@ -1244,7 +1248,7 @@ Time_SetNTP_Off()
 {
   int status;
 
-  system("/etc/init.d/ntpd stop");
+  status = system("/etc/init.d/ntpd stop");
   status = system("/sbin/chkconfig --level 2345 ntpd off");
   return status;
 }
@@ -1343,7 +1347,7 @@ Net_SetEncryptedRootPassword(char *password)
   fp = fopen("/etc/shadow", "r");
   tmp = fopen("/tmp/shadow", "w");
   if ((fp != NULL) && (tmp != NULL)) {
-    fgets(buffer, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
     while (!feof(fp)) {
       if (strncmp(buffer, "root", 4) != 0) {
         fputs(buffer, tmp);
@@ -1356,12 +1360,12 @@ Net_SetEncryptedRootPassword(char *password)
           free(buf);
         }
       }
-      fgets(buffer, 1024, fp);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
     }
 
     fclose(fp);
     fclose(tmp);
-    system("/bin/mv -f /tmp/shadow /etc/shadow");
+    NOWARN_UNUSED_RETURN(system("/bin/mv -f /tmp/shadow /etc/shadow"));
   }
   setreuid(old_euid, old_euid);
   return 0;
@@ -1420,7 +1424,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     if ((ts_file = fopen("/etc/traffic_server", "r")) == NULL) {
       ink_strncpy(ts_base_dir, "/home/trafficserver", sizeof(ts_base_dir));
     } else {
-      fgets(buffer, sizeof(buf), ts_file);
+      NOWARN_UNUSED_RETURN(fgets(buffer, sizeof(buf), ts_file));
       fclose(ts_file);
 
       for (i = 0; !isspace(buffer[i]); i++)
@@ -1447,7 +1451,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
   }
   //first handle the Linux snmp
   buf[0] = 0;                   /* lv: == strcpy(buf, ""); */
-  fgets(buf, sizeof(buf), fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
 
   while (!feof(fp)) {
     if (!isLineCommented(buf)) {
@@ -1474,7 +1478,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     } else {                    //if isLineCommented
       fputs(buf, fp1);          //only in case of a comment
     }
-    fgets(buf, sizeof(buf), fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
   }
 
   //now check which of the options is not set, and set it...
@@ -1495,7 +1499,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
 
   //now handle TS snmp
   buf[0] = 0;
-  fgets(buf, sizeof(buf), fp_ts);
+  NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp_ts));
   while (!feof(fp_ts)) {
     if (!isLineCommented(buf)) {
       if ((strncasecmp(buf, "sysLocation", 11) == 0) && (sys_location != NULL)) {
@@ -1536,7 +1540,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     } else {                    //if isLineCommented
       fputs(buf, fp1_ts);       //only in case of a comment
     }
-    fgets(buf, sizeof(buf), fp_ts);
+    NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp_ts));
   }
 
   //now check which of the options is not set, and set it...
@@ -1573,7 +1577,9 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
       chmod(snmp_path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
       // cast type in order to get rid of compiling error. disable coverity check here
       // coverity[cast_to_qualified_type]
-      chown(snmp_path, (const int) -1, wheel_gid);
+      if (chown(snmp_path, (const int) -1, wheel_gid) == (-1)) {
+        DPRINTF(("[SysAPI] can not chown new ts_snmp cfg file"));
+      }
     }
   } else {
     int res;
@@ -1623,7 +1629,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     }
 
     buf[0] = 0;
-    fgets(buf, 1024, snmppass_fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, 1024, snmppass_fp));
     while (!feof(snmppass_fp)) {
       if (!isLineCommented(buf)) {
         if (strncasecmp(buf, "result=", 7) == 0) {
@@ -1633,7 +1639,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
       } else {                  //if isLineCommented
         fputs(buf, snmppass_fp1);       //only in case of a comment
       }
-      fgets(buf, 1024, snmppass_fp);
+      NOWARN_UNUSED_RETURN(fgets(buf, 1024, snmppass_fp));
     }
     fclose(snmppass_fp);
     fclose(snmppass_fp1);
@@ -1770,7 +1776,7 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
     return 1;
   }
 
-  fgets(buf, 1024, fp);
+  NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   while (!feof(fp)) {
     if (!isLineCommented(buf)) {
       if (strncasecmp(buf, "sysLocation", 11) == 0) {
@@ -1808,7 +1814,7 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
         }
       }
     }
-    fgets(buf, 1024, fp);
+    NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   }
 
   fclose(fp);

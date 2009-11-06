@@ -3713,7 +3713,7 @@ handle_network_object(WebHttpContext * whc, char *tag, char *arg)
     strncat(command, "/g' >", sizeof(command) - strlen(command) - 1);
     strncat(command, device_ink_path, sizeof(command) - strlen(command) - 1);
     strncat(command, " 2>/dev/null", sizeof(command) - strlen(command) - 1);
-    system(command);
+    NOWARN_UNUSED_RETURN(system(command));
     WebHttpRender(whc, tmpname);
     remove(device_ink_path);
 

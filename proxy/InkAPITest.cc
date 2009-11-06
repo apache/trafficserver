@@ -62,7 +62,7 @@ SDK_RPRINT(RegressionTest * t, char *api_name, char *testcase_name, int status, 
   va_start(ap, err_details_format);
   l = ink_bvsprintf(buffer, format2, ap);
   va_end(ap);
-  fprintf(stderr, buffer);
+  fputs(buffer, stderr);
   return (l);
 }
 
@@ -2962,7 +2962,7 @@ REGRESSION_TEST(SDK_API_INKUrl) (RegressionTest * test, int atype, int *pstatus)
 
   size_t len = url_expected_length + 1;
   url_expected_string = (char *) INKmalloc(len * sizeof(char));
-  memset(url_expected_string, url_expected_length + 1, 0);
+  memset(url_expected_string, 0, url_expected_length + 1);
   snprintf(url_expected_string, len, "%s://%s%s%s%s%s%s%s/%s%s%s%s%s%s%s",
            scheme,
            ((user == NULL) ? "" : user),

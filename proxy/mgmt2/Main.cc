@@ -306,7 +306,7 @@ chdir_root()
     strncpy(root_dir, env_path, PATH_MAX);
   } else {
     if ((ts_file = fopen("/etc/traffic_server", "r")) != NULL) {
-      fgets(buffer, 1024, ts_file);
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
       fclose(ts_file);
       while (!isspace(buffer[i])) {
         root_dir[i] = buffer[i];

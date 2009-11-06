@@ -170,7 +170,7 @@ CIFCReadEntry::ConfigReadIFCEle()
 
   case 0:
     p1++;
-    snprintf(Output, p2 - p1, p1);
+    snprintf(Output, p2 - p1, "%s", p1);
     //memset(Output + (p2-p1), 1, 0);
     delete[]filebuffer;
     return (ConfigReadPrintIFCEle());

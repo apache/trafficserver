@@ -2959,7 +2959,7 @@ handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
           if (floppy_drive_mount_point != NULL)
             ink_snprintf(unmountPath, sizeof(unmountPath), "/bin/umount %s", floppy_drive_mount_point);
           else {
-            system("sync;sync;sync");
+            NOWARN_UNUSED_RETURN(system("sync;sync;sync"));
             linkFile = "/configure/c_snapshot_floppy.ink";
             ink_hash_table_insert(whc->submit_warn_ht, "CouldnotUnmount", NULL);
             if (!(whc->request_state & WEB_HTTP_STATE_SUBMIT_WARN)) {
@@ -4796,7 +4796,7 @@ handle_submit_otw_upgrade(WebHttpContext * whc, const char *file)
       if (ink_hash_table_lookup(whc->post_data_ht, "working_dir", (void **) &working_dir)) {
         // cleanup
         ink_snprintf(tmp, MAX_TMP_BUF_LEN, "/bin/rm -rf %s", working_dir);
-        system(tmp);
+        NOWARN_UNUSED_RETURN(system(tmp));
       }
       if (submit_from_page)
         xfree(submit_from_page);
