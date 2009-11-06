@@ -28,5 +28,5 @@ See libinktomi++/ink_res_init.cc, libinktomi++/ink_res_mkquery.cc
 
 Copyright (c) 1997-1998 Sun Microsystems, Inc.
 
-See proxy/mgmt2/cli2/hashtable.cc
+See proxy/mgmt2/cli2/hashtable.cc, m4/tcl.m4
 

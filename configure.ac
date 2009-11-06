@@ -255,8 +255,6 @@ AS_IF([test "x$PERL" = "xnot found"],
 AC_ARG_VAR([DOXYGEN], [full path of Doxygen executable])
 AC_ARG_VAR([PERL], [full path of Perl executable])
 
-AC_PATH_PROG([TCLSH],[tclsh],[],[/usr/releng/bin /bin /usr/bin])
-
 AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
 
 #
@@ -339,12 +337,19 @@ AC_CHECK_LIB([ssl],[SSL_CTX_new],
   [-ldl -lcrypto -lgcc]
 )
 
-# for linux need LIBM and LIBDL
-AC_CHECK_LIB([tcl],[Tcl_InitHashTable],
-  [AC_SUBST([LIBTCL],["-ltcl"])],
-  [AC_MSG_FAILURE([check for libtcl failed. Have you installed tcl-devel?])],
-  [$LIBM $LIBDL]
-)
+#
+# Tcl macros provided by m4/tcl.m4
+#
+
+# this will error out if tclConfig.sh is not found
+SC_PATH_TCLCONFIG
+
+# if tclConfig.sh loads properly, assume libraries are there and working
+SC_LOAD_TCLCONFIG
+
+# expect tclConfig.sh to populate TCL_LIB_FLAG and TCL_INCLUDE_SPEC
+AC_SUBST([LIBTCL],[$TCL_LIB_FLAG])
+CPPFLAGS="$CPPFLAGS $TCL_INCLUDE_SPEC"
 
 AC_CHECK_LIB([expat],[XML_SetUserData],
   [AC_SUBST([LIBEXPAT],["-lexpat"])],
