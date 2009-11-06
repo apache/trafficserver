@@ -3682,7 +3682,7 @@ ConfigDate(char *datestr)
 
 
   Cli_Debug("Config:clock: get date\n");
-  if (system("date '+DATE: %m/%d/%Y'") == (-1))
+  if (system("date '+DATE: %m/%d/%Y'") == -1)
     return CLI_ERROR;
 
   return CLI_OK;
@@ -3768,7 +3768,7 @@ ConfigTime(char *timestr)
   }
 
   Cli_Debug("Config:clock: get time\n");
-  if (system("date '+TIME: %H:%M:%S'") == (-1))
+  if (system("date '+TIME: %H:%M:%S'") == -1)
     Cli_Error("ERROR: Unable to set date.\n");
 
   return CLI_OK;
@@ -3879,11 +3879,11 @@ ConfigTimezone(int index, int setvar)
     }
     fclose(fp);
     fclose(tmp);
-    if (system("/bin/mv /tmp/clock.tmp /etc/sysconfig/clock") == (-1))
+    if (system("/bin/mv /tmp/clock.tmp /etc/sysconfig/clock") == -1)
       return CLI_ERROR;
 
     ink_snprintf(command, sizeof(command), "/bin/cp -f /usr/share/zoneinfo/%s /etc/localtime", new_zone);
-    if (system(command) == (-1))
+    if (system(command) == -1)
       return CLI_ERROR;
 
     StartTrafficServer();
@@ -3926,7 +3926,7 @@ ConfigTimezoneList()
   fclose(fp);
   fclose(tmp);
   remove("/tmp/zonetab");
-  if (system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab") == (-1)) {
+  if (system("/bin/sort /tmp/zonetab.tmp > /tmp/zonetab") == -1) {
     printf("can not sort zonetab.tmp\n");
     return CLI_ERROR;
   }
@@ -5150,7 +5150,7 @@ setnameserver(char *nameserver)
     char resolventry[256];
 
 #if (HOST_OS == linux)
-    if (getdomainname(domain, 256) == (-1))
+    if (getdomainname(domain, 256) == -1)
       return CLI_ERROR;
     snprintf((char *) &resolventry, sizeof(resolventry), "domain %s\nnameserver %s\n", domain, nameserver);
 #endif

@@ -168,7 +168,7 @@ Net_GetDefaultRouter(char *router, size_t router_len)
 
     ink_strncpy(command, "/sbin/route -n > /tmp/route_status", sizeof(command));
     remove(tmp_file);
-    if (system(command) == (-1)) {
+    if (system(command) == -1) {
       DPRINTF(("[Net_GetDefaultRouter] run route -n\n"));
       return -1;
     }
@@ -465,7 +465,7 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
       strncat(command, tmp_file, (sizeof(command) - strlen(command) - 1));
 
       remove(tmp_file);
-      if (system(command) == (-1)) {
+      if (system(command) == -1) {
         DPRINTF(("[Net_GetNIC_IP] can not run ifconfig\n"));
         return -1;
       }
@@ -522,7 +522,7 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
       strncat(command, tmp_file, (sizeof(command) - strlen(command) - 1));
 
       remove(tmp_file);
-      if (system(command) == (-1)) {
+      if (system(command) == -1) {
         DPRINTF(("[Net_GetNIC_Netmask] can not run ifconfig\n"));
         return -1;
       }
@@ -1000,7 +1000,7 @@ NetConfig_Action(int index, ...)
     res = execv(command_path, argv);
 
     if (res != 0) {
-      DPRINTF(("[SysAPI] fail to call net_config"));
+      DPRINTF(("[SysAPI] fail to call net_config\n"));
     }
     _exit(res);
   }
@@ -1320,7 +1320,7 @@ TimeConfig_Action(int index, bool restart ...)
     res = execv(command_path, argv);
 
     if (res != 0) {
-      DPRINTF(("[SysAPI] fail to call time_config"));
+      DPRINTF(("[SysAPI] fail to call time_config\n"));
     }
     _exit(res);
   }
@@ -1414,7 +1414,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
   //first open the snmp files
   snprintf(snmp_path, sizeof(snmp_path), "%s", SNMP_PATH);
   if ((fp = fopen(snmp_path, "r")) == NULL && (fp = fopen(snmp_path, "a+")) == NULL) {
-    DPRINTF(("[SysAPI] failed to open snmp configuration file"));
+    DPRINTF(("[SysAPI] failed to open snmp configuration file\n"));
     return 1;
   }
 
@@ -1435,18 +1435,18 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
 
   snprintf(ts_snmp_path, sizeof(ts_snmp_path), "%s/conf/yts/%s", ts_base_dir, TS_SNMP_PATH);
   if ((fp_ts = fopen(ts_snmp_path, "r")) == NULL && (fp_ts = fopen(ts_snmp_path, "a+")) == NULL) {
-    DPRINTF(("[SysAPI] failed to open ts snmp configuration file"));
+    DPRINTF(("[SysAPI] failed to open ts snmp configuration file\n"));
     fclose(fp);
     return 1;
   }
   snprintf(snmp_path_new, sizeof(snmp_path_new), "%s.new", SNMP_PATH);
   if ((fp1 = fopen(snmp_path_new, "w")) == NULL) {
-    DPRINTF(("[SysAPI] failed to open new snmp configuration file"));
+    DPRINTF(("[SysAPI] failed to open new snmp configuration file\n"));
     return 1;
   }
   snprintf(ts_snmp_path_new, sizeof(ts_snmp_path_new), "%s/%s.new", ts_base_dir, TS_SNMP_PATH);
   if ((fp1_ts = fopen(ts_snmp_path_new, "w")) == NULL) {
-    DPRINTF(("[SysAPI] failed to open new ts snmp configuration file"));
+    DPRINTF(("[SysAPI] failed to open new ts snmp configuration file\n"));
     return 1;
   }
   //first handle the Linux snmp
@@ -1577,15 +1577,15 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
       chmod(snmp_path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
       // cast type in order to get rid of compiling error. disable coverity check here
       // coverity[cast_to_qualified_type]
-      if (chown(snmp_path, (const int) -1, wheel_gid) == (-1)) {
-        DPRINTF(("[SysAPI] can not chown new ts_snmp cfg file"));
+      if (chown(snmp_path, (const int) -1, wheel_gid) == -1) {
+        DPRINTF(("[SysAPI] can not chown new ts_snmp cfg file\n"));
       }
     }
   } else {
     int res;
     res = execl(mv_binary, "mv", snmp_path_new, snmp_path, NULL);
     if (res != 0) {
-      DPRINTF(("[SysAPI] mv of new snmp cfg file failed "));
+      DPRINTF(("[SysAPI] mv of new snmp cfg file failed\n"));
     }
     _exit(res);
   }
@@ -1598,7 +1598,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     int res;
     res = execl(mv_binary, "mv", ts_snmp_path_new, ts_snmp_path, NULL);
     if (res != 0) {
-      DPRINTF(("[SysAPI] mv of new ts_snmp cfg file failed "));
+      DPRINTF(("[SysAPI] mv of new ts_snmp cfg file failed\n"));
     }
     _exit(res);
   }
@@ -1617,14 +1617,14 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     snprintf(snmp_pass, sizeof(snmp_pass), "%s/bin/snmppass.sh", ts_base_dir);
     if ((snmppass_fp = fopen(snmp_pass, "r")) == NULL) {
       if ((fp = fopen(snmp_pass, "a+")) == NULL) {
-        DPRINTF(("[SysAPI] failed to open ts snmp script file"));
+        DPRINTF(("[SysAPI] failed to open ts snmp script file\n"));
         return 1;
       }
       fclose(fp);
     }
     snprintf(snmp_pass_new, sizeof(snmp_pass_new), "%s/bin/snmppass.sh.new", ts_base_dir);
     if ((snmppass_fp1 = fopen(snmp_pass_new, "w")) == NULL) {
-      DPRINTF(("[SysAPI] failed to open new snmp script file"));
+      DPRINTF(("[SysAPI] failed to open new snmp script file\n"));
       return 1;
     }
 
@@ -1653,7 +1653,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
       int res;
       res = execl(mv_binary, "mv", snmp_pass_new, snmp_pass, NULL);
       if (res != 0) {
-        DPRINTF(("[SysAPI] mv of new snmpass.sh file failed "));
+        DPRINTF(("[SysAPI] mv of new snmpass.sh file failed\n"));
       }
       _exit(res);
     }
@@ -1661,7 +1661,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     int flag_status;
     flag_status = chmod(snmp_pass, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (flag_status)
-      DPRINTF(("[SYSAPI]: Failed to change permissions of snmpass.sh"));
+      DPRINTF(("[SYSAPI]: Failed to change permissions of snmpass.sh\n"));
   }
 
   return 0;
@@ -1703,7 +1703,7 @@ Net_SNMPSetUp(char *sys_location, char *sys_contact, char *sys_name, char *autht
     res = execv(command_path, NULL);
 
     if (res != 0) {
-      DPRINTF(("[SysAPI] failed to execute stop_snmp && start_snmp"));
+      DPRINTF(("[SysAPI] failed to execute stop_snmp && start_snmp\n"));
     }
     _exit(res);
   }
@@ -1772,7 +1772,7 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
 
   snprintf(snmp_config, sizeof(snmp_config), "%s/conf/yts/snmpd.cnf", ts_path);
   if ((fp = fopen(snmp_config, "r")) == NULL && (fp = fopen(snmp_config, "a+")) == NULL) {
-    DPRINTF(("[SysAPI] failed to open ts snmp script file"));
+    DPRINTF(("[SysAPI] failed to open ts snmp script file\n"));
     return 1;
   }
 

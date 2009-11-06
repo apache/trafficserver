@@ -2971,7 +2971,7 @@ ftpProcessSpawn(char *args[], char *output)
   size_t output_size = 4096;
   size_t count = 0;
 
-  if (pipe(stdoutPipe) == (-1))
+  if (pipe(stdoutPipe) == -1)
     fprintf(stderr, "[ftpProcessSpawn] unable to create stdout pipe\n");
 
   pid = fork();
@@ -3026,7 +3026,7 @@ tclCheckProcessSpawn(char *args[], char *output)
   size_t output_size = 256;
   size_t count = 0;
 
-  if (pipe(stdoutPipe) == (-1))
+  if (pipe(stdoutPipe) == -1)
     fprintf(stderr, "[tclCheckProcessSpawn] unable to create stdout pipe\n");
 
   pid = fork();

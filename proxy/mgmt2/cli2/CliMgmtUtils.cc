@@ -595,7 +595,7 @@ StopTrafficServer()
     return CLI_ERROR;
   }
   snprintf(stop_ts, sizeof(stop_ts), "%s/bin/stop_traffic_server", ts_path);
-  if (system(stop_ts) == (-1))
+  if (system(stop_ts) == -1)
     return CLI_ERROR;
 
   return 0;
@@ -616,7 +616,7 @@ StartTrafficServer()
   } else {
     snprintf(start_ts, sizeof(start_ts), "%s/bin/start_traffic_server", ts_path);
   }
-  if (system(start_ts) == (-1))
+  if (system(start_ts) == -1)
     return CLI_ERROR;
 
   return 0;

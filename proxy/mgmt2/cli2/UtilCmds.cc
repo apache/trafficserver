@@ -181,7 +181,7 @@ Cmd_ConfigRoot(ClientData clientData, Tcl_Interp * interp, int argc, const char 
   // su will prompt user for root password
   int pid = fork();
   if (pid == 0) {
-    if (system(command) == (-1))
+    if (system(command) == -1)
       exit(2);
     else
       exit(1);

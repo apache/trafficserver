@@ -216,7 +216,7 @@ start_binary(const char *abs_bin_path)
     return false;
   }
 
-  if (system(abs_bin_path) == (-1)) {
+  if (system(abs_bin_path) == -1) {
     INKDiags(INK_DIAG_ERROR, "Cannot system(%s)", abs_bin_path);
     return false;
   }

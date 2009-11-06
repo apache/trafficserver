@@ -1579,10 +1579,10 @@ processSpawn(char *args[],
   bool cutoff;
   char *too_large_msg = "\nfile too large, truncated here...";
 
-  if (pipe(stdinPipe) == (-1))
+  if (pipe(stdinPipe) == -1)
     mgmt_elog(stderr, "[processSpawn] unable to create stdin pipe\n");
   if (!nowait) {
-    if (pipe(stdoutPipe) == (-1))
+    if (pipe(stdoutPipe) == -1)
       mgmt_elog(stderr, "[processSpawn] unable to create stdout pipe\n");
   }
 
@@ -1639,7 +1639,7 @@ processSpawn(char *args[],
 
     if (input_buf) {
       // write input_buf to stdin of child process
-      if (write(stdinPipe[1], input_buf->bufPtr(), input_buf->spaceUsed()) == (-1))
+      if (write(stdinPipe[1], input_buf->bufPtr(), input_buf->spaceUsed()) == -1)
         mgmt_elog(stderr, "[processSpawn] unable to write to stdin pipe\n");
     }
     close(stdinPipe[1]);
