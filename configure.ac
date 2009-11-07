@@ -223,7 +223,7 @@ AC_SUBST([pkglibexecdir],["$libexecdir/$PACKAGE_TARNAME"])
 # 5) Test compilers with all flags set.
 
 # These are shortcuts used in combination for the compiler options below
-common_opt="-m32 -Wall -Werror -Wno-char-subscripts -Wno-write-strings"
+common_opt="-pipe -m32 -Wall -Werror -Wno-char-subscripts -Wno-write-strings"
 debug_opt="-ggdb3 $common_opt"
 release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
 cxx_opt="-Wno-invalid-offsetof"
