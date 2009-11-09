@@ -63,7 +63,7 @@ traffic_shell_LDFLAGS =	$(EXTRA_CXX_LDFLAGS)
 
 traffic_shell_LDADD = \
   $(top_builddir)/proxy/mgmt2/api2/remote/libmgmtapiremote.a \
-  -ltcl \
+  $(LIBTCL) \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   libtrafficshell.a \
   $(top_builddir)/proxy/mgmt2/tools/libinksysapi.a \
