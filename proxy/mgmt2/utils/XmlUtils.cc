@@ -560,27 +560,34 @@ void
 XMLNode::WriteFile(FILE * pf)
 {
   XMLNode *pChild = m_pFirstChild;
-  fwrite(gcstr_lb, 1, 1, pf);
-  fwrite(m_pNodeName, 1, strlen(m_pNodeName), pf);
+  if ((fwrite(gcstr_lb, 1, 1, pf) != 1) ||
+      (fwrite(m_pNodeName, 1, strlen(m_pNodeName), pf) != strlen(m_pNodeName)))
+    return;
 
   char *pAttr = getAttributeString();
   if (pAttr) {
-    fwrite(pAttr, 1, strlen(pAttr), pf);
+    if (fwrite(pAttr, 1, strlen(pAttr), pf) != strlen(pAttr)) {
+      delete[]pAttr;
+      return;
+    }
     delete[]pAttr;
   }
 
-  fwrite(gcstr_rb, 1, 1, pf);
+  if (fwrite(gcstr_rb, 1, 1, pf) != 1)
+    return;
   if (m_pNodeValue)
-    fwrite(m_pNodeValue, 1, strlen(m_pNodeValue), pf);
+    if (fwrite(m_pNodeValue, 1, strlen(m_pNodeValue), pf) != strlen(m_pNodeValue))
+      return;
 
   while (pChild) {
     pChild->WriteFile(pf);
     pChild = pChild->m_pNext;
   }
 
-  fwrite(gcstr_lbend, 1, 2, pf);
-  fwrite(m_pNodeName, 1, strlen(m_pNodeName), pf);
-  fwrite(gcstr_rb, 1, 1, pf);
+  if ((fwrite(gcstr_lbend, 1, 2, pf) != 2) ||
+      (fwrite(m_pNodeName, 1, strlen(m_pNodeName), pf) != strlen(m_pNodeName)) ||
+      (fwrite(gcstr_rb, 1, 1, pf) != 1))
+    return;
 
   return;
 }

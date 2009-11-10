@@ -160,12 +160,14 @@ CIFCWriteEntry::ConfigWriteIFCEle()
 
   if (size * (int) sizeof(char) != amount_read) {
     Cli_Error("Error Reading IFC File\n");
+    fclose(Fptr);
     delete[]filebuffer;
     return CLI_ERROR;
   }
   // look for KeyWord
   if ((p1 = strstr(filebuffer, KeyWord)) == NULL) {
     delete[]filebuffer;
+    fclose(Fptr);
     Cli_Error("Error Finding Keyword\n");
     return CLI_ERROR;
   }
@@ -190,25 +192,39 @@ CIFCWriteEntry::ConfigWriteIFCEle()
       in_buffer = new char[in_buffer_size];
       snprintf(in_buffer, in_buffer_size, "%d\n%s\n", Count, Input);
       in_buffer[addsize] = '\0';
-      fwrite(in_buffer, sizeof(char), strlen(in_buffer), Fptr);
+      if (fwrite(in_buffer, sizeof(char), strlen(in_buffer), Fptr) != strlen(in_buffer)) {
+        Cli_Error("Unable to fwrite() buffer\n");
+        delete[]in_buffer;
+        delete[]filebuffer;
+        fclose(Fptr);
+        return CLI_ERROR;
+      }
       delete[]in_buffer;
       break;
     }
   case 0:
-
-    fwrite("\n", sizeof(char), strlen("\n"), Fptr);
-    fwrite(Input, sizeof(char), strlen(Input), Fptr);
+    if ((fwrite("\n", sizeof(char), 1, Fptr) != 1) ||
+        (fwrite(Input, sizeof(char), strlen(Input), Fptr) != strlen(Input))) {
+      Cli_Error("Unable to fwrite() buffer\n");
+      fclose(Fptr);
+      delete[]filebuffer;
+      return CLI_ERROR;
+    }
     break;
 
   default:
-
     Cli_Error("Unexpected Value of CountOn\n");
     fclose(Fptr);
     delete[]filebuffer;
     return CLI_ERROR;
   }
 
-  fwrite(p1, sizeof(char), size - (p1 - filebuffer), Fptr);
+  if (fwrite(p1, sizeof(char), size - (p1 - filebuffer), Fptr) != (size_t)(size - (p1 - filebuffer))) {
+    Cli_Error("Unable to fwrite() buffer\n");
+    fclose(Fptr);
+    delete[]filebuffer;
+    return CLI_ERROR;
+  }
   fclose(Fptr);
   delete[]filebuffer;
   return CLI_OK;
