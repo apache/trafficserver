@@ -290,12 +290,17 @@ AS_IF([test "x$with_architecture" != "xno"],
 
 AC_CHECK_SIZEOF(int *) # test for 64-bit pointers, this permits CFLAGS=-m32 for 32-bit compiles on 64-bit systems
 
+# add a default march if there is not one set
 if test "${ac_cv_sizeof_int_p}" = "4"; then
-    AS_CASE($CFLAGS, *\-march=*, , CFLAGS="$CFLAGS -march=i586")
-    AS_CASE($CXXFLAGS, *\-march=*, , CXXFLAGS="$CXXFLAGS -march=i586")
-else
-    CFLAGS="$CFLAGS"
-    CXXFLAGS="$CXXFLAGS"
+    case $CFLAGS in
+  *\-march=*) : ;;
+  *) CFLAGS="$CFLAGS -march=i586" ;;
+esac
+
+    case $CXXFLAGS in
+  *\-march=*) : ;;
+  *) CXXFLAGS="$CXXFLAGS -march=i586" ;;
+esac
 fi
 
 AC_CACHE_CHECK([for gcc atomic builtins],[support_cv_atomic],
