@@ -498,7 +498,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
     vc = allocateThread(e->ethread);
 
-    int sz = sizeof(vc->con.sa);
+    socklen_t sz = sizeof(vc->con.sa);
     int fd = socketManager.accept(server.fd, (struct sockaddr *) &vc->con.sa, &sz);
 
     // vc->loggingInit(); // TODO add a configuration option for this

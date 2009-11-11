@@ -242,6 +242,7 @@ struct HostDBInfo
     unsigned int ip;
     int hostname_offset;
     // int srv_host_offset;
+    inku64 dummy_pad;
   } data;
 
   unsigned int srv_weight:16;

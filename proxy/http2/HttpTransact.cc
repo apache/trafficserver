@@ -626,14 +626,14 @@ how_to_open_connection(HttpTransact::State * s)
 }
 
 #ifdef USE_NCA
-static uint64_t
+static inku64
 extract_ctag_from_response(HTTPHdr * h)
 {
 
   HTTP_DEBUG_ASSERT(h->type_get() == HTTP_TYPE_RESPONSE);
   MIMEField *ctag_field = h->field_find("@Ctag", 5);
 
-  uint64_t ctag;
+  inku64 ctag;
   if (ctag_field != NULL) {
     int tmp;
     const char *ctag_str = ctag_field->value_get(&tmp);
@@ -3091,7 +3091,7 @@ HttpTransact::HandleCacheOpenReadHit(State * s)
 #ifdef USE_NCA
   if (s->client_info.port_attribute == SERVER_PORT_NCA) {
 
-    uint64_t ctag = extract_ctag_from_response(obj->response_get());
+    inku64 ctag = extract_ctag_from_response(obj->response_get());
     NcaCacheUp_t *nc = s->nca_info.request_info;
 
     if (nc->advisory) {
@@ -5821,7 +5821,7 @@ HttpTransact::set_headers_for_cache_write(State * s, HTTPInfo * cache_info, HTTP
 #ifdef USE_NCA
   // With NCA set get a new ctag here since this is a new document
   if (s->client_info.port_attribute == SERVER_PORT_NCA) {
-    uint64_t new_ctag = ncaProcessor.allocate_ctag();
+    inku64 new_ctag = ncaProcessor.allocate_ctag();
 
     char ctag_str[21];
     snprintf(ctag_str, sizeof(ctag_str), "%llu", new_ctag);
@@ -8466,7 +8466,7 @@ HttpTransact::delete_all_document_alternates_and_return(State * s, bool cache_hi
      if (s->nca_info.request_info->advisory) {
      HTTPHdr cached_response = s->cache_info.object_read->response_get();
      ink_assert(cached_response.valid());
-     uint64_t ctag = extract_ctag_from_response(cached_response);
+     inku64 ctag = extract_ctag_from_response(cached_response);
      s->nca_info.response_info.ctag = ctag;
      s->nca_info.response_info.advisory |= NCA_IO_ADVISE_FLUSH;
      s->nca_info.response_info.nocache = 1;

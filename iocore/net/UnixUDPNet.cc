@@ -159,7 +159,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler * nh,
   int iters = 0;
   do {
     struct sockaddr_in fromaddr;
-    int fromlen = sizeof(fromaddr);
+    socklen_t fromlen = sizeof(fromaddr);
     // XXX: want to be 0 copy.
     // XXX: really should read into next contiguous region of an IOBufferData
     // which gets referenced by IOBufferBlock.
@@ -227,7 +227,7 @@ public:
   inline void free(void);
   inline void init_token(Event * completionToken);
 
-  inline void init_read(int fd, IOBufferBlock * buf, int len, struct sockaddr *fromaddr, int *fromaddrlen);     // start up polling
+  inline void init_read(int fd, IOBufferBlock * buf, int len, struct sockaddr *fromaddr, socklen_t *fromaddrlen);     // start up polling
   void set_timer(int seconds)
   {
     timeout_interval = HRTIME_SECONDS(seconds);
@@ -246,7 +246,7 @@ private:
   Ptr<IOBufferBlock> readbuf;
   int readlen;
   struct sockaddr *fromaddr;
-  int *fromaddrlen;
+  socklen_t *fromaddrlen;
   int fd;                       // fd we are reading from
   int ifd;                      // poll fd index
 
@@ -342,7 +342,7 @@ UDPReadContinuation::init_token(Event * completionToken)
 }
 
 inline void
-UDPReadContinuation::init_read(int rfd, IOBufferBlock * buf, int len, struct sockaddr *fromaddr_, int *fromaddrlen_)
+UDPReadContinuation::init_read(int rfd, IOBufferBlock * buf, int len, struct sockaddr *fromaddr_, socklen_t *fromaddrlen_)
 {
 #ifdef DEBUG_UDP
   (*eventStamp) (nevents) = ink_get_hrtime();
@@ -451,7 +451,7 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
   if (ifd < 0 || event_ == EVENT_INTERVAL || (pc->pollDescriptor->pfd[ifd].revents & POLLIN)) {
     c = completionUtil::getContinuation(event);
     // do read
-    int tmp_fromlen = *fromaddrlen;
+    socklen_t tmp_fromlen = *fromaddrlen;
     int rlen = socketManager.recvfrom(fd, readbuf->end(), readlen,
                                       0,        // default flags
                                       fromaddr, &tmp_fromlen);
@@ -522,7 +522,7 @@ Action *
 UDPNetProcessor::recvfrom_re(Continuation * cont,
                              void *token,
                              int fd,
-                             struct sockaddr * fromaddr, int *fromaddrlen,
+                             struct sockaddr * fromaddr, socklen_t *fromaddrlen,
                              IOBufferBlock * buf, int len, bool useReadCont, int timeout)
 {
   (void) useReadCont;
@@ -1296,9 +1296,9 @@ UDPNetHandler::UDPNetHandler()
     udpConnections[i] = NULL;
   }
 
-  ink_atomiclist_init(&udpAtomicQueue, "Outgoing UDP Packet queue", (unsigned) &((UDPPacketInternal *) 0)->alink.next);
+  ink_atomiclist_init(&udpAtomicQueue, "Outgoing UDP Packet queue", (uintptr_t) &((UDPPacketInternal *) 0)->alink.next);
 
-  ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", (unsigned)
+  ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", (uintptr_t)
                       &((UnixUDPConnection *) 0)->newconn_alink.next);
 
   udpOutQueue = NEW(new UDPQueue(&udpAtomicQueue));

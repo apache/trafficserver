@@ -64,7 +64,9 @@ template<class T> T max(const T a, const T b)
 #if (HOST_OS == linux)
 /* typedef int rlim_t; */
 typedef long paddr_t;
+#ifndef __x86_64
 typedef unsigned long long uint64_t;
+#endif
 
 extern "C"
 {

@@ -1314,12 +1314,7 @@ ClusterHandler::compute_active_channels()
     if (VALID_CHANNEL(vc) && (vc->iov_map != CLUSTER_IOV_NOT_OPEN)) {
       ++active_chans;
       if (dump_verbose) {
-        printf("ch[%d] vc=0x%x remote_free=%d last_local_free=%d\n", i,
-#ifdef __alpha
-               (inku64) vc,
-#else
-               (unsigned int) vc,
-#endif
+        printf("ch[%d] vc=0x%p remote_free=%d last_local_free=%d\n", i, vc,
                vc->remote_free, vc->last_local_free);
         printf("  r_bytes=%d r_done=%d w_bytes=%d w_done=%d\n",
                vc->read.vio.get_nbytes(), vc->read.vio.get_ndone(),

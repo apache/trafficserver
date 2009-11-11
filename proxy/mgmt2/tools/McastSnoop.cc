@@ -258,7 +258,7 @@ snoopPackets(int fd)
   const int buf_size = 61440;
   char buf[buf_size + 1];
   int nbytes;
-  int addr_len = 0;
+  socklen_t addr_len = 0;
   struct sockaddr_in receive_addr;
 
 
@@ -268,12 +268,7 @@ snoopPackets(int fd)
     memset(&receive_addr, 0, sizeof(sockaddr_in));
 
     if ((nbytes = recvfrom(fd, buf, buf_size, 0, (struct sockaddr *) &receive_addr,
-#if (HOST_OS == linux)
-                           (size_t *) & addr_len
-#else
-                           &addr_len
-#endif
-         )) < 0) {
+                           &addr_len)) < 0) {
       perror("Receive failed");
     } else {
       buf[nbytes] = '\0';

@@ -454,7 +454,7 @@ cache_handler(INKCont contp, INKEvent event, void *data)
 
   case INK_EVENT_CACHE_OPEN_WRITE_FAILED:
     Debug(UTDBG_TAG "_cache_event", "INK_EVENT_CACHE_OPEN_WRITE_FAILED %d %p", event, data);
-    SDK_RPRINT(SDK_Cache_test, "INKCacheWrite", "TestCase1", TC_FAIL, "can't open cache vc, edtata = %d", (int) data);
+    SDK_RPRINT(SDK_Cache_test, "INKCacheWrite", "TestCase1", TC_FAIL, "can't open cache vc, edtata = %p", data);
     INKReleaseAssert(!"cache");
 
     // no need to continue, return
@@ -879,7 +879,8 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
   char cmp_buffer[BUFSIZ];
   struct stat stat_buffer_pre, stat_buffer_post, stat_buffer_input;
   char *ret_val;
-  int error_counter = 0, read = 0, wrote = 0, read_amount = 0;
+  int error_counter = 0, read = 0, wrote = 0;
+  off_t read_amount = 0;
   const char *install_dir;
   char INPUT_TEXT_FILE[] = "plugin.config";
   char input_file_full_path[BUFSIZ];
@@ -952,7 +953,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
     return;
   }
 
-  read_amount = (stat_buffer_input.st_size <= sizeof(input_buffer)) ?
+  read_amount = (stat_buffer_input.st_size <= (off_t)sizeof(input_buffer)) ?
     (stat_buffer_input.st_size) : (sizeof(input_buffer));
 
   // INKfgets
@@ -1061,7 +1062,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
     return;
   }
 
-  read_amount = (stat_buffer_input.st_size <= sizeof(cmp_buffer)) ? (stat_buffer_input.st_size) : (sizeof(cmp_buffer));
+  read_amount = (stat_buffer_input.st_size <= (off_t)sizeof(cmp_buffer)) ? (stat_buffer_input.st_size) : (sizeof(cmp_buffer));
 
   // INKfread on read file 
   read = INKfread(cmp_read_file, cmp_buffer, read_amount);

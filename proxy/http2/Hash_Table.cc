@@ -173,7 +173,7 @@ HashTable::insert(int index, HttpRequestData * url, bool revalidation)
     }
 
     if (iterator == NULL && match_found == false) {
-      Debug("http_track", "[HashTable::insert] Adding alternate to node %x **\n", (unsigned) request);
+      Debug("http_track", "[HashTable::insert] Adding alternate to node %p **\n", request);
       alternate = (HeaderAlternate *) xmalloc(sizeof(HeaderAlternate));
       alternate->hdr = url->hdr;
       alternate->prev = NULL;
@@ -191,7 +191,7 @@ HashTable::insert(int index, HttpRequestData * url, bool revalidation)
   } else {
     request = (RequestNode *) xmalloc(sizeof(RequestNode));
 
-    Debug("http_track", "[HashTable::insert] Adding a new node %x **\n", (unsigned) request);
+    Debug("http_track", "[HashTable::insert] Adding a new node %p **\n", request);
     alternate = (HeaderAlternate *) xmalloc(sizeof(HeaderAlternate));
     alternate->hdr = url->hdr;
     alternate->prev = NULL;

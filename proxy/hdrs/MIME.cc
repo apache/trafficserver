@@ -2878,7 +2878,7 @@ mime_parser_parse(MIMEParser * parser,
     if (must_copy_strings || (!line_is_real)) {
       int length = total_line_length;
       char *dup = heap->duplicate_str(field_name_first, length);
-      int delta = (int) (dup - field_name_first);
+      intptr_t delta = dup - field_name_first;
 
       field_name_first += delta;
       field_name_last += delta;

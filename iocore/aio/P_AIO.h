@@ -70,7 +70,7 @@ struct AIOCallbackInternal:AIOCallback
 INK_INLINE int
 AIOCallback::ok()
 {
-  return (int) aiocb.aio_nbytes == (int) aio_result;
+  return (ink_off_t) aiocb.aio_nbytes == (ink_off_t) aio_result;
 };
 
 INK_INLINE int

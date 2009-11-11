@@ -38,6 +38,18 @@
 #include "ink_apidefs.h"
 #include "ink_unused.h"
 
+/*
+  For information on the structure of the x86_64 memory map:
+
+  http://en.wikipedia.org/wiki/X86-64#Linux
+
+  Essentially, in the current 48-bit implementations, the
+  top bit as well as the  lower 47 bits are used, leaving
+  the upper-but one 16 bits free to be used for the version.
+  We will use the top-but-one 15 and sign extend when generating
+  the pointer was required by the standard.
+*/
+
 //#if defined(POSIX_THREAD)
 //#include <pthread.h>
 //#include <stdlib.h>
@@ -87,10 +99,19 @@ extern "C"
 #define TO_PTR(_x) _x
 #endif
 
+#if defined(__i386__)
 #define FREELIST_POINTER(_x) (_x).s.pointer
 #define FREELIST_VERSION(_x) (_x).s.version
 #define SET_FREELIST_POINTER_VERSION(_x,_p,_v) \
 (_x).s.pointer = _p; (_x).s.version = _v
+#elif defined(__x86_64__)
+#define FREELIST_POINTER(_x) ((void*)(((((intptr_t)(_x).data)>>63)<<48)|(((intptr_t)(_x).data)&0xFFFFFFFFFFFFLL)))
+#define FREELIST_VERSION(_x) ((((intptr_t)(_x).data)<<1)>>49)
+#define SET_FREELIST_POINTER_VERSION(_x,_p,_v) \
+  (_x).data = ((((intptr_t)(_p))&0x8000FFFFFFFFFFFFLL) | (((_v)&0x7FFFLL) << 48))
+#else
+#error "unsupported processor"
+#endif
 
   typedef void *void_p;
 

@@ -22,13 +22,14 @@
  */
 
 #include <time.h>
+#include <stdint.h>
 #include "ink_rand.h"
 #include "ink_code.h"
 #include "ink_auth_api.h"
 
 static int s_rand_seed = time(NULL) + s_rand_seed;
 static InkRand
-s_rand_gen(ink_rand_r((unsigned int *) &s_rand_seed) ^ (unsigned) &s_rand_seed);
+s_rand_gen(ink_rand_r((unsigned int *) &s_rand_seed) ^ (uintptr_t) &s_rand_seed);
 
 inline INKU32
 ink_get_rand_intrn()

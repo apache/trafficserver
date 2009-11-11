@@ -30,14 +30,12 @@
 typedef char INK8;
 typedef unsigned char INKU8;
 
-#if (defined(i386) || defined(__i386))
 typedef short INK16;
 typedef unsigned short INKU16;
 typedef int INK32;
 typedef unsigned int INKU32;
 typedef long long INK64;
 typedef unsigned long long INKU64;
-#endif
 
 typedef union
 {

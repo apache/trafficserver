@@ -811,7 +811,7 @@ DNSHandler::recv_dns(int event, Event * e)
   while ((dnsc = (DNSConnection *) nh->dnsqueue.dequeue())) {
     while (1) {
       struct sockaddr_in sa_from;
-      int sa_length = sizeof(sa_from);
+      socklen_t sa_length = sizeof(sa_from);
       if (!hostent_cache)
         hostent_cache = dnsBufAllocator.alloc();
       HostEnt *buf = hostent_cache;

@@ -191,6 +191,14 @@ AS_IF([test "x$enable_cli2" = "xyes"],
   [AC_SUBST([CLI_DIR],[cli2])]
 )
 
+AC_ARG_WITH([architecture],
+  [AS_HELP_STRING([--with-architecture], [explicitly specify architecture for compiler])],
+  [with_architecture=$withval],
+  [with_architecture=no]
+)
+AS_IF([test "x$with_architecture" = "xyes"], [echo "--with-architecture needs an argument"; AS_EXIT()]
+)
+          
 #
 # Installation directories
 #
@@ -223,7 +231,7 @@ AC_SUBST([pkglibexecdir],["$libexecdir/$PACKAGE_TARNAME"])
 # 5) Test compilers with all flags set.
 
 # These are shortcuts used in combination for the compiler options below
-common_opt="-pipe -m32 -Wall -Werror -Wno-char-subscripts -Wno-write-strings"
+common_opt="-pipe -Wall -Werror -Wno-char-subscripts -Wno-write-strings"
 debug_opt="-ggdb3 $common_opt"
 release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
 cxx_opt="-Wno-invalid-offsetof"
@@ -233,19 +241,30 @@ cc_oflag_dbg=$debug_opt
 cxx_oflag_opt="$release_opt $cxx_opt"
 cxx_oflag_dbg="$debug_opt $cxx_opt"
 
-CC=/usr/bin/gcc
-CXX=/usr/bin/g++
+CC=gcc
+CXX=g++
 
 SHARED_CFLAGS=-fPIC
 SHARED_LDFLAGS=-shared
 SHARED_CXXFLAGS=-fPIC
 SHARED_CXXLINKFLAGS=-shared
 
+# AC_PROG can sometimes mangle CFLAGS etc.
+# in particular, on Linux they insert -g -O2, here we preserve any user CFLAGS
+
+REAL_CFLAGS="${CFLAGS}"
+REAL_CXXFLAGS="${CXXFLAGS}"
+REAL_CCASFLAGS="${CCASFLAGS}"
+
 AM_PROG_AS
 AC_PROG_AWK
 AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_PROG_INSTALL
+
+CFLAGS="${REAL_CFLAGS}"
+CXXFLAGS="${REAL_CXXFLAGS}"
+CCASFLAGS="${REAL_CCASFLAGS}"
 
 AC_PATH_PROG([DOXYGEN], [doxygen]) # needed for Doxygen
 AC_PATH_PROG([PERL],[perl],[not found])
@@ -262,8 +281,30 @@ AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
 # so forth.
 # TODO cpu architecture settings separate from operating system settings
 # 
-CFLAGS="$CFLAGS -march=pentium"
-CXXFLAGS="$CXXFLAGS -march=pentium"
+
+# Examine the current CXXFLAGS / CFLAGS for patterns we might need
+# ToDo: This needs to be made conditional on compiler used (only gcc is supported here)
+AS_IF([test "x$with_architecture" != "xno"],
+  [CFLAGS="$CFLAGS -march=$with_architecture"; CXXFLAGS="$CXXFLAGS -march=$with_architecture"]
+)
+
+AC_CHECK_SIZEOF(int *) # test for 64-bit pointers, this permits CFLAGS=-m32 for 32-bit compiles on 64-bit systems
+
+if test "${ac_cv_sizeof_int_p}" = "4"; then
+    AS_CASE($CFLAGS, *\-march=*, , CFLAGS="$CFLAGS -march=i586")
+    AS_CASE($CXXFLAGS, *\-march=*, , CXXFLAGS="$CXXFLAGS -march=i586")
+else
+    CFLAGS="$CFLAGS"
+    CXXFLAGS="$CXXFLAGS"
+fi
+
+AC_CACHE_CHECK([for gcc atomic builtins],[support_cv_atomic],
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([],[[
+int i, x =0;
+i = __sync_add_and_fetch(&x,1);
+return x;
+]])],[support_cv_atomic="yes"],[support_cv_atomic="no"])])
+AM_CONDITIONAL([SUPPORT_ATOMICS],[test x$support_cv_atomic = xyes])
 
 # Feature Test Macros for the GNU C Library
 # http://www.gnu.org/s/libc/manual/html_node/Feature-Test-Macros.html

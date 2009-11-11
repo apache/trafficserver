@@ -489,6 +489,9 @@ CacheProcessor::start_internal(int flags)
       opts |= O_CREAT;
     }
     opts |= _O_ATTRIB_OVERLAPPED;
+#ifdef O_DIRECT
+    opts |= O_DIRECT;
+#endif
 
     int fd = ink_open(path, opts, 0644);
     int blocks = sd->blocks;
@@ -1165,7 +1168,7 @@ Part::handle_recover_from_data(int event, void *data)
     io.aiocb.aio_buf = (char *) valloc(MAX_RECOVER_BYTES);
 #endif
     io.aiocb.aio_nbytes = MAX_RECOVER_BYTES;
-    if (recover_pos + io.aiocb.aio_nbytes > skip + len)
+    if ((ink_off_t)(recover_pos + io.aiocb.aio_nbytes) > (ink_off_t)(skip + len))
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
   } else if (event == AIO_EVENT_DONE) {
     if ((int) io.aiocb.aio_nbytes != (int) io.aio_result) {
@@ -1310,7 +1313,7 @@ Part::handle_recover_from_data(int event, void *data)
       if (recover_pos >= skip + len)
         recover_pos = start;
       io.aiocb.aio_nbytes = MAX_RECOVER_BYTES;
-      if (recover_pos + io.aiocb.aio_nbytes > skip + len)
+      if ((ink_off_t)(recover_pos + io.aiocb.aio_nbytes) > (ink_off_t)(skip + len))
         io.aiocb.aio_nbytes = (skip + len) - recover_pos;
     }
   }
@@ -1928,7 +1931,7 @@ CacheVC::handleRead(int event, Event * e)
 
   io.aiocb.aio_fildes = part->fd;
   io.aiocb.aio_offset = part_offset(part, &dir);
-  if (io.aiocb.aio_offset + io.aiocb.aio_nbytes > part->skip + part->len)
+  if ((ink_off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (ink_off_t)(part->skip + part->len))
     io.aiocb.aio_nbytes = part->skip + part->len - io.aiocb.aio_offset;
   buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes), MEMALIGNED);
   io.aiocb.aio_buf = buf->data();

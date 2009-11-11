@@ -67,16 +67,12 @@ transient_error()
 // Timing done in the connectionManager
 //
 INK_INLINE int
-SocketManager::accept(int s, struct sockaddr *addr, int *addrlen)
+SocketManager::accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
   int r;
 
   do {
-#if (HOST_OS == linux)
-    r =::accept(s, addr, (size_t *) addrlen);
-#else
     r =::accept(s, addr, addrlen);
-#endif
     if (likely(r >= 0))
       break;
     r = -errno;
@@ -227,16 +223,12 @@ SocketManager::recv(int fd, void *buf, int size, int flags)
 
 
 INK_INLINE int
-SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, int *addrlen)
+SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen)
 {
   int r;
 
   do {
-#if (HOST_OS == linux)
-    r =::recvfrom(fd, (char *) buf, size, flags, addr, (size_t *) addrlen);
-#else
     r =::recvfrom(fd, (char *) buf, size, flags, addr, addrlen);
-#endif
     if (unlikely(r < 0))
       r = -errno;
   } while (r == -EINTR);
@@ -531,13 +523,9 @@ SocketManager::set_rcvbuf_size(int s, int bsz)
 
 
 INK_INLINE int
-SocketManager::getsockname(int s, struct sockaddr *sa, int *sz)
+SocketManager::getsockname(int s, struct sockaddr *sa, socklen_t *sz)
 {
-#if (HOST_OS == linux)
-  return::getsockname(s, sa, (socklen_t *) sz);
-#else
   return::getsockname(s, sa, sz);
-#endif
 }
 
 

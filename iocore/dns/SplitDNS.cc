@@ -552,7 +552,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
 
     unsigned int addr = inet_addr(current);
 
-    if ((ip_addr_t) - 1 == htonl(addr)) {
+    if (((uint32_t)-1) == htonl(addr)) {
       return "invalid IP address given for a DNS server";
     }
 

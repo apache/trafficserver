@@ -39,6 +39,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include <assert.h>
 #include "ink_port.h"
 
@@ -51,6 +52,26 @@ typedef vink32 *pvink32;
 typedef vink64 *pvink64;
 typedef vvoidp *pvvoidp;
 
+
+#if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)
+
+// see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+
+static inline ink32 ink_atomic_swap(pvink32 mem, ink32 value) { return __sync_lock_test_and_set(mem, value); }
+static inline ink64 ink_atomic_swap64(pvink64 mem, ink64 value) { return __sync_lock_test_and_set(mem, value); }
+static inline void *ink_atomic_swap_ptr(void *mem, void *value) { return __sync_lock_test_and_set((void**)mem, value); }
+static inline int ink_atomic_cas(pvink32 mem, int old, int new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
+static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
+static inline int ink_atomic_increment(pvink32 mem, int value) { return __sync_fetch_and_add(mem, value); }
+static inline int ink_atomic_increment64(pvink64 mem, ink64 value) { return __sync_fetch_and_add(mem, value); }
+static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, value); }
+static inline int ink_atomic_cas64(pvink64 mem, ink64 old, ink64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
+
+// not used for Intel Processors which have sequential(esque) consistency
+#define INK_WRITE_MEMORY_BARRIER
+#define INK_MEMORY_BARRIER
+
+#else
 
 #ifdef __cplusplus
 extern "C"
@@ -152,5 +173,7 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
+
+#endif
 
 #endif                          /* _ink_atomic_h_ */

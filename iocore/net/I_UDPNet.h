@@ -111,7 +111,7 @@ public:
   Action *sendmsg_re(Continuation * c, void *token, int fd, struct msghdr *msg);
 
   Action *recvfrom_re(Continuation * c, void *token, int fd,
-                      struct sockaddr *fromaddr, int *fromaddrlen,
+                      struct sockaddr *fromaddr, socklen_t *fromaddrlen,
                       IOBufferBlock * buf, int len, bool useReadCont = true, int timeout = 0);
   // Continuation is really a UDPConnection; due to the include mess, we stick in the
   // base-class of UDPConnection.

@@ -48,14 +48,13 @@ ErrorClass::operator() (const char *aformat_string, ...)
   va_list aap;
   va_start(aap, aformat_string);
   format_string = aformat_string;
-  ap = aap;
-  raise();
+  raise(aap);
   va_end(aap);
   delete this;
 }
 
 void
-ErrorClass::raise(const char *prefix)
+ErrorClass::raise(va_list ap, const char *prefix)
 {
   SrcLoc loc;
   loc.set(filename, function_name, line_number);
@@ -66,9 +65,9 @@ ErrorClass::raise(const char *prefix)
 // Abort the current request, cleanup all related resources.
 //
 void
-RequestFatalClass::raise(const char *prefix)
+RequestFatalClass::raise(va_list ap, const char *prefix)
 {
-  ErrorClass::raise(prefix ? prefix : "REQUEST FATAL");
+  ErrorClass::raise(ap, prefix ? prefix : "REQUEST FATAL");
   ink_assert(!"RequestFatal");
 }
 
@@ -76,9 +75,9 @@ RequestFatalClass::raise(const char *prefix)
 // Abort the current thread, restart within processor
 //
 void
-ThreadFatalClass::raise(const char *prefix)
+ThreadFatalClass::raise(va_list ap, const char *prefix)
 {
-  ErrorClass::raise(prefix ? prefix : "THREAD FATAL");
+  ErrorClass::raise(ap, prefix ? prefix : "THREAD FATAL");
   ink_assert(!"ThreadFatal");
   ink_thread_exit(0);
 }
@@ -87,9 +86,9 @@ ThreadFatalClass::raise(const char *prefix)
 // Kill and restart the processor
 //
 void
-ProcessorFatalClass::raise(const char *prefix)
+ProcessorFatalClass::raise(va_list ap, const char *prefix)
 {
-  ErrorClass::raise(prefix ? prefix : "PROCESSOR FATAL");
+  ErrorClass::raise(ap, prefix ? prefix : "PROCESSOR FATAL");
   ink_assert(!"ProcessorFatal");
 }
 
@@ -97,9 +96,9 @@ ProcessorFatalClass::raise(const char *prefix)
 // Kill and restart the process
 //
 void
-ProcessFatalClass::raise(const char *prefix)
+ProcessFatalClass::raise(va_list ap, const char *prefix)
 {
-  ErrorClass::raise(prefix ? prefix : "PROCESS FATAL");
+  ErrorClass::raise(ap, prefix ? prefix : "PROCESS FATAL");
   //exit(1);
   ink_assert(!"ProcessFatal");
 }
@@ -108,8 +107,8 @@ ProcessFatalClass::raise(const char *prefix)
 // Kill and restart the set of processors on this machine
 //
 void
-MachineFatalClass::raise(const char *prefix)
+MachineFatalClass::raise(va_list ap, const char *prefix)
 {
-  ErrorClass::raise(prefix ? prefix : "MACHINE FATAL");
+  ErrorClass::raise(ap, prefix ? prefix : "MACHINE FATAL");
   exit(2);
 }

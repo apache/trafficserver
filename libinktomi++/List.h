@@ -54,6 +54,8 @@
 #ifndef _List_h_
 #define	_List_h_
 
+#include <stdint.h>
+
 #include "ink_bool.h"
 #include "ink_assert.h"
 #include "ink_queue.h"

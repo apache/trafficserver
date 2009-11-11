@@ -82,7 +82,11 @@ extern "C"
 
 #define INK_HTTP_CNTL_OFF  (void*) 0
 #define INK_HTTP_CNTL_ON   (void*) 1
-
+/* usage: 
+   void *onoff = 0;
+   INKHttpTxnCntl(.., INK_HTTP_CNTL_GET_LOGGING_MODE, &onoff);
+   if (onoff == INK_HTTP_CNTL_ON) ....
+*/
   inkapi int INKHttpTxnCntl(INKHttpTxn txnp, INKHttpCntlType cntl, void *data);
 
 /* Protocols APIs */

@@ -895,7 +895,7 @@ ParentSiblingPeer::SendMsg_re(Continuation * cont, void *token, struct msghdr * 
 
 Action *
 ParentSiblingPeer::RecvFrom_re(Continuation * cont, void *token,
-                               IOBufferBlock * bufblock, int size, struct sockaddr * from, int *fromlen)
+                               IOBufferBlock * bufblock, int size, struct sockaddr * from, socklen_t *fromlen)
 {
   // Note: All receives are funneled through the local peer UDP socket.
 
@@ -1047,7 +1047,7 @@ MultiCastPeer::SendMsg_re(Continuation * cont, void *token, struct msghdr * msg,
 
 Action *
 MultiCastPeer::RecvFrom_re(Continuation * cont, void *token,
-                           IOBufferBlock * bufblock, int len, struct sockaddr * from, int *fromlen)
+                           IOBufferBlock * bufblock, int len, struct sockaddr * from, socklen_t *fromlen)
 {
   Action *a = udpNet.recvfrom_re(cont, token,
                                  _recv_chan.fd, from, fromlen,

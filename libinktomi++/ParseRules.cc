@@ -46,10 +46,10 @@ ParseRules::scan_while(unsigned char *ptr, unsigned int n, inku32 bitmask)
   unsigned int i;
   inku32 *wptr;
   unsigned char *align_ptr;
-  unsigned int f_bytes, b_bytes, words, align_off;
+  uintptr_t f_bytes, b_bytes, words, align_off;
 
-  align_off = ((unsigned int) ptr & 3);
-  align_ptr = (unsigned char *) (((unsigned int) ptr) & ~3);
+  align_off = ((uintptr_t) ptr & 3);
+  align_ptr = (unsigned char *) (((uintptr_t) ptr) & ~3);
 
   f_bytes = (align_off ? 4 - align_off : 0);
 
@@ -133,9 +133,9 @@ ParseRules::ink_tolower_buffer(char *ptr, unsigned int n)
     for (i = 0; i < n; i++)
       ptr[i] = ParseRules::ink_tolower(ptr[i]);
   } else {
-    unsigned int fpad = 4 - ((unsigned int) ptr & 3);
-    unsigned int words = (n - fpad) >> 2;
-    unsigned int bpad = n - fpad - (words << 2);
+    uintptr_t fpad = 4 - ((uintptr_t) ptr & 3);
+    uintptr_t words = (n - fpad) >> 2;
+    uintptr_t bpad = n - fpad - (words << 2);
 
     switch (fpad) {
     case 3:

@@ -29,7 +29,6 @@ libinktomi___a_SOURCES = \
   ink_args.h \
   ink_assert.cc \
   ink_assert.h \
-  ink_atomic_solaris_i86pc.s \
   ink_atomic.h \
   ink_auth_api.cc \
   ink_auth_api.h \
@@ -137,20 +136,26 @@ libinktomi___a_SOURCES = \
   Tokenizer.h \
   Version.cc
 
+if SUPPORT_ATOMICS
+# support in header
+else
+libinktomi___a_SOURCES += ink_atomic_solaris_i86pc.s
+endif
+
 libinktomi___a_LIBADD = ParseRules.o @LIBOBJS@
 
 mkdfa_SOURCES = mkdfa.c
 
 test_atomic_SOURCES = test_atomic.cc
-test_atomic_LDADD = libinktomi++.a @LIBTHREAD@
+test_atomic_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@
 test_atomic_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_freelist_SOURCES = test_freelist.cc
-test_freelist_LDADD = libinktomi++.a @LIBTHREAD@
+test_freelist_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@
 test_freelist_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_arena_SOURCES = test_arena.cc
-test_arena_LDADD = libinktomi++.a @LIBTHREAD@
+test_arena_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@
 test_arena_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 CompileParseRules_SOURCES = CompileParseRules.cc

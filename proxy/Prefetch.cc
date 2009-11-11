@@ -913,7 +913,7 @@ PrefetchUrlBlaster::udpUrlBlaster(int event, void *data)
     }
 
   case NET_EVENT_DATAGRAM_WRITE_ERROR:
-    Debug("PrefetchBlaster", "Error in sending the url list on UDP (%d)", (int) data);
+    Debug("PrefetchBlaster", "Error in sending the url list on UDP (%p)", data);
   case NET_EVENT_DATAGRAM_WRITE_COMPLETE:
     free();
     break;
@@ -1705,7 +1705,7 @@ PrefetchBlaster::blastObject(int event, void *data)
     break;
 
   case NET_EVENT_DATAGRAM_WRITE_ERROR:
-    Debug("PrefetchBlaster", "error in sending the udp data %d", (int) data);
+    Debug("PrefetchBlaster", "error in sending the udp data %p", data);
 
   default:
     ink_assert(!"unexpected event");

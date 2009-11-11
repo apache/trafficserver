@@ -422,7 +422,7 @@ start_dns_Proxy(int dns_proxy_fd)
 void *
 dns_udp_receiver(void *varg)
 {
-  int port = (int) varg;
+  int port = (int)(intptr_t) varg;
 
   char *pkt_buf = (char *) xmalloc(MAX_DNS_PACKET_LEN);
 

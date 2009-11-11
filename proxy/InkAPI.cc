@@ -3366,9 +3366,9 @@ INKMimeHdrFieldInsert(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc, int 
 
     if (field_handle->field_ptr->m_ptr_name == NULL) {
       char noname[20];
-      inku32 addr32 = (inku32) (field_handle->field_ptr);
-      snprintf(noname, sizeof(noname), "@X-Noname-%08X", addr32);
-      INKMimeFieldNameSet(bufp, field_mloc, noname, 18);
+      intptr_t addr = (intptr_t) (field_handle->field_ptr);
+      snprintf(noname, sizeof(noname), "@X-Noname-%016llX", (ink64)addr);
+      INKMimeFieldNameSet(bufp, field_mloc, noname, 26);
     }
 
     mime_hdr_field_attach(mh, field_handle->field_ptr, 1, NULL);
@@ -6245,12 +6245,12 @@ INKHttpTxnCntl(INKHttpTxn txnp, INKHttpCntlType cntl, void *data)
         return 0;
       }
 
-      INK32 *rptr = (INK32 *) data;
+      intptr_t *rptr = (intptr_t *) data;
 
       if (sm->t_state.api_info.logging_enabled) {
-        *rptr = (INK32) INK_HTTP_CNTL_ON;
+        *rptr = (intptr_t) INK_HTTP_CNTL_ON;
       } else {
-        *rptr = (INK32) INK_HTTP_CNTL_OFF;
+        *rptr = (intptr_t) INK_HTTP_CNTL_OFF;
       }
 
       return 1;
@@ -6271,12 +6271,12 @@ INKHttpTxnCntl(INKHttpTxn txnp, INKHttpCntlType cntl, void *data)
         return 0;
       }
 
-      INK32 *rptr = (INK32 *) data;
+      intptr_t *rptr = (intptr_t *) data;
 
       if (sm->t_state.api_info.retry_intercept_failures) {
-        *rptr = (INK32) INK_HTTP_CNTL_ON;
+        *rptr = (intptr_t) INK_HTTP_CNTL_ON;
       } else {
-        *rptr = (INK32) INK_HTTP_CNTL_OFF;
+        *rptr = (intptr_t) INK_HTTP_CNTL_OFF;
       }
 
       return 1;

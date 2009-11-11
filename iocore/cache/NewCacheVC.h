@@ -91,8 +91,8 @@ public:
     return &_action;
   }
 
-  bool appendCacheHttpInfo(const void *data, const uint64_t size);
-  bool completeCacheHttpInfo(const void *data, const uint64_t size);
+  bool appendCacheHttpInfo(const void *data, const inku64 size);
+  bool completeCacheHttpInfo(const void *data, const inku64 size);
   // inialize the cache vc as a writer or a reader
   int writerInit();
   int readerInit();
@@ -130,12 +130,12 @@ public:
   void getCacheHeaderKey(void **key, int *length);
 
   // called from the ink api when getting the buffer informaiton
-  //void getCacheBufferInfo( void ** buf ,uint64_t *size, uint64_t *offset);
-  void getCacheBufferInfo(uint64_t * size, uint64_t * offset);
+  //void getCacheBufferInfo( void ** buf ,inku64 *size, inku64 *offset);
+  void getCacheBufferInfo(inku64 * size, inku64 * offset);
   IOBufferReader *getBufferReader();
 
   // set the total size of the data object in cache
-  void setTotalObjectSize(const uint64_t size)
+  void setTotalObjectSize(const inku64 size)
   {
     _totalObjectSize = size;
   }
@@ -178,7 +178,7 @@ private:
     }
   }
 
-  void _append_unmarshal_buf(const void *data, const uint64_t size);
+  void _append_unmarshal_buf(const void *data, const inku64 size);
   void _setup_read();
   void _writeHttpInfo();
   void _free();
@@ -193,8 +193,8 @@ private:
 
   // information for reading and writing to the cache plugin
   // XXX I don't think these are needed anymore since we are using MIOBuffer now
-  uint64_t _offset;
-  uint64_t _size;
+  inku64 _offset;
+  inku64 _size;
 
   URL *_lookupUrl;
   char *_url;
@@ -211,7 +211,7 @@ private:
   MIOBuffer *_httpInfoBuffer;
   IOBufferReader *_httpInfoBufferReader;
 
-  uint64_t _totalObjectSize;
+  inku64 _totalObjectSize;
   // Range related....
   typedef struct _RangeRecord
   {

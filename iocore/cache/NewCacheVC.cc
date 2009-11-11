@@ -355,7 +355,7 @@ NewCacheVC::get_http_info(CacheHTTPInfo ** info)
 }
 
 void
-NewCacheVC::_append_unmarshal_buf(const void *data, const uint64_t size)
+NewCacheVC::_append_unmarshal_buf(const void *data, const inku64 size)
 {
   if (data == NULL || size == 0)
     return;
@@ -405,7 +405,7 @@ NewCacheVC::handleLookup(int event, Event * e)
 
 //----------------------------------------------------------------------------
 bool
-NewCacheVC::appendCacheHttpInfo(const void *data, const uint64_t size)
+NewCacheVC::appendCacheHttpInfo(const void *data, const inku64 size)
 {
   if (!data) {
     Debug("cache_plugin", "[NewCacheVC::appendCacheHttpInfo] data NULL");
@@ -423,7 +423,7 @@ NewCacheVC::appendCacheHttpInfo(const void *data, const uint64_t size)
 
 //----------------------------------------------------------------------------
 bool
-NewCacheVC::completeCacheHttpInfo(const void *data, const uint64_t size)
+NewCacheVC::completeCacheHttpInfo(const void *data, const inku64 size)
 {
   if (!data) {
     Error("[NewCacheVC::completeCacheHttpInfo] data NULL");
@@ -748,9 +748,9 @@ NewCacheVC::modifyRespHdr()
 
 
 //----------------------------------------------------------------------------
-//void NewCacheVC::getCacheBufferInfo(void **buff,uint64_t *size, uint64_t *offset)
+//void NewCacheVC::getCacheBufferInfo(void **buff,inku64 *size, inku64 *offset)
 void
-NewCacheVC::getCacheBufferInfo(uint64_t * size, uint64_t * offset)
+NewCacheVC::getCacheBufferInfo(inku64 * size, inku64 * offset)
 {
   //*buff = _vio.get_writer();
   *size = _size;

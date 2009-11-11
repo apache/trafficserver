@@ -1117,7 +1117,7 @@ struct PingMessage:public ClusterMessageHeader
   {
     PingMessage *p = 0;
     // Maybe use offsetof here instead. /leif
-    return (int) (&p->data[0]);
+    return (uintptr_t) (&p->data[0]);
   }
   void init(inku16 vers = PING_MESSAGE_VERSION) {
     _init(vers);

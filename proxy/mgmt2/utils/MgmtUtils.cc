@@ -330,7 +330,7 @@ mgmt_log(FILE * log, const char *message_format, ...)
 
 #if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   if (diags_init) {
-    diags->print_va(NULL, DL_Note, "NOTE", NULL, message_format, (va_list) ap);
+    diags->print_va(NULL, DL_Note, "NOTE", NULL, message_format, ap);
   } else {
 #endif
 

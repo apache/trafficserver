@@ -49,7 +49,11 @@
 #include "ink_resource.h"
 
 
+#ifdef __x86_64__
+#define INK_QUEUE_LD64(dst,src) *((inku64*)&(dst)) = *((inku64*)&(src))
+#else
 #define INK_QUEUE_LD64(dst,src) (ink_queue_load_64((void *)&(dst), (void *)&(src)))
+#endif
 
 typedef struct _ink_freelist_list
 {
@@ -330,7 +334,7 @@ ink_freelist_new(InkFreeList * f)
 
 #ifdef SANITY
       if (result) {
-        if (((unsigned int) (TO_PTR(next.s.pointer))) & 3)
+        if (((uintptr_t) (TO_PTR(next.s.pointer))) & 3)
           ink_fatal(1, "ink_freelist_new: bad list");
         if (TO_PTR(FREELIST_POINTER(next)))
           fake_global_for_ink_queue = *(int *) TO_PTR(FREELIST_POINTER(next));

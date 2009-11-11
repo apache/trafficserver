@@ -754,7 +754,7 @@ Part::evac_range(ink_off_t low, ink_off_t high, int evac_phase)
       io.aiocb.aio_fildes = fd;
       io.aiocb.aio_nbytes = dir_approx_size(&first->dir);
       io.aiocb.aio_offset = part_offset(this, &first->dir);
-      if (io.aiocb.aio_offset + io.aiocb.aio_nbytes > skip + len)
+      if ((ink_off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (ink_off_t)(skip + len))
         io.aiocb.aio_nbytes = skip + len - io.aiocb.aio_offset;
       doc_evacuator = new_DocEvacuator(io.aiocb.aio_nbytes, this);
       doc_evacuator->overwrite_dir = first->dir;
@@ -1495,7 +1495,7 @@ CacheVC::openWriteStartDone(int event, Event * e)
 
 Lcollision:
   {
-    int if_writers = ((int) info == CACHE_ALLOW_MULTIPLE_WRITES);
+    int if_writers = ((uintptr_t) info == CACHE_ALLOW_MULTIPLE_WRITES);
     CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
     if (!lock)
       VC_SCHED_LOCK_RETRY();
@@ -1651,7 +1651,7 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheHTTPInfo * info, tim
 
   ink_assert(caches[type] == this);
   int err = 0;
-  int if_writers = (int) info == CACHE_ALLOW_MULTIPLE_WRITES;
+  int if_writers = (uintptr_t) info == CACHE_ALLOW_MULTIPLE_WRITES;
   CacheVC *c = new_CacheVC(cont);
   ProxyMutex *mutex = cont->mutex;
   c->vio.op = VIO::WRITE;
@@ -1672,7 +1672,7 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheHTTPInfo * info, tim
   c->part = key_to_part(key, hostname, host_len);
   Part *part = c->part;
   c->info = info;
-  if (c->info && (int) info != CACHE_ALLOW_MULTIPLE_WRITES) {
+  if (c->info && (uintptr_t) info != CACHE_ALLOW_MULTIPLE_WRITES) {
     /*
        Update has the following code paths :
        a) Update alternate header only :

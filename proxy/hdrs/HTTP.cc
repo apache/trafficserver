@@ -2019,7 +2019,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj * block_ref)
   ink_assert(alt->m_writeable == 0);
   len -= HTTP_ALT_MARSHAL_SIZE;
 
-  HdrHeap *heap = (HdrHeap *) (alt->m_request_hdr.m_heap ? (buf + (int) alt->m_request_hdr.m_heap) : 0);
+  HdrHeap *heap = (HdrHeap *) (alt->m_request_hdr.m_heap ? (buf + (intptr_t) alt->m_request_hdr.m_heap) : 0);
   HTTPHdrImpl *hh = NULL;
   int tmp;
   if (heap != NULL) {
@@ -2036,7 +2036,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj * block_ref)
     alt->m_request_hdr.m_url_cached.m_heap = heap;
   }
 
-  heap = (HdrHeap *) (alt->m_response_hdr.m_heap ? (buf + (int) alt->m_response_hdr.m_heap) : 0);
+  heap = (HdrHeap *) (alt->m_response_hdr.m_heap ? (buf + (intptr_t) alt->m_response_hdr.m_heap) : 0);
   if (heap != NULL) {
     tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **) & hh, block_ref);
     if (hh == NULL || tmp < 0) {
@@ -2080,11 +2080,11 @@ HTTPInfo::check_marshalled(char *buf, int len)
     return false;
   }
 
-  if ((int) alt->m_request_hdr.m_heap > len) {
+  if ((intptr_t) alt->m_request_hdr.m_heap > len) {
     return false;
   }
 
-  HdrHeap *heap = (HdrHeap *) (buf + (int) alt->m_request_hdr.m_heap);
+  HdrHeap *heap = (HdrHeap *) (buf + (intptr_t) alt->m_request_hdr.m_heap);
   if (heap->check_marshalled(len) == false) {
     return false;
   }
@@ -2093,11 +2093,11 @@ HTTPInfo::check_marshalled(char *buf, int len)
     return false;
   }
 
-  if ((int) alt->m_response_hdr.m_heap > len) {
+  if ((intptr_t) alt->m_response_hdr.m_heap > len) {
     return false;
   }
 
-  heap = (HdrHeap *) (buf + (int) alt->m_response_hdr.m_heap);
+  heap = (HdrHeap *) (buf + (intptr_t) alt->m_response_hdr.m_heap);
   if (heap->check_marshalled(len) == false) {
     return false;
   }

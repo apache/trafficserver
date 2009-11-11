@@ -30,23 +30,23 @@
 
 template<class T> class DynArray {
 public:
-  DynArray(const T * val, int initial_size = 0);
+  DynArray(const T * val, intptr_t initial_size = 0);
   ~DynArray();
 
 #ifndef __GNUC__
   operator  const T *() const;
 #endif
   operator  T *();
-  T & operator[](int idx);
-  T & operator()(int idx);
+  T & operator[](intptr_t idx);
+  T & operator()(intptr_t idx);
   T *detach();
   T defvalue() const;
-  int length();
+  intptr_t length();
   void clear();
-  void set_length(int i);
+  void set_length(intptr_t i);
 
 private:
-  void resize(int new_size);
+  void resize(intptr_t new_size);
 
 private:
   T * data;
@@ -56,7 +56,7 @@ private:
 };
 
 
-template<class T> inline DynArray<T>::DynArray(const T * val, int initial_size)
+template<class T> inline DynArray<T>::DynArray(const T * val, intptr_t initial_size)
   :
 data(NULL),
 default_val(val),
@@ -100,13 +100,13 @@ T * ()
   return data;
 }
 
-template<class T> inline T & DynArray<T>::operator [](int idx) {
+template<class T> inline T & DynArray<T>::operator [](intptr_t idx) {
   return data[idx];
 }
 
-template<class T> inline T & DynArray<T>::operator ()(int idx) {
+template<class T> inline T & DynArray<T>::operator ()(intptr_t idx) {
   if (idx >= size) {
-    int new_size;
+    intptr_t new_size;
 
     if (size == 0) {
       new_size = 64;
@@ -143,7 +143,7 @@ template<class T> inline T DynArray<T>::defvalue() const
   return *default_val;
 }
 
-template<class T> inline int DynArray<T>::length()
+template<class T> inline intptr_t DynArray<T>::length()
 {
   return pos + 1;
 }
@@ -159,16 +159,16 @@ template<class T> inline void DynArray<T>::clear()
   pos = -1;
 }
 
-template<class T> inline void DynArray<T>::set_length(int i)
+template<class T> inline void DynArray<T>::set_length(intptr_t i)
 {
   pos = i - 1;
 }
 
-template<class T> inline void DynArray<T>::resize(int new_size)
+template<class T> inline void DynArray<T>::resize(intptr_t new_size)
 {
   if (new_size > size) {
     T *new_data;
-    int i;
+    intptr_t i;
 
     new_data = NEW(new T[new_size]);
 

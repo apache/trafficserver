@@ -198,7 +198,7 @@ main(int argc, const char *argv[])
   //ink64 lm = 1LL, ln = 100LL;
   char *m2 = "hello", *n2;
 
-  printf("sizeof(ink32)==%d   sizeof(void *)==%d\n", sizeof(ink32), sizeof(void *));
+  printf("sizeof(ink32)==%d   sizeof(void *)==%d\n", (int)sizeof(ink32), (int)sizeof(void *));
 
 #if 0
   INK_SPINLOCK_ACQUIRE(&s);
@@ -275,7 +275,7 @@ main(int argc, const char *argv[])
   {
     int ali;
     srand(time(NULL));
-    printf("sizeof(al_test) = %d\n", sizeof(al_test));
+    printf("sizeof(al_test) = %d\n", (int)sizeof(al_test));
     memset(&al_test[0][0], 0, sizeof(al_test));
     for (ali = 0; ali < MAX_ALIST_TEST; ali++)
       ink_atomiclist_init(&al[ali], "foo", 0);

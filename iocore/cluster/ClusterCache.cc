@@ -1791,11 +1791,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
         write_cluster_vc->remote_closed = 1;    // avoid remote close msg
         write_cluster_vc->do_io(VIO::CLOSE);
       }
-#ifdef __alpha
-      *((ink32 *) reply->moi) = (ink32) ((inku64) cvc & 0xffffffff);    // code describing failure
-#else
-      *((ink32 *) reply->moi) = (ink32) cvc;    // code describing failure
-#endif
+      *((ink32 *) reply->moi) = (ink32) ((uintptr_t) cvc & 0xffffffff);    // code describing failure
     }
     // Make reply message the current message
     msg = reply;

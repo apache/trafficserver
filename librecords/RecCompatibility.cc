@@ -166,7 +166,7 @@ RecPipeCreate(char *base_path, char *name)
   struct sockaddr_un servaddr;
   struct sockaddr_un cliaddr;
   int servaddr_len;
-  int cliaddr_len;
+  socklen_t cliaddr_len;
 
   // first, let's disable SIGPIPE (move out later!)
   struct sigaction act, oact;
@@ -222,10 +222,7 @@ RecPipeCreate(char *base_path, char *name)
   // block until we get a connection from the other side
   cliaddr_len = sizeof(cliaddr);
   if ((acceptfd = accept(listenfd, (struct sockaddr *) &cliaddr,
-#if (HOST_OS == linux)
-                         (size_t *)
-#endif
-                         & cliaddr_len)) < 0) {
+                         &cliaddr_len)) < 0) {
     return REC_HANDLE_INVALID;
   }
 

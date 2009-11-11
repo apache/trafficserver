@@ -73,9 +73,9 @@ int
 Server::accept(Connection * c)
 {
   int res = 0;
-  int sz = sizeof(c->sa);
+  socklen_t sz = sizeof(c->sa);
 
-  res = socketManager.accept(fd, (struct sockaddr *) &c->sa, &sz);
+  res = socketManager.accept(fd, (struct sockaddr *)&c->sa, &sz);
   if (res < 0)
     return res;
   c->fd = res;

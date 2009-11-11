@@ -257,7 +257,7 @@ CacheVC::scanObject(int event, Event * e)
 
 Lread:
   io.aiocb.aio_fildes = part->fd;
-  if (io.aiocb.aio_offset + io.aiocb.aio_nbytes > part->skip + part->len)
+  if ((ink_off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (ink_off_t)(part->skip + part->len))
     io.aiocb.aio_nbytes = part->skip + part->len - io.aiocb.aio_offset;
   offset = 0;
   ink_assert(ink_aio_read(&io) >= 0);

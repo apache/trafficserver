@@ -925,9 +925,9 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
   ink_assert(m_free_start == NULL);
 
   // Convert Heap offsets to pointers
-  m_data_start = ((char *) this) + (int) m_data_start;
+  m_data_start = ((char *) this) + (intptr_t) m_data_start;
   m_free_start = ((char *) this) + m_size;
-  m_ronly_heap[0].m_heap_start = ((char *) this) + (int) m_ronly_heap[0].m_heap_start;
+  m_ronly_heap[0].m_heap_start = ((char *) this) + (intptr_t) m_ronly_heap[0].m_heap_start;
 
   // Crazy Invarient - If we are sitting in a ref counted block,
   //   the HdrHeap lifetime is externally determined.  Whoever
@@ -974,7 +974,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
     default:
       fprintf(stderr,
               "WARNING: Unmarshal failed due to unknow obj type %d after %d bytes",
-              (int) obj->m_type, obj_data - (char *) this);
+              (int) obj->m_type, (int)(obj_data - (char *) this));
       dump_heap(unmarshal_size);
       return -1;
     }

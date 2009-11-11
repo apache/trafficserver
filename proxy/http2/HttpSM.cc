@@ -1289,7 +1289,7 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
 {
 
   STATE_ENTER(&HttpSM::state_request_wait_for_transform_read, event);
-  int size = (int) data;
+  int size = (int)(intptr_t) data;
 
   switch (event) {
   case TRANSFORM_READ_READY:
@@ -1332,7 +1332,7 @@ HttpSM::state_response_wait_for_transform_read(int event, void *data)
 {
 
   STATE_ENTER(&HttpSM::state_response_wait_for_transform_read, event);
-  int size = (int) data;
+  int size = (int)(intptr_t) data;
 
   switch (event) {
   case TRANSFORM_READ_READY:
@@ -7000,7 +7000,8 @@ HttpSM::update_stats()
       int length = 0;
       const char *field = t_state.hdr_info.client_request.value_get(MIME_FIELD_X_ID, MIME_LEN_X_ID, &length);
       if (field != NULL) {
-        length =::min((unsigned int) length, sizeof(unique_id_string));
+        if ((int)sizeof(unique_id_string) < length)
+          length =  (int)sizeof(unique_id_string);
         strncpy(unique_id_string, field, length);
         unique_id_string[length] = '\0';
       } else {

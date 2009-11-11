@@ -68,7 +68,7 @@ struct SocketManager
   int read_from_middle_of_file(int fd, void *buf, int len, off_t offset, char *tag = NULL);
 
   int recv(int s, void *buf, int len, int flags);
-  int recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, int *addrlen);
+  int recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen);
   int write(int fd, void *buf, int len, void *pOLP = NULL);
   int writev(int fd, struct iovec *vector, size_t count, teFDType eT = KeDontCare);
   int write_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
@@ -92,7 +92,7 @@ struct SocketManager
   int dup(int s);
 
   // result is the fd or -errno
-  int accept(int s, struct sockaddr *addr, int *addrlen);
+  int accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 
   // manipulate socket buffers
   int get_sndbuf_size(int s);
@@ -100,7 +100,7 @@ struct SocketManager
   int set_sndbuf_size(int s, int size);
   int set_rcvbuf_size(int s, int size);
 
-  int getsockname(int s, struct sockaddr *, int *);
+  int getsockname(int s, struct sockaddr *, socklen_t *);
 
   // result is 0 or -errno
   int close(int sock, teFDType eT = KeDontCare);

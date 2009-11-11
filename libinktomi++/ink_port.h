@@ -35,10 +35,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-/*******************************************************************
- ** x86
-  ******************************************************************/
-#if (defined(i386) || defined(__i386))
 typedef char ink8;
 typedef unsigned char inku8;
 typedef short ink16;
@@ -48,6 +44,18 @@ typedef unsigned int inku32;
 typedef long long ink64;
 typedef unsigned long long inku64;
 typedef off_t ink_off_t;
+
+/*******************************************************************
+ ** x86
+  ******************************************************************/
+
+#if (defined(i386) || defined(__i386))
+# define ink_atomic_cas_long(x,y) ink_atomic_cas ((ink32*) x, y)
+# define ink_atomic_swap_long(x,y) ink_atomic_swap ((ink32*) x, y)
+#else
+# define ink_atomic_cas_long(x,y) ink_atomic_cas64 ((ink64*) x, y)
+# define ink_atomic_swap_long(x,y) ink_atomic_swap64 ((ink64*) x, y)
+#endif
 
 #define _CRTIMP
 #define HAVE_64_BIT
@@ -60,9 +68,6 @@ typedef off_t ink_off_t;
 #error "Unknown OS!"
 #endif
 
-# define ink_atomic_cas_long(x,y) ink_atomic_cas ((ink32*) x, y)
-# define ink_atomic_swap_long(x,y) ink_atomic_swap ((ink32*) x, y)
-#endif /* #if (defined(i386) || defined(__i386)) */
 
 #if (HOST_OS == freebsd)
 #define ETIME ETIMEDOUT

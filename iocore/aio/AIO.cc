@@ -480,7 +480,7 @@ aio_init_fildes(int fildes)
 
   ink_cond_init(&request->aio_cond);
   ink_mutex_init(&request->aio_mutex, NULL);
-  ink_atomiclist_init(&request->aio_temp_list, "temp_list", (unsigned) &((AIOCallback *) 0)->link);
+  ink_atomiclist_init(&request->aio_temp_list, "temp_list", (uintptr_t) &((AIOCallback *) 0)->link);
 
   request->index = num_filedes;
   request->filedes = fildes;

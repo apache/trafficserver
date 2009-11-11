@@ -285,9 +285,11 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
   lock();
   if (config.outputs[diags_level].to_diagslog) {
     if (diags_log_fp) {
+      va_list ap_scratch;
+      va_copy(ap_scratch, ap);
       char *buffer;
       buffer = format_buf_w_ts;
-      ink_vfprintf(diags_log_fp, buffer, ap);
+      ink_vfprintf(diags_log_fp, buffer, ap_scratch);
       {
         int len = strlen(buffer);
         if (len > 0 && buffer[len - 1] != '\n') {
@@ -298,9 +300,11 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
   }
 
   if (config.outputs[diags_level].to_stdout) {
+    va_list ap_scratch;
+    va_copy(ap_scratch, ap);
     char *buffer;
     buffer = format_buf_w_ts;
-    ink_vfprintf(stdout, buffer, ap);
+    ink_vfprintf(stdout, buffer, ap_scratch);
     {
       int len = strlen(buffer);
       if (len > 0 && buffer[len - 1] != '\n') {
@@ -310,9 +314,11 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
   }
 
   if (config.outputs[diags_level].to_stderr) {
+    va_list ap_scratch;
+    va_copy(ap_scratch, ap);
     char *buffer;
     buffer = format_buf_w_ts;
-    ink_vfprintf(stderr, buffer, ap);
+    ink_vfprintf(stderr, buffer, ap_scratch);
     {
       int len = strlen(buffer);
       if (len > 0 && buffer[len - 1] != '\n') {

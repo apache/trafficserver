@@ -355,27 +355,27 @@ RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
   r = (RecRecord *) p;
   p += sizeof(RecRecord);
   if (rec_name_len != -1) {
-    ink_assert((msg->o_end - ((unsigned int) p - (unsigned int) msg)) >= (unsigned int) rec_name_len);
+    ink_assert((msg->o_end - ((uintptr_t) p - (uintptr_t) msg)) >= (uintptr_t) rec_name_len);
     memcpy(p, record->name, rec_name_len);
-    r->name = (char *) ((unsigned int) p - (unsigned int) r);
+    r->name = (char *) ((uintptr_t) p - (uintptr_t) r);
     p += rec_name_len;
   }
   if (rec_data_str_len != -1) {
-    ink_assert((msg->o_end - ((unsigned int) p - (unsigned int) msg)) >= (unsigned int) rec_data_str_len);
+    ink_assert((msg->o_end - ((uintptr_t) p - (uintptr_t) msg)) >= (uintptr_t) rec_data_str_len);
     memcpy(p, record->data.rec_string, rec_data_str_len);
-    r->data.rec_string = (char *) ((unsigned int) p - (unsigned int) r);
+    r->data.rec_string = (char *) ((uintptr_t) p - (uintptr_t) r);
     p += rec_data_str_len;
   }
   if (rec_data_def_str_len != -1) {
-    ink_assert((msg->o_end - ((unsigned int) p - (unsigned int) msg)) >= (unsigned int) rec_data_def_str_len);
+    ink_assert((msg->o_end - ((uintptr_t) p - (uintptr_t) msg)) >= (uintptr_t) rec_data_def_str_len);
     memcpy(p, record->data_default.rec_string, rec_data_def_str_len);
-    r->data_default.rec_string = (char *) ((unsigned int) p - (unsigned int) r);
+    r->data_default.rec_string = (char *) ((uintptr_t) p - (uintptr_t) r);
     p += rec_data_def_str_len;
   }
   if (rec_cfg_chk_len != -1) {
-    ink_assert((msg->o_end - ((unsigned int) p - (unsigned int) msg)) >= (unsigned int) rec_cfg_chk_len);
+    ink_assert((msg->o_end - ((uintptr_t) p - (uintptr_t) msg)) >= (uintptr_t) rec_cfg_chk_len);
     memcpy(p, record->config_meta.check_expr, rec_cfg_chk_len);
-    r->config_meta.check_expr = (char *) ((unsigned int) p - (unsigned int) r);
+    r->config_meta.check_expr = (char *) ((uintptr_t) p - (uintptr_t) r);
     p += rec_cfg_chk_len;
   }
 
@@ -437,18 +437,18 @@ RecMessageUnmarshalNext(RecMessage * msg, RecMessageItr * itr, RecRecord ** reco
   r = (RecRecord *) ((char *) eh + sizeof(RecMessageEleHdr));
 
   if (r->name) {
-    r->name = (char *) r + (int) (r->name);
+    r->name = (char *) r + (intptr_t) (r->name);
   }
   if (r->data_type == RECD_STRING) {
     if (r->data.rec_string) {
-      r->data.rec_string = (char *) r + (int) (r->data.rec_string);
+      r->data.rec_string = (char *) r + (intptr_t) (r->data.rec_string);
     }
     if (r->data_default.rec_string) {
-      r->data_default.rec_string = (char *) r + (int) (r->data_default.rec_string);
+      r->data_default.rec_string = (char *) r + (intptr_t) (r->data_default.rec_string);
     }
   }
   if (REC_TYPE_IS_CONFIG(r->rec_type) && (r->config_meta.check_expr)) {
-    r->config_meta.check_expr = (char *) r + (int) (r->config_meta.check_expr);
+    r->config_meta.check_expr = (char *) r + (intptr_t) (r->config_meta.check_expr);
   }
 
   *record = r;

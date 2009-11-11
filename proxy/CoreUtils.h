@@ -39,16 +39,16 @@
 // to be sorted by lwpid, but lwps are assumed to come in order
 struct lwpTable
 {
-  int lwpId;
-  int framep;
+  intptr_t lwpId;
+  intptr_t framep;
 };
 
 // contains local and in registers, frame pointer, and stack base
 struct core_stack_state
 {
   struct rwindow regs;
-  int framep;
-  int stkbase;
+  intptr_t framep;
+  intptr_t stkbase;
 };
 #endif
 
@@ -73,18 +73,18 @@ struct core_stack_state
 // contains local and in registers, frame pointer, and stack base
 struct core_stack_state
 {
-  int framep;                   //int stkbase;
-  int pc;
-  int arg[NO_OF_ARGS];
+  intptr_t framep;                   //int stkbase;
+  intptr_t pc;
+  intptr_t arg[NO_OF_ARGS];
 };
 #endif  // linux check
 
 // to be sorted by virtual address
 struct memTable
 {
-  int vaddr;
-  int offset;
-  int fsize;
+  intptr_t vaddr;
+  intptr_t offset;
+  intptr_t fsize;
 };
 
 typedef void (*StuffTest_f) (void *);
@@ -119,14 +119,14 @@ public:
   * notes: upper and lower stands for the lowest and highest indices
   *        the function should search between
   **********************************************************************/
-  static int find_vaddr(int vaddr, int upper, int lower);
+  static intptr_t find_vaddr(intptr_t vaddr, intptr_t upper, intptr_t lower);
 
   /**********************************************************************
   * purpose: function used to build the virtual address table
   * inputs: int vaddr1, int offset1, int fsize1
   * outputs: none
   **********************************************************************/
-  static void insert_table(int vaddr1, int offset1, int fsize1);
+  static void insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1);
 
   /**********************************************************************
   * purpose: fills the given buffer with characters from the beginning
@@ -134,7 +134,7 @@ public:
   * inputs: int vaddr, int length, char* buf, FILE *fp
   * outputs: returns -1 on read error or 1 if successful
   **********************************************************************/
-  static int read_core_memory(int vaddr, int length, char *buf, FILE * fp);
+  static intptr_t read_core_memory(intptr_t vaddr, intptr_t length, char *buf, FILE * fp);
 
   /**********************************************************************
   * purpose: fills the given buffer with characters from the beginning
@@ -142,7 +142,7 @@ public:
   * inputs: int offset, int vaddr, int length, char* buf, FILE *fp
   * outputs: returns -1 on read error or 1 if successful
   **********************************************************************/
-  static int read_core_memory(int offset, int vaddr, int length, char *buf, FILE * fp);
+  static intptr_t read_core_memory(intptr_t offset, intptr_t vaddr, intptr_t length, char *buf, FILE * fp);
 
   /**********************************************************************
   * purpose: fills the buffer with num of given bytes from the
@@ -150,14 +150,14 @@ public:
   * inputs: int vaddr, int bytes, char* buf
   * outputs: returns -1 on read error or num of bytes read
   **********************************************************************/
-  static int read_from_core(int vaddr, int bytes, char *buf);
+  static intptr_t read_from_core(intptr_t vaddr, intptr_t bytes, char *buf);
 
   /**********************************************************************
   * purpose: beats the heck outta me
   * inputs: int vaddr, int bytes, HdrHeap h
   * outputs: returns -1 on read error or num of bytes read
   **********************************************************************/
-  static int read_heap_header(int vaddr, int bytes, HdrHeap h);
+  static intptr_t read_heap_header(intptr_t vaddr, intptr_t bytes, HdrHeap h);
 
   /**********************************************************************
   * purpose: returns the active lwp id
@@ -165,7 +165,7 @@ public:
   * outputs: returns the active lwp id
   **********************************************************************/
 #if defined(sparc)
-  static int get_active_thread_Id();
+  static intptr_t get_active_thread_Id();
 #endif
 
   /**********************************************************************
@@ -174,10 +174,10 @@ public:
   * outputs: returns the base core_stack_state for the given thread id
   **********************************************************************/
 #if (HOST_OS == linux)
-  static void get_base_frame(int framep, core_stack_state * coress);
+  static void get_base_frame(intptr_t framep, core_stack_state * coress);
 #endif
 #if defined(sparc)
-  static void get_base_frame(int threadId, core_stack_state * coress);
+  static void get_base_frame(intptr_t threadId, core_stack_state * coress);
 #endif
 
   /**********************************************************************

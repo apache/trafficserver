@@ -252,7 +252,7 @@ CCFailHistoryTestCont::init_events()
   clear_events();
 
   failEvents = new InkAtomicList;
-  ink_atomiclist_init(failEvents, "failEvents", (unsigned) &((CCFailHistoryTestCont::FailEvents *) 0)->link);
+  ink_atomiclist_init(failEvents, "failEvents", (uintptr_t) &((CCFailHistoryTestCont::FailEvents *) 0)->link);
 
   int i, j;
   CCFailHistoryTestCont::FailEvents * new_event = NULL;

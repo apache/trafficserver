@@ -23,7 +23,7 @@
 
 #include "P_Net.h"
 
-#define STATE_VIO_OFFSET ((int)&((NetState*)0)->vio)
+#define STATE_VIO_OFFSET ((uintptr_t)&((NetState*)0)->vio)
 #define STATE_FROM_VIO(_x) ((NetState*)(((char*)(_x)) - STATE_VIO_OFFSET))
 
 #define disable_read(_vc) (_vc)->read.enabled = 0

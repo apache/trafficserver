@@ -229,7 +229,7 @@ RamCache::fixup(INK_MD5 * key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 ne
 void
 RamCache::print_stats(FILE * fp, int verbose)
 {
-  fprintf(fp, "RAM Cache <%X>\n", (unsigned int) this);
+  fprintf(fp, "RAM Cache <%p>\n", this);
   fprintf(fp, "\tn_partitions: %d\n", n_partitions);
   fprintf(fp, "\tbytes: %d\n", (int) bytes);
   fprintf(fp, "\tobjects: %d\n", (int) objects);

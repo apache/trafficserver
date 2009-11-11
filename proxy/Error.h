@@ -49,19 +49,18 @@ struct ErrorClass
   const char *filename;
   int line_number;
   const char *function_name;
-  va_list ap;
 
   const char *format_string;
 
     ErrorClass(const char *afile, int aline, const char *afunction)
-  : filename(afile), line_number(aline), function_name(afunction), ap(NULL), format_string(NULL)
+  : filename(afile), line_number(aline), function_name(afunction), format_string(NULL)
   {
   }
 
   void operator() (const char *aformat_string ...);
 
   virtual ~ ErrorClass();
-  virtual void raise(const char *prefix = NULL);
+  virtual void raise(va_list ap, const char *prefix = NULL);
 };
 
 #if !defined (__GNUC__)
@@ -91,7 +90,7 @@ struct FatalClass:ErrorClass
 
 struct RequestFatalClass:FatalClass
 {
-  virtual void raise(const char *prefix = NULL);
+  virtual void raise(va_list ap, const char *prefix = NULL);
     RequestFatalClass(const char *afile, int aline, const char *afunction)
   : FatalClass(afile, aline, afunction)
   {
@@ -108,7 +107,7 @@ struct RequestFatalClass:FatalClass
 
 struct ThreadFatalClass:FatalClass
 {
-  virtual void raise(const char *prefix = NULL);
+  virtual void raise(va_list ap, const char *prefix = NULL);
     ThreadFatalClass(const char *afile, int aline, const char *afunction)
   : FatalClass(afile, aline, afunction)
   {
@@ -125,7 +124,7 @@ struct ThreadFatalClass:FatalClass
 
 struct ProcessorFatalClass:FatalClass
 {
-  virtual void raise(const char *prefix = NULL);
+  virtual void raise(va_list ap, const char *prefix = NULL);
     ProcessorFatalClass(const char *afile, int aline, const char *afunction)
   : FatalClass(afile, aline, afunction)
   {
@@ -143,7 +142,7 @@ struct ProcessorFatalClass:FatalClass
 
 struct ProcessFatalClass:FatalClass
 {
-  virtual void raise(const char *prefix = NULL);
+  virtual void raise(va_list ap, const char *prefix = NULL);
     ProcessFatalClass(const char *afile, int aline, const char *afunction)
   : FatalClass(afile, aline, afunction)
   {
@@ -162,7 +161,7 @@ struct ProcessFatalClass:FatalClass
 
 struct MachineFatalClass:FatalClass
 {
-  virtual void raise(const char *prefix = NULL);
+  virtual void raise(va_list ap, const char *prefix = NULL);
     MachineFatalClass(const char *afile, int aline, const char *afunction)
   : FatalClass(afile, aline, afunction)
   {

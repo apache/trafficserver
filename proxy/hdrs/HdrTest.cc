@@ -631,7 +631,7 @@ HdrTest::test_http_parser_eos_boundary_cases()
     ret = req_hdr.parse_req(&parser, &start, end, true);
     bytes_consumed = (int) (start - orig_start);
 
-    printf("======== test %d (length=%d, consumed=%d)\n", i, strlen(tests[i].msg), bytes_consumed);
+    printf("======== test %d (length=%d, consumed=%d)\n", i, (int)strlen(tests[i].msg), bytes_consumed);
     printf("[%s]\n", tests[i].msg);
     printf("\n[");
     req_hdr.print(NULL, 0, NULL, NULL);
@@ -696,7 +696,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
 
     /*** (2) print out the request ***/
 
-  printf("======== real request (length=%d)\n\n", strlen(request));
+  printf("======== real request (length=%d)\n\n", (int)strlen(request));
   printf("%s\n", request);
 
   printf("\n[");
@@ -731,7 +731,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
 
     /*** (4) print out the response ***/
 
-  printf("\n======== real response (length=%d)\n\n", strlen(response));
+  printf("\n======== real response (length=%d)\n\n", (int)strlen(response));
   printf("%s\n", response);
 
   printf("\n[");
@@ -1090,8 +1090,8 @@ done:
 
   if (comp_str) {
     printf("FAILED: (test #%d) copy & compare: %s\n", testnum, comp_str);
-    printf("REQ:\n[%.*s]\n", strlen(request), request);
-    printf("RESP  :\n[%.*s]\n", strlen(response), response);
+    printf("REQ:\n[%.*s]\n", (int)strlen(request), request);
+    printf("RESP  :\n[%.*s]\n", (int)strlen(response), response);
     return (0);
   } else {
     return (1);
@@ -1162,10 +1162,10 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
 
   if (((size_t) prt_bufindex != strlen(request_tgt)) || ((size_t) cpy_bufindex != strlen(request_tgt))) {
     printf("FAILED: (test #%d) print req output size mismatch --- tgt=%d, prt_bufsize=%d, cpy_bufsize=%d\n",
-           testnum, strlen(request_tgt), prt_bufindex, cpy_bufindex);
+           testnum, (int)strlen(request_tgt), prt_bufindex, cpy_bufindex);
 
-    printf("ORIGINAL:\n[%.*s]\n", strlen(request), request);
-    printf("TARGET  :\n[%.*s]\n", strlen(request_tgt), request_tgt);
+    printf("ORIGINAL:\n[%.*s]\n", (int)strlen(request), request);
+    printf("TARGET  :\n[%.*s]\n", (int)strlen(request_tgt), request_tgt);
     printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
     return (0);
@@ -1174,8 +1174,8 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
   if ((strncasecmp(request_tgt, prt_buf, strlen(request_tgt)) != 0) ||
       (strncasecmp(request_tgt, cpy_buf, strlen(request_tgt)) != 0)) {
     printf("FAILED: (test #%d) print req output mismatch\n", testnum);
-    printf("ORIGINAL:\n[%.*s]\n", strlen(request), request);
-    printf("TARGET  :\n[%.*s]\n", strlen(request_tgt), request_tgt);
+    printf("ORIGINAL:\n[%.*s]\n", (int)strlen(request), request);
+    printf("TARGET  :\n[%.*s]\n", (int)strlen(request_tgt), request_tgt);
     printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
     return (0);
@@ -1224,9 +1224,9 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
 
   if (((size_t) prt_bufindex != strlen(response_tgt)) || ((size_t) cpy_bufindex != strlen(response_tgt))) {
     printf("FAILED: (test #%d) print rsp output size mismatch --- tgt=%d, prt_bufsize=%d, cpy_bufsize=%d\n",
-           testnum, strlen(response_tgt), prt_bufindex, cpy_bufindex);
-    printf("ORIGINAL:\n[%.*s]\n", strlen(response), response);
-    printf("TARGET  :\n[%.*s]\n", strlen(response_tgt), response_tgt);
+           testnum, (int)strlen(response_tgt), prt_bufindex, cpy_bufindex);
+    printf("ORIGINAL:\n[%.*s]\n", (int)strlen(response), response);
+    printf("TARGET  :\n[%.*s]\n", (int)strlen(response_tgt), response_tgt);
     printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
     return (0);
@@ -1235,8 +1235,8 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
   if ((strncasecmp(response_tgt, prt_buf, strlen(response_tgt)) != 0) ||
       (strncasecmp(response_tgt, cpy_buf, strlen(response_tgt)) != 0)) {
     printf("FAILED: (test #%d) print rsp output mismatch\n", testnum);
-    printf("ORIGINAL:\n[%.*s]\n", strlen(response), response);
-    printf("TARGET  :\n[%.*s]\n", strlen(response_tgt), response_tgt);
+    printf("ORIGINAL:\n[%.*s]\n", (int)strlen(response), response);
+    printf("TARGET  :\n[%.*s]\n", (int)strlen(response_tgt), response_tgt);
     printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
     return (0);
@@ -2007,7 +2007,7 @@ HdrTest::test_set_comma_vals()
       ++failures;
       printf("FAILED:  test #%d (setting idx %d of '%s' to '%s') expected '%s' len %d, got '%.*s' len %d\n",
              i + 1, tests[i].idx, tests[i].old_raw, tests[i].slice,
-             tests[i].new_raw, strlen(tests[i].new_raw), f->m_len_value, f->m_ptr_value, f->m_len_value);
+             tests[i].new_raw, (int)strlen(tests[i].new_raw), f->m_len_value, f->m_ptr_value, f->m_len_value);
     }
   }
 
@@ -2151,7 +2151,7 @@ HdrTest::test_str_replace_slice()
   good = "oo, de, fr, en";
   retr = mime_field_value_str_replace_slice(heap, &len, buff, (int) strlen(buff), targ, 0, repl, (int) strlen(repl));
   if ((len != (int) strlen(good)) || (memcmp(good, retr, len) != 0)) {
-    printf("FAILED: expected %d byte str \"%s\", got %d byte str \"%.*s\"\n", (int) strlen(good), good, len, len, retr);
+    printf("FAILED: expected %d byte str \"%s\", got %d byte str \"%.*s\"\n", (int)strlen(good), good, len, len, retr);
     ++failures;
   }
   // (2) append
@@ -2159,7 +2159,7 @@ HdrTest::test_str_replace_slice()
   targ = buff + 10;
   repl = ", bloop";
   good = "de, fr, en, bloop";
-  retr = mime_field_value_str_replace_slice(heap, &len, buff, (int) strlen(buff), targ, 0, repl, (int) strlen(repl));
+  retr = mime_field_value_str_replace_slice(heap, &len, buff, (int)strlen(buff), targ, 0, repl, (int)strlen(repl));
   if ((len != (int) strlen(good)) || (memcmp(good, retr, len) != 0)) {
     printf("FAILED: expected %d byte str \"%s\", got %d byte str \"%.*s\"\n", (int) strlen(good), good, len, len, retr);
     ++failures;
@@ -2368,7 +2368,7 @@ HdrTest::test_parse_comma_list()
         if (cell != NULL) {
           ++failures;
           printf("FAILED: test #%d (string '%s', idx %d) expected NULL piece, got [offset %d len %d]\n",
-                 i + 1, tests[i].value, j, offset, cell->len);
+                 i + 1, tests[i].value, j, offset, (int)cell->len);
         }
       } else                    // should have a piece
       {
@@ -2379,7 +2379,7 @@ HdrTest::test_parse_comma_list()
         } else if ((offset != tests[i].pieces[j].offset) || (cell->len != (size_t) tests[i].pieces[j].len)) {
           ++failures;
           printf("FAILED: test #%d (string '%s', idx %d) expected [offset %d len %d], got [offset %d len %d]\n",
-                 i + 1, tests[i].value, j, tests[i].pieces[j].offset, tests[i].pieces[j].len, offset, cell->len);
+                 i + 1, tests[i].value, j, tests[i].pieces[j].offset, tests[i].pieces[j].len, offset, (int)cell->len);
         }
       }
     }

@@ -869,7 +869,7 @@ LogConfig::display(FILE * fd)
   fprintf(fd, "   space_used_frequency = %d\n", space_used_frequency);
 
   fprintf(fd, "\n");
-  fprintf(fd, "************ Log Objects (%u objects) ************\n", log_object_manager.get_num_objects());
+  fprintf(fd, "************ Log Objects (%u objects) ************\n", (unsigned int)log_object_manager.get_num_objects());
   log_object_manager.display(fd);
 
   fprintf(fd, "************ Global Filter List (%u filters) ************\n", global_filter_list.count());

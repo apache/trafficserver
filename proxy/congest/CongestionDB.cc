@@ -159,7 +159,7 @@ CongestionDB::CongestionDB(int tablesize)
   ink_assert(tablesize > 0);
   todo_lists = new InkAtomicList[MT_HASHTABLE_PARTITIONS];
   for (int i = 0; i < MT_HASHTABLE_PARTITIONS; i++) {
-    ink_atomiclist_init(&todo_lists[i], "cong_todo_list", (unsigned) &((CongestRequestParam *) 0)->link);
+    ink_atomiclist_init(&todo_lists[i], "cong_todo_list", (uintptr_t) &((CongestRequestParam *) 0)->link);
   }
 }
 

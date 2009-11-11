@@ -47,12 +47,20 @@ ink_restore_signal_handler_frame(void **stack, int len, int signalhandler_frame)
   struct sigframe *sf;
   struct sigcontext *scxt;
 
+#ifdef __i386__
   asm volatile ("movl %%ebp,%0":"=r" (fp));
+#else
+  asm volatile ("mov %%rbp,%0":"=r" (fp));
+#endif
   for (i = 0; i < signalhandler_frame; i++)
     fp = (void **) (*fp);
   sf = (struct sigframe *) (fp + 1);
   scxt = &(sf->sc);
+#ifdef __i386__
   stack[signalhandler_frame + 1] = (void *) scxt->eip;
+#else
+  stack[signalhandler_frame + 1] = (void *) scxt->rip;
+#endif
   for (i = signalhandler_frame + 2; i < len - 1; i++)
     stack[i] = stack[i + 1];
 }

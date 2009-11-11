@@ -511,7 +511,7 @@ public:
   virtual struct in_addr *GetIP() = 0;
   virtual int GetPort() = 0;
   virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr_in *to) = 0;
-  virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, int *) = 0;
+  virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, socklen_t *) = 0;
   virtual int GetRecvFD() = 0;
   virtual int GetSendFD() = 0;
   virtual int ExpectedReplies(BitMap *) = 0;
@@ -570,7 +570,7 @@ public:
   // this is for delayed I/O
   Ptr<IOBufferBlock> buf;
   struct sockaddr_in fromaddr;
-  int fromaddrlen;
+  socklen_t fromaddrlen;
   int notFirstRead;             // priming the reads
   Action *readAction;           // outstanding read
   Action *writeAction;          // outstanding write
@@ -617,7 +617,7 @@ public:
   virtual struct in_addr *GetIP();
   virtual int GetPort();
   virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr_in *to);
-  virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, int *);
+  virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, socklen_t *);
   virtual int GetRecvFD();
   virtual int GetSendFD();
   virtual int ExpectedReplies(BitMap *);
@@ -668,7 +668,7 @@ public:
   virtual struct in_addr *GetIP();
   virtual int GetPort();
   virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr_in *to);
-  virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, int *);
+  virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, socklen_t *);
   virtual int GetRecvFD();
   virtual int GetSendFD();
   virtual int ExpectedReplies(BitMap *);
