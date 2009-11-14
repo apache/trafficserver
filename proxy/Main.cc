@@ -257,9 +257,9 @@ ArgumentDescription argument_descriptions[] = {
    "T",
    &run_test_hook, "PROXY_RUN_TEST_HOOK", NULL},
 #endif //INK_NO_TESTS
-  {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", error_tags,
+  {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
    "PROXY_DEBUG_TAGS", NULL},
-  {"action_tags", 'B', "Colon-Separated Behavior Tags", "S1023", action_tags,
+  {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags,
    "PROXY_BEHAVIOR_TAGS", NULL},
   {"interval", 'i', "Statistics Interval", "I", &show_statistics,
    "PROXY_STATS_INTERVAL", NULL},
