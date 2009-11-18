@@ -77,7 +77,7 @@ LogAccessTest::marshal_client_host_ip(char *buf)
 /*------------------------------------------------------------------------- 
   -------------------------------------------------------------------------*/
 
-/*int
+int
 LogAccessTest::marshal_client_auth_user_name(char *buf)
 {
   static char *str = "major tom";
@@ -86,7 +86,7 @@ LogAccessTest::marshal_client_auth_user_name(char *buf)
     marshal_str(buf, str, len);
   }
   return len;
-}a*/
+}
 
 /*------------------------------------------------------------------------- 
   -------------------------------------------------------------------------*/

@@ -57,7 +57,7 @@ public:
   // client -> proxy fields
   //
   virtual int marshal_client_host_ip(char *);   // INT
-  //virtual int marshal_client_auth_user_name(char *);    // STR
+  virtual int marshal_client_auth_user_name(char *);    // STR
   virtual int marshal_client_req_text(char *);  // STR
   virtual int marshal_client_req_http_method(char *);   // INT
   virtual int marshal_client_req_url(char *);   // STR

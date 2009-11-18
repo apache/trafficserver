@@ -392,6 +392,14 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "chih", field);
 
+  // Jira TS-40: Re-add Squid field 'caun'
+  field = NEW (new LogField ("client_auth_user_name", "caun",
+                             LogField::STRING,
+                             &LogAccess::marshal_client_auth_user_name,
+                             &LogAccess::unmarshal_str));
+  global_field_list.add (field, false);
+  ink_hash_table_insert (field_symbol_hash, "caun", field);
+    
   field = NEW(new LogField("client_req_timestamp_sec", "cqts",
                            LogField::sINT,
                            &LogAccess::marshal_client_req_timestamp_sec, &LogAccess::unmarshal_int_to_str));

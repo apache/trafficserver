@@ -82,7 +82,7 @@ LogAccessICP::marshal_client_host_ip(char *buf)
 /*------------------------------------------------------------------------- 
   -------------------------------------------------------------------------*/
 
-/*int
+int
 LogAccessICP::marshal_client_auth_user_name(char *buf)
 {
   char *str = (char *) m_icp_log->GetIdent();
@@ -91,7 +91,7 @@ LogAccessICP::marshal_client_auth_user_name(char *buf)
     marshal_str(buf, str, len);
   }
   return len;
-}*/
+}
 
 /*------------------------------------------------------------------------- 
   -------------------------------------------------------------------------*/
