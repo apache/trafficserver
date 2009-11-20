@@ -92,11 +92,11 @@ extern "C"
 #define ZERO_HEAD_P(_x)
 
 #ifdef DEBUG
-#define FROM_PTR(_x) (void*)(((unsigned long)_x)+1)
-#define TO_PTR(_x) (void*)(((unsigned long)_x)-1)
+#define FROM_PTR(_x) (void*)(((uintptr_t)_x)+1)
+#define TO_PTR(_x) (void*)(((uintptr_t)_x)-1)
 #else
-#define FROM_PTR(_x) _x
-#define TO_PTR(_x) _x
+#define FROM_PTR(_x) ((void*)(_x))
+#define TO_PTR(_x) ((void*)(_x))
 #endif
 
 #if defined(__i386__)
@@ -135,24 +135,23 @@ extern "C"
 #endif
 
     const char *name;
-    unsigned type_size, chunk_size, count, allocated, offset, alignment;
-    unsigned allocated_base, count_base;
+    inku32 type_size, chunk_size, count, allocated, offset, alignment;
+    inku32 allocated_base, count_base;
   } InkFreeList, *PInkFreeList;
 
   inkcoreapi extern volatile ink64 fastalloc_mem_in_use;
   inkcoreapi extern volatile ink64 fastalloc_mem_total;
-
   inkcoreapi extern volatile ink64 freelist_allocated_mem;
 
 /*
  * alignment must be a power of 2
  */
-  InkFreeList *ink_freelist_create(const char *name, unsigned type_size,
-                                   unsigned chunk_size, unsigned offset_to_next, unsigned alignment);
+  InkFreeList *ink_freelist_create(const char *name, inku32 type_size,
+                                   inku32 chunk_size, inku32 offset_to_next, inku32 alignment);
 
   inkcoreapi void ink_freelist_init(InkFreeList * fl, const char *name,
-                                    unsigned type_size, unsigned chunk_size,
-                                    unsigned offset_to_next, unsigned alignment);
+                                    inku32 type_size, inku32 chunk_size,
+                                    inku32 offset_to_next, inku32 alignment);
 #if !defined(INK_USE_MUTEX_FOR_FREELISTS)
   inkcoreapi void *ink_freelist_new(InkFreeList * f);
   inkcoreapi void ink_freelist_free(InkFreeList * f, void *item);
@@ -186,7 +185,7 @@ extern "C"
 #endif
     volatile head_p head;
     const char *name;
-    unsigned offset;
+    inku32 offset;
   } InkAtomicList;
 
 #if !defined(INK_QUEUE_NT)
@@ -196,7 +195,7 @@ extern "C"
 #define INK_ATOMICLIST_EMPTY(_x) (!(      (FREELIST_POINTER((_x.head)))))
 #endif
 
-  inkcoreapi void ink_atomiclist_init(InkAtomicList * l, const char *name, unsigned offset_to_next);
+  inkcoreapi void ink_atomiclist_init(InkAtomicList * l, const char *name, inku32 offset_to_next);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
   inkcoreapi void *ink_atomiclist_push(InkAtomicList * l, void *item);
   void *ink_atomiclist_pop(InkAtomicList * l);

@@ -103,7 +103,7 @@ inkcoreapi volatile ink64 freelist_allocated_mem = 0;
 
 void
 ink_freelist_init(InkFreeList * f,
-                  const char *name, unsigned type_size, unsigned chunk_size, unsigned offset, unsigned alignment)
+                  const char *name, inku32 type_size, inku32 chunk_size, inku32 offset, inku32 alignment)
 {
   ink_freelist_list *fll;
 
@@ -133,7 +133,7 @@ ink_freelist_init(InkFreeList * f,
   f->tail = NULL;
 #endif
 #else
-  SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(NULL), ((unsigned long) 0));
+  SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(NULL), 0);
 #endif
 
   f->count = 0;
@@ -143,7 +143,7 @@ ink_freelist_init(InkFreeList * f,
 }
 
 InkFreeList *
-ink_freelist_create(const char *name, unsigned type_size, unsigned chunk_size, unsigned offset, unsigned alignment)
+ink_freelist_create(const char *name, inku32 type_size, inku32 chunk_size, inku32 offset, inku32 alignment)
 {
   InkFreeList *f = ink_type_malloc(InkFreeList);
   ink_freelist_init(f, name, type_size, chunk_size, offset, alignment);
@@ -165,12 +165,12 @@ ink_freelist_new_wrap(InkFreeList * f)
 void *
 ink_freelist_new(InkFreeList * f)
 #endif                          /* !INK_USE_MUTEX_FOR_FREELISTS */
-{                               //static unsigned cntf = 0;
+{                               //static inku32 cntf = 0;
 
 
 #if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE))
   void *foo;
-  unsigned type_size = f->type_size;
+  inku32 type_size = f->type_size;
 
   ink_mutex_acquire(&(f->freelist_mutex));
   ink_assert(f->type_size != 0);
@@ -198,7 +198,7 @@ ink_freelist_new(InkFreeList * f)
      * Might as well unlock the freelist mutex, since
      * we're just going to do a malloc now..
      */
-    unsigned alignment;
+    inku32 alignment;
 
 #ifdef MEMPROTECT
     if (type_size >= MEMPROTECT_SIZE) {
@@ -240,8 +240,8 @@ ink_freelist_new(InkFreeList * f)
   do {
     INK_QUEUE_LD64(item, f->head);
     if (TO_PTR(FREELIST_POINTER(item)) == NULL) {
-      unsigned type_size = f->type_size;
-      unsigned int i;
+      inku32 type_size = f->type_size;
+      inku32 i;
 
 #ifdef MEMPROTECT
       if (type_size >= MEMPROTECT_SIZE) {
@@ -270,11 +270,11 @@ ink_freelist_new(InkFreeList * f)
 #endif
       SET_FREELIST_POINTER_VERSION(item, newp, 0);
 #else
-      unsigned int add;
-      unsigned long mask;
+      uintptr_t add;
+      uintptr_t mask;
       if (f->alignment) {
         add = f->alignment - 1;
-        mask = ~(unsigned long) add;
+        mask = ~(uintptr_t) add;
       } else {
         add = 0;
         mask = ~0;
@@ -282,8 +282,8 @@ ink_freelist_new(InkFreeList * f)
       newp = ink_malloc(f->chunk_size * type_size + add);
       if (newp)
         fl_memadd(f->chunk_size * type_size + add);
-      newp = (void *) ((((unsigned long) newp) + add) & mask);
-      SET_FREELIST_POINTER_VERSION(item, newp, ((unsigned long) 0));
+      newp = (void *) ((((uintptr_t) newp) + add) & mask);
+      SET_FREELIST_POINTER_VERSION(item, newp, 0);
 #endif
 
 #if !defined(INK_USE_MUTEX_FOR_FREELISTS)
@@ -344,7 +344,7 @@ ink_freelist_new(InkFreeList * f)
     }
   }
   while (result == 0);
-  // ink_assert(!((unsigned long)TO_PTR(FREELIST_POINTER(item))&(f->alignment-1))); XXX - why is this no longer working? -bcall
+  ink_assert(!((uintptr_t)TO_PTR(FREELIST_POINTER(item))&(((uintptr_t)f->alignment)-1)));
 
   ink_atomic_increment((int *) &f->count, 1);
   ink_atomic_increment64(&fastalloc_mem_in_use, (ink64) f->type_size);
@@ -435,9 +435,9 @@ ink_freelist_free(InkFreeList * f, void *item)
     if (TO_PTR(FREELIST_POINTER(h)) == item)
       ink_fatal(1, "ink_freelist_free: trying to free item twice");
 #ifdef __alpha
-    if (((unsigned long) (TO_PTR(h.data))) & 3)
+    if (((uintptr_t) (TO_PTR(h.data))) & 3)
 #else
-    if (((unsigned long) (TO_PTR(h.s.pointer))) & 3)
+    if (((uintptr_t) (TO_PTR(h.s.pointer))) & 3)
 #endif
       ink_fatal(1, "ink_freelist_free: bad list");
     if (TO_PTR(FREELIST_POINTER(h)))
@@ -518,17 +518,17 @@ ink_freelists_dump(FILE * f)
 
 
 #define INK_FREELIST_CREATE(T, n) \
-ink_freelist_create("<unknown>", sizeof(T), n, (unsigned)&((T *)0)->next, 4)
+ink_freelist_create("<unknown>", sizeof(T), n, (uintptr_t)&((T *)0)->next, 4)
 
 void
-ink_atomiclist_init(InkAtomicList * l, const char *name, unsigned offset_to_next)
+ink_atomiclist_init(InkAtomicList * l, const char *name, inku32 offset_to_next)
 {
 #if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
   ink_mutex_init(&(l->inkatomiclist_mutex), name);
 #endif
   l->name = name;
   l->offset = offset_to_next;
-  SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(NULL), ((unsigned long) 0));
+  SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(NULL), 0);
 }
 
 #if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
