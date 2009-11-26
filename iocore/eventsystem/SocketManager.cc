@@ -38,11 +38,7 @@ SocketManager socketManager;
 int monitor_read_activity = !!getenv("MONITOR_READS");
 int monitor_write_activity = !!getenv("MONITOR_WRITES");
 
-#if (HOST_OS == freebsd)
-#define MONITOR_STRING "%qX %qX %d %s\n"
-#else
 #define MONITOR_STRING "%lX %lX %d %s\n"
-#endif
 
 
 void
