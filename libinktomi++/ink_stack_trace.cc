@@ -32,18 +32,27 @@
 
 #include <execinfo.h>           /* for backtrace_symbols, etc. */
 #include <signal.h>
+
+#ifdef __linux__
+/* TODO: port this more correctly to non-Linux platforms. */
+#define HAVE_SIGCONTEXT
+#endif
+
 struct sigframe
 {
   char *pretcode;
   int sig;
+#ifdef HAVE_SIGCONTEXT
   struct sigcontext sc;
   struct _fpstate fpstate;
+#endif
 };
 
 static void
 ink_restore_signal_handler_frame(void **stack, int len, int signalhandler_frame)
 {
-  void **fp;
+#ifdef HAVE_SIGCONTEXT
+    void **fp;
   int i;
   struct sigframe *sf;
   struct sigcontext *scxt;
@@ -64,6 +73,7 @@ ink_restore_signal_handler_frame(void **stack, int len, int signalhandler_frame)
 #endif
   for (i = signalhandler_frame + 2; i < len - 1; i++)
     stack[i] = stack[i + 1];
+#endif
 }
 
 int
