@@ -439,7 +439,7 @@ AC_LANG_POP
 
 AC_CHECK_HEADER([execinfo.h],[],[])
 
-AC_CHECK_HEADERS([sys/epoll.h sys/event.h machine/endian.h endian.h sys/sysinfo.h sys/sysctl.h sys/systeminfo.h netinet/ip.h sys/ioctl.h sys/byteorder.h sys/sockio.h sys/sysctl.h sys/sysinfo.h sys/systeminfo.h arpa/nameser_compat.h], [], [])
+AC_CHECK_HEADERS([sys/epoll.h sys/event.h machine/endian.h endian.h sys/sysinfo.h sys/sysctl.h sys/systeminfo.h netinet/ip.h sys/ioctl.h sys/byteorder.h sys/sockio.h sys/sysctl.h sys/sysinfo.h sys/systeminfo.h arpa/nameser_compat.h db_185.h db.h], [], [])
 
 #
 # use modular IOCORE 

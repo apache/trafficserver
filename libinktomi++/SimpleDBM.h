@@ -46,7 +46,12 @@
 
 extern "C"
 {
-#include "db_185.h"
+#ifdef HAVE_DB_185_H
+#include <db_185.h>
+#endif
+#ifdef HAVE_DB_H
+#include <db.h>
+#endif
 }
 
 #include "ink_platform.h"
