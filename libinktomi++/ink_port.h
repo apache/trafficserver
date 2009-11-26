@@ -68,10 +68,20 @@ typedef off_t ink_off_t;
 #error "Unknown OS!"
 #endif
 
+#ifndef ETIME
+#ifdef ETIMEDOUT
+#define ETIME ETIMEDOUT
+#endif
+#endif
+
+#ifndef ENOTSUP
+#ifdef EOPNOTSUPP
+#define ENOTSUP EOPNOTSUPP
+#endif
+#endif
+
 
 #if (HOST_OS == freebsd)
-#define ETIME ETIMEDOUT
-#define ENOTSUP EOPNOTSUPP
 #define NO_MEMALIGN
 #define MAXINT INT_MAX
 #endif
