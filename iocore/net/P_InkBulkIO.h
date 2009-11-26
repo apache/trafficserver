@@ -123,7 +123,7 @@ struct InkBulkIOSendtoRequest
 struct InkBulkIOSplitRequest
 {
   /* declarations are done so that things in a req. block are usually 4-byte
-     /* aligned */
+   * aligned */
   uint16_t recvCount;
   struct InkBulkIOAddrInfo src;
   uint16_t perDestHeader;       /* boolean */
