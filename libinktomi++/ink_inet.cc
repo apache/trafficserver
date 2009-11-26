@@ -46,7 +46,8 @@ ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data * data)
   data->herrno = errno;
 
 #else //RENTRENT_GETHOSTBYNAME
-#if (HOST_OS == linux)
+#ifdef GETHOSTBYNAME_R_GLIBC2
+  
   struct hostent *addrp = NULL;
   int res = gethostbyname_r(hostname, &data->ent, data->buf,
                             INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp,
@@ -54,11 +55,12 @@ ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data * data)
   struct hostent *r = NULL;
   if (!res && addrp)
     r = addrp;
+
 #else
   struct hostent *r = gethostbyname_r(hostname, &data->ent, data->buf,
                                       INK_GETHOSTBYNAME_R_DATA_SIZE,
                                       &data->herrno);
-#endif //LINUX
+#endif
 #endif
   return r;
 }
@@ -66,7 +68,7 @@ ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data * data)
 struct hostent *
 ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyaddr_r_data * data)
 {
-#if (HOST_OS == linux)
+#ifdef GETHOSTBYNAME_R_GLIBC2
   struct hostent *r = NULL;
   struct hostent *addrp = NULL;
   int res = gethostbyaddr_r((char *) ip, len, type, &data->ent, data->buf,
