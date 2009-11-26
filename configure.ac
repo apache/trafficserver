@@ -416,6 +416,8 @@ if test "$ts_have_db" = "0"; then
     AC_MSG_FAILURE([No DB interface found])
 fi
 
+AC_CHECK_FUNC(clock_gettime)
+
 
 
 # For SunPro 5.2 - we need the demangle symbol for

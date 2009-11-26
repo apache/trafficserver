@@ -201,7 +201,16 @@ init_hrtime_basis()
 #endif
   do {
     t1 = ink_get_hrtime_internal();
+#ifdef HAVE_CLOCK_GETTIME
     ink_assert(!clock_gettime(CLOCK_REALTIME, &timespec_basis));
+#else
+    {
+      struct timeval tnow;
+      ink_assert(!gettimeofday(&tnow, NULL));
+      timespec_basis.tv_sec = tnow.tv_sec;
+      timespec_basis.tv_nsec = tnow.tv_usec * 1000;
+    }
+#endif
     t2 = ink_get_hrtime_internal();
     // accuracy must be at least 100 microseconds
   } while (t2 - t1 > HRTIME_USECONDS(100));
