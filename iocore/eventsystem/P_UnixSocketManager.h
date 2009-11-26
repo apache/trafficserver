@@ -597,15 +597,27 @@ SocketManager::fast_close(int s)
 }
 
 int safe_msync(caddr_t addr, size_t len, caddr_t end, int flags);
-#if (HOST_OS == linux)
+
+#ifndef MADV_NORMAL
 #define MADV_NORMAL 0
+#endif
+
+#ifndef MADV_RANDOM
 #define MADV_RANDOM 1
+#endif
+
+#ifndef MADV_SEQUENTIAL
 #define MADV_SEQUENTIAL 2
+#endif
+
+#ifndef MADV_WILLNEED
 #define MADV_WILLNEED 3
+#endif
+
 #ifndef MADV_DONTNEED
-#define MADV_DONTNEED 3
+#define MADV_DONTNEED 4
 #endif
-#endif
+
 int safe_madvise(caddr_t addr, size_t len, caddr_t end, int flags);
 int safe_mlock(caddr_t addr, size_t len, caddr_t end);
 
