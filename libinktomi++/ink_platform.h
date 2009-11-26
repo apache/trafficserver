@@ -100,7 +100,6 @@ struct ifafilt;
 #include <stropts.h>
 #endif
 
-#ifdef __alpha
 //
 // Gnu C++ doesn't define __STDC__ == 0 as needed to
 // have ip_hl be defined.
@@ -108,23 +107,29 @@ struct ifafilt;
 #if defined(__GNUC__) && !defined(__STDC__)
 #define __STDC__ 0
 #endif
+
+#ifdef HAVE_NETINET_IP_H
 #  include <netinet/ip.h>
+#endif
+
+#ifdef HAVE_MACHINE_ENDIAN_H
 #  include <machine/endian.h>
-#  include <sys/ioctl.h>
-#elif (HOST_OS == linux)
-#  include <netinet/ip.h>
+#endif
+
+#ifdef HAVE_ENDIAN_H
 #  include <endian.h>
+#endif
+
+#ifdef HAVE_SYS_IOCTL_H
 #  include <sys/ioctl.h>
-#  ifdef __KERNEL__
-#   include <linux/sockios.h>
-#  endif
-#elif (HOST_OS == freebsd)
-#  include <netinet/ip.h>
-#  include <machine/endian.h>
-#  include <sys/ioctl.h>
-#else
-#  include <netinet/ip.h>
+#endif
+
+
+#ifdef HAVE_SYS_BYTEORDER_H
 #  include <sys/byteorder.h>
+#endif
+
+#ifdef HAVE_SYS_SOCKIO_H
 #  include <sys/sockio.h>
 #endif
 
@@ -141,14 +146,22 @@ struct ifafilt;
 typedef unsigned int in_addr_t;
 #endif
 
-#if (HOST_OS == linux)
-#include <sys/sysinfo.h>
-#elif (HOST_OS == freebsd)
-#include <sys/sysctl.h>
-#else
-#include <sys/systeminfo.h>
+#ifdef HAVE_SYS_SYSINFO_H
+#  include <sys/sysinfo.h>
+#endif
+
+#ifdef HAVE_SYS_SYSCTL_H
+#  include <sys/sysctl.h>
+#endif
+
+#ifdef HAVE_SYS_SYSTEMINFO_H
+#  include <sys/systeminfo.h>
 #endif
 
 #include <dlfcn.h>
+
+#ifdef HAVE_ARPA_NAMESER_COMPAT_H
+#  include <arpa/nameser_compat.h>
+#endif
 
 #endif /* _PLATFORM_H_ */

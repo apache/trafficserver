@@ -370,11 +370,6 @@ AC_CHECK_LIB([pthread],[pthread_exit],[AC_SUBST([LIBTHREAD],["-lpthread"])])
 AC_CHECK_LIB([rt],[clock_gettime],[AC_SUBST([LIBRT],["-lrt"])])
 AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
 
-AC_CHECK_FUNC([gnu_get_libc_version],
-  [],
-  [AC_MSG_FAILURE([check for glibc failed. Have you installed glibc-devel?])]
-)
-
 AC_CHECK_LIB([ssl],[SSL_CTX_new],
   [AC_SUBST([LIBSSL],["-lssl -lcrypto"])
    AC_DEFINE([HAVE_LIBSSL],[1],[Define if you have libssl])
@@ -403,12 +398,25 @@ AC_CHECK_LIB([expat],[XML_SetUserData],
   [$LIBTHREAD]
 )
 
+ts_have_db=0
 AC_CHECK_LIB([db],[__db185_open],
-  [LIBDB="-ldb"],
-  [AC_MSG_FAILURE([check for libdb failed. Have you installed db4-devel?])]
+  [LIBDB="-ldb"
+   ts_have_db=1
+  ],
+   [AC_MSG_WARN([check for libdb failed. Have you installed db4-devel?])]
 )
-AC_CHECK_LIB([c],[dbopen],[LIBDB=""])
+
+AC_CHECK_LIB([c],[dbopen],
+  [LIBDB=""
+  ts_have_db=1
+  ])
 AC_SUBST([LIBDB])
+ 
+if test "$ts_have_db" = "0"; then
+    AC_MSG_FAILURE([No DB interface found])
+fi
+
+
 
 # For SunPro 5.2 - we need the demangle symbol for
 #  ink_stack_trace.cc in libinktomi++.  Because this
@@ -428,6 +436,8 @@ AC_LANG_POP
 # 5. CHECK FOR HEADER FILES
 
 AC_CHECK_HEADER([execinfo.h],[],[])
+
+AC_CHECK_HEADERS([sys/epoll.h sys/event.h machine/endian.h endian.h sys/sysinfo.h sys/sysctl.h sys/systeminfo.h netinet/ip.h sys/ioctl.h sys/byteorder.h sys/sockio.h sys/sysctl.h sys/sysinfo.h sys/systeminfo.h arpa/nameser_compat.h], [], [])
 
 #
 # use modular IOCORE 
