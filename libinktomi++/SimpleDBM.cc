@@ -39,7 +39,6 @@
 */
 
 #include "inktomi++.h"
-#include "db_185.h"
 #include "SimpleDBM.h"
 #include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 
