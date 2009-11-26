@@ -48,9 +48,10 @@ extern "C"
 {
 #ifdef HAVE_DB_185_H
 #include <db_185.h>
-#endif
+#else
 #ifdef HAVE_DB_H
 #include <db.h>
+#endif
 #endif
 }
 
