@@ -212,7 +212,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
 
   // add the thread id
   pthread_t id = pthread_self();
-  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{%u} ", (unsigned) id);
+  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{%lu} ", (unsigned long) id);
 
   ////////////////////////////////
   // start with the user prefix //
