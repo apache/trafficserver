@@ -28,7 +28,8 @@
 #include "inktomi++.h"
 #include "ink_stack_trace.h"
 
-#if (HOST_OS == linux)
+#ifdef HAVE_EXECINFO_H
+
 #include <execinfo.h>           /* for backtrace_symbols, etc. */
 #include <signal.h>
 struct sigframe
