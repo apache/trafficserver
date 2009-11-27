@@ -37,8 +37,9 @@
 #include "P_RecLocal.h"
 
 // for linux and freebsd
+#ifndef C_ISUID
 #define C_ISUID S_ISUID
-
+#endif
 
 int
 vmapEnableHandler(const char *tok, RecDataT data_type, RecData data, void *cookie)
