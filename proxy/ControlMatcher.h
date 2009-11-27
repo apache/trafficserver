@@ -87,20 +87,17 @@
 #ifndef _CONTROL_MATCHER_H_
 #define _CONTROL_MATCHER_H_
 
-#if defined(__alpha)
+
+#ifdef HAVE_REGEX_H
 #include "regex.h"
-#else
+#endif
+
+#ifdef HAVE_CTYPE_H
 #include "ctype.h"
 #endif
+
 #include "DynArray.h"
 #include "IpLookup.h"
-#if (HOST_OS != linux) && !defined(__alpha)
-#include "ink_regex-3.6.h"
-#else
-#if (HOST_OS == linux)
-#include <regex.h>
-#endif
-#endif
 
 #include "ink_port.h"
 #include "HTTP.h"
@@ -178,7 +175,7 @@ public:
 #ifndef TS_MICRO
 protected:
 #endif
-  regex_t * re_array;           // array of compiled regexs
+  struct regex_t * re_array;           // array of compiled regexs
   char **re_str;                // array of uncompiled regex strings
   Data *data_array;             // data array.  Corresponds to re_array
   int array_len;                // length of the arrays (all three are the same length)
