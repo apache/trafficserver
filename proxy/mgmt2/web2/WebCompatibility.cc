@@ -38,32 +38,14 @@
 char *
 WebGetHostname_Xmalloc(sockaddr_in * client_info)
 {
-
+  ink_gethostbyaddr_r_data data;
   char *hostname;
   char *hostname_tmp;
 
-#if (HOST_OS == linux)
-  // Why aren't we using the reentrant calls to gethostbyaddr? /leif
-  /*
-     struct hostent hostInfo;
-     char hostInfoBuf[256];
-     int _r_errno;
-     struct hostent *r = NULL;
-     struct hostent * addrp = NULL;
-
-     int res = gethostbyaddr_r((char*)&client_info->sin_addr.s_addr,
-     sizeof(client_info->sin_addr.s_addr), AF_INET,
-     &hostInfo, hostInfoBuf, 265, &addrp, &_r_errno);
-     if (!res && addrp) r = addrp;
-   */
-  struct hostent *r = gethostbyaddr((char *) &client_info->sin_addr.s_addr,
-                                    sizeof(client_info->sin_addr.s_addr),
-                                    AF_INET);
-#else
-  struct hostent *r = gethostbyaddr_r((char *) &client_info->sin_addr.s_addr,
-                                      sizeof(client_info->sin_addr.s_addr), AF_INET,
-                                      &hostInfo, hostInfoBuf, 265, &_r_errno);
-#endif
+  struct hostent *r = ink_gethostbyaddr_r((char *) &client_info->sin_addr.s_addr,
+                                          sizeof(client_info->sin_addr.s_addr),
+                                          AF_INET,
+                                          &data);
 
   hostname_tmp = r ? r->h_name : inet_ntoa(client_info->sin_addr);
   size_t len = strlen(hostname_tmp) + 1;
