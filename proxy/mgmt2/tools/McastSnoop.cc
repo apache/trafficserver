@@ -208,7 +208,7 @@ handlePacket(char *packet, int size)
   time_t cur_clock = (time_t) packet_time.tv_sec;
   ctime_buf = ctime_r(&cur_clock, timestamp_buf);
   if (ctime_buf != NULL) {
-    snprintf(&(timestamp_buf[19]), sizeof(timestamp_buf) - 19, ".%03ld", (packet_time.tv_usec / 1000));
+    snprintf(&(timestamp_buf[19]), sizeof(timestamp_buf) - 19, ".%03ld", (long int)(packet_time.tv_usec / 1000));
   } else {
     fprintf(stderr, "Warning: Unable to make timestamp");
   }
