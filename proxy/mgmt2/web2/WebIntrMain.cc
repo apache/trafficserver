@@ -118,17 +118,6 @@ int aconf_port_arg = -1;
 // INKqa10098: UBSWarburg: Overseer port enabled by default
 static int overseerMode = 0;
 
-// The /usr/sww/include files are missing these functions
-//   which are present in the Solaris 2.5.1 header files
-//
-#if (HOST_OS != linux)
-extern "C"
-{
-  int gethostname(char *name, int namelen);
-  struct hostent *gethostbyname_r(const char *, struct hostent *, char *, int, int *h_errnop);
-}
-#endif
-
 #ifdef HAVE_LIBSSL
 
 // Locks that SSleay uses
