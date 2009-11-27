@@ -165,11 +165,7 @@ MgmtPing::pingAddress(char *addr)
       len = sizeof(address);
 
       if ((n = recvfrom(icmp_fd, (char *) recvpack, (int) sizeof(recvpack), 0, (struct sockaddr *) &address,
-#if (HOST_OS == linux)
                         (socklen_t *) & len
-#else
-                        &len
-#endif
            )) < 0) {
         mgmt_elog("[MgmtPing::pingAddress] Failed to received packet\n");
         break;
