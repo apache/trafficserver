@@ -176,6 +176,7 @@ UnixNetProcessor::accept_internal(Continuation * cont,
   if (bound_sockaddr && bound_sockaddr_size)
     safe_getsockname(na->server.fd, bound_sockaddr, bound_sockaddr_size);
 
+#ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
   int accept_timeout = 0;
@@ -183,7 +184,7 @@ UnixNetProcessor::accept_internal(Continuation * cont,
   if (accept_timeout > 0) {
     setsockopt(na->server.fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &accept_timeout, sizeof(int));
   }
-
+#endif
   return na->action_;
 }
 
