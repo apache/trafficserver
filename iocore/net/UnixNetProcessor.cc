@@ -377,19 +377,40 @@ UnixNetProcessor::connect(Continuation * cont,
 
   vc->ep = eptr;
 
+  PollDescriptor *pd = get_PollDescriptor(t);
+
+#if defined(USE_EPOLL)
   struct epoll_event ev;
   memset(&ev, 0, sizeof(struct epoll_event));
   ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
   ev.data.ptr = eptr;
 
-  PollDescriptor *pd = get_PollDescriptor(t);
-
   res = epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, vc->con.fd, &ev);
+
   if (res < 0) {
     Debug("iocore_net", "connect : Error in adding to epoll list\n");
     close_UnixNetVConnection(vc, vc->thread);
     return ACTION_RESULT_DONE;
   }
+
+#elif defined(USE_KQUEUE)
+  struct kevent ev;
+  EV_SET(&ev, vc->con.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+  if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
+    Debug("iocore_net", "connect : Error in adding to kqueue list\n");
+    close_UnixNetVConnection(vc, vc->thread);
+    return ACTION_RESULT_DONE;
+  }
+
+  EV_SET(&ev, vc->con.fd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+  if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
+    Debug("iocore_net", "connect : Error in adding to kqueue list\n");
+    close_UnixNetVConnection(vc, vc->thread);
+    return ACTION_RESULT_DONE;
+  }
+#else
+#error port me
+#endif
 
   Debug("iocore_net", "connect : Adding fd %d to read wait list\n", vc->con.fd);
   vc->nh->wait_list.epoll_addto_read_wait_list(vc);

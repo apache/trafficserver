@@ -165,27 +165,45 @@ net_accept_main_blocking(NetAccept * na, Event * e, bool blockable)
   //unix_netProcessor.accept_epoll_fd = epd->epoll_fd;
 
   //added by vijay - bug 2237131 
-  struct epoll_event ev;
   struct epoll_data_ptr *eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-  memset(&ev, 0, sizeof(ev));
-  ev.events = EPOLLIN | EPOLLET;
   eptr->type = EPOLL_NETACCEPT; //NetAccept
   eptr->data.na = na;
-
+#if defined(USE_EPOLL)
+  struct epoll_event ev;
+  memset(&ev, 0, sizeof(ev));
+  ev.events = EPOLLIN | EPOLLET;
   ev.data.ptr = eptr;
   if (epoll_ctl(epd->epoll_fd, EPOLL_CTL_ADD, na->server.fd, &ev) < 0) {
     Debug("iocore_net", "init_accept_loop : Error in epoll_ctl\n");
   }
+#elif defined(USE_KQUEUE)
+  struct kevent ev;
+  EV_SET(&ev, na->server.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+  if (kevent(epd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
+    Debug("iocore_net", "init_accept_loop : Error in kevent\n");
+  }
+#else
+#error port me
+#endif
   EThread *t = this_ethread();
   NetAccept *net_accept = NULL;
 
   while (1) {
     epd->nfds = 0;
+#if defined(USE_EPOLL)
     epd->result = epoll_wait(epd->epoll_fd, epd->ePoll_Triggered_Events,
                              POLL_DESCRIPTOR_SIZE, ACCEPT_THREAD_POLL_TIMEOUT);
+#elif defined(USE_KQUEUE)
+    struct timespec tv;
+    tv.tv_sec = 0;
+    tv.tv_nsec = 1000000 * ACCEPT_THREAD_POLL_TIMEOUT;
+    epd->result = kevent(epd->kqueue_fd, NULL, 0,
+                         epd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE,
+                         &tv);
+#endif
     for (int x = 0; x < epd->result; x++) {
-      if (epd->ePoll_Triggered_Events[x].events & EPOLLIN) {
-        temp_eptr = (struct epoll_data_ptr *) epd->ePoll_Triggered_Events[x].data.ptr;
+      if (get_ev_events(epd,x) & INK_EVP_IN) {
+        temp_eptr = (epoll_data_ptr *)get_ev_data(epd,x);
         if (temp_eptr)
           net_accept = temp_eptr->data.na;
         if (net_accept) {
@@ -306,6 +324,7 @@ NetAccept::init_accept_per_thread()
     eptr->type = EPOLL_NETACCEPT;
     eptr->data.na = a;
 
+#if defined(USE_EPOLL)
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLET;
@@ -314,7 +333,15 @@ NetAccept::init_accept_per_thread()
     if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, a->server.fd, &ev) < 0) {
       Debug("iocore_net", "init_accept_per_thread : Error in epoll_ctl\n");
     }
-
+#elif defined(USE_KQUEUE)
+    struct kevent ev;
+    EV_SET(&ev, a->server.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+    if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
+      Debug("iocore_net", "init_accept_per_thread : Error in kevent\n");
+    }
+#else
+#error port me
+#endif
     a->mutex = get_NetHandler(t)->mutex;
     t->schedule_every(a, period, etype);
   }
@@ -599,7 +626,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     eptr->data.vc = vc;
 
     vc->ep = eptr;
-
+#if defined(USE_EPOLL)
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
@@ -610,6 +637,18 @@ NetAccept::acceptFastEvent(int event, void *ep)
       close_UnixNetVConnection(vc, e->ethread);
       return EVENT_DONE;
     }
+#elif defined(USE_KQUEUE)
+    struct kevent ev[2];
+    EV_SET(&ev[0], vc->con.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+    EV_SET(&ev[1], vc->con.fd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+    if (kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL) < 0) {
+      Debug("iocore_net", "acceptFastEvent : Error in inserting fd[%d] in kevent\n", vc->con.fd);
+      close_UnixNetVConnection(vc, e->ethread);
+      return EVENT_DONE;
+    }
+#else
+#error port me
+#endif
     // Set the vc as triggered and place it in the read ready queue in case there is already data on the socket.
     // The request will  timeout on the connection if the client has already sent data and it is on the socket
     // ready to be read.  This can occur under heavy load.

@@ -1443,8 +1443,8 @@ UDPNetHandler::mainNetEvent(int event, Event * e)
   //changed by YTS Team, yamsat 
   struct epoll_data_ptr *temp_eptr = NULL;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
-    temp_eptr = (struct epoll_data_ptr *) pc->pollDescriptor->ePoll_Triggered_Events[i].data.ptr;
-    if ((pc->pollDescriptor->ePoll_Triggered_Events[i].events & EPOLLIN)
+    temp_eptr = (struct epoll_data_ptr *) get_ev_data(pc->pollDescriptor,i);
+    if ((get_ev_events(pc->pollDescriptor,i) & INK_EVP_IN)
         && temp_eptr->type == EPOLL_UDP_CONNECTION) {
       uc = temp_eptr->data.uc;
       ink_assert(uc && uc->mutex && uc->continuation);
@@ -1556,7 +1556,6 @@ UDPWorkContinuation::StateCreatePortPairs(int event, void *data)
   //epoll changes
 
   //added by YTS Team, yamsat 
-  struct epoll_event ev;
   struct epoll_data_ptr *eptr = NULL;
   PollCont *pc = NULL;
   //epoll changes ends here
@@ -1633,21 +1632,35 @@ UDPWorkContinuation::StateCreatePortPairs(int event, void *data)
   //struct epoll_data_ptr *eptr=NULL;
   //PollCont * pc  = NULL;
 
+#if defined(USE_EPOLL)
+  struct epoll_event ev;
+#elif defined(USE_KQUEUE)
+  struct kevent ev;
+#else
+#error port me
+#endif
   //changed by YTS Team, yamsat
   for (i = 0; i < numUdpPorts; i++) {
     m_udpConns[i]->bindToThread(m_cont);
     //epoll changes
     pc = get_UDPPollCont(m_udpConns[i]->m_ethread);
     eptr = (struct epoll_data_ptr *) malloc(sizeof(struct epoll_data_ptr));
-    memset(&ev, 0, sizeof(struct epoll_event));
 
     eptr->type = 5;             //UDP
     eptr->data.uc = m_udpConns[i];
+    m_udpConns[i]->eptr = eptr;
 
+#if defined(USE_EPOLL)
+    memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLET;
     ev.data.ptr = eptr;
-    m_udpConns[i]->eptr = eptr;
     epoll_ctl(pc->pollDescriptor->epoll_fd, EPOLL_CTL_ADD, m_udpConns[i]->getFd(), &ev);
+#elif defined(USE_KQUEUE)
+    EV_SET(&ev, m_udpConns[i]->getFd(), EVFILT_READ, EV_ADD, 0, 0, eptr);
+    kevent(pc->pollDescriptor->kqueue_fd, &ev, 1, NULL, 0, NULL);
+#else
+#error port me
+#endif
     //epoll changes ends here
   }                             //for
 

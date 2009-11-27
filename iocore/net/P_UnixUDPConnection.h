@@ -142,16 +142,22 @@ INK_INLINE void
 UDPConnection::Release()
 {
   UnixUDPConnection *p = (UnixUDPConnection *) this;
-  //epoll changes
-  //added by YTS Team, yamsat
-  struct epoll_event ev;
   PollCont *pc = get_UDPPollCont(p->m_ethread);
+
+#if defined(USE_EPOLL)
+  struct epoll_event ev;
   epoll_ctl(pc->pollDescriptor->epoll_fd, EPOLL_CTL_DEL, getFd(), &ev);
+#elif defined(USE_KQUEUE)
+  struct kevent ev[2];
+  EV_SET(&ev[0], getFd(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+  EV_SET(&ev[1], getFd(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+  kevent(pc->pollDescriptor->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
+#endif
   if (p->eptr) {
     free(p->eptr);
     p->eptr = NULL;
   }
-  //epoll changes ends here
+
   if (ink_atomic_increment(&p->m_refcount, -1) == 1) {
     ink_debug_assert(p->callback_link.next == NULL);
     ink_debug_assert(p->callback_link.prev == NULL);

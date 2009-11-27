@@ -355,18 +355,25 @@ void
 DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
 {
   PollDescriptor *pd = get_PollDescriptor(dnsProcessor.thread);
-  struct epoll_event ev;
 
   Debug("dns", "open_con: opening connection %d.%d.%d.%d:%d", DOT_SEPARATED(aip), aport);
 
-  memset(&ev, 0, sizeof(struct epoll_event));
   if (!icon) {
     ip = aip;
     port = aport;
   }
 
   if (con[icon].fd != NO_FD) {  // Remove old FD from epoll fd
+#if defined(USE_EPOLL)
+    struct epoll_event ev;
+    memset(&ev, 0, sizeof(struct epoll_event));
     epoll_ctl(pd->epoll_fd, EPOLL_CTL_DEL, con[icon].fd, &ev);
+#elif defined(USE_KQUEUE
+    struct kevent ev[2];
+    EV_SET(&ev[0], con[icon].fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    EV_SET(&ev[1], con[icon].fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+    kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
+#endif
     con[icon].close();
   }
 

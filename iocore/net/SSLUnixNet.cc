@@ -152,6 +152,7 @@ SSLNetAccept::init_accept_per_thread()
     eptr->type = EPOLL_NETACCEPT;
     eptr->data.na = (NetAccept *) a;
 
+#if defined(USE_EPOLL)
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLET;
@@ -160,6 +161,15 @@ SSLNetAccept::init_accept_per_thread()
     if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, a->server.fd, &ev) < 0) {
       printf("error in epoll_ctl\n");
     }
+#elif defined(USE_KQUEUE)
+    struct kevent ev;
+    EV_SET(&ev, a->server.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+    if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
+      printf("error in kevent\n");
+    }
+#else
+#error port me
+#endif
 
     a->mutex = get_NetHandler(t)->mutex;
     t->schedule_every(a, period, etype);

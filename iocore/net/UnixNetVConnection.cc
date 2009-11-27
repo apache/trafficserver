@@ -133,13 +133,20 @@ close_UnixNetVConnection(UnixNetVConnection * vc, EThread * t)
   vc->cancel_OOB();
 
   //added by YTS Team, yamsat
-  PollDescriptor *
-    pd = get_PollDescriptor(t);
-  struct epoll_event
-    ev;
+  PollDescriptor *pd = get_PollDescriptor(t);
+#if defined(USE_EPOLL)
+  struct epoll_event ev;
   memset(&ev, 0, sizeof(struct epoll_event));
   ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
   epoll_ctl(pd->epoll_fd, EPOLL_CTL_DEL, vc->con.fd, &ev);
+#elif defined(USE_KQUEUE)
+  struct kevent ev[2];
+  EV_SET(&ev[0], vc->con.fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+  EV_SET(&ev[1], vc->con.fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+  kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
+#else
+#error port me
+#endif
   if (vc->ep != NULL) {
     xfree(vc->ep);
     vc->ep = NULL;
@@ -1171,6 +1178,7 @@ UnixNetVConnection::acceptEvent(int event, Event * e)
 
   this->ep = eptr;
 
+#if defined(USE_EPOLL)
   struct epoll_event ev;
   memset(&ev, 0, sizeof(struct epoll_event));
 
@@ -1182,6 +1190,18 @@ UnixNetVConnection::acceptEvent(int event, Event * e)
     close_UnixNetVConnection(this, e->ethread);
     return EVENT_DONE;
   }
+#elif defined(USE_KQUEUE)
+  struct kevent ev[2];
+  EV_SET(&ev[0], con.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+  EV_SET(&ev[1], con.fd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+  if (kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL) < 0) {
+    Debug("iocore_net", "acceptEvent : Failed to add to kqueue list\n");
+    close_UnixNetVConnection(this, e->ethread);
+    return EVENT_DONE;
+  }
+#else
+#error port me
+#endif
 
   Debug("iocore_net", "acceptEvent : Adding fd %d to read wait list\n", con.fd);
   nh->wait_list.epoll_addto_read_wait_list(this);
@@ -1328,19 +1348,34 @@ UnixNetVConnection::connectUp(EThread * t)
       eptr->data.vc = this;
       ep = eptr;
 
+#if defined(USE_EPOLL)
       struct epoll_event ev;
       memset(&ev, 0, sizeof(struct epoll_event));
       ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
       ev.data.ptr = eptr;
       int rval = epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, socketFd, &ev);
       if (rval != 0) {
-        Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
         lerrno = errno;
+        Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) rval);
         free(t);
         return CONNECT_FAILURE;
       }
-
+#elif defined(USE_KQUEUE)
+      struct kevent ev[2];
+      EV_SET(&ev[0], socketFd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+      EV_SET(&ev[1], socketFd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+      int rval = kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
+      if (rval < 0) {
+        lerrno = errno;
+        Debug("iocore_net", "connectUp : Failed to add to kqueue list\n");
+        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) rval);
+        free(t);
+        return CONNECT_FAILURE;
+      }
+#else
+#error port me
+#endif
       res = con.fast_connect(ip, port, &options, socketFd);
     } else {
       res = socketFd;
@@ -1376,6 +1411,7 @@ UnixNetVConnection::connectUp(EThread * t)
 
     ep = eptr;
 
+#if defined(USE_EPOLL)
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
@@ -1388,6 +1424,21 @@ UnixNetVConnection::connectUp(EThread * t)
       free(t);
       return CONNECT_FAILURE;
     }
+#elif defined(USE_KQUEUE)
+    struct kevent ev[2];
+    EV_SET(&ev[0], con.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+    EV_SET(&ev[1], con.fd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+    res = kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
+    if (res < 0) {
+      lerrno = errno;
+      Debug("iocore_net", "connectUp : Failed to add to kqueue list\n");
+      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) res);
+      free(t);
+      return CONNECT_FAILURE;
+    }
+#else
+#error port me
+#endif
   }
 
   closed = 0;

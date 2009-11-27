@@ -86,12 +86,26 @@ PollCont::pollEvent(int event, Event * e)
     }
   }
   // wait for fd's to tigger, or don't wait if timeout is 0
+#if defined(USE_EPOLL)
   pollDescriptor->result = epoll_wait(pollDescriptor->epoll_fd,
                                       pollDescriptor->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
   Debug("epoll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd, poll_timeout,
         pollDescriptor->result);
-
   Debug("iocore_net", "pollEvent : Epoll fd %d active\n", pollDescriptor->epoll_fd);
+#elif defined(USE_KQUEUE)
+  struct timespec tv;
+  tv.tv_sec = poll_timeout / 1000;
+  tv.tv_nsec = 1000000 * (poll_timeout % 1000);
+  pollDescriptor->result = kevent(pollDescriptor->kqueue_fd, NULL, 0,
+                                  pollDescriptor->kq_Triggered_Events,
+                                  POLL_DESCRIPTOR_SIZE,
+                                  &tv);
+  Debug("kqueue", "[PollCont::pollEvent] kueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd, poll_timeout,
+        pollDescriptor->result);
+  Debug("iocore_net", "pollEvent : KQueue fd %d active\n", pollDescriptor->kqueue_fd);
+#else
+#error port me
+#endif
   return EVENT_CONT;
 }
 
@@ -246,41 +260,52 @@ NetHandler::mainNetEvent(int event, Event * e)
 
   PollDescriptor *pd = get_PollDescriptor(trigger_event->ethread);
   UnixNetVConnection *vc = NULL;
-
+#if defined(USE_EPOLL)
   pd->result = epoll_wait(pd->epoll_fd, pd->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
+#elif defined(USE_KQUEUE)
+  struct timespec tv;
+  tv.tv_sec = poll_timeout / 1000;
+  tv.tv_nsec = 1000000 * (poll_timeout % 1000);
+  pd->result = kevent(pd->kqueue_fd, NULL, 0,
+                      pd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE,
+                      &tv);
+
+#else
+#error port me
+#endif
 
   vc = NULL;
 
   for (int x = 0; x < pd->result; x++) {
-    epd = (struct epoll_data_ptr *) pd->ePoll_Triggered_Events[x].data.ptr;
+    epd = (struct epoll_data_ptr *) get_ev_data(pd,x);
     if (epd->type == EPOLL_READWRITE_VC) {
       vc = epd->data.vc;
-      if (pd->ePoll_Triggered_Events[x].events & (EPOLLIN)) {
+      if (get_ev_events(pd,x) & (INK_EVP_IN)) {
         vc->read.triggered = 1;
         vc->addLogMessage("read triggered");
         if ((vc->read.enabled || vc->closed) && !vc->read.netready_queue) {
           ready_queue.epoll_addto_read_ready_queue(vc);
-        } else if (pd->ePoll_Triggered_Events[x].events & (EPOLLPRI | EPOLLHUP | EPOLLERR)) {
+        } else if (get_ev_events(pd,x) & (INK_EVP_PRI | INK_EVP_HUP | INK_EVP_ERR)) {
           // check for unhandled epoll events that should be handled
           Debug("epoll_miss", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%p",
-                pd->ePoll_Triggered_Events[x].events, vc->read.enabled, vc->closed, vc->read.netready_queue);
+                get_ev_events(pd,x), vc->read.enabled, vc->closed, vc->read.netready_queue);
         }
       }
       vc = epd->data.vc;
-      if (pd->ePoll_Triggered_Events[x].events & (EPOLLOUT)) {
+      if (get_ev_events(pd,x) & (INK_EVP_OUT)) {
         vc->write.triggered = 1;
         vc->addLogMessage("write triggered");
         if ((vc->write.enabled || vc->closed) && !vc->write.netready_queue) {
           ready_queue.epoll_addto_write_ready_queue(vc);
-        } else if (pd->ePoll_Triggered_Events[x].events & (EPOLLPRI | EPOLLHUP | EPOLLERR)) {
+        } else if (get_ev_events(pd,x) & (INK_EVP_PRI | INK_EVP_HUP | INK_EVP_ERR)) {
           // check for unhandled epoll events that should be handled
           Debug("epoll_miss",
                 "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%p",
-                pd->ePoll_Triggered_Events[x].events, vc->write.enabled, vc->closed, vc->write.netready_queue);
+                get_ev_events(pd,x), vc->write.enabled, vc->closed, vc->write.netready_queue);
         }
-      } else if (!(pd->ePoll_Triggered_Events[x].events & (EPOLLIN)) &&
-                 pd->ePoll_Triggered_Events[x].events & (EPOLLPRI | EPOLLHUP | EPOLLERR)) {
-        Debug("epoll_miss", "Unhandled epoll event: 0x%04x", pd->ePoll_Triggered_Events[x].events);
+      } else if (!(get_ev_events(pd,x) & (INK_EVP_IN)) &&
+                 get_ev_events(pd,x) & (INK_EVP_PRI | INK_EVP_HUP | INK_EVP_ERR)) {
+        Debug("epoll_miss", "Unhandled epoll event: 0x%04x", get_ev_events(pd,x));
       }
     } else if (epd->type == EPOLL_DNS_CONNECTION) {
       if (epd->data.dnscon != NULL) {
