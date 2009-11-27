@@ -443,6 +443,8 @@ sinclude(build-aux/apr_common.m4)
 sinclude(build-aux/apr_network.m4)
 APR_CHECK_GETHOSTBYNAME_R_STYLE
 
+AC_CHECK_HEADERS([sys/epoll.h sys/event.h machine/endian.h endian.h sys/sysinfo.h sys/sysctl.h sys/systeminfo.h netinet/ip.h sys/ioctl.h sys/byteorder.h sys/sockio.h sys/sysctl.h sys/sysinfo.h sys/systeminfo.h arpa/nameser_compat.h], [], [])
+
 #
 # use modular IOCORE 
 # 
