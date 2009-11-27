@@ -36,7 +36,15 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <regex.h>
+
+#ifdef HAVE_REGEX_H
+#include "/usr/include/regex.h"
+#endif
+
+#ifdef HAVE_CTYPE_H
+#include <ctype.h>
+#endif
+
 #include "inktomi++.h"
 #include "Config.h"
 

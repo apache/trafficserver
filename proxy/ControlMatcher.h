@@ -87,13 +87,12 @@
 #ifndef _CONTROL_MATCHER_H_
 #define _CONTROL_MATCHER_H_
 
-
 #ifdef HAVE_REGEX_H
-#include "regex.h"
+#include "/usr/include/regex.h"
 #endif
 
 #ifdef HAVE_CTYPE_H
-#include "ctype.h"
+#include <ctype.h>
 #endif
 
 #include "DynArray.h"
@@ -175,7 +174,7 @@ public:
 #ifndef TS_MICRO
 protected:
 #endif
-  struct regex_t * re_array;           // array of compiled regexs
+  regex_t * re_array;           // array of compiled regexs
   char **re_str;                // array of uncompiled regex strings
   Data *data_array;             // data array.  Corresponds to re_array
   int array_len;                // length of the arrays (all three are the same length)
