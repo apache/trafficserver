@@ -442,6 +442,27 @@ AC_CHECK_LIB([demangle],[cplus_demangle],
 AC_SUBST([LIBDEMANGLE])
 AC_LANG_POP
 
+
+# It's stupid, but not all platforms have union semun, even those that need it.
+AC_MSG_CHECKING(for union semun in sys/sem.h)
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+],[
+union semun arg;
+semctl(0, 0, 0, arg);
+], [have_union_semun="1" union_semun=yes ]
+msg=yes, [
+have_union_semun="0"
+msg=no ] )
+AC_MSG_RESULT([$msg])
+
+if test "$have_union_semun" = "0"; then
+  AC_DEFINE([NEED_UNION_SEMUN])
+fi
+
+
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 

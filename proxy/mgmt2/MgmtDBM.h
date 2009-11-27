@@ -41,10 +41,11 @@
 #include "MgmtUtils.h"
 #include "Diags.h"
 
-#if (HOST_OS == linux)
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+
+#ifdef NEED_UNION_SEMUN
 union semun
 {
   int val;                      /* value for SETVAL */
@@ -52,7 +53,7 @@ union semun
   unsigned short int *array;    /* array for GETALL, SETALL */
   struct seminfo *__buf;        /* buffer for IPC_INFO */
 };
-#endif  // linux check
+#endif
 
 class MgmtDBM:public SimpleDBM
 {
