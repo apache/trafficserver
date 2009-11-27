@@ -219,11 +219,7 @@ LogSock::accept()
   Debug("log2-sock", "waiting to accept a new connection");
 
   connect_sd =::accept(ct[0].sd, (sockaddr *) & connect_addr,
-#if (HOST_OS == linux)
                        (socklen_t *) & size
-#else
-                       (int *) &size
-#endif
     );
   if (connect_sd < 0) {
     return LogSock::LS_ERROR_ACCEPT;
