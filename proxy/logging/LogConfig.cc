@@ -32,12 +32,12 @@
 #include <stdio.h>
 #include <string.h>
 
-// TODO move these checks to ink_platform.h
-#if (HOST_OS == freebsd)
-#include <machine/types.h>
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
-#endif  // freebsd
+#endif
 
 #include <dirent.h>
 

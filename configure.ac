@@ -505,6 +505,8 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   alloca.h \
                   cpio.h \
                   stropts.h \
+                  sys/mount.h \
+                  sys/param.h \
                   ], [], [])
 
 sinclude(build-aux/apr_common.m4)
