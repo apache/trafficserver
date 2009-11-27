@@ -165,4 +165,8 @@ typedef unsigned int in_addr_t;
 #  include <arpa/nameser_compat.h>
 #endif
 
+#ifndef MAXINT
+#define MAXINT INT_MAX
+#endif
+
 #endif /* _PLATFORM_H_ */
