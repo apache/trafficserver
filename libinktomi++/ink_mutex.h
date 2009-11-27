@@ -87,37 +87,6 @@ ink_mutex_destroy(ink_mutex * m)
   return pthread_mutex_destroy(m);
 }
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
-static inline int
-ink_mutex_acquire(ink_mutex * m)
-{
-#ifdef DEBUG
-  int status;
-  if ((status = pthread_mutex_lock_inline(m)) != 0) {
-    fprintf(stderr, "pthread_mutex_lock() returned=%d\n", status);
-#else
-  if (pthread_mutex_lock_inline(m) != 0) {
-#endif
-    abort();
-  }
-  return 0;
-}
-
-static inline int
-ink_mutex_release(ink_mutex * m)
-{
-  if (pthread_mutex_unlock_inline(m) != 0) {
-    abort();
-  }
-  return 0;
-}
-
-static inline int
-ink_mutex_try_acquire(ink_mutex * m)
-{
-  return pthread_mutex_trylock_inline(m) == 0;
-}
-#else  // else is for linux or freebsd hosts
 static inline int
 ink_mutex_acquire(ink_mutex * m)
 {
@@ -141,7 +110,6 @@ ink_mutex_try_acquire(ink_mutex * m)
 {
   return pthread_mutex_trylock(m) == 0;
 }
-#endif  // check for linux and freebsd hosts
 
 #endif /* #if defined(POSIX_THREAD) */
 
