@@ -260,7 +260,7 @@ ink_memalign(size_t alignment, size_t size)
 
   void *ptr;
 
-#if (HOST_OS == linux)
+#ifdef HAVE_POSIX_MEMALIGN
   if (alignment <= 16)
     return ink_malloc(size);
 
