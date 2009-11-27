@@ -75,7 +75,7 @@ extern "C"
 }
 #endif
 
-#if (HOST_OS == freebsd)
+#if (HOST_OS == freebsd) || (HOST_OS == darwin)
 typedef long paddr_t;
 typedef unsigned int in_addr_t;
 #endif
