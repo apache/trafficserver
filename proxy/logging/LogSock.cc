@@ -38,13 +38,6 @@ static const int LS_DOMAIN = AF_INET;
 static const int LS_SOCKTYPE = SOCK_STREAM;
 static const int LS_PROTOCOL = 0;
 
-#if (HOST_OS != linux)
-extern "C"
-{
-  int gethostname(char *buf, int size);
-}
-#endif
-
 /*-------------------------------------------------------------------------
   LogSock
 
