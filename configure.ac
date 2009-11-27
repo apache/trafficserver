@@ -385,7 +385,7 @@ AC_CHECK_LIB([ssl],[SSL_CTX_new],
    AC_DEFINE([HAVE_LIBSSL],[1],[Define if you have libssl])
   ],
   [AC_MSG_FAILURE([check for libssl failed. Have you installed openssl-devel?])],
-  [-ldl -lcrypto -lgcc]
+  [-lcrypto -lgcc]
 )
 
 #
