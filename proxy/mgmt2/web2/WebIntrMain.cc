@@ -487,9 +487,9 @@ printServiceThr(int sig)
   for (int i = 0; i < MAX_SERVICE_THREADS; i++) {
     if (wGlobals.serviceThrArray[i].threadId != 0 || wGlobals.serviceThrArray[i].fd != -1) {
       fprintf(stderr,
-              " Slot %d : FD %d : ThrId %d : StartTime %d : WaitForJoin %s : Shutdown %s\n",
+              " Slot %d : FD %d : ThrId %lu : StartTime %d : WaitForJoin %s : Shutdown %s\n",
               i, wGlobals.serviceThrArray[i].fd,
-              (int) wGlobals.serviceThrArray[i].threadId,
+              (unsigned long) wGlobals.serviceThrArray[i].threadId,
               (int) wGlobals.serviceThrArray[i].startTime,
               wGlobals.serviceThrArray[i].waitingForJoin ? "true" : "false",
               wGlobals.serviceThrArray[i].alreadyShutdown ? "true" : "false");
