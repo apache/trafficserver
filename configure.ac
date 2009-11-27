@@ -24,9 +24,18 @@ AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CANONICAL_HOST
 
 case $host_os in
-  linux*)    AC_DEFINE_UNQUOTED([HOST_OS],[linux])   ;;
-  darwin*)   AC_DEFINE_UNQUOTED([HOST_OS],[darwin])  ;;
-  freebsd*)  AC_DEFINE_UNQUOTED([HOST_OS],[freebsd]) ;;
+  linux*)
+    AC_DEFINE_UNQUOTED([HOST_OS],[linux])
+    AC_DEFINE_UNQUOTED([freebsd],[1])
+    ;;
+  darwin*)
+    AC_DEFINE_UNQUOTED([HOST_OS],[darwin])
+    AC_DEFINE_UNQUOTED([darwin],[1])
+    ;;
+  freebsd*)
+    AC_DEFINE_UNQUOTED([HOST_OS],[freebsd])
+    AC_DEFINE_UNQUOTED([freebsd],[1])
+    ;;
   *)         AC_DEFINE_UNQUOTED([HOST_OS],[unknown]) ;;
 esac
 
