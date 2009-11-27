@@ -21,13 +21,13 @@ vip_config_SOURCES = VIPConfig.cc
 vip_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 vip_config_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
-  @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBDL@
+  @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@
 
 net_config_SOURCES = NetConfig.cc
 net_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 net_config_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
-  @LIBSOCKET@ @LIBTCL@ @LIBRT@
+  @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBICONV@
 
 time_config_SOURCES = TimeConfig.cc
 time_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
@@ -39,7 +39,7 @@ mcast_snoop_SOURCES = McastSnoop.cc
 mcast_snoop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 mcast_snoop_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
-  @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBRT@ @LIBTHREAD@ @LIBDL@
+  @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBRT@ @LIBTHREAD@ @LIBDL@ @LIBICONV@
 
 libinksysapi_a_SOURCES = SysAPI.cc SysAPI.h
 
