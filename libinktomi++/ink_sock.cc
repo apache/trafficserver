@@ -73,11 +73,7 @@ safe_getsockopt(int s, int level, int optname, char *optval, int *optlevel)
 {
   int r;
   do {
-#if (HOST_OS == linux)
     r = getsockopt(s, level, optname, optval, (socklen_t *) optlevel);
-#else
-    r = getsockopt(s, level, optname, optval, optlevel);
-#endif
   } while (r < 0 && (errno == EAGAIN || errno == EINTR));
   return r;
 }
@@ -194,11 +190,7 @@ safe_getsockname(int s, struct sockaddr *name, int *namelen)
 {
   int r;
   do {
-#if (HOST_OS == linux)
     r = getsockname(s, name, (socklen_t *) namelen);
-#else
-    r = getsockname(s, name, namelen);
-#endif
   } while (r < 0 && (errno == EAGAIN || errno == EINTR));
   return r;
 }
