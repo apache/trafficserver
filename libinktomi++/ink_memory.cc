@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if (HOST_OS != freebsd)
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #include "inktomi++.h"     /* MAGIC_EDITING_TAG */
