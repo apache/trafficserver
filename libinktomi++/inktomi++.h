@@ -47,7 +47,7 @@ extern "C"
 
 #include <errno.h>
 #include <ctype.h>
-#if (HOST_OS != freebsd)
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 #include <assert.h>
