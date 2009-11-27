@@ -73,8 +73,11 @@ static char sccsid[] = "@(#)res_mkquery.c	8.1 (Berkeley) 6/4/93";
 
 #include "ink_resolver.h"
 
-#if (HOST_OS == linux)
+#ifndef __putshort
 #define __putshort putshort
+#endif
+
+#ifndef __putlong
 #define __putlong putlong
 #endif
 
