@@ -416,11 +416,17 @@ if test "$ts_have_db" = "0"; then
     AC_MSG_FAILURE([No DB interface found])
 fi
 
-AC_CHECK_FUNC(clock_gettime)
+AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl])
 
-sinclude(build-aux/apr_common.m4)
-sinclude(build-aux/apr_network.m4)
-APR_CHECK_GETHOSTBYNAME_R_STYLE
+if test "$ac_cv_func_epoll_ctl" = "yes"; then
+   AC_DEFINE([USE_EPOLL])
+   have_good_poller=1
+elif test "$ac_cv_func_kqueue" = "yes"; then
+   AC_DEFINE([USE_KQUEUE])
+   have_good_poller=1
+else
+    AC_MSG_FAILURE([No suitable polling interface found])
+fi
 
 # For SunPro 5.2 - we need the demangle symbol for
 #  ink_stack_trace.cc in libinktomi++.  Because this

@@ -77,9 +77,12 @@
 #include <strings.h>
 #include <poll.h>
 
-#if (HOST_OS == linux)
+#if defined(USE_EPOLL)
 #include <sys/epoll.h>
+#elif defined(USE_KQUEUE)
+#include <sys/event.h>
 #endif
+
 
 #if (HOST_OS != freebsd)
 #include <values.h>

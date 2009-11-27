@@ -423,7 +423,7 @@ SocketManager::poll(struct pollfd *fds, unsigned long nfds, int timeout)
   return r;
 }
 
-
+#if defined(USE_EPOLL)
 INK_INLINE int
 SocketManager::epoll_create(int size)
 {
@@ -482,6 +482,35 @@ SocketManager::epoll_wait(int epfd, struct epoll_event *events, int maxevents, i
   } while (errno == -EINTR);
   return r;
 }
+
+#elif defined(USE_KQUEUE)
+INK_INLINE int
+SocketManager::kqueue()
+{
+  return ::kqueue();
+}
+
+
+INK_INLINE int
+SocketManager::kevent(int kq, const struct kevent *changelist, int nchanges,
+                      struct kevent *eventlist, int nevents,
+                      const struct timespec *timeout)
+{
+  int r;
+
+  do {
+    r =::kevent(kq, changelist, nchanges,
+                eventlist, nevents, timeout);
+    if (likely(r >= 0)) {
+        break;
+    }
+    r = -errno;
+  } while (errno == -EINTR);
+
+  return r;
+}
+
+#endif
 
 
 INK_INLINE int
