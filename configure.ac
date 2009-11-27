@@ -425,7 +425,7 @@ if test "$ts_have_db" = "0"; then
     AC_MSG_FAILURE([No DB interface found])
 fi
 
-AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign])
+AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign lrand48_r srand48_r])
 
 if test "$ac_cv_func_epoll_ctl" = "yes"; then
    AC_DEFINE([USE_EPOLL])

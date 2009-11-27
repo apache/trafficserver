@@ -2274,7 +2274,7 @@ struct HostDBTestReverse:Continuation
 {
   int outstanding;
   int total;
-#if (HOST_OS != freebsd)
+#ifdef HAVE_LRAND48_R
   struct drand48_data dr;
 #endif
 
@@ -2289,7 +2289,7 @@ struct HostDBTestReverse:Continuation
     while (outstanding < HOSTDB_TEST_MAX_OUTSTANDING && total < HOSTDB_TEST_LENGTH)
     {
       long l = 0;
-#if (HOST_OS == freebsd)
+#ifndef HAVE_LRAND48_R
       l = lrand48();
 #else
       lrand48_r(&dr, &l);
@@ -2309,7 +2309,7 @@ struct HostDBTestReverse:Continuation
   }
 HostDBTestReverse():Continuation(new_ProxyMutex()), outstanding(0), total(0) {
     SET_HANDLER((HostDBTestReverseHandler) & HostDBTestReverse::mainEvent);
-#if (HOST_OS == freebsd)
+#ifndef HAVE_SRAND48_R
     srand48(time(NULL));
 #else
     srand48_r(time(NULL), &dr);
