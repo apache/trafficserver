@@ -2196,11 +2196,7 @@ ClusterCom::receiveIncomingMessage(char *buf, int max)
   int nbytes = 0, addr_len = sizeof(receive_addr);
 
   if ((nbytes = recvfrom(receive_fd, buf, max, 0, (struct sockaddr *) &receive_addr,
-#if (HOST_OS == linux)
                          (socklen_t *) & addr_len
-#else
-                         &addr_len
-#endif
        )) < 0) {
     mgmt_elog(stderr, "[ClusterCom::receiveIncomingMessage] Receive failed\n");
   }
