@@ -368,7 +368,7 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     epoll_ctl(pd->epoll_fd, EPOLL_CTL_DEL, con[icon].fd, &ev);
-#elif defined(USE_KQUEUE
+#elif defined(USE_KQUEUE)
     struct kevent ev[2];
     EV_SET(&ev[0], con[icon].fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
     EV_SET(&ev[1], con[icon].fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
@@ -397,10 +397,21 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
       con[icon].epoll_ptr = eptr;
     }
 
+    int r;
+#if defined(USE_EPOLL)
+    struct epoll_event ev;
+    memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN;
     ev.data.ptr = con[icon].epoll_ptr;
-
-    if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, con[icon].fd, &ev) < 0) {        // Add the FD to epoll fd
+    r = epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, con[icon].fd, &ev);
+#elif defined(USE_KQUEUE)
+    struct kevent ev;
+    EV_SET(&ev, con[icon].fd, EVFILT_READ, EV_ADD, 0, 0, con[icon].epoll_ptr);
+    r = kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL);
+#else
+#error port me
+#endif
+    if (r < 0) {        // Add the FD to epoll fd
       Error("iocore_dns", "open_con: Failed to add %d server to epoll list\n", icon);
     } else {
       con[icon].num = icon;
