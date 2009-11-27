@@ -418,6 +418,9 @@ fi
 
 AC_CHECK_FUNC(clock_gettime)
 
+sinclude(build-aux/apr_common.m4)
+sinclude(build-aux/apr_network.m4)
+APR_CHECK_GETHOSTBYNAME_R_STYLE
 
 # For SunPro 5.2 - we need the demangle symbol for
 #  ink_stack_trace.cc in libinktomi++.  Because this
