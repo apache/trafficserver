@@ -1240,7 +1240,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal * p, ink32 pktLen)
   }
 }
 
-#if (HOST_OS == linux)
+#ifndef BULK_IO_SEND_IS_BROKEN
 void
 UDPQueue::BulkIOSend()
 {
