@@ -64,7 +64,7 @@
 #include <arpa/nameser.h>
 #include <signal.h>
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#ifdef HAVE_SIGINFO_H
 #include <siginfo.h>
 #endif
 
