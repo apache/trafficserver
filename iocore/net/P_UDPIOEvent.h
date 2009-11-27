@@ -75,11 +75,7 @@ public:
   }
   static void free(UDPIOEvent * e);
 private:
-#if (HOST_OS == hpux)
-  void *operator  new(size_t size) { }; // undefined
-#else
   void *operator  new(size_t size);     // undefined
-#endif
   int fd;
   int err;                      // error code
   struct msghdr *m;
