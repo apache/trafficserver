@@ -60,7 +60,9 @@ static char cop_lockfile[PATH_MAX];
 static char manager_lockfile[PATH_MAX];
 static char server_lockfile[PATH_MAX];
 
+#if (HOST_OS == linux)
 static bool check_memory_required = false;
+#endif
 static int check_memory_min_swapfree_kb = 10240;
 static int check_memory_min_memfree_kb = 10240;
 
