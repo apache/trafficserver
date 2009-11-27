@@ -56,9 +56,10 @@ extern "C"
 #include <strings.h>
 #include <unistd.h>
 #include <stdarg.h>
-#if (HOST_OS == freebsd)
+#ifdef HAVE_FLOAT_H
 #include <float.h>
-#else
+#endif
+#ifdef HAVE_LIBGEN_H
 #include <libgen.h>
 #endif
 #include <limits.h>

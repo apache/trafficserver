@@ -68,7 +68,7 @@
 #include <siginfo.h>
 #endif
 
-#if (HOST_OS != freebsd)
+#ifdef HAVE_WAIT_H
 #include <wait.h>
 #endif
 
@@ -84,22 +84,24 @@
 #endif
 
 
-#if (HOST_OS != freebsd)
+#ifdef HAVE_VALUES_H
 #include <values.h>
+#endif
+#ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 
 #include <errno.h>
 #include <dirent.h>
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#ifdef HAVE_CPIO_H
 #include <cpio.h>
 #endif
 
 struct ifafilt;
 #include <net/if.h>
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
 
@@ -137,10 +139,6 @@ struct ifafilt;
 #endif
 
 #include <netinet/ip_icmp.h>
-
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
-#undef __P
-#endif
 
 #include <resolv.h>
 

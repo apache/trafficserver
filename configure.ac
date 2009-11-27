@@ -498,6 +498,13 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   ctype.h \
                   siginfo.h \
                   malloc.h \
+                  wait.h \
+                  float.h \
+                  libgen.h \
+                  values.h \
+                  alloca.h \
+                  cpio.h \
+                  stropts.h \
                   ], [], [])
 
 sinclude(build-aux/apr_common.m4)
