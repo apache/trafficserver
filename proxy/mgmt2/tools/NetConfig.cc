@@ -30,6 +30,16 @@
  *
  */
 
+#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+/* This program has not been ported to these operating systems at all,
+ * and even the linux one is insanely distro specific.
+ */
+int main()
+{
+  return 255;
+};
+#endif
+
 #if (HOST_OS == linux)
 
 #include <ctype.h>
