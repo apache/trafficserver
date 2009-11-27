@@ -26,7 +26,7 @@ AC_CANONICAL_HOST
 case $host_os in
   linux*)
     AC_DEFINE_UNQUOTED([HOST_OS],[linux])
-    AC_DEFINE_UNQUOTED([freebsd],[1])
+    AC_DEFINE_UNQUOTED([linux],[1])
     ;;
   darwin*)
     AC_DEFINE_UNQUOTED([HOST_OS],[darwin])
