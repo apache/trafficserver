@@ -156,7 +156,7 @@ traffic_server_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBREGEX@ @LIBDB@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ \
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ \
   @LIBMLD@ @LIBEXC@ -lm
 
 logcat_SOURCES = logcat.cc
@@ -214,7 +214,7 @@ logcat_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBREGEX@ @LIBDB@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ -lm
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ -lm
 
 logstats_CPPFLAGS = \
   -DPKGLOGDIR=\"$(pkglogdir)\" \
@@ -276,7 +276,7 @@ logstats_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBREGEX@ @LIBDB@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ -lm
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ -lm
 
 sac_SOURCES = sac.cc
 sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@
@@ -333,13 +333,13 @@ sac_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBREGEX@ @LIBDB@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ -lm
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ -lm
 
 cust_log_fmt_cnvrt_SOURCES = cust_log_fmt_cnvrt.cc
 cust_log_fmt_cnvrt_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ \
-  @LIBTCL@ @LIBRT@ @LIBDL@
+  @LIBTCL@ @LIBRT@ @LIBICONV@ @LIBDL@
 
 libClusterHashStandalone_a_SOURCES = \
   ClusterHashStandalone.cc \
