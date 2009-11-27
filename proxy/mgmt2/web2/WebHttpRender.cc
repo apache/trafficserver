@@ -3533,12 +3533,11 @@ static int
 handle_network(WebHttpContext * whc, char *tag, char *arg)
 {
   int err = WEB_HTTP_ERR_OKAY;
+#if (HOST_OS == linux) || (HOST_OS == sunos)
   char value[1024];
   char *value_safe, *old_value, *dummy;
   char *pos;
   char *interface;
-
-#if (HOST_OS == linux) || (HOST_OS == sunos)
 
   if (ink_hash_table_lookup(whc->submit_warn_ht, arg, (void **) &dummy)) {
     if (ink_hash_table_lookup(whc->post_data_ht, arg, (void **) &old_value)) {
@@ -3684,10 +3683,9 @@ Ldone:
 static int
 handle_network_object(WebHttpContext * whc, char *tag, char *arg)
 {
+#if (HOST_OS == linux)
   char *device_ink_path, *template_ink_path;
   char command[200], tmpname[80], interface[80];
-
-#if (HOST_OS == linux)
 
   if (strcmp(arg, "configure") == 0) {
     template_ink_path = WebHttpAddDocRoot_Xmalloc(whc, "/configure/c_net_device.ink");
