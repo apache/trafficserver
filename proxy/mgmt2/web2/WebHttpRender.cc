@@ -1593,7 +1593,7 @@ static int
 handle_select_system_logs(WebHttpContext * whc, char *tag, char *arg)
 {
   char *syslog_path = NULL;
-  char *syslog;
+  char *syslog = NULL;
   char tmp[MAX_TMP_BUF_LEN + 1];
   char tmp2[MAX_TMP_BUF_LEN + 1];
   char tmp3[MAX_TMP_BUF_LEN + 1];
@@ -1603,7 +1603,7 @@ handle_select_system_logs(WebHttpContext * whc, char *tag, char *arg)
   MgmtInt fsize;;
 
   // define the name of syslog in different OS
-#if (HOST_OS == linux)
+#if (HOST_OS == linux) 
   syslog = "messages";
 #endif
 
