@@ -26,7 +26,7 @@
 
 #include "ParseRules.h"
 
-#if (HOST_OS == freebsd)
+#if (HOST_OS == freebsd) || (HOST_OS == darwin)
 extern "C"
 {
   struct hostent *gethostbyname_r(const char *name, struct hostent *result, char *buffer, int buflen, int *h_errnop);
