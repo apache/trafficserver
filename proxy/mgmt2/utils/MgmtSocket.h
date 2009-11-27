@@ -63,11 +63,7 @@ mgmt_accept(int s, struct sockaddr *addr, int *addrlen)
 {
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-#if (HOST_OS == linux)
     r =::accept(s, addr, (socklen_t *) addrlen);
-#else
-    r =::accept(s, addr, addrlen);
-#endif
     if (r >= 0)
       return r;
     if (!mgmt_transient_error())
