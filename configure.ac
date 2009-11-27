@@ -35,6 +35,7 @@ case $host_os in
   freebsd*)
     AC_DEFINE_UNQUOTED([HOST_OS],[freebsd])
     AC_DEFINE_UNQUOTED([freebsd],[1])
+    LDFLAGS="${LDFLAGS} -L/usr/local/lib"
     ;;
   *)         AC_DEFINE_UNQUOTED([HOST_OS],[unknown]) ;;
 esac
