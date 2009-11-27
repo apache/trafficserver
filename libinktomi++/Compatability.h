@@ -233,7 +233,7 @@ write_to_middle_of_file(int fildes, void *buf, size_t nbytes, off_t offset)
 #define ink_fsync      fsync
 #define ink_ftruncate  ftruncate
 
-#if (HOST_OS == freebsd)
+#if (HOST_OS == freebsd) || (HOST_OS == darwin)
 #define ink_ftruncate64(_fd,_s)  ftruncate(_fd, (off_t)(_s))
 #else
 #define ink_ftruncate64  ftruncate64
