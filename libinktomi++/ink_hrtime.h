@@ -289,7 +289,7 @@ ink_get_based_hrtime_internal()
 {
 #if defined(USE_TIME_STAMP_COUNTER_HRTIME)
   return hrtime_offset + ink_get_hrtime_internal();
-#elif (HOST_OS == linux) || defined(NO_CLOCK_GETTIME)
+#elif !defined(HAVE_CLOCK_GETTIME)
   timeval tv;
   gettimeofday(&tv, NULL);
   return (tv.tv_sec * HRTIME_SECOND + tv.tv_usec * HRTIME_USECOND);
