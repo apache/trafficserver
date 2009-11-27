@@ -457,11 +457,7 @@ struct CheckConnect:public Continuation
       break;
 
       case VC_EVENT_WRITE_READY:int sl, ret;
-#if (HOST_OS == linux)
       socklen_t sz;
-#else
-      int sz;
-#endif
       if (!action_.cancelled)
       {
         sz = sizeof(int);
