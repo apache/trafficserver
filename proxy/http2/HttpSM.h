@@ -413,7 +413,7 @@ protected:
   void do_setup_put_tunnel_to_ftp();
   void do_cache_prepare_write();
   void do_cache_prepare_write_transform();
-  void do_cache_prepare_update();       // DI FP work
+  void do_cache_prepare_update();
   void do_cache_prepare_action(HttpCacheSM * c_sm,
                                CacheHTTPInfo * object_read_info, bool retry, bool allow_multiple = false);
   void do_cache_delete_all_alts(Continuation * cont);

@@ -261,13 +261,6 @@ update_dns_info(HttpTransact::DNSLookupInfo * dns, HttpTransact::CurrentInfo * f
   dns->attempts = attempts;
 }
 
-inline static bool
-is_agent_server_appropriate(HttpTransact::State * s)
-{
-  // for DI: only server style requests go to the distributor
-  return (s->http_config_param->agent_server_enabled && s->hdr_info.client_req_is_server_style);
-}
-
 inline static HTTPHdr *
 find_appropriate_cached_resp(HttpTransact::State * s)
 {
@@ -340,8 +333,6 @@ find_server_and_update_current_info(HttpTransact::State * s)
     // For example, the cache_urls_that_look_dynamic variable.
     Debug("http_trans", "request not cacheable, so bypass parent");
     s->parent_result.r = PARENT_DIRECT;
-  } else if (is_agent_server_appropriate(s)) {
-    s->parent_result.r = PARENT_AGENT;
   } else {
     switch (s->parent_result.r) {
     case PARENT_UNDEFINED:
@@ -382,17 +373,6 @@ find_server_and_update_current_info(HttpTransact::State * s)
   }
 
   switch (s->parent_result.r) {
-  case PARENT_AGENT:
-    s->parent_info.name =
-      s->arena.str_store(s->http_config_param->agent_server_hostname,
-                         strlen(s->http_config_param->agent_server_hostname));
-    s->parent_info.port = (int) (s->http_config_param->agent_server_port);
-    update_current_info(&s->current, &s->parent_info, HttpTransact::AGENT_SERVER, (s->current.attempts)++);
-    update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
-    HTTP_DEBUG_ASSERT(s->dns_info.looking_up == HttpTransact::AGENT_SERVER);
-    s->next_hop_scheme = URL_WKSIDX_HTTP;
-
-    return HttpTransact::AGENT_SERVER;
   case PARENT_SPECIFIED:
     s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
     s->parent_info.port = s->parent_result.port;
@@ -897,23 +877,6 @@ HttpTransact::StartRemapRequest(State * s)
      (host, host_len, s->http_config_param->tn_server,
       s->http_config_param->tn_server_len) == 0) && (port == s->http_config_param->tn_port);
 
-  if (s->http_config_param->footprint_enabled) {
-    static const char fpmcp_prefix[] = "@fpmcp@/";
-    static int fpmcp_prefix_len = sizeof(fpmcp_prefix) - 1;     /* strlen(fpmcp_prefix); sizeof is much better */
-    static int DI_command_port = -1;
-
-    if (DI_command_port == -1) {
-      char *other_proxy_ports = s->http_config_param->proxy_server_other_ports;
-      if (other_proxy_ports)
-        DI_command_port = atoi(other_proxy_ports);
-    }
-
-    if (s->client_info.port == DI_command_port && host == NULL && path_len > fpmcp_prefix_len &&
-        strncmp(path, fpmcp_prefix, fpmcp_prefix_len) == 0) {
-      s->reverse_proxy = true;
-      TRANSACT_RETURN(HTTP_END_REMAP_REQUEST, HttpTransact::EndRemapRequest);   // skip actual remap
-    }
-  }
   //////////////////////////////////////////////////////////////////
   // FIX: this logic seems awfully convoluted and hard to follow; //
   //      seems like we could come up with a more elegant and     //
@@ -1500,14 +1463,8 @@ HttpTransact::PPDNSLookup(State * s)
 
   Debug("http_trans", "[HttpTransact::PPDNSLookup] This was attempt %d", s->dns_info.attempts);
 
-  HTTP_DEBUG_ASSERT(s->dns_info.looking_up == PARENT_PROXY || s->dns_info.looking_up == AGENT_SERVER);
+  HTTP_DEBUG_ASSERT(s->dns_info.looking_up == PARENT_PROXY);
   if (!s->dns_info.lookup_success) {
-    // DNS lookup of agent server died
-    if (s->dns_info.looking_up == HttpTransact::AGENT_SERVER) {
-      s->parent_result.r = PARENT_FAIL;
-      handle_parent_died(s);
-      return;
-    }
     // DNS lookup of parent failed, find next parent or o.s.
     find_server_and_update_current_info(s);
     if (s->current.server->ip == 0) {
@@ -1527,9 +1484,8 @@ HttpTransact::PPDNSLookup(State * s)
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info, s->http_config_param);
     s->parent_info.dns_round_robin = s->dns_info.round_robin;
 
-    Debug("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%d] %s successful "
+    Debug("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%d] successful "
           "IP: %u.%u.%u.%u", s->state_machine->sm_id,
-          (s->dns_info.looking_up != HttpTransact::AGENT_SERVER) ? "P.P" : "Agent Server",
           ((unsigned char *) &s->parent_info.ip)[0],
           ((unsigned char *) &s->parent_info.ip)[1],
           ((unsigned char *) &s->parent_info.ip)[2], ((unsigned char *) &s->parent_info.ip)[3]);
@@ -2012,8 +1968,6 @@ HttpTransact::DecideCacheLookup(State * s)
     }
     HTTP_DEBUG_ASSERT(s->current.mode != TUNNELLING_PROXY);
 
-    // for the DI feature, for multiple cache lookups, the lookup_url
-    // could have already been set up
     if (s->cache_info.lookup_url == NULL) {
 
       if (s->pristine_host_hdr > 0 || s->http_config_param->maintain_pristine_host_hdr || s->scheme == URL_WKSIDX_FTP) {
@@ -2105,7 +2059,7 @@ HttpTransact::LookupSkipOpenServer(State * s)
   // to a parent proxy or to the origin server.
   find_server_and_update_current_info(s);
 
-  if (s->current.request_to == PARENT_PROXY || s->current.request_to == AGENT_SERVER) {
+  if (s->current.request_to == PARENT_PROXY) {
     TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
   }
 
@@ -2479,7 +2433,7 @@ HttpTransact::HandleCacheOpenReadFtp(State * s)
     if (s->current.server->ip == 0) {
 
       HTTP_ASSERT(s->current.request_to == PARENT_PROXY ||
-                  s->current.request_to == AGENT_SERVER || s->http_config_param->no_dns_forward_to_parent != 0);
+                  s->http_config_param->no_dns_forward_to_parent != 0);
 
       // Set ourselves up to handle pending revalidate issues
       //  after the PP DNS lookup
@@ -2493,7 +2447,7 @@ HttpTransact::HandleCacheOpenReadFtp(State * s)
       //  through.  The request will fail because of the
       //  missing ip but we won't take down the system
       //
-      if (s->current.request_to == PARENT_PROXY || s->current.request_to == AGENT_SERVER) {
+      if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
       } else {
         handle_parent_died(s);
@@ -2535,7 +2489,6 @@ HttpTransact::HandleCacheOpenReadFtp(State * s)
 void
 HttpTransact::issue_revalidate(State * s)
 {
-  // this is done for DI - instead of using object_read unconditionally
   HTTPHdr *c_resp = find_appropriate_cached_resp(s);
   SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
   HTTP_DEBUG_ASSERT(GET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP) != ' ');
@@ -3019,7 +2972,7 @@ HttpTransact::HandleCacheOpenReadHit(State * s)
       if (!s->stale_icp_lookup && s->current.server->ip == 0) {
 
         HTTP_ASSERT(s->current.request_to == PARENT_PROXY ||
-                    s->current.request_to == AGENT_SERVER || s->http_config_param->no_dns_forward_to_parent != 0);
+                    s->http_config_param->no_dns_forward_to_parent != 0);
 
         // Set ourselves up to handle pending revalidate issues
         //  after the PP DNS lookup
@@ -3033,7 +2986,7 @@ HttpTransact::HandleCacheOpenReadHit(State * s)
         //  through.  The request will fail because of the
         //  missing ip but we won't take down the system
         //
-        if (s->current.request_to == PARENT_PROXY || s->current.request_to == AGENT_SERVER) {
+        if (s->current.request_to == PARENT_PROXY) {
           TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
         } else {
           handle_parent_died(s);
@@ -3468,8 +3421,8 @@ HttpTransact::HandleCacheOpenReadMiss(State * s)
     find_server_and_update_current_info(s);
     if (s->current.server->ip == 0) {
       HTTP_ASSERT(s->current.request_to == PARENT_PROXY ||
-                  s->current.request_to == AGENT_SERVER || s->http_config_param->no_dns_forward_to_parent != 0);
-      if (s->current.request_to == PARENT_PROXY || s->current.request_to == AGENT_SERVER) {
+                  s->http_config_param->no_dns_forward_to_parent != 0);
+      if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(DNS_LOOKUP, HttpTransact::PPDNSLookup);
       } else {
         handle_parent_died(s);
@@ -3547,7 +3500,7 @@ HttpTransact::HandleICPLookup(State * s)
 
     find_server_and_update_current_info(s);
     if (s->current.server->ip == 0) {
-      if (s->current.request_to == PARENT_PROXY || s->current.request_to == AGENT_SERVER) {
+      if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
       } else {
         HTTP_ASSERT(0);
@@ -3971,7 +3924,6 @@ HttpTransact::HandleResponse(State * s)
     handle_response_from_icp_suggested_host(s);
     break;
 #endif
-  case AGENT_SERVER:
   case PARENT_PROXY:
     handle_response_from_parent(s);
     break;
@@ -3989,7 +3941,7 @@ HttpTransact::HandleResponse(State * s)
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : HandleUpdateCachedObject
 // Description: called from the state machine when we are going to modify
-//              headers without any server contact. DI Footprint specific
+//              headers without any server contact.
 //
 // Details    : this function does very little. mainly to satisfy
 //              the call_transact_and_set_next format and not affect
@@ -4117,7 +4069,7 @@ HttpTransact::handle_response_from_icp_suggested_host(State * s)
     // one or else directly to the origin server.
     find_server_and_update_current_info(s);
     if (s->current.server->ip == 0) {
-      if (s->current.request_to == PARENT_PROXY || s->current.request_to == AGENT_SERVER) {
+      if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
       } else {
         HTTP_ASSERT(0);
@@ -4188,32 +4140,13 @@ HttpTransact::handle_response_from_parent(State * s)
 
       // If the request is not retryable, just give up!
       if (!is_request_retryable(s)) {
-        if (s->current.request_to != HttpTransact::AGENT_SERVER)
-          s->parent_params->markParentDown(&s->parent_result);
+        s->parent_params->markParentDown(&s->parent_result);
         s->parent_result.r = PARENT_FAIL;
         handle_parent_died(s);
         return;
       }
 
-      if (s->current.request_to == HttpTransact::AGENT_SERVER) {
-        if (s->current.attempts < s->http_config_param->agent_server_connect_attempts) {
-          s->current.attempts++;
-
-          // Now we are not done with the agent server so retry
-          s->next_action = how_to_open_connection(s);
-          Debug("http_trans",
-                "%s Retrying agent server for attempt %d, max %d",
-                "[handle_response_from_parent]", s->current.attempts,
-                s->http_config_param->agent_server_connect_attempts);
-          return;
-        } else {
-          // Now we are done with agent server retrying
-          s->parent_result.r = PARENT_FAIL;
-          handle_parent_died(s);
-          return;
-        }
-      } else if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
-
+      if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
         s->current.attempts++;
 
         // Are we done with this particular parent?
@@ -4265,7 +4198,7 @@ HttpTransact::handle_response_from_parent(State * s)
         break;
       default:
         // This handles:
-        // UNDEFINED_LOOKUP, ICP_SUGGESTED_HOST, AGENT_SERVER,
+        // UNDEFINED_LOOKUP, ICP_SUGGESTED_HOST,
         // INCOMING_ROUTER
         break;
       }
@@ -6824,7 +6757,7 @@ HttpTransact::initialize_state_variables_from_response(State * s, HTTPHdr * inco
   MIMEField *c_hdr;
   if ((s->current.request_to != ORIGIN_SERVER) &&
       (s->current.request_to == PARENT_PROXY ||
-       s->current.request_to == AGENT_SERVER || s->current.request_to == ICP_SUGGESTED_HOST)) {
+       s->current.request_to == ICP_SUGGESTED_HOST)) {
     c_hdr = s->hdr_info.server_response.field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
 
     // If there is a Proxy-Connection header use that,
@@ -8039,10 +7972,6 @@ HttpTransact::will_this_request_self_loop(State * s)
           Debug("http_transact", "[will_this_request_self_loop] "
                 "parent proxy ip and port same as local ip and port - bailing");
           break;
-        case AGENT_SERVER:
-          Debug("http_transact", "[will_this_request_self_loop] "
-                "agent server ip and port same as local ip and port - bailing");
-          break;
         default:
           Debug("http_transact", "[will_this_request_self_loop] "
                 "unknown's ip and port same as local ip and port - bailing");
@@ -8274,7 +8203,7 @@ HttpTransact::handle_request_keep_alive_headers(State * s, HTTPVersion ver, HTTP
     HTTP_DEBUG_ASSERT(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
     if (ver == HTTPVersion(1, 0)) {
       if (s->current.request_to == PARENT_PROXY ||
-          s->current.request_to == AGENT_SERVER || s->current.request_to == ICP_SUGGESTED_HOST) {
+          s->current.request_to == ICP_SUGGESTED_HOST) {
         heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "keep-alive", 10);
       } else {
         heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "keep-alive", 10);
@@ -8289,7 +8218,7 @@ HttpTransact::handle_request_keep_alive_headers(State * s, HTTPVersion ver, HTTP
       /* Had keep-alive */
       s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
       if (s->current.request_to == PARENT_PROXY ||
-          s->current.request_to == AGENT_SERVER || s->current.request_to == ICP_SUGGESTED_HOST) {
+          s->current.request_to == ICP_SUGGESTED_HOST) {
         heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
       } else {
         heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);

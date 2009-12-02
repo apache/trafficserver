@@ -704,17 +704,6 @@ public:
   //////////////////////
   MgmtInt fwd_proxy_auth_to_parent;
 
-  ////////////////////////////////////////////////////////////
-  // Agent Server - another name for the distributor  of DI //
-  ////////////////////////////////////////////////////////////
-  MgmtInt agent_server_enabled;
-  char *agent_server_hostname;
-  MgmtInt agent_server_port;
-  MgmtInt agent_server_connect_attempts;
-
-  // The following parameter should be set to 1 for DI.
-  MgmtInt footprint_enabled;
-
   // Cluster time delta is not a config variable,
   //  rather it is the time skew which the manager observes
   ink32 cluster_time_delta;
@@ -1003,10 +992,6 @@ default_buffer_size_index(0),
 default_buffer_water_mark(0),
 enable_http_info(0),
 fwd_proxy_auth_to_parent(0),
-agent_server_enabled(0),
-agent_server_hostname(NULL),
-agent_server_port(0),
-agent_server_connect_attempts(0),
 cluster_time_delta(0),
         //Added by YTS Team, yamsat
 hashtable_enabled(false),
@@ -1042,7 +1027,6 @@ HttpConfigParams()
   xfree(ssl_ports_string);
   xfree(ftp_anonymous_passwd);
   xfree(reverse_proxy_no_host_redirect);
-  xfree(agent_server_hostname);
 
   if (ssl_ports) {
     delete ssl_ports;

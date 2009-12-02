@@ -545,7 +545,7 @@ HttpClientSession::attach_server_session(HttpServerSession * ssession, bool tran
     ink_assert(ssession->get_reader()->read_avail() == 0);
     ink_assert(ssession->get_netvc() != client_vc);
 
-    // DI feature - handling potential keep-alive here
+    // handling potential keep-alive here
     if (m_active) {
       m_active = false;
       HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
@@ -586,7 +586,7 @@ HttpClientSession::release(IOBufferReader * r)
   Debug("http_cs", "[%lld] session released by sm [%lld]", con_id, current_reader->sm_id);
   current_reader = NULL;
 
-  // DI feature - handling potential keep-alive here
+  // handling potential keep-alive here
   if (m_active) {
     m_active = false;
     HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);

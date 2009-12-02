@@ -5836,7 +5836,6 @@ HttpSM::setup_server_send_request()
     write_header_into_buffer(&t_state.hdr_info.server_request, server_entry->write_buffer);
 
   // the plugin decided to append a message to the request
-  // this is for the F5 GET to POST request conversion
   if (api_set) {
     Debug("http", "[%lld] appending msg of %d bytes to request %s", sm_id, msg_len, t_state.internal_msg_buffer);
     hdr_length += server_entry->write_buffer->write(t_state.internal_msg_buffer, msg_len);

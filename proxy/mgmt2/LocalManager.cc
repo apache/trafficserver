@@ -237,7 +237,6 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
   proxy_launch_outstanding = false;
   mgmt_shutdown_outstanding = false;
   proxy_running = 0;
-  difp_listen_mode = 0;
   REC_setInteger("proxy.node.proxy_running", 0);
   mgmt_sync_key = REC_readInteger("proxy.config.lm.sem_id", &found);
   if (!found || mgmt_sync_key <= 0) {
@@ -254,14 +253,10 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
     memset((void *) proxy_server_port_attributes[i], 0, MAX_ATTR_LEN);
   }
 
-  // DI Footprint: If the listen_mode is zero, then do the default
-  // behavior and let the manager listen() on the main server port;
-  // otherwise (non-zero listen_mode), traffic_server will listen().
   int pnum = 0;
   RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
   ink_debug_assert(found);
-  difp_listen_mode = REC_readInteger("proxy.config.di.footprint.listen_mode", &found);
-  if (http_enabled && (!found || (difp_listen_mode == 0))) {
+  if (http_enabled && !found) {
     int port = (int) REC_readInteger("proxy.config.http.server_port", &found);
     if (found) {
       proxy_server_port[pnum] = port;
@@ -1225,21 +1220,11 @@ LocalManager::startProxy()
 
     // Check if we need to pass down port/fd information to
     // traffic_server
-    if (difp_listen_mode != 0 || proxy_server_fd[0] != -1) {
+    if (proxy_server_fd[0] != -1) {
       snprintf(&real_proxy_options[n], sizeof(real_proxy_options) - n, " -A");
       n = strlen(real_proxy_options);
-      // DI Footprint: If the listen_mode is zero, then manager
-      // has listen()'ed on the main server port (business as
-      // usual); otherwise, tell traffic_server that it needs to
-      // listen() on the main server port by giving it a "0:X".
-      // Note that going forward, we should probably not use "0:X"
-      // to specify this behavior since 0 is a valid fd.
-      if (difp_listen_mode != 0) {
-        snprintf(&real_proxy_options[n], sizeof(real_proxy_options) - n, "0:X");
-        n = strlen(real_proxy_options);
-      }
       // Handle some syntax issues
-      if (difp_listen_mode != 0 && proxy_server_fd[0] != -1) {
+      if (proxy_server_fd[0] != -1) {
         snprintf(&real_proxy_options[n], sizeof(real_proxy_options) - n, ",");
         n = strlen(real_proxy_options);
       }

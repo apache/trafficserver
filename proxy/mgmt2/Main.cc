@@ -677,15 +677,9 @@ main(int argc, char **argv)
     lmgmt->proxy_options = tsArgs;
     mgmt_log(stderr, "[main] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
   }
-  // DI Footprint: Only allow the user to override the main proxy
-  // server port (proxy_server_port[0]) if we're in standard
-  // operation and not in the special DI Footprint listen_mode
-  // (difp_listen_mode equals 1 or 2).
-  if (lmgmt->difp_listen_mode == 0) {
-    if (proxy_port != -1) {
-      lmgmt->proxy_server_port[0] = proxy_port;
-      mgmt_log(stderr, "[main] Traffic Server Port: '%d'\n", lmgmt->proxy_server_port[0]);
-    }
+  if (proxy_port != -1) {
+    lmgmt->proxy_server_port[0] = proxy_port;
+    mgmt_log(stderr, "[main] Traffic Server Port: '%d'\n", lmgmt->proxy_server_port[0]);
   }
 
   if (proxy_backdoor != -1) {

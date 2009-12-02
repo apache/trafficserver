@@ -1288,14 +1288,6 @@ HttpConfig::startup()
   // Stat Page Info
   HttpEstablishStaticConfigLongLong(c.enable_http_info, "proxy.config.http.enable_http_info");
 
-  // Agent server info - Distributor
-  HttpEstablishStaticConfigLongLong(c.agent_server_enabled, "proxy.config.http.agent_server_enabled");
-  HttpEstablishStaticConfigStringAlloc(c.agent_server_hostname, "proxy.config.http.agent_server_hostname");
-  HttpEstablishStaticConfigLongLong(c.agent_server_port, "proxy.config.http.agent_server_port");
-  HttpEstablishStaticConfigLongLong(c.agent_server_connect_attempts, "proxy.config.http.agent_server.connect_attempts");
-
-  // The following parameter should be set to 1 for DI.
-  HttpEstablishStaticConfigLongLong(c.footprint_enabled, "proxy.config.di.footprint.footprint_enabled");
 
   ///////////////////////////////////////////////////////////////////////////
   //   Added by YTS Team, yamsat                                                //
@@ -1571,14 +1563,6 @@ HttpConfig::reconfigure()
   params->inktoswitch_enabled = m_master.inktoswitch_enabled;
   params->router_ip = m_master.router_ip;
   params->router_port = m_master.router_port;
-
-  // for DI distributor
-  params->agent_server_enabled = m_master.agent_server_enabled;
-  params->agent_server_hostname = xstrdup(m_master.agent_server_hostname);
-  params->agent_server_port = m_master.agent_server_port;
-  params->agent_server_connect_attempts = m_master.agent_server_connect_attempts;
-
-  params->footprint_enabled = m_master.footprint_enabled;
 
   ///////////////////////////////////////////////////////////////////////////
   //  Added by YTS Team, yamsat                                                 //

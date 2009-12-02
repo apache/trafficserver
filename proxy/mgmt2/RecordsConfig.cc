@@ -1000,19 +1000,7 @@ RecordElement RecordsConfig[] = {
   //        ###################################
   {CONFIG, "proxy.config.http.doc_in_cache_skip_dns", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
-  //        ###################################
-  //        # Agent Server - DI stuff         #
-  //        ###################################
-  {CONFIG, "proxy.config.http.agent_server_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.http.agent_server_hostname", "", INK_STRING, "parent.config", RU_REREAD, RR_NULL, RC_NULL,
-   NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.http.agent_server_port", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.http.agent_server.connect_attempts", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
+
   //        ###################################
   //        # HTTP connection timeouts (secs) #
   //        ###################################
@@ -2480,7 +2468,6 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.cache.alt_rewrite_max_size", "", INK_INT, "4096", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  // only enable for DI currently. 
   {CONFIG, "proxy.config.cache.enable_read_while_writer", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //
@@ -3613,16 +3600,6 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.plugin.extensions_dir", "", INK_STRING,
    PKGLOCALSTATEDIR, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-
-  //##############################################################################
-  //#
-  //# DI Footprint Config
-  //#
-  //##############################################################################
-  {CONFIG, "proxy.config.di.footprint.footprint_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.di.footprint.listen_mode", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
 
   //##############################################################################

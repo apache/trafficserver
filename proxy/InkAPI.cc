@@ -5762,9 +5762,7 @@ INKHttpTxnAborted(INKHttpTxn txnp)
     // check for the server abort
     return 1;
   }
-  // there can be the case of transformation error. DI is not doing it now,
-  // so skip it for the time being. In order to do this, we probably need
-  // another state variable?
+  // there can be the case of transformation error.
   return 0;
 }
 
@@ -7579,8 +7577,6 @@ INKHttpTxnClientRemotePortGet(INKHttpTxn txnp, int *port)
   *port = htons(vc->get_remote_port());
   return INK_SUCCESS;
 }
-
-/*******************  DI Footprint API (private)  **********************/
 
 /* IP Lookup */
 #if 0                           // Not used.

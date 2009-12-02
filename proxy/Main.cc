@@ -332,66 +332,6 @@ max_out_limit(int which, bool max_it = true, bool unlim_it = true)
 }
 
 
-struct DI_listen_cont:public Continuation
-{
-  int start_http_server(int event, Event * e)
-  {
-    start_HttpProxyServer(http_accept_file_descriptor, http_accept_port_number);
-    Note("Proxy restarted");
-    return EVENT_DONE;
-  };
-  int stop_http_server(int event, Event * e)
-  {
-    int i;
-    for (i = 0; i < eventProcessor.n_threads_for_type[ET_NET]; i++) {
-      // proxy server accept event is the first entry
-      int idx = eventProcessor.eventthread[ET_NET][i]->main_accept_index;
-      if (idx != -1) {
-        eventProcessor.eventthread[ET_NET][i]->accept_event[idx]->cancel();
-        eventProcessor.eventthread[ET_NET][i]->accept_event[idx] = NULL;
-        eventProcessor.eventthread[ET_NET][i]->main_accept_index = -1;
-      }
-    }
-    ink_assert(!::close(http_accept_file_descriptor));
-    http_accept_file_descriptor = NO_FD;
-    Note("Proxy shut down");
-    return EVENT_CONT;
-  };
-DI_listen_cont():Continuation(new_ProxyMutex()) {
-  };
-};
-
-int
-change_net_listen_mode(const char *name, RecDataT data_type, RecData data, void *cookie)
-{
-  // This function is called on a mgmt callback which is not an EThread
-  static DI_listen_cont *di_cont = new DI_listen_cont;
-  if (listen_mode == 1) {
-    Note("Restarting the http proxy");
-    http_accept_file_descriptor = NO_FD;
-    SET_CONTINUATION_HANDLER(di_cont, &DI_listen_cont::start_http_server);
-    eventProcessor.schedule_imm(di_cont);
-  } else if (listen_mode == 2) {
-    Note("Shutting down the http proxy", http_accept_file_descriptor);
-    SET_CONTINUATION_HANDLER(di_cont, &DI_listen_cont::stop_http_server);
-    eventProcessor.schedule_imm(di_cont);
-  } else
-    Note("Ignoring change in the listen_mode");
-  return 0;
-}
-
-void
-init_listen_mode()
-{
-  // DI stuff
-  RecInt temp;
-  REC_EstablishStaticConfigInteger(temp, "proxy.config.di.footprint.listen_mode");
-  listen_mode = (int) temp;
-  TS_RegisterConfigUpdateFunc("proxy.config.di.footprint.listen_mode", change_net_listen_mode, NULL);
-  TS_ReadConfigInteger(listen_mode, "proxy.config.di.footprint.listen_mode");
-  ink_assert(listen_mode > -1 && listen_mode < 3);
-}
-
 //
 // Initialize operating system related information/services
 //
@@ -1812,8 +1752,6 @@ main(int argc, char **argv)
   remapProcessor.start(num_remap_threads);
 
   RecProcessStart();
-
-  init_listen_mode();
 
   init_signals2();
   // log initialization moved down

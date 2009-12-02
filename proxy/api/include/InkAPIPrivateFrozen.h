@@ -39,10 +39,6 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-/* ----------------------------------------------------------------------
- * Interfaces for MIXT plugin
- * ---------------------------------------------------------------------- */
-
 /****************************************************************************
  *  Create a new field and assign it a name 
  *  contact: MIXT
@@ -52,24 +48,18 @@ extern "C"
 
 /****************************************************************************
  *  Test if cache ready to accept request for a specific type of data
- *  contact: DI, MIXT
+ *  contact: MIXT
  ****************************************************************************/
   inkapi INKReturnCode INKCacheDataTypeReady(INKCacheDataType type, int *is_ready);
-
-/* ----------------------------------------------------------------------
- * Interfaces for F5
- * ---------------------------------------------------------------------- */
 
 /****************************************************************************
  *  When reenabling a txn in error, keep the connection open in case
  *  of keepalive.
- *  contact: F5
  ****************************************************************************/
   inkapi int INKHttpTxnClientKeepaliveSet(INKHttpTxn txnp);
 
 /****************************************************************************
  *  Allow to set the body of a POST request.
- *  contact: F5
  ****************************************************************************/
   inkapi void INKHttpTxnServerRequestBodySet(INKHttpTxn txnp, char *buf, int buflength);
 
@@ -106,51 +96,33 @@ extern "C"
 #define INK_HRTIME_USECONDS(_x) HRTIME_USECONDS(_x)
 #define INK_HRTIME_NSECONDS(_x) HRTIME_NSECONDS(_x)
 
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
+  /* ===== Time ===== */
   inkapi unsigned int INKBasedTimeGet();
-
-/* ===== Time ===== */
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi double INKBasedTimeGetD();
 
 /****************************************************************************
  *  Get time when Http TXN started
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnStartTimeGet(INKHttpTxn txnp, INK64 * start_time);
 
 /****************************************************************************
  *  Get time when Http TXN ended
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnEndTimeGet(INKHttpTxn txnp, INK64 * end_time);
 
 /****************************************************************************
  *  Get time when Http TXN started
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnStartTimeGetD(INKHttpTxn txnp, double *start_time);
 
 /****************************************************************************
  *  Get time when Http TXN ended
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnEndTimeGetD(INKHttpTxn txnp, double *end_time);
 
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnCachedRespTimeGet(INKHttpTxn txnp, long *resp_time);
 
 /* ===== Cache ===== */
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi INKReturnCode INKCacheKeyDataTypeSet(INKCacheKey key, INKCacheDataType type);
 
 
@@ -158,99 +130,77 @@ extern "C"
 /****************************************************************************
  *  Create a random number
  *  Return random integer between <X> and <Y>
- *  contact: DI
  ****************************************************************************/
   inkapi unsigned int INKrandom(void);
 
 /****************************************************************************
  *  Create a random double
  *  Return random double between <X> and <Y>
- *  contact: DI
  ****************************************************************************/
   inkapi double INKdrandom(void);
 
 /****************************************************************************
  *  Return Hi-resolution current time. (ink64)
- *  contact: DI
  ****************************************************************************/
   inkapi INK64 INKhrtime(void);
 
 /* ===== global http stats ===== */
 /****************************************************************************
  *  Get number of current client http connections
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpCurrentClientConnectionsGet(int *num_connections);
 
 /****************************************************************************
  *  Get number of current active client http connections
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpCurrentActiveClientConnectionsGet(int *num_connections);
 
 /****************************************************************************
  *  Get number of current idle client http connections
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpCurrentIdleClientConnectionsGet(int *num_connections);
 
 /****************************************************************************
  *  Get number of current http connections to cache
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpCurrentCacheConnectionsGet(int *num_connections);
 
 /****************************************************************************
  *  Get number of current http server connections
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpCurrentServerConnectionsGet(int *num_connections);
 
 /* http transaction status -- more in InkAPIPrivate.h */
 /****************************************************************************
  *  Get size of response header
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnServerRespHdrBytesGet(INKHttpTxn txnp, int *bytes);
 
 /****************************************************************************
  *  Get size of response body
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnServerRespBodyBytesGet(INKHttpTxn txnp, int *bytes);
 
 /* =====  CacheHttpInfo =====  */
 
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
 #ifdef IDC
   inkapi INKReturnCode INKCacheHttpInfoCopy(INKCacheHttpInfo infop_src, INKCacheHttpInfo * infop_dest);
 #else
   inkapi INKCacheHttpInfo INKCacheHttpInfoCopy(INKCacheHttpInfo * infop);
 #endif
 
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
 #ifdef IDC
   inkapi INKReturnCode INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
 #else
   inkapi void INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * offset);
 #endif
 
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
 #ifdef IDC
   inkapi INKReturnCode INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
 #else
   inkapi void INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * offset);
 #endif
 
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
 #ifdef IDC
   inkapi INKReturnCode INKCacheHttpInfoDestroy(INKCacheHttpInfo infop);
 #else
@@ -261,121 +211,69 @@ extern "C"
   inkapi void INKHttpIcpDynamicSet(int value);
 
 /* =====  Http Transactions =====  */
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnCachedRespModifiableGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnCacheLookupStatusSet(INKHttpTxn txnp, int cachelookup);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnCacheLookupUrlGet(INKHttpTxn txnp, INKMBuffer bufp, INKMLoc obj);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnCachedUrlSet(INKHttpTxn txnp, INKMBuffer bufp, INKMLoc obj);
 
 /****************************************************************************
  *  INKHttpTxnCacheLookupCountGet
  *  Return: INK_SUCESS/INK_ERROR
- *  contact: DI
  ****************************************************************************/
   INKReturnCode INKHttpTxnCacheLookupCountGet(INKHttpTxn txnp, int *lookup_count);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnNewCacheLookupDo(INKHttpTxn txnp, INKMBuffer bufp, INKMLoc url_loc);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnSecondUrlTryLock(INKHttpTxn txnp);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnRedirectRequest(INKHttpTxn txnp, INKMBuffer bufp, INKMLoc url_loc);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnCacheLookupSkip(INKHttpTxn txnp);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnServerRespNoStore(INKHttpTxn txnp);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnServerRespIgnore(INKHttpTxn txnp);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKHttpTxnShutDown(INKHttpTxn txnp, INKEvent event);
 
 /****************************************************************************
  *  ??
  *  Return ??
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnAborted(INKHttpTxn txnp);
 
 /****************************************************************************
  *  ??
  *  Return ??
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnClientReqIsServerStyle(INKHttpTxn txnp);
 
 /****************************************************************************
  *  ??
  *  Return ??
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnOverwriteExpireTime(INKHttpTxn txnp, time_t expire_time);
 
 /****************************************************************************
  *  ??
  *  Return ??
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnUpdateCachedObject(INKHttpTxn txnp);
 
 /****************************************************************************
  *  ??
  *  Return ??
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnCachedRespTimeGet(INKHttpTxn txnp, long *resp_time);
 
 /****************************************************************************
  *  ??
  *  Return ??
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnLookingUpTypeGet(INKHttpTxn txnp);
 
 /****************************************************************************
  *  ??
  *  Return ??
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnClientRespHdrBytesGet(INKHttpTxn txnp, int *bytes);
 
 /****************************************************************************
  *  ??
  *  Return ??
- *  contact: DI
  ****************************************************************************/
   inkapi int INKHttpTxnClientRespBodyBytesGet(INKHttpTxn txnp, int *bytes);
 
@@ -387,56 +285,48 @@ extern "C"
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
   inkapi char *INKMatcherReadIntoBuffer(char *file_name, int *file_len);
 
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
   inkapi char *INKMatcherTokLine(char *buffer, char **last);
 
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
   inkapi char *INKMatcherExtractIPRange(char *match_str, INKU32 * addr1, INKU32 * addr2);
 
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
   inkapi INKMatcherLine INKMatcherLineCreate();
 
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
   inkapi void INKMatcherLineDestroy(INKMatcherLine ml);
 
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
   inkapi char *INKMatcherParseSrcIPConfigLine(char *line, INKMatcherLine ml);
 
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
   inkapi char *INKMatcherLineName(INKMatcherLine ml, int element);
 
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
   inkapi char *INKMatcherLineValue(INKMatcherLine ml, int element);
 
@@ -448,7 +338,6 @@ extern "C"
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
 #if 0                           // Not used.
   inkapi INKIPLookup INKIPLookupCreate();
@@ -457,7 +346,6 @@ extern "C"
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
 #if 0                           // Not used.
   inkapi void INKIPLookupDestroy(INKIPLookup iplu);
@@ -466,7 +354,6 @@ extern "C"
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
 #if 0                           // Not used.
   inkapi INKIPLookupState INKIPLookupStateCreate();
@@ -475,32 +362,19 @@ extern "C"
 /****************************************************************************
  *  ??
  *  Return
- *  contact: DI
  ****************************************************************************/
 #if 0                           // Not used.
   inkapi void INKIPLookupStateDestroy(INKIPLookupState iplus);
 #endif
 
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi void INKIPLookupNewEntry(INKIPLookup iplu, INKU32 addr1, INKU32 addr2, void *data);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKIPLookupMatchFirst(INKIPLookup iplu, INKU32 addr, INKIPLookupState iplus, void **data);
-
-/****************************************************************************
- *  contact: DI
- ****************************************************************************/
   inkapi int INKIPLookupMatchNext(INKIPLookup iplu, INKIPLookupState iplus, void **data);
 
 /* ===== Configuration Setting ===== */
 
 /****************************************************************************
  *  Set a records.config integer variable
- *  contact: DI
  ****************************************************************************/
   inkapi int INKMgmtConfigIntSet(const char *var_name, INKMgmtInt value);
 

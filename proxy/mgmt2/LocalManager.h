@@ -157,8 +157,6 @@ public:
   char *proxy_options;
   char *env_prep;
 
-  int difp_listen_mode;         /* DI Footprint Listen Mode */
-
 #ifndef _WIN32
   int process_server_sockfd;
   volatile int watched_process_fd;

@@ -38,8 +38,6 @@
 #include "HttpNcaClient.h"
 #endif
 
-// DI code changes
-int listen_mode;
 HttpPortEntry *http_port_attr_array = NULL;
 HttpOtherPortEntry *http_other_port_array = NULL;
 
@@ -244,8 +242,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   unsigned long sock_option_flag_in = 0;
   char *attr_string = 0;
   static HttpPortTypes attr = SERVER_PORT_DEFAULT;
-  // Should not listen on port 8080 if the listen_mode==2
-  bool main_listen = (listen_mode == 0) || (listen_mode == 1);
+
   if (!called_once) {
     // function can be called several times : do memory allocation once
     REC_ReadConfigStringAlloc(attr_string, "proxy.config.http.server_port_attr");
@@ -280,28 +277,26 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
       http_other_port_array = parse_http_server_other_ports();
     }
   }
-  if (main_listen) {
-    if (!http_port_attr_array) {
-      netProcessor.main_accept(NEW(new HttpAccept(attr)), fd, port, NULL, NULL, false,
-                               sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
+  if (!http_port_attr_array) {
+    netProcessor.main_accept(NEW(new HttpAccept(attr)), fd, port, NULL, NULL, false,
+                             sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
 
-      if (http_other_port_array) {
-        for (int i = 0; http_other_port_array[i].port != -1; i++) {
-          HttpOtherPortEntry & e = http_other_port_array[i];
-          if ((e.port<1) || (e.port> 65535))
-            Warning("additional port out of range ignored: %d", e.port);
-          else
-            netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, e.port, NULL, NULL, false,
-                                     sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
-        }
-      }
-    } else {
-      for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
-        HttpPortEntry & e = http_port_attr_array[i];
-        if (!e.fd) {
-          netProcessor.main_accept(NEW(new HttpAccept(attr)), fd, port, NULL, NULL, false,
+    if (http_other_port_array) {
+      for (int i = 0; http_other_port_array[i].port != -1; i++) {
+        HttpOtherPortEntry & e = http_other_port_array[i];
+        if ((e.port<1) || (e.port> 65535))
+          Warning("additional port out of range ignored: %d", e.port);
+        else
+          netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, e.port, NULL, NULL, false,
                                    sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
-        }
+      }
+    }
+  } else {
+    for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
+      HttpPortEntry & e = http_port_attr_array[i];
+      if (!e.fd) {
+        netProcessor.main_accept(NEW(new HttpAccept(attr)), fd, port, NULL, NULL, false,
+                                 sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
       }
     }
   }
