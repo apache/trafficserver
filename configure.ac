@@ -511,8 +511,6 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   sys/param.h \
                   ], [], [])
 
-sinclude(build-aux/apr_common.m4)
-sinclude(build-aux/apr_network.m4)
 APR_CHECK_GETHOSTBYNAME_R_STYLE
 
 #

@@ -25,6 +25,7 @@ plugins to build large scale web applications.
   |-- iocore/ ............ IO core
   |-- libinktomi++/ ...... base library
   |-- librecords/ ........ library for config files
+  |-- m4/ ................ custom macros for configure.ac
   |-- proxy/ ............. HTTP proxy logic
   |-- test/ .............. functional tests
   |-- .indent.pro ........ indent profile for coding style
