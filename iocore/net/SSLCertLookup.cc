@@ -197,7 +197,12 @@ int
 SSLCertLookup::addInfoToHash(char *strAddr, char *cert, char *serverPrivateKey)
 {
 
-  SSL_METHOD *meth = SSLv23_server_method();
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD now
+  const SSL_METHOD *meth = NULL;
+#else
+  SSL_METHOD *meth = NULL;
+#endif
+  meth = SSLv23_server_method();
   SSL_CTX *ctx = SSL_CTX_new(meth);
   if (!ctx) {
     ssl_NetProcessor.logSSLError("Cannot create new server contex.");

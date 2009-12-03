@@ -224,7 +224,11 @@ SSLNetProcessor::logSSLError(const char *errStr, int critical)
 int
 SSLNetProcessor::initSSL(SslConfigParams * param)
 {
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD now
+  const SSL_METHOD *meth = NULL;
+#else
   SSL_METHOD *meth = NULL;
+#endif
   char *serverKeyPtr = NULL;
 
   int randBuff[64];
@@ -500,7 +504,11 @@ SSLNetProcessor::initSSLServerCTX(SslConfigParams * param, SSL_CTX * lCtx,
 int
 SSLNetProcessor::initSSLClient(SslConfigParams * param)
 {
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD now
+  const SSL_METHOD *meth = NULL;
+#else
   SSL_METHOD *meth = NULL;
+#endif
   int client_verify_server;
   char *clientKeyPtr = NULL;
 
