@@ -976,7 +976,6 @@ Part::periodic_scan()
 void
 Part::agg_wrap()
 {
-  // wrap -- FIXME: make these atomic
   header->write_pos = start;
   header->phase = !header->phase;
 

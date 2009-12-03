@@ -201,7 +201,7 @@ struct Part:public Continuation
   Dir *segment[DIR_SEGMENTS];
   MetaData *metadata;
   ink_off_t recover_pos;
-  ink_off_t prev_recover_pos;   //Bug fixed by YTS Team, yamsat BZ59274
+  ink_off_t prev_recover_pos;
   ink_off_t scan_pos;
   ink_off_t metadata_pos;
   ink_off_t skip;               // start of headers

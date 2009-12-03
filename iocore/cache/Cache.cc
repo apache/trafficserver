@@ -87,34 +87,23 @@ static volatile int initialize_disk = 0;
 Cache *caches[1 << NumCacheFragTypes] = { 0 };
 CacheSync *cacheDirSync = 0;
 Store theCacheStore;
-volatile int
-  CacheProcessor::initialized = CACHE_INITIALIZING;
-volatile inku32
-  CacheProcessor::cache_ready = 0;
-volatile int
-  CacheProcessor::start_done = 0;
-int
-  CacheProcessor::clear = 0;
-int
-  CacheProcessor::fix = 0;
-int
-  CacheProcessor::start_internal_flags = 0;
-int
-  CacheProcessor::auto_clear_flag = 0;
-CacheProcessor
-  cacheProcessor;
-Part **
-  gpart = NULL;
-volatile int
-  gnpart = 0;
+volatile int CacheProcessor::initialized = CACHE_INITIALIZING;
+volatile inku32 CacheProcessor::cache_ready = 0;
+volatile int CacheProcessor::start_done = 0;
+int CacheProcessor::clear = 0;
+int CacheProcessor::fix = 0;
+int CacheProcessor::start_internal_flags = 0;
+int CacheProcessor::auto_clear_flag = 0;
+CacheProcessor cacheProcessor;
+Part ** gpart = NULL;
+volatile int gnpart = 0;
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<NewCacheVC> newCacheVConnectionAllocator("newCacheVConnection");
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
 
-int
-  CacheVC::size_to_init = -1;
+int CacheVC::size_to_init = -1;
 
 CacheKey zero_key(0, 0);
 
@@ -965,7 +954,6 @@ Part::clear_dir()
 int
 Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
 {
-
   dir_skip = ROUND_TO_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
   path = strdup(s);
   const size_t hash_id_size = strlen(s) + 32;
@@ -978,8 +966,9 @@ Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
   ink_assert(len <= MAX_PART_SIZE);
   skip = dir_skip;
   int i;
+  prev_recover_pos = 0;
+
   // successive approximation, directory/meta data eats up some storage
-  prev_recover_pos = 0;         //Bug fixed by YTS Team, yamsat BZ 59274
   start = dir_skip;
   part_init_data(this);
   part_init_data(this);
@@ -1162,6 +1151,10 @@ Part::handle_recover_from_data(int event, void *data)
     last_sync_serial = 0;
     last_write_serial = 0;
     recover_pos = header->last_write_pos;
+    if (recover_pos >= skip + len) {
+      recover_wrapped = 1;
+      recover_pos = start;
+    }
 #if defined(_WIN32)
     io.aiocb.aio_buf = (char *) malloc(MAX_RECOVER_BYTES);
 #else
@@ -1317,20 +1310,19 @@ Part::handle_recover_from_data(int event, void *data)
         io.aiocb.aio_nbytes = (skip + len) - recover_pos;
     }
   }
-  if (recover_pos == prev_recover_pos)  //Bug fixed by YTS Team, yamsat BZ59274
-    goto Lclear;                //Bug fixed by YTS Team, yamsat BZ59274
-  prev_recover_pos = recover_pos;       //Bug fixed by YTS Team, yamsat BZ59274
+  if (recover_pos == prev_recover_pos) // this should never happen, but if it does break the loop
+    goto Lclear;
+  prev_recover_pos = recover_pos;
   io.aiocb.aio_offset = recover_pos;
   ink_assert(ink_aio_read(&io));
   return EVENT_CONT;
 
 Ldone:{
-    /* if we come back to the starting position, then 
-       we don't have to recover anything??? */
+    /* if we come back to the starting position, then we don't have to recover anything */
     if (recover_pos == header->write_pos && recover_wrapped) {
       SET_HANDLER(&Part::handle_recover_write_dir);
       if (is_debug_tag_set("cache_init"))
-        Note("recovery wrapped around. Nothing to Clear\n");
+        Note("recovery wrapped around. nothing to clear\n");
       return handle_recover_write_dir(EVENT_IMMEDIATE, 0);
     }
 
