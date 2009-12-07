@@ -1,0 +1,7 @@
+example/README.internal
+example/blacklist-1/blacklist.txt
+example/thread-pool/TESTPLAN.txt
+example/thread-pool/test/SDKTest/SDKtest_server.config
+example/thread-pool/test/SynTest/system.cfg
+example/thread-pool/test/SynTest/tests_psi.cfg
+example/thread-pool/test/SynTest/Tests/PsiPlugin/
