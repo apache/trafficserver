@@ -66,7 +66,6 @@ int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 char management_directory[256] = DEFAULT_MANAGEMENT_DIRECTORY;
 char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
 int use_accept_thread = 1;
-int last_net_mode = 1;
 int num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
 int num_of_cache_threads = 1;
 Diags *diags;

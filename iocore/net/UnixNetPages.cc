@@ -180,12 +180,7 @@ struct ShowNet:ShowCont
       //write_buck[i]++;
     }
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Connections", connections));
-#ifdef BSD_TCP
-    CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n",
-                    "Last Poll Size", ethread->pollDescriptor->nfds_bsd + ethread->pollDescriptor->nfds_sol));
-#else
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Size", pollDescriptor->nfds));
-#endif
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Ready", pollDescriptor->result));
     CHECK_SHOW(show("</table>\n"));
     CHECK_SHOW(show("<table border=1>\n"));

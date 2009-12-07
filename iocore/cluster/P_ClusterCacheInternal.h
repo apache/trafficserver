@@ -124,10 +124,6 @@ struct CacheContinuation:public Continuation
   // remove_and_delete() specific data
   bool use_deferred_callback;
 
-  // link() return data
-  int link_lerror;
-  Action *local_link_action;
-
   // open_read/write data
 
   time_t pin_in_cache;
@@ -302,8 +298,6 @@ CacheContinuation():
     request_timeout(0),
     expect_cache_callback(true),
     use_deferred_callback(0),
-    link_lerror(0),
-    local_link_action(0),
     pin_in_cache(0),
     rw_buf_msg_len(0),
     read_cluster_vc(0),

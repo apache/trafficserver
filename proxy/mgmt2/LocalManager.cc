@@ -40,10 +40,6 @@
 #include "WebReconfig.h"
 #include "MgmtSocket.h"
 
-#ifdef BSD_TCP
-#include "inkio.h"
-#endif
-
 int bindProxyPort(int, in_addr_t, int);
 
 bool
@@ -1293,11 +1289,7 @@ LocalManager::listenForProxy()
       }
 
       if (*proxy_server_port_attributes[i] != 'D') {
-#ifdef BSD_TCP
-        if ((safe_listen(proxy_server_fd[i], 1024)) < 0) {
-#else
         if ((listen(proxy_server_fd[i], 1024)) < 0) {
-#endif
           mgmt_fatal(stderr, "[LocalManager::listenForProxy] Unable to listen on socket: %d\n", proxy_server_port[i]);
         }
         mgmt_log(stderr, "[LocalManager::listenForProxy] Listening on port: %d\n", proxy_server_port[i]);
@@ -1371,39 +1363,21 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
   }
 
   /* Setup reliable connection, for large config changes */
-#ifdef BSD_TCP
-  if ((proxy_port_fd = ink_socket(AF_INET, type, 0)) < 0) {
-#else
   if ((proxy_port_fd = socket(AF_INET, type, 0)) < 0) {
-#endif
     mgmt_elog(stderr, "[bindProxyPort] Unable to create socket : %s\n", strerror(errno));
     _exit(1);
   }
-#ifdef BSD_TCP
-  if (safe_setsockopt(proxy_port_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
-#else
   if (setsockopt(proxy_port_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
-#endif
     mgmt_elog(stderr, "[bindProxyPort] Unable to set socket options: %d : %s\n", proxy_port, strerror(errno));
     _exit(1);
   }
-#if !defined(BSD_TCP)
-  if (fcntl(proxy_port_fd, F_SETFD, 0) < 0) {
-    mgmt_elog(stderr, "[bindProxyPort] Unable to set fcntl: %d : %s\n", proxy_port, strerror(errno));
-    _exit(1);
-  }
-#endif
 
   memset(&proxy_addr, 0, sizeof(proxy_addr));
   proxy_addr.sin_family = AF_INET;
   proxy_addr.sin_addr.s_addr = incoming_ip_to_bind;
   proxy_addr.sin_port = htons(proxy_port);
 
-#ifdef BSD_TCP
-  if ((safe_bind(proxy_port_fd, (struct sockaddr *) &proxy_addr, sizeof(proxy_addr))) < 0) {
-#else
   if ((bind(proxy_port_fd, (struct sockaddr *) &proxy_addr, sizeof(proxy_addr))) < 0) {
-#endif
     mgmt_elog(stderr, "[bindProxyPort] Unable to bind socket: %d : %s\n", proxy_port, strerror(errno));
     _exit(1);
   }
@@ -1419,7 +1393,6 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
   return proxy_port_fd;
 
 }                               /* End bindProxyPort */
-
 
 void
 LocalManager::signalAlarm(int alarm_id, char *desc, char *ip)

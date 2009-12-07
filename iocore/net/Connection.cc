@@ -118,11 +118,7 @@ Connection::close()
 
 
 int
-Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * opt, const int socketFd
-#ifdef __INKIO
-                         , bool use_inkio
-#endif
-  )
+Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * opt, const int socketFd)
 {
   inku32 *z;
   ink_assert(fd == NO_FD);
@@ -194,16 +190,7 @@ Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * o
       Debug("socket", "::fast_connect: setsockopt() SO_KEEPALIVE on socket");
     }
   }
-#ifdef __INKIO
-  if (use_inkio) {
-    inkio_queue qd = this_ethread()->kernel_q;
-    res = inkio_connect(qd, fd, 0, 0, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-  } else {
-    res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-  }
-#else
   res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-#endif
 
   if (res < 0 && errno != EINPROGRESS) {
     goto Lerror;

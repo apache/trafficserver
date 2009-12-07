@@ -38,17 +38,10 @@ struct AIOCallback;
 
 EThread::EThread()
 :generator(time(NULL) ^ (long) this),
-logConfig(NULL),
-logEventForwarder(NULL),
 ethreads_to_be_signalled(NULL),
 n_ethreads_to_be_signalled(0),
-total_sleep_time(0),
-accept_event_count(0),
 main_accept_index(-1),
-id(NO_ETHREAD_ID), ethread_id(NO_ETHREAD_ID), event_types(0), events_processed(0), tt(REGULAR), eventsem(NULL)
-#ifdef TRANSACTION_ON_A_THREAD
-  , l1_hash(NULL)
-#endif
+id(NO_ETHREAD_ID), event_types(0), tt(REGULAR), eventsem(NULL)
 {
   memset(thread_private, 0, PER_THREAD_DATA);
 }
@@ -56,49 +49,25 @@ id(NO_ETHREAD_ID), ethread_id(NO_ETHREAD_ID), event_types(0), events_processed(0
 EThread::EThread(ThreadType att, int anid)
   :
 generator(time(NULL) ^ (long) this),
-logConfig(NULL),
-logEventForwarder(NULL),
 ethreads_to_be_signalled(NULL),
 n_ethreads_to_be_signalled(0),
-total_sleep_time(0),
-accept_event_count(0),
 main_accept_index(-1),
 id(anid),
-ethread_id(NO_ETHREAD_ID),
 event_types(0),
-events_processed(0),
 tt(att),
 eventsem(NULL)
-#ifdef TRANSACTION_ON_A_THREAD
-,
-l1_hash(NULL)
-#endif
 {
-#ifdef TRANSACTION_ON_A_THREAD
-  l1_hash = new SessionBucket[HSM_LEVEL1_BUCKETS];
-  for (int i = 0; i < HSM_LEVEL1_BUCKETS; i++)
-    l1_hash[i].mutex = mutex;
-#endif
-
   ethreads_to_be_signalled = (EThread **) xmalloc(MAX_EVENT_THREADS * sizeof(EThread *));
   memset((char *) ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
-
   memset(thread_private, 0, PER_THREAD_DATA);
 }
 
 EThread::EThread(ThreadType att, Event * e, ink_sem * sem)
 :generator(time(NULL) ^ (long) this),
-logConfig(NULL),
-logEventForwarder(NULL),
 ethreads_to_be_signalled(NULL),
 n_ethreads_to_be_signalled(0),
-total_sleep_time(0),
-accept_event_count(0),
 main_accept_index(-1),
-id(NO_ETHREAD_ID), ethread_id(NO_ETHREAD_ID), event_types(0), events_processed(0), tt(att), oneevent(e), eventsem(sem)
-#ifdef TRANSACTION_ON_A_THREAD
-  , l1_hash(NULL)
-#endif
+id(NO_ETHREAD_ID), event_types(0), tt(att), oneevent(e), eventsem(sem)
 {
   ink_assert(att == DEDICATED);
   memset(thread_private, 0, PER_THREAD_DATA);
@@ -113,10 +82,6 @@ EThread::~EThread()
     flush_signals(this);
   if (ethreads_to_be_signalled)
     xfree(ethreads_to_be_signalled);
-#ifdef TRANSACTION_ON_A_THREAD
-  if (l1_hash)
-    delete[]l1_hash;
-#endif
 }
 
 bool
@@ -293,7 +258,6 @@ EThread::execute()
             next_time = cur_time + THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND;
             sleep_time = THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND;
           }
-          total_sleep_time += sleep_time;
           // dequeue all the external events and put them in a local
           // queue. If there are no external events available, do a
           // cond_timedwait.

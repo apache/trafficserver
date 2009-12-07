@@ -56,10 +56,6 @@ int read_ready(int fd);
 char fd_read_char(int fd);
 int fd_read_line(int fd, char *s, int len);
 
-#ifdef BSD_TCP
-int ink_socket(int, int, int);
-#endif
-
 int ink_close_socket(int s);
 int ink_write_socket(int s, const char *buffer, int length);
 int ink_read_socket(int s, char *buffer, int length);

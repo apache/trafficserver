@@ -79,7 +79,7 @@ chunked_reenable(HttpTunnelProducer * p, HttpTunnel * tunnel)
         // INKqa05737 - since we explictly disabled the vc by setting
         //  nbytes = ndone when going into flow control, we need
         //  set nbytes up again here
-        p->read_vio->set_nbytes(INT_MAX);
+        p->read_vio->nbytes = INT_MAX;
         p->read_vio->reenable();
       }
     } else {
@@ -1003,7 +1003,7 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer * p)
     //   we will move the server to a keep alive state.  Since
     //   we are prohibited from changing the buffer, we need
     //   make sure the iocore doesn't schedule a read
-    p->read_vio->set_nbytes(p->read_vio->ndone);
+    p->read_vio->nbytes = p->read_vio->ndone;
     return VC_EVENT_READ_READY;
   }
 

@@ -39,12 +39,6 @@
 
 
 //
-// Compilation Options
-//
-//#define TRANSACTION_ON_A_THREAD
-
-
-//
 // Constants
 //
 #define DOMAIN_NAME_MAX       255
@@ -83,9 +77,6 @@ inkcoreapi extern int qt_accept_file_descriptor;
 inkcoreapi extern int CacheClusteringEnabled;
 
 extern int use_mp;
-
-// Debugging
-extern int last_net_mode;
 
 // Debugging Configuration
 extern char debug_host[DOMAIN_NAME_MAX + 1];

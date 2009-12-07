@@ -62,19 +62,6 @@ NetProcessor::accept(Continuation * cont,
   (void) accept_only;           // NT only
   (void) bound_sockaddr;        // NT only
   (void) bound_sockaddr_size;   // NT only
-#ifdef __INKIO
-  Debug("net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-        port, recv_bufsize, send_bufsize, sockopt_flags);
-  return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD,
-                                                      port,
-                                                      bound_sockaddr,
-                                                      bound_sockaddr_size,
-                                                      frequent_accept,
-                                                      inkio_net_accept,
-                                                      recv_bufsize, send_bufsize, sockopt_flags,
-                                                      accept_ip, callback_on_open, etype);
-
-#else
   Debug("net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
         port, recv_bufsize, send_bufsize, sockopt_flags);
   return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, port,
@@ -84,8 +71,6 @@ NetProcessor::accept(Continuation * cont,
                                                       net_accept,
                                                       recv_bufsize, send_bufsize, sockopt_flags,
                                                       accept_ip, callback_on_open, etype);
-
-#endif
 }
 
 Action *
@@ -96,21 +81,6 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd, int port,
                           EventType etype, bool callback_on_open)
 {
   (void) accept_only;           // NT only
-#ifdef __INKIO
-  Debug("net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-        port, recv_bufsize, send_bufsize, sockopt_flags);
-
-  return ((UnixNetProcessor *) this)->accept_internal(cont, fd, port,
-                                                      bound_sockaddr,
-                                                      bound_sockaddr_size,
-                                                      true,
-                                                      inkio_net_accept,
-                                                      recv_bufsize,
-                                                      send_bufsize,
-                                                      sockopt_flags,
-                                                      ((UnixNetProcessor *) this)->incoming_ip_to_bind_saddr,
-                                                      callback_on_open, etype);
-#else
   Debug("net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
         port, recv_bufsize, send_bufsize, sockopt_flags);
   return ((UnixNetProcessor *) this)->accept_internal(cont, fd, port,
@@ -123,8 +93,6 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd, int port,
                                                       sockopt_flags,
                                                       ((UnixNetProcessor *) this)->incoming_ip_to_bind_saddr,
                                                       callback_on_open, etype);
-
-#endif
 }
 
 
@@ -257,7 +225,6 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
     Action *result = &vc->action_;
 #ifndef INK_NO_SOCKS
     if (using_socks) {
-
       Debug("Socks", "Using Socks ip: %u.%u.%u.%u:%d\n", PRINT_IP(ip), port);
       socksEntry = socksAllocator.alloc();
       socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
@@ -283,11 +250,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
     if (t->is_event_type(opt->etype)) {
       MUTEX_TRY_LOCK(lock, cont->mutex, t);
       if (lock) {
-#ifdef __INKIO
-        MUTEX_TRY_LOCK(lock2, t->netQueueMonitor->mutex, t);
-#else
         MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
-#endif
         if (lock2) {
           int ret;
           ret = vc->connectUp(t);
@@ -599,12 +562,8 @@ UnixNetProcessor::start(int)
  * Stat pages
  */
 #ifdef NON_MODULAR
-#ifdef __INKIO
-  statPagesManager.register_http("net", register_InkioShowNet);
-#else
   extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
   statPagesManager.register_http("net", register_ShowNet);
-#endif
 #endif
   return 1;
 }
@@ -617,21 +576,13 @@ UnixNetProcessor::start(int)
 UnixNetVConnection *
 UnixNetProcessor::allocateThread(EThread * t)
 {
-#ifdef __INKIO
-  return ((UnixNetVConnection *) THREAD_ALLOC(inkioNetVCAllocator, t));
-#else
   return ((UnixNetVConnection *) THREAD_ALLOC(netVCAllocator, t));
-#endif
 }
 
 void
 UnixNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
 {
-#ifdef __INKIO
-  THREAD_FREE((InkioNetVConnection *) vc, inkioNetVCAllocator, t);
-#else
   THREAD_FREE(vc, netVCAllocator, t);
-#endif
 }
 
 
@@ -640,11 +591,7 @@ UnixNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
 NetAccept *
 UnixNetProcessor::createNetAccept()
 {
-#ifdef __INKIO
-  return (NEW(new InkioNetAccept));
-#else
   return (NEW(new NetAccept));
-#endif
 }
 
 struct socks_conf_struct *

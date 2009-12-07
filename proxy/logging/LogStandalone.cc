@@ -59,7 +59,6 @@ int nntp_accept_file_descriptor = -1;
 int ftp_accept_file_descriptor = -1;
 int auto_clear_hostdb_flag = 0;
 char proxy_name[256] = "unknown";
-int last_net_mode = 1;
 
 char system_config_directory[PATH_NAME_MAX + 1] = "conf/yts";
 char management_directory[256] = "conf/yts";

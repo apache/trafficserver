@@ -138,7 +138,6 @@ int stack_trace_flag = DEFAULT_STACK_TRACE_FLAG;
 int number_of_processors = ink_number_of_processors();
 int num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
 int num_of_cluster_threads = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
-//int num_of_auth_threads = 1;
 int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 int num_of_ssl_threads = DEFAULT_NUMBER_OF_SSL_THREADS;
 extern int use_accept_thread;
@@ -157,7 +156,6 @@ int command_flag = DEFAULT_COMMAND_FLAG;
 char regression_test[1024] = "";
 #endif
 int auto_clear_hostdb_flag = 0;
-//int auto_clear_authdb_flag = 0;
 int lock_process = DEFAULT_LOCK_PROCESS;
 extern int fds_limit;
 extern int cluster_port_number;
@@ -185,7 +183,6 @@ inkcoreapi Diags *diags = NULL;
 inkcoreapi DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
 int diags_init = 0;             // used by process manager
-int last_net_mode = 1;
 
 char vingid_flag[255] = "";
 
@@ -1546,10 +1543,6 @@ main(int argc, char **argv)
   NOWARN_UNUSED(argc);
 
   mcheck_pedantic(NULL);
-
-#ifdef BSD_TCP
-  inkio_initialize();
-#endif
 
 #ifdef USE_NCA
   NCA_handlers = ink_number_of_processors();

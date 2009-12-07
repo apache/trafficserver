@@ -265,10 +265,6 @@ LogCollationClientSM::client_auth(int event, VIO * vio)
   case VC_EVENT_WRITE_COMPLETE:
     Debug("log2-coll", "[%d]client::client_auth - WRITE_COMPLETE", m_id);
 
-    // stats
-    // we now take care of updating the stats in Log::flush_thread_main
-    //SUM_DYN_STAT (log2_stat_bytes_sent_to_network_stat, vio->get_ndone());
-
     Note("[log-coll] host up [%d.%d.%d.%d:%d]",
          ((unsigned char *) (&(m_log_host->m_ip)))[0],
          ((unsigned char *) (&(m_log_host->m_ip)))[1],
@@ -712,10 +708,6 @@ LogCollationClientSM::client_send(int event, VIO * vio)
 
   case VC_EVENT_WRITE_COMPLETE:
     Debug("log2-coll", "[%d]client::client_send - WRITE_COMPLETE", m_id);
-
-    // stats
-    // we now take care of updating the stats in Log::flush_thread_main
-    //SUM_DYN_STAT (log2_stat_bytes_sent_to_network_stat, vio->get_ndone());
 
     ink_assert(m_buffer_in_iocore != NULL);
 #if defined(LOG_BUFFER_TRACKING)

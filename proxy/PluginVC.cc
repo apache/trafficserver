@@ -236,7 +236,6 @@ PluginVC::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
   read_state.vio.mutex = c->mutex;
   read_state.vio._cont = c;
   read_state.vio.nbytes = nbytes;
-  read_state.vio.data = 0;
   read_state.vio.ndone = 0;
   read_state.vio.vc_server = (VConnection *) this;
   read_state.vio.op = VIO::READ;
@@ -270,7 +269,6 @@ PluginVC::do_io_write(Continuation * c, int nbytes, IOBufferReader * abuffer, bo
   write_state.vio.mutex = c->mutex;
   write_state.vio._cont = c;
   write_state.vio.nbytes = nbytes;
-  write_state.vio.data = 0;
   write_state.vio.ndone = 0;
   write_state.vio.vc_server = (VConnection *) this;
   write_state.vio.op = VIO::WRITE;
@@ -540,7 +538,7 @@ PluginVC::process_write_side(bool other_side_call)
     return;
   }
 
-  write_state.vio.add_ndone(added);
+  write_state.vio.ndone += added;
 
   Debug("pvc", "[%u] %s: process_write_side; added %d", PVC_ID, PVC_TYPE, added);
 
@@ -650,7 +648,7 @@ PluginVC::process_read_side(bool other_side_call)
     return;
   }
 
-  read_state.vio.add_ndone(added);
+  read_state.vio.ndone += added;
 
   Debug("pvc", "[%u] %s: process_read_side; added %d", PVC_ID, PVC_TYPE, added);
 

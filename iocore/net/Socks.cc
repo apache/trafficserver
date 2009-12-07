@@ -342,7 +342,7 @@ SocksEntry::mainEvent(int event, void *data)
         }
 
         if (vio->ndone >= reply_len) {
-          vio->set_nbytes(vio->ndone);
+          vio->nbytes = vio->ndone;
           ret = EVENT_DONE;
         }
       }

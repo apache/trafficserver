@@ -33,7 +33,6 @@ _cont(NULL),
 nbytes(0),
 ndone(0),
 op(aop),
-data(0),
 buffer(),
 vc_server(0),
 mutex(0)
@@ -53,7 +52,6 @@ _cont(0),
 nbytes(0),
 ndone(0),
 op(VIO::NONE),
-data(0),
 buffer(),
 vc_server(0),
 mutex(0)
@@ -61,80 +59,10 @@ mutex(0)
   return;
 }
 
-INK_INLINE void
-VIO::set_nbytes(int anbytes)
-{
-  nbytes = anbytes;
-}
-INK_INLINE void
-VIO::add_nbytes(int anbytes)
-{
-  nbytes += anbytes;
-}
-INK_INLINE void
-VIO::set_nbytes_internal(int anbytes)
-{
-  nbytes = anbytes;
-}
-INK_INLINE void
-VIO::add_nbytes_internal(int anbytes)
-{
-  nbytes += anbytes;
-}
-INK_INLINE void
-VIO::set_ndone(int andone)
-{
-  ndone = andone;
-}
-INK_INLINE void
-VIO::add_ndone(int andone)
-{
-  ndone += andone;
-}
-INK_INLINE void
-VIO::set_data(int adata)
-{
-  data = adata;
-}
-INK_INLINE void
-VIO::set_vc_server(VConnection * avc_server)
-{
-  vc_server = avc_server;
-}
 INK_INLINE Continuation *
 VIO::get_continuation()
 {
   return _cont;
-}
-INK_INLINE int
-VIO::get_nbytes()
-{
-  return nbytes;
-}
-INK_INLINE int
-VIO::get_ndone()
-{
-  return ndone;
-}
-INK_INLINE int
-VIO::get_data()
-{
-  return data;
-}
-INK_INLINE void
-VIO::set_op(int aop)
-{
-  op = aop;
-}
-INK_INLINE int
-VIO::get_op()
-{
-  return op;
-}
-INK_INLINE ProxyMutex *
-VIO::get_mutex()
-{
-  return (mutex);
 }
 INK_INLINE void
 VIO::set_writer(MIOBuffer * writer)
@@ -165,19 +93,9 @@ INK_INLINE void
 VIO::done()
 {
   if (buffer.reader())
-    set_nbytes(ndone + buffer.reader()->read_avail());
+    nbytes = ndone + buffer.reader()->read_avail();
   else
-    set_nbytes(ndone);
-}
-INK_INLINE int
-VIO::get_ntodo()
-{
-  return (nbytes - ndone);
-}
-INK_INLINE VConnection *
-VIO::get_vc_server()
-{
-  return (vc_server);
+    nbytes = ndone;
 }
 
 /////////////////////////////////////////////////////////////

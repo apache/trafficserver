@@ -125,16 +125,6 @@ public:
   volatile int cancelled;
 
   /**
-    Stores platform-specific errors. (internal use).
-
-    This field stores platform specific errors and it is provided
-    as a convenience for classes derived from Action. It is used
-    internally and it is not meant to be accessed.
-
-  */
-  int lerror;
-
-  /**
     Cancels the asynchronous operation represented by this action.
 
     This method is called by state machines willing to cancel an
@@ -195,7 +185,7 @@ public:
     Continuation.
 
   */
-Action():continuation(NULL), cancelled(false), lerror(0) {
+Action():continuation(NULL), cancelled(false) {
   }
 
 #if defined(__GNUC__)

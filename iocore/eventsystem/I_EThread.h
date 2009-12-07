@@ -278,10 +278,6 @@ public:
   ProxyAllocator ioDataAllocator;
   ProxyAllocator ioBlockAllocator;
   ProxyAllocator ioBufAllocator[9];
-#ifdef TRANSACTION_ON_A_THREAD
-  SessionBucket *l1_hash;
-#endif
-  // ink_unprot_global_stat_t global_dyn_stats[MAX_DYN_STATS-DYN_STAT_START];
 
 private:
 
@@ -313,12 +309,8 @@ public:
   /** Private Data for the Disk Processor. */
   DiskHandler *diskHandler;
 
-  /** Private Data for Logging system. */
-  LogConfiguration *logConfig;
-  LogEventForwarder *logEventForwarder;
-
   /** Private Data for AIO. */
-    Queue<Continuation> aio_ops;
+  Queue<Continuation> aio_ops;
 
   ProtectedQueue EventQueueExternal;
   PriorityEventQueue EventQueue;
@@ -326,14 +318,10 @@ public:
   EThread **ethreads_to_be_signalled;
   int n_ethreads_to_be_signalled;
 
-  ink_hrtime total_sleep_time;
   Event *accept_event[MAX_ACCEPT_EVENTS];
-  int accept_event_count;
   int main_accept_index;
 
   int id;
-  int ethread_id;
-
   unsigned int event_types;
   bool is_event_type(EventType et);
   void set_event_type(EventType et);
@@ -343,8 +331,6 @@ public:
   void execute();
   void process_event(Event * e, int calling_code);
   void free_event(Event * e);
-
-  long events_processed;
 
   ThreadType tt;
   Event *oneevent;              // For dedicated event thread

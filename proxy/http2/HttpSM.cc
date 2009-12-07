@@ -797,7 +797,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     Debug("http", "[%lld] error parsing client request header", sm_id);
 
     // Disable further I/O on the client
-    ua_entry->read_vio->set_nbytes(ua_entry->read_vio->ndone);
+    ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
 
     call_transact_and_set_next_state(HttpTransact::BadRequest);
     break;
@@ -809,7 +809,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       set_ua_abort(HttpTransact::ABORTED, event);
 
       // Disable further I/O on the client
-      ua_entry->read_vio->set_nbytes(ua_entry->read_vio->ndone);
+      ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
 
       call_transact_and_set_next_state(HttpTransact::BadRequest);
       break;
@@ -832,7 +832,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       //  be body that we are tunneling POST/PUT/CONNECT or
       //  extension methods and we can't issue another
       //  another IO later for the body with a different buffer
-      ua_entry->read_vio->set_nbytes(ua_entry->read_vio->ndone);
+      ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     }
     //YTS Team, yamsat Plugin
     //Setting enable_redirection according to HttpConfig master
@@ -941,7 +941,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       }
       // Disable further I/O on the client
       if (ua_entry->read_vio) {
-        ua_entry->read_vio->set_nbytes(ua_entry->read_vio->ndone);
+        ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
       }
       mark_server_down_on_client_abort();
       milestones.ua_close = ink_get_hrtime();
@@ -1082,7 +1082,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
 
   if (state != PARSE_CONT) {
     // Disable further IO
-    ua_entry->read_vio->set_nbytes(ua_entry->read_vio->ndone);
+    ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
     milestones.server_read_header_done = ink_get_hrtime();
   }
@@ -1951,7 +1951,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
   if (state != PARSE_CONT) {
     // Disable further IO
-    server_entry->read_vio->set_nbytes(server_entry->read_vio->ndone);
+    server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
     milestones.server_read_header_done = ink_get_hrtime();
   }

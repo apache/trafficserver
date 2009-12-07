@@ -126,11 +126,7 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     vc->ip = vc->con.sa.sin_addr.s_addr;
     vc->port = ntohs(vc->con.sa.sin_port);
     vc->accept_port = ntohs(na->server.sa.sin_port);
-#ifdef TRANSACTION_ON_A_THREAD
-    vc->mutex = e->ethread->mutex;
-#else
     vc->mutex = new_ProxyMutex();
-#endif
     vc->action_ = *na->action_;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
 
@@ -222,21 +218,13 @@ net_accept_main_blocking(NetAccept * na, Event * e, bool blockable)
 UnixNetVConnection *
 NetAccept::allocateThread(EThread * t)
 {
-#ifdef __INKIO
-  return ((UnixNetVConnection *) THREAD_ALLOC(inkioNetVCAllocator, t));
-#else
   return ((UnixNetVConnection *) THREAD_ALLOC(netVCAllocator, t));
-#endif
 }
 
 void
 NetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
 {
-#ifdef __INKIO
-  THREAD_FREE((InkioNetVConnection *) vc, inkioNetVCAllocator, t);
-#else
   THREAD_FREE(vc, netVCAllocator, t);
-#endif
 }
 
 
@@ -432,20 +420,9 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
     vc->ip = vc->con.sa.sin_addr.s_addr;
     vc->port = ntohs(vc->con.sa.sin_port);
     vc->accept_port = ntohs(server.sa.sin_port);
-#ifdef TRANSACTION_ON_A_THREAD
-    vc->mutex = e->ethread->mutex;
-#else
     vc->mutex = new_ProxyMutex();
-#endif
     vc->action_ = *action_;
-#ifdef INKIO_NET_DBG
-    ((InkioNetVConnection *) vc)->how_created = 1;      /* accept */
-#endif
-#ifdef __INKIO
-    SET_CONTINUATION_HANDLER(vc, &InkioNetVConnection::acceptEvent);
-#else
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
-#endif
     eventProcessor.schedule_imm(vc, getEtype());
   } while (loop);
 
@@ -607,11 +584,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->ip = vc->con.sa.sin_addr.s_addr;
     vc->port = ntohs(vc->con.sa.sin_port);
     vc->accept_port = ntohs(server.sa.sin_port);
-#ifdef TRANSACTION_ON_A_THREAD
-    vc->mutex = e->ethread->mutex;
-#else
     vc->mutex = new_ProxyMutex();
-#endif
     vc->thread = e->ethread;
 
     vc->ep = NULL;

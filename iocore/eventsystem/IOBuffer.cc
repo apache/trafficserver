@@ -61,27 +61,6 @@ init_buffer_allocators()
   }
 }
 
-#ifdef AUTO_PILOT_MODE
-void
-MIOBuffer::reenable_readers(void)
-{
-  ink_debug_assert(autopilot);
-  for (int j = 0; j < MAX_MIOBUFFER_READERS; j++)
-    if (readers[j].allocated()) {
-      ink_debug_assert(reader_vio[j]);
-      reader_vio[j]->reenable();
-    }
-}
-
-void
-MIOBuffer::reenable_writer(void)
-{
-  ink_debug_assert(autopilot);
-  ink_debug_assert(writer_vio);
-  writer_vio->reenable();
-}
-#endif
-
 int
 MIOBuffer::remove_append(IOBufferReader * r)
 {

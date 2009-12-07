@@ -29,8 +29,6 @@
 #include "I_Processor.h"
 #include "I_Event.h"
 
-#define BASE_N_THREADS   4      // number of threads *not* argument to start()
-
 const int MAX_THREADS_IN_EACH_TYPE = 200;
 const int MAX_EVENT_THREADS = 200;
 
@@ -306,7 +304,7 @@ public:
   Event *reschedule_in(Event * e, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL);
   Event *reschedule_every(Event * e, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL);
 
-    EventProcessor();
+  EventProcessor();
 
   /**
     Initializes the EventProcessor and its associated threads. Spawns the
@@ -382,7 +380,7 @@ public:
   | Unix & non NT Interface                                |
   \*------------------------------------------------------*/
 
-    Event * schedule(Event * e, EventType etype);
+  Event * schedule(Event * e, EventType etype);
   EThread *assign_thread(EventType etype);
 
   EThread *dthreads[MAX_EVENT_THREADS];

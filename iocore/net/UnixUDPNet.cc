@@ -381,20 +381,10 @@ UDPReadContinuation::setupPollDescriptor()
   Pollfd *pfd;
   EThread *et = (EThread *) this_thread();
   PollCont *pc = get_PollCont(et);
-#ifdef BSD_TCP
-  pfd = pc->nextPollDescriptor->alloc(fd);
-  ifd = pfd - pc->nextPollDescriptor->pfd;
-  if (ifd >= POLL_DESCRIPTOR_SIZE) {
-    ink_assert(pc->nextPollDescriptor->nfds_bsd > (ifd - POLL_DESCRIPTOR_SIZE));
-  } else {
-    ink_assert(pc->nextPollDescriptor->nfds_sol > ifd);
-  }
-#else
   pfd = pc->nextPollDescriptor->alloc();
   pfd->fd = fd;
   ifd = pfd - pc->nextPollDescriptor->pfd;
   ink_assert(pc->nextPollDescriptor->nfds > ifd);
-#endif
   ifd_seq_num = pc->nextPollDescriptor->seq_num;
   pfd->events = POLLIN;
   pfd->revents = 0;
@@ -434,20 +424,10 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
       return EVENT_DONE;
     }
   }
-#ifdef BSD_TCP
-  ink_assert(ifd < 0 || event_ == EVENT_INTERVAL ||
-             (event_ == EVENT_POLL &&
-              ifd_seq_num == pc->pollDescriptor->seq_num &&
-              (ifd >= POLL_DESCRIPTOR_SIZE ?
-               (pc->pollDescriptor->nfds_bsd >
-                (ifd - POLL_DESCRIPTOR_SIZE)) :
-               (pc->pollDescriptor->nfds_sol > ifd)) && pc->pollDescriptor->pfd[ifd].fd == fd));
-#else
   ink_assert(ifd < 0 || event_ == EVENT_INTERVAL ||
              (event_ == EVENT_POLL &&
               ifd_seq_num == pc->pollDescriptor->seq_num &&
               pc->pollDescriptor->nfds > ifd && pc->pollDescriptor->pfd[ifd].fd == fd));
-#endif
   if (ifd < 0 || event_ == EVENT_INTERVAL || (pc->pollDescriptor->pfd[ifd].revents & POLLIN)) {
     c = completionUtil::getContinuation(event);
     // do read
@@ -1326,12 +1306,8 @@ UDPNetHandler::build_one_udpread_poll(int fd, UnixUDPConnection * uc, PollDescri
   // XXX: just hack until figure things out
   ink_assert(uc->getFd() > 0);
   Pollfd *pfd;
-#ifdef BSD_TCP
-  pfd = pd->alloc(fd);
-#else
   pfd = pd->alloc();
   pfd->fd = fd;
-#endif
   i = pfd - pd->pfd;
   uc->setPollvecIndex(i);
   udpConnections[i] = uc;
@@ -1405,39 +1381,6 @@ UDPNetHandler::mainNetEvent(int event, Event * e)
   UnixUDPConnection *uc, *next;
   int i;
   int nread = 0;
-#ifdef BSD_TCP
-  for (i = POLL_DESCRIPTOR_SIZE; i < (POLL_DESCRIPTOR_SIZE + pc->pollDescriptor->nfds_bsd); i++) {
-    if (pc->pollDescriptor->pfd[i].revents & POLLIN) {
-      uc = udpConnections[i];
-      ink_assert(uc && uc->mutex && uc->continuation);
-      ink_assert(uc->m_refcount >= 1);
-      if (uc->shouldDestroy()) {
-        udp_polling->remove(uc, uc->polling_link);
-        uc->Release();
-      } else {
-        udpNet.udp_read_from_net(this, uc, pc->pollDescriptor, trigger_event->ethread);
-        nread++;
-      }
-    }
-  }
-
-  for (i = 0; i < pc->pollDescriptor->nfds_sol; i++) {
-    if (pc->pollDescriptor->pfd[i].revents & POLLIN) {
-      uc = udpConnections[i];
-      ink_assert(uc && uc->mutex && uc->continuation);
-      ink_assert(uc->m_refcount >= 1);
-      if (uc->shouldDestroy()) {
-        //changed by YTS Team, yamsat
-        //udp_polling->remove(uc,uc->polling_link);
-        uc->Release();
-      } else {
-        udpNet.udp_read_from_net(this, uc, pc->pollDescriptor, trigger_event->ethread);
-        nread++;
-      }
-    }
-  }
-
-#else
 //epoll changes
 
   //changed by YTS Team, yamsat 
@@ -1476,7 +1419,6 @@ UDPNetHandler::mainNetEvent(int event, Event * e)
       }
     }
   } */
-#endif
 
   // remove dead UDP connections
   ink_hrtime now = ink_get_hrtime_internal();

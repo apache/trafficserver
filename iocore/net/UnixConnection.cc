@@ -28,11 +28,6 @@
 #include "ink_unused.h"       /* MAGIC_EDITING_TAG */
 #include "P_Net.h"
 
-#ifdef __INKIO
-#include "inktcp.h"
-#endif
-
-
 #define SET_TCP_NO_DELAY
 #define SET_NO_LINGER
 // set in the OS
@@ -164,11 +159,7 @@ int
 Connection::bind_connect(unsigned int target_ip, int target_port,
                          unsigned int my_ip,
                          NetVCOptions * opt,
-                         bool non_blocking_connect, bool use_tcp, bool non_blocking, bool bc_no_connect, bool bc_no_bind
-#ifdef __INKIO
-                         , bool use_inkio
-#endif
-  )
+                         bool non_blocking_connect, bool use_tcp, bool non_blocking, bool bc_no_connect, bool bc_no_bind)
 {
   ink_assert(fd == NO_FD);
   int res = 0;
@@ -266,16 +257,7 @@ Connection::bind_connect(unsigned int target_ip, int target_port,
 
   if (!bc_no_connect) {
     t = ink_get_hrtime();
-#ifdef __INKIO
-    if (use_inkio) {
-      inkio_queue qd = this_ethread()->kernel_q;
-      res = inkio_connect(qd, fd, 0, 0, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-    } else {
-      res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-    }
-#else
     res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-#endif
     if (!res || ((res < 0) && errno == EINPROGRESS)) {
       if (!non_blocking_connect && non_blocking)
         if ((res = safe_nonblocking(fd)) < 0)

@@ -95,8 +95,8 @@
 #define WMT_EVENT_EVENTS_START                    59000
 #define INK_API_EVENT_EVENTS_START                60000
 #define RADIUS_EVENT_EVENTS_START                 61000
-#define SRV_EVENT_EVENTS_START				      62000
-#define REMAP_EVENT_EVENTS_START				  63000
+#define SRV_EVENT_EVENTS_START	                  62000
+#define REMAP_EVENT_EVENTS_START                  63000
 
 //define misc events here
 #define ONE_WAY_TUNNEL_EVENT_PEER_CLOSE (SIMPLE_EVENT_EVENTS_START+1)
@@ -242,7 +242,7 @@ public:
 
   // Private
 
-    Event();
+  Event();
 
 
   Event *init(Continuation * c, ink_hrtime atimeout_at = 0, ink_hrtime aperiod = 0);

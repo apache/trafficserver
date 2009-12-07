@@ -1386,7 +1386,7 @@ bool ClusterHandler::complete_channel_read(int len, ClusterVConnection * vc)
   ink_assert((ProxyMutex *) s->vio.mutex == (ProxyMutex *) s->vio._cont->mutex);
 
   Debug("cluster_vc_xfer", "Complete read, credit ch %d 0x%x %d bytes", vc->channel, vc, len);
-  s->vio.add_ndone(len);
+  s->vio.ndone += len;
 
   if (s->vio.ntodo() <= 0) {
     s->enabled = 0;
@@ -1491,13 +1491,13 @@ ClusterHandler::update_channels_written(bool bump_unhandled_channels)
           int len = write.msg.descriptor[i].length;
           vc->write_bytes_in_transit -= len;
           ink_release_assert(vc->write_bytes_in_transit >= 0);
-          Debug(CL_PROTO, "(%d) data sent %d %d", write.msg.descriptor[i].channel, len, s->vio.get_ndone());
+          Debug(CL_PROTO, "(%d) data sent %d %d", write.msg.descriptor[i].channel, len, s->vio.ndone);
 
           if (vc_ok_write(vc)) {
             vc->last_activity_time = current_time;      // note activity time
             int n = vc->was_closed()? 0 : s->vio.buffer.reader()->block_read_avail();
-            int nb = vc->was_closed()? 0 : s->vio.get_nbytes();
-            int ndone = vc->was_closed()? 0 : s->vio.get_ndone();
+            int nb = vc->was_closed()? 0 : s->vio.nbytes;
+            int ndone = vc->was_closed()? 0 : s->vio.ndone;
 
             if (ndone < vc->remote_free) {
               cluster_set_priority(this, s, 1); // next bucket
@@ -1607,7 +1607,7 @@ ClusterHandler::build_write_descriptors()
     vc_next = (ClusterVConnection *) vc->write.link.next;
     if (valid_for_data_write(vc)) {
       ink_assert(vc->write_locked);     // Acquired in valid_for_data_write()
-      if ((vc->remote_free > (vc->write.vio.get_ndone() - vc->write_list_bytes))
+      if ((vc->remote_free > (vc->write.vio.ndone - vc->write_list_bytes))
           && channels[vc->channel] == vc) {
 
         ink_assert(vc->write_list && vc->write_list_bytes);
@@ -1620,11 +1620,11 @@ ClusterHandler::build_write_descriptors()
         ink_release_assert(s <= MAX_CLUSTER_SEND_LENGTH);
 
         // Transfer no more than nbytes
-        if ((vc->write.vio.get_ndone() - s) > vc->write.vio.get_nbytes())
-          s = vc->write.vio.get_nbytes() - (vc->write.vio.get_ndone() - s);
+        if ((vc->write.vio.ndone - s) > vc->write.vio.nbytes)
+          s = vc->write.vio.nbytes - (vc->write.vio.ndone - s);
 
-        if ((vc->write.vio.get_ndone() - s) > vc->remote_free)
-          s = vc->remote_free - (vc->write.vio.get_ndone() - s);
+        if ((vc->write.vio.ndone - s) > vc->remote_free)
+          s = vc->remote_free - (vc->write.vio.ndone - s);
         write.msg.descriptor[d].length = s;
         write.msg.count++;
         tcount++;
@@ -2019,7 +2019,7 @@ retry:
   // If no room on the remote side or set_data() messages pending
   //
   int set_data_msgs_pending = vc->n_set_data_msgs;
-  if (set_data_msgs_pending || (vc->remote_free <= (s->vio.get_ndone() - vc->write_list_bytes))) {
+  if (set_data_msgs_pending || (vc->remote_free <= (s->vio.ndone - vc->write_list_bytes))) {
     if (set_data_msgs_pending) {
       cluster_bump(this, vc, s, cur_vcs);
       CLUSTER_INCREMENT_DYN_STAT(CLUSTER_VC_WRITE_STALL_STAT);
@@ -2096,7 +2096,7 @@ retry:
     // We may defer the write, but tell the user we have consumed the data.
 
     (s->vio.buffer.reader())->consume(consume_bytes);
-    s->vio.add_ndone(consume_bytes);
+    s->vio.ndone += consume_bytes;
     if (s->vio.ntodo() <= 0) {
       if (cluster_signal_and_update_locked(VC_EVENT_WRITE_COMPLETE, vc, s) != EVENT_DONE) {
         cluster_reschedule(this, vc, s);
@@ -2216,7 +2216,7 @@ retry:
     return 0;
   }
 
-  int nb = s->vio.get_nbytes();
+  int nb = s->vio.nbytes;
   int ntodo = s->vio.ntodo();
   ink_assert(ntodo >= 0);
 
@@ -2250,7 +2250,7 @@ retry:
       s->vio.buffer.writer()->append_block(b);
       vc->read_block->consume(bytes_to_move);
     }
-    s->vio.add_ndone(bytes_to_move);
+    s->vio.ndone += bytes_to_move;
     vc->initial_data_bytes -= bytes_to_move;
 
     if (s->vio.ntodo() <= 0) {
@@ -2286,7 +2286,7 @@ retry:
   // has been moved into the user VC.  
   // Now allow send of freespace to receive additional data.
 
-  int nextfree = vc->read.vio.get_ndone();
+  int nextfree = vc->read.vio.ndone;
   nextfree = (nextfree + DEFAULT_MAX_BUFFER_SIZE - 1) / DEFAULT_MAX_BUFFER_SIZE;
   nextfree *= DEFAULT_MAX_BUFFER_SIZE;
 
@@ -2316,7 +2316,7 @@ ClusterHandler::remote_close(ClusterVConnection * vc, ClusterVConnState * ns)
     ns->enabled = 0;
     if (vc->remote_closed > 0) {
       if (ns->vio.op == VIO::READ) {
-        if (ns->vio.get_nbytes() == ns->vio.get_ndone()) {
+        if (ns->vio.nbytes == ns->vio.ndone) {
           return cluster_signal_and_update(VC_EVENT_READ_COMPLETE, vc, ns);
         } else {
           return cluster_signal_and_update(VC_EVENT_EOS, vc, ns);
@@ -2396,20 +2396,12 @@ ClusterHandler::build_poll(bool next)
 {
   Pollfd *pfd;
   if (next) {
-#ifdef BSD_TCP
-    pfd = thread->nextPollDescriptor->alloc(net_vc->get_socket());
-#else
     pfd = thread->nextPollDescriptor->alloc();
     pfd->fd = net_vc->get_socket();
-#endif
     ifd = pfd - thread->nextPollDescriptor->pfd;
   } else {
-#ifdef BSD_TCP
-    pfd = thread->pollDescriptor->alloc(net_vc->get_socket());
-#else
     pfd = thread->pollDescriptor->alloc();
     pfd->fd = net_vc->get_socket();
-#endif
     ifd = pfd - thread->pollDescriptor->pfd;
   }
   pfd->events = POLLHUP;

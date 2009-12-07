@@ -1122,7 +1122,6 @@ INKVConnInternal::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
   m_read_vio.op = VIO::READ;
   m_read_vio.set_continuation(c);
   m_read_vio.nbytes = nbytes;
-  m_read_vio.data = 0;
   m_read_vio.ndone = 0;
   m_read_vio.vc_server = this;
 
@@ -1142,7 +1141,6 @@ INKVConnInternal::do_io_write(Continuation * c, int nbytes, IOBufferReader * buf
   m_write_vio.op = VIO::WRITE;
   m_write_vio.set_continuation(c);
   m_write_vio.nbytes = nbytes;
-  m_write_vio.data = 0;
   m_write_vio.ndone = 0;
   m_write_vio.vc_server = this;
 

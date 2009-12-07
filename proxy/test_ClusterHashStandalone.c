@@ -49,4 +49,5 @@ main()
     printf("cluster IP ('%s') = %d.%d.%d.%d\n", urls[i],
            (ipaddr >> 24) & 0xFF, (ipaddr >> 16) & 0xFF, (ipaddr >> 8) & 0xFF, (ipaddr >> 0) & 0xFF);
   }
+  return 0;
 }

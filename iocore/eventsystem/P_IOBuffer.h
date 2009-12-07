@@ -736,9 +736,6 @@ MIOBuffer::MIOBuffer(void *b, int bufsize, int aWater_mark)
   set(b, bufsize);
   water_mark = aWater_mark;
   size_index = BUFFER_SIZE_NOT_ALLOCATED;
-#ifdef AUTO_PILOT_MODE
-  autopilot = false;
-#endif
 #ifdef TRACK_BUFFER_USER
   _location = NULL;
 #endif
@@ -750,9 +747,6 @@ MIOBuffer::MIOBuffer(int default_size_index)
 {
   clear();
   size_index = default_size_index;
-#ifdef AUTO_PILOT_MODE
-  autopilot = false;
-#endif
 #ifdef TRACK_BUFFER_USER
   _location = NULL;
 #endif
@@ -763,9 +757,6 @@ INK_INLINE
 MIOBuffer::MIOBuffer()
 {
   clear();
-#ifdef AUTO_PILOT_MODE
-  autopilot = false;
-#endif
 #ifdef TRACK_BUFFER_USER
   _location = NULL;
 #endif
@@ -1134,36 +1125,9 @@ MIOBuffer::alloc_xmalloc(int buf_size)
   set_xmalloced(b, buf_size);
 }
 
-#ifdef AUTO_PILOT_MODE
-INK_INLINE void
-MIOBuffer::assign_reader_vio(VIO * vio, IOBufferReader * r)
-{
-  for (int i = 0; i < MAX_MIOBUFFER_READERS; i++) {
-    if (readers[i].allocated() && &readers[i] == r) {
-      reader_vio[i] = vio;
-      break;
-    }
-  }
-}
-
-INK_INLINE void
-MIOBuffer::assign_writer_vio(VIO * wvio)
-{
-  writer_vio = wvio;
-}
-#endif
-
 INK_INLINE void
 MIOBuffer::dealloc_reader(IOBufferReader * e)
 {
-#ifdef AUTO_PILOT_MODE
-  for (int i = 0; i < MAX_MIOBUFFER_READERS; i++) {
-    if (readers[i].allocated() && &readers[i] == e) {
-      reader_vio[i] = NULL;
-      break;
-    }
-  }
-#endif
   if (e->accessor) {
     ink_assert(e->accessor->mbuf == this);
     ink_assert(e->accessor->entry == e);

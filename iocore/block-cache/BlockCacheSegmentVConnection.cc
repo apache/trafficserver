@@ -98,8 +98,8 @@ BCSV_impl::do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool 
   // write when the fastest reader advances.
 
   m_vio.set_continuation(c);
-  m_vio.set_op(VIO::WRITE);
-  m_vio.set_nbytes(nbytes);
+  m_vio.op = VIO::WRITE;
+  m_vio.nbytes = nbytes;
   m_vio.set_reader(buf);
 
   // update BC_OpenSegment writeDataAvail w/ buf's readAvail.
@@ -114,8 +114,8 @@ BCSV_impl::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
   // call into BC_OpenSegment for io strategy
 
   m_vio.set_continuation(c);
-  m_vio.set_op(VIO::READ);
-  m_vio.set_nbytes(nbytes);
+  m_vio.op = VIO::READ;
+  m_vio.nbytes = nbytes;
   m_vio.set_writer(buf);
 
   // update BC_OpenSegment readAvail w/ buf's writeAvail.

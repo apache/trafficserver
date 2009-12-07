@@ -142,15 +142,7 @@ DNSConnection::connect(unsigned int ip, int port,
 #endif
 
   t = ink_get_hrtime();
-#ifdef BSD_TCP
-  if (IS_BSD_FD(fd)) {
-    res = inkio_connect(BSD_FD(fd), (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-  } else {
-    res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-  }
-#else
   res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-#endif
 
   if (!res || ((res < 0) && (errno == EINPROGRESS || errno == EWOULDBLOCK))) {
     if (!non_blocking_connect && non_blocking)

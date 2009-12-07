@@ -47,12 +47,13 @@ struct ProtectedQueue
   void remove(Event * e);
   Event *dequeue_local();
   void dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool sleep);
-    ProtectedQueue();
 
   InkAtomicList al;
   ink_mutex lock;
   ink_cond might_have_data;
-    Queue<Event> localQueue;
+  Queue<Event> localQueue;
+
+  ProtectedQueue();
 };
 
 void flush_signals(EThread * t);

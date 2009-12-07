@@ -78,37 +78,16 @@ public:
   }
 
   /** Interface for the VConnection that owns this handle. */
+  Continuation *get_continuation();
   void set_continuation(Continuation * cont);
 
   /**
-    Increase the number of bytes in the 'nbytes' data member.
+    Set nbytes to be what is current available.
 
-    Interface to increase nbytes once the actually size of the
-    transfer is known. Can only be used to increase nbytes. Nbytes
-    must not be decreased once an operation is started. There may
-    be cartain rules associated with this function depending on the
-    VConnection used. See the documentation for your VConnection.
-
-    @param nbytes number of bytes to assign to the 'nbytes' member.
-
+    Interface to set nbytes to be ndone + buffer.reader()->read_avail()
+    if a reader is set.
   */
-  inkcoreapi void set_nbytes(int nbytes);
-
-  void set_nbytes_internal(int nbytes);
-  void set_ndone(int ndone);
-  void add_nbytes(int nbytes);
-  void add_nbytes_internal(int nbytes);
-  void add_ndone(int ndone);
-  void set_data(int data);
   void done();
-
-  void set_vc_server(VConnection * vc_server);
-
-  Continuation *get_continuation();
-  int get_nbytes();
-  int get_ndone();
-  int get_data();
-  int get_ntodo();
 
   /**
     Determine the number of bytes remaining.
@@ -120,9 +99,6 @@ public:
 
   */
   int ntodo();
-
-  VConnection *get_vc_server();
-  ProxyMutex *get_mutex();
 
   /////////////////////
   // buffer settings //
@@ -169,9 +145,6 @@ public:
   VIO(int aop);
   VIO();
 
-  void set_op(int op);
-  int get_op();
-
   enum
   {
     NONE = 0, READ, WRITE, CLOSE, ABORT,
@@ -215,9 +188,6 @@ public:
 
   */
   int op;
-
-  /** Not used? */
-  int data;
 
   /**
     Provides access to the reader or writer for this operation.

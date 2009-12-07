@@ -88,22 +88,14 @@ struct Connection
               bool non_blocking_connect = NON_BLOCKING_CONNECT,
               bool use_tcp = CONNECT_WITH_TCP, bool non_blocking = NON_BLOCKING, bool bind_random_port = BIND_ANY_PORT);
 
-  int fast_connect(const unsigned int ip, const int port, NetVCOptions * opt = NULL, const int socketFd = -1
-#ifdef __INKIO
-                   , const bool use_inkio = false
-#endif
-    );
+  int fast_connect(const unsigned int ip, const int port, NetVCOptions * opt = NULL, const int socketFd = -1);
 
   int bind_connect(unsigned int target_ip, int target_port,
                    unsigned int my_ip,
                    NetVCOptions * opt = NULL,
                    bool non_blocking_connect = NON_BLOCKING_CONNECT,
                    bool use_tcp = CONNECT_WITH_TCP,
-                   bool non_blocking = NON_BLOCKING, bool bc_no_connect = BC_CONNECT, bool bc_no_bind = BC_BIND
-#ifdef __INKIO
-                   , bool use_inkio = false
-#endif
-    );
+                   bool non_blocking = NON_BLOCKING, bool bc_no_connect = BC_CONNECT, bool bc_no_bind = BC_BIND);
 
   int setup_mc_send(unsigned int mc_ip, int mc_port,
                     unsigned int my_ip, int my_port,

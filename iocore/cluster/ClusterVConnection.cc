@@ -74,11 +74,10 @@ ClusterVConnectionBase::do_io_read(Continuation * acont, int anbytes, MIOBuffer 
 {
   ink_assert(!closed);
   read.vio.buffer.writer_for(abuffer);
-  read.vio.set_op(VIO::READ);
+  read.vio.op = VIO::READ;
   read.vio.set_continuation(acont);
-  read.vio.set_nbytes_internal(anbytes);
-  read.vio.set_data(0);
-  read.vio.set_ndone(0);
+  read.vio.nbytes = anbytes;
+  read.vio.ndone = 0;
   read.vio.vc_server = (VConnection *) this;
   read.enabled = 1;
 
@@ -93,11 +92,10 @@ ClusterVConnectionBase::do_io_write(Continuation * acont, int anbytes, IOBufferR
   ink_assert(!closed);
   ink_assert(!owner);
   write.vio.buffer.reader_for(abuffer);
-  write.vio.set_op(VIO::WRITE);
+  write.vio.op = VIO::WRITE;
   write.vio.set_continuation(acont);
-  write.vio.set_nbytes_internal(anbytes);
-  write.vio.set_data(0);
-  write.vio.set_ndone(0);
+  write.vio.nbytes = anbytes;
+  write.vio.ndone = 0;
   write.vio.vc_server = (VConnection *) this;
   write.enabled = 1;
 

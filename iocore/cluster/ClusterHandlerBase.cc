@@ -419,8 +419,8 @@ ClusterState::doIO()
     }
 
     // Resume operation
-    v->set_nbytes(to_do + did);
-    ink_release_assert(v->get_nbytes() > v->get_ndone());
+    v->nbytes = to_do + did;
+    ink_release_assert(v->nbytes > v->ndone);
 
     io_complete = false;
     io_complete_event = 0;
@@ -474,19 +474,18 @@ ClusterState::doIO_read_event(int event, void *d)
   case VC_EVENT_READ_READY:
     {
       // Disable read processing
-      v->set_nbytes(v->get_ndone());
-
+      v->nbytes = v->ndone;
       // fall through
     }
   case VC_EVENT_READ_COMPLETE:
     {
-      bytes_xfered = v->get_ndone() - last_ndone;
+      bytes_xfered = v->ndone - last_ndone;
       if (bytes_xfered) {
         total_bytes_xfered += bytes_xfered;
         did += bytes_xfered;
         to_do -= bytes_xfered;
       }
-      last_ndone = v->get_ndone();
+      last_ndone = v->ndone;
       io_complete_event = event;
       INK_WRITE_MEMORY_BARRIER;
 
@@ -527,19 +526,19 @@ ClusterState::doIO_write_event(int event, void *d)
 #ifdef CLUSTER_IMMEDIATE_NETIO
     {
       // Disable write processing
-      v->set_nbytes(v->get_ndone());
+      v->nbytes = v->ndone;
       // fall through
     }
 #endif
   case VC_EVENT_WRITE_COMPLETE:
     {
-      bytes_xfered = v->get_ndone() - last_ndone;
+      bytes_xfered = v->ndone - last_ndone;
       if (bytes_xfered) {
         total_bytes_xfered += bytes_xfered;
         did += bytes_xfered;
         to_do -= bytes_xfered;
       }
-      last_ndone = v->get_ndone();
+      last_ndone = v->ndone;
 #ifdef CLUSTER_IMMEDIATE_NETIO
       io_complete_event = event;
       INK_WRITE_MEMORY_BARRIER;
@@ -1317,8 +1316,8 @@ ClusterHandler::compute_active_channels()
         printf("ch[%d] vc=0x%p remote_free=%d last_local_free=%d\n", i, vc,
                vc->remote_free, vc->last_local_free);
         printf("  r_bytes=%d r_done=%d w_bytes=%d w_done=%d\n",
-               vc->read.vio.get_nbytes(), vc->read.vio.get_ndone(),
-               vc->write.vio.get_nbytes(), vc->write.vio.get_ndone());
+               vc->read.vio.nbytes, vc->read.vio.ndone,
+               vc->write.vio.nbytes, vc->write.vio.ndone);
       }
     }
   }

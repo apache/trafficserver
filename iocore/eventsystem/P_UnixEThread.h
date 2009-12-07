@@ -139,7 +139,6 @@ EThread::schedule_every_local(Continuation * cont, ink_hrtime t, int callback_ev
 INK_INLINE Event *
 EThread::schedule_local(Event * e)
 {
-  //ink_assert(tt == REGULAR);
   if (tt != REGULAR) {
     ink_debug_assert(tt == DEDICATED);
     return eventProcessor.schedule(e, ET_CALL);

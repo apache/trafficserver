@@ -50,10 +50,6 @@
 #include "HTTP.h"
 #include "RecordsConfig.h"
 
-#ifdef BSD_TCP
-#include "inkio.h"
-#endif
-
 #if defined(HAVE_LIBSSL) && defined(TRAFFIC_NET)
 #include "traffic_net/tn_Thread.h"
 #endif
@@ -358,9 +354,6 @@ main(int argc, char **argv)
 
   // Set up the application version info
   appVersionInfo.setup("traffic_manager", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
-#ifdef BSD_TCP
-  inkio_initialize();
-#endif
   initSignalHandlers();
 
   // Process Environment Variables

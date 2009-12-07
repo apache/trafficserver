@@ -145,8 +145,6 @@ SocksProxy::mainEvent(int event, void *data)
     switch (state) {
     case HTTP_REQ:{
         //This is a WRITE_COMPLETE. vio->nbytes == vio->ndone is true
-        //vio = (VIO *) data;
-        //vio->set_nbytes(vio->ndone);
 
         SOCKSPROXY_INC_STAT(socksproxy_http_connections_stat);
         Debug("SocksProxy", "Handing over the HTTP request\n");
@@ -261,12 +259,11 @@ SocksProxy::mainEvent(int event, void *data)
       if (ret == EVENT_DONE) {
         timeout->cancel(this);
         timeout = 0;
-        //vio->set_nbytes(0);
 
         if (auth_handler) {
 
           /* disable further reads */
-          vio->set_nbytes(vio->ndone);
+          vio->nbytes = vio->ndone;
 
           //There is some auth stuff left.
           if (invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_READ_COMPLETE, p) >= 0) {
@@ -281,7 +278,6 @@ SocksProxy::mainEvent(int event, void *data)
 
             clientVC->do_io_write(this, n_bytes, reader, 0);
 
-            //vio->set_nbytes(0);
             state = AUTH_DONE;
           } else {
             Debug("SocksProxy", "Auth_handler returned error\n");
@@ -295,7 +291,7 @@ SocksProxy::mainEvent(int event, void *data)
           if (port == netProcessor.socks_conf_stuff->http_port && p[1] == SOCKS_CONNECT) {
 
             /* disable further reads */
-            vio->set_nbytes(vio->ndone);
+            vio->nbytes = vio->ndone;
 
             ret = setupHttpRequest(p);
             sendResp(true);

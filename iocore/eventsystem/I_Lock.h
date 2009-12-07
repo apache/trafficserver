@@ -155,17 +155,10 @@ public:
     ink_mutex_init(&the_mutex, name);
   }
 
-#ifdef TRANSACTION_ON_A_THREAD
-  bool is_thread()
-  {
-    return nthread_holding < 0;
-  }
-#else
   bool is_thread()
   {
     return false;
   }
-#endif //TRANSACTION_ON_A_THREAD
 };
 
 // The ClassAlocator for ProxyMutexes
@@ -192,11 +185,7 @@ public:
 
   */
 ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
-    if (m_ptr
-#ifdef TRANSACTION_ON_A_THREAD
-        && m_ptr->nthread_holding >= 0
-#endif
-      )
+    if (m_ptr)
       REF_COUNT_OBJ_REFCOUNT_INC(m_ptr);
   }
 
@@ -212,11 +201,7 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
   */
   ProxyMutexPtr(const ProxyMutexPtr & src):m_ptr(src.m_ptr)
   {
-    if (m_ptr
-#ifdef TRANSACTION_ON_A_THREAD
-        && m_ptr->nthread_holding >= 0
-#endif
-      )
+    if (m_ptr)
       REF_COUNT_OBJ_REFCOUNT_INC(m_ptr);
   }
 
@@ -227,11 +212,7 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
 
   */
   ~ProxyMutexPtr() {
-    if (m_ptr &&
-#ifdef TRANSACTION_ON_A_THREAD
-        m_ptr->nthread_holding >= 0 &&
-#endif
-        !m_ptr->refcount_dec())
+    if (m_ptr && !m_ptr->refcount_dec())
       m_ptr->free();
   }
 
@@ -251,17 +232,9 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
     if (m_ptr == p)
       return (*this);
     m_ptr = p;
-    if (m_ptr
-#ifdef TRANSACTION_ON_A_THREAD
-        && m_ptr->nthread_holding >= 0
-#endif
-      )
+    if (m_ptr)
       m_ptr->refcount_inc();
-    if (temp_ptr
-#ifdef TRANSACTION_ON_A_THREAD
-        && temp_ptr->nthread_holding >= 0
-#endif
-        && REF_COUNT_OBJ_REFCOUNT_DEC(((RefCountObj *) temp_ptr)) == 0)
+    if (temp_ptr && REF_COUNT_OBJ_REFCOUNT_DEC(((RefCountObj *) temp_ptr)) == 0)
       ((RefCountObj *) temp_ptr)->free();
     return (*this);
   }
@@ -294,11 +267,7 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
   void clear()
   {
     if (m_ptr) {
-      if (
-#ifdef TRANSACTION_ON_A_THREAD
-           m_ptr->nthread_holding >= 0 &&
-#endif
-           !((RefCountObj *) m_ptr)->refcount_dec())
+      if (!((RefCountObj *) m_ptr)->refcount_dec())
         ((RefCountObj *) m_ptr)->free();
       m_ptr = NULL;
     }
@@ -630,14 +599,6 @@ struct MutexTryLock
 #endif                          //DEBUG
                   ProxyMutex * am, EThread * t)
   {
-#ifdef TRANSACTION_ON_A_THREAD
-
-    if (am->nthread_holding < 0) {
-      lock_acquired = 1;
-      ink_debug_assert(am->thread_holding == (EThread *) this_thread());
-    } else
-    {
-#endif //TRANSACTION_ON_A_THREAD
       lock_acquired = Mutex_trylock(
 #ifdef DEBUG
                                      afile, aline, ahandler,
@@ -645,9 +606,6 @@ struct MutexTryLock
                                      am, t);
       if (lock_acquired)
         m = am;
-#ifdef TRANSACTION_ON_A_THREAD
-    }
-#endif //TRANSACTION_ON_A_THREAD
   }
 
   MutexTryLock(
@@ -656,13 +614,6 @@ struct MutexTryLock
 #endif                          //DEBUG
                 ProxyMutex * am, EThread * t, int sp)
   {
-#ifdef TRANSACTION_ON_A_THREAD
-
-    if (am->nthread_holding < 0) {
-      lock_acquired = 1;
-      ink_debug_assert(am->thread_holding == (EThread *) this_thread());
-    } else {
-#endif //TRANSACTION_ON_A_THREAD
       lock_acquired = Mutex_trylock_spin(
 #ifdef DEBUG
                                           afile, aline, ahandler,
@@ -670,9 +621,6 @@ struct MutexTryLock
                                           am, t, sp);
       if (lock_acquired)
         m = am;
-#ifdef TRANSACTION_ON_A_THREAD
-    }
-#endif //TRANSACTION_ON_A_THREAD
   }
 
   ~MutexTryLock() {

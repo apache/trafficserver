@@ -36,8 +36,6 @@
 #include "HttpDebugNames.h"
 #include "HttpServerSession.h"
 
-//#define TRANSACTION_ON_A_THREAD
-
 #define STATE_ENTER(state_name, event, vio) { \
     /*HTTP_DEBUG_ASSERT (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */ \
         Debug("http_cs", "[%lld] [%s, %s]", con_id, \
@@ -197,19 +195,9 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   ink_assert(client_vc == NULL);
   client_vc = new_vc;
   magic = HTTP_CS_MAGIC_ALIVE;
-#ifdef TRANSACTION_ON_A_THREAD
-  if (CacheClusteringEnabled || (HttpPortTypes) client_vc->attributes == SERVER_PORT_NCA) {
-    // Disable transaction on a thread if cache clustering is enabled.
-    new_vc->mutex = mutex = new_ProxyMutex();
-    MUTEX_TRY_LOCK(lock, mutex, new_vc->thread);
-    ink_assert(!!lock);
-  } else
-    mutex = new_vc->mutex;
-#else
   mutex = new_vc->mutex;
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   ink_assert(!!lock);
-#endif
   this->backdoor_connect = backdoor;
 
   // Unique client session identifier.

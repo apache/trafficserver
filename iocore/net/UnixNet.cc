@@ -124,39 +124,12 @@ initialize_thread_for_net(EThread * thread, int thread_index)
     poll_delay_read = true;
   }
 
-
-  thread->ethread_id = thread_index;
-  // thread->schedule_every(get_PollCont(thread), -HRTIME_MSECONDS(9));
-#ifdef __INKIO
-  extern void queuehandler(inkio_event * e);
-  int qfd = NO_FD;
-  thread->kernel_q = inkio_queue_create(&queuehandler, &qfd);
-  ink_debug_assert(qfd != NO_FD);
-  thread->netQueueMonitor = NEW(new NetQueueMonitor);
-  thread->netQueueMonitor->qfd = qfd;
-#ifdef TRANSACTION_ON_A_THREAD
-  thread->netQueueMonitor->mutex = thread->mutex;
-#else
-  thread->netQueueMonitor->mutex = new_ProxyMutex();
-#endif
-  thread->schedule_imm(thread->netQueueMonitor);
-
-#else /* ifndef __INKIO */
   new((ink_dummy_for_new *) get_NetHandler(thread)) NetHandler(false);
   new((ink_dummy_for_new *) get_PollCont(thread)) PollCont(thread->mutex, get_NetHandler(thread));
-#ifdef TRANSACTION_ON_A_THREAD
-  get_NetHandler(thread)->mutex = thread->mutex;
-  //added by YTS Team, yamsat
-  get_NetHandler(thread)->read_enable_mutex = thread->mutex;
-  get_NetHandler(thread)->write_enable_mutex = thread->mutex;
-#else
   get_NetHandler(thread)->mutex = new_ProxyMutex();
-  //added by YTS Team, yamsat
   get_NetHandler(thread)->read_enable_mutex = new_ProxyMutex();
   get_NetHandler(thread)->write_enable_mutex = new_ProxyMutex();
-#endif
   thread->schedule_imm(get_NetHandler(thread));
-#endif /*ifdef __INKIO */
 
 #ifndef INACTIVITY_TIMEOUT
   InactivityCop *inactivityCop = NEW(new InactivityCop(get_NetHandler(thread)->mutex));

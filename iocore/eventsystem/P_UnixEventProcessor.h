@@ -44,9 +44,6 @@ thread_data_used(0)
 INK_INLINE off_t
 EventProcessor::allocate(int size)
 {
-
-  //static off_t start = ((off_t) (((EThread *) 0)->thread_private) + 7) & ~7;  
-  //static off_t loss =  start - (off_t)((EThread *) 0)->thread_private;
   static off_t start = (offsetof(EThread, thread_private) + 7) & ~7;
   static off_t loss = start - offsetof(EThread, thread_private);
   size = (size + 7) & ~7;       // 8 byte alignment
@@ -59,7 +56,6 @@ EventProcessor::allocate(int size)
   } while (!ink_atomic_cas(&thread_data_used, old, old + size));
 
   return (off_t) (old + start);
-
 }
 
 INK_INLINE EThread *

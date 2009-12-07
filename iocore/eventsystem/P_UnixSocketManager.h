@@ -40,14 +40,8 @@ extern int monitor_write_activity;
 //
 // These limits are currently disabled
 //
-#define SOCKETS_MAX                               1024
 // 1024 - stdin, stderr, stdout
-#define SOCKETS_TO_ALLOCATE                       1021
-#define SOCKETS_LOW_WATER                          100
-#define SOCKETS_LOW_WATER_WARN_HYSTERIA             50
 #define EPOLL_MAX_DESCRIPTOR_SIZE                32768
-
-#define O_NO_WRITE_CACHE 0
 
 INK_INLINE bool
 transient_error()

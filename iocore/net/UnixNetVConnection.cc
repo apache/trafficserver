@@ -212,15 +212,7 @@ static inline int
 read_signal_and_update(int event, UnixNetVConnection * vc)
 {
   vc->recursion++;
-#ifdef AUTO_PILOT_MODE
-  if ((event == VC_EVENT_READ_READY) && vc->read.vio.buffer.mbuf->autopilot) {
-    vc->read.vio.buffer.mbuf->reenable_readers();
-  } else {
-    vc->read.vio._cont->handleEvent(event, &vc->read.vio);
-  }
-#else
   vc->read.vio._cont->handleEvent(event, &vc->read.vio);
-#endif
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_debug_assert(vc->thread == this_ethread());
@@ -235,15 +227,7 @@ static inline int
 write_signal_and_update(int event, UnixNetVConnection * vc)
 {
   vc->recursion++;
-#ifdef AUTO_PILOT_MODE
-  if ((event == VC_EVENT_WRITE_READY) && vc->write.vio.buffer.mbuf->autopilot) {
-    vc->write.vio.buffer.mbuf->reenable_writer();
-  } else {
-    vc->write.vio._cont->handleEvent(event, &vc->write.vio);
-  }
-#else
   vc->write.vio._cont->handleEvent(event, &vc->write.vio);
-#endif
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_debug_assert(vc->thread == this_ethread());
@@ -680,7 +664,6 @@ UnixNetVConnection::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
   read.vio.mutex = c->mutex;
   read.vio._cont = c;
   read.vio.nbytes = nbytes;
-  read.vio.data = 0;
   read.vio.ndone = 0;
   read.vio.vc_server = (VConnection *) this;
   XTIME(printf("%d %d do_io_read\n", id, (int) ((ink_get_hrtime_internal() - submit_time) / HRTIME_MSECOND)));
@@ -712,7 +695,6 @@ UnixNetVConnection::do_io_write(Continuation * acont, int anbytes, IOBufferReade
   write.vio.mutex = acont->mutex;
   write.vio._cont = acont;
   write.vio.nbytes = anbytes;
-  write.vio.data = 0;
   write.vio.ndone = 0;
   write.vio.vc_server = (VConnection *) this;
   XTIME(printf("%d %d do_io_write\n", id, (int) ((ink_get_hrtime_internal() - submit_time) / HRTIME_MSECOND)));
@@ -1126,11 +1108,7 @@ UnixNetVConnection::startEvent(int event, Event * e)
 {
   (void) event;
   MUTEX_TRY_LOCK(lock, action_.mutex, e->ethread);
-#ifdef __INKIO
-  MUTEX_TRY_LOCK(lock2, e->ethread->netQueueMonitor->mutex, e->ethread);
-#else
   MUTEX_TRY_LOCK(lock2, get_NetHandler(e->ethread)->mutex, e->ethread);
-#endif
 
   if (!lock || !lock2) {
     e->schedule_in(NET_RETRY_DELAY);

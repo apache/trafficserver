@@ -66,9 +66,6 @@
 #endif
 
 #define NO_FD                             (-1)
-#ifdef NET_DUMP_STATS
-#define NET_DUMP_SIZE                     256
-#endif
 
 #define NET_EVENT_OPEN                    (NET_EVENT_EVENTS_START)
 #define NET_EVENT_OPEN_FAILED             (NET_EVENT_EVENTS_START+1)

@@ -1517,7 +1517,7 @@ CacheContinuation::VCdataRead(int event, VIO * target_vio)
   switch (event) {
   case VC_EVENT_EOS:
     {
-      if (!target_vio->get_ndone()) {
+      if (!target_vio->ndone) {
         // Doc with zero byte body, handle as read failure
         goto read_failed;
       }
@@ -1527,7 +1527,7 @@ CacheContinuation::VCdataRead(int event, VIO * target_vio)
   case VC_EVENT_READ_COMPLETE:
     {
       int clone_bytes;
-      int current_ndone = target_vio->get_ndone();
+      int current_ndone = target_vio->ndone;
 
       ink_assert(current_ndone);
       ink_assert(current_ndone <= readahead_reader->read_avail());
@@ -1769,16 +1769,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
     // Initialize reply message header
     *reply = *msg;
 
-    if (request_opcode == CACHE_LINK) {
-      if (local_link_action) {
-        // Marshal the Action lerror into the reply message
-        *((ink32 *) reply->moi) = local_link_action->lerror;
-      } else {
-        // Reentrant callback, use result in reply
-        *((ink32 *) reply->moi) = result;
-      }
-
-    } else {
+    if (request_opcode != CACHE_LINK) {
       //
       // open read/write failed, close preallocated VC
       //
@@ -1865,7 +1856,7 @@ CacheContinuation::setupReadBufTunnel(VConnection * cache_read_vc, VConnection *
   ((ClusterVConnection *) cluster_write_vc)->write.enabled = 0;
 
   // Disable cache read VC
-  readahead_vio->set_nbytes(readahead_vio->get_ndone());
+  readahead_vio->nbytes = readahead_vio->ndone;
 
   /////////////////////////////////////////////////////////////////////
   // At this point, the OneWayTunnel is blocked awaiting a reenable
@@ -1973,7 +1964,7 @@ CacheContinuation::handleDisposeEvent(int event, CacheContinuation * cc)
     if (!cc->tunnel_closed) {
       // Start tunnel by reenabling source and target VCs.
 
-      cc->tunnel->vioSource->set_nbytes(getObjectSize(cc->tunnel->vioSource->vc_server, cc->request_opcode, 0));
+      cc->tunnel->vioSource->nbytes = getObjectSize(cc->tunnel->vioSource->vc_server, cc->request_opcode, 0);
       cc->tunnel->vioSource->reenable_re();
       cc->tunnel->vioTarget->reenable();
 
@@ -2009,7 +2000,6 @@ cache_op_result_ClusterFunction(ClusterMachine * from, void *d, int l)
   int flen, len = l;
   CacheHTTPInfo ci;
   CacheOpReplyMsg *msg = (CacheOpReplyMsg *) data;
-  ink32 link_action_lerror = 0;
   ink32 op_result_error = 0;
   ClusterMessageHeader *mh = (ClusterMessageHeader *) data;
 
@@ -2042,14 +2032,7 @@ cache_op_result_ClusterFunction(ClusterMachine * from, void *d, int l)
       }
     case CACHE_EVENT_LINK:
     case CACHE_EVENT_LINK_FAILED:
-      {
-        // Unmarshal the remote Action "lerror" value
-        ink_assert(((len - flen) == sizeof(ink32)));
-        link_action_lerror = *(ink32 *) msg->moi;
-        if (mh->NeedByteSwap())
-          swap32((inku32 *) & link_action_lerror);
-        break;
-      }
+      break;
     case CACHE_EVENT_OPEN_READ_FAILED:
     case CACHE_EVENT_OPEN_READ_FAILED_IN_PROGRESS:
     case CACHE_EVENT_OPEN_WRITE_FAILED:
@@ -2102,13 +2085,7 @@ cache_op_result_ClusterFunction(ClusterMachine * from, void *d, int l)
       MUTEX_UNTAKE_LOCK(remoteCacheContQueueMutex[hash], thread);
       goto Lretry;
     }
-    ///////////////////////////////////////////////////////
-    // For link(), move remote lerror into local Action.
-    ///////////////////////////////////////////////////////
-    if (c->request_opcode == CACHE_LINK)
-      c->action.lerror = link_action_lerror;
-    else
-      c->result_error = op_result_error;
+    c->result_error = op_result_error;
 
     // send message, release lock
 
@@ -2141,7 +2118,6 @@ cache_op_result_ClusterFunction(ClusterMachine * from, void *d, int l)
       c->setMsgBufferLen(len, iob);
       c->ic_new_info = ci;
     }
-    c->link_lerror = link_action_lerror;        // valid only for link()
     c->result_error = op_result_error;
     eventProcessor.schedule_in(c, CACHE_RETRY_PERIOD, ET_CACHE_CONT_SM);
   }
@@ -2185,11 +2161,6 @@ CacheContinuation::handleReplyEvent(int event, Event * e)
       e->schedule_in(CACHE_RETRY_PERIOD);
       return EVENT_CONT;
     }
-    ///////////////////////////////////////////////////////
-    // For link(), move remote lerror into local Action.
-    ///////////////////////////////////////////////////////
-    if (c->request_opcode == CACHE_LINK)
-      c->action.lerror = link_lerror;
 
     // If unmarshalled CacheHTTPInfo exists, pass it along
 

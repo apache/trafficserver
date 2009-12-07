@@ -128,7 +128,7 @@ public:
     assembled.
 
   */
-    Link<Continuation> link;
+  Link<Continuation> link;
 
   /**
     Receives the event code and data for an Event.

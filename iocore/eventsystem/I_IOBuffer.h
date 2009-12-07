@@ -54,11 +54,6 @@ inkcoreapi extern int max_iobuffer_size;
 extern int default_small_iobuffer_size;
 extern int default_large_iobuffer_size; // matched to size of OS buffers
 
-// Define this to turn on automatic reenables. The producer VC then 
-// automatically reenables the consumer VCs and the other way. The
-// state machine should set up the  VIOs and the autopilot flag
-#define AUTO_PILOT_MODE
-
 #if !defined(PURIFY)
 // Define this macro to enable buffer usage tracking.
 #define TRACK_BUFFER_USER
@@ -1037,12 +1032,6 @@ public:
 
   */
   IOBufferReader *clone_reader(IOBufferReader * r);
-#ifdef AUTO_PILOT_MODE
-  void assign_reader_vio(VIO * vio, IOBufferReader * r);
-  void assign_writer_vio(VIO * wvio);
-  void reenable_readers(void);
-  void reenable_writer(void);
-#endif
 
   /**
     Deallocates reader e from this buffer. e MUST be a pointer to a reader
@@ -1083,20 +1072,11 @@ public:
   {
     if (_writer) {
       _writer->reset();
-#ifdef AUTO_PILOT_MODE
-      writer_vio = NULL;
-#endif
     }
     for (int j = 0; j < MAX_MIOBUFFER_READERS; j++)
       if (readers[j].allocated()) {
         readers[j].reset();
-#ifdef AUTO_PILOT_MODE
-        reader_vio[j] = NULL;
-#endif
       }
-#ifdef AUTO_PILOT_MODE
-    autopilot = false;
-#endif
   }
 
   void init_readers()
@@ -1153,11 +1133,6 @@ public:
 
   Ptr<IOBufferBlock> _writer;
   IOBufferReader readers[MAX_MIOBUFFER_READERS];
-#ifdef AUTO_PILOT_MODE
-  VIO *writer_vio;
-  VIO *reader_vio[MAX_MIOBUFFER_READERS];
-  bool autopilot;
-#endif
 
 #ifdef TRACK_BUFFER_USER
   const char *_location;

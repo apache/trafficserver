@@ -194,17 +194,8 @@ HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int po
   ProxyMutex *bucket_mutex;
   EThread *ethread = this_ethread();
 
-#ifdef TRANSACTION_ON_A_THREAD
-  // Transaction on a thread.  Need to get session
-  //   from thread specific hash table
-  bucket = ethread->l1_hash + l1_index;
-  bucket_mutex = cont->mutex;
-#else
-  // Not transaction on a thread (probably NCA).
-  //  Use global hash table
   bucket = g_l1_hash + l1_index;
   bucket_mutex = bucket->mutex;
-#endif
 
   MUTEX_TRY_LOCK(lock, bucket_mutex, ethread);
   if (lock) {
