@@ -84,7 +84,7 @@ MIOBuffer::remove_append(IOBufferReader * r)
 int
 MIOBuffer::write(const void *abuf, int alen)
 {
-  char *buf = (char*)abuf;
+  const char *buf = (const char*)abuf;
   int len = alen;
   while (len) {
     if (!_writer)
