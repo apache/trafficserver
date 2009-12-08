@@ -1459,7 +1459,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest * t, int atype, int *status
 
   /* introduce loops */
   /* in bucket */
-#if 1
+#if 0
   for (int sno = 0; sno < DIR_SEGMENTS; sno++) {
     for (int bno = 0; bno < d->buckets; bno++) {
       // coverity[secure_coding]
@@ -1543,7 +1543,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest * t, int atype, int *status
     dir_corrupt_bucket(dir_bucket(b1, dir_segment(17, d)), 17, d);
     check_dir(d);
   }
-  //part_dir_clear(d);
+  part_dir_clear(d);
 #endif
 
   NEW(new CacheDirReg(status));

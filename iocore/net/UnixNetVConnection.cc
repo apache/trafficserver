@@ -1156,6 +1156,8 @@ UnixNetVConnection::acceptEvent(int event, Event * e)
 
   this->ep = eptr;
 
+  closed = 0;
+
 #if defined(USE_EPOLL)
   struct epoll_event ev;
   memset(&ev, 0, sizeof(struct epoll_event));

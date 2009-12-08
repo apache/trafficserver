@@ -1430,15 +1430,9 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
     default:
       ink_assert(0);
     }
-    if (request)
-      delete request;
-    if (result)
-      delete result;
   }
-  if (request)
-    delete request;
-  if (result)
-    delete result;
+  delete request;
+  delete result;
 
   printf("Tests Passed: %d\nTests Failed: %d\n", passes, fails);
   *pstatus = (!fails ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED);

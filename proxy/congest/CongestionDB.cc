@@ -177,7 +177,7 @@ CongestionDB::addRecord(inku64 key, CongestionEntry * pEntry)
 {
   ink_assert(key == pEntry->m_key);
   pEntry->get();
-  ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(key);
+  ProxyMutex *bucket_mutex = lock_for_key(key);
   MUTEX_TRY_LOCK(lock, bucket_mutex, this_ethread());
   if (lock) {
     RunTodoList(part_num(key));
