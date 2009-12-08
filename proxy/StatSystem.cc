@@ -70,6 +70,9 @@ int snap_stats_every = 60;
 ink_hrtime http_handler_times[MAX_HTTP_HANDLER_EVENTS];
 int http_handler_counts[MAX_HTTP_HANDLER_EVENTS];
 
+
+char snap_filename[PATH_NAME_MAX+1] = DEFAULT_SNAP_FILENAME;
+
 #define DEFAULT_PERSISTENT
 
 #ifndef DEFAULT_PERSISTENT
@@ -202,14 +205,10 @@ persistent_stat(int i)
 static int
 open_stats_snap()
 {
-  char filename[PATH_NAME_MAX];
-
-  snprintf(filename, sizeof(filename), "%s%s%s%s%s", system_config_directory,
-           DIR_SEP, "internal", DIR_SEP, "stats.snap");
-  int fd = socketManager.open(filename,
+  int fd = socketManager.open(snap_filename,
                               O_CREAT | O_RDWR | _O_ATTRIB_NORMAL);
   if (fd < 0) {
-    Warning("unable to open stats.snap: %s", strerror(-fd));
+    Warning("unable to open %s: %s", snap_filename, strerror(-fd));
     return -1;
   }
   return fd;
@@ -219,10 +218,6 @@ static void
 clear_stats()
 {
   int i = 0;
-  char filename[PATH_NAME_MAX];
-
-  snprintf(filename, sizeof(filename), "%s%s%s%s%s", system_config_directory,
-           DIR_SEP, "internal", DIR_SEP, "stats.snap");
 
   int stats_size = MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS - 1;
   for (i = 0; i < stats_size; i++) {
@@ -253,7 +248,7 @@ clear_stats()
     }
   }
 
-  socketManager.unlink(filename);
+  socketManager.unlink(snap_filename);
   Debug("stats", "clear_stats: clearing statistics");
 }
 
@@ -610,6 +605,21 @@ void
 initialize_all_global_stats()
 {
   int istat, i;
+  char snap_file[PATH_NAME_MAX];
+  char local_state_dir[PATH_NAME_MAX];
+  struct stat s;
+  int err;
+
+  // Jira TS-21
+  REC_ReadConfigString(local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
+  if ((err = stat(local_state_dir, &s)) < 0) {
+    Warning("Unable to stat() local state directory '%s': %d %d, %s", local_state_dir, err, errno, strerror(errno));
+    Warning(" Please set 'proxy.config.local_state_dir' to allow statistics collection");
+  }
+  REC_ReadConfigString(snap_file, "proxy.config.stats.snap_file", PATH_NAME_MAX);
+  snprintf(snap_filename, sizeof(snap_filename), "%s%s%s", local_state_dir,
+           DIR_SEP, snap_file);
+  Debug("stats", "stat snap filename %s", snap_filename);
 
   stat_callback_init();
   testpage_callback_init();

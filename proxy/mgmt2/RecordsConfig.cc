@@ -77,6 +77,9 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.config_dir", "", INK_STRING, PKGSYSCONFDIR, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
+  // Jira TS-21
+  {CONFIG, "proxy.config.local_state_dir", "", INK_STRING, PKGLOCALSTATEDIR, RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
   {CONFIG, "proxy.config.temp_dir", "", INK_STRING, "/tmp", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.alarm_email", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_STR, ".*", RA_NULL}
@@ -2691,6 +2694,9 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.stats.snap_frequency", "", INK_INT, "60", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.stats.config_file", "", INK_STRING, "stats.config", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  // Jira TS-21
+  {CONFIG, "proxy.config.stats.snap_file", "", INK_STRING, "stats.snap", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //        ###########
   //        # Parsing #

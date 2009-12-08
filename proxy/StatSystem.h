@@ -40,6 +40,7 @@
 #include "ink_apidefs.h"
 
 #define STATS_MAJOR_VERSION    6        // increment when changing the stats!
+#define DEFAULT_SNAP_FILENAME             "stats.snap"
 
 /////////////////////////////////////////////////////////////
 //
