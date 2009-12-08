@@ -714,7 +714,7 @@ public:
     @return number of bytes copied and consumed.
 
   */
-  inkcoreapi int read(char *buf, int len);
+  inkcoreapi int read(void *buf, int len);
 
   /**
     Copy data but do not consume it. Copies 'len' bytes of data from
@@ -733,7 +733,7 @@ public:
       parameter buf is set to this value also.
 
   */
-  inkcoreapi char *memcpy(char *buf, int len = INT_MAX, int offset = 0);
+  inkcoreapi char *memcpy(void *buf, int len = INT_MAX, int offset = 0);
 
   /**
     Subscript operator. Returns a reference to the character at the
@@ -859,7 +859,7 @@ public:
     control. Returns the number of bytes added.
 
   */
-  inkcoreapi int write(const char *rbuf, int nbytes);
+  inkcoreapi int write(const void *rbuf, int nbytes);
 
 #ifdef WRITE_AND_TRANSFER
   /**

@@ -82,8 +82,9 @@ MIOBuffer::remove_append(IOBufferReader * r)
 }
 
 int
-MIOBuffer::write(const char *buf, int alen)
+MIOBuffer::write(const void *abuf, int alen)
 {
+  char *buf = (char*)abuf;
   int len = alen;
   while (len) {
     if (!_writer)
@@ -186,8 +187,9 @@ MIOBuffer::puts(char *s, int len)
 }
 
 int
-IOBufferReader::read(char *b, int len)
+IOBufferReader::read(void *ab, int len)
 {
+  char *b = (char*)ab;
   int max_bytes = read_avail();
   int bytes = len <= max_bytes ? len : max_bytes;
   int n = bytes;
@@ -238,8 +240,9 @@ IOBufferReader::memchr(char c, int len, int offset)
 }
 
 char *
-IOBufferReader::memcpy(char *p, int len, int offset)
+IOBufferReader::memcpy(void *ap, int len, int offset)
 {
+  char *p = (char*)ap;
   IOBufferBlock *b = block;
   offset += start_offset;
 
