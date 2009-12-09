@@ -140,8 +140,10 @@ SLL<C, o>::pop() {
       return NULL;
   }
   C *ret = head;
-  if (head)
-    head = GetSLinkNext(C, head, o);
+  if (ret) {
+    head = GetSLinkNext(C, ret, o);
+    GetSLinkNext(C, ret, o) = NULL;
+  }
   return ret;
 }
 
