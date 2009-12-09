@@ -85,8 +85,8 @@ AIOCallbackInternal::io_complete(int event, void *data)
 
 struct AIO_Reqs
 {
-  Queue<AIOCallback> aio_todo;       /* queue for holding non-http requests */
-  Queue<AIOCallback> http_aio_todo;  /* queue for http requests */
+  Que(AIOCallback, link) aio_todo;       /* queue for holding non-http requests */
+  Que(AIOCallback, link) http_aio_todo;  /* queue for http requests */
   /* Atomic list to temporarily hold the request if the
      lock for a particular queue cannot be acquired */
   InkAtomicList aio_temp_list;
