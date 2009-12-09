@@ -152,7 +152,7 @@ EThread::execute()
 {
   Event *e;
   ink_hrtime next_time = 0, sleep_time;
-  Queue<Event> NegativeQueue;
+  Que(Event, link) NegativeQueue;
   switch (tt) {
 
   case REGULAR:{

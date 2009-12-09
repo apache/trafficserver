@@ -310,7 +310,7 @@ public:
   DiskHandler *diskHandler;
 
   /** Private Data for AIO. */
-  Queue<Continuation> aio_ops;
+  Que(Continuation, link) aio_ops;
 
   ProtectedQueue EventQueueExternal;
   PriorityEventQueue EventQueue;

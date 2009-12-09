@@ -51,7 +51,7 @@ struct ProtectedQueue
   InkAtomicList al;
   ink_mutex lock;
   ink_cond might_have_data;
-  Queue<Event> localQueue;
+  Que(Event, link) localQueue;
 
   ProtectedQueue();
 };

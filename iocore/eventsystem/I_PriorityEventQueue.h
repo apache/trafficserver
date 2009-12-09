@@ -38,7 +38,7 @@ class EThread;
 struct PriorityEventQueue
 {
 
-  Queue<Event> after[N_PQ_LIST];
+  Que(Event, link) after[N_PQ_LIST];
   ink_hrtime last_check_time;
   inku32 last_check_buckets;
 
