@@ -130,17 +130,13 @@ UnixNetProcessor::accept_internal(Continuation * cont,
   na->etype = etype;
   if (na->callback_on_open)
     na->mutex = cont->mutex;
-  if (frequent_accept)          // true
-  {
-    if (use_accept_thread)      // 0
-    {
+  if (frequent_accept) { // true
+    if (use_accept_thread) // 0
       na->init_accept_loop();
-    } else {
+    else
       na->init_accept_per_thread();
-    }
-  } else {
+  } else
     na->init_accept();
-  }
   if (bound_sockaddr && bound_sockaddr_size)
     safe_getsockname(na->server.fd, bound_sockaddr, bound_sockaddr_size);
 
@@ -184,11 +180,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
 
     NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
     vc->id = net_next_connection_number();
-#ifdef XXTIME
-    vc->submit_time = ink_get_hrtime_internal();
-#else
     vc->submit_time = ink_get_hrtime();
-#endif
     vc->setSSLClientConnection(true);
     vc->ip = ip;
     vc->port = port;
@@ -213,11 +205,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
 #endif
     NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
     vc->id = net_next_connection_number();
-#ifdef XXTIME
-    vc->submit_time = ink_get_hrtime_internal();
-#else
     vc->submit_time = ink_get_hrtime();
-#endif
     vc->setSSLClientConnection(true);
     vc->ip = ip;
     vc->port = port;
@@ -273,7 +261,6 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
   }
 }
 
-
 Action *
 UnixNetProcessor::connect(Continuation * cont,
                           UnixNetVConnection ** avc,
@@ -297,11 +284,7 @@ UnixNetProcessor::connect(Continuation * cont,
   else
     opt = &vc->options;
   vc->id = net_next_connection_number();
-#ifdef XXTIME
-  vc->submit_time = ink_get_hrtime_internal();
-#else
   vc->submit_time = ink_get_hrtime();
-#endif
   vc->setSSLClientConnection(true);
   vc->ip = ip;
   vc->port = port;
@@ -330,15 +313,8 @@ UnixNetProcessor::connect(Continuation * cont,
 
   check_emergency_throttle(vc->con);
 
-  // start up next round immediately
-
-  //added by YTS Team, yamsat
-  struct epoll_data_ptr *eptr;
-  eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-  eptr->type = EPOLL_READWRITE_VC;
-  eptr->data.vc = vc;
-
-  vc->ep = eptr;
+  vc->ep.type = EPOLL_READWRITE_VC;
+  vc->ep.data.vc = vc;
 
   PollDescriptor *pd = get_PollDescriptor(t);
 
@@ -346,7 +322,7 @@ UnixNetProcessor::connect(Continuation * cont,
   struct epoll_event ev;
   memset(&ev, 0, sizeof(struct epoll_event));
   ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-  ev.data.ptr = eptr;
+  ev.data.ptr = &vc->ep;
 
   res = epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, vc->con.fd, &ev);
 
@@ -358,14 +334,14 @@ UnixNetProcessor::connect(Continuation * cont,
 
 #elif defined(USE_KQUEUE)
   struct kevent ev;
-  EV_SET(&ev, vc->con.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+  EV_SET(&ev, vc->con.fd, EVFILT_READ, EV_ADD, 0, 0, &vc->ep);
   if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
     Debug("iocore_net", "connect : Error in adding to kqueue list\n");
     close_UnixNetVConnection(vc, vc->thread);
     return ACTION_RESULT_DONE;
   }
 
-  EV_SET(&ev, vc->con.fd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+  EV_SET(&ev, vc->con.fd, EVFILT_WRITE, EV_ADD, 0, 0, &vc->ep);
   if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
     Debug("iocore_net", "connect : Error in adding to kqueue list\n");
     close_UnixNetVConnection(vc, vc->thread);
@@ -375,20 +351,14 @@ UnixNetProcessor::connect(Continuation * cont,
 #error port me
 #endif
 
-  Debug("iocore_net", "connect : Adding fd %d to read wait list\n", vc->con.fd);
-  vc->nh->wait_list.epoll_addto_read_wait_list(vc);
-  Debug("iocore_net", "connect : Adding fd %d to write wait list\n", vc->con.fd);
-  vc->nh->wait_list.epoll_addto_write_wait_list(vc);
+  vc->nh->open_list.enqueue(vc);
 
   SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::mainEvent);
   ink_assert(!vc->inactivity_timeout_in);
   ink_assert(!vc->active_timeout_in);
-  XTIME(printf("%d 1connect\n", vc->id));
   *avc = vc;
   return ACTION_RESULT_DONE;
 }
-
-
 
 struct CheckConnect:public Continuation
 {

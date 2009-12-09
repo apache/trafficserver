@@ -192,31 +192,20 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     }
 
     if (ret == EVENT_ERROR) {
-      //added by YTS Team, yamsat 
-      if (this->read.triggered == 1) {
-        this->read.triggered = 0;
-      }
+      this->read.triggered = 0;
       readSignalError(nh, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT || ret == SSL_HANDSHAKE_WANT_CONNECT
                || ret == SSL_HANDSHAKE_WANT_WRITE) {
       read.triggered = 0;
-      if (read.netready_queue) {
-        ReadyQueue::epoll_remove_from_read_ready_queue(this);
-      }
+      nh->read_ready_list.remove(this);
       write.triggered = 0;
-      if (write.netready_queue) {
-        ReadyQueue::epoll_remove_from_write_ready_queue(this);
-      }
+      nh->write_ready_list.remove(this);
     } else if (ret == EVENT_DONE) {
       write.triggered = 1;
-      if (write.enabled) {
-        if (!write.netready_queue) {
-          nh->ready_queue.epoll_addto_write_ready_queue(this);
-        }
-      }
-    } else {
+      if (write.enabled)
+        nh->write_ready_list.in_or_enqueue(this);
+    } else 
       readReschedule(nh);
-    }
     return;
   }
   // If there is nothing to do, disable connection 
@@ -225,8 +214,6 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     read_disable(nh, this);
     return;
   }
-
-
 
   do {
     if (!buf.writer()->write_avail()) {
@@ -263,10 +250,7 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     // reset the tigger and remove from the ready queue
     // we will need to be retriggered to read from this socket again
     read.triggered = 0;
-    if (read.netready_queue) {
-      ReadyQueue::epoll_remove_from_read_ready_queue(this);
-    }
-
+    nh->read_ready_list.remove(this);
     Debug("ssl", "read_from_net, read finished - would block");
     break;
 
@@ -287,10 +271,7 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
     Debug("ssl", "read_from_net, read finished - signal done");
     break;
   case SSL_READ_ERROR:
-    //added by YTS Team, yamsat
-    if (this->read.triggered == 1) {
-      this->read.triggered = 0;
-    }
+    this->read.triggered = 0;
     readSignalError(nh, r);
     Debug("ssl", "read_from_net, read finished - read error");
     break;
@@ -410,7 +391,6 @@ write_want_syscal(0), write_want_x509(0), write_error_zero(0), sslHandShakeCompl
   ssl = NULL;
 }
 
-//changed by YTS Team, yamsat
 void
 SSLNetVConnection::free(EThread * t)
 {
@@ -424,15 +404,8 @@ SSLNetVConnection::free(EThread * t)
   this->mutex.clear();
   flags = 0;
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler) & SSLNetVConnection::startEvent);
-  ink_assert(!read.queue && !write.queue);
   ink_assert(con.fd == NO_FD);
-  if (ep) {
-    xfree(ep);
-    ep = NULL;
-  }
-  if (nh) {
-    nh = NULL;
-  }
+  nh = NULL;
   //printf("total %d read calls for this connection fd: %d\n", read_calls, con.fd); 
   //printf("total %d write calls for this connection fd:  %d\n", write_calls, con.fd); 
   read_calls = 0;

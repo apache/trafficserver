@@ -36,58 +36,37 @@
 #include "P_UDPConnection.h"
 class UnixUDPConnection:public UDPConnectionInternal
 {
-
 public:
+  void init(int fd);
+  void setEthread(EThread * e);
+  void errorAndDie(int e);
+  int callbackHandler(int event, void *data);
+
+  Link<UnixUDPConnection> polling_link;
+  Link<UnixUDPConnection> callback_link;
+  SLink<UnixUDPConnection> newconn_alink;
+
+  InkAtomicList inQueue;
+  int onCallbackQueue;
+  Action *callbackAction;
+  EThread *ethread;
+  struct epoll_data_ptr ep;
 
   UnixUDPConnection(int fd);
-    virtual ~ UnixUDPConnection();
-
-  void init(int fd);
-
-  void setPollvecIndex(int i);
-  int getPollvecIndex();
-  void clearPollvecIndex();
-  void setEthread(EThread * e);
-
-  void errorAndDie(int e);
-
-    Link<UnixUDPConnection> polling_link;
-
-    Link<UnixUDPConnection> callback_link;
-
-    SLink<UnixUDPConnection> newconn_alink;
-
-  int callbackHandler(int event, void *data);
-  InkAtomicList inQueue;
-
-  int onCallbackQueue;
-
-  Action *callbackAction;
-  EThread *m_ethread;
-  struct epoll_data_ptr *eptr;
-  virtual void UDPConnection_is_abstract()
-  {
-  };
-
+  virtual ~ UnixUDPConnection();
 private:
-  int m_pollvec_index;          // used by nethandler for polling.
   int m_errno;
+  virtual void UDPConnection_is_abstract() {};
 };
 
 inline
 UnixUDPConnection::UnixUDPConnection(int fd)
-  :
-onCallbackQueue(0)
-  ,
-callbackAction(NULL)
-  ,
-m_ethread(NULL)
-  ,
-m_pollvec_index(-1)
-  ,
-m_errno(0)
+  : onCallbackQueue(0)
+  , callbackAction(NULL)
+  , ethread(NULL)
+  , m_errno(0)
 {
-  m_fd = fd;
+  fd = fd;
   UDPPacketInternal p;
   ink_atomiclist_init(&inQueue, "Incoming UDP Packet queue", (char *) &p.alink.next - (char *) &p);
   SET_HANDLER(&UnixUDPConnection::callbackHandler);
@@ -96,11 +75,10 @@ m_errno(0)
 inline void
 UnixUDPConnection::init(int fd)
 {
-  m_fd = fd;
+  fd = fd;
   onCallbackQueue = 0;
   callbackAction = NULL;
-  m_ethread = NULL;
-  m_pollvec_index = -1;
+  ethread = NULL;
   m_errno = 0;
 
   UDPPacketInternal p;
@@ -109,27 +87,9 @@ UnixUDPConnection::init(int fd)
 }
 
 inline void
-UnixUDPConnection::setPollvecIndex(int i)
-{
-  m_pollvec_index = i;
-}
-
-inline int
-UnixUDPConnection::getPollvecIndex()
-{
-  return m_pollvec_index;
-}
-
-inline void
-UnixUDPConnection::clearPollvecIndex()
-{
-  m_pollvec_index = -1;
-}
-
-inline void
 UnixUDPConnection::setEthread(EThread * e)
 {
-  m_ethread = e;
+  ethread = e;
 }
 
 inline void
@@ -142,7 +102,7 @@ INK_INLINE void
 UDPConnection::Release()
 {
   UnixUDPConnection *p = (UnixUDPConnection *) this;
-  PollCont *pc = get_UDPPollCont(p->m_ethread);
+  PollCont *pc = get_UDPPollCont(p->ethread);
 
 #if defined(USE_EPOLL)
   struct epoll_event ev;
@@ -153,12 +113,8 @@ UDPConnection::Release()
   EV_SET(&ev[1], getFd(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
   kevent(pc->pollDescriptor->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
 #endif
-  if (p->eptr) {
-    free(p->eptr);
-    p->eptr = NULL;
-  }
 
-  if (ink_atomic_increment(&p->m_refcount, -1) == 1) {
+  if (ink_atomic_increment(&p->refcount, -1) == 1) {
     ink_debug_assert(p->callback_link.next == NULL);
     ink_debug_assert(p->callback_link.prev == NULL);
     ink_debug_assert(p->polling_link.next == NULL);

@@ -30,14 +30,6 @@ int net_connections_throttle;
 int fds_throttle;
 int fds_limit = 8000;
 ink_hrtime last_transient_accept_error;
-int n_netq_list = 32;
-
-NetState::NetState():
-enabled(0), priority(INK_MIN_PRIORITY), vio(VIO::NONE), queue(0), netready_queue(0),    //added by YTS Team, yamsat
-  enable_queue(0),              //added by YTS Team, yamsat
-  ifd(-1), do_next_at(0), next_vc(0), npending_scheds(0), triggered(0)  //added by YTS Team, yamsat
-{
-}
 
 PollCont::PollCont(ProxyMutex * m):Continuation(m), net_handler(NULL), poll_timeout(REAL_DEFAULT_EPOLL_TIMEOUT)
 {
@@ -75,10 +67,10 @@ PollCont::pollEvent(int event, Event * e)
   if (likely(net_handler)) {
     /* checking to see whether there are connections on the ready_queue (either read or write) that need processing [ebalsa] */
     if (likely
-        (!net_handler->ready_queue.read_ready_queue.empty() || !net_handler->ready_queue.write_ready_queue.empty() ||
+        (!net_handler->read_ready_list.empty() || !net_handler->read_ready_list.empty() ||
          !net_handler->read_enable_list.empty() || !net_handler->write_enable_list.empty())) {
-      Debug("epoll", "rrq: %d, wrq: %d, rel: %d, wel: %d", net_handler->ready_queue.read_ready_queue.empty(),
-            net_handler->ready_queue.write_ready_queue.empty(), net_handler->read_enable_list.empty(),
+      Debug("epoll", "rrq: %d, wrq: %d, rel: %d, wel: %d", net_handler->read_ready_list.empty(),
+            net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(),
             net_handler->write_enable_list.empty());
       poll_timeout = 0;         //poll immediately returns -- we have triggered stuff to process right now
     } else {
@@ -119,16 +111,13 @@ initialize_thread_for_net(EThread * thread, int thread_index)
     if ((max_poll_delay & (max_poll_delay - 1)) ||
         (max_poll_delay<NET_PRIORITY_MSEC) || (max_poll_delay> MAX_NET_BUCKETS * NET_PRIORITY_MSEC)) {
       IOCORE_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, "proxy.config.net.max_poll_delay range is [4-1024]");
-    } else
-      n_netq_list = max_poll_delay / 4;
+    }
     poll_delay_read = true;
   }
 
-  new((ink_dummy_for_new *) get_NetHandler(thread)) NetHandler(false);
+  new((ink_dummy_for_new *) get_NetHandler(thread)) NetHandler();
   new((ink_dummy_for_new *) get_PollCont(thread)) PollCont(thread->mutex, get_NetHandler(thread));
   get_NetHandler(thread)->mutex = new_ProxyMutex();
-  get_NetHandler(thread)->read_enable_mutex = new_ProxyMutex();
-  get_NetHandler(thread)->write_enable_mutex = new_ProxyMutex();
   thread->schedule_imm(get_NetHandler(thread));
 
 #ifndef INACTIVITY_TIMEOUT
@@ -139,7 +128,7 @@ initialize_thread_for_net(EThread * thread, int thread_index)
 
 // NetHandler method definitions
 
-NetHandler::NetHandler(bool _ext_main):Continuation(NULL), trigger_event(0), cur_msec(0), ext_main(_ext_main)
+NetHandler::NetHandler():Continuation(NULL), trigger_event(0)
 {
   SET_HANDLER((NetContHandler) & NetHandler::startNetEvent);
 }
@@ -159,42 +148,25 @@ NetHandler::startNetEvent(int event, Event * e)
 }
 
 //
-//Function added by YTS Team, yamsat
+// Move VC's enabled on a different thread to the ready list
 //
 void
-NetHandler::process_sm_enabled_list(NetHandler * nh, EThread * t)
+NetHandler::process_enabled_list(NetHandler * nh, EThread * t)
 {
-
   UnixNetVConnection *vc = NULL;
 
-  MUTEX_TRY_LOCK(rlistlock, nh->read_enable_mutex, t);
-  if (rlistlock) {
-    Queue<UnixNetVConnection> &rq = nh->read_enable_list;
-    while ((vc = (UnixNetVConnection *) rq.dequeue(rq.head, rq.head->read.enable_link))) {
-      vc->read.enable_queue = NULL;
-      if ((vc->read.enabled && vc->read.triggered) || vc->closed) {
-        if (!vc->read.netready_queue) {
-          nh->ready_queue.epoll_addto_read_ready_queue(vc);
-        }
-      }
-    }
-    MUTEX_RELEASE(rlistlock);
+  SList(UnixNetVConnection, read.enable_link) rq(nh->read_enable_list.popall());
+  while ((vc = rq.pop())) {
+    vc->read.in_enabled_list = 0;
+    if ((vc->read.enabled && vc->read.triggered) || vc->closed)
+      nh->read_ready_list.in_or_enqueue(vc);
   }
 
-  vc = NULL;
-
-  MUTEX_TRY_LOCK(wlistlock, nh->write_enable_mutex, t);
-  if (wlistlock) {
-    Queue<UnixNetVConnection> &wq = nh->write_enable_list;
-    while ((vc = (UnixNetVConnection *) wq.dequeue(wq.head, wq.head->write.enable_link))) {
-      vc->write.enable_queue = NULL;
-      if ((vc->write.enabled && vc->write.triggered) || vc->closed) {
-        if (!vc->write.netready_queue) {
-          nh->ready_queue.epoll_addto_write_ready_queue(vc);
-        }
-      }
-    }
-    MUTEX_RELEASE(wlistlock);
+  SList(UnixNetVConnection, write.enable_link) wq(nh->write_enable_list.popall());
+  while ((vc = wq.pop())) {
+    vc->write.in_enabled_list = 0;
+    if ((vc->write.enabled && vc->write.triggered) || vc->closed)
+      nh->write_ready_list.in_or_enqueue(vc);
   }
 }
 
@@ -213,23 +185,13 @@ NetHandler::mainNetEvent(int event, Event * e)
   int poll_timeout = REAL_DEFAULT_EPOLL_TIMEOUT;
 
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
-  //UnixNetVConnection *closed_vc = NULL, *next_closed_vc = NULL;
-  //Queue<UnixNetVConnection> &q = wait_list.read_wait_list;
-  //for (closed_vc= (UnixNetVConnection*)q.head ; closed_vc ; closed_vc = next_closed_vc){
-  // next_closed_vc = (UnixNetVConnection*) closed_vc->read.link.next;
-  //if (closed_vc->closed){
-  //printf("MESSEDUP connection closed for fd :%d\n",closed_vc->con.fd);
-  //close_UnixNetVConnection(closed_vc, trigger_event->ethread);
-  //}
-  //}
 
-  process_sm_enabled_list(this, e->ethread);
-  if (likely(!ready_queue.read_ready_queue.empty() || !ready_queue.write_ready_queue.empty() ||
-             !read_enable_list.empty() || !write_enable_list.empty())) {
-    poll_timeout = 0;           //poll immediately returns -- we have triggered stuff to process right now
-  } else {
+  process_enabled_list(this, e->ethread);
+  if (likely(!read_ready_list.empty() || !write_ready_list.empty() ||
+             !read_enable_list.empty() || !write_enable_list.empty()))
+    poll_timeout = 0; // poll immediately returns -- we have triggered stuff to process right now
+  else
     poll_timeout = REAL_DEFAULT_EPOLL_TIMEOUT;
-  }
 
   PollDescriptor *pd = get_PollDescriptor(trigger_event->ethread);
   UnixNetVConnection *vc = NULL;
@@ -256,71 +218,60 @@ NetHandler::mainNetEvent(int event, Event * e)
       if (get_ev_events(pd,x) & (INK_EVP_IN)) {
         vc->read.triggered = 1;
         vc->addLogMessage("read triggered");
-        if ((vc->read.enabled || vc->closed) && !vc->read.netready_queue) {
-          ready_queue.epoll_addto_read_ready_queue(vc);
-        } else if (get_ev_events(pd,x) & (INK_EVP_PRI | INK_EVP_HUP | INK_EVP_ERR)) {
+        if ((vc->read.enabled || vc->closed) && !read_ready_list.in(vc))
+          read_ready_list.enqueue(vc);
+        else if (get_ev_events(pd,x) & (INK_EVP_PRI | INK_EVP_HUP | INK_EVP_ERR)) {
           // check for unhandled epoll events that should be handled
-          Debug("epoll_miss", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%p",
-                get_ev_events(pd,x), vc->read.enabled, vc->closed, vc->read.netready_queue);
+          Debug("epoll_miss", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%d",
+                get_ev_events(pd,x), vc->read.enabled, vc->closed, read_ready_list.in(vc));
         }
       }
       vc = epd->data.vc;
       if (get_ev_events(pd,x) & (INK_EVP_OUT)) {
         vc->write.triggered = 1;
         vc->addLogMessage("write triggered");
-        if ((vc->write.enabled || vc->closed) && !vc->write.netready_queue) {
-          ready_queue.epoll_addto_write_ready_queue(vc);
-        } else if (get_ev_events(pd,x) & (INK_EVP_PRI | INK_EVP_HUP | INK_EVP_ERR)) {
+        if ((vc->write.enabled || vc->closed) && !write_ready_list.in(vc))
+          write_ready_list.enqueue(vc);
+        else if (get_ev_events(pd,x) & (INK_EVP_PRI | INK_EVP_HUP | INK_EVP_ERR)) {
           // check for unhandled epoll events that should be handled
           Debug("epoll_miss",
-                "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%p",
-                get_ev_events(pd,x), vc->write.enabled, vc->closed, vc->write.netready_queue);
+                "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%d",
+                get_ev_events(pd,x), vc->write.enabled, vc->closed, write_ready_list.in(vc));
         }
       } else if (!(get_ev_events(pd,x) & (INK_EVP_IN)) &&
                  get_ev_events(pd,x) & (INK_EVP_PRI | INK_EVP_HUP | INK_EVP_ERR)) {
         Debug("epoll_miss", "Unhandled epoll event: 0x%04x", get_ev_events(pd,x));
       }
     } else if (epd->type == EPOLL_DNS_CONNECTION) {
-      if (epd->data.dnscon != NULL) {
-        dnsqueue.enqueue(epd->data.dnscon, epd->data.dnscon->link);
-      }
+      if (epd->data.dnscon != NULL)
+        dnsqueue.enqueue(epd->data.dnscon);
     }
   }
 
   pd->result = 0;
 
   UnixNetVConnection *next_vc = NULL;
-  vc = ready_queue.read_ready_queue.head;
-
+  vc = read_ready_list.head;
   while (vc) {
-    next_vc = vc->read.netready_link.next;
-    if (vc->closed) {
+    next_vc = vc->read.ready_link.next;
+    if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    } else if (vc->read.enabled && vc->read.triggered) {
+    else if (vc->read.enabled && vc->read.triggered)
       vc->net_read_io(this, trigger_event->ethread);
-    }
     vc = next_vc;
   }
 
   next_vc = NULL;
-  vc = ready_queue.write_ready_queue.head;
-
+  vc = write_ready_list.head;
   while (vc) {
-    next_vc = vc->write.netready_link.next;
-    if (vc->closed) {
+    next_vc = vc->write.ready_link.next;
+    if (vc->closed)
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    } else if (vc->write.enabled && vc->write.triggered) {
+    else if (vc->write.enabled && vc->write.triggered)
       write_to_net(this, vc, pd, trigger_event->ethread);
-    }
     vc = next_vc;
   }
 
   return EVENT_CONT;
 }
 
-// PriorityPollQueue methods
-
-PriorityPollQueue::PriorityPollQueue()
-{
-  position = ink_get_hrtime() / HRTIME_MSECOND;
-}

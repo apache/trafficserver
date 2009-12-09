@@ -1991,10 +1991,10 @@ xmlBandwidthSchemaRead(XMLNode * node)
   // file doesn't exist
   if (node->getNodeName() == NULL) {
     // alloc 1-elt array to store stuff for best-effort traffic
-    G_inkPipeInfo.m_perPipeInfo = NEW(new InkSinglePipeInfo[1]);
-    G_inkPipeInfo.m_perPipeInfo[0].m_wt = 1.0;
-    G_inkPipeInfo.m_numPipes = 0;
-    G_inkPipeInfo.m_interfaceMbps = 0.0;
+    G_inkPipeInfo.perPipeInfo = NEW(new InkSinglePipeInfo[1]);
+    G_inkPipeInfo.perPipeInfo[0].wt = 1.0;
+    G_inkPipeInfo.numPipes = 0;
+    G_inkPipeInfo.interfaceMbps = 0.0;
     return true;
   }
 
@@ -2002,24 +2002,24 @@ xmlBandwidthSchemaRead(XMLNode * node)
     Debug("bw-mgmt", "Root node should be an interface tag!\n");
     return false;
   }
-  // First entry G_inkPipeInfo.m_perPipeInfo[0] is the one for "best-effort" traffic.
-  G_inkPipeInfo.m_perPipeInfo = NEW(new InkSinglePipeInfo[node->getChildCount() + 1]);
-  G_inkPipeInfo.m_perPipeInfo[0].m_wt = 1.0;
-  G_inkPipeInfo.m_numPipes = 0;
-  G_inkPipeInfo.m_reliabilityMbps = 1.0;
-  G_inkPipeInfo.m_interfaceMbps = 30.0;
+  // First entry G_inkPipeInfo.perPipeInfo[0] is the one for "best-effort" traffic.
+  G_inkPipeInfo.perPipeInfo = NEW(new InkSinglePipeInfo[node->getChildCount() + 1]);
+  G_inkPipeInfo.perPipeInfo[0].wt = 1.0;
+  G_inkPipeInfo.numPipes = 0;
+  G_inkPipeInfo.reliabilityMbps = 1.0;
+  G_inkPipeInfo.interfaceMbps = 30.0;
   for (i = 0; i < node->getChildCount(); i++) {
     if ((child = node->getChildNode(i))) {
       if (strcmp(child->getNodeName(), "pipe") == 0) {
-        G_inkPipeInfo.m_numPipes++;
+        G_inkPipeInfo.numPipes++;
         for (k = 0; k < child->getChildCount(); k++) {
           c2 = child->getChildNode(k);
           for (int l = 0; l < c2->m_nACount; l++) {
             if (strcmp(c2->m_pAList[l].pAName, "weight") == 0) {
-              G_inkPipeInfo.m_perPipeInfo[G_inkPipeInfo.m_numPipes].m_wt = atof(c2->m_pAList[l].pAValue);
-              G_inkPipeInfo.m_perPipeInfo[0].m_wt -= G_inkPipeInfo.m_perPipeInfo[G_inkPipeInfo.m_numPipes].m_wt;
+              G_inkPipeInfo.perPipeInfo[G_inkPipeInfo.numPipes].wt = atof(c2->m_pAList[l].pAValue);
+              G_inkPipeInfo.perPipeInfo[0].wt -= G_inkPipeInfo.perPipeInfo[G_inkPipeInfo.numPipes].wt;
             } else if (strcmp(c2->m_pAList[l].pAName, "dest_ip") == 0) {
-              p = (unsigned char *) &(G_inkPipeInfo.m_perPipeInfo[G_inkPipeInfo.m_numPipes].m_destIP);
+              p = (unsigned char *) &(G_inkPipeInfo.perPipeInfo[G_inkPipeInfo.numPipes].destIP);
               ip = c2->m_pAList[l].pAValue;
               for (j = 0; j < 4; j++) {
                 p[j] = atoi(ip);
@@ -2033,21 +2033,21 @@ xmlBandwidthSchemaRead(XMLNode * node)
       } else if (strcmp(child->getNodeName(), "bandwidth") == 0) {
         for (j = 0; j < child->m_nACount; j++) {
           if (strcmp(child->m_pAList[j].pAName, "limit_mbps") == 0) {
-            G_inkPipeInfo.m_interfaceMbps = atof(child->m_pAList[j].pAValue);
+            G_inkPipeInfo.interfaceMbps = atof(child->m_pAList[j].pAValue);
           } else if (strcmp(child->m_pAList[j].pAName, "reliability_mbps") == 0) {
-            G_inkPipeInfo.m_reliabilityMbps = atof(child->m_pAList[j].pAValue);
+            G_inkPipeInfo.reliabilityMbps = atof(child->m_pAList[j].pAValue);
           }
         }
       }
     }
   }
-  Debug("bw-mgmt", "Read in: limit_mbps = %lf\n", G_inkPipeInfo.m_interfaceMbps);
-  for (i = 0; i < G_inkPipeInfo.m_numPipes + 1; i++) {
-    G_inkPipeInfo.m_perPipeInfo[i].m_bwLimit =
-      (ink64) (G_inkPipeInfo.m_perPipeInfo[i].m_wt * G_inkPipeInfo.m_interfaceMbps * 1024.0 * 1024.0);
-    p = (unsigned char *) &(G_inkPipeInfo.m_perPipeInfo[i].m_destIP);
+  Debug("bw-mgmt", "Read in: limit_mbps = %lf\n", G_inkPipeInfo.interfaceMbps);
+  for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++) {
+    G_inkPipeInfo.perPipeInfo[i].bwLimit =
+      (ink64) (G_inkPipeInfo.perPipeInfo[i].wt * G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0);
+    p = (unsigned char *) &(G_inkPipeInfo.perPipeInfo[i].destIP);
     Debug("bw-mgmt", "Pipe [%d]: wt = %lf, dest ip = %d.%d.%d.%d\n",
-          i, G_inkPipeInfo.m_perPipeInfo[i].m_wt, p[0], p[1], p[2], p[3]);
+          i, G_inkPipeInfo.perPipeInfo[i].wt, p[0], p[1], p[2], p[3]);
   }
   return true;
 }

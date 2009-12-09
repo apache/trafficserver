@@ -78,7 +78,7 @@ public:
 
   char *throttle_error_message;
   Event *accept_thread_event;
-  AtomicSLL<NetAccept> accepts_on_thread;
+  ASSL(NetAccept, link) accepts_on_thread;
 
   int accept_epoll_fd;          //added by YTS Team, yamsat
 

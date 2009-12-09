@@ -35,8 +35,8 @@ UnixUDPConnection::~UnixUDPConnection()
 {
   UDPPacketInternal *p = (UDPPacketInternal *) ink_atomiclist_popall(&inQueue);
 
-  if (!m_tobedestroyed)
-    m_tobedestroyed = 1;
+  if (!tobedestroyed)
+    tobedestroyed = 1;
 
   if (p) {
     UDPPacketInternal *pnext = NULL;
@@ -44,7 +44,6 @@ UnixUDPConnection::~UnixUDPConnection()
       pnext = p->alink.next;
       p->alink.next = NULL;
       p->free();
-      //delete p;
       p = pnext;
     }
   }
@@ -53,10 +52,10 @@ UnixUDPConnection::~UnixUDPConnection()
     callbackAction = NULL;
   }
   Debug("udpnet", "Destroying udp port = %d", getPortNum());
-  if (m_fd != -1) {
-    socketManager.close(m_fd, keSocket);
+  if (fd != -1) {
+    socketManager.close(fd, keSocket);
   }
-  m_fd = -1;
+  fd = -1;
 }
 
 // called with continuation lock taken out
@@ -81,7 +80,7 @@ UnixUDPConnection::callbackHandler(int event, void *data)
     if (p) {
       Debug("udpnet", "UDPConnection::callbackHandler");
       UDPPacketInternal *pnext = NULL;
-      Queue<UDPPacketInternal> result;
+      Que(UDPPacketInternal, link) result;
       while (p) {
         pnext = p->alink.next;
         p->alink.next = NULL;
@@ -91,9 +90,8 @@ UnixUDPConnection::callbackHandler(int event, void *data)
       if (!shouldDestroy())
         continuation->handleEvent(NET_EVENT_DATAGRAM_READ_READY, &result);
       else {
-        while ((p = result.dequeue())) {
+        while ((p = result.dequeue()))
           p->free();
-        }
       }
     }
   }
@@ -109,7 +107,7 @@ UDPConnection::bindToThread(Continuation * c)
   EThread *t = eventProcessor.assign_thread(ET_UDP);
   ink_assert(t);
   ink_assert(get_UDPNetHandler(t));
-  uc->m_ethread = t;
+  uc->ethread = t;
   AddRef();
   uc->continuation = c;
   mutex = c->mutex;
@@ -134,7 +132,7 @@ UDPConnection::send(Continuation * c, UDPPacket * xp)
   conn->continuation = c;
   ink_assert(conn->continuation != NULL);
   mutex = c->mutex;
-  p->m_reqGenerationNum = conn->m_sendGenerationNum;
-  get_UDPNetHandler(conn->m_ethread)->udpOutQueue->send(p);
+  p->reqGenerationNum = conn->sendGenerationNum;
+  get_UDPNetHandler(conn->ethread)->udpOutQueue.send(p);
   return ACTION_RESULT_NONE;
 }

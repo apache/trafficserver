@@ -84,7 +84,6 @@ struct OOB_callback:public Continuation
 
 class UnixNetVConnection:public NetVConnection
 {
-
 public:
 
   virtual VIO * do_io_read(Continuation * c, int nbytes, MIOBuffer * buf);
@@ -93,32 +92,12 @@ public:
   virtual Action *send_OOB(Continuation * cont, char *buf, int len);
   virtual void cancel_OOB();
 
-  virtual bool is_over_ssl()
-  {
-    return (false);
-  }
-  virtual void setSSLHandshakeWantsRead(bool flag)
-  {
-    return;
-  };
-  virtual bool getSSLHandshakeWantsRead()
-  {
-    return false;
-  };
-  virtual void setSSLHandshakeWantsWrite(bool flag)
-  {
-    return;
-  };
-  virtual bool getSSLHandshakeWantsWrite()
-  {
-    return false;
-  };
-  /////////////////////////////////////
-  // DEPRICATED
-  bool is_read_enabled();
-  bool is_write_enabled();
-  // DEPRICATED
-  /////////////////////////////////////
+  virtual bool is_over_ssl() { return (false); }
+  virtual void setSSLHandshakeWantsRead(bool flag) { return; }
+  virtual bool getSSLHandshakeWantsRead() { return false; }
+  virtual void setSSLHandshakeWantsWrite(bool flag) { return; }
+
+  virtual bool getSSLHandshakeWantsWrite() { return false; }
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
@@ -143,12 +122,6 @@ public:
   // The public interface is VIO::reenable()
   virtual void reenable(VIO * vio);
   virtual void reenable_re(VIO * vio);
-
-  //////////////////////////////////////////////////
-  // Indicate that the connection is likely to be //
-  // actively used soon. this is a no-op on NT.   //
-  //////////////////////////////////////////////////
-  virtual void boost();
 
   virtual SOCKET get_socket()
   {
@@ -224,11 +197,9 @@ public:
   }
 
   Action action_;
-
   volatile int closed;
   NetState read;
   NetState write;
-
   ink_hrtime inactivity_timeout_in;
   ink_hrtime active_timeout_in;
 #ifdef INACTIVITY_TIMEOUT
@@ -237,15 +208,11 @@ public:
   ink_hrtime next_inactivity_timeout_at;
 #endif
   Event *active_timeout;
-
-
-  struct epoll_data_ptr *ep;    //added by YTS Team, yamsat
-  NetHandler *nh;               //added by YTS Team, yamsat
-
+  struct epoll_data_ptr ep;
+  NetHandler *nh;
   unsigned int id;
-
   unsigned int ip;
-  unsigned int _interface;
+  unsigned int _interface; // 'interface' conflicts with the C++ keyword
   int accept_port;
   int port;
 
@@ -263,9 +230,7 @@ public:
   struct sockaddr_in local_sa;
 
   Connection con;
-
   int recursion;
-
   ink_hrtime submit_time;
   OOB_callback *oob_ptr;
 
@@ -314,21 +279,6 @@ UnixNetVConnection::get_inactivity_timeout()
 {
   return inactivity_timeout_in;
 }
-
-// this is currently not implemented on NT
-INK_INLINE bool
-UnixNetVConnection::is_read_enabled()
-{
-  return !!read.enabled;
-}
-
-INK_INLINE bool
-UnixNetVConnection::is_write_enabled()
-{
-  return !!write.enabled;
-}
-
-
 
 INK_INLINE void
 UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)

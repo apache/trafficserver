@@ -145,25 +145,22 @@ SSLNetAccept::init_accept_per_thread()
       a = this;
     EThread *t = eventProcessor.eventthread[ET_SSL][i];
 
-    //added by YTS Team, yamsat
     PollDescriptor *pd = get_PollDescriptor(t);
-    struct epoll_data_ptr *eptr;
-    eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-    eptr->type = EPOLL_NETACCEPT;
-    eptr->data.na = (NetAccept *) a;
+    ep.type = EPOLL_NETACCEPT;
+    ep.data.na = (NetAccept *) a;
 
 #if defined(USE_EPOLL)
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLET;
-    ev.data.ptr = eptr;
+    ev.data.ptr = &ep;
 
     if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, a->server.fd, &ev) < 0) {
       printf("error in epoll_ctl\n");
     }
 #elif defined(USE_KQUEUE)
     struct kevent ev;
-    EV_SET(&ev, a->server.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+    EV_SET(&ev, a->server.fd, EVFILT_READ, EV_ADD, 0, 0, &ep);
     if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
       printf("error in kevent\n");
     }

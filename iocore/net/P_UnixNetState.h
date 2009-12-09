@@ -49,23 +49,12 @@ struct UnixNetVConnection;
 struct NetState
 {
   volatile int enabled;
-  int priority;
   VIO vio;
-  void *queue;
-  void *netready_queue;         //added by YTS Team, yamsat
-  void *enable_queue;           //added by YTS Team, yamsat
-  int ifd;
-  ink_hrtime do_next_at;
-  Link<UnixNetVConnection> link;
-  Link<UnixNetVConnection> netready_link;  //added by YTS Team, yamsat
-  Link<UnixNetVConnection> enable_link;    //added by YTS Team, yamsat
-  ink32 next_vc;
-  int npending_scheds;
+  Link<UnixNetVConnection> ready_link;
+  SLink<UnixNetVConnection> enable_link;
+  int in_enabled_list;
+  int triggered;
 
-  int triggered;                // added by YTS Team, yamsat
-
-  void enqueue(void *q, UnixNetVConnection * vc);
-
-  NetState();
+  NetState() : enabled(0), vio(VIO::NONE), in_enabled_list(0), triggered(0) {}
 };
 #endif

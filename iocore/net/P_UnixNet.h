@@ -26,15 +26,28 @@
 
 #include <stdarg.h>
 #include "List.h"
+
+class UnixNetVConnection;
+class DNSConnection;
+class NetAccept;
+class UnixUDPConnection;
+struct epoll_data_ptr
+{
+  int type;
+  union
+  {
+    UnixNetVConnection *vc;
+    DNSConnection *dnscon;
+    NetAccept *na;
+    UnixUDPConnection *uc;
+  } data;
+};
+
 #include "P_UnixNetProcessor.h"
 #include "P_UnixNetVConnection.h"
 #include "P_NetAccept.h"
 #include "P_DNSConnection.h"
 
-//
-//added by YTS Team, yamsat
-//Epoll data pointer's data type
-//
 #define EPOLL_NETACCEPT			1
 #define EPOLL_READWRITE_VC		2
 #define EPOLL_DNS_CONNECTION		3
@@ -53,7 +66,6 @@ extern int fds_throttle;
 extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
 extern int http_accept_port_number;
-extern int n_netq_list;
 
 
 //#define INACTIVITY_TIMEOUT
@@ -95,67 +107,12 @@ extern int n_netq_list;
 
 #define NET_THROTTLE_DELAY                        50    /* mseconds */
 #define INK_MIN_PRIORITY                          0
-#define INK_MAX_PRIORITY                          (n_netq_list - 1)
 
-#ifdef XXTIME
-#define XTIME(_x)                                 _x
-#else
-#define XTIME(_x)
-#endif
+#define PRINT_IP(x) ((inku8*)&(x))[0],((inku8*)&(x))[1], ((inku8*)&(x))[2],((inku8*)&(x))[3]
 
 
-#define PRINT_IP(x) ((inku8*)&(x))[0],((inku8*)&(x))[1], \
-                ((inku8*)&(x))[2],((inku8*)&(x))[3]
-
-
-//function prototype needed for SSLUnixNetVConnection
+// function prototype needed for SSLUnixNetVConnection
 unsigned int net_next_connection_number();
-
-struct PriorityPollQueue
-{
-
-  Queue<UnixNetVConnection> read_after[MAX_NET_BUCKETS];
-  Queue<UnixNetVConnection> read_poll;
-  Queue<UnixNetVConnection> write_after[MAX_NET_BUCKETS];
-  Queue<UnixNetVConnection> write_poll;
-  inku32 position;
-
-  int iafter(inku32 now, NetState * ns)
-  {
-    int delta = (int) (ns->do_next_at - now);
-      ink_assert(delta >= 0);
-      ink_assert((delta < n_netq_list) || (n_netq_list == 1));
-      return (position + delta) % n_netq_list;
-  }
-  void enqueue(UnixNetVConnection * vc, NetState * ns, Queue<UnixNetVConnection> *q, inku32 now)
-  {
-    int i = iafter(now, ns);
-    ink_assert(!ns->queue);
-    ns->queue = &q[i];
-    q[i].enqueue(vc, ns->link);
-  }
-  void enqueue_read(UnixNetVConnection * vc, inku32 now)
-  {
-    enqueue(vc, &vc->read, read_after, now);
-  }
-  void enqueue_write(UnixNetVConnection * vc, inku32 now)
-  {
-    enqueue(vc, &vc->write, write_after, now);
-  }
-  static void remove_read(UnixNetVConnection * vc)
-  {
-    ((Queue<UnixNetVConnection> *)vc->read.queue)->remove(vc, vc->read.link);
-    vc->read.queue = NULL;
-  }
-  static void remove_write(UnixNetVConnection * vc)
-  {
-    ((Queue<UnixNetVConnection> *)vc->write.queue)->remove(vc, vc->write.link);
-    vc->write.queue = NULL;
-  }
-
-  PriorityPollQueue();
-};
-
 
 struct PollCont:public Continuation
 {
@@ -164,93 +121,10 @@ struct PollCont:public Continuation
   PollDescriptor *nextPollDescriptor;
   int poll_timeout;
 
-    PollCont(ProxyMutex * m);
-    PollCont(ProxyMutex * m, NetHandler * nh);
-   ~PollCont();
+  PollCont(ProxyMutex * m);
+  PollCont(ProxyMutex * m, NetHandler * nh);
+  ~PollCont();
   int pollEvent(int event, Event * e);
-};
-
-
-
-//
-//added by YTS Team, yamsat
-//Class consisting of ready queues and lock pending queues
-//Ready queues consist of triggered and enabled events
-//NetHandler processes the ready queues
-//VCs which could not acquire the lock are added to lock
-//pending queues
-// 
-struct ReadyQueue
-{
-public:
-  Queue<UnixNetVConnection> read_ready_queue;
-  Queue<UnixNetVConnection> write_ready_queue;
-
-  void epoll_addto_read_ready_queue(UnixNetVConnection * vc)
-  {
-    vc->read.netready_queue = &read_ready_queue;
-    read_ready_queue.enqueue(vc, vc->read.netready_link);
-  }
-
-  void epoll_addto_write_ready_queue(UnixNetVConnection * vc)
-  {
-    vc->write.netready_queue = &write_ready_queue;
-    write_ready_queue.enqueue(vc, vc->write.netready_link);
-  }
-
-  static void epoll_remove_from_read_ready_queue(UnixNetVConnection * vc)
-  {
-    ((Queue<UnixNetVConnection> *)vc->read.netready_queue)->remove(vc, vc->read.netready_link);
-    vc->read.netready_queue = NULL;
-  }
-
-  static void epoll_remove_from_write_ready_queue(UnixNetVConnection * vc)
-  {
-    ((Queue<UnixNetVConnection> *)vc->write.netready_queue)->remove(vc, vc->write.netready_link);
-    vc->write.netready_queue = NULL;
-  }
-
-  ReadyQueue() {
-  }
-};
-
-//
-//added by YTS Team, yamsat
-//Class consisting of wait queues
-//Wait queues consist of VCs which should not be processed
-//
-struct WaitList
-{
-public:
-  Queue<UnixNetVConnection> read_wait_list;
-  Queue<UnixNetVConnection> write_wait_list;
-
-  void epoll_addto_read_wait_list(UnixNetVConnection * vc)
-  {
-    vc->read.queue = &read_wait_list;
-    read_wait_list.enqueue(vc, vc->read.link);
-  }
-
-  void epoll_addto_write_wait_list(UnixNetVConnection * vc)
-  {
-    vc->write.queue = &write_wait_list;
-    write_wait_list.enqueue(vc, vc->write.link);
-  }
-
-
-  static void epoll_remove_from_read_wait_list(UnixNetVConnection * vc)
-  {
-    ((Queue<UnixNetVConnection> *)vc->read.queue)->remove(vc, vc->read.link);
-    vc->read.queue = NULL;
-  }
-  static void epoll_remove_from_write_wait_list(UnixNetVConnection * vc)
-  {
-    ((Queue<UnixNetVConnection> *)vc->write.queue)->remove(vc, vc->write.link);
-    vc->write.queue = NULL;
-  }
-
-  WaitList() {
-  }
 };
 
 //
@@ -262,30 +136,24 @@ public:
 class NetHandler:public Continuation
 {
 public:
-  Event * trigger_event;
-  PriorityPollQueue pollq;
+  Event *trigger_event;
 
-  ReadyQueue ready_queue;       //added by YTS Team, yamsat 
-  WaitList wait_list;           //added by YTS Team, yamsat
-
-  inku32 cur_msec;
-  bool ext_main;
-
-    Queue<DNSConnection> dnsqueue;   //added by YTS Team, yamsat
-    Queue<UnixNetVConnection> read_enable_list;      //added by YTS Team, yamsat
-    Queue<UnixNetVConnection> write_enable_list;     //added by YTS Team, yamsat
-  ProxyMutexPtr read_enable_mutex;      //added by YTS Team, yamsat
-  ProxyMutexPtr write_enable_mutex;     //added by YTS Team, yamsat
+  Que(UnixNetVConnection, read.ready_link) read_ready_list;
+  Que(UnixNetVConnection, write.ready_link) write_ready_list;
+  Que(UnixNetVConnection, link) open_list;
+  Que(DNSConnection, link) dnsqueue;
+  ASSL(UnixNetVConnection, read.enable_link) read_enable_list;
+  ASSL(UnixNetVConnection, write.enable_link) write_enable_list;
 
   int startNetEvent(int event, Event * data);
   int mainNetEvent(int event, Event * data);
-  void process_sm_enabled_list(NetHandler *, EThread *);        //added by YTS Team, yamsat 
   int mainNetEventExt(int event, Event * data);
+  void process_enabled_list(NetHandler *, EThread *);
   PollDescriptor *build_poll(PollDescriptor * pd);
   PollDescriptor *build_one_read_poll(int fd, UnixNetVConnection *, PollDescriptor * pd);
   PollDescriptor *build_one_write_poll(int fd, UnixNetVConnection *, PollDescriptor * pd);
 
-    NetHandler(bool _ext_main = false);
+  NetHandler();
 };
 
 static inline NetHandler *
@@ -492,12 +360,8 @@ read_disable(NetHandler * nh, UnixNetVConnection * vc)
     if (!vc->write.enabled)
       vc->next_inactivity_timeout_at = 0;
 #endif
-  if (vc->read.enabled) {
-    vc->read.enabled = 0;
-  }
-  if (vc->read.netready_queue) {
-    ReadyQueue::epoll_remove_from_read_ready_queue(vc);
-  }
+  vc->read.enabled = 0;
+  nh->read_ready_list.remove(vc);
 }
 
 static inline void
@@ -511,18 +375,12 @@ write_disable(NetHandler * nh, UnixNetVConnection * vc)
     }
   }
 #else
-  if (vc->next_inactivity_timeout_at) {
-    if (!vc->read.enabled) {
+  if (vc->next_inactivity_timeout_at) 
+    if (!vc->read.enabled)
       vc->next_inactivity_timeout_at = 0;
-    }
-  }
 #endif
-  if (vc->write.enabled) {
-    vc->write.enabled = 0;
-  }
-  if (vc->write.netready_queue) {
-    ReadyQueue::epoll_remove_from_write_ready_queue(vc);
-  }
+  vc->write.enabled = 0;
+  nh->write_ready_list.remove(vc);
 }
 
 
@@ -541,24 +399,18 @@ struct InactivityCop:public Continuation
     (void) event;
     ink_hrtime now = ink_get_hrtime();
     NetHandler *nh = get_NetHandler(this_ethread());
-    UnixNetVConnection *vc = NULL;
-    UnixNetVConnection *next_vc = NULL;
-    Queue<UnixNetVConnection> &q = nh->wait_list.read_wait_list;
-    for (vc = (UnixNetVConnection *) q.head; vc; vc = next_vc) {
-      next_vc = (UnixNetVConnection *) vc->read.link.next;
-      if (vc->inactivity_timeout_in && vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now) {
+    UnixNetVConnection * vc = nh->open_list.head, *vc_next = 0;
+    while (vc) {
+      vc_next = (UnixNetVConnection*)vc->link.next;
+      if (vc->inactivity_timeout_in && vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now)
         vc->handleEvent(EVENT_IMMEDIATE, e);
-      } else {
-        if (vc->closed) {
+      else
+        if (vc->closed)
           close_UnixNetVConnection(vc, e->ethread);
-        }
-      }
-
+      vc = vc_next;
     }
     return 0;
   }
 };
 #endif
-
-
 #endif

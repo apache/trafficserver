@@ -59,9 +59,7 @@ struct ShowNet:ShowCont
     }
 
     ink_hrtime now = ink_get_hrtime();
-    //for (int i = 0; i < n_netq_list; i++) {
-    Queue<UnixNetVConnection> &q = nh->wait_list.read_wait_list;
-    for (UnixNetVConnection * vc = (UnixNetVConnection *) q.head; vc; vc = (UnixNetVConnection *) vc->read.link.next) {
+    forl_LL(UnixNetVConnection, vc, nh->open_list) {
       if (ip && ip != vc->ip)
         continue;
       if (port && port != vc->port && port != vc->accept_port)
@@ -80,11 +78,9 @@ struct ShowNet:ShowCont
                       "<td>%d secs ago</td>"    // start time
                       "<td>%d</td>"     // thread id
                       "<td>%d</td>"     // read enabled
-                      "<td>%d</td>"     // read priority
                       "<td>%d</td>"     // read NBytes
                       "<td>%d</td>"     // read NDone
                       "<td>%d</td>"     // write enabled
-                      "<td>%d</td>"     // write priority
                       "<td>%d</td>"     // write nbytes
                       "<td>%d</td>"     // write ndone
                       "<td>%d secs</td>"        // Inactivity timeout at
@@ -100,17 +96,14 @@ struct ShowNet:ShowCont
                       (int) ((now - vc->submit_time) / HRTIME_SECOND),
                       ethread->id,
                       vc->read.enabled,
-                      vc->read.priority,
                       vc->read.vio.nbytes,
                       vc->read.vio.ndone,
                       vc->write.enabled,
-                      vc->write.priority,
                       vc->write.vio.nbytes,
                       vc->write.vio.ndone,
                       (int) (vc->inactivity_timeout_in / HRTIME_SECOND),
                       (int) (vc->active_timeout_in / HRTIME_SECOND), vc->f.shutdown, vc->closed ? "closed " : ""));
     }
-    //}
     ithread++;
     if (ithread < eventProcessor.n_threads_for_type[ET_NET])
       eventProcessor.eventthread[ET_NET][ithread]->schedule_imm(this);
@@ -163,22 +156,8 @@ struct ShowNet:ShowCont
     CHECK_SHOW(show("<H3>Thread: %d</H3>\n", ithread));
     CHECK_SHOW(show("<table border=1>\n"));
     int connections = 0;
-    /*int *read_pri = new int[n_netq_list];
-       int *write_pri = new int[n_netq_list];
-       int *read_buck = new int[n_netq_list];
-       int *write_buck = new int[n_netq_list]; */
-    Queue<UnixNetVConnection> &qr = nh->wait_list.read_wait_list;
-    UnixNetVConnection *vc = (UnixNetVConnection *) qr.head;
-    for (; vc; vc = (UnixNetVConnection *) vc->read.link.next) {
+    forl_LL(UnixNetVConnection, vc, nh->open_list)
       connections++;
-      //read_pri[vc->read.priority <= 0 ? 0 : vc->read.priority]++;
-      //read_buck[i]++;
-    }
-    Queue<UnixNetVConnection> &qw = nh->wait_list.write_wait_list;
-    for (vc = (UnixNetVConnection *) qw.head; vc; vc = (UnixNetVConnection *) vc->write.link.next) {
-      //write_pri[vc->write.priority <= 0 ? 0 : vc->write.priority]++;
-      //write_buck[i]++;
-    }
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Connections", connections));
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Size", pollDescriptor->nfds));
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Ready", pollDescriptor->result));
@@ -186,11 +165,6 @@ struct ShowNet:ShowCont
     CHECK_SHOW(show("<table border=1>\n"));
     CHECK_SHOW(show
                ("<tr><th>#</th><th>Read Priority</th><th>Read Bucket</th><th>Write Priority</th><th>Write Bucket</th></tr>\n"));
-    /*for (i = 0; i < n_netq_list; i++) {
-       CHECK_SHOW(show(
-       "<tr><td>%d</td><td>%d</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
-       i, read_pri[i],read_buck[i],write_pri[i],write_buck[i]));
-       } */
     CHECK_SHOW(show("</table>\n"));
     ithread++;
     if (ithread < eventProcessor.n_threads_for_type[ET_NET])

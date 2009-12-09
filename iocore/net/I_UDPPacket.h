@@ -67,10 +67,10 @@ public:
   char *asBuf(int *len = NULL);
   virtual void UDPPacket_is_abstract() = 0;
 
-  struct sockaddr_in m_from;    // what address came from
-  struct sockaddr_in m_to;      // what address to send to
+  struct sockaddr_in from;    // what address came from
+  struct sockaddr_in to;      // what address to send to
 
-  int m_from_size;
+  int from_size;
 
   Link<UDPPacket> link;
 };

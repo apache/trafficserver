@@ -38,8 +38,6 @@ typedef struct iovec IOVec;
 #define NET_MAX_IOV UIO_MAXIOV
 #endif
 
-#define NET_THREAD_STEALING
-
 #ifdef DEBUG
 // Initialize class UnixNetVConnection static data
 int
@@ -58,34 +56,24 @@ net_update_priority(NetHandler * nh, UnixNetVConnection * vc, NetState * ns, int
 
 //
 // Reschedule a UnixNetVConnection by placing the VC 
-// into ReadyQueue or WaitList
+// into ready_list or wait_list
 //
 static inline void
 read_reschedule(NetHandler * nh, UnixNetVConnection * vc)
 {
   if (vc->read.triggered && vc->read.enabled) {
-    if (!vc->read.netready_queue) {
-      nh->ready_queue.epoll_addto_read_ready_queue(vc);
-    }
-  } else {
-    if (vc->read.netready_queue) {
-      ReadyQueue::epoll_remove_from_read_ready_queue(vc);
-    }
-  }
+    nh->read_ready_list.in_or_enqueue(vc);
+  } else
+    nh->read_ready_list.remove(vc);
 }
 
 static inline void
 write_reschedule(NetHandler * nh, UnixNetVConnection * vc)
 {
   if (vc->write.triggered && vc->write.enabled) {
-    if (!vc->write.netready_queue) {
-      nh->ready_queue.epoll_addto_write_ready_queue(vc);
-    }
-  } else {
-    if (vc->write.netready_queue) {
-      ReadyQueue::epoll_remove_from_write_ready_queue(vc);
-    }
-  }
+    nh->write_ready_list.in_or_enqueue(vc);
+  } else
+    nh->write_ready_list.remove(vc);
 }
 
 void
@@ -114,7 +102,6 @@ net_activity(UnixNetVConnection * vc, EThread * thread)
 
 //
 // Function used to close a UnixNetVConnection and free the vc
-// Modified by YTS Team, yamsat
 //
 void
 close_UnixNetVConnection(UnixNetVConnection * vc, EThread * t)
@@ -122,17 +109,13 @@ close_UnixNetVConnection(UnixNetVConnection * vc, EThread * t)
   if (vc->loggingEnabled()) {
     vc->addLogMessage("close_UnixNetVConnection");
     // display the slow log for the http client session
-    if (vc->getLogsTotalTime() / 1000000 > 30000) {
+    if (vc->getLogsTotalTime() / 1000000 > 30000)
       vc->printLogs();
-    }
     vc->clearLogs();
   }
 
-  XTIME(printf("%d %d close\n", vc->id, (int) ((ink_get_hrtime_internal() - vc->submit_time) / HRTIME_MSECOND)));
-
   vc->cancel_OOB();
 
-  //added by YTS Team, yamsat
   PollDescriptor *pd = get_PollDescriptor(t);
 #if defined(USE_EPOLL)
   struct epoll_event ev;
@@ -147,10 +130,6 @@ close_UnixNetVConnection(UnixNetVConnection * vc, EThread * t)
 #else
 #error port me
 #endif
-  if (vc->ep != NULL) {
-    xfree(vc->ep);
-    vc->ep = NULL;
-  }
 
   socketManager.fast_close(vc->con.fd);
   vc->con.fd = NO_FD;
@@ -170,38 +149,23 @@ close_UnixNetVConnection(UnixNetVConnection * vc, EThread * t)
   }
   vc->active_timeout_in = 0;
 
-  //added by YTS Team, yamsat
+  NetHandler *nh = vc->nh;
+  nh->open_list.remove(vc);
+  nh->read_ready_list.remove(vc);
+  nh->write_ready_list.remove(vc);
+  if (vc->read.in_enabled_list) {
+    ink_assert(vc->closed);
+    ink_assert(nh->read_enable_list.remove(vc) == vc);
+    vc->read.in_enabled_list = 0;
+  }
+  ink_assert(vc->read.enable_link.next == NULL);
+  if (vc->write.in_enabled_list) {
+    ink_assert(vc->closed);
+    ink_assert(nh->write_enable_list.remove(vc) == vc);
+    vc->write.in_enabled_list = 0;
+  }
+  ink_assert(vc->write.enable_link.next == NULL);
 
-  if (vc->read.queue) {
-    WaitList::epoll_remove_from_read_wait_list(vc);
-  }
-  if (vc->write.queue) {
-    WaitList::epoll_remove_from_write_wait_list(vc);
-  }
-
-  if (vc->read.netready_queue) {
-    ReadyQueue::epoll_remove_from_read_ready_queue(vc);
-  }
-  if (vc->write.netready_queue) {
-    ReadyQueue::epoll_remove_from_write_ready_queue(vc);
-  }
-
-  if (vc->read.enable_queue) {
-    ((Queue<UnixNetVConnection> *)vc->read.enable_queue)->remove(vc, vc->read.enable_link);
-    vc->read.enable_queue = NULL;
-  }
-  if (vc->write.enable_queue) {
-    ((Queue<UnixNetVConnection> *)vc->write.enable_queue)->remove(vc, vc->write.enable_link);
-    vc->write.enable_queue = NULL;
-  }
-  // clear variables for reuse
-  vc->nh = NULL;                //added by YTS Team, yamsat
-  vc->closed = 1;
-  vc->read.ifd = -1;
-  vc->read.triggered = 0;       //added by YTS Team, yamsat
-  vc->write.ifd = -1;
-  vc->write.triggered = 0;      //added by YTS Team, yamsat
-  vc->options.reset();
   vc->free(t);
 }
 
@@ -278,19 +242,16 @@ write_signal_error(NetHandler * nh, UnixNetVConnection * vc, int lerrno)
 
 // read the data for a UnixNetVConnection.
 // Rescheduling the UnixNetVConnection by placing the VC into 
-// ReadyQueue (or) WaitList
+// ready_list (or) wait_list
 // Had to wrap this function with net_read_io to make SSL work..
 static void
 read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
 {
   vc->addLogMessage("read from net");
-  NetState *
-    s = &vc->read;
-  ProxyMutex *
-    mutex = thread->mutex;
+  NetState * s = &vc->read;
+  ProxyMutex * mutex = thread->mutex;
   MIOBufferAccessor & buf = s->vio.buffer;
-  int
-    r = 0;
+  int r = 0;
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
@@ -381,34 +342,28 @@ read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
       if (r == -EAGAIN || r == -ENOTCONN) {
         NET_DEBUG_COUNT_DYN_STAT(net_calls_to_read_nodata_stat, 1);
         vc->addLogMessage("EAGAIN or ENOTCONN");
-
         vc->read.triggered = 0;
-        ReadyQueue::epoll_remove_from_read_ready_queue(vc);
-
+        nh->read_ready_list.remove(vc);
         return;
       }
 
       if (!r || r == -ECONNRESET) {
         // display the slow log for the http client session
         if (vc->loggingEnabled()) {
-          if (vc->getLogsTotalTime() / 1000000 > 30000) {
+          if (vc->getLogsTotalTime() / 1000000 > 30000)
             vc->printLogs();
-          }
           vc->clearLogs();
         }
         // connection is closed
         vc->read.triggered = 0;
-        ReadyQueue::epoll_remove_from_read_ready_queue(vc);
+        nh->read_ready_list.remove(vc);
         read_signal_done(VC_EVENT_EOS, nh, vc);
-
         return;
       }
       vc->read.triggered = 0;
       read_signal_error(nh, vc, -r);
       return;
     }
-    NET_TRUSS(Debug("net_truss_read", "VC[%d:%d], read %d bytes", vc->id, vc->con.fd, r));
-    XTIME(printf("%d %d read: %d\n", vc->id, (int) ((ink_get_hrtime() - vc->submit_time) / HRTIME_MSECOND), r));
     NET_SUM_DYN_STAT(net_read_bytes_stat, r);
 
     // Add data to buffer and signal continuation.
@@ -461,8 +416,7 @@ read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
 void
 write_to_net(NetHandler * nh, UnixNetVConnection * vc, PollDescriptor * pd, EThread * thread)
 {
-  ProxyMutex *
-    mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex;
 
   NET_DEBUG_COUNT_DYN_STAT(net_calls_to_writetonet_stat, 1);
   NET_DEBUG_COUNT_DYN_STAT(net_calls_to_writetonet_afterpoll_stat, 1);
@@ -476,22 +430,18 @@ write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
 {
   vc->addLogMessage("write to net io");
 
-  NetState *
-    s = &vc->write;
-  ProxyMutex *
-    mutex = thread->mutex;
+  NetState *s = &vc->write;
+  ProxyMutex *mutex = thread->mutex;
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
-  if (!lock || lock.m.m_ptr != s->vio.mutex.m_ptr) {
+  if (!lock || lock.m.m_ptr != s->vio.mutex.m_ptr)
     return;
-  }
+
   // This function will always return true unless
   // vc is an SSLNetVConnection.
   if (!vc->getSSLHandShakeComplete()) {
-    int
-      err,
-      ret;
+    int err, ret;
 
     if (vc->getSSLClientConnection())
       ret = vc->sslStartHandShake(SSL_EVENT_CLIENT, err);
@@ -499,31 +449,20 @@ write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
       ret = vc->sslStartHandShake(SSL_EVENT_SERVER, err);
 
     if (ret == EVENT_ERROR) {
-      if (vc->write.triggered) {
-        vc->write.triggered = 0;
-      }
+      vc->write.triggered = 0;
       write_signal_error(nh, vc, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT || ret == SSL_HANDSHAKE_WANT_CONNECT
                || ret == SSL_HANDSHAKE_WANT_WRITE) {
       vc->read.triggered = 0;
-      if (vc->read.netready_queue) {
-        ReadyQueue::epoll_remove_from_read_ready_queue(vc);
-      }
+      nh->read_ready_list.remove(vc);
       vc->write.triggered = 0;
-      if (vc->write.netready_queue) {
-        ReadyQueue::epoll_remove_from_write_ready_queue(vc);
-      }
+      nh->write_ready_list.remove(vc);
     } else if (ret == EVENT_DONE) {
       vc->read.triggered = 1;
-      if (vc->read.enabled) {
-        if (!vc->read.netready_queue) {
-          nh->ready_queue.epoll_addto_read_ready_queue(vc);
-        }
-      }
-
-    } else {
+      if (vc->read.enabled)
+        nh->read_ready_list.in_or_enqueue(vc); 
+    } else
       write_reschedule(nh, vc);
-    }
     return;
   }
   // If it is not enabled,add to WaitList.
@@ -532,8 +471,7 @@ write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
     return;
   }
   // If there is nothing to do, disable
-  int
-    ntodo = s->vio.ntodo();
+  int ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
     write_disable(nh, vc);
     return;
@@ -543,12 +481,10 @@ write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
   ink_debug_assert(buf.writer());
 
   // Calculate amount to write
-  int
-    towrite = buf.reader()->read_avail();
+  int towrite = buf.reader()->read_avail();
   if (towrite > ntodo)
     towrite = ntodo;
-  int
-    signalled = 0;
+  int signalled = 0;
 
   // signal write ready to allow user to fill the buffer
   if (towrite != ntodo && buf.writer()->write_avail()) {
@@ -573,12 +509,10 @@ write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
     return;
   }
 
-  int
-    r = 0, total_wrote = 0, wattempted = 0;
-  r = vc->loadBufferAndCallWrite(towrite, wattempted, total_wrote, buf);
+  int total_wrote = 0, wattempted = 0;
+  int r = vc->loadBufferAndCallWrite(towrite, wattempted, total_wrote, buf);
   if (vc->loggingEnabled()) {
-    char
-      message[256];
+    char message[256];
     snprintf(message, sizeof(message), "rval: %d towrite: %d ntodo: %d total_wrote: %d", r, towrite, ntodo,
              total_wrote);
     vc->addLogMessage(message);
@@ -595,9 +529,7 @@ write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
     if (r == -EAGAIN || r == -ENOTCONN) {
       NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_nodata_stat, 1);
       vc->write.triggered = 0;
-      if (vc->write.netready_queue) {
-        ReadyQueue::epoll_remove_from_write_ready_queue(vc);
-      }
+      nh->write_ready_list.remove(vc);
       return;
     }
     if (!r || r == -ECONNRESET) {
@@ -609,9 +541,6 @@ write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
     write_signal_error(nh, vc, -r);
     return;
   } else {
-    NET_TRUSS(Debug("net_truss_write", "VC[%d:%d], write %d bytes", vc->id, vc->con.fd, r));
-    XTIME(printf("%d %d write: %d\n", vc->id,
-                 (int) ((ink_get_hrtime_internal() - vc->submit_time) / HRTIME_MSECOND), r));
     NET_SUM_DYN_STAT(net_write_bytes_stat, r);
 
     // Remove data from the buffer and signal continuation.
@@ -650,23 +579,17 @@ write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread)
 VIO *
 UnixNetVConnection::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
 {
-  //  addLogMessage("do_io_read");
-  NET_TRUSS(Debug("net_truss_read", "VC[%d:%d] do_io_read(%d)", id, con.fd, nbytes));
   ink_assert(!closed);
   if (buf)
     read.vio.buffer.writer_for(buf);
   else
     read.vio.buffer.clear();
-  // boost the NetVC
-  read.priority = INK_MIN_PRIORITY;
-  write.priority = INK_MIN_PRIORITY;
   read.vio.op = VIO::READ;
   read.vio.mutex = c->mutex;
   read.vio._cont = c;
   read.vio.nbytes = nbytes;
   read.vio.ndone = 0;
   read.vio.vc_server = (VConnection *) this;
-  XTIME(printf("%d %d do_io_read\n", id, (int) ((ink_get_hrtime_internal() - submit_time) / HRTIME_MSECOND)));
   if (buf) {
     if (!read.enabled)
       read.vio.reenable();
@@ -680,24 +603,18 @@ VIO *
 UnixNetVConnection::do_io_write(Continuation * acont, int anbytes, IOBufferReader * abuffer, bool owner)
 {
   addLogMessage("do_io_write");
-
-  NET_TRUSS(Debug("net_truss_write", "VC[%d:%d] do_io_write(%d)", id, con.fd, anbytes));
   ink_assert(!closed);
   if (abuffer) {
     ink_assert(!owner);
     write.vio.buffer.reader_for(abuffer);
   } else
     write.vio.buffer.clear();
-  // boost the NetVC
-  read.priority = INK_MIN_PRIORITY;
-  write.priority = INK_MIN_PRIORITY;
   write.vio.op = VIO::WRITE;
   write.vio.mutex = acont->mutex;
   write.vio._cont = acont;
   write.vio.nbytes = anbytes;
   write.vio.ndone = 0;
   write.vio.vc_server = (VConnection *) this;
-  XTIME(printf("%d %d do_io_write\n", id, (int) ((ink_get_hrtime_internal() - submit_time) / HRTIME_MSECOND)));
   if (abuffer) {
     if (!write.enabled)
       write.vio.reenable();
@@ -834,142 +751,92 @@ UnixNetVConnection::send_OOB(Continuation * cont, char *buf, int len)
 
 //
 // Function used to reenable the VC for reading or
-// writing. Modified by YTS Team, yamsat
+// writing.
 //
 void
 UnixNetVConnection::reenable(VIO * vio)
 {
-
-  if (STATE_FROM_VIO(vio)->enabled) {
+  if (STATE_FROM_VIO(vio)->enabled)
     return;
-  }
-  NET_TRUSS(Debug("net_truss", "VC[%d:%d] UnixNetVConnection::reenable", id, con.fd));
   set_enabled(vio);
-#ifdef NET_THREAD_STEALING
   if (!thread)
     return;
   EThread *t = vio->mutex->thread_holding;
   ink_debug_assert(t == this_ethread());
-  //Modified by YTS Team, yamsat
   if (nh->mutex->thread_holding == t) {
     if (vio == &read.vio) {
-      if (read.triggered) {
-        if (!read.netready_queue) {
-          nh->ready_queue.epoll_addto_read_ready_queue(this);
-        }
-      } else {
-        if (read.netready_queue) {
-          ReadyQueue::epoll_remove_from_read_ready_queue(this);
-        }
-      }
-
+      if (read.triggered)
+        nh->read_ready_list.in_or_enqueue(this);
+      else
+        nh->read_ready_list.remove(this);
     } else {
-      if (write.triggered) {
-        if (!write.netready_queue) {
-          nh->ready_queue.epoll_addto_write_ready_queue(this);
-        }
-      } else {
-        if (write.netready_queue) {
-          ReadyQueue::epoll_remove_from_write_ready_queue(this);
-        }
-      }
+      if (write.triggered)
+        nh->write_ready_list.in_or_enqueue(this);
+      else
+        nh->write_ready_list.remove(this);
     }
   } else if (!nh->mutex->is_thread()) {
     MUTEX_TRY_LOCK(lock, nh->mutex, t);
     if (!lock) {
       if (vio == &read.vio) {
-        ink_mutex_acquire(&nh->read_enable_mutex.m_ptr->the_mutex);
-        if (!read.enable_queue) {
-          read.enable_queue = &nh->read_enable_list;
-          nh->read_enable_list.enqueue(this, read.enable_link);
-        }
-        ink_mutex_release(&nh->read_enable_mutex.m_ptr->the_mutex);
-      } else {
-        ink_mutex_acquire(&nh->write_enable_mutex.m_ptr->the_mutex);
-        if (!write.enable_queue) {
-          write.enable_queue = &nh->write_enable_list;
-          nh->write_enable_list.enqueue(this, write.enable_link);
-        }
-        ink_mutex_release(&nh->write_enable_mutex.m_ptr->the_mutex);
-      }
-      return;
-    }
-    if (vio == &read.vio) {
-      if (read.triggered) {
-        if (!read.netready_queue) {
-          nh->ready_queue.epoll_addto_read_ready_queue(this);
+        if (!read.in_enabled_list) {
+          read.in_enabled_list = 1;
+          nh->read_enable_list.push(this);
         }
       } else {
-        if (read.netready_queue) {
-          ReadyQueue::epoll_remove_from_read_ready_queue(this);
+        if (!write.in_enabled_list) {
+          write.in_enabled_list = 1;
+          nh->write_enable_list.push(this);
         }
       }
     } else {
-      if (write.triggered) {
-        if (!write.netready_queue) {
-          nh->ready_queue.epoll_addto_write_ready_queue(this);
-        }
+      if (vio == &read.vio) {
+        if (read.triggered)
+          nh->read_ready_list.in_or_enqueue(this);
+        else
+          nh->read_ready_list.remove(this);
       } else {
-        if (write.netready_queue) {
-          ReadyQueue::epoll_remove_from_write_ready_queue(this);
-        }
+        if (write.triggered)
+          nh->write_ready_list.in_or_enqueue(this);
+        else
+          nh->write_ready_list.remove(this);
       }
     }
   }
-#endif
 }
 
 void
 UnixNetVConnection::reenable_re(VIO * vio)
 {
-
   set_enabled(vio);
-
-#ifdef NET_THREAD_STEALING
-  if (!thread) {
+  if (!thread)
     return;
-  }
   EThread *t = vio->mutex->thread_holding;
   ink_debug_assert(t == this_ethread());
   if (nh->mutex->thread_holding == t) {
     if (vio == &read.vio) {
-      if (read.triggered) {
+      if (read.triggered)
         net_read_io(nh, t);
-      } else {
-        if (read.netready_queue != NULL) {
-          ReadyQueue::epoll_remove_from_read_ready_queue(this);
-        }
-      }
+      else
+        nh->read_ready_list.remove(this);
     } else {
-      if (write.triggered) {
+      if (write.triggered)
         write_to_net(nh, this, NULL, t);
-      } else {
-        if (write.netready_queue != NULL) {
-          ReadyQueue::epoll_remove_from_write_ready_queue(this);
-        }
-      }
+      else
+        nh->write_ready_list.remove(this);
     }
   }
-#endif
-}
-
-
-void
-UnixNetVConnection::boost()
-{
-  ink_assert(thread);
 }
 
 
 UnixNetVConnection::UnixNetVConnection():
-closed(1), inactivity_timeout_in(0), active_timeout_in(0),
+closed(0), inactivity_timeout_in(0), active_timeout_in(0),
 #ifdef INACTIVITY_TIMEOUT
   inactivity_timeout(NULL),
 #else
   next_inactivity_timeout_at(0),
 #endif
-  active_timeout(NULL), ep(NULL),       //added by YTS Team, yamsat
-  nh(NULL),                     //added by YTS Team, yamsat
+  active_timeout(NULL), nh(NULL),
   id(0), ip(0), _interface(0), accept_port(0), port(0), flags(0), recursion(0), submit_time(0), oob_ptr(0)
 {
   memset(&local_sa, 0, sizeof local_sa);
@@ -987,11 +854,9 @@ UnixNetVConnection::set_enabled(VIO * vio)
   STATE_FROM_VIO(vio)->enabled = 1;
 #ifdef DEBUG
   if (vio == &read.vio) {
-    XTIME(printf("%d %d reenable read\n", id, (int) ((ink_get_hrtime_internal() - submit_time) / HRTIME_MSECOND)));
     if (enable_debug_trace && (vio->buffer.mbuf && !vio->buffer.writer()->write_avail()));
   } else {
     ink_assert(vio == &write.vio);
-    XTIME(printf("%d %d reenable write\n", id, (int) ((ink_get_hrtime_internal() - submit_time) / HRTIME_MSECOND)));
     if (enable_debug_trace && (vio->buffer.mbuf && !vio->buffer.reader()->read_avail()));
   }
 #endif
@@ -1003,8 +868,6 @@ UnixNetVConnection::set_enabled(VIO * vio)
     next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
 #endif
 }
-
-
 
 void
 UnixNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
@@ -1145,25 +1008,17 @@ UnixNetVConnection::acceptEvent(int event, Event * e)
 
   SET_HANDLER((NetVConnHandler) & UnixNetVConnection::mainEvent);
 
-  //added by YTS Team, yamsat
   nh = get_NetHandler(thread);
   PollDescriptor *pd = get_PollDescriptor(thread);
-
-  struct epoll_data_ptr *eptr;
-  eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-  eptr->type = EPOLL_READWRITE_VC;
-  eptr->data.vc = this;
-
-  this->ep = eptr;
-
-  closed = 0;
+  ep.type = EPOLL_READWRITE_VC;
+  ep.data.vc = this;
 
 #if defined(USE_EPOLL)
   struct epoll_event ev;
   memset(&ev, 0, sizeof(struct epoll_event));
 
   ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-  ev.data.ptr = eptr;
+  ev.data.ptr = &ep;
   //printf("Added to epoll ctl fd %d and number is %d\n",con.fd,id);
   if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, con.fd, &ev) < 0) {
     Debug("iocore_net", "acceptEvent : Failed to add to epoll list\n");
@@ -1172,8 +1027,8 @@ UnixNetVConnection::acceptEvent(int event, Event * e)
   }
 #elif defined(USE_KQUEUE)
   struct kevent ev[2];
-  EV_SET(&ev[0], con.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
-  EV_SET(&ev[1], con.fd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+  EV_SET(&ev[0], con.fd, EVFILT_READ, EV_ADD, 0, 0, &ep);
+  EV_SET(&ev[1], con.fd, EVFILT_WRITE, EV_ADD, 0, 0, &ep);
   if (kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL) < 0) {
     Debug("iocore_net", "acceptEvent : Failed to add to kqueue list\n");
     close_UnixNetVConnection(this, e->ethread);
@@ -1183,14 +1038,7 @@ UnixNetVConnection::acceptEvent(int event, Event * e)
 #error port me
 #endif
 
-  Debug("iocore_net", "acceptEvent : Adding fd %d to read wait list\n", con.fd);
-  nh->wait_list.epoll_addto_read_wait_list(this);
-  Debug("iocore_net", "acceptEvent : Adding fd %d to write wait list\n", con.fd);
-  nh->wait_list.epoll_addto_write_wait_list(this);
-
-  //Debug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
-  //read.triggered = 1;
-  //nh->ready_queue.epoll_addto_read_ready_queue(this);
+  nh->open_list.enqueue(this);
 
   if (inactivity_timeout_in)
     UnixNetVConnection::set_inactivity_timeout(inactivity_timeout_in);
@@ -1209,7 +1057,6 @@ int
 UnixNetVConnection::mainEvent(int event, Event * e)
 {
   addLogMessage("main event");
-  NET_TRUSS(Debug("netvc_truss_timeout", "UnixNetVConnection[%d]::timeout", con.fd));
   ink_debug_assert(event == EVENT_IMMEDIATE || event == EVENT_INTERVAL);
   /* BZ 31932 */
   ink_debug_assert(thread == this_ethread());
@@ -1223,14 +1070,11 @@ UnixNetVConnection::mainEvent(int event, Event * e)
     if (e == active_timeout)
 #endif
       e->schedule_in(NET_RETRY_DELAY);
-
     return EVENT_CONT;
   }
-
-  if (e->cancelled) {
-
+  if (e->cancelled)
     return EVENT_DONE;
-  }
+
   int signal_event;
   Event **signal_timeout;
   Continuation *reader_cont = NULL;
@@ -1250,9 +1094,8 @@ UnixNetVConnection::mainEvent(int event, Event * e)
     /* BZ 49408 */
     //ink_debug_assert(inactivity_timeout_in);
     //ink_debug_assert(next_inactivity_timeout_at < ink_get_hrtime());
-    if (!inactivity_timeout_in || next_inactivity_timeout_at > ink_get_hrtime()) {
+    if (!inactivity_timeout_in || next_inactivity_timeout_at > ink_get_hrtime())
       return EVENT_CONT;
-    }
     signal_event = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout_at = &next_inactivity_timeout_at;
   }
@@ -1265,27 +1108,24 @@ UnixNetVConnection::mainEvent(int event, Event * e)
   *signal_timeout = 0;
   *signal_timeout_at = 0;
   writer_cont = write.vio._cont;
-
+  
   if (closed) {
-    //added by YTS Team, yamsat
     close_UnixNetVConnection(this, thread);
     return EVENT_DONE;
   }
+
   if (read.vio.op == VIO::READ && !(f.shutdown & NET_VC_SHUTDOWN_READ)) {
     reader_cont = read.vio._cont;
-    if (read_signal_and_update(signal_event, this) == EVENT_DONE) {
+    if (read_signal_and_update(signal_event, this) == EVENT_DONE)
       return EVENT_DONE;
-    }
   }
 
   if (!*signal_timeout &&
       !*signal_timeout_at &&
       !closed && write.vio.op == VIO::WRITE &&
-      !(f.shutdown & NET_VC_SHUTDOWN_WRITE) && reader_cont != write.vio._cont && writer_cont == write.vio._cont) {
-    if (write_signal_and_update(signal_event, this) == EVENT_DONE) {
+      !(f.shutdown & NET_VC_SHUTDOWN_WRITE) && reader_cont != write.vio._cont && writer_cont == write.vio._cont)
+    if (write_signal_and_update(signal_event, this) == EVENT_DONE)
       return EVENT_DONE;
-    }
-  }
   return EVENT_DONE;
 }
 
@@ -1320,19 +1160,14 @@ UnixNetVConnection::connectUp(EThread * t)
       nh = get_NetHandler(t);
       PollDescriptor *pd = get_PollDescriptor(t);
 
-      closed = 0;               // need to set this before adding it to epoll
-
-      struct epoll_data_ptr *eptr;
-      eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-      eptr->type = EPOLL_READWRITE_VC;
-      eptr->data.vc = this;
-      ep = eptr;
+      ep.type = EPOLL_READWRITE_VC;
+      ep.data.vc = this;
 
 #if defined(USE_EPOLL)
       struct epoll_event ev;
       memset(&ev, 0, sizeof(struct epoll_event));
       ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-      ev.data.ptr = eptr;
+      ev.data.ptr = &ep;
       int rval = epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, socketFd, &ev);
       if (rval != 0) {
         lerrno = errno;
@@ -1343,8 +1178,8 @@ UnixNetVConnection::connectUp(EThread * t)
       }
 #elif defined(USE_KQUEUE)
       struct kevent ev[2];
-      EV_SET(&ev[0], socketFd, EVFILT_READ, EV_ADD, 0, 0, eptr);
-      EV_SET(&ev[1], socketFd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+      EV_SET(&ev[0], socketFd, EVFILT_READ, EV_ADD, 0, 0, &ep);
+      EV_SET(&ev[1], socketFd, EVFILT_WRITE, EV_ADD, 0, 0, &ep);
       int rval = kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
       if (rval < 0) {
         lerrno = errno;
@@ -1378,24 +1213,18 @@ UnixNetVConnection::connectUp(EThread * t)
   // function code not to be duplicated in the inherited SSL class.
   //  sslStartHandShake (SSL_EVENT_CLIENT, err);
 
-  //added for epoll by YTS Team, yamsat
-
   if (_interface || options.local_port || options.spoof_ip) {
     nh = get_NetHandler(t);
     PollDescriptor *pd = get_PollDescriptor(t);
 
-    struct epoll_data_ptr *eptr;
-    eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-    eptr->type = EPOLL_READWRITE_VC;
-    eptr->data.vc = this;
-
-    ep = eptr;
+    ep.type = EPOLL_READWRITE_VC;
+    ep.data.vc = this;
 
 #if defined(USE_EPOLL)
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    ev.data.ptr = eptr;
+    ev.data.ptr = &ep;
     res = epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, con.fd, &ev);
     if (res < 0) {
       Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
@@ -1406,8 +1235,8 @@ UnixNetVConnection::connectUp(EThread * t)
     }
 #elif defined(USE_KQUEUE)
     struct kevent ev[2];
-    EV_SET(&ev[0], con.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
-    EV_SET(&ev[1], con.fd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+    EV_SET(&ev[0], con.fd, EVFILT_READ, EV_ADD, 0, 0, &ep);
+    EV_SET(&ev[1], con.fd, EVFILT_WRITE, EV_ADD, 0, 0, &ep);
     res = kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
     if (res < 0) {
       lerrno = errno;
@@ -1421,18 +1250,11 @@ UnixNetVConnection::connectUp(EThread * t)
 #endif
   }
 
-  closed = 0;
-
-  Debug("iocore_net", "connectUp : Adding fd %d to read wait list\n", con.fd);
-  nh->wait_list.epoll_addto_read_wait_list(this);
-
-  Debug("iocore_net", "connectUp : Adding fd %d to write wait list\n", con.fd);
-  nh->wait_list.epoll_addto_write_wait_list(this);
+  nh->open_list.enqueue(this);
 
   ink_assert(!inactivity_timeout_in);
   ink_assert(!active_timeout_in);
   action_.continuation->handleEvent(NET_EVENT_OPEN, this);
-  XTIME(printf("%d 2connect\n", id));
   return CONNECT_SUCCESS;
 }
 
@@ -1441,6 +1263,7 @@ void
 UnixNetVConnection::free(EThread * t)
 {
   NET_DECREMENT_THREAD_DYN_STAT(net_connections_currently_open_stat, t);
+  // clear variables for reuse
   got_remote_addr = 0;
   got_local_addr = 0;
   read.vio.mutex.clear();
@@ -1450,26 +1273,18 @@ UnixNetVConnection::free(EThread * t)
   flags = 0;
   accept_port = 0;
   SET_CONTINUATION_HANDLER(this, (NetVConnHandler) & UnixNetVConnection::startEvent);
-  //added for epoll by YTS Team, yamsat
-  if (ep != NULL) {
-    xfree(ep);
-    ep = NULL;
-  }
-  if (nh != NULL) {
-    nh = NULL;
-  }
-  ink_debug_assert(!read.queue && !write.queue);
-  ink_debug_assert(!read.netready_queue && !write.netready_queue);
-  ink_debug_assert(!read.enable_queue && !write.enable_queue);
-  ink_debug_assert(!read.link.prev && !read.link.next);
-  ink_debug_assert(!read.netready_link.prev && !read.netready_link.next);
-  ink_debug_assert(!read.enable_link.prev && !read.enable_link.next);
-  ink_debug_assert(!write.link.prev && !write.link.next);
-  ink_debug_assert(!write.netready_link.prev && !write.netready_link.next);
-  ink_debug_assert(!write.enable_link.prev && !write.enable_link.next);
+  nh = NULL;
+  read.triggered = 0;
+  write.triggered = 0;
+  options.reset();
+  ink_debug_assert(!read.ready_link.prev && !read.ready_link.next);
+  ink_debug_assert(!read.enable_link.next);
+  ink_debug_assert(!write.ready_link.prev && !write.ready_link.next);
+  ink_debug_assert(!write.enable_link.next);
   ink_debug_assert(!link.next && !link.prev);
   ink_debug_assert(!active_timeout);
   ink_debug_assert(con.fd == NO_FD);
   ink_debug_assert(t == this_ethread());
+  closed = 0;
   THREAD_FREE(this, netVCAllocator, t);
 }

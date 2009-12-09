@@ -32,7 +32,7 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 
-#define WITH_DETTAILED_VCONNECTION_LOGGING 1
+// #define WITH_DETTAILED_VCONNECTION_LOGGING 1
 
 #if WITH_DETTAILED_VCONNECTION_LOGGING
 #include "DetailedLog.h"
@@ -457,6 +457,12 @@ public:
   {
     return (logging != NULL);
   }
+#else
+  void addLogMessage(const char *message) {}
+  bool loggingEnabled() const { return false; }
+  ink_hrtime getLogsTotalTime() const { return 0; }
+  void printLogs() const {}
+  void clearLogs() {}
 #endif
 
 private:

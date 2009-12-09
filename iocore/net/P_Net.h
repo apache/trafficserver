@@ -116,33 +116,11 @@ do { \
 #include "P_SSLCertLookup.h"
 #endif
 
-//added by YTS Team, yamsat
-struct epoll_data_ptr
-{
-  int type;
-  union
-  {
-    UnixNetVConnection *vc;
-    DNSConnection *dnscon;
-    NetAccept *na;
-    UnixUDPConnection *uc;
-  } data;
-};
 
 #undef  NET_SYSTEM_MODULE_VERSION
 #define NET_SYSTEM_MODULE_VERSION makeModuleVersion(                    \
                                        NET_SYSTEM_MODULE_MAJOR_VERSION, \
                                        NET_SYSTEM_MODULE_MINOR_VERSION, \
                                        PRIVATE_MODULE_HEADER)
-
-//Debug stuff
-//define ENABLE_NET_TRUSS
-
-#ifdef ENABLE_NET_TRUSS
-#define NET_TRUSS(x) x
-#else
-#define NET_TRUSS(x)
-#endif
-
 
 #endif

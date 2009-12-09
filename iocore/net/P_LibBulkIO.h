@@ -64,87 +64,87 @@ struct InkBulkIOAggregator
 {
   InkBulkIOAggregator()
   {
-    m_metaReqCount = 0;
-    m_metablockInfo.ptr = NULL;
-    m_metablockInfo.id = 0xffffffff;
-    m_metablockReqPtr = NULL;
+    metaReqCount = 0;
+    metablockInfo.ptr = NULL;
+    metablockInfo.id = 0xffffffff;
+    metablockReqPtr = NULL;
 
-    m_lastReqFragCount = 0;
-    m_lastReq = NULL;
-    m_reqblockInfo.ptr = NULL;
-    m_reqblockInfo.id = 0xffffffff;
-    m_reqblockPktPtr = NULL;
+    lastReqFragCount = 0;
+    lastReq = NULL;
+    reqblockInfo.ptr = NULL;
+    reqblockInfo.id = 0xffffffff;
+    reqblockPktPtr = NULL;
 
   };
-  struct InkBulkIOBlock m_metablockInfo;
+  struct InkBulkIOBlock metablockInfo;
   // Location where the next req. block id should be stuffed in the meta block.
-  uint32_t *m_metablockReqPtr;
-  uint32_t m_metaReqCount;
-  struct InkBulkIOBlock m_reqblockInfo;
+  uint32_t *metablockReqPtr;
+  uint32_t metaReqCount;
+  struct InkBulkIOBlock reqblockInfo;
   // Location where the next packet should be stuffed in the req. block
-  struct InkBulkIOPkt *m_reqblockPktPtr;
+  struct InkBulkIOPkt *reqblockPktPtr;
   // # of fragments in the last request.
-  uint32_t m_lastReqFragCount;
-  struct InkBulkIORequest *m_lastReq;
+  uint32_t lastReqFragCount;
+  struct InkBulkIORequest *lastReq;
   void ResetLastRequestInfo()
   {
-    m_lastReqFragCount = 0;
-    m_lastReq = NULL;
-    m_reqblockInfo.ptr = NULL;
-    m_reqblockInfo.id = 0xffffffff;
-    m_reqblockPktPtr = NULL;
+    lastReqFragCount = 0;
+    lastReq = NULL;
+    reqblockInfo.ptr = NULL;
+    reqblockInfo.id = 0xffffffff;
+    reqblockPktPtr = NULL;
   };
   void ResetMetaBlockInfo()
   {
-    m_metaReqCount = 0;
-    m_metablockInfo.ptr = NULL;
-    m_metablockInfo.id = 0xffffffff;
-    m_metablockReqPtr = NULL;
+    metaReqCount = 0;
+    metablockInfo.ptr = NULL;
+    metablockInfo.id = 0xffffffff;
+    metablockReqPtr = NULL;
   };
   bool AppendLastRequest()
   {
-    if (m_metaReqCount >= INKBIO_MAX_REQS_PER_REQ_BLOCK)
+    if (metaReqCount >= INKBIO_MAX_REQS_PER_REQ_BLOCK)
       return false;
 
-    memcpy(m_metablockReqPtr, &(m_reqblockInfo.id), sizeof(uint32_t));
-    m_metablockReqPtr++;
-    m_metaReqCount++;
+    memcpy(metablockReqPtr, &(reqblockInfo.id), sizeof(uint32_t));
+    metablockReqPtr++;
+    metaReqCount++;
     return true;
   };
   void TerminateMetaBlock()
   {
-    *m_metablockReqPtr = 0xffffffff;
+    *metablockReqPtr = 0xffffffff;
   };
   void TerminateLastRequest()
   {
-    m_reqblockPktPtr->blockID = 0xffffffff;
-    m_reqblockPktPtr->pktsize = 0xffff;
-    m_reqblockPktPtr->inChain = 0;
-    m_reqblockPktPtr->reserved = 0;
+    reqblockPktPtr->blockID = 0xffffffff;
+    reqblockPktPtr->pktsize = 0xffff;
+    reqblockPktPtr->inChain = 0;
+    reqblockPktPtr->reserved = 0;
   };
   void InitMetaBlock()
   {
-    m_metablockReqPtr = (uint32_t *) m_metablockInfo.ptr;
-    m_metaReqCount = 0;
+    metablockReqPtr = (uint32_t *) metablockInfo.ptr;
+    metaReqCount = 0;
   };
   void InitSendtoReqBlock()
   {
-    m_reqblockPktPtr = (struct InkBulkIOPkt *)
-      ((caddr_t) m_reqblockInfo.ptr + sizeof(InkBulkIORequest));
-    m_lastReq = (struct InkBulkIORequest *) m_reqblockInfo.ptr;
-    m_lastReq->reqType = INKBIO_SENDTO_REQUEST;
-    m_lastReq->request.sendto.pktCount = 0;
-    m_lastReqFragCount = 0;
+    reqblockPktPtr = (struct InkBulkIOPkt *)
+      ((caddr_t) reqblockInfo.ptr + sizeof(InkBulkIORequest));
+    lastReq = (struct InkBulkIORequest *) reqblockInfo.ptr;
+    lastReq->reqType = INKBIO_SENDTO_REQUEST;
+    lastReq->request.sendto.pktCount = 0;
+    lastReqFragCount = 0;
   };
   void InitSplitReqBlock()
   {
-    m_reqblockPktPtr = (struct InkBulkIOPkt *)
-      ((caddr_t) m_reqblockInfo.ptr + sizeof(InkBulkIORequest));
-    m_lastReq = (struct InkBulkIORequest *) m_reqblockInfo.ptr;
-    m_lastReq->reqType = INKBIO_SPLIT_REQUEST;
-    m_lastReq->request.split.recvCount = 0;
-    m_lastReq->request.split.perDestHeader = 0;
-    m_lastReqFragCount = 0;
+    reqblockPktPtr = (struct InkBulkIOPkt *)
+      ((caddr_t) reqblockInfo.ptr + sizeof(InkBulkIORequest));
+    lastReq = (struct InkBulkIORequest *) reqblockInfo.ptr;
+    lastReq->reqType = INKBIO_SPLIT_REQUEST;
+    lastReq->request.split.recvCount = 0;
+    lastReq->request.split.perDestHeader = 0;
+    lastReqFragCount = 0;
   };
 
 };

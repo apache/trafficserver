@@ -118,11 +118,7 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     count++;
     na->alloc_cache = NULL;
 
-#ifdef XXTIME
-    vc->submit_time = ink_get_hrtime_internal();
-#else
     vc->submit_time = ink_get_hrtime();
-#endif
     vc->ip = vc->con.sa.sin_addr.s_addr;
     vc->port = ntohs(vc->con.sa.sin_port);
     vc->accept_port = ntohs(na->server.sa.sin_port);
@@ -146,7 +142,6 @@ Ldone:
 //
 // Special purpose MAIN proxy accept code
 // Seperate accept thread function
-// Modified by YTS Team, yamsat
 //
 int
 net_accept_main_blocking(NetAccept * na, Event * e, bool blockable)
@@ -154,27 +149,24 @@ net_accept_main_blocking(NetAccept * na, Event * e, bool blockable)
   (void) blockable;
   (void) e;
 
-  struct epoll_data_ptr *temp_eptr = NULL;
   struct PollDescriptor *epd = (PollDescriptor *) xmalloc(sizeof(PollDescriptor));
   epd->init();
 
-  //unix_netProcessor.accept_epoll_fd = epd->epoll_fd;
-
   //added by vijay - bug 2237131 
-  struct epoll_data_ptr *eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-  eptr->type = EPOLL_NETACCEPT; //NetAccept
-  eptr->data.na = na;
+  struct epoll_data_ptr ep;
+  ep.type = EPOLL_NETACCEPT; // NetAccept
+  ep.data.na = na;
 #if defined(USE_EPOLL)
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
   ev.events = EPOLLIN | EPOLLET;
-  ev.data.ptr = eptr;
+  ev.data.ptr = &ep;
   if (epoll_ctl(epd->epoll_fd, EPOLL_CTL_ADD, na->server.fd, &ev) < 0) {
     Debug("iocore_net", "init_accept_loop : Error in epoll_ctl\n");
   }
 #elif defined(USE_KQUEUE)
   struct kevent ev;
-  EV_SET(&ev, na->server.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+  EV_SET(&ev, na->server.fd, EVFILT_READ, EV_ADD, 0, 0, &ep);
   if (kevent(epd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
     Debug("iocore_net", "init_accept_loop : Error in kevent\n");
   }
@@ -199,7 +191,7 @@ net_accept_main_blocking(NetAccept * na, Event * e, bool blockable)
 #endif
     for (int x = 0; x < epd->result; x++) {
       if (get_ev_events(epd,x) & INK_EVP_IN) {
-        temp_eptr = (epoll_data_ptr *)get_ev_data(epd,x);
+        struct epoll_data_ptr *temp_eptr = (epoll_data_ptr *)get_ev_data(epd,x);
         if (temp_eptr)
           net_accept = temp_eptr->data.na;
         if (net_accept) {
@@ -305,25 +297,22 @@ NetAccept::init_accept_per_thread()
       a = this;
     EThread *t = eventProcessor.eventthread[ET_NET][i];
 
-    //added by YTS Team, yamsat 
     PollDescriptor *pd = get_PollDescriptor(t);
-    struct epoll_data_ptr *eptr;
-    eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-    eptr->type = EPOLL_NETACCEPT;
-    eptr->data.na = a;
+    ep.type = EPOLL_NETACCEPT;
+    ep.data.na = a;
 
 #if defined(USE_EPOLL)
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLET;
-    ev.data.ptr = eptr;
+    ev.data.ptr = &ep;
 
     if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, a->server.fd, &ev) < 0) {
       Debug("iocore_net", "init_accept_per_thread : Error in epoll_ctl\n");
     }
 #elif defined(USE_KQUEUE)
     struct kevent ev;
-    EV_SET(&ev, a->server.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
+    EV_SET(&ev, a->server.fd, EVFILT_READ, EV_ADD, 0, 0, &ep);
     if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
       Debug("iocore_net", "init_accept_per_thread : Error in kevent\n");
     }
@@ -412,11 +401,7 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
 
     RecIncrGlobalRawStatSum(net_rsb, net_connections_currently_open_stat, 1);
     vc->closed = 0;
-#ifdef XXTIME
-    vc->submit_time = ink_get_hrtime_internal();
-#else
     vc->submit_time = now;
-#endif
     vc->ip = vc->con.sa.sin_addr.s_addr;
     vc->port = ntohs(vc->con.sa.sin_port);
     vc->accept_port = ntohs(server.sa.sin_port);
@@ -555,9 +540,6 @@ NetAccept::acceptFastEvent(int event, void *ep)
 #endif
         ) {
         ink_assert(vc->con.fd == NO_FD);
-        ink_assert(!vc->read.queue && !vc->write.queue);
-        ink_assert(!vc->read.link.prev && !vc->read.link.next);
-        ink_assert(!vc->write.link.prev && !vc->write.link.next);
         ink_assert(!vc->link.next && !vc->link.prev);
         freeThread(vc, e->ethread);
         goto Ldone;
@@ -576,34 +558,25 @@ NetAccept::acceptFastEvent(int event, void *ep)
     NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
     vc->id = net_next_connection_number();
 
-#ifdef XXTIME
-    vc->submit_time = ink_get_hrtime_internal();
-#else
     vc->submit_time = ink_get_hrtime();
-#endif
     vc->ip = vc->con.sa.sin_addr.s_addr;
     vc->port = ntohs(vc->con.sa.sin_port);
     vc->accept_port = ntohs(server.sa.sin_port);
     vc->mutex = new_ProxyMutex();
     vc->thread = e->ethread;
 
-    vc->ep = NULL;
-
     vc->nh = get_NetHandler(e->ethread);
 
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::mainEvent);
 
-    struct epoll_data_ptr *eptr;
-    eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-    eptr->type = EPOLL_READWRITE_VC;
-    eptr->data.vc = vc;
+    vc->ep.type = EPOLL_READWRITE_VC;
+    vc->ep.data.vc = vc;
 
-    vc->ep = eptr;
 #if defined(USE_EPOLL)
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    ev.data.ptr = eptr;
+    ev.data.ptr = &vc->ep;
 
     if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, vc->con.fd, &ev) < 0) {
       Debug("iocore_net", "acceptFastEvent : Error in inserting fd[%d] in epoll_list\n", vc->con.fd);
@@ -612,8 +585,8 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
 #elif defined(USE_KQUEUE)
     struct kevent ev[2];
-    EV_SET(&ev[0], vc->con.fd, EVFILT_READ, EV_ADD, 0, 0, eptr);
-    EV_SET(&ev[1], vc->con.fd, EVFILT_WRITE, EV_ADD, 0, 0, eptr);
+    EV_SET(&ev[0], vc->con.fd, EVFILT_READ, EV_ADD, 0, 0, &vc->ep);
+    EV_SET(&ev[1], vc->con.fd, EVFILT_WRITE, EV_ADD, 0, 0, &vc->ep);
     if (kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL) < 0) {
       Debug("iocore_net", "acceptFastEvent : Error in inserting fd[%d] in kevent\n", vc->con.fd);
       close_UnixNetVConnection(vc, e->ethread);
@@ -622,23 +595,20 @@ NetAccept::acceptFastEvent(int event, void *ep)
 #else
 #error port me
 #endif
+
+    vc->nh->open_list.enqueue(vc);
+
     // Set the vc as triggered and place it in the read ready queue in case there is already data on the socket.
     // The request will  timeout on the connection if the client has already sent data and it is on the socket
     // ready to be read.  This can occur under heavy load.
     Debug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
     vc->read.triggered = 1;
-    vc->nh->ready_queue.epoll_addto_read_ready_queue(vc);
+    vc->nh->read_ready_list.enqueue(vc);
 
-    Debug("iocore_net", "acceptFastEvent : Adding fd %d to read wait list\n", vc->con.fd);
-    vc->nh->wait_list.epoll_addto_read_wait_list(vc);
-    Debug("iocore_net", "acceptFastEvent : Adding fd %d to write wait list\n", vc->con.fd);
-    vc->nh->wait_list.epoll_addto_write_wait_list(vc);
-
-    if (!action_->cancelled) {
+    if (!action_->cancelled)
       action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
-    } else {
+    else
       close_UnixNetVConnection(vc, e->ethread);
-    }
   } while (loop);
 
 Ldone:
@@ -648,9 +618,6 @@ Ldone:
 Lerror:
   server.close();
   e->cancel();
-  if (vc->ep != NULL) {
-    free(vc->ep);
-  }
   freeThread(vc, e->ethread);
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
   delete this;

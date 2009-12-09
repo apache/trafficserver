@@ -91,12 +91,13 @@ struct NetAccept:Continuation
   int ifd;
   int ifd_seq_num;
   bool callback_on_open;
-    Ptr<NetAcceptAction> action_;
+  Ptr<NetAcceptAction> action_;
   int recv_bufsize;
   int send_bufsize;
   unsigned long sockopt_flags;
   EventType etype;
   UnixNetVConnection *epoll_vc; // only storage for epoll events
+  struct epoll_data_ptr ep;
 
   // Functions all THREAD_FREE and THREAD_ALLOC to be performed
   // for both SSL and regular NetVConnection transparent to
@@ -117,8 +118,8 @@ struct NetAccept:Continuation
   int acceptLoopEvent(int event, Event * e);
   void cancel();
 
-    NetAccept();
-    virtual ~ NetAccept()
+  NetAccept();
+  virtual ~ NetAccept()
   {
     action_ = NULL;
   };

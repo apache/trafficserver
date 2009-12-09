@@ -43,14 +43,14 @@ public:
 
   Continuation *continuation;
   int recvActive;               // interested in receiving
-  int m_refcount;               // public for assertion
+  int refcount;               // public for assertion
 
-  SOCKET m_fd;
-  struct sockaddr_in m_binding;
-  int m_binding_valid;
-  int m_tobedestroyed;
-  int m_sendGenerationNum;
-  ink64 m_lastSentPktTSSeqNum;
+  SOCKET fd;
+  struct sockaddr_in binding;
+  int binding_valid;
+  int tobedestroyed;
+  int sendGenerationNum;
+  ink64 lastSentPktTSSeqNum;
 
   // this is for doing packet scheduling: we keep two values so that we can
   // implement cancel.  The first value tracks the startTime of the last
@@ -58,53 +58,44 @@ public:
   // startTime of the last packet when we are doing scheduling;  whenever the
   // associated continuation cancels a packet, we rest lastPktStartTime to be
   // the same as the lastSentPktStartTime.
-  inku64 m_lastSentPktStartTime;
-  inku64 m_lastPktStartTime;
-  ink32 m_pipe_class;
-  inku32 m_nBytesDone;
-  inku32 m_nBytesTodo;
+  inku64 lastSentPktStartTime;
+  inku64 lastPktStartTime;
+  ink32 pipe_class;
+  inku32 nBytesDone;
+  inku32 nBytesTodo;
   // flow rate in Bytes per sec.
-  double m_flowRateBps;
-  double m_avgPktSize;
-  ink64 m_allocedbps;
+  double flowRateBps;
+  double avgPktSize;
+  ink64 allocedbps;
 
   //this class is abstract
 };
 
 inline
 UDPConnectionInternal::UDPConnectionInternal()
-  :
-continuation(NULL)
-  ,
-recvActive(0)
-  ,
-m_refcount(0)
-  ,
-m_fd(-1)
-  ,
-m_binding_valid(0)
-  ,
-m_tobedestroyed(0)
-  ,
-m_nBytesDone(0)
-  ,
-m_nBytesTodo(0)
+  : continuation(NULL)
+  , recvActive(0)
+  , refcount(0)
+  , fd(-1)
+  , binding_valid(0)
+  , tobedestroyed(0)
+  , nBytesDone(0)
+  , nBytesTodo(0)
 {
-  m_sendGenerationNum = 0;
-  m_lastSentPktTSSeqNum = -1;
-  m_lastSentPktStartTime = 0;
-  m_lastPktStartTime = 0;
-  m_pipe_class = 0;
-  m_flowRateBps = 0.0;
-  m_avgPktSize = 0.0;
-  m_allocedbps = 0;
-  memset(&m_binding, 0, sizeof m_binding);
+  sendGenerationNum = 0;
+  lastSentPktTSSeqNum = -1;
+  lastSentPktStartTime = 0;
+  lastPktStartTime = 0;
+  pipe_class = 0;
+  flowRateBps = 0.0;
+  avgPktSize = 0.0;
+  allocedbps = 0;
+  memset(&binding, 0, sizeof binding);
   //SET_HANDLER(&BaseUDPConnection::callbackHandler);
 }
 
 inline
-UDPConnectionInternal::~
-UDPConnectionInternal()
+UDPConnectionInternal::~UDPConnectionInternal()
 {
   udpNet.FreeBandwidth(this);
   continuation = NULL;
@@ -115,78 +106,78 @@ UDPConnectionInternal()
 INK_INLINE SOCKET
 UDPConnection::getFd()
 {
-  return ((UDPConnectionInternal *) this)->m_fd;
+  return ((UDPConnectionInternal *) this)->fd;
 }
 
 INK_INLINE void
 UDPConnection::setBinding(struct sockaddr_in *s)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
-  memcpy(&p->m_binding, s, sizeof(p->m_binding));
-  p->m_binding_valid = 1;
+  memcpy(&p->binding, s, sizeof(p->binding));
+  p->binding_valid = 1;
 }
 
 INK_INLINE int
 UDPConnection::getBinding(struct sockaddr_in *s)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
-  memcpy(s, &p->m_binding, sizeof(*s));
-  return p->m_binding_valid;
+  memcpy(s, &p->binding, sizeof(*s));
+  return p->binding_valid;
 }
 
 INK_INLINE int
 UDPConnection::get_ndone()
 {
-  return ((UDPConnectionInternal *) this)->m_nBytesDone;
+  return ((UDPConnectionInternal *) this)->nBytesDone;
 }
 
 INK_INLINE int
 UDPConnection::get_ntodo()
 {
-  return ((UDPConnectionInternal *) this)->m_nBytesTodo;
+  return ((UDPConnectionInternal *) this)->nBytesTodo;
 }
 
 // return the b/w allocated to this UDPConnection in Mbps
 INK_INLINE double
 UDPConnection::get_allocatedBandwidth()
 {
-  return (((UDPConnectionInternal *) this)->m_flowRateBps * 8.0) / (1024.0 * 1024.0);
+  return (((UDPConnectionInternal *) this)->flowRateBps * 8.0) / (1024.0 * 1024.0);
 }
 
 INK_INLINE void
 UDPConnection::destroy()
 {
-  ((UDPConnectionInternal *) this)->m_tobedestroyed = 1;
+  ((UDPConnectionInternal *) this)->tobedestroyed = 1;
 }
 
 INK_INLINE int
 UDPConnection::shouldDestroy()
 {
-  return ((UDPConnectionInternal *) this)->m_tobedestroyed;
+  return ((UDPConnectionInternal *) this)->tobedestroyed;
 }
 
 INK_INLINE void
 UDPConnection::AddRef()
 {
-  ink_atomic_increment(&((UDPConnectionInternal *) this)->m_refcount, 1);
+  ink_atomic_increment(&((UDPConnectionInternal *) this)->refcount, 1);
 }
 
 INK_INLINE int
 UDPConnection::GetRefCount()
 {
-  return ((UDPConnectionInternal *) this)->m_refcount;
+  return ((UDPConnectionInternal *) this)->refcount;
 }
 
 INK_INLINE int
 UDPConnection::GetSendGenerationNumber()
 {
-  return ((UDPConnectionInternal *) this)->m_sendGenerationNum;
+  return ((UDPConnectionInternal *) this)->sendGenerationNum;
 }
 
 INK_INLINE int
 UDPConnection::getPortNum(void)
 {
-  return ((UDPConnectionInternal *) this)->m_binding.sin_port;
+  return ((UDPConnectionInternal *) this)->binding.sin_port;
 }
 
 INK_INLINE ink64
@@ -194,15 +185,15 @@ UDPConnection::cancel(void)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
 
-  p->m_sendGenerationNum++;
-  p->m_lastPktStartTime = p->m_lastSentPktStartTime;
-  return p->m_lastSentPktTSSeqNum;
+  p->sendGenerationNum++;
+  p->lastPktStartTime = p->lastSentPktStartTime;
+  return p->lastSentPktTSSeqNum;
 };
 
 INK_INLINE void
 UDPConnection::SetLastSentPktTSSeqNum(ink64 sentSeqNum)
 {
-  ((UDPConnectionInternal *) this)->m_lastSentPktTSSeqNum = sentSeqNum;
+  ((UDPConnectionInternal *) this)->lastSentPktTSSeqNum = sentSeqNum;
 };
 
 INK_INLINE void

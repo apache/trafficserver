@@ -51,67 +51,53 @@ public:
 
   virtual void free();
 
-    SLink<UDPPacketInternal> alink;  // atomic link
+  SLink<UDPPacketInternal> alink;  // atomic link
   // packet scheduling stuff: keep it a doubly linked list
-    Link<UDPPacketInternal> slink;
-  // From the packet scheduler point of view...
-  inku64 m_pktSendStartTime;
-  inku64 m_pktSendFinishTime;
-  inku32 m_pktLength;
+  inku64 pktSendStartTime;
+  inku64 pktSendFinishTime;
+  inku32 pktLength;
 
-  bool m_isReliabilityPkt;
+  bool isReliabilityPkt;
 
-  int m_reqGenerationNum;
+  int reqGenerationNum;
   // Associate a TS seq. # with each packet...  We need this for WMT---WMT
   // maintains its own sequence numbers that need to increment by 1 on each
   // packet send.  Since packets can be cancelled during a seek, WMT needs to
   // know the next "WMT seq. #" that it can tag to a packet.  To determine the
   // "WMT seq. #", WMT code maintains a mapping betweeen WMT seq. # and TS
-  // seq. #.  If m_pktTSSeqNum is set to -1, then this value is ignored by the
+  // seq. #.  If pktTSSeqNum is set to -1, then this value is ignored by the
   // UDP code.
-  ink64 m_pktTSSeqNum;
+  ink64 pktTSSeqNum;
 
-  ink_hrtime m_delivery_time;   // when to deliver packet
-  ink_hrtime m_arrival_time;    // when packet arrived
+  ink_hrtime delivery_time;   // when to deliver packet
+  ink_hrtime arrival_time;    // when packet arrived
 
-    Ptr<IOBufferBlock> m_chain;
-  Continuation *m_cont;         // callback on error
-  UDPConnectionInternal *m_conn;        // connection where packet should be sent to.
+  Ptr<IOBufferBlock> chain;
+  Continuation *cont;         // callback on error
+  UDPConnectionInternal *conn;        // connection where packet should be sent to.
 
 #if defined(PACKETQUEUE_IMPL_AS_PQLIST) || defined(PACKETQUEUE_IMPL_AS_RING)
   int in_the_priority_queue;
   int in_heap;
 #endif
 
-  virtual void UDPPacket_is_abstract()
-  {
-  };
+  virtual void UDPPacket_is_abstract() { }
 };
 
 inkcoreapi extern ClassAllocator<UDPPacketInternal> udpPacketAllocator;
 
 inline
 UDPPacketInternal::UDPPacketInternal()
-  :
-m_pktSendStartTime(0)
-  ,
-m_pktSendFinishTime(0)
-  ,
-m_pktLength(0)
-  ,
-m_isReliabilityPkt(false)
-  ,
-m_reqGenerationNum(0)
-  ,
-m_pktTSSeqNum(-1)
-  ,
-m_delivery_time(0)
-  ,
-m_arrival_time(0)
-  ,
-m_cont(NULL)
-  ,
-m_conn(NULL)
+  : pktSendStartTime(0)
+  , pktSendFinishTime(0)
+  , pktLength(0)
+  , isReliabilityPkt(false)
+  , reqGenerationNum(0)
+  , pktTSSeqNum(-1)
+  , delivery_time(0)
+  , arrival_time(0)
+  , cont(NULL)
+  , conn(NULL)
 #if defined(PACKETQUEUE_IMPL_AS_PQLIST) || defined(PACKETQUEUE_IMPL_AS_RING)
 ,
 in_the_priority_queue(0)
@@ -119,24 +105,24 @@ in_the_priority_queue(0)
 in_heap(0)
 #endif
 {
-  memset(&m_from, '\0', sizeof(m_from));
-  memset(&m_to, '\0', sizeof(m_to));
+  memset(&from, '\0', sizeof(from));
+  memset(&to, '\0', sizeof(to));
 }
 
 inline
 UDPPacketInternal::~
 UDPPacketInternal()
 {
-  m_chain = NULL;
+  chain = NULL;
 }
 
 inline void
 UDPPacketInternal::free()
 {
-  m_chain = NULL;
-  if (m_conn)
-    m_conn->Release();
-  m_conn = NULL;
+  chain = NULL;
+  if (conn)
+    conn->Release();
+  conn = NULL;
   udpPacketAllocator.free(this);
 }
 
@@ -155,14 +141,14 @@ UDPPacket::setReliabilityPkt()
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;
 
-  p->m_isReliabilityPkt = true;
+  p->isReliabilityPkt = true;
 }
 
 INK_INLINE void
 UDPPacket::setPktTSSeq(ink64 seqno)
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;
-  p->m_pktTSSeqNum = seqno;
+  p->pktTSSeqNum = seqno;
 }
 
 INK_INLINE void
@@ -171,14 +157,14 @@ UDPPacket::append_block(IOBufferBlock * block)
   UDPPacketInternal *p = (UDPPacketInternal *) this;
 
   if (block) {
-    if (p->m_chain) {           // append to end
-      IOBufferBlock *last = p->m_chain;
+    if (p->chain) {           // append to end
+      IOBufferBlock *last = p->chain;
       while (last->next != NULL) {
         last = last->next;
       }
       last->next = block;
     } else {
-      p->m_chain = block;
+      p->chain = block;
     }
   }
 }
@@ -187,10 +173,10 @@ INK_INLINE char *
 UDPPacket::asBuf(int *len)
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;
-  if (p->m_chain) {
+  if (p->chain) {
     if (len)
-      *len = p->m_chain->size();
-    return p->m_chain->start();
+      *len = p->chain->size();
+    return p->chain->start();
   } else {
     return NULL;
   }
@@ -202,13 +188,13 @@ UDPPacket::getPktLength()
   UDPPacketInternal *p = (UDPPacketInternal *) this;
   IOBufferBlock *b;
 
-  p->m_pktLength = 0;
-  b = p->m_chain;
+  p->pktLength = 0;
+  b = p->chain;
   while (b) {
-    p->m_pktLength += b->read_avail();
+    p->pktLength += b->read_avail();
     b = b->next;
   }
-  return p->m_pktLength;
+  return p->pktLength;
 }
 
 INK_INLINE void
@@ -220,20 +206,20 @@ UDPPacket::free()
 INK_INLINE void
 UDPPacket::setContinuation(Continuation * c)
 {
-  ((UDPPacketInternal *) this)->m_cont = c;
+  ((UDPPacketInternal *) this)->cont = c;
 }
 
 INK_INLINE void
 UDPPacket::setConnection(UDPConnection * c)
 {
   /*Code reviewed by Case Larsen.  Previously, we just had
-     ink_assert(!m_conn).  This prevents tunneling of packets
+     ink_assert(!conn).  This prevents tunneling of packets
      correctly---that is, you get packets from a server on a udp
      conn. and want to send it to a player on another connection, the
      assert will prevent that.  The "if" clause enables correct
      handling of the connection ref. counts in such a scenario. */
 
-  UDPConnectionInternal *&conn = ((UDPPacketInternal *) this)->m_conn;
+  UDPConnectionInternal *&conn = ((UDPPacketInternal *) this)->conn;
 
   if (conn) {
     if (conn == c)
@@ -248,19 +234,19 @@ UDPPacket::setConnection(UDPConnection * c)
 INK_INLINE IOBufferBlock *
 UDPPacket::getIOBlockChain(void)
 {
-  return ((UDPPacketInternal *) this)->m_chain;
+  return ((UDPPacketInternal *) this)->chain;
 }
 
 INK_INLINE UDPConnection *
 UDPPacket::getConnection(void)
 {
-  return ((UDPPacketInternal *) this)->m_conn;
+  return ((UDPPacketInternal *) this)->conn;
 }
 
 INK_INLINE void
 UDPPacket::setArrivalTime(ink_hrtime t)
 {
-  ((UDPPacketInternal *) this)->m_arrival_time = t;
+  ((UDPPacketInternal *) this)->arrival_time = t;
 }
 
 INK_INLINE UDPPacket *
@@ -272,8 +258,8 @@ new_UDPPacket(struct sockaddr_in *to, ink_hrtime when, char *buf, int len)
   p->in_the_priority_queue = 0;
   p->in_heap = 0;
 #endif
-  p->m_delivery_time = when;
-  memcpy(&p->m_to, to, sizeof(p->m_to));
+  p->delivery_time = when;
+  memcpy(&p->to, to, sizeof(p->to));
 
   if (buf) {
     IOBufferBlock *body = new_IOBufferBlock();
@@ -297,8 +283,8 @@ new_UDPPacket(struct sockaddr_in * to, ink_hrtime when, IOBufferBlock * buf, int
   p->in_the_priority_queue = 0;
   p->in_heap = 0;
 #endif
-  p->m_delivery_time = when;
-  memcpy(&p->m_to, to, sizeof(p->m_to));
+  p->delivery_time = when;
+  memcpy(&p->to, to, sizeof(p->to));
 
   while (buf) {
     body = buf->clone();
@@ -317,10 +303,10 @@ new_UDPPacket(struct sockaddr_in * to, ink_hrtime when, Ptr<IOBufferBlock> buf)
   p->in_the_priority_queue = 0;
   p->in_heap = 0;
 #endif
-  p->m_delivery_time = when;
+  p->delivery_time = when;
   if (to)
-    memcpy(&p->m_to, to, sizeof(p->m_to));
-  p->m_chain = buf;
+    memcpy(&p->to, to, sizeof(p->to));
+  p->chain = buf;
   return p;
 }
 
@@ -339,8 +325,8 @@ new_incoming_UDPPacket(struct sockaddr_in * from, char *buf, int len)
   p->in_the_priority_queue = 0;
   p->in_heap = 0;
 #endif
-  p->m_delivery_time = 0;
-  memcpy(&p->m_from, from, sizeof(p->m_from));
+  p->delivery_time = 0;
+  memcpy(&p->from, from, sizeof(p->from));
 
   IOBufferBlock *body = new_IOBufferBlock();
   body->alloc(iobuffer_size_to_index(len));

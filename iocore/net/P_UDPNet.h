@@ -44,33 +44,26 @@ static inline PollCont *get_UDPPollCont(EThread *);
 
 class UDPNetHandler;
 
-struct UDPNetProcessorInternal:public UDPNetProcessor
+struct UDPNetProcessorInternal : public UDPNetProcessor
 {
-
   virtual int start(int n_udp_threads);
-
 #if defined (_IOCORE_WIN32)
   SOCKET create_dgram_socket_internal();
-
 #else
-
   void udp_read_from_net(UDPNetHandler * nh, UDPConnection * uc, PollDescriptor * pd, EThread * thread);
-
   int udp_callback(UDPNetHandler * nh, UDPConnection * uc, EThread * thread);
 #endif
 
 #if defined (_IOCORE_WIN32)
-  EThread *m_ethread;
-  UDPNetHandler *m_udpNetHandler;
+  EThread *ethread;
+  UDPNetHandler *udpNetHandler;
 #else
   ink_off_t pollCont_offset;
   ink_off_t udpNetHandler_offset;
 #endif
 
 public:
-    virtual void UDPNetProcessor_is_abstract()
-  {
-  };
+  virtual void UDPNetProcessor_is_abstract() {  }
 };
 
 extern UDPNetProcessorInternal udpNetInternal;
@@ -80,8 +73,6 @@ class PacketQueue;
 class UDPQueue
 {
 public:
-  UDPQueue(InkAtomicList *);
-  virtual ~ UDPQueue();
 
   void service(UDPNetHandler *);
   // these are internal APIs
@@ -94,15 +85,17 @@ public:
   // Interface exported to the outside world
   void send(UDPPacket * p);
 
-    Queue<UDPPacketInternal> m_reliabilityPktQueue;
+  Que(UDPPacketInternal, link) reliabilityPktQueue;
+  InkAtomicList atomicQueue;
+  ink_hrtime last_report;
+  ink_hrtime last_service;
+  ink_hrtime last_byteperiod;
+  int bytesSent;
+  int packets;
+  int added;
 
-  InkAtomicList *m_atomicQueue;
-  ink_hrtime m_last_report;
-  ink_hrtime m_last_service;
-  ink_hrtime m_last_byteperiod;
-  int m_bytesSent;
-  int m_packets;
-  int m_added;
+  UDPQueue();
+  ~UDPQueue();
 };
 
 #ifdef PACKETQUEUE_IMPL_AS_RING
@@ -121,7 +114,7 @@ public:
   :nPackets(0)
   , now_slot(0)
   {
-    m_lastPullLongTermQ = 0;
+    lastPullLongTermQ = 0;
     init();
   }
 
@@ -130,9 +123,9 @@ public:
   }
   int nPackets;
 
-  ink_hrtime m_lastPullLongTermQ;
-  Queue<UDPPacketInternal> m_longTermQ;
-  Queue<UDPPacketInternal> bucket[N_SLOTS];
+  ink_hrtime lastPullLongTermQ;
+  Que(UDPPacketInternal, link) longTermQ;
+  Que(UDPPacketInternal, link) bucket[N_SLOTS];
   ink_hrtime delivery_time[N_SLOTS];
   int now_slot;
 
@@ -163,10 +156,10 @@ public:
 
     ink_assert(delivery_time[now_slot]);
 
-    if (e->m_delivery_time < now)
-      e->m_delivery_time = now;
+    if (e->delivery_time < now)
+      e->delivery_time = now;
 
-    ink_hrtime s = e->m_delivery_time - delivery_time[now_slot];
+    ink_hrtime s = e->delivery_time - delivery_time[now_slot];
 
     if (s < 0) {
       before = 1;
@@ -178,7 +171,7 @@ public:
     // need a thingy to hold packets in a "long-term" slot; then, pull packets
     // from long-term slot whenever you advance.
     if (s >= N_SLOTS - 1) {
-      m_longTermQ.enqueue(e);
+      longTermQ.enqueue(e);
       e->in_heap = 0;
       e->in_the_priority_queue = 1;
       return;
@@ -186,8 +179,8 @@ public:
     slot = (s + now_slot) % N_SLOTS;
 
     // so that slot+1 is still "in future".
-    ink_assert((before || delivery_time[slot] <= e->m_delivery_time) &&
-               (delivery_time[(slot + 1) % N_SLOTS] >= e->m_delivery_time));
+    ink_assert((before || delivery_time[slot] <= e->delivery_time) &&
+               (delivery_time[(slot + 1) % N_SLOTS] >= e->delivery_time));
     e->in_the_priority_queue = 1;
     e->in_heap = slot;
     bucket[slot].enqueue(e);
@@ -214,13 +207,13 @@ public:
   bool IsCancelledPacket(UDPPacketInternal * p)
   {
     // discard packets that'll never get sent...
-    return ((p->m_conn->shouldDestroy()) || (p->m_conn->GetSendGenerationNumber() != p->m_reqGenerationNum));
+    return ((p->conn->shouldDestroy()) || (p->conn->GetSendGenerationNumber() != p->reqGenerationNum));
   };
 
   void FreeCancelledPackets(int numSlots)
   {
     UDPPacketInternal *p;
-    Queue<UDPPacketInternal> tempQ;
+    Que(UDPPacketInternal, link) tempQ;
     int i, s;
 
     for (i = 0; i < numSlots; i++) {
@@ -245,19 +238,18 @@ public:
     int s = now_slot;
     int prev;
 
-    if (ink_hrtime_to_msec(t - m_lastPullLongTermQ) >= SLOT_TIME_MSEC * ((N_SLOTS - 1) / 2)) {
-      Queue<UDPPacketInternal> tempQ;
+    if (ink_hrtime_to_msec(t - lastPullLongTermQ) >= SLOT_TIME_MSEC * ((N_SLOTS - 1) / 2)) {
+      Que(UDPPacketInternal, link) tempQ;
       UDPPacketInternal *p;
       // pull in all the stuff from long-term slot
-      m_lastPullLongTermQ = t;
+      lastPullLongTermQ = t;
       // this is to handle wierdoness where someone is trying to queue a
       // packet to be sent in SLOT_TIME_MSEC * N_SLOTS * (2+)---the packet
-      // will get back to m_longTermQ and we'll have an infinite loop.
-      while ((p = m_longTermQ.dequeue()) != NULL)
+      // will get back to longTermQ and we'll have an infinite loop.
+      while ((p = longTermQ.dequeue()) != NULL)
         tempQ.enqueue(p);
-      while ((p = tempQ.dequeue()) != NULL) {
+      while ((p = tempQ.dequeue()) != NULL)
         addPacket(p);
-      }
     }
 
     while (!bucket[s].head && (t > delivery_time[s] + SLOT_TIME)) {
@@ -331,38 +323,28 @@ void initialize_thread_for_udp_net(EThread * thread);
 struct UDPNetHandler:Continuation
 {
 public:
-  //PollDescriptor *   pollDescriptor;
-
-#define MAX_UDP_CONNECTION 8000
-  UnixUDPConnection ** udpConnections;
+  // to be polled for read
+  Que(UnixUDPConnection, polling_link) udp_polling;
+  // to be called back with data
+  Que(UnixUDPConnection, callback_link) udp_callbacks;
+  // outgoing packets
+  InkAtomicList udpAtomicQueue;
+  UDPQueue udpOutQueue;
+  // to hold the newly created descriptors before scheduling them on
+  // the servicing buckets.
+  // atomically added to by a thread creating a new connection with
+  // UDPBind
+  InkAtomicList udpNewConnections;
+  Event *trigger_event;
+  ink_hrtime nextCheck;
+  ink_hrtime lastCheck;
 
   int startNetEvent(int event, Event * data);
   int mainNetEvent(int event, Event * data);
   PollDescriptor *build_poll(PollDescriptor *);
   PollDescriptor *build_one_udpread_poll(int fd, UnixUDPConnection *, PollDescriptor * pd);
 
-
-    UDPNetHandler();
-
-  // to be polled for read
-    Queue<UnixUDPConnection> *udp_polling;
-  // to be called back with data
-    Queue<UnixUDPConnection> *udp_callbacks;
-
-  // outgoing packets
-  InkAtomicList udpAtomicQueue;
-  UDPQueue *udpOutQueue;
-
-  // to hold the newly created descriptors before scheduling them on
-  // the servicing buckets.
-  // atomically added to by a thread creating a new connection with
-  // UDPBind
-  InkAtomicList udpNewConnections;
-
-  Event *trigger_event;
-
-  ink_hrtime nextCheck;
-  ink_hrtime lastCheck;
+  UDPNetHandler();
 };
 #endif
 
@@ -375,34 +357,27 @@ class UDPQueue;
 class UDPNetHandler:Continuation
 {
 public:
-  UDPNetHandler();
-  virtual ~ UDPNetHandler();
-  int startNetEvent(int event, Event * data);
-  int mainNetEvent(int event, Event * data);
-
-#define MAX_UDP_CONNECTION 8000
-  UDPConnection **udpConnections;
-
-
   // to be polled for read
-    Queue<UDPConnection> *udp_polling;
+  Que(UnixUDPConnection, polling_link) udp_polling;
   // to be called back with data
-    Queue<UDPConnection> *udp_callbacks;
-
+  Que(UnixUDPConnection, callback_link) udp_callbacks;
   // outgoing packets
   InkAtomicList udpAtomicQueue;
-  UDPQueue *udpOutQueue;
-
+  UDPQueue udpOutQueue;
   // to hold the newly created descriptors before scheduling them on
   // the servicing buckets.
   // atomically added to by a thread creating a new connection with
   // UDPBind
   InkAtomicList udpNewConnections;
-
   Event *trigger_event;
-
   ink_hrtime nextCheck;
   ink_hrtime lastCheck;
+
+  int startNetEvent(int event, Event * data);
+  int mainNetEvent(int event, Event * data);
+
+  UDPNetHandler();
+  virtual ~ UDPNetHandler();
 };
 #endif
 
@@ -425,39 +400,39 @@ struct InkSinglePipeInfo
 {
   InkSinglePipeInfo()
   {
-    m_wt = 0.0;
-    m_bwLimit = 0;
-    m_destIP = 0;
-    m_count = 0;
-    m_bytesSent = m_pktsSent = 0;
-    m_bwAlloc = 0;
-    m_bwUsed = 0.0;
-    m_queue = NEW(new PacketQueue());
+    wt = 0.0;
+    bwLimit = 0;
+    destIP = 0;
+    count = 0;
+    bytesSent = pktsSent = 0;
+    bwAlloc = 0;
+    bwUsed = 0.0;
+    queue = NEW(new PacketQueue());
   };
 
   ~InkSinglePipeInfo() {
-    delete m_queue;
+    delete queue;
   }
 
-  double m_wt;
+  double wt;
   // all are in bps (bits per sec.) so that we can do ink_atomic_increment
-  ink64 m_bwLimit;
-  ink64 m_bwAlloc;
+  ink64 bwLimit;
+  ink64 bwAlloc;
   // this is in Mbps
-  double m_bwUsed;
-  ink32 m_destIP;
-  inku32 m_count;
-  inku64 m_bytesSent;
-  inku64 m_pktsSent;
-  PacketQueue *m_queue;
+  double bwUsed;
+  ink32 destIP;
+  inku32 count;
+  inku64 bytesSent;
+  inku64 pktsSent;
+  PacketQueue *queue;
 };
 
 struct InkPipeInfo
 {
-  int m_numPipes;
-  double m_interfaceMbps;
-  double m_reliabilityMbps;
-  InkSinglePipeInfo *m_perPipeInfo;
+  int numPipes;
+  double interfaceMbps;
+  double reliabilityMbps;
+  InkSinglePipeInfo *perPipeInfo;
 };
 
 extern InkPipeInfo G_inkPipeInfo;
@@ -465,8 +440,8 @@ extern InkPipeInfo G_inkPipeInfo;
 class UDPWorkContinuation:public Continuation
 {
 public:
-  UDPWorkContinuation():m_cont(NULL), m_numPairs(0), m_myIP(0), m_destIP(0),
-    m_sendbufsize(0), m_recvbufsize(0), m_udpConns(NULL), m_resultCode(NET_EVENT_DATAGRAM_OPEN)
+  UDPWorkContinuation():cont(NULL), numPairs(0), myIP(0), destIP(0),
+    sendbufsize(0), recvbufsize(0), udpConns(NULL), resultCode(NET_EVENT_DATAGRAM_OPEN)
   {
   };
   ~UDPWorkContinuation() {
@@ -475,15 +450,15 @@ public:
   int StateCreatePortPairs(int event, void *data);
   int StateDoCallback(int event, void *data);
 
-  Action m_action;
+  Action action;
 
 private:
-  Continuation * m_cont;
-  int m_numPairs;
-  unsigned int m_myIP, m_destIP;
-  int m_sendbufsize, m_recvbufsize;
-  UnixUDPConnection **m_udpConns;
-  int m_resultCode;
+  Continuation * cont;
+  int numPairs;
+  unsigned int myIP, destIP;
+  int sendbufsize, recvbufsize;
+  UnixUDPConnection **udpConns;
+  int resultCode;
 };
 
 typedef int (UDPWorkContinuation::*UDPWorkContinuation_Handler) (int, void *);

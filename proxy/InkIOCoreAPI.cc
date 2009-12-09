@@ -400,9 +400,9 @@ INKUDPSendTo(INKCont contp, INKUDPConn udp, unsigned int ip, int port, char *dat
   UDPPacket *packet = new_UDPPacket();
   UDPConnection *conn = (UDPConnection *) udp;
 
-  packet->m_to.sin_family = PF_INET;
-  packet->m_to.sin_port = htons(port);
-  packet->m_to.sin_addr.s_addr = ip;
+  packet->to.sin_family = PF_INET;
+  packet->to.sin_port = htons(port);
+  packet->to.sin_addr.s_addr = ip;
 
   IOBufferBlock *blockp = new_IOBufferBlock();
   blockp->alloc(BUFFER_SIZE_INDEX_32K);
@@ -458,14 +458,14 @@ unsigned int
 INKUDPPacketFromAddressGet(INKUDPPacket packet)
 {
   UDPPacket *p = (UDPPacket *) packet;
-  return (p->m_from.sin_addr.s_addr);
+  return (p->from.sin_addr.s_addr);
 }
 
 int
 INKUDPPacketFromPortGet(INKUDPPacket packet)
 {
   UDPPacket *p = (UDPPacket *) packet;
-  return (ntohs(p->m_from.sin_port));
+  return (ntohs(p->from.sin_port));
 }
 
 INKUDPConn
