@@ -64,436 +64,525 @@
 //
 //      Link cell for singly-linked list of objects of type C.
 //
-template<class C> struct SLink
-{
+template <class C> class SLink {
+ public:
   C *next;
-    SLink();
+  SLink() : next(NULL) {};
 };
-
-template<class C> inline SLink<C>::SLink():next(NULL)
-{
-}
+#define GetSLinkNext(_c, _e, _o) (((SLink<_c> *)(void*)(((intptr_t)(void*)_e) + _o))->next)
 
 //
 //      Link cell for doubly-linked list of objects of type C.
 //
-template<class C> struct Link:SLink<C>
-{
+template <class C> struct Link : SLink<C> {
   C *prev;
-    Link():prev(NULL)
-  {
-  }
+  Link() : prev(NULL) {}
 };
-
-
+#define GetLink(_c, _e, _o) (((Link<_c> *)(void*)(((intptr_t)(void*)_e) + _o)))
+#define GetLinkNext(_c, _e, _o) (((Link<_c> *)(void*)(((intptr_t)(void*)_e) + _o))->next)
+#define GetLinkPrev(_c, _e, _o) (((Link<_c> *)(void*)(((intptr_t)(void*)_e) + _o))->prev)
 
 //
 //      List descriptor for singly-linked list of objects of type C.
 //
-template<class C> struct SLL
-{
+template <class C, int o = -1> class SLL {
+ public:
   C *head;
-
-  // given an object c and its link cl, find the link for object x
-
-    SLink<C> &link(C * x, C * c, SLink<C> &cl);
-
-  // given an object c and its link cl, compute the link for the head object
-
-    SLink<C> &head_link(C * c, SLink<C> &l)
-  {
-    return link(head, c, l);
-  }
-
-  // push objects onto the SLL
-
-  void push(C * c);
-  void push(C * c, SLink<C> &l);
-
-  // pop objects off the SLL
-
+  void push(C *e);
   C *pop();
+  void clear() { head = NULL; }
+  C *next_link(C *e) { return GetLinkNext(C, e, o); }
+  // old manual link offset compatibiilty code
+  SLink<C> &link(C * x, C * c, SLink<C> &cl);
+  SLink<C> &head_link(C * c, SLink<C> &l) { return link(head, c, l); }
+  void push(C * c, SLink<C> &l);
   C *pop(C * c, SLink<C> &l);
+  // end compatibility code
 
-SLL():head(NULL) {
-  }
+  SLL() : head(NULL) {}
+  SLL(C *c) : head(c) {}
 };
+#define SList(_c, _f)  SLL<_c, offsetof(_c, _f)>
+#define forl_LL(_c, _p, _l) for (_c *_p = (_l).head; _p; _p = (_l).next_link(_p))
 
-
-template<class C> inline SLink<C> &SLL<C>::link(C * x, C * c, SLink<C> &cl)
-{
-  return *(SLink<C> *)(((char *) x) + (((char *) &cl) - ((char *) c)));
+template<class C, int o> inline void 
+SLL<C,o>::push(C *c, SLink<C> &l) {
+  l.next = head;
+  head = c;
 }
 
-template<class C> inline void SLL<C>::push(C * c)
-{
-  push(c, *(SLink<C> *) & c->link);
+template <class C, int o> inline void 
+SLL<C, o>::push(C *e) {
+  if (o == -1) {
+    push(e, *(SLink<C>*)&e->link);
+    return;
+  }
+  GetSLinkNext(C, e, o) = head;
+  head = e;
 }
 
-template<class C> inline void SLL<C>::push(C * c, SLink<C> &l)
-{
-  l.next = this->head;
-  this->head = c;
-}
-
-template<class C> inline C * SLL<C>::pop()
-{
-  if (this->head)
-    return pop(this->head, *(SLink<C> *) & this->head->link);
-  else
-    return NULL;
-}
-
-template<class C> inline C * SLL<C>::pop(C * c, SLink<C> &l)
-{
-  ink_assert(c == this->head);
-  C *res = this->head;
+template<class C, int o> inline C * 
+SLL<C, o>::pop(C * c, SLink<C> &l) {
+  C *res = head;
   if (res) {
-    this->head = l.next;
+    head = l.next;
     link(res, c, l).next = NULL;
   }
   return res;
 }
 
+template <class C, int o> inline C *
+SLL<C, o>::pop() {
+  if (o == -1) {
+    if (head)
+      return pop(head, *(SLink<C>*)&head->link);
+    else
+      return NULL;
+  }
+  C *ret = head;
+  if (head)
+    head = GetSLinkNext(C, head, o);
+  return ret;
+}
+
+template<class C, int o> inline SLink<C> &SLL<C, o>::link(C * x, C * c, SLink<C> &cl) {
+  return *(SLink<C> *)(((char *) x) + (((char *) &cl) - ((char *) c)));
+}
+
 //
 //      List descriptor for doubly-linked list of objects of type C.
 //
-#define LINK(_x,_c,_cl) (*(Link<C>*)(((char*)_x)+(((char*)&_cl)-((char*)_c))))
-#define HEAD_LINK(_c,_cl) LINK(this->head,_c,_cl)
-
-template<class C> struct DLL
-{
+template <class C, int o = -1> struct DLL {
   C *head;
-
-  // given an object c and its link cl, compute the link for object x
-  // Stupid SunCC can't seem to inline this at the highest optimiation level
-  // hence the macro.
-    Link<C> &link(C * x, C * c, Link<C> &cl)
-  {
-    return *(Link<C> *)(((char *) x) + (((char *) &cl) - ((char *) c)));
-  }
-
-  // given an object c and its link cl, compute the link for the head object.
-
-  Link<C> &head_link(C * c, Link<C> &cl)
-  {
-    return LINK((C *) this->head, c, cl);
-  }
-
-  // push objects onto the DLL
-
-  void push(C * c)
-  {
-    push(c, *(Link<C> *) & c->link);
-  }
-  void push(C * c, Link<C> &l);
-
-  // pop objects off the DLL
-
+  bool empty() { return head == NULL; }
+  void push(C *e);
   C *pop();
-  C *pop(C * c, Link<C> &l);
+  void remove(C *e);
+  void insert(C *e, C *after);
+  bool in(C *e) { return head == e || GetLinkNext(C, e, o) || GetLinkPrev(C, e, o); }
+  void clear() { head = NULL; }
+  C *next_link(C *e) { return GetLinkNext(C, e, o); }
+  C *prev_link(C *e) { return GetLinkPrev(C, e, o); }
+  // old manual link offset compatibiilty code
+  void push(C *c, Link<C> &l);
+  void remove(C *c, Link<C> &l);
+  void enqueue(C *c, Link<C> &l);
+  void insert(C *c, Link<C> &l, C *after);
+  bool in(C * c, Link<C> &l) { return l.prev || l.next || this->head == c; }
+  C *pop(C *c, Link<C> &l);
+  Link<C> &link(C *x, C *c, Link<C> &cl);
+  Link<C> &head_link(C * c, Link<C> &cl);
+  Link<C> &tail_link(C * c, Link<C> &cl);
+  // end compatibility code
 
-  // remove object <c> from any place in the DLL
-  //   (<c> must be a member of the list)
-
-  void remove(C * c)
-  {
-    remove(c, *(Link<C> *) & c->link);
-  }
-  void remove(C * c, Link<C> &l);
-
-  // insert object <c> after object <after> in the DLL
-  //   (<after> must be a member of the list, and <c> must not be)
-
-  void insert(C * c, C * after)
-  {
-    insert(c, *(Link<C> *) & c->link, after);
-  }
-  void insert(C * c, Link<C> &l, C * after);
-
-  // determine if object <c> is in the list
-  //   (currently does a weak test)
-
-  bool in(C * c)
-  {
-    return in(c, *(Link<C> *) & c->link);
-  }
-  bool in(C * c, Link<C> &l)
-  {
-    return l.prev || l.next || this->head == c;
-  }
-
-DLL():head(NULL) {
-  }
+  DLL() : head(NULL) {}
 };
+#define DList(_c, _f)  DLL<_c, offsetof(_c, _f)>
 
-template<class C> inline void DLL<C>::push(C * c, Link<C> &l)
+template<class C, int o> inline void 
+DLL<C,o>::push(C *c, Link<C> &l)
 {
-  C *chead = (C *) this->head;
+  C *chead = (C *)head;
   l.next = chead;
   if (chead)
-    LINK(chead, c, l).prev = c;
-  this->head = c;
+    link(chead, c, l).prev = c;
+  head = c;
 }
 
-template<class C> inline C * DLL<C>::pop()
-{
-  C *chead = (C *) this->head;
-  if (chead)
-    return pop(chead, *(Link<C> *) & chead->link);
-  else
-    return NULL;
-}
-
-template<class C> inline C * DLL<C>::pop(C * c, Link<C> &l)
-{
-  C *res = (C *) this->head;
-  if (res)
-    remove(res, LINK(res, c, l));
-  return res;
-}
-
-template<class C> inline void DLL<C>::remove(C * c, Link<C> &l)
-{
-  if (!this->head)
+template <class C, int o> inline void 
+DLL<C, o>::push(C *e) {
+  if (o == -1) {
+    push(e, *(Link<C>*)&e->link);
     return;
-  if (c == this->head)
-    this->head = (C *) LINK(this->head, c, l).next;
+  }
+  if (head)
+    GetLinkPrev(C, head, o) = e;
+  GetLinkNext(C, e, o) = head;
+  head = e;
+}
+
+template<class C, int o> inline void 
+DLL<C,o>::remove(C *c, Link<C> &l)
+{
+  if (!head)
+    return;
+  if (c == head)
+    head = (C *) link(head, c, l).next;
   if (l.prev)
-    LINK(l.prev, c, l).next = l.next;
+    link(l.prev, c, l).next = l.next;
   if (l.next)
-    LINK(l.next, c, l).prev = l.prev;
+    link(l.next, c, l).prev = l.prev;
   l.prev = NULL;
   l.next = NULL;
 }
 
-template<class C> inline void DLL<C>::insert(C * c, Link<C> &l, C * after)
+template <class C, int o> inline void
+DLL<C, o>::remove(C *e) {
+  if (o == -1) {
+    remove(e, *(Link<C>*)&e->link);
+    return;
+  }
+  if (!head) return;
+  if (e == head) head = GetLinkNext(C, e, o);
+  if (GetLinkPrev(C, e, o)) GetLinkNext(C, GetLinkPrev(C, e, o), o) = GetLinkNext(C, e, o);
+  if (GetLinkNext(C, e, o)) GetLinkPrev(C, GetLinkNext(C, e, o), o) = GetLinkPrev(C, e, o);
+  GetLinkPrev(C, e, o) = NULL;
+  GetLinkNext(C, e, o) = NULL;
+}
+
+template<class C, int o> inline C *
+DLL<C,o>::pop(C * c, Link<C> &l)
 {
-  ink_assert(l.prev == NULL);
-  ink_assert(l.next == NULL);
+  C *res = (C*)head;
+  if (res)
+    remove(res, link(res, c, l));
+  return res;
+}
+
+template <class C, int o> inline C *
+DLL<C, o>::pop() {
+  if (o == -1) {
+    if (head)
+      return pop(head, *(Link<C>*)&head->link);
+    else
+      return NULL;
+  }
+  C *ret = head;
+  if (ret) {
+    head = GetLinkNext(C, ret, o);
+    if (head)
+      GetLinkPrev(C, head, o) = NULL;
+    GetLinkNext(C, ret, o) = NULL;
+    return ret;
+  } else
+    return NULL;
+}
+
+template<class C, int o> inline void
+DLL<C, o>::insert(C *c, Link<C> &l, C *after) {
   if (!after) {
     push(c, l);
     return;
   }
   l.prev = after;
-  l.next = LINK(after, c, l).next;
-  LINK(after, c, l).next = c;
+  l.next = link(after, c, l).next;
+  link(after, c, l).next = c;
   if (l.next)
-    LINK(l.next, c, l).prev = c;
+    link(l.next, c, l).prev = c;
+}
+
+template <class C, int o> inline void
+DLL<C, o>::insert(C *e, C *after) {
+  if (o == -1) {
+    insert(e, *(Link<C>*)&e->link, after);
+    return;
+  }
+  if (!after) { push(e); return; }
+  GetLinkPrev(C, e, o) = after; 
+  GetLinkNext(C, e, o) = GetLinkNext(C, after, o);
+  GetLinkNext(C, after, o) = e;
+  if (GetLinkNext(C, e, o)) GetLinkPrev(C, GetLinkNext(C, e, o), o) = e;
+}
+
+template <class C, int o> inline Link<C> &
+DLL<C,o>::link(C *x, C *c, Link<C> &cl) {
+  return (*(Link<C>*)(((char*)x)+(((char*)&cl)-((char*)c))));
+}
+
+template <class C, int o> inline Link<C> &
+DLL<C,o>::head_link(C * c, Link<C> &cl) {
+  return link((C *) this->head, c, cl);
+}
+
+template <class C, int o> inline Link<C> &
+DLL<C,o>::tail_link(C * c, Link<C> &cl) {
+  return link((C *) this->tail, c, cl);
 }
 
 //
 //      List descriptor for queue of objects of type C.
 //
-#define TAIL_LINK(_c,_cl) LINK(this->tail,_c,_cl)
-
-template<class C> struct Queue:DLL<C>
-{
+template <class C, int o = -1> class Queue : public DLL<C, o> {
+ public:
+  using DLL<C, o>::head;
+  using DLL<C, o>::link;
   C *tail;
-
-  // Stupid SunCC can't seem to inline this at the highest optimiation level
-  // hence the macro.
-    Link<C> &tail_link(C * c, Link<C> &l)
-  {
-    return LINK(this->tail, c, l);
-  }
-
-  // push objects onto the DLL
-
-  void push(C * c)
-  {
-    push(c, *(Link<C> *) & c->link);
-  }
-  void push(C * c, Link<C> &l)
-  {
-    DLL<C>::push(c, l);
-    if (!this->tail)
-      this->tail = this->head;
-  }
-
-  // pop objects off the DLL
-
-  C *pop()
-  {
-    C *ret = DLL<C>::pop();
-    if (!this->head)
-      this->tail = NULL;
-    return ret;
-  }
-  C *pop(C * c, Link<C> &l)
-  {
-    C *ret = DLL<C>::pop(c, l);
-    if (!this->head)
-      this->tail = NULL;
-    return ret;
-  }
-
-  // enqueue object <c> at end of the Queue
-
-  void enqueue(C * c)
-  {
-    enqueue(c, *(Link<C> *) & c->link);
-  }
-  void enqueue(C * c, Link<C> &l);
-
-  void remove(C * c)
-  {
-    remove(c, *(Link<C> *) & c->link);
-  }
-  void remove(C * c, Link<C> &l);
-
-  void insert(C * c, C * after)
-  {
-    insert(c, *(Link<C> *) & c->link, after);
-  }
-  void insert(C * c, Link<C> &l, C * after)
-  {
-    DLL<C>::insert(c, l, after);
-    if (!this->tail)
-      this->tail = this->head;
-    else if (this->tail == after)
-      this->tail = c;
-  }
-
-  void append(Queue<C> q)
-  {
-    append(q, *(Link<C> *) & q.head->link);
-  }
-  void append(Queue<C> q, Link<C> &l)
-  {
-    if (!this->head) {
-      this->head = q.head;
-      this->tail = q.tail;
-    } else {
-      if (q.head) {
-        LINK(this->tail, q.head, l).next = q.head;
-        LINK(q.head, q.head, l).prev = this->tail;
-        this->tail = q.tail;
-      }
-    }
-  }
-
-  void append(DLL<C> q)
-  {
-    append(q, *(Link<C> *) & q.head->link);
-  }
-  void append(DLL<C> q, Link<C> &l)
-  {
-    C *qtail = q.head;
-    if (qtail)
-      while (LINK(qtail, q.head, l).next)
-        qtail = LINK(qtail, q.head, l).next;
-    if (!this->head) {
-      this->head = q.head;
-      this->tail = qtail;
-    } else {
-      if (q.head) {
-        LINK(this->tail, q.head, l).next = q.head;
-        LINK(q.head, q.head, l).prev = this->tail;
-        this->tail = qtail;
-      }
-    }
-  }
-
-  // dequeue the object from the front of the Queue
-
+  void push(C *e);
+  C *pop();
+  void enqueue(C *e);
+  void in_or_enqueue(C *e);
   C *dequeue();
-  C *dequeue(C * c, Link<C> &l);
-
-  bool in(C * c)
-  {
-    return DLL<C>::in(c);
-  }
-  void clear()
-  {
-    this->head = NULL;
-    this->tail = NULL;
-  }
-  bool empty()
-  {
-    return this->head == NULL && this->tail == NULL;
-  }
-Queue():tail(NULL) {
-  }
+  void remove(C *e);
+  void insert(C *e, C *after);
+  void append(Queue<C, o> q);
+  void append(DLL<C, o> q);
+  void clear() { head = NULL; tail = NULL; }
+  // old manual link offset compatibiilty code
+  void push(C *c, Link<C> &l);
+  C *pop(C *c, Link<C> &l);
+  void enqueue(C *e, Link<C> &l);
+  C *dequeue(C *c, Link<C> &l);
+  void remove(C *c, Link<C> &l);
+  void insert(C *c, Link<C> &l, C * after);
+  void append(Queue<C, o> q, Link<C> &l);
+  void append(DLL<C, o> q, Link<C> &l);
+  // end compatibility code
+  
+  Queue() : tail(NULL) {}
 };
+#define Que(_c, _f) Queue<_c, offsetof(_c, _f)>
 
-template<class C> inline void Queue<C>::enqueue(C * c, Link<C> &l)
-{
-  C *ctail = (C *) this->tail;
+template <class C, int o> inline void 
+Queue<C, o>::push(C * c, Link<C> &l) {
+  DLL<C, o>::push(c, l);
+  if (!tail)
+    tail = head;
+}
+
+template <class C, int o> inline void 
+Queue<C, o>::push(C *e) {
+  if (o == -1) {
+    push(e, *(Link<C>*)&e->link);
+    return;
+  }
+  DLL<C, o>::push(e);
+  if (!tail) tail = head;
+}
+
+template <class C, int o> inline C *
+Queue<C, o>::pop(C *c, Link<C> &l) {
+  C *ret = DLL<C,o>::pop(c, l);
+  if (!head)
+    tail = NULL;
+  return ret;
+}
+
+template <class C, int o> inline C *
+Queue<C, o>::pop() {
+  if (o == -1) {
+    if (head)
+      return pop(head, *(Link<C>*)&head->link);
+    else
+      return NULL;
+  }
+  C *ret = DLL<C, o>::pop();
+  if (!head) tail = NULL;
+  return ret;
+}
+
+template <class C, int o> inline void
+Queue<C, o>::insert(C *c, Link<C> &l, C *after) {
+  DLL<C, o>::insert(c, l, after);
+  if (!tail)
+    tail = head;
+  else if (tail == after)
+    tail = c;
+}
+
+template <class C, int o> inline void
+Queue<C, o>::insert(C *e, C *after) {
+  if (o == -1) {
+    insert(e, *(Link<C>*)&e->link, after);
+    return;
+  }
+  DLL<C, o>::insert(e, after);
+  if (!tail)
+    tail = head;
+  else if (tail == after)
+    tail = e;
+}
+
+template<class C, int o> inline void 
+Queue<C, o>::remove(C * c, Link<C> &l) {
+  if (c == tail)
+    tail = l.prev;
+  DLL<C, o>::remove(c, l);
+}
+
+template <class C, int o> inline void
+Queue<C, o>::remove(C *e) {
+  if (o == -1) {
+    remove(e, *(Link<C>*)&e->link);
+    return;
+  }
+  if (tail == e)
+    tail = GetLinkPrev(C, e, o);
+  DLL<C, o>::remove(e);
+}
+
+template <class C, int o> inline void
+Queue<C, o>::append(DLL<C, o> q, Link<C> &l) {
+  C *qtail = q.head;
+  if (qtail)
+    while (link(qtail, q.head, l).next)
+      qtail = link(qtail, q.head, l).next;
+  if (!head) {
+    head = q.head;
+    tail = qtail;
+  } else {
+    if (q.head) {
+      link(tail, q.head, l).next = q.head;
+      link(q.head, q.head, l).prev = tail;
+      tail = qtail;
+    }
+  }
+}
+
+template <class C, int o> inline void
+Queue<C, o>::append(DLL<C, o> q) {
+  if (o == -1) {
+    if (q.head)
+      append(q, *(Link<C>*)&q.head->link);
+    return;
+  }
+  C *qtail = q.head;
+  if (qtail)
+    while (GetLinkNext(C, qtail, o))
+      qtail = GetLinkNext(C, qtail, o);
+  if (!head) {
+    head = q.head;
+    tail = qtail;
+  } else {
+    if (q.head) {
+      GetLinkNext(C, tail, o) = q.head;
+      GetLinkPrev(C, q.head, o) = tail;
+      tail = qtail;
+    }
+  }
+}
+
+template <class C, int o> inline void
+Queue<C, o>::append(Queue<C, o> q, Link<C> &l) {
+  if (!head) {
+    head = q.head;
+    tail = q.tail;
+  } else {
+    if (q.head) {
+      link(tail, q.head, l).next = q.head;
+      link(q.head, q.head, l).prev = tail;
+      tail = q.tail;
+    }
+  }
+}
+
+template <class C, int o> inline void
+Queue<C, o>::append(Queue<C, o> q) {
+  if (o == -1) {
+    append(q, *(Link<C>*)&q.head->link);
+    return;
+  }
+  if (!head) {
+    head = q.head;
+    tail = q.tail;
+  } else {
+    if (q.head) {
+      GetLinkNext(C, tail, o) = q.head;
+      GetLinkPrev(C, q.head, o) = tail;
+      tail = q.tail;
+    }
+  }
+}
+
+template<class C, int o> inline void 
+Queue<C,o>::enqueue(C *c, Link<C> &l) {
+  C *ctail = (C*)tail;
   if (ctail)
     insert(c, l, ctail);
   else {
-    ink_assert(!this->head);
-    DLL<C>::push(c, l);
+    ink_assert(!head);
+    DLL<C,o>::push(c, l);
   }
-  this->tail = c;
+  tail = c;
 }
 
-template<class C> inline void Queue<C>::remove(C * c, Link<C> &l)
-{
-  if (c == this->tail)
-    this->tail = l.prev;
-  DLL<C>::remove(c, l);
-}
-
-template<class C> inline C * Queue<C>::dequeue()
-{
-  C *chead = (C *) this->head;
-  if (chead)
-    return dequeue(chead, *(Link<C> *) & chead->link);
+template <class C, int o> inline void 
+Queue<C, o>::enqueue(C *e) {
+  if (o == -1) {
+    enqueue(e, *(Link<C>*)&e->link);
+    return;
+  }
+  if (tail)
+    insert(e, tail);
   else
-    return NULL;
+    push(e);
 }
 
-template<class C> inline C * Queue<C>::dequeue(C * c, Link<C> &l)
-{
-  C *chead = (C *) this->head;
+template <class C, int o> inline void 
+Queue<C, o>::in_or_enqueue(C *e) {
+  if (!in(e)) enqueue(e);
+}
+
+template<class C, int o> inline C * 
+Queue<C, o>::dequeue(C * c, Link<C> &l) {
+  C *chead = (C*)head;
   if (!chead)
     return NULL;
-  remove(chead, LINK(chead, c, l));
-  return (C *) chead;
+  remove(chead, link(chead, c, l));
+  return (C*)chead;
 }
 
-template<class C> struct SortableQueue:Queue<C>
+template <class C, int o> inline C *
+Queue<C, o>::dequeue() {
+  if (o == -1) {
+    if (head)
+      return dequeue(head, *(Link<C>*)&head->link);
+    else
+      return NULL;
+  }
+  return pop();
+}
+
+//
+// Adds sorting, but requires that elements implement <
+//
+
+template<class C, int o = -1> struct SortableQueue: public Queue<C, o>
 {
-  void sort()
-  {
-    sort(this->head, *(Link<C> *) & this->head->link);
+  using DLL<C, o>::head;
+  using DLL<C, o>::link;
+  using Queue<C, o>::tail;
+  void sort() {
+    if (!head) return;
+    if (o == -1) {
+      sort(head, *(Link<C>*)&head->link);
+      return;
+    }
+    sort(head, *GetLink(C, head, o));
   }
   void sort(C * c, Link<C> &l)
   {
     bool clean = false;
     while (!clean) {
       clean = true;
-      C *v = this->head;
-      C *n = HEAD_LINK(c, l).next;
+      C *v = head;
+      C *n = head_link(c, l).next;
       while (n) {
-        C *f = LINK(n, c, l).next;
+        C *f = link(n, c, l).next;
         if (*n < *v) {
           clean = false;
           // swap 'em
-          if (this->head == v)
-            this->head = n;
-          if (this->tail == n)
-            this->tail = v;
+          if (head == v)
+            head = n;
+          if (tail == n)
+            tail = v;
           // fix prev (p)
-          C *p = LINK(v, c, l).prev;
+          C *p = link(v, c, l).prev;
           if (p) {
-            LINK(p, c, l).next = n;
-            LINK(n, c, l).prev = p;
+            link(p, c, l).next = n;
+            link(n, c, l).prev = p;
           } else {
-            LINK(n, c, l).prev = NULL;
+            link(n, c, l).prev = NULL;
           }
           // fix follow (f)
           if (f) {
-            LINK(f, c, l).prev = v;
-            LINK(v, c, l).next = f;
+            link(f, c, l).prev = v;
+            link(v, c, l).next = f;
           } else {
-            LINK(v, c, l).next = NULL;
+            link(v, c, l).next = NULL;
           }
           // fix interior
-          LINK(v, c, l).prev = n;
-          LINK(n, c, l).next = v;
+          link(v, c, l).prev = n;
+          link(n, c, l).next = v;
         } else {
           v = n;
         }
@@ -502,6 +591,7 @@ template<class C> struct SortableQueue:Queue<C>
     }
   }
 };
+#define SortableQue(_c, _l) SortableQueue<_c, offsetof(_c, _l)>
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -513,60 +603,50 @@ template<class C> struct SortableQueue:Queue<C>
 //
 //////////////////////////////////////////////////////////////////////////////
 
-template<class C> struct Plist:public Queue<C>
+template<class C, int o> struct Plist:public Queue<C, o>
 {
-  void push(C * c)
-  {
-    Queue<C>::enqueue(c, *(Link<C> *) & c->link);
+  using DLL<C,o>::head;
+  using Queue<C,o>::tail;
+  void push(C * c) {
+    Queue<C, o>::enqueue(c, *GetLink(C, c, o));
   }
-  void push(C * c, Link<C> &l)
-  {
-    Queue<C>::enqueue(c, l);
+  void push(C * c, Link<C> &l) {
+    Queue<C, o>::enqueue(c, l);
   }
-  C *pop()
-  {
-    return pop(this->tail, *(Link<C> *) & this->tail->link);
+  C *pop() {
+    return pop(tail, *GetLink(C, tail, o));
   }
-  C *pop(C * c, Link<C> &l)
-  {
-    C *v = this->tail;
-    this->remove(v, TAIL_LINK(c, l));
+  C *pop(C * c, Link<C> &l) {
+    C *v = tail;
+    this->remove(v, tail_link(c, l));
     return v;
   }
-  C *shift()
-  {
-    return Queue<C>::dequeue();
+  C *shift() {
+    return Queue<C, o>::dequeue();
   }
-  C *shift(C * c, Link<C> &l)
-  {
-    return Queue<C>::dequeue(c, l);
+  C *shift(C * c, Link<C> &l) {
+    return Queue<C, o>::dequeue(c, l);
   }
-  void unshift(C * c)
-  {
-    unshift(c, *(Link<C> *) & c->link);
+  void unshift(C * c) {
+    unshift(c, *GetLink(C, c, o));
   }
-  void unshift(C * c, Link<C> &l)
-  {
-    Queue<C>::push(c, l);
-    if (!this->tail)
-      this->tail = c;
+  void unshift(C * c, Link<C> &l) {
+    Queue<C, o>::push(c, l);
+    if (!tail)
+      tail = c;
   }
 private:
-  void enqueue(C *)
-  {
+  void enqueue(C *) {
     ink_assert(!"no Plist::enqueue");
   }
-  void enqueue(C *, Link<C> &)
-  {
+  void enqueue(C *, Link<C> &) {
     ink_assert(!"no Plist::enqueue");
   }
-  C *dequeue()
-  {
+  C *dequeue() {
     ink_assert(!"no Plist::dequeue");
     return 0;
   }
-  C *dequeue(C *, Link<C> &)
-  {
+  C *dequeue(C *, Link<C> &) {
     ink_assert(!"no Plist::dequeue");
     return 0;
   }
@@ -587,59 +667,51 @@ private:
 //
 //////////////////////////////////////////////////////////////////////////////
 
-template<class C> struct CPlist:Plist<C>
+template<class C, int o> struct CPlist:Plist<C, o>
 {
+  using DLL<C,o>::head;
+  using Queue<C,o>::tail;
 
   int count;
 
-  void push(C * c)
-  {
-    push(c, *(Link<C> *) & c->link);
+  void push(C * c) {
+    push(c, *GetLink(C, c, o));
   }
-  void push(C * c, Link<C> &l)
-  {
-    Plist<C>::push(c, l);
+  void push(C * c, Link<C> &l) {
+    Plist<C, o>::push(c, l);
     count++;
   }
-  C *pop()
-  {
-    return pop(this->tail, *(Link<C> *) & this->tail->link);
+  C *pop() {
+    return pop(tail, *GetLink(C, tail, o));
   }
-  C *pop(C * c, Link<C> &l)
-  {
-    C *t = Plist<C>::pop(c, l);
+  C *pop(C * c, Link<C> &l) {
+    C *t = Plist<C, o>::pop(c, l);
     if (t)
       count--;
     return t;
   }
-  C *shift()
-  {
-    return shift(this->head, *(Link<C> *) & this->head->link);
+  C *shift() {
+    return shift(head, *GetLink(C, head, o));
   }
-  C *shift(C * c, Link<C> &l)
-  {
-    C *t = Plist<C>::shift(c, l);
+  C *shift(C * c, Link<C> &l) {
+    C *t = Plist<C, o>::shift(c, l);
     if (t)
       count--;
     return t;
   }
-  void unshift(C * c)
-  {
-    unshift(c, *(Link<C> *) & c->link);
+  void unshift(C * c) {
+    unshift(c, *GetLink(C, c, o));
   }
-  void unshift(C * c, Link<C> &l)
-  {
-    Plist<C>::unshift(c, l);
+  void unshift(C * c, Link<C> &l) {
+    Plist<C, o>::unshift(c, l);
     count++;
   }
-  void clear()
-  {
-    Plist<C>::clear();
+  void clear() {
+    Plist<C, o>::clear();
     count = 0;
   }
 
-CPlist():count(0) {
-  }
+  CPlist():count(0) { }
 };
 
 
@@ -663,22 +735,14 @@ for(_x = _q.head; _x != NULL; _x = LINK(_x,_x,_x->_l).next)
 
 // atomic lists
 
-template<class C> struct AtomicSLL
+template<class C, int o = -1> struct AtomicSLL
 {
   SLink<C> &link(C * x, C * c, SLink<C> &cl);
 
-  void push(C * c)
-  {
-    ink_atomiclist_push(&al, c);
-  }
-  C *pop()
-  {
-    return (C *) ink_atomiclist_pop(&al);
-  }
-  C *popall()
-  {
-    return (C *) ink_atomiclist_popall(&al);
-  }
+  void push(C * c) { ink_atomiclist_push(&al, c); }
+  C *pop() { return (C *) ink_atomiclist_pop(&al); }
+  C *popall() { return (C *) ink_atomiclist_popall(&al); }
+  bool empty() { return INK_ATOMICLIST_EMPTY(al); }
 
   /*
    * WARNING WARNING WARNING WARNING WARNING WARNING WARNING
@@ -686,19 +750,9 @@ template<class C> struct AtomicSLL
    * which only that thread can use as well.
    * WARNING WARNING WARNING WARNING WARNING WARNING WARNING
    */
-  C *remove(C * c)
-  {
-    return (C *) ink_atomiclist_remove(&al, c);
-  }
-
-  C *head()
-  {
-    return (C *) TO_PTR(FREELIST_POINTER(al.head));
-  }
-  C *next(C * c)
-  {
-    return (C *) TO_PTR(c);
-  }
+  C *remove(C * c) { return (C *) ink_atomiclist_remove(&al, c); }
+  C *head() { return (C *) TO_PTR(FREELIST_POINTER(al.head)); }
+  C *next(C * c) { return (C *) TO_PTR(c); }
 
   InkAtomicList al;
 
@@ -706,20 +760,21 @@ template<class C> struct AtomicSLL
   AtomicSLL(C * c, SLink<C> *l);
 };
 
-template<class C> inline SLink<C> &AtomicSLL<C>::link(C * x, C * c, SLink<C> &cl)
-{
+#define ASSL(_c, _l) AtomicSLL<_c, offsetof(_c, _l)>
+
+template<class C, int o> inline SLink<C> &AtomicSLL<C,o>::link(C * x, C * c, SLink<C> &cl) {
   return *(SLink<C> *)(((char *) x) + (((char *) &cl) - ((char *) c)));
 }
 
-template<class C> inline AtomicSLL<C>::AtomicSLL(C * c, SLink<C> *l)
-{
+template<class C, int o> inline AtomicSLL<C,o>::AtomicSLL(C * c, SLink<C> *l) {
   ink_atomiclist_init(&al, "AtomicSLL", (char *) l - (char *) c);
 }
 
-template<class C> inline AtomicSLL<C>::AtomicSLL()
-{
-  C *c = (C *) alloca(sizeof(C));
-  ink_atomiclist_init(&al, "AtomicSLL", (char *) &c->link.next - (char *) c);
+template<class C, int o> inline AtomicSLL<C,o>::AtomicSLL() {
+  if (o < 0) {
+    ink_atomiclist_init(&al, "AtomicSLL", (inku32)(uintptr_t)&((C*)0)->link);
+  } else
+    ink_atomiclist_init(&al, "AtomicSLL", (inku32)o);
 }
 
 #endif  /*_List_h_*/

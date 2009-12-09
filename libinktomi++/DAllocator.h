@@ -53,13 +53,11 @@ enum DallocState
 
 struct AllocDescriptor
 {
-
   int magic;
   DallocState state;
   void *el;
 
-    Link<AllocDescriptor> link;      // list of free elements
-
+  Link<AllocDescriptor> link;      // list of free elements
 };
 
 struct DAllocator;
@@ -75,7 +73,7 @@ struct AllocPoolDescriptor
 
   AllocDescriptor *descriptors;
 
-    SLink<AllocPoolDescriptor> link;
+  SLink<AllocPoolDescriptor> link;
 };
 
 struct DAllocator
@@ -85,11 +83,11 @@ struct DAllocator
   int alignment;
   int el_size;
 
-    SLL<AllocPoolDescriptor> pools;
-    Queue<AllocDescriptor> free_list;
+  SList(AllocPoolDescriptor,link) pools;
+  Que(AllocDescriptor,link) free_list;
 
-    DAllocator();
-   ~DAllocator();
+  DAllocator();
+  ~DAllocator();
 
   void init(const char *name, unsigned type_size, unsigned alignment);
   void *alloc();
