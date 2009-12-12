@@ -142,8 +142,8 @@ public:
   Que(UnixNetVConnection, write.ready_link) write_ready_list;
   Que(UnixNetVConnection, link) open_list;
   Que(DNSConnection, link) dnsqueue;
-  ASSL(UnixNetVConnection, read.enable_link) read_enable_list;
-  ASSL(UnixNetVConnection, write.enable_link) write_enable_list;
+  ASLL(UnixNetVConnection, read.enable_link) read_enable_list;
+  ASLL(UnixNetVConnection, write.enable_link) write_enable_list;
 
   int startNetEvent(int event, Event * data);
   int mainNetEvent(int event, Event * data);

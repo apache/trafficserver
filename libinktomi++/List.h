@@ -762,7 +762,7 @@ template<class C, int o = -1> struct AtomicSLL
   AtomicSLL(C * c, SLink<C> *l);
 };
 
-#define ASSL(_c, _l) AtomicSLL<_c, offsetof(_c, _l)>
+#define ASLL(_c, _l) AtomicSLL<_c, offsetof(_c, _l)>
 
 template<class C, int o> inline SLink<C> &AtomicSLL<C,o>::link(C * x, C * c, SLink<C> &cl) {
   return *(SLink<C> *)(((char *) x) + (((char *) &cl) - ((char *) c)));
@@ -773,9 +773,9 @@ template<class C, int o> inline AtomicSLL<C,o>::AtomicSLL(C * c, SLink<C> *l) {
 }
 
 template<class C, int o> inline AtomicSLL<C,o>::AtomicSLL() {
-  if (o < 0) {
+  if (o < 0)
     ink_atomiclist_init(&al, "AtomicSLL", (inku32)(uintptr_t)&((C*)0)->link);
-  } else
+  else
     ink_atomiclist_init(&al, "AtomicSLL", (inku32)o);
 }
 
