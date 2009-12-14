@@ -94,11 +94,11 @@ EventProcessor::schedule_spawn(Continuation * cont)
 INK_INLINE Event *
 EventProcessor::schedule_imm(Continuation * cont, EventType et, int callback_event, void *cookie)
 {
-  NOWARN_UNUSED(callback_event);
   Event *e = eventAllocator.alloc();
 #ifdef ENABLE_TIME_TRACE
   e->start_time = ink_get_hrtime();
 #endif
+  e->callback_event = callback_event;
   e->cookie = cookie;
   return schedule(e->init(cont, 0, 0), et);
 }
@@ -106,9 +106,9 @@ EventProcessor::schedule_imm(Continuation * cont, EventType et, int callback_eve
 INK_INLINE Event *
 EventProcessor::schedule_at(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
-  NOWARN_UNUSED(callback_event);
   ink_assert(t > 0);
   Event *e = eventAllocator.alloc();
+  e->callback_event = callback_event;
   e->cookie = cookie;
   return schedule(e->init(cont, t, 0), et);
 }
@@ -116,8 +116,8 @@ EventProcessor::schedule_at(Continuation * cont, ink_hrtime t, EventType et, int
 INK_INLINE Event *
 EventProcessor::schedule_in(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
-  NOWARN_UNUSED(callback_event);
   Event *e = eventAllocator.alloc();
+  e->callback_event = callback_event;
   e->cookie = cookie;
   return schedule(e->init(cont, ink_get_based_hrtime() + t, 0), et);
 }
@@ -125,9 +125,9 @@ EventProcessor::schedule_in(Continuation * cont, ink_hrtime t, EventType et, int
 INK_INLINE Event *
 EventProcessor::schedule_every(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
-  NOWARN_UNUSED(callback_event);
   ink_assert(t != 0);
   Event *e = eventAllocator.alloc();
+  e->callback_event = callback_event;
   e->cookie = cookie;
   if (t < 0)
     return schedule(e->init(cont, t, t), et);

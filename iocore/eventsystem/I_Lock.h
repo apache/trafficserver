@@ -586,6 +586,15 @@ struct MutexLock
     if (m)
       Mutex_unlock(m, m->thread_holding);
   }
+
+  int operator!()
+  {
+    return false;
+  }
+  operator  bool()
+  {
+    return true;
+  }
 };
 
 struct MutexTryLock

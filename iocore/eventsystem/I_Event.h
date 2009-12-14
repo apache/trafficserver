@@ -228,6 +228,7 @@ public:
   unsigned int immediate:1;
   unsigned int globally_allocated:1;
   unsigned int in_heap:4;
+  int callback_event;
 
   ink_hrtime timeout_at;
   ink_hrtime period;
@@ -282,7 +283,6 @@ public:
   virtual ~ Event() {
   }
 #endif
-
 };
 
 //

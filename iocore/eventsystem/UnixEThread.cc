@@ -165,7 +165,7 @@ EThread::execute()
         while ((e = EventQueueExternal.dequeue_local())) {
           if (!e->timeout_at) {
             ink_assert(e->period == 0);
-            process_event(e, EVENT_IMMEDIATE);
+            process_event(e, e->callback_event);
           } else {
 
             if (e->timeout_at < 0) {
@@ -199,7 +199,7 @@ EThread::execute()
               free_event(e);
             else {
               done_one = true;
-              process_event(e, e->immediate ? EVENT_IMMEDIATE : EVENT_INTERVAL);
+              process_event(e, e->callback_event);
             }
           }
         } while (done_one);
@@ -216,7 +216,7 @@ EThread::execute()
             EventQueueExternal.dequeue_timed(cur_time, next_time, false);
           while ((e = EventQueueExternal.dequeue_local())) {
             if (!e->timeout_at)
-              process_event(e, EVENT_IMMEDIATE);
+              process_event(e, e->callback_event);
             else {
               if (e->cancelled)
                 free_event(e);

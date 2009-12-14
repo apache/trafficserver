@@ -116,26 +116,12 @@ public:
   */
   EventType spawn_event_threads(int n_threads);
 
-  // not used
-  // Event *schedule_spawn(Continuation *cont);
-
+#if 0  
   /**
-    Schedules the continuation on a specific EThread to receive an event
-    as soon as possible.  Instructs the EventProcessor to schedule the
-    callback to the continuation 'c' as soon as possible. The event is
-    assigned to the specified EThread.
-
-    @param c Continuation to be called back as soon as possible.
-    @param ethread EThread on which to schedule the event.
-    @param callback_event code to be passed back to the continuation's
-      handler. See the Remarks section.
-    @param cookie user-defined value or pointer to be passed back in
-      the Event's object cookie field.
-    @return reference to an Event object representing the scheduling
-      of this callback.
-
+    Unused
   */
-  Event *schedule_imm(Continuation * c, Thread * ethread, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_spawn(Continuation *cont);
+#endif
 
   /**
     Schedules the continuation on a specific EThread to receive an event
@@ -153,68 +139,6 @@ public:
       the Event's object cookie field.
     @return reference to an Event object representing the scheduling
       of this callback.
-
-  */
-  Event *schedule_at(Continuation * c,
-                     ink_hrtime atimeout_at,
-                     Thread * ethread, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
-
-  /**
-    Schedules the continuation on a specific EThread to receive an event
-    after the timeout elapses. Instructs the EventProcessor to schedule
-    the callback to the continuation 'c' after the time specified in
-    atimeout_in elapses.  The event is assigned to the specified EThread.
-
-    @param c Continuation to be called back after the timeout elapses.
-    @param atimeout_in amount of time after which to callback.
-    @param ethread EThread on which to schedule the event.
-    @param callback_event code to be passed back to the continuation's
-      handler. See the Remarks section.
-    @param cookie user-defined value or pointer to be passed back in
-      the Event's object cookie field.
-    @return reference to an Event object representing the scheduling
-      of this callback.
-
-  */
-  Event *schedule_in(Continuation * c,
-                     ink_hrtime atimeout_in,
-                     Thread * ethread, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
-
-  /**
-    Schedules the continuation on a specific EThread to receive an
-    event periodically. Schedules the callback to the continuation 'c'
-    in the EventProcessor to occur every time 'aperiod' elapses. It is
-    scheduled on the specified EThread.
-
-    @param c Continuation to call back everytime 'aperiod' elapses.
-    @param aperiod duration of the time period between callbacks.
-    @param ethread EThread on which to schedule the event.
-    @param callback_event code to be passed back to the continuation's
-      handler. See the Remarks section.
-    @param cookie user-defined value or pointer to be passed back in
-      the Event's object cookie field.
-    @return reference to an Event object representing the scheduling of
-      this callback.
-
-  */
-  Event *schedule_every(Continuation * c,
-                        ink_hrtime aperiod, Thread * ethread, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
-
-  /**
-    Schedules the continuation on a specific thread group to receive an
-    event as soon as possible. Instructs the EventProcessor to schedule
-    the callback to the continuation 'c' as soon as possible. The callback
-    is handled by a thread in the specified thread group (event_type).
-
-    @param c Continuation to be called back as soon as possible.
-    @param event_type thread group id (or event type) specifying the
-      group of threads on which to schedule the callback.
-    @param callback_event code to be passed back to the continuation's
-      handler. See the Remarks section.
-    @param cookie User-defined value or pointer to be passed back in
-      the Event's object cookie field.
-    @return reference to an Event object representing the scheduling of
-      this callback.
 
   */
   Event *schedule_imm(Continuation * c,
