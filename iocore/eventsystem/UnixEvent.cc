@@ -33,9 +33,9 @@
 ClassAllocator<Event> eventAllocator("eventAllocator", 256);
 
 void
-Event::schedule_imm(int callback_event)
+Event::schedule_imm(int acallback_event)
 {
-  NOWARN_UNUSED(callback_event);
+  callback_event = acallback_event;
   ink_debug_assert(ethread == this_ethread());
   if (in_the_prot_queue)
     ethread->EventQueueExternal.remove(this);
@@ -49,9 +49,9 @@ Event::schedule_imm(int callback_event)
 }
 
 void
-Event::schedule_at(ink_hrtime atimeout_at, int callback_event)
+Event::schedule_at(ink_hrtime atimeout_at, int acallback_event)
 {
-  NOWARN_UNUSED(callback_event);
+  callback_event = acallback_event;
   ink_debug_assert(ethread == this_ethread());
   ink_assert(atimeout_at > 0);
   if (in_the_prot_queue)
@@ -66,9 +66,9 @@ Event::schedule_at(ink_hrtime atimeout_at, int callback_event)
 }
 
 void
-Event::schedule_in(ink_hrtime atimeout_in, int callback_event)
+Event::schedule_in(ink_hrtime atimeout_in, int acallback_event)
 {
-  NOWARN_UNUSED(callback_event);
+  callback_event = acallback_event;
   ink_debug_assert(ethread == this_ethread());
   if (in_the_prot_queue)
     ethread->EventQueueExternal.remove(this);
@@ -82,9 +82,9 @@ Event::schedule_in(ink_hrtime atimeout_in, int callback_event)
 }
 
 void
-Event::schedule_every(ink_hrtime aperiod, int callback_event)
+Event::schedule_every(ink_hrtime aperiod, int acallback_event)
 {
-  NOWARN_UNUSED(callback_event);
+  callback_event = acallback_event;
   ink_debug_assert(ethread == this_ethread());
   ink_assert(aperiod != 0);
   if (in_the_prot_queue)
