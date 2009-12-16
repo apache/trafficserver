@@ -113,7 +113,12 @@ char *schema_path = NULL;
 bool xml_on = false;
 char *xml_path = NULL;
 
-char *mgmt_path = "./conf/yts/";
+char system_root_dir[PATH_NAME_MAX + 1] = DEFAULT_ROOT_DIRECTORY;
+char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
+char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
+char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
+
+char mgmt_path[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
 
 // By default, set the current directory as base
 char *ts_base_dir = ".";
@@ -142,7 +147,7 @@ check_lockfile()
   //////////////////////////////////////
   // test for presence of server lock //
   //////////////////////////////////////
-  ink_snprintf(lockfile, PATH_MAX, "%sinternal/%s", mgmt_path, SERVER_LOCK);
+  ink_snprintf(lockfile, PATH_MAX, "%s%s%s", system_local_state_dir, DIR_SEP, SERVER_LOCK);
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Open(&holding_pid);
   if (err == 1) {
@@ -163,7 +168,7 @@ check_lockfile()
   ///////////////////////////////////////////
   // try to get the exclusive manager lock //
   ///////////////////////////////////////////
-  ink_snprintf(lockfile, sizeof(lockfile), "%sinternal/%s", mgmt_path, MANAGER_LOCK);
+  ink_snprintf(lockfile, sizeof(lockfile), "%s%s%s", system_local_state_dir, DIR_SEP, MANAGER_LOCK);
   Lockfile manager_lockfile(lockfile);
   err = manager_lockfile.Get(&holding_pid);
   if (err != 1) {
@@ -287,35 +292,104 @@ setup_coredump()
   return 0;
 }
 
+static void
+init_dirs(void)
+{
+  struct stat s;
+  int err;
+
+  if ((err = stat(mgmt_path, &s)) < 0) {
+    REC_ReadConfigString(mgmt_path, "proxy.config.config_dir", PATH_NAME_MAX);
+    if ((err = stat(mgmt_path, &s)) < 0) {
+      // Try 'system_root_dir/etc/trafficserver' directory
+      snprintf(mgmt_path, sizeof(mgmt_path), 
+               "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
+      if ((err = stat(mgmt_path, &s)) < 0) {
+        mgmt_elog("unable to stat() mgmt path '%s': %d %d, %s\n", 
+                mgmt_path, err, errno, strerror(errno));
+        mgmt_elog("please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+        _exit(1);
+      }
+    }
+  }
+
+  if ((err = stat(system_config_directory, &s)) < 0) {
+    ink_strncpy(system_config_directory,mgmt_path,PATH_NAME_MAX); 
+    if ((err = stat(system_config_directory, &s)) < 0) {
+      REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
+      if ((err = stat(system_config_directory, &s)) < 0) {
+        // Try 'system_root_dir/etc/trafficserver' directory
+        snprintf(system_config_directory, sizeof(system_config_directory), 
+                 "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
+        if ((err = stat(system_config_directory, &s)) < 0) {
+          mgmt_elog("unable to stat() config dir '%s': %d %d, %s\n", 
+                    system_config_directory, err, errno, strerror(errno));
+          mgmt_elog("please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+          _exit(1);
+        }
+      }
+    }
+  }
+
+  if ((err = stat(system_local_state_dir, &s)) < 0) {
+    REC_ReadConfigString(system_local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
+    if ((err = stat(system_local_state_dir, &s)) < 0) {
+      // Try 'system_root_dir/var/trafficserver' directory
+      snprintf(system_local_state_dir, sizeof(system_local_state_dir), 
+               "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
+      if ((err = stat(system_local_state_dir, &s)) < 0) {
+        mgmt_elog("unable to stat() local state dir '%s': %d %d, %s\n", 
+                system_local_state_dir, err, errno, strerror(errno));
+        mgmt_elog("please set 'proxy.config.local_state_dir'\n");
+        _exit(1);
+      }
+    }
+  }
+
+  if ((err = stat(system_log_dir, &s)) < 0) {
+    REC_ReadConfigString(system_log_dir, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    if ((err = stat(system_log_dir, &s)) < 0) {
+      // Try 'system_root_dir/var/log/trafficserver' directory
+      snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+               system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
+      if ((err = stat(system_log_dir, &s)) < 0) {
+        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
+                system_log_dir, err, errno, strerror(errno));
+        mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+        _exit(1);
+      }
+    }
+  }
+
+}
 
 void
 chdir_root()
 {
-  char root_dir[PATH_MAX];
   char buffer[1024];
   char *env_path;
   FILE *ts_file;
   int i = 0;
 
-  root_dir[0] = '\0';
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
-    strncpy(root_dir, env_path, PATH_MAX);
+  if ((env_path = getenv("TS_ROOT"))) {
+    strncpy(system_root_dir, env_path, PATH_NAME_MAX);
   } else {
     if ((ts_file = fopen("/etc/traffic_server", "r")) != NULL) {
       NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
       fclose(ts_file);
       while (!isspace(buffer[i])) {
-        root_dir[i] = buffer[i];
+        system_root_dir[i] = buffer[i];
         i++;
       }
-      root_dir[i] = '\0';
+      system_root_dir[i] = '\0';
     } else {
-      ink_strncpy(root_dir, "/home/trafficserver", PATH_MAX);
+      ink_strncpy(system_root_dir, PREFIX, PATH_NAME_MAX);
     }
   }
 
-  if (root_dir[0] && (chdir(root_dir) < 0)) {
-    mgmt_elog("unable to change to root directory \"%s\" [%d '%s']\n", root_dir, errno, strerror(errno));
+  if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
+    mgmt_elog("unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
+    mgmt_elog(" please set correct path in env variable TS_ROOT \n");
     exit(1);
   }
 }
@@ -420,12 +494,12 @@ main(int argc, char **argv)
           } else if (strcmp(argv[i], "-path") == 0) {
             ++i;
             //bugfixed by YTS Team, yamsat(id-59703)
-            if ((strlen(argv[i]) > 600)) {
+            if ((strlen(argv[i]) > PATH_NAME_MAX)) {
               fprintf(stderr, "\n   Path exceeded the maximum allowed characters.\n");
               exit(1);
             }
 
-            mgmt_path = argv[i];
+            ink_strncpy(mgmt_path, argv[i], PATH_NAME_MAX);
             /*
                } else if(strcmp(argv[i], "-lmConf") == 0) {
                ++i;
@@ -519,6 +593,8 @@ main(int argc, char **argv)
     icmp_ping = new MgmtPing(); */
   icmp_ping = NULL;
 
+  init_dirs();// setup directories
+
   // Get the config info we need while we are still root
   extractConfigInfo(mgmt_path, recs_conf, userToRunAs);
 
@@ -528,7 +604,8 @@ main(int argc, char **argv)
 
   check_lockfile();
 
-  ink_snprintf(config_internal_dir, sizeof(config_internal_dir), "%s%sinternal", mgmt_path, DIR_SEP);
+  ink_snprintf(config_internal_dir, sizeof(config_internal_dir), 
+               "%s%sinternal", mgmt_path, DIR_SEP);
   url_init(config_internal_dir);
   mime_init(config_internal_dir);
   http_init(config_internal_dir);
@@ -1369,10 +1446,10 @@ extractConfigInfo(char *mgmt_path, char *recs_conf, char *userName)
   if (mgmt_path && recs_conf) {
     FILE *fin;
 
-    ink_snprintf(file, sizeof(file), "%s%s.shadow", mgmt_path, recs_conf);
+    ink_snprintf(file, sizeof(file), "%s%s%s.shadow", mgmt_path, DIR_SEP, recs_conf);
     if (!(fin = fopen(file, "r"))) {
 
-      ink_snprintf(file, sizeof(file), "%s%s", mgmt_path, recs_conf);
+      ink_snprintf(file, sizeof(file), "%s%s%s", mgmt_path, DIR_SEP, recs_conf);
       if (!(fin = fopen(file, "r"))) {
         mgmt_elog(stderr, "[extractConfigInfo] Unable to open config file(%s)\n", file);
         _exit(1);

@@ -12,7 +12,10 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/preparse \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
-  -I$(top_srcdir)/proxy
+  -I$(top_srcdir)/proxy \
+  -DPREFIX=\"$(prefix)\" \
+  -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
+  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\"
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)

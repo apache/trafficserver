@@ -8,7 +8,10 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/libinktomi++ \
   -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/proxy/mgmt2/tools
+  -I$(top_srcdir)/proxy/mgmt2/tools \
+  -DPREFIX=\"$(prefix)\" \
+  -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
+  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\"
 
 dist_bin_SCRIPTS = \
   cli_setdomain.tcl \

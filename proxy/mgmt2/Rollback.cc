@@ -100,7 +100,7 @@ root_access_needed(root_access_needed_)
   }
   int configDirLen = strlen(configTmp) + 4;
   configDir = new char[configDirLen];
-  ink_snprintf(configDir, configDirLen, ".%s%s%s", DIR_SEP, configTmp, DIR_SEP);
+  ink_snprintf(configDir, configDirLen, "%s%s", configTmp, DIR_SEP);
 
 #ifdef OEM
   // since these plugin files are not in the config directory,

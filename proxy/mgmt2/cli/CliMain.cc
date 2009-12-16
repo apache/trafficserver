@@ -34,6 +34,7 @@
 #include "ink_args.h"
 #include "Tokenizer.h"
 #include "TextBuffer.h"
+#include "CliUtils.h"
 #include "clientCLI.h"
 
 #ifdef _WIN32

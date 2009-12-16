@@ -791,29 +791,28 @@ webIntr_main(void *x)
 
   // INKqa09866
   // fire up interface for ts configuration through API; use absolute path from root to 
-  // set up socket paths; if can't get root path, assume running TM from bin directory
-  char config_path[1024];
+  // set up socket paths; 
+  char local_state_path[1024];
   char api_sock_path[1024];
   char event_sock_path[1024];
 
-  bzero(config_path, 1024);
+  bzero(local_state_path, 1024);
   bzero(api_sock_path, 1024);
   bzero(event_sock_path, 1024);
-  char *config_dir;
-  found = (RecGetRecordString_Xmalloc("proxy.config.config_dir", &config_dir) == REC_ERR_OKAY);
+  char *local_state_dir;
+  found = (RecGetRecordString_Xmalloc("proxy.config.local_state_dir", &local_state_dir) == REC_ERR_OKAY);
 
   if (found == true) {
-    ink_snprintf(config_path, sizeof(config_path), "%s", config_dir);
-    ink_snprintf(config_path, sizeof(config_path), "%s", config_dir);
-    xfree(config_dir);
+    ink_snprintf(local_state_path, sizeof(local_state_path), "%s", local_state_dir);
+    ink_snprintf(local_state_path, sizeof(local_state_path), "%s", local_state_dir);
+    xfree(local_state_dir);
   } else {
-    // else assume we're in the bin directory...
-    ink_snprintf(config_path, sizeof(config_path), "..%sconfig", DIR_SEP);
-    ink_snprintf(config_path, sizeof(config_path), "..%sconfig", DIR_SEP);
+    mgmt_elog("please set 'proxy.config.local_state_dir'\n");
+    _exit(1);
   }
 
-  ink_snprintf(api_sock_path, sizeof(api_sock_path), "%s%smgmtapisocket", config_path, DIR_SEP);
-  ink_snprintf(event_sock_path, sizeof(event_sock_path), "%s%seventapisocket", config_path, DIR_SEP);
+  ink_snprintf(api_sock_path, sizeof(api_sock_path), "%s%smgmtapisocket", local_state_path, DIR_SEP);
+  ink_snprintf(event_sock_path, sizeof(event_sock_path), "%s%seventapisocket", local_state_path, DIR_SEP);
 
   // INKqa12562: MgmtAPI sockets should be created with 775 permission
   mode_t oldmask = umask(S_IWOTH);

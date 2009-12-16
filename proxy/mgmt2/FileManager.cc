@@ -89,7 +89,7 @@ FileManager::FileManager()
   pathLen = strlen(configTmp) + strlen(snapDir) + 3;
   const size_t snapshotDir_size = pathLen + 1;
   snapshotDir = new char[snapshotDir_size];
-  snprintf(snapshotDir, snapshotDir_size, ".%s%s%s%s", DIR_SEP, configTmp, DIR_SEP, snapDir);
+  snprintf(snapshotDir, snapshotDir_size, "%s%s%s", configTmp, DIR_SEP, snapDir);
 
   // Set up info for MultiFile
   managedDir = snapshotDir;
@@ -104,7 +104,7 @@ FileManager::FileManager()
     if (mkdir(snapshotDir) < 0) {
 #endif
       // Failed to create the snapshot directory
-      mgmt_fatal(stderr, "[FileManager::FileManager] Failed to create the snapshot directory: %s\n", strerror(errno));
+      mgmt_fatal(stderr, "[FileManager::FileManager] Failed to create the snapshot directory %s: %s\n", snapshotDir, strerror(errno));
     }
   }
 }

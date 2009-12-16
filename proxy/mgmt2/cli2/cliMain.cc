@@ -49,20 +49,18 @@ main(int argc, char *argv[])
   CliDisplayPrintf = 1;
 
   // initialize MgmtAPI using TS directory specified in /etc/traffic_server
-  // or ../conf/yts/ if /etc/traffic_server does not exist
+  // or PKGLOCALSTATEDIR if /etc/traffic_server does not exist
 
   if (GetTSDirectory(ts_path)) {
-    status = INKInit("../conf/yts/");
+    status = INKInit(PKGLOCALSTATEDIR);
     if (status) {
-      printf("INKInit %d: Failed to initialize MgmtAPI in ../conf/yts/\n", status);
+      printf("INKInit %d: Failed to initialize MgmtAPI in %s\n", status, PKGLOCALSTATEDIR);
     } else {
-      printf("Successfully Initialized MgmtAPI in ../conf/yts/\n");
+      printf("Successfully Initialized MgmtAPI in %s \n", PKGLOCALSTATEDIR);
     }
   } else {
-    snprintf(config_path, sizeof(config_path), "%s/conf/yts/", ts_path);
-
+    snprintf(config_path, sizeof(config_path), "%s/var/trafficserver/", ts_path);
     // initialize MgmtAPI
-
     INKError status = INKInit(config_path);
     if (status) {
       printf("INKInit %d: Failed to initialize MgmtAPI in %s\n", status, config_path);

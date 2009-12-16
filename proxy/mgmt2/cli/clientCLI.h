@@ -95,7 +95,7 @@ public:
   CliResult getVariable(const char *name, char **value);
 
 #ifndef _WIN32
-  char sockPath[PATH_MAX];
+  char sockPath[PATH_NAME_MAX + 1];
   static const char *defaultSockPath;
 #else
   int cliPort;

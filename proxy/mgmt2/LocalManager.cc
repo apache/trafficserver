@@ -139,11 +139,25 @@ LocalManager::rollLogFiles()
   return;
 }
 
+char snap_filename[FILE_NAME_MAX+1] = "stats.snap";
+
 void
 LocalManager::clearStats()
 {
   char *statsPath;
-  const char statsFile[] = "/internal/stats.snap";
+  char local_state_dir[FILE_NAME_MAX];
+  char snap_file[FILE_NAME_MAX];
+  struct stat s;
+  int err;
+
+  REC_ReadConfigString(local_state_dir, "proxy.config.local_state_dir", FILE_NAME_MAX);
+  if ((err = stat(local_state_dir, &s)) < 0) {
+    Warning("Unable to stat() local state directory '%s': %d %d, %s", local_state_dir, err, errno, strerror(errno));
+    Warning(" Please set 'proxy.config.local_state_dir' to allow statistics collection");
+  }
+  REC_ReadConfigString(snap_file, "proxy.config.stats.snap_file", FILE_NAME_MAX);
+  snprintf(snap_filename, sizeof(snap_filename), "%s%s%s", local_state_dir,
+           DIR_SEP, snap_file);
 
   // Clear our records and then send the signal.  There is a race condition
   //  here where our stats could get re-updated from the proxy
@@ -154,7 +168,7 @@ LocalManager::clearStats()
   //   stats getting cleared by progation of clearing the
   //   cluster stats
   //
-  NOWARN_UNUSED(statsFile);
+  NOWARN_UNUSED(snap_filename);
 
   RecResetStatRecord();
 
@@ -239,7 +253,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
     mgmt_log("Bad or missing proxy.config.lm.sem_id value; using default id %d\n", MGMT_SEMID_DEFAULT);
     mgmt_sync_key = MGMT_SEMID_DEFAULT;
   }
-  ink_strncpy(pserver_path, mpath, sizeof(pserver_path));
+  ink_strncpy(pserver_path, system_local_state_dir, sizeof(pserver_path));
 
   virt_map = NULL;
 

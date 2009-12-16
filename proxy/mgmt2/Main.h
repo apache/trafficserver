@@ -31,6 +31,15 @@
 #include "WebOverview.h"
 #include "I_Version.h"
 
+#define PATH_NAME_MAX         511 // instead of PATH_MAX which is inconsistent
+                                  // on various OSs (linux-4096,osx/bsd-1024,
+                                  //                 windows-260,etc)
+
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     PKGLOCALSTATEDIR
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   PKGSYSCONFDIR
+#define DEFAULT_LOG_DIRECTORY             PKGLOGDIR
+
 void MgmtShutdown(int status);
 void fileUpdated(char *fname);
 void runAsUser(char *userName);
@@ -43,13 +52,18 @@ extern FileManager *configFiles;
 extern overviewPage *overviewGenerator;
 extern AppVersionInfo appVersionInfo;
 
-// Global string constants
-extern char *mgmt_path;
+// Global strings 
+extern char mgmt_path[];
 extern char *recs_conf;
 //extern char *lm_conf;
 
 // Root of Traffic Server
 extern char *ts_base_dir;
+extern char system_root_dir[];
+extern char system_local_state_dir[];
+extern char system_config_directory[];
+extern char system_log_dir[];
+
 
 // Global variable to replace ifdef MGMT_LAUNCH_PROXY so that
 // we can turn on/off proxy launch at runtime to facilitate

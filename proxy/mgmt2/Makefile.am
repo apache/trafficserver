@@ -20,6 +20,7 @@ AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
+  -DPREFIX=\"$(prefix)\" \
   -DPKGLIBEXECDIR=\"$(pkglibexecdir)\" \
   -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
   -DPKGLOGDIR=\"$(pkglogdir)\" \

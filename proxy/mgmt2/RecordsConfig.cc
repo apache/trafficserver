@@ -58,7 +58,7 @@ RecordElement RecordsConfig[] = {
 
   {CONFIG, "proxy.config.proxy_name", "", INK_STRING, "<proxy_name>", RU_REREAD, RR_REQUIRED, RC_STR, ".+", RA_NULL}
   ,
-  {CONFIG, "proxy.config.bin_path", "", INK_STRING, "<bin_path>", RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.bin_path", "", INK_STRING, PREFIX "/bin", RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.proxy_binary", "", INK_STRING, "traffic_server", RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
   ,
@@ -369,7 +369,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.admin.cli_enabled", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.admin.cli_path", "", INK_STRING, PKGSYSCONFDIR "/cli", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.admin.cli_path", "", INK_STRING, PKGLOCALSTATEDIR "/cli", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.admin.cli_port", "", INK_INT, "9000", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,

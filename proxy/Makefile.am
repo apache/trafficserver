@@ -367,8 +367,8 @@ versiondir = $(pkglocalstatedir)
 dist_version_DATA = TS_version
 
 install-exec-local:
-	$(INSTALL) -d -o nobody -g nobody $(pkglocalstatedir) $(pkglogdir)
-	$(INSTALL) -d $(pkgsysconfdir) $(pkglibexecdir)
+	$(INSTALL) -d -o nobody -g nobody $(pkglocalstatedir) $(pkglogdir) $(pkgsysconfdir) $(pkgsysconfdir)/internal
+	$(INSTALL) -d $(pkglibexecdir)
 
 uninstall-local:
 	-rm -rf $(pkglocalstatedir) $(pkglogdir) $(pkgsysconfdir) $(pkglibexecdir)

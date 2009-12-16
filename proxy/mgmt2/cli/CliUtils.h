@@ -34,6 +34,10 @@
 #include "ink_hrtime.h"
 #include "ink_port.h"
 
+#define PATH_NAME_MAX         511 // instead of PATH_MAX which is inconsistent
+                                  // on various OSs (linux-4096,osx/bsd-1024,
+                                  //                 windows-260,etc)
+
 // Server side functions (blocking I/O)
 int cli_read(int fd, char *buf, int maxlen);
 int cli_write(int fd, const char *data, int nbytes);

@@ -292,7 +292,7 @@ configAuthOtherUsers()
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.admin.access_control_file", &file);
   if (rec_err != REC_ERR_OKAY)
     return;
-  ink_snprintf(fpath, sizeof(fpath), "%s%s", mgmt_path, file);
+  ink_snprintf(fpath, sizeof(fpath), "%s%s%s", mgmt_path, DIR_SEP, file);
 
 #if !defined (_WIN32)
   if ((fd =::mgmt_open(fpath, O_RDONLY)) < 0) {
@@ -445,7 +445,7 @@ configLangDict()
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.admin.lang_dict", &file);
   if (rec_err != REC_ERR_OKAY)
     return;
-  ink_snprintf(fpath, FILE_NAME_MAX, "%s%s", mgmt_path, file);
+  ink_snprintf(fpath, FILE_NAME_MAX, "%s%s%s", mgmt_path, DIR_SEP, file);
   fbuf = 0;
   if (WebFileImport_Xmalloc(fpath, &file_buf, &file_size) != WEB_HTTP_ERR_OKAY) {
     mgmt_log(stderr, "[configLangDict] could not find language dictionary "

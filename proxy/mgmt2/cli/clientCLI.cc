@@ -49,7 +49,7 @@ const char *
 
 #ifndef _WIN32
 const char *
-  clientCLI::defaultSockPath = "./conf/yts/cli";
+  clientCLI::defaultSockPath = PKGLOCALSTATEDIR "/cli";
 #else
 const int
   clientCLI::defaultCliPort = 9000;
@@ -78,11 +78,11 @@ clientCLI::~clientCLI(void)
 void
 clientCLI::readTSdir()
 {
-  char sPath[512];
+  char sPath[PATH_NAME_MAX + 1];
   if (GetTSDirectory(sPath)) {
     ink_strncpy(sockPath, clientCLI::defaultSockPath, sizeof(sockPath));
   } else {
-    ink_snprintf(sockPath, sizeof(sockPath), "%s/conf/yts/cli", sPath);
+    ink_snprintf(sockPath, sizeof(sockPath), "%s/cli", sPath);
   }
 }
 void

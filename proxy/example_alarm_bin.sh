@@ -30,6 +30,11 @@ else
   SENDMAIL="/usr/lib/sendmail"
 fi
 
+if [ ! -x $SENDMAIL ]; then
+    echo "$0: Could not find $SENDMAIL program"
+    exit 1
+fi
+
 if [ $# -eq 1 ]; then
   # if only one parameter, then no email information was provided
   msg="`hostname` $1"

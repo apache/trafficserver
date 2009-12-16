@@ -304,34 +304,42 @@ GetTSDirectory(char *ts_path)
 {
   FILE *fp;
   const char *env_path;
+  struct stat s;
+  int err;
 
-  // INST will set ROOT and INST_ROOT properly, try ROOT first
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
-    ink_strncpy(ts_path, env_path, 256);
-    return 0;
+  if ((env_path = getenv("TS_ROOT"))) {
+    ink_strncpy(ts_path, env_path, PATH_NAME_MAX);
+  } else {
+    if ((fp = fopen("/etc/traffic_server", "r")) != NULL) {
+      if (fgets(ts_path, PATH_NAME_MAX, fp) == NULL) {
+        fclose(fp);
+        printf("\nInvalid contents in /etc/traffic_server\n");
+        printf(" Please set correct path in env variable TS_ROOT \n");
+        return -1;
+      }
+      // strip newline if it exists
+      int len = strlen(ts_path);
+      if (ts_path[len - 1] == '\n') {
+        ts_path[len - 1] = '\0';
+      }
+      // strip trailing "/" if it exists
+      len = strlen(ts_path);
+      if (ts_path[len - 1] == '/') {
+        ts_path[len - 1] = '\0';
+      }
+      
+      fclose(fp);
+    } else {
+      ink_strncpy(ts_path, PREFIX, PATH_NAME_MAX);
+    }
   }
 
-  if ((fp = fopen("/etc/traffic_server", "r")) == NULL) {
-    ink_strncpy(ts_path, "/home/trafficserver", 256);
-    return 0;
-  }
-
-  if (fgets(ts_path, 256, fp) == NULL) {
-    fclose(fp);
-    printf("\nInvalid contents in /etc/traffic_server\n");
+  if ((err = stat(ts_path, &s)) < 0) {
+    printf("unable to stat() TS PATH '%s': %d %d, %s\n", 
+              ts_path, err, errno, strerror(errno));
+    printf(" Please set correct path in env variable TS_ROOT \n");
     return -1;
   }
-  // strip newline if it exists
-  int len = strlen(ts_path);
-  if (ts_path[len - 1] == '\n') {
-    ts_path[len - 1] = '\0';
-  }
-  // strip trailing "/" if it exists
-  len = strlen(ts_path);
-  if (ts_path[len - 1] == '/') {
-    ts_path[len - 1] = '\0';
-  }
 
-  fclose(fp);
   return 0;
 }
