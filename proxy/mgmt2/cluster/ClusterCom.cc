@@ -2405,7 +2405,7 @@ checkBackDoor(int req_fd, char *message)
     char variable[1024];
 
     // coverity[secure_coding]  
-    if (sscanf(message, "read %1023s\n", variable) != 1) {
+    if (sscanf(message, "read %s\n", variable) != 1) {
       mgmt_elog("[ClusterCom::CBD] Invalid message-line(%d) '%s'\n", __LINE__, message);
       return false;
     }
@@ -2420,7 +2420,7 @@ checkBackDoor(int req_fd, char *message)
         {
           ink64 val = (stype == RECD_COUNTER ? REC_readCounter(variable, &found) : REC_readInteger(variable, &found));
           if (found) {
-            rep_len = ink_sprintf(reply, "\nRecord '%s' Val: '%lld'\n", variable, val);
+            rep_len = ink_snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%lld'\n", variable, val);
           }
           break;
         }
@@ -2428,7 +2428,7 @@ checkBackDoor(int req_fd, char *message)
         {
           RecFloat val = REC_readFloat(variable, &found);
           if (found) {
-            rep_len = ink_sprintf(reply, "\nRecord '%s' Val: '%f'\n", variable, val);
+            rep_len = ink_snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%f'\n", variable, val);
           }
           break;
         }
@@ -2436,7 +2436,7 @@ checkBackDoor(int req_fd, char *message)
         {
           char *val = REC_readString(variable, &found);
           if (found) {
-            rep_len = ink_sprintf(reply, "\nRecord '%s' Val: '%s'\n", variable, val);
+            rep_len = ink_snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%s'\n", variable, val);
             xfree(val);
           }
           break;
@@ -2458,7 +2458,7 @@ checkBackDoor(int req_fd, char *message)
     char variable[1024], value[1024];
     RecordType type;
 
-    if (sscanf(message, "write %1023s %1023s", variable, value) != 2) {
+    if (sscanf(message, "write %s %s", variable, value) != 2) {
       mgmt_elog("[ClusterCom::CBD] Invalid message-line(%d) '%s'\n", __LINE__, message);
       return false;
     }

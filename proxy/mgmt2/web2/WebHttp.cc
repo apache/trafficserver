@@ -7045,6 +7045,7 @@ LAuthenticate:
     // on the autoconf port.  can't have users downloading arbitrary
     // files under the config directory!
     if (!ink_hash_table_isbound(g_autoconf_allow_ht, file)) {
+      mgmt_elog(stderr,"[WebHttpHandleConnection] %s not valid autoconf file",file);
       whc->response_hdr->setStatus(STATUS_NOT_FOUND);
       WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);
       goto Ltransaction_send;

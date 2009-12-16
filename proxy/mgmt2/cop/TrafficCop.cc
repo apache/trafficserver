@@ -42,6 +42,8 @@ union semun
 // For debugging, turn this on.
 // #define TRACE_LOG_COP 1
 
+#define OPTIONS_MAX     32
+#define OPTIONS_LEN_MAX 1024
 #define MAX_PROXY_PORTS 48
 
 #ifndef WAIT_ANY
@@ -53,6 +55,7 @@ union semun
 #define COP_DEBUG    LOG_DEBUG
 
 static char root_dir[PATH_MAX];
+static char local_state_dir[PATH_MAX];
 static char config_dir[PATH_MAX];
 static char config_file[PATH_MAX];
 
@@ -76,6 +79,7 @@ static int coresig = 0;
 static char admin_user[80] = "nobody";
 static char manager_binary[PATH_MAX] = "traffic_manager";
 static char server_binary[PATH_MAX] = "traffic_server";
+static char manager_options[OPTIONS_LEN_MAX] = "";
 
 static char log_file[PATH_MAX] = "logs/traffic.out";
 static char bin_path[PATH_MAX] = "bin";
@@ -676,6 +680,15 @@ read_config()
   read_config_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary));
   read_config_string("proxy.config.bin_path", bin_path, sizeof(bin_path));
   read_config_string("proxy.config.log2.logfile_dir", log_dir, sizeof(log_dir));
+  if (stat(log_dir, &stat_buf) < 0) {
+    // Try 'root_dir/var/log/trafficserver' directory
+    snprintf(log_dir, sizeof(log_dir), "%s%s%s%s%s%s%s",
+             root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
+    if (stat(log_dir, &stat_buf) < 0) {
+      cop_log(COP_FATAL, "could not stat \"%s\"\n", log_dir);
+      cop_log(COP_FATAL, "please set 'proxy.config.log2.logfile_dir' \n");
+    }
+  }
   read_config_string("proxy.config.output.logfile", log_filename, sizeof(log_filename));
   snprintf(log_file, sizeof(log_file), "%s%s%s", log_dir, DIR_SEP, log_filename);
   read_config_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port);
@@ -817,7 +830,9 @@ spawn_manager()
 {
   struct stat info;
   char prog[PATH_MAX];
-
+  char *options[OPTIONS_MAX];
+  char *last;
+  char *tok;
   int log_fd;
   int err;
   int key;
@@ -848,6 +863,21 @@ spawn_manager()
   }
 
   snprintf(prog, sizeof(prog), "%s%s%s", bin_path, DIR_SEP, manager_binary);
+#ifdef TRACE_LOG_COP
+  cop_log(COP_DEBUG, "spawn_manager: Launching %s with options '%s'\n",
+          prog, manager_options);
+#endif
+  int i;
+  for (i = 0; i < OPTIONS_MAX; i++) {
+    options[i] = NULL;
+  }
+  options[0] = prog;
+  i = 1;
+  tok = ink_strtok_r(manager_options, " ", &last);
+  options[i++] = tok;
+  while (i < OPTIONS_MAX && (tok = ink_strtok_r(NULL, " ", &last))) {
+    options[i++] = tok;
+  }
 
   // coverity[fs_check_call]
   if (stat(prog, &info) < 0) {
@@ -877,9 +907,9 @@ spawn_manager()
       close(log_fd);
     }
 
-    err = execl(prog, prog, NULL);
+    err = execv(prog, options);
 #ifdef TRACE_LOG_COP
-    cop_log(COP_DEBUG, "Somehow execl(%s, %s, NULL) failed (%d)!\n", prog, prog, err);
+    cop_log(COP_DEBUG, "Somehow execv(%s, options, NULL) failed (%d)!\n", prog, err);
 #endif
     exit(1);
   } else if (err == -1) {
@@ -2179,7 +2209,7 @@ init_config_dir()
 #endif
 
   root_dir[0] = '\0';
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
+  if ((env_path = getenv("TS_ROOT"))) {
     strncpy(root_dir, env_path, PATH_MAX);
   } else {
     if ((ts_file = fopen("/etc/traffic_server", "r")) != NULL) {
@@ -2191,20 +2221,38 @@ init_config_dir()
       }
       root_dir[i] = '\0';
     } else {
-      ink_strncpy(root_dir, "/home/trafficserver", sizeof(root_dir));
+      ink_strncpy(root_dir, PREFIX, sizeof(root_dir));
     }
   }
 
   if (root_dir[0] && (chdir(root_dir) < 0)) {
     cop_log(COP_FATAL, "unable to change to root directory \"%s\" [%d '%s']\n", root_dir, errno, strerror(errno));
+    cop_log(COP_FATAL," please set correct path in env variable TS_ROOT \n");
     exit(1);
   }
 
-  snprintf(config_dir, sizeof(config_dir), "./conf/yts");
-
+  snprintf(config_dir, sizeof(config_dir), PKGSYSCONFDIR);
   if (stat(config_dir, &info) < 0) {
-    cop_log(COP_FATAL, "unable to locate config directory\n");
-    exit(1);
+    // Try 'root_dir/etc/trafficserver' directory
+    snprintf(config_dir, sizeof(config_dir), "%s%s%s%s%s",
+             root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
+    if (stat(config_dir, &info) < 0) {
+      cop_log(COP_FATAL, "unable to locate config directory '%s'\n",config_dir);
+      cop_log(COP_FATAL, " please try setting correct root path in env variable TS_ROOT \n");
+      exit(1);
+    }
+  }
+  
+  snprintf(local_state_dir, sizeof(config_dir), PKGLOCALSTATEDIR);
+  if (stat(local_state_dir, &info) < 0) {
+    // Try 'root_dir/var/trafficserver' directory
+    snprintf(local_state_dir, sizeof(local_state_dir), 
+             "%s%s%s%s%s",root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
+    if (stat(local_state_dir, &info) < 0) {
+      cop_log(COP_FATAL, "unable to locate local state directory '%s'\n",local_state_dir);
+      cop_log(COP_FATAL, " please try setting correct root path in either env variable TS_ROOT \n");
+        exit(1);
+    }
   }
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving init_config_dir()\n");
@@ -2218,12 +2266,12 @@ init_lockfiles()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering init_lockfiles()\n");
 #endif
-  snprintf(cop_lockfile, sizeof(cop_lockfile), "%s/internal/%s", config_dir, COP_LOCK);
-  snprintf(manager_lockfile, sizeof(manager_lockfile), "%s/internal/%s", config_dir, MANAGER_LOCK);
-  snprintf(server_lockfile, sizeof(server_lockfile), "%s/internal/%s", config_dir, SERVER_LOCK);
-  snprintf(rni_rpass_lockfile, sizeof(rni_rpass_lockfile), "%s/internal/%s", config_dir, RNI_RPASS_LOCK);
+  snprintf(cop_lockfile, sizeof(cop_lockfile), "%s%s%s", local_state_dir, DIR_SEP, COP_LOCK);
+  snprintf(manager_lockfile, sizeof(manager_lockfile), "%s%s%s", local_state_dir, DIR_SEP, MANAGER_LOCK);
+  snprintf(server_lockfile, sizeof(server_lockfile), "%s%s%s", local_state_dir, DIR_SEP, SERVER_LOCK);
+  snprintf(rni_rpass_lockfile, sizeof(rni_rpass_lockfile), "%s%s%s", local_state_dir, DIR_SEP, RNI_RPASS_LOCK);
 
-  check_lockfile();
+
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving init_lockfiles()\n");
 #endif
@@ -2272,6 +2320,7 @@ init()
 
   init_config_file();
   init_lockfiles();
+  check_lockfile();
 
 #if (HOST_OS == linux)
   struct utsname buf;

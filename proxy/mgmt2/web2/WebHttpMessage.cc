@@ -223,8 +223,8 @@ httpMessage::addRequestLine(char *request)
   }
   // Now allocate space for the document path portion
   //  of the URI along with the query if any
-  unsigned int amtToAllocate = strlen(URI);
-  file = new char[amtToAllocate + 1];
+  unsigned int amtToAllocate = strlen(URI) + 1;
+  file = new char[amtToAllocate];
   ink_strncpy(file, URI, amtToAllocate);
   tmp = strstr(file, "?");
   if (tmp != NULL) {
