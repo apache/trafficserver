@@ -1172,7 +1172,7 @@ UnixNetVConnection::connectUp(EThread * t)
       if (rval != 0) {
         lerrno = errno;
         Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
-        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) rval);
+        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)rval);
         free(t);
         return CONNECT_FAILURE;
       }
@@ -1184,7 +1184,7 @@ UnixNetVConnection::connectUp(EThread * t)
       if (rval < 0) {
         lerrno = errno;
         Debug("iocore_net", "connectUp : Failed to add to kqueue list\n");
-        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) rval);
+        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)rval);
         free(t);
         return CONNECT_FAILURE;
       }
@@ -1198,7 +1198,7 @@ UnixNetVConnection::connectUp(EThread * t)
   }
   if (res) {
     lerrno = errno;
-    action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) res);
+    action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)res);
     free(t);
     return CONNECT_FAILURE;
   }
@@ -1229,7 +1229,7 @@ UnixNetVConnection::connectUp(EThread * t)
     if (res < 0) {
       Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
       lerrno = errno;
-      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) res);
+      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)res);
       free(t);
       return CONNECT_FAILURE;
     }
@@ -1241,7 +1241,7 @@ UnixNetVConnection::connectUp(EThread * t)
     if (res < 0) {
       lerrno = errno;
       Debug("iocore_net", "connectUp : Failed to add to kqueue list\n");
-      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) res);
+      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)res);
       free(t);
       return CONNECT_FAILURE;
     }
