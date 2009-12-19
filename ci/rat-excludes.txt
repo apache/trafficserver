@@ -5,3 +5,9 @@ example/thread-pool/test/SDKTest/SDKtest_server.config
 example/thread-pool/test/SynTest/system.cfg
 example/thread-pool/test/SynTest/tests_psi.cfg
 example/thread-pool/test/SynTest/Tests/PsiPlugin/
+ci/
+**/*.a
+**/*.so
+**/*.o
+**/*.po
+**/*.in
