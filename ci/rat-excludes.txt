@@ -1,3 +1,4 @@
+ci/
 example/README.internal
 example/blacklist-1/blacklist.txt
 example/thread-pool/TESTPLAN.txt
@@ -5,7 +6,12 @@ example/thread-pool/test/SDKTest/SDKtest_server.config
 example/thread-pool/test/SynTest/system.cfg
 example/thread-pool/test/SynTest/tests_psi.cfg
 example/thread-pool/test/SynTest/Tests/PsiPlugin/
-ci/
+m4/libtool.m4
+m4/ltoptions.m4
+m4/ltsugar.m4
+m4/ltversion.m4
+m4/lt~obsolete.m4
+m4/tcl.m4
 **/*.a
 **/*.so
 **/*.o
