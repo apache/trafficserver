@@ -1540,6 +1540,8 @@ main(int argc, char **argv)
 {
   int mem_throttling;
 
+  intentional_bug 0;
+
   NOWARN_UNUSED(argc);
 
   mcheck_pedantic(NULL);
