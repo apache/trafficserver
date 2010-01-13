@@ -428,6 +428,11 @@ if test "$ts_have_db" = "0"; then
     AC_MSG_FAILURE([No DB interface found])
 fi
 
+AC_CHECK_LIB([pcre], [pcre_exec], 
+  [AC_SUBST([LIBPCRE],["-lpcre"])],
+  [AC_MSG_FAILURE([check for pcre failed. Have you installed pcre-devel?])],
+)
+
 AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign lrand48_r srand48_r])
 
 if test "$ac_cv_func_epoll_ctl" = "yes"; then

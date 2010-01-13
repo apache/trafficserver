@@ -101,7 +101,7 @@ private:
 class url_mapping
 {
 public:
-  url_mapping();
+  url_mapping(int rank = 0);
   ~url_mapping();
   url_mapping *next;            // next in main list (primary hash by host name)
   url_mapping *next_root_schema;        // list of different schemas (valid only for root nodes)
@@ -137,11 +137,15 @@ public:
   redirect_tag_str *redir_chunk_list;
   acl_filter_rule *filter;      // acl filtering (list of rules)
   unsigned int _plugin_count;
+
+  int getRank() const { return _rank; };
+
 private:
     bool set_instance(remap_plugin_info *, ihandle *);
     std::deque<remap_plugin_info *>_plugin_list;
     std::map<remap_plugin_info *, ihandle *>_instance_map;
   int _cur_instance_count;
+  int _rank;
 };
 
 

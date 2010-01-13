@@ -28,6 +28,9 @@
 #include "UrlMapping.h"
 #include "UmsHelper.h"
 
+#include <pcre.h>
+#include <list>
+
 #define URL_REMAP_FILTER_NONE         0x00000000
 #define URL_REMAP_FILTER_REFERER      0x00000001        /* enable "referer" header validation */
 #define URL_REMAP_FILTER_REDIRECT_FMT 0x00010000        /* enable redirect URL formatting */
@@ -89,14 +92,79 @@ public:
   url_mapping_ext *reverseTableLookupExt(URL * request_url,
                                          int request_port, const char *request_host, int host_len, char *tag = 0);
 //  private:
+
+  static const int MAX_REGEX_SUBS = 10;
+
+  struct RegexMapping
+  {
+    url_mapping *url_map;
+    pcre *re;
+    pcre_extra *re_extra;
+    
+    // we store the host-string-to-substitute here; if a match is found,
+    // the substitutions are made and the resulting url is stored
+    // directly in toURL's host field
+    char *to_url_host_template; 
+    int to_url_host_template_len;
+
+    // stores the number of substitutions
+    int n_substitutions;     
+    
+    // these two together point to template string places where
+    // substitutions need to be made and the matching substring
+    // to use
+    int substitution_markers[MAX_REGEX_SUBS]; 
+    int substitution_ids[MAX_REGEX_SUBS];
+  };
+  
+  typedef std::list<RegexMapping> RegexMappingList;
+  
+  struct MappingsStore 
+  {
+    InkHashTable *hash_lookup;
+    RegexMappingList regex_list;
+    bool empty() 
+    {
+      return ((hash_lookup == NULL) && (regex_list.size() == 0));
+    }
+  };
+  
   void PerformACLFiltering(HttpTransact::State * s, url_mapping * mapping);
   url_mapping *SetupPacMapping();       // manager proxy-autconfig mapping
   url_mapping *SetupBackdoorMapping();
   void PrintTable(InkHashTable * h_table);
-  void DestroyTable(InkHashTable * h_table);
+  void DestroyStore(MappingsStore &store) 
+  {
+    _destroyTable(store.hash_lookup);
+    _destroyList(store.regex_list);
+  }
   void TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src_host);
-  url_mapping *TableLookup(InkHashTable * h_table, URL * request_url,
-                           int request_port, const char *request_host, int host_len, char *tag = NULL);
+
+  MappingsStore forward_mappings;
+  MappingsStore reverse_mappings;
+  MappingsStore permanent_redirects;
+  MappingsStore temporary_redirects;
+
+  url_mapping *forwardMappingLookup(URL *request_url, int request_port, const char *request_host, 
+                                    int request_host_len, char *tag = NULL) 
+  {
+    return _mappingLookup(forward_mappings, request_url, request_port, request_host, request_host_len, tag);
+  }
+  url_mapping *reverseMappingLookup(URL *request_url, int request_port, const char *request_host, 
+                                    int request_host_len, char *tag = NULL) 
+  {
+    return _mappingLookup(reverse_mappings, request_url, request_port, request_host, request_host_len, tag);
+  }
+  url_mapping *permanentRedirectLookup(URL *request_url, int request_port, const char *request_host, 
+                                       int request_host_len, char *tag = NULL) 
+  {
+    return _mappingLookup(permanent_redirects, request_url, request_port, request_host, request_host_len, tag);
+  }
+  url_mapping *temporaryRedirectLookup(URL *request_url, int request_port, const char *request_host, 
+                                       int request_host_len, char *tag = NULL) 
+  {
+    return _mappingLookup(temporary_redirects, request_url, request_port, request_host, request_host_len, tag);
+  }
   int DoRemap(HttpTransact::State * s, HTTPHdr * request_header, url_mapping * mapPtr,
               URL * request_url, char **redirect = NULL, host_hdr_info * hh_ptr = NULL);
   int UrlWhack(char *toWhack, int *origLength);
@@ -106,10 +174,6 @@ public:
   int load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *errbuf, int errbufsize, int jump_to_argc,
                         int *plugin_found_at);
 
-  InkHashTable *lookup_table;
-  InkHashTable *reverse_table;
-  InkHashTable *permanent_redirect_table;
-  InkHashTable *temporary_redirect_table;
   int nohost_rules;
   int reverse_proxy;
   int pristine_host_hdr;
@@ -130,6 +194,24 @@ public:
   int num_rules_redirect_permanent;
   int num_rules_redirect_temporary;
   remap_plugin_info *remap_pi_list;
+
+private:
+  url_mapping *_mappingLookup(MappingsStore &mappings, URL *request_url,
+                              int request_port, const char *request_host, int request_host_len, char *tag);
+  url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url,
+                            int request_port, const char *request_host, int request_host_len, char *tag);
+  url_mapping *_regexMappingLookup(RegexMappingList &regex_mappings,
+                                   URL * request_url, int request_port, const char *request_host, 
+                                   int request_host_len, char *tag, int rank_ceiling);
+  int _expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
+                           const char *matched_string, char *dest_buf, int dest_buf_size);
+  bool _processRegexMappingConfig(url_mapping *new_mapping, RegexMapping &reg_map);
+  void _destroyTable(InkHashTable *h_table);
+  void _destroyList(RegexMappingList &regexes);
+  inline void _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping &reg_map,
+                          char *src_host, bool is_cur_mapping_regex, int &count);
+
+  static const int MAX_URL_STR_SIZE = 1024;
 };
 
 #endif

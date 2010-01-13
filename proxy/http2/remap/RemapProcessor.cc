@@ -59,7 +59,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
   ink_assert(redirect_url != NULL);
 
   if (unlikely(rewrite_table->num_rules_forward == 0)) {
-    ink_assert(rewrite_table->lookup_table == NULL);
+    ink_assert(rewrite_table->forward_mappings.empty());
     return false;
   }
   // Since we are called before request validity checking
@@ -79,8 +79,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
     //  host headers.)
     proxy_request = true;
     map =
-      rewrite_table->TableLookup(rewrite_table->lookup_table, request_url, request_url->port_get(), request_url_host,
-                                 request_url_host_len, tag);
+      rewrite_table->forwardMappingLookup(request_url, request_url->port_get(), request_url_host,
+                                          request_url_host_len, tag);
   } else {
     // Server request.  Use the host header to figure out where
     // it goes
@@ -109,7 +109,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
     }
 
     Debug("url_rewrite", "[lookup] attempting normal lookup");
-    map = rewrite_table->TableLookup(rewrite_table->lookup_table, request_url, request_port, host_hdr, host_len, tag);
+    map = rewrite_table->forwardMappingLookup(request_url, request_port, host_hdr, host_len, tag);
 
     // Save this information for later
     s->hh_info.host_len = host_len;
@@ -120,7 +120,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
     //   they function as default rules for server requests
     if (map == NULL && rewrite_table->nohost_rules && *host_hdr != '\0') {
       Debug("url_rewrite", "[lookup] nothing matched");
-      map = rewrite_table->TableLookup(rewrite_table->lookup_table, request_url, 0, "", 0, tag);
+      map = rewrite_table->forwardMappingLookup(request_url, 0, "", 0, tag);
     }
 
     if (map && orig_url) {
