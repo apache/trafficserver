@@ -483,6 +483,7 @@ main(int argc, char **argv)
           } else if (strcmp(argv[i], "-clusterRSPort") == 0) {
             ++i;
             cluster_server_port = atoi(argv[i]);
+#ifndef NO_DIAGS
           } else if (strcmp(argv[i], "-debug") == 0) {
             ++i;
             strncpy(debug_tags, argv[i], 1023);
@@ -491,6 +492,7 @@ main(int argc, char **argv)
             ++i;
             strncpy(action_tags, argv[i], 1023);
             action_tags[1023] = '\0';
+#endif
           } else if (strcmp(argv[i], "-path") == 0) {
             ++i;
             //bugfixed by YTS Team, yamsat(id-59703)

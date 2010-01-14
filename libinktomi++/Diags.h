@@ -44,6 +44,10 @@
 
 #define DIAGS_MAGIC 0x12345678
 
+#if !defined(USE_DIAGS)
+#define NO_DIAG 1
+#endif
+
 // eInsertStringType - defined in ink_error.h //
 //typedef enum
 //{
@@ -83,12 +87,6 @@
 // 
 //
 //////////////////////////////////////////////////////////////////////////////
-
-#if 1
-#undef NO_DIAGS
-#else
-#define NO_DIAGS 1
-#endif
 
 
 class Diags;

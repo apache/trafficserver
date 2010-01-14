@@ -254,10 +254,12 @@ ArgumentDescription argument_descriptions[] = {
    "T",
    &run_test_hook, "PROXY_RUN_TEST_HOOK", NULL},
 #endif //INK_NO_TESTS
+#ifndef NO_DIAGS
   {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
    "PROXY_DEBUG_TAGS", NULL},
   {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags,
    "PROXY_BEHAVIOR_TAGS", NULL},
+#endif
   {"interval", 'i', "Statistics Interval", "I", &show_statistics,
    "PROXY_STATS_INTERVAL", NULL},
   {"remote_management", 'M', "Remote Management", "T",

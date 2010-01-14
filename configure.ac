@@ -69,6 +69,21 @@ AS_IF([test "x$enable_debug" = "xyes"],
 )
 
 #
+# Diags
+#
+
+AC_MSG_CHECKING([whether to enable diags])
+AC_ARG_ENABLE([diags],
+  [AS_HELP_STRING([--disable-diags],[turn off diags])],
+  [],
+  [enable_diags="yes"]
+)
+AC_MSG_RESULT([$enable_diags])
+AS_IF([test "x$enable_diags" = "xyes"],
+  [AC_DEFINE([USE_DIAGS])]
+)
+
+#
 # Purify
 #
 
