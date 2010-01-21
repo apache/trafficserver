@@ -1,0 +1,329 @@
+#!/bin/sh
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Template from /etc/init.d/skeleton on Ubuntu
+#
+### BEGIN INIT INFO
+# Provides:          Traffic Server
+# Required-Start:    $local_fs $remote_fs
+# Required-Stop:     $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: initscript to start/stop Traffic Server
+# Description:       initscript to start/stop Traffic Server
+#                    This should be placed in /etc/init.d. on Ubuntu
+### END INIT INFO
+
+# Author: George Paul <georgev.paul@yahoo.com>
+#
+
+# Fedora:
+#  When this file is installed as /etc/rc.d/init.d/trafficserver
+#  and added to the chkconfig system with `chkconfig --add trafficserver`
+#  then the default values of these variables can be overridden
+#  in the /etc/sysconfig/trafficserver file
+# Ubuntu:
+#  Values read from /etc/default/trafficserver
+
+
+if [ -e /etc/SuSE-release ]; then
+    DISTRIB_ID="suse"
+elif [ -e /etc/fedora-release ]; then
+    DISTRIB_ID="fedora"
+elif [ -e /etc/redhat-release ]; then
+    DISTRIB_ID="redhat" # also exists on Fedora
+elif [ -e /etc/lsb-release ]; then
+    DISTRIB_ID="ubuntu"
+elif [ -e /etc/debian-version ]; then
+    DISTRIB_ID="debian" # also exists on Ubuntu
+elif [ -e /etc/slackware-version ]; then
+    DISTRIB_ID="slackware"
+fi
+
+# /usr/bin/lsb_release -rd # Ubuntu release & description info
+
+# Ubuntu: Do NOT "set -e"
+
+#Ubuntu:PATH should only include /usr/* if it runs after the mountnfs.sh script
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+DESC="start/stop Traffic Server"
+NAME=trafficserver
+TS_ROOT=${TS_ROOT:-@prefix@}
+TC_NAME=${TS_NAME:-traffic_cop}
+TM_NAME=${TS_NAME:-traffic_manager}
+TS_NAME=${TS_NAME:-traffic_server}
+TC_DAEMON=${TC_DAEMON:-$TS_ROOT/bin/traffic_cop}
+TC_DAEMON_ARGS=""
+TM_DAEMON=${TM_DAEMON:-$TS_ROOT/bin/traffic_manager}
+TM_DAEMON_ARGS=""
+TS_DAEMON=${TS_DAEMON:-$TS_ROOT/bin/traffic_server}
+TS_DAEMON_ARGS=""
+TC_PIDFILE=${TC_PIDFILE:-$TS_ROOT/var/trafficserver/cop.lock}
+TM_PIDFILE=${TM_PIDFILE:-$TS_ROOT/var/trafficserver/manager.lock}
+TS_PIDFILE=${TS_PIDFILE:-$TS_ROOT/var/trafficserver/server.lock}
+# number of times to retry check on pid lock file
+PIDFILE_CHECK_RETRIES=${PIDFILE_CHECK_RETRIES:-30}
+# stdout file of executable
+STDOUTLOG=${STDOUTLOG:-$TS_ROOT/var/log/trafficserver/traffic_server.stdout}
+# stderr file of executable
+STDERRLOG=${STDERRLOG:-$TS_ROOT/var/log/trafficserver/traffic_server.stderr}
+if [ -d /etc/rc.d/init.d ]; then
+    SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
+elif [ -d /etc/init.d ]; then
+    SCRIPTNAME=/etc/init.d/$NAME # Ubuntu
+else
+    echo "This script needs to be ported to this OS"
+    exit 1
+fi
+
+
+# Exit if the package is not installed
+if [ ! -x "$TS_DAEMON" ]; then
+    echo "$TS_DAEMON is not installed"
+    exit 0
+fi 
+
+# Ubuntu: Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+# Ubuntu: Load the VERBOSE setting and other rcS variables
+[ -f /etc/default/rcS ] && . /etc/default/rcS
+
+
+if [ -r /etc/rc.d/init.d/functions ]; then
+# Fedora: make avail helper functions 'action', 'killproc', 'status', etc
+    . /etc/rc.d/init.d/functions
+elif [ -r /lib/lsb/init-functions ]; then
+# Ubuntu: Define LSB log_* functions.
+#         Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+    . /lib/lsb/init-functions
+else
+    echo "This script needs to be ported to this OS"
+    exit 1
+fi
+
+
+#
+# Fedora: 
+#  launches $* in the background
+#  and checks if program creates its own pid lock file
+#  redirects stdout and stderr to files 
+#  this function is meant to substitute 'daemon'
+#  because 'daemon' expects $1 to fork itself
+forkdaemon() {
+  local i=0
+
+  # launch in background, i.e. fork
+  # and redirect stdout and stderr to files
+  $* >> $STDOUTLOG 2>> $STDERRLOG &
+
+  while (( $i < $PIDFILE_CHECK_RETRIES ))
+  do
+
+    # check for regular file and size greater than 0
+    if [[ -f $TC_PIDFILE ]] && [[ -s $TC_PIDFILE ]]
+    then
+      success
+      return 0
+    fi
+
+    sleep 1  # zzz for 1 second
+    (( i++ ))
+
+  done
+
+  failure
+  return 1
+}
+
+
+#
+# Ubuntu: Function that starts the daemon/service
+#
+do_start()
+{
+	# Return
+	#   0 if daemon has been started
+	#   1 if daemon was already running
+	#   2 if daemon could not be started
+	start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON --test > /dev/null \
+		|| return 1
+	start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON -- \
+		$TC_DAEMON_ARGS \
+		|| return 2
+	# Add code here, if necessary, that waits for the process to be ready
+	# to handle requests from services started subsequently which depend
+	# on this one.  As a last resort, sleep for some time.
+}
+
+#
+# Ubuntu: Function that stops the daemon/service
+#
+do_stop()
+{
+	# Return
+	#   0 if daemon has been stopped
+	#   1 if daemon was already stopped
+	#   2 if daemon could not be stopped
+	#   other if a failure occurred
+	start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TC_PIDFILE --name $TC_NAME
+	RETVAL="$?"
+	[ "$RETVAL" = 2 ] && return 2
+	# Wait for children to finish too if this is a daemon that forks
+	# and if the daemon is only ever run from this initscript.
+	# If the above conditions are not satisfied then add some other code
+	# that waits for the process to drop all resources that could be
+	# needed by services started subsequently.  A last resort is to
+	# sleep for some time.
+	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TC_DAEMON
+	[ "$?" = 2 ] && return 2
+        # Need to stop the TM and TS also
+	start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
+	[ "$?" = 2 ] && return 2
+	start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
+	[ "$?" = 2 ] && return 2
+	# Many daemons don't delete their pidfiles when they exit.
+	rm -f $TC_PIDFILE
+	rm -f $TM_PIDFILE
+	rm -f $TS_PIDFILE
+	return "$RETVAL"
+}
+
+#
+# Ubuntu: Function that sends a SIGHUP to the daemon/service
+#
+do_reload() {
+	#
+	# If the daemon can reload its configuration without
+	# restarting (for example, when it is sent a SIGHUP),
+	# then implement that here.
+	#
+	start-stop-daemon --stop --signal 1 --quiet --pidfile $TS_PIDFILE --name $TS_NAME
+	return 0
+}
+
+
+
+# main 
+case "$1" in
+  start)
+        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+	    [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+	    do_start
+	    case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	    esac
+        elif [ "$DISTRIB_ID" = "fedora" ]; then
+            action "Starting $prog:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+	;;
+  stop)
+        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+	    [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+	    do_stop
+	    case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	    esac
+        elif [ "$DISTRIB_ID" = "fedora" ]; then
+            action "Stopping $prog:" killproc -p $TC_PIDFILE $TC_DAEMON
+            action "Stopping $prog:" killproc -p $TM_PIDFILE $TM_DAEMON
+            action "Stopping $prog:" killproc -p $TS_PIDFILE $TS_DAEMON
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+	;;
+  #reload|force-reload)
+	#
+	# If do_reload() is not implemented then leave this commented out
+	# and leave 'force-reload' as an alias for 'restart'.
+	#
+	#log_daemon_msg "Reloading $DESC" "$NAME"
+	#do_reload
+	#log_end_msg $?
+	#;;
+  restart|force-reload)
+        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+	#
+	# If the "reload" option is implemented then remove the
+	# 'force-reload' alias
+	#
+	    log_daemon_msg "Restarting $DESC" "$NAME"
+	    do_stop
+	    case "$?" in
+	        0|1)
+		    do_start
+		    case "$?" in
+			0) log_end_msg 0 ;;
+			1) log_end_msg 1 ;; # Old process is still running
+			*) log_end_msg 1 ;; # Failed to start
+		    esac
+		    ;;
+	        *)
+	  	# Failed to stop
+		    log_end_msg 1
+		    ;;
+	    esac
+        elif [ "$DISTRIB_ID" = "fedora" ]; then
+            $0 'stop'
+            $0 'start'
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+	;;
+  status)
+        if [ "$DISTRIB_ID" = "fedora" ]; then
+            status -p $PIDFILE $PROGRAM
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+        ;;
+  condrestart)
+        if [ "$DISTRIB_ID" = "fedora" ]; then
+            if ! $0 'status'
+            then
+                $0 'stop'
+                $0 'start'
+            fi
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+    ;;
+  *)
+        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+	#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
+	#echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+	    echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+        elif [ "$DISTRIB_ID" = "fedora" ]; then
+            echo "Usage: $0 {start|stop|status|restart|condrestart}"
+        else
+            echo "This script needs to be ported to this OS"
+            exit 1
+        fi
+	exit 3
+	;;
+esac
+
+
