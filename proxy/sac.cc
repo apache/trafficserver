@@ -53,6 +53,9 @@
 extern int CacheClusteringEnabled;
 int auto_clear_cache_flag = 0;
 
+char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
+char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
+
 // ldap required externals ...
 //int  gldap_auth_enable    = 0;
 //int  gsplit_ldap_enabled  = 0;

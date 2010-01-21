@@ -2788,6 +2788,8 @@ register_cache_stats(RecRawStatBlock * rsb, const char *prefix)
 void
 ink_cache_init(ModuleVersion v)
 {
+  struct stat s;
+  int ierr;
   ink_release_assert(!checkModuleVersion(v, CACHE_MODULE_VERSION));
 
   cache_rsb = RecAllocateRawStatBlock((int) cache_stat_count);
@@ -2846,6 +2848,20 @@ ink_cache_init(ModuleVersion v)
   IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
   Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
+  if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
+    ink_strncpy(cache_system_config_directory,system_config_directory,PATH_NAME_MAX); 
+    if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
+      // Try 'system_root_dir/etc/trafficserver' directory
+      snprintf(cache_system_config_directory, sizeof(cache_system_config_directory), 
+               "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
+      if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
+        fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n", 
+                cache_system_config_directory, ierr, errno, strerror(errno));
+        fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
+        _exit(1);
+      }
+    }
+  }
 #ifdef HIT_EVACUATE
 
   IOCORE_RegisterConfigInteger(RECT_CONFIG,

@@ -222,9 +222,9 @@ RecCoreInit(RecModeT mode_type, Diags * _diags)
     g_rec_config_contents_llq = create_queue();
     g_rec_config_contents_ht = ink_hash_table_create(InkHashTableKeyType_String);
     // Import the file into memory; try the following in this order:
-    // ./conf/yts/records.config.shadow
+    // ./etc/trafficserver/records.config.shadow
     // ./records.config.shadow
-    // ./conf/yts/records.config
+    // ./etc/trafficserver/records.config
     // ./records.config
     bool file_exists = true;
     g_rec_config_fpath = REC_CONFIG_DIR REC_CONFIG_FILE REC_SHADOW_EXT;

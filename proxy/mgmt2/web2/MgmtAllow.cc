@@ -61,6 +61,8 @@ err_allow_all(false)
   bool found;
   char *config_file = NULL;
   char *config_dir = NULL;
+  struct stat s;
+  int err;
 
   config_file_var = xstrdup(config_var);
   config_file_path[0] = '\0';
@@ -76,6 +78,15 @@ err_allow_all(false)
     xfree(config_file);
     mgmt_log(stderr, "%s WARNING: Unable to locate config dir.  All IP Addresses will be blocked\n");
     return;
+  }
+
+  if ((err = stat(config_dir, &s)) < 0) {
+    xfree(config_dir);
+    config_dir = xstrdup(system_config_directory);
+    if ((err = stat(config_dir, &s)) < 0) {
+      mgmt_log(stderr, "%s WARNING: Unable to locate config dir %s.  All IP Addresses will be blocked\n",config_dir);
+      return;
+    }
   }
 
   if (strlen(config_file) + strlen(config_dir) + 1 > PATH_NAME_MAX) {

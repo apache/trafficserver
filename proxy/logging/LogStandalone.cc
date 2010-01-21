@@ -65,7 +65,7 @@ char management_directory[256] = "conf/yts";
 char error_tags[1024] = "";
 char action_tags[1024] = "";
 char command_string[512] = "";
-char system_base_install[256] = "";
+char system_root_dir[PATH_NAME_MAX + 1] = DEFAULT_ROOT_DIRECTORY;
 
 Diags *diags = NULL;
 DiagsConfig *diagsConfig = NULL;

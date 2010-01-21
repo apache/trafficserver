@@ -1816,7 +1816,7 @@ INKhrtime()
 const char *
 INKInstallDirGet(void)
 {
-  return system_base_install;
+  return system_root_dir;
 }
 
 const char *
@@ -1843,7 +1843,7 @@ INKPluginDirGet(void)
     if (*plugin_dir == '/') {
       ink_strncpy(path, plugin_dir, sizeof(path));
     } else {
-      snprintf(path, sizeof(path), "%s%s%s", system_base_install, DIR_SEP, plugin_dir);
+      snprintf(path, sizeof(path), "%s%s%s", system_root_dir, DIR_SEP, plugin_dir);
     }
 
   }

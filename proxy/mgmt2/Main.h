@@ -36,9 +36,9 @@
                                   //                 windows-260,etc)
 
 #define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     PKGLOCALSTATEDIR
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   PKGSYSCONFDIR
-#define DEFAULT_LOG_DIRECTORY             PKGLOGDIR
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
 
 void MgmtShutdown(int status);
 void fileUpdated(char *fname);
@@ -62,7 +62,7 @@ extern char *ts_base_dir;
 extern char system_root_dir[];
 extern char system_local_state_dir[];
 extern char system_config_directory[];
-extern char system_log_dir[];
+extern char system_log_dir[PATH_NAME_MAX + 1];
 
 
 // Global variable to replace ifdef MGMT_LAUNCH_PROXY so that

@@ -49,7 +49,7 @@ const char *
 
 #ifndef _WIN32
 const char *
-  clientCLI::defaultSockPath = PKGLOCALSTATEDIR "/cli";
+  clientCLI::defaultSockPath = DEFAULT_LOCAL_STATE_DIRECTORY "/cli";
 #else
 const int
   clientCLI::defaultCliPort = 9000;

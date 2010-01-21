@@ -55,6 +55,12 @@ using namespace __gnu_cxx;
 // Constants, please update the VERSION number when you make a new build!!!
 #define PROGRAM_VERSION		"1.0"
 #define PROGRAM_NAME		"logstats"
+
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
+
 const int MAX_LOGBUFFER_SIZE = 65536;
 const int DEFAULT_LINE_LEN = 78;
 const double LOG10_1024 = 3.0102999566398116;
@@ -86,10 +92,10 @@ const int HTTP_AS_INT = 1886680168;     // For "http" followed by "s://" or "://
 // Defaults/string constants
 
 // e.g. /usr/local/var/log/trafficserver/logstats.state
-const static char *STATE_FILE = PKGLOGDIR "/logstats.state";
+const static char *STATE_FILE = DEFAULT_LOG_DIRECTORY "/logstats.state";
 
 // e.g. /usr/local/var/log/trafficserver
-const static char *LOG_DIR = PKGLOGDIR;
+const static char *LOG_DIR = DEFAULT_LOG_DIRECTORY;
 
 
 // Store our "state" (position in log file etc.)
@@ -281,6 +287,8 @@ struct eqstr
 typedef hash_map < const char *, OriginStats *, hash < const char *>, eqstr > OriginStorage;
 typedef hash_set < const char *, hash < const char *>, eqstr > OriginSet;
 
+char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
+char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Globals, holding the accumulated stats (ok, I'm lazy ...)
@@ -1860,7 +1868,7 @@ main(int argc, char *argv[])
 
   // Change directory to the log dir
   if (chdir(LOG_DIR) < 0) {
-    strncat(ymon_notice, " can't chdir to " PKGLOGDIR, sizeof(ymon_notice) - strlen(ymon_notice) - 1);
+    strncat(ymon_notice, " can't chdir to " DEFAULT_LOG_DIRECTORY, sizeof(ymon_notice) - strlen(ymon_notice) - 1);
     my_exit(YMON_CRITICAL, ymon_notice);
   }
 

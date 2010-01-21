@@ -34,7 +34,7 @@
 #ifdef NON_MODULAR
 #include "P_HostDB.h"
 #else
-extern const char *system_config_directory;
+//extern const char *system_config_directory;
 #endif
 
 #include "P_MultiCache.h"

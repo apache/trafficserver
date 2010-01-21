@@ -29,7 +29,7 @@
 #define DIAGS_LOG_FILE "manager.log"
 
 #else
-
+#include "Main.h"
 #include "Config.h"
 #define MGMT_PTR       pmgmt
 #define DIAGS_LOG_FILE "diags.log"
@@ -292,8 +292,9 @@ DiagsConfig::RegisterDiagConfig()
 DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
 {
   char *diags_logdir = NULL;
-  char diags_logpath[MAXPATHLEN];
-
+  char diags_logpath[PATH_NAME_MAX];
+  struct stat s;
+  int err;
   callbacks_established = false;
   diags_log_fp = (FILE *) NULL;
   diags = NULL;
@@ -314,13 +315,37 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
   // open the diags log //
   ////////////////////////
 
+  if ((err = stat(system_log_dir, &s)) < 0) {
+    REC_ReadConfigString(system_log_dir, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    if ((err = stat(system_log_dir, &s)) < 0) {
+      diags_logdir = REC_readString("proxy.config.log2.logfile_dir", &found);
+      if (found && (diags_logdir != NULL)) {
+        snprintf(system_log_dir, sizeof(system_log_dir), "%s",diags_logdir);
+      }
+      if ((err = stat(system_log_dir, &s)) < 0) {
+        // Try 'system_root_dir/var/log/trafficserver' directory
+        snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+                 system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
+        if ((err = stat(system_log_dir, &s)) < 0) {
+          fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n", 
+                  system_log_dir, err, errno, strerror(errno));
+          fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+          _exit(1);
+        }
+      }
+    }
+  }
+#if 0
   diags_logdir = REC_readString("proxy.config.log2.logfile_dir", &found);
-
   if (!found || (diags_logdir == NULL) || (diags_logdir[0] == '\0')) {
     ink_strncpy(diags_logpath, DIAGS_LOG_FILE, sizeof(diags_logpath));
   } else {
     snprintf(diags_logpath, sizeof(diags_logpath), "%s%s%s", diags_logdir, DIR_SEP, DIAGS_LOG_FILE);
   }
+
+#else
+    snprintf(diags_logpath, sizeof(diags_logpath), "%s%s%s", system_log_dir, DIR_SEP, DIAGS_LOG_FILE);
+#endif
 
   // open write append
   // diags_log_fp = fopen(diags_logpath,"w");

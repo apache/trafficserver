@@ -49,14 +49,14 @@ main(int argc, char *argv[])
   CliDisplayPrintf = 1;
 
   // initialize MgmtAPI using TS directory specified in /etc/traffic_server
-  // or PKGLOCALSTATEDIR if /etc/traffic_server does not exist
+  // or DEFAULT_LOCAL_STATE_DIRECTORY if /etc/traffic_server does not exist
 
   if (GetTSDirectory(ts_path)) {
-    status = INKInit(PKGLOCALSTATEDIR);
+    status = INKInit(DEFAULT_LOCAL_STATE_DIRECTORY);
     if (status) {
-      printf("INKInit %d: Failed to initialize MgmtAPI in %s\n", status, PKGLOCALSTATEDIR);
+      printf("INKInit %d: Failed to initialize MgmtAPI in %s\n", status, DEFAULT_LOCAL_STATE_DIRECTORY);
     } else {
-      printf("Successfully Initialized MgmtAPI in %s \n", PKGLOCALSTATEDIR);
+      printf("Successfully Initialized MgmtAPI in %s \n", DEFAULT_LOCAL_STATE_DIRECTORY);
     }
   } else {
     snprintf(config_path, sizeof(config_path), "%s/var/trafficserver/", ts_path);

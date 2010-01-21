@@ -35,6 +35,11 @@
                                   // on various OSs (linux-4096,osx/bsd-1024,
                                   //                 windows-260,etc)
 
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
+
 #define RECORD_GET 0
 #define RECORD_SET 1
 

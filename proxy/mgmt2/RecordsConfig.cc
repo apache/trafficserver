@@ -24,6 +24,7 @@
 
 
 #include "RecordsConfig.h"
+#include "Main.h"
 
 //-------------------------------------------------------------------------
 // RecordsConfig
@@ -58,7 +59,7 @@ RecordElement RecordsConfig[] = {
 
   {CONFIG, "proxy.config.proxy_name", "", INK_STRING, "<proxy_name>", RU_REREAD, RR_REQUIRED, RC_STR, ".+", RA_NULL}
   ,
-  {CONFIG, "proxy.config.bin_path", "", INK_STRING, PREFIX "/bin", RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.bin_path", "", INK_STRING, "./bin", RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.proxy_binary", "", INK_STRING, "traffic_server", RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
   ,
@@ -295,13 +296,13 @@ RecordElement RecordsConfig[] = {
   //# 1 is full clustering, 2 is mgmt only, 3 is no clustering
   {LOCAL, "proxy.local.cluster.type", "", INK_INT, "3", RU_RESTART_TM, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.cluster.rsport", "", INK_INT, "<reliable_service_port>", RU_NULL, RR_REQUIRED, RC_NULL, NULL,
+  {CONFIG, "proxy.config.cluster.rsport", "", INK_INT, "8088", RU_NULL, RR_REQUIRED, RC_NULL, NULL,
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.cluster.mcport", "", INK_INT, "<multicast_port>", RU_REREAD, RR_REQUIRED, RC_NULL, NULL,
+  {CONFIG, "proxy.config.cluster.mcport", "", INK_INT, "8089", RU_REREAD, RR_REQUIRED, RC_NULL, NULL,
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.cluster.mc_group_addr", "", INK_STRING, "<multicast_group_addr>", RU_REREAD, RR_REQUIRED,
+  {CONFIG, "proxy.config.cluster.mc_group_addr", "", INK_STRING, "224.0.1.37", RU_REREAD, RR_REQUIRED,
    RC_IP, "[0-255].[0-255].[0-255].[0-255]", RA_NULL}
   ,
   {CONFIG, "proxy.config.cluster.mc_ttl", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -311,10 +312,10 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.admin.html_doc_root", "", INK_STRING, "<html_doc_root>", RU_NULL, RR_REQUIRED, RC_NULL, NULL,
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.admin.web_interface_port", "", INK_INT, "<web_interface_port>", RU_RESTART_TM, RR_REQUIRED,
+  {CONFIG, "proxy.config.admin.web_interface_port", "", INK_INT, "8081", RU_RESTART_TM, RR_REQUIRED,
    RC_INT, "[0-65535]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.admin.autoconf_port", "", INK_INT, "<auto_config_port>", RU_RESTART_TM, RR_REQUIRED, RC_INT,
+  {CONFIG, "proxy.config.admin.autoconf_port", "", INK_INT, "8083", RU_RESTART_TM, RR_REQUIRED, RC_INT,
    "[0-65535]", RA_NULL}
   ,
   {CONFIG, "proxy.config.admin.autoconf.localhost_only", "", INK_INT, "0", RU_RESTART_TM, RR_NULL, RC_INT, "[0-1]",
@@ -329,7 +330,7 @@ RecordElement RecordsConfig[] = {
   // overseer_mode: 0 disabled, 1 monitor only (get), 2 full acces (get, set, reread, bounce, restart)
   {CONFIG, "proxy.config.admin.overseer_mode", "", INK_INT, "1", RU_RESTART_TM, RR_NULL, RC_INT, "[0-2]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.admin.overseer_port", "", INK_INT, "<overseer_port>", RU_NULL, RR_REQUIRED, RC_NULL, NULL,
+  {CONFIG, "proxy.config.admin.overseer_port", "", INK_INT, "9898", RU_NULL, RR_REQUIRED, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.admin.admin_user", "", INK_STRING, "<admin_user_name>", RU_REREAD, RR_REQUIRED, RC_STR, ".+",
@@ -369,7 +370,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.admin.cli_enabled", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.admin.cli_path", "", INK_STRING, PKGLOCALSTATEDIR "/cli", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.admin.cli_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY "/cli", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.admin.cli_port", "", INK_INT, "9000", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -410,7 +411,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.process_manager.enable_mgmt_port", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.process_manager.mgmt_port", "", INK_INT, "<process_mgmt_port>", RU_NULL, RR_REQUIRED, RC_NULL,
+  {CONFIG, "proxy.config.process_manager.mgmt_port", "", INK_INT, "8084", RU_NULL, RR_REQUIRED, RC_NULL,
    NULL, RA_NULL}
   ,
   //##############################################################################
@@ -559,7 +560,7 @@ RecordElement RecordsConfig[] = {
    "authcache.db", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.auth.cache.path", "", INK_STRING,
-   PKGLOCALSTATEDIR, RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+   DEFAULT_LOCAL_STATE_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.auth.cache.size", "", INK_INT, "5000",
    RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -586,7 +587,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.auth.convert_bin", "", INK_STRING, "filter_to_policy", RU_REREAD, RR_NULL, RC_STR, ".*",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.auth.password_file_path", "", INK_STRING, PKGLOCALSTATEDIR, RU_REREAD, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.auth.password_file_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_REREAD, RR_NULL, RC_NULL,
    ".*", RA_NULL}
   ,
   //##############################################################################x
@@ -600,7 +601,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.ldap.cache.size", "", INK_INT, "5000", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.ldap.cache.storage_path", "", INK_STRING, PKGLOCALSTATEDIR, RU_RESTART_TS, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.ldap.cache.storage_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.ldap.cache.storage_size", "", INK_INT, "15728640", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
@@ -721,7 +722,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.ntlm.cache.size", "", INK_INT, "5000", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.ntlm.cache.storage_path", "", INK_STRING, PKGLOCALSTATEDIR, RU_RESTART_TS, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.ntlm.cache.storage_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.ntlm.cache.storage_size", "", INK_INT, "15728640", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
@@ -808,7 +809,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.username.cache.size", "", INK_INT, "5000", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.username.cache.storage_path", "", INK_STRING, PKGLOCALSTATEDIR, RU_NULL, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.username.cache.storage_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_NULL, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.username.cache.storage_size", "", INK_INT, "15728640", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -830,7 +831,7 @@ RecordElement RecordsConfig[] = {
   //       #
   {CONFIG, "proxy.config.http.enabled", "", INK_INT, "1", RU_RESTART_TM, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.http.server_port", "", INK_INT, "<server_port>", RU_RESTART_TM, RR_REQUIRED, RC_INT,
+  {CONFIG, "proxy.config.http.server_port", "", INK_INT, "8080", RU_RESTART_TM, RR_REQUIRED, RC_INT,
    "[0-65535]", RA_NULL}
   ,
   {CONFIG, "proxy.config.http.server_port_attr", "", INK_STRING, "X", RU_RESTART_TM, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -1282,7 +1283,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.body_factory.enable_logging", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.body_factory.template_sets_dir", "", INK_STRING, PKGSYSCONFDIR "/body_factory", RU_RESTART_TS,
+  {CONFIG, "proxy.config.body_factory.template_sets_dir", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY "/body_factory", RU_RESTART_TS,
    RR_NULL, RC_STR, "^[^[:space:]]+$", RA_NULL}
   ,
   //# 0 - never suppress generated responses
@@ -2187,7 +2188,7 @@ RecordElement RecordsConfig[] = {
   //# Cluster Subsystem
   //#
   //##############################################################################
-  {CONFIG, "proxy.config.cluster.cluster_port", "", INK_INT, "<cluster_port>", RU_RESTART_TS, RR_REQUIRED, RC_NULL,
+  {CONFIG, "proxy.config.cluster.cluster_port", "", INK_INT, "8086", RU_RESTART_TS, RR_REQUIRED, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cluster.cluster_configuration", "", INK_STRING, "cluster.config", RU_NULL, RR_NULL, RC_NULL,
@@ -2625,7 +2626,7 @@ RecordElement RecordsConfig[] = {
   //       # in entries, may not be changed while running
   {CONFIG, "proxy.config.hostdb.size", "", INK_INT, "200000", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.hostdb.storage_path", "", INK_STRING, PKGLOCALSTATEDIR, RU_REREAD, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.hostdb.storage_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.hostdb.storage_size", "", INK_INT, "33554432", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -2728,7 +2729,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.log2.hostname", "", INK_STRING, "localhost", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.logfile_dir", "", INK_STRING, PKGLOGDIR , RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]+$",
+  {CONFIG, "proxy.config.log2.logfile_dir", "", INK_STRING, DEFAULT_LOG_DIRECTORY, RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]+$",
    RA_NULL}
   ,
   {CONFIG, "proxy.config.log2.logfile_perm", "", INK_STRING, "rw-r--r--", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -2792,7 +2793,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.log2.collation_host", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]*$",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.collation_port", "", INK_INT, "<log2_collation_port>", RU_REREAD, RR_REQUIRED, RC_INT,
+  {CONFIG, "proxy.config.log2.collation_port", "", INK_INT, "8085", RU_REREAD, RR_REQUIRED, RC_INT,
    "[0-65535]", RA_NULL}
   ,
   {CONFIG, "proxy.config.log2.collation_secret", "", INK_STRING, "foobar", RU_REREAD, RR_NULL, RC_STR, ".*", RA_NULL}
@@ -3336,10 +3337,10 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.aaa.radius.min_timeout", "", INK_INT, "10", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.aaa.radius.database_path", "", INK_STRING, PKGSYSCONFDIR "/plugins/aaa/raddb", RU_NULL, RR_NULL,
+  {CONFIG, "proxy.config.aaa.radius.database_path", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY "/plugins/aaa/raddb", RU_NULL, RR_NULL,
    RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.aaa.radius.log_path", "", INK_STRING, PKGLOGDIR, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.aaa.radius.log_path", "", INK_STRING, DEFAULT_LOG_DIRECTORY, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
 
   //##############################################################################
@@ -3423,7 +3424,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.ssl.server.cert.filename", "", INK_STRING, "server.pem", RU_RESTART_TS, RR_NULL, RC_STR,
    "^[^[:space:]]+$", RA_NULL}
   ,
-  {CONFIG, "proxy.config.ssl.server.cert.path", "", INK_STRING, PKGSYSCONFDIR, RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.ssl.server.cert.path", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.ssl.server.cert_chain.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR, NULL,
@@ -3448,7 +3449,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.ssl.client.cert.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR,
    "^[^[:space:]]*$", RA_NULL}
   ,
-  {CONFIG, "proxy.config.ssl.client.cert.path", "", INK_STRING, PKGSYSCONFDIR, RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.ssl.client.cert.path", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.ssl.client.private_key.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR,
@@ -3601,11 +3602,11 @@ RecordElement RecordsConfig[] = {
   //# Directory in which to find plugins
   {CONFIG, "proxy.config.plugin.plugin_dir", "", INK_STRING, PKGLIBEXECDIR, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.plugin.plugin_mgmt_dir", "", INK_STRING, PKGSYSCONFDIR "/plugins_mgmt", RU_NULL, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.plugin.plugin_mgmt_dir", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY "/plugins_mgmt", RU_NULL, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.plugin.extensions_dir", "", INK_STRING,
-   PKGLOCALSTATEDIR, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+   DEFAULT_LOCAL_STATE_DIRECTORY, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
 
   //##############################################################################

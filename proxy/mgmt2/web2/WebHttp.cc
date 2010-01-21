@@ -1881,12 +1881,21 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
   bool found = false;
   int ret_val;
   struct stat snapDirStat;
-  char config_dir[256];
+  char config_dir[PATH_NAME_MAX];
+  struct stat s;
 
-  if (varStrFromName("proxy.config.config_dir", config_dir, 256) == false)
+  if (varStrFromName("proxy.config.config_dir", config_dir, PATH_NAME_MAX) == false)
     mgmt_fatal(stderr,
                "[WebHttp::handle_submit_snapshot] Unable to find configuration directory from proxy.config.config_dir\n");
 
+  if ((err = stat(config_dir, &s)) < 0) {
+    ink_strncpy(config_dir, system_config_directory,PATH_NAME_MAX); 
+    if ((err = stat(config_dir, &s)) < 0) {
+        mgmt_elog("[WebHttp::handle_submit_snapshot] unable to stat() directory '%s': %d %d, %s\n", 
+                config_dir, err, errno, strerror(errno));
+        mgmt_fatal("[WebHttp::handle_submit_snapshot] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+    }
+  }
   // check for submit_from_page
   if (ink_hash_table_lookup(whc->post_data_ht, "submit_from_page", (void **) &submit_from_page)) {
     ink_hash_table_delete(whc->post_data_ht, "submit_from_page");

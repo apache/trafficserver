@@ -169,4 +169,10 @@ typedef unsigned int in_addr_t;
 #define MAXINT INT_MAX
 #endif
 
+#ifndef PATH_NAME_MAX
+#define PATH_NAME_MAX 511 // instead of PATH_MAX which is inconsistent
+                          // on various OSs (linux-4096,osx/bsd-1024,
+                          //                 windows-260,etc)
+#endif
+
 #endif /* _PLATFORM_H_ */

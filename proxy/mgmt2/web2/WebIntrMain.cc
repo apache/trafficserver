@@ -742,6 +742,18 @@ webIntr_main(void *x)
   if (autoconfContext.docRoot == NULL) {
     mgmt_fatal(stderr, "[WebIntrMain] No Client AutoConf Root\n");
   } else {
+    struct stat s;
+    int err;
+    if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
+      xfree(autoconfContext.docRoot);
+      autoconfContext.docRoot = xstrdup(system_config_directory);
+      if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
+        mgmt_elog("[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n", 
+                autoconfContext.docRoot, err, errno, strerror(errno));
+        mgmt_elog("[WebIntrMain] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+        mgmt_fatal(stderr, "[WebIntrMain] No Client AutoConf Root\n");
+      }
+    }
     autoconfContext.docRootLen = strlen(autoconfContext.docRoot);
   }
   autoconfContext.adminAuthEnabled = 0;

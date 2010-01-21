@@ -293,13 +293,14 @@ setup_coredump()
 }
 
 static void
-init_dirs(void)
+init_dirs(bool use_librecords = true)
 {
   struct stat s;
   int err;
 
   if ((err = stat(mgmt_path, &s)) < 0) {
-    REC_ReadConfigString(mgmt_path, "proxy.config.config_dir", PATH_NAME_MAX);
+    if (use_librecords)
+      REC_ReadConfigString(mgmt_path, "proxy.config.config_dir", PATH_NAME_MAX);
     if ((err = stat(mgmt_path, &s)) < 0) {
       // Try 'system_root_dir/etc/trafficserver' directory
       snprintf(mgmt_path, sizeof(mgmt_path), 
@@ -316,7 +317,8 @@ init_dirs(void)
   if ((err = stat(system_config_directory, &s)) < 0) {
     ink_strncpy(system_config_directory,mgmt_path,PATH_NAME_MAX); 
     if ((err = stat(system_config_directory, &s)) < 0) {
-      REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
+      if (use_librecords)
+        REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
       if ((err = stat(system_config_directory, &s)) < 0) {
         // Try 'system_root_dir/etc/trafficserver' directory
         snprintf(system_config_directory, sizeof(system_config_directory), 
@@ -332,7 +334,8 @@ init_dirs(void)
   }
 
   if ((err = stat(system_local_state_dir, &s)) < 0) {
-    REC_ReadConfigString(system_local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
+    if (use_librecords)
+      REC_ReadConfigString(system_local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
     if ((err = stat(system_local_state_dir, &s)) < 0) {
       // Try 'system_root_dir/var/trafficserver' directory
       snprintf(system_local_state_dir, sizeof(system_local_state_dir), 
@@ -347,7 +350,8 @@ init_dirs(void)
   }
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    REC_ReadConfigString(system_log_dir, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    if (use_librecords)
+      REC_ReadConfigString(system_log_dir, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
     if ((err = stat(system_log_dir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
       snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
@@ -391,6 +395,8 @@ chdir_root()
     mgmt_elog("unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
     mgmt_elog(" please set correct path in env variable TS_ROOT \n");
     exit(1);
+  } else {
+    mgmt_log("[TrafficManager] using root directory '%s'\n",system_root_dir);
   }
 }
 
@@ -595,7 +601,7 @@ main(int argc, char **argv)
     icmp_ping = new MgmtPing(); */
   icmp_ping = NULL;
 
-  init_dirs();// setup directories
+  init_dirs(false);// setup directories
 
   // Get the config info we need while we are still root
   extractConfigInfo(mgmt_path, recs_conf, userToRunAs);

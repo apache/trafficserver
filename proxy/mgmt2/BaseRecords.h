@@ -235,7 +235,7 @@ public:
   long pid;
   char str_pid[1024];
   MgmtDBM *record_db;
-  char config_file[80];
+  char config_file[PATH_NAME_MAX + 1];
 
   MgmtHashTable *record_files;
   MgmtHashTable *record_id_map;

@@ -148,7 +148,7 @@ public:
   int process_server_timeout_secs;
   int process_server_timeout_msecs;
 
-  char pserver_path[1024];
+  char pserver_path[PATH_NAME_MAX];
   char *config_path;
   char *bin_path;
   char *absolute_proxy_binary;

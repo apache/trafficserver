@@ -70,9 +70,10 @@ char *SnapshotStrings[] = { "Request Successful\n",
 
 FileManager::FileManager()
 {
-  char configTmp[256];
+  char configTmp[PATH_NAME_MAX];
   int pathLen;
   struct stat statBuf;
+  int err;
 
   bindings = ink_hash_table_create(InkHashTableKeyType_String);
 
@@ -84,6 +85,15 @@ FileManager::FileManager()
   if (varStrFromName("proxy.config.config_dir", configTmp, sizeof(configTmp)) == false) {
     mgmt_fatal(stderr,
                "[FileManager::FileManager] Unable to find configuration directory from proxy.config.config_dir\n");
+  }
+  if ((err = stat(configTmp, &statBuf)) < 0) {
+    ink_strncpy(configTmp, system_config_directory,PATH_NAME_MAX); 
+    if ((err = stat(configTmp, &statBuf)) < 0) {
+        mgmt_elog("[FileManager::FileManager] unable to stat() directory '%s': %d %d, %s\n", 
+                mgmt_path, err, errno, strerror(errno));
+        mgmt_elog("[FileManager::FileManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+        _exit(1);
+    }
   }
   // Set up the path to the snap shot dir
   pathLen = strlen(configTmp) + strlen(snapDir) + 3;

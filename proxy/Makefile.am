@@ -74,6 +74,7 @@ traffic_server_CPPFLAGS = \
   -DPREFIX=\"$(prefix)\" \
   -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
   -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
+  -DPKGLOGDIR=\"$(pkglogdir)\" \
   -DPKGSYSUSER=\"$(pkgsysuser)\" \
   $(AM_CPPFLAGS)
 
@@ -175,6 +176,11 @@ traffic_server_LDADD = \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ \
   @LIBMLD@ @LIBEXC@ -lm
 
+logcat_CPPFLAGS = \
+  -DPREFIX=\"$(prefix)\" \
+  -DPKGLOGDIR=\"$(pkglogdir)\" \
+  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
+  $(AM_CPPFLAGS)
 logcat_SOURCES = logcat.cc
 logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 logcat_LDADD = \
@@ -233,7 +239,9 @@ logcat_LDADD = \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ -lm
 
 logstats_CPPFLAGS = \
+  -DPREFIX=\"$(prefix)\" \
   -DPKGLOGDIR=\"$(pkglogdir)\" \
+  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
   $(AM_CPPFLAGS)
 logstats_SOURCES = logstats.cc
 logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@
@@ -294,6 +302,11 @@ logstats_LDADD = \
   @LIBREGEX@ @LIBPCRE@ @LIBDB@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ -lm
 
+sac_CPPFLAGS = \
+  -DPREFIX=\"$(prefix)\" \
+  -DPKGLOGDIR=\"$(pkglogdir)\" \
+  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
+  $(AM_CPPFLAGS)
 sac_SOURCES = sac.cc
 sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 sac_LDADD = \

@@ -54,6 +54,11 @@ union semun
 #define COP_WARNING  LOG_ERR
 #define COP_DEBUG    LOG_DEBUG
 
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
+
 static char root_dir[PATH_MAX];
 static char local_state_dir[PATH_MAX];
 static char config_dir[PATH_MAX];
@@ -2231,7 +2236,7 @@ init_config_dir()
     exit(1);
   }
 
-  snprintf(config_dir, sizeof(config_dir), PKGSYSCONFDIR);
+  snprintf(config_dir, sizeof(config_dir), DEFAULT_SYSTEM_CONFIG_DIRECTORY);
   if (stat(config_dir, &info) < 0) {
     // Try 'root_dir/etc/trafficserver' directory
     snprintf(config_dir, sizeof(config_dir), "%s%s%s%s%s",
@@ -2243,7 +2248,7 @@ init_config_dir()
     }
   }
   
-  snprintf(local_state_dir, sizeof(config_dir), PKGLOCALSTATEDIR);
+  snprintf(local_state_dir, sizeof(config_dir), DEFAULT_LOCAL_STATE_DIRECTORY);
   if (stat(local_state_dir, &info) < 0) {
     // Try 'root_dir/var/trafficserver' directory
     snprintf(local_state_dir, sizeof(local_state_dir), 

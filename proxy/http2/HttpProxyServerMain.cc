@@ -213,7 +213,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   ////////////////////////////////
   if ((port<1) || (port> 65535)) {
 
-    ProcessFatal("accept port is not between 1 and 65535 ", "please check configuration");
+    ProcessFatal("accept port %d is not between 1 and 65535 ", "please check configuration", port);
     return;
   }
 

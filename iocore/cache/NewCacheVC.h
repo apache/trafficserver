@@ -28,6 +28,7 @@
 #include "api/include/InkAPI.h"
 #include "HTTP.h"
 #include "I_Cache.h"
+#include "P_Cache.h"
 #include "P_CacheHttp.h"
 
 class APIHook;

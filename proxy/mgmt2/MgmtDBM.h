@@ -62,7 +62,7 @@ public:
 
   MgmtDBM(char *fname):SimpleDBM(), mgmt_sem_id(0)
   {
-    if (!(strlen(fname) < 80)) {
+    if (!(strlen(fname) < PATH_NAME_MAX)) {
       mgmt_fatal(stderr, "[MgmtDBM::MgmtDBM] File name to large: '%s'\n", fname);
     }
     partner_process = 0;
@@ -240,7 +240,7 @@ private:
 #else
   HANDLE mgmt_hsem;
 #endif
-  char db_file[80];
+  char db_file[PATH_NAME_MAX + 1];
   pid_t partner_process;
 
 };                              /* End class MgmtDBM */

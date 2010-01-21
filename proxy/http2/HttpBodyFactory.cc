@@ -278,6 +278,8 @@ HttpBodyFactory::reconfigure()
   RecString s;
   bool all_found;
   int rec_err;
+  struct stat st;
+  int err;
 
   lock();
   sanity_check();
@@ -318,6 +320,15 @@ HttpBodyFactory::reconfigure()
       xfree(directory_of_template_sets);
     }
     directory_of_template_sets = s;
+    if ((err = stat(directory_of_template_sets, &st)) < 0) {
+      if ((err = stat(system_config_directory, &st)) < 0) {
+        Warning("Unable to stat() directory '%s': %d %d, %s", system_config_directory, err, errno, strerror(errno));
+        Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+      } else {
+        xfree(directory_of_template_sets);
+        directory_of_template_sets = xstrdup(system_config_directory);
+      }
+    }
   }
 
   Debug("body_factory", "directory_of_template_sets = '%s' (found = %d)", directory_of_template_sets, e);

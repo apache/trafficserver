@@ -235,7 +235,8 @@ LocalManager::LocalManager(char *mpath, LMRecords * rd, bool proxy_on):
 BaseManager(), run_proxy(proxy_on), record_data(rd)
 {
   bool found;
-
+  struct stat s;
+  int err;
 #ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;
 #endif
@@ -371,6 +372,16 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
     proxy_server_incoming_ip_to_bind = htonl(INADDR_ANY);
   }
   config_path = REC_readString("proxy.config.config_dir", &found);
+  if ((err = stat(config_path, &s)) < 0) {
+    xfree(config_path);
+    config_path = xstrdup(system_config_directory);
+    if ((err = stat(config_path, &s)) < 0) {
+        mgmt_elog("[LocalManager::LocalManager] unable to stat() directory '%s': %d %d, %s\n", 
+                config_path, err, errno, strerror(errno));
+        mgmt_fatal("[LocalManager::LocalManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+    }
+  }
+
   bin_path = REC_readString("proxy.config.bin_path", &found);
   process_server_timeout_secs = REC_readInteger("proxy.config.lm.pserver_timeout_secs", &found);
   process_server_timeout_msecs = REC_readInteger("proxy.config.lm.pserver_timeout_msecs", &found);

@@ -43,6 +43,10 @@
 #include "ink_apidefs.h"
 #include "MgmtSocket.h"
 
+#ifndef DEFAULT_LOCAL_STATE_DIRECTORY // FIXME: consolidate defines
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
+#endif
+
 /*
  * Global ProcessManager
  */
@@ -84,7 +88,7 @@ startProcessManager(void *arg)
 ProcessManager::ProcessManager(bool rlm, char *mpath, ProcessRecords * rd):
 BaseManager(), require_lm(rlm), mgmt_sync_key(0), record_data(rd), local_manager_sockfd(0)
 {
-  ink_strncpy(pserver_path, PKGLOCALSTATEDIR, sizeof(pserver_path));
+  ink_strncpy(pserver_path, DEFAULT_LOCAL_STATE_DIRECTORY, sizeof(pserver_path));
   mgmt_signal_queue = create_queue();
 
   // Set temp. process/manager timeout. Will be reconfigure later.

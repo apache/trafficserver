@@ -166,9 +166,13 @@ char cluster_host[DOMAIN_NAME_MAX + 1] = DEFAULT_CLUSTER_HOST;
 char proxy_name[256] = "unknown";
 char command_string[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
-char management_directory[256] = PKGSYSCONFDIR;  // e.g. /usr/local/etc/trafficserver
-char system_config_directory[PATH_NAME_MAX + 1] = PKGSYSCONFDIR;  // e.g. /usr/local/etc/trafficserver
-char system_base_install[256] = "";
+char management_directory[256] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
+
+char system_root_dir[PATH_NAME_MAX + 1] = DEFAULT_ROOT_DIRECTORY;
+char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
+char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
+char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
+
 int logging_port_override = 0;
 char logging_server_override[256] = " do not override";
 char error_tags[1024] = "";
@@ -354,12 +358,25 @@ init_system()
 static void
 check_lockfile()
 {
-  char lockfile[PATH_MAX];
+  char lockfile[PATH_NAME_MAX];
+  char lockdir[PATH_NAME_MAX] = DEFAULT_LOCAL_STATE_DIRECTORY;
   int err;
   pid_t holding_pid;
+  struct stat s;
 
 #ifndef _DLL_FOR_HNS
-  snprintf(lockfile, sizeof(lockfile), PKGLOCALSTATEDIR DIR_SEP SERVER_LOCK);
+  if ((err = stat(lockdir, &s)) < 0) {
+    // Try 'system_root_dir/var/trafficserver' directory
+    snprintf(lockdir, sizeof(lockdir), 
+             "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
+    if ((err = stat(lockdir, &s)) < 0) {
+      fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n", 
+                lockdir, err, errno, strerror(errno));
+      fprintf(stderr," please set correct path in env variable TS_ROOT \n");
+      _exit(1);
+    }
+  } 
+  snprintf(lockfile, sizeof(lockfile),"%s%s%s", lockdir,DIR_SEP,SERVER_LOCK);
 #else
 #define MAX_ENVVAR_LENGTH 128
   char tempvar[MAX_ENVVAR_LENGTH + 1];
@@ -387,6 +404,63 @@ check_lockfile()
   }
 }
 
+static void
+init_dirs(void)
+{
+  struct stat s;
+  int err;
+
+
+  if ((err = stat(system_config_directory, &s)) < 0) {
+    ink_strncpy(system_config_directory,management_directory,PATH_NAME_MAX); 
+    if ((err = stat(system_config_directory, &s)) < 0) {
+      REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
+      if ((err = stat(system_config_directory, &s)) < 0) {
+        // Try 'system_root_dir/etc/trafficserver' directory
+        snprintf(system_config_directory, sizeof(system_config_directory), 
+                 "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
+        if ((err = stat(system_config_directory, &s)) < 0) {
+          fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n", 
+                    system_config_directory, err, errno, strerror(errno));
+          fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
+          _exit(1);
+        }
+      }
+    }
+  }
+
+  if ((err = stat(system_local_state_dir, &s)) < 0) {
+    REC_ReadConfigString(system_local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
+    if ((err = stat(system_local_state_dir, &s)) < 0) {
+      // Try 'system_root_dir/var/trafficserver' directory
+      snprintf(system_local_state_dir, sizeof(system_local_state_dir), 
+               "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
+      if ((err = stat(system_local_state_dir, &s)) < 0) {
+        fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n", 
+                system_local_state_dir, err, errno, strerror(errno));
+        fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
+        _exit(1);
+      }
+    }
+  }
+
+  if ((err = stat(system_log_dir, &s)) < 0) {
+    REC_ReadConfigString(system_log_dir, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    if ((err = stat(system_log_dir, &s)) < 0) {
+      // Try 'system_root_dir/var/log/trafficserver' directory
+      snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+               system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
+      if ((err = stat(system_log_dir, &s)) < 0) {
+        fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n", 
+                system_log_dir, err, errno, strerror(errno));
+        fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+        _exit(1);
+      }
+    }
+  }
+
+}
+
 //
 // Startup process manager
 //
@@ -394,6 +468,8 @@ static void
 initialize_process_manager()
 {
   ProcessRecords *precs;
+  struct stat s;
+  int err;
 
   mgmt_use_syslog();
 
@@ -406,6 +482,18 @@ initialize_process_manager()
   //
   if (management_directory[strlen(management_directory) - 1] == '/')
     management_directory[strlen(management_directory) - 1] = 0;
+
+  if ((err = stat(management_directory, &s)) < 0) {
+    // Try 'system_root_dir/etc/trafficserver' directory
+    snprintf(management_directory, sizeof(management_directory), 
+             "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
+    if ((err = stat(management_directory, &s)) < 0) {
+      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n", 
+                management_directory, err, errno, strerror(errno));
+      fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
+      _exit(1);
+    }
+  }
 
   RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags);
 
@@ -426,7 +514,8 @@ initialize_process_manager()
 
   pmgmt->reconfigure();
 
-  TS_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
+  //TS_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
+  init_dirs();// setup directories
 
   //
   // Define version info records
@@ -1399,15 +1488,40 @@ run_RegressionTest()
 }
 #endif //INK_NO_TESTS
 
-static void
-find_install_dir(void)
-{
-  system_base_install[0] = 0;
-  ink_strncpy(system_base_install, PREFIX, sizeof(system_base_install));
 
-  // change the current working directory to the installed directory
-  NOWARN_UNUSED_RETURN(chdir(system_base_install));
+static void
+chdir_root()
+{
+  char buffer[1024];
+  char *env_path;
+  FILE *ts_file;
+  int i = 0;
+
+  if ((env_path = getenv("TS_ROOT"))) {
+    strncpy(system_root_dir, env_path, PATH_NAME_MAX);
+  } else {
+    if ((ts_file = fopen("/etc/traffic_server", "r")) != NULL) {
+      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
+      fclose(ts_file);
+      while (!isspace(buffer[i])) {
+        system_root_dir[i] = buffer[i];
+        i++;
+      }
+      system_root_dir[i] = '\0';
+    } else {
+      ink_strncpy(system_root_dir, PREFIX, PATH_NAME_MAX);
+    }
+  }
+
+  if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
+    fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
+    fprintf(stderr," please set correct path in env variable TS_ROOT \n");
+    _exit(1);
+  } else {
+    printf("[TrafficServer] using root directory '%s'\n",system_root_dir);
+  }
 }
+
 
 int
 getNumSSLThreads(void)
@@ -1556,8 +1670,7 @@ main(int argc, char **argv)
   // Define the version info
   appVersionInfo.setup("traffic_server", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
-  // Find the install root of traffic server.
-  find_install_dir();
+  chdir_root(); // change directory to the install root of traffic server.
 
   process_args(argument_descriptions, n_argument_descriptions, argv);
 
@@ -1657,11 +1770,11 @@ main(int argc, char **argv)
   {
     XMLDom schema;
     bool xmlBandwidthSchemaRead(XMLNode * node);
-    char *configPath = TS_ConfigReadString("proxy.config.config_dir");
+    //char *configPath = TS_ConfigReadString("proxy.config.config_dir");
     char *filename = TS_ConfigReadString("proxy.config.bandwidth_mgmt.filename");
-    char bwFilename[512];
+    char bwFilename[PATH_NAME_MAX];
 
-    snprintf(bwFilename, sizeof(bwFilename), "%s/%s", configPath, filename);
+    snprintf(bwFilename, sizeof(bwFilename), "%s/%s", system_config_directory, filename);
 
 
     Debug("bw-mgmt", "Looking to read: %s for bw-mgmt", bwFilename);

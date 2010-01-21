@@ -26,7 +26,7 @@
 #include "P_HostDB.h"
 
 #ifndef NON_MODULAR
-char system_config_directory[512] = "conf/yts";
+//char system_config_directory[512] = "conf/yts";
 #else
 #include "Show.h"
 #endif
@@ -330,7 +330,7 @@ HostDBCache::start(int flags)
       szPath[i] = '\\';
     i++;
   }
-  strcpy(storage_path, system_base_install);
+  ink_strncpy(storage_path, system_root_dir, PATH_NAME_MAX);
   strcat(storage_path, DIR_SEP);
   strcat(storage_path, szPath);
 #else
@@ -338,6 +338,15 @@ HostDBCache::start(int flags)
 #endif
   IOCORE_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
 
+  struct stat s;
+  int err;
+  if ((err = stat(storage_path, &s)) < 0) {
+    ink_strncpy(storage_path,system_local_state_dir,PATH_NAME_MAX); 
+    if ((err = stat(storage_path, &s)) < 0) {
+      Warning("Unable to stat() directory '%s': %d %d, %s", storage_path, err, errno, strerror(errno));
+      Warning(" Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir' ");
+    }
+  }
   hostDBStore = NEW(new Store);
   hostDBSpan = NEW(new Span);
   hostDBSpan->init(storage_path, storage_size);

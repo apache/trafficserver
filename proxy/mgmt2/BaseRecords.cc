@@ -35,6 +35,7 @@
 #include "Compatability.h"
 #include "ink_string.h"
 #include "ink_atomic.h"
+#include "Main.h"
 #include "BaseRecords.h"
 #include "RecordsConfig.h"
 #include "MgmtSocket.h"
@@ -86,7 +87,7 @@ destroyRecords(Records * to_destroy)
 
 BaseRecords::BaseRecords(char *mpath, char *cfile, char *efile)
 {
-  char fpath[1024];
+  char fpath[PATH_NAME_MAX];
   InkHashTableEntry *hash_entry;
   InkHashTableIteratorState hash_iterator_state;
 
@@ -126,7 +127,8 @@ BaseRecords::BaseRecords(char *mpath, char *cfile, char *efile)
   plugin_data.recs = (Record *) xmalloc(MAX_PLUGIN_RECORDS * sizeof(Record));
 
   /* For now, we are using a dbm for record sharing */
-  snprintf(fpath, sizeof(fpath), "%s", MGMT_DB_FILENAME);
+  snprintf(fpath, sizeof(fpath), "%s%s%s", system_local_state_dir,DIR_SEP,MGMT_DB_FILENAME);
+  unlink(fpath);
   record_db = new MgmtDBM(fpath);
 
   /* Setup RecordType->record_array mappings */

@@ -35,6 +35,11 @@
 #include "ink_platform.h"
 #include "inktomi++.h"
 
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
+
 class textBuffer;
 
 /* Client side part of CLI */

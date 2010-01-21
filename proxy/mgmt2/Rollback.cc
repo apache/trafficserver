@@ -59,12 +59,14 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
   :
 root_access_needed(root_access_needed_)
 {
-  char configTmp[256];
+  char configTmp[PATH_NAME_MAX];
   version_t highestSeen;        // the highest backup version
   ExpandingArray existVer(25, true);    // Exsisting versions
   struct stat fileInfo;
   MgmtInt numBak;
   char *alarmMsg;
+  struct stat s;
+  int err;
 
   // To Test, Read/Write access to the file
   int testFD;                   // For open test
@@ -87,6 +89,16 @@ root_access_needed(root_access_needed_)
   if (varStrFromName("proxy.config.config_dir", configTmp, 256) == false) {
     mgmt_log(stderr, "[Rollback::Rollback] Unable to find configuration directory from proxy.config.config_dir\n");
     ink_assert(0);
+  }
+
+  if ((err = stat(configTmp, &s)) < 0) {
+    ink_strncpy(configTmp, system_config_directory,PATH_NAME_MAX); 
+    if ((err = stat(configTmp, &s)) < 0) {
+        mgmt_elog("[Rollback::Rollback] unable to stat() directory '%s': %d %d, %s\n", 
+                mgmt_path, err, errno, strerror(errno));
+        mgmt_elog("[Rollback::Rollback] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+        _exit(1);
+    }
   }
 
   if (varIntFromName("proxy.config.admin.number_config_bak", &numBak) == true) {
