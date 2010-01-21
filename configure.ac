@@ -50,6 +50,26 @@ build_machine="`uname -n`"
 AC_DEFINE_UNQUOTED(BUILD_PERSON, "$build_person")
 AC_DEFINE_UNQUOTED(BUILD_MACHINE, "$build_machine")
 
+AC_ARG_WITH([user],
+  [AS_HELP_STRING([--with-user],[specify the system user])],
+  [
+  with_user="$withval"
+  ],[
+  with_user="$build_person"
+  ]
+)
+
+AC_ARG_WITH([group],
+  [AS_HELP_STRING([--with-group],[specify the system group])],
+  [
+  with_group="$withval"
+  ],[
+  with_group="$with_user"
+  ]
+)
+AC_SUBST([pkgsysuser],[$with_user])
+AC_SUBST([pkgsysgroup],[$with_group])
+
 # -----------------------------------------------------------------------------
 # 2. SITE CONFIGURATION
 

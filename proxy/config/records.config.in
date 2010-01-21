@@ -29,7 +29,7 @@ CONFIG proxy.config.watch_script STRING traffic_cop
 CONFIG proxy.config.env_prep STRING example_prep.sh
 CONFIG proxy.config.config_dir STRING @prefix@/etc/@PACKAGE@
 CONFIG proxy.config.temp_dir STRING /tmp
-CONFIG proxy.config.alarm_email STRING nobody
+CONFIG proxy.config.alarm_email STRING @pkgsysuser@
 CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
 CONFIG proxy.config.cop.core_signal INT 0
 CONFIG proxy.config.output.logfile STRING traffic.out
@@ -66,7 +66,7 @@ CONFIG proxy.config.admin.basic_auth INT 1
 CONFIG proxy.config.admin.use_ssl INT 0
 CONFIG proxy.config.admin.ssl_cert_file STRING private_key.pem
 CONFIG proxy.config.admin.number_config_bak INT 3
-CONFIG proxy.config.admin.user_id STRING nobody
+CONFIG proxy.config.admin.user_id STRING @pkgsysuser@
 CONFIG proxy.config.admin.ui_refresh_rate INT 30
 CONFIG proxy.config.admin.log_mgmt_access INT 0
 CONFIG proxy.config.admin.log_resolve_hostname INT 1

@@ -76,7 +76,8 @@ static int rni_killsig = SIGTERM;
 static int killsig = SIGKILL;
 static int coresig = 0;
 
-static char admin_user[80] = "nobody";
+static char sys_user[80] = PKGSYSUSER;
+static char admin_user[80] = PKGSYSUSER;
 static char manager_binary[PATH_MAX] = "traffic_manager";
 static char server_binary[PATH_MAX] = "traffic_server";
 static char manager_options[OPTIONS_LEN_MAX] = "";
@@ -670,10 +671,9 @@ read_config()
 
   // Get the admin user
   read_config_string("proxy.config.admin.user_id", admin_user, sizeof(admin_user));
-
-  // bitch if the admin user is not "nobody"
-  if (strncmp("nobody", admin_user, sizeof(admin_user)) != 0) {
-    cop_log(COP_WARNING, "proxy.config.admin.user_id should be \"nobody\"");
+  // just warn if the admin user is not the configured system user
+  if (strncmp(sys_user, admin_user, sizeof(admin_user)) != 0) {
+    cop_log(COP_WARNING, "proxy.config.admin.user_id should be \"%s\"",sys_user);
   }
 
   read_config_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary));

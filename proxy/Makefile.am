@@ -74,6 +74,7 @@ traffic_server_CPPFLAGS = \
   -DPREFIX=\"$(prefix)\" \
   -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
   -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
+  -DPKGSYSUSER=\"$(pkgsysuser)\" \
   $(AM_CPPFLAGS)
 
 traffic_server_SOURCES = \
@@ -382,7 +383,7 @@ versiondir = $(pkglocalstatedir)
 dist_version_DATA = TS_version
 
 install-exec-local:
-	$(INSTALL) -d -o nobody -g nobody $(pkglocalstatedir) $(pkglogdir) $(pkgsysconfdir) $(pkgsysconfdir)/internal
+	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(pkglocalstatedir) $(pkglogdir) $(pkgsysconfdir) $(pkgsysconfdir)/internal
 	$(INSTALL) -d $(pkglibexecdir)
 
 uninstall-local:
