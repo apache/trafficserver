@@ -247,7 +247,7 @@ void dir_lookaside_cleanup(Part * d);
 void dir_lookaside_remove(CacheKey * key, Part * d);
 void dir_free_entry(Dir * e, int s, Part * d);
 void dir_sync_init();
-void check_dir(Part * d);
+int check_dir(Part * d);
 void dir_clean_part(Part * d);
 void dir_clear_range(int start, int end, Part * d);
 int dir_segment_accounted(int s, Part * d, int offby = 0,

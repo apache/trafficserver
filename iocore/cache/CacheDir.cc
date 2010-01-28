@@ -24,7 +24,7 @@
 
 #include "P_Cache.h"
 
-#define LOOP_CHECK_MODE
+// #define LOOP_CHECK_MODE 1
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD	      1000
 #endif
@@ -295,8 +295,10 @@ dir_bucket_length(Dir * b, int s, Part * d)
   Dir *e = b;
   int i = 0;
   Dir *seg = dir_segment(s, d);
+#ifdef LOOP_CHECK_MODE
   if (dir_bucket_loop_fix(b, s, d))
     return 1;
+#endif
   while (e) {
     i++;
     if (i > 100)
@@ -306,22 +308,21 @@ dir_bucket_length(Dir * b, int s, Part * d)
   return i;
 }
 
-
-void
+int
 check_dir(Part * d)
 {
   int i, s;
   Debug("cache_check_dir", "inside check dir");
   for (s = 0; s < DIR_SEGMENTS; s++) {
     Dir *seg = dir_segment(s, d);
-    ink_debug_assert(dir_bucket_loop_check(dir_from_offset(d->header->freelist[s], seg), seg));
     for (i = 0; i < d->buckets; i++) {
-      Dir RELEASE_UNUSED *b = dir_bucket(i, seg);
-      ink_debug_assert(dir_bucket_length(b, s, d) >= 0);
-      ink_debug_assert(!dir_next(b) || dir_offset(b));
-      ink_debug_assert(dir_bucket_loop_check(b, seg));
+      Dir *b = dir_bucket(i, seg);
+      if (!(dir_bucket_length(b, s, d) >= 0)) return 0;
+      if (!(!dir_next(b) || dir_offset(b))) return 0;
+      if (!(dir_bucket_loop_check(b, seg))) return 0;
     }
   }
+  return 1;
 }
 
 inline void
@@ -372,7 +373,9 @@ dir_clean_bucket(Dir * b, int s, Part * part)
 {
   Dir *e = b, *p = NULL;
   Dir *seg = dir_segment(s, part);
+#ifdef LOOP_CHECK_MODE
   int loop_count = 0;
+#endif
   do {
 #ifdef LOOP_CHECK_MODE
     loop_count++;
@@ -678,8 +681,10 @@ dir_overwrite(CacheKey * key, Part * d, Dir * dir, Dir * overwrite, bool must_ov
   Dir *b = dir_bucket(bi, seg);
   unsigned int t = DIR_MASK_TAG(key->word(1));
   int res = 1;
+#ifdef LOOP_CHECK_MODE
   int loop_count = 0;
   bool loop_possible = true;
+#endif
   Part *part = d;
 #if defined(DEBUG) && defined(CHECK_DIR)
   check_dir(d);
@@ -750,7 +755,9 @@ dir_delete(CacheKey * key, Part * d, Dir * del)
   int b = (key->word(0) / DIR_SEGMENTS) % d->buckets;
   Dir *seg = dir_segment(s, d);
   Dir *e = NULL, *p = NULL;
+#ifdef LOOP_CHECK_MODE
   int loop_count = 0;
+#endif
   Part *part = d;
 #if defined(DEBUG) && defined(CHECK_DIR)
   check_dir(d);
@@ -924,7 +931,6 @@ CacheSync::aio_write(int fd, char *b, int n, ink_off_t o)
 inku64
 dir_entries_used(Part * d)
 {
-
   inku64 full = 0;
   inku64 sfull = 0;
   for (int s = 0; s < DIR_SEGMENTS; full += sfull, s++) {
@@ -939,7 +945,6 @@ dir_entries_used(Part * d)
       while (e) {
         if (dir_offset(e))
           sfull++;
-
         e = next_dir(e, seg);
         if (!e)
           break;
@@ -1340,7 +1345,7 @@ dir_corrupt_bucket(Dir * b, int s, Part * d)
     ink_release_assert(e);
     e = next_dir(e, seg);
   }
-  dir_next(e) = dir_to_offset(e, seg);
+  dir_set_next(e, dir_to_offset(e, seg));
 }
 
 struct CacheDirReg:Continuation
@@ -1457,30 +1462,19 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest * t, int atype, int *status
   }
 
 
-  /* introduce loops */
-  /* in bucket */
-#if 0
-  for (int sno = 0; sno < DIR_SEGMENTS; sno++) {
-    for (int bno = 0; bno < d->buckets; bno++) {
-      // coverity[secure_coding]
-      if (drand48() < 0.01)
-        rprintf(t, "creating loop in bucket %d, seg %d\n", bno, sno);
-      dir_corrupt_bucket(dir_bucket(bno, dir_segment(sno, d)), sno, d);
-    }
-  }
-
-#else
-  Dir *last_collision = 0, *seg1 = 0;
+  Dir dir1;
+  memset(&dir1, 0, sizeof(Dir));
   int s1, b1;
 
-  for (int ntimes = 0; ntimes < 1000; ntimes++) {
+  for (int ntimes = 0; ntimes < 10; ntimes++) {
+#ifdef LOOP_CHECK_MODE
     rprintf(t, "dir_probe in bucket with loop\n");
     rand_CacheKey(&key, thread->mutex);
     s1 = key.word(0) % DIR_SEGMENTS;
     b1 = (key.word(0) / DIR_SEGMENTS) % d->buckets;
     dir_corrupt_bucket(dir_bucket(b1, dir_segment(s1, d)), s1, d);
     dir_insert(&key, d, &dir);
-    last_collision = 0;
+    Dir *last_collision = 0;
     dir_probe(&key, d, &dir, &last_collision);
 
 
@@ -1498,7 +1492,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest * t, int atype, int *status
     b1 = (key.word(0) / DIR_SEGMENTS) % d->buckets;
     CacheKey key1;
     key1.b[1] = 127;
-    Dir dir1 = dir;
+    dir1 = dir;
     dir_set_offset(&dir1, 23);
     dir_insert(&key1, d, &dir1);
     dir_insert(&key, d, &dir);
@@ -1518,7 +1512,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest * t, int atype, int *status
 
     rand_CacheKey(&key, thread->mutex);
     s1 = key.word(0) % DIR_SEGMENTS;
-    seg1 = dir_segment(s1, d);
+    Dir *seg1 = dir_segment(s1, d);
     rprintf(t, "dir_freelist_length in freelist with loop: segment %d\n", s1);
     dir_corrupt_bucket(dir_from_offset(d->header->freelist[s], seg1), s1, d);
     dir_freelist_length(d, s1);
@@ -1532,19 +1526,22 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest * t, int atype, int *status
     dir_corrupt_bucket(dir_bucket(b1, dir_segment(s1, d)), s1, d);
     dir_bucket_length(dir_bucket(b1, dir_segment(s1, d)), s1, d);
 
-
-
+    if (!check_dir(d))
+      ret = REGRESSION_TEST_FAILED;
+#else
+    // test corruption detection
     rand_CacheKey(&key, thread->mutex);
     s1 = key.word(0) % DIR_SEGMENTS;
     b1 = (key.word(0) / DIR_SEGMENTS) % d->buckets;
-    rprintf(t, "check_dir in bucket with loop: segment %d %d %d\n", 3, 23, 17);
-    dir_corrupt_bucket(dir_bucket(b1, dir_segment(3, d)), 3, d);
-    dir_corrupt_bucket(dir_bucket(b1, dir_segment(7, d)), 7, d);
-    dir_corrupt_bucket(dir_bucket(b1, dir_segment(17, d)), 17, d);
-    check_dir(d);
+
+    dir_insert(&key, d, &dir1);
+    dir_insert(&key, d, &dir1);
+
+    dir_corrupt_bucket(dir_bucket(b1, dir_segment(s1, d)), s1, d);
+    if (check_dir(d))
+      ret = REGRESSION_TEST_FAILED;
+#endif
   }
   part_dir_clear(d);
-#endif
-
-  NEW(new CacheDirReg(status));
+  *status = ret;
 }
