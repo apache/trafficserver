@@ -267,7 +267,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
   int pnum = 0;
   RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
   ink_debug_assert(found);
-  if (http_enabled && !found) {
+  if (http_enabled && found) {
     int port = (int) REC_readInteger("proxy.config.http.server_port", &found);
     if (found) {
       proxy_server_port[pnum] = port;
