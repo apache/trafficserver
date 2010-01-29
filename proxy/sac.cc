@@ -53,9 +53,6 @@
 extern int CacheClusteringEnabled;
 int auto_clear_cache_flag = 0;
 
-char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
-char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
-
 // ldap required externals ...
 //int  gldap_auth_enable    = 0;
 //int  gsplit_ldap_enabled  = 0;
@@ -92,6 +89,7 @@ int n_argument_descriptions = SIZE(argument_descriptions);
 int
 main(int argc, char *argv[])
 {
+  char ts_path[PATH_NAME_MAX + 1];
   // build the application information structure
   //
   appVersionInfo.setup(PROGRAM_NAME, PROGRAM_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
@@ -100,6 +98,11 @@ main(int argc, char *argv[])
   //
   snprintf(configDirectoryType, sizeof(configDirectoryType), "S%d", PATH_NAME_MAX - 1);
   process_args(argument_descriptions, n_argument_descriptions, argv);
+
+  // Get TS directory
+  if (0 == get_ts_directory(ts_path)) {
+    ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
+  } 
 
   management_directory[0] = 0;
   strncat(management_directory, system_config_directory, 256 - 1);

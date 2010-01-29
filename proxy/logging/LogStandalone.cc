@@ -41,6 +41,11 @@
 #include "MgmtUtils.h"
 #include "RecordsConfig.h"
 
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
+
 #define LOG_ReadConfigString REC_ReadConfigString
 
 #define HttpBodyFactory		int
@@ -60,12 +65,16 @@ int ftp_accept_file_descriptor = -1;
 int auto_clear_hostdb_flag = 0;
 char proxy_name[256] = "unknown";
 
-char system_config_directory[PATH_NAME_MAX + 1] = "conf/yts";
-char management_directory[256] = "conf/yts";
+char system_root_dir[PATH_NAME_MAX + 1] = DEFAULT_ROOT_DIRECTORY;
+char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
+char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
+char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
+char management_directory[256] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
+
 char error_tags[1024] = "";
 char action_tags[1024] = "";
 char command_string[512] = "";
-char system_root_dir[PATH_NAME_MAX + 1] = DEFAULT_ROOT_DIRECTORY;
+
 
 Diags *diags = NULL;
 DiagsConfig *diagsConfig = NULL;
@@ -124,6 +133,8 @@ static void
 initialize_process_manager()
 {
   ProcessRecords *precs;
+  struct stat s;
+  int err;
 
   mgmt_use_syslog();
 
@@ -136,6 +147,18 @@ initialize_process_manager()
   //
   if (management_directory[strlen(management_directory) - 1] == '/')
     management_directory[strlen(management_directory) - 1] = 0;
+
+  if ((err = stat(management_directory, &s)) < 0) {
+    // Try 'system_root_dir/etc/trafficserver' directory
+    snprintf(management_directory, sizeof(management_directory), 
+             "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
+    if ((err = stat(management_directory, &s)) < 0) {
+      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n", 
+                management_directory, err, errno, strerror(errno));
+      fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
+      _exit(1);
+    }
+  }
 
   // diags should have been initialized by caller, e.g.: sac.cc
   ink_assert(diags);
@@ -200,8 +223,22 @@ check_lockfile(char *config_dir, char *pgm_name)
   int err;
   pid_t holding_pid;
   char lockfile[PATH_NAME_MAX + 1];
+  char lockdir[PATH_NAME_MAX] = DEFAULT_LOCAL_STATE_DIRECTORY;
+  struct stat s;
 
-  int nn = snprintf(lockfile, sizeof(lockfile), "%s/internal/%s_lock", config_dir, pgm_name);
+  if ((err = stat(lockdir, &s)) < 0) {
+    // Try 'system_root_dir/var/trafficserver' directory
+    snprintf(lockdir, sizeof(lockdir), 
+             "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
+    if ((err = stat(lockdir, &s)) < 0) {
+      fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n", 
+                lockdir, err, errno, strerror(errno));
+      fprintf(stderr," please set correct path in env variable TS_ROOT \n");
+      _exit(1);
+    }
+  } 
+  int nn = snprintf(lockfile, sizeof(lockfile),"%s%s%s", lockdir,DIR_SEP,SERVER_LOCK);
+
   ink_assert(nn > 0);
 
   Lockfile server_lockfile(lockfile);
@@ -294,3 +331,49 @@ init_log_standalone_basic(char *pgm_name)
 
   diags_init = 1;
 }
+
+int
+get_ts_directory(char *ts_path)
+{
+  FILE *fp;
+  char *env_path;
+  struct stat s;
+  int err;
+
+  if ((env_path = getenv("TS_ROOT"))) {
+    ink_strncpy(ts_path, env_path, PATH_NAME_MAX);
+  } else {
+    if ((fp = fopen("/etc/traffic_server", "r")) != NULL) {
+      if (fgets(ts_path, PATH_NAME_MAX, fp) == NULL) {
+        fclose(fp);
+        fprintf(stderr,"\nInvalid contents in /etc/traffic_server\n");
+        fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
+        return -1;
+      }
+      // strip newline if it exists
+      int len = strlen(ts_path);
+      if (ts_path[len - 1] == '\n') {
+        ts_path[len - 1] = '\0';
+      }
+      // strip trailing "/" if it exists
+      len = strlen(ts_path);
+      if (ts_path[len - 1] == '/') {
+        ts_path[len - 1] = '\0';
+      }
+      
+      fclose(fp);
+    } else {
+      ink_strncpy(ts_path, PREFIX, PATH_NAME_MAX);
+    }
+  }
+
+  if ((err = stat(ts_path, &s)) < 0) {
+    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n", 
+              ts_path, err, errno, strerror(errno));
+    fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
+    return -1;
+  }
+
+  return 0;
+}
+

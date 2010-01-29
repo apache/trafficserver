@@ -74,16 +74,50 @@ clientCLI::~clientCLI(void)
 }                               // end ~clientCLI()
 
 #ifndef _WIN32
-//fix BZ48417
-void
-clientCLI::readTSdir()
+int
+clientCLI::GetTSDirectory(char *ts_path)
 {
-  char sPath[PATH_NAME_MAX + 1];
-  if (GetTSDirectory(sPath)) {
-    ink_strncpy(sockPath, clientCLI::defaultSockPath, sizeof(sockPath));
+  FILE *fp;
+  char *env_path;
+
+  struct stat s;
+  int err;
+
+  if ((env_path = getenv("TS_ROOT"))) {
+    ink_strncpy(ts_path, env_path, PATH_NAME_MAX);
   } else {
-    ink_snprintf(sockPath, sizeof(sockPath), "%s/cli", sPath);
+    if ((fp = fopen("/etc/traffic_server", "r")) != NULL) {
+      if (fgets(ts_path, PATH_NAME_MAX, fp) == NULL) {
+        fclose(fp);
+        fprintf(stderr,"\nInvalid contents in /etc/traffic_server\n");
+        fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
+        return -1;
+      }
+      // strip newline if it exists
+      int len = strlen(ts_path);
+      if (ts_path[len - 1] == '\n') {
+        ts_path[len - 1] = '\0';
+      }
+      // strip trailing "/" if it exists
+      len = strlen(ts_path);
+      if (ts_path[len - 1] == '/') {
+        ts_path[len - 1] = '\0';
+      }
+      
+      fclose(fp);
+    } else {
+      ink_strncpy(ts_path, PREFIX, PATH_NAME_MAX);
+    }
   }
+
+  if ((err = stat(ts_path, &s)) < 0) {
+    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n", 
+              ts_path, err, errno, strerror(errno));
+    fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
+    return -1;
+  }
+
+  return 0;
 }
 void
 clientCLI::setSockPath(const char *path)

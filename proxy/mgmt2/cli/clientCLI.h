@@ -62,8 +62,8 @@ public:
    ~clientCLI(void);
 
 #ifndef _WIN32
-  void setSockPath(const char *path);
-  void readTSdir();
+   int GetTSDirectory(char *ts_path);
+   void setSockPath(const char *path);
 #else
   void setCliPort(int port);
 #endif

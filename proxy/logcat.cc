@@ -45,9 +45,6 @@
 #include "LogSock.h"
 #include "Log.h"
 
-char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
-char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
-
 // logcat-specific command-line flags
 static int version_flag = 0;
 static int help = 0;

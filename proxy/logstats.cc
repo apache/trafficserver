@@ -56,11 +56,6 @@ using namespace __gnu_cxx;
 #define PROGRAM_VERSION		"1.0"
 #define PROGRAM_NAME		"logstats"
 
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
-
 const int MAX_LOGBUFFER_SIZE = 65536;
 const int DEFAULT_LINE_LEN = 78;
 const double LOG10_1024 = 3.0102999566398116;
@@ -88,14 +83,6 @@ const int JAVA_AS_INT = 1635148138;     // For "javascript"
 const int PLAI_AS_INT = 1767992432;     // For "plain"
 const int IMAG_AS_INT = 1734438249;     // For "image"
 const int HTTP_AS_INT = 1886680168;     // For "http" followed by "s://" or "://"
-
-// Defaults/string constants
-
-// e.g. /usr/local/var/log/trafficserver/logstats.state
-const static char *STATE_FILE = DEFAULT_LOG_DIRECTORY "/logstats.state";
-
-// e.g. /usr/local/var/log/trafficserver
-const static char *LOG_DIR = DEFAULT_LOG_DIRECTORY;
 
 
 // Store our "state" (position in log file etc.)
@@ -287,8 +274,6 @@ struct eqstr
 typedef hash_map < const char *, OriginStats *, hash < const char *>, eqstr > OriginStorage;
 typedef hash_set < const char *, hash < const char *>, eqstr > OriginSet;
 
-char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
-char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Globals, holding the accumulated stats (ok, I'm lazy ...)
@@ -1749,6 +1734,7 @@ open_main_log(char *ymon_notice, const size_t ymon_notice_size)
 }
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // main
 int
@@ -1760,6 +1746,7 @@ main(int argc, char *argv[])
   int res, cnt;
   int main_fd;
   unsigned max_age;
+  char ts_path[PATH_NAME_MAX + 1];
 
   // build the application information structure
   appVersionInfo.setup(PROGRAM_NAME, PROGRAM_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
@@ -1773,6 +1760,14 @@ main(int argc, char *argv[])
   cl.line_len = DEFAULT_LINE_LEN;
   origin_set = NULL;
   parse_errors = 0;
+
+  // Get TS directory
+  if (0 == get_ts_directory(ts_path)) {
+    ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
+    ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s/var/log/trafficserver", system_root_dir);
+  } else {
+    ink_strncpy(system_log_dir, DEFAULT_LOG_DIRECTORY, sizeof(system_log_dir));
+  }
 
   // process command-line arguments
   process_args(argument_descriptions, n_argument_descriptions, argv, USAGE_LINE);
@@ -1867,16 +1862,17 @@ main(int argc, char *argv[])
   hostname = xstrdup(uts_buf.nodename);
 
   // Change directory to the log dir
-  if (chdir(LOG_DIR) < 0) {
-    strncat(ymon_notice, " can't chdir to " DEFAULT_LOG_DIRECTORY, sizeof(ymon_notice) - strlen(ymon_notice) - 1);
+  if (chdir(system_log_dir) < 0) {
+    ink_snprintf(ymon_notice, sizeof(ymon_notice), "can't chdir to %s", system_log_dir);
     my_exit(YMON_CRITICAL, ymon_notice);
   }
 
   if (cl.incremental) {
     // Do the incremental parse of the default squid log.
-    std::string sf_name = STATE_FILE;
+    std::string sf_name(system_log_dir);
     struct stat stat_buf;
     int state_fd;
+    sf_name.append("/logstats.state");
 
     if (cl.state_tag[0] != '\0') {
       sf_name.append(".");
@@ -1961,7 +1957,7 @@ main(int argc, char *argv[])
       last_state.st_ino = stat_buf.st_ino;
 
       // Find the old log file.
-      dirp = opendir(LOG_DIR);
+      dirp = opendir(system_log_dir);
       if (dirp == NULL) {
         strncat(ymon_notice, " can't read log directory", sizeof(ymon_notice) - strlen(ymon_notice) - 1);
         if (ymon_status == YMON_OK)
