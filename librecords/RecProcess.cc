@@ -152,7 +152,9 @@ recv_message_cb__process(RecMessage * msg, RecMessageT msg_type, void *cookie)
   int err;
   if ((err = recv_message_cb(msg, msg_type, cookie)) == REC_ERR_OKAY) {
     if (msg_type == RECG_PULL_ACK) {
+      ink_mutex_acquire(&g_force_req_mutex);
       ink_cond_signal(&g_force_req_cond);
+      ink_mutex_release(&g_force_req_mutex);
     }
   }
   return err;
@@ -331,6 +333,7 @@ RecProcessInitMessage(RecModeT mode_type)
   ink_mutex_init(&g_force_req_mutex, NULL);
   if (mode_type == RECM_CLIENT) {
     send_pull_message(RECG_PULL_REQ);
+    ink_mutex_acquire(&g_force_req_mutex);
     ink_cond_wait(&g_force_req_cond, &g_force_req_mutex);
     ink_mutex_release(&g_force_req_mutex);
   }
