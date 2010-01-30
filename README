@@ -38,13 +38,30 @@ plugins to build large scale web applications.
 
 3. REQUIREMENTS
 
-  Fedora 11:
+  Fedora 11,12:
+    autoconf
+    automake
+    libtool
     gcc-c++
-    glibc-devel.i586
-    db4-devel.i586
-    openssl-devel.i586
-    tcl-devel.i586
-    expat-devel.i586
+    glibc-devel
+    openssl-devel
+    tcl-devel
+    expat-devel
+    db4-devel
+    pcre
+
+  Ubuntu 8.04,8.10,9.10
+    autoconf 
+    automake
+    libtool 
+    g++ 
+    libssl-dev 
+    tcl-dev 
+    expat 
+    libexpat-dev 
+    libdb-dev 
+    libpcre3-dev
+
 
 4. BUILDING FROM SVN REPO
 
