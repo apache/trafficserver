@@ -1433,7 +1433,7 @@ CacheVC::openWriteStartDone(int event, Event * e)
 {
   NOWARN_UNUSED(e);
 
-  int err = ECACHE_NO_DOC;
+  intptr_t err = ECACHE_NO_DOC;
   cancel_trigger();
   if (is_io_in_progress()) {
     if (event != AIO_EVENT_DONE)
@@ -1547,7 +1547,7 @@ CacheVC::openWriteStartBegin(int event, Event * e)
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
 
-  int err;
+  intptr_t err;
   cancel_trigger();
   if (_action.cancelled)
     return free_CacheVC(this);
@@ -1583,7 +1583,7 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheFragType frag_type,
 
   ink_assert(caches[frag_type] == this);
 
-  int res = 0;
+  intptr_t res = 0;
   CacheVC *c = new_CacheVC(cont);
   ProxyMutex *mutex = cont->mutex;
   c->vio.op = VIO::WRITE;
@@ -1649,7 +1649,7 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheHTTPInfo * info, tim
   }
 
   ink_assert(caches[type] == this);
-  int err = 0;
+  intptr_t err = 0;
   int if_writers = (uintptr_t) info == CACHE_ALLOW_MULTIPLE_WRITES;
   CacheVC *c = new_CacheVC(cont);
   ProxyMutex *mutex = cont->mutex;
