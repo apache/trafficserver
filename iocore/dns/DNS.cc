@@ -1801,13 +1801,13 @@ struct DNSRegressionContinuation:Continuation
 };
 
 static char *dns_test_hosts[] = {
-  "tsdev.inktomi.com",
-  "www.best.com",
-  "not.found.com",
+  "www.apple.com",
+  "www.ibm.com",
+  "www.microsoft.com",
   "www.coke.com"
 };
 
 REGRESSION_TEST(DNS) (RegressionTest * t, int atype, int *pstatus) {
-  eventProcessor.schedule_in(NEW(new DNSRegressionContinuation(4, 3, dns_test_hosts, t, atype, pstatus)),
+  eventProcessor.schedule_in(NEW(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus)),
                              HRTIME_SECONDS(1));
 }
