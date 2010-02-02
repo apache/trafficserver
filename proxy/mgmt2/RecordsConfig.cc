@@ -4567,7 +4567,7 @@ RecordsConfigInit()
   int r;
   RecordsConfigIndex = NEW(new MgmtHashTable("records_config_index", false, InkHashTableKeyType_String));
   for (r = 0; RecordsConfig[r].value_type != INVALID; r++) {
-    RecordsConfigIndex->mgmt_hash_table_insert(RecordsConfig[r].name, (void *) r);
+    RecordsConfigIndex->mgmt_hash_table_insert(RecordsConfig[r].name, (void *)(intptr_t)r);
   }
 }
 

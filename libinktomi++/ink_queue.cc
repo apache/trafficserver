@@ -133,7 +133,7 @@ ink_freelist_init(InkFreeList * f,
   f->tail = NULL;
 #endif
 #else
-  SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(NULL), 0);
+  SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
 #endif
 
   f->count = 0;
@@ -528,7 +528,7 @@ ink_atomiclist_init(InkAtomicList * l, const char *name, inku32 offset_to_next)
 #endif
   l->name = name;
   l->offset = offset_to_next;
-  SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(NULL), 0);
+  SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(0), 0);
 }
 
 #if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)

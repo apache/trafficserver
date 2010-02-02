@@ -228,7 +228,7 @@ TransformTerminus::handle_event(int event, void *edata)
               m_event_count, event, (long) m_tvc, (long) m_tvc->m_cont);
 
         m_called_user = 1;
-        m_tvc->m_cont->handleEvent(TRANSFORM_READ_READY, (void *) m_write_vio.nbytes);
+        m_tvc->m_cont->handleEvent(TRANSFORM_READ_READY, (void *)(intptr_t)m_write_vio.nbytes);
       }
     } else {
       int towrite;

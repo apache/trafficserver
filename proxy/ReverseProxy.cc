@@ -55,16 +55,16 @@ static Ptr<ProxyMutex> reconfig_mutex = NULL;
 UrlRewrite *rewrite_table = NULL;
 
 // Tokens for the Callback function
-static const int FILE_CHANGED = 0;
-static const int REVERSE_CHANGED = 1;
-static const int TSNAME_CHANGED = 2;
-static const int AC_PORT_CHANGED = 3;
-static const int TRANS_CHANGED = 4;
-static const int DEFAULT_TO_PAC_CHANGED = 5;
-static const int PRISTINE_HOST_HDR_CHANGED = 6;
-static const int DEFAULT_TO_PAC_PORT_CHANGED = 7;
-static const int URL_REMAP_MODE_CHANGED = 8;
-static const int HTTP_DEFAULT_REDIRECT_CHANGED = 9;
+#define FILE_CHANGED 0
+#define REVERSE_CHANGED 1
+#define TSNAME_CHANGED 2
+#define AC_PORT_CHANGED 3
+#define TRANS_CHANGED 4
+#define DEFAULT_TO_PAC_CHANGED 5
+#define PRISTINE_HOST_HDR_CHANGED 6
+#define DEFAULT_TO_PAC_PORT_CHANGED 7
+#define URL_REMAP_MODE_CHANGED 8
+#define HTTP_DEFAULT_REDIRECT_CHANGED 9
 
 int url_remap_mode;
 

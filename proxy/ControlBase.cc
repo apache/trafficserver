@@ -372,7 +372,7 @@ ControlBase::ProcessModifiers(matcher_line * line_info)
       // coverity[secure_coding]
       if (sscanf(val, "%d", &tmp) == 1) {
         cur_el.type = MOD_IPORT;
-        cur_el.opaque_data = (void *) tmp;
+        cur_el.opaque_data = (void *)(uintptr_t)tmp;
       } else {
         err = ME_BAD_IPORT;
         goto error;

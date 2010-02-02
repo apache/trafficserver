@@ -50,17 +50,17 @@
 // Since we don't want to steal the manager's main thread we get
 // config callbacks, set up an array to store the callback info and
 // then read it periodically
-const int ADV_UI_ENABLED = 0;
-const int AUTH_ENABLED_CB = 1;
-const int AUTH_ADMIN_USER_CB = 2;
-const int AUTH_ADMIN_PASSWD_CB = 3;
-const int AUTH_OTHER_USERS_CB = 4;
-const int LANG_DICT_CB = 5;
-const int LOAD_FACTOR_CB = 6;
-const int MGMT_IP_ALLOW = 7;
-const int REFRESH_RATE_CB = 8;
-const int SSL_ENABLED_CB = 9;
-const int UPDATE_ARRAY_SIZE = 10;
+#define ADV_UI_ENABLED 0
+#define AUTH_ENABLED_CB 1
+#define AUTH_ADMIN_USER_CB 2
+#define AUTH_ADMIN_PASSWD_CB 3
+#define AUTH_OTHER_USERS_CB 4
+#define LANG_DICT_CB 5
+#define LOAD_FACTOR_CB 6
+#define MGMT_IP_ALLOW 7
+#define REFRESH_RATE_CB 8
+#define SSL_ENABLED_CB 9
+#define UPDATE_ARRAY_SIZE 10
 
 int webConfigChanged = 0;
 static int updateArray[UPDATE_ARRAY_SIZE];

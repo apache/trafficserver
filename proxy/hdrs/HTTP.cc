@@ -1970,7 +1970,7 @@ HTTPInfo::marshal(char *buf, int len)
   //    marshalling in to
   if (m_alt->m_request_hdr.valid()) {
     tmp = m_alt->m_request_hdr.m_heap->marshal(buf, len - used);
-    marshal_alt->m_request_hdr.m_heap = (HdrHeap *) (used);
+    marshal_alt->m_request_hdr.m_heap = (HdrHeap *)(intptr_t)used;
     ink_assert(((long) marshal_alt->m_request_hdr.m_heap) < len);
     buf += tmp;
     used += tmp;
@@ -1981,7 +1981,7 @@ HTTPInfo::marshal(char *buf, int len)
 
   if (m_alt->m_response_hdr.valid()) {
     tmp = m_alt->m_response_hdr.m_heap->marshal(buf, len - used);
-    marshal_alt->m_response_hdr.m_heap = (HdrHeap *) (used);
+    marshal_alt->m_response_hdr.m_heap = (HdrHeap *)(intptr_t)used;
     ink_assert(((long) marshal_alt->m_response_hdr.m_heap) < len);
     used += tmp;
   } else {

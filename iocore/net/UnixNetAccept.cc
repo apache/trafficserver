@@ -106,10 +106,10 @@ net_accept(NetAccept * na, void *ep, bool blockable)
         goto Ldone;
       if (na->server.fd != NO_FD && !na->action_->cancelled) {
         if (!blockable)
-          na->action_->continuation->handleEvent(EVENT_ERROR, (void *) res);
+          na->action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
         else {
           MUTEX_LOCK(lock, na->action_->mutex, e->ethread);
-          na->action_->continuation->handleEvent(EVENT_ERROR, (void *) res);
+          na->action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
         }
       }
       count = res;
@@ -390,7 +390,7 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
       }
       if (!action_->cancelled) {
         MUTEX_LOCK(lock, action_->mutex, t);
-        action_->continuation->handleEvent(EVENT_ERROR, (void *) res);
+        action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
         MUTEX_UNTAKE_LOCK(action_->mutex, t);
         IOCORE_MachineFatal("accept thread received fatal error: errno = %d", errno);
       }
@@ -549,7 +549,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
         goto Ldone;
       }
       if (!action_->cancelled)
-        action_->continuation->handleEvent(EVENT_ERROR, (void *) res);
+        action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
       goto Lerror;
     }
     vc->closed = 0;

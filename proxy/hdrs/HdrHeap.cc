@@ -38,10 +38,10 @@
 #include "Diags.h"
 #include "ptrdef.h"
 
-const int HDR_MAX_ALLOC_SIZE = HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap);
-const int HDR_HEAP_HDR_SIZE = ROUND(sizeof(HdrHeap), HDR_PTR_SIZE);
-const int STR_HEAP_HDR_SIZE = sizeof(HdrStrHeap);
-const int MAX_LOST_STR_SPACE = 1024;
+#define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))
+#define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)
+#define STR_HEAP_HDR_SIZE sizeof(HdrStrHeap)
+#define MAX_LOST_STR_SPACE 1024
 
 Allocator hdrHeapAllocator("hdrHeap", HDR_HEAP_DEFAULT_SIZE);
 static HdrHeap proto_heap;
@@ -215,7 +215,7 @@ HdrHeap::allocate_obj(int nbytes, int type)
 
   nbytes = ROUND(nbytes, HDR_PTR_SIZE);
 
-  if (nbytes > HDR_MAX_ALLOC_SIZE) {
+  if (nbytes > (int)HDR_MAX_ALLOC_SIZE) {
     ink_assert(!"alloc too big");
     return NULL;
   }
@@ -274,7 +274,7 @@ HdrHeap::allocate_str(int nbytes)
   //   but I already no that this code path is
   //   safe for forcing a str coalesce so I'm doing
   //   it here for sanity's sake
-  if (m_lost_string_space > MAX_LOST_STR_SPACE) {
+  if (m_lost_string_space > (int)MAX_LOST_STR_SPACE) {
     goto FAILED;
   }
 
@@ -686,7 +686,7 @@ HdrHeap::marshal(char *buf, int len)
   marshal_hdr->m_free_start = NULL;
   marshal_hdr->m_data_start = (char *) HDR_HEAP_HDR_SIZE;       // offset
   marshal_hdr->m_magic = HDR_BUF_MAGIC_MARSHALED;
-  marshal_hdr->m_writeable = false;;
+  marshal_hdr->m_writeable = false;
   marshal_hdr->m_size = ptr_heap_size + HDR_HEAP_HDR_SIZE;
   marshal_hdr->m_next = NULL;
   marshal_hdr->m_free_size = 0;
@@ -694,7 +694,7 @@ HdrHeap::marshal(char *buf, int len)
   marshal_hdr->m_lost_string_space = this->m_lost_string_space;
 
   // We'have one read-only string heap after marshalling
-  marshal_hdr->m_ronly_heap[0].m_heap_start = (char *) marshal_hdr->m_size;     // offset
+  marshal_hdr->m_ronly_heap[0].m_heap_start = (char *)(intptr_t)marshal_hdr->m_size;     // offset
   marshal_hdr->m_ronly_heap[0].m_ref_count_ptr.m_ptr = NULL;
 
   marshal_hdr->m_ronly_heap[1].m_heap_start = NULL;
@@ -1069,7 +1069,7 @@ HdrHeap::inherit_string_heaps(const HdrHeap * inherit_from)
   // Find out if we are building up too much lost space
   int new_lost_space = m_lost_string_space + inherit_from->m_lost_string_space;
 
-  if (free_slots<0 || new_lost_space> MAX_LOST_STR_SPACE) {
+  if (free_slots < 0 || new_lost_space > (int)MAX_LOST_STR_SPACE) {
     // Not enough free slots.  We need to force a coalesce of
     //  string heaps for both old heaps and the inherited from heaps.  
     // Coalesce can't know the inherited str size so we pass it

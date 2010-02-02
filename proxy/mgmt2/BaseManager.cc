@@ -95,7 +95,7 @@ BaseManager::registerMgmtCallback(int msg_id, MgmtCallback cb, void *opaque_cb_d
   MgmtCallbackList *cb_list;
   InkHashTableValue hash_value;
 
-  if (ink_hash_table_lookup(mgmt_callback_table, (InkHashTableKey) msg_id, &hash_value) != 0) {
+  if (ink_hash_table_lookup(mgmt_callback_table, (InkHashTableKey)(intptr_t)msg_id, &hash_value) != 0) {
     cb_list = (MgmtCallbackList *) hash_value;
   } else {
     cb_list = NULL;
@@ -114,7 +114,7 @@ BaseManager::registerMgmtCallback(int msg_id, MgmtCallback cb, void *opaque_cb_d
     cb_list->func = cb;
     cb_list->opaque_data = opaque_cb_data;
     cb_list->next = NULL;
-    ink_hash_table_insert(mgmt_callback_table, (InkHashTableKey) msg_id, cb_list);
+    ink_hash_table_insert(mgmt_callback_table, (InkHashTableKey)(intptr_t)msg_id, cb_list);
   }
   return msg_id;
 }                               /* End BaseManager::registerMgmtCallback */
@@ -164,7 +164,7 @@ void
 BaseManager::executeMgmtCallback(int msg_id, char *data_raw, int data_len)
 {
   InkHashTableValue hash_value;
-  if (ink_hash_table_lookup(mgmt_callback_table, (InkHashTableKey) msg_id, &hash_value) != 0) {
+  if (ink_hash_table_lookup(mgmt_callback_table, (InkHashTableKey)(intptr_t)msg_id, &hash_value) != 0) {
     for (MgmtCallbackList * cb_list = (MgmtCallbackList *) hash_value; cb_list; cb_list = cb_list->next) {
       (*((MgmtCallback) (cb_list->func))) (cb_list->opaque_data, data_raw, data_len);
     }

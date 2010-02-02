@@ -562,7 +562,7 @@ UDPNetProcessor::sendto_re(Continuation * cont,
     cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_COMPLETE, (void *) -1);
     return ACTION_RESULT_DONE;
   } else {
-    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, (void *) nbytes_sent);
+    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, (void *)(intptr_t)nbytes_sent);
     return ACTION_IO_ERROR;
   }
 }

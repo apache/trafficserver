@@ -125,7 +125,7 @@ DynArray<struct lwpTable>arrayLwp(&default_lwpTable, 0);
 
 #define __p_type p_type         //ugly hack? - see resolv.h
 #define D(x) x                  /* for debugging */
-int f1, f2;
+intptr_t f1, f2;
 int framepointer = 0;
 int program_counter = 0;
 #endif  // linux check

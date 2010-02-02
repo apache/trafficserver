@@ -2225,7 +2225,7 @@ CacheContinuation::remoteOpEvent(int event_code, Event * e)
     start_time = 0;
   }
   // for CACHE_EVENT_RESPONSE/XXX the lock was acquired at the higher level
-  int return_error = 0;
+  intptr_t return_error = 0;
   ClusterVCToken *pToken = NULL;
 
 retry:
