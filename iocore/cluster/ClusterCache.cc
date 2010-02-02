@@ -2954,7 +2954,7 @@ int
 CacheContinuation::callbackEvent(int event, Event * e)
 {
   if (!action.cancelled)
-    action.continuation->handleEvent(result, (void *) result_error);
+    action.continuation->handleEvent(result, (void *)(intptr_t)result_error);
   cacheContAllocator_free(this);
   return EVENT_DONE;
 }

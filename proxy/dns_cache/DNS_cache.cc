@@ -416,7 +416,7 @@ start_dns_Proxy(int dns_proxy_fd)
   if (dns_proxy_port == 0)
     dns_proxy_port = DEFAULT_DNS_PROXY_PORT;
 
-  ink_thread_create(dns_udp_receiver, (void *) dns_proxy_port);
+  ink_thread_create(dns_udp_receiver, (void *)(intptr_t)dns_proxy_port);
 }
 
 void *
