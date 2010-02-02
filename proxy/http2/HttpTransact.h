@@ -1156,6 +1156,7 @@ public:
     unsigned int filter_mask;
 
     bool already_downgraded;
+    URL pristine_url;  // pristine url is the url before remap
 
   };
 
@@ -1462,7 +1463,8 @@ congest_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
 congestion_control_crat(0),
 congestion_congested_or_failed(0),
 congestion_connection_opened(0),
-reverse_proxy(false), url_remap_success(false), remap_redirect(NULL), filter_mask(0), already_downgraded(false)
+reverse_proxy(false), url_remap_success(false), remap_redirect(NULL), filter_mask(0), already_downgraded(false),
+pristine_url()
 {
   int
     i;

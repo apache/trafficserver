@@ -842,6 +842,11 @@ HttpSM::state_read_client_request_header(int event, void *data)
     if (HttpConfig::m_master.number_of_redirections)
       enable_redirection = HttpConfig::m_master.redirection_enabled;
 
+    // Preserve pristine url before remap
+    t_state.pristine_url.create(t_state.hdr_info.client_request.url_get()->m_heap);
+    t_state.pristine_url.copy(t_state.hdr_info.client_request.url_get());
+
+
     call_transact_and_set_next_state(HttpTransact::ModifyRequest);
 
     break;

@@ -1959,6 +1959,7 @@ extern "C"
   inkapi INKReturnCode INKHttpTxnHookAdd(INKHttpTxn txnp, INKHttpHookID id, INKCont contp);
   inkapi INKHttpSsn INKHttpTxnSsnGet(INKHttpTxn txnp);
   inkapi int INKHttpTxnClientReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
+  inkapi INKReturnCode INKHttpTxnPristineUrlGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *url_loc);
   inkapi int INKHttpTxnClientRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnServerReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnServerRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);

@@ -5144,6 +5144,32 @@ INKHttpTxnClientReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
   }
 }
 
+// pristine url is the url before remap
+INKReturnCode
+INKHttpTxnPristineUrlGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *url_loc)
+{
+  if (sdk_sanity_check_txn(txnp)!=INK_SUCCESS ||
+    sdk_sanity_check_null_ptr((void*)bufp) != INK_SUCCESS ||
+    sdk_sanity_check_null_ptr((void*)url_loc) != INK_SUCCESS) {
+    return INK_ERROR;
+  }
+  HttpSM *sm = (HttpSM*) txnp;
+  HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);
+
+  if (hptr->valid()) {
+    *bufp = hptr;
+    *url_loc = (INKMLoc)sm->t_state.pristine_url.m_url_impl;
+    sdk_sanity_check_mbuffer(*bufp);
+    if (*url_loc)
+      return INK_SUCCESS;
+    else
+      return INK_ERROR;
+  }
+  else
+    return INK_ERROR;
+}
+
+
 int
 INKHttpTxnClientRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
 {
