@@ -303,8 +303,9 @@ ArgumentDescription argument_descriptions[] = {
 int n_argument_descriptions = SIZE(argument_descriptions);
 
 
+#define set_rlimit(name,max_it,ulim_it) max_out_limit(#name, name, max_it, ulim_it)
 static rlim_t
-max_out_limit(int which, bool max_it = true, bool unlim_it = true)
+max_out_limit(char *name, int which, bool max_it = true, bool unlim_it = true)
 {
   struct rlimit rl;
 
@@ -330,7 +331,7 @@ max_out_limit(int which, bool max_it = true, bool unlim_it = true)
     }
   }
   ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
-
+  //syslog(LOG_NOTICE, "NOTE: %s(%d):cur(%d),max(%d)", name, which, (int)rl.rlim_cur, (int)rl.rlim_max);
   return rl.rlim_cur;
 }
 
@@ -352,7 +353,7 @@ init_system()
   //
   // Delimit file Descriptors
   //
-  fds_limit = max_out_limit(RLIMIT_NOFILE, true, false);
+  fds_limit = set_rlimit(RLIMIT_NOFILE, true, false);
 }
 
 static void
@@ -1187,14 +1188,15 @@ adjust_sys_settings(void)
       lim.rlim_cur = (lim.rlim_max = (rlim_t) fds_throttle);
       if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
         fds_limit = (int) lim.rlim_cur;
+	syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
       }
     }
   }
 
-  max_out_limit(RLIMIT_STACK);
-  max_out_limit(RLIMIT_DATA);
-  max_out_limit(RLIMIT_FSIZE, true, false);
-  max_out_limit(RLIMIT_RSS);
+  set_rlimit(RLIMIT_STACK,true,true);
+  set_rlimit(RLIMIT_DATA,true,true);
+  set_rlimit(RLIMIT_FSIZE, true, false);
+  set_rlimit(RLIMIT_RSS,true,true);
 
 #endif  // linux check
 }

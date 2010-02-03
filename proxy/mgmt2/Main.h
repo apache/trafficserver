@@ -43,7 +43,7 @@
 void MgmtShutdown(int status);
 void fileUpdated(char *fname);
 void runAsUser(char *userName);
-void extractConfigInfo(char *mgmt_path, char *recs_conf, char *userName);
+void extractConfigInfo(char *mgmt_path, char *recs_conf, char *userName, int *fds_throttle);
 void printUsage(void);
 
 extern MgmtPing *icmp_ping;

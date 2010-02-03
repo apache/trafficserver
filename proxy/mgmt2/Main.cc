@@ -76,6 +76,9 @@
 #endif
 
 
+#define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
+
+
 #if (HOST_OS != linux)
 extern "C"
 {
@@ -123,6 +126,8 @@ char mgmt_path[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
 // By default, set the current directory as base
 char *ts_base_dir = ".";
 char *recs_conf = "records.config";
+
+int fds_limit;
 
 typedef void (*PFV) (int);
 #if (HOST_OS != linux) && (HOST_OS != freebsd)
@@ -400,6 +405,66 @@ chdir_root()
   }
 }
 
+#define set_rlimit(name,max_it,ulim_it) max_out_limit(#name, name, max_it, ulim_it)
+static rlim_t
+max_out_limit(char *name, int which, bool max_it = true, bool unlim_it = true)
+{
+  struct rlimit rl;
+
+#if (HOST_OS == linux)
+#  define MAGIC_CAST(x) (enum __rlimit_resource)(x)
+#else
+#  define MAGIC_CAST(x) x
+#endif
+
+  if (max_it) {
+    ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
+    if (rl.rlim_cur != rl.rlim_max) {
+      rl.rlim_cur = rl.rlim_max;
+      ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
+    }
+  }
+
+  if (unlim_it) {
+    ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
+    if (rl.rlim_cur != RLIM_INFINITY) {
+      rl.rlim_cur = (rl.rlim_max = RLIM_INFINITY);
+      ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
+    }
+  }
+  ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
+#ifdef MGMT_USE_SYSLOG
+  //syslog(LOG_NOTICE, "NOTE: %s(%d):cur(%d),max(%d)", name, which, (int)rl.rlim_cur, (int)rl.rlim_max);
+#endif
+  return rl.rlim_cur;
+}
+
+
+static void
+set_process_limits(int fds_throttle)
+{
+  struct rlimit lim;
+
+  // Set needed rlimits (root)
+  set_rlimit(RLIMIT_NOFILE, true, false);
+  set_rlimit(RLIMIT_STACK, true, true);
+  set_rlimit(RLIMIT_DATA, true, true);
+  set_rlimit(RLIMIT_FSIZE, true, false);
+  set_rlimit(RLIMIT_RSS, true, true);
+
+  if (!getrlimit(RLIMIT_NOFILE, &lim)) {
+    if (fds_throttle > (int) (lim.rlim_cur + FD_THROTTLE_HEADROOM)) {
+      lim.rlim_cur = (lim.rlim_max = (rlim_t) fds_throttle);
+      if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
+        fds_limit = (int) lim.rlim_cur;
+#ifdef MGMT_USE_SYSLOG
+	syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+#endif
+      }
+    }
+  }
+
+}
 
 int
 main(int argc, char **argv)
@@ -425,7 +490,7 @@ main(int argc, char **argv)
   bool log_to_syslog = true;
   char userToRunAs[80];
   char config_internal_dir[PATH_MAX];
-
+  int  fds_throttle = -1;
   time_t ticker;
   ink_thread webThrId;
 
@@ -604,7 +669,9 @@ main(int argc, char **argv)
   init_dirs(false);// setup directories
 
   // Get the config info we need while we are still root
-  extractConfigInfo(mgmt_path, recs_conf, userToRunAs);
+  extractConfigInfo(mgmt_path, recs_conf, userToRunAs, &fds_throttle);
+
+  set_process_limits(fds_throttle); // as root
 
   runAsUser(userToRunAs);
 
@@ -1445,37 +1512,38 @@ runAsUser(char *userName)
 //
 //
 void
-extractConfigInfo(char *mgmt_path, char *recs_conf, char *userName)
+extractConfigInfo(char *mgmt_path, char *recs_conf, char *userName, int *fds_throttle)
 {
   char file[1024];
   bool useridFound = false;
+  bool throttleFound = false;
 
   /* Figure out what user we should run as */
   if (mgmt_path && recs_conf) {
     FILE *fin;
-
     ink_snprintf(file, sizeof(file), "%s%s%s.shadow", mgmt_path, DIR_SEP, recs_conf);
     if (!(fin = fopen(file, "r"))) {
-
       ink_snprintf(file, sizeof(file), "%s%s%s", mgmt_path, DIR_SEP, recs_conf);
       if (!(fin = fopen(file, "r"))) {
         mgmt_elog(stderr, "[extractConfigInfo] Unable to open config file(%s)\n", file);
         _exit(1);
       }
     }
-
-    while ((!useridFound) && fgets(file, 1024, fin)) {
-
+    // Get 'user id' and 'network connections throttle limit'
+    while (((!useridFound) || (!throttleFound)) && fgets(file, 1024, fin)) {
       if (strstr(file, "CONFIG proxy.config.admin.user_id STRING")) {
         //coverity[secure_coding]
         if ((sscanf(file, "CONFIG proxy.config.admin.user_id STRING %1023s\n", userName) == 1) &&
             strcmp(userName, "NULL") != 0) {
           useridFound = true;
         }
+      } else if (strstr(file, "CONFIG proxy.config.net.connections_throttle INT")) {
+        if ((sscanf(file, "CONFIG proxy.config.net.connections_throttle INT %d\n", fds_throttle) == 1)) {
+          throttleFound = true;
+        }
       }
 
     }
-
     fclose(fin);
   } else {
     mgmt_elog(stderr, "[extractConfigInfo] Fatal Error: unable to access records file\n");
