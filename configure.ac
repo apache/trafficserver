@@ -55,7 +55,7 @@ AC_ARG_WITH([user],
   [
   with_user="$withval"
   ],[
-  with_user="$build_person"
+  with_user="nobody"
   ]
 )
 
@@ -64,7 +64,7 @@ AC_ARG_WITH([group],
   [
   with_group="$withval"
   ],[
-  with_group="$with_user"
+  with_group="nobody"
   ]
 )
 AC_SUBST([pkgsysuser],[$with_user])
