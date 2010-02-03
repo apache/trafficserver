@@ -120,6 +120,9 @@ extern "C"
     const char *request_query;  /* request query string */
     int request_query_size;     /* request query string size. A negative size means remove it completely. */
 
+    const char *request_matrix; /* request matrix string */
+    int request_matrix_size;    /* request matrix string size. A negative size means remove it completely. */
+
     const char *from_scheme;    /* The "from" scheme (e.g. HTTP) */
     int from_scheme_len;        /* The len of the "from" scheme */
 
@@ -138,6 +141,8 @@ extern "C"
     int new_path_size;          /* new path string size (0 - do not change request path) */
     char new_query[TSREMAP_RRI_MAX_PATH_SIZE];  /* new query string */
     int new_query_size;         /* new query string size (0 - do not change request query) */
+    char new_matrix[TSREMAP_RRI_MAX_PATH_SIZE]; /* new matrix parameter string */
+    int new_matrix_size;        /* new matrix parameter string size (0 - do not change matrix parameters) */
     char redirect_url[TSREMAP_RRI_MAX_REDIRECT_URL];    /* redirect url (to redirect/reject request) */
     int redirect_url_size;      /* redirect url size (0 - empty redirect url string) */
     int require_ssl;            /* Require the toScheme to become SSL (e.g. HTTPS).  */

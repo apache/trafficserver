@@ -123,6 +123,9 @@ RemapPlugins::run_plugin(remap_plugin_info * plugin, char *origURLBuf, int origU
   // Get request query
   rri.request_query = _request_url->query_get(&rri.request_query_size);
 
+  // Get request matrix parameters
+  rri.request_matrix = _request_url->params_get(&rri.request_matrix_size);
+
   // Get toURL host
   rri.remap_to_host = toHost;
   rri.remap_to_host_size = toHostLen;
@@ -142,7 +145,12 @@ RemapPlugins::run_plugin(remap_plugin_info * plugin, char *origURLBuf, int origU
   rri.require_ssl = -1;         // By default, the plugin will not modify the to_scheme
 
   // Used to see if plugin changed anything.
-  rri.new_port = (rri.new_host_size = (rri.new_path_size = (rri.redirect_url_size = (rri.new_query_size = 0))));
+  rri.new_port = 0;
+  rri.new_host_size = 0;
+  rri.new_path_size = 0;
+  rri.redirect_url_size = 0;
+  rri.new_query_size = 0;
+  rri.new_matrix_size = 0;
 
   // Get request Host
   rri.request_host = _request_url->host_get(&rri.request_host_size);
@@ -200,13 +208,21 @@ RemapPlugins::run_plugin(remap_plugin_info * plugin, char *origURLBuf, int origU
         _request_url->path_set(rri.new_path, rri.new_path_size);
       *plugin_modified_path = true;
     }
-    // Finally, update the query string. This has a special case, where a negative
+    // Update the query string. This has a special case, where a negative
     // size value means to remove the query string entirely.
     if (rri.new_query_size != 0) {
       if (rri.new_query_size < 0)
         _request_url->query_set(NULL, 0);
       else
         _request_url->query_set(rri.new_query, rri.new_query_size);
+    }
+    // Update the matrix parameter string. This has a special case, where a negative
+    // size value means to remove the matrix parameter string entirely.
+    if (rri.new_matrix_size != 0) {
+      if (rri.new_matrix_size < 0)
+        _request_url->params_set(NULL, 0);
+      else
+        _request_url->params_set(rri.new_matrix, rri.new_matrix_size);
     }
     // If require_ssl is set, make sure our toScheme is SSL'ified. It's done this way
     // to avoid dealing with weirness (say, a plugin trying to modify the "toScheme"
