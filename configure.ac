@@ -119,21 +119,6 @@ AS_IF([test "x$enable_purify" = "xyes"],
 )
 
 #
-# Disk InkAIO
-#
-
-AC_MSG_CHECKING([whether to enable disk InkAIO])
-AC_ARG_ENABLE([diskinkaio],
-  [AS_HELP_STRING([--enable-diskinkaio],[enable disk InkAIO])],
-  [],
-  [enable_diskinkaio=no]
-)
-AC_MSG_RESULT([$enable_diskinkaio])
-AS_IF([test "x$enable_diskinkaio" = "xyes"],
-  [AC_DEFINE([INKDISKAIO])]
-)
-
-#
 # Micro
 #
 

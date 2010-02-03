@@ -90,9 +90,6 @@ struct AIO_Reqs
   /* Atomic list to temporarily hold the request if the
      lock for a particular queue cannot be acquired */
   InkAtomicList aio_temp_list;
-#ifdef INKDISKAIO
-  ProxyMutexPtr list_mutex;
-#endif
   ink_mutex aio_mutex;
   ink_cond aio_cond;
   int index;                    /* position of this struct in the aio_reqs array */
@@ -118,47 +115,6 @@ public:
 
   int ink_aio_stats(int event, void *data);
 };
-#endif
-
-
-#ifdef INKDISKAIO
-#include "inkaio.h"
-void initialize_thread_for_diskaio(EThread *);
-struct AIOMissEvent:Continuation
-{
-  AIOCallback *cb;
-
-  int mainEvent(int event, Event * e)
-  {
-    if (!cb->action.cancelled)
-      cb->action.continuation->handleEvent(AIO_EVENT_DONE, cb);
-    delete this;
-      return EVENT_DONE;
-  }
-
-  AIOMissEvent(ProxyMutex * amutex, AIOCallback * acb)
-  : Continuation(amutex), cb(acb)
-  {
-    SET_HANDLER(&AIOMissEvent::mainEvent);
-  }
-};
-static ink_off_t kcb_offset, dm_offset, dmid_offset;
-inline INKAIOCB *
-get_kcb(EThread * t)
-{
-  return *((INKAIOCB **) ETHREAD_GET_PTR(t, kcb_offset));
-}
-
-inline Continuation *
-get_dm(EThread * t)
-{
-  return *((Continuation **) ETHREAD_GET_PTR(t, dm_offset));
-}
-inline int
-get_dmid(EThread * t)
-{
-  return *((int *) ETHREAD_GET_PTR(t, dmid_offset));
-}
 #endif
 
 enum aio_stat_enum
