@@ -412,13 +412,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
     return ("PROXY_DRAIN_REQUEST_BODY");
 #endif /* PROXY_DRAIN */
 
-#ifdef IDC
-  case HttpTransact::HTTP_API_BEFORE_SERVE_FROM_CACHE:
-    return ("API_BEFORE_SERVE_FROM_CACHE");
-
-  case HttpTransact::HTTP_API_BEFORE_SERVE_FROM_SERVER:
-    return ("API_BEFORE_SERVE_FROM_SERVER");
-#endif
   //case HttpTransact::AUTH_LOOKUP:
   //  return ("AUTH_LOOKUP");
   case HttpTransact::SEND_QUERY_TO_INCOMING_ROUTER:
@@ -528,18 +521,6 @@ HttpDebugNames::get_api_hook_name(INKHttpHookID t)
     return "INK_HTTP_READ_REQUEST_PRE_REMAP_HOOK";
   case INK_HTTP_LAST_HOOK:
     return "INK_HTTP_LAST_HOOK";
-#ifdef IDC
-  case INK_HTTP_BASE_LOOKUP_COMPLETE_HOOK:
-    return "INK_HTTP_BASE_LOOKUP_COMPLETE_HOOK";
-  case INK_HTTP_BASE_SELECT_ALT_0_HOOK:
-    return "INK_HTTP_BASE_SELECT_ALT_0_HOOK";
-  case INK_HTTP_BASE_SELECT_ALT_1_HOOK:
-    return "INK_HTTP_BASE_SELECT_ALT_1_HOOK";
-  case INK_HTTP_BEFORE_SERVE_FROM_CACHE_HOOK:
-    return "INK_HTTP_BEFORE_SERVE_FROM_CACHE_HOOK";
-  case INK_HTTP_BEFORE_SERVE_FROM_SERVER_HOOK:
-    return "INK_HTTP_BEFORE_SERVE_FROM_SERVER_HOOK";
-#endif
   }
 
   return "unknown hook";

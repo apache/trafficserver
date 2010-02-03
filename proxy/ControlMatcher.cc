@@ -591,25 +591,15 @@ template<class Data, class Result>
   config_file_var = xstrdup(file_var);
   config_file_path[0] = '\0';
 
-#ifdef IDC
-  // With IDC enabled, for the [idc_control] ControlMatcher,
-  // file_var is a file name instead of a config variable.
-  if (!strncmp(name, "[idc_control]", 13)) {
-    strncat(config_file_path, file_var, sizeof(config_file_path) - strlen(config_file_path) - 1);
-  } else {
-#endif
-    REC_ReadConfigStringAlloc(config_file, config_file_var);
+  REC_ReadConfigStringAlloc(config_file, config_file_var);
 
-    if (!(flags & DONT_BUILD_TABLE)) {
-      ink_release_assert(config_file != NULL);
-      ink_strncpy(config_file_path, system_config_directory, sizeof(config_file_path));
-      strncat(config_file_path, DIR_SEP, sizeof(config_file_path) - strlen(config_file_path) - 1);
-      strncat(config_file_path, config_file, sizeof(config_file_path) - strlen(config_file_path) - 1);
-      xfree(config_file);
-    }
-#ifdef IDC
+  if (!(flags & DONT_BUILD_TABLE)) {
+    ink_release_assert(config_file != NULL);
+    ink_strncpy(config_file_path, system_config_directory, sizeof(config_file_path));
+    strncat(config_file_path, DIR_SEP, sizeof(config_file_path) - strlen(config_file_path) - 1);
+    strncat(config_file_path, config_file, sizeof(config_file_path) - strlen(config_file_path) - 1);
+    xfree(config_file);
   }
-#endif
 
   reMatch = NULL;
   hostMatch = NULL;
@@ -920,12 +910,3 @@ template class HostMatcher<CongestionControlRecord, CongestionControlRule>;
 template class HostRegexMatcher<CongestionControlRecord, CongestionControlRule>;
 template class RegexMatcher<CongestionControlRecord, CongestionControlRule>;
 template class IpMatcher<CongestionControlRecord, CongestionControlRule>;
-
-#ifdef IDC
-#include "IDCControlMatcher.h"
-template class ControlMatcher<IDCControlRecord, IDCControlResult>;
-template class HostMatcher<IDCControlRecord, IDCControlResult>;
-template class HostRegexMatcher<IDCControlRecord, IDCControlResult>;
-template class RegexMatcher<IDCControlRecord, IDCControlResult>;
-template class IpMatcher<IDCControlRecord, IDCControlResult>;
-#endif

@@ -183,29 +183,11 @@ extern "C"
 
 /* =====  CacheHttpInfo =====  */
 
-#ifdef IDC
-  inkapi INKReturnCode INKCacheHttpInfoCopy(INKCacheHttpInfo infop_src, INKCacheHttpInfo * infop_dest);
-#else
   inkapi INKCacheHttpInfo INKCacheHttpInfoCopy(INKCacheHttpInfo * infop);
-#endif
-
-#ifdef IDC
-  inkapi INKReturnCode INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
-#else
   inkapi void INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * offset);
-#endif
-
-#ifdef IDC
-  inkapi INKReturnCode INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
-#else
   inkapi void INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * offset);
-#endif
-
-#ifdef IDC
   inkapi INKReturnCode INKCacheHttpInfoDestroy(INKCacheHttpInfo infop);
-#else
-  inkapi void INKCacheHttpInfoDestroy(INKCacheHttpInfo * infop);
-#endif
+
 
 /* =====  ICP =====  */
   inkapi void INKHttpIcpDynamicSet(int value);

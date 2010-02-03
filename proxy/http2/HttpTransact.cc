@@ -3908,13 +3908,6 @@ HttpTransact::HandleResponse(State * s)
     Debug("http_seq", "[HttpTransact::HandleResponse] Response not valid");
   } else {
     Debug("http_seq", "[HttpTransact::HandleResponse] Response valid");
-#ifdef IDC
-    if (diags->on("pe_ms")) {
-      Debug("pe_ms", "[%lld] Inc. resp. code: %d content-len: %d",
-            s->state_machine_id, s->hdr_info.server_response.status_get(),
-            s->hdr_info.server_response.get_content_length());
-    }
-#endif
     initialize_state_variables_from_response(s, &s->hdr_info.server_response);
   }
 
@@ -5305,29 +5298,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
   }
   // all other responses (not 304, 412, 416) are handled here
   else {
-#ifdef IDC
-    // If the next_action is SERVE_FROM_CACHE or SERVER_READ,
-    // then TS will go to another state HTTP_API_BEFORE_SERVE_FROM_...
-    // to invoke plugins that hook at the corresponding hooks.
-    // After plugins finish their works, TS will continue the
-    // regular control flow and processing by going to
-    // AfterApiCalloutBeforeServe_hcoofsr() which essentially
-    // duplicates the processing of the rest of this function.
-    switch (s->next_action) {
-    case SERVE_FROM_CACHE:
-      s->saved_ptr_value1 = (void *) base_response;
-      s->saved_int_value1 = (int) client_response_code;
-      TRANSACT_RETURN(HTTP_API_BEFORE_SERVE_FROM_CACHE, HttpTransact::AfterApiCalloutBeforeServe_hcoofsr);
-      return;
-    case SERVER_READ:
-      s->saved_ptr_value1 = (void *) base_response;
-      s->saved_int_value1 = (int) client_response_code;
-      TRANSACT_RETURN(HTTP_API_BEFORE_SERVE_FROM_SERVER, HttpTransact::AfterApiCalloutBeforeServe_hcoofsr);
-      return;
-    default:
-      break;
-    }
-#endif
     if (((s->next_action == SERVE_FROM_CACHE) ||
          (s->next_action == SERVER_READ)) && s->state_machine->do_transform_open()) {
       set_header_for_transform(s, base_response);
@@ -5338,34 +5308,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
 
   return;
 }
-
-#ifdef IDC
-void
-HttpTransact::AfterApiCalloutBeforeServe_hcoofsr(State * s)
-{
-  HTTPHdr *base_response = (HTTPHdr *) s->saved_ptr_value1;
-  HTTPStatus client_response_code = (HTTPStatus) s->saved_int_value1;
-
-  switch (s->next_action) {
-  case HTTP_API_BEFORE_SERVE_FROM_CACHE:
-    s->next_action = SERVE_FROM_CACHE;
-    break;
-  case HTTP_API_BEFORE_SERVE_FROM_SERVER:
-    s->next_action = SERVER_READ;
-    break;
-  default:
-    ink_assert(!"should be BEFORE_SERVE_FROM_...");
-    break;
-  }
-  if (((s->next_action == SERVE_FROM_CACHE) ||
-       (s->next_action == SERVER_READ)) && s->state_machine->do_transform_open()) {
-    set_header_for_transform(s, base_response);
-  } else {
-    build_response(s, base_response, &s->hdr_info.client_response, s->client_info.http_version, client_response_code);
-  }
-  return;
-}
-#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -5448,28 +5390,6 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State * s)
     break;
   }
 
-#ifdef IDC
-  // If the next_action is SERVE_FROM_CACHE or SERVER_READ,
-  // then TS will go to another state HTTP_API_BEFORE_SERVE_FROM_...
-  // to invoke plugins that hook at the corresponding hooks.
-  // After plugins finish their works, TS will continue the
-  // regular control flow and processing by going to
-  // AfterApiCalloutBeforeServe_hcoofsr() which essentially
-  // duplicates the processing of the rest of this function.
-  switch (s->next_action) {
-  case SERVE_FROM_CACHE:
-    s->saved_ptr_value1 = (void *) warn_text;
-    TRANSACT_RETURN(HTTP_API_BEFORE_SERVE_FROM_CACHE, HttpTransact::AfterApiCalloutBeforeServe_hncoofsr);
-    return;
-  case SERVER_READ:
-    s->saved_ptr_value1 = (void *) warn_text;
-    TRANSACT_RETURN(HTTP_API_BEFORE_SERVE_FROM_SERVER, HttpTransact::AfterApiCalloutBeforeServe_hncoofsr);
-    return;
-  default:
-    break;
-  }
-#endif
-
   HTTPHdr *to_warn;
   if (s->next_action == SERVER_READ && s->state_machine->do_transform_open()) {
     set_header_for_transform(s, &s->hdr_info.server_response);
@@ -5487,39 +5407,6 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State * s)
   return;
 }
 
-#ifdef IDC
-void
-HttpTransact::AfterApiCalloutBeforeServe_hncoofsr(State * s)
-{
-  char *warn_text = (char *) s->saved_ptr_value1;
-  HTTPHdr *to_warn;
-  switch (s->next_action) {
-  case HTTP_API_BEFORE_SERVE_FROM_CACHE:
-    s->next_action = SERVE_FROM_CACHE;
-    break;
-  case HTTP_API_BEFORE_SERVE_FROM_SERVER:
-    s->next_action = SERVER_READ;
-    break;
-  default:
-    ink_assert(!"should be BEFORE_SERVE_FROM_...");
-    break;
-  }
-  if (s->next_action == SERVER_READ && s->state_machine->do_transform_open()) {
-    set_header_for_transform(s, &s->hdr_info.server_response);
-    to_warn = &s->hdr_info.transform_response;
-  } else {
-    build_response(s, &s->hdr_info.server_response, &s->hdr_info.client_response, s->client_info.http_version);
-    to_warn = &s->hdr_info.server_response;
-  }
-
-  if (warn_text) {
-    HttpTransactHeaders::insert_warning_header(s->http_config_param,
-                                               to_warn, HTTP_WARNING_CODE_MISC_WARNING, warn_text, strlen(warn_text));
-  }
-
-  return;
-}
-#endif
 
 void
 HttpTransact::merge_and_update_headers_for_cache_update(State * s)

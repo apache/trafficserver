@@ -23,9 +23,6 @@
 
 #include "ink_platform.h"
 
-#ifdef IDC
-#include "HttpSM.h"
-#endif
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
 #include "HttpTransactCache.h"

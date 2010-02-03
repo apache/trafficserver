@@ -111,9 +111,6 @@ LogAccessHttp::init()
       LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
     } else {
       // If Content-Type field is missing, check for @Content-Type
-      // IDC Header Compression will remove the Content-Type field after
-      // header compression is successful. In its place it adds @Content-Type
-      // for loggging purposes.
       MIMEField *field = m_proxy_response->field_find(HIDDEN_CONTENT_TYPE, HIDDEN_CONTENT_TYPE_LEN);
       if (field) {
         m_proxy_resp_content_type_str = (char *) field->value_get(&m_proxy_resp_content_type_len);

@@ -163,9 +163,6 @@ HttpClientSession::new_transaction()
 
   transact_count++;
   Debug("http_cs", "[%lld] Starting transaction %d using sm [%lld]", con_id, transact_count, current_reader->sm_id);
-#ifdef IDC
-  Debug("pe_ms", "[%lld] sm starting", current_reader->sm_id);
-#endif
 
   current_reader->attach_client_session(this, sm_reader);
 }
@@ -219,9 +216,6 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
 #endif
 
   Debug("http_cs", "[%lld] session born, netvc %p", con_id, new_vc);
-#ifdef IDC
-  Debug("pe_ms", "[%lld] session born, netvc %p", con_id, new_vc);
-#endif
 
   read_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   sm_reader = read_buffer->alloc_reader();

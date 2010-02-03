@@ -90,11 +90,7 @@ extern "C"
   inkapi int INKHttpTxnCntl(INKHttpTxn txnp, INKHttpCntlType cntl, void *data);
 
 /* Protocols APIs */
-#ifndef IDC
   inkapi void INKVConnCacheHttpInfoSet(INKVConn connp, INKCacheHttpInfo infop);
-#else
-  inkapi INKReturnCode INKVConnCacheHttpInfoSet(INKVConn connp, INKCacheHttpInfo infop);
-#endif
 
 /* NetVC API. Experimental, developed for RAFT. No longer used. */
   inkapi void INKVConnInactivityTimeoutSet(INKVConn connp, int timeout);
@@ -106,75 +102,6 @@ extern "C"
 
   inkapi int INKICPCachedReqGet(INKCont contp, INKMBuffer * bufp, INKMLoc * obj);
   inkapi int INKICPCachedRespGet(INKCont contp, INKMBuffer * bufp, INKMLoc * obj);
-
-#ifdef IDC
-// for the base_select_flag in HttpAltInfo
-// Corresponding to enum BaseSelectFlags_t in HttpTransactCache.h
-  enum ApiBaseSelectFlags
-  {
-    INK_API_BASE_SELECT_DONE = 0x0001,
-    INK_API_BASE_SELECT_REPLACE = 0x0002
-  };
-
-  inkapi INKReturnCode INKHttpAltInfoBaseSelectFlagSet(INKHttpAltInfo infop, int flag);
-  inkapi INKReturnCode INKCacheKeyBaseTxnSet(INKCacheKey key, INKHttpTxn txnp);
-  inkapi int INKAtomicCAS(INK32 * ptr, INK32 old_value, INK32 new_value);
-  inkapi int INKAtomicCAS64(INK64 * ptr, INK64 old_value, INK64 new_value);
-  inkapi time_t INKHRTimeToSecond(INK64 hrtime);
-  inkapi int INKHttpTxnIdGet(INKHttpTxn txnp, INKU64 * id);
-
-/****************************************************************************
- * Api for writing HTTP objects directly into the cache.
- ***************************************************************************/
-  inkapi INKReturnCode INKCacheHttpInfoCreate(INKCacheHttpInfo * new_info);
-  inkapi INKReturnCode INKCacheHttpInfoClear(INKCacheHttpInfo infop);
-  inkapi INKReturnCode INKCacheHttpInfoReqSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
-  inkapi INKReturnCode INKCacheHttpInfoRespSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
-  inkapi INKReturnCode INKCacheHttpInfoReqSentTimeSet(INKCacheHttpInfo infop, time_t t);
-  inkapi INKReturnCode INKCacheHttpInfoRespRecvTimeSet(INKCacheHttpInfo infop, time_t t);
-  inkapi INKReturnCode INKCacheHttpInfoReqSentTimeGet(INKCacheHttpInfo infop, time_t * t);
-  inkapi INKReturnCode INKCacheHttpInfoRespRecvTimeGet(INKCacheHttpInfo infop, time_t * t);
-
-  inkapi INKReturnCode INKVConnCacheHttpInfoGet(INKVConn connp, INKCacheHttpInfo * infop_dest);
-
-  inkapi INKReturnCode INKCacheKeyURLSet(INKCacheKey key, INKMBuffer bufp, INKMLoc obj);
-  inkapi INKReturnCode INKCacheKeyReqSet(INKCacheKey key, INKMBuffer bufp, INKMLoc obj);
-  inkapi INKReturnCode INKCacheKeyInfoSet(INKCacheKey key, INKCacheHttpInfo old_infop);
-
-// added for BPMgmt plugin
-  typedef void *INKIDCControlMatcher;
-  typedef void *INKIDCControlResult;
-  typedef void *INKIDCRequestData;
-  typedef void *INKMD5;
-  inkapi INKIDCControlMatcher INKIDCControlMatcherCreate(const char *file_var, const char *name, void *tags);
-  inkapi INKIDCControlResult INKIDCControlResultCreate();
-  inkapi INKIDCRequestData INKIDCRequestDataCreate(INKMBuffer url_bufp, INKMLoc url_offset);
-  inkapi void INKIDCControlResultDestroy(INKIDCControlResult result);
-  inkapi void INKIDCRequestDataDestroy(INKIDCRequestData rdata);
-  inkapi void INKIDCControlGet(INKIDCControlMatcher matcher, INKIDCRequestData rdata, INKIDCControlResult result);
-  inkapi int INKIsIDCEligible(INKIDCControlResult result);
-  inkapi void INKMD5Create(char *buffer, int length, INKU64 * md5);
-
-  typedef enum
-  {
-    INK_CONSUMER_CACHE,
-    INK_CONSUMER_CLIENT
-  } INKConsumerType;
-  inkapi void INKConsumersOfTransformSetup(INKHttpTxn txnp, INKConsumerType type, int skip, int write);
-
-
-/* Alarm */
-  typedef enum
-  {
-    INK_SIGNAL_IDC_BPG_CONFIG_NOT_FOUND = 300,
-    INK_SIGNAL_IDC_BPG_WENT_DOWN = 301
-  } INKIDCAlarmType;
-
-  inkapi int INKIDCSignalWarning(INKIDCAlarmType code, char *msg);
-
-//inkapi int INKMD5Compare(INKMD5 md51, INKMD5 md52);
-// added for BPMgmt Plugin ends
-#endif
 
 #ifdef __cplusplus
 }

@@ -825,17 +825,9 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
     alarm_keeper->signalAlarm(MGMT_ALARM_WDA_RADIUS_CORRUPTED_PACKETS, data_raw);
     break;
     // Wireless plugin signal - end
-    // IDC plugin signal - begin
-  case INK_MGMT_SIGNAL_IDC_BPG_CONFIG_NOT_FOUND:
-    alarm_keeper->signalAlarm(MGMT_ALARM_IDC_BPG_CONFIG_NOT_FOUND, data_raw);
-    break;
-  case INK_MGMT_SIGNAL_IDC_BPG_WENT_DOWN:
-    alarm_keeper->signalAlarm(MGMT_ALARM_IDC_BPG_WENT_DOWN, data_raw);
-    break;
   case INK_MGMT_SIGNAL_SAC_SERVER_DOWN:
     alarm_keeper->signalAlarm(MGMT_ALARM_SAC_SERVER_DOWN, data_raw);
     break;
-    // IDC plugin signal - end
 
   default:
     break;
