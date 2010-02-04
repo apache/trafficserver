@@ -774,6 +774,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
     case RECD_STRING:
       if (r->data_default.rec_string) {
         strncpy(*buf, r->data_default.rec_string, 1023);
+        buf[1023] = '\0';
       } else {
         xfree(*buf);
         *buf = NULL;

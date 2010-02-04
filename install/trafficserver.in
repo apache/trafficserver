@@ -56,13 +56,23 @@ fi
 
 # /usr/bin/lsb_release -rd # Ubuntu release & description info
 
+HEAD=/usr/bin/head
+[ -x $HEAD ] || HEAD=head
+
 # Ubuntu: Do NOT "set -e"
 
 #Ubuntu:PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 DESC="start/stop Traffic Server"
 NAME=trafficserver
-TS_ROOT=${TS_ROOT:-@prefix@}
+
+if [ -f @prefix@/etc/traffic_server ]; then
+  TS_PREFIX=`${HEAD} -1 @prefix@/etc/traffic_server`
+else
+  TS_PREFIX="@prefix@"
+fi
+
+TS_ROOT=${TS_ROOT:-$TS_PREFIX}
 TC_NAME=${TS_NAME:-traffic_cop}
 TM_NAME=${TS_NAME:-traffic_manager}
 TS_NAME=${TS_NAME:-traffic_server}
@@ -91,9 +101,10 @@ else
 fi
 
 
-# Exit if the package is not installed
+# Exit if the package can not be found
 if [ ! -x "$TS_DAEMON" ]; then
-    echo "$TS_DAEMON is not installed"
+    echo "Error: Can not find $TS_DAEMON using TS_ROOT=$TS_ROOT"
+    echo "       Please set TS_ROOT to point to base installation."
     exit 0
 fi 
 

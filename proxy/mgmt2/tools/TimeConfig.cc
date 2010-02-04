@@ -36,6 +36,13 @@
 
 #include "ink_defs.h"
 
+// TODO: consolidate location of these defaults
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
+#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
+
 #define CHANGE_ALL 	0
 #define CHANGE_TIME 	1
 #define CHANGE_DATE 	2
@@ -70,17 +77,17 @@ main(int argc, char *argv[])
   }
   buffer[0] = 0;
 
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
-    strncpy(buffer, env_path, 1023);
+  if ((env_path = getenv("TS_ROOT"))) {
+    strncpy(buffer, env_path, sizeof(buffer) - 1);
   } else {
-    if ((fp = fopen("/etc/traffic_server", "r")) != NULL) {
+    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
       NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
       if (buffer[strlen(buffer) - 1] == '\n') {
         buffer[strlen(buffer) - 1] = '\0';
       }
       fclose(fp);
     } else {
-      strncpy(buffer, "/home/trafficserver", sizeof(buffer) - 1);
+      strncpy(buffer, "/usr/local", sizeof(buffer) - 1);
     }
   }
 

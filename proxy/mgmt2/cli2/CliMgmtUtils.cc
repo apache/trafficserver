@@ -549,7 +549,7 @@ cliCheckIfEnabled(char *command)
 }
 
 int
-GetTSDirectory(char *ts_path)
+GetTSDirectory(char *ts_path, size_t ts_path_len)
 {
   FILE *fp;
   char *env_path;
@@ -558,12 +558,12 @@ GetTSDirectory(char *ts_path)
   int err;
 
   if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, PATH_NAME_MAX);
+    ink_strncpy(ts_path, env_path, ts_path_len);
   } else {
-    if ((fp = fopen("/etc/traffic_server", "r")) != NULL) {
-      if (fgets(ts_path, PATH_NAME_MAX, fp) == NULL) {
+    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
+      if (fgets(ts_path, ts_path_len, fp) == NULL) {
         fclose(fp);
-        Cli_Error("\nInvalid contents in /etc/traffic_server\n");
+        Cli_Error("\nInvalid contents in %s\n",DEFAULT_TS_DIRECTORY_FILE);
         Cli_Error(" Please set correct path in env variable TS_ROOT \n");
         return -1;
       }
@@ -580,7 +580,7 @@ GetTSDirectory(char *ts_path)
       
       fclose(fp);
     } else {
-      ink_strncpy(ts_path, PREFIX, PATH_NAME_MAX);
+      ink_strncpy(ts_path, PREFIX, ts_path_len);
     }
   }
 
@@ -600,7 +600,7 @@ StopTrafficServer()
   char ts_path[512];
   char stop_ts[1024];
 
-  if (GetTSDirectory(ts_path)) {
+  if (GetTSDirectory(ts_path,sizeof(ts_path))) {
     return CLI_ERROR;
   }
   snprintf(stop_ts, sizeof(stop_ts), "%s/bin/stop_traffic_server", ts_path);
@@ -616,7 +616,7 @@ StartTrafficServer()
   char ts_path[512];
   char start_ts[1024];
 
-  if (GetTSDirectory(ts_path)) {
+  if (GetTSDirectory(ts_path,sizeof(ts_path))) {
     return CLI_ERROR;
   }
   // root user should start_traffic_shell as inktomi user

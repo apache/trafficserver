@@ -2849,7 +2849,7 @@ ink_cache_init(ModuleVersion v)
   IOCORE_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
   Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
   if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
-    ink_strncpy(cache_system_config_directory,system_config_directory,PATH_NAME_MAX); 
+    ink_strncpy(cache_system_config_directory,system_config_directory,sizeof(cache_system_config_directory)); 
     if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
       // Try 'system_root_dir/etc/trafficserver' directory
       snprintf(cache_system_config_directory, sizeof(cache_system_config_directory), 

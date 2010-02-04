@@ -170,7 +170,7 @@ Cmd_ConfigRoot(ClientData clientData, Tcl_Interp * interp, int argc, const char 
 
   }
   char ts_path[256];
-  if (GetTSDirectory(ts_path)) {
+  if (GetTSDirectory(ts_path,sizeof(ts_path))) {
     return CLI_ERROR;
   }
 

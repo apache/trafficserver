@@ -320,7 +320,7 @@ init_dirs(bool use_librecords = true)
   }
 
   if ((err = stat(system_config_directory, &s)) < 0) {
-    ink_strncpy(system_config_directory,mgmt_path,PATH_NAME_MAX); 
+    ink_strncpy(system_config_directory,mgmt_path,sizeof(system_config_directory)); 
     if ((err = stat(system_config_directory, &s)) < 0) {
       if (use_librecords)
         REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
@@ -381,9 +381,9 @@ chdir_root()
   int i = 0;
 
   if ((env_path = getenv("TS_ROOT"))) {
-    strncpy(system_root_dir, env_path, PATH_NAME_MAX);
+    ink_strncpy(system_root_dir, env_path, sizeof(system_root_dir));
   } else {
-    if ((ts_file = fopen("/etc/traffic_server", "r")) != NULL) {
+    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
       NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
       fclose(ts_file);
       while (!isspace(buffer[i])) {
@@ -392,7 +392,7 @@ chdir_root()
       }
       system_root_dir[i] = '\0';
     } else {
-      ink_strncpy(system_root_dir, PREFIX, PATH_NAME_MAX);
+      ink_strncpy(system_root_dir, PREFIX, sizeof(system_root_dir));
     }
   }
 
@@ -572,7 +572,7 @@ main(int argc, char **argv)
               exit(1);
             }
 
-            ink_strncpy(mgmt_path, argv[i], PATH_NAME_MAX);
+            ink_strncpy(mgmt_path, argv[i], sizeof(mgmt_path));
             /*
                } else if(strcmp(argv[i], "-lmConf") == 0) {
                ++i;

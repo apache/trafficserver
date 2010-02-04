@@ -48,10 +48,10 @@ main(int argc, char *argv[])
   // traffic_shell binary should use printf to display information onscreen
   CliDisplayPrintf = 1;
 
-  // initialize MgmtAPI using TS directory specified in /etc/traffic_server
-  // or DEFAULT_LOCAL_STATE_DIRECTORY if /etc/traffic_server does not exist
+  // initialize MgmtAPI using TS directory specified in DEFAULT_TS_DIRECTORY_FILE
+  // or DEFAULT_LOCAL_STATE_DIRECTORY if DEFAULT_TS_DIRECTORY_FILE does not exist
 
-  if (GetTSDirectory(ts_path)) {
+  if (GetTSDirectory(ts_path, sizeof(ts_path))) {
     status = INKInit(DEFAULT_LOCAL_STATE_DIRECTORY);
     if (status) {
       printf("INKInit %d: Failed to initialize MgmtAPI in %s\n", status, DEFAULT_LOCAL_STATE_DIRECTORY);

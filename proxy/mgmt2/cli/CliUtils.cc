@@ -32,6 +32,7 @@
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 #include "inktomi++.h"
 #include "CliUtils.h"
+#include "clientCLI.h"
 #include "MgmtSocket.h"
 
 // These functions are stolen from MgmtUtils.cc  I hate copying them since
@@ -297,10 +298,10 @@ cli_write_timeout(int fd, const char *data, int nbytes, ink_hrtime timeout)
 
 /*
  This function is copied from cli2/CliMgmtUtils.cc. Gets the install directory from
-/etc/traffic_server
+DEFAULT_TS_DIRECTORY_FILE
 */
 int
-GetTSDirectory(char *ts_path)
+GetTSDirectory(char *ts_path, size_t ts_path_len)
 {
   FILE *fp;
   const char *env_path;
@@ -308,12 +309,12 @@ GetTSDirectory(char *ts_path)
   int err;
 
   if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, PATH_NAME_MAX);
+    ink_strncpy(ts_path, env_path, ts_path_len);
   } else {
-    if ((fp = fopen("/etc/traffic_server", "r")) != NULL) {
-      if (fgets(ts_path, PATH_NAME_MAX, fp) == NULL) {
+    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
+      if (fgets(ts_path, ts_path_len, fp) == NULL) {
         fclose(fp);
-        printf("\nInvalid contents in /etc/traffic_server\n");
+        printf("\nInvalid contents in %s\n",DEFAULT_TS_DIRECTORY_FILE);
         printf(" Please set correct path in env variable TS_ROOT \n");
         return -1;
       }
@@ -330,7 +331,7 @@ GetTSDirectory(char *ts_path)
       
       fclose(fp);
     } else {
-      ink_strncpy(ts_path, PREFIX, PATH_NAME_MAX);
+      ink_strncpy(ts_path, PREFIX, ts_path_len);
     }
   }
 

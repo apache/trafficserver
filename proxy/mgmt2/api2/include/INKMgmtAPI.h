@@ -76,7 +76,6 @@
 #define NULL 0
 #endif
 
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -1231,7 +1230,7 @@ typedef enum
  *       mgmt plugins should be specified in the records.config variable 
  *       "proxy.config.plugin.plugin_mgmt_dir" (if this directory is a relative
  *       pathname then, it is assumed that it is relative to the root directory
- *       stored in "/etc/traffic_server"). The default value is "conf/yts/plugins_mgmt",
+ *       stored in DEFAULT_TS_DIRECTORY_FILE). The default value is "conf/yts/plugins_mgmt",
  *       which tells Traffic Manager to use the directory plugins_mgmt located in the
  *       same directory as records.config. You should place your shared library (*.so)
  *       into the directory you have specified. 

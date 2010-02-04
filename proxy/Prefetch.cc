@@ -1012,7 +1012,7 @@ PrefetchBlaster::init(PrefetchUrlEntry * entry, HTTPHdr * req_hdr, PrefetchTrans
 
     char ip_buf[16];
     strncpy(ip_buf, ip_str, ip_len);
-    ip_buf[ip_len] = 0;
+    ip_buf[ip_len] = '\0';
 
     entry->child_ip = inet_addr(ip_buf);
   } else

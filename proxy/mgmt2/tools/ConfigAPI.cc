@@ -34,9 +34,17 @@
 #include <string.h>
 #include "inktomi++.h"
 #include "CoreAPI.h"
+
 #include "../utils/XmlUtils.h"
 #include "../../../libinktomi++/SimpleTokenizer.h"
 #include "../api2/include/INKMgmtAPI.h"
+
+// TODO: consolidate location of these defaults
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
+#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
 #define NETCONFIG_HOSTNAME  0
 #define NETCONFIG_GATEWAY   1
@@ -1306,11 +1314,11 @@ Config_FloppyNetRestore()
   // NOTE - this script is system specific, thus if you use this funciton not under LINUX, you need to provide the appropriate 
   // script for the specific OS you use
 
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
-    strncpy(ts_base_dir, env_path, 1023);
+  if ((env_path = getenv("TS_ROOT"))) {
+    ink_strncpy(ts_base_dir, env_path, sizeof(ts_base_dir));
   } else {
-    if ((ts_file = fopen("/etc/traffic_server", "r")) == NULL) {
-      ink_strncpy(ts_base_dir, "/home/trafficserver", sizeof(ts_base_dir));
+    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
+      ink_strncpy(ts_base_dir, "/usr/local", sizeof(ts_base_dir));
     } else {
       NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
       fclose(ts_file);

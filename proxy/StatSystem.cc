@@ -613,7 +613,7 @@ initialize_all_global_stats()
   // Jira TS-21
   REC_ReadConfigString(local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
   if ((err = stat(local_state_dir, &s)) < 0) {
-    ink_strncpy(local_state_dir,system_local_state_dir,PATH_NAME_MAX); 
+    ink_strncpy(local_state_dir,system_local_state_dir,sizeof(local_state_dir)); 
     if ((err = stat(local_state_dir, &s)) < 0) {
       Warning("Unable to stat() local state directory '%s': %d %d, %s", local_state_dir, err, errno, strerror(errno));
       Warning(" Please set 'proxy.config.local_state_dir' to allow statistics collection");

@@ -1134,12 +1134,11 @@ GetRmCfgPath()
   INKString tmp2;
   char *env_path;
 
-  // INST will set ROOT and INST_ROOT properly, try ROOT first
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
-    strcnpy(ts_base_dir, env_path, 1023);
+  if ((env_path = getenv("TS_ROOT"))) {
+    ink_strncpy(ts_base_dir, env_path, sizeof(ts_base_dir));
   } else {
-    if ((ts_file = fopen("/etc/traffic_server", "r")) == NULL) {
-      strcpy(ts_base_dir, "/home/trafficserver");
+    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
+      ink_strncpy(ts_base_dir, "/usr/local",sizeof(ts_base_dir));
     } else {
       fgets(buffer, 1024, ts_file);
       fclose(ts_file);

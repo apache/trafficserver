@@ -1889,7 +1889,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
                "[WebHttp::handle_submit_snapshot] Unable to find configuration directory from proxy.config.config_dir\n");
 
   if ((err = stat(config_dir, &s)) < 0) {
-    ink_strncpy(config_dir, system_config_directory,PATH_NAME_MAX); 
+    ink_strncpy(config_dir, system_config_directory,sizeof(config_dir)); 
     if ((err = stat(config_dir, &s)) < 0) {
         mgmt_elog("[WebHttp::handle_submit_snapshot] unable to stat() directory '%s': %d %d, %s\n", 
                 config_dir, err, errno, strerror(errno));
@@ -5549,17 +5549,16 @@ getTSdirectory(char *ts_path, size_t ts_path_len)
   FILE *fp;
   char *env_path;
 
-  // INST will set ROOT and INST_ROOT properly, try ROOT first
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
-    strcnpy(ts_path, env_path, 255);
+  if ((env_path = getenv("TS_ROOT"))) {
+    ink_strncpy(ts_path, env_path, ts_path_len);
     return 0;
   }
 
-  if ((fp = fopen("/etc/traffic_server", "r")) == NULL) {
-    ink_strncpy(ts_path, "/home/trafficserver", ts_path_len);
+  if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
+    ink_strncpy(ts_path, "/usr/local", ts_path_len);
     return 0;
   }
-  if (fgets(ts_path, 256, fp) == NULL)
+  if (fgets(ts_path, ts_path_len, fp) == NULL)
     return -1;
   // strip newline if it exists
   int len = strlen(ts_path);

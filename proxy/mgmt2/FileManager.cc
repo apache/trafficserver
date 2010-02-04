@@ -87,7 +87,7 @@ FileManager::FileManager()
                "[FileManager::FileManager] Unable to find configuration directory from proxy.config.config_dir\n");
   }
   if ((err = stat(configTmp, &statBuf)) < 0) {
-    ink_strncpy(configTmp, system_config_directory,PATH_NAME_MAX); 
+    ink_strncpy(configTmp, system_config_directory,sizeof(configTmp)); 
     if ((err = stat(configTmp, &statBuf)) < 0) {
         mgmt_elog("[FileManager::FileManager] unable to stat() directory '%s': %d %d, %s\n", 
                 mgmt_path, err, errno, strerror(errno));

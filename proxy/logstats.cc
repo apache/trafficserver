@@ -1762,7 +1762,7 @@ main(int argc, char *argv[])
   parse_errors = 0;
 
   // Get TS directory
-  if (0 == get_ts_directory(ts_path)) {
+  if (0 == get_ts_directory(ts_path,sizeof(ts_path))) {
     ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
     ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s/var/log/trafficserver", system_root_dir);
   } else {
@@ -1778,7 +1778,7 @@ main(int argc, char *argv[])
     cl.ymon = 0;
     cl.incremental = 1;
     if (cl.state_tag[0] == '\0')
-      strncpy(cl.state_tag, "ysar", 5);
+      ink_strncpy(cl.state_tag, "ysar", sizeof(cl.state_tag));
   }
   if (cl.ymon) {
     cl.ysar = 0;

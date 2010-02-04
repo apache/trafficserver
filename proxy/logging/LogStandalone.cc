@@ -41,10 +41,12 @@
 #include "MgmtUtils.h"
 #include "RecordsConfig.h"
 
+// TODO: consolidate location of these defaults
 #define DEFAULT_ROOT_DIRECTORY            PREFIX
 #define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
 #define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
 #define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
+#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
 #define LOG_ReadConfigString REC_ReadConfigString
 
@@ -333,7 +335,7 @@ init_log_standalone_basic(char *pgm_name)
 }
 
 int
-get_ts_directory(char *ts_path)
+get_ts_directory(char *ts_path, size_t ts_path_len)
 {
   FILE *fp;
   char *env_path;
@@ -341,12 +343,12 @@ get_ts_directory(char *ts_path)
   int err;
 
   if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, PATH_NAME_MAX);
+    ink_strncpy(ts_path, env_path, ts_path_len);
   } else {
-    if ((fp = fopen("/etc/traffic_server", "r")) != NULL) {
-      if (fgets(ts_path, PATH_NAME_MAX, fp) == NULL) {
+    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
+      if (fgets(ts_path, ts_path_len, fp) == NULL) {
         fclose(fp);
-        fprintf(stderr,"\nInvalid contents in /etc/traffic_server\n");
+        fprintf(stderr,"\nInvalid contents in %s\n",DEFAULT_TS_DIRECTORY_FILE);
         fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
         return -1;
       }
@@ -363,7 +365,7 @@ get_ts_directory(char *ts_path)
       
       fclose(fp);
     } else {
-      ink_strncpy(ts_path, PREFIX, PATH_NAME_MAX);
+      ink_strncpy(ts_path, PREFIX, ts_path_len);
     }
   }
 

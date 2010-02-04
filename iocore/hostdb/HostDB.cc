@@ -330,7 +330,7 @@ HostDBCache::start(int flags)
       szPath[i] = '\\';
     i++;
   }
-  ink_strncpy(storage_path, system_root_dir, PATH_NAME_MAX);
+  ink_strncpy(storage_path, system_root_dir, sizeof(storage_path));
   strcat(storage_path, DIR_SEP);
   strcat(storage_path, szPath);
 #else
@@ -341,7 +341,7 @@ HostDBCache::start(int flags)
   struct stat s;
   int err;
   if ((err = stat(storage_path, &s)) < 0) {
-    ink_strncpy(storage_path,system_local_state_dir,PATH_NAME_MAX); 
+    ink_strncpy(storage_path,system_local_state_dir,sizeof(storage_path)); 
     if ((err = stat(storage_path, &s)) < 0) {
       Warning("Unable to stat() directory '%s': %d %d, %s", storage_path, err, errno, strerror(errno));
       Warning(" Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir' ");

@@ -45,6 +45,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+// TODO: consolidate location of these defaults
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
+#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
+
 #define NETCONFIG_HOSTNAME  0
 #define NETCONFIG_GATEWAY   1
 #define NETCONFIG_DOMAIN    2
@@ -1104,14 +1111,13 @@ getTSdirectory(char *ts_path, size_t ts_path_len)
   FILE *fp;
   char *env_path;
 
-  // INST will set ROOT and INST_ROOT properly, try ROOT first
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
+  if ((env_path = getenv("TS_ROOT"))) {
     ink_strncpy(ts_path, env_path, ts_path_len);
     return 0;
   }
 
-  if ((fp = fopen("/etc/traffic_server", "r")) == NULL) {
-    ink_strncpy(ts_path, "/home/trafficserver", ts_path_len);
+  if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
+    ink_strncpy(ts_path, "/usr/local", ts_path_len);
     return 0;
   }
 
@@ -1418,11 +1424,11 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     return 1;
   }
 
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
+  if ((env_path = getenv("TS_ROOT"))) {
     ink_strncpy(ts_base_dir, env_path, sizeof(ts_base_dir));
   } else {
-    if ((ts_file = fopen("/etc/traffic_server", "r")) == NULL) {
-      ink_strncpy(ts_base_dir, "/home/trafficserver", sizeof(ts_base_dir));
+    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
+      ink_strncpy(ts_base_dir, "/usr/local", sizeof(ts_base_dir));
     } else {
       NOWARN_UNUSED_RETURN(fgets(buffer, sizeof(buf), ts_file));
       fclose(ts_file);
@@ -3006,12 +3012,12 @@ getTSdirectory(char *ts_path, size_t ts_path_len)
   FILE *fp;
   char *env_path;
 
-  if ((env_path = getenv("ROOT")) || (env_path = getenv("INST_ROOT"))) {
+  if ((env_path = getenv("TS_ROOT"))) {
     ink_strcnpy(ts_path, env_path, ts_path_len);
     return 0;
   }
-  if ((fp = fopen("/etc/traffic_server", "r")) == NULL) {
-    ink_strncpy(ts_path, "/home/trafficserver", ts_path_len);
+  if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
+    ink_strncpy(ts_path, "/usr/local", ts_path_len);
     return 0;
   }
 

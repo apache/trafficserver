@@ -54,10 +54,12 @@ union semun
 #define COP_WARNING  LOG_ERR
 #define COP_DEBUG    LOG_DEBUG
 
+// TODO: consolidate location of these defaults
 #define DEFAULT_ROOT_DIRECTORY            PREFIX
 #define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
 #define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
 #define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
+#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
 static char root_dir[PATH_MAX];
 static char local_state_dir[PATH_MAX];
@@ -2200,7 +2202,7 @@ init_config_dir()
   // directory or the bin/ directory. In either case, there should
   // always be a conf/yts/ directory there.
   //
-  // If there is no /etc/traffic_server file to be found, we will
+  // If there is no DEFAULT_TS_DIRECTORY_FILE file to be found, we will
   // assume there is one in the current working directory.
 
   FILE *ts_file;
@@ -2215,9 +2217,9 @@ init_config_dir()
 
   root_dir[0] = '\0';
   if ((env_path = getenv("TS_ROOT"))) {
-    strncpy(root_dir, env_path, PATH_MAX);
+    strncpy(root_dir, env_path, sizeof(root_dir));
   } else {
-    if ((ts_file = fopen("/etc/traffic_server", "r")) != NULL) {
+    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
       NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
       fclose(ts_file);
       while (!isspace(buffer[i])) {

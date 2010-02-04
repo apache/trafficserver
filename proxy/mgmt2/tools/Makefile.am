@@ -23,7 +23,12 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/api2 \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
-  -I$(top_srcdir)/proxy/mgmt2
+  -I$(top_srcdir)/proxy/mgmt2 \
+  -DPREFIX=\"$(prefix)\" \
+  -DPKGLIBEXECDIR=\"$(pkglibexecdir)\" \
+  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
+  -DPKGLOGDIR=\"$(pkglogdir)\" \
+  -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\"
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)

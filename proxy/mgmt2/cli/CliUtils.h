@@ -46,6 +46,6 @@ ink_hrtime milliTime(void);
 // Client side functions (non-blocking I/O)
 int cli_read_timeout(int fd, char *buf, int maxlen, ink_hrtime timeout);
 int cli_write_timeout(int fd, const char *data, int nbytes, ink_hrtime timeout);
-int GetTSDirectory(char *ts_path);
+int GetTSDirectory(char *ts_path, size_t ts_path_len);
 
 #endif /* _CLI_UTILS_H_ */

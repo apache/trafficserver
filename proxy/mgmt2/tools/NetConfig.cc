@@ -73,6 +73,13 @@ struct ifafilt;
 
 #include "ink_bool.h"
 
+// TODO: consolidate location of these defaults
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
+#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
+
 #define UP_INTERFACE     0
 #define DOWN_INTERFACE   1
 #define HOSTNAME         2
@@ -1654,11 +1661,11 @@ rm_stop_proxy()
   char rec_config[1024];
   char *tmp;
 
-  if ((tmp = getenv("ROOT")) || (tmp = getenv("INST_ROOT"))) {
+  if ((tmp = getenv("TS_ROOT"))) {
     ink_strncpy(ts_base_dir, tmp, sizeof(ts_base_dir));
   } else {
-    if ((ts_file = fopen("/etc/traffic_server", "r")) == NULL) {
-      ink_strncpy(ts_base_dir, "/home/trafficserver", sizeof(ts_base_dir));
+    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
+      ink_strncpy(ts_base_dir, "/usr/local", sizeof(ts_base_dir));
     } else {
       NOWARN_UNUSED_RETURN(fgets(buffer, sizeof(buffer), ts_file));
       fclose(ts_file);

@@ -100,7 +100,7 @@ main(int argc, char *argv[])
   process_args(argument_descriptions, n_argument_descriptions, argv);
 
   // Get TS directory
-  if (0 == get_ts_directory(ts_path)) {
+  if (0 == get_ts_directory(ts_path,sizeof(ts_path))) {
     ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
   } 
 

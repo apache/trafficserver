@@ -122,7 +122,7 @@ MultiCacheBase::initialize(Store * astore, char *afilename,
   nominal_elements = aelements;
   buckets = abuckets;
   strncpy(filename, afilename, PATH_NAME_MAX - 1);
-
+  filename[PATH_NAME_MAX - 1] = '\0';
   //
   //  Allocate level 2 as the outermost
   //
