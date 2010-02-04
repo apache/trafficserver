@@ -11,7 +11,7 @@
 # -----------------------------------------------------------------------------
 # 1. INITIALIZATION
 
-AC_INIT([Traffic Server], [2.0.0], [trafficserver-dev@incubator.apache.org], [trafficserver])
+AC_INIT([Apache Traffic Server], [2.0.0-alpha], [trafficserver-dev@incubator.apache.org], [trafficserver])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign no-installinfo no-installman 1.9.2])

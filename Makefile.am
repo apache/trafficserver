@@ -27,6 +27,10 @@ else
 SUBDIRS =  libinktomi++ iocore librecords proxy doc install
 endif
 
+DIST_BUILD_USER=`id -nu`
+DIST_BUILD_USER_GROUP=`id -ng`
+DISTCHECK_CONFIGURE_FLAGS=--with-user=${DIST_BUILD_USER} --with-group=${DIST_BUILD_USER_GROUP}
+
 doxygen:
 	$(MAKE) -C doc doxygen
 
