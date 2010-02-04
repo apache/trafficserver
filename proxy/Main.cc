@@ -515,7 +515,6 @@ initialize_process_manager()
 
   pmgmt->reconfigure();
 
-  //TS_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
   init_dirs();// setup directories
 
   //

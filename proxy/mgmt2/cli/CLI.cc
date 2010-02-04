@@ -1129,7 +1129,7 @@ handleOverseer(int fd, int mode)
     "    proxy.node.cache.contents.bytes_free = \"56616048\"",
     "    Ok",
     "",
-    "  Variable lists are conf/yts/stats records, separated by commas",
+    "  Variable lists are etc/trafficserver/stats records, separated by commas",
     "",
     NULL
   };

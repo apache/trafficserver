@@ -143,7 +143,7 @@ SafeShell::Run()
 }
 
 
-#define SAFESHELL_CONFIG_FILE "/export/home/inktomi/rubicon/conf/yts/.sfshrc"
+#define SAFESHELL_CONFIG_FILE "etc/trafficserver/.sfshrc"
 
 // The main driver for the SafeShell program. It reads in a config dil
 int

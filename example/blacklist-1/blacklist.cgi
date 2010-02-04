@@ -28,7 +28,7 @@
 # CHANGE: specify the installed directory of traffic server here
 $ts_dir = "/home/inktomi/ts-3.5";
 
-$blacklist_file = "$ts_dir/conf/yts/plugins/blacklist.txt";
+$blacklist_file = "$ts_dir/etc/trafficserver/plugins/blacklist.txt";
 
 sub parse_form {
   local($pairs, $buffer);

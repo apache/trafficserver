@@ -1677,7 +1677,7 @@ rm_stop_proxy()
     }
   }
 
-  snprintf(rec_config, sizeof(rec_config), "%s/conf/yts/records.config", ts_base_dir);
+  snprintf(rec_config, sizeof(rec_config), "%s/etc/trafficserver/records.config", ts_base_dir);
 
   if ((rec_file = fopen(rec_config, "r")) == NULL) {
     //fprintf(stderr, "Error: unable to open %s.\n", rec_config);

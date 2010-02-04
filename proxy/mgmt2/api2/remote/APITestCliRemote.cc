@@ -80,7 +80,7 @@
  * take_snap:<snap_name> - takes the snapshot snap_name
  * restore_snap:<snap_name> restores the snapshot snap_name
  * remove_snap:<snap_name> - removes the snapshot snap_name
- * snapshots - lists all snapshots in conf/yts/snapshot directory
+ * snapshots - lists all snapshots in etc/trafficserver/snapshot directory
  *
  * Diags
  * ----
@@ -2706,7 +2706,7 @@ sync_test()
 void
 test_encrypt_password(char *pwd)
 {
-  if (INKEncryptToFile(pwd, "/export/workareas/lant/tsunami/traffic/sun_dbg/conf/yts/LAN_pwd") != INK_ERR_OKAY)
+  if (INKEncryptToFile(pwd, "/export/workareas/lant/tsunami/traffic/sun_dbg/etc/trafficserver/LAN_pwd") != INK_ERR_OKAY)
     printf("[INKEncryptToFile] could not encrypt %s", pwd);
 }
 
@@ -2840,9 +2840,9 @@ main(int argc, char **argv)
 
   // initialize 
 #if INSTALL_TEST
-  if ((ret = INKInit("../conf/yts/")) != INK_ERR_OKAY)
+  if ((ret = INKInit("../etc/trafficserver/")) != INK_ERR_OKAY)
 #else
-  if ((ret = INKInit("../../../../conf/yts/")) != INK_ERR_OKAY)
+  if ((ret = INKInit("../../../../etc/trafficserver/")) != INK_ERR_OKAY)
 #endif
   {
     print_err("main", ret);

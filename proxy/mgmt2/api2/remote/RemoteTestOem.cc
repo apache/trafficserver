@@ -153,7 +153,7 @@ main(int argc, char *argv[])
   printf("START REMOTE API TEST\n");
 
   // initialize 
-  if (INKInit("../../../../conf/yts/mgmtapisocket") != INK_ERR_OKAY) {
+  if (INKInit("../../../../etc/trafficserver/mgmtapisocket") != INK_ERR_OKAY) {
     printf("INKInit failed!\n");
     return -1;
   }

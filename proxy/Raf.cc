@@ -575,7 +575,7 @@ RafCont::process_query_cmd(char **argv, int argc)
 {
 
   const char stats[] = "/stats/";
-  const char config[] = "/conf/yts/";
+  const char config[] = "/etc/trafficserver/";
 
 
   int qstring_index = 2;
@@ -594,7 +594,7 @@ RafCont::process_query_cmd(char **argv, int argc)
 
   if (strcmp(argv[qstring_index], "/*") == 0) {
     output_resp_hdr(argv[0], 0);
-    output_raf_msg(" /stats {} /conf/yts {}");
+    output_raf_msg(" /stats {} /etc/trafficserver {}");
   } else if (strcmp(argv[qstring_index], "deadhosts") == 0) {
     process_query_deadhosts(argv[0]);
     // return 0;

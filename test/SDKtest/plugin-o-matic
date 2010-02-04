@@ -97,7 +97,7 @@ if [ "$target_host" != "" ]; then
   echo "Starting Traffic Server without plugin"
   echo "" > $temp_config_file
   traffic_server_dir=`$rsh cat /etc/traffic_server`
-  config_file="$rhost$traffic_server_dir/conf/yts/plugin.config"
+  config_file="$rhost$traffic_server_dir/etc/trafficserver/plugin.config"
   $rcp $temp_config_file $config_file &
 
   # clear cache

@@ -44,7 +44,7 @@
 #include "MgmtSocket.h"
 
 #ifndef DEFAULT_LOCAL_STATE_DIRECTORY // FIXME: consolidate defines
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
 #endif
 
 /*

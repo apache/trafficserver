@@ -95,10 +95,10 @@ if (! defined($mylogin)) {
 }
 
 if (!defined($myport)) {
-    if (! (-e "conf/yts/records.config.shadow") && ! ( -e "conf/yts/records.config")) {
-	die "This must be run from traffic/proxy, and you must have conf/yts/records.config.shadow set up.";
+    if (! (-e "etc/trafficserver/records.config.shadow") && ! ( -e "etc/trafficserver/records.config")) {
+	die "This must be run from traffic/proxy, and you must have etc/trafficserver/records.config.shadow set up.";
     }
-    open(S,"<conf/yts/records.config.shadow") || open(S,"<conf/yts/records.config");
+    open(S,"<etc/trafficserver/records.config.shadow") || open(S,"<etc/trafficserver/records.config");
     while (<S>) {
 	if (/proxy.config.http.server_port\s/) {
 	    ($x,$y,$z,$myport) = split(/\s+/);

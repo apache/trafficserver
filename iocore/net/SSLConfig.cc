@@ -41,11 +41,6 @@ bool
 SslConfig
   sslTerminationConfig;
 
-#ifdef NET_FIXME
-#define system_base_install "."
-#define system_config_directory "conf/yts"
-#endif
-
 #ifndef USE_CONFIG_PROCESSOR
 SslConfigParams *
   SslConfig::ssl_config_params;
@@ -162,7 +157,7 @@ SslConfigParams::initialize()
   char *clientCACertRelativePath = NULL;
   char *multicert_config_file = NULL;
 
-  int system_base_install_len = strlen(system_base_install) + 1;
+  int system_root_dir_len = strlen(system_root_dir) + 1;
   int system_config_directory_len = strlen(system_config_directory) + 1;
   int ssl_mode = SSL_TERM_MODE_NONE;
   int ret_val = 0;
@@ -186,8 +181,8 @@ SslConfigParams::initialize()
   /* if ssl is enabled and we require an accelerator */
   if ((termMode & SSL_TERM_MODE_BOTH) && (ssl_accelerator_required & SSL_ACCELERATOR_REQ_BOTH)) {
     if (system(NULL)) {
-      ret_val = system("/home/trafficserver/bin/openssl_accelerated >/dev/null 2>&1");
-      Debug("ssl_accelerator_required", "/home/trafficserver/bin/openssl_accelerated returned %d|%d|(%d)", ret_val,
+      ret_val = system("bin/openssl_accelerated >/dev/null 2>&1");
+      Debug("ssl_accelerator_required", "bin/openssl_accelerated returned %d|%d|(%d)", ret_val,
             WIFEXITED(ret_val), WEXITSTATUS(ret_val));
       if (WEXITSTATUS(ret_val) != 1) {
         if (ssl_accelerator_required & SSL_ACCELERATOR_REQ_MEAN) {
@@ -196,7 +191,7 @@ SslConfigParams::initialize()
           exit(-1);
         } else {
           Error
-            ("You asked to have ssl acceleration only if you have an accelerator card present, but you don't appear to have one [what does /home/trafficserver/bin/openssl_accelerated return?]");
+            ("You asked to have ssl acceleration only if you have an accelerator card present, but you don't appear to have one [what does bin/openssl_accelerated return?]");
           ssl_mode = 0;
           termMode = (SSL_TERMINATION_MODE) ssl_mode;
         }
@@ -269,17 +264,16 @@ SslConfigParams::initialize()
   IOCORE_ReadConfigString(serverCertRelativePath, "proxy.config.ssl.server.cert.path", PATH_NAME_MAX);
 
   const size_t serverCertPathSize =
-    system_base_install_len + strlen(serverCertRelativePath) + strlen(serverCertFilename) + 1;
+    system_root_dir_len + strlen(serverCertRelativePath) + strlen(serverCertFilename) + 2;
   serverCertPath = (char *) xmalloc(serverCertPathSize);
 
-  const size_t serverCertPathOnlySize = system_base_install_len + strlen(serverCertRelativePath) + 5;
+  const size_t serverCertPathOnlySize = system_root_dir_len + strlen(serverCertRelativePath) + 5;
   serverCertPathOnly = (char *) xmalloc(serverCertPathOnlySize);
 
-  ink_strncpy(serverCertPath, system_base_install, serverCertPathSize);
-  strncat(serverCertPath, serverCertRelativePath, (serverCertPathSize - strlen(serverCertPath) - 1));
-  strncat(serverCertPath, "/", (serverCertPathSize - strlen(serverCertPath) - 1));
-  ink_strncpy(serverCertPathOnly, (const char *) serverCertPath, serverCertPathOnlySize);
-  strncat(serverCertPath, serverCertFilename, (serverCertPathSize - strlen(serverCertPath) - 1));
+  snprintf(serverCertPathOnly, serverCertPathOnlySize, "%s%s%s%s",
+	   system_root_dir, DIR_SEP,serverCertRelativePath,DIR_SEP);
+  snprintf(serverCertPath, serverCertPathSize, 
+	   "%s%s",serverCertPathOnly, serverCertFilename);
 
 #ifdef _WIN32
   i = 0;
@@ -346,10 +340,10 @@ SslConfigParams::initialize()
 
   if (ssl_server_private_key_filename != NULL) {
     const size_t serverKeyPathSize =
-      system_base_install_len + strlen(ssl_server_private_key_path) + strlen(ssl_server_private_key_filename) + 1;
+      system_root_dir_len + strlen(ssl_server_private_key_path) + strlen(ssl_server_private_key_filename) + 1;
     serverKeyPath = (char *) xmalloc(serverKeyPathSize);
 
-    ink_strncpy(serverKeyPath, system_base_install, serverKeyPathSize);
+    ink_strncpy(serverKeyPath, system_root_dir, serverKeyPathSize);
     strncat(serverKeyPath, ssl_server_private_key_path, (serverKeyPathSize - strlen(serverKeyPath) - 1));
     strncat(serverKeyPath, "/", (serverKeyPathSize - strlen(serverKeyPath) - 1));
     strncat(serverKeyPath, ssl_server_private_key_filename, (serverKeyPathSize - strlen(serverKeyPath) - 1));
@@ -366,10 +360,10 @@ SslConfigParams::initialize()
   }
 
   if (ssl_server_private_key_path != NULL) {
-    const size_t serverKeyPathOnlySize = system_base_install_len + strlen(ssl_server_private_key_path) + 1;
+    const size_t serverKeyPathOnlySize = system_root_dir_len + strlen(ssl_server_private_key_path) + 1;
     serverKeyPathOnly = (char *) xmalloc(serverKeyPathOnlySize);
 
-    ink_strncpy(serverKeyPathOnly, system_base_install, serverKeyPathOnlySize);
+    ink_strncpy(serverKeyPathOnly, system_root_dir, serverKeyPathOnlySize);
     strncat(serverKeyPathOnly, ssl_server_private_key_path, (serverKeyPathOnlySize - strlen(serverKeyPathOnly) - 1));
     strncat(serverKeyPathOnly, "/", (serverKeyPathOnlySize - strlen(serverKeyPathOnly) - 1));
     xfree(ssl_server_private_key_path);
@@ -386,10 +380,10 @@ SslConfigParams::initialize()
   IOCORE_ReadConfigStringAlloc(CACertRelativePath, "proxy.config.ssl.CA.cert.pathname");
 
   if (CACertRelativePath != NULL) {
-    const size_t CACertPathSize = system_base_install_len + strlen(CACertRelativePath) + 1;
+    const size_t CACertPathSize = system_root_dir_len + strlen(CACertRelativePath) + 1;
     CACertPath = (char *) xmalloc(CACertPathSize);
 
-    ink_strncpy(CACertPath, system_base_install, CACertPathSize);
+    ink_strncpy(CACertPath, system_root_dir, CACertPathSize);
     strncat(CACertPath, CACertRelativePath, (CACertPathSize - strlen(CACertPath) - 1));
 #ifdef _WIN32
     i = 0;
@@ -412,10 +406,10 @@ SslConfigParams::initialize()
 
   if (ssl_client_cert_filename != NULL) {
     const size_t clientCertPathSize =
-      system_base_install_len + strlen(ssl_client_cert_path) + strlen(ssl_client_cert_filename) + 1;
+      system_root_dir_len + strlen(ssl_client_cert_path) + strlen(ssl_client_cert_filename) + 1;
     clientCertPath = (char *) xmalloc(clientCertPathSize);
 
-    ink_strncpy(clientCertPath, system_base_install, clientCertPathSize);
+    ink_strncpy(clientCertPath, system_root_dir, clientCertPathSize);
     strncat(clientCertPath, ssl_client_cert_path, (clientCertPathSize - strlen(clientCertPath) - 1));
     strncat(clientCertPath, "/", (clientCertPathSize - strlen(clientCertPath) - 1));
     strncat(clientCertPath, ssl_client_cert_filename, (clientCertPathSize - strlen(clientCertPath) - 1));
@@ -443,10 +437,10 @@ SslConfigParams::initialize()
 
   if (ssl_client_private_key_filename != NULL) {
     const size_t clientKeyPathSize =
-      system_base_install_len + strlen(ssl_client_private_key_path) + strlen(ssl_client_private_key_filename) + 1;
+      system_root_dir_len + strlen(ssl_client_private_key_path) + strlen(ssl_client_private_key_filename) + 1;
     clientKeyPath = (char *) xmalloc(clientKeyPathSize);
 
-    ink_strncpy(clientKeyPath, system_base_install, clientKeyPathSize);
+    ink_strncpy(clientKeyPath, system_root_dir, clientKeyPathSize);
     strncat(clientKeyPath, ssl_client_private_key_path, (clientKeyPathSize - strlen(clientKeyPath) - 1));
     strncat(clientKeyPath, "/", (clientKeyPathSize - strlen(clientKeyPath) - 1));
     strncat(clientKeyPath, ssl_client_private_key_filename, (clientKeyPathSize - strlen(clientKeyPath) - 1));
@@ -479,8 +473,8 @@ SslConfigParams::initialize()
 // Notice that we don't put the filename at the
 // end of this path.  Its a quirk of the SSL lib interface.
   if (clientCACertRelativePath != NULL) {
-    clientCACertPath = (char *) xmalloc(system_base_install_len + strlen(clientCACertRelativePath) + 1);
-    strcpy(clientCACertPath, system_base_install);
+    clientCACertPath = (char *) xmalloc(system_root_dir_len + strlen(clientCACertRelativePath) + 1);
+    strcpy(clientCACertPath, system_root_dir);
     strcat(clientCACertPath, clientCACertRelativePath);
 #ifdef _WIN32
     i = 0;
@@ -537,7 +531,7 @@ register_ssl_net_configs(void)
 
   IOCORE_RegisterConfigString(RECT_CONFIG,
                               "proxy.config.ssl.server.cert.path",
-                              "/conf/yts", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]+$");
+                              "etc/trafficserver", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]+$");
 
   IOCORE_RegisterConfigString(RECT_CONFIG,
                               "proxy.config.ssl.server.cert_chain.filename", NULL, RECU_DYNAMIC, RECC_STR, NULL);
@@ -565,7 +559,7 @@ register_ssl_net_configs(void)
                               "proxy.config.ssl.client.cert.filename", NULL, RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
 
   IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.client.cert.path", "/conf/yts", RECU_DYNAMIC, RECC_NULL, NULL);
+                              "proxy.config.ssl.client.cert.path", "etc/trafficserver", RECU_DYNAMIC, RECC_NULL, NULL);
 
   IOCORE_RegisterConfigString(RECT_CONFIG,
                               "proxy.config.ssl.client.private_key.filename",

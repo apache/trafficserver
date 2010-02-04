@@ -26,7 +26,7 @@
 #include "P_HostDB.h"
 
 #ifndef NON_MODULAR
-//char system_config_directory[512] = "conf/yts";
+//char system_config_directory[512] = "etc/trafficserver";
 #else
 #include "Show.h"
 #endif
@@ -2366,7 +2366,7 @@ ink_hostdb_init(ModuleVersion v)
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.size", 200000, RECU_DYNAMIC, RECC_NULL, NULL);
 
   IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.hostdb.storage_path", "conf/yts/internal", RECU_DYNAMIC, RECC_NULL, NULL);
+                              "proxy.config.hostdb.storage_path", "etc/trafficserver/internal", RECU_DYNAMIC, RECC_NULL, NULL);
 
   IOCORE_RegisterConfigInteger(RECT_CONFIG,
                                "proxy.config.hostdb.storage_size", 33554432, RECU_DYNAMIC, RECC_NULL, NULL);

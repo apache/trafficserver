@@ -76,7 +76,7 @@ echo $name > /etc/hostname.${network_dev}
 #it has the ip address stored where it will translate stuff
 
 #Remove the existing file
-IPNAT_CONF=/export/home/inktomi/rubicon/conf/yts/ipnat.conf
+IPNAT_CONF=/export/home/inktomi/rubicon/etc/trafficserver/ipnat.conf
 if [ -f $IPNAT_CONF -a -r $IPNAT_CONF ]; then
   rm -f $IPNAT_CONF
   cat >> $IPNAT_CONF << EOF
@@ -88,8 +88,8 @@ EOF
 fi
 
 #Change records.config to reflect new hostname
-RECORDS_CONFIG=/export/home/inktomi/rubicon/conf/yts/records.config
-RECORDS_CONFIG_NEW=/export/home/inktomi/rubicon/conf/yts/records.config_new
+RECORDS_CONFIG=/export/home/inktomi/rubicon/etc/trafficserver/records.config
+RECORDS_CONFIG_NEW=/export/home/inktomi/rubicon/etc/trafficserver/records.config_new
 if [ -f $RECORDS_CONFIG ]; then
  /bin/rm -f $RECORDS_CONFIG_NEW
  sed "s!proxy.config.proxy_name.*!proxy.config.proxy_name STRING $name!" $RE
@@ -101,7 +101,7 @@ fi
 
 #We need to restart TrafficManager and Server again
 TRAFFIC_LINE=/export/home/inktomi/rubicon/bin/traffic_line
-TF=/export/home/inktomi/rubicon/conf/yts/cli
+TF=/export/home/inktomi/rubicon/etc/trafficserver/cli
 if [ -x $TRAFFIC_LINE ]; then
   $TRAFFIC_LINE -p $TF -L
 fi

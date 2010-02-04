@@ -95,7 +95,7 @@ Plugin Installation
 
  The files to include must be located under the directory <plugin_path>/include
  <plugin_path> is the path where the psi.so library is located
- (by default $TS_HOME/conf/yts/plugins)
+ (by default $TS_HOME/etc/trafficserver/plugins)
 
  Start TS as usual. Now any HTTP response with the X-Psi headers will be processed
  by the PSI plugin.

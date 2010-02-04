@@ -177,7 +177,7 @@ REGRESSION_TEST(SDK_API_INKPluginDirGet) (RegressionTest * test, int atype, int 
     return;
   }
 
-  if (strstr(plugin_dir, "conf/yts/plugin") == NULL) {
+  if (strstr(plugin_dir, "etc/trafficserver/plugin") == NULL) {
     SDK_RPRINT(test, "INKPluginDirGet", "TestCase2", TC_FAIL, "plugin dir is incorrect");
     *pstatus = REGRESSION_TEST_FAILED;
     return;
@@ -893,8 +893,8 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
-  // Add "conf/yts" to point to config directory
-  snprintf(input_file_full_path, sizeof(input_file_full_path), "%s%s%s%s", install_dir, DIR_SEP, "conf/yts", DIR_SEP);
+  // Add "etc/trafficserver" to point to config directory
+  snprintf(input_file_full_path, sizeof(input_file_full_path), "%s%s%s%s", install_dir, DIR_SEP, "etc/trafficserver", DIR_SEP);
 
   strncat(input_file_full_path, INPUT_TEXT_FILE, sizeof(INPUT_TEXT_FILE));
 

@@ -56,9 +56,9 @@ union semun
 
 // TODO: consolidate location of these defaults
 #define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "./var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "./etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "./var/log/trafficserver"
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
 #define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
 static char root_dir[PATH_MAX];
@@ -2200,7 +2200,7 @@ init_config_dir()
   // 
   // The traffic_cop binary should be run from either the TS root
   // directory or the bin/ directory. In either case, there should
-  // always be a conf/yts/ directory there.
+  // always be a etc/trafficserver directory there.
   //
   // If there is no DEFAULT_TS_DIRECTORY_FILE file to be found, we will
   // assume there is one in the current working directory.

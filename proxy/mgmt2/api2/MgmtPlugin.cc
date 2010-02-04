@@ -56,7 +56,7 @@
 #endif
 
 static char *plugin_dir = ".";
-static char *config_dir = "../conf/yts";
+static char *config_dir = "../etc/trafficserver";
 
 typedef void (*init_func_t) (int argc, char *argv[]);
 typedef void (*init_func_w_handle_t) (void *handle, int argc, char *argv[]);

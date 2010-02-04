@@ -27,7 +27,7 @@ CONFIG proxy.config.manager_binary STRING traffic_manager
 CONFIG proxy.config.cli_binary STRING traffic_line
 CONFIG proxy.config.watch_script STRING traffic_cop
 CONFIG proxy.config.env_prep STRING example_prep.sh
-CONFIG proxy.config.config_dir STRING @prefix@/etc/@PACKAGE@
+CONFIG proxy.config.config_dir STRING etc/@PACKAGE@
 CONFIG proxy.config.temp_dir STRING /tmp
 CONFIG proxy.config.alarm_email STRING @pkgsysuser@
 CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
@@ -340,7 +340,7 @@ CONFIG proxy.config.http.ftp.binary_transfer_only INT 0
    # 2 - enable language-targeted user response pages
 CONFIG proxy.config.body_factory.enable_customizations INT 0
 CONFIG proxy.config.body_factory.enable_logging INT 0
-CONFIG proxy.config.body_factory.template_sets_dir STRING @prefix@/etc/@PACKAGE@/body_factory
+CONFIG proxy.config.body_factory.template_sets_dir STRING etc/@PACKAGE@/body_factory
    # 0 - never suppress generated responses
    # 1 - always suppress generated responses
    # 2 - suppress responses for intercepted traffic
@@ -501,7 +501,7 @@ CONFIG proxy.config.log2.max_space_mb_for_logs INT 25000
 CONFIG proxy.config.log2.max_space_mb_for_orphan_logs INT 25
 CONFIG proxy.config.log2.max_space_mb_headroom INT 3000
 CONFIG proxy.config.log2.hostname STRING localhost
-CONFIG proxy.config.log2.logfile_dir STRING @prefix@/var/log/@PACKAGE@
+CONFIG proxy.config.log2.logfile_dir STRING var/log/@PACKAGE@
 CONFIG proxy.config.log2.logfile_perm STRING rw-r--r--
 CONFIG proxy.config.log2.custom_logs_enabled INT 0
 # 0: old log format, 1: new xml log format (default)
@@ -665,7 +665,7 @@ CONFIG proxy.config.ssl.server.cert.filename STRING server.pem
 CONFIG proxy.config.ssl.server.cert_chain.filename STRING NULL
    # This is the path that will be used for both single and
    # multi cert systems.
-CONFIG proxy.config.ssl.server.cert.path STRING @prefix@/etc/@PACKAGE@
+CONFIG proxy.config.ssl.server.cert.path STRING etc/@PACKAGE@
    # Fill in private key file and path only if the server's 
    # private key is not contained in the server certificate file.
    # For multiple cert systems, if any private key is not contained
@@ -682,7 +682,7 @@ CONFIG proxy.config.ssl.CA.cert.path STRING NULL
    ################################
 CONFIG proxy.config.ssl.client.verify.server INT 0
 CONFIG proxy.config.ssl.client.cert.filename STRING NULL
-CONFIG proxy.config.ssl.client.cert.path STRING @prefix@/etc/@PACKAGE@
+CONFIG proxy.config.ssl.client.cert.path STRING etc/@PACKAGE@
    # Fill in private key file and path only if the client's 
    # private key is not contained in the client certificate file.
 CONFIG proxy.config.ssl.client.private_key.filename STRING NULL
@@ -730,7 +730,7 @@ CONFIG proxy.config.snmp.snmp_encap_enabled INT 0
 #
 ##############################################################################
    # Directory in which to find plugins
-CONFIG proxy.config.plugin.plugin_dir STRING @prefix@/libexec/@PACKAGE@
+CONFIG proxy.config.plugin.plugin_dir STRING libexec/@PACKAGE@
 ##############################################################################
 #
 # Remote Access Framework

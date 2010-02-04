@@ -1439,7 +1439,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     }
   }
 
-  snprintf(ts_snmp_path, sizeof(ts_snmp_path), "%s/conf/yts/%s", ts_base_dir, TS_SNMP_PATH);
+  snprintf(ts_snmp_path, sizeof(ts_snmp_path), "%s/etc/trafficserver/%s", ts_base_dir, TS_SNMP_PATH);
   if ((fp_ts = fopen(ts_snmp_path, "r")) == NULL && (fp_ts = fopen(ts_snmp_path, "a+")) == NULL) {
     DPRINTF(("[SysAPI] failed to open ts snmp configuration file\n"));
     fclose(fp);
@@ -1776,7 +1776,7 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
     return -1;
   }
 
-  snprintf(snmp_config, sizeof(snmp_config), "%s/conf/yts/snmpd.cnf", ts_path);
+  snprintf(snmp_config, sizeof(snmp_config), "%s/etc/trafficserver/snmpd.cnf", ts_path);
   if ((fp = fopen(snmp_config, "r")) == NULL && (fp = fopen(snmp_config, "a+")) == NULL) {
     DPRINTF(("[SysAPI] failed to open ts snmp script file\n"));
     return 1;

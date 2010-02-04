@@ -50,8 +50,8 @@
 #define DEFAULT_NUMBER_OF_THREADS         sysconf(_SC_NPROCESSORS_ONLN) // number of Net threads
 #endif
 #define DEFAULT_REMOTE_MANAGEMENT_FLAG    0
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "conf/yts"
-#define DEFAULT_MANAGEMENT_DIRECTORY      "conf/yts"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
+#define DEFAULT_MANAGEMENT_DIRECTORY      "etc/trafficserver"
 
 
 char error_tags[1024] = "";

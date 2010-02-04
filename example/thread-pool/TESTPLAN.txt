@@ -35,7 +35,7 @@ Tests setup:
 ------------
  - Update plugin.config to add the psi plugin
  - Generate the include files using the gen_inc.sh tool in thread-pool/include
- - Copy the include files into $TS_HOME/conf/yts/plugins/include
+ - Copy the include files into $TS_HOME/etc/trafficserver/plugins/include
  - Start TS
  - Start SynTest
 
@@ -61,7 +61,7 @@ Tests setup:
 TS setup:
  - Update plugin.config to add the psi plugin
  - Generate the include files using the gen_inc.sh tool in thread-pool/include
- - Copy the include files into $TS_HOME/conf/yts/plugins/include
+ - Copy the include files into $TS_HOME/etc/trafficserver/plugins/include
  - Start TS
 
 SDKTest setup (Refer to SDKTest manual for detailed instructions):

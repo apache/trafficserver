@@ -2623,19 +2623,19 @@ handle_ftp_logging(WebHttpContext * whc, char *tag, char *arg)
   }
 
   if (strcmp(arg, "ftp_logging_enable") == 0) {
-    if (access("conf/yts/internal/ftp_logging.config", F_OK) == 0) {
+    if (access("etc/trafficserver/internal/ftp_logging.config", F_OK) == 0) {
       ink_strncpy(value, "checked", sizeof(value));
     } else {
       ink_strncpy(value, "", sizeof(value));
     }
   } else if (strcmp(arg, "ftp_logging_disable") == 0) {
-    if (access("conf/yts/internal/ftp_logging.config", F_OK) != 0) {
+    if (access("etc/trafficserver/internal/ftp_logging.config", F_OK) != 0) {
       ink_strncpy(value, "checked", sizeof(value));
     } else {
       ink_strncpy(value, "", sizeof(value));
     }
   } else if (strcmp(arg, "FTPServerName") == 0) {
-    f = fopen("conf/yts/internal/ftp_logging.config", "r");
+    f = fopen("etc/trafficserver/internal/ftp_logging.config", "r");
     if (f != NULL) {
       fgets(buffer, 1024, f);
       sscanf(buffer, "%s\n", value);
@@ -2644,7 +2644,7 @@ handle_ftp_logging(WebHttpContext * whc, char *tag, char *arg)
       ink_strncpy(value, "", sizeof(value));
     }
   } else if (strcmp(arg, "FTPUserName") == 0) {
-    f = fopen("conf/yts/internal/ftp_logging.config", "r");
+    f = fopen("etc/trafficserver/internal/ftp_logging.config", "r");
     if (f != NULL) {
       fgets(buffer, 1024, f);
       fgets(buffer, 1024, f);
@@ -2654,7 +2654,7 @@ handle_ftp_logging(WebHttpContext * whc, char *tag, char *arg)
       ink_strncpy(value, "", sizeof(value));
     }
   } else if (strcmp(arg, "FTPRemoteDir") == 0) {
-    f = fopen("conf/yts/internal/ftp_logging.config", "r");
+    f = fopen("etc/trafficserver/internal/ftp_logging.config", "r");
     if (f != NULL) {
       fgets(buffer, 1024, f);
       fgets(buffer, 1024, f);

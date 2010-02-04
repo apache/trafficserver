@@ -98,7 +98,7 @@ main(int argc, char *argv[])
   strncat(start_traffic_server, "/bin/start_traffic_server",
           sizeof(start_traffic_server) - 1 - strlen(start_traffic_server));
   strncpy(no_cop_path, buffer, sizeof(no_cop_path) - 1);
-  strncat(no_cop_path, "/conf/yts/internal/no_cop", sizeof(no_cop_path) - 1 - strlen(no_cop_path));
+  strncat(no_cop_path, "/etc/trafficserver/internal/no_cop", sizeof(no_cop_path) - 1 - strlen(no_cop_path));
   strncpy(zonepath, "/usr/share/zoneinfo/", sizeof(zonepath) - 1);
 
 //  while(access(no_cop_path, F_OK) == -1);

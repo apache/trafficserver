@@ -298,7 +298,7 @@ RafProcessQueryCmd(textBuffer * resp, char **argv, int argc)
 
   const char stats[] = "/stats/";
   // This doesn't seem to be used.
-  //const char config[] = "/conf/yts/";
+  //const char config[] = "/etc/trafficserver/";
 
   int qstring_index = 2;
   while (qstring_index < argc) {
@@ -317,7 +317,7 @@ RafProcessQueryCmd(textBuffer * resp, char **argv, int argc)
   }
 
   if (strcmp(argv[qstring_index], "/*") == 0) {
-    char msg[] = " /stats {} /conf/yts {}";
+    char msg[] = " /stats {} /etc/trafficserver {}";
     RafOutputHeader(resp, argv[0], "0");
     RafOutputArg(resp, msg);
   } else {

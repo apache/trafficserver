@@ -65,7 +65,7 @@ char *net_config_serverCertFilename = "server.pem";
 
 //    # This is the path that will be used for both single and
 //    # multi cert systems.
-char *net_config_serverCertRelativePath = "/conf/yts";
+char *net_config_serverCertRelativePath = "etc/trafficserver";
 
 //    # Fill in private key file and path only if the server's
 //    # private key is not contained in the server certificate file.
@@ -87,7 +87,7 @@ char *net_config_CACertRelativePath = NULL;
 
 int net_config_clientVerify = 0;
 char *net_config_ssl_client_cert_filename = NULL;
-char *net_config_ssl_client_cert_path = "/conf/yts";
+char *net_config_ssl_client_cert_path = "etc/trafficserver";
 
 //    # Fill in private key file and path only if the client's
 //    # private key is not contained in the client certificate file.

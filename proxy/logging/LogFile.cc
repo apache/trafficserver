@@ -475,7 +475,7 @@ LogFile::roll(long interval_start, long interval_end)
   ink_assert(found);
 #endif
 */
-  sprintf(file_name, "%s%s%s%s%s", "../conf/yts", DIR_SEP, "internal", DIR_SEP, "ftp_logging.config");
+  sprintf(file_name, "%s%s%s%s%s", "../etc/trafficserver", DIR_SEP, "internal", DIR_SEP, "ftp_logging.config");
 
   if (access(file_name, F_OK) != 0)
     return 1;

@@ -92,7 +92,7 @@
 #define SPI_TRAFFIC_LINE  "spi_traffic_line.sh"
 #define SPI_TRAFFIC_LINE_ARGS  "1>/usr/tmp/spi_traffic_line.log 2>&1"
 
-#define RECORDS_CONFIG_FILE  INKTOMI_HOME "/rubicon/conf/yts/records.config"
+#define RECORDS_CONFIG_FILE  INKTOMI_HOME "/rubicon/etc/trafficserver/records.config"
 
 
 

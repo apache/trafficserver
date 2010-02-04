@@ -1394,7 +1394,7 @@ Config_FloppyNetRestore()
     bool restoreConfig = true;
     int oldModTime;
     if(!stat(floppy_config_file, &floppyNetConfig)) {
-      FILE *floppyLockFile = fopen("/home/inktomi/5.2.12/conf/yts/internal/floppy.dat", "r+");
+      FILE *floppyLockFile = fopen("/home/inktomi/5.2.12/etc/trafficserver/internal/floppy.dat", "r+");
       if(floppyLockFile != NULL) {
         fscanf(floppyLockFile, "%d", &oldModTime);
         if(oldModTime == floppyNetConfig.st_mtime)

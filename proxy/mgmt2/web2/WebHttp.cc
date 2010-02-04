@@ -5610,7 +5610,7 @@ restoreVsExtFactoryDefault(WebHttpContext * whc)
   // first, try to open factory default file
   if (getTSdirectory(ts_path, sizeof(ts_path)) != 0)
     goto Lunable_to_submit;
-  ink_snprintf(command_path, sizeof(command_path), "%s/conf/yts/plugins/extensions.config.factory.default", ts_path);
+  ink_snprintf(command_path, sizeof(command_path), "%s/etc/trafficserver/plugins/extensions.config.factory.default", ts_path);
   fd = fopen(command_path, "r");
   if (fd == NULL)
     goto FILE_MISSING;
@@ -6184,7 +6184,7 @@ handle_default(WebHttpContext * whc, const char *file)
   } else {
     // don't serve file types that we don't know about; helps to lock
     // down the webserver.  for example, when serving files out the
-    // conf/yts/plugins directory, we don't want to allow the users to
+    // etc/trafficserver/plugins directory, we don't want to allow the users to
     // access the .so/.dll plugin files.
     response_hdr->setStatus(STATUS_NOT_FOUND);
     WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);

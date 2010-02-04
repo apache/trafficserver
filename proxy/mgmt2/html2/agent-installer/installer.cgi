@@ -20,14 +20,14 @@
 echo "<HTML>"
 echo "<H3>Agent Installer Results</H3><P>"
 
-if [ -r conf/yts/records.config.shadow ]
+if [ -r etc/trafficserver/records.config.shadow ]
 then
-    HTMLDIR=`grep "proxy\.config\.admin\.html_doc_root " conf/yts/records.config.shadow | awk '{print $4}'`
-    SERVERPORT=`grep "proxy\.config\.http\.server_port " conf/yts/records.config.shadow | awk '{print $4}'`
+    HTMLDIR=`grep "proxy\.config\.admin\.html_doc_root " etc/trafficserver/records.config.shadow | awk '{print $4}'`
+    SERVERPORT=`grep "proxy\.config\.http\.server_port " etc/trafficserver/records.config.shadow | awk '{print $4}'`
 elif [ -r conf/yts/records.config ]
 then
-    HTMLDIR=`grep "proxy\.config\.admin\.html_doc_root " conf/yts/records.config | awk '{print $4}'`
-    SERVERPORT=`grep "proxy\.config\.http\.server_port " conf/yts/records.config | awk '{print $4}'`
+    HTMLDIR=`grep "proxy\.config\.admin\.html_doc_root " etc/trafficserver/records.config | awk '{print $4}'`
+    SERVERPORT=`grep "proxy\.config\.http\.server_port " etc/trafficserver/records.config | awk '{print $4}'`
 else
     HTMLDIR="../ui"
     SERVERPORT=8080

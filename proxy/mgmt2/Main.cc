@@ -925,12 +925,12 @@ main(int argc, char **argv)
   //For OEM releases we check here whether a floppy with the correct config file exists
   //if it does, we first configure the network, then we continue
   char floppyLockFile[256];
-  ink_snprintf(floppyLockFile, sizeof(floppyLockFile), "./conf/yts/internal/floppy.dat");
+  ink_snprintf(floppyLockFile, sizeof(floppyLockFile), "./etc/trafficserver/internal/floppy.dat");
   struct stat lockFileStat;
   FILE *floppy_lock_fd;
   bool floppyRestore = true;
 
-  // Check for the presence of floppy.dat lock file in the conf/yts/internal directory
+  // Check for the presence of floppy.dat lock file in the etc/trafficserver/internal directory
   // If the lock is found, check if it is more than 120 seconds old.
   // If the lock file is missing or if it is more than 120 seconds old, create a new lock file
   // and restore network settings.

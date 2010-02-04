@@ -307,7 +307,7 @@ sub process_meta_config {
 
 sub process_other_file_blob {
     my ($file_name) = @_;
-    my $file_path = $run_dir . "/conf/yts/" . $file_name;
+    my $file_path = $run_dir . "/etc/trafficserver/" . $file_name;
     
     open(OTHER_FILE, "> $file_path") || die "Failed to write file $file_name: $!\n";
 
@@ -445,7 +445,7 @@ sub output_records_config {
 }
 
 sub output_remap_config {
-    my $remap_file = $run_dir . "/conf/yts/remap.config";
+    my $remap_file = $run_dir . "/etc/trafficserver/remap.config";
     
     open(REMAP_FILE, "> $remap_file") || die "Failed to write file $remap_file: $!\n";
 
@@ -477,7 +477,7 @@ sub output_remap_config {
 }
 
 sub output_ftp_remap_config {
-    my $ftp_remap_file = $run_dir . "/conf/yts/ftp_remap.config";
+    my $ftp_remap_file = $run_dir . "/etc/trafficserver/ftp_remap.config";
     
     open(REMAP_FILE, "> $ftp_remap_file") || die "Failed to write file $ftp_remap_file: $!\n";
 
@@ -509,7 +509,7 @@ sub output_ftp_remap_config {
 }
 
 sub output_ipnat_conf {
-    my $ipnat_file = $run_dir . "/conf/yts/ipnat.conf";
+    my $ipnat_file = $run_dir . "/etc/trafficserver/ipnat.conf";
     
     open(IPNAT_FILE, "> $ipnat_file") || die "Failed to write file $ipnat_file: $!\n";
 
@@ -542,7 +542,7 @@ sub output_ipnat_conf {
 
 
 sub output_filter_config {
-    my $filter_file = $run_dir . "/conf/yts/filter.config";
+    my $filter_file = $run_dir . "/etc/trafficserver/filter.config";
     
     open(FILTER_FILE, "> $filter_file") || die "Failed to write file $filter_file: $!\n";
 
@@ -608,7 +608,7 @@ our @lib_ldap_locations =
  "f_pkg/lib"
  );
  
-our @populate_dirs = ( "bin", "conf/yts", "conf/yts/internal", "logs");
+our @populate_dirs = ( "bin", "etc/trafficserver", "etc/trafficserver/internal", "logs");
 
 our %populate_symlinks =
 ( "bin/traffic_server" => "bin/traffic_server",
@@ -618,8 +618,8 @@ our %populate_symlinks =
   "bin/start_traffic_server" => "bin/start_traffic_server",
   "bin/stop_traffic_server" => "bin/stop_traffic_server",
   "bin/filter_to_policy" => "bin/filter_to_policy",
-  "conf/yts/body_factory" => "conf/yts/body_factory",
-  "conf/yts/plugins" => "conf/yts/plugins",
+  "etc/trafficserver/body_factory" => "etc/trafficserver/body_factory",
+  "etc/trafficserver/plugins" => "etc/trafficserver/plugins",
   "lib" => "lib",
   "ui" => "ui"
 );
@@ -672,8 +672,8 @@ sub populate_run_dir() {
 	}
     }
 
-    my $config_dir_source = $bin_dir . "/conf/yts";
-    my $config_dir_target = $run_dir . "/conf/yts";
+    my $config_dir_source = $bin_dir . "/etc/trafficserver";
+    my $config_dir_target = $run_dir . "/etc/trafficserver";
 
     opendir(CONFIG_SOURCE_DIR, $config_dir_source) ||
 	die "Couldn't open config src dir: $!\n";
@@ -706,7 +706,7 @@ my $records_config_in = "";
 $bin_dir = $input_args{"bin_dir"};
 
 if ($bin_dir) {
-    $records_config_in = $bin_dir . "/conf/yts/records.config";
+    $records_config_in = $bin_dir . "/etc/trafficserver/records.config";
 } else {
     warn("bin_dir not sent\n");
     exit(1);
@@ -717,10 +717,10 @@ my $no_run_dir = $input_args{"no_run_dir"};
 
 my $records_config_out;
 if ($no_run_dir) {
-    $records_config_out = $bin_dir . "/conf/yts/records.config.shadow";
+    $records_config_out = $bin_dir . "/etc/trafficserver/records.config.shadow";
     $run_dir = $bin_dir;
 } else {
-    $records_config_out = $run_dir . "/conf/yts/records.config";
+    $records_config_out = $run_dir . "/etc/trafficserver/records.config";
 }
 
 if (!$run_dir) {

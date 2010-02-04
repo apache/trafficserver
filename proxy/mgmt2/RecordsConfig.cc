@@ -59,7 +59,7 @@ RecordElement RecordsConfig[] = {
 
   {CONFIG, "proxy.config.proxy_name", "", INK_STRING, "<proxy_name>", RU_REREAD, RR_REQUIRED, RC_STR, ".+", RA_NULL}
   ,
-  {CONFIG, "proxy.config.bin_path", "", INK_STRING, "./bin", RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.bin_path", "", INK_STRING, "bin", RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.proxy_binary", "", INK_STRING, "traffic_server", RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
   ,
@@ -76,10 +76,10 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.env_prep", "", INK_STRING, "example_prep.sh", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.config_dir", "", INK_STRING, PKGSYSCONFDIR, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.config_dir", "", INK_STRING, "etc/trafficserver", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   // Jira TS-21
-  {CONFIG, "proxy.config.local_state_dir", "", INK_STRING, PKGLOCALSTATEDIR, RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.local_state_dir", "", INK_STRING, "var/trafficserver", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.temp_dir", "", INK_STRING, "/tmp", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -370,7 +370,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.admin.cli_enabled", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.admin.cli_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY "/cli", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.admin.cli_path", "", INK_STRING, "var/trafficserver/cli", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.admin.cli_port", "", INK_INT, "9000", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -560,7 +560,7 @@ RecordElement RecordsConfig[] = {
    "authcache.db", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.auth.cache.path", "", INK_STRING,
-   DEFAULT_LOCAL_STATE_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+   "/var/trafficserver", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.auth.cache.size", "", INK_INT, "5000",
    RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -587,7 +587,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.auth.convert_bin", "", INK_STRING, "filter_to_policy", RU_REREAD, RR_NULL, RC_STR, ".*",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.auth.password_file_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_REREAD, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.auth.password_file_path", "", INK_STRING, "var/trafficserver", RU_REREAD, RR_NULL, RC_NULL,
    ".*", RA_NULL}
   ,
   //##############################################################################x
@@ -601,7 +601,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.ldap.cache.size", "", INK_INT, "5000", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.ldap.cache.storage_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.ldap.cache.storage_path", "", INK_STRING, "var/trafficserver", RU_RESTART_TS, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.ldap.cache.storage_size", "", INK_INT, "15728640", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
@@ -722,7 +722,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.ntlm.cache.size", "", INK_INT, "5000", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.ntlm.cache.storage_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.ntlm.cache.storage_path", "", INK_STRING, "var/trafficserver", RU_RESTART_TS, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.ntlm.cache.storage_size", "", INK_INT, "15728640", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
@@ -809,7 +809,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.username.cache.size", "", INK_INT, "5000", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.username.cache.storage_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_NULL, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.username.cache.storage_path", "", INK_STRING, "var/trafficserver", RU_NULL, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.username.cache.storage_size", "", INK_INT, "15728640", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -1283,7 +1283,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.body_factory.enable_logging", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]",
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.body_factory.template_sets_dir", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY "/body_factory", RU_RESTART_TS,
+  {CONFIG, "proxy.config.body_factory.template_sets_dir", "", INK_STRING, "etc/trafficserver/body_factory", RU_RESTART_TS,
    RR_NULL, RC_STR, "^[^[:space:]]+$", RA_NULL}
   ,
   //# 0 - never suppress generated responses
@@ -2626,7 +2626,7 @@ RecordElement RecordsConfig[] = {
   //       # in entries, may not be changed while running
   {CONFIG, "proxy.config.hostdb.size", "", INK_INT, "200000", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.hostdb.storage_path", "", INK_STRING, DEFAULT_LOCAL_STATE_DIRECTORY, RU_REREAD, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.hostdb.storage_path", "", INK_STRING, "/var/trafficserver", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.hostdb.storage_size", "", INK_INT, "33554432", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -2729,7 +2729,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.log2.hostname", "", INK_STRING, "localhost", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log2.logfile_dir", "", INK_STRING, DEFAULT_LOG_DIRECTORY, RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]+$",
+  {CONFIG, "proxy.config.log2.logfile_dir", "", INK_STRING, "var/log/trafficserver", RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]+$",
    RA_NULL}
   ,
   {CONFIG, "proxy.config.log2.logfile_perm", "", INK_STRING, "rw-r--r--", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -3337,10 +3337,10 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.aaa.radius.min_timeout", "", INK_INT, "10", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.aaa.radius.database_path", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY "/plugins/aaa/raddb", RU_NULL, RR_NULL,
+  {CONFIG, "proxy.config.aaa.radius.database_path", "", INK_STRING, "etc/trafficserver/plugins/aaa/raddb", RU_NULL, RR_NULL,
    RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.aaa.radius.log_path", "", INK_STRING, DEFAULT_LOG_DIRECTORY, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.aaa.radius.log_path", "", INK_STRING, "var/log/trafficserver", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
 
   //##############################################################################
@@ -3424,7 +3424,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.ssl.server.cert.filename", "", INK_STRING, "server.pem", RU_RESTART_TS, RR_NULL, RC_STR,
    "^[^[:space:]]+$", RA_NULL}
   ,
-  {CONFIG, "proxy.config.ssl.server.cert.path", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.ssl.server.cert.path", "", INK_STRING, "etc/trafficserver", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.ssl.server.cert_chain.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR, NULL,
@@ -3449,7 +3449,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.ssl.client.cert.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR,
    "^[^[:space:]]*$", RA_NULL}
   ,
-  {CONFIG, "proxy.config.ssl.client.cert.path", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY, RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.ssl.client.cert.path", "", INK_STRING, "etc/trafficserver", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.ssl.client.private_key.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR,
@@ -3600,13 +3600,13 @@ RecordElement RecordsConfig[] = {
   //# Plug-in Configuration
   //##############################################################################
   //# Directory in which to find plugins
-  {CONFIG, "proxy.config.plugin.plugin_dir", "", INK_STRING, PKGLIBEXECDIR, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.plugin.plugin_dir", "", INK_STRING, "libexec/trafficserver", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.plugin.plugin_mgmt_dir", "", INK_STRING, DEFAULT_SYSTEM_CONFIG_DIRECTORY "/plugins_mgmt", RU_NULL, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.plugin.plugin_mgmt_dir", "", INK_STRING, "etc/trafficserver/plugins_mgmt", RU_NULL, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.plugin.extensions_dir", "", INK_STRING,
-   DEFAULT_LOCAL_STATE_DIRECTORY, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+   "var/trafficserver", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
 
   //##############################################################################
