@@ -109,15 +109,14 @@ struct DNSProcessor:Processor
   //
   void open(unsigned int ip = DEFAULT_DOMAIN_NAME_SERVER, int port = DOMAIN_SERVICE_PORT, int options = _res.options);
 
-    DNSProcessor();
+  DNSProcessor();
 
   //
   // private:
   //
   EThread *thread;
   DNSHandler *handler;
-  struct __res_state *l_res;
-  struct __res_state_rr *l_res_rr;
+  __ink_res_state l_res;
   Action *getby(char *x, int len, int type, Continuation * cont,
                 HostEnt ** wait, DNSHandler * adnsH = NULL, bool proxy = false, bool proxy_cache = false, int timeout =
                 0);

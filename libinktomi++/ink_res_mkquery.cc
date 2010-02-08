@@ -1,304 +1,525 @@
-/** @file
-
-  A brief file description
-
-  @section license License
-
-  Copyright (c) 1985, 1989, 1993
-     The Regents of the University of California.  All rights reserved.
-
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions
-  are met:
-  1. Redistributions of source code must retain the above copyright
-     notice, this list of conditions and the following disclaimer.
-  2. Redistributions in binary form must reproduce the above copyright
-     notice, this list of conditions and the following disclaimer in the
-     documentation and/or other materials provided with the distribution.
-  3. All advertising materials mentioning features or use of this software
-     must display the following acknowledgement:
-     This product includes software developed by the University of
-     California, Berkeley and its contributors.
-  4. Neither the name of the University nor the names of its contributors
-     may be used to endorse or promote products derived from this software
-     without specific prior written permission.
-
-  THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
-  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-  ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
-  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-  SUCH DAMAGE.
-
-  Portions Copyright (c) 1993 by Digital Equipment Corporation.
-
-  Permission to use, copy, modify, and distribute this software for any
-  purpose with or without fee is hereby granted, provided that the above
-  copyright notice and this permission notice appear in all copies, and that
-  the name of Digital Equipment Corporation not be used in advertising or
-  publicity pertaining to distribution of the document or software without
-  specific, written prior permission.
-
-  THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
-  WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
-  OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
-  CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-  DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
-  PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
-  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-  SOFTWARE.
-
+/*
+ * Copyright (c) 1985, 1993
+ *    The Regents of the University of California.  All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ * 	This product includes software developed by the University of
+ * 	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	8.1 (Berkeley) 6/4/93";
+/*
+ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
+ * 
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies, and that
+ * the name of Digital Equipment Corporation not be used in advertising or
+ * publicity pertaining to distribution of the document or software without
+ * specific, written prior permission.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
+ */
 
+/*
+ * Copyright (c) 2004 by Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (c) 1996-1999 by Internet Software Consortium.
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS.  IN NO EVENT SHALL ISC BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+
+/*
+  Imported from Bind-9.5.2-P2
+  
+  Changes:
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+
+#if defined(LIBC_SCCS) && !defined(lint)
+static const char sccsid[] = "@(#)res_mkquery.c	8.1 (Berkeley) 6/4/93";
+static const char rcsid[] = "$Id: res_mkquery.c,v 1.6.672.1 2008/04/03 02:12:21 marka Exp $";
 #endif /* LIBC_SCCS and not lint */
+
 
 #include <sys/types.h>
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
-
-#include <stdio.h>
 #include <netdb.h>
 #include <resolv.h>
+#include <stdio.h>
 #include <string.h>
-#include <strings.h>
 
+#include "ink_defs.h"
 #include "ink_resolver.h"
 
-#ifndef __putshort
-#define __putshort putshort
-#endif
+#define SPRINTF(x) (sprintf x)
 
-#ifndef __putlong
-#define __putlong putlong
-#endif
-
-/*
+/*%
  * Form all types of queries.
  * Returns the size of the result or -1.
  */
 int
-ink_res_mkquery(struct __res_state &p_res,      /* user defined res struct */
-                int op,         /* opcode of query */
-                const char *dname,      /* domain name */
-                int res_class, int type,        /* class and type of query */
-                const u_char * data,    /* resource record data */
-                int datalen,    /* length of data */
-                const u_char * newrr_in,        /* new rr for modify or append */
-                u_char * buf,   /* buffer to put query */
-                int buflen      /* size of buffer */
-  )
+ink_res_mkquery(ink_res_state statp,
+	     int op,			/*!< opcode of query  */
+	     const char *dname,		/*!< domain name  */
+	     int _class, int type,	/*!< _class and type of query  */
+	     const u_char *data,	/*!< resource record data  */
+	     int datalen,		/*!< length of data  */
+	     const u_char *newrr_in,	/*!< new rr for modify or append  */
+	     u_char *buf,		/*!< buffer to put query  */
+	     int buflen)		/*!< size of buffer  */
 {
-  register HEADER *hp;
-  register u_char *cp;
-  register int n;
-  u_char *dnptrs[20], **dpp, **lastdnptr;
+	register HEADER *hp;
+	register u_char *cp, *ep;
+	register int n;
+	u_char *dnptrs[20], **dpp, **lastdnptr;
 
-  if ((p_res.options & RES_INIT) == 0 && res_init() == -1) {
-    h_errno = NETDB_INTERNAL;
-    return (-1);
-  }
-#ifdef DEBUG
-  if (p_res.options & RES_DEBUG)
-    printf(";; res_mkquery(%d, %s, %d, %d)\n", op, dname, res_class, type);
-#endif
-  /*
-   * Initialize header fields.
-   */
-  if ((buf == NULL) || (buflen < HFIXEDSZ))
-    return (-1);
-  bzero((char *) buf, HFIXEDSZ);
-  hp = (HEADER *) buf;
-  hp->id = htons(++p_res.id);
-  hp->opcode = op;
-  hp->rd = (p_res.options & RES_RECURSE) != 0;
-  hp->rcode = NOERROR;
-  cp = buf + HFIXEDSZ;
-  buflen -= HFIXEDSZ;
-  dpp = dnptrs;
-  *dpp++ = buf;
-  *dpp++ = NULL;
-  lastdnptr = dnptrs + sizeof dnptrs / sizeof dnptrs[0];
-  /*
-   * perform opcode specific processing
-   */
-  switch (op) {
-  case QUERY:
-  /*FALLTHROUGH*/ case NS_NOTIFY_OP:
-    if ((buflen -= QFIXEDSZ) < 0)
-      return (-1);
-    if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
-      return (-1);
-    cp += n;
-    buflen -= n;
-    __putshort(type, cp);
-    cp += INT16SZ;
-    __putshort(res_class, cp);
-    cp += INT16SZ;
-    hp->qdcount = htons(1);
-    if (op == QUERY || data == NULL)
-      break;
-    /*
-     * Make an additional record for completion domain.
-     */
-    buflen -= RRFIXEDSZ;
-    n = dn_comp((char *) data, cp, buflen, dnptrs, lastdnptr);
-    if (n < 0)
-      return (-1);
-    cp += n;
-    buflen -= n;
-    __putshort(T_NULL, cp);
-    cp += INT16SZ;
-    __putshort(res_class, cp);
-    cp += INT16SZ;
-    __putlong(0, cp);
-    cp += INT32SZ;
-    __putshort(0, cp);
-    cp += INT16SZ;
-    hp->arcount = htons(1);
-    break;
+	NOWARN_UNUSED(newrr_in);
 
-  case IQUERY:
-    /*
-     * Initialize answer section
-     */
-    if (buflen < 1 + RRFIXEDSZ + datalen)
-      return (-1);
-    *cp++ = '\0';               /* no domain name */
-    __putshort(type, cp);
-    cp += INT16SZ;
-    __putshort(res_class, cp);
-    cp += INT16SZ;
-    __putlong(0, cp);
-    cp += INT32SZ;
-    __putshort(datalen, cp);
-    cp += INT16SZ;
-    if (datalen) {
-      bcopy((const char *) data, (char *) cp, datalen);
-      cp += datalen;
-    }
-    hp->ancount = htons(1);
-    break;
+	/*
+	 * Initialize header fields.
+	 */
+	if ((buf == NULL) || (buflen < HFIXEDSZ))
+		return (-1);
+	memset(buf, 0, HFIXEDSZ);
+	hp = (HEADER *) buf;
+	hp->id = htons(++statp->id);
+	hp->opcode = op;
+	hp->rd = (statp->options & RES_RECURSE) != 0U;
+	hp->rcode = NOERROR;
+	cp = buf + HFIXEDSZ;
+	ep = buf + buflen;
+	dpp = dnptrs;
+	*dpp++ = buf;
+	*dpp++ = NULL;
+	lastdnptr = dnptrs + sizeof dnptrs / sizeof dnptrs[0];
+	/*
+	 * perform opcode specific processing
+	 */
+	switch (op) {
+	case QUERY:	/*FALLTHROUGH*/
+	case NS_NOTIFY_OP:
+		if (ep - cp < QFIXEDSZ)
+			return (-1);
+		if ((n = dn_comp(dname, cp, ep - cp - QFIXEDSZ, dnptrs,
+		    lastdnptr)) < 0)
+			return (-1);
+		cp += n;
+		NS_PUT16(type, cp);
+		NS_PUT16(_class, cp);
+		hp->qdcount = htons(1);
+		if (op == QUERY || data == NULL)
+			break;
+		/*
+		 * Make an additional record for completion domain.
+		 */
+		if ((ep - cp) < RRFIXEDSZ)
+			return (-1);
+		n = dn_comp((const char *)data, cp, ep - cp - RRFIXEDSZ,
+			    dnptrs, lastdnptr);
+		if (n < 0)
+			return (-1);
+		cp += n;
+		NS_PUT16(T_NULL, cp);
+		NS_PUT16(_class, cp);
+		NS_PUT32(0, cp);
+		NS_PUT16(0, cp);
+		hp->arcount = htons(1);
+		break;
 
-  default:
-    return (-1);
-  }
-  return (cp - buf);
+	case IQUERY:
+		/*
+		 * Initialize answer section
+		 */
+		if (ep - cp < 1 + RRFIXEDSZ + datalen)
+			return (-1);
+		*cp++ = '\0';	/*%< no domain name */
+		NS_PUT16(type, cp);
+		NS_PUT16(_class, cp);
+		NS_PUT32(0, cp);
+		NS_PUT16(datalen, cp);
+		if (datalen) {
+			memcpy(cp, data, datalen);
+			cp += datalen;
+		}
+		hp->ancount = htons(1);
+		break;
+
+	default:
+		return (-1);
+	}
+	return (cp - buf);
 }
 
-int
-ink_res_mkquery_rr(struct __res_state_rr &p_res,        /* user defined res struct */
-                   int op,      /* opcode of query */
-                   const char *dname,   /* domain name */
-                   int res_class, int type,     /* class and type of query */
-                   const u_char * data, /* resource record data */
-                   int datalen, /* length of data */
-                   const u_char * newrr_in,     /* new rr for modify or append */
-                   u_char * buf,        /* buffer to put query */
-                   int buflen   /* size of buffer */
-  )
+/* Public. */
+
+/*%
+ *	Thinking in noninternationalized USASCII (per the DNS spec),
+ *	is this character visible and not a space when printed ?
+ *
+ * return:
+ *\li	boolean.
+ */
+static int
+printable(int ch) {
+	return (ch > 0x20 && ch < 0x7f);
+}
+
+static const char	digits[] = "0123456789";
+
+static int
+labellen(const u_char *lp)
 {
-  register HEADER *hp;
-  register u_char *cp;
-  register int n;
-  u_char *dnptrs[20], **dpp, **lastdnptr;
+	int bitlen;
+	u_char l = *lp;
 
-  if ((p_res.options & RES_INIT) == 0 && res_init() == -1) {
-    h_errno = NETDB_INTERNAL;
-    return (-1);
-  }
-#ifdef DEBUG
-  if (p_res.options & RES_DEBUG)
-    printf(";; res_mkquery(%d, %s, %d, %d)\n", op, dname, res_class, type);
-#endif
-  /*
-   * Initialize header fields.
-   */
-  if ((buf == NULL) || (buflen < HFIXEDSZ))
-    return (-1);
-  bzero((char *) buf, HFIXEDSZ);
-  hp = (HEADER *) buf;
-  hp->id = htons(++p_res.id);
-  hp->opcode = op;
-  hp->rd = (p_res.options & RES_RECURSE) != 0;
-  hp->rcode = NOERROR;
-  cp = buf + HFIXEDSZ;
-  buflen -= HFIXEDSZ;
-  dpp = dnptrs;
-  *dpp++ = buf;
-  *dpp++ = NULL;
-  lastdnptr = dnptrs + sizeof dnptrs / sizeof dnptrs[0];
-  /*
-   * perform opcode specific processing
-   */
-  switch (op) {
-  case QUERY:
-  /*FALLTHROUGH*/ case NS_NOTIFY_OP:
-    if ((buflen -= QFIXEDSZ) < 0)
-      return (-1);
-    if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
-      return (-1);
-    cp += n;
-    buflen -= n;
-    __putshort(type, cp);
-    cp += INT16SZ;
-    __putshort(res_class, cp);
-    cp += INT16SZ;
-    hp->qdcount = htons(1);
-    if (op == QUERY || data == NULL)
-      break;
-    /*
-     * Make an additional record for completion domain.
-     */
-    buflen -= RRFIXEDSZ;
-    n = dn_comp((char *) data, cp, buflen, dnptrs, lastdnptr);
-    if (n < 0)
-      return (-1);
-    cp += n;
-    buflen -= n;
-    __putshort(T_NULL, cp);
-    cp += INT16SZ;
-    __putshort(res_class, cp);
-    cp += INT16SZ;
-    __putlong(0, cp);
-    cp += INT32SZ;
-    __putshort(0, cp);
-    cp += INT16SZ;
-    hp->arcount = htons(1);
-    break;
+	if ((l & NS_CMPRSFLGS) == NS_CMPRSFLGS) {
+		/* should be avoided by the caller */
+		return(-1);
+	}
 
-  case IQUERY:
-    /*
-     * Initialize answer section
-     */
-    if (buflen < 1 + RRFIXEDSZ + datalen)
-      return (-1);
-    *cp++ = '\0';               /* no domain name */
-    __putshort(type, cp);
-    cp += INT16SZ;
-    __putshort(res_class, cp);
-    cp += INT16SZ;
-    __putlong(0, cp);
-    cp += INT32SZ;
-    __putshort(datalen, cp);
-    cp += INT16SZ;
-    if (datalen) {
-      bcopy((const char *) data, (char *) cp, datalen);
-      cp += datalen;
-    }
-    hp->ancount = htons(1);
-    break;
+	if ((l & NS_CMPRSFLGS) == NS_TYPE_ELT) {
+		if (l == DNS_LABELTYPE_BITSTRING) {
+			if ((bitlen = *(lp + 1)) == 0)
+				bitlen = 256;
+			return((bitlen + 7 ) / 8 + 1);
+		}
+		return(-1);	/*%< unknwon ELT */
+	}
+	return(l);
+}
 
-  default:
-    return (-1);
-  }
-  return (cp - buf);
+static int
+decode_bitstring(const unsigned char **cpp, char *dn, const char *eom)
+{
+	const unsigned char *cp = *cpp;
+	char *beg = dn, tc;
+	int b, blen, plen, i;
+
+	if ((blen = (*cp & 0xff)) == 0)
+		blen = 256;
+	plen = (blen + 3) / 4;
+	plen += sizeof("\\[x/]") + (blen > 99 ? 3 : (blen > 9) ? 2 : 1);
+	if (dn + plen >= eom)
+		return(-1);
+
+	cp++;
+	i = SPRINTF((dn, "\\[x"));
+	if (i < 0)
+		return (-1);
+	dn += i;
+	for (b = blen; b > 7; b -= 8, cp++) {
+		i = SPRINTF((dn, "%02x", *cp & 0xff));
+		if (i < 0)
+			return (-1);
+		dn += i;
+	}
+	if (b > 4) {
+		tc = *cp++;
+		i = SPRINTF((dn, "%02x", tc & (0xff << (8 - b))));
+		if (i < 0)
+			return (-1);
+		dn += i;
+	} else if (b > 0) {
+		tc = *cp++;
+		i = SPRINTF((dn, "%1x",
+			       ((tc >> 4) & 0x0f) & (0x0f << (4 - b)))); 
+		if (i < 0)
+			return (-1);
+		dn += i;
+	}
+	i = SPRINTF((dn, "/%d]", blen));
+	if (i < 0)
+		return (-1);
+	dn += i;
+
+	*cpp = cp;
+	return(dn - beg);
+}
+
+/*%
+ *	Thinking in noninternationalized USASCII (per the DNS spec),
+ *	is this characted special ("in need of quoting") ?
+ *
+ * return:
+ *\li	boolean.
+ */
+static int
+special(int ch) {
+	switch (ch) {
+	case 0x22: /*%< '"' */
+	case 0x2E: /*%< '.' */
+	case 0x3B: /*%< ';' */
+	case 0x5C: /*%< '\\' */
+	case 0x28: /*%< '(' */
+	case 0x29: /*%< ')' */
+	/* Special modifiers in zone files. */
+	case 0x40: /*%< '@' */
+	case 0x24: /*%< '$' */
+		return (1);
+	default:
+		return (0);
+	}
+}
+
+/*%
+ *	Convert an encoded domain name to printable ascii as per RFC1035.
+
+ * return:
+ *\li	Number of bytes written to buffer, or -1 (with errno set)
+ *
+ * notes:
+ *\li	The root is returned as "."
+ *\li	All other domains are returned in non absolute form
+ */
+int
+ink_ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
+{
+	const u_char *cp;
+	char *dn, *eom;
+	u_char c;
+	u_int n;
+	int l;
+
+	cp = src;
+	dn = dst;
+	eom = dst + dstsiz;
+
+	while ((n = *cp++) != 0) {
+		if ((n & NS_CMPRSFLGS) == NS_CMPRSFLGS) {
+			/* Some kind of compression pointer. */
+			errno = EMSGSIZE;
+			return (-1);
+		}
+		if (dn != dst) {
+			if (dn >= eom) {
+				errno = EMSGSIZE;
+				return (-1);
+			}
+			*dn++ = '.';
+		}
+		if ((l = labellen(cp - 1)) < 0) {
+			errno = EMSGSIZE; /*%< XXX */
+			return(-1);
+		}
+		if (dn + l >= eom) {
+			errno = EMSGSIZE;
+			return (-1);
+		}
+		if ((n & NS_CMPRSFLGS) == NS_TYPE_ELT) {
+			int m;
+
+			if (n != DNS_LABELTYPE_BITSTRING) {
+				/* XXX: labellen should reject this case */
+				errno = EINVAL;
+				return(-1);
+			}
+			if ((m = decode_bitstring(&cp, dn, eom)) < 0)
+			{
+				errno = EMSGSIZE;
+				return(-1);
+			}
+			dn += m; 
+			continue;
+		}
+		for ((void)NULL; l > 0; l--) {
+			c = *cp++;
+			if (special(c)) {
+				if (dn + 1 >= eom) {
+					errno = EMSGSIZE;
+					return (-1);
+				}
+				*dn++ = '\\';
+				*dn++ = (char)c;
+			} else if (!printable(c)) {
+				if (dn + 3 >= eom) {
+					errno = EMSGSIZE;
+					return (-1);
+				}
+				*dn++ = '\\';
+				*dn++ = digits[c / 100];
+				*dn++ = digits[(c % 100) / 10];
+				*dn++ = digits[c % 10];
+			} else {
+				if (dn >= eom) {
+					errno = EMSGSIZE;
+					return (-1);
+				}
+				*dn++ = (char)c;
+			}
+		}
+	}
+	if (dn == dst) {
+		if (dn >= eom) {
+			errno = EMSGSIZE;
+			return (-1);
+		}
+		*dn++ = '.';
+	}
+	if (dn >= eom) {
+		errno = EMSGSIZE;
+		return (-1);
+	}
+	*dn++ = '\0';
+	return (dn - dst);
+}
+
+/*%
+ *	Convert an encoded domain name to printable ascii as per RFC1035.
+
+ * return:
+ *\li	Number of bytes written to buffer, or -1 (with errno set)
+ *
+ * notes:
+ *\li	The root is returned as "."
+ *\li	All other domains are returned in non absolute form
+ */
+int
+ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
+{
+	const u_char *cp;
+	char *dn, *eom;
+	u_char c;
+	u_int n;
+	int l;
+
+	cp = src;
+	dn = dst;
+	eom = dst + dstsiz;
+
+	while ((n = *cp++) != 0) {
+		if ((n & NS_CMPRSFLGS) == NS_CMPRSFLGS) {
+			/* Some kind of compression pointer. */
+			errno = EMSGSIZE;
+			return (-1);
+		}
+		if (dn != dst) {
+			if (dn >= eom) {
+				errno = EMSGSIZE;
+				return (-1);
+			}
+			*dn++ = '.';
+		}
+		if ((l = labellen(cp - 1)) < 0) {
+			errno = EMSGSIZE; /*%< XXX */
+			return(-1);
+		}
+		if (dn + l >= eom) {
+			errno = EMSGSIZE;
+			return (-1);
+		}
+		if ((n & NS_CMPRSFLGS) == NS_TYPE_ELT) {
+			int m;
+
+			if (n != DNS_LABELTYPE_BITSTRING) {
+				/* XXX: labellen should reject this case */
+				errno = EINVAL;
+				return(-1);
+			}
+			if ((m = decode_bitstring(&cp, dn, eom)) < 0)
+			{
+				errno = EMSGSIZE;
+				return(-1);
+			}
+			dn += m; 
+			continue;
+		}
+		for ((void)NULL; l > 0; l--) {
+			c = *cp++;
+			if (special(c)) {
+				if (dn + 1 >= eom) {
+					errno = EMSGSIZE;
+					return (-1);
+				}
+				*dn++ = '\\';
+				*dn++ = (char)c;
+			} else if (!printable(c)) {
+				if (dn + 3 >= eom) {
+					errno = EMSGSIZE;
+					return (-1);
+				}
+				*dn++ = '\\';
+				*dn++ = digits[c / 100];
+				*dn++ = digits[(c % 100) / 10];
+				*dn++ = digits[c % 10];
+			} else {
+				if (dn >= eom) {
+					errno = EMSGSIZE;
+					return (-1);
+				}
+				*dn++ = (char)c;
+			}
+		}
+	}
+	if (dn == dst) {
+		if (dn >= eom) {
+			errno = EMSGSIZE;
+			return (-1);
+		}
+		*dn++ = '.';
+	}
+	if (dn >= eom) {
+		errno = EMSGSIZE;
+		return (-1);
+	}
+	*dn++ = '\0';
+	return (dn - dst);
 }

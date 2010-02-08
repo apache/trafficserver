@@ -50,7 +50,6 @@ int dns_ns_rr = 0;
 int dns_ns_rr_init_down = 1;
 char *dns_ns_list = NULL;
 
-
 DNSProcessor dnsProcessor;
 ClassAllocator<DNSEntry> dnsEntryAllocator("dnsEntryAllocator");
 // Users are expected to free these entries in short order!
@@ -67,7 +66,6 @@ static DNSEntry *get_dns(DNSHandler * h, u_short id);
 static void dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry);
 static void write_dns(DNSHandler * h);
 static bool write_dns_event(DNSHandler * h, DNSEntry * e);
-//static void dns_init();
 
 // "reliable" name to try. need to build up first.
 static int try_servers = 0;
@@ -75,18 +73,6 @@ static int local_num_entries = 1;
 static int attempt_num_entries = 1;
 char try_server_names[DEFAULT_NUM_TRY_SERVER][MAXDNAME];
 
-
-/*
-// for HPUX port: 
-// domain_string is defined to store the initial domain fields
-// after calling res_init. The _res global variable somehow gets
-// corrupted when event handled by different threads. For now, 
-// we are using this work-around to get-by the problem. It would
-// be investigated further.
-#if (HOST_OS == hpux)
-char *domain_string[MAXDNSRCH]; 
-#endif
-*/
 
 static inline char *
 strnchr(char *s, char c, int len)
@@ -97,6 +83,13 @@ strnchr(char *s, char c, int len)
   return *s == c ? s : (char *) NULL;
 }
 
+static inline inku16
+ink_get16(const inku8 *src) {
+  inku16 dst;
+  
+  NS_GET16(dst, src);
+  return dst;
+}
 
 //
 //  Public functions
@@ -108,7 +101,6 @@ DNSProcessor::free_hostent(HostEnt * ent)
 {
   dnsBufAllocator.free(ent);
 }
-
 
 int
 DNSProcessor::start(int)
@@ -136,7 +128,6 @@ DNSProcessor::start(int)
   return 0;
 }
 
-
 void
 DNSProcessor::open(unsigned int aip, int aport, int aoptions)
 {
@@ -144,12 +135,7 @@ DNSProcessor::open(unsigned int aip, int aport, int aoptions)
 
   h->options = aoptions;
   h->mutex = thread->mutex;
-
-  if (dns_ns_rr)
-    h->m_res = l_res_rr;
-  else
-    h->m_res = l_res;
-
+  h->m_res = &l_res;
   h->ip = aip;
   h->port = aport;
 
@@ -159,7 +145,6 @@ DNSProcessor::open(unsigned int aip, int aport, int aoptions)
   SET_CONTINUATION_HANDLER(h, &DNSHandler::startEvent);
   thread->schedule_imm(h, ET_DNS);
 }
-
 
 //
 // Initialization
@@ -226,25 +211,13 @@ DNSProcessor::dns_init()
     // Terminate the list for ink_res_init
     nameserver_ip[j] = 0;
 
-    struct __res_state_rr *res_rr = new struct __res_state_rr;
-    memset(res_rr, 0, sizeof(__res_state_rr));
-
     // The default domain (4th param) and search list (5th param) will
     // come from /etc/resolv.conf.
-    if (j == 0 || ink_res_init_rr(*res_rr, &nameserver_ip[0], &nameserver_port[0], NULL, NULL) == -1) {
-      Debug("dns", "Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
-      Warning("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
-
-      res_init();
-      dns_ns_rr = 0;
-      l_res = &_res;
-      delete res_rr;
-    } else {
-      l_res_rr = res_rr;
-    }
+    if (ink_res_init(&l_res, &nameserver_ip[0], &nameserver_port[0], NULL, NULL) < 0)
+      MachineFatal("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
   } else {
-    res_init();
-    l_res = &_res;
+    if (ink_res_init(&l_res, 0, 0, 0, 0) < 0)
+      MachineFatal("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
     dns_ns_rr = 0;
   }
 }
@@ -264,9 +237,9 @@ ink_dn_expand(const u_char * msg, const u_char * eom, const u_char * comp_dn, u_
 }
 
 DNSProcessor::DNSProcessor()
-:thread(NULL), handler(NULL), l_res(NULL), l_res_rr(NULL)
+  : thread(NULL), handler(NULL)
 {
-  // no body
+  memset(&l_res, 0, sizeof(l_res));
 }
 
 void
@@ -434,18 +407,9 @@ DNSHandler::startEvent(int event, Event * e)
   Debug("dns", "DNSHandler::startEvent: on thread%d\n", e->ethread->id);
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
     // seems that res_init always sets m_res.nscount to at least 1!
-    int nscount = 0;
-    if (!dns_ns_rr)
-      nscount = ((struct __res_state *) m_res)->nscount;
-    else
-      nscount = ((struct __res_state_rr *) m_res)->nscount;
-    if (!nscount)
-      IOCORE_MachineFatal("bad '/etc/resolv.conf': no nameservers given");
-    struct sockaddr_in *sa;
-    if (!dns_ns_rr)
-      sa = &((struct __res_state *) m_res)->nsaddr_list[0];
-    else
-      sa = &((struct __res_state_rr *) m_res)->nsaddr_list[0];
+    if (!m_res->nscount)
+      MachineFatal("bad '/etc/resolv.conf': no nameservers given");
+    struct sockaddr_in *sa = &m_res->nsaddr_list[0];
     ip = sa->sin_addr.s_addr;
     if (!ip)
       ip = ink_inet_addr("127.0.0.1");
@@ -460,12 +424,12 @@ DNSHandler::startEvent(int event, Event * e)
     dns_handler_initialized = 1;
     SET_HANDLER(&DNSHandler::mainEvent);
     if (dns_ns_rr) {
-      int max_nscount = ((struct __res_state_rr *) m_res)->nscount;
+      int max_nscount = m_res->nscount;
       if (max_nscount > MAX_NAMED)
         max_nscount = MAX_NAMED;
       n_con = 0;
       for (int i = 0; i < max_nscount; i++) {
-        struct sockaddr_in *sa = &((struct __res_state_rr *) m_res)->nsaddr_list[i];
+        struct sockaddr_in *sa = &m_res->nsaddr_list[i];
         ip = sa->sin_addr.s_addr;
         if (ip) {
           port = ntohs(sa->sin_port);
@@ -486,93 +450,11 @@ DNSHandler::startEvent(int event, Event * e)
     ink_assert(false);          // I.e. this should never really happen
     return EVENT_DONE;
   }
-
-#ifdef SOMEONE_IS_SMOKING_CRACK_HERE
-}
-
-else {                          //this appears to never happen but i may be wrong /ebalsa
-  // Certainly looks "dead" to me, but it might be that we want to be able to restart the
-  // DNS processor / handler?
-
-  //
-  // If we are re-initializing the connection
-  // close the old one and open the new one.
-  //
-
-  //added by YTS Team, yamsat 
-  Debug("dns", "Reinitializing the connections in DNSHandler::startEvent on thread%d\n", e->ethread->id);
-  struct epoll_event event;
-  PollDescriptor *pd = get_PollDescriptor(e->ethread);
-  memset(&event, 0, sizeof(struct epoll_event));
-  event.events = EPOLLIN | EPOLLET;
-
-  if (dns_ns_rr) {
-    int max_nscount = ((struct __res_state_rr *) m_res)->nscount;
-    if (max_nscount > MAX_NAMED)
-      max_nscount = MAX_NAMED;
-    n_con = 0;
-    for (int i = 0; i < max_nscount; i++) {
-      if (dnsProcessor.handler->con[i].fd != NO_FD) {
-        //added by YTS Team, yamsat 
-        epoll_ctl(pd->epoll_fd, EPOLL_CTL_DEL, dnsProcessor.handler->con[i].fd, &event);
-        dnsProcessor.handler->con[i].close();
-      }
-      struct sockaddr_in *sa = &((struct __res_state_rr *) m_res)->nsaddr_list[i];
-      ip = sa->sin_addr.s_addr;
-      if (ip) {
-        port = ntohs(sa->sin_port);
-        dnsProcessor.handler->options = options;
-        dnsProcessor.handler->open_con(ip, port, false, i);
-        //added by YTS Team, yamsat 
-        dnsProcessor.handler->con[i].num = n_con;
-        if (dnsProcessor.handler->con[i].epoll_ptr == NULL) {
-          struct epoll_data_ptr *eptr;
-          eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-          eptr->type = 3;
-          eptr->data.dnscon = &dnsProcessor.handler->con[i];
-          dnsProcessor.handler->con[i].epoll_ptr = eptr;
-        }
-        event.data.ptr = dnsProcessor.handler->con[i].epoll_ptr;
-        if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, dnsProcessor.handler->con[i].fd, &event) < 0) {
-          Debug("iocore_dns", "startEvent : Failed to add %d server to epoll list\n", i);
-        }
-        ++n_con;
-      }
-    }
-  } else {
-    if (dnsProcessor.handler->con[0].fd != NO_FD) {
-      //added by YTS Team, yamsat 
-      epoll_ctl(pd->epoll_fd, EPOLL_CTL_DEL, dnsProcessor.handler->con[0].fd, &event);
-      dnsProcessor.handler->con[0].close();
-    }
-    dnsProcessor.handler->options = options;
-    dnsProcessor.handler->open_con(ip, port);
-
-    //added by YTS Team, yamsat 
-    dnsProcessor.handler->con[0].num = 0;
-    if (dnsProcessor.handler->con[0].epoll_ptr == NULL) {
-      struct epoll_data_ptr *eptr;
-      eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-      eptr->type = 3;
-      eptr->data.dnscon = &dnsProcessor.handler->con[0];
-      dnsProcessor.handler->con[0].epoll_ptr = eptr;
-    }
-    event.data.ptr = dnsProcessor.handler->con[0].epoll_ptr;
-    if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, dnsProcessor.handler->con[0].fd, &event) < 0) {
-      Debug("iocore_dns", "startEvent : Failed to add the server to epoll list\n");
-    }
-  }
-  delete this;
-  return EVENT_DONE;
-}
-#endif //Crack
-
 }
 
 /**
   Initial state of the DSNHandler. Can reinitialize the running DNS
   hander to a new nameserver.
-
 */
 int
 DNSHandler::startEvent_sdns(int event, Event * e)
@@ -586,9 +468,9 @@ DNSHandler::startEvent_sdns(int event, Event * e)
 
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
     // seems that res_init always sets m_res.nscount to at least 1!
-    if (!((struct __res_state *) m_res)->nscount)
-      IOCORE_MachineFatal("bad '/etc/resolv.conf': no nameservers given");
-    struct sockaddr_in *sa = &((struct __res_state *) m_res)->nsaddr_list[0];
+    if (!m_res->nscount)
+      MachineFatal("bad '/etc/resolv.conf': no nameservers given");
+    struct sockaddr_in *sa = &m_res->nsaddr_list[0];
     ip = sa->sin_addr.s_addr;
     if (!ip)
       ip = ink_inet_addr("127.0.0.1");
@@ -603,25 +485,14 @@ DNSHandler::startEvent_sdns(int event, Event * e)
   return EVENT_CONT;
 }
 
-
 static inline int
-_ink_res_mkquery(struct __res_state &res, char *qname, int qtype, char *buffer)
+_ink_res_mkquery(ink_res_state res, char *qname, int qtype, char *buffer)
 {
   int r = ink_res_mkquery(res, QUERY, qname, C_IN, qtype,
                           NULL, 0, NULL, (unsigned char *) buffer,
                           MAX_DNS_PACKET_LEN);
   return r;
 }
-
-static inline int
-_ink_res_mkquery_rr(struct __res_state_rr &res, char *qname, int qtype, char *buffer)
-{
-  int r = ink_res_mkquery_rr(res, QUERY, qname, C_IN, qtype,
-                             NULL, 0, NULL, (unsigned char *) buffer,
-                             MAX_DNS_PACKET_LEN);
-  return r;
-}
-
 
 void
 DNSHandler::recover()
@@ -631,7 +502,6 @@ DNSHandler::recover()
   switch_named(name_server);
 }
 
-
 void
 DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
 {
@@ -640,10 +510,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
     last_primary_reopen = t;
     con[ndx].close();
     struct sockaddr_in *sa;
-    if (!dns_ns_rr)
-      sa = &((struct __res_state *) m_res)->nsaddr_list[ndx];
-    else
-      sa = &((struct __res_state_rr *) m_res)->nsaddr_list[ndx];
+    sa = &m_res->nsaddr_list[ndx];
     ip = sa->sin_addr.s_addr;
     port = ntohs(sa->sin_port);
 
@@ -652,14 +519,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
 
   char buffer[MAX_DNS_PACKET_LEN];
   Debug("dns", "trying to resolve '%s' from DNS connection, ndx %d", try_server_names[try_servers], ndx);
-  int r = 0;
-  if (!dns_ns_rr) {
-    struct __res_state *p_res = (struct __res_state *) m_res;
-    r = _ink_res_mkquery(*p_res, try_server_names[try_servers], T_A, buffer);
-  } else {
-    struct __res_state_rr *p_res = (struct __res_state_rr *) m_res;
-    r = _ink_res_mkquery_rr(*p_res, try_server_names[try_servers], T_A, buffer);
-  }
+  int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
   try_servers = (try_servers + 1) % SIZE(try_server_names);
   ink_assert(r >= 0);
   if (r >= 0) {                 // looking for a bounce
@@ -667,7 +527,6 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
     Debug("dns", "ping result = %d", res);
   }
 }
-
 
 void
 DNSHandler::try_primary_named(bool reopen)
@@ -680,18 +539,10 @@ DNSHandler::try_primary_named(bool reopen)
   }
   if ((t - last_primary_retry) > DNS_PRIMARY_RETRY_PERIOD) {
     char buffer[MAX_DNS_PACKET_LEN];
-    int r;
 
     last_primary_retry = t;
-    if (!dns_ns_rr) {
-      Debug("dns", "trying to resolve '%s' from primary DNS connection", try_server_names[try_servers]);
-      struct __res_state *p_res = (struct __res_state *) m_res;
-      r = _ink_res_mkquery(*p_res, try_server_names[try_servers], T_A, buffer);
-    } else {
-      Debug("dns", "[rr] trying to resolve '%s' from primary DNS connection", try_server_names[try_servers]);
-      struct __res_state_rr *p_res = (struct __res_state_rr *) m_res;
-      r = _ink_res_mkquery_rr(*p_res, try_server_names[try_servers], T_A, buffer);
-    }
+    Debug("dns", "trying to resolve '%s' from primary DNS connection", try_server_names[try_servers]);
+    int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
     // if try_server_names[] is not full, round-robin within the
     // filled entries.
     if (local_num_entries < DEFAULT_NUM_TRY_SERVER)
@@ -725,16 +576,16 @@ DNSHandler::failover()
 {
   Debug("dns", "failover: initiating failover attempt, current name_server=%d", name_server);
   // no hope, if we have only one server
-  if (((struct __res_state *) m_res)->nscount > 1) {
-    int max_nscount = ((struct __res_state *) m_res)->nscount;
+  if (m_res->nscount > 1) {
+    int max_nscount = m_res->nscount;
 
     if (max_nscount > MAX_NAMED)
       max_nscount = MAX_NAMED;
-    unsigned int old_ip = ((struct __res_state *) m_res)->nsaddr_list[name_server].sin_addr.s_addr;
+    unsigned int old_ip = m_res->nsaddr_list[name_server].sin_addr.s_addr;
     name_server = (name_server + 1) % max_nscount;
     Debug("dns", "failover: failing over to name_server=%d", name_server);
 
-    struct sockaddr_in *sa = &((struct __res_state *) m_res)->nsaddr_list[name_server];
+    struct sockaddr_in *sa = &m_res->nsaddr_list[name_server];
 
     Warning("failover: connection to DNS server %d.%d.%d.%d lost, move to %d.%d.%d.%d",
             DOT_SEPARATED(old_ip), DOT_SEPARATED(sa->sin_addr.s_addr));
@@ -761,19 +612,19 @@ DNSHandler::rr_failure(int ndx)
     Debug("dns", "rr_failure: Marking nameserver %d as down", ndx);
     ns_down[ndx] = 1;
 
-    struct sockaddr_in *sa = &((struct __res_state_rr *) m_res)->nsaddr_list[ndx];
+    struct sockaddr_in *sa = &m_res->nsaddr_list[ndx];
     unsigned int tip = sa->sin_addr.s_addr;
     Warning("connection to DNS server %d.%d.%d.%d lost, marking as down", DOT_SEPARATED(tip));
   }
 
-  int nscnt = ((struct __res_state_rr *) m_res)->nscount;
-  if (nscnt > MAX_NAMED)
-    nscnt = MAX_NAMED;
+  int nscount = m_res->nscount;
+  if (nscount > MAX_NAMED)
+    nscount = MAX_NAMED;
 
   // See if all nameservers are down
   int all_down = 1;
 
-  for (int i = 0; i < nscnt && all_down; i++) {
+  for (int i = 0; i < nscount && all_down; i++) {
     Debug("dns", "nsdown[%d]=%d", i, ns_down[i]);
     if (!ns_down[i]) {
       all_down = 0;
@@ -859,7 +710,7 @@ DNSHandler::recv_dns(int event, Event * e)
         if (good_rcode(buf->buf)) {
           received_one(dnsc->num);
           if (ns_down[dnsc->num]) {
-            struct sockaddr_in *sa = &((struct __res_state_rr *) m_res)->nsaddr_list[dnsc->num];
+            struct sockaddr_in *sa = &m_res->nsaddr_list[dnsc->num];
             Warning("connection to DNS server %d.%d.%d.%d restored", DOT_SEPARATED(sa->sin_addr.s_addr));
             ns_down[dnsc->num] = 0;
           }
@@ -968,12 +819,7 @@ write_dns(DNSHandler * h)
 {
   ProxyMutex *mutex = h->mutex;
   DNS_INCREMENT_DYN_STAT(dns_total_lookups_stat);
-  int max_nscount;
-
-  if (!dns_ns_rr)
-    max_nscount = ((struct __res_state *) (h->m_res))->nscount;
-  else
-    max_nscount = ((struct __res_state_rr *) (h->m_res))->nscount;
+  int max_nscount = h->m_res->nscount;
   if (max_nscount > MAX_NAMED)
     max_nscount = MAX_NAMED;
 
@@ -1019,14 +865,7 @@ write_dns_event(DNSHandler * h, DNSEntry * e)
 #ifdef DNS_PROXY
   if (!e->proxy) {
 #endif
-    if (!dns_ns_rr) {
-      struct __res_state *p_res = (struct __res_state *) h->m_res;
-      r = _ink_res_mkquery(*p_res, e->qname, e->qtype, buffer);
-    } else {
-      struct __res_state_rr *p_res = (struct __res_state_rr *) h->m_res;
-      r = _ink_res_mkquery_rr(*p_res, e->qname, e->qtype, buffer);
-    }
-    if (r <= 0) {
+    if ((r = _ink_res_mkquery(h->m_res, e->qname, e->qtype, buffer)) <= 0) {
       Debug("dns", "cannot build query: %s", e->qname);
       dns_result(h, e, NULL, false);
       return true;
@@ -1042,7 +881,6 @@ write_dns_event(DNSHandler * h, DNSEntry * e)
   ++dns_sequence_number;
 
   DNS_SET_DYN_COUNT(dns_sequence_number_stat, dns_sequence_number);
-
 
 #ifdef DNS_PROXY
   if (!e->proxy) {
@@ -1127,12 +965,8 @@ DNSEntry::mainEvent(int event, Event * e)
       if (!proxy) {
 #endif
         //if (dns_search && !strnchr(qname,'.',MAXDNAME)){
-        if (dns_search) {
-          if (!dns_ns_rr)
-            domains = ((struct __res_state *) dnsH->m_res)->dnsrch;
-          else
-            domains = ((struct __res_state_rr *) dnsH->m_res)->dnsrch;
-        }
+        if (dns_search)
+          domains = dnsH->m_res->dnsrch;
         if (domains && !strnchr(qname, '.', MAXDNAME)) {
           qname[qname_len] = '.';
           ink_strncpy(qname + qname_len + 1, *domains, MAXDNAME - (qname_len + 1));
@@ -1357,7 +1191,6 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
   dnsEntryAllocator.free(this);
   return 0;
 }
-
 
 int
 DNSEntry::postEvent(int event, Event * e)
@@ -1590,20 +1423,20 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
         cp += dn_skipname(cp, eom);
         here = cp;              /* hack */
         char srvname[MAXDNAME];
-        int r = ns_name_ntop(srv[num_srv] + SRV_SERVER, srvname, MAXDNAME);
+        int r = ink_ns_name_ntop(srv[num_srv] + SRV_SERVER, srvname, MAXDNAME);
         if (r <= 0) {
           /* FIXME: is this really an error? or just a continue; */
           ++error;
           goto Lerror;
         }
         Debug("dns_srv", "Discovered SRV record [from NS lookup] with cost:%d weight:%d port:%d with host:%s",
-              ns_get16(srv[num_srv] + SRV_COST),
-              ns_get16(srv[num_srv] + SRV_WEIGHT), ns_get16(srv[num_srv] + SRV_PORT), srvname);
+              ink_get16(srv[num_srv] + SRV_COST),
+              ink_get16(srv[num_srv] + SRV_WEIGHT), ink_get16(srv[num_srv] + SRV_PORT), srvname);
 
         SRV *s = SRVAllocator.alloc();
-        s->setPort(ns_get16(srv[num_srv] + SRV_PORT));
-        s->setPriority(ns_get16(srv[num_srv] + SRV_COST));
-        s->setWeight(ns_get16(srv[num_srv] + SRV_WEIGHT));
+        s->setPort(ink_get16(srv[num_srv] + SRV_PORT));
+        s->setPriority(ink_get16(srv[num_srv] + SRV_COST));
+        s->setWeight(ink_get16(srv[num_srv] + SRV_WEIGHT));
         s->setHost(srvname);
 
         buf->srv_hosts.insert(s);

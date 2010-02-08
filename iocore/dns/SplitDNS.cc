@@ -718,11 +718,10 @@ SplitDNSRecord::Init(matcher_line * line_info)
   }
 
   DNSHandler *dnsH = new DNSHandler;
-  struct __res_state *res = new ResState;
-  memset(res, 0, sizeof(ResState));
+  ink_res_state res = new __ink_res_state;
+  memset(res, 0, sizeof(__ink_res_state));
 
-
-  if ((-1 == ink_res_init(*res,
+  if ((-1 == ink_res_init(res,
                           &m_servers.x_server_ip[0],
                           &m_servers.x_dns_server_port[0],
                           &m_servers.x_def_domain[0], &m_servers.x_domain_srch_list[0]))) {
@@ -733,7 +732,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
 
     return errBuf;
   }
-  dnsH->m_res = (void *) res;
+  dnsH->m_res = res;
 
   dnsH->mutex = SplitDNSConfig::dnsHandler_mutex;
   dnsH->options = res->options;
@@ -821,7 +820,10 @@ createDefaultServer()
 
   SplitDNSRecord *newRec;
 
-  if (-1 == res_init()) {
+  ink_res_state res = new __ink_res_state;
+  memset(res, 0, sizeof(__ink_res_state));
+
+  if (ink_res_init(res, 0, 0, 0, 0) < 0) {
     Warning("no default name server configured!");
     return 0;
   }
@@ -829,14 +831,12 @@ createDefaultServer()
   newRec = NEW(new SplitDNSRecord);
 
   for (int i = 0; i < _res.nscount; i++) {
-
     newRec->m_servers.x_server_ip[i] = _res.nsaddr_list[i].sin_addr.s_addr;
-
     newRec->m_servers.x_dns_server_port[i] = ntohs(_res.nsaddr_list[i].sin_port);
   }
 
   newRec->m_servers.x_dnsH = new DNSHandler;
-  newRec->m_servers.x_dnsH->m_res = &_res;
+  newRec->m_servers.x_dnsH->m_res = res;
 
   newRec->m_servers.x_dnsH->mutex = SplitDNSConfig::dnsHandler_mutex;
   newRec->m_servers.x_dnsH->options = _res.options;

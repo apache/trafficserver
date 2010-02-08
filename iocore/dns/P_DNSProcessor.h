@@ -61,14 +61,6 @@ extern int dns_failover_try_period;
 extern int dns_max_dns_in_flight;
 extern unsigned int dns_sequence_number;
 
-//#include "OneWayTunnel.h"
-//#include "HttpTransact.h"
-
-// This is temporily to bypass a bunch of debug and error statements. 
-//#define Warning
-//#define Debug
-//#define IOCORE_MachineFatal
-
 //
 // Constants
 //
@@ -218,11 +210,6 @@ struct DNSEntry:Continuation
 };
 
 
-//extern ClassAllocator<DNSEntry>;
-// Users are expected to free these entries in short order!
-// We could page align this buffer to enable page flipping for recv...
-//extern ClassAllocator<HostEnt>;
-
 typedef int (DNSEntry::*DNSEntryHandler) (int, void *);
 
 struct DNSEntry;
@@ -240,7 +227,7 @@ struct DNSHandler:Continuation
   int n_con;
   DNSConnection con[MAX_NAMED];
   int options;
-    Queue<DNSEntry> entries;
+  Queue<DNSEntry> entries;
   int in_flight;
   int name_server;
   int in_write_dns;
@@ -253,7 +240,7 @@ struct DNSHandler:Continuation
   ink_hrtime last_primary_retry;
   ink_hrtime last_primary_reopen;
 
-  void *m_res;
+  ink_res_state m_res;
   int txn_lookup_timeout;
 
   void received_one(int i)
@@ -304,13 +291,13 @@ struct DNSHandler:Continuation
 
 
 inline DNSHandler::DNSHandler()
-:Continuation(NULL),
-ip(0),
-port(0),
-n_con(0),
-options(0),
-in_flight(0), name_server(0), in_write_dns(0), hostent_cache(0), last_primary_retry(0), last_primary_reopen(0),
-m_res(0), txn_lookup_timeout(0)
+ :Continuation(NULL),
+  ip(0),
+  port(0),
+  n_con(0),
+  options(0),
+  in_flight(0), name_server(0), in_write_dns(0), hostent_cache(0), last_primary_retry(0), last_primary_reopen(0),
+  m_res(0), txn_lookup_timeout(0)
 {
   for (int i = 0; i < MAX_NAMED; i++) {
     ifd[i] = -1;
