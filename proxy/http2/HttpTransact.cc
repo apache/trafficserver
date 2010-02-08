@@ -8597,6 +8597,8 @@ HttpTransact::Freshness_t HttpTransact::what_is_document_freshness(State *
   inku32
     cc_mask,
     cooked_cc_mask;
+  inku32
+    os_specifies_revalidate;
 
 
   //////////////////////////////////////////////////////
@@ -8621,9 +8623,9 @@ HttpTransact::Freshness_t HttpTransact::what_is_document_freshness(State *
 
 
   cooked_cc_mask = cached_obj_response->get_cooked_cc_mask();
-  cc_mask =
-    (MIME_COOKED_MASK_CC_MUST_REVALIDATE |
-     MIME_COOKED_MASK_CC_PROXY_REVALIDATE | MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE);
+  os_specifies_revalidate = cooked_cc_mask &
+    (MIME_COOKED_MASK_CC_MUST_REVALIDATE | MIME_COOKED_MASK_CC_PROXY_REVALIDATE);
+  cc_mask = MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE;
 
   // Check to see if the server forces revalidation
 
@@ -8716,13 +8718,18 @@ HttpTransact::Freshness_t HttpTransact::what_is_document_freshness(State *
     // if max-stale set, relax the freshness limit //
     /////////////////////////////////////////////////
     if (cooked_cc_mask & MIME_COOKED_MASK_CC_MAX_STALE) {
-      int
-        max_stale_val = client_request->get_cooked_cc_max_stale();
-      if (max_stale_val != MAXINT)
-        age_limit += max_stale_val;
-      else
-        age_limit = max_stale_val;
-      Debug("http_match", "[..._document_freshness] max-stale set, age limit: %d", age_limit);
+      if (os_specifies_revalidate) {
+        Debug("http_match", "[...document_freshness] OS specifies revalidation; "
+              "ignoring client's max-stale request...");
+      } else {
+        int max_stale_val = client_request->get_cooked_cc_max_stale();
+
+        if (max_stale_val != MAXINT)
+          age_limit += max_stale_val;
+        else
+          age_limit = max_stale_val;
+        Debug("http_match", "[..._document_freshness] max-stale set, age limit: %d", age_limit);
+      }
     }
     /////////////////////////////////////////////////////
     // if min-fresh set, constrain the freshness limit //
@@ -8735,8 +8742,7 @@ HttpTransact::Freshness_t HttpTransact::what_is_document_freshness(State *
     // if max-age set, constrain the freshness limit //
     ///////////////////////////////////////////////////
     if (!s->cache_control.ignore_client_cc_max_age && (cooked_cc_mask & MIME_COOKED_MASK_CC_MAX_AGE)) {
-      int
-        age_val = client_request->get_cooked_cc_max_age();
+      int age_val = client_request->get_cooked_cc_max_age();
       if (age_val == 0)
         do_revalidate = true;
       age_limit = min(age_limit, age_val);
@@ -8770,12 +8776,23 @@ HttpTransact::Freshness_t HttpTransact::what_is_document_freshness(State *
   // now, see if the age is "fresh enough" //
   ///////////////////////////////////////////
 
-  if (do_revalidate || current_age > age_limit) // client-modified limit
+  if (do_revalidate || current_age > age_limit) { // client-modified limit
+    DebugOn("http_match", "[..._document_freshness] document needs revalidate/too old; "
+            "returning FRESHNESS_STALE");
     return (FRESHNESS_STALE);
-  else if (current_age > fresh_limit)   // original limit
+  } else if (current_age > fresh_limit) {  // original limit
+    if (os_specifies_revalidate) {
+      DebugOn("http_match", "[..._document_freshness] document is stale and OS specifies revalidation; "
+              "returning FRESHNESS_STALE");
+      return (FRESHNESS_STALE);
+    }
+    DebugOn("http_match", "[..._document_freshness] document is stale but no revalidation explicitly required; "
+            "returning FRESHNESS_WARNING");
     return (FRESHNESS_WARNING);
-  else
+  } else {
+    DebugOn("http_match", "[..._document_freshness] document is fresh; returning FRESHNESS_FRESH");
     return (FRESHNESS_FRESH);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -8811,7 +8828,8 @@ AuthenticationNeeded(const HttpConfigParams * p, HTTPHdr * client_request, HTTPH
   ///////////////////////////////////////////////////////////////////////
 
   if (client_request->presence(MIME_PRESENCE_AUTHORIZATION) && p->cache_ignore_auth == 0) {
-    if (obj_response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE)) {
+    if (obj_response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE) ||
+        obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) {
       return AUTHENTICATION_MUST_REVALIDATE;
     } else if (obj_response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) {
       return AUTHENTICATION_MUST_REVALIDATE;
