@@ -27,3 +27,5 @@ config.log
 config.status
 configure
 configure.ac
+TS_version
+README.via
