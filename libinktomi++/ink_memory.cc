@@ -261,7 +261,7 @@ ink_memalign(size_t alignment, size_t size)
   void *ptr;
 
 #ifdef HAVE_POSIX_MEMALIGN
-  if (alignment <= 16)
+  if (alignment <= 8)
     return ink_malloc(size);
 
   if (size == (1024 * 1024)) {
