@@ -229,6 +229,29 @@ AC_ARG_WITH([architecture],
 )
 AS_IF([test "x$with_architecture" = "xyes"], [echo "--with-architecture needs an argument"; AS_EXIT()]
 )
+
+#
+# DB support. By default, we require sqlite3, but we also optionally support BDB. You can
+# disable / flip these behaviors with these flags.
+#
+AC_MSG_CHECKING([whether to enable sqlite3])
+AC_ARG_WITH([sqlite3],
+  [AS_HELP_STRING([--without-sqlite3],[disable support for sqlite3 [default=no]])],
+  [],
+  [with_sqlite3=yes]
+)
+if test "x${with_sqlite3}" = "x"; then
+   with_sqlite3="yes"
+fi
+AC_MSG_RESULT([$with_sqlite3])
+          
+AC_MSG_CHECKING([whether to enable libdb])
+AC_ARG_WITH([libdb],
+  [AS_HELP_STRING([--with-libdb],[compile with libdb support [default=no]])],
+  [with_libdb=$withval],
+  [with_libdb=no]
+)
+AC_MSG_RESULT([$with_libdb])
           
 #
 # Installation directories
@@ -430,23 +453,31 @@ AC_CHECK_LIB([expat],[XML_SetUserData],
   [$LIBTHREAD]
 )
 
-ts_have_db=0
-AC_CHECK_LIB([db],[__db185_open],
-  [LIBDB="-ldb"
-   ts_have_db=1
-  ],
-   [AC_MSG_WARN([check for libdb failed. Have you installed db4-devel?])]
-)
-
-AC_CHECK_LIB([c],[dbopen],
-  [LIBDB=""
-  ts_have_db=1
-  ])
-AC_SUBST([LIBDB])
- 
-if test "$ts_have_db" = "0"; then
-    AC_MSG_FAILURE([No DB interface found])
+if test "x${with_sqlite3}" == "xyes"; then
+  AC_CHECK_LIB([sqlite3], [sqlite3_open], 
+    [AC_SUBST([LIBSQLITE3], ["-lsqlite3"])
+    ],
+    [AC_MSG_FAILURE([check for sqlite3 failed. Have you installed sqlite3-devel?])],
+  )
 fi
+
+if test "x${with_libdb}" == "xyes"; then
+  ts_have_db=0
+  AC_CHECK_LIB([db],[__db185_open],
+    [LIBDB="-ldb"
+    ],
+    [AC_MSG_WARN([check for libdb failed. Have you installed db4-devel?])]
+  )
+
+  AC_CHECK_LIB([c],[dbopen],
+      [LIBDB=""
+      ])
+  AC_SUBST([LIBDB])
+fi
+
+#if test "$ts_have_db" = "0"; then
+#    AC_MSG_FAILURE([No DB interface found])
+#fi
 
 AC_CHECK_LIB([pcre], [pcre_exec], 
   [AC_SUBST([LIBPCRE],["-lpcre"])],
@@ -518,8 +549,6 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   sys/sysinfo.h \
                   sys/systeminfo.h \
                   arpa/nameser_compat.h \
-                  db_185.h \
-                  db.h \
                   execinfo.h \
                   netdb.h \
                   regex.h \
@@ -536,6 +565,18 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   sys/mount.h \
                   sys/param.h \
                   ], [], [])
+
+if test "x${with_libdb}" == "xyes"; then
+AC_CHECK_HEADERS([db_185.h \
+                  db.h \
+                  ], [], [])
+fi
+
+if test "x${with_sqlite3}" == "xyes"; then
+AC_CHECK_HEADERS([sqlite3.h \
+                  ], [], [])
+fi
+
 
 APR_CHECK_GETHOSTBYNAME_R_STYLE
 

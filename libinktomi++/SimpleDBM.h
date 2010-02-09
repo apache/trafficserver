@@ -24,8 +24,8 @@
 
   This C++ class encapsulates a simple DBM.  It is implemented
   internally with libdb or gdbm or a similar basic DBM.  The underlying
-  implementation can be specified in the constructor, though at the time
-  of this writing, only a libdb version is available.
+  implementation can be specified in the constructor, currently sqlite3
+  and libdb are supported. sqlite3 is the favored default if available.
 
   The SimpleDBM interface supports open, get, put, remove, iterate,
   and other methods.  It basically creates an associative object memory
@@ -38,26 +38,13 @@
   used to prevent multiple processes from accessing the same database.
 
   Refer to the method comments in SimpleDBM.cc for more info.
-
 */
 
 #ifndef _SimpleDBM_h_
 #define	_SimpleDBM_h_
 
-extern "C"
-{
-#ifdef HAVE_DB_185_H
-#include <db_185.h>
-#else
-#ifdef HAVE_DB_H
-#include <db.h>
-#endif
-#endif
-}
-
 #include "ink_platform.h"
 #include "inktomi++.h"
-
 
 class SimpleDBM;
 
@@ -68,30 +55,41 @@ class SimpleDBM;
 //////////////////////////////////////////////////////////////////////////////
 
 typedef enum
-{
-  SimpleDBM_Type_LIBDB_Hash = 1,
-  SimpleDBM_Type_GDBM = 2
-} SimpleDBM_Type;
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      SimpleDBM_Info
-//
-//////////////////////////////////////////////////////////////////////////////
-
-typedef struct
-{
-  void *dbopen_info;
-} SimpleDBM_Info_LIBDB;
-
-typedef struct
-{
-  union
   {
-    SimpleDBM_Info_LIBDB libdb;
-  } type_specific;
-} SimpleDBM_Info;
+    SimpleDBM_Type_LIBDB_Hash = 1,
+    SimpleDBM_Type_SQLITE3 = 2,
+    SimpleDBM_Type_MDBM = 4 // Not supported!
+  } SimpleDBM_Type;
+
+typedef enum
+  {
+    SimpleDBM_Flags_READONLY = 1,
+  } SimpleDBM_Flags;
+
+extern "C"
+{
+#ifdef HAVE_SQLITE3_H
+#define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_SQLITE3
+#define SIMPLEDBM_USE_SQLITE3
+#include <sqlite3.h>
+#endif
+
+#ifdef HAVE_DB_185_H
+#ifndef DEFAULT_DB_IMPLEMENTATION
+#define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_LIBDB_Hash
+#endif
+#define SIMPLEDBM_USE_LIBDB
+#include <db_185.h>
+#else
+#ifdef HAVE_DB_H
+#ifndef DEFAULT_DB_IMPLEMENTATION
+#define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_LIBDB_Hash
+#endif
+#define SIMPLEDBM_USE_LIBDB
+#include <db.h>
+#endif
+#endif
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -101,7 +99,7 @@ typedef struct
 //////////////////////////////////////////////////////////////////////////////
 
 typedef int (*SimpleDBMIteratorFunction)
-  (SimpleDBM * dbm, void *client_data, void *key, int key_len, void *data, int data_len);
+  (SimpleDBM *dbm, void *client_data, const void *key, int key_len, const void *data, int data_len);
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -109,30 +107,41 @@ typedef int (*SimpleDBMIteratorFunction)
 //      SimpleDBM Class
 //
 //////////////////////////////////////////////////////////////////////////////
-
 class SimpleDBM
 {
 private:
-  int dbm_fd;
-  char *dbm_name;
-  bool dbm_opened;
-  SimpleDBM_Type dbm_type;
+  int _dbm_fd;
+  char *_dbm_name;
+  bool _dbm_opened;
+  SimpleDBM_Type _dbm_type;
+  void *_data;
 
-  ProcessMutex thread_lock;
+  ProcessMutex _lock;
 
-  union
-  {
-    struct
-    {
+  // Backend type specific "state" data.
+  union {
+#ifdef SIMPLEDBM_USE_LIBDB    
+    struct {
       DB *db;
     } libdb;
-  } type_specific_state;
+#endif
+#ifdef SIMPLEDBM_USE_SQLITE3
+    struct {
+      sqlite3 *ppDb;
+      sqlite3_stmt *replace_stmt;
+      sqlite3_stmt *delete_stmt;
+      sqlite3_stmt *select_stmt;
+      sqlite3_stmt *iterate_stmt;
+    } sqlite3;
+#endif
+  } _type_state;
 
 public:
-    SimpleDBM(SimpleDBM_Type type = SimpleDBM_Type_LIBDB_Hash);
-   ~SimpleDBM();
+  SimpleDBM(SimpleDBM_Type type = DEFAULT_DB_IMPLEMENTATION);
 
-  int open(char *db_name, SimpleDBM_Info * info = NULL);
+  ~SimpleDBM();
+
+  int open(char *db_name, int flags = 0, void *info = NULL);
   int close();
 
   int get(void *key, int key_len, void **data, int *data_len);
@@ -144,13 +153,45 @@ public:
   int lock(bool shared_lock = false);
   int unlock();
 
-  void freeData(void *data);
-};
 
-//////////////////////////////////////////////////////////////////////////////
-//
-//      Inline Methods
-//
-//////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  //      Inline Methods
+  //
+  //////////////////////////////////////////////////////////////////////////////
+  bool functional() const {
+    return supported(_dbm_type);
+  }
+
+  /**
+     This method frees the data pointer that was returned by the
+     SimpleDBM::get() method. If the user doesn't free the data returned
+     by get() when it is no longer needed, it will become a storage leak.
+
+  */
+  void freeData(void *data) {
+    xfree(data);
+  }
+
+  // Class members, used to see what backends are available.
+  static bool supported(SimpleDBM_Type type) {
+    return static_cast<bool>(backends() & type);
+  }
+
+  static int backends() {
+    return
+#ifdef SIMPLEDBM_USE_LIBDB    
+      SimpleDBM_Type_LIBDB_Hash |
+#endif
+#ifdef SIMPLEDBM_USE_SQLITE3    
+      SimpleDBM_Type_SQLITE3 |
+#endif
+#ifdef SIMPLEDBM_USE_MDBM    
+      SimpleDBM_Type_MDBM |
+#endif
+      0;
+  }
+
+};
 
 #endif /*_SimpleDBM_h_*/

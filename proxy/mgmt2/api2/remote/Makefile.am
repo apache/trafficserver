@@ -61,4 +61,4 @@ api_cli_remote_LDADD = \
   libmgmtapiremote.a \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBTCL@ @LIBDB@ @LIBRT@ @LIBDL@ @LIBSSL@ @LIBICONV@
+  @LIBTCL@ @LIBDB@ @LIBSQLITE3@ @LIBRT@ @LIBDL@ @LIBSSL@ @LIBICONV@

@@ -47,7 +47,7 @@ plugins to build large scale web applications.
     openssl-devel
     tcl-devel
     expat-devel
-    db4-devel
+    sqlite-devel (or optionally, db4-devel)
     pcre
 
   Ubuntu 8.04,8.10,9.10
@@ -59,7 +59,7 @@ plugins to build large scale web applications.
     tcl-dev 
     expat 
     libexpat-dev 
-    libdb-dev 
+    libsqlite3-dev (or optionally, libdb-dev)
     libpcre3-dev
 
 

@@ -22,10 +22,10 @@
 
   @section details Details
   
-  This C++ class encapsulates a simple DBM.  It is implemented internally
-  with libdb or gdbm or a similar basic DBM.  The underlying implementation
-  can be specified in the constructor, though at the time of this writing,
-  only a libdb version is available.
+  This C++ class encapsulates a simple DBM.  It is implemented
+  internally with libdb or gdbm or a similar basic DBM.  The underlying
+  implementation can be specified in the constructor, currently sqlite3
+  and libdb are supported. sqlite3 is the favored default if available.
 
   The SimpleDBM interface supports open, get, put, delete, iterate, and
   other methods.  It basically creates an associative object memory on disk.
@@ -37,10 +37,23 @@
   prevent multiple processes from accessing the same database.
 
 */
-
-#include "inktomi++.h"
 #include "SimpleDBM.h"
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
+
+// sqlite3 prepared statement SQL. TODO: We might not be able to
+// use these "globals" if we switch to a model where sqlite3 is allowed
+// to do the locking around the db conn and step.
+#ifdef SIMPLEDBM_USE_SQLITE3
+#include "INK_MD5.h"
+
+static const char* REPLACE_STMT = "REPLACE INTO ats(kid,key,val) VALUES(?,?,?)";
+static const char* DELETE_STMT = "DELETE FROM ats WHERE kid=?";
+static const char* SELECT_STMT = "SELECT val FROM ats WHERE kid=?";
+static const char* ITERATE_STMT = "SELECT key,val FROM ats";
+
+static const int SQLITE_RETRIES = 3;
+static const int MD5_LENGTH = 32;
+#endif
+
 
 /**
   This is the constructor for a SimpleDBM. The constructor initializes
@@ -53,13 +66,18 @@
 */
 SimpleDBM::SimpleDBM(SimpleDBM_Type type)
 {
-  dbm_opened = false;
-  dbm_type = type;
-  dbm_fd = -1;
-  dbm_name = NULL;
+  _dbm_fd = -1;
+  _dbm_name = NULL;
+  _dbm_opened = false;
+  _dbm_type = type;
+  _data = NULL;
 
-  ink_ProcessMutex_init(&thread_lock, "SimpleDBM");
+#ifdef SIMPLEDBM_USE_SQLITE3
+  memset(&_type_state.sqlite3, 0, sizeof(_type_state.sqlite3));
+#endif
+  ink_ProcessMutex_init(&_lock, "SimpleDBM");
 }
+
 
 /**
   This is the destructor for a SimpleDBM. If the attached database is
@@ -68,10 +86,11 @@ SimpleDBM::SimpleDBM(SimpleDBM_Type type)
 */
 SimpleDBM::~SimpleDBM()
 {
-  if (dbm_opened)
+  if (_dbm_opened)
     close();
-  ink_ProcessMutex_destroy(&thread_lock);
+  ink_ProcessMutex_destroy(&_lock);
 }
+
 
 /**
   This routine opens a database file with name db_name, creating it if
@@ -81,50 +100,98 @@ SimpleDBM::~SimpleDBM()
   If you perform any of the following methods on a SimpleDBM which has
   not been opened, the error ENOTCONN is returned.
 
+  Flags can be used to control some behavior, which might or might not
+  be supported by all backends:
+
+      SimpleDBM_Flags_READONLY   - Open the DB in Read-Only mode
+
   @return 0 on success, else a negative number on error.
 
 */
 int
-SimpleDBM::open(char *db_name, SimpleDBM_Info * info)
+SimpleDBM::open(char *db_name, int flags, void* info)
 {
-  DB *db;
-  int return_code;
+  int return_code = 0;
+#ifdef SIMPLEDBM_USE_SQLITE3
+  int sqlite3_flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+  int s;
+#endif
 
-  ink_ProcessMutex_acquire(&thread_lock);
+  ink_ProcessMutex_acquire(&_lock);
 
-  if (dbm_opened) {
-    ink_ProcessMutex_release(&thread_lock);
+  if (_dbm_opened) {
+    ink_ProcessMutex_release(&_lock);
     return (-EALREADY);
   }
 
   if (db_name == NULL) {
-    ink_ProcessMutex_release(&thread_lock);
+    ink_ProcessMutex_release(&_lock);
     return (-EINVAL);
   }
 
-  dbm_name = xstrdup(db_name);
+  _dbm_name = xstrdup(db_name);
 
-  switch (dbm_type) {
+  switch (_dbm_type) {
   case SimpleDBM_Type_LIBDB_Hash:
-    db = dbopen(db_name, O_RDWR | O_CREAT, 0666, DB_HASH, (info ? info->type_specific.libdb.dbopen_info : NULL));
+#ifdef SIMPLEDBM_USE_LIBDB
+    _type_state.libdb.db = dbopen(db_name, O_RDWR | O_CREAT, 0666, DB_HASH, info);
 
-    type_specific_state.libdb.db = db;
-
-    if (!db) {
+    if (!_type_state.libdb.db) {
       return_code = (errno ? -errno : -1);
     } else {
-      return_code = 0;
-      dbm_fd = db->fd(db);
-      dbm_opened = true;
+      _dbm_fd = _type_state.libdb.db->fd(_type_state.libdb.db);
+      _dbm_opened = true;
     }
+#else // libdb not supported
+    return_code = -ENOTSUP;
+#endif
+    break;
+  case SimpleDBM_Type_SQLITE3:
+#ifdef SIMPLEDBM_USE_SQLITE3
+#ifdef SQLITE_OPEN_NOMUTEX
+    sqlite3_flags |= SQLITE_OPEN_NOMUTEX; // We use our own mutexes
+#endif
+    if (flags & SimpleDBM_Flags_READONLY)
+      sqlite3_flags = SQLITE_OPEN_READONLY;
+    s = sqlite3_open_v2(db_name, &_type_state.sqlite3.ppDb, sqlite3_flags, NULL);
+    if (SQLITE_OK == s) {
+      if (!(flags & SimpleDBM_Flags_READONLY))
+        s = sqlite3_exec(_type_state.sqlite3.ppDb,
+                         "CREATE TABLE IF NOT EXISTS ats(kid VARHCHAR(32) PRIMARY KEY, key BLOB, val BLOB)",
+                         NULL, 0, NULL);
+      if (SQLITE_OK == s) { // OK, DB opened and initialized properly, lets prepare the statements.
+        _dbm_opened = true;
+        if (!(flags & SimpleDBM_Flags_READONLY)) {
+          s = sqlite3_prepare_v2(_type_state.sqlite3.ppDb, REPLACE_STMT, -1, &_type_state.sqlite3.replace_stmt, NULL);
+          if (SQLITE_OK != s)
+            return_code = -s;
+          s = sqlite3_prepare_v2(_type_state.sqlite3.ppDb, DELETE_STMT, -1, &_type_state.sqlite3.delete_stmt, NULL);
+          if (SQLITE_OK != s)
+            return_code = -s;
+        }
+        s = sqlite3_prepare_v2(_type_state.sqlite3.ppDb, SELECT_STMT, -1, &_type_state.sqlite3.select_stmt, NULL);
+        if (SQLITE_OK != s)
+          return_code = -s;
+        s = sqlite3_prepare_v2(_type_state.sqlite3.ppDb, ITERATE_STMT, -1, &_type_state.sqlite3.iterate_stmt, NULL);
+        if (SQLITE_OK != s)
+          return_code = -s;
+      } else {
+        return_code = -s;
+      }
+    } else {
+      return_code = -s;
+    }
+#else // sqlite3 not supported
+    return_code = -ENOTSUP;
+#endif
     break;
   default:
     return_code = -ENOTSUP;
     break;
   }
+  ink_ProcessMutex_release(&_lock);
 
-  ink_ProcessMutex_release(&thread_lock);
-  return (return_code);
+  return return_code;
 }
 
 
@@ -137,36 +204,54 @@ SimpleDBM::open(char *db_name, SimpleDBM_Info * info)
 int
 SimpleDBM::close()
 {
-  int s, return_code;
+  int return_code = 0;
+  int s;
 
-  return_code = 0;
+  ink_ProcessMutex_acquire(&_lock);
 
-  ink_ProcessMutex_acquire(&thread_lock);
+  xfree(_dbm_name);
+  _dbm_name = NULL;
 
-  if (!dbm_opened) {
-    ink_ProcessMutex_release(&thread_lock);
+  if (!_dbm_opened) {
+    ink_ProcessMutex_release(&_lock);
     return (-ENOTCONN);
   }
 
-  switch (dbm_type) {
+  switch (_dbm_type) {
   case SimpleDBM_Type_LIBDB_Hash:
-    s = type_specific_state.libdb.db->close(type_specific_state.libdb.db);
+#ifdef SIMPLEDBM_USE_LIBDB
+    s = _type_state.libdb.db->close(_type_state.libdb.db);
     if (s != 0)
       return_code = -errno;
+#else
+    return_code = -ENOTSUP;
+#endif // libdb not supported
+    break;
+  case SimpleDBM_Type_SQLITE3:
+#ifdef SIMPLEDBM_USE_SQLITE3
+    sqlite3_finalize(_type_state.sqlite3.replace_stmt);
+    sqlite3_finalize(_type_state.sqlite3.delete_stmt);
+    sqlite3_finalize(_type_state.sqlite3.select_stmt);
+    sqlite3_finalize(_type_state.sqlite3.iterate_stmt);
+    s = sqlite3_close(_type_state.sqlite3.ppDb);
+    if (SQLITE_OK != s)
+      return_code = -s;
+#else // sqlite3 not supported
+    return_code = -ENOTSUP;
+#endif
     break;
   default:
     return_code = -ENOTSUP;
     break;
   }
 
-  xfree(dbm_name);
-  dbm_name = NULL;
-  dbm_fd = -1;
-  dbm_opened = false;
+  _dbm_fd = -1;
+  _dbm_opened = false;
+  ink_ProcessMutex_release(&_lock);
 
-  ink_ProcessMutex_release(&thread_lock);
-  return (return_code);
+  return return_code;
 }
+
 
 /**
   This method finds the data object corresponding to a key, if any.
@@ -185,24 +270,36 @@ SimpleDBM::close()
 int
 SimpleDBM::get(void *key, int key_len, void **data, int *data_len)
 {
-  DB *db;
-  int s, return_code;
+  int return_code = 0;
+  int s;
+#ifdef SIMPLEDBM_USE_LIBDB
   DBT key_thang, data_thang;
+#endif
+#ifdef SIMPLEDBM_USE_SQLITE3
+  int retries = SQLITE_RETRIES;
+  const void *res = NULL;
+  INK_MD5 key_md5;
+  char key_buf[33];
 
-  ink_ProcessMutex_acquire(&thread_lock);
+  // Do this before we acquire the lock
+  key_md5.encodeBuffer((char*)key, key_len);
+  key_md5.toHexStr(key_buf);
+#endif
 
-  if (!dbm_opened) {
-    ink_ProcessMutex_release(&thread_lock);
+  ink_ProcessMutex_acquire(&_lock);
+
+  if (!_dbm_opened) {
+    ink_ProcessMutex_release(&_lock);
     return (-ENOTCONN);
   }
 
-  switch (dbm_type) {
+  switch (_dbm_type) {
   case SimpleDBM_Type_LIBDB_Hash:
-    db = type_specific_state.libdb.db;
+#ifdef SIMPLEDBM_USE_LIBDB
     key_thang.data = key;
     key_thang.size = key_len;
 
-    s = db->get(db, &key_thang, &data_thang, 0);
+    s = _type_state.libdb.db->get(_type_state.libdb.db, &key_thang, &data_thang, 0);
 
     if (s == 0) {
       *data_len = (int) (data_thang.size);
@@ -218,15 +315,58 @@ SimpleDBM::get(void *key, int key_len, void **data, int *data_len)
       *data = NULL;
       return_code = (errno ? -errno : -1);
     }
+#else // libdb not supported
+    return_code = -ENOTSUP;
+#endif
+    break;
+  case SimpleDBM_Type_SQLITE3:
+#ifdef SIMPLEDBM_USE_SQLITE3
+    sqlite3_reset(_type_state.sqlite3.select_stmt);
+    sqlite3_bind_text(_type_state.sqlite3.select_stmt, 1, key_buf, MD5_LENGTH, NULL);
+    while (retries > 0) {
+      s = sqlite3_step(_type_state.sqlite3.select_stmt);
+      switch (s) {
+      case SQLITE_ROW:
+        retries = 0;
+        res = sqlite3_column_blob(_type_state.sqlite3.select_stmt, 0);
+        if (res) {
+          *data_len = sqlite3_column_bytes(_type_state.sqlite3.select_stmt, 0);
+          *data = xmalloc((unsigned int)*data_len);
+          ink_memcpy(*data, (void*)res, (int)*data_len);
+        } else {
+          *data_len = 0;
+          *data = NULL;
+        }
+        return_code = 0;
+        break;
+      case SQLITE_BUSY:
+        --retries;
+        return_code = -s;
+        break;
+      case SQLITE_DONE:
+        if (!res)
+          return_code = 1;
+        retries = 0;
+        break;
+      default:
+        return_code = -s;
+        retries = 0;
+        break;
+      }
+    }
+#else // sqlite3 not supported
+    return_code = -ENOTSUP;
+#endif
     break;
   default:
     return_code = -ENOTSUP;
     break;
   }
+  ink_ProcessMutex_release(&_lock);
 
-  ink_ProcessMutex_release(&thread_lock);
-  return (return_code);
+  return return_code;
 }
+
 
 /**
   This method inserts the (key,data) binding into the current
@@ -239,26 +379,37 @@ SimpleDBM::get(void *key, int key_len, void **data, int *data_len)
 int
 SimpleDBM::put(void *key, int key_len, void *data, int data_len)
 {
-  DB *db;
-  int s, return_code;
+  int return_code = 0;
+  int s;
+#ifdef SIMPLEDBM_USE_LIBDB
   DBT key_thang, data_thang;
+#endif
+#ifdef SIMPLEDBM_USE_SQLITE3
+  int retries = SQLITE_RETRIES;
+  INK_MD5 key_md5;
+  char key_buf[33];
 
-  ink_ProcessMutex_acquire(&thread_lock);
+  // Do this before we acquire the lock
+  key_md5.encodeBuffer((char*)key, key_len);
+  key_md5.toHexStr(key_buf);
+#endif
 
-  if (!dbm_opened) {
-    ink_ProcessMutex_release(&thread_lock);
-    return (-ENOTCONN);
+  ink_ProcessMutex_acquire(&_lock);
+
+  if (!_dbm_opened) {
+    ink_ProcessMutex_release(&_lock);
+    return -ENOTCONN;
   }
 
-  switch (dbm_type) {
+  switch (_dbm_type) {
   case SimpleDBM_Type_LIBDB_Hash:
-    db = type_specific_state.libdb.db;
+#ifdef SIMPLEDBM_USE_LIBDB
     key_thang.data = key;
     key_thang.size = key_len;
     data_thang.data = data;
     data_thang.size = data_len;
 
-    s = db->put(db, &key_thang, &data_thang, 0);
+    s = _type_state.libdb.db->put(_type_state.libdb.db, &key_thang, &data_thang, 0);
 
     if (s == 0)
       return_code = 0;
@@ -267,15 +418,48 @@ SimpleDBM::put(void *key, int key_len, void *data, int data_len)
     else
       return_code = (errno ? -errno : -1);
 
+#else // libdb not supported
+    return_code = -ENOTSUP;
+#endif
+    break;
+  case SimpleDBM_Type_SQLITE3:
+#ifdef SIMPLEDBM_USE_SQLITE3
+    if (NULL == _type_state.sqlite3.replace_stmt)
+      return -ENOTSUP;
+    sqlite3_reset(_type_state.sqlite3.replace_stmt);
+    sqlite3_bind_text(_type_state.sqlite3.replace_stmt, 1, key_buf, MD5_LENGTH, NULL);
+    sqlite3_bind_blob(_type_state.sqlite3.replace_stmt, 2, key, key_len, NULL);
+    sqlite3_bind_blob(_type_state.sqlite3.replace_stmt, 3, data, data_len, NULL);
+
+    while (retries > 0) {
+      s = sqlite3_step(_type_state.sqlite3.replace_stmt);
+      switch (s) {
+      case SQLITE_BUSY:
+        --retries;
+        return_code = -s;
+        break;
+      case SQLITE_DONE:
+        retries = 0;
+        break;
+      default:
+        return_code = -s;
+        retries = 0;
+        break;
+      }
+    }
+#else // sqlite3 not supported
+    return_code = -ENOTSUP;
+#endif
     break;
   default:
     return_code = -ENOTSUP;
     break;
   }
+  ink_ProcessMutex_release(&_lock);
 
-  ink_ProcessMutex_release(&thread_lock);
-  return (return_code);
+  return return_code;
 }
+
 
 /**
   This method removes any binding for the key with byte count key_len.
@@ -286,50 +470,79 @@ SimpleDBM::put(void *key, int key_len, void *data, int data_len)
 int
 SimpleDBM::remove(void *key, int key_len)
 {
-  DB *db;
+  int return_code = 0;
+  int s;
+#ifdef SIMPLEDBM_USE_LIBDB
   DBT key_thang;
-  int s, return_code;
+#endif
+#ifdef SIMPLEDBM_USE_SQLITE3
+  int retries = SQLITE_RETRIES;
+  INK_MD5 key_md5;
+  char key_buf[33];
 
-  ink_ProcessMutex_acquire(&thread_lock);
+  // Do this before we acquire the lock
+  key_md5.encodeBuffer((char*)key, key_len);
+  key_md5.toHexStr(key_buf);
+#endif
 
-  if (!dbm_opened) {
-    ink_ProcessMutex_release(&thread_lock);
+  ink_ProcessMutex_acquire(&_lock);
+
+  if (!_dbm_opened) {
+    ink_ProcessMutex_release(&_lock);
     return (-ENOTCONN);
   }
 
-  switch (dbm_type) {
+  switch (_dbm_type) {
   case SimpleDBM_Type_LIBDB_Hash:
-    db = type_specific_state.libdb.db;
+#ifdef SIMPLEDBM_USE_LIBDB
     key_thang.data = key;
     key_thang.size = key_len;
 
-    s = db->del(db, &key_thang, 0);
+    s = _type_state.libdb.db->del(_type_state.libdb.db, &key_thang, 0);
 
     if ((s == 0) || (s == 1))
       return_code = 0;
     else
       return_code = (errno ? -errno : -1);
+#else // libdb not supported
+    return_code = -ENOTSUP;
+#endif
+    break;
+  case SimpleDBM_Type_SQLITE3:
+#ifdef SIMPLEDBM_USE_SQLITE3
+    if (NULL == _type_state.sqlite3.delete_stmt)
+      return -ENOTSUP;
+    sqlite3_reset(_type_state.sqlite3.delete_stmt);
+    sqlite3_bind_text(_type_state.sqlite3.delete_stmt, 1, key_buf, MD5_LENGTH, NULL);
+    while (retries > 0) {
+      s = sqlite3_step(_type_state.sqlite3.delete_stmt);
+      switch (s) {
+      case SQLITE_BUSY:
+        --retries;
+        return_code = -s;
+        break;
+      case SQLITE_DONE:
+        retries = 0;
+        break;
+      default:
+        return_code = -s;
+        retries = 0;
+        break;
+      }
+    }
+#else // sqlite3 not supported
+    return_code = -ENOTSUP;
+#endif
     break;
   default:
     return_code = -ENOTSUP;
     break;
   }
+  ink_ProcessMutex_release(&_lock);
 
-  ink_ProcessMutex_release(&thread_lock);
-  return (return_code);
+  return return_code;
 }
 
-/**
-  This method frees the data pointer that was returned by the
-  SimpleDBM::get() method. If the user doesn't free the data returned
-  by get() when it is no longer needed, it will become a storage leak.
-
-*/
-void
-SimpleDBM::freeData(void *data)
-{
-  xfree(data);
-}
 
 /**
   Flush any information, if appropriate.
@@ -340,35 +553,48 @@ SimpleDBM::freeData(void *data)
 int
 SimpleDBM::sync()
 {
-  DB *db;
-  int s, return_code;
+  int return_code = 0;
+#ifdef SIMPLEDBM_USE_LIBDB
+  int s;
+#endif
 
-  ink_ProcessMutex_acquire(&thread_lock);
+  ink_ProcessMutex_acquire(&_lock);
 
-  if (!dbm_opened) {
-    ink_ProcessMutex_release(&thread_lock);
+  if (!_dbm_opened) {
+    ink_ProcessMutex_release(&_lock);
     return (-ENOTCONN);
   }
 
-  switch (dbm_type) {
+  switch (_dbm_type) {
   case SimpleDBM_Type_LIBDB_Hash:
-    db = type_specific_state.libdb.db;
-
-    s = db->sync(db, 0);
+#ifdef SIMPLEDBM_USE_LIBDB
+    s = _type_state.libdb.db->sync(_type_state.libdb.db, 0);
 
     if (s == 0)
       return_code = 0;
     else
       return_code = (errno ? -errno : -1);
+#else
+    return_code = -ENOTSUP;
+#endif // libdb not supported
+    break;
+  case SimpleDBM_Type_SQLITE3:
+#ifdef SIMPLEDBM_USE_SQLITE3
+    // Todo: Implement sync ?
+    return_code = 0;
+#else // sqlite3 not supported
+    return_code = -ENOTSUP;
+#endif
     break;
   default:
     return_code = -ENOTSUP;
     break;
   }
+  ink_ProcessMutex_release(&_lock);
 
-  ink_ProcessMutex_release(&thread_lock);
-  return (return_code);
+  return return_code;
 }
+
 
 /**
   This routine maps a function f over the elements in the database,
@@ -400,41 +626,43 @@ SimpleDBM::sync()
 int
 SimpleDBM::iterate(SimpleDBMIteratorFunction f, void *client_data)
 {
-  DB *db;
+  int return_code = 0;
+  int nelems = 0;
+  int s, r;
+#ifdef SIMPLEDBM_USE_LIBDB
   DBT key_thang, data_thang;
-  int s, r, nelems, flags, return_code;
+  int flags;
+#endif
+#ifdef SIMPLEDBM_USE_SQLITE3
+  int retries = SQLITE_RETRIES;
+  const void *key = NULL;
+  const void *data = NULL;
+#endif
 
-  ink_ProcessMutex_acquire(&thread_lock);
+  ink_ProcessMutex_acquire(&_lock);
 
-  if (!dbm_opened) {
-    ink_ProcessMutex_release(&thread_lock);
+  if (!_dbm_opened) {
+    ink_ProcessMutex_release(&_lock);
     return (-ENOTCONN);
   }
 
-  switch (dbm_type) {
+  switch (_dbm_type) {
   case SimpleDBM_Type_LIBDB_Hash:
-    db = type_specific_state.libdb.db;
-
-    nelems = 0;
-    return_code = 0;
-
+#ifdef SIMPLEDBM_USE_LIBDB
     while (1) {
       flags = (nelems == 0 ? R_FIRST : R_NEXT);
 
-      s = db->seq(db, &key_thang, &data_thang, flags);
+      s = _type_state.libdb.db->seq(_type_state.libdb.db, &key_thang, &data_thang, flags);
 
-      if (s == 1)               // all done
-      {
-        r = (*f) (this, client_data, NULL, 0, NULL, 0);
+      if (s == 1) {
+        r = (*f)(this, client_data, NULL, 0, NULL, 0);
         return_code = nelems;
         break;
-      } else if (s < 0)         // error
-      {
+      } else if (s < 0) {         // error
         return_code = s;
         break;
-      } else                    // got real data
-      {
-        r = (*f) (this, client_data, key_thang.data, (int) (key_thang.size), data_thang.data, (int) (data_thang.size));
+      } else {                   // got real data
+        r = (*f)(this, client_data, key_thang.data, (int)(key_thang.size), data_thang.data, (int)(data_thang.size));
         ++nelems;
         if (r == 0) {
           return_code = nelems;
@@ -442,15 +670,59 @@ SimpleDBM::iterate(SimpleDBMIteratorFunction f, void *client_data)
         }
       }
     }
+#else // libdb not supported
+    return_code = -ENOTSUP;
+#endif
+    break;
+  case SimpleDBM_Type_SQLITE3:
+#ifdef SIMPLEDBM_USE_SQLITE3
+    sqlite3_reset(_type_state.sqlite3.iterate_stmt);
+    while (retries > 0) {
+      s = sqlite3_step(_type_state.sqlite3.iterate_stmt);
+      switch (s) {
+      case SQLITE_ROW:
+        key = sqlite3_column_blob(_type_state.sqlite3.iterate_stmt, 0);
+        data = sqlite3_column_blob(_type_state.sqlite3.iterate_stmt, 0);
+        if (key) {
+          int key_len = sqlite3_column_bytes(_type_state.sqlite3.iterate_stmt, 0);
+          int data_len = sqlite3_column_bytes(_type_state.sqlite3.iterate_stmt, 1);
+
+          ++nelems;
+          r = (*f)(this, client_data, key, key_len, data, data_len);
+          if (r == 0) {
+            return_code = nelems;
+            retries = 0; // We're done, or so the callback thinks
+          }
+        }        
+        break;
+      case SQLITE_BUSY:
+        --retries;
+        return_code = -s;
+        break;
+      case SQLITE_DONE:
+        r = (*f)(this, client_data, NULL, 0, NULL, 0);
+        return_code = nelems;
+        retries = 0;
+        break;
+      default:
+        return_code = -s;
+        retries = 0;
+        break;
+      }
+    }
+#else // sqlite3 not supported
+    return_code = -ENOTSUP;
+#endif
     break;
   default:
     return_code = -ENOTSUP;
     break;
   }
+  ink_ProcessMutex_release(&_lock);
 
-  ink_ProcessMutex_release(&thread_lock);
-  return (return_code);
+  return return_code;
 }
+
 
 /**
   This routine takes out a process lock on the database.
@@ -468,35 +740,58 @@ SimpleDBM::iterate(SimpleDBMIteratorFunction f, void *client_data)
   opens the same file D, and locks and unlocks the lock, the original
   lock will be unset.
 
-  @return 0 on success, a negative value on error.
+  Note that not all backend implementation requires an explicit lock, since
+  they handle multiple access to the DB automatically. In such cases, lock()
+  and unlock() becomes no-ops.
 
+  @return 0 on success, a negative value on error.
 */
 int
 SimpleDBM::lock(bool shared_lock)
 {
-  int s;
+  int return_code = 0;
 
-  ink_ProcessMutex_acquire(&thread_lock);
+  switch (_dbm_type) {
+  case SimpleDBM_Type_LIBDB_Hash:
+#ifdef SIMPLEDBM_USE_LIBDB
+    ink_ProcessMutex_acquire(&_lock);
+    if (!_dbm_opened) {
+      ink_ProcessMutex_release(&_lock);
+      return (-ENOTCONN);
+    }
 
-  if (!dbm_opened) {
-    ink_ProcessMutex_release(&thread_lock);
-    return (-ENOTCONN);
+    if (_dbm_fd == -1) {
+      ink_ProcessMutex_release(&_lock);
+      return (-EBADF);
+    }
+    ink_ProcessMutex_release(&_lock);
+    //
+    // ink_file_lock can block, so we shouldn't leave the mutex acquired,
+    // or we might never be able to unlock the file lock.
+    //
+    return_code = ink_file_lock(_dbm_fd, (shared_lock ? F_RDLCK : F_WRLCK));
+    if (return_code > 0)
+      return_code = 0;
+#else // libdb not supported
+    return_code = -ENOTSUP;
+#endif
+    break;
+  case SimpleDBM_Type_SQLITE3:
+#ifdef SIMPLEDBM_USE_SQLITE3
+    // Explicit locking not needed / supported for sqlite3.
+    return_code = 0;
+#else // sqlite3 not supported
+    return_code = -ENOTSUP;
+#endif
+    break;
+  default:
+    return_code = -ENOTSUP;
+    break;
   }
 
-  if (dbm_fd == -1) {
-    ink_ProcessMutex_release(&thread_lock);
-    return (-EBADF);
-  }
-  //
-  // ink_file_lock can block, so we shouldn't leave the mutex acquired,
-  // or we might never be able to unlock the file lock.
-  //
-
-  ink_ProcessMutex_release(&thread_lock);
-  s = ink_file_lock(dbm_fd, (shared_lock ? F_RDLCK : F_WRLCK));
-
-  return (s < 0 ? s : 0);
+  return (return_code);
 }
+
 
 /**
   This routine releases a process lock on the database.
@@ -508,28 +803,52 @@ SimpleDBM::lock(bool shared_lock)
   opens the same file D, and locks and unlocks the lock, the original
   lock will be unset.
 
+  Note that not all backend implementation requires an explicit lock, since
+  they handle multiple access to the DB automatically. In such cases, lock()
+  and unlock() becomes no-ops.
+
   @return 0 on success, a negative value on error.
 
 */
 int
 SimpleDBM::unlock()
 {
-  int s;
+  int return_code = 0;
 
-  ink_ProcessMutex_acquire(&thread_lock);
+  switch (_dbm_type) {
+  case SimpleDBM_Type_LIBDB_Hash:
+#ifdef SIMPLEDBM_USE_LIBDB
+    ink_ProcessMutex_acquire(&_lock);
+    if (!_dbm_opened) {
+      ink_ProcessMutex_release(&_lock);
+      return (-ENOTCONN);
+    }
 
-  if (!dbm_opened) {
-    ink_ProcessMutex_release(&thread_lock);
-    return (-ENOTCONN);
+    if (_dbm_fd == -1) {
+      ink_ProcessMutex_release(&_lock);
+      return (-EBADF);
+    }
+    ink_ProcessMutex_release(&_lock);
+
+    return_code = ink_file_lock(_dbm_fd, F_UNLCK);
+    if (return_code > 0)
+      return_code = 0;
+#else // libdb not supported
+    return_code = -ENOTSUP;
+#endif
+    break;
+  case SimpleDBM_Type_SQLITE3:
+#ifdef SIMPLEDBM_USE_SQLITE3
+    // Locking not needed / supported for sqlite3.
+    return_code = 0;
+#else // sqlite3 not supported
+    return_code = -ENOTSUP;
+#endif
+    break;
+  default:
+    return_code = -ENOTSUP;
+    break;
   }
 
-  if (dbm_fd == -1) {
-    ink_ProcessMutex_release(&thread_lock);
-    return (-EBADF);
-  }
-
-  ink_ProcessMutex_release(&thread_lock);
-  s = ink_file_lock(dbm_fd, F_UNLCK);
-
-  return (s < 0 ? s : 0);
+  return return_code;
 }
