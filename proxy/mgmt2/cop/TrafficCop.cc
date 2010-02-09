@@ -79,7 +79,7 @@ static int check_memory_min_memfree_kb = 10240;
 static int syslog_facility = LOG_DAEMON;
 static char syslog_fac_str[PATH_MAX];
 
-static int rni_killsig = SIGTERM;
+//static int rni_killsig = SIGTERM;
 static int killsig = SIGKILL;
 static int coresig = 0;
 
@@ -101,6 +101,7 @@ static int manager_failures = 0;
 static int server_failures = 0;
 static int server_not_found = 0;
 
+#if 0 // TODO: REMOVE RNI
 // connect to proxy port and hand it the RTSP port
 static time_t rni_last_restart = 0;
 static int rni_proxy_start_succeed = 1;
@@ -116,6 +117,7 @@ static int rni_rpass_watcher_enabled = 0;
 static char rni_rpass_lockfile[PATH_MAX];
 static char rni_rpass_restart_cmd[PATH_MAX] = "";
 static char rni_rpass_binary[PATH_MAX] = "";
+#endif
 
 static const int sleep_time = 10;       // 10 sec
 static const int manager_timeout = 3 * 60;      //  3 min
@@ -138,10 +140,12 @@ static ink_hrtime manager_flap_retry_start_time = 0;    // first time we attempt
 
 static const int kill_timeout = 1 * 60; //  1 min
 
+#if 0 // TODO: REMOVE RNI
 #define DEFAULT_RNI_RESTART_INTERVAL 20 // 20 seconds
 static int rni_restart_interval = DEFAULT_RNI_RESTART_INTERVAL;
 #define DEFAULT_RNI_RPASS_SWITCH_INTERVAL 60
 static int rni_rpass_switch_interval = DEFAULT_RNI_RPASS_SWITCH_INTERVAL;
+#endif
 
 static int child_pid = 0;
 static int child_status = 0;
@@ -613,6 +617,7 @@ ConfigIntFatalError:
   exit(1);
 }
 
+#if 0 // Used by RNI
 // extract the binary name from a cmd
 static void
 get_binary_from_cmd(char *cmdline, char *binary)
@@ -639,6 +644,7 @@ get_binary_from_cmd(char *cmdline, char *binary)
   cop_log(COP_DEBUG, "Leaving get_binary_from_cmd(%s, <%s>)\n", cmdline, binary);
 #endif
 }
+#endif
 
 static void
 read_config()
@@ -723,6 +729,7 @@ read_config()
   read_config_int("proxy.config.cop.linux_min_swapfree_kb", &check_memory_min_swapfree_kb);
   read_config_int("proxy.config.cop.linux_min_memfree_kb", &check_memory_min_memfree_kb);
 
+#if 0 // TODO: REMOVE RNI
   // Real Networks stuff
   read_config_int("proxy.config.rni.watcher_enabled", &rni_watcher_enabled);
   if (rni_watcher_enabled) {
@@ -749,11 +756,13 @@ read_config()
       get_binary_from_cmd(rni_rpass_restart_cmd, rni_rpass_binary);
     }
   }
+#endif
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving read_config()\n");
 #endif
 }
 
+#if 0 // Used by RNI
 //
 // Get process ID in file
 //
@@ -831,6 +840,7 @@ getholding_pid(const char *pid_path)
 #endif
   return 0;
 }
+#endif
 
 static void
 spawn_manager()
@@ -932,6 +942,7 @@ spawn_manager()
 #endif
 }
 
+#if 0 // TODO: REMOVE RNI
 //
 // Spawn G2 Real Server
 //
@@ -1139,7 +1150,7 @@ spawn_rpass()
   }
 }
 
-
+#endif // TODO: REMOVE RNI
 
 
 static int
@@ -1727,7 +1738,7 @@ server_up()
   }
 }
 
-
+#if 0 // TODO: REMOVE RNI
 //
 // Check health status for G2 Real Server
 //
@@ -1782,6 +1793,7 @@ check_rpass()
   }
 #endif
 }
+#endif // TODO: REMOVE RNI
 
 //         |  state  |  status  |  action
 // --------|---------|----------|---------------
@@ -1803,11 +1815,12 @@ check_programs()
 {
   int err;
   pid_t holding_pid;
-  pid_t rni_pid;
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering check_programs()\n");
 #endif
+#if 0 // TODO: REMOVE RNI
+  pid_t rni_pid;
   if (rni_last_restart > 0) {
     rni_pid = getholding_pid(rni_proxy_pid_path);
     if (rni_pid == 0 || kill(rni_pid, 0) == -1) {
@@ -1838,6 +1851,8 @@ check_programs()
   if (rni_rpass_watcher_enabled && !rni_proxy_start_succeed) {
     check_rpass();
   }
+#endif // TODO: REMOVE RNI
+
   // Try to get the manager lock file. If we succeed in doing this,
   // it means there is no manager running.
   Lockfile manager_lf(manager_lockfile);
@@ -2276,8 +2291,9 @@ init_lockfiles()
   snprintf(cop_lockfile, sizeof(cop_lockfile), "%s%s%s", local_state_dir, DIR_SEP, COP_LOCK);
   snprintf(manager_lockfile, sizeof(manager_lockfile), "%s%s%s", local_state_dir, DIR_SEP, MANAGER_LOCK);
   snprintf(server_lockfile, sizeof(server_lockfile), "%s%s%s", local_state_dir, DIR_SEP, SERVER_LOCK);
+#if 0 // TODO: REMOVE RNI
   snprintf(rni_rpass_lockfile, sizeof(rni_rpass_lockfile), "%s%s%s", local_state_dir, DIR_SEP, RNI_RPASS_LOCK);
-
+#endif
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving init_lockfiles()\n");
