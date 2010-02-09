@@ -39,9 +39,9 @@ CONFIG proxy.config.snapshot_dir STRING snapshots
 CONFIG proxy.config.system.mmap_max INT 2097152
 CONFIG proxy.config.system.memalign_heap INT 0
 CONFIG proxy.config.exec_thread.autoconfig INT 1
-CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 2.5
+CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 3.0
 CONFIG proxy.config.exec_thread.limit INT 2
-CONFIG proxy.config.accept_threads INT 0
+CONFIG proxy.config.accept_threads INT 1
 ##############################################################################
 #
 # Local Manager
@@ -90,49 +90,6 @@ CONFIG proxy.config.vmap.enabled INT 0
    # execute alarm as "<abs_path>/<bin> "<MSG_STRING_FROM_PROXY>""
 CONFIG proxy.config.alarm.bin STRING example_alarm_bin.sh
 CONFIG proxy.config.alarm.abs_path STRING NULL
-##############################################################################
-#
-# Authentication Basic Realm
-##############################################################################
-CONFIG proxy.config.proxy.authenticate.basic.realm STRING NULL
-##############################################################################
-#
-# LDAP
-#
-##############################################################################
-CONFIG proxy.config.ldap.auth.enabled INT 0
-CONFIG proxy.config.ldap.auth.ttl_value INT 3000
-CONFIG proxy.config.ldap.auth.purge_cache_on_auth_fail INT 0
-CONFIG proxy.config.ldap.proc.ldap.server.name STRING NULL
-CONFIG proxy.config.ldap.proc.ldap.server.port INT 389
-CONFIG proxy.config.ldap.proc.ldap.base.dn STRING NULL
-CONFIG proxy.config.ldap.proc.ldap.uid_filter STRING uid
-##############################################################################
-#
-# RADIUS Authentication
-#
-##############################################################################
-CONFIG proxy.config.radius.auth.enabled INT 0
-CONFIG proxy.config.radius.proc.radius.primary_server.name STRING NULL
-CONFIG proxy.config.radius.proc.radius.primary_server.auth_port INT 1812
-CONFIG proxy.config.radius.proc.radius.primary_server.shared_key STRING NULL
-CONFIG proxy.config.radius.proc.radius.secondary_server.name STRING NULL
-CONFIG proxy.config.radius.proc.radius.secondary_server.auth_port INT 1812
-CONFIG proxy.config.radius.proc.radius.secondary_server.shared_key STRING NULL
-CONFIG proxy.config.radius.auth.min_timeout INT 10
-CONFIG proxy.config.radius.auth.max_retries INT 10
-CONFIG proxy.config.radius.auth.ttl_value INT 60
-##############################################################################
-#
-# NTLM
-#
-##############################################################################
-CONFIG proxy.config.ntlm.auth.enabled INT 0
-CONFIG proxy.config.ntlm.dc.list STRING NULL
-CONFIG proxy.config.ntlm.dc.load_balance INT 0
-CONFIG proxy.config.ntlm.dc.max_connections INT 3
-CONFIG proxy.config.ntlm.nt_domain STRING NULL
-CONFIG proxy.config.ntlm.cache.ttl_value INT 3600
 ##############################################################################
 #
 # HTTP Engine
@@ -268,7 +225,6 @@ CONFIG proxy.config.http.quick_filter.mask INT 0x80020082
    # cache control #
    #################
 CONFIG proxy.config.http.cache.http INT 1
-CONFIG proxy.config.http.cache.ftp INT 0
 CONFIG proxy.config.http.cache.ignore_client_no_cache INT 1
 CONFIG proxy.config.http.cache.ims_on_client_no_cache INT 1
 CONFIG proxy.config.http.cache.ignore_server_no_cache INT 0
@@ -318,18 +274,6 @@ CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.005
 CONFIG proxy.config.http.cache.vary_default_text STRING NULL
 CONFIG proxy.config.http.cache.vary_default_images STRING NULL
 CONFIG proxy.config.http.cache.vary_default_other STRING NULL
-   ##########################
-   # anonymous ftp password #
-   ##########################
-CONFIG proxy.config.http.ftp.anonymous_passwd STRING anonymous@
-   ################################
-   # cached ftp document lifetime #
-   ################################
-CONFIG proxy.config.http.ftp.cache.document_lifetime INT 259200
-   #####################
-   # ftp transfer mode #
-   #####################
-CONFIG proxy.config.http.ftp.binary_transfer_only INT 0
 ##############################################################################
 #
 # Customizable User Response Pages
@@ -345,72 +289,6 @@ CONFIG proxy.config.body_factory.template_sets_dir STRING etc/@PACKAGE@/body_fac
    # 1 - always suppress generated responses
    # 2 - suppress responses for intercepted traffic
 CONFIG proxy.config.body_factory.response_suppression_mode INT 0
-##############################################################################
-#
-# Ftp Engine
-#
-##############################################################################
-##############################################################################
-# Ftp over Http
-##############################################################################
-   # ftp_mode:
-   #   1 PASV then PORT
-   #   2 PORT only
-   #   3 PASV only
-CONFIG proxy.config.ftp.data_connection_mode INT 1
-CONFIG proxy.config.ftp.control_connection_timeout INT 300
-CONFIG proxy.config.ftp.rc_to_switch_to_PORT STRING NULL
-##############################################################################
-# Ftp Proxy
-##############################################################################
-CONFIG proxy.config.ftp.ftp_enabled INT 0
-CONFIG proxy.config.ftp.cache_enabled INT 0
-CONFIG proxy.config.ftp.logging_enabled INT 0
-CONFIG proxy.config.ftp.proxy_server_port INT 21
-   # the mode to open a listening port
-   #   1 let the OS pick an available listening port
-   #   2 use the range specified by min_lisn_port and max_lisn_port
-CONFIG proxy.config.ftp.open_lisn_port_mode INT 1
-CONFIG proxy.config.ftp.min_lisn_port INT 32768
-CONFIG proxy.config.ftp.max_lisn_port INT 65535
-CONFIG proxy.config.ftp.server_data_default_pasv INT 1
-CONFIG proxy.config.ftp.different_client_port_ip_allowed INT 0
-CONFIG proxy.config.ftp.try_pasv_times INT 1024
-CONFIG proxy.config.ftp.try_port_times INT 1024
-CONFIG proxy.config.ftp.try_server_ctrl_connect_times INT 6
-CONFIG proxy.config.ftp.try_server_data_connect_times INT 3
-CONFIG proxy.config.ftp.try_client_data_connect_times INT 3
-CONFIG proxy.config.ftp.client_ctrl_no_activity_timeout INT 900
-CONFIG proxy.config.ftp.client_ctrl_active_timeout INT 14400
-CONFIG proxy.config.ftp.server_ctrl_no_activity_timeout INT 120
-CONFIG proxy.config.ftp.server_ctrl_active_timeout INT 14400
-CONFIG proxy.config.ftp.client_data_no_activity_timeout INT 120
-CONFIG proxy.config.ftp.client_data_active_timeout INT 14400
-CONFIG proxy.config.ftp.server_data_no_activity_timeout INT 120
-CONFIG proxy.config.ftp.server_data_active_timeout INT 14400
-CONFIG proxy.config.ftp.pasv_accept_timeout INT 120
-CONFIG proxy.config.ftp.port_accept_timeout INT 120
-CONFIG proxy.config.ftp.share_ftp_server_ctrl_enabled INT 1
-CONFIG proxy.config.ftp.share_only_after_session_end INT 1
-CONFIG proxy.config.ftp.server_ctrl_keep_alive_no_activity_timeout INT 90
-CONFIG proxy.config.ftp.reverse_ftp_enabled INT 0
-CONFIG proxy.config.ftp.login_info_fresh_in_cache_time INT 604800
-CONFIG proxy.config.ftp.directory_listing_fresh_in_cache_time INT 86400
-CONFIG proxy.config.ftp.file_fresh_in_cache_time INT 259200
-CONFIG proxy.config.ftp.simple_directory_listing_cache_enabled INT 1
-CONFIG proxy.config.ftp.full_directory_listing_cache_enabled INT 1
-CONFIG proxy.config.ftp.file_fresh_mdtm_checking_enabled INT 0
-CONFIG proxy.config.ftp.data_source_port_20_enabled INT 0
-##############################################################################
-#
-# SOCKS Processor
-#
-##############################################################################
-CONFIG proxy.config.socks.socks_needed INT 0
-CONFIG proxy.config.socks.socks_version INT 4
-CONFIG proxy.config.socks.default_servers STRING s1.example.com:1080;socks2:4080
-CONFIG proxy.config.socks.accept_enabled INT 0
-CONFIG proxy.config.socks.accept_port INT 1080
 ##############################################################################
 #
 # Net Subsystem
@@ -539,71 +417,6 @@ CONFIG proxy.config.log2.auto_delete_rolled_files INT 1
 CONFIG proxy.config.log2.sampling_frequency INT 1
 ##############################################################################
 #
-# Tunable for MIXT in general
-#
-##############################################################################
-CONFIG proxy.config.cache.ram_cache_mixt_cutoff INT 1048576
-CONFIG proxy.config.resource.target_maxmem_mb INT 0
-##############################################################################
-#
-# Windows Media Technology Configuration
-#
-##############################################################################
-CONFIG proxy.config.wmt.enabled INT 0
-CONFIG proxy.config.wmt.port INT 1755
-CONFIG proxy.config.wmt.asx_rewrite.enabled INT 1
-CONFIG proxy.config.wmt.media_bridge.name STRING NULL
-CONFIG proxy.config.wmt.media_bridge.port INT 10022
-CONFIG proxy.config.wmt.media_bridge.mount_point STRING ffnet
-CONFIG proxy.config.wmt.media_bridge.monitor.version INT 0
-CONFIG proxy.config.wmt.media_bridge.monitor.port INT 10088
-CONFIG proxy.config.wmt.media_bridge.monitor.name STRING NULL
-CONFIG proxy.config.wmt.max_rexmit_memory INT 20971520
-CONFIG proxy.config.wmt.inactivity_timeout INT 21600
-##############################################################################
-#
-# MIXT WMTMCast Configuration
-#
-##############################################################################
-CONFIG proxy.config.mixt.wmtmcast.enabled INT 1
-##############################################################################
-#
-# MIXT Push Configuration
-#
-##############################################################################
-CONFIG proxy.config.mixt.push.enabled INT 1
-CONFIG proxy.config.mixt.push.port INT 1900
-CONFIG proxy.config.mixt.push.password STRING NULL
-##############################################################################
-#
-# QuickTime Config
-#
-##############################################################################
-CONFIG proxy.config.qt.enabled INT 0
-CONFIG proxy.config.mixt.rtsp_proxy_port INT 554
-CONFIG proxy.config.qt.media_bridge.name STRING NULL
-CONFIG proxy.config.qt.media_bridge.port INT 10036
-CONFIG proxy.config.qt.media_bridge.mount_point STRING ffnet
-CONFIG proxy.config.qt.media_bridge.monitor.name STRING NULL
-CONFIG proxy.config.qt.media_bridge.monitor.port INT 10088
-##############################################################################
-#
-# RNI Config
-#
-##############################################################################
-CONFIG proxy.config.rni.enabled INT 0
-CONFIG proxy.config.rni.watcher_enabled INT 0
-CONFIG proxy.config.rni.proxy_port INT 9231
-CONFIG proxy.config.rni.proxy_pid_path STRING NULL
-CONFIG proxy.config.rni.proxy_restart_cmd STRING NULL
-CONFIG proxy.config.rni.proxy_restart_interval INT 20
-CONFIG proxy.config.rni.proxy_service_name STRING RMProxy
-CONFIG proxy.config.rni.auth_port INT 7808
-   # Real Passthrough
-CONFIG proxy.config.rni.rpass_watcher_enabled INT 0
-CONFIG proxy.config.rni.rpass_restart_cmd STRING NULL
-##############################################################################
-#
 # Reverse Proxy
 #
 ##############################################################################
@@ -716,14 +529,6 @@ CONFIG proxy.config.update.force INT 0
 CONFIG proxy.config.update.retry_count INT 10
 CONFIG proxy.config.update.retry_interval INT 2
 CONFIG proxy.config.update.concurrent_updates INT 100
-##############################################################################
-#
-# SNMP Configuration
-#
-##############################################################################
-   # Start MIB-II Host MIB (TCP/UDP stats, etc.) and traffic server MIB
-CONFIG proxy.config.snmp.master_agent_enabled INT 0
-CONFIG proxy.config.snmp.snmp_encap_enabled INT 0
 ##############################################################################
 #
 # Plug-in Configuration
