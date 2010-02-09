@@ -1,5 +1,5 @@
 ci/
-proxy/config
+proxy/config/
 example/README.internal
 example/blacklist-1/blacklist.txt
 example/thread-pool/TESTPLAN.txt
