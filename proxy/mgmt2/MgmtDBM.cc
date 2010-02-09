@@ -119,7 +119,7 @@ MgmtDBM::mgmt_batch_open()
     // we have the semaphore, reset the failure count
     g_semop_failures = 0;
 
-    if (open(db_file, NULL) || lock(true)) {
+    if (open(db_file, 0, NULL) || lock(true)) {
       mgmt_fatal(stderr, "[MgmtDBM::mgmt_batch_open] dbm op failed\n");
     }
     opened = true;
