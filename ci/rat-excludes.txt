@@ -61,3 +61,11 @@ iocore/cache/Notes
 iocore/cache/cache_test.config
 iocore/fastio/tools/advbmark/runme
 librecords/test_records.config
+proxy/mgmt2/stats/spec
+proxy/mime.types
+proxy/msgs/TSMessages.mc
+proxy/msgs/TSMsgs.rc
+test/SDKtest/synth_server/SDKtest_server.config
+test/deft/defs/climatelab.def
+test/deft/defs/localhost.def
+test/plugin/INKHttpHooksTrans/altSelect.notes
