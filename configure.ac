@@ -469,7 +469,7 @@ AC_CHECK_LIB([expat],[XML_SetUserData],
   [$LIBTHREAD]
 )
 
-if test "x${with_sqlite3}" == "xyes"; then
+if test "x${with_sqlite3}" = "xyes"; then
   AC_CHECK_LIB([sqlite3], [sqlite3_open], 
     [AC_SUBST([LIBSQLITE3], ["-lsqlite3"])
     ],
@@ -477,7 +477,7 @@ if test "x${with_sqlite3}" == "xyes"; then
   )
 fi
 
-if test "x${with_libdb}" == "xyes"; then
+if test "x${with_libdb}" = "xyes"; then
   ts_have_db=0
   AC_CHECK_LIB([db],[__db185_open],
     [LIBDB="-ldb"
@@ -582,13 +582,13 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   sys/param.h \
                   ], [], [])
 
-if test "x${with_libdb}" == "xyes"; then
+if test "x${with_libdb}" = "xyes"; then
 AC_CHECK_HEADERS([db_185.h \
                   db.h \
                   ], [], [])
 fi
 
-if test "x${with_sqlite3}" == "xyes"; then
+if test "x${with_sqlite3}" = "xyes"; then
 AC_CHECK_HEADERS([sqlite3.h \
                   ], [], [])
 fi
