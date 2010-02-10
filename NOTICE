@@ -22,6 +22,8 @@ The Regents of the University of California. All rights reserved.
 
 Portions Copyright (c) 1993 by Digital Equipment Corporation.
 
+Portions Copyright (c) 1996-1999 by Internet Software Consortium.
+
 See libinktomi++/ink_res_init.cc, libinktomi++/ink_res_mkquery.cc
 
 ~~~
@@ -29,4 +31,3 @@ See libinktomi++/ink_res_init.cc, libinktomi++/ink_res_mkquery.cc
 Copyright (c) 1997-1998 Sun Microsystems, Inc.
 
 See proxy/mgmt2/cli2/hashtable.cc, m4/tcl.m4
-
