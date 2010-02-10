@@ -1,0 +1,31 @@
+Traffic Server 2.0 STATUS:                                              -*-text-*-
+Last modified at [$Date$]
+
+The current version of this file can be found at:
+
+  * https://svn.apache.org/repos/asf/incubator/trafficserver/traffic/trunk/STATUS
+
+
+Release history:
+    [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
+          while x.{even}.z versions are Stable/GA releases.]
+
+    2.0.0a   : In development
+
+
+Contributors looking for a mission:
+
+  * Just do an egrep on "TODO" or "XXX" in the source.
+
+  * Review the bug database at: https://issues.apache.org/jira/browse/TS
+
+      - Download, test and review patches attached to open bugs
+
+  * Open bugs in the bug database.
+
+
+RELEASE SHOWSTOPPERS:
+
+A list of all bugs scheduled for this release can be found at
+
+  http://bit.ly/ATS-2a
