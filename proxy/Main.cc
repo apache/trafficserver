@@ -1695,7 +1695,6 @@ main(int argc, char **argv)
   //   yet we do not know where
   openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
-  init_system();
 
 
   // Setup Diags temporary to allow librecords to be initialized.
@@ -1720,6 +1719,7 @@ main(int argc, char **argv)
   // Set the core limit for the process
   init_core_size();
 
+  init_system();
   // Init memalign heaps
   init_ink_memalign_heap();
 
