@@ -108,10 +108,12 @@ union LB_State
   LB_State():ival(0)
   {
   };
+
   LB_State(volatile LB_State & vs)
   {
     ival = vs.ival;
   };
+
   LB_State & operator =(volatile LB_State & vs)
   {
     ival = vs.ival;
@@ -143,21 +145,22 @@ private:
 
   static void Init(void);
 protected:
-    iObject(const iObject &);   /* declared; not implemented - block copying and assignment */
-    iObject & operator=(const iObject &);       /* ditto */
+  iObject(const iObject &);   /* declared; not implemented - block copying and assignment */
+  iObject & operator=(const iObject &);       /* ditto */
 
 public:
   void *operator  new(size_t size);
   void operator  delete(void *p);
 
-    iObject():class_size(0), next_object(NULL)
-  {                             /* nop */
-  }
-  virtual ~ iObject()
-  {                             /* nop */
-  }
+ iObject() 
+ {                             /* nop */
+ }
 
-  friend class iObjectActivator;
+ virtual ~iObject()
+ {                             /* nop */
+ }
+
+ friend class iObjectActivator;
 };
 
 /* ------------------------------ iLogBufferBuffer ------------------------- */
@@ -172,13 +175,14 @@ private:
 
   static void Init(void);
 
-    iLogBufferBuffer()
+  iLogBufferBuffer()
   {
     next = 0;
     buf = 0;
     real_buf_size = (size = 0);
   }
-   ~iLogBufferBuffer()
+
+  ~iLogBufferBuffer()
   {
     if (buf)
       xfree(buf);
@@ -208,7 +212,8 @@ public:
     iObject::Init();
     iLogBufferBuffer::Init();
   }
-   ~iObjectActivator()
+
+  ~iObjectActivator()
   {                             /* nop */
   }
 };

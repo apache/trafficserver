@@ -61,24 +61,21 @@ struct FieldListCacheElement
 };
 
 enum
-{ FIELDLIST_CACHE_SIZE = 256 };
+{
+  FIELDLIST_CACHE_SIZE = 256
+};
+
 FieldListCacheElement fieldlist_cache[FIELDLIST_CACHE_SIZE];
 int fieldlist_cache_entries = 0;
-vink32
-  LogBuffer::M_ID = 0;
+vink32 LogBuffer::M_ID = 0;
 
-iObjectActivator
-  iObjectActivatorInstance;     /* just to do ::Init() before main() */
+iObjectActivator iObjectActivatorInstance;     /* just to do ::Init() before main() */
 
-iObject *
-  iObject::free_heap = 0;       /* list of free blocks */
-ink_mutex
-  iObject::iObjectMutex;        /* mutex for access iObject class global variables */
+iObject *iObject::free_heap = 0;       /* list of free blocks */
+ink_mutex iObject::iObjectMutex;        /* mutex for access iObject class global variables */
 
-iLogBufferBuffer *
-  iLogBufferBuffer::free_heap = 0;      /* list of free blocks */
-ink_mutex
-  iLogBufferBuffer::iLogBufferBufferMutex;      /* mutex for access iLogBufferBuffer class global variables */
+iLogBufferBuffer *iLogBufferBuffer::free_heap = 0;      /* list of free blocks */
+ink_mutex iLogBufferBuffer::iLogBufferBufferMutex;      /* mutex for access iLogBufferBuffer class global variables */
 
 
 /* --------------------- iStaticBuf_LogBuffer::Init ------------------------ */
@@ -156,15 +153,14 @@ iObject::Init(void)
 
 /* ---------------------------- iObject::new ------------------------------- */
 void *
-  iObject::operator
-new(size_t _size)
+iObject::operator new(size_t _size)
 {
-  iObject **objj, **objj_best = 0;
-  iObject *ob = 0, *ob_best = 0;
+  iObject **objj, **objj_best = NULL;
+  iObject *ob = NULL, *ob_best = NULL;
   size_t real_size = _size;
 
   ink_mutex_acquire(&iObjectMutex);
-  for (objj = &free_heap; (ob = *objj) != 0; objj = &(ob->next_object)) {
+  for (objj = &free_heap; (ob = *objj) != NULL; objj = &(ob->next_object)) {
     if (ob->class_size == _size) {
       *objj = ob->next_object;
       break;
@@ -193,8 +189,7 @@ new(size_t _size)
 
 /* --------------------------- iObject::delete ----------------------------- */
 void
-  iObject::operator
-delete(void *p)
+iObject::operator delete(void *p)
 {
   iObject *ob = (iObject *) p;
 
@@ -270,13 +265,13 @@ LogBufferHeader::log_filename()
   -------------------------------------------------------------------------*/
 
 LogBuffer::LogBuffer(LogObject * owner, size_t size, int buf_align_mask, int write_align_mask):
-sign(CLASS_SIGN_LOGBUFFER),
-next_flush(NULL),
-next_list(NULL),
-m_new_buffer(NULL),
-m_size(size),
-m_buf_align_mask(buf_align_mask),
-m_write_align_mask(write_align_mask), m_max_entries(Log::config->max_entries_per_buffer), m_owner(owner)
+  sign(CLASS_SIGN_LOGBUFFER),
+  next_flush(NULL),
+  next_list(NULL),
+  m_new_buffer(NULL),
+  m_size(size),
+  m_buf_align_mask(buf_align_mask),
+  m_write_align_mask(write_align_mask), m_max_entries(Log::config->max_entries_per_buffer), m_owner(owner)
 {
   size_t hdr_size;
 
@@ -307,15 +302,15 @@ m_write_align_mask(write_align_mask), m_max_entries(Log::config->max_entries_per
 }
 
 LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
-sign(CLASS_SIGN_LOGBUFFER),
-next_flush(NULL),
-next_list(NULL),
-m_bb(NULL),
-m_unaligned_buffer(NULL),
-m_buffer((char *) header),
-m_size(0),
-m_buf_align_mask(LB_DEFAULT_ALIGN_MASK),
-m_write_align_mask(MIN_ALIGN - 1), m_max_entries(0), m_expiration_time(0), m_owner(owner), m_header(header)
+  sign(CLASS_SIGN_LOGBUFFER),
+  next_flush(NULL),
+  next_list(NULL),
+  m_bb(NULL),
+  m_unaligned_buffer(NULL),
+  m_buffer((char *) header),
+  m_size(0),
+  m_buf_align_mask(LB_DEFAULT_ALIGN_MASK),
+  m_write_align_mask(MIN_ALIGN - 1), m_max_entries(0), m_expiration_time(0), m_owner(owner), m_header(header)
 {
   // This constructor does not allocate a buffer because it gets it as 
   // an argument. We set m_unaligned_buffer to NULL, which means that 
