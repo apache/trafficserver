@@ -30,7 +30,7 @@
 
 #include "ink_platform.h"
 #include "TextBuffer.h"
-
+#include "Main.h"
 #include "WebCompatibility.h"
 #include "WebHttpLog.h"
 
@@ -47,9 +47,32 @@ WebHandle WebHttpLogHandle = WEB_HANDLE_INVALID;
 void
 WebHttpLogInit()
 {
+  struct stat s;
+  int err;
+  char *log_dir;
+  char log_file[PATH_NAME_MAX+1];
 
+  if ((err = stat(system_log_dir, &s)) < 0) {
+    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &log_dir) 
+	       == REC_ERR_OKAY);
+    if ((err = stat(log_dir, &s)) < 0) {
+      // Try 'system_root_dir/var/log/trafficserver' directory
+      ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+               system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
+      if ((err = stat(system_log_dir, &s)) < 0) {
+        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
+                system_log_dir, err, errno, strerror(errno));
+        mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+        //_exit(1);
+      }
+    } else {
+      ink_strncpy(system_log_dir,log_dir,sizeof(system_log_dir)); 
+    }
+  } 
+
+  ink_snprintf(log_file, sizeof(log_file), "%s%s%s", system_log_dir, DIR_SEP, "lm.log");
   if (WebHttpLogHandle == WEB_HANDLE_INVALID) {
-    WebHttpLogHandle = WebFileOpenW("lm.log");
+    WebHttpLogHandle = WebFileOpenW(log_file);
   }
 
 }

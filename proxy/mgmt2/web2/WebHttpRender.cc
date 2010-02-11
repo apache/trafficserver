@@ -1654,18 +1654,36 @@ handle_select_access_logs(WebHttpContext * whc, char *tag, char *arg)
   struct dirent *dent;
   DIR *dirp;
   DIR *dirp2;
+  struct stat s;
+  int err;
 
   // open all files in the log directory except traffic.out
-  ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir)
-             == REC_ERR_OKAY);
   ink_assert(RecGetRecordString_Xmalloc("proxy.config.output.logfile", &logfile)
              == REC_ERR_OKAY);
 
-  if ((dirp = opendir(logdir))) {
+  if ((err = stat(system_log_dir, &s)) < 0) {
+    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir) 
+	       == REC_ERR_OKAY);
+    if ((err = stat(logdir, &s)) < 0) {
+      // Try 'system_root_dir/var/log/trafficserver' directory
+      ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+               system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
+      if ((err = stat(system_log_dir, &s)) < 0) {
+        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
+                system_log_dir, err, errno, strerror(errno));
+        mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+        //_exit(1);
+      }
+    } else {
+      ink_strncpy(system_log_dir,logdir,sizeof(system_log_dir)); 
+    }
+  } 
+
+  if ((dirp = opendir(system_log_dir))) {
     while ((dent = readdir(dirp)) != NULL) {
       // exclude traffic.out*
       if (strncmp(logfile, dent->d_name, strlen(logfile)) != 0) {
-        ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s/%s", logdir, dent->d_name);
+        ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s%s", system_log_dir, DIR_SEP, dent->d_name);
         if ((dirp2 = opendir(tmp))) {
           // exclude directory
           closedir(dirp2);
@@ -1716,17 +1734,36 @@ handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
     "manager.log",
     "lm.log"
   };
+  struct stat s;
+  int err;
 
-  ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir)
-             == REC_ERR_OKAY);
+
   ink_assert(RecGetRecordString_Xmalloc("proxy.config.output.logfile", &logfile)
              == REC_ERR_OKAY);
 
+  if ((err = stat(system_log_dir, &s)) < 0) {
+    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir) 
+	       == REC_ERR_OKAY);
+    if ((err = stat(logdir, &s)) < 0) {
+      // Try 'system_root_dir/var/log/trafficserver' directory
+      ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+               system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
+      if ((err = stat(system_log_dir, &s)) < 0) {
+        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
+                system_log_dir, err, errno, strerror(errno));
+        mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+        //_exit(1);
+      }
+    } else {
+      ink_strncpy(system_log_dir,logdir,sizeof(system_log_dir)); 
+    }
+  } 
+
   // traffic.out*
-  if ((dirp = opendir(logdir))) {
+  if ((dirp = opendir(system_log_dir))) {
     while ((dent = readdir(dirp)) != NULL) {
       if (strncmp(logfile, dent->d_name, strlen(logfile)) == 0) {
-        ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s/%s", logdir, dent->d_name);
+        ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s%s", system_log_dir, DIR_SEP, dent->d_name);
         if (readable(tmp, &fsize)) {
           selected = selected_log(whc, tmp);
           bytesFromInt(fsize, tmp3);
