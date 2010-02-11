@@ -81,7 +81,7 @@ WebFileOpenW(const char *file)
 
   WebHandle h_file;
 
-  if ((h_file = mgmt_open_mode(file, O_WRONLY | O_APPEND | O_CREAT, 0600)) < 0) {
+  if ((h_file = mgmt_open_mode(file, O_WRONLY | O_APPEND | O_CREAT, 0644)) < 0) {
     return WEB_HANDLE_INVALID;
   }
   fcntl(h_file, F_SETFD, 1);

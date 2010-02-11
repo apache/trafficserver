@@ -250,7 +250,7 @@ static int
 setUpLogging()
 {
 
-  int diskFD = open("lm.log", O_WRONLY | O_APPEND | O_CREAT, 0600);
+  int diskFD = open("lm.log", O_WRONLY | O_APPEND | O_CREAT, 0644);
 
   if (diskFD < 0) {
     mgmt_log(stderr, "[setUpLogging] Unable to open log file.  No logging will occur: %s\n", strerror(errno));

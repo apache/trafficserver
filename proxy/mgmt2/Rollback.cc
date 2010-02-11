@@ -351,7 +351,7 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
       mgmt_log(stderr, "[Rollback] Unable to acquire root privileges.\n");
     }
   }
-  fd = mgmt_open_mode(filePath, oflags, 0600);
+  fd = mgmt_open_mode(filePath, oflags, 0644);
   if (root_access_needed) {
     if (removeRootPriv() != true) {
       mgmt_log(stderr, "[Rollback] Unable to restore non-root privileges.\n");
