@@ -1016,6 +1016,8 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.origin_max_connections, "proxy.config.http.origin_max_connections");
 
+  HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
+
   HttpEstablishStaticConfigLongLong(c.parent_proxy_routing_enable, "proxy.config.http.parent_proxy_routing_enable");
 
   // Wank me.
@@ -1369,6 +1371,14 @@ HttpConfig::reconfigure()
   params->server_max_connections = m_master.server_max_connections;
 
   params->origin_max_connections = m_master.origin_max_connections;
+
+  params->origin_min_keep_alive_connections = m_master.origin_min_keep_alive_connections;
+
+  if( params->origin_max_connections &&
+      params->origin_max_connections < params->origin_min_keep_alive_connections ) {
+    Warning("origin_max_connections < origin_min_keep_alive_connections, setting min=max , please correct your records.config");
+    params->origin_min_keep_alive_connections = params->origin_max_connections;
+  }
 
   params->parent_proxy_routing_enable = INT_TO_BOOL(m_master.parent_proxy_routing_enable);
 

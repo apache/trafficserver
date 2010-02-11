@@ -922,6 +922,8 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.http.origin_max_connections", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$", RA_NULL}
   ,
+  {CONFIG, "proxy.config.http.origin_min_keep_alive_connections", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$", RA_NULL}
+  ,
 
   //       ##########################
   //       # HTTP referer filtering #

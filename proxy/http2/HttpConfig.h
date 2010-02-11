@@ -407,6 +407,7 @@ public:
 
   MgmtInt server_max_connections;
   MgmtInt origin_max_connections;
+  MgmtInt origin_min_keep_alive_connections;
 
   MgmtInt parent_proxy_routing_enable;
   MgmtInt disable_ssl_parenting;
@@ -853,6 +854,7 @@ outgoing_ip_to_bind(0),
 outgoing_ip_to_bind_saddr(0),
 server_max_connections(0),
 origin_max_connections(0),
+origin_min_keep_alive_connections(0),
 parent_proxy_routing_enable(false),
 disable_ssl_parenting(0),
 enable_url_expandomatic(0),

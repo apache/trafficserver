@@ -1818,11 +1818,13 @@ HttpSM::state_http_server_open(int event, void *data)
   switch (event) {
   case NET_EVENT_OPEN:
     session = THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding);
-    // If origin_max_connections is set then we are limiting the number
+    // If origin_max_connections or origin_min_keep_alive_connections is 
+    // set then we are metering the max and or min number
     // of connections per host.  Set enable_origin_connection_limiting
     // to true in the server session so it will increment and decrement
     // the connection count.
-    if (t_state.http_config_param->origin_max_connections > 0) {
+    if (t_state.http_config_param->origin_max_connections > 0 || 
+        t_state.http_config_param->origin_min_keep_alive_connections > 0) {
       Debug("http_ss", "[%lld] max number of connections: %u",
             sm_id, t_state.http_config_param->origin_max_connections);
       session->enable_origin_connection_limiting = true;
