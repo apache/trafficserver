@@ -28,11 +28,6 @@ AM_CPPFLAGS = \
   -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
   -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\"
 
-dist_bin_SCRIPTS = \
-  cli_setdomain.tcl \
-  cli_sethostname.tcl \
-  cli_setrouter.tcl \
-  script_configs.tcl
 
 bin_PROGRAMS = traffic_shell
 traffic_shell_SOURCES = \
@@ -87,7 +82,7 @@ traffic_shell_LDADD = \
   $(top_builddir)/proxy/mgmt2/tools/libinksysapi.a \
   $(top_builddir)/proxy/mgmt2/tools/libinkconfigapi.a \
   $(top_builddir)/proxy/mgmt2/utils/libutils_lm.a \
-  -ldl \
+  @LIBDL@ \
   -lm \
   @LIBEXPAT@ @LIBSSL@ \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \

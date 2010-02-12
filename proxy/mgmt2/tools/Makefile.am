@@ -33,31 +33,31 @@ AM_CPPFLAGS = \
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
 
-bin_PROGRAMS = vip_config net_config time_config shmem_clean mcast_snoop
+noinst_PROGRAMS = traffic_vip_config traffic_net_config traffic_time_config traffic_shmem_clean traffic_mcast_snoop
 
 noinst_LIBRARIES = libinksysapi.a libinkconfigapi.a
 
-vip_config_SOURCES = VIPConfig.cc
-vip_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-vip_config_LDADD = \
+traffic_vip_config_SOURCES = VIPConfig.cc
+traffic_vip_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_vip_config_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@
 
-net_config_SOURCES = NetConfig.cc
-net_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-net_config_LDADD = \
+traffic_net_config_SOURCES = NetConfig.cc
+traffic_net_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_net_config_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBICONV@
 
-time_config_SOURCES = TimeConfig.cc
-time_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_time_config_SOURCES = TimeConfig.cc
+traffic_time_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
-shmem_clean_SOURCES = ShmemClean.cc
-shmem_clean_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_shmem_clean_SOURCES = ShmemClean.cc
+traffic_shmem_clean_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
-mcast_snoop_SOURCES = McastSnoop.cc
-mcast_snoop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
-mcast_snoop_LDADD = \
+traffic_mcast_snoop_SOURCES = McastSnoop.cc
+traffic_mcast_snoop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
+traffic_mcast_snoop_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBRT@ @LIBTHREAD@ @LIBDL@ @LIBICONV@
 

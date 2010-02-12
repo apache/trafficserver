@@ -40,7 +40,7 @@ DEFS  += $(MGMT_DEFS)
 
 noinst_LIBRARIES = libmgmtapiremote.a 
 
-bin_PROGRAMS = api_cli_remote
+noinst_PROGRAMS = traffic_api_cli_remote
 
 libmgmtapiremote_a_SOURCES = \
   ../CfgContextImpl.cc \
@@ -56,8 +56,8 @@ libmgmtapiremote_a_SOURCES = \
   NetworkUtilsRemote.cc \
   NetworkUtilsRemote.h
 
-api_cli_remote_SOURCES = APITestCliRemote.cc 
-api_cli_remote_LDADD = \
+traffic_api_cli_remote_SOURCES = APITestCliRemote.cc 
+traffic_api_cli_remote_LDADD = \
   libmgmtapiremote.a \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
