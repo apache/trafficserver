@@ -513,6 +513,11 @@ reply_to_cont(Continuation * cont, HostDBInfo * ar)
   char *reason = "none";
   HostDBInfo *r = ar;
 
+  if (r == NULL) {
+    cont->handleEvent(EVENT_HOST_DB_LOOKUP, NULL);
+    return false;
+  }
+
   if (r->failed()) {
     if (r->is_srv && r->srv_count) {
       cont->handleEvent(EVENT_SRV_LOOKUP, NULL);
