@@ -6443,7 +6443,7 @@ REGRESSION_TEST(SDK_API_INKMgmtGet) (RegressionTest * test, int atype, int *psta
   int CONFIG_PARAM_INT_VALUE = 1;
 
   char *CONFIG_PARAM_STRING_NAME = "proxy.config.product_name";
-  char *CONFIG_PARAM_STRING_VALUE = "Traffic Edge";
+  char *CONFIG_PARAM_STRING_VALUE = "Traffic Server";
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
 

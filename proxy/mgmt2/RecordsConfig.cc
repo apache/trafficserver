@@ -43,12 +43,12 @@ RecordElement RecordsConfig[] = {
   //# System Variables
   //#
   //##############################################################################
-  {CONFIG, "proxy.config.product_company", "", INK_STRING, "Apache Project", RU_NULL, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.product_company", "", INK_STRING, "Apache Software Foundation", RU_NULL, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.product_vendor", "", INK_STRING, "Apache", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.product_name", "", INK_STRING, "Traffic Edge", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.product_name", "", INK_STRING, "Traffic Server", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cop_name", "", INK_STRING, "Traffic Cop", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -447,7 +447,7 @@ RecordElement RecordsConfig[] = {
   ,
   //##############################################################################
   //#
-  //# Inktomi Traffic Net
+  //# Traffic Net
   //#
   //##############################################################################
   {CONFIG, "proxy.config.traffic_net.traffic_net_mode", "", INK_INT, "3", RU_REREAD, RR_NULL, RC_INT, "[0-3]", RA_NULL}
@@ -459,7 +459,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.traffic_net.traffic_net_lid", "", INK_STRING, NULL, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.traffic_net.traffic_net_server", "", INK_STRING, "sm-linux-1.inktomi.com", RU_NULL, RR_NULL,
+  {CONFIG, "proxy.config.traffic_net.traffic_net_server", "", INK_STRING, "sm-linux-1.example.com", RU_NULL, RR_NULL,
    RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.traffic_net.traffic_net_port", "", INK_INT, "80", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -3298,7 +3298,7 @@ RecordElement RecordsConfig[] = {
   //##############################################################################
   {CONFIG, "proxy.config.aaa.billing.reporting_interval", "", INK_INT, "300", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.aaa.billing.machine_name", "", INK_STRING, "wire-dev02.inktomi.com", RU_NULL, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.aaa.billing.machine_name", "", INK_STRING, "wire-dev02.example.com", RU_NULL, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.aaa.billing.install_directory", "", INK_STRING, "/opt/portal/6.0", RU_NULL, RR_NULL, RC_NULL,
@@ -3325,7 +3325,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.aaa.radius.is_proxy", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.aaa.radius.radius_server_ip", "", INK_STRING, "cachedev.inktomi.com", RU_NULL, RR_NULL,
+  {CONFIG, "proxy.config.aaa.radius.radius_server_ip", "", INK_STRING, "cachedev.example.com", RU_NULL, RR_NULL,
    RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.aaa.radius.radius_server_auth_port", "", INK_INT, "1812", RU_NULL, RR_NULL, RC_NULL, NULL,

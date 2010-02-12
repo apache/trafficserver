@@ -1891,9 +1891,6 @@ Ldone:
 static int
 handle_version(WebHttpContext * whc, char *tag, char *arg)
 {
-  // bug 52754: For Tsunami only, need to hack in Traffic Edge 
-  // version "1.5.0" for the web UI; NEED TO REMOVE for post-tsunami release   
-  //whc->response_bdy->copyFrom(appVersionInfo.VersionStr, strlen(appVersionInfo.VersionStr));
   whc->response_bdy->copyFrom(PACKAGE_VERSION, strlen(PACKAGE_VERSION));
   return WEB_HTTP_ERR_OKAY;
 }
