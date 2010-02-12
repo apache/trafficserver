@@ -44,6 +44,7 @@ configure_net(void)
 
   IOCORE_RegisterConfigUpdateFunc("proxy.config.net.connections_throttle", change_net_connections_throttle, NULL);
   IOCORE_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
+  IOCORE_ReadConfigInteger(throttle_enabled,"proxy.config.net.throttle_enabled");
 
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.net.listen_backlog", 1024, RECU_DYNAMIC, RECC_NULL, NULL);
 

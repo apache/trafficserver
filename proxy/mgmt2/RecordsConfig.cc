@@ -2118,6 +2118,8 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.net.connections_throttle", "", INK_INT, "<connections_throttle>", RU_RESTART_TS, RR_REQUIRED,
    RC_STR, "^[0-9]+$", RA_NULL}
   ,
+  {CONFIG, "proxy.config.net.throttle_enabled", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, "[0-1]", RA_NULL}
+  ,
   {CONFIG, "proxy.config.net.max_poll_delay", "", INK_INT, "128", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.net.listen_backlog", "", INK_INT, "1024", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
