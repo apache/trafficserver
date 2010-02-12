@@ -1264,7 +1264,7 @@ bool
         ((pristine_host_hdr <= 0 && s->pristine_host_hdr <= 0) ||
          (pristine_host_hdr > 0 && s->pristine_host_hdr == 0))) {
       remapped_host = request_url->host_get(&remapped_host_len);
-      remapped_port = request_url->port_get();
+      remapped_port = request_url->port_get_raw();
 
       // Debug code to print out old host header.  This was easier before
       //  the header conversion.  Now we have to copy to gain null
@@ -1288,8 +1288,10 @@ bool
       if (host_buf_len > remapped_host_len) {
         tmp = remapped_host_len;
         memcpy(host_hdr_buf, remapped_host, remapped_host_len);
-        tmp += ink_snprintf(host_hdr_buf + remapped_host_len, host_buf_len - remapped_host_len - 1,
-                            ":%d", remapped_port);
+        if (remapped_port) {
+          tmp += ink_snprintf(host_hdr_buf + remapped_host_len, host_buf_len - remapped_host_len - 1,
+                              ":%d", remapped_port);
+        }
       } else {
         tmp = host_buf_len;
       }
