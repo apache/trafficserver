@@ -115,7 +115,7 @@ REGRESSION_TEST(SDK_API_INKTrafficServerVersionGet) (RegressionTest * test, int 
     return;
   }
 
-  if (major_ts_version < 5) {
+  if (major_ts_version < 2) {
     SDK_RPRINT(test, "INKTrafficServerVersionGet", "TestCase3", TC_FAIL, "traffic server major version is incorrect");
     *pstatus = REGRESSION_TEST_FAILED;
     return;
@@ -177,8 +177,8 @@ REGRESSION_TEST(SDK_API_INKPluginDirGet) (RegressionTest * test, int atype, int 
     return;
   }
 
-  if (strstr(plugin_dir, "etc/trafficserver/plugin") == NULL) {
-    SDK_RPRINT(test, "INKPluginDirGet", "TestCase2", TC_FAIL, "plugin dir is incorrect");
+  if (strstr(plugin_dir, "libexec/trafficserver") == NULL) {
+    SDK_RPRINT(test, "INKPluginDirGet", "TestCase2", TC_FAIL, "plugin dir(%s) is incorrect, expected (%s) in path",plugin_dir,"libexec/trafficserver");
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
@@ -3425,7 +3425,7 @@ REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *psta
 
   INKMLoc url_loc;
   INKMLoc url_loc_Get;
-  const char *url_host = "www.inktomi.com";
+  const char *url_host = "www.example.com";
   int url_port = 2345;
   const char *url_path = "abcd/efg/hij.htm";
 
@@ -3450,7 +3450,7 @@ REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *psta
   /* int version2; unused: lv */
 
   int length;
-  char *expected_iobuf = "GET http://www.inktomi.com:2345/abcd/efg/hij.htm HTTP/2.1\r\n\r\n";
+  char *expected_iobuf = "GET http://www.example.com:2345/abcd/efg/hij.htm HTTP/2.1\r\n\r\n";
   int actual_length;
   int expected_length;
   bool test_passed_Http_Hdr_Create = false;
@@ -5389,7 +5389,7 @@ convert_http_hdr_to_string(INKMBuffer bufp, INKMLoc hdr_loc)
 REGRESSION_TEST(SDK_API_INKHttpHdrParse) (RegressionTest * test, int atype, int *pstatus) {
 
   char *req =
-    "GET http://www.inktomi.com/ HTTP/1.1\r\nmimefield1:field1value1,field1value2\r\nmimefield2:field2value1,field2value2\r\n\r\n";
+    "GET http://www.example.com/ HTTP/1.1\r\nmimefield1:field1value1,field1value2\r\nmimefield2:field2value1,field2value2\r\n\r\n";
   char *resp =
     "HTTP/1.1 200 OK\r\n1mimefield:1field1value,1field2value\r\n2mimefield:2field1value,2field2value\r\n\r\n";
   const char *start;
@@ -6226,7 +6226,7 @@ REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int 
 
 REGRESSION_TEST(SDK_API_INKUrlParse) (RegressionTest * test, int atype, int *pstatus) {
 
-  char *url = "http://abc:def@www.inktomi.com:3426/homepage.cgi;ab?abc=def#abc";
+  char *url = "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc";
   const char *start;
   char *end;
   char *temp;
@@ -6553,7 +6553,7 @@ REGRESSION_TEST(SDK_API_INKMgmtUpdateRegister) (RegressionTest * test, int atype
       if ( _x - ORIG_##_x != 0) { \
           test_passed = false; \
           SDK_RPRINT (test, "##_x", "TestCase1", TC_FAIL, \
-                      "Original Value = %d; New Value = %d \n", _x, ORIG_##_x); \
+		      "%s:Original Value = %d; New Value = %d \n", #_x,_x, ORIG_##_x); \
       } \
 }
 
@@ -6636,6 +6636,7 @@ typedef enum
   ORIG_INK_HTTP_SSN_START_HOOK,
   ORIG_INK_HTTP_SSN_CLOSE_HOOK,
   ORIG_INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK,
+  ORIG_INK_HTTP_READ_REQUEST_PRE_REMAP_HOOK,
   ORIG_INK_HTTP_LAST_HOOK
 } ORIG_INKHttpHookID;
 
@@ -6951,7 +6952,7 @@ static int
 checkHttpTxnParentProxy(ContData * data, INKHttpTxn txnp)
 {
 
-  char *hostname = "npdev.inktomi.com";
+  char *hostname = "txnpp.example.com";
   int port = 10180;
   char *hostnameget = NULL;
   int portget = 0;
