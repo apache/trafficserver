@@ -80,6 +80,7 @@ class AppVersionInfo
 {
 public:
   int defined;
+  char PkgStr[128];
   char AppStr[128];
   char VersionStr[128];
   char BldNumStr[128];
@@ -90,9 +91,10 @@ public:
   char BldCompileFlagsStr[128];
   char FullVersionInfoStr[256];
 
-    AppVersionInfo();
-  void setup(char *app_name, char *app_version,
-             char *build_date, char *build_time, char *build_machine, char *build_person, char *build_cflags);
+  AppVersionInfo();
+  void setup(char *pkg_name, char *app_name, char *app_version, 
+             char *build_date, char *build_time, char *build_machine, 
+             char *build_person, char *build_cflags);
 };
 
 #endif /*_Version_h*/

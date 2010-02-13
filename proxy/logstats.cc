@@ -53,8 +53,7 @@ using namespace __gnu_cxx;
 
 
 // Constants, please update the VERSION number when you make a new build!!!
-#define PROGRAM_VERSION		"1.0"
-#define PROGRAM_NAME		"logstats"
+#define PROGRAM_NAME		"traffic_logstats"
 
 const int MAX_LOGBUFFER_SIZE = 65536;
 const int DEFAULT_LINE_LEN = 78;
@@ -1631,12 +1630,12 @@ my_exit(YmonLevel status, const char *notice)
     format_ysar(totals.content.other, totals.total);
     format_ysar(totals.content.none, totals.total, true);
   } else if (cl.ymon) {
-    std::cout << hostname << '\t' << "yts_origins\t" << status << '\t' << "ver. " << PROGRAM_VERSION << notice << std::
+    std::cout << hostname << '\t' << "yts_origins\t" << status << '\t' << "ver. " << PACKAGE_VERSION << notice << std::
       endl;
     for (OriginStorage::iterator i = origins.begin(); i != origins.end(); i++) {
       if (use_origin(i->second)) {
         std::cout << hostname << '\t' << "yts_origins" << '\t' <<
-          status << '\t' << "ver. " << PROGRAM_VERSION << notice << "|";
+          status << '\t' << "ver. " << PACKAGE_VERSION << notice << "|";
         print_ymon_metrics(i->second, std::cout);
         std::cout << std::endl;
       }
@@ -1749,7 +1748,8 @@ main(int argc, char *argv[])
   char ts_path[PATH_NAME_MAX + 1];
 
   // build the application information structure
-  appVersionInfo.setup(PROGRAM_NAME, PROGRAM_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__, 
+                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Initialize some globals
   memset(&totals, 0, sizeof(totals));   // Make sure counters are zero

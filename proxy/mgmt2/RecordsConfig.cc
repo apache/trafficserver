@@ -851,15 +851,15 @@ RecordElement RecordsConfig[] = {
   //        # 2 - some extra info added
   {CONFIG, "proxy.config.http.verbose_via_str", "", INK_INT, "2", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.http.request_via_str", "", INK_STRING, "TrafficServer/" PACKAGE_VERSION, RU_REREAD,
+  {CONFIG, "proxy.config.http.request_via_str", "", INK_STRING, "ApacheTrafficServer/" PACKAGE_VERSION, RU_REREAD,
    RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.http.response_via_str", "", INK_STRING, "TrafficServer/" PACKAGE_VERSION, RU_REREAD,
+  {CONFIG, "proxy.config.http.response_via_str", "", INK_STRING, "ApacheTrafficServer/" PACKAGE_VERSION, RU_REREAD,
    RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.http.response_server_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, "[0-3]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.http.response_server_str", "", INK_STRING, "TS/" PACKAGE_VERSION, RU_REREAD, RR_NULL, RC_NULL,
+  {CONFIG, "proxy.config.http.response_server_str", "", INK_STRING, "ATS/" PACKAGE_VERSION, RU_REREAD, RR_NULL, RC_NULL,
    ".*", RA_NULL}
   ,
   {CONFIG, "proxy.config.http.enable_url_expandomatic", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}

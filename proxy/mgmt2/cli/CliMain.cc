@@ -32,6 +32,7 @@
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 
 #include "ink_args.h"
+#include "I_Version.h"
 #include "Tokenizer.h"
 #include "TextBuffer.h"
 #include "CliUtils.h"
@@ -286,6 +287,8 @@ runInteractive(clientCLI * cli)
   }                             // end while(1)
 }                               // end runInteractive
 
+AppVersionInfo appVersionInfo;
+int version_flag = 0;
 /*
  * Main entry point
  */
@@ -311,6 +314,10 @@ main(int argc, char **argv)
   repeatCount = 1;
   repeatInterval = 5;
   timeout_arg = -1;
+
+  // build the application information structure
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_line", PACKAGE_VERSION, __DATE__, 
+                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   clientCLI *cli = new clientCLI();
 
@@ -341,7 +348,8 @@ main(int argc, char **argv)
     {"bounce_cluster", 'B', "Bounce traffic_server (cluster wide)", "F", &BounceCluster, NULL, NULL},
     {"bounce_local", 'b', "Bounce local traffic_server", "F", &BounceLocal, NULL, NULL},
     {"clear_cluster", 'C', "Clear Statistics (cluster wide)", "F", &ClearCluster, NULL, NULL},
-    {"clear_node", 'c', "Clear Statistics (local node)", "F", &ClearNode, NULL, NULL}
+    {"clear_node", 'c', "Clear Statistics (local node)", "F", &ClearNode, NULL, NULL},
+    {"version", 'V', "Print Version Id", "T", &version_flag, NULL, NULL},
     /* INKqa10624
        { "timeout", 'T', "Request timeout (seconds)", "I", &timeout_arg, NULL, NULL} */
 
@@ -352,6 +360,12 @@ main(int argc, char **argv)
 
   // Process command line arguments and dump into variables
   process_args(argument_descriptions, n_argument_descriptions, argv);
+
+  // check for the version number request
+  if (version_flag) {
+    fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
+    exit(0);
+  }
 
 #ifdef _WIN32
   if (initWinSock() == false) {

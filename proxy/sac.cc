@@ -30,8 +30,7 @@
  ***************************************************************************/
 #include "ink_unused.h"
 
-#define PROGRAM_NAME		"sac"
-#define PROGRAM_VERSION		"1.0"
+#define PROGRAM_NAME		"traffic_sac"
 
 #include "LogStandalone.cc"
 
@@ -92,7 +91,8 @@ main(int argc, char *argv[])
   char ts_path[PATH_NAME_MAX + 1];
   // build the application information structure
   //
-  appVersionInfo.setup(PROGRAM_NAME, PROGRAM_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__, 
+                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // take care of command-line arguments
   //

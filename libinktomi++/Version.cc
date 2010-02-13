@@ -28,7 +28,7 @@
 AppVersionInfo::AppVersionInfo()
 {
   defined = 0;
-
+  ink_strncpy(PkgStr, "?", sizeof(PkgStr));
   ink_strncpy(AppStr, "?", sizeof(AppStr));
   ink_strncpy(VersionStr, "?", sizeof(VersionStr));
   ink_strncpy(BldNumStr, "?", sizeof(BldNumStr));
@@ -43,8 +43,9 @@ AppVersionInfo::AppVersionInfo()
 
 
 void
-AppVersionInfo::setup(char *app_name, char *app_version,
-                      char *build_date, char *build_time, char *build_machine, char *build_person, char *build_cflags)
+AppVersionInfo::setup(char *pkg_name, char *app_name, char *app_version,
+                      char *build_date, char *build_time, char *build_machine, 
+                      char *build_person, char *build_cflags)
 {
   char month_name[8];
   int year, month, day, hour, minute, second;
@@ -67,7 +68,7 @@ AppVersionInfo::setup(char *app_name, char *app_version,
   ///////////////////////////////////////////
   // now construct the version information //
   ///////////////////////////////////////////
-
+  ink_strncpy(PkgStr, pkg_name, sizeof(PkgStr));
   ink_strncpy(AppStr, app_name, sizeof(AppStr));
   snprintf(VersionStr, sizeof(VersionStr), "%s", app_version);
   snprintf(BldNumStr, sizeof(BldNumStr), "%d%d%d", month, day, hour);
@@ -77,13 +78,15 @@ AppVersionInfo::setup(char *app_name, char *app_version,
   snprintf(BldPersonStr, sizeof(BldPersonStr), "%s", build_person);
   snprintf(BldCompileFlagsStr, sizeof(BldCompileFlagsStr), "%s", build_cflags);
 
-  snprintf(FullVersionInfoStr, sizeof(FullVersionInfoStr), "%s %s - (build # %d%d%d on %s at %s)",
-           AppStr, VersionStr, month, day, hour, build_date, build_time);
+  snprintf(FullVersionInfoStr, sizeof(FullVersionInfoStr), 
+           "%s - %s - %s - (build # %d%d%d on %s at %s)",
+           PkgStr, AppStr, VersionStr, month, day, hour, build_date, build_time);
 
   /////////////////////////////////////////////////////////////
   // the manager doesn't like empty strings, so prevent them //
   /////////////////////////////////////////////////////////////
-
+  if (PkgStr[0] == '\0')
+    ink_strncpy(PkgStr, "?", sizeof(PkgStr));
   if (AppStr[0] == '\0')
     ink_strncpy(AppStr, "?", sizeof(AppStr));
   if (VersionStr[0] == '\0')

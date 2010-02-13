@@ -23,8 +23,7 @@
 
 #include "ink_unused.h"
 
-#define PROGRAM_VERSION		"1.0"
-#define PROGRAM_NAME		"logcat"
+#define PROGRAM_NAME		"traffic_logcat"
 #define MAX_LOGBUFFER_SIZE	65536
 
 #include <poll.h>
@@ -241,7 +240,8 @@ main(int argc, char *argv[])
 
   // build the application information structure
   //
-  appVersionInfo.setup(PROGRAM_NAME, PROGRAM_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__, 
+                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // process command-line arguments
   //

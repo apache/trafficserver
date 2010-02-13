@@ -498,7 +498,8 @@ main(int argc, char **argv)
   }
 
   // Set up the application version info
-  appVersionInfo.setup("traffic_manager", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_manager", PACKAGE_VERSION, 
+                       __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   initSignalHandlers();
 
   // Process Environment Variables
@@ -525,7 +526,7 @@ main(int argc, char **argv)
   for (int i = 1; i < argc; i++) {      /* Process command line args */
 
     if (argv[i][0] == '-') {
-      if (strcmp(argv[i], "-version") == 0) {
+      if ((strcmp(argv[i], "-version") == 0) || (strcmp(argv[i], "-V") == 0)) {
         fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
         exit(0);
       } else if (strcmp(argv[i], "-proxyOff") == 0) {
@@ -1277,7 +1278,7 @@ printUsage()
   fprintf(stderr, "     -printRecords  [...]   Print flags, default all are off.\n");
   fprintf(stderr, "     -debug         <tags>  Enable the given debug tags\n");
   fprintf(stderr, "     -action        <tags>  Enable the given action tags.\n");
-  fprintf(stderr, "     -version               Print version id and exit.\n");
+  fprintf(stderr, "     -version or -V         Print version id and exit.\n");
   fprintf(stderr, "     -snmplog       <int>   Turn on SNMP SDK diagnostics. (2147450879 is good...)\n");
   fprintf(stderr, "     -vingid        <id>    Vingid Flag\n");
   fprintf(stderr, "\n");

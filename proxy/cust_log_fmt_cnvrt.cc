@@ -37,8 +37,7 @@ using namespace std;
 #include "I_Version.h"
 #include "ink_assert.h"
 
-#define PROGRAM_VERSION		"1.0"
-#define PROGRAM_NAME            "cust_log_fmt_cnvrt"
+#define PROGRAM_NAME            "traffic_cust_log_fmt_cnvrt"
 
 const int LINE_BUFFER_SIZE = 1024;
 const int MAX_LOG_OBJECTS = 64;
@@ -528,7 +527,8 @@ main(int argc, char **argv)
   // build the application information structure
   //
   AppVersionInfo appVersionInfo;
-  appVersionInfo.setup(PROGRAM_NAME, PROGRAM_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, 
+                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // process command-line arguments
   //

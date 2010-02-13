@@ -116,7 +116,8 @@ initialize_standalone()
 {
   init_system();
   // Define the version info
-  appVersionInfo.setup("traffic_server", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_server", PACKAGE_VERSION, __DATE__,
+                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   // Local process manager
   initialize_process_manager();
 

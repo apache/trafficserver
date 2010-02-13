@@ -28,9 +28,6 @@
 #                    This should be placed in /etc/init.d. on Ubuntu
 ### END INIT INFO
 
-# Author: George Paul <georgev.paul@yahoo.com>
-#
-
 # Fedora:
 #  When this file is installed as /etc/rc.d/init.d/trafficserver
 #  and added to the chkconfig system with `chkconfig --add trafficserver`
@@ -39,6 +36,9 @@
 # Ubuntu:
 #  Values read from /etc/default/trafficserver
 
+TS_PACKAGE_NAME="@PACKAGE_NAME@"
+TS_PACKAGE_VERSION="@PACKAGE_VERSION@"
+TS_PACKAGE_BUGREPORT="@PACKAGE_BUGREPORT@"
 
 if [ -e /etc/SuSE-release ]; then
     DISTRIB_ID="suse"

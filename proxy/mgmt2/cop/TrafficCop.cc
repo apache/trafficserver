@@ -2334,7 +2334,6 @@ init()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering init()\n");
 #endif
-  appVersionInfo.setup("traffic_cop", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   init_signals();
   init_syslog();
@@ -2360,16 +2359,21 @@ init()
 #endif
 }
 
-
+int version_flag = 0;
 int
 main(int argc, char *argv[])
 {
   int fd;
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_cop", PACKAGE_VERSION, __DATE__, 
+                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-stop") == 0) {
       fprintf(stdout, "Cool! I think I'll be a STOP cop!\n");
       killsig = SIGSTOP;
+    } else if (strcmp(argv[i], "-V") == 0) {
+      fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
+      exit(0);
     }
   }
 

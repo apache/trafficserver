@@ -25,6 +25,8 @@
 //#include "tclExtend.h"
 #include "tcl.h"
 #include <string.h>
+#include "ink_args.h"
+#include "I_Version.h"
 #include <CliMgmtUtils.h>
 #include "../api2/include/INKMgmtAPI.h"
 
@@ -38,12 +40,37 @@ int AlarmCallbackPrint = 1;
 // registers an event callback for all events in general
 void register_event_callback(void);
 
+AppVersionInfo appVersionInfo;
+int version_flag = 0;
+
 int
 main(int argc, char *argv[])
 {
   char ts_path[512];
   char config_path[512];
   INKError status;
+
+  // build the application information structure
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_shell", PACKAGE_VERSION, __DATE__,
+                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+
+  // Argument description table used to describe how to parse command line args,
+  // see 'ink_args.h' for meanings of the various fields 
+  ArgumentDescription argument_descriptions[] = {
+    {"version", 'V', "Print Version Id", "T", &version_flag, NULL, NULL}
+  };
+
+  int n_argument_descriptions = SIZE(argument_descriptions);
+  NOWARN_UNUSED(argc);
+
+  // Process command line arguments and dump into variables
+  process_args(argument_descriptions, n_argument_descriptions, argv);
+
+  // check for the version number request
+  if (version_flag) {
+    fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
+    exit(0);
+  }
 
   // traffic_shell binary should use printf to display information onscreen
   CliDisplayPrintf = 1;
