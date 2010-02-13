@@ -103,9 +103,6 @@ NewCacheVC::reenable(VIO * vio)
 {
   Debug("cache_plugin", "[NewCacheVC::reenable] this=%lX vio=%lX", (long) this, (long) vio);
   if (_vio.op == VIO::WRITE) {
-    if (!_vio.buffer.reader()->read_avail()) {
-      ink_assert(!"useless reenable of cache write");
-    }
     SET_HANDLER(&NewCacheVC::handleWrite);
     if (!trigger) {
       trigger = vio->mutex->thread_holding->schedule_imm_local(this);
