@@ -54,8 +54,8 @@
 #define CONFIGURATION_HISTORY_PROBE_DEPTH   1
 
 // Bump this any time hostdb format is changed
-#define HOST_DB_CACHE_MAJOR_VERSION         1
-#define HOST_DB_CACHE_MINOR_VERSION         2
+#define HOST_DB_CACHE_MAJOR_VERSION         2
+#define HOST_DB_CACHE_MINOR_VERSION         0
 
 #define DEFAULT_HOST_DB_FILENAME             "host.db"
 #define DEFAULT_HOST_DB_SIZE                 (1<<14)

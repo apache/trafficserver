@@ -39,7 +39,7 @@
 void start_dns_Proxy(int);
 void *dns_udp_receiver(void *arg);
 
-#define DNS_CACHE_MODULE_MAJOR_VERSION 1
+#define DNS_CACHE_MODULE_MAJOR_VERSION 2
 #define DNS_CACHE_MODULE_MINOR_VERSION 0
 #define DNS_CACHE_MODULE_VERSION makeModuleVersion(                    \
                                        DNS_CACHE_MODULE_MAJOR_VERSION, \
