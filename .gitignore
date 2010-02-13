@@ -24,9 +24,17 @@ libinktomi++/ParseRulesCTypeToLower
 libinktomi++/ParseRulesCTypeToUpper
 libinktomi++/mkdfa
 proxy/config/records.config
-proxy/cust_log_fmt_cnvrt
-proxy/logcat
-proxy/logstats
+
+proxy/mgmt2/api2/remote/traffic_api_cli_remote
+proxy/mgmt2/tools/traffic_mcast_snoop
+proxy/mgmt2/tools/traffic_net_config
+proxy/mgmt2/tools/traffic_shmem_clean
+proxy/mgmt2/tools/traffic_time_config
+proxy/mgmt2/tools/traffic_vip_config
+proxy/traffic_cust_log_fmt_cnvrt
+proxy/traffic_logcat
+proxy/traffic_logstats
+proxy/traffic_sac
 proxy/mgmt2/api2/remote/api_cli_remote
 proxy/mgmt2/cli/traffic_line
 proxy/mgmt2/cli2/traffic_shell
@@ -37,7 +45,6 @@ proxy/mgmt2/tools/shmem_clean
 proxy/mgmt2/tools/time_config
 proxy/mgmt2/tools/vip_config
 proxy/mgmt2/traffic_manager
-proxy/sac
 proxy/traffic_server
 
 libtool
