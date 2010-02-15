@@ -1324,14 +1324,14 @@ LocalManager::listenForProxy()
 //      and false on failure
 //    - no-op on WIN32
 bool
-removeRootPriv(void)
+removeRootPriv(uid_t euid)
 {
-  if (seteuid(getuid()) < 0) {
-    Debug("lm", "[restoreRootPiv] seteuid root failed : %s\n", strerror(errno));
+  if (seteuid(euid) < 0) {
+    Debug("lm", "[restoreRootPriv] seteuid failed : %s\n", strerror(errno));
     return false;
   }
 
-  Debug("lm", "[removeRootPiv] removed root privileges.  Euid is %d\n", geteuid());
+  Debug("lm", "[removeRootPriv] removed root privileges.  Euid is %d\n", euid);
 
   return true;
 }
@@ -1343,14 +1343,16 @@ removeRootPriv(void)
 //      and false on failure
 //    - no-op on WIN32
 bool
-restoreRootPriv(void)
+restoreRootPriv(uid_t *old_euid)
 {
+  if (old_euid)
+    *old_euid = geteuid();
   if (seteuid(0) < 0) {
-    Debug("lm", "[restoreRootPiv] seteuid root failed : %s\n", strerror(errno));
+    Debug("lm", "[restoreRootPriv] seteuid root failed : %s\n", strerror(errno));
     return false;
   }
 
-  Debug("lm", "[restoreRootPiv] restored root privileges.  Euid is %d\n", geteuid());
+  Debug("lm", "[restoreRootPriv] restored root privileges.  Euid is %d\n", 0);
 
   return true;
 }
@@ -1368,9 +1370,10 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
   int proxy_port_fd = -1;
   bool privBoost = false;
   uid_t euid = geteuid();
+  uid_t saved_euid = 0;
 
   if (proxy_port < 1024 && euid != 0) {
-    if (restoreRootPriv() == false) {
+    if (restoreRootPriv(&saved_euid) == false) {
       mgmt_elog(stderr, "[bindProxyPort] Unable to get root priviledges to bind port %d. euid is %d.  Exiting\n",
                 proxy_port, euid);
       _exit(0);
@@ -1402,7 +1405,7 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
   Debug("lm", "[bindProxyPort] Successfully bound proxy port %d\n", proxy_port);
 
   if (privBoost == true) {
-    if (removeRootPriv() == false) {
+    if (removeRootPriv(saved_euid) == false) {
       mgmt_elog(stderr, "[bindProxyPort] Unable to reset permissions to euid %d.  Exiting...\n", getuid());
       _exit(1);
     }

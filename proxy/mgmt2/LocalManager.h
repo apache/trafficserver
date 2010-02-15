@@ -193,8 +193,8 @@ private:
 
 };                              /* End class LocalManager */
 
-bool restoreRootPriv(void);
-bool removeRootPriv(void);
+bool restoreRootPriv(uid_t *old_euid = NULL);
+bool removeRootPriv(uid_t euid);
 
 
 #endif /* _LOCAL_MANAGER_H */

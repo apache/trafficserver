@@ -312,19 +312,20 @@ Rollback::statFile(version_t version, struct stat *buf)
 {
   char *filePath;
   int statResult;
+  uid_t saved_euid = 0;
 
   if (version == this->currentVersion) {
     version = ACTIVE_VERSION;
   }
   filePath = createPathStr(version);
   if (root_access_needed) {
-    if (restoreRootPriv() != true) {
+    if (restoreRootPriv(&saved_euid) != true) {
       mgmt_log(stderr, "[Rollback] Unable to acquire root privileges.\n");
     }
   }
   statResult = stat(filePath, buf);
   if (root_access_needed) {
-    if (removeRootPriv() != true) {
+    if (removeRootPriv(saved_euid) != true) {
       mgmt_log(stderr, "[Rollback] Unable to restore non-root privileges.\n");
     }
   }
@@ -343,17 +344,18 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
 {
   char *filePath;
   int fd;
+  uid_t saved_euid = 0;
 
   filePath = createPathStr(version);
 
   if (root_access_needed) {
-    if (restoreRootPriv() != true) {
+    if (restoreRootPriv(&saved_euid) != true) {
       mgmt_log(stderr, "[Rollback] Unable to acquire root privileges.\n");
     }
   }
   fd = mgmt_open_mode(filePath, oflags, 0644);
   if (root_access_needed) {
-    if (removeRootPriv() != true) {
+    if (removeRootPriv(saved_euid) != true) {
       mgmt_log(stderr, "[Rollback] Unable to restore non-root privileges.\n");
     }
   }
