@@ -582,7 +582,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.proxy.authenticate.basic.realm", "",
    INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.auth.convert_filter_to_policy", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]",
+  {CONFIG, "proxy.config.auth.convert_filter_to_policy", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]",
    RA_NULL}
   ,
   // assumes executable is stored in bin_path directory
