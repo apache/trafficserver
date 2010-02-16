@@ -24,7 +24,6 @@
 #ifndef _URL_MAPPING_H_
 #define _URL_MAPPING_H_
 
-#include "UmsHelper.h"
 #include "AclFiltering.h"
 #include <deque>
 #include <map>
@@ -34,8 +33,6 @@
 #include "URL.h"
 #include "RemapPluginInfo.h"
 #include "HttpTransact.h"
-
-class ums_helper;
 
 /**
  * Used to store http referer strings (and/or regexp) 
@@ -103,13 +100,6 @@ class url_mapping
 public:
   url_mapping(int rank = 0);
   ~url_mapping();
-  url_mapping *next;            // next in main list (primary hash by host name)
-  url_mapping *next_root_schema;        // list of different schemas (valid only for root nodes)
-  url_mapping *next_schema;     // next with the same schema
-  url_mapping *next_empty;      // next in ums_helper.empty_list
-  url_mapping *next_unique;     // next in ums_helper.unique_list
-  url_mapping *next_hash;       // next in hash table list
-  ums_helper *lookup_helper;    // primary helper (from host name hash list)
 
   bool add_plugin(remap_plugin_info *);
   remap_plugin_info *get_plugin(unsigned int);

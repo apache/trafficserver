@@ -43,7 +43,6 @@
 #include "RemapProcessor.h"
 #include "UrlRewrite.h"
 #include "UrlMapping.h"
-#include "UmsHelper.h"
 #include "StringHash.h"
 #include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 

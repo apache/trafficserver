@@ -40,7 +40,6 @@
 #include "HttpTransact.h"
 #include "RemapPluginInfo.h"
 #include "UrlRewrite.h"
-#include "UmsHelper.h"
 #include "UrlMapping.h"
 
 #define EMPTY_PORT_MAPPING (ink32)~0

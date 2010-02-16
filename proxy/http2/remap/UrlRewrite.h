@@ -26,7 +26,6 @@
 
 #include "StringHash.h"
 #include "UrlMapping.h"
-#include "UmsHelper.h"
 
 #include <pcre.h>
 #include <list>
@@ -79,7 +78,6 @@ public:
   UrlRewrite(char *file_var_in);
    ~UrlRewrite();
   int BuildTable();
-  void CreateLookupHelper(InkHashTable * h_table);
   bool Remap(HttpTransact::State * s, HTTPHdr * request_header, char **redirect_url, char **orig_url,
              char *tag = NULL, unsigned int filter_mask = URL_REMAP_FILTER_NONE);
   mapping_type Remap_redirect(HTTPHdr * request_header, char **redirect_url, char **orig_url, char *tag = NULL);

@@ -24,7 +24,6 @@
 #include "StringHash.h"
 #include "Main.h"
 #include "Error.h"
-#include "UmsHelper.h"
 
 
 // ===============================================================================

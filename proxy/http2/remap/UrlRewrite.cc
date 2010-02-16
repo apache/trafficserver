@@ -32,6 +32,7 @@
 #include "MatcherUtils.h"
 #include "Tokenizer.h"
 #include "RemapAPI.h"
+#include "UrlMappingPathIndex.h"
 
 #include "ink_string.h"
 
@@ -648,16 +649,20 @@ UrlRewrite::_destroyTable(InkHashTable * h_table)
 {
   InkHashTableEntry *ht_entry;
   InkHashTableIteratorState ht_iter;
-  url_mapping *value;
-  url_mapping *next;
+  UrlMappingPathIndex *item;
+  UrlMappingPathIndex::MappingList mappings;
 
   if (h_table != NULL) {        // Iterate over the hash tabel freeing up the all the url_mappings
     //   contained with in
     for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != NULL;) {
-      for (value = (url_mapping *) ink_hash_table_entry_value(h_table, ht_entry); value; value = next) {
-        next = value->next;
-        delete value;
+      item = (UrlMappingPathIndex *) ink_hash_table_entry_value(h_table, ht_entry);
+      item->GetMappings(mappings);
+      for (UrlMappingPathIndex::MappingList::iterator mapping_iter = mappings.begin(); 
+           mapping_iter != mappings.end(); ++mapping_iter) {
+        delete *mapping_iter;
       }
+      mappings.clear();
+      delete item;
       ht_entry = ink_hash_table_iterator_next(h_table, &ht_iter);
     }
     ink_hash_table_destroy(h_table);
@@ -699,18 +704,25 @@ UrlRewrite::PrintTable(InkHashTable * h_table)
 {
   InkHashTableEntry *ht_entry;
   InkHashTableIteratorState ht_iter;
-  url_mapping *value;
+  UrlMappingPathIndex *value;
   char from_url_buf[2048], to_url_buf[2048];
+  UrlMappingPathIndex::MappingList mappings;
+  url_mapping *um;
 
   for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != NULL;) {
-    for (value = (url_mapping *) ink_hash_table_entry_value(h_table, ht_entry); value; value = value->next) {
-      value->fromURL.string_get_buf(from_url_buf, (int) sizeof(from_url_buf));
-      value->toURL.string_get_buf(to_url_buf, (int) sizeof(to_url_buf));
+    value = (UrlMappingPathIndex *) ink_hash_table_entry_value(h_table, ht_entry); 
+    value->GetMappings(mappings);
+    for (UrlMappingPathIndex::MappingList::iterator mapping_iter = mappings.begin();
+         mapping_iter != mappings.end(); ++mapping_iter) {
+      um = *mapping_iter;
+      um->fromURL.string_get_buf(from_url_buf, (int) sizeof(from_url_buf));
+      um->toURL.string_get_buf(to_url_buf, (int) sizeof(to_url_buf));
       printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %d plugins]\n", from_url_buf,
-             value->unique ? "(unique)" : "", to_url_buf,
-             value->homePageRedirect ? "(R)" : "", value->tag ? value->tag : "",
-             value->_plugin_count > 0 ? "are" : "not", value->_plugin_count);
+             um->unique ? "(unique)" : "", to_url_buf,
+             um->homePageRedirect ? "(R)" : "", um->tag ? um->tag : "",
+             um->_plugin_count > 0 ? "are" : "not", um->_plugin_count);
     }
+    mappings.clear();
     ht_entry = ink_hash_table_iterator_next(h_table, &ht_iter);
   }
 }
@@ -724,12 +736,10 @@ url_mapping *
 UrlRewrite::_tableLookup(InkHashTable * h_table, URL * request_url,
                         int request_port, const char *request_host, int request_host_len, char *tag)
 {
-  url_mapping *ht_entry, *um;
-  ums_helper *lh;
+  UrlMappingPathIndex *ht_entry;
+  url_mapping *um = NULL;
   char host_lower_buf[1024], *request_host_lower, *xfree_buf_ptr;
-  const char *from_path, *request_path, *request_url_scheme;
-  URL *map_from;
-  int ht_result, tmp, from_path_len, request_path_len;
+  int ht_result, tmp;
 
   if (unlikely(!request_host || !request_url || request_host_len < 0))
     return NULL;
@@ -758,58 +768,9 @@ UrlRewrite::_tableLookup(InkHashTable * h_table, URL * request_url,
     xfree(xfree_buf_ptr);
 
   if (likely(ht_result && ht_entry)) {
-    request_path = request_url->path_get(&request_path_len);    // do it only once
-    request_url_scheme = request_url->scheme_get(&tmp);
-
-    for (um = ht_entry; um; um = um->next_root_schema) {
-      if (um->fromURL.scheme_get(&tmp) == request_url_scheme ||
-          (request_url_scheme == URL_SCHEME_HTTPS && um->wildcard_from_scheme))
-        break;
-    }
-    if (unlikely((ht_entry = um) == NULL))
-      return NULL;              /* we don't have such scheme in our list */
-
-    if (likely((lh = ht_entry->lookup_helper) != NULL)) {
-      if (unlikely(!request_path))      // extreme case - return first best match from empty list or NULL
-      {
-        return lh->lookup_best_empty(request_host, request_port, tag);
-      }
-      // request_path != NULL
-      return lh->lookup_best_notempty(ht_entry, request_host, request_port, request_path, request_path_len, tag);
-    }
-    // backup search method - old search without lookup_helper
-    // Search through the chain of remappings for this hostname
-    //   until we find one that matches.  We take the first matching
-    //   remap because the chain is stored in the order of the configuration
-    //   file and earlier entries in the file take precedence over later
-    //   entries
-    for (; ht_entry; ht_entry = ht_entry->next) { 
-      // If the incoming request has no tag but the entry does, or both
-      // have tags that do not match, then we do NOT have a match.
-      bool tags_match = (ht_entry->tag && (!tag || strcmp(tag, ht_entry->tag))) ? false : true;
-
-      map_from = &ht_entry->fromURL;
-      if (tags_match &&
-          (request_url_scheme == map_from->scheme_get(&tmp) ||
-           (request_url_scheme == URL_SCHEME_HTTPS && ht_entry->wildcard_from_scheme)) &&
-          // If the request had no determinable host do not check
-          //  the port since the map_from URL will not have a port
-          //  number other than the default port
-          (*request_host == '\0' || request_port == map_from->port_get())) {    // Port and scheme match so check the path
-        from_path = map_from->path_get(&from_path_len);
-
-        if (ht_entry->unique) {
-          if ((!from_path && !request_path) || (from_path && request_path &&
-                                                from_path_len == request_path_len &&
-                                                !strncmp(from_path, request_path, from_path_len)))
-            return ht_entry;
-        } else if (!from_path || (request_path && request_path_len >= from_path_len &&
-                                  !strncmp(from_path, request_path, from_path_len)))
-          return ht_entry;
-      }
-    }                           /* end for */
+    um = ht_entry->Search(request_url, request_port);
   }
-  return NULL;
+  return um;
 }
 
 /**
@@ -885,8 +846,10 @@ UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, url_mappi
   if (!plugin_modified_host)
     request_url->host_set(toHost, toHostLen);
 
-  if (!plugin_modified_port && (requestPort != map_to->port_get()))
+  if (!plugin_modified_port && 
+      ((requestPort != map_to->port_get()) || map_to->port_get_raw())) {
     request_url->port_set(map_to->port_get_raw());
+  }
 
   // Extra byte is potentially needed for prefix path '/'.
   // Added an extra 3 so that TS wouldn't crash in the field.
@@ -2131,94 +2094,7 @@ UrlRewrite::BuildTable()
 
   xfree(file_buf);
 
-  CreateLookupHelper(forward_mappings.hash_lookup);
-  CreateLookupHelper(reverse_mappings.hash_lookup);
-  CreateLookupHelper(permanent_redirects.hash_lookup);
-  CreateLookupHelper(temporary_redirects.hash_lookup);
-
   return 0;
-}
-
-/**
-  Create lookup helper info inside first url_mapping in hash list.
-  Since remap pattern can be different for each host we should adjust
-  lookup parameters for each hash hit list.
-
-*/
-void
-UrlRewrite::CreateLookupHelper(InkHashTable * h_table)
-{
-  InkHashTableEntry *ht_entry;
-  InkHashTableIteratorState ht_iter;
-  url_mapping *um_root, *um, *ul, **uppe, **uppu;
-  ums_helper *lh;
-  const char *from_path;
-  int from_path_len, i;
-
-  if (h_table) {
-    for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != NULL;) {
-      if (likely((um_root = (url_mapping *) ink_hash_table_entry_value(h_table, ht_entry)) != NULL)) {
-        for (um = um_root->next; um; um = um->next) {
-          from_path = um->fromURL.scheme_get(&i);
-          for (ul = um_root; ul; ul = ul->next_root_schema) {
-            if (ul->fromURL.scheme_get(&from_path_len) == from_path && i == from_path_len)
-              break;
-          }
-          if (likely(ul)) {
-            for (uppu = &ul->next_schema; *uppu; uppu = &((*uppu)->next_schema));
-          } else {
-            for (uppu = &um_root->next_root_schema; *uppu; uppu = &((*uppu)->next_root_schema));
-          }
-          *uppu = um;
-        }
-        // create lookup helper for each scheme
-        for (um = um_root; um; um = um->next_root_schema) {
-          if (unlikely(um->lookup_helper)) {
-            delete um->lookup_helper;
-            um->lookup_helper = NULL;
-          }
-          um->lookup_helper = (lh = NEW(new ums_helper()));
-          lh->min_path_size = 1024 * 256;
-
-          uppe = &lh->empty_list;
-          uppu = &lh->unique_list;
-
-          for (ul = um; ul; ul = ul->next_schema) {
-            // #1. check unique flag
-            if (ul->unique) {
-              *uppu = ul;
-              uppu = &ul->next_unique;
-            }
-            // #2. check min & max path size
-            if (NULL == (from_path = ul->fromURL.path_get(&from_path_len))) {
-              *uppe = ul;
-              uppe = &ul->next_empty;
-              from_path_len = 0;
-            }
-            if (lh->max_path_size < from_path_len)
-              lh->max_path_size = from_path_len;
-            if (lh->min_path_size > from_path_len) {
-              lh->min_path_size = from_path_len;
-            }
-            if (unlikely(lh->min_path_size > lh->max_path_size))
-              lh->min_path_size = lh->max_path_size;
-            if (ul->tag)
-              lh->tag_present = true;
-            lh->map_cnt++;
-          }
-          // create hash table only if empty and unique lists are empty
-          if (!lh->empty_list && !lh->unique_list && lh->min_path_size > 0 && lh->map_cnt > 1) {
-            if (lh->init_hash_table() && lh->load_hash_table(um) && lh->hash_table->max_hit_level > 3) {
-              lh->delete_hash_table();
-              lh->init_hash_table(lh->map_cnt << 1);
-              lh->load_hash_table(um);
-            }
-          }
-        }
-      }
-      ht_entry = ink_hash_table_iterator_next(h_table, &ht_iter);
-    }
-  }
 }
 
 /**
@@ -2230,22 +2106,27 @@ void
 UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src_host)
 {
   char src_host_tmp_buf[1];
-  url_mapping *ht_contents;
+  UrlMappingPathIndex *ht_contents;
 
   if (!src_host) {
     src_host = &src_host_tmp_buf[0];
     src_host_tmp_buf[0] = 0;
   }
   // Insert the new_mapping into hash table
-  if (ink_hash_table_lookup(h_table, src_host, (void **) &ht_contents)) {       // There is already a mapping so chain the entries
-    //   Be sure to preserve the order of the file so that we can resolve
-    //    conflicting directives
-    if (ht_contents != NULL) {
-      for (; ht_contents->next; ht_contents = ht_contents->next);
-      (ht_contents->next = mapping)->next = NULL;
+  if (ink_hash_table_lookup(h_table, src_host, (void**) &ht_contents)) {       
+    // There is already a path index for this host
+    if (ht_contents == NULL) {
+      // why should this happen?
+      Error("Found entry cannot be null!");
+      return;
     }
   } else {
-    ink_hash_table_insert(h_table, src_host, mapping);
+    ht_contents = new UrlMappingPathIndex();
+    ink_hash_table_insert(h_table, src_host, ht_contents);
+  }
+  if (!ht_contents->Insert(mapping)) {
+    Error("Could not insert new mapping");
+    // @todo - should we delete these now?
   }
 }
 

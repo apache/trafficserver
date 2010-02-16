@@ -90,9 +90,11 @@ libhttp_a_SOURCES = \
   remap/RemapProcessor.h \
   remap/StringHash.cc \
   remap/StringHash.h \
-  remap/UmsHelper.cc \
-  remap/UmsHelper.h \
   remap/UrlMapping.cc \
   remap/UrlMapping.h \
   remap/UrlRewrite.cc \
-  remap/UrlRewrite.h
+  remap/UrlRewrite.h \
+  remap/Trie.h \
+  remap/UrlMappingPathIndex.h \
+  remap/UrlMappingPathIndex.cc
+
