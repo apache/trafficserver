@@ -124,6 +124,7 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     vc->accept_port = ntohs(na->server.sa.sin_port);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *na->action_;
+    vc->closed  = 0;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
 
     if (e->ethread->is_event_type(na->etype))
