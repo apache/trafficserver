@@ -712,7 +712,7 @@ webIntr_main(void *x)
   int rec_err;
   rec_err = RecGetRecordInt("proxy.config.admin.overseer_mode", &tempInt);
   overseerMode = (int) tempInt;
-  if ((rec_err != REC_ERR_OKAY) || overseerMode<1 || overseerMode> 2)
+  if ((rec_err != REC_ERR_OKAY) || overseerMode<0 || overseerMode> 2)
     overseerMode = 2;
   rec_err = RecGetRecordInt("proxy.config.admin.overseer_port", &tempInt);
   overseerPort = (int) tempInt;

@@ -330,7 +330,7 @@ RecordElement RecordsConfig[] = {
    RA_NULL}
   ,
   // overseer_mode: 0 disabled, 1 monitor only (get), 2 full acces (get, set, reread, bounce, restart)
-  {CONFIG, "proxy.config.admin.overseer_mode", "", INK_INT, "1", RU_RESTART_TM, RR_NULL, RC_INT, "[0-2]", RA_NULL}
+  {CONFIG, "proxy.config.admin.overseer_mode", "", INK_INT, "0", RU_RESTART_TM, RR_NULL, RC_INT, "[0-2]", RA_NULL}
   ,
   {CONFIG, "proxy.config.admin.overseer_port", "", INK_INT, "9898", RU_NULL, RR_REQUIRED, RC_NULL, NULL,
    RA_NULL}
@@ -3619,13 +3619,13 @@ RecordElement RecordsConfig[] = {
   //#
   //# Remote Access Framework (RAF) config - (for integration into SF test harness)
   //#
-  //# ** TM raf is enabled by default with port 20098 (see am-1/tcl/common/defaults.tcl)
+  //# ** TM raf is *NOW* disabled by default with port 20098 (see am-1/tcl/common/defaults.tcl)
   //##############################################################################
   {CONFIG, "proxy.config.raf.enabled", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.raf.port", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.raf.manager.enabled", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.raf.manager.enabled", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.raf.manager.port", "", INK_INT, "20098", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,

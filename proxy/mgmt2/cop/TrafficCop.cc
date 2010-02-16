@@ -92,9 +92,9 @@ static char manager_options[OPTIONS_LEN_MAX] = "";
 static char log_file[PATH_MAX] = "logs/traffic.out";
 static char bin_path[PATH_MAX] = "bin";
 
-static int autoconf_port = 8013;
-static int rs_port = 8018;
-static int http_backdoor_port = 8080;
+static int autoconf_port = 8083;
+static int rs_port = 8088;
+static int http_backdoor_port = 8084;
 static char http_backdoor_ip[PATH_MAX];
 
 static int manager_failures = 0;
