@@ -206,6 +206,22 @@ AC_MSG_RESULT([$enable_remote_cov_commit])
 AC_SUBST([enable_remote_cov_commit])
 
 #
+# WebUI
+#
+AC_MSG_CHECKING([whether to enable Web UI])
+AC_ARG_ENABLE([webui],
+  [AS_HELP_STRING([--enable-webui],[enable Web UI])],
+  [],
+  [enable_webui=no]
+)
+AC_MSG_RESULT([$enable_webui])
+AS_IF([test "x$enable_webui" = "xno"],
+  [AC_DEFINE([NO_WEBUI])
+  ]
+)
+
+
+#
 # API
 #
 
@@ -671,6 +687,15 @@ AC_CONFIG_FILES([proxy/mgmt2/cli/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/cluster/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/cop/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/html2/Makefile])
+AC_CONFIG_FILES([proxy/mgmt2/html2/agent-installer/Makefile])
+AC_CONFIG_FILES([proxy/mgmt2/html2/charting/Makefile])
+AC_CONFIG_FILES([proxy/mgmt2/html2/configure/Makefile])
+AC_CONFIG_FILES([proxy/mgmt2/html2/configure/helper/Makefile])
+AC_CONFIG_FILES([proxy/mgmt2/html2/images/Makefile])
+AC_CONFIG_FILES([proxy/mgmt2/html2/include/Makefile])
+AC_CONFIG_FILES([proxy/mgmt2/html2/monitor/Makefile])
+AC_CONFIG_FILES([proxy/mgmt2/html2/mrtg/Makefile])
+AC_CONFIG_FILES([proxy/mgmt2/html2/tune/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/preparse/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/stats/Makefile])

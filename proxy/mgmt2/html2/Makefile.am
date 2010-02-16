@@ -16,3 +16,34 @@
 
 sysconfdir = $(pkgsysconfdir)
 dist_sysconf_DATA = english.dict
+
+SUBDIRS = agent-installer charting configure images include monitor mrtg tune
+
+install-exec-local:
+	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkgdatadir) \
+	$(DESTDIR)$(pkgdatadir)/agent-installer \
+	$(DESTDIR)$(pkgdatadir)/charting \
+	$(DESTDIR)$(pkgdatadir)/configure \
+	$(DESTDIR)$(pkgdatadir)/configure/helper \
+	$(DESTDIR)$(pkgdatadir)/images \
+	$(DESTDIR)$(pkgdatadir)/include \
+	$(DESTDIR)$(pkgdatadir)/monitor \
+	$(DESTDIR)$(pkgdatadir)/mrtg \
+	$(DESTDIR)$(pkgdatadir)/tune
+
+uninstall-local:
+	-rm -rf $(DESTDIR)$(pkgdatadir)
+
+webuidir = $(pkgdatadir)
+dist_webui_DATA = \
+	checkCookies.ink \
+	enableCookies.ink \
+	index.ink \
+	inktomi.css \
+	inktomiLarge.css \
+	navigation_tree.xml \
+	plugin.ink \
+	rename.ink \
+	resize.js \
+	restart.ink \
+	ssl_redirect.ink

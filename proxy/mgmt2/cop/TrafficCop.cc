@@ -1560,7 +1560,7 @@ test_server_http_port()
   return test_http_port(http_backdoor_port, request, server_timeout * 1000, ip, ip);
 }
 
-#ifndef OEM_NO_WEBUI
+#ifndef NO_WEBUI
 static int
 test_manager_http_port()
 {
@@ -1603,7 +1603,7 @@ heartbeat_manager()
 #endif
     return err;
   }
-#ifndef OEM_NO_WEBUI
+#ifndef NO_WEBUI
   start = milliseconds();
   err = test_manager_http_port();
 //     fprintf (stderr, "heartbeat_manager[http]() [%d ms]\n",
@@ -1628,7 +1628,7 @@ heartbeat_manager()
     manager_failures = 0;
   }
 
-#endif //OEM_NO_WEBUI
+#endif //NO_WEBUI
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving heartbeat_manager() --> %d\n", err);

@@ -14,7 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-webuidir = $(pkgdatadir)/mrtg
+
+webuidir = $(pkgdatadir)/agent-installer
 dist_webui_DATA = \
-	detailed.ink \
-	overview.ink
+	ftp.exp \
+	ftp.pl \
+	installer.cgi \
+	installer.html

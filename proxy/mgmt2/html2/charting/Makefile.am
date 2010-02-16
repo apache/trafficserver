@@ -14,7 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-webuidir = $(pkgdatadir)/mrtg
+webuidir = $(pkgdatadir)/charting
 dist_webui_DATA = \
-	detailed.ink \
-	overview.ink
+	Bandwidth_Savings.html \
+	Cache_Percent_Free.html \
+	Cache_Transfers_In_Progress.html \
+	Client_Throughput.html \
+	DNS_Lookups_Per_Second.html \
+	Document_Hit_Rate.html \
+	Host_Database_Hit_Rate.html \
+	Multiple_Graph_View.html \
+	Open_Client_Connections.html \
+	Open_Server_Connections.html \
+	Transactions_Per_Second.html

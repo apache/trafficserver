@@ -612,8 +612,9 @@ webIntr_main(void *x)
   sigset_t allSigs;             // Set of all signals
 #endif
   char *cliPath = NULL;         // UNIX: socket path for cli
-
+#ifndef NO_WEBUI
   char webFailMsg[] = "Management Web Services Failed to Initialize";
+#endif
   char pacFailMsg[] = "Auto-Configuration Service Failed to Initialize";
   //  char gphFailMsg[] = "Dynamic Graph Service Failed to Initialize";
   char cliFailMsg[] = "Command Line Interface Failed to Initialize";
@@ -626,8 +627,9 @@ webIntr_main(void *x)
 
   int addrLen;
   int i;
+#ifndef NO_WEBUI
   int sleepTime = 2;
-
+#endif
   // No Warning
   x = x;
 
@@ -725,7 +727,7 @@ webIntr_main(void *x)
 
   adminContext.SSL_Context = NULL;
 
-#ifndef OEM_NO_WEBUI
+#ifndef NO_WEBUI
   // configure components
   configAuthEnabled();
   configAuthAdminUser();
@@ -734,7 +736,7 @@ webIntr_main(void *x)
   // <@record> substitution requires WebHttpInit() first
   // configLangDict();
   configUI();
-#endif /* OEM_NO_WEBUI */
+#endif /* NO_WEBUI */
 
 #ifdef HAVE_LIBSSL
   configSSLenable();
@@ -862,7 +864,7 @@ webIntr_main(void *x)
   // Check our web contexts to make sure everything is
   //  OK.  If it is, go ahead and fire up the interfaces
 
-#ifndef OEM_NO_WEBUI
+#ifndef NO_WEBUI
 
   if (checkWebContext(&adminContext, "Web Management") != 0) {
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, webFailMsg);
@@ -884,7 +886,7 @@ webIntr_main(void *x)
     }
   }
 
-#endif //OEM_NO_WEBUI
+#endif //NO_WEBUI
 
   if (checkWebContext(&autoconfContext, "Browser Auto-Configuration") != 0) {
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, pacFailMsg);
@@ -934,11 +936,12 @@ webIntr_main(void *x)
       overseerFD = -1;
     }
   }
+
   // Initialze WebHttp Module
   WebHttpInit();
-#ifndef OEM_NO_WEBUI
+#ifndef NO_WEBUI
   configLangDict();
-#endif /* OEM_NO_WEBUI */
+#endif /* NO_WEBUI */
 
   while (1) {
 
@@ -1025,12 +1028,12 @@ webIntr_main(void *x)
       // Accept OK
       ink_mutex_acquire(&wGlobals.serviceThrLock);
 
-#ifndef OEM_NO_WEBUI
+#ifndef NO_WEBUI
       // Check to see if there are any unprocessed config changes
       if (webConfigChanged > 0) {
         updateWebConfig();
       }
-#endif /* OEM_NO_WEBUI */
+#endif /* NO_WEBUI */
 
       // If this a web manager or an overseer connection, make sure that
       //   it is from an allowed ip addr

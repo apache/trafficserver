@@ -14,7 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-webuidir = $(pkgdatadir)/mrtg
+webuidir = $(pkgdatadir)/configure/helper
 dist_webui_DATA = \
-	detailed.ink \
-	overview.ink
+	INKMgmtAPICheckTcl.sh \
+	INKMgmtAPIFtp.tcl \
+	log.sh \
+	otwu.tcl \
+	traffic_shell.cgi
+

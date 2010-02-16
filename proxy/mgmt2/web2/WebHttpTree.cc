@@ -487,8 +487,8 @@ WebHttpTreeInit()
     goto Lerror;
   }
   if (XML_Parse(parser, xml_file_buf, xml_file_len, true) == 0) {
-    mgmt_elog(stderr, "[WebHttpTreeInit]: XML parse error - %s at line %d\n",
-              XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser));
+    mgmt_elog(stderr, "[WebHttpTreeInit]: XML parse error - %s at line %d for %s\n",
+              XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser),xml_file_path);
     goto Lerror;
   }
   // build javascript tree and track 'item's in our g_link_ht
