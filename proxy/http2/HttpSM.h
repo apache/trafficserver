@@ -310,6 +310,8 @@ public:
   HttpClientSession *ua_session;
   BackgroundFill_t background_fill;
   //AuthHttpAdapter authAdapter;
+  void set_http_schedule(Continuation *);
+  int get_http_schedule(int event, void *data);
 
 protected:
   IOBufferReader * ua_buffer_reader;
@@ -332,6 +334,7 @@ protected:
   HttpSMHandler default_handler;
   Action *pending_action;
   Action *historical_action;
+  Continuation *schedule_cont;
 
   HTTPParser http_parser;
   void start_sub_sm();

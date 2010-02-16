@@ -7818,3 +7818,37 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 
   DUMP_HEADER("http_hdrs", &t_state.hdr_info.client_request, sm_id, "Framed Client Request..checking");
 }
+
+void HttpSM::set_http_schedule(Continuation *contp)
+{
+  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::get_http_schedule);
+  schedule_cont = contp;
+}
+
+int HttpSM::get_http_schedule(int event, void * data)
+{
+  bool plugin_lock;
+  Ptr <ProxyMutex> plugin_mutex;
+  if (schedule_cont->mutex) {
+    plugin_mutex = schedule_cont->mutex;
+    plugin_lock = MUTEX_TAKE_TRY_LOCK(schedule_cont->mutex, mutex->thread_holding);
+
+    if (!plugin_lock) {
+      HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::get_http_schedule);
+      ink_debug_assert(pending_action == NULL);
+      pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
+      return 0;
+    }    
+  } else {
+    plugin_lock = false;
+  }    
+
+  //handle Mutex;
+  schedule_cont->handleEvent ( event, this);
+  if (plugin_lock) {
+    Mutex_unlock(plugin_mutex, mutex->thread_holding);
+  }    
+
+  return 0;
+}
+

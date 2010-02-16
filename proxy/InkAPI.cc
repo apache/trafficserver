@@ -4945,6 +4945,28 @@ INKContSchedule(INKCont contp, unsigned int timeout)
   return action;
 }
 
+INKAction INKHttpSchedule(INKCont contp ,INKHttpTxn txnp, unsigned int timeout)
+{
+  if (sdk_sanity_check_iocore_structure (contp) != INK_SUCCESS)
+    return (INKAction) INK_ERROR_PTR;
+
+  FORCE_PLUGIN_MUTEX(contp);
+  INKAction action;
+  Continuation *cont  = (Continuation*)contp;
+  HttpSM *sm = (HttpSM*)txnp;
+  sm->set_http_schedule(cont);
+
+  if (timeout == 0) { 
+    action = eventProcessor.schedule_imm (sm, ET_NET);
+  } else {
+    action = eventProcessor.schedule_in (sm, HRTIME_MSECONDS (timeout), ET_NET);
+  }    
+
+  action = (INKAction) ((paddr_t) action | 0x1);
+
+  return action;
+}
+
 int
 INKContCall(INKCont contp, INKEvent event, void *edata)
 {

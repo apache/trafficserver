@@ -1934,6 +1934,7 @@ extern "C"
   inkapi INKReturnCode INKContDataSet(INKCont contp, void *data);
   inkapi void *INKContDataGet(INKCont contp);
   inkapi INKAction INKContSchedule(INKCont contp, unsigned int timeout);
+  inkapi INKAction INKHttpSchedule(INKCont contp, INKHttpTxn txnp, unsigned int timeout);
   inkapi int INKContCall(INKCont contp, INKEvent event, void *edata);
   inkapi INKMutex INKContMutexGet(INKCont contp);
 
