@@ -45,6 +45,7 @@ proxy/mgmt2/tools/shmem_clean
 proxy/mgmt2/tools/time_config
 proxy/mgmt2/tools/vip_config
 proxy/mgmt2/traffic_manager
+proxy/mgmt2/html2/tune/navigation_tree.xml
 proxy/traffic_server
 
 libtool
@@ -55,3 +56,4 @@ m4/ltversion.m4
 m4/lt~obsolete.m4
 
 install/trafficserver
+
