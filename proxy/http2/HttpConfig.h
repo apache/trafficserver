@@ -268,6 +268,8 @@ enum
   http_ua_msecs_counts_errors_other_stat,
   http_ua_msecs_counts_other_unclassified_stat,
 
+  http_total_x_redirect_stat,
+
   // Times
   http_total_transactions_time_stat,
   http_total_transactions_think_time_stat,

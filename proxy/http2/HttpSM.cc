@@ -325,7 +325,7 @@ static int next_sm_id = 0;
 HttpSM::HttpSM():
 Continuation(NULL), sm_id(-1), magic(HTTP_SM_MAGIC_DEAD),
   //YTS Team, yamsat Plugin
-  enable_redirection(false), api_enable_redirection(true), redirection_tries(0), transfered_bytes(0),
+  enable_redirection(false), api_enable_redirection(true), redirect_url(NULL), redirect_url_len(0), redirection_tries(0), transfered_bytes(0),
 post_failed(false),
   //YTS Team, yamsat
   is_cache_enabled(false), request_inserted(false),
@@ -398,6 +398,8 @@ HttpSM::init()
   sm_id = 0;
   enable_redirection = false;
   api_enable_redirection = true;
+  redirect_url = NULL;
+  redirect_url_len = 0;
 
   // Unique state machine identifier.
   //  changed next_sm_id from ink64 to int because
@@ -6865,6 +6867,12 @@ HttpSM::kill_this()
 
     HTTP_SM_SET_DEFAULT_HANDLER(NULL);
 
+    if (redirect_url != NULL) {
+      xfree(redirect_url);
+      redirect_url = NULL;
+      redirect_url_len = 0;
+    }
+
 #ifdef USE_HTTP_DEBUG_LISTS
     ink_mutex_acquire(&debug_sm_list_mutex);
     debug_sm_list.remove(this, this->debug_link);
@@ -7721,13 +7729,26 @@ HttpSM::do_redirect()
   }
 
   HTTPStatus status = t_state.hdr_info.client_response.status_get();
-  if ((status == HTTP_STATUS_MOVED_TEMPORARILY) || (status == HTTP_STATUS_MOVED_PERMANENTLY)) {
+  // if redirect_url is set by an user's plugin, yts will redirect to this url anyway.
+  if ((redirect_url != NULL) || (status == HTTP_STATUS_MOVED_TEMPORARILY) || (status == HTTP_STATUS_MOVED_PERMANENTLY)) {
 
-    if (t_state.hdr_info.client_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
+    if (redirect_url != NULL || t_state.hdr_info.client_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
 
       if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
         LogAccessHttp accessor(this);
-        //t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT_REDIRECT;
+        if (redirect_url == NULL) {
+          if (t_state.squid_codes.log_code == SQUID_LOG_TCP_HIT)
+            t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT_REDIRECT;
+          else
+            t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS_REDIRECT;
+        }
+        else {
+          if (t_state.squid_codes.log_code == SQUID_LOG_TCP_HIT)
+            t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT_X_REDIRECT;
+          else
+            t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS_X_REDIRECT;
+        }
+
         int ret = Log::access(&accessor);
 
         if (ret & Log::FULL) {
@@ -7737,11 +7758,21 @@ HttpSM::do_redirect()
           Log::error("failed to log transaction for at least one log object");
         }
       }
-      // get the location header and setup the redirect
-      int redirect_len;
-      char *redirect_url =
-        (char *) t_state.hdr_info.client_response.value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redirect_len);
-      redirect_request(redirect_url, redirect_len);
+
+      if (redirect_url != NULL) {
+        redirect_request(redirect_url, redirect_url_len);
+        xfree(redirect_url);
+        redirect_url = NULL;
+        redirect_url_len = 0;
+        HTTP_INCREMENT_DYN_STAT(http_total_x_redirect_stat);
+      }
+      else {
+        // get the location header and setup the redirect
+        int redir_len;
+        char *redir_url =
+        (char *) t_state.hdr_info.client_response.value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redir_len);
+        redirect_request(redir_url, redir_len);
+      }
 
     } else {
       enable_redirection = false;

@@ -127,6 +127,10 @@ enum SquidLogCode
   SQUID_LOG_TCP_WEBFETCH_MISS = 'd',
   SQUID_LOG_TCP_SPIDER_BYPASS = 'e',
   SQUID_LOG_TCP_FUTURE_2 = 'f',
+  SQUID_LOG_TCP_HIT_REDIRECT = '[',       // standard redirect
+  SQUID_LOG_TCP_MISS_REDIRECT = ']',      // standard redirect
+  SQUID_LOG_TCP_HIT_X_REDIRECT = '<',     // extended redirect
+  SQUID_LOG_TCP_MISS_X_REDIRECT = '>',    // extended redirect
   SQUID_LOG_UDP_HIT = 'g',
   SQUID_LOG_UDP_WEAK_HIT = 'h',
   SQUID_LOG_UDP_HIT_OBJ = 'i',

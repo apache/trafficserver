@@ -970,6 +970,11 @@ register_stat_callbacks()
                      RECD_FLOAT, RECP_NULL,
                      (int) http_ua_msecs_counts_other_unclassified_stat, RecRawStatSyncIntMsecsToFloatSeconds);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.http.total_x_redirect_count",
+                     RECD_COUNTER, RECP_NULL,
+                     (int) http_total_x_redirect_stat, RecRawStatSyncCount);
+
 }
 
 

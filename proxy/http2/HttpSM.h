@@ -268,6 +268,8 @@ public:
   //YTS Team, yamsat Plugin
   bool enable_redirection;      //To check if redirection is enabled
   bool api_enable_redirection;  //To check if redirection is enabled
+  char *redirect_url;           //url for force redirect (provide users a functionality to redirect to another url when needed)
+  int redirect_url_len;
   int redirection_tries;        //To monitor number of redirections
   int transfered_bytes;         //Added to calculate POST data
   bool post_failed;             //Added to identify post failure

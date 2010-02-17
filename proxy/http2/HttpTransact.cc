@@ -5361,7 +5361,9 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State * s)
       HTTP_DEBUG_ASSERT(s->cache_info.action == CACHE_DO_NO_ACTION);
       s->next_action = SERVER_READ;
     }
-    s->state_machine->enable_redirection = false;
+    if (s->state_machine->redirect_url == NULL) {
+      s->state_machine->enable_redirection = false;
+    }
     break;
   case HTTP_STATUS_NOT_MODIFIED:
     Debug("http_trans", "[hncoofsr] server sent back 304. IMS from client?");

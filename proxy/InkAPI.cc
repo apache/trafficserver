@@ -5571,81 +5571,6 @@ INKHttpTxnFollowRedirect(INKHttpTxn txnp, int on)
   return INK_SUCCESS;
 }
 
-// YTS Team, yamsat Plugin
-// This API is to create new request to the redirected url
-// by setting API INKHttpTxnRedirectRequest
-int
-INKHttpTxnCreateRequest(INKHttpTxn txnp, const char *hostname, const char *path, int port)
-{
-  HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State * s = &(sm->t_state);
-  if (sm->enable_redirection) {
-    INKMBuffer bufp_resp = NULL;
-    INKMLoc hdrresp_loc = NULL;
-
-    INKHttpTxnClientRespGet(txnp, &bufp_resp, &hdrresp_loc);
-    //Checking for 302 and 301 response codes
-    if (INK_HTTP_STATUS_MOVED_TEMPORARILY == (INKHttpHdrStatusGet(bufp_resp, hdrresp_loc)) ||
-        INK_HTTP_STATUS_MOVED_PERMANENTLY == (INKHttpHdrStatusGet(bufp_resp, hdrresp_loc))) {
-
-      INKMBuffer redirBuf;
-      INKMLoc redirLoc;
-      int redir_url_length;
-      int re;
-
-      redirBuf = INKMBufferCreate();
-      redirLoc = INKUrlCreate(redirBuf);
-
-      INKUrlSchemeSet(redirBuf, redirLoc, INK_URL_SCHEME_HTTPS, INK_URL_LEN_HTTPS);
-      INKUrlHostSet(redirBuf, redirLoc, hostname, strlen(hostname));
-      INKUrlPortSet(redirBuf, redirLoc, port);
-      INKUrlPathSet(redirBuf, redirLoc, path, strlen(path));
-
-      const char *url_redir_str = INKUrlStringGet(redirBuf, redirLoc, &redir_url_length);
-      INKDebug("http", "Redirect URL in createReequest = \'%s\'\n", url_redir_str);
-
-      re = INKUrlParse(redirBuf, redirLoc, &url_redir_str, (url_redir_str + strlen(url_redir_str)));
-      if (re != INK_PARSE_DONE) {
-        INKDebug("INKHttpTxnCreateRequest", "\n CreateRequest: INKParse failed ");
-        INKMBufferDestroy(&redirBuf);
-        return 0;
-      }
-
-      re = INKHttpTxnRedirectRequest(txnp, redirBuf, redirLoc);
-
-      INKMBuffer req_bufp = NULL;
-      INKMLoc req_loc = NULL;
-      INKMLoc new_field_loc;
-      std::string HOSTNAME;
-      char *temp = NULL;
-      size_t temp_size = 4 * sizeof(int);
-      temp = (char *) xmalloc(temp_size);
-
-      if (!INKHttpTxnClientReqGet(txnp, &req_bufp, &req_loc)) {
-        INKError("Error");
-      }
-
-      HOSTNAME += hostname;
-      HOSTNAME += ":";
-      snprintf(temp, temp_size, "%d", port);
-      HOSTNAME += temp;
-
-      new_field_loc = INKMimeHdrFieldFind(req_bufp, req_loc, "Host", 4);
-      INKMimeHdrFieldValueSet(req_bufp, req_loc, new_field_loc, -1, HOSTNAME.c_str(), strlen(HOSTNAME.c_str()));
-      INKHandleMLocRelease(req_bufp, req_loc, new_field_loc);
-
-      DUMP_HEADER("http_hdrs", &s->hdr_info.client_request, sm->sm_id, "Framed Client Request..checking");
-
-      return 0;
-    } else if (200 == (INKHttpHdrStatusGet(bufp_resp, hdrresp_loc))) {
-      sm->enable_redirection = false;
-    }
-    return 0;
-  }
-  return 0;
-}
-
-
 int
 INKHttpTxnRedirectRequest(INKHttpTxn txnp, INKMBuffer bufp, INKMLoc url_loc)
 {
@@ -9027,5 +8952,48 @@ INKCacheHttpInfoSizeSet(INKCacheHttpInfo infop, INKU64 size)
   info->object_size_set(size);
 }
 
+// this function should be called at INK_EVENT_HTTP_READ_RESPONSE_HDR
+INKReturnCode INKRedirectUrlSet(INKHttpTxn txnp, const char* url, const int url_len)
+{
+  if (url == NULL) {
+    return INK_ERROR;
+  }
+  if (sdk_sanity_check_txn(txnp)!=INK_SUCCESS) {
+    return INK_ERROR;
+  }
+  HttpSM *sm = (HttpSM*) txnp;
+
+  if (sm->redirect_url != NULL) {
+    xfree(sm->redirect_url);
+    sm->redirect_url = NULL;
+    sm->redirect_url_len = 0;
+  }
+
+  if ((sm->redirect_url = (char*)xmalloc(url_len + 1)) != NULL) {
+    ink_strncpy(sm->redirect_url, (char*)url, url_len + 1);
+    sm->redirect_url_len = url_len;
+    // have to turn redirection on for this transaction if user wants to redirect to another URL
+    if (sm->enable_redirection == false) {
+      sm->enable_redirection = true;
+      // max-out "redirection_tries" to avoid the regular redirection being turned on in
+      // this transaction improperly. This variable doesn't affect the custom-redirection
+      sm->redirection_tries = HttpConfig::m_master.number_of_redirections;
+    }
+    return INK_SUCCESS;
+  }
+  else {
+    return INK_ERROR;
+  }
+}
+
+const char* INKRedirectUrlGet(INKHttpTxn txnp, int* url_len_ptr)
+{
+  if (sdk_sanity_check_txn(txnp)!=INK_SUCCESS) {
+    return NULL;
+  }
+  HttpSM *sm = (HttpSM*) txnp;
+  *url_len_ptr = sm->redirect_url_len;
+  return (const char*)sm->redirect_url;
+}
 
 #endif //INK_NO_API
