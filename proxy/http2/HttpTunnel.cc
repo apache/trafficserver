@@ -759,18 +759,24 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
   ink_assert(p->vc != NULL);
   active = true;
 
+  IOBufferReader *chunked_buffer_start = NULL, *dechunked_buffer_start = NULL;
   if (p->do_chunking || p->do_dechunking || p->do_chunked_passthru) {
     producer_n = (consumer_n = INT_MAX);
     p->chunked_handler.init(p->buffer_start, p);
 
     // Copy the header into the chunked/dechunked buffers.
     if (p->do_chunking) {
+      // initialize a reader to chunked buffer start before writing to keep ref count
+      chunked_buffer_start = p->chunked_handler.chunked_buffer->alloc_reader();
       p->chunked_handler.chunked_buffer->write(p->buffer_start, p->chunked_handler.skip_bytes);
     } else if (p->do_dechunking) {
       // bz57413
       Debug("http_tunnel",
             "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %d",
             p->chunked_handler.chunked_reader->read_avail());
+
+      // initialize a reader to dechunked buffer start before writing to keep ref count
+      dechunked_buffer_start = p->chunked_handler.dechunked_buffer->alloc_reader();
 
       // If there is no transformation then add the header to the buffer, else the
       // client already has got the header from us, no need for it in the buffer.
@@ -804,7 +810,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
         break;
       case TCA_DECHUNK_CONTENT:
       case TCA_PASSTHRU_CHUNKED_CONTENT:
-        c->buffer_reader = p->chunked_handler.dechunked_buffer->alloc_reader();
+        c->buffer_reader = p->chunked_handler.dechunked_buffer->clone_reader(dechunked_buffer_start);
         break;
       default:
         break;
@@ -812,9 +818,9 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     }
     // Non-cache consumers.
     else if (action == TCA_CHUNK_CONTENT) {
-      c->buffer_reader = p->chunked_handler.chunked_buffer->alloc_reader();
+      c->buffer_reader = p->chunked_handler.chunked_buffer->clone_reader(chunked_buffer_start);
     } else if (action == TCA_DECHUNK_CONTENT) {
-      c->buffer_reader = p->chunked_handler.dechunked_buffer->alloc_reader();
+      c->buffer_reader = p->chunked_handler.dechunked_buffer->clone_reader(dechunked_buffer_start);
     } else {
       c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
     }
@@ -875,12 +881,19 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
 
 
   if (p->do_chunking) {
+    // remove the chunked reader marker so that it doesn't act like a buffer guard
+    p->chunked_handler.chunked_buffer->dealloc_reader(chunked_buffer_start);
     p->chunked_handler.dechunked_reader->consume(p->chunked_handler.skip_bytes);
 
     // If there is data to process in the buffer, do it now
     if (p->chunked_handler.dechunked_reader->read_avail())
       producer_handler(VC_EVENT_READ_READY, p);
-  } else if (p->do_dechunking || p->do_chunked_passthru) {      // bz57413
+  } else if (p->do_dechunking || p->do_chunked_passthru) {      
+    // remove the dechunked reader marker so that it doesn't act like a buffer guard
+    if (p->do_dechunking)
+      p->chunked_handler.dechunked_buffer->dealloc_reader(dechunked_buffer_start);
+
+    // bz57413
     // If there is no transformation plugin, then we didn't add the header, hence no need to consume it
     Debug("http_tunnel",
           "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %d",
