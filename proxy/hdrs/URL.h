@@ -50,6 +50,7 @@ struct URLImpl:public HdrHeapObjImpl
   inku16 m_len_user;
   inku16 m_len_password;
   inku16 m_len_host;
+  inku16 m_capacity_host;
   inku16 m_len_port;
   inku16 m_len_path;
   inku16 m_len_params;

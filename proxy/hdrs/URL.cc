@@ -177,6 +177,7 @@ url_create(HdrHeap * heap)
   obj_clear_data((HdrHeapObjImpl *) url);
   url->m_url_type = URL_TYPE_NONE;
   url->m_scheme_wks_idx = -1;
+  url->m_capacity_host = 0;
   url_clear_string_ref(url);
   return (url);
 }
@@ -313,7 +314,7 @@ URLImpl::move_strings(HdrStrHeap * new_heap)
   HDR_MOVE_STR(m_ptr_scheme, m_len_scheme);
   HDR_MOVE_STR(m_ptr_user, m_len_user);
   HDR_MOVE_STR(m_ptr_password, m_len_password);
-  HDR_MOVE_STR(m_ptr_host, m_len_host);
+  HDR_MOVE_STR(m_ptr_host, m_capacity_host);
   HDR_MOVE_STR(m_ptr_port, m_len_port);
   HDR_MOVE_STR(m_ptr_path, m_len_path);
   HDR_MOVE_STR(m_ptr_params, m_len_params);
@@ -328,7 +329,7 @@ URLImpl::check_strings(HeapCheck * heaps, int num_heaps)
   CHECK_STR(m_ptr_scheme, m_len_scheme, heaps, num_heaps);
   CHECK_STR(m_ptr_user, m_len_user, heaps, num_heaps);
   CHECK_STR(m_ptr_password, m_len_password, heaps, num_heaps);
-  CHECK_STR(m_ptr_host, m_len_host, heaps, num_heaps);
+  CHECK_STR(m_ptr_host, m_capacity_host, heaps, num_heaps);
   CHECK_STR(m_ptr_port, m_len_port, heaps, num_heaps);
   CHECK_STR(m_ptr_path, m_len_path, heaps, num_heaps);
   CHECK_STR(m_ptr_params, m_len_params, heaps, num_heaps);
@@ -410,9 +411,27 @@ void
 url_host_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
-    value = NULL;
-  mime_str_u16_set(heap, value, length, &(url->m_ptr_host), &(url->m_len_host), copy_string);
+  if ((length <= 0) || (value == NULL)) {
+    url->m_len_host = 0;
+    return;
+  }
+
+  if (!copy_string) {
+    url->m_ptr_host = value;
+    url->m_len_host = length;
+    return;
+  }
+
+  if (url->m_capacity_host < length) {
+    if (url->m_capacity_host) {
+      heap->free_string(url->m_ptr_host, url->m_capacity_host);
+    }
+    url->m_ptr_host = heap->duplicate_str(value, length);
+    url->m_capacity_host = url->m_len_host = length;
+  } else {
+    memcpy(const_cast<char *>(url->m_ptr_host), value, length);
+    url->m_len_host = length;
+  }
 }
 
 /*-------------------------------------------------------------------------
