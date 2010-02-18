@@ -77,14 +77,67 @@
 #include <resolv.h>
 #include <arpa/nameser.h>
 
-#define RES_USE_DNSSEC 0x00200000 
-#define RES_NOTLDQUERY  0x00100000      /*%< don't unqualified name as a tld */
-#define RES_USE_DNAME   0x10000000      /*%< use DNAME */
-#define RES_NO_NIBBLE2  0x80000000      /*%< disable alternate nibble lookup */
-#define NS_TYPE_ELT  0x40 /*%< EDNS0 extended label type */
-#define DNS_LABELTYPE_BITSTRING 0x41
+#define INK_RES_F_VC        0x00000001      /*%< socket is TCP */
+#define INK_RES_F_CONN      0x00000002      /*%< socket is connected */
+#define INK_RES_F_EDNS0ERR  0x00000004      /*%< EDNS0 caused errors */
+#define INK_RES_F__UNUSED   0x00000008      /*%< (unused) */
+#define INK_RES_F_LASTMASK  0x000000F0      /*%< ordinal server of last res_nsend */
+#define INK_RES_F_LASTSHIFT 4               /*%< bit position of LASTMASK "flag" */
+#define INK_RES_GETLAST(res) (((res)._flags & INK_RES_F_LASTMASK) >> INK_RES_F_LASTSHIFT)
 
-#define MAXNSRR 32
+/* res_findzonecut2() options */
+#define INK_RES_EXHAUSTIVE  0x00000001      /*%< always do all queries */
+#define INK_RES_IPV4ONLY    0x00000002      /*%< IPv4 only */
+#define INK_RES_IPV6ONLY    0x00000004      /*%< IPv6 only */
+
+/*%
+ *  * Resolver options (keep these in synch with res_debug.c, please)
+ *   */
+#define INK_RES_INIT        0x00000001      /*%< address initialized */
+#define INK_RES_DEBUG       0x00000002      /*%< print debug messages */
+#define INK_RES_AAONLY      0x00000004      /*%< authoritative answers only (!IMPL)*/
+#define INK_RES_USEVC       0x00000008      /*%< use virtual circuit */
+#define INK_RES_PRIMARY     0x00000010      /*%< query primary server only (!IMPL) */
+#define INK_RES_IGNTC       0x00000020      /*%< ignore trucation errors */
+#define INK_RES_RECURSE     0x00000040      /*%< recursion desired */
+#define INK_RES_DEFNAMES    0x00000080      /*%< use default domain name */
+#define INK_RES_STAYOPEN    0x00000100      /*%< Keep TCP socket open */
+#define INK_RES_DNSRCH      0x00000200      /*%< search up local domain tree */
+#define INK_RES_INSECURE1   0x00000400      /*%< type 1 security disabled */
+#define INK_RES_INSECURE2   0x00000800      /*%< type 2 security disabled */
+#define INK_RES_NOALIASES   0x00001000      /*%< shuts off HOSTALIASES feature */
+#define INK_RES_USE_INET6   0x00002000      /*%< use/map IPv6 in gethostbyname() */
+#define INK_RES_ROTATE      0x00004000      /*%< rotate ns list after each query */
+#define INK_RES_NOCHECKNAME 0x00008000      /*%< do not check names for sanity. */
+#define INK_RES_KEEPTSIG    0x00010000      /*%< do not strip TSIG records */
+#define INK_RES_BLAST       0x00020000      /*%< blast all recursive servers */
+#define INK_RES_NSID        0x00040000      /*%< request name server ID */
+#define INK_RES_NOTLDQUERY  0x00100000      /*%< don't unqualified name as a tld */
+#define INK_RES_USE_DNSSEC  0x00200000      /*%< use DNSSEC using OK bit in OPT */
+/* #define INK_RES_DEBUG2   0x00400000 */   /* nslookup internal */
+/* KAME extensions: use higher bit to avoid conflict with ISC use */
+#define INK_RES_USE_DNAME   0x10000000      /*%< use DNAME */
+#define INK_RES_USE_EDNS0   0x40000000      /*%< use EDNS0 if configured */
+#define INK_RES_NO_NIBBLE2  0x80000000      /*%< disable alternate nibble lookup */
+
+#define INK_RES_DEFAULT     (INK_RES_RECURSE | INK_RES_DEFNAMES | \
+                         INK_RES_DNSRCH | INK_RES_NO_NIBBLE2)
+
+#define INK_MAXNS                   32      /*%< max # name servers we'll track */
+#define INK_MAXDFLSRCH              3       /*%< # default domain levels to try */
+#define INK_MAXDNSRCH               6       /*%< max # domains in search path */
+#define INK_LOCALDOMAINPARTS        2       /*%< min levels in name that is "local" */
+#define INK_RES_TIMEOUT             5       /*%< min. seconds between retries */
+#define INK_MAXRESOLVSORT           10      /*%< number of net to sort on */
+#define INK_RES_TIMEOUT             5       /*%< min. seconds between retries */
+#define INK_RES_MAXNDOTS            15      /*%< should reflect bit field size */
+#define INK_RES_MAXRETRANS          30      /*%< only for resolv.conf/RES_OPTIONS */
+#define INK_RES_MAXRETRY            5       /*%< only for resolv.conf/RES_OPTIONS */
+#define INK_RES_DFLRETRY            2       /*%< Default #/tries. */
+#define INK_RES_MAXTIME             65535   /*%< Infinity, in milliseconds. */
+
+#define INK_NS_TYPE_ELT  0x40 /*%< EDNS0 extended label type */
+#define INK_DNS_LABELTYPE_BITSTRING 0x41
 
 #ifndef NS_GET16
 #define NS_GET16(s, cp) do { \
@@ -140,7 +193,7 @@ struct __ink_res_state {
 #endif
   int     nscount;                /*%< number of name servers */
   struct sockaddr_in
-  nsaddr_list[MAXNSRR];     /*%< address of name server */
+  nsaddr_list[INK_MAXNS];     /*%< address of name server */
 #define nsaddr  nsaddr_list[0]          /*%< for backward compatibility */
   u_short id;                     /*%< current message id */
   char    *dnsrch[MAXDNSRCH+1];   /*%< components of domain to search */
@@ -168,8 +221,8 @@ struct __ink_res_state {
     char    pad[72 - 4*sizeof (int) - 2*sizeof (void *)];
     struct {
       u_int16_t               nscount;
-      u_int16_t               nstimes[MAXNSRR]; /*%< ms. */
-      int                     nssocks[MAXNSRR];
+      u_int16_t               nstimes[INK_MAXNS]; /*%< ms. */
+      int                     nssocks[INK_MAXNS];
       struct __ink_res_state_ext *ext;    /*%< extention for IPv6 */
     } _ext;
   } _u;
@@ -190,7 +243,7 @@ union ink_res_sockaddr_union {
 };
 
 struct __ink_res_state_ext {
-        union ink_res_sockaddr_union nsaddrs[MAXNSRR];
+        union ink_res_sockaddr_union nsaddrs[INK_MAXNS];
         struct sort_list {
                 int     af;
                 union {

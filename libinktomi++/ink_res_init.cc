@@ -141,7 +141,7 @@ ink_res_nclose(ink_res_state statp) {
   if (statp->_vcsock >= 0) { 
     (void) close(statp->_vcsock);
     statp->_vcsock = -1;
-    statp->_flags &= ~(RES_F_VC | RES_F_CONN);
+    statp->_flags &= ~(INK_RES_F_VC | INK_RES_F_CONN);
   }
   for (ns = 0; ns < statp->_u._ext.nscount; ns++) {
     if (statp->_u._ext.nssocks[ns] != -1) {
@@ -156,7 +156,7 @@ ink_res_ndestroy(ink_res_state statp) {
   ink_res_nclose(statp);
   if (statp->_u._ext.ext != NULL)
     free(statp->_u._ext.ext);
-  statp->options &= ~RES_INIT;
+  statp->options &= ~INK_RES_INIT;
   statp->_u._ext.ext = NULL;
 }
 
@@ -172,7 +172,7 @@ ink_res_setservers(ink_res_state statp, const union ink_res_sockaddr_union *set,
   statp->_u._ext.nscount = 0;
 
   nserv = 0;
-  for (i = 0; i < cnt && nserv < MAXNS; i++) {
+  for (i = 0; i < cnt && nserv < INK_MAXNS; i++) {
     switch (set->sin.sin_family) {
       case AF_INET:
         size = sizeof(set->sin);
@@ -265,7 +265,7 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
   struct __ink_res_state_ext *ext = statp->_u._ext.ext;
 
 #ifdef DEBUG
-  if (statp->options & RES_DEBUG)
+  if (statp->options & INK_RES_DEBUG)
     printf(";; res_setoptions(\"%s\", \"%s\")...\n",
            options, source);
 #endif
@@ -276,22 +276,22 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
     /* search for and process individual options */
     if (!strncmp(cp, "ndots:", sizeof("ndots:") - 1)) {
       i = atoi(cp + sizeof("ndots:") - 1);
-      if (i <= RES_MAXNDOTS)
+      if (i <= INK_RES_MAXNDOTS)
         statp->ndots = i;
       else
-        statp->ndots = RES_MAXNDOTS;
+        statp->ndots = INK_RES_MAXNDOTS;
 #ifdef DEBUG
-      if (statp->options & RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG)
         printf(";;\tndots=%d\n", statp->ndots);
 #endif
     } else if (!strncmp(cp, "timeout:", sizeof("timeout:") - 1)) {
       i = atoi(cp + sizeof("timeout:") - 1);
-      if (i <= RES_MAXRETRANS)
+      if (i <= INK_RES_MAXRETRANS)
         statp->retrans = i;
       else
-        statp->retrans = RES_MAXRETRANS;
+        statp->retrans = INK_RES_MAXRETRANS;
 #ifdef DEBUG
-      if (statp->options & RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG)
         printf(";;\ttimeout=%d\n", statp->retrans);
 #endif
 #ifdef	SOLARIS2
@@ -312,20 +312,20 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
 #endif	/* SOLARIS2 */
     } else if (!strncmp(cp, "attempts:", sizeof("attempts:") - 1)){
       i = atoi(cp + sizeof("attempts:") - 1);
-      if (i <= RES_MAXRETRY)
+      if (i <= INK_RES_MAXRETRY)
         statp->retry = i;
       else
-        statp->retry = RES_MAXRETRY;
+        statp->retry = INK_RES_MAXRETRY;
 #ifdef DEBUG
-      if (statp->options & RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG)
         printf(";;\tattempts=%d\n", statp->retry);
 #endif
     } else if (!strncmp(cp, "debug", sizeof("debug") - 1)) {
 #ifdef DEBUG
-      if (!(statp->options & RES_DEBUG)) {
+      if (!(statp->options & INK_RES_DEBUG)) {
         printf(";; res_setoptions(\"%s\", \"%s\")..\n",
                options, source);
-        statp->options |= RES_DEBUG;
+        statp->options |= INK_RES_DEBUG;
       }
       printf(";;\tdebug\n");
 #endif
@@ -333,22 +333,22 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
                         sizeof("no_tld_query") - 1) ||
                !strncmp(cp, "no-tld-query",
                         sizeof("no-tld-query") - 1)) {
-      statp->options |= RES_NOTLDQUERY;
+      statp->options |= INK_RES_NOTLDQUERY;
     } else if (!strncmp(cp, "inet6", sizeof("inet6") - 1)) {
-      statp->options |= RES_USE_INET6;
+      statp->options |= INK_RES_USE_INET6;
     } else if (!strncmp(cp, "rotate", sizeof("rotate") - 1)) {
-      statp->options |= RES_ROTATE;
+      statp->options |= INK_RES_ROTATE;
     } else if (!strncmp(cp, "no-check-names",
                         sizeof("no-check-names") - 1)) {
-      statp->options |= RES_NOCHECKNAME;
+      statp->options |= INK_RES_NOCHECKNAME;
     }
-#ifdef RES_USE_EDNS0
+#ifdef INK_RES_USE_EDNS0
     else if (!strncmp(cp, "edns0", sizeof("edns0") - 1)) {
-      statp->options |= RES_USE_EDNS0;
+      statp->options |= INK_RES_USE_EDNS0;
     }
 #endif
     else if (!strncmp(cp, "dname", sizeof("dname") - 1)) {
-      statp->options |= RES_USE_DNAME;
+      statp->options |= INK_RES_USE_DNAME;
     }
     else if (!strncmp(cp, "nibble:", sizeof("nibble:") - 1)) {
       if (ext == NULL)
@@ -370,10 +370,10 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
       cp += sizeof("v6revmode:") - 1;
       /* "nibble" and "bitstring" used to be valid */
       if (!strncmp(cp, "single", sizeof("single") - 1)) {
-        statp->options |= RES_NO_NIBBLE2;
+        statp->options |= INK_RES_NO_NIBBLE2;
       } else if (!strncmp(cp, "both", sizeof("both") - 1)) {
         statp->options &=
-          ~RES_NO_NIBBLE2;
+          ~INK_RES_NO_NIBBLE2;
       }
     }
     else {
@@ -461,16 +461,16 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
 #endif
   int dots;
   union ink_res_sockaddr_union u[2];
-  int maxns = MAXNS;
+  int maxns = INK_MAXNS;
 
-  // RES_SET_H_ERRNO(statp, 0);
+  // INK_RES_SET_H_ERRNO(statp, 0);
   statp->res_h_errno = 0;
   if (statp->_u._ext.ext != NULL)
     ink_res_ndestroy(statp);
 
-  statp->retrans = RES_TIMEOUT;
-  statp->retry = RES_DFLRETRY;
-  statp->options = RES_DEFAULT;
+  statp->retrans = INK_RES_TIMEOUT;
+  statp->retry = INK_RES_DFLRETRY;
+  statp->options = INK_RES_DEFAULT;
   statp->id = ink_res_randomid();
 
   memset(u, 0, sizeof(u));
@@ -525,7 +525,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
      * to check our return code wont be able to make
      * queries anyhow.
      */
-    // RES_SET_H_ERRNO(statp, NETDB_INTERNAL);
+    // INK_RES_SET_H_ERRNO(statp, NETDB_INTERNAL);
     statp->res_h_errno = NETDB_INTERNAL;
     maxns = 0;
   }
@@ -572,7 +572,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
     cp = statp->defdname;
     pp = statp->dnsrch;
     *pp++ = cp;
-    for (n = 0; *cp && pp < statp->dnsrch + MAXDNSRCH; cp++) {
+    for (n = 0; *cp && pp < statp->dnsrch + INK_MAXDNSRCH; cp++) {
       if (*cp == '\n')	/*%< silly backwards compat */
         break;
       else if (*cp == ' ' || *cp == '\t') {
@@ -624,7 +624,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
     cp = statp->defdname;
     pp = statp->dnsrch;
     *pp++ = cp;
-    for (n = 0; *cp && pp < statp->dnsrch + MAXDNSRCH; cp++) {
+    for (n = 0; *cp && pp < statp->dnsrch + INK_MAXDNSRCH; cp++) {
       if (*cp == ' ' || *cp == '\t') {
         *cp = 0;
         n = 1;
@@ -646,7 +646,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
      we must be provided with atleast a named!
      ------------------------------------------- */
 
-  while (pHostList && pHostList[nserv] != 0 && nserv < MAXNS) {
+  while (pHostList && pHostList[nserv] != 0 && nserv < INK_MAXNS) {
     statp->nsaddr_list[nserv].sin_addr.s_addr = pHostList[nserv];
     statp->nsaddr_list[nserv].sin_family = AF_INET;
     statp->nsaddr_list[nserv].sin_port = htons(pPort[nserv]);
@@ -701,7 +701,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
         cp = statp->defdname;
         pp = statp->dnsrch;
         *pp++ = cp;
-        for (n = 0; *cp && pp < statp->dnsrch + MAXDNSRCH; cp++) {
+        for (n = 0; *cp && pp < statp->dnsrch + INK_MAXDNSRCH; cp++) {
           if (*cp == ' ' || *cp == '\t') {
             *cp = 0;
             n = 1;
@@ -758,7 +758,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
         struct in_addr a;
 
         cp = buf + sizeof("sortlist") - 1;
-        while (nsort < MAXRESOLVSORT) {
+        while (nsort < INK_MAXRESOLVSORT) {
           while (*cp == ' ' || *cp == '\t')
             cp++;
           if (*cp == '\0' || *cp == '\n' || *cp == ';')
@@ -834,8 +834,8 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
       dots += (*cp == '.');
 
     cp = statp->defdname;
-    while (pp < statp->dnsrch + MAXDFLSRCH) {
-      if (dots < LOCALDOMAINPARTS)
+    while (pp < statp->dnsrch + INK_MAXDFLSRCH) {
+      if (dots < INK_LOCALDOMAINPARTS)
         break;
       cp = strchr(cp, '.') + 1;    /*%< we know there is one */
       *pp++ = cp;
@@ -843,7 +843,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
     }
     *pp = NULL;
 #ifdef DEBUG
-    if (statp->options & RES_DEBUG) {
+    if (statp->options & INK_RES_DEBUG) {
       printf(";; res_init()... default dnsrch list:\n");
       for (pp = statp->dnsrch; *pp; pp++)
         printf(";;\t%s\n", *pp);
@@ -854,7 +854,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
 
   if ((cp = getenv("RES_OPTIONS")) != NULL)
     ink_res_setoptions(statp, cp, "env");
-  statp->options |= RES_INIT;
+  statp->options |= INK_RES_INIT;
   return (statp->res_h_errno);
 }
 
