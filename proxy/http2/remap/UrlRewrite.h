@@ -136,7 +136,7 @@ public:
     _destroyTable(store.hash_lookup);
     _destroyList(store.regex_list);
   }
-  void TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src_host);
+  bool TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src_host);
 
   MappingsStore forward_mappings;
   MappingsStore reverse_mappings;
@@ -206,7 +206,7 @@ private:
   bool _processRegexMappingConfig(url_mapping *new_mapping, RegexMapping &reg_map);
   void _destroyTable(InkHashTable *h_table);
   void _destroyList(RegexMappingList &regexes);
-  inline void _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping &reg_map,
+  inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping &reg_map,
                           char *src_host, bool is_cur_mapping_regex, int &count);
 
   static const int MAX_URL_STR_SIZE = 1024;

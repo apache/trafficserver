@@ -1482,13 +1482,21 @@ UrlRewrite::UrlWhack(char *toWhack, int *origLength)
   return length;
 }
 
-inline void
+inline bool
 UrlRewrite::_addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping &reg_map,
                         char *src_host, bool is_cur_mapping_regex, int &count)
 {
-  is_cur_mapping_regex ? store.regex_list.push_back(reg_map) : 
-    TableInsert(store.hash_lookup, new_mapping, src_host);
-  ++count;
+  bool retval;
+  if (is_cur_mapping_regex) {
+    store.regex_list.push_back(reg_map);
+    retval = true;
+  } else {
+    retval = TableInsert(store.hash_lookup, new_mapping, src_host);
+  }
+  if (retval) {
+    ++count;
+  }
+  return retval;
 }
 
 /**
@@ -1532,6 +1540,7 @@ UrlRewrite::BuildTable()
   RegexMapping reg_map;
   bool is_cur_mapping_regex;
   const char *type_id_str;
+  bool add_result;
   
   ink_assert(forward_mappings.empty());
   ink_assert(reverse_mappings.empty());
@@ -1852,31 +1861,38 @@ UrlRewrite::BuildTable()
       Debug("url_rewrite_regex", "Configured regex rule for host [%s]", fromHost_lower);
     }
 
+    add_result = false;
+
     switch (maptype) {
     case FORWARD_MAP:
     case FORWARD_MAP_REFERER:
-      _addToStore(forward_mappings, new_mapping, reg_map, fromHost_lower, 
-                  is_cur_mapping_regex, num_rules_forward);
-      SetHomePageRedirectFlag(new_mapping);   // @todo: is this applicable to regex mapping too?
+      if ((add_result = _addToStore(forward_mappings, new_mapping, reg_map, fromHost_lower, 
+                                    is_cur_mapping_regex, num_rules_forward)) == true) {
+        SetHomePageRedirectFlag(new_mapping);   // @todo: is this applicable to regex mapping too?
+      }
       break;
     case REVERSE_MAP:
-      _addToStore(reverse_mappings, new_mapping, reg_map, fromHost_lower, 
-                  is_cur_mapping_regex, num_rules_reverse);
+      add_result = _addToStore(reverse_mappings, new_mapping, reg_map, fromHost_lower, 
+                               is_cur_mapping_regex, num_rules_reverse);
       new_mapping->homePageRedirect = false;
       break;
     case PERMANENT_REDIRECT:
-      _addToStore(permanent_redirects, new_mapping, reg_map, fromHost_lower, 
-                  is_cur_mapping_regex, num_rules_redirect_permanent);
+      add_result = _addToStore(permanent_redirects, new_mapping, reg_map, fromHost_lower, 
+                               is_cur_mapping_regex, num_rules_redirect_permanent);
       break;
     case TEMPORARY_REDIRECT:
-      _addToStore(temporary_redirects, new_mapping, reg_map, fromHost_lower, 
-                  is_cur_mapping_regex, num_rules_redirect_temporary);
+      add_result = _addToStore(temporary_redirects, new_mapping, reg_map, fromHost_lower, 
+                               is_cur_mapping_regex, num_rules_redirect_temporary);
       break;
     default:
       // 'default' required to avoid compiler warning; unsupported map
       // type would have been dealt with much before this
       break;
     };
+
+    if (!add_result) {
+      goto MAP_WARNING;
+    }
 
     // If a TS receives a request on a port which is set to tunnel mode
     // (ie, blind forwarding) and a client connects directly to the TS,
@@ -1911,7 +1927,9 @@ UrlRewrite::BuildTable()
             u_mapping->toURL.copy(&new_mapping->toURL);
             if (bti.paramv[3] != NULL)
               u_mapping->tag = xstrdup(&(bti.paramv[3][0]));
-            TableInsert(forward_mappings.hash_lookup, u_mapping, ipv4_name);
+            if (!TableInsert(forward_mappings.hash_lookup, u_mapping, ipv4_name)) {
+              goto MAP_WARNING;
+            }
             num_rules_forward++;
             SetHomePageRedirectFlag(u_mapping);
           }
@@ -1951,7 +1969,9 @@ UrlRewrite::BuildTable()
             u_mapping->toURL.copy(&new_mapping->toURL);
             if (bti.paramv[3] != NULL)
               u_mapping->tag = xstrdup(&(bti.paramv[3][0]));
-            TableInsert(forward_mappings.hash_lookup, u_mapping, ipv4_name);
+            if (!TableInsert(forward_mappings.hash_lookup, u_mapping, ipv4_name)) {
+              goto MAP_WARNING;
+            }
             num_rules_forward++;
             SetHomePageRedirectFlag(u_mapping);
           }
@@ -1984,7 +2004,9 @@ UrlRewrite::BuildTable()
             u_mapping->toURL.host_set(ipv4_name, strlen(ipv4_name));
             if (bti.paramv[3] != NULL)
               u_mapping->tag = xstrdup(&(bti.paramv[3][0]));
-            TableInsert(reverse_mappings.hash_lookup, u_mapping, fromHost_lower);
+            if (!TableInsert(reverse_mappings.hash_lookup, u_mapping, fromHost_lower)) {
+              goto MAP_WARNING;
+            }
             num_rules_reverse++;
             u_mapping->homePageRedirect = false;
           }
@@ -2038,6 +2060,14 @@ UrlRewrite::BuildTable()
     cln++;
     continue;
 
+  MAP_WARNING:
+    Error("Could not add rule at line #%d; Continuing with remaining lines", cln + 1);
+    if (new_mapping) {
+      delete new_mapping;
+      new_mapping = NULL;
+    }
+    continue;
+
   MAP_ERROR:
     ink_snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
     SignalError(errBuf, alarm_already);
@@ -2059,15 +2089,23 @@ UrlRewrite::BuildTable()
   // since this is more specific
   if (unlikely(backdoor_enabled)) {
     new_mapping = SetupBackdoorMapping();
-    TableInsert(forward_mappings.hash_lookup, new_mapping, "");
-    num_rules_forward++;
+    if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
+      num_rules_forward++;
+    } else {
+      Error("Could not insert backdoor mapping into store");
+      delete new_mapping;
+    }
   }
   // Add the default mapping to the manager PAC file
   //  if we need it
   if (default_to_pac) {
     new_mapping = SetupPacMapping();
-    TableInsert(forward_mappings.hash_lookup, new_mapping, "");
-    num_rules_forward++;
+    if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
+      num_rules_forward++;
+    } else {
+      Error("Could not insert pac mapping into store");
+      delete new_mapping;
+    }
   }
   // Destroy unused tables
   if (num_rules_forward == 0) {
@@ -2100,7 +2138,7 @@ UrlRewrite::BuildTable()
   of existing entries bound to src_host if necessary.
 
 */
-void
+bool
 UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src_host)
 {
   char src_host_tmp_buf[1];
@@ -2116,7 +2154,7 @@ UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src
     if (ht_contents == NULL) {
       // why should this happen?
       Error("Found entry cannot be null!");
-      return;
+      return false;
     }
   } else {
     ht_contents = new UrlMappingPathIndex();
@@ -2124,8 +2162,9 @@ UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src
   }
   if (!ht_contents->Insert(mapping)) {
     Error("Could not insert new mapping");
-    // @todo - should we delete these now?
+    return false;
   }
+  return true;
 }
 
 url_mapping_ext *
