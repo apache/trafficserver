@@ -846,10 +846,8 @@ UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, url_mappi
   if (!plugin_modified_host)
     request_url->host_set(toHost, toHostLen);
 
-  if (!plugin_modified_port && 
-      ((requestPort != map_to->port_get()) || map_to->port_get_raw())) {
+  if (!plugin_modified_port)
     request_url->port_set(map_to->port_get_raw());
-  }
 
   // Extra byte is potentially needed for prefix path '/'.
   // Added an extra 3 so that TS wouldn't crash in the field.

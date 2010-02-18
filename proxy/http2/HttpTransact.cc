@@ -2005,17 +2005,16 @@ HttpTransact::DecideCacheLookup(State * s)
                                                                     MIME_LEN_HOST, &host_len);
         if (host_hdr) {
           char *tmp;
+          int port = 0;
           tmp = (char *) memchr(host_hdr, ':', host_len);
           if (tmp) {
             s->cache_info.lookup_url->host_set(host_hdr, (tmp - host_hdr));
 
-            int port = ink_atoi(tmp + 1, host_len - (tmp + 1 - host_hdr));
-            if (port != 0) {
-              s->cache_info.lookup_url->port_set(port);
-            }
+            port = ink_atoi(tmp + 1, host_len - (tmp + 1 - host_hdr));
           } else {
             s->cache_info.lookup_url->host_set(host_hdr, host_len);
           }
+          s->cache_info.lookup_url->port_set(port);
         }
       }
       HTTP_DEBUG_ASSERT(s->cache_info.lookup_url->valid() == true);

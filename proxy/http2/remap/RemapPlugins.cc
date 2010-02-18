@@ -410,7 +410,7 @@ RemapPlugins::run_single_remap()
     _request_url->host_set(toHost, toHostLen);
   }
 
-  if (!plugin_modified_port && (requestPort != map_to->port_get()))
+  if (!plugin_modified_port)
     _request_url->port_set(map_to->port_get_raw());
 
   // Extra byte is potentially needed for prefix path '/'.
