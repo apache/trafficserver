@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <InkAPI.h>
+#include <ts/ts.h>
 #include <inttypes.h>
 #include <sys/types.h>
 #include <openssl/md5.h>

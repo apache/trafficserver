@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../include
+API_INC=../../proxy/api/include
 
 default: blacklist-1.so
 
-blacklist-1.o: blacklist-1.c $(API_INC)/InkAPI.h
+blacklist-1.o: blacklist-1.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o blacklist-1.o -c blacklist-1.c
 
 blacklist-1.so: blacklist-1.o

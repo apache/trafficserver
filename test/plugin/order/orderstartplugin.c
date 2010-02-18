@@ -39,7 +39,7 @@
 #include<stdio.h>
 #include<string.h>
 #include<assert.h>
-#include "InkAPI.h"
+#include "ts.h"
 
 #define FIELD_NAME "RANK"
 int value;

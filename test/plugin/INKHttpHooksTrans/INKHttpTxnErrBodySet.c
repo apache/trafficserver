@@ -22,7 +22,7 @@
  */
 
 
-#include "InkAPI.h"
+#include "ts.h"
 
 /* This is a response to a client (req), which will be executed after reciept
  * of: 

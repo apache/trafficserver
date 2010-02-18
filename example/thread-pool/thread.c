@@ -25,7 +25,7 @@
 
 #include <stdio.h>
 #include <pthread.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #include "thread.h"
 

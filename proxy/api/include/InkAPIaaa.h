@@ -26,7 +26,7 @@
 #define __INK_API_AAA_H_
 
 
-#include "InkAPI.h"
+#include "ts.h"
 
 
 #ifdef __cplusplus

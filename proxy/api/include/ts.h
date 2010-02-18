@@ -2659,6 +2659,12 @@ extern "C"
   inkapi void INKMBufferCompress(INKMBuffer bufp);
 
   // --------------------------------------------------------------------------
+  // YTS Team, yamsat Plugin
+
+  /** @deprecated */
+  inkapi int INKHttpTxnCreateRequest(INKHttpTxn txnp, const char *, const char *, int);
+
+  // --------------------------------------------------------------------------
   // Deprecated MIME field functions --- use INKMimeHdrFieldXXX instead
 
   /** @deprecated */
@@ -2808,9 +2814,6 @@ extern "C"
 
   /** @deprecated */
   inkapi int INKCacheHttpInfoVector(INKCacheHttpInfo infop, void *data, int length);
-
-  inkapi INKReturnCode INKRedirectUrlSet(INKHttpTxn txnp, const char* url, const int url_len);
-  const char* INKRedirectUrlGet(INKHttpTxn txnp, int* url_len_ptr);
 
 #ifdef __cplusplus
 }

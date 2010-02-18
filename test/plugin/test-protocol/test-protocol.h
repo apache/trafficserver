@@ -29,7 +29,7 @@
 #include <string.h>
 #include <limits.h>
 
-#include "InkAPI.h"
+#include "ts.h"
 
 #define WATER_MARK 5
 #define MAX_REQUEST_LENGTH 2048

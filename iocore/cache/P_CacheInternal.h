@@ -31,7 +31,7 @@
 #endif
 
 #include "inktomi++.h"
-#include "api/include/InkAPI.h"
+#include "api/include/ts.h"
 
 // Compilation Options
 

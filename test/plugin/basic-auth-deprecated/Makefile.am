@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 
 default: basic-auth-deprecated.so
 
-basic-auth-deprecated.o: basic-auth.deprecated.c $(API_INC)/InkAPI.h
+basic-auth-deprecated.o: basic-auth.deprecated.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o basic-auth-deprecated.o -c basic-auth.deprecated.c
 
 basic-auth-deprecated.so: basic-auth-deprecated.o

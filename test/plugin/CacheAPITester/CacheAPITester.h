@@ -32,7 +32,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
-#include "InkAPI.h"
+#include "ts.h"
 
 #define DEBUG_TAG "CacheAPITester-dbg"
 

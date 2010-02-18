@@ -43,7 +43,7 @@
 #include <windows.h>
 #endif
 
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #define DEBUG_TAG "output-header"
 

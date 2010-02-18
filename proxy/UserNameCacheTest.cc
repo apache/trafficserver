@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "api/include/InkAPI.h"
+#include "api/include/ts.h"
 #include "UserNameCacheTest.h"
 #include <stdio.h>
 

@@ -34,7 +34,7 @@ is a test of "global" hook/event processing.
 
 */
 
-#include "InkAPI.h"
+#include "ts.h"
 #include <sys/types.h>
 #include <stdio.h>
 

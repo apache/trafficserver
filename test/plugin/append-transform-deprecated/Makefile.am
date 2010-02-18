@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 
 default: append-transform-deprecated.so
 
-append-transform-deprecated.o: append-transform.deprecated.c $(API_INC)/InkAPI.h
+append-transform-deprecated.o: append-transform.deprecated.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o append-transform-deprecated.o -c append-transform.deprecated.c
 
 append-transform-deprecated.so: append-transform-deprecated.o

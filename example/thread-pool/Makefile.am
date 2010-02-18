@@ -18,14 +18,14 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../include
+API_INC=../../proxy/api/include
 
 default: psi.so
 
-thread.o: thread.c thread.h $(API_INC)/InkAPI.h
+thread.o: thread.c thread.h $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o thread.o -c thread.c
 
-psi.o: psi.c $(API_INC)/InkAPI.h
+psi.o: psi.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o psi.o -c psi.c
 
 psi.so: psi.o thread.o

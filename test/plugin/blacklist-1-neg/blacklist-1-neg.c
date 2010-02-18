@@ -37,7 +37,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #define MAX_NSITES 500
 #define RETRY_TIME 10

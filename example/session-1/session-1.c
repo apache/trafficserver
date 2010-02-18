@@ -30,7 +30,7 @@
  */
 
 #include <stdio.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 static INKStat transaction_count;
 static INKStat session_count;

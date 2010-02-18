@@ -41,7 +41,7 @@
 #	include <windows.h>
 #endif
 
-#include "InkAPI.h"
+#include "ts.h"
 
 #define STRING_SIZE 100
 

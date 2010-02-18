@@ -65,7 +65,7 @@ write the code.  Guesstimate: 3X more code and time. Easier to maintane.
 
 *****************************************************************************/
 
-#include "InkAPI.h"
+#include "ts.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>

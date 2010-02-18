@@ -41,7 +41,7 @@
 #include <windows.h>
 #endif
 
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 
 static char base64_codes[256];

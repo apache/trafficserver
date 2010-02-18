@@ -496,7 +496,7 @@ public:
     TOTAL_RESPONSE_ERROR_TYPES
   };
 
-  // Please do not forget to fix INKServerState (InkAPI.h)
+  // Please do not forget to fix INKServerState (ts/ts.h)
   // in case of any modifications in ServerState_t
   enum ServerState_t
   {

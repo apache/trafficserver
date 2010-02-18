@@ -32,7 +32,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 static char **sites;
 static int nsites;

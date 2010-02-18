@@ -27,7 +27,7 @@
  *   Interfaces in this header file are experimental, undocumented and 
  *   are subject to change even across minor releases of Traffic Server.
  *   None of the interfaces in this file are committed to be stable 
- *   unless they are migrated to InkAPI.h  If you require stable APIs to 
+ *   unless they are migrated to ts/ts.h  If you require stable APIs to 
  *   Traffic Server, DO NOT USE anything in this file.
  *
  *   $Revision: 1.3 $ $Date: 2003-06-01 18:36:51 $

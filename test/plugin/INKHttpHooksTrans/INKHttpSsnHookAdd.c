@@ -28,7 +28,7 @@ Tests for registering/processing events at the session level.
 */
 
 
-#include "InkAPI.h"
+#include "ts.h"
 #include <sys/types.h>
 #include <stdio.h>
 

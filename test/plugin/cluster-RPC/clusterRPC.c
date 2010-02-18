@@ -36,7 +36,7 @@
  */
 
 #include <stdio.h>
-#include "InkAPI.h"
+#include "ts.h"
 #include "InkAPIPrivate.h"
 
 /****************************************************************************

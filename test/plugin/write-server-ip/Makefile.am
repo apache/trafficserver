@@ -18,17 +18,17 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 
 default: write-server-ip.so write-server-ip-dbg.so
 
-write-server-ip.o: write-server-ip.c $(API_INC)/InkAPI.h
+write-server-ip.o: write-server-ip.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o write-server-ip.o -c write-server-ip.c
 
 write-server-ip.so: write-server-ip.o
 	$(CC) $(LDFLAGS) -o write-server-ip.so write-server-ip.o
 
-write-server-ip-dbg.o: write-server-ip.c $(API_INC)/InkAPI.h
+write-server-ip-dbg.o: write-server-ip.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -DDEBUG -I$(API_INC) -o write-server-ip-dbg.o -c write-server-ip.c
 
 write-server-ip-dbg.so: write-server-ip-dbg.o

@@ -18,20 +18,20 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 
 default: orderstartplugin.so orderplugin1.so orderplugin2.so orderplugin3.so orderplugin4.so
 
 
-orderstartplugin.o: orderstartplugin.c $(API_INC)/InkAPI.h
+orderstartplugin.o: orderstartplugin.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o orderstartplugin.o -c orderstartplugin.c
-orderplugin1.o: orderplugin1.c $(API_INC)/InkAPI.h
+orderplugin1.o: orderplugin1.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o orderplugin1.o -c orderplugin1.c
-orderplugin2.o: orderplugin2.c $(API_INC)/InkAPI.h
+orderplugin2.o: orderplugin2.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o orderplugin2.o -c orderplugin2.c
-orderplugin3.o: orderplugin3.c $(API_INC)/InkAPI.h
+orderplugin3.o: orderplugin3.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o orderplugin3.o -c orderplugin3.c
-orderplugin4.o: orderplugin4.c $(API_INC)/InkAPI.h
+orderplugin4.o: orderplugin4.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o orderplugin4.o -c orderplugin4.c
 
 

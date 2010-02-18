@@ -38,7 +38,7 @@
  */
 
 #include <stdio.h>
-#include "InkAPI.h"
+#include "ts.h"
 
 #define DBG_TAG "test-transform-dbg"
 

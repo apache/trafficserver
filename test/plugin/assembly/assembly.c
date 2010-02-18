@@ -216,7 +216,7 @@ Example:
 
 #include <string.h>
 
-#include "InkAPI.h"
+#include "ts.h"
 
 #include "common.h"
 #include "list.h"

@@ -36,7 +36,7 @@
 /* set tab stops to four. */
 
 #include <stdio.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #define INK_NULL_MUTEX      NULL
 #define STATE_BUFFER_DATA   0

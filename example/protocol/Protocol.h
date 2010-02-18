@@ -33,7 +33,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #define MAX_SERVER_NAME_LENGTH 1024
 #define MAX_FILE_NAME_LENGTH 1024

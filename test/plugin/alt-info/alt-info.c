@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "InkAPI.h"
+#include "ts.h"
 
 #define DEBUG_TAG "alt-info-dbg"
 

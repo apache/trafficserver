@@ -47,7 +47,7 @@ to create/init a mutex.
 #include <sys/types.h>
 #include <time.h>
 
-#include <InkAPI.h>
+#include <ts/ts.h>
 
 /* Verification code for: INKqa06643 */
 static int

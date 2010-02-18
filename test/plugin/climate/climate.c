@@ -52,7 +52,7 @@
 #include <limits.h>
 #include <sys/time.h>
 
-#include "InkAPI.h"
+#include "ts.h"
 #include "InkAPIPrivate.h"
 
 #include "events.h"

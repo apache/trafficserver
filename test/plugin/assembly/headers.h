@@ -24,7 +24,7 @@
 #ifndef _HEADERS_H_
 #define _HEADERS_H_
 
-#include "InkAPI.h"
+#include "ts.h"
 #include "common.h"
 
 int query_string_extract(TxnData * txn_data, char **query_store);

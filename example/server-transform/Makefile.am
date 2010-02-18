@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../include
+API_INC=../../proxy/api/include
 
 default: server-transform.so
 
-server-transform.o: server-transform.c $(API_INC)/InkAPI.h
+server-transform.o: server-transform.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o server-transform.o -c server-transform.c
 
 server-transform.so: server-transform.o

@@ -43,7 +43,7 @@
 #  include <windows.h>
 #endif
 
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #if !defined (_WIN32)
 static in_addr_t ip_deny;

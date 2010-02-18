@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 
 default: INKContSchedule.so
 
-INKContSchedule.o: INKContSchedule.c $(API_INC)/InkAPI.h
+INKContSchedule.o: INKContSchedule.c $(API_INC)/ts.h
 	$(CC) -g $(CFLAGS) -I$(API_INC) -o INKContSchedule.o \
 		-c INKContSchedule.c
 

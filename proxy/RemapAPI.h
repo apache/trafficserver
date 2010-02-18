@@ -156,7 +156,7 @@ extern "C"
 // Remap new request
 // Return: != 0 - request was remapped, TS must look at new_... fields in TSRemapRequestInfo
 //         == 0 - request was not processed. TS must perform default remap
-// Note: rhandle == INKHttpTxn (see InkAPI.h for more details)
+// Note: rhandle == INKHttpTxn (see ts/ts.h for more details)
 // Remap API plugin can use InkAPI function calls inside tsremap_remap()
   int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri);
   typedef int _tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri);
@@ -164,7 +164,7 @@ extern "C"
 
 // Check response code from Origin Server
 // Return: none
-// Note: rhandle == INKHttpTxn (see InkAPI.h for more details)
+// Note: rhandle == INKHttpTxn (see ts/ts.h for more details)
 // os_response_type -> INKServerState
 // Remap API plugin can use InkAPI function calls inside tsremap_remap()
   void tsremap_os_response(ihandle ih, rhandle rh, int os_response_type);

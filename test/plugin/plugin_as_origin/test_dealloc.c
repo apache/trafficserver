@@ -32,7 +32,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
-#include "InkAPI.h"
+#include "ts.h"
 
 static int
 test_destroy_plugin(INKCont contp, INKEvent event, void *edata)

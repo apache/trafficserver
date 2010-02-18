@@ -33,7 +33,7 @@
  */
 
 #include <stdio.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 int
 check_ts_version()

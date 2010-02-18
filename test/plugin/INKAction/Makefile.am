@@ -22,7 +22,7 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 LIBINK_INC=../../../../../ts-libinktomi
 
 default: INKAction.so
@@ -30,7 +30,7 @@ default: INKAction.so
 INKAction.so: INKAction.o
 	$(CPLUSPLUS) $(LDFLAGS) -g -o INKAction.so INKAction.o
 
-INKAction.o: INKAction.cc $(API_INC)/InkAPI.h $(LIBINK_INC)/ink_assert.h
+INKAction.o: INKAction.cc $(API_INC)/ts.h $(LIBINK_INC)/ink_assert.h
 	$(CPLUSPLUS) $(CFLAGS) -g -I$(API_INC) -o INKAction.o \
 		-I$(LIBINK_INC) -c INKAction.cc
 

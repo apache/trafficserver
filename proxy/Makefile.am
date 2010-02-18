@@ -48,7 +48,7 @@ noinst_PROGRAMS =  traffic_cust_log_fmt_cnvrt
 
 noinst_HEADERS = \
   api/include/InkAPIaaa.h \
-  api/include/InkAPI.h \
+  api/include/ts.h \
   api/include/InkAPIHughes.h \
   api/include/InkAPIPrivateFrozen.h \
   api/include/InkAPIPrivate.h \

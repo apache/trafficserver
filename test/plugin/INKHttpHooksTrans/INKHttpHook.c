@@ -30,7 +30,7 @@ TODO TRANSFORM hooks are not "global" but transactional--address this
 */
 
 
-#include "InkAPI.h"
+#include "ts.h"
 #include <sys/types.h>
 #include <stdio.h>
 

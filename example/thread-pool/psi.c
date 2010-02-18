@@ -50,7 +50,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #include "thread.h"
 

@@ -40,7 +40,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #define ASSERT_SUCCESS(_x) INKAssert ((_x) == INK_SUCCESS)
 

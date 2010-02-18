@@ -27,7 +27,7 @@
 #include "List.h"
 
 // need to keep syncronized with INKSDKVersion
-//   in InkAPI.h
+//   in ts/ts.h
 typedef enum
 {
   PLUGIN_SDK_VERSION_UNKNOWN = -1,

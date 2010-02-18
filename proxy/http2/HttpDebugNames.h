@@ -25,7 +25,7 @@
 #define _HttpDebugNames_h_
 
 #include "HttpTransact.h"
-#include "api/include/InkAPI.h"
+#include "api/include/ts.h"
 
 class HttpDebugNames
 {

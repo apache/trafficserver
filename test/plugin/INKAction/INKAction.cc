@@ -22,7 +22,7 @@
  */
 
 
-#include "InkAPI.h"
+#include "ts.h"
 #include "ink_assert.h"
 #include <arpa/inet.h>
 #include <netdb.h>

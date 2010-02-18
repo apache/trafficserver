@@ -22,7 +22,7 @@
  */
 
 
-#include "InkAPI.h"
+#include "ts.h"
 
 #if 0
 /* HTTP transactions */

@@ -32,7 +32,7 @@ Tests for registering/processing:
 */
 
 
-#include "InkAPI.h"
+#include "ts.h"
 #include <sys/types.h>
 #include <stdio.h>
 

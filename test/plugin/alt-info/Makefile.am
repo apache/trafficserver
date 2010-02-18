@@ -18,17 +18,17 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 
 default: alt-info.so alt-info-dbg.so
 
-alt-info.o: alt-info.c $(API_INC)/InkAPI.h
+alt-info.o: alt-info.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o alt-info.o -c alt-info.c
 
 alt-info.so: alt-info.o
 	$(CC) $(LDFLAGS) -o alt-info.so alt-info.o
 
-alt-info-dbg.o: alt-info.c $(API_INC)/InkAPI.h
+alt-info-dbg.o: alt-info.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -DDEBUG -I$(API_INC) -o alt-info-dbg.o -c alt-info.c
 
 alt-info-dbg.so: alt-info-dbg.o

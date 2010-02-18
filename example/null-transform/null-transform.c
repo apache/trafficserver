@@ -34,7 +34,7 @@
  */
 
 #include <stdio.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 typedef struct
 {

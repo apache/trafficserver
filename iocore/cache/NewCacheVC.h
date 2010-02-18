@@ -25,7 +25,7 @@
 #define __NEWCACHEVC_H__
 
 #include "inktomi++.h"
-#include "api/include/InkAPI.h"
+#include "api/include/ts.h"
 #include "HTTP.h"
 #include "I_Cache.h"
 #include "P_Cache.h"

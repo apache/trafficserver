@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../include
+API_INC=../../proxy/api/include
 
 default: replace-header.so
 
-replace-header.o: replace-header.c $(API_INC)/InkAPI.h
+replace-header.o: replace-header.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o replace-header.o -c replace-header.c
 
 replace-header.so: replace-header.o

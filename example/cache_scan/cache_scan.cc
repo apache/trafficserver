@@ -30,7 +30,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdlib.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 static INKCont global_contp;
 

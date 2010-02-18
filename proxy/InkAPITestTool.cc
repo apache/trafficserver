@@ -22,7 +22,7 @@
  */
 
 #include "Regression.h"
-#include "api/include/InkAPI.h"
+#include "api/include/ts.h"
 
 #include <arpa/inet.h>          /* For htonl */
 #include "P_Net.h"

@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-API_HDR = ../include/InkAPI.h
+API_HDR = ../../../proxy/api/include/ts.h
 AM_CFLAGS = -g -Wall -fPIC
 AM_LDFLAGS = -g -Wall -shared
 

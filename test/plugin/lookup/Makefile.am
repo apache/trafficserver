@@ -18,17 +18,17 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 
 default: lookup.so lookup-dbg.so
 
-lookup.o: lookup.c $(API_INC)/InkAPI.h
+lookup.o: lookup.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o lookup.o -c lookup.c
 
 lookup.so: lookup.o
 	$(CC) $(LDFLAGS) -o lookup.so lookup.o
 
-lookup-dbg.o: lookup.c $(API_INC)/InkAPI.h
+lookup-dbg.o: lookup.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -DDEBUG -o lookup-dbg.o -c lookup.c
 
 lookup-dbg.so: lookup-dbg.o

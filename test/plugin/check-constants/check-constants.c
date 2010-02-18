@@ -25,8 +25,8 @@
  * check-constants
  *
  * Description:	This sample plugins simply compares all the constants 
- *				values in the curent InkAPI.h against the values as they 
- *				exist in the SDK 2.0 FCS InkAPI.h, and prints them out if they
+ *				values in the curent ts/ts.h against the values as they 
+ *				exist in the SDK 2.0 FCS ts/ts.h, and prints them out if they
  *				happen to differ.
  *****************************************************************************/
 
@@ -40,7 +40,7 @@
 #	include <windows.h>
 #endif
 
-#include "InkAPI.h"
+#include "ts.h"
 
 #define PRINT_DIFF(const_name, current_const, orig_const ) \
 { \

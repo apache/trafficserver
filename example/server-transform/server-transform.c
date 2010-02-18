@@ -60,7 +60,7 @@
 #  include <windows.h>
 #endif
 
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #define STATE_BUFFER       1
 #define STATE_CONNECT      2

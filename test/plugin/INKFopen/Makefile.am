@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 
 default: INKFopen.so
 
-INKFopen.o: INKFopen.c $(API_INC)/InkAPI.h
+INKFopen.o: INKFopen.c $(API_INC)/ts.h
 	$(CC) -g $(CFLAGS) -I$(API_INC) -o INKFopen.o -c INKFopen.c
 
 INKFopen.so: INKFopen.o

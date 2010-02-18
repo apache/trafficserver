@@ -31,7 +31,7 @@
 #include <string.h>
 #include <zlib.h>
 #include <assert.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 #define DICT_PATH_MAX 512
 #define DICT_ENTRY_MAX 2048

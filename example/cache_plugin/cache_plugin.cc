@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "InkAPI.h"
+#include <ts/ts.h>
 #include <iostream>
 #include <map>
 #include <string>

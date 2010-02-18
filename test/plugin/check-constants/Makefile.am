@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../../include
+API_INC=../../../proxy/api/include
 
 default: check-constants.so
 
-check-constants.o: check-constants.c $(API_INC)/InkAPI.h
+check-constants.o: check-constants.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o check-constants.o -c check-constants.c
 
 check-constants.so: check-constants.o

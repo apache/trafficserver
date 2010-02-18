@@ -34,7 +34,7 @@
  */
 
 #include <string.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 static INKMBuffer hdr_bufp;
 static INKMLoc hdr_loc;

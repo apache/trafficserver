@@ -34,7 +34,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "InkAPI.h"
+#include <ts/ts.h>
 
 static void *
 reenable_txn(void *data)

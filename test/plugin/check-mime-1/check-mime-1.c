@@ -39,7 +39,7 @@
 #	include <windows.h>
 #endif
 
-#include "InkAPI.h"
+#include "ts.h"
 
 #define DEBUG_TAG "check-mime-1-dbg"
 #define REASON_DEBUG_TAG "status-reason"

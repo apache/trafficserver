@@ -26,7 +26,7 @@
 TODO tests of stoping an event at the session and transaction level
 
 
-#include "InkAPI.h"
+#include "ts.h"
 #include <sys/types.h>
 #include <stdio.h>
 

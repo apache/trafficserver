@@ -22,7 +22,7 @@
  */
 
 #include <strings.h>
-#include <InkAPI.h>
+#include <ts/ts.h>
 #include "common.h"
 #include "list.h"
 

@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../include
+API_INC=../../proxy/api/include
 
 default: hello.so
 
-hello.o: hello.c $(API_INC)/InkAPI.h
+hello.o: hello.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o hello.o -c hello.c
 
 hello.so: hello.o

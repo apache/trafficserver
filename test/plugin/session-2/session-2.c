@@ -36,7 +36,7 @@
 ******************************************************************************/
 #include <stdio.h>
 #include <pthread.h>
-#include "InkAPI.h"
+#include "ts.h"
 
 #define DEBUG_TAG "session-2-dbg"
 #define SLEEP_TIME 10

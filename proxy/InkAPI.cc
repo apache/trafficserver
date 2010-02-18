@@ -6267,7 +6267,7 @@ INKHttpTxnCntl(INKHttpTxn txnp, INKHttpCntlType cntl, void *data)
 
 /* This is kinda horky, we have to use INKServerState instead of
    HttpTransact::ServerState_t, otherwise we have a prototype
-   mismatch in the public InkAPI.h interfaces. */
+   mismatch in the public ts/ts.h interfaces. */
 INKServerState
 INKHttpTxnServerStateGet(INKHttpTxn txnp)
 {

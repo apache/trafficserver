@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../include
+API_INC=../../proxy/api/include
 
 default: redirect-1.so
 
-redirect-1.o: redirect-1.c $(API_INC)/InkAPI.h
+redirect-1.o: redirect-1.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o redirect-1.o -c redirect-1.c
 
 redirect-1.so: redirect-1.o

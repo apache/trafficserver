@@ -18,11 +18,11 @@ CC=@CC@
 LD=ld
 CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
 LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../include
+API_INC=../../proxy/api/include
 
 default: bnull-transform.so
 
-bnull-transform.o: bnull-transform.c $(API_INC)/InkAPI.h
+bnull-transform.o: bnull-transform.c $(API_INC)/ts.h
 	$(CC) $(CFLAGS) -I$(API_INC) -o bnull-transform.o -c bnull-transform.c
 
 bnull-transform.so: bnull-transform.o

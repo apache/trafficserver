@@ -31,7 +31,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
-#include "InkAPI.h"
+#include "ts.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

@@ -43,7 +43,7 @@
 #	include <windows.h>
 #endif
 
-#include "InkAPI.h"
+#include "ts.h"
 #include "macro.h"
 
 #define STRING_SIZE 512
