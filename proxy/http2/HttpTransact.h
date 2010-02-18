@@ -39,7 +39,7 @@
 #include "Config.h"
 #include "Transform.h"
 //#include "HttpAuthParams.h"
-#include "RemapAPI.h"
+#include "api/include/remap.h"
 #include "RemapPluginInfo.h"
 
 

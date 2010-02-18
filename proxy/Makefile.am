@@ -127,7 +127,6 @@ traffic_server_SOURCES = \
   Prefetch.cc \
   Prefetch.h \
   Raf.h \
-  RemapAPI.h \
   ReverseProxy.cc \
   ReverseProxy.h \
   RniTransStats.h \
