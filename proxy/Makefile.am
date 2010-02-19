@@ -46,11 +46,15 @@ bin_PROGRAMS = \
 
 noinst_PROGRAMS =  traffic_cust_log_fmt_cnvrt
 
-noinst_HEADERS = \
+includedir=$(prefix)/include/ts
+
+include_HEADERS = \
   api/include/ts.h \
   api/include/remap.h \
   api/include/ts_private.h \
-  api/include/ts_private_frozen.h \
+  api/include/ts_private_frozen.h
+
+noinst_HEADERS = \
   api/include/InkAPIHughes.h \
   api/include/InkAPIaaa.h \
   api/include/InkAPIPrivateIOCore.h \
