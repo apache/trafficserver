@@ -28,7 +28,7 @@
 #include "URL.h"
 #include "StatSystem.h"
 #include "P_Net.h"
-#include "api/include/InkAPIPrivateFrozen.h"
+#include "api/include/ts_private_frozen.h"
 //#include "MixtAPIInternal.h"
 #include "HTTP.h"
 #include "List.h"

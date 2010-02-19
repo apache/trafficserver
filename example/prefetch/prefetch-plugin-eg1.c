@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ts/ts.h>
-#include "InkAPIPrivate.h"
+#include <ts/ts_private.h>
 
 /* We will register the following two hooks */
 

@@ -53,7 +53,7 @@
 #include <sys/time.h>
 
 #include "ts.h"
-#include "InkAPIPrivate.h"
+#include "ts_private.h"
 
 #include "events.h"
 

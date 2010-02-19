@@ -37,7 +37,7 @@
 
 #include <stdio.h>
 #include "ts.h"
-#include "InkAPIPrivate.h"
+#include "ts_private.h"
 
 /****************************************************************************
  *  Declarations.

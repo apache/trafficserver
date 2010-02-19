@@ -170,7 +170,7 @@ extern "C"
  ****************************************************************************/
   inkapi int INKHttpCurrentServerConnectionsGet(int *num_connections);
 
-/* http transaction status -- more in InkAPIPrivate.h */
+/* http transaction status -- more in ts_private.h */
 /****************************************************************************
  *  Get size of response header
  ****************************************************************************/

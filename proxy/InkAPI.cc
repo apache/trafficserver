@@ -50,7 +50,7 @@
 #include "LogConfig.h"
 //#include "UserNameCache.h"
 #include "PluginVC.h"
-#include "api/include/InkAPIPrivate.h"
+#include "api/include/ts_private.h"
 #include "ICP.h"
 #include "HttpAccept.h"
 #include "PluginVC.h"

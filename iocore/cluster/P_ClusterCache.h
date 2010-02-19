@@ -960,7 +960,7 @@ ClusterFuncToQpri(int cluster_func)
  *									    *
  ****************************************************************************
  * Note: All of the following must be kept in sync with INKClusterRPCKey_t  *
- * 	 definition in InkAPIPrivate.h					    *
+ * 	 definition in ts/ts_private.h					    *
  ****************************************************************************/
 
 /************************************************
