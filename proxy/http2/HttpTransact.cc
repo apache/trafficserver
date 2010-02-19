@@ -8215,6 +8215,8 @@ HttpTransact::handle_response_keep_alive_headers(State * s, HTTPVersion ver, HTT
         s->client_info.http_version == HTTPVersion(1, 1) &&
         ((s->http_config_param->chunking_enabled == 1 && s->remap_chunking_enabled != 0) ||
          (s->http_config_param->chunking_enabled == 0 && s->remap_chunking_enabled == 1)) &&
+        // if we're not sending a body, don't set a chunked header regardless of server response
+        !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
          // we do not need chunked encoding for internal error messages
          // that are sent to the client if the server response is not valid.
          ((s->source == SOURCE_HTTP_ORIGIN_SERVER &&
