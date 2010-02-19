@@ -734,38 +734,13 @@ UrlRewrite::PrintTable(InkHashTable * h_table)
 */
 url_mapping *
 UrlRewrite::_tableLookup(InkHashTable * h_table, URL * request_url,
-                        int request_port, const char *request_host, int request_host_len, char *tag)
+                        int request_port, char *request_host, int request_host_len, char *tag)
 {
   UrlMappingPathIndex *ht_entry;
   url_mapping *um = NULL;
-  char host_lower_buf[1024], *request_host_lower, *xfree_buf_ptr;
-  int ht_result, tmp;
+  int ht_result;
 
-  if (unlikely(!request_host || !request_url || request_host_len < 0))
-    return NULL;
-
-  // Canonicalize the string to lower case so that lookup
-  //   is case insensitive
-  if (unlikely((request_host_len + 1) > (int) sizeof(host_lower_buf))) {
-    if (unlikely((request_host_lower = (xfree_buf_ptr = ((char *) xmalloc(request_host_len + 1)))) == NULL))
-      return NULL;              // impossible
-  } else {
-    request_host_lower = &host_lower_buf[0];
-    xfree_buf_ptr = 0;          /* try to minimize memory allocation */
-  }
-
-  // Copy and tolower    
-  for (tmp = 0; tmp < request_host_len; tmp++) {
-    if ((ht_result = (request_host_lower[tmp] = request_host[tmp])) >= 'A' && ht_result <= 'Z') {
-      request_host_lower[tmp] = (ht_result + ('a' - 'A'));
-    }
-  }
-  request_host_lower[request_host_len] = 0;
-
-  ht_result = ink_hash_table_lookup(h_table, request_host_lower, (void **) &ht_entry);
-
-  if (unlikely(xfree_buf_ptr))
-    xfree(xfree_buf_ptr);
+  ht_result = ink_hash_table_lookup(h_table, request_host, (void **) &ht_entry);
 
   if (likely(ht_result && ht_entry)) {
     um = ht_entry->Search(request_url, request_port);
@@ -1851,10 +1826,13 @@ UrlRewrite::BuildTable()
     fromHost_lower[fromHostLen] = 0;
     LowerCaseStr(fromHost_lower);
 
+    // set the normalized string so nobody else has to normalize this
+    new_mapping->fromURL.host_set(fromHost_lower, fromHostLen);
+
     if (is_cur_mapping_regex) {
       // it's ok to reuse reg_map as previous content (if any)
       // would be "reference-copied" into regex mapping lists
-      if (!_processRegexMappingConfig(new_mapping, reg_map)) {
+      if (!_processRegexMappingConfig(fromHost_lower, new_mapping, reg_map)) {
         errStr = "Could not process regex mapping config line";
         goto MAP_ERROR;
       }
@@ -2168,7 +2146,7 @@ UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src
 }
 
 url_mapping_ext *
-UrlRewrite::forwardTableLookupExt(URL * request_url, int request_port, const char *request_host, int host_len,
+UrlRewrite::forwardTableLookupExt(URL * request_url, int request_port, char *request_host, int host_len,
                                   char *tag)
 {
   if (forward_mappings.hash_lookup) {
@@ -2182,7 +2160,7 @@ UrlRewrite::forwardTableLookupExt(URL * request_url, int request_port, const cha
 
 
 url_mapping_ext *
-UrlRewrite::reverseTableLookupExt(URL * request_url, int request_port, const char *request_host, int host_len,
+UrlRewrite::reverseTableLookupExt(URL * request_url, int request_port, char *request_host, int host_len,
                                   char *tag)
 {
   if (reverse_mappings.hash_lookup) {
@@ -2403,15 +2381,29 @@ url_mapping *
 UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url,
                            int request_port, const char *request_host, int request_host_len, char *tag)
 {
+  char request_host_lower[TSREMAP_RRI_MAX_HOST_SIZE];
+
+  if (!request_host || !request_url ||
+      (request_host_len < 0) || (request_host_len >= TSREMAP_RRI_MAX_HOST_SIZE)) {
+    Error("url_rewrite: Invalid arguments!");
+    return NULL;
+  }
+
+  // lowercase
+  for (int i = 0; i < request_host_len; ++i) {
+    request_host_lower[i] = tolower(request_host[i]);
+  }
+  request_host_lower[request_host_len] = 0;
+
   int rank_ceiling = -1;
-  url_mapping *mapping = _tableLookup(mappings.hash_lookup, request_url, request_port, request_host, 
+  url_mapping *mapping = _tableLookup(mappings.hash_lookup, request_url, request_port, request_host_lower, 
                                       request_host_len, tag);
   if (mapping != NULL) {
     rank_ceiling = mapping->getRank();
     Debug("url_rewrite_regex", "Found 'simple' mapping with rank %d", rank_ceiling);
   }
   url_mapping *regex_mapping = _regexMappingLookup(mappings.regex_list, request_url, request_port, 
-                                                   request_host, request_host_len, tag, rank_ceiling);
+                                                   request_host_lower, request_host_len, tag, rank_ceiling);
   if (regex_mapping) {
     mapping = regex_mapping;
     Debug("url_rewrite_regex", "Using regex mapping with rank %d", mapping->getRank());
@@ -2575,25 +2567,16 @@ UrlRewrite::_destroyList(RegexMappingList &mappings)
     inconsequential and will be perfunctorily null-ed;
 */
 bool
-UrlRewrite::_processRegexMappingConfig(url_mapping *new_mapping, RegexMapping &reg_map)
+UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping *new_mapping,
+                                       RegexMapping &reg_map)
 {
-  char *regex_str;
   const char *str;
   int str_index;
-  const char *from_host;
-  int from_host_len;
   const char *to_host;
   int to_host_len;
   int substitution_id;
   int substitution_count = 0;
 
-  // we get a NULL-terminated version because that is what 
-  // pcre_compile needs
-  from_host = new_mapping->fromURL.host_get(&from_host_len);
-  regex_str = static_cast<char *>(ink_malloc(from_host_len + 1));
-  memcpy(regex_str, from_host, from_host_len);
-  regex_str[from_host_len] = '\0';
-  
   reg_map.re = NULL;
   reg_map.re_extra = NULL;
   reg_map.to_url_host_template = NULL;
@@ -2602,9 +2585,11 @@ UrlRewrite::_processRegexMappingConfig(url_mapping *new_mapping, RegexMapping &r
   
   reg_map.url_map = new_mapping;
 
-  reg_map.re = pcre_compile(regex_str, 0, &str, &str_index, NULL);
+  // using from_host_lower (and not new_mapping->fromURL.host_get())
+  // as this one will be NULL-terminated (required by pcre_compile)
+  reg_map.re = pcre_compile(from_host_lower, 0, &str, &str_index, NULL);
   if (reg_map.re == NULL) {
-    Error("pcre_compile failed! Regex has error starting at %s", regex_str + str_index);
+    Error("pcre_compile failed! Regex has error starting at %s", from_host_lower + str_index);
     goto lFail;
   }
   
@@ -2630,13 +2615,13 @@ UrlRewrite::_processRegexMappingConfig(url_mapping *new_mapping, RegexMapping &r
     if (to_host[i] == '$') {
       if (substitution_count > MAX_REGEX_SUBS) {
         Error("Cannot have more than %d substitutions in mapping with host [%s]",
-              MAX_REGEX_SUBS, regex_str);
+              MAX_REGEX_SUBS, from_host_lower);
         goto lFail;
       }
       substitution_id = to_host[i + 1] - '0';
       if ((substitution_id < 0) || (substitution_id > n_captures)) {
         Error("Substitution id [%c] has no corresponding capture pattern in regex [%s]",
-              to_host[i + 1], regex_str);
+              to_host[i + 1], from_host_lower);
         goto lFail;
       }
       reg_map.substitution_markers[reg_map.n_substitutions] = i;
@@ -2654,7 +2639,6 @@ UrlRewrite::_processRegexMappingConfig(url_mapping *new_mapping, RegexMapping &r
   reg_map.to_url_host_template = static_cast<char *>(ink_malloc(str_index));
   memcpy(reg_map.to_url_host_template, str, str_index);
 
-  ink_free(regex_str);
   return true;
   
  lFail:
@@ -2671,6 +2655,5 @@ UrlRewrite::_processRegexMappingConfig(url_mapping *new_mapping, RegexMapping &r
     reg_map.to_url_host_template = NULL;
     reg_map.to_url_host_template_len = 0;
   }
-  ink_free(regex_str);
   return false;
 }

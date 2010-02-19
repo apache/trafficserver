@@ -86,9 +86,9 @@ public:
   void SetPristineFlag(int flag);
   void Print();
   url_mapping_ext *forwardTableLookupExt(URL * request_url,
-                                         int request_port, const char *request_host, int host_len, char *tag = 0);
+                                         int request_port, char *request_host, int host_len, char *tag = 0);
   url_mapping_ext *reverseTableLookupExt(URL * request_url,
-                                         int request_port, const char *request_host, int host_len, char *tag = 0);
+                                         int request_port, char *request_host, int host_len, char *tag = 0);
 //  private:
 
   static const int MAX_REGEX_SUBS = 10;
@@ -197,13 +197,13 @@ private:
   url_mapping *_mappingLookup(MappingsStore &mappings, URL *request_url,
                               int request_port, const char *request_host, int request_host_len, char *tag);
   url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url,
-                            int request_port, const char *request_host, int request_host_len, char *tag);
+                            int request_port, char *request_host, int request_host_len, char *tag);
   url_mapping *_regexMappingLookup(RegexMappingList &regex_mappings,
                                    URL * request_url, int request_port, const char *request_host, 
                                    int request_host_len, char *tag, int rank_ceiling);
   int _expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
                            const char *matched_string, char *dest_buf, int dest_buf_size);
-  bool _processRegexMappingConfig(url_mapping *new_mapping, RegexMapping &reg_map);
+  bool _processRegexMappingConfig(const char *from_host_lower, url_mapping *new_mapping, RegexMapping &reg_map);
   void _destroyTable(InkHashTable *h_table);
   void _destroyList(RegexMappingList &regexes);
   inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping &reg_map,
