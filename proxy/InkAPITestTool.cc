@@ -45,8 +45,8 @@
 #define PROXY_CONFIG_NAME_HTTP_PORT "proxy.config.http.server_port"
 #define PROXY_HTTP_DEFAULT_PORT 8080
 
-#define REQUEST_MAX_SIZE  2047
-#define RESPONSE_MAX_SIZE 2047
+#define REQUEST_MAX_SIZE  4095
+#define RESPONSE_MAX_SIZE 4095
 
 #define HTTP_REQUEST_END "\r\n\r\n"
 
@@ -529,8 +529,12 @@ synclient_txn_read_response(INKCont contp)
     int blocklen;
     const char *blockptr = INKIOBufferBlockReadStart(block, txn->resp_reader, &blocklen);
 
-    memcpy((char *) (txn->response + txn->response_len), blockptr, blocklen);
-    txn->response_len += blocklen;
+    if (txn->response_len+blocklen <= RESPONSE_MAX_SIZE) {
+      memcpy((char *) (txn->response + txn->response_len), blockptr, blocklen);
+      txn->response_len += blocklen;
+    } else {
+      INKError("Error: Response length %d > response buffer size %d", txn->response_len+blocklen, RESPONSE_MAX_SIZE);
+    }
 
     block = INKIOBufferBlockNext(block);
   }
@@ -926,8 +930,12 @@ synserver_txn_read_request(INKCont contp)
     int blocklen;
     const char *blockptr = INKIOBufferBlockReadStart(block, txn->req_reader, &blocklen);
 
-    memcpy((char *) (txn->request + txn->request_len), blockptr, blocklen);
-    txn->request_len += blocklen;
+    if (txn->request_len+blocklen <= REQUEST_MAX_SIZE) {
+      memcpy((char *) (txn->request + txn->request_len), blockptr, blocklen);
+      txn->request_len += blocklen;
+    } else {
+      INKError("Error: Request length %d > request buffer size %d", txn->request_len+blocklen, REQUEST_MAX_SIZE);
+    }
 
     block = INKIOBufferBlockNext(block);
   }
