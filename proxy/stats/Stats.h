@@ -224,4 +224,6 @@ StatDescriptor::flt_value() const
   return m_type == RECD_INT ? (float) tmp.rec_int : tmp.rec_float;
 }
 
+void init_inkapi_stat_system();
+
 #endif // STATS_H
