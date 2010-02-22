@@ -2,6 +2,7 @@
 *.a
 *.in
 *~
+*.tar.gz
 
 .deps
 
