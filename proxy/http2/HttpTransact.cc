@@ -7150,7 +7150,7 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
     // If a ttl is set: no header required for caching
     // otherwise: follow parameter http.cache.required_headers
     if (s->cache_control.ttl_in_cache <= 0) {
-
+      inku32 cc_mask = (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE);
       // server did not send expires header or last modified
       // and we are configured to not cache without them.
       switch (s->http_config_param->cache_required_headers) {
@@ -7159,8 +7159,9 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
         break;
 
       case HttpConfigParams::CACHE_REQUIRED_HEADERS_AT_LEAST_LAST_MODIFIED:
-        if (!response->presence(MIME_PRESENCE_EXPIRES) && !response->get_last_modified()) {
-          Debug("http_trans", "[is_response_cacheable] " "last_modified required");
+        if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask) && 
+            !response->get_last_modified()) {
+          Debug("http_trans", "[is_response_cacheable] " "last_modified, expires, or max-age is required");
 
           // Set the WUTS code to NO_DLE or NO_LE only for 200 responses.
           if (response_code == HTTP_STATUS_OK) {
@@ -7172,8 +7173,8 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
         break;
 
       case HttpConfigParams::CACHE_REQUIRED_HEADERS_CACHE_CONTROL:
-        if (!response->presence(MIME_PRESENCE_EXPIRES | MIME_PRESENCE_CACHE_CONTROL)) {
-          Debug("http_trans", "[is_response_cacheable] " "cache-control or expires header is required");
+        if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask)) {
+          Debug("http_trans", "[is_response_cacheable] " "expires header or max-age is required");
           return (false);
         }
         break;

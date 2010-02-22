@@ -255,8 +255,8 @@ CONFIG proxy.config.http.cache.when_to_revalidate INT 0
 CONFIG proxy.config.http.cache.when_to_add_no_cache_to_msie_requests INT 0
    # required headers: three options:
    #   0 - No required headers to make document cachable
-   #   1 - at least, "Last-Modified:" header required
-   #   2 - explicit lifetime required, "Expires:" or "Cache-Control:"
+   #   1 - "Last-Modified:", "Expires:", or "Cache-Control: max-age" required
+   #   2 - explicit lifetime required, "Expires:" or "Cache-Control: max-age"
 CONFIG proxy.config.http.cache.required_headers INT 1
 CONFIG proxy.config.http.cache.max_stale_age INT 604800
 CONFIG proxy.config.http.cache.range.lookup INT 1
