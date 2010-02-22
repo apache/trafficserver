@@ -48,10 +48,17 @@ struct ProtectedQueue
   Event *dequeue_local();
   void dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool sleep);
 
+  void setWriteFd(int );
+  void setReadFd(int );
+  int getReadFd();
+
   InkAtomicList al;
   ink_mutex lock;
   ink_cond might_have_data;
   Que(Event, link) localQueue;
+
+  int write_pipe_fd;
+  int read_pipe_fd;
 
   ProtectedQueue();
 };

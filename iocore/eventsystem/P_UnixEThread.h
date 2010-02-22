@@ -168,5 +168,10 @@ EThread::free_event(Event * e)
   EVENT_FREE(e, eventAllocator, this);
 }
 
+INK_INLINE int 
+EThread::getEventFd()
+{
+  return EventQueueExternal.getReadFd();
+}
 
 #endif /*_EThread_h_*/

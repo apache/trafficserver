@@ -119,12 +119,33 @@ initialize_thread_for_net(EThread * thread, int thread_index)
   new((ink_dummy_for_new *) get_NetHandler(thread)) NetHandler();
   new((ink_dummy_for_new *) get_PollCont(thread)) PollCont(thread->mutex, get_NetHandler(thread));
   get_NetHandler(thread)->mutex = new_ProxyMutex();
+  initialize_eventfd(thread);
   thread->schedule_imm(get_NetHandler(thread));
 
 #ifndef INACTIVITY_TIMEOUT
   InactivityCop *inactivityCop = NEW(new InactivityCop(get_NetHandler(thread)->mutex));
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(1));
 #endif
+}
+
+void initialize_eventfd(EThread *thread) {
+
+  int fd = thread->getEventFd();
+  PollDescriptor *pd = get_PollDescriptor(thread);
+  struct epoll_data_ptr *eptr;
+  eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
+  eptr->type = EVENTFD;
+  eptr->data.fd = fd;
+
+
+  struct epoll_event ev;
+  memset(&ev, 0, sizeof(struct epoll_event));
+
+  ev.events = EPOLLIN | EPOLLET;
+  ev.data.ptr = eptr;
+  if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
+    Debug("iocore_net", "acceptEvent : Failed to add event add to list epoll list\n");
+  }
 }
 
 // NetHandler method definitions
@@ -246,6 +267,16 @@ NetHandler::mainNetEvent(int event, Event * e)
     } else if (epd->type == EPOLL_DNS_CONNECTION) {
       if (epd->data.dnscon != NULL)
         dnsqueue.enqueue(epd->data.dnscon);
+    } else if (epd->type == EVENTFD) {
+      char buf[1024];
+      int retVal=-1;
+      do {
+        retVal = socketManager.read(epd->data.fd,&buf,1024);
+      } while(retVal == 1024);
+      if (retVal <=0) {
+        socketManager.close(epd->data.fd);
+        initialize_eventfd(e->ethread);
+      }
     }
   }
 

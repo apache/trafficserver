@@ -34,7 +34,7 @@
 
 
 INK_INLINE
-ProtectedQueue::ProtectedQueue()
+ProtectedQueue::ProtectedQueue():write_pipe_fd(-1),read_pipe_fd(-1)
 {
   Event e;
   ink_mutex_init(&lock, "ProtectedQueue");
@@ -46,21 +46,39 @@ INK_INLINE void
 ProtectedQueue::signal()
 {
   // Need to get the lock before you can signal the thread
-  ink_mutex_acquire(&lock);
-  ink_cond_signal(&might_have_data);
-  ink_mutex_release(&lock);
+  if(write_pipe_fd!=-1) {
+    int retVal = socketManager.write(write_pipe_fd,(void*)"W",1);
+    if(retVal <= 0) {
+      int fd = write_pipe_fd;
+      socketManager.close(fd);
+    }
+  } else {
+    ink_mutex_acquire(&lock);
+    ink_cond_signal(&might_have_data);
+    ink_mutex_release(&lock);
+  }
 }
 
 INK_INLINE int
 ProtectedQueue::try_signal()
 {
   // Need to get the lock before you can signal the thread
-  if (ink_mutex_try_acquire(&lock)) {
-    ink_cond_signal(&might_have_data);
-    ink_mutex_release(&lock);
+  if(write_pipe_fd!=-1) {
+    int retVal = socketManager.write(write_pipe_fd,(void*)"W",1);
+    if(retVal <= 0) {
+      int fd = write_pipe_fd;
+      write_pipe_fd = read_pipe_fd = -1;
+      socketManager.close(fd);
+    }
     return 1;
   } else {
-    return 0;
+    if (ink_mutex_try_acquire(&lock)) {
+      ink_cond_signal(&might_have_data);
+      ink_mutex_release(&lock);
+      return 1;
+    } else {
+      return 0;
+    }
   }
 }
 
@@ -91,6 +109,28 @@ ProtectedQueue::dequeue_local()
     e->in_the_prot_queue = 0;
   }
   return e;
+}
+
+INK_INLINE void 
+ProtectedQueue::setReadFd(int fd)
+{
+  read_pipe_fd = fd;
+}
+
+INK_INLINE void 
+ProtectedQueue::setWriteFd(int fd)
+{
+  write_pipe_fd = fd;
+}
+
+INK_INLINE int 
+ProtectedQueue::getReadFd()
+{
+  int pfd[2] = {-1,-1};
+  ink_create_pipe(pfd);
+  setReadFd(pfd[0]);
+  setWriteFd(pfd[1]);
+  return pfd[0];
 }
 
 #endif

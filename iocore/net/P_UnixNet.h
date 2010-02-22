@@ -40,6 +40,7 @@ struct epoll_data_ptr
     DNSConnection *dnscon;
     NetAccept *na;
     UnixUDPConnection *uc;
+    int fd;
   } data;
 };
 
@@ -52,6 +53,7 @@ struct epoll_data_ptr
 #define EPOLL_READWRITE_VC		2
 #define EPOLL_DNS_CONNECTION		3
 #define EPOLL_UDP_CONNECTION		4
+#define EVENTFD			5
 
 struct UnixNetVConnection;
 struct NetHandler;
@@ -104,7 +106,7 @@ extern int http_accept_port_number;
 #define MAX_EPOLL_ARRAY_SIZE                      (1024*16)
 #define MAX_EPOLL_TIMEOUT                         50    /* mseconds */
 #define DEFAULT_EPOLL_TIMEOUT                     10    /* mseconds */
-#define REAL_DEFAULT_EPOLL_TIMEOUT                3     /* the define above is old code [ebalsa] -- this directly effects latency of the connections. */
+#define REAL_DEFAULT_EPOLL_TIMEOUT                1     /* the define above is old code [ebalsa] -- this directly effects latency of the connections. */
 
 #define NET_THROTTLE_DELAY                        50    /* mseconds */
 #define INK_MIN_PRIORITY                          0

@@ -110,6 +110,7 @@ extern UnixNetProcessor unix_netProcessor;
 // accept such events by the EventProcesor.
 //
 extern void initialize_thread_for_net(EThread * thread, int thread_index);
+extern void initialize_eventfd(EThread * thread);
 
 //#include "UnixNet.h"
 #endif
