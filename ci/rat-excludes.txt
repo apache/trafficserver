@@ -10,6 +10,7 @@ iocore/fastio/inkfio/inkfio.conf
 .gitignore
 .indent.pro
 aclocal.m4
+CHANGES
 m4/
 autom4te.cache/
 build-aux/
