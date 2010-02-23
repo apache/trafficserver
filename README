@@ -62,6 +62,8 @@ plugins to build large scale web applications.
     libsqlite3-dev (or optionally, libdb-dev)
     libpcre3-dev
 
+For using sqlite3, we only support v3.5 or later (basically, we require the v2 APIs).
+
 
 4. BUILDING FROM SVN REPO
 
