@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  CongestionDB.h - Implementation of KDDI Congestion Control
+ *  CongestionDB.h - Implementation of Congestion Control
  *
  *
  ****************************************************************************/

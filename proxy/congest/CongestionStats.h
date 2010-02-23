@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  CongestionStats.h - Implementation of KDDI Congestion Control
+ *  CongestionStats.h - Implementation of Congestion Control
  *
  *
  ****************************************************************************/

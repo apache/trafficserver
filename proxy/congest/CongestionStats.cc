@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  CongestionStats.cc - Implementation of KDDI Congestion Control
+ *  CongestionStats.cc - Implementation of Congestion Control
  *
  *
  ****************************************************************************/
