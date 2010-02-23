@@ -405,6 +405,7 @@ uninstall-local:
 	-rm -rf $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkglibexecdir)
 
 install-exec-hook:
+	chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkglibexecdir) $(DESTDIR)$(pkgdatadir)
 	-echo $(DESTDIR)$(prefix) > $(DESTDIR)$(prefix)/etc/traffic_server
 
 uninstall-hook:
