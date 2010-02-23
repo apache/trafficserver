@@ -1,0 +1,37 @@
+APACHE TRAFFIC SERVER INSTALLATION
+
+ Quick Start - Unix
+  ------------------
+
+  For complete installation documentation, see the on-line documentation at
+
+        http://incubator.apache.org/trafficserver/docs/admin/
+
+
+     $ ./configure [--prefix=PREFIX]
+     $ make
+     $ make install
+     $ PREFIX/bin/trafficserver start
+
+
+  The default PREFIX is /usr/local, unless explicitly specified.
+
+  The easiest way to find all of the configuration flags for Traffic Server
+  is to run ./configure --help.
+
+
+
+  Postscript
+  ----------
+
+  The Apache Traffic Server group cannot field user's installation questions.
+  There are many valuable forums to help you get started.  Please refer your
+  questions to the appropriate forum, such as the Users Mailing List at
+
+      http://cwiki.apache.org/confluence/display/TS/Traffic+Server
+
+
+  Thanks for using the Apache Traffic Server, version 2.0.
+
+                                     The Apache Software Foundation
+                                     http://www.apache.org/
