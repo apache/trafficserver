@@ -1,5 +1,5 @@
 ﻿                                                         -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 2.0.0-alpha
+Changes with Apache Traffic Server 2.1.0-alpha
 
   *) Code cleanup to get the ATS software into a distributable shape. This
    means that certain things are missing, or not functional (intentionally).
