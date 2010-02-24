@@ -18,7 +18,6 @@ Makefile
 config.log
 config.status
 doc/Doxyfile
-install/update_records
 libinktomi++/CompileParseRules
 libinktomi++/ParseRulesCType
 libinktomi++/ParseRulesCTypeToLower
@@ -56,5 +55,5 @@ m4/ltsugar.m4
 m4/ltversion.m4
 m4/lt~obsolete.m4
 
-install/trafficserver
-
+rc/trafficserver
+rc/update_records
