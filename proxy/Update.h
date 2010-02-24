@@ -451,7 +451,7 @@ public:
   DynArray<char>_tag;
   DynArray<char>_attr;
   DynArray<char>_attr_value;
-  int _attr_value_hash_char_index;      // '#' char loc
+  intptr_t _attr_value_hash_char_index;      // '#' char loc
   unsigned char _attr_value_quoted;
   DynArray<char>_html_doc_base;
   DynArray<char>_result;

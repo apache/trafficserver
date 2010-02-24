@@ -36,31 +36,31 @@
   ///////////////////////////////////////////////
   // Common Interface impl                     //
   ///////////////////////////////////////////////
-INK_INLINE
+inline
 Thread::~
 Thread()
 {
 }
 
-INK_INLINE void
+inline void
 Thread::set_specific()
 {
   ink_thread_setspecific(Thread::thread_data_key, this);
 }
 
-INK_INLINE Thread *
+inline Thread *
 this_thread()
 {
   return (Thread *) ink_thread_getspecific(Thread::thread_data_key);
 }
 
-INK_INLINE ink_hrtime
+inline ink_hrtime
 ink_get_hrtime()
 {
   return Thread::cur_time;
 }
 
-INK_INLINE ink_hrtime
+inline ink_hrtime
 ink_get_based_hrtime()
 {
   return Thread::cur_time;

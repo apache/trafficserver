@@ -30,7 +30,7 @@
 
 template<class T> class DynArray {
 public:
-  DynArray(const T * val, intptr_t initial_size = 0);
+  DynArray(const T * val = 0, intptr_t initial_size = 0);
   ~DynArray();
 
 #ifndef __GNUC__
@@ -71,6 +71,7 @@ pos(-1)
 
     resize(i);
   }
+
 }
 
 template<class T> inline DynArray<T>::~DynArray()
@@ -177,7 +178,8 @@ template<class T> inline void DynArray<T>::resize(intptr_t new_size)
     }
 
     for (; i < new_size; i++) {
-      new_data[i] = (T) * default_val;
+      if (default_val)
+        new_data[i] = (T) * default_val;
     }
 
     if (data) {

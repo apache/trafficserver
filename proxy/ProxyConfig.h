@@ -23,17 +23,17 @@
 
 /****************************************************************************
 
-  Config.h
+  ProxyConfig.h
 
   
   ****************************************************************************/
 
-#ifndef _Config_h
-#define _Config_h
+#ifndef _Proxy_Config_h
+#define _Proxy_Config_h
 
+#include "inktomi++.h"
 #include "ProcessManager.h"
 #include "Error.h"
-#include "inktomi++.h"
 
 void *config_int_cb(void *data, void *value);
 void *config_long_long_cb(void *data, void *value);

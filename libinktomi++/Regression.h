@@ -21,38 +21,32 @@
   limitations under the License.
  */
 
-/****************************************************************************
-
-  Regression.h
-
-  
- ****************************************************************************/
-
 #ifndef _Regression_h
 #define _Regression_h
+
 #include "inktomi++.h"
 #include "Regex.h"
 
-// 
-//  Each module should provide one or more regression tests
+//   Each module should provide one or more regression tests
 //
-//  An example:
+//   An example:
 //
-// REGRESSION_TEST(Addition)(RegressionTest *t, int atype, int *pstatus) {
-//    if (1 + 1 != 2) 
-//      *pstatus = REGRESSION_TEST_FAILED;
-//    if (atype > REGRESSION_TEST_NIGHTLY)  // try again
-//      if (1 + 1 != 2) 
-//        *pstatus = REGRESSION_TEST_FAILED;
-//    rprintf(t, "it worked, 1+1 really is 2!");
-//    *pstatus return REGRESSION_TEST_PASSED;
-// }
-// 
-// 
+//   REGRESSION_TEST(Addition)(RegressionTest *t, int atype, int *pstatus) {
+//     if (atype < REGRESSION_TEST_NIGHTLY) { // to expensive to do more than nightly
+//       *pstatus = REGRESSION_TEST_NOT_RUN;
+//       return;
+//     }
+//     if (1 + 1 != 2) {
+//       rprintf(t, "drat, 1+1 isn't 2??");
+//       *pstatus = REGRESSION_TEST_FAILED;
+//     } else
+//       *pstatus = REGRESSION_TEST_PASSED;
+//   }
+
 
 // status values
 #define REGRESSION_TEST_PASSED         1
-#define REGRESSION_TEST_INPROGRESS     0
+#define REGRESSION_TEST_INPROGRESS     0 // initial value
 #define REGRESSION_TEST_FAILED         -1
 #define REGRESSION_TEST_NOT_RUN        -2
 
@@ -80,7 +74,7 @@ struct RegressionTest
   int printed;
   int opt;
 
-    RegressionTest(const char *name_arg, TestFunction * function_arg, int aopt);
+  RegressionTest(const char *name_arg, TestFunction * function_arg, int aopt);
 
   static int final_status;
   static int ran_tests;
@@ -102,6 +96,7 @@ RegressionTest regressionTest_##_f(#_f,&RegressionTest_##_f, REGRESSION_OPT_EXCL
 void RegressionTest_##_f
 
 int rprintf(RegressionTest * t, const char *format, ...);
+int rperf(RegressionTest *t, const char *tag, double val);
 char *regression_status_string(int status);
 
 extern int regression_level;
@@ -113,5 +108,4 @@ extern int regression_level;
   Warning(_buf);                                                        \
 }                                                                       \
 
-#define _Regression_h
 #endif /* _Regression_h */

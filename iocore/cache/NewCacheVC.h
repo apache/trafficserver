@@ -70,8 +70,8 @@ public:
   // static method to allocate a new cache vc
   static NewCacheVC *alloc(Continuation * cont, URL * url, HttpCacheSM * sm);
   void setWriteVC(CacheHTTPInfo * old_info);
-  VIO *do_io_read(Continuation * c, int nbytes, MIOBuffer * buf);
-  VIO *do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner = false);
+  VIO *do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf);
+  VIO *do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner = false);
   void do_io_close(int lerrno = -1);
 
   void reenable(VIO * vio);
@@ -90,6 +90,46 @@ public:
   Action *action()
   {
     return &_action;
+  }
+  bool set_pin_in_cache(time_t time_pin)
+  {
+    ink_assert(!"implemented");
+    return false;
+  }
+  bool set_disk_io_priority(int priority)
+  {
+    ink_assert(!"implemented");
+    return false;
+  }
+  time_t get_pin_in_cache()
+  {
+    ink_assert(!"implemented");
+    return 0;
+  }
+  int
+  get_disk_io_priority()
+  {
+    ink_assert(!"implemented");
+    return 0;
+  }
+  int get_header(void **ptr, int *len) 
+  {
+    ink_assert(!"implemented");
+    return -1;
+  }
+  int set_header(void *ptr, int len) 
+  {
+    ink_assert(!"implemented");
+    return -1;
+  }
+  int get_object_size()
+  {
+    ink_assert(!"implemented");
+    return -1;
+  }
+  VIO *do_io_pread(Continuation *c, ink64 nbytes, MIOBuffer *buf, ink64 offset) {
+    ink_assert(!"implemented");
+    return 0;
   }
 
   bool appendCacheHttpInfo(const void *data, const inku64 size);

@@ -29,7 +29,7 @@
  ****************************************************************************/
 #include "Main.h"
 #include "Error.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 //#include "Lock.h"
 #include "P_Net.h"
 //#include "Freer.h"

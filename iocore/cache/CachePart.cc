@@ -81,7 +81,7 @@ CacheVC::scanPart(int event, Event * e)
     goto Ldone;
   }
 Lcont:
-  segment = 0;
+  fragment = 0;
   SET_HANDLER(&CacheVC::scanObject);
   eventProcessor.schedule_in(this, HRTIME_MSECONDS(scan_msec_delay));
   return EVENT_CONT;
@@ -113,19 +113,19 @@ CacheVC::scanObject(int event, Event * e)
   if (_action.cancelled)
     return free_CacheVC(this);
 
-  MUTEX_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+  CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
   if (!lock) {
     mutex->thread_holding->schedule_in_local(this, MUTEX_RETRY_DELAY);
     return EVENT_CONT;
   }
 
-  if (!segment) {               // initialize for first read
-    segment = 1;
+  if (!fragment) {               // initialize for first read
+    fragment = 1;
     io.aiocb.aio_offset = part_offset_to_offset(part, 0);
     io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
     io.aiocb.aio_buf = buf->data();
     io.action = this;
-    io.thread = mutex->thread_holding;
+    io.thread = AIO_CALLBACK_THREAD_ANY;
     goto Lread;
   }
 
@@ -140,22 +140,22 @@ CacheVC::scanObject(int event, Event * e)
     int i;
     bool changed;
 
-    if (doc->magic != DOC_MAGIC || !doc->hlen)
+    if (doc->magic != DOC_MAGIC || doc->ftype != CACHE_FRAG_TYPE_HTTP || !doc->hlen)
       goto Lskip;
 
     last_collision = NULL;
     while (1) {
       if (!dir_probe(&doc->first_key, part, &dir, &last_collision))
         goto Lskip;
-      if (!dir_agg_valid(part, &dir) || !dir.head ||
+      if (!dir_agg_valid(part, &dir) || !dir_head(&dir) ||
           (part_offset(part, &dir) != io.aiocb.aio_offset + ((char *) doc - buf->data())))
         continue;
       break;
     }
-    if ((char *) doc - buf->data() + sizeofDoc + doc->hlen > (int) io.aiocb.aio_nbytes)
+    if (doc->data() - buf->data() > (int) io.aiocb.aio_nbytes)
       goto Lskip;
     {
-      char *tmp = doc->hdr;
+      char *tmp = doc->hdr();
       int len = doc->hlen;
       while (len > 0) {
         int r = HTTPInfo::unmarshal(tmp, len, buf._ptr());
@@ -167,7 +167,7 @@ CacheVC::scanObject(int event, Event * e)
         tmp += r;
       }
     }
-    if (vector.get_handles(doc->hdr, doc->hlen) != doc->hlen)
+    if (vector.get_handles(doc->hdr(), doc->hlen) != doc->hlen)
       goto Lskip;
     changed = false;
     hostinfo_copied = 0;
@@ -222,13 +222,12 @@ CacheVC::scanObject(int event, Event * e)
         ink_debug_assert(hostinfo_copied);
         SET_HANDLER(&CacheVC::scanRemoveDone);
         // force remove even if there is a writer
-        cacheProcessor.remove(this, &doc->first_key, true, false, CACHE_FRAG_TYPE_HTTP, (char *) hname, hlen);
+        cacheProcessor.remove(this, &doc->first_key, CACHE_FRAG_TYPE_HTTP, true, false, (char *) hname, hlen);
         return EVENT_CONT;
-//      dir_delete(&doc->first_key, part, &dir);
       } else {
         offset = (char *) doc - buf->data();
         write_len = 0;
-        f.http_request = 1;
+        frag_type = CACHE_FRAG_TYPE_HTTP;
         f.use_first_key = 1;
         f.evac_vector = 1;
         first_key = key = doc->first_key;
@@ -306,71 +305,69 @@ CacheVC::scanOpenWrite(int event, Event * e)
       return scanObject(EVENT_IMMEDIATE, 0);
     }
   }
-  MUTEX_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
-  if (!lock)
-    VC_SCHED_LOCK_RETRY();
+  int ret = 0;
+  {
+    CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+    if (!lock)
+      VC_SCHED_LOCK_RETRY();
 
-  Debug("cache_scan", "trying for writer lock");
-  if (part->open_write(this, false, 1)) {
-    writer_lock_retry++;
-    SET_HANDLER(&CacheVC::scanOpenWrite);
-    mutex->thread_holding->schedule_in_local(this, scan_msec_delay);
-    return EVENT_CONT;
-  }
-
-  ink_debug_assert(this->od);
-  // put all the alternates in the open directory vector
-  int alt_count = vector.count();
-  for (int i = 0; i < alt_count; i++) {
-    write_vector->insert(vector.get(i));
-  }
-  od->writing_vec = 1;
-  vector.clear(false);
-  // check that the directory entry was not overwritten
-  // if so return failure
-  Debug("cache_scan", "got writer lock");
-  Dir *l = NULL;
-  Dir d;
-  Doc *doc = (Doc *) (buf->data() + offset);
-  offset = (char *) doc - buf->data() + round_to_approx_size(doc->len);
-  // if the doc contains some data, then we need to create
-  // a new directory entry for this fragment. Remember the
-  // offset and the key in earliest_key
-  dir_assign(&od->first_dir, &dir);
-  if (doc->total_len) {
-    dir_assign(&od->single_doc_dir, &dir);
-    dir_set_tag(&od->single_doc_dir, DIR_MASK_TAG(doc->key.word(1)));
-    od->single_doc_key = doc->key;
-    od->move_resident_alt = 1;
-  }
-
-  while (1) {
-    if (!dir_probe(&first_key, part, &d, &l)) {
-      part->close_write(this);
-      _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_FAILED, 0);
-      SET_HANDLER(&CacheVC::scanObject);
-      return handleEvent(EVENT_IMMEDIATE, 0);
+    Debug("cache_scan", "trying for writer lock");
+    if (part->open_write(this, false, 1)) {
+      writer_lock_retry++;
+      SET_HANDLER(&CacheVC::scanOpenWrite);
+      mutex->thread_holding->schedule_in_local(this, scan_msec_delay);
+      return EVENT_CONT;
     }
-/*     
-    if (!dir_agg_valid(part, &d) || !d.head || 
-	(part_offset(part, &d) !=
-	 io.aiocb.aio_offset + ((char*)doc - buf->data()))) {
-      Debug("cache_scan","dir entry is not valid");
-      continue;
-    }
-*/
-    if (*((inku64 *) & dir) != *((inku64 *) & d)) {
-      Debug("cache_scan", "dir entry has changed");
-      continue;
-    }
-    break;
-  }
 
-  // the document was not modified 
-  // we are safe from now on as we hold the 
-  // writer lock on the doc
-  SET_HANDLER(&CacheVC::scanUpdateDone);
-  return do_write();
+    ink_debug_assert(this->od);
+    // put all the alternates in the open directory vector
+    int alt_count = vector.count();
+    for (int i = 0; i < alt_count; i++) {
+      write_vector->insert(vector.get(i));
+    }
+    od->writing_vec = 1;
+    vector.clear(false);
+    // check that the directory entry was not overwritten
+    // if so return failure
+    Debug("cache_scan", "got writer lock");
+    Dir *l = NULL;
+    Dir d;
+    Doc *doc = (Doc *) (buf->data() + offset);
+    offset = (char *) doc - buf->data() + round_to_approx_size(doc->len);
+    // if the doc contains some data, then we need to create
+    // a new directory entry for this fragment. Remember the
+    // offset and the key in earliest_key
+    dir_assign(&od->first_dir, &dir);
+    if (doc->total_len) {
+      dir_assign(&od->single_doc_dir, &dir);
+      dir_set_tag(&od->single_doc_dir, doc->key.word(2));
+      od->single_doc_key = doc->key;
+      od->move_resident_alt = 1;
+    }
+
+    while (1) {
+      if (!dir_probe(&first_key, part, &d, &l)) {
+        part->close_write(this);
+        _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_FAILED, 0);
+        SET_HANDLER(&CacheVC::scanObject);
+        return handleEvent(EVENT_IMMEDIATE, 0);
+      }
+      if (memcmp(&dir, &d, SIZEOF_DIR)) {
+        Debug("cache_scan", "dir entry has changed");
+        continue;
+      }
+      break;
+    }
+
+    // the document was not modified 
+    // we are safe from now on as we hold the 
+    // writer lock on the doc
+    SET_HANDLER(&CacheVC::scanUpdateDone);
+    ret = do_write_call();
+  }
+  if (ret == EVENT_RETURN)
+    return handleEvent(AIO_EVENT_DONE, 0);
+  return ret;
 }
 
 int
@@ -381,7 +378,7 @@ CacheVC::scanUpdateDone(int event, Event * e)
   Debug("cache_scan_truss", "inside %p:scanUpdateDone", this);
   cancel_trigger();
   // get partition lock
-  MUTEX_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+  CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
   if (lock) {
     // insert a directory entry for the previous fragment 
     dir_overwrite(&first_key, part, &dir, &od->first_dir, false);

@@ -29,8 +29,6 @@
 **************************************************************************/
 
 #include "ink_unused.h" /* MAGIC_EDITING_TAG */
-#include "ink_platform.h"
-
 #include "P_DNS.h"
 #include "P_DNSConnection.h"
 
@@ -49,7 +47,7 @@
 //
 
 DNSConnection::DNSConnection():
-fd(NO_FD), num(0), epoll_ptr(NULL)
+fd(NO_FD), num(0)
 {
   memset(&sa, 0, sizeof(struct sockaddr_in));
 }

@@ -28,6 +28,7 @@
   
  ****************************************************************************/
 
+#include "inktomi++.h"
 #include "HttpBodyFactory.h"
 #include <unistd.h>
 #include <dirent.h>
@@ -39,7 +40,6 @@
 #include <logging/LogAccess.h>
 #include <logging/LogAccessHttp.h>
 #include "HttpCompat.h"
-#include "inktomi++.h"
 
 //////////////////////////////////////////////////////////////////////
 // The HttpBodyFactory creates HTTP response page bodies, supported //

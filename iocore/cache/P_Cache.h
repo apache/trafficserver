@@ -24,11 +24,6 @@
 #ifndef _P_CACHE_H__
 #define _P_CACHE_H__
 
-#ifndef INLINE_CC
-#undef INK_INLINE
-#define INK_INLINE inline
-#endif
-
 #define PATH_NAME_MAX 511
 #include "inktomi++.h"
 #include "P_EventSystem.h"

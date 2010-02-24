@@ -32,11 +32,11 @@
 #define __P_DNSCONNECTION_H__
 
 #include "I_EventSystem.h"
+
 //
 // Defines
 //
 
-//#define NO_FD                    (-1)
 #define NON_BLOCKING_CONNECT     true
 #define BLOCKING_CONNECT         false
 #define CONNECT_WITH_TCP         true
@@ -52,21 +52,17 @@
 #define BC_NO_BIND      	 true
 #define BC_BIND      	 	 false
 
-///////////////////////////////////////////////////////////////////////
 //
 // Connection
 //
-///////////////////////////////////////////////////////////////////////
+
 struct DNSConnection
 {
   int fd;
   struct sockaddr_in sa;
-
-  int num;                      //added by YTS Team, yamsat
-
-    Link<DNSConnection> link;        //added by YTS Team, yamsat
-
-  struct epoll_data_ptr *epoll_ptr;
+  int num;
+  Link<DNSConnection> link;
+  EventIO eio;
 
   int connect(unsigned int ip, int port,
               bool non_blocking_connect = NON_BLOCKING_CONNECT,
@@ -74,8 +70,8 @@ struct DNSConnection
 
   int close();                  // 0 on success, -errno on failure
 
-    virtual ~ DNSConnection();
-    DNSConnection();
+  virtual ~DNSConnection();
+  DNSConnection();
 };
 
 #endif /*_P_DNSConnection_h*/

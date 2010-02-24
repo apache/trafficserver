@@ -38,7 +38,11 @@
 #include <stdio.h>
 
 #ifdef HAVE_REGEX_H
+#if (HOST_OS == solaris)
+#include <regex.h>
+#else
 #include "/usr/include/regex.h"
+#endif
 #endif
 
 #ifdef HAVE_CTYPE_H
@@ -46,7 +50,7 @@
 #endif
 
 #include "inktomi++.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 
 #undef MgmtInt
 #undef MgmtFloat

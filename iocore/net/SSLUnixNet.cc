@@ -30,9 +30,9 @@
 
   
  ****************************************************************************/
+#include "ink_config.h"
+
 #ifdef HAVE_LIBSSL
-#include "ink_unused.h"   /* MAGIC_EDITING_TAG */
-#include <string.h>
 #include "P_Net.h"
 //
 // Global Data
@@ -146,28 +146,8 @@ SSLNetAccept::init_accept_per_thread()
     EThread *t = eventProcessor.eventthread[ET_SSL][i];
 
     PollDescriptor *pd = get_PollDescriptor(t);
-    ep.type = EPOLL_NETACCEPT;
-    ep.data.na = (NetAccept *) a;
-
-#if defined(USE_EPOLL)
-    struct epoll_event ev;
-    memset(&ev, 0, sizeof(struct epoll_event));
-    ev.events = EPOLLIN | EPOLLET;
-    ev.data.ptr = &ep;
-
-    if (epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, a->server.fd, &ev) < 0) {
-      printf("error in epoll_ctl\n");
-    }
-#elif defined(USE_KQUEUE)
-    struct kevent ev;
-    EV_SET(&ev, a->server.fd, EVFILT_READ, EV_ADD, 0, 0, &ep);
-    if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
-      printf("error in kevent\n");
-    }
-#else
-#error port me
-#endif
-
+    if (ep.start(pd, this, EVENTIO_READ) < 0)
+      Debug("iocore_net", "error starting EventIO");
     a->mutex = get_NetHandler(t)->mutex;
     t->schedule_every(a, period, etype);
   }

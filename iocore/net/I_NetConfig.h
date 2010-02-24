@@ -29,7 +29,13 @@
  * net sub system.
  * For the default values look at NetConfig.cc
  */
+#if (HOST_OS == solaris)
+#define DEFAULT_POLL_TIMEOUT                      30  /* mseconds */
+#else
+#define DEFAULT_POLL_TIMEOUT                      10  /* mseconds */
+#endif
 
+extern int net_config_poll_timeout;
 extern int net_config_max_poll_delay;
 extern int net_config_fds_throttle;
 extern int net_config_listen_backlog;

@@ -25,6 +25,7 @@
 
 
 #include "P_Cache.h"
+#include "P_CacheTest.h"
 
 // Cache Inspector and State Pages
 #ifdef NON_MODULAR
@@ -34,27 +35,24 @@
 #ifdef HTTP_CACHE
 #include "HttpTransactCache.h"
 #endif
-// Compilation Options
 
 #include "InkAPIInternal.h"
 #include <HttpSM.h>
 #include <HttpCacheSM.h>
 
-#define USELESS_REENABLES       // allow them for now
-// #define USE_CACHE_OPEN_READ_DONE
-// #define VERIFY_JTEST_DATA
+// Compilation Options
 
-// Defines
-#define MAX_RECOVER_BYTES  (1024 * 1024)
+#define USELESS_REENABLES       // allow them for now
+// #define VERIFY_JTEST_DATA
 
 #define DOCACHE_CLEAR_DYN_STAT(x) \
 do { \
 	RecSetRawStatSum(rsb, x, 0); \
 	RecSetRawStatCount(rsb, x, 0); \
 } while (0);
+
 // Configuration
 
-int cache_config_sem_key = 31717;
 ink64 cache_config_ram_cache_size = AUTO_SIZE_RAM_CACHE;
 int cache_config_http_max_alts = 3;
 int cache_config_dir_sync_frequency = 60;
@@ -65,9 +63,7 @@ int cache_config_max_doc_size = 0;
 int cache_config_min_average_object_size = ESTIMATED_OBJECT_SIZE;
 ink64 cache_config_ram_cache_cutoff = 1048576;  // 1 MB
 ink64 cache_config_ram_cache_mixt_cutoff = 1048576;     // 1 MB
-int cache_config_max_agg_delay = 1000;
 int cache_config_max_disk_errors = 5;
-int cache_config_check_disk_idle = 1;
 int cache_config_agg_write_backlog = 5242880;
 #ifdef HIT_EVACUATE
 int cache_config_hit_evacuate_percent = 10;
@@ -95,16 +91,14 @@ int CacheProcessor::fix = 0;
 int CacheProcessor::start_internal_flags = 0;
 int CacheProcessor::auto_clear_flag = 0;
 CacheProcessor cacheProcessor;
-Part ** gpart = NULL;
+Part **gpart = NULL;
 volatile int gnpart = 0;
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<NewCacheVC> newCacheVConnectionAllocator("newCacheVConnection");
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
-
 int CacheVC::size_to_init = -1;
-
 CacheKey zero_key(0, 0);
 
 struct PartInitInfo
@@ -113,13 +107,13 @@ struct PartInitInfo
   AIOCallbackInternal part_aio[4];
   char *part_h_f;
 
-    PartInitInfo()
+  PartInitInfo()
   {
     recover_pos = 0;
     if ((part_h_f = (char *) valloc(4 * INK_BLOCK_SIZE)) != NULL)
       memset(part_h_f, 0, 4 * INK_BLOCK_SIZE);
   }
-   ~PartInitInfo()
+  ~PartInitInfo() 
   {
     for (int i = 0; i < 4; i++) {
       part_aio[i].action = NULL;
@@ -132,9 +126,9 @@ struct PartInitInfo
 void cplist_init();
 static void cplist_update();
 int cplist_reconfigure();
-static int create_partition(int partition_number, int size_in_blocks, int scheme, CachePart * cp);
-static void rebuild_host_table(Cache * cache);
-void register_cache_stats(RecRawStatBlock * rsb, const char *prefix);
+static int create_partition(int partition_number, int size_in_blocks, int scheme, CachePart *cp);
+static void rebuild_host_table(Cache *cache);
+void register_cache_stats(RecRawStatBlock *rsb, const char *prefix);
 
 Queue<CachePart> cp_list;
 int cp_list_len = 0;
@@ -149,7 +143,7 @@ cache_bytes_used(void)
       if (!gpart[i]->header->cycle)
         used += gpart[i]->header->write_pos - gpart[i]->start;
       else
-        used += gpart[i]->len - part_dirlen(gpart[i]) - EVAC_SIZE;
+        used += gpart[i]->len - part_dirlen(gpart[i]) - EVACUATION_SIZE;
     }
   }
   return used;
@@ -160,14 +154,14 @@ cache_bytes_total(void)
 {
   ink64 total = 0;
   for (int i = 0; i < gnpart; i++)
-    total += gpart[i]->len - part_dirlen(gpart[i]) - EVAC_SIZE;
+    total += gpart[i]->len - part_dirlen(gpart[i]) - EVACUATION_SIZE;
 
   return total;
 }
 
 int
 cache_stats_bytes_used_cb(const char *name,
-                          RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id, void *cookie)
+                          RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id, void *cookie)
 {
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
     RecSetGlobalRawStatSum(rsb, id, cache_bytes_used());
@@ -209,7 +203,7 @@ CacheVC::CacheVC():alternate_index(CACHE_ALT_INDEX_DEFAULT)
 }
 
 VIO *
-CacheVC::do_io_read(Continuation * c, int nbytes, MIOBuffer * abuf)
+CacheVC::do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *abuf)
 {
   ink_assert(vio.op == VIO::READ);
   vio.buffer.writer_for(abuf);
@@ -218,13 +212,29 @@ CacheVC::do_io_read(Continuation * c, int nbytes, MIOBuffer * abuf)
   vio.nbytes = nbytes;
   vio.vc_server = this;
   ink_assert(c->mutex->thread_holding);
-  if (!trigger)
+  if (!trigger && !recursive)
     trigger = c->mutex->thread_holding->schedule_imm_local(this);
   return &vio;
 }
 
 VIO *
-CacheVC::do_io_write(Continuation * c, int nbytes, IOBufferReader * abuf, bool owner)
+CacheVC::do_io_pread(Continuation *c, ink64 nbytes, MIOBuffer *abuf, ink64 offset)
+{
+  ink_assert(vio.op == VIO::READ);
+  vio.buffer.writer_for(abuf);
+  vio.set_continuation(c);
+  vio.ndone = offset;
+  vio.nbytes = 0;
+  vio.vc_server = this;
+  seek_to = offset;
+  ink_assert(c->mutex->thread_holding);
+  if (!trigger && !recursive)
+    trigger = c->mutex->thread_holding->schedule_imm_local(this);
+  return &vio;
+}
+
+VIO *
+CacheVC::do_io_write(Continuation *c, ink64 nbytes, IOBufferReader *abuf, bool owner)
 {
   ink_assert(vio.op == VIO::WRITE);
   ink_assert(!owner);
@@ -234,7 +244,7 @@ CacheVC::do_io_write(Continuation * c, int nbytes, IOBufferReader * abuf, bool o
   vio.nbytes = nbytes;
   vio.vc_server = this;
   ink_assert(c->mutex->thread_holding);
-  if (!trigger)
+  if (!trigger && !recursive)
     trigger = c->mutex->thread_holding->schedule_imm_local(this);
   return &vio;
 }
@@ -244,14 +254,14 @@ CacheVC::do_io_close(int alerrno)
 {
   ink_debug_assert(mutex->thread_holding == this_ethread());
   closed = (alerrno == -1) ? 1 : -1;    // Stupid default arguments
-  Debug("cache_close", "do_io_close %lX %d %d", (long) this, alerrno, closed);
+  DDebug("cache_close", "do_io_close %lX %d %d", (long) this, alerrno, closed);
   die();
 }
 
 void
-CacheVC::reenable(VIO * avio)
+CacheVC::reenable(VIO *avio)
 {
-  Debug("cache_reenable", "reenable %lX", (long) this);
+  DDebug("cache_reenable", "reenable %lX", (long) this);
   (void) avio;
   ink_assert(avio->mutex->thread_holding);
   if (!trigger) {
@@ -267,9 +277,9 @@ CacheVC::reenable(VIO * avio)
 }
 
 void
-CacheVC::reenable_re(VIO * avio)
+CacheVC::reenable_re(VIO *avio)
 {
-  Debug("cache_reenable", "reenable_re %lX", (long) this);
+  DDebug("cache_reenable", "reenable_re %lX", (long) this);
   (void) avio;
   ink_assert(avio->mutex->thread_holding);
   if (!trigger) {
@@ -326,7 +336,7 @@ CacheVC::get_http_info(CacheHTTPInfo ** ainfo)
 // calling set_http_info(), but it guarantees that the info will
 // be set before transferring any bytes
 void
-CacheVC::set_http_info(CacheHTTPInfo * ainfo)
+CacheVC::set_http_info(CacheHTTPInfo *ainfo)
 {
 
   ink_assert(!total_len);
@@ -377,31 +387,31 @@ CacheVC::get_disk_io_priority()
 }
 
 int
-Part::begin_read(CacheVC * cont)
+Part::begin_read(CacheVC *cont)
 {
-  // no need for evacuation as the entire document is already in memory
   ink_debug_assert(cont->mutex->thread_holding == this_ethread());
   ink_debug_assert(mutex->thread_holding == this_ethread());
 #ifdef CACHE_STAT_PAGES
   ink_assert(!cont->stat_link.next && !cont->stat_link.prev);
   stat_cache_vcs.enqueue(cont, cont->stat_link);
 #endif
-  if (cont->f.single_segment)
+  // no need for evacuation as the entire document is already in memory
+  if (cont->f.single_fragment)
     return 0;
-  EThread *t = cont->mutex->thread_holding;
   int i = dir_evac_bucket(&cont->earliest_dir);
   EvacuationBlock *b;
   for (b = evacuate[i].head; b; b = b->link.next) {
     if (dir_offset(&b->dir) != dir_offset(&cont->earliest_dir))
       continue;
-    if (b->f.readers)
-      b->f.readers = b->f.readers + 1;
+    if (b->readers)
+      b->readers = b->readers + 1;
     return 0;
   }
   // we don't actually need to preserve this block as it is already in
   // memory, but this is easier, and evacuations are rare
+  EThread *t = cont->mutex->thread_holding;
   b = new_EvacuationBlock(t);
-  b->f.readers = 1;
+  b->readers = 1;
   b->dir = cont->earliest_dir;
   b->evac_frags.key = cont->earliest_key;
   evacuate[i].push(b);
@@ -409,10 +419,11 @@ Part::begin_read(CacheVC * cont)
 }
 
 int
-Part::close_read(CacheVC * cont)
+Part::close_read(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
   ink_debug_assert(t == this_ethread());
+  ink_debug_assert(t == mutex->thread_holding);
   if (dir_is_empty(&cont->earliest_dir))
     return 1;
   int i = dir_evac_bucket(&cont->earliest_dir);
@@ -423,9 +434,10 @@ Part::close_read(CacheVC * cont)
       b = next;
       continue;
     }
-    if (b->f.readers && !--b->f.readers) {
+    if (b->readers && !--b->readers) {
       evacuate[i].remove(b);
       free_EvacuationBlock(b, t);
+      break;
     }
     b = next;
   }
@@ -447,6 +459,8 @@ CacheProcessor::start(int)
 int
 CacheProcessor::start_internal(int flags)
 {
+  verify_cache_api();
+
   start_internal_flags = flags;
   clear = !!(flags & PROCESSOR_RECONFIGURE) || auto_clear_flag;
   fix = !!(flags & PROCESSOR_FIX);
@@ -480,6 +494,9 @@ CacheProcessor::start_internal(int flags)
     opts |= _O_ATTRIB_OVERLAPPED;
 #ifdef O_DIRECT
     opts |= O_DIRECT;
+#endif
+#ifdef O_DSYNC
+    opts |= O_DSYNC;
 #endif
 
     int fd = ink_open(path, opts, 0644);
@@ -731,7 +748,7 @@ CacheProcessor::cacheInitialized()
           CACHE_PART_SUM_DYN_STAT(cache_bytes_total_stat, part_total_cache_bytes);
 
 
-          part_total_direntries = gpart[i]->buckets * DIR_SEGMENTS * DIR_DEPTH;
+          part_total_direntries = gpart[i]->buckets * gpart[i]->segments * DIR_DEPTH;
           total_direntries += part_total_direntries;
           CACHE_PART_SUM_DYN_STAT(cache_direntries_total_stat, part_total_direntries);
 
@@ -791,7 +808,7 @@ CacheProcessor::cacheInitialized()
           Debug("cache_init", "CacheProcessor::cacheInitialized - total_cache_bytes = %lld = %lldMb",
                 total_cache_bytes, total_cache_bytes / (1024 * 1024));
 
-          part_total_direntries = gpart[i]->buckets * DIR_SEGMENTS * DIR_DEPTH;
+          part_total_direntries = gpart[i]->buckets * gpart[i]->segments * DIR_DEPTH;
           total_direntries += part_total_direntries;
           CACHE_PART_SUM_DYN_STAT(cache_direntries_total_stat, part_total_direntries);
 
@@ -808,7 +825,6 @@ CacheProcessor::cacheInitialized()
       GLOBAL_CACHE_SET_DYN_STAT(cache_direntries_total_stat, total_direntries);
       GLOBAL_CACHE_SET_DYN_STAT(cache_direntries_used_stat, used_direntries);
       dir_sync_init();
-//    dir_compute_stats();
       cache_init_ok = 1;
     } else
       Warning("cache unable to open any parts, disabled");
@@ -864,39 +880,48 @@ Part::db_check(bool fix)
   tt[strlen(tt) - 1] = 0;
   printf("        Create Time:     %s\n", tt);
   printf("        Sync Serial:     %u\n", (int) header->sync_serial);
-  printf("        Write Serial:      %u\n", (int) header->write_serial);
+  printf("        Write Serial:    %u\n", (int) header->write_serial);
   printf("\n");
+
   return 0;
 }
 
 static void
-part_init_data(Part * d)
+part_init_data_internal(Part *d)
 {
-  d->buckets = ((d->len - (d->start - d->skip))
-                / cache_config_min_average_object_size) / DIR_DEPTH;
-  d->buckets = ((d->buckets + DIR_SEGMENTS - 1) / DIR_SEGMENTS);
-  d->start = d->skip + 2 * part_dirlen(d) + part_metalen(d);
+  d->buckets = ((d->len - (d->start - d->skip)) / cache_config_min_average_object_size) / DIR_DEPTH;
+  d->segments = (d->buckets + (((1<<16)-1)/DIR_DEPTH)) / ((1<<16)/DIR_DEPTH);
+  d->buckets = (d->buckets + d->segments - 1) / d->segments;
+  d->start = d->skip + 2 *part_dirlen(d);
+}
+
+static void
+part_init_data(Part *d) {
+  // iteratively calculate start + buckets
+  part_init_data_internal(d);
+  part_init_data_internal(d);
+  part_init_data_internal(d);
 }
 
 void
-part_init_dir(Part * d)
+part_init_dir(Part *d)
 {
   int b, s, l;
 
-  for (s = 0; s < DIR_SEGMENTS; s++) {
+  for (s = 0; s < d->segments; s++) {
     d->header->freelist[s] = 0;
     Dir *seg = dir_segment(s, d);
     for (l = 1; l < DIR_DEPTH; l++) {
       for (b = 0; b < d->buckets; b++) {
         Dir *bucket = dir_bucket(b, seg);
-        dir_free_entry(&bucket[l], s, d);
+        dir_free_entry(dir_bucket_row(bucket, l), s, d);
       }
     }
   }
 }
 
 void
-part_clear_init(Part * d)
+part_clear_init(Part *d)
 {
   int dir_len = part_dirlen(d);
   memset(d->raw_dir, 0, dir_len);
@@ -914,7 +939,7 @@ part_clear_init(Part * d)
 }
 
 int
-part_dir_clear(Part * d)
+part_dir_clear(Part *d)
 {
   int dir_len = part_dirlen(d);
   part_clear_init(d);
@@ -923,11 +948,6 @@ part_dir_clear(Part * d)
     Warning("unable to clear cache directory '%s'", d->hash_id);
     return -1;
   }
-  if (pwrite(d->fd, d->raw_dir, ROUND_TO_BLOCK(sizeof(PartHeaderFooter)), d->skip + dir_len) < 0) {
-    Warning("unable to clear cache directory '%s'", d->hash_id);
-    return -1;
-  }
-
   return 0;
 }
 
@@ -940,12 +960,11 @@ Part::clear_dir()
   SET_HANDLER(&Part::handle_dir_clear);
 
   io.aiocb.aio_fildes = fd;
-  io.aiocb.aio_reqprio = 0;
   io.aiocb.aio_buf = raw_dir;
   io.aiocb.aio_nbytes = dir_len;
   io.aiocb.aio_offset = skip;
   io.action = this;
-  io.thread = this_ethread();
+  io.thread = AIO_CALLBACK_THREAD_ANY;
   io.then = 0;
   ink_assert(ink_aio_write(&io));
   return 0;
@@ -970,8 +989,6 @@ Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
 
   // successive approximation, directory/meta data eats up some storage
   start = dir_skip;
-  part_init_data(this);
-  part_init_data(this);
   part_init_data(this);
   data_blocks = (len - (start - skip)) / INK_BLOCK_SIZE;
 #ifdef HIT_EVACUATE
@@ -999,11 +1016,9 @@ Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
   raw_dir = (char *) (((unsigned int) ((char *) (raw_dir) + (alignment - 1))) & ~(alignment - 1));
 #endif
 
-  dir = (Dir *) (raw_dir + ROUND_TO_BLOCK(sizeof(PartHeaderFooter)));
+  dir = (Dir *) (raw_dir + part_headerlen(this));
   header = (PartHeaderFooter *) raw_dir;
   footer = (PartHeaderFooter *) (raw_dir + part_dirlen(this) - ROUND_TO_BLOCK(sizeof(PartHeaderFooter)));
-  for (i = 0; i < DIR_SEGMENTS; i++)
-    segment[i] = part_dir_segment(this, i);
 
   if (clear) {
     Note("clearing cache directory '%s'", hash_id);
@@ -1011,8 +1026,8 @@ Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
   }
 
   init_info = new PartInitInfo();
-  int dir_len = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
-  ink_off_t footer_offset = part_dirlen(this) - dir_len;
+  int footerlen = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
+  ink_off_t footer_offset = part_dirlen(this) - footerlen;
   // try A
   ink_off_t as = skip;
   if (is_debug_tag_set("cache_init"))
@@ -1021,16 +1036,14 @@ Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
   init_info->part_aio[0].aiocb.aio_offset = as;
   init_info->part_aio[1].aiocb.aio_offset = as + footer_offset;
   ink_off_t bs = skip + part_dirlen(this);
-
   init_info->part_aio[2].aiocb.aio_offset = bs;
   init_info->part_aio[3].aiocb.aio_offset = bs + footer_offset;
 
   for (i = 0; i < 4; i++) {
     AIOCallback *aio = &(init_info->part_aio[i]);
     aio->aiocb.aio_fildes = fd;
-    aio->aiocb.aio_reqprio = 0;
     aio->aiocb.aio_buf = &(init_info->part_h_f[i * INK_BLOCK_SIZE]);
-    aio->aiocb.aio_nbytes = dir_len;
+    aio->aiocb.aio_nbytes = footerlen;
     aio->action = this;
     aio->thread = this_ethread();
     aio->then = (i < 3) ? &(init_info->part_aio[i + 1]) : 0;
@@ -1089,9 +1102,7 @@ Part::handle_dir_read(int event, void *data)
     clear_dir();
     return EVENT_DONE;
   }
-#ifdef DEBUG
-  check_dir(this);
-#endif
+  CHECK_DIR(this);
 
   SET_HANDLER(&Part::handle_recover_from_data);
   return handle_recover_from_data(EVENT_IMMEDIATE, 0);
@@ -1156,11 +1167,11 @@ Part::handle_recover_from_data(int event, void *data)
       recover_pos = start;
     }
 #if defined(_WIN32)
-    io.aiocb.aio_buf = (char *) malloc(MAX_RECOVER_BYTES);
+    io.aiocb.aio_buf = (char *) malloc(RECOVERY_SIZE);
 #else
-    io.aiocb.aio_buf = (char *) valloc(MAX_RECOVER_BYTES);
+    io.aiocb.aio_buf = (char *) valloc(RECOVERY_SIZE);
 #endif
-    io.aiocb.aio_nbytes = MAX_RECOVER_BYTES;
+    io.aiocb.aio_nbytes = RECOVERY_SIZE;
     if ((ink_off_t)(recover_pos + io.aiocb.aio_nbytes) > (ink_off_t)(skip + len))
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
   } else if (event == AIO_EVENT_DONE) {
@@ -1213,7 +1224,7 @@ Part::handle_recover_from_data(int event, void *data)
     if (recover_wrapped && start == io.aiocb.aio_offset) {
       doc = (Doc *) s;
       if (doc->magic != DOC_MAGIC || doc->write_serial < last_write_serial) {
-        recover_pos = skip + len - EVAC_SIZE;
+        recover_pos = skip + len - EVACUATION_SIZE;
         goto Ldone;
       }
     }
@@ -1266,7 +1277,7 @@ Part::handle_recover_from_data(int event, void *data)
           else if (recover_pos - (e - s) > (skip + len) - AGG_SIZE) {
             recover_wrapped = 1;
             recover_pos = start;
-            io.aiocb.aio_nbytes = MAX_RECOVER_BYTES;
+            io.aiocb.aio_nbytes = RECOVERY_SIZE;
 
             break;
           }
@@ -1281,7 +1292,7 @@ Part::handle_recover_from_data(int event, void *data)
           if (recover_pos > (skip + len) - AGG_SIZE) {
             recover_wrapped = 1;
             recover_pos = start;
-            io.aiocb.aio_nbytes = MAX_RECOVER_BYTES;
+            io.aiocb.aio_nbytes = RECOVERY_SIZE;
 
             break;
           }
@@ -1295,7 +1306,7 @@ Part::handle_recover_from_data(int event, void *data)
       s += round_to_approx_size(doc->len);
     }
 
-    /* if (s > e) then we gone through MAX_RECOVER_BYTES; we need to 
+    /* if (s > e) then we gone through RECOVERY_SIZE; we need to 
        read more data off disk and continue recovering */
     if (s >= e) {
       /* In the last iteration, we increment s by doc->len...need to undo 
@@ -1305,7 +1316,7 @@ Part::handle_recover_from_data(int event, void *data)
       recover_pos -= e - s;
       if (recover_pos >= skip + len)
         recover_pos = start;
-      io.aiocb.aio_nbytes = MAX_RECOVER_BYTES;
+      io.aiocb.aio_nbytes = RECOVERY_SIZE;
       if ((ink_off_t)(recover_pos + io.aiocb.aio_nbytes) > (ink_off_t)(skip + len))
         io.aiocb.aio_nbytes = (skip + len) - recover_pos;
     }
@@ -1326,8 +1337,8 @@ Ldone:{
       return handle_recover_write_dir(EVENT_IMMEDIATE, 0);
     }
 
-    recover_pos += EVAC_SIZE;   // safely cover the max write size
-    if (recover_pos < header->write_pos && (recover_pos + EVAC_SIZE >= header->write_pos)) {
+    recover_pos += EVACUATION_SIZE;   // safely cover the max write size
+    if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
       Debug("cache_init", "Head Pos: %llu, Rec Pos: %llu, Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
       Warning("no valid directory found while recovering '%s', clearing", hash_id);
       goto Lclear;
@@ -1341,8 +1352,8 @@ Ldone:{
     if (!(header->sync_serial & 1) == !(next_sync_serial & 1))
       next_sync_serial++;
     // clear effected portion of the cache
-    int clear_start = offset_to_part_offset(this, header->write_pos);
-    int clear_end = offset_to_part_offset(this, recover_pos);
+    ink_off_t clear_start = offset_to_part_offset(this, header->write_pos);
+    ink_off_t clear_end = offset_to_part_offset(this, recover_pos);
     if (clear_start <= clear_end)
       dir_clear_range(clear_start, clear_end, this);
     else {
@@ -1354,25 +1365,27 @@ Ldone:{
            header->write_pos, recover_pos, header->sync_serial, next_sync_serial);
     footer->sync_serial = header->sync_serial = next_sync_serial;
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 3; i++) {
       AIOCallback *aio = &(init_info->part_aio[i]);
       aio->aiocb.aio_fildes = fd;
-      aio->aiocb.aio_reqprio = 0;
       aio->action = this;
-      aio->thread = this_ethread();
-      aio->then = (i < 1) ? &(init_info->part_aio[i + 1]) : 0;
+      aio->thread = AIO_CALLBACK_THREAD_ANY;
+      aio->then = (i < 2) ? &(init_info->part_aio[i + 1]) : 0;
     }
-    int headerlen = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
+    int footerlen = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
     int dirlen = part_dirlen(this);
     int B = header->sync_serial & 1;
     ink_off_t ss = skip + (B ? dirlen : 0);
 
     init_info->part_aio[0].aiocb.aio_buf = raw_dir;
-    init_info->part_aio[0].aiocb.aio_nbytes = dirlen - headerlen;
+    init_info->part_aio[0].aiocb.aio_nbytes = footerlen;
     init_info->part_aio[0].aiocb.aio_offset = ss;
-    init_info->part_aio[1].aiocb.aio_buf = raw_dir + dirlen - headerlen;
-    init_info->part_aio[1].aiocb.aio_nbytes = headerlen;
-    init_info->part_aio[1].aiocb.aio_offset = ss + dirlen - headerlen;
+    init_info->part_aio[1].aiocb.aio_buf = raw_dir + footerlen;
+    init_info->part_aio[1].aiocb.aio_nbytes = dirlen - 2 * footerlen;
+    init_info->part_aio[1].aiocb.aio_offset = ss + footerlen;
+    init_info->part_aio[2].aiocb.aio_buf = raw_dir + dirlen - footerlen;
+    init_info->part_aio[2].aiocb.aio_nbytes = footerlen;
+    init_info->part_aio[2].aiocb.aio_offset = ss + dirlen - footerlen;
 
     SET_HANDLER(&Part::handle_recover_write_dir);
     ink_assert(ink_aio_write(init_info->part_aio));
@@ -1427,12 +1440,12 @@ Part::handle_header_read(int event, void *data)
     }
 
     io.aiocb.aio_fildes = fd;
-    io.aiocb.aio_reqprio = 0;
     io.aiocb.aio_nbytes = part_dirlen(this);
     io.aiocb.aio_buf = raw_dir;
     io.action = this;
-    io.thread = this_ethread();
+    io.thread = AIO_CALLBACK_THREAD_ANY;
     io.then = 0;
+
     if (hf[0]->sync_serial == hf[1]->sync_serial &&
         (hf[0]->sync_serial >= hf[2]->sync_serial || hf[2]->sync_serial != hf[3]->sync_serial)) {
       SET_HANDLER(&Part::handle_dir_read);
@@ -1483,7 +1496,7 @@ Part::dir_init_done(int event, void *data)
 }
 
 void
-build_part_hash_table(CacheHostRecord * cp)
+build_part_hash_table(CacheHostRecord *cp)
 {
   int num_parts = cp->num_part;
   unsigned int *mapping = (unsigned int *) xmalloc(sizeof(unsigned int) * num_parts);
@@ -1615,7 +1628,7 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
 
         for (p = 0; p < gnpart; p++) {
           if (d->fd == gpart[p]->fd) {
-            total_dir_delete += gpart[p]->buckets * DIR_SEGMENTS * DIR_DEPTH;
+            total_dir_delete += gpart[p]->buckets * gpart[p]->segments * DIR_DEPTH;
             used_dir_delete += dir_entries_used(gpart[p]);
             total_bytes_delete = gpart[p]->len - part_dirlen(gpart[p]);
           }
@@ -1680,7 +1693,7 @@ Cache::open_done()
 {
 #ifdef NON_MODULAR
   Action *register_ShowCache(Continuation * c, HTTPHdr * h);
-  Action *register_ShowCacheInternal(Continuation * c, HTTPHdr * h);
+  Action *register_ShowCacheInternal(Continuation *c, HTTPHdr *h);
   statPagesManager.register_http("cache", register_ShowCache);
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
 #endif
@@ -1717,15 +1730,6 @@ Cache::open(bool clear, bool fix)
   IOCORE_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
   Debug("cache_init", "Cache::open - proxy.config.cache.min_average_object_size = %ld",
         (long) cache_config_min_average_object_size);
-  /* To support partition sizes of upto 8G, we have to limit the 
-     cache_config_min_average_object_size to be atleast 4096 Bytes. 
-     This restriction is because we can support only upto 64K dir 
-     entries per segment in the Part
-   */
-  if (cache_config_min_average_object_size < 4096) {
-    ink_release_assert(!"Fatal Error: proxy.config.cache.min_average_object_size cannot be lesser than 4096");
-  }
-
 
   CachePart *cp = cp_list.head;
   for (; cp; cp = cp->link.next) {
@@ -1768,7 +1772,7 @@ Cache::close()
 }
 
 int
-CacheVC::dead(int event, Event * e)
+CacheVC::dead(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
@@ -1779,121 +1783,118 @@ CacheVC::dead(int event, Event * e)
 #define STORE_COLLISION 1
 
 int
-CacheVC::handleReadDone(int event, Event * e)
+CacheVC::handleReadDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   cancel_trigger();
   ink_debug_assert(this_ethread() == mutex->thread_holding);
-  if (event != AIO_EVENT_DONE && is_io_in_progress())
-    return EVENT_CONT;          // reenable read
 
-  // aio complete OR lock retry
-  set_io_not_in_progress();
-  int okay = 1;
-  MUTEX_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
-  if (!lock)
-    VC_SCHED_LOCK_RETRY();
-
-  if ((!dir_valid(part, &dir)) || (!io.ok())) {
-    if (!io.ok()) {
-      Debug("cache_disk_error", "Read error on disk %s\n \
+  if (event == AIO_EVENT_DONE)
+    set_io_not_in_progress();
+  else
+    if (is_io_in_progress())
+      return EVENT_CONT;
+  {
+    MUTEX_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+    if (!lock)
+      VC_SCHED_LOCK_RETRY();
+    if ((!dir_valid(part, &dir)) || (!io.ok())) {
+      if (!io.ok()) {
+        Debug("cache_disk_error", "Read error on disk %s\n \
 	    read range : [%llu - %llu bytes]  [%llu - %llu blocks] \n", part->hash_id, io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes, io.aiocb.aio_offset / 512, (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
+      }
+      goto Ldone;
     }
-    POP_HANDLER;
-    return handleEvent(AIO_EVENT_DONE, 0);
-  }
 
-  ink_assert(part->mutex->nthread_holding < 1000);
-  ink_assert(((Doc *) buf->data())->magic == DOC_MAGIC);
+    ink_assert(part->mutex->nthread_holding < 1000);
+    ink_assert(((Doc *) buf->data())->magic == DOC_MAGIC);
 #ifdef VERIFY_JTEST_DATA
-  char xx[500];
-  if (read_key && *read_key == ((Doc *) buf->data())->key && request.valid() && !dir_head(&dir) && !vio.ndone) {
-    int ib = 0, xd = 0;
-    request.url_get()->print(xx, 500, &ib, &xd);
-    char *x = xx;
-    for (int q = 0; q < 3; q++)
-      x = strchr(x + 1, '/');
-    ink_assert(!memcmp(((Doc *) buf->data())->data(), x, ib - (x - xx)));
-  }
-#endif
-  Doc *doc = (Doc *) buf->data();
-  // put into ram cache?
-  if (io.ok() &&
-      ((doc->first_key == *read_key) || (doc->key == *read_key) || STORE_COLLISION) && doc->magic == DOC_MAGIC) {
-    f.not_from_ram_cache = 1;
-    if (cache_config_enable_checksum && doc->checksum != DOC_NO_CHECKSUM) {
-      // verify that the checksum matches
-      inku32 checksum = 0;
-      for (char *b = doc->hdr; b < (char *) doc + doc->len; b++)
-        checksum += *b;
-      ink_assert(checksum == doc->checksum);
-      if (checksum != doc->checksum) {
-        Note("cache: checksum error for [%llu %llu] len %d, hlen %d, disk %s, offset %llu size %d",
-             doc->first_key.b[0], doc->first_key.b[1],
-             doc->len, doc->hlen, part->path, io.aiocb.aio_offset, io.aiocb.aio_nbytes);
-        doc->magic = DOC_CORRUPT;
-        okay = 0;
-      }
+    char xx[500];
+    if (read_key && *read_key == ((Doc *) buf->data())->key && request.valid() && !dir_head(&dir) && !vio.ndone) {
+      int ib = 0, xd = 0;
+      request.url_get()->print(xx, 500, &ib, &xd);
+      char *x = xx;
+      for (int q = 0; q < 3; q++)
+        x = strchr(x + 1, '/');
+      ink_assert(!memcmp(((Doc *) buf->data())->data(), x, ib - (x - xx)));
     }
-    // If http doc, we need to unmarshal the headers before putting
-    // in the ram cache. 
-#ifdef HTTP_CACHE
-    if (doc->hlen > 0 && okay) {
-      char *tmp = doc->hdr;
-      int len = doc->hlen;
-      while (len > 0) {
-        int r = HTTPInfo::unmarshal(tmp, len, buf._ptr());
-        if (r < 0) {
-          ink_assert(!"CacheVC::handleReadDone unmarshal failed");
+#endif
+    Doc *doc = (Doc *) buf->data();
+    // put into ram cache?
+    if (io.ok() &&
+        ((doc->first_key == *read_key) || (doc->key == *read_key) || STORE_COLLISION) && doc->magic == DOC_MAGIC) {
+      int okay = 1;
+      f.not_from_ram_cache = 1;
+      if (cache_config_enable_checksum && doc->checksum != DOC_NO_CHECKSUM) {
+        // verify that the checksum matches
+        inku32 checksum = 0;
+        for (char *b = doc->hdr(); b < (char *) doc + doc->len; b++)
+          checksum += *b;
+        ink_assert(checksum == doc->checksum);
+        if (checksum != doc->checksum) {
+          Note("cache: checksum error for [%llu %llu] len %d, hlen %d, disk %s, offset %llu size %d",
+               doc->first_key.b[0], doc->first_key.b[1],
+               doc->len, doc->hlen, part->path, io.aiocb.aio_offset, io.aiocb.aio_nbytes);
+          doc->magic = DOC_CORRUPT;
           okay = 0;
-          break;
         }
-        len -= r;
-        tmp += r;
       }
-    }
+      // If http doc, we need to unmarshal the headers before putting
+      // in the ram cache. 
+#ifdef HTTP_CACHE
+      if (doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay) {
+        char *tmp = doc->hdr();
+        int len = doc->hlen;
+        while (len > 0) {
+          int r = HTTPInfo::unmarshal(tmp, len, buf._ptr());
+          if (r < 0) {
+            ink_assert(!"CacheVC::handleReadDone unmarshal failed");
+            okay = 0;
+            break;
+          }
+          len -= r;
+          tmp += r;
+        }
+      }
 #endif
-    //Put the request in the ram cache only if its a open_read or lookup
-    if (vio.op == VIO::READ && okay) {
-      bool cutoff_check;
-      // cutoff_check : 
-      // doc_len == 0 for the first fragment (it is set from the vector)
-      //                The decision on the first fragment is based on 
-      //                doc->total_len
-      // After that, the decision is based of doc_len (doc_len != 0)
-      // (cache_config_ram_cache_cutoff == 0) : no cutoffs
-      cutoff_check = ((!doc_len && doc->total_len < part->ram_cache.cutoff_size)
-                      || (doc_len && doc_len < part->ram_cache.cutoff_size)
-                      || !part->ram_cache.cutoff_size);
-
-      if (cutoff_check) {
-        part->ram_cache.put(read_key, buf, mutex->thread_holding, 0, dir_offset(&dir));
-      }                         // end cutoff_check
-
-      if (!doc_len) {
-        // keep a pointer to it. In case the state machine decides to
-        // update this document, we don't have to read it back in memory
-        // again
-        part->first_fragment.key = *read_key;
-        part->first_fragment.auxkey1 = dir_offset(&dir);
-        part->first_fragment.data = buf;
-      }
-    }                           // end VIO::READ check
-  }                             // end io.ok() check
-
+      // Put the request in the ram cache only if its a open_read or lookup
+      if (vio.op == VIO::READ && okay) {
+        bool cutoff_check;
+        // cutoff_check : 
+        // doc_len == 0 for the first fragment (it is set from the vector)
+        //                The decision on the first fragment is based on 
+        //                doc->total_len
+        // After that, the decision is based of doc_len (doc_len != 0)
+        // (cache_config_ram_cache_cutoff == 0) : no cutoffs
+        cutoff_check = ((!doc_len && doc->total_len < part->ram_cache.cutoff_size)
+                        || (doc_len && doc_len < part->ram_cache.cutoff_size)
+                        || !part->ram_cache.cutoff_size);
+        if (cutoff_check)
+          part->ram_cache.put(read_key, buf, mutex->thread_holding, 0, dir_offset(&dir));
+        if (!doc_len) {
+          // keep a pointer to it. In case the state machine decides to
+          // update this document, we don't have to read it back in memory
+          // again
+          part->first_fragment.key = *read_key;
+          part->first_fragment.auxkey1 = dir_offset(&dir);
+          part->first_fragment.data = buf;
+        }
+      }                           // end VIO::READ check
+    }                             // end io.ok() check
+  }
+Ldone:
   POP_HANDLER;
   return handleEvent(AIO_EVENT_DONE, 0);
 }
 
 
 int
-CacheVC::handleRead(int event, Event * e)
+CacheVC::handleRead(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   cancel_trigger();
 
   // check ram cache
-  ink_assert(event == EVENT_NONE);
   ink_debug_assert(part->mutex->thread_holding == this_ethread());
   if (part->ram_cache.get(read_key, &buf, 0, dir_offset(&dir))) {
     CACHE_INCREMENT_DYN_STAT(cache_ram_cache_hits_stat);
@@ -1906,26 +1907,25 @@ CacheVC::handleRead(int event, Event * e)
   }
 
   CACHE_INCREMENT_DYN_STAT(cache_ram_cache_misses_stat);
-  // set ram cache hit flag to false
 
   // see if its in the aggregation buffer
   if (dir_agg_buf_valid(part, &dir)) {
     int agg_offset = part_offset(part, &dir) - part->header->write_pos;
-    buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes), MEMALIGNED);
+    buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
     ink_assert((agg_offset + io.aiocb.aio_nbytes) <= (unsigned) part->agg_buf_pos);
     char *doc = buf->data();
     char *agg = part->agg_buffer + agg_offset;
     memcpy(doc, agg, io.aiocb.aio_nbytes);
     io.aio_result = io.aiocb.aio_nbytes;
     SET_HANDLER(&CacheVC::handleReadDone);
-    return handleReadDone(AIO_EVENT_DONE, 0);
+    return EVENT_RETURN;
   }
 
   io.aiocb.aio_fildes = part->fd;
   io.aiocb.aio_offset = part_offset(part, &dir);
   if ((ink_off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (ink_off_t)(part->skip + part->len))
     io.aiocb.aio_nbytes = part->skip + part->len - io.aiocb.aio_offset;
-  buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes), MEMALIGNED);
+  buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   io.aiocb.aio_buf = buf->data();
   io.action = this;
   io.thread = mutex->thread_holding;
@@ -1937,11 +1937,11 @@ CacheVC::handleRead(int event, Event * e)
 LramHit:
   io.aio_result = io.aiocb.aio_nbytes;
   POP_HANDLER;
-  return handleEvent(AIO_EVENT_DONE, 0);
+  return EVENT_RETURN; // allow the caller to release the partition lock
 }
 
 Action *
-Cache::lookup(Continuation * cont, CacheKey * key, CacheFragType type, char *hostname, int host_len)
+Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
 {
 
   if (!(CacheProcessor::cache_ready & type)) {
@@ -1949,20 +1949,15 @@ Cache::lookup(Continuation * cont, CacheKey * key, CacheFragType type, char *hos
     return ACTION_RESULT_DONE;
   }
 
-  ink_assert(this);
-
   Part *part = key_to_part(key, hostname, host_len);
-  CacheVC *c = NULL;
   ProxyMutex *mutex = cont->mutex;
-
-  c = new_CacheVC(cont);
+  CacheVC *c = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op = VIO::READ;
   c->base_stat = cache_lookup_active_stat;
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
   c->first_key = c->key = *key;
-  if (type == CACHE_FRAG_TYPE_HTTP)
-    c->f.http_request = 1;
+  c->frag_type = type;
   c->f.lookup = 1;
   c->part = part;
   c->last_collision = NULL;
@@ -1975,7 +1970,7 @@ Cache::lookup(Continuation * cont, CacheKey * key, CacheFragType type, char *hos
 
 #ifdef HTTP_CACHE
 Action *
-Cache::lookup(Continuation * cont, CacheURL * url, CacheFragType type)
+Cache::lookup(Continuation *cont, CacheURL *url, CacheFragType type)
 {
   INK_MD5 md5;
 
@@ -1986,111 +1981,87 @@ Cache::lookup(Continuation * cont, CacheURL * url, CacheFragType type)
 }
 #endif
 
-// called to abort another writer so that
-// remove can proceed.
-// checks if there is another writer - if another
-// writer found its write is aborted
-
-// the result of this function call is that -
-// either the other writer (if it exists) is
-// aborted or the cacheVC succeeds in 
-// open_write
-
 int
-CacheVC::removeAbortWriter(int event, Event * e)
+CacheVC::removeEvent(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
-  int ow_ret;
-  cancel_trigger();
-  if (_action.cancelled)
-    return free_CacheVC(this);
 
-  MUTEX_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
-  if (!lock)
-    VC_SCHED_LOCK_RETRY();
-
-  // if there are other writers, we still want this remove to go through.
-  // If we are the first writer, don't allow other writers. Otherwise,
-  // we to put the vector in the open directory entry in case there are
-  // new writers.
-  if ((ow_ret = part->open_write(this, true, 1))) {
-    // writer  exists
-    ink_assert(od = part->open_read(&key));
-    od->dont_update_directory = 1;
-    od = NULL;
-  } else {
-    od->dont_update_directory = 1;
-  }
-
-  SET_HANDLER(&CacheVC::removeReadDone);
-  return removeReadDone(EVENT_IMMEDIATE, 0);
-
-}
-
-// remove code
-
-int
-CacheVC::removeReadDone(int event, Event * e)
-{
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
   cancel_trigger();
   set_io_not_in_progress();
-  MUTEX_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
-  if (!lock)
-    VC_SCHED_LOCK_RETRY();
-
-  if (_action.cancelled) {
+  {
+    MUTEX_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+    if (!lock)
+      VC_SCHED_LOCK_RETRY();
+    if (_action.cancelled) {
+      if (od) {
+        part->close_write(this);
+        od = 0;
+      }
+      goto Lfree;
+    }
+    if (!f.remove_aborted_writers) {
+      if (part->open_write(this, true, 1)) {
+        // writer  exists
+        ink_assert(od = part->open_read(&key));
+        od->dont_update_directory = 1;
+        od = NULL;
+      } else {
+        od->dont_update_directory = 1;
+      }
+      f.remove_aborted_writers = 1;
+    }
+  Lread:
+    if (!buf)
+      goto Lcollision;
+    if (!dir_valid(part, &dir)) {
+      last_collision = NULL;
+      goto Lcollision;
+    }
+    // check read completed correct FIXME: remove bad parts
+    if ((int) io.aio_result != (int) io.aiocb.aio_nbytes)
+      goto Ldone;
+    {
+      // verify that this is our document
+      Doc *doc = (Doc *) buf->data();
+      /* should be first_key not key..right?? */
+      if (doc->first_key == key) {
+        ink_assert(doc->magic == DOC_MAGIC);
+        if (dir_delete(&key, part, &dir) > 0) {
+          if (od)
+            part->close_write(this);
+          od = NULL;
+          goto Lremoved;
+        }
+        goto Ldone;
+      }
+    }
+  Lcollision:
+    // check for collision
+    if (dir_probe(&key, part, &dir, &last_collision) > 0) {
+      int ret = do_read_call(&key);
+      if (ret == EVENT_RETURN)
+        goto Lread;
+      return ret;
+    }
+  Ldone:
+    CACHE_INCREMENT_DYN_STAT(cache_remove_failure_stat);
     if (od)
       part->close_write(this);
-    od = NULL;
-    return free_CacheVC(this);
   }
-
-  if (!buf)
-    goto Lcollision;
-
-  if (!dir_valid(part, &dir)) {
-    last_collision = NULL;
-    goto Lcollision;
-  }
-  // check read completed correct FIXME: remove bad parts
-  if ((int) io.aio_result != (int) io.aiocb.aio_nbytes)
-    goto Ldone;
-  {
-    // verify that this is our document
-    Doc *doc = (Doc *) buf->data();
-    /* should be first_key not key..right?? */
-    if (doc->first_key == key) {
-      ink_assert(doc->magic == DOC_MAGIC);
-      if (dir_delete(&key, part, &dir) > 0) {
-        if (od)
-          part->close_write(this);
-        _action.continuation->handleEvent(CACHE_EVENT_REMOVE, 0);
-        od = NULL;
-        return free_CacheVC(this);
-      }
-      goto Ldone;
-    }
-  }
-Lcollision:
-  // check for collision
-  if (dir_probe(&key, part, &dir, &last_collision) > 0) {
-    return do_read(&key);
-  }
-
-Ldone:
-  CACHE_INCREMENT_DYN_STAT(cache_remove_failure_stat);
-  if (od)
-    part->close_write(this);
+  ink_debug_assert(!part || this_ethread() != part->mutex->thread_holding);
   _action.continuation->handleEvent(CACHE_EVENT_REMOVE_FAILED, (void *) -ECACHE_NO_DOC);
+  goto Lfree;
+Lremoved:
+  _action.continuation->handleEvent(CACHE_EVENT_REMOVE, 0);
+Lfree:
   return free_CacheVC(this);
 }
 
 Action *
-Cache::remove(Continuation * cont, CacheKey * key, bool user_agents,
-              bool link, CacheFragType type, char *hostname, int host_len)
+Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type, 
+              bool user_agents, bool link, 
+              char *hostname, int host_len)
 {
   NOWARN_UNUSED(user_agents);
   NOWARN_UNUSED(link);
@@ -2107,7 +2078,7 @@ Cache::remove(Continuation * cont, CacheKey * key, bool user_agents,
   if (!cont)
     cont = new_CacheRemoveCont();
 
-  MUTEX_TRY_LOCK(lock, cont->mutex, this_ethread());
+  CACHE_TRY_LOCK(lock, cont->mutex, this_ethread());
   ink_assert(lock);
   Part *part = key_to_part(key, hostname, host_len);
   // coverity[var_decl]
@@ -2117,8 +2088,7 @@ Cache::remove(Continuation * cont, CacheKey * key, bool user_agents,
 
   CacheVC *c = new_CacheVC(cont);
   c->vio.op = VIO::NONE;
-  if (type == CACHE_FRAG_TYPE_HTTP)
-    c->f.http_request = 1;
+  c->frag_type = type;
   c->base_stat = cache_remove_active_stat;
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
   c->first_key = c->key = *key;
@@ -2126,9 +2096,8 @@ Cache::remove(Continuation * cont, CacheKey * key, bool user_agents,
   c->dir = result;
   c->f.remove = 1;
 
-  SET_CONTINUATION_HANDLER(c, &CacheVC::removeAbortWriter);
-  //Action *ret_action = ACTION_RESULT_DONE;
-  int ret = c->removeAbortWriter(EVENT_IMMEDIATE, 0);
+  SET_CONTINUATION_HANDLER(c, &CacheVC::removeEvent);
+  int ret = c->removeEvent(EVENT_IMMEDIATE, 0);
   if (ret == EVENT_DONE)
     return ACTION_RESULT_DONE;
   else
@@ -2137,13 +2106,13 @@ Cache::remove(Continuation * cont, CacheKey * key, bool user_agents,
 
 #ifdef HTTP_CACHE
 Action *
-Cache::remove(Continuation * cont, CacheURL * url, CacheFragType type)
+Cache::remove(Continuation *cont, CacheURL *url, CacheFragType type)
 {
   INK_MD5 md5;
   url->MD5_get(&md5);
   int host_len = 0;
   const char *hostname = url->host_get(&host_len);
-  return remove(cont, &md5, true, false, type, (char *) hostname, host_len);
+  return remove(cont, &md5, type, true, false, (char *) hostname, host_len);
 }
 #endif
 
@@ -2157,7 +2126,6 @@ CacheVConnection::CacheVConnection()
 void
 cplist_init()
 {
-
   int i;
   unsigned int j;
   cp_list_len = 0;
@@ -2269,12 +2237,10 @@ cplist_reconfigure()
       if (gdisks[i]->cleared) {
         inku64 free_space = gdisks[i]->free_space * STORE_BLOCK_SIZE;
         int parts = (free_space / MAX_PART_SIZE) + 1;
-        int p = 0;
-        for (; p < parts; p++) {
-          unsigned int b = gdisks[i]->free_space / (parts - p);
+        for (int p = 0; p < parts; p++) {
+          ink_off_t b = gdisks[i]->free_space / (parts - p);
           Debug("cache_hosting", "blocks = %d\n", b);
           DiskPartBlock *dpb = gdisks[i]->create_partition(0, b, CACHE_HTTP_TYPE);
-
           ink_assert(dpb && dpb->len == b);
         }
         ink_assert(gdisks[i]->free_space == 0);
@@ -2452,7 +2418,7 @@ cplist_reconfigure()
 }
 
 int
-create_partition(int partition_number, int size_in_blocks, int scheme, CachePart * cp)
+create_partition(int partition_number, int size_in_blocks, int scheme, CachePart *cp)
 {
   static int curr_part = 0;
   int to_create = size_in_blocks;
@@ -2510,7 +2476,7 @@ create_partition(int partition_number, int size_in_blocks, int scheme, CachePart
 }
 
 void
-rebuild_host_table(Cache * cache)
+rebuild_host_table(Cache *cache)
 {
   build_part_hash_table(&cache->hosttable->gen_host_rec);
   if (cache->hosttable->m_numEntries != 0) {
@@ -2526,8 +2492,9 @@ rebuild_host_table(Cache * cache)
 
 // if generic_host_rec.parts == NULL, what do we do??? 
 Part *
-Cache::key_to_part(CacheKey * key, char *hostname, int host_len)
+Cache::key_to_part(CacheKey *key, char *hostname, int host_len)
 {
+  inku32 h = (key->word(2) >> DIR_TAG_WIDTH) % PART_HASH_TABLE_SIZE;
   unsigned short *hash_table = hosttable->gen_host_rec.part_hash_table;
   CacheHostRecord *host_rec = &hosttable->gen_host_rec;
   if (hosttable->m_numEntries > 0 && host_len) {
@@ -2539,7 +2506,7 @@ Cache::key_to_part(CacheKey * key, char *hostname, int host_len)
         char format_str[50];
         snprintf(format_str, sizeof(format_str), "Partition: %%xd for host: %%.%ds", host_len);
         Debug("cache_hosting", format_str, res.record, hostname);
-        return res.record->parts[host_hash_table[key->word(1) % PART_HASH_TABLE_SIZE]];
+        return res.record->parts[host_hash_table[h]];
       }
     }
   }
@@ -2547,241 +2514,71 @@ Cache::key_to_part(CacheKey * key, char *hostname, int host_len)
     char format_str[50];
     snprintf(format_str, sizeof(format_str), "Generic partition: %%xd for host: %%.%ds", host_len);
     Debug("cache_hosting", format_str, host_rec, hostname);
-    return host_rec->parts[hash_table[key->word(1) % PART_HASH_TABLE_SIZE]];
+    return host_rec->parts[hash_table[h]];
   } else
     return host_rec->parts[0];
 }
 
+static void reg_int(const char *str, int stat, RecRawStatBlock *rsb, const char *prefix) {
+  char stat_str[256];
+  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, str);
+  RecRegisterRawStat(rsb, RECT_PROCESS,
+                     stat_str, RECD_INT, RECP_NON_PERSISTENT, stat, RecRawStatSyncSum);
+  DOCACHE_CLEAR_DYN_STAT(stat)
+}
+#define REG_INT(_str, _stat) reg_int(_str, (int)_stat, rsb, prefix)
 
 // Register Stats
 void
-register_cache_stats(RecRawStatBlock * rsb, const char *prefix)
+register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
 {
-
   char stat_str[256];
 
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "bytes_used");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_bytes_used_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_bytes_used_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "bytes_total");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_bytes_total_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_bytes_total_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "ram_cache.bytes_used");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_ram_cache_bytes_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_ram_cache_bytes_stat);
-
+  REG_INT("bytes_used", cache_bytes_used_stat);
+  REG_INT("bytes_total", cache_bytes_total_stat);
   snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "ram_cache.total_bytes");
   RecRegisterRawStat(rsb, RECT_PROCESS,
                      stat_str, RECD_INT, RECP_NULL, (int) cache_ram_cache_bytes_total_stat, RecRawStatSyncSum);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "ram_cache.misses");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_ram_cache_misses_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_ram_cache_misses_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "ram_cache.hits");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_ram_cache_hits_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_ram_cache_hits_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "pread_count");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_pread_count_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_pread_count_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "percent_full");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_percent_full_stat, RecRawStatSyncSum);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "lookup.active");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_lookup_active_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_lookup_active_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "lookup.success");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_lookup_success_stat, RecRawStatSyncSum);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "lookup.failure");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_lookup_failure_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_lookup_failure_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "read.active");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_read_active_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_read_active_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "read.success");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_read_success_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_read_success_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "read.failure");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_read_failure_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_read_failure_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "write.active");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_write_active_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_write_active_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "write.success");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_write_success_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_write_success_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "write.failure");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_write_failure_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_write_failure_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "write.backlog.failure");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str,
-                     RECD_INT, RECP_NON_PERSISTENT, (int) cache_write_backlog_failure_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_write_backlog_failure_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "update.active");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_update_active_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_update_active_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "update.success");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_update_success_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_update_success_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "update.failure");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_update_failure_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_update_failure_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "remove.active");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_remove_active_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_remove_active_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "remove.success");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_remove_success_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_remove_success_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "remove.failure");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_remove_failure_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_remove_failure_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "evacuate.active");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_evacuate_active_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_evacuate_active_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "evacuate.success");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_evacuate_success_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_evacuate_success_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "evacuate.failure");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_evacuate_failure_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_evacuate_failure_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "scan.active");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_scan_active_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_scan_active_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "scan.success");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_scan_success_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_scan_success_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "scan.failure");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_scan_failure_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_scan_failure_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "direntries.total");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_direntries_total_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_direntries_total_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "direntries.used");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_direntries_used_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_direntries_used_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "directory_collision");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str,
-                     RECD_INT, RECP_NON_PERSISTENT, (int) cache_directory_collision_count_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_directory_collision_count_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "frags_per_doc.1");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str,
-                     RECD_INT, RECP_NON_PERSISTENT, (int) cache_single_fragment_document_count_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_single_fragment_document_count_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "frags_per_doc.2");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str,
-                     RECD_INT, RECP_NON_PERSISTENT, (int) cache_two_fragment_document_count_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_two_fragment_document_count_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "frags_per_doc.3+");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str,
-                     RECD_INT, RECP_NON_PERSISTENT,
-                     (int) cache_three_plus_plus_fragment_document_count_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_three_plus_plus_fragment_document_count_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "read_busy.success");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_read_busy_success_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_read_busy_success_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "read_busy.failure");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_read_busy_failure_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_read_busy_failure_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "write_bytes_stat");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_write_bytes_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_write_bytes_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "vector_marshals");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_hdr_vector_marshal_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_hdr_vector_marshal_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "hdr_marshals");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_hdr_marshal_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_hdr_marshal_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "hdr_marshal_bytes");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_hdr_marshal_bytes_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_hdr_marshal_bytes_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "gc_bytes_evacuated");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_gc_bytes_evacuated_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_gc_bytes_evacuated_stat);
-
-  snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "gc_frags_evacuated");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, (int) cache_gc_frags_evacuated_stat, RecRawStatSyncSum);
-  DOCACHE_CLEAR_DYN_STAT(cache_gc_frags_evacuated_stat);
+  REG_INT("ram_cache.bytes_used", cache_ram_cache_bytes_stat);
+  REG_INT("ram_cache.hits", cache_ram_cache_hits_stat);
+  REG_INT("pread_count", cache_pread_count_stat);
+  REG_INT("percent_full", cache_percent_full_stat);
+  REG_INT("lookup.active", cache_lookup_active_stat);
+  REG_INT("lookup.success", cache_lookup_success_stat);
+  REG_INT("lookup.failure", cache_lookup_failure_stat);
+  REG_INT("read.active", cache_read_active_stat);
+  REG_INT("read.success", cache_read_success_stat);
+  REG_INT("read.failure", cache_read_failure_stat);
+  REG_INT("write.active", cache_write_active_stat);
+  REG_INT("write.success", cache_write_success_stat);
+  REG_INT("write.failure", cache_write_failure_stat);
+  REG_INT("write.backlog.failure", cache_write_backlog_failure_stat);
+  REG_INT("update.active", cache_update_active_stat);
+  REG_INT("update.success", cache_update_success_stat);
+  REG_INT("update.failure", cache_update_failure_stat);
+  REG_INT("remove.active", cache_remove_active_stat);
+  REG_INT("remove.success", cache_remove_success_stat);
+  REG_INT("remove.failure", cache_remove_failure_stat);
+  REG_INT("evacuate.active", cache_evacuate_active_stat);
+  REG_INT("evacuate.success", cache_evacuate_success_stat);
+  REG_INT("evacuate.failure", cache_evacuate_failure_stat);
+  REG_INT("scan.active", cache_scan_active_stat);
+  REG_INT("scan.success", cache_scan_success_stat);
+  REG_INT("scan.failure", cache_scan_failure_stat);
+  REG_INT("direntries.total", cache_direntries_total_stat);
+  REG_INT("direntries.used", cache_direntries_used_stat);
+  REG_INT("directory_collision", cache_directory_collision_count_stat);
+  REG_INT("frags_per_doc.1", cache_single_fragment_document_count_stat);
+  REG_INT("frags_per_doc.2", cache_two_fragment_document_count_stat);
+  REG_INT("frags_per_doc.3+", cache_three_plus_plus_fragment_document_count_stat);
+  REG_INT("read_busy.success", cache_read_busy_success_stat);
+  REG_INT("read_busy.failure", cache_read_busy_failure_stat);
+  REG_INT("write_bytes_stat", cache_write_bytes_stat);
+  REG_INT("vector_marshals", cache_hdr_vector_marshal_stat);
+  REG_INT("hdr_marshals", cache_hdr_marshal_stat);
+  REG_INT("hdr_marshal_bytes", cache_hdr_marshal_bytes_stat);
+  REG_INT("gc_bytes_evacuated", cache_gc_bytes_evacuated_stat);
+  REG_INT("gc_frags_evacuated", cache_gc_frags_evacuated_stat);
 }
 
 
@@ -2841,10 +2638,6 @@ ink_cache_init(ModuleVersion v)
   Debug("cache_init", "proxy.config.cache.max_doc_size = %d = %dMb",
         cache_config_max_doc_size, cache_config_max_doc_size / (1024 * 1024));
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.max_agg_delay", 1000, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_EstablishStaticConfigInt32(cache_config_max_agg_delay, "proxy.config.cache.max_agg_delay");
-  Debug("cache_init", "proxy.config.cache.max_agg_delay = %d", cache_config_max_agg_delay);
-
   IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
   Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
@@ -2884,10 +2677,6 @@ ink_cache_init(ModuleVersion v)
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.max_disk_errors", 5, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
   Debug("cache_init", "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.check_disk_idle", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_EstablishStaticConfigInt32(cache_config_check_disk_idle, "proxy.config.cache.check_disk_idle");
-  Debug("cache_init", "proxy.config.cache.check_disk_idle = %d", cache_config_check_disk_idle);
 
   IOCORE_RegisterConfigInteger(RECT_CONFIG,
                                "proxy.config.cache.agg_write_backlog", 5242880, RECU_DYNAMIC, RECC_NULL, NULL);
@@ -2943,11 +2732,11 @@ ink_cache_init(ModuleVersion v)
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_read(Continuation * cont, URL * url, CacheHTTPHdr * request,
-                          CacheLookupHttpConfig * params, time_t pin_in_cache, CacheFragType type)
+CacheProcessor::open_read(Continuation *cont, URL *url, CacheHTTPHdr *request,
+                          CacheLookupHttpConfig *params, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
-  if (CacheClusteringEnabled > 0) {
+  if (cache_clustering_enabled > 0) {
     return open_read_internal(CACHE_OPEN_READ_LONG, cont, (MIOBuffer *) 0,
                               url, request, params, (CacheKey *) 0, pin_in_cache, type, (char *) 0, 0);
   }
@@ -2989,11 +2778,11 @@ CacheProcessor::open_read(Continuation * cont, URL * url, CacheHTTPHdr * request
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_write(Continuation * cont, int expected_size, URL * url,
-                           CacheHTTPHdr * request, CacheHTTPInfo * old_info, time_t pin_in_cache, CacheFragType type)
+CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url,
+                           CacheHTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
-  if (CacheClusteringEnabled > 0) {
+  if (cache_clustering_enabled > 0) {
     INK_MD5 url_md5;
     Cache::generate_key(&url_md5, url, request);
     ClusterMachine *m = cluster_machine_at_depth(cache_hash(url_md5));
@@ -3025,7 +2814,7 @@ CacheProcessor::open_write(Continuation * cont, int expected_size, URL * url,
       sm->handleEvent(CACHE_EVENT_OPEN_WRITE, (void *) vc);
       return ACTION_RESULT_DONE;
     } else {
-      Debug("cache_plugin", "[CacheProcessor::open_write] Error: NewCacheVC not set");
+      DDebug("cache_plugin", "[CacheProcessor::open_write] Error: NewCacheVC not set");
       sm->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_WRITE_FAIL);
       return ACTION_RESULT_DONE;
     }
@@ -3037,14 +2826,14 @@ CacheProcessor::open_write(Continuation * cont, int expected_size, URL * url,
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::remove(Continuation * cont, URL * url, CacheFragType frag_type)
+CacheProcessor::remove(Continuation *cont, URL *url, CacheFragType frag_type)
 {
 #ifdef CLUSTER_CACHE
-  if (CacheClusteringEnabled > 0) {
+  if (cache_clustering_enabled > 0) {
   }
 #endif
   if (cache_global_hooks != NULL && cache_global_hooks->hooks_set > 0) {
-    Debug("cache_plugin", "[CacheProcessor::remove] Cache hooks are set");
+    DDebug("cache_plugin", "[CacheProcessor::remove] Cache hooks are set");
     APIHook *cache_lookup = cache_global_hooks->get(INK_CACHE_PLUGIN_HOOK);
     if (cache_lookup != NULL) {
       NewCacheVC *vc = NewCacheVC::alloc(cont, url, NULL);

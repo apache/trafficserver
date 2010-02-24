@@ -41,7 +41,7 @@ class UnixNetVConnection;
 class NetHandler;
 class PollDescriptor;
 
-INK_INLINE void
+inline void
 NetVCOptions::reset()
 {
   local_port = 0;
@@ -56,7 +56,7 @@ NetVCOptions::reset()
   etype = ET_NET;
 }
 
-INK_INLINE void
+inline void
 NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags)
 {
   socket_recv_bufsize = _recv_bufsize;
@@ -86,8 +86,8 @@ class UnixNetVConnection:public NetVConnection
 {
 public:
 
-  virtual VIO * do_io_read(Continuation * c, int nbytes, MIOBuffer * buf);
-  virtual VIO *do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner = false);
+  virtual VIO * do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf);
+  virtual VIO *do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner = false);
 
   virtual Action *send_OOB(Continuation * cont, char *buf, int len);
   virtual void cancel_OOB();
@@ -150,10 +150,6 @@ public:
 
   void get_local_sa();
 
-  VIO *do_io_read_now(Continuation * c, int nbytes, MIOBuffer * buf);
-  VIO *do_io_write_now(Continuation * c, int nbytes, IOBufferReader * buf, bool owner = false);
-  void reenable_re_now(VIO * vio);
-
   // these are not part of the pure virtual interface.  They were
   // added to reduce the amount of duplicate code in classes inherited
   // from NetVConnection (SSL).
@@ -185,12 +181,9 @@ public:
   int readSignalDone(int event, NetHandler * nh);
   int readSignalAndUpdate(int event);
   void readReschedule(NetHandler * nh);
+  void writeReschedule(NetHandler * nh);
   void netActivity(EThread * lthread);
 
-#ifdef DEBUG
-  // Class static data
-  static int enable_debug_trace;
-#endif
   Action *action()
   {
     return &action_;
@@ -208,7 +201,7 @@ public:
   ink_hrtime next_inactivity_timeout_at;
 #endif
   Event *active_timeout;
-  struct epoll_data_ptr ep;
+  EventIO ep;
   NetHandler *nh;
   unsigned int id;
   unsigned int ip;
@@ -253,7 +246,7 @@ extern ClassAllocator<UnixNetVConnection> netVCAllocator;
 typedef int (UnixNetVConnection::*NetVConnHandler) (int, void *);
 
 
-INK_INLINE void
+inline void
 UnixNetVConnection::set_remote_addr()
 {
   remote_addr.sin_family = con.sa.sin_family;
@@ -261,26 +254,26 @@ UnixNetVConnection::set_remote_addr()
   remote_addr.sin_addr.s_addr = ip;
 }
 
-INK_INLINE void
+inline void
 UnixNetVConnection::set_local_addr()
 {
   int local_sa_size = sizeof(local_addr);
   safe_getsockname(con.fd, (sockaddr *) & local_addr, &local_sa_size);
 }
 
-INK_INLINE ink_hrtime
+inline ink_hrtime
 UnixNetVConnection::get_active_timeout()
 {
   return active_timeout_in;
 }
 
-INK_INLINE ink_hrtime
+inline ink_hrtime
 UnixNetVConnection::get_inactivity_timeout()
 {
   return inactivity_timeout_in;
 }
 
-INK_INLINE void
+inline void
 UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
 {
   inactivity_timeout_in = timeout;
@@ -303,7 +296,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
 #endif
 }
 
-INK_INLINE void
+inline void
 UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
 {
   active_timeout_in = timeout;
@@ -322,7 +315,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
     active_timeout = 0;
 }
 
-INK_INLINE void
+inline void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
   inactivity_timeout_in = 0;
@@ -336,7 +329,7 @@ UnixNetVConnection::cancel_inactivity_timeout()
 #endif
 }
 
-INK_INLINE void
+inline void
 UnixNetVConnection::cancel_active_timeout()
 {
   if (active_timeout) {
@@ -346,7 +339,7 @@ UnixNetVConnection::cancel_active_timeout()
   }
 }
 
-INK_INLINE
+inline
 UnixNetVConnection::~
 UnixNetVConnection()
 {
@@ -356,10 +349,7 @@ UnixNetVConnection()
 // declarations for local use (within the net module)
 
 void close_UnixNetVConnection(UnixNetVConnection * vc, EThread * t);
-
-
 void write_to_net(NetHandler * nh, UnixNetVConnection * vc, PollDescriptor * pd, EThread * thread);
-
 void write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread);
 
 #endif

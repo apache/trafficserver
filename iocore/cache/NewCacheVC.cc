@@ -122,7 +122,7 @@ NewCacheVC::reenable(VIO * vio)
 
 //----------------------------------------------------------------------------
 VIO *
-NewCacheVC::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
+NewCacheVC::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
 {
   Debug("cache_plugin", "[NewCacheVC::do_io_read] this=%lX c=%lX nbytes=%d", (long) this, (long) c, nbytes);
   switch (_state) {
@@ -176,7 +176,7 @@ NewCacheVC::handleRead(int event, Event * e)
 
 //----------------------------------------------------------------------------
 VIO *
-NewCacheVC::do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner)
+NewCacheVC::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner)
 {
   Debug("cache_plugin", "[NewCacheVC::do_io_write] this=%lX c=%lX", (long) this, (long) c);
 

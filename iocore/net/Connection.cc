@@ -29,7 +29,7 @@
 **************************************************************************/
 
 #include "ink_unused.h"   /* MAGIC_EDITING_TAG */
-#include "ink_platform.h"
+#include "inktomi++.h"
 
 #include "P_Net.h"
 
@@ -118,19 +118,17 @@ Connection::close()
 
 
 int
-Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * opt, const int socketFd)
+Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * opt, const int sock)
 {
   inku32 *z;
-  ink_assert(fd == NO_FD);
   int res = 0;
 
-  if (socketFd == -1) {
-    if ((res = socketManager.socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+  if (sock < 0) {
+    ink_assert(fd == NO_FD);
+    if ((res = socketManager.socket(AF_INET, SOCK_STREAM, 0)) < 0)
       goto Lerror;
-    }
-  } else {
-    res = socketFd;
-  }
+  } else
+    res = sock;
 
   fd = res;
 
@@ -147,7 +145,7 @@ Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * o
 
   // cannot do this after connection on non-blocking connect
 #ifdef SET_TCP_NO_DELAY
-  Debug("socket", "setting TCP_NODELAY in fast_connect");
+  NetDebug("socket", "setting TCP_NODELAY in fast_connect");
   if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int))) < 0)
     goto Lerror;
 #endif
@@ -183,18 +181,17 @@ Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * o
     }
     if (opt->sockopt_flags & 1) {
       safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
-      Debug("socket", "::fast_connect: setsockopt() TCP_NODELAY on socket");
+      NetDebug("socket", "::fast_connect: setsockopt() TCP_NODELAY on socket");
     }
     if (opt->sockopt_flags & 2) {
       safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
-      Debug("socket", "::fast_connect: setsockopt() SO_KEEPALIVE on socket");
+      NetDebug("socket", "::fast_connect: setsockopt() SO_KEEPALIVE on socket");
     }
   }
-  res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
+  res = ::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
 
-  if (res < 0 && errno != EINPROGRESS) {
+  if (res < 0 && errno != EINPROGRESS)
     goto Lerror;
-  }
 
   return 0;
 
@@ -237,7 +234,7 @@ Connection::connect(unsigned int ip, int port,
       int p = time(NULL) + offset;
       p = (p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT;
       bind_sa.sin_port = htons(p);
-      Debug("dns", "random port = %d\n", p);
+      NetDebug("dns", "random port = %d\n", p);
       if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa), Proto)) < 0) {
         offset += 101;
         continue;

@@ -21,17 +21,13 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
+#include "inktomi++.h"
 /****************************************************************************
 
   StoreReadConfig.cc
 
   
  ****************************************************************************/
-
-#include "ink_platform.h"
-#include "Compatability.h"
-#include "ink_file.h"
 
 char *
 parseStorageFile(int fd)

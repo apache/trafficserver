@@ -90,11 +90,29 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	    if test x"${ac_cv_c_tclconfig}" = x ; then
 		for i in `ls -d ${libdir} 2>/dev/null` \
 			`ls -d ${exec_prefix}/lib 2>/dev/null` \
+			`ls -dr ${exec_prefix}/lib/tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ${exec_prefix}/lib/tcl[[8-9]].[[0-9]] 2>/dev/null` \
+			`ls -dr ${exec_prefix}/lib/tcl[[8-9]].[[0-9]]* 2>/dev/null` \
 			`ls -d ${prefix}/lib 2>/dev/null` \
+			`ls -dr ${prefix}/lib/tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ${prefix}/lib/tcl[[8-9]].[[0-9]] 2>/dev/null` \
+			`ls -dr ${prefix}/lib/tcl[[8-9]].[[0-9]]* 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
+			`ls -dr /usr/local/lib/tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr /usr/local/lib/tcl[[8-9]].[[0-9]] 2>/dev/null` \
+			`ls -dr /usr/local/lib/tcl[[8-9]].[[0-9]]* 2>/dev/null` \
 			`ls -d /usr/lib64 2>/dev/null` \
+			`ls -dr /usr/lib64/tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr /usr/lib64/tcl[[8-9]].[[0-9]] 2>/dev/null` \
+			`ls -dr /usr/lib64/tcl[[8-9]].[[0-9]]* 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
+			`ls -dr /usr/contrib/lib/tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr /usr/contrib/lib/tcl[[8-9]].[[0-9]] 2>/dev/null` \
+			`ls -dr /usr/contrib/lib/tcl[[8-9]].[[0-9]]* 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
+			`ls -dr /usr/lib/tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr /usr/lib/tcl[[8-9]].[[0-9]] 2>/dev/null` \
+			`ls -dr /usr/lib/tcl[[8-9]].[[0-9]]* 2>/dev/null` \
 			; do
 		    if test -f "$i/tclConfig.sh" ; then
 			ac_cv_c_tclconfig="`(cd $i; pwd)`"

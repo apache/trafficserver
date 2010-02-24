@@ -30,6 +30,7 @@
  *
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "StatProcessor.h"
 #include "ink_unused.h"
 

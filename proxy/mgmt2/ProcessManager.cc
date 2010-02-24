@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 /*
  *
  * ProcessManager.cc
@@ -231,8 +230,11 @@ ProcessManager::initLMConnection()
 
   snprintf(message, sizeof(message), "%s/%s", pserver_path, LM_CONNECTION_SERVER);
   ink_strncpy(serv_addr.sun_path, message, sizeof(serv_addr.sun_path));
+#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+  servlen = sizeof(sockaddr_un);
+#else
   servlen = strlen(serv_addr.sun_path) + sizeof(serv_addr.sun_family);
-
+#endif
   if ((local_manager_sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
     mgmt_fatal(stderr, "[ProcessManager::initLMConnection] Unable to create socket\n");
   }

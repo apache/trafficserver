@@ -48,7 +48,7 @@ EventType ET_UDP;
 //
 
 UDPNetProcessorInternal udpNetInternal;
-UDPNetProcessor & udpNet = udpNetInternal;
+UDPNetProcessor &udpNet = udpNetInternal;
 
 inku64 g_udp_bytesPending;
 ink32 g_udp_periodicCleanupSlots;
@@ -74,6 +74,11 @@ initialize_thread_for_udp_net(EThread * thread)
   new((ink_dummy_for_new *) get_UDPPollCont(thread)) PollCont(thread->mutex);
   new((ink_dummy_for_new *) get_UDPNetHandler(thread)) UDPNetHandler;
 
+#if defined(USE_LIBEV)
+  PollCont *pc = get_UDPPollCont(thread);
+  PollDescriptor *pd = pc->pollDescriptor;
+  pd->eio = ev_loop_new(LIBEV_BACKEND_LIST);
+#endif
   // These are hidden variables that control the amount of memory used by UDP
   // packets.  As usual, defaults are in RecordsConfig.cc
 
@@ -207,8 +212,8 @@ public:
     return event;
   }
   void setupPollDescriptor();
-private:
 
+private:
   Event * event;                // the completion event token created
   // on behalf of the client
   Ptr<IOBufferBlock> readbuf;
@@ -217,63 +222,27 @@ private:
   socklen_t *fromaddrlen;
   int fd;                       // fd we are reading from
   int ifd;                      // poll fd index
-
-  int ifd_seq_num;              // some assertable information
-
   ink_hrtime period;            // polling period
   ink_hrtime elapsed_time;
   ink_hrtime timeout_interval;
-
-#ifdef DEBUG_UDP
-  DynArray<ink_hrtime> *eventStamp;
-  DynArray<int>*eventType;
-  int nevents;
-#endif
-  // some i/o information
 };
-
-#ifdef DEBUG_UDP
-static ink_hrtime default_hrtime = NULL;
-static int default_event = 0;
-#endif
 
 ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator");
 
 UDPReadContinuation::UDPReadContinuation(Event * completionToken)
-:Continuation(NULL),
-event(completionToken),
-readbuf(NULL),
-readlen(0), fromaddrlen(0), fd(-1), ifd(-1), ifd_seq_num(-1), period(0), elapsed_time(0), timeout_interval(0)
-#ifdef DEBUG_UDP
-  , nevents(0)
-#endif
+: Continuation(NULL), event(completionToken), readbuf(NULL),
+  readlen(0), fromaddrlen(0), fd(-1), ifd(-1), period(0), elapsed_time(0), timeout_interval(0)
 {
-#ifdef DEBUG_UDP
-  eventStamp = NEW(new DynArray<ink_hrtime> (&default_hrtime));
-  eventType = NEW(new DynArray<int>(&default_event));
-#endif
-
-  if (completionToken->continuation) {
+  if (completionToken->continuation)
     this->mutex = completionToken->continuation->mutex;
-  } else {
+  else
     this->mutex = new_ProxyMutex();
-  }
 }
 
 UDPReadContinuation::UDPReadContinuation()
-:Continuation(NULL),
-event(0),
-readbuf(NULL),
-readlen(0), fromaddrlen(0), fd(-1), ifd(-1), ifd_seq_num(-1), period(0), elapsed_time(0), timeout_interval(0)
-#ifdef DEBUG_UDP
-  , nevents(0)
-#endif
+: Continuation(NULL), event(0), readbuf(NULL),
+  readlen(0), fromaddrlen(0), fd(-1), ifd(-1), period(0), elapsed_time(0), timeout_interval(0)
 {
-#ifdef DEBUG_UDP
-  eventStamp = NEW(new DynArray<ink_hrtime> (&default_hrtime));
-  eventType = NEW(new DynArray<int>(&default_event));
-#endif
-
 }
 
 inline void
@@ -287,14 +256,10 @@ UDPReadContinuation::free(void)
   fromaddrlen = 0;
   fd = -1;
   ifd = -1;
-  ifd_seq_num = 0;
   period = 0;
   elapsed_time = 0;
   timeout_interval = 0;
   mutex = NULL;
-#ifdef DEBUG_UDP
-  nevents = 0;
-#endif
   udpReadContAllocator.free(this);
 }
 
@@ -312,11 +277,6 @@ UDPReadContinuation::init_token(Event * completionToken)
 inline void
 UDPReadContinuation::init_read(int rfd, IOBufferBlock * buf, int len, struct sockaddr *fromaddr_, socklen_t *fromaddrlen_)
 {
-#ifdef DEBUG_UDP
-  (*eventStamp) (nevents) = ink_get_hrtime();
-  (*eventType) (nevents) = 0;
-  nevents++;
-#endif
   ink_assert(rfd >= 0 && buf != NULL && fromaddr_ != NULL && fromaddrlen_ != NULL);
   fd = rfd;
   readbuf = buf;
@@ -346,6 +306,7 @@ UDPReadContinuation::cancel()
 void
 UDPReadContinuation::setupPollDescriptor()
 {
+#ifdef USE_EPOLL
   Pollfd *pfd;
   EThread *et = (EThread *) this_thread();
   PollCont *pc = get_PollCont(et);
@@ -353,9 +314,9 @@ UDPReadContinuation::setupPollDescriptor()
   pfd->fd = fd;
   ifd = pfd - pc->nextPollDescriptor->pfd;
   ink_assert(pc->nextPollDescriptor->nfds > ifd);
-  ifd_seq_num = pc->nextPollDescriptor->seq_num;
   pfd->events = POLLIN;
   pfd->revents = 0;
+#endif
 }
 
 int
@@ -365,14 +326,8 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
   (void) e;
   int res;
 
-  PollCont *pc = get_PollCont(e->ethread);
+  //PollCont *pc = get_PollCont(e->ethread);
   Continuation *c;
-
-#ifdef DEBUG_UDP
-  (*eventStamp) (nevents) = ink_get_hrtime();
-  (*eventType) (nevents) = event_;
-  nevents++;
-#endif
 
   if (event->cancelled) {
     e->cancel();
@@ -392,11 +347,9 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
       return EVENT_DONE;
     }
   }
-  ink_assert(ifd < 0 || event_ == EVENT_INTERVAL ||
-             (event_ == EVENT_POLL &&
-              ifd_seq_num == pc->pollDescriptor->seq_num &&
-              pc->pollDescriptor->nfds > ifd && pc->pollDescriptor->pfd[ifd].fd == fd));
-  if (ifd < 0 || event_ == EVENT_INTERVAL || (pc->pollDescriptor->pfd[ifd].revents & POLLIN)) {
+  //ink_assert(ifd < 0 || event_ == EVENT_INTERVAL || (event_ == EVENT_POLL && pc->pollDescriptor->nfds > ifd && pc->pollDescriptor->pfd[ifd].fd == fd));
+  //if (ifd < 0 || event_ == EVENT_INTERVAL || (pc->pollDescriptor->pfd[ifd].revents & POLLIN)) {
+  ink_debug_assert(!"incomplete");
     c = completionUtil::getContinuation(event);
     // do read
     socklen_t tmp_fromlen = *fromaddrlen;
@@ -410,11 +363,6 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
       *fromaddrlen = tmp_fromlen;
       completionUtil::setInfo(event, fd, readbuf, rlen, errno);
       readbuf->fill(rlen);
-#ifdef DEBUG_UDP
-      (*eventStamp) (nevents) = ink_get_hrtime();
-      (*eventType) (nevents) = NET_EVENT_DATAGRAM_READ_COMPLETE;
-      nevents++;
-#endif
       res = c->handleEvent(NET_EVENT_DATAGRAM_READ_COMPLETE, event);
       e->cancel();
       free();
@@ -425,11 +373,6 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
       *fromaddrlen = tmp_fromlen;
       completionUtil::setInfo(event, fd, (IOBufferBlock *) readbuf, rlen, errno);
       c = completionUtil::getContinuation(event);
-#ifdef DEBUG_UDP
-      (*eventStamp) (nevents) = ink_get_hrtime();
-      (*eventType) (nevents) = NET_EVENT_DATAGRAM_READ_ERROR;
-      nevents++;
-#endif
       res = c->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
       e->cancel();
       free();
@@ -438,7 +381,7 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
     } else {
       completionUtil::setThread(event, NULL);
     }
-  }
+//}
   if (event->cancelled) {
     e->cancel();
     free();
@@ -1229,8 +1172,8 @@ UDPQueue::send(UDPPacket * p)
 UDPNetHandler::UDPNetHandler()
 {
   mutex = new_ProxyMutex();
-  ink_atomiclist_init(&udpOutQueue.atomicQueue, "Outgoing UDP Packet queue", offsetof(UDPPacketInternal, alink.next));
-  ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", offsetof(UnixUDPConnection, newconn_alink.next));
+  ink_atomiclist_init(&udpOutQueue.atomicQueue, "Outgoing UDP Packet queue", ink_offsetof(UDPPacketInternal, alink.next));
+  ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", ink_offsetof(UnixUDPConnection, newconn_alink.next));
   nextCheck = ink_get_hrtime_internal() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
   SET_HANDLER((UDPNetContHandler) & UDPNetHandler::startNetEvent);
@@ -1244,36 +1187,6 @@ UDPNetHandler::startNetEvent(int event, Event * e)
   trigger_event = e;
   e->schedule_every(-HRTIME_MSECONDS(9));
   return EVENT_CONT;
-}
-
-inline PollDescriptor *
-UDPNetHandler::build_one_udpread_poll(int fd, UnixUDPConnection * uc, PollDescriptor * pd)
-{
-  // XXX: just hack until figure things out
-  ink_assert(uc->getFd() > 0);
-  Pollfd *pfd = pd->alloc();
-  pfd->fd = fd;
-  pfd->events = POLLIN;
-  pfd->revents = 0;
-  return pd;
-}
-
-PollDescriptor *
-UDPNetHandler::build_poll(PollDescriptor * pd)
-{
-  // build read poll for UDP connections.
-  ink_assert(pd->empty());
-  int i = 0;
-  forl_LL(UnixUDPConnection, uc, udp_polling) {
-    if (uc->recvActive) {
-      pd = build_one_udpread_poll(uc->getFd(), uc, pd);
-      i++;
-    }
-  }
-  if (i > 500) {
-    Debug("udpnet-poll", "%d fds", i);
-  }
-  return pd;
 }
 
 int
@@ -1293,11 +1206,11 @@ UDPNetHandler::mainNetEvent(int event, Event * e)
   int i;
   int nread = 0;
 
-  struct epoll_data_ptr *temp_eptr = NULL;
+  EventIO *temp_eptr = NULL;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
-    temp_eptr = (struct epoll_data_ptr *) get_ev_data(pc->pollDescriptor,i);
-    if ((get_ev_events(pc->pollDescriptor,i) & INK_EVP_IN)
-        && temp_eptr->type == EPOLL_UDP_CONNECTION) {
+    temp_eptr = (EventIO*) get_ev_data(pc->pollDescriptor,i);
+    if ((get_ev_events(pc->pollDescriptor,i) & EVENTIO_READ) 
+        && temp_eptr->type == EVENTIO_UDP_CONNECTION) {
       uc = temp_eptr->data.uc;
       ink_assert(uc && uc->mutex && uc->continuation);
       ink_assert(uc->refcount >= 1);
@@ -1459,44 +1372,20 @@ UDPWorkContinuation::StateCreatePortPairs(int event, void *data)
   // to call destroy(); the thread to which the UDPConnection will
   // remove the connection from a linked list and call delete.
 
-#if defined(USE_EPOLL)
-  struct epoll_event ev;
-#elif defined(USE_KQUEUE)
-  struct kevent ev;
-#else
-#error port me
-#endif
-  //changed by YTS Team, yamsat
   for (i = 0; i < numUdpPorts; i++) {
     udpConns[i]->bindToThread(cont);
-    //epoll changes
     pc = get_UDPPollCont(udpConns[i]->ethread);
-    udpConns[i]->ep.type = 5;             //UDP
-    udpConns[i]->ep.data.uc = udpConns[i];
-
-#if defined(USE_EPOLL)
-    memset(&ev, 0, sizeof(struct epoll_event));
-    ev.events = EPOLLIN | EPOLLET;
-    ev.data.ptr = &udpConns[i]->ep;
-    epoll_ctl(pc->pollDescriptor->epoll_fd, EPOLL_CTL_ADD, udpConns[i]->getFd(), &ev);
-#elif defined(USE_KQUEUE)
-    EV_SET(&ev, udpConns[i]->getFd(), EVFILT_READ, EV_ADD, 0, 0, &udpConns[i].ep);
-    kevent(pc->pollDescriptor->kqueue_fd, &ev, 1, NULL, 0, NULL);
-#else
-#error port me
-#endif
-    //epoll changes ends here
-  }                             //for
+    udpConns[i]->ep.start(pc->pollDescriptor, udpConns[i], EVENTIO_READ);
+  }
 
   resultCode = NET_EVENT_DATAGRAM_OPEN;
   goto out;
 
 Lerror:
   resultCode = NET_EVENT_DATAGRAM_ERROR;
-  for (i = 0; i < numUdpPorts; i++) {
+  for (i = 0; i < numUdpPorts; i++)
     delete udpConns[i];
-  }
-  delete[]udpConns;
+  delete[] udpConns;
   udpConns = NULL;
 
 out:

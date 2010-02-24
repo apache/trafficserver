@@ -30,6 +30,7 @@
    
 ****************************************************************************/
 
+#include "ink_config.h"
 #include "HttpConfig.h"
 #include "HttpTunnel.h"
 #include "HttpSM.h"

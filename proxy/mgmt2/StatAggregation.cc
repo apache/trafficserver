@@ -40,6 +40,7 @@
  *
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 #include "WebMgmtUtils.h"
 #include "ink_hrtime.h"

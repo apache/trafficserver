@@ -38,7 +38,7 @@
 #include "EThread.h"
 #include "EventProcessor.h"
 #include "Net.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "ProcessManager.h"
 #include "I_Version.h"
 #include "ink_syslog.h"

@@ -26,6 +26,8 @@
 
  
  ***************************************************************************/
+
+#include "ink_config.h"
 #include "ink_unused.h"
 
 #include <stdio.h>

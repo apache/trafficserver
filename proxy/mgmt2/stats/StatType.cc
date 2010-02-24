@@ -30,6 +30,7 @@
  *
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "StatType.h"
 
 bool StatError = false;         // global error flag

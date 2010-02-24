@@ -21,8 +21,9 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"
+#include "ink_config.h"
 #include "ink_platform.h"
+#include "ink_unused.h"
 #include "Main.h"
 #include "MgmtUtils.h"
 #include "ConfigParse.h"

@@ -123,6 +123,8 @@ flush_signals(EThread * thr)
   for (i = 0; i < n; i++) {
     if (thr->ethreads_to_be_signalled[i]) {
       thr->ethreads_to_be_signalled[i]->EventQueueExternal.signal();
+      if (thr->ethreads_to_be_signalled[i]->signal_hook)
+        thr->ethreads_to_be_signalled[i]->signal_hook(thr->ethreads_to_be_signalled[i]);
       thr->ethreads_to_be_signalled[i] = 0;
     }
   }

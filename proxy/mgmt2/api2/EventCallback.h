@@ -59,6 +59,10 @@ typedef struct
   ink_mutex event_callback_lock;
 } CallbackTable;
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
 
 EventCallbackT *create_event_callback(INKEventSignalFunc func, void *data);
 void delete_event_callback(EventCallbackT * event_cb);
@@ -73,5 +77,9 @@ LLQ *get_events_with_callbacks(CallbackTable * cb_table);
 INKError cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc func, void *data,
                            bool * first_cb);
 INKError cb_table_unregister(CallbackTable * cb_table, char *event_name, INKEventSignalFunc func);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif

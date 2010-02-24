@@ -75,19 +75,16 @@ libtrafficshell_a_SOURCES = \
 traffic_shell_LDFLAGS =	$(EXTRA_CXX_LDFLAGS)
 
 traffic_shell_LDADD = \
-  $(top_builddir)/proxy/mgmt2/api2/remote/libmgmtapiremote.a \
-  $(LIBTCL) \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
   libtrafficshell.a \
+  $(top_builddir)/proxy/mgmt2/api2/remote/libmgmtapiremote.a \
   $(top_builddir)/proxy/mgmt2/tools/libinksysapi.a \
   $(top_builddir)/proxy/mgmt2/tools/libinkconfigapi.a \
   $(top_builddir)/proxy/mgmt2/utils/libutils_lm.a \
+  $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(LIBTCL) \
   @LIBDL@ \
-  -lm \
+  @LIBM@ \
+  @LIBICONV@ \
   @LIBEXPAT@ @LIBSSL@ \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBRT@
-
-libtrafficshell_a_LIBADD = \
-  $(libtrafficshell_a_OBJECTS) \
-  $(libtrafficshell_a_DEPENDENCIES)

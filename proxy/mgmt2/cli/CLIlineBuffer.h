@@ -40,7 +40,7 @@ class CLIlineBuffer
 {
 private:
   int n_fields;                 /* available number of fields */
-  int c_fields;                 /* low water mark on used fields */
+  intptr_t c_fields;                 /* low water mark on used fields */
     DynArray < const char *>*f_format;  /* array of format fields */
     DynArray < const char *>*o_string;  /* array of output strings */
     DynArray<int>*f_widths;  /* array of field widths */

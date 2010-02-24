@@ -198,7 +198,7 @@ MuxClientVC::kill()
 
 
 VIO *
-MuxClientVC::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
+MuxClientVC::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
 {
 
   ink_debug_assert(!closed);
@@ -237,7 +237,7 @@ MuxClientVC::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
 }
 
 VIO *
-MuxClientVC::do_io_write(Continuation * c, int nbytes, IOBufferReader * abuffer, bool owner)
+MuxClientVC::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * abuffer, bool owner)
 {
 
   ink_debug_assert(!closed);

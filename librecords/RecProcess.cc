@@ -21,12 +21,7 @@
   limitations under the License.
  */
 
-#include "Compatability.h"
-#include "ink_atomic.h"
-#include "ink_bool.h"
-#include "ink_hrtime.h"
-#include "ink_platform.h"
-#include "ParseRules.h"
+#include "inktomi++.h"
 
 #include "P_EventSystem.h"
 #include "P_RecCore.h"

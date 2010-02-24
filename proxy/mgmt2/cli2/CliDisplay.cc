@@ -29,10 +29,11 @@
  * 
  ****************************************************************/
 
+#include "inktomi++.h"
 #include "CliDisplay.h"
 #include "definitions.h"
 #include <string.h>
-#include <inktomi++.h>
+
 
 #define BUF_SIZE 1024
 

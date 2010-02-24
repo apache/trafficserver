@@ -20,6 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include "ink_config.h"
 
 #ifdef HAVE_LIBSSL
 #include "P_Net.h"

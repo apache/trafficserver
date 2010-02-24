@@ -57,6 +57,8 @@ template<class T> T max(const T a, const T b)
 #if (HOST_OS == linux)
 #define NEED_ALTZONE_DEFINED
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED)
+#elif (HOST_OS == darwin)
+#define MAP_SHARED_MAP_NORESERVE (MAP_SHARED)
 #else
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED | MAP_NORESERVE)
 #endif
@@ -75,9 +77,12 @@ extern "C"
 }
 #endif
 
-#if (HOST_OS == freebsd) || (HOST_OS == darwin)
+#if ((HOST_OS == freebsd) || (HOST_OS == darwin))
 typedef long paddr_t;
 typedef unsigned int in_addr_t;
+#elif (HOST_OS == solaris)
+#include <sys/types.h> /* paddr_t should be defined here*/
+typedef uint64_t  paddr_t;
 #endif
 
 #define NEED_HRTIME
@@ -113,10 +118,10 @@ extern "C" void bcopy(const void *s1, void *s2, size_t n);
 #include <sys/syscall.h>
 
 // Some ugliness around pread() vs SYS_pread64 syscall
-#if defined (SYS_pread64)
+#if !defined(SYS_pread) && defined (SYS_pread64)
 #  define SYS_pread SYS_pread64
 #endif
-#if defined (SYS_pwrite64)
+#if !defined(SYS_pwrite) && defined (SYS_pwrite64)
 #  define SYS_pwrite SYS_pwrite64
 #endif
 
@@ -242,6 +247,12 @@ write_to_middle_of_file(int fildes, void *buf, size_t nbytes, off_t offset)
 #define ink_fstat      fstat
 #define ink_mmap       mmap
 #define ink_sleep      sleep
+
+#if (__GNUC__ >= 3) && ((HOST_OS == darwin) || (HOST_OS == solaris))
+#define ink_offsetof(TYPE, MEMBER) (__builtin_offsetof (TYPE, MEMBER))
+#else
+#define ink_offsetof offsetof
+#endif
 
 #include "Resource.h"
 

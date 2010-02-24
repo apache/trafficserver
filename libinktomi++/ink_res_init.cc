@@ -96,6 +96,9 @@ static char sccsid[] = "@(#)res_init.c	8.1 (Berkeley) 6/7/93";
 
 #endif /* LIBC_SCCS and not lint */
 
+#include "ink_config.h"
+#include "ink_platform.h"
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -103,14 +106,17 @@ static char sccsid[] = "@(#)res_init.c	8.1 (Berkeley) 6/7/93";
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
+#ifdef HAVE_ARPA_NAMESER_COMPAT_H
+#include <arpa/nameser_compat.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <resolv.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ink_string.h"
 
+#include "ink_string.h"
 #include "ink_resolver.h"
 
 #if (HOST_OS != linux)

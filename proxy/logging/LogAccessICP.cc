@@ -32,11 +32,8 @@
  
  ***************************************************************************/
 #ifndef TS_MICRO
-#include "ink_unused.h"
-
-#include "ink_platform.h"
+#include "inktomi++.h"
 #include "Error.h"
-#include "ink_hrtime.h"
 #include "HTTP.h"
 #include "ICP.h"
 #include "ICPlog.h"

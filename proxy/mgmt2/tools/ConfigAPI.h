@@ -26,7 +26,7 @@
 
 #include "../utils/XmlUtils.h"
 
-#if (HOST_OS == sunos)
+#if (HOST_OS == solaris)
 #include "ink_bool.h"
 #endif
 

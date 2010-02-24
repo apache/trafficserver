@@ -28,6 +28,9 @@
    Description:
    SSL Configurations
  ****************************************************************************/
+
+#include "ink_config.h"
+
 #ifdef HAVE_LIBSSL
 #include <string.h>
 #include "P_Net.h"

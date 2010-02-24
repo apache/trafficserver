@@ -37,7 +37,7 @@
    
  ****************************************************************************/
 
-#include "Compatability.h"
+#include "inktomi++.h"
 #include "HTTP.h"
 #include "P_EventSystem.h"
 

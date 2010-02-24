@@ -450,7 +450,6 @@ ICPPeerReadCont::ICPPeerQueryEvent(int event, Event * e)
         return EVENT_DONE;
       }
     case CACHE_EVENT_OPEN_READ_FAILED:
-    case CACHE_EVENT_OPEN_READ_FAILED_IN_PROGRESS:
       {
         event = CACHE_EVENT_LOOKUP_FAILED;
         break;
@@ -1120,9 +1119,9 @@ ICPRequestCont::remove_from_pendingActions(Action * a)
     npending_actions--;
     return;
   }
-  for (int i = 0; i < pendingActions->length(); i++) {
+  for (intptr_t i = 0; i < pendingActions->length(); i++) {
     if ((*pendingActions)[i] == a) {
-      for (int j = i; j < pendingActions->length() - 1; j++)
+      for (intptr_t j = i; j < pendingActions->length() - 1; j++)
         (*pendingActions)[j] = (*pendingActions)[j + 1];
       pendingActions->set_length(pendingActions->length() - 1);
       npending_actions--;
@@ -1140,7 +1139,7 @@ ICPRequestCont::remove_all_pendingActions()
   if (!pendingActions) {
     return;
   }
-  for (int i = 0; i < pendingActions->length(); i++) {
+  for (intptr_t i = 0; i < pendingActions->length(); i++) {
     if ((*pendingActions)[i]
         && ((*pendingActions)[i] != ACTION_IO_ERROR)) {
       ((*pendingActions)[i])->cancel();
@@ -1753,7 +1752,7 @@ ICPRequestCont::BuildICPMsg(ICPopcode_t op, unsigned int seqno,
 
   mhdr->msg_name = (caddr_t) 0;
   mhdr->msg_namelen = 0;
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   mhdr->msg_accrights = (caddr_t) 0;
   mhdr->msg_accrightslen = 0;
 #else
@@ -1928,7 +1927,7 @@ ICPProcessor::start()
   // Setup custom allocators
   //
   // replaced with generic IOBufferBlock allocator
-  ICPHandlerCont::ICPDataBuf_IOBuffer_sizeindex = iobuffer_size_to_index(MAX_ICP_MSGSIZE);
+  ICPHandlerCont::ICPDataBuf_IOBuffer_sizeindex = iobuffer_size_to_index(MAX_ICP_MSGSIZE, MAX_BUFFER_SIZE_INDEX);
 
   //
   // Setup ICP stats callbacks

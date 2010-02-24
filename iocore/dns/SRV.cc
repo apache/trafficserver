@@ -39,12 +39,6 @@ struct HostDBRoundRobin;
 
 ClassAllocator<SRV> SRVAllocator("SRVAllocator");
 
-INK_INLINE bool
-operator<(const SRV & left, const SRV & right)
-{
-  return (left.getPriority() < right.getPriority());    /* lower priorities first :) */
-}
-
 /* 
 To select a target to be contacted next, arrange all SRV RRs
 (that have not been ordered yet) in any order, except that all

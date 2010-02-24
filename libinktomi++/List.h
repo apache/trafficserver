@@ -60,6 +60,7 @@
 #include "ink_assert.h"
 #include "ink_queue.h"
 #include "ink_resource.h"
+#include "Compatability.h"
 
 //
 //      Link cell for singly-linked list of objects of type C.
@@ -102,7 +103,7 @@ template <class C, int o = -1> class SLL {
   SLL() : head(NULL) {}
   SLL(C *c) : head(c) {}
 };
-#define SList(_c, _f)  SLL<_c, offsetof(_c, _f)>
+#define SList(_c, _f)  SLL<_c, ink_offsetof(_c, _f)>
 #define forl_LL(_c, _p, _l) for (_c *_p = (_l).head; _p; _p = (_l).next_link(_p))
 
 template<class C, int o> inline void 
@@ -179,7 +180,7 @@ template <class C, int o = -1> struct DLL {
 
   DLL() : head(NULL) {}
 };
-#define DList(_c, _f)  DLL<_c, offsetof(_c, _f)>
+#define DList(_c, _f)  DLL<_c, ink_offsetof(_c, _f)>
 
 template<class C, int o> inline void 
 DLL<C,o>::push(C *c, Link<C> &l)
@@ -332,7 +333,7 @@ template <class C, int o = -1> class Queue : public DLL<C, o> {
   
   Queue() : tail(NULL) {}
 };
-#define Que(_c, _f) Queue<_c, offsetof(_c, _f)>
+#define Que(_c, _f) Queue<_c, ink_offsetof(_c, _f)>
 
 template <class C, int o> inline void 
 Queue<C, o>::push(C * c, Link<C> &l) {
@@ -593,7 +594,7 @@ template<class C, int o = -1> struct SortableQueue: public Queue<C, o>
     }
   }
 };
-#define SortableQue(_c, _l) SortableQueue<_c, offsetof(_c, _l)>
+#define SortableQue(_c, _l) SortableQueue<_c, ink_offsetof(_c, _l)>
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -762,7 +763,7 @@ template<class C, int o = -1> struct AtomicSLL
   AtomicSLL(C * c, SLink<C> *l);
 };
 
-#define ASLL(_c, _l) AtomicSLL<_c, offsetof(_c, _l)>
+#define ASLL(_c, _l) AtomicSLL<_c, ink_offsetof(_c, _l)>
 
 template<class C, int o> inline SLink<C> &AtomicSLL<C,o>::link(C * x, C * c, SLink<C> &cl) {
   return *(SLink<C> *)(((char *) x) + (((char *) &cl) - ((char *) c)));

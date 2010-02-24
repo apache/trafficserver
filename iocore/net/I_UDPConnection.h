@@ -112,5 +112,5 @@ public:
   virtual void UDPConnection_is_abstract() = 0;
 };
 
-INK_INLINE UDPConnection *new_UDPConnection(int fd);
+inline UDPConnection *new_UDPConnection(int fd);
 #endif //__I_UDPCONNECTION_H_

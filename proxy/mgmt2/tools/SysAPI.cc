@@ -21,20 +21,15 @@
   limitations under the License.
  */
 
-#if (HOST_OS == linux)
+
+#include "inktomi++.h"
+#if (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin)
 
 #include "SysAPI.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <sys/time.h>
-#include <stdarg.h>
-#include <string.h>
 #include <ink_string.h>
 #include <regex.h>
-#include <time.h>
 #include <grp.h>
 
 #include <ctype.h>
@@ -611,12 +606,12 @@ int
 Net_SetNIC_BootProtocol(char *interface, char *nic_protocol)
 {
   char nic_boot[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
-
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
   Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
   Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
   Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
-
+#endif
   return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
 }
 
@@ -624,8 +619,8 @@ int
 Net_SetNIC_IP(char *interface, char *nic_ip)
 {
   //int status;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   char nic_boot[80], nic_protocol[80], nic_netmask[80], nic_gateway[80], old_ip[80];
-
   Net_GetNIC_IP(interface, old_ip, sizeof(old_ip));
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
   Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
@@ -633,26 +628,32 @@ Net_SetNIC_IP(char *interface, char *nic_ip)
   Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
 
   return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
 }
 
 int
 Net_SetNIC_Netmask(char *interface, char *nic_netmask)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_gateway[80];
-
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
   Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
   Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
   Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
 
   return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
 }
 
 int
 Net_SetNIC_Gateway(char *interface, char *nic_gateway)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80];
-
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
   Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
   Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
@@ -661,6 +662,9 @@ Net_SetNIC_Gateway(char *interface, char *nic_gateway)
            nic_protocol, nic_ip, nic_netmask, nic_gateway));
 
   return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
 }
 
 int
@@ -733,7 +737,7 @@ Net_DisableInterface(char *interface)
   return status;
 }
 
-#endif
+#endif /* linux */
 
 
 int
@@ -1014,6 +1018,7 @@ NetConfig_Action(int index, ...)
 
   return 0;
 }
+
 
 bool
 recordRegexCheck(const char *pattern, const char *value)
@@ -1589,7 +1594,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     }
   } else {
     int res;
-    res = execl(mv_binary, "mv", snmp_path_new, snmp_path, NULL);
+    res = execl(mv_binary, "mv", snmp_path_new, snmp_path, (char*)NULL);
     if (res != 0) {
       DPRINTF(("[SysAPI] mv of new snmp cfg file failed\n"));
     }
@@ -1602,7 +1607,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     wait(&status);
   } else {
     int res;
-    res = execl(mv_binary, "mv", ts_snmp_path_new, ts_snmp_path, NULL);
+    res = execl(mv_binary, "mv", ts_snmp_path_new, ts_snmp_path, (char*)NULL);
     if (res != 0) {
       DPRINTF(("[SysAPI] mv of new ts_snmp cfg file failed\n"));
     }
@@ -1657,7 +1662,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
       wait(&status);
     } else {
       int res;
-      res = execl(mv_binary, "mv", snmp_pass_new, snmp_pass, NULL);
+      res = execl(mv_binary, "mv", snmp_pass_new, snmp_pass, (char*)NULL);
       if (res != 0) {
         DPRINTF(("[SysAPI] mv of new snmpass.sh file failed\n"));
       }
@@ -1827,9 +1832,9 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
   return 0;
 }
 
-#endif
+#endif /* (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin) */
 
-#if (HOST_OS == sunos)
+#if (HOST_OS == solaris)
 
 #include "SysAPI.h"
 #include <stdio.h>
@@ -1843,6 +1848,9 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
 #include <regex.h>
 
 #include <ctype.h>
+
+#include "ink_string.h"
+
 #include "../api2/include/INKMgmtAPI.h"
 
 #include <arpa/inet.h>
@@ -1850,6 +1858,13 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
 #include <sys/types.h>
 
 #include "ParseRules.h"
+
+// TODO: consolidate location of these defaults
+#define DEFAULT_ROOT_DIRECTORY            PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
+#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
 #define NETCONFIG_HOSTNAME  0
 #define NETCONFIG_GATEWAY   1
@@ -1900,7 +1915,7 @@ static bool recordRegexCheck(const char *pattern, const char *value);
 static int getTSdirectory(char *ts_path, size_t ts_path_len);
 
 int
-Net_GetHostname(char *hostname)
+Net_GetHostname(char *hostname, size_t hostname_len)
 {
   strcpy(hostname, "");
   return (gethostname(hostname, 256));
@@ -1923,7 +1938,7 @@ Net_SetHostname(char *hostname)
     return -1;
   }
 
-  Net_GetHostname(old_hostname);
+  Net_GetHostname(old_hostname,sizeof(old_hostname));
   if (!strlen(old_hostname)) {
     DPRINTF(("Net_SetHostname: failed to get old_hostname\n"));
     return -1;
@@ -1941,13 +1956,13 @@ Net_SetHostname(char *hostname)
     nic_status[0] = 0;
     protocol[0] = 0;
     for (int i = 0; i < count; i++) {   //since we are looping - we will get the "last" available IP - doesn't matter to us
-      Net_GetNetworkInt(i, name);       //we know we have at least one
+      Net_GetNetworkInt(i, name, sizeof(name)); //we know we have at least one
       if (name != NULL) {
-        Net_GetNIC_Status(name, nic_status);
-        Net_GetNIC_Protocol(name, protocol);
+        Net_GetNIC_Status(name, nic_status, sizeof(nic_status));
+        Net_GetNIC_Protocol(name, protocol, sizeof(protocol));
         if ((strcmp("up", nic_status) == 0) && (!found)) {
           //we can use this interface
-          Net_GetNIC_IP(name, ip_addr);
+          Net_GetNIC_IP(name, ip_addr, sizeof(ip_addr));
           found = true;
         }
       }
@@ -2049,14 +2064,14 @@ Net_GetDefaultRouter(char *router, size_t router_len)
       }
       if (fgets(buffer, BUFFLEN, fd)) {
         char *p = buffer;
-        while (*p && !isspace(*p) && (p - buffer) < router_len)
+        while (*p && !isspace(*p) && ((size_t)(p - buffer) < router_len))
           *(router++) = *(p++);
         *router = 0;
       }
       fclose(fd);
     } else {                    // found, already in ip format, just need to cpy it
       char *p = buffer;
-      while (*p && !isspace(*p) && (p - buffer) < router_len)
+      while (*p && !isspace(*p) && ((size_t)(p - buffer) < router_len))
         *(router++) = *(p++);
       *router = 0;
     }
@@ -2095,7 +2110,7 @@ Net_SetDefaultRouter(char *router)
 }
 
 int
-Net_GetDomain(char *domain)
+Net_GetDomain(char *domain, size_t domain_len)
 {
   //  domain can be defined using search or domain keyword
   strcpy(domain, "");
@@ -2124,7 +2139,7 @@ Net_SetDomain(char *domain)
 }
 
 int
-Net_GetDNS_Servers(char *dns)
+Net_GetDNS_Servers(char *dns, size_t dns_len)
 {
   char ip[80];
   strcpy(dns, "");
@@ -2195,7 +2210,7 @@ Net_GetNetworkIntCount()
 }
 
 int
-Net_GetNetworkInt(int int_num, char *interface)
+Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)//FIXME: use interface_len
 {
   strcpy(interface, "");
 
@@ -2248,7 +2263,7 @@ Net_GetNetworkInt(int int_num, char *interface)
 }
 
 int
-Net_GetNIC_Status(char *interface, char *status)
+Net_GetNIC_Status(char *interface, char *status, size_t status_len) // FIXME: use status_line
 {
   const int BUFFLEN = 80;
   char buffer[BUFFLEN];
@@ -2270,7 +2285,7 @@ Net_GetNIC_Status(char *interface, char *status)
 }
 
 int
-Net_GetNIC_Start(char *interface, char *start)
+Net_GetNIC_Start(char *interface, char *start, size_t start_len)
 {
   const int PATHLEN = 200;
   char hostnamefile[PATHLEN];
@@ -2286,7 +2301,7 @@ Net_GetNIC_Start(char *interface, char *start)
 }
 
 int
-Net_GetNIC_Protocol(char *interface, char *protocol)
+Net_GetNIC_Protocol(char *interface, char *protocol, size_t protocol_len)
 {
   const int PATHLEN = 200;
   char dhcp_filename[PATHLEN];
@@ -2383,7 +2398,7 @@ getMatchingBits(char *network, char *ip)
 }
 
 int
-Net_GetNIC_IP(char *interface, char *ip)
+Net_GetNIC_IP(char *interface, char *ip, size_t nic_ip_len)//FIXME: use nic_ip_len
 {
   strcpy(ip, "");               // bug 50628, initialize for null value
   int status = parseIfconfig(interface, "inet ", ip);
@@ -2410,7 +2425,7 @@ Net_GetNIC_IP(char *interface, char *ip)
     while (!feof(fd) && isLineCommented(hostname))      // skip # and blank
       fgets(hostname, PATHLEN, fd);
 
-    if (!hostname) {
+    if (hostname[0] == '\0') {
       DPRINTF(("[NET_GETNIC_IP] failed to get hostname"));
       return -1;
     }
@@ -2453,7 +2468,7 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
     FILE *fd;
 
 
-    status = Net_GetNIC_IP(interface, ip_addr);
+    status = Net_GetNIC_IP(interface, ip_addr, sizeof(ip_addr));
     if (status != 0) {
       DPRINTF(("[NET_GETNIC_NETMASK] failed to obtain ip address"));
       return -1;
@@ -2522,7 +2537,7 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
 }
 
 int
-Net_GetNIC_Gateway(char *interface, char *gateway)
+Net_GetNIC_Gateway(char *interface, char *gateway, size_t gateway_len)
 {
   // command is netstat -rn | grep <interface name> | grep G
   // the 2nd column is the Gateway
@@ -2561,7 +2576,7 @@ Net_SetNIC_Down(char *interface)
     return status;
   }
 
-  Net_GetNIC_IP(interface, ip);
+  Net_GetNIC_IP(interface, ip, sizeof(ip));
 
   return status;
 }
@@ -2571,10 +2586,10 @@ Net_SetNIC_StartOnBoot(char *interface, char *onboot)
 {
   char nic_protocol[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
 
-  Net_GetNIC_Protocol(interface, nic_protocol);
-  Net_GetNIC_IP(interface, nic_ip);
-  Net_GetNIC_Netmask(interface, nic_netmask);
-  Net_GetNIC_Gateway(interface, nic_gateway);
+  Net_GetNIC_Protocol(interface, nic_protocol,sizeof(nic_protocol));
+  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
+  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
+  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
 
   return (Net_SetNIC_Up(interface, onboot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
 }
@@ -2583,55 +2598,68 @@ int
 Net_SetNIC_BootProtocol(char *interface, char *nic_protocol)
 {
   char nic_boot[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
-
-  Net_GetNIC_Start(interface, nic_boot);
-  Net_GetNIC_IP(interface, nic_ip);
-  Net_GetNIC_Netmask(interface, nic_netmask);
-  Net_GetNIC_Gateway(interface, nic_gateway);
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+  Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
+  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
+  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
+  Net_GetNIC_Gateway(interface, nic_gateway, sizeof(nic_gateway));
 
   return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
 }
 
 int
 Net_SetNIC_IP(char *interface, char *nic_ip)
 {
   //int status;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   char nic_boot[80], nic_protocol[80], nic_netmask[80], nic_gateway[80], old_ip[80];
-
-  Net_GetNIC_IP(interface, old_ip);
+  Net_GetNIC_IP(interface, old_ip, sizeof(old_ip));
   Net_GetNIC_Start(interface, nic_boot);
   Net_GetNIC_Protocol(interface, nic_protocol);
-  Net_GetNIC_Netmask(interface, nic_netmask);
+  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
   Net_GetNIC_Gateway(interface, nic_gateway);
 
   return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
 }
 
 int
 Net_SetNIC_Netmask(char *interface, char *nic_netmask)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_gateway[80];
-
   Net_GetNIC_Start(interface, nic_boot);
   Net_GetNIC_Protocol(interface, nic_protocol);
-  Net_GetNIC_IP(interface, nic_ip);
+  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
   Net_GetNIC_Gateway(interface, nic_gateway);
 
   return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
 }
 
 int
 Net_SetNIC_Gateway(char *interface, char *nic_gateway)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80];
-
   Net_GetNIC_Start(interface, nic_boot);
   Net_GetNIC_Protocol(interface, nic_protocol);
-  Net_GetNIC_IP(interface, nic_ip);
-  Net_GetNIC_Netmask(interface, nic_netmask);
+  Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
+  Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
+
   //   DPRINTF(("Net_SetNIC_Gateway:: interface %s onboot %s protocol %s ip %s netmask %s gateway %s\n", interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
 
   return (Net_SetNIC_Up(interface, nic_boot, nic_protocol, nic_ip, nic_netmask, nic_gateway));
+#else
+  return -1;
+#endif
 }
 
 int
@@ -2656,9 +2684,9 @@ Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *net
   const int BUFFLEN = 200;
   char old_ip[BUFFLEN], old_mask[BUFFLEN], old_gateway[BUFFLEN], default_gateway[BUFFLEN];
 
-  Net_GetNIC_IP(interface, old_ip);
-  Net_GetNIC_Netmask(interface, old_mask);
-  Net_GetNIC_Gateway(interface, old_gateway);
+  Net_GetNIC_IP(interface, old_ip, sizeof(old_ip));
+  Net_GetNIC_Netmask(interface, old_mask, sizeof(old_mask));
+  Net_GetNIC_Gateway(interface, old_gateway, sizeof(old_gateway));
   Net_GetDefaultRouter(default_gateway, sizeof(default_gateway));
 
   if (strcmp(protocol, "static") == 0)
@@ -2693,7 +2721,7 @@ Net_IsValid_Interface(char *interface)
   }
   int count = Net_GetNetworkIntCount();
   for (int i = 0; i < count; i++) {
-    Net_GetNetworkInt(i, name);
+    Net_GetNetworkInt(i, name, sizeof(name));
     if (strcmp(name, interface) == 0)
       return 1;
   }
@@ -2779,7 +2807,7 @@ Net_IsValid_IP(char *ip_addr)
 {
   char addr[80];
   char octet1[16], octet2[16], octet3[16], octet4[16];
-  int byte1, byte2, byte3, byte4;
+  int byte1 = 0, byte2 = 0, byte3 = 0, byte4 = 0;
   char junk[256];
 
   if (ip_addr == NULL) {
@@ -3013,7 +3041,7 @@ getTSdirectory(char *ts_path, size_t ts_path_len)
   char *env_path;
 
   if ((env_path = getenv("TS_ROOT"))) {
-    ink_strcnpy(ts_path, env_path, ts_path_len);
+    ink_strncpy(ts_path, env_path, ts_path_len);
     return 0;
   }
   if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
@@ -3107,7 +3135,7 @@ Time_GetNTP_Servers(char *server)
   FILE *fp;
   const char *ntpconf = "/etc/ntp.conf";
   char buffer[1024];
-  char *option, *server_name;
+  char *option, *server_name = NULL;
 
   fp = fopen(ntpconf, "r");
   if (fp == NULL) {
@@ -3309,4 +3337,4 @@ Sys_Grp_Inktomi(int egid)
   return 0;
 }
 
-#endif
+#endif /* (HOST_OS == solaris) */

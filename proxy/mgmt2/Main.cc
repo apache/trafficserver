@@ -30,6 +30,9 @@
  *
  */
 
+#include "ink_config.h"
+#include "ink_platform.h"
+
 #include "Main.h"
 #include "MgmtUtils.h"
 #include "MgmtSchema.h"
@@ -75,11 +78,9 @@
 #include "tools/SysAPI.h"
 #endif
 
-
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 
-
-#if (HOST_OS != linux)
+#if (HOST_OS != linux) && (HOST_OS != darwin) && (HOST_OS != freebsd) && (HOST_OS != solaris)
 extern "C"
 {
   int gethostname(char *name, int namelen);
@@ -130,7 +131,7 @@ char *recs_conf = "records.config";
 int fds_limit;
 
 typedef void (*PFV) (int);
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
 void SignalHandler(int sig, siginfo_t * t, void *f);
 void SignalAlrmHandler(int sig, siginfo_t * t, void *f);
 #else
@@ -160,7 +161,11 @@ check_lockfile()
   } else {
     char *reason = strerror(-err);
     if (err == 0) {
+#if (HOST_OS == solaris)
+      fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, (int)holding_pid);
+#else
       fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, holding_pid);
+#endif
       mgmt_elog(stderr, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, holding_pid);
     } else {
       fprintf(stderr, "FATAL: Can't open server lockfile '%s' (%s)\n", lockfile, (reason ? reason : "Unknown Reason"));
@@ -181,7 +186,11 @@ check_lockfile()
     fprintf(stderr, "FATAL: Can't acquire manager lockfile '%s'", lockfile);
     mgmt_elog(stderr, "FATAL: Can't acquire manager lockfile '%s'", lockfile);
     if (err == 0) {
+#if (HOST_OS == solaris)
+      fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
+#else
       fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);
+#endif
       mgmt_elog(stderr, " (Lock file held by process ID %d)\n", holding_pid);
     } else if (reason) {
       fprintf(stderr, " (%s)\n", reason);
@@ -205,7 +214,7 @@ initSignalHandlers()
   sigset_t sigsToBlock;
 
   // Set up the signal handler
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   sigHandler.sa_handler = NULL;
   sigHandler.sa_sigaction = SignalHandler;
 #else
@@ -225,7 +234,7 @@ initSignalHandlers()
   // Don't block the signal on entry to the signal
   //   handler so we can reissue it and get a core
   //   file in the appropriate circumstances
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   sigHandler.sa_flags = SA_RESETHAND | SA_SIGINFO;
 #else
   sigHandler.sa_flags = SA_RESETHAND;
@@ -237,7 +246,7 @@ initSignalHandlers()
   sigaction(SIGSEGV, &sigHandler, NULL);
   sigaction(SIGTERM, &sigHandler, NULL);
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   sigAlrmHandler.sa_handler = NULL;
   sigAlrmHandler.sa_sigaction = SignalAlrmHandler;
 #else
@@ -245,7 +254,7 @@ initSignalHandlers()
 #endif
 
   sigemptyset(&sigAlrmHandler.sa_mask);
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   sigAlrmHandler.sa_flags = SA_SIGINFO;
 #else
   sigAlrmHandler.sa_flags = 0;
@@ -420,11 +429,19 @@ max_out_limit(char *name, int which, bool max_it = true, bool unlim_it = true)
   if (max_it) {
     ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
     if (rl.rlim_cur != rl.rlim_max) {
+#if (HOST_OS == darwin)
+      if (which == RLIMIT_NOFILE)
+	rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
+      else
+	rl.rlim_cur = rl.rlim_max;
+#else
       rl.rlim_cur = rl.rlim_max;
+#endif
       ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
     }
   }
 
+#if (HOST_OS != darwin)
   if (unlim_it) {
     ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
     if (rl.rlim_cur != RLIM_INFINITY) {
@@ -432,6 +449,7 @@ max_out_limit(char *name, int which, bool max_it = true, bool unlim_it = true)
       ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
     }
   }
+#endif
   ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
 #ifdef MGMT_USE_SYSLOG
   //syslog(LOG_NOTICE, "NOTE: %s(%d):cur(%d),max(%d)", name, which, (int)rl.rlim_cur, (int)rl.rlim_max);
@@ -450,7 +468,9 @@ set_process_limits(int fds_throttle)
   set_rlimit(RLIMIT_STACK, true, true);
   set_rlimit(RLIMIT_DATA, true, true);
   set_rlimit(RLIMIT_FSIZE, true, false);
+#ifdef RLIMIT_RSS
   set_rlimit(RLIMIT_RSS, true, true);
+#endif
 
   if (!getrlimit(RLIMIT_NOFILE, &lim)) {
     if (fds_throttle > (int) (lim.rlim_cur + FD_THROTTLE_HEADROOM)) {
@@ -1094,7 +1114,7 @@ main(int argc, char **argv)
 
 
 #ifndef _WIN32
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
 void
 SignalAlrmHandler(int sig, siginfo_t * t, void *c)
 #else
@@ -1106,10 +1126,14 @@ SignalAlrmHandler(int sig)
      fprintf(stderr,"[TrafficManager] ==> SIGALRM received\n");
      mgmt_elog(stderr,"[TrafficManager] ==> SIGALRM received\n");
    */
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   if (t) {
     if (t->si_code <= 0) {
+#if (HOST_OS == solaris)
+      fprintf(stderr, "[TrafficManager] ==> User Alarm from pid: %d uid: %d\n", (int)t->si_pid, t->si_uid);
+#else
       fprintf(stderr, "[TrafficManager] ==> User Alarm from pid: %d uid: %d\n", t->si_pid, t->si_uid);
+#endif
       mgmt_elog(stderr, "[TrafficManager] ==> User Alarm from pid: %d uid: %d\n", t->si_pid, t->si_uid);
     } else {
       fprintf(stderr, "[TrafficManager] ==> Kernel Alarm Reason: %d\n", t->si_code);
@@ -1122,7 +1146,7 @@ SignalAlrmHandler(int sig)
 }
 
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
 void
 SignalHandler(int sig, siginfo_t * t, void *c)
 #else
@@ -1133,10 +1157,14 @@ SignalHandler(int sig)
   static int clean = 0;
   int status;
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   if (t) {
     if (t->si_code <= 0) {
+#if (HOST_OS == solaris)
+      fprintf(stderr, "[TrafficManager] ==> User Sig %d from pid: %d uid: %d\n", sig, (int)t->si_pid, t->si_uid);
+#else
       fprintf(stderr, "[TrafficManager] ==> User Sig %d from pid: %d uid: %d\n", sig, t->si_pid, t->si_uid);
+#endif
       mgmt_elog(stderr, "[TrafficManager] ==> User Sig %d from pid: %d uid: %d\n", sig, t->si_pid, t->si_uid);
     } else {
       fprintf(stderr, "[TrafficManager] ==> Kernel Sig %d; Reason: %d\n", sig, t->si_code);

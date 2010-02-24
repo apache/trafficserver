@@ -91,6 +91,8 @@
 /* modify the "note" in process_core */
 /* Document properly */
 
+#include "ink_config.h"
+
 #if defined(sparc)
 // We need procfs data strucutures and they
 //   don't support large files
@@ -129,6 +131,15 @@ intptr_t f1, f2;
 int framepointer = 0;
 int program_counter = 0;
 #endif  // linux check
+
+#if (HOST_OS == darwin) || (HOST_OS == freebsd) || (HOST_OS == solaris) // FIXME: solaris x86
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <math.h>
+#include "inktomi++.h"
+#include "CoreUtils.h"
+#endif /* darwin || freebsd || solaris */
 
 #ifdef READ_CORE_WMT
 #include "WMT-Debug.h"
@@ -211,11 +222,11 @@ CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
 
   if (arrayMem.length() == 0) {
     arrayMem(0);
-    arrayMem[0].vaddr = vaddr1;
-    arrayMem[0].offset = offset1;
-    arrayMem[0].fsize = fsize1;
+    arrayMem[(intptr_t)0].vaddr = vaddr1;
+    arrayMem[(intptr_t)0].offset = offset1;
+    arrayMem[(intptr_t)0].fsize = fsize1;
   } else {
-    int index = find_vaddr(vaddr1, arrayMem.length(), 0);
+    intptr_t index = find_vaddr(vaddr1, arrayMem.length(), 0);
     if (index == arrayMem.length()) {
       arrayMem(index);
       arrayMem[index].vaddr = vaddr1;
@@ -223,17 +234,17 @@ CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
       arrayMem[index].fsize = fsize1;
     } else if (index == 0) {
       arrayMem(arrayMem.length());
-      for (int i = 0; i < arrayMem.length(); i++) {
+      for (intptr_t i = 0; i < arrayMem.length(); i++) {
         arrayMem[arrayMem.length() - i - 1].vaddr = arrayMem[arrayMem.length() - i - 2].vaddr;
         arrayMem[arrayMem.length() - i - 1].offset = arrayMem[arrayMem.length() - i - 2].offset;
         arrayMem[arrayMem.length() - i - 1].fsize = arrayMem[arrayMem.length() - i - 2].fsize;
       }
-      arrayMem[0].vaddr = vaddr1;
-      arrayMem[0].offset = offset1;
-      arrayMem[0].fsize = fsize1;
+      arrayMem[(intptr_t)0].vaddr = vaddr1;
+      arrayMem[(intptr_t)0].offset = offset1;
+      arrayMem[(intptr_t)0].fsize = fsize1;
     } else {
       arrayMem(arrayMem.length());
-      for (int i = 1; i < arrayMem.length() - index; i++) {
+      for (intptr_t i = 1; i < arrayMem.length() - index; i++) {
         arrayMem[arrayMem.length() - i].vaddr = arrayMem[arrayMem.length() - i - 1].vaddr;
         arrayMem[arrayMem.length() - i].offset = arrayMem[arrayMem.length() - i - 1].offset;
         arrayMem[arrayMem.length() - i].fsize = arrayMem[arrayMem.length() - i - 1].fsize;
@@ -251,7 +262,7 @@ CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
 intptr_t
 CoreUtils::read_core_memory(intptr_t vaddr, intptr_t length, char *buf, FILE * fp)
 {
-  int index = find_vaddr(vaddr, arrayMem.length(), 0);
+  intptr_t index = find_vaddr(vaddr, arrayMem.length(), 0);
   if (inTable == false)
     return -1;
   else {
@@ -1132,7 +1143,11 @@ CoreUtils::process_EThread(EThread * eth_test)
 
     // This is not 64-bit correct. /leif
     printf("----------- EThread @ 0x%p ----------\n", eth_test);
-    printf("   thread_id: %d\n", (int) loaded_eth->tid);
+#if (HOST_OS == freebsd) || (HOST_OS == darwin)
+    printf("   thread_id: %p\n", loaded_eth->tid);
+#else
+    printf("   thread_id: %i\n", (int) loaded_eth->tid);
+#endif
     //    printf("   NetHandler: 0x%x\n\n", (int) loaded_eth->netHandler);
   }
 
@@ -1145,7 +1160,7 @@ print_netstate(NetState * n)
   // These might not be 64-bit correct. /leif
   printf("      enabled: %d\n", n->enabled);
   printf("      op: %d  _cont: 0x%p\n", n->vio.op, n->vio._cont);
-  printf("      nbytes: %d  done: %d\n", n->vio.nbytes, n->vio.ndone);
+  printf("      nbytes: %d  done: %d\n", (int)n->vio.nbytes, (int)n->vio.ndone);
   printf("      vc_server: 0x%p   mutex: 0x%p\n\n", n->vio.vc_server, n->vio.mutex.m_ptr);
 }
 

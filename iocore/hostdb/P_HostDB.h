@@ -31,17 +31,13 @@
 #ifndef _P_HostDB_h_
 #define _P_HostDB_h_
 
-#ifndef INLINE_CC
-#undef INK_INLINE
-#define INK_INLINE inline
-#endif
+#include "inktomi++.h"
 
 #ifdef SPLIT_DNS
 #include "P_SplitDNS.h"
 #include "P_Cluster.h"
 #endif
 
-#include "inktomi++.h"
 #include "P_EventSystem.h"
 
 // HostDB files

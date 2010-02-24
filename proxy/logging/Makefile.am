@@ -20,8 +20,8 @@ DEFS += -DIOCORE_LOG_COLLATION
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/libinktomi++ \
-  $(iocore_include_dirs) \
   -I$(top_srcdir)/proxy \
+  $(iocore_include_dirs) \
   -I$(top_srcdir)/proxy/http2 \
   -I$(top_srcdir)/proxy/http2/remap \
   -I$(top_srcdir)/proxy/mgmt2 \

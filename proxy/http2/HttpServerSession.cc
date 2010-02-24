@@ -30,6 +30,7 @@
    
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "Allocator.h"
 #include "HttpServerSession.h"
 #include "HttpSessionManager.h"
@@ -51,7 +52,7 @@ host_hash_computed(false), con_id(0), transact_count(0),
 state(HSS_INIT), to_parent_proxy(false), server_trans_stat(0),
 private_session(false), 
 enable_origin_connection_limiting(false),
-connection_count(ConnectionCount::getInstance()),
+connection_count(NULL),
 read_buffer(NULL), server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
 {
 }
@@ -102,6 +103,8 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
   // Check to see if we are limiting the number of connections
   // per host
   if (enable_origin_connection_limiting == true) {
+    if(connection_count == NULL)
+      connection_count = ConnectionCount::getInstance();
     connection_count->incrementCount(server_ip);
     Debug("http_ss", "[%lld] new connection, ip: %u, count: %u",
           con_id, server_ip, connection_count->getCount(server_ip));
@@ -117,13 +120,13 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
 }
 
 VIO *
-HttpServerSession::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
+HttpServerSession::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
 {
   return server_vc->do_io_read(c, nbytes, buf);
 }
 
 VIO *
-HttpServerSession::do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner)
+HttpServerSession::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner)
 {
   return server_vc->do_io_write(c, nbytes, buf, owner);
 }

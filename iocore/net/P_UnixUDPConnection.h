@@ -34,6 +34,8 @@
 #ifndef _IOCORE_WIN32
 
 #include "P_UDPConnection.h"
+#include "P_UDPPacket.h"
+
 class UnixUDPConnection:public UDPConnectionInternal
 {
 public:
@@ -50,7 +52,7 @@ public:
   int onCallbackQueue;
   Action *callbackAction;
   EThread *ethread;
-  struct epoll_data_ptr ep;
+  EventIO ep;
 
   UnixUDPConnection(int fd);
   virtual ~ UnixUDPConnection();
@@ -98,34 +100,7 @@ UnixUDPConnection::errorAndDie(int e)
   m_errno = e;
 }
 
-INK_INLINE void
-UDPConnection::Release()
-{
-  UnixUDPConnection *p = (UnixUDPConnection *) this;
-  PollCont *pc = get_UDPPollCont(p->ethread);
-
-#if defined(USE_EPOLL)
-  struct epoll_event ev;
-  epoll_ctl(pc->pollDescriptor->epoll_fd, EPOLL_CTL_DEL, getFd(), &ev);
-#elif defined(USE_KQUEUE)
-  struct kevent ev[2];
-  EV_SET(&ev[0], getFd(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
-  EV_SET(&ev[1], getFd(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-  kevent(pc->pollDescriptor->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
-#endif
-
-  if (ink_atomic_increment(&p->refcount, -1) == 1) {
-    ink_debug_assert(p->callback_link.next == NULL);
-    ink_debug_assert(p->callback_link.prev == NULL);
-    ink_debug_assert(p->polling_link.next == NULL);
-    ink_debug_assert(p->polling_link.prev == NULL);
-    ink_debug_assert(p->newconn_alink.next == NULL);
-
-    delete this;
-  }
-}
-
-INK_INLINE Action *
+inline Action *
 UDPConnection::recv(Continuation * c)
 {
   UnixUDPConnection *p = (UnixUDPConnection *) this;
@@ -138,7 +113,7 @@ UDPConnection::recv(Continuation * c)
 }
 
 
-INK_INLINE UDPConnection *
+inline UDPConnection *
 new_UDPConnection(int fd)
 {
   return (fd >= 0) ? NEW(new UnixUDPConnection(fd)) : 0;

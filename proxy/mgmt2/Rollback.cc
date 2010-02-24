@@ -22,19 +22,13 @@
  */
 
 /****************************************************************************/
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
-
-#include "ink_platform.h"
-#include "Compatability.h"
-#include "ink_thread.h"
-#include "ink_error.h"
+#include "inktomi++.h"
 #include "LocalManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
 #include "WebGlobals.h"
 #include "MgmtUtils.h"
 #include "ExpandingArray.h"
-#include "Diags.h"
 #include "MgmtSocket.h"
 
 /****************************************************************************

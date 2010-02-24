@@ -29,6 +29,7 @@
  * 
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "ink_platform.h"
 #include "ink_hash_table.h"
 #include "ink_snprintf.h"

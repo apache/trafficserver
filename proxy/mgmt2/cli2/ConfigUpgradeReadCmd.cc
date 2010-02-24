@@ -29,14 +29,14 @@
  ****************************************************************/
 
 
-
+#include "inktomi++.h"
 #include <ConfigCmd.h>
 #include <CliDisplay.h>
 #include <CliMgmtUtils.h>
 #include <ConfigUpgradeCmd.h>
 #include <string.h>
 #include "../api2/include/INKMgmtAPI.h"
-#include "inktomi++.h"
+
 
 extern Tcl_Interp *interp;
 CIFCReadEntry::CIFCReadEntry():

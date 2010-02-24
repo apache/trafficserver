@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
+
 /* varargs declarations: */
 # include <stdarg.h>
 # define VA_START(f)     va_start(ap, f)

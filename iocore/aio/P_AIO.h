@@ -31,15 +31,11 @@
 #ifndef _P_AIO_h_
 #define _P_AIO_h_
 
-#ifndef INLINE_CC
-#undef INK_INLINE
-#define INK_INLINE inline
-#endif
-
 #include "P_EventSystem.h"
 #include "I_AIO.h"
 
-// #define AIO_STATS
+// for debugging
+// #define AIO_STATS 1
 
 #undef  AIO_MODULE_VERSION
 #define AIO_MODULE_VERSION        makeModuleVersion(AIO_MODULE_MAJOR_VERSION,\
@@ -53,9 +49,6 @@ struct AIOCallbackInternal:AIOCallback
   AIO_Reqs *aio_req;
   ink_hrtime sleep_time;
   int io_complete(int event, void *data);
-  void AIOCallback_is_an_abstract_class()
-  {
-  }
   AIOCallbackInternal()
   {
     const size_t to_zero = sizeof(AIOCallbackInternal)
@@ -67,13 +60,13 @@ struct AIOCallbackInternal:AIOCallback
   }
 };
 
-INK_INLINE int
+inline int
 AIOCallback::ok()
 {
   return (ink_off_t) aiocb.aio_nbytes == (ink_off_t) aio_result;
 };
 
-INK_INLINE int
+inline int
 AIOCallbackInternal::io_complete(int event, void *data)
 {
   (void) event;
@@ -107,13 +100,14 @@ public:
   int num_temp;
   int num_queue;
   ink_hrtime start;
-    AIOTestData():Continuation(new_ProxyMutex()), num_req(0), num_temp(0), num_queue(0)
+
+  int ink_aio_stats(int event, void *data);
+
+  AIOTestData():Continuation(new_ProxyMutex()), num_req(0), num_temp(0), num_queue(0)
   {
     start = ink_get_hrtime();
     SET_HANDLER(&AIOTestData::ink_aio_stats);
   }
-
-  int ink_aio_stats(int event, void *data);
 };
 #endif
 

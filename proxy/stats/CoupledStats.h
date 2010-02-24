@@ -37,7 +37,7 @@
 #include "ink_resource.h"
 #include "ink_assert.h"
 #include "BaseRecords.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "Stats.h"
 
 #ifdef _c_impl

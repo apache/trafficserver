@@ -23,7 +23,7 @@
 
 
 #include "I_OpQueue.h"
-#include "inktomi++.h"
+#include "P_EventSystem.h"
 ClassAllocator<Callback> cbAlloc("Callback", 16);
 
 #define CB_ALLOC(_a, _t) _a.alloc()

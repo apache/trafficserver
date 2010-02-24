@@ -28,6 +28,7 @@
  *
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 
 #include <sys/types.h>
@@ -45,7 +46,7 @@
 #include "Main.h"
 #include "Error.h"
 #include "P_EventSystem.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "StatSystem.h"

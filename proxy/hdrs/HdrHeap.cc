@@ -30,12 +30,11 @@
    
  ****************************************************************************/
 
+#include "inktomi++.h"
 #include "HdrHeap.h"
-#include "Allocator.h"
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "Diags.h"
 #include "ptrdef.h"
 
 #define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))

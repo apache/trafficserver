@@ -30,10 +30,10 @@
    
  ****************************************************************************/
 
+#include "inktomi++.h"
+#include "ink_platform.h"
 #include <stdio.h>
 #include <list>
-#include "ink_platform.h"
-#include "inktomi++.h"
 //#include "ink_file.h"
 //#include "Compatability.h"
 #include "ParseRules.h"

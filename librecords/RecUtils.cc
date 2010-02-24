@@ -21,13 +21,10 @@
   limitations under the License.
  */
 
+#include "inktomi++.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
 #include "P_RecTree.h"
-
-#include "ParseRules.h"
-#include "ink_atomic.h"
-#include "ink_snprintf.h"
 
 // diags defined in RecCore.cc
 extern Diags *g_diags;

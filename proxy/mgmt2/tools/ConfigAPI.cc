@@ -21,10 +21,12 @@
   limitations under the License.
  */
 
-#if (HOST_OS == linux) || (HOST_OS == sunos)
+#if (HOST_OS == linux) || (HOST_OS == solaris) || (HOST_OS == freebsd) || (HOST_OS == darwin)
 
+#include "inktomi++.h"
 #include "ConfigAPI.h"
 #include "SysAPI.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,7 +34,7 @@
 #include <sys/wait.h>
 #include <stdarg.h>
 #include <string.h>
-#include "inktomi++.h"
+
 #include "CoreAPI.h"
 
 #include "../utils/XmlUtils.h"
@@ -72,26 +74,28 @@
 int
 Config_GetHostname(char *hostname, size_t hostname_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   return (Net_GetHostname(hostname, hostname_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_SetHostname(char *hostname)
 {
-  int status;
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   char old_hostname[256];
   INKInt val;
   bool rni = false;
-
 
   //printf("Inside Config_SetHostname(), hostname = %s\n", hostname);
 
   //validate
   ink_strncpy(old_hostname, "", sizeof(old_hostname));
-
   if (hostname == NULL)
     return -1;
-
 
   //System call first
   status = Net_SetHostname(hostname);
@@ -126,7 +130,6 @@ Config_SetHostname(char *hostname)
     if (status) {
       // If this fails, we need to restore old machine hostname
       // at this poing we already have TS and network configured
-
       Net_GetHostname(old_hostname, sizeof(old_hostname));
       if (!strlen(old_hostname)) {
         DPRINTF(("Config_SetHostname: FATAL: recovery failed - failed to get old_hostname\n"));
@@ -152,21 +155,25 @@ Config_SetHostname(char *hostname)
       DPRINTF(("Config_SetHostname: Failed starting rm proxy in rm_start_proxy\n"));
     }
   }
-
+#endif /* !freebsd && !darwin */
   return status;
 }
 
 int
 Config_GetDefaultRouter(char *router, size_t len)
 {
-
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_GetDefaultRouter(router, len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_SetDefaultRouter(char *router)
 {
-  int status;
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   char old_router[80];
 
   //validate
@@ -180,11 +187,8 @@ Config_SetDefaultRouter(char *router)
   }
 
   DPRINTF(("Config_SetDefaultRouter: router %s\n", router));
-
   status = Net_SetDefaultRouter(router);
-
   DPRINTF(("Config_SetDefaultRouter: Net_SetDefaultRouter returned %d\n", status));
-
   if (status) {
     return status;
   }
@@ -203,19 +207,25 @@ Config_SetDefaultRouter(char *router)
     }
     return -1;
   }
+#endif /* !freebsd && !darwin */
   return status;
 }
 
 int
 Config_GetDomain(char *domain, size_t domain_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   return (Net_GetDomain(domain, domain_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_SetDomain(char *domain)
 {
-  int status;
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   char old_domain[80];
 
   status = Config_GetDomain(old_domain, sizeof(old_domain));
@@ -241,29 +251,33 @@ Config_SetDomain(char *domain)
     }
     return -1;
   }
+#endif /* !freebsd && !darwin */
   return status;
 }
 
 int
 Config_GetDNS_Servers(char *dns, size_t dns_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   return (Net_GetDNS_Servers(dns, dns_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_SetDNS_Servers(char *dns)
 {
-  int status;
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   char old_dns[80];
 
   DPRINTF(("Config_SetDNS_Servers: dns %s\n", dns));
-
   status = Config_GetDNS_Servers(old_dns, sizeof(old_dns));
   if (status) {
     DPRINTF(("Config_SetDNS_Servers: falied to retrieve old dns name\n"));
     ink_strncpy(old_dns, "", sizeof(old_dns));
   }
-
   status = Net_SetDNS_Servers(dns);
   if (status) {
     return status;
@@ -275,7 +289,6 @@ Config_SetDNS_Servers(char *dns)
       DPRINTF(("Config_SetDNS_Servers: FATAL: falied to retrieve old dns name\n"));
       return -1;
     }
-
     status = Net_SetDNS_Servers(old_dns);
     if (status) {
       DPRINTF(("Config_SetDNS_Servers: FATAL: falied to revert to old dns name\n"));
@@ -283,74 +296,111 @@ Config_SetDNS_Servers(char *dns)
     }
     return -1;
   }
+#endif /* !freebsd && !darwin */
   return status;
 }
 
 int
 Config_GetDNS_Server(char *server, size_t server_len, int no)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   return (Net_GetDNS_Server(server, server_len, no));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_GetNetworkIntCount()
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_GetNetworkIntCount());
+#else
+  return -1;
+#endif
 }
 
 int
 Config_GetNetworkInt(int int_num, char *interface, size_t interface_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_GetNetworkInt(int_num, interface, interface_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_GetNIC_Status(char *interface, char *status, size_t status_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_GetNIC_Status(interface, status, status_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_GetNIC_Start(char *interface, char *start, size_t start_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   return (Net_GetNIC_Start(interface, start, start_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_GetNIC_Protocol(char *interface, char *protocol, size_t protocol_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   return (Net_GetNIC_Protocol(interface, protocol, protocol_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_GetNIC_IP(char *interface, char *ip, size_t ip_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_GetNIC_IP(interface, ip, ip_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_GetNIC_Netmask(interface, netmask, netmask_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_GetNIC_Gateway(char *interface, char *gateway, size_t gateway_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   return (Net_GetNIC_Gateway(interface, gateway, gateway_len));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_SetNIC_Down(char *interface)
 {
-  int status;
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   char ip[80];
 
   //validate 
   if (interface == NULL) {
     return -1;
   }
-
   status = Net_SetNIC_Down(interface);
   if (status) {
     return status;
@@ -363,6 +413,7 @@ Config_SetNIC_Down(char *interface)
   if (status) {
     DPRINTF(("Config_SetNIC_down: falied to config TS for SetNIC_Down\n"));
   }
+#endif /* !freebsd && !darwin */
   return status;
 }
 
@@ -374,8 +425,11 @@ Config_SetNIC_StartOnBoot(char *interface, char *onboot)
   if ((interface == NULL) || (onboot == NULL)) {
     return -1;
   }
-
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_SetNIC_StartOnBoot(interface, onboot));
+#else
+  return -1;
+#endif
 }
 
 int
@@ -385,48 +439,62 @@ Config_SetNIC_BootProtocol(char *interface, char *nic_protocol)
   if ((interface == NULL) || (nic_protocol == NULL)) {
     return -1;
   }
-
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_SetNIC_BootProtocol(interface, nic_protocol));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_SetNIC_IP(char *interface, char *nic_ip)
 {
+  int status = -1;
   //validate
   if ((interface == NULL) || (nic_ip == NULL)) {
     return -1;
   }
-  return (Net_SetNIC_IP(interface, nic_ip));
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+  status = (Net_SetNIC_IP(interface, nic_ip));
+#endif
+  return status;
 }
 
 int
 Config_SetNIC_Netmask(char *interface, char *nic_netmask)
 {
+  int status = -1;
   //validate
   if ((interface == NULL) || (nic_netmask == NULL)) {
     return -1;
   }
-
-  return (Net_SetNIC_Netmask(interface, nic_netmask));
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+  status = (Net_SetNIC_Netmask(interface, nic_netmask));
+#endif
+  return status;
 }
 
 int
 Config_SetNIC_Gateway(char *interface, char *nic_gateway)
 {
+  int status = -1;
   //validate
   if ((interface == NULL) || (nic_gateway == NULL)) {
     return -1;
   }
 
   DPRINTF(("Config_SetNIC_gateway:: interface %s gateway %s\n", interface, nic_gateway));
-
-  return (Net_SetNIC_Gateway(interface, nic_gateway));
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+  status = (Net_SetNIC_Gateway(interface, nic_gateway));
+#endif
+  return status;
 }
 
 int
 Config_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *netmask, char *gateway)
 {
-  int status;
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   char old_ip[80];
   INKInt val;
   bool rni = false;
@@ -471,7 +539,7 @@ Config_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *
       return -1;
     }
   }
-
+#endif /* !freebsd && !darwin */
   return status;
 }
 
@@ -479,105 +547,116 @@ int
 Config_GetTime(char *hour, const size_t hourSize, char *minute, const size_t minuteSize, char *second,
                const size_t secondSize)
 {
-  int status;
-
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   status = Time_GetTime(hour, hourSize, minute, minuteSize, second, secondSize);
+#endif
   return status;
 }
 
 int
 Config_SetTime(bool restart, char *hour, char *minute, char *second)
 {
-  int status;
+  int status = -1;
 
   if (hour == NULL || minute == NULL || second == NULL) {
     return -1;
   }
-
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   status = Time_SetTime(restart, hour, minute, second);
+#endif
   return status;
 }
 
 int
 Config_GetDate(char *month, const size_t monthSize, char *day, const size_t daySize, char *year, const size_t yearSize)
 {
-  int status;
-
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   status = Time_GetDate(month, monthSize, day, daySize, year, yearSize);
+#endif
   return status;
 }
 
 int
 Config_SetDate(bool restart, char *month, char *day, char *year)
 {
-  int status;
+  int status = -1;
 
   if (month == NULL || day == NULL || year == NULL) {
     return -1;
   }
-
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   status = Time_SetDate(restart, month, day, year);
+#endif
   return status;
 }
 
 int
 Config_SortTimezone(void)
 {
-  int status;
-
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   status = Time_SortTimezone();
+#endif
   return status;
 }
 
 int
 Config_GetTimezone(char *timezone, size_t timezone_len)
 {
-  int status;
-
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   status = Time_GetTimezone(timezone, timezone_len);
+#endif
   return status;
 }
 
 int
 Config_SetTimezone(bool restart, char *timezone)
 {
-  int status;
+  int status = -1;
 
   if (timezone == NULL) {
     return -1;
   }
-
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   status = Time_SetTimezone(restart, timezone);
+#endif
   return status;
 }
 
 int
 Config_GetNTP_Servers(char *server, size_t server_len)
 {
-  int status;
-
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   status = Time_GetNTP_Servers(server, server_len);
+#endif
   return status;
 }
 
 int
 Config_SetNTP_Servers(bool restart, char *server)
 {
-  int status;
+  int status = -1;
 
   if (server == NULL) {
     return -1;
   }
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   status = Time_SetNTP_Servers(restart, server);
+#endif
   return status;
 }
 
 int
 Config_GetNTP_Server(char *server, size_t server_len, int no)
 {
-  int status;
-
+  int status = -1;
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   status = Time_GetNTP_Server(server, server_len, no);
+#endif
   return status;
 }
 
@@ -645,42 +724,66 @@ Config_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contac
            trap_community, trap_host));
   return status;
 }
-#endif
+#endif /* linux */
 
 int
 Config_GetNTP_Status(char *status, size_t status_len)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   return Time_GetNTP_Status(status, status_len);
+#else
+  return -1;
+#endif
 }
 
 int
 Config_SetNTP_Off(void)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return Time_SetNTP_Off();
+#else
+  return -1;
+#endif
 }
 
 int
 Config_User_Root(int *old_euid)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return Sys_User_Root(old_euid);
+#else
+  return -1;
+#endif
 }
 
 int
 Config_User_Inktomi(int euid)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return Sys_User_Inktomi(euid);
+#else
+  return -1;
+#endif
 }
 
 int
 Config_Grp_Root(int *old_egid)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return Sys_Grp_Root(old_egid);
+#else
+  return -1;
+#endif
 }
 
 int
 Config_Grp_Inktomi(int egid)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return Sys_Grp_Inktomi(egid);
+#else
+  return -1;
+#endif
 }
 
 #if (HOST_OS == linux)
@@ -781,7 +884,7 @@ Config_RestoreNetConfig(char *file)
       }
       snprintf(eth, sizeof(eth), "eth%d", ++count);
     }
-#endif
+#endif /* linux */
 
     // Check that we always have eth0. If eth0 is missing, exit.
     // Check for all others if eth0 is found
@@ -836,7 +939,7 @@ Config_RestoreNetConfig(char *file)
       xfree(trap_community);
     if (trap_host != NULL)
       xfree(trap_host);
-#endif
+#endif /* linux */
 
     // Get Admin GUI encrypted password.
     char *e_gui_passwd;
@@ -876,9 +979,13 @@ Config_RestoreNetConfig(char *file)
     if (TagValue != NULL) {
       //This is the last one - here we restart TM if it is not floppy configuration
       if (!isFloppyConfig) {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
         Time_SetTimezone(true, TagValue);
+#endif
       } else {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
         Time_SetTimezone(false, TagValue);
+#endif
       }
     }
     xfree(TagValue);
@@ -898,7 +1005,7 @@ Config_SaveNetConfig(char *file)
   //char ethXNM[24];
   //char ethXGW[24];
   XMLDom netConfigXML;
-
+#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   netConfigXML.setNodeName("APPLIANCE_CONFIG");
 
   XMLNode *child2 = new XMLNode;
@@ -1125,7 +1232,7 @@ Config_SaveNetConfig(char *file)
     SNMPinfo->setNodeValue(trap_host);
     child->AppendChild(SNMPinfo);
   }
-#endif
+#endif /* linux */
 
   XMLNode *child1 = new XMLNode;
   char *parentAttributes1[3];
@@ -1166,7 +1273,7 @@ Config_SaveNetConfig(char *file)
   netConfigXML.AppendChild(child);
   netConfigXML.AppendChild(child1);
   netConfigXML.SaveToFile(file);
-
+#endif /* !freebsd && !darwin */
   return 0;
 }
 
@@ -1239,13 +1346,21 @@ XmlObject::getXmlTagValueAndAttribute(char *XmlAttribute, char *XmlTagName)
 int
 Config_SetSMTP_Server(char *server)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_SetSMTP_Server(server));
+#else
+  return -1;
+#endif
 }
 
 int
 Config_GetSMTP_Server(char *server)
 {
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   return (Net_GetSMTP_Server(server));
+#else
+  return -1;
+#endif
 }
 
 
@@ -1272,10 +1387,7 @@ uMountFloppy(char *net_floppy_config)
       return 1;
     }
   } else {
-    int res = execl(net_floppy_config,
-                    "net_floppy_config",
-                    "done",
-                    NULL);
+    int res = execl(net_floppy_config,"net_floppy_config","done",(char*)NULL);
     return res;
   }
 
@@ -1349,10 +1461,7 @@ Config_FloppyNetRestore()
       return 1;
     }
   } else {
-    int res = execl(net_floppy_config,
-                    "net_floppy_config",
-                    "do",
-                    NULL);
+    int res = execl(net_floppy_config,"net_floppy_config","do", (char*)NULL);
     return res;
   }
 
@@ -1422,4 +1531,4 @@ Config_FloppyNetRestore()
 
 }
 
-#endif
+#endif /* (HOST_OS == linux) || (HOST_OS == solaris) || (HOST_OS == freebsd) || (HOST_OS == darwin) */

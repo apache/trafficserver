@@ -34,7 +34,6 @@ libinkevent_a_SOURCES = \
   I_EventSystem.h \
   I_IOBuffer.h \
   I_Lock.h \
-  Inline.cc \
   IOBuffer.cc \
   I_PriorityEventQueue.h \
   I_Processor.h \

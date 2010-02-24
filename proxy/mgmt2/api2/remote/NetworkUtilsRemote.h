@@ -42,6 +42,11 @@
 #include "NetworkUtilsDefs.h"
 #include "EventCallback.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+
 /**********************************************************************
  * Socket Helper Functions
  **********************************************************************/
@@ -52,7 +57,7 @@ int socket_test(int fd);
  * the client connection information stored in the variables in 
  * NetworkUtilsRemote.cc 
  */
-INKError connect();
+INKError ts_connect(); /* TODO: update documenation, Renamed due to conflict with connect() in <sys/socket.h> on some platforms*/
 INKError disconnect();
 INKError reconnect();
 INKError reconnect_loop(int num_attempts);
@@ -94,5 +99,9 @@ INKError parse_proxy_state_get_reply(int fd, INKProxyStateT * state);
 
 INKError parse_event_active_reply(int fd, bool * is_active);
 INKError parse_event_notification(int fd, INKEvent * event);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif

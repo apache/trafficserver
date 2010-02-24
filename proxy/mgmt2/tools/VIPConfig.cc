@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
+#include "inktomi++.h"
 /*
  *
  * VIPConfig.cc
@@ -33,18 +33,6 @@
  * 
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 
 #include <sys/un.h>
 struct ifafilt;
@@ -222,7 +210,7 @@ up_interface(char *binary, char *vip, char *interface)
     } else if (pid > 0) {
       wait(&status);
     } else {                    /* Exec the up */
-      int res = execl(binary, "ifconfig", interface, "up", NULL);
+      int res = execl(binary, "ifconfig", interface, "up", (char*)NULL);
       if (res != 0) {
         perror("[vip_confg] ");
       }
@@ -235,7 +223,7 @@ up_interface(char *binary, char *vip, char *interface)
 
 // "netmask +" is broken on Solaris 2.6 & 2.7,
 // it never actually checks against /etc/netmasks.
-    int res = execl(binary, "ifconfig", interface, vip, "netmask", "+", "broadcast", "+", "metric", "1", NULL);
+    int res = execl(binary, "ifconfig", interface, vip, "netmask", "+", "broadcast", "+", "metric", "1", (char*)NULL);
     if (res != 0) {
       perror("[vip_config] ");
     }
@@ -306,7 +294,7 @@ down_interface(char *binary, char *vip, char *interface)
     } else if (pid > 0) {
       wait(&status);
     } else {                    /* Exec the remove */
-      int res = execl(binary, "ifconfig", interface, "inet", "0.0.0.0", NULL);
+      int res = execl(binary, "ifconfig", interface, "inet", "0.0.0.0", (char*)NULL);
       if (res != 0) {
         perror("[vip_confg] ");
       }
@@ -318,7 +306,7 @@ down_interface(char *binary, char *vip, char *interface)
   } else {                      /* Exec the down */
     int res = 0;
     // don't down the inter on linux, it'll shutdown the driver
-    res = execl(binary, "ifconfig", interface, "down", NULL);
+    res = execl(binary, "ifconfig", interface, "down", (char*)NULL);
     if (res != 0) {
       perror("[vip_confg] ");
     }

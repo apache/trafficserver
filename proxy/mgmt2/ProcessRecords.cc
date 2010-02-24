@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
+
 /*
  *
  * ProcessRecords.cc
@@ -32,6 +32,8 @@
  * 
  */
 
+#include "ink_config.h"
+#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 #include "ProcessRecords.h"
 
 bool

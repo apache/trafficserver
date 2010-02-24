@@ -28,7 +28,7 @@
  *
  ****************************************************************/
 
-
+#include "inktomi++.h"
 #include <ConfigCmd.h>
 #include <CliDisplay.h>
 #include <CliMgmtUtils.h>
@@ -36,7 +36,7 @@
 #include <CliMgmtUtils.h>
 #include <ConfigUpgradeCmd.h>
 #include <string.h>
-#include <inktomi++.h>
+
 
 CIFCWriteEntry::CIFCWriteEntry():CountOn(0)
 {

@@ -38,10 +38,9 @@ AM_CPPFLAGS = \
 MGMT_DEFS = @MGMT_DEFS@
 DEFS  += $(MGMT_DEFS)
 
-noinst_LIBRARIES = libmgmtapiremote.a 
-
 noinst_PROGRAMS = traffic_api_cli_remote
 
+noinst_LIBRARIES = libmgmtapiremote.a 
 libmgmtapiremote_a_SOURCES = \
   ../CfgContextImpl.cc \
   ../CfgContextManager.cc \

@@ -35,16 +35,12 @@
 static RegressionTest *test = NULL;
 static RegressionTest *exclusive_test = NULL;
 
-RegressionTest *
-  RegressionTest::current = 0;
-int
-  RegressionTest::ran_tests = 0;
-DFA
-  RegressionTest::dfa;
-int
-  regression_level = 0;
-int
-  RegressionTest::final_status = REGRESSION_TEST_PASSED;
+RegressionTest *RegressionTest::current = 0;
+int RegressionTest::ran_tests = 0;
+DFA RegressionTest::dfa;
+int regression_level = 0;
+int RegressionTest::final_status = REGRESSION_TEST_PASSED;
+
 char *
 regression_status_string(int status)
 {
@@ -55,7 +51,6 @@ regression_status_string(int status)
 
 RegressionTest::RegressionTest(const char *name_arg, TestFunction * function_arg, int aopt)
 {
-  // printf("<%s>\n",name_arg);
   name = name_arg;
   function = function_arg;
   status = REGRESSION_TEST_NOT_RUN;
@@ -109,7 +104,6 @@ RegressionTest::run(char *atest)
   return run_some();
 }
 
-
 int
 RegressionTest::run_some()
 {
@@ -123,7 +117,6 @@ RegressionTest::run_some()
               &SPACES[40 + strlen(current->name)], regression_status_string(current->status));
     }
     current = current->next;
-
   }
   for (; current; current = current->next) {
     if ((dfa.match(current->name) >= 0)) {
@@ -180,7 +173,7 @@ check_test_list:
 }
 
 int
-rprintf(RegressionTest * t, const char *format, ...)
+rprintf(RegressionTest *t, const char *format, ...)
 {
   int l;
   char buffer[8192];
@@ -194,10 +187,21 @@ rprintf(RegressionTest * t, const char *format, ...)
   return (l);
 }
 
+int
+rperf(RegressionTest *t, const char *tag, double val)
+{
+  int l;
+  char format2[8192];
+  l = snprintf(format2, sizeof(format2), "RPERF %s.%s %f\n", t->name, tag, val);
+  fputs(format2, stderr);
+  return (l);
+}
+
 REGRESSION_TEST(Regression) (RegressionTest * t, int atype, int *status) {
   (void) t;
   (void) atype;
   rprintf(t, "regression test\n");
+  rperf(t, "speed", 100.0);
   if (!test)
     *status = REGRESSION_TEST_FAILED;
   else

@@ -95,7 +95,7 @@ public:
 };
 
 
-INK_INLINE Action *
+inline Action *
 NetProcessor::connect_re(Continuation * cont, unsigned int ip, int port, unsigned int _interface, NetVCOptions * opts)
 {
   return ((UnixNetProcessor *) this)->connect_re_internal(cont, ip, port, _interface, opts);
@@ -110,7 +110,8 @@ extern UnixNetProcessor unix_netProcessor;
 // accept such events by the EventProcesor.
 //
 extern void initialize_thread_for_net(EThread * thread, int thread_index);
+#if defined(USE_OLD_EVENTFD)
 extern void initialize_eventfd(EThread * thread);
-
+#endif
 //#include "UnixNet.h"
 #endif

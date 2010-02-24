@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
+
 #ifdef HAVE_LIBSSL
 
 #include "P_SSLCertLookup.h"

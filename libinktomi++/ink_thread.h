@@ -225,6 +225,29 @@ ink_sem_destroy(ink_sem * sp)
   ink_assert(!sem_destroy(sp));
 }
 
+#if (HOST_OS == darwin)
+static inline ink_sem * 
+ink_sem_open(const char *name , int oflag, mode_t mode, unsigned int value)
+{
+  ink_sem *sptr;
+  sptr = sem_open(name, oflag, mode, value);
+  ink_assert(sptr != SEM_FAILED);
+  return sptr;
+}
+
+static inline void
+ink_sem_close(ink_sem * sp)
+{
+  ink_assert(!sem_close(sp));
+}
+
+static inline int
+ink_sem_unlink(const char *name)
+{
+  return sem_unlink(name);
+}
+#endif /* darwin */
+
 /*******************************************************************
  * Posix Condition Variables
  ******************************************************************/
@@ -251,7 +274,11 @@ ink_cond_timedwait(ink_cond * cp, ink_mutex * mp, ink_timestruc * t)
 {
   int err;
   while (EINTR == (err = pthread_cond_timedwait(cp, mp, t)));
+#if (HOST_OS == freebsd)
+  ink_assert((err == 0) || (err == ETIMEDOUT));
+#else
   ink_assert((err == 0) || (err == ETIME) || (err == ETIMEDOUT));
+#endif
   return err;
 }
 
@@ -279,11 +306,13 @@ ink_thread_exit(void *status)
   pthread_exit(status);
 }
 
+#if defined(USE_OLD_EVENTFD)
 static inline void
 ink_create_pipe( int pfd[2])
 {
   ink_assert(pipe(pfd)==0);
 }
+#endif
 
 #endif /* #if defined(POSIX_THREAD) */
 

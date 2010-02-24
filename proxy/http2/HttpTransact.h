@@ -36,7 +36,7 @@
 #include "CacheControl.h"
 #include "ParentSelection.h"
 #include "BaseRecords.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "Transform.h"
 //#include "HttpAuthParams.h"
 #include "api/include/remap.h"

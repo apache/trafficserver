@@ -28,8 +28,7 @@
   
  ****************************************************************************/
 
-#include "ink_unused.h"     /* MAGIC_EDITING_TAG */
-#include <string.h>
+#include "inktomi++.h"
 
 #ifdef NON_MODULAR
 #include "P_HostDB.h"
@@ -427,26 +426,38 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     int fd = -1;
 
 // find a good address to start
+#if (HOST_OS != darwin)
     fd = socketManager.open("/dev/zero", O_RDONLY, 0645);
     if (fd < 0) {
       Warning("unable to open /dev/zero: %d, %s", errno, strerror(errno));
       goto Labort;
     }
+#endif
 
     // lots of useless stuff
-
+#if (HOST_OS == darwin)
+    cur = (char *) mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE | MAP_ANON, -1, 0);
+#else 
     cur = (char *) mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE, fd, 0);
-
+#endif
     if (cur == NULL || cur == (caddr_t) MAP_FAILED) {
       store = saved;
-      Warning("unable to mmap /dev/zero for %u bytes", totalsize);
+#if (HOST_OS == darwin)
+      Warning("unable to mmap anonymous region for %u bytes: %d, %s", totalsize, errno, strerror(errno));
+#else
+      Warning("unable to mmap /dev/zero for %u bytes: %d, %s", totalsize, errno, strerror(errno));
       close(fd);
+#endif
       goto Labort;
     }
     if (munmap(cur, totalsize)) {
       store = saved;
-      Warning("unable to munmap /dev/zero for %u bytes", totalsize);
+#if (HOST_OS == darwin)
+      Warning("unable to munmap anonymous region for %u bytes: %d, %s", totalsize, errno, strerror(errno));
+#else
+      Warning("unable to munmap /dev/zero for %u bytes: %d, %s", totalsize, errno, strerror(errno));
       close(fd);
+#endif
       goto Labort;
     }
     data = cur;
@@ -472,8 +483,9 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     mapped_header = (MultiCacheHeader *) cur;
     if (!mmap_region(1, fds, cur, private_flag, fd))
       goto Labort;
-
+#if (HOST_OS != darwin)
     ink_assert(!socketManager.close(fd, keFile));
+#endif
     store = saved;
   }
 
@@ -833,7 +845,7 @@ MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
 
   ink_assert(data != new_data);
   if (new_data == NULL || new_data == (caddr_t) MAP_FAILED) {
-    Warning("unable to mmap /dev/zero for %u bytes", totalsize);
+    Warning("unable to mmap /dev/zero for %u bytes: %d, %s", totalsize,errno, strerror(errno));
     return -1;
   }
   ::close(fd);

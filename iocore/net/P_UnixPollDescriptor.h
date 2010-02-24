@@ -30,43 +30,60 @@
 #ifndef __P_UNIXPOLLDESCRIPTOR_H__
 #define __P_UNIXPOLLDESCRIPTOR_H__
 
-typedef struct pollfd Pollfd;
+#include "inktomi++.h"
 
-#define POLL_DESCRIPTOR_SIZE 32768
-
-struct PollDescriptor
-{
-  int result;                   // result of poll
-#if defined(USE_EPOLL)
-  int epoll_fd;                 // epoll interface (added by YTS Team, yamsat)
-#elif defined(USE_KQUEUE)
-  int kqueue_fd;
-#else
-#error port to your os
+#ifdef USE_LIBEV
+#include "ev.h"
 #endif
-  int nfds;                     // actual number
-  int seq_num;                  // sequence number
-  Pollfd pfd[POLL_DESCRIPTOR_SIZE];
-
-#if defined(USE_EPOLL)
-  struct epoll_event ePoll_Triggered_Events[POLL_DESCRIPTOR_SIZE];      //added by YTS Team, yamsat
-#define INK_EVP_IN EPOLLIN
-#define INK_EVP_OUT EPOLLOUT
-#define INK_EVP_ERR EPOLLERR
-#define INK_EVP_PRI EPOLLPRI
-#define INK_EVP_HUP EPOLLHUP
-#define get_ev_events(a,x) ((a)->ePoll_Triggered_Events[(x)].events)
-#define get_ev_data(a,x) ((a)->ePoll_Triggered_Events[(x)].data.ptr)
-
-#elif defined(USE_KQUEUE)
-  struct kevent kq_Triggered_Events[POLL_DESCRIPTOR_SIZE];      //added by YTS Team, yamsat
-  /* we define these here as numbers, because for kqueue mapping them to a combination of 
- * filters / flags is hard to do. */
+#if defined(USE_KQUEUE)
+#include <sys/event.h>
 #define INK_EVP_IN    0x001
 #define INK_EVP_PRI   0x002
 #define INK_EVP_OUT   0x004
 #define INK_EVP_ERR   0x010
 #define INK_EVP_HUP   0x020
+#endif
+
+#define POLL_DESCRIPTOR_SIZE 32768
+
+typedef struct pollfd Pollfd;
+
+struct PollDescriptor
+{
+  int result;                   // result of poll
+#if defined(USE_LIBEV)
+  struct ev_loop *eio;
+#elif defined(USE_EPOLL)
+  int epoll_fd;
+  int nfds;                     // actual number
+  Pollfd pfd[POLL_DESCRIPTOR_SIZE];
+  struct epoll_event ePoll_Triggered_Events[POLL_DESCRIPTOR_SIZE];
+#elif defined(USE_KQUEUE)
+  int kqueue_fd;
+#elif defined(USE_PORT)
+  int port_fd;
+#else
+#error port me
+#endif
+
+#if defined(USE_LIBEV)
+#define get_ev_port(a) ((a)->eio->backend_fd)
+#define get_ev_events(a,x) (a->eio->pendings[0] + a->eio->pendingcnt[0] - 1)->events
+#define get_ev_data(a,x) ((EventIO*)(a->eio->pendings[0] + a->eio->pendingcnt[0] - 1)->w->cb)
+#define ev_next_event(a,x) do {					       \
+    (a->eio->pendings[0] + a->eio->pendingcnt[0] - 1)->w->pending = 0; \
+    a->eio->pendingcnt[0]--;                               \
+  } while (0)
+#elif defined(USE_EPOLL)
+#define get_ev_port(a) ((a)->epoll_fd)
+#define get_ev_events(a,x) ((a)->ePoll_Triggered_Events[(x)].events)
+#define get_ev_data(a,x) ((a)->ePoll_Triggered_Events[(x)].data.ptr)
+#define ev_next_event(a,x)
+#elif defined(USE_KQUEUE)
+  struct kevent kq_Triggered_Events[POLL_DESCRIPTOR_SIZE];
+  /* we define these here as numbers, because for kqueue mapping them to a combination of 
+ * filters / flags is hard to do. */
+#define get_ev_port(a) ((a)->kqueue_fd)
 #define get_ev_events(a,x) ((a)->kq_event_convert((a)->kq_Triggered_Events[(x)].filter, (a)->kq_Triggered_Events[(x)].flags))
 #define get_ev_data(a,x) ((a)->kq_Triggered_Events[(x)].udata)
   int kq_event_convert(int16_t event, uint16_t flags)
@@ -85,38 +102,46 @@ struct PollDescriptor
     }
     return r;
   }
+#define ev_next_event(a,x)
+#elif defined(USE_PORT)
+  port_event_t Port_Triggered_Events[POLL_DESCRIPTOR_SIZE];
+#define get_ev_port(a) ((a)->port_fd)
+#define get_ev_events(a,x) ((a)->Port_Triggered_Events[(x)].portev_events)
+#define get_ev_data(a,x) ((a)->Port_Triggered_Events[(x)].portev_user)
+#define get_ev_odata(a,x) ((a)->Port_Triggered_Events[(x)].portev_object)
+#define ev_next_event(a,x)
 #else
 #error port to your os
 #endif
 
-  bool empty()
-  {
-    return nfds == 0;
-  }
-  void reset()
-  {
-    nfds = 0;
-  }
   Pollfd *alloc()
   {
+#ifdef USE_EPOLL
     return &pfd[nfds++];
+#else
+    return 0;
+#endif
   }
-
   PollDescriptor *init()
   {
     result = 0;
+#if defined(USE_LIBEV)
+    eio = 0;
+    // eio = ev_loop_new(0); moved to initialize_thread_for_xx --- all this junk should go away
+#elif defined(USE_EPOLL)
     nfds = 0;
-    seq_num = 0;
-#if defined(USE_EPOLL)
-    epoll_fd = epoll_create(POLL_DESCRIPTOR_SIZE);      //added by YTS Team, yamsat
+    epoll_fd = epoll_create(POLL_DESCRIPTOR_SIZE);
     memset(ePoll_Triggered_Events, 0, sizeof(ePoll_Triggered_Events));
+    memset(pfd, 0, sizeof(pfd));
 #elif defined(USE_KQUEUE)
     kqueue_fd = kqueue();
     memset(kq_Triggered_Events, 0, sizeof(kq_Triggered_Events));
+#elif defined(USE_PORT)
+    port_fd = port_create();
+    memset(Port_Triggered_Events, 0, sizeof(Port_Triggered_Events));
 #else
 #error port to your os
 #endif
-    memset(pfd, 0, sizeof(pfd));
     return this;
   }
   PollDescriptor() {

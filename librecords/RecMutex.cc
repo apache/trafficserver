@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
 #include "I_RecMutex.h"
 
 int

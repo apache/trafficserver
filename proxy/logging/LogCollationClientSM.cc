@@ -25,13 +25,14 @@
 // include files
 //-------------------------------------------------------------------------
 
+#include "inktomi++.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
 #include <sys/types.h>
 
-#include "inktomi++.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 

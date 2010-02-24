@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
 #include "DiagsConfig.h"
 #ifdef LOCAL_MANAGER
 
@@ -30,7 +31,7 @@
 
 #else
 #include "Main.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #define MGMT_PTR       pmgmt
 #define DIAGS_LOG_FILE "diags.log"
 

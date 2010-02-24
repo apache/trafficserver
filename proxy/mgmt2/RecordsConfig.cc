@@ -22,7 +22,7 @@
  */
 
 
-
+#include "ink_config.h"
 #include "RecordsConfig.h"
 #include "Main.h"
 

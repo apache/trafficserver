@@ -31,6 +31,7 @@
  * Created by: Lan Tran
  * 
  ***************************************************************************/
+#include "ink_config.h"
 #include "ink_platform.h"
 #include "CfgContextManager.h"
 #include "CfgContextUtils.h"

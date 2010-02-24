@@ -30,10 +30,6 @@
 #ifndef __P_NET_H__
 #define __P_NET_H__
 
-#ifndef INLINE_CC
-#undef INK_INLINE
-#define INK_INLINE inline
-#endif
 // Net Stats 
 
 enum Net_Stats
@@ -93,6 +89,12 @@ do { \
 #define NET_DECREMENT_THREAD_DYN_STAT(_s, _t) \
   RecIncrRawStatSum(net_rsb, _t, (int) _s, -1);
 
+#ifndef DEBUG
+#define NetDebug if (0) dummy_debug
+#else
+#define NetDebug Debug
+#endif
+
 #include "inktomi++.h"
 #include "P_EventSystem.h"
 #include "I_Net.h"
@@ -122,5 +124,11 @@ do { \
                                        NET_SYSTEM_MODULE_MAJOR_VERSION, \
                                        NET_SYSTEM_MODULE_MINOR_VERSION, \
                                        PRIVATE_MODULE_HEADER)
+// libev backend flags
+#if (HOST_OS == solaris)
+#define LIBEV_BACKEND_LIST (EVBACKEND_POLL | EVBACKEND_SELECT) // Level-Triggered
+#else
+  #define LIBEV_BACKEND_LIST 0 /* auto */
+#endif
 
 #endif

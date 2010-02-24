@@ -29,14 +29,9 @@
  * 
  ***************************************************************************/
 
-#include "ink_platform.h"
-#include "ink_mutex.h"
-#include "ink_hash_table.h"
-#include "ink_sock.h"
-#include "Tokenizer.h"
+#include "inktomi++.h"
 #include "LocalManager.h"
 #include "MgmtSocket.h"
-
 #include "EventControlMain.h"
 #include "CoreAPI.h"
 #include "NetworkUtilsLocal.h"

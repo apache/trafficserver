@@ -58,9 +58,9 @@ public:
 public:
   void new_connection(NetVConnection * new_vc, bool backdoor);
 
-  virtual VIO *do_io_read(Continuation * c, int nbytes = INT_MAX, MIOBuffer * buf = 0);
+  virtual VIO *do_io_read(Continuation * c, ink64 nbytes = INK64_MAX, MIOBuffer * buf = 0);
 
-  virtual VIO *do_io_write(Continuation * c = NULL, int nbytes = INT_MAX, IOBufferReader * buf = 0, bool owner = false);
+  virtual VIO *do_io_write(Continuation * c = NULL, ink64 nbytes = INK64_MAX, IOBufferReader * buf = 0, bool owner = false);
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);

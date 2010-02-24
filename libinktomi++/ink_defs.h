@@ -29,7 +29,9 @@
 #define SIZE(x) (sizeof(x)/sizeof((x)[0]))
 #define ON ((char*)&on)
 #define OFF ((char*)&off)
+#ifndef ABS
 #define ABS(_x_) (((_x_) < 0) ? ( - (_x_)) : (_x_))
+#endif
 
 /* Debugging
 */

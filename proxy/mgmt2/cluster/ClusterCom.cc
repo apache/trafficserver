@@ -31,18 +31,12 @@
  * 
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
+#include "inktomi++.h"
 
-#include "ink_platform.h"
-#include "Compatability.h"
 #include "I_Version.h"
 
-#include "ink_string.h"
-#include "ink_sock.h"
 #include "TextBuffer.h"
 #include "MgmtSocket.h"
-
-#include "Diags.h"
 
 #include "Main.h"
 #include "ClusterCom.h"
@@ -2546,9 +2540,14 @@ checkBackDoor(int req_fd, char *message)
              (lmgmt->mgmt_shutdown_outstanding ? "true" : "false"));
     mgmt_writeline(req_fd, reply, strlen(reply));
 
-#ifndef _WIN32
+#if !defined(_WIN32)
+#if (HOST_OS == solaris)
+    snprintf(reply, sizeof(reply), "\twatched_process_fd: %d  watched_process_pid: %ld\n",
+             lmgmt->watched_process_fd, lmgmt->watched_process_pid);
+#else
     snprintf(reply, sizeof(reply), "\twatched_process_fd: %d  watched_process_pid: %d\n",
              lmgmt->watched_process_fd, lmgmt->watched_process_pid);
+#endif
     mgmt_writeline(req_fd, reply, strlen(reply));
 #else // We don't have unix domain sockets on NT
     snprintf(reply, sizeof(reply), "\tprocess_server_hpipe: %d  watched_process_pid: %ld\n",

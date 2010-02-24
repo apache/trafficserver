@@ -28,6 +28,7 @@
  * 
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "ink_platform.h"
 #include "MgmtAllow.h"
 #include "Main.h"

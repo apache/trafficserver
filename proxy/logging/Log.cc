@@ -1054,6 +1054,9 @@ Log::handle_logging_mode_change(const char *name, RecDataT data_type, RecData da
 void
 Log::init(int flags)
 {
+  iObject::Init();
+  iLogBufferBuffer::Init();
+
   maxInactiveObjects = LOG_OBJECT_ARRAY_DELTA;
   numInactiveObjects = 0;
   inactive_objects = new LogObject *[maxInactiveObjects];

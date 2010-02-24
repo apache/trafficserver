@@ -169,7 +169,7 @@ public:
     The total number of bytes this operation must complete.
 
   */
-  int nbytes;
+  ink64 nbytes;
 
   /**
     Number of bytes already completed.
@@ -179,7 +179,7 @@ public:
     the lock.
 
   */
-  int ndone;
+  ink64 ndone;
 
   /**
     Type of operation.

@@ -1232,7 +1232,7 @@ cache_op_ClusterFunction(ClusterMachine * from, void *data, int len)
         // Save hostname and attach it to the continuation since we may
         //  need it if we convert this to an open_write.
 
-        c->ic_hostname = new_IOBufferData(buffer_size_to_index(host_len));
+        c->ic_hostname = new_IOBufferData(iobuffer_size_to_index(host_len));
         c->ic_hostname_len = host_len;
 
         memcpy(c->ic_hostname->data(), hostname, host_len);
@@ -1395,10 +1395,10 @@ cache_op_ClusterFunction(ClusterMachine * from, void *data, int len)
       }
 
       Cache *call_cache = caches[c->frag_type];
-      Action *a = call_cache->remove(c, &key,
+      Action *a = call_cache->remove(c, &key, c->frag_type,
                                      !!(c->cfl_flags & CFL_REMOVE_USER_AGENTS),
                                      !!(c->cfl_flags & CFL_REMOVE_LINK),
-                                     c->frag_type, hostname, host_len);
+                                     hostname, host_len);
       if (a != ACTION_RESULT_DONE) {
         c->cache_action = a;
       }
@@ -1489,7 +1489,7 @@ CacheContinuation::setupVCdataRead(int event, VConnection * vc)
     ink_release_assert(caller_buf_freebytes);
     SET_HANDLER((CacheContHandler) & CacheContinuation::VCdataRead);
 
-    int size_index = buffer_size_to_index(caller_buf_freebytes);
+    int size_index = iobuffer_size_to_index(caller_buf_freebytes);
     MIOBuffer *buf = new_MIOBuffer(size_index);
     readahead_reader = buf->alloc_reader();
 
@@ -1593,14 +1593,6 @@ CacheContinuation::setupReadWriteVC(int event, VConnection * vc)
       // setup readahead
 
       SET_HANDLER((CacheContHandler) & CacheContinuation::setupVCdataRead);
-      return handleEvent(event, vc);
-      break;
-    }
-  case CACHE_EVENT_OPEN_READ_FAILED_IN_PROGRESS:
-    {
-      // open read in-progress, just deflect to final completion handler
-
-      SET_HANDLER((CacheContHandler) & CacheContinuation::replyOpEvent);
       return handleEvent(event, vc);
       break;
     }
@@ -2034,7 +2026,6 @@ cache_op_result_ClusterFunction(ClusterMachine * from, void *d, int l)
     case CACHE_EVENT_LINK_FAILED:
       break;
     case CACHE_EVENT_OPEN_READ_FAILED:
-    case CACHE_EVENT_OPEN_READ_FAILED_IN_PROGRESS:
     case CACHE_EVENT_OPEN_WRITE_FAILED:
     case CACHE_EVENT_REMOVE_FAILED:
     case CACHE_EVENT_UPDATE_FAILED:
@@ -2781,7 +2772,7 @@ ink32 CacheContinuation::getObjectSize(VConnection * vc, int opcode, CacheHTTPIn
     }
 
   } else {
-    object_size = vc->get_object_size();
+    object_size = ((CacheVC *)vc)->get_object_size();
   }
 
   if (ret_ci && !ret_ci->valid()) {

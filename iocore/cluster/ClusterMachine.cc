@@ -26,6 +26,7 @@
   Machine.cc
  ****************************************************************************/
 
+#include "ink_config.h"
 #include <unistd.h>
 #include "P_Cluster.h"
 extern char cache_system_config_directory[PATH_NAME_MAX + 1];

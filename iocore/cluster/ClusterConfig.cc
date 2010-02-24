@@ -403,7 +403,7 @@ ClusterMachine *
 cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine ** past_probes)
 {
 #ifdef CLUSTER_TOMCAT
-  if (!CacheClusteringEnabled)
+  if (!cache_clustering_enabled)
     return NULL;
 #endif
   ClusterConfiguration *

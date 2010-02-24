@@ -35,9 +35,17 @@
 #include <stdio.h>
 
 #ifndef _WIN32
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
 
 void *event_callback_thread(void *arg);
 void *event_poll_thread_main(void *arg);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* !_WIN32 */
 

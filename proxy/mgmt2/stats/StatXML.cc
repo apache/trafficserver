@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
 #include "StatXML.h"
 #include <stdlib.h>
 #include <ctype.h>

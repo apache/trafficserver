@@ -30,15 +30,8 @@
 #if !defined (_P_DNS_h_)
 #define _P_DNS_h_
 
-#ifndef INLINE_CC
-#undef INK_INLINE
-#define INK_INLINE inline
-#endif
-
-
-#include "I_DNS.h"
 #include "inktomi++.h"
-//#include <arpa/nameser.h>
+#include "I_DNS.h"
 #include "P_EventSystem.h"
 #include "I_Cache.h"
 #include "P_Net.h"

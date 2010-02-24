@@ -251,7 +251,11 @@ check_lockfile(char *config_dir, char *pgm_name)
     fprintf(stderr, "FATAL: Can't acquire lockfile '%s'", lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
+#if (HOST_OS == solaris)
+      fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
+#else
       fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);
+#endif
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {

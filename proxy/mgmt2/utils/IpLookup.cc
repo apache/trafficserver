@@ -216,7 +216,7 @@ IpLookup::MatchArray(IpLookupState * s, void **opaque_ptr, void *array_in)
   DynArray<ip_match_el> *array = (DynArray<ip_match_el> *)array_in;
   ip_match_el *cur;
   /* struct in_addr debug;  */
-  int j;
+  intptr_t j;
 
   for (j = s->array_slot + 1; j < array->length(); j++) {
     cur = &((*array)[j]);
@@ -393,7 +393,7 @@ IpLookup::PrintArray(void *array_in, IpLookupPrintFunc f)
   struct in_addr rangeStart;
   struct in_addr rangeEnd;
 
-  for (int j = 0; j < array->length(); j++) {
+  for (intptr_t j = 0; j < array->length(); j++) {
     cur = &((*array)[j]);
     ink_assert(cur != NULL);
     rangeStart.s_addr = htonl(cur->range_start);

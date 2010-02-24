@@ -314,8 +314,19 @@ DNSEntry::init(char *x, int len, int qtype_arg,
     memcpy(request, x, len);
   }
 #endif
-  if (sem_ent)
+  if (sem_ent) {
+#if (HOST_OS == darwin)
+    static int qnum = 0;
+    char sname[NAME_MAX];
+    int retval;
+    qnum++;
+    snprintf(sname,NAME_MAX,"%s%d","DNSEntry",qnum);
+    retval = ink_sem_unlink(sname); // FIXME: remove, semaphore should be properly deleted after usage
+    sem = ink_sem_open(sname, O_CREAT | O_EXCL, 0777, 0);
+#else /* !darwin */
     ink_sem_init(&sem, 0);
+#endif /* !darwin */
+  }
   SET_HANDLER((DNSEntryHandler) & DNSEntry::mainEvent);
 }
 
@@ -337,16 +348,7 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
   }
 
   if (con[icon].fd != NO_FD) {  // Remove old FD from epoll fd
-#if defined(USE_EPOLL)
-    struct epoll_event ev;
-    memset(&ev, 0, sizeof(struct epoll_event));
-    epoll_ctl(pd->epoll_fd, EPOLL_CTL_DEL, con[icon].fd, &ev);
-#elif defined(USE_KQUEUE)
-    struct kevent ev[2];
-    EV_SET(&ev[0], con[icon].fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    EV_SET(&ev[1], con[icon].fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-    kevent(pd->kqueue_fd, &ev[0], 2, NULL, 0, NULL);
-#endif
+    con[icon].eio.stop();
     con[icon].close();
   }
 
@@ -361,30 +363,7 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
     return;
   } else {
     ns_down[icon] = 0;
-    if (con[icon].epoll_ptr == NULL) {  // Allocate the epoll private data
-      struct epoll_data_ptr *eptr;
-
-      eptr = (struct epoll_data_ptr *) xmalloc(sizeof(struct epoll_data_ptr));
-      eptr->type = EPOLL_DNS_CONNECTION;
-      eptr->data.dnscon = &con[icon];
-      con[icon].epoll_ptr = eptr;
-    }
-
-    int r;
-#if defined(USE_EPOLL)
-    struct epoll_event ev;
-    memset(&ev, 0, sizeof(struct epoll_event));
-    ev.events = EPOLLIN;
-    ev.data.ptr = con[icon].epoll_ptr;
-    r = epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, con[icon].fd, &ev);
-#elif defined(USE_KQUEUE)
-    struct kevent ev;
-    EV_SET(&ev, con[icon].fd, EVFILT_READ, EV_ADD, 0, 0, con[icon].epoll_ptr);
-    r = kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL);
-#else
-#error port me
-#endif
-    if (r < 0) {        // Add the FD to epoll fd
+    if (con[icon].eio.start(pd, &con[icon], EVENTIO_READ) < 0) {
       Error("iocore_dns", "open_con: Failed to add %d server to epoll list\n", icon);
     } else {
       con[icon].num = icon;
@@ -1025,9 +1004,18 @@ DNSProcessor::getby(char *x, int len, int type,
   if (proxy_cache)
     e->proxy_cache = true;
   e->init(x, len, type, cont, wait, adnsH, timeout);
-  dnsProcessor.thread->schedule_imm(e);
-  if (wait)
+  MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
+  if (!lock)
+    dnsProcessor.thread->schedule_imm(e);
+  else
+    e->handleEvent(EVENT_IMMEDIATE, 0);
+  if (wait) {
+#if (HOST_OS == darwin)
+    ink_sem_wait(e->sem);
+#else
     ink_sem_wait(&e->sem);
+#endif
+  }
   return wait ? ACTION_RESULT_DONE : &e->action;
 }
 
@@ -1154,7 +1142,11 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
   //
   if (sem_ent) {
     *sem_ent = ent;
+#if (HOST_OS == darwin)
+    ink_sem_post(sem);
+#else
     ink_sem_post(&sem);
+#endif
   } else {
     if (!action.mutex->is_thread()) {
       MUTEX_TRY_LOCK(lock, action.mutex, h->mutex->thread_holding);

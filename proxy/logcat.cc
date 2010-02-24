@@ -299,7 +299,9 @@ main(int argc, char *argv[])
         perror(0);
         error = DATA_PROCESSING_ERROR;
       } else {
+#ifdef HAVE_POSIX_FADVISE
         posix_fadvise(in_fd, 0, 0, POSIX_FADV_DONTNEED);
+#endif
         if (auto_filenames) {
           // change .blog to .log
           //

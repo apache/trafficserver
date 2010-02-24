@@ -21,9 +21,10 @@
   limitations under the License.
  */
 
-#ifdef NON_MODULAR
 #include "P_Cache.h"
 #include "Show.h"
+
+#ifdef NON_MODULAR
 
 struct ShowCacheInternal:ShowCont
 {
@@ -153,23 +154,15 @@ ShowCacheInternal::showPartConnections(int event, Event * e)
     sprintf(nbytes, "%d", vc->vio.nbytes);
     sprintf(todo, "%d", vc->vio.ntodo());
 
-#if 1
-    if (vc->f.http_request && vc->request.valid()) {
+    if (vc->f.frag_type == CACHE_FRAG_TYPE_HTTP && vc->request.valid()) {
       URL *u = vc->request.url_get(&uu);
       u->print(url, 8000, &ib, &xd);
       url[ib] = 0;
-    }
-    //else if (vc->vector.get(vc->alternate_index)->valid()) {
-    //  URL* u = vc->vector.get(vc->alternate_index)->request_url_get(&uu);
-    //  u->print(url, 8000, &ib, &xd);
-    //  url[ib] = 0;
-    //} 
-    else if (vc->alternate.valid()) {
+    } else if (vc->alternate.valid()) {
       URL *u = vc->alternate.request_url_get(&uu);
       u->print(url, 8000, &ib, &xd);
       url[ib] = 0;
     } else
-#endif
       vc->key.string(url);
     CHECK_SHOW(show("<tr>" "<td>%s</td>"        // operation
                     "<td>%s</td>"       // Part
@@ -182,7 +175,7 @@ ShowCacheInternal::showPartConnections(int event, Event * e)
                     vc->part->hash_id,
                     url,
                     vc->vio.ndone,
-                    vc->vio.nbytes == INT_MAX ? "all" : nbytes, vc->vio.nbytes == INT_MAX ? "all" : todo));
+                    vc->vio.nbytes == INK64_MAX ? "all" : nbytes, vc->vio.nbytes == INK64_MAX ? "all" : todo));
   }
   part_index++;
   if (part_index < gnpart)
@@ -228,7 +221,7 @@ ShowCacheInternal::showPartEvacuations(int event, Event * e)
                       "<td>%d</td>"     // estimated size
                       "<td>%d</td>"     // reader count
                       "<td>%s</td>"     // done
-                      "</tr>\n", offset, (int) dir_approx_size(&b->dir), b->f.readers, b->f.done ? "yes" : "no"));
+                      "</tr>\n", offset, (int) dir_approx_size(&b->dir), b->readers, b->f.done ? "yes" : "no"));
     }
   }
   part_index++;
@@ -279,7 +272,7 @@ ShowCacheInternal::showPartPartitions(int event, Event * e)
     agg_todo++;
   CHECK_SHOW(show("<tr>" "<td>%s</td>"  // ID
                   "<td>%d</td>" // blocks
-                  "<td>%d</td>" // directory entries
+                  "<td>%lld</td>" // directory entries
                   "<td>%d</td>" // write position
                   "<td>%d</td>" // write agg to do
                   "<td>%d</td>" // write agg to do size
@@ -291,7 +284,7 @@ ShowCacheInternal::showPartPartitions(int event, Event * e)
                   "</tr>\n",
                   p->hash_id,
                   (int) ((p->len - (p->start - p->skip)) / INK_BLOCK_SIZE),
-                  p->buckets * DIR_DEPTH * DIR_SEGMENTS,
+                  (inku64)(p->buckets * DIR_DEPTH * p->segments),
                   (int) ((p->header->write_pos - p->start) / INK_BLOCK_SIZE),
                   agg_todo,
                   p->agg_todo_size,
@@ -330,7 +323,7 @@ ShowCacheInternal::showSegSegment(int event, Event * e)
                   "<td>%d</td>"
                   "<td>%d</td>" "<td>%d</td>" "<td>%d</td>" "</tr>\n", free, used, empty, valid, agg_valid, avg_size));
   seg_index++;
-  if (seg_index < DIR_SEGMENTS)
+  if (seg_index < p->segments)
     CONT_SCHED_LOCK_RETRY(this);
   else {
     CHECK_SHOW(show("</table>\n"));

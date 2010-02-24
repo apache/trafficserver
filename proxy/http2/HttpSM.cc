@@ -23,7 +23,7 @@
  */
 
 #include "HttpSM.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "HttpClientSession.h"
 #include "HttpServerSession.h"
 #include "HttpDebugNames.h"
@@ -5366,7 +5366,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
 
       alloc_index = (int) t_state.http_config_param->default_buffer_size_index;
-      if (alloc_index<MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index> DEFAULT_MAX_BUFFER_SIZE) {
+      if (alloc_index<MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index> MAX_BUFFER_SIZE_INDEX) {
         alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
       }
     } else {

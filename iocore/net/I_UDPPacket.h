@@ -85,7 +85,7 @@ public:
    @param buf if !NULL, then len bytes copied from buf and made into packet.
    @param len # of bytes to copy from buf
  */
-INK_INLINE UDPPacket *new_UDPPacket(struct sockaddr_in *to, ink_hrtime when = 0, char *buf = NULL, int len = 0);
+inline UDPPacket *new_UDPPacket(struct sockaddr_in *to, ink_hrtime when = 0, char *buf = NULL, int len = 0);
 /**
    Create a new packet to be sent over UDPConnection. This clones and
    makes a reference to an existing IOBufferBlock chain.
@@ -97,19 +97,19 @@ INK_INLINE UDPPacket *new_UDPPacket(struct sockaddr_in *to, ink_hrtime when = 0,
    for packet
    @param len # of bytes to reference from block
  */
-INK_INLINE UDPPacket *new_UDPPacket(struct sockaddr_in *to,
+inline UDPPacket *new_UDPPacket(struct sockaddr_in *to,
                                     ink_hrtime when = 0, IOBufferBlock * block = NULL, int len = 0);
 /**
    Create a new packet to be sent over UDPConnection.  Packet has no
    destination or data.
 */
-INK_INLINE UDPPacket *new_UDPPacket();
+inline UDPPacket *new_UDPPacket();
 
 /**
    Create a new packet to be delivered to application.
    Internal function only
 */
-INK_INLINE UDPPacket *new_incoming_UDPPacket(struct sockaddr_in *from, char *buf, int len);
+inline UDPPacket *new_incoming_UDPPacket(struct sockaddr_in *from, char *buf, int len);
 
 //@}
 #endif //__I_UDPPACKET_H_

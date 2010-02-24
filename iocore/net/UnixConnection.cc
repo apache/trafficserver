@@ -156,10 +156,9 @@ Lerror:
 
 
 int
-Connection::bind_connect(unsigned int target_ip, int target_port,
-                         unsigned int my_ip,
-                         NetVCOptions * opt,
-                         bool non_blocking_connect, bool use_tcp, bool non_blocking, bool bc_no_connect, bool bc_no_bind)
+Connection::bind_connect(unsigned int target_ip, int target_port, unsigned int my_ip,
+                         NetVCOptions *opt, int sock, bool non_blocking_connect, bool use_tcp, 
+                         bool non_blocking, bool bc_no_connect, bool bc_no_bind)
 {
   ink_assert(fd == NO_FD);
   int res = 0;
@@ -168,30 +167,31 @@ Connection::bind_connect(unsigned int target_ip, int target_port,
   int my_port = (opt) ? opt->local_port : 0;
 
   if (!bc_no_bind) {
-    if (use_tcp) {
-      if ((res = socketManager.socket(AF_INET, SOCK_STREAM, 0)) < 0)
-        goto Lerror;
-    } else {
-      if ((res = socketManager.socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-        goto Lerror;
-    }
+    if (sock < 0) {
+      if (use_tcp) {
+        if ((res = socketManager.socket(AF_INET, SOCK_STREAM, 0)) < 0)
+          goto Lerror;
+      } else {
+        if ((res = socketManager.socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+          goto Lerror;
+      }
+    } else
+      res = sock;
 
     fd = res;
 
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
+    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) 
       goto Lerror;
-    }
 
     struct sockaddr_in bind_sa;
     memset(&bind_sa, 0, sizeof(bind_sa));
     bind_sa.sin_family = AF_INET;
     bind_sa.sin_port = htons(my_port);
     bind_sa.sin_addr.s_addr = my_ip;
-    if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa))) < 0) {
+    if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa))) < 0)
       goto Lerror;
-    }
 
-    Debug("arm_spoofing", "Passed in options opt=%x client_ip=%x and client_port=%d",
+    NetDebug("arm_spoofing", "Passed in options opt=%x client_ip=%x and client_port=%d",
           opt, opt ? opt->spoof_ip : 0, opt ? opt->spoof_port : 0);
   }
 
@@ -246,11 +246,11 @@ Connection::bind_connect(unsigned int target_ip, int target_port,
     if (use_tcp) {
       if (opt->sockopt_flags & 1) {
         safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
-        Debug("socket", "::bind_connect: setsockopt() TCP_NODELAY on socket");
+        NetDebug("socket", "::bind_connect: setsockopt() TCP_NODELAY on socket");
       }
       if (opt->sockopt_flags & 2) {
         safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
-        Debug("socket", "::bind_connect: setsockopt() SO_KEEPALIVE on socket");
+        NetDebug("socket", "::bind_connect: setsockopt() SO_KEEPALIVE on socket");
       }
     }
   }

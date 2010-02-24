@@ -28,7 +28,7 @@
    Description: Common SSL initialization/cleanup fuctions from SSLNet.h
  ****************************************************************************/
 
-
+#include "ink_config.h"
 
 #ifdef HAVE_LIBSSL
 #include "P_Net.h"

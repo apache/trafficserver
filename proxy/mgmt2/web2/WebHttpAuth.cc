@@ -28,8 +28,8 @@
  * 
  ****************************************************************************/
 
-#include "ink_platform.h"
 #include "inktomi++.h"
+#include "ink_platform.h"
 #include "ink_base64.h"
 #include "ink_code.h"
 #include "TextBuffer.h"

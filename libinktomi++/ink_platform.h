@@ -81,6 +81,8 @@
 #include <sys/epoll.h>
 #elif defined(USE_KQUEUE)
 #include <sys/event.h>
+#elif defined(USE_PORT)
+#include <port.h>
 #endif
 
 
@@ -113,8 +115,20 @@ struct ifafilt;
 #define __STDC__ 0
 #endif
 
+#ifdef HAVE_NETINET_IN_H
+  #include <netinet/in.h>
+#endif
+
 #ifdef HAVE_NETINET_IP_H
-#  include <netinet/ip.h>
+  #include <netinet/ip.h>
+#endif
+
+#ifdef HAVE_NETINET_IN_SYSTM_H
+  #include <netinet/in_systm.h>
+#endif
+
+#ifdef HAVE_NETINET_IP_ICMP_H
+  #include <netinet/ip_icmp.h>
 #endif
 
 #ifdef HAVE_MACHINE_ENDIAN_H
@@ -138,8 +152,6 @@ struct ifafilt;
 #  include <sys/sockio.h>
 #endif
 
-#include <netinet/ip_icmp.h>
-
 #include <resolv.h>
 
 
@@ -151,8 +163,10 @@ typedef unsigned int in_addr_t;
 #  include <sys/sysinfo.h>
 #endif
 
+#if (HOST_OS != darwin)
 #ifdef HAVE_SYS_SYSCTL_H
 #  include <sys/sysctl.h>
+#endif
 #endif
 
 #ifdef HAVE_SYS_SYSTEMINFO_H
@@ -161,8 +175,22 @@ typedef unsigned int in_addr_t;
 
 #include <dlfcn.h>
 
+#ifdef HAVE_ARPA_INET_H
+#  include <arpa/inet.h>
+#endif
+#ifdef HAVE_ARPA_NAMESER_H
+#  include <arpa/nameser.h>
+#endif
 #ifdef HAVE_ARPA_NAMESER_COMPAT_H
 #  include <arpa/nameser_compat.h>
+#endif
+
+#ifdef HAVE_MATH_H
+#include <math.h>
+#endif
+
+#ifdef HAVE_SYS_SYSMACROS_H
+#include <sys/sysmacros.h>
 #endif
 
 #ifndef MAXINT

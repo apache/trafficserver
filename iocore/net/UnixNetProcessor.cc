@@ -62,7 +62,7 @@ NetProcessor::accept(Continuation * cont,
   (void) accept_only;           // NT only
   (void) bound_sockaddr;        // NT only
   (void) bound_sockaddr_size;   // NT only
-  Debug("net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
+  NetDebug("iocore_net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
         port, recv_bufsize, send_bufsize, sockopt_flags);
   return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, port,
                                                       bound_sockaddr,
@@ -81,7 +81,7 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd, int port,
                           EventType etype, bool callback_on_open)
 {
   (void) accept_only;           // NT only
-  Debug("net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
+  NetDebug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
         port, recv_bufsize, send_bufsize, sockopt_flags);
   return ((UnixNetProcessor *) this)->accept_internal(cont, fd, port,
                                                       bound_sockaddr,
@@ -213,7 +213,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
     Action *result = &vc->action_;
 #ifndef INK_NO_SOCKS
     if (using_socks) {
-      Debug("Socks", "Using Socks ip: %u.%u.%u.%u:%d\n", PRINT_IP(ip), port);
+      NetDebug("Socks", "Using Socks ip: %u.%u.%u.%u:%d\n", PRINT_IP(ip), port);
       socksEntry = socksAllocator.alloc();
       socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
       socksEntry->action_ = cont;
@@ -228,7 +228,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
       result = &socksEntry->action_;
       vc->action_ = socksEntry;
     } else {
-      Debug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
+      NetDebug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
       vc->action_ = cont;
     }
 #else
@@ -313,43 +313,13 @@ UnixNetProcessor::connect(Continuation * cont,
 
   check_emergency_throttle(vc->con);
 
-  vc->ep.type = EPOLL_READWRITE_VC;
-  vc->ep.data.vc = vc;
-
   PollDescriptor *pd = get_PollDescriptor(t);
 
-#if defined(USE_EPOLL)
-  struct epoll_event ev;
-  memset(&ev, 0, sizeof(struct epoll_event));
-  ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-  ev.data.ptr = &vc->ep;
-
-  res = epoll_ctl(pd->epoll_fd, EPOLL_CTL_ADD, vc->con.fd, &ev);
-
-  if (res < 0) {
-    Debug("iocore_net", "connect : Error in adding to epoll list\n");
+  if (vc->ep.start(pd, vc, EVENTIO_READ|EVENTIO_WRITE) < 0) {
+    NetDebug("iocore_net", "connect : Error in adding to epoll list\n");
     close_UnixNetVConnection(vc, vc->thread);
     return ACTION_RESULT_DONE;
   }
-
-#elif defined(USE_KQUEUE)
-  struct kevent ev;
-  EV_SET(&ev, vc->con.fd, EVFILT_READ, EV_ADD, 0, 0, &vc->ep);
-  if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
-    Debug("iocore_net", "connect : Error in adding to kqueue list\n");
-    close_UnixNetVConnection(vc, vc->thread);
-    return ACTION_RESULT_DONE;
-  }
-
-  EV_SET(&ev, vc->con.fd, EVFILT_WRITE, EV_ADD, 0, 0, &vc->ep);
-  if (kevent(pd->kqueue_fd, &ev, 1, NULL, 0, NULL) < 0) {
-    Debug("iocore_net", "connect : Error in adding to kqueue list\n");
-    close_UnixNetVConnection(vc, vc->thread);
-    return ACTION_RESULT_DONE;
-  }
-#else
-#error port me
-#endif
 
   vc->nh->open_list.enqueue(vc);
 
@@ -376,7 +346,7 @@ struct CheckConnect:public Continuation
     switch (event) {
     case NET_EVENT_OPEN:
       vc = (UnixNetVConnection *) e;
-      Debug("connect", "connect Net open");
+      NetDebug("iocore_net_connect", "connect Net open");
       vc->do_io_write(this, 10, /* some non-zero number just to get the poll going */
                       reader);
       /* dont wait for more than timeout secs */
@@ -384,7 +354,8 @@ struct CheckConnect:public Continuation
       return EVENT_CONT;
       break;
 
-      case NET_EVENT_OPEN_FAILED:Debug("connect", "connect Net open failed");
+      case NET_EVENT_OPEN_FAILED:
+	NetDebug("iocore_net_connect", "connect Net open failed");
       if (!action_.cancelled)
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) e);
       break;
@@ -397,7 +368,7 @@ struct CheckConnect:public Continuation
           ret = getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, (char *) &sl, &sz);
         if (!ret && sl == 0)
         {
-          Debug("connect", "connection established");
+          NetDebug("iocore_net_connect", "connection established");
           /* disable write on vc */
           vc->write.enabled = 0;
           vc->cancel_inactivity_timeout();
@@ -418,7 +389,7 @@ struct CheckConnect:public Continuation
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_FAILED);
       break;
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      Debug("connect", "connect timed out");
+      NetDebug("iocore_net_connect", "connect timed out");
       vc->do_io_close();
       if (!action_.cancelled)
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_TIMEOUT);
@@ -450,8 +421,7 @@ struct CheckConnect:public Continuation
     }
   }
 
-CheckConnect(ProxyMutex * m = NULL):Continuation(m), connect_status(-1), recursion(0), timeout(0)
-  {
+  CheckConnect(ProxyMutex * m = NULL):Continuation(m), connect_status(-1), recursion(0), timeout(0) {
     SET_HANDLER(&CheckConnect::handle_connect);
     buf = new_empty_MIOBuffer(1);
     reader = buf->alloc_reader();
@@ -468,11 +438,9 @@ Action *
 NetProcessor::connect_s(Continuation * cont, unsigned int ip,
                         int port, unsigned int _interface, int timeout, NetVCOptions * opt)
 {
-
-  Debug("connect", "NetProcessor::connect_s called");
+  NetDebug("iocore_net_connect", "NetProcessor::connect_s called");
   CheckConnect *c = NEW(new CheckConnect(cont->mutex));
   return c->connect_s(cont, ip, port, _interface, timeout, opt);
-
 }
 
 
@@ -565,10 +533,8 @@ UnixNetProcessor::createNetAccept()
 }
 
 struct socks_conf_struct *
-  NetProcessor::socks_conf_stuff = NULL;
-int
-  NetProcessor::accept_mss = 0;
+NetProcessor::socks_conf_stuff = NULL;
+int NetProcessor::accept_mss = 0;
 
-UnixNetProcessor
-  unix_netProcessor;
+UnixNetProcessor unix_netProcessor;
 NetProcessor & netProcessor = unix_netProcessor;

@@ -28,12 +28,13 @@
  *  
  * 
  ****************************************************************************/
+
+#include "inktomi++.h"
+#include "ink_platform.h"
 #include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 
-#include "ink_platform.h"
-
 /* local includes */
-#include "inktomi++.h"
+
 #include "DynArray.h"
 #include "WebMgmtUtils.h"
 #include "FileManager.h"
@@ -97,7 +98,7 @@ CLIlineBuffer::numFields()
 int
 CLIlineBuffer::getLineSize()
 {
-  int i;
+  intptr_t i;
   int line_size = 0;
 
   for (i = 0; i < c_fields; i++)
@@ -110,7 +111,7 @@ CLIlineBuffer::getLineSize()
 int
 CLIlineBuffer::getStringSize()
 {
-  int i;
+  intptr_t i;
   int s_size = 0;
 
   for (i = 0; i < c_fields; i++)
@@ -130,7 +131,7 @@ CLIlineBuffer::getStringSize()
 int
 CLIlineBuffer::getDepth()
 {
-  int i;
+  intptr_t i;
   int cdepth = 1;
   int depth = 1;
   int spdepth = 0;
@@ -212,7 +213,7 @@ CLIlineBuffer::getline()
   int iters = 0;
   static char *cptr = '\0';
   bool done = false;
-  int i;
+  intptr_t i;
 
   // calculate output line buffer size
   buf_size = buf_depth * (line_size + strlen("\n") + 1) + 1;

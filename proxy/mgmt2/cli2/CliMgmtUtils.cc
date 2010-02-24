@@ -29,6 +29,7 @@
  * 
  ****************************************************************/
 
+#include "inktomi++.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include "CliMgmtUtils.h"
@@ -36,7 +37,7 @@
 #include "ink_resource.h"
 #include "definitions.h"
 #include "ConfigCmd.h"
-#include <inktomi++.h>
+
 
 void Cli_DisplayMgmtAPI_Error(INKError status);
 

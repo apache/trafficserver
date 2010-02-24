@@ -371,14 +371,15 @@ struct ClusterVConnectionBase:CacheVConnection
   //                creation callback.
   //
 
-  virtual VIO *do_io_read(Continuation * c, int nbytes, MIOBuffer * buf);
-  virtual VIO *do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner = false);
+  virtual VIO *do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf);
+  virtual VIO *do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner = false);
   virtual void do_io_shutdown(ShutdownHowTo_t howto)
   {
     (void) howto;
     ink_assert(!"shutdown of cluster connection");
   }
   virtual void do_io_close(int lerrno = -1);
+  virtual VIO* do_io_pread(Continuation*, ink64, MIOBuffer*, ink64);
 
   // Set the timeouts associated with this connection.
   // active_timeout is for the total elasped time of the connection.
@@ -530,8 +531,8 @@ struct ClusterVConnection:ClusterVConnectionBase
   // 0 on success -1 on failure
   int start(EThread * t);       // New connect protocol
 
-    ClusterVConnection(int is_new_connect_read = 0);
-   ~ClusterVConnection();
+  ClusterVConnection(int is_new_connect_read = 0);
+  ~ClusterVConnection();
   void free();                  // Destructor actions (we are using ClassAllocator)
 
   virtual void do_io_close(int lerrno = -1);
@@ -564,28 +565,28 @@ struct ClusterVConnection:ClusterVConnectionBase
   void set_type(int);
   ink_hrtime start_time;
   ink_hrtime last_activity_time;
-    Queue<ByteBankDescriptor> byte_bank_q;   // done awaiting completion
+  Queue<ByteBankDescriptor> byte_bank_q;   // done awaiting completion
   int n_set_data_msgs;          // # pending set_data() msgs on VC
   int n_recv_set_data_msgs;     // # set_data() msgs received on VC
   volatile int pending_remote_fill;     // Remote fill pending on connection
-    Ptr<IOBufferBlock> read_block;   // Hold current data for open read
+  Ptr<IOBufferBlock> read_block;   // Hold current data for open read
   bool have_all_data;           // All data in read_block
   int initial_data_bytes;       // bytes in open_read buffer
-    Ptr<IOBufferBlock> remote_write_block;   // Write side data for remote fill
+  Ptr<IOBufferBlock> remote_write_block;   // Write side data for remote fill
   void *current_cont;           // Track current continuation (debug)
 
 #define CLUSTER_IOV_NOT_OPEN               -2
 #define CLUSTER_IOV_NONE                   -1
   int iov_map;                  // which iov?
 
-    Ptr<ProxyMutex> read_locked;
-    Ptr<ProxyMutex> write_locked;
+  Ptr<ProxyMutex> read_locked;
+  Ptr<ProxyMutex> write_locked;
 
   // Data buffer for unmarshaled objects from remote node.
-    Ptr<IOBufferData> marshal_buf;
+  Ptr<IOBufferData> marshal_buf;
 
   // Pending write data
-    Ptr<IOBufferBlock> write_list;
+  Ptr<IOBufferBlock> write_list;
   IOBufferBlock *write_list_tail;
   int write_list_bytes;
   int write_bytes_in_transit;
@@ -614,6 +615,8 @@ struct ClusterVConnection:ClusterVConnectionBase
   {
     return 0;
   }
+  virtual int get_header(void **ptr, int *len);
+  virtual int set_header(void *ptr, int len);
 };
 
 //

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"        /* MAGIC_EDITING_TAG */
+#include "inktomi++.h"
 
 #include "WebPluginList.h"
 

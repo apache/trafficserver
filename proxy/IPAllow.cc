@@ -31,7 +31,7 @@
 #include "inktomi++.h"
 #include "Main.h"
 #include "IPAllow.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "StatSystem.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"

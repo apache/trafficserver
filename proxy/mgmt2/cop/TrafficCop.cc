@@ -242,7 +242,7 @@ sig_child(int signum)
 }
 
 static void
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
 sig_fatal(int signum, siginfo_t * t, void *c)
 #else
 sig_fatal(int signum)
@@ -251,7 +251,7 @@ sig_fatal(int signum)
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering sig_fatal(%d)\n", signum);
 #endif
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   if (t) {
     if (t->si_code <= 0) {
       cop_log(COP_FATAL, "cop received fatal user signal [%d] from"
@@ -262,7 +262,7 @@ sig_fatal(int signum)
   } else {
 #endif
     cop_log(COP_FATAL, "cop received fatal signal [%d]\n", signum);
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   }
 #endif
 #ifdef TRACE_LOG_COP
@@ -272,7 +272,7 @@ sig_fatal(int signum)
 }
 
 static void
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
 sig_alarm_warn(int signum, siginfo_t * t, void *c)
 #else
 sig_alarm_warn(int signum)
@@ -310,7 +310,7 @@ set_alarm_death()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering set_alarm_death()\n");
 #endif
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   action.sa_handler = NULL;
   action.sa_sigaction = sig_fatal;
   sigemptyset(&action.sa_mask);
@@ -335,7 +335,7 @@ set_alarm_warn()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering set_alarm_warn()\n");
 #endif
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   action.sa_handler = NULL;
   action.sa_sigaction = sig_alarm_warn;
   sigemptyset(&action.sa_mask);
@@ -461,7 +461,7 @@ transient_error(int error, int wait_ms)
 #ifdef ENOBUFS
   case ENOBUFS:
 #endif
-#if (HOST_OS != freebsd)
+#if (HOST_OS != freebsd) && (HOST_OS != darwin)
   case ENOSR:
 #endif
     if (wait_ms)
@@ -868,7 +868,7 @@ spawn_manager()
     if (err < 0) {
       break;
     }
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
     err = semctl(err, 1, IPC_RMID);
 #else
     union semun dummy_semun;
@@ -892,8 +892,10 @@ spawn_manager()
   i = 1;
   tok = ink_strtok_r(manager_options, " ", &last);
   options[i++] = tok;
-  while (i < OPTIONS_MAX && (tok = ink_strtok_r(NULL, " ", &last))) {
-    options[i++] = tok;
+  if (tok != NULL) {
+    while (i < OPTIONS_MAX && (tok = ink_strtok_r(NULL, " ", &last))) {
+      options[i++] = tok;
+    }
   }
 
   // coverity[fs_check_call]
@@ -1127,7 +1129,11 @@ spawn_rpass()
     if (err == 0) {
       fd = fopen(rni_rpass_lockfile, "w+");
       if (fd > 0) {
+#if (HOST_OS == solaris)
+	fprintf(fd, "%d\n", (int)getpid());
+#else
         fprintf(fd, "%d\n", getpid());
+#endif
         fclose(fd);
       }
 
@@ -2169,14 +2175,14 @@ init_signals()
   // these signals arrive in order to generate a core. There is some
   // difficulty with generating core files when linking with libthread
   // under solaris.
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   action.sa_handler = NULL;
   action.sa_sigaction = sig_fatal;
 #else
   action.sa_handler = sig_fatal;
 #endif
   sigemptyset(&action.sa_mask);
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
   action.sa_flags = SA_SIGINFO;
 #else
   action.sa_flags = 0;
@@ -2384,7 +2390,11 @@ main(int argc, char *argv[])
   signal(SIGTTIN, SIG_IGN);
 
   setsid();                     // Important, thanks Vlad. :)
+#if (HOST_OS == freebsd)
+  setpgrp(0,0);
+#else
   setpgrp();
+#endif
 
   close(STDIN_FILENO);
   close(STDOUT_FILENO);

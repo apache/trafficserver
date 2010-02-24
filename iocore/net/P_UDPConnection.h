@@ -103,13 +103,13 @@ UDPConnectionInternal::~UDPConnectionInternal()
 }
 
 
-INK_INLINE SOCKET
+inline SOCKET
 UDPConnection::getFd()
 {
   return ((UDPConnectionInternal *) this)->fd;
 }
 
-INK_INLINE void
+inline void
 UDPConnection::setBinding(struct sockaddr_in *s)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
@@ -117,7 +117,7 @@ UDPConnection::setBinding(struct sockaddr_in *s)
   p->binding_valid = 1;
 }
 
-INK_INLINE int
+inline int
 UDPConnection::getBinding(struct sockaddr_in *s)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
@@ -125,62 +125,62 @@ UDPConnection::getBinding(struct sockaddr_in *s)
   return p->binding_valid;
 }
 
-INK_INLINE int
+inline int
 UDPConnection::get_ndone()
 {
   return ((UDPConnectionInternal *) this)->nBytesDone;
 }
 
-INK_INLINE int
+inline int
 UDPConnection::get_ntodo()
 {
   return ((UDPConnectionInternal *) this)->nBytesTodo;
 }
 
 // return the b/w allocated to this UDPConnection in Mbps
-INK_INLINE double
+inline double
 UDPConnection::get_allocatedBandwidth()
 {
   return (((UDPConnectionInternal *) this)->flowRateBps * 8.0) / (1024.0 * 1024.0);
 }
 
-INK_INLINE void
+inline void
 UDPConnection::destroy()
 {
   ((UDPConnectionInternal *) this)->tobedestroyed = 1;
 }
 
-INK_INLINE int
+inline int
 UDPConnection::shouldDestroy()
 {
   return ((UDPConnectionInternal *) this)->tobedestroyed;
 }
 
-INK_INLINE void
+inline void
 UDPConnection::AddRef()
 {
   ink_atomic_increment(&((UDPConnectionInternal *) this)->refcount, 1);
 }
 
-INK_INLINE int
+inline int
 UDPConnection::GetRefCount()
 {
   return ((UDPConnectionInternal *) this)->refcount;
 }
 
-INK_INLINE int
+inline int
 UDPConnection::GetSendGenerationNumber()
 {
   return ((UDPConnectionInternal *) this)->sendGenerationNum;
 }
 
-INK_INLINE int
+inline int
 UDPConnection::getPortNum(void)
 {
   return ((UDPConnectionInternal *) this)->binding.sin_port;
 }
 
-INK_INLINE ink64
+inline ink64
 UDPConnection::cancel(void)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
@@ -190,13 +190,13 @@ UDPConnection::cancel(void)
   return p->lastSentPktTSSeqNum;
 };
 
-INK_INLINE void
+inline void
 UDPConnection::SetLastSentPktTSSeqNum(ink64 sentSeqNum)
 {
   ((UDPConnectionInternal *) this)->lastSentPktTSSeqNum = sentSeqNum;
 };
 
-INK_INLINE void
+inline void
 UDPConnection::setContinuation(Continuation * c)
 {
   // it is not safe to switch among continuations that don't share locks

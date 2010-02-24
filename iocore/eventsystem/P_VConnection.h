@@ -26,7 +26,7 @@
 #define P_VConnection_h
 #include "I_EventSystem.h"
 
-INK_INLINE const char *
+inline const char *
 get_vc_event_name(int event)
 {
   switch (event) {
@@ -56,7 +56,7 @@ get_vc_event_name(int event)
 }
 
 
-INK_INLINE
+inline
 VConnection::VConnection(ProxyMutex * aMutex)
   :
 Continuation(aMutex),
@@ -65,7 +65,7 @@ lerrno(0)
   SET_HANDLER(0);
 }
 
-INK_INLINE
+inline
 VConnection::~
 VConnection()
 {
@@ -75,7 +75,7 @@ VConnection()
 //
 //      DEPRECATED DEPRECATED DEPRECATED
 //
-//      INK_INLINE VIO * VConnection::do_io()
+//      inline VIO * VConnection::do_io()
 //
 //      This method enqueues a VIO operation onto the VIO queue, and
 //      activates the I/O operation if and operation of that type isn't
@@ -84,7 +84,7 @@ VConnection()
 //////////////////////////////////////////////////////////////////////////////
 
 static inline VIO *
-vc_do_io_write(VConnection * vc, Continuation * cont, int nbytes, MIOBuffer * buf, int offset)
+vc_do_io_write(VConnection * vc, Continuation * cont, ink64 nbytes, MIOBuffer * buf, ink64 offset)
 {
   IOBufferReader *reader = buf->alloc_reader();
 
@@ -94,8 +94,8 @@ vc_do_io_write(VConnection * vc, Continuation * cont, int nbytes, MIOBuffer * bu
   return vc->do_io_write(cont, nbytes, reader, true);
 }
 
-INK_INLINE VIO *
-VConnection::do_io(int op, Continuation * c, int nbytes, MIOBuffer * cb, int data)
+inline VIO *
+VConnection::do_io(int op, Continuation * c, ink64 nbytes, MIOBuffer * cb, int data)
 {
   switch (op) {
   case VIO::READ:
@@ -122,15 +122,15 @@ VConnection::do_io(int op, Continuation * c, int nbytes, MIOBuffer * cb, int dat
   return NULL;
 }
 
-INK_INLINE void
+inline void
 VConnection::set_continuation(VIO *, Continuation *)
 {
 }
-INK_INLINE void
+inline void
 VConnection::reenable(VIO *)
 {
 }
-INK_INLINE void
+inline void
 VConnection::reenable_re(VIO * vio)
 {
   reenable(vio);

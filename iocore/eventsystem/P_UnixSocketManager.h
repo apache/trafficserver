@@ -31,6 +31,8 @@
 ****************************************************************************/
 #ifndef _P_UnixSocketManager_h_
 #define _P_UnixSocketManager_h_
+
+#include "inktomi++.h"
 #include "I_SocketManager.h"
 
 extern int monitor_read_activity;
@@ -43,7 +45,7 @@ extern int monitor_write_activity;
 // 1024 - stdin, stderr, stdout
 #define EPOLL_MAX_DESCRIPTOR_SIZE                32768
 
-INK_INLINE bool
+inline bool
 transient_error()
 {
   bool transient = (errno == EINTR);
@@ -60,7 +62,7 @@ transient_error()
 //
 // Timing done in the connectionManager
 //
-INK_INLINE int
+inline int
 SocketManager::accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
   int r;
@@ -76,7 +78,7 @@ SocketManager::accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::open(char *path, int oflag, mode_t mode)
 {
   int s;
@@ -91,7 +93,7 @@ SocketManager::open(char *path, int oflag, mode_t mode)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::read(int fd, void *buf, int size, void *pOLP)
 {
   int r = 0;
@@ -108,7 +110,7 @@ SocketManager::read(int fd, void *buf, int size, void *pOLP)
 
 void monitor_disk_read(int fd, void *buf, int size, off_t offset, char *tag);
 
-INK_INLINE int
+inline int
 SocketManager::pread(int fd, void *buf, int size, off_t offset, char *tag)
 {
   if (monitor_read_activity)
@@ -123,7 +125,7 @@ SocketManager::pread(int fd, void *buf, int size, off_t offset, char *tag)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::read_from_middle_of_file(int fd, void *buf, int size, off_t offset, char *tag)
 {
   int r;
@@ -138,7 +140,7 @@ SocketManager::read_from_middle_of_file(int fd, void *buf, int size, off_t offse
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::readv(int fd, struct iovec *vector, size_t count, teFDType eT)
 {
   int r;
@@ -153,7 +155,7 @@ SocketManager::readv(int fd, struct iovec *vector, size_t count, teFDType eT)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP)
 {
   const int max_iovecs_per_request = 16;
@@ -195,14 +197,14 @@ SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_re
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::read_vector(int fd, struct iovec *vector, size_t count, void *pOLP)
 {
   return vector_io(fd, vector, count, 1, pOLP);
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::recv(int fd, void *buf, int size, int flags)
 {
   int r;
@@ -216,7 +218,7 @@ SocketManager::recv(int fd, void *buf, int size, int flags)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen)
 {
   int r;
@@ -230,7 +232,7 @@ SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr 
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::write(int fd, void *buf, int size, void *pOLP)
 {
   int r;
@@ -246,7 +248,7 @@ SocketManager::write(int fd, void *buf, int size, void *pOLP)
 
 void monitor_disk_write(int fd, void *buf, int size, off_t offset, char *tag);
 
-INK_INLINE int
+inline int
 SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char *tag)
 {
   int r;
@@ -261,7 +263,7 @@ SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char *tag)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::write_to_middle_of_file(int fd, void *buf, int size, off_t offset, char *tag)
 {
   int r;
@@ -278,7 +280,7 @@ SocketManager::write_to_middle_of_file(int fd, void *buf, int size, off_t offset
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::writev(int fd, struct iovec *vector, size_t count, teFDType eT)
 {
   int r;
@@ -292,14 +294,14 @@ SocketManager::writev(int fd, struct iovec *vector, size_t count, teFDType eT)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::write_vector(int fd, struct iovec *vector, size_t count, void *pOLP)
 {
   return vector_io(fd, vector, count, 0, pOLP);
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::send(int fd, void *buf, int size, int flags)
 {
   int r;
@@ -312,7 +314,7 @@ SocketManager::send(int fd, void *buf, int size, int flags)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tolen)
 {
   int r;
@@ -325,7 +327,7 @@ SocketManager::sendto(int fd, void *buf, int len, int flags, struct sockaddr *to
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::sendmsg(int fd, struct msghdr *m, int flags, void *pOLP)
 {
   int r;
@@ -338,7 +340,7 @@ SocketManager::sendmsg(int fd, struct msghdr *m, int flags, void *pOLP)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::lseek(int fd, off_t offset, int whence)
 {
   int r;
@@ -351,7 +353,7 @@ SocketManager::lseek(int fd, off_t offset, int whence)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::fstat(int fd, struct stat *buf)
 {
   int r;
@@ -365,7 +367,7 @@ SocketManager::fstat(int fd, struct stat *buf)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::unlink(char *buf)
 {
   int r;
@@ -378,7 +380,7 @@ SocketManager::unlink(char *buf)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::fsync(int fildes)
 {
   int r;
@@ -391,7 +393,7 @@ SocketManager::fsync(int fildes)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::ftruncate(int fildes, off_t length)
 {
   int r;
@@ -404,7 +406,7 @@ SocketManager::ftruncate(int fildes, off_t length)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::poll(struct pollfd *fds, unsigned long nfds, int timeout)
 {
   int r;
@@ -418,7 +420,7 @@ SocketManager::poll(struct pollfd *fds, unsigned long nfds, int timeout)
 }
 
 #if defined(USE_EPOLL)
-INK_INLINE int
+inline int
 SocketManager::epoll_create(int size)
 {
   int r;
@@ -434,7 +436,7 @@ SocketManager::epoll_create(int size)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::epoll_close(int epfd)
 {
   int r = 0;
@@ -450,7 +452,7 @@ SocketManager::epoll_close(int epfd)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 {
   int r;
@@ -464,7 +466,7 @@ SocketManager::epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
   int r;
@@ -478,14 +480,14 @@ SocketManager::epoll_wait(int epfd, struct epoll_event *events, int maxevents, i
 }
 
 #elif defined(USE_KQUEUE)
-INK_INLINE int
+inline int
 SocketManager::kqueue()
 {
   return ::kqueue();
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::kevent(int kq, const struct kevent *changelist, int nchanges,
                       struct kevent *eventlist, int nevents,
                       const struct timespec *timeout)
@@ -503,11 +505,50 @@ SocketManager::kevent(int kq, const struct kevent *changelist, int nchanges,
 
   return r;
 }
+#elif defined(USE_PORT)
+inline int
+SocketManager::port_create() 
+{
+  return ::port_create();
+}
 
-#endif
+inline int
+SocketManager::port_associate(int port, int source, uintptr_t obj,
+                              int events, void *user) 
+{
+  int r;
+  r =::port_associate(port, source, obj, events, user);
+  if(r < 0) 
+    r = -errno;
+  return r;
+}
+
+inline int
+SocketManager::port_dissociate(int port, int source, uintptr_t obj) 
+{
+  int r;
+  r =::port_dissociate(port, source, obj);
+  if(r < 0) 
+    r = -errno;
+  return r;
+}
+
+inline int
+SocketManager::port_getn(int port, port_event_t *list, uint_t max,
+                         uint_t *nget, timespec_t *timeout) 
+{
+  int r;
+  do {
+    if ((r =::port_getn(port, list, max, nget, timeout)) >= 0)
+      break;
+    r = -errno;
+  } while (errno == -EINTR); //TODO: possible EAGAIN(undocumented)
+  return r;
+}
+#endif /* USE_PORT */
 
 
-INK_INLINE int
+inline int
 SocketManager::get_sndbuf_size(int s)
 {
   int bsz = 0;
@@ -519,7 +560,7 @@ SocketManager::get_sndbuf_size(int s)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::get_rcvbuf_size(int s)
 {
   int bsz = 0;
@@ -531,42 +572,42 @@ SocketManager::get_rcvbuf_size(int s)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::set_sndbuf_size(int s, int bsz)
 {
   return safe_setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &bsz, sizeof(bsz));
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::set_rcvbuf_size(int s, int bsz)
 {
   return safe_setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &bsz, sizeof(bsz));
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::getsockname(int s, struct sockaddr *sa, socklen_t *sz)
 {
   return::getsockname(s, sa, sz);
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::socket(int domain, int type, int protocol, bool bNonBlocking)
 {
   return::socket(domain, type, protocol);
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::mc_socket(int domain, int type, int protocol, bool bNonBlocking)
 {
   return SocketManager::socket(domain, type, protocol, bNonBlocking);
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::shutdown(int s, int how)
 {
   int res;
@@ -579,7 +620,7 @@ SocketManager::shutdown(int s, int how)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::lockf(int s, int f, long size)
 {
   int res;
@@ -592,7 +633,7 @@ SocketManager::lockf(int s, int f, long size)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::dup(int s)
 {
   int res;
@@ -606,7 +647,7 @@ SocketManager::dup(int s)
 }
 
 
-INK_INLINE int
+inline int
 SocketManager::fast_close(int s)
 {
   int res;

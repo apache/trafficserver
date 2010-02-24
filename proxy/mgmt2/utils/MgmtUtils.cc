@@ -580,7 +580,7 @@ get_interface_mtu(int sock_fd, struct ifreq *ifr)
     mgmt_log(stderr, "[getAddrForIntr] Unable to obtain MTU for " "interface '%s'", ifr->ifr_name);
     return 0;
   } else
-#if (HOST_OS == sunos) || (HOST_OS == hpux)
+#if (HOST_OS == solaris) || (HOST_OS == hpux)
     return ifr->ifr_metric;
 #else
     return ifr->ifr_mtu;
@@ -662,7 +662,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
         }
       }
     }
-#if (HOST_OS == freebsd)
+#if (HOST_OS == freebsd) || (HOST_OS == darwin)
     ifr = (struct ifreq *) ((char *) &ifr->ifr_addr + ifr->ifr_addr.sa_len);
 #else
     ifr = (struct ifreq *) (((char *) ifr) + sizeof(*ifr));

@@ -27,10 +27,6 @@
 
 #include "inktomi++.h"
 
-#ifndef INK_INLINE
-#define INK_INLINE
-#endif
-
 #include "I_IOBuffer.h"
 #include "I_Action.h"
 #include "I_Continuation.h"

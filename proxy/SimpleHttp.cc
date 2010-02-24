@@ -27,7 +27,7 @@
 #include "P_Cache.h"
 #include "P_Net.h"
 #include "P_HostDB.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "Diags.h"
 #include "HTTP.h"
 

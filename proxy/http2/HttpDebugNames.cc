@@ -196,8 +196,6 @@ HttpDebugNames::get_event_name(int event)
     return ("CACHE_EVENT_OPEN_READ");
   case CACHE_EVENT_OPEN_READ_FAILED:
     return ("CACHE_EVENT_OPEN_READ_FAILED");
-  case CACHE_EVENT_OPEN_READ_FAILED_IN_PROGRESS:
-    return ("CACHE_EVENT_OPEN_READ_FAILED_IN_PROGRESS");
   case CACHE_EVENT_OPEN_WRITE:
     return ("CACHE_EVENT_OPEN_WRITE");
   case CACHE_EVENT_OPEN_WRITE_FAILED:
@@ -210,10 +208,6 @@ HttpDebugNames::get_event_name(int event)
     return ("CACHE_EVENT_UPDATE");
   case CACHE_EVENT_UPDATE_FAILED:
     return ("CACHE_EVENT_UPDATE_FAILED");
-#if 0
-  case CACHE_EVENT_LOOKUP_RESPONSE:
-    return ("CACHE_EVENT_LOOKUP_RESPONSE");
-#endif
 
   case STAT_PAGE_SUCCESS:
     return ("STAT_PAGE_SUCCESS");

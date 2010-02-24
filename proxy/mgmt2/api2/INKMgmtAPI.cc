@@ -29,8 +29,8 @@
  *
  * 
  ***************************************************************************/
-#include <limits.h>
 #include "inktomi++.h"
+#include <limits.h>
 
 #include "INKMgmtAPI.h"
 #include "CfgContextManager.h"
@@ -3282,7 +3282,7 @@ inkapi INKError rm_change_ip(int cnt, char **ip)
     wait(&status);
   } else {
     int res;
-    res = execl(mv_binary, "mv", rmserver_path1, rmserver_path, NULL);
+    res = execl(mv_binary, "mv", rmserver_path1, rmserver_path, (char*)NULL);
     if (res != 0) {
       perror("[rm_change_ip] mv of rmserver.cfg failed! ");
     }
@@ -3378,7 +3378,7 @@ inkapi INKError rm_remove_ip(int cnt, char **ip)
     wait(&status);
   } else {                      /* Exec the up */
     int res;
-    res = execl(mv_binary, "mv", rmserver_path1, rmserver_path, NULL);
+    res = execl(mv_binary, "mv", rmserver_path1, rmserver_path, (char*)NULL);
     if (res != 0) {
       perror("[rm_remove_ip] mv of rmserver.cfg failed! ");
     }
@@ -3501,7 +3501,7 @@ inkapi INKError rm_change_hostname(INKString hostname)
     wait(&status);
   } else {                      /* Exec the up */
     int res;
-    res = execl(mv_binary, "mv", rmserver_path1, rmserver_path, NULL);
+    res = execl(mv_binary, "mv", rmserver_path1, rmserver_path, (char*)NULL);
     if (res != 0) {
       perror("[rm_change_hostname] mv of rmserver.cfg failed! ");
     }

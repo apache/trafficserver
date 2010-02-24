@@ -34,8 +34,8 @@
   
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "ink_unused.h"
-
 #include "ink_error.h"
 #include "ink_assert.h"
 #include "ink_time.h"
@@ -51,6 +51,7 @@
 
 
 int diags_on_for_plugins = 0;
+bool DiagsConfigState::enabled[2] = { false, false };
 
 //////////////////////////////////////////////////////////////////////////////
 //

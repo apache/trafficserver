@@ -26,13 +26,10 @@
  *
  ****************************************************************************/
 
-#include "ink_unused.h"     /* MAGIC_EDITING_TAG */
-
-#include "Compatability.h"
+#include "inktomi++.h"
 #include "MgmtConverter.h"
 #include "RecordsConfig.h"
 #include "Main.h"
-#include "ink_hash_table.h"
 #include "WebMgmtUtils.h"
 #include "CfgContextUtils.h"
 #include "CoreAPI.h"            // for testing

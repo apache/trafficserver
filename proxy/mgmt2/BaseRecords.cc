@@ -26,15 +26,10 @@
  * BaseRecords.cc
  *   Member function definitions for the BaseRecords class.
  *
- * 
  */
 
-#include "ink_unused.h" /* MAGIC_EDITING_TAG */
-
-#include "ink_platform.h"
-#include "Compatability.h"
-#include "ink_string.h"
-#include "ink_atomic.h"
+#include "inktomi++.h"
+#include "Main.h"
 #include "Main.h"
 #include "BaseRecords.h"
 #include "RecordsConfig.h"

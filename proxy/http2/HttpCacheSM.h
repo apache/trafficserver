@@ -35,7 +35,7 @@
 
 #include "P_Cache.h"
 #include "StatSystem.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "URL.h"
 #include "HTTP.h"
 #include "HttpConfig.h"

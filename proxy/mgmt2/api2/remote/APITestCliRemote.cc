@@ -94,6 +94,7 @@
  * reset_stats - resets all statistics to default values
  */
 
+#include "ink_config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

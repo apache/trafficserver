@@ -21,12 +21,8 @@
   limitations under the License.
  */
 
-/****************************************************************************
 
-  HashTable.cc --
-  Created On          : Mon Dec 02 2007
- ****************************************************************************/
-
+#include "inktomi++.h"
 #include "Hash_Table.h"
 #include "HttpSM.h"
 #include "HttpTransactCache.h"

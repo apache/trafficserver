@@ -26,6 +26,8 @@
 
  
  ***************************************************************************/
+
+#include "inktomi++.h"
 #include "ink_unused.h"
 
 #include <errno.h>
@@ -33,7 +35,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "inktomi++.h"
 #include "Error.h"
 
 #include "P_EventSystem.h"

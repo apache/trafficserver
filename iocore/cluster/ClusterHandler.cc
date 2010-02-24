@@ -592,8 +592,7 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
               //////////////////////////////////////////////////////////
               ink_release_assert(s.msg.descriptor[i].length <= DEFAULT_MAX_BUFFER_SIZE);
               vc->read_block = new_IOBufferBlock();
-              int
-                index = buffer_size_to_index(s.msg.descriptor[i].length);
+              int index = buffer_size_to_index(s.msg.descriptor[i].length, MAX_BUFFER_SIZE_INDEX);
               vc->read_block->alloc(index);
 
               s.iov[new_n_iov].iov_base = 0;
@@ -610,8 +609,7 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
             s.block[new_n_iov]->_buf_end = s.block[new_n_iov]->end() + s.msg.descriptor[i].length;
 
           } else {
-            bool
-              remote_write_fill = (vc->pending_remote_fill && vc->remote_write_block);
+            bool remote_write_fill = (vc->pending_remote_fill && vc->remote_write_block);
             // Sanity check, assert we have the lock
             if (!remote_write_fill) {
               ink_assert((ProxyMutex *) vc->write_locked);

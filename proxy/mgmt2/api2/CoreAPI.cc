@@ -29,6 +29,7 @@
  * 
  ***************************************************************************/
 
+#include "ink_config.h"
 #include "ink_platform.h"
 #include "Main.h"
 #include "LocalManager.h"

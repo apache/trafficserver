@@ -61,7 +61,7 @@
 
 #ifndef INK_NO_TRANSFORM
 
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "P_Net.h"
 #include "MimeTable.h"
 #include "TransformInternal.h"
@@ -92,7 +92,7 @@ TransformProcessor::start()
   -------------------------------------------------------------------------*/
 
 VConnection *
-TransformProcessor::open(Continuation * cont, APIHook * hooks)
+TransformProcessor::open(Continuation *cont, APIHook *hooks)
 {
   if (hooks) {
     return NEW(new TransformVConnection(cont, hooks));
@@ -105,7 +105,7 @@ TransformProcessor::open(Continuation * cont, APIHook * hooks)
   -------------------------------------------------------------------------*/
 
 INKVConnInternal *
-TransformProcessor::null_transform(ProxyMutex * mutex)
+TransformProcessor::null_transform(ProxyMutex *mutex)
 {
   return NEW(new NullTransform(mutex));
 }
@@ -114,8 +114,8 @@ TransformProcessor::null_transform(ProxyMutex * mutex)
   -------------------------------------------------------------------------*/
 
 INKVConnInternal *
-TransformProcessor::ftp_list_transform(ProxyMutex * mutex,
-                                       HTTPHdr * req, IOBufferReader * ftp_message, const char *currentdir)
+TransformProcessor::ftp_list_transform(ProxyMutex *mutex,
+                                       HTTPHdr *req, IOBufferReader *ftp_message, const char *currentdir)
 {
   return NEW(new FtpListTransform(mutex, req, ftp_message, currentdir));
 }
@@ -125,8 +125,8 @@ TransformProcessor::ftp_list_transform(ProxyMutex * mutex,
   -------------------------------------------------------------------------*/
 
 INKVConnInternal *
-TransformProcessor::range_transform(ProxyMutex * mut,
-                                    MIMEField * range_field, HTTPInfo * cache_obj, HTTPHdr * transform_resp, bool & b)
+TransformProcessor::range_transform(ProxyMutex *mut,
+                                    MIMEField *range_field, HTTPInfo *cache_obj, HTTPHdr *transform_resp, bool & b)
 {
   RangeTransform *range_transform = NEW(new RangeTransform(mut, range_field, cache_obj, transform_resp));
 
@@ -144,7 +144,7 @@ TransformProcessor::range_transform(ProxyMutex * mut,
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-TransformTerminus::TransformTerminus(TransformVConnection * tvc)
+TransformTerminus::TransformTerminus(TransformVConnection *tvc)
 :VConnection(tvc->mutex),
 m_tvc(tvc), m_read_vio(), m_write_vio(), m_event_count(0), m_deletable(0), m_closed(0), m_called_user(0)
 {
@@ -155,7 +155,7 @@ m_tvc(tvc), m_read_vio(), m_write_vio(), m_event_count(0), m_deletable(0), m_clo
   -------------------------------------------------------------------------*/
 
 static inline void
-dump_buffer(IOBufferReader * reader)
+dump_buffer(IOBufferReader *reader)
 {
   IOBufferBlock *b = reader->get_current_block();
   int offset = reader->start_offset;
@@ -345,7 +345,7 @@ TransformTerminus::handle_event(int event, void *edata)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformTerminus::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
+TransformTerminus::do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *buf)
 {
   m_read_vio.buffer.writer_for(buf);
   m_read_vio.op = VIO::READ;
@@ -368,7 +368,7 @@ TransformTerminus::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformTerminus::do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner)
+TransformTerminus::do_io_write(Continuation *c, ink64 nbytes, IOBufferReader *buf, bool owner)
 {
   // In the process of eliminating 'owner' mode so asserting against it
   ink_assert(!owner);
@@ -438,7 +438,7 @@ TransformTerminus::do_io_shutdown(ShutdownHowTo_t howto)
   -------------------------------------------------------------------------*/
 
 void
-TransformTerminus::reenable(VIO * vio)
+TransformTerminus::reenable(VIO *vio)
 {
   ink_assert((vio == &m_read_vio) || (vio == &m_write_vio));
 
@@ -458,7 +458,7 @@ TransformTerminus::reenable(VIO * vio)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-TransformVConnection::TransformVConnection(Continuation * cont, APIHook * hooks)
+TransformVConnection::TransformVConnection(Continuation *cont, APIHook *hooks)
 :VConnection(cont->mutex), m_cont(cont), m_terminus(this), m_closed(0)
 {
   INKVConnInternal *xform;
@@ -506,7 +506,7 @@ TransformVConnection::handle_event(int event, void *edata)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformVConnection::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
+TransformVConnection::do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *buf)
 {
   Debug("transform", "TransformVConnection do_io_read: 0x%lx [0x%lx]", (long) c, (long) this);
 
@@ -517,7 +517,7 @@ TransformVConnection::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformVConnection::do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner)
+TransformVConnection::do_io_write(Continuation *c, ink64 nbytes, IOBufferReader *buf, bool owner)
 {
   Debug("transform", "TransformVConnection do_io_write: 0x%lx [0x%lx]", (long) c, (long) this);
 
@@ -558,7 +558,7 @@ TransformVConnection::do_io_shutdown(ShutdownHowTo_t howto)
   -------------------------------------------------------------------------*/
 
 void
-TransformVConnection::reenable(VIO * vio)
+TransformVConnection::reenable(VIO *vio)
 {
   ink_assert(!"not reached");
 }
@@ -645,7 +645,7 @@ TransformControl::handle_event(int event, void *edata)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-NullTransform::NullTransform(ProxyMutex * _mutex)
+NullTransform::NullTransform(ProxyMutex *_mutex)
 :INKVConnInternal(NULL, _mutex), m_output_buf(NULL), m_output_reader(NULL), m_output_vio(NULL)
 {
   SET_HANDLER(&NullTransform::handle_event);
@@ -770,8 +770,8 @@ NullTransform::handle_event(int event, void *edata)
   b) are somewhat hard to overcome.
   -------------------------------------------------------------------------*/
 
-FtpListTransform::FtpListTransform(ProxyMutex * _mutex,
-                                   HTTPHdr * req, IOBufferReader * ftp_message, const char *currentdir)
+FtpListTransform::FtpListTransform(ProxyMutex *_mutex,
+                                   HTTPHdr *req, IOBufferReader *ftp_message, const char *currentdir)
 :INKVConnInternal(NULL, _mutex),
 m_req(req),
 m_ftp_message(ftp_message),
@@ -1791,8 +1791,8 @@ num_chars_for_int(int i)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-RangeTransform::RangeTransform(ProxyMutex * mut, MIMEField * range_field,
-                               HTTPInfo * cache_obj, HTTPHdr * transform_resp)
+RangeTransform::RangeTransform(ProxyMutex *mut, MIMEField *range_field,
+                               HTTPInfo *cache_obj, HTTPHdr *transform_resp)
 :INKVConnInternal(NULL, mut),
 m_output_buf(NULL),
 m_output_reader(NULL),

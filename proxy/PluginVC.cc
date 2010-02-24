@@ -219,7 +219,7 @@ PluginVC::main_handler(int event, void *data)
 }
 
 VIO *
-PluginVC::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
+PluginVC::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
 {
 
   ink_assert(!closed);
@@ -251,7 +251,7 @@ PluginVC::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
 }
 
 VIO *
-PluginVC::do_io_write(Continuation * c, int nbytes, IOBufferReader * abuffer, bool owner)
+PluginVC::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * abuffer, bool owner)
 {
 
   ink_assert(!closed);

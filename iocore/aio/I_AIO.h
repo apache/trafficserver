@@ -31,10 +31,6 @@
 #if !defined (_I_AIO_h_)
 #define _I_AIO_h_
 
-#ifndef INK_INLINE
-#define INK_INLINE
-#endif
-
 #include "inktomi++.h"
 #include "I_EventSystem.h"
 #include "I_RecProcess.h"
@@ -50,11 +46,14 @@
 #define AIO_MODE_AIO             0
 #define AIO_MODE_SYNC            1
 #define AIO_MODE_THREAD          2
-#define AIO_MODE_INK             3
 #define AIO_MODE                 AIO_MODE_THREAD
 
+// AIOCallback::thread special values
+#define AIO_CALLBACK_THREAD_ANY ((EThread*)0) // any regular event thread
+#define AIO_CALLBACK_THREAD_AIO ((EThread*)-1)
+
 #define AIO_LOWEST_PRIORITY      0
-#define AIO_DEFAULT_PRIORITY     AIO_LOWEST_PRIORTY
+#define AIO_DEFAULT_PRIORITY     AIO_LOWEST_PRIORITY
 
 struct AIOCallback:Continuation
 {
@@ -67,8 +66,9 @@ struct AIOCallback:Continuation
   int aio_result;
 
   int ok();
-  // AIOCallback();
-  virtual void AIOCallback_is_an_abstract_class() = 0;
+  AIOCallback() : thread(AIO_CALLBACK_THREAD_ANY), then(0) {
+    aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+  }
 };
 
 void ink_aio_init(ModuleVersion version);

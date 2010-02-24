@@ -35,6 +35,11 @@
 #include "CfgContextDefs.h"
 #include "Tokenizer.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+
 INKError Init(char *socket_path = NULL);
 INKError Terminate();
 
@@ -153,5 +158,9 @@ INKString GetRmCfgPath();
 INKError ReadRmCfgFile(char **);
 void RmReadCfgList(Tokenizer * Tp, tok_iter_state * Tstate, char **, INKRmServerListT ListType);
 INKError WriteRmCfgFile(char *text);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif

@@ -33,8 +33,11 @@
 #include "I_EventSystem.h"
 
 
-INK_INLINE
+inline
 ProtectedQueue::ProtectedQueue():write_pipe_fd(-1),read_pipe_fd(-1)
+#if defined(USE_OLD_EVENTFD)
+:write_pipe_fd(-1),read_pipe_fd(-1)
+#endif
 {
   Event e;
   ink_mutex_init(&lock, "ProtectedQueue");
@@ -42,10 +45,11 @@ ProtectedQueue::ProtectedQueue():write_pipe_fd(-1),read_pipe_fd(-1)
   ink_cond_init(&might_have_data);
 }
 
-INK_INLINE void
+inline void
 ProtectedQueue::signal()
 {
   // Need to get the lock before you can signal the thread
+#if defined(USE_OLD_EVENTFD)
   if(write_pipe_fd!=-1) {
     int retVal = socketManager.write(write_pipe_fd,(void*)"W",1);
     if(retVal <= 0) {
@@ -53,16 +57,20 @@ ProtectedQueue::signal()
       socketManager.close(fd);
     }
   } else {
+#endif
     ink_mutex_acquire(&lock);
     ink_cond_signal(&might_have_data);
     ink_mutex_release(&lock);
+#if defined(USE_OLD_EVENTFD)
   }
+#endif
 }
 
-INK_INLINE int
+inline int
 ProtectedQueue::try_signal()
 {
   // Need to get the lock before you can signal the thread
+#if defined(USE_OLD_EVENTFD)
   if(write_pipe_fd!=-1) {
     int retVal = socketManager.write(write_pipe_fd,(void*)"W",1);
     if(retVal <= 0) {
@@ -72,6 +80,7 @@ ProtectedQueue::try_signal()
     }
     return 1;
   } else {
+#endif
     if (ink_mutex_try_acquire(&lock)) {
       ink_cond_signal(&might_have_data);
       ink_mutex_release(&lock);
@@ -79,11 +88,13 @@ ProtectedQueue::try_signal()
     } else {
       return 0;
     }
+#if defined(USE_OLD_EVENTFD)
   }
+#endif
 }
 
 // Called from the same thread (don't need to signal)
-INK_INLINE void
+inline void
 ProtectedQueue::enqueue_local(Event * e)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
@@ -91,7 +102,7 @@ ProtectedQueue::enqueue_local(Event * e)
   localQueue.enqueue(e);
 }
 
-INK_INLINE void
+inline void
 ProtectedQueue::remove(Event * e)
 {
   ink_assert(e->in_the_prot_queue);
@@ -100,7 +111,7 @@ ProtectedQueue::remove(Event * e)
   e->in_the_prot_queue = 0;
 }
 
-INK_INLINE Event *
+inline Event *
 ProtectedQueue::dequeue_local()
 {
   Event *e = localQueue.dequeue();
@@ -111,6 +122,7 @@ ProtectedQueue::dequeue_local()
   return e;
 }
 
+#if defined(USE_OLD_EVENTFD)
 INK_INLINE void 
 ProtectedQueue::setReadFd(int fd)
 {
@@ -132,5 +144,6 @@ ProtectedQueue::getReadFd()
   setWriteFd(pfd[1]);
   return pfd[0];
 }
+#endif /* USE_OLD_EVENTFD */
 
 #endif

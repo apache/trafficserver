@@ -84,35 +84,41 @@ Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *host
 
   ink_assert(caches[type] == this);
 
-  Action *action = NULL;
-
   Part *part = key_to_part(key, hostname, host_len);
-  Dir result = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+  Dir result;
   Dir *last_collision = NULL;
+  CacheVC *c = NULL;
+  {
+    MUTEX_TRY_LOCK(lock, part->mutex, cont->mutex->thread_holding);
+    if (lock) {
+      if (!dir_probe(key, part, &result, &last_collision)) {
+        cont->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *) -ECACHE_NO_DOC);
+        return ACTION_RESULT_DONE;
+      }
+    }
+    c = new_CacheVC(cont);
+    SET_CONTINUATION_HANDLER(c, &CacheVC::derefRead);
+    c->first_key = c->key = *key;
+    c->part = part;
+    c->dir = result;
+    c->last_collision = last_collision;
 
-  MUTEX_TRY_LOCK(lock, part->mutex, cont->mutex->thread_holding);
-  if (lock) {
-    if (!dir_probe(key, part, &result, &last_collision)) {
-      cont->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *) -ECACHE_NO_DOC);
-      return ACTION_RESULT_DONE;
+    if (!lock) {
+      c->mutex->thread_holding->schedule_in_local(c, MUTEX_RETRY_DELAY);
+      return &c->_action;
+    }
+
+    switch (c->do_read_call(&c->key)) {
+      case EVENT_DONE: return ACTION_RESULT_DONE;
+      case EVENT_RETURN: goto Lcallreturn;
+      default: return &c->_action;
     }
   }
-  CacheVC *c = new_CacheVC(cont);
-  SET_CONTINUATION_HANDLER(c, &CacheVC::derefRead);
-  c->first_key = c->key = *key;
-  c->part = part;
-  c->dir = result;
-  c->last_collision = last_collision;
-
-  if (!lock) {
-    c->mutex->thread_holding->schedule_in_local(c, MUTEX_RETRY_DELAY);
-    return &c->_action;
-  }
-
-  if (c->do_read(&c->key) == EVENT_CONT)
-    return &c->_action;
+Lcallreturn:
+  if (c->handleEvent(AIO_EVENT_DONE, 0) == EVENT_DONE)
+    return ACTION_RESULT_DONE;
   else
-    return action;
+    return &c->_action;
 }
 
 int
@@ -149,10 +155,16 @@ Lcollision:{
       mutex->thread_holding->schedule_in_local(this, MUTEX_RETRY_DELAY);
       return EVENT_CONT;
     }
-    if (dir_probe(&key, part, &dir, &last_collision))
-      return do_read(&key);
+    if (dir_probe(&key, part, &dir, &last_collision)) {
+      int ret = do_read_call(&first_key);
+      if (ret == EVENT_RETURN)
+        goto Lcallreturn;
+      return ret;
+    }
   }
 Ldone:
   _action.continuation->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *) -ECACHE_NO_DOC);
   return free_CacheVC(this);
+Lcallreturn:
+  return handleEvent(AIO_EVENT_DONE, 0); // hopefully a tail call
 }

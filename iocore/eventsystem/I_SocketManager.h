@@ -94,6 +94,13 @@ struct SocketManager
   int kevent(int kq, const struct kevent *changelist, int nchanges,
              struct kevent *eventlist, int nevents,
              const struct timespec *timeout);
+#elif defined(USE_PORT)
+  int port_create();
+  int port_associate(int port, int fd, uintptr_t obj, 
+		     int events, void *user);
+  int port_dissociate(int port, int fd, uintptr_t obj);
+  int port_getn(int port, port_event_t *list, uint_t max, 
+		uint_t *nget, timespec_t *timeout);
 #endif
   int shutdown(int s, int how);
   int dup(int s);

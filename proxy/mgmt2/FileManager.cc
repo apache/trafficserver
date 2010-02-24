@@ -21,12 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"  /* MAGIC_EDITING_TAG */
-
-#include "ink_platform.h"
-#include "Compatability.h"
-#include "ink_resource.h"
-#include "ink_error.h"
+#include "inktomi++.h"
 #include "FileManager.h"
 #include "Main.h"
 #include "Rollback.h"

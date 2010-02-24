@@ -21,12 +21,13 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
 #include <ctype.h>
 #include <string.h>
 #include "HttpConfig.h"
 #include "HTTP.h"
 #include "ProcessManager.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "ICPProcessor.h"
 #include "P_Net.h"
 #include "P_RecUtils.h"

@@ -36,7 +36,6 @@ MGMT_DEFS = @MGMT_DEFS@
 DEFS  += $(MGMT_DEFS)
 
 noinst_LIBRARIES = libweb.a
-
 libweb_a_SOURCES = \
   MgmtAllow.cc \
   MgmtAllow.h \

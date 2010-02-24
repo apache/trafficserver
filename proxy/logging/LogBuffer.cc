@@ -30,13 +30,14 @@
 
  
  ***************************************************************************/
+
+#include "inktomi++.h"
 #include "ink_unused.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "inktomi++.h"
 #include "Error.h"
 #include "P_EventSystem.h"
 #include "LogField.h"
@@ -69,7 +70,7 @@ FieldListCacheElement fieldlist_cache[FIELDLIST_CACHE_SIZE];
 int fieldlist_cache_entries = 0;
 vink32 LogBuffer::M_ID = 0;
 
-iObjectActivator iObjectActivatorInstance;     /* just to do ::Init() before main() */
+//iObjectActivator  iObjectActivatorInstance;     /* just to do ::Init() before main() */
 
 iObject *iObject::free_heap = 0;       /* list of free blocks */
 ink_mutex iObject::iObjectMutex;        /* mutex for access iObject class global variables */

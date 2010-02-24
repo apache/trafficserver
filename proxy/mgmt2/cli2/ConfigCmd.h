@@ -912,7 +912,7 @@ int IsValidFQHostname(char *str);
 int IsValidDomainname(char *str);
 int IsValidIpAddress(char *str);
 int getnetparms(char *ipaddr, char *netmask);
-#if (HOST_OS == sunos)
+#if (HOST_OS == solaris)
 int getnetmask(char *mask);
 #endif
 char *pos_after_string(char const *haystack, char const *needle);

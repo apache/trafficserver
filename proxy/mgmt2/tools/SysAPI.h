@@ -24,7 +24,7 @@
 #ifndef _SYS_API_H
 #define _SYS_API_H
 
-#if (HOST_OS == sunos)
+#if (HOST_OS == solaris)
 #include "ink_bool.h"
 #endif
 

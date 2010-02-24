@@ -21,8 +21,12 @@
   limitations under the License.
  */
 
-#ifndef __REGEX_H__
-#define __REGEX_H__
+#ifndef __TS_REGEX_H__
+#define __TS_REGEX_H__
+
+#if (HOST_OS == darwin) // FIXME: includes case sensitve(?)
+#include </usr/include/regex.h>
+#endif
 
 /*
   regular expression rules:
@@ -95,4 +99,4 @@ private:
 };
 
 
-#endif /* __REGEX_H__ */
+#endif /* __TS_REGEX_H__ */

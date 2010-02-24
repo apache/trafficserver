@@ -39,6 +39,7 @@
 #if !defined (_SSLNetAccept_h_)
 #define _SSLNetAccept_h_
 
+#include "inktomi++.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
 

@@ -35,15 +35,23 @@
 #if (__WORDSIZE == 64)
 typedef long long int_pointer;
 
-#else   /*  */
+#else   /*  (__WORDSIZE == 32) */
 typedef unsigned long int_pointer;
 
 #endif  /* #if (__WORDSIZE == 64) */
-#else   /*  */
+#else   /*  (__WORDSIZE != 64) && (__WORDSIZE != 32) */
 #error "Invalid __WORDSIZE!"
 #endif  /* #if (__WORDSIZE == 64) || (__WORDSIZE == 32) */
-#else   /*  */
+#else   /*  !__WORDSIZE */
+#ifdef _LP64
+typedef long long int_pointer;
+#else /* !_LP64 */
+#if defined(__PTRDIFF_TYPE__)
+typedef unsigned  __PTRDIFF_TYPE__ int_pointer;
+#else /* !__PTRDIFF_TYPE__ */
 #error "__WORDSIZE not defined!"
+#endif /* __PTRDIFF_TYPE__ */
+#endif /* _LP64 */
 #endif  /* #ifdef __WORDSIZE  */
   
 #endif  /* #ifndef H_PTRDEF_H */

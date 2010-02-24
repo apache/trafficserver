@@ -40,7 +40,7 @@ extern int cache_config_max_disk_errors;
 #define ROUND_DOWN_TO_STORE_BLOCK(_x)   (((_x) >> STORE_BLOCK_SHIFT) << STORE_BLOCK_SHIFT)
 
 #define STORE_BLOCKS_PER_PART  (PART_BLOCK_SIZE / STORE_BLOCK_SIZE)
-#define DISK_HEADER_MAGIC               0xABCD1234
+#define DISK_HEADER_MAGIC               0xABCD1235
 
 /* each disk part block has a corresponding Part object */
 struct CacheDisk;
@@ -70,9 +70,9 @@ struct DiskPart
   int num_partblocks;           /* number of disk partition blocks in this discrete 
                                    partition */
   int part_number;              /* the partition number of this partition */
-  int size;                     /* size in store blocks */
+  ink_off_t size;               /* size in store blocks */
   CacheDisk *disk;
-    Queue<DiskPartBlockQueue> dpb_queue;
+  Queue<DiskPartBlockQueue> dpb_queue;
 };
 
 struct DiskHeader
@@ -129,7 +129,7 @@ struct CacheDisk:public Continuation
 
   int syncDone(int event, void *data);
 
-  DiskPartBlock *create_partition(int number, int size, int scheme);
+  DiskPartBlock *create_partition(int number, ink_off_t size, int scheme);
 
   int delete_partition(int number);
 

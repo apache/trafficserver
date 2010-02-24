@@ -26,7 +26,7 @@
 #define  P_VIO_h
 #include "I_VIO.h"
 
-INK_INLINE
+inline
 VIO::VIO(int aop)
   :
 _cont(NULL),
@@ -45,7 +45,7 @@ mutex(0)
 //  VIO::VIO()
 //
 /////////////////////////////////////////////////////////////
-INK_INLINE
+inline
 VIO::VIO()
   :
 _cont(0),
@@ -59,37 +59,37 @@ mutex(0)
   return;
 }
 
-INK_INLINE Continuation *
+inline Continuation *
 VIO::get_continuation()
 {
   return _cont;
 }
-INK_INLINE void
+inline void
 VIO::set_writer(MIOBuffer * writer)
 {
   buffer.writer_for(writer);
 }
-INK_INLINE void
+inline void
 VIO::set_reader(IOBufferReader * reader)
 {
   buffer.reader_for(reader);
 }
-INK_INLINE MIOBuffer *
+inline MIOBuffer *
 VIO::get_writer()
 {
   return buffer.writer();
 }
-INK_INLINE IOBufferReader *
+inline IOBufferReader *
 VIO::get_reader()
 {
   return (buffer.reader());
 }
-INK_INLINE int
+inline int
 VIO::ntodo()
 {
   return nbytes - ndone;
 }
-INK_INLINE void
+inline void
 VIO::done()
 {
   if (buffer.reader())
@@ -103,7 +103,7 @@ VIO::done()
 //  VIO::set_continuation()
 //
 /////////////////////////////////////////////////////////////
-INK_INLINE void
+inline void
 VIO::set_continuation(Continuation * acont)
 {
   if (vc_server)
@@ -123,7 +123,7 @@ VIO::set_continuation(Continuation * acont)
 //  VIO::reenable()
 //
 /////////////////////////////////////////////////////////////
-INK_INLINE void
+inline void
 VIO::reenable()
 {
   if (vc_server)
@@ -135,7 +135,7 @@ VIO::reenable()
 //  VIO::reenable_re()
 //
 /////////////////////////////////////////////////////////////
-INK_INLINE void
+inline void
 VIO::reenable_re()
 {
   if (vc_server)

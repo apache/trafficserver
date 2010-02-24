@@ -21,9 +21,10 @@
   limitations under the License.
  */
 
-#ifdef NON_MODULAR
 #include "P_Cache.h"
 #include "Show.h"
+
+#ifdef NON_MODULAR
 
 struct ShowCache:ShowCont
 {
@@ -305,6 +306,8 @@ ShowCache::handleCacheOpenRead(int event, Event * e)
     CHECK_SHOW(show("<tr><td>sync_serial</td><td>%lu</tr>\n", d->sync_serial));
     CHECK_SHOW(show("<tr><td>write_serial</td><td>%lu</tr>\n", d->write_serial));
     CHECK_SHOW(show("<tr><td>header length</td><td>%lu</tr>\n", d->hlen));
+    CHECK_SHOW(show("<tr><td>fragment type</td><td>%lu</tr>\n", d->ftype));
+    CHECK_SHOW(show("<tr><td>fragment table length</td><td>%lu</tr>\n", d->flen));
     CHECK_SHOW(show("<tr><td>No of Alternates</td><td>%d</td></tr>\n", alt_count));
 
     CHECK_SHOW(show("<tr><td>Action</td>\n"

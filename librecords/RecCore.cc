@@ -21,11 +21,7 @@
   limitations under the License.
  */
 
-#include "Compatability.h"
-#include "ink_atomic.h"
-#include "ink_bool.h"
-#include "ink_platform.h"
-#include "ink_snprintf.h"
+#include "inktomi++.h"
 
 #include "P_RecCompatibility.h"
 #include "P_RecCore.h"

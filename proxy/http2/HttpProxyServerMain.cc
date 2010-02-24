@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
 #include "P_Net.h"
 #include "Main.h"
 #include "Error.h"

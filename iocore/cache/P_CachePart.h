@@ -25,47 +25,37 @@
 #ifndef _P_CACHE_PART_H__
 #define _P_CACHE_PART_H__
 
-// Definitions
-#define AIO_NOT_IN_PROGRESS             0
-#define AIO_AGG_WRITE_IN_PROGRESS       -1
-#define SHM_MAGIC                       "TrafficServerCache"
-#define SHM_SIZE                        128
-#define AUTO_SIZE_RAM_CACHE             -1      // 1-1 with directory size
-
-#define INK_BLOCK_SIZE			512
-#define INK_BLOCK_SHIFT                 9
-#define B8K_SIZE			8192
-#define B8K_SHIFT                       13
-#define ROUND_TO_16(_x)                 (((_x)+(16-1))&~(16-1))
-#define ROUND_TO_BLOCK(_x)	(((_x)+(INK_BLOCK_SIZE-1))&~(INK_BLOCK_SIZE-1))
-#define ROUND_TO_8K(_x) 		(((_x)+(B8K_SIZE-1))&~(B8K_SIZE-1))
-#define ROUND_TO_PAGE(_x) 		(((_x)+(STORE_BLOCK_SIZE-1))&\
-                                          ~(STORE_BLOCK_SIZE-1))
-#define START_BLOCKS                    32      // 8k
-#define START_POS			((ink_off_t)START_BLOCKS * INK_BLOCK_SIZE)
-#define AGG_BLOCKS                      1024
-#define AGG_HEADER_SIZE                 INK_BLOCK_SIZE
-#define AGG_SIZE                        (AGG_BLOCKS * INK_BLOCK_SIZE)   // 512k
-#define EVAC_SIZE                       (2 * AGG_SIZE)  // 1MB
-#define MAX_PART_SIZE                   ((ink_off_t)8 * 1024 * 1024 * 1024)
-#define STORE_BLOCKS_PER_DISK_BLOCK     (STORE_BLOCK_SIZE / INK_BLOCK_SIZE)
-#define MAX_PART_BLOCKS                 (MAX_PART_SIZE / INK_BLOCK_SIZE)
-#define TARGET_FRAG_SIZE                (32768 - sizeofDoc)
-#define SHRINK_TARGET_FRAG_SIZE         (32768 + 8192)
-#define MAX_FRAG_SIZE                   ((256 * 1024) - sizeofDoc)
-#define AGG_TODO_SIZE_MAX               (5242880)       // 5 MB
-#define LEAVE_FREE                      32768
-#define PIN_SCAN_EVERY                  16      // scan every 1/16 of disk
-
-#define PART_HASH_TABLE_SIZE            32707
-#define PART_HASH_EMPTY                 0xFFFF
-
-#define LOOKASIDE_SIZE                  256
+#define INK_BLOCK_SHIFT			9
+#define INK_BLOCK_SIZE			(1<<INK_BLOCK_SHIFT)
+#define ROUND_TO_BLOCK(_x)	        (((_x)+(INK_BLOCK_SIZE-1))&~(INK_BLOCK_SIZE-1))
+#define ROUND_TO(_x, _y)	        (((_x)+((_y)-1))&~((_y)-1))
 
 // Part
 
 #define PART_MAGIC			0xF1D0F00D
-#define EVACUATION_BUCKET_SIZE          (2 * 1024 * 1024)
+#define START_BLOCKS                    32      // 8k
+#define START_POS			((ink_off_t)START_BLOCKS * INK_BLOCK_SIZE)
+#define AGG_HEADER_SIZE                 INK_BLOCK_SIZE
+#define AGG_SIZE                        (4 * 1024 * 1024) // 4MB
+#define AGG_HIGH_WATER                  (AGG_SIZE / 2) // 2MB
+#define EVACUATION_SIZE                 (2 * AGG_SIZE)  // 8MB
+#define MAX_PART_SIZE                   ((ink_off_t)512 * 1024 * 1024 * 1024 * 1024)
+#define STORE_BLOCKS_PER_DISK_BLOCK     (STORE_BLOCK_SIZE / INK_BLOCK_SIZE)
+#define MAX_PART_BLOCKS                 (MAX_PART_SIZE / INK_BLOCK_SIZE)
+#define TARGET_FRAG_SIZE                (DEFAULT_MAX_BUFFER_SIZE - sizeofDoc)
+#define SHRINK_TARGET_FRAG_SIZE         (DEFAULT_MAX_BUFFER_SIZE + (DEFAULT_MAX_BUFFER_SIZE/4))
+#define MAX_FRAG_SIZE                   ((256 * 1024) - sizeofDoc)
+#define LEAVE_FREE                      DEFAULT_MAX_BUFFER_SIZE
+#define PIN_SCAN_EVERY                  16      // scan every 1/16 of disk
+#define PART_HASH_TABLE_SIZE            32707
+#define PART_HASH_EMPTY                 0xFFFF
+#define LOOKASIDE_SIZE                  256
+#define EVACUATION_BUCKET_SIZE          (2 * EVACUATION_SIZE) // 16MB
+#define RECOVERY_SIZE                   EVACUATION_SIZE // 8MB
+#define AIO_NOT_IN_PROGRESS             0
+#define AIO_AGG_WRITE_IN_PROGRESS       -1
+#define AUTO_SIZE_RAM_CACHE             -1      // 1-1 with directory size
+
 
 #define dir_offset_evac_bucket(_o) \
   (_o / (EVACUATION_BUCKET_SIZE / INK_BLOCK_SIZE))
@@ -79,15 +69,10 @@
 #define DOC_CORRUPT                     ((inku32)0xDEADBABE)
 #define DOC_NO_CHECKSUM                 ((inku32)0xA0B0C0D0)
 
-#define sizeofDoc ((int)(long)&((Doc*)0)->hdr[0])
-
-
-enum
-{ CACHE_METADATA_INSERT, CACHE_METADATA_UPDATE,
-  CACHE_METADATA_RESERVED, CACHE_METADATA_RESERVED2
-};
+#define sizeofDoc (((inku32)(uintptr_t)&((Doc*)0)->checksum)+(inku32)sizeof(inku32))
 
 struct Cache;
+struct Part;
 struct CacheDisk;
 struct PartInitInfo;
 struct DiskPart;
@@ -97,17 +82,17 @@ struct PartHeaderFooter
 {
   unsigned int magic;
   VersionNumber version;
+  time_t create_time;
   ink_off_t write_pos;
   ink_off_t last_write_pos;
-  inku32 generation;            // token generation (vary), this cannot be 0
   ink_off_t agg_pos;
-  unsigned int phase;
-  unsigned int cycle;
-  unsigned int sync_serial;
-  unsigned int write_serial;
-  time_t create_time;
-  unsigned int dirty;
-  unsigned short freelist[DIR_SEGMENTS];
+  inku32 generation;            // token generation (vary), this cannot be 0
+  inku32 phase;
+  inku32 cycle;
+  inku32 sync_serial;
+  inku32 write_serial;
+  inku32 dirty;
+  inku16 freelist[1];
 };
 
 // Key and Earliest key for each fragment that needs to be evacuated
@@ -125,65 +110,19 @@ struct EvacuationBlock
     unsigned int init;
     struct
     {
-      unsigned int readers:16;  // normal readers
-      unsigned int done:1;      // has been evacuated
-      unsigned int pinned:1;    // check pinning timeout
+      unsigned int done:1;              // has been evacuated
+      unsigned int pinned:1;            // check pinning timeout
       unsigned int evacuate_head:1;     // check pinning timeout
-      unsigned int unused:13;
+      unsigned int unused:29;
     } f;
   };
+  int readers;
   Dir dir;
   Dir new_dir;
   // we need to have a list of evacuationkeys because of collision.
   EvacuationKey evac_frags;
   CacheVC *earliest_evacuator;
-    Link<EvacuationBlock> link;
-};
-
-struct MetaData
-{
-  union
-  {
-    struct
-    {
-      unsigned int op:2;
-      unsigned int unused:30;
-      unsigned int doc_serial;
-      ink_off_t write_pos;
-    } hdr;
-    struct
-    {
-      unsigned int op:2;
-      unsigned int hosthash:14;
-      unsigned int segment:4;
-      unsigned int bucket:12;
-      unsigned int pin_time;
-      Dir dir;
-    } insert;
-    struct
-    {
-      unsigned int op:2;
-      unsigned int hosthash:14;
-      unsigned int segment:4;
-      unsigned int bucket:12;
-      unsigned int new_offset;
-      Dir dir;
-    } update;
-  };
-};
-
-struct PartCallback:public Continuation
-{
-
-  Queue<CacheVC> write_done;
-  Event *trigger;
-
-  int aggWriteDone(int event, Event * e);
-
-    PartCallback(ProxyMutex * m):Continuation(m), trigger(0)
-  {
-    SET_HANDLER(&PartCallback::aggWriteDone);
-  }
+  Link<EvacuationBlock> link;
 };
 
 struct Part:public Continuation
@@ -197,24 +136,20 @@ struct Part:public Continuation
   Dir *dir;
   PartHeaderFooter *header;
   PartHeaderFooter *footer;
-  int buckets;
-  Dir *segment[DIR_SEGMENTS];
-  MetaData *metadata;
+  int segments;
+  ink_off_t buckets;
   ink_off_t recover_pos;
   ink_off_t prev_recover_pos;
   ink_off_t scan_pos;
-  ink_off_t metadata_pos;
   ink_off_t skip;               // start of headers
   ink_off_t start;              // start of data
   ink_off_t len;
-  int data_blocks;
+  ink_off_t data_blocks;
   int hit_evacuate_window;
-
   AIOCallbackInternal io;
 
-    Queue<CacheVC> agg;
-    Queue<CacheVC> stat_cache_vcs;
-  PartCallback *callback_cont;
+  Queue<CacheVC> agg;
+  Queue<CacheVC> stat_cache_vcs;
   char *agg_buffer;
   int agg_todo_size;
   int agg_buf_pos;
@@ -224,8 +159,8 @@ struct Part:public Continuation
   OpenDir open_dir;
   RamCache ram_cache;
   int evacuate_size;
-    DLL<EvacuationBlock> *evacuate;
-    DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
+  DLL<EvacuationBlock> *evacuate;
+  DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
   CacheVC *doc_evacuator;
 
   PartInitInfo *init_info;
@@ -243,12 +178,12 @@ struct Part:public Continuation
 
   void cancel_trigger();
 
-  int open_write(CacheVC * cont, int allow_if_writers, int max_writers);
-  int open_write_lock(CacheVC * cont, int allow_if_writers, int max_writers);
-  int close_write(CacheVC * cont);
-  int close_write_lock(CacheVC * cont);
-  int begin_read(CacheVC * cont);
-  int begin_read_lock(CacheVC * cont);
+  int open_write(CacheVC *cont, int allow_if_writers, int max_writers);
+  int open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers);
+  int close_write(CacheVC *cont);
+  int close_write_lock(CacheVC *cont);
+  int begin_read(CacheVC *cont);
+  int begin_read_lock(CacheVC *cont);
   // unused read-write interlock code
   // currently http handles a write-lock failure by retrying the read
   OpenDirEntry *open_read(INK_MD5 * key);
@@ -289,29 +224,28 @@ struct Part:public Continuation
     io.aiocb.aio_fildes = AIO_NOT_IN_PROGRESS;
   }
 
-  int aggWriteDone(int event, Event * e);
-  int aggWrite(int event, Event * e);
+  int aggWriteDone(int event, Event *e);
+  int aggWrite(int event, void *e);
   void agg_wrap();
 
-  int evacuateWrite(CacheVC * evacuator, int event, Event * e);
-  int evacuateDocReadDone(int event, Event * e);
-  int evacuateDoc(int event, Event * e);
+  int evacuateWrite(CacheVC *evacuator, int event, Event *e);
+  int evacuateDocReadDone(int event, Event *e);
+  int evacuateDoc(int event, Event *e);
 
   int evac_range(ink_off_t start, ink_off_t end, int evac_phase);
   void periodic_scan();
   void scan_for_pinned_documents();
   void evacuate_cleanup_blocks(int i);
   void evacuate_cleanup();
-  EvacuationBlock *force_evacuate_head(Dir * dir, int pinned);
-  int within_hit_evacuate_window(Dir * dir);
+  EvacuationBlock *force_evacuate_head(Dir *dir, int pinned);
+  int within_hit_evacuate_window(Dir *dir);
 
 Part():Continuation(new_ProxyMutex()), path(NULL), fd(-1),
-    dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0), metadata_pos(0), skip(0), start(0),
+    dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0), skip(0), start(0),
     len(0), data_blocks(0), hit_evacuate_window(0), agg_todo_size(0), agg_buf_pos(0), trigger(0),
     evacuate_size(0), disk(NULL), last_sync_serial(0), last_write_serial(0), recover_wrapped(false),
     dir_sync_waiting(0), dir_sync_in_progress(0) {
     open_dir.mutex = mutex;
-    callback_cont = NEW(new PartCallback(mutex));
 #if defined(_WIN32)
     agg_buffer = (char *) malloc(AGG_SIZE);
 #else
@@ -322,21 +256,17 @@ Part():Continuation(new_ProxyMutex()), path(NULL), fd(-1),
   }
 
   ~Part() {
-    delete callback_cont;
     ink_memalign_free(agg_buffer);
   }
 };
 
 struct AIO_Callback_handler:public Continuation
 {
-
   int handle_disk_failure(int event, void *data);
 
-    AIO_Callback_handler():Continuation(new_ProxyMutex())
-  {
+  AIO_Callback_handler():Continuation(new_ProxyMutex()) {
     SET_HANDLER(&AIO_Callback_handler::handle_disk_failure);
   }
-
 };
 
 struct CachePart
@@ -351,32 +281,38 @@ struct CachePart
   // per partition stats
   RecRawStatBlock *part_rsb;
 
-    CachePart():part_number(-1), scheme(0), size(0), num_parts(0), parts(NULL), disk_parts(0), part_rsb(0)
-  {
-  }
-
-
+  CachePart():part_number(-1), scheme(0), size(0), num_parts(0), parts(NULL), disk_parts(0), part_rsb(0) { }
 };
 
-// Note : the hdr field needs to be 8 byte aligned. 
+// element of the fragment table in the head of a multi-fragment document
+struct Frag {
+  inku64 offset; // start offset of data stored in this fragment
+};
+
+// Note : hdr() needs to be 8 byte aligned. 
+// If you change this, change sizeofDoc above
 struct Doc
 {
   inku32 magic;                 // DOC_MAGIC
-  ink32 len;                    // length of this segment
-  ink32 hlen;                   // header length
-  ink32 total_len;              // total length of document
+  inku32 len;                   // length of this segment
+  inku64 total_len;             // total length of document
   INK_MD5 first_key;            // first key in document (http: vector)
   INK_MD5 key;
+  inku32 hlen;                  // header length
+  inku32 ftype:8;               // fragment type CACHE_FRAG_TYPE_XX
+  inku32 flen:24;               // fragment table length
   inku32 sync_serial;
   inku32 write_serial;
   inku32 pinned;                // pinned until
   inku32 checksum;
-  char hdr[1];
 
-
-  int data_len();
-  int single_segment();
-  int no_data_in_segment();
+  inku32 data_len();
+  inku32 prefix_len();
+  int single_fragment();
+  int no_data_in_fragment();
+  inku32 nfrags();
+  char *hdr();
+  Frag *frags();
   char *data();
 };
 
@@ -392,21 +328,19 @@ extern unsigned short *part_hash_table;
 // inline Functions
 
 inline int
+part_headerlen(Part *d) {
+  return ROUND_TO_BLOCK(sizeof(PartHeaderFooter) + sizeof(inku16) * (d->segments-1));
+}
+inline int
 part_dirlen(Part * d)
 {
-  return ROUND_TO_BLOCK(d->buckets *
-                        DIR_DEPTH * DIR_SEGMENTS * SIZEOF_DIR) + 2 * ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
+  return ROUND_TO_BLOCK(d->buckets * DIR_DEPTH * d->segments * SIZEOF_DIR) + 
+    part_headerlen(d) + ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
 }
 inline int
 part_direntries(Part * d)
 {
-  return d->buckets * DIR_DEPTH * DIR_SEGMENTS;
-}
-inline int
-part_metalen(Part * e)
-{
-  (void) e;
-  return 0;
+  return d->buckets * DIR_DEPTH * d->segments;
 }
 inline int
 part_out_of_phase_valid(Part * d, Dir * e)
@@ -433,10 +367,10 @@ part_offset(Part * d, Dir * e)
 {
   return d->start + (ink_off_t) dir_offset(e) * INK_BLOCK_SIZE - INK_BLOCK_SIZE;
 }
-inline int
+inline ink_off_t
 offset_to_part_offset(Part * d, ink_off_t pos)
 {
-  return (int) ((pos - d->start + INK_BLOCK_SIZE) / INK_BLOCK_SIZE);
+  return ((pos - d->start + INK_BLOCK_SIZE) / INK_BLOCK_SIZE);
 }
 inline ink_off_t
 part_offset_to_offset(Part * d, ink_off_t pos)
@@ -453,21 +387,39 @@ part_in_phase_agg_buf_valid(Part * d, Dir * e)
 {
   return (part_offset(d, e) >= d->header->write_pos && part_offset(d, e) < (d->header->write_pos + d->agg_buf_pos));
 }
-
-inline int
+inline inku32
+Doc::prefix_len()
+{
+  return sizeofDoc + hlen + flen;
+}
+inline inku32
 Doc::data_len()
 {
-  return len - sizeofDoc - hlen;
+  return len - sizeofDoc - hlen - flen;
 }
 inline int
-Doc::single_segment()
+Doc::single_fragment()
 {
   return (total_len && (data_len() == total_len));
+}
+inline inku32
+Doc::nfrags() { 
+  return flen / sizeof(Frag);
+}
+inline Frag *
+Doc::frags()
+{
+  return (Frag*)(((char *) this) + sizeofDoc);
+}
+inline char *
+Doc::hdr()
+{
+  return ((char *) this) + sizeofDoc + flen;
 }
 inline char *
 Doc::data()
 {
-  return ((char *) this) + sizeofDoc + hlen;
+  return ((char *) this) + sizeofDoc + flen + hlen;
 }
 
 int part_dir_clear(Part * d);
@@ -499,6 +451,7 @@ new_EvacuationBlock(EThread * t)
 {
   EvacuationBlock *b = THREAD_ALLOC(evacuationBlockAllocator, t);
   b->init = 0;
+  b->readers = 0;
   b->earliest_evacuator = 0;
   b->evac_frags.link.next = 0;
   return b;

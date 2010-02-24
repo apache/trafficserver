@@ -27,8 +27,8 @@
  * Implementation of CfgContext class and all the CfgEleObj subclasses
  ***********************************************************************/
 
-#include "ink_platform.h"
 #include "inktomi++.h"
+#include "ink_platform.h"
 
 #include "CfgContextImpl.h"
 #include "CfgContextUtils.h"

@@ -36,6 +36,7 @@
   
   ****************************************************************************/
 
+#include "ink_config.h"
 #include <assert.h>
 #include <memory.h>
 #include <stdlib.h>
@@ -76,7 +77,7 @@ inkcoreapi volatile ink64 fastalloc_mem_total = 0;
 #define DEADBEEF
 #endif
 
-/* #define MEMPROTECT */
+// #define MEMPROTECT 1
 
 #define MEMPROTECT_SIZE  0x200
 
@@ -166,7 +167,6 @@ void *
 ink_freelist_new(InkFreeList * f)
 #endif                          /* !INK_USE_MUTEX_FOR_FREELISTS */
 {                               //static inku32 cntf = 0;
-
 
 #if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE))
   void *foo;
@@ -321,10 +321,6 @@ ink_freelist_new(InkFreeList * f)
     } else {
       SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), f->offset),
                                    FREELIST_VERSION(item) + 1);
-#ifdef SANITY
-      if (item.s.pointer == TO_PTR(next.s.pointer))
-        ink_fatal(1, "ink_freelist_new: loop detected");
-#endif /* SANITY */
 #if !defined(INK_USE_MUTEX_FOR_FREELISTS)
       result = ink_atomic_cas64((ink64 *) & f->head.data, item.data, next.data);
 #else
@@ -334,7 +330,9 @@ ink_freelist_new(InkFreeList * f)
 
 #ifdef SANITY
       if (result) {
-        if (((uintptr_t) (TO_PTR(next.s.pointer))) & 3)
+        if (FREELIST_POINTER(item) == TO_PTR(FREELIST_POINTER(next)))
+          ink_fatal(1, "ink_freelist_new: loop detected");
+        if (((uintptr_t) (TO_PTR(FREELIST_POINTER(next)))) & 3)
           ink_fatal(1, "ink_freelist_new: bad list");
         if (TO_PTR(FREELIST_POINTER(next)))
           fake_global_for_ink_queue = *(int *) TO_PTR(FREELIST_POINTER(next));
@@ -434,11 +432,7 @@ ink_freelist_free(InkFreeList * f, void *item)
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == item)
       ink_fatal(1, "ink_freelist_free: trying to free item twice");
-#ifdef __alpha
-    if (((uintptr_t) (TO_PTR(h.data))) & 3)
-#else
-    if (((uintptr_t) (TO_PTR(h.s.pointer))) & 3)
-#endif
+    if (((uintptr_t) (TO_PTR(FREELIST_POINTER(h)))) & 3)
       ink_fatal(1, "ink_freelist_free: bad list");
     if (TO_PTR(FREELIST_POINTER(h)))
       fake_global_for_ink_queue = *(int *) TO_PTR(FREELIST_POINTER(h));

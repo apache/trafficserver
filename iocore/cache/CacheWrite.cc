@@ -28,18 +28,25 @@
 #define HDR_PTR_SIZE            (sizeof(inku64))
 #define HDR_PTR_ALIGNMENT_MASK  ((HDR_PTR_SIZE) - 1L)
 
-#define CACHE_AGGREGATE_WRITE 1
-#define MAX_AGG_LEN (256*1024)
-
-extern int cache_config_max_agg_delay;
-extern int cache_config_check_disk_idle;
 extern int cache_config_agg_write_backlog;
+
+static inline int power_of_2(inku32 x) {
+  while (x) {
+    if (x & 1) {
+      if (x >> 1) 
+        return 0;
+      return 1;
+    }
+    x >>= 1; 
+  }
+  return 1;
+}
 
 // Given a key, finds the index of the alternate which matches
 // used to get the alternate which is actually present in the document
 #ifdef HTTP_CACHE
 int
-get_alternate_index(CacheHTTPInfoVector * cache_vector, CacheKey key)
+get_alternate_index(CacheHTTPInfoVector *cache_vector, CacheKey key)
 {
   int alt_count = cache_vector->count();
   CacheHTTPInfo *obj;
@@ -62,7 +69,7 @@ get_alternate_index(CacheHTTPInfoVector * cache_vector, CacheKey key)
 // of writing the vector even if the http state machine aborts.  This
 // makes it easier to handle situations where writers abort.
 int
-CacheVC::updateVector(int event, Event * e)
+CacheVC::updateVector(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
@@ -70,79 +77,82 @@ CacheVC::updateVector(int event, Event * e)
   cancel_trigger();
   if (od->reading_vec || od->writing_vec)
     VC_SCHED_LOCK_RETRY();
+  int ret = 0;
+  {
+    CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+    if (!lock || od->writing_vec)
+      VC_SCHED_LOCK_RETRY();
 
-  CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
-  if (!lock || od->writing_vec)
-    VC_SCHED_LOCK_RETRY();
-
-  int vec = alternate.valid();
-  if (f.update) {
-    // all Update cases. Need to get the alternate index.
-    alternate_index = get_alternate_index(write_vector, update_key);
-    Debug("cache_update", "updating alternate index %d", alternate_index);
-    // if its an alternate delete
-    if (!vec) {
-      ink_assert(!total_len);
-      if (alternate_index >= 0) {
-        write_vector->remove(alternate_index, true);
-        alternate_index = CACHE_ALT_REMOVED;
-        if (!write_vector->count())
-          dir_delete(&first_key, part, &od->first_dir);
+    int vec = alternate.valid();
+    if (f.update) {
+      // all Update cases. Need to get the alternate index.
+      alternate_index = get_alternate_index(write_vector, update_key);
+      Debug("cache_update", "updating alternate index %d", alternate_index);
+      // if its an alternate delete
+      if (!vec) {
+        ink_assert(!total_len);
+        if (alternate_index >= 0) {
+          write_vector->remove(alternate_index, true);
+          alternate_index = CACHE_ALT_REMOVED;
+          if (!write_vector->count())
+            dir_delete(&first_key, part, &od->first_dir);
+        }
+        // the alternate is not there any more. somebody might have
+        // deleted it. Just close this writer
+        if (alternate_index != CACHE_ALT_REMOVED || !write_vector->count()) {
+          SET_HANDLER(&CacheVC::openWriteCloseDir);
+          return openWriteCloseDir(EVENT_IMMEDIATE, 0);
+        }
       }
-      // the alternate is not there any more. somebody might have
-      // deleted it. Just close this writer
-      if (alternate_index != CACHE_ALT_REMOVED || !write_vector->count()) {
-        SET_HANDLER(&CacheVC::openWriteCloseDir);
-        return openWriteCloseDir(EVENT_IMMEDIATE, 0);
+      if (update_key == od->single_doc_key && (total_len || !vec))
+        od->move_resident_alt = 0;
+    }
+    if (cache_config_http_max_alts > 1 && write_vector->count() >= cache_config_http_max_alts && alternate_index < 0) {
+      if (od->move_resident_alt && get_alternate_index(write_vector, od->single_doc_key) == 0)
+        od->move_resident_alt = 0;
+      write_vector->remove(0, true);
+    }
+    if (vec)
+      alternate_index = write_vector->insert(&alternate, alternate_index);
+
+    if (od->move_resident_alt && first_buf._ptr() && !od->has_multiple_writers()) {
+      Doc *doc = (Doc *) first_buf->data();
+      int small_doc = (ink64)doc->data_len() < (ink64)cache_config_alt_rewrite_max_size;
+      int have_res_alt = doc->key == od->single_doc_key;
+      // if the new alternate is not written with the vector
+      // then move the old one with the vector
+      // if its a header only update move the resident alternate
+      // with the vector.
+      // We are sure that the body of the resident alternate that we are
+      // rewriting has not changed and the alternate is not being deleted,
+      // since we set od->move_resident_alt  to 0 in that case
+      // (in updateVector)
+      if (small_doc && have_res_alt && (fragment || (f.update && !total_len))) {
+        // for multiple fragment document, we must have done
+        // CacheVC:openWriteCloseDataDone
+        ink_assert(!fragment || f.data_done);
+        od->move_resident_alt = 0;
+        f.rewrite_resident_alt = 1;
+        write_len = doc->data_len();
+        Debug("cache_update_alt",
+              "rewriting resident alt size: %d key: %X, first_key: %X", write_len, doc->key.word(0), first_key.word(0));
       }
     }
-    if (update_key == od->single_doc_key && (total_len || !vec))
-      od->move_resident_alt = 0;
+    od->writing_vec = 1;
+    f.use_first_key = 1;
+    SET_HANDLER(&CacheVC::openWriteCloseHeadDone);
+    ret = do_write_call();
   }
-  if (cache_config_http_max_alts > 1 && write_vector->count() >= cache_config_http_max_alts && alternate_index < 0) {
-
-    if (od->move_resident_alt && get_alternate_index(write_vector, od->single_doc_key) == 0)
-      od->move_resident_alt = 0;
-
-    write_vector->remove(0, true);
-  }
-  if (vec)
-    alternate_index = write_vector->insert(&alternate, alternate_index);
-
-  if (od->move_resident_alt && first_buf._ptr() && !od->has_multiple_writers()) {
-    Doc *doc = (Doc *) first_buf->data();
-    int small_doc = doc->data_len() < cache_config_alt_rewrite_max_size;
-    int have_res_alt = doc->key == od->single_doc_key;
-    // if the new alternate is not written with the vector
-    // then move the old one with the vector
-    // if its a header only update move the resident alternate
-    // with the vector.
-    // We are sure that the body of the resident alternate that we are
-    // rewriting has not changed and the alternate is not being deleted,
-    // since we set od->move_resident_alt  to 0 in that case
-    // (in updateVector)
-    if (small_doc && have_res_alt && (segment || (f.update && !total_len))) {
-      // for multiple segment document, we must have done
-      // CacheVC:openWriteCloseDataDone
-      ink_assert(!segment || f.data_done);
-      od->move_resident_alt = 0;
-      f.rewrite_resident_alt = 1;
-      write_len = doc->data_len();
-      Debug("cache_update_alt",
-            "rewriting resident alt size: %d key: %X, first_key: %X", write_len, doc->key.word(0), first_key.word(0));
-    }
-  }
-  od->writing_vec = 1;
-  f.use_first_key = 1;
-  SET_HANDLER(&CacheVC::openWriteCloseHeadDone);
-  return do_write();
+  if (ret == EVENT_RETURN)
+    return handleEvent(AIO_EVENT_DONE, 0);
+  return ret;
 }
 #endif
 /*
    The following fields of the CacheVC are used when writing down a fragment.
    Make sure that each of the fields is set to a valid value before calling
    this function
-   - f.http_request. Checked to see if a vector needs to be marshalled.
+   - frag_type. Checked to see if a vector needs to be marshalled.
    - f.use_first_key. To decide if the vector should be marshalled and to set
      the doc->key to the appropriate key (first_key or earliest_key)
    - f.evac_vector. If set, the writer is pushed in the beginning of the 
@@ -154,7 +164,7 @@ CacheVC::updateVector(int event, Event * e)
    - f.rewrite_resident_alt. The resident alternate is rewritten.
    - f.update. Used only if the write_vector needs to be written to disk. 
      Used to set the length of the alternate to total_len.
-   - write_vector. Used only if f.http_request && 
+   - write_vector. Used only if frag_type == CACHE_FRAG_TYPE_HTTP && 
      (f.use_fist_key || f.evac_vector) is set. Write_vector is written to disk
    - alternate_index. Used only if write_vector needs to be written to disk.
      Used to find out the VC's alternate in the write_vector and set its 
@@ -174,7 +184,7 @@ CacheVC::updateVector(int event, Event * e)
    */
 
 int
-CacheVC::handleWrite(int event, Event * e)
+CacheVC::handleWrite(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
@@ -182,48 +192,53 @@ CacheVC::handleWrite(int event, Event * e)
   // plain write case
   ink_assert(!trigger);
 #ifdef HTTP_CACHE
-  if (f.http_request && (f.use_first_key || f.evac_vector)) {
+  if (frag_type == CACHE_FRAG_TYPE_HTTP && (f.use_first_key || f.evac_vector)) {
     ink_assert(od->writing_vec);
-    vec_len = write_vector->marshal_length();
-    ink_assert(vec_len > 0);
+    header_len = write_vector->marshal_length();
+    ink_assert(header_len > 0);
   } else
 #endif
-    vec_len = 0;
+    header_len = header_to_write_len;
+  if (f.use_first_key && fragment) {
+    frag_len = (fragment-1) * sizeof(Frag);
+  } else
+    frag_len = 0;
   set_agg_write_in_progress();
   POP_HANDLER;
-  agg_len = round_to_approx_size(write_len + vec_len + sizeofDoc);
+  agg_len = round_to_approx_size(write_len + header_len + frag_len + sizeofDoc);
   part->agg_todo_size += agg_len;
   ink_assert(agg_len <= AGG_SIZE);
-  bool agg_error = (agg_len > AGG_SIZE ||
-                    (!f.readers && (part->agg_todo_size > cache_config_agg_write_backlog + AGG_SIZE) && write_len));
+  bool agg_error = 
+    (agg_len > AGG_SIZE ||
+     (!f.readers && (part->agg_todo_size > cache_config_agg_write_backlog + AGG_SIZE) && write_len));
 #ifdef CACHE_AGG_FAIL_RATE
   agg_error = agg_error || ((inku32) mutex->thread_holding->generator.random() <
                             (inku32) (UINT_MAX * CACHE_AGG_FAIL_RATE));
 #endif
   bool max_doc_error = (cache_config_max_doc_size &&
                         (cache_config_max_doc_size < vio.ndone ||
-                         (vio.nbytes != MAXINT && (cache_config_max_doc_size < vio.nbytes))));
+                         (vio.nbytes != INK64_MAX && (cache_config_max_doc_size < vio.nbytes))));
 
   if (agg_error || max_doc_error) {
     CACHE_INCREMENT_DYN_STAT(cache_write_backlog_failure_stat);
     CACHE_INCREMENT_DYN_STAT(base_stat + CACHE_STAT_FAILURE);
     part->agg_todo_size -= agg_len;
     io.aio_result = AIO_SOFT_FAILURE;
+    if (event == EVENT_CALL)
+      return EVENT_RETURN;
     return handleEvent(AIO_EVENT_DONE, 0);
   }
   if (f.evac_vector)
     part->agg.push(this);
   else
     part->agg.enqueue(this);
-
-  if (!part->is_io_in_progress()) {
-    part->aggWrite(EVENT_IMMEDIATE, 0);
-  }
+  if (!part->is_io_in_progress())
+    return part->aggWrite(event, this);
   return EVENT_CONT;
 }
 
 static char *
-iobufferblock_memcpy(char *p, int len, IOBufferBlock * ab, int offset)
+iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
 {
   IOBufferBlock *b = ab;
   while (b && len >= 0) {
@@ -249,7 +264,7 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock * ab, int offset)
 }
 
 EvacuationBlock *
-Part::force_evacuate_head(Dir * evac_dir, int pinned)
+Part::force_evacuate_head(Dir *evac_dir, int pinned)
 {
   // build an evacuation block for the object
   EvacuationBlock *b = evacuation_block_exists(evac_dir, this);
@@ -261,14 +276,14 @@ Part::force_evacuate_head(Dir * evac_dir, int pinned)
   if (!b) {
     b = new_EvacuationBlock(mutex->thread_holding);
     b->dir = *evac_dir;
-    Debug("cache_evac", "force: %d, %d", (int) dir_offset(evac_dir), (int) dir_phase(evac_dir));
+    DDebug("cache_evac", "force: %d, %d", (int) dir_offset(evac_dir), (int) dir_phase(evac_dir));
     evacuate[dir_evac_bucket(evac_dir)].push(b);
   }
   b->f.pinned = pinned;
   b->f.evacuate_head = 1;
   b->evac_frags.key.set(0, 0);  // ensure that the block gets
   // evacuated no matter what
-  b->f.readers = 0;             // ensure that the block does not disappear
+  b->readers = 0;             // ensure that the block does not disappear
   return b;
 }
 
@@ -279,10 +294,10 @@ Part::scan_for_pinned_documents()
     // we can't evacuate anything between header->write_pos and
     // header->write_pos + AGG_SIZE.
     int ps = offset_to_part_offset(this, header->write_pos + AGG_SIZE);
-    int pe = offset_to_part_offset(this, header->write_pos + 2 * EVAC_SIZE + (len / PIN_SCAN_EVERY));
+    int pe = offset_to_part_offset(this, header->write_pos + 2 * EVACUATION_SIZE + (len / PIN_SCAN_EVERY));
     int part_end_offset = offset_to_part_offset(this, len + skip);
     int before_end_of_part = pe < part_end_offset;
-    Debug("cache_evac", "scan %d %d", ps, pe);
+    DDebug("cache_evac", "scan %d %d", ps, pe);
     for (int i = 0; i < part_direntries(this); i++) {
       // is it a valid pinned object?
       if (!dir_is_empty(&dir[i]) && dir_pinned(&dir[i]) && dir_head(&dir[i])) {
@@ -296,49 +311,11 @@ Part::scan_for_pinned_documents()
             continue;
         }
         force_evacuate_head(&dir[i], 1);
-        //      Debug("cache_evac", "scan pinned at offset %d %d %d %d %d %d",
+        //      DDebug("cache_evac", "scan pinned at offset %d %d %d %d %d %d",
         //            (int)dir_offset(&b->dir), ps, o , pe, i, (int)b->f.done);
       }
     }
   }
-}
-
-int
-PartCallback::aggWriteDone(int event, Event * e)
-{
-  NOWARN_UNUSED(e);
-  NOWARN_UNUSED(event);
-
-  if (trigger) {
-    trigger->cancel_action();
-    trigger = NULL;
-  }
-
-  CacheVC *c;
-  Queue<CacheVC> not_done;
-  EThread *t = mutex->thread_holding;
-  while ((c = (CacheVC *) write_done.dequeue())) {
-    if (!c->mutex->is_thread() || c->mutex->thread_holding == t) {
-      CACHE_TRY_LOCK(lock, c->mutex, t);
-      if (!lock) {
-        not_done.enqueue(c);
-        continue;
-      }
-      c->handleEvent(AIO_EVENT_DONE, 0);
-    } else {
-      not_done.enqueue(c);
-      continue;
-    }
-  }
-  if (not_done.head) {
-    write_done = not_done;
-    if (write_done.head->mutex->is_thread() && write_done.head->mutex->thread_holding != t)
-      trigger = write_done.head->mutex->thread_holding->schedule_imm(this);
-    else
-      trigger = eventProcessor.schedule_in(this, MUTEX_RETRY_DELAY);
-    return EVENT_CONT;
-  }
-  return EVENT_DONE;
 }
 
 /* NOTE:: This state can be called by an AIO thread, so DON'T DON'T
@@ -347,19 +324,14 @@ PartCallback::aggWriteDone(int event, Event * e)
    eventProcessor.schedule_xxx(). 
    */
 int
-Part::aggWriteDone(int event, Event * e)
+Part::aggWriteDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
 
   cancel_trigger();
-  ProxyMutex *dir_sync_lock;
-  if (dir_sync_waiting)
-    dir_sync_lock = cacheDirSync->mutex;
-  else
-    dir_sync_lock = mutex;
 
-  CACHE_TRY_LOCK(lock, dir_sync_lock, mutex->thread_holding);
+  CACHE_TRY_LOCK(lock, dir_sync_waiting ? cacheDirSync->mutex : mutex, mutex->thread_holding);
   if (!lock) {
     // INKqa10347
     // Race condition between cacheDirSync and the part when setting the
@@ -367,22 +339,25 @@ Part::aggWriteDone(int event, Event * e)
     eventProcessor.schedule_in(this, MUTEX_RETRY_DELAY);
     return EVENT_CONT;
   }
-
   if (io.ok()) {
     header->last_write_pos = header->write_pos;
     header->write_pos += io.aiocb.aio_nbytes;
-    Debug("cache_agg", "Dir %s, Write: %llu, last Write: %llu\n", hash_id, header->write_pos, header->last_write_pos);
+    ink_assert(header->write_pos >= start);
+    DDebug("cache_agg", "Dir %s, Write: %llu, last Write: %llu\n", 
+          hash_id, header->write_pos, header->last_write_pos);
     ink_assert(header->write_pos == header->agg_pos);
-    if (header->write_pos + EVAC_SIZE > scan_pos)
+    if (header->write_pos + EVACUATION_SIZE > scan_pos)
       periodic_scan();
-
     agg_buf_pos = 0;
     header->write_serial++;
   } else {
     // delete all the directory entries that we inserted
     // for fragments is this aggregation buffer
     Debug("cache_disk_error", "Write error on disk %s\n \
-              write range : [%llu - %llu bytes]  [%llu - %llu blocks] \n", hash_id, io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes, io.aiocb.aio_offset / 512, (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
+              write range : [%llu - %llu bytes]  [%llu - %llu blocks] \n", 
+          hash_id, io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes, 
+          io.aiocb.aio_offset / INK_BLOCK_SIZE, 
+          (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / INK_BLOCK_SIZE);
     Dir del_dir;
     dir_clear(&del_dir);
     for (int done = 0; done < agg_buf_pos;) {
@@ -393,31 +368,24 @@ Part::aggWriteDone(int event, Event * e)
     }
     agg_buf_pos = 0;
   }
-
   set_io_not_in_progress();
-  SET_HANDLER(&Part::aggWrite);
-
   if (dir_sync_waiting) {
     dir_sync_waiting = 0;
     cacheDirSync->handleEvent(EVENT_IMMEDIATE, 0);
   }
-
   if (agg.head)
-    return aggWrite(EVENT_IMMEDIATE, e);
+    return aggWrite(event, e);
   return EVENT_CONT;
 }
 
-extern volatile int cachewrite_buf_data;
-
 CacheVC *
-new_DocEvacuator(int nbytes, Part * part)
+new_DocEvacuator(int nbytes, Part *part)
 {
   CacheVC *c = new_CacheVC(part);
   ProxyMutex *mutex = part->mutex;
   c->base_stat = cache_evacuate_active_stat;
-
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
-  c->buf = new_IOBufferData(iobuffer_size_to_index(nbytes), MEMALIGNED);
+  c->buf = new_IOBufferData(iobuffer_size_to_index(nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   c->part = part;
   c->f.evacuator = 1;
   c->earliest_key = zero_key;
@@ -426,7 +394,7 @@ new_DocEvacuator(int nbytes, Part * part)
 }
 
 int
-CacheVC::evacuateReadHead(int event, Event * e)
+CacheVC::evacuateReadHead(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
@@ -449,9 +417,9 @@ CacheVC::evacuateReadHead(int event, Event * e)
     goto Lcollision;
 #ifdef HTTP_CACHE
   alternate_tmp = 0;
-  if (doc->hlen) {
-    //its an http document
-    if (vector.get_handles(doc->hdr, doc->hlen) != doc->hlen) {
+  if (doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
+    // its an http document
+    if (vector.get_handles(doc->hdr(), doc->hlen) != doc->hlen) {
       Note("bad vector detected during evacuation");
       goto Ldone;
     }
@@ -471,7 +439,7 @@ CacheVC::evacuateReadHead(int event, Event * e)
     if (!(next_key == earliest_key))
       goto Ldone;
     doc_len = doc->total_len;
-    Debug("cache_evac",
+    DDebug("cache_evac",
           "evacuateReadHead non-http earliest %X first: %X len: %d", first_key.word(0), earliest_key.word(0), doc_len);
   }
   if (doc_len == total_len) {
@@ -481,25 +449,27 @@ CacheVC::evacuateReadHead(int event, Event * e)
     return free_CacheVC(this);
   }
   return EVENT_CONT;
-
 Lcollision:
-  if (dir_probe(&first_key, part, &dir, &last_collision))
-    return do_read(&first_key);
-
+  if (dir_probe(&first_key, part, &dir, &last_collision)) {
+    int ret = do_read_call(&first_key);
+    if (ret == EVENT_RETURN)
+      return handleEvent(AIO_EVENT_DONE, 0);
+    return ret;
+  }
 Ldone:
   dir_lookaside_remove(&earliest_key, part);
   return free_CacheVC(this);
 }
 
 int
-CacheVC::evacuateDocDone(int event, Event * e)
+CacheVC::evacuateDocDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
 
   ink_debug_assert(part->mutex->thread_holding == this_ethread());
   Doc *doc = (Doc *) buf->data();
-  Debug("cache_evac", "evacuateDocDone %X o %d p %d new_o %d new_p %d",
+  DDebug("cache_evac", "evacuateDocDone %X o %d p %d new_o %d new_p %d",
         (int) key.word(0), (int) dir_offset(&overwrite_dir),
         (int) dir_phase(&overwrite_dir), (int) dir_offset(&dir), (int) dir_phase(&dir));
   int i = dir_evac_bucket(&overwrite_dir);
@@ -508,10 +478,10 @@ CacheVC::evacuateDocDone(int event, Event * e)
   for (; b; b = b->link.next) {
     if (dir_offset(&b->dir) == dir_offset(&overwrite_dir)) {
 
-      // If the document is single segment (although not tied to the vector),
+      // If the document is single fragment (although not tied to the vector),
       // then we don't have to put the directory entry in the lookaside
       // buffer. But, we have no way of finding out if the document is
-      // single segment. doc->single_segment() can be true for a multiple
+      // single fragment. doc->single_fragment() can be true for a multiple
       // fragment document since total_len and doc->len could be equal at
       // the time we write the fragment down. To be on the safe side, we
       // only overwrite the entry in the directory if its not a head.
@@ -523,7 +493,7 @@ CacheVC::evacuateDocDone(int event, Event * e)
         if (!evac)
           break;
         if (evac->earliest_key.fold()) {
-          Debug("cache_evac", "evacdocdone: evacuating key %X earliest %X",
+          DDebug("cache_evac", "evacdocdone: evacuating key %X earliest %X",
                 evac->key.word(0), evac->earliest_key.word(0));
           EvacuationBlock *eblock = 0;
           Dir dir_tmp;
@@ -545,17 +515,17 @@ CacheVC::evacuateDocDone(int event, Event * e)
       // Cache::open_write). Once we know its the vector, we can
       // safely overwrite the first_key in the directory.
       if (dir_head(&overwrite_dir) && b->f.evacuate_head) {
-        Debug("cache_evac",
+        DDebug("cache_evac",
               "evacuateDocDone evacuate_head %X %X hlen %d offset %d",
               (int) key.word(0), (int) doc->key.word(0), doc->hlen, (int) dir_offset(&overwrite_dir));
 
         if (dir_compare_tag(&overwrite_dir, &doc->first_key)) {
           OpenDirEntry *cod;
-          Debug("cache_evac", "evacuating vector: %X %d",
+          DDebug("cache_evac", "evacuating vector: %X %d",
                 (int) doc->first_key.word(0), (int) dir_offset(&overwrite_dir));
           if ((cod = part->open_read(&doc->first_key))) {
             // writer  exists
-            Debug("cache_evac", "overwriting the open directory %X %d %d",
+            DDebug("cache_evac", "overwriting the open directory %X %d %d",
                   (int) doc->first_key.word(0), (int) dir_offset(&cod->first_dir), (int) dir_offset(&dir));
             ink_assert(dir_pinned(&dir));
             cod->first_dir = dir;
@@ -565,7 +535,7 @@ CacheVC::evacuateDocDone(int event, Event * e)
             part->ram_cache.fixup(&doc->first_key, 0, dir_offset(&overwrite_dir), 0, dir_offset(&dir));
           }
         } else {
-          Debug("cache_evac", "evacuating earliest: %X %d", (int) doc->key.word(0), (int) dir_offset(&overwrite_dir));
+          DDebug("cache_evac", "evacuating earliest: %X %d", (int) doc->key.word(0), (int) dir_offset(&overwrite_dir));
           ink_debug_assert(dir_compare_tag(&overwrite_dir, &doc->key));
           ink_assert(b->earliest_evacuator == this);
           total_len += doc->data_len();
@@ -575,7 +545,10 @@ CacheVC::evacuateDocDone(int event, Event * e)
             dir_lookaside_insert(b, part, &earliest_dir);
             // read the vector
             SET_HANDLER(&CacheVC::evacuateReadHead);
-            return do_read(&first_key);
+            int ret = do_read_call(&first_key);
+            if (ret == EVENT_RETURN)
+              return handleEvent(AIO_EVENT_DONE, 0);
+            return ret;
           }
         }
       }
@@ -585,8 +558,8 @@ CacheVC::evacuateDocDone(int event, Event * e)
   return free_CacheVC(this);
 }
 
-int
-evacuate_segments(CacheKey * key, CacheKey * earliest_key, int force, Part * part)
+static int
+evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Part *part)
 {
   Dir dir, *last_collision = 0;
   int i = 0;
@@ -613,16 +586,16 @@ evacuate_segments(CacheKey * key, CacheKey * earliest_key, int force, Part * par
       b->evac_frags.link.next = evac_frag;
     }
     if (force)
-      b->f.readers = 0;
-    Debug("cache_evac",
-          "next segment %X Earliest: %X offset %d phase %d force %d",
+      b->readers = 0;
+    DDebug("cache_evac",
+          "next fragment %X Earliest: %X offset %d phase %d force %d",
           (int) key->word(0), (int) earliest_key->word(0), (int) dir_offset(&dir), (int) dir_phase(&dir), force);
   }
   return i;
 }
 
 int
-Part::evacuateWrite(CacheVC * evacuator, int event, Event * e)
+Part::evacuateWrite(CacheVC *evacuator, int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
@@ -639,18 +612,16 @@ Part::evacuateWrite(CacheVC * evacuator, int event, Event * e)
   ink_assert(evacuator->agg_len <= AGG_SIZE);
   agg.insert(evacuator, after);
   return aggWrite(event, e);
-
 }
 
 int
-Part::evacuateDocReadDone(int event, Event * e)
+Part::evacuateDocReadDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
 
   cancel_trigger();
-  if (event != AIO_EVENT_DONE) {
+  if (event != AIO_EVENT_DONE)
     return EVENT_DONE;
-  }
   ink_assert(is_io_in_progress());
   set_io_not_in_progress();
   ink_debug_assert(mutex->thread_holding == this_ethread());
@@ -663,7 +634,7 @@ Part::evacuateDocReadDone(int event, Event * e)
     ink_assert(doc->magic == DOC_MAGIC);
     goto Ldone;
   }
-  Debug("cache_evac", "evacuateDocReadDone %X offset %d",
+  DDebug("cache_evac", "evacuateDocReadDone %X offset %d",
         (int) doc->key.word(0), (int) dir_offset(&doc_evacuator->overwrite_dir));
 
   b = evacuate[dir_evac_bucket(&doc_evacuator->overwrite_dir)].head;
@@ -674,7 +645,7 @@ Part::evacuateDocReadDone(int event, Event * e)
   }
   if (!b)
     goto Ldone;
-  if ((b->f.pinned && !b->f.readers) && doc->pinned < (inku32) (ink_get_based_hrtime() / HRTIME_SECOND))
+  if ((b->f.pinned && !b->readers) && doc->pinned < (inku32) (ink_get_based_hrtime() / HRTIME_SECOND))
     goto Ldone;
 
   if (dir_head(&b->dir) && b->f.evacuate_head) {
@@ -684,8 +655,9 @@ Part::evacuateDocReadDone(int event, Event * e)
     if (dir_compare_tag(&b->dir, &doc->first_key)) {
       doc_evacuator->key = doc->first_key;
       b->evac_frags.key = doc->first_key;
-      Debug("cache_evac", "evacuating vector %X offset %d",
+      DDebug("cache_evac", "evacuating vector %X offset %d",
             (int) doc->first_key.word(0), (int) dir_offset(&doc_evacuator->overwrite_dir));
+      b->f.unused = 57;
     } else {
       // if its an earliest fragment (alternate) evacuation, things get
       // a little tricky. We have to propagate the earliest key to the next
@@ -696,20 +668,24 @@ Part::evacuateDocReadDone(int event, Event * e)
       b->evac_frags.key = doc->key;
       b->evac_frags.earliest_key = doc->key;
       b->earliest_evacuator = doc_evacuator;
-      Debug("cache_evac", "evacuating earliest %X %X evac: %X offset: %d",
+      DDebug("cache_evac", "evacuating earliest %X %X evac: %X offset: %d",
             (int) b->evac_frags.key.word(0), (int) doc->key.word(0),
             doc_evacuator, (int) dir_offset(&doc_evacuator->overwrite_dir));
+      b->f.unused = 67;
     }
   } else {
     // find which key matches the document
     EvacuationKey *ek = &b->evac_frags;
     for (; ek && !(ek->key == doc->key); ek = ek->link.next);
-    if (!ek)
+    if (!ek) {
+      b->f.unused = 77;
       goto Ldone;
+    }
     doc_evacuator->key = ek->key;
     doc_evacuator->earliest_key = ek->earliest_key;
-    Debug("cache_evac", "evacuateDocReadDone key: %X earliest: %X",
+    DDebug("cache_evac", "evacuateDocReadDone key: %X earliest: %X",
           (int) ek->key.word(0), (int) ek->earliest_key.word(0));
+    b->f.unused = 87;
   }
   // if the tag in the c->dir does match the first_key in the
   // document, then it has to be the earliest fragment. We gaurantee that
@@ -717,11 +693,12 @@ Part::evacuateDocReadDone(int event, Event * e)
   // Cache::open_write).
   if (!dir_head(&b->dir) || !dir_compare_tag(&b->dir, &doc->first_key)) {
     next_CacheKey(&next_key, &doc->key);
-    evacuate_segments(&next_key, &doc_evacuator->earliest_key, !b->f.readers, this);
+    evacuate_fragments(&next_key, &doc_evacuator->earliest_key, !b->readers, this);
   }
   return evacuateWrite(doc_evacuator, event, e);
 Ldone:
   free_CacheVC(doc_evacuator);
+  doc_evacuator = 0;
   return aggWrite(event, e);
 }
 
@@ -733,16 +710,13 @@ Part::evac_range(ink_off_t low, ink_off_t high, int evac_phase)
   int si = dir_offset_evac_bucket(s);
   int ei = dir_offset_evac_bucket(e);
 
-  //  Debug("cache_evac", "evac_range %d %d %d %d", si, ei, s, e);
   for (int i = si; i <= ei; i++) {
     EvacuationBlock *b = evacuate[i].head;
     EvacuationBlock *first = 0;
     int first_offset = INT_MAX;
     for (; b; b = b->link.next) {
-      int offset = dir_offset(&b->dir);
+      ink64 offset = dir_offset(&b->dir);
       int phase = dir_phase(&b->dir);
-      //      Debug("cache_evac", "evac_range test %X %d %d",
-      //      b->key.word(0), offset, b->f.done);
       if (offset >= s && offset < e && !b->f.done && phase == evac_phase)
         if (offset < first_offset) {
           first = b;
@@ -761,8 +735,8 @@ Part::evac_range(ink_off_t low, ink_off_t high, int evac_phase)
 
       io.aiocb.aio_buf = doc_evacuator->buf->data();
       io.action = this;
-      io.thread = mutex->thread_holding;
-      Debug("cache_evac", "evac_range evacuating %X %d", (int) dir_tag(&first->dir), (int) dir_offset(&first->dir));
+      io.thread = AIO_CALLBACK_THREAD_ANY;
+      DDebug("cache_evac", "evac_range evacuating %X %d", (int)dir_tag(&first->dir), (int)dir_offset(&first->dir));
       SET_HANDLER(&Part::evacuateDocReadDone);
       ink_assert(ink_aio_read(&io) >= 0);
       return -1;
@@ -773,7 +747,7 @@ Part::evac_range(ink_off_t low, ink_off_t high, int evac_phase)
 
 
 static int
-agg_copy(char *p, CacheVC * vc)
+agg_copy(char *p, CacheVC *vc)
 {
   Part *part = vc->part;
   ink_off_t o = part->header->write_pos + part->agg_buf_pos;
@@ -782,9 +756,9 @@ agg_copy(char *p, CacheVC * vc)
     Doc *doc = (Doc *) p;
     IOBufferBlock *res_alt_blk = 0;
 
-    int seglen = vc->write_len + vc->vec_len + sizeofDoc;
-    ink_assert(!vc->f.http_request || seglen != sizeofDoc);
-    int writelen = round_to_approx_size(seglen);
+    inku32 len = vc->write_len + vc->header_len + vc->frag_len + sizeofDoc;
+    ink_assert(vc->frag_type != CACHE_FRAG_TYPE_HTTP || len != sizeofDoc);
+    int writelen = round_to_approx_size(len);
     // update copy of directory entry for this document
     dir_set_approx_size(&vc->dir, writelen);
     dir_set_offset(&vc->dir, offset_to_part_offset(part, o));
@@ -793,8 +767,10 @@ agg_copy(char *p, CacheVC * vc)
 
     // fill in document header
     doc->magic = DOC_MAGIC;
-    doc->len = seglen;
-    doc->hlen = vc->vec_len;
+    doc->len = len;
+    doc->hlen = vc->header_len;
+    doc->ftype = vc->frag_type;
+    doc->flen = vc->frag_len;
     doc->total_len = vc->total_len;
     doc->first_key = vc->first_key;
     doc->sync_serial = part->header->sync_serial;
@@ -818,7 +794,7 @@ agg_copy(char *p, CacheVC * vc)
       dir_set_head(&vc->dir, true);
     } else {
       doc->key = vc->key;
-      dir_set_head(&vc->dir, !vc->segment);
+      dir_set_head(&vc->dir, !vc->fragment);
     }
 
 #ifdef HTTP_CACHE
@@ -831,28 +807,31 @@ agg_copy(char *p, CacheVC * vc)
     }
 #endif
     // update the new_info object_key, and total_len and dirinfo
-#ifdef HTTP_CACHE
-    if (vc->vec_len) {
+    if (vc->header_len) {
       ink_debug_assert(vc->f.use_first_key);
-      ink_debug_assert(vc->write_vector->count() > 0);
-      if (!vc->f.update && !vc->f.evac_vector) {
-        ink_debug_assert(!(vc->first_key == zero_key));
-        CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
-        http_info->object_size_set(vc->total_len);
-      }
-      // update + data_written =>  Update case (b)
-      // need to change the old alternate's object length
-      if (vc->f.update && vc->total_len) {
-        CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
-        http_info->object_size_set(vc->total_len);
-      }
-      ink_assert(!(((unsigned long) &doc->hdr[0]) & HDR_PTR_ALIGNMENT_MASK));
-      ink_assert(vc->vec_len == vc->write_vector->marshal(&doc->hdr[0], vc->vec_len));
-      // the single segment flag is not used in the write call.
-      // putting it in for completeness.
-      vc->f.single_segment = doc->single_segment();
-    }
+#ifdef HTTP_CACHE
+      if (vc->frag_type == CACHE_FRAG_TYPE_HTTP) {
+        ink_debug_assert(vc->write_vector->count() > 0);
+        if (!vc->f.update && !vc->f.evac_vector) {
+          ink_debug_assert(!(vc->first_key == zero_key));
+          CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
+          http_info->object_size_set(vc->total_len);
+        }
+        // update + data_written =>  Update case (b)
+        // need to change the old alternate's object length
+        if (vc->f.update && vc->total_len) {
+          CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
+          http_info->object_size_set(vc->total_len);
+        }
+        ink_assert(!(((unsigned long) &doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK));
+        ink_assert(vc->header_len == vc->write_vector->marshal(doc->hdr(), vc->header_len));
+      } else
 #endif
+        memcpy(doc->hdr(), vc->header_to_write, vc->header_len);
+      // the single fragment flag is not used in the write call.
+      // putting it in for completeness.
+      vc->f.single_fragment = doc->single_fragment();
+    }
     // move data
     if (vc->write_len) {
       {
@@ -862,31 +841,29 @@ agg_copy(char *p, CacheVC * vc)
       }
 #ifdef HTTP_CACHE
       if (vc->f.rewrite_resident_alt)
-        iobufferblock_memcpy(&doc->hdr[vc->vec_len], vc->write_len, res_alt_blk, 0);
+        iobufferblock_memcpy(doc->data(), vc->write_len, res_alt_blk, 0);
       else
 #endif
-        iobufferblock_memcpy(&doc->hdr[vc->vec_len], vc->write_len, vc->blocks, vc->offset);
+        iobufferblock_memcpy(doc->data(), vc->write_len, vc->blocks, vc->offset);
 #ifdef VERIFY_JTEST_DATA
-      if (f.use_first_key && vec_len) {
+      if (f.use_first_key && header_len) {
         int ib = 0, xd = 0;
         char xx[500];
         new_info.request_get().url_get().print(xx, 500, &ib, &xd);
         char *x = xx;
         for (int q = 0; q < 3; q++)
           x = strchr(x + 1, '/');
-        ink_assert(!memcmp(&doc->hdr[vec_len], x, ib - (x - xx)));
+        ink_assert(!memcmp(doc->hdr(), x, ib - (x - xx)));
       }
 #endif
 
     }
     if (cache_config_enable_checksum) {
       doc->checksum = 0;
-      for (char *b = doc->hdr; b < (char *) doc + doc->len; b++) {
+      for (char *b = doc->hdr(); b < (char *) doc + doc->len; b++)
         doc->checksum += *b;
-      }
     }
-
-    if (vc->f.http_request && vc->f.single_segment)
+    if (vc->frag_type == CACHE_FRAG_TYPE_HTTP && vc->f.single_fragment)
       ink_assert(doc->hlen);
 
     if (res_alt_blk)
@@ -926,7 +903,7 @@ Part::evacuate_cleanup_blocks(int i)
           header->write_pos > part_offset(this, &b->dir)) ||
          (header->phase == dir_phase(&b->dir) && header->write_pos <= part_offset(this, &b->dir)))) {
       EvacuationBlock *x = b;
-      Debug("cache_evac", "evacuate cleanup free %X offset %d",
+      DDebug("cache_evac", "evacuate cleanup free %X offset %d",
             (int) b->evac_frags.key.word(0), (int) dir_offset(&b->dir));
       b = b->link.next;
       evacuate[i].remove(x);
@@ -940,10 +917,10 @@ Part::evacuate_cleanup_blocks(int i)
 void
 Part::evacuate_cleanup()
 {
-  int eo = ((header->write_pos - start) / INK_BLOCK_SIZE) + 1;
-  int e = dir_offset_evac_bucket(eo);
-  int sx = e - (evacuate_size / PIN_SCAN_EVERY) - 1;
-  int s = sx;
+  ink64 eo = ((header->write_pos - start) / INK_BLOCK_SIZE) + 1;
+  ink64 e = dir_offset_evac_bucket(eo);
+  ink64 sx = e - (evacuate_size / PIN_SCAN_EVERY) - 1;
+  ink64 s = sx;
   int i;
 
   if (e > evacuate_size)
@@ -994,99 +971,103 @@ Part::agg_wrap()
    the eventProcessor to schedule events
    */
 int
-Part::aggWrite(int event, Event * e)
+Part::aggWrite(int event, void *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
+  ink_assert(!is_io_in_progress());
+
+  Que(CacheVC, link) tocall;
+  CacheVC *c;
 
   cancel_trigger();
 
-  ink_assert(!is_io_in_progress());
 Lagain:
   // calculate length of aggregated write
-  CacheVC * c;
-
   for (c = (CacheVC *) agg.head; c;) {
     int writelen = c->agg_len;
     ink_assert(writelen < AGG_SIZE);
-    if (agg_buf_pos + writelen > AGG_SIZE || header->write_pos + agg_buf_pos + writelen > (skip + len))
+    if (agg_buf_pos + writelen > AGG_SIZE || 
+        header->write_pos + agg_buf_pos + writelen > (skip + len))
       break;
-    Debug("agg_read", "copying: %d, %llu, key: %d", agg_buf_pos, header->write_pos + agg_buf_pos, c->first_key.word(0));
-    agg_copy(agg_buffer + agg_buf_pos, c);
+    DDebug("agg_read", "copying: %d, %llu, key: %d", 
+          agg_buf_pos, header->write_pos + agg_buf_pos, c->first_key.word(0));
+    int wrotelen = agg_copy(agg_buffer + agg_buf_pos, c);
+    ink_assert(writelen == wrotelen);
     agg_todo_size -= writelen;
     agg_buf_pos += writelen;
-    CacheVC *n = (CacheVC *) c->link.next;
+    CacheVC *n = (CacheVC *)c->link.next;
     agg.dequeue();
     if (c->f.evacuator)
       c->handleEvent(AIO_EVENT_DONE, 0);
     else
-      callback_cont->write_done.enqueue(c);
+      tocall.enqueue(c);
     c = n;
   }
 
   // if we got nothing...
   if (!agg_buf_pos) {
-    if (!agg.head) {
-      // nothing to get
-      return EVENT_DONE;
-    }
+    if (!agg.head) // nothing to get
+      return EVENT_CONT;
     if (header->write_pos == start) {
       // write aggregation too long, bad bad, punt on everything.
-      //action_tag_assert("cache", false);
       Note("write aggregation exceeds part size");
-      if (is_action_tag_set("cache")) {
-        ink_release_assert(false);
+      ink_assert(!tocall.head);
+      ink_assert(false);
+      while ((c = agg.dequeue())) {
+        agg_todo_size -= c->agg_len;
+        c->initial_thread->schedule_imm(c, AIO_EVENT_DONE);
       }
-      CacheVC *vc;
-      while ((vc = agg.dequeue())) {
-        agg_todo_size -= vc->agg_len;
-        // signal failure?
-        callback_cont->write_done.enqueue(vc);
-        if (!callback_cont->trigger)
-          callback_cont->trigger = eventProcessor.schedule_imm(callback_cont);
-      }
-      return EVENT_DONE;
+      return EVENT_CONT;
     }
     // start back
     agg_wrap();
     goto Lagain;
   }
 
-  if (!callback_cont->trigger) {
-    if (callback_cont->write_done.head)
-      callback_cont->trigger = eventProcessor.schedule_imm(callback_cont);
-  }
   // evacuate space
-  ink_off_t end = header->write_pos + agg_buf_pos + EVAC_SIZE;
+  ink_off_t end = header->write_pos + agg_buf_pos + EVACUATION_SIZE;
   if (evac_range(header->write_pos, end, !header->phase) < 0)
-    return EVENT_CONT;
+    goto Lwait;
   if (end > skip + len)
     if (evac_range(start, start + (end - (skip + len)), header->phase))
-      return EVENT_CONT;
+      goto Lwait;
 
   // if agg.head, then we are near the end of the disk, so
   // write down the aggregation in whatever size it is.
-  if (agg_buf_pos < MAX_AGG_LEN && !agg.head && !dir_sync_waiting)
-    return EVENT_CONT;
-  Debug("agg_read", "flushing: %d", agg_buf_pos);
+  if (agg_buf_pos < AGG_HIGH_WATER && !agg.head && !dir_sync_waiting)
+    goto Lwait;
 
   // set write limit
   header->agg_pos = header->write_pos + agg_buf_pos;
 
-  // do write
   io.aiocb.aio_fildes = fd;
   io.aiocb.aio_offset = header->write_pos;
   io.aiocb.aio_buf = agg_buffer;
   io.aiocb.aio_nbytes = agg_buf_pos;
   io.action = this;
-  io.thread = mutex->thread_holding;
+  /*
+    Callback on AIO thread so that we can issue a new write ASAP
+    as all writes are serialized in the partition.  This is not necessary
+    for reads proceed independently.
+   */
+  io.thread = AIO_CALLBACK_THREAD_AIO;
   SET_HANDLER(&Part::aggWriteDone);
   ink_aio_write(&io);
-  return EVENT_CONT;
+
+Lwait:
+  int ret = EVENT_CONT;
+  while ((c = tocall.dequeue())) {
+    if (event == EVENT_CALL && c->mutex->thread_holding == mutex->thread_holding)
+      ret = EVENT_RETURN;
+    else
+      c->initial_thread->schedule_imm(c, AIO_EVENT_DONE);
+  }
+  return ret;
 }
 
 int
-CacheVC::openWriteCloseDir(int event, Event * e)
+CacheVC::openWriteCloseDir(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
@@ -1100,21 +1081,21 @@ CacheVC::openWriteCloseDir(int event, Event * e)
       VC_SCHED_LOCK_RETRY();
     }
     part->close_write(this);
-    if (closed < 0 && segment)
+    if (closed < 0 && fragment)
       dir_delete(&earliest_key, part, &earliest_dir);
   }
   if (is_debug_tag_set("cache_update")) {
     if (f.update && closed > 0) {
       if (!total_len && alternate_index != CACHE_ALT_REMOVED) {
         Debug("cache_update", "header only %d (%llu, %llu)\n",
-              DIR_MASK_TAG(first_key.word(1)), update_key.b[0], update_key.b[1]);
+              DIR_MASK_TAG(first_key.word(2)), update_key.b[0], update_key.b[1]);
 
       } else if (total_len && alternate_index != CACHE_ALT_REMOVED) {
         Debug("cache_update", "header body, %d, (%llu, %llu), (%llu, %llu)\n",
-              DIR_MASK_TAG(first_key.word(1)), update_key.b[0], update_key.b[1], earliest_key.b[0], earliest_key.b[1]);
+              DIR_MASK_TAG(first_key.word(2)), update_key.b[0], update_key.b[1], earliest_key.b[0], earliest_key.b[1]);
       } else if (!total_len && alternate_index == CACHE_ALT_REMOVED) {
         Debug("cache_update", "alt delete, %d, (%llu, %llu)\n",
-              DIR_MASK_TAG(first_key.word(1)), update_key.b[0], update_key.b[1]);
+              DIR_MASK_TAG(first_key.word(2)), update_key.b[0], update_key.b[1]);
       }
     }
   }
@@ -1123,82 +1104,71 @@ CacheVC::openWriteCloseDir(int event, Event * e)
   // one, two and three or more fragments. This is because for
   // updates we dont decrement the variable corresponding the old
   // size of the document
-  /*
-     Debug("segment_size","Segment = %d\n",segment);
-     Debug("segment_size","total_len = %d\n",total_len);
-     Debug("segment_size","closed = %d\n",closed);
-     Debug("segment_size","f.update = %d\n",f.update);
-   */
   if ((closed == 1) && (total_len > 0)) {
-    Debug("cache_stats", "Segment = %d", segment);
-    switch (segment) {
-    case 0:
-      CACHE_INCREMENT_DYN_STAT(cache_single_fragment_document_count_stat);
-      break;
-
-    case 1:
-      CACHE_INCREMENT_DYN_STAT(cache_two_fragment_document_count_stat);
-      break;
-
-    default:
-      CACHE_INCREMENT_DYN_STAT(cache_three_plus_plus_fragment_document_count_stat);
-      break;
+    DDebug("cache_stats", "Fragment = %d", fragment);
+    switch (fragment) {
+      case 0: CACHE_INCREMENT_DYN_STAT(cache_single_fragment_document_count_stat); break;
+      case 1: CACHE_INCREMENT_DYN_STAT(cache_two_fragment_document_count_stat); break;
+      default: CACHE_INCREMENT_DYN_STAT(cache_three_plus_plus_fragment_document_count_stat); break;
     }
   }
-
   return free_CacheVC(this);
 }
 
 int
-CacheVC::openWriteCloseHeadDone(int event, Event * e)
+CacheVC::openWriteCloseHeadDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
-  ink_assert(event == AIO_EVENT_DONE);
-  set_io_not_in_progress();
-  od->writing_vec = 0;
-
-  if (!io.ok())
-    return openWriteCloseDir(event, e);
-  ink_assert(f.use_first_key);
-  // lock taken by caller
-  ink_debug_assert(part->mutex->thread_holding == this_ethread());
-  if (!od->dont_update_directory) {
-    if (dir_is_empty(&od->first_dir)) {
-      dir_insert(&first_key, part, &dir);
-    } else {
-      // multiple segment vector write
-      dir_overwrite(&first_key, part, &dir, &od->first_dir, false);
-      // insert moved resident alternate
-      if (od->move_resident_alt) {
-        if (dir_valid(part, &od->single_doc_dir))
-          dir_insert(&od->single_doc_key, part, &od->single_doc_dir);
-        od->move_resident_alt = 0;
+  {
+    CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+    if (!lock)
+      VC_LOCK_RETRY_EVENT();
+    if (event == AIO_EVENT_DONE)
+      set_io_not_in_progress();
+    else if (is_io_in_progress())
+      return EVENT_CONT;
+    od->writing_vec = 0;
+    if (!io.ok())
+      goto Lclose;
+    ink_assert(f.use_first_key);
+    if (!od->dont_update_directory) {
+      if (dir_is_empty(&od->first_dir)) {
+        dir_insert(&first_key, part, &dir);
+      } else {
+        // multiple fragment vector write
+        dir_overwrite(&first_key, part, &dir, &od->first_dir, false);
+        // insert moved resident alternate
+        if (od->move_resident_alt) {
+          if (dir_valid(part, &od->single_doc_dir))
+            dir_insert(&od->single_doc_key, part, &od->single_doc_dir);
+          od->move_resident_alt = 0;
+        }
       }
-    }
-    od->first_dir = dir;
-    if (f.http_request && f.single_segment) {
-      // segment is tied to the vector
-      od->move_resident_alt = 1;
-      if (!f.rewrite_resident_alt) {
-        od->single_doc_key = earliest_key;
+      od->first_dir = dir;
+      if (frag_type == CACHE_FRAG_TYPE_HTTP && f.single_fragment) {
+        // fragment is tied to the vector
+        od->move_resident_alt = 1;
+        if (!f.rewrite_resident_alt) {
+          od->single_doc_key = earliest_key;
+        }
+        dir_assign(&od->single_doc_dir, &dir);
+        dir_set_tag(&od->single_doc_dir, od->single_doc_key.word(2));
       }
-      dir_assign(&od->single_doc_dir, &dir);
-      dir_set_tag(&od->single_doc_dir, od->single_doc_key.word(1));
     }
   }
+Lclose:
   return openWriteCloseDir(event, e);
 }
 
-
 int
-CacheVC::openWriteCloseHead(int event, Event * e)
+CacheVC::openWriteCloseHead(int event, Event *e)
 {
   NOWARN_UNUSED(e);
 
   cancel_trigger();
   f.use_first_key = 1;
   if (io.ok())
-    ink_assert(segment || (length == total_len));
+    ink_assert(fragment || (length == (ink64)total_len));
   else
     return openWriteCloseDir(event, e);
   if (f.data_done)
@@ -1206,7 +1176,7 @@ CacheVC::openWriteCloseHead(int event, Event * e)
   else
     write_len = length;
 #ifdef HTTP_CACHE
-  if (f.http_request) {
+  if (frag_type == CACHE_FRAG_TYPE_HTTP) {
     SET_HANDLER(&CacheVC::updateVector);
     return updateVector(EVENT_IMMEDIATE, 0);
   } else {
@@ -1214,36 +1184,38 @@ CacheVC::openWriteCloseHead(int event, Event * e)
     SET_HANDLER(&CacheVC::openWriteCloseHeadDone);
     return do_write_lock();
 #ifdef HTTP_CACHE
-
   }
 #endif
 }
 
 int
-CacheVC::openWriteCloseDataDone(int event, Event * e)
+CacheVC::openWriteCloseDataDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
 
-  if (event == AIO_EVENT_DONE) {
+  if (event == AIO_EVENT_DONE)
     set_io_not_in_progress();
-
-    if (!io.ok())
-      return openWriteCloseDir(event, e);
+  else if (is_io_in_progress())
+    return EVENT_CONT;
+  if (!io.ok())
+    return openWriteCloseDir(event, e);
+  {
+    CACHE_TRY_LOCK(lock, part->mutex, this_ethread());
+    if (!lock)
+      VC_LOCK_RETRY_EVENT();
+    fragment++;
+    write_pos += write_len;
+    dir_insert(&key, part, &dir);
+    f.data_done = 1;
+    ink_assert(fragment);
+    return openWriteCloseHead(event, e); // must be called under part lock from here
   }
-  // locked taken by caller
-  ink_debug_assert(part->mutex->thread_holding == this_ethread());
-  dir_insert(&key, part, &dir);
-
-  f.data_done = 1;
-  ink_assert(segment);
-  return openWriteCloseHead(event, e);
 }
 
 int
-CacheVC::openWriteClose(int event, Event * e)
+CacheVC::openWriteClose(int event, Event *e)
 {
   NOWARN_UNUSED(e);
-
   cancel_trigger();
   if (is_io_in_progress()) {
     if (event != AIO_EVENT_DONE)
@@ -1265,31 +1237,29 @@ CacheVC::openWriteClose(int event, Event * e)
       }
 #else
       return openWriteCloseDir(event, e);
-#endif //HTTP_CACHE
-
+#endif
     }
-    if (length && segment) {
+    if (length && fragment) {
       SET_HANDLER(&CacheVC::openWriteCloseDataDone);
       write_len = length;
-      return do_write_lock();
+      return do_write_lock_call();
     } else
       return openWriteCloseHead(event, e);
-  } else {
+  } else
     return openWriteCloseDir(event, e);
-  }
 }
 
 int
-CacheVC::openWriteWriteDone(int event, Event * e)
+CacheVC::openWriteWriteDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
 
   cancel_trigger();
-  ink_assert(is_io_in_progress());
-  if (event != AIO_EVENT_DONE)
-    return EVENT_CONT;
-
-  set_io_not_in_progress();
+  if (event == AIO_EVENT_DONE)
+    set_io_not_in_progress();
+  else
+    if (is_io_in_progress())
+      return EVENT_CONT;
   // In the event of VC_EVENT_ERROR, the cont must do an io_close
   if (!io.ok()) {
     if (closed) {
@@ -1297,21 +1267,38 @@ CacheVC::openWriteWriteDone(int event, Event * e)
       return die();
     }
     SET_HANDLER(&CacheVC::openWriteMain);
-    calluser(VC_EVENT_ERROR);
-    return EVENT_CONT;
+    return calluser(VC_EVENT_ERROR);
   }
-  // store the earliest directory. Need to remove the earliest dir
-  // in case the writer aborts.
-  if (!segment) {
-    ink_assert(key == earliest_key);
-    earliest_dir = dir;
+  {
+    CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
+    if (!lock)
+      VC_LOCK_RETRY_EVENT();
+    // store the earliest directory. Need to remove the earliest dir
+    // in case the writer aborts.
+    if (!fragment) {
+      ink_assert(key == earliest_key);
+      earliest_dir = dir;
+    } else {
+      if (!frag) 
+        frag = &integral_frags[0];
+      else {
+        if (fragment-1 >= INTEGRAL_FRAGS && power_of_2((inku32)(fragment-1))) {
+          Frag *t = frag;
+          frag = (Frag*)xmalloc(sizeof(Frag) * (fragment-1)*2);
+          memcpy(frag, t, sizeof(Frag) * (fragment-2));
+          if (t != integral_frags)
+            xfree(t);
+        }
+      }
+      frag[fragment-1].offset = write_pos;
+    }
+    fragment++;
+    write_pos += write_len;
+    dir_insert(&key, part, &dir);
+    DDebug("cache_insert", "WriteDone: %X, %X, %d", key.word(0), first_key.word(0), write_len);
+    blocks = iobufferblock_skip(blocks, &offset, &length, write_len);
+    next_CacheKey(&key, &key);
   }
-  segment++;
-  dir_insert(&key, part, &dir);
-  Debug("cache_insert", "WriteDone: %X, %X, %d", key.word(0), first_key.word(0), write_len);
-  blocks = iobufferblock_skip(blocks, &offset, &length, write_len);
-  write_len = length;
-  next_CacheKey(&key, &key);
   if (closed)
     return die();
   SET_HANDLER(&CacheVC::openWriteMain);
@@ -1319,7 +1306,7 @@ CacheVC::openWriteWriteDone(int event, Event * e)
 }
 
 int
-CacheVC::openWriteMain(int event, Event * e)
+CacheVC::openWriteMain(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
@@ -1328,22 +1315,22 @@ CacheVC::openWriteMain(int event, Event * e)
   ink_debug_assert(!is_io_in_progress());
 Lagain:
   if (!vio.buffer.writer()) {
-    if (calluser(VC_EVENT_WRITE_READY))
+    if (calluser(VC_EVENT_WRITE_READY) == EVENT_DONE)
       return EVENT_DONE;
     if (!vio.buffer.writer())
       return EVENT_CONT;
   }
   if (vio.ntodo() <= 0) {
     called_user = 1;
-    if (calluser(VC_EVENT_WRITE_COMPLETE))
+    if (calluser(VC_EVENT_WRITE_COMPLETE) == EVENT_DONE)
       return EVENT_DONE;
     if (vio.ntodo() <= 0)
       return EVENT_CONT;
   }
-  ink64 ntodo = (ink64) vio.ntodo() + length;
-  int total_avail = vio.buffer.reader()->read_avail();
-  int avail = total_avail;
-  int towrite = avail + length;
+  ink64 ntodo = (ink64)(vio.ntodo() + length);
+  ink64 total_avail = vio.buffer.reader()->read_avail();
+  ink64 avail = total_avail;
+  ink64 towrite = avail + length;
   if (towrite > ntodo) {
     avail -= (towrite - ntodo);
     towrite = ntodo;
@@ -1361,7 +1348,7 @@ Lagain:
     vio.ndone += avail;
     total_len += avail;
   }
-  length = towrite;
+  length = (inku64)towrite;
   if (length > TARGET_FRAG_SIZE && length < SHRINK_TARGET_FRAG_SIZE)
     write_len = TARGET_FRAG_SIZE;
   else
@@ -1370,7 +1357,7 @@ Lagain:
   if (!called_user) {
     if (not_writing) {
       called_user = 1;
-      if (calluser(VC_EVENT_WRITE_READY))
+      if (calluser(VC_EVENT_WRITE_READY) == EVENT_DONE)
         return EVENT_DONE;
       goto Lagain;
     } else if (vio.ntodo() <= 0)
@@ -1380,15 +1367,14 @@ Lagain:
     return EVENT_CONT;
 
   SET_HANDLER(&CacheVC::openWriteWriteDone);
-  return do_write_lock();
+  return do_write_lock_call();
 }
 
 // begin overwrite
 int
-CacheVC::openWriteOverwrite(int event, Event * e)
+CacheVC::openWriteOverwrite(int event, Event *e)
 {
   NOWARN_UNUSED(e);
-  int res;
 
   cancel_trigger();
   if (event != AIO_EVENT_DONE) {
@@ -1409,27 +1395,30 @@ CacheVC::openWriteOverwrite(int event, Event * e)
     od->first_dir = dir;
     goto Ldone;
   }
-
 Lcollision:
   {
     CACHE_TRY_LOCK(lock, part->mutex, this_ethread());
     if (!lock)
-      VC_SCHED_LOCK_RETRY();
-    res = dir_probe(&first_key, part, &dir, &last_collision);
-    if (res > 0)
-      return do_read(&first_key);
+      VC_LOCK_RETRY_EVENT();
+    int res = dir_probe(&first_key, part, &dir, &last_collision);
+    if (res > 0) {
+      if ((res = do_read_call(&first_key)) == EVENT_RETURN)
+        goto Lcallreturn;
+      return res;
+    }
   }
 Ldone:
   SET_HANDLER(&CacheVC::openWriteMain);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE, (void *) this);
-  return EVENT_DONE;
+  return callcont(CACHE_EVENT_OPEN_WRITE);
+Lcallreturn:
+  return handleEvent(AIO_EVENT_DONE, 0); // hopefully a tail call
 }
 
 #ifdef HTTP_CACHE
 // openWriteStartDone handles vector read (addition of alternates)
 // and lock misses
 int
-CacheVC::openWriteStartDone(int event, Event * e)
+CacheVC::openWriteStartDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
 
@@ -1456,9 +1445,9 @@ CacheVC::openWriteStartDone(int event, Event * e)
        to NULL.
      */
     if (!dir_valid(part, &dir)) {
-      Debug("cache_write",
+      DDebug("cache_write",
             "OpenReadStartDone: Dir not valid: Write Head: %d, Dir: %d",
-            offset_to_part_offset(part, part->header->write_pos), dir.offset);
+            offset_to_part_offset(part, part->header->write_pos), dir_offset(&dir));
       last_collision = NULL;
       goto Lcollision;
     }
@@ -1472,21 +1461,21 @@ CacheVC::openWriteStartDone(int event, Event * e)
       err = ECACHE_BAD_META_DATA;
       goto Lfailure;
     }
-    ink_assert((((unsigned long) &doc->hdr[0]) & HDR_PTR_ALIGNMENT_MASK) == 0);
+    ink_assert((((unsigned long) &doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK) == 0);
 
-    if (write_vector->get_handles(doc->hdr, doc->hlen, buf) != doc->hlen) {
+    if (write_vector->get_handles(doc->hdr(), doc->hlen, buf) != doc->hlen) {
       err = ECACHE_BAD_META_DATA;
       goto Lfailure;
     }
     ink_debug_assert(write_vector->count() > 0);
     od->first_dir = dir;
     first_dir = dir;
-    if (doc->single_segment()) {
-      // segment is tied to the vector
+    if (doc->single_fragment()) {
+      // fragment is tied to the vector
       od->move_resident_alt = 1;
       od->single_doc_key = doc->key;
       dir_assign(&od->single_doc_dir, &dir);
-      dir_set_tag(&od->single_doc_dir, DIR_MASK_TAG(od->single_doc_key.word(1)));
+      dir_set_tag(&od->single_doc_dir, od->single_doc_key.word(2));
     }
     first_buf = buf;
     goto Lsuccess;
@@ -1497,35 +1486,36 @@ Lcollision:
     int if_writers = ((uintptr_t) info == CACHE_ALLOW_MULTIPLE_WRITES);
     CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
     if (!lock)
-      VC_SCHED_LOCK_RETRY();
+      VC_LOCK_RETRY_EVENT();
     if (!od) {
-      if ((err = part->open_write(this, if_writers,
-                                  cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0)
+      if ((err = part->open_write(
+             this, if_writers, cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0)
         goto Lfailure;
       if (od->has_multiple_writers()) {
+        MUTEX_RELEASE(lock);
         SET_HANDLER(&CacheVC::openWriteMain);
-        _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE, (void *) this);
-        return EVENT_DONE;
+        return callcont(CACHE_EVENT_OPEN_WRITE);
       }
     }
     // check for collision
     if (dir_probe(&first_key, part, &dir, &last_collision)) {
       od->reading_vec = 1;
-      return do_read(&first_key);
+      int ret = do_read_call(&first_key);
+      if (ret == EVENT_RETURN)
+        goto Lcallreturn;
+      return ret;
     }
     if (f.update) {
       // fail update because vector has been GC'd
       goto Lfailure;
     }
-
   }
 Lsuccess:
   od->reading_vec = 0;
   if (_action.cancelled)
     goto Lcancel;
   SET_HANDLER(&CacheVC::openWriteMain);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE, (void *) this);
-  return EVENT_DONE;
+  return callcont(CACHE_EVENT_OPEN_WRITE);
 
 Lfailure:
   CACHE_INCREMENT_DYN_STAT(base_stat + CACHE_STAT_FAILURE);
@@ -1538,11 +1528,13 @@ Lcancel:
     return EVENT_DONE;
   } else
     return free_CacheVC(this);
+Lcallreturn:
+  return handleEvent(AIO_EVENT_DONE, 0); // hopefully a tail call
 }
 #endif
 // handle lock failures from main Cache::open_write entry points below
 int
-CacheVC::openWriteStartBegin(int event, Event * e)
+CacheVC::openWriteStartBegin(int event, Event *e)
 {
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
@@ -1556,23 +1548,25 @@ CacheVC::openWriteStartBegin(int event, Event * e)
     VC_SCHED_LOCK_RETRY();
   if ((err = part->open_write(this, false, 1)) > 0) {
     CACHE_INCREMENT_DYN_STAT(base_stat + CACHE_STAT_FAILURE);
+    free_CacheVC(this);
+    MUTEX_RELEASE(lock);
     _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -err);
-    return free_CacheVC(this);
+    return 0;
   }
   if (f.overwrite) {
     SET_HANDLER(&CacheVC::openWriteOverwrite);
     return openWriteOverwrite(EVENT_IMMEDIATE, 0);
   } else {
+    MUTEX_RELEASE(lock);
     // write by key
     SET_HANDLER(&CacheVC::openWriteMain);
-    _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE, (void *) this);
-    return EVENT_DONE;
+    return callcont(CACHE_EVENT_OPEN_WRITE);
   }
 }
 
 // main entry point for writing of of non-http documents
 Action *
-Cache::open_write(Continuation * cont, CacheKey * key, CacheFragType frag_type,
+Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
                   bool overwrite, time_t apin_in_cache, char *hostname, int host_len)
 {
 
@@ -1592,8 +1586,9 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheFragType frag_type,
   Part *part = c->part;
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
   c->first_key = c->key = *key;
+  c->frag_type = frag_type;
   /*
-     The transition from single segment document to a multi-segment document
+     The transition from single fragment document to a multi-fragment document
      would cause a problem if the key and the first_key collide. In case of
      a collision, old vector data could be served to HTTP. Need to avoid that.
      Also, when evacuating a fragment, we have to decide if its the first_key
@@ -1601,8 +1596,7 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheFragType frag_type,
    */
   do {
     rand_CacheKey(&c->key, cont->mutex);
-  }
-  while (DIR_MASK_TAG(c->key.word(1)) == DIR_MASK_TAG(c->first_key.word(1)));
+  } while (DIR_MASK_TAG(c->key.word(2)) == DIR_MASK_TAG(c->first_key.word(2)));
   c->earliest_key = c->key;
 #ifdef HTTP_CACHE
   c->info = 0;
@@ -1624,7 +1618,7 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheFragType frag_type,
   }
   if (!overwrite) {
     SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteMain);
-    cont->handleEvent(CACHE_EVENT_OPEN_WRITE, (void *) c);
+    c->callcont(CACHE_EVENT_OPEN_WRITE);
     return ACTION_RESULT_DONE;
   } else {
     SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteOverwrite);
@@ -1638,8 +1632,8 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheFragType frag_type,
 #ifdef HTTP_CACHE
 // main entry point for writing of http documents
 Action *
-Cache::open_write(Continuation * cont, CacheKey * key, CacheHTTPInfo * info, time_t apin_in_cache,
-                  CacheKey * key1, CacheFragType type, char *hostname, int host_len)
+Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
+                  CacheKey *key1, CacheFragType type, char *hostname, int host_len)
 {
   NOWARN_UNUSED(key1);
 
@@ -1656,7 +1650,7 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheHTTPInfo * info, tim
   c->vio.op = VIO::WRITE;
   c->first_key = *key;
   /*
-     The transition from single segment document to a multi-segment document
+     The transition from single fragment document to a multi-fragment document
      would cause a problem if the key and the first_key collide. In case of
      a collision, old vector data could be served to HTTP. Need to avoid that.
      Also, when evacuating a fragment, we have to decide if its the first_key
@@ -1665,9 +1659,9 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheHTTPInfo * info, tim
   do {
     rand_CacheKey(&c->key, cont->mutex);
   }
-  while (DIR_MASK_TAG(c->key.word(1)) == DIR_MASK_TAG(c->first_key.word(1)));
+  while (DIR_MASK_TAG(c->key.word(2)) == DIR_MASK_TAG(c->first_key.word(2)));
   c->earliest_key = c->key;
-  c->f.http_request = 1;
+  c->frag_type = CACHE_FRAG_TYPE_HTTP;
   c->part = key_to_part(key, hostname, host_len);
   Part *part = c->part;
   c->info = info;
@@ -1703,7 +1697,7 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheHTTPInfo * info, tim
      */
     c->f.update = 1;
     c->base_stat = cache_update_active_stat;
-    Debug("cache_update", "Update called");
+    DDebug("cache_update", "Update called");
     info->object_key_get(&c->update_key);
     ink_debug_assert(!(c->update_key == zero_key));
     c->update_len = info->object_size_get();
@@ -1712,44 +1706,47 @@ Cache::open_write(Continuation * cont, CacheKey * key, CacheHTTPInfo * info, tim
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
   c->pin_in_cache = (inku32) apin_in_cache;
 
-  CACHE_TRY_LOCK(lock, c->part->mutex, cont->mutex->thread_holding);
-  if (lock) {
-    if ((err = c->part->open_write(c, if_writers, cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0) {
-      goto Lfailure;
-    }
-    // If there are multiple writers, then this one cannot be an update.
-    // Only the first writer can do an update. If that's the case, we can
-    // return success to the state machine now.;
-    if (c->od->has_multiple_writers()) {
-      SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteMain);
-      cont->handleEvent(CACHE_EVENT_OPEN_WRITE, (void *) c);
-      return ACTION_RESULT_DONE;
-    }
-    if (!dir_probe(key, c->part, &c->dir, &c->last_collision)) {
-      if (c->f.update) {
-        // fail update because vector has been GC'd
-        // This situation can also arise in openWriteStartDone
-        err = ECACHE_NO_DOC;
+  {
+    CACHE_TRY_LOCK(lock, c->part->mutex, cont->mutex->thread_holding);
+    if (lock) {
+      if ((err = c->part->open_write(c, if_writers, 
+                                     cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0)
         goto Lfailure;
+      // If there are multiple writers, then this one cannot be an update.
+      // Only the first writer can do an update. If that's the case, we can
+      // return success to the state machine now.;
+      if (c->od->has_multiple_writers())
+        goto Lmiss;
+      if (!dir_probe(key, c->part, &c->dir, &c->last_collision)) {
+        if (c->f.update) {
+          // fail update because vector has been GC'd
+          // This situation can also arise in openWriteStartDone
+          err = ECACHE_NO_DOC;
+          goto Lfailure;
+        }
+        // document doesn't exist, begin write
+        goto Lmiss;
+      } else {
+        c->od->reading_vec = 1;
+        // document exists, read vector
+        SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteStartDone);
+        switch (c->do_read_call(&c->first_key)) {
+          case EVENT_DONE: return ACTION_RESULT_DONE;
+          case EVENT_RETURN: goto Lcallreturn;
+          default: return &c->_action;
+        }
       }
-      // document doesn't exist, begin write
-      SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteMain);
-      cont->handleEvent(CACHE_EVENT_OPEN_WRITE, (void *) c);
-      return ACTION_RESULT_DONE;
-    } else {
-      c->od->reading_vec = 1;
-      // document exists, read vector
-      SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteStartDone);
-      if (c->do_read(&c->first_key) == EVENT_CONT)
-        return &c->_action;
-      else
-        return ACTION_RESULT_DONE;
     }
+    // missed lock
+    SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteStartDone);
+    CONT_SCHED_LOCK_RETRY(c);
+    return &c->_action;
   }
-  // missed lock
-  SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteStartDone);
-  CONT_SCHED_LOCK_RETRY(c);
-  return &c->_action;
+
+Lmiss:
+  SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteMain);
+  c->callcont(CACHE_EVENT_OPEN_WRITE);
+  return ACTION_RESULT_DONE;
 
 Lfailure:
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_FAILURE);
@@ -1761,5 +1758,10 @@ Lfailure:
   }
   free_CacheVC(c);
   return ACTION_RESULT_DONE;
+
+Lcallreturn:
+  if (c->handleEvent(AIO_EVENT_DONE, 0) == EVENT_DONE)
+    return ACTION_RESULT_DONE;
+  return &c->_action;
 }
 #endif

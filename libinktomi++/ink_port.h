@@ -45,6 +45,10 @@ typedef long long ink64;
 typedef unsigned long long inku64;
 typedef off_t ink_off_t;
 
+#define INKU64_MAX 18446744073709551615ULL
+#define INK64_MAX 9223372036854775807LL
+#define INK64_MIN (-INK64_MAX -1LL)
+
 /*******************************************************************
  ** x86
   ******************************************************************/
@@ -60,7 +64,7 @@ typedef off_t ink_off_t;
 #define _CRTIMP
 #define HAVE_64_BIT
 
-#if (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin)
+#if (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin) || (HOST_OS == solaris)
 #define POSIX_THREAD
 #define POSIX_THREAD_10031c
 #else
@@ -84,6 +88,12 @@ typedef off_t ink_off_t;
 #if (HOST_OS == freebsd)
 #define NO_MEMALIGN
 #define MAXINT INT_MAX
+#endif
+
+#if (HOST_OS == darwin)
+#define NO_MEMALIGN
+#define RENTRENT_GETHOSTBYNAME
+#define RENTRENT_GETHOSTBYADDR
 #endif
 
 #define NUL '\0'

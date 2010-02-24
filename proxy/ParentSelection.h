@@ -32,7 +32,7 @@
 #define _PARENT_SELECTION_H_
 
 #include "Main.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "ControlBase.h"
 #include "ControlMatcher.h"
 

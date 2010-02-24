@@ -21,7 +21,8 @@ check_PROGRAMS = test_atomic test_freelist test_arena
 TESTS = $(check_PROGRAMS)
 noinst_LIBRARIES = libinktomi++.a
 
-libinktomi___a_CCASFLAGS = -Wa,--32
+#libinktomi___a_CCASFLAGS = -Wa,--32
+libinktomi___a_CCASFLAGS = -Wa,-32
 libinktomi___a_SOURCES = \
   Allocator.cc \
   Allocator.h \
@@ -161,15 +162,15 @@ libinktomi___a_LIBADD = ParseRules.o @LIBOBJS@
 mkdfa_SOURCES = mkdfa.c
 
 test_atomic_SOURCES = test_atomic.cc
-test_atomic_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@
+test_atomic_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@
 test_atomic_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_freelist_SOURCES = test_freelist.cc
-test_freelist_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@
+test_freelist_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@
 test_freelist_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 test_arena_SOURCES = test_arena.cc
-test_arena_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@
+test_arena_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@
 test_arena_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
 CompileParseRules_SOURCES = CompileParseRules.cc

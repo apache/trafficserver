@@ -504,7 +504,7 @@ charIndex::iter_next(charIndexIterState * s)
 {
   int index;
   charIndex_el *current_el = s->cur_el;
-  int level = s->cur_level;
+  intptr_t level = s->cur_level;
   charIndexIterInternal stored_state;
   HostBranch *r = NULL;
   bool first_element;
@@ -840,8 +840,8 @@ HostLookup::PrintHostBranch(HostBranch * hb, HostLookupPrintFunc f)
   hostArrayIterState ha_iter;
 
   HostBranch *lower_branch;
-  int curIndex;
-  int i;                        // Loop var
+  intptr_t curIndex;
+  intptr_t i;                        // Loop var
 
   for (i = 0; i < hb->leaf_indexs.length(); i++) {
     curIndex = hb->leaf_indexs[i];
@@ -1127,8 +1127,8 @@ HostLookup::TableInsert(const char *match_data, int index, bool domain_record)
 bool
 HostLookup::MatchArray(HostLookupState * s, void **opaque_ptr, DynArray<int>&array, bool host_done)
 {
-  int index;
-  int i;
+  intptr_t index;
+  intptr_t i;
 
   for (i = s->array_index + 1; i < array.length(); i++) {
     index = array[i];

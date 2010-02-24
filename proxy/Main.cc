@@ -30,9 +30,6 @@
   
  ****************************************************************************/
 
-#include "ink_unused.h"       /* MAGIC_EDITING_TAG */
-
-void deinitSubAgent();
 
 
 #include "inktomi++.h"
@@ -46,7 +43,9 @@ extern "C" int plock(int);
 #include <sys/filio.h>
 #endif
 #include <syslog.h>
+#if (HOST_OS != darwin) && (HOST_OS != freebsd) && (HOST_OS != solaris)
 #include <mcheck.h>
+#endif
 
 #include "Main.h"
 #include "signals.h"
@@ -63,7 +62,7 @@ extern "C" int plock(int);
 #include "RecordsConfig.h"
 #include "Transform.h"
 #include "ProcessManager.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 //#include "Ftp.h"
 //#include "FtpProxy.h"
 #include "HttpProxyServerMain.h"
@@ -159,7 +158,7 @@ int auto_clear_hostdb_flag = 0;
 int lock_process = DEFAULT_LOCK_PROCESS;
 extern int fds_limit;
 extern int cluster_port_number;
-extern int CacheClusteringEnabled;
+extern int cache_clustering_enabled;
 char cluster_host[DOMAIN_NAME_MAX + 1] = DEFAULT_CLUSTER_HOST;
 
 //         = DEFAULT_CLUSTER_PORT_NUMBER;
@@ -203,6 +202,7 @@ extern int test_net_processor();
 extern int run_TestHook();
 //extern void run_SimpleHttp();
 #endif
+void deinitSubAgent();
 
 Version version = {
   {CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION},     // cacheDB
@@ -298,6 +298,8 @@ ArgumentDescription argument_descriptions[] = {
 
   {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss,
    NULL, NULL},
+  {"poll_timeout", 't', "poll timeout in milliseconds", "I", &net_config_poll_timeout,
+   NULL, NULL},
   {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
 };
 int n_argument_descriptions = SIZE(argument_descriptions);
@@ -318,7 +320,14 @@ max_out_limit(char *name, int which, bool max_it = true, bool unlim_it = true)
   if (max_it) {
     ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
     if (rl.rlim_cur != rl.rlim_max) {
+#if (HOST_OS == darwin)
+      if (which == RLIMIT_NOFILE)
+	rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
+      else
+	rl.rlim_cur = rl.rlim_max;
+#else
       rl.rlim_cur = rl.rlim_max;
+#endif
       ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
     }
   }
@@ -393,7 +402,11 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
+#if (HOST_OS == solaris)
+      fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
+#else
       fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);
+#endif
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {
@@ -1195,7 +1208,9 @@ adjust_sys_settings(void)
   set_rlimit(RLIMIT_STACK,true,true);
   set_rlimit(RLIMIT_DATA,true,true);
   set_rlimit(RLIMIT_FSIZE, true, false);
+#ifdef RLIMIT_RSS
   set_rlimit(RLIMIT_RSS,true,true);
+#endif
 
 #endif  // linux check
 }
@@ -1379,6 +1394,15 @@ static void
 check_system_constants()
 {
 }
+
+/*
+static void
+init_logging()
+{
+  //  iObject::Init();
+  //  iLogBufferBuffer::Init();
+}
+*/
 
 static void
 init_http_header()
@@ -1618,8 +1642,11 @@ change_uid_gid(const char *user)
 {
   struct passwd pwbuf;
   struct passwd *pwbufp = NULL;
+#if (HOST_OS == freebsd) // TODO: investigate sysconf(_SC_GETPW_R_SIZE_MAX)) failure
+  long buflen = 1024; // or 4096?
+#else
   long buflen = sysconf(_SC_GETPW_R_SIZE_MAX);
-
+#endif
   if (buflen < 0) {
     ink_fatal_die("sysconf() failed for _SC_GETPW_R_SIZE_MAX");
   }
@@ -1659,7 +1686,11 @@ main(int argc, char **argv)
 
   NOWARN_UNUSED(argc);
 
+  //init_logging();
+
+#ifdef HAVE_MCHECK
   mcheck_pedantic(NULL);
+#endif
 
 #ifdef USE_NCA
   NCA_handlers = ink_number_of_processors();
@@ -1825,10 +1856,10 @@ main(int argc, char **argv)
   RecGetRecordInt("proxy.local.cluster.type", &temp_int);
   cluster_type = (int) temp_int;
   if (cluster_type == 1) {
-    CacheClusteringEnabled = 1;
+    cache_clustering_enabled = 1;
     Note("cache clustering enabled");
   } else {
-    CacheClusteringEnabled = 0;
+    cache_clustering_enabled = 0;
     /* 3com does not want these messages to be seen */
     Note("cache clustering disabled");
 

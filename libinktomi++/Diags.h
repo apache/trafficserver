@@ -48,47 +48,6 @@
 #define NO_DIAG 1
 #endif
 
-// eInsertStringType - defined in ink_error.h //
-//typedef enum
-//{
-//    keNo_OP = 0,
-//    keENCAPSULATED_STRING = 1,        
-//    keINSERT_STRING = 2
-//} eInsertStringType;
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      On Feb 10, 1998, Peter Mattis showed Diags overhead was non-existant
-//      when the run-time enable flag was turned off.  So, on this great and
-//      glorious date, run-time diags were incorporated into Traffic Server.
-//
-//      Date: Tue, 10 Feb 1998 19:52:25 -0800
-//      Subject: Re: ~5 ops/sec faster when statistics are turned off
-//
-//      (1) diags commented out
-//              40% hit-rate...372.85 ops/sec
-//      (2) diags in code, but enabled = 0
-//              40% hit-rate...375.72 ops/sec
-//      (3) diags in code, enabled = 1, but no tags match
-//              40% hit-rate...111.86 ops/sec
-//
-//      Looks like we're faster with diagnostics compiled in but
-//      turned off in records.config. :)  My runs are not long enough
-//      for the above numbers to be anything other than
-//      approximations.  But it does show that diagnostics cost
-//      basically nothing when not enabled.
-//
-//      Peter
-//
-//  On November 23, 1999, determined that the performance
-//  impact was insignificant only because of the heinously inefficient
-//  code written, and turned of Diags in the optimized 
-//  code.
-// 
-//
-//////////////////////////////////////////////////////////////////////////////
-
-
 class Diags;
 
 // extern int diags_on_for_plugins;
@@ -131,7 +90,8 @@ typedef void (*DiagsCleanupFunc) ();
 
 struct DiagsConfigState
 {
-  bool enabled[2];              // one debug, one action
+  // this is static to eliminate many loads from the critical path
+  static bool enabled[2];                       // one debug, one action
   DiagsModeOutput outputs[DiagsLevel_Count];    // where each level prints
 };
 
@@ -346,7 +306,6 @@ public:
 };
 
 
-// debug closures support debug tags
 class DiagsDClosure:public DiagsBaseClosure
 {
 public:
@@ -365,6 +324,7 @@ public:
   void operator() (const char *tag, int show_loc, const char *format_string ...);
 };
 
+// debug closures support debug tags
 
 // error closures do not support debug tags
 class DiagsEClosure:public DiagsBaseClosure

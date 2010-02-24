@@ -136,7 +136,7 @@ UDPPacketInternal::append_bytes(char *buf, int len)
   }
 }
 
-INK_INLINE void
+inline void
 UDPPacket::setReliabilityPkt()
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;
@@ -144,14 +144,14 @@ UDPPacket::setReliabilityPkt()
   p->isReliabilityPkt = true;
 }
 
-INK_INLINE void
+inline void
 UDPPacket::setPktTSSeq(ink64 seqno)
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;
   p->pktTSSeqNum = seqno;
 }
 
-INK_INLINE void
+inline void
 UDPPacket::append_block(IOBufferBlock * block)
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;
@@ -169,7 +169,7 @@ UDPPacket::append_block(IOBufferBlock * block)
   }
 }
 
-INK_INLINE char *
+inline char *
 UDPPacket::asBuf(int *len)
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;
@@ -182,7 +182,7 @@ UDPPacket::asBuf(int *len)
   }
 }
 
-INK_INLINE int
+inline int
 UDPPacket::getPktLength()
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;
@@ -197,19 +197,19 @@ UDPPacket::getPktLength()
   return p->pktLength;
 }
 
-INK_INLINE void
+inline void
 UDPPacket::free()
 {
   ((UDPPacketInternal *) this)->free();
 }
 
-INK_INLINE void
+inline void
 UDPPacket::setContinuation(Continuation * c)
 {
   ((UDPPacketInternal *) this)->cont = c;
 }
 
-INK_INLINE void
+inline void
 UDPPacket::setConnection(UDPConnection * c)
 {
   /*Code reviewed by Case Larsen.  Previously, we just had
@@ -231,25 +231,25 @@ UDPPacket::setConnection(UDPConnection * c)
   conn->AddRef();
 }
 
-INK_INLINE IOBufferBlock *
+inline IOBufferBlock *
 UDPPacket::getIOBlockChain(void)
 {
   return ((UDPPacketInternal *) this)->chain;
 }
 
-INK_INLINE UDPConnection *
+inline UDPConnection *
 UDPPacket::getConnection(void)
 {
   return ((UDPPacketInternal *) this)->conn;
 }
 
-INK_INLINE void
+inline void
 UDPPacket::setArrivalTime(ink_hrtime t)
 {
   ((UDPPacketInternal *) this)->arrival_time = t;
 }
 
-INK_INLINE UDPPacket *
+inline UDPPacket *
 new_UDPPacket(struct sockaddr_in *to, ink_hrtime when, char *buf, int len)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
@@ -272,7 +272,7 @@ new_UDPPacket(struct sockaddr_in *to, ink_hrtime when, char *buf, int len)
   return p;
 }
 
-INK_INLINE UDPPacket *
+inline UDPPacket *
 new_UDPPacket(struct sockaddr_in * to, ink_hrtime when, IOBufferBlock * buf, int len)
 {
   (void) len;
@@ -294,7 +294,7 @@ new_UDPPacket(struct sockaddr_in * to, ink_hrtime when, IOBufferBlock * buf, int
   return p;
 }
 
-INK_INLINE UDPPacket *
+inline UDPPacket *
 new_UDPPacket(struct sockaddr_in * to, ink_hrtime when, Ptr<IOBufferBlock> buf)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
@@ -310,13 +310,13 @@ new_UDPPacket(struct sockaddr_in * to, ink_hrtime when, Ptr<IOBufferBlock> buf)
   return p;
 }
 
-INK_INLINE UDPPacket *
+inline UDPPacket *
 new_UDPPacket(ink_hrtime when, Ptr<IOBufferBlock> buf)
 {
   return new_UDPPacket(NULL, when, buf);
 }
 
-INK_INLINE UDPPacket *
+inline UDPPacket *
 new_incoming_UDPPacket(struct sockaddr_in * from, char *buf, int len)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
@@ -337,7 +337,7 @@ new_incoming_UDPPacket(struct sockaddr_in * from, char *buf, int len)
   return p;
 }
 
-INK_INLINE UDPPacket *
+inline UDPPacket *
 new_UDPPacket()
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();

@@ -25,10 +25,16 @@
 
   SocketManager.cc
  ****************************************************************************/
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
+#include "inktomi++.h"
 
 #if (HOST_OS != linux)
 #include <sys/filio.h>
+#endif
+
+#if (HOST_OS == solaris)
+#include <sys/types.h>
+#include <sys/mman.h>
+extern "C" int madvise(caddr_t, size_t, int); // FIXME: why is this not being found
 #endif
 
 #include "P_EventSystem.h"

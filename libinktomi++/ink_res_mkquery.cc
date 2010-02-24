@@ -97,11 +97,15 @@ static const char sccsid[] = "@(#)res_mkquery.c	8.1 (Berkeley) 6/4/93";
 static const char rcsid[] = "$Id: res_mkquery.c,v 1.6.672.1 2008/04/03 02:12:21 marka Exp $";
 #endif /* LIBC_SCCS and not lint */
 
+#include "ink_config.h"
 
 #include <sys/types.h>
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
+#ifdef HAVE_ARPA_NAMESER_COMPAT_H
+#include <arpa/nameser_compat.h>
+#endif
 #include <netdb.h>
 #include <resolv.h>
 #include <stdio.h>

@@ -29,9 +29,10 @@
  * 
  */
 
+#include "ink_config.h"
+#include "ink_platform.h"
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 
-#include "ink_platform.h"
 #include "Main.h"
 #include "VMap.h"
 #include "P_RecLocal.h"
@@ -241,7 +242,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
           }
         }
       }
-#if (HOST_OS == freebsd)
+#if (HOST_OS == freebsd) || (HOST_OS == darwin)
       ifr = (struct ifreq *) ((char *) &ifr->ifr_addr + ifr->ifr_addr.sa_len);
 #else
       ifr = (struct ifreq *) (((char *) ifr) + sizeof(*ifr));
@@ -1091,8 +1092,8 @@ VMap::upAddr(char *virt_ip)
     interface = ((VIPInfo *) hash_value)->interface;
     sub_id = ((VIPInfo *) hash_value)->sub_interface_id;
 
-#if (HOST_OS == linux) || (HOST_OS == freebsd)
-    res = execl(absolute_vipconf_binary, vip_conf, "up", virt_ip, "/sbin/ifconfig", interface, sub_id, NULL);
+#if (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == solaris) || (HOST_OS == darwin)
+    res = execl(absolute_vipconf_binary, vip_conf, "up", virt_ip, "/sbin/ifconfig", interface, sub_id, (char*) NULL);
 #else
     res = execl(absolute_vipconf_binary, vip_conf, "up", virt_ip, "/usr/sbin/ifconfig", interface, sub_id, NULL);
 #endif
@@ -1147,8 +1148,8 @@ VMap::downAddr(char *virt_ip)
     interface = ((VIPInfo *) hash_value)->interface;
     sub_id = ((VIPInfo *) hash_value)->sub_interface_id;
 
-#if (HOST_OS == linux) || (HOST_OS == freebsd)
-    res = execl(absolute_vipconf_binary, vip_conf, "down", virt_ip, "/sbin/ifconfig", interface, sub_id, NULL);
+#if (HOST_OS == linux)|| (HOST_OS == freebsd) || (HOST_OS == solaris) || (HOST_OS == darwin)
+    res = execl(absolute_vipconf_binary, vip_conf, "down", virt_ip, "/sbin/ifconfig", interface, sub_id, (char*)NULL);
 #else
     res = execl(absolute_vipconf_binary, vip_conf, "down", virt_ip, "/usr/sbin/ifconfig", interface, sub_id, NULL);
 #endif

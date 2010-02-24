@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ink_platform.h"
 #include "inktomi++.h"
+#include "ink_platform.h"
 #include "CfgContextUtils.h"
 #include "Tokenizer.h"
 #if defined(OEM)

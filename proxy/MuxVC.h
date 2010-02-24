@@ -107,9 +107,9 @@ public:
   void init(MuxVC * mvc, ink32 id);
   void kill();
 
-  virtual VIO *do_io_read(Continuation * c = NULL, int nbytes = INT_MAX, MIOBuffer * buf = 0);
+  virtual VIO *do_io_read(Continuation * c = NULL, ink64 nbytes = INK64_MAX, MIOBuffer * buf = 0);
 
-  virtual VIO *do_io_write(Continuation * c = NULL, int nbytes = INT_MAX, IOBufferReader * buf = 0, bool owner = false);
+  virtual VIO *do_io_write(Continuation * c = NULL, ink64 nbytes = INK64_MAX, IOBufferReader * buf = 0, bool owner = false);
 
   virtual bool is_over_ssl()
   {

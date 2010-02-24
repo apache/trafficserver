@@ -58,7 +58,11 @@ public:
   void Print();
 private:
     ink_mutex accessLock;
+#if (HOST_OS == darwin)
+  ink_sem *waitSema;
+#else
   ink_sem waitSema;
+#endif
   SimpleQueueEntry *head;
   SimpleQueueEntry *tail;
 };

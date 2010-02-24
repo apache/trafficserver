@@ -31,6 +31,7 @@
 #if !defined (_ink_hrtime_h_)
 #define _ink_hrtime_h_
 
+#include "ink_config.h"
 #include "ink_assert.h"
 #include "Compatability.h"
 
@@ -46,11 +47,6 @@ typedef ink64 ink_hrtime;
 #else /* !defined (NEED_HRTIME) */
 #include <sys/time.h>
 typedef hrtime_t ink_hrtime;
-#endif
-
-#if (HOST_OS == freebsd)
-#define NEED_HRTIME_BASIS
-#define USE_TIME_STAMP_COUNTER_HRTIME
 #endif
 
 

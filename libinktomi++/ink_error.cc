@@ -22,8 +22,8 @@
 
  */
 
-#include "ink_error.h"
 #include "inktomi++.h"
+#include "ink_error.h"
 #include "ink_stack_trace.h"
 
 #include <syslog.h>

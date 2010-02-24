@@ -1,0 +1,6 @@
+Slightly modified to expose an internal function
+
+Steps:
+1. autoreconf -i
+2. run configure.trafficserver to build with defaults
+3. install normally

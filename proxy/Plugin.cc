@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
 #include <stdio.h>
 #if (HOST_OS == hpux)
 #include <dl.h>

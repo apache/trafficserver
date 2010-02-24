@@ -32,9 +32,7 @@
    
  ****************************************************************************/
 
-#include <sys/types.h>
-#include <stdlib.h>
-#include <string.h>
+#include "inktomi++.h"
 
 #include "Arena.h"
 #include "HTTP.h"

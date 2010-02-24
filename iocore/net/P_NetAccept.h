@@ -97,7 +97,7 @@ struct NetAccept:Continuation
   unsigned long sockopt_flags;
   EventType etype;
   UnixNetVConnection *epoll_vc; // only storage for epoll events
-  struct epoll_data_ptr ep;
+  EventIO ep;
 
   // Functions all THREAD_FREE and THREAD_ALLOC to be performed
   // for both SSL and regular NetVConnection transparent to

@@ -29,10 +29,7 @@
  * 
  ****************************************************************************/
 
-#include "ink_unused.h"      /* MAGIC_EDITING_TAG */
-
-#include "ink_args.h"
-#include "ink_sock.h"
+#include "inktomi++.h"
 #include "Tokenizer.h"
 #include "TextBuffer.h"
 #include "CliUtils.h"           /* cli_read_timeout(), cli_write_timeout(),GetTSDirectory() */
@@ -162,8 +159,11 @@ clientCLI::CliResult clientCLI::connectToLM(void)
   memset(&clientS, 0, sizeof(sockaddr_un));
   clientS.sun_family = AF_UNIX; // UNIX domain socket
   ink_strncpy(clientS.sun_path, sockPath, sizeof(clientS.sun_path));
+#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+  sockaddrLen = sizeof(sockaddr_un);
+#else
   sockaddrLen = sizeof(clientS.sun_family) + strlen(clientS.sun_path);;
-
+#endif
   // make socket non-blocking
   if (safe_nonblocking(socketFD) < 0) {
     fprintf(stderr, "Unable to set non-blocking flags on socket : %s\n", strerror(errno));

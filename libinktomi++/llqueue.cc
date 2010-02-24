@@ -21,14 +21,17 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #if (HOST_OS != freebsd) && (HOST_OS != darwin)
 #include <malloc.h>
 #endif
 #include <assert.h>
-#include "ink_unused.h" /* MAGIC_EDITING_TAG */
+#include <limits.h>
 
+#include "ink_unused.h" /* MAGIC_EDITING_TAG */
 #include "llqueue.h"
 #include "errno.h"
 
@@ -80,14 +83,22 @@ LLQ *
 create_queue()
 {
   const char *totally_bogus_name = "create_queue";
-
   LLQ * new_val;
 
   new_val = (LLQ *) xmalloc(sizeof(LLQ));
   if (!new_val)
     return NULL;
 
+#if (HOST_OS == darwin)
+  static int qnum = 0;
+  char sname[NAME_MAX];
+  qnum++;
+  snprintf(sname,NAME_MAX,"%s%d",totally_bogus_name,qnum);
+  ink_sem_unlink(sname); // FIXME: remove, semaphore should be properly deleted after usage
+  new_val->sema = ink_sem_open(sname, O_CREAT | O_EXCL, 0777, 0);
+#else /* !darwin */
   ink_sem_init(&(new_val->sema), 0);
+#endif /* !darwin */
   ink_mutex_init(&(new_val->mux), totally_bogus_name);
 
   new_val->head = new_val->tail = new_val->free = NULL;
@@ -139,8 +150,11 @@ enqueue(LLQ * Q, void *data)
   if (Q->len > Q->highwater)
     Q->highwater = Q->len;
   ink_mutex_release(&(Q->mux));
+#if (HOST_OS == darwin)
+  ink_sem_post(Q->sema);
+#else
   ink_sem_post(&(Q->sema));
-
+#endif
   return 1;
 }
 
@@ -207,9 +221,11 @@ dequeue(LLQ * Q)
 {
   LLQrec * rec;
   void *d;
-
+#if (HOST_OS == darwin)
+  ink_sem_wait(Q->sema);
+#else
   ink_sem_wait(&(Q->sema));
-
+#endif
   ink_mutex_acquire(&(Q->mux));
 
 

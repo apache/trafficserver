@@ -36,7 +36,7 @@
 #include "ControlMatcher.h"
 #include "Main.h"
 #include "Error.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "HTTP.h"
 #include "HttpTransact.h"
 

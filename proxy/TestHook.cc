@@ -26,6 +26,7 @@
   TestHook.cc
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "ink_unused.h"
 #include <limits.h>
 #include "P_Net.h"

@@ -34,7 +34,7 @@
 struct INK_MD5
 {
   inku64 b[2];
-    INK_MD5 & operator =(INK_MD5 & md5)
+  const INK_MD5 & operator =(const INK_MD5 & md5)
   {
     b[0] = md5.b[0];
     b[1] = md5.b[1];

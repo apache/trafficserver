@@ -37,6 +37,8 @@
 #if !defined (_inktomiplus_h_)
 #define	_inktomiplus_h_
 
+#include "ink_config.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -65,6 +67,7 @@ extern "C"
 #include <limits.h>
 #include <fcntl.h>
 #include <time.h>
+#include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 
@@ -73,7 +76,6 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
-
 
 #include "ink_aiocb.h"
 #include "ink_align.h"

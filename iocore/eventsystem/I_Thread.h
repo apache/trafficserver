@@ -133,8 +133,8 @@ public:
   }
 };
 
-INK_INLINE ink_hrtime ink_get_hrtime();
-INK_INLINE ink_hrtime ink_get_based_hrtime();
-INK_INLINE Thread *this_thread();
+inline ink_hrtime ink_get_hrtime();
+inline ink_hrtime ink_get_based_hrtime();
+inline Thread *this_thread();
 
 #endif /*_I_Thread_h*/

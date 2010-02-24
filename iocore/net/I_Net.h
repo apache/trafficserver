@@ -41,11 +41,6 @@
 #ifndef __I_NET_H_
 #define __I_NET_H_
 
-
-#ifndef INK_INLINE
-#define INK_INLINE
-#endif
-
 #include "I_Version.h"
 #include "I_EventSystem.h"
 #include <netinet/in.h>

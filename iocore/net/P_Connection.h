@@ -58,7 +58,6 @@ struct NetVCOptions;
 // Defines
 //
 
-//#define NO_FD                    (-1)
 #define NON_BLOCKING_CONNECT     true
 #define BLOCKING_CONNECT         false
 #define CONNECT_WITH_TCP         true
@@ -88,11 +87,11 @@ struct Connection
               bool non_blocking_connect = NON_BLOCKING_CONNECT,
               bool use_tcp = CONNECT_WITH_TCP, bool non_blocking = NON_BLOCKING, bool bind_random_port = BIND_ANY_PORT);
 
-  int fast_connect(const unsigned int ip, const int port, NetVCOptions * opt = NULL, const int socketFd = -1);
+  int fast_connect(const unsigned int ip, const int port, NetVCOptions * opt = NULL, const int sock = -1);
 
   int bind_connect(unsigned int target_ip, int target_port,
                    unsigned int my_ip,
-                   NetVCOptions * opt = NULL,
+                   NetVCOptions * opt = NULL, int sock = -1,
                    bool non_blocking_connect = NON_BLOCKING_CONNECT,
                    bool use_tcp = CONNECT_WITH_TCP,
                    bool non_blocking = NON_BLOCKING, bool bc_no_connect = BC_CONNECT, bool bc_no_bind = BC_BIND);
@@ -107,8 +106,8 @@ struct Connection
 
   int close();                  // 0 on success, -errno on failure
 
-    virtual ~ Connection();
-    Connection();
+  virtual ~ Connection();
+  Connection();
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -139,9 +138,7 @@ struct Server:Connection
   int listen(int port, bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
   int setup_fd_for_listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
 
-    Server():Connection(), accept_ip(INADDR_ANY)
-  {
-  }
+  Server():Connection(), accept_ip(INADDR_ANY) { }
 };
 
 #endif /*_Connection_h*/

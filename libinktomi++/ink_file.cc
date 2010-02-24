@@ -29,22 +29,7 @@
 
  ****************************************************************************/
 
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <stdio.h>
-#include "Compatability.h"
-#include "ink_time.h"
-
-#include <sys/file.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#include "ink_error.h"
-#include "ink_file.h"
-#include "ink_port.h"
-#include "ink_unused.h"       /* MAGIC_EDITING_TAG */
+#include "inktomi++.h"
 
 DIR *
 ink_opendir(const char *path)

@@ -21,12 +21,13 @@
   limitations under the License.
  */
 
+#include "inktomi++.h"
+#include "ink_stack_trace.h"
+
 #include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "inktomi++.h"
-#include "ink_stack_trace.h"
 
 #ifdef HAVE_EXECINFO_H
 

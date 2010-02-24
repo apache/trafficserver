@@ -41,7 +41,7 @@
 #include "P_Cache.h"
 #include "I_RecCore.h"
 #include "I_RecSignals.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "stats/CoupledStats.h"
 #include "stats/Stats.h"
 #include "InkAPIInternal.h"
@@ -1116,7 +1116,7 @@ INKVConnInternal::handle_event(int event, void *edata)
 }
 
 VIO *
-INKVConnInternal::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
+INKVConnInternal::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
 {
   m_read_vio.buffer.writer_for(buf);
   m_read_vio.op = VIO::READ;
@@ -1134,7 +1134,7 @@ INKVConnInternal::do_io_read(Continuation * c, int nbytes, MIOBuffer * buf)
 }
 
 VIO *
-INKVConnInternal::do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner)
+INKVConnInternal::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner)
 {
   ink_assert(!owner);
   m_write_vio.buffer.reader_for(buf);
@@ -7004,8 +7004,7 @@ INKCacheWrite(INKCont contp, INKCacheKey key)
   CacheInfo *info = (CacheInfo *) key;
   Continuation *i = (INKContInternal *) contp;
   return (INKAction)
-    cacheProcessor.open_write(i, 0, &info->cache_key,
-                              info->frag_type, false, info->pin_in_cache, info->hostname, info->len);
+    cacheProcessor.open_write(i, &info->cache_key, info->frag_type, 0, false, info->pin_in_cache, info->hostname, info->len);
 }
 
 INKAction
@@ -7018,7 +7017,7 @@ INKCacheRemove(INKCont contp, INKCacheKey key)
   CacheInfo *info = (CacheInfo *) key;
   INKContInternal *i = (INKContInternal *) contp;
   return (INKAction)
-    cacheProcessor.remove(i, &info->cache_key, true, false, info->frag_type, info->hostname, info->len);
+    cacheProcessor.remove(i, &info->cache_key, info->frag_type, true, false, info->hostname, info->len);
 }
 
 INKAction
@@ -7956,8 +7955,8 @@ INKCacheOverwrite(INKCont contp, INKCacheKey key)
   CacheInfo *info = (CacheInfo *) key;
   Continuation *i = (INKContInternal *) contp;
   return (INKAction)
-    cacheProcessor.open_write(i, 0, &info->cache_key,
-                              info->frag_type, true, info->pin_in_cache, info->hostname, info->len);
+    cacheProcessor.open_write(i, &info->cache_key,
+                              info->frag_type, 0, true, info->pin_in_cache, info->hostname, info->len);
 }
 
 void

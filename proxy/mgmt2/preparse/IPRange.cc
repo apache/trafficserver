@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 /****************************************************************************
 
   IPRange.cc
@@ -29,6 +28,9 @@
   This file an IPRange object that reads a range of IPS, and does
   matching of a given IP address against those ranges.
  ****************************************************************************/
+
+#include "ink_config.h"
+#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 #if !defined (_WIN32)
 #include <ctype.h>
 #include <sys/types.h>

@@ -29,12 +29,12 @@
  * 
  ****************************************************************************/
 
+#include "inktomi++.h"
+#include "ink_platform.h"
 #include "ink_unused.h" /* MAGIC_EDITING_TAG */
 
-#include "ink_platform.h"
-
 /* local includes */
-#include "inktomi++.h"
+
 #include "CLIeventHandler.h"
 #include "Tokenizer.h"
 #include "TextBuffer.h"

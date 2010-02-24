@@ -21,10 +21,8 @@
   limitations under the License.
  */
 
-#include "Compatability.h"
-#include "ink_platform.h"
+#include "inktomi++.h"
 #include "ParseRules.h"
-
 #include "P_RecCore.h"
 #include "P_RecLocal.h"
 #include "P_RecMessage.h"

@@ -32,7 +32,7 @@
 //#include "MixtAPIInternal.h"
 #include "HTTP.h"
 #include "List.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "P_Cache.h"
 class CacheAPIHooks;
 extern CacheAPIHooks *cache_global_hooks;

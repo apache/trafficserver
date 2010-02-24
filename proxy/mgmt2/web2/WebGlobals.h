@@ -108,7 +108,11 @@ struct WebInterFaceGlobals
 {
   ink_mutex serviceThrLock;
   ink_mutex submitLock;
+#if (HOST_OS == darwin)
+  ink_sem *serviceThrCount;
+#else
   ink_sem serviceThrCount;
+#endif
   serviceThr_t *serviceThrArray;
   int webPort;
   ink_thread_key tmpFile;       // used by WebFileEdit.cc

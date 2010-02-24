@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -31,7 +32,7 @@ using namespace std;
 #include <stdio.h>
 #include <errno.h>
 //#include <iomanip.h>
-//#include <unistd.h>
+#include <unistd.h>
 #include "SimpleTokenizer.h"
 #include "ink_args.h"
 #include "I_Version.h"

@@ -24,19 +24,9 @@
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-#if (HOST_OS == linux)
+#include "inktomi++.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <signal.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#if (HOST_OS == linux)
 
 #include "ink_killall.h"
 #include "ink_resource.h"

@@ -23,10 +23,6 @@
 
 #ifndef _P_CLUSTER_H__
 #define _P_CLUSTER_H__
-#ifndef INLINE_CC
-#undef INK_INLINE
-#define INK_INLINE inline
-#endif
 
 #include "inktomi++.h"
 #include "P_EventSystem.h"

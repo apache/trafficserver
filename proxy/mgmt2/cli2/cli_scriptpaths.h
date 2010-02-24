@@ -28,18 +28,19 @@
 #define __SPI_SCRIPT_PATH__H
 
 #define INKTOMI_HOME "/home/inktomi"
-#if (HOST_OS == sunos)
+#if (HOST_OS == solaris)
 #define DEFAULTROUTER_PATH "/etc/defaultrouter"
 #define DEFAULT_DOMAIN_PATH "/etc/defaultdomain"
 #define NETMASK_PATH "/etc/inet/netmasks"
 
-// not used by sunos
+// not used by solaris
 #define NIC_IDENTIFIER_STRING ""
 
 #define NIC_SETTINGS_FILE "/kernel/drv/iprb.conf"
 #define NIC_CHANGES_STRING "Changes Take Effect on Reboot"
 #define NIC_CONFIG_LABEL "ForceSpeedDuplex="
 #define SET_ROUTER_SCRIPT "./cli_setrouter.tcl"
+#define GATEWAY_MARKER "GATEWAY=" // FIXME:
 
 #elif (HOST_OS == linux)
 #define DEFAULTROUTER_PATH "/etc/sysconfig/network"
@@ -53,6 +54,12 @@
 #define NIC_IDENTIFIER_STRING "eth0"
 #define NIC_CHANGES_STRING "Changes Take Effect Immediately"
 #define NIC_SETTINGS_EXECUTABLE INKTOMI_HOME "/rubicon/bin/mii-diag"
+#elif (HOST_OS == darwin)
+#define DEFAULTROUTER_PATH "/tmp/tsrouterpath-fixme" // FIXME:
+#define GATEWAY_MARKER "GATEWAY=" // FIXME:
+#elif (HOST_OS == freebsd)
+#define DEFAULTROUTER_PATH "/tmp/tsrouterpath-fixme" // FIXME:
+#define GATEWAY_MARKER "GATEWAY=" // FIXME:
 #endif
 
 #define NAMESERVER_PATH "/etc/resolv.conf"
@@ -101,10 +108,14 @@
 
 #define SET_TIMEZONE_SCRIPT INKTOMI_HOME "/rubicon/bin/spi_settimezone.sh"
 #define SET_TIMEZONE_ARGS "1>/usr/tmp/spi_settimezone.log 2>&1"
-#if (HOST_OS == sunos)
+#if (HOST_OS == solaris)
 #define TIMEZONE_FILE "/etc/default/init"
 #elif (HOST_OS == linux)
 #define TIMEZONE_FILE "/etc/sysconfig/clock"
+#elif (HOST_OS == darwin)
+#define TIMEZONE_FILE "/tmp/tstzonefile-fixme" // FIXME:
+#elif (HOST_OS == freebsd)
+#define TIMEZONE_FILE "/tmp/tstzonefile-fixme" // FIXME:
 #else
 #error No file set for this OS.
 #endif

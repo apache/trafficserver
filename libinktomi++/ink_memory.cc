@@ -29,6 +29,8 @@
  
  ****************************************************************************/
 
+#include "inktomi++.h"
+
 #include <assert.h>
 #if (HOST_OS == linux)
 #ifndef _XOPEN_SOURCE
@@ -41,7 +43,7 @@
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#include "inktomi++.h"     /* MAGIC_EDITING_TAG */
+
 
 
 class MAMemChunk
@@ -79,7 +81,8 @@ MAHeap::Init(int _chunk_size, int _total_chunks)
   size = chunk_size * total_chunks;
 
   if (size > 0) {
-    if (!posix_memalign((void **) &heap, 8192, size)) {
+    heap = (char *)ink_memalign(8192, size);
+    if (heap != NULL) {
       for (int i = 0; i < total_chunks; i++) {
         MAMemChunk *mc = new MAMemChunk();
         mc->next = chunk_list_free;
@@ -296,7 +299,7 @@ ink_memalign(size_t alignment, size_t size)
 #endif
   return (ptr);
 #else
-#if (HOST_OS == freebsd)
+#if (HOST_OS == freebsd) || (HOST_OS == darwin)
   /*
    * DEC malloc calims to align for "any allocatable type",
    * and the following code checks that.

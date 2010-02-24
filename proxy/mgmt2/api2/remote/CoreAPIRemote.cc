@@ -36,6 +36,7 @@
  * 
  ***************************************************************************/
 
+#include "ink_config.h"
 #include <strings.h>
 #include "ink_snprintf.h"
 #include "ink_string.h"
@@ -318,7 +319,7 @@ Init(char *socket_path)
   // do this last so that everything else on client side is set up even if 
   // connection fails; this might happen if client is set up and running 
   // before TM
-  err = connect();
+  err = ts_connect();
   if (err != INK_ERR_OKAY)
     goto END;
 

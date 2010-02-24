@@ -76,6 +76,9 @@
 #include "ink_platform.h"
 #include <resolv.h>
 #include <arpa/nameser.h>
+#ifdef HAVE_NET_PPP_DEFS_H
+#include <net/ppp_defs.h>
+#endif
 
 #define INK_RES_F_VC        0x00000001      /*%< socket is TCP */
 #define INK_RES_F_CONN      0x00000002      /*%< socket is connected */

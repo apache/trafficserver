@@ -31,11 +31,6 @@
 #ifndef _P_SPLIT_DNS_H_
 #define _P_SPLIT_DNS_H_
 
-#ifndef INLINE_CC
-#undef INK_INLINE
-#define INK_INLINE inline
-#endif
-
 #include "P_DNS.h"
 #include "I_SplitDNS.h"
 #include "I_Lock.h"

@@ -32,7 +32,7 @@
 #include "Error.h"
 #include "BaseRecords.h"
 #include "ProcessManager.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "StatPages.h"
 #include "HTTP.h"
 #include "RecordsConfig.h"

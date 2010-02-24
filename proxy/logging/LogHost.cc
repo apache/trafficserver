@@ -26,9 +26,8 @@
 
  
  ***************************************************************************/
-#include "ink_unused.h"
+#include "inktomi++.h"
 
-#include "ink_platform.h"
 #include "Resource.h"
 #include "Error.h"
 
@@ -55,57 +54,35 @@
   -------------------------------------------------------------------------*/
 
 LogHost::LogHost(char *object_filename, inku64 object_signature)
-  :
-m_object_filename(xstrdup(object_filename))
-  ,
-m_object_signature(object_signature)
-  ,
-m_ip(0)
-  ,
-m_ipstr(NULL)
-  ,
-m_name(NULL)
-  ,
-m_port(0)
-  ,
-m_sock(NULL)
-  ,
-m_sock_fd(-1)
-  ,
-m_connected(false)
-  ,
-m_orphan_file(NULL)
+  : m_object_filename(xstrdup(object_filename))
+  , m_object_signature(object_signature)
+  , m_ip(0)
+  , m_ipstr(NULL)
+  , m_name(NULL)
+  , m_port(0)
+  , m_sock(NULL)
+  , m_sock_fd(-1)
+  , m_connected(false)
+  , m_orphan_file(NULL)
 #if defined (IOCORE_LOG_COLLATION)
-,
-m_log_collation_client_sm(NULL)
+  , m_log_collation_client_sm(NULL)
 #endif
 {
 }
 
 LogHost::LogHost(const LogHost & rhs)
-  :
-m_object_filename(xstrdup(rhs.m_object_filename))
-  ,
-m_object_signature(rhs.m_object_signature)
-  ,
-m_ip(rhs.m_ip)
-  ,
-m_ipstr(xstrdup(rhs.m_ipstr))
-  ,
-m_name(xstrdup(rhs.m_name))
-  ,
-m_port(rhs.m_port)
-  ,
-m_sock(NULL)
-  ,
-m_sock_fd(-1)
-  ,
-m_connected(false)
-  ,
-m_orphan_file(NULL)
+  : m_object_filename(xstrdup(rhs.m_object_filename))
+  , m_object_signature(rhs.m_object_signature)
+  , m_ip(rhs.m_ip)
+  , m_ipstr(xstrdup(rhs.m_ipstr))
+  , m_name(xstrdup(rhs.m_name))
+  , m_port(rhs.m_port)
+  , m_sock(NULL)
+  , m_sock_fd(-1)
+  , m_connected(false)
+  , m_orphan_file(NULL)
 #if defined (IOCORE_LOG_COLLATION)
-,
-m_log_collation_client_sm(NULL)
+  , m_log_collation_client_sm(NULL)
 #endif
 {
   create_orphan_LogFile_object();

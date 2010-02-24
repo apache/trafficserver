@@ -21,15 +21,8 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
-/****************************************************************************
-
-  Config.cc
-
-  
-  ****************************************************************************/
-
-#include "Config.h"
+#include "inktomi++.h"
+#include "ProxyConfig.h"
 #include "P_EventSystem.h"
 
 ConfigProcessor configProcessor;

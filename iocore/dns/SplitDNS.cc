@@ -27,9 +27,11 @@
  *
  *
  ****************************************************************************/
+
+#include "inktomi++.h"
+
 #ifdef SPLIT_DNS
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 
 #include "P_SplitDNS.h"
 

@@ -24,7 +24,7 @@
 #ifndef _P_UnixEvent_h_
 #define _P_UnixEvent_h_
 
-INK_INLINE Event *
+inline Event *
 Event::init(Continuation * c, ink_hrtime atimeout_at, ink_hrtime aperiod)
 {
   continuation = c;
@@ -35,14 +35,14 @@ Event::init(Continuation * c, ink_hrtime atimeout_at, ink_hrtime aperiod)
   return this;
 }
 
-INK_INLINE void
+inline void
 Event::free()
 {
   mutex = NULL;
   eventAllocator.free(this);
 }
 
-INK_INLINE
+inline
 Event::Event():
   ethread(0),
   in_the_prot_queue(false),

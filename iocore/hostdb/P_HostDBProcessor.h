@@ -158,7 +158,7 @@ struct HostDBCache:MultiCache<HostDBInfo>
   HostDBCache();
 };
 
-INK_INLINE HostDBInfo *
+inline HostDBInfo *
 HostDBRoundRobin::find_ip(unsigned int ip)
 {
   bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
@@ -176,7 +176,7 @@ HostDBRoundRobin::find_ip(unsigned int ip)
   return NULL;
 }
 
-INK_INLINE HostDBInfo *
+inline HostDBInfo *
 HostDBRoundRobin::select_best(unsigned int client_ip, HostDBInfo * r)
 {
   (void) r;
@@ -203,7 +203,7 @@ HostDBRoundRobin::select_best(unsigned int client_ip, HostDBInfo * r)
   return &info[best];
 }
 
-INK_INLINE HostDBInfo *
+inline HostDBInfo *
 HostDBRoundRobin::select_best_http(unsigned int client_ip, time_t now, ink32 fail_window)
 {
   bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
@@ -383,24 +383,24 @@ extern int hostdb_disable_reverse_lookup;
 extern HostDBCache hostDB;
 //extern Queue<HostDBContinuation>  remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 
-INK_INLINE unsigned int
+inline unsigned int
 master_hash(INK_MD5 & md5)
 {
   return (int) (md5[1] >> 32);
 }
-INK_INLINE bool
+inline bool
 is_dotted_form_hostname(char *c)
 {
   return -1 != (int) ink_inet_addr(c);
 }
 
-INK_INLINE Queue<HostDBContinuation> &
+inline Queue<HostDBContinuation> &
 HostDBCache::pending_dns_for_hash(INK_MD5 & md5)
 {
   return pending_dns[partition_of_bucket((int) (fold_md5(md5) % hostDB.buckets))];
 }
 
-INK_INLINE int
+inline int
 HostDBContinuation::key_partition()
 {
   return hostDB.partition_of_bucket(fold_md5(md5) % hostDB.buckets);

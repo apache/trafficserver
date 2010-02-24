@@ -24,10 +24,8 @@ SUBDIRS = congest dns_cache http2 hdrs logging mgmt2 config stats
 endif
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/libinktomi++ \
-  -I$(top_srcdir)/proxy/dns_cache \
-  -I$(top_srcdir)/librecords \
   $(iocore_include_dirs) \
+  -I$(top_srcdir)/proxy/dns_cache \
   -I$(srcdir)/http2 \
   -I$(srcdir)/logging \
   -I$(srcdir)/http2/remap  \
@@ -36,7 +34,12 @@ AM_CPPFLAGS = \
   -I$(srcdir)/mgmt2/preparse \
   -I$(srcdir)/mgmt2/utils \
   -I$(srcdir)/mgmt2/web2 \
-  -I$(srcdir)/api/include
+  -I$(srcdir)/api/include \
+  -DPKGLOGDIR=\"$(pkglogdir)\" \
+  -DPREFIX=\"$(prefix)\" \
+  -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
+  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
+  -DPKGSYSUSER=\"$(pkgsysuser)\"
 
 bin_PROGRAMS = \
   traffic_server \
@@ -73,14 +76,6 @@ EXTRA_LIBRARIES	= \
 
 EXTRA_DIST = InkAPITestTool.cc example_alarm_bin.sh example_prep.sh
 
-traffic_server_CPPFLAGS = \
-  -DPREFIX=\"$(prefix)\" \
-  -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
-  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
-  -DPKGLOGDIR=\"$(pkglogdir)\" \
-  -DPKGSYSUSER=\"$(pkgsysuser)\" \
-  $(AM_CPPFLAGS)
-
 traffic_server_SOURCES = \
   AbstractBuffer.cc \
   AbstractBuffer.h \
@@ -88,8 +83,8 @@ traffic_server_SOURCES = \
   CacheControl.h \
   CacheInspectorAllow.cc \
   CacheInspectorAllow.h \
-  Config.cc \
-  Config.h \
+  ProxyConfig.cc \
+  ProxyConfig.h \
   ControlBase.cc \
   ControlBase.h \
   ControlMatcher.cc \
@@ -132,6 +127,8 @@ traffic_server_SOURCES = \
   Prefetch.cc \
   Prefetch.h \
   Raf.h \
+  RegressionSM.h \
+  RegressionSM.cc \
   ReverseProxy.cc \
   ReverseProxy.h \
   RniTransStats.h \
@@ -176,13 +173,8 @@ traffic_server_LDADD = \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBREGEX@ @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ \
-  @LIBMLD@ @LIBEXC@ @LIBM@
+  @LIBMLD@ @LIBEXC@ @LIBM@ @LIBEV@
 
-traffic_logcat_CPPFLAGS = \
-  -DPREFIX=\"$(prefix)\" \
-  -DPKGLOGDIR=\"$(pkglogdir)\" \
-  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
-  $(AM_CPPFLAGS)
 traffic_logcat_SOURCES = logcat.cc
 traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_logcat_LDADD = \
@@ -197,7 +189,7 @@ traffic_logcat_LDADD = \
   StatSystem.o \
   CacheInspectorAllow.o \
   ReverseProxy.o \
-  Config.o \
+  ProxyConfig.o \
   signals.o \
   Error.o \
   EventName.o \
@@ -209,6 +201,7 @@ traffic_logcat_LDADD = \
   Prefetch.o \
   Update.o \
   TestHook.o \
+  RegressionSM.o \
   Plugin.o \
   PluginDB.o \
   InkAPI.o \
@@ -237,14 +230,9 @@ traffic_logcat_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBREGEX@ @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
+  @LIBREGEX@ @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@
 
-traffic_logstats_CPPFLAGS = \
-  -DPREFIX=\"$(prefix)\" \
-  -DPKGLOGDIR=\"$(pkglogdir)\" \
-  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
-  $(AM_CPPFLAGS)
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_logstats_LDADD = \
@@ -260,7 +248,7 @@ traffic_logstats_LDADD = \
   StatSystem.o \
   CacheInspectorAllow.o \
   ReverseProxy.o \
-  Config.o \
+  ProxyConfig.o \
   signals.o \
   Error.o \
   EventName.o \
@@ -272,6 +260,7 @@ traffic_logstats_LDADD = \
   Prefetch.o \
   Update.o \
   TestHook.o \
+  RegressionSM.o \
   Plugin.o \
   PluginDB.o \
   InkAPI.o \
@@ -301,14 +290,9 @@ traffic_logstats_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBREGEX@ @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
+  @LIBREGEX@ @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@
 
-traffic_sac_CPPFLAGS = \
-  -DPREFIX=\"$(prefix)\" \
-  -DPKGLOGDIR=\"$(pkglogdir)\" \
-  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
-  $(AM_CPPFLAGS)
 traffic_sac_SOURCES = sac.cc
 traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_sac_LDADD = \
@@ -324,7 +308,7 @@ traffic_sac_LDADD = \
   StatSystem.o \
   CacheInspectorAllow.o \
   ReverseProxy.o \
-  Config.o \
+  ProxyConfig.o \
   signals.o \
   Error.o \
   EventName.o \
@@ -336,6 +320,7 @@ traffic_sac_LDADD = \
   Prefetch.o \
   Update.o \
   TestHook.o \
+  RegressionSM.o \
   Plugin.o \
   PluginDB.o \
   InkAPI.o \
@@ -363,7 +348,7 @@ traffic_sac_LDADD = \
   $(top_builddir)/librecords/librecprocess.a \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
-  @LIBREGEX@ @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
+  @LIBREGEX@ @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@
 
 traffic_cust_log_fmt_cnvrt_SOURCES = cust_log_fmt_cnvrt.cc
@@ -379,7 +364,7 @@ libClusterHashStandalone_a_SOURCES = \
 libTrafficServerStandalone_a_SOURCES = \
   signals.cc \
   Error.cc \
-  Config.cc \
+  ProxyConfig.cc \
   EventName.cc \
   DiagsConfig.cc \
   StatPages.cc \

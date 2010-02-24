@@ -67,20 +67,17 @@ CacheDisk::open(char *s, ink_off_t blocks, ink_off_t dir_skip, int fildes, bool 
     return clearDisk();
   }
 
-
   SET_HANDLER(&CacheDisk::openStart);
   io.aiocb.aio_offset = skip;
   io.aiocb.aio_buf = (char *) header;
   io.aiocb.aio_nbytes = header_len;
-
-  io.thread = this_ethread();
+  io.thread = AIO_CALLBACK_THREAD_ANY;
   ink_aio_read(&io);
   return 0;
 }
 
 CacheDisk::~CacheDisk()
 {
-
   if (path) {
     xfree(path);
     for (int i = 0; i < (int) header->num_partitions; i++) {
@@ -104,13 +101,12 @@ CacheDisk::~CacheDisk()
 int
 CacheDisk::clearDisk()
 {
-
   delete_all_partitions();
 
   io.aiocb.aio_offset = skip;
   io.aiocb.aio_buf = header;
   io.aiocb.aio_nbytes = header_len;
-  io.thread = this_ethread();
+  io.thread = AIO_CALLBACK_THREAD_ANY;
   ink_aio_write(&io);
   return 0;
 }
@@ -157,7 +153,6 @@ CacheDisk::openStart(int event, void *data)
 
   SET_HANDLER(&CacheDisk::openDone);
   return openDone(EVENT_IMMEDIATE, 0);
-
 }
 
 int
@@ -178,11 +173,10 @@ CacheDisk::openDone(int event, void *data)
 int
 CacheDisk::sync()
 {
-
   io.aiocb.aio_offset = skip;
   io.aiocb.aio_buf = header;
   io.aiocb.aio_nbytes = header_len;
-  io.thread = this_ethread();
+  io.thread = AIO_CALLBACK_THREAD_ANY;
   ink_aio_write(&io);
   return 0;
 }
@@ -205,9 +199,8 @@ CacheDisk::syncDone(int event, void *data)
 
 /* size is in store blocks */
 DiskPartBlock *
-CacheDisk::create_partition(int number, int size_in_blocks, int scheme)
+CacheDisk::create_partition(int number, ink_off_t size_in_blocks, int scheme)
 {
-
   if (size_in_blocks == 0)
     return NULL;
 
@@ -216,7 +209,7 @@ CacheDisk::create_partition(int number, int size_in_blocks, int scheme)
 
   if (!q)
     return NULL;
-  int max_blocks = MAX_PART_SIZE >> STORE_BLOCK_SHIFT;
+  ink_off_t max_blocks = MAX_PART_SIZE >> STORE_BLOCK_SHIFT;
   size_in_blocks = (size_in_blocks <= max_blocks) ? size_in_blocks : max_blocks;
 
   int blocks_per_part = PART_BLOCK_SIZE / STORE_BLOCK_SIZE;
@@ -232,7 +225,6 @@ CacheDisk::create_partition(int number, int size_in_blocks, int scheme)
         closest_match = q;
     }
   }
-
 
   if (!p && !closest_match)
     return NULL;
@@ -267,7 +259,6 @@ CacheDisk::create_partition(int number, int size_in_blocks, int scheme)
     free_blocks->size += dpb->len;
     free_space += dpb->len;
     header->num_diskpart_blks++;
-
   } else
     header->num_free--;
 
@@ -296,7 +287,6 @@ CacheDisk::create_partition(int number, int size_in_blocks, int scheme)
     disk_parts[i]->size = q->b->len;
     header->num_partitions++;
   }
-
   return p;
 }
 
@@ -304,7 +294,6 @@ CacheDisk::create_partition(int number, int size_in_blocks, int scheme)
 int
 CacheDisk::delete_partition(int number)
 {
-
   unsigned int i;
   for (i = 0; i < header->num_partitions; i++) {
     if (disk_parts[i]->part_number == number) {
@@ -340,7 +329,6 @@ CacheDisk::delete_partition(int number)
 void
 CacheDisk::update_header()
 {
-
   unsigned int n = 0;
   unsigned int i, j;
   if (free_blocks) {
@@ -397,14 +385,12 @@ CacheDisk::update_header()
     }
   }
 
-
   ink_assert(n == header->num_partitions);
 }
 
 DiskPart *
 CacheDisk::get_diskpart(int part_number)
 {
-
   unsigned int i;
   for (i = 0; i < header->num_partitions; i++) {
     if (disk_parts[i]->part_number == part_number) {
@@ -417,7 +403,6 @@ CacheDisk::get_diskpart(int part_number)
 int
 CacheDisk::delete_all_partitions()
 {
-
   header->part_info[0].offset = start;
   header->part_info[0].len = num_usable_blocks;
   header->part_info[0].type = CACHE_NONE_TYPE;

@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
 #include <assert.h>
 
 #include "ink_atomic.h"
@@ -68,9 +69,13 @@
 void
 ink_queue_load_64(void *dst, void *src)
 {
+#if defined(__i386__)
   ink32 src_version = (*(head_p *) src).s.version;
   void *src_pointer = (*(head_p *) src).s.pointer;
 
   (*(head_p *) dst).s.version = src_version;
   (*(head_p *) dst).s.pointer = src_pointer;
+#else
+  *(void**)dst = *(void**)src;
+#endif
 }

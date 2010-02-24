@@ -27,10 +27,7 @@
  This file implements the LogConfig object.
  
  ***************************************************************************/
-#include "ink_unused.h"
-
-#include <stdio.h>
-#include <string.h>
+#include "inktomi++.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -43,11 +40,12 @@
 
 #if (HOST_OS == linux)
 #include <sys/statfs.h>
-#else  // linux check
-#if (HOST_OS != freebsd)
+#elif (HOST_OS == solaris)
+#include <sys/statfs.h>
 #include <sys/statvfs.h>
-#endif  // not freebsd check
-#endif  // linux check
+#elif (HOST_OS != freebsd)
+#include <sys/statvfs.h>
+#endif  // linux 
 
 #include "ink_platform.h"
 
@@ -1783,12 +1781,19 @@ LogConfig::update_space_used()
   // Now check the partition to see if there is enough *actual* space.
   //
   partition_space_left = m_partition_space_left;
+#if (HOST_OS == solaris)
+  struct statvfs fs;
+  ::memset(&fs, 0, sizeof(fs));
+  int ret =::statvfs(logfile_dir, &fs);
+#else
   struct statfs fs;
   ::memset(&fs, 0, sizeof(fs));
   int ret =::statfs(logfile_dir, &fs);
+#endif
   if (ret >= 0) {
     partition_space_left = (ink64) fs.f_bavail * (ink64) fs.f_bsize;
   }
+
   //
   // Update the config variables for space used/left
   //

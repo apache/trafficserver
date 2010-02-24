@@ -28,6 +28,7 @@
  * 
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "ink_platform.h"
 
 #include "ink_hash_table.h"
@@ -3567,7 +3568,7 @@ static int
 handle_network(WebHttpContext * whc, char *tag, char *arg)
 {
   int err = WEB_HTTP_ERR_OKAY;
-#if (HOST_OS == linux) || (HOST_OS == sunos)
+#if (HOST_OS == linux) || (HOST_OS == solaris)
   char value[1024];
   char *value_safe, *old_value, *dummy;
   char *pos;
@@ -4012,7 +4013,7 @@ WebHttpRender(WebHttpContext * whc, const char *file)
   int file_size;
   char *doc_root_file;
   ink_debug_assert(file != NULL);
-#if (HOST_OS == linux)
+#if (HOST_OS == linux) || (HOST_OS == solaris)
 //Bug 49922, for those .ink files which may meet the root-only system files,  
 //upgrade the uid to root.
   int old_euid;
@@ -4045,7 +4046,7 @@ Lnot_found:
 
 Ldone:
 
-#if (HOST_OS == linux) || (HOST_OS == sunos)
+#if (HOST_OS == linux) || (HOST_OS == solaris)
   if (change_uid) {
     Config_User_Inktomi(old_euid);
   }

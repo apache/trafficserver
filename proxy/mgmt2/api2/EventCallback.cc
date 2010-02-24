@@ -29,6 +29,7 @@
  * 
  ***************************************************************************/
 
+#include "ink_config.h"
 #include "ink_resource.h"
 
 #include "EventCallback.h"

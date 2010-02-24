@@ -341,8 +341,6 @@ public:
 
   int startNetEvent(int event, Event * data);
   int mainNetEvent(int event, Event * data);
-  PollDescriptor *build_poll(PollDescriptor *);
-  PollDescriptor *build_one_udpread_poll(int fd, UnixUDPConnection *, PollDescriptor * pd);
 
   UDPNetHandler();
 };

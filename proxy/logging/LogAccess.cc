@@ -38,8 +38,7 @@
  ***************************************************************************/
 #include "ink_unused.h"
 
-#include <assert.h>
-#include "ink_platform.h"
+#include "inktomi++.h"
 
 #include "Error.h"
 #include "HTTP.h"

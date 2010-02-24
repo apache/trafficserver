@@ -21,13 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"  /* MAGIC_EDITING_TAG */
-
-#include "Compatability.h"
+#include "inktomi++.h"
 #include "MgmtSchema.h"
 #include "RecordsConfig.h"
 #include "Main.h"
-#include "ink_hash_table.h"
 
 //********************************************************
 // XML Schema Validation

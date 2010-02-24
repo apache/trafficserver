@@ -21,11 +21,8 @@
   limitations under the License.
  */
 
+#include "inktomi++.h"
 #include "P_RecTree.h"
-#include <string.h>
-#include <stdio.h>
-#include "Tokenizer.h"
-#include "ink_assert.h"
 
 #define RecTreeDebug printf
 bool rec_debug = false;

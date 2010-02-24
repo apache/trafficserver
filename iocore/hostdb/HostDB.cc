@@ -44,43 +44,25 @@
 #include "ink_apidefs.h"
 
 HostDBProcessor hostDBProcessor;
-int
-  HostDBProcessor::hostdb_strict_round_robin = 0;
-int
-  hostdb_enable = true;
-int
-  hostdb_migrate_on_demand = true;
-int
-  hostdb_cluster = false;
-int
-  hostdb_cluster_round_robin = false;
-int
-  hostdb_lookup_timeout = 120;
-int
-  hostdb_insert_timeout = 160;
-int
-  hostdb_re_dns_on_reload = false;
-int
-  hostdb_ttl_mode = TTL_OBEY;
-unsigned int
-  hostdb_current_interval = 0;
-unsigned int
-  hostdb_ip_stale_interval = HOST_DB_IP_STALE;
-unsigned int
-  hostdb_ip_timeout_interval = HOST_DB_IP_TIMEOUT;
-unsigned int
-  hostdb_ip_fail_timeout_interval = HOST_DB_IP_FAIL_TIMEOUT;
-unsigned int
-  hostdb_serve_stale_but_revalidate = 0;
-char
-  hostdb_filename[PATH_NAME_MAX + 1] = DEFAULT_HOST_DB_FILENAME;
-int
-  hostdb_size = DEFAULT_HOST_DB_SIZE;
+int HostDBProcessor::hostdb_strict_round_robin = 0;
+int hostdb_enable = true;
+int hostdb_migrate_on_demand = true;
+int hostdb_cluster = false;
+int hostdb_cluster_round_robin = false;
+int hostdb_lookup_timeout = 120;
+int hostdb_insert_timeout = 160;
+int hostdb_re_dns_on_reload = false;
+int hostdb_ttl_mode = TTL_OBEY;
+unsigned int hostdb_current_interval = 0;
+unsigned int hostdb_ip_stale_interval = HOST_DB_IP_STALE;
+unsigned int hostdb_ip_timeout_interval = HOST_DB_IP_TIMEOUT;
+unsigned int hostdb_ip_fail_timeout_interval = HOST_DB_IP_FAIL_TIMEOUT;
+unsigned int hostdb_serve_stale_but_revalidate = 0;
+char hostdb_filename[PATH_NAME_MAX + 1] = DEFAULT_HOST_DB_FILENAME;
+int hostdb_size = DEFAULT_HOST_DB_SIZE;
 //int hostdb_timestamp = 0;
-int
-  hostdb_sync_frequency = 60;
-int
-  hostdb_disable_reverse_lookup = 0;
+int hostdb_sync_frequency = 60;
+int hostdb_disable_reverse_lookup = 0;
 
 ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 
@@ -94,7 +76,7 @@ static
   remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 
 
-static INK_INLINE int
+static inline int
 corrupt_debugging_callout(HostDBInfo * e, RebuildMC & r)
 {
   Debug("hostdb", "corrupt %d part %d", (char *) &e->app.rr.offset - r.data, r.partition);
@@ -102,7 +84,7 @@ corrupt_debugging_callout(HostDBInfo * e, RebuildMC & r)
 }
 
 
-INK_INLINE void
+inline void
 hostdb_cont_free(HostDBContinuation * cont)
 {
   if (cont->pending_action)
@@ -958,11 +940,15 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
   // Since ProxyMutexPtr has a cast operator, gcc-3.x get upset
   // about ambiguity when doing this comparison, so by reversing
   // the operands, I force it to pick the cast operation /leif.
+#ifdef USE_NCA
   if (thread->mutex == cont->mutex) {
     thread->schedule_in(c, MUTEX_RETRY_DELAY);
   } else {
     dnsProcessor.thread->schedule_imm(c);
   }
+#else
+  thread->schedule_in(c, MUTEX_RETRY_DELAY);
+#endif
 
   return &c->action;
 }

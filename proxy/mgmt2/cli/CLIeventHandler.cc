@@ -29,13 +29,13 @@
  * 
  ****************************************************************************/
 
+#include "inktomi++.h"
 #include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 /* system includes */
 #include <stdio.h>
 #include <stdlib.h>
 
 /* local includes */
-#include "inktomi++.h"
 #include "CLIeventHandler.h"
 #include "Tokenizer.h"
 #include "WebMgmtUtils.h"

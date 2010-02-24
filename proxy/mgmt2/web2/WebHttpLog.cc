@@ -28,6 +28,7 @@
  *
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "ink_platform.h"
 #include "TextBuffer.h"
 #include "Main.h"

@@ -29,6 +29,8 @@
 #include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 #include "P_EventSystem.h"
 
+extern "C" int eventfd(unsigned int initval, int flags);
+
 struct AIOCallback;
 
 #define MAX_HEARTBEATS_MISSED         	10
@@ -37,37 +39,54 @@ struct AIOCallback;
 #define NO_ETHREAD_ID                   -1
 
 EThread::EThread()
-:generator(time(NULL) ^ (long) this),
-ethreads_to_be_signalled(NULL),
-n_ethreads_to_be_signalled(0),
-main_accept_index(-1),
-id(NO_ETHREAD_ID), event_types(0), tt(REGULAR), eventsem(NULL)
+ : generator(time(NULL) ^ (long) this),
+   ethreads_to_be_signalled(NULL),
+   n_ethreads_to_be_signalled(0),
+   main_accept_index(-1),
+   id(NO_ETHREAD_ID), event_types(0), 
+   signal_hook(0),
+   tt(REGULAR), eventsem(NULL)
 {
   memset(thread_private, 0, PER_THREAD_DATA);
 }
 
 EThread::EThread(ThreadType att, int anid)
-  :
-generator(time(NULL) ^ (long) this),
-ethreads_to_be_signalled(NULL),
-n_ethreads_to_be_signalled(0),
-main_accept_index(-1),
-id(anid),
-event_types(0),
-tt(att),
-eventsem(NULL)
+  : generator(time(NULL) ^ (long) this),
+    ethreads_to_be_signalled(NULL),
+    n_ethreads_to_be_signalled(0),
+    main_accept_index(-1),
+    id(anid),
+    event_types(0),
+    signal_hook(0),
+    tt(att),
+    eventsem(NULL)
 {
   ethreads_to_be_signalled = (EThread **) xmalloc(MAX_EVENT_THREADS * sizeof(EThread *));
   memset((char *) ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
   memset(thread_private, 0, PER_THREAD_DATA);
+#ifdef HAVE_EVENTFD
+  evfd = eventfd(0, O_NONBLOCK | FD_CLOEXEC);
+  if (evfd < 0)
+    ink_release_assert((evfd = eventfd(0,0)) >= 0);
+  fcntl(evfd, F_SETFD, FD_CLOEXEC);
+  fcntl(evfd, F_SETFL, O_NONBLOCK);
+#else
+  ink_release_assert(pipe(evpipe) >= 0); 
+  fcntl(evpipe[0], F_SETFD, FD_CLOEXEC);
+  fcntl(evpipe[0], F_SETFL, O_NONBLOCK);
+  fcntl(evpipe[1], F_SETFD, FD_CLOEXEC);
+  fcntl(evpipe[1], F_SETFL, O_NONBLOCK);
+#endif
 }
 
 EThread::EThread(ThreadType att, Event * e, ink_sem * sem)
-:generator(time(NULL) ^ (long) this),
-ethreads_to_be_signalled(NULL),
-n_ethreads_to_be_signalled(0),
-main_accept_index(-1),
-id(NO_ETHREAD_ID), event_types(0), tt(att), oneevent(e), eventsem(sem)
+ : generator(time(NULL) ^ (long) this),
+   ethreads_to_be_signalled(NULL),
+   n_ethreads_to_be_signalled(0),
+   main_accept_index(-1),
+   id(NO_ETHREAD_ID), event_types(0), 
+   signal_hook(0),
+   tt(att), oneevent(e), eventsem(sem)
 {
   ink_assert(att == DEDICATED);
   memset(thread_private, 0, PER_THREAD_DATA);
@@ -141,56 +160,44 @@ EThread::process_event(Event * e, int calling_code)
 // lock. If successful, call the continuation, otherwise put the event back
 // into the queue.
 //
-#ifdef ENABLE_TIME_TRACE
-int immediate_events_time_dist[TIME_DIST_BUCKETS_SIZE];
-int cnt_immediate_events;
-#endif
 
-extern struct EventProcessor eventProcessor;
 void
-EThread::execute()
-{
-  Event *e;
-  ink_hrtime next_time = 0, sleep_time;
-  Que(Event, link) NegativeQueue;
+EThread::execute() {
   switch (tt) {
 
-  case REGULAR:{
-      // Try to give priority to immediate events.
+    case REGULAR: {
+      Event *e;
+      Que(Event, link) NegativeQueue;
+      ink_hrtime next_time = 0;
 
+      // give priority to immediate events
       for (;;) {
-        // Execute all the available external events that have
+        // execute all the available external events that have
         // already been dequeued
         cur_time = ink_get_based_hrtime_internal();
         while ((e = EventQueueExternal.dequeue_local())) {
-          if (!e->timeout_at) {
+          if (!e->timeout_at) { // IMMEDIATE
             ink_assert(e->period == 0);
             process_event(e, e->callback_event);
-          } else {
-
-            if (e->timeout_at < 0) {
-#ifdef FIXME
-              if (-e->timeout_at < min_neg_timeout)
-                min_neg_timeout = -e->timeout_at;
-#endif
-              Event *p = NULL;
-              Event *a = NegativeQueue.head;
-              while (a && a->timeout_at > e->timeout_at) {
-                p = a;
-                a = a->link.next;
-              }
-              if (!a)
-                NegativeQueue.enqueue(e);
-              else
-                NegativeQueue.insert(e, p);
-            } else
-              EventQueue.enqueue(e, cur_time);
+          } else if (e->timeout_at > 0) // INTERVAL
+            EventQueue.enqueue(e, cur_time);
+          else { // NEGATIVE
+            Event *p = NULL;
+            Event *a = NegativeQueue.head;
+            while (a && a->timeout_at > e->timeout_at) {
+              p = a;
+              a = a->link.next;
+            }
+            if (!a)
+              NegativeQueue.enqueue(e);
+            else
+              NegativeQueue.insert(e, p);
           }
         }
         bool done_one;
         do {
           done_one = false;
-          // Execute all the eligible internal events
+          // execute all the eligible internal events
           EventQueue.check_ready(cur_time, this);
           while ((e = EventQueue.dequeue_ready(cur_time))) {
             ink_assert(e);
@@ -203,12 +210,10 @@ EThread::execute()
             }
           }
         } while (done_one);
-
+        // execute any negative (poll) events
         if (NegativeQueue.head) {
           if (n_ethreads_to_be_signalled)
             flush_signals(this);
-
-
           // dequeue all the external events and put them in a local
           // queue. If there are no external events available, don't
           // do a cond_timedwait.
@@ -245,15 +250,13 @@ EThread::execute()
             }
           }
           // execute poll events
-          while ((e = NegativeQueue.dequeue()) != NULL) {
+          while ((e = NegativeQueue.dequeue()))
             process_event(e, EVENT_POLL);
-          }
-          // fixme min_neg_timeout = HRTIME_FOREVER;
           if (!INK_ATOMICLIST_EMPTY(EventQueueExternal.al))
             EventQueueExternal.dequeue_timed(cur_time, next_time, false);
         } else {                // Means there are no negative events
           next_time = EventQueue.earliest_timeout();
-          sleep_time = next_time - cur_time;
+          ink_hrtime sleep_time = next_time - cur_time;
           if (sleep_time > THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND) {
             next_time = cur_time + THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND;
             sleep_time = THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND;
@@ -266,10 +269,9 @@ EThread::execute()
           EventQueueExternal.dequeue_timed(cur_time, next_time, true);
         }
       }
-
     }
-  case DEDICATED:{
-      // if (DEBUG) cout << "Inside execute (dedicated thread)\n";
+
+    case DEDICATED: {
       // coverity[lock]
       if (eventsem)
         ink_sem_wait(eventsem);
@@ -279,9 +281,10 @@ EThread::execute()
       free_event(oneevent);
       break;
     }
-  default:
-    ink_assert(!"bad case value (execute)");
-    break;
+
+    default:
+      ink_assert(!"bad case value (execute)");
+      break;
   }                             /* End switch */
   // coverity[missing_unlock]
 }

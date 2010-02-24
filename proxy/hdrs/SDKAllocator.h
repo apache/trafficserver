@@ -33,6 +33,7 @@
 #ifndef _SDK_ALLOCATOR_H_
 #define _SDK_ALLOCATOR_H_
 
+#include "inktomi++.h"
 #include "List.h"
 
 /////////////////////////////////////

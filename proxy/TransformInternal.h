@@ -41,18 +41,15 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation * c, int nbytes, MIOBuffer * buf);
-
-  VIO *do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner = false);
-
+  VIO *do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf);
+  VIO *do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner = false);
   void do_io_close(int lerrno = -1);
-
   void do_io_shutdown(ShutdownHowTo_t howto);
 
   void reenable(VIO * vio);
 
 public:
-    TransformVConnection * m_tvc;
+  TransformVConnection * m_tvc;
   VIO m_read_vio;
   VIO m_write_vio;
   volatile int m_event_count;
@@ -70,18 +67,15 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation * c, int nbytes, MIOBuffer * buf);
-
-  VIO *do_io_write(Continuation * c, int nbytes, IOBufferReader * buf, bool owner = false);
-
+  VIO *do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf);
+  VIO *do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner = false);
   void do_io_close(int lerrno = -1);
-
   void do_io_shutdown(ShutdownHowTo_t howto);
 
   void reenable(VIO * vio);
 
 public:
-    VConnection * m_transform;
+  VConnection * m_transform;
   Continuation *m_cont;
   TransformTerminus m_terminus;
   volatile int m_closed;
@@ -96,7 +90,7 @@ public:
   int handle_event(int event, void *edata);
 
 public:
-    APIHooks m_hooks;
+  APIHooks m_hooks;
   VConnection *m_tvc;
   IOBufferReader *m_read_buf;
   MIOBuffer *m_write_buf;
@@ -112,7 +106,7 @@ public:
   int handle_event(int event, void *edata);
 
 public:
-    MIOBuffer * m_output_buf;
+  MIOBuffer * m_output_buf;
   IOBufferReader *m_output_reader;
   VIO *m_output_vio;
 };
@@ -139,7 +133,7 @@ public:
                        const char *ne, const char *ns, struct tm *tp, int size);
 
 public:
-    HTTPHdr * m_req;
+  HTTPHdr * m_req;
   IOBufferReader *m_ftp_message;
   IOBufferReader *m_output_reader;
   MIOBuffer *m_output_buf;

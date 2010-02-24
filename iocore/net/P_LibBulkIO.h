@@ -25,7 +25,7 @@
 #ifndef _LIB_BULK_IO_H
 #define _LIB_BULK_IO_H
 
-#if (HOST_OS == sunos)
+#if (HOST_OS == solaris)
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>

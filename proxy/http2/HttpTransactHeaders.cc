@@ -28,22 +28,14 @@
 
    
  ****************************************************************************/
-#include "ink_platform.h"
+#include "inktomi++.h"
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
-#include "time.h"
-#include "ink_assert.h"
-#include "ink_defs.h"
-#include "ParseRules.h"
-#include "URL.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "HttpCompat.h"
 #include "HttpMessageBody.h"
-#include "Error.h"
-#include "InkErrno.h"
-#include "ink_base64.h"
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

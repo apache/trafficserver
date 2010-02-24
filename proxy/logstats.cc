@@ -31,6 +31,10 @@
 
 #include <math.h>
 #include <sys/utsname.h>
+#if (HOST_OS == solaris)
+#include <sys/types.h>
+#include <unistd.h>
+#endif
 
 #include <iostream>
 #include <fstream>
@@ -1726,9 +1730,9 @@ open_main_log(char *ymon_notice, const size_t ymon_notice_size)
     strncat(ymon_notice, " squid.blog not enabled", ymon_notice_size - strlen(ymon_notice) - 1);
     return -1;
   }
-
+#ifdef HAVE_POSIX_FADVISE
   posix_fadvise(main_fd, 0, 0, POSIX_FADV_DONTNEED);
-
+#endif
   return main_fd;
 }
 
@@ -1745,6 +1749,7 @@ main(int argc, char *argv[])
   int res, cnt;
   int main_fd;
   unsigned max_age;
+  struct flock lck;
   char ts_path[PATH_NAME_MAX + 1];
 
   // build the application information structure
@@ -1895,8 +1900,14 @@ main(int argc, char *argv[])
       my_exit(YMON_CRITICAL, ymon_notice);
     }
     // Get an exclusive lock, if possible. Try for up to 20 seconds.
+    // Use more portable & standard fcntl() over flock()
+    lck.l_type = F_WRLCK;
+    lck.l_whence = 0; /* offset l_start from beginning of file*/
+    lck.l_start = (off_t)0;
+    lck.l_len = (off_t)0; /* till end of file*/
     cnt = 10;
-    while (((res = flock(state_fd, LOCK_EX | LOCK_NB)) < 0) && --cnt) {
+    // while (((res = flock(state_fd, LOCK_EX | LOCK_NB)) < 0) && --cnt) {
+    while (((res = fcntl(state_fd, F_SETLK, &lck)) < 0) && --cnt) {
       switch (errno) {
       case EWOULDBLOCK:
       case EINTR:
@@ -2029,7 +2040,9 @@ main(int argc, char *argv[])
           ymon_status = YMON_WARNING;
       }
     }
-    flock(state_fd, LOCK_UN);
+    //flock(state_fd, LOCK_UN);
+    lck.l_type = F_UNLCK;
+    fcntl(state_fd, F_SETLK, &lck);
     close(main_fd);
     close(state_fd);
   } else {

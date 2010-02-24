@@ -482,7 +482,7 @@ fold_md5(INK_MD5 & md5)
   return (md5.fold());
 }
 
-template<class C> INK_INLINE int MultiCache<C>::level_of_block(C * b)
+template<class C> inline int MultiCache<C>::level_of_block(C * b)
 {
   if ((char *) b - data >= level_offset[1]) {
     if ((char *) b - data >= level_offset[2])
@@ -492,7 +492,7 @@ template<class C> INK_INLINE int MultiCache<C>::level_of_block(C * b)
   return 0;
 }
 
-template<class C> INK_INLINE C * MultiCache<C>::cache_bucket(inku64 folded_md5, int level)
+template<class C> inline C * MultiCache<C>::cache_bucket(inku64 folded_md5, int level)
 {
   int bucket = (int) (folded_md5 % buckets);
   char *offset = data + level_offset[level] + bucketsize[level] * bucket;
@@ -502,7 +502,7 @@ template<class C> INK_INLINE C * MultiCache<C>::cache_bucket(inku64 folded_md5, 
 //
 // Insert an entry
 //
-template<class C> INK_INLINE C * MultiCache<C>::insert_block(inku64 folded_md5, C * new_block, int level)
+template<class C> inline C * MultiCache<C>::insert_block(inku64 folded_md5, C * new_block, int level)
 {
   C *b = cache_bucket(folded_md5, level);
   C *block = NULL, *empty = NULL;
@@ -573,7 +573,7 @@ Lfound:
 //
 // This function ejects some number of entries.
 //
-template<class C> INK_INLINE void MultiCache<C>::flush(C * b, int bucket, int level)
+template<class C> inline void MultiCache<C>::flush(C * b, int bucket, int level)
 {
   C *block = NULL;
   if (level < levels - 1) {
@@ -594,7 +594,7 @@ template<class C> INK_INLINE void MultiCache<C>::flush(C * b, int bucket, int le
 //
 // Match a cache line and a folded md5 key
 //
-template<class C> INK_INLINE bool MultiCache<C>::match(inku64 folded_md5, C * block)
+template<class C> inline bool MultiCache<C>::match(inku64 folded_md5, C * block)
 {
   return block->tag() == make_tag(folded_md5);
 }
@@ -602,7 +602,7 @@ template<class C> INK_INLINE bool MultiCache<C>::match(inku64 folded_md5, C * bl
 //
 // This code is a bit of a mess and should probably be rewritten
 //
-template<class C> INK_INLINE void MultiCache<C>::delete_block(C * b)
+template<class C> inline void MultiCache<C>::delete_block(C * b)
 {
   if (b->backed) {
     int l = level_of_block(b);
@@ -620,7 +620,7 @@ template<class C> INK_INLINE void MultiCache<C>::delete_block(C * b)
 //
 // Lookup an entry up to some level in the cache
 //
-template<class C> INK_INLINE C * MultiCache<C>::lookup_block(inku64 folded_md5, int level)
+template<class C> inline C * MultiCache<C>::lookup_block(inku64 folded_md5, int level)
 {
   C *b = cache_bucket(folded_md5, 0);
   inku64 tag = make_tag(folded_md5);
@@ -646,7 +646,7 @@ template<class C> INK_INLINE C * MultiCache<C>::lookup_block(inku64 folded_md5, 
   return NULL;
 }
 
-template<class C> INK_INLINE void MultiCache<C>::rebuild_element(int bucket, char *elem, RebuildMC & r)
+template<class C> inline void MultiCache<C>::rebuild_element(int bucket, char *elem, RebuildMC & r)
 {
   C *e = (C *) elem;
   if (!e->is_empty()) {
@@ -671,7 +671,7 @@ template<class C> INK_INLINE void MultiCache<C>::rebuild_element(int bucket, cha
   }
 }
 
-template<class C> INK_INLINE void MultiCache<C>::copy_heap(int partition, MultiCacheHeapGC * gc)
+template<class C> inline void MultiCache<C>::copy_heap(int partition, MultiCacheHeapGC * gc)
 {
   int b = first_bucket_of_partition(partition);
   int n = buckets_of_partition(partition);

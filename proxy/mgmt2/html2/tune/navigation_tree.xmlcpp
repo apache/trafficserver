@@ -187,7 +187,7 @@ This text will be stripped from the build 'navigation_tree.xml'.
     </MENU>
 
     <MENU name="Networking">
-#if (HOST_OS == linux) || (HOST_OS == sunos)
+#if (HOST_OS == linux) || (HOST_OS == solaris)
       <ITEM name="System">
         <LINK refresh="true"
               file_link="/monitor/m_net.ink"
@@ -525,7 +525,7 @@ This text will be stripped from the build 'navigation_tree.xml'.
     </MENU>
 
     <MENU name="Networking">
-#if (HOST_OS == linux) || (HOST_OS == sunos)
+#if (HOST_OS == linux) || (HOST_OS == solaris)
       <ITEM name="System">
         <LINK name="General"
               file_link="/configure/c_net_config.ink"

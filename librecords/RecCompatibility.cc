@@ -21,12 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_assert.h"
-
+#include "inktomi++.h"
 #include "P_RecCompatibility.h"
 #include "P_RecDefs.h"
 #include "P_RecUtils.h"
-#include <inktomi++.h>
 
 //-------------------------------------------------------------------------
 // RecFileOpenR
@@ -178,8 +176,7 @@ RecPipeCreate(char *base_path, char *name)
 
   // construct a path/filename for the pipe
 #define SEPERATOR "/"
-  int path_len = strlen(base_path) + strlen(SEPERATOR) + strlen(name);
-  char path[(path_len + 1) * sizeof(char)];
+  char path[PATH_NAME_MAX];
   snprintf(path, sizeof(path), "%s%s%s", base_path, SEPERATOR, name);
 #undef SEPERATOR
   if (strlen(path) > (sizeof(servaddr.sun_path) - 1)) {
@@ -245,8 +242,7 @@ RecPipeConnect(char *base_path, char *name)
 
   // construct a path/filename for the pipe
 #define SEPERATOR "/"
-  int path_len = strlen(base_path) + strlen(SEPERATOR) + strlen(name);
-  char path[(path_len + 1) * sizeof(char)];
+  char path[PATH_NAME_MAX];
   snprintf(path, sizeof(path), "%s%s%s", base_path, SEPERATOR, name);
 #undef SEPERATOR
   if (strlen(path) > (sizeof(servaddr.sun_path) - 1)) {

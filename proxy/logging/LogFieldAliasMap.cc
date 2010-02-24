@@ -27,6 +27,7 @@
  
  ***************************************************************************/
 
+#include "ink_config.h"
 #include "LogFieldAliasMap.h"
 #include "ink_assert.h"
 

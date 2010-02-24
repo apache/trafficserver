@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_llqueue.h"
+#include "inktomi++.h"
 
 #include "P_RecCompatibility.h"
 #include "P_RecMessage.h"

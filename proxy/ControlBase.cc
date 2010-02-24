@@ -86,7 +86,7 @@ ControlBase::~ControlBase()
     // Free all Prefix/Postfix strings and
     //   SrcIP, Port, Time Of Day Structures
     num_el = (*mod_elements).length() + 1;
-    for (int i = 0; i < num_el; i++) {
+    for (intptr_t i = 0; i < num_el; i++) {
       modifier_el & cur_el = (*mod_elements)[i];
       if (cur_el.type == MOD_PREFIX ||
           cur_el.type == MOD_SUFFIX ||
@@ -118,7 +118,7 @@ ControlBase::Print()
   }
 
   printf("\t\t\t");
-  for (int i = 0; i < num_el; i++) {
+  for (intptr_t i = 0; i < num_el; i++) {
     modifier_el & cur_el = (*mod_elements)[i];
     switch (cur_el.type) {
     case MOD_INVALID:
@@ -195,7 +195,7 @@ ControlBase::CheckModifiers(HttpRequestData * request_data)
     return true;
   }
 
-  for (int i = 0; i < mod_elements->length(); i++) {
+  for (intptr_t i = 0; i < mod_elements->length(); i++) {
     modifier_el & cur_el = (*mod_elements)[i];
 
     switch (cur_el.type) {

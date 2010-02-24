@@ -37,6 +37,8 @@
   prevent multiple processes from accessing the same database.
 
 */
+#include "ink_config.h"
+
 #include "SimpleDBM.h"
 
 // sqlite3 prepared statement SQL. TODO: We might not be able to

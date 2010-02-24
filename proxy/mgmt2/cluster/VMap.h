@@ -34,10 +34,7 @@
 #ifndef _VMAP_H
 #define _VMAP_H
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "ink_mutex.h"
+#include "inktomi++.h"
 
 #ifdef _WIN32
 /* Currently, iphlpapi.h is not present in VC98\include;

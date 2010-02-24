@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
+#include "ink_platform.h"
 #include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 #include "ink_assert.h"
 
@@ -49,7 +51,16 @@
 SimpleQueue::SimpleQueue()
 {
   ink_mutex_init(&accessLock, "SimpleQueue Lock");
+#if (HOST_OS == darwin)
+  static int qnum = 0;
+  char sname[NAME_MAX];
+  qnum++;
+  snprintf(sname,NAME_MAX,"%s%d","SimpleQueueLock",qnum);
+  ink_sem_unlink(sname); // FIXME: remove, semaphore should be properly deleted after usage
+  waitSema = ink_sem_open(sname, O_CREAT | O_EXCL, 0777, 0);
+#else /* !darwin */
   ink_sem_init(&waitSema, 0);
+#endif /* !darwin */
   head = NULL;
   tail = NULL;
 }
@@ -75,7 +86,11 @@ SimpleQueue::~SimpleQueue()
   }
 
   ink_mutex_destroy(&accessLock);
+#if (HOST_OS == darwin)
+  ink_sem_close(waitSema);
+#else
   ink_sem_destroy(&waitSema);
+#endif
 }
 
 //
@@ -91,8 +106,11 @@ SimpleQueue::dequeue()
   void *data;
 
   // Wait for something to be on the queue
+#if (HOST_OS == darwin)
+  ink_sem_wait(waitSema);
+#else
   ink_sem_wait(&waitSema);
-
+#endif
   ink_mutex_acquire(&accessLock);
 
   ink_assert(head != NULL && tail != NULL);
@@ -129,8 +147,11 @@ SimpleQueue::pop()
   void *data;
 
   // Wait for something to be on the queue
+#if (HOST_OS == darwin)
+  ink_sem_wait(waitSema);
+#else
   ink_sem_wait(&waitSema);
-
+#endif
   ink_mutex_acquire(&accessLock);
 
   ink_assert(head != NULL && tail != NULL);
@@ -182,7 +203,11 @@ SimpleQueue::enqueue(void *data)
   }
 
   ink_mutex_release(&accessLock);
+#if (HOST_OS == darwin)
+  ink_sem_post(waitSema);
+#else
   ink_sem_post(&waitSema);
+#endif
 }
 
 //

@@ -32,6 +32,7 @@
  * 
  ***************************************************************************/
 
+#include "ink_config.h"
 #include "ink_sock.h"
 #include "ink_string.h"
 #include "NetworkUtilsRemote.h"
@@ -140,7 +141,7 @@ socket_test(int fd)
  *        goes back to just sitting and listening for connection.
  ***************************************************************************/
 INKError
-connect()
+ts_connect()
 {
   struct sockaddr_un client_sock;
   struct sockaddr_un client_event_sock;
@@ -161,8 +162,11 @@ connect()
   memset(&client_sock, 0, sizeof(sockaddr_un));
   client_sock.sun_family = AF_UNIX;
   ink_strncpy(client_sock.sun_path, main_socket_path, sizeof(client_sock.sun_path));
+#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+  sockaddr_len = sizeof(sockaddr_un);
+#else
   sockaddr_len = sizeof(client_sock.sun_family) + strlen(client_sock.sun_path);
-
+#endif
   // connect call
   if (connect(main_socket_fd, (struct sockaddr *) &client_sock, sockaddr_len) < 0) {
     //fprintf(stderr, "[connect] ERROR (main_socket_fd %d): %s\n", main_socket_fd, strerror(int(errno)));
@@ -183,8 +187,11 @@ connect()
   memset(&client_event_sock, 0, sizeof(sockaddr_un));
   client_event_sock.sun_family = AF_UNIX;
   ink_strncpy(client_event_sock.sun_path, event_socket_path, sizeof(client_sock.sun_path));
+#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+  sockaddr_len = sizeof(sockaddr_un);
+#else
   sockaddr_len = sizeof(client_event_sock.sun_family) + strlen(client_event_sock.sun_path);
-
+#endif
   // connect call
   if (connect(event_socket_fd, (struct sockaddr *) &client_event_sock, sockaddr_len) < 0) {
     //fprintf(stderr, "[connect] ERROR (event_socket_fd %d): %s\n", event_socket_fd, strerror(int(errno)));
@@ -255,7 +262,7 @@ reconnect()
   // use the socket_path that was called by remote client on first init
   // use connect instead of INKInit() b/c if TM restarted, client-side tables 
   // would be recreated; just want to reconnect to same socket_path
-  err = connect();
+  err = ts_connect();
   if (err != INK_ERR_OKAY)      // problem establishing connection
     return err;
 

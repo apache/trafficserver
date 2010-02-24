@@ -218,7 +218,7 @@ struct CacheContinuation:public Continuation
     ink_assert(rw_buf_msg == 0);
     ink_assert(rw_buf_msg_len);
     if (rw_buf_msg_len <= DEFAULT_MAX_BUFFER_SIZE) {
-      rw_buf_msg = new_IOBufferData(buffer_size_to_index(rw_buf_msg_len));
+      rw_buf_msg = new_IOBufferData(buffer_size_to_index(rw_buf_msg_len, MAX_BUFFER_SIZE_INDEX));
     } else {
       rw_buf_msg = new_xmalloc_IOBufferData(xmalloc(rw_buf_msg_len), rw_buf_msg_len);
     }
@@ -812,7 +812,6 @@ event_reply_may_have_moi(int event)
   case CACHE_EVENT_LINK:
   case CACHE_EVENT_LINK_FAILED:
   case CACHE_EVENT_OPEN_READ_FAILED:
-  case CACHE_EVENT_OPEN_READ_FAILED_IN_PROGRESS:
   case CACHE_EVENT_OPEN_WRITE_FAILED:
   case CACHE_EVENT_REMOVE_FAILED:
   case CACHE_EVENT_UPDATE_FAILED:
@@ -829,7 +828,6 @@ event_is_failure(int event)
   switch (event) {
   case CACHE_EVENT_LOOKUP_FAILED:
   case CACHE_EVENT_OPEN_READ_FAILED:
-  case CACHE_EVENT_OPEN_READ_FAILED_IN_PROGRESS:
   case CACHE_EVENT_OPEN_WRITE_FAILED:
   case CACHE_EVENT_UPDATE_FAILED:
   case CACHE_EVENT_REMOVE_FAILED:

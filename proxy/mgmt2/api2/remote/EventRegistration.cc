@@ -31,13 +31,14 @@
  * 
  ***************************************************************************/
 
+#include "inktomi++.h"
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <string.h>
 
 #include "ink_thread.h"
-#include "inktomi++.h"
+
 #include "MgmtSocket.h"
 
 #include "INKMgmtAPI.h"

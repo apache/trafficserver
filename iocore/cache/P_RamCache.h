@@ -64,7 +64,7 @@ struct RamCache
   ink64 objects;
   ink64 partition_size;
   ink64 seen_size;
-  int cutoff_size;
+  inku32 cutoff_size;
   RamCachePartition *partition;
   RamCachePartition one_partition;
   Part *part;                   // back pointer to partition

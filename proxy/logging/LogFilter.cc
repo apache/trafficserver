@@ -26,9 +26,8 @@
 
  
  ***************************************************************************/
-#include "ink_unused.h"
+#include "inktomi++.h"
 
-#include "ink_platform.h"
 #include "Resource.h"
 #include "Error.h"
 #include "LogUtils.h"

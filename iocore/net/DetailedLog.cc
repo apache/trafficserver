@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
 #include "DetailedLog.h"
 
 static pthread_mutex_t logMutex = PTHREAD_MUTEX_INITIALIZER;

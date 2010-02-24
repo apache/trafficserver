@@ -21,9 +21,10 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
+#include "ink_platform.h"
 #include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 
-#include "ink_platform.h"
 #include "ink_assert.h"
 #include "ink_resource.h"
 #include "ink_error.h"

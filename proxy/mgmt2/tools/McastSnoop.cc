@@ -31,13 +31,14 @@
  *
  ******************************************************************/
 
+#include "inktomi++.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "Tokenizer.h"
-#include "inktomi++.h"
+
 
 char version_str[] = "2.0";
 int packet_count = 0;

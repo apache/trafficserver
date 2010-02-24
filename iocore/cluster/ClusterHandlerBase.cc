@@ -73,7 +73,7 @@ ClusterControl::real_alloc_data(int read_access, bool align_ink32_on_non_ink64_b
 
   ink_assert(!data);
   if ((len + DATA_HDR + sizeof(ink32)) <= DEFAULT_MAX_BUFFER_SIZE) {
-    size_index = buffer_size_to_index(len + DATA_HDR + sizeof(ink32));
+    size_index = buffer_size_to_index(len + DATA_HDR + sizeof(ink32), MAX_BUFFER_SIZE_INDEX);
     iob_block = new_IOBufferBlock();
     iob_block->alloc(size_index);       // aligns on 8 byte boundary
     real_data = (ink64 *) iob_block->buf();
@@ -1316,8 +1316,8 @@ ClusterHandler::compute_active_channels()
         printf("ch[%d] vc=0x%p remote_free=%d last_local_free=%d\n", i, vc,
                vc->remote_free, vc->last_local_free);
         printf("  r_bytes=%d r_done=%d w_bytes=%d w_done=%d\n",
-               vc->read.vio.nbytes, vc->read.vio.ndone,
-               vc->write.vio.nbytes, vc->write.vio.ndone);
+               (int)vc->read.vio.nbytes, (int)vc->read.vio.ndone,
+               (int)vc->write.vio.nbytes, (int)vc->write.vio.ndone);
       }
     }
   }

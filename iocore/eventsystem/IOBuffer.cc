@@ -36,9 +36,9 @@ inkcoreapi Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 inkcoreapi ClassAllocator<MIOBuffer> ioAllocator("ioAllocator", DEFAULT_BUFFER_NUMBER);
 inkcoreapi ClassAllocator<IOBufferData> ioDataAllocator("ioDataAllocator", DEFAULT_BUFFER_NUMBER);
 inkcoreapi ClassAllocator<IOBufferBlock> ioBlockAllocator("ioBlockAllocator", DEFAULT_BUFFER_NUMBER);
-int default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
-int default_small_iobuffer_size = DEFAULT_SMALL_BUFFER_SIZE;
-int max_iobuffer_size = DEFAULT_BUFFER_SIZES - 1;
+ink64 default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
+ink64 default_small_iobuffer_size = DEFAULT_SMALL_BUFFER_SIZE;
+ink64 max_iobuffer_size = DEFAULT_BUFFER_SIZES - 1;
 
 //
 // Initialization
@@ -49,8 +49,8 @@ init_buffer_allocators()
   char *name;
 
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
-    int s = DEFAULT_BUFFER_BASE_SIZE * (1 << i);
-    int a = DEFAULT_BUFFER_ALIGNMENT;
+    ink64 s = DEFAULT_BUFFER_BASE_SIZE * (((ink64)1) << i);
+    ink64 a = DEFAULT_BUFFER_ALIGNMENT;
     int n = i <= default_large_iobuffer_size ? DEFAULT_BUFFER_NUMBER : DEFAULT_HUGE_BUFFER_NUMBER;
     if (s < a)
       a = s;
@@ -61,10 +61,10 @@ init_buffer_allocators()
   }
 }
 
-int
+ink64
 MIOBuffer::remove_append(IOBufferReader * r)
 {
-  int l = 0;
+  ink64 l = 0;
   while (r->block) {
     Ptr<IOBufferBlock> b = r->block;
     r->block = r->block->next;
@@ -81,15 +81,15 @@ MIOBuffer::remove_append(IOBufferReader * r)
   return l;
 }
 
-int
-MIOBuffer::write(const void *abuf, int alen)
+ink64
+MIOBuffer::write(const void *abuf, ink64 alen)
 {
   const char *buf = (const char*)abuf;
-  int len = alen;
+  ink64 len = alen;
   while (len) {
     if (!_writer)
       add_block();
-    int f = _writer->write_avail();
+    ink64 f = _writer->write_avail();
     f = f < len ? f : len;
     if (f > 0) {
       ::memcpy(_writer->end(), buf, f);
@@ -115,10 +115,10 @@ MIOBuffer::write(const void *abuf, int alen)
    * and this space becomes available to the copy.
    *
    */
-int
-MIOBuffer::write_and_transfer_left_over_space(IOBufferReader * r, int alen, int offset)
+ink64
+MIOBuffer::write_and_transfer_left_over_space(IOBufferReader * r, ink64 alen, ink64 offset)
 {
-  int rval = write(r, alen, offset);
+  ink64 rval = write(r, alen, offset);
   // reset the end markers of the original so that it cannot
   // make use of the space in the current block
   if (r->mbuf->_writer)
@@ -134,22 +134,22 @@ MIOBuffer::write_and_transfer_left_over_space(IOBufferReader * r, int alen, int 
 #endif
 
 
-int
-MIOBuffer::write(IOBufferReader * r, int alen, int offset)
+ink64
+MIOBuffer::write(IOBufferReader * r, ink64 alen, ink64 offset)
 {
-  int len = alen;
+  ink64 len = alen;
   IOBufferBlock *b = r->block;
   offset += r->start_offset;
 
   while (b && len > 0) {
-    int max_bytes = b->read_avail();
+    ink64 max_bytes = b->read_avail();
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
       b = b->next;
       continue;
     }
-    int bytes;
+    ink64 bytes;
     if (len<0 || len>= max_bytes)
       bytes = max_bytes;
     else
@@ -165,8 +165,8 @@ MIOBuffer::write(IOBufferReader * r, int alen, int offset)
   return alen - len;
 }
 
-int
-MIOBuffer::puts(char *s, int len)
+ink64
+MIOBuffer::puts(char *s, ink64 len)
 {
   char *pc = end();
   char *pb = s;
@@ -174,7 +174,7 @@ MIOBuffer::puts(char *s, int len)
     if (len-- <= 0)
       return -1;
     if (!*pb || *pb == '\n') {
-      int n = (int) (pb - s);
+      ink64 n = (ink64) (pb - s);
       memcpy(end(), s, n + 1);  // Upto and including '\n'
       end()[n + 1] = 0;
       fill(n + 1);
@@ -186,16 +186,16 @@ MIOBuffer::puts(char *s, int len)
   return 0;
 }
 
-int
-IOBufferReader::read(void *ab, int len)
+ink64
+IOBufferReader::read(void *ab, ink64 len)
 {
   char *b = (char*)ab;
-  int max_bytes = read_avail();
-  int bytes = len <= max_bytes ? len : max_bytes;
-  int n = bytes;
+  ink64 max_bytes = read_avail();
+  ink64 bytes = len <= max_bytes ? len : max_bytes;
+  ink64 n = bytes;
 
   while (n) {
-    int l = block_read_avail();
+    ink64 l = block_read_avail();
     if (n < l)
       l = n;
     ::memcpy(b, start(), l);
@@ -206,22 +206,22 @@ IOBufferReader::read(void *ab, int len)
   return bytes;
 }
 
-int
-IOBufferReader::memchr(char c, int len, int offset)
+ink64
+IOBufferReader::memchr(char c, ink64 len, ink64 offset)
 {
   IOBufferBlock *b = block;
   offset += start_offset;
-  int o = offset;
+  ink64 o = offset;
 
   while (b && len) {
-    int max_bytes = b->read_avail();
+    ink64 max_bytes = b->read_avail();
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
       b = b->next;
       continue;
     }
-    int bytes;
+    ink64 bytes;
     if (len<0 || len>= max_bytes)
       bytes = max_bytes;
     else
@@ -229,7 +229,7 @@ IOBufferReader::memchr(char c, int len, int offset)
     char *s = b->start() + offset;
     char *p = (char *) ink_memchr(s, c, bytes);
     if (p)
-      return (int) (o - start_offset + p - s);
+      return (ink64) (o - start_offset + p - s);
     o += bytes;
     len -= bytes;
     b = b->next;
@@ -240,21 +240,21 @@ IOBufferReader::memchr(char c, int len, int offset)
 }
 
 char *
-IOBufferReader::memcpy(void *ap, int len, int offset)
+IOBufferReader::memcpy(void *ap, ink64 len, ink64 offset)
 {
   char *p = (char*)ap;
   IOBufferBlock *b = block;
   offset += start_offset;
 
   while (b && len) {
-    int max_bytes = b->read_avail();
+    ink64 max_bytes = b->read_avail();
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
       b = b->next;
       continue;
     }
-    int bytes;
+    ink64 bytes;
     if (len<0 || len>= max_bytes)
       bytes = max_bytes;
     else

@@ -31,6 +31,7 @@
 
  ****************************************************************************/
 
+#include "ink_config.h"
 #include "ink_time.h"
 #include "ink_assert.h"
 #include "ink_port.h"

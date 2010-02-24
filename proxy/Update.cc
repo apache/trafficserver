@@ -21,20 +21,11 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
+#include "inktomi++.h"
 
-
-/****************************************************************************
-
-  Update.cc
-
-  
-****************************************************************************/
-
-#include "ink_platform.h"
 #include "Main.h"
 #include "Update.h"
-#include "Config.h"
+#include "ProxyConfig.h"
 #include "StatSystem.h"
 #include "HttpUpdateSM.h"
 #include "HttpDebugNames.h"
@@ -2323,7 +2314,7 @@ HtmlParser::ValidSupportedProtoScheme(char *p)
 int
 HtmlParser::ExtractURL(char **url, char **url_end)
 {
-  int n;
+  intptr_t n;
 
   // '#' considerations
   if (_attr_value_hash_char_index >= 0) {
@@ -2341,7 +2332,7 @@ HtmlParser::ExtractURL(char **url, char **url_end)
     if (_html_doc_base) {
       _html_doc_base.clear();
     }
-    int n;
+    intptr_t n;
     for (n = 0; n < _attr_value.length(); ++n) {
       _html_doc_base(_html_doc_base.length()) = _attr_value[n];
     }
@@ -2388,7 +2379,7 @@ HtmlParser::ExtractURL(char **url, char **url_end)
   }
 
   if (_attr_value.length() > 1) {
-    *url = &_attr_value[0];
+    *url = &_attr_value[(intptr_t)0];
     *url_end = &_attr_value[_attr_value.length() - 2];
     return 1;
 
@@ -2474,7 +2465,7 @@ HtmlParser::ConstructURL(char **url, char **url_end)
     if (base)
       delete base;
 
-    *url = &_result[0];
+    *url = &_result[(intptr_t)0];
     *url_end = &_result[_result.length() - 3];  // -1 (real len)
     // -1 (skip null)
     // -1 (zero base)

@@ -30,15 +30,10 @@
  * 
  ***************************************************************************/
 
-#include "ink_platform.h"
-#include "ink_mutex.h"
-#include "ink_hash_table.h"
-#include "ink_sock.h"
-#include "Tokenizer.h"
+#include "inktomi++.h"
 #include "LocalManager.h"
 #include "Main.h"
 #include "MgmtSocket.h"
-
 #include "TSControlMain.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"

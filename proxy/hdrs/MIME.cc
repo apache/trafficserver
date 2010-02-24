@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
+#include "inktomi++.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include "inktomi++.h"
 #include "MIME.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"

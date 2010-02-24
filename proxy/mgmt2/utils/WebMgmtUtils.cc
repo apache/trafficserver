@@ -21,17 +21,11 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"        /* MAGIC_EDITING_TAG */
-/***************************************/
-
-#include "Compatability.h"
-#include "ink_bool.h"
+#include "inktomi++.h"
 #include "Main.h"
 #include "WebMgmtUtils.h"
 #include "BaseRecords.h"
-#include "Tokenizer.h"
 #include "RecordsConfig.h"
-#include "ink_regex-3.6.h"
 
 /****************************************************************************
  *

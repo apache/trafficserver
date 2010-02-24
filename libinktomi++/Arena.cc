@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
+#include "inktomi++.h"
 #include <assert.h>
 #include <string.h>
-#include "inktomi++.h"
 
 
 #define DEFAULT_ALLOC_SIZE   1024

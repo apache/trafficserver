@@ -26,12 +26,7 @@
 
  
  ***************************************************************************/
-#include "ink_unused.h"
-
-#include "ink_platform.h"
-#include "List.h"
-#include "Resource.h"
-#include "Error.h"
+#include "inktomi++.h"
 
 #include "InkXml.h"
 

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
 /*
  *
  * Alarms.cc
@@ -32,8 +31,7 @@
  * 
  */
 
-#include "ink_platform.h"
-#include "Compatability.h"
+#include "inktomi++.h"
 #include "Main.h"
 #include "Alarms.h"
 #include "Diags.h"
@@ -635,9 +633,9 @@ Alarms::execAlarmBin(const char *desc)
   } else {
     int res;
     if (alarm_email_from_name && alarm_email_from_addr && alarm_email_to_addr) {
-      res = execl(cmd_line, alarm_bin, desc, alarm_email_from_name, alarm_email_from_addr, alarm_email_to_addr, NULL);
+      res = execl(cmd_line, alarm_bin, desc, alarm_email_from_name, alarm_email_from_addr, alarm_email_to_addr, (char*)NULL);
     } else {
-      res = execl(cmd_line, alarm_bin, desc, NULL);
+      res = execl(cmd_line, alarm_bin, desc, (char*)NULL);
     }
     _exit(res);
   }

@@ -31,7 +31,7 @@
 #include "inktomi++.h"
 #include "ink_unused.h"
 #include "ink_platform.h"
-#if (HOST_OS == linux) || (HOST_OS == freebsd)
+#if (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin)
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
@@ -49,16 +49,22 @@ ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
 {
   *name = 0;
   *release = 0;
-#if (HOST_OS == freebsd)
+#if (HOST_OS == freebsd) || (HOST_OS == darwin)
   int mib[2];
+  size_t len = namelen;
   mib[0] = CTL_KERN;
   mib[1] = KERN_OSTYPE;
-  if (sysctl(mib, 2, name, (size_t *) & namelen, NULL, 0) == -1)
+
+  if (sysctl(mib, 2, name, &len, NULL, 0) == -1)
     return -1;
+
+  len = releaselen;
   mib[0] = CTL_KERN;
   mib[1] = KERN_OSRELEASE;
-  if (sysctl(mib, 2, release, (size_t *) & releaselen, NULL, 0) == -1)
+
+  if (sysctl(mib, 2, release, &len, NULL, 0) == -1)
     return -1;
+
   return 0;
 #elif (HOST_OS == linux)
   struct utsname buf;

@@ -74,7 +74,7 @@ test(void *d)
 int
 main(int argc, char *argv[])
 {
-  int threads[NTHREADS];
+  ink_thread threads[NTHREADS];
   //void *status;
   int i;
 

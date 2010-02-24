@@ -46,7 +46,9 @@
  * bool, true, and false already declared in C++
  */
 #if !defined (bool)
+#if (HOST_OS != freebsd) && (HOST_OS != solaris)
 #define bool int
+#endif
 #endif
 
 #if !defined (true)

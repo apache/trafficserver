@@ -102,7 +102,12 @@ public:
 
 };
 
-INK_INLINE bool operator<(const SRV & left, const SRV & right);
+inline bool
+operator<(const SRV & left, const SRV & right)
+{
+  return (left.getPriority() < right.getPriority());    /* lower priorities first :) */
+}
+
 extern ClassAllocator<SRV> SRVAllocator;
 
 class SRVHosts
