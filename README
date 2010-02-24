@@ -62,6 +62,39 @@ plugins to build large scale web applications.
     libsqlite3-dev (or optionally, libdb-dev)
     libpcre3-dev
 
+  FreeBSD 7.2,8.0:
+    GCC 4.2.1 compiler suite
+    autoconf 
+    automake
+    libtool
+    tcl
+    expat
+    openssl
+    pcre
+    sqlite3 (or optionally, db4)
+
+  OpenSolaris osol0906:
+    GCC 4.3.2 compiler suite (dev collection)
+    autoconf 
+    automake
+    libtool
+    tcl
+    expat
+    openssl
+    pcre
+    sqlite3 (or optionally, db4)
+
+  OSX 10.5:
+    GCC 4.2.4 compiler suite (ports collection)
+    autoconf 
+    automake
+    libtool
+    tcl
+    expat
+    openssl
+    pcre
+    sqlite3 (or optionally, db4)
+
 For using sqlite3, we only support v3.5 or later (basically, we require the v2 APIs).
 
 

@@ -1,17 +1,41 @@
 APACHE TRAFFIC SERVER INSTALLATION
 
  Quick Start - Unix
-  ------------------
+  -----------------
 
   For complete installation documentation, see the on-line documentation at
 
         http://incubator.apache.org/trafficserver/docs/admin/
 
+  Configure & Build:
+    On Linux, OSX and FreeBSD:
+      $ ./configure [--prefix=PREFIX]
+      $ make
 
-     $ ./configure [--prefix=PREFIX]
-     $ make
-     $ make install
-     $ PREFIX/bin/trafficserver start
+    On OpenSolaris:
+      $ ./configure [--prefix=PREFIX] CC=/usr/bin/gcc-4.3.2 CXX=/usr/bin/g++-4.3.2
+      $ make
+
+
+  Next set the cluster interface in 'records.config'
+    On Linux: e.g
+      CONFIG proxy.config.cluster.ethernet_interface STRING eth0
+    On OSX: e.g
+      CONFIG proxy.config.cluster.ethernet_interface STRING en0
+    on FreeBSD: e.g.
+      CONFIG proxy.config.cluster.ethernet_interface STRING em0
+    On OpenSolaris e.g.
+      CONFIG proxy.config.cluster.ethernet_interface STRING e1000g0
+
+  To install:
+    $ sudo make install
+
+  To start Traffic Server process stack (TC, TM, TS):
+    On Linux:
+      $ sudo PREFIX/bin/trafficserver start
+
+    On FreeBSD, OSX and OpenSolaris:
+      $ sudo PREFIX/bin/traffic_cop
 
 
   The default PREFIX is /usr/local, unless explicitly specified.
