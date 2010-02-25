@@ -71,3 +71,10 @@ test/deft/defs/climatelab.def
 test/deft/defs/localhost.def
 test/plugin/INKHttpHooksTrans/altSelect.notes
 proxy/mgmt2/html2/tune/navigation_tree.xml
+proxy/mgmt2/cli2/hashtable.cc
+libinktomi++/ink_res_init.cc
+libinktomi++/ink_res_mkquery.cc
+libinktomi++/ink_rand.h
+libinktomi++/ink_rand.cc
+README.libev
+stamp-h1
