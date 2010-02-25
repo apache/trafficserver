@@ -1,2 +1,0 @@
-#!/bin/sh
-./configure CFLAGS="$CFLAGS -Dinline_size= -DEV_MINPRI=0 -DEV_MAXPRI=0"
