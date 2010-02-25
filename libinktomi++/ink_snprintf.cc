@@ -61,7 +61,7 @@ ink_snprintf(char *str, size_t count, const char *fmt, ...)
 int
 ink_vsprintf(char *str, const char *fmt, va_list args)
 {
-  return ink_vsnprintf(str, 0, fmt, args);
+  return vsprintf(str, fmt, args);
 }
 
 int
@@ -73,7 +73,7 @@ ink_sprintf(char *str, const char *fmt, ...)
   VA_SHIFT(str, char *);
   VA_SHIFT(count, size_t);
   VA_SHIFT(fmt, char *);
-  int len = str ? ink_vsnprintf(str, 0, fmt, ap) : 0;
+  int len = str ? ink_vsprintf(str, fmt, ap) : 0;
 
   va_end(ap);
   return (len);
