@@ -823,8 +823,6 @@ iocore_include_dirs="-I\$(top_srcdir)/librecords \
 
 AC_DEFINE([HTTP_CACHE])
 
-AC_LIBOBJ([ink_pread_linux])
-
 # Testing Framework suffix generation hack
 TFW_PACKAGE_SUFFIX=$os_type
 

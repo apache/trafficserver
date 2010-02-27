@@ -126,21 +126,6 @@ SocketManager::pread(int fd, void *buf, int size, off_t offset, char *tag)
 
 
 inline int
-SocketManager::read_from_middle_of_file(int fd, void *buf, int size, off_t offset, char *tag)
-{
-  int r;
-  if (monitor_read_activity)
-    monitor_disk_read(fd, buf, size, offset, tag);
-  do {
-    if ((r =::read_from_middle_of_file(fd, buf, size, offset)) >= 0)
-      break;
-    r = -errno;
-  } while (r == -EINTR);
-  return r;
-}
-
-
-inline int
 SocketManager::readv(int fd, struct iovec *vector, size_t count, teFDType eT)
 {
   int r;
@@ -258,23 +243,6 @@ SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char *tag)
   do {
     if (unlikely((r =::pwrite(fd, buf, size, offset)) < 0))
       r = -errno;
-  } while (r == -EINTR);
-  return r;
-}
-
-
-inline int
-SocketManager::write_to_middle_of_file(int fd, void *buf, int size, off_t offset, char *tag)
-{
-  int r;
-
-  if (monitor_write_activity)
-    monitor_disk_write(fd, buf, size, offset, tag);
-
-  do {
-    if (likely((r =::write_to_middle_of_file(fd, buf, size, offset)) >= 0))
-      break;
-    r = -errno;
   } while (r == -EINTR);
   return r;
 }

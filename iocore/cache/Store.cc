@@ -1111,7 +1111,7 @@ Store::clear(char *filename, bool clear_dirs)
       if (fd < 0)
         return -1;
       for (int b = 0; ds->blocks; b++)
-        if (socketManager.write_to_middle_of_file(fd, z, STORE_BLOCK_SIZE, ds->offset + (b * STORE_BLOCK_SIZE)) < 0) {
+        if (socketManager.pwrite(fd, z, STORE_BLOCK_SIZE, ds->offset + (b * STORE_BLOCK_SIZE)) < 0) {
           close(fd);
           return -1;
         }

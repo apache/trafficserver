@@ -82,7 +82,6 @@ libinktomi___a_SOURCES = \
   ink_platform.h \
   InkPool.h \
   ink_port.h \
-  ink_pread.h \
   ink_queue.cc \
   ink_queue.h \
   ink_queue_utils.c \
