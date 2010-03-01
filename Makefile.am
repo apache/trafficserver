@@ -33,10 +33,6 @@ DISTCHECK_CONFIGURE_FLAGS=--with-user=${DIST_BUILD_USER} --with-group=${DIST_BUI
 
 EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LICENSE example contrib
 
-# This hook happens before the "global" chmod og+rw ... :/
-#dist-hook:
-#	find $(distdir) -type d -exec chmod og-w {} \;
-
 installcheck-local:
 	$(DESTDIR)$(bindir)/traffic_server -R 1
 
@@ -44,12 +40,30 @@ installcheck-local:
 doxygen:
 	$(MAKE) -C doc doxygen
 
+asf-distdir:
+	@$(am__remove_distdir)
+	svn export . $(distdir)
+	@cd $(distdir)
+	autoreconf -i
+	@cd ..
+
+asf-dist: asf-distdir
+	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2
+	@$(am__remove_distdir)
+
+asf-dist-sign: asf-dist 
+	md5sum $(distdir).tar.bz2 >$(distdir).tar.bz2.md5
+	sha1sum $(distdir).tar.bz2 >$(distdir).tar.bz2.sha1
+	gpg --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
+
 help:
 	@echo 'all            default target for building the package' && \
    echo 'check          run the test suite, if any' && \
    echo 'clean          remove whatever make created' && \
    echo 'distclean      remove whatever configure created' && \
-   echo 'dist           recreate source package' && \
+   echo 'dist           DEPRECATED: recreate source package' && \
+   echo 'asf-dist       recreate source package' && \
+   echo 'asf-dist-sign  recreate source package, with checksums and signature' && \
    echo 'distcheck      verify dist by performing VPATH build and then distclean' && \
    echo 'doxygen        generate doxygen docs in doc/html dir' && \
    echo 'help           display this list of make targets' && \
