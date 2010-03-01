@@ -31,7 +31,7 @@
 AC_INIT([Apache Traffic Server], [2.1.0], [trafficserver-dev@incubator.apache.org], [trafficserver],[http://incubator.apache.org/projects/trafficserver.html])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign no-installinfo no-installman 1.9.2])
+AM_INIT_AUTOMAKE([tar-ustar -Wall -Werror foreign no-installinfo no-installman 1.9.2])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([m4])
 AM_CONFIG_HEADER([config.h])
