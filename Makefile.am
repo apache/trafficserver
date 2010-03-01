@@ -8,6 +8,7 @@
 #  to you under the Apache License, Version 2.0 (the
 #  "License"); you may not use this file except in compliance
 #  with the License.  You may obtain a copy of the License at
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
@@ -30,7 +31,11 @@ DIST_BUILD_USER=`id -nu`
 DIST_BUILD_USER_GROUP=`id -ng`
 DISTCHECK_CONFIGURE_FLAGS=--with-user=${DIST_BUILD_USER} --with-group=${DIST_BUILD_USER_GROUP}
 
-EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LICENSE README.libev
+EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LICENSE example contrib
+
+# This hook happens before the "global" chmod og+rw ... :/
+#dist-hook:
+#	find $(distdir) -type d -exec chmod og-w {} \;
 
 installcheck-local:
 	$(DESTDIR)$(bindir)/traffic_server -R 1
