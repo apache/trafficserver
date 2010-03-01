@@ -310,6 +310,9 @@ AC_SUBST([pkgsysconfdir],["$sysconfdir/trafficserver"])
 # default: /usr/local/libexec/trafficserver
 AC_SUBST([pkglibexecdir],["$libexecdir/trafficserver"])
 
+# default: /usr/local/share/trafficserver
+AC_SUBST([pkgdatadir],["$datadir/trafficserver"])
+
 # -----------------------------------------------------------------------------
 # 3. CHECK FOR PROGRAMS
 
