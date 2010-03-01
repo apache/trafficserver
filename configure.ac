@@ -27,12 +27,13 @@
 # -----------------------------------------------------------------------------
 # 1. INITIALIZATION
 
-AC_INIT([Apache Traffic Server], [2.0.0-alpha], [trafficserver-dev@incubator.apache.org], [trafficserver],[http://incubator.apache.org/projects/trafficserver.html])
+AC_INIT([Apache Traffic Server], [2.0.0-alpha], [trafficserver-dev@incubator.apache.org], [apache-trafficserver-incubating],[http://incubator.apache.org/projects/trafficserver.html])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([tar-ustar -Wall -Werror foreign no-installinfo no-installman 1.9.2])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([m4])
+AC_SUBST([PACKAGE],[trafficserver])
 
 #
 # Host detection
@@ -299,16 +300,16 @@ fi
 AC_SUBST([logdir],["$localstatedir/log"])
 
 # default: /usr/local/var/log/trafficserver
-AC_SUBST([pkglogdir],["$logdir/$PACKAGE_TARNAME"])
+AC_SUBST([pkglogdir],["$logdir/$PACKAGE"])
 
 # default: /usr/local/var/trafficserver
-AC_SUBST([pkglocalstatedir],["$localstatedir/$PACKAGE_TARNAME"])
+AC_SUBST([pkglocalstatedir],["$localstatedir/$PACKAGE"])
 
 # default: /usr/local/etc/trafficserver
-AC_SUBST([pkgsysconfdir],["$sysconfdir/$PACKAGE_TARNAME"])
+AC_SUBST([pkgsysconfdir],["$sysconfdir/$PACKAGE"])
 
 # default: /usr/local/libexec/trafficserver
-AC_SUBST([pkglibexecdir],["$libexecdir/$PACKAGE_TARNAME"])
+AC_SUBST([pkglibexecdir],["$libexecdir/$PACKAGE"])
 
 # -----------------------------------------------------------------------------
 # 3. CHECK FOR PROGRAMS
