@@ -33,7 +33,6 @@ AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([tar-ustar -Wall -Werror foreign no-installinfo no-installman 1.9.2])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([m4])
-AC_SUBST([PACKAGE],[trafficserver])
 
 #
 # Host detection
@@ -300,16 +299,16 @@ fi
 AC_SUBST([logdir],["$localstatedir/log"])
 
 # default: /usr/local/var/log/trafficserver
-AC_SUBST([pkglogdir],["$logdir/$PACKAGE"])
+AC_SUBST([pkglogdir],["$logdir/trafficserver"])
 
 # default: /usr/local/var/trafficserver
-AC_SUBST([pkglocalstatedir],["$localstatedir/$PACKAGE"])
+AC_SUBST([pkglocalstatedir],["$localstatedir/trafficserver"])
 
 # default: /usr/local/etc/trafficserver
-AC_SUBST([pkgsysconfdir],["$sysconfdir/$PACKAGE"])
+AC_SUBST([pkgsysconfdir],["$sysconfdir/trafficserver"])
 
 # default: /usr/local/libexec/trafficserver
-AC_SUBST([pkglibexecdir],["$libexecdir/$PACKAGE"])
+AC_SUBST([pkglibexecdir],["$libexecdir/trafficserver"])
 
 # -----------------------------------------------------------------------------
 # 3. CHECK FOR PROGRAMS
