@@ -31,7 +31,11 @@ DIST_BUILD_USER=`id -nu`
 DIST_BUILD_USER_GROUP=`id -ng`
 DISTCHECK_CONFIGURE_FLAGS=--with-user=${DIST_BUILD_USER} --with-group=${DIST_BUILD_USER_GROUP}
 
-EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LICENSE
+EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LICENSE example contrib
+
+# This hook happens before the "global" chmod og+rw ... :/
+#dist-hook:
+#	find $(distdir) -type d -exec chmod og-w {} \;
 
 installcheck-local:
 	$(DESTDIR)$(bindir)/traffic_server -R 1
