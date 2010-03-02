@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-webuidir = $(pkgdatadir)/charting
+webuidir = $(DESTDIR)$(pkgdatadir)/charting
 dist_webui_DATA = \
 	Bandwidth_Savings.html \
 	Cache_Percent_Free.html \

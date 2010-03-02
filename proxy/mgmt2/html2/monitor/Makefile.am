@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-webuidir = $(pkgdatadir)/monitor
+webuidir = $(DESTDIR)$(pkgdatadir)/monitor
 dist_webui_DATA = \
 	m_alarm.ink \
 	m_blue_bar.ink \

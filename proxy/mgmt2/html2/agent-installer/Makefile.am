@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 
-webuidir = $(pkgdatadir)/agent-installer
+webuidir = $(DESTDIR)$(pkgdatadir)/agent-installer
 dist_webui_DATA = \
 	ftp.exp \
 	ftp.pl \
