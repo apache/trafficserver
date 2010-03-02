@@ -55,8 +55,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
 		 http://svn.apache.org/viewcvs?view=rev&rev=918101
     Jira: https://issues.apache.org/jira/browse/TS-225
     Submitted by: zwoop
-    +1: zwoop
-    +1: georgep
+    +1: zwoop, georgep, pquerna
 
 
 
