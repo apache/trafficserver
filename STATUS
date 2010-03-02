@@ -24,6 +24,15 @@ Contributors looking for a mission:
   * Open bugs in the bug database.
 
 
+
+CURRENT RELEASE NOTES
+
+  * This is a "stable" release, based primarily on existing Inktomi /
+    Yahoo code. For the latest, greatest features and performance, check
+    out the trunk.
+
+
+
 RELEASE SHOWSTOPPERS:
 
 A list of all bugs scheduled for this release can be found at
@@ -34,6 +43,20 @@ A list of all bugs scheduled for this release can be found at
 For the final 2.0.0 ATS release, see the bug list at
 
   http://bit.ly/ATS-2-0-0
+
+
+
+PATCHES PROPOSED TO BACKPORT FROM TRUNK:
+  [ New proposals should be added at the end of the list ]
+
+  * package: Support more Linux distros in RC / startup script
+    Trunk patch: http://svn.apache.org/viewcvs?view=rev&rev=918149
+    	  	 http://svn.apache.org/viewcvs?view=rev&rev=918103
+		 http://svn.apache.org/viewcvs?view=rev&rev=918101
+    Jira: https://issues.apache.org/jira/browse/TS-225
+    Submitted by: zwoop
+    +1: zwoop
+
 
 
 RELEASE PROCESS
