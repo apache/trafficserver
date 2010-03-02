@@ -19,7 +19,7 @@ dist_sysconf_DATA = english.dict
 
 SUBDIRS = agent-installer charting configure images include monitor mrtg tune
 
-install-exec-local:
+install-data-local:
 	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkgdatadir) \
 	$(DESTDIR)$(pkgdatadir)/agent-installer \
 	$(DESTDIR)$(pkgdatadir)/charting \
@@ -31,10 +31,10 @@ install-exec-local:
 	$(DESTDIR)$(pkgdatadir)/mrtg \
 	$(DESTDIR)$(pkgdatadir)/tune
 
-uninstall-local:
+uninstall-hook:
 	-rm -rf $(DESTDIR)$(pkgdatadir)
 
-webuidir = $(pkgdatadir)
+webuidir = $(DESTDIR)$(pkgdatadir)
 dist_webui_DATA = \
 	checkCookies.ink \
 	enableCookies.ink \
