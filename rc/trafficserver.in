@@ -48,7 +48,7 @@ elif [ -e /etc/redhat-release ]; then
     DISTRIB_ID="redhat" # also exists on Fedora
 elif [ -e /etc/lsb-release ]; then
     DISTRIB_ID="ubuntu"
-elif [ -e /etc/debian-version ]; then
+elif [ -e /etc/debian_version ]; then
     DISTRIB_ID="debian" # also exists on Ubuntu
 elif [ -e /etc/slackware-version ]; then
     DISTRIB_ID="slackware"
@@ -232,14 +232,14 @@ do_reload() {
 # main 
 case "$1" in
   start)
-        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
 	    [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
 	    do_start
 	    case "$?" in
 		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	    esac
-        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+        elif [ "$DISTRIB_ID" = "fedora" ]; then
             action "Starting $prog:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
         else
             echo "This script needs to be ported to this OS"
@@ -247,14 +247,14 @@ case "$1" in
         fi
 	;;
   stop)
-        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
 	    [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
 	    do_stop
 	    case "$?" in
 		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	    esac
-        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+        elif [ "$DISTRIB_ID" = "fedora" ]; then
             action "Stopping $prog:" killproc -p $TC_PIDFILE $TC_DAEMON
             action "Stopping $prog:" killproc -p $TM_PIDFILE $TM_DAEMON
             action "Stopping $prog:" killproc -p $TS_PIDFILE $TS_DAEMON
@@ -273,7 +273,7 @@ case "$1" in
 	#log_end_msg $?
 	#;;
   restart|force-reload)
-        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
 	#
 	# If the "reload" option is implemented then remove the
 	# 'force-reload' alias
@@ -294,7 +294,7 @@ case "$1" in
 		    log_end_msg 1
 		    ;;
 	    esac
-        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat"  ]; then
+        elif [ "$DISTRIB_ID" = "fedora" ]; then
             $0 'stop'
             $0 'start'
         else
@@ -303,7 +303,7 @@ case "$1" in
         fi
 	;;
   status)
-        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat"]; then
+        if [ "$DISTRIB_ID" = "fedora" ]; then
             status -p $PIDFILE $PROGRAM
         else
             echo "This script needs to be ported to this OS"
@@ -311,7 +311,7 @@ case "$1" in
         fi
         ;;
   condrestart)
-        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+        if [ "$DISTRIB_ID" = "fedora" ]; then
             if ! $0 'status'
             then
                 $0 'stop'
@@ -323,11 +323,11 @@ case "$1" in
         fi
     ;;
   *)
-        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
 	#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
 	#echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
 	    echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
-        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+        elif [ "$DISTRIB_ID" = "fedora" ]; then
             echo "Usage: $0 {start|stop|status|restart|condrestart}"
         else
             echo "This script needs to be ported to this OS"
