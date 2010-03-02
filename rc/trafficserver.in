@@ -239,7 +239,7 @@ case "$1" in
 		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	    esac
-        elif [ "$DISTRIB_ID" = "fedora" ]; then
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             action "Starting $prog:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
         else
             echo "This script needs to be ported to this OS"
@@ -254,7 +254,7 @@ case "$1" in
 		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	    esac
-        elif [ "$DISTRIB_ID" = "fedora" ]; then
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             action "Stopping $prog:" killproc -p $TC_PIDFILE $TC_DAEMON
             action "Stopping $prog:" killproc -p $TM_PIDFILE $TM_DAEMON
             action "Stopping $prog:" killproc -p $TS_PIDFILE $TS_DAEMON
@@ -294,7 +294,7 @@ case "$1" in
 		    log_end_msg 1
 		    ;;
 	    esac
-        elif [ "$DISTRIB_ID" = "fedora" ]; then
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             $0 'stop'
             $0 'start'
         else
@@ -303,7 +303,7 @@ case "$1" in
         fi
 	;;
   status)
-        if [ "$DISTRIB_ID" = "fedora" ]; then
+        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             status -p $PIDFILE $PROGRAM
         else
             echo "This script needs to be ported to this OS"
@@ -311,7 +311,7 @@ case "$1" in
         fi
         ;;
   condrestart)
-        if [ "$DISTRIB_ID" = "fedora" ]; then
+        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             if ! $0 'status'
             then
                 $0 'stop'
@@ -327,7 +327,7 @@ case "$1" in
 	#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
 	#echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
 	    echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
-        elif [ "$DISTRIB_ID" = "fedora" ]; then
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             echo "Usage: $0 {start|stop|status|restart|condrestart}"
         else
             echo "This script needs to be ported to this OS"
