@@ -16,7 +16,7 @@
 
 SUBDIRS = helper
 
-webuidir = $(pkgdatadir)/configure
+webuidir = $(DESTDIR)$(pkgdatadir)/configure
 dist_webui_DATA = \
 	c_autoconf_pac.ink \
 	c_autoconf_wpad.ink \

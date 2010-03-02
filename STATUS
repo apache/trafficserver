@@ -34,3 +34,10 @@ A list of all bugs scheduled for this release can be found at
 For the final 2.0.0 ATS release, see the bug list at
 
   http://bit.ly/ATS-2-0-0
+
+
+RELEASE PROCESS
+
+The Traffic Server release process is documented at
+
+    http://cwiki.apache.org/confluence/display/TS/ReleaseProcess

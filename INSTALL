@@ -7,11 +7,21 @@ APACHE TRAFFIC SERVER INSTALLATION
 
         http://incubator.apache.org/trafficserver/docs/admin/
 
-
+  Configure & Build:
+    On Linux:
      $ ./configure [--prefix=PREFIX]
      $ make
+
+  Next set the cluster interface in 'records.config'
+    On Linux: e.g
+      CONFIG proxy.config.cluster.ethernet_interface STRING eth0
+
+  To install:
      $ make install
-     $ PREFIX/bin/trafficserver start
+
+  To start Traffic Server process stack (TC, TM, TS):
+    On Linux:
+      $ sudo PREFIX/bin/trafficserver start
 
 
   The default PREFIX is /usr/local, unless explicitly specified.
