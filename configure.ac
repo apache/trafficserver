@@ -424,7 +424,8 @@ case $host_os in
     ;;
   solaris*)
     if test "x${base_cc}" = "xcc" ;then
-      common_opt="-mt -m64 -D__WORDSIZE=64" # FIXME: This should be detected
+      common_opt="-mt -m64 -D__WORDSIZE=64" # FIXME: arch should be detected
+      CCASFLAGS="-Wa,-32" # TODO: add 64bit support to atomic ops
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt -xO3"
       cxx_opt="-library=stlport4 -erroff"    
@@ -470,9 +471,9 @@ AS_IF([test "x$with_architecture" != "xno"],
   [CFLAGS="$CFLAGS -march=$with_architecture"; CXXFLAGS="$CXXFLAGS -march=$with_architecture"]
 )
 
-AC_CHECK_SIZEOF(int *) # test for 64-bit pointers, this permits CFLAGS=-m32 for 32-bit compiles on 64-bit systems
+AC_CHECK_SIZEOF(int *) # test for 64-bit pointers, this permits GCC CFLAGS=-m32 for 32-bit compiles on 64-bit systems
 
-# add a default march if there is not one set
+# GCC: add a default march if there is not one set
 if test "x${GCC}" = "xyes"; then
  if test "${ac_cv_sizeof_int_p}" = "4"; then
   case $CFLAGS in

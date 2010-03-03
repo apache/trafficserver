@@ -183,8 +183,8 @@ struct DNSEntry:Continuation
   bool written_flag;
   bool once_written_flag;
   bool last;
-  Queue<DNSEntry> dups;
-  Link<DNSEntry> dup_link;
+  LINK(DNSEntry, dup_link);
+  Que(DNSEntry, dup_link) dups;
 
   int mainEvent(int event, Event * e);
   int delayEvent(int event, Event * e);

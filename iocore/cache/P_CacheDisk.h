@@ -59,8 +59,8 @@ struct DiskPartBlockQueue
 {
   DiskPartBlock *b;
   int new_block;                /* whether an existing part or a new one */
-    Link<DiskPartBlockQueue> link;
-    DiskPartBlockQueue():b(NULL), new_block(0)
+  LINK(DiskPartBlockQueue, link);
+  DiskPartBlockQueue():b(NULL), new_block(0)
   {
   }
 };

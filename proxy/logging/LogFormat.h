@@ -149,7 +149,7 @@ private:
   LogFormatType m_format_type;
 
 public:
-  Link<LogFormat> link;
+  LINK(LogFormat, link);
 
 private:
   // -- member functions that are not allowed --
@@ -183,11 +183,11 @@ public:
   unsigned count();
   void display(FILE * fd = stdout);
 private:
-    Queue<LogFormat> m_format_list;
+  Queue<LogFormat> m_format_list;
 
   // -- member functions that are not allowed --
-    LogFormatList(const LogFormatList & rhs);
-    LogFormatList & operator=(const LogFormatList & rhs);
+  LogFormatList(const LogFormatList & rhs);
+  LogFormatList & operator=(const LogFormatList & rhs);
 };
 
 #endif

@@ -182,7 +182,7 @@ struct ConfigPart
   bool in_percent;
   int percent;
   CachePart *cachep;
-    Link<ConfigPart> link;
+  LINK(ConfigPart, link);
 };
 
 struct ConfigPartitions
@@ -190,7 +190,7 @@ struct ConfigPartitions
   int num_partitions;
   int num_http_partitions;
   int num_stream_partitions;
-    Queue<ConfigPart> cp_queue;
+  Queue<ConfigPart> cp_queue;
   void read_config_file();
   void BuildListFromString(char *config_file_path, char *file_buf);
   void clear_all(void)

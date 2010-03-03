@@ -281,10 +281,10 @@ private:
     char *filename;
     int is_ascii;
     char *header;
-      Link<PreDefinedFormatInfo> link;
+    LINK(PreDefinedFormatInfo, link);
 
-      PreDefinedFormatInfo(LogFormat * fmt, char *fname, int ascii,
-                           char *hdr):format(fmt), filename(fname), is_ascii(ascii), header(hdr)
+    PreDefinedFormatInfo(LogFormat * fmt, char *fname, int ascii,
+                         char *hdr):format(fmt), filename(fname), is_ascii(ascii), header(hdr)
     {
     };
   };

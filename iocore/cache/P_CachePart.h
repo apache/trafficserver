@@ -122,7 +122,7 @@ struct EvacuationBlock
   // we need to have a list of evacuationkeys because of collision.
   EvacuationKey evac_frags;
   CacheVC *earliest_evacuator;
-  Link<EvacuationBlock> link;
+  LINK(EvacuationBlock, link);
 };
 
 struct Part:public Continuation
@@ -148,8 +148,8 @@ struct Part:public Continuation
   int hit_evacuate_window;
   AIOCallbackInternal io;
 
-  Queue<CacheVC> agg;
-  Queue<CacheVC> stat_cache_vcs;
+  Queue<CacheVC, Continuation::Link_link> agg;
+  Queue<CacheVC, Continuation::Link_link> stat_cache_vcs;
   char *agg_buffer;
   int agg_todo_size;
   int agg_buf_pos;
@@ -277,7 +277,7 @@ struct CachePart
   int num_parts;
   Part **parts;
   DiskPart **disk_parts;
-    Link<CachePart> link;
+  LINK(CachePart, link);
   // per partition stats
   RecRawStatBlock *part_rsb;
 

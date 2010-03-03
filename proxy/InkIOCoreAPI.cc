@@ -29,8 +29,13 @@
 
 #include "inktomi++.h"
 #include "api/include/InkAPIPrivateIOCore.h"
+#if (HOST_OS == solaris) && !defined(__GNUC__)
+#include "P_EventSystem.h" // I_EventSystem.h
+#include "P_Net.h"         // I_Net.h
+#else
 #include "I_EventSystem.h"
 #include "I_Net.h"
+#endif
 #include "I_Cache.h"
 #include "I_HostDB.h"
 

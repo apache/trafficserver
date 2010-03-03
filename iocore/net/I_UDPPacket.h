@@ -72,7 +72,7 @@ public:
 
   int from_size;
 
-  Link<UDPPacket> link;
+  LINK(UDPPacket, link);
 };
 
 /**

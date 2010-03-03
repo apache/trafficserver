@@ -193,6 +193,12 @@ public:
   volatile int closed;
   NetState read;
   NetState write;
+
+  LINKM(UnixNetVConnection, read, ready_link);
+  SLINKM(UnixNetVConnection, read, enable_link);
+  LINKM(UnixNetVConnection, write, ready_link);
+  SLINKM(UnixNetVConnection, write, enable_link);
+
   ink_hrtime inactivity_timeout_in;
   ink_hrtime active_timeout_in;
 #ifdef INACTIVITY_TIMEOUT

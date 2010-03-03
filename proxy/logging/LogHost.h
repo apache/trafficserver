@@ -115,7 +115,7 @@ private:
 #endif
 
 public:
-  Link<LogHost> link;
+  LINK(LogHost, link);
 
 private:
   // -- member functions not allowed --

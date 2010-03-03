@@ -75,7 +75,7 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
     if (!(d->writers.head->first_key == cont->first_key))
       continue;
     if (allow_if_writers && d->num_writers < d->max_writers) {
-      d->writers.push(cont, cont->opendir_link);
+      d->writers.push(cont);
       d->num_writers++;
       cont->od = d;
       cont->write_vector = &d->vector;
@@ -86,7 +86,7 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   OpenDirEntry *od = THREAD_ALLOC(openDirEntryAllocator,
                                   cont->mutex->thread_holding);
   od->readers.head = NULL;
-  od->writers.push(cont, cont->opendir_link);
+  od->writers.push(cont);
   od->num_writers = 1;
   od->max_writers = max_writers;
   od->vector.data.data = &od->vector.data.fast_data[0];
@@ -107,7 +107,7 @@ OpenDir::signal_readers(int event, Event *e)
   NOWARN_UNUSED(e);
   NOWARN_UNUSED(event);
 
-  Queue<CacheVC> newly_delayed_readers;
+  Queue<CacheVC, Link_CacheVC_opendir_link> newly_delayed_readers;
   EThread *t = mutex->thread_holding;
   CacheVC *c = NULL;
   while ((c = delayed_readers.dequeue())) {
@@ -137,7 +137,7 @@ int
 OpenDir::close_write(CacheVC *cont)
 {
   ink_debug_assert(cont->part->mutex->thread_holding == this_ethread());
-  cont->od->writers.remove(cont, cont->opendir_link);
+  cont->od->writers.remove(cont);
   cont->od->num_writers--;
   if (!cont->od->writers.head) {
     unsigned int h = cont->first_key.word(0);

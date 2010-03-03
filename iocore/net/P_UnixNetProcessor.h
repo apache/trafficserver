@@ -78,11 +78,9 @@ public:
 
   char *throttle_error_message;
   Event *accept_thread_event;
-  ASLL(NetAccept, link) accepts_on_thread;
+  AtomicSLL<NetAccept, NetAccept::Link_link> accepts_on_thread;
 
-  int accept_epoll_fd;          //added by YTS Team, yamsat
-
-  //offsets for per thread data structures
+  // offsets for per thread data structures
   ink_off_t netHandler_offset;
   ink_off_t pollCont_offset;
 

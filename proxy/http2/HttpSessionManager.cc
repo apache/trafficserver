@@ -111,8 +111,8 @@ SessionBucket::session_handler(int event, void *data)
       Debug("http_ss", "[%lld] [session_bucket] session received "
             "io notice [%s]", s->con_id, HttpDebugNames::get_event_name(event));
       ink_assert(s->state == HSS_KA_SHARED);
-      lru_list.remove(s, s->lru_link);
-      l2_hash[l2_index].remove(s, s->hash_link);
+      lru_list.remove(s);
+      l2_hash[l2_index].remove(s);
       s->do_io_close();
       return 0;
     } else {
@@ -154,9 +154,9 @@ HttpSessionManager::purge_keepalives()
     if (lock) {
       while (b->lru_list.head) {
         HttpServerSession *sess = b->lru_list.head;
-        b->lru_list.remove(sess, sess->lru_link);
+        b->lru_list.remove(sess);
         int l2_index = SECOND_LEVEL_HASH(sess->server_ip);
-        b->l2_hash[l2_index].remove(sess, sess->hash_link);
+        b->l2_hash[l2_index].remove(sess);
         sess->do_io_close();
       }
     } else {
@@ -249,8 +249,8 @@ HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int po
           //  we can not get called back from the netProcessor 
           //  here.  The SM will do a do_io when it gets the session,
           //  effectively canceling the keep-alive read
-          bucket->lru_list.remove(b, b->lru_link);
-          bucket->l2_hash[l2_index].remove(b, b->hash_link);
+          bucket->lru_list.remove(b);
+          bucket->l2_hash[l2_index].remove(b);
           b->state = HSS_ACTIVE;
           to_return = b;
           Debug("http_ss", "[%lld] [acquire session] " "return session from shared pool", to_return->con_id);
@@ -297,8 +297,8 @@ HttpSessionManager::release_session(HttpServerSession * to_release)
     ink_assert(l2_index < HSM_LEVEL2_BUCKETS);
 
     // First insert the session on to our lists
-    bucket->lru_list.enqueue(to_release, to_release->lru_link);
-    bucket->l2_hash[l2_index].push(to_release, to_release->hash_link);
+    bucket->lru_list.enqueue(to_release);
+    bucket->l2_hash[l2_index].push(to_release);
     to_release->state = HSS_KA_SHARED;
 
     // Now we need to issue a read on the connection to detect

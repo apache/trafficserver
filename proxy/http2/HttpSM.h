@@ -193,12 +193,12 @@ class HttpSM:public Continuation
   friend class HttpPagesHandler;
   friend class CoreUtils;
 public:
-    HttpSM();
+  HttpSM();
   void cleanup();
   virtual void destroy();
 
   static HttpSM *allocate();
-    HttpCacheSM & get_cache_sm();       //Added to get the object of CacheSM YTS Team, yamsat
+  HttpCacheSM & get_cache_sm();       //Added to get the object of CacheSM YTS Team, yamsat
   HttpVCTableEntry *get_ua_entry();     //Added to get the ua_entry pointer  - YTS-TEAM
   static void _instantiate_func(HttpSM * prototype, HttpSM * new_instance);
   static void _make_scatter_list(HttpSM * prototype);
@@ -528,7 +528,7 @@ protected:
   void transform_cleanup(INKHttpHookID hook, HttpTransformInfo * info);
 
 public:
-  Link<HttpSM> debug_link;
+  LINK(HttpSM, debug_link);
 };
 
 //Function to get the cache_sm object - YTS Team, yamsat

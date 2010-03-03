@@ -38,6 +38,7 @@
 						   PUBLIC_MODULE_HEADER)
 
 class CacheLookupHttpConfig;
+class CacheVC;
 #ifdef HTTP_CACHE
 class URL;
 class HTTPHdr;

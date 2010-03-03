@@ -177,7 +177,7 @@ public:
 public:
   struct Entry
   {
-    Link<Entry> link;
+    LINK(Entry, link);
     bool mark_for_delete;
     INK_MD5 key;
     ClusterVConnection *vc;

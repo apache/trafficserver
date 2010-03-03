@@ -17,12 +17,11 @@
 #  limitations under the License.
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_atomic test_freelist test_arena
+check_PROGRAMS = test_atomic test_freelist test_arena test_List
 TESTS = $(check_PROGRAMS)
 noinst_LIBRARIES = libinktomi++.a
 
-#libinktomi___a_CCASFLAGS = -Wa,--32
-libinktomi___a_CCASFLAGS = -Wa,-32
+#libinktomi___a_CCASFLAGS = -Wa,-32
 libinktomi___a_SOURCES = \
   Allocator.cc \
   Allocator.h \
@@ -172,11 +171,18 @@ test_arena_SOURCES = test_arena.cc
 test_arena_LDADD = libinktomi++.a @LIBTHREAD@ @LIBTCL@ @LIBICONV@
 test_arena_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 
+test_List_SOURCES = test_List.cc
+
 CompileParseRules_SOURCES = CompileParseRules.cc
 
 ParseRules.o: ParseRules.cc CompileParseRules
 	./CompileParseRules
 	$(CXXCOMPILE) -c $<
+
+test:: $(TESTS)
+	for f in $(TESTS) ; do $$f ; done
+
+#$(foreach F, $(TESTS), $(shell $F)) 
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper

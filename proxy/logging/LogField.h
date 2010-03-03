@@ -147,7 +147,7 @@ private:
   Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
 
 public:
-  Link<LogField> link;
+  LINK(LogField, link);
 
 private:
 // luis, check where this is used and what it does
@@ -194,11 +194,11 @@ public:
 
 private:
   unsigned m_marshal_len;
-    Queue<LogField> m_field_list;
+  Queue<LogField> m_field_list;
 
   // -- member functions that are not allowed --
-    LogFieldList(const LogFieldList & rhs);
-    LogFieldList & operator=(const LogFieldList & rhs);
+  LogFieldList(const LogFieldList & rhs);
+  LogFieldList & operator=(const LogFieldList & rhs);
 };
 
 #endif

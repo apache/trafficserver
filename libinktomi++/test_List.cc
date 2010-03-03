@@ -1,6 +1,6 @@
 /** @file
 
-  Plugin init declarations
+  A brief file description
 
   @section license License
 
@@ -21,43 +21,39 @@
   limitations under the License.
  */
 
-#ifndef __PLUGIN_H__
-#define __PLUGIN_H__
 
 #include "List.h"
 
-// need to keep syncronized with INKSDKVersion
-//   in ts/ts.h
-typedef enum
-{
-  PLUGIN_SDK_VERSION_UNKNOWN = -1,
-  PLUGIN_SDK_VERSION_1_0 = 0,
-  PLUGIN_SDK_VERSION_1_1,
-  PLUGIN_SDK_VERSION_2_0,
-  PLUGIN_SDK_VERSION_3_0
-} PluginSDKVersion;
+class Foo { public:
+  int x;
 
-struct PluginRegInfo
-{
-  PluginRegInfo();
-  ~PluginRegInfo();
-
-  bool plugin_registered;
-  char *plugin_path;
-
-  PluginSDKVersion sdk_version;
-  char *plugin_name;
-  char *vendor_name;
-  char *support_email;
-
-  LINK(PluginRegInfo, link);
+  virtual void foo() {}
+  
+  SLINK(Foo, slink);
+  LINK(Foo, dlink);
+  
+  Foo(int i = 0): x(i) {}
 };
 
-// Plugin registration vars
-extern DLL<PluginRegInfo> plugin_reg_list;
-extern PluginRegInfo *plugin_reg_current;
-
-void plugin_init(const char *config_dir, bool internal_exts);
-int plugins_exist(const char *config_dir);
-
-#endif /* __PLUGIN_H__ */
+int main() {
+   SList(Foo,slink) s; 
+   DList(Foo,dlink) d; 
+   Que(Foo,dlink) q; 
+   Foo *f = new Foo;
+   f->x = 7;
+   s.push(f);
+   d.push(s.pop());
+   q.enqueue(d.pop()); 
+   for (int i = 0; i < 100; i++)
+     q.enqueue(new Foo(i));
+   int tot = 0;
+   for (int i = 0; i < 101; i++)
+     tot += q.dequeue()->x;
+   if (tot != 4957) {
+     printf("test_List FAILED\n");
+     exit(1);
+   } else {
+     printf("test_List PASSED\n");
+     exit(0);
+   }
+}

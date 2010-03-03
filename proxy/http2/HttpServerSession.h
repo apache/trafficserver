@@ -128,8 +128,8 @@ public:
   bool private_session;
   //bool www_auth_content;
 
-  Link<HttpServerSession> lru_link;
-  Link<HttpServerSession> hash_link;
+  LINK(HttpServerSession, lru_link);
+  LINK(HttpServerSession, hash_link);
 
   // Keep track of connection limiting and a pointer to the
   // singleton that keeps track of the connection counts.

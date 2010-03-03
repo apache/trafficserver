@@ -55,7 +55,7 @@ struct SDKAllocHdr
 {
   inku32 m_magic;
   SDKAllocator *m_source;
-    Link<SDKAllocHdr> link;
+  LINK(SDKAllocHdr, link);
 };
 
 class SDKAllocator:public DLL<SDKAllocHdr>

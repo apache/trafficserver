@@ -174,7 +174,7 @@ struct ClusterConfiguration
   ClusterConfiguration();
   unsigned char hash_table[CLUSTER_HASH_TABLE_SIZE];
   ink_hrtime changed;
-  SLink<ClusterConfiguration> link;
+  SLINK(ClusterConfiguration, link);
 };
 
 inline bool
@@ -333,32 +333,11 @@ struct ClusterVConnState
   void *queue;
   int ifd;
   Event *delay_timeout;
-    Link<ClusterVConnectionBase> link;
+  Link<ClusterVConnectionBase> link;
 
   // void enqueue(void * q, ClusterVConnection * vc);
-    ClusterVConnState();
+  ClusterVConnState();
 };
-
-//
-// Inline function to enqueue VC's.
-// This would be better as a member function of ClusterVConnState,
-// but C++'s primitive compilation model makes that impossible.
-//
-inline void
-ClusterVConnState_enqueue(Queue<ClusterVConnectionBase> &q, ClusterVConnectionBase * vc, ClusterVConnState * cs)
-{
-  ink_assert(!cs->queue);
-  cs->queue = &q;
-  q.enqueue(vc, cs->link);
-}
-
-inline void
-ClusterVConnState_remove(ClusterVConnectionBase * vc, ClusterVConnState * cs)
-{
-  ink_assert(cs->queue);
-  ((Queue<ClusterVConnectionBase> *)cs->queue)->remove(vc, cs->link);
-  cs->queue = NULL;
-}
 
 struct ClusterVConnectionBase:CacheVConnection
 {
@@ -406,6 +385,8 @@ struct ClusterVConnectionBase:CacheVConnection
   volatile int closed;
   ClusterVConnState read;
   ClusterVConnState write;
+  LINKM(ClusterVConnectionBase, read, link);
+  LINKM(ClusterVConnectionBase, write, link);
   ink_hrtime inactivity_timeout_in;
   ink_hrtime active_timeout_in;
   Event *inactivity_timeout;
@@ -493,7 +474,7 @@ public:
   static void ByteBankDescriptor_free(ByteBankDescriptor *);
 
 public:
-  Link<ByteBankDescriptor> link;
+  LINK(ByteBankDescriptor, link);
 
 private:
   Ptr<IOBufferBlock> block;  // holder of bank bytes
@@ -1134,8 +1115,7 @@ struct PingMessage:public ClusterMessageHeader
 inline void
 cluster_ping(ClusterMachine * m, PingReturnFunction fn, void *data, int len)
 {
-  PingMessage *msg = (PingMessage *)
-    alloca(PingMessage::sizeof_fixedlen_msg() + len);
+  PingMessage *msg = (PingMessage *)alloca(PingMessage::sizeof_fixedlen_msg() + len);
   msg->init();
   msg->fn = fn;
   memcpy(msg->data, data, len);
@@ -1157,18 +1137,38 @@ extern bool randClusterHash;
 void build_cluster_hash_table(ClusterConfiguration *);
 
 inline void
-ClusterVC_enqueue(Queue<ClusterVConnectionBase> &q, ClusterVConnectionBase * vc, ClusterVConnState * cs)
+ClusterVC_enqueue_read(Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link> &q, ClusterVConnectionBase * vc)
 {
+  ClusterVConnState * cs = &vc->read;
   ink_assert(!cs->queue);
   cs->queue = &q;
-  q.enqueue(vc, cs->link);
+  q.enqueue(vc);
 }
 
 inline void
-ClusterVC_remove(ClusterVConnectionBase * vc, ClusterVConnState * cs)
+ClusterVC_enqueue_write(Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link> &q, ClusterVConnectionBase * vc)
 {
+  ClusterVConnState * cs = &vc->write;
+  ink_assert(!cs->queue);
+  cs->queue = &q;
+  q.enqueue(vc);
+}
+
+inline void
+ClusterVC_remove_read(ClusterVConnectionBase * vc)
+{
+  ClusterVConnState * cs = &vc->read;
   ink_assert(cs->queue);
-  ((Queue<ClusterVConnectionBase> *)cs->queue)->remove(vc, cs->link);
+  ((Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link> *)cs->queue)->remove(vc);
+  cs->queue = NULL;
+}
+
+inline void
+ClusterVC_remove_write(ClusterVConnectionBase * vc)
+{
+  ClusterVConnState * cs = &vc->write;
+  ink_assert(cs->queue);
+  ((Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link> *)cs->queue)->remove(vc);
   cs->queue = NULL;
 }
 

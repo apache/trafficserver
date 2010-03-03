@@ -88,7 +88,7 @@ struct CongestRequestParam
   Op_t m_op;
   CongestionEntry *m_pEntry;
 
-  Link<CongestRequestParam> link;
+  LINK(CongestRequestParam, link);
 };
 
 /* struct declaration and definitions */

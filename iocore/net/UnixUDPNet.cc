@@ -838,7 +838,7 @@ UDPQueue::service(UDPNetHandler * nh)
   if (p) {
 
     UDPPacketInternal *pnext = NULL;
-    Que(UDPPacketInternal, link) stk;
+    Queue<UDPPacketInternal> stk;
 
     while (p) {
       pnext = p->alink.next;
@@ -1094,9 +1094,11 @@ UDPQueue::SendUDPPacket(UDPPacketInternal * p, ink32 pktLen)
   }
 
   Debug("udp-send", "Sending 0x%x", p);
+#if (HOST_OS != solaris)
   msg.msg_control = 0;
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
+#endif
   msg.msg_name = (caddr_t) & p->to;
   msg.msg_namelen = sizeof(p->to);
   iov_len = 0;

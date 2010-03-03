@@ -373,9 +373,9 @@ struct CacheVC:CacheVConnection
   OpenDirEntry *od;
   AIOCallbackInternal io;
   int alternate_index;          // preferred position in vector
-  Link<CacheVC> opendir_link;
+  LINK(CacheVC, opendir_link);
 #ifdef CACHE_STAT_PAGES
-  Link<CacheVC> stat_link;
+  LINK(CacheVC, stat_link);
 #endif
   // end Region B
 
@@ -1297,5 +1297,7 @@ local_cache()
 {
   return theCache;
 }
+
+LINK_DEFINITION(CacheVC, opendir_link);
 
 #endif /* _P_CACHE_INTERNAL_H__ */

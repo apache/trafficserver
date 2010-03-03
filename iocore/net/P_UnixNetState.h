@@ -57,4 +57,5 @@ struct NetState
 
   NetState() : enabled(0), vio(VIO::NONE), in_enabled_list(0), triggered(0) {}
 };
+
 #endif

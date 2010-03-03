@@ -40,7 +40,7 @@
 #include "ProxyConfig.h"
 #include "Stats.h"
 
-#ifdef _c_impl
+#if defined(_c_impl) && defined(__GNUC__) // TODO: review and simplify
 #define CST_INLINE
 #else
 #define CST_INLINE inline

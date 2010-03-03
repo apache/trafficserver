@@ -117,9 +117,9 @@ traffic_manager_LDADD = \
   utils/libutils_lm.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/librecords/libreclocal.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
   $(top_builddir)/proxy/mgmt2/tools/libinksysapi.a \
   $(top_builddir)/proxy/mgmt2/tools/libinkconfigapi.a \
+  $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBEXPAT@ \
   @LIBSSL@ @LIBDB@ @LIBSQLITE3@ @LIBREGEX@ @LIBTCL@ @LIBICONV@ \
   @LIBM@ @LIBDL@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \

@@ -58,7 +58,7 @@ struct versionInfo
 {
   version_t version;
   time_t modTime;
-    Link<versionInfo> link;
+  LINK(versionInfo, link);
 };
 
 //

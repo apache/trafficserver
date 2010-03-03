@@ -215,10 +215,11 @@ struct FreeDir
 // alternates from this vector is done under the Part::lock. The alternate
 // is deleted/inserted into the vector just before writing the vector disk 
 // (CacheVC::updateVector). 
+LINK_FORWARD_DECLARATION(CacheVC, opendir_link); // forward declaration
 struct OpenDirEntry
 {
-  DLL<CacheVC> writers;         // list of all the current writers
-  DLL<CacheVC> readers;         // list of all the current readers - not used
+  DLL<CacheVC, Link_CacheVC_opendir_link> writers;       // list of all the current writers
+  DLL<CacheVC, Link_CacheVC_opendir_link> readers;         // list of all the current readers - not used
   CacheHTTPInfoVector vector;   // Vector for the http document. Each writer 
                                 // maintains a pointer to this vector and 
                                 // writes it down to disk. 
@@ -233,7 +234,7 @@ struct OpenDirEntry
   volatile bool reading_vec;    // somebody is currently reading the vector
   volatile bool writing_vec;    // somebody is currently writing the vector
 
-  Link<OpenDirEntry> link;
+  LINK(OpenDirEntry, link);
 
   int wait(CacheVC *c, int msec);
 
@@ -245,7 +246,7 @@ struct OpenDirEntry
 
 struct OpenDir:Continuation
 {
-  Queue<CacheVC> delayed_readers;
+  Queue<CacheVC, Link_CacheVC_opendir_link> delayed_readers;
   DLL<OpenDirEntry> bucket[OPEN_DIR_BUCKETS];
 
   int open_write(CacheVC *c, int allow_if_writers, int max_writers);

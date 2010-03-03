@@ -261,7 +261,7 @@ private:
     Event & operator =(const Event &);
 
 public:
-    Link<Event> link;
+  LINK(Event, link);
 
   /*-------------------------------------------------------*\
   | UNIX/non-NT Interface                                   |

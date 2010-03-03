@@ -346,7 +346,7 @@ struct ClusterState:Continuation
   int last_ndone;               // last do_io ndone
   int total_bytes_xfered;
   IOVec *iov;                   // io vector for readv, writev
-    Ptr<IOBufferData> iob_iov;
+  Ptr<IOBufferData> iob_iov;
 
   // Write byte bank structures
   char *byte_bank;              // bytes buffered for transit
@@ -358,7 +358,7 @@ struct ClusterState:Continuation
   ink_hrtime last_time;
   ink_hrtime start_time;
 
-    Ptr<IOBufferBlock> block[MAX_TCOUNT];
+  Ptr<IOBufferBlock> block[MAX_TCOUNT];
   struct MIOBuffer *mbuf;
   int state;                    // See enum defs below
 
@@ -388,8 +388,8 @@ struct ClusterState:Continuation
     WRITE_COMPLETE
   } write_state_t;
 
-    ClusterState(ClusterHandler *, bool);
-   ~ClusterState();
+  ClusterState(ClusterHandler *, bool);
+  ~ClusterState();
   IOBufferData *get_data();
   void build_do_io_vector();
   int doIO();
@@ -407,13 +407,13 @@ struct ClusterHandlerBase:Continuation
   //
   // Private
   //
-  Queue<ClusterVConnectionBase> *read_vcs;
-  Queue<ClusterVConnectionBase> *write_vcs;
+  Queue<ClusterVConnectionBase, ClusterVConnection::Link_read_link> *read_vcs;
+  Queue<ClusterVConnectionBase, ClusterVConnection::Link_write_link> *write_vcs;
   int cur_vcs;
   int min_priority;
   Event *trigger_event;
 
-    ClusterHandlerBase():Continuation(NULL), read_vcs(NULL), write_vcs(NULL), cur_vcs(0), min_priority(1)
+  ClusterHandlerBase():Continuation(NULL), read_vcs(NULL), write_vcs(NULL), cur_vcs(0), min_priority(1)
   {
   }
 };
@@ -437,13 +437,13 @@ struct ClusterHandler:public ClusterHandlerBase
   struct ChannelData
   {
     int channel_number;
-      Link<ChannelData> link;
+    LINK(ChannelData, link);
   };
 
   int n_channels;
   ClusterVConnection **channels;
   struct ChannelData **channel_data;
-    Queue<ChannelData> free_local_channels;
+  Queue<ChannelData> free_local_channels;
 
   bool connector;
   int cluster_connect_state;    // see clcon_state_t enum
@@ -469,11 +469,11 @@ struct ClusterHandler:public ClusterHandlerBase
   InkAtomicList outgoing_control_al[CLUSTER_CMSG_QUEUES];
   InkAtomicList external_incoming_control;
   InkAtomicList external_incoming_open_local;
-    ClusterCalloutContinuation * callout_cont[MAX_COMPLETION_CALLBACK_EVENTS];
+  ClusterCalloutContinuation * callout_cont[MAX_COMPLETION_CALLBACK_EVENTS];
   Event *callout_events[MAX_COMPLETION_CALLBACK_EVENTS];
   Event *cluster_periodic_event;
-    Queue<OutgoingControl> outgoing_control[CLUSTER_CMSG_QUEUES];
-    Queue<IncomingControl> incoming_control;
+  Queue<OutgoingControl> outgoing_control[CLUSTER_CMSG_QUEUES];
+  Queue<IncomingControl> incoming_control;
   ClusterState read;
   ClusterState write;
 
@@ -484,7 +484,7 @@ struct ClusterHandler:public ClusterHandlerBase
   ink_hrtime last_cluster_op_enable;
   ink_hrtime last_trace_dump;
 
-    DLL<ClusterVConnectionBase> delayed_reads;
+  DLL<ClusterVConnectionBase> delayed_reads;
   ClusterLoadMonitor *clm;
   bool disable_remote_cluster_ops;
 

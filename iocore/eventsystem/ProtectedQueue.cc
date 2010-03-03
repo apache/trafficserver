@@ -147,7 +147,7 @@ ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool slee
 
   e = (Event *) ink_atomiclist_popall(&al);
   // invert the list, to preserve order
-  SList(Event, link) l, t;
+  SLL<Event, Event::Link_link> l, t;
   t.head = e;
   while ((e = t.pop()))
     l.push(e);

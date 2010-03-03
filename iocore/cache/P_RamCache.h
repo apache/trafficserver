@@ -38,21 +38,21 @@ struct RamCacheEntry
   INK_MD5 key;
   inku32 auxkey1;
   inku32 auxkey2;
-    Link<RamCacheEntry> lru_link;
-    Link<RamCacheEntry> hash_link;
-    Ptr<IOBufferData> data;
+  LINK(RamCacheEntry, lru_link);
+  LINK(RamCacheEntry, hash_link);
+  Ptr<IOBufferData> data;
 };
 
 struct RamCachePartition
 {
   int cur_bytes;
   int cur_objects;
-    DLL<RamCacheEntry> *bucket;
-    Queue<RamCacheEntry> lru;
+  DList(RamCacheEntry, hash_link) *bucket;
+  Que(RamCacheEntry, lru_link) lru;
   unsigned short *seen;
   ProxyMutexPtr lock;
 
-    RamCachePartition():cur_bytes(0), cur_objects(0), bucket(0), seen(0), lock(NULL)
+  RamCachePartition():cur_bytes(0), cur_objects(0), bucket(0), seen(0), lock(NULL)
   {
   }
 };

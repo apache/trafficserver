@@ -61,7 +61,7 @@ struct DNSConnection
   int fd;
   struct sockaddr_in sa;
   int num;
-  Link<DNSConnection> link;
+  LINK(DNSConnection, link);
   EventIO eio;
 
   int connect(unsigned int ip, int port,

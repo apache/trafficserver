@@ -834,10 +834,16 @@ NewCacheVC::_writeHttpInfo()
 
     // tmp buffer since we can't marshal into a miobuffer
     if ((_size = _httpInfoVector.marshal_length()) > 0) {
+#if defined(__GNUC__)
       void *buffer[_size];
-
+#else
+      void *buffer = xmalloc(_size);
+#endif
       _httpInfoVector.marshal((char *) buffer, _size);
       _httpInfoBuffer->write((const char *) buffer, (int) _size);
+#if !defined(__GNUC__)
+      xfree(buffer);
+#endif
     }
     //setCtrlInPlugin(true);
     _cacheWriteHook->invoke(INK_EVENT_CACHE_WRITE_HEADER, this);

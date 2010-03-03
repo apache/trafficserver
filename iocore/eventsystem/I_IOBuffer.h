@@ -1130,7 +1130,7 @@ public:
   ink64 water_mark;
 
   // DEPRECATED
-  Link<MIOBuffer> link;
+  //DLINK(MIOBuffer, link);
 
   Ptr<IOBufferBlock> _writer;
   IOBufferReader readers[MAX_MIOBUFFER_READERS];

@@ -78,7 +78,7 @@ public:
   alarm_t type;
   char *ip;
   char *desc;
-    Link<AlarmListable> link;
+  LINK(AlarmListable, link);
 };
 
 enum PowerLampState
@@ -99,7 +99,7 @@ public:
   bool localNode;
   char *hostname;               // FQ hostname of the node
   unsigned long inetAddr;       // IP address of the node
-    DLL<AlarmListable> nodeAlarms;   // List of alarms for the node
+  DLL<AlarmListable> nodeAlarms;   // List of alarms for the node
   void checkAlarms();
   bool varStrFromName(char *varName, char *bufVal, int bufLen);
   RecCounter readCounter(char *name, bool * found);
@@ -149,7 +149,7 @@ public:
   int varClusterCounterFromName(char *, MgmtInt *);
 
 private:
-    ink_mutex accessLock;
+  ink_mutex accessLock;
 
   // Private fcns
     overviewPage(const overviewPage &);
@@ -188,11 +188,8 @@ extern overviewPage *overviewGenerator; // global handle to overiewPage?
                                         // defn found in WebOverview.cc
 
 void overviewAlarmCallback(alarm_t newAlarm, char *ip, char *desc);
-
 void resolveAlarm(InkHashTable * post_data_ht);
-
 void resolveAlarmCLI(textBuffer * output, const char *ipAddr);
-
 int hostSortFunc(const void *arg1, const void *arg2);
 
 #endif

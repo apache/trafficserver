@@ -1651,7 +1651,11 @@ change_uid_gid(const char *user)
     ink_fatal_die("sysconf() failed for _SC_GETPW_R_SIZE_MAX");
   }
 
+#if defined(__GNUC__)
   char buf[buflen];
+#else
+  char *buf = (char *)xmalloc(buflen);
+#endif
 
   // read the entry from the passwd file
   getpwnam_r(user, &pwbuf, buf, buflen, &pwbufp);
@@ -1672,6 +1676,9 @@ change_uid_gid(const char *user)
       ink_fatal_die("Can't change uid to user: %s, uid: %d", user, pwbuf.pw_uid);
     }
   }
+#if !defined(__GNUC__)
+  xfree(buf);
+#endif
 }
 
 

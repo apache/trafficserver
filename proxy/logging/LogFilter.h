@@ -110,7 +110,7 @@ protected:
   size_t m_num_values;          // the number of comparison values
 
 public:
-  Link<LogFilter> link;      // so we can create a LogFilterList
+  LINK(LogFilter, link);      // so we can create a LogFilterList
 
 private:
   // -- member functions that are not allowed --

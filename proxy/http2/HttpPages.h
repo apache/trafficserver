@@ -40,6 +40,7 @@
 #include "DynArray.h"
 #include "HTTP.h"
 #include "StatPages.h"
+#include "HttpSM.h"
 
 class HttpSM;
 
@@ -49,7 +50,7 @@ const int HTTP_LIST_RETRY = HRTIME_MSECONDS(10);
 struct HttpSMListBucket
 {
   Ptr<ProxyMutex> mutex;
-  DLL<HttpSM> sm_list;
+  DList(HttpSM, debug_link) sm_list;
 };
 
 extern HttpSMListBucket HttpSMList[];
@@ -67,7 +68,7 @@ public:
 
 private:
 
-    ink64 extract_id(const char *query);
+  ink64 extract_id(const char *query);
   void dump_hdr(HTTPHdr * hdr, char *desc);
   void dump_tunnel_info(HttpSM * sm);
   void dump_history(HttpSM * sm);

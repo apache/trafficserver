@@ -60,11 +60,10 @@ public:
   virtual INKCfgEle *getCfgEleCopy() = 0;       /* returns copy of ele */
   virtual INKRuleTypeT getRuleType() = 0;
 
-  Link<CfgEleObj> link;
+  LINK(CfgEleObj, link);
 
 protected:
   bool m_valid;                 /* stores if Ele has valid fields; by default true */
-
 };
 
 /********************************************************************

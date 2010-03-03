@@ -153,8 +153,8 @@ struct HostDBCache:MultiCache<HostDBInfo>
     //return 16.0;
     return 24.0;
   }
-  Queue<HostDBContinuation> pending_dns[MULTI_CACHE_PARTITIONS];
-  Queue<HostDBContinuation> &pending_dns_for_hash(INK_MD5 & md5);
+  Queue<HostDBContinuation, Continuation::Link_link> pending_dns[MULTI_CACHE_PARTITIONS];
+  Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 & md5);
   HostDBCache();
 };
 

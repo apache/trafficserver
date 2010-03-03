@@ -285,7 +285,7 @@ NetHandler::process_enabled_list(NetHandler *nh, EThread *t)
 {
   UnixNetVConnection *vc = NULL;
 
-  SList(UnixNetVConnection, read.enable_link) rq(nh->read_enable_list.popall());
+  SListM(UnixNetVConnection, NetState, read, enable_link) rq(nh->read_enable_list.popall());
   while ((vc = rq.pop())) {
     vc->ep.modify(EVENTIO_READ);
     vc->ep.refresh(EVENTIO_READ);
@@ -294,7 +294,7 @@ NetHandler::process_enabled_list(NetHandler *nh, EThread *t)
       nh->read_ready_list.in_or_enqueue(vc);
   }
 
-  SList(UnixNetVConnection, write.enable_link) wq(nh->write_enable_list.popall());
+  SListM(UnixNetVConnection, NetState, write, enable_link) wq(nh->write_enable_list.popall());
   while ((vc = wq.pop())) {
     vc->ep.modify(EVENTIO_WRITE);
     vc->ep.refresh(EVENTIO_WRITE);

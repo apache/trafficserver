@@ -62,9 +62,9 @@ RamCache::init(ink64 abytes, ink64 aobjects, int cutoff, Part * _part, ProxyMute
     partition = NEW(new RamCachePartition[n_partitions]);
   else
     partition = &one_partition;
-  int s = partition_size * sizeof(DLL<RamCacheEntry>);
+  int s = partition_size * sizeof(DList(RamCacheEntry, hash_link));
   for (int i = 0; i < n_partitions; i++) {
-    partition[i].bucket = (DLL<RamCacheEntry> *)xmalloc(s);
+    partition[i].bucket = (DList(RamCacheEntry, hash_link) *)xmalloc(s);
     memset(partition[i].bucket, 0, s);
     if (m)
       partition[i].lock = m;
@@ -90,8 +90,8 @@ RamCache::get(INK_MD5 * key, Ptr<IOBufferData> *ret_data, inku32 auxkey1, inku32
   RamCacheEntry *e = p->bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2) {
-      p->lru.remove(e, e->lru_link);
-      p->lru.enqueue(e, e->lru_link);
+      p->lru.remove(e);
+      p->lru.enqueue(e);
       (*ret_data) = e->data;
       DDebug("ram_cache", "get %X %d %d HIT", k, auxkey1, auxkey2);
       return 1;
@@ -120,7 +120,7 @@ RamCache::remove_entry(RamCacheEntry * ee, RamCachePartition * p, EThread * t)
 {
   inku32 oo = ee->key.word(3) / n_partitions;
   inku32 ii = oo % partition_size;
-  p->bucket[ii].remove(ee, ee->hash_link);
+  p->bucket[ii].remove(ee);
   p->cur_bytes -= ee->data->block_size();
   ProxyMutex *mutex = part->mutex;
   CACHE_SUM_DYN_STAT(cache_ram_cache_bytes_stat, -ee->data->block_size());
@@ -161,7 +161,7 @@ RamCache::put(INK_MD5 * key, IOBufferData * data, EThread * t, inku32 auxkey1, i
         DDebug("ram_cache", "put %X %d %d PRESENT", k, auxkey1, auxkey2);
         return 1;               // already present
       } else {
-        p->lru.remove(e, e->lru_link);
+        p->lru.remove(e);
         remove_entry(e, p, t);
       }
     }
@@ -173,13 +173,13 @@ RamCache::put(INK_MD5 * key, IOBufferData * data, EThread * t, inku32 auxkey1, i
   e->auxkey2 = auxkey2;
   e->data = data;
   ink_assert(p->bucket[i].head != e);
-  p->bucket[i].push(e, e->hash_link);
+  p->bucket[i].push(e);
   ink_assert(e->hash_link.next != e);
-  p->lru.enqueue(e, e->lru_link);
+  p->lru.enqueue(e);
   p->cur_bytes += data->block_size();
   CACHE_SUM_DYN_STAT(cache_ram_cache_bytes_stat, data->block_size());
   while (p->cur_bytes > bytes) {
-    RamCacheEntry *ee = p->lru.dequeue(p->lru.head, p->lru.head->lru_link);
+    RamCacheEntry *ee = p->lru.dequeue();
     if (ee)
       remove_entry(ee, p, t);
     else

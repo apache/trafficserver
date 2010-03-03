@@ -25,16 +25,21 @@
 
 #ifndef _HTTP_CONNECTION_COUNT_H_
 
+#if (__GNUC__ >= 3)
 #define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
 #include <ext/hash_map>
 #undef _BACKWARD_BACKWARD_WARNING_H
+#else
+#include <hash_map>
+#endif
 // XXX - had to include map to get around "max" begin defined as a macro
 // in the traffic server code, really odd
 #include <map>
 #include <ink_mutex.h>
 
-
+#if (__GNUC__ >= 3)
 using namespace __gnu_cxx;
+#endif
 using namespace std;
 
 

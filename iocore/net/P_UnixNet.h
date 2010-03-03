@@ -243,12 +243,12 @@ class NetHandler:public Continuation
 {
 public:
   Event *trigger_event;
-  Que(UnixNetVConnection, read.ready_link) read_ready_list;
-  Que(UnixNetVConnection, write.ready_link) write_ready_list;
+  QueM(UnixNetVConnection, NetState, read, ready_link) read_ready_list;
+  QueM(UnixNetVConnection, NetState, write, ready_link) write_ready_list;
   Que(UnixNetVConnection, link) open_list;
   Que(DNSConnection, link) dnsqueue;
-  ASLL(UnixNetVConnection, read.enable_link) read_enable_list;
-  ASLL(UnixNetVConnection, write.enable_link) write_enable_list;
+  ASLLM(UnixNetVConnection, NetState, read, enable_link) read_enable_list;
+  ASLLM(UnixNetVConnection, NetState, write, enable_link) write_enable_list;
 
   time_t sec;
   int cycles;

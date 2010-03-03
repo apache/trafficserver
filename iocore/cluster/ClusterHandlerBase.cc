@@ -1080,8 +1080,8 @@ ClusterHandler::startClusterEvent(int event, Event * e)
              DOT_SEPARATED(ip), clusteringVersion._major, clusteringVersion._minor);
 #endif
         thread = e->ethread;
-        read_vcs = NEW(new Queue<ClusterVConnectionBase>[CLUSTER_BUCKETS]);
-        write_vcs = NEW(new Queue<ClusterVConnectionBase>[CLUSTER_BUCKETS]);
+        read_vcs = NEW((new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link>[CLUSTER_BUCKETS]));
+        write_vcs = NEW((new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link>[CLUSTER_BUCKETS]));
         SET_HANDLER((ClusterContHandler) & ClusterHandler::beginClusterEvent);
 
         // enable schedule_imm() on i/o completion (optimization)

@@ -149,7 +149,7 @@ public:
   int ScheduleNow(time_t);
 
 public:
-    Link<UpdateEntry> link;
+  LINK(UpdateEntry, link);
   UpdateEntry *_group_link;
   UpdateEntry *_hash_link;
 

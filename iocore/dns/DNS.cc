@@ -955,7 +955,7 @@ DNSEntry::mainEvent(int event, Event * e)
         DNSEntry *dup = get_entry(dnsH, qname, qtype);
         if (dup) {
           Debug("dns", "collapsing NS request");
-          dup->dups.enqueue(this, this->dup_link);
+          dup->dups.enqueue(this);
         } else {
           Debug("dns", "adding first to collapsing queue");
           dnsH->entries.enqueue(this);
@@ -1112,9 +1112,9 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
 
   DNSEntry *dup = NULL;
 
-  while ((dup = e->dups.dequeue(e, e->dup_link))) {
+  while ((dup = e->dups.dequeue())) {
     if (dup->post(h, ent, false)) {
-      e->dups.enqueue(dup, dup->dup_link);
+      e->dups.enqueue(dup);
       goto Lretry;
     }
   }

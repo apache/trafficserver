@@ -137,8 +137,17 @@ extern "C" void bcopy(const void *s1, void *s2, size_t n);
 
 #if (__GNUC__ >= 3) && ((HOST_OS == darwin) || (HOST_OS == solaris))
 #define ink_offsetof(TYPE, MEMBER) (__builtin_offsetof (TYPE, MEMBER))
+#else /* !GNUC */
+#if (HOST_OS == solaris)
+//#include <stddef.h> // FIXME: pulled offsetof() from here
+#if __cplusplus >= 199711L
+#define	ink_offsetof(s, m)  (std::size_t)(&(((s *)0)->m))
 #else
+#define	ink_offsetof(s, m)  (size_t)(&(((s *)0)->m))
+#endif
+#else /* !GNUC & !solaris */
 #define ink_offsetof offsetof
+#endif
 #endif
 
 #include "Resource.h"

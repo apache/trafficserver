@@ -50,6 +50,9 @@
 //#include "HttpAuthParams.h"
 #include "congest/Congestion.h"
 
+#if (HOST_OS == solaris) && !defined(__GNUC__)
+#include <string>
+#endif
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX    6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX    6  // 8K
@@ -556,7 +559,7 @@ HttpSM::state_add_to_list(int event, void *data)
       return EVENT_DONE;
     }
 
-    HttpSMList[bucket].sm_list.push(this, this->debug_link);
+    HttpSMList[bucket].sm_list.push(this);
   }
 
   t_state.api_next_action = HttpTransact::HTTP_API_SM_START;
@@ -586,7 +589,7 @@ HttpSM::state_remove_from_list(int event, void *data)
       return EVENT_DONE;
     }
 
-    HttpSMList[bucket].sm_list.remove(this, this->debug_link);
+    HttpSMList[bucket].sm_list.remove(this);
   }
 
   return this->kill_this_async_hook(EVENT_NONE, NULL);
@@ -7836,10 +7839,17 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 
     if (host != NULL) {
       int port = clientUrl.port_get();
+#if defined(__GNUC__)
       char buf[host_len + 7];
+#else
+      char *buf = (char *)xmalloc(host_len + 7);
+#endif
       strncpy(buf, host, host_len);
       host_len += snprintf(buf + host_len, sizeof(buf) - host_len, ":%d", port);
       t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
+#if !defined(__GNUC__)
+      xfree(buf);
+#endif
     } else {
       // the client request didn't have a host, so remove it from the headers
       t_state.hdr_info.client_request.field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);

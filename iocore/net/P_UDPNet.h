@@ -85,7 +85,7 @@ public:
   // Interface exported to the outside world
   void send(UDPPacket * p);
 
-  Que(UDPPacketInternal, link) reliabilityPktQueue;
+  Queue<UDPPacketInternal> reliabilityPktQueue;
   InkAtomicList atomicQueue;
   ink_hrtime last_report;
   ink_hrtime last_service;
@@ -124,8 +124,8 @@ public:
   int nPackets;
 
   ink_hrtime lastPullLongTermQ;
-  Que(UDPPacketInternal, link) longTermQ;
-  Que(UDPPacketInternal, link) bucket[N_SLOTS];
+  Queue<UDPPacketInternal> longTermQ;
+  Queue<UDPPacketInternal> bucket[N_SLOTS];
   ink_hrtime delivery_time[N_SLOTS];
   int now_slot;
 
@@ -213,7 +213,7 @@ public:
   void FreeCancelledPackets(int numSlots)
   {
     UDPPacketInternal *p;
-    Que(UDPPacketInternal, link) tempQ;
+    Queue<UDPPacketInternal> tempQ;
     int i, s;
 
     for (i = 0; i < numSlots; i++) {
@@ -239,7 +239,7 @@ public:
     int prev;
 
     if (ink_hrtime_to_msec(t - lastPullLongTermQ) >= SLOT_TIME_MSEC * ((N_SLOTS - 1) / 2)) {
-      Que(UDPPacketInternal, link) tempQ;
+      Queue<UDPPacketInternal> tempQ;
       UDPPacketInternal *p;
       // pull in all the stuff from long-term slot
       lastPullLongTermQ = t;
@@ -356,9 +356,9 @@ class UDPNetHandler:Continuation
 {
 public:
   // to be polled for read
-  Que(UnixUDPConnection, polling_link) udp_polling;
+  Queue(UnixUDPConnection, polling_link) udp_polling;
   // to be called back with data
-  Que(UnixUDPConnection, callback_link) udp_callbacks;
+  Queue(UnixUDPConnection, callback_link) udp_callbacks;
   // outgoing packets
   InkAtomicList udpAtomicQueue;
   UDPQueue udpOutQueue;

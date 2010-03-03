@@ -184,7 +184,7 @@ char *ptr_data;
 intptr_t
 CoreUtils::find_vaddr(intptr_t vaddr, intptr_t upper, intptr_t lower)
 {
-  intptr_t index = (intptr_t) floor((upper + lower) / 2);
+  intptr_t index = (intptr_t) floor((double)((upper + lower) / 2));
 
   // match in table, returns index to be inserted into
   if (arrayMem[index].vaddr == vaddr) {
@@ -926,7 +926,11 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
     char *free_start = (char *) (((HdrStrHeap *) str_hdr)->m_free_start);
     int nto_copy = abs((char *) copy_start - free_start);
     free(str_hdr);
+#if defined(__GNUC__)
     char rw_heap[sizeof(char) * nto_copy];
+#else
+    char *rw_heap = (char *)xmalloc(sizeof(char) * nto_copy);
+#endif
     if (read_from_core((intptr_t) copy_start, nto_copy, rw_heap) == -1) {
       printf("Cannot read from core\n");
       _exit(0);
@@ -938,12 +942,18 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
 
     str_size += nto_copy;
     str_heaps++;
+#if !defined(__GNUC__)
+    xfree(rw_heap);
+#endif
   }
 
   for (i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
     if (heap->m_ronly_heap[i].m_heap_start != NULL) {
-
+#if defined(__GNUC__)
       char ro_heap[sizeof(char) * heap->m_ronly_heap[i].m_heap_len];
+#else
+      char * ro_heap = (char *) xmalloc(sizeof(char) * heap->m_ronly_heap[i].m_heap_len);
+#endif
       if (read_from_core((intptr_t) heap->m_ronly_heap[i].m_heap_start, heap->m_ronly_heap[i].m_heap_len, ro_heap) == -1) {
         printf("Cannot read from core\n");
         _exit(0);
@@ -957,6 +967,9 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
 
       str_heaps++;
       str_size += heap->m_ronly_heap[i].m_heap_len;
+#if !defined(__GNUC__)
+      xfree(ro_heap);
+#endif
     }
   }
 

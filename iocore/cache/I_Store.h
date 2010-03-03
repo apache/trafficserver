@@ -53,7 +53,7 @@ struct Span
   bool isRaw;
   ink64 offset;                 // used only if (file == true)
   int disk_id;
-    Link<Span> link;
+  LINK(Span, link);
 
 private:
     bool is_mmapable_internal;

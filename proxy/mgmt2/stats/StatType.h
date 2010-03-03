@@ -130,9 +130,9 @@ public:
   short precedence();
   void copy(const StatExprToken &);
 
-    Link<StatExprToken> link;
-    StatExprToken();
-    inline ~ StatExprToken()
+  LINK(StatExprToken, link);
+  StatExprToken();
+  inline ~ StatExprToken()
   {
     clean();
   };
@@ -172,7 +172,6 @@ private:
 
   size_t m_size;
   Queue<StatExprToken> m_tokenList;
-
 };
 
 /***************************************************************
@@ -198,12 +197,12 @@ public:
   StatFloat m_stats_max;
   StatFloat m_stats_min;
   bool m_has_delta;
-    Link<StatObject> link;
+  LINK(StatObject, link);
 
   // Member functions
-    StatObject();
-    StatObject(unsigned);
-    inline ~ StatObject()
+  StatObject();
+  StatObject(unsigned);
+  inline ~ StatObject()
   {
     clean();
   };
@@ -219,7 +218,6 @@ public:
 private:
 
   void infix2postfix();
-
 };
 
 
@@ -250,7 +248,6 @@ public:
 private:
 
   Queue<StatObject> m_statList;
-
 };
 
 #endif

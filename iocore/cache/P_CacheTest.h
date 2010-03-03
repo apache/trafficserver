@@ -35,7 +35,7 @@ struct PinnedDocEntry
 {
   CacheKey key;
   ink_time_t time;
-  Link<PinnedDocEntry> link;
+  LINK(PinnedDocEntry, link);
 };
 
 struct PinnedDocTable:Continuation

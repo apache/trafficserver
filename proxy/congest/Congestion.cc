@@ -27,12 +27,8 @@
  *
  *
  ****************************************************************************/
-#include "Main.h"
-#include "Error.h"
-#include "ProxyConfig.h"
-//#include "Lock.h"
-#include "P_Net.h"
-//#include "Freer.h"
+#include "inktomi++.h"
+#include "I_Net.h"
 #include "CongestionDB.h"
 #include "Congestion.h"
 #include "ControlMatcher.h"

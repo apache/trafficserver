@@ -1289,7 +1289,7 @@ APIHooks::prepend(INKContInternal * cont)
   api_hook = apiHookAllocator.alloc();
   api_hook->m_cont = cont;
 
-  m_hooks.push(api_hook, api_hook->m_link);
+  m_hooks.push(api_hook);
 }
 
 void
@@ -1300,7 +1300,7 @@ APIHooks::append(INKContInternal * cont)
   api_hook = apiHookAllocator.alloc();
   api_hook->m_cont = cont;
 
-  m_hooks.enqueue(api_hook, api_hook->m_link);
+  m_hooks.enqueue(api_hook);
 }
 
 APIHook *

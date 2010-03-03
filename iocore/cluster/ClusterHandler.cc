@@ -277,9 +277,9 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection * vc)
   if (vc->active_timeout)
     vc->active_timeout->cancel(vc);
   if (vc->read.queue)
-    ClusterVC_remove(vc, &vc->read);
+    ClusterVC_remove_read(vc);
   if (vc->write.queue)
-    ClusterVC_remove(vc, &vc->write);
+    ClusterVC_remove_write(vc);
   vc->read.vio.mutex = NULL;
   vc->write.vio.mutex = NULL;
 
@@ -289,7 +289,7 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection * vc)
   free_channel(vc);
 
   if (vc->byte_bank_q.head) {
-    delayed_reads.remove(vc, vc->read.link);
+    delayed_reads.remove(vc);
 
     // Deallocate byte bank descriptors
     ByteBankDescriptor *d;
@@ -1067,11 +1067,11 @@ ClusterHandler::process_freespace_msgs()
         ClusterVConnState *ns = &channels[c]->write;
         if (ns->queue) {
           ClusterVConnection *vc = channels[c];
-          ClusterVC_remove(vc, ns);
+          ClusterVC_remove_write(vc);
           cluster_set_priority(this, ns, 1);
           Debug(CL_PROTO, "(%d) upping write priority %d read %d free %d",
                 c, ns->priority, channels[c]->read.priority, channels[c]->remote_free);
-          ClusterVC_enqueue(write_vcs[cur_vcs], vc, ns);
+          ClusterVC_enqueue_write(write_vcs[cur_vcs], vc);
         }
       }
     }
@@ -1089,8 +1089,8 @@ ClusterHandler::add_to_byte_bank(ClusterVConnection * vc)
 
   // Start byte bank completion action if not active
   if (!pending_byte_bank_completion) {
-    ClusterVC_remove(vc, &vc->read);
-    delayed_reads.push(vc, vc->read.link);
+    ClusterVC_remove_read(vc);
+    delayed_reads.push(vc);
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_LEVEL1_BANK_STAT);
   } else {
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_MULTILEVEL_BANK_STAT);
@@ -1368,8 +1368,7 @@ bool ClusterHandler::complete_channel_read(int len, ClusterVConnection * vc)
   // We have processed a complete VC read request message for a channel,
   // perform completion actions.
   //
-  ClusterVConnState *
-    s = &vc->read;
+  ClusterVConnState *s = &vc->read;
 
   if (vc->pending_remote_fill) {
     Debug(CL_TRACE, "complete_channel_read chan=%d len=%d", vc->channel, len);
@@ -1407,10 +1406,10 @@ bool ClusterHandler::complete_channel_read(int len, ClusterVConnection * vc)
     // VC received data, move VC to current bucket since 
     // it may have freespace data to send (READ_VC_PRIORITY).
     //
-    ClusterVC_remove(vc, s);
+    ClusterVC_remove_read(vc);
     cluster_set_priority(this, s, 1);
     Debug(CL_PROTO, "(%d) upping read priority %d", vc->channel, s->priority);
-    ClusterVC_enqueue(read_vcs[cur_vcs], vc, s);
+    ClusterVC_enqueue_read(read_vcs[cur_vcs], vc);
   }
   return true;
 }
@@ -1425,7 +1424,7 @@ ClusterHandler::finish_delayed_reads()
   //
   ClusterVConnection *vc = NULL;
   DLL<ClusterVConnectionBase> l;
-  while ((vc = (ClusterVConnection *) delayed_reads.pop(vc, vc->read.link))) {
+  while ((vc = (ClusterVConnection *) delayed_reads.pop())) {
     MUTEX_TRY_LOCK_SPIN(lock, vc->read.vio.mutex, thread, READ_LOCK_SPIN_COUNT);
     if (lock) {
       if (vc_ok_read(vc)) {
@@ -1436,7 +1435,7 @@ ClusterHandler::finish_delayed_reads()
           if (vc->read.queue) {
             // Previous complete_channel_read() put us back on the list,
             //  remove our self to process another byte bank completion
-            ClusterVC_remove(vc, &vc->read);
+            ClusterVC_remove_read(vc);
           }
           Debug("cluster_vc_xfer",
                 "Delayed read, credit ch %d 0x%x %d bytes", vc->channel, vc, d->get_block()->read_avail());
@@ -1450,9 +1449,8 @@ ClusterHandler::finish_delayed_reads()
           }
         }
       }
-    } else {
-      l.push(vc, vc->read.link);
-    }
+    } else
+      l.push(vc);
   }
   delayed_reads = l;
 }
@@ -1538,7 +1536,7 @@ ClusterHandler::update_channels_written(bool bump_unhandled_channels)
     int n;
     ClusterVConnection *vc;
     while ((vc = (ClusterVConnection *) write_vcs[cur_vcs].head)) {
-      ClusterVC_remove(vc, &vc->write);
+      ClusterVC_remove_write(vc);
 
       ink_assert(!((ProxyMutex *) vc->write_locked));
       MUTEX_TRY_LOCK_SPIN(lock, vc->write.vio.mutex, thread, WRITE_LOCK_SPIN_COUNT);

@@ -8547,7 +8547,7 @@ HttpTransact::calculate_document_freshness_limit(Arena * arena,
 int
 HttpTransact::calculate_freshness_fuzz(State * s, int fresh_limit)
 {
-  static double LOG_YEAR = log10(NUM_SECONDS_IN_ONE_YEAR);
+  static double LOG_YEAR = log10((double)NUM_SECONDS_IN_ONE_YEAR);
   const inku32 granularity = 1000;
   int result = 0;
 
@@ -8560,10 +8560,10 @@ HttpTransact::calculate_freshness_fuzz(State * s, int fresh_limit)
       // Complicated calculations to try to find a reasonable fuzz time between fuzz_min_time and fuzz_time
       int fresh_small = (int) rint((double) s->http_config_param->freshness_fuzz_min_time *
                                    pow(2, min((double) fresh_limit / (double) s->http_config_param->freshness_fuzz_time,
-                                              sqrt(s->http_config_param->freshness_fuzz_time))));
+                                              sqrt((double)s->http_config_param->freshness_fuzz_time))));
       int fresh_large = max((int) s->http_config_param->freshness_fuzz_min_time,
                             (int) rint(s->http_config_param->freshness_fuzz_time *
-                                       log10(fresh_limit - s->http_config_param->freshness_fuzz_min_time) / LOG_YEAR));
+                                       log10((double)(fresh_limit - s->http_config_param->freshness_fuzz_min_time) / LOG_YEAR)));
       result = min(fresh_small, fresh_large);
       Debug("http_match", "calculate_freshness_fuzz using min/max --- freshness fuzz = %d", result);
     } else {

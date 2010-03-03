@@ -123,7 +123,7 @@ public:
   INKContInternal * m_cont;
   int invoke(int event, void *edata);
   APIHook *next() const;
-    Link<APIHook> m_link;
+  LINK(APIHook, m_link);
 };
 
 
@@ -135,7 +135,7 @@ public:
   APIHook *get();
 
 private:
-    Queue<APIHook> m_hooks;
+  Que(APIHook, m_link) m_hooks;
 };
 
 
@@ -155,7 +155,7 @@ public:
   int hooks_set;
 
 private:
-    APIHooks m_hooks[INK_HTTP_LAST_HOOK];
+  APIHooks m_hooks[INK_HTTP_LAST_HOOK];
 };
 
 

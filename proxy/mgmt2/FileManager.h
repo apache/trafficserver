@@ -47,7 +47,7 @@ struct callbackListable
 {
 public:
   FileCallbackFunc func;
-  Link<callbackListable> link;
+  LINK(callbackListable, link);
 };
 
 struct fileBinding

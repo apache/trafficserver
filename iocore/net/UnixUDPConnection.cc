@@ -80,7 +80,7 @@ UnixUDPConnection::callbackHandler(int event, void *data)
     if (p) {
       Debug("udpnet", "UDPConnection::callbackHandler");
       UDPPacketInternal *pnext = NULL;
-      Que(UDPPacketInternal, link) result;
+      Queue<UDPPacketInternal> result;
       while (p) {
         pnext = p->alink.next;
         p->alink.next = NULL;

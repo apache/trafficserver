@@ -56,6 +56,7 @@
 #define ALLOCATE_AND_WRITE_TO_BUF 1
 #define WRITE_TO_BUF 2
 
+class HttpTunnelProducer;
 class HttpSM;
 class HttpPagesHandler;
 typedef int (HttpSM::*HttpSMHandler) (int event, void *data);
@@ -136,6 +137,29 @@ private:
   int transfer_bytes();
 };
 
+struct HttpTunnelConsumer
+{
+  HttpTunnelConsumer();
+
+  LINK(HttpTunnelConsumer, link);
+  HttpTunnelProducer *producer;
+  HttpTunnelProducer *self_producer;
+
+  HttpTunnelType_t vc_type;
+  VConnection *vc;
+  IOBufferReader *buffer_reader;
+  HttpConsumerHandler vc_handler;
+  VIO *write_vio;
+
+  int skip_bytes;               // bytes to skip at beginning of stream
+  int bytes_written;            // total bytes written to the vc
+  int handler_state;            // state used the handlers
+
+  bool alive;
+  bool write_success;
+  const char *name;
+};
+
 struct HttpTunnelProducer
 {
   HttpTunnelProducer();
@@ -166,29 +190,6 @@ struct HttpTunnelProducer
 
   bool alive;
   bool read_success;
-  const char *name;
-};
-
-struct HttpTunnelConsumer
-{
-  HttpTunnelConsumer();
-
-  Link<HttpTunnelConsumer> link;
-  HttpTunnelProducer *producer;
-  HttpTunnelProducer *self_producer;
-
-  HttpTunnelType_t vc_type;
-  VConnection *vc;
-  IOBufferReader *buffer_reader;
-  HttpConsumerHandler vc_handler;
-  VIO *write_vio;
-
-  int skip_bytes;               // bytes to skip at beginning of stream
-  int bytes_written;            // total bytes written to the vc
-  int handler_state;            // state used the handlers
-
-  bool alive;
-  bool write_success;
   const char *name;
 };
 

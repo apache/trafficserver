@@ -54,8 +54,8 @@ class SessionBucket:public Continuation
 public:
   SessionBucket();
   int session_handler(int event, void *data);
-    Queue<HttpServerSession> lru_list;
-    DLL<HttpServerSession> l2_hash[HSM_LEVEL2_BUCKETS];
+  Que(HttpServerSession, lru_link) lru_list;
+  DList(HttpServerSession, hash_link) l2_hash[HSM_LEVEL2_BUCKETS];
 };
 
 enum HSMresult_t

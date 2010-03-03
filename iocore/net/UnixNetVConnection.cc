@@ -42,11 +42,6 @@ typedef struct iovec IOVec;
 ClassAllocator<UnixNetVConnection> netVCAllocator("netVCAllocator");
 
 //
-// Prototypes
-//
-void net_update_priority(NetHandler *nh, UnixNetVConnection *vc, NetState *ns, int ndone);
-
-//
 // Reschedule a UnixNetVConnection by moving it
 // onto or off of the ready_list
 //

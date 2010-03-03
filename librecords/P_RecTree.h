@@ -46,7 +46,7 @@ public:
   char *node_name;
   char *var_name_ptr;
   int num_leaf;
-    Link<RecTreeNode> link;
+  LINK(RecTreeNode, link);
 
   void print();
 };

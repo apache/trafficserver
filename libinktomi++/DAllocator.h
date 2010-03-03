@@ -57,7 +57,7 @@ struct AllocDescriptor
   DallocState state;
   void *el;
 
-  Link<AllocDescriptor> link;      // list of free elements
+  LINK(AllocDescriptor, link);      // list of free elements
 };
 
 struct DAllocator;
@@ -73,7 +73,7 @@ struct AllocPoolDescriptor
 
   AllocDescriptor *descriptors;
 
-  SLink<AllocPoolDescriptor> link;
+  SLINK(AllocPoolDescriptor, link);
 };
 
 struct DAllocator

@@ -44,9 +44,9 @@ public:
   void errorAndDie(int e);
   int callbackHandler(int event, void *data);
 
-  Link<UnixUDPConnection> polling_link;
-  Link<UnixUDPConnection> callback_link;
-  SLink<UnixUDPConnection> newconn_alink;
+  LINK(UnixUDPConnection, polling_link);
+  LINK(UnixUDPConnection, callback_link);
+  SLINK(UnixUDPConnection, newconn_alink);
 
   InkAtomicList inQueue;
   int onCallbackQueue;

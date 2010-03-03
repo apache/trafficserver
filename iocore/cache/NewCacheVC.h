@@ -36,8 +36,6 @@ class HttpCacheSM;
 class HttpTunnel;
 
 //----------------------------------------------------------------------------
-class NewCacheVC;
-extern ClassAllocator<NewCacheVC> newCacheVConnectionAllocator;
 
 class NewCacheVC:public CacheVConnection
 {
@@ -293,6 +291,7 @@ private:
   Event *trigger;
 };
 
+extern ClassAllocator<NewCacheVC> newCacheVConnectionAllocator;
 
 
 #endif // __NEWCACHEVC_H__

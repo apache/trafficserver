@@ -56,7 +56,7 @@ public:
   int id;
   int event;
   void *data;
-  Link<Callback> link;
+  LINK(Callback, link);
 };
 
 /**

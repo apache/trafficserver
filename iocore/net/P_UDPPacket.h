@@ -51,7 +51,7 @@ public:
 
   virtual void free();
 
-  SLink<UDPPacketInternal> alink;  // atomic link
+  SLINK(UDPPacketInternal, alink);  // atomic link
   // packet scheduling stuff: keep it a doubly linked list
   inku64 pktSendStartTime;
   inku64 pktSendFinishTime;

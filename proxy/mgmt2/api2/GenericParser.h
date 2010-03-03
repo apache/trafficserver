@@ -60,7 +60,7 @@ public:
 
   char *name;
   char *value;
-    Link<Token> link;
+  LINK(Token, link);
 };
 
 /***************************************************************************
@@ -182,7 +182,7 @@ public:
   void Print();
   TokenList *parse(const char *buf, INKFileNameT filetype);
 
-  Link<Rule> link;
+  LINK(Rule, link);
 private:
 
   INKFileNameT m_filetype;

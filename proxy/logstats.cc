@@ -43,18 +43,25 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#if (__GNUC__ >= 3)
 #define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
 #include <ext/hash_map>
 #include <ext/hash_set>
 #undef _BACKWARD_BACKWARD_WARNING_H
+#else
+#include <hash_map>
+#include <hash_set>
+#include <map>
+#endif
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif
 #include <fcntl.h>
 
-
+#if defined(__GNUC__)
 using namespace __gnu_cxx;
-
+#endif
+using namespace std;
 
 // Constants, please update the VERSION number when you make a new build!!!
 #define PROGRAM_NAME		"traffic_logstats"
@@ -1187,7 +1194,7 @@ inline void
 format_int(ink64 num, std::ostream & out)
 {
   if (num > 0) {
-    ink64 mult = (ink64) pow(10, (int) (log10(num) / 3) * 3);
+    ink64 mult = (ink64) pow((double)10, (int) (log10((double)num) / 3) * 3);
     ink64 div;
     std::stringstream ss;
 
@@ -1243,7 +1250,7 @@ format_line(const char *desc, const StatsCounter & stat, const StatsCounter & to
 {
   static char metrics[] = "KKMGTP";
   static char buf[64];
-  int ix = (stat.bytes > 1024 ? (int) (log10(stat.bytes) / LOG10_1024) : 1);
+  int ix = (stat.bytes > 1024 ? (int) (log10((double)stat.bytes) / LOG10_1024) : 1);
 
   out << std::left << std::setw(29) << desc;
 
@@ -1253,7 +1260,7 @@ format_line(const char *desc, const StatsCounter & stat, const StatsCounter & to
   snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.count / total.count * 100));
   out << std::right << buf;
 
-  snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow(1024, ix), metrics[ix]);
+  snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow((double)1024, ix), metrics[ix]);
   out << std::right << buf;
 
   snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.bytes / total.bytes * 100));

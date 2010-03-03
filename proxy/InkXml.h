@@ -62,7 +62,7 @@ private:
   char *m_value;
 
 public:
-  Link<InkXmlAttr> link;
+  LINK(InkXmlAttr, link);
 
 private:
   // -- member functions that are not allowed --
@@ -108,7 +108,7 @@ private:
   Queue<InkXmlAttr> m_tags;
 
 public:
-  Link<InkXmlObject> link;
+  LINK(InkXmlObject, link);
 
 private:
   InkXmlObject * get_next_xml_object(int fd);
@@ -179,9 +179,9 @@ private:
   struct ListElem
   {
     char *m_name;
-      Link<ListElem> link;
+    LINK(ListElem, link);
 
-      ListElem(char *name):m_name(name)
+    ListElem(char *name):m_name(name)
     {
     }
   };

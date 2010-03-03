@@ -41,8 +41,8 @@ private:
   char host[MAXDNAME];
 
 public:
-    Link<SRV> link;          /* we need this in order to queue these things up in SRVHosts, but I agree, it's pretty lame */
-    SRV():weight(0), port(0), priority(0), ttl(0)
+  LINK(SRV, link);
+  SRV():weight(0), port(0), priority(0), ttl(0)
   {
     memset(host, 0, MAXDNAME);
   }
