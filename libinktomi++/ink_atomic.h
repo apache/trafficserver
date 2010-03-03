@@ -52,6 +52,36 @@ typedef vink32 *pvink32;
 typedef vink64 *pvink64;
 typedef vvoidp *pvvoidp;
 
+#if defined(__SUNPRO_CC)
+
+typedef volatile inku32 vinku32;
+#if __WORDSIZE == 64
+typedef unsigned long inku64_s;
+#else
+typedef inku64 inku64_s;
+#endif
+typedef volatile inku64_s vinku64_s;
+typedef vinku32 *pvinku32;
+typedef vinku64_s *pvinku64_s;
+
+
+#include <atomic.h>
+
+static inline ink32 ink_atomic_swap(pvink32 mem, ink32 value) { return (ink32)atomic_swap_32((pvinku32)mem, (inku32)value); }
+static inline ink64 ink_atomic_swap64(pvink64 mem, ink64 value) { return (ink64)atomic_swap_64((pvinku64_s)mem, (inku64_s)value); }
+static inline void *ink_atomic_swap_ptr(vvoidp mem, void *value) { return atomic_swap_ptr((vvoidp)mem, value); }
+static inline int ink_atomic_cas(pvink32 mem, int old, int new_value) { return atomic_cas_32((pvinku32)mem, (inku32)old, (inku32)new_value) == old; }
+static inline int ink_atomic_cas64(pvink64 mem, ink64 old, ink64 new_value) { return atomic_cas_64((pvinku64_s)mem, (inku64_s)old, (inku64_s)new_value) == old; }
+static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return atomic_cas_ptr((vvoidp)mem, old, new_value) == old; }
+static inline int ink_atomic_increment(pvink32 mem, int value) { return ((inku32)atomic_add_32_nv((pvinku32)mem, (inku32)value)) - value; }
+static inline ink64 ink_atomic_increment64(pvink64 mem, ink64 value) { return ((inku64_s)atomic_add_64_nv((pvinku64_s)mem, (inku64_s)value)) - value; }
+static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return (void*)(((char*)atomic_add_ptr_nv((vvoidp)mem, (ssize_t)value)) - value); }
+
+// not used for Intel Processors or Sparc which are mostly sequentally consistent
+#define INK_WRITE_MEMORY_BARRIER
+#define INK_MEMORY_BARRIER
+
+#else
 
 #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)
 
@@ -59,13 +89,13 @@ typedef vvoidp *pvvoidp;
 
 static inline ink32 ink_atomic_swap(pvink32 mem, ink32 value) { return __sync_lock_test_and_set(mem, value); }
 static inline ink64 ink_atomic_swap64(pvink64 mem, ink64 value) { return __sync_lock_test_and_set(mem, value); }
-static inline void *ink_atomic_swap_ptr(void *mem, void *value) { return __sync_lock_test_and_set((void**)mem, value); }
+static inline void *ink_atomic_swap_ptr(vvoidp mem, void *value) { return __sync_lock_test_and_set((void**)mem, value); }
 static inline int ink_atomic_cas(pvink32 mem, int old, int new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
+static inline ink64 ink_atomic_cas64(pvink64 mem, ink64 old, ink64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 static inline int ink_atomic_increment(pvink32 mem, int value) { return __sync_fetch_and_add(mem, value); }
-static inline int ink_atomic_increment64(pvink64 mem, ink64 value) { return __sync_fetch_and_add(mem, value); }
+static inline ink64 ink_atomic_increment64(pvink64 mem, ink64 value) { return __sync_fetch_and_add(mem, value); }
 static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, value); }
-static inline int ink_atomic_cas64(pvink64 mem, ink64 old, ink64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 
 // not used for Intel Processors which have sequential(esque) consistency
 #define INK_WRITE_MEMORY_BARRIER
@@ -88,7 +118,7 @@ extern "C"
   ink32 ink_atomic_swap(pvink32 mem, ink32 value);
 
 /* atomic swap a pointer */
-  void *ink_atomic_swap_ptr(void *mem, void *value);
+  void *ink_atomic_swap_ptr(vvoidp mem, void *value);
 
   ink64 ink_atomic_swap64(pvink64 mem, ink64 value);
 
@@ -153,7 +183,7 @@ extern "C"
       return result;
   }
 
-  static inline int ink_atomic_increment64(pvink64 mem, ink64 value)
+  static inline ink64 ink_atomic_increment64(pvink64 mem, ink64 value)
   {
     volatile ink64 *memp = mem;
     ink64 old;
@@ -173,7 +203,6 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
-
 #endif
-
+#endif
 #endif                          /* _ink_atomic_h_ */
