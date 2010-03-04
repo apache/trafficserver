@@ -63,9 +63,12 @@ struct CacheTestHost {
                   xprev_host_prob(0), xnext_host_prob(0) {}
 };
 
-struct CacheTestSM;
+struct CacheTestHeader {
+  inku64 serial;
+};
 
 struct CacheTestSM : RegressionSM {
+  int start_memcpy_on_clone; // place all variables to be copied between these markers
   Action *timeout;
   Action *cache_action;
   ink_hrtime start_time;
@@ -84,18 +87,9 @@ struct CacheTestSM : RegressionSM {
   int expect_event;
   int expect_initial_event;
   int initial_event;
-  union
-  {
-    unsigned int flags;
-    struct
-    {
-      unsigned int http_request:1;
-      unsigned int writing:1;
-      unsigned int update:1;
-      unsigned int hit:1;
-      unsigned int remove:1;
-    } f;
-  };
+  inku64 content_salt;
+  CacheTestHeader header;
+  int end_memcpy_on_clone; // place all variables to be copied between these markers
 
   void fill_buffer();
   int check_buffer();
@@ -107,6 +101,8 @@ struct CacheTestSM : RegressionSM {
     make_request_internal();
   }
   virtual void make_request_internal() = 0;
+  virtual int open_read_callout();
+  virtual int open_write_callout();
 
   void cancel_timeout() {
     if (timeout) timeout->cancel();

@@ -24,23 +24,10 @@
 
 #include "P_Cache.h"
 
-
-#define HDR_PTR_SIZE            (sizeof(inku64))
-#define HDR_PTR_ALIGNMENT_MASK  ((HDR_PTR_SIZE) - 1L)
-
-extern int cache_config_agg_write_backlog;
-
-static inline int power_of_2(inku32 x) {
-  while (x) {
-    if (x & 1) {
-      if (x >> 1) 
-        return 0;
-      return 1;
-    }
-    x >>= 1; 
-  }
-  return 1;
-}
+#define IS_POWER_2(_x) (!((_x)&((_x)-1)))
+#define UINT_WRAP_LTE(_x, _y) (((_y)-(_x)) < INT_MAX) // exploit overflow
+#define UINT_WRAP_GTE(_x, _y) (((_x)-(_y)) < INT_MAX) // exploit overflow
+#define UINT_WRAP_LT(_x, _y) (((_x)-(_y)) >= INT_MAX) // exploit overflow
 
 // Given a key, finds the index of the alternate which matches
 // used to get the alternate which is actually present in the document
@@ -196,7 +183,7 @@ CacheVC::handleWrite(int event, Event *e)
     ink_assert(od->writing_vec);
     header_len = write_vector->marshal_length();
     ink_assert(header_len > 0);
-  } else
+  } else if (f.use_first_key)
 #endif
     header_len = header_to_write_len;
   if (f.use_first_key && fragment) {
@@ -331,11 +318,10 @@ Part::aggWriteDone(int event, Event *e)
 
   cancel_trigger();
 
+  // ensure we have the cacheDirSync lock if we intend to call it later
+  // retaking the current mutex recursively is a NOOP
   CACHE_TRY_LOCK(lock, dir_sync_waiting ? cacheDirSync->mutex : mutex, mutex->thread_holding);
   if (!lock) {
-    // INKqa10347
-    // Race condition between cacheDirSync and the part when setting the
-    // dir_sync_waiting flag
     eventProcessor.schedule_in(this, MUTEX_RETRY_DELAY);
     return EVENT_CONT;
   }
@@ -369,11 +355,21 @@ Part::aggWriteDone(int event, Event *e)
     agg_buf_pos = 0;
   }
   set_io_not_in_progress();
+  // callback ready sync CacheVCs
+  CacheVC *c = 0;
+  while ((c = sync.dequeue())) {
+    if (UINT_WRAP_LTE(c->write_serial + 2, header->write_serial))
+      c->initial_thread->schedule_imm(c, AIO_EVENT_DONE);
+    else {
+      sync.push(c); // put it back on the front
+      break;
+    }
+  }
   if (dir_sync_waiting) {
     dir_sync_waiting = 0;
     cacheDirSync->handleEvent(EVENT_IMMEDIATE, 0);
   }
-  if (agg.head)
+  if (agg.head || sync.head)
     return aggWrite(event, e);
   return EVENT_CONT;
 }
@@ -774,7 +770,7 @@ agg_copy(char *p, CacheVC *vc)
     doc->total_len = vc->total_len;
     doc->first_key = vc->first_key;
     doc->sync_serial = part->header->sync_serial;
-    doc->write_serial = part->header->write_serial;
+    vc->write_serial = doc->write_serial = part->header->write_serial;
     doc->checksum = DOC_NO_CHECKSUM;
     if (vc->pin_in_cache) {
       dir_set_pinned(&vc->dir, 1);
@@ -963,13 +959,13 @@ Part::agg_wrap()
   periodic_scan();
 }
 
-/* NOTE:: This state can be called by an AIO thread, so DON'T DON'T
+/* NOTE: This state can be called by an AIO thread, so DON'T DON'T
    DON'T schedule any events on this thread using VC_SCHED_XXX or
    mutex->thread_holding->schedule_xxx_local(). ALWAYS use 
    eventProcessor.schedule_xxx().
    Also, make sure that any functions called by this also use
    the eventProcessor to schedule events
-   */
+*/
 int
 Part::aggWrite(int event, void *e)
 {
@@ -998,7 +994,12 @@ Lagain:
     agg_buf_pos += writelen;
     CacheVC *n = (CacheVC *)c->link.next;
     agg.dequeue();
-    if (c->f.evacuator)
+    if (c->f.sync && c->f.use_first_key) {
+      CacheVC *last = sync.tail;
+      while (last && UINT_WRAP_LT(c->write_serial, last->write_serial))
+        last = (CacheVC*)last->link.prev;
+      sync.insert(c, last);
+    } else if (c->f.evacuator)
       c->handleEvent(AIO_EVENT_DONE, 0);
     else
       tocall.enqueue(c);
@@ -1007,7 +1008,7 @@ Lagain:
 
   // if we got nothing...
   if (!agg_buf_pos) {
-    if (!agg.head) // nothing to get
+    if (!agg.head && !sync.head) // nothing to get
       return EVENT_CONT;
     if (header->write_pos == start) {
       // write aggregation too long, bad bad, punt on everything.
@@ -1021,8 +1022,10 @@ Lagain:
       return EVENT_CONT;
     }
     // start back
-    agg_wrap();
-    goto Lagain;
+    if (agg.head) {
+      agg_wrap();
+      goto Lagain;
+    }
   }
 
   // evacuate space
@@ -1035,8 +1038,21 @@ Lagain:
 
   // if agg.head, then we are near the end of the disk, so
   // write down the aggregation in whatever size it is.
-  if (agg_buf_pos < AGG_HIGH_WATER && !agg.head && !dir_sync_waiting)
+  if (agg_buf_pos < AGG_HIGH_WATER && !agg.head && !sync.head && !dir_sync_waiting)
     goto Lwait;
+
+  // write sync marker
+  if (!agg_buf_pos) {
+    ink_assert(sync.head);
+    int l = round_to_approx_size(sizeof(Doc));
+    agg_buf_pos = l;
+    Doc *d = (Doc*)agg_buffer;
+    memset(d, 0, sizeof(Doc));
+    d->magic = DOC_MAGIC;
+    d->len = l;
+    d->sync_serial = header->sync_serial;
+    d->write_serial = header->write_serial;
+  }
 
   // set write limit
   header->agg_pos = header->write_pos + agg_buf_pos;
@@ -1112,6 +1128,12 @@ CacheVC::openWriteCloseDir(int event, Event *e)
       default: CACHE_INCREMENT_DYN_STAT(cache_three_plus_plus_fragment_document_count_stat); break;
     }
   }
+  if (f.close_complete) {
+    recursive++;
+    ink_debug_assert(!part || this_ethread() != part->mutex->thread_holding);
+    vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, (void *) &vio);
+    recursive--;
+  }
   return free_CacheVC(this);
 }
 
@@ -1119,14 +1141,14 @@ int
 CacheVC::openWriteCloseHeadDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
+  if (event == AIO_EVENT_DONE)
+    set_io_not_in_progress();
+  else if (is_io_in_progress())
+    return EVENT_CONT;
   {
     CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
     if (!lock)
       VC_LOCK_RETRY_EVENT();
-    if (event == AIO_EVENT_DONE)
-      set_io_not_in_progress();
-    else if (is_io_in_progress())
-      return EVENT_CONT;
     od->writing_vec = 0;
     if (!io.ok())
       goto Lclose;
@@ -1282,7 +1304,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
       if (!frag) 
         frag = &integral_frags[0];
       else {
-        if (fragment-1 >= INTEGRAL_FRAGS && power_of_2((inku32)(fragment-1))) {
+        if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((inku32)(fragment-1))) {
           Frag *t = frag;
           frag = (Frag*)xmalloc(sizeof(Frag) * (fragment-1)*2);
           memcpy(frag, t, sizeof(Frag) * (fragment-2));
@@ -1324,6 +1346,7 @@ Lagain:
     called_user = 1;
     if (calluser(VC_EVENT_WRITE_COMPLETE) == EVENT_DONE)
       return EVENT_DONE;
+    ink_assert(!"close expected after write COMPLETE");
     if (vio.ntodo() <= 0)
       return EVENT_CONT;
   }
@@ -1365,7 +1388,11 @@ Lagain:
   }
   if (not_writing)
     return EVENT_CONT;
-
+  if (towrite == ntodo && f.close_complete) {
+    closed = 1;
+    SET_HANDLER(&CacheVC::openWriteClose);
+    return openWriteClose(EVENT_NONE, NULL);
+  }
   SET_HANDLER(&CacheVC::openWriteWriteDone);
   return do_write_lock_call();
 }
@@ -1393,6 +1420,7 @@ CacheVC::openWriteOverwrite(int event, Event *e)
     if (!(doc->first_key == first_key))
       goto Lcollision;
     od->first_dir = dir;
+    first_buf = buf;
     goto Ldone;
   }
 Lcollision:
@@ -1543,22 +1571,19 @@ CacheVC::openWriteStartBegin(int event, Event *e)
   cancel_trigger();
   if (_action.cancelled)
     return free_CacheVC(this);
-  CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
-  if (!lock)
-    VC_SCHED_LOCK_RETRY();
-  if ((err = part->open_write(this, false, 1)) > 0) {
+  if ((err = part->open_write_lock(this, false, 1) > 0)) {
     CACHE_INCREMENT_DYN_STAT(base_stat + CACHE_STAT_FAILURE);
     free_CacheVC(this);
-    MUTEX_RELEASE(lock);
     _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -err);
     return 0;
   }
+  if (err < 0)
+    VC_SCHED_LOCK_RETRY();
   if (f.overwrite) {
-    SET_HANDLER(&CacheVC::openWriteOverwrite);
+     SET_HANDLER(&CacheVC::openWriteOverwrite);
     return openWriteOverwrite(EVENT_IMMEDIATE, 0);
   } else {
-    MUTEX_RELEASE(lock);
-    // write by key
+     // write by key
     SET_HANDLER(&CacheVC::openWriteMain);
     return callcont(CACHE_EVENT_OPEN_WRITE);
   }
@@ -1567,7 +1592,7 @@ CacheVC::openWriteStartBegin(int event, Event *e)
 // main entry point for writing of of non-http documents
 Action *
 Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
-                  bool overwrite, time_t apin_in_cache, char *hostname, int host_len)
+                  int options, time_t apin_in_cache, char *hostname, int host_len)
 {
 
   if (!(CacheProcessor::cache_ready & frag_type)) {
@@ -1601,7 +1626,9 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
 #ifdef HTTP_CACHE
   c->info = 0;
 #endif
-  c->f.overwrite = overwrite;
+  c->f.overwrite = (options & CACHE_WRITE_OPT_OVERWRITE) != 0;
+  c->f.close_complete = (options & CACHE_WRITE_OPT_CLOSE_COMPLETE) != 0;
+  c->f.sync = (options & CACHE_WRITE_OPT_SYNC) == CACHE_WRITE_OPT_SYNC;
   c->pin_in_cache = (inku32) apin_in_cache;
 
   if ((res = c->part->open_write_lock(c, false, 1)) > 0) {
@@ -1616,7 +1643,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
     c->trigger = CONT_SCHED_LOCK_RETRY(c);
     return &c->_action;
   }
-  if (!overwrite) {
+  if (!c->f.overwrite) {
     SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteMain);
     c->callcont(CACHE_EVENT_OPEN_WRITE);
     return ACTION_RESULT_DONE;

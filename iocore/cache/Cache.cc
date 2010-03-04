@@ -253,9 +253,11 @@ void
 CacheVC::do_io_close(int alerrno)
 {
   ink_debug_assert(mutex->thread_holding == this_ethread());
+  int previous_closed = closed;
   closed = (alerrno == -1) ? 1 : -1;    // Stupid default arguments
   DDebug("cache_close", "do_io_close %lX %d %d", (long) this, alerrno, closed);
-  die();
+  if (!previous_closed && !recursive)
+    die();
 }
 
 void
@@ -338,7 +340,6 @@ CacheVC::get_http_info(CacheHTTPInfo ** ainfo)
 void
 CacheVC::set_http_info(CacheHTTPInfo *ainfo)
 {
-
   ink_assert(!total_len);
   if (f.update) {
     ainfo->object_key_set(update_key);
@@ -354,7 +355,6 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
 
 bool CacheVC::set_pin_in_cache(time_t time_pin)
 {
-
   if (total_len) {
     ink_assert(!"should Pin the document before writing");
     return false;
@@ -1056,7 +1056,6 @@ Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
 int
 Part::handle_dir_clear(int event, void *data)
 {
-
   int dir_len = part_dirlen(this);
   AIOCallback *op;
 
@@ -1186,7 +1185,6 @@ Part::handle_recover_from_data(int event, void *data)
          were written to just before syncing the directory) and make sure
          that all documents have write_serial <= header->write_serial.
        */
-
       int to_check = header->write_pos - header->last_write_pos;
       ink_assert(to_check && to_check < (int) io.aiocb.aio_nbytes);
       int done = 0;
@@ -1198,7 +1196,6 @@ Part::handle_recover_from_data(int event, void *data)
           goto Lclear;
         }
         done += round_to_approx_size(doc->len);
-
         if (doc->sync_serial > last_write_serial)
           last_sync_serial = doc->sync_serial;
       }
@@ -2798,7 +2795,6 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url,
     }
   }
 #endif
-
   // cache plugin
   if (cache_global_hooks != NULL && cache_global_hooks->hooks_set > 0) {
     Debug("cache_plugin", "[CacheProcessor::open_write] Cache hooks are set, old_info=%lX", (long) old_info);
@@ -2819,8 +2815,6 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url,
       return ACTION_RESULT_DONE;
     }
   }
-
-
   return caches[type]->open_write(cont, url, request, old_info, pin_in_cache, type);
 }
 

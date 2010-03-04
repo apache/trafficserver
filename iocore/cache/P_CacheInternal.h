@@ -214,6 +214,7 @@ extern int cache_config_alt_rewrite_max_size;
 extern int cache_config_read_while_writer;
 extern char cache_system_config_directory[PATH_NAME_MAX + 1];
 extern int cache_clustering_enabled;
+extern int cache_config_agg_write_backlog;
 #ifdef HIT_EVACUATE
 extern int cache_config_hit_evacuate_percent;
 extern int cache_config_hit_evacuate_size_limit;
@@ -243,10 +244,13 @@ struct CacheVC:CacheVConnection
   }
   int get_header(void **ptr, int *len) 
   {
-    Doc *doc = (Doc*)first_buf->data();
-    *ptr = doc->hdr();
-    *len = doc->hlen;   
-    return 0;
+    if (first_buf.m_ptr) {
+      Doc *doc = (Doc*)first_buf->data();
+      *ptr = doc->hdr();
+      *len = doc->hlen;   
+      return 0;
+    } else
+      return -1;
   }
   int set_header(void *ptr, int len) 
   {
@@ -269,6 +273,7 @@ struct CacheVC:CacheVConnection
   int do_write_call();
   int do_write_lock();
   int do_write_lock_call();
+  int do_sync(inku32 target_write_serial);
 
   int openReadClose(int event, Event *e);
   int openReadReadDone(int event, Event *e);
@@ -398,6 +403,7 @@ struct CacheVC:CacheVConnection
   int frag_len;         // for communicating with agg_copy
   inku32 write_len;     // for communicating with agg_copy
   inku32 agg_len;       // for communicating with aggWrite
+  inku32 write_serial;  // serial of the final write for SYNC
   Frag *frag;           // arraylist of fragment offset
   Frag integral_frags[INTEGRAL_FRAGS];
   Part *part;
@@ -435,13 +441,12 @@ struct CacheVC:CacheVConnection
     {
       unsigned int use_first_key:1;
       unsigned int overwrite:1; // overwrite first_key Dir if it exists
+      unsigned int close_complete:1; // WRITE_COMPLETE is final
+      unsigned int sync:1; // write to be committed to durable storage before WRITE_COMPLETE
       unsigned int evacuator:1;
       unsigned int single_fragment:1;
       unsigned int evac_vector:1;
       unsigned int lookup:1;
-#ifdef HIT_EVACUATE
-      unsigned int hit_evacuate:1;
-#endif
       unsigned int update:1;
       unsigned int remove:1;
       unsigned int remove_aborted_writers:1;
@@ -451,6 +456,9 @@ struct CacheVC:CacheVConnection
       unsigned int not_from_ram_cache:1;        // entire doc was from ram cache
       unsigned int rewrite_resident_alt:1;
       unsigned int readers:1;
+#ifdef HIT_EVACUATE
+      unsigned int hit_evacuate:1;
+#endif
     } f;
   };
   //end region C
@@ -923,7 +931,7 @@ struct Cache
   Action *lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len);
   inkcoreapi Action *open_read(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int len);
   inkcoreapi Action *open_write(Continuation *cont, CacheKey *key,
-                                CacheFragType frag_type, bool overwrite = false,
+                                CacheFragType frag_type, int options = 0,
                                 time_t pin_in_cache = (time_t) 0, char *hostname = 0, int host_len = 0);
   inkcoreapi Action *remove(Continuation *cont, CacheKey *key,
                             CacheFragType type = CACHE_FRAG_TYPE_HTTP, 
@@ -1109,7 +1117,7 @@ CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *k
 
 inline inkcoreapi Action *
 CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type, 
-                           int expected_size, bool overwrite, time_t pin_in_cache, 
+                           int expected_size, int options, time_t pin_in_cache, 
                            char *hostname, int host_len)
 {
   (void) expected_size;
@@ -1118,27 +1126,24 @@ CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag
 
   if (m && (cache_clustering_enabled > 0)) {
     return Cluster_write(cont, expected_size, (MIOBuffer *) 0, m,
-                         key, frag_type, overwrite, pin_in_cache,
+                         key, frag_type, options, pin_in_cache,
                          CACHE_OPEN_WRITE, key, (CacheURL *) 0,
                          (CacheHTTPHdr *) 0, (CacheHTTPInfo *) 0, hostname, host_len);
   }
 #endif
-  return caches[frag_type]->open_write(cont, key, frag_type, overwrite, pin_in_cache, hostname, host_len);
-
+  return caches[frag_type]->open_write(cont, key, frag_type, options, pin_in_cache, hostname, host_len);
 }
 
 inline Action *
-CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf,
-                                  CacheKey *key, 
-                                  CacheFragType frag_type, 
-                                  bool overwrite, time_t pin_in_cache,
+CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *key, 
+                                  CacheFragType frag_type, int options, time_t pin_in_cache, 
                                   char *hostname, int host_len) 
 {
   (void)cont;
   (void)buf;
   (void)key;
   (void)frag_type;
-  (void)overwrite;
+  (void)options;
   (void)hostname;
   (void)host_len;
   ink_assert(!"implemented");

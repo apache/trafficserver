@@ -56,7 +56,7 @@ CacheTestSM::CacheTestSM(RegressionTest *t) :
   expect_event(EVENT_NONE),
   expect_initial_event(EVENT_NONE),
   initial_event(EVENT_NONE),
-  flags(0)
+  content_salt(0)
 {
   SET_HANDLER(&CacheTestSM::event_handler);
 }
@@ -68,6 +68,16 @@ CacheTestSM::~CacheTestSM() {
     buffer->dealloc_reader(buffer_reader);
   if (buffer)
     free_MIOBuffer(buffer);
+}
+
+int CacheTestSM::open_read_callout() {
+  cvio = cache_vc->do_io_read(this, total_size, buffer);
+  return 1;
+}
+
+int CacheTestSM::open_write_callout() {
+  cvio = cache_vc->do_io_write(this, total_size, buffer_reader);
+  return 1;
 }
 
 int CacheTestSM::event_handler(int event, void *data) {
@@ -100,8 +110,10 @@ int CacheTestSM::event_handler(int event, void *data) {
       cache_vc = (CacheVConnection*)data;
       buffer = new_empty_MIOBuffer();
       buffer_reader = buffer->alloc_reader();
-      cvio = cache_vc->do_io_read(this, total_size, buffer);
-      return EVENT_DONE;
+      if (open_read_callout() < 0)
+        goto Lclose_error_next;
+      else
+        return EVENT_DONE;
    
     case CACHE_EVENT_OPEN_READ_FAILED:
       goto Lcancel_next;
@@ -129,8 +141,10 @@ int CacheTestSM::event_handler(int event, void *data) {
       cache_vc = (CacheVConnection*)data;
       buffer = new_empty_MIOBuffer();
       buffer_reader = buffer->alloc_reader();
-      cvio = cache_vc->do_io_write(this, total_size, buffer_reader);
-      return EVENT_DONE;
+      if (open_write_callout() < 0)
+        goto Lclose_error_next;
+      else
+        return EVENT_DONE;
       
     case CACHE_EVENT_OPEN_WRITE_FAILED:
       goto Lcancel_next;
@@ -209,6 +223,7 @@ Lnext:
 void CacheTestSM::fill_buffer() {
   ink64 avail = buffer->write_avail();
   CacheKey k = key;
+  k.b[1] += content_salt;
   ink64 sk = (ink64)sizeof(key);
   while (avail > 0) {
     ink64 l = avail;
@@ -229,6 +244,7 @@ void CacheTestSM::fill_buffer() {
 int CacheTestSM::check_buffer() { 
   ink64 avail = buffer_reader->read_avail();
   CacheKey k = key;
+  k.b[1] += content_salt;
   char b[sizeof(key)];
   ink64 sk = (ink64)sizeof(key);
   ink64 pos = cvio->ndone -  buffer_reader->read_avail();
@@ -267,25 +283,9 @@ int CacheTestSM::complete(int event) {
 }
 
 CacheTestSM::CacheTestSM(const CacheTestSM &ao) : RegressionSM(ao) {
-  timeout = ao.timeout;
-  cache_action = ao.cache_action; 
-  start_time = ao.start_time; 
-  cache_vc = ao.cache_vc;
-  cvio = ao.cvio;
-  buffer = ao.buffer;
-  buffer_reader = ao.buffer_reader;
-#ifdef HTTP_CACHE
-  params = ao.params;
-  info = ao.info;
-#endif
-  total_size = ao.total_size;
-  memcpy(urlstr, ao.urlstr, 1024);
-  key = ao.key;
-  repeat_count = ao.repeat_count;
-  expect_event = ao.expect_event;
-  expect_initial_event = ao.expect_initial_event;
-  initial_event = ao.initial_event;
-  flags = ao.flags;
+  int o = (int)(((char*)&start_memcpy_on_clone) - ((char*)this));
+  int s = (int)(((char*)&end_memcpy_on_clone) - ((char*)&start_memcpy_on_clone));
+  memcpy(((char*)this)+o, ((char*)&ao)+o, s);
   SET_HANDLER(&CacheTestSM::event_handler);
 }
 
@@ -298,7 +298,9 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
 
   EThread *thread = this_ethread();
 
-  CACHE_SM(t, write_test, { cacheProcessor.open_write(this, &key); } );
+  CACHE_SM(t, write_test, { cacheProcessor.open_write(
+        this, &key, CACHE_FRAG_TYPE_NONE, 100, 
+        CACHE_WRITE_OPT_SYNC); } );
   write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   write_test.expect_event = VC_EVENT_WRITE_COMPLETE;
   write_test.total_size = 100;
@@ -330,6 +332,62 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
   remove_fail_test.expect_event = CACHE_EVENT_REMOVE_FAILED;
   rand_CacheKey(&remove_fail_test.key, thread->mutex);
 
+  CACHE_SM(t, replace_write_test, { 
+      cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100, 
+                                CACHE_WRITE_OPT_SYNC);
+    }
+    int open_write_callout() {
+      header.serial = 10;
+      cache_vc->set_header(&header, sizeof(header));
+      cvio = cache_vc->do_io_write(this, total_size, buffer_reader);
+      return 1;
+    });
+  replace_write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
+  replace_write_test.expect_event = VC_EVENT_WRITE_COMPLETE;
+  replace_write_test.total_size = 100;
+  rand_CacheKey(&replace_write_test.key, thread->mutex);
+
+  CACHE_SM(t, replace_test, {
+      cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100,
+                                CACHE_WRITE_OPT_OVERWRITE_SYNC);
+    }   
+    int open_write_callout() {
+      CacheTestHeader *h = 0;
+      int hlen = 0;
+      if (cache_vc->get_header((void**)&h, &hlen) < 0)
+        return -1;
+      if (h->serial != 10)
+        return -1;
+      header.serial = 11;
+      cache_vc->set_header(&header, sizeof(header));
+      cvio = cache_vc->do_io_write(this, total_size, buffer_reader);
+      return 1;
+    });
+  replace_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
+  replace_test.expect_event = VC_EVENT_WRITE_COMPLETE;
+  replace_test.total_size = 100;
+  replace_test.key = replace_write_test.key;
+  replace_test.content_salt = 1;
+
+  CACHE_SM(t, replace_read_test, {
+      cacheProcessor.open_read(this, &key); 
+    }
+    int open_read_callout() {
+      CacheTestHeader *h = 0;
+      int hlen = 0;
+      if (cache_vc->get_header((void**)&h, &hlen) < 0)
+        return -1;
+      if (h->serial != 11)
+        return -1;
+      cvio = cache_vc->do_io_read(this, total_size, buffer);
+      return 1;
+    });
+  replace_read_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
+  replace_read_test.expect_event = VC_EVENT_READ_COMPLETE;
+  replace_read_test.total_size = 100;
+  replace_read_test.key = replace_test.key;
+  replace_read_test.content_salt = 1;
+
   r_sequential(
     t,
     write_test.clone(),
@@ -339,6 +397,9 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
     lookup_fail_test.clone(),
     read_fail_test.clone(),
     remove_fail_test.clone(),
+    replace_write_test.clone(),
+    replace_test.clone(),
+    replace_read_test.clone(),
     NULL
     )->run(pstatus);
   return;

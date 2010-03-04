@@ -1022,12 +1022,6 @@ CacheVC::openReadStartHead(int event, Event * e)
     } else
 #endif
     {
-      // non-http docs have the total len set in the first fragment
-      if (doc->hlen) {
-        ink_debug_assert(!"Cache::openReadStartHead non-http request" " for http doc");
-        err = -ECACHE_BAD_READ_REQUEST;
-        goto Ldone;
-      }
       next_CacheKey(&key, &doc->key);
       f.single_fragment = doc->single_fragment();
       doc_pos = doc->prefix_len();

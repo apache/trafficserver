@@ -169,7 +169,7 @@ err_exit:
 inline Action *
 Cluster_write(Continuation * cont, int expected_size,
               MIOBuffer * buf, ClusterMachine * m,
-              INK_MD5 * url_md5, CacheFragType ft, bool overwrite,
+              INK_MD5 * url_md5, CacheFragType ft, int options,
               time_t pin_in_cache, int opcode,
               CacheKey * key, CacheURL * url,
               CacheHTTPHdr * request, CacheHTTPInfo * old_info, char *hostname, int host_len)
@@ -258,7 +258,7 @@ Cluster_write(Continuation * cont, int expected_size,
     writeArgs.url_md5 = url_md5;
     writeArgs.pin_in_cache = pin_in_cache;
     writeArgs.frag_type = ft;
-    writeArgs.cfl_flags |= (overwrite ? CFL_OVERWRITE_ON_WRITE : 0);
+    writeArgs.cfl_flags |= (options & CACHE_WRITE_OPT_OVERWRITE ? CFL_OVERWRITE_ON_WRITE : 0);
     writeArgs.cfl_flags |= (old_info ? CFL_LOPENWRITE_HAVE_OLDINFO : 0);
     writeArgs.cfl_flags |= (allow_multiple_writes ? CFL_ALLOW_MULTIPLE_WRITES : 0);
 

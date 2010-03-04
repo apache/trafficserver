@@ -37,6 +37,11 @@
 						   CACHE_MODULE_MINOR_VERSION,\
 						   PUBLIC_MODULE_HEADER)
 
+#define CACHE_WRITE_OPT_OVERWRITE       0x0001
+#define CACHE_WRITE_OPT_CLOSE_COMPLETE  0x0002
+#define CACHE_WRITE_OPT_SYNC            (CACHE_WRITE_OPT_CLOSE_COMPLETE | 0x0004)
+#define CACHE_WRITE_OPT_OVERWRITE_SYNC  (CACHE_WRITE_OPT_SYNC | CACHE_WRITE_OPT_OVERWRITE)
+
 class CacheLookupHttpConfig;
 class CacheVC;
 #ifdef HTTP_CACHE
@@ -70,13 +75,13 @@ struct CacheProcessor:public Processor
                                 CacheKey *key, 
                                 CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
                                 int expected_size = CACHE_EXPECTED_SIZE,
-                                bool overwrite = false,
+                                int options = 0,
                                 time_t pin_in_cache = (time_t) 0,
                                 char *hostname = 0, int host_len = 0);
   Action *open_write_buffer(Continuation *cont, MIOBuffer *buf,
                             CacheKey *key, 
                             CacheFragType frag_type = CACHE_FRAG_TYPE_NONE, 
-                            bool overwrite = false,
+                            int options = 0,
                             time_t pin_in_cache = (time_t) 0,
                             char *hostname = 0, int host_len = 0);
   inkcoreapi Action *remove(Continuation *cont, CacheKey *key,

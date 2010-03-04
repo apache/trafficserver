@@ -150,6 +150,7 @@ struct Part:public Continuation
 
   Queue<CacheVC, Continuation::Link_link> agg;
   Queue<CacheVC, Continuation::Link_link> stat_cache_vcs;
+  Queue<CacheVC, Continuation::Link_link> sync;
   char *agg_buffer;
   int agg_todo_size;
   int agg_buf_pos;
@@ -171,10 +172,10 @@ struct Part:public Continuation
   inku32 last_sync_serial;
   inku32 last_write_serial;
   bool recover_wrapped;
-  int dir_sync_waiting;
-  int dir_sync_in_progress;
+  bool dir_sync_waiting;
+  bool dir_sync_in_progress;
+  bool writing_end_marker;
   RamCacheEntry first_fragment;
-
 
   void cancel_trigger();
 
@@ -240,11 +241,11 @@ struct Part:public Continuation
   EvacuationBlock *force_evacuate_head(Dir *dir, int pinned);
   int within_hit_evacuate_window(Dir *dir);
 
-Part():Continuation(new_ProxyMutex()), path(NULL), fd(-1),
-    dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0), skip(0), start(0),
-    len(0), data_blocks(0), hit_evacuate_window(0), agg_todo_size(0), agg_buf_pos(0), trigger(0),
-    evacuate_size(0), disk(NULL), last_sync_serial(0), last_write_serial(0), recover_wrapped(false),
-    dir_sync_waiting(0), dir_sync_in_progress(0) {
+  Part():Continuation(new_ProxyMutex()), path(NULL), fd(-1),
+         dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0), skip(0), start(0),
+         len(0), data_blocks(0), hit_evacuate_window(0), agg_todo_size(0), agg_buf_pos(0), trigger(0),
+         evacuate_size(0), disk(NULL), last_sync_serial(0), last_write_serial(0), recover_wrapped(false),
+         dir_sync_waiting(0), dir_sync_in_progress(0), writing_end_marker(0) {
     open_dir.mutex = mutex;
 #if defined(_WIN32)
     agg_buffer = (char *) malloc(AGG_SIZE);
