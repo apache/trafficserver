@@ -12,18 +12,22 @@ libinktomi++
         jplevyak@apache.org - portions including atomics, diags, List, regressions and portability
 	zwoop@apache.org
 	bcall@apache.org
+        georgep@apache.org
 
 Event System/Buffering/VIO/VConnection
         jplevyak@apache.org
 	bcall@apache.org
+        georgep@apache.org
 
 Network I/O
         jplevyak@apache.org - not including SSL or UDP except where it intersects the other code
 	bcall@apache.org
+        georgep@apache.org
 
 Raw Cache and AIO
         jplevyak@apache.org - not including HTTP-specific behavior
 	bcall@apache.org
+        georgep@apache.org
 
 HTTP Caching
 	bcall@apache.org
@@ -33,11 +37,13 @@ Block-Cache
 
 Clustering
         jplevyak@apache.org
+        georgep@apache.org
 
 DNS/HostDB
         jplevyak@apache.org
 	zwoop@apache.org
 	bcall@apache.org
+        georgep@apache.org
 
 FastIO
 Docs
@@ -46,6 +52,7 @@ Examples/Plugins
 	bcall@apache.org
 librecords
 	bcall@apache.org
+        georgep@apache.org
 HDRs
 	bcall@apache.org
 HTTP
@@ -56,15 +63,21 @@ Remap
 API
 	zwoop@apache.org
 	bcall@apache.org
+        georgep@apache.org
 Config
 	zwoop@apache.org
 	bcall@apache.org
+        georgep@apache.org
 Congest
 DNS Cache
 Logging
+        georgep@apache.org
 MGMT
+        georgep@apache.org
 Stats
 	bcall@apache.org
+        georgep@apache.org
 Build System
-      zwoop@apache.org
+        zwoop@apache.org
 	bcall@apache.org
+        georgep@apache.org
