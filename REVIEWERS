@@ -11,18 +11,24 @@ Committers: add modules as needed and any qualifications after your e-mail addre
 libinktomi++
         jplevyak@apache.org - portions including atomics, diags, List, regressions and portability
 	zwoop@apache.org
+	bcall@apache.org
 
 Event System/Buffering/VIO/VConnection
         jplevyak@apache.org
+	bcall@apache.org
 
 Network I/O
         jplevyak@apache.org - not including SSL or UDP except where it intersects the other code
+	bcall@apache.org
 
 Raw Cache and AIO
         jplevyak@apache.org - not including HTTP-specific behavior
+	bcall@apache.org
 
 HTTP Caching
+	bcall@apache.org
 Pluggable Cache/NewCacheVC
+	bcall@apache.org
 Block-Cache
 
 Clustering
@@ -31,24 +37,34 @@ Clustering
 DNS/HostDB
         jplevyak@apache.org
 	zwoop@apache.org
+	bcall@apache.org
 
 FastIO
 Docs
 Examples/Plugins
 	zwoop@apache.org
+	bcall@apache.org
 librecords
+	bcall@apache.org
 HDRs
+	bcall@apache.org
 HTTP
+	bcall@apache.org
 Remap
 	zwoop@apache.org
+	bcall@apache.org
 API
 	zwoop@apache.org
+	bcall@apache.org
 Config
 	zwoop@apache.org
+	bcall@apache.org
 Congest
 DNS Cache
 Logging
 MGMT
 Stats
+	bcall@apache.org
 Build System
       zwoop@apache.org
+	bcall@apache.org
