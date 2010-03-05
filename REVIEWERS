@@ -1,0 +1,46 @@
+These are Committers who have expressed general interest in the listed parts
+of the Traffic Server code to the extent that they will review or at least read
+over changes in those parts and should review major changes.  As always, 
+major changes should be discussed on trafficserver-dev@incubator.apache.org
+and/or IRC #traffic-server irc.freenode.net and logged into jira at
+https://issues.apache.org/jira/browse/TS 
+
+Committers: add modules as needed and any qualifications after your e-mail address
+
+
+libinktomi++
+        jplevyak@apache.org - portions including atomics, diags, List, regressions and portability 
+
+Event System/Buffering/VIO/VConnection
+        jplevyak@apache.org
+
+Network I/O
+        jplevyak@apache.org - not including SSL or UDP except where it intersects the other code
+
+Raw Cache and AIO
+        jplevyak@apache.org - not including HTTP-specific behavior
+
+HTTP Caching
+Pluggable Cache/NewCacheVC
+Block-Cache
+
+Clustering
+        jplevyak@apache.org
+
+DNS/HostDB
+        jplevyak@apache.org
+
+FastIO
+Docs
+Examples/Plugins
+librecords
+HDRs
+HTTP
+API
+Config
+Congest
+DNS Cache
+Logging
+MGMT
+Stats
+Build System
