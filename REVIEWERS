@@ -9,7 +9,8 @@ Committers: add modules as needed and any qualifications after your e-mail addre
 
 
 libinktomi++
-        jplevyak@apache.org - portions including atomics, diags, List, regressions and portability 
+        jplevyak@apache.org - portions including atomics, diags, List, regressions and portability
+	zwoop@apache.org
 
 Event System/Buffering/VIO/VConnection
         jplevyak@apache.org
@@ -29,18 +30,25 @@ Clustering
 
 DNS/HostDB
         jplevyak@apache.org
+	zwoop@apache.org
 
 FastIO
 Docs
 Examples/Plugins
+	zwoop@apache.org
 librecords
 HDRs
 HTTP
+Remap
+	zwoop@apache.org
 API
+	zwoop@apache.org
 Config
+	zwoop@apache.org
 Congest
 DNS Cache
 Logging
 MGMT
 Stats
 Build System
+      zwoop@apache.org
