@@ -1,50 +1,53 @@
 These are Committers who have expressed general interest in the listed parts
 of the Traffic Server code to the extent that they will review or at least read
-over changes in those parts and should review major changes.  As always, 
-major changes should be discussed on trafficserver-dev@incubator.apache.org
-and/or IRC #traffic-server irc.freenode.net and logged into jira at
-https://issues.apache.org/jira/browse/TS 
+over changes in those parts and should review major changes.
+
+All changes should have a jira ticket:
+        https://issues.apache.org/jira/browse/TS
+
+Big changes should be discussed on one or more of:
+        mailing list: trafficserver-dev@incubator.apache.org
+        IRC: #traffic-server irc.freenode.net
+
+Major or controversial changes should be have wiki page and may require a vote:
+        http://cwiki.apache.org/confluence/display/TS/Traffic+Server
 
 Committers: add modules as needed and any qualifications after your e-mail address
+====================================================================================
 
-
+all/general interest
+        jplevyak@apache.org
+	bcall@apache.org
 libinktomi++
-        jplevyak@apache.org - portions including atomics, diags, List, regressions and portability
+        jplevyak@apache.org
 	zwoop@apache.org
 	bcall@apache.org
         georgep@apache.org
-
 Event System/Buffering/VIO/VConnection
         jplevyak@apache.org
 	bcall@apache.org
         georgep@apache.org
-
 Network I/O
         jplevyak@apache.org - not including SSL or UDP except where it intersects the other code
 	bcall@apache.org
         georgep@apache.org
-
 Raw Cache and AIO
-        jplevyak@apache.org - not including HTTP-specific behavior
+        jplevyak@apache.org
 	bcall@apache.org
         georgep@apache.org
-
 HTTP Caching
 	bcall@apache.org
 Pluggable Cache/NewCacheVC
 	bcall@apache.org
 Block-Cache
-
 Clustering
         jplevyak@apache.org
         georgep@apache.org
-
 DNS/HostDB
         jplevyak@apache.org
 	zwoop@apache.org
 	bcall@apache.org
         georgep@apache.org
-
 FastIO
 Docs
 Examples/Plugins
