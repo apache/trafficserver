@@ -98,7 +98,7 @@ public:
     @return The number of bytes to be processed by the operation.
 
   */
-  int ntodo();
+  ink64 ntodo();
 
   /////////////////////
   // buffer settings //

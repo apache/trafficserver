@@ -73,7 +73,7 @@ struct OOB_callback:public Continuation
   Continuation *server_cont;
   int retry_OOB_send(int, Event *);
 
-    OOB_callback(ProxyMutex * m, NetVConnection * vc, Continuation * cont,
+    OOB_callback(ProxyMutex *m, NetVConnection *vc, Continuation *cont,
                  char *buf, int len):Continuation(m), data(buf), length(len), trigger(0)
   {
     server_vc = (UnixNetVConnection *) vc;
@@ -86,10 +86,10 @@ class UnixNetVConnection:public NetVConnection
 {
 public:
 
-  virtual VIO * do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf);
-  virtual VIO *do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner = false);
+  virtual VIO *do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *buf);
+  virtual VIO *do_io_write(Continuation *c, ink64 nbytes, IOBufferReader *buf, bool owner = false);
 
-  virtual Action *send_OOB(Continuation * cont, char *buf, int len);
+  virtual Action *send_OOB(Continuation *cont, char *buf, int len);
   virtual void cancel_OOB();
 
   virtual bool is_over_ssl() { return (false); }
@@ -120,8 +120,8 @@ public:
   virtual void cancel_inactivity_timeout();
 
   // The public interface is VIO::reenable()
-  virtual void reenable(VIO * vio);
-  virtual void reenable_re(VIO * vio);
+  virtual void reenable(VIO *vio);
+  virtual void reenable_re(VIO *vio);
 
   virtual SOCKET get_socket()
   {
@@ -146,21 +146,19 @@ public:
   /////////////////////////
   // UNIX implementation //
   /////////////////////////
-  void set_enabled(VIO * vio);
+  void set_enabled(VIO *vio);
 
   void get_local_sa();
 
   // these are not part of the pure virtual interface.  They were
   // added to reduce the amount of duplicate code in classes inherited
   // from NetVConnection (SSL).
-  virtual int sslStartHandShake(int event, int &err)
-  {
+  virtual int sslStartHandShake(int event, int &err) {
     (void) event;
     (void) err;
     return EVENT_ERROR;
   }
-  virtual bool getSSLHandShakeComplete()
-  {
+  virtual bool getSSLHandShakeComplete() {
     return (true);
   }
   virtual bool getSSLClientConnection()
@@ -171,18 +169,18 @@ public:
   {
     (void) state;
   }
-  virtual void net_read_io(NetHandler * nh, EThread * lthread);
-  virtual int loadBufferAndCallWrite(int towrite, int &wattempted, int &total_wrote, MIOBufferAccessor & buf);
-  void readTempPriority(NetHandler * nh, int priority);
-  void readDisable(NetHandler * nh);
-  void readSignalError(NetHandler * nh, int err);
-  void readSetPriority(NetHandler * nh, int priority);
-  void readUpdatePriority(NetHandler * nh, int bytesRead, int nBytes, EThread * lthread);
-  int readSignalDone(int event, NetHandler * nh);
+  virtual void net_read_io(NetHandler *nh, EThread *lthread);
+  virtual ink64 load_buffer_and_write(ink64 towrite, ink64 &wattempted, ink64 &total_wrote, MIOBufferAccessor & buf);
+  void readTempPriority(NetHandler *nh, int priority);
+  void readDisable(NetHandler *nh);
+  void readSignalError(NetHandler *nh, int err);
+  void readSetPriority(NetHandler *nh, int priority);
+  void readUpdatePriority(NetHandler *nh, int bytesRead, int nBytes, EThread *lthread);
+  int readSignalDone(int event, NetHandler *nh);
   int readSignalAndUpdate(int event);
-  void readReschedule(NetHandler * nh);
-  void writeReschedule(NetHandler * nh);
-  void netActivity(EThread * lthread);
+  void readReschedule(NetHandler *nh);
+  void writeReschedule(NetHandler *nh);
+  void netActivity(EThread *lthread);
 
   Action *action()
   {
@@ -233,12 +231,11 @@ public:
   ink_hrtime submit_time;
   OOB_callback *oob_ptr;
 
-  int startEvent(int event, Event * e);
-  int acceptEvent(int event, Event * e);
-  int mainEvent(int event, Event * e);
-  virtual int connectUp(EThread * t);
-
-  virtual void free(EThread * t);
+  int startEvent(int event, Event *e);
+  int acceptEvent(int event, Event *e);
+  int mainEvent(int event, Event *e);
+  virtual int connectUp(EThread *t);
+  virtual void free(EThread *t);
 
   virtual ink_hrtime get_inactivity_timeout();
   virtual ink_hrtime get_active_timeout();

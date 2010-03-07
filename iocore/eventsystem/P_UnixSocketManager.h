@@ -35,9 +35,6 @@
 #include "inktomi++.h"
 #include "I_SocketManager.h"
 
-extern int monitor_read_activity;
-extern int monitor_write_activity;
-
 
 //
 // These limits are currently disabled
@@ -66,7 +63,6 @@ inline int
 SocketManager::accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
   int r;
-
   do {
     r =::accept(s, addr, addrlen);
     if (likely(r >= 0))
@@ -77,12 +73,10 @@ SocketManager::accept(int s, struct sockaddr *addr, socklen_t *addrlen)
   return r;
 }
 
-
 inline int
 SocketManager::open(char *path, int oflag, mode_t mode)
 {
   int s;
-
   do {
     s =::open(path, oflag, mode);
     if (likely(s >= 0))
@@ -92,12 +86,10 @@ SocketManager::open(char *path, int oflag, mode_t mode)
   return s;
 }
 
-
-inline int
+inline ink64
 SocketManager::read(int fd, void *buf, int size, void *pOLP)
 {
-  int r = 0;
-
+  ink64 r;
   do {
     r =::read(fd, buf, size);
     if (likely(r >= 0))
@@ -107,15 +99,10 @@ SocketManager::read(int fd, void *buf, int size, void *pOLP)
   return r;
 }
 
-
-void monitor_disk_read(int fd, void *buf, int size, off_t offset, char *tag);
-
-inline int
+inline ink64
 SocketManager::pread(int fd, void *buf, int size, off_t offset, char *tag)
 {
-  if (monitor_read_activity)
-    monitor_disk_read(fd, buf, size, offset, tag);
-  int r = 0;
+  ink64 r;
   do {
     r =::pread(fd, buf, size, offset);
     if (r < 0)
@@ -124,12 +111,10 @@ SocketManager::pread(int fd, void *buf, int size, off_t offset, char *tag)
   return r;
 }
 
-
-inline int
+inline ink64
 SocketManager::readv(int fd, struct iovec *vector, size_t count, teFDType eT)
 {
-  int r;
-
+  ink64 r;
   do {
     // coverity[tainted_data_argument]
     if (likely((r =::readv(fd, vector, count)) >= 0))
@@ -139,17 +124,16 @@ SocketManager::readv(int fd, struct iovec *vector, size_t count, teFDType eT)
   return r;
 }
 
-
-inline int
+inline ink64
 SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP)
 {
   const int max_iovecs_per_request = 16;
   int n;
-  int r = 0;
+  ink64 r = 0;
   int n_vec;
-  int bytes_xfered = 0;
+  ink64 bytes_xfered = 0;
   int current_count;
-  int current_request_bytes;
+  ink64 current_request_bytes;
 
   for (n_vec = 0; n_vec < (int) count; n_vec += max_iovecs_per_request) {
     current_count = min(max_iovecs_per_request, ((int) (count - n_vec)));
@@ -181,19 +165,16 @@ SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_re
   return bytes_xfered;
 }
 
-
-inline int
+inline ink64
 SocketManager::read_vector(int fd, struct iovec *vector, size_t count, void *pOLP)
 {
   return vector_io(fd, vector, count, 1, pOLP);
 }
 
-
 inline int
 SocketManager::recv(int fd, void *buf, int size, int flags)
 {
   int r;
-
   do {
     if (unlikely((r =::recv(fd, (char *) buf, size, flags)) < 0)) {
       r = -errno;
@@ -202,12 +183,10 @@ SocketManager::recv(int fd, void *buf, int size, int flags)
   return r;
 }
 
-
 inline int
 SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen)
 {
   int r;
-
   do {
     r =::recvfrom(fd, (char *) buf, size, flags, addr, addrlen);
     if (unlikely(r < 0))
@@ -216,12 +195,10 @@ SocketManager::recvfrom(int fd, void *buf, int size, int flags, struct sockaddr 
   return r;
 }
 
-
-inline int
+inline ink64
 SocketManager::write(int fd, void *buf, int size, void *pOLP)
 {
-  int r;
-
+  ink64 r;
   do {
     if (likely((r =::write(fd, buf, size)) >= 0))
       break;
@@ -230,16 +207,10 @@ SocketManager::write(int fd, void *buf, int size, void *pOLP)
   return r;
 }
 
-
-void monitor_disk_write(int fd, void *buf, int size, off_t offset, char *tag);
-
-inline int
+inline ink64
 SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char *tag)
 {
-  int r;
-
-  if (monitor_write_activity)
-    monitor_disk_write(fd, buf, size, offset, tag);
+  ink64 r;
   do {
     if (unlikely((r =::pwrite(fd, buf, size, offset)) < 0))
       r = -errno;
@@ -247,12 +218,10 @@ SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char *tag)
   return r;
 }
 
-
-inline int
+inline ink64
 SocketManager::writev(int fd, struct iovec *vector, size_t count, teFDType eT)
 {
-  int r;
-
+  ink64 r;
   do {
     if (likely((r =::writev(fd, vector, count)) >= 0))
       break;
@@ -261,8 +230,7 @@ SocketManager::writev(int fd, struct iovec *vector, size_t count, teFDType eT)
   return r;
 }
 
-
-inline int
+inline ink64
 SocketManager::write_vector(int fd, struct iovec *vector, size_t count, void *pOLP)
 {
   return vector_io(fd, vector, count, 0, pOLP);
@@ -273,7 +241,6 @@ inline int
 SocketManager::send(int fd, void *buf, int size, int flags)
 {
   int r;
-
   do {
     if (unlikely((r =::send(fd, (char *) buf, size, flags)) < 0))
       r = -errno;
@@ -281,12 +248,10 @@ SocketManager::send(int fd, void *buf, int size, int flags)
   return r;
 }
 
-
 inline int
 SocketManager::sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tolen)
 {
   int r;
-
   do {
     if (unlikely((r =::sendto(fd, (char *) buf, len, flags, to, tolen)) < 0))
       r = -errno;
@@ -294,12 +259,10 @@ SocketManager::sendto(int fd, void *buf, int len, int flags, struct sockaddr *to
   return r;
 }
 
-
 inline int
 SocketManager::sendmsg(int fd, struct msghdr *m, int flags, void *pOLP)
 {
   int r;
-
   do {
     if (unlikely((r =::sendmsg(fd, m, flags)) < 0))
       r = -errno;
@@ -307,12 +270,10 @@ SocketManager::sendmsg(int fd, struct msghdr *m, int flags, void *pOLP)
   return r;
 }
 
-
-inline int
+inline ink64
 SocketManager::lseek(int fd, off_t offset, int whence)
 {
-  int r;
-
+  ink64 r;
   do {
     if ((r =::lseek(fd, offset, whence)) < 0)
       r = -errno;
@@ -320,12 +281,10 @@ SocketManager::lseek(int fd, off_t offset, int whence)
   return r;
 }
 
-
 inline int
 SocketManager::fstat(int fd, struct stat *buf)
 {
   int r;
-
   do {
     if ((r =::fstat(fd, buf)) >= 0)
       break;
@@ -334,12 +293,10 @@ SocketManager::fstat(int fd, struct stat *buf)
   return r;
 }
 
-
 inline int
 SocketManager::unlink(char *buf)
 {
   int r;
-
   do {
     if ((r =::unlink(buf)) < 0)
       r = -errno;
@@ -347,12 +304,10 @@ SocketManager::unlink(char *buf)
   return r;
 }
 
-
 inline int
 SocketManager::fsync(int fildes)
 {
   int r;
-
   do {
     if ((r =::fsync(fildes)) < 0)
       r = -errno;
@@ -360,12 +315,10 @@ SocketManager::fsync(int fildes)
   return r;
 }
 
-
 inline int
 SocketManager::ftruncate(int fildes, off_t length)
 {
   int r;
-
   do {
     if ((r =::ftruncate(fildes, length)) < 0)
       r = -errno;
@@ -373,12 +326,10 @@ SocketManager::ftruncate(int fildes, off_t length)
   return r;
 }
 
-
 inline int
 SocketManager::poll(struct pollfd *fds, unsigned long nfds, int timeout)
 {
   int r;
-
   do {
     if ((r =::poll(fds, nfds, timeout)) >= 0)
       break;
@@ -392,7 +343,6 @@ inline int
 SocketManager::epoll_create(int size)
 {
   int r;
-
   if (size <= 0)
     size = EPOLL_MAX_DESCRIPTOR_SIZE;
   do {
@@ -403,12 +353,10 @@ SocketManager::epoll_create(int size)
   return r;
 }
 
-
 inline int
 SocketManager::epoll_close(int epfd)
 {
   int r = 0;
-
   if (likely(epfd >= 0)) {
     do {
       if (likely((r =::close(epfd)) == 0))
@@ -419,12 +367,10 @@ SocketManager::epoll_close(int epfd)
   return r;
 }
 
-
 inline int
 SocketManager::epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 {
   int r;
-
   do {
     if (likely((r =::epoll_ctl(epfd, op, fd, event)) == 0))
       break;
@@ -433,12 +379,10 @@ SocketManager::epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
   return r;
 }
 
-
 inline int
 SocketManager::epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
   int r;
-
   do {
     if ((r =::epoll_wait(epfd, events, maxevents, timeout)) >= 0)
       break;
@@ -454,14 +398,12 @@ SocketManager::kqueue()
   return ::kqueue();
 }
 
-
 inline int
 SocketManager::kevent(int kq, const struct kevent *changelist, int nchanges,
                       struct kevent *eventlist, int nevents,
                       const struct timespec *timeout)
 {
   int r;
-
   do {
     r =::kevent(kq, changelist, nchanges,
                 eventlist, nevents, timeout);
@@ -470,7 +412,6 @@ SocketManager::kevent(int kq, const struct kevent *changelist, int nchanges,
     }
     r = -errno;
   } while (errno == -EINTR);
-
   return r;
 }
 #elif defined(USE_PORT)
@@ -527,7 +468,6 @@ SocketManager::get_sndbuf_size(int s)
   return (r == 0 ? bsz : r);
 }
 
-
 inline int
 SocketManager::get_rcvbuf_size(int s)
 {
@@ -539,13 +479,11 @@ SocketManager::get_rcvbuf_size(int s)
   return (r == 0 ? bsz : r);
 }
 
-
 inline int
 SocketManager::set_sndbuf_size(int s, int bsz)
 {
   return safe_setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *) &bsz, sizeof(bsz));
 }
-
 
 inline int
 SocketManager::set_rcvbuf_size(int s, int bsz)
@@ -553,13 +491,11 @@ SocketManager::set_rcvbuf_size(int s, int bsz)
   return safe_setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *) &bsz, sizeof(bsz));
 }
 
-
 inline int
 SocketManager::getsockname(int s, struct sockaddr *sa, socklen_t *sz)
 {
   return::getsockname(s, sa, sz);
 }
-
 
 inline int
 SocketManager::socket(int domain, int type, int protocol, bool bNonBlocking)
@@ -567,19 +503,16 @@ SocketManager::socket(int domain, int type, int protocol, bool bNonBlocking)
   return::socket(domain, type, protocol);
 }
 
-
 inline int
 SocketManager::mc_socket(int domain, int type, int protocol, bool bNonBlocking)
 {
   return SocketManager::socket(domain, type, protocol, bNonBlocking);
 }
 
-
 inline int
 SocketManager::shutdown(int s, int how)
 {
   int res;
-
   do {
     if (unlikely((res =::shutdown(s, how)) < 0))
       res = -errno;
@@ -587,12 +520,10 @@ SocketManager::shutdown(int s, int how)
   return res;
 }
 
-
 inline int
 SocketManager::lockf(int s, int f, long size)
 {
   int res;
-
   do {
     if ((res =::lockf(s, f, size)) < 0)
       res = -errno;
@@ -600,12 +531,10 @@ SocketManager::lockf(int s, int f, long size)
   return res;
 }
 
-
 inline int
 SocketManager::dup(int s)
 {
   int res;
-
   do {
     if ((res =::dup(s)) >= 0)
       break;
@@ -614,12 +543,10 @@ SocketManager::dup(int s)
   return res;
 }
 
-
 inline int
 SocketManager::fast_close(int s)
 {
   int res;
-
   do {
     if ((res =::close(s)) >= 0)
       break;

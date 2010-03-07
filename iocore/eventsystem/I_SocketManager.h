@@ -37,11 +37,7 @@
 #include "I_EventSystem.h"
 #include "I_Thread.h"
 
-extern int monitor_read_activity;
-extern int monitor_write_activity;
-
 #define DEFAULT_OPEN_MODE                         0644
-
 
 struct Thread;
 
@@ -59,25 +55,24 @@ struct SocketManager
   int open(char *path, int oflag = O_RDWR | O_NDELAY | O_CREAT, mode_t mode = DEFAULT_OPEN_MODE);
 
   // result is the number of bytes or -errno
-  int read(int fd, void *buf, int len, void *pOLP = NULL);
-  int vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP = 0);
-  int readv(int fd, struct iovec *vector, size_t count, teFDType eT = KeDontCare);
-  int read_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
-  int pread(int fd, void *buf, int len, off_t offset, char *tag = NULL);
-  //
-  int read_from_middle_of_file(int fd, void *buf, int len, off_t offset, char *tag = NULL);
+  ink64 read(int fd, void *buf, int len, void *pOLP = NULL);
+  ink64 vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP = 0);
+  ink64 readv(int fd, struct iovec *vector, size_t count, teFDType eT = KeDontCare);
+  ink64 read_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
+  ink64 pread(int fd, void *buf, int len, off_t offset, char *tag = NULL);
 
   int recv(int s, void *buf, int len, int flags);
   int recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen);
-  int write(int fd, void *buf, int len, void *pOLP = NULL);
-  int writev(int fd, struct iovec *vector, size_t count, teFDType eT = KeDontCare);
-  int write_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
-  int pwrite(int fd, void *buf, int len, off_t offset, char *tag = NULL);
-  int write_to_middle_of_file(int fd, void *buf, int len, off_t offset, char *tag = NULL);
+
+  ink64 write(int fd, void *buf, int len, void *pOLP = NULL);
+  ink64 writev(int fd, struct iovec *vector, size_t count, teFDType eT = KeDontCare);
+  ink64 write_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
+  ink64 pwrite(int fd, void *buf, int len, off_t offset, char *tag = NULL);
+
   int send(int fd, void *buf, int len, int flags);
   int sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tolen);
   int sendmsg(int fd, struct msghdr *m, int flags, void *pOLP = 0);
-  int lseek(int fd, off_t offset, int whence);
+  ink64 lseek(int fd, off_t offset, int whence);
   int fstat(int fd, struct stat *);
   int unlink(char *buf);
   int fsync(int fildes);
