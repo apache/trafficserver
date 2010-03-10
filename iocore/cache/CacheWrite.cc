@@ -1410,10 +1410,8 @@ CacheVC::openWriteOverwrite(int event, Event *e)
   } else {
     Doc *doc = NULL;
     set_io_not_in_progress();
-    if (_action.cancelled) {
-      SET_HANDLER(&CacheVC::openWriteCloseDir);
+    if (_action.cancelled)
       return openWriteCloseDir(event, e);
-    }
     if (!io.ok())
       goto Ldone;
     doc = (Doc *) buf->data();
@@ -1551,15 +1549,14 @@ Lfailure:
 Lcancel:
   if (od) {
     od->reading_vec = 0;
-    SET_HANDLER(&CacheVC::openWriteCloseDir);
-    openWriteCloseDir(event, e);
-    return EVENT_DONE;
+    return openWriteCloseDir(event, e);
   } else
     return free_CacheVC(this);
 Lcallreturn:
   return handleEvent(AIO_EVENT_DONE, 0); // hopefully a tail call
 }
 #endif
+
 // handle lock failures from main Cache::open_write entry points below
 int
 CacheVC::openWriteStartBegin(int event, Event *e)
@@ -1571,19 +1568,19 @@ CacheVC::openWriteStartBegin(int event, Event *e)
   cancel_trigger();
   if (_action.cancelled)
     return free_CacheVC(this);
-  if ((err = part->open_write_lock(this, false, 1) > 0)) {
+  if (((err = part->open_write_lock(this, false, 1)) > 0)) {
     CACHE_INCREMENT_DYN_STAT(base_stat + CACHE_STAT_FAILURE);
     free_CacheVC(this);
     _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -err);
-    return 0;
+    return EVENT_DONE;
   }
   if (err < 0)
     VC_SCHED_LOCK_RETRY();
   if (f.overwrite) {
-     SET_HANDLER(&CacheVC::openWriteOverwrite);
+    SET_HANDLER(&CacheVC::openWriteOverwrite);
     return openWriteOverwrite(EVENT_IMMEDIATE, 0);
   } else {
-     // write by key
+    // write by key
     SET_HANDLER(&CacheVC::openWriteMain);
     return callcont(CACHE_EVENT_OPEN_WRITE);
   }
@@ -1605,6 +1602,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
   intptr_t res = 0;
   CacheVC *c = new_CacheVC(cont);
   ProxyMutex *mutex = cont->mutex;
+  MUTEX_LOCK(lock, c->mutex, this_ethread());
   c->vio.op = VIO::WRITE;
   c->base_stat = cache_write_active_stat;
   c->part = key_to_part(key, hostname, host_len);
@@ -1779,7 +1777,6 @@ Lfailure:
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_FAILURE);
   cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -err);
   if (c->od) {
-    SET_CONTINUATION_HANDLER(c, &CacheVC::openWriteCloseDir);
     c->openWriteCloseDir(EVENT_IMMEDIATE, 0);
     return ACTION_RESULT_DONE;
   }
