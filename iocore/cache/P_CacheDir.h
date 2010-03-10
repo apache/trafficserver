@@ -159,7 +159,7 @@ struct FreeDir
 #endif
 };
 
-#define dir_bit(_e, _w, _b) (((_e)->w[_w] >> (_b)) & 1)
+#define dir_bit(_e, _w, _b) ((inku32)(((_e)->w[_w] >> (_b)) & 1))
 #define dir_set_bit(_e, _w, _b, _v) (_e)->w[_w] = (inku16)(((_e)->w[_w] & ~(1<<(_b))) | (((_v)?1:0)<<(_b)))
 #define dir_offset(_e) ((ink64)                                         \
                          (((inku64)(_e)->w[0]) |                        \
@@ -194,7 +194,7 @@ struct FreeDir
                                   (_s <= DIR_SIZE_WITH_BLOCK(1) ? ROUND_TO(_s, DIR_BLOCK_SIZE(1)) : \
                                    (_s <= DIR_SIZE_WITH_BLOCK(2) ? ROUND_TO(_s, DIR_BLOCK_SIZE(2)) : \
                                     ROUND_TO(_s, DIR_BLOCK_SIZE(3)))))
-#define dir_tag(_e) ((_e)->w[2]&((1<<DIR_TAG_WIDTH)-1))
+#define dir_tag(_e) ((inku32)((_e)->w[2]&((1<<DIR_TAG_WIDTH)-1)))
 #define dir_set_tag(_e,_t) (_e)->w[2] = (inku16)(((_e)->w[2]&~((1<<DIR_TAG_WIDTH)-1)) | ((_t)&((1<<DIR_TAG_WIDTH)-1)))
 #define dir_phase(_e) dir_bit(_e,2,12)
 #define dir_set_phase(_e,_v) dir_set_bit(_e,2,12,_v)

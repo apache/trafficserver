@@ -245,7 +245,7 @@ CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * bloc
     int tmp = info.get_handle((char *) buf, length - (buf - start));
     if (tmp < 0) {
       ink_assert(!"CacheHTTPInfoVector::unmarshal get_handle() failed");
-      return -1;
+      return (inku32) -1;
     }
     buf += tmp;
 
