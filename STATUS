@@ -57,6 +57,13 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Submitted by: zwoop
     +1: zwoop, georgep, pquerna, bcall
 
+  * build: Support platforms with pcre/pcre.h instead of pcre.h
+    This is already committed to trunk, as part of a massive merge from
+    the dev branch. I've backported just this single change, which is
+    attached to the Jira ticket. 
+    Jira: https://issues.apache.org/jira/browse/TS-234
+    +1: zwoop
+
 
 
 RELEASE PROCESS
