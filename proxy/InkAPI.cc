@@ -5623,7 +5623,6 @@ INKHttpTxnActiveTimeoutSet(INKHttpTxn txnp, int timeout)
 {
   Debug("http_timeout", "setting active timeout to %d msec via API", timeout);
   HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
-  s->api_txn_active_timeout = true;
   s->api_txn_active_timeout_value = timeout;
   return 1;
 }
@@ -5637,7 +5636,6 @@ INKHttpTxnConnectTimeoutSet(INKHttpTxn txnp, int timeout)
 {
   Debug("http_timeout", "setting inactive timeout to %d msec via API", timeout);
   HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
-  s->api_txn_connect_timeout = true;
   s->api_txn_connect_timeout_value = timeout;
   return 1;
 }
@@ -5651,7 +5649,6 @@ INKHttpTxnDNSTimeoutSet(INKHttpTxn txnp, int timeout)
 {
   Debug("http_timeout", "setting DNS timeout to %d msec via API", timeout);
   HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
-  s->api_txn_dns_timeout = true;
   s->api_txn_dns_timeout_value = timeout;
   return 1;
 }
@@ -5666,7 +5663,6 @@ INKHttpTxnNoActivityTimeoutSet(INKHttpTxn txnp, int timeout)
 {
   Debug("http_timeout", "setting DNS timeout to %d msec via API", timeout);
   HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
-  s->api_txn_no_activity_timeout = true;
   s->api_txn_no_activity_timeout_value = timeout;
   return 1;
 }

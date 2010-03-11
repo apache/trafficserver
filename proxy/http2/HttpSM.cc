@@ -1928,11 +1928,10 @@ HttpSM::state_read_server_response_header(int event, void *data)
   if (server_response_hdr_bytes == 0) {
     milestones.server_first_read = ink_get_hrtime();
 
-    if (t_state.api_txn_no_activity_timeout) {
+    if (t_state.api_txn_no_activity_timeout_value != -1) {
       server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
     } else {
-      server_session->get_netvc()->
-        set_inactivity_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_no_activity_timeout_out));
+      server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_no_activity_timeout_out));
     }
 
     // For requests that contain a body, we can cancel the ua inactivity timeout.
@@ -2186,7 +2185,7 @@ lookup:
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_hostdb_lookup);
 
-  if (t_state.api_txn_dns_timeout) {
+  if (t_state.api_txn_dns_timeout_value != -1) {
     Debug("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS", t_state.api_txn_dns_timeout_value);
   }
 
@@ -2199,7 +2198,7 @@ lookup:
                                                                      does_client_permit_dns_storing) ? HostDBProcessor::
                                                                     HOSTDB_DO_NOT_FORCE_DNS : HostDBProcessor::
                                                                     HOSTDB_FORCE_DNS_RELOAD),
-                                                                   t_state.api_txn_dns_timeout ? t_state.
+                                                                   (t_state.api_txn_dns_timeout_value != -1) ? t_state.
                                                                    api_txn_dns_timeout_value : 0);
 
 
@@ -2250,7 +2249,7 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
 
   milestones.dns_lookup_end = ink_get_hrtime();
 
-  if (t_state.api_txn_dns_timeout) {
+  if (t_state.api_txn_dns_timeout_value != -1) {
     int foo = (int) (milestone_difference_msec(milestones.dns_lookup_begin, milestones.dns_lookup_end));
     Debug("http_timeout", "DNS took: %d msec", foo);
   }
@@ -4040,7 +4039,7 @@ HttpSM::do_hostdb_lookup()
                                                                         (process_srv_info_pfn) & HttpSM::
                                                                         process_srv_info,
                                                                         (char *) s.c_str(),
-                                                                        t_state.api_txn_dns_timeout ? t_state.
+                                                                        (t_state.api_txn_dns_timeout_value != -1) ? t_state.
                                                                         api_txn_dns_timeout_value : 0);
 
     if (srv_lookup_action_handle != ACTION_RESULT_DONE) {
@@ -4056,7 +4055,7 @@ HttpSM::do_hostdb_lookup()
     //  server at the beginning of the transaction
     int server_port = t_state.current.server ? t_state.current.server->port : t_state.server_info.port;
 
-    if (t_state.api_txn_dns_timeout) {
+    if (t_state.api_txn_dns_timeout_value != -1) {
       Debug("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS lookup",
             t_state.api_txn_dns_timeout_value);
     }
@@ -4071,7 +4070,7 @@ HttpSM::do_hostdb_lookup()
                                                                       HostDBProcessor::
                                                                       HOSTDB_DO_NOT_FORCE_DNS : HostDBProcessor::
                                                                       HOSTDB_FORCE_DNS_RELOAD),
-                                                                     t_state.api_txn_dns_timeout ? t_state.
+                                                                     (t_state.api_txn_dns_timeout_value != -1) ? t_state.
                                                                      api_txn_dns_timeout_value : 0);
 
     if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
@@ -5796,17 +5795,16 @@ HttpSM::attach_server_session(HttpServerSession * s)
   if (t_state.pCongestionEntry != NULL)
     connect_timeout = t_state.pCongestionEntry->connect_timeout();
 
-  if (t_state.api_txn_connect_timeout) {
+  if (t_state.api_txn_connect_timeout_value != -1) {
     server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_connect_timeout_value));
   } else {
     server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(connect_timeout));
   }
 
-  if (t_state.api_txn_active_timeout) {
+  if (t_state.api_txn_active_timeout_value != -1) {
     server_session->get_netvc()->set_active_timeout(HRTIME_MSECONDS(t_state.api_txn_active_timeout_value));
   } else {
-    server_session->get_netvc()->
-      set_active_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_active_timeout_out));
+    server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_active_timeout_out));
   }
 
   if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {

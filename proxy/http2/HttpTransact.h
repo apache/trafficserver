@@ -1086,16 +1086,12 @@ public:
     char return_xbuf[HTTP_TRANSACT_STATE_MAX_XBUF_SIZE];
     void *user_args[HTTP_TRANSACT_STATE_MAX_USER_ARG];
 
-    bool api_txn_active_timeout;
     int api_txn_active_timeout_value;
 
-    bool api_txn_connect_timeout;
     int api_txn_connect_timeout_value;
 
-    bool api_txn_dns_timeout;
     int api_txn_dns_timeout_value;
 
-    bool api_txn_no_activity_timeout;
     int api_txn_no_activity_timeout_value;
 
     // Used by INKHttpTxnCachedReqGet and INKHttpTxnCachedRespGet SDK functions
@@ -1434,14 +1430,10 @@ remap_plugin_instance(0),
 http_return_code(HTTP_STATUS_NONE),
 return_xbuf_size(0),
 return_xbuf_plain(false),
-api_txn_active_timeout(false),
-api_txn_active_timeout_value(0),
-api_txn_connect_timeout(false),
-api_txn_connect_timeout_value(0),
-api_txn_dns_timeout(false),
-api_txn_dns_timeout_value(0),
-api_txn_no_activity_timeout(false),
-api_txn_no_activity_timeout_value(0),
+api_txn_active_timeout_value(-1),
+api_txn_connect_timeout_value(-1),
+api_txn_dns_timeout_value(-1),
+api_txn_no_activity_timeout_value(-1),
 cache_req_hdr_heap_handle(NULL),
 cache_resp_hdr_heap_handle(NULL),
 api_release_server_session(false),

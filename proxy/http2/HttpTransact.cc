@@ -8929,14 +8929,14 @@ HttpTransact::handle_server_died(State * s)
     body_type = "connect#hangup";
     break;
   case ACTIVE_TIMEOUT:
-    if (s->api_txn_active_timeout)
+    if (s->api_txn_active_timeout_value != -1)
       Debug("http_timeout", "Maximum active time of %d msec exceeded", s->api_txn_active_timeout_value);
     status = HTTP_STATUS_GATEWAY_TIMEOUT;
     reason = "Maximum Transaction Time Exceeded";
     body_type = "timeout#activity";
     break;
   case INACTIVE_TIMEOUT:
-    if (s->api_txn_connect_timeout)
+    if (s->api_txn_connect_timeout_value != -1)
       Debug("http_timeout", "Maximum connect time of %d msec exceeded", s->api_txn_connect_timeout_value);
     status = HTTP_STATUS_GATEWAY_TIMEOUT;
     reason = "Connection Timed Out";
