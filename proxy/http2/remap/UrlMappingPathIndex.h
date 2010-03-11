@@ -38,7 +38,7 @@ public:
 
   bool Insert(url_mapping *mapping);
 
-  url_mapping *Search(URL *request_url, int request_port) const;
+  url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
 
   typedef std::list<url_mapping *> MappingList;
   
@@ -56,15 +56,15 @@ private:
   typedef Trie<url_mapping *> UrlMappingTrie;
   struct UrlMappingTrieKey 
   {
-    URLType url_type;
+    int scheme_wks_idx;
     int port;
-    UrlMappingTrieKey(URLType type, int p) : url_type(type), port(p) { };
+    UrlMappingTrieKey(int idx, int p) : scheme_wks_idx(idx), port(p) { };
     bool operator <(const UrlMappingTrieKey &rhs) const 
     {
-      if (url_type == rhs.url_type) {
+      if (scheme_wks_idx == rhs.scheme_wks_idx) {
         return (port < rhs.port);
       }
-      return (url_type < rhs.url_type);
+      return (scheme_wks_idx < rhs.scheme_wks_idx);
     };
   };
   
@@ -76,10 +76,16 @@ private:
   UrlMappingPathIndex(const UrlMappingPathIndex &rhs) { };
   UrlMappingPathIndex &operator =(const UrlMappingPathIndex &rhs) { return *this; }
 
-  inline UrlMappingTrie *_GetTrie(URL *url, URLType &url_type, int port) const
+  inline UrlMappingTrie *_GetTrie(URL *url, int &idx, int port, bool search = true) const
   {
-    url_type = static_cast<URLType>(url->type_get());
-    UrlMappingGroup::const_iterator group_iter = m_tries.find(UrlMappingTrieKey(url_type, port));
+    idx = url->scheme_get_wksidx();
+    UrlMappingGroup::const_iterator group_iter;
+    if (search) { // normal search
+      group_iter = m_tries.find(UrlMappingTrieKey(idx, port));
+    } else { // return the first trie arbitrarily
+      Debug("UrlMappingPathIndex::_GetTrie", "Not performing search; will return first available trie");
+      group_iter = m_tries.begin();
+    }
     if (group_iter != m_tries.end()) {
       return group_iter->second;
     }
