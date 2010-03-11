@@ -210,9 +210,25 @@ url_copy(URLImpl * s_url, HdrHeap * s_heap, HdrHeap * d_heap, bool inherit_strs)
 void
 url_copy_onto(URLImpl * s_url, HdrHeap * s_heap, URLImpl * d_url, HdrHeap * d_heap, bool inherit_strs)
 {
-  obj_copy_data((HdrHeapObjImpl *) s_url, (HdrHeapObjImpl *) d_url);
-  if (inherit_strs && (s_heap != d_heap))
-    d_heap->inherit_string_heaps(s_heap);
+  if (s_url != d_url) {
+    obj_copy_data((HdrHeapObjImpl *) s_url, (HdrHeapObjImpl *) d_url);
+    if (inherit_strs && (s_heap != d_heap))
+      d_heap->inherit_string_heaps(s_heap);
+
+    // m_ptr_host is reused by the object if it has capacity and not
+    // reallocated on every url_host_set(); obj_copy_data() above does
+    // a "shallow" copy and inherit_string_heaps() inherits strings as
+    // "read-only" (see HdrHeap.cc). Hence we have to make sure the
+    // copied object uses a different buffer
+    if (s_url->m_ptr_host && (s_url->m_capacity_host > 0) && d_heap) {
+      d_url->m_ptr_host = d_heap->allocate_str(d_url->m_capacity_host);
+      if (d_url->m_ptr_host) {
+        memcpy(const_cast<char *>(d_url->m_ptr_host), s_url->m_ptr_host, s_url->m_capacity_host);
+      } else {
+        d_url->m_capacity_host = d_url->m_len_host = 0;
+      }
+    }
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -224,7 +240,7 @@ url_nuke_proxy_stuff(URLImpl * d_url)
   d_url->m_len_scheme = 0;
   d_url->m_len_user = 0;
   d_url->m_len_password = 0;
-  d_url->m_len_host = 0;
+  d_url->m_len_host = d_url->m_capacity_host = 0;
   d_url->m_len_port = 0;
 
   d_url->m_ptr_scheme = NULL;

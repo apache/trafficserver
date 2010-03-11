@@ -50,7 +50,6 @@ struct URLImpl:public HdrHeapObjImpl
   inku16 m_len_user;
   inku16 m_len_password;
   inku16 m_len_host;
-  inku16 m_capacity_host;
   inku16 m_len_port;
   inku16 m_len_path;
   inku16 m_len_params;
@@ -75,6 +74,11 @@ struct URLImpl:public HdrHeapObjImpl
   inku16 m_port;
   inku8 m_url_type;             // e.g. FTP or HTTP
   inku8 m_type_code;            // RFC 1738 limits type code to 1 char
+
+  // adding this member might cause issues with (un)marshalling
+  // and/or memory alignment; this should be checked first if there
+  // are issues with URLImpl objects
+  inku16 m_capacity_host;
 
   // Marshaling Functions
   int marshal(MarshalXlate * str_xlate, int num_xlate);
