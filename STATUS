@@ -49,14 +49,6 @@ For the final 2.0.0 ATS release, see the bug list at
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-  * package: Support more Linux distros in RC / startup script
-    Trunk patch: http://svn.apache.org/viewcvs?view=rev&rev=918149
-    	  	 http://svn.apache.org/viewcvs?view=rev&rev=918103
-		 http://svn.apache.org/viewcvs?view=rev&rev=918101
-    Jira: https://issues.apache.org/jira/browse/TS-225
-    Submitted by: zwoop
-    +1: zwoop, georgep, pquerna, bcall
-
   * build: Support platforms with pcre/pcre.h instead of pcre.h
     This is already committed to trunk, as part of a massive merge from
     the dev branch. I've backported just this single change, which is

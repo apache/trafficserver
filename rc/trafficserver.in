@@ -48,7 +48,7 @@ elif [ -e /etc/redhat-release ]; then
     DISTRIB_ID="redhat" # also exists on Fedora
 elif [ -e /etc/lsb-release ]; then
     DISTRIB_ID="ubuntu"
-elif [ -e /etc/debian-version ]; then
+elif [ -e /etc/debian_version ]; then
     DISTRIB_ID="debian" # also exists on Ubuntu
 elif [ -e /etc/slackware-version ]; then
     DISTRIB_ID="slackware"
@@ -114,18 +114,15 @@ fi
 # Ubuntu: Load the VERBOSE setting and other rcS variables
 [ -f /etc/default/rcS ] && . /etc/default/rcS
 
+# Suse: load rc.status
+[ -f /etc/rc.status ] && . /etc/rc.status
 
-if [ -r /etc/rc.d/init.d/functions ]; then
 # Fedora: make avail helper functions 'action', 'killproc', 'status', etc
-    . /etc/rc.d/init.d/functions
-elif [ -r /lib/lsb/init-functions ]; then
+[ -f /etc/rc.d/init.d/functions ] && . /etc/rc.d/init.d/functions
+
 # Ubuntu: Define LSB log_* functions.
 #         Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
-    . /lib/lsb/init-functions
-else
-    echo "This script needs to be ported to this OS"
-    exit 1
-fi
+[ -f /lib/lsb/init-functions ] && . /lib/lsb/init-functions
 
 
 #
@@ -232,32 +229,46 @@ do_reload() {
 # main 
 case "$1" in
   start)
-        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
 	    [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
 	    do_start
 	    case "$?" in
 		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	    esac
-        elif [ "$DISTRIB_ID" = "fedora" ]; then
-            action "Starting $prog:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+            action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
+        elif [ "$DISTRIB_ID" = "suse" ]; then
+	    echo -n "Starting ${TS_PACKAGE_NAME}"
+            startproc -p $TC_PIDFILE $TC_DAEMON $TC_DAEMON_ARGS
+	    rc_status -v
         else
             echo "This script needs to be ported to this OS"
             exit 1
         fi
 	;;
   stop)
-        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
 	    [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
 	    do_stop
 	    case "$?" in
 		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	    esac
-        elif [ "$DISTRIB_ID" = "fedora" ]; then
-            action "Stopping $prog:" killproc -p $TC_PIDFILE $TC_DAEMON
-            action "Stopping $prog:" killproc -p $TM_PIDFILE $TM_DAEMON
-            action "Stopping $prog:" killproc -p $TS_PIDFILE $TS_DAEMON
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+            action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE $TC_DAEMON
+            action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE $TM_DAEMON
+            action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE $TS_DAEMON
+        elif [ "$DISTRIB_ID" = "suse" ]; then
+	    echo -n "Stopping ${TC_NAME}"
+            killproc -p $TC_PIDFILE $TC_DAEMON
+	    rc_status -v
+	    echo -n "Stopping ${TM_NAME}"
+            killproc -p $TM_PIDFILE $TM_DAEMON
+	    rc_status -v
+	    echo -n "Stopping ${TS_NAME}"
+            killproc -p $TS_PIDFILE $TS_DAEMON
+	    rc_status -v
         else
             echo "This script needs to be ported to this OS"
             exit 1
@@ -273,7 +284,7 @@ case "$1" in
 	#log_end_msg $?
 	#;;
   restart|force-reload)
-        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
 	#
 	# If the "reload" option is implemented then remove the
 	# 'force-reload' alias
@@ -294,24 +305,26 @@ case "$1" in
 		    log_end_msg 1
 		    ;;
 	    esac
-        elif [ "$DISTRIB_ID" = "fedora" ]; then
+        else
+	    # This is the typical process for restart
             $0 'stop'
             $0 'start'
-        else
-            echo "This script needs to be ported to this OS"
-            exit 1
-        fi
+         fi
 	;;
   status)
-        if [ "$DISTRIB_ID" = "fedora" ]; then
-            status -p $PIDFILE $PROGRAM
-        else
+        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+            status -p $TC_PIDFILE $TC_NAME
+        elif [  "$DISTRIB_ID" = "suse" ]; then
+            echo -n "Checking for service ${DM}: "
+            checkproc -p $TC_PIDFILE $TC_NAME
+            rc_status -v
+	else
             echo "This script needs to be ported to this OS"
             exit 1
         fi
         ;;
   condrestart)
-        if [ "$DISTRIB_ID" = "fedora" ]; then
+        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             if ! $0 'status'
             then
                 $0 'stop'
@@ -323,12 +336,12 @@ case "$1" in
         fi
     ;;
   *)
-        if [ "$DISTRIB_ID" = "ubuntu" ] ; then
-	#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
-	#echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
 	    echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
-        elif [ "$DISTRIB_ID" = "fedora" ]; then
+        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             echo "Usage: $0 {start|stop|status|restart|condrestart}"
+        elif [ "$DISTRIB_ID" = "suse" ]; then
+            echo "Usage: $0 {start|stop|restart|status}"
         else
             echo "This script needs to be ported to this OS"
             exit 1
