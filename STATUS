@@ -54,23 +54,23 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     the dev branch. I've backported just this single change, which is
     attached to the Jira ticket. 
     Jira: https://issues.apache.org/jira/browse/TS-234
-    +1: zwoop, bcall
+    +1: zwoop, bcall, jplevyak
 
   * core: url copy function should duplicate host fields
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=921639
     Jira: https://issues.apache.org/jira/browse/TS-236
-    +1: manjesh, zwoop, sjiang
+    +1: manjesh, zwoop, sjiang, jplevyak
 
   * core: catch-all remap rule ("map / ....") stopped working after lookup
     optimizations.
     Trunk patch: http://svn.apache.org/viewvc?rev=921965&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-237
-    +1: manjesh, zwoop, sjiang
+    +1: manjesh, zwoop, sjiang, jplevyak
 
   * API: Bump remap API major version
     Trunk patch: http://svn.apache.org/viewvc?rev=922056&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-238
-    +1: zwoop, sjiang
+    +1: zwoop, sjiang, jplevyak
 
 
 
