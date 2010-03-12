@@ -326,6 +326,15 @@ if test "${with_sqlite3}" = "no" -a "${with_libdb}" = "no"; then
    AC_MSG_ERROR([Need at least one DB backend, --with-sqlite3 and --with-libdb are supported])
 fi
 
+# Google profiler
+AC_MSG_CHECKING([whether to enable profiler])
+AC_ARG_WITH([profiler],
+  [AS_HELP_STRING([--with-profiler],[enable support for profiler [default=no]])],
+  [with_profiler=$withval],
+  [with_profiler=no]
+)
+AC_MSG_RESULT([$with_sqlite3])
+
           
 #
 # Installation directories
@@ -692,6 +701,14 @@ else
    AC_MSG_FAILURE([No suitable polling interface found])
 fi
 
+if test "x${with_profiler}" = "xyes"; then
+  AC_CHECK_LIB([profiler], [ProfilerStart], 
+    [AC_SUBST([LIBPROFILER], ["-lprofiler"])
+     AC_DEFINE([HAVE_PROFILER])
+    ],
+    [AC_MSG_FAILURE([check for profiler failed. Have you installed google-perftools-devel?])],
+  )
+fi
 
 # For SunPro 5.2 - we need the demangle symbol for
 #  ink_stack_trace.cc in libinktomi++.  Because this
@@ -804,6 +821,11 @@ fi
 
 if test "x${with_sqlite3}" = "xyes"; then
 AC_CHECK_HEADERS([sqlite3.h \
+                  ], [], [])
+fi
+
+if test "x${with_profiler}" = "xyes"; then
+AC_CHECK_HEADERS([google/profiler.h \
                   ], [], [])
 fi
 
@@ -965,6 +987,7 @@ AH_TEMPLATE([solaris],[solaris])
 AH_TEMPLATE([FIXME_NONMODULAR],[FIXME_NONMODULAR])
 AH_TEMPLATE([SPLIT_DNS],[SPLIT_DNS])
 AH_TEMPLATE([NON_MODULAR],[NON_MODULAR])
+AH_TEMPLATE([HAVE_PROFILER],[HAVE_PROFILER])
 
 AC_OUTPUT
 

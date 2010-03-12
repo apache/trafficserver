@@ -30,8 +30,6 @@
   
  ****************************************************************************/
 
-
-
 #include "inktomi++.h"
 #if (HOST_OS != linux)
 #include <sys/lock.h>
@@ -105,6 +103,11 @@ extern "C" int plock(int);
 #include "RemapProcessor.h"
 
 #include "XmlUtils.h"
+
+#ifdef HAVE_PROFILER
+#include <google/profiler.h>
+#endif
+
 //
 // Global Data
 //
@@ -1682,6 +1685,7 @@ change_uid_gid(const char *user)
 }
 
 
+
 //
 // Main
 //
@@ -1689,6 +1693,9 @@ change_uid_gid(const char *user)
 int
 main(int argc, char **argv)
 {
+#ifdef HAVE_PROFILER
+  ProfilerStart("/tmp/ts.prof");
+#endif
   int mem_throttling;
 
   NOWARN_UNUSED(argc);

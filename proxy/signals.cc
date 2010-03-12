@@ -27,6 +27,7 @@
 
 **************************************************************************/
 
+
 #include "inktomi++.h"
 #include <unistd.h>
 #include "signals.h"
@@ -40,14 +41,18 @@
 // For backtraces on crash
 #include "ink_stack_trace.h"
 
+
 #ifdef __alpha
 #include <obj.h>
 #include <sym.h>
 #include <demangle.h>
 #include <ucontext.h>
 #include <excpt.h>
-
 struct obj_list *ObjList;
+#endif
+
+#ifdef HAVE_PROFILER
+#include <google/profiler.h>
 #endif
 
 #if (HOST_OS != linux) && (HOST_OS != freebsd)
@@ -220,6 +225,7 @@ print_context(sigcontext & c, int frame)
 #endif
 
 
+
 static void
 interrupt_handler(int sig)
 {
@@ -316,6 +322,9 @@ signal_handler(int sig, siginfo_t * t, void *c)
   //syslog(LOG_ERR, sig_msg); 
 #endif
 
+#ifdef HAVE_PROFILER
+  ProfilerStop();
+#endif
   shutdown_system();
 
   // Make sure to drop a core for signals that normally
