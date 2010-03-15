@@ -607,6 +607,9 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   sys/param.h \
                   ], [], [])
 
+AC_CHECK_HEADERS([pcre/pcre.h], 
+                 [], [],[])
+
 if test "x${with_libdb}" = "xyes"; then
 AC_CHECK_HEADERS([db_185.h \
                   db.h \
