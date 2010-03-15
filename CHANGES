@@ -8,3 +8,7 @@ Changes with Apache Traffic Server 2.1.0
 
   *) Code cleanup to get the ATS software into a distributable shape. This
    means that certain things are missing, or not functional (intentionally).
+  
+  *) Support for larger Cache Partitions up to .5 PB (Petabytes), reducing seeks/write.
+
+  *) Reduced Cache miss latency (sub millesecond)
