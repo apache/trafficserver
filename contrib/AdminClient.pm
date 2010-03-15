@@ -44,7 +44,7 @@ sub new {
   my $self = {};
   my %args = @_;
 
-  $self->{_socket_path} = $args{socket_path} || "/usr/local/var/trafficserver/cli"; # ToDo: fix on install
+  $self->{_socket_path} = $args{socket_path} || "/usr/local/var/trafficserver/cli"; # TODO: fix on install
   $self->{_socket} = undef;
   $self->{_select} = IO::Select->new();
   bless $self, $class;
