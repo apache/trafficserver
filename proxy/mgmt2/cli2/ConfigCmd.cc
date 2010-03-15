@@ -260,19 +260,21 @@ Cmd_Config(ClientData clientData, Tcl_Interp * interp, int argc, const char *arg
 
   char *cmdinfo, *temp;
   int i = 0;
+
   Cli_Debug("Cmd_Config\n");
   Tcl_Eval(interp, "info commands config* ");
 
-  size_t cmdinfo_len = strlen(interp->result) + 2;
+  size_t cmdinfo_len = strlen(Tcl_GetStringResult(interp)) + 2;
   cmdinfo = (char *) malloc(sizeof(char) * cmdinfo_len);
-  ink_strncpy(cmdinfo, interp->result, cmdinfo_len);
+  ink_strncpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_len);
   size_t temp_len = strlen(cmdinfo) + 20;
   temp = (char *) malloc(sizeof(char) * temp_len);
   ink_strncpy(temp, "lsort \"", temp_len);
   strncat(temp, cmdinfo, temp_len - strlen(temp));
   strncat(temp, "\"", temp_len - strlen(temp));
+
   Tcl_Eval(interp, temp);
-  ink_strncpy(cmdinfo, interp->result, cmdinfo_len);
+  ink_strncpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_len);
   i = i + strlen("config ");
   while (cmdinfo[i] != 0) {
     if (cmdinfo[i] == ' ') {

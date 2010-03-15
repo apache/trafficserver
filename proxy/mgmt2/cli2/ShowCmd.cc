@@ -69,16 +69,16 @@ Cmd_Show(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[
   Cli_Debug("Cmd_Show\n");
   Tcl_Eval(interp, "info commands show* ");
 
-  int cmdinfo_size = sizeof(char) * (strlen(interp->result) + 2);
+  int cmdinfo_size = sizeof(char) * (strlen(Tcl_GetStringResult(interp)) + 2);
   cmdinfo = (char *) malloc(cmdinfo_size);
-  ink_strncpy(cmdinfo, interp->result, cmdinfo_size);
+  ink_strncpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_size);
   int temp_size = sizeof(char) * (strlen(cmdinfo) + 20);
   temp = (char *) malloc(temp_size);
   ink_strncpy(temp, "lsort \"", temp_size);
   strncat(temp, cmdinfo, temp_size - strlen(temp) - 1);
   strncat(temp, "\"", temp_size - strlen(temp) - 1);
   Tcl_Eval(interp, temp);
-  ink_strncpy(cmdinfo, interp->result, cmdinfo_size);
+  ink_strncpy(cmdinfo, Tcl_GetStringResult(interp), cmdinfo_size);
   i = i + strlen("show ");
   while (cmdinfo[i] != 0) {
     if (cmdinfo[i] == ' ') {
