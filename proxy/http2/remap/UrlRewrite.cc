@@ -743,7 +743,8 @@ UrlRewrite::_tableLookup(InkHashTable * h_table, URL * request_url,
   ht_result = ink_hash_table_lookup(h_table, request_host, (void **) &ht_entry);
 
   if (likely(ht_result && ht_entry)) {
-    um = ht_entry->Search(request_url, request_port);
+    // for empty host don't do a normal search, get a mapping arbitrarily
+    um = ht_entry->Search(request_url, request_port, request_host_len ? true : false);
   }
   return um;
 }

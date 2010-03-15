@@ -25,18 +25,19 @@
 bool
 UrlMappingPathIndex::Insert(url_mapping *mapping)
 {
-  URLType url_type;
+  int scheme_idx;
   int port = (mapping->fromURL).port_get();
   UrlMappingTrie *trie;
   int from_path_len;
   const char *from_path;
 
-  trie = _GetTrie(&(mapping->fromURL), url_type, port);
+  trie = _GetTrie(&(mapping->fromURL), scheme_idx, port);
   
   if (!trie) {
     trie = new UrlMappingTrie();
-    m_tries.insert(UrlMappingGroup::value_type(UrlMappingTrieKey(url_type, port), trie));
-    Debug("UrlMappingPathIndex::Insert", "Created new trie for url type, port combo <%d, %d>", url_type, port);
+    m_tries.insert(UrlMappingGroup::value_type(UrlMappingTrieKey(scheme_idx, port), trie));
+    Debug("UrlMappingPathIndex::Insert", "Created new trie for scheme index, port combo <%d, %d>",
+          scheme_idx, port);
   }
   
   from_path = mapping->fromURL.path_get(&from_path_len);
@@ -49,19 +50,19 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
 }
 
 url_mapping *
-UrlMappingPathIndex::Search(URL *request_url, int request_port) const
+UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_search /* = true */) const
 {
   url_mapping **retval = 0;
-  URLType url_type;
+  int scheme_idx;
   UrlMappingTrie *trie;
   int path_len;
   const char *path;
 
-  trie = _GetTrie(request_url, url_type, request_port);
+  trie = _GetTrie(request_url, scheme_idx, request_port, normal_search);
   
   if (!trie) {
-    Debug("UrlMappingPathIndex::Search", "No mappings exist for url type, port combo <%d, %d>",
-          url_type, request_port);
+    Debug("UrlMappingPathIndex::Search", "No mappings exist for scheme index, port combo <%d, %d>",
+          scheme_idx, request_port);
     goto lFail;
   }
 
