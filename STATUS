@@ -49,11 +49,6 @@ For the final 2.0.0 ATS release, see the bug list at
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-  * core: url copy function should duplicate host fields
-    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=921639
-    Jira: https://issues.apache.org/jira/browse/TS-236
-    +1: manjesh, zwoop, sjiang, jplevyak, georgep
-
   * core: catch-all remap rule ("map / ....") stopped working after lookup
     optimizations.
     Trunk patch: http://svn.apache.org/viewvc?rev=921965&view=rev
