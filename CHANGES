@@ -2,5 +2,9 @@
 
 Changes with Apache Traffic Server 2.1.0
 
+  *) Support for TCL v8.6 and later [TS-246].
+
+  *) Support for many more platforms, including FreeBSD, MacOSX and Solaris.
+
   *) Code cleanup to get the ATS software into a distributable shape. This
    means that certain things are missing, or not functional (intentionally).
