@@ -32,7 +32,7 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-#define TSREMAP_VMAJOR   1      /* major version number */
+#define TSREMAP_VMAJOR   2      /* major version number */
 #define TSREMAP_VMINOR   0      /* minor version number */
 #define TSREMAP_VERSION ((TSREMAP_VMAJOR << 16)|TSREMAP_VMINOR)
 
