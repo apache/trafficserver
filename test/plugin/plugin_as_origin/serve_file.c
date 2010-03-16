@@ -355,17 +355,9 @@ check_ts_version()
     }
 
     /* Since this is an TS-SDK 2.0 plugin, we need at
-       least Traffic Server 3.5.2 to run */
-    if (major_ts_version > 3) {
+       least Traffic Server 2.0 to run */
+    if (major_ts_version >= 2) {
       result = 1;
-    } else if (major_ts_version == 3) {
-      if (minor_ts_version > 5) {
-        result = 1;
-      } else if (minor_ts_version == 5) {
-        if (patch_ts_version >= 2) {
-          result = 1;
-        }
-      }
     }
   }
 
@@ -424,17 +416,17 @@ INKPluginInit(int argc, const char *argv[])
 
 /* NEGATIVE TEST for INKPluginRegister */
 #ifdef DEBUG
-  if (INKPluginRegister(INK_SDK_VERSION_5_2, NULL) != 0) {
+  if (INKPluginRegister(INK_SDK_VERSION_2_0, NULL) != 0) {
     LOG_ERROR_NEG("INKPluginRegister");
   } else
     INKDebug(NEG_DEBUG_TAG, "Negative Test INKPluginRegister 1 passed");
 #endif
-  if (!INKPluginRegister(INK_SDK_VERSION_5_2, &info)) {
+  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
     INKError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 3.5.2 or later\n");
+    INKError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 

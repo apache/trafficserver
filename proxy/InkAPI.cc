@@ -1871,7 +1871,7 @@ INKPluginRegister(INKSDKVersion sdk_version, INKPluginRegistrationInfo * plugin_
 
   plugin_reg_current->plugin_registered = true;
 
-  if (sdk_version >= INK_SDK_VERSION_1_0 && sdk_version <= INK_SDK_VERSION_5_2) {
+  if (sdk_version >= INK_SDK_VERSION_2_0 && sdk_version <= INK_SDK_VERSION_2_0) {
     plugin_reg_current->sdk_version = (PluginSDKVersion) sdk_version;
   } else {
     plugin_reg_current->sdk_version = PLUGIN_SDK_VERSION_UNKNOWN;
@@ -1894,8 +1894,7 @@ INKPluginRegister(INKSDKVersion sdk_version, INKPluginRegistrationInfo * plugin_
 
 ////////////////////////////////////////////////////////////////////
 //
-// Plugin info registration - coded in 5.2, but not documented and
-//                                                        not supported in 5.2
+// Plugin info registration - coded in 2.0, but not documented 
 //
 ////////////////////////////////////////////////////////////////////
 

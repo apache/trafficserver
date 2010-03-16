@@ -426,16 +426,12 @@ extern "C"
   } INKIOBufferSizeIndex;
 
   /**
-      Starting 5.2, SDK now follows same versioning as Traffic Server.
+      Starting 2.0, SDK now follows same versioning as Traffic Server.
 
    */
   typedef enum
   {
-    INK_SDK_VERSION_1_0 = 0,
-    INK_SDK_VERSION_1_1,
-    INK_SDK_VERSION_2_0,
-    INK_SDK_VERSION_5_2,
-    INK_SDK_VERSION_5_5
+    INK_SDK_VERSION_2_0 = 0,
   } INKSDKVersion;
 
   typedef enum

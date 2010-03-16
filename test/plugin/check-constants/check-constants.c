@@ -186,9 +186,7 @@ typedef enum
 
 typedef enum
 {
-  ORIG_INK_SDK_VERSION_1_0 = 0,
-  ORIG_INK_SDK_VERSION_1_1,
-  ORIG_INK_SDK_VERSION_2_0
+  ORIG_INK_SDK_VERSION_2_0 = 0,
 } ORIG_INKSDKVersion;
 
 
@@ -318,7 +316,7 @@ INKPluginInit(int argc, const char *argv[])
   PRINT_DIFF("INK_VC_CLOSE_ABORT", INK_VC_CLOSE_ABORT, ORIG_INK_VC_CLOSE_ABORT);
   PRINT_DIFF("INK_VC_CLOSE_NORMAL", INK_VC_CLOSE_NORMAL, ORIG_INK_VC_CLOSE_NORMAL);
 
-  PRINT_DIFF("INK_SDK_VERSION_1_0", INK_SDK_VERSION_1_0, ORIG_INK_SDK_VERSION_1_0);
+  PRINT_DIFF("INK_SDK_VERSION_2_0", INK_SDK_VERSION_2_0, ORIG_INK_SDK_VERSION_2_0);
 
   if (file_changed) {
     printf("\n***************************************************************************************");

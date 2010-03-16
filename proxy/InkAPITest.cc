@@ -142,7 +142,7 @@ REGRESSION_TEST(SDK_API_INKPluginRegister) (RegressionTest * test, int atype, in
   info.vendor_name = "my_company";
   info.support_email = "ts-api-support@my_company.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_5_2, &info)) {
+  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
     SDK_RPRINT(test, "INKPluginRegister", "TestCase1", TC_FAIL, "can't register plugin");
     *pstatus = REGRESSION_TEST_FAILED;
     return;
@@ -6746,10 +6746,7 @@ typedef enum
 
 typedef enum
 {
-  ORIG_INK_SDK_VERSION_1_0 = 0,
-  ORIG_INK_SDK_VERSION_1_1,
-  ORIG_INK_SDK_VERSION_2_0,
-  ORIG_INK_SDK_VERSION_5_2
+  ORIG_INK_SDK_VERSION_2_0 = 0,
 } ORIG_INKSDKVersion;
 
 typedef enum
@@ -6904,10 +6901,7 @@ REGRESSION_TEST(SDK_API_INKConstant) (RegressionTest * test, int atype, int *pst
   PRINT_DIFF(INK_VC_CLOSE_ABORT);
   PRINT_DIFF(INK_VC_CLOSE_NORMAL);
 
-  PRINT_DIFF(INK_SDK_VERSION_1_0);
-  PRINT_DIFF(INK_SDK_VERSION_1_1);
   PRINT_DIFF(INK_SDK_VERSION_2_0);
-  PRINT_DIFF(INK_SDK_VERSION_5_2);
 
   PRINT_DIFF(INK_ERROR);
   PRINT_DIFF(INK_SUCCESS);

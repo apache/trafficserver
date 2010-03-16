@@ -60,7 +60,7 @@
 #define CACHE_HTTP_TYPE              1
 #define CACHE_RTSP_TYPE              2
 // NOTE: All the failures are ODD, and one greater than the success
-//       Some of these must match those in InkAPI.h (tested in verify_cache_api())
+//       Some of these must match those in <ts/ts.h> (tested in verify_cache_api())
 enum CacheEventType
 {
   CACHE_EVENT_LOOKUP = CACHE_EVENT_EVENTS_START + 0,
