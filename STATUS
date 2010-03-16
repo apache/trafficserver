@@ -10,6 +10,7 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
+    2.0.0         : In development
     2.0.0-alpha   : Released March 13, 2010
 
 
@@ -45,15 +46,36 @@ For the final 2.0.0 ATS release, see the bug list at
   http://bit.ly/ATS-2-0-0
 
 
+PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
+  [ start all new proposals below, under PATCHES PROPOSED. ]
+
+  * core: url copy function should duplicate host fields
+    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=921639
+    Jira: https://issues.apache.org/jira/browse/TS-236
+    +1: manjesh, zwoop, sjiang, jplevyak, georgep
+ 
+  * core: catch-all remap rule ("map / ....") stopped working after lookup
+    optimizations.
+    Trunk patch: http://svn.apache.org/viewvc?rev=921965&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-237
+    +1: manjesh, zwoop, sjiang, jplevyak, georgep
+ 
+  * API: Bump remap API major version
+    Trunk patch: http://svn.apache.org/viewvc?rev=922056&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-238
+    +1: zwoop, sjiang, jplevyak, georgep
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-  * <template description, can be multiple lines>
-    Trunk patch: http://svn.apache.org/viewvc?rev=1234567&view=rev
-    Jira: https://issues.apache.org/jira/browse/TS-1234
-    +1: zwoop, bcall
-
+  * SDK: Change INK_SDK_VERSION_5_2 (and predecessors) to only use and
+    support INK_SDK_VERSION_2_0 (for now). We'll bump this version with
+    new releases as well, but the idea is not to support 5.5, 5.2 or any
+    of the other old Inktomi versions in the SDK.
+    Trunk patch: http://svn.apache.org/viewvc?rev=923986&view=rev
+    Jira: https://issues.apache.org/jira/browse/TS-249
+    +1: zwoop
 
 
 RELEASE PROCESS
