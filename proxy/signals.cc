@@ -342,16 +342,12 @@ signal_handler(int sig, siginfo_t * t, void *c)
   case SIGXCPU:
   case SIGXFSZ:
   case SIGSEGV:
-#if (HOST_OS == linux)
     ink_stack_trace_dump(2);
-#endif
     signal(sig, SIG_DFL);
     return;
-#if (HOST_OS == linux)
   case SIGUSR2:
     ink_stack_trace_dump(2);
     return;
-#endif
   case SIGABRT:
   case SIGUSR1:
   default:
