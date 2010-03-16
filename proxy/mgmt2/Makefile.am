@@ -106,7 +106,6 @@ traffic_manager_SOURCES = \
   WebPluginList.h
 
 traffic_manager_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @EXPAT_LDFLAGS@
-
 traffic_manager_LDADD = \
   cluster/libcluster.a \
   preparse/libpreparse.a \
@@ -123,4 +122,4 @@ traffic_manager_LDADD = \
   @LIBEXPAT@ \
   @LIBSSL@ @LIBDB@ @LIBSQLITE3@ @LIBREGEX@ @LIBTCL@ @LIBICONV@ \
   @LIBM@ @LIBDL@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBTHREAD@ @LIBRT@
+  @LIBTHREAD@ @LIBRT@ @LIBEXECINFO@

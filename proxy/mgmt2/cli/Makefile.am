@@ -73,4 +73,4 @@ traffic_line_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   $(top_builddir)/librecords/libreclocal.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@
+  @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@ @LIBEXECINFO@

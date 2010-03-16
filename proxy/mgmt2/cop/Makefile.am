@@ -43,4 +43,4 @@ traffic_cop_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTCL@ \
   @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
-  @LIBTHREAD@ @LIBDL@ @LIBRT@ @LIBICONV@
+  @LIBTHREAD@ @LIBDL@ @LIBRT@ @LIBICONV@ @LIBEXECINFO@

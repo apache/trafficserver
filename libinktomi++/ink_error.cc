@@ -61,9 +61,7 @@ ink_fatal_va(int return_code, const char *message_format, va_list ap)
   message[sizeof(message) - 1] = 0;
   fprintf(stderr, "%s\n", message);
   syslog(LOG_CRIT, "%s", message);
-#if (HOST_OS == linux)
   ink_stack_trace_dump();
-#endif
   ink_die_die_die(return_code);
 }
 
@@ -109,9 +107,7 @@ ink_pfatal(int return_code, const char *message_format, ...)
   fprintf(stderr, "%s\n", message);
   syslog(LOG_CRIT, "%s", message);
   va_end(ap);
-#if (HOST_OS == linux)
   ink_stack_trace_dump();
-#endif
   ink_die_die_die(return_code);
 }
 

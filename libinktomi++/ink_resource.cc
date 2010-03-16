@@ -673,9 +673,7 @@ xdump_to_file(FILE * fp)
 void
 xdump()
 {
-#if (HOST_OS == linux)
   ink_stack_trace_dump();
-#endif
   xdump_to_file(stderr);
 }
 

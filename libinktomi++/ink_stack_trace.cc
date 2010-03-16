@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#ifdef HAVE_EXECINFO_H
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
 
 #include <execinfo.h>           /* for backtrace_symbols, etc. */
 #include <signal.h>
@@ -114,7 +114,7 @@ ink_stack_trace_dump(int sighandler_frame)
   backtrace_symbols_fd(stack, btl, 2);
 }
 
-#else  // linux check
+#else  /* !(HAVE_EXECINFO_H && HAVE_BACKTRACE) */
 
 void
 ink_stack_trace_dump(int sighandler_frame)
@@ -123,4 +123,4 @@ ink_stack_trace_dump(int sighandler_frame)
   write(2, msg, sizeof(msg) - 1);
 }
 
-#endif  // linux check
+#endif  /* !(HAVE_EXECINFO_H && HAVE_BACKTRACE) */

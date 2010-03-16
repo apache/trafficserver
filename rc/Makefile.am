@@ -35,5 +35,5 @@ update_records_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 update_records_LDADD =	\
 			$(top_builddir)/proxy/mgmt2/librecords.a \
 			$(top_builddir)/libinktomi++/libinktomi++.a \
-			@LIBICONV@ @LIBTHREAD@ @LIBRT@ @LIBTCL@ @LIBDL@ @LIBSSL@
+			@LIBICONV@ @LIBTHREAD@ @LIBRT@ @LIBTCL@ @LIBDL@ @LIBSSL@ @LIBEXECINFO@
 

@@ -41,13 +41,13 @@ traffic_vip_config_SOURCES = VIPConfig.cc
 traffic_vip_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_vip_config_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
-  @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@
+  @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@ @LIBEXECINFO@
 
 traffic_net_config_SOURCES = NetConfig.cc
 traffic_net_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_net_config_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
-  @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBICONV@
+  @LIBSOCKET@ @LIBTCL@ @LIBRT@ @LIBICONV@ @LIBEXECINFO@
 
 traffic_time_config_SOURCES = TimeConfig.cc
 traffic_time_config_LDFLAGS = @EXTRA_CXX_LDFLAGS@
@@ -59,7 +59,7 @@ traffic_mcast_snoop_SOURCES = McastSnoop.cc
 traffic_mcast_snoop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_mcast_snoop_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
-  @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBRT@ @LIBTHREAD@ @LIBDL@ @LIBICONV@
+  @LIBSOCKET@ @LIBNSL@ @LIBTCL@ @LIBRT@ @LIBTHREAD@ @LIBDL@ @LIBICONV@ @LIBEXECINFO@
 
 libinksysapi_a_SOURCES = SysAPI.cc SysAPI.h
 

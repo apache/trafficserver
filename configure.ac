@@ -682,6 +682,21 @@ AC_CHECK_LIB([pcre], [pcre_exec],
   [AC_MSG_FAILURE([check for pcre failed. Have you installed pcre-devel?])],
 )
 
+# Check for backtrace() support
+AC_CHECK_HEADERS([execinfo.h], [have_backtrace=yes],[])
+if test "x${have_backtrace}" = "xyes"; then
+  # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
+  AC_CHECK_LIB([execinfo], [backtrace], [have_backtrace_lib=yes 
+                                         AC_SUBST([LIBEXECINFO],["-lexecinfo"])])
+  if test "x${have_backtrace_lib}" = "xyes"; then
+    AC_MSG_NOTICE([Using backtrace library '-lexecinfo'])
+  fi	
+  AC_DEFINE(HAVE_BACKTRACE, 1, [Define if you have backtrace()])
+else
+  AC_MSG_WARN([No backtrace() support found])
+fi
+AC_SUBST(HAVE_BACKTRACE)
+
 if test "x$enable_libev" = "xyes"; then
    AC_DEFINE([USE_LIBEV])
    have_good_poller=1
