@@ -48,7 +48,7 @@ DEBUG=$FALSE
 BUILD_HOME=/usr/local
 PREFIX=--prefix=$BUILD_HOME
 BUILD_OPTIONS_DEBUG="--with-user=root --with-group=root $PREFIX --enable-debug"
-BUILD_OPTIONS="--with-user=root --with-group=root $PREFIX"
+BUILD_OPTIONS="$PREFIX"
 FULL_BUILD_PATH=$EC2_EPHEMERAL/$PROJECT/$SVN_LOC
 
 SUSE="suse"
@@ -69,6 +69,7 @@ function updateInstall() {
         if [ "$DISTRIB_ID" = "$UBUNTU" ]; then
                 apt-get update
                 apt-get install -y g++ autoconf \
+                        make \
 			libtool \
 			libssl-dev \
 			tcl-dev \
@@ -76,7 +77,8 @@ function updateInstall() {
 			libdb-dev \
 			libpcre3-dev \
 			libsqlite3-dev \
-			libdb-dev
+			libdb-dev \
+                        curl
                 apt-get install -y subversion git git-svn
         elif [ "$DISTRIB_ID" = "$FEDORA" ]; then
                 yum -y install subversion \
