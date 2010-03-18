@@ -238,7 +238,7 @@ re_array(NULL), re_str(NULL), data_array(NULL), array_len(-1), num_el(-1), match
 template<class Data, class Result> RegexMatcher<Data, Result>::~RegexMatcher()
 {
   for (int i = 0; i < num_el; i++) {
-    regfree(re_array + i);;
+    pcre_free(re_array[i]);
     xfree(re_str[i]);
   }
   delete[]re_str;
@@ -268,8 +268,8 @@ template<class Data, class Result> void RegexMatcher<Data, Result>::AllocateSpac
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  re_array = (regex_t *) xmalloc(sizeof(regex_t) * num_entries);
-  memset(re_array, 0, sizeof(regex_t *) * num_entries);
+  re_array = (pcre**) xmalloc(sizeof(pcre*) * num_entries);
+  memset(re_array, 0, sizeof(pcre*) * num_entries);
 
   data_array = NEW(new Data[num_entries]);
 
@@ -288,9 +288,9 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
 
   Data *cur_d;
   char *errBuf;
-  char *reErr;
   char *pattern;
-  int r;
+  const char *error;
+  int erroffset;
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -305,15 +305,13 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
   ink_assert(pattern != NULL);
 
   // Create the compiled regular expression
-  r = regcomp(re_array + num_el, pattern, REG_EXTENDED | REG_NOSUB);
-  if (r != 0) {
+  re_array[num_el] = pcre_compile(pattern, 0, &error, &erroffset, NULL);
+  if (!re_array[num_el]) {
     errBuf = (char *) xmalloc(1024 * sizeof(char));
-    reErr = (char *) xmalloc(1024 * sizeof(char));
-    *reErr = *errBuf = '\0';
-    regerror(r, re_array + num_el, reErr, 1024);
-    ink_snprintf(errBuf, 1024, "%s regular expression error at line %d : %s", matcher_name, line_info->line_num, reErr);
-    memset(re_array + num_el, 0, sizeof(regex_t));
-    xfree(reErr);
+    *errBuf = '\0';
+    ink_snprintf(errBuf, 1024, "%s regular expression error at line %d position %d : %s",
+                 matcher_name, line_info->line_num, erroffset, error);
+    re_array[num_el] = NULL;
     return errBuf;
   }
   re_str[num_el] = xstrdup(pattern);
@@ -329,11 +327,11 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
   if (errBuf == NULL) {
     num_el++;
   } else {
-    // There was a problme so undo the effects this function
+    // There was a problem so undo the effects this function
     xfree(re_str[num_el]);
     re_str[num_el] = NULL;
-    regfree(re_array + num_el);
-    memset(re_array + num_el, 0, sizeof(regex_t));
+    pcre_free(re_array[num_el]);
+    re_array[num_el] = NULL;
   }
 
   return errBuf;
@@ -349,7 +347,6 @@ template<class Data, class Result> void RegexMatcher<Data, Result>::Match(RD * r
 {
   char *url_str;
   int r;
-  char *errBuf;
 
   // Check to see there is any work to before we copy the
   //   URL
@@ -371,17 +368,13 @@ template<class Data, class Result> void RegexMatcher<Data, Result>::Match(RD * r
 
   for (int i = 0; i < num_el; i++) {
 
-    r = regexec(re_array + i, url_str, 0, NULL, 0);
-    if (r == 0) {
+    r = pcre_exec(re_array[i], NULL, url_str, strlen(url_str), 0, 0, NULL, 0);
+    if (r != -1) {
       Debug("matcher", "%s Matched %s with regex at line %d", matcher_name, url_str, data_array[i].line_num);
       data_array[i].UpdateMatch(result, rdata);
-    } else if (r != REG_NOMATCH) {
+    } else {
       // An error has occured
-      errBuf = (char *) xmalloc(sizeof(char) * 1024);
-      *errBuf = '\0';
-      regerror(r, NULL, errBuf, 1024);
-      Warning("error matching regex at line %d : %s", data_array[i].line_num, errBuf);
-      xfree(errBuf);
+      Warning("error matching regex at line %d", data_array[i].line_num);
     }
 
   }
@@ -410,7 +403,6 @@ template<class Data, class Result> void HostRegexMatcher<Data, Result>::Match(RD
 {
   const char *url_str;
   int r;
-  char *errBuf;
 
   // Check to see there is any work to before we copy the
   //   URL
@@ -426,19 +418,14 @@ template<class Data, class Result> void HostRegexMatcher<Data, Result>::Match(RD
     url_str = "";
   }
   for (int i = 0; i < this->num_el; i++) {
-
-    r = regexec(this->re_array + i, url_str, 0, NULL, 0);
-    if (r == 0) {
+    r = pcre_exec(this->re_array[i], NULL, url_str, strlen(url_str), 0, 0, NULL, 0);
+    if (r != -1) {
       Debug("matcher", "%s Matched %s with regex at line %d",
             this->matcher_name, url_str, this->data_array[i].line_num);
       this->data_array[i].UpdateMatch(result, rdata);
-    } else if (r != REG_NOMATCH) {
+    } else {
       // An error has occured
-      errBuf = (char *) xmalloc(sizeof(char) * 1024);
-      *errBuf = '\0';
-      regerror(r, NULL, errBuf, 1024);
-      Warning("error matching regex at line %d : %s", this->data_array[i].line_num, errBuf);
-      xfree(errBuf);
+      Warning("error matching regex at line %d", this->data_array[i].line_num);
     }
   }
 }

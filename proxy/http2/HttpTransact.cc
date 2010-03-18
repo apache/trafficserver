@@ -780,9 +780,10 @@ HttpTransact::perform_accept_encoding_filtering(State * s)
     if (u_agent_len >= (int) sizeof(tmp_ua_buf))
       u_agent_len = (int) (sizeof(tmp_ua_buf) - 1);
     memcpy(tmp_ua_buf, u_agent, u_agent_len);
-    tmp_ua_buf[u_agent_len] = 0;
+    tmp_ua_buf[u_agent_len] = '\0';
     //fprintf(stderr,"User-Agent: \"%s\"\n",tmp_ua_buf);
 
+    // TODO: Do we really want to do these hardcoded checks still?
     // Check hardcoded case MSIE[6-9] & Mozilla/4
     if ((c = strstr(tmp_ua_buf, "MSIE")) != NULL) {
       if (c[5] >= '6' && c[5] <= '9')
@@ -793,6 +794,7 @@ HttpTransact::perform_accept_encoding_filtering(State * s)
         return false;           // Don't change anything for Mozilla > 4
       ua_match = true;
     }
+
     // Check custom filters
     if (!ua_match && HttpConfig::user_agent_list) {
       for (uae = HttpConfig::user_agent_list; uae && !ua_match; uae = uae->next) {
@@ -808,7 +810,7 @@ HttpTransact::perform_accept_encoding_filtering(State * s)
             ua_match = true;
           break;
         case HttpUserAgent_RegxEntry::STRTYPE_REGEXP:  /* .regexp POSIX regular expression */
-          if (uae->regx_valid && !regexec(&uae->regx, tmp_ua_buf, 0, NULL, 0))
+          if (uae->regx_valid && !pcre_exec(uae->regx, NULL, tmp_ua_buf, u_agent_len, 0, 0, NULL, 0))
             ua_match = true;
           break;
         default:               /* unknown type in the structure - bad initialization - impossible bug! */

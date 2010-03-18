@@ -27,6 +27,13 @@
 #include "BaseRecords.h"
 #include "RecordsConfig.h"
 
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
+
+
 /****************************************************************************
  *
  *  WebMgmtUtils.cc - Functions for interfacing to management records
@@ -1455,14 +1462,21 @@ recordValidityCheck(const char *varName, const char *value)
 bool
 recordRegexCheck(const char *pattern, const char *value)
 {
-  regex_t regex;
-  int result;
-  if (regcomp(&regex, pattern, REG_NOSUB | REG_EXTENDED) != 0) {
+  pcre* regex;
+  const char* error;
+  int erroffset;
+
+  regex = pcre_compile(pattern, 0, &error, &erroffset, NULL);
+  if (!regex) {
     return false;
+  } else {
+    int r = pcre_exec(regex, NULL, value, strlen(value), 0, 0, NULL, 0);
+
+    pcre_free(regex);
+    return (r != -1) ? true : false;
   }
-  result = regexec(&regex, value, 0, NULL, 0);
-  regfree(&regex);
-  return (result == 0) ? true : false;
+
+  return false; //no-op
 }
 
 bool

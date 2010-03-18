@@ -288,12 +288,13 @@ redirect_tag_str::parse_format_redirect_url(char *url)
 referer_info::referer_info(char *_ref, bool * error_flag, char *errmsgbuf, int errmsgbuf_size):next(0), referer(0), referer_size(0), any(false), negative(false),
 regx_valid(false)
 {
-  int
-    i;
+  const char *error;
+  int erroffset;
 
   if (error_flag)
     *error_flag = false;
-  memset(&regx, 0, sizeof(regx));
+  regx = NULL;
+
   if (_ref) {
     if (*_ref == '~') {
       negative = true;
@@ -304,10 +305,10 @@ regx_valid(false)
       if (!strcmp(referer, "*"))
         any = true;
       else {
-        if ((i = regcomp(&regx, (const char *) referer, (int) (REG_EXTENDED | REG_NOSUB | REG_ICASE))) != 0) {
+        regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, NULL);
+        if (!regx) {
           if (errmsgbuf && (errmsgbuf_size - 1) > 0)
-            regerror(i, (const regex_t *) &regx, errmsgbuf, (size_t) (errmsgbuf_size - 1));
-          regfree(&regx);
+            ink_strncpy(errmsgbuf, error, errmsgbuf_size - 1);
           if (error_flag)
             *error_flag = true;
         } else
@@ -329,7 +330,8 @@ referer_info::~referer_info()
   referer_size = 0;
 
   if (regx_valid) {
-    regfree(&regx);
+    pcre_free(regx);
+    regx = NULL;
     regx_valid = false;
   }
 }

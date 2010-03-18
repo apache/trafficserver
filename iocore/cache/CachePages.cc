@@ -522,44 +522,56 @@ ShowCache::handleCacheScanCallback(int event, Event * e)
       HTTPInfo *alt = (HTTPInfo *) e;
       char xx[501], m[501];
       int ib = 0, xd = 0, ml = 0;
+
       alt->request_get()->url_get()->print(xx, 500, &ib, &xd);
-      xx[ib] = 0;
+      xx[ib] = '\0';
+
       const char *mm = alt->request_get()->method_get(&ml);
+
       memcpy(m, mm, ml);
       m[ml] = 0;
       Debug("cache_scan", "scan url '%s' '%s'\n", m, xx);
+
       int res = CACHE_SCAN_RESULT_CONTINUE;
+
       for (int s = 0; show_cache_urlstrs[s][0] != '\0'; s++) {
-        regex_t preq;
-        regcomp(&preq, show_cache_urlstrs[s], REG_EXTENDED | REG_NOSUB);
-        int r = regexec(&preq, xx, 0, NULL, 0);
-        regfree(&preq);
-        if (r == 0) {
-          linecount++;
-          if ((linecount % 5) == 0) {
-            CHECK_SHOW(show("<TR bgcolor=\"#FFF0E0\">"));
-          } else {
-            CHECK_SHOW(show("<TR>"));
+        const char* error;
+        int erroffset;
+        pcre* preq =  pcre_compile(show_cache_urlstrs[s], 0, &error, &erroffset, NULL);
+
+        if (preq) {
+          int r = pcre_exec(preq, NULL, xx, ib, 0, 0, NULL, 0);
+
+          pcre_free(preq);
+          if (r != -1) {
+            linecount++;
+            if ((linecount % 5) == 0) {
+              CHECK_SHOW(show("<TR bgcolor=\"#FFF0E0\">"));
+            } else {
+              CHECK_SHOW(show("<TR>"));
+            }
+            if (scan_flag == 0) {
+              /*Y! Bug: 2249781: using onClick() because i need encodeURIComponent() and YTS doesn't have something like that */
+              CHECK_SHOW(show("<TD><INPUT TYPE=CHECKBOX NAME=\"%s\" "
+                              "onClick=\"addToUrlList(this)\"></TD>"
+                              "<TD><A onClick='window.location.href=\"./lookup_url?url=\"+ encodeURIComponent(\"%s\");' HREF=\"#\">"
+                              "<B>%s</B></A></br></TD></TR>\n", xx, xx, xx));
+            }
+            if (scan_flag == 1) {
+              CHECK_SHOW(show("<TD><B>%s</B></TD>" "<TD><font color=red>deleted</font></TD></TR>\n", xx));
+              res = CACHE_SCAN_RESULT_DELETE;
+            } else if (scan_flag == 2) {
+              HTTPInfo new_info;
+              res = CACHE_SCAN_RESULT_UPDATE;
+              new_info.copy(alt);
+              new_info.response_get()->set_cooked_cc_need_revalidate_once();
+              CHECK_SHOW(show("<TD><B>%s</B></TD>" "<TD><font color=red>Invalidate</font></TD>" "</TR>\n", xx));
+              cache_vc->set_http_info(&new_info);
+            }
+            break;
           }
-          if (scan_flag == 0) {
-            /*Y! Bug: 2249781: using onClick() because i need encodeURIComponent() and YTS doesn't have something like that */
-            CHECK_SHOW(show("<TD><INPUT TYPE=CHECKBOX NAME=\"%s\" "
-                            "onClick=\"addToUrlList(this)\"></TD>"
-                            "<TD><A onClick='window.location.href=\"./lookup_url?url=\"+ encodeURIComponent(\"%s\");' HREF=\"#\">"
-                            "<B>%s</B></A></br></TD></TR>\n", xx, xx, xx));
-          }
-          if (scan_flag == 1) {
-            CHECK_SHOW(show("<TD><B>%s</B></TD>" "<TD><font color=red>deleted</font></TD></TR>\n", xx));
-            res = CACHE_SCAN_RESULT_DELETE;
-          } else if (scan_flag == 2) {
-            HTTPInfo new_info;
-            res = CACHE_SCAN_RESULT_UPDATE;
-            new_info.copy(alt);
-            new_info.response_get()->set_cooked_cc_need_revalidate_once();
-            CHECK_SHOW(show("<TD><B>%s</B></TD>" "<TD><font color=red>Invalidate</font></TD>" "</TR>\n", xx));
-            cache_vc->set_http_info(&new_info);
-          }
-          break;
+        } else {
+          // TODO: Regex didn't compile, show errors ?
         }
       }
       return res;

@@ -119,7 +119,7 @@ traffic_manager_LDADD = \
   $(top_builddir)/proxy/mgmt2/tools/libinksysapi.a \
   $(top_builddir)/proxy/mgmt2/tools/libinkconfigapi.a \
   $(top_builddir)/libinktomi++/libinktomi++.a \
-  @LIBEXPAT@ \
-  @LIBSSL@ @LIBDB@ @LIBSQLITE3@ @LIBREGEX@ @LIBTCL@ @LIBICONV@ \
+  @LIBEXPAT@ @LIBPCRE@ \
+  @LIBSSL@ @LIBDB@ @LIBSQLITE3@ @LIBTCL@ @LIBICONV@ \
   @LIBM@ @LIBDL@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBTHREAD@ @LIBRT@ @LIBEXECINFO@

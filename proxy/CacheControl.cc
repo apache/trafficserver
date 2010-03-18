@@ -33,12 +33,10 @@
 
 #include <sys/types.h>
 
-#if (HOST_OS != linux) && !defined(__alpha)
-#include "ink_regex-3.6.h"
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
 #else
-#if (HOST_OS == linux)
-#include <regex.h>
-#endif
+#include <pcre.h>
 #endif
 
 #include "CacheControl.h"

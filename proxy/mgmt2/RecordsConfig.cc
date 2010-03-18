@@ -305,7 +305,7 @@ RecordElement RecordsConfig[] = {
    RA_NULL}
   ,
   {CONFIG, "proxy.config.cluster.mc_group_addr", "", INK_STRING, "224.0.1.37", RU_REREAD, RR_REQUIRED,
-   RC_IP, "[0-255].[0-255].[0-255].[0-255]", RA_NULL}
+   RC_IP, "[0-255]\\.[0-255]\\.[0-255]\\.[0-255]", RA_NULL}
   ,
   {CONFIG, "proxy.config.cluster.mc_ttl", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,

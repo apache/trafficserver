@@ -1814,7 +1814,6 @@ HttpUserAgent_RegxEntry::~HttpUserAgent_RegxEntry()
 bool
 HttpUserAgent_RegxEntry::create(char *_refexp_str, char *errmsgbuf, int errmsgbuf_size)
 {
-  int i;
   char *c, *refexp_str, refexp_str_buf[2048];
   bool retcode = false;
 
@@ -1822,7 +1821,7 @@ HttpUserAgent_RegxEntry::create(char *_refexp_str, char *errmsgbuf, int errmsgbu
   user_agent_str_size = 0;
   stype = STRTYPE_UNKNOWN;
   if (regx_valid) {
-    regfree(&regx);
+    pcre_free(regx);
     regx_valid = false;
   }
   if (errmsgbuf && errmsgbuf_size > 0)
@@ -1858,10 +1857,13 @@ HttpUserAgent_RegxEntry::create(char *_refexp_str, char *errmsgbuf, int errmsgbu
     if ((user_agent_str = xstrdup(refexp_str)) != NULL) {
       retcode = true;
       if (stype == STRTYPE_REGEXP) {
-        if ((i = regcomp(&regx, (const char *) user_agent_str, (int) (REG_EXTENDED | REG_NOSUB | REG_ICASE))) != 0) {
+        const char* error;
+        int erroffset;
+
+        regx = pcre_compile((const char *) user_agent_str, PCRE_CASELESS, &error, &erroffset, NULL);
+        if (regx == NULL) {
           if (errmsgbuf && (errmsgbuf_size - 1) > 0)
-            regerror(i, (const regex_t *) &regx, errmsgbuf, (size_t) (errmsgbuf_size - 1));
-          regfree(&regx);
+            ink_strncpy(errmsgbuf, error, errmsgbuf_size - 1);
           user_agent_str = (char *) xfree_null(user_agent_str);
           retcode = false;
         } else

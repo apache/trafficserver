@@ -87,8 +87,10 @@
 #ifndef _CONTROL_MATCHER_H_
 #define _CONTROL_MATCHER_H_
 
-#ifdef HAVE_REGEX_H
-#include "/usr/include/regex.h"
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
 #endif
 
 #ifdef HAVE_CTYPE_H
@@ -174,7 +176,7 @@ public:
 #ifndef TS_MICRO
 protected:
 #endif
-  regex_t * re_array;           // array of compiled regexs
+  pcre** re_array;              // array of compiled regexs
   char **re_str;                // array of uncompiled regex strings
   Data *data_array;             // data array.  Corresponds to re_array
   int array_len;                // length of the arrays (all three are the same length)

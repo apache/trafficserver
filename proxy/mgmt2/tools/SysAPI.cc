@@ -23,13 +23,19 @@
 
 
 #include "inktomi++.h"
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
+
 #if (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin)
 
 #include "SysAPI.h"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <ink_string.h>
-#include <regex.h>
 #include <grp.h>
 
 #include <ctype.h>
@@ -1023,14 +1029,18 @@ NetConfig_Action(int index, ...)
 bool
 recordRegexCheck(const char *pattern, const char *value)
 {
-  regex_t regex;
+  pcre* regex;
+  const char* error;
+  int erroffset;
   int result;
-  if (regcomp(&regex, pattern, REG_NOSUB | REG_EXTENDED) != 0) {
+
+  if (!(regex = pcre_compile(pattern, 0, &error, &erroffset, NULL)))
     return false;
-  }
-  result = regexec(&regex, value, 0, NULL, 0);
-  regfree(&regex);
-  return (result == 0) ? true : false;
+
+  result = pcre_exec(regex, NULL, value, strlen(value), 0, 0, NULL, 0);
+  pcre_free(regex);
+
+  return (result != -1) ? true : false;
 }
 
 int
@@ -1845,7 +1855,6 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
 #include <sys/time.h>
 #include <stdarg.h>
 #include <string.h>
-#include <regex.h>
 
 #include <ctype.h>
 
@@ -2945,14 +2954,18 @@ NetConfig_Action(int index, ...)
 bool
 recordRegexCheck(const char *pattern, const char *value)
 {
-  regex_t regex;
+  pcre* regex;
+  const char* error;
+  int erroffset;
   int result;
-  if (regcomp(&regex, pattern, REG_NOSUB | REG_EXTENDED) != 0) {
+
+  if (!(regex = pcre_compile(pattern, 0, &error, &erroffset, NULL)))
     return false;
-  }
-  result = regexec(&regex, value, 0, NULL, 0);
-  regfree(&regex);
-  return (result == 0) ? true : false;
+
+  result = pcre_exec(regex, NULL, value, strlen(value), 0, 0, NULL, 0);
+  pcre_free(regex);
+
+  return (result != -1) ? true : false;
 }
 
 int

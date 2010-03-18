@@ -555,7 +555,6 @@ fi
 # 4. CHECK FOR LIBRARIES
 
 AC_CHECK_LIB([m],[sin],[AC_SUBST([LIBM],["-lm"])])
-AC_CHECK_LIB([regex-3.6],[regcomp],[AC_SUBST([LIBREGEX],["-lregex-3.6"])])
 AC_CHECK_LIB([exc],[exc_capture_context],[AC_SUBST([LIBEXC],["-lexc"])])
 AC_CHECK_LIB([mld],[MLD_demangle_string],[AC_SUBST([LIBMLD],["-lmld"])])
 AC_CHECK_LIB([crypt],[crypt],[AC_SUBST([LIBCRYPT],["-lcrypt"])])
@@ -783,7 +782,6 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   arpa/nameser_compat.h \
                   execinfo.h \
                   netdb.h \
-                  regex.h \
                   ctype.h \
                   siginfo.h \
                   malloc.h \

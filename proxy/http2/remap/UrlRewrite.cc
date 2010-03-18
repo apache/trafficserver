@@ -1134,7 +1134,7 @@ bool
             enabled_flag = true;
             if (!map->negative_referer)
               break;
-          } else if (ri->regx_valid && !regexec(&ri->regx, tmp_referer_buf, 0, NULL, 0)) {
+          } else if (ri->regx_valid && (pcre_exec(ri->regx, NULL, tmp_referer_buf, referer_len, 0, 0, NULL, 0) != -1)) {
             enabled_flag = ri->negative ? false : true;
             break;
           }

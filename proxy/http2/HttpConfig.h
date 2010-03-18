@@ -37,12 +37,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef HAVE_REGEX_H
-#if (HOST_OS == solaris)
-#include <regex.h>
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
 #else
-#include "/usr/include/regex.h"
-#endif
+#include <pcre.h>
 #endif
 
 #ifdef HAVE_CTYPE_H
@@ -796,7 +794,7 @@ public:
   char *user_agent_str;
   bool regx_valid;
   StrType stype;
-  regex_t regx;
+  pcre* regx;
 
     HttpUserAgent_RegxEntry();
    ~HttpUserAgent_RegxEntry();

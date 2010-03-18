@@ -24,10 +24,6 @@
 #ifndef __TS_REGEX_H__
 #define __TS_REGEX_H__
 
-#if (HOST_OS == darwin) // FIXME: includes case sensitve(?)
-#include </usr/include/regex.h>
-#endif
-
 /*
   regular expression rules:
 

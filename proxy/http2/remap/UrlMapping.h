@@ -27,12 +27,17 @@
 #include "AclFiltering.h"
 #include <deque>
 #include <map>
-#include <regex.h>
 #include "Main.h"
 #include "Error.h"
 #include "URL.h"
 #include "RemapPluginInfo.h"
 #include "HttpTransact.h"
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
 
 /**
  * Used to store http referer strings (and/or regexp) 
@@ -48,7 +53,7 @@ public:
   bool any;                     /* any flag '*' */
   bool negative;                /* negative referer '~' */
   bool regx_valid;
-  regex_t regx;
+  pcre* regx;
 };
 
 /**
