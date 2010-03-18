@@ -79,6 +79,7 @@ struct ShowCont:Continuation
     if (!action.cancelled) {
       StatPageData data(start, buf - start);
       action.continuation->handleEvent(STAT_PAGE_SUCCESS, &data);
+      start = 0;
     } else {
       xfree(start);
       start = NULL;

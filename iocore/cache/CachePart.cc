@@ -43,7 +43,7 @@ Cache::scan(Continuation * cont, char *hostname, int host_len, int KB_per_second
   c->hostname = hostname;
   c->host_len = host_len;
   c->base_stat = cache_scan_active_stat;
-  c->buf = new_xmalloc_IOBufferData(xmalloc(SCAN_BUF_SIZE), SCAN_BUF_SIZE);
+  c->buf = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(SCAN_BUF_SIZE), MEMALIGNED);
   c->scan_msec_delay = (512000 / KB_per_second);
   c->offset = 0;
   SET_CONTINUATION_HANDLER(c, &CacheVC::scanPart);
@@ -175,8 +175,7 @@ CacheVC::scanObject(int event, Event * e)
       if (!vector.get(i)->valid())
         continue;
       if (!hostinfo_copied) {
-        memccpy(hname, vector.get(i)->request_get()->url_get()->host_get(&hlen)
-                , 0, 500);
+        memccpy(hname, vector.get(i)->request_get()->url_get()->host_get(&hlen), 0, 500);
         Debug("cache_scan", "hostname = '%s', hostlen = %d", hname, hlen);
         hostinfo_copied = 1;
       }
