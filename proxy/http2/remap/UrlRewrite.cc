@@ -2448,7 +2448,7 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url,
 
   if (!request_host || !request_url ||
       (request_host_len < 0) || (request_host_len >= TSREMAP_RRI_MAX_HOST_SIZE)) {
-    Error("url_rewrite: Invalid arguments!");
+    Debug("url_rewrite", "Invalid arguments!");
     return NULL;
   }
 
@@ -2463,13 +2463,13 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url,
                                       request_host_len, tag);
   if (mapping != NULL) {
     rank_ceiling = mapping->getRank();
-    Debug("url_rewrite_regex", "Found 'simple' mapping with rank %d", rank_ceiling);
+    Debug("url_rewrite", "Found 'simple' mapping with rank %d", rank_ceiling);
   }
   url_mapping *regex_mapping = _regexMappingLookup(mappings.regex_list, request_url, request_port, 
                                                    request_host_lower, request_host_len, tag, rank_ceiling);
   if (regex_mapping) {
     mapping = regex_mapping;
-    Debug("url_rewrite_regex", "Using regex mapping with rank %d", mapping->getRank());
+    Debug("url_rewrite", "Using regex mapping with rank %d", mapping->getRank());
   }
   return mapping;
 }
