@@ -1,13 +1,23 @@
 To compile TrafficServer with libev
 
-1. pull the libev source into the root of the TS source
-   cvs -z3 -d :pserver:anonymous@cvs.schmorp.de/schmorpforge co libev
-2. apply the patch at the end of this file (after CUT HERE) to the libev source
+1. Get the libev source by either:
+   a. Pull the libev source into the root of the TS source
+      cvs -z3 -d :pserver:anonymous@cvs.schmorp.de/schmorpforge co libev
+
+ OR
+
+   b. Download libev tar ball e.g. libev-3.8.tar.gz  and extract into 
+      toplevel TS source directory. Next symlink the extracted directory 
+      to 'libev' e.g. 'ln -s libev-3.8 libev'.
+
+2. Apply the patch at the end of this file (after CUT HERE) to the libev source
+
 3. In the libev directory
   a. autoreconf -i
   b. ./configure CFLAGS="$CFLAGS -Dinline_size= -DEV_MINPRI=0 -DEV_MAXPRI=0"
   c. install normally
-4. configure trafffic server with --with-libev
+
+4. Configure trafffic server with '--enable-libev'.
 
 
 ------------------------ CUT HERE ----------------
