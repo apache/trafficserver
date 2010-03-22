@@ -1178,7 +1178,7 @@ struct MIMEFieldBlockXlate
 {
   const char *old_f;
   const char *old_l;
-  int delta;
+  intptr_t delta;
 };
 
 void
@@ -1225,7 +1225,7 @@ mime_hdr_field_block_list_adjust(int block_count, MIMEFieldBlockImpl * old_list,
   for (i = 0; i < block_count; i++) {
     xlate_table[i].old_f = (const char *) old_blk;
     xlate_table[i].old_l = xlate_table[i].old_f + sizeof(MIMEFieldBlockImpl) - 1;
-    xlate_table[i].delta = (int) ((const char *) new_blk - (const char *) old_blk);
+    xlate_table[i].delta = (intptr_t) ((const char *) new_blk - (const char *) old_blk);
 
     old_blk = old_blk->m_next;
     new_blk = new_blk->m_next;
