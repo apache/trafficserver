@@ -1346,7 +1346,7 @@ Lagain:
     called_user = 1;
     if (calluser(VC_EVENT_WRITE_COMPLETE) == EVENT_DONE)
       return EVENT_DONE;
-    ink_assert(!"close expected after write COMPLETE");
+    ink_assert(!f.close_complete || !"close expected after write COMPLETE");
     if (vio.ntodo() <= 0)
       return EVENT_CONT;
   }
