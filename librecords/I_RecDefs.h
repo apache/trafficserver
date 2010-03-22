@@ -141,6 +141,11 @@ struct RecRawStat
 {
   ink64 sum;
   ink64 count;
+  // XXX - these will waist some space because they are only needed for the globals
+  // this is a fix for bug TS-162, so I am trying to do as few code changes as
+  // possible, this should be revisted -bcall
+  ink64 last_sum; // value from the last global sync
+  ink64 last_count; // value from the last global sync
 };
 
 // WARNING!  It's advised that developers do not modify the contents of

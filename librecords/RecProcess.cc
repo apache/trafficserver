@@ -73,7 +73,7 @@ raw_stat_get_total(RecRawStatBlock * rsb, int id, RecRawStat * total)
 //-------------------------------------------------------------------------
 
 static int
-raw_stat_sync_to_global(RecRawStatBlock * rsb, int id)
+raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 {
 
   int i;
@@ -82,16 +82,27 @@ raw_stat_sync_to_global(RecRawStatBlock * rsb, int id)
   total.sum = 0;
   total.count = 0;
 
-  // get thread local values and reset them to 0
+  // sum the thread local values
   for (i = 0; i < eventProcessor.n_ethreads; i++) {
     tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
-    total.sum += ink_atomic_swap64(&(tlp->sum), 0);
-    total.count += ink_atomic_swap64(&(tlp->count), 0);
+    total.sum += tlp->sum;
+    total.count += tlp->count;
   }
 
-  // set global values
-  ink_atomic_increment64(&(rsb->global[id]->sum), total.sum);
-  ink_atomic_increment64(&(rsb->global[id]->count), total.count);
+  // get the delta from the last sync
+  RecRawStat delta;
+  delta.sum = total.sum - rsb->global[id]->last_sum;
+  delta.count = total.count - rsb->global[id]->last_count;
+
+  Debug("stats", "raw_stat_sync_to_global(): rsb pointer:%016llX id:%d delta:%lld total:%lld last:%lld global:%lld\n", (long long)rsb, id, delta.sum, total.sum, rsb->global[id]->last_sum, rsb->global[id]->sum);
+
+  // increment the global values by the delta
+  ink_atomic_increment64(&(rsb->global[id]->sum), delta.sum);
+  ink_atomic_increment64(&(rsb->global[id]->count), delta.count);
+
+  // set the new totals as the last values seen
+  ink_atomic_swap64(&(rsb->global[id]->last_sum), total.sum);
+  ink_atomic_swap64(&(rsb->global[id]->last_count), total.count);
 
   return REC_ERR_OKAY;
 
@@ -102,19 +113,21 @@ raw_stat_sync_to_global(RecRawStatBlock * rsb, int id)
 //-------------------------------------------------------------------------
 
 static int
-raw_stat_clear_sum(RecRawStatBlock * rsb, int id)
+raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
 {
+  Debug("stats", "raw_stat_clear_sum(): rsb pointer:%llX id:%d\n", (long long)rsb, id);
 
-  int i;
+  // the globals need to be reset too
+  ink_atomic_swap64(&(rsb->global[id]->sum), 0);
+  ink_atomic_swap64(&(rsb->global[id]->last_sum), 0);
+
+  // reset the local stats
   RecRawStat *tlp;
-  // waste. 
-//  ink_atomic_swap64(&(rsb->global[id]->sum), 0);
-  for (i = 0; i < eventProcessor.n_ethreads; i++) {
+  for (int i = 0; i < eventProcessor.n_ethreads; i++) {
     tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap64(&(tlp->sum), 0);
   }
   return REC_ERR_OKAY;
-
 }
 
 //-------------------------------------------------------------------------
@@ -124,17 +137,19 @@ raw_stat_clear_sum(RecRawStatBlock * rsb, int id)
 static int
 raw_stat_clear_count(RecRawStatBlock * rsb, int id)
 {
+  Debug("stats", "raw_stat_clear_count(): rsb pointer:%llX id:%d\n", (long long)rsb, id);
 
-  int i;
+  // the globals need to be reset too
+  ink_atomic_swap64(&(rsb->global[id]->count), 0);
+  ink_atomic_swap64(&(rsb->global[id]->last_count), 0);
+
+  // reset the local stats
   RecRawStat *tlp;
-  // waste.
-//  ink_atomic_swap64(&(rsb->global[id]->count), 0);
-  for (i = 0; i < eventProcessor.n_ethreads; i++) {
+  for (int i = 0; i < eventProcessor.n_ethreads; i++) {
     tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap64(&(tlp->count), 0);
   }
   return REC_ERR_OKAY;
-
 }
 
 //-------------------------------------------------------------------------
@@ -406,6 +421,8 @@ RecRegisterRawStat(RecRawStatBlock * rsb,
                    char *name, RecDataT data_type, RecPersistT persist_type, int id, RecRawStatSyncCb sync_cb)
 {
 
+  Debug("stats", "RecRawStatSyncCb(): rsb pointer:%llX id:%d\n", (long long)rsb, id);
+
   // check to see if we're good to proceed
   ink_debug_assert(id < rsb->max_stats);
 
@@ -428,6 +445,8 @@ RecRegisterRawStat(RecRawStatBlock * rsb,
 
   // store a pointer to our record->stat_meta.data_raw in our rsb
   rsb->global[id] = &(r->stat_meta.data_raw);
+  rsb->global[id]->last_sum = 0;
+  rsb->global[id]->last_count = 0;
 
   // setup the periodic sync callback
   RecRegisterRawStatSyncCb(name, sync_cb, rsb, id);
