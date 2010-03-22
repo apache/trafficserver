@@ -75,7 +75,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     of the other old Inktomi versions in the SDK.
     Trunk patch: http://svn.apache.org/viewvc?rev=923986&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-249
-    +1: zwoop, sjiang, georgep
+    +1: zwoop, sjiang, georgep, bcall
 
   * core: Fix ip-based filtering in remap.config
     Trunk patch: http://svn.apache.org/viewvc?revision=925063&view=rev
@@ -87,6 +87,11 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-262
     +1: manjesh, zwoop
 
+  * core: Inconsistencies in the stats system. There are incorrect
+          assumtions on sychronization between threads
+    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=926357
+    Jira: https://issues.apache.org/jira/browse/TS-162
+    +1: bcall
 
 RELEASE PROCESS
 
