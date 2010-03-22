@@ -85,7 +85,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   * core: Trie code crashes when negative value characters are present
           in the path
     Jira: https://issues.apache.org/jira/browse/TS-262
-    +1: manjesh
+    +1: manjesh, zwoop
 
 
 RELEASE PROCESS
