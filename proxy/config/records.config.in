@@ -215,7 +215,7 @@ CONFIG proxy.config.http.push_method_enabled INT 0
 #       0x0200 - TRACE
 #       0x0400 - PUSH
 #  bits 18-16 - IP address type
-#       reserverd
+#       reserved
 #  bits 30-17 - reserved
 #  bit 31 - Action (allow=1, deny=0)
 #  Note: if 'proxy.config.http.quick_filter.mask' is equal 0, there is no 'quick http filtering' at all
@@ -567,7 +567,7 @@ CONFIG proxy.config.auth.enabled INT 0
 # Connection Collapsing
 #
 ##############################################################################
-  # Adds the ability to collaspe connections going to the orgin server
+  # Adds the ability to collapse connections going to the origin server
   # see Admin Guide Addendum for more details
 CONFIG proxy.config.connection_collapsing.hashtable_enabled INT 0
 CONFIG proxy.config.connection_collapsing.rww_wait_time INT 0
@@ -577,11 +577,11 @@ CONFIG proxy.config.connection_collapsing.revalidate_window_period INT 0
 # Debugging
 #
 ##############################################################################
-  # uses a regular express to match the debugging topic name, performace
-  # will be effected!
+  # Uses a regular express to match the debugging topic name, performance
+  # will be affected!
 CONFIG proxy.config.diags.debug.enabled INT 0
 CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
-  # great for tracking down memory leaks, but you need to use the
+  # Great for tracking down memory leaks, but you need to use the
   # ink allocators
 CONFIG proxy.config.dump_mem_info_frequency INT 0
 
