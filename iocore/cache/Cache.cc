@@ -1621,7 +1621,6 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
         inku64 total_bytes_delete = 0;
         inku64 total_dir_delete = 0;
         inku64 used_dir_delete = 0;
-        ink64 sum;
 
         for (p = 0; p < gnpart; p++) {
           if (d->fd == gpart[p]->fd) {
@@ -1630,17 +1629,10 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
             total_bytes_delete = gpart[p]->len - part_dirlen(gpart[p]);
           }
         }
-        RecGetGlobalRawStatSum(cache_rsb, cache_bytes_total_stat, &sum);
-        sum -= total_bytes_delete;
-        RecSetGlobalRawStatSum(cache_rsb, cache_bytes_total_stat, sum);
 
-        RecGetGlobalRawStatSum(cache_rsb, cache_direntries_total_stat, &sum);
-        sum -= total_dir_delete;
-        RecSetGlobalRawStatSum(cache_rsb, cache_direntries_total_stat, sum);
-
-        RecGetGlobalRawStatSum(cache_rsb, cache_direntries_used_stat, &sum);
-        sum -= used_dir_delete;
-        RecSetGlobalRawStatSum(cache_rsb, cache_direntries_used_stat, sum);
+        RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_bytes_delete);
+        RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_dir_delete);
+        RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -cache_direntries_used_stat);
 
         if (theCache) {
           rebuild_host_table(theCache);

@@ -157,6 +157,7 @@ struct RecRawStatBlock
   RecRawStat **global;          // global raw-stat storage (ptr to RecRecord)
   int num_stats;                // number of stats in this block
   int max_stats;                // maximum number of stats for this block
+  ink_mutex mutex;
 };
 
 //-------------------------------------------------------------------------

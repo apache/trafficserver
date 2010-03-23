@@ -89,12 +89,15 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
     total.count += tlp->count;
   }
 
+  // lock so the setting of the globals and last values are atomic
+  ink_mutex_acquire(&(rsb->mutex));
+
   // get the delta from the last sync
   RecRawStat delta;
   delta.sum = total.sum - rsb->global[id]->last_sum;
   delta.count = total.count - rsb->global[id]->last_count;
 
-  Debug("stats", "raw_stat_sync_to_global(): rsb pointer:%016llX id:%d delta:%lld total:%lld last:%lld global:%lld\n", (long long)rsb, id, delta.sum, total.sum, rsb->global[id]->last_sum, rsb->global[id]->sum);
+  Debug("stats", "raw_stat_sync_to_global(): rsb pointer:%llX id:%d delta:%lld total:%lld last:%lld global:%lld\n", (long long)rsb, id, delta.sum, total.sum, rsb->global[id]->last_sum, rsb->global[id]->sum);
 
   // increment the global values by the delta
   ink_atomic_increment64(&(rsb->global[id]->sum), delta.sum);
@@ -104,8 +107,9 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
   ink_atomic_swap64(&(rsb->global[id]->last_sum), total.sum);
   ink_atomic_swap64(&(rsb->global[id]->last_count), total.count);
 
-  return REC_ERR_OKAY;
+  ink_mutex_release(&(rsb->mutex));
 
+  return REC_ERR_OKAY;
 }
 
 //-------------------------------------------------------------------------
@@ -118,8 +122,11 @@ raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
   Debug("stats", "raw_stat_clear_sum(): rsb pointer:%llX id:%d\n", (long long)rsb, id);
 
   // the globals need to be reset too
+  // lock so the setting of the globals and last values are atomic
+  ink_mutex_acquire(&(rsb->mutex));
   ink_atomic_swap64(&(rsb->global[id]->sum), 0);
   ink_atomic_swap64(&(rsb->global[id]->last_sum), 0);
+  ink_mutex_release(&(rsb->mutex));
 
   // reset the local stats
   RecRawStat *tlp;
@@ -140,8 +147,11 @@ raw_stat_clear_count(RecRawStatBlock * rsb, int id)
   Debug("stats", "raw_stat_clear_count(): rsb pointer:%llX id:%d\n", (long long)rsb, id);
 
   // the globals need to be reset too
+  // lock so the setting of the globals and last values are atomic
+  ink_mutex_acquire(&(rsb->mutex));
   ink_atomic_swap64(&(rsb->global[id]->count), 0);
   ink_atomic_swap64(&(rsb->global[id]->last_count), 0);
+  ink_mutex_release(&(rsb->mutex));
 
   // reset the local stats
   RecRawStat *tlp;
