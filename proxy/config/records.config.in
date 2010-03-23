@@ -577,7 +577,7 @@ CONFIG proxy.config.connection_collapsing.revalidate_window_period INT 0
 # Debugging
 #
 ##############################################################################
-  # Uses a regular express to match the debugging topic name, performance
+  # Uses a regular expression to match the debugging topic name, performance
   # will be affected!
 CONFIG proxy.config.diags.debug.enabled INT 0
 CONFIG proxy.config.diags.debug.tags STRING http.*|dns.*
