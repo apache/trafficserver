@@ -463,17 +463,10 @@ check_signal_thread(void *)
 #endif
 
 void
-init_signals()
+init_signals(bool do_stackdump)
 {
-  RecInt stackDump;
-  bool found = (RecGetRecordInt("proxy.config.stack_dump_enabled", &stackDump) == REC_ERR_OKAY);
-
-  if(found == false) {
-    Warning("Unable to determine stack_dump_enabled , assuming enabled");
-    stackDump = 1;
-  }
-
   sigset_t sigsToBlock;
+
   sigemptyset(&sigsToBlock);
   ink_thread_sigsetmask(SIG_SETMASK, &sigsToBlock, NULL);
 
@@ -482,7 +475,7 @@ init_signals()
   set_signal(SIGTERM, (SigActionFunc_t) signal_handler);
   set_signal(SIGHUP, (SigActionFunc_t) interrupt_handler);
   set_signal(SIGILL, (SigActionFunc_t) signal_handler);
-  if(stackDump == 1) {
+  if(do_stackdump) {
     set_signal(SIGBUS, (SigActionFunc_t) signal_handler);
     set_signal(SIGSEGV, (SigActionFunc_t) signal_handler);
   }
