@@ -86,7 +86,6 @@ libinktomi___a_SOURCES = \
   ink_queue_utils.c \
   ink_rand.cc \
   ink_rand.h \
-  ink_regex-3.6.h \
   ink_res_init.cc \
   ink_res_mkquery.cc \
   ink_resolver.h \
