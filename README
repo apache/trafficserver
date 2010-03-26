@@ -37,6 +37,7 @@ plugins to build large scale web applications.
   `-- Makefile.am ........ top level automake configuration
 
 3. REQUIREMENTS
+    This section outlines different OS distributions
 
   Fedora 11,12:
     autoconf
@@ -50,7 +51,30 @@ plugins to build large scale web applications.
     sqlite-devel (or optionally, db4-devel)
     pcre
 
-  Ubuntu 8.04,8.10,9.10
+  Fedora 8 EC2 (Kernel: 2.6.21.7-2.ec2.v1.2.fc8xen):
+    You must either upgrade sqlite to >= 3.5 or use db4-devel.
+    We recommend that you when dealing with EC2 FC8 to just use db4-devel.
+    FC8 on EC2 requires unique configure declarations, please see that section
+    below.
+    Alternately you may use the install scripts in /contrib which automate this
+    or use the pre-built public Fedora Core 8 EC2 AMI with ATS installed.
+    Both of which are HIGHLY RECOMMENDED.
+
+    Public AMI: (Coming shortly)
+
+    Install these packages:
+    autoconf
+    automake
+    libtool
+    gcc-c++
+    glibc-devel
+    openssl-devel
+    tcl-devel
+    expat-devel
+    db4-devel
+    pcre
+
+  Ubuntu 8.04,8.10,9.10:
     autoconf 
     automake
     libtool 
@@ -59,6 +83,25 @@ plugins to build large scale web applications.
     tcl-dev 
     expat 
     libexpat-dev 
+    libsqlite3-dev (or optionally, libdb-dev)
+    libpcre3-dev
+
+  Ubuntu EC2 9.10:
+    Alternately you may use the install scripts in /contrib which automate this
+    or use the pre-built public Ubuntu EC2 AMI with ATS installed.
+    Both of which are HIGHLY RECOMMENDED.
+
+    AMI: ami-d911feb0
+
+    Install these packages:
+    autoconf
+    automake
+    libtool
+    g++
+    libssl-dev
+    tcl-dev
+    expat
+    libexpat-dev
     libsqlite3-dev (or optionally, libdb-dev)
     libpcre3-dev
 
@@ -107,6 +150,29 @@ For using sqlite3, we only support v3.5 or later (basically, we require the v2 A
   autoreconf -i          # generate the configure script and Makefile.in files
   ./configure            # configure the build environment to create Makfiles
   make                   # execute the compile
+
+4b. Special note for installing on EC2
+    Alternately you may use the scripts under /contrib which will automate
+    the install for trafficserver under EC2 which is HIGHLY RECOMMENDED.
+
+   # As root do the following when using Ubuntu
+   mkdir -p /mnt          #EC2 Storage Mount, where storage is located
+   cd /mnt
+   svn checkout ...       # get the source code from ASF Subversion repo
+   cd traffic             # enter the checkout dir
+   autoreconf -i --force  # generate the configure script and Makefile.in files
+   ./configure
+   make
+
+   # As root do the following when using Fedora Core 8 kernel
+   mkdir -p /mnt          #EC2 Storage Mount, where storage is located
+   cd /mnt
+   svn checkout ...       # get the source code from ASF Subversion repo
+   cd traffic             # enter the checkout dir
+   autoreconf -i --force  # generate the configure script and Makefile.in files
+   ./configure --without-sqlite3 --with-libdb --disable-eventfd
+   make
+
 
 5. INSTALLATION
 
