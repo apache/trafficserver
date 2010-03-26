@@ -335,6 +335,18 @@ AC_ARG_WITH([profiler],
 )
 AC_MSG_RESULT([$with_sqlite3])
 
+#
+# use eventfd() or pipes
+# Found that ec2 is using an older kernel causing eventfd errors.
+# Disable eventfd when using ATS on EC2 Fedora.
+#
+AC_MSG_CHECKING([whether to enable eventfd()])
+AC_ARG_ENABLE([eventfd],
+  [AS_HELP_STRING([--disable-eventfd],[turn off eventfd and use pipes])],
+  [],
+  [enable_eventfd="yes"]
+)
+AC_MSG_RESULT([$enable_eventfd])
           
 #
 # Installation directories
@@ -673,7 +685,11 @@ if test "x${with_libdb}" = "xyes"; then
   fi
 fi
 
-AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign lrand48_r srand48_r eventfd port_create])
+AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign lrand48_r srand48_r port_create])
+
+AS_IF([test "x$enable_eventfd" = "xyes"],
+  [AC_CHECK_FUNCS([eventfd])]
+)
 
 
 AC_CHECK_LIB([pcre], [pcre_exec], 
