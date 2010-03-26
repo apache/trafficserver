@@ -310,7 +310,7 @@ URLImpl::marshal(MarshalXlate * str_xlate, int num_xlate)
 }
 
 void
-URLImpl::unmarshal(long offset)
+URLImpl::unmarshal(intptr_t offset)
 {
   HDR_UNMARSHAL_STR(m_ptr_scheme, offset);
   HDR_UNMARSHAL_STR(m_ptr_user, offset);

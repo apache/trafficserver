@@ -944,7 +944,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
   // Loop over objects and swizzle there pointer to
   //  live offsets
   char *obj_data = m_data_start;
-  long offset = (long) this;
+  intptr_t offset = (intptr_t) this;
 
   while (obj_data < m_free_start) {
     HdrHeapObjImpl *obj = (HdrHeapObjImpl *) obj_data;

@@ -82,7 +82,7 @@ struct URLImpl:public HdrHeapObjImpl
 
   // Marshaling Functions
   int marshal(MarshalXlate * str_xlate, int num_xlate);
-  void unmarshal(long offset);
+  void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap * new_heap);
 
   // Sanity Check Functions

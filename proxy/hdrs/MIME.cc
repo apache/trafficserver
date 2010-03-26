@@ -4035,7 +4035,7 @@ MIMEFieldBlockImpl::marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate 
 }
 
 void
-MIMEFieldBlockImpl::unmarshal(long offset)
+MIMEFieldBlockImpl::unmarshal(intptr_t offset)
 {
   HDR_UNMARSHAL_PTR(m_next, MIMEFieldBlockImpl, offset);
 

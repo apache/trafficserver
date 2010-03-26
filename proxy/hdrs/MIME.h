@@ -233,7 +233,7 @@ struct MIMEHdrImpl:public HdrHeapObjImpl
 
   // Marshaling Functions
   int marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate * str_xlate, int num_str);
-  void unmarshal(long offset);
+  void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap * new_heap);
 
   // Sanity Check Functions

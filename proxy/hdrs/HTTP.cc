@@ -1804,7 +1804,7 @@ HTTPHdrImpl::marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate * str_x
 
 
 void
-HTTPHdrImpl::unmarshal(long offset)
+HTTPHdrImpl::unmarshal(intptr_t offset)
 {
 
   if (m_polarity == HTTP_TYPE_REQUEST) {
@@ -1951,7 +1951,7 @@ HTTPInfo::marshal(char *buf, int len)
   ink_debug_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
 
   // Make sure the buffer is aligned
-//    ink_debug_assert(((long)buf) & 0x3 == 0);
+//    ink_debug_assert(((intptr_t)buf) & 0x3 == 0);
 
   // Memcpy the whole object so that we can use it
   //   live later.  This involves copying a few
@@ -1971,7 +1971,7 @@ HTTPInfo::marshal(char *buf, int len)
   if (m_alt->m_request_hdr.valid()) {
     tmp = m_alt->m_request_hdr.m_heap->marshal(buf, len - used);
     marshal_alt->m_request_hdr.m_heap = (HdrHeap *)(intptr_t)used;
-    ink_assert(((long) marshal_alt->m_request_hdr.m_heap) < len);
+    ink_assert(((intptr_t) marshal_alt->m_request_hdr.m_heap) < len);
     buf += tmp;
     used += tmp;
   } else {
@@ -1982,7 +1982,7 @@ HTTPInfo::marshal(char *buf, int len)
   if (m_alt->m_response_hdr.valid()) {
     tmp = m_alt->m_response_hdr.m_heap->marshal(buf, len - used);
     marshal_alt->m_response_hdr.m_heap = (HdrHeap *)(intptr_t)used;
-    ink_assert(((long) marshal_alt->m_response_hdr.m_heap) < len);
+    ink_assert(((intptr_t) marshal_alt->m_response_hdr.m_heap) < len);
     used += tmp;
   } else {
     marshal_alt->m_response_hdr.m_heap = NULL;
