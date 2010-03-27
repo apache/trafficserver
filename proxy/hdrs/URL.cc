@@ -553,7 +553,7 @@ url_type_set(URLImpl * url, unsigned int typecode)
 void
 url_called_set(URLImpl * url)
 {
-  url->clean = !url->m_ptr_printed_string;
+  url->m_clean = !url->m_ptr_printed_string;
 }
 
 void
@@ -562,7 +562,7 @@ url_clear_string_ref(URLImpl * url)
   if (url->m_ptr_printed_string) {
     url->m_len_printed_string = 0;
     url->m_ptr_printed_string = NULL;
-    url->clean = true;
+    url->m_clean = true;
   }
   return;
 }
@@ -573,7 +573,7 @@ url_string_get_ref(HdrHeap * heap, URLImpl * url, int *length)
   if (!url)
     return NULL;
 
-  if (url->m_ptr_printed_string && url->clean) {
+  if (url->m_ptr_printed_string && url->m_clean) {
     if (length)
       *length = url->m_len_printed_string;
     return (char *) url->m_ptr_printed_string;
@@ -591,7 +591,7 @@ url_string_get_ref(HdrHeap * heap, URLImpl * url, int *length)
     if (length) {
       *length = len;
     }
-    url->clean = true;          //reset since we have url_print()'ed again
+    url->m_clean = true;          //reset since we have url_print()'ed again
     url->m_len_printed_string = len;
     url->m_ptr_printed_string = buf;
     return buf;
@@ -617,7 +617,7 @@ url_string_get(URLImpl * url, Arena * arena, int *length, HdrHeap * heap)
     buf2 = heap->allocate_str(len + 1);
     memcpy(buf2, buf, len);
     buf2[len] = '\0';
-    url->clean = true;          //reset since we have url_print()'ed again
+    url->m_clean = true;          //reset since we have url_print()'ed again
     url->m_len_printed_string = len;
     url->m_ptr_printed_string = buf2;
   }

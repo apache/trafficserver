@@ -4097,7 +4097,7 @@ MIMEHdrImpl::marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate * str_x
 }
 
 void
-MIMEHdrImpl::unmarshal(long offset)
+MIMEHdrImpl::unmarshal(intptr_t offset)
 {
   HDR_UNMARSHAL_PTR(m_fblock_list_tail, MIMEFieldBlockImpl, offset);
   m_first_fblock.unmarshal(offset);

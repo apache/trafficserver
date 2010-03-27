@@ -154,15 +154,16 @@ struct MIMEField
 
 struct MIMEFieldBlockImpl:public HdrHeapObjImpl
 {
-  MIMEFieldBlockImpl *m_next;
+  // HdrHeapObjImpl is 4 bytes
   inku32 m_freetop;
+  MIMEFieldBlockImpl *m_next;
   MIMEField m_field_slots[MIME_FIELD_BLOCK_SLOTS];
   // mime_hdr_copy_onto assumes that m_field_slots is last --
   // don't add any new fields afterit.
 
   // Marshaling Functions
   int marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate * str_xlate, int num_str);
-  void unmarshal(long offset);
+  void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap * new_heap);
 
   // Sanity Check Functions
@@ -221,6 +222,7 @@ struct MIMECooked
 
 struct MIMEHdrImpl:public HdrHeapObjImpl
 {
+  // HdrHeapObjImpl is 4 bytes, so this will result in 4 bytes padding
   inku64 m_presence_bits;
   inku32 m_slot_accelerators[4];
 

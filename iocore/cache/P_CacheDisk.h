@@ -40,7 +40,7 @@ extern int cache_config_max_disk_errors;
 #define ROUND_DOWN_TO_STORE_BLOCK(_x)   (((_x) >> STORE_BLOCK_SHIFT) << STORE_BLOCK_SHIFT)
 
 #define STORE_BLOCKS_PER_PART  (PART_BLOCK_SIZE / STORE_BLOCK_SIZE)
-#define DISK_HEADER_MAGIC               0xABCD1235
+#define DISK_HEADER_MAGIC               0xABCD1236
 
 /* each disk part block has a corresponding Part object */
 struct CacheDisk;

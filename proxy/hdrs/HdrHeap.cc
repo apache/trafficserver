@@ -625,8 +625,7 @@ int
 HdrHeap::marshal(char *buf, int len)
 {
 
-// FIX: replaced unsigned long with portable paddr_t
-  ink_assert((((unsigned long) buf) & HDR_PTR_ALIGNMENT_MASK) == 0);
+  ink_assert((((uintptr_t) buf) & HDR_PTR_ALIGNMENT_MASK) == 0);
 
   HdrHeap *marshal_hdr = (HdrHeap *) buf;
   char *b = buf + HDR_HEAP_HDR_SIZE;
@@ -746,7 +745,6 @@ HdrHeap::marshal(char *buf, int len)
       str_xlation[str_heaps].end = m_ronly_heap[i].m_heap_start + m_ronly_heap[i].m_heap_len;
       str_xlation[str_heaps].offset = str_xlation[str_heaps].start - (b - buf);
       ink_assert(str_xlation[str_heaps].start <= str_xlation[str_heaps].end);
-      // INKqa10130: ink_assert(((long) str_xlation[str_heaps].offset) >= 0); 
 
       str_heaps++;
       b += m_ronly_heap[i].m_heap_len;
@@ -844,11 +842,11 @@ HdrHeap::check_marshalled(inku32 buf_length)
     return false;
   }
 
-  if (this->m_size != (unsigned long) this->m_ronly_heap[0].m_heap_start) {
+  if (this->m_size != (uintptr_t) this->m_ronly_heap[0].m_heap_start) {
     return false;
   }
 
-  if ((unsigned long) (this->m_size + m_ronly_heap[0].m_heap_start) > buf_length) {
+  if ((uintptr_t) (this->m_size + m_ronly_heap[0].m_heap_start) > buf_length) {
     return false;
   }
 

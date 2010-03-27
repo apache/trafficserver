@@ -25,7 +25,7 @@
 
 #include "P_Cache.h"
 
-#define SCAN_BUF_SIZE      (512 * 1024)
+#define SCAN_BUF_SIZE      RECOVERY_SIZE
 #define SCAN_WRITER_LOCK_MAX_RETRY 5
 
 Action *
@@ -44,7 +44,7 @@ Cache::scan(Continuation * cont, char *hostname, int host_len, int KB_per_second
   c->host_len = host_len;
   c->base_stat = cache_scan_active_stat;
   c->buf = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(SCAN_BUF_SIZE), MEMALIGNED);
-  c->scan_msec_delay = (512000 / KB_per_second);
+  c->scan_msec_delay = (SCAN_BUF_SIZE / KB_per_second);
   c->offset = 0;
   SET_CONTINUATION_HANDLER(c, &CacheVC::scanPart);
   eventProcessor.schedule_in(c, HRTIME_MSECONDS(c->scan_msec_delay));
@@ -176,6 +176,7 @@ CacheVC::scanObject(int event, Event * e)
         continue;
       if (!hostinfo_copied) {
         memccpy(hname, vector.get(i)->request_get()->url_get()->host_get(&hlen), 0, 500);
+        hname[hlen] = 0;
         Debug("cache_scan", "hostname = '%s', hostlen = %d", hname, hlen);
         hostinfo_copied = 1;
       }
@@ -257,6 +258,8 @@ Lread:
   io.aiocb.aio_fildes = part->fd;
   if ((ink_off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (ink_off_t)(part->skip + part->len))
     io.aiocb.aio_nbytes = part->skip + part->len - io.aiocb.aio_offset;
+  else
+    io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
   offset = 0;
   ink_assert(ink_aio_read(&io) >= 0);
   return EVENT_CONT;

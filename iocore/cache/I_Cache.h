@@ -42,6 +42,8 @@
 #define CACHE_WRITE_OPT_SYNC            (CACHE_WRITE_OPT_CLOSE_COMPLETE | 0x0004)
 #define CACHE_WRITE_OPT_OVERWRITE_SYNC  (CACHE_WRITE_OPT_SYNC | CACHE_WRITE_OPT_OVERWRITE)
 
+#define SCAN_KB_PER_SECOND      8192 // 1TB/8MB = 131072 = 36 HOURS to scan a TB
+
 class CacheLookupHttpConfig;
 class CacheVC;
 #ifdef HTTP_CACHE
@@ -88,7 +90,7 @@ struct CacheProcessor:public Processor
                             CacheFragType frag_type = CACHE_FRAG_TYPE_NONE, 
                             bool rm_user_agents = true, bool rm_link = false,
                             char *hostname = 0, int host_len = 0);
-  Action *scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second = 2500);
+  Action *scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
 #ifdef HTTP_CACHE
   Action *lookup(Continuation *cont, URL *url, bool local_only = false,
                  CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);

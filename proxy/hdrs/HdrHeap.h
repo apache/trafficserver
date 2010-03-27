@@ -87,8 +87,7 @@ extern void obj_describe(HdrHeapObjImpl * obj, bool recurse);
 inline int
 obj_is_aligned(HdrHeapObjImpl * obj)
 {
-// FIX: replace unsigned long with portable paddr_t
-  return (((((unsigned long) obj) & HDR_PTR_ALIGNMENT_MASK) == 0) && ((obj->m_length & HDR_PTR_ALIGNMENT_MASK) == 0));
+  return (((((uintptr_t) obj) & HDR_PTR_ALIGNMENT_MASK) == 0) && ((obj->m_length & HDR_PTR_ALIGNMENT_MASK) == 0));
 }
 
 inline void
@@ -290,7 +289,7 @@ if (ptr) { \
    for (int i = 0; i < nentries; i++) { \
       if (ptr >= table[i].start && \
 	  ptr <= table[i].end) { \
-          ptr =  (((char*)ptr) - (unsigned long) table[i].offset); \
+          ptr =  (((char*)ptr) - (uintptr_t) table[i].offset); \
           found = 1; \
           break; \
       } \
@@ -307,7 +306,7 @@ if (ptr) { \
    int found = 0; \
       if (ptr >= table[0].start && \
 	  ptr <= table[0].end) { \
-          ptr =  (((char*)ptr) - (unsigned long) table[0].offset); \
+          ptr =  (((char*)ptr) - (uintptr_t) table[0].offset); \
           found = 1; \
       } \
    ink_assert(found); \
@@ -324,7 +323,7 @@ if (ptr) { \
    for (int i = 0; i < nentries; i++) { \
       if ((char*) ptr >= table[i].start && \
 	  (char*) ptr <= table[i].end) { \
-          ptr = (type *) (((char*)ptr) - (unsigned long) table[i].offset); \
+          ptr = (type *) (((char*)ptr) - (uintptr_t) table[i].offset); \
           found = 1; \
           break; \
       } \
@@ -340,7 +339,7 @@ if (ptr) { \
    int found = 0; \
       if ((char*) ptr >= table[0].start && \
 	  (char*) ptr <= table[0].end) { \
-          ptr = (type *) (((char*)ptr) - (unsigned long) table[0].offset); \
+          ptr = (type *) (((char*)ptr) - (uintptr_t) table[0].offset); \
           found = 1; \
       } \
    ink_assert(found); \

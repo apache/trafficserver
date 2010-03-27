@@ -258,9 +258,10 @@ enum HTTPType
 
 struct HTTPHdrImpl:public HdrHeapObjImpl
 {
+  // HdrHeapObjImpl is 4 bytes
   HTTPType m_polarity;          // request or response or unknown
   ink32 m_version;              // cooked version number
-
+  // 12 bytes means 4 bytes padding here on 64-bit architectures
   union
   {
     struct
