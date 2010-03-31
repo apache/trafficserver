@@ -31,7 +31,10 @@ plugins to build large scale web applications.
   |-- .indent.pro ........ indent profile for coding style
   |-- emacs-style ........ emacs style definition
   |-- README ............. intro, links, build info
-  |-- LICENSE ............ full lincense text
+  |-- README-EC2 ......... info on EC2 support
+  |-- README.libev ....... instructions to build with 'libev'
+  |-- REVIEWERS .......... (incomplete) list of areas with committer interest
+  |-- LICENSE ............ full license text
   |-- NOTICE ............. copyright notices
   |-- configure.ac ....... autoconf configuration
   `-- Makefile.am ........ top level automake configuration
@@ -55,12 +58,12 @@ plugins to build large scale web applications.
     You must either upgrade sqlite to >= 3.5 or use db4-devel.
     We recommend that you when dealing with EC2 FC8 to just use db4-devel.
     FC8 on EC2 requires unique configure declarations, please see that section
-    below.
-    Alternately you may use the install scripts in /contrib which automate this
-    or use the pre-built public Fedora Core 8 EC2 AMI with ATS installed.
-    Both of which are HIGHLY RECOMMENDED.
+    below. 
 
-    Public AMI: (Coming shortly)
+    NOTE: Alternately you may use the install scripts in 'contrib' which 
+          automate this or use the pre-built public Fedora Core 8 EC2 AMI 
+          with ATS installed. Both of which are HIGHLY RECOMMENDED. 
+          See 'README-EC2' for further details.
 
     Install these packages:
     autoconf
@@ -87,11 +90,10 @@ plugins to build large scale web applications.
     libpcre3-dev
 
   Ubuntu EC2 9.10:
-    Alternately you may use the install scripts in /contrib which automate this
-    or use the pre-built public Ubuntu EC2 AMI with ATS installed.
-    Both of which are HIGHLY RECOMMENDED.
-
-    AMI: ami-d911feb0
+    NOTE: Alternately you may use the install scripts in 'contrib' which 
+          automate this or use the pre-built public Ubuntu EC2 AMI with 
+          ATS installed. Both of which are HIGHLY RECOMMENDED.
+          See 'README-EC2' for further details.
 
     Install these packages:
     autoconf
@@ -151,9 +153,10 @@ For using sqlite3, we only support v3.5 or later (basically, we require the v2 A
   ./configure            # configure the build environment to create Makfiles
   make                   # execute the compile
 
-4b. Special note for installing on EC2
-    Alternately you may use the scripts under /contrib which will automate
-    the install for trafficserver under EC2 which is HIGHLY RECOMMENDED.
+4b. Instructions for building on EC2
+    NOTE: Alternately you may use the scripts under 'contrib' which will 
+          automate the install for trafficserver under EC2 which is 
+          HIGHLY RECOMMENDED. See 'README-EC2' for further details.
 
    # As root do the following when using Ubuntu
    mkdir -p /mnt          #EC2 Storage Mount, where storage is located
