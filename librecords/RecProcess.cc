@@ -417,6 +417,7 @@ RecAllocateRawStatBlock(int num_stats)
   memset(rsb->global, 0, num_stats * sizeof(RecRawStat *));
   rsb->num_stats = 0;
   rsb->max_stats = num_stats;
+  ink_mutex_init(&(rsb->mutex),"net stat mutex");
   return rsb;
 
 }
