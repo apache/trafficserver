@@ -64,18 +64,18 @@ int tsremap_new_instance(int argc,char *argv[],ihandle *ih,char *errbuf,int errb
   // 1: toURL
   // 2: query param to hash
   // 3,4,... : server hostnames
-  query_remap_info *qri = (query_remap_info*) malloc(sizeof(query_remap_info));
+  query_remap_info *qri = (query_remap_info*) INKmalloc(sizeof(query_remap_info));
   
-  qri->param_name = strdup(argv[2]);
+  qri->param_name = INKstrdup(argv[2]);
   qri->param_len = strlen(qri->param_name);
   qri->num_hosts = argc - 3;
-  qri->hosts = (char**) malloc(qri->num_hosts*sizeof(char*));
+  qri->hosts = (char**) INKmalloc(qri->num_hosts*sizeof(char*));
 
   INKDebug(PLUGIN_NAME, " - Hash using query parameter [%s] with %d hosts", 
            qri->param_name, qri->num_hosts);  
 
   for (i=0; i < qri->num_hosts; ++i) {
-    qri->hosts[i] = strdup(argv[i+3]);
+    qri->hosts[i] = INKstrdup(argv[i+3]);
     INKDebug(PLUGIN_NAME, " - Host %d: %s", i, qri->hosts[i]);
   }
   
@@ -93,14 +93,14 @@ void tsremap_delete_instance(ihandle ih)
   if (ih) {
     query_remap_info *qri = (query_remap_info*)ih;
     if (qri->param_name) 
-      free(qri->param_name);
+      INKfree(qri->param_name);
     if (qri->hosts) {
       for (i=0; i < qri->num_hosts; ++i) {
-        free(qri->hosts[i]);
+        INKfree(qri->hosts[i]);
       }
-      free(qri->hosts);        
+      INKfree(qri->hosts);        
     }
-    free(qri);
+    INKfree(qri);
   }
 }
 
@@ -121,7 +121,7 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
     char *q, *s, *key;
 
     //make a copy of the query, as it is read only
-    q = (char*) malloc(rri->request_query_size+1);
+    q = (char*) INKmalloc(rri->request_query_size+1);
     strncpy(q, rri->request_query, rri->request_query_size);
     q[rri->request_query_size] = '\0';
 
@@ -140,7 +140,7 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
       }
     }
     
-    free(q);
+    INKfree(q);
 
     if (hostidx >= 0) {
       rri->new_host_size = strlen(qri->hosts[hostidx]);
