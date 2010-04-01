@@ -2028,7 +2028,7 @@ extern "C"
   inkapi INKReturnCode INKHttpTxnGetArg(INKHttpTxn txnp, int arg_idx, void **arg);
 
   inkapi int INKHttpTxnGetMaxHttpRetBodySize(void);
-  inkapi INKReturnCode INKHttpTxnSetHttpRetBody(INKHttpTxn txnp, const char *body_msg, bool plain_msg);
+  inkapi INKReturnCode INKHttpTxnSetHttpRetBody(INKHttpTxn txnp, const char *body_msg, int plain_msg);
   inkapi INKReturnCode INKHttpTxnSetHttpRetStatus(INKHttpTxn txnp, INKHttpStatus http_retstatus);
   inkapi int INKHttpTxnActiveTimeoutSet(INKHttpTxn txnp, int timeout);
   inkapi int INKHttpTxnConnectTimeoutSet(INKHttpTxn txnp, int timeout);

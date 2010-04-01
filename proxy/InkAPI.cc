@@ -6176,7 +6176,7 @@ INKHttpTxnGetMaxHttpRetBodySize(void)
 }
 
 INKReturnCode
-INKHttpTxnSetHttpRetBody(INKHttpTxn txnp, const char *body_msg, bool plain_msg_flag)
+INKHttpTxnSetHttpRetBody(INKHttpTxn txnp, const char *body_msg, int plain_msg_flag)
 {
   if (sdk_sanity_check_txn(txnp) == INK_SUCCESS) {
     HttpSM *sm = (HttpSM *) txnp;
