@@ -46,7 +46,7 @@ INKPluginInit(int argc, const char *argv[])
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_5_2, &info)) {
+  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
     INKError("Plugin registration failed.\n");
   }
 

@@ -708,18 +708,10 @@ check_ts_version()
       return 0;
     }
 
-    /* Since this is an TS-SDK 5.2 plugin, we need at
-       least Traffic Server 5.2 to run */
-    if (major_ts_version > 3) {
+    /* Since this is an TS-SDK 2.0 plugin, we need at
+       least Traffic Server 2.0 to run */
+    if (major_ts_version >= 2) {
       result = 1;
-    } else if (major_ts_version == 3) {
-      if (minor_ts_version > 5) {
-        result = 1;
-      } else if (minor_ts_version == 5) {
-        if (patch_ts_version >= 2) {
-          result = 1;
-        }
-      }
     }
   }
 
@@ -746,7 +738,7 @@ INKPluginInit(int argc, const char *argv[])
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 3.5.2 or later\n");
+    INKError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
