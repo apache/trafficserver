@@ -946,7 +946,7 @@ mime_init_date_format_table()
 
   time_t now_secs;
   int i, now_days, first_days, last_days, num_days;
-  int m, d, y;
+  int m=0, d=0, y=0;
 
 #if defined (VxWorks)
   struct timeval tv;
@@ -3421,7 +3421,7 @@ mime_format_date(char *buffer, time_t value)
   };
 
   char *buf;
-  int sec, min, hour, wday, mday, year, month;
+  int sec, min, hour, wday, mday=0, year=0, month=0;
 
   buf = buffer;
 

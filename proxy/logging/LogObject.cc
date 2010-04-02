@@ -66,8 +66,8 @@ LogBufferManager::flush_buffers(LogBufferSink * sink, size_t * to_disk, size_t *
       if (bytes_flushed > 0)
         total_bytes_flushed += bytes_flushed;
       delete _delay_delete_array[_head];
-      _delay_delete_array[_head] = flush_buffer;
-      _head = ++_head % DELAY_DELETE_SIZE;
+      _delay_delete_array[_head++] = flush_buffer;
+      _head = _head % DELAY_DELETE_SIZE;
       delcnt++;
     }
     Debug("log2-logbuffer", "flushed %d buffers: %lu bytes", delcnt, (unsigned long) total_bytes_flushed);

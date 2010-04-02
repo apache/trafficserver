@@ -166,8 +166,8 @@ ClusterLoadMonitor::compute_cluster_load()
 
   // Log ping latency in history buffer.
 
-  ping_response_history_buf[ping_history_buf_head] = current_ping_latency;
-  ping_history_buf_head = ++ping_history_buf_head % ping_history_buf_length;
+  ping_response_history_buf[ping_history_buf_head++] = current_ping_latency;
+  ping_history_buf_head = ping_history_buf_head % ping_history_buf_length;
 
   // Determine the current state of the cluster interconnect using
   // the configured limits.  We determine the state as follows.

@@ -1179,7 +1179,7 @@ string_to_hms_time(const char *str, INKHmsTime * time)
       pos++;
     }
 
-    *str++;
+    ++str;
   }
 
   if (!valid)
@@ -2069,7 +2069,7 @@ chopWhiteSpaces_alloc(char *str)
   // skip any leading white spaces
   while (*str != '\0') {
     if ((*str) == ' ') {
-      *str++;
+      ++str;
       continue;
     }
     break;
