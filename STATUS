@@ -104,7 +104,13 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     tools suchs as logcat and logstats.
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=926907
     Jira: https://issues.apache.org/jira/browse/TS-272
-    +1: zwoop, georgep
+    +1: zwoop, georgep, sjiang
+
+  * API: ts.h does not compile ANSI C due to bool in 
+    INKHttpTxnSetHttpRetBody prototype
+    Trunk patch: http://svn.apache.org/viewcvs?view=rev&rev=929862
+    Jira: https://issues.apache.org/jira/browse/TS-283
+    +1: sjiang
 
 RELEASE PROCESS
 
