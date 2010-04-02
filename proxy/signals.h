@@ -46,7 +46,7 @@ int register_signal_callback(sig_callback_fptr f);
  *  Function prototypes
  */
 
-void init_signals();
+void init_signals(bool do_stackdump=true);
 void init_signals2();
 void init_daemon_signals();
 

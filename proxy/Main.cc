@@ -342,7 +342,15 @@ max_out_limit(char *name, int which, bool max_it = true, bool unlim_it = true)
 void
 init_system()
 {
-  init_signals();
+  RecInt stackDump;
+  bool found = (RecGetRecordInt("proxy.config.stack_dump_enabled", &stackDump) == REC_ERR_OKAY);
+
+  if(found == false) {
+    Warning("Unable to determine stack_dump_enabled , assuming enabled");
+    stackDump = 1;
+  }
+
+  init_signals(stackDump == 1);
 
   syslog(LOG_NOTICE, "NOTE: --- Server Starting ---");
   syslog(LOG_NOTICE, "NOTE: Server Version: %s", appVersionInfo.FullVersionInfoStr);

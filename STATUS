@@ -73,6 +73,12 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-249
     +1: zwoop, sjiang, georgep, bcall
 
+  * core: signals.cc shouldn't require Records support. This crashes
+    tools suchs as logcat and logstats.
+    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=926907
+    Jira: https://issues.apache.org/jira/browse/TS-272
+    +1: zwoop, georgep, sjiang
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -99,12 +105,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Trunk patch: http://svn.apache.org/viewvc?rev=926431&view=rev
     Jira: https://issues.apache.org/jira/browse/TS-268
     +1: sjiang, zwoop, georgep
-
-  * core: signals.cc shouldn't require Records support. This crashes
-    tools suchs as logcat and logstats.
-    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=926907
-    Jira: https://issues.apache.org/jira/browse/TS-272
-    +1: zwoop, georgep, sjiang
 
   * API: ts.h does not compile ANSI C due to bool in 
     INKHttpTxnSetHttpRetBody prototype
