@@ -204,7 +204,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
 {
   acl_filter_rule *rule;
   unsigned long ul;
-  char *argptr;
+  char *argptr, tmpbuf[1024], *c;
   SRC_IP_INFO *ipi;
   int i, j, m;
   bool new_rule_flg = false;
@@ -334,6 +334,18 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
       ipi = &rule->src_ip_array[rule->src_ip_cnt];
       if (ul & REMAP_OPTFLG_INVERT)
         ipi->invert = true;
+      strncpy(tmpbuf, argptr, sizeof(tmpbuf) - 1);
+      tmpbuf[sizeof(tmpbuf) - 1] = 0; // important! use copy of argument
+      if ((c = ExtractIpRange(tmpbuf, (unsigned long*) &ipi->start, &ipi->end)) != NULL) {
+        Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
+        ink_snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
+        errStrBuf[errStrBufSize - 1] = 0;
+        if (new_rule_flg) {
+          delete rule;
+          *rule_pp = NULL;
+        }
+        return (const char*) errStrBuf;
+      }
       for (j = 0; j < rule->src_ip_cnt; j++) {
         if (rule->src_ip_array[j].start == ipi->start && rule->src_ip_array[j].end == ipi->end) {
           ipi->reset();
@@ -1005,6 +1017,52 @@ bool UrlRewrite::ReverseMap(HTTPHdr * response_header, char *tag)
 void
 UrlRewrite::PerformACLFiltering(HttpTransact::State * s, url_mapping * map)
 {
+  if (unlikely(!s || s->acl_filtering_performed || !s->client_connection_enabled))
+    return;
+
+  s->acl_filtering_performed = true;    // small protection against reverse mapping
+
+  if (map->filter) {
+    int i, res, method;
+    i = (method = s->hdr_info.client_request.method_get_wksidx()) - HTTP_WKSIDX_CONNECT;
+    if (likely(i >= 0 && i < ACL_FILTER_MAX_METHODS)) {
+      bool client_enabled_flag = true;
+      unsigned long client_ip = ntohl(s->client_info.ip);
+      for (acl_filter_rule * rp = map->filter; rp; rp = rp->next) {
+        bool match = true;
+        if (rp->method_valid) {
+          if (rp->method_idx[i] != method)
+            match = false;
+        }
+        if (match && rp->src_ip_valid) {
+          match = false;
+          for (int j = 0; j < rp->src_ip_cnt && !match; j++) {
+            res = (rp->src_ip_array[j].start <= client_ip && client_ip <= rp->src_ip_array[j].end) ? 1 : 0;
+            if (rp->src_ip_array[j].invert) {
+              if (res != 1)
+                match = true;
+            } else {
+              if (res == 1)
+                match = true;
+            }
+          }
+        }
+        if (match && client_enabled_flag) {     //make sure that a previous filter did not DENY
+          Debug("url_rewrite", "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
+          client_enabled_flag = rp->allow_flag ? true : false;
+        } else {
+          if (!client_enabled_flag) {
+            Debug("url_rewrite", "Previous ACL filter rule denied request, continuing to deny it");
+          } else {
+            Debug("url_rewrite", "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
+              client_enabled_flag = rp->allow_flag ? false : true;
+          }
+        }
+
+      }                         /* end of for(rp = map->filter;rp;rp = rp->next) */
+      s->client_connection_enabled = client_enabled_flag;
+    }
+  }
 }
 
 
