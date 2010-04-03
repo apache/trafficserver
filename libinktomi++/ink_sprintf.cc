@@ -69,6 +69,8 @@ ink_bvsprintf(char *buffer, char *format, va_list ap)
 {
   int d_val;
   char *s, *d, *p, *s_val, d_buffer[32];
+  va_list ap_local;
+  va_copy(ap_local, ap);
 
   s = format;
   d = buffer;
@@ -105,7 +107,7 @@ ink_bvsprintf(char *buffer, char *format, va_list ap)
     {
     case 's':                  // %s pattern
       ++s;                      // consume 's'
-      s_val = va_arg(ap, char *);       // grab string argument
+      s_val = va_arg(ap_local, char *);       // grab string argument
       p = s_val;                // temporary pointer
       if (buffer)               // if have output buffer
         while (*p) {
@@ -119,7 +121,7 @@ ink_bvsprintf(char *buffer, char *format, va_list ap)
       break;
     case 'd':                  // %d pattern
       ++s;                      // consume 'd'
-      d_val = va_arg(ap, int);  // grab integer argument
+      d_val = va_arg(ap_local, int);  // grab integer argument
       snprintf(d_buffer, sizeof(d_buffer), "%d", d_val);        // stringify integer
       p = d_buffer;             // temporary pointer
       if (buffer)               // if have output buffer
@@ -145,5 +147,6 @@ ink_bvsprintf(char *buffer, char *format, va_list ap)
     *d = NUL;
   ++d;
 
+  va_end(ap_local);
   return (int) (d - buffer);
 }
