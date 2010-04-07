@@ -417,6 +417,14 @@ public:
   /** Set remote sock addr struct. */
   virtual void set_remote_addr() = 0;
 
+  bool get_is_internal_request() const {
+    return is_internal_request;
+  }
+
+  void set_is_internal_request(bool val = false) {
+    is_internal_request = val;
+  }
+
 #if WITH_DETAILED_VCONNECTION_LOGGING
   void loggingInit()
   {
@@ -463,6 +471,7 @@ public:
   void addLogMessage(const char *message) {}
   void loggingInit() {}
   bool loggingEnabled() const { return false; }
+
   ink_hrtime getLogsTotalTime() const { return 0; }
   void printLogs() const {}
   void clearLogs() {}
@@ -478,6 +487,8 @@ protected:
 
   int got_local_addr;
   int got_remote_addr;
+
+  bool is_internal_request;
 };
 
 inline
@@ -489,7 +500,8 @@ thread(NULL),
 logging(NULL),
 #endif
 got_local_addr(0),
-got_remote_addr(0)
+got_remote_addr(0),
+is_internal_request(false)
 {
   memset(&local_addr, 0, sizeof(local_addr));
   memset(&remote_addr, 0, sizeof(remote_addr));

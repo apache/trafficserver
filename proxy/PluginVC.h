@@ -115,6 +115,8 @@ public:
   virtual bool get_data(int id, void *data);
   virtual bool set_data(int id, void *data);
 
+  virtual PluginVC* get_other_side() { return other_side; }
+
   int main_handler(int event, void *data);
 
 private:

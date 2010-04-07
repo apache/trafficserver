@@ -6560,6 +6560,14 @@ INKHttpConnect(unsigned int log_ip, int log_port, INKVConn * vc)
     new_pvc->set_active_addr(log_ip, log_port);
     new_pvc->set_accept_cont(plugin_http_accept);
     PluginVC *return_vc = new_pvc->connect();
+
+    if(return_vc !=NULL) {
+      PluginVC* other_side = return_vc->get_other_side();
+      if(other_side != NULL) {
+        other_side->set_is_internal_request(true);
+      }
+    }
+
     *vc = (INKVConn) return_vc;
     return ((return_vc) ? INK_SUCCESS : INK_ERROR);
   } else {
@@ -8988,6 +8996,21 @@ const char* INKRedirectUrlGet(INKHttpTxn txnp, int* url_len_ptr)
   HttpSM *sm = (HttpSM*) txnp;
   *url_len_ptr = sm->redirect_url_len;
   return (const char*)sm->redirect_url;
+}
+
+int
+INKHttpIsInternalRequest(INKHttpTxn txnp)
+{
+  if (sdk_sanity_check_txn(txnp) != INK_SUCCESS) {
+    return 0;
+  }
+  INKHttpSsn ssnp = INKHttpTxnSsnGet(txnp);
+  HttpClientSession *cs = (HttpClientSession *) ssnp;
+  NetVConnection *vc = cs->get_netvc();
+  if (!cs || !vc) {
+    return 0;
+  }
+  return vc->get_is_internal_request();
 }
 
 #endif //INK_NO_API

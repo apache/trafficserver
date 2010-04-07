@@ -2120,6 +2120,9 @@ extern "C"
 
    */
   inkapi INKReturnCode INKHttpConnect(unsigned int log_ip, int log_port, INKVConn * vc);
+ 
+  /* Check if HTTP State machine is internal or not */ 
+  inkapi int INKHttpIsInternalRequest(INKHttpTxn txnp);
 
   // --------------------------------------------------------------------------
   // HTTP alternate selection
