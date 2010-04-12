@@ -103,6 +103,9 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   * core: Inconsistencies in the stats system. There are incorrect
           assumtions on sychronization between threads
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=926357
+    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=926813
+    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=927302
+    Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=930004
     Jira: https://issues.apache.org/jira/browse/TS-162
     +1: bcall
 
@@ -110,7 +113,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     INKHttpTxnSetHttpRetBody prototype
     Trunk patch: http://svn.apache.org/viewcvs?view=rev&rev=929862
     Jira: https://issues.apache.org/jira/browse/TS-283
-    +1: sjiang, zwoop
+    +1: sjiang, zwoop, bcall
 
 RELEASE PROCESS
 
