@@ -53,18 +53,22 @@ public:
 private:
   static const int N_NODE_CHILDREN = 256;
 
-  struct Node 
+  class Node 
   {
+  public:
     T value;
     bool occupied;
     int rank;
-    Node *children[N_NODE_CHILDREN];
     void Clear() {
       occupied = false;
       rank = 0;
       bzero(children, sizeof(Node *) * N_NODE_CHILDREN);
     };
     void Print(const char *debug_tag) const;
+    inline Node* GetChild(char index) const { return children[static_cast<unsigned char>(index)]; };
+    inline void SetChild(char index, Node *child) { children[static_cast<unsigned char>(index)] = child; };
+  private:
+    Node *children[N_NODE_CHILDREN];
   };
 
   Node m_root;
@@ -110,12 +114,12 @@ Trie<T>::Insert(const char *key, const T &value, int rank, int key_len /* = -1 *
     if (i == key_len) {
       break;
     }
-    next_node = curr_node->children[key[i]];
+    next_node = curr_node->GetChild(key[i]);
     if (!next_node) {
       while (i < key_len) {
         Debug("Trie::Insert", "Creating child node for char %c (%d)", key[i], key[i]);
-        curr_node->children[key[i]] = static_cast<Node*>(ink_malloc(sizeof(Node)));
-        curr_node = curr_node->children[key[i]];
+        curr_node->SetChild(key[i], static_cast<Node*>(ink_malloc(sizeof(Node))));
+        curr_node = curr_node->GetChild(key[i]);
         curr_node->Clear();
         ++i;
       }
@@ -167,7 +171,7 @@ Trie<T>::Search(const char *key, T *&value_ptr, int key_len /* = -1 */)
     if (i == key_len) {
       break;
     }
-    curr_node = curr_node->children[key[i]];
+    curr_node = curr_node->GetChild(key[i]);
     ++i;
   }
 
@@ -183,10 +187,12 @@ template<typename T>
 void
 Trie<T>::_Clear(Node *node) 
 {
+  Node *child;
   for (int i = 0; i < N_NODE_CHILDREN; ++i) {
-    if (node->children[i]) {
-      _Clear(node->children[i]);
-      ink_free(node->children[i]);
+    child = node->GetChild(i);
+    if (child) {
+      _Clear(child);
+      ink_free(child);
     }
   }
 }
@@ -211,7 +217,7 @@ Trie<T>::Node::Print(const char *debug_tag) const
     Debug(debug_tag, "Node is not occupied");
   }
   for (int i = 0; i < N_NODE_CHILDREN; ++i) {
-    if (children[i]) {
+    if (GetChild(i)) {
       Debug(debug_tag, "Node has child for char %c", static_cast<char>(i));
     }
   }
