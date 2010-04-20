@@ -118,7 +118,7 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   * mgmt: Passing NULL as second argument to execv, should be an array
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=936014
     Jira: http://issues.apache.org/jira/browse/TS-319
-    +1: bcall
+    +1: bcall, zwoop
 
 RELEASE PROCESS
 
