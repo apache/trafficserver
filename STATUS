@@ -96,6 +96,12 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-262
     +1: manjesh, zwoop, georgep
 
+  * API: ts.h does not compile ANSI C due to bool in 
+    INKHttpTxnSetHttpRetBody prototype
+    Trunk patch: http://svn.apache.org/viewcvs?view=rev&rev=929862
+    Jira: https://issues.apache.org/jira/browse/TS-283
+    +1: sjiang, zwoop, bcall
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -109,16 +115,10 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-162
     +1: bcall
 
-  * API: ts.h does not compile ANSI C due to bool in 
-    INKHttpTxnSetHttpRetBody prototype
-    Trunk patch: http://svn.apache.org/viewcvs?view=rev&rev=929862
-    Jira: https://issues.apache.org/jira/browse/TS-283
-    +1: sjiang, zwoop, bcall
-
   * mgmt: Passing NULL as second argument to execv, should be an array
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=936014
     Jira: http://issues.apache.org/jira/browse/TS-319
-    +1: bcall, zwoop
+    +1: bcall, zwoop, sjiang
 
 RELEASE PROCESS
 
