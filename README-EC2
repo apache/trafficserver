@@ -113,7 +113,8 @@ Author: Jason Giedymin
   to re-install ATS against trunk, run '/ats/install_update.sh'.  Note that 
   you will have to backup and/or optimize your configuration (see 3.2).  
   To further setup ATS see the TrafficServer wiki @ 
-    http://incubator.apache.org/trafficserver/
+
+    http://cwiki.apache.org/confluence/display/TS/
 
 4.2 What is EC2?
   See http://aws.amazon.com/
@@ -125,8 +126,9 @@ Author: Jason Giedymin
   repository under '/contrib'.
 
 4.4 How do I contact you for help?
-  For mailing lists, and IRC see http://incubator.apache.org/trafficserver/
+  For mailing lists, and IRC information, visit our web page at
+
+    http://trafficserver.apache.org/
 
 4.5 Will these AMIs be updated in the future?
   Absolutely!
-

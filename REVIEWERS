@@ -6,7 +6,7 @@ All changes should have a jira ticket:
         https://issues.apache.org/jira/browse/TS
 
 Big changes should be discussed on one or more of:
-        mailing list: trafficserver-dev@incubator.apache.org
+        mailing list: dev@trafficserver.apache.org
         IRC: #traffic-server irc.freenode.net
 
 Major or controversial changes should be have wiki page and may require a vote:
