@@ -5,7 +5,7 @@ APACHE TRAFFIC SERVER INSTALLATION
 
   For complete installation documentation, see the on-line documentation at
 
-        http://incubator.apache.org/trafficserver/docs/admin/
+        http://trafficserver.apache.org/docs.html
 
   Configure & Build:
     On Linux:
