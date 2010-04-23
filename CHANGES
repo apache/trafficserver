@@ -11,15 +11,21 @@ Changes with Apache Traffic Server 2.1.0
   
   *) Support for larger Cache Partitions up to .5 PB (Petabytes), reducing seeks/write.
 
-  *) Reduced Cache miss latency (sub millesecond)
+  *) Reduced Cache miss latency (sub millesecond).
 
 
 Changes with Apache Traffic Server 2.0.0
 
   *) Change SDK versioning schemes to 2.0 [TS-249).
 
+  *) Minor additions to the SDK (see the docs for details).
+
+  *) Support regexe_map rules in remap.config [TS-80]
+
 
 Changes with Apache Traffic Server 2.0.0-alpha
 
   *) Code cleanup to get the ATS software into a distributable shape. This
    means that certain things are missing, or not functional (intentionally).
+
+  *) Ports available for most Linux distros, including 64-bit.
