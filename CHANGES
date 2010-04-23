@@ -5,6 +5,8 @@ Changes with Apache Traffic Server 2.0.0
 
   *) Minor additions to the SDK (see the docs for details).
 
+  *) Support regexe_map rules in remap.config [TS-80]
+
 
 Changes with Apache Traffic Server 2.0.0-alpha
 

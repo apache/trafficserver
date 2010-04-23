@@ -1706,7 +1706,8 @@ Net_SNMPSetUp(char *sys_location, char *sys_contact, char *sys_name, char *autht
     snprintf(command_path, sizeof(command_path), "%s/bin/stop_snmp && %s/bin/start_snmp", ts_path, ts_path);
 
     sleep(30);
-    res = execv(command_path, NULL);
+    char *argv[] = { NULL };
+    res = execv(command_path, argv);
 
     if (res != 0) {
       DPRINTF(("[SysAPI] failed to execute stop_snmp && start_snmp\n"));
