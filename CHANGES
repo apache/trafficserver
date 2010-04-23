@@ -1,12 +1,14 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 2.0.0
 
-  *) Change SDK versioning schemes to 2.0 [TS-249).
+  *) Minor additions to the SDK (see the docs for details).
 
 
 Changes with Apache Traffic Server 2.0.0-alpha
 
   *) Code cleanup to get the ATS software into a distributable shape. This
    means that certain things are missing, or not functional (intentionally).
+
+  *) Ports available for most Linux distros, including 64-bit.
 
   *) Change SDK versioning schemes to 2.0 [TS-249).
