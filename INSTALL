@@ -7,6 +7,10 @@ APACHE TRAFFIC SERVER INSTALLATION
 
         http://trafficserver.apache.org/docs.html
 
+  Further platform and distribution specific details are kept up-to-date on
+
+         https://cwiki.apache.org/confluence/display/TS/Building
+
   Configure & Build:
     On Linux:
      $ ./configure [--prefix=PREFIX]
