@@ -107,6 +107,13 @@ ClusterVConnection::set_header(void *ptr, int len)
   return -1;
 }
 
+int
+ClusterVConnection::get_single_data(void **ptr, int *len) 
+{
+  ink_assert(!"implemented");
+  return -1;
+}
+
 VIO *
 ClusterVConnectionBase::do_io_write(Continuation * acont, ink64 anbytes, IOBufferReader * abuffer, bool owner)
 {

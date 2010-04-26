@@ -22,7 +22,10 @@
  */
 
 #include "P_Cache.h"
-#include "../../proxy/http2/HttpCacheSM.h"      //Added to get the scope of HttpCacheSM object.
+
+#ifdef HTTP_CACHE
+#include "HttpCacheSM.h"      //Added to get the scope of HttpCacheSM object.
+#endif
 
 #define READ_WHILE_WRITER 1
 
@@ -332,7 +335,9 @@ CacheVC::openReadFromWriter(int event, Event * e)
       return openReadStartHead(event, e);
     }
   }
+#ifdef HTTP_CACHE
   OpenDirEntry *cod = od;
+#endif
   od = NULL;
   // someone is currently writing the document
   if (write_vc->closed < 0) {

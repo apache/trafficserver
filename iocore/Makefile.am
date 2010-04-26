@@ -17,8 +17,8 @@
 #  limitations under the License.
 
 if STANDALONE_IOCORE
-SUBDIRS = eventsystem net aio cache dns hostdb utils
+SUBDIRS = eventsystem net aio dns hostdb utils cache
 else
-SUBDIRS = eventsystem net aio cache dns cluster hostdb utils
+SUBDIRS = eventsystem net aio dns hostdb utils cache cluster 
 endif
 

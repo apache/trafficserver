@@ -281,7 +281,7 @@ get_PollDescriptor(EThread * t)
 
 enum ThrottleType
 { ACCEPT, CONNECT };
-inline int
+TS_INLINE int
 net_connections_to_throttle(ThrottleType t)
 {
 
@@ -305,7 +305,7 @@ net_connections_to_throttle(ThrottleType t)
   return (int) (currently_open * headroom);
 }
 
-inline void
+TS_INLINE void
 check_shedding_warning()
 {
   ink_hrtime t = ink_get_hrtime();
@@ -315,13 +315,13 @@ check_shedding_warning()
   }
 }
 
-inline int
+TS_INLINE int
 emergency_throttle(ink_hrtime now)
 {
   return emergency_throttle_time > now;
 }
 
-inline int
+TS_INLINE int
 check_net_throttle(ThrottleType t, ink_hrtime now)
 {
   if(throttle_enabled == false) {
@@ -339,7 +339,7 @@ check_net_throttle(ThrottleType t, ink_hrtime now)
   return false;
 }
 
-inline void
+TS_INLINE void
 check_throttle_warning()
 {
   ink_hrtime t = ink_get_hrtime();
@@ -361,7 +361,7 @@ check_throttle_warning()
 // descriptors.  Close the connection immediately, the upper levels
 // will recover.
 //
-inline int
+TS_INLINE int
 check_emergency_throttle(Connection & con)
 {
   int fd = con.fd;
@@ -379,7 +379,7 @@ check_emergency_throttle(Connection & con)
 }
 
 
-inline int
+TS_INLINE int
 change_net_connections_throttle(const char *token, RecDataT data_type, RecData value, void *data)
 {
   (void) token;
@@ -401,7 +401,7 @@ change_net_connections_throttle(const char *token, RecDataT data_type, RecData v
 // 1  - transient
 // 0  - report as warning
 // -1 - fatal
-inline int
+TS_INLINE int
 accept_error_seriousness(int res)
 {
   switch (res) {
@@ -438,7 +438,7 @@ accept_error_seriousness(int res)
   }
 }
 
-inline void
+TS_INLINE void
 check_transient_accept_error(int res)
 {
   ink_hrtime t = ink_get_hrtime();
@@ -495,23 +495,23 @@ write_disable(NetHandler * nh, UnixNetVConnection * vc)
   vc->ep.modify(-EVENTIO_WRITE);
 }
 
-inline int EventIO::start(EventLoop l, DNSConnection *vc, int events) {
+TS_INLINE int EventIO::start(EventLoop l, DNSConnection *vc, int events) {
   type = EVENTIO_DNS_CONNECTION;
   return start(l, vc->fd, (Continuation*)vc, events);
 }
-inline int EventIO::start(EventLoop l, NetAccept *vc, int events) {
+TS_INLINE int EventIO::start(EventLoop l, NetAccept *vc, int events) {
   type = EVENTIO_NETACCEPT;
   return start(l, vc->server.fd, (Continuation*)vc, events);
 }
-inline int EventIO::start(EventLoop l, UnixNetVConnection *vc, int events) {
+TS_INLINE int EventIO::start(EventLoop l, UnixNetVConnection *vc, int events) {
   type = EVENTIO_READWRITE_VC;
   return start(l, vc->con.fd, (Continuation*)vc, events);
 }
-inline int EventIO::start(EventLoop l, UnixUDPConnection *vc, int events) {
+TS_INLINE int EventIO::start(EventLoop l, UnixUDPConnection *vc, int events) {
   type = EVENTIO_UDP_CONNECTION;
   return start(l, vc->fd, (Continuation*)vc, events);
 }
-inline int EventIO::close() {
+TS_INLINE int EventIO::close() {
   stop();
   switch (type) {
     default: ink_assert(!"case");
@@ -524,7 +524,7 @@ inline int EventIO::close() {
 
 #ifdef USE_LIBEV
 
-inline int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
+TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
   event_loop = l;
   data.c = c;
   ev_init(&eio, (eio_cb_t)this);
@@ -533,7 +533,7 @@ inline int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
   return 0;
 }
 
-inline int EventIO::modify(int e) {
+TS_INLINE int EventIO::modify(int e) {
   ink_assert(event_loop);
   int ee = eio.events;
   if (e < 0)
@@ -547,11 +547,11 @@ inline int EventIO::modify(int e) {
   return 0;
 }
 
-inline int EventIO::refresh(int e) {
+TS_INLINE int EventIO::refresh(int e) {
   return 0;
 }
 
-inline int EventIO::stop() {
+TS_INLINE int EventIO::stop() {
   if (event_loop) {
     ev_io_stop(event_loop->eio, &eio);
     event_loop = 0;
@@ -561,7 +561,7 @@ inline int EventIO::stop() {
 
 #else /* !USE_LIBEV */
 
-inline int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
+TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
   data.c = c;
   fd = afd;
   event_loop = l;
@@ -593,7 +593,7 @@ inline int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
 #endif
 }
 
-inline int EventIO::modify(int e) {
+TS_INLINE int EventIO::modify(int e) {
 #if defined(USE_EPOLL) && !defined(USE_EDGE_TRIGGER)
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
@@ -665,7 +665,7 @@ inline int EventIO::modify(int e) {
 #endif
 }
 
-inline int EventIO::refresh(int e) {
+TS_INLINE int EventIO::refresh(int e) {
 #if defined(USE_KQUEUE) && defined(USE_EDGE_TRIGGER)
   e = e & events;
   struct kevent ev[2];
@@ -701,7 +701,7 @@ inline int EventIO::refresh(int e) {
 }
 
 
-inline int EventIO::stop() {
+TS_INLINE int EventIO::stop() {
   if (event_loop) {
 #if defined(USE_EPOLL)
     struct epoll_event ev;

@@ -43,7 +43,7 @@ bool StatDebug = false;         // global debug flag
 StatExprToken::StatExprToken():
 m_arith_symbol('\0'),
 m_token_name(NULL),
-m_token_type(RECD_NULL),
+m_token_type((StatDataT)RECD_NULL),
 m_token_value(0.0),
 m_token_value_max(FLT_MAX),
 m_token_value_min(-1 * FLT_MAX), m_token_value_delta(NULL), m_sum_var(false), m_node_var(true)
@@ -201,7 +201,7 @@ bool StatExprToken::assignTokenType()
 {
 
   ink_debug_assert(m_token_name != NULL);
-  m_token_type = varType(m_token_name);
+  m_token_type = (StatDataT)varType(m_token_name);
 
   if (m_token_name[0] == '$') {
     m_token_type = STAT_CONST;
@@ -214,8 +214,7 @@ bool StatExprToken::assignTokenType()
   }
   // I'm guessing here that we want to check if we're still RECD_NULL,
   // it used to be INVALID, which is not in the m_token_type's enum. /leif
-  return (m_token_type != RECD_NULL);
-
+  return (m_token_type != (StatDataT)RECD_NULL);
 }
 
 
@@ -749,7 +748,7 @@ StatFloat StatObject::NodeStatEval(bool cluster)
 
     // in librecords, not all statistics are register at initialization
     // must assign proper type if it is undefined.
-    if (src->m_token_type == RECD_NULL) {
+    if (src->m_token_type == (StatDataT)RECD_NULL) {
       src->assignTokenType();
     }
 
@@ -797,10 +796,10 @@ StatFloat StatObject::NodeStatEval(bool cluster)
         right = stack.pop();
         left = stack.pop();
 
-        if (left->m_token_type == RECD_NULL) {
+        if (left->m_token_type == (StatDataT)RECD_NULL) {
           left->assignTokenType();
         }
-        if (right->m_token_type == RECD_NULL) {
+        if (right->m_token_type == (StatDataT)RECD_NULL) {
           right->assignTokenType();
         }
 

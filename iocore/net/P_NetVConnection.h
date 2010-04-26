@@ -23,7 +23,7 @@
 
 #include "I_NetVConnection.h"
 
-inline const struct sockaddr_in &
+TS_INLINE const struct sockaddr_in &
 NetVConnection::get_remote_addr()
 {
   if (!got_remote_addr) {
@@ -33,20 +33,20 @@ NetVConnection::get_remote_addr()
   return remote_addr;
 }
 
-inline unsigned int
+TS_INLINE unsigned int
 NetVConnection::get_remote_ip()
 {
   return (unsigned int) get_remote_addr().sin_addr.s_addr;
 }
 
 
-inline int
+TS_INLINE int
 NetVConnection::get_remote_port()
 {
   return ntohs(get_remote_addr().sin_port);
 }
 
-inline const struct sockaddr_in &
+TS_INLINE const struct sockaddr_in &
 NetVConnection::get_local_addr()
 {
   if (!got_local_addr) {
@@ -58,13 +58,13 @@ NetVConnection::get_local_addr()
   return local_addr;
 }
 
-inline unsigned int
+TS_INLINE unsigned int
 NetVConnection::get_local_ip()
 {
   return (unsigned int) get_local_addr().sin_addr.s_addr;
 }
 
-inline int
+TS_INLINE int
 NetVConnection::get_local_port()
 {
   return ntohs(get_local_addr().sin_port);

@@ -28,7 +28,7 @@
 const int LOAD_BALANCE_INTERVAL = 1;
 
 
-inline
+TS_INLINE
 EventProcessor::EventProcessor():
 n_ethreads(0),
 n_thread_groups(0),
@@ -41,7 +41,7 @@ thread_data_used(0)
   memset(next_thread_for_type, 0, sizeof(next_thread_for_type));
 }
 
-inline off_t
+TS_INLINE off_t
 EventProcessor::allocate(int size)
 {
   static off_t start = (ink_offsetof(EThread, thread_private) + 7) & ~7;
@@ -58,7 +58,7 @@ EventProcessor::allocate(int size)
   return (off_t) (old + start);
 }
 
-inline EThread *
+TS_INLINE EThread *
 EventProcessor::assign_thread(EventType etype)
 {
   int next;
@@ -69,7 +69,7 @@ EventProcessor::assign_thread(EventType etype)
   return (eventthread[etype][next]);
 }
 
-inline Event *
+TS_INLINE Event *
 EventProcessor::schedule(Event * e, EventType etype)
 {
   e->ethread = assign_thread(etype);
@@ -83,7 +83,7 @@ EventProcessor::schedule(Event * e, EventType etype)
 
 #if 0
 /* getting rid of this, i dont see anybody using this */
-inline Event *
+TS_INLINE Event *
 EventProcessor::schedule_spawn(Continuation * cont)
 {
   Event *e = eventAllocator.alloc();
@@ -91,7 +91,7 @@ EventProcessor::schedule_spawn(Continuation * cont)
 }
 #endif
 
-inline Event *
+TS_INLINE Event *
 EventProcessor::schedule_imm(Continuation * cont, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
@@ -103,7 +103,7 @@ EventProcessor::schedule_imm(Continuation * cont, EventType et, int callback_eve
   return schedule(e->init(cont, 0, 0), et);
 }
 
-inline Event *
+TS_INLINE Event *
 EventProcessor::schedule_at(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   ink_assert(t > 0);
@@ -113,7 +113,7 @@ EventProcessor::schedule_at(Continuation * cont, ink_hrtime t, EventType et, int
   return schedule(e->init(cont, t, 0), et);
 }
 
-inline Event *
+TS_INLINE Event *
 EventProcessor::schedule_in(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
@@ -122,7 +122,7 @@ EventProcessor::schedule_in(Continuation * cont, ink_hrtime t, EventType et, int
   return schedule(e->init(cont, ink_get_based_hrtime() + t, 0), et);
 }
 
-inline Event *
+TS_INLINE Event *
 EventProcessor::schedule_every(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   ink_assert(t != 0);

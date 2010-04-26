@@ -164,7 +164,7 @@ struct SplitDNS:public SplitDNSConfigInfo
 /* --------------------------------------------------------------
    SplitDNSConfig::isSplitDNSEnabled()
    -------------------------------------------------------------- */
-inline bool SplitDNSConfig::isSplitDNSEnabled()
+TS_INLINE bool SplitDNSConfig::isSplitDNSEnabled()
 {
   return (gsplit_dns_enabled ? true : false);
 }
@@ -253,7 +253,7 @@ public:
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
-inline DNSRequestData::DNSRequestData()
+TS_INLINE DNSRequestData::DNSRequestData()
 :m_pHost(0)
 {
 }
@@ -263,7 +263,7 @@ inline DNSRequestData::DNSRequestData()
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
 
-inline char *
+TS_INLINE char *
 DNSRequestData::get_string()
 {
   return xstrdup((char *) m_pHost);
@@ -274,7 +274,7 @@ DNSRequestData::get_string()
    DNSRequestData::get_host()
    -------------------------------------------------------------- */
 
-inline const char *
+TS_INLINE const char *
 DNSRequestData::get_host()
 {
   return m_pHost;
@@ -285,7 +285,7 @@ DNSRequestData::get_host()
    DNSRequestData::get_ip()
    -------------------------------------------------------------- */
 
-inline ip_addr_t DNSRequestData::get_ip()
+TS_INLINE ip_addr_t DNSRequestData::get_ip()
 {
   return (ip_addr_t) 0;
 }
@@ -295,7 +295,7 @@ inline ip_addr_t DNSRequestData::get_ip()
    DNSRequestData::get_client_ip()
    -------------------------------------------------------------- */
 
-inline ip_addr_t DNSRequestData::get_client_ip()
+TS_INLINE ip_addr_t DNSRequestData::get_client_ip()
 {
   return (ip_addr_t) 0;
 }
@@ -353,7 +353,7 @@ public:
    SplitDNSRecord::SplitDNSRecord()
    -------------------------------------------------------------- */
 
-inline SplitDNSRecord::SplitDNSRecord()
+TS_INLINE SplitDNSRecord::SplitDNSRecord()
 :m_dnsSrvr_cnt(0), m_domain_srch_list(0)
 {
 }
@@ -363,7 +363,7 @@ inline SplitDNSRecord::SplitDNSRecord()
    SplitDNSRecord::~SplitDNSRecord()
    -------------------------------------------------------------- */
 
-inline SplitDNSRecord::~SplitDNSRecord()
+TS_INLINE SplitDNSRecord::~SplitDNSRecord()
 {
 }
 
@@ -394,7 +394,7 @@ struct SDNS_UpdateContinuation:
    SDNS_UpdateContinuation::SDNS_UpdateContinuation()
    -------------------------------------------------------------- */
 
-inline SDNS_UpdateContinuation::SDNS_UpdateContinuation(ProxyMutex * m)
+TS_INLINE SDNS_UpdateContinuation::SDNS_UpdateContinuation(ProxyMutex * m)
 :Continuation(m)
 {
   SET_HANDLER(&SDNS_UpdateContinuation::handle_event);
@@ -405,7 +405,7 @@ inline SDNS_UpdateContinuation::SDNS_UpdateContinuation(ProxyMutex * m)
    SDNS_UpdateContinuation::handle_event()
    -------------------------------------------------------------- */
 
-inline int
+TS_INLINE int
 SDNS_UpdateContinuation::handle_event(int event, void *data)
 {
   NOWARN_UNUSED(event);

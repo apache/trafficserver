@@ -31,6 +31,10 @@
 #if !defined (_I_AIO_h_)
 #define _I_AIO_h_
 
+#ifndef TS_INLINE
+#define TS_INLINE
+#endif
+
 #include "inktomi++.h"
 #include "I_EventSystem.h"
 #include "I_RecProcess.h"

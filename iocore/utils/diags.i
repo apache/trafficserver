@@ -23,9 +23,6 @@
 
 
 
-#include <iostream.h>
-#include <fstream.h>
-
 Diags *diags;
 #define DIAGS_LOG_FILE "diags.log"
 

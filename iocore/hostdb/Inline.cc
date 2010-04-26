@@ -21,32 +21,13 @@
   limitations under the License.
  */
 
-
-/****************************************************************************
-
-  I_HostDB.h
-
-  
- ****************************************************************************/
-
-#ifndef _I_HostDB_h_
-#define _I_HostDB_h_
-
-#ifndef TS_INLINE
+/*
+ * Inline Functions as globals for users using only the interface
+ *
+ */
 #define TS_INLINE
-#endif
+#define INLINE_CC
 
-#include "I_EventSystem.h"
-#include "I_Net.h"
-#include "I_Cache.h"
+#include "P_HostDB.h" 
 
-#include "I_HostDBProcessor.h"
 
-#define HOSTDB_MODULE_MAJOR_VERSION 1
-#define HOSTDB_MODULE_MINOR_VERSION 0
-#define HOSTDB_MODULE_VERSION makeModuleVersion(                 \
-                                    HOSTDB_MODULE_MAJOR_VERSION, \
-                                    HOSTDB_MODULE_MINOR_VERSION, \
-                                    PUBLIC_MODULE_HEADER)
-
-#endif /* _I_HostDB_h_ */

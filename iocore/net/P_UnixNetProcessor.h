@@ -93,7 +93,7 @@ public:
 };
 
 
-inline Action *
+TS_INLINE Action *
 NetProcessor::connect_re(Continuation * cont, unsigned int ip, int port, unsigned int _interface, NetVCOptions * opts)
 {
   return ((UnixNetProcessor *) this)->connect_re_internal(cont, ip, port, _interface, opts);

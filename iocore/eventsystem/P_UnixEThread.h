@@ -37,14 +37,14 @@
 
 const int DELAY_FOR_RETRY = HRTIME_MSECONDS(10);
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_spawn(Continuation * cont)
 {
   Event *e = EVENT_ALLOC(eventAllocator, this);
   return schedule(e->init(cont, 0, 0));
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_imm(Continuation * cont, int callback_event, void *cookie)
 {
   Event *e =::eventAllocator.alloc();
@@ -53,7 +53,7 @@ EThread::schedule_imm(Continuation * cont, int callback_event, void *cookie)
   return schedule(e->init(cont, 0, 0));
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_at(Continuation * cont, ink_hrtime t, int callback_event, void *cookie)
 {
   Event *e =::eventAllocator.alloc();
@@ -62,7 +62,7 @@ EThread::schedule_at(Continuation * cont, ink_hrtime t, int callback_event, void
   return schedule(e->init(cont, t, 0));
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_in(Continuation * cont, ink_hrtime t, int callback_event, void *cookie)
 {
   Event *e =::eventAllocator.alloc();
@@ -71,7 +71,7 @@ EThread::schedule_in(Continuation * cont, ink_hrtime t, int callback_event, void
   return schedule(e->init(cont, ink_get_based_hrtime() + t, 0));
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_every(Continuation * cont, ink_hrtime t, int callback_event, void *cookie)
 {
   Event *e =::eventAllocator.alloc();
@@ -80,7 +80,7 @@ EThread::schedule_every(Continuation * cont, ink_hrtime t, int callback_event, v
   return schedule(e->init(cont, ink_get_based_hrtime() + t, t));
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule(Event * e)
 {
   e->ethread = this;
@@ -94,7 +94,7 @@ EThread::schedule(Event * e)
   return e;
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_imm_local(Continuation * cont, int callback_event, void *cookie)
 {
   Event *e = EVENT_ALLOC(eventAllocator, this);
@@ -103,7 +103,7 @@ EThread::schedule_imm_local(Continuation * cont, int callback_event, void *cooki
   return schedule_local(e->init(cont, 0, 0));
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_at_local(Continuation * cont, ink_hrtime t, int callback_event, void *cookie)
 {
   Event *e = EVENT_ALLOC(eventAllocator, this);
@@ -112,7 +112,7 @@ EThread::schedule_at_local(Continuation * cont, ink_hrtime t, int callback_event
   return schedule_local(e->init(cont, t, 0));
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_in_local(Continuation * cont, ink_hrtime t, int callback_event, void *cookie)
 {
   Event *e = EVENT_ALLOC(eventAllocator, this);
@@ -121,7 +121,7 @@ EThread::schedule_in_local(Continuation * cont, ink_hrtime t, int callback_event
   return schedule_local(e->init(cont, ink_get_based_hrtime() + t, 0));
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_every_local(Continuation * cont, ink_hrtime t, int callback_event, void *cookie)
 {
   Event *e = EVENT_ALLOC(eventAllocator, this);
@@ -130,7 +130,7 @@ EThread::schedule_every_local(Continuation * cont, ink_hrtime t, int callback_ev
   return schedule_local(e->init(cont, ink_get_based_hrtime() + t, t));
 }
 
-inline Event *
+TS_INLINE Event *
 EThread::schedule_local(Event * e)
 {
   if (tt != REGULAR) {
@@ -148,13 +148,13 @@ EThread::schedule_local(Event * e)
   return e;
 }
 
-inline EThread *
+TS_INLINE EThread *
 this_ethread()
 {
   return (EThread *) this_thread();
 }
 
-inline void
+TS_INLINE void
 EThread::free_event(Event * e)
 {
   ink_assert(!e->in_the_priority_queue && !e->in_the_prot_queue);
@@ -163,7 +163,7 @@ EThread::free_event(Event * e)
 }
 
 #if defined(USE_OLD_EVENTFD)
-INK_INLINE int 
+TS_INLINE int 
 EThread::getEventFd()
 {
   return EventQueueExternal.getReadFd();

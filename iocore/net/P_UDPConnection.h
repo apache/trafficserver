@@ -71,7 +71,7 @@ public:
   //this class is abstract
 };
 
-inline
+TS_INLINE
 UDPConnectionInternal::UDPConnectionInternal()
   : continuation(NULL)
   , recvActive(0)
@@ -94,7 +94,7 @@ UDPConnectionInternal::UDPConnectionInternal()
   //SET_HANDLER(&BaseUDPConnection::callbackHandler);
 }
 
-inline
+TS_INLINE
 UDPConnectionInternal::~UDPConnectionInternal()
 {
   udpNet.FreeBandwidth(this);
@@ -103,13 +103,13 @@ UDPConnectionInternal::~UDPConnectionInternal()
 }
 
 
-inline SOCKET
+TS_INLINE SOCKET
 UDPConnection::getFd()
 {
   return ((UDPConnectionInternal *) this)->fd;
 }
 
-inline void
+TS_INLINE void
 UDPConnection::setBinding(struct sockaddr_in *s)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
@@ -117,7 +117,7 @@ UDPConnection::setBinding(struct sockaddr_in *s)
   p->binding_valid = 1;
 }
 
-inline int
+TS_INLINE int
 UDPConnection::getBinding(struct sockaddr_in *s)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
@@ -125,62 +125,62 @@ UDPConnection::getBinding(struct sockaddr_in *s)
   return p->binding_valid;
 }
 
-inline int
+TS_INLINE int
 UDPConnection::get_ndone()
 {
   return ((UDPConnectionInternal *) this)->nBytesDone;
 }
 
-inline int
+TS_INLINE int
 UDPConnection::get_ntodo()
 {
   return ((UDPConnectionInternal *) this)->nBytesTodo;
 }
 
 // return the b/w allocated to this UDPConnection in Mbps
-inline double
+TS_INLINE double
 UDPConnection::get_allocatedBandwidth()
 {
   return (((UDPConnectionInternal *) this)->flowRateBps * 8.0) / (1024.0 * 1024.0);
 }
 
-inline void
+TS_INLINE void
 UDPConnection::destroy()
 {
   ((UDPConnectionInternal *) this)->tobedestroyed = 1;
 }
 
-inline int
+TS_INLINE int
 UDPConnection::shouldDestroy()
 {
   return ((UDPConnectionInternal *) this)->tobedestroyed;
 }
 
-inline void
+TS_INLINE void
 UDPConnection::AddRef()
 {
   ink_atomic_increment(&((UDPConnectionInternal *) this)->refcount, 1);
 }
 
-inline int
+TS_INLINE int
 UDPConnection::GetRefCount()
 {
   return ((UDPConnectionInternal *) this)->refcount;
 }
 
-inline int
+TS_INLINE int
 UDPConnection::GetSendGenerationNumber()
 {
   return ((UDPConnectionInternal *) this)->sendGenerationNum;
 }
 
-inline int
+TS_INLINE int
 UDPConnection::getPortNum(void)
 {
   return ((UDPConnectionInternal *) this)->binding.sin_port;
 }
 
-inline ink64
+TS_INLINE ink64
 UDPConnection::cancel(void)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
@@ -190,13 +190,13 @@ UDPConnection::cancel(void)
   return p->lastSentPktTSSeqNum;
 };
 
-inline void
+TS_INLINE void
 UDPConnection::SetLastSentPktTSSeqNum(ink64 sentSeqNum)
 {
   ((UDPConnectionInternal *) this)->lastSentPktTSSeqNum = sentSeqNum;
 };
 
-inline void
+TS_INLINE void
 UDPConnection::setContinuation(Continuation * c)
 {
   // it is not safe to switch among continuations that don't share locks

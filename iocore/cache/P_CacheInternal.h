@@ -25,13 +25,12 @@
 #ifndef _P_CACHE_INTERNAL_H__
 #define _P_CACHE_INTERNAL_H__
 
+#include "inktomi++.h"
+
 #ifdef HTTP_CACHE
 #include "HTTP.h"
 #include "P_CacheHttp.h"
 #endif
-
-#include "inktomi++.h"
-#include "api/include/ts.h"
 
 class EvacuationBlock;
 
@@ -257,6 +256,18 @@ struct CacheVC:CacheVConnection
     header_to_write = ptr;
     header_to_write_len = len;
     return 0;
+  }
+  int get_single_data(void **ptr, int *len)
+  {
+    if (first_buf.m_ptr) {
+      Doc *doc = (Doc*)first_buf->data();
+      if (doc->data_len() == doc->total_len) {
+        *ptr = doc->data();
+        *len = doc->data_len();
+        return 0;
+      }
+    }
+    return -1;
   }
 
   bool writer_done();
@@ -497,7 +508,7 @@ CacheVC *new_DocEvacuator(int nbytes, Part *d);
 
 // inline Functions
 
-inline CacheVC *
+TS_INLINE CacheVC *
 new_CacheVC(Continuation *cont)
 {
   EThread *t = cont->mutex->thread_holding;
@@ -519,7 +530,7 @@ new_CacheVC(Continuation *cont)
   return c;
 }
 
-inline int
+TS_INLINE int
 free_CacheVC(CacheVC *cont)
 {
   Debug("cache_free", "free %lX", (long) cont);
@@ -576,7 +587,7 @@ free_CacheVC(CacheVC *cont)
   return EVENT_DONE;
 }
 
-inline int
+TS_INLINE int
 CacheVC::calluser(int event)
 {
   recursive++;
@@ -590,7 +601,7 @@ CacheVC::calluser(int event)
   return EVENT_CONT;
 }
 
-inline int
+TS_INLINE int
 CacheVC::callcont(int event)
 {
   recursive++;
@@ -604,7 +615,7 @@ CacheVC::callcont(int event)
   return EVENT_DONE;
 }
 
-inline int
+TS_INLINE int
 CacheVC::do_read_call(CacheKey *akey)
 {
   doc_pos = 0;
@@ -614,14 +625,14 @@ CacheVC::do_read_call(CacheKey *akey)
   return handleRead(EVENT_CALL, 0);
 }
 
-inline int
+TS_INLINE int
 CacheVC::do_write_call()
 {
   PUSH_HANDLER(&CacheVC::handleWrite);
   return handleWrite(EVENT_CALL, 0);
 }
 
-inline void
+TS_INLINE void
 CacheVC::cancel_trigger()
 {
   if (trigger) {
@@ -630,7 +641,7 @@ CacheVC::cancel_trigger()
   }
 }
 
-inline int
+TS_INLINE int
 CacheVC::die()
 {
   if (vio.op == VIO::WRITE) {
@@ -657,7 +668,7 @@ CacheVC::die()
   }
 }
 
-inline int
+TS_INLINE int
 CacheVC::handleWriteLock(int event, Event *e)
 {
   cancel_trigger();
@@ -676,21 +687,21 @@ CacheVC::handleWriteLock(int event, Event *e)
   return EVENT_CONT;
 }
 
-inline int
+TS_INLINE int
 CacheVC::do_write_lock()
 {
   PUSH_HANDLER(&CacheVC::handleWriteLock);
   return handleWriteLock(EVENT_NONE, 0);
 }
 
-inline int
+TS_INLINE int
 CacheVC::do_write_lock_call()
 {
   PUSH_HANDLER(&CacheVC::handleWriteLock);
   return handleWriteLock(EVENT_CALL, 0);
 }
 
-inline bool
+TS_INLINE bool
 CacheVC::writer_done()
 {
   OpenDirEntry *cod = od;
@@ -707,7 +718,7 @@ CacheVC::writer_done()
   return false;
 }
 
-inline int
+TS_INLINE int
 Part::close_write(CacheVC *cont)
 {
 
@@ -720,7 +731,7 @@ Part::close_write(CacheVC *cont)
 }
 
 // Returns 0 on success or a positive error code on failure
-inline int
+TS_INLINE int
 Part::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   Part *part = this;
@@ -747,7 +758,7 @@ Part::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
   return ECACHE_DOC_BUSY;
 }
 
-inline int
+TS_INLINE int
 Part::close_write_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
@@ -757,7 +768,7 @@ Part::close_write_lock(CacheVC *cont)
   return close_write(cont);
 }
 
-inline int
+TS_INLINE int
 Part::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   EThread *t = cont->mutex->thread_holding;
@@ -767,7 +778,7 @@ Part::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
   return open_write(cont, allow_if_writers, max_writers);
 }
 
-inline OpenDirEntry *
+TS_INLINE OpenDirEntry *
 Part::open_read_lock(INK_MD5 *key, EThread *t)
 {
   CACHE_TRY_LOCK(lock, mutex, t);
@@ -776,7 +787,7 @@ Part::open_read_lock(INK_MD5 *key, EThread *t)
   return open_dir.open_read(key);
 }
 
-inline int
+TS_INLINE int
 Part::begin_read_lock(CacheVC *cont)
 {
   // no need for evacuation as the entire document is already in memory
@@ -792,7 +803,7 @@ Part::begin_read_lock(CacheVC *cont)
   return begin_read(cont);
 }
 
-inline int
+TS_INLINE int
 Part::close_read_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
@@ -802,7 +813,7 @@ Part::close_read_lock(CacheVC *cont)
   return close_read(cont);
 }
 
-inline int
+TS_INLINE int
 dir_delete_lock(CacheKey *key, Part *d, ProxyMutex *m, Dir *del)
 {
   EThread *thread = m->thread_holding;
@@ -812,7 +823,7 @@ dir_delete_lock(CacheKey *key, Part *d, ProxyMutex *m, Dir *del)
   return dir_delete(key, d, del);
 }
 
-inline int
+TS_INLINE int
 dir_insert_lock(CacheKey *key, Part *d, Dir *to_part, ProxyMutex *m)
 {
   EThread *thread = m->thread_holding;
@@ -822,7 +833,7 @@ dir_insert_lock(CacheKey *key, Part *d, Dir *to_part, ProxyMutex *m)
   return dir_insert(key, d, to_part);
 }
 
-inline int
+TS_INLINE int
 dir_overwrite_lock(CacheKey *key, Part *d, Dir *to_part, ProxyMutex *m, Dir *overwrite, bool must_overwrite = true)
 {
   EThread *thread = m->thread_holding;
@@ -832,7 +843,7 @@ dir_overwrite_lock(CacheKey *key, Part *d, Dir *to_part, ProxyMutex *m, Dir *ove
   return dir_overwrite(key, d, to_part, overwrite, must_overwrite);
 }
 
-void inline
+void TS_INLINE
 rand_CacheKey(CacheKey *next_key, ProxyMutex *mutex)
 {
   inku32 *b = (inku32 *) & next_key->b[0];
@@ -842,7 +853,7 @@ rand_CacheKey(CacheKey *next_key, ProxyMutex *mutex)
 }
 
 extern inku8 CacheKey_next_table[];
-void inline
+void TS_INLINE
 next_CacheKey(CacheKey *next_key, CacheKey *key)
 {
   inku8 *b = (inku8 *) next_key;
@@ -852,7 +863,7 @@ next_CacheKey(CacheKey *next_key, CacheKey *key)
     b[i] = CacheKey_next_table[(b[i - 1] + k[i]) & 0xFF];
 }
 extern inku8 CacheKey_prev_table[];
-void inline
+void TS_INLINE
 prev_CacheKey(CacheKey *prev_key, CacheKey *key)
 {
   inku8 *b = (inku8 *) prev_key;
@@ -862,7 +873,7 @@ prev_CacheKey(CacheKey *prev_key, CacheKey *key)
   b[0] = CacheKey_prev_table[k[0]];
 }
 
-inline unsigned int
+TS_INLINE unsigned int
 next_rand(unsigned int *p)
 {
   unsigned int seed = *p;
@@ -873,7 +884,7 @@ next_rand(unsigned int *p)
 
 extern ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator;
 
-inline CacheRemoveCont *
+TS_INLINE CacheRemoveCont *
 new_CacheRemoveCont()
 {
   CacheRemoveCont *cache_rm = cacheRemoveContAllocator.alloc();
@@ -883,14 +894,14 @@ new_CacheRemoveCont()
   return cache_rm;
 }
 
-inline void
+TS_INLINE void
 free_CacheRemoveCont(CacheRemoveCont *cache_rm)
 {
   cache_rm->mutex = NULL;
   cacheRemoveContAllocator.free(cache_rm);
 }
 
-inline int
+TS_INLINE int
 CacheRemoveCont::event_handler(int event, void *data)
 {
   (void) event;
@@ -980,7 +991,7 @@ extern int cache_config_vary_on_user_agent;
 
 
 #ifdef HTTP_CACHE
-inline Action *
+TS_INLINE Action *
 Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
                  CacheLookupHttpConfig *params, CacheFragType type)
 {
@@ -991,7 +1002,7 @@ Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
   return open_read(cont, &md5, request, params, type, (char *) hostname, len);
 }
 
-inline void
+TS_INLINE void
 Cache::generate_key(INK_MD5 *md5, URL *url, CacheHTTPHdr *request)
 {
 #ifdef BROKEN_HACK_FOR_VARY_ON_UA
@@ -1036,7 +1047,7 @@ Cache::generate_key(INK_MD5 *md5, URL *url, CacheHTTPHdr *request)
   url->MD5_get(md5);
 }
 
-inline Action *
+TS_INLINE Action *
 Cache::open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
                   CacheHTTPInfo *old_info, time_t pin_in_cache, CacheFragType type)
 {
@@ -1050,7 +1061,7 @@ Cache::open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
 }
 #endif
 
-inline unsigned int
+TS_INLINE unsigned int
 cache_hash(INK_MD5 & md5)
 {
   inku64 f = md5.fold();
@@ -1069,7 +1080,7 @@ cache_hash(INK_MD5 & md5)
 #include "P_ClusterInline.h"
 #endif
 
-inline Action *
+TS_INLINE Action *
 CacheProcessor::lookup(Continuation *cont, CacheKey *key, bool local_only,
                        CacheFragType frag_type, char *hostname, int host_len)
 {
@@ -1086,7 +1097,7 @@ CacheProcessor::lookup(Continuation *cont, CacheKey *key, bool local_only,
   return caches[frag_type]->lookup(cont, key, frag_type, hostname, host_len);
 }
 
-inline inkcoreapi Action *
+TS_INLINE inkcoreapi Action *
 CacheProcessor::open_read(Continuation *cont, CacheKey *key, CacheFragType frag_type, char *hostname, int host_len)
 {
 #ifdef CLUSTER_CACHE
@@ -1099,7 +1110,7 @@ CacheProcessor::open_read(Continuation *cont, CacheKey *key, CacheFragType frag_
   return caches[frag_type]->open_read(cont, key, frag_type, hostname, host_len);
 }
 
-inline Action *
+TS_INLINE Action *
 CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *key, CacheFragType frag_type,
                                  char *hostname, int host_len)
 {
@@ -1115,7 +1126,7 @@ CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *k
 }
 
 
-inline inkcoreapi Action *
+TS_INLINE inkcoreapi Action *
 CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type, 
                            int expected_size, int options, time_t pin_in_cache, 
                            char *hostname, int host_len)
@@ -1134,7 +1145,7 @@ CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag
   return caches[frag_type]->open_write(cont, key, frag_type, options, pin_in_cache, hostname, host_len);
 }
 
-inline Action *
+TS_INLINE Action *
 CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *key, 
                                   CacheFragType frag_type, int options, time_t pin_in_cache, 
                                   char *hostname, int host_len) 
@@ -1150,7 +1161,7 @@ CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *
   return NULL;
 }
 
-inline Action *
+TS_INLINE Action *
 CacheProcessor::remove(Continuation *cont, CacheKey *key, CacheFragType frag_type,
                        bool rm_user_agents, bool rm_link, char *hostname, int host_len)
 {
@@ -1166,14 +1177,14 @@ CacheProcessor::remove(Continuation *cont, CacheKey *key, CacheFragType frag_typ
   return caches[frag_type]->remove(cont, key, frag_type, rm_user_agents, rm_link, hostname, host_len);
 }
 
-inline Action *
+TS_INLINE Action *
 scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second = 2500)
 {
   return caches[CACHE_FRAG_TYPE_HTTP]->scan(cont, hostname, host_len, KB_per_second);
 }
 
 #ifdef HTTP_CACHE
-inline Action *
+TS_INLINE Action *
 CacheProcessor::lookup(Continuation *cont, URL *url, bool local_only, CacheFragType frag_type)
 {
   (void) local_only;
@@ -1185,7 +1196,7 @@ CacheProcessor::lookup(Continuation *cont, URL *url, bool local_only, CacheFragT
   return lookup(cont, &md5, local_only, frag_type, (char *) hostname, host_len);
 }
 
-inline Action *
+TS_INLINE Action *
 CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf,
                                  URL *url, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type)
 {
@@ -1199,7 +1210,7 @@ CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf,
   return caches[type]->open_read(cont, url, request, params, type);
 }
 
-inline Action *
+TS_INLINE Action *
 CacheProcessor::open_write_buffer(Continuation * cont, MIOBuffer * buf, URL * url,
                                   CacheHTTPHdr * request, CacheHTTPHdr * response, CacheFragType type)
 {
@@ -1217,7 +1228,7 @@ CacheProcessor::open_write_buffer(Continuation * cont, MIOBuffer * buf, URL * ur
 
 
 #ifdef CLUSTER_CACHE
-inline Action *
+TS_INLINE Action *
 CacheProcessor::open_read_internal(int opcode,
                                    Continuation *cont, MIOBuffer *buf,
                                    CacheURL *url,
@@ -1250,7 +1261,7 @@ CacheProcessor::open_read_internal(int opcode,
 #endif
 
 #ifdef CLUSTER_CACHE
-inline Action *
+TS_INLINE Action *
 CacheProcessor::link(Continuation *cont, CacheKey *from, CacheKey *to,
                      CacheFragType type, char *hostname, int host_len)
 {
@@ -1264,7 +1275,7 @@ CacheProcessor::link(Continuation *cont, CacheKey *from, CacheKey *to,
   return caches[type]->link(cont, from, to, type, hostname, host_len);
 }
 
-inline Action *
+TS_INLINE Action *
 CacheProcessor::deref(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
 {
   if (cache_clustering_enabled > 0) {
@@ -1277,19 +1288,19 @@ CacheProcessor::deref(Continuation *cont, CacheKey *key, CacheFragType type, cha
 }
 #endif
 
-inline Action *
+TS_INLINE Action *
 CacheProcessor::scan(Continuation *cont, char *hostname, int host_len, int KB_per_second)
 {
   return caches[CACHE_FRAG_TYPE_HTTP]->scan(cont, hostname, host_len, KB_per_second);
 }
 
-inline int
+TS_INLINE int
 CacheProcessor::IsCacheEnabled()
 {
   return CacheProcessor::initialized;
 }
 
-inline unsigned int
+TS_INLINE unsigned int
 CacheProcessor::IsCacheReady(CacheFragType type)
 {
   if (IsCacheEnabled() != CACHE_INITIALIZED)
@@ -1297,7 +1308,7 @@ CacheProcessor::IsCacheReady(CacheFragType type)
   return (cache_ready & type);
 }
 
-inline Cache *
+TS_INLINE Cache *
 local_cache()
 {
   return theCache;

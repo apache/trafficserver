@@ -1199,11 +1199,11 @@ private:
   MIOBufferAccessor & operator =(const MIOBufferAccessor &);
 };
 
-inline MIOBuffer * new_MIOBuffer_internal(
+TS_INLINE MIOBuffer * new_MIOBuffer_internal(
 #ifdef TRACK_BUFFER_USER
-                                               const char *loc,
+                                          const char *loc,
 #endif
-                                               ink64 size_index = default_large_iobuffer_size);
+                                          ink64 size_index = default_large_iobuffer_size);
 
 #ifdef TRACK_BUFFER_USER
 class MIOBuffer_tracker
@@ -1221,7 +1221,7 @@ public:
 };
 #endif
 
-inline MIOBuffer * new_empty_MIOBuffer_internal(
+TS_INLINE MIOBuffer * new_empty_MIOBuffer_internal(
 #ifdef TRACK_BUFFER_USER
                                                      const char *loc,
 #endif
@@ -1250,15 +1250,15 @@ public:
 #define new_MIOBuffer               new_MIOBuffer_internal
 #define new_empty_MIOBuffer         new_empty_MIOBuffer_internal
 #endif
-inline void free_MIOBuffer(MIOBuffer * mio);
+TS_INLINE void free_MIOBuffer(MIOBuffer * mio);
 //////////////////////////////////////////////////////////////////////
 
-inline IOBufferBlock * new_IOBufferBlock_internal(
+TS_INLINE IOBufferBlock * new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
                                                        const char *loc
 #endif
   );
-inline IOBufferBlock * new_IOBufferBlock_internal(
+TS_INLINE IOBufferBlock * new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
                                                        const char *loc,
 #endif
@@ -1292,7 +1292,7 @@ public:
 #endif
 ////////////////////////////////////////////////////////////
 
-inline IOBufferData *new_IOBufferData_internal(
+TS_INLINE IOBufferData *new_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
                                                     const char *location,
 #endif

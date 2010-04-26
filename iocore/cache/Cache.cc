@@ -25,20 +25,19 @@
 
 
 #include "P_Cache.h"
-#include "P_CacheTest.h"
 
 // Cache Inspector and State Pages
 #ifdef NON_MODULAR
+#include "P_CacheTest.h"
 #include "StatPages.h"
 #endif
 
 #ifdef HTTP_CACHE
 #include "HttpTransactCache.h"
-#endif
-
+#include "HttpSM.h"
+#include "HttpCacheSM.h"
 #include "InkAPIInternal.h"
-#include <HttpSM.h>
-#include <HttpCacheSM.h>
+#endif
 
 // Compilation Options
 
@@ -94,7 +93,9 @@ CacheProcessor cacheProcessor;
 Part **gpart = NULL;
 volatile int gnpart = 0;
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
+#ifdef NON_MODULAR
 ClassAllocator<NewCacheVC> newCacheVConnectionAllocator("newCacheVConnection");
+#endif
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
@@ -459,7 +460,9 @@ CacheProcessor::start(int)
 int
 CacheProcessor::start_internal(int flags)
 {
+#ifdef NON_MODULAR
   verify_cache_api();
+#endif
 
   start_internal_flags = flags;
   clear = !!(flags & PROCESSOR_RECONFIGURE) || auto_clear_flag;
@@ -1957,7 +1960,7 @@ Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostn
     return ACTION_RESULT_DONE;
 }
 
-#ifdef HTTP_CACHE
+#ifdef NON_MODULAR
 Action *
 Cache::lookup(Continuation *cont, CacheURL *url, CacheFragType type)
 {
@@ -2093,7 +2096,7 @@ Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type,
     return &c->_action;
 }
 
-#ifdef HTTP_CACHE
+#ifdef NON_MODULAR
 Action *
 Cache::remove(Continuation *cont, CacheURL *url, CacheFragType type)
 {
@@ -2718,7 +2721,7 @@ ink_cache_init(ModuleVersion v)
   }
 }
 
-
+#ifdef NON_MODULAR
 //----------------------------------------------------------------------------
 Action *
 CacheProcessor::open_read(Continuation *cont, URL *url, CacheHTTPHdr *request,
@@ -2836,3 +2839,5 @@ CacheProcessor::remove(Continuation *cont, URL *url, CacheFragType frag_type)
   }
   return caches[frag_type]->remove(cont, url, frag_type);
 }
+
+#endif

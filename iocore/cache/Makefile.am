@@ -16,18 +16,31 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+if STANDALONE_IOCORE
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/proxy \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/librecords \
+  -I$(top_srcdir)/libinktomi++ \
+  -DSYSCONFDIR=\"$(sysconfdir)\"
+
+ADD_SRC = 
+else
+AM_CPPFLAGS = \
+  $(iocore_include_dirs) \
+  -I$(top_srcdir)/librecords \
+  -I$(top_srcdir)/libinktomi++ \
+  -I$(top_srcdir)/proxy \
+  -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/http2 \
   -I$(top_srcdir)/proxy/http2/remap \
-  -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/preparse \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
-  -DSYSCONFDIR=\"$(sysconfdir)\"
+  -DSYSCONFDIR=\"$(sysconfdir)\" 
+
+ADD_SRC = CacheTest.cc P_CacheTest.h NewCacheVC.cc NewCacheVC.h
+endif
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
 
@@ -45,12 +58,9 @@ libinkcache_a_SOURCES = \
   CachePart.cc \
   CacheRead.cc \
   CacheWrite.cc \
-  CacheTest.cc \
   I_Cache.h \
   I_CacheDefs.h \
   I_Store.h \
-  NewCacheVC.cc \
-  NewCacheVC.h \
   P_Cache.h \
   P_CacheArray.h \
   P_CacheDir.h \
@@ -59,8 +69,9 @@ libinkcache_a_SOURCES = \
   P_CacheHttp.h \
   P_CacheInternal.h \
   P_CachePart.h \
-  P_CacheTest.h \
   P_RamCache.h \
   RamCache.cc \
-  Store.cc
+  Store.cc \
+  Inline.cc $(ADD_SRC)
+
 

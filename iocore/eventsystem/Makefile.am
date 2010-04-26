@@ -62,5 +62,6 @@ libinkevent_a_SOURCES = \
   Thread.cc \
   UnixEThread.cc \
   UnixEvent.cc \
-  UnixEventProcessor.cc
+  UnixEventProcessor.cc \
+  Inline.cc
 

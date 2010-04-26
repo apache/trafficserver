@@ -70,11 +70,10 @@ ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 
 HostDBCache
   hostDB;
-static
-  Queue <
-  HostDBContinuation >
-  remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 
+#ifdef NON_MODULAR
+static  Queue <HostDBContinuation > remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
+#endif
 
 static inline int
 corrupt_debugging_callout(HostDBInfo * e, RebuildMC & r)
@@ -652,7 +651,7 @@ HostDBProcessor::getby(Continuation * cont,
 {
   INK_MD5 md5;
   char *pServerLine = 0;
-  void *pDS = 0, *pSD = 0;
+  void *pDS = 0;
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
 
@@ -670,7 +669,7 @@ HostDBProcessor::getby(Continuation * cont,
     char *scan = hostname;
     for (; *scan != '\0' && (ParseRules::is_digit(*scan) || '.' == *scan); scan++);
     if ('\0' != *scan) {
-      pSD = (void *) SplitDNSConfig::acquire();
+      void *pSD = (void *) SplitDNSConfig::acquire();
       if (0 != pSD) {
         pDS = ((SplitDNS *) pSD)->getDNSRecord(hostname);
 
@@ -870,8 +869,7 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
   }
 
   INK_MD5 md5;
-  void *pDS = 0, *pSD = 0;
-
+  void *pDS = 0;
   HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
 
   if (!hostdb_enable || !*hostname) {
@@ -888,7 +886,7 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
     char *pServerLine = 0;
     for (; *scan != '\0' && (ParseRules::is_digit(*scan) || '.' == *scan); scan++);
     if ('\0' != *scan) {
-      pSD = (void *) SplitDNSConfig::acquire();
+      void *pSD = (void *) SplitDNSConfig::acquire();
       if (0 != pSD) {
         pDS = ((SplitDNS *) pSD)->getDNSRecord(hostname);
 

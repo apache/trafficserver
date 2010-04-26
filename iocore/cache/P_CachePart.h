@@ -328,96 +328,96 @@ extern unsigned short *part_hash_table;
 
 // inline Functions
 
-inline int
+TS_INLINE int
 part_headerlen(Part *d) {
   return ROUND_TO_BLOCK(sizeof(PartHeaderFooter) + sizeof(inku16) * (d->segments-1));
 }
-inline int
+TS_INLINE int
 part_dirlen(Part * d)
 {
   return ROUND_TO_BLOCK(d->buckets * DIR_DEPTH * d->segments * SIZEOF_DIR) + 
     part_headerlen(d) + ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
 }
-inline int
+TS_INLINE int
 part_direntries(Part * d)
 {
   return d->buckets * DIR_DEPTH * d->segments;
 }
-inline int
+TS_INLINE int
 part_out_of_phase_valid(Part * d, Dir * e)
 {
   return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start) / INK_BLOCK_SIZE));
 }
-inline int
+TS_INLINE int
 part_out_of_phase_agg_valid(Part * d, Dir * e)
 {
   return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start + AGG_SIZE) / INK_BLOCK_SIZE));
 }
-inline int
+TS_INLINE int
 part_out_of_phase_write_valid(Part * d, Dir * e)
 {
   return (dir_offset(e) - 1 >= ((d->header->write_pos - d->start) / INK_BLOCK_SIZE));
 }
-inline int
+TS_INLINE int
 part_in_phase_valid(Part * d, Dir * e)
 {
   return (dir_offset(e) - 1 < ((d->header->write_pos + d->agg_buf_pos - d->start) / INK_BLOCK_SIZE));
 }
-inline ink_off_t
+TS_INLINE ink_off_t
 part_offset(Part * d, Dir * e)
 {
   return d->start + (ink_off_t) dir_offset(e) * INK_BLOCK_SIZE - INK_BLOCK_SIZE;
 }
-inline ink_off_t
+TS_INLINE ink_off_t
 offset_to_part_offset(Part * d, ink_off_t pos)
 {
   return ((pos - d->start + INK_BLOCK_SIZE) / INK_BLOCK_SIZE);
 }
-inline ink_off_t
+TS_INLINE ink_off_t
 part_offset_to_offset(Part * d, ink_off_t pos)
 {
   return d->start + pos * INK_BLOCK_SIZE - INK_BLOCK_SIZE;
 }
-inline Dir *
+TS_INLINE Dir *
 part_dir_segment(Part * d, int s)
 {
   return (Dir *) (((char *) d->dir) + (s * d->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
-inline int
+TS_INLINE int
 part_in_phase_agg_buf_valid(Part * d, Dir * e)
 {
   return (part_offset(d, e) >= d->header->write_pos && part_offset(d, e) < (d->header->write_pos + d->agg_buf_pos));
 }
-inline inku32
+TS_INLINE inku32
 Doc::prefix_len()
 {
   return sizeofDoc + hlen + flen;
 }
-inline inku32
+TS_INLINE inku32
 Doc::data_len()
 {
   return len - sizeofDoc - hlen - flen;
 }
-inline int
+TS_INLINE int
 Doc::single_fragment()
 {
   return (total_len && (data_len() == total_len));
 }
-inline inku32
+TS_INLINE inku32
 Doc::nfrags() { 
   return flen / sizeof(Frag);
 }
-inline Frag *
+TS_INLINE Frag *
 Doc::frags()
 {
   return (Frag*)(((char *) this) + sizeofDoc);
 }
-inline char *
+TS_INLINE char *
 Doc::hdr()
 {
   return ((char *) this) + sizeofDoc + flen;
 }
-inline char *
+TS_INLINE char *
 Doc::data()
 {
   return ((char *) this) + sizeofDoc + flen + hlen;
@@ -428,7 +428,7 @@ int part_init(Part * d, char *s, ink_off_t blocks, ink_off_t skip, bool clear);
 
 // inline Functions
 
-inline EvacuationBlock *
+TS_INLINE EvacuationBlock *
 evacuation_block_exists(Dir * dir, Part * p)
 {
   EvacuationBlock *b = p->evacuate[dir_evac_bucket(dir)].head;
@@ -438,7 +438,7 @@ evacuation_block_exists(Dir * dir, Part * p)
   return 0;
 }
 
-inline void
+TS_INLINE void
 Part::cancel_trigger()
 {
   if (trigger) {
@@ -447,7 +447,7 @@ Part::cancel_trigger()
   }
 }
 
-inline EvacuationBlock *
+TS_INLINE EvacuationBlock *
 new_EvacuationBlock(EThread * t)
 {
   EvacuationBlock *b = THREAD_ALLOC(evacuationBlockAllocator, t);
@@ -458,7 +458,7 @@ new_EvacuationBlock(EThread * t)
   return b;
 }
 
-inline void
+TS_INLINE void
 free_EvacuationBlock(EvacuationBlock * b, EThread * t)
 {
   EvacuationKey *e = b->evac_frags.link.next;
@@ -470,13 +470,13 @@ free_EvacuationBlock(EvacuationBlock * b, EThread * t)
   THREAD_FREE(b, evacuationBlockAllocator, t);
 }
 
-inline OpenDirEntry *
+TS_INLINE OpenDirEntry *
 Part::open_read(INK_MD5 * key)
 {
   return open_dir.open_read(key);
 }
 
-inline int
+TS_INLINE int
 Part::within_hit_evacuate_window(Dir * xdir)
 {
   ink_off_t oft = dir_offset(xdir) - 1;

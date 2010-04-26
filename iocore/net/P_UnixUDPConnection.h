@@ -61,7 +61,7 @@ private:
   virtual void UDPConnection_is_abstract() {};
 };
 
-inline
+TS_INLINE
 UnixUDPConnection::UnixUDPConnection(int fd)
   : onCallbackQueue(0)
   , callbackAction(NULL)
@@ -74,7 +74,7 @@ UnixUDPConnection::UnixUDPConnection(int fd)
   SET_HANDLER(&UnixUDPConnection::callbackHandler);
 }
 
-inline void
+TS_INLINE void
 UnixUDPConnection::init(int fd)
 {
   fd = fd;
@@ -88,19 +88,19 @@ UnixUDPConnection::init(int fd)
   SET_HANDLER(&UnixUDPConnection::callbackHandler);
 }
 
-inline void
+TS_INLINE void
 UnixUDPConnection::setEthread(EThread * e)
 {
   ethread = e;
 }
 
-inline void
+TS_INLINE void
 UnixUDPConnection::errorAndDie(int e)
 {
   m_errno = e;
 }
 
-inline Action *
+TS_INLINE Action *
 UDPConnection::recv(Continuation * c)
 {
   UnixUDPConnection *p = (UnixUDPConnection *) this;
@@ -113,7 +113,7 @@ UDPConnection::recv(Continuation * c)
 }
 
 
-inline UDPConnection *
+TS_INLINE UDPConnection *
 new_UDPConnection(int fd)
 {
   return (fd >= 0) ? NEW(new UnixUDPConnection(fd)) : 0;

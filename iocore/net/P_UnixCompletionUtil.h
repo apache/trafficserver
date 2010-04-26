@@ -32,74 +32,74 @@
 // passed into and back from the I/O core.
 #include "P_UDPIOEvent.h"
 
-inline Event *
+TS_INLINE Event *
 completionUtil::create()
 {
   UDPIOEvent *u = UDPIOEventAllocator.alloc();
   return u;
 };
-inline void
+TS_INLINE void
 completionUtil::destroy(Event * e)
 {
   ink_assert(e != NULL);
   UDPIOEvent *u = (UDPIOEvent *) e;
   UDPIOEvent::free(u);
 };
-inline void
+TS_INLINE void
 completionUtil::setThread(Event * e, EThread * t)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;
   u->ethread = t;
 }
-inline void
+TS_INLINE void
 completionUtil::setContinuation(Event * e, Continuation * c)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;
   *(Action *) u = c;
 }
-inline void *
+TS_INLINE void *
 completionUtil::getHandle(Event * e)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;
   return u->getHandle();
 }
-inline void
+TS_INLINE void
 completionUtil::setHandle(Event * e, void *handle)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;
   u->setHandle(handle);
 }
-inline void
+TS_INLINE void
 completionUtil::setInfo(Event * e, int fd, IOBufferBlock * buf, int actual, int errno_)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;
   u->setInfo(fd, buf, actual, errno_);
 }
-inline void
+TS_INLINE void
 completionUtil::setInfo(Event * e, int fd, struct msghdr *msg, int actual, int errno_)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;
   u->setInfo(fd, msg, actual, errno_);
 }
-inline int
+TS_INLINE int
 completionUtil::getBytesTransferred(Event * e)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;
   return u->getBytesTransferred();
 }
-inline IOBufferBlock *
+TS_INLINE IOBufferBlock *
 completionUtil::getIOBufferBlock(Event * e)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;
   return u->getIOBufferBlock();
 }
-inline Continuation *
+TS_INLINE Continuation *
 completionUtil::getContinuation(Event * e)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;
   return u->getContinuation();
 }
-inline int
+TS_INLINE int
 completionUtil::getError(Event * e)
 {
   UDPIOEvent *u = (UDPIOEvent *) e;

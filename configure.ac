@@ -203,6 +203,7 @@ AS_IF([test "x$enable_standalone_iocore" = "xyes"],
    AC_SUBST([ink_with_modules_def],["-DREC_BUILD_STAND_ALONE"])
    AC_SUBST([ink_with_modules_local],[""])
    AC_SUBST([ink_with_modules_process],[""])
+   AC_SUBST([hdr_dirs],"proxy/hdrs")
   ],
   [AC_DEFINE([FIXME_NONMODULAR])
    AC_DEFINE([SPLIT_DNS])
@@ -211,9 +212,9 @@ AS_IF([test "x$enable_standalone_iocore" = "xyes"],
    AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT2"])
    AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
    AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
-   AC_DEFINE([MODULARIZED])
   ]
 )
+AC_DEFINE([MODULARIZED])
 AM_CONDITIONAL([STANDALONE_IOCORE], [test "x$enable_standalone_iocore" = "xyes"])
 
 #
@@ -876,7 +877,6 @@ iocore_include_dirs="-I\$(top_srcdir)/librecords \
  -I\$(top_srcdir)/iocore/dns \
  -I\$(top_srcdir)/libev"
 
-AC_DEFINE([HTTP_CACHE])
 
 # Testing Framework suffix generation hack
 TFW_PACKAGE_SUFFIX=$os_type

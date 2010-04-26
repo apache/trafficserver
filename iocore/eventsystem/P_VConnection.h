@@ -26,7 +26,7 @@
 #define P_VConnection_h
 #include "I_EventSystem.h"
 
-inline const char *
+TS_INLINE const char *
 get_vc_event_name(int event)
 {
   switch (event) {
@@ -56,7 +56,7 @@ get_vc_event_name(int event)
 }
 
 
-inline
+TS_INLINE
 VConnection::VConnection(ProxyMutex * aMutex)
   :
 Continuation(aMutex),
@@ -65,7 +65,7 @@ lerrno(0)
   SET_HANDLER(0);
 }
 
-inline
+TS_INLINE
 VConnection::~
 VConnection()
 {
@@ -83,7 +83,7 @@ VConnection()
 //
 //////////////////////////////////////////////////////////////////////////////
 
-static inline VIO *
+static TS_INLINE VIO *
 vc_do_io_write(VConnection * vc, Continuation * cont, ink64 nbytes, MIOBuffer * buf, ink64 offset)
 {
   IOBufferReader *reader = buf->alloc_reader();
@@ -94,7 +94,7 @@ vc_do_io_write(VConnection * vc, Continuation * cont, ink64 nbytes, MIOBuffer * 
   return vc->do_io_write(cont, nbytes, reader, true);
 }
 
-inline VIO *
+TS_INLINE VIO *
 VConnection::do_io(int op, Continuation * c, ink64 nbytes, MIOBuffer * cb, int data)
 {
   switch (op) {
@@ -122,15 +122,15 @@ VConnection::do_io(int op, Continuation * c, ink64 nbytes, MIOBuffer * cb, int d
   return NULL;
 }
 
-inline void
+TS_INLINE void
 VConnection::set_continuation(VIO *, Continuation *)
 {
 }
-inline void
+TS_INLINE void
 VConnection::reenable(VIO *)
 {
 }
-inline void
+TS_INLINE void
 VConnection::reenable_re(VIO * vio)
 {
   reenable(vio);

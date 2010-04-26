@@ -88,7 +88,7 @@ struct CacheHTTPInfoVector
   Ptr<RefCountObj> vector_buf;
 };
 
-inline CacheHTTPInfo *
+TS_INLINE CacheHTTPInfo *
 CacheHTTPInfoVector::get(int idx)
 {
   ink_assert(idx >= 0);

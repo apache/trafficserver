@@ -25,11 +25,13 @@
 #define __NEWCACHEVC_H__
 
 #include "inktomi++.h"
-#include "api/include/ts.h"
-#include "HTTP.h"
-#include "I_Cache.h"
+//#include "api/include/ts.h"
+//#include "I_Cache.h"
 #include "P_Cache.h"
+#ifdef HTTP_CACHE
+#include "HTTP.h"
 #include "P_CacheHttp.h"
+#endif
 
 class APIHook;
 class HttpCacheSM;
@@ -120,6 +122,11 @@ public:
     ink_assert(!"implemented");
     return -1;
   }
+  int get_single_data(void **ptr, int *len)
+  {
+    ink_assert(!"implemented");
+    return -1;
+  }
   int get_object_size()
   {
     ink_assert(!"implemented");
@@ -190,7 +197,7 @@ public:
   int handleRead(int event, Event * e);
   int handleWrite(int event, Event * e);
   int dead(int event, Event * e);
-  bool setRangeAndSize(INKU64 size);
+  bool setRangeAndSize(inku64 size);
   void doRangeSetup();
   void parseRange();
   void calculateCl();

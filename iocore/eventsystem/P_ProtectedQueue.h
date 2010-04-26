@@ -33,7 +33,7 @@
 #include "I_EventSystem.h"
 
 
-inline
+TS_INLINE
 ProtectedQueue::ProtectedQueue():write_pipe_fd(-1),read_pipe_fd(-1)
 #if defined(USE_OLD_EVENTFD)
 :write_pipe_fd(-1),read_pipe_fd(-1)
@@ -45,7 +45,7 @@ ProtectedQueue::ProtectedQueue():write_pipe_fd(-1),read_pipe_fd(-1)
   ink_cond_init(&might_have_data);
 }
 
-inline void
+TS_INLINE void
 ProtectedQueue::signal()
 {
   // Need to get the lock before you can signal the thread
@@ -66,7 +66,7 @@ ProtectedQueue::signal()
 #endif
 }
 
-inline int
+TS_INLINE int
 ProtectedQueue::try_signal()
 {
   // Need to get the lock before you can signal the thread
@@ -94,7 +94,7 @@ ProtectedQueue::try_signal()
 }
 
 // Called from the same thread (don't need to signal)
-inline void
+TS_INLINE void
 ProtectedQueue::enqueue_local(Event * e)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
@@ -102,7 +102,7 @@ ProtectedQueue::enqueue_local(Event * e)
   localQueue.enqueue(e);
 }
 
-inline void
+TS_INLINE void
 ProtectedQueue::remove(Event * e)
 {
   ink_assert(e->in_the_prot_queue);
@@ -111,7 +111,7 @@ ProtectedQueue::remove(Event * e)
   e->in_the_prot_queue = 0;
 }
 
-inline Event *
+TS_INLINE Event *
 ProtectedQueue::dequeue_local()
 {
   Event *e = localQueue.dequeue();
@@ -123,19 +123,19 @@ ProtectedQueue::dequeue_local()
 }
 
 #if defined(USE_OLD_EVENTFD)
-INK_INLINE void 
+TS_INLINE void 
 ProtectedQueue::setReadFd(int fd)
 {
   read_pipe_fd = fd;
 }
 
-INK_INLINE void 
+TS_INLINE void 
 ProtectedQueue::setWriteFd(int fd)
 {
   write_pipe_fd = fd;
 }
 
-INK_INLINE int 
+TS_INLINE int 
 ProtectedQueue::getReadFd()
 {
   int pfd[2] = {-1,-1};

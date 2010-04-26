@@ -41,6 +41,10 @@
 #ifndef __I_NET_H_
 #define __I_NET_H_
 
+#ifndef TS_INLINE
+#define TS_INLINE
+#endif
+
 #include "I_Version.h"
 #include "I_EventSystem.h"
 #include <netinet/in.h>

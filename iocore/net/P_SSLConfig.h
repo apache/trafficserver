@@ -174,7 +174,7 @@ extern SslConfig sslTerminationConfig;
 
 #include "Diags.h"
 
-inline void
+TS_INLINE void
 DebugBufferPrint(char *tag, char *buff, int blen, char *message = NULL)
 {
   (void) tag;

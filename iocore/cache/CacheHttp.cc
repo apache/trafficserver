@@ -29,10 +29,10 @@
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-static CacheHTTPInfo default_http_info;
 static vec_info default_vec_info;
 
 #ifdef HTTP_CACHE
+static CacheHTTPInfo default_http_info;
 
 CacheHTTPInfoVector::CacheHTTPInfoVector()
 :magic(NULL), data(&default_vec_info, 4), xcount(0)
@@ -311,7 +311,7 @@ CacheHTTPInfoVector::clear(bool destroy)
   -------------------------------------------------------------------------*/
 
 void
-CacheHTTPInfoVector::print(char *buffer, bool temps)
+CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
 {
   ink_assert(0);
 }
@@ -345,7 +345,7 @@ CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj * block_
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-int
+inku32
 CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * block_ptr)
 {
   ink_assert(0);

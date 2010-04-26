@@ -25,5 +25,5 @@ DEFS += @IOCORE_MODULARIZED_DEFS@
 
 noinst_LIBRARIES = libinkaio.a
 
-libinkaio_a_SOURCES = AIO.cc I_AIO.h P_AIO.h
+libinkaio_a_SOURCES = AIO.cc I_AIO.h P_AIO.h Inline.cc
 

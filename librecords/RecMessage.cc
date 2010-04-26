@@ -51,7 +51,7 @@ send_thr(void *data)
 {
   int msg_size;
   RecMessageHdr *msg_hdr;
-  RecHandle h_pipe = (RecHandle) data;
+  RecHandle h_pipe = (RecHandle)(intptr_t)data;
   while (true) {
     // dequeue will block if there's nothing in the queue
     msg_hdr = (RecMessageHdr *) dequeue(g_send_llq);
@@ -74,7 +74,7 @@ recv_thr(void *data)
   int msg_size;
   RecMessageHdr msg_hdr;
   RecMessage *msg;
-  RecHandle h_pipe = (RecHandle) data;
+  RecHandle h_pipe = (RecHandle)(intptr_t)data;
   while (true) {
     if (RecPipeRead(h_pipe, (char *) (&msg_hdr), sizeof(RecMessageHdr)) == REC_ERR_FAIL) {
       ink_release_assert("Pipe read failed");
@@ -154,6 +154,11 @@ RecMessageInit(RecModeT mode_type)
     break;
   case RECM_SERVER:
     ink_thread_create(accept_thr, NULL);
+    break;
+  case RECM_NULL:
+  case RECM_STAND_ALONE:
+  default:
+    ink_debug_assert(!"Unexpected RecModeT type");
     break;
   }
 

@@ -598,6 +598,7 @@ struct ClusterVConnection:ClusterVConnectionBase
   }
   virtual int get_header(void **ptr, int *len);
   virtual int set_header(void *ptr, int len);
+  virtual int get_single_data(void **ptr, int *len);
 };
 
 //

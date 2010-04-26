@@ -24,12 +24,19 @@
 #ifndef _I_CACHE_H__
 #define _I_CACHE_H__
 
+#ifndef TS_INLINE
+#define TS_INLINE
+#endif
+
 #include "inktomi++.h"
 #include "I_EventSystem.h"
 #include "I_AIO.h"
 #include "I_CacheDefs.h"
 #include "I_Store.h"
+
+#ifdef HTTP_CACHE
 #include "../../proxy/http2/Hash_Table.h"       //Added to get the scope of hash table - YTS Team, yamsat
+#endif
 
 #define CACHE_MODULE_MAJOR_VERSION 1
 #define CACHE_MODULE_MINOR_VERSION 0
@@ -44,9 +51,9 @@
 
 #define SCAN_KB_PER_SECOND      8192 // 1TB/8MB = 131072 = 36 HOURS to scan a TB
 
-class CacheLookupHttpConfig;
 class CacheVC;
 #ifdef HTTP_CACHE
+class CacheLookupHttpConfig;
 class URL;
 class HTTPHdr;
 class HTTPInfo;
@@ -134,7 +141,9 @@ struct CacheProcessor:public Processor
   static int fix;
   static int start_internal_flags;
   static int auto_clear_flag;
+#ifdef HTTP_CACHE
   HashTable hashtable_tracker;  //Object declaration for hash table  - YTS Team, yamsat
+#endif
 };
 
 struct CacheVConnection:public VConnection
@@ -153,6 +162,7 @@ struct CacheVConnection:public VConnection
 
   virtual int get_header(void **ptr, int *len) = 0;
   virtual int set_header(void *ptr, int len) = 0;
+  virtual int get_single_data(void **ptr, int *len) = 0;
 
 #ifdef HTTP_CACHE
   virtual void set_http_info(CacheHTTPInfo *info) = 0;

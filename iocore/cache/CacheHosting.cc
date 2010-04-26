@@ -842,7 +842,7 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
             if (state == INK_ERROR_PARTITION || *tmp) {
               snprintf(errBuf, sizeof(errBuf),
                        "Total partition size added upto more than 100 percent,No partitions created");
-              SignalError(errBuf, manager_alarmed);
+              IOCORE_SignalError(errBuf, manager_alarmed);
               break;
             }
           }
@@ -866,7 +866,7 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
       //added by YTS Team, yamsat for bug id 59632
       if (state == INK_ERROR_PARTITION || *tmp) {
         snprintf(errBuf, sizeof(errBuf), "Total partition size added upto more than 100 percent,No partitions created");
-        SignalError(errBuf, manager_alarmed);
+        IOCORE_SignalError(errBuf, manager_alarmed);
         break;
       }
       // ends here

@@ -58,7 +58,7 @@ template<class T> struct CacheArray
 };
 
 
-template<class T> inline CacheArray<T>::CacheArray(const T * val, int initial_size)
+template<class T> TS_INLINE CacheArray<T>::CacheArray(const T * val, int initial_size)
   :
 data(NULL),
 default_val(val),
@@ -75,7 +75,7 @@ pos(-1)
   }
 }
 
-template<class T> inline CacheArray<T>::~CacheArray()
+template<class T> TS_INLINE CacheArray<T>::~CacheArray()
 {
   if (data) {
     if (data != fast_data) {
@@ -84,29 +84,23 @@ template<class T> inline CacheArray<T>::~CacheArray()
   }
 }
 
-template<class T> inline CacheArray<T>::operator  const T *()
+template<class T> TS_INLINE CacheArray<T>::operator  const T *()
 const
 {
   return
     data;
 }
 
-template <
-  class
-  T >
-  inline
-  CacheArray <
-  T >::operator
-T * ()
+template <class T> TS_INLINE CacheArray <T>::operator T *()
 {
   return data;
 }
 
-template<class T> inline T & CacheArray<T>::operator [](int idx) {
+template<class T> TS_INLINE T & CacheArray<T>::operator [](int idx) {
   return data[idx];
 }
 
-template<class T> inline T & CacheArray<T>::operator ()(int idx) {
+template<class T> TS_INLINE T & CacheArray<T>::operator ()(int idx) {
   if (idx >= size) {
     int new_size;
 
@@ -130,7 +124,7 @@ template<class T> inline T & CacheArray<T>::operator ()(int idx) {
   return data[idx];
 }
 
-template<class T> inline T * CacheArray<T>::detach()
+template<class T> TS_INLINE T * CacheArray<T>::detach()
 {
   T *d;
 
@@ -140,12 +134,12 @@ template<class T> inline T * CacheArray<T>::detach()
   return d;
 }
 
-template<class T> inline int CacheArray<T>::length()
+template<class T> TS_INLINE int CacheArray<T>::length()
 {
   return pos + 1;
 }
 
-template<class T> inline void CacheArray<T>::clear()
+template<class T> TS_INLINE void CacheArray<T>::clear()
 {
   if (data) {
     if (data != fast_data) {
@@ -158,7 +152,7 @@ template<class T> inline void CacheArray<T>::clear()
   pos = -1;
 }
 
-template<class T> inline void CacheArray<T>::resize(int new_size)
+template<class T> TS_INLINE void CacheArray<T>::resize(int new_size)
 {
   if (new_size > size) {
     T *new_data;

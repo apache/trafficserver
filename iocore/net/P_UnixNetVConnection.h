@@ -41,7 +41,7 @@ class UnixNetVConnection;
 class NetHandler;
 class PollDescriptor;
 
-inline void
+TS_INLINE void
 NetVCOptions::reset()
 {
   local_port = 0;
@@ -56,7 +56,7 @@ NetVCOptions::reset()
   etype = ET_NET;
 }
 
-inline void
+TS_INLINE void
 NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags)
 {
   socket_recv_bufsize = _recv_bufsize;
@@ -249,7 +249,7 @@ extern ClassAllocator<UnixNetVConnection> netVCAllocator;
 typedef int (UnixNetVConnection::*NetVConnHandler) (int, void *);
 
 
-inline void
+TS_INLINE void
 UnixNetVConnection::set_remote_addr()
 {
   remote_addr.sin_family = con.sa.sin_family;
@@ -257,26 +257,26 @@ UnixNetVConnection::set_remote_addr()
   remote_addr.sin_addr.s_addr = ip;
 }
 
-inline void
+TS_INLINE void
 UnixNetVConnection::set_local_addr()
 {
   int local_sa_size = sizeof(local_addr);
   safe_getsockname(con.fd, (sockaddr *) & local_addr, &local_sa_size);
 }
 
-inline ink_hrtime
+TS_INLINE ink_hrtime
 UnixNetVConnection::get_active_timeout()
 {
   return active_timeout_in;
 }
 
-inline ink_hrtime
+TS_INLINE ink_hrtime
 UnixNetVConnection::get_inactivity_timeout()
 {
   return inactivity_timeout_in;
 }
 
-inline void
+TS_INLINE void
 UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
 {
   inactivity_timeout_in = timeout;
@@ -299,7 +299,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
 #endif
 }
 
-inline void
+TS_INLINE void
 UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
 {
   active_timeout_in = timeout;
@@ -318,7 +318,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
     active_timeout = 0;
 }
 
-inline void
+TS_INLINE void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
   inactivity_timeout_in = 0;
@@ -332,7 +332,7 @@ UnixNetVConnection::cancel_inactivity_timeout()
 #endif
 }
 
-inline void
+TS_INLINE void
 UnixNetVConnection::cancel_active_timeout()
 {
   if (active_timeout) {
@@ -342,7 +342,7 @@ UnixNetVConnection::cancel_active_timeout()
   }
 }
 
-inline
+TS_INLINE
 UnixNetVConnection::~
 UnixNetVConnection()
 {

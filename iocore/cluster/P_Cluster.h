@@ -24,15 +24,22 @@
 #ifndef _P_CLUSTER_H__
 #define _P_CLUSTER_H__
 
+#ifndef INLINE_CC
+#undef  TS_INLINE
+#define TS_INLINE inline
+#endif
+
 #include "inktomi++.h"
 #include "P_EventSystem.h"
 #include "I_RecProcess.h"
 #include "P_Net.h"
 #include "P_Cache.h"
+
+#ifdef HTTP_CACHE
 #include "MIME.h"
 #include "HTTP.h"
 // #include "HttpTransactCache.h"
-
+#endif
 
 #include "P_ClusterMachine.h"
 #include "P_ClusterCache.h"

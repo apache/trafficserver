@@ -17,11 +17,7 @@
 #  limitations under the License.
 
 
-if STANDALONE_IOCORE
-SUBDIRS = congest dns_cache http2 hdrs logging mgmt2 config stats hdrs
-else
 SUBDIRS = congest dns_cache http2 hdrs logging mgmt2 config stats
-endif
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \

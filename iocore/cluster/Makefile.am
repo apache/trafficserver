@@ -54,5 +54,6 @@ libinkcluster_a_SOURCES = \
   P_ClusterLib.h \
   P_ClusterLoadMonitor.h \
   P_ClusterMachine.h \
-  P_TimeTrace.h
+  P_TimeTrace.h \
+  Inline.cc
 

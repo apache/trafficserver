@@ -16,18 +16,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+if STANDALONE_IOCORE
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/proxy/mgmt2/snmp \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
-  -I$(top_srcdir)/proxy/mgmt2/api2/include \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
+  -I$(top_srcdir)/libinktomi++ \
+  -I$(top_srcdir)/librecords 
+else
+AM_CPPFLAGS = \
+  $(iocore_include_dirs) \
+  -I$(top_srcdir)/libinktomi++ \
+  -I$(top_srcdir)/librecords \
+  -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/mgmt2/preparse \
-  -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/http2 \
   -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/proxy
+  -I$(top_srcdir)/proxy/http2 \
+  -I$(top_srcdir)/proxy/mgmt2 \
+  -I$(top_srcdir)/proxy/mgmt2/utils
+endif
+
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
 
@@ -41,5 +47,6 @@ libinkhostdb_a_SOURCES = \
   MultiCache.cc \
   P_HostDB.h \
   P_HostDBProcessor.h \
-  P_MultiCache.h
+  P_MultiCache.h \
+  Inline.cc
 

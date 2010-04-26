@@ -293,7 +293,7 @@ struct DNSHandler:Continuation
 };
 
 
-inline DNSHandler::DNSHandler()
+TS_INLINE DNSHandler::DNSHandler()
  :Continuation(NULL),
   ip(0),
   port(0),

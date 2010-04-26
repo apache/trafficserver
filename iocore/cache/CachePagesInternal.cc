@@ -22,9 +22,9 @@
  */
 
 #include "P_Cache.h"
-#include "Show.h"
 
 #ifdef NON_MODULAR
+#include "Show.h"
 
 struct ShowCacheInternal:ShowCont
 {

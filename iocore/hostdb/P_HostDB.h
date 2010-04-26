@@ -31,6 +31,11 @@
 #ifndef _P_HostDB_h_
 #define _P_HostDB_h_
 
+#ifndef INLINE_CC
+#undef  TS_INLINE
+#define TS_INLINE inline
+#endif
+
 #include "inktomi++.h"
 
 #ifdef SPLIT_DNS
@@ -39,6 +44,8 @@
 #endif
 
 #include "P_EventSystem.h"
+
+#include "I_HostDB.h"
 
 // HostDB files
 #include "I_HostDBProcessor.h"

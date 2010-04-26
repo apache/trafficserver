@@ -61,11 +61,6 @@ extern char *recs_conf;
 
 // Root of Traffic Server
 extern char *ts_base_dir;
-extern char system_root_dir[];
-extern char system_local_state_dir[];
-extern char system_config_directory[];
-extern char system_log_dir[PATH_NAME_MAX + 1];
-
 
 // Global variable to replace ifdef MGMT_LAUNCH_PROXY so that
 // we can turn on/off proxy launch at runtime to facilitate

@@ -33,14 +33,7 @@
 
 #include "I_HostDBProcessor.h"
 
-/*
-#include "inktomi++.h"
-#include "P_EventSystem.h"
-#include "P_MultiCache.h"
-#include "P_Cluster.h"
-#include "HTTP.h"
-#include "P_DNS.h"
-*/
+
 #define HOSTDB_CLIENT_IP_HASH(_client_ip,_ip) \
 (((_client_ip >> 16)^_client_ip^_ip^(_ip>>16))&0xFFFF)
 
