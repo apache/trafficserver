@@ -94,7 +94,7 @@ SessionBucket::session_handler(int event, void *data)
         HttpConfig::release(http_config_params);
 
         if( connection_count_below_min ) {
-          Debug("http_ss", "[%b64d] [session_bucket] session received io notice [%s], "
+          Debug("http_ss", "[%lld] [session_bucket] session received io notice [%s], "
                 "reseting timeout to maintain minimum number of connections", s->con_id,
                 HttpDebugNames::get_event_name(event));
           s->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(
