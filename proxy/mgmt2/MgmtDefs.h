@@ -72,7 +72,7 @@ typedef void *(*MgmtCallback) (void *opaque_cb_data, char *data_raw, int data_le
 /* Structs used in Average Statistics calculations */
 struct StatTwoIntSamples
 {
-  char *lm_record_name;
+  const char *lm_record_name;
   ink_hrtime previous_time;
   ink_hrtime current_time;
   MgmtInt previous_value;
@@ -90,7 +90,7 @@ struct StatTwoIntSamples
 
 struct StatTwoFloatSamples
 {
-  char *lm_record_name;
+  const char *lm_record_name;
   ink_hrtime previous_time;
   ink_hrtime current_time;
   MgmtFloat previous_value;

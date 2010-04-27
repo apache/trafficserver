@@ -114,10 +114,10 @@ mgmt_readline(int soc, char *buf, int maxlen)
  *             -1  error
  */
 int
-mgmt_writeline(int soc, char *data, int nbytes)
+mgmt_writeline(int soc, const char *data, int nbytes)
 {
   int nleft, nwritten, n;
-  char *tmp = data;
+  const char *tmp = data;
 
   nleft = nbytes;
   while (nleft > 0) {

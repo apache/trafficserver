@@ -662,7 +662,7 @@ LogFile::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
   -------------------------------------------------------------------------*/
 
 int
-LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, char *path, char *alt_format)
+LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, char *alt_format)
 {
   ink_assert(buffer_header != NULL);
   ink_assert(fd >= 0);
@@ -858,7 +858,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
   -------------------------------------------------------------------------*/
 
 int
-LogFile::writeln(char *data, int len, int fd, char *path)
+LogFile::writeln(char *data, int len, int fd, const char *path)
 {
   int total_bytes = 0;
 

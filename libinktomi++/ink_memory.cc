@@ -450,7 +450,7 @@ ink_memzero(void *src_arg, int nbytes)
 
 
 void *
-ink_memcpy(void *s1, void *s2, int n)
+ink_memcpy(void *s1, const void *s2, int n)
 {
   register int i;
   register char *s, *d;

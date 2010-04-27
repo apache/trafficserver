@@ -193,7 +193,7 @@ HttpCompat::parse_tok_list(StrList * list, int trim_quotes, const char *string, 
 //////////////////////////////////////////////////////////////////////////////
 
 bool
-HttpCompat::lookup_param_in_strlist(StrList * param_list, char *param_name, char *param_val, int param_val_length)
+HttpCompat::lookup_param_in_strlist(StrList * param_list,  const char *param_name, char *param_val, int param_val_length)
 {
   int cnt;
   const char *s, *t;
@@ -264,7 +264,7 @@ HttpCompat::lookup_param_in_strlist(StrList * param_list, char *param_name, char
 
 bool
 HttpCompat::lookup_param_in_semicolon_string(const char *semicolon_string, int semicolon_string_len,
-                                             char *param_name, char *param_val, int param_val_length)
+                                             const char *param_name, char *param_val, int param_val_length)
 {
   StrList l;
   bool result;

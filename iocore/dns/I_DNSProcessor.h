@@ -83,18 +83,18 @@ struct DNSProcessor:Processor
   // NOTE: the HostEnt * block is freed when the function returns
   //
 
-  Action *gethostbyname(Continuation * cont, char *name, DNSHandler * adnsH = 0, bool dns_proxy = 0, int timeout = 0);
-  Action *getSRVbyname(Continuation * cont, char *name, DNSHandler * adnsH = 0, bool dns_proxy = 0, int timeout = 0);
-  Action *gethostbyname(Continuation * cont, char *name, int len, int timeout = 0);
+  Action *gethostbyname(Continuation * cont, const char *name, DNSHandler * adnsH = 0, bool dns_proxy = 0, int timeout = 0);
+  Action *getSRVbyname(Continuation * cont, const char *name, DNSHandler * adnsH = 0, bool dns_proxy = 0, int timeout = 0);
+  Action *gethostbyname(Continuation * cont, const char *name, int len, int timeout = 0);
   Action *gethostbyaddr(Continuation * cont, unsigned int ip, int timeout = 0);
   Action *getproxyresult(Continuation * cont, char *request, DNSHandler * adnsH = 0);
 
   // Blocking DNS lookup, user must free the return HostEnt *
   // NOTE: this HostEnt is big, please free these ASAP
   //
-  HostEnt *gethostbyname(char *name);
+  HostEnt *gethostbyname(const char *name);
   HostEnt *gethostbyaddr(unsigned int addr);
-  HostEnt *getSRVbyname(char *name);
+  HostEnt *getSRVbyname(const char *name);
 
   /** Free the returned HostEnt (only for Blocking versions). */
   void free_hostent(HostEnt * ent);
@@ -117,7 +117,7 @@ struct DNSProcessor:Processor
   EThread *thread;
   DNSHandler *handler;
   __ink_res_state l_res;
-  Action *getby(char *x, int len, int type, Continuation * cont,
+  Action *getby(const char *x, int len, int type, Continuation * cont,
                 HostEnt ** wait, DNSHandler * adnsH = NULL, bool proxy = false, bool proxy_cache = false, int timeout =
                 0);
   void dns_init();
@@ -135,7 +135,7 @@ extern DNSProcessor dnsProcessor;
 //
 
 inline HostEnt *
-DNSProcessor::getSRVbyname(char *name)
+DNSProcessor::getSRVbyname(const char *name)
 {
   HostEnt *ent = NULL;
 
@@ -145,21 +145,21 @@ DNSProcessor::getSRVbyname(char *name)
 
 
 inline Action *
-DNSProcessor::getSRVbyname(Continuation * cont, char *name, DNSHandler * adnsH, bool proxy, int timeout)
+DNSProcessor::getSRVbyname(Continuation * cont, const char *name, DNSHandler * adnsH, bool proxy, int timeout)
 {
   return getby(name, 0, T_SRV, cont, 0, adnsH, 0, proxy, timeout);
 }
 
 
 inline Action *
-DNSProcessor::gethostbyname(Continuation * cont, char *name, DNSHandler * adnsH, bool proxy, int timeout)
+DNSProcessor::gethostbyname(Continuation * cont, const char *name, DNSHandler * adnsH, bool proxy, int timeout)
 {
   return getby(name, 0, T_A, cont, 0, adnsH, 0, proxy, timeout);
 }
 
 
 inline Action *
-DNSProcessor::gethostbyname(Continuation * cont, char *name, int len, int timeout)
+DNSProcessor::gethostbyname(Continuation * cont, const char *name, int len, int timeout)
 {
   return getby(name, len, T_A, cont, 0, NULL, 0, false, timeout);
 }
@@ -173,7 +173,7 @@ DNSProcessor::gethostbyaddr(Continuation * cont, unsigned int addr, int timeout)
 
 
 inline HostEnt *
-DNSProcessor::gethostbyname(char *name)
+DNSProcessor::gethostbyname(const char *name)
 {
   HostEnt *ent = NULL;
   getby(name, 0, T_A, NULL, &ent);

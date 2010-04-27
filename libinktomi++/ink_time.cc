@@ -715,7 +715,7 @@ struct dtconv
  * once) when used in a mulithreaded program. Gack!
  */
 int
-cftime_replacement(char *s, int maxsize, char *format, const time_t * clock)
+cftime_replacement(char *s, int maxsize, const char *format, const time_t * clock)
 {
   struct tm tm;
 

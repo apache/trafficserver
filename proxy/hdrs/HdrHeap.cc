@@ -54,7 +54,7 @@ static HdrStrHeap str_proto_heap;
 void
 obj_describe(HdrHeapObjImpl * obj, bool recurse)
 {
-  static char *obj_names[] = { "EMPTY", "RAW", "URL", "HTTP_HEADER", "MIME_HEADER", "FIELD_BLOCK" };
+  static const char *obj_names[] = { "EMPTY", "RAW", "URL", "HTTP_HEADER", "MIME_HEADER", "FIELD_BLOCK" };
 
   Debug("http", "%s 0x%X: [T: %d, L: %4d, OBJFLAGS: %X]  ",
         obj_names[obj->m_type], obj, obj->m_type, obj->m_length, obj->m_obj_flags);

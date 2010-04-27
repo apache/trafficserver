@@ -1213,7 +1213,7 @@ typedef enum
  *       even if not successful connection (eg. client program is started
  *       before TM) then can still make API calls and will try connecting then
  */
-  inkapi INKError INKInit(char *socket_path);
+  inkapi INKError INKInit(const char *socket_path);
 
 /* INKTerminate: does clean up for API clients
  * Input: <none>
@@ -1317,7 +1317,7 @@ typedef enum
  * Output: INKError  
  * Note: Uses certificate in ACL module for encryption. 
  */
-  inkapi INKError INKEncryptToFile(char *passwd, char *filepath);
+  inkapi INKError INKEncryptToFile(const char *passwd, const char *filepath);
 
 /*--- direct file operations ----------------------------------------------*/
 /* INKConfigFileRead: reads a config file into a buffer
@@ -1375,7 +1375,7 @@ typedef enum
  *       - www.inktomi.com
  * NOTE: header and headerSize can be NULL
  */
-  inkapi INKError INKReadFromUrlEx(char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout);
+  inkapi INKError INKReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout);
 
 /*--- snapshot operations -------------------------------------------------*/
 /* INKSnapshotTake: takes snapshot of configuration at that instant in time
@@ -1416,8 +1416,8 @@ typedef enum
  * Output: INKError
  */
 //inkapi INKError INKMgmtFtpPut(const char* ftp_server_name, const char* ftp_login, const char* ftp_password, const char* localDir, const char *remoteDir);
-  inkapi INKError INKMgmtFtp(char *ftpCmd, char *ftp_server_name, char *ftp_login, char *ftp_password, char *local,
-                             char *remote, char *output);
+  inkapi INKError INKMgmtFtp(const char *ftpCmd, const char *ftp_server_name, const char *ftp_login, const char *ftp_password, const char *local,
+                             const char *remote, char *output);
 /*--- statistics operations -----------------------------------------------*/
 /* INKStatsReset: sets all the statistics variables to their default values
  * Input: <none>
@@ -1440,10 +1440,10 @@ typedef enum
  * Note: For INKRecordGetString, the function will allocate memory for the 
  *       *string_val, so the caller must free (*string_val);
  */
-  inkapi INKError INKRecordGetInt(char *rec_name, INKInt * int_val);
-  inkapi INKError INKRecordGetCounter(char *rec_name, INKCounter * counter_val);
-  inkapi INKError INKRecordGetFloat(char *rec_name, INKFloat * float_val);
-  inkapi INKError INKRecordGetString(char *rec_name, INKString * string_val);
+  inkapi INKError INKRecordGetInt(const char *rec_name, INKInt * int_val);
+  inkapi INKError INKRecordGetCounter(const char *rec_name, INKCounter * counter_val);
+  inkapi INKError INKRecordGetFloat(const char *rec_name, INKFloat * float_val);
+  inkapi INKError INKRecordGetString(const char *rec_name, INKString * string_val);
 
 /* INKRecordGetMlt: gets a set of records
  * Input:  rec_list - list of record names the user wants to retrieve; 
@@ -1460,11 +1460,11 @@ typedef enum
  * Output: INKError
  */
 
-  inkapi INKError INKRecordSet(char *rec_name, INKString val, INKActionNeedT * action_need);
-  inkapi INKError INKRecordSetInt(char *rec_name, INKInt int_val, INKActionNeedT * action_need);
-  inkapi INKError INKRecordSetCounter(char *rec_name, INKCounter counter_val, INKActionNeedT * action_need);
-  inkapi INKError INKRecordSetFloat(char *rec_name, INKFloat float_val, INKActionNeedT * action_need);
-  inkapi INKError INKRecordSetString(char *rec_name, INKString string_val, INKActionNeedT * action_need);
+  inkapi INKError INKRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need);
+  inkapi INKError INKRecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT * action_need);
+  inkapi INKError INKRecordSetCounter(const char *rec_name, INKCounter counter_val, INKActionNeedT * action_need);
+  inkapi INKError INKRecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * action_need);
+  inkapi INKError INKRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT * action_need);
 
 /* INKRecordSetMlt: sets a set of records
  * Input:  rec_list     - list of record names the user wants to set; 
@@ -1726,7 +1726,7 @@ typedef enum
 
   inkapi INKError INKSetNICDown(INKString nic_name, INKString ip_addrr);
 
-  inkapi INKError INKSetSearchDomain(INKString search_name);
+  inkapi INKError INKSetSearchDomain(const char *search_name);
 
   inkapi INKError INKSetRmRealm(const char *hostname);
 

@@ -148,7 +148,7 @@ record_version_valid(char *record_version)
 //-------------------------------------------------------------------------
 
 static bool
-set_record_value(WebHttpContext * whc, char *rec, char *value)
+set_record_value(WebHttpContext * whc, const char *rec, const char *value)
 {
   MgmtData varValue;
   char *record;
@@ -187,7 +187,7 @@ set_record_value(WebHttpContext * whc, char *rec, char *value)
 
 #ifndef _WIN32
       if (script) {
-        char *args[MAX_ARGS + 1];
+        const char *args[MAX_ARGS + 1];
         for (int i = 0; i < MAX_ARGS; i++)
           args[i] = NULL;
         script_path = WebHttpAddDocRoot_Xmalloc(whc, script);
@@ -371,7 +371,7 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
     query_string_tb.copyFrom(query_string, qlen);
   }
 #ifndef _WIN32
-  if (processSpawn((char **) &a[0], &env, &query_string_tb, replyMsg, nowait, run_as_root) != 0) {
+  if (processSpawn(&a[0], &env, &query_string_tb, replyMsg, nowait, run_as_root) != 0) {
     mgmt_elog(stderr, "[spawn_cgi] Unable to fork child process\n");
     WebHttpSetErrorResponse(whc, STATUS_INTERNAL_SERVER_ERROR);
     answerHdr->setStatus(STATUS_INTERNAL_SERVER_ERROR);
@@ -680,8 +680,8 @@ handle_chart(WebHttpContext * whc, const char *file)
   const int totalNumGraphs = 10;
   char numGraphStr[8];
   char *theGraphs[totalNumGraphs];
-  char *theGraphNames[totalNumGraphs];
-  char *graphNames[] = {
+  const char *theGraphNames[totalNumGraphs];
+  const char *graphNames[] = {
     "Document Hit Rate", "Bandwidth Savings", "Cache Percent Free",
     "Open Server Connections", "Open Client Connections",
     "Cache Transfers In Progress", "Client Throughput",
@@ -885,18 +885,18 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
   int num_records;
 
   char line[LINE_SIZE];
-  char *random_html;
+  const char *random_html;
   char cur_value[BUF_SIZE + 1];
   char *cur_value_safe;
   char def_value_rec[BUF_SIZE + 1];
-  char *def_value;
+  const char *def_value;
   char *def_value_safe;
-  char *title;
+  const char *title;
 
-  char *rec_type_a[RECT_MAX];
-  char *data_type_a[RECD_MAX];
-  char *type_a[MAX_RECORD_TYPE];
-  char *value_type_a[MAX_MGMT_TYPE];
+  const char *rec_type_a[RECT_MAX];
+  const char *data_type_a[RECD_MAX];
+  const char *type_a[MAX_RECORD_TYPE];
+  const char *value_type_a[MAX_MGMT_TYPE];
 
   bool found;
   bool same;
@@ -2131,7 +2131,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
           char args[256];
           RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
           ink_snprintf(args, sizeof(args), "cp -fr %s/%s %s", floppyMountPoint, snap_name, snapDirFromRecordsConf);
-          char *argv[] = { args,
+          const char *argv[] = { args,
             NULL
           };
           processSpawn(argv, NULL, NULL, NULL, false, false);
@@ -2922,7 +2922,7 @@ handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
   char *record_version;
   char *UnmountFloppy;
   int old_euid;
-  char *linkFile;
+  const char *linkFile;
 #if defined(OEM)
   char *NWSnapshotType;
 #endif
@@ -3943,7 +3943,8 @@ handle_submit_net_config(WebHttpContext * whc, const char *file)
   //  int nic_up[5];
   char *dns_ip[3], old_value[265], old_hostname[80], old_gw_ip[80];
   char nic_name[5][10], *nic[5][6], interface[80], *param, *old_ip[5];
-  char *hostname = 0, *gw_ip = 0, *dn = 0;
+  char *hostname = 0, *gw_ip = 0;
+  const char *dn = 0;
   int i, j, no;
   char dns_ips[80];
   bool warning, fail, rni;

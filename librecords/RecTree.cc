@@ -33,7 +33,7 @@ bool rec_debug = false;
  * RecTreeNode
  *
  *************************************************************************/
-RecTreeNode::RecTreeNode(char *t):
+RecTreeNode::RecTreeNode(const char *t):
 record_ptr(NULL),
 subtree_ptr(new RecTree(this)),
 var_name_ptr(NULL),
@@ -42,7 +42,7 @@ num_leaf(0)
   if (t) {
     node_name = xstrdup(t);
   } else {
-    node_name = "root";
+    node_name = xstrdup("root");
   }
 }
 
@@ -90,7 +90,7 @@ RecTree::RecTree(RecTreeNode * n)
  *									  
  *************************************************************************/
 void
-RecTree::rec_tree_insert(char *var_name, char *var_name_ptr)
+RecTree::rec_tree_insert(const char *var_name, const char *var_name_ptr)
 {
   if ((var_name == NULL) || (!strlen(var_name))) {
     return;
@@ -105,7 +105,7 @@ RecTree::rec_tree_insert(char *var_name, char *var_name_ptr)
   tok_iter_state targetTok_state;
   const char *first_token = targetTok.iterFirst(&targetTok_state);
 
-  char *rest_token = strchr(var_name, REC_VAR_NAME_DELIMITOR);
+  const char *rest_token = strchr(var_name, REC_VAR_NAME_DELIMITOR);
   if (rest_token) {
     rest_token++;
     if (rec_debug) {
@@ -262,7 +262,7 @@ RecTree::p_rec_tree_get_list(char *path_name, char ***buffer, int *index)
 {
 
   if (this_node->var_name_ptr) {
-    (*buffer)[(*index)] = this_node->var_name_ptr;
+    (*buffer)[(*index)] = (char*)this_node->var_name_ptr;
     if (rec_debug) {
       RecTreeDebug("%d %s\n", (*index), (*buffer)[(*index)]);
     }

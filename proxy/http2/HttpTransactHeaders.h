@@ -76,7 +76,7 @@ public:
   static bool does_server_allow_response_to_be_stored(HTTPHdr * resp);
   static bool downgrade_request(bool * origin_server_keep_alive, HTTPHdr * outgoing_request);
 
-  static bool generate_basic_authorization_from_request(Arena * arena, HTTPHdr * h, char **username, char **password);
+  static bool generate_basic_authorization_from_request(Arena *arena, HTTPHdr *h, char **username, char **password);
   static bool get_wuts_code(HTTPHdr * hdr, WUTSCode * w);
   static void set_wuts_codes(HTTPHdr * hdr, WUTSCode * code);
   static void set_wuts_codes(HTTPHdr * hdr, SquidHitMissCode hit_miss_code,
@@ -88,9 +88,9 @@ public:
   //INKqa09773
   static void convert_wuts_code_to_normal_reason(HTTPHdr * header);
   static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
-  static void insert_warning_header(HttpConfigParams * http_config_param,
-                                    HTTPHdr * header, HTTPWarningCode code,
-                                    char *warn_text = NULL, int warn_text_len = 0);
+  static void insert_warning_header(HttpConfigParams *http_config_param,
+                                    HTTPHdr *header, HTTPWarningCode code,
+                                    const char *warn_text = NULL, int warn_text_len = 0);
   static void insert_time_and_age_headers_in_response(ink_time_t request_sent_time,
                                                       ink_time_t response_received_time,
                                                       ink_time_t now, HTTPHdr * base, HTTPHdr * outgoing);
@@ -119,7 +119,7 @@ public:
   static void add_server_header_to_response(HttpConfigParams * http_config_param, HTTPHdr * header);
   static void remove_privacy_headers_from_request(HttpConfigParams * http_config_param, HTTPHdr * header);
 
-  static int nstrcpy(char *d, char *as);
+  static int nstrcpy(char *d, const char *as);
 };
 
 /*****************************************************************************
@@ -152,9 +152,9 @@ HttpTransactHeaders::is_this_http_method_supported(int method)
 }
 
 inline int
-HttpTransactHeaders::nstrcpy(char *d, char *as)
+HttpTransactHeaders::nstrcpy(char *d, const char *as)
 {
-  char *s = as;
+  const char *s = as;
   while (*s)
     *d++ = *s++;
   return s - as;

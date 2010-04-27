@@ -61,7 +61,7 @@ DiagsConfig::reconfigure_diags()
 
   static struct
   {
-    char *config_name;
+    const char *config_name;
     DiagsLevel level;
   } output_records[] = {
     {
@@ -108,7 +108,7 @@ DiagsConfig::reconfigure_diags()
 
   // read output routing values
   for (i = 0;; i++) {
-    char *record_name = output_records[i].config_name;
+    const char *record_name = output_records[i].config_name;
     DiagsLevel l = output_records[i].level;
 
     if (!record_name)
@@ -391,7 +391,7 @@ void
 DiagsConfig::register_diags_callbacks()
 {
 
-  static char *config_record_names[] = {
+  static const char *config_record_names[] = {
     "proxy.config.diags.debug.enabled",
     "proxy.config.diags.debug.tags",
     "proxy.config.diags.action.enabled",

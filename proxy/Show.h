@@ -44,7 +44,7 @@ struct ShowCont:Continuation
   int iarg;
   char *sarg;
 
-  int show(char *s, ...)
+  int show(const char *s, ...)
   {
     va_list aap;
       va_start(aap, s);
@@ -96,7 +96,7 @@ struct ShowCont:Continuation
     return done(VIO::ABORT, event, e);
   }
 
-  int begin(char *name)
+  int begin(const char *name)
   {
     return show("<HTML>\n<HEAD><TITLE>%s</TITLE>\n"
                 "<BODY BGCOLOR=\"#ffffff\" FGCOLOR=\"#00ff00\">\n" "<H1>%s</H1>\n", name, name);

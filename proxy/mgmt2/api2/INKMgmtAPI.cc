@@ -2007,7 +2007,7 @@ INKRecordGet(char *rec_name, INKRecordEle * rec_val)
 }
 
 INKError
-INKRecordGetInt(char *rec_name, INKInt * int_val)
+INKRecordGetInt(const char *rec_name, INKInt * int_val)
 {
   INKError ret = INK_ERR_OKAY;
 
@@ -2024,7 +2024,7 @@ END:
 }
 
 INKError
-INKRecordGetCounter(char *rec_name, INKCounter * counter_val)
+INKRecordGetCounter(const char *rec_name, INKCounter * counter_val)
 {
   INKError ret;
 
@@ -2040,7 +2040,7 @@ END:
 }
 
 INKError
-INKRecordGetFloat(char *rec_name, INKFloat * float_val)
+INKRecordGetFloat(const char *rec_name, INKFloat * float_val)
 {
   INKError ret;
 
@@ -2056,7 +2056,7 @@ END:
 }
 
 INKError
-INKRecordGetString(char *rec_name, INKString * string_val)
+INKRecordGetString(const char *rec_name, INKString *string_val)
 {
   INKError ret;
   char *str;
@@ -2138,32 +2138,32 @@ INKRecordGetMlt(INKStringList rec_names, INKList rec_vals)
 
 
 inkapi INKError
-INKRecordSet(char *rec_name, INKString val, INKActionNeedT * action_need)
+INKRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need)
 {
   return MgmtRecordSet(rec_name, val, action_need);
 }
 
 
 inkapi INKError
-INKRecordSetInt(char *rec_name, INKInt int_val, INKActionNeedT * action_need)
+INKRecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT * action_need)
 {
   return MgmtRecordSetInt(rec_name, int_val, action_need);
 }
 
 inkapi INKError
-INKRecordSetCounter(char *rec_name, INKCounter counter_val, INKActionNeedT * action_need)
+INKRecordSetCounter(const char *rec_name, INKCounter counter_val, INKActionNeedT * action_need)
 {
   return MgmtRecordSetCounter(rec_name, counter_val, action_need);
 }
 
 inkapi INKError
-INKRecordSetFloat(char *rec_name, INKFloat float_val, INKActionNeedT * action_need)
+INKRecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * action_need)
 {
   return MgmtRecordSetFloat(rec_name, float_val, action_need);
 }
 
 inkapi INKError
-INKRecordSetString(char *rec_name, INKString str_val, INKActionNeedT * action_need)
+INKRecordSetString(const char *rec_name, const char *str_val, INKActionNeedT * action_need)
 {
   return MgmtRecordSetString(rec_name, str_val, action_need);
 }
@@ -2238,7 +2238,7 @@ INKRecordSetMlt(INKList rec_list, INKActionNeedT * action_need)
 
 /*--- api initialization and shutdown -------------------------------------*/
 inkapi INKError
-INKInit(char *socket_path)
+INKInit(const char *socket_path)
 {
   return Init(socket_path);
 }
@@ -2468,7 +2468,7 @@ INKEncryptPassword(char *passwd, char **e_passwd)
 }
 
 inkapi INKError
-INKEncryptToFile(char *passwd, char *filepath)
+INKEncryptToFile(const char *passwd, const char *filepath)
 {
   return EncryptToFile(passwd, filepath);
 }
@@ -2513,7 +2513,7 @@ INKReadFromUrl(char *url, char **header, int *headerSize, char **body, int *body
 }
 
 inkapi INKError
-INKReadFromUrlEx(char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout)
+INKReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout)
 {
   int hFD = -1;
   char *httpHost = NULL;
@@ -2533,12 +2533,12 @@ INKReadFromUrlEx(char *url, char **header, int *headerSize, char **body, int *bo
     timeout = URL_TIMEOUT;
   }
   // Chop the protocol part, if it exists
-  char *doubleSlash = strstr(url, "//");
+  const char *doubleSlash = strstr(url, "//");
   if (doubleSlash) {
     url = doubleSlash + 2;      // advance two positions to get rid of leading '//'
   }
   // the path starts after the first occurrence of '/'
-  char *tempPath = strstr(url, "/");
+  const char *tempPath = strstr(url, "/");
   char *host_and_port;
   if (tempPath) {
     host_and_port = xstrndup(url, strlen(url) - strlen(tempPath));
@@ -2966,7 +2966,7 @@ INKIsValid(INKCfgEle * ele)
 /* Process forking function for ftp.tcl helper */
 
 static int
-ftpProcessSpawn(char *args[], char *output)
+ftpProcessSpawn(const char *args[], char *output)
 {
   int status = 0;
 
@@ -2986,7 +2986,7 @@ ftpProcessSpawn(char *args[], char *output)
     dup2(stdoutPipe[1], STDOUT_FILENO);
     close(stdoutPipe[0]);
 
-    pid = execv(args[0], &args[0]);
+    pid = execv(args[0], (char* const*)&args[0]);
     if (pid == -1) {
       fprintf(stderr, "[ftpProcessSpawn] unable to execv [%s,%s...]\n", args[0], args[1]);
     }
@@ -3076,7 +3076,7 @@ tclCheckProcessSpawn(char *args[], char *output)
 /* Snapshot Interface-centric function */
 
 inkapi INKError
-INKMgmtFtp(char *ftpCmd, char *ftp_server_name, char *ftp_login, char *ftp_password, char *local, char *remote,
+INKMgmtFtp(const char *ftpCmd, const char *ftp_server_name, const char *ftp_login, const char *ftp_password, const char *local, const char *remote,
            char *output)
 {
   char script_path[1024];
@@ -3098,7 +3098,7 @@ INKMgmtFtp(char *ftpCmd, char *ftp_server_name, char *ftp_login, char *ftp_passw
     if (chk_status == 0) {
       /* Go ahead and try the using the FTP .tcl script */
       snprintf(script_path, sizeof(script_path), "%s/configure/helper/INKMgmtAPIFtp.tcl", ui_path);
-      char *args[] = {
+      const char *args[] = {
         script_path,
         ftpCmd,
         ftp_server_name,
@@ -3596,7 +3596,7 @@ inkapi INKError rm_start_proxy()
 
   if (time_diff > 60 || time_diff < 0) {        // wrap around??  shall never happen 
     pid_t pid;
-    char *argv[3];
+    const char *argv[3];
     argv[0] = "net_config";
     argv[1] = "7";
     argv[2] = NULL;
@@ -3619,7 +3619,7 @@ inkapi INKError rm_start_proxy()
       close(1);                 // close STDOUT
       close(2);                 // close STDERR
 
-      int res = execv(command_path, argv);
+      int res = execv(command_path, (char* const*)argv);
       if (res != 0) {
         perror("[rm_start_proxy] net_config stop_proxy failed! ");
       }
@@ -3910,7 +3910,7 @@ INKSetNICDown(INKString nic_name, INKString ip_addrr)
 
 
 inkapi INKError
-INKSetSearchDomain(INKString search_name)
+INKSetSearchDomain(const char *search_name)
 {
   //Nothing to be done for now
   return INK_ERR_OKAY;

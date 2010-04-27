@@ -67,7 +67,7 @@ int num_file_entries = SIZE(file_info_entries);
 static InkHashTable *file_info_ht = 0;
 
 // This is for TESTING ONLY!! (used in testConvertFile_ts) 
-char *config_files[] = {
+const char *config_files[] = {
   "admin_access.config",
   "bypass.config",
   "cache.config",
@@ -1343,7 +1343,7 @@ convertDomain_xml(XMLNode * dom_node, INKDomain * dom)
 //        xml_file - results of the conversion (allocated buffer) 
 // Output:   
 int
-convertFile_ts(char *filename, char **xml_file)
+convertFile_ts(const char *filename, char **xml_file)
 {
   INKCfgContext ctx = NULL;
   INKCfgEle *ele;
@@ -2252,7 +2252,7 @@ convertPortEle_ts(INKPortEle * ele, textBuffer * xml_file, char *tag_name)
 // convertIpAddrEle_ts 
 // ---------------------------------------------------------------------
 int
-convertIpAddrEle_ts(INKIpAddrEle * ele, textBuffer * xml_file, char *tag_name)
+convertIpAddrEle_ts(INKIpAddrEle * ele, textBuffer * xml_file, const char *tag_name)
 {
   if (!ele || !xml_file || !tag_name)
     return INK_ERR_FAIL;
@@ -2433,7 +2433,7 @@ convertTimePeriod_ts(INKHmsTime * time, textBuffer * xml_file)
 // ---------------------------------------------------------------------
 // converts into ipPortListType with the given "tag_name" 
 int
-convertIpAddrList_ts(INKIpAddrList list, textBuffer * xml_file, char *tag_name)
+convertIpAddrList_ts(INKIpAddrList list, textBuffer * xml_file, const char *tag_name)
 {
   INKIpAddrEle *ele;
 
@@ -2456,7 +2456,7 @@ convertIpAddrList_ts(INKIpAddrList list, textBuffer * xml_file, char *tag_name)
 // ---------------------------------------------------------------------
 // INKDomainList ==> hostPortListType
 int
-convertDomainList_ts(INKDomainList list, textBuffer * xml_file, char *tag_name)
+convertDomainList_ts(INKDomainList list, textBuffer * xml_file, const char *tag_name)
 {
   writeXmlStartTag(xml_file, tag_name);
 
@@ -2487,7 +2487,7 @@ convertDomainList_ts(INKDomainList list, textBuffer * xml_file, char *tag_name)
 // ---------------------------------------------------------------------
 // if namespace specified, writes into xml buffer "<namespace:name>"
 void
-writeXmlStartTag(textBuffer * xml, char *name, char *nsp)
+writeXmlStartTag(textBuffer * xml, const char *name, const char *nsp)
 {
   if (nsp) {
     xml->copyFrom("<", 1);
@@ -2508,7 +2508,7 @@ writeXmlStartTag(textBuffer * xml, char *name, char *nsp)
 // If namespace specified, writes into xml buffer "<namespace:name "
 // Instead of closing the start tag with close bracket, writes whitespace
 void
-writeXmlAttrStartTag(textBuffer * xml, char *name, char *nsp)
+writeXmlAttrStartTag(textBuffer * xml, const char *name, char *nsp)
 {
   xml->copyFrom("<", 1);
   if (nsp) {
@@ -2525,7 +2525,7 @@ writeXmlAttrStartTag(textBuffer * xml, char *name, char *nsp)
 // ---------------------------------------------------------------------
 // if namespace specified, writes into xml buffer "</namespace:name>"
 void
-writeXmlEndTag(textBuffer * xml, char *name, char *nsp)
+writeXmlEndTag(textBuffer * xml, const char *name, const char *nsp)
 {
 
   xml->copyFrom("</", 2);
@@ -2545,7 +2545,7 @@ writeXmlEndTag(textBuffer * xml, char *name, char *nsp)
 // writes into the file "xml": "<elemName>value</elemName>"
 // the nsp is optional 
 void
-writeXmlElement(textBuffer * xml, char *elemName, char *value, char *nsp)
+writeXmlElement(textBuffer * xml, const char *elemName, const char *value, const char *nsp)
 {
   writeXmlStartTag(xml, elemName, nsp);
   xml->copyFrom(value, strlen(value));
@@ -2558,7 +2558,7 @@ writeXmlElement(textBuffer * xml, char *elemName, char *value, char *nsp)
 // writes into the file "xml": "<elemName>value</elemName>"
 // the nsp is optional 
 void
-writeXmlElement_int(textBuffer * xml, char *elemName, int value, char *nsp)
+writeXmlElement_int(textBuffer * xml, const char *elemName, int value, const char *nsp)
 {
   char tempStr[128];
   memset(tempStr, 0, 128);
@@ -2574,7 +2574,7 @@ writeXmlElement_int(textBuffer * xml, char *elemName, int value, char *nsp)
 // ---------------------------------------------------------------------
 // will write the attribute name value pair, padded with white space
 void
-writeXmlAttribute(textBuffer * xml, char *attrName, char *value)
+writeXmlAttribute(textBuffer * xml, const char *attrName, const char *value)
 {
   xml->copyFrom(" ", 1);
   xml->copyFrom(attrName, strlen(attrName));
@@ -2588,7 +2588,7 @@ writeXmlAttribute(textBuffer * xml, char *attrName, char *value)
 // ---------------------------------------------------------------------
 // will write the attribute name value pair, padded with white space
 void
-writeXmlAttribute_int(textBuffer * xml, char *attrName, int value)
+writeXmlAttribute_int(textBuffer * xml, const char *attrName, int value)
 {
   char tempStr[128];
   memset(tempStr, 0, 128);
@@ -2982,7 +2982,8 @@ testConvertFile_xml(XMLNode * file_node, char *file)
 int
 testConvertFile_ts(char *file)
 {
-  char *xml_file = NULL, *filename;
+  char *xml_file = NULL;
+  const char *filename;
   // Not used here.
   //INKError err; 
   FILE *fp;                     // output file for conversion results

@@ -96,7 +96,7 @@ struct html_tag update_allowable_html_tags[] = {
 
 struct schemes_descriptor
 {
-  char *tag;
+  const char *tag;
   int tag_len;
 };
 
@@ -2565,7 +2565,7 @@ HtmlParser::MakeURL(char *url, char *sub, int subsize, int relative_url)
 }
 
 DynArray<char>*
-HtmlParser::PrependString(char *pre, int presize, char *sub, int subsize)
+HtmlParser::PrependString(const char *pre, int presize, char *sub, int subsize)
 {
   int n;
 

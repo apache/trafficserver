@@ -50,7 +50,7 @@
 // RecData Utils
 //-------------------------------------------------------------------------
 
-RecRecord *RecAlloc(RecT rec_type, char *name, RecDataT data_type);
+RecRecord *RecAlloc(RecT rec_type, const char *name, RecDataT data_type);
 void RecDataClear(RecDataT data_type, RecData * data);
 bool RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src);
 bool RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, ink64 data_ink64);

@@ -58,11 +58,11 @@
 ////////////////////////////////////////////////////////////////////////
 
 char *
-HttpBodyFactory::fabricate_with_old_api(char *type, HttpTransact::State * context,
+HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * context,
                                         int max_buffer_length, int *resulting_buffer_length,
                                         char content_language_out[256],
                                         char content_type_out[256],
-                                        HTTPStatus status_code, char *reason_or_null, char *format, va_list ap)
+                                        HTTPStatus status_code, const char *reason_or_null, const char *format, va_list ap)
 {
   char *buffer = NULL;
   const char *lang_ptr = NULL;
@@ -381,7 +381,7 @@ HttpBodyFactory::HttpBodyFactory()
   // set up management configuration-change callbacks //
   //////////////////////////////////////////////////////
 
-  static char *config_record_names[] = {
+  static const char *config_record_names[] = {
     "proxy.config.body_factory.enable_customizations",
     "proxy.config.body_factory.enable_logging",
     "proxy.config.body_factory.template_sets_dir",
@@ -419,7 +419,7 @@ HttpBodyFactory::~HttpBodyFactory()
 char *
 HttpBodyFactory::fabricate(StrList * acpt_language_list,
                            StrList * acpt_charset_list,
-                           char *type, HttpTransact::State * context,
+                           const char *type, HttpTransact::State * context,
                            int *buffer_length_return,
                            const char **content_language_return,
                            const char **content_charset_return, const char **set_return)

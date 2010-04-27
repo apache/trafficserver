@@ -331,7 +331,7 @@ ArgumentDescription argument_descriptions[] = {
 };
 int n_argument_descriptions = SIZE(argument_descriptions);
 
-static char *USAGE_LINE =
+static const char *USAGE_LINE =
   "Usage: " PROGRAM_NAME " [-l logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
 
 

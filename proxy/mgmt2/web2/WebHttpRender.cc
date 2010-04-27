@@ -117,7 +117,7 @@ WebHttpGetTopLevelRndrFile_Xmalloc(WebHttpContext * whc)
 // WebHttpGetIntFromQuery
 //-------------------------------------------------------------------------
 void
-WebHttpGetIntFromQuery(WebHttpContext * whc, char *tag, int *active_id)
+WebHttpGetIntFromQuery(WebHttpContext * whc, const char *tag, int *active_id)
 {
   char *active_str;
 
@@ -515,7 +515,7 @@ handle_config_input_form(WebHttpContext * whc, char *tag, char *arg)
 // Creates a select list where the options are the strings passed in 
 // the options array. Assuming the value and text of the option are the same. 
 int
-HtmlRndrSelectList(textBuffer * html, char *listName, char *options[], int numOpts)
+HtmlRndrSelectList(textBuffer * html, const char *listName, const char *options[], int numOpts)
 {
   if (!listName || !options)
     return WEB_HTTP_ERR_FAIL;
@@ -1197,7 +1197,7 @@ handle_ftp_select(WebHttpContext * whc)
 
       SimpleTokenizer snapDirPathTok(ftpOutput, ' ');
       int numOptions = snapDirPathTok.getNumTokensRemaining();
-      char *default_text = "- select a snapshot -";
+      const char *default_text = "- select a snapshot -";
 
       HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
       HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, "2", 2);
@@ -1347,7 +1347,7 @@ handle_floppy_select(WebHttpContext * whc)
         // Not used here.
         //fileEntry* fileListEntry;
         textBuffer *output = whc->response_bdy;
-        char *default_text = "- select a snapshot -";
+        const char *default_text = "- select a snapshot -";
 
         dir = opendir(floppy_drive_mount_point);
 
@@ -1553,7 +1553,7 @@ handle_sessionid(WebHttpContext * whc, char *tag, char *arg)
 // handle_select_*_logs
 //-------------------------------------------------------------------------
 static bool
-readable(char *file, MgmtInt * size)
+readable(const char *file, MgmtInt * size)
 {
   WebHandle h_file;
   if ((h_file = WebFileOpenR(file)) == WEB_HANDLE_INVALID) {
@@ -1565,7 +1565,7 @@ readable(char *file, MgmtInt * size)
 }
 
 static bool
-selected_log(WebHttpContext * whc, char *file)
+selected_log(WebHttpContext * whc, const char *file)
 {
   char *selected_file;
   InkHashTable *ht = whc->post_data_ht;
@@ -1580,7 +1580,7 @@ selected_log(WebHttpContext * whc, char *file)
 }
 
 static void
-render_option(textBuffer * output, char *value, char *display, bool selected)
+render_option(textBuffer * output, const char *value, char *display, bool selected)
 {
   HtmlRndrOptionOpen(output, value, selected);
   output->copyFrom(display, strlen(display));
@@ -1593,8 +1593,8 @@ render_option(textBuffer * output, char *value, char *display, bool selected)
 static int
 handle_select_system_logs(WebHttpContext * whc, char *tag, char *arg)
 {
-  char *syslog_path = NULL;
-  char *syslog = NULL;
+  const char *syslog_path = NULL;
+  const char *syslog = NULL;
   char tmp[MAX_TMP_BUF_LEN + 1];
   char tmp2[MAX_TMP_BUF_LEN + 1];
   char tmp3[MAX_TMP_BUF_LEN + 1];
@@ -1730,7 +1730,7 @@ handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
 
   struct dirent *dent;
   DIR *dirp;
-  char *debug_logs[] = {
+  const char *debug_logs[] = {
     "diags.log",
     "manager.log",
     "lm.log"
@@ -1806,7 +1806,7 @@ handle_log_action(WebHttpContext * whc, char *tag, char *arg)
   bool truncated;
 
   if (arg) {
-    char *args[MAX_ARGS + 1];
+    const char *args[MAX_ARGS + 1];
     for (int i = 0; i < MAX_ARGS + 1; i++)
       args[i] = NULL;
 
@@ -2427,8 +2427,7 @@ handle_cache_regex_query(WebHttpContext * whc, char *tag, char *arg)
                   // display document lookup link
                   ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s?url_op=%s&url=%s", HTML_SUBMIT_INSPECTOR_DPY_FILE, cache_op,
                                url);
-                  HtmlRndrAOpen(output, HTML_CSS_GRAPH, tmp, "display",
-                                "window.open('display', 'width=350, height=400')");
+                  HtmlRndrAOpen(output, HTML_CSS_GRAPH, tmp, "display", "window.open('display', 'width=350, height=400')");
                   output->copyFrom(url, url_size);
                   HtmlRndrAClose(output);
                 } else {
@@ -4159,7 +4158,7 @@ Ldone:
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrTrOpen(textBuffer * html, HtmlCss css, HtmlAlign align)
+HtmlRndrTrOpen(textBuffer * html, const HtmlCss css, const HtmlAlign align)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<tr", 3);
@@ -4181,7 +4180,7 @@ HtmlRndrTrOpen(textBuffer * html, HtmlCss css, HtmlAlign align)
 
 int
 HtmlRndrTdOpen(textBuffer * html,
-               HtmlCss css, HtmlAlign align, HtmlValign valign, char *width, char *height, int colspan, char *bg)
+               const HtmlCss css, const HtmlAlign align, const HtmlValign valign, const char *width, const char *height, int colspan, const char *bg)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<td", 3);
@@ -4222,7 +4221,7 @@ HtmlRndrTdOpen(textBuffer * html,
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrAOpen(textBuffer * html, HtmlCss css, char *href, char *target, char *onclick)
+HtmlRndrAOpen(textBuffer * html, const HtmlCss css, const char *href, const char *target, const char *onclick)
 {
   char tmp[512 + 1];            // larger, since href's can be lengthy
   html->copyFrom("<a", 2);
@@ -4251,7 +4250,7 @@ HtmlRndrAOpen(textBuffer * html, HtmlCss css, char *href, char *target, char *on
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrFormOpen(textBuffer * html, char *name, HtmlMethod method, char *action)
+HtmlRndrFormOpen(textBuffer * html, const char *name, const HtmlMethod method, const char *action)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<form", 5);
@@ -4276,7 +4275,7 @@ HtmlRndrFormOpen(textBuffer * html, char *name, HtmlMethod method, char *action)
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrTextareaOpen(textBuffer * html, HtmlCss css, int cols, int rows, HtmlWrap wrap, char *name, bool readonly)
+HtmlRndrTextareaOpen(textBuffer * html, const HtmlCss css, int cols, int rows, const HtmlWrap wrap, const char *name, bool readonly)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<textarea", 9);
@@ -4313,7 +4312,7 @@ HtmlRndrTextareaOpen(textBuffer * html, HtmlCss css, int cols, int rows, HtmlWra
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrTableOpen(textBuffer * html, char *width, int border, int cellspacing, int cellpadding, char *bordercolor)
+HtmlRndrTableOpen(textBuffer * html, const char *width, int border, int cellspacing, int cellpadding, const char *bordercolor)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<table", 6);
@@ -4340,7 +4339,7 @@ HtmlRndrTableOpen(textBuffer * html, char *width, int border, int cellspacing, i
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrSpanOpen(textBuffer * html, HtmlCss css)
+HtmlRndrSpanOpen(textBuffer * html, const HtmlCss css)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<span", 5);
@@ -4357,7 +4356,7 @@ HtmlRndrSpanOpen(textBuffer * html, HtmlCss css)
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrSelectOpen(textBuffer * html, HtmlCss css, char *name, int size)
+HtmlRndrSelectOpen(textBuffer * html, const HtmlCss css, const char *name, int size)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<select", 7);
@@ -4382,7 +4381,7 @@ HtmlRndrSelectOpen(textBuffer * html, HtmlCss css, char *name, int size)
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrOptionOpen(textBuffer * html, char *value, bool selected)
+HtmlRndrOptionOpen(textBuffer * html, const char *value, bool selected)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<option", 7);
@@ -4402,7 +4401,7 @@ HtmlRndrOptionOpen(textBuffer * html, char *value, bool selected)
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrPreOpen(textBuffer * html, HtmlCss css, char *width)
+HtmlRndrPreOpen(textBuffer * html, const HtmlCss css, const char *width)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<PRE", 4);
@@ -4593,7 +4592,7 @@ HtmlRndrInput(textBuffer * html,
 }
 #else
 int
-HtmlRndrInput(textBuffer * html, HtmlCss css, HtmlType type, char *name, char *value, char *target, char *onclick)
+HtmlRndrInput(textBuffer * html, const HtmlCss css, const HtmlType type, const char *name, const char *value, const char *target, const char *onclick)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<input", 6);
@@ -4698,7 +4697,7 @@ HtmlRndrSpace(textBuffer * html, int num_spaces)
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrText(textBuffer * html, MgmtHashTable * dict_ht, HtmlId text_id)
+HtmlRndrText(textBuffer * html, MgmtHashTable * dict_ht, const HtmlId text_id)
 {
   char *value;
   if (dict_ht->mgmt_hash_table_lookup(text_id, (void **) &value)) {
@@ -4716,7 +4715,7 @@ HtmlRndrText(textBuffer * html, MgmtHashTable * dict_ht, HtmlId text_id)
 //-------------------------------------------------------------------------
 
 int
-HtmlRndrImg(textBuffer * html, char *src, char *border, char *width, char *height, char *hspace)
+HtmlRndrImg(textBuffer * html, const char *src, const char *border, const char *width, const char *height, const char *hspace)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<img", 4);

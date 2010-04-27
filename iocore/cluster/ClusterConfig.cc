@@ -205,7 +205,7 @@ machine_config_change(const char *name, RecDataT data_type, RecData data, void *
 }
 
 void
-do_machine_config_change(void *d, char *s)
+do_machine_config_change(void *d, const char *s)
 {
   char cluster_config_filename[PATH_NAME_MAX] = "";
   IOCORE_ReadConfigString(cluster_config_filename, s, sizeof(cluster_config_filename) - 1);

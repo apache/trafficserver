@@ -2704,7 +2704,7 @@ ink_cache_init(ModuleVersion v)
   IOCORE_RegisterStatUpdateFunc("proxy.process.cache.bytes_used",
                                 cache_rsb, (int) cache_bytes_used_stat, cache_stats_bytes_used_cb, NULL);
 
-  char *err = NULL;
+  const char *err = NULL;
   if ((err = theCacheStore.read_config())) {
     printf("%s  failed\n", err);
     exit(1);

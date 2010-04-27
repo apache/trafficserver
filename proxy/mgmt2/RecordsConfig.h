@@ -65,14 +65,14 @@ enum RecordAccessType
 struct RecordElement
 {
   int type;                     // type of the record (CONFIG, PROCESS, etc)
-  char *name;                   // name of the record
-  char *description;            // short description of the record
+  const char *name;             // name of the record
+  const char *description;      // short description of the record
   MgmtType value_type;          // type of the record value (INT, FLOAT, etc)
-  char *value;                  // default value for the record
+  const char *value;            // default value for the record
   RecordUpdateType update;      // action necessary to change a configuration
   RecordRequiredType required;  // is records required to be in records.config?
   RecordCheckType check;
-  char *regex;
+  const char *regex;
   RecordAccessType access;      // access level of the record 
 };
 

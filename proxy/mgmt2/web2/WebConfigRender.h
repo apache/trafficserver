@@ -188,35 +188,35 @@ int convert_pdss_to_html_format(INKPdSsFormat info,
 
 //------------------------- SELECT FUNCTIONS ------------------------------
 
-void writeRuleTypeSelect_arm(textBuffer * html, char *listName);
-void writeRuleTypeSelect_cache(textBuffer * html, char *listName);
-void writeRuleTypeSelect_filter(textBuffer * html, char *listName);
-void writeRuleTypeSelect_remap(textBuffer * html, char *listName);
-void writeRuleTypeSelect_socks(textBuffer * html, char *listName);
-void writeRuleTypeSelect_bypass(textBuffer * html, char *listName);
-void writeConnTypeSelect(textBuffer * html, char *listName);
-void writeIpActionSelect(textBuffer * html, char *listName);
-void writePdTypeSelect(textBuffer * html, char *listName);
-void writePdTypeSelect_hosting(textBuffer * html, char *listName);
-void writePdTypeSelect_splitdns(textBuffer * html, char *listName);
-void writeMethodSelect(textBuffer * html, char *listName);
-void writeMethodSelect_push(textBuffer * html, char *listName);
-void writeSchemeSelect(textBuffer * html, char *listName);
-void writeSchemeSelect_partition(textBuffer * html, char *listName);
-void writeSchemeSelect_remap(textBuffer * html, char *listName);
-void writeMixtSelect(textBuffer * html, char *listName);
-void writeHeaderTypeSelect(textBuffer * html, char *listName);
-void writeCacheTypeSelect(textBuffer * html, char *listName);
-void writeMcTtlSelect(textBuffer * html, char *listName);
-void writeOnOffSelect(textBuffer * html, char *listName);
-void writeDenySelect(textBuffer * html, char *listName);
-void writeClientGroupTypeSelect(textBuffer * html, char *listName);
-void writeAccessTypeSelect(textBuffer * html, char *listName);
-void writeTreatmentTypeSelect(textBuffer * html, char *listName);
-void writeRoundRobinTypeSelect(textBuffer * html, char *listName);
-void writeRoundRobinTypeSelect_notrue(textBuffer * html, char *listName);
-void writeTrueFalseSelect(textBuffer * html, char *listName);
-void writeSizeFormatSelect(textBuffer * html, char *listName);
-void writeProtocolSelect(textBuffer * html, char *listName);
+void writeRuleTypeSelect_arm(textBuffer * html, const char *listName);
+void writeRuleTypeSelect_cache(textBuffer * html, const char *listName);
+void writeRuleTypeSelect_filter(textBuffer * html, const char *listName);
+void writeRuleTypeSelect_remap(textBuffer * html, const char *listName);
+void writeRuleTypeSelect_socks(textBuffer * html, const char *listName);
+void writeRuleTypeSelect_bypass(textBuffer * html, const char *listName);
+void writeConnTypeSelect(textBuffer * html, const char *listName);
+void writeIpActionSelect(textBuffer * html, const char *listName);
+void writePdTypeSelect(textBuffer * html, const char *listName);
+void writePdTypeSelect_hosting(textBuffer * html, const char *listName);
+void writePdTypeSelect_splitdns(textBuffer * html, const char *listName);
+void writeMethodSelect(textBuffer * html, const char *listName);
+void writeMethodSelect_push(textBuffer * html, const char *listName);
+void writeSchemeSelect(textBuffer * html, const char *listName);
+void writeSchemeSelect_partition(textBuffer * html, const char *listName);
+void writeSchemeSelect_remap(textBuffer * html, const char *listName);
+void writeMixtSelect(textBuffer * html, const char *listName);
+void writeHeaderTypeSelect(textBuffer * html, const char *listName);
+void writeCacheTypeSelect(textBuffer * html, const char *listName);
+void writeMcTtlSelect(textBuffer * html, const char *listName);
+void writeOnOffSelect(textBuffer * html, const char *listName);
+void writeDenySelect(textBuffer * html, const char *listName);
+void writeClientGroupTypeSelect(textBuffer * html, const char *listName);
+void writeAccessTypeSelect(textBuffer * html, const char *listName);
+void writeTreatmentTypeSelect(textBuffer * html, const char *listName);
+void writeRoundRobinTypeSelect(textBuffer * html, const char *listName);
+void writeRoundRobinTypeSelect_notrue(textBuffer * html, const char *listName);
+void writeTrueFalseSelect(textBuffer * html, const char *listName);
+void writeSizeFormatSelect(textBuffer * html, const char *listName);
+void writeProtocolSelect(textBuffer * html, const char *listName);
 
 #endif // _WEB_CONFIG_RENDER_H_

@@ -24,7 +24,7 @@
 #include "inktomi++.h"
 #include "P_Cache.h"
 
-char *STORAGE_CONFIG_HEADER = "# 									\n\
+const char *STORAGE_CONFIG_HEADER = "# 									\n\
 # Storage Configuration file                                            \n\
 #                                                                       \n\
 #                                                                       \n\
@@ -299,12 +299,12 @@ Lagain:
   return found ? 0 : -1;
 }
 
-char *
+const char *
 Store::read_config(int fd)
 {
   int n_dsstore = 0;
   int ln = 0;
-  char *err = NULL;
+  const char *err = NULL;
   Span *sd = NULL, *cur = NULL;
   Span *ns;
 
@@ -446,11 +446,11 @@ Store::write_config_data(int fd)
 #endif
 #include <string.h>
 
-char *
+const char *
 Span::init(char *an, ink64 size)
 {
   int devnum = 0;
-  char *err = NULL;
+  const char *err = NULL;
   int ret = 0;
 
   //
@@ -468,7 +468,7 @@ Span::init(char *an, ink64 size)
     if (*real_n != '/') {
       char *rs = strrchr(an, '/');
       int l = (rs - an) + 1;
-      char *ann = an;
+      const char *ann = an;
       if (!rs) {
         ann = "./";
         l = 2;
@@ -622,7 +622,7 @@ Lfail:
 #include <linux/fs.h>           /* for BLKGETSIZE.  sys/mount.h is another candidate */
 
 
-char *
+const char *
 Span::init(char *filename, ink64 size)
 {
   int devnum = 0, fd, arg;

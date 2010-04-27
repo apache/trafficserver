@@ -211,7 +211,8 @@ drainIncomingChannel(void *arg)
              * Explicit virtual ip unmap request. Note order unmap then 
              * map for strstr. 
              */
-            char msg_ip[80], *msg;
+            char msg_ip[80];
+            const char *msg;
             if (sscanf(message, "unmap: %79s", msg_ip) != 1) {
               ink_close_socket(req_fd);
               continue;
@@ -236,7 +237,8 @@ drainIncomingChannel(void *arg)
           } else if (strstr(message, "map: ")) {
 
             /* Explicit virtual ip map request */
-            char msg_ip[80], *msg;
+            char msg_ip[80];
+            const char *msg;
             if (sscanf(message, "map: %79s", msg_ip) != 1) {
               ink_close_socket(req_fd);
               continue;
@@ -296,7 +298,7 @@ drainIncomingChannel(void *arg)
             }
 
             if (!stat) {
-              char *msg = "file: failed";
+              const char *msg = "file: failed";
               mgmt_writeline(req_fd, msg, strlen(msg));
             }
             if (buff)
@@ -1887,7 +1889,7 @@ bool
 ClusterCom::sendClusterMessage(int msg_type)
 {
   bool ret = true, tmp_ret;
-  char *msg;
+  const char *msg;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
@@ -1963,7 +1965,7 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len)
  *   Used to send a string across the reliable fd.
  */
 bool
-ClusterCom::rl_sendReliableMessage(unsigned long addr, char *buf, int len)
+ClusterCom::rl_sendReliableMessage(unsigned long addr, const char *buf, int len)
 {
   int fd, cport;
   char string_addr[80];
@@ -2270,7 +2272,7 @@ ClusterCom::lowestPeer(int *no)
 
 
 void
-ClusterCom::logClusterMismatch(char *ip, ClusterMismatch type, char *data)
+ClusterCom::logClusterMismatch(const char *ip, ClusterMismatch type, char *data)
 {
 
   void *value;
@@ -2354,7 +2356,7 @@ checkBackDoor(int req_fd, char *message)
   char reply[4096];
 
   if (strstr(message, "show_map")) {
-    char *tmp_msg;
+    const char *tmp_msg;
     bool map_empty = true;
     InkHashTableEntry *entry;
     InkHashTableIteratorState iterator_state;
@@ -2488,7 +2490,8 @@ checkBackDoor(int req_fd, char *message)
 
     for (entry = ink_hash_table_iterator_first(lmgmt->ccom->peers, &iterator_state);
          entry != NULL; entry = ink_hash_table_iterator_next(lmgmt->ccom->peers, &iterator_state)) {
-      char *tmp_msg, ip_addr[80];
+      const char *tmp_msg;
+      char ip_addr[80];
       struct in_addr addr;
 
       ClusterPeerInfo *tmp = (ClusterPeerInfo *) ink_hash_table_entry_value(lmgmt->ccom->peers, entry);

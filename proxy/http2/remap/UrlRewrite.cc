@@ -204,7 +204,8 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
 {
   acl_filter_rule *rule;
   unsigned long ul;
-  char *argptr, tmpbuf[1024], *c;
+  char *argptr, tmpbuf[1024];
+  const char *c;
   SRC_IP_INFO *ipi;
   int i, j, m;
   bool new_rule_flg = false;
@@ -497,7 +498,7 @@ process_filter_opt(url_mapping * mp, BUILD_TABLE_INFO * bti, char *errStrBuf, in
 }
 
 
-UrlRewrite::UrlRewrite(char *file_var_in)
+UrlRewrite::UrlRewrite(const char *file_var_in)
 :nohost_rules(0), reverse_proxy(0), pristine_host_hdr(0), backdoor_enabled(0),
 mgmt_autoconf_port(0), default_to_pac(0), default_to_pac_port(0), file_var(NULL), ts_name(NULL),
 http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num_rules_redirect_permanent(0),
@@ -2176,7 +2177,7 @@ UrlRewrite::BuildTable()
 
 */
 bool
-UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src_host)
+UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, const char *src_host)
 {
   char src_host_tmp_buf[1];
   UrlMappingPathIndex *ht_contents;

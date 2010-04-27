@@ -69,7 +69,7 @@ protected:
   bool isManaged(const char *fileName);
   void addSelectOptions(textBuffer * output, ExpandingArray * options);
   char *managedDir;
-  char *dirDescript;
+  const char *dirDescript;
 };
 
 int fileEntryCmpFunc(const void *e1, const void *e2);

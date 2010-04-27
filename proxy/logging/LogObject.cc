@@ -187,7 +187,7 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
     --len;
   };                            // remove dot at end of name
 
-  char *ext = 0;
+  const char *ext = 0;
   int ext_len = 0;
   if (i < 0) {                  // no extension, add one
     switch (file_format) {
@@ -880,7 +880,7 @@ LogObjectManager::_manage_object(LogObject * log_object, bool is_api_object, int
       // do filesystem checks
       //
       if (log_object->do_filesystem_checks() < 0) {
-        char *msg = "The log file %s did not pass filesystem checks. " "No output will be produced for this log";
+        const char *msg = "The log file %s did not pass filesystem checks. " "No output will be produced for this log";
         Error(msg, log_object->get_full_filename());
         LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, log_object->get_full_filename());
         retVal = ERROR_DOING_FILESYSTEM_CHECKS;
@@ -930,7 +930,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
   char *filename = log_object->get_full_filename();
   if (access(filename, F_OK)) {
     if (errno != ENOENT) {
-      char *msg = "Cannot access log file %s: %s";
+      const char *msg = "Cannot access log file %s: %s";
       char *se = strerror(errno);
       Error(msg, filename, se);
       LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename, se);
@@ -972,7 +972,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
       if (maxConflicts == 0) {
         // do not take any action, and return an error status
         //
-        char *msg = "Cannot solve filename conflicts for log file %s";
+        const char *msg = "Cannot solve filename conflicts for log file %s";
         Error(msg, filename);
         LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename);
         retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
@@ -995,7 +995,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
           if (stat(filename, &s) < 0) {
             // an error happened while trying to get file info
             // 
-            char *msg = "Cannot stat log file %s: %s";
+            const char *msg = "Cannot stat log file %s: %s";
             char *se = strerror(errno);
             Error(msg, filename, se);
             LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename, se);
@@ -1017,7 +1017,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
           if (logfile.roll(time_now - log_object->get_rolling_interval(), time_now) == 0) {
             // an error happened while trying to roll the file
             // 
-            char *msg = "Cannot roll log file %s to fix log " "filename conflicts";
+            const char *msg = "Cannot roll log file %s to fix log " "filename conflicts";
             Error(msg, filename);
             LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename);
             retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
@@ -1071,7 +1071,7 @@ LogObjectManager::_solve_internal_filename_conflicts(LogObject * log_object, int
       log_object->rename(new_name);
       retVal = _solve_internal_filename_conflicts(log_object, maxConflicts, fileNum);
     } else {
-      char *msg = "Cannot solve filename conflicts for log file %s";
+      const char *msg = "Cannot solve filename conflicts for log file %s";
       Error(msg, filename);
       LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename);
       retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;

@@ -60,7 +60,7 @@ static char *argument_types_descriptions[] = {
 
 static void
 process_arg(ArgumentDescription * argument_descriptions,
-            int n_argument_descriptions, int i, char ***argv, char *usage_string)
+            int n_argument_descriptions, int i, char ***argv, const char *usage_string)
 {
   char *arg = NULL;
   if (argument_descriptions[i].type) {
@@ -135,7 +135,7 @@ show_argument_configuration(ArgumentDescription * argument_descriptions, int n_a
 }
 
 void
-process_args(ArgumentDescription * argument_descriptions, int n_argument_descriptions, char **argv, char *usage_string)
+process_args(ArgumentDescription * argument_descriptions, int n_argument_descriptions, char **argv, const char *usage_string)
 {
   int i = 0;
   //
@@ -203,7 +203,7 @@ process_args(ArgumentDescription * argument_descriptions, int n_argument_descrip
 }
 
 void
-usage(ArgumentDescription * argument_descriptions, int n_argument_descriptions, char *usage_string)
+usage(ArgumentDescription * argument_descriptions, int n_argument_descriptions, const char *usage_string)
 {
   (void) argument_descriptions;
   (void) n_argument_descriptions;

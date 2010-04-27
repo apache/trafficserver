@@ -652,7 +652,7 @@ up_interface(char *nic_name, bool static_ip, char *ip, char *netmask, bool onboo
   char hostname[1024], buf[1024];
   char etc_hostname_path[1024], etc_hostname_path_new[1024];
   FILE *fp, *fp1;
-  char *mv_binary = MV_BINARY;
+  const char *mv_binary = MV_BINARY;
   bool hostname_flag = false;
   char broadcast[17];
   char network_addr[17];
@@ -816,7 +816,7 @@ down_interface(char *nic_name)
 {
   int status;
   pid_t pid;
-  char *ifconfig_binary = IFCONFIG;
+  const char *ifconfig_binary = IFCONFIG;
 
   if ((pid = fork()) < 0) {
     exit(1);
@@ -845,7 +845,7 @@ mrtg_hostname_change(char *hostname, char *old_hostname)
   char buf[1024], tmp_buf[1024], mrtg_dir_path[1024], mrtg_path[1024], mrtg_path_new[1024], *index;
   FILE *fp;
   FILE *fp1;
-  char *mv_binary = MV_BINARY;
+  const char *mv_binary = MV_BINARY;
   int res;
   int status;
   pid_t pid;
@@ -915,7 +915,7 @@ set_hostname(char *hostname, char *old_hostname, char *ip_addr)
   char etc_hostname_path[1024], etc_hostname_path_new[1024], ip_address[1024];
   FILE *fp;
   FILE *fp1;
-  char *mv_binary = MV_BINARY;
+  const char *mv_binary = MV_BINARY;
   int res;
   int status;
   pid_t pid;
@@ -1054,7 +1054,7 @@ set_gateway(char *ip_address, char *old_ip_address)
   FILE *fp1;
   const char *mv_binary = MV_BINARY;
   int res;
-  char *route_binary = ROUTE_BINARY;
+  const char *route_binary = ROUTE_BINARY;
   int status;
   pid_t pid;
   char *pos;
@@ -1890,16 +1890,16 @@ int up_interface(char *nic_name, bool static_ip, char *ip, char *netmask, bool o
                  char *old_ip, char *old_netmask, char *old_gateway, char *default_gateway);
 int down_interface(char *nic_name);
 
-int overwriteFiles(char *source, char *dest, char *api_name);
+int overwriteFiles(char *source, char *dest, const char *api_name);
 // for default gateway
-int addRoute(char *dest, char *gateway, char *api_name);
+int addRoute(const char *dest, char *gateway, const char *api_name);
 // get to associate interface to a gateway
-int addRoute(char *dest, char *gateway, char *interface, char *api_name);
+int addRoute(const char *dest, char *gateway, char *interface, const char *api_name);
 // for default gateway
-int delRoute(char *dest, char *gateway, char *api_name);
+int delRoute(const char *dest, char *gateway, const char *api_name);
 // get to associate interface to a gateway
-int delRoute(char *dest, char *gateway, char *interface, char *api_name);
-int setIpAndMask(char *ip, char *mask, char *interface, char *api_name);
+int delRoute(const char *dest, char *gateway, char *interface, const char *api_name);
+int setIpAndMask(char *ip, char *mask, char *interface, const char *api_name);
 
 bool isLineCommented(char *line);
 bool defaultGatewayHasOwnEntry(char *default_gateway);
@@ -1946,7 +1946,7 @@ alphasort(const void *a, const void *b)
 }
 
 int
-overwriteFiles(char *source, char *dest, char *api_name)
+overwriteFiles(char *source, char *dest, const char *api_name)
 {
   char errmsg[200];
   pid_t pid;
@@ -1991,7 +1991,7 @@ createSymbolicLink(char *original_file, char *symbolic_link)
 }
 
 int
-changeFilePermission(char *mode, char *filename)
+changeFilePermission(const char *mode, char *filename)
 {
   char errmsg[200];
   pid_t pid;
@@ -2016,7 +2016,7 @@ changeFilePermission(char *mode, char *filename)
 }
 
 int
-delRoute(char *dest, char *gateway, char *api_name)
+delRoute(const char *dest, char *gateway, const char *api_name)
 {
   char errmsg[200];
   pid_t pid;
@@ -2042,7 +2042,7 @@ delRoute(char *dest, char *gateway, char *api_name)
 }
 
 int
-delRoute(char *dest, char *gateway, char *interface, char *api_name)
+delRoute(const char *dest, char *gateway, char *interface, const char *api_name)
 {
   char errmsg[200];
   pid_t pid;
@@ -2067,7 +2067,7 @@ delRoute(char *dest, char *gateway, char *interface, char *api_name)
 }
 
 int
-addRoute(char *dest, char *gateway, char *api_name)
+addRoute(const char *dest, char *gateway, const char *api_name)
 {
   char errmsg[200];
   pid_t pid;
@@ -2091,7 +2091,7 @@ addRoute(char *dest, char *gateway, char *api_name)
 }
 
 int
-addRoute(char *dest, char *gateway, char *interface, char *api_name)
+addRoute(const char *dest, char *gateway, char *interface, const char *api_name)
 {
   char errmsg[200];
   pid_t pid;
@@ -2117,7 +2117,7 @@ addRoute(char *dest, char *gateway, char *interface, char *api_name)
 }
 
 int
-setIpAndMask(char *ip, char *mask, char *interface, char *api_name)
+setIpAndMask(char *ip, char *mask, char *interface, const char *api_name)
 {
   char errmsg[200];
   pid_t pid;
@@ -2672,7 +2672,8 @@ fillEntryEtcHostnameFile(char *nic_name)
     gethostname(hostname, PATHLEN);
   }
 
-  if (strlen(hostname) == 0 || strcasestr(hostname, "unknown"))
+  char lstr[] = "unknown";
+  if (strlen(hostname) == 0 || strcasestr(hostname, lstr))
     snprintf(hostname, sizeof(hostname), "inkt_ts_%s", nic_name);
 
   FILE *fd;
@@ -2788,7 +2789,7 @@ down_interface(char *nic_name)
 {
   int status;
   pid_t pid;
-  char *ifconfig_binary = IFCONFIG;
+  const char *ifconfig_binary = IFCONFIG;
 
   if ((pid = fork()) < 0) {
     exit(1);
@@ -2831,9 +2832,10 @@ mrtg_hostname_change(char *hostname, char *old_hostname)
     perror("[net_config] scandir failed");
     return 1;
   }
+  char lstr[] = ".html";
   while (n--) {
     //printf("%s\n", namelist[n]->d_name);
-    if (strcasestr(namelist[n]->d_name, ".html") != NULL) {
+    if (strcasestr(namelist[n]->d_name, lstr) != NULL) {
       snprintf(mrtg_path, sizeof(mrtg_path), "%s/%s", mrtg_dir_path, namelist[n]->d_name);
       if ((fp = fopen(mrtg_path, "r")) == NULL) {
         perror("[net_config] failed to open mrtg file");
@@ -3077,9 +3079,10 @@ set_dns_server(char *dns_server_ips)
     return 1;
   }
   //  bool changed = false;
+  char lstr[] = "nameserver";
   fgets(buf, 1024, fp);
   while (!feof(fp)) {
-    if (strcasestr(buf, "nameserver")) {
+    if (strcasestr(buf, lstr)) {
       /*      if (!changed) {
          fprintf(fp1,"nameserver %s \n",dns_server_ips);
          changed = true;
@@ -3152,9 +3155,10 @@ set_domain_name(char *domain_name)
     return 1;
   }
 
+  char lstr[] = "domain";
   fgets(buf, 1024, fp);
   while (!feof(fp)) {
-    if (strcasestr(buf, "domain")) {
+    if (strcasestr(buf, lstr)) {
       fprintf(fp1, "domain %s \n", domain_name);
       domain_flag = true;
     } else
@@ -3208,9 +3212,10 @@ set_search_domain(char *search_name)
     return 1;
   }
 
+  char lstr[] = "search";
   fgets(buf, 1024, fp);
   while (!feof(fp)) {
-    if (strcasestr(buf, "search")) {
+    if (strcasestr(buf, lstr)) {
       fprintf(fp1, "search %s\n", search_name);
       search_flag = true;
     } else

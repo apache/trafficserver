@@ -48,8 +48,8 @@
 //   LD_SHAREDCMD=ld -G
 
 
-static char *plugin_dir = ".";
-static char *extensions_dir = ".";
+static const char *plugin_dir = ".";
+static const char *extensions_dir = ".";
 static PluginDB *plugin_db = NULL;
 
 typedef void (*init_func_t) (int argc, char *argv[]);
@@ -91,7 +91,7 @@ dll_open(char *fn, bool global)
 }
 
 static void *
-dll_findsym(void *dlp, char *name)
+dll_findsym(void *dlp, const char *name)
 {
   return (void *) dlsym(dlp, name);
 }
@@ -267,7 +267,7 @@ plugins_exist(const char *config_dir)
   int fd;
   int plugin_count = 0;
 
-  RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", &plugin_dir);
+  RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", (char**)&plugin_dir);
 
   snprintf(path, sizeof(path), "%s%splugin.config", config_dir, DIR_SEP);
   fd = open(path, O_RDONLY);
@@ -304,8 +304,8 @@ plugin_init(const char *config_dir, bool internal)
     api_init();
     init_inkapi_stat_system();
 
-    RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", &plugin_dir);
-    RecGetRecordString_Xmalloc("proxy.config.plugin.extensions_dir", &extensions_dir);
+    RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", (char**)&plugin_dir);
+    RecGetRecordString_Xmalloc("proxy.config.plugin.extensions_dir", (char**)&extensions_dir);
 
     snprintf(path, sizeof(path), "%s%splugin.db", config_dir, DIR_SEP);
     plugin_db = new PluginDB(path);

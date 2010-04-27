@@ -38,13 +38,13 @@ class RecTree;
 class RecTreeNode
 {
 public:
-  RecTreeNode(char *name = NULL);
+  RecTreeNode(const char *name = NULL);
    ~RecTreeNode();
 
   RecRecord *record_ptr;
   RecTree *subtree_ptr;
   char *node_name;
-  char *var_name_ptr;
+  const char *var_name_ptr;
   int num_leaf;
   LINK(RecTreeNode, link);
 
@@ -78,7 +78,7 @@ public:
     return (current->link).next;
   };
 
-  void rec_tree_insert(char *, char *full_name = NULL);
+  void rec_tree_insert(const char *, const char *full_name = NULL);
   RecTree *rec_tree_get(char *);
   void rec_tree_get_list(char *, char ***, int *);
 

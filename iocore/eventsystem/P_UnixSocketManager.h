@@ -74,7 +74,7 @@ SocketManager::accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 }
 
 TS_INLINE int
-SocketManager::open(char *path, int oflag, mode_t mode)
+SocketManager::open(const char *path, int oflag, mode_t mode)
 {
   int s;
   do {

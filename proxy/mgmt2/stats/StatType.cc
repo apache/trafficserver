@@ -238,7 +238,7 @@ StatExprToken::clean()
  * Print the token according to its type in a human-readable format. :)
  */
 void
-StatExprToken::print(char *prefix)
+StatExprToken::print(const char *prefix)
 {
 
   if (m_token_name != NULL) {
@@ -438,7 +438,7 @@ StatExprList::next(StatExprToken * current)
  *  Print the token in the expression in a human-readable format. :)
  */
 void
-StatExprList::print(char *prefix)
+StatExprList::print(const char *prefix)
 {
 
   for (StatExprToken * token = first(); token; token = next(token)) {

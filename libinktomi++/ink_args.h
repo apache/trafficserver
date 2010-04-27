@@ -34,11 +34,11 @@ Process arguments
 
 struct ArgumentDescription;
 
-typedef void ArgumentFunction(ArgumentDescription * argument_descriptions, int n_argument_descriptions, char *arg);
+typedef void ArgumentFunction(ArgumentDescription * argument_descriptions, int n_argument_descriptions, const char *arg);
 
 struct ArgumentDescription
 {
-  char *name;
+  const char *name;
   char key;
   /* 
      "I" = integer
@@ -50,10 +50,10 @@ struct ArgumentDescription
      "T" = toggle
      "S80" = read string, 80 chars max
    */
-  char *description;
-  char *type;
+  const char *description;
+  const char *type;
   void *location;
-  char *env;
+  const char *env;
   ArgumentFunction *pfn;
 };
 
@@ -67,11 +67,11 @@ extern char *program_name;      // exported by process_args()
 */
 void show_argument_configuration(ArgumentDescription * argument_descriptions, int n_argument_descriptions);
 
-void usage(ArgumentDescription * argument_descriptions, int n_argument_descriptions, char *arg_unused);
+void usage(ArgumentDescription * argument_descriptions, int n_argument_descriptions, const char *arg_unused);
 
 /* Process all arguments
 */
 void process_args(ArgumentDescription * argument_descriptions,
-                  int n_argument_descriptions, char **argv, char *usage_string = 0);
+                  int n_argument_descriptions, char **argv, const char *usage_string = 0);
 
 #endif /*_INK_ARGS_H*/

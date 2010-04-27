@@ -79,7 +79,7 @@ enum mapping_type
 class UrlRewrite
 {
 public:
-  UrlRewrite(char *file_var_in);
+  UrlRewrite(const char *file_var_in);
    ~UrlRewrite();
   int BuildTable();
   bool Remap(HttpTransact::State * s, HTTPHdr * request_header, char **redirect_url, char **orig_url,
@@ -140,7 +140,7 @@ public:
     _destroyTable(store.hash_lookup);
     _destroyList(store.regex_list);
   }
-  bool TableInsert(InkHashTable * h_table, url_mapping * mapping, char *src_host);
+  bool TableInsert(InkHashTable *h_table, url_mapping *mapping, const char *src_host);
 
   MappingsStore forward_mappings;
   MappingsStore reverse_mappings;

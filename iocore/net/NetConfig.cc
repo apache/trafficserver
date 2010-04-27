@@ -47,9 +47,9 @@ int net_config_sslAccelerator = 0;
 //    # the following accelerator library paths only need
 //    # to be changed if the default path was not used
 //    # while installing the accelerator card.
-char *net_config_atallaAccelLibPath = "/opt/atalla/lib";
-char *net_config_ncipherAccelLibPath = "/opt/nfast/toolkits/hwcrhk";
-char *net_config_cswiftAccelLibPath = "/usr/lib";
+const char *net_config_atallaAccelLibPath = "/opt/atalla/lib";
+const char *net_config_ncipherAccelLibPath = "/opt/nfast/toolkits/hwcrhk";
+const char *net_config_cswiftAccelLibPath = "/usr/lib";
 
 
 int net_config_ssl_accept_port_number = 8443;
@@ -63,11 +63,11 @@ int net_config_clientCertLevel = 0;
 //    # Server cert filename is the name of the cert file
 //    # for a single cert system and the default cert name
 //    # for a multiple cert system.
-char *net_config_serverCertFilename = "server.pem";
+const char *net_config_serverCertFilename = "server.pem";
 
 //    # This is the path that will be used for both single and
 //    # multi cert systems.
-char *net_config_serverCertRelativePath = "etc/trafficserver";
+const char *net_config_serverCertRelativePath = "etc/trafficserver";
 
 //    # Fill in private key file and path only if the server's
 //    # private key is not contained in the server certificate file.
@@ -89,7 +89,7 @@ char *net_config_CACertRelativePath = NULL;
 
 int net_config_clientVerify = 0;
 char *net_config_ssl_client_cert_filename = NULL;
-char *net_config_ssl_client_cert_path = "etc/trafficserver";
+const char *net_config_ssl_client_cert_path = "etc/trafficserver";
 
 //    # Fill in private key file and path only if the client's
 //    # private key is not contained in the client certificate file.
@@ -103,4 +103,4 @@ char *net_config_clientCACertFilename = NULL;
 char *net_config_clientCACertRelativePath = NULL;
 
 
-char *net_config_multicert_config_file = "ssl_multicert.config";
+const char *net_config_multicert_config_file = "ssl_multicert.config";

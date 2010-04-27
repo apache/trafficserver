@@ -314,7 +314,7 @@ public:
   static int unmarshal_entry_type(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
 
-  static int unmarshal_with_map(LOG_INT code, char *dest, int len, Ptr<LogFieldAliasMap> map, char *msg = 0);
+  static int unmarshal_with_map(LOG_INT code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg = 0);
 
   static int unmarshal_record(char **buf, char *dest, int len);
 
@@ -328,8 +328,8 @@ public:
 public:
   inkcoreapi void static marshal_int(char *dest, LOG_INT source);
   inkcoreapi void static marshal_int_no_byte_order_conversion(char *dest, LOG_INT source);
-  inkcoreapi void static marshal_str(char *dest, char *source, int padded_len);
-  inkcoreapi void static marshal_mem(char *dest, char *source, int actual_len, int padded_len);
+  inkcoreapi void static marshal_str(char *dest, const char *source, int padded_len);
+  inkcoreapi void static marshal_mem(char *dest, const char *source, int actual_len, int padded_len);
 
   bool initialized;
 

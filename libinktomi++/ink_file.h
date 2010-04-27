@@ -69,6 +69,6 @@ int ink_file_lock(int fd, int type);
 int ink_file_trylock(int fd, int type);
 
 int ink_file_fd_readline(int fd, int bufsz, char *buf);
-int ink_file_fd_writestring(int fd, char *buf);
+int ink_file_fd_writestring(int fd, const char *buf);
 
 #endif // _ink_file_h_

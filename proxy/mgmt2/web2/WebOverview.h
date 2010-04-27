@@ -101,12 +101,12 @@ public:
   unsigned long inetAddr;       // IP address of the node
   DLL<AlarmListable> nodeAlarms;   // List of alarms for the node
   void checkAlarms();
-  bool varStrFromName(char *varName, char *bufVal, int bufLen);
-  RecCounter readCounter(char *name, bool * found);
-  RecInt readInteger(char *name, bool * found);
-  RecLLong readLLong(char *name, bool * found);
-  RecFloat readFloat(char *name, bool * found);
-  RecString readString(char *name, bool * found);
+  bool varStrFromName(const char *varName, char *bufVal, int bufLen);
+  RecCounter readCounter(const char *name, bool * found);
+  RecInt readInteger(const char *name, bool * found);
+  RecLLong readLLong(const char *name, bool * found);
+  RecFloat readFloat(const char *name, bool * found);
+  RecString readString(const char *name, bool * found);
   bool varIntFromName(const char *varName, RecInt * value);
   bool varFloatFromName(const char *varName, RecFloat * value);
   bool varCounterFromName(const char *varName, RecCounter * value);
@@ -138,9 +138,9 @@ public:
   char *resolvePeerHostname(const char *peerIP);
   char *resolvePeerHostname_ml(const char *peerIP);
   int getClusterHosts(ExpandingArray * hosts);
-  MgmtInt readInteger(const char *nodeName, char *name, bool * found = NULL);
-  MgmtFloat readFloat(const char *nodeName, char *name, bool * found = NULL);
-  MgmtString readString(const char *nodeName, char *name, bool * found = NULL);
+  MgmtInt readInteger(const char *nodeName, const char *name, bool * found = NULL);
+  MgmtFloat readFloat(const char *nodeName, const char *name, bool * found = NULL);
+  MgmtString readString(const char *nodeName, const char *name, bool * found = NULL);
   void doClusterAg();
   void addSelfRecord();
 
@@ -170,13 +170,13 @@ private:
 
   // Functions to do cluster aggregation
   //
-  void clusterAgInt(char *clustVar, char *nodeVar);
-  void clusterAgIntScale(char *clustVar, char *nodeVar, double factor);
+  void clusterAgInt(const char *clustVar, const char *nodeVar);
+  void clusterAgIntScale(const char *clustVar, const char *nodeVar, double factor);
 #define MB_SCALE (1/(1024*1024.0))
-  int clusterSumInt(char *nodeVar, MgmtInt * sum);
+  int clusterSumInt(const char *nodeVar, MgmtInt * sum);
   int clusterSumCounter(char *nodeVar, MgmtInt * sum);
-  void clusterAgFloat(char *clusterVar, char *nodeVar);
-  int clusterSumFloat(char *nodeVar, MgmtFloat * sum);
+  void clusterAgFloat(const char *clusterVar, const char *nodeVar);
+  int clusterSumFloat(const char *nodeVar, MgmtFloat * sum);
   void agHostdbHitRate();
   void agCacheHitRate();
   void agCachePercentFree();

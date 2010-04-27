@@ -67,7 +67,7 @@ static ArgumentDescription argument_descriptions[] = {
 };
 static int n_argument_descriptions = SIZE(argument_descriptions);
 
-static char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [-hnVw] [input-file ...]";
+static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [-hnVw] [input-file ...]";
 
 struct LogFormat
 {
@@ -121,7 +121,7 @@ LogObj::print_filters(ostream & os)
 
 
 char *
-create_escaped_string(char *input)
+create_escaped_string(const char *input)
 {
   ink_debug_assert(input);
   char *output = new char[strlen(input) * 2];   // worst case scenario
@@ -213,7 +213,7 @@ process_format(SimpleTokenizer * tok, LogFormat ** formats, int &numFormats)
 Filter *
 process_filter(SimpleTokenizer * tok)
 {
-  char *action = "REJECT";
+  const char *action = "REJECT";
 
   char *objName = tok->getNext();
   if (!objName)
@@ -222,7 +222,7 @@ process_filter(SimpleTokenizer * tok)
   if (!field)
     return 0;
 
-  char *oper = tok->getNext();
+  const char *oper = tok->getNext();
   if (!oper)
     return 0;
   if (strcasecmp(oper, "NOMATCH") == 0) {

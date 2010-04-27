@@ -61,7 +61,7 @@ private:
   void byPass(textBuffer & newFile, Tokenizer & tok, const char *funcStr);
   void addProxy(textBuffer & output, char *hostname, char *port, bool first, bool final);
   bool BuildFile(InkHashTable * parameters, textBuffer & newFile);
-  void pacErrorResponse(char *action, PACresult error, textBuffer * output);
+  void pacErrorResponse(const char *action, PACresult error, textBuffer * output);
 };
 
 extern AutoConf *autoConfObj;

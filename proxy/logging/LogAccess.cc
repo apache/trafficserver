@@ -828,7 +828,7 @@ LogAccess::marshal_record(char *record, char *buf)
   ink_debug_assert(::strlen(record_not_found_msg) + 1 == record_not_found_chars);
 
   char ascii_buf[max_chars];
-  register char *out_buf;
+  register const char *out_buf;
   register unsigned int num_chars;
 
 #define LOG_INTEGER RECD_INT
@@ -1002,7 +1002,7 @@ LogAccess::marshal_int_no_byte_order_conversion(char *dest, LOG_INT source)
   -------------------------------------------------------------------------*/
 
 void
-LogAccess::marshal_str(char *dest, char *source, int padded_len)
+LogAccess::marshal_str(char *dest, const char *source, int padded_len)
 {
   if (source == NULL || source[0] == 0 || padded_len == 0) {
     source = DEFAULT_STR;
@@ -1032,7 +1032,7 @@ LogAccess::marshal_str(char *dest, char *source, int padded_len)
   -------------------------------------------------------------------------*/
 
 void
-LogAccess::marshal_mem(char *dest, char *source, int actual_len, int padded_len)
+LogAccess::marshal_mem(char *dest, const char *source, int actual_len, int padded_len)
 {
   if (source == NULL || source[0] == 0 || actual_len == 0) {
     source = DEFAULT_STR;
@@ -1057,7 +1057,7 @@ LogAccess::marshal_mem(char *dest, char *source, int actual_len, int padded_len)
 }
 
 inline int
-LogAccess::unmarshal_with_map(LOG_INT code, char *dest, int len, Ptr<LogFieldAliasMap> map, char *msg)
+LogAccess::unmarshal_with_map(LOG_INT code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
 {
   int codeStrLen;
 
@@ -1281,7 +1281,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   ink_assert(*buf != NULL);
   ink_assert(dest != NULL);
 
-  static char *http = "HTTP/";
+  static const char *http = "HTTP/";
   static int http_len = (int)::strlen(http);
 
   char val_buf[128];

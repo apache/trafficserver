@@ -1571,7 +1571,7 @@ fileCheckSum(char *buffer, int size, char *checksum, const size_t checksumSize)
 //  Attempts to spawn out a process by given a list of arguments
 //
 int
-processSpawn(char *args[],
+processSpawn(const char *args[],
              EnvBlock * env,
              textBuffer * input_buf, textBuffer * output_buf, bool nowait, bool run_as_root, bool * truncated)
 {
@@ -1585,7 +1585,7 @@ processSpawn(char *args[],
   pid_t pid;
   long total;
   bool cutoff;
-  char *too_large_msg = "\nfile too large, truncated here...";
+  const char *too_large_msg = "\nfile too large, truncated here...";
   uid_t saved_euid = 0;
 
   if (pipe(stdinPipe) == -1)
@@ -1630,9 +1630,9 @@ processSpawn(char *args[],
     }
     // exec process
     if (env) {
-      pid = execve(args[0], &args[0], env->toStringArray());
+      pid = execve(args[0], (char* const*)&args[0], env->toStringArray());
     } else {
-      pid = execv(args[0], &args[0]);
+      pid = execv(args[0], (char* const*)&args[0]);
     }
     if (pid == -1) {
       mgmt_elog(stderr, "[processSpawn] unable to execve [%s...]\n", args[0]);

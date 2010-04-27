@@ -298,7 +298,7 @@ extern "C"
  *  ??
  *  Return
  ****************************************************************************/
-  inkapi char *INKMatcherParseSrcIPConfigLine(char *line, INKMatcherLine ml);
+  inkapi const char *INKMatcherParseSrcIPConfigLine(char *line, INKMatcherLine ml);
 
 /****************************************************************************
  *  ??

@@ -60,7 +60,7 @@ extern void setReqdArgs(char **required_args);
 
 int
 createArgument(const char *argument, int position, int commandoption,
-               char *range, int argumentRef, char *helpString, char *defValue)
+               char *range, int argumentRef, const char *helpString, char *defValue)
 {
   int arg_type = 0;
   int arg_option = 0;

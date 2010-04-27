@@ -42,7 +42,7 @@ class MgmtHashTable
 
 public:
 
-  MgmtHashTable(char *name, bool xfree_on_delete, InkHashTableKeyType type)
+  MgmtHashTable(const char *name, bool xfree_on_delete, InkHashTableKeyType type)
   {
     ink_mutex_init(&mutex, name);
     destroy_and_free = xfree_on_delete;
@@ -70,7 +70,7 @@ public:
     return ret;
   }                             /* End MgmtHashTable::mgmt_hash_table_isbound */
 
-  int mgmt_hash_table_lookup(InkHashTableKey key, InkHashTableValue * value_ptr)
+  int mgmt_hash_table_lookup(const char *key, InkHashTableValue * value_ptr)
   {
     int ret;
     ink_mutex_acquire(&mutex);
@@ -106,7 +106,7 @@ public:
     return ret;
   }                             /* End MgmtHashTable::mgmt_hash_table_get_entry */
 
-  void mgmt_hash_table_insert(InkHashTableKey key, InkHashTableValue value)
+  void mgmt_hash_table_insert(const char *key, InkHashTableValue value)
   {
     ink_mutex_acquire(&mutex);
     ink_hash_table_insert(ht, key, value);

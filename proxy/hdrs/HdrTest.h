@@ -78,8 +78,8 @@ private:
   int test_http_hdr_copy_over_aux(int testnum, const char *request, const char *response);
   int test_http_aux(const char *request, const char *response);
   int test_arena_aux(Arena * arena, int len);
-  void bri_box(char *s);
-  int failures_to_status(char *testname, int nfail);
+  void bri_box(const char *s);
+  int failures_to_status(const char *testname, int nfail);
 };
 
 #endif

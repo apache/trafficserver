@@ -1830,11 +1830,11 @@ INKPluginDirGet(void)
 {
   const char *CFG_NM = "proxy.config.plugin.plugin_dir";
   static char path[PATH_NAME_MAX];
-  static char *plugin_dir = ".";
+  static const char *plugin_dir = ".";
 
   if (*path == '\0') {
 
-    RecGetRecordString_Xmalloc((char *) CFG_NM, &plugin_dir);
+    RecGetRecordString_Xmalloc((char *) CFG_NM, (char**)&plugin_dir);
     if (!plugin_dir) {
       Error("Unable to read %s", CFG_NM);
       return NULL;
@@ -7657,7 +7657,7 @@ INKMatcherTokLine(char *buffer, char **last)
 char *
 INKMatcherExtractIPRange(char *match_str, INKU32 * addr1, INKU32 * addr2)
 {
-  return ExtractIpRange(match_str, (ip_addr_t *) addr1, (ip_addr_t *) addr2);
+  return (char*)ExtractIpRange(match_str, (ip_addr_t *) addr1, (ip_addr_t *) addr2);
 }
 
 INKMatcherLine
@@ -7674,7 +7674,7 @@ INKMatcherLineDestroy(INKMatcherLine ml)
   }
 }
 
-char *
+const char *
 INKMatcherParseSrcIPConfigLine(char *line, INKMatcherLine ml)
 {
   return parseConfigLine(line, (matcher_line *) ml, &ip_allow_tags);

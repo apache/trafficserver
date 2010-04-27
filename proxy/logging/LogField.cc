@@ -39,7 +39,7 @@
 #include "LogAccess.h"
 #include "Log.h"
 
-char *container_names[] = {
+const char *container_names[] = {
   "not-a-container",
   "cqh",
   "psh",
@@ -55,7 +55,7 @@ char *container_names[] = {
   ""
 };
 
-char *aggregate_names[] = {
+const char *aggregate_names[] = {
   "not-an-agg-op",
   "COUNT",
   "SUM",
@@ -71,31 +71,11 @@ char *aggregate_names[] = {
 
 // Generic field ctor
 
-LogField::LogField(char *name, char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal)
+LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal)
   :
-m_name(xstrdup(name))
-  ,
-m_symbol(xstrdup(symbol))
-  ,
-m_type(type)
-  ,
-m_container(NO_CONTAINER)
-  ,
-m_marshal_func(marshal)
-  ,
-m_unmarshal_func(unmarshal)
-  ,
-m_unmarshal_func_map(NULL)
-  ,
-m_agg_op(NO_AGGREGATE)
-  ,
-m_agg_cnt(0)
-  ,
-m_agg_val(0)
-  ,
-m_time_field(false)
-  ,
-m_alias_map(0)
+  m_name(xstrdup(name)), m_symbol(xstrdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
+  m_unmarshal_func(unmarshal), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
+  m_time_field(false), m_alias_map(0)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -108,32 +88,12 @@ m_alias_map(0)
                   || strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
 }
 
-LogField::LogField(char *name, char *symbol, Type type,
+LogField::LogField(const char *name, const char *symbol, Type type,
                    MarshalFunc marshal, UnmarshalFuncWithMap unmarshal, Ptr<LogFieldAliasMap> map)
   :
-m_name(xstrdup(name))
-  ,
-m_symbol(xstrdup(symbol))
-  ,
-m_type(type)
-  ,
-m_container(NO_CONTAINER)
-  ,
-m_marshal_func(marshal)
-  ,
-m_unmarshal_func(NULL)
-  ,
-m_unmarshal_func_map(unmarshal)
-  ,
-m_agg_op(NO_AGGREGATE)
-  ,
-m_agg_cnt(0)
-  ,
-m_agg_val(0)
-  ,
-m_time_field(false)
-  ,
-m_alias_map(map)
+  m_name(xstrdup(name)), m_symbol(xstrdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
+  m_unmarshal_func(NULL), m_unmarshal_func_map(unmarshal), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
+  m_time_field(false), m_alias_map(map)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -149,7 +109,7 @@ m_alias_map(map)
 
 // Container field ctor
 
-LogField::LogField(char *field, Container container)
+LogField::LogField(const char *field, Container container)
   :
 m_name(xstrdup(field))
   ,
@@ -401,7 +361,7 @@ LogField::unmarshal(char **buf, char *dest, int len)
 void
 LogField::display(FILE * fd)
 {
-  static char *names[LogField::N_TYPES] = {
+  static const char *names[LogField::N_TYPES] = {
     "sINT",
     "dINT",
     "STR"

@@ -310,7 +310,7 @@ int n_argument_descriptions = SIZE(argument_descriptions);
 
 #define set_rlimit(name,max_it,ulim_it) max_out_limit(#name, name, max_it, ulim_it)
 static rlim_t
-max_out_limit(char *name, int which, bool max_it = true, bool unlim_it = true)
+max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = true)
 {
   struct rlimit rl;
 
@@ -727,7 +727,7 @@ cmd_check_internal(char *cmd, bool fix = false)
 //  acc.clear_cache();
 //#endif
 
-  char *err = NULL;
+  const char *err = NULL;
   theStore.delete_all();
   if ((err = theStore.read_config())) {
     printf("%s, %s failed\n", err, n);
@@ -787,7 +787,7 @@ cmd_clear(char *cmd)
   }
 
   if (c_all || c_cache) {
-    char *err = NULL;
+    const char *err = NULL;
     theStore.delete_all();
     if ((err = theStore.read_config())) {
       printf("%s, CLEAR failed\n", err);
@@ -837,9 +837,9 @@ static int cmd_help(char *cmd);
 
 static struct CMD
 {
-  char *n;                      // name
-  char *d;                      // description (part of a line)
-  char *h;                      // help string (multi-line)
+  const char *n;                      // name
+  const char *d;                      // description (part of a line)
+  const char *h;                      // help string (multi-line)
   int (*f) (char *);
 }
 commands[] = {
@@ -901,9 +901,9 @@ cmd_index(char *p)
 {
   p += strspn(p, " \t");
   for (int c = 0; c < N_CMDS; c++) {
-    char *l = commands[c].n;
+    const char *l = commands[c].n;
     while (l) {
-      char *s = strchr(l, '/');
+      const char *s = strchr(l, '/');
       char *e = strpbrk(p, " \t\n");
       int len = s ? s - l : strlen(l);
       int lenp = e ? e - p : strlen(p);

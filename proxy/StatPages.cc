@@ -57,7 +57,7 @@ StatPagesManager::init()
 }
 
 void
-StatPagesManager::register_http(char *module, StatPagesFunc func)
+StatPagesManager::register_http(const char *module, StatPagesFunc func)
 {
   ink_release_assert(n_stat_pages < MAX_STAT_PAGES);
 

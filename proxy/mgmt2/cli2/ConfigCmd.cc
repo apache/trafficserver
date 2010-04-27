@@ -61,7 +61,7 @@
 
 int enable_restricted_commands = FALSE;
 
-static int find_value(char *pathname, char *key, char *value, int value_len, char *delim, int no);
+static int find_value(const char *pathname, const char *key, char *value, int value_len, const char *delim, int no);
 
 int
 u_getch(void)
@@ -6331,7 +6331,7 @@ ConfigAlarmNotify(char *string_val)
 }
 
 int
-find_value(char *pathname, char *key, char *value, int value_len, char *delim, int no)
+find_value(const char *pathname, const char *key, char *value, int value_len, const char *delim, int no)
 {
   char buffer[1024];
   char *pos;
@@ -6381,7 +6381,7 @@ find_value(char *pathname, char *key, char *value, int value_len, char *delim, i
 }
 
 int
-ConfigRadiusKeys(char *record)
+ConfigRadiusKeys(const char *record)
 {
 
   char new_passwd1[256], new_passwd2[256], ch = ' ';

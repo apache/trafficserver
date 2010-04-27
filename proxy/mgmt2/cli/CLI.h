@@ -46,16 +46,16 @@ struct CLI_globals
   typedef struct CLI_LevelDesc
   {
     cmdline_states cmdlevel;    /* command line level */
-    char *cmdprompt;            /* command line level prompt */
+    const char *cmdprompt;            /* command line level prompt */
   } CLI_LevelDesc;
 
   /* Variable / Description pairs */
   typedef struct VarNameDesc
   {
-    char *name;                 /* node variable name */
-    char *cname;                /* cluster variable name (if one exits) */
-    char *desc;                 /* variable description */
-    char *format;               /* format string */
+    const char *name;                 /* node variable name */
+    const char *cname;                /* cluster variable name (if one exits) */
+    const char *desc;                 /* variable description */
+    const char *format;               /* format string */
     int name_value_width;       /* field width for name value */
     int cname_value_width;      /* field width for cname value */
     int desc_width;             /* width of description field */

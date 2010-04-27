@@ -43,7 +43,7 @@ bool WebHttpTreeReturnRefresh(char *file_link);
 char *WebHttpTreeReturnHelpLink(char *file_link);
 void WebHttpTreeRebuildJsTree();
 
-char *WebHttpGetLink_Xmalloc(char *file_link);
+char *WebHttpGetLink_Xmalloc(const char *file_link);
 char *WebHttpGetLinkQuery_Xmalloc(char *file_link);
 
 void start_element_handler(void *userData, const char *name, const char **atts);

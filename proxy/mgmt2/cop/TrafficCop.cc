@@ -156,7 +156,7 @@ static InkHashTable *configTable = NULL;
 
 
 static void
-cop_log(int priority, char *format, ...)
+cop_log(int priority, const char *format, ...)
 {
   va_list args;
   char buffer[8192];
@@ -537,14 +537,14 @@ build_config_table(FILE * fp)
 }
 
 static int
-config_exists(char *str)
+config_exists(const char *str)
 {
   InkHashTableValue hval;
   return ink_hash_table_lookup(configTable, str, &hval);
 }
 
 static void
-read_config_string(char *str, char *val, size_t val_len)
+read_config_string(const char *str, char *val, size_t val_len)
 {
   InkHashTableValue hval;
   char *p, *buf;
@@ -579,7 +579,7 @@ ConfigStrFatalError:
 }
 
 static void
-read_config_int(char *str, int *val, bool miss_ok = false)
+read_config_int(const char *str, int *val, bool miss_ok = false)
 {
   InkHashTableValue hval;
   char *p, *buf;
@@ -1203,7 +1203,7 @@ poll_write(int fd, int timeout)
 }
 
 static int
-open_socket(int port, char *ip = NULL, char *ip_to_bind = NULL)
+open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
 {
 
   int sock;

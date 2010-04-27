@@ -44,7 +44,7 @@ parseRemapFile(int fd)
 {
   int entry = 0;
   char line[512];
-  char *err = NULL;
+  const char *err = NULL;
   char *errBuf;
   Tokenizer whiteTok(" \t\r\n");
   int numToks;

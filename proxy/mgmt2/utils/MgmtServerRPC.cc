@@ -172,7 +172,7 @@ Lerror:
 // Output: returns the socket file descriptor to read the RAF response from
 // 
 int
-send_cli_congest_request(char *arguments)
+send_cli_congest_request(const char *arguments)
 {
   int s, connect_result;
   bool found;

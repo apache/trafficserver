@@ -315,7 +315,7 @@ LogHost::create_orphan_LogFile_object()
 {
   delete m_orphan_file;
 
-  char *orphan_ext = "orphan";
+  const char *orphan_ext = "orphan";
   unsigned name_len = (unsigned) (strlen(m_object_filename) + strlen(name()) + strlen(orphan_ext) + 16);
   char *name_buf = (char *) xmalloc(name_len);
   ink_assert(name_buf != NULL);

@@ -904,7 +904,7 @@ mime_init_cache_control_cooking_masks()
 {
   static struct
   {
-    char *name;
+    const char *name;
     inku32 mask;
   } cc_mask_table[] = {
     {
@@ -2939,7 +2939,7 @@ void
 mime_field_block_describe(HdrHeapObjImpl * raw, bool recurse)
 {
   unsigned int i;
-  static char *readiness_names[] = { "EMPTY", "DETACHED", "LIVE", "DELETED" };
+  static const char *readiness_names[] = { "EMPTY", "DETACHED", "LIVE", "DELETED" };
 
   MIMEFieldBlockImpl *obj = (MIMEFieldBlockImpl *) raw;
 

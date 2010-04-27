@@ -122,7 +122,7 @@ class BaseRecords
 
 public:
 
-  BaseRecords(char *mpath, char *cfile, char *efile = NULL);
+  BaseRecords(char *mpath, const char *cfile, char *efile = NULL);
    ~BaseRecords();
 
   void defineRecords();

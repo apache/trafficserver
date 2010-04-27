@@ -60,7 +60,7 @@ public:
   static char *timestamp_to_date_str(long timestamp);
   static char *timestamp_to_time_str(long timestamp);
   static unsigned ip_from_host(char *host);
-  static void manager_alarm(AlarmType alarm_type, char *msg, ...);
+  static void manager_alarm(AlarmType alarm_type, const char *msg, ...);
   static void strip_trailing_newline(char *buf);
   static char *escapify_url(Arena * arena, char *url, int len_in, int *len_out);
   static void remove_content_type_attributes(char *type_str, int *type_len);

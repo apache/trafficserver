@@ -52,7 +52,7 @@ extern int errno;
 
 /* Use SDK_RPRINT to report failure or success for each test case */
 int
-SDK_RPRINT(RegressionTest * t, char *api_name, char *testcase_name, int status, char *err_details_format, ...)
+SDK_RPRINT(RegressionTest * t, const char *api_name, const char *testcase_name, int status, const char *err_details_format, ...)
 {
   int l;
   char buffer[8192];
@@ -209,8 +209,8 @@ REGRESSION_TEST(SDK_API_INKPluginDirGet) (RegressionTest * test, int atype, int 
 static int my_config_id = -1;
 typedef struct
 {
-  char *a;
-  char *b;
+  const char *a;
+  const char *b;
 } ConfigData;
 
 static void
@@ -2895,22 +2895,22 @@ REGRESSION_TEST(SDK_API_INKUrl) (RegressionTest * test, int atype, int *pstatus)
   INKMLoc url_loc3;
   const char *scheme = INK_URL_SCHEME_HTTP;
   const char *scheme_get;
-  char *user = "yyy";
+  const char *user = "yyy";
   const char *user_get;
-  char *password = "xxx";
+  const char *password = "xxx";
   const char *password_get;
-  char *host = "www.example.com";
+  const char *host = "www.example.com";
   const char *host_get;
   int port = 2021;
   char port_char[10];
   int port_get = 80;
-  char *path = "about/overview.html";
+  const char *path = "about/overview.html";
   const char *path_get;
-  char *params = "abcdef";
+  const char *params = "abcdef";
   const char *params_get;
-  char *query = "name=xxx";
+  const char *query = "name=xxx";
   const char *query_get;
-  char *fragment = "yyy";
+  const char *fragment = "yyy";
   const char *fragment_get;
   char *url_expected_string;
   char *url_string_from_1 = (char *) INK_ERROR_PTR;
@@ -3430,7 +3430,7 @@ REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *psta
   int url_port = 2345;
   const char *url_path = "abcd/efg/hij.htm";
 
-  char *response_reason = "aefa";
+  const char *response_reason = "aefa";
   const char *response_reason_get;
 
   INKHttpStatus status_get;
@@ -3451,7 +3451,7 @@ REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *psta
   /* int version2; unused: lv */
 
   int length;
-  char *expected_iobuf = "GET http://www.example.com:2345/abcd/efg/hij.htm HTTP/2.1\r\n\r\n";
+  const char *expected_iobuf = "GET http://www.example.com:2345/abcd/efg/hij.htm HTTP/2.1\r\n\r\n";
   int actual_length;
   int expected_length;
   bool test_passed_Http_Hdr_Create = false;
@@ -5389,12 +5389,12 @@ convert_http_hdr_to_string(INKMBuffer bufp, INKMLoc hdr_loc)
 
 REGRESSION_TEST(SDK_API_INKHttpHdrParse) (RegressionTest * test, int atype, int *pstatus) {
 
-  char *req =
+  const char *req =
     "GET http://www.example.com/ HTTP/1.1\r\nmimefield1:field1value1,field1value2\r\nmimefield2:field2value1,field2value2\r\n\r\n";
-  char *resp =
+  const char *resp =
     "HTTP/1.1 200 OK\r\n1mimefield:1field1value,1field2value\r\n2mimefield:2field1value,2field2value\r\n\r\n";
   const char *start;
-  char *end;
+  const char *end;
   char *temp;
 
   int retval;
@@ -5717,10 +5717,10 @@ compare_field_values(RegressionTest * test, INKMBuffer bufp1, INKMLoc hdr_loc1, 
 
 REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int *pstatus) {
 
-  char *parse_string =
+  const char *parse_string =
     "field1:field1Value1,field1Value2\r\nfield2:10,-34,45\r\nfield3:field3Value1,23\r\nfield2: 2345, field2Value2\r\n\r\n";
-  char *DUPLICATE_FIELD_NAME = "field2";
-  char *REMOVE_FIELD_NAME = "field3";
+  const char *DUPLICATE_FIELD_NAME = "field2";
+  const char *REMOVE_FIELD_NAME = "field3";
 
   INKMimeParser parser;
 
@@ -5736,7 +5736,8 @@ REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int 
   INKMLoc field_loc2 = (INKMLoc) INK_ERROR_PTR;
 
   const char *start;
-  char *end, *temp;
+  const char *end;
+  char *temp;
 
   int retval;
   int hdrLength;
@@ -6227,9 +6228,9 @@ REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int 
 
 REGRESSION_TEST(SDK_API_INKUrlParse) (RegressionTest * test, int atype, int *pstatus) {
 
-  char *url = "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc";
+  const char *url = "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc";
   const char *start;
-  char *end;
+  const char *end;
   char *temp;
 
   int retval;
@@ -6383,7 +6384,7 @@ REGRESSION_TEST(SDK_API_INKTextLog) (RegressionTest * test, int atype, int *psta
     SDK_RPRINT(test, "INKTextLogObjectCreate", "TestCase1", TC_PASS, "ok");
   }
 
-  retVal = INKTextLogObjectWrite(log, LOG_TEST_PATTERN);
+  retVal = INKTextLogObjectWrite(log, (char*)LOG_TEST_PATTERN);
   if (retVal != INK_SUCCESS) {
     SDK_RPRINT(test, "INKTextLogObjectWrite", "TestCase1", TC_FAIL, "can not write to log object");
     *pstatus = REGRESSION_TEST_FAILED;
@@ -6434,17 +6435,17 @@ REGRESSION_TEST(SDK_API_INKTextLog) (RegressionTest * test, int atype, int *psta
 //////////////////////////////////////////////
 
 REGRESSION_TEST(SDK_API_INKMgmtGet) (RegressionTest * test, int atype, int *pstatus) {
-  char *CONFIG_PARAM_COUNTER_NAME = "proxy.process.http.total_parent_proxy_connections";
+  const char *CONFIG_PARAM_COUNTER_NAME = "proxy.process.http.total_parent_proxy_connections";
   int CONFIG_PARAM_COUNTER_VALUE = 0;
 
-  char *CONFIG_PARAM_FLOAT_NAME = "proxy.config.http.background_fill_completed_threshold";
+  const char *CONFIG_PARAM_FLOAT_NAME = "proxy.config.http.background_fill_completed_threshold";
   float CONFIG_PARAM_FLOAT_VALUE = 0.5;
 
-  char *CONFIG_PARAM_INT_NAME = "proxy.config.http.cache.http";
+  const char *CONFIG_PARAM_INT_NAME = "proxy.config.http.cache.http";
   int CONFIG_PARAM_INT_VALUE = 1;
 
-  char *CONFIG_PARAM_STRING_NAME = "proxy.config.product_name";
-  char *CONFIG_PARAM_STRING_VALUE = "Traffic Server";
+  const char *CONFIG_PARAM_STRING_NAME = "proxy.config.product_name";
+  const char *CONFIG_PARAM_STRING_VALUE = "Traffic Server";
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -6947,12 +6948,12 @@ static int
 checkHttpTxnParentProxy(ContData * data, INKHttpTxn txnp)
 {
 
-  char *hostname = "txnpp.example.com";
+  const char *hostname = "txnpp.example.com";
   int port = 10180;
   char *hostnameget = NULL;
   int portget = 0;
 
-  if (INKHttpTxnParentProxySet(txnp, hostname, port) != INK_SUCCESS) {
+  if (INKHttpTxnParentProxySet(txnp, (char*)hostname, port) != INK_SUCCESS) {
     SDK_RPRINT(data->test, "INKHttpTxnParentProxySet", "TestCase1", TC_FAIL,
                "INKHttpTxnParentProxySet doesn't return INK_SUCCESS");
     SDK_RPRINT(data->test, "INKHttpTxnParentProxyGet", "TestCase1", TC_FAIL,
@@ -8346,7 +8347,7 @@ cont_test_handler(INKCont contp, INKEvent event, void *edata)
 
       /* Check if browser response body is the one we expected */
       char *body_response = get_body_ptr(data->browser->response);
-      char *body_expected;
+      const char *body_expected;
       if (data->test_case == TEST_CASE_CONNECT_ID1) {
         body_expected = "Body for response 9";
       } else {

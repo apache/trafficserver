@@ -97,8 +97,8 @@ cliCreateCommandHashtable()
 
 
 int
-cliAddCommandtoHashtable(char *name, cli_ArgvInfo * argtable,
-                         char **reqd_args, cli_parsedArgInfo * parsedArgTable, char *helpString)
+cliAddCommandtoHashtable(const char *name, cli_ArgvInfo * argtable,
+                         char **reqd_args, cli_parsedArgInfo * parsedArgTable, const char *helpString)
 {
   Tcl_HashEntry *entryPtr;
   int newCmd;

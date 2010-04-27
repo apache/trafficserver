@@ -277,12 +277,12 @@ struct MultiCacheBase:MultiCacheHeader
     return last_bucket_of_partition(p) - first_bucket_of_partition(p) + 1;
   }
 
-  int open(Store * store, char *config_filename,
+  int open(Store * store, const char *config_filename,
            char *db_filename = NULL, int db_size = -1, bool reconfigure = false, bool fix = false, bool silent = false);
 
   // 1 for success, 0 for no config file, -1 for failure
-  int read_config(char *config_filename, Store & store, char *fn = NULL, int *pi = NULL, int *pbuckets = NULL);
-  int write_config(char *config_filename, int nominal_size, int buckets);
+  int read_config(const char *config_filename, Store & store, char *fn = NULL, int *pi = NULL, int *pbuckets = NULL);
+  int write_config(const char *config_filename, int nominal_size, int buckets);
   int initialize(Store * store, char *filename, int elements,
                  int buckets = 0, int levels = 2,
                  int level0_elements_per_bucket = 4,
@@ -334,7 +334,7 @@ struct MultiCacheBase:MultiCacheHeader
   // ** cannot be called on a running system **
   //  assumes that the configuration is correct
   //
-  int check(char *config_filename, bool fix = false);
+  int check(const char *config_filename, bool fix = false);
 
   ProxyMutex *lock_for_bucket(int bucket)
   {

@@ -290,7 +290,7 @@ setUpLogging()
 //    returns 1 if something is missing
 //
 int
-checkWebContext(WebContext * wctx, char *desc)
+checkWebContext(WebContext * wctx, const char *desc)
 {
 
   struct stat fInfo;

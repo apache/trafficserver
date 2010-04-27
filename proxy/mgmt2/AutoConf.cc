@@ -176,7 +176,7 @@ void
 AutoConf::processAction(char *submission, textBuffer * output)
 {
   InkHashTable *vars = processFormSubmission(submission);
-  char *action = "Unknown";
+  const char *action = "Unknown";
   PACresult r = PAC_OK;
   bool genReply = true;
 
@@ -218,7 +218,7 @@ AutoConf::processAction(char *submission, textBuffer * output)
 // void AutoConf::pacErrorResponse(char* action, PACresult error, textBuffer* output)
 //
 void
-AutoConf::pacErrorResponse(char *action, PACresult error, textBuffer * output)
+AutoConf::pacErrorResponse(const char *action, PACresult error, textBuffer * output)
 {
   const char a[] =
     "<html>\n<head>\n<title> Client AutoConfig Error </title>\n</head>\n<body bgcolor=\"#FFFFFF\">\n<h1> Client AutoConfig Error </h1>\n<p>\nClient AutoCnfig File ";

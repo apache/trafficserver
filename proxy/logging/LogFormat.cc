@@ -79,13 +79,13 @@ const char *const
   -------------------------------------------------------------------------*/
 
 void
-LogFormat::setup(char *name, char *format_str, unsigned interval_sec)
+LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec)
 {
   if (name == NULL && format_str == NULL) {
     Note("No name or field symbols for this format");
     m_valid = false;
   } else {
-    char *tag = " %<phn>";
+    const char *tag = " %<phn>";
     const size_t m_format_str_size = strlen(format_str) + (m_tagging_on ? strlen(tag) : 0) + 1;
     m_format_str = (char *) xmalloc(m_format_str_size);
     ink_strncpy(m_format_str, format_str, m_format_str_size);
@@ -115,7 +115,7 @@ LogFormat::setup(char *name, char *format_str, unsigned interval_sec)
   LogFormat::id_from_name
   -------------------------------------------------------------------------*/
 
-ink32 LogFormat::id_from_name(char *name)
+ink32 LogFormat::id_from_name(const char *name)
 {
   ink32
     id = 0;
@@ -142,7 +142,7 @@ ink32 LogFormat::id_from_name(char *name)
   -------------------------------------------------------------------------*/
 
 void
-LogFormat::init_variables(char *name, char *fieldlist_str, char *printf_str, unsigned interval_sec)
+LogFormat::init_variables(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec)
 {
 
   m_field_count = parse_symbol_string(fieldlist_str, &m_field_list, &m_aggregate);
@@ -245,7 +245,7 @@ LogFormat::LogFormat(LogFormatType type)
   form %<symbol>.
   -------------------------------------------------------------------------*/
 
-LogFormat::LogFormat(char *name, char *format_str, unsigned interval_sec)
+LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval_sec)
   :
 m_interval_sec(0)
   ,
@@ -283,7 +283,7 @@ m_format_str(NULL)
 // LogBufferHeader does not store the format_str, if it did, we could probably
 // delete this.
 //
-LogFormat::LogFormat(char *name, char *fieldlist_str, char *printf_str, unsigned interval_sec)
+LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec)
   :
 m_interval_sec(0)
   ,
@@ -530,7 +530,7 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   -------------------------------------------------------------------------*/
 
 int
-LogFormat::parse_symbol_string(char *symbol_string, LogFieldList * field_list, bool * contains_aggregates)
+LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_list, bool *contains_aggregates)
 {
   char *sym_str;
   int field_count = 0;
@@ -751,7 +751,7 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
 void
 LogFormat::display(FILE * fd)
 {
-  static char *types[] = {
+  static const char *types[] = {
     "SQUID_LOG",
     "COMMON_LOG",
     "EXTENDED_LOG",

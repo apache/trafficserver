@@ -280,7 +280,7 @@ CacheHostTable::BuildTableFromString(char *file_buf)
   int second_pass = 0;
   int numEntries = 0;
   char errBuf[1024];
-  char *errPtr = NULL;
+  const char *errPtr = NULL;
 
   // type counts
   int hostDomain = 0;
@@ -687,7 +687,7 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
   int scheme = CACHE_NONE_TYPE;
   int size = 0;
   int in_percent = 0;
-  char *matcher_name = "[CachePartition]";
+  const char *matcher_name = "[CachePartition]";
 
   memset(partition_seen, 0, sizeof(partition_seen));
   num_partitions = 0;
@@ -779,7 +779,7 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
         // XXX should this be < 0 instead of < 1
         if (partition_number<1 || partition_number> 255 || partition_seen[partition_number]) {
 
-          char *err;
+          const char *err;
 
           // XXX should this be < 0 instead of < 1
           if (partition_number<1 || partition_number> 255) {

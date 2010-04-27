@@ -95,7 +95,7 @@ struct StatPagesManager
 {
   void init();
 
-  inkcoreapi void register_http(char *hostname, StatPagesFunc func);
+  inkcoreapi void register_http(const char *hostname, StatPagesFunc func);
 
   // Private
   Action *handle_http(Continuation * cont, HTTPHdr * header, int client_ip);

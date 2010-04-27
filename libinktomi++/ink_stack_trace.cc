@@ -99,7 +99,7 @@ ink_stack_trace_dump(int sighandler_frame)
 
   // Recopy and re-terminate the app name in case it has been trashed.
   char name[256];
-  char *msg = " - STACK TRACE: \n";
+  const char *msg = " - STACK TRACE: \n";
   ink_strncpy(name, program_name, sizeof(name) - 2);
   if (write(2, name, strlen(name)) == -1)
     return;

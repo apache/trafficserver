@@ -33,8 +33,8 @@
 
 extern int cliCreateCommandHashtable();
 
-extern int cliAddCommandtoHashtable(char *name, cli_ArgvInfo * argtable, char **reqd_args,
-                                    cli_parsedArgInfo * parsedArgTable, char *helpString);
+extern int cliAddCommandtoHashtable(const char *name, cli_ArgvInfo * argtable, char **reqd_args,
+                                    cli_parsedArgInfo * parsedArgTable, const char *helpString);
 
 extern cli_CommandInfo *cliGetCommandArgsfromHashtable(char *name);
 

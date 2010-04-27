@@ -52,7 +52,7 @@ char *
 HttpMessageBody::MakeErrorBodyVA(int max_buffer_length,
                                  int *resulting_buffer_length,
                                  const HttpConfigParams * config,
-                                 HTTPStatus status_code, char *reason, char *format, va_list va)
+                                 HTTPStatus status_code, const char *reason, const char *format, va_list va)
 {
   char *p, *outbuf = NULL;
   char error_title[128];

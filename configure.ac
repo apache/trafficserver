@@ -424,13 +424,13 @@ base_cc=`basename $CC`
 # These are shortcuts used in combination for the compiler options below
 case $host_os in
   linux*)
-    common_opt="-pipe -Wall -Werror -Wno-char-subscripts -Wno-write-strings"
+    common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
     ;;
   darwin*)
-    common_opt="-pipe -Wall -Werror -Wno-char-subscripts -Wno-write-strings"
+    common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
@@ -438,7 +438,7 @@ case $host_os in
     LDFLAGS="${LDFLAGS} -L/opt/local/lib"
     ;;
   freebsd*)
-    common_opt="-pipe -Wall -Werror -Wno-char-subscripts -Wno-write-strings"
+    common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
@@ -455,7 +455,7 @@ case $host_os in
        [posix thread semantics]
       )
     else # gcc
-      common_opt="-pipe -Wall -Werror -Wno-char-subscripts -Wno-write-strings"
+      common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -463,7 +463,7 @@ case $host_os in
     LDFLAGS="${LDFLAGS} -L/lib -L/usr/local/lib"
     ;;
   *)         
-    common_opt="-pipe -Wall -Werror -Wno-char-subscripts -Wno-write-strings"
+    common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
@@ -687,6 +687,7 @@ if test "x${with_libdb}" = "xyes"; then
 fi
 
 AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign lrand48_r srand48_r port_create])
+AC_CHECK_FUNCS([strndup])
 
 AS_IF([test "x$enable_eventfd" = "xyes"],
   [AC_CHECK_FUNCS([eventfd])]

@@ -67,7 +67,7 @@
 
 struct tree_node
 {
-  char *name;                   // name of this node
+  const char *name;             // name of this node
   char *enabled;                // config record to check if this node enabled (NULL default to enabled)
 };
 
@@ -85,7 +85,7 @@ struct link_node
   int menu_id;                  // query: menu_id = [menu id]
   int item_id;                  // query: item_id = [item id]
   int tab_id;                   // query: tab_id  = [tab id]
-  char *query;                  // query: additional query items for this link
+  const char *query;            // query: additional query items for this link
   bool refresh;
   char *help_link;
 };
@@ -122,7 +122,7 @@ static InkHashTable *g_item_ht = NULL;
 static InkHashTable *g_link_ht = NULL;
 static mode_node g_modes[WHT_MAX_MODES];
 
-static char *g_empty_string = "";
+static const char *g_empty_string = "";
 static int g_mode_id = 0;
 static int g_menu_id = 0;
 static int g_item_id = 0;
@@ -757,7 +757,7 @@ WebHttpRenderHtmlTabs(textBuffer * output, char *file_link, int active_tab)
 //-------------------------------------------------------------------------
 
 char *
-WebHttpGetLink_Xmalloc(char *file_link)
+WebHttpGetLink_Xmalloc(const char *file_link)
 {
   link_node *link;
   char *buf = (char *) xmalloc(WHT_MAX_BUF_LEN + 1);

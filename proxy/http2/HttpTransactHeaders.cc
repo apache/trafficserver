@@ -570,8 +570,7 @@ HttpTransactHeaders::downgrade_request(bool * origin_server_keep_alive, HTTPHdr 
   -------------------------------------------------------------------------*/
 
 bool
-HttpTransactHeaders::generate_basic_authorization_from_request(Arena * arena,
-                                                               HTTPHdr * h, char **username, char **password)
+HttpTransactHeaders::generate_basic_authorization_from_request(Arena *arena, HTTPHdr *h, char **username, char **password)
 {
   const char *auth_value;
   const char *auth_end;
@@ -1091,8 +1090,8 @@ HttpTransactHeaders::handle_conditional_headers(HttpTransact::CacheLookupInfo * 
   -------------------------------------------------------------------------*/
 
 void
-HttpTransactHeaders::insert_warning_header(HttpConfigParams * http_config_param,
-                                           HTTPHdr * header, HTTPWarningCode code, char *warn_text, int warn_text_len)
+HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, HTTPHdr *header, HTTPWarningCode code,
+                                           const char *warn_text, int warn_text_len)
 {
   char *p;
   char *warning_text = NULL;
@@ -1220,7 +1219,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams * http_config
   }
 
   ink_assert(scheme >= 0);
-  char *prot = "?";
+  const char *prot = "?";
   if (scheme == URL_WKSIDX_HTTP)
     prot = "HTTP";
   else if (scheme == URL_WKSIDX_HTTPS)
@@ -1315,7 +1314,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams * http_confi
     return;
   }
 
-  char *prot = "?";
+  const char *prot = "?";
   if (scheme == URL_WKSIDX_HTTP)
     prot = "HTTP";
   else if (scheme == URL_WKSIDX_HTTPS)

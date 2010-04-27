@@ -75,6 +75,13 @@ char *ink_string_mcopy(char *source);
          */
 char *ink_string_mjoin(int nstrings, ...);
 
+/* Missing fcns */
+#ifdef HAVE_STRNDUP
+#define  ink_strndup strndup
+#else
+char *ink_strndup(const char *str, size_t n);
+#endif
+
 /* 9/3/98 elam: Added this because NT doesn't have strtok_r() */
 char *ink_strtok_r(char *s1, const char *s2, char **lasts);
 
@@ -291,7 +298,7 @@ ink_string_fast_strncpy(char *dest, char *src, int src_size, int nbytes)
 }
 
 static inline int
-ink_string_fast_strncasecmp(char *s0, char *s1, int n)
+ink_string_fast_strncasecmp(const char *s0, const char *s1, int n)
 {
   int i;
   for (i = 0; (i < n) && (ParseRules::ink_tolower(s0[i]) == ParseRules::ink_tolower(s1[i])); i++);
@@ -302,9 +309,9 @@ ink_string_fast_strncasecmp(char *s0, char *s1, int n)
 }
 
 static inline int
-ink_string_fast_strcasecmp(char *s0, char *s1)
+ink_string_fast_strcasecmp(const char *s0, const char *s1)
 {
-  char *s = s0, *p = s1;
+  const char *s = s0, *p = s1;
   while (*s && *p && (ParseRules::ink_tolower(*s) == ParseRules::ink_tolower(*p))) {
     s++;
     p++;
@@ -316,9 +323,9 @@ ink_string_fast_strcasecmp(char *s0, char *s1)
 }
 
 static inline int
-ink_string_fast_strcmp(char *s0, char *s1)
+ink_string_fast_strcmp(const char *s0, const char *s1)
 {
-  char *s = s0, *p = s1;
+  const char *s = s0, *p = s1;
 
   while (*s && *p && *s == *p) {
     s++;

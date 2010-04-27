@@ -57,17 +57,17 @@
 
 struct ConfigEntry
 {
-  char *type;
-  char *name;
-  char *value_type;
-  char *value;
+  const char *type;
+  const char *name;
+  const char *value_type;
+  const char *value;
   ConfigEntry *next;
 };
 
 struct RecordRenameMapElement
 {
-  char *old_name;
-  char *new_name;
+  const char *old_name;
+  const char *new_name;
 };
 
 //-------------------------------------------------------------------------
@@ -88,7 +88,7 @@ RecordRenameMapElement RecordRenameMap[] = {
 };
 
 // blacklist these records (upgrade only!)
-char *RecordBlackList[] = {
+const char *RecordBlackList[] = {
   "proxy.config.socks.socks_version",
   NULL                          // array terminator
 };
@@ -105,18 +105,18 @@ InkHashTable *modify_ht = 0;
 ConfigEntry *modify_list_head = 0;
 ConfigEntry *modify_list_tail = 0;
 
-char *null_str = "NULL";
-char *config_str = "CONFIG";
-char *local_str = "LOCAL";
-char *plugin_str = "PLUGIN";
-char *int_str = "INT";
-char *llong_str = "LLONG";
-char *string_str = "STRING";
-char *float_str = "FLOAT";
-char *counter_str = "COUNTER";
+const char *null_str = "NULL";
+const char *config_str = "CONFIG";
+const char *local_str = "LOCAL";
+const char *plugin_str = "PLUGIN";
+const char *int_str = "INT";
+const char *llong_str = "LLONG";
+const char *string_str = "STRING";
+const char *float_str = "FLOAT";
+const char *counter_str = "COUNTER";
 
 #define ADMIN_PASSWD_LEN 23
-char *admin_passwd_rec_name = "proxy.config.admin.admin_password";
+const char *admin_passwd_rec_name = "proxy.config.admin.admin_password";
 char admin_passwd[ADMIN_PASSWD_LEN + 1];
 
 bool upgrade = false;
@@ -342,7 +342,7 @@ generate_rename_ht_from_RecordRenameMap()
   RecordRenameMapElement *rrme = RecordRenameMap;
 
   while (rrme->old_name != NULL) {
-    ink_hash_table_insert(rename_ht, rrme->old_name, rrme->new_name);
+    ink_hash_table_insert(rename_ht, rrme->old_name, (void*)rrme->new_name);
     rrme++;
   }
   return 0;
@@ -357,7 +357,7 @@ int
 generate_blacklist_ht_from_RecordBlackList()
 {
 
-  char **p = RecordBlackList;
+  const char **p = RecordBlackList;
 
   while (*p != NULL) {
     ink_hash_table_insert(blacklist_ht, *p, NULL);
@@ -503,7 +503,8 @@ generate_new_config(char *fname)
 
   FILE *fp;
   char *p, *q, *t, *p_copy;
-  char *b_type, *b_name, *b_value_type, *b_value;
+  char *b_type, *b_name, *b_value_type;
+  const char *b_value;
   SimpleTokenizer st(' ', SimpleTokenizer::OVERWRITE_INPUT_STRING);
   ConfigEntry *ce;
 

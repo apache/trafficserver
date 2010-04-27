@@ -143,7 +143,7 @@ unescapifyStr(char *buffer)
 //                         ip_addr_t* addr2)
 //
 //   Attempts to extract either an Ip Address or an IP Range
-//     fron match_str.  The range should be two addresses
+//     from match_str.  The range should be two addresses
 //     separated by a hyphen and no spaces
 //
 //   If the extraction is successful, sets addr1 and addr2
@@ -153,8 +153,8 @@ unescapifyStr(char *buffer)
 //   If the extraction fails, returns a static string
 //     that describes the reason for the error. 
 //
-char *
-ExtractIpRange(char *match_str, ip_addr_t * addr1, ip_addr_t * addr2)
+const char *
+ExtractIpRange(char *match_str, ip_addr_t *addr1, ip_addr_t *addr2)
 {
   Tokenizer rangeTok("-/");
   bool mask = false;
@@ -259,7 +259,7 @@ tokLine(char *buf, char **last)
   return NULL;
 }
 
-char *matcher_type_str[] = {
+const char *matcher_type_str[] = {
   "invalid",
   "host",
   "domain",
@@ -284,7 +284,7 @@ char *matcher_type_str[] = {
 //   Returns NULL on success and a static
 //    error string on failure
 //
-char *
+const char *
 processDurationString(char *str, int *seconds)
 {
   char *s = str;
@@ -391,8 +391,8 @@ const matcher_tags socks_server_tags = {
 //   If successful, NULL is returned.  If unsuccessful,
 //     a static error string is returned
 //
-char *
-parseConfigLine(char *line, matcher_line * p_line, const matcher_tags * tags)
+const char *
+parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
 {
 
   enum pState

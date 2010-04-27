@@ -51,12 +51,12 @@ static const char modulePrefix[] = "[ParentSelection]";
 static Ptr<ProxyMutex> reconfig_mutex = NULL;
 
 // Config var names
-static char *file_var = "proxy.config.http.parent_proxy.file";
-static char *default_var = "proxy.config.http.parent_proxies";
-static char *retry_var = "proxy.config.http.parent_proxy.retry_time";
-static char *enable_var = "proxy.config.http.parent_proxy_routing_enable";
-static char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
-static char *dns_parent_only_var = "proxy.config.http.no_dns_just_forward_to_parent";
+static const char *file_var = "proxy.config.http.parent_proxy.file";
+static const char *default_var = "proxy.config.http.parent_proxies";
+static const char *retry_var = "proxy.config.http.parent_proxy.retry_time";
+static const char *enable_var = "proxy.config.http.parent_proxy_routing_enable";
+static const char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
+static const char *dns_parent_only_var = "proxy.config.http.no_dns_just_forward_to_parent";
 
 static const char *ParentResultStr[] = {
   "Parent_Undefined",
@@ -639,7 +639,7 @@ ParentRecord::ProcessParents(char *val)
   const char *current;
   int port;
   char *tmp;
-  char *errPtr;
+  const char *errPtr;
 
   if (parents != NULL) {
     return "Can not specify more than one set of parents";
@@ -1306,7 +1306,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
   FP RE(verify(result, PARENT_SPECIFIED, "pilot_net", 80), 4)
     // Test 5
     ST(5) REINIT br(request, "www.snoopy.net");
-  char *snoopy_dog = "http://www.snoopy.com/";
+  const char *snoopy_dog = "http://www.snoopy.com/";
   request->hdr->url_set(snoopy_dog, strlen(snoopy_dog));
   FP RE(verify(result, PARENT_SPECIFIED, "odie", 80) + verify(result, PARENT_SPECIFIED, "garfield", 80), 5)
     // Test 6
@@ -1440,7 +1440,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
 
 // verify returns 1 iff the test passes
 int
-verify(ParentResult * r, ParentResultType e, char *h, int p)
+verify(ParentResult * r, ParentResultType e, const char *h, int p)
 {
   if (is_debug_tag_set("parent_select"))
     show_result(r);
@@ -1449,7 +1449,7 @@ verify(ParentResult * r, ParentResultType e, char *h, int p)
 
 // br creates an HttpRequestData object
 void
-br(HttpRequestData * h, char *os_hostname, int dest_ip)
+br(HttpRequestData * h, const char *os_hostname, int dest_ip)
 {
   int hostname_len = strlen(os_hostname) + 1;
 

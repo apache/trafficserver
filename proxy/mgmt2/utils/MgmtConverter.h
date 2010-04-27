@@ -38,7 +38,7 @@ typedef char *(*RuleConverter_xml) (XMLNode * rule_node);       /* XML ==> TS co
 
 struct FileInfo
 {
-  char *record_name;
+  const char *record_name;
   INKFileNameT type;
   RuleConverter_ts converter_ts;
   RuleConverter_xml converter_xml;
@@ -87,7 +87,7 @@ int convertDomain_xml(XMLNode * dom_node, INKDomain * dom);
 
 
 /* TS ==> XML conversion */
-int convertFile_ts(char *filename, char **xml_file);
+int convertFile_ts(const char *filename, char **xml_file);
 /* RuleConverter function pointers */
 int convertAdminAccessRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file);
 int convertArmSecurityRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file);
@@ -113,20 +113,20 @@ int convertVaddrsRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file);
 
 /* helper functions to convert common structures */
 int convertPortEle_ts(INKPortEle * ele, textBuffer * xml_file, char *tag_name);
-int convertIpAddrEle_ts(INKIpAddrEle * ele, textBuffer * xml_file, char *tag_name);
+int convertIpAddrEle_ts(INKIpAddrEle * ele, textBuffer * xml_file, const char *tag_name);
 int convertPdssFormat_ts(INKPdSsFormat * pdss, textBuffer * xml_file);
 int convertTimePeriod_ts(INKHmsTime * time, textBuffer * xml_file);
-int convertIpAddrList_ts(INKIpAddrList list, textBuffer * xml_file, char *tag_name);
-int convertDomainList_ts(INKDomainList list, textBuffer * xml_file, char *tag_name);
+int convertIpAddrList_ts(INKIpAddrList list, textBuffer * xml_file, const char *tag_name);
+int convertDomainList_ts(INKDomainList list, textBuffer * xml_file, const char *tag_name);
 
 /* helper functions to write common xml */
-void writeXmlStartTag(textBuffer * xml, char *name, char *nsp = NULL);
-void writeXmlAttrStartTag(textBuffer * xml, char *name, char *nsp = NULL);
-void writeXmlEndTag(textBuffer * xml, char *name, char *nsp = NULL);
-void writeXmlElement(textBuffer * xml, char *elemName, char *value, char *nsp = NULL);
-void writeXmlElement_int(textBuffer * xml, char *elemName, int value, char *nsp = NULL);
-void writeXmlAttribute(textBuffer * xml, char *attrName, char *value);
-void writeXmlAttribute_int(textBuffer * xml, char *attrName, int value);
+void writeXmlStartTag(textBuffer * xml, const char *name, const char *nsp = NULL);
+void writeXmlAttrStartTag(textBuffer * xml, const char *name, char *nsp = NULL);
+void writeXmlEndTag(textBuffer * xml, const char *name, const char *nsp = NULL);
+void writeXmlElement(textBuffer * xml, const char *elemName, const char *value, const char *nsp = NULL);
+void writeXmlElement_int(textBuffer * xml, const char *elemName, int value, const char *nsp = NULL);
+void writeXmlAttribute(textBuffer * xml, const char *attrName, const char *value);
+void writeXmlAttribute_int(textBuffer * xml, const char *attrName, int value);
 void writeXmlClose(textBuffer * xml);
 
 int strcmptag(char *fulltag, char *name, char *nsp);

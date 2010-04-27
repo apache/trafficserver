@@ -243,7 +243,7 @@ DNSProcessor::DNSProcessor()
 }
 
 void
-DNSEntry::init(char *x, int len, int qtype_arg,
+DNSEntry::init(const char *x, int len, int qtype_arg,
                Continuation * acont, HostEnt ** wait, DNSHandler * adnsH, int dns_lookup_timeout)
 {
   (void) adnsH;
@@ -990,7 +990,7 @@ DNSEntry::mainEvent(int event, Event * e)
 
 
 Action *
-DNSProcessor::getby(char *x, int len, int type,
+DNSProcessor::getby(const char *x, int len, int type,
                     Continuation * cont, HostEnt ** wait, DNSHandler * adnsH, bool proxy, bool proxy_cache, int timeout)
 {
   Debug("dns", "received query %s type = %d, timeout = %d", x, type, timeout);
@@ -1583,7 +1583,7 @@ typedef int (DNSRegressionContinuation::*DNSRegContHandler) (int, void *);
 struct DNSRegressionContinuation:Continuation
 {
   int hosts;
-  char **hostnames;
+  const char **hostnames;
   int type;
   int *status;
   int found;
@@ -1618,14 +1618,14 @@ struct DNSRegressionContinuation:Continuation
     }
   }
 
-  DNSRegressionContinuation(int ahosts, int atofind, char **ahostnames, RegressionTest * t, int atype, int *astatus)
+  DNSRegressionContinuation(int ahosts, int atofind, const char **ahostnames, RegressionTest * t, int atype, int *astatus)
 :  Continuation(new_ProxyMutex()), hosts(ahosts), hostnames(ahostnames), type(atype),
     status(astatus), found(0), tofind(atofind), i(0), test(t) {
     SET_HANDLER((DNSRegContHandler) & DNSRegressionContinuation::mainEvent);
   }
 };
 
-static char *dns_test_hosts[] = {
+static const char *dns_test_hosts[] = {
   "www.apple.com",
   "www.ibm.com",
   "www.microsoft.com",

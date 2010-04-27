@@ -41,9 +41,7 @@ int RecProcessStart();
 
 RecRawStatBlock *RecAllocateRawStatBlock(int num_stats);
 
-int RecRegisterRawStat(RecRawStatBlock * rsb,
-                       RecT rec_type,
-                       char *name, RecDataT data_type, RecPersistT persist_type, int id, RecRawStatSyncCb sync_cb);
+int RecRegisterRawStat(RecRawStatBlock * rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id, RecRawStatSyncCb sync_cb);
 
 // RecRawStatRange* RecAllocateRawStatRange (int num_buckets);
 

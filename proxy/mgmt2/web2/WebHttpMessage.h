@@ -287,7 +287,7 @@ public:
   };
   void setLocationURL(const char *url);
 
-  void setRealm(char *);
+  void setRealm(const char *);
   void setLastMod(time_t lm)
   {
     lastMod = lm;

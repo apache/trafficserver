@@ -642,7 +642,7 @@ httpResponse::setContentType(const char *str)
 }
 
 void
-httpResponse::setRealm(char *realm)
+httpResponse::setRealm(const char *realm)
 {
   if (realm != NULL) {
     authRealm = xstrdup(realm);

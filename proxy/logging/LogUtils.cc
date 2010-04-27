@@ -261,7 +261,7 @@ LogUtils::ip_from_host(char *host)
   -------------------------------------------------------------------------*/
 
 void
-LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, char *msg, ...)
+LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
 {
   char msg_buf[LOG_MAX_FORMATTED_LINE];
   va_list ap;

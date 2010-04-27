@@ -73,14 +73,14 @@ CmdLine_EventHandler::~CmdLine_EventHandler(void)
 
 /****************************** Member fcns *******************************/
 
-inline char *
+inline const char *
 CmdLine_EventHandler::command_prompt()
 {
   return cmdprompt;
 }
 
 inline void
-CmdLine_EventHandler::command_prompt(char *new_prompt)
+CmdLine_EventHandler::command_prompt(const char *new_prompt)
 {
   cmdprompt = new_prompt ? new_prompt : NULL;
 }

@@ -34,7 +34,7 @@ parseStorageFile(int fd)
 {
   int ln = 0;
   char line[256];
-  char *err = NULL;
+  const char *err = NULL;
   while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
     // update lines
 

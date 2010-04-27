@@ -43,7 +43,7 @@ class LMRecords:public BaseRecords
 
 public:
 
-  LMRecords(char *mpath, char *cfile, char *efile):BaseRecords(mpath, cfile, efile)
+  LMRecords(char *mpath, const char *cfile, char *efile):BaseRecords(mpath, cfile, efile)
   {
     //char fpath[PATH_NAME_MAX];
     time_last_config_change = 0;

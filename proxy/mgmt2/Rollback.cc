@@ -43,7 +43,7 @@
 #define DEFAULT_BACKUPS 2
 
 // Error Strings
-char *RollbackStrings[] = { "Rollback Ok",
+const char *RollbackStrings[] = { "Rollback Ok",
   "File was not found",
   "Version was out of date",
   "System Call Error",

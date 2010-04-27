@@ -4743,7 +4743,7 @@ LibRecordsConfigInit()
         break;
 
       case INK_STRING:
-        RecRegisterStatString(type, RecordsConfig[r].name, RecordsConfig[r].value, RECP_NON_PERSISTENT);
+        RecRegisterStatString(type, RecordsConfig[r].name, (RecString)RecordsConfig[r].value, RECP_NON_PERSISTENT);
         break;
 
       case INK_COUNTER:

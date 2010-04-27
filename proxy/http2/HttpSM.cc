@@ -6026,7 +6026,7 @@ HttpSM::setup_cache_transfer_to_transform()
 
 void
 HttpSM::setup_cache_write_transfer(HttpCacheSM * c_sm,
-                                   VConnection * source_vc, HTTPInfo * store_info, int skip_bytes, char *name)
+                                   VConnection * source_vc, HTTPInfo * store_info, int skip_bytes, const char *name)
 {
 
   ink_assert(c_sm->cache_write_vc != NULL);
@@ -7135,7 +7135,7 @@ HttpSM::dump_state_on_assert()
 }
 
 void
-HttpSM::dump_state_hdr(HTTPHdr * h, char *s)
+HttpSM::dump_state_hdr(HTTPHdr *h, const char *s)
 {
 
   // Dump the client request if available

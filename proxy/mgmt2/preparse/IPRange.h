@@ -43,7 +43,7 @@ public:
       lines.
 
   */
-  char *read_table_from_file(int fd, char *identifier_str, bool localip = TRUE);
+  char *read_table_from_file(int fd, const char *identifier_str, bool localip = TRUE);
     IPRange():n_ips(0), n_ip_ranges(0)
   {
 

@@ -2130,9 +2130,9 @@ ShowCache()
   INKInt doc_life = -1;
   INKInt dynamic_urls = -1;
   INKInt alternates = -1;
-  INKString vary_def_text = "NONE";
-  INKString vary_def_image = "NONE";
-  INKString vary_def_other = "NONE";
+  const char *vary_def_text = "NONE";
+  const char *vary_def_image = "NONE";
+  const char *vary_def_other = "NONE";
   INKInt cookies = -1;
 
   // retrieve values
@@ -2149,9 +2149,9 @@ ShowCache()
   Cli_RecordGetInt("proxy.config.http.ftp.cache.document_lifetime", &doc_life);
   Cli_RecordGetInt("proxy.config.http.cache.cache_urls_that_look_dynamic", &dynamic_urls);
   Cli_RecordGetInt("proxy.config.http.cache.enable_default_vary_headers", &alternates);
-  Cli_RecordGetString("proxy.config.http.cache.vary_default_text", &vary_def_text);
-  Cli_RecordGetString("proxy.config.http.cache.vary_default_images", &vary_def_image);
-  Cli_RecordGetString("proxy.config.http.cache.vary_default_other", &vary_def_other);
+  Cli_RecordGetString("proxy.config.http.cache.vary_default_text", (char**)&vary_def_text);
+  Cli_RecordGetString("proxy.config.http.cache.vary_default_images", (char**)&vary_def_image);
+  Cli_RecordGetString("proxy.config.http.cache.vary_default_other", (char**)&vary_def_other);
 
   Cli_RecordGetInt("proxy.config.http.cache.cache_responses_to_cookies", &cookies);
 
@@ -2381,7 +2381,7 @@ ShowLogging()
   INKInt log_space = -1;
   INKInt headroom_space = -1;
   INKInt collation_mode = 0;
-  INKString collation_host = "None";
+  const char *collation_host = "None";
   INKInt collation_port = -1;
   INKString collation_secret = NULL;
   INKInt host_tag = 0;
@@ -2422,7 +2422,7 @@ ShowLogging()
   Cli_RecordGetInt("proxy.config.log2.max_space_mb_for_logs", &log_space);
   Cli_RecordGetInt("proxy.config.log2.max_space_mb_headroom", &headroom_space);
   Cli_RecordGetInt("proxy.local.log2.collation_mode", &collation_mode);
-  Cli_RecordGetString("proxy.config.log2.collation_host", &collation_host);
+  Cli_RecordGetString("proxy.config.log2.collation_host", (char**)&collation_host);
   Cli_RecordGetInt("proxy.config.log2.collation_port", &collation_port);
   Cli_RecordGetString("proxy.config.log2.collation_secret", &collation_secret);
   Cli_RecordGetInt("proxy.config.log2.collation_host_tagged", &host_tag);

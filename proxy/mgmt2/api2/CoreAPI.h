@@ -40,7 +40,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-INKError Init(char *socket_path = NULL);
+INKError Init(const char *socket_path = NULL);
 INKError Terminate();
 
 void Diags(INKDiagsT mode, const char *fmt, va_list ap);
@@ -60,13 +60,13 @@ INKError HardRestart();         //restart traffic_cop
  ***************************************************************************/
 /* For remote implementation of this interface, these functions will have
    to marshal/unmarshal and send request across the network */
-INKError MgmtRecordGet(char *rec_name, INKRecordEle * rec_ele);
+INKError MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele);
 
-INKError MgmtRecordSet(char *rec_name, char *val, INKActionNeedT * action_need);
-INKError MgmtRecordSetInt(char *rec_name, MgmtInt int_val, INKActionNeedT * action_need);
-INKError MgmtRecordSetCounter(char *rec_name, MgmtIntCounter counter_val, INKActionNeedT * action_need);
-INKError MgmtRecordSetFloat(char *rec_name, MgmtFloat float_val, INKActionNeedT * action_need);
-INKError MgmtRecordSetString(char *rec_name, MgmtString string_val, INKActionNeedT * action_need);
+INKError MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need);
+INKError MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_need);
+INKError MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKActionNeedT *action_need);
+INKError MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * action_need);
+INKError MgmtRecordSetString(const char *rec_name, const char*string_val, INKActionNeedT * action_need);
 
 
 /***************************************************************************
@@ -99,7 +99,7 @@ INKError StatsReset();
 /***************************************************************************
  * Miscellaneous Utility
  ***************************************************************************/
-INKError EncryptToFile(char *passwd, char *filepath);
+INKError EncryptToFile(const char *passwd, const char *filepath);
 
 /*-------------------------------------------------------------
  * rmserver.cfg 

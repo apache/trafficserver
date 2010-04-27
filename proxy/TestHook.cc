@@ -33,7 +33,7 @@
 #include "ParseRules.h"
 
 volatile int state_machine_count = 0;
-extern char *event_int_to_string(int event, char buffer[32] = NULL);
+extern const char *event_int_to_string(int event, char buffer[32] = NULL);
 
 struct Globals
 {
@@ -43,7 +43,7 @@ struct Globals
   int buffer_size;
   int default_body_size;
 
-  void get_env_int(int *var, char *env)
+  void get_env_int(int *var, const char *env)
   {
     char *s = getenv(env);
     if (s)

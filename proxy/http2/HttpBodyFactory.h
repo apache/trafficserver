@@ -156,17 +156,17 @@ public:
   ///////////////////////
   // primary user APIs //
   ///////////////////////
-  char *fabricate_with_old_api(char *type, HttpTransact::State * context,
+  char *fabricate_with_old_api(const char *type, HttpTransact::State * context,
                                int max_buffer_length, int *resulting_buffer_length,
                                char content_language_out[256],
                                char content_type_out[256],
-                               HTTPStatus status_code, char *reason_or_null, char *format, va_list ap);
+                               HTTPStatus status_code, const char *reason_or_null, const char *format, va_list ap);
 
-  char *fabricate_with_old_api_build_va(char *type, HttpTransact::State * context,
+  char *fabricate_with_old_api_build_va(const char *type, HttpTransact::State * context,
                                         int max_buffer_length, int *resulting_buffer_length,
                                         char content_language_out[256],
                                         char content_type_out[256],
-                                        HTTPStatus status_code, char *reason_or_null, char *format, ...)
+                                        HTTPStatus status_code, const char *reason_or_null, const char *format, ...)
   {
     va_list ap;
       va_start(ap, format);
@@ -182,7 +182,7 @@ private:
 
   char *fabricate(StrList * acpt_language_list,
                   StrList * acpt_charset_list,
-                  char *type, HttpTransact::State * context,
+                  const char *type, HttpTransact::State * context,
                   int *resulting_buffer_length,
                   const char **content_language_return,
                   const char **content_charset_return, const char **set_return = NULL);

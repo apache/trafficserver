@@ -52,7 +52,7 @@ struct SocketManager
   SOCKET mc_socket(int domain = AF_INET, int type = SOCK_DGRAM, int protocol = 0, bool bNonBlocking = true);
 
   // result is the fd or -errno
-  int open(char *path, int oflag = O_RDWR | O_NDELAY | O_CREAT, mode_t mode = DEFAULT_OPEN_MODE);
+  int open(const char *path, int oflag = O_RDWR | O_NDELAY | O_CREAT, mode_t mode = DEFAULT_OPEN_MODE);
 
   // result is the number of bytes or -errno
   ink64 read(int fd, void *buf, int len, void *pOLP = NULL);

@@ -1282,7 +1282,7 @@ done:
   -------------------------------------------------------------------------*/
 
 int
-Log::error(char *format, ...)
+Log::error(const char *format, ...)
 {
   int ret_val = Log::SKIP;
 

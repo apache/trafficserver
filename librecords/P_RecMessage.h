@@ -47,7 +47,7 @@ int RecMessageSend(RecMessage * msg);
 int RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie);
 void *RecMessageRecvThis(void *cookie, char *data_raw, int data_len);
 
-RecMessage *RecMessageReadFromDisk(char *fpath);
-int RecMessageWriteToDisk(RecMessage * msg, char *fpath);
+RecMessage *RecMessageReadFromDisk(const char *fpath);
+int RecMessageWriteToDisk(RecMessage *msg, const char *fpath);
 
 #endif

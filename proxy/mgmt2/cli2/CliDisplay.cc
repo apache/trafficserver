@@ -182,7 +182,7 @@ Cli_Debug(const char *string, ...)
 }
 
 int
-Cli_PrintEnable(char *string, int flag)
+Cli_PrintEnable(const char *string, int flag)
 {
   if (flag == 0)
     Cli_Printf("%soff\n", string);

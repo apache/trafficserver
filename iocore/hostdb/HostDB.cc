@@ -491,7 +491,7 @@ make_md5(INK_MD5 & md5, char *hostname, int len, int port, char *pDNSServers, in
 static bool
 reply_to_cont(Continuation * cont, HostDBInfo * ar)
 {
-  char *reason = "none";
+  const char *reason = "none";
   HostDBInfo *r = ar;
 
   if (r == NULL) {

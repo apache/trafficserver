@@ -126,7 +126,7 @@ public:
   // Member Functions
   void assignTokenName(const char *);
   bool assignTokenType();
-  void print(char *);
+  void print(const char *);
   short precedence();
   void copy(const StatExprToken &);
 
@@ -166,7 +166,7 @@ public:
   StatExprToken *first();
   StatExprToken *next(StatExprToken *);
   unsigned count();
-  void print(char *);
+  void print(const char *);
 
 private:
 

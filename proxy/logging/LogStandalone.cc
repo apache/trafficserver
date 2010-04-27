@@ -220,7 +220,7 @@ shutdown_system()
   -------------------------------------------------------------------------*/
 
 static void
-check_lockfile(char *config_dir, char *pgm_name)
+check_lockfile(const char *config_dir, const char *pgm_name)
 {
   int err;
   pid_t holding_pid;
@@ -286,7 +286,7 @@ syslog_thr_init()
   -------------------------------------------------------------------------*/
 
 void
-init_log_standalone(char *pgm_name, bool one_copy)
+init_log_standalone(const char *pgm_name, bool one_copy)
 {
   // ensure that only one copy of the sac is running
   //
@@ -322,7 +322,7 @@ init_log_standalone(char *pgm_name, bool one_copy)
   -------------------------------------------------------------------------*/
 
 void
-init_log_standalone_basic(char *pgm_name)
+init_log_standalone_basic(const char *pgm_name)
 {
   openlog(pgm_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 

@@ -51,7 +51,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 int
-ink_bsprintf(char *buffer, char *format, ...)
+ink_bsprintf(char *buffer, const char *format, ...)
 {
   int l;
 
@@ -65,10 +65,11 @@ ink_bsprintf(char *buffer, char *format, ...)
 
 
 int
-ink_bvsprintf(char *buffer, char *format, va_list ap)
+ink_bvsprintf(char *buffer, const char *format, va_list ap)
 {
   int d_val;
-  char *s, *d, *p, *s_val, d_buffer[32];
+  const char *s;
+  char *d, *p, *s_val, d_buffer[32];
   va_list ap_local;
   va_copy(ap_local, ap);
 

@@ -86,7 +86,7 @@ delete_event_callback(EventCallbackT * event_cb)
  * notes: None
  **********************************************************************/
 CallbackTable *
-create_callback_table(char *lock_name)
+create_callback_table(const char *lock_name)
 {
   CallbackTable *cb_table;
 

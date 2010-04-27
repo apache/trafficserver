@@ -88,7 +88,7 @@ struct INK_MD5
     ink_code_md5(buffer, len, md5);
     *this = md5;
   }
-  void encodeBuffer(char *buffer, int len)
+  void encodeBuffer(const char *buffer, int len)
   {
     encodeBuffer((unsigned char *) buffer, len);
   }

@@ -499,7 +499,7 @@ RecMessageRecvThis(void *cookie, char *data_raw, int data_len)
 //-------------------------------------------------------------------------
 
 RecMessage *
-RecMessageReadFromDisk(char *fpath)
+RecMessageReadFromDisk(const char *fpath)
 {
 
   RecMessageHdr msg_hdr;
@@ -542,7 +542,7 @@ Ldone:
 //-------------------------------------------------------------------------
 
 int
-RecMessageWriteToDisk(RecMessage * msg, char *fpath)
+RecMessageWriteToDisk(RecMessage *msg, const char *fpath)
 {
 
   int msg_size;

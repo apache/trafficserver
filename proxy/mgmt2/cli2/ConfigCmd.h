@@ -1117,5 +1117,5 @@ int ConfigAlarmResolveAll();
 int ConfigAlarmNotify(char *stringval);
 
 // config:radius keys
-int ConfigRadiusKeys(char *record);
+int ConfigRadiusKeys(const char *record);
 #endif // __CONFIG_CMD_H__

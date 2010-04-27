@@ -271,7 +271,7 @@ HdrTest::test_parse_date()
 int
 HdrTest::test_format_date()
 {
-  static char *dates[] = {
+  static const char *dates[] = {
     "Sun, 06 Nov 1994 08:49:37 GMT",
     "Sun, 03 Jan 1999 08:49:37 GMT",
     "Sun, 05 Dec 1999 08:49:37 GMT",
@@ -286,11 +286,11 @@ HdrTest::test_format_date()
   int i;
   time_t t, t2, t3;
   char buffer[128], buffer2[128];
-  static char *envstr = "TZ=GMT0";
+  static const char *envstr = "TZ=GMT0";
   int failures = 0;
 
   // shift into GMT timezone for cftime conversions
-  putenv(envstr);
+  putenv((char*)envstr);
   tzset();
 
   for (i = 0; dates[i]; i++) {
@@ -432,7 +432,7 @@ HdrTest::test_url()
     url.print(print_buf, 1024, &new_length, &offset);
     print_buf[new_length] = '\0';
 
-    char *fail_text = NULL;
+    const char *fail_text = NULL;
 
     if (old_length == new_length) {
       if (memcmp(print_buf, strs[i], new_length) != 0)
@@ -575,7 +575,7 @@ HdrTest::test_http_parser_eos_boundary_cases()
 {
   struct
   {
-    char *msg;
+    const char *msg;
     int expected_result;
     int expected_bytes_consumed;
   } tests[] = {
@@ -782,10 +782,10 @@ HdrTest::test_http_hdr_print_and_copy()
 {
   static struct
   {
-    char *req;
-    char *req_tgt;
-    char *rsp;
-    char *rsp_tgt;
+    const char *req;
+    const char *req_tgt;
+    const char *rsp;
+    const char *rsp_tgt;
   } tests[] = {
     {
     "GET http://foo.com/bar.txt HTTP/1.0\r\n"
@@ -940,7 +940,7 @@ HdrTest::test_http_hdr_print_and_copy()
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-static char *
+static const char *
 comp_http_hdr(HTTPHdr * h1, HTTPHdr * h2)
 {
 
@@ -1001,7 +1001,7 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   HTTPParser parser;
   const char *start;
   const char *end;
-  char *comp_str = NULL;
+  const char *comp_str = NULL;
 
     /*** (1) parse the request string into hdr ***/
 
@@ -1649,8 +1649,8 @@ HdrTest::test_accept_language_match()
 
   struct
   {
-    char *content_language;
-    char *accept_language;
+    const char *content_language;
+    const char *accept_language;
     float Q;
     int L;
     int I;
@@ -1716,8 +1716,8 @@ HdrTest::test_accept_charset_match()
 
   struct
   {
-    char *content_charset;
-    char *accept_charset;
+    const char *content_charset;
+    const char *accept_charset;
     float Q;
     int I;
   } test_cases[] = {
@@ -1782,7 +1782,7 @@ HdrTest::test_comma_vals()
 {
   static struct
   {
-    char *value;
+    const char *value;
     int value_count;
     struct
     {
@@ -1945,10 +1945,10 @@ HdrTest::test_set_comma_vals()
 {
   static struct
   {
-    char *old_raw;
+    const char *old_raw;
     int idx;
-    char *slice;
-    char *new_raw;
+    const char *slice;
+    const char *new_raw;
   } tests[] = {
     {
     "a,b,c", 0, "fred", "fred, b, c"}, {
@@ -2061,7 +2061,7 @@ HdrTest::test_comma_val_slice()
 {
   static struct
   {
-    char *str;
+    const char *str;
     int idx;
     int correct_offset;
     int correct_len;
@@ -2397,7 +2397,7 @@ HdrTest::test_parse_comma_list()
   -------------------------------------------------------------------------*/
 
 void
-HdrTest::bri_box(char *s)
+HdrTest::bri_box(const char *s)
 {
   int i, len;
 
@@ -2417,7 +2417,7 @@ HdrTest::bri_box(char *s)
   -------------------------------------------------------------------------*/
 
 int
-HdrTest::failures_to_status(char *testname, int nfail)
+HdrTest::failures_to_status(const char *testname, int nfail)
 {
   rprintf(rtest, "  HdrTest %s: %s\n", testname, ((nfail > 0) ? "FAILED" : "PASSED"));
   return ((nfail > 0) ? 0 : 1);

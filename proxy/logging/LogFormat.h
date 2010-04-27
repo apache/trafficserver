@@ -48,10 +48,10 @@ class LogFormat
 {
 public:
   LogFormat(LogFormatType type);
-  LogFormat(char *name, char *format_str, unsigned interval_sec = 0);
-    LogFormat(char *name, char *fieldlist_str, char *printf_str, unsigned interval_sec = 0);
-    LogFormat(const LogFormat & rhs);
-   ~LogFormat();
+  LogFormat(const char *name, const char *format_str, unsigned interval_sec = 0);
+  LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec = 0);
+  LogFormat(const LogFormat & rhs);
+  ~LogFormat();
 
   void display(FILE * fd = stdout);
   void displayAsXML(FILE * fd = stdout);
@@ -102,10 +102,10 @@ public:
   };
 
 public:
-  static ink32 id_from_name(char *name);
+  static ink32 id_from_name(const char *name);
   static LogFormat *format_from_specification(char *spec,
                                               char **file_name, char **file_header, LogFileFormat * file_type);
-  static int parse_symbol_string(char *symbol_string, LogFieldList * field_list, bool * contains_aggregates);
+  static int parse_symbol_string(const char *symbol_string, LogFieldList *field_list, bool *contains_aggregates);
   static int parse_format_string(const char *format_str, char **printf_str, char **fields_str);
 
   // these are static because m_tagging_on is a class variable
@@ -120,8 +120,8 @@ public:
   };
 
 private:
-  void setup(char *name, char *format_str, unsigned interval_sec = 0);
-  void init_variables(char *name, char *fieldlist_str, char *printf_str, unsigned interval_sec);
+  void setup(const char *name, const char *format_str, unsigned interval_sec = 0);
+  void init_variables(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec);
 
 public:
   LogFieldList m_field_list;

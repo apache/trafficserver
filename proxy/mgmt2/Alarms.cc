@@ -181,7 +181,7 @@ Alarms::resolveAlarm(alarm_t a, char *ip)
 
 
 void
-Alarms::signalAlarm(alarm_t a, char *desc, char *ip)
+Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 {
   static time_t last_sent = 0;
   static char prev_alarm_text[2048] = "";

@@ -482,7 +482,7 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
 {
 
   Data *cur_d;
-  char *errPtr;
+  const char *errPtr;
   char *errBuf;
   char *match_data;
   ip_addr_t addr1, addr2;
@@ -684,7 +684,7 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
   int numEntries = 0;
   bool alarmAlready = false;
   char errBuf[1024];
-  char *errPtr = NULL;
+  const char *errPtr = NULL;
 
   // type counts
   int hostDomain = 0;
@@ -807,7 +807,7 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
     //   the NewEntry
     if (errPtr != NULL) {
       SignalError(errPtr, alarmAlready);
-      xfree(errPtr);
+      //xfree(errPtr); // XXX - why are we trying to free
       errPtr = NULL;
     }
     // Deallocate the parsing structure

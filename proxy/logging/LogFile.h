@@ -173,7 +173,7 @@ public:
   {
     return (m_file_format == BINARY_LOG ? "binary" : (m_file_format == ASCII_PIPE ? "ascii_pipe" : "ascii"));
   };
-  static int write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, char *path, char *alt_format = NULL);
+  static int write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, char *alt_format = NULL);
   int write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_format = NULL);
   static bool rolled_logfile(char *file);
   static bool exists(const char *pathname);
@@ -202,7 +202,7 @@ private:
   void close_file();
 
   void check_fd();
-  static int writeln(char *data, int len, int fd, char *path);
+  static int writeln(char *data, int len, int fd, const char *path);
   void read_metadata();
 
 private:

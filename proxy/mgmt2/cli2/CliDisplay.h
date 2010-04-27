@@ -85,7 +85,7 @@ int Cli_SetPrintLevel(CliPrintLevelT level);
 CliPrintLevelT Cli_GetPrintLevel();
 int Cli_Printf(const char *string, ...);
 int Cli_Debug(const char *string, ...);
-int Cli_PrintEnable(char *string, int flag);
+int Cli_PrintEnable(const char *string, int flag);
 int Cli_PrintOnOff(int flag);
 int Cli_PrintArg(int arg_index, const cli_parsedArgInfo * argtable);
 #endif // __CLI_ERROR_HANDLE_H__

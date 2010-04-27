@@ -54,7 +54,7 @@ public:
   static char *MakeErrorBodyVA(int max_buffer_length,
                                int *resulting_buffer_length,
                                const HttpConfigParams * config,
-                               HTTPStatus status_code, char *reason_or_null, char *format, va_list va);
+                               HTTPStatus status_code, const char *reason_or_null, const char *format, va_list va);
 };
 
 #endif

@@ -182,7 +182,7 @@ CacheInspectorAllow::BuildTable()
 {
   char *tok_state = NULL;
   char *line = NULL;
-  char *errPtr = NULL;
+  const char *errPtr = NULL;
   char errBuf[1024];
   char *file_buf = NULL;
   int line_num = 0;

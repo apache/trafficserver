@@ -788,7 +788,7 @@ LogConfig::init(LogConfig * prev_config)
         NEW(new TextLogObject("error.log", logfile_dir, true, NULL,
                               rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb));
       if (new_elog->do_filesystem_checks() < 0) {
-        char *msg = "The log file %s did not pass filesystem checks. " "No output will be produced for this log";
+        const char *msg = "The log file %s did not pass filesystem checks. " "No output will be produced for this log";
         Error(msg, new_elog->get_full_filename());
         LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, new_elog->get_full_filename());
         delete new_elog;
@@ -961,7 +961,7 @@ LogConfig::setup_pre_defined_info(PreDefinedFormatInfoList * preDefInfoList)
 /* end-user's search requirements.                               */
 /*                                                               */
 void
-LogConfig::add_filters_to_search_log_object(char *format_name)
+LogConfig::add_filters_to_search_log_object(const char *format_name)
 {
   LogObject *obj;
 
@@ -996,9 +996,8 @@ LogConfig::add_filters_to_search_log_object(char *format_name)
 #endif
 
 void
-LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList & pre_def_info_list,
-                                                  size_t num_filters,
-                                                  LogFilter ** filter, char *filt_name, bool force_extension)
+LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList & pre_def_info_list, size_t num_filters,
+                                                  LogFilter ** filter, const char *filt_name, bool force_extension)
 {
   PreDefinedFormatInfo *pdi;
   for (pdi = pre_def_info_list.head; pdi != NULL; pdi = (pdi->link).next) {
@@ -1070,8 +1069,8 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
   unsigned value[] = { LOG_ENTRY_NNTP, LOG_ENTRY_ICP,
     LOG_ENTRY_MIXT, LOG_ENTRY_HTTP
   };
-  char *name[] = { "nntp", "icp", "mixt", "http" };
-  char *filter_name[] = { "__nntp__", "__icp__", "__mixt__", "__http__" };
+  const char *name[] = { "nntp", "icp", "mixt", "http" };
+  const char *filter_name[] = { "__nntp__", "__icp__", "__mixt__", "__http__" };
   unsigned filter_val[http];    // protocols to reject
   size_t n = 0;
 
@@ -1081,8 +1080,7 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
 
   if (separate_nntp_logs) {
     if (separate_nntp_logs == 1) {
-      filter[0] = NEW(new LogFilterInt(filter_name[nntp],
-                                       etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[nntp]));
+      filter[0] = NEW(new LogFilterInt(filter_name[nntp], etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[nntp]));
       create_pre_defined_objects_with_filter(pre_def_info_list, 1, filter, name[nntp]);
       delete filter[0];
     }
@@ -1706,7 +1704,7 @@ LogConfig::update_space_used()
   // check if logging directory has been specified
   //
   if (!logfile_dir) {
-    char *msg = "Logging directory not specified";
+    const char *msg = "Logging directory not specified";
     Error(msg);
     LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg);
     m_log_directory_inaccessible = true;
@@ -1720,7 +1718,7 @@ LogConfig::update_space_used()
   } while ((err < 0) && (errno == EINTR));
 
   if (err < 0) {
-    char *msg = "Error accessing logging directory %s: %s.";
+    const char *msg = "Error accessing logging directory %s: %s.";
     Error(msg, logfile_dir, strerror(errno));
     LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, logfile_dir, strerror(errno));
     m_log_directory_inaccessible = true;
@@ -1729,7 +1727,7 @@ LogConfig::update_space_used()
 
   ld =::opendir(logfile_dir);
   if (ld == NULL) {
-    char *msg = "Error opening logging directory %s to perform a space " "check: %s.";
+    const char *msg = "Error opening logging directory %s to perform a space " "check: %s.";
     Error(msg, logfile_dir, strerror(errno));
     LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, logfile_dir, strerror(errno));
     m_log_directory_inaccessible = true;

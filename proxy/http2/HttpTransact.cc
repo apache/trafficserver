@@ -2222,7 +2222,7 @@ HttpTransact::HandleBadPushRespHdr(State * s)
 }
 
 void
-HttpTransact::HandlePushError(State * s, char *reason)
+HttpTransact::HandlePushError(State *s, const char *reason)
 {
   s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
 
@@ -4863,7 +4863,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
   HTTPHdr *base_response = NULL;
   HTTPStatus server_response_code = HTTP_STATUS_NONE;
   HTTPStatus client_response_code = HTTP_STATUS_NONE;
-  char *warn_text = NULL;
+  const char *warn_text = NULL;
   bool cacheable = false;
 
   cacheable = is_response_cacheable(s, &s->hdr_info.client_request, &s->hdr_info.server_response);
@@ -5347,7 +5347,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State * s)
 
   bool keep_alive = true;
   keep_alive = ((s->current.server->keep_alive == HTTP_KEEPALIVE) || (s->current.server->keep_alive == HTTP_PIPELINE));
-  char *warn_text = NULL;
+  const char *warn_text = NULL;
 
   switch (s->hdr_info.server_response.status_get()) {
   case HTTP_STATUS_OK:
@@ -7654,8 +7654,7 @@ HttpTransact::setup_ftp_request(State * s)
   // url.                                                        //
   /////////////////////////////////////////////////////////////////
   if (r->presence(MIME_PRESENCE_AUTHORIZATION)) {
-    if (!HttpTransactHeaders::
-        generate_basic_authorization_from_request(&s->arena, r, &s->ftp_info->username, &s->ftp_info->password)) {
+    if (!HttpTransactHeaders::generate_basic_authorization_from_request(&s->arena, r, (char**)&s->ftp_info->username, &s->ftp_info->password)) {
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Bad HTTP Request For FTP Object", "ftp#bad_request", "");
       s->next_action = PROXY_SEND_ERROR_CACHE_NOOP;;
       return false;
@@ -8884,8 +8883,8 @@ HttpTransact::handle_parent_died(State * s)
 void
 HttpTransact::handle_server_died(State * s)
 {
-  char *reason = NULL;
-  char *body_type = "UNKNOWN";
+  const char *reason = NULL;
+  const char *body_type = "UNKNOWN";
   HTTPStatus status = HTTP_STATUS_BAD_GATEWAY;
 
   ////////////////////////////////////////////////////////
@@ -9035,7 +9034,7 @@ HttpTransact::handle_server_died(State * s)
   // now add a default body, which is either the //
   // ftp error text or the reason phrase         //
   /////////////////////////////////////////////////
-  char *body_text;
+  const char *body_text;
   if ((s->next_hop_scheme == URL_WKSIDX_FTP) && (s->ftp_info->error_msg))
     body_text = s->ftp_info->error_msg;
   else
@@ -9403,12 +9402,11 @@ HttpTransact::build_response(State * s,
 //
 //////////////////////////////////////////////////////////////////////////////
 void
-HttpTransact::build_error_response(State * s,
-                                   HTTPStatus status_code,
-                                   char *reason_phrase_or_null, char *error_body_type, char *format, ...)
+HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null,
+                                   const char *error_body_type, const char *format, ...)
 {
   va_list ap;
-  char *reason_phrase;
+  const char *reason_phrase;
   URL *url;
   char *url_string;
   char body_language[256], body_type[256];
@@ -9600,7 +9598,7 @@ HttpTransact::build_redirect_response(State * s)
   URL *u;
   const char *old_host;
   int old_host_len;
-  char *new_url = NULL;
+  const char *new_url = NULL;
   int new_url_len;
   char *to_free = NULL;
 
@@ -9703,7 +9701,7 @@ HttpTransact::get_error_string(int erno)
 const char *
 HttpTransact::FtpReplyCodeToReasonPhrase(int code)
 {
-  char *msg = "Unspecified Reply";
+  const char *msg = "Unspecified Reply";
 
   switch (code) {
   case 110:

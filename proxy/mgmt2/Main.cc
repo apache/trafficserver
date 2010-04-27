@@ -125,8 +125,8 @@ char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
 char mgmt_path[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
 
 // By default, set the current directory as base
-char *ts_base_dir = ".";
-char *recs_conf = "records.config";
+const char *ts_base_dir = ".";
+const char *recs_conf = "records.config";
 
 int fds_limit;
 
@@ -416,7 +416,7 @@ chdir_root()
 
 #define set_rlimit(name,max_it,ulim_it) max_out_limit(#name, name, max_it, ulim_it)
 static rlim_t
-max_out_limit(char *name, int which, bool max_it = true, bool unlim_it = true)
+max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = true)
 {
   struct rlimit rl;
 
@@ -1541,7 +1541,7 @@ runAsUser(char *userName)
 //
 //
 void
-extractConfigInfo(char *mgmt_path, char *recs_conf, char *userName, int *fds_throttle)
+extractConfigInfo(char *mgmt_path, const char *recs_conf, char *userName, int *fds_throttle)
 {
   char file[1024];
   bool useridFound = false;

@@ -71,9 +71,9 @@ static ClassAllocator<DNSRequestData> DNSReqAllocator("DNSRequestDataAllocator")
 /* --------------------------------------------------------------
    config var names
    -------------------------------------------------------------- */
-static char *sdns_file_var = "proxy.config.dns.splitdns.filename";
-static char *sdns_enable_var = "proxy.config.dns.splitDNS.enabled";
-static char *sdns_def_domain = "proxy.config.dns.splitdns.def_domain";
+static const char *sdns_file_var = "proxy.config.dns.splitdns.filename";
+static const char *sdns_enable_var = "proxy.config.dns.splitDNS.enabled";
+static const char *sdns_def_domain = "proxy.config.dns.splitdns.def_domain";
 
 
 /* --------------------------------------------------------------

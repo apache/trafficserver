@@ -91,7 +91,7 @@ typedef struct cli_parsedArgInfo
 
 typedef struct cli_cmdCallbackInfo
 {
-  char *command_usage;
+  const char *command_usage;
   cli_parsedArgInfo *parsedArgTable;
   void *userdata;
 } cli_cmdCallbackInfo;
@@ -99,7 +99,7 @@ typedef struct cli_cmdCallbackInfo
 
 typedef struct cli_CommandInfo
 {
-  char *command_name;           /* command name    */
+  const char *command_name;           /* command name    */
   cli_ArgvInfo *argtable;       /* pointer to argv table */
   char **reqd_args;             /* holds reference no for 
                                    required arguments */
@@ -109,7 +109,7 @@ typedef struct cli_CommandInfo
 } cli_CommandInfo;
 
 extern int createArgument(const char *argument, int position, int commandoption,
-                          char *range, int argumentRef, char *helpString, char *defValue);
+                          char *range, int argumentRef, const char *helpString, char *defValue);
 
 
 

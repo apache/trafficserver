@@ -162,7 +162,7 @@ public:
   volatile DiagsConfigState config;
   int show_location;
   DiagsCleanupFunc cleanup_func;
-  char *prefix_str;
+  const char *prefix_str;
 
   ///////////////////////////
   // conditional debugging //

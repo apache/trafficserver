@@ -606,18 +606,18 @@ int WebHttpRender(WebHttpContext * whc, char *file_buf, int file_size);
 // html rendering
 //-------------------------------------------------------------------------
 
-int HtmlRndrTrOpen(textBuffer * html, HtmlCss css, HtmlAlign align);
-int HtmlRndrTdOpen(textBuffer * html, HtmlCss css, HtmlAlign align, HtmlValign valign, char *width, char *height,
-                   int colspan, char *bg = NULL);
-int HtmlRndrAOpen(textBuffer * html, HtmlCss css, char *href, char *target, char *onclick = NULL);
-int HtmlRndrFormOpen(textBuffer * html, char *name, HtmlMethod method, char *action);
-int HtmlRndrTextareaOpen(textBuffer * html, HtmlCss css, int cols, int rows, HtmlWrap wrap, char *name, bool readonly);
-int HtmlRndrTableOpen(textBuffer * html, char *width, int border, int cellspacing, int cellpadding, char *bordercolor =
-                      NULL);
-int HtmlRndrSpanOpen(textBuffer * html, HtmlCss css);
-int HtmlRndrSelectOpen(textBuffer * html, HtmlCss css, char *name, int size);
-int HtmlRndrOptionOpen(textBuffer * html, char *value, bool selected);
-int HtmlRndrPreOpen(textBuffer * html, HtmlCss css, char *width);
+int HtmlRndrTrOpen(textBuffer * html, const HtmlCss css, const HtmlAlign align);
+int HtmlRndrTdOpen(textBuffer * html, const HtmlCss css, const HtmlAlign align, const HtmlValign valign, const char *width, const char *height,
+                   int colspan, const char *bg = NULL);
+int HtmlRndrAOpen(textBuffer * html, const HtmlCss css, const char *href, const char *target, const char *onclick = NULL);
+int HtmlRndrFormOpen(textBuffer * html, const char *name, const HtmlMethod method, const char *action);
+int HtmlRndrTextareaOpen(textBuffer * html, const HtmlCss css, int cols, int rows, const HtmlWrap wrap, const char *name, bool readonly);
+int HtmlRndrTableOpen(textBuffer * html, const char *width, int border, int cellspacing, int cellpadding,
+                      const char *bordercolor = NULL);
+int HtmlRndrSpanOpen(textBuffer * html, const HtmlCss css);
+int HtmlRndrSelectOpen(textBuffer * html, const HtmlCss css, const char *name, int size);
+int HtmlRndrOptionOpen(textBuffer * html, const char *value, bool selected);
+int HtmlRndrPreOpen(textBuffer * html, const HtmlCss css, const char *width);
 int HtmlRndrUlOpen(textBuffer * html);
 
 int HtmlRndrTrClose(textBuffer * html);
@@ -636,7 +636,7 @@ int HtmlRndrUlClose(textBuffer * html);
 int HtmlRndrInput(textBuffer * html, HtmlCss css, HtmlType type, char *name, char *value, char *target, char *onclick,
                   char *size = NULL);
 #else
-int HtmlRndrInput(textBuffer * html, HtmlCss css, HtmlType type, char *name, char *value, char *target, char *onclick);
+int HtmlRndrInput(textBuffer * html, const HtmlCss css, const HtmlType type, const char *name, const char *value, const char *target, const char *onclick);
 #endif
 
 int HtmlRndrInput(textBuffer * html, MgmtHashTable * dict_ht, HtmlCss css, HtmlType type, char *name, HtmlId value_id);
@@ -644,11 +644,11 @@ int HtmlRndrBr(textBuffer * html);
 int HtmlRndrLi(textBuffer * html);
 
 int HtmlRndrSpace(textBuffer * html, int num_spaces);
-int HtmlRndrText(textBuffer * html, MgmtHashTable * dict_ht, HtmlId text_id);
+int HtmlRndrText(textBuffer * html, MgmtHashTable * dict_ht, const HtmlId text_id);
 
-int HtmlRndrImg(textBuffer * html, char *src, char *border, char *width, char *height, char *hspace);
+int HtmlRndrImg(textBuffer * html, const char *src, const char *border, const char *width, const char *height, const char *hspace);
 int HtmlRndrDotClear(textBuffer * html, int width, int height);
-int HtmlRndrSelectList(textBuffer * html, char *listName, char *options[], int numOpts);
+int HtmlRndrSelectList(textBuffer * html, const char *listName, const char *options[], int numOpts);
 
 #ifdef OEM
 int getMaximumClientConnections();

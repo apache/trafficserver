@@ -53,7 +53,7 @@
                                 the customer.
 */
 
-extern int createCommand(char *cmdName, Tcl_CmdProc * cmdFuncPtr,
-                         createArgumentFuncPtr argvFuncPtr, cmdTerritory cmdScope, char *usage, char *helpstring);
+extern int createCommand(const char *cmdName, Tcl_CmdProc * cmdFuncPtr,
+                         createArgumentFuncPtr argvFuncPtr, cmdTerritory cmdScope, const char *usage, const char *helpstring);
 
 #endif /* CREATE_COMMAND */

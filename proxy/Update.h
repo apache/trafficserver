@@ -371,8 +371,8 @@ extern struct dispatch_entry scheme_post_dispatch_table[UpdateSM::N_SCHEMES];
 
 struct html_tag
 {
-  char *tag;
-  char *attr;
+  const char *tag;
+  const char *attr;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -442,7 +442,7 @@ public:
   int ExtractURL(char **, char **);
   int ConstructURL(char **, char **);
   DynArray<char>*MakeURL(char *, char *, int, int);
-  DynArray<char>*PrependString(char *, int, char *, int);
+  DynArray<char>*PrependString(const char *, int, char *, int);
   bool _attr_matched;
 
   char *_url;

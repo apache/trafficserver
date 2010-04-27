@@ -2890,8 +2890,7 @@ writeArmSecurityConfigForm(WebHttpContext * whc)
   textBuffer *output = whc->response_bdy;
 
   // write the hidden "filename" tag 
-  HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_ARM_SECURITY_CONFIG, NULL,
-                NULL);
+  HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_ARM_SECURITY_CONFIG, NULL, NULL);
 
   // rule type
   HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
@@ -6412,9 +6411,9 @@ Lerror:
 // writeRuleTypeSelect
 //-------------------------------------------------------------------------
 void
-writeRuleTypeSelect_cache(textBuffer * html, char *listName)
+writeRuleTypeSelect_cache(textBuffer * html, const char *listName)
 {
-  char *options[7];
+  const char *options[7];
   options[0] = "never-cache";
   options[1] = "ignore-no-cache";
   options[2] = "ignore-client-no-cache";
@@ -6427,9 +6426,9 @@ writeRuleTypeSelect_cache(textBuffer * html, char *listName)
 }
 
 void
-writeRuleTypeSelect_arm(textBuffer * html, char *listName)
+writeRuleTypeSelect_arm(textBuffer * html, const char *listName)
 {
-  char *options[3];
+  const char *options[3];
   options[0] = "open";
   options[1] = "deny";
   options[2] = "allow";
@@ -6438,9 +6437,9 @@ writeRuleTypeSelect_arm(textBuffer * html, char *listName)
 }
 
 void
-writeRuleTypeSelect_filter(textBuffer * html, char *listName)
+writeRuleTypeSelect_filter(textBuffer * html, const char *listName)
 {
-  char *options[6];
+  const char *options[6];
   options[0] = "allow";
   options[1] = "deny";
   options[2] = "ldap";
@@ -6452,9 +6451,9 @@ writeRuleTypeSelect_filter(textBuffer * html, char *listName)
 }
 
 void
-writeRuleTypeSelect_remap(textBuffer * html, char *listName)
+writeRuleTypeSelect_remap(textBuffer * html, const char *listName)
 {
-  char *options[4];
+  const char *options[4];
   options[0] = "map";
   options[1] = "reverse_map";
   options[2] = "redirect";
@@ -6464,9 +6463,9 @@ writeRuleTypeSelect_remap(textBuffer * html, char *listName)
 }
 
 void
-writeRuleTypeSelect_socks(textBuffer * html, char *listName)
+writeRuleTypeSelect_socks(textBuffer * html, const char *listName)
 {
-  char *options[3];
+  const char *options[3];
   options[0] = "no_socks";
   options[1] = "auth";
   options[2] = "multiple_socks";
@@ -6475,9 +6474,9 @@ writeRuleTypeSelect_socks(textBuffer * html, char *listName)
 }
 
 void
-writeRuleTypeSelect_bypass(textBuffer * html, char *listName)
+writeRuleTypeSelect_bypass(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "bypass";
   options[1] = "deny_dyn_bypass";
 
@@ -6488,9 +6487,9 @@ writeRuleTypeSelect_bypass(textBuffer * html, char *listName)
 // writeConnTypeSelect
 //-------------------------------------------------------------------------
 void
-writeConnTypeSelect(textBuffer * html, char *listName)
+writeConnTypeSelect(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "tcp";
   options[1] = "udp";
 
@@ -6501,9 +6500,9 @@ writeConnTypeSelect(textBuffer * html, char *listName)
 // writeIpActionSelect
 //-------------------------------------------------------------------------
 void
-writeIpActionSelect(textBuffer * html, char *listName)
+writeIpActionSelect(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "ip_allow";
   options[1] = "ip_deny";
 
@@ -6515,9 +6514,9 @@ writeIpActionSelect(textBuffer * html, char *listName)
 // writePdTypeSelect
 //-------------------------------------------------------------------------
 void
-writePdTypeSelect(textBuffer * html, char *listName)
+writePdTypeSelect(textBuffer * html, const char *listName)
 {
-  char *options[4];
+  const char *options[4];
   options[0] = "dest_domain";
   options[1] = "dest_host";
   options[2] = "dest_ip";
@@ -6527,9 +6526,9 @@ writePdTypeSelect(textBuffer * html, char *listName)
 }
 
 void
-writePdTypeSelect_splitdns(textBuffer * html, char *listName)
+writePdTypeSelect_splitdns(textBuffer * html, const char *listName)
 {
-  char *options[3];
+  const char *options[3];
   options[0] = "dest_domain";
   options[1] = "dest_host";
   options[2] = "url_regex";
@@ -6538,9 +6537,9 @@ writePdTypeSelect_splitdns(textBuffer * html, char *listName)
 }
 
 void
-writePdTypeSelect_hosting(textBuffer * html, char *listName)
+writePdTypeSelect_hosting(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "domain";
   options[1] = "hostname";
 
@@ -6552,7 +6551,7 @@ writePdTypeSelect_hosting(textBuffer * html, char *listName)
 //-------------------------------------------------------------------------
 // some files may/may not include the PUSH option in their list. 
 void
-writeMethodSelect_push(textBuffer * html, char *listName)
+writeMethodSelect_push(textBuffer * html, const char *listName)
 {
   // PUSH option is enabledwith proxy.config.http.push_method_enabled
   bool found;
@@ -6561,7 +6560,7 @@ writeMethodSelect_push(textBuffer * html, char *listName)
            == REC_ERR_OKAY);
   int push_enabled = (int) rec_int;
   if (found && push_enabled) {  // PUSH enabled
-    char *options[6];
+    const char *options[6];
     options[0] = "";
     options[1] = "get";
     options[2] = "post";
@@ -6575,9 +6574,9 @@ writeMethodSelect_push(textBuffer * html, char *listName)
 }
 
 void
-writeMethodSelect(textBuffer * html, char *listName)
+writeMethodSelect(textBuffer * html, const char *listName)
 {
-  char *options[5];
+  const char *options[5];
   options[0] = "";
   options[1] = "get";
   options[2] = "post";
@@ -6591,9 +6590,9 @@ writeMethodSelect(textBuffer * html, char *listName)
 // writeSchemeSelect
 //-------------------------------------------------------------------------
 void
-writeSchemeSelect(textBuffer * html, char *listName)
+writeSchemeSelect(textBuffer * html, const char *listName)
 {
-  char *options[6];
+  const char *options[6];
   options[0] = "";
   options[1] = "http";
   options[2] = "https";
@@ -6605,9 +6604,9 @@ writeSchemeSelect(textBuffer * html, char *listName)
 }
 
 void
-writeSchemeSelect_partition(textBuffer * html, char *listName)
+writeSchemeSelect_partition(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "http";
   options[1] = "mixt";
 
@@ -6615,9 +6614,9 @@ writeSchemeSelect_partition(textBuffer * html, char *listName)
 }
 
 void
-writeSchemeSelect_remap(textBuffer * html, char *listName)
+writeSchemeSelect_remap(textBuffer * html, const char *listName)
 {
-  char *options[5];
+  const char *options[5];
   options[0] = "http";
   options[1] = "https";
   options[2] = "ftp";
@@ -6631,9 +6630,9 @@ writeSchemeSelect_remap(textBuffer * html, char *listName)
 // writeMixtSelect
 //-------------------------------------------------------------------------
 void
-writeMixtSelect(textBuffer * html, char *listName)
+writeMixtSelect(textBuffer * html, const char *listName)
 {
-  char *options[3];
+  const char *options[3];
   options[0] = "";
   options[1] = "RNI";
   options[2] = "QT";
@@ -6645,9 +6644,9 @@ writeMixtSelect(textBuffer * html, char *listName)
 // writeHeaderTypeSelect
 //-------------------------------------------------------------------------
 void
-writeHeaderTypeSelect(textBuffer * html, char *listName)
+writeHeaderTypeSelect(textBuffer * html, const char *listName)
 {
-  char *options[5];
+  const char *options[5];
   options[0] = "";
   options[1] = "date";
   options[2] = "host";
@@ -6661,9 +6660,9 @@ writeHeaderTypeSelect(textBuffer * html, char *listName)
 // writeCacheTypeSelect
 //-------------------------------------------------------------------------
 void
-writeCacheTypeSelect(textBuffer * html, char *listName)
+writeCacheTypeSelect(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "parent";
   options[1] = "sibling";
 
@@ -6674,9 +6673,9 @@ writeCacheTypeSelect(textBuffer * html, char *listName)
 // writeMcTtlSelect
 //-------------------------------------------------------------------------
 void
-writeMcTtlSelect(textBuffer * html, char *listName)
+writeMcTtlSelect(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "single subnet";
   options[1] = "multiple subnets";
 
@@ -6687,9 +6686,9 @@ writeMcTtlSelect(textBuffer * html, char *listName)
 // writeOnOffSelect
 //-------------------------------------------------------------------------
 void
-writeOnOffSelect(textBuffer * html, char *listName)
+writeOnOffSelect(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "off";
   options[1] = "on";
 
@@ -6700,9 +6699,9 @@ writeOnOffSelect(textBuffer * html, char *listName)
 // writeDenySelect
 //-------------------------------------------------------------------------
 void
-writeDenySelect(textBuffer * html, char *listName)
+writeDenySelect(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "";
   options[1] = "deny";
 
@@ -6713,9 +6712,9 @@ writeDenySelect(textBuffer * html, char *listName)
 // writeClientGroupTypeSelect
 //-------------------------------------------------------------------------
 void
-writeClientGroupTypeSelect(textBuffer * html, char *listName)
+writeClientGroupTypeSelect(textBuffer * html, const char *listName)
 {
-  char *options[3];
+  const char *options[3];
   options[0] = "ip";
   options[1] = "domain";
   options[2] = "hostname";
@@ -6727,9 +6726,9 @@ writeClientGroupTypeSelect(textBuffer * html, char *listName)
 // writeAccessTypeSelect
 //-------------------------------------------------------------------------
 void
-writeAccessTypeSelect(textBuffer * html, char *listName)
+writeAccessTypeSelect(textBuffer * html, const char *listName)
 {
-  char *options[5];
+  const char *options[5];
   options[0] = "allow";
   options[1] = "deny";
   options[2] = "basic";
@@ -6743,9 +6742,9 @@ writeAccessTypeSelect(textBuffer * html, char *listName)
 // writeTreatmentTypeSelect
 //-------------------------------------------------------------------------
 void
-writeTreatmentTypeSelect(textBuffer * html, char *listName)
+writeTreatmentTypeSelect(textBuffer * html, const char *listName)
 {
-  char *options[7];
+  const char *options[7];
   options[0] = "";
   options[1] = "feed";
   options[2] = "push";
@@ -6761,9 +6760,9 @@ writeTreatmentTypeSelect(textBuffer * html, char *listName)
 // writeRoundRobinTypeSelect
 //-------------------------------------------------------------------------
 void
-writeRoundRobinTypeSelect(textBuffer * html, char *listName)
+writeRoundRobinTypeSelect(textBuffer * html, const char *listName)
 {
-  char *options[4];
+  const char *options[4];
   options[0] = "";
   options[1] = "true";
   options[2] = "strict";
@@ -6773,9 +6772,9 @@ writeRoundRobinTypeSelect(textBuffer * html, char *listName)
 }
 
 void
-writeRoundRobinTypeSelect_notrue(textBuffer * html, char *listName)
+writeRoundRobinTypeSelect_notrue(textBuffer * html, const char *listName)
 {
-  char *options[3];
+  const char *options[3];
   options[0] = "";
   options[1] = "strict";
   options[2] = "false";
@@ -6788,9 +6787,9 @@ writeRoundRobinTypeSelect_notrue(textBuffer * html, char *listName)
 // writeTrueFalseSelect
 //-------------------------------------------------------------------------
 void
-writeTrueFalseSelect(textBuffer * html, char *listName)
+writeTrueFalseSelect(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "false";
   options[1] = "true";
 
@@ -6801,9 +6800,9 @@ writeTrueFalseSelect(textBuffer * html, char *listName)
 // writeSizeFormatSelect
 //-------------------------------------------------------------------------
 void
-writeSizeFormatSelect(textBuffer * html, char *listName)
+writeSizeFormatSelect(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "absolute";
   options[1] = "percent";
 
@@ -6814,9 +6813,9 @@ writeSizeFormatSelect(textBuffer * html, char *listName)
 // writeProtocolSelect
 //-------------------------------------------------------------------------
 void
-writeProtocolSelect(textBuffer * html, char *listName)
+writeProtocolSelect(textBuffer * html, const char *listName)
 {
-  char *options[2];
+  const char *options[2];
   options[0] = "";
   options[1] = "dns";
 

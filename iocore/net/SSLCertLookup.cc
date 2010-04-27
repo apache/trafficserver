@@ -58,7 +58,7 @@ SSLCertLookup::buildTable()
 {
   char *tok_state = NULL;
   char *line = NULL;
-  char *errPtr = NULL;
+  const char *errPtr = NULL;
   char errBuf[1024];
   char *file_buf = NULL;
   int line_num = 0;
@@ -144,7 +144,7 @@ SSLCertLookup::buildTable()
   return ret;
 }
 
-char *
+const char *
 SSLCertLookup::extractIPAndCert(matcher_line * line_info, char **addr, char **cert, char **priKey)
 {
 //  ip_addr_t testAddr;

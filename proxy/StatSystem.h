@@ -204,7 +204,7 @@ typedef enum { \
 struct RniTransactionStatsString_t
 {
   RniTransactionStat_t i;
-  char *name;
+  const char *name;
 };
 
 
@@ -237,7 +237,7 @@ typedef enum { \
 struct DynamicStatsString_t
 {
   DynamicStat_t i;
-  char *name;
+  const char *name;
 };
 
 extern HttpTransactionStatsString_t HttpTransactionStatsStrings[];

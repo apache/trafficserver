@@ -59,7 +59,7 @@
 const ink_hrtime hrThreshold = 10 * HRTIME_SECOND;
 
 void
-AgInt_generic(char *processVar, char *nodeVar)
+AgInt_generic(const char *processVar, const char *nodeVar)
 {
   MgmtInt tmp;
 
@@ -71,7 +71,7 @@ AgInt_generic(char *processVar, char *nodeVar)
 }
 
 void
-AgInt_generic_scale(char *processVar, char *nodeVar, double factor)
+AgInt_generic_scale(const char *processVar, const char *nodeVar, double factor)
 {
   MgmtInt tmp;
 
@@ -96,7 +96,7 @@ AgFloat_generic(char *processVar, char *nodeVar)
 }
 
 void
-AgFloat_generic_scale_to_int(char *processVar, char *nodeVar, double factor)
+AgFloat_generic_scale_to_int(const char *processVar, const char *nodeVar, double factor)
 {
   MgmtFloat tmp;
 
@@ -220,7 +220,7 @@ Ag_cacheHits()
   };
 
   // the position in this array is significant and hardcoded
-  static char *hit_counts_names[] = {
+  static const char *hit_counts_names[] = {
     "proxy.node.http.cache_hit_fresh_avg_10s",  // 0
     "proxy.node.http.cache_hit_revalidated_avg_10s",    // 1
     "proxy.node.http.cache_hit_ims_avg_10s",    // 2
@@ -233,7 +233,7 @@ Ag_cacheHits()
   };
 
   // the position in this array is significant and hardcoded
-  static char *miss_counts_names[] = {
+  static const char *miss_counts_names[] = {
     "proxy.node.http.cache_miss_cold_avg_10s",  // 0
     "proxy.node.http.cache_miss_changed_avg_10s",       // 1 
     "proxy.node.http.cache_miss_not_cacheable_avg_10s", // 2
@@ -382,8 +382,8 @@ Ag_HostdbHitRate()
   const ink_hrtime window = 10 * HRTIME_SECOND; // update every 10 seconds
   static StatTwoIntSamples node_hostdb_total_lookups = { "proxy.process.hostdb.total_lookups", 0, 0, 0, 0 };
   static StatTwoIntSamples node_hostdb_hits = { "proxy.process.hostdb.total_hits", 0, 0, 0, 0 };
-  static char *node_hostdb_total_lookups_name = "proxy.node.hostdb.total_lookups_avg_10s";
-  static char *node_hostdb_hits_name = "proxy.node.hostdb.total_hits_avg_10s";
+  static const char *node_hostdb_total_lookups_name = "proxy.node.hostdb.total_lookups_avg_10s";
+  static const char *node_hostdb_hits_name = "proxy.node.hostdb.total_hits_avg_10s";
   int status;
   MgmtInt hostdbHits;
   MgmtInt hostdbLookups;
@@ -530,7 +530,7 @@ Ag_TransactionPercentsAndMeanTimes()
   };
 
   // the position in this array is significant and hardcoded
-  static char *counts_names[] = {
+  static const char *counts_names[] = {
     "proxy.node.http.transaction_counts_avg_10s.hit_fresh",     // 0
     "proxy.node.http.transaction_counts_avg_10s.hit_revalidated",       // 1
     "proxy.node.http.transaction_counts_avg_10s.miss_cold",     // 4
@@ -549,7 +549,7 @@ Ag_TransactionPercentsAndMeanTimes()
   };
 
   // the position in this array is significant and hardcoded
-  static char *frac_names[] = {
+  static const char *frac_names[] = {
     "proxy.node.http.transaction_frac_avg_10s.hit_fresh",       // 0
     "proxy.node.http.transaction_frac_avg_10s.hit_revalidated", // 1
     "proxy.node.http.transaction_frac_avg_10s.miss_cold",       // 4
@@ -568,7 +568,7 @@ Ag_TransactionPercentsAndMeanTimes()
   };
 
   // the position in this array is significant and hardcoded
-  static char *frac_int_names[] = {
+  static const char *frac_int_names[] = {
     "proxy.node.http.transaction_frac_avg_10s.hit_fresh_int_pct",       // 0
     "proxy.node.http.transaction_frac_avg_10s.hit_revalidated_int_pct", // 1
     "proxy.node.http.transaction_frac_avg_10s.miss_cold_int_pct",       // 4
@@ -587,7 +587,7 @@ Ag_TransactionPercentsAndMeanTimes()
   };
 
   // the position in this array is significant and hardcoded
-  static char *avgtime_names[] = {
+  static const char *avgtime_names[] = {
     "proxy.node.http.transaction_msec_avg_10s.hit_fresh",       // 0
     "proxy.node.http.transaction_msec_avg_10s.hit_revalidated", // 1
     "proxy.node.http.transaction_msec_avg_10s.miss_cold",       // 4
@@ -698,10 +698,10 @@ Ag_Throughput()
   static StatTwoIntSamples node_nntp_downstream_total_bytes = { "proxy.node.nntp.downstream_total_bytes", 0, 0, 0, 0 };
   static StatTwoIntSamples node_ftp_downstream_total_bytes = { "proxy.node.ftp.downstream_total_bytes", 0, 0, 0, 0 };
   static StatTwoIntSamples node_rni_downstream_total_bytes = { "proxy.node.rni.downstream_total_bytes", 0, 0, 0, 0 };
-  static char *node_http_ua_total_response_bytes_name = "proxy.node.http.user_agent_total_response_bytesavg_10s";
-  static char *node_nntp_downstream_total_bytes_name = "proxy.node.nntp.downstream_total_bytes_avg_10s";
-  static char *node_ftp_downstream_total_bytes_name = "proxy.node.ftp.downstream_total_bytes_avg_10s";
-  static char *node_rni_downstream_total_bytes_name = "proxy.node.rni.downstream_total_bytes_avg_10s";
+  static const char *node_http_ua_total_response_bytes_name = "proxy.node.http.user_agent_total_response_bytesavg_10s";
+  static const char *node_nntp_downstream_total_bytes_name = "proxy.node.nntp.downstream_total_bytes_avg_10s";
+  static const char *node_ftp_downstream_total_bytes_name = "proxy.node.ftp.downstream_total_bytes_avg_10s";
+  static const char *node_rni_downstream_total_bytes_name = "proxy.node.rni.downstream_total_bytes_avg_10s";
   static ink_hrtime lastThroughputTime = 0;
   static MgmtInt lastBytesThrough = 0;
   // These aren't used.
@@ -1011,8 +1011,8 @@ Ag_Bytes()
   const ink_hrtime window = 10 * HRTIME_SECOND; // update every 10 seconds
   static StatTwoIntSamples node_ua_total_bytes = { "proxy.node.user_agent_total_bytes", 0, 0, 0, 0 };
   static StatTwoIntSamples node_os_total_bytes = { "proxy.node.origin_server_total_bytes", 0, 0, 0, 0 };
-  static char *node_ua_total_bytes_name = "proxy.node.user_agent_total_bytes_avg_10s";
-  static char *node_os_total_bytes_name = "proxy.node.origin_server_total_bytes_avg_10s";
+  static const char *node_ua_total_bytes_name = "proxy.node.user_agent_total_bytes_avg_10s";
+  static const char *node_os_total_bytes_name = "proxy.node.origin_server_total_bytes_avg_10s";
   int status;
   MgmtFloat hitRate;
 

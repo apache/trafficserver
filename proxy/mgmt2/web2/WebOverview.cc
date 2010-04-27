@@ -269,7 +269,7 @@ overviewRecord::checkAlarms()
 //  CALLEE is responsible for obtaining and releasing the lock
 //
 RecCounter
-overviewRecord::readCounter(char *name, bool * found)
+overviewRecord::readCounter(const char *name, bool * found)
 {
   RecCounter rec = 0;
   int rec_status = REC_ERR_OKAY;
@@ -294,7 +294,7 @@ overviewRecord::readCounter(char *name, bool * found)
 }
 
 RecInt
-overviewRecord::readInteger(char *name, bool * found)
+overviewRecord::readInteger(const char *name, bool * found)
 {
   RecInt rec = 0;
   int rec_status = REC_ERR_OKAY;
@@ -319,7 +319,7 @@ overviewRecord::readInteger(char *name, bool * found)
 }
 
 RecLLong
-overviewRecord::readLLong(char *name, bool * found)
+overviewRecord::readLLong(const char *name, bool * found)
 {
   RecLLong rec = 0;
   int rec_status = REC_ERR_OKAY;
@@ -344,7 +344,7 @@ overviewRecord::readLLong(char *name, bool * found)
 }
 
 RecFloat
-overviewRecord::readFloat(char *name, bool * found)
+overviewRecord::readFloat(const char *name, bool * found)
 {
   RecFloat rec = 0.0;
   int rec_status = REC_ERR_OKAY;
@@ -369,7 +369,7 @@ overviewRecord::readFloat(char *name, bool * found)
 }
 
 RecString
-overviewRecord::readString(char *name, bool * found)
+overviewRecord::readString(const char *name, bool * found)
 {
   RecString rec = NULL;
   int rec_status = REC_ERR_OKAY;
@@ -409,7 +409,7 @@ overviewRecord::readString(char *name, bool * found)
 //    an easy way to merge the functions
 //
 bool
-overviewRecord::varStrFromName(char *varNameConst, char *bufVal, int bufLen)
+overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
 {
   char *varName;
   RecDataT varDataType;
@@ -1514,7 +1514,7 @@ overviewPage::findNodeByName(const char *nodeName)
 //    CALLEE deallocates the string with free()
 //
 MgmtString
-overviewPage::readString(const char *nodeName, char *name, bool * found)
+overviewPage::readString(const char *nodeName, const char *name, bool * found)
 {
   MgmtString r = NULL;
   //  bool nodeFound = false;
@@ -1542,7 +1542,7 @@ overviewPage::readString(const char *nodeName, char *name, bool * found)
 //   Looks up a node record for a specific by nodeName
 //
 MgmtInt
-overviewPage::readInteger(const char *nodeName, char *name, bool * found)
+overviewPage::readInteger(const char *nodeName, const char *name, bool * found)
 {
   MgmtInt r = -1;
   //  bool nodeFound = false;
@@ -1570,7 +1570,7 @@ overviewPage::readInteger(const char *nodeName, char *name, bool * found)
 //   Looks up a node record for a specific by nodeName
 //
 RecFloat
-overviewPage::readFloat(const char *nodeName, char *name, bool * found)
+overviewPage::readFloat(const char *nodeName, const char *name, bool * found)
 {
   RecFloat r = -1.0;
   //  bool nodeFound = false;
@@ -1631,8 +1631,8 @@ overviewPage::agCacheHitRate()
   const ink_hrtime window = 10 * HRTIME_SECOND; // update every 10 seconds
   static StatTwoIntSamples cluster_hit_count = { "proxy.node.cache_total_hits", 0, 0, 0, 0 };
   static StatTwoIntSamples cluster_miss_count = { "proxy.node.cache_total_misses", 0, 0, 0, 0 };
-  static char *cluster_hit_count_name = "proxy.cluster.cache_total_hits_avg_10s";
-  static char *cluster_miss_count_name = "proxy.cluster.cache_total_misses_avg_10s";
+  static const char *cluster_hit_count_name = "proxy.cluster.cache_total_hits_avg_10s";
+  static const char *cluster_miss_count_name = "proxy.cluster.cache_total_misses_avg_10s";
 
   MgmtIntCounter totalHits = 0;
   MgmtIntCounter totalMisses = 0;
@@ -1742,8 +1742,8 @@ overviewPage::agHostdbHitRate()
   const ink_hrtime window = 10 * HRTIME_SECOND; // update every 10 seconds
   static StatTwoIntSamples cluster_hostdb_total_lookups = { "proxy.node.hostdb.total_lookups", 0, 0, 0, 0 };
   static StatTwoIntSamples cluster_hostdb_hits = { "proxy.node.hostdb.total_hits", 0, 0, 0, 0 };
-  static char *cluster_hostdb_total_lookups_name = "proxy.cluster.hostdb.total_lookups_avg_10s";
-  static char *cluster_hostdb_hits_name = "proxy.cluster.hostdb.total_hits_avg_10s";
+  static const char *cluster_hostdb_total_lookups_name = "proxy.cluster.hostdb.total_lookups_avg_10s";
+  static const char *cluster_hostdb_hits_name = "proxy.cluster.hostdb.total_hits_avg_10s";
 
   RecInt hostDBtotal = 0;
   RecInt hostDBhits = 0;
@@ -1854,8 +1854,8 @@ overviewPage::agBandwidthHitRate()
   const ink_hrtime window = 10 * HRTIME_SECOND; // update every 10 seconds
   static StatTwoIntSamples cluster_ua_total_bytes = { "proxy.node.user_agent_total_bytes", 0, 0, 0, 0 };
   static StatTwoIntSamples cluster_os_total_bytes = { "proxy.node.origin_server_total_bytes", 0, 0, 0, 0 };
-  static char *cluster_ua_total_bytes_name = "proxy.cluster.user_agent_total_bytes_avg_10s";
-  static char *cluster_os_total_bytes_name = "proxy.cluster.origin_server_total_bytes_avg_10s";
+  static const char *cluster_ua_total_bytes_name = "proxy.cluster.user_agent_total_bytes_avg_10s";
+  static const char *cluster_os_total_bytes_name = "proxy.cluster.origin_server_total_bytes_avg_10s";
 
   MgmtInt bytes;
   MgmtInt UA_total = 0;         // User Agent total
@@ -2011,7 +2011,7 @@ overviewPage::agBandwidthHitRate()
 //   CALLEE MUST HOLD this->accessLock
 //
 int
-overviewPage::clusterSumInt(char *nodeVar, RecInt * sum)
+overviewPage::clusterSumInt(const char *nodeVar, RecInt * sum)
 {
   int numUsed = 0;
   int numHosts_local = sortRecords.getNumEntries();
@@ -2062,7 +2062,7 @@ overviewPage::agConnections()
 //   CALLEE MUST HOLD this->accessLock
 //
 void
-overviewPage::clusterAgInt(char *clusterVar, char *nodeVar)
+overviewPage::clusterAgInt(const char *clusterVar, const char *nodeVar)
 {
   int numUsed = 0;
   MgmtInt sum = 0;
@@ -2074,7 +2074,7 @@ overviewPage::clusterAgInt(char *clusterVar, char *nodeVar)
 }
 
 void
-overviewPage::clusterAgIntScale(char *clusterVar, char *nodeVar, double factor)
+overviewPage::clusterAgIntScale(const char *clusterVar, const char *nodeVar, double factor)
 {
   int numUsed = 0;
   RecInt sum = 0;
@@ -2125,7 +2125,7 @@ overviewPage::clusterSumCounter(char *nodeVar, RecInt * sum)
 //   CALLEE MUST HOLD this->accessLock
 //
 int
-overviewPage::clusterSumFloat(char *nodeVar, RecFloat * sum)
+overviewPage::clusterSumFloat(const char *nodeVar, RecFloat * sum)
 {
   int numUsed = 0;
   int numHosts_local = sortRecords.getNumEntries();
@@ -2157,7 +2157,7 @@ overviewPage::clusterSumFloat(char *nodeVar, RecFloat * sum)
 //   CALLEE MUST HOLD this->accessLock
 //
 void
-overviewPage::clusterAgFloat(char *clusterVar, char *nodeVar)
+overviewPage::clusterAgFloat(const char *clusterVar, const char *nodeVar)
 {
   int numUsed = 0;
   MgmtFloat sum = 0;

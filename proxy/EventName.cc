@@ -46,7 +46,7 @@
   return a string of the integer identifier.
   -------------------------------------------------------------------------*/
 
-char *
+const char *
 event_int_to_string(int event, char buffer[32])
 {
   switch (event) {

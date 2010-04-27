@@ -1731,7 +1731,7 @@ tokens_to_pdss_format(TokenList * tokens, Token * first_tok, INKPdSsFormat * pds
 {
   Token *tok, *last_tok;
   int i = 0;
-  char *sspecs[NUM_SEC_SPECS] = { "time", "src_ip", "prefix", "suffix", "port", "method", "scheme", "tag" };
+  const char *sspecs[NUM_SEC_SPECS] = { "time", "src_ip", "prefix", "suffix", "port", "method", "scheme", "tag" };
 
   //ink_assert(tokens && first_tok && pdss);
   if (!tokens || !first_tok || !pdss)

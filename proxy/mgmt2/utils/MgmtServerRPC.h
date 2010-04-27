@@ -38,6 +38,6 @@
 #include "P_RecCore.h"
 
 int send_exit_request(int fd);
-int send_cli_congest_request(char *arguments);
+int send_cli_congest_request(const char *arguments);
 
 #endif /* _MGMT_SERVER_RPC_ */

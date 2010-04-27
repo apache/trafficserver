@@ -38,8 +38,8 @@ public:
   {
   }
   int LoadFile(char *file);
-  char *getXmlTagValue(char *XmlTagName);
-  char *getXmlTagValueAndAttribute(char *XmlAttribute, char *XmlTagName);
+  char *getXmlTagValue(const char *XmlTagName);
+  char *getXmlTagValueAndAttribute(char *XmlAttribute, const char *XmlTagName);
 };
 
 extern int Config_GetHostname(char *hostname, size_t hostname_len);
@@ -47,7 +47,7 @@ extern int Config_SetHostname(char *hostname);
 extern int Config_GetDefaultRouter(char *router, size_t len);
 extern int Config_SetDefaultRouter(char *router);
 extern int Config_GetDomain(char *domain, size_t domain_len);
-extern int Config_SetDomain(char *domain);
+extern int Config_SetDomain(const char *domain);
 extern int Config_GetDNS_Servers(char *dns, size_t dns_len);
 extern int Config_SetDNS_Servers(char *dns);
 extern int Config_GetDNS_Server(char *server, size_t server_len, int no);

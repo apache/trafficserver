@@ -69,7 +69,7 @@ public:
 private:
 
   ink64 extract_id(const char *query);
-  void dump_hdr(HTTPHdr * hdr, char *desc);
+  void dump_hdr(HTTPHdr *hdr, const char *desc);
   void dump_tunnel_info(HttpSM * sm);
   void dump_history(HttpSM * sm);
   int dump_sm(HttpSM * sm);

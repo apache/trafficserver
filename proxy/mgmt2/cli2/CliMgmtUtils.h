@@ -49,28 +49,28 @@
 INKError Cli_RecordGet(const char *rec_name, INKRecordEle * rec_val);
 
 // Get an integer type records.config variable
-INKError Cli_RecordGetInt(char *rec_name, INKInt * int_val);
+INKError Cli_RecordGetInt(const char *rec_name, INKInt * int_val);
 
 // Get an counter type records.config variable
-INKError Cli_RecordGetCounter(char *rec_name, INKCounter * ctr_val);
+INKError Cli_RecordGetCounter(const char *rec_name, INKCounter * ctr_val);
 
 // Get a float type records.config variable
-INKError Cli_RecordGetFloat(char *rec_name, INKFloat * float_val);
+INKError Cli_RecordGetFloat(const char *rec_name, INKFloat * float_val);
 
 // Get a string type records.config variable
-INKError Cli_RecordGetString(char *rec_name, INKString * string_val);
+INKError Cli_RecordGetString(const char *rec_name, char **string_val);
 
 // Use a string to set a records.config variable
 INKError Cli_RecordSet(const char *rec_name, const char *rec_value, INKActionNeedT * action_need);
 
 // Set an integer type records.config variable
-INKError Cli_RecordSetInt(char *rec_name, INKInt int_val, INKActionNeedT * action_need);
+INKError Cli_RecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT * action_need);
 
 //Set a float type records.config variable
-INKError Cli_RecordSetFloat(char *rec_name, INKFloat float_val, INKActionNeedT * action_need);
+INKError Cli_RecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * action_need);
 
 // Set a string type records.config variable  
-INKError Cli_RecordSetString(char *rec_name, INKString str_val, INKActionNeedT * action_need);
+INKError Cli_RecordSetString(const char *rec_name, INKString str_val, INKActionNeedT * action_need);
 
 // Retrieve and display contents of a rules file
 INKError Cli_DisplayRules(INKFileNameT fname);
@@ -102,7 +102,7 @@ int Cli_EvalOnOffString(char *stringval);
 //
 // on_off = "on" mean 1, "off" mean 0
 //
-int Cli_RecordOnOff_Action(int action, char *record, char *on_off);
+int Cli_RecordOnOff_Action(int action, const char *record, const char *on_off);
 
 ////////////////////////////////////////////////////////////////
 // Cli_RecordInt_Action
@@ -116,7 +116,7 @@ int Cli_RecordOnOff_Action(int action, char *record, char *on_off);
 //
 // value = the integer value used by RECORD_SET
 //
-int Cli_RecordInt_Action(int action, char *record, int value);
+int Cli_RecordInt_Action(int action, const char *record, int value);
 
 ////////////////////////////////////////////////////////////////
 // Cli_RecordHostname_Action
@@ -131,7 +131,7 @@ int Cli_RecordInt_Action(int action, char *record, int value);
 //
 // hostname = string to set
 //
-int Cli_RecordHostname_Action(int action, char *record, char *hostname);
+int Cli_RecordHostname_Action(int action, const char *record, char *hostname);
 
 ////////////////////////////////////////////////////////////////
 // Cli_RecordString_Action
@@ -145,7 +145,7 @@ int Cli_RecordHostname_Action(int action, char *record, char *hostname);
 //
 // string_val = string to set
 //
-int Cli_RecordString_Action(int action, char *record, char *string_val);
+int Cli_RecordString_Action(int action, const char *record, char *string_val);
 
 ////////////////////////////////////////////////////////////////
 // Cli_ConfigFileURL_Action
@@ -158,11 +158,11 @@ int Cli_RecordString_Action(int action, char *record, char *string_val);
 //
 // url = if non-NULL, update the file using contents of URL
 //
-int Cli_ConfigFileURL_Action(INKFileNameT file, char *filename, const char *url);
+int Cli_ConfigFileURL_Action(INKFileNameT file, const char *filename, const char *url);
 
 extern int enable_restricted_commands;
 
-int cliCheckIfEnabled(char *command);
+int cliCheckIfEnabled(const char *command);
 
 int GetTSDirectory(char *ts_path, size_t ts_path_len);
 

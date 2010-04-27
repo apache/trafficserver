@@ -301,12 +301,10 @@ private:
   void setup_pre_defined_info(PreDefinedFormatInfoList * pre_def_info_list);
   LogFilter *split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list);
   size_t split_by_hostname(const PreDefinedFormatInfoList & pre_def_info_list, LogFilter * reject_protocol);
-  void create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
-                                              & pre_def_info_list,
-                                              size_t num_filt,
-                                              LogFilter ** filter, char *filt_name = 0, bool force_extension = false);
+  void create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList &pre_def_info_list, size_t num_filt,
+                                              LogFilter ** filter, const char *filt_name = 0, bool force_extension = false);
 
-  void add_filters_to_search_log_object(char *format_name);
+  void add_filters_to_search_log_object(const char *format_name);
 
 private:
   // if true, use max_space_mb_for_orphan_logs to determine the amount

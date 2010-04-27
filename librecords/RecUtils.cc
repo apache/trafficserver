@@ -34,7 +34,7 @@ extern Diags *g_diags;
 //-------------------------------------------------------------------------
 
 RecRecord *
-RecAlloc(RecT rec_type, char *name, RecDataT data_type)
+RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 {
 
   if (g_num_records >= REC_MAX_RECORDS) {

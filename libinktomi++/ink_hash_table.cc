@@ -161,7 +161,7 @@ ink_hash_table_destroy_and_xfree_values(InkHashTable * ht_ptr)
  *---------------------------------------------------------------------------*/
 
 int
-ink_hash_table_isbound(InkHashTable * ht_ptr, InkHashTableKey key)
+ink_hash_table_isbound(InkHashTable * ht_ptr, const char *key)
 {
   InkHashTableEntry *he_ptr;
 
@@ -182,7 +182,7 @@ ink_hash_table_isbound(InkHashTable * ht_ptr, InkHashTableKey key)
  *---------------------------------------------------------------------------*/
 
 int
-ink_hash_table_lookup(InkHashTable * ht_ptr, InkHashTableKey key, InkHashTableValue * value_ptr)
+ink_hash_table_lookup(InkHashTable *ht_ptr, const char* key, InkHashTableValue *value_ptr)
 {
   InkHashTableEntry *he_ptr;
   InkHashTableValue value;
@@ -208,7 +208,7 @@ ink_hash_table_lookup(InkHashTable * ht_ptr, InkHashTableKey key, InkHashTableVa
  *---------------------------------------------------------------------------*/
 
 int
-ink_hash_table_delete(InkHashTable * ht_ptr, InkHashTableKey key)
+ink_hash_table_delete(InkHashTable * ht_ptr, const char *key)
 {
   char *tcl_key;
   Tcl_HashTable *tcl_ht_ptr;
@@ -237,16 +237,14 @@ ink_hash_table_delete(InkHashTable * ht_ptr, InkHashTableKey key)
  *---------------------------------------------------------------------------*/
 
 InkHashTableEntry *
-ink_hash_table_lookup_entry(InkHashTable * ht_ptr, InkHashTableKey key)
+ink_hash_table_lookup_entry(InkHashTable * ht_ptr, const char* key)
 {
-  char *tcl_key;
   Tcl_HashTable *tcl_ht_ptr;
   Tcl_HashEntry *tcl_he_ptr;
   InkHashTableEntry *he_ptr;
 
-  tcl_key = (char *) key;
   tcl_ht_ptr = (Tcl_HashTable *) ht_ptr;
-  tcl_he_ptr = Tcl_FindHashEntry(tcl_ht_ptr, tcl_key);
+  tcl_he_ptr = Tcl_FindHashEntry(tcl_ht_ptr, key);
   he_ptr = (InkHashTableEntry *) tcl_he_ptr;
 
   return (he_ptr);
@@ -266,15 +264,13 @@ ink_hash_table_lookup_entry(InkHashTable * ht_ptr, InkHashTableKey key)
  *---------------------------------------------------------------------------*/
 
 InkHashTableEntry *
-ink_hash_table_get_entry(InkHashTable * ht_ptr, InkHashTableKey key, int *new_value)
+ink_hash_table_get_entry(InkHashTable *ht_ptr, const char *key, int *new_value)
 {
-  char *tcl_key;
   Tcl_HashTable *tcl_ht_ptr;
   Tcl_HashEntry *tcl_he_ptr;
 
-  tcl_key = (char *) key;
   tcl_ht_ptr = (Tcl_HashTable *) ht_ptr;
-  tcl_he_ptr = Tcl_CreateHashEntry(tcl_ht_ptr, tcl_key, new_value);
+  tcl_he_ptr = Tcl_CreateHashEntry(tcl_ht_ptr, key, new_value);
 
   if (tcl_he_ptr == NULL) {
     ink_fatal(1, "%s: Tcl_CreateHashEntry returned NULL", "ink_hash_table_get_entry");
@@ -320,7 +316,7 @@ ink_hash_table_set_entry(InkHashTable * ht_ptr, InkHashTableEntry * he_ptr, InkH
  *---------------------------------------------------------------------------*/
 
 void
-ink_hash_table_insert(InkHashTable * ht_ptr, InkHashTableKey key, InkHashTableValue value)
+ink_hash_table_insert(InkHashTable * ht_ptr, const char *key, InkHashTableValue value)
 {
   int new_value;
   InkHashTableEntry *he_ptr;

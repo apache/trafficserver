@@ -121,7 +121,7 @@ public:
   bool sendOutgoingMessage(char *buf, int len);
   bool sendReliableMessage(unsigned long addr, char *buf, int len);
 
-  bool rl_sendReliableMessage(unsigned long addr, char *buf, int len);
+  bool rl_sendReliableMessage(unsigned long addr, const char *buf, int len);
   bool sendReliableMessage(unsigned long addr, char *buf, int len, char *reply, int len2, bool take_lock);
   bool sendReliableMessageReadTillClose(unsigned long addr, char *buf, int len, textBuffer * reply);
 
@@ -136,7 +136,7 @@ public:
     return our_ip;
   }
 
-  void logClusterMismatch(char *ip, ClusterMismatch type, char *data);
+  void logClusterMismatch(const char *ip, ClusterMismatch type, char *data);
 
   InkHashTable *mismatchLog;    // drainer thread use only
 

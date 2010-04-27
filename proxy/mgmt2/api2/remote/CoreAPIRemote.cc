@@ -65,7 +65,7 @@ extern int event_socket_fd;
 INKError send_and_parse_basic(OpType op);
 INKError send_and_parse_list(OpType op, LLQ * list);
 INKError send_and_parse_name(OpType op, char *name);
-INKError mgmt_record_set(char *rec_name, char *rec_val, INKActionNeedT * action_need);
+INKError mgmt_record_set(const char *rec_name, const char *rec_val, INKActionNeedT * action_need);
 bool start_binary(const char *abs_bin_path);
 char *get_root_dir();
 
@@ -181,7 +181,7 @@ send_and_parse_name(OpType op, char *name)
  * void*. Just read out the string from socket and pass it MgmtRecordSet.
  */
 INKError
-mgmt_record_set(char *rec_name, char *rec_val, INKActionNeedT * action_need)
+mgmt_record_set(const char *rec_name, const char *rec_val, INKActionNeedT * action_need)
 {
   INKError err;
 
@@ -294,7 +294,7 @@ terminate_signal(int sig)
 
 
 INKError
-Init(char *socket_path)
+Init(const char *socket_path)
 {
   INKError err = INK_ERR_OKAY;
 
@@ -490,7 +490,7 @@ HardRestart()
 // note that the record value is being sent as chunk of memory, regardless of
 // record type; it's not being converted to a string!!
 INKError
-MgmtRecordGet(char *rec_name, INKRecordEle * rec_ele)
+MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
 {
   INKError ret;
   void *val;
@@ -535,7 +535,7 @@ MgmtRecordGet(char *rec_name, INKRecordEle * rec_ele)
 
 
 INKError
-MgmtRecordSet(char *rec_name, char *val, INKActionNeedT * action_need)
+MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need)
 {
   INKError ret;
 
@@ -549,7 +549,7 @@ MgmtRecordSet(char *rec_name, char *val, INKActionNeedT * action_need)
 // first convert the MgmtInt into a string
 // NOTE: use long long, not just long, MgmtInt = ink64
 INKError
-MgmtRecordSetInt(char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
+MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
 {
   char str_val[MAX_RECORD_SIZE];
   INKError ret;
@@ -566,7 +566,7 @@ MgmtRecordSetInt(char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
 
 // first convert the MgmtIntCounter into a string
 INKError
-MgmtRecordSetCounter(char *rec_name, MgmtIntCounter counter_val, INKActionNeedT * action_need)
+MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKActionNeedT * action_need)
 {
   char str_val[MAX_RECORD_SIZE];
   INKError ret;
@@ -583,7 +583,7 @@ MgmtRecordSetCounter(char *rec_name, MgmtIntCounter counter_val, INKActionNeedT 
 
 // first convert the MgmtFloat into string
 INKError
-MgmtRecordSetFloat(char *rec_name, MgmtFloat float_val, INKActionNeedT * action_need)
+MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * action_need)
 {
   char str_val[MAX_RECORD_SIZE];
   INKError ret;
@@ -598,7 +598,7 @@ MgmtRecordSetFloat(char *rec_name, MgmtFloat float_val, INKActionNeedT * action_
 
 
 INKError
-MgmtRecordSetString(char *rec_name, MgmtString string_val, INKActionNeedT * action_need)
+MgmtRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT * action_need)
 {
   INKError ret;
 
@@ -857,7 +857,7 @@ StatsReset()
  * location specified by "filepath"  
  */
 INKError
-EncryptToFile(char *passwd, char *filepath)
+EncryptToFile(const char *passwd, const char *filepath)
 {
   INKError err;
 

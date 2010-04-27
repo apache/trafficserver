@@ -362,7 +362,7 @@ public:
     return (logging_mode == FULL_LOGGING || logging_mode == LOG_ERRORS_ONLY);
   }
   inkcoreapi static int access(LogAccess * lad);
-  inkcoreapi static int error(char *format, ...);
+  inkcoreapi static int error(const char *format, ...);
 #else
   static int error(char *format, ...)
   {

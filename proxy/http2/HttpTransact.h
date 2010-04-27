@@ -918,7 +918,7 @@ public:
   {
     char *path;                 // out
     char *filename;             // out
-    char *username;             // out
+    const char *username;       // out
     char *password;             // out
     char transfer_mode;         // out
     MimeTableEntry *mime_type;  // out
@@ -1230,7 +1230,7 @@ public:
   static void HandlePushCacheWrite(State * s);
   static void HandlePushTunnelSuccess(State * s);
   static void HandlePushTunnelFailure(State * s);
-  static void HandlePushError(State * s, char *reason);
+  static void HandlePushError(State *s, const char *reason);
   static void HandleBadPushRespHdr(State * s);
 
   // Utility Methods
@@ -1325,9 +1325,8 @@ public:
                                                HTTPHdr * client_request, HTTPHdr * obj_response);
   static void handle_parent_died(State * s);
   static void handle_server_died(State * s);
-  static void build_error_response(State * s,
-                                   HTTPStatus status_code,
-                                   char *reason_phrase_or_null, char *error_body_type, char *format, ...);
+  static void build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null,
+                                   const char *error_body_type, const char *format, ...);
   static void build_redirect_response(State * s);
   static const char *get_error_string(int erno);
 
@@ -1583,7 +1582,7 @@ HttpTransact::State::destroy()
   return;
 }
 
-inline char *
+inline const char *
 conn_state_enum_to_str(HttpTransact::ServerState_t the_state)
 {
   switch (the_state) {

@@ -222,7 +222,7 @@ Config_GetDomain(char *domain, size_t domain_len)
 }
 
 int
-Config_SetDomain(char *domain)
+Config_SetDomain(const char *domain)
 {
   int status = -1;
 #if (HOST_OS != freebsd) && (HOST_OS != darwin)
@@ -1285,7 +1285,7 @@ XmlObject::LoadFile(char *file)
 }
 
 char *
-XmlObject::getXmlTagValue(char *XmlTagName)
+XmlObject::getXmlTagValue(const char *XmlTagName)
 {
   char XmlTagValue[1024];
   ink_strncpy(XmlTagValue, "", sizeof(XmlTagValue));
@@ -1312,7 +1312,7 @@ XmlObject::getXmlTagValue(char *XmlTagName)
 
 
 char *
-XmlObject::getXmlTagValueAndAttribute(char *XmlAttribute, char *XmlTagName)
+XmlObject::getXmlTagValueAndAttribute(char *XmlAttribute, const char *XmlTagName)
 {
   char XmlTagValue[1024];
   ink_strncpy(XmlTagValue, "", sizeof(XmlTagValue));

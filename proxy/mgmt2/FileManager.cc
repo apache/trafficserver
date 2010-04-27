@@ -50,7 +50,7 @@ static const char snapDir[] = "snapshots";
 
 typedef fileEntry snapshot;
 
-char *SnapshotStrings[] = { "Request Successful\n",
+const char *SnapshotStrings[] = { "Request Successful\n",
   "No Snapshot Directory",
   "Snapshot was not found\n",
   "Creation of snapshot directory failed\n",
@@ -186,7 +186,7 @@ FileManager::registerCallback(FileCallbackFunc func)
 //  Pointers to the new objects are stored in the bindings hashtable
 //
 void
-FileManager::addFile(char *baseFileName, bool root_access_needed)
+FileManager::addFile(const char *baseFileName, bool root_access_needed)
 {
 
   ink_assert(baseFileName != NULL);
@@ -207,7 +207,7 @@ FileManager::addFile(char *baseFileName, bool root_access_needed)
 //  If there is no binding, falseis returned
 //
 bool
-FileManager::getRollbackObj(char *baseFileName, Rollback ** rbPtr)
+FileManager::getRollbackObj(const char *baseFileName, Rollback ** rbPtr)
 {
 
   InkHashTableValue lookup;

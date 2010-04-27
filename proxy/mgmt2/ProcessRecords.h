@@ -44,7 +44,7 @@ class ProcessRecords:public BaseRecords
 
 public:
 
-  ProcessRecords(char *mpath, char *cfile, char *lmfile):BaseRecords(mpath, cfile, lmfile)
+  ProcessRecords(char *mpath, const char *cfile, char *lmfile):BaseRecords(mpath, cfile, lmfile)
   {
     ignore_manager = false;
   };

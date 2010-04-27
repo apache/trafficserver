@@ -540,7 +540,7 @@ MultiCacheBase::clear_but_heap()
 }
 
 int
-MultiCacheBase::read_config(char *config_filename, Store & s, char *fn, int *pi, int *pbuck)
+MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, int *pi, int *pbuck)
 {
   int scratch;
   char p[PATH_NAME_MAX + 1], buf[256];
@@ -578,7 +578,7 @@ MultiCacheBase::read_config(char *config_filename, Store & s, char *fn, int *pi,
 }
 
 int
-MultiCacheBase::write_config(char *config_filename, int nominal_size, int abuckets)
+MultiCacheBase::write_config(const char *config_filename, int nominal_size, int abuckets)
 {
   char p[PATH_NAME_MAX], buf[256];
   int fd, retcode = -1;
@@ -598,11 +598,11 @@ MultiCacheBase::write_config(char *config_filename, int nominal_size, int abucke
 }
 
 int
-MultiCacheBase::open(Store * s, char *config_filename, char *db_filename, int db_size,
+MultiCacheBase::open(Store * s, const char *config_filename, char *db_filename, int db_size,
                      bool reconfigure, bool fix, bool silent)
 {
   int ret = 0;
-  char *err = NULL;
+  const char *err = NULL;
   char *serr = NULL;
   char t_db_filename[PATH_NAME_MAX];
   int t_db_size = 0;
@@ -948,7 +948,7 @@ MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
 }
 
 int
-MultiCacheBase::check(char *config_filename, bool fix)
+MultiCacheBase::check(const char *config_filename, bool fix)
 {
   //  rebuild
   Store tStore;

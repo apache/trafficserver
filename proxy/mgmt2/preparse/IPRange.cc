@@ -86,7 +86,7 @@ read_an_ip(char *line, unsigned int *ip, int *i, int n)
 
 // Returns 0 if successful, error string otherwise
 char *
-IPRange::read_table_from_file(int fd, char *identifier_str, bool localip)
+IPRange::read_table_from_file(int fd, const char *identifier_str, bool localip)
 {
   int i, j, n, rc, s, line_no;
   char c, line[MAXLINESIZE];

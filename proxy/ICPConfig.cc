@@ -1372,7 +1372,7 @@ ICPlog::GetContentType()
 // ICP Debug support.
 //*****************************************************************************
 //
-static char *ICPstatNames[] = {
+static const char *ICPstatNames[] = {
   "icp_stat_def",
   "config_mgmt_callouts_stat",
   "reconfig_polls_stat",
@@ -1412,7 +1412,7 @@ static char *ICPstatNames[] = {
 };
 
 void
-dumpICPstatEntry(int i, char *name)
+dumpICPstatEntry(int i, const char *name)
 {
   int l = strlen(name);
   ink64 sval, cval;
@@ -1460,7 +1460,7 @@ ICPProcessor::DumpICPConfig()
     type = P->GetType();
     *(inku32 *) & ip = (inku32) (P->GetIP())->s_addr;
     icp_port = P->GetPort();
-    char *str_type;
+    const char *str_type;
 
     switch (type) {
     case PEER_PARENT:

@@ -578,7 +578,7 @@ configSSLenable()
   return;
 
 SSL_FAILED:
-  char *errMsg = "Unable to initialize SSL.  Web administration inoperable";
+  const char *errMsg = "Unable to initialize SSL.  Web administration inoperable";
   mgmt_elog(stderr, "[configSSLenable] %s\n", errMsg);
   lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, errMsg);
   adminContext.SSLenabled = -1;

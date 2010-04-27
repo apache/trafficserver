@@ -39,17 +39,17 @@ char *readIntoBuffer(char *file_path, const char *module_name, int *read_size_pt
 void unescapifyStr(char *buffer);
 
 typedef unsigned long ip_addr_t;
-char *ExtractIpRange(char *match_str, ip_addr_t * addr1, ip_addr_t * addr2);
+const char *ExtractIpRange(char *match_str, ip_addr_t * addr1, ip_addr_t * addr2);
 char *tokLine(char *buf, char **last);
 
-char *processDurationString(char *str, int *seconds);
+const char *processDurationString(char *str, int *seconds);
 
 // The first class types we support matching on
 enum matcher_type
 { MATCH_NONE, MATCH_HOST, MATCH_DOMAIN,
   MATCH_IP, MATCH_REGEX, MATCH_HOST_REGEX
 };
-extern char *matcher_type_str[];
+extern const char *matcher_type_str[];
 
 // A parsed config file line
 const int MATCHER_MAX_TOKENS = 40;
@@ -78,7 +78,7 @@ extern const matcher_tags http_dest_tags;
 extern const matcher_tags ip_allow_tags;
 extern const matcher_tags socks_server_tags;
 
-char *parseConfigLine(char *line, matcher_line * p_line, const matcher_tags * tags);
+const char *parseConfigLine(char *line, matcher_line * p_line, const matcher_tags * tags);
 
 // inline void LowerCaseStr(char* str)
 //

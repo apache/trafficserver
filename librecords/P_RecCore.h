@@ -43,13 +43,13 @@ extern int g_num_update[];
 extern RecTree *g_records_tree;
 
 // records.config items
-extern char *g_rec_config_fpath;
+extern const char *g_rec_config_fpath;
 extern LLQ *g_rec_config_contents_llq;
 extern InkHashTable *g_rec_config_contents_ht;
 extern ink_mutex g_rec_config_lock;
 
 // stats.snap items
-extern char *g_stats_snap_fpath;
+extern const char *g_stats_snap_fpath;
 
 extern int g_type_records[][REC_MAX_RECORDS];
 extern int g_type_num_records[];
@@ -64,12 +64,12 @@ int RecCoreInit(RecModeT mode_type, Diags * diags);
 // Registration/Insertion
 //-------------------------------------------------------------------------
 
-RecRecord *RecRegisterStat(RecT rec_type, char *name, RecDataT data_type,
+RecRecord *RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type,
                            RecData data_default, RecPersistT persist_type);
 
-RecRecord *RecRegisterConfig(RecT rec_type, char *name, RecDataT data_type,
+RecRecord *RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type,
                              RecData data_default, RecUpdateT update_type,
-                             RecCheckT check_type, char *check_regex, RecAccessT access_type = RECA_NULL);
+                             RecCheckT check_type, const char *check_regex, RecAccessT access_type = RECA_NULL);
 
 RecRecord *RecForceInsert(RecRecord * record);
 
@@ -77,10 +77,10 @@ RecRecord *RecForceInsert(RecRecord * record);
 // Setting/Getting
 //-------------------------------------------------------------------------
 
-int RecSetRecord(RecT rec_type, char *name, RecDataT data_type,
-                 RecData * data, RecRawStat * raw_stat, bool lock = true);
+int RecSetRecord(RecT rec_type, const char *name, RecDataT data_type,
+                 RecData *data, RecRawStat *raw_stat, bool lock = true);
 
-int RecGetRecord_Xmalloc(char *name, RecDataT data_type, RecData * data, bool lock = true);
+int RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData * data, bool lock = true);
 
 //-------------------------------------------------------------------------
 // Read/Sync to Disk

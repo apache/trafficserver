@@ -427,9 +427,7 @@ RecAllocateRawStatBlock(int num_stats)
 //-------------------------------------------------------------------------
 
 int
-RecRegisterRawStat(RecRawStatBlock * rsb,
-                   RecT rec_type,
-                   char *name, RecDataT data_type, RecPersistT persist_type, int id, RecRawStatSyncCb sync_cb)
+RecRegisterRawStat(RecRawStatBlock * rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id, RecRawStatSyncCb sync_cb)
 {
 
   Debug("stats", "RecRawStatSyncCb(): rsb pointer:%p id:%d\n", rsb, id);
@@ -722,7 +720,7 @@ RecGetGlobalRawStatCountPtr(RecRawStatBlock * rsb, int id)
 //-------------------------------------------------------------------------
 
 int
-RecRegisterRawStatSyncCb(char *name, RecRawStatSyncCb sync_cb, RecRawStatBlock * rsb, int id)
+RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatBlock * rsb, int id)
 {
   int err = REC_ERR_FAIL;
   RecRecord *r;

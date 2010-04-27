@@ -242,7 +242,6 @@ ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
   return (p);
 }                               /* End ink_string_find_dotted_extension */
 
-
 /*---------------------------------------------------------------------------*
  
   char *ink_string_mpath(int nstrings, char *str1, bool free1, 
@@ -391,6 +390,24 @@ ink_string_mjoin(int nstrings, ...)
   }
   return ns;
 }
+
+#if !defined(HAVE_STRNDUP)
+char *
+ink_strndup(const char *str, size_t n)
+{
+  char *cstr = NULL;
+
+  if (likely(str)) {
+    size_t len = strlen(str);
+    cstr = (char *)xmalloc(len + 1);
+    if (cstr == NULL)
+      return (NULL);
+    memcpy(cstr, str, len);
+    cstr[len] = '\0';
+  }
+  return (cstr);
+}
+#endif
 
 char *
 ink_strtok_r(char *s1, const char *s2, char **lasts)

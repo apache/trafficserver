@@ -1689,7 +1689,7 @@ read_string(FILE * fp, char *buf, int size)
 }
 
 static bool
-store_error_message(char *err_msg_buf, int buf_size, char *fmt, ...)
+store_error_message(char *err_msg_buf, int buf_size, const char *fmt, ...)
 {
   if (likely(err_msg_buf && buf_size > 0)) {
     char buf[2048];

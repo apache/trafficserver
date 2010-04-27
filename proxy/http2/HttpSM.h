@@ -251,14 +251,14 @@ public:
 
   // Debugging routines to dump the SM history, hdrs
   void dump_state_on_assert();
-  void dump_state_hdr(HTTPHdr * h, char *s);
+  void dump_state_hdr(HTTPHdr *h, const char *s);
 
   // Functions for manipulating api hooks
   void txn_hook_append(INKHttpHookID id, INKContInternal * cont);
   void txn_hook_prepend(INKHttpHookID id, INKContInternal * cont);
   APIHook *txn_hook_get(INKHttpHookID id);
 
-  void add_history_entry(char *fileline, int event, int reentrant);
+  void add_history_entry(const char *fileline, int event, int reentrant);
   void add_cache_sm();
   bool decide_cached_url(URL * s_url);
 
@@ -292,7 +292,7 @@ protected:
 
   struct History
   {
-    char *fileline;
+    const char *fileline;
     unsigned short event;
     short reentrancy;
   };
@@ -463,7 +463,7 @@ protected:
   void setup_push_transfer_to_cache();
   void setup_transform_to_server_transfer();
   void setup_cache_write_transfer(HttpCacheSM * c_sm,
-                                  VConnection * source_vc, HTTPInfo * store_info, int skip_bytes, char *name);
+                                  VConnection * source_vc, HTTPInfo * store_info, int skip_bytes, const char *name);
   void issue_cache_update();
   void perform_cache_write_action();
   void perform_transform_cache_write_action();
@@ -579,7 +579,7 @@ HttpSM::write_response_header_into_buffer(HTTPHdr * h, MIOBuffer * b)
 }
 
 inline void
-HttpSM::add_history_entry(char *fileline, int event, int reentrant)
+HttpSM::add_history_entry(const char *fileline, int event, int reentrant)
 {
   int pos = history_pos++ % HISTORY_SIZE;
   history[pos].fileline = fileline;

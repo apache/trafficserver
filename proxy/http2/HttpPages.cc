@@ -91,7 +91,7 @@ HttpPagesHandler::extract_id(const char *query)
 }
 
 void
-HttpPagesHandler::dump_hdr(HTTPHdr * hdr, char *desc)
+HttpPagesHandler::dump_hdr(HTTPHdr *hdr, const char *desc)
 {
 
   if (hdr->valid()) {

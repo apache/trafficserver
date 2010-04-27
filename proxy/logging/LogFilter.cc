@@ -43,13 +43,11 @@
 //#include "ink_ctype.h"
 #include "SimpleTokenizer.h"
 
-char *
-  LogFilter::OPERATOR_NAME[] = { "MATCH", "CASE_INSENSITIVE_MATCH",
+const char *LogFilter::OPERATOR_NAME[] = { "MATCH", "CASE_INSENSITIVE_MATCH",
   "CONTAIN", "CASE_INSENSITIVE_CONTAIN"
 };
 
-char *
-LogFilter::ACTION_NAME[] = { "REJECT", "ACCEPT" };
+const char *LogFilter::ACTION_NAME[] = { "REJECT", "ACCEPT" };
 
 /*-------------------------------------------------------------------------
   LogFilter::LogFilter
@@ -59,7 +57,7 @@ LogFilter::ACTION_NAME[] = { "REJECT", "ACCEPT" };
   between the classes and I think should be removed.     ltavera
   -------------------------------------------------------------------------*/
 
-LogFilter::LogFilter(char *name, LogField * field, LogFilter::Action action, LogFilter::Operator oper)
+LogFilter::LogFilter(const char *name, LogField * field, LogFilter::Action action, LogFilter::Operator oper)
   :
 m_name(xstrdup(name))
   ,
@@ -275,7 +273,7 @@ LogFilterString::_setValues(size_t n, char **value)
 }
 
 
-LogFilterString::LogFilterString(char *name, LogField * field,
+LogFilterString::LogFilterString(const char *name, LogField * field,
                                  LogFilter::Action action, LogFilter::Operator oper, char *values)
   :
 LogFilter(name, field, action, oper)
@@ -301,7 +299,7 @@ LogFilter(name, field, action, oper)
   delete[]val_array;
 }
 
-LogFilterString::LogFilterString(char *name, LogField * field,
+LogFilterString::LogFilterString(const char *name, LogField * field,
                                  LogFilter::Action action, LogFilter::Operator oper, size_t num_values, char **value)
   :
 LogFilter(name, field, action, oper)
@@ -530,7 +528,7 @@ LogFilterInt::_convertStringToInt(char *value, unsigned *ival, LogFieldAliasMap 
   return 0;                     // all OK
 }
 
-LogFilterInt::LogFilterInt(char *name, LogField * field,
+LogFilterInt::LogFilterInt(const char *name, LogField * field,
                            LogFilter::Action action, LogFilter::Operator oper, unsigned value)
 :LogFilter(name, field, action, oper)
 {
@@ -539,7 +537,7 @@ LogFilterInt::LogFilterInt(char *name, LogField * field,
   _setValues(1, v);
 }
 
-LogFilterInt::LogFilterInt(char *name, LogField * field,
+LogFilterInt::LogFilterInt(const char *name, LogField * field,
                            LogFilter::Action action, LogFilter::Operator oper, size_t num_values, unsigned *value)
   :
 LogFilter(name, field, action, oper)
@@ -547,7 +545,7 @@ LogFilter(name, field, action, oper)
   _setValues(num_values, value);
 }
 
-LogFilterInt::LogFilterInt(char *name, LogField * field,
+LogFilterInt::LogFilterInt(const char *name, LogField * field,
                            LogFilter::Action action, LogFilter::Operator oper, char *values)
   :
 LogFilter(name, field, action, oper)

@@ -519,7 +519,7 @@ extern ClassAllocator<ByteBankDescriptor> byteBankAllocator;
 extern int cluster_port;
 // extern void * machine_config_change(void *, void *);
 int machine_config_change(const char *, RecDataT, RecData, void *);
-extern void do_machine_config_change(void *, char *);
+extern void do_machine_config_change(void *, const char *);
 
 #ifdef NON_MODULAR
 // Cluster API support functions 

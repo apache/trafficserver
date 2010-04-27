@@ -129,8 +129,8 @@ class CmdLine_EventHandler:public AbsEventHandler
 private:
   /* variables */
   char *cmdmode;                /* command mode i.e. batch(b) or interactive(i) */
-  char *cmdprompt;              /* what prompt should look like e.g '->' */
-  char *dcmdprompt;             /* default prompt */
+  const char *cmdprompt;              /* what prompt should look like e.g '->' */
+  const char *dcmdprompt;             /* default prompt */
   char *args;                   /* arugments passed to this level */
   cmdline_states curr_state;    /* current command line state */
 
@@ -173,8 +173,8 @@ public:
    ~CmdLine_EventHandler(void);
 
   /* Member fcns */
-  char *command_prompt();       /* get prompt */
-  void command_prompt(char *new_prompt);        /* set prompt */
+  const char *command_prompt();       /* get prompt */
+  void command_prompt(const char *new_prompt);        /* set prompt */
   char *arguments();            /* get args */
   void arguments(char *new_args);       /* set args */
   char *command_mode();         /* get command mode */

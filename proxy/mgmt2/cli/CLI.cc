@@ -85,8 +85,7 @@ const char *
   CLI_globals::sep2 = "**************************************" "**************************************\n";
 
 // Initialization of global Table of command levels with their prompts
-const
-  CLI_globals::CLI_LevelDesc
+  const CLI_globals::CLI_LevelDesc
   CLI_globals::cmdLD[] = {
   {CL_BASE, "cli->;"},
   {CL_MONITOR, "monitor->;"},
@@ -1107,12 +1106,13 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
 void
 handleOverseer(int fd, int mode)
 {
-  char *ok = "Ok", buf[8192], reply[2048];
+  const char *ok = "Ok";
+  char buf[8192], reply[2048];
   RecDataT mtype = RECD_NULL;
 
   bool command_allowed;
 
-  static char *help_lines[] = {
+  static const char *help_lines[] = {
     "",
     "  Traffic Server Overseer Port",
     "",

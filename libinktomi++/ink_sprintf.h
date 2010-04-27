@@ -39,9 +39,9 @@
 #include "ink_defs.h"
 
 int
-ink_bsprintf(char *buffer, char *format, ...)
+ink_bsprintf(char *buffer, const char *format, ...)
 PRINTFLIKE(2, 3);
 int
-ink_bvsprintf(char *buffer, char *format, va_list ap);
+ink_bvsprintf(char *buffer, const char *format, va_list ap);
 
 #endif

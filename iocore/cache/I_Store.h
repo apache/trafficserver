@@ -102,7 +102,7 @@ public:
     return offset + blocks;
   }
 
-  char *init(char *n, ink64 size);
+  const char *init(char *n, ink64 size);
 
   int path(char *filename,      // for non-file, the filename in the director
            ink64 * offset,      // for file, start offset (unsupported)
@@ -192,7 +192,7 @@ struct Store
   // if fd >= 0 then on failure it returns an error string
   //            otherwise on failure it returns (char *)-1
   //
-  char *read_config(int fd = -1);
+  const char *read_config(int fd = -1);
   int write_config_data(int fd);
 };
 
@@ -207,7 +207,7 @@ int initialize_store();
 
 struct storageConfigFile
 {
-  char *parseFile(int fd)
+  const char *parseFile(int fd)
   {
     Store tStore;
       return tStore.read_config(fd);

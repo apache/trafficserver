@@ -51,6 +51,7 @@ typedef ink64 RecInt;
 typedef ink64 RecLLong;
 typedef float RecFloat;
 typedef char *RecString;
+typedef const char *RecStringConst;
 typedef ink64 RecCounter;
 
 enum RecT

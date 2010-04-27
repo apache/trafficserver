@@ -128,7 +128,7 @@ ink_time_is_400th_year(int year)
 
 
 
-int cftime_replacement(char *s, int maxsize, char *format, const time_t * clock);
+int cftime_replacement(char *s, int maxsize, const char *format, const time_t * clock);
 #define cftime(s, format, clock) cftime_replacement(s, 8192, format, clock)
 
 #endif /* #ifndef _ink_time_h_ */

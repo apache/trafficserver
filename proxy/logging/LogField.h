@@ -86,12 +86,12 @@ public:
     N_AGGREGATES
   };
 
-    LogField(char *name, char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal);
+    LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal);
 
-    LogField(char *name, char *symbol, Type type,
+    LogField(const char *name, const char *symbol, Type type,
              MarshalFunc marshal, UnmarshalFuncWithMap unmarshal, Ptr<LogFieldAliasMap> map);
 
-    LogField(char *field, Container container);
+    LogField(const char *field, Container container);
     LogField(const LogField & rhs);
    ~LogField();
 
@@ -158,8 +158,8 @@ private:
   LogField & operator=(const LogField & rhs);
 };
 
-extern char *container_names[];
-extern char *aggregate_names[];
+extern const char *container_names[];
+extern const char *aggregate_names[];
 
 /*-------------------------------------------------------------------------
   LogFieldList

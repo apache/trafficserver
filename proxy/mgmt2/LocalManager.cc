@@ -144,7 +144,7 @@ char snap_filename[FILE_NAME_MAX+1] = "stats.snap";
 void
 LocalManager::clearStats()
 {
-  char *statsPath;
+  const char *statsPath;
   char local_state_dir[FILE_NAME_MAX];
   char snap_file[FILE_NAME_MAX];
   struct stat s;
@@ -340,7 +340,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
 
     cport = ink_strtok_r(proxy_server_other_ports, " ", &last);
     for (; pnum < MAX_PROXY_SERVER_PORTS && cport; pnum++) {
-      char *attr = "X";
+      const char *attr = "X";
 
       for (int j = 0; cport[j]; j++) {
         if (cport[j] == ':') {
@@ -966,7 +966,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
             // End of TS down
           } else {
             // TS is still up, but the connection is lost
-            char *err_msg =
+            const char *err_msg =
               "The TS-TM connection is broken for some reason. Either restart TS and TM or correct this error for TM to display TS statistics correctly";
             lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR, err_msg);
           }
@@ -986,7 +986,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
 
 
 void
-LocalManager::signalFileChange(char *var_name)
+LocalManager::signalFileChange(const char *var_name)
 {
   signalEvent(MGMT_EVENT_CONFIG_FILE_UPDATE, var_name);
   return;
@@ -1417,7 +1417,7 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
 }                               /* End bindProxyPort */
 
 void
-LocalManager::signalAlarm(int alarm_id, char *desc, char *ip)
+LocalManager::signalAlarm(int alarm_id, const char *desc, const char *ip)
 {
   if (alarm_keeper)
     alarm_keeper->signalAlarm((alarm_t) alarm_id, desc, ip);

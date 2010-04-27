@@ -740,7 +740,7 @@ INKRecordSetFloat(char *rec_name, INKFloat float_val, INKActionNeedT * action_ne
 }
 
 inkapi INKError
-INKRecordSetString(char *rec_name, INKString str_val, INKActionNeedT * action_nee)
+INKRecordSetString(const char *rec_name, const char *str_val, INKActionNeedT * action_nee)
 {
   return INK_ERR_OKAY;
 }

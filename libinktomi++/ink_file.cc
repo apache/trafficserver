@@ -303,7 +303,7 @@ ink_file_fd_readline(int fd, int bufsz, char *buf)
 
 /* Write until NUL */
 int
-ink_file_fd_writestring(int fd, char *buf)
+ink_file_fd_writestring(int fd, const char *buf)
 {
   int len, i = 0;
 

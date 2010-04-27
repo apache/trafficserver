@@ -331,31 +331,31 @@ recv_message_cb(RecMessage * msg, RecMessageT msg_type, void *cookie)
   }
 
 int
-RecRegisterStatInt(RecT rec_type, char *name, RecInt data_default, RecPersistT persist_type)
+RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_int, RECD_INT);
 }
 
 int
-RecRegisterStatLLong(RecT rec_type, char *name, RecLLong data_default, RecPersistT persist_type)
+RecRegisterStatLLong(RecT rec_type, const char *name, RecLLong data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_llong, RECD_LLONG);
 }
 
 int
-RecRegisterStatFloat(RecT rec_type, char *name, RecFloat data_default, RecPersistT persist_type)
+RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_float, RECD_FLOAT);
 }
 
 int
-RecRegisterStatString(RecT rec_type, char *name, RecString data_default, RecPersistT persist_type)
+RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_string, RECD_STRING);
 }
 
 int
-RecRegisterStatCounter(RecT rec_type, char *name, RecCounter data_default, RecPersistT persist_type)
+RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_counter, RECD_COUNTER);
 }
@@ -382,27 +382,27 @@ RecRegisterStatCounter(RecT rec_type, char *name, RecCounter data_default, RecPe
   }
 
 int
-RecRegisterConfigInt(RecT rec_type, char *name,
+RecRegisterConfigInt(RecT rec_type, const char *name,
                      RecInt data_default, RecUpdateT update_type,
-                     RecCheckT check_type, char *check_regex, RecAccessT access_type)
+                     RecCheckT check_type, const char *check_regex, RecAccessT access_type)
 {
   ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_int, RECD_INT);
 }
 
 int
-RecRegisterConfigLLong(RecT rec_type, char *name,
+RecRegisterConfigLLong(RecT rec_type, const char *name,
                        RecLLong data_default, RecUpdateT update_type,
-                       RecCheckT check_type, char *check_regex, RecAccessT access_type)
+                       RecCheckT check_type, const char *check_regex, RecAccessT access_type)
 {
   ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_llong, RECD_LLONG);
 }
 
 int
-RecRegisterConfigFloat(RecT rec_type, char *name,
+RecRegisterConfigFloat(RecT rec_type, const char *name,
                        RecFloat data_default, RecUpdateT update_type,
-                       RecCheckT check_type, char *check_regex, RecAccessT access_type)
+                       RecCheckT check_type, const char *check_regex, RecAccessT access_type)
 {
   ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_float, RECD_FLOAT);
@@ -410,18 +410,19 @@ RecRegisterConfigFloat(RecT rec_type, char *name,
 
 
 int
-RecRegisterConfigString(RecT rec_type, char *name,
-                        RecString data_default, RecUpdateT update_type,
-                        RecCheckT check_type, char *check_regex, RecAccessT access_type)
+RecRegisterConfigString(RecT rec_type, const char *name,
+                        const char *data_default_tmp, RecUpdateT update_type,
+                        RecCheckT check_type, const char *check_regex, RecAccessT access_type)
 {
+  RecString data_default = (RecString)data_default_tmp;
   ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_string, RECD_STRING);
 }
 
 int
-RecRegisterConfigCounter(RecT rec_type, char *name,
+RecRegisterConfigCounter(RecT rec_type, const char *name,
                          RecCounter data_default, RecUpdateT update_type,
-                         RecCheckT check_type, char *check_regex, RecAccessT access_type)
+                         RecCheckT check_type, const char *check_regex, RecAccessT access_type)
 {
   ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_counter, RECD_COUNTER);
@@ -432,7 +433,7 @@ RecRegisterConfigCounter(RecT rec_type, char *name,
 //-------------------------------------------------------------------------
 
 int
-RecSetRecord(RecT rec_type, char *name, RecDataT data_type, RecData * data, RecRawStat * data_raw, bool lock)
+RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, bool lock)
 {
 
   int err = REC_ERR_OKAY;
@@ -548,7 +549,7 @@ Ldone:
 }
 
 int
-RecSetRecordConvert(char *name, RecString rec_string, bool lock)
+RecSetRecordConvert(const char *name, const RecString rec_string, bool lock)
 {
   RecData data;
   data.rec_string = rec_string;
@@ -556,7 +557,7 @@ RecSetRecordConvert(char *name, RecString rec_string, bool lock)
 }
 
 int
-RecSetRecordInt(char *name, RecInt rec_int, bool lock)
+RecSetRecordInt(const char *name, RecInt rec_int, bool lock)
 {
   RecData data;
   data.rec_int = rec_int;
@@ -564,7 +565,7 @@ RecSetRecordInt(char *name, RecInt rec_int, bool lock)
 }
 
 int
-RecSetRecordLLong(char *name, RecLLong rec_llong, bool lock)
+RecSetRecordLLong(const char *name, RecLLong rec_llong, bool lock)
 {
   RecData data;
   data.rec_llong = rec_llong;
@@ -572,7 +573,7 @@ RecSetRecordLLong(char *name, RecLLong rec_llong, bool lock)
 }
 
 int
-RecSetRecordFloat(char *name, RecFloat rec_float, bool lock)
+RecSetRecordFloat(const char *name, RecFloat rec_float, bool lock)
 {
   RecData data;
   data.rec_float = rec_float;
@@ -580,7 +581,7 @@ RecSetRecordFloat(char *name, RecFloat rec_float, bool lock)
 }
 
 int
-RecSetRecordString(char *name, RecString rec_string, bool lock)
+RecSetRecordString(const char *name, const RecString rec_string, bool lock)
 {
   RecData data;
   data.rec_string = rec_string;
@@ -588,7 +589,7 @@ RecSetRecordString(char *name, RecString rec_string, bool lock)
 }
 
 int
-RecSetRecordCounter(char *name, RecCounter rec_counter, bool lock)
+RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock)
 {
   RecData data;
   data.rec_counter = rec_counter;

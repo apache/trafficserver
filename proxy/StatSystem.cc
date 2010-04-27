@@ -475,7 +475,7 @@ start_stats_snap()
 
 
 
-static char **stat_names = NULL;
+static const char **stat_names = NULL;
 static int nstat_names = 0;
 
 static Action *
@@ -539,7 +539,7 @@ static void
 stat_callback_init()
 {
 
-  char *p;
+  const char *p;
   int i, j;
 
   statPagesManager.register_http("stat", stat_callback);
@@ -550,7 +550,7 @@ stat_callback_init()
     nstat_names++;
     //}
   }
-  stat_names = (char **) xmalloc(nstat_names * sizeof(char *));
+  stat_names = (const char **) xmalloc(nstat_names * sizeof(char *));
 
   j = 0;
   for (i = 0; RecordsConfig[i].value_type != INVALID; i++) {

@@ -220,8 +220,8 @@ int parentSelection_CB(const char *name, RecDataT data_type, RecData data, void 
 
 // Unit Test Functions
 void show_result(ParentResult * aParentResult);
-void br(HttpRequestData * h, char *os_hostname, int dest_ip = 0);       // short for build request
-int verify(ParentResult * r, ParentResultType e, char *h, int p);
+void br(HttpRequestData * h, const char *os_hostname, int dest_ip = 0);       // short for build request
+int verify(ParentResult * r, ParentResultType e, const char *h, int p);
 
 /*
   For supporting multiple Socks servers, we essentially use the

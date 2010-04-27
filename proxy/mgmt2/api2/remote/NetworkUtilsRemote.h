@@ -70,7 +70,7 @@ void *socket_test_thread(void *arg);
  *****************************************************************************/
 INKError send_request(int fd, OpType op);
 INKError send_request_name(int fd, OpType op, char *name);
-INKError send_request_name_value(int fd, OpType op, char *name, char *value);
+INKError send_request_name_value(int fd, OpType op, const char *name, const char *value);
 
 INKError send_file_read_request(int fd, INKFileNameT file);
 INKError send_file_write_request(int fd, INKFileNameT file, int ver, int size, char *text);

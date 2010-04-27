@@ -112,8 +112,8 @@ class FileManager:public MultiFile
 public:
   FileManager();
   ~FileManager();
-  void addFile(char *baseFileName, bool root_access_needed);
-  bool getRollbackObj(char *baseFileName, Rollback ** rbPtr);
+  void addFile(const char *baseFileName, bool root_access_needed);
+  bool getRollbackObj(const char *baseFileName, Rollback ** rbPtr);
   void registerCallback(FileCallbackFunc func);
   void fileChanged(const char *baseFileName);
   textBuffer *filesManaged();

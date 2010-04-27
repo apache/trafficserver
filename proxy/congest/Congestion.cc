@@ -38,9 +38,9 @@ RecRawStatBlock *congest_rsb;
 InkRand CongestionRand(123);
 
 static const char *congestPrefix = "[CongestionControl]";
-static char *congestVar = "proxy.config.http.congestion_control.filename";
-static char *congestEnabledVar = "proxy.config.http.congestion_control.enabled";
-static char *congestTimeVar = "proxy.config.http.congestion_control.localtime";
+static const char *congestVar = "proxy.config.http.congestion_control.filename";
+static const char *congestEnabledVar = "proxy.config.http.congestion_control.enabled";
+static const char *congestTimeVar = "proxy.config.http.congestion_control.localtime";
 
 static const matcher_tags congest_dest_tags = {
   "dest_host",
@@ -54,20 +54,20 @@ static const matcher_tags congest_dest_tags = {
 #define CONGESTION_CONTROL_CONFIG_TIMEOUT 120
 /* default congestion control values */
 
-static char *default_max_connection_failures_var =
+static const char *default_max_connection_failures_var =
   "proxy.config.http.congestion_control.default.max_connection_failures";
-static char *default_fail_window_var = "proxy.config.http.congestion_control.default.fail_window";
-static char *default_proxy_retry_interval_var = "proxy.config.http.congestion_control.default.proxy_retry_interval";
-static char *default_client_wait_interval_var = "proxy.config.http.congestion_control.default.client_wait_interval";
-static char *default_wait_interval_alpha_var = "proxy.config.http.congestion_control.default.wait_interval_alpha";
-static char *default_live_os_conn_timeout_var = "proxy.config.http.congestion_control.default.live_os_conn_timeout";
-static char *default_live_os_conn_retries_var = "proxy.config.http.congestion_control.default.live_os_conn_retries";
-static char *default_dead_os_conn_timeout_var = "proxy.config.http.congestion_control.default.dead_os_conn_timeout";
-static char *default_dead_os_conn_retries_var = "proxy.config.http.congestion_control.default.dead_os_conn_retries";
-static char *default_max_connection_var = "proxy.config.http.congestion_control.default.max_connection";
-static char *default_error_page_var = "proxy.config.http.congestion_control.default.error_page";
-static char *default_congestion_scheme_var = "proxy.config.http.congestion_control.default.congestion_scheme";
-static char *default_snmp_var = "proxy.config.http.congestion_control.default.snmp";
+static const char *default_fail_window_var = "proxy.config.http.congestion_control.default.fail_window";
+static const char *default_proxy_retry_interval_var = "proxy.config.http.congestion_control.default.proxy_retry_interval";
+static const char *default_client_wait_interval_var = "proxy.config.http.congestion_control.default.client_wait_interval";
+static const char *default_wait_interval_alpha_var = "proxy.config.http.congestion_control.default.wait_interval_alpha";
+static const char *default_live_os_conn_timeout_var = "proxy.config.http.congestion_control.default.live_os_conn_timeout";
+static const char *default_live_os_conn_retries_var = "proxy.config.http.congestion_control.default.live_os_conn_retries";
+static const char *default_dead_os_conn_timeout_var = "proxy.config.http.congestion_control.default.dead_os_conn_timeout";
+static const char *default_dead_os_conn_retries_var = "proxy.config.http.congestion_control.default.dead_os_conn_retries";
+static const char *default_max_connection_var = "proxy.config.http.congestion_control.default.max_connection";
+static const char *default_error_page_var = "proxy.config.http.congestion_control.default.error_page";
+static const char *default_congestion_scheme_var = "proxy.config.http.congestion_control.default.congestion_scheme";
+static const char *default_snmp_var = "proxy.config.http.congestion_control.default.snmp";
 
 char *DEFAULT_error_page = xstrdup("congestion#retryAfter");
 int DEFAULT_max_connection_failures = 5;

@@ -42,55 +42,55 @@ int RecSetDiags(Diags * diags);
 // Stat Registration
 //-------------------------------------------------------------------------
 
-int RecRegisterStatInt(RecT rec_type, char *name, RecInt data_default, RecPersistT persist_type);
+int RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type);
 
-int RecRegisterStatLLong(RecT rec_type, char *name, RecLLong data_default, RecPersistT persist_type);
+int RecRegisterStatLLong(RecT rec_type, const char *name, RecLLong data_default, RecPersistT persist_type);
 
-int RecRegisterStatFloat(RecT rec_type, char *name, RecFloat data_default, RecPersistT persist_type);
+int RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type);
 
-int RecRegisterStatString(RecT rec_type, char *name, RecString data_default, RecPersistT persist_type);
+int RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type);
 
-int RecRegisterStatCounter(RecT rec_type, char *name, RecCounter data_default, RecPersistT persist_type);
+int RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type);
 
 //-------------------------------------------------------------------------
 // Config Registration
 //-------------------------------------------------------------------------
 
-int RecRegisterConfigInt(RecT rec_type, char *name,
+int RecRegisterConfigInt(RecT rec_type, const char *name,
                          RecInt data_default, RecUpdateT update_type,
-                         RecCheckT check_type, char *check_regex, RecAccessT access_type = RECA_NULL);
+                         RecCheckT check_type, const char *ccheck_regex, RecAccessT access_type = RECA_NULL);
 
-int RecRegisterConfigLLong(RecT rec_type, char *name,
+int RecRegisterConfigLLong(RecT rec_type, const char *name,
                            RecLLong data_default, RecUpdateT update_type,
-                           RecCheckT check_type, char *check_regex, RecAccessT access_type = RECA_NULL);
+                           RecCheckT check_type, const char *check_regex, RecAccessT access_type = RECA_NULL);
 
-int RecRegisterConfigFloat(RecT rec_type, char *name,
+int RecRegisterConfigFloat(RecT rec_type, const char *name,
                            RecFloat data_default, RecUpdateT update_type,
-                           RecCheckT check_type, char *check_regex, RecAccessT access_type = RECA_NULL);
+                           RecCheckT check_type, const char *check_regex, RecAccessT access_type = RECA_NULL);
 
-int RecRegisterConfigString(RecT rec_type, char *name,
-                            RecString data_default, RecUpdateT update_type,
-                            RecCheckT check_type, char *check_regex, RecAccessT access_type = RECA_NULL);
+int RecRegisterConfigString(RecT rec_type, const char *name,
+                            const char *data_default, RecUpdateT update_type,
+                            RecCheckT check_type, const char *check_regex, RecAccessT access_type = RECA_NULL);
 
-int RecRegisterConfigCounter(RecT rec_type, char *name,
+int RecRegisterConfigCounter(RecT rec_type, const char *name,
                              RecCounter data_default, RecUpdateT update_type,
-                             RecCheckT check_type, char *check_regex, RecAccessT access_type = RECA_NULL);
+                             RecCheckT check_type, const char *check_regex, RecAccessT access_type = RECA_NULL);
 
 //-------------------------------------------------------------------------
 // Config Change Notification
 //-------------------------------------------------------------------------
 
-int RecLinkConfigInt(char *name, RecInt * rec_int);
-int RecLinkConfigLLong(char *name, RecLLong * rec_llong);
-int RecLinkConfigInk32(char *name, ink32 * p_ink32);
-int RecLinkConfigInkU32(char *name, inku32 * p_inku32);
-int RecLinkConfigFloat(char *name, RecFloat * rec_float);
-int RecLinkConfigCounter(char *name, RecCounter * rec_counter);
-int RecLinkConfigString(char *name, RecString * rec_string);
+int RecLinkConfigInt(const char *name, RecInt * rec_int);
+int RecLinkConfigLLong(const char *name, RecLLong * rec_llong);
+int RecLinkConfigInk32(const char *name, ink32 * p_ink32);
+int RecLinkConfigInkU32(const char *name, inku32 * p_inku32);
+int RecLinkConfigFloat(const char *name, RecFloat * rec_float);
+int RecLinkConfigCounter(const char *name, RecCounter * rec_counter);
+int RecLinkConfigString(const char *name, RecString * rec_string);
 
-int RecRegisterConfigUpdateCb(char *name, RecConfigUpdateCb update_cb, void *cookie);
-int RecRegisterStatUpdateFunc(char *name, RecStatUpdateFunc update_func, void *cookie);
-int RecRegisterRawStatUpdateFunc(char *name, RecRawStatBlock * rsb,
+int RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *cookie);
+int RecRegisterStatUpdateFunc(const char *name, RecStatUpdateFunc update_func, void *cookie);
+int RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock * rsb,
                                  int id, RecStatUpdateFunc update_func, void *cookie);
 
 //-------------------------------------------------------------------------
@@ -104,36 +104,36 @@ int RecRegisterRawStatUpdateFunc(char *name, RecRawStatBlock * rsb,
 // already been taken out for the callback.
 
 // RecSetRecordConvert -> WebMgmtUtils.cc::varSetFromStr()
-int RecSetRecordConvert(char *name, RecString rec_string, bool lock = true);
-int RecSetRecordInt(char *name, RecInt rec_int, bool lock = true);
-int RecSetRecordLLong(char *name, RecLLong rec_llong, bool lock = true);
-int RecSetRecordFloat(char *name, RecFloat rec_float, bool lock = true);
-int RecSetRecordString(char *name, RecString rec_string, bool lock = true);
-int RecSetRecordCounter(char *name, RecCounter rec_counter, bool lock = true);
+int RecSetRecordConvert(const char *name, const RecString rec_string, bool lock = true);
+int RecSetRecordInt(const char *name, RecInt rec_int, bool lock = true);
+int RecSetRecordLLong(const char *name, RecLLong rec_llong, bool lock = true);
+int RecSetRecordFloat(const char *name, RecFloat rec_float, bool lock = true);
+int RecSetRecordString(const char *name, const RecString rec_string, bool lock = true);
+int RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock = true);
 
-int RecGetRecordInt(char *name, RecInt * rec_int, bool lock = true);
-int RecGetRecordLLong(char *name, RecLLong * rec_llong, bool lock = true);
-int RecGetRecordFloat(char *name, RecFloat * rec_float, bool lock = true);
-int RecGetRecordString(char *name, char *buf, int buf_len, bool lock = true);
-int RecGetRecordString_Xmalloc(char *name, RecString * rec_string, bool lock = true);
-int RecGetRecordCounter(char *name, RecCounter * rec_counter, bool lock = true);
-int RecGetRecordGeneric_Xmalloc(char *name, RecString * rec_string, bool lock = true);
+int RecGetRecordInt(const char *name, RecInt * rec_int, bool lock = true);
+int RecGetRecordLLong(const char *name, RecLLong * rec_llong, bool lock = true);
+int RecGetRecordFloat(const char *name, RecFloat * rec_float, bool lock = true);
+int RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
+int RecGetRecordString_Xmalloc(const char *name, RecString * rec_string, bool lock = true);
+int RecGetRecordCounter(const char *name, RecCounter * rec_counter, bool lock = true);
+int RecGetRecordGeneric_Xmalloc(const char *name, RecString * rec_string, bool lock = true);
 
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
-int RecGetRecordType(char *name, RecT * rec_type, bool lock = true);
-int RecGetRecordDataType(char *name, RecDataT * data_type, bool lock = true);
+int RecGetRecordType(const char *name, RecT * rec_type, bool lock = true);
+int RecGetRecordDataType(const char *name, RecDataT * data_type, bool lock = true);
 int RecGetRecordUpdateCount(RecT data_type);
-int RecGetRecordRelativeOrder(char *name, int *order, bool lock = true);
+int RecGetRecordRelativeOrder(const char *name, int *order, bool lock = true);
 
-int RecGetRecordUpdateType(char *name, RecUpdateT * update_type, bool lock = true);
-int RecGetRecordCheckType(char *name, RecCheckT * check_type, bool lock = true);
-int RecGetRecordCheckExpr(char *name, char **check_expr, bool lock = true);
+int RecGetRecordUpdateType(const char *name, RecUpdateT * update_type, bool lock = true);
+int RecGetRecordCheckType(const char *name, RecCheckT * check_type, bool lock = true);
+int RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock = true);
 int RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock = true);
 
-int RecGetRecordAccessType(char *name, RecAccessT * secure, bool lock = true);
-int RecSetRecordAccessType(char *name, RecAccessT secure, bool lock = true);
+int RecGetRecordAccessType(const char *name, RecAccessT * secure, bool lock = true);
+int RecSetRecordAccessType(const char *name, RecAccessT secure, bool lock = true);
 
 void RecGetRecordTree(char *subtree = NULL);
 void RecGetRecordList(char *, char ***, int *);
@@ -142,8 +142,8 @@ int RecGetRecordPrefix_Xmalloc(char *prefix, char **result, int *result_len);
 //------------------------------------------------------------------------
 // Signal and Alarms
 //------------------------------------------------------------------------
-void RecSignalManager(int, char *);
-void RecSignalAlarm(int, char *);
+void RecSignalManager(int, const char *);
+void RecSignalAlarm(int, const char *);
 
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
@@ -221,24 +221,24 @@ void RecSignalAlarm(int, char *);
   _var = (RecFloat)REC_ConfigReadFloat(_config_var_name); \
 } while (0)
 
-RecInt REC_ConfigReadInteger(char *name);
-RecLLong REC_ConfigReadLLong(char *name);
-char *REC_ConfigReadString(char *name);
-RecFloat REC_ConfigReadFloat(char *name);
-RecCounter REC_ConfigReadCounter(char *name);
+RecInt REC_ConfigReadInteger(const char *name);
+RecLLong REC_ConfigReadLLong(const char *name);
+char *REC_ConfigReadString(const char *name);
+RecFloat REC_ConfigReadFloat(const char *name);
+RecCounter REC_ConfigReadCounter(const char *name);
 
 // MGMT2 Marco's -- converting lmgmt->record_data->readXXX
-RecInt REC_readInteger(char *name, bool * found, bool lock = true);
+RecInt REC_readInteger(const char *name, bool * found, bool lock = true);
 RecLLong REC_readLLong(char *name, bool * found, bool lock = true);
 RecFloat REC_readFloat(char *name, bool * found, bool lock = true);
 RecCounter REC_readCounter(char *name, bool * found, bool lock = true);
-RecString REC_readString(char *name, bool * found, bool lock = true);
+RecString REC_readString(const char *name, bool * found, bool lock = true);
 
-bool REC_setInteger(char *name, int value, bool dirty = true);
-bool REC_setLLong(char *name, RecLLong value, bool dirty = true);
-bool REC_setFloat(char *name, float value, bool dirty = true);
-bool REC_setCounter(char *name, ink64 value, bool dirty = true);
-bool REC_setString(char *name, char *value, bool dirty = true);
+bool REC_setInteger(const char *name, int value, bool dirty = true);
+bool REC_setLLong(const char *name, RecLLong value, bool dirty = true);
+bool REC_setFloat(const char *name, float value, bool dirty = true);
+bool REC_setCounter(const char *name, ink64 value, bool dirty = true);
+bool REC_setString(const char *name, char *value, bool dirty = true);
 
 //------------------------------------------------------------------------
 // Clear Statistics

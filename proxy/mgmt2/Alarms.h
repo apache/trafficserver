@@ -124,7 +124,7 @@ public:
   void registerCallback(AlarmCallbackFunc func);
   bool isCurrentAlarm(alarm_t a, char *ip = NULL);
 
-  void signalAlarm(alarm_t t, char *desc = NULL, char *ip = NULL);
+  void signalAlarm(alarm_t t, const char *desc = NULL, const char *ip = NULL);
   void resolveAlarm(alarm_t a, char *ip = NULL);
 
   void constructAlarmMessage(char *ip, char *message, int max);

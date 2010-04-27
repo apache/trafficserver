@@ -191,7 +191,7 @@ struct DNSEntry:Continuation
   int post(DNSHandler * h, HostEnt * ent, bool freeable);
   int postEvent(int event, Event * e);
 
-  void init(char *x, int len, int qtype_arg, Continuation * acont, HostEnt ** wait, DNSHandler * adnsH, int timeout);
+  void init(const char *x, int len, int qtype_arg, Continuation * acont, HostEnt ** wait, DNSHandler * adnsH, int timeout);
 
     DNSEntry()
   : Continuation(NULL),

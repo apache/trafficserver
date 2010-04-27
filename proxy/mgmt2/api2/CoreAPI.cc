@@ -62,7 +62,7 @@ CallbackTable *local_event_callbacks;
  * uses the update type that's stored with the record rec_name to determine
  * which type of INKActionNeedT to return.
  */
-INKActionNeedT determine_action_need(char *rec_name);
+INKActionNeedT determine_action_need(const char *rec_name);
 
 /*-------------------------------------------------------------------------
  * Init
@@ -71,7 +71,7 @@ INKActionNeedT determine_action_need(char *rec_name);
  * eg. set up global structures; called by the INKMgmtAPI::INKInit() 
  */
 INKError
-Init(char *socket_path)
+Init(const char *socket_path)
 {
   // socket_path should be null; only applies to remote clients
   local_event_callbacks = create_callback_table("local_callbacks");
@@ -294,7 +294,7 @@ HardRestart()
  * The record info associated with rec_name will be returned in rec_ele.
  */
 INKError
-MgmtRecordGet(char *rec_name, INKRecordEle * rec_ele)
+MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
 {
   RecDataT rec_type;
   char rec_val[MAX_BUF_SIZE];
@@ -381,7 +381,7 @@ MgmtRecordGet(char *rec_name, INKRecordEle * rec_ele)
  * then returns INK_ACTION_UNDEFINED
  */
 INKActionNeedT
-determine_action_need(char *rec_name)
+determine_action_need(const char *rec_name)
 {
   int r;                        // index in RecordsConfig[]
   RecordUpdateType update_t;
@@ -429,7 +429,7 @@ determine_action_need(char *rec_name)
  *   and false otherwise 
  */
 INKError
-MgmtRecordSet(char *rec_name, char *val, INKActionNeedT * action_need)
+MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need)
 {
   Debug("RecOp", "[MgmtRecordSet] Start\n");
 
@@ -455,7 +455,7 @@ MgmtRecordSet(char *rec_name, char *val, INKActionNeedT * action_need)
  * Converts the integer value to a string and call MgmtRecordSet
  */
 INKError
-MgmtRecordSetInt(char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
+MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
 {
   if (!rec_name || !action_need)
     return INK_ERR_PARAMS;
@@ -485,7 +485,7 @@ MgmtRecordSetInt(char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
  * converts the counter_val to a string and uses MgmtRecordSet
  */
 INKError
-MgmtRecordSetCounter(char *rec_name, MgmtIntCounter counter_val, INKActionNeedT * action_need)
+MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKActionNeedT * action_need)
 {
   if (!rec_name || !action_need)
     return INK_ERR_PARAMS;
@@ -516,7 +516,7 @@ MgmtRecordSetCounter(char *rec_name, MgmtIntCounter counter_val, INKActionNeedT 
  * and calls MgmtRecordSet
  */
 INKError
-MgmtRecordSetFloat(char *rec_name, MgmtFloat float_val, INKActionNeedT * action_need)
+MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * action_need)
 {
   if (!rec_name || !action_need)
     return INK_ERR_PARAMS;
@@ -546,7 +546,7 @@ MgmtRecordSetFloat(char *rec_name, MgmtFloat float_val, INKActionNeedT * action_
  * The string value is copied so it's okay to free the string later
  */
 INKError
-MgmtRecordSetString(char *rec_name, INKString string_val, INKActionNeedT * action_need)
+MgmtRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT * action_need)
 {
   return MgmtRecordSet(rec_name, string_val, action_need);
 }
@@ -1096,7 +1096,7 @@ StatsReset()
  * location specified by "filepath"  
  */
 INKError
-EncryptToFile(char *passwd, char *filepath)
+EncryptToFile(const char *passwd, const char *filepath)
 {
   //AuthString fileAuthStr(filepath);
   //AuthString passwdAuthStr(passwd);

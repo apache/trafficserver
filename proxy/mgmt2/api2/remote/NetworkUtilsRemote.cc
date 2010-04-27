@@ -570,7 +570,7 @@ send_request_name(int fd, OpType op, char *name)
  * note: format: <OpType> <name-len> <val-len> <name> <val>
  **********************************************************************/
 INKError
-send_request_name_value(int fd, OpType op, char *name, char *value)
+send_request_name_value(int fd, OpType op, const char *name, const char *value)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
@@ -1313,7 +1313,7 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
 
   // check size before reading text
   if ((*size) <= 0) {
-    *text = "";                 // set to empty string
+    *text = ink_strndup("", 1);                 // set to empty string
   } else {
     // now we got the size, we can read everything into our msg * then parse it
     *text = (char *) xmalloc(sizeof(char) * (f_size + 1));

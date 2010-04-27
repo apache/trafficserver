@@ -80,7 +80,7 @@ destroyRecords(Records * to_destroy)
   }
 }
 
-BaseRecords::BaseRecords(char *mpath, char *cfile, char *efile)
+BaseRecords::BaseRecords(char *mpath, const char *cfile, char *efile)
 {
   char fpath[PATH_NAME_MAX];
   InkHashTableEntry *hash_entry;
@@ -435,7 +435,7 @@ BaseRecords::defineRecords()
     recs[*cur_rec].opaque_token = NULL;
     recs[*cur_rec].list = NULL;
 
-    recs[*cur_rec].name = RecordsConfig[r].name;
+    recs[*cur_rec].name = (char*)RecordsConfig[r].name;
     recs[*cur_rec].stype = RecordsConfig[r].value_type;
 
     switch (recs[*cur_rec].stype) {
@@ -523,8 +523,8 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
   required_records_ht = new MgmtHashTable("required_records_ht", false, InkHashTableKeyType_String);
   for (r = 0; RecordsConfig[r].value_type != INVALID; r++) {
     if (RecordsConfig[r].required == RR_REQUIRED) {
-      char *name = RecordsConfig[r].name;
-      required_records_ht->mgmt_hash_table_insert(name, name);
+      const char *name = RecordsConfig[r].name;
+      required_records_ht->mgmt_hash_table_insert(name, (void*)name);
     }
   }
 

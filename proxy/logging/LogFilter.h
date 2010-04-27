@@ -56,7 +56,7 @@ public:
     ACCEPT,
     N_ACTIONS
   };
-  static char *ACTION_NAME[];
+  static const char *ACTION_NAME[];
 
   // all operators "positive" (i.e., there is no NOMATCH operator anymore)
   // because one can specify through the "action" field if the record should
@@ -70,10 +70,10 @@ public:
     CASE_INSENSITIVE_CONTAIN,
     N_OPERATORS
   };
-  static char *OPERATOR_NAME[];
+  static const char *OPERATOR_NAME[];
 
-    LogFilter(char *name, LogField * field, Action action, Operator oper);
-    virtual ~ LogFilter();
+  LogFilter(const char *name, LogField * field, Action action, Operator oper);
+  virtual ~ LogFilter();
 
   char *name()
   {
@@ -128,10 +128,10 @@ private:
 class LogFilterString:public LogFilter
 {
 public:
-  LogFilterString(char *name, LogField * field, Action a, Operator o, char *value);
-    LogFilterString(char *name, LogField * field, Action a, Operator o, size_t num_values, char **value);
-    LogFilterString(const LogFilterString & rhs);
-   ~LogFilterString();
+  LogFilterString(const char *name, LogField * field, Action a, Operator o, char *value);
+  LogFilterString(const char *name, LogField * field, Action a, Operator o, size_t num_values, char **value);
+  LogFilterString(const LogFilterString & rhs);
+  ~LogFilterString();
   bool operator==(LogFilterString & rhs);
 
   bool toss_this_entry(LogAccess * lad);
@@ -150,9 +150,9 @@ private:
 
   // note: OperatorFunction's must return 0 (zero) if condition is satisfied
   // (as strcmp does)
-  typedef int (*OperatorFunction) (char *, char *);
+  typedef int (*OperatorFunction) (const char *, const char *);
 
-  static int _isSubstring(char *s0, char *s1)
+  static int _isSubstring(const char *s0, const char *s1)
   {
     // return 0 if s1 is substring of s0 and 1 otherwise
     // this reverse behavior is to conform to the behavior of strcmp
@@ -167,7 +167,7 @@ private:
   };
 
   inline bool _checkCondition(OperatorFunction f,
-                              char *field_value, size_t field_value_length, char **val, LengthCondition lc);
+                              const char *field_value, size_t field_value_length, char **val, LengthCondition lc);
 
   // -- member functions that are not allowed --
   LogFilterString();
@@ -183,9 +183,9 @@ private:
 class LogFilterInt:public LogFilter
 {
 public:
-  LogFilterInt(char *name, LogField * field, Action a, Operator o, unsigned value);
-    LogFilterInt(char *name, LogField * field, Action a, Operator o, size_t num_values, unsigned *value);
-    LogFilterInt(char *name, LogField * field, Action a, Operator o, char *values);
+  LogFilterInt(const char *name, LogField * field, Action a, Operator o, unsigned value);
+    LogFilterInt(const char *name, LogField * field, Action a, Operator o, size_t num_values, unsigned *value);
+    LogFilterInt(const char *name, LogField * field, Action a, Operator o, char *values);
     LogFilterInt(const LogFilterInt & rhs);
    ~LogFilterInt();
   bool operator==(LogFilterInt & rhs);
@@ -285,7 +285,7 @@ private:
 
 inline bool
 LogFilterString::_checkCondition(OperatorFunction f,
-                                 char *field_value, size_t field_value_length, char **val, LengthCondition lc)
+                                 const char *field_value, size_t field_value_length, char **val, LengthCondition lc)
 {
   bool retVal = false;
 

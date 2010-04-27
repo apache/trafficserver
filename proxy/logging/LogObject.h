@@ -427,7 +427,7 @@ public:
   int log(LogAccess * lad);
   void display(FILE * str = stdout);
   void add_filter_to_all(LogFilter * filter);
-  LogObject *find_by_format_name(char *name);
+  LogObject *find_by_format_name(const char *name);
   size_t flush_buffers(size_t * to_disk, size_t * to_net = 0, size_t * to_pipe = 0);
   void open_local_pipes();
   void transfer_objects(LogObjectManager & mgr);
@@ -459,7 +459,7 @@ LogObjectManager::display(FILE * str)
 };
 
 inline LogObject *
-LogObjectManager::find_by_format_name(char *name)
+LogObjectManager::find_by_format_name(const char *name)
 {
   for (size_t i = 0; i < _numObjects; i++) {
     if (_objects[i]->m_format->name_id() == LogFormat::id_from_name(name)) {

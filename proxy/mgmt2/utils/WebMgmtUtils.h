@@ -108,7 +108,7 @@ InkHashTable *processFormSubmission_noSubstitute(char *submission);
 
 // Shutdown the proxy
 bool ProxyShutdown();
-int processSpawn(char *args[],
+int processSpawn(const char *args[],
                  EnvBlock * env,
                  textBuffer * input_buf, textBuffer * output_buf, bool nowait, bool runAsRoot, bool * truncated = NULL);
 
@@ -121,7 +121,7 @@ void appendDefaultDomain(char *hostname, int bufLength);
 #define SECOND_TO_MILLISECOND_SCALE (1000.0)
 #define PCT_TO_INTPCT_SCALE (100.0)
 void AgInt_generic_scale(char *processVar, char *nodeVar, double factor);
-void AgFloat_generic_scale_to_int(char *processVar, char *nodeVar, double factor);
+void AgFloat_generic_scale_to_int(const char *processVar, const char *nodeVar, double factor);
 
 bool recordValidityCheck(const char *varName, const char *value);
 bool recordRegexCheck(const char *pattern, const char *value);

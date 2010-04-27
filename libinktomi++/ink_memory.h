@@ -59,7 +59,7 @@ extern "C"
   void ink_memalign_free(void *ptr);
   char *ink_duplicate_string(char *ptr);        /* obsoleted by ink_string_duplicate --- don't use */
   void ink_memzero(void *src_arg, int nbytes);
-  void *ink_memcpy(void *s1, void *s2, int n);
+  void *ink_memcpy(void *s1, const void *s2, int n);
   void ink_bcopy(void *s1, void *s2, size_t n);
 
 #ifdef __cplusplus

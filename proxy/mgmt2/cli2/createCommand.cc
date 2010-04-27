@@ -53,8 +53,8 @@ extern int cliSetArgvInfo(cli_ArgvInfo * argtable);
 
 
 int
-createCommand(char *cmdName, Tcl_CmdProc cmdFuncPtr,
-              createArgumentFuncPtr argvFuncPtr, cmdTerritory cmdScope, char *usage, char *helpString)
+createCommand(const char *cmdName, Tcl_CmdProc cmdFuncPtr,
+              createArgumentFuncPtr argvFuncPtr, cmdTerritory cmdScope, const char *usage, const char *helpString)
 {
   /* No code to support threads for Tcl */
 

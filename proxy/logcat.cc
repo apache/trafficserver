@@ -77,7 +77,7 @@ ArgumentDescription argument_descriptions[] = {
 };
 int n_argument_descriptions = SIZE(argument_descriptions);
 
-static char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [-CEhS"
+static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [-CEhS"
 #ifdef DEBUG
   "T"
 #endif

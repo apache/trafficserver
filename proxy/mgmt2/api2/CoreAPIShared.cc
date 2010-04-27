@@ -218,7 +218,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
 
 /* Modified from TrafficCop.cc (open_socket) */
 int
-connectDirect(char *host, int port, inku64 timeout)
+connectDirect(const char *host, int port, inku64 timeout)
 {
 #ifdef _WIN32
   TimedIOStatus ret;

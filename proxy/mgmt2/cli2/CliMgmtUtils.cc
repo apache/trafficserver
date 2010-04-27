@@ -55,7 +55,7 @@ Cli_RecordGet(const char *rec_name, INKRecordEle * rec_val)
 
 // Get an integer type records.config variable
 INKError
-Cli_RecordGetInt(char *rec_name, INKInt * int_val)
+Cli_RecordGetInt(const char *rec_name, INKInt * int_val)
 {
   INKError status;
   if ((status = INKRecordGetInt(rec_name, int_val))) {
@@ -67,7 +67,7 @@ Cli_RecordGetInt(char *rec_name, INKInt * int_val)
 
 // Get an counter type records.config variable
 INKError
-Cli_RecordGetCounter(char *rec_name, INKCounter * ctr_val)
+Cli_RecordGetCounter(const char *rec_name, INKCounter * ctr_val)
 {
   INKError status;
   if ((status = INKRecordGetCounter(rec_name, ctr_val))) {
@@ -79,7 +79,7 @@ Cli_RecordGetCounter(char *rec_name, INKCounter * ctr_val)
 
 // Get a float type records.config variable
 INKError
-Cli_RecordGetFloat(char *rec_name, INKFloat * float_val)
+Cli_RecordGetFloat(const char *rec_name, INKFloat * float_val)
 {
   INKError status;
   if ((status = INKRecordGetFloat(rec_name, float_val))) {
@@ -91,7 +91,7 @@ Cli_RecordGetFloat(char *rec_name, INKFloat * float_val)
 
 // Get a string type records.config variable
 INKError
-Cli_RecordGetString(char *rec_name, INKString * string_val)
+Cli_RecordGetString(const char *rec_name, char **string_val)
 {
   INKError status;
   if ((status = INKRecordGetString(rec_name, string_val))) {
@@ -115,7 +115,7 @@ Cli_RecordSet(const char *rec_name, const char *rec_value, INKActionNeedT * acti
 
 // Set an integer type records.config variable
 INKError
-Cli_RecordSetInt(char *rec_name, INKInt int_val, INKActionNeedT * action_need)
+Cli_RecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT * action_need)
 {
   INKError status;
   if ((status = INKRecordSetInt(rec_name, int_val, action_need))) {
@@ -127,7 +127,7 @@ Cli_RecordSetInt(char *rec_name, INKInt int_val, INKActionNeedT * action_need)
 
 // Set a float type records.config variable
 INKError
-Cli_RecordSetFloat(char *rec_name, INKFloat float_val, INKActionNeedT * action_need)
+Cli_RecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * action_need)
 {
   INKError status;
   if ((status = INKRecordSetFloat(rec_name, float_val, action_need))) {
@@ -140,7 +140,7 @@ Cli_RecordSetFloat(char *rec_name, INKFloat float_val, INKActionNeedT * action_n
 
 // Set a string type records.config variable
 INKError
-Cli_RecordSetString(char *rec_name, INKString str_val, INKActionNeedT * action_need)
+Cli_RecordSetString(const char *rec_name, INKString str_val, INKActionNeedT * action_need)
 {
   INKError status;
   if ((status = INKRecordSetString(rec_name, str_val, action_need))) {
@@ -343,7 +343,7 @@ Cli_EvalOnOffString(char *stringval)
 // on_off = "on" mean 1, "off" mean 0
 //
 int
-Cli_RecordOnOff_Action(int action, char *record, char *on_off)
+Cli_RecordOnOff_Action(int action, const char *record, const char *on_off)
 {
   INKActionNeedT action_need;
   INKError status;
@@ -392,7 +392,7 @@ Cli_RecordOnOff_Action(int action, char *record, char *on_off)
 // value = the integer value used by RECORD_SET
 //
 int
-Cli_RecordInt_Action(int action, char *record, int value)
+Cli_RecordInt_Action(int action, const char *record, int value)
 {
   switch (action) {
   case RECORD_SET:
@@ -480,7 +480,7 @@ Cli_RecordHostname_Action(int action, char *record, char *hostname)
 // string_val = string to set
 //
 int
-Cli_RecordString_Action(int action, char *record, char *string_val)
+Cli_RecordString_Action(int action, const char *record, char *string_val)
 {
   INKError status;
   INKActionNeedT action_need = INK_ACTION_UNDEFINED;
@@ -521,7 +521,7 @@ Cli_RecordString_Action(int action, char *record, char *string_val)
 // url = if non-NULL, update the file using contents of URL
 //
 int
-Cli_ConfigFileURL_Action(INKFileNameT file, char *filename, const char *url)
+Cli_ConfigFileURL_Action(INKFileNameT file, const char *filename, const char *url)
 {
   INKError status;
   // Retrieve  file from url
@@ -540,7 +540,7 @@ Cli_ConfigFileURL_Action(INKFileNameT file, char *filename, const char *url)
 }
 
 int
-cliCheckIfEnabled(char *command)
+cliCheckIfEnabled(const char *command)
 {
   if (enable_restricted_commands == FALSE) {
     Cli_Error("\n%s is a restricted command only accessible from enable mode\n\n", command);

@@ -67,7 +67,7 @@ extern "C"
 EventCallbackT *create_event_callback(INKEventSignalFunc func, void *data);
 void delete_event_callback(EventCallbackT * event_cb);
 
-CallbackTable *create_callback_table(char *lock_name);
+CallbackTable *create_callback_table(const char *lock_name);
 
 void delete_callback_table(CallbackTable * cb_table);
 

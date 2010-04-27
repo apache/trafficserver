@@ -78,7 +78,7 @@ int NetConfig_Action(int index, ...);
 int TimeConfig_Action(int index, bool restart, ...);
 int Net_GetNIC_Values(char *interface, char *status, char *onboot, char *static_ip, char *ip, char *netmask,
                       char *gateway);
-int find_value(char *pathname, char *key, char *value, size_t value_len, char *delim, int no);
+int find_value(const char *pathname, const char *key, char *value, size_t value_len, const char *delim, int no);
 static bool recordRegexCheck(const char *pattern, const char *value);
 static int getTSdirectory(char *ts_path, size_t ts_path_len);
 
@@ -171,7 +171,8 @@ Net_GetDefaultRouter(char *router, size_t router_len)
     return !value;
   } else {
     char command[80];
-    char *tmp_file = "/tmp/route_status", buffer[256];
+    const char *tmp_file = "/tmp/route_status";
+    char buffer[256];
     FILE *fp;
 
     ink_strncpy(command, "/sbin/route -n > /tmp/route_status", sizeof(command));
@@ -255,7 +256,7 @@ Net_GetDomain(char *domain, size_t domain_len)
 }
 
 int
-Net_SetDomain(char *domain)
+Net_SetDomain(const char *domain)
 {
   int status;
 
@@ -464,7 +465,8 @@ Net_GetNIC_IP(char *interface, char *ip, size_t ip_len)
   } else {
     Net_GetNIC_Status(interface, status, sizeof(status));
     if (strcmp(status, "up") == 0) {
-      char *tmp_file = "/tmp/dhcp_status", buffer[256];
+      const char *tmp_file = "/tmp/dhcp_status";
+      char buffer[256];
       FILE *fp;
 
       ink_strncpy(command, "/sbin/ifconfig ", sizeof(command));
@@ -521,7 +523,8 @@ Net_GetNIC_Netmask(char *interface, char *netmask, size_t netmask_len)
   } else {
     Net_GetNIC_Status(interface, status, sizeof(status));
     if (strcmp(status, "up") == 0) {
-      char *tmp_file = "/tmp/dhcp_status", buffer[256];
+      const char *tmp_file = "/tmp/dhcp_status";
+      char buffer[256];
       FILE *fp;
 
       ink_strncpy(command, "/sbin/ifconfig ", sizeof(command));
@@ -674,7 +677,7 @@ Net_SetNIC_Gateway(char *interface, char *nic_gateway)
 }
 
 int
-Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *netmask, char *gateway)
+Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *netmask, const char *gateway)
 {
   int status;
 
@@ -801,7 +804,7 @@ Sys_Grp_Inktomi(int egid)
 
 
 int
-find_value(char *pathname, char *key, char *value, size_t value_len, char *delim, int no)
+find_value(const char *pathname, const char *key, char *value, size_t value_len, const char *delim, int no)
 {
   char buffer[1024];
   char *pos;
@@ -937,7 +940,7 @@ Net_IsValid_IP(char *ip_addr)
 int
 NetConfig_Action(int index, ...)
 {
-  char *argv[10];
+  const char *argv[10];
   pid_t pid;
   int status;
 
@@ -1014,7 +1017,7 @@ NetConfig_Action(int index, ...)
 
     snprintf(command_path, sizeof(command_path), "%s/bin/net_config", ts_path);
 
-    res = execv(command_path, argv);
+    res = execv(command_path, (char* const*)argv);
 
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call net_config\n"));
@@ -1277,7 +1280,7 @@ Time_SetNTP_Off()
 int
 TimeConfig_Action(int index, bool restart ...)
 {
-  char *argv[20];
+  const char *argv[20];
   pid_t pid;
   int status;
 
@@ -1338,7 +1341,7 @@ TimeConfig_Action(int index, bool restart ...)
     }
     snprintf(command_path, sizeof(command_path), "%s/bin/time_config", ts_path);
 
-    res = execv(command_path, argv);
+    res = execv(command_path, (char* const*)argv);
 
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call time_config\n"));
@@ -1420,7 +1423,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
   FILE *fp, *ts_file, *fp1, *fp_ts, *fp1_ts, *snmppass_fp, *snmppass_fp1;
   pid_t pid;
   int i, status;
-  char *mv_binary = MV_BINARY;
+  const char *mv_binary = MV_BINARY;
 
   bool sys_location_flag = false;
   bool sys_contact_flag = false;
@@ -1920,7 +1923,7 @@ int NetConfig_Action(int index, ...);
 int TimeConfig_Action(int index, bool restart, ...);
 int Net_GetNIC_Values(char *interface, char *status, char *onboot, char *static_ip, char *ip, char *netmask,
                       char *gateway);
-int find_value(char *pathname, char *key, char *value, char *delim, int no);
+int find_value(const char *pathname, const char *key, char *value, const char *delim, int no);
 static bool recordRegexCheck(const char *pattern, const char *value);
 static int getTSdirectory(char *ts_path, size_t ts_path_len);
 
@@ -2134,7 +2137,7 @@ Net_GetDomain(char *domain, size_t domain_len)
 }
 
 int
-Net_SetDomain(char *domain)
+Net_SetDomain(const char *domain)
 {
   int status;
 
@@ -2327,7 +2330,7 @@ Net_GetNIC_Protocol(char *interface, char *protocol, size_t protocol_len)
 }
 
 int
-parseIfconfig(char *interface, char *keyword, char *value)
+parseIfconfig(char *interface, const char *keyword, char *value)
 {
 
   const int BUFFLEN = 200;
@@ -2673,7 +2676,7 @@ Net_SetNIC_Gateway(char *interface, char *nic_gateway)
 }
 
 int
-Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *netmask, char *gateway)
+Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *netmask, const char *gateway)
 {
   int status;
 
@@ -2739,7 +2742,7 @@ Net_IsValid_Interface(char *interface)
 }
 
 int
-find_value(char *pathname, char *key, char *value, char *delim, int no)
+find_value(const char *pathname, const char *key, char *value, const char *delim, int no)
 {
   char buffer[1024];
   char *pos;
@@ -2862,7 +2865,7 @@ Net_IsValid_IP(char *ip_addr)
 int
 NetConfig_Action(int index, ...)
 {
-  char *argv[20];
+  const char *argv[20];
   pid_t pid;
   int status;
 
@@ -2941,7 +2944,7 @@ NetConfig_Action(int index, ...)
     seteuid(0);
     setreuid(0, 0);
 
-    res = execv(command_path, argv);
+    res = execv(command_path, (char* const*) argv);
 
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call net_config"));
@@ -3194,7 +3197,7 @@ Time_GetNTP_Server(char *server, int no)
 int
 TimeConfig_Action(int index, bool restart ...)
 {
-  char *argv[20];
+  const char *argv[20];
   pid_t pid;
   int status;
 
@@ -3255,7 +3258,7 @@ TimeConfig_Action(int index, bool restart ...)
     }
     snprintf(command_path, sizeof(command_path), "%s/bin/time_config", ts_path);
 
-    res = execv(command_path, argv);
+    res = execv(command_path, (char* const*) argv);
 
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call time_config"));
@@ -3311,7 +3314,6 @@ Net_SetSMTP_Server(char *server)
 int
 Net_GetSMTP_Server(char *server)
 {
-  server = "inktomi.smtp.com";
   return 0;
 }
 
