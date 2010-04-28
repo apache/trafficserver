@@ -62,7 +62,6 @@ int command_flag = 0;
 int http_accept_port_number = 0;
 int http_accept_file_descriptor = 0;
 int remote_management_flag = 0;
-int nntp_accept_file_descriptor = -1;
 int ftp_accept_file_descriptor = -1;
 int auto_clear_hostdb_flag = 0;
 char proxy_name[256] = "unknown";

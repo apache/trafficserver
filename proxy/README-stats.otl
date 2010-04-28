@@ -292,23 +292,6 @@ proxy.process.icp.invalid_icp_query_response
 (UI) proxy.process.icp.total_icp_request_time
   - Overall avg response time of locally generated ICP request
 ---------------------------------------------------------------------------------
-* nntp stats
-		*** number of open client connections
-		*** number of open server connections
-		*** total number of client connections 
-		*** total number of server connections 
-		*** total # of client bytes
-		*** total # of server bytes
-		*** total # of client ops
-		*** total # of server ops
-		*** client ops/sec ??? is this computable??
-		*** high watermark number of simultaneous client connections
-		*** high watermark client connection time
-
-   we can add more of these as we see fit, perhaps you could send
-   me the new HTTP list, then I could see if we could make the NNTP
-   stats cover similar things.
----------------------------------------------------------------------------------
 * hostdb/dns stats
 	** hostdb
 		*** total entries
@@ -490,7 +473,7 @@ total/max active server connections
 total/max active cache connections
 total/max active parent proxy connections
 average transaction rate
-total transaction count per protocol {dns, http, nntp, ftp, rtsp}
+total transaction count per protocol {dns, http, ftp, rtsp}
 total bytes served to clients
 total bytes from origin servers
 total bytes from parent proxies
@@ -524,7 +507,7 @@ total/max active server connections
 total/max active cache connections
 number of active connections by connection status: ESTABLISHED, CLOSE_WAIT,
 TIME_WAIT, ...
-total transaction count per protocol {dns, http, nntp, ftp, rtsp}
+total transaction count per protocol {dns, http, ftp, rtsp}
 total/max active parent proxy connections
 total bytes served to clients
 total bytes from origin servers

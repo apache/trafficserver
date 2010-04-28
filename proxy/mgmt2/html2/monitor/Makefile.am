@@ -35,7 +35,6 @@ dist_webui_DATA = \
 	m_mpeg4.ink \
 	m_net_device.ink \
 	m_net.ink \
-	m_nntp.ink \
 	m_node.ink \
 	m_ntlm.ink \
 	m_overview_details_less.ink \

@@ -115,9 +115,8 @@ enum CacheFragType
 {
   CACHE_FRAG_TYPE_NONE = 1 << 0,
   CACHE_FRAG_TYPE_HTTP = 1 << 1,
-  CACHE_FRAG_TYPE_NNTP = 1 << 2,
-  CACHE_FRAG_TYPE_FTP = 1 << 3,
-  CACHE_FRAG_TYPE_RTSP = 1 << 4
+  CACHE_FRAG_TYPE_FTP = 1 << 2,
+  CACHE_FRAG_TYPE_RTSP = 1 << 3
 };
 
 #define CacheKey INK_MD5

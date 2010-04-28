@@ -481,99 +481,6 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
 }
 
 //-------------------------------------------------------------------------
-// getNntpPluginStatus
-//
-// Determines if NNTP plugin can be enabled (e.g. nntp plugin exists). 
-// If the plugin does exist in directory but is not listed in plugin.config,
-// then it will be added to plugin.config. 
-//   return 1 if it can be enabled (plugin exists)
-//   return 0 if plugin does not exist in plugin directory 
-//   return -1 if any other error
-//-------------------------------------------------------------------------
-int
-getNntpPluginStatus()
-{
-
-  char nntp_plugin[FILE_NAME_MAX + 1];
-  char rel_plugin_dir[FILE_NAME_MAX + 1];
-  char *abs_plugin_dir = NULL, *p1, *plugin;
-  Rollback *file_rb;
-  textBuffer *file_content = NULL;
-  version_t ver;
-  int return_code = -1, num_plugins, i;
-  ExpandingArray plugin_list(25, true);
-
-  if (!varStrFromName("proxy.config.nntp.plugin_name", nntp_plugin, FILE_NAME_MAX)) {
-    mgmt_log("[getNntpPluginStatus] ERROR no plugin name specified");
-    return_code = -1;
-    goto Ldone;
-  }
-
-  if (!varStrFromName("proxy.config.plugin.plugin_dir", rel_plugin_dir, FILE_NAME_MAX)) {
-    mgmt_log("[getNntpPluginStatus] ERROR no plugin directory specified");
-    return_code = -1;
-    goto Ldone;
-  }
-  abs_plugin_dir = newPathString(ts_base_dir, rel_plugin_dir);
-
-  // iterate through each plugin in plugin_dir
-  if (getFilesInDirectory(abs_plugin_dir, &plugin_list) == 1) {
-    num_plugins = plugin_list.getNumEntries();
-    for (i = 0; i < num_plugins; i++) {
-      plugin = (char *) (plugin_list[i]);
-      if (strcmp(plugin, nntp_plugin) == 0) {
-        return_code = 1;
-      }
-    }
-  }
-
-  if (return_code != 1) {       // did not locate plugin name in dir
-    return_code = 0;
-    goto Ldone;
-  }
-  // check to make sure plugin name is in plugin.config
-  if (!(configFiles->getRollbackObj("plugin.config", &file_rb))) {
-    mgmt_log("[getNntpPluginStatus] ERROR getting rollback object");
-    return_code = -1;
-    goto Ldone;
-  }
-  ver = file_rb->getCurrentVersion();
-  file_rb->getVersion(ver, &file_content);
-
-  if ((p1 = strstr(file_content->bufPtr(), nntp_plugin)) == NULL) {
-    goto Ladd_plugin;           // plugin not listed
-  }
-
-  do {
-    p1--;
-  } while (*p1 == ' ');
-
-  if ((char) *p1 == '#') {
-    goto Ladd_plugin;           // plugin commented out
-  } else {
-    goto Ldone;
-  }
-
-Ladd_plugin:                   // add plugin name to plugin.config
-  file_content->copyFrom("\n", 1);
-  file_content->copyFrom(nntp_plugin, strlen(nntp_plugin));
-  file_content->copyFrom("\n", 1);
-
-  if ((file_rb->forceUpdate(file_content, -1)) != OK_ROLLBACK) {
-    return_code = -1;
-  }
-
-Ldone:
-  if (file_content) {
-    delete file_content;
-  }
-  if (abs_plugin_dir) {
-    delete[]abs_plugin_dir;
-  }
-  return return_code;
-}
-
-//-------------------------------------------------------------------------
 // encryptToFileAuth_malloc
 //
 // Given the clear-case password, this function will encrypt the password
@@ -3585,15 +3492,6 @@ handle_submit_update(WebHttpContext * whc, const char *file)
           use_ssl_updated = true;
         }
       }
-      // check if enabling nntp
-      if (strcasecmp(record, "proxy.config.nntp.enabled") == 0 && strcmp(value, "1") == 0) {
-        if (getNntpPluginStatus() != 1) {       // print error
-          whc->request_state |= WEB_HTTP_STATE_SUBMIT_WARN;
-          HtmlRndrText(whc->submit_warn, whc->lang_dict_ht, HTML_ID_NNTP_NO_PLUGIN);
-          HtmlRndrBr(whc->submit_warn);
-          continue;
-        }
-      }
       // check if entering radius password
       RecString old_pwd_file;
       char *new_pwd_file;
@@ -3764,12 +3662,6 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
       break;
     case INK_FNAME_MGMT_ALLOW:
       err = updateMgmtAllowConfig(rules, numRules, &errBuff);
-      break;
-    case INK_FNAME_NNTP_ACCESS:
-      err = updateNntpAccessConfig(rules, numRules, &errBuff);
-      break;
-    case INK_FNAME_NNTP_SERVERS:
-      err = updateNntpServersConfig(rules, numRules, &errBuff);
       break;
     case INK_FNAME_PARENT_PROXY:
       err = updateParentConfig(rules, numRules, &errBuff);
@@ -6753,8 +6645,6 @@ WebHttpInit()
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_ICP_CONFIG, (void *) INK_FNAME_ICP_PEER);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_IP_ALLOW_CONFIG, (void *) INK_FNAME_IP_ALLOW);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_MGMT_ALLOW_CONFIG, (void *) INK_FNAME_MGMT_ALLOW);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_NNTP_ACCESS_CONFIG, (void *) INK_FNAME_NNTP_ACCESS);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_NNTP_SERVERS_CONFIG, (void *) INK_FNAME_NNTP_SERVERS);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_PARENT_CONFIG, (void *) INK_FNAME_PARENT_PROXY);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_PARTITION_CONFIG, (void *) INK_FNAME_PARTITION);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_REMAP_CONFIG, (void *) INK_FNAME_REMAP);

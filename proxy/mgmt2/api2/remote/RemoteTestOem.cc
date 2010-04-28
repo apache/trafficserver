@@ -77,11 +77,6 @@ test_action_need(void)
   printf("[INKRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
          INK_ACTION_RESTART, action);
 
-  // RU_RESTART_TC record
-  INKRecordSetInt("proxy.config.nntp.enabled", 1, &action);
-  printf("[INKRecordSetInt] proxy.config.nntp.enabled\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         INK_ACTION_SHUTDOWN, action);
-
 }
 
 /* ------------------------------------------------------------------------

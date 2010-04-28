@@ -125,8 +125,6 @@ char *round_robin_type_to_string(INKRrT rr);
 /* INKFileNameT <==> string */
 char *filename_to_string(INKFileNameT file);
 
-char *nntp_acc_type_to_string(INKNntpAccessT acc);
-INKNntpTreatmentT string_to_nntp_treat_type(const char *treat);
 INKCongestionSchemeT string_to_congest_scheme_type(const char *scheme);
 
 INKAccessT string_to_admin_acc_type(const char *access);
@@ -192,8 +190,6 @@ INKLogFilterEle *copy_log_filter_ele(INKLogFilterEle * ele);
 INKLogFormatEle *copy_log_format_ele(INKLogFormatEle * ele);
 INKLogObjectEle *copy_log_object_ele(INKLogObjectEle * ele);
 INKMgmtAllowEle *copy_mgmt_allow_ele(INKMgmtAllowEle * ele);
-INKNntpAccessEle *copy_nntp_access_ele(INKNntpAccessEle * ele);
-INKNntpSrvrEle *copy_nntp_srvr_ele(INKNntpSrvrEle * ele);
 INKParentProxyEle *copy_parent_proxy_ele(INKParentProxyEle * ele);
 INKPartitionEle *copy_partition_ele(INKPartitionEle * ele);
 INKPluginEle *copy_plugin_ele(INKPluginEle * ele);

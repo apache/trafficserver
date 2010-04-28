@@ -44,7 +44,6 @@
 #define COP_LOCK       "cop.lock"
 #define MANAGER_LOCK   "manager.lock"
 #define SERVER_LOCK    "server.lock"
-#define NNTP_AUTH_LOCK "nntp_auth.lock"
 #endif
 
 class Lockfile

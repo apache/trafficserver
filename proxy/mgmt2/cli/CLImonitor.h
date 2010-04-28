@@ -42,10 +42,9 @@ struct CLI_monitor
 #define NUM_PROT_HTTP_OS_DESCS  4
 #define NUM_PROT_FTP_DESCS      5
 #define NUM_PROT_ICP_DESCS     11
-#define NUM_PROT_NNTP_DESCS    16
 #define NUM_PROT_RNI_DESCS     13
   /*-------------------------------*/
-#define NUM_PROT_DESCS         61
+#define NUM_PROT_DESCS         37
   static const CLI_globals::VarNameDesc mon_prot_desctable[NUM_PROT_DESCS];
 
 #define NUM_NODE_CACHE_DESCS    3

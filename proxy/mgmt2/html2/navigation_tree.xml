@@ -89,11 +89,6 @@
               file_link="/monitor/m_ftp.ink"
               help_link="/help/ts.ink?help=s_ftp.htm"/>
       </ITEM>
-      <ITEM name="NNTP" enable_record="proxy.config.nntp.enabled">
-        <LINK refresh="true"
-              file_link="/monitor/m_nntp.ink"
-              help_link="/help/ts.ink?help=s_nntp.htm"/>
-      </ITEM>
     </MENU>
 
     <MENU name="Streaming Media" enable_record="proxy.config.qt.enabled|proxy.config.rni.enabled|proxy.config.wmt.enabled">
@@ -303,20 +298,6 @@
         <LINK name="Timeouts" refresh="false"
               file_link="/configure/c_ftp_timeout.ink"
               help_link="/help/ts.ink?help=c_ftp.htm"/>
-      </ITEM>
-      <ITEM name="NNTP" enable_record="proxy.config.nntp.enabled">
-        <LINK name="General" refresh="false"
-              file_link="/configure/c_nntp_general.ink"
-              help_link="/help/ts.ink?help=c_nntpc.htm"/>
-        <LINK name="Cacheability" refresh="false"
-              file_link="/configure/c_nntp_cachability.ink"
-              help_link="/help/ts.ink?help=c_nntpc.htm"/>
-        <LINK name="Parent Servers" refresh="false"
-              file_link="/configure/c_nntp_parent_servers.ink"
-              help_link="/help/ts.ink?help=c_nntpc.htm"/>
-	<LINK name="Timeouts" refresh="false"
-              file_link="/configure/c_nntp_timeout.ink"
-              help_link="/help/ts.ink?help=c_nntpc.htm"/>
       </ITEM>
     </MENU>
     <MENU name="Streaming Media" enable_record="proxy.config.qt.enabled|proxy.config.rni.enabled|proxy.config.wmt.enabled">

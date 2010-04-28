@@ -1298,56 +1298,6 @@ RecordElement RecordsConfig[] = {
   ,
   //##############################################################################
   //#
-  //# NNTP Engine
-  //#
-  //##############################################################################
-  //# WebUI
-  {CONFIG, "proxy.config.nntp.plugin_name", "", INK_STRING, "nntp.so", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.config_file", "", INK_STRING, "nntp_config.xml", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  //# NNTP module
-  {CONFIG, "proxy.config.nntp.enabled", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.server_port", "", INK_INT, "119", RU_RESTART_TM, RR_REQUIRED, RC_INT, "[0-65535]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.cache_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.posting_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.logging_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.transparency_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.client_timeout", "", INK_INT, "300", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.server_timeout", "", INK_INT, "600", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.expire_group", "", INK_INT, "600", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.expire_overview", "", INK_INT, "600", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.expire_list_active", "", INK_INT, "86400", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.expire_list_atimes", "", INK_INT, "86400", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.greeting", "", INK_STRING, "200 NNTP service ready, posting allowed", RU_REREAD, RR_NULL,
-   RC_STR, ".*", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.greeting_nopost", "", INK_STRING, "201 NNTP service ready, posting prohibited", RU_REREAD,
-   RR_NULL, RC_STR, ".*", RA_NULL}
-  ,
-  //# Debgugging & finetuning; hidden from users
-  {CONFIG, "proxy.config.nntp.show_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.debug_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.nntp.overview_range_size", "", INK_INT, "512", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$", RA_NULL}
-  ,
-
-  //##############################################################################
-  //#
   //# Http Statistics
   //#
   //##############################################################################
@@ -2490,7 +2440,6 @@ RecordElement RecordsConfig[] = {
   //# 2 - No fingerprinting
   //# UNIMPLEMENTED CONFIG proxy.config.cache.fingerprint_method INT 2
   //# UNIMPLEMENTED: CONFIG proxy.config.cache.limits.http.quota FLOAT 1.0
-  //# UNIMPLEMENTED: CONFIG proxy.config.cache.limits.nntp.quota FLOAT 1.0
   //# UNIMPLEMENTED: CONFIG proxy.config.cache.limits.rtsp.quota FLOAT 1.0
   //
   //  #
@@ -2789,8 +2738,6 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.log2.extended2_log_header", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.log2.separate_icp_logs", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.log2.separate_nntp_logs", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.log2.separate_mixt_logs", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -3745,8 +3692,6 @@ RecordElement RecordsConfig[] = {
   ,
   {NODE, "proxy.node.ftp.cache_hit_fresh_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {NODE, "proxy.node.nntp.cache_hit_fresh_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
   {NODE, "proxy.node.rni.block_hit_count_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {NODE, "proxy.node.wmt.block_hit_count_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -3772,8 +3717,6 @@ RecordElement RecordsConfig[] = {
   {NODE, "proxy.node.ftp.cache_misses_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {NODE, "proxy.node.ftp.cache_miss_cold_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.nntp.cache_miss_cold_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {NODE, "proxy.node.rni.block_miss_count_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -4011,22 +3954,6 @@ RecordElement RecordsConfig[] = {
   {NODE, "proxy.node.http.cache_total_hits", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {NODE, "proxy.node.http.cache_total_misses", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  //#NNTP
-  {NODE, "proxy.node.nntp.user_agents_total_documents_served", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {NODE, "proxy.node.nntp.user_agent_xacts_per_second", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.nntp.upstream_total_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.nntp.downstream_total_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.nntp.current_client_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.nntp.current_server_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.nntp.current_cache_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //#FTP
   {NODE, "proxy.node.ftp.user_agents_total_documents_served", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -4296,23 +4223,6 @@ RecordElement RecordsConfig[] = {
   ,
   {CLUSTER, "proxy.cluster.http.parent_proxy_total_response_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
    RA_NULL}
-  ,
-  //#NNTP
-  {CLUSTER, "proxy.cluster.nntp.user_agent_xacts_per_second", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.nntp.user_agents_total_documents_served", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.nntp.upstream_total_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.nntp.downstream_total_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.nntp.current_client_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.nntp.current_server_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.nntp.current_cache_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //#FTP
   {CLUSTER, "proxy.cluster.ftp.user_agent_xacts_per_second", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL,

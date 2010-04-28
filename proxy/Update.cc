@@ -119,7 +119,6 @@ struct schemes_descriptor proto_schemes[] = {
   {"mailto:", 0},
   {"mid:", 0},
   {"news:", 0},
-  {"nntp:", 0},
   {"path:", 0},
   {"prospero:", 0},
   {"rlogin:", 0},

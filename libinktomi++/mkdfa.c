@@ -155,7 +155,6 @@ info_t schemes[] = {
   {"https", "URL_SCHEME_HTTPS", 0},
   {"mailto", "URL_SCHEME_MAILTO", 0},
   {"news", "URL_SCHEME_NEWS", 0},
-  {"nntp", "URL_SCHEME_NNTP", 0},
   {"prospero", "URL_SCHEME_PROSPERO", 0},
   {"telnet", "URL_SCHEME_TELNET", 0},
   {"wais", "URL_SCHEME_WAIS", 0},
@@ -271,43 +270,6 @@ info_t cache_controls[] = {
   {"public", "HTTP_CACHE_DIRECTIVE_PUBLIC", -1},
   {"s-maxage", "HTTP_CACHE_DIRECTIVE_S_MAX_AGE", -1},
   {NULL, "HTTP_CACHE_DIRECTIVE_CACHE_EXTENSION", -1},
-};
-
-info_t nntp[] = {
-  {"AUTHINFO", "NNTP_SERVER_CMD_AUTHINFO", -1},
-  {"ARTICLE", "NNTP_SERVER_CMD_ARTICLE", -1},
-  {"BODY", "NNTP_SERVER_CMD_BODY", -1},
-  {"CHECK", "NNTP_SERVER_CMD_CHECK", -1},
-  {"DATE", "NNTP_SERVER_CMD_DATE", -1},
-  {"GROUP", "NNTP_SERVER_CMD_GROUP", -1},
-  {"HEAD", "NNTP_SERVER_CMD_HEAD", -1},
-  {"HELP", "NNTP_SERVER_CMD_HELP", -1},
-  {"IHAVE", "NNTP_SERVER_CMD_IHAVE", -1},
-  {"LAST", "NNTP_SERVER_CMD_LAST", -1},
-  {"LIST", "NNTP_SERVER_CMD_LIST", -1},
-  {"LISTGROUP", "NNTP_SERVER_CMD_LISTGROUP", -1},
-  {"MODE", "NNTP_SERVER_CMD_MODE", -1},
-  {"NEWGROUPS", "NNTP_SERVER_CMD_NEWGROUPS", -1},
-  {"NEWNEWS", "NNTP_SERVER_CMD_NEWNEWS", -1},
-  {"NEXT", "NNTP_SERVER_CMD_NEXT", -1},
-  {"OVER", "NNTP_SERVER_CMD_OVER", -1},
-  {"PAT", "NNTP_SERVER_CMD_PAT", -1},
-  {"POST", "NNTP_SERVER_CMD_POST", -1},
-  {"QUIT", "NNTP_SERVER_CMD_QUIT", -1},
-  {"SLAVE", "NNTP_SERVER_CMD_SLAVE", -1},
-  {"STAT", "NNTP_SERVER_CMD_STAT", -1},
-  {"TAKETHIS", "NNTP_SERVER_CMD_TAKETHIS", -1},
-  {"XDATE", "NNTP_SERVER_CMD_XDATE", -1},
-  {"XGTITLE", "NNTP_SERVER_CMD_XGTITLE", -1},
-  {"XHDR", "NNTP_SERVER_CMD_XHDR", -1},
-  {"XINKTOMI", "NNTP_SERVER_CMD_XINKTOMI", -1},
-  {"XLISTGROUP", "NNTP_SERVER_CMD_XLISTGROUP", -1},
-  {"XMODE", "NNTP_SERVER_CMD_XMODE", -1},
-  {"XOVER", "NNTP_SERVER_CMD_XOVER", -1},
-  {"XPAT", "NNTP_SERVER_CMD_XPAT", -1},
-  {"XPATH", "NNTP_SERVER_CMD_XPATH", -1},
-  {"XREPLIC", "NNTP_SERVER_CMD_XREPLIC", -1},
-  {NULL, "NNTP_SERVER_CMD_NONE", -1}
 };
 
 
@@ -714,8 +676,6 @@ main(int argc, char *argv[])
     mkdfa(connections, SIZEOF(connections), 0, (argc == 3));
   else if (strcmp(argv[1], "cache-controls") == 0)
     mkdfa(cache_controls, SIZEOF(cache_controls), 0, (argc == 3));
-  else if (strcmp(argv[1], "nntp") == 0)
-    mkdfa(nntp, SIZEOF(nntp), 0, (argc == 3));
 
   return 0;
 }

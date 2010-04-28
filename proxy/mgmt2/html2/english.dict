@@ -77,7 +77,6 @@ s_text_112=Warning: Permission denied.  Please correct the marked item below (!)
 s_text_113=Warning: The selected log file is too large.  Log file would be truncated.
 s_text_114=Warning: Invalid session timeout value. Must be > 30 seconds (!).
 s_text_115=Warning: Could not unmount floppy. Device is busy. Please try later.
-s_text_116=Warning: NNTP caching is not installed. You will not be able to enable and configure this function.
 s_text_117=Warning: Could not save snapshot. Please check free space available on floppy drive.
 
 s_text_150=*
@@ -329,7 +328,6 @@ s_text_852=Select 'deny' to prevent the listed newsgroup names from posting.
 s_text_853=Client Group Type
 s_text_854=Specifies the type of the client group.
 
-s_text_860=NNTP Server Hostname
 s_text_861=Specifies the hostname or IP address and the port of the news server.  Specifies '.block' token to block access to specific newsgroups.
 s_text_862=Example:  1.1.1.1:9999 or news.com:9999 or .block
 s_text_863=Newsgroup Names
@@ -339,7 +337,6 @@ s_text_866=Treatment Type (Optional)
 s_text_867=Defines how <@record proxy.config.product_name> treats the specified host and newsgroups.
 s_text_868=Priority (Optional) 
 s_text_869=Specifies the priority <@record proxy.config.product_name> uses to retrieve articles on demand from the specified server. If no positive integer is specified, the default priority is 0. 
-s_text_870=Specifies the network interface used to contact the NNTP server.
 
 s_text_875=Specifies whether IP addresses below are allowed/denied to access <@record proxy.config.product_name>.
 s_text_876=Specifies a single or range of IP addresses to allow/deny access to <@record proxy.config.product_name>.

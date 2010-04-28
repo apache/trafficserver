@@ -59,9 +59,6 @@ CliCreateCommands()
 
   createCommand("show:http", Cmd_ShowHttp, NULL, CLI_COMMAND_EXTERNAL, "show:http", "HTTP protocol configuration");
 
-  createCommand("show:nntp", Cmd_ShowNntp, CmdArgs_ShowNntp, CLI_COMMAND_EXTERNAL,
-                "show:nntp [config-xml]", "NNTP protocol configuration");
-
   createCommand("show:ftp", Cmd_ShowFtp, NULL, CLI_COMMAND_EXTERNAL, "show:ftp", "FTP protocol configuration");
 
   createCommand("show:icp", Cmd_ShowIcp, CmdArgs_ShowIcp, CLI_COMMAND_EXTERNAL,
@@ -116,8 +113,6 @@ CliCreateCommands()
                 "show:http-trans-stats", "HTTP transaction statistics");
 
   createCommand("show:http-stats", Cmd_ShowHttpStats, NULL, CLI_COMMAND_EXTERNAL, "show:http-stats", "HTTP statistics");
-
-  createCommand("show:nntp-stats", Cmd_ShowNntpStats, NULL, CLI_COMMAND_EXTERNAL, "show:nntp-stats", "NNTP statistics");
 
   createCommand("show:ftp-stats", Cmd_ShowFtpStats, NULL, CLI_COMMAND_EXTERNAL, "show:ftp-stats", "FTP statistics");
 
@@ -247,7 +242,7 @@ CliCreateCommands()
 
 
   createCommand("config:cache", Cmd_ConfigCache, CmdArgs_ConfigCache, CLI_COMMAND_EXTERNAL,
-                "config:cache <http | nntp | ftp> <on | off>\n"
+                "config:cache <http | ftp> <on | off>\n"
                 "config:cache ignore-bypass <on | off>\n"
                 "config:cache <max-object-size | max-alternates> <int>\n"
                 "config:cache file <url-config-file>\n"
@@ -274,7 +269,7 @@ CliCreateCommands()
                 "config:logging collation secret <string> tagged <on | off> orphan-limit <int>\n"
                 "config:logging format <squid | netscape-common | netscape-ext | netscape-ext2> <on | off>\n"
                 "               type <ascii | binary> file <string> header <string>\n"
-                "config:logging splitting <nntp | icp | http> <on | off>\n"
+                "config:logging splitting <icp | http> <on | off>\n"
                 "config:logging custom <on | off> format <traditional | xml>\n"
                 "config:logging rolling <on | off> offset <hour> interval <hours>\n"
                 "               auto-delete <on | off>", "Configure Logging");
@@ -305,25 +300,6 @@ CliCreateCommands()
                 "config:network int <interface> ip <x.x.x.x>\n"
                 "config:network int <interface> netmask <x.x.x.x>\n"
                 "config:network int <interface> gateway <x.x.x.x | default>\n", "Configure Network Settings");
-
-  createCommand("config:nntp", Cmd_ConfigNNTP, CmdArgs_ConfigNNTP, CLI_COMMAND_EXTERNAL,
-                "config:nntp status <on | off>\n"
-#if 0
-                "config:nntp port <int>\n"
-                "config:nntp connect-msg <posting | non-posting> <string>\n"
-                "config:nntp <posting-status | access-control | v2-auth | local-auth> <on | off>\n"
-                "config:nntp <clustering | allow-feeds | background-posting> <on | off>\n"
-#endif
-                "config:nntp <obey-cancel | obey-newgroups | obey-rmgroups> <on | off>\n"
-                "config:nntp <inactive-timeout | check-new-groups | check-cancelled> <seconds>\n"
-                "config:nntp <check-parent | check-pull> <seconds>\n"
-#if 0
-                "config:nntp <check-parent | check-cluster | check-pull> <seconds>\n"
-                "config:nntp auth-server <string>\n"
-                "config:nntp auth-port <seconds>\n"
-                "config:nntp auth-timeout <seconds>\n" "config:nntp client-throttle <bytes per second | 0>\n"
-#endif
-                "config:nntp <nntp-servers | nntp-access> <url-config-file>", "NNTP Configuration");
 
   createCommand("config:alarms", Cmd_ConfigAlarm, CmdArgs_ConfigAlarm, CLI_COMMAND_EXTERNAL,
                 "config:alarms resolve-name <string>\n"

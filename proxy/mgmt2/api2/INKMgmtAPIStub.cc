@@ -463,30 +463,6 @@ INKLogObjectEleDestroy(INKLogObjectEle * ele)
   return;
 }
 
-inkapi INKNntpAccessEle *
-INKNntpAccessEleCreate()
-{
-  return NULL;
-}
-
-inkapi void
-INKNntpAccessEleDestroy(INKNntpAccessEle * ele)
-{
-  return;
-}
-
-inkapi INKNntpSrvrEle *
-INKNntpSrvrEleCreate()
-{
-  return NULL;
-}
-
-inkapi void
-INKNntpSrvrEleDestroy(INKNntpSrvrEle * ele)
-{
-  return;
-}
-
 inkapi INKParentProxyEle *
 INKParentProxyEleCreate()
 {

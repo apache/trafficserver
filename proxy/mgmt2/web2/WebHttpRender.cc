@@ -189,12 +189,6 @@ handle_config_table_object(WebHttpContext * whc, char *tag, char *arg)
     case INK_FNAME_MGMT_ALLOW:
       err = writeMgmtAllowConfigTable(whc);
       break;
-    case INK_FNAME_NNTP_ACCESS:
-      err = writeNntpAccessConfigTable(whc);
-      break;
-    case INK_FNAME_NNTP_SERVERS:
-      err = writeNntpServersConfigTable(whc);
-      break;
     case INK_FNAME_PARENT_PROXY:
       err = writeParentConfigTable(whc);
       break;
@@ -262,12 +256,6 @@ handle_help_config_link(WebHttpContext * whc, char *tag, char *arg)
         break;
       case INK_FNAME_MGMT_ALLOW:
         whc->response_bdy->copyFrom(HTML_HELP_LINK_MGMT_ALLOW, strlen(HTML_HELP_LINK_MGMT_ALLOW));
-        break;
-      case INK_FNAME_NNTP_ACCESS:
-        whc->response_bdy->copyFrom(HTML_HELP_LINK_NNTP_ACCESS, strlen(HTML_HELP_LINK_NNTP_ACCESS));
-        break;
-      case INK_FNAME_NNTP_SERVERS:
-        whc->response_bdy->copyFrom(HTML_HELP_LINK_NNTP_SERVERS, strlen(HTML_HELP_LINK_NNTP_SERVERS));
         break;
       case INK_FNAME_PARENT_PROXY:
         whc->response_bdy->copyFrom(HTML_HELP_LINK_PARENT, strlen(HTML_HELP_LINK_PARENT));
@@ -360,12 +348,6 @@ handle_dynamic_javascript(WebHttpContext * whc, char *tag, char *arg)
         break;
       case INK_FNAME_MGMT_ALLOW:
         err = writeMgmtAllowRuleList(whc->response_bdy);
-        break;
-      case INK_FNAME_NNTP_ACCESS:
-        err = writeNntpAccessRuleList(whc->response_bdy);
-        break;
-      case INK_FNAME_NNTP_SERVERS:
-        err = writeNntpServersRuleList(whc->response_bdy);
         break;
       case INK_FNAME_PARENT_PROXY:
         err = writeParentRuleList(whc->response_bdy);
@@ -467,12 +449,6 @@ handle_config_input_form(WebHttpContext * whc, char *tag, char *arg)
         break;
       case INK_FNAME_MGMT_ALLOW:
         err = writeMgmtAllowConfigForm(whc);
-        break;
-      case INK_FNAME_NNTP_ACCESS:
-        err = writeNntpAccessConfigForm(whc);
-        break;
-      case INK_FNAME_NNTP_SERVERS:
-        err = writeNntpServersConfigForm(whc);
         break;
       case INK_FNAME_PARENT_PROXY:
         err = writeParentConfigForm(whc);
@@ -1895,47 +1871,6 @@ handle_version(WebHttpContext * whc, char *tag, char *arg)
   whc->response_bdy->copyFrom(PACKAGE_VERSION, strlen(PACKAGE_VERSION));
   return WEB_HTTP_ERR_OKAY;
 }
-
-//-------------------------------------------------------------------------
-// handle_nntp_plugin_status
-//-------------------------------------------------------------------------
-// If nntp is enabled, checks that the nntp plugin exists; if it does not 
-// exist, it will disable nntp. 
-static int
-handle_nntp_plugin_status(WebHttpContext * whc, char *tag, char *arg)
-{
-  MgmtInt nntp_enabled;
-  if (varIntFromName("proxy.config.nntp.enabled", &nntp_enabled) && nntp_enabled == 1) {
-    if (getNntpPluginStatus() != 1) {   // missing NNTP plugin 
-      whc->request_state |= WEB_HTTP_STATE_SUBMIT_WARN;
-      HtmlRndrText(whc->submit_warn, whc->lang_dict_ht, HTML_ID_NNTP_NO_PLUGIN);
-      HtmlRndrBr(whc->submit_warn);
-      // disable NNTP
-      varSetFromStr("proxy.config.nntp.enabled", "0");
-      WebHttpTreeRebuildJsTree();
-    }
-  }
-
-  return WEB_HTTP_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// handle_nntp_config_display
-//-------------------------------------------------------------------------
-// Checks if the nntp plugin exists; if it does not exist, 
-// will display warning message 
-static int
-handle_nntp_config_display(WebHttpContext * whc, char *tag, char *arg)
-{
-  if (getNntpPluginStatus() != 1) {
-    whc->request_state |= WEB_HTTP_STATE_SUBMIT_WARN;
-    HtmlRndrText(whc->submit_warn, whc->lang_dict_ht, HTML_ID_NNTP_NO_PLUGIN);
-    HtmlRndrBr(whc->submit_warn);
-  }
-
-  return WEB_HTTP_ERR_OKAY;
-}
-
 
 //-------------------------------------------------------------------------
 // handle_clear_cluster_stats
@@ -3989,8 +3924,6 @@ WebHttpRenderInit()
   ink_hash_table_insert(g_display_bindings_ht, "config_table_object", (void *) handle_config_table_object);
   ink_hash_table_insert(g_display_bindings_ht, "network", (void *) handle_network);
   ink_hash_table_insert(g_display_bindings_ht, "network_object", (void *) handle_network_object);
-  ink_hash_table_insert(g_display_bindings_ht, "nntp_plugin_status", (void *) handle_nntp_plugin_status);
-  ink_hash_table_insert(g_display_bindings_ht, "nntp_config_display", (void *) handle_nntp_config_display);
 #ifdef OEM
   ink_hash_table_insert(g_display_bindings_ht, "date", (void *) handle_date);
   ink_hash_table_insert(g_display_bindings_ht, "driver_object", (void *) handle_driver_object);

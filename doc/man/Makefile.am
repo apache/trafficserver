@@ -33,7 +33,6 @@ man_MANS = \
   config_logging.1 \
   config_name.1 \
   config_network.1 \
-  config_nntp.1 \
   config_ntlm.1 \
   config_parent.1 \
   config_port-tunnels.1 \
@@ -79,8 +78,6 @@ man_MANS = \
   show_logging.1 \
   show_logging-stats.1 \
   show_network.1 \
-  show_nntp.1 \
-  show_nntp-stats.1 \
   show_ntlm.1 \
   show_ntlm-stats.1 \
   show_parent.1 \

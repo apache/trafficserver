@@ -36,7 +36,6 @@ dist_sysconf_DATA =	\
   logs_xml.config \
   mgmt_allow.config \
   mgr.cnf \
-  nntp_config.xml \
   parent.config \
   partition.config \
   plugin.config \

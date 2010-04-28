@@ -384,57 +384,6 @@ http			HTTP Configuration
       Remove       (proxy.config.http.anonymize_remove_client_ip)
     ts>
     
-nntp			NNTP Configuration
-			(feeds, access control, servers, access)
-  syntax: show:nntp [ servers | access ]
-  args:   optional arg is either "servers" or "access"
-          
-  behavior:  with no args, Display basic NNTP Configuration
-
-    ts> show:nntp
-    NNTP Caching ---------------- on          (proxy.config.nntp.cache_enabled)
-    NNTP Server ----------------- off         (proxy.config.nntp.enabled)
-    NNTP Server Port ------------ 119         (proxy.config.nntp.server_port)
-    Connect Message (posting allowed) (proxy.config.nntp.posting_ok_message)
-      Inktomi NNTP server ready. posting ok
-    Connect Message (posting not allowed)  (proxy.config.nntp.posting_not_ok_message)
-      Inktomi NNTP server ready. no posting
-    NNTP Options:
-      Posting --------------------------- on  (proxy.config.nntp.posting_enabled)
-      Access Control -------------------- off (proxy.config.nntp.access_control_enabled)
-      NNTP V2 Authentication ------------ off (proxy.config.nntp.v2_authentication)
-      Run Local Authentication Server --- off (proxy.config.nntp.run_local_authentication_server)
-      Clustering ------------------------ on  (proxy.config.nntp.cluster_enabled)
-      Allow Feeds ----------------------- on  (proxy.config.nntp.feed_enabled)
-      Access Logs ----------------------- on  (proxy.config.nntp.logging_enabled)
-      Background Posting ---------------- off (proxy.config.nntp.background_posting_enabled)
-      Obey Cancel Control Messages ------ off (proxy.config.nntp.obey_control_cancel)
-      Obey NewGroups Control Messages --- off (proxy.config.nntp.obey_control_newgroup)
-      Obey RmGroups Control Messages ---- off (proxy.config.nntp.obey_control_rmgroup)
-    Inactivity Timeout ------------------ 600 s    (proxy.config.nntp.inactivity_timeout)
-    Check for New Groups Every ---------- 86400 s  (proxy.config.nntp.check_newgroups_every)
-    Check for Cancelled Articles Every -- 3600 s   (proxy.config.nntp.check_cancels_every)
-    Check Parent NNTP Server Every ------ 300 s    (proxy.config.nntp.group_check_parent_every)
-    Check Cluster Every ----------------- 60 s     (proxy.config.nntp.group_check_cluster_ever)
-    Check Pull Groups Every ------------- 600 s    (proxy.config.nntp.check_pull_every)
-    Authentication Server Host ---------- NULL     (proxy.config.nntp.authorization_hostname)
-    Authentication Server Port ---------- 0        (proxy.config.nntp.authorization_port)
-    Local Authentication Server Timeout - 50000 ms  (proxy.config.nntp.authorization_server_timeout)
-    Client Speed Throttle --------------- 0 bytes/sec  (proxy.config.nntp.client_speed_throttle)
-    ts>
-
-    ts> show:nntp servers
-    nntp_servers.config rules
-    -------------------------
-    (Display nntp_servers.config rules)
-    ts>
-
-    ts> show:nntp access
-    nntp_access.config rules
-    ------------------------
-    (Display nntp_access.config rules)
-    ts>
-
 ftp			FTP Configuration
   syntax: show:ftp
   args:   none
@@ -486,7 +435,6 @@ cache			Cache Configuration
   ts> show:cache
   HTTP Caching ------------------- on    (proxy.config.http.cache.http)
   FTP Caching -------------------- on    (proxy.config.http.cache.ftp)
-  NNTP Caching ------------------- on    (proxy.config.nntp.cache_enabled)
   Ignore User Requests To Bypass Cache --- off  (proxy.config.http.cache.ignore_client_no_cache)
   Maximum HTTP/FTP Object Size --- NONE        (proxy.config.cache.max_doc_size)
 
@@ -600,7 +548,6 @@ logging			Logging Configuration
     File Header ------- NULL      (proxy.config.log2.extended2_log_header)
 
   Splitting
-    NNTP Log Splitting -- off       (proxy.config.log2.separate_nntp_logs)
     ICP Log Splitting -- off        (proxy.config.log2.separate_icp_logs)
     HTTP Host Log Splitting -- off  (proxy.config.log2.separate_host_logs)
 
@@ -857,33 +804,6 @@ http-stats		HTTP Protocol Summary
   Total Header Bytes -------- 16.3 MB   (origin_server_response_header_total_size)
   Total Connections --------- 0         (current_server_connections)
   Transactions In Progress -- 0         (current_server_transactions)
-  ts>
-
-nntp-stats		NNTP Statistics
-  syntax: show:nntp-stats
-  args:   none
-  behavior:  Display NNTP statistics.
-
-  ts> show:nntp-stats
-  --Client--                          (proxy.process.nntp.*)
-  Open Connections ---- 0               (client_connections_currently_open)
-  Bytes Read ---------- 538.2 MB        (client_bytes_read)
-  Bytes Written ------- 559.5 GB        (client_bytes_written)
-  --Server--
-  Open Connections ---- 0               (server_connections_currently_open)
-  Bytes Read ---------- 145.2 GB        (server_bytes_read)
-  Bytes Written ------- 143.1 MB        (server_bytes_written)
-  --Operations--
-  Article Hits ------ 17,434,502      (article_hits)
-  Article Misses ---- 6,053,508       (article_misses)
-  Overview Hits ------- 0               (overview_hits)
-  Overview Refreshes -- 0               (overview_refreshes)
-  Group Hits ---------- 0               (group_hits)
-  Group Refreshes ----- 0               (group_refreshes)
-  Posts --------------- 0               (posts)
-  Post Bytes ---------- 0               (post_bytes)
-  Pull Bytes ---------- 0               (pull_bytes)
-  Feed Bytes ---------- 0               (feed_bytes)
   ts>
 
 ftp-stats		FTP Statistics
@@ -1225,75 +1145,6 @@ ssl			SSL Configuration
     ts#
    
 
-nntp			NNTP Configuration
-			(feeds, access control, servers, access)
-  syntax: config:nntp status <on | off>
-  record: (proxy.config.nntp.enabled)
-
-    ts# config:nntp status on
-    ts#
-
-  syntax: config:nntp port <portnum>
-  record: (proxy.config.nntp.server_port)
-
-    ts# config:nntp port 119
-    ts#
-
-  syntax: config:nntp connect-msg <posting | non-posting> <string>
-  record: <posting>      (proxy.config.nntp.posting_ok_message)
-          <non-posting>  (proxy.config.nntp.posting_not_ok_message)
-
-    ts# config:nntp connect-msg posting "Inktomi NNTP server. posting ok"
-    ts#
-
-  syntax: config:nntp <option> <on | off>
-  args:   <option> can be one of the following
-            <posting>            (proxy.config.nntp.posting_enabled)
-            <access-control>     (proxy.config.nntp.access_control_enabled)
-            <v2-auth>            (proxy.config.nntp.v2_authentication)
-            <local-auth>         (proxy.config.nntp.run_local_authentication_server)
-            <clustering>         (proxy.config.nntp.cluster_enabled)
-            <allow-feeds>        (proxy.config.nntp.feed_enabled)
-            <access-logs>        (proxy.config.nntp.logging_enabled)
-            <background-posting> (proxy.config.nntp.background_posting_enabled)
-            <obey-cancel>        (proxy.config.nntp.obey_control_cancel)
-            <obey-newgroups>     (proxy.config.nntp.obey_control_newgroup)
-            <obey-rmgroups>      (proxy.config.nntp.obey_control_rmgroup)
-
-    ts# config:nntp posting on v2-auth off access-logs on obey-rmgroups on
-    ts#
-
-  syntax: config:nntp <time_record> <seconds>
-  args:   <time_record> can be one of the following
-            <inactive-timeout>   (proxy.config.nntp.inactivity_timeout)
-            <check-new-groups>   (proxy.config.nntp.check_newgroups_every)
-            <check-cancelled>    (proxy.config.nntp.check_cancels_every)
-            <check-parent>       (proxy.config.nntp.group_check_parent_every)
-            <check-cluster>      (proxy.config.nntp.group_check_cluster_every)
-            <check-pull>         (proxy.config.nntp.check_pull_every)
-
-    ts# config:nntp inactive-timeout 10 check-parent 50 check-pull 100
-    ts#
-
-  syntax: config:nntp auth-server <servername> auth-port <portnum> auth-timeout <ms>
-  record: (proxy.config.nntp.authorization_hostname)
-          (proxy.config.nntp.authorization_port)
-          (proxy.config.nntp.authorization_server_timeout)
-
-    ts# config:nntp auth-server nntpserver.example.com auth-port 100 auth-timeout 5000
-    ts#
-
-  syntax: config:nntp client-throttle <bytespersecond>
-  record: (proxy.config.nntp.client_speed_throttle)
-
-    ts# config:nntp client-throttle 0
-
-  syntax: config:nntp <nntp-servers | nntp-access> <url>
-  behavior:  Retrieve nntp_servers.config or nntp_access.config file from URL.
-
-    ts# config:nntp-servers http://example.com/nntp_servers.config
-    ts#
-
 ftp			FTP Configuration
   syntax: config:ftp mode <pasv-port | pasv | port>
   record: (proxy.config.ftp.data_connection_mode value) 
@@ -1358,7 +1209,7 @@ cache			Cache Configuration
 			(active protocols, bypass, storage, freshness, 
                          expires, variable content, rules, clear)
   syntax: config:cache <protocol> <on | off>
-  args:   <protocol> = <http | nntp | ftp>
+  args:   <protocol> = <http | ftp>
           <on | off> specifies the given protocol is cached
   behavior:  Enable/Disable caching of various protocols.
 
@@ -1367,14 +1218,6 @@ cache			Cache Configuration
     ts#
 
     ts# config:cache http
-    on
-    ts#
-
-    ts# config:cache nntp on      (proxy.config.nntp.cache_enabled)
-    +OK
-    ts#
-
-    ts# config:cache nntp
     on
     ts#
 
@@ -1661,12 +1504,11 @@ logging			Logging Configuration
     +OK
     ts#
 
-  syntax:  config:logging splitting <nntp | icp | http> <on | off>
-  records:  proxy.config.log2.separate_nntp_logs <nntp>
-            proxy.config.log2.separate_icp_logs  <icp>
+  syntax:  config:logging splitting <icp | http> <on | off>
+  records:  proxy.config.log2.separate_icp_logs  <icp>
             proxy.config.log2.separate_host_logs <http>
 
-    ts# config:log split nntp on
+    ts# config:log split icp on
     +OK
     ts#
 
@@ -1740,7 +1582,7 @@ ports			Ports used by Traffic Server
 *** config:ports command is not implemented or supported ***
 			(including mgmt port)
   syntax: config:ports <http-server | http-other | webui | overseer | cluster
-                        cluster-rs | cluster-mc | nntp-server | ftp-server |
+                        cluster-rs | cluster-mc | ftp-server |
                         ssl | socks-server | icp> <port | ports>
   args:   some variables are single-port while other can be a list of ports
           <http-server>     (proxy.config.http.server_port) single
@@ -1750,7 +1592,6 @@ ports			Ports used by Traffic Server
           <cluster>         (proxy.config.cluster_port) single
           <cluster-rs>      (proxy.config.cluster.rsport) single
           <cluster-mc>      (proxy.config.cluster.mcport) single
-          <nntp-server>     (proxy.config.nntp.server_port) single
           <ftp-server>      (proxy.config.ftp.proxy_server_port) single
           <ssl>             (proxy.config.http.ssl_ports) list
           <socks-server>    (proxy.config.socks.socks_server_port) single

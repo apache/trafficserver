@@ -569,7 +569,7 @@ CmdLine_EventHandler::MonitorProtocolsLevel(void *cdata)
     /* Fall through */
   case CL_EV_FOUR:             // ICP
     /* Fall through */
-  case CL_EV_FIVE:             // NNTP
+  case CL_EV_FIVE:
     /* Fall through */
   case CL_EV_SIX:              // FIXME: RNI stats section
     Debug("cli_event", "MonitorProtocolsLevel: entered %d case \n", cli_data->cevent);
@@ -910,10 +910,8 @@ CmdLine_EventHandler::ConfigureProtocolsLevel(void *cdata)
     /* Fall through */
   case CL_EV_THREE:            // show FTP configuration
     /* Fall through */
-  case CL_EV_FOUR:             // show NNTP configuration
-    Debug("cli_event", "ConfigureProtocolsLevel: entered %d case \n", cli_data->cevent);
-    CLI_configure::doConfigureProtocols(cli_data);
-    break;
+  case CL_EV_FOUR:
+    /* Fall through */
   case CL_EV_FIVE:
     /* Fall through */
   case CL_EV_SIX:

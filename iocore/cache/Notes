@@ -1,7 +1,7 @@
 proxy/cluster/Cluster.h is now iocore/cluster/P_ClusterCache.h
 Clustering compiles but only works if this module is compiled with the entire
-TS because there are a lot of stuff required for clustering in proxy/http2 
-and proxy/NNTP.cc
+TS because there are a lot of stuff required for clustering in proxy/http2.
+
 
 cache ifdefs
 FIXME_NONMODULAR -> this flaf needs to be turned on when compiling along 

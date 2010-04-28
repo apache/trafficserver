@@ -70,7 +70,6 @@
 #define HTTP_NET_CONNECTION_EVENT_EVENTS_START    1400
 #define HTTP_NET_VCONNECTION_EVENT_EVENTS_START   1500
 #define GC_EVENT_EVENTS_START                     1600
-#define NNTP_EVENT_EVENTS_START                   1700
 #define ICP_EVENT_EVENTS_START                    1800
 #define RNI_EVENT_EVENTS_START                    1900
 #define TRANSFORM_EVENTS_START                    2000
@@ -104,7 +103,7 @@
 
 /*
 enum EventType { ET_SPAWN = 0, ET_CALL, ET_NET, ET_CLUSTER, ET_AUTH,
-		 ET_DNS, ET_FTP, ET_CACHE , ET_GC, ET_LOG, ET_ICP, ET_NNTP,
+		 ET_DNS, ET_FTP, ET_CACHE , ET_GC, ET_LOG, ET_ICP,
                  ET_UDP, ET_SSL, ET_NET_9x, ET_REMAP, ET_LAST};
 const int N_EVENT_TYPES = ET_LAST;
 */

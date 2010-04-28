@@ -36,7 +36,7 @@
 #define REC_SIGNAL_CACHE_WARNING                8
 #define REC_SIGNAL_LOGGING_ERROR                9
 #define REC_SIGNAL_LOGGING_WARNING              10
-#define REC_SIGNAL_NNTP_ERROR                   11
+// Currently unused: 11
 #define REC_SIGNAL_PLUGIN_CONFIG_REG            12
 #define REC_SIGNAL_PLUGIN_ADD_REC               13
 #define REC_SIGNAL_PLUGIN_SET_CONFIG            14

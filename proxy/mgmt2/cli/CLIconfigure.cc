@@ -128,7 +128,7 @@ const
 const
   CLI_globals::VarNameDesc
   CLI_configure::conf_protocols_desctable[NUM_CONF_PROTOCOLS_DESCS] = {
-  // HTTP - 14
+  // HTTP - 15
   // ->Keep-alive timeouts - 2
   {"proxy.config.http.keep_alive_no_activity_timeout_in", NULL,
    "Keep-Alive Timeout: Inbound (secs)", "%*d) %-*s %*s\n",
@@ -150,7 +150,7 @@ const
   {"proxy.config.http.transaction_active_timeout_out", NULL,
    "Activity Timeout: Outbound (secs)", "%*d) %-*s %*s\n",
    10, 10, 50, 3},
-  // -> Remove headers - 5
+  // -> Remove headers - 6
   {"proxy.config.http.anonymize_remove_from", NULL,
    "From(1=Yes,0=No)", "%*d) %-*s %*s\n",
    10, 10, 50, 3},
@@ -190,88 +190,6 @@ const
   {"proxy.config.http.ftp.anonymous_passwd", NULL,
    "Anonymous FTP password", "%*d) %-*s %*s\n",
    10, 10, 50, 3},
-// NNTP - 23
-// NNTP - 2/4
-  {"proxy.config.nntp.enabled", NULL,
-   "NNTP Server enabled(1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.server_port", NULL,
-   "NNTP Server Port:", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-// NNTP Options - 11
-  {"proxy.config.nntp.posting_enabled", NULL,
-   "Posting enabled(1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.access_control_enabled", NULL,
-   "Access Control enabled(1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.v2_authentication", NULL,
-   "NNTP V2 Authentication enabled(1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.run_local_authentication_server", NULL,
-   "Run Local Authentication Server (1=Yes,0=No)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.cluster_enabled", NULL,
-   "Clustering enabled(1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.feed_enabled", NULL,
-   "Feed enabled(1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.logging_enabled", NULL,
-   "Logging enabled(1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.background_posting_enabled", NULL,
-   "Background Posting enabled(1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.obey_control_cancel", NULL,
-   "Obey Cancel Control Messages (1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.obey_control_newgroup", NULL,
-   "Obey NewGroups Control Messages (1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.obey_control_rmgroup", NULL,
-   "Obey RmGroups Control Messages (1=On,0=Off)", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  // - 10
-  {"proxy.config.nntp.inactivity_timeout", NULL,
-   "Inactivity Timeout(secs):", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.check_newgroups_every", NULL,
-   "Check for New Groups Every(secs):", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.check_cancels_every", NULL,
-   "Check for Cancelled Articles Every(secs):", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.group_check_parent_every", NULL,
-   "Check Parent NNTP Server Every(secs):", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.group_check_cluster_every", NULL,
-   "Check Cluster Every(secs):", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.check_pull_every", NULL,
-   "Check Pull Groups Every(secs):", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.authorization_hostname", NULL,
-   "Authorization Server Host", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.authorization_port", NULL,
-   "Authorization Server Port", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.authorization_server_timeout", NULL,
-   "Authorization Server Timeout(mill-secs):", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.nntp.client_speed_throttle", NULL,
-   "Client Speed Throttle(bytes/secs):", "%*d) %-*s %*s\n",
-   10, 10, 50, 3}
-/*
-// RNI - 2
-{"proxy.config.rni.enabled", NULL,
- "Real Networks Enabled(1=On,0=Off)",  "%*d) %-*s %*s\n",
-   10,10,50,3  },
-{"proxy.config.rni.client_port", NULL,
- "Real Networks client port",  "%*d) %-*s %*s\n",
-   10,10,50,3  }
-*/
 };
 
 
@@ -287,9 +205,6 @@ const
    15, 15, 50, 3},
   {"proxy.config.http.cache.ftp", NULL,
    "Enable FTP caching(1=On,0=Off)", "%*d) %-*s %*s\n",
-   15, 15, 50, 3},
-  {"proxy.config.nntp.cache_enabled", NULL,
-   "Enable NNTP caching(1=On,0=Off)", "%*d) %-*s %*s\n",
    15, 15, 50, 3},
   {"proxy.config.http.cache.ignore_client_no_cache", NULL,
    "Ignore user requests to bypass cache(1=On,0=Off)", "%*d) %-*s %*s\n",
@@ -548,9 +463,6 @@ const
    "Auto-delete rolled log files when space is low", "%*d) %-*s %*s\n",
    10, 10, 50, 3},
   // Log Splitting - 2
-  {"proxy.config.log2.separate_nntp_logs", NULL,
-   "NNTP Log Splitting", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
   {"proxy.config.log2.separate_host_logs", NULL,
    "Host Log Splitting", "%*d) %-*s %*s\n",
    10, 10, 50, 3}
@@ -774,39 +686,25 @@ CLI_configure::doConfigureProtocols(CLI_DATA * c_data /* IN: client data */ )
   const char *line8 = "    1=PASV/PORT (use PORT if PASV fails)  \n"
     "    2=PASV only (initiate data connection)   \n" "    3=PORT only (receive data connection)\n\n";
   const char *line9 = "\n                            HTTPS \n";
-  const char *line10 = "                            NNTP \n";
-  const char *line11 = "\n     OPTIONS: \n";
-  const char *line12 = "     Inactivity timeout sets how long idle connections remain \n"
-    "     open. A 10 minute minimum is recommended.\n\n";
-  const char *line13 = "     The lists of groups on parent NNTP servers are checked \n"
-    "     periodically for new groups.  They need to be checked \n" "     frequently as the list changes slowly.\n\n";
-  const char *line14 = "     If the Traffic Server is not set to obey cancel control \n"
-    "     messages, it can actively poll groups to detect cancelled \n"
-    "     articles.  This should not be done too frequently as it \n"
-    "     involves communication with the partent NNTP server.\n\n";
-  const char *line15 = "     Poll the parent NNTP Server to see if new articles have \n"
-    "     appeared this often.\n\n";
-  const char *line16 = "     Poll the other Traffic Servers in the cluster see if new \n"
-    "     articles have appeared this often.\n\n";
-  const char *line17 = "     Pull groups are specified in the nntp_servers.config file.\n\n";
-  const char *line18 = "     The Authorization Server will abort an authorization \n"
-    "     operation if it does not complete in this amount of time.\n" "     The client can retry the operation.\n\n";
-  const char *line19 = "     Clients are limited to downloading no more than this number\n"
-    "     of bytes/second. A throttle of 0 means downloading is not\n" "     limited.\n\n";
-  const char *line20 = "     The Authentication Server can be run on either the local \n"
-    "     host or on a remote host. Enter the hostname on which the  \n" "     Authentication Server will run.\n\n";
-  const char *line21 = "     The locally run Authentication Server will accept connections\n"
-    "     on this port, and the Traffic Server will connect to the \n"
-    "     the Authentication Server on this port.\n\n";
+  //  const char *line11 = "\n     OPTIONS: \n";
+  //  const char *line12 = "     Inactivity timeout sets how long idle connections remain \n"
+  //  "     open. A 10 minute minimum is recommended.\n\n";
+  //  const char *line16 = "     Poll the other Traffic Servers in the cluster see if new \n"
+  //  "     articles have appeared this often.\n\n";
+  // const char *line18 = "     The Authorization Server will abort an authorization \n"
+  //  "     operation if it does not complete in this amount of time.\n" "     The client can retry the operation.\n\n";
+  // const char *line19 = "     Clients are limited to downloading no more than this number\n"
+  //  "     of bytes/second. A throttle of 0 means downloading is not\n" "     limited.\n\n";
+  // const char *line20 = "     The Authentication Server can be run on either the local \n"
+  //  "     host or on a remote host. Enter the hostname on which the  \n" "     Authentication Server will run.\n\n";
+  // const char *line21 = "     The locally run Authentication Server will accept connections\n"
+  //  "     on this port, and the Traffic Server will connect to the \n"
+  //  "     the Authentication Server on this port.\n\n";
   const char *line22 = "\n     Traffic Server can insert Client-ip headers to retain the \n"
     "     user's IP address through proxies. \n\n";
-  const char *line23 = "                         Real Networks \n\n";
+  // const char *line23 = "                         Real Networks \n\n";
   int highmark = 0;
   int i;
-  bool ret_value = false;
-
-  // Avoid warnings. /leif
-  NOWARN_UNUSED(line23);
 
   Debug("cli_configure", "Entering doConfigureProtocols, c_data->cevent=%d\n", c_data->cevent);
 
@@ -870,50 +768,6 @@ CLI_configure::doConfigureProtocols(CLI_DATA * c_data /* IN: client data */ )
     }
     c_data->output->copyFrom("\n", strlen("\n"));
   }
-  // Output NNTP header
-  highmark += NUM_CONF_PROTOCOLS_NNTP_DESCS;
-  if (CL_EV_ONE == c_data->cevent || CL_EV_FOUR == c_data->cevent) {
-    c_data->output->copyFrom(CLI_globals::sep1, strlen(CLI_globals::sep1));
-    c_data->output->copyFrom(line10, strlen(line10));
-
-    // now we need to get all the configuration variables
-    for (i = highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS; i < highmark; i++) {
-      if (i == (2 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS)) {
-        c_data->output->copyFrom(line11, strlen(line11));
-      }
-
-      if ((ret_value = varStrFromName(conf_protocols_desctable[i].name, buf, sizeof(buf))) == true) {
-        snprintf(tmpbuf, sizeof(tmpbuf), conf_protocols_desctable[i].format,
-                 conf_protocols_desctable[i].no_width, i,
-                 conf_protocols_desctable[i].desc_width, conf_protocols_desctable[i].desc,
-                 conf_protocols_desctable[i].name_value_width, buf);
-        c_data->output->copyFrom(tmpbuf, strlen(tmpbuf));
-      }
-      if (i == (13 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line12, strlen(line12));
-      } else if (i == (14 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line13, strlen(line13));
-      } else if (i == (15 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line14, strlen(line14));
-      } else if (i == (16 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line15, strlen(line15));
-      } else if (i == (17 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line16, strlen(line16));
-      } else if (i == (18 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line17, strlen(line17));
-      } else if (i == (19 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line20, strlen(line20));
-      } else if (i == (20 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line21, strlen(line21));
-      } else if (i == (21 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line18, strlen(line18));
-      } else if (i == (22 + highmark - NUM_CONF_PROTOCOLS_NNTP_DESCS) && ret_value) {
-        c_data->output->copyFrom(line19, strlen(line19));
-      }
-
-    }
-    c_data->output->copyFrom("\n", strlen("\n"));
-  }
 
   /* Removing RNI stuff for now.  These two variables have been
      either dropped or renamed.  Eventually, this section needs
@@ -961,17 +815,6 @@ CLI_configure::doConfigureCache(CLI_DATA * c_data /* IN: client data */ )
   const char *line5 = "                              FRESHNESS\n";
   const char *line6 = "                           VARIABLE CONTENT\n";
   const char *line7 = "     Do not cache objects served in response :\n";
-  // Doesn't seem to be used.
-  const char *line8 = "     Do not serve cached objects whose header fields:\n";
-  const char *line9 = "                          HTTP HEADER FIELDS\n";
-  const char *line10 = "     Match These header fields: \n";
-  const char *line11 = "\n     Changing the following value requires database reconfiguration \n\n";
-  const char *line12 = "\n     The Traffic Server caches alternate versions of objects \n"
-    "     (for example, a variety of spoken languages, or formats \n"
-    "     that match different browsers).  This can improve your \n"
-    "     cache performance, but consumes more space.\n\n";
-  const char *line13 = "\n     Setting the low water mark to greater than or equal to \n"
-    "     the high water mark causes the garbage collector to run \n" "     continuously.\n\n";
   const char *line14 = "\n     Before the Traffic Server serves an object from its cache,\n"
     "     it can ask the original content server to verify the object's \n" "     freshness.\n\n";
   const char *line15 = "\n     Some web servers do not stamp the objects they serve with an\n"
@@ -979,10 +822,6 @@ CLI_configure::doConfigureCache(CLI_DATA * c_data /* IN: client data */ )
     "     considers these cacheable and limit how long these objects are \n" "     considered fresh.\n\n";
   const char *line16 = "\n     If an object has no expiration date, leave it in the cache \n"
     "     for at least 6) but no more than 7).\n";
-  // Doesn't seem to be used.
-  const char *line17 = "\n     Minimum freshness information for a document to be cacheable:\n";
-  const char *line18 = "     0=optimize latency \n"
-    "     1=balance latency and bandwidth \n" "     2=optimize bandwidth \n";
   const char *line19 = "     0=when the object has expired \n"
     "     1=when the object has expired, or has no expiration date\n" "     2=always \n" "     3=never \n";
   const char *line20 = "     0=nothing \n" "     1=a last-modified time \n" "     2=an explict lifetime \n";
@@ -990,16 +829,6 @@ CLI_configure::doConfigureCache(CLI_DATA * c_data /* IN: client data */ )
 
   int highmark = 0;
   int i;
-
-  // Avoid warnings on unused text strings. /leif
-  NOWARN_UNUSED(line8);
-  NOWARN_UNUSED(line9);
-  NOWARN_UNUSED(line10);
-  NOWARN_UNUSED(line11);
-  NOWARN_UNUSED(line12);
-  NOWARN_UNUSED(line13);
-  NOWARN_UNUSED(line17);
-  NOWARN_UNUSED(line18);
 
   Debug("cli_configure", "Entering doConfigureCache, c_data->cevent=%d\n", c_data->cevent);
 

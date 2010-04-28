@@ -44,7 +44,6 @@ void WebHttpSetErrorResponse(WebHttpContext * whc, HttpStatus_t error);
 char *WebHttpAddDocRoot_Xmalloc(WebHttpContext * whc, const char *file);
 
 int spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, bool run_as_root);
-int getNntpPluginStatus();
 char *encryptToFileAuth_malloc(const char *password);
 
 #endif // _WEB_HTTP_H_

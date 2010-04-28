@@ -50,8 +50,6 @@ time_t last_http_local_time;
 #endif
 ink_stat_lock_t global_http_trans_stat_lock;
 ink_unprot_global_stat_t global_http_trans_stats[MAX_HTTP_TRANS_STATS];
-ink_stat_lock_t global_nntp_trans_stat_lock;
-ink_unprot_global_stat_t global_nntp_trans_stats[MAX_NNTP_TRANS_STATS];
 inkcoreapi ink_stat_lock_t global_rni_trans_stat_lock;
 inkcoreapi ink_unprot_global_stat_t global_rni_trans_stats[MAX_RNI_TRANS_STATS];
 #ifndef USE_LOCKS_FOR_DYN_STATS
@@ -81,9 +79,6 @@ static int persistent_stats[] = {
 };
 #else
 static int non_persistent_stats[] = {
-  nntp_client_connections_currently_open_stat,
-  nntp_server_connections_currently_open_stat,
-  nntp_cache_connections_currently_open_stat,
   ////////////////////////////
   // Start of Cluster stats
   ////////////////////////////
@@ -226,13 +221,6 @@ clear_stats()
       global_http_trans_stats[i].count = 0;
     }
   }
-  stats_size = MAX_NNTP_TRANS_STATS - NO_NNTP_TRANS_STATS - 1;
-  for (i = 0; i < stats_size; i++) {
-    if (persistent_stat(i + NO_NNTP_TRANS_STATS)) {
-      global_nntp_trans_stats[i].sum = 0;
-      global_nntp_trans_stats[i].count = 0;
-    }
-  }
   stats_size = MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS - 1;
   for (i = 0; i < stats_size; i++) {
     if (persistent_stat(i + NO_RNI_TRANS_STATS)) {
@@ -275,7 +263,6 @@ read_stats_snap()
     goto Lmissmatch;
   stats_size =
     MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS +
-    MAX_NNTP_TRANS_STATS - NO_NNTP_TRANS_STATS +
     MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
   if (socketManager.read(fd, (char *) &count, sizeof(count)) != sizeof(count))
     goto Lmissmatch;
@@ -289,15 +276,6 @@ read_stats_snap()
       goto Lmissmatch;
     if (socketManager.read(fd, (char *) &global_http_trans_stats[i].count, sizeof(global_http_trans_stats[i].count))
         != sizeof(global_http_trans_stats[i].count))
-      goto Lmissmatch;
-  }
-  stats_size = MAX_NNTP_TRANS_STATS - NO_NNTP_TRANS_STATS;
-  for (i = 0; i < stats_size; i++) {
-    if (socketManager.read(fd, (char *) &global_nntp_trans_stats[i].sum, sizeof(global_nntp_trans_stats[i].sum))
-        != sizeof(global_nntp_trans_stats[i].sum))
-      goto Lmissmatch;
-    if (socketManager.read(fd, (char *) &global_nntp_trans_stats[i].count, sizeof(global_nntp_trans_stats[i].count))
-        != sizeof(global_nntp_trans_stats[i].count))
       goto Lmissmatch;
   }
   stats_size = MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS;
@@ -344,7 +322,6 @@ write_stats_snap()
   {
     int stats_size =
       MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS +
-      MAX_NNTP_TRANS_STATS - NO_NNTP_TRANS_STATS +
       MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
     int buf_size = sizeof(unsigned int) * 3 +
       stats_size * (sizeof(global_dyn_stats[0].sum) + sizeof(global_dyn_stats[0].count));
@@ -366,15 +343,6 @@ write_stats_snap()
       p += sizeof(global_http_trans_stats[i].count);
     }
     STAT_LOCK_RELEASE(&(global_http_trans_stat_lock));
-    stats_size = MAX_NNTP_TRANS_STATS - NO_NNTP_TRANS_STATS;
-    STAT_LOCK_ACQUIRE(&(global_nntp_trans_stat_lock));
-    for (i = 0; i < stats_size; i++) {
-      memcpy(p, (char *) &global_nntp_trans_stats[i].sum, sizeof(global_nntp_trans_stats[i].sum));
-      p += sizeof(global_nntp_trans_stats[i].sum);
-      memcpy(p, (char *) &global_nntp_trans_stats[i].count, sizeof(global_nntp_trans_stats[i].count));
-      p += sizeof(global_nntp_trans_stats[i].count);
-    }
-    STAT_LOCK_RELEASE(&(global_nntp_trans_stat_lock));
     stats_size = MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS;
     STAT_LOCK_ACQUIRE(&(global_rni_trans_stat_lock));
     for (i = 0; i < stats_size; i++) {
@@ -633,18 +601,11 @@ initialize_all_global_stats()
   take_rusage_snap();           // fill in _old as well
 
   STAT_LOCK_INIT(&(global_http_trans_stat_lock), "Global Http Stats Lock");
-  STAT_LOCK_INIT(&(global_nntp_trans_stat_lock), "Global Nntp Stats Lock");
   STAT_LOCK_INIT(&(global_rni_trans_stat_lock), "Global Rni Stats Lock");
 
   for (istat = NO_HTTP_TRANS_STATS; istat < MAX_HTTP_TRANS_STATS; istat++) {
     if (!persistent_stat(istat)) {
       INITIALIZE_GLOBAL_TRANS_STATS(global_http_trans_stats[istat]);
-    }
-  }
-
-  for (istat = NO_NNTP_TRANS_STATS; istat < MAX_NNTP_TRANS_STATS; istat++) {
-    if (!persistent_stat(istat)) {
-      INITIALIZE_GLOBAL_TRANS_STATS(global_nntp_trans_stats[istat]);
     }
   }
 

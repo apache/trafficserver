@@ -20,7 +20,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/proxy \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/proxy/nntp \
   -I$(top_srcdir)/proxy/http2 \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/preparse \

@@ -84,7 +84,7 @@
 #define MGMT_SIGNAL_CACHE_WARNING         8
 #define MGMT_SIGNAL_LOGGING_ERROR         9
 #define MGMT_SIGNAL_LOGGING_WARNING       10
-#define MGMT_SIGNAL_NNTP_ERROR            11
+// Currently unused: 11
 #define MGMT_SIGNAL_PLUGIN_CONFIG_REG     12
 #define MGMT_SIGNAL_PLUGIN_ADD_REC        13
 #define MGMT_SIGNAL_PLUGIN_SET_CONFIG     14

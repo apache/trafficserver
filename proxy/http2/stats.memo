@@ -13,7 +13,7 @@ Proxy Schems:
   Type          :  A bit vector. a bit per scheme. 
   Who It Affects:  HTTP Engine
   Comments      :  Current schemes are { HTTP, FTP }
-                   Future Schemes { GOPHER, HTTPS, NNTP }
+                   Future Schemes { GOPHER, HTTPS }
 
   Name          :  TunnelingEnabled
   Type          :  boolean

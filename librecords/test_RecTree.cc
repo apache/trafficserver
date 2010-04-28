@@ -54,8 +54,6 @@ main(int argc, char **argv)
   printf("\n");
   new_rec_tree->rec_tree_insert("proxy.node.http.hitrate");
   printf("\n");
-  new_rec_tree->rec_tree_insert("proxy.node.nntp.bandwidth_saving");
-  printf("\n");
   new_rec_tree->rec_tree_insert("proxy.node.rni.client.connections");
   printf("\n");
   new_rec_tree->rec_tree_insert("proxy.node.rni.server.connections");

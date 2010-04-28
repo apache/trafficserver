@@ -228,10 +228,6 @@ Rule::parse(const char *const_rule, INKFileNameT filetype)
     return logs_xmlParse(rule);
   case INK_FNAME_MGMT_ALLOW:   /* mgmt_allow.config */
     return mgmt_allowParse(rule);
-  case INK_FNAME_NNTP_ACCESS:  /* nnpt_access.config */
-    return nntp_accessParse(rule);
-  case INK_FNAME_NNTP_SERVERS: /* nntp_servers.config */
-    return nntp_serversParse(rule);
   case INK_FNAME_PARENT_PROXY: /* parent.config */
     return parentParse(rule);
   case INK_FNAME_PARTITION:    /* partition.config */
@@ -690,60 +686,6 @@ TokenList *
 Rule::mgmt_allowParse(char *rule)
 {
   return cacheParse(rule, 2, 2);
-}
-
-
-/**
- * nntp_accessParse
- **/
-TokenList *
-Rule::nntp_accessParse(char *rule)
-{
-  return cacheParse(rule, 2, 7);
-}
-
-
-/**
- * nntp_serversParse
- **/
-TokenList *
-Rule::nntp_serversParse(char *rule)
-{
-  // ASSUMPTIONS:
-  //   NO SPACE around ","
-  //   at least 2; at most 4 fields
-  Tokenizer ruleTok(" \t");
-  int numRuleTok = ruleTok.Initialize(rule);
-  tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-
-  if (strstr(rule, ", ")) {
-    setErrorHint("Expecting no space after ','");
-    return NULL;
-  }
-  if (strstr(rule, " ,")) {
-    setErrorHint("Expecting no space before ','");
-    return NULL;
-  }
-  if (numRuleTok < 2) {
-    setErrorHint("Expecting at least 2 space delimited tokens");
-    return NULL;
-  }
-  if (numRuleTok > 4) {
-    setErrorHint("Expecting at most 4 space delimited tokens");
-    return NULL;
-  }
-
-  Token *token;
-  TokenList *m_tokenList = NEW(new TokenList());
-
-  for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
-    token = NEW(new Token());
-    token->setName(tokenStr);
-    m_tokenList->enqueue(token);
-  }
-
-  return m_tokenList;
 }
 
 
@@ -1284,10 +1226,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = INK_FNAME_LOGS_XML;    /* logs_xml.config */
   } else if (strstr(filename, "mgmt_allow.config")) {
     m_filetype = INK_FNAME_MGMT_ALLOW;  /* mgmt_allow.config */
-  } else if (strstr(filename, "nntp_access.config")) {
-    m_filetype = INK_FNAME_NNTP_ACCESS; /* nnpt_access.config */
-  } else if (strstr(filename, "nntp_servers.config")) {
-    m_filetype = INK_FNAME_NNTP_SERVERS;        /* nntp_servers.config */
   } else if (strstr(filename, "parent.config")) {
     m_filetype = INK_FNAME_PARENT_PROXY;        /* parent.config */
   } else if (strstr(filename, "partition.config")) {

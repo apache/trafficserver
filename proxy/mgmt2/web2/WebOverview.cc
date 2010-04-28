@@ -1369,7 +1369,7 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
 
   clients = servers = 0;
 
-  // TODO add NNTP/RNI here
+  // TODO add RNI here
   host->varIntFromName("proxy.node.current_client_connections", &clients);
   host->varIntFromName("proxy.node.current_server_connections", &servers);
 
@@ -1886,11 +1886,6 @@ overviewPage::agBandwidthHitRate()
   varIntFromName("proxy.cluster.ftp.downstream_total_bytes", &bytes);
   UA_total += bytes;
 
-  // NNTP
-  varIntFromName("proxy.cluster.nntp.downstream_total_bytes", &bytes);
-  UA_total += bytes;
-
-
   // Origin Server and Parent Proxy
 
   // HTTP
@@ -1905,10 +1900,6 @@ overviewPage::agBandwidthHitRate()
 
   // FTP
   varIntFromName("proxy.cluster.ftp.upstream_total_bytes", &bytes);
-  OSPP_total += bytes;
-
-  // NNTP
-  varIntFromName("proxy.cluster.nntp.upstream_total_bytes", &bytes);
   OSPP_total += bytes;
 
   // Special negative bandwidth scenario is treated here
@@ -2273,16 +2264,6 @@ overviewPage::doClusterAg()
                "proxy.node.http.user_agents_total_documents_served");
   clusterAgInt("proxy.cluster.http.origin_server_total_transactions_count",
                "proxy.node.http.origin_server_total_transactions_count");
-
-  // NNTP
-  clusterAgInt("proxy.cluster.nntp.upstream_total_bytes", "proxy.node.nntp.upstream_total_bytes");
-  clusterAgInt("proxy.cluster.nntp.downstream_total_bytes", "proxy.node.nntp.downstream_total_bytes");
-  clusterAgInt("proxy.cluster.nntp.current_server_connections", "proxy.node.nntp.current_server_connections");
-  clusterAgInt("proxy.cluster.nntp.current_cache_connections", "proxy.node.nntp.current_cache_connections");
-  clusterAgInt("proxy.cluster.nntp.user_agents_total_documents_served",
-               "proxy.node.nntp.user_agents_total_documents_served");
-
-  clusterAgFloat("proxy.cluster.nntp.user_agent_xacts_per_second", "proxy.node.nntp.user_agent_xacts_per_second");
 
   // FTP
   clusterAgInt("proxy.cluster.ftp.upstream_total_bytes", "proxy.node.ftp.upstream_total_bytes");

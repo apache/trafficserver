@@ -414,54 +414,6 @@ private:
   INKMgmtAllowEle * m_ele;
 };
 
-/* nntp_access.config  *******************************************/
-class NntpAccessObj:public CfgEleObj
-{
-public:
-  NntpAccessObj(INKNntpAccessEle * ele);
-  NntpAccessObj(TokenList * tokens);
-  ~NntpAccessObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
-  {
-    return (INKCfgEle *) m_ele;
-  }
-  virtual INKRuleTypeT getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  INKNntpAccessEle * m_ele;
-};
-
-/* nntp_servers.config *******************************************/
-class NntpSrvrObj:public CfgEleObj
-{
-public:
-  NntpSrvrObj(INKNntpSrvrEle * ele);
-  NntpSrvrObj(TokenList * tokens);
-  ~NntpSrvrObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
-  {
-    return (INKCfgEle *) m_ele;
-  }
-  virtual INKRuleTypeT getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  INKNntpSrvrEle * m_ele;
-};
-
 /* parent.config       *******************************************/
 class ParentProxyObj:public CfgEleObj
 {

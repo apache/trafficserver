@@ -56,7 +56,7 @@
 #define MGMT_ALARM_PROXY_CACHE_WARNING           9
 #define MGMT_ALARM_PROXY_LOGGING_ERROR           10
 #define MGMT_ALARM_PROXY_LOGGING_WARNING         11
-#define MGMT_ALARM_PROXY_NNTP_ERROR	         12
+// Currently unused: 12
 #define MGMT_ALARM_MGMT_TEST                     13
 #define MGMT_ALARM_CONFIG_UPDATE_FAILED          14
 #define MGMT_ALARM_WEB_ERROR                     15

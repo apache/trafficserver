@@ -44,10 +44,6 @@ typedef enum
   CMD_SHOW_CLUSTER,
   CMD_SHOW_SECURITY,
   CMD_SHOW_HTTP,
-  CMD_SHOW_NNTP,
-  CMD_SHOW_NNTP_SERVERS,
-  CMD_SHOW_NNTP_ACCESS,
-  CMD_SHOW_NNTP_CONFIG,
   CMD_SHOW_FTP,
   CMD_SHOW_ICP,
   CMD_SHOW_ICP_PEER,
@@ -76,7 +72,6 @@ typedef enum
   CMD_SHOW_PROXY_STATS,
   CMD_SHOW_HTTP_TRANS_STATS,
   CMD_SHOW_HTTP_STATS,
-  CMD_SHOW_NNTP_STATS,
   CMD_SHOW_FTP_STATS,
   CMD_SHOW_ICP_STATS,
   CMD_SHOW_CACHE_STATS,
@@ -112,8 +107,6 @@ int Cmd_ShowPorts(ClientData clientData, Tcl_Interp * interp, int argc, const ch
 int Cmd_ShowCluster(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowSecurity(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowHttp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int Cmd_ShowNntp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int CmdArgs_ShowNntp();
 int Cmd_ShowFtp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowIcp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_ShowIcp();
@@ -142,7 +135,6 @@ int CmdArgs_ShowScheduledUpdate();
 int Cmd_ShowProxyStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowHttpTransStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowHttpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int Cmd_ShowNntpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowFtpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowIcpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowCacheStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
@@ -183,18 +175,6 @@ int ShowSecurity();
 
 // show http sub-command
 int ShowHttp();
-
-// show nntp sub-command
-int ShowNntp();
-
-// show nntp config sub-command
-int ShowNntpConfig();
-
-// show nntp servers sub-command
-int ShowNntpServers();
-
-// show nntp access sub-command
-int ShowNntpAccess();
 
 // show ftp sub-command
 int ShowFtp();
@@ -283,9 +263,6 @@ int ShowHttpTransStats();
 
 // show proxy-stats sub-command
 int ShowHttpStats();
-
-// show proxy-stats sub-command
-int ShowNntpStats();
 
 // show proxy-stats sub-command
 int ShowFtpStats();

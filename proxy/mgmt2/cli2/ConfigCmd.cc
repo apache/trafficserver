@@ -844,7 +844,6 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
       case CMD_CONFIG_PORTS_CLUSTER:
       case CMD_CONFIG_PORTS_CLUSTER_RS:
       case CMD_CONFIG_PORTS_CLUSTER_MC:
-      case CMD_CONFIG_PORTS_NNTP_SERVER:
       case CMD_CONFIG_PORTS_FTP_SERVER:
       case CMD_CONFIG_PORTS_SOCKS_SERVER:
       case CMD_CONFIG_PORTS_ICP:
@@ -853,7 +852,7 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
     }
   }
   Cli_Error(ERR_COMMAND_SYNTAX,
-            "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n nntp-server | ftp-server | ssl | \n socks-server | icp > \n <port | ports list>\n");
+            "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n ftp-server | ssl | \n socks-server | icp > \n <port | ports list>\n");
   return CMD_ERROR;
 
 }
@@ -880,8 +879,6 @@ CmdArgs_ConfigPorts()
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER_RS, "Set Ports for cluster-rs", (char *) NULL);
   createArgument("cluster-mc", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER_MC, "Set Ports for cluster-mc", (char *) NULL);
-  createArgument("nntp-server", 1, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_PORTS_NNTP_SERVER, "Set Ports for nntp-server", (char *) NULL);
   createArgument("ftp-server", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_FTP_SERVER, "Set Ports for ftp-server", (char *) NULL);
   createArgument("ssl", 1, CLI_ARGV_OPTION_NAME_VALUE,
@@ -1047,293 +1044,6 @@ CmdArgs_ConfigLdap()
                  (char *) NULL, CMD_CONFIG_LDAP_FILE, "Set filter.config (used for LDAP configuration) from <url>",
                  (char *) NULL);
   return 0;
-}
-
-
-
-////////////////////////////////////////////////////////////////
-// Cmd_ConfigNNTP
-//
-// This is the callback function for the "config:nntp" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ConfigNNTP(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  INKString plugin_name = NULL;
-  INKError status = INK_ERR_OKAY;
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  if (cliCheckIfEnabled("config:nntp") == CLI_ERROR) {
-    return CMD_ERROR;
-  }
-  Cli_Debug("Cmd_ConfigNNTP argc %d\n", argc);
-  status = Cli_RecordGetString("proxy.config.nntp.plugin_name", &plugin_name);
-  if (status != INK_ERR_OKAY) {
-    return status;
-  }
-  if (Cli_CheckPluginStatus(plugin_name) != CLI_OK) {
-    Cli_Printf("NNTP is not installed.\n\n");
-    return CMD_ERROR;
-  };
-
-  cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
-
-  cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
-
-  if (argc == 1) {
-    Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-    return CMD_ERROR;
-  }
-
-  if (argtable->parsed_args != CLI_PARSED_ARGV_END) {
-    switch (infoPtr->parsed_args) {
-    case CMD_CONFIG_NNTP_STATUS:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.enabled", argtable->arg_string));
-#if 0
-    case CMD_CONFIG_NNTP_PORT:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.server_port", argtable->arg_int));
-
-    case CMD_CONFIG_NNTP_CONNECTMSG:
-      infoPtr++;
-      if (ConfigNNTPConnectmsg(infoPtr->parsed_args, infoPtr->arg_string) == CLI_ERROR) {
-        infoPtr--;
-      }
-      break;
-
-    case CMD_CONFIG_NNTP_POSTINGSTATUS:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.posting_enabled", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_ACCESSCONTROL:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.access_control_enabled", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_v2AUTH:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.v2_authentication", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_LOCALAUTH:
-      return (Cli_RecordOnOff_Action((argc == 3),
-                                     "proxy.config.nntp.run_local_authentication_server", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_CLUSTERING:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.cluster_enabled", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_ALLOWFEEDS:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.feed_enabled", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_ACCESSLOGS:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.logging_enabled", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_BACKPOSTING:
-      return (Cli_RecordOnOff_Action((argc == 3),
-                                     "proxy.config.nntp.background_posting_enabled", argtable->arg_string));
-#endif
-    case CMD_CONFIG_NNTP_OBEYCANCEL:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.obey_control_cancel", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_OBEYNEWGROUPS:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.obey_control_newgroup", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_OBEYRMGROUPS:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.obey_control_rmgroup", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_INACTIVETIMEOUT:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.inactivity_timeout", argtable->arg_int));
-
-    case CMD_CONFIG_NNTP_CHECKNEWGROUPS:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.check_newgroups_every", argtable->arg_int));
-
-    case CMD_CONFIG_NNTP_CHECKCANCELLED:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.check_cancels_every", argtable->arg_int));
-
-    case CMD_CONFIG_NNTP_CHECKPARENT:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.group_check_parent_every", argtable->arg_int));
-#if 0
-    case CMD_CONFIG_NNTP_CHECKCLUSTER:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.group_check_cluster_every", argtable->arg_int));
-#endif
-    case CMD_CONFIG_NNTP_CHECKPULL:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.check_pull_every", argtable->arg_int));
-#if 0
-    case CMD_CONFIG_NNTP_AUTHSERVER:
-      return (Cli_RecordString_Action((argc == 3), "proxy.config.nntp.authorization_hostname", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_AUTHPORT:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.authorization_port", argtable->arg_int));
-
-    case CMD_CONFIG_NNTP_AUTHTIMEOUT:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.authorization_server_timeout", argtable->arg_int));
-
-    case CMD_CONFIG_NNTP_CLIENTTHROTTLE:
-      return (Cli_RecordInt_Action((argc == 3), "proxy.config.nntp.client_speed_throttle", argtable->arg_int));
-    case CMD_CONFIG_NNTP_SERVERS:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_NNTP_SERVERS, "nntp_servers.config", argtable->arg_string));
-
-    case CMD_CONFIG_NNTP_ACCESS:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_NNTP_ACCESS, "nntp_servers.config", argtable->arg_string));
-#endif
-    case CMD_CONFIG_NNTP_CONFIG_XML:
-      return (Cli_ConfigFileURL_Action(INK_FNAME_NNTP_CONFIG_XML, "nntp-config.xml", argtable->arg_string));
-    }
-  }
-  Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-  return CMD_ERROR;
-}
-
-int
-ConfigNNTPConnectmsg(int option, char *string)
-{
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
-  INKString str_val = NULL;
-  char buf[256];
-
-  Cli_Debug("ConfigNNTPConnectmsg: posting | non-posting %s\n", string);
-  if (option == CMD_CONFIG_NNTP_POSTING) {
-    if (string) {
-      status = Cli_RecordSetString("proxy.config.nntp.posting_ok_message", (INKString) string, &action_need);
-      Cli_Printf("connect-msg posting set to %s\n", string);
-    } else {
-      status = Cli_RecordGetString("proxy.config.nntp.posting_ok_message", &str_val);
-      Cli_Printf("%s\n", (char *) str_val);
-    }
-  } else if (option == CMD_CONFIG_NNTP_NONPOSTING) {
-    if (string) {
-      status = Cli_RecordSetString("proxy.config.nntp.posting_not_ok_message", (INKString) string, &action_need);
-      Cli_Printf("connect-msg non-posting set to %s\n", string);
-    } else {
-      status = Cli_RecordGetString("proxy.config.nntp.posting_not_ok_message", &str_val);
-      Cli_Printf("%s\n", (char *) str_val);
-    }
-  } else {
-    snprintf(buf, sizeof(buf), "config nntp connect-msg <posting | non-posting> <string>\n");
-    Cli_Printf(buf);
-    return CLI_ERROR;
-  }
-  if (status != INK_ERR_OKAY) {
-    Cli_ConfigEnactChanges(action_need);
-    return CLI_ERROR;
-  }
-
-  return CLI_OK;
-}
-
-////////////////////////////////////////////////////////////////
-// CmdArgs_ConfigNNTP
-//
-// Register "config:nntp" arguments with the Tcl interpreter.
-//
-
-int
-CmdArgs_ConfigNNTP()
-{
-  createArgument("status", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_STATUS, "Set NNTP <on|off>", (char *) NULL);
-#if 0
-  createArgument("port", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_PORT, "Port <int>", (char *) NULL);
-
-  createArgument("connect-msg", CLI_ARGV_NO_POS, CLI_ARGV_CONST_OPTION,
-                 (char *) NULL, CMD_CONFIG_NNTP_CONNECTMSG, "connect-msg <posting | non-posting> <string>",
-                 (char *) NULL);
-  createArgument("posting", CMD_CONFIG_NNTP_CONNECTMSG, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_POSTING, "connect-msg posting <string>", (char *) NULL);
-  createArgument("non-posting", CMD_CONFIG_NNTP_CONNECTMSG, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_NONPOSTING, "connect-msg non-posting <string>", (char *) NULL);
-
-  createArgument("posting-status", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_POSTINGSTATUS, "Posting <on|off>", (char *) NULL);
-
-  createArgument("access-control", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_ACCESSCONTROL, "Access Control <on|off>", (char *) NULL);
-
-  createArgument("v2-auth", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_v2AUTH, "NNTP v2 Auth <on|off>", (char *) NULL);
-
-  createArgument("local-auth", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_LOCALAUTH, "Local Auth <on|off>", (char *) NULL);
-
-  createArgument("clustering", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_CLUSTERING, "Clustering <on|off>", (char *) NULL);
-
-  createArgument("allow-feeds", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_ALLOWFEEDS, "Allow Feeds <on|off>", (char *) NULL);
-
-  createArgument("access-logs", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_ACCESSLOGS, "Access Logs <on|off>", (char *) NULL);
-
-  createArgument("background-posting", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_BACKPOSTING, "Background Posting <on|off>", (char *) NULL);
-#endif
-  createArgument("obey-cancel", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_OBEYCANCEL, "Obey Cancel <on|off>", (char *) NULL);
-
-  createArgument("obey-newgroups", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_OBEYNEWGROUPS, "Obey Newgroups <on|off>", (char *) NULL);
-
-  createArgument("obey-rmgroups", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_OBEYRMGROUPS, "Obey Rmgroups <on|off>", (char *) NULL);
-
-  createArgument("inactive-timeout", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_INACTIVETIMEOUT, "Inactive Timeout <seconds>", (char *) NULL);
-
-  createArgument("check-new-groups", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_CHECKNEWGROUPS, "Check New Groups interval <seconds>", (char *) NULL);
-
-  createArgument("check-cancelled", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_CHECKCANCELLED, "Check Cancelled interval <seconds>", (char *) NULL);
-
-  createArgument("check-parent", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_CHECKPARENT, "Check Parent interval <seconds>", (char *) NULL);
-
-  createArgument("check-pull", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_CHECKPULL, "Check Pull interval <seconds>", (char *) NULL);
-#if 0
-  createArgument("check-cluster", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_CHECKCLUSTER, "Check Cluster interval <seconds>", (char *) NULL);
-
-  createArgument("check-pull", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_CHECKPULL, "Check Pull interval <seconds>", (char *) NULL);
-
-  createArgument("auth-server", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_AUTHSERVER, "Auth Server <string>", (char *) NULL);
-
-  createArgument("auth-port", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_AUTHPORT, "Auth Port <int>", (char *) NULL);
-
-  createArgument("auth-timeout", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_AUTHTIMEOUT, "Auth Timeout <seconds>", (char *) NULL);
-
-  createArgument("client-throttle", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_CLIENTTHROTTLE,
-                 "Client Throttle <bytes per second | 0>", (char *) NULL);
-
-  createArgument("nntp-servers", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_SERVERS, "Update NNTP Servers config file <url>", (char *) NULL);
-
-  createArgument("nntp-access", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_ACCESS, "Update NNTP Access config file <url>", (char *) NULL);
-#endif
-  createArgument("config-xml", CLI_ARGV_NO_POS, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_NNTP_CONFIG_XML, "Update nntp config file <url>", (char *) NULL);
-  return 0;
-
-
 }
 
 
@@ -2144,9 +1854,6 @@ Cmd_ConfigCache(ClientData clientData, Tcl_Interp * interp, int argc, const char
     case CMD_CONFIG_CACHE_HTTP:
       return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.http.cache.http", argtable->arg_string));
 
-    case CMD_CONFIG_CACHE_NNTP:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.nntp.cache_enabled", argtable->arg_string));
-
     case CMD_CONFIG_CACHE_FTP:
       return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.http.cache.ftp", argtable->arg_string));
 
@@ -2234,8 +1941,6 @@ CmdArgs_ConfigCache()
 {
   createArgument("http", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_CACHE_HTTP, "HTTP Protocol caching <on|off>", (char *) NULL);
-  createArgument("nntp", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_CACHE_NNTP, "NNTP Protocol caching <on|off>", (char *) NULL);
   createArgument("ftp", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_CACHE_FTP, "FTP Protocol caching <on|off>", (char *) NULL);
   createArgument("ignore-bypass", 1, CLI_ARGV_OPTION_NAME_VALUE,
@@ -2810,9 +2515,7 @@ CmdArgs_ConfigLogging()
 
   createArgument("splitting", 1, CLI_ARGV_CONST_OPTION,
                  (char *) NULL, CMD_CONFIG_LOGGING_SPLITTING,
-                 "Splitting of logs for protocols <nntp | icp | http>", (char *) NULL);
-  createArgument("nntp", CMD_CONFIG_LOGGING_SPLITTING, CLI_ARGV_CONST_OPTION,
-                 (char *) NULL, CMD_CONFIG_LOGGING_SPLITTING_NNTP, "Split NNTP <on | off>", (char *) NULL);
+                 "Splitting of logs for protocols <icp | http>", (char *) NULL);
   createArgument("icp", CMD_CONFIG_LOGGING_SPLITTING, CLI_ARGV_CONST_OPTION,
                  (char *) NULL, CMD_CONFIG_LOGGING_SPLITTING_ICP, "Split ICP <on | off>", (char *) NULL);
   createArgument("http", CMD_CONFIG_LOGGING_SPLITTING, CLI_ARGV_CONST_OPTION,
@@ -3371,9 +3074,6 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
   case CMD_CONFIG_PORTS_CLUSTER_MC:
     status = Cli_RecordSetInt("proxy.config.cluster.mcport", *(INKInt *) valuePtr, &action_need);
     break;
-  case CMD_CONFIG_PORTS_NNTP_SERVER:
-    status = Cli_RecordSetInt("proxy.config.nntp.server_port", *(INKInt *) valuePtr, &action_need);
-    break;
   case CMD_CONFIG_PORTS_FTP_SERVER:
     status = Cli_RecordSetInt("proxy.config.ftp.proxy_server_port", *(INKInt *) valuePtr, &action_need);
     break;
@@ -3462,13 +3162,6 @@ ConfigPortsGet(int arg_ref)
     }
     Cli_Printf("%d\n", int_val);
     break;
-  case CMD_CONFIG_PORTS_NNTP_SERVER:
-    status = Cli_RecordGetInt("proxy.config.nntp.server_port", &int_val);
-    if (status) {
-      return status;
-    }
-    Cli_Printf("%d\n", int_val);
-    break;
   case CMD_CONFIG_PORTS_FTP_SERVER:
     status = Cli_RecordGetInt("proxy.config.ftp.proxy_server_port", &int_val);
     if (status) {
@@ -3503,7 +3196,7 @@ ConfigPortsGet(int arg_ref)
     break;
   default:
     Cli_Error(ERR_COMMAND_SYNTAX,
-              "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n nntp-server | ftp-server | ssl | \n socks-server | icp > \n <port | ports list>\n");
+              "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n ftp-server | ssl | \n socks-server | icp > \n <port | ports list>\n");
 
     return CLI_ERROR;
   }
@@ -5955,16 +5648,6 @@ ConfigLoggingSplitting(int arg_ref_protocol, int arg_ref_on_off, int setvar)
   case 0:                      //get
 
     switch (arg_ref_protocol) {
-    case CMD_CONFIG_LOGGING_SPLITTING_NNTP:
-
-      status = Cli_RecordGetInt("proxy.config.log2.separate_nntp_logs", &int_val);
-      if (status) {
-        return status;
-      }
-      if (Cli_PrintEnable("", int_val) == CLI_ERROR) {
-        return CLI_ERROR;
-      }
-      return CLI_OK;
     case CMD_CONFIG_LOGGING_SPLITTING_ICP:
       status = Cli_RecordGetInt("proxy.config.log2.separate_icp_logs", &int_val);
       if (status) {
@@ -6004,13 +5687,6 @@ ConfigLoggingSplitting(int arg_ref_protocol, int arg_ref_on_off, int setvar)
       }
 
       switch (arg_ref_protocol) {
-      case CMD_CONFIG_LOGGING_SPLITTING_NNTP:
-        status = Cli_RecordSetInt("proxy.config.log2.separate_nntp_logs", int_val, &action_need);
-        if (status) {
-          return status;
-        }
-        return (Cli_ConfigEnactChanges(action_need));
-
       case CMD_CONFIG_LOGGING_SPLITTING_ICP:
         status = Cli_RecordSetInt("proxy.config.log2.separate_icp_logs", int_val, &action_need);
         if (status) {

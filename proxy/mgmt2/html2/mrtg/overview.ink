@@ -103,16 +103,6 @@
         </tr>
         <tr align="center"> 
           <td align=center class="bodyText">
-            NNTP Client / Server Connections:<BR>
-            <A HREF="nccon.html"><IMG HEIGHT=88 WIDTH=325 SRC="nccon-day.png"></A>
-          </td>
-          <td align=center class="bodyText">
-            NNTP Hit Rate:<BR>
-            <A HREF="ndoc.html"><IMG HEIGHT=88 WIDTH=325 SRC="ndoc-day.png"></A>
-          </td>
-        </tr>
-        <tr align="center"> 
-          <td align=center class="bodyText">
             FTP Client / Server Connections:<BR>
             <A HREF="fccon.html"><IMG HEIGHT=88 WIDTH=325 SRC="fccon-day.png"></A>
           </td>

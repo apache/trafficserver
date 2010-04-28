@@ -1431,8 +1431,6 @@ fileUpdated(char *fname)
   } else if (strcmp(fname, "proxy.config.body_factory.template_sets_dir") == 0) {
     lmgmt->signalFileChange("proxy.config.body_factory.template_sets_dir");
 
-  } else if (strcmp(fname, "nntp_config.xml") == 0) {
-    lmgmt->signalFileChange("proxy.config.nntp.config_file");
   } else if (strcmp(fname, "stats.config.xml") == 0) {
 #if defined(STATPRO)
     if (statProcessor) {

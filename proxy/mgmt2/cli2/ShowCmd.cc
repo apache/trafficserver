@@ -273,79 +273,6 @@ Cmd_ShowHttp(ClientData clientData, Tcl_Interp * interp, int argc, const char *a
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ShowNntp
-//
-// This is the callback function for the "show:nntp" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowNntp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  INKString plugin_name = NULL;
-  INKError status = INK_ERR_OKAY;
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  Cli_Debug("Cmd_ShowNntp\n");
-  status = Cli_RecordGetString("proxy.config.nntp.plugin_name", &plugin_name);
-  if (status != INK_ERR_OKAY) {
-    return status;
-  }
-  if (Cli_CheckPluginStatus(plugin_name) != CLI_OK) {
-    Cli_Printf("NNTP is not installed.\n\n");
-    return CMD_ERROR;
-  };
-
-  cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable;
-
-  cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-
-  if (argtable[0].parsed_args != CLI_PARSED_ARGV_END) {
-    if (argtable[0].parsed_args == CMD_SHOW_NNTP_CONFIG) {
-      return (ShowNntpConfig());
-    }
-#if 0
-    if (argtable[0].parsed_args == CMD_SHOW_NNTP_SERVERS) {
-      return (ShowNntpServers());
-    } else if (argtable[0].parsed_args == CMD_SHOW_NNTP_ACCESS) {
-      return (ShowNntpAccess());
-    }
-#endif
-    Cli_Error(ERR_INVALID_COMMAND);
-    return CMD_ERROR;
-  }
-  return (ShowNntp());
-}
-
-int
-CmdArgs_ShowNntp()
-{
-  createArgument("config-xml", 1, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_SHOW_NNTP_CONFIG, "NNTP Configuration", (char *) NULL);
-#if 0
-  createArgument("servers", 1, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_SHOW_NNTP_SERVERS, "NNTP Server Configuration", (char *) NULL);
-  createArgument("access", 1, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_SHOW_NNTP_ACCESS, "NNTP Access Configuration", (char *) NULL);
-#endif
-  return 0;
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ShowFtp
 //
 // This is the callback function for the "show:ftp" command.
@@ -1137,46 +1064,6 @@ Cmd_ShowHttpStats(ClientData clientData, Tcl_Interp * interp, int argc, const ch
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ShowNntpStats
-//
-// This is the callback function for the "show:nntp-stats" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowNntpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  INKString plugin_name = NULL;
-  INKError status = INK_ERR_OKAY;
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  Cli_Debug("Cmd_ShowNntpStats\n");
-
-  status = Cli_RecordGetString("proxy.config.nntp.plugin_name", &plugin_name);
-  if (status != INK_ERR_OKAY) {
-    return status;
-  }
-  if (Cli_CheckPluginStatus(plugin_name) != CLI_OK) {
-    Cli_Printf("NNTP is not installed.\n\n");
-    return CMD_ERROR;
-  };
-
-  return (ShowNntpStats());
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ShowFtpStats
 //
 // This is the callback function for the "show:ftp-stats" command.
@@ -1649,7 +1536,6 @@ ShowPorts()
   INKInt cluster = -1;
   INKInt cluster_rs = -1;
   INKInt cluster_mc = -1;
-  INKInt nntp_server = -1;
   INKInt ftp_server = -1;
   INKInt socks_server = -1;
   INKInt icp = -1;
@@ -1664,7 +1550,6 @@ ShowPorts()
   Cli_RecordGetInt("proxy.config.cluster.cluster_port", &cluster);
   Cli_RecordGetInt("proxy.config.cluster.rsport", &cluster_rs);
   Cli_RecordGetInt("proxy.config.cluster.mcport", &cluster_mc);
-  Cli_RecordGetInt("proxy.config.nntp.server_port", &nntp_server);
   Cli_RecordGetInt("proxy.config.ftp.proxy_server_port", &ftp_server);
   Cli_RecordGetString("proxy.config.http.ssl_ports", &ssl);
   Cli_RecordGetInt("proxy.config.socks.socks_server_port", &socks_server);
@@ -1679,7 +1564,6 @@ ShowPorts()
   Cli_Printf("Cluster Port ----------- %d\n", cluster);
   Cli_Printf("Cluster RS Port -------- %d\n", cluster_rs);
   Cli_Printf("Cluster MC Port -------- %d\n", cluster_mc);
-  Cli_Printf("NNTP Server Port ------- %d\n", nntp_server);
   Cli_Printf("FTP Proxy Server Port -- %d\n", ftp_server);
   Cli_Printf("SSL Ports -------------- %s\n", (ssl != NULL) ? ssl : "none");
   Cli_Printf("SOCKS Server Port ------ %d\n", socks_server);
@@ -1831,180 +1715,6 @@ ShowHttp()
   return CLI_OK;
 }
 
-// show nntp sub-command
-int
-ShowNntp()
-{
-  // declare and initialize variables
-
-  INKInt nntp_enabled = -1;
-  INKInt nntp_server = -1;
-  INKInt nntp_server_port = 119;
-  INKString connect_msg_allow = NULL;
-  INKString connect_msg_disallow = NULL;
-  INKInt nntp_posting = -1;
-  INKInt nntp_access_control = -1;
-  INKInt nntp_v2_auth = -1;
-  INKInt nntp_run_local_auth_server = -1;
-  INKInt nntp_clustering = -1;
-  INKInt nntp_allow_feeds = -1;
-  INKInt nntp_access_logs = -1;
-  INKInt nntp_bg_posting = -1;
-  INKInt nntp_obey_control_cancel = -1;
-  INKInt nntp_obey_control_newgroup = -1;
-  INKInt nntp_obey_control_rmgroup = -1;
-  INKInt nntp_inactivity_timeout = 600;
-  INKInt nntp_check_newgrp_every = 86400;
-  INKInt nntp_check_cancelled_articles_every = 3600;
-  INKInt nntp_check_parent_server_every = 300;
-  INKInt nntp_check_cluster_every = 60;
-  INKInt nntp_check_pull_groups_every = 600;
-  INKString nntp_auth_server_hostname = NULL;
-  INKInt nntp_auth_server_port = 0;
-  INKInt nntp_local_authserver_timeout = 50000;
-  INKInt nntp_client_speed_throttle = 0;
-
-  // Since so much code is ifdef'ed out, we get tons of warnings here.
-  // Lets avoid those for now ... /leif
-  NOWARN_UNUSED(nntp_server);
-  NOWARN_UNUSED(nntp_server_port);
-  NOWARN_UNUSED(connect_msg_allow);
-  NOWARN_UNUSED(connect_msg_disallow);
-  NOWARN_UNUSED(nntp_posting);
-  NOWARN_UNUSED(nntp_access_control);
-  NOWARN_UNUSED(nntp_v2_auth);
-  NOWARN_UNUSED(nntp_run_local_auth_server);
-  NOWARN_UNUSED(nntp_clustering);
-  NOWARN_UNUSED(nntp_allow_feeds);
-  NOWARN_UNUSED(nntp_access_logs);
-  NOWARN_UNUSED(nntp_bg_posting);
-  NOWARN_UNUSED(nntp_check_cluster_every);
-  NOWARN_UNUSED(nntp_auth_server_hostname);
-  NOWARN_UNUSED(nntp_auth_server_port);
-  NOWARN_UNUSED(nntp_local_authserver_timeout);
-  NOWARN_UNUSED(nntp_client_speed_throttle);
-
-  // retrieve values
-
-  Cli_RecordGetInt("proxy.config.nntp.cache_enabled", &nntp_enabled);
-#if 0
-  Cli_RecordGetInt("proxy.config.nntp.enabled", &nntp_server);
-  Cli_RecordGetInt("proxy.config.nntp.server_port", &nntp_server_port);
-  Cli_RecordGetString("proxy.config.nntp.posting_ok_message", &connect_msg_allow);
-  Cli_RecordGetString("proxy.config.nntp.posting_not_ok_message", &connect_msg_disallow);
-  Cli_RecordGetInt("proxy.config.nntp.posting_enabled", &nntp_posting);
-  Cli_RecordGetInt("proxy.config.nntp.access_control_enabled", &nntp_access_control);
-  Cli_RecordGetInt("proxy.config.nntp.v2_authentication", &nntp_v2_auth);
-  Cli_RecordGetInt("proxy.config.nntp.run_local_authentication_server", &nntp_run_local_auth_server);
-  Cli_RecordGetInt("proxy.config.nntp.cluster_enabled", &nntp_clustering);
-  Cli_RecordGetInt("proxy.config.nntp.feed_enabled", &nntp_allow_feeds);
-  Cli_RecordGetInt("proxy.config.nntp.logging_enabled", &nntp_access_logs);
-  Cli_RecordGetInt("proxy.config.nntp.background_posting_enabled", &nntp_bg_posting);
-#endif
-  Cli_RecordGetInt("proxy.config.nntp.obey_control_cancel", &nntp_obey_control_cancel);
-  Cli_RecordGetInt("proxy.config.nntp.obey_control_newgroup", &nntp_obey_control_newgroup);
-  Cli_RecordGetInt("proxy.config.nntp.obey_control_rmgroup", &nntp_obey_control_rmgroup);
-  Cli_RecordGetInt("proxy.config.nntp.inactivity_timeout", &nntp_inactivity_timeout);
-  Cli_RecordGetInt("proxy.config.nntp.check_newgroups_every", &nntp_check_newgrp_every);
-  Cli_RecordGetInt("proxy.config.nntp.check_cancels_every", &nntp_check_cancelled_articles_every);
-  Cli_RecordGetInt("proxy.config.nntp.group_check_parent_every", &nntp_check_parent_server_every);
-  Cli_RecordGetInt("proxy.config.nntp.check_pull_every", &nntp_check_pull_groups_every);
-#if 0
-  Cli_RecordGetInt("proxy.config.nntp.group_check_cluster_every", &nntp_check_cluster_every);
-  Cli_RecordGetString("proxy.config.nntp.authorization_hostname", &nntp_auth_server_hostname);
-  Cli_RecordGetInt("proxy.config.nntp.authorization_port", &nntp_auth_server_port);
-  Cli_RecordGetInt("proxy.config.nntp.authorization_server_timeout", &nntp_local_authserver_timeout);
-  Cli_RecordGetInt("proxy.config.nntp.client_speed_throttle", &nntp_client_speed_throttle);
-#endif
-  // display results
-
-  Cli_Printf("\n");
-  Cli_PrintEnable("NNTP Caching --------------------------- ", nntp_enabled);
-#if 0
-  Cli_PrintEnable("NNTP Server  --------------------------- ", nntp_server);
-  if (nntp_enabled == 1)
-    Cli_Printf("NNTP Server Port ----------------------- %d\n", nntp_server_port);
-  if (connect_msg_allow)
-    Cli_Printf("Connect Message ------------------------ %s\n", connect_msg_allow);
-  if (connect_msg_disallow)
-    Cli_Printf("Connect Message ------------------------ %s\n", connect_msg_disallow);
-#endif
-  Cli_Printf("NNTP Options:\n");
-#if 0
-  Cli_PrintEnable("  Posting ------------------------------ ", nntp_posting);
-  Cli_PrintEnable("  Access Control ----------------------- ", nntp_access_control);
-  Cli_PrintEnable("  V2 Authentication -------------------- ", nntp_v2_auth);
-  Cli_PrintEnable("  Local Auth. Server ------------------- ", nntp_run_local_auth_server);
-  Cli_PrintEnable("  Clustering --------------------------- ", nntp_clustering);
-  Cli_PrintEnable("  Allow feeds -------------------------- ", nntp_allow_feeds);
-  Cli_PrintEnable("  Access Logs -------------------------- ", nntp_access_logs);
-  Cli_PrintEnable("  Background Posting ------------------- ", nntp_bg_posting);
-#endif
-  Cli_PrintEnable("  Obey Cancel Control ------------------ ", nntp_obey_control_cancel);
-  Cli_PrintEnable("  Obey NewGroups Control --------------- ", nntp_obey_control_newgroup);
-  Cli_PrintEnable("  Obey RmGroups Control ---------------- ", nntp_obey_control_rmgroup);
-  Cli_PrintEnable("Inactivity Timeout --------------------- ", nntp_inactivity_timeout);
-  Cli_Printf("Check for New Groups Every ------------- %d s\n", nntp_check_newgrp_every);
-  Cli_Printf("Check for Cancelled Articles Every------ %d s\n", nntp_check_cancelled_articles_every);
-  Cli_Printf("Check Parent NNTP Server Every---------- %d s\n", nntp_check_parent_server_every);
-  Cli_Printf("Check Pull Groups Every ---------------- %d s\n", nntp_check_pull_groups_every);
-#if 0
-  Cli_Printf("Check Cluster Every -------------------- %d s\n", nntp_check_cluster_every);
-  if (nntp_auth_server_hostname) {
-    Cli_Printf("Authentication Server Host ------------- %s\n", nntp_auth_server_hostname);
-    Cli_Printf("Authentication Server Port ------------- %d\n", nntp_auth_server_port);
-  }
-  Cli_Printf("Local Authentication Server Timeout ---- %d ms\n", nntp_local_authserver_timeout);
-  Cli_Printf("Client Speed Throttle ------------------ %d bytes/s\n", nntp_client_speed_throttle);
-#endif
-  Cli_Printf("\n");
-
-  return CLI_OK;
-}
-
-// show nntp config sub-command
-int
-ShowNntpConfig()
-{
-  INKError status = INK_ERR_OKAY;
-  Cli_Printf("\n");
-  // display nntp_config.xml
-  Cli_Printf("nntp_config.xml\n" "-------------------\n");
-  status = Cli_DisplayRules(INK_FNAME_NNTP_CONFIG_XML);
-  Cli_Printf("\n");
-  return CLI_OK;
-}
-
-#if 0
-// show nntp servers sub-command
-int
-ShowNntpServers()
-{
-  INKError status = INK_ERR_OKAY;
-  Cli_Printf("\n");
-  // display rules from nntp_servers.config
-  Cli_Printf("nntp_servers.config rules\n" "-------------------\n");
-  status = Cli_DisplayRules(INK_FNAME_NNTP_SERVERS);
-  Cli_Printf("\n");
-
-  return status;
-}
-
-// show nntp access sub-command
-int
-ShowNntpAccess()
-{
-  INKError status = INK_ERR_OKAY;
-  Cli_Printf("\n");
-  // display rules from nntp_access.config
-  Cli_Printf("nntp_access.config rules\n" "-------------------\n");
-  status = Cli_DisplayRules(INK_FNAME_NNTP_ACCESS);
-  Cli_Printf("\n");
-
-  return status;
-}
-#endif
-
 // show ftp sub-command
 int
 ShowFtp()
@@ -2120,7 +1830,6 @@ ShowCache()
 
   INKInt cache_http = -1;
   INKInt cache_ftp = -1;
-  INKInt cache_nntp = -1;
   INKInt cache_bypass = -1;
   INKInt max_doc_size = -1;
   INKInt when_to_reval = -1;
@@ -2139,8 +1848,6 @@ ShowCache()
 
   Cli_RecordGetInt("proxy.config.http.cache.http", &cache_http);
   Cli_RecordGetInt("proxy.config.http.cache.ftp", &cache_ftp);
-  Cli_RecordGetInt("proxy.config.nntp.cache_enabled", &cache_nntp);
-  Cli_RecordGetInt("proxy.config.http.cache.ignore_client_no_cache", &cache_bypass);
   Cli_RecordGetInt("proxy.config.cache.max_doc_size", &max_doc_size);
   Cli_RecordGetInt("proxy.config.http.cache.when_to_revalidate", &when_to_reval);
   Cli_RecordGetInt("proxy.config.http.cache.required_headers", &reqd_headers);
@@ -2162,8 +1869,6 @@ ShowCache()
   Cli_PrintEnable("HTTP Caching --------------------------- ", cache_http);
 
   Cli_PrintEnable("FTP Caching ---------------------------- ", cache_ftp);
-
-  Cli_PrintEnable("NNTP Caching --------------------------- ", cache_nntp);
 
   Cli_PrintEnable("Ignore User Requests To Bypass Cache --- ", cache_bypass);
 
@@ -2407,7 +2112,6 @@ ShowLogging()
   INKString extended2_file_name = NULL;
   INKString extended2_file_header = NULL;
 
-  INKInt nntp_log = 0;
   INKInt icp_log = 0;
   INKInt http_host_log = 0;
   INKInt custom_log = 0;
@@ -2448,7 +2152,6 @@ ShowLogging()
   Cli_RecordGetString("proxy.config.log2.extended2_log_name", &extended2_file_name);
   Cli_RecordGetString("proxy.config.log2.extended2_log_header", &extended2_file_header);
 
-  Cli_RecordGetInt("proxy.config.log2.separate_nntp_logs", &nntp_log);
   Cli_RecordGetInt("proxy.config.log2.separate_icp_logs", &icp_log);
   Cli_RecordGetInt("proxy.config.log2.separate_host_logs", &http_host_log);
   Cli_RecordGetInt("proxy.config.log2.separate_host_logs", &custom_log);
@@ -2533,7 +2236,6 @@ ShowLogging()
   Cli_Printf("  File Header ---------------------------- %s\n", extended2_file_header);
 
   Cli_Printf("\nSplitting\n");
-  Cli_PrintEnable("  NNTP Log Splitting --------------------- ", nntp_log);
   Cli_PrintEnable("  ICP Log Splitting ---------------------- ", icp_log);
   Cli_PrintEnable("  HTTP Host Log Splitting ---------------- ", http_host_log);
   Cli_PrintEnable("\nCustom Logs ------------------------------ ", custom_log);
@@ -3062,72 +2764,6 @@ ShowHttpStats()
   Cli_Printf("Total Header Bytes ------- %d MB\n", origin_server_response_header_total_size / (1024 * 1024));
   Cli_Printf("Total Connections -------- %d\n", current_server_connections);
   Cli_Printf("Transactins In Progress -- %d\n", current_server_transactions);
-  Cli_Printf("\n");
-
-  return CLI_OK;
-}
-
-// show proxy-stats sub-command
-int
-ShowNntpStats()
-{
-  INKInt client_open_connections = -1;
-  INKInt client_bytes_read = -1;
-  INKInt client_bytes_written = -1;
-  INKInt server_open_connections = -1;
-  INKInt server_bytes_read = -1;
-  INKInt server_bytes_written = -1;
-  INKInt article_hits = -1;
-  INKInt article_misses = -1;
-  INKInt overview_hits = -1;
-  INKInt overview_refreshes = -1;
-  INKInt group_hits = -1;
-  INKInt group_refreshes = -1;
-  INKInt posts = -1;
-  INKInt post_bytes = -1;
-  INKInt pull_bytes = -1;
-  INKInt feed_bytes = -1;
-
-  // get values
-
-  Cli_RecordGetInt("proxy.process.nntp.client_connections_currently_open", &client_open_connections);
-  Cli_RecordGetInt("proxy.process.nntp.client_bytes_read", &client_bytes_read);
-  Cli_RecordGetInt("proxy.process.nntp.client_bytes_written", &client_bytes_written);
-  Cli_RecordGetInt("proxy.process.nntp.server_connections_currently_open", &server_open_connections);
-  Cli_RecordGetInt("proxy.process.nntp.server_bytes_read", &server_bytes_read);
-  Cli_RecordGetInt("proxy.process.nntp.server_bytes_written", &server_bytes_written);
-  Cli_RecordGetInt("proxy.process.nntp.article_hits", &article_hits);
-  Cli_RecordGetInt("proxy.process.nntp.article_misses", &article_misses);
-  Cli_RecordGetInt("proxy.process.nntp.overview_hits", &overview_hits);
-  Cli_RecordGetInt("proxy.process.nntp.overview_refreshes", &overview_refreshes);
-  Cli_RecordGetInt("proxy.process.nntp.group_hits", &group_hits);
-  Cli_RecordGetInt("proxy.process.nntp.group_refreshes", &group_refreshes);
-  Cli_RecordGetInt("proxy.process.nntp.posts", &posts);
-  Cli_RecordGetInt("proxy.process.nntp.post_bytes", &post_bytes);
-  Cli_RecordGetInt("proxy.process.nntp.pull_bytes", &pull_bytes);
-  Cli_RecordGetInt("proxy.process.nntp.feed_bytes", &feed_bytes);
-
-  // display results
-  Cli_Printf("\n");
-  Cli_Printf("--Client--\n");
-  Cli_Printf("Open Connections ---- %d\n", client_open_connections);
-  Cli_Printf("Bytes Read ---------- %d\n", client_bytes_read);
-  Cli_Printf("Bytes Written ------- %d\n", client_bytes_written);
-  Cli_Printf("--Server--\n");
-  Cli_Printf("Open Connections ---- %d\n", server_open_connections);
-  Cli_Printf("Bytes Read ---------- %d\n", server_bytes_read);
-  Cli_Printf("Bytes Written ------- %d\n", server_bytes_written);
-  Cli_Printf("--Operations--\n");
-  Cli_Printf("Article Hits -------- %d\n", article_hits);
-  Cli_Printf("Article Misses ------ %d\n", article_misses);
-  Cli_Printf("Overview Hits ------- %d\n", overview_hits);
-  Cli_Printf("Overview Refreshes -- %d\n", overview_refreshes);
-  Cli_Printf("Group Hits ---------- %d\n", group_hits);
-  Cli_Printf("Group Refreshes ----- %d\n", group_refreshes);
-  Cli_Printf("Posts --------------- %d\n", posts);
-  Cli_Printf("Post Bytes ---------- %d\n", post_bytes);
-  Cli_Printf("Pull Bytes ---------- %d\n", pull_bytes);
-  Cli_Printf("Feed Bytes ---------- %d\n", feed_bytes);
   Cli_Printf("\n");
 
   return CLI_OK;

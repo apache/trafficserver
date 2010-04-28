@@ -54,7 +54,6 @@ typedef enum
   CMD_CONFIG_PORTS_CLUSTER,
   CMD_CONFIG_PORTS_CLUSTER_RS,
   CMD_CONFIG_PORTS_CLUSTER_MC,
-  CMD_CONFIG_PORTS_NNTP_SERVER,
   CMD_CONFIG_PORTS_FTP_SERVER,
   CMD_CONFIG_PORTS_SSL,
   CMD_CONFIG_PORTS_SOCKS_SERVER,
@@ -182,7 +181,6 @@ typedef enum
   CMD_CONFIG_CACHE_ON,
   CMD_CONFIG_CACHE_OFF,
   CMD_CONFIG_CACHE_HTTP,
-  CMD_CONFIG_CACHE_NNTP,
   CMD_CONFIG_CACHE_FTP,
   CMD_CONFIG_CACHE_IGNORE_BYPASS,
   CMD_CONFIG_CACHE_MAX_OBJECT_SIZE,
@@ -265,7 +263,6 @@ typedef enum
   CMD_CONFIG_LOGGING_FILE,
   CMD_CONFIG_LOGGING_HEADER,
   CMD_CONFIG_LOGGING_SPLITTING,
-  CMD_CONFIG_LOGGING_SPLITTING_NNTP,
   CMD_CONFIG_LOGGING_SPLITTING_ICP,
   CMD_CONFIG_LOGGING_SPLITTING_HTTP,
   CMD_CONFIG_LOGGING_CUSTOM,
@@ -289,35 +286,6 @@ typedef enum
   CMD_CONFIG_NETWORK_START,
   CMD_CONFIG_NETWORK_PROTOCOL,
   CMD_CONFIG_GATEWAY,
-  CMD_CONFIG_NNTP_PORT,
-  CMD_CONFIG_NNTP_CONNECTMSG,
-  CMD_CONFIG_NNTP_POSTING,
-  CMD_CONFIG_NNTP_NONPOSTING,
-  CMD_CONFIG_NNTP_POSTINGSTATUS,
-  CMD_CONFIG_NNTP_ACCESSCONTROL,
-  CMD_CONFIG_NNTP_v2AUTH,
-  CMD_CONFIG_NNTP_LOCALAUTH,
-  CMD_CONFIG_NNTP_CLUSTERING,
-  CMD_CONFIG_NNTP_ALLOWFEEDS,
-  CMD_CONFIG_NNTP_ACCESSLOGS,
-  CMD_CONFIG_NNTP_BACKPOSTING,
-  CMD_CONFIG_NNTP_OBEYCANCEL,
-  CMD_CONFIG_NNTP_OBEYNEWGROUPS,
-  CMD_CONFIG_NNTP_OBEYRMGROUPS,
-  CMD_CONFIG_NNTP_STATUS,
-  CMD_CONFIG_NNTP_CHECKNEWGROUPS,
-  CMD_CONFIG_NNTP_CHECKCANCELLED,
-  CMD_CONFIG_NNTP_INACTIVETIMEOUT,
-  CMD_CONFIG_NNTP_CHECKPARENT,
-  CMD_CONFIG_NNTP_CHECKCLUSTER,
-  CMD_CONFIG_NNTP_CHECKPULL,
-  CMD_CONFIG_NNTP_AUTHSERVER,
-  CMD_CONFIG_NNTP_AUTHPORT,
-  CMD_CONFIG_NNTP_AUTHTIMEOUT,
-  CMD_CONFIG_NNTP_CLIENTTHROTTLE,
-  CMD_CONFIG_NNTP_SERVERS,
-  CMD_CONFIG_NNTP_ACCESS,
-  CMD_CONFIG_NNTP_CONFIG_XML,
   CMD_CONFIG_NTLM_STATUS,
   CMD_CONFIG_NTLM_DOMAIN_CTRL,
   CMD_CONFIG_NTLM_NTDOMAIN,
@@ -638,31 +606,6 @@ int Cmd_ConfigSocks(ClientData clientData, Tcl_Interp * interp, int argc, const 
 // Register "config:socks" arguments with the Tcl interpreter.
 //
 int CmdArgs_ConfigSocks();
-
-////////////////////////////////////////////////////////////////
-// Cmd_ConfigNNTP
-//
-// This is the callback function for the "config:nntp" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int Cmd_ConfigNNTP(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-
-////////////////////////////////////////////////////////////////
-// CmdArgs_ConfigNNTP
-//
-// Register "config:nntp" arguments with the Tcl interpreter.
-//
-int CmdArgs_ConfigNNTP();
-
-///////////////////////////////////////////////////////////////
-// Functions to implement config:nntp
-//
-int ConfigNNTPConnectmsg(int option, char *string);
 
 ////////////////////////////////////////////////////////////////
 // Cmd_ConfigClock

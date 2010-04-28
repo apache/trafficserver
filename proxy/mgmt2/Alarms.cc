@@ -57,7 +57,6 @@ const char *alarmText[] = {
   "Cache Warning",
   "Logging Error",
   "Logging Warning",
-  "NNTP Error",
   "Mgmt Debugging Alarm",
   "Configuration File Update Failed",
   "Unable to Establish Manager User-Interface Services",

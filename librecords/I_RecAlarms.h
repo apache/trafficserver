@@ -36,7 +36,7 @@
 #define REC_ALARM_PROXY_CACHE_WARNING           9
 #define REC_ALARM_PROXY_LOGGING_ERROR           10
 #define REC_ALARM_PROXY_LOGGING_WARNING         11
-#define REC_ALARM_PROXY_NNTP_ERROR	        12
+// Currently unused: 12
 #define REC_ALARM_REC_TEST                      13
 #define REC_ALARM_CONFIG_UPDATE_FAILED          14
 #define REC_ALARM_WEB_ERROR                     15

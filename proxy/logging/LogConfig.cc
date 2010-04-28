@@ -118,7 +118,6 @@ LogConfig::setup_default_values()
   logfile_dir = xstrdup(".");
 
   separate_icp_logs = 1;
-  separate_nntp_logs = 1;
   separate_mixt_logs = -1;
   separate_host_logs = FALSE;
 
@@ -423,16 +422,11 @@ LogConfig::read_configuration_variables()
   // SPLITTING
   // 0 means no splitting
   // 1 means splitting
-  // for icp, nntp, and mixt 
+  // for icp and mixt 
   //   -1 means filter out (do not log and do not create split file)
   val = (int) LOG_ConfigReadInteger("proxy.config.log2.separate_icp_logs");
   if (val == 0 || val == 1 || val == -1) {
     separate_icp_logs = val;
-  };
-
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.separate_nntp_logs");
-  if (val == 0 || val == 1 || val == -1) {
-    separate_nntp_logs = val;
   };
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log2.separate_mixt_logs");
@@ -868,7 +862,6 @@ LogConfig::display(FILE * fd)
   fprintf(fd, "   extended2_log_name = %s\n", extended2_log_name);
   fprintf(fd, "   extended2_log_header = %s\n", extended2_log_header ? extended2_log_header : "<no header defined>");
   fprintf(fd, "   separate_icp_logs = %d\n", separate_icp_logs);
-  fprintf(fd, "   separate_nntp_logs = %d\n", separate_nntp_logs);
   fprintf(fd, "   separate_mixt_logs = %d\n", separate_mixt_logs);
   fprintf(fd, "   separate_host_logs = %d\n", separate_host_logs);
   fprintf(fd, "   collation_mode = %d\n", collation_mode);
@@ -1060,32 +1053,23 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
 LogFilter *
 LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
 {
-  if (!(separate_nntp_logs || separate_icp_logs || separate_mixt_logs)) {
+  if (!(separate_icp_logs || separate_mixt_logs)) {
     return NULL;
   }
   // http MUST be last entry
   enum
-  { nntp = 0, icp, mixt, http };
-  unsigned value[] = { LOG_ENTRY_NNTP, LOG_ENTRY_ICP,
+  { icp=0, mixt, http };
+  unsigned value[] = { LOG_ENTRY_ICP,
     LOG_ENTRY_MIXT, LOG_ENTRY_HTTP
   };
-  const char *name[] = { "nntp", "icp", "mixt", "http" };
-  const char *filter_name[] = { "__nntp__", "__icp__", "__mixt__", "__http__" };
+  const char *name[] = { "icp", "mixt", "http" };
+  const char *filter_name[] = { "__icp__", "__mixt__", "__http__" };
   unsigned filter_val[http];    // protocols to reject
   size_t n = 0;
 
   LogFilter *filter[1];
   LogField *etype_field = Log::global_field_list.find_by_symbol("etype");
   ink_assert(etype_field);
-
-  if (separate_nntp_logs) {
-    if (separate_nntp_logs == 1) {
-      filter[0] = NEW(new LogFilterInt(filter_name[nntp], etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[nntp]));
-      create_pre_defined_objects_with_filter(pre_def_info_list, 1, filter, name[nntp]);
-      delete filter[0];
-    }
-    filter_val[n++] = value[nntp];
-  }
 
   if (separate_icp_logs) {
     if (separate_icp_logs == 1) {
@@ -1389,8 +1373,6 @@ LogConfig::register_configs()
 
   RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.separate_icp_logs", 0, RECU_DYNAMIC, RECC_NULL, NULL);
 
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.separate_nntp_logs", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
   RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.separate_mixt_logs", 0, RECU_DYNAMIC, RECC_NULL, NULL);
 
   RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.separate_host_logs", 0, RECU_DYNAMIC, RECC_NULL, NULL);
@@ -1505,7 +1487,6 @@ LogConfig::register_config_callbacks()
 
   // SPLITTING
   LOG_RegisterConfigUpdateFunc("proxy.config.log2.separate_icp_logs", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log2.separate_nntp_logs", &LogConfig::reconfigure, NULL);
 //    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.separate_mixt_logs",
 //                                  &LogConfig::reconfigure, NULL);
   LOG_RegisterConfigUpdateFunc("proxy.config.log2.separate_host_logs", &LogConfig::reconfigure, NULL);
@@ -2612,9 +2593,7 @@ LogConfig::read_xml_log_config(int from_memory)
           size_t numValid = 0;
           char *t;
           while (t = tok.getNext(), t != NULL) {
-            if (strcasecmp(t, "nntp") == 0) {
-              val_array[numValid++] = LOG_ENTRY_NNTP;
-            } else if (strcasecmp(t, "icp") == 0) {
+            if (strcasecmp(t, "icp") == 0) {
               val_array[numValid++] = LOG_ENTRY_ICP;
             } else if (strcasecmp(t, "mixt") == 0) {
               val_array[numValid++] = LOG_ENTRY_MIXT;

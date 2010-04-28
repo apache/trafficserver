@@ -27,37 +27,6 @@ _HEADER
   //
   // this one's in the state machine currently
   //
-  // Dynamic NNTP Stats
-  //
-_D(nntp_client_connections_currently_open_stat)
-_D(nntp_client_bytes_read_stat)
-_D(nntp_client_bytes_written_stat)
-_D(nntp_server_connections_currently_open_stat)
-_D(nntp_server_bytes_read_stat)
-_D(nntp_server_article_bytes_read_stat)
-_D(nntp_server_overview_bytes_read_stat)
-_D(nntp_server_bytes_written_stat)
-_D(nntp_control_cancels_stat)
-_D(nntp_control_newgroups_stat)
-_D(nntp_control_rmgroups_stat)
-_D(nntp_cache_connections_currently_open_stat)
-    // NNTP Stats which could be Transaction Stats
-_D(nntp_client_connections_stat)
-_D(nntp_client_commands_stat)
-_D(nntp_server_connections_stat)
-_D(nntp_server_commands_stat)
-_D(nntp_article_hits_stat)
-_D(nntp_article_hits_ms_stat)
-_D(nntp_article_misses_stat)
-_D(nntp_article_misses_ms_stat)
-_D(nntp_overview_hits_stat)
-_D(nntp_overview_refreshes_stat)
-_D(nntp_group_hits_stat)
-_D(nntp_group_refreshes_stat)
-_D(nntp_posts_stat)
-_D(nntp_post_bytes_stat)
-_D(nntp_pull_bytes_stat)
-_D(nntp_feed_bytes_stat)
     //
     // Dynamic Cluster Stats
     //

@@ -696,43 +696,6 @@ print_mgmt_allow_ele(INKMgmtAllowEle * ele)
 }
 
 void
-print_nntp_access_ele(INKNntpAccessEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-  printf("Client Group: %d\n", ele->client_t);
-  printf("Clients: %s\n", ele->clients);
-  printf("Access Type: %d\n", ele->access);
-  if (ele->authenticator)
-    printf("authenticator: %s\n", ele->authenticator);
-  if (ele->user)
-    printf("user: %s\n", ele->user);
-  if (ele->pass)
-    printf("pass: %s\n", ele->pass);
-  if (ele->group_wildmat)
-    print_string_list(ele->group_wildmat);
-  printf("deny posting? %d\n", ele->deny_posting);
-}
-
-void
-print_nntp_servers_ele(INKNntpSrvrEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-  printf("NNTP server: %s\n", ele->hostname);
-  print_string_list(ele->group_wildmat);
-  printf("INKNntpTreatmentT: %d\n", ele->treatment);
-  printf("priority: %d\n", ele->priority);
-  if (ele->interface)
-    printf("interface: %s\n", ele->interface);
-
-}
-
-void
 print_parent_ele(INKParentProxyEle * ele)
 {
   if (!ele) {
@@ -1065,12 +1028,6 @@ print_ele_list(INKFileNameT file, INKCfgContext ctx)
     case INK_FNAME_MGMT_ALLOW:
       print_mgmt_allow_ele((INKMgmtAllowEle *) ele);
       break;
-    case INK_FNAME_NNTP_ACCESS:
-      print_nntp_access_ele((INKNntpAccessEle *) ele);
-      break;
-    case INK_FNAME_NNTP_SERVERS:
-      print_nntp_servers_ele((INKNntpSrvrEle *) ele);
-      break;
     case INK_FNAME_PARENT_PROXY:
       print_parent_ele((INKParentProxyEle *) ele);
       break;
@@ -1228,11 +1185,6 @@ test_action_need(void)
   INKRecordSetInt("proxy.config.cluster.cluster_port", 6666, &action);
   printf("[INKRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
          INK_ACTION_RESTART, action);
-
-  // RU_RESTART_TC record
-  INKRecordSetInt("proxy.config.nntp.enabled", 1, &action);
-  printf("[INKRecordSetInt] proxy.config.nntp.enabled\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         INK_ACTION_SHUTDOWN, action);
 
 }
 
@@ -1839,10 +1791,6 @@ test_cfg_context_get(char *args)
     file = INK_FNAME_LOGS_XML;
   } else if (strcmp(name, "mgmt_allow.config") == 0) {
     file = INK_FNAME_MGMT_ALLOW;
-  } else if (strcmp(name, "nntp_access.config") == 0) {
-    file = INK_FNAME_NNTP_ACCESS;
-  } else if (strcmp(name, "nntp_servers.config") == 0) {
-    file = INK_FNAME_NNTP_SERVERS;
   } else if (strcmp(name, "parent.config") == 0) {
     file = INK_FNAME_PARENT_PROXY;
   } else if (strcmp(name, "partition.config") == 0) {
@@ -1923,10 +1871,6 @@ test_cfg_context_move(char *args)
     file = INK_FNAME_LOGS_XML;
   } else if (strcmp(name, "mgmt_allow.config") == 0) {
     file = INK_FNAME_MGMT_ALLOW;
-  } else if (strcmp(name, "nntp_access.config") == 0) {
-    file = INK_FNAME_NNTP_ACCESS;
-  } else if (strcmp(name, "nntp_servers.config") == 0) {
-    file = INK_FNAME_NNTP_SERVERS;
   } else if (strcmp(name, "parent.config") == 0) {
     file = INK_FNAME_PARENT_PROXY;
   } else if (strcmp(name, "partition.config") == 0) {
@@ -2570,15 +2514,6 @@ set_stats()
   INKRecordSetInt("proxy.cluster.http.cache_total_hits", 110, &action);
   INKRecordSetInt("proxy.cluster.http.cache_total_misses", 110, &action);
   INKRecordSetInt("proxy.cluster.http.throughput", 110, &action);
-
-  INKRecordSetFloat("proxy.process.nntp.transaction_totaltime.miss_cold", 110, &action);
-  INKRecordSetFloat("proxy.process.nntp.transaction_totaltime.hit_fresh", 110, &action);
-
-  INKRecordSetInt("proxy.process.nntp.client_bytes_written", 110, &action);
-  INKRecordSetInt("proxy.process.nntp.client_bytes_read", 110, &action);
-  INKRecordSetInt("proxy.process.nntp.client_bytes_written", 110, &action);
-  INKRecordSetInt("proxy.process.nntp.server_connections_currently_open", 110, &action);
-
 }
 
 void
@@ -2648,14 +2583,6 @@ print_stats()
   fprintf(stderr, "%f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5, f6);
   fprintf(stderr, "%lld, %lld, %lld, %lld, %lld\n", i1, i2, i3, i4, i5);
 
-  INKRecordGetFloat("proxy.process.nntp.transf_totaltime.miss_cold", &f1);
-  INKRecordGetFloat("proxy.process.nntp.transf_totaltime.hit_fresh", &f2);
-
-  INKRecordGetInt("proxy.process.nntp.client_bytes_written", &i1);
-  INKRecordGetInt("proxy.process.nntp.client_bytes_read", &i2);
-  INKRecordGetInt("proxy.process.nntp.client_bytes_written", &i3);
-  INKRecordGetInt("proxy.process.nntp.server_connections_currently_open", &i4);
-
   fprintf(stderr, "PROCESS stats: \n");
   fprintf(stderr, "%f, %f\n", f1, f2);
   fprintf(stderr, "%lld, %lld, %lld, %lld\n", i1, i2, i3, i4);
@@ -2691,10 +2618,6 @@ sync_test()
     printf("INKRecordSet FAILED!\n");
   else
     printf("[INKRecordSet] proxy.config.http.cache.fuzz.probability=-0.3333\n");
-
-  INKRecordSetInt("proxy.config.nntp.cache_enabled", 0, &action);
-  printf("[INKRecordSetInt] proxy.config.nntp.enabled\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         INK_ACTION_SHUTDOWN, action);
 
 #if 1
   INKError ret;

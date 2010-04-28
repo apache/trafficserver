@@ -4634,9 +4634,6 @@ INKCacheKeyDataTypeSet(INKCacheKey key, INKCacheDataType type)
   case INK_CACHE_DATA_TYPE_HTTP:
     ((CacheInfo *) key)->frag_type = CACHE_FRAG_TYPE_HTTP;
     break;
-  case INK_CACHE_DATA_TYPE_NNTP:
-    ((CacheInfo *) key)->frag_type = CACHE_FRAG_TYPE_NNTP;
-    break;
   case INK_CACHE_DATA_TYPE_FTP:
     ((CacheInfo *) key)->frag_type = CACHE_FRAG_TYPE_FTP;
     break;
@@ -6961,9 +6958,6 @@ INKCacheDataTypeReady(INKCacheDataType type, int *is_ready)
   case INK_CACHE_DATA_TYPE_OTHER:      /* other maps to http */
   case INK_CACHE_DATA_TYPE_HTTP:
     frag_type = CACHE_FRAG_TYPE_HTTP;
-    break;
-  case INK_CACHE_DATA_TYPE_NNTP:
-    frag_type = CACHE_FRAG_TYPE_NNTP;
     break;
   case INK_CACHE_DATA_TYPE_FTP:
     frag_type = CACHE_FRAG_TYPE_FTP;

@@ -169,18 +169,6 @@ struct HttpTransactionStatsString_t
   char *name;
 };
 
-//
-// NNTP Transaction Stats
-//
-typedef enum
-{
-  NO_NNTP_TRANS_STATS = 0,
-  //
-  // What do I put here?
-  //
-  MAX_NNTP_TRANS_STATS
-} NntpTransactionStat_t;
-
 
 //
 // RNI Transaction Stats
@@ -394,11 +382,6 @@ struct ink_unprot_global_stat_t
     ink_assert (!(X & DYN_STAT_MASK)); \
     READ_GLOBAL_HTTP_TRANS_STAT(X,C,S); \
 }
-#define READ_NNTP_TRANS_STAT(X,C,S) \
-{ \
-    ink_assert (!(X & DYN_STAT_MASK)); \
-    READ_GLOBAL_NNTP_TRANS_STAT(X,C,S); \
-}
 #define READ_RNI_TRANS_STAT(X,C,S) \
 { \
     ink_assert (!(X & DYN_STAT_MASK)); \
@@ -438,17 +421,6 @@ struct ink_unprot_global_stat_t
 	global_http_trans_stats[i].sum += local_stat_struct_[i].value; \
     } \
     STAT_LOCK_RELEASE(&(global_http_trans_stat_lock)); \
-}
-
-#define UPDATE_NNTP_TRANS_STATS(local_stat_struct_) \
-{ \
-    int i; \
-    STAT_LOCK_ACQUIRE(&(global_nntp_trans_stat_lock)); \
-    for (i=NO_NTTP_TRANS_STATS; i<MAX_NTTP_TRANS_STATS; i++) { \
-	global_nntp_trans_stats[i].count += (ink_statval_t)1; \
-	global_nntp_trans_stats[i].sum += local_stat_struct_[i].value; \
-    } \
-    STAT_LOCK_RELEASE(&(global_nntp_trans_stat_lock)); \
 }
 
 #define UPDATE_RNI_TRANS_STATS(local_stat_struct_) \
@@ -559,11 +531,6 @@ global_dyn_stats[X].sum = 0
     C = global_http_trans_stats[X].count; \
     S = global_http_trans_stats[X].sum; \
 }
-#define READ_GLOBAL_NNTP_TRANS_STAT(X,C,S) \
-{ \
-    C = global_nntp_trans_stats[X].count; \
-    S = global_nntp_trans_stats[X].sum; \
-}
 #define READ_GLOBAL_RNI_TRANS_STAT(X,C,S) \
 { \
     C = global_rni_trans_stats[X].count; \
@@ -618,11 +585,6 @@ S = global_dyn_stats[X].sum;
 { \
     C = global_http_trans_stats[X].count; \
     S = global_http_trans_stats[X].sum; \
-}
-#define READ_GLOBAL_NNTP_TRANS_STAT(X,C,S) \
-{ \
-    C = global_nntp_trans_stats[X].count; \
-    S = global_nntp_trans_stats[X].sum; \
 }
 #define READ_GLOBAL_RNI_TRANS_STAT(X,C,S) \
 { \
@@ -692,11 +654,6 @@ global_dyn_stats[X].sum = S
 { \
     C = global_http_trans_stats[X].count; \
     S = global_http_trans_stats[X].sum; \
-}
-#define READ_GLOBAL_NNTP_TRANS_STAT(X,C,S) \
-{ \
-    C = global_nntp_trans_stats[X].count; \
-    S = global_nntp_trans_stats[X].sum; \
 }
 #define READ_GLOBAL_RNI_TRANS_STAT(X,C,S) \
 { \
@@ -769,8 +726,6 @@ void *dyn_stats_int_msecs_to_float_seconds_cb(void *data, void *res);
 //---------------------------------------------------------------------//
 extern ink_stat_lock_t global_http_trans_stat_lock;
 extern ink_unprot_global_stat_t global_http_trans_stats[MAX_HTTP_TRANS_STATS];
-extern ink_stat_lock_t global_nntp_trans_stat_lock;
-extern ink_unprot_global_stat_t global_nntp_trans_stats[MAX_NNTP_TRANS_STATS];
 extern inkcoreapi ink_stat_lock_t global_rni_trans_stat_lock;
 extern inkcoreapi ink_unprot_global_stat_t global_rni_trans_stats[MAX_RNI_TRANS_STATS];
 #ifndef USE_LOCKS_FOR_DYN_STATS

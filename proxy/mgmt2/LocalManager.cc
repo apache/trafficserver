@@ -698,9 +698,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
   case MGMT_SIGNAL_SYSTEM_ERROR:
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR, data_raw);
     break;
-  case MGMT_SIGNAL_NNTP_ERROR:
-    alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_NNTP_ERROR, data_raw);
-    break;
   case MGMT_SIGNAL_LOG_SPACE_CRISIS:
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_LOG_SPACE_CRISIS, data_raw);
     break;

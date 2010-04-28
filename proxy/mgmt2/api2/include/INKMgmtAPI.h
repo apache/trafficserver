@@ -336,16 +336,6 @@ typedef enum
     INK_MGMT_ALLOW_UNDEFINED
   } INKMgmtAllowT;
 
-  typedef enum                  /* access privileges to news articles cached by Traffic Server  */
-  {
-    INK_NNTP_ACC_ALLOW,
-    INK_NNTP_ACC_DENY,
-    INK_NNTP_ACC_BASIC,
-    INK_NNTP_ACC_GENERIC,
-    INK_NNTP_ACC_CUSTOM,
-    INK_NNTP_ACC_UNDEFINED
-  } INKNntpAccessT;
-
   typedef enum                  /* methods of specifying groups of clients */
   {
     INK_CLIENT_GRP_IP,          /* ip range */
@@ -353,17 +343,6 @@ typedef enum
     INK_CLIENT_GRP_HOSTNAME,    /* hostname */
     INK_CLIENT_GRP_UNDEFINED
   } INKClientGroupT;
-
-  typedef enum                  /* specifies how to treate specified host and news groups */
-  {
-    INK_NNTP_TRMT_FEED,         /* receive news feeds as parent NNTP receives news feeds */
-    INK_NNTP_TRMT_PUSH,         /* receive news feeds and cache articles on demand */
-    INK_NNTP_TRMT_PULL,         /* actively caches all articles specified at the specified frequency */
-    INK_NNTP_TRMT_PULLOVER,     /* actively pulls overview database for the newsgroups; retrives news articles on demand */
-    INK_NNTP_TRMT_DYNAMIC,      /* automatically decides if group should be pull, pullover, or demand-based retrieval */
-    INK_NNTP_TRMT_POST,         /* articles to be posted to specified news groups are sent to specified server */
-    INK_NNTP_TRMT_UNDEFINED
-  } INKNntpTreatmentT;
 
   typedef enum
   {
@@ -443,9 +422,6 @@ typedef enum
     INK_FNAME_IP_ALLOW,         /* ip_allow.config */
     INK_FNAME_LOGS_XML,         /* logs_xml.config */
     INK_FNAME_MGMT_ALLOW,       /* mgmt_allow.config */
-    INK_FNAME_NNTP_ACCESS,      /* nnpt_access.config */
-    INK_FNAME_NNTP_SERVERS,     /* nntp_servers.config */
-    INK_FNAME_NNTP_CONFIG_XML,  /* nntp_config.xml */
     INK_FNAME_PARENT_PROXY,     /* parent.config */
     INK_FNAME_PARTITION,        /* partition.config */
     INK_FNAME_PLUGIN,           /* plugin.config */
@@ -494,8 +470,6 @@ typedef enum
     INK_LOG_OBJECT,
     INK_LOG_FORMAT,
     INK_MGMT_ALLOW,             /* mgmt_allow.config */
-    INK_NNTP_ACCESS,            /* nntp_access.config */
-    INK_NNTP_SERVERS,           /* nntp_servers.config */
     INK_PP_PARENT,              /* parent.config */
     INK_PP_GO_DIRECT,
     INK_PARTITION,              /* partition.config */
@@ -842,38 +816,6 @@ typedef enum
     INKMgmtAllowT action;
   } INKMgmtAllowEle;
 
-/* nntp_access.config */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    INKClientGroupT client_t;   /* can specify client group by ip range, domain, or host name: INK_CLIENT_GRP_xxx */
-    char *clients;              /* client group value ("0.0.0.0 - 255.255.255.255" || "myhost.mydomain.com") */
-    INKNntpAccessT access;      /* allow, deny, basic, generic, custom (INK_NNTP_ACC_xxx) */
-    char *authenticator;        /* optional for GENERIC, required for CUSTOM (see admin guide) */
-    char *user;                 /* required for BASIC, equals 'required' for CUSTOM */
-    char *pass;                 /* optional for BASIC, equals 'required' for CUSTOM */
-    INKStringList group_wildmat;        /*(optional) use when restricting clients to a subset of groups; using "*" as wildcard  */
-    bool deny_posting;          /* (optional) use when restricting clients to a subset of groups */
-  } INKNntpAccessEle;
-
-
-/* nntp_server.config */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    char *hostname;             /* nntp server (hostname, hostname:port, ip, ip:port, .block) 
-                                   ( .block used to block access to specific news groups) */
-    INKStringList group_wildmat;        /* groups to cache; list of group names in wildmat format; use "*" as
-                                           wild-card, use prefix "!" to indicate groups not
-                                           indicated in list */
-    INKNntpTreatmentT treatment;        /* (optional) tells Traffic Server how to  treat the specified host 
-                                           and news group; if not indicated, articles from specified 
-                                           newsgroup are cached on demand */
-    int priority;               /* an integer value used when treatment is INK_NNTP_TRMT_PRIO */
-    char *interface;            /* the network interface the Traffic Server uses to contact the
-                                   parent NNTP server (1.2.3.4 or news.host.com) (can be NULL) */
-  } INKNntpSrvrEle;
-
 /* parent.config */
   typedef struct
   {
@@ -1159,10 +1101,6 @@ typedef enum
   inkapi void INKLogObjectEleDestroy(INKLogObjectEle * ele);
   inkapi INKMgmtAllowEle *INKMgmtAllowEleCreate();
   inkapi void INKMgmtAllowEleDestroy(INKMgmtAllowEle * ele);
-  inkapi INKNntpAccessEle *INKNntpAccessEleCreate();
-  inkapi void INKNntpAccessEleDestroy(INKNntpAccessEle * ele);
-  inkapi INKNntpSrvrEle *INKNntpSrvrEleCreate();
-  inkapi void INKNntpSrvrEleDestroy(INKNntpSrvrEle * ele);
   inkapi INKParentProxyEle *INKParentProxyEleCreate(INKRuleTypeT type);
   inkapi void INKParentProxyEleDestroy(INKParentProxyEle * ele);
   inkapi INKPartitionEle *INKPartitionEleCreate();

@@ -88,7 +88,6 @@ show:status                  Proxy status
 show:version                 Version information
 show:security                Security information
 show:http                    HTTP protocol configuration
-show:nntp [servers|access]   NNTP protocol configuration
 show:ftp                     FTP protocol configuration
 show:icp [peer]              ICP protocol configuration
 show:proxy                   Proxy configuration
@@ -109,7 +108,6 @@ show:scheduled-update        Scheduled update configuration
 show:proxy-stats             Proxy statistics
 show:http-trans-stats        HTTP transaction statistics
 show:http-stats              HTTP statistics
-show:nntp-stats              NNTP statistics
 show:ftp-stats               FTP statistics
 show:icp-stats               ICP statistics
 show:cache-stats             Cache statistics
@@ -184,7 +182,7 @@ config:socks timeout <seconds>
     
     
 config:cache <on | off>
-config:cache <http | nntp | ftp> <on | off>
+config:cache <http | ftp> <on | off>
 config:cache ignore-bypass <on | off>
 config:cache <max-object-size | max-alternates> <int>
 config:cache file <url-config-file>
@@ -210,7 +208,7 @@ config:logging collation-host <string>
 config:logging collation secret <string> tagged <on | off> orphan-limit <int>
 config:logging format <squid | netscape-common | netscape-ext | netscape-ext2>
                type <ascii | binary> file <string> header <string>
-config:logging splitting <nntp | icp | http> <on | off>
+config:logging splitting <icp | http> <on | off>
 config:logging custom <on | off> format <traditional | xml>
 config:logging rolling <on | off> offset <hour> interval <hours>
                auto-delete <on | off>,
@@ -228,20 +226,6 @@ config:network netmask <x.x.x.x>         (Linux only)
 config:network domainname <string>       (Linux only)
 config:network dns-ip <x.x.x.x>          (Linux only)
 config:network defaultrouter <x.x.x.x>   (Linux only)
-
-config:nntp <on | off>
-config:nntp port <int>
-config:nntp connect-msg <posting | non-posting> <string>
-config:nntp <posting-status | access-control | v2-auth | local-auth> <on | off>
-config:nntp <clustering | allow-feeds | background-posting> <on | off>
-config:nntp <obey-cancel | obey-newgroups | obey-rmgroups> <on | off>
-config:nntp <inactive-timeout | check-new-groups | check-cancelled> <seconds>
-config:nntp <check-parent | check-cluster | check-pull> <seconds>
-config:nntp auth-server <string>
-config:nntp auth-port <seconds>
-config:nntp auth-timeout <seconds>
-config:nntp client-throttle <bytes per second | 0>
-config:nntp <nntp-servers | nntp-access> <url-config-file>,
 
 config:alarms resolve-name <string>
 config:alarms resolve-number <int>

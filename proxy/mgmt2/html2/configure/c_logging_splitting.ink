@@ -55,24 +55,6 @@
 
 <!--
   <tr> 
-    <td height="2" colspan="2" class="configureLabel"><@submit_error_flg proxy.config.log2.separate_nntp_logs>Split NNTP Logs</td>
-  </tr>
-  <tr> 
-    <td nowrap class="bodyText">
-      <input type="radio" name="proxy.config.log2.separate_nntp_logs" value="1" <@checked proxy.config.log2.separate_nntp_logs\1>>
-        Enabled <br>
-      <input type="radio" name="proxy.config.log2.separate_nntp_logs" value="0" <@checked proxy.config.log2.separate_nntp_logs\0>>
-        Disabled <br>
-    </td>
-    <td class="configureHelp" valign="top" align="left"> 
-      <ul>
-        <li>Enables/Disables splitting of NNTP logs.
-      </ul>
-    </td>
-  </tr>
--->
-<!--
-  <tr> 
     <td height="2" colspan="2" class="configureLabel"><@submit_error_flg proxy.config.log2.separate_mixt_logs>Split Streaming Media Logs</td>
   </tr>
   <tr> 

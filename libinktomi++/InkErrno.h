@@ -38,7 +38,6 @@
 #define CLUSTER_ERRNO                     INK_START_ERRNO+200
 #define FTP_ERRNO                         INK_START_ERRNO+300
 #define CACHE_ERRNO                       INK_START_ERRNO+400
-#define NNTP_ERRNO                        INK_START_ERRNO+500
 #define HTTP_ERRNO                        INK_START_ERRNO+600
 
 #define ENET_THROTTLING                   (NET_ERRNO+1)
@@ -82,8 +81,6 @@
 #define ECACHE_NOT_READY                  (CACHE_ERRNO+7)
 #define ECACHE_ALT_MISS                   (CACHE_ERRNO+8)
 #define ECACHE_BAD_READ_REQUEST           (CACHE_ERRNO+9)
-
-#define ENNTP_ERROR                       (NNTP_ERRNO+0)
 
 #define EHTTP_ERROR                       (HTTP_ERRNO+0)
 

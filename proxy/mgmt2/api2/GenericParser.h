@@ -218,8 +218,6 @@ private:
   TokenList *ip_allowParse(char *rule);
   TokenList *logs_xmlParse(char *rule);
   TokenList *mgmt_allowParse(char *rule);
-  TokenList *nntp_accessParse(char *rule);
-  TokenList *nntp_serversParse(char *rule);
   TokenList *partitionParse(char *rule);
   TokenList *logsParse(char *rule);
   TokenList *pluginParse(char *rule);

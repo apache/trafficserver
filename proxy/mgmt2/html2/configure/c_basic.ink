@@ -33,7 +33,6 @@
 
 <@include /configure/c_buttons.ink>
 
-<@nntp_plugin_status>
 <@submit_error_msg>
 
 <table width="100%" border="0" cellspacing="0" cellpadding="10"> 
@@ -127,15 +126,6 @@
 
 	<tr>
           <td height="2" colspan="3" class="configureLabelSmall">Protocols</td>
-        </tr>
-        <tr> 
-          <td class="bodyText" align=left>&nbsp;&nbsp;<@submit_error_flg proxy.config.nntp.enabled>NNTP</td>
-          <td>
-            <input type="radio" name="proxy.config.nntp.enabled" value="1" <@checked proxy.config.nntp.enabled\1>>
-          </td>
-          <td>
-            <input type="radio" name="proxy.config.nntp.enabled" value="0" <@checked proxy.config.nntp.enabled\0>>
-          </td>
         </tr>
         <tr> 
           <td class="bodyText" align=left>&nbsp;&nbsp;<@submit_error_flg proxy.config.ftp.ftp_enabled>FTP</td>

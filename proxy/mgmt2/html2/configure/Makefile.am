@@ -72,11 +72,6 @@ dist_webui_DATA = \
 	c_net_device.ink \
 	c_net_driver.ink \
 	c_net_nic.ink \
-	c_nntp_auth.ink \
-	c_nntp_cachability.ink \
-	c_nntp_general.ink \
-	c_nntp_parent_servers.ink \
-	c_nntp_timeout.ink \
 	c_ntlm_general.ink \
 	c_phonehome.ink \
 	c_proxy_access.ink \
@@ -116,8 +111,6 @@ dist_webui_DATA = \
 	f_ip_allow_config.ink \
 	f_ipnat_config.ink \
 	f_mgmt_allow_config.ink \
-	f_nntp_access_config.ink \
-	f_nntp_servers_config.ink \
 	f_parent_config.ink \
 	f_partition_config.ink \
 	f_remap_config.ink \

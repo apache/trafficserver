@@ -108,13 +108,12 @@ static const char *MonNodeHelpStrings[numCmdMonNode] = {
 };
 
 // Help usage at cli->monitor->protocols level
-const int numCmdMonProtocols = 10;
+const int numCmdMonProtocols = 8;
 static const char *MonProtHelpStrings[numCmdMonProtocols] = {
   "1. stats              # displays all the protocol statistics \n",
   "2. http               # displays the HTTP protocol statistics \n",
   "3. ftp                # displays the FTP protocol statistics \n",
   "4. icp                # displays the ICP protocol statistics \n",
-  "5. nntp               # displays the NNTP protocol statistics \n",
   "     Select above options by number \n",
   ".                     # Move back to previous level \n",
   "help                  # displays a list of commands\n",
@@ -193,12 +192,11 @@ static const char *ConfigureServerHelpStrings[numCmdConfServer] = {
 };
 
 // Help usage at cli->configure->protocols level
-const int numCmdConfProtocols = 9;
+const int numCmdConfProtocols = 8;
 static const char *ConfigureProtHelpStrings[numCmdConfProtocols] = {
   "1. display            # displays all configuration variables \n",
   "2. http               # HTTP configuration variables \n",
   "3. ftp                # FTP configuration variables \n",
-  "4. nntp               # NNTP configuration variables \n",
   "     Select above options by number \n",
   "change <no> <value>   # sets variable shown by <no> to <value>\n",
   ".                     # Move back to previous level \n",
@@ -311,10 +309,10 @@ CLI_globals::Help(textBuffer * output,  /* IN/OUT: output buffer */
   // create appropriate Help response
   // 
   // See 'MgmtFeat.cc'
-  // advui == 1(10) -> Advanced UI only           (Regular TS HTTP/FTP/NNTP)
+  // advui == 1(10) -> Advanced UI only           (Regular TS HTTP/FTP)
   //       == 0(00) -> Simple UI only             (on hold....)
   //       == 2(01) -> RNI UI only                (TS for Real Networks, only does RNI caching)
-  //       == 3(11) -> Advanced UI + RNI features (TS w/ RN support HTTP/FTP/NNTP/RNI )
+  //       == 3(11) -> Advanced UI + RNI features (TS w/ RN support HTTP/FTP/RNI )
   // Currently only used to implement cheesy licensing
   // featset == 1 -> indicates that Advanced UI is enabled 
   //         == 0 -> indicates that Advanced UI is disabled

@@ -41,7 +41,6 @@
 FileInfo file_info_entries[] = {
   {"proxy.config.cache.control.filename", INK_FNAME_CACHE_OBJ, &convertCacheRule_ts, &convertCacheRule_xml},
   {"proxy.config.icp.icp_configuration", INK_FNAME_ICP_PEER, &convertIcpRule_ts, &convertIcpRule_xml},
-  {"proxy.config.nntp.access_filename", INK_FNAME_NNTP_ACCESS, &convertNntpAccessRule_ts, &convertNntpAccessRule_xml},
   {"proxy.config.url_remap.filename", INK_FNAME_REMAP, &convertRemapRule_ts, &convertRemapRule_xml},
   {"proxy.config.dns.splitdns.filename", INK_FNAME_SPLIT_DNS, &convertSplitDnsRule_ts, &convertSplitDnsRule_xml},
   {"proxy.config.ftp.reverse_ftp_remap_file_name", INK_FNAME_FTP_REMAP, &convertFtpRemapRule_ts,
@@ -49,7 +48,6 @@ FileInfo file_info_entries[] = {
   {"proxy.config.cache.hosting_filename", INK_FNAME_HOSTING, &convertHostingRule_ts, &convertHostingRule_xml},
   {"proxy.config.cache.ip_allow.filename", INK_FNAME_IP_ALLOW, &convertIpAllowRule_ts, &convertIpAllowRule_xml},
   {"proxy.config.admin.ip_allow.filename", INK_FNAME_MGMT_ALLOW, &convertMgmtAllowRule_ts, &convertMgmtAllowRule_xml},
-  {"proxy.config.nntp.servers_filename", INK_FNAME_NNTP_SERVERS, &convertNntpServerRule_ts, &convertNntpServerRule_xml},
   {"proxy.config.http.parent_proxy.file", INK_FNAME_PARENT_PROXY, &convertParentRule_ts, &convertParentRule_xml},
   {"proxy.config.cache.partition_filename", INK_FNAME_PARTITION, &convertPartitionRule_ts, &convertPartitionRule_xml},
   {"proxy.config.socks.socks_config_file", INK_FNAME_SOCKS, &convertSocksRule_ts, &convertSocksRule_xml},
@@ -78,8 +76,6 @@ const char *config_files[] = {
   "ip_allow.config",
   "ipnat.conf",
   "mgmt_allow.config",
-  "nntp_servers.config",
-  "nntp_access.config",
   "parent.config",
   "partition.config",
   "remap.config",
@@ -575,120 +571,6 @@ convertMgmtAllowRule_xml(XMLNode * rule_node)
   convertIpAddrEle_xml(rule_node, ele->src_ip_addr);
 
   MgmtAllowObj ele_obj(ele);
-  char *rule = ele_obj.formatEleToRule();
-
-  return rule;
-}
-
-// ---------------------------------------------------------------------
-// convertNntpAccessRule_xml
-// ---------------------------------------------------------------------
-char *
-convertNntpAccessRule_xml(XMLNode * rule_node)
-{
-  XMLNode *child;
-  INKNntpAccessEle *ele = NULL;
-  char *name = NULL, *val, *type = NULL;
-
-  if (!rule_node)
-    return NULL;
-
-  type = rule_node->getNodeName();
-  ele = INKNntpAccessEleCreate();
-  if (strcmp(type, "allow") == 0) {
-    ele->access = INK_NNTP_ACC_ALLOW;
-  } else if (strcmp(type, "deny") == 0) {
-    ele->access = INK_NNTP_ACC_DENY;
-  } else if (strcmp(type, "basic") == 0) {
-    ele->access = INK_NNTP_ACC_BASIC;
-  } else if (strcmp(type, "generic") == 0) {
-    ele->access = INK_NNTP_ACC_GENERIC;
-  } else if (strcmp(type, "custom") == 0) {
-    ele->access = INK_NNTP_ACC_CUSTOM;
-  } else {
-    INKNntpAccessEleDestroy(ele);
-    return NULL;
-  }
-
-  // process any specified attributes
-  val = rule_node->getAttributeValueByName("user");
-  if (val)
-    ele->user = xstrdup(val);
-  val = rule_node->getAttributeValueByName("password");
-  if (val)
-    ele->pass = xstrdup(val);
-  val = rule_node->getAttributeValueByName("authenticator");
-  if (val)
-    ele->authenticator = xstrdup(val);
-
-  // iterate through each subelement of a rule node
-  for (int i = 0; i < rule_node->getChildCount(); i++) {
-    child = rule_node->getChildNode(i);
-    name = child->getNodeName();
-    val = child->getNodeValue();
-    if (strcmp(name, "ip") == 0) {
-      ele->client_t = INK_CLIENT_GRP_IP;
-      INKIpAddrEle *ip_ele = INKIpAddrEleCreate();
-      convertIpAddrEle_xml(child, ip_ele);
-      ele->clients = ip_addr_ele_to_string(ip_ele);
-      INKIpAddrEleDestroy(ip_ele);
-    } else if (strcmp(name, "domain") == 0) {
-      ele->client_t = INK_CLIENT_GRP_DOMAIN;
-      ele->clients = xstrdup(val);
-    } else if (strcmp(name, "hostname") == 0) {
-      ele->client_t = INK_CLIENT_GRP_HOSTNAME;
-      ele->clients = xstrdup(val);
-    } else if (strcmp(name, "deny") == 0) {
-      ele->deny_posting = true;
-      ele->group_wildmat = string_to_string_list(val, " ");
-    }
-  }
-
-  // convert Ele into "one-liner" text format
-  NntpAccessObj ele_obj(ele);
-  char *rule = ele_obj.formatEleToRule();
-
-  return rule;
-}
-
-// ---------------------------------------------------------------------
-// convertNntpServerRule_xml
-// ---------------------------------------------------------------------
-char *
-convertNntpServerRule_xml(XMLNode * rule_node)
-{
-  XMLNode *child;
-  INKNntpSrvrEle *ele = NULL;
-  char *name, *val;
-
-  if (!rule_node)
-    return NULL;
-
-  ele = INKNntpSrvrEleCreate();
-
-  // process any specified attributes
-  val = rule_node->getAttributeValueByName("interface");
-  if (val)
-    ele->interface = xstrdup(val);
-
-  // iterate through each subelement of a rule node
-  for (int i = 0; i < rule_node->getChildCount(); i++) {
-    child = rule_node->getChildNode(i);
-    name = child->getNodeName();
-    val = child->getNodeValue();
-    if (strcmp(name, "host") == 0 || strcmp(name, "host_auth") == 0) {
-      ele->hostname = xstrdup(val);
-    } else if (strcmp(name, "groups") == 0) {
-      ele->group_wildmat = string_to_string_list(val, " ");
-    } else if (strcmp(name, "treatment") == 0) {
-      ele->treatment = string_to_nntp_treat_type(val);
-    } else if (strcmp(name, "priority") == 0) {
-      ele->priority = ink_atoi(val);
-    }
-  }
-
-  // convert Ele into "one-liner" text format
-  NntpSrvrObj ele_obj(ele);
   char *rule = ele_obj.formatEleToRule();
 
   return rule;
@@ -1747,153 +1629,6 @@ convertMgmtAllowRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
   default:
     goto Lerror;
   }
-
-  return INK_ERR_OKAY;
-
-Lerror:
-  return INK_ERR_FAIL;
-}
-
-// ---------------------------------------------------------------------
-// convertNntpAccessRule_ts
-// ---------------------------------------------------------------------
-int
-convertNntpAccessRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
-{
-  char *strPtr;
-  INKIpAddrEle *ip_ele;
-  INKNntpAccessEle *ele = (INKNntpAccessEle *) cfg_ele;
-
-  strPtr = nntp_acc_type_to_string(ele->access);
-  if (!strPtr)
-    goto Lerror;
-
-  if (!ele->authenticator && !ele->user && !ele->pass) {        // no attrs
-    writeXmlStartTag(xml_file, strPtr);
-  } else {
-    writeXmlAttrStartTag(xml_file, strPtr);
-
-    if (ele->authenticator)
-      writeXmlAttribute(xml_file, "authenticator", ele->authenticator);
-    if (ele->user)
-      writeXmlAttribute(xml_file, "user", ele->user);
-    if (ele->pass)
-      writeXmlAttribute(xml_file, "password", ele->pass);
-
-    xml_file->copyFrom(">", 1);
-  }
-  xfree(strPtr);
-
-  switch (ele->client_t) {
-  case INK_CLIENT_GRP_IP:
-    // convert into INKIpAddrEle first
-    ip_ele = string_to_ip_addr_ele(ele->clients);
-    if (ip_ele)
-      convertIpAddrEle_ts(ip_ele, xml_file, "ip");
-    else
-      goto Lerror;
-    break;
-  case INK_CLIENT_GRP_DOMAIN:
-    writeXmlElement(xml_file, "domain", ele->clients);
-    break;
-  case INK_CLIENT_GRP_HOSTNAME:
-    writeXmlElement(xml_file, "hostname", ele->clients);
-    break;
-  default:
-    goto Lerror;
-  }
-
-  // deny list?
-  if (ele->deny_posting) {
-    strPtr = string_list_to_string(ele->group_wildmat, " ");
-    if (!strPtr)
-      goto Lerror;
-    writeXmlElement(xml_file, "deny", strPtr);
-    xfree(strPtr);
-  }
-
-  switch (ele->access) {
-  case INK_NNTP_ACC_ALLOW:
-    writeXmlEndTag(xml_file, "allow");
-    break;
-  case INK_NNTP_ACC_DENY:
-    writeXmlEndTag(xml_file, "deny");
-    break;
-  case INK_NNTP_ACC_BASIC:
-    writeXmlEndTag(xml_file, "basic");
-    break;
-  case INK_NNTP_ACC_GENERIC:
-    writeXmlEndTag(xml_file, "generic");
-    break;
-  case INK_NNTP_ACC_CUSTOM:
-    writeXmlEndTag(xml_file, "custom");
-    break;
-  default:
-    goto Lerror;
-  }
-
-  return INK_ERR_OKAY;
-
-Lerror:
-  return INK_ERR_FAIL;
-}
-
-// ---------------------------------------------------------------------
-// convertNntpServerRule_ts
-// ---------------------------------------------------------------------
-int
-convertNntpServerRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
-{
-  char *strPtr;
-  INKNntpSrvrEle *ele = (INKNntpSrvrEle *) cfg_ele;
-
-  if (ele->interface) {         // has attribute
-    writeXmlAttrStartTag(xml_file, "rule");
-    writeXmlAttribute(xml_file, "interface", ele->interface);
-    xml_file->copyFrom(">", 1);
-  } else {
-    writeXmlStartTag(xml_file, "rule");
-  }
-
-  if (strcasecmp(ele->hostname, ".block") == 0) {
-    writeXmlElement(xml_file, "host_auth", ele->hostname);
-  } else {
-    writeXmlElement(xml_file, "host", ele->hostname);
-  }
-
-  if (ele->group_wildmat) {
-    strPtr = string_list_to_string(ele->group_wildmat, " ");
-    if (!strPtr)
-      goto Lerror;
-    writeXmlElement(xml_file, "groups", strPtr);
-    xfree(strPtr);
-  }
-
-  switch (ele->treatment) {
-  case INK_NNTP_TRMT_FEED:
-    writeXmlElement(xml_file, "treatment", "feed");
-    break;
-  case INK_NNTP_TRMT_PUSH:
-    writeXmlElement(xml_file, "treatment", "push");
-    break;
-  case INK_NNTP_TRMT_PULL:
-    writeXmlElement(xml_file, "treatment", "pull");
-    break;
-  case INK_NNTP_TRMT_PULLOVER:
-    writeXmlElement(xml_file, "treatment", "pullover");
-    break;
-  case INK_NNTP_TRMT_DYNAMIC:
-    writeXmlElement(xml_file, "treatment", "dynamic");
-    break;
-  case INK_NNTP_TRMT_POST:
-    writeXmlElement(xml_file, "treatment", "post");
-    break;
-  default:
-    writeXmlElement_int(xml_file, "priority", ele->priority);
-    break;
-  }
-
-  writeXmlEndTag(xml_file, "rule");
 
   return INK_ERR_OKAY;
 

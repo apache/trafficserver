@@ -28,7 +28,6 @@
 
 #include "P_EventSystem.h"
 // #include "I_Disk.h" unused
-// #include "I_NNTP.h" unavailable
 // #include "I_FTP.h" unavailable
 #include "I_Cache.h"
 #include "I_Net.h"
@@ -137,20 +136,6 @@ event_int_to_string(int event, char buffer[32])
     case HTTP_EVENT_WRITE_COMPLETE: return "HTTP_EVENT_WRITE_COMPLETE";
     case HTTP_EVENT_EOS: return "HTTP_EVENT_EOS";
     case HTTP_EVENT_CLOSED: return "HTTP_EVENT_CLOSED";
-
-    case NNTP_EVENT_CMD: return "NNTP_EVENT_CMD";
-    case NNTP_EVENT_CALL: return "NNTP_EVENT_CALL";
-    case NNTP_EVENT_CALL_DONE: return "NNTP_EVENT_CALL_DONE";
-    case NNTP_EVENT_ACQUIRE: return "NNTP_EVENT_ACQUIRE";
-    case NNTP_EVENT_ACQUIRE_FAILED: return "NNTP_EVENT_ACQUIRE_FAILED";
-    case NNTP_EVENT_SLAVE_RESPONSE: return "NNTP_EVENT_SLAVE_RESPONSE";
-    case NNTP_EVENT_SLAVE_INITIAL_ERROR: return "NNTP_EVENT_SLAVE_INITIAL_ERROR";
-    case NNTP_EVENT_SLAVE_ERROR: return "NNTP_EVENT_SLAVE_ERROR";
-    case NNTP_EVENT_SLAVE_DONE: return "NNTP_EVENT_SLAVE_DONE";
-    case NNTP_EVENT_TUNNEL_DONE: return "NNTP_EVENT_TUNNEL_DONE";
-    case NNTP_EVENT_TUNNEL_ERROR: return "NNTP_EVENT_TUNNEL_ERROR";
-    case NNTP_EVENT_TUNNEL_CONT: return "NNTP_EVENT_TUNNEL_CONT";
-    case NNTP_EVENT_CLUSTER_MSG: return "NNTP_EVENT_CLUSTER_MSG";
 #endif
 
     case MGMT_EVENT_SHUTDOWN: return "MGMT_EVENT_SHUTDOWN";

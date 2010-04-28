@@ -559,45 +559,6 @@
 <!-- realmem end -->
 
         <!--------------------------- PROTOCOLS -------------------------->
-		<!-- NNTP -->
-        <tr> 
-          <td height="2" colspan="2" class="configureLabel">Protocols</td>
-        </tr>
-<!-- nccon start -->
-        <tr align="center"> 
-          <td align=center class="bodyText">
-            NNTP Client Connections:<BR>
-            <A HREF="nccon.html"><IMG HEIGHT=135 WIDTH=500 SRC="nccon-<@query mrtg>.png"></A>
-          </td>
-          <td align=left class="bodyText">
-            This is an instantaneous snapshot of the NNTP client/server connection count.
-            The blue curve and the orange line represent the client/server connection count, respectively.
-          </td>
-        </tr>
-<!-- nccon end -->
-<!-- ndoc start -->
-        <tr align="center"> 
-          <td align=center class="bodyText">
-            NNTP Hit Rate:<BR>
-            <A HREF="ndoc.html"><IMG HEIGHT=135 WIDTH=500 SRC="ndoc-<@query mrtg>.png"></A>
-          </td>
-          <td align=left class="bodyText">
-            The blue curve shows the 5 minute average NNTP hit rate.
-          </td>
-        </tr>
-<!-- ndoc end -->
-<!-- nbw start -->
-        <tr align="center"> 
-          <td align=center class="bodyText">
-            NNTP Bandwidth Savings:<BR>
-            <A HREF="nbw.html"><IMG HEIGHT=135 WIDTH=500 SRC="nbw-<@query mrtg>.png"></A>
-          </td>
-          <td align=left class="bodyText">
-            This shows the NNTP bandwidth savings percentage.
-          </td>
-        </tr>
-<!-- nbw end -->
-
 		<!-- FTP -->
 <!-- fccon start -->
         <tr align="center"> 
@@ -606,7 +567,7 @@
             <A HREF="fccon.html"><IMG HEIGHT=135 WIDTH=500 SRC="fccon-<@query mrtg>.png"></A>
           </td>
           <td align=left class="bodyText">
-            This is an instantaneous snapshot of the NNTP client/server connection count.
+            This is an instantaneous snapshot of the FTP client/server connection count.
             The blue curve and the orange line represent the client/server connection count, respectively. <i>(not including FTP over HTTP traffic)</i>
           </td>
         </tr>

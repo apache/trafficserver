@@ -65,14 +65,6 @@ int writeMgmtAllowConfigTable(WebHttpContext * whc);
 int writeMgmtAllowRuleList(textBuffer * output);
 int writeMgmtAllowConfigForm(WebHttpContext * whc);
 
-int writeNntpAccessConfigTable(WebHttpContext * whc);
-int writeNntpAccessRuleList(textBuffer * output);
-int writeNntpAccessConfigForm(WebHttpContext * whc);
-
-int writeNntpServersConfigTable(WebHttpContext * whc);
-int writeNntpServersRuleList(textBuffer * output);
-int writeNntpServersConfigForm(WebHttpContext * whc);
-
 int writeParentConfigTable(WebHttpContext * whc);
 int writeParentRuleList(textBuffer * output);
 int writeParentConfigForm(WebHttpContext * whc);
@@ -144,13 +136,6 @@ int convert_icp_ele_to_html_format(INKIcpEle * ele,
 int convert_ip_allow_ele_to_html_format(INKIpAllowEle * ele, char *src_ip, char *action);
 
 int convert_mgmt_allow_ele_to_html_format(INKMgmtAllowEle * ele, char *src_ip, char *action);
-
-int convert_nntp_access_ele_to_html_format(INKNntpAccessEle * ele,
-                                           char *grp_type,
-                                           char *access, char *auth, char *user, char *pass, char *groups, char *post);
-
-int convert_nntp_srvr_ele_to_html_format(INKNntpSrvrEle * ele,
-                                         char *groups, char *treatment, char *priority, char *intr);
 
 int convert_parent_ele_to_html_format(INKParentProxyEle * ele,
                                       char *pdType,

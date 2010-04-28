@@ -47,26 +47,17 @@
 //
 //    Running Example:
 //
-//      http://{nntp}/groups/dump?comp.compilers
+//      http://{http}/groups/dump?comp.compilers
 //
 // 2. What sort of things should be available?
 //
 //    A. The type of data should default to HTML or match the
 //       extension type e.g.:
 //
-//         http://{nntp}/groups/use_graph.gif?august
+//         http://{http}/groups/use_graph.gif?august
 //  
 //    B. Each protocol/sybsystem should have their own information.
 //       For example
-//
-//      1. NNTP 
-//
-//        - the user can find out the status of/dump the various
-//          databases (group, overview, articles).
-//
-//        - the user can find out the status of the connections
-//
-//        etc.
 
 #define STAT_PAGE_SUCCESS           STAT_PAGES_EVENTS_START+0
 #define STAT_PAGE_FAILURE           STAT_PAGES_EVENTS_START+1

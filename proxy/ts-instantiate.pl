@@ -213,7 +213,6 @@ our %base_port_hash  =
  "proxy.config.raf.manager.port" => 16,
  "proxy.config.wmt.port" => 17,
  "proxy.config.ftp.proxy_server_port" => 18,
- "proxy.config.nntp.server_port" => 19
  );
 
 our %config_meta = ();

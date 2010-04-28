@@ -121,7 +121,6 @@ initializeRegistry()
   configFiles->addFile("splitdns.config", false);
   configFiles->addFile("ssl_multicert.config", false);
   configFiles->addFile("stats.config.xml", false);
-  configFiles->addFile("nntp_config.xml", false);
 #if defined(OEM)
   configFiles->addFile("net.config.xml", true);
   /* only if the vscan plugin is installed would this file be read */

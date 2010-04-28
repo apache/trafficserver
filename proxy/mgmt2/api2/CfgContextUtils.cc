@@ -1549,15 +1549,6 @@ filename_to_string(INKFileNameT file)
   case INK_FNAME_MGMT_ALLOW:
     return xstrdup("mgmt_allow.config");
 
-  case INK_FNAME_NNTP_ACCESS:
-    return xstrdup("nntp_access.config");
-
-  case INK_FNAME_NNTP_SERVERS:
-    return xstrdup("nntp_servers.config");
-
-  case INK_FNAME_NNTP_CONFIG_XML:
-    return xstrdup("nntp_config.xml");
-
   case INK_FNAME_PARENT_PROXY:
     return xstrdup("parent.config");
 
@@ -1599,60 +1590,6 @@ filename_to_string(INKFileNameT file)
   default:                     /* no such config file */
     return NULL;
   }
-}
-
-/* ------------------------------------------------------------------------- 
- * nntp_acc_type_to_string
- * -------------------------------------------------------------------------
- */
-char *
-nntp_acc_type_to_string(INKNntpAccessT acc)
-{
-  switch (acc) {
-  case INK_NNTP_ACC_ALLOW:
-    return xstrdup("allow");
-    break;
-  case INK_NNTP_ACC_DENY:
-    return xstrdup("deny");
-    break;
-  case INK_NNTP_ACC_BASIC:
-    return xstrdup("basic");
-    break;
-  case INK_NNTP_ACC_GENERIC:
-    return xstrdup("generic");
-    break;
-  case INK_NNTP_ACC_CUSTOM:
-    return xstrdup("custom");
-    break;
-  default:
-    break;
-  }
-
-  return NULL;
-}
-
-/* ------------------------------------------------------------------------- 
- * string_to_nntp_treat_type
- * -------------------------------------------------------------------------
- */
-INKNntpTreatmentT
-string_to_nntp_treat_type(const char *treat)
-{
-  if (strcasecmp(treat, "feed") == 0) {
-    return INK_NNTP_TRMT_FEED;
-  } else if (strcasecmp(treat, "push") == 0) {
-    return INK_NNTP_TRMT_PUSH;
-  } else if (strcasecmp(treat, "pull") == 0) {
-    return INK_NNTP_TRMT_PULL;
-  } else if (strcasecmp(treat, "pullover") == 0) {
-    return INK_NNTP_TRMT_PULLOVER;
-  } else if (strcasecmp(treat, "dynamic") == 0) {
-    return INK_NNTP_TRMT_DYNAMIC;
-  } else if (strcasecmp(treat, "port") == 0) {
-    return INK_NNTP_TRMT_POST;
-  }
-
-  return INK_NNTP_TRMT_UNDEFINED;
 }
 
 /* ------------------------------------------------------------------------- 
@@ -2168,12 +2105,6 @@ create_ele_obj_from_rule_node(Rule * rule)
   case INK_MGMT_ALLOW:         /* mgmt_allow.config */
     ele = (CfgEleObj *) new MgmtAllowObj(token_list);
     break;
-  case INK_NNTP_ACCESS:        /* nntp_access.config */
-    ele = (CfgEleObj *) new NntpAccessObj(token_list);
-    break;
-  case INK_NNTP_SERVERS:       /* nntp_servers.config */
-    ele = (CfgEleObj *) new NntpSrvrObj(token_list);
-    break;
   case INK_PP_PARENT:          /* parent.config */
   case INK_PP_GO_DIRECT:
     ele = (CfgEleObj *) new ParentProxyObj(token_list);
@@ -2307,14 +2238,6 @@ create_ele_obj_from_ele(INKCfgEle * ele)
 
   case INK_MGMT_ALLOW:         /* mgmt_allow.config */
     ele_obj = (CfgEleObj *) new MgmtAllowObj((INKMgmtAllowEle *) ele);
-    break;
-
-  case INK_NNTP_ACCESS:        /* nntp_access.config */
-    ele_obj = (CfgEleObj *) new NntpAccessObj((INKNntpAccessEle *) ele);
-    break;
-
-  case INK_NNTP_SERVERS:       /* nntp_servers.config */
-    ele_obj = (CfgEleObj *) new NntpSrvrObj((INKNntpSrvrEle *) ele);
     break;
 
   case INK_PP_PARENT:          /* parent.config */
@@ -2492,12 +2415,6 @@ get_rule_type(TokenList * token_list, INKFileNameT file)
 
   case INK_FNAME_MGMT_ALLOW:   /* mgmt_allow.config */
     return INK_MGMT_ALLOW;
-
-  case INK_FNAME_NNTP_ACCESS:  /* nnpt_access.config */
-    return INK_NNTP_ACCESS;
-
-  case INK_FNAME_NNTP_SERVERS: /* nntp_servers.config */
-    return INK_NNTP_SERVERS;
 
   case INK_FNAME_PARENT_PROXY: /* parent.config */
     // search fro go_direct action name and recongize the value-> ture or false
@@ -3100,56 +3017,6 @@ copy_log_object_ele(INKLogObjectEle * ele)
   nele->filters = copy_string_list(ele->filters);
   nele->protocols = copy_string_list(ele->protocols);
   nele->server_hosts = copy_string_list(ele->server_hosts);
-
-  return nele;
-}
-
-INKNntpAccessEle *
-copy_nntp_access_ele(INKNntpAccessEle * ele)
-{
-  if (!ele) {
-    return NULL;
-  }
-
-  INKNntpAccessEle *nele = INKNntpAccessEleCreate();
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  nele->client_t = INK_CLIENT_GRP_UNDEFINED;
-  if (ele->clients)
-    nele->clients = xstrdup(ele->clients);
-  nele->access = INK_NNTP_ACC_UNDEFINED;
-  if (ele->authenticator)
-    nele->authenticator = xstrdup(ele->authenticator);
-  if (ele->user)
-    nele->user = xstrdup(ele->user);
-  if (ele->pass)
-    nele->pass = xstrdup(ele->pass);
-  nele->group_wildmat = copy_string_list(ele->group_wildmat);
-  nele->deny_posting = false;
-
-  return nele;
-}
-
-INKNntpSrvrEle *
-copy_nntp_srvr_ele(INKNntpSrvrEle * ele)
-{
-  if (!ele) {
-    return NULL;
-  }
-
-  INKNntpSrvrEle *nele = INKNntpSrvrEleCreate();
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->hostname)
-    nele->hostname = xstrdup(ele->hostname);
-  nele->group_wildmat = copy_string_list(ele->group_wildmat);
-  nele->treatment = ele->treatment;
-  nele->priority = ele->priority;
-  nele->interface = xstrdup(ele->interface);
 
   return nele;
 }

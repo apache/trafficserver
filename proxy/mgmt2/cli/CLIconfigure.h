@@ -52,12 +52,10 @@ struct CLI_configure
   static const CLI_globals::VarNameDesc conf_server_desctable[NUM_SERVER_DESCS];
 
   /* Protocol Configuration */
-#define NUM_CONF_PROTOCOLS_HTTP_DESCS      14
+#define NUM_CONF_PROTOCOLS_HTTP_DESCS      15
 #define NUM_CONF_PROTOCOLS_FTP_DESCS        3
-#define NUM_CONF_PROTOCOLS_NNTP_DESCS      23
-//#define NUM_CONF_PROTOCOLS_RNI_DESCS        2
   /*------------------------------------------*/
-#define NUM_CONF_PROTOCOLS_DESCS           41
+#define NUM_CONF_PROTOCOLS_DESCS           18
   static const CLI_globals::VarNameDesc conf_protocols_desctable[NUM_CONF_PROTOCOLS_DESCS];
 
   /* Cache Configuration */

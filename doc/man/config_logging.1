@@ -82,10 +82,10 @@ Netscape Extended2 ----------------------- off
   File Name   ---------------------------- extended2
   File Header ---------------------------- NULL
 
-.SS "splitting <nntp | icp | http> <on | off>"
-Enables (on) or disables (off) log splitting for NNTP, ICP, and HTTP. When 
+.SS "splitting <icp | http> <on | off>"
+Enables (on) or disables (off) log splitting for ICP, and HTTP. When 
 enabled, the proxy stores the transactions for the protocol you choose in a 
-separate log file. (The default value is off for NNTP, ICP and HTTP.)
+separate log file. (The default value is off for ICP and HTTP.)
 .SS"custom <on | off> format <traditional | xml>"
 Enables (on) or disables (off) custom logging. When you enable custom logging, 
 you must specify the format, traditional or XML. (The default values are off for 
@@ -144,17 +144,12 @@ traffic_shell>
 .nf
 traffic_shell> config:log format squid on type ascii file squid.log
 traffic_shell> 
-.SS "Example 9. Separating log files for NNTP transactions"
-.PP
-.nf
-traffic_shell> config:logging splitting nntp on 
-traffic_shell> 
-.SS "Example 10. Enabling custom XML logging"
+.SS "Example 9. Enabling custom XML logging"
 .PP
 .nf
 traffic_shell> config:logging custom on format xml
 traffic_shell> 
-.SS "Example 11. Enabling log rolling, to begin rolling at "
+.SS "Example 10. Enabling log rolling, to begin rolling at "
 .SS "            midnight, with an interval of 60 seconds and"
 .SS "            no automatic deletion of rolled files"
 .PP

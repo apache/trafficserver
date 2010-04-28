@@ -37,9 +37,5 @@ char *SocksParser(FILE * fp);
 char *SocksParser(int fd);
 char *parseRemapFile(FILE * fp);
 char *parseRemapFile(int fd);
-char *parseNNTPServersFile(FILE * fp);
-char *parseNNTPServersFile(int fd);
-char *parseNNTPAccessFile(FILE * fp);
-char *parseNNTPAccessFile(int fd);
 
 #endif

@@ -61,23 +61,17 @@
 #     1->1.  The values of all statistics in atomic update group take on
 #     their new values at same time.
 #
-#---these are missing from UI...
-proxy.node.nntp.upstream_total_bytes M
-proxy.node.nntp.downstream_total_bytes M
-proxy.cluster.nntp.upstream_total_bytes M
-proxy.cluster.nntp.downstream_total_bytes M
-#----
 #
 # html/everything.ink
 proxy.node.cache_total_hits
-# derived: sum of proxy.process.http.cache_hit_fresh, proxy.process.http.cache_hit_revalidated, proxy.process.ftp.cache_hits, proxy.process.nntp.cache_hit_fresh
+# derived: sum of proxy.process.http.cache_hit_fresh, proxy.process.http.cache_hit_revalidated, proxy.process.ftp.cache_hits
 # usage: counter
 # units: objects
 # scale: 1000
 # doc: # of objects served from cache
 # perfmonvar: cache_total_hits
 proxy.node.cache_total_misses
-# derived: sum of proxy.process.http.cache_miss_cold, proxy.process.http.cache_miss_changed, proxy.process.http.cache_miss_not_cacheable,  proxy.process.http.cache_miss_client_no_cache, proxy.process.ftp.cache_misses, proxy.process.nntp.cache_miss_cold
+# derived: sum of proxy.process.http.cache_miss_cold, proxy.process.http.cache_miss_changed, proxy.process.http.cache_miss_not_cacheable,  proxy.process.http.cache_miss_client_no_cache, proxy.process.ftp.cache_misses
 # usage: counter
 # units: objects
 # scale: 1000
@@ -109,22 +103,6 @@ proxy.node.http.current_parent_proxy_connections
 # shortdoc: # open conn to HTTP parent proxies
 # perfmonvar: cur_parent_proxy_conn
 #
-proxy.node.nntp.current_client_connections
-# usage: gauge
-# units: connections
-# scale: 100
-# doc: # of open connections to NNTP clients
-# shortdoc: # open conn to NNTP clients
-# perfmonvar: cur_nntp_client_conn
-#
-proxy.node.nntp.current_server_connections
-# usage: gauge
-# units: connections
-# scale: 100
-# doc: # of open connections to NNTP servers
-# shortdoc: # open conn to NNTP servers
-# perfmonvar: cur_nntp_server_conn
-#
 proxy.node.current_cache_connections
 # usage: gauge
 # units: connections
@@ -154,24 +132,6 @@ proxy.cluster.http.current_parent_proxy_connections
 # doc: # of open connections to HTTP parent proxies (cluster)
 # shortdoc: # open con to HTTP prnt prxies (cluster)
 # perfmonvar: cluster_cur_parent_proxy_conn
-#
-proxy.cluster.nntp.current_client_connections
-# derived: cluster aggregate of proxy.node.nntp.current_client_connections
-# usage: gauge
-# units: connections
-# scale: 100
-# doc: # of open connections to NNTP clients (cluster)
-# shortdoc: # open conn to NNTP clnts (cluster)
-# perfmonvar: cluster_cur_nntp_client_conn
-#
-proxy.cluster.nntp.current_server_connections
-# derived: cluster aggregate of proxy.node.nntp.current_server_connections
-# usage: gauge
-# units: connections
-# scale: 100
-# doc: # of open connections to NNTP servers
-# shortdoc: # open conn to NNTP srvrs (cluster)
-# perfmonvar: cluster_cur_nntp_server_conn
 #
 proxy.cluster.current_cache_connections
 # derived: cluster aggregate of proxy.node.current_cache_connections
@@ -204,12 +164,10 @@ proxy.node.bandwidth_hit_ratio CH
 # doc: The ratio of bytes served from the cache to total requested bytes (HTTP and FTP) since installation).
 # proxy.node.http.user_agent_total_request_bytes = proxy.process.http.user_agent_request_document_total_size + proxy.process.http.user_agent_request_header_total_size
 # proxy.node.http.user_agent_total_response_bytes = proxy.process.http.user_agent_response_document_total_size + proxy.process.http.user_agent_response_header_total_size
-# proxy.node.nntp.upstream_total_bytes = proxy.process.nntp.upstream.request_bytes + proxy.process.nntp.upstream.response_bytes
 # proxy.node.http.origin_server_total_request_bytes = proxy.process.http.origin_server_request_document_total_size + proxy.process.http.origin_server_request_header_total_size
 # proxy.node.http.origin_server_total_response_bytes = proxy.process.http.origin_server_response_document_total_size + proxy.process.http.origin_server_response_header_total_size
-# proxy.node.nntp.downstream_total_bytes = proxy.process.nntp.downstream.request_bytes + proxy.process.nntp.downstream.response_bytes
-# UA_bytes = proxy.node.http.user_agent_total_request_bytes + proxy.node.http.user_agent_total_response_bytes + proxy.node.nntp.upstream_total_bytes
-# OS_bytes = proxy.node.http.origin_server_total_request_bytes + proxy.node.http.origin_server_total_response_bytes + proxy.node.nntp.downstream_total_bytes
+# UA_bytes = proxy.node.http.user_agent_total_request_bytes + proxy.node.http.user_agent_total_response_bytes
+# OS_bytes = proxy.node.http.origin_server_total_request_bytes + proxy.node.http.origin_server_total_response_bytes
 # PP_bytes = 0
 # result = (UA_bytes - (OS_bytes + PP_bytes)) / UA_bytes
 proxy.cluster.bandwidth_hit_ratio CH
@@ -574,114 +532,6 @@ proxy.process.icp.total_udp_send_queries
 # usage: counter
 # scale: 10000
 # perfmonvar: total_icp_udp_send_queries
-#
-proxy.process.nntp.article_hits
-# doc: # of NNTP article hits
-# units: documents
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_article_hits
-#
-proxy.process.nntp.article_misses
-# doc: # of NNTP articles misses
-# units: documents
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_article_misses
-#
-proxy.process.nntp.client_bytes_read
-# doc: # of bytes read from NNTP clients
-# units: bytes
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_client_bytes_read
-#
-proxy.process.nntp.client_bytes_written
-# doc: # of bytes written to NNTP clients
-# units: bytes
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_client_bytes_written
-#
-proxy.process.nntp.client_connections_currently_open CH
-proxy.process.nntp.feed_bytes
-# doc: # of bytes received through NNTP feeds
-# units: bytes
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_feed_bytes
-#
-proxy.process.nntp.group_hits
-# doc: # of NNTP group hits
-# units: NNTP group hits
-# usage: counter
-# scale: 100
-# perfmonvar: total_nntp_group_hits
-#
-proxy.process.nntp.group_refreshes
-# doc: # of NNTP group refreshes
-# units: NNTP group refreshes
-# usage: counter
-# scale: 100
-# perfmonvar: total_nntp_group_refreshes
-#
-proxy.process.nntp.overview_hits
-# doc: # of NNTP overview hits
-# units: NNTP overview hits
-# usage: counter
-# scale: 100
-# perfmonvar: total_nntp_overview_hits
-#
-proxy.process.nntp.overview_refreshes
-# doc: Number of NNTP overview refreshes.  An overview refresh occurs when the Traffic Server caches a group overview on demand (as opposed to an overview pull).
-# shortdoc: # of NNTP overview refreshes
-# units: NNTP overview refreshes
-# usage: counter
-# scale: 100
-# perfmonvar: total_nntp_overview_refreshes
-#
-proxy.process.nntp.post_bytes
-# doc: # of bytes posted through NNTP
-# units: bytes
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_post_bytes
-#
-proxy.process.nntp.posts
-# doc: # of articles posted through NNTP
-# units: articles
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_posts
-#
-proxy.process.nntp.pull_bytes
-# doc: # of bytes of article/overview pulled through NNTP
-# units: bytes
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_pull_bytes
-#
-proxy.process.nntp.server_bytes_read
-# doc: # of bytes read from parent NNTP servers
-# units: bytes
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_server_bytes_read
-#
-proxy.process.nntp.server_bytes_written
-# doc: # of bytes written to cache for NNTP
-# units: bytes
-# usage: counter
-# scale: 10000
-# perfmonvar: total_nntp_server_bytes_written
-#
-proxy.process.nntp.server_connections_currently_open CH
-proxy.process.rni.block_hit_count
-# doc: total # of rni block hits
-# units: blocks
-# usage: counter
-# scale: 10000000
-# perfmonvar: total_rni_block_hit_count
 #
 proxy.process.rni.block_miss_count
 # doc: total # of rni block misses

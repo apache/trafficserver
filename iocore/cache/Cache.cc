@@ -692,11 +692,9 @@ CacheProcessor::cacheInitialized()
     } else {
       caches_ready = caches_ready | CACHE_FRAG_TYPE_HTTP;
       caches_ready = caches_ready | CACHE_FRAG_TYPE_NONE;
-      caches_ready = caches_ready | CACHE_FRAG_TYPE_NNTP;
       caches_ready = caches_ready | CACHE_FRAG_TYPE_FTP;
       caches[CACHE_FRAG_TYPE_HTTP] = theCache;
       caches[CACHE_FRAG_TYPE_NONE] = theCache;
-      caches[CACHE_FRAG_TYPE_NNTP] = theCache;
       caches[CACHE_FRAG_TYPE_FTP] = theCache;
     }
   }
@@ -1663,7 +1661,6 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
     unsigned int caches_ready = 0;
     caches_ready = caches_ready | CACHE_FRAG_TYPE_HTTP;
     caches_ready = caches_ready | CACHE_FRAG_TYPE_NONE;
-    caches_ready = caches_ready | CACHE_FRAG_TYPE_NNTP;
     caches_ready = caches_ready | CACHE_FRAG_TYPE_FTP;
     caches_ready = ~caches_ready;
     CacheProcessor::cache_ready &= caches_ready;

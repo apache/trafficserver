@@ -63,7 +63,6 @@ extern int accept_till_done;
 //extern int ssl_enabled;       
 extern int http_accept_port_number;
 extern int http_accept_file_descriptor;
-extern int nntp_accept_file_descriptor;
 extern int ftp_accept_file_descriptor;
 extern int command_flag;
 extern int auto_clear_hostdb_flag;
