@@ -1191,7 +1191,7 @@ MIOBufferAccessor():mbuf(NULL), entry(NULL)
   ~MIOBufferAccessor();
 
 #ifdef DEBUG
-  char *name;
+  const char *name;
 #endif
 
 private:

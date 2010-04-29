@@ -43,7 +43,7 @@ ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
 #endif
 
 void
-lock_waiting(const char *file, int line, char *handler)
+lock_waiting(const char *file, int line, const char *handler)
 {
   (void) file;
   (void) line;
@@ -56,7 +56,7 @@ lock_waiting(const char *file, int line, char *handler)
 }
 
 void
-lock_holding(const char *file, int line, char *handler)
+lock_holding(const char *file, int line, const char *handler)
 {
   (void) file;
   (void) line;
@@ -69,7 +69,7 @@ lock_holding(const char *file, int line, char *handler)
 }
 
 void
-lock_taken(const char *file, int line, char *handler)
+lock_taken(const char *file, int line, const char *handler)
 {
   (void) file;
   (void) line;

@@ -108,7 +108,7 @@ public:
   ContinuationHandler handler;
 
 #ifdef DEBUG
-  char *handler_name;
+  const char *handler_name;
 #endif
 
   /**

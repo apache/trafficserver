@@ -35,9 +35,9 @@ class EThread;
 typedef EThread *EThreadPtr;
 typedef volatile EThreadPtr VolatileEThreadPtr;
 
-inkcoreapi extern void lock_waiting(const char *file, int line, char *handler);
-inkcoreapi extern void lock_holding(const char *file, int line, char *handler);
-extern void lock_taken(const char *file, int line, char *handler);
+inkcoreapi extern void lock_waiting(const char *file, int line, const char *handler);
+inkcoreapi extern void lock_holding(const char *file, int line, const char *handler);
+extern void lock_taken(const char *file, int line, const char *handler);
 
 /**
   Lock object used in continuations and threads.
@@ -92,9 +92,9 @@ public:
 
 #ifdef DEBUG
   ink_hrtime hold_time;
-  char *file;
+  const char *file;
   int line;
-  char *handler;
+  const char *handler;
 
 #  ifdef MAX_LOCK_TAKEN
   int taken;
@@ -382,7 +382,7 @@ ProxyMutexPtr(ProxyMutex * ptr = 0):m_ptr(ptr) {
 inline bool
 Mutex_trylock(
 #ifdef DEBUG
-               char *afile, int aline, char *ahandler,
+               const char *afile, int aline, const char *ahandler,
 #endif
                ProxyMutex * m, EThread * t)
 {
@@ -429,7 +429,7 @@ Mutex_trylock(
 inline bool
 Mutex_trylock_spin(
 #ifdef DEBUG
-                    char *afile, int aline, char *ahandler,
+                    const char *afile, int aline, const char *ahandler,
 #endif
                     ProxyMutex * m, EThread * t, int spincnt = 1)
 {
@@ -481,7 +481,7 @@ Mutex_trylock_spin(
 inline int
 Mutex_lock(
 #ifdef DEBUG
-            char *afile, int aline, char *ahandler,
+            const char *afile, int aline, const char *ahandler,
 #endif
             ProxyMutex * m, EThread * t)
 {
@@ -548,7 +548,7 @@ struct MutexLock
 
   MutexLock(
 #ifdef DEBUG
-             char *afile, int aline, char *ahandler,
+             const char *afile, int aline, const char *ahandler,
 #endif                          //DEBUG
              ProxyMutex * am, EThread * t):m(am)
   {
@@ -562,7 +562,7 @@ struct MutexLock
 
   void set_and_take(
 #ifdef DEBUG
-                     char *afile, int aline, char *ahandler,
+                     const char *afile, int aline, const char *ahandler,
 #endif                          //DEBUG
                      ProxyMutex * am, EThread * t)
   {
@@ -604,7 +604,7 @@ struct MutexTryLock
 
     MutexTryLock(
 #ifdef DEBUG
-                  char *afile, int aline, char *ahandler,
+                  const char *afile, int aline, const char *ahandler,
 #endif                          //DEBUG
                   ProxyMutex * am, EThread * t)
   {
@@ -619,7 +619,7 @@ struct MutexTryLock
 
   MutexTryLock(
 #ifdef DEBUG
-                char *afile, int aline, char *ahandler,
+                const char *afile, int aline, const char *ahandler,
 #endif                          //DEBUG
                 ProxyMutex * am, EThread * t, int sp)
   {
