@@ -70,14 +70,14 @@ EventProcessor::assign_thread(EventType etype)
 }
 
 TS_INLINE Event *
-EventProcessor::schedule(Event * e, EventType etype)
+EventProcessor::schedule(Event * e, EventType etype, bool fast_signal)
 {
   e->ethread = assign_thread(etype);
   if (e->continuation->mutex)
     e->mutex = e->continuation->mutex;
   else
     e->mutex = e->continuation->mutex = e->ethread->mutex;
-  e->ethread->EventQueueExternal.enqueue(e);
+  e->ethread->EventQueueExternal.enqueue(e,fast_signal);
   return e;
 }
 
@@ -90,6 +90,18 @@ EventProcessor::schedule_spawn(Continuation * cont)
   return schedule(e->init(cont, 0, 0), ET_SPAWN);
 }
 #endif
+
+TS_INLINE Event *
+EventProcessor::schedule_imm_signal(Continuation * cont, EventType et, int callback_event, void *cookie)
+{
+  Event *e = eventAllocator.alloc();
+#ifdef ENABLE_TIME_TRACE
+  e->start_time = ink_get_hrtime();
+#endif
+  e->callback_event = callback_event;
+  e->cookie = cookie;
+  return schedule(e->init(cont, 0, 0), et,true);
+}
 
 TS_INLINE Event *
 EventProcessor::schedule_imm(Continuation * cont, EventType et, int callback_event, void *cookie)

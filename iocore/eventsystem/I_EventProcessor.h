@@ -143,7 +143,11 @@ public:
   */
   Event *schedule_imm(Continuation * c,
                       EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
-
+  /* 
+    provides the same functionality as schedule_imm and also signals the thread immediately
+  */
+  Event *schedule_imm_signal(Continuation * c,
+                      EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
   /**
     Schedules the continuation on a specific thread group to receive an
     event at the given timeout. Requests the EventProcessor to schedule
@@ -304,7 +308,7 @@ public:
   | Unix & non NT Interface                                |
   \*------------------------------------------------------*/
 
-  Event * schedule(Event * e, EventType etype);
+  Event * schedule(Event * e, EventType etype, bool fast_signal = false);
   EThread *assign_thread(EventType etype);
 
   EThread *dthreads[MAX_EVENT_THREADS];

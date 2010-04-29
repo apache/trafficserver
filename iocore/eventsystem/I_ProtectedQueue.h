@@ -37,10 +37,9 @@
 
 #include "inktomi++.h"
 #include "I_Event.h"
-
 struct ProtectedQueue
 {
-  void enqueue(Event * e);
+  void enqueue(Event * e,bool fast_signal=false);
   void signal();
   int try_signal();             // Use non blocking lock and if acquired, signal
   void enqueue_local(Event * e);        // Safe when called from the same thread

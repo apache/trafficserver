@@ -45,7 +45,7 @@
 extern ClassAllocator<Event> eventAllocator;
 
 void
-ProtectedQueue::enqueue(Event * e)
+ProtectedQueue::enqueue(Event * e , bool fast_signal)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
   EThread *e_ethread = e->ethread;
@@ -59,6 +59,10 @@ ProtectedQueue::enqueue(Event * e)
     if (inserting_thread != e_ethread) {
       if (!inserting_thread || !inserting_thread->ethreads_to_be_signalled) {
         signal();
+        if (fast_signal) { 
+          if (e_ethread->signal_hook)
+            e_ethread->signal_hook(e_ethread);
+        }
       } else {
 
 #ifdef EAGER_SIGNALLING
@@ -66,7 +70,11 @@ ProtectedQueue::enqueue(Event * e)
         if (e_ethread->EventQueueExternal.try_signal())
           return;
 #endif
-
+        
+        if (fast_signal) { 
+          if (e_ethread->signal_hook)
+            e_ethread->signal_hook(e_ethread);
+        }
         int &t = inserting_thread->n_ethreads_to_be_signalled;
         EThread **sig_e = inserting_thread->ethreads_to_be_signalled;
         if ((t + 1) >= eventProcessor.n_ethreads) {

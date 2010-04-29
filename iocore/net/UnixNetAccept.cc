@@ -338,7 +338,8 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
     vc->mutex = new_ProxyMutex();
     vc->action_ = *action_;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
-    eventProcessor.schedule_imm(vc, getEtype());
+    //eventProcessor.schedule_imm(vc, getEtype());
+    eventProcessor.schedule_imm_signal(vc, getEtype());
   } while (loop);
 
   return 1;
