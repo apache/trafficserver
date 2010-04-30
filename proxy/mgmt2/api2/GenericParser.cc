@@ -212,8 +212,6 @@ Rule::parse(const char *const_rule, INKFileNameT filetype)
     return congestionParse(rule, 1, 15);
   case INK_FNAME_FILTER:       /* filter.config */
     return filterParse(rule);
-  case INK_FNAME_FTP_REMAP:    /* ftp_remap.config */
-    return ftp_remapParse(rule);
   case INK_FNAME_HOSTING:      /* hosting.config */
     return hostingParse(rule);
   case INK_FNAME_ICP_PEER:     /* icp.config */
@@ -508,41 +506,6 @@ TokenList *
 Rule::filterParse(char *rule)
 {
   return cacheParse(rule, 2);
-}
-
-
-/**
- * ftp_remapParse
- *   - mimic proxy/FtpConfig.cc::BuildTable
- **/
-TokenList *
-Rule::ftp_remapParse(char *rule)
-{
-  Tokenizer ruleTok(" \t");
-  int numRuleTok = ruleTok.Initialize(rule);
-  tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token;
-
-  if (numRuleTok != 2) {
-    setErrorHint("Expecting exactly 2 tokens!");
-    return NULL;
-  }
-
-  TokenList *m_tokenList = NEW(new TokenList());
-
-  token = NEW(new Token());
-  token->setName(tokenStr);
-  tokenStr = ruleTok.iterNext(&ruleTok_state);
-  token->setValue(tokenStr);
-  m_tokenList->enqueue(token);
-
-  // Just to make sure that there are no left overs
-  // coverity[returned_pointer]
-  tokenStr = ruleTok.iterNext(&ruleTok_state);
-  ink_debug_assert(tokenStr == NULL);
-
-  return m_tokenList;
 }
 
 
@@ -1208,8 +1171,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = INK_FNAME_CONGESTION;  /* congestion.config */
   } else if (strstr(filename, "filter.config")) {
     m_filetype = INK_FNAME_FILTER;      /* filter.config */
-  } else if (strstr(filename, "ftp_remap.config")) {
-    m_filetype = INK_FNAME_FTP_REMAP;   /* ftp_remap.config */
   } else if (strstr(filename, "hosting.config")) {
     m_filetype = INK_FNAME_HOSTING;     /* hosting.config */
   } else if (strstr(filename, "icp.config")) {

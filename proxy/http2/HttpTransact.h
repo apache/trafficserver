@@ -173,7 +173,6 @@ enum WUTSProxyStatusCode
   WUTS_PROXY_STATUS_NO_RELAY = 813,
   WUTS_PROXY_STATUS_DISK_IO_ERROR = 814,
   WUTS_PROXY_STATUS_ZERO_SIZE_OBJECT = 815,
-  WUTS_PROXY_STATUS_FTP_DISABLED = 816,
   WUTS_PROXY_STATUS_PROXY_AUTHORIZATION_FAILURE = 817,
   WUTS_PROXY_STATUS_WEBFETCH_DETECTED_ERROR = 818,
   WUTS_PROXY_STATUS_PERSISTENT_READ_ERROR = 819,
@@ -471,7 +470,6 @@ public:
     BAD_SSL_PORT,
     FAILED_PROXY_AUTHORIZATION,
     METHOD_NOT_SUPPORTED,
-    FTP_METHOD_NOT_SUPPORTED,
     MISSING_HOST_FIELD,
     NO_POST_CONTENT_LENGTH,
     NO_REQUEST_SCHEME,
@@ -486,8 +484,6 @@ public:
     NO_RESPONSE_HEADER_ERROR,
     BOGUS_OR_NO_DATE_IN_RESPONSE,
     CONNECTION_OPEN_FAILED,
-    FTP_CONNECTION_OPEN_FAILED,
-    FTP_LOGIN_INCORRECT,
     MISSING_REASON_PHRASE,
     MISSING_STATUS_CODE,
     NON_EXISTANT_RESPONSE_HEADER,
@@ -506,7 +502,6 @@ public:
     CONNECTION_ALIVE,
     CONNECTION_CLOSED,
     CONNECTION_ERROR,
-    FTP_OPEN_FAILED,
     INACTIVE_TIMEOUT,
     OPEN_RAW_ERROR,
     PARSE_ERROR,
@@ -539,7 +534,6 @@ public:
   {
     SOURCE_NONE = 0,
     SOURCE_HTTP_ORIGIN_SERVER,
-    SOURCE_FTP_ORIGIN_SERVER,
     SOURCE_RAW_ORIGIN_SERVER,
     SOURCE_CACHE,
     SOURCE_TRANSFORM,
@@ -564,11 +558,6 @@ public:
     ISSUE_CACHE_DELETE,
     PREPARE_CACHE_UPDATE,
     ISSUE_CACHE_UPDATE,
-
-    FTP_READ,
-    FTP_SERVER_OPEN,
-    FTP_WRITE_CACHE_DELETE,
-    FTP_WRITE_CACHE_NOOP,
 
     ICP_QUERY,
 
@@ -643,7 +632,6 @@ public:
     CACHE_LOOKUP_NONE,
     CACHE_LOOKUP_MISS,
     CACHE_LOOKUP_DOC_BUSY,
-    CACHE_LOOKUP_HIT_FTP_NON_ANONYMOUS,
     CACHE_LOOKUP_HIT_STALE,
     CACHE_LOOKUP_HIT_WARNING,
     CACHE_LOOKUP_HIT_FRESH,
@@ -914,39 +902,6 @@ public:
   }
   SquidLogInfo;
 
-  typedef struct _FtpInfo
-  {
-    char *path;                 // out
-    char *filename;             // out
-    const char *username;       // out
-    char *password;             // out
-    char transfer_mode;         // out
-    MimeTableEntry *mime_type;  // out
-    bool is_directory;          // in
-    int last_reply_code;
-    int last_error;             // in
-    int content_length;         // in
-    char *error_msg;            // in
-    ink_time_t last_modified;   // in
-
-    inline void init()
-    {
-      path = NULL;
-      filename = NULL;
-      username = NULL;
-      password = NULL;
-      transfer_mode = 0;
-      mime_type = NULL;
-      is_directory = false;
-      last_modified = 0;
-      last_reply_code = 0;
-      last_error = 0;
-      content_length = 0;
-      error_msg = NULL;
-      last_modified = 0;
-    }
-  }
-  FtpInfo;
 
 #ifdef USE_NCA
   typedef struct _NcaInfo
@@ -1043,7 +998,6 @@ public:
     int method;
     HostDBInfo host_db_info;    // in
     int cause_of_death_errno;   // in
-    FtpInfo *ftp_info;
 
     HttpTransactMagic_t _separator6;
     ink_time_t client_request_time;     // internal
@@ -1184,16 +1138,8 @@ public:
   static void PPDNSLookup(State * s);
   static void HandleAuth(State * s);
   static void HandleAuthFailed(State * s);
-  static void SetFtpErrorMessage(State * s, IOBufferReader * error_msg);
-  static const char *FtpReplyCodeToReasonPhrase(int code);
-  static void HandleFtpResponse(State * s);
-  static void HandleFtpRevalidate(State * s);
-  static void HandleFtpPutSuccess(State * s);
-  static void HandleFtpPutFailure(State * s);
   static void OriginServerRawOpen(State * s);
   static void HandleCacheOpenRead(State * s);
-  static void HandleCacheOpenReadFtpFreshness(State * s);
-  static void HandleCacheOpenReadFtp(State * s);
   static void HandleCacheOpenReadHitFreshness(State * s);
   static void HandleCacheOpenReadHit(State * s);
   static void HandleCacheOpenReadMiss(State * s);
@@ -1240,13 +1186,11 @@ public:
                                        ConnectionAttributes * client_info,
                                        HostDBInfo * host_db_info, HttpConfigParams * config_params);
   static bool service_transaction_in_proxy_only_mode(State * s);
-  static bool setup_ftp_request(State * s);
   static void setup_plugin_request_intercept(State * s);
   static void handle_msie_reload_badness(State * s, HTTPHdr * client_request);
   static void add_client_ip_to_outgoing_request(State * s, HTTPHdr * request);
   static RequestError_t check_request_validity(State * s, HTTPHdr * incoming_hdr);
   static ResponseError_t check_response_validity(State * s, HTTPHdr * incoming_hdr);
-  static ResponseError_t check_ftp_response_validity(State * s);
   static bool delete_all_document_alternates_and_return(State * s, bool cache_hit);
   static bool did_forward_server_send_0_9_response(State * s);
   static bool does_client_request_permit_cached_response(const HttpConfigParams * p,
@@ -1269,7 +1213,6 @@ public:
   static bool is_request_retryable(State * s);
   static bool is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * response);
   static bool is_response_valid(State * s, HTTPHdr * incoming_response);
-  static bool is_ftp_response_valid(State * s);
 
 //    static bool setup_reverse_proxy(State *s,HTTPHdr *incoming_request);
   static bool process_quick_http_filter(State * s, int method);
@@ -1300,7 +1243,6 @@ public:
 
   static void build_response_copy(State * s,
                                   HTTPHdr * base_response, HTTPHdr * outgoing_response, HTTPVersion outgoing_version);
-  static bool build_ftp_server_response(State * s);
   static void handle_content_length_header(State * s, HTTPHdr * header, HTTPHdr * base);
 
   static void handle_request_keep_alive_headers(State * s, HTTPVersion ver, HTTPHdr * heads);
@@ -1405,7 +1347,6 @@ orig_scheme(scheme),
 method(0),
 host_db_info(),
 cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
-ftp_info(NULL),
 _separator6(HTTP_TRANSACT_MAGIC_SEPARATOR),
 client_request_time(UNDEFINED_TIME),
 request_sent_time(UNDEFINED_TIME),
@@ -1539,8 +1480,6 @@ HttpTransact::State::destroy()
     free_internal_msg_buffer(internal_msg_buffer, internal_msg_buffer_fast_allocator_size);
   }
   //if (unmapped_request_url) xfree(unmapped_request_url);
-  if (ftp_info && ftp_info->error_msg)
-    xfree(ftp_info->error_msg);
   if (internal_msg_buffer_type)
     xfree(internal_msg_buffer_type);
 
@@ -1598,8 +1537,6 @@ conn_state_enum_to_str(HttpTransact::ServerState_t the_state)
     return "CONNECTION_CLOSED";
   case HttpTransact::CONNECTION_ERROR:
     return "CONNECTION_ERROR";
-  case HttpTransact::FTP_OPEN_FAILED:
-    return "FTP_OPEN_FAILED";
   case HttpTransact::INACTIVE_TIMEOUT:
     return "INACTIVE_TIMEOUT";
   case HttpTransact::OPEN_RAW_ERROR:
@@ -1659,5 +1596,4 @@ HttpTransact::update_stat(State * s, int stat, ink_statval_t increment)
   (*next_insert)++;
 }
 
-extern MimeTableEntry unknown_ftp_mime_type;
 #endif

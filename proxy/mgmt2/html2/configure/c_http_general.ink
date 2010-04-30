@@ -110,56 +110,6 @@
       </ul>
     </td>
   </tr>
-
-  <tr> 
-    <td height="2" colspan="2" class="configureLabel">FTP over HTTP</td>
-  </tr>
-  <tr> 
-    <td colspan="2">
-      <table border="1" cellspacing="0" cellpadding="0" bordercolor=#CCCCCC width="100%">
-        <tr>
-          <td>
-            <table border="0" cellspacing="0" cellpadding="5" width="100%">
-              <tr> 
-                <td height="2" colspan="2" class="configureLabelSmall"><@submit_error_flg proxy.config.http.ftp.anonymous_passwd>Anonymous Password</td>
-              </tr>
-              <tr>
-                <td nowrap class="bodyText">
-                  <input type="text" size="18" name="proxy.config.http.ftp.anonymous_passwd" value="<@record proxy.config.http.ftp.anonymous_passwd>">
-                </td>
-                 <td class="configureHelp" valign="top" align="left"> 
-                  <ul>
-                    <li>Specifies the anonymous password for FTP servers that
-                        require a password for access.
-                  </ul>
-                </td>
-              </tr>
-
-              <tr> 
-                <td height="2" colspan="2" class="configureLabelSmall"><@submit_error_flg proxy.config.ftp.data_connection_mode>Data Connection Mode</td>
-              </tr>
-              <tr> 
-                <td nowrap class="bodyText"> 
-                  <input type="radio" name="proxy.config.ftp.data_connection_mode" value="1" <@checked proxy.config.ftp.data_connection_mode\1>>
-                    PASV then PORT <br>
-                  <input type="radio" name="proxy.config.ftp.data_connection_mode" value="2" <@checked proxy.config.ftp.data_connection_mode\2>>
-                    PORT Only <br>
-                  <input type="radio" name="proxy.config.ftp.data_connection_mode" value="3" <@checked proxy.config.ftp.data_connection_mode\3>>
-                    PASV Only
-                </td>
-                <td width="100%" class="configureHelp" valign="top" align="left"> 
-                  <ul>
-                    <li>Specifies the FTP connection mode over HTTP.
-                  </ul>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-
 </table>
 
 <@include /configure/c_buttons.ink>

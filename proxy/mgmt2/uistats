@@ -64,14 +64,14 @@
 #
 # html/everything.ink
 proxy.node.cache_total_hits
-# derived: sum of proxy.process.http.cache_hit_fresh, proxy.process.http.cache_hit_revalidated, proxy.process.ftp.cache_hits
+# derived: sum of proxy.process.http.cache_hit_fresh, proxy.process.http.cache_hit_revalidated
 # usage: counter
 # units: objects
 # scale: 1000
 # doc: # of objects served from cache
 # perfmonvar: cache_total_hits
 proxy.node.cache_total_misses
-# derived: sum of proxy.process.http.cache_miss_cold, proxy.process.http.cache_miss_changed, proxy.process.http.cache_miss_not_cacheable,  proxy.process.http.cache_miss_client_no_cache, proxy.process.ftp.cache_misses
+# derived: sum of proxy.process.http.cache_miss_cold, proxy.process.http.cache_miss_changed, proxy.process.http.cache_miss_not_cacheable,  proxy.process.http.cache_miss_client_no_cache
 # usage: counter
 # units: objects
 # scale: 1000
@@ -161,7 +161,7 @@ proxy.cluster.current_server_connections
 # perfmonvar: cluster_cur_server_conn
 #
 proxy.node.bandwidth_hit_ratio CH
-# doc: The ratio of bytes served from the cache to total requested bytes (HTTP and FTP) since installation).
+# doc: The ratio of bytes served from the cache to total requested bytes (HTTP) since installation).
 # proxy.node.http.user_agent_total_request_bytes = proxy.process.http.user_agent_request_document_total_size + proxy.process.http.user_agent_request_header_total_size
 # proxy.node.http.user_agent_total_response_bytes = proxy.process.http.user_agent_response_document_total_size + proxy.process.http.user_agent_response_header_total_size
 # proxy.node.http.origin_server_total_request_bytes = proxy.process.http.origin_server_request_document_total_size + proxy.process.http.origin_server_request_header_total_size
@@ -182,7 +182,7 @@ proxy.cluster.cache_hit_ratio CH
 # scale: 100
 # usage: gauge
 proxy.node.client_throughput_out CH
-# doc: Number of HTTP and FTP bytes per second through node (and cluster).
+# doc: Number of HTTP bytes per second through node (and cluster).
 # usage: gauge
 # units: bytes/second
 # scale: 100000
@@ -246,8 +246,8 @@ proxy.cluster.http.throughput
 # perfmonvar: cluster_http_throughput
 #
 proxy.cluster.http.user_agent_current_connections_count
-# doc: Number of currently open HTTP and FTP client connections (cluster).
-# shortdoc: # cur open HTTP & FTP cli conn (clstr)
+# doc: Number of currently open HTTP client connections (cluster).
+# shortdoc: # cur open HTTP conn (clstr)
 # scale: 100
 # units: connections
 # usage: gauge
@@ -280,32 +280,32 @@ proxy.node.hostdb.hit_ratio CH
 # scale: 100
 proxy.node.hostname CH
 proxy.node.http.bandwidth_hit_ratio CH
-# doc: The ratio of bytes served from the cache to total requested bytes (HTTP and FTP) since installation).
+# doc: The ratio of bytes served from the cache to total requested bytes (HTTP) since installation).
 # units: %
 # scale: 100
 # usage: gauge
 proxy.node.http.cache_current_connections_count
-# doc: Number of HTTP and FTP cache transfers (cache reads and writes) in progress.
-# shortdoc: # HTTP & FTP cache xfrs in prgrss
+# doc: Number of HTTP cache transfers (cache reads and writes) in progress.
+# shortdoc: # HTTP cache xfrs in prgrss
 # scale: 100
 # units: connections
 # usage: gauge
 # perfmonvar: cur_http_cache_conn
 proxy.node.http.cache_hit_ratio CH
-# doc: Ratio of cache hits to total cache requests (HTTP and FTP), since installation.
+# doc: Ratio of cache hits to total cache requests (HTTP), since installation.
 # units: %
 # scale: 100
 # usage: gauge
 proxy.node.http.cache_total_hits
-# doc: Total number of HTTP and FTP objects served from the cache since installation.
-# shortdoc: Tot # HTTP & FTP obj srvd frm cache
+# doc: Total number of HTTP objects served from the cache since installation.
+# shortdoc: Tot # HTTP obj srvd frm cache
 # units: documents
 # scale: 10000
 # usage: counter
 # perfmonvar: http_cache_hits_total
 proxy.node.http.origin_server_current_connections_count
-# doc: Number of currently open HTTP and FTP server connections.
-# shortdoc: # cur open HTTP & FTP srvr conn
+# doc: Number of currently open HTTP server connections.
+# shortdoc: # cur open HTTP srvr conn
 # scale: 100
 # units: connections
 # usage: gauge
@@ -320,8 +320,8 @@ proxy.node.http.throughput
 # perfmonvar: cur_http_throughput
 #
 proxy.node.http.user_agent_current_connections_count
-# doc: Number of currently open HTTP and FTP client connections.
-# shortdoc: # cur open HTTP & FTP cli conn
+# doc: Number of currently open HTTP client connections.
+# shortdoc: # cur open HTTP cli conn
 # scale: 100
 # units: connections
 # usage: gauge
@@ -370,40 +370,6 @@ proxy.node.http.transaction_msec_avg_10s.miss_client_no_cache
 proxy.node.http.transaction_msec_avg_10s.miss_cold
 proxy.node.http.transaction_msec_avg_10s.miss_not_cacheable
 proxy.node.http.transaction_msec_avg_10s.other.unclassified
-proxy.process.ftp.connections_currently_open
-# doc: Number of open FTP connections
-# units: connections
-# usage: gauge
-# scale: 100
-# perfmonvar: cur_ftp_conn
-proxy.process.ftp.connections_failed_pasv
-# doc: Number of failed PASV FTP connections
-# shortdoc: # of failed PASV FTP connections
-# units: connections
-# usage: counter
-# scale: 100
-# perfmonvar: ftp_pasv_conn_failed
-proxy.process.ftp.connections_failed_port
-# doc: Number of failed PORT FTP connections
-# shortdoc: # of failed PORT FTP connections
-# units: connections
-# usage: counter
-# scale: 100
-# perfmonvar: ftp_port_conn_failed
-proxy.process.ftp.connections_successful_pasv
-# doc: Number of successful PASV FTP connections
-# shortdoc: # of successful PASV FTP conn
-# units: connections
-# usage: counter
-# scale: 100
-# perfmonvar: ftp_pasv_conn_sucess
-proxy.process.ftp.connections_successful_port
-# doc: Number of successful PORT FTP connections
-# shortdoc: # of successful PORT FTP conn
-# units: connections
-# usage: counter
-# scale: 100
-# perfmonvar: ftp_port_conn_success
 proxy.process.http.current_client_connections
 # doc: Total HTTP client connections currently active
 # shortdoc: Tot HTTP cli conn cur active
@@ -883,16 +849,16 @@ proxy.node.client_throughput_out_kbit M
 proxy.cluster.client_throughput_out_kbit M
 proxy.node.bandwidth_hit_ratio_int_pct MP
 # derived: proxy.node.bandwidth_hit_ratio * 100
-# doc: The ratio of bytes served from the cache to total requested bytes (HTTP and FTP) since installation).
-# shortdoc: % FTP/HTTP bytes served from cache
+# doc: The ratio of bytes served from the cache to total requested bytes (HTTP) since installation).
+# shortdoc: % HTTP bytes served from cache
 # units: %
 # scale: 100
 # usage: gauge
 # perfmonvar: bw_hit_ratio
 proxy.cluster.bandwidth_hit_ratio_int_pct MP
 # derived: proxy.cluster.bandwidth_hit_ratio * 100
-# doc: The ratio of bytes served from the cache to total requested bytes (HTTP and FTP) since installation).
-# shortdoc: % FTP/HTTP bytes srvd frm cache (cluster)
+# doc: The ratio of bytes served from the cache to total requested bytes (HTTP) since installation).
+# shortdoc: % HTTP bytes srvd frm cache (cluster)
 # units: %
 # scale: 100
 # usage: gauge

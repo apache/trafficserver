@@ -43,12 +43,6 @@ public:
 
   INKVConnInternal *null_transform(ProxyMutex * mutex);
 
-#ifndef INK_NO_FTP
-  INKVConnInternal *ftp_list_transform(ProxyMutex * mutex,
-                                       HTTPHdr * req, IOBufferReader * ftp_message, const char *currentdir);
-#endif
-
-
   INKVConnInternal *range_transform(ProxyMutex * mutex,
                                     MIMEField * range_field, HTTPInfo * cache_obj, HTTPHdr * transform_resp, bool & b);
 

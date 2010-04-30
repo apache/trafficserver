@@ -1153,41 +1153,6 @@ INKFilterEleDestroy(INKFilterEle * ele)
 
 
 /*-------------------------------------------------------------
- * FtpRemapObj
- *-------------------------------------------------------------*/
-inkapi INKFtpRemapEle *
-INKFtpRemapEleCreate()
-{
-  INKFtpRemapEle *ele;
-
-  ele = (INKFtpRemapEle *) xmalloc(sizeof(INKFtpRemapEle));
-  if (!ele)
-    return NULL;
-
-  ele->cfg_ele.type = INK_FTP_REMAP;
-  ele->cfg_ele.error = INK_ERR_OKAY;
-  ele->from_val = NULL;
-  ele->from_port = INK_INVALID_PORT;
-  ele->to_val = NULL;
-  ele->to_port = INK_INVALID_PORT;
-
-  return ele;
-}
-
-inkapi void
-INKFtpRemapEleDestroy(INKFtpRemapEle * ele)
-{
-  if (ele) {
-    if (ele->from_val)
-      xfree(ele->from_val);
-    if (ele->to_val)
-      xfree(ele->to_val);
-    xfree(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
  * HostingObj
  *-------------------------------------------------------------*/
 inkapi INKHostingEle *

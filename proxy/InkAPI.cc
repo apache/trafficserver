@@ -4634,9 +4634,6 @@ INKCacheKeyDataTypeSet(INKCacheKey key, INKCacheDataType type)
   case INK_CACHE_DATA_TYPE_HTTP:
     ((CacheInfo *) key)->frag_type = CACHE_FRAG_TYPE_HTTP;
     break;
-  case INK_CACHE_DATA_TYPE_FTP:
-    ((CacheInfo *) key)->frag_type = CACHE_FRAG_TYPE_FTP;
-    break;
   case INK_CACHE_DATA_TYPE_MIXT_RTSP:  /* rtsp, wmt, qtime map to rtsp */
   case INK_CACHE_DATA_TYPE_MIXT_WMT:
   case INK_CACHE_DATA_TYPE_MIXT_QTIME:
@@ -5372,7 +5369,6 @@ INKHttpTxnCacheLookupStatusGet(INKHttpTxn txnp, int *lookup_status)
 
   switch (sm->t_state.cache_lookup_result) {
   case HttpTransact::CACHE_LOOKUP_MISS:
-  case HttpTransact::CACHE_LOOKUP_HIT_FTP_NON_ANONYMOUS:
   case HttpTransact::CACHE_LOOKUP_DOC_BUSY:
     *lookup_status = INK_CACHE_LOOKUP_MISS;
     break;
@@ -6958,9 +6954,6 @@ INKCacheDataTypeReady(INKCacheDataType type, int *is_ready)
   case INK_CACHE_DATA_TYPE_OTHER:      /* other maps to http */
   case INK_CACHE_DATA_TYPE_HTTP:
     frag_type = CACHE_FRAG_TYPE_HTTP;
-    break;
-  case INK_CACHE_DATA_TYPE_FTP:
-    frag_type = CACHE_FRAG_TYPE_FTP;
     break;
   case INK_CACHE_DATA_TYPE_MIXT_RTSP:  /* rtsp, wmt, qtime map to rtsp */
   case INK_CACHE_DATA_TYPE_MIXT_WMT:

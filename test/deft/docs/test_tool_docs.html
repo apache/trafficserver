@@ -50,7 +50,7 @@ to create
    of the form <code>[&lt;config filename&gt;]</code>.  Example: </p>
    <pre>[storage.config]</pre>
    <p> With exception of <code>[records.config]</code>,
-   <code>[remap.config]</code>, <code>[ftp_remap.config]</code>,
+   <code>[remap.config]</code>,
    <code>[filter.config]</code>, and <code>[meta]</code>
    the contents between that tag and next 
    file tag  (or end of file) are written verbatim
@@ -66,8 +66,8 @@ to create
    records.config and is intended for setting variables not
    all already in the file.  Example:</p>
    <pre>add CONFIG proxy.config.core_limit INT -1</pre>
-   <p> <code>[remap.config]</code> and <code>[ftp_remap.config]</code>
-   sections allow for
+   <p> <code>[remap.config]</code>
+   section allow for
    substitution of variables from records.config to allows for
    reverse proxy tests.  The ports for TS are not known until the
    TS's instantiator runs so we need a special syntax to have
@@ -102,7 +102,6 @@ run_manager: 1
    <ul>
    <li> <b> rafPort </b> - RAF service port</b> </li>
    <li> <b> tsHttpPort </b> - HTTP Proxy Port </b> </li>
-   <li> <b> tsFtpPort  </b> - FTP Proxy Port </b> </li>
    <li> <b> tsRtspPort </b> - RTSP Proxy Port</b> </li>
    <li> <b> tsWmtPort </b> - WMT Proxy Port </li>
    </ul>

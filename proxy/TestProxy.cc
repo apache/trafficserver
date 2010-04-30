@@ -30,7 +30,6 @@
 #include <limits.h>
 #include "Net.h"
 #include "Disk.h"
-#include "Ftp.h"
 #include "Main.h"
 #include "HostDB.h"
 #include "Cluster.h"
@@ -140,8 +139,7 @@ struct TestProxy:Continuation
         SET_HANDLER(fileEvent);
         diskProcessor.open_vc(this, url, O_RDONLY);
         return EVENT_DONE;
-      } else if (s[4] == 'f' || s[4] == 'F')
-        thost = s + 10;         // GET ftp
+      }
       else
         thost = s + 11;         // GET http
       url = strchr(thost, '/'); // done before portStr stompage */
@@ -233,33 +231,19 @@ struct TestProxy:Continuation
 
   int dnsEvent(int event, HostDBInfo * info)
   {
-    char ftppath[1023];
     if (!info) {
       printf("TestProxy dnsEvent error %d\n", event);
       return done();
     }
-    if (s[4] == 'f' || s[4] == 'F') {
-      SET_HANDLER(ftpEvent);
-      ftppath[0] = '/';
-      ink_assert(url_end > url);
-      memcpy((ftppath + 1), (url + 1), (url_end - url - 1));
-      ftppath[url_end - url] = '\0';
-      cout << "Ftp proxy: pathname<" << ftppath << ">\n";
-      cout.flush();
-      if (ftppath[url_end - url - 1] == '/')
-        ftpProcessor.opendirectory(this, info->ip, ftppath, 0, "anonymous", "foo@inktomi.com", PASV);
-      else
-        ftpProcessor.openfile(this, info->ip, ftppath, 0, "anonymous", "foo@inktomi.com", PASV);
-    } else {
-      SET_HANDLER(cacheCheckEvent);
-      url_struct = new URL((const char *) url_str, sizeof(url_str), true);
-      hostdbinfo = info;
-      cacheProcessor.lookup(this, url_struct);
-      // SET_HANDLER(connectEvent);
-      // netProcessor.connect(this,info->ip,port,host);
-    }
+    SET_HANDLER(cacheCheckEvent);
+    url_struct = new URL((const char *) url_str, sizeof(url_str), true);
+    hostdbinfo = info;
+    cacheProcessor.lookup(this, url_struct);
+    // SET_HANDLER(connectEvent);
+    // netProcessor.connect(this,info->ip,port,host);
     return EVENT_DONE;
   }
+
   int cacheCheckEvent(int event, void *data)
   {
     if (event == CACHE_EVENT_LOOKUP) {
@@ -363,18 +347,6 @@ struct TestProxy:Continuation
     outbuf->fill(strlen(outbuf->start) + 1);
     remote->do_io(VIO::WRITE, this, INT_MAX, outbuf);
     // printf("sending [%s]\n",outbuf->start);
-    return EVENT_CONT;
-  }
-
-  int ftpEvent(int event, FtpVConnection * aremote)
-  {
-    if (event != FTP_EVENT_OPEN) {
-      printf("TestProxy ftpEvent error %d\n", event);
-      return done();
-    }
-    remote = aremote;
-    SET_HANDLER(tunnelEvent);
-    tunnel = new OneWayTunnel(remote, vc, this, TUNNEL_TILL_DONE, true, true, true);
     return EVENT_CONT;
   }
 

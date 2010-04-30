@@ -37,7 +37,6 @@ enum URLType
   URL_TYPE_NONE,
   URL_TYPE_HTTP,
   URL_TYPE_HTTPS,
-  URL_TYPE_FTP,
   URL_TYPE_MMS,
   URL_TYPE_MMSU,
   URL_TYPE_MMST,
@@ -74,7 +73,7 @@ struct URLImpl:public HdrHeapObjImpl
   // Tokenized values
   ink16 m_scheme_wks_idx;
   inku16 m_port;
-  inku8 m_url_type;             // e.g. FTP or HTTP
+  inku8 m_url_type;             // e.g. HTTP
   inku8 m_type_code;            // RFC 1738 limits type code to 1 char
   // 6 bytes
 
@@ -191,10 +190,9 @@ void url_password_set(HdrHeap * heap, URLImpl * url, const char *value, int leng
 void url_host_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string);
 void url_port_set(HdrHeap * heap, URLImpl * url, unsigned int port);
 
-/* FTP and HTTP specific */
+/* HTTP specific */
 void url_path_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool copy_string);
 
-/* FTP specific */
 void url_type_set(URLImpl * url, unsigned int type);
 
 /* HTTP specific */
@@ -207,7 +205,6 @@ MIMEParseResult url_parse_no_path_component_breakdown(HdrHeap * heap, URLImpl * 
                                                       const char **start, const char *end, bool copy_strings);
 MIMEParseResult url_parse_internet(HdrHeap * heap, URLImpl * url,
                                    const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_ftp(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings);
 MIMEParseResult url_parse_http(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings);
 MIMEParseResult url_parse_http_no_path_component_breakdown(HdrHeap * heap, URLImpl * url,
                                                            const char **start, const char *end, bool copy_strings);
@@ -220,8 +217,6 @@ url_canonicalize_port(int type, int port)
   if (port == 0) {
     if (type == URL_TYPE_HTTP)
       port = 80;
-    else if (type == URL_TYPE_FTP)
-      port = 21;
     else if (type == URL_TYPE_HTTPS)
       port = 443;
     else if (type == URL_TYPE_MMS || type == URL_TYPE_MMSU || type == URL_TYPE_MMST)

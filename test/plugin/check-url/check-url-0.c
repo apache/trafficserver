@@ -49,7 +49,6 @@ typedef struct
   char *httpMethod;
 
   /* Req line URL */
-  int urlFtpType;
   char *urlHost;
   char *urlFragment;
   char *urlParams;
@@ -76,8 +75,6 @@ initMsgLine()
 
   msgLine->httpType = INK_HTTP_TYPE_UNKNOWN;
   msgLine->httpMethod = NULL;
-
-  msgLine->urlFtpType = 0;
   msgLine->urlHost = NULL;
   msgLine->urlFragment = NULL;
   msgLine->urlParams = NULL;
@@ -117,10 +114,7 @@ identicalURL(HttpMsgLine_T * pHttpMsgLine1, HttpMsgLine_T * pHttpMsgLine2)
 {
   LOG_SET_FUNCTION_NAME("identicalURL");
 
-  if ((pHttpMsgLine1->urlFtpType != pHttpMsgLine2->urlFtpType)) {
-    LOG_AUTO_ERROR("INKHttpUrlCopy", "FTP type different");
-    return 0;
-  } else if (pHttpMsgLine1->urlHost && strcmp(pHttpMsgLine1->urlHost, pHttpMsgLine2->urlHost)) {
+if (pHttpMsgLine1->urlHost && strcmp(pHttpMsgLine1->urlHost, pHttpMsgLine2->urlHost)) {
     LOG_AUTO_ERROR("INKHttpUrlCopy", "urlHost different");
     return 0;
   } else if (pHttpMsgLine1->urlFragment && strcmp(pHttpMsgLine1->urlFragment, pHttpMsgLine2->urlFragment)) {
@@ -185,13 +179,6 @@ storeHdrInfo(HttpMsgLine_T * pHttpMsgLine, INKMBuffer hdrBuf, INKMLoc hdrLoc,
   }
 
   /*urlLoc = INKHttpHdrUrlGet (hdrBuf, hdrLoc); */
-
-  if ((pHttpMsgLine->urlFtpType = INKUrlFtpTypeGet(hdrBuf, urlLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlFtpTypeGet");
-  } else {
-    INKDebug(debugTag, "(%g) FTP type = %d (%c)", section, pHttpMsgLine->urlFtpType, pHttpMsgLine->urlFtpType);
-  }
-
   if ((sUrlHostName = INKUrlHostGet(hdrBuf, urlLoc, &iUrlHostLength)) == INK_ERROR_PTR) {
     LOG_API_ERROR("INKUrlHostGet");
   } else {
@@ -301,14 +288,6 @@ setCustomUrl(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     LOG_API_ERROR("INKHttpHdrTypeGet");
   } else if (INKHttpHdrTypeGet(hdrBuf, httpHdrLoc) != INK_HTTP_TYPE_REQUEST) {
     LOG_AUTO_ERROR("INKHttpHdrTypeSet", "Type not set to INK_HTTP_TYPE_REQUEST");
-  }
-
-  if (INKUrlFtpTypeSet(hdrBuf, urlLoc, custUrl[i].urlFtpType) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlFtpTypeSet");
-  } else if (INKUrlFtpTypeGet(hdrBuf, urlLoc) == INK_ERROR) {
-    LOG_API_ERROR("INKUrlFtpTypeGet");
-  } else if (INKUrlFtpTypeGet(hdrBuf, urlLoc) != custUrl->urlFtpType) {
-    LOG_AUTO_ERROR("INKUrlFtpTypeSet/Get", "GET different from SET");
   }
 
   if (INKUrlHostSet(hdrBuf, urlLoc, custUrl[i].urlHost, strlen(custUrl[i].urlHost)) == INK_ERROR) {
@@ -448,26 +427,6 @@ negTesting(INKMBuffer hdrBuf, INKMLoc urlLoc)
   /* valid INKUrlCopy */
   if (INKUrlCopy(negHdrBuf, negUrlLoc, hdrBuf, urlLoc) == INK_ERROR) {
     LOG_NEG_ERROR("INKUrlCopy");
-  }
-
-  /* INKUrlFtpTypeGet(); */
-  if (INKUrlFtpTypeGet(NULL, negUrlLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlFtpTypeGet");
-  }
-  if (INKUrlFtpTypeGet(negHdrBuf, NULL) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlFtpTypeGet");
-  }
-
-  /* INKUrlFtpTypeSet(); */
-  if (INKUrlFtpTypeSet(NULL, negUrlLoc, 'a') != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlFtpTypeSet");
-  }
-  if (INKUrlFtpTypeSet(negHdrBuf, NULL, 'a') != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlFtpTypeSet");
-  }
-  /* FIXME: INKqa12722 */
-  if (INKUrlFtpTypeSet(negHdrBuf, negUrlLoc, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKUrlFtpTypeSet");
   }
 
   /* INKUrlHostGet */

@@ -962,9 +962,6 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
         case INK_SCHEME_HTTPS:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=https ");
           break;
-        case INK_SCHEME_FTP:
-          psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=ftp ");
-          break;
         case INK_SCHEME_RTSP:
           psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=rtsp ");
           break;
@@ -1306,8 +1303,6 @@ string_to_scheme_type(const char *scheme)
 {
   if (strcasecmp(scheme, "http") == 0) {
     return INK_SCHEME_HTTP;
-  } else if (strcasecmp(scheme, "ftp") == 0) {
-    return INK_SCHEME_FTP;
   } else if (strcasecmp(scheme, "https") == 0) {
     return INK_SCHEME_HTTPS;
   } else if (strcasecmp(scheme, "rtsp") == 0) {
@@ -1328,8 +1323,6 @@ scheme_type_to_string(INKSchemeT scheme)
     return xstrdup("http");
   case INK_SCHEME_HTTPS:
     return xstrdup("https");
-  case INK_SCHEME_FTP:
-    return xstrdup("ftp");
   case INK_SCHEME_RTSP:
     return xstrdup("rtsp");
   case INK_SCHEME_MMS:
@@ -1525,9 +1518,6 @@ filename_to_string(INKFileNameT file)
 
   case INK_FNAME_FILTER:
     return xstrdup("filter.config");
-
-  case INK_FNAME_FTP_REMAP:
-    return xstrdup("ftp_remap.config");
 
   case INK_FNAME_HOSTING:
     return xstrdup("hosting.config");
@@ -2080,9 +2070,6 @@ create_ele_obj_from_rule_node(Rule * rule)
   case INK_FILTER_STRIP_HDR:
     ele = (CfgEleObj *) new FilterObj(token_list);
     break;
-  case INK_FTP_REMAP:          /* ftp_remap.config */
-    ele = (CfgEleObj *) new FtpRemapObj(token_list);
-    break;
   case INK_HOSTING:            /* hosting.config */
     ele = (CfgEleObj *) new HostingObj(token_list);
     break;
@@ -2212,10 +2199,6 @@ create_ele_obj_from_ele(INKCfgEle * ele)
   case INK_FILTER_KEEP_HDR:    // fall-through
   case INK_FILTER_STRIP_HDR:   // fall-through
     ele_obj = (CfgEleObj *) new FilterObj((INKFilterEle *) ele);
-    break;
-
-  case INK_FTP_REMAP:          /* ftp_remap.config */
-    ele_obj = (CfgEleObj *) new FtpRemapObj((INKFtpRemapEle *) ele);
     break;
 
   case INK_HOSTING:            /* hosting.config */
@@ -2388,9 +2371,6 @@ get_rule_type(TokenList * token_list, INKFileNameT file)
       }
     }
     return INK_FILTER_ALLOW;
-
-  case INK_FNAME_FTP_REMAP:    /* ftp_remap.config */
-    return INK_FTP_REMAP;
 
   case INK_FNAME_HOSTING:      /* hosting.config */
     return INK_HOSTING;
@@ -2845,28 +2825,6 @@ copy_filter_ele(INKFilterEle * ele)
     nele->bind_dn = xstrdup(ele->bind_dn);
   if (ele->bind_pwd_file)
     nele->bind_pwd_file = xstrdup(ele->bind_pwd_file);
-
-  return nele;
-}
-
-INKFtpRemapEle *
-copy_ftp_remap_ele(INKFtpRemapEle * ele)
-{
-  if (!ele) {
-    return NULL;
-  }
-
-  INKFtpRemapEle *nele = INKFtpRemapEleCreate();
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->from_val)
-    nele->from_val = xstrdup(ele->from_val);
-  nele->from_port = ele->from_port;
-  if (ele->to_val)
-    nele->to_val = xstrdup(ele->to_val);
-  nele->to_port = ele->to_port;
 
   return nele;
 }

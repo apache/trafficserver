@@ -40,7 +40,6 @@ our @additional_config_entries = ("CONFIG proxy.config.raf.enabled INT 1",
 				  "CONFIG proxy.config.raf.port INT <alloc_port>");
 our %override;
 our @remap_lines;
-our @ftp_remap_lines;
 our @filter_lines;
 our @ipnat_lines;
 
@@ -173,7 +172,6 @@ our %defaults =
  "proxy.config.admin.admin_user" => "admin",
  "proxy.config.admin.admin_password" => "21232F297A57A5A743894A0",
  "proxy.config.admin.user_id" => $default_user,
- "proxy.config.http.ftp.anonymous_passwd" => $eth_if,
  "proxy.config.net.connections_throttle" => 8000,
  "proxy.config.cluster.ethernet_interface" => $eth_if,
  "proxy.config.icp.icp_interface" => $eth_if,
@@ -189,7 +187,6 @@ our %export_ports =
 (
  "proxy.config.http.server_port" => "tsHttpPort",
  "proxy.config.raf.port" => "rafPort",
- "proxy.config.ftp.proxy_server_port" => "tsFtpPort",
  "proxy.config.mixt.rtsp_proxy_port" => "tsRtspPort",
  "proxy.config.wmt.port" => "tsWmtPort",
  "proxy.config.rni.proxy_port" => "tsRniPort"
@@ -212,7 +209,6 @@ our %base_port_hash  =
  "proxy.config.raf.port" => 15,
  "proxy.config.raf.manager.port" => 16,
  "proxy.config.wmt.port" => 17,
- "proxy.config.ftp.proxy_server_port" => 18,
  );
 
 our %config_meta = ();
@@ -246,18 +242,6 @@ sub process_remap_config {
 	    return $1;
 	} else {
 	    push(@remap_lines, $line);
-	}
-    }
-    return "";
-}
-
-sub process_ftp_remap_config {
-    my $line;
-    while ($line = <CONFIG_BLOB>) {
-	if ($line =~ /^\[([^\]]*)\]\s*$/) {
-	    return $1;
-	} else {
-	    push(@ftp_remap_lines, $line);
 	}
     }
     return "";
@@ -343,8 +327,6 @@ sub read_test_config_blob {
 	    $file_name = process_records_blob();
 	} elsif ($file_name eq "remap.config") {
 	    $file_name = process_remap_config();
-	} elsif ($file_name eq "ftp_remap.config") {
-	    $file_name = process_ftp_remap_config();
 	} elsif ($file_name eq "filter.config") {
 	    $file_name = process_filter_config();
 	} elsif ($file_name eq "ipnat.conf") {
@@ -450,38 +432,6 @@ sub output_remap_config {
 
     my $line;
     while ($line = shift(@remap_lines)) {
-	chomp($line);
-	my $output_line = "";
-	while ($line) {
-	    if ($line =~ /([^\(]*)&&\(([^\)]+)\)(.*)/) {
-		$output_line = $output_line . $1;
-		my $rec_var = $2;
-
-		if ($records_seen{$rec_var}) {
-		    $output_line = $output_line . $records_seen{$rec_var};
-		} else {
-		    $output_line = $output_line . "&&(" . $2 . ")";
-		}
-		$line = $3;
-	    } else {
-		$output_line = $output_line . $line;
-		$line = "";
-	    }
-	}
-
-	print REMAP_FILE "$output_line\n";
-    }
-
-    close(REMAP_FILE);
-}
-
-sub output_ftp_remap_config {
-    my $ftp_remap_file = $run_dir . "/etc/trafficserver/ftp_remap.config";
-    
-    open(REMAP_FILE, "> $ftp_remap_file") || die "Failed to write file $ftp_remap_file: $!\n";
-
-    my $line;
-    while ($line = shift(@ftp_remap_lines)) {
 	chomp($line);
 	my $output_line = "";
 	while ($line) {
@@ -761,10 +711,6 @@ $ports_used = output_records_config($records_config_in,
 
 if (scalar(@remap_lines) > 0) {
     output_remap_config();
-}
-
-if (scalar(@ftp_remap_lines) > 0) {
-    output_ftp_remap_config();
 }
 
 if (scalar(@filter_lines) > 0) {

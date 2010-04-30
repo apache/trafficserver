@@ -35,9 +35,6 @@ dist_webui_DATA = \
 	c_dns_resolver.ink \
 	c_dns_split.ink \
 	c_footer.ink \
-	c_ftp_cachability.ink \
-	c_ftp_general.ink \
-	c_ftp_timeout.ink \
 	c_header.ink \
 	c_http_cachability.ink \
 	c_http_dyn_cache.ink \
@@ -60,7 +57,6 @@ dist_webui_DATA = \
 	c_logging_general.ink \
 	c_logging_search.ink \
 	c_logging_splitting.ink \
-	c_mapping_ftp.ink \
 	c_mapping.ink \
 	c_media_common.ink \
 	c_media_push.ink \
@@ -79,11 +75,9 @@ dist_webui_DATA = \
 	c_quicktime_mbridge.ink \
 	c_radius_general.ink \
 	c_real_networks_general.ink \
-	c_reverse_proxy_ftp.ink \
 	c_reverse_proxy.ink \
 	c_snapshot_filesystem.ink \
 	c_snapshot_floppy.ink \
-	c_snapshot_ftpsystem.ink \
 	c_snapshot.ink \
 	c_socks_general.ink \
 	c_socks_proxy.ink \
@@ -105,7 +99,6 @@ dist_webui_DATA = \
 	f_cache_config.ink \
 	f_configs.ink \
 	f_filter_config.ink \
-	f_ftp_remap_config.ink \
 	f_hosting_config.ink \
 	f_icp_config.ink \
 	f_ip_allow_config.ink \

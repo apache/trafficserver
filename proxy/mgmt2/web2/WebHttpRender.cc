@@ -174,9 +174,6 @@ handle_config_table_object(WebHttpContext * whc, char *tag, char *arg)
     case INK_FNAME_FILTER:
       err = writeFilterConfigTable(whc);
       break;
-    case INK_FNAME_FTP_REMAP:
-      err = writeFtpRemapConfigTable(whc);
-      break;
     case INK_FNAME_HOSTING:
       err = writeHostingConfigTable(whc);
       break;
@@ -241,9 +238,6 @@ handle_help_config_link(WebHttpContext * whc, char *tag, char *arg)
         break;
       case INK_FNAME_FILTER:
         whc->response_bdy->copyFrom(HTML_HELP_LINK_FILTER, strlen(HTML_HELP_LINK_FILTER));
-        break;
-      case INK_FNAME_FTP_REMAP:
-        whc->response_bdy->copyFrom(HTML_HELP_LINK_FTP_REMAP, strlen(HTML_HELP_LINK_FTP_REMAP));
         break;
       case INK_FNAME_HOSTING:
         whc->response_bdy->copyFrom(HTML_HELP_LINK_HOSTING, strlen(HTML_HELP_LINK_HOSTING));
@@ -333,9 +327,6 @@ handle_dynamic_javascript(WebHttpContext * whc, char *tag, char *arg)
         break;
       case INK_FNAME_FILTER:
         err = writeFilterRuleList(whc->response_bdy);
-        break;
-      case INK_FNAME_FTP_REMAP:
-        err = writeFtpRemapRuleList(whc->response_bdy);
         break;
       case INK_FNAME_HOSTING:
         err = writeHostingRuleList(whc->response_bdy);
@@ -434,9 +425,6 @@ handle_config_input_form(WebHttpContext * whc, char *tag, char *arg)
         break;
       case INK_FNAME_FILTER:
         err = writeFilterConfigForm(whc);
-        break;
-      case INK_FNAME_FTP_REMAP:
-        err = writeFtpRemapConfigForm(whc);
         break;
       case INK_FNAME_HOSTING:
         err = writeHostingConfigForm(whc);

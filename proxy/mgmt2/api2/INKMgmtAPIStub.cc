@@ -367,18 +367,6 @@ INKFilterEleDestroy(INKFilterEle * ele)
   return;
 }
 
-inkapi INKFtpRemapEle *
-INKFtpRemapEleCreate()
-{
-  return NULL;
-}
-
-inkapi void
-INKFtpRemapEleDestroy(INKFtpRemapEle * ele)
-{
-  return;
-}
-
 inkapi INKHostingEle *
 INKHostingEleCreate()
 {

@@ -273,35 +273,6 @@ Cmd_ShowHttp(ClientData clientData, Tcl_Interp * interp, int argc, const char *a
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ShowFtp
-//
-// This is the callback function for the "show:ftp" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowFtp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  Cli_Debug("Cmd_ShowFtp\n");
-
-  return (ShowFtp());
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ShowIcp
 //
 // This is the callback function for the "show:icp" command.
@@ -1064,35 +1035,6 @@ Cmd_ShowHttpStats(ClientData clientData, Tcl_Interp * interp, int argc, const ch
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ShowFtpStats
-//
-// This is the callback function for the "show:ftp-stats" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowFtpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  Cli_Debug("Cmd_ShowFtpStats\n");
-
-  return (ShowFtpStats());
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ShowIcpStats
 //
 // This is the callback function for the "show:icp-stats" command.
@@ -1536,7 +1478,6 @@ ShowPorts()
   INKInt cluster = -1;
   INKInt cluster_rs = -1;
   INKInt cluster_mc = -1;
-  INKInt ftp_server = -1;
   INKInt socks_server = -1;
   INKInt icp = -1;
   INKString ssl = NULL;
@@ -1550,7 +1491,6 @@ ShowPorts()
   Cli_RecordGetInt("proxy.config.cluster.cluster_port", &cluster);
   Cli_RecordGetInt("proxy.config.cluster.rsport", &cluster_rs);
   Cli_RecordGetInt("proxy.config.cluster.mcport", &cluster_mc);
-  Cli_RecordGetInt("proxy.config.ftp.proxy_server_port", &ftp_server);
   Cli_RecordGetString("proxy.config.http.ssl_ports", &ssl);
   Cli_RecordGetInt("proxy.config.socks.socks_server_port", &socks_server);
   Cli_RecordGetInt("proxy.config.icp.icp_port", &icp);
@@ -1564,7 +1504,6 @@ ShowPorts()
   Cli_Printf("Cluster Port ----------- %d\n", cluster);
   Cli_Printf("Cluster RS Port -------- %d\n", cluster_rs);
   Cli_Printf("Cluster MC Port -------- %d\n", cluster_mc);
-  Cli_Printf("FTP Proxy Server Port -- %d\n", ftp_server);
   Cli_Printf("SSL Ports -------------- %s\n", (ssl != NULL) ? ssl : "none");
   Cli_Printf("SOCKS Server Port ------ %d\n", socks_server);
   Cli_Printf("ICP Port --------------- %d\n", icp);
@@ -1715,55 +1654,6 @@ ShowHttp()
   return CLI_OK;
 }
 
-// show ftp sub-command
-int
-ShowFtp()
-{
-  // declare and initialize variables
-
-  INKInt cache_ftp = 0;
-  INKInt document_lifetime = -1;
-  INKInt data_connection_mode = -1;
-  INKInt control_connection_timeout = -1;
-  INKString passwd = NULL;
-
-  // retrieve value
-
-  Cli_RecordGetInt("proxy.config.http.cache.ftp", &cache_ftp);
-  Cli_RecordGetInt("proxy.config.http.ftp.cache.document_lifetime", &document_lifetime);
-  Cli_RecordGetInt("proxy.config.ftp.data_connection_mode", &data_connection_mode);
-  Cli_RecordGetInt("proxy.config.ftp.control_connection_timeout", &control_connection_timeout);
-  Cli_RecordGetString("proxy.config.http.ftp.anonymous_passwd", &passwd);
-  // display results
-  Cli_Printf("\n");
-
-  if (Cli_PrintEnable("FTP Caching ----------------------- ", cache_ftp) == CLI_ERROR) {
-    return CLI_ERROR;
-  }
-  Cli_Printf("FTP Cached Objects Expired After -- %d s\n", document_lifetime);
-
-  switch (data_connection_mode) {
-  case 1:
-    Cli_Printf("FTP Connection Mode --------------- %s\n", "PASV/PORT");
-    break;
-  case 2:
-    Cli_Printf("FTP Connection Mode --------------- %s\n", "PORT ONLY");
-    break;
-  case 3:
-    Cli_Printf("FTP Connection Mode --------------- %s\n", "PASV ONLY");
-    break;
-  default:
-    Cli_Printf("FTP Connection Mode --------------- %s\n", "NOT SET");
-
-  }
-
-  Cli_Printf("FTP Inactivity Timeout ------------ %d s\n", control_connection_timeout);
-  Cli_Printf("Anonymous FTP password ------------ %s\n", passwd);
-  Cli_Printf("\n");
-
-  return CLI_OK;
-}
-
 // show icp sub-command
 int
 ShowIcp()
@@ -1829,14 +1719,12 @@ ShowCache()
   // declare and initialize variables
 
   INKInt cache_http = -1;
-  INKInt cache_ftp = -1;
   INKInt cache_bypass = -1;
   INKInt max_doc_size = -1;
   INKInt when_to_reval = -1;
   INKInt reqd_headers = -1;
   INKInt min_life = -1;
   INKInt max_life = -1;
-  INKInt doc_life = -1;
   INKInt dynamic_urls = -1;
   INKInt alternates = -1;
   const char *vary_def_text = "NONE";
@@ -1847,13 +1735,11 @@ ShowCache()
   // retrieve values
 
   Cli_RecordGetInt("proxy.config.http.cache.http", &cache_http);
-  Cli_RecordGetInt("proxy.config.http.cache.ftp", &cache_ftp);
   Cli_RecordGetInt("proxy.config.cache.max_doc_size", &max_doc_size);
   Cli_RecordGetInt("proxy.config.http.cache.when_to_revalidate", &when_to_reval);
   Cli_RecordGetInt("proxy.config.http.cache.required_headers", &reqd_headers);
   Cli_RecordGetInt("proxy.config.http.cache.heuristic_min_lifetime", &min_life);
   Cli_RecordGetInt("proxy.config.http.cache.heuristic_max_lifetime", &max_life);
-  Cli_RecordGetInt("proxy.config.http.ftp.cache.document_lifetime", &doc_life);
   Cli_RecordGetInt("proxy.config.http.cache.cache_urls_that_look_dynamic", &dynamic_urls);
   Cli_RecordGetInt("proxy.config.http.cache.enable_default_vary_headers", &alternates);
   Cli_RecordGetString("proxy.config.http.cache.vary_default_text", (char**)&vary_def_text);
@@ -1868,14 +1754,12 @@ ShowCache()
 
   Cli_PrintEnable("HTTP Caching --------------------------- ", cache_http);
 
-  Cli_PrintEnable("FTP Caching ---------------------------- ", cache_ftp);
-
   Cli_PrintEnable("Ignore User Requests To Bypass Cache --- ", cache_bypass);
 
   if (max_doc_size == 0)
-    Cli_Printf("Maximum HTTP/FTP Object Size ----------- NONE\n");
+    Cli_Printf("Maximum HTTP Object Size ----------- NONE\n");
   else
-    Cli_Printf("Maximum HTTP/FTP Object Size ----------- %d\n", max_doc_size);
+    Cli_Printf("Maximum HTTP Object Size ----------- %d\n", max_doc_size);
 
   Cli_Printf("Freshness\n");
   Cli_Printf("  Verify Freshness By Checking --------- ");
@@ -1917,7 +1801,6 @@ ShowCache()
 
   Cli_Printf("  If Object has no Expiration Date: \n" "    Leave it in Cache for at least ----- %d s\n", min_life);
   Cli_Printf("    but no more than ------------------- %d s\n", max_life);
-  Cli_Printf("  FTP Cached Objects Expire After ------ %d s\n", doc_life);
 
   Cli_Printf("Variable Content\n");
 
@@ -2764,37 +2647,6 @@ ShowHttpStats()
   Cli_Printf("Total Header Bytes ------- %d MB\n", origin_server_response_header_total_size / (1024 * 1024));
   Cli_Printf("Total Connections -------- %d\n", current_server_connections);
   Cli_Printf("Transactins In Progress -- %d\n", current_server_transactions);
-  Cli_Printf("\n");
-
-  return CLI_OK;
-}
-
-// show proxy-stats sub-command
-int
-ShowFtpStats()
-{
-  //variable declaration
-
-  INKInt connections_currently_open = -1;
-  INKInt connections_successful_pasv = -1;
-  INKInt connections_failed_pasv = -1;
-  INKInt connections_successful_port = -1;
-  INKInt connections_failed_port = -1;
-
-  //get value   
-  Cli_RecordGetInt("proxy.process.ftp.connections_currently_open", &connections_currently_open);
-  Cli_RecordGetInt("proxy.process.ftp.connections_successful_pasv", &connections_successful_pasv);
-  Cli_RecordGetInt("proxy.process.ftp.connections_failed_pasv", &connections_failed_pasv);
-  Cli_RecordGetInt("proxy.process.ftp.connections_successful_port", &connections_successful_port);
-  Cli_RecordGetInt("proxy.process.ftp.connections_failed_port", &connections_failed_port);
-
-  //display values
-  Cli_Printf("\n");
-  Cli_Printf("Open Connections ------------ %d\n", connections_currently_open);
-  Cli_Printf("PASV Connections Successes -- %d\n", connections_successful_pasv);
-  Cli_Printf("PASV Connections Failure ---- %d\n", connections_failed_pasv);
-  Cli_Printf("PORT Connections Successes -- %d\n", connections_successful_port);
-  Cli_Printf("PORT Connections Failure ---- %d\n", connections_failed_port);
   Cli_Printf("\n");
 
   return CLI_OK;

@@ -68,25 +68,6 @@
     </td>
   </tr>
 
-
-  <tr>
-    <td class="blackLabel">
-      <@record proxy.config.ftp.reverse_ftp_remap_file_name>
-    </td>
-  </tr>
-  <tr>
-   <td width="100%" class="configureHelp" valign="top" align="left">
-    <@config_table_object /configure/f_ftp_remap_config.ink>
-   </td>
-  </tr>
-  <tr>
-    <td colspan="2" align="right">
-     <input class="configureButton" type=button name="refresh" value="Refresh" onclick="window.location='/configure/f_configs.ink'">
-     <input class="configureButton" type=button name="editFile" value="Edit File" target="displayWin" onclick="window.open('/configure/submit_config_display.cgi?filename=/configure/f_ftp_remap_config.ink&fname=<@record proxy.config.ftp.reverse_ftp_remap_file_name>&frecord=proxy.config.ftp.reverse_ftp_remap_file_name', 'displayWin');">
-    </td>
-  </tr>
-
-
   <tr>
     <td class="blackLabel">
       <@record proxy.config.cache.hosting_filename>

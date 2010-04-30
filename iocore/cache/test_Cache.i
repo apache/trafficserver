@@ -347,7 +347,6 @@ CacheTestControl::CacheTestControl()
   xrun_length = 0;
   xmean_doc_size = 13 * 1024;
   xlast_cachable_id = 10000;
-  xlast_ftp_cachable_id = 0;
   xnum_hosts = 0;
   xhotset_probability = 1;
   xremove_probability = 0;
@@ -899,16 +898,6 @@ CacheTestControl::get_request(CacheSMTest * test, char *buffer, int size)
       }
       id = 1 + (id << 1);
       sprintf(buffer, "http://%s/%s/%u", h->name, cache_test_id, id);
-    } else {
-      if (gen->drandom() <= xhotset_probability) {
-        test->f.hit = 1;
-        id = (unsigned int) (1 + h->xlast_ftp_cachable_id * gen->drandom());
-
-      } else {
-        id = 1 + ink_atomic_increment((volatile ink32 *) &h->xlast_ftp_cachable_id, 1);
-      }
-      id = 1 + (id << 1);
-      sprintf(buffer, "ftp://%s/%s/%u", h->name, cache_test_id, id);
     }
   } else {
     if (gen->drandom() <= xhttp_req_probability) {
@@ -920,16 +909,6 @@ CacheTestControl::get_request(CacheSMTest * test, char *buffer, int size)
       }
       id = 1 + (id << 1);
       sprintf(buffer, "http://www.foobar.com/%s/%u", cache_test_id, id);
-
-    } else {
-      if (gen->drandom() <= xhotset_probability) {
-        test->f.hit = 1;
-        id = (unsigned int) (1 + xlast_ftp_cachable_id * gen->drandom());
-      } else {
-        id = 1 + ink_atomic_increment((volatile ink32 *) &xlast_ftp_cachable_id, 1);
-      }
-      id = 1 + (id << 1);
-      sprintf(buffer, "ftp://www.foobar.com/%s/%u", cache_test_id, id);
     }
   }
 
@@ -1292,12 +1271,7 @@ CacheSMTest::make_request()
     hdr->url_get(&url);
     start_time = ink_get_hrtime();
     action = cacheProcessor.open_read(this, &url, hdr, &params);
-  } else
 #endif
-  {
-    f.http_request = 0;
-    start_time = ink_get_hrtime();
-    action = cacheProcessor.open_read(this, &md5, CACHE_FRAG_TYPE_FTP, 0, 0);
   }
 
   if ((action != ACTION_RESULT_DONE) && (gen->drandom() <= control->xcancel_probability)) {
@@ -1444,12 +1418,6 @@ CacheSMTest::event_handler(int event, void *edata)
           info.request_get(&h);
           h.url_get(&u);
           action = cacheProcessor.open_write(this, 0, &u, &h, alternate, pin_in_cache);
-        } else {
-          if (prob < (control->xupdate_probability)) {
-            action = cacheProcessor.open_write(this, 0, &md5, CACHE_FRAG_TYPE_FTP, true, pin_in_cache);
-          } else {
-            action = cacheProcessor.remove(this, &md5);
-          }
         }
         if ((action != ACTION_RESULT_DONE) && (gen->drandom() <= control->xcancel_probability)) {
           cache_action = action;
@@ -1508,12 +1476,8 @@ CacheSMTest::event_handler(int event, void *edata)
         info.request_get(&h);
         h.url_get(&u);
         action = cacheProcessor.open_write(this, total_size, &u, &h, NULL, pin_in_cache);
-      } else
-#endif
-      {
-        action = cacheProcessor.open_write(this, total_size, &md5, CACHE_FRAG_TYPE_FTP, 0, pin_in_cache);
       }
-
+#endif
       if ((action != ACTION_RESULT_DONE) && (gen->drandom() <= control->xcancel_probability)) {
         cache_action = action;
         timeout = eventProcessor.schedule_in(this, HRTIME_MSECONDS((int) (gen->drandom() * 50)), ET_CALL);

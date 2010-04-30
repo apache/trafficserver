@@ -274,11 +274,6 @@ s_text_789=Example: ab.c.com a.bc.com
 s_text_795=Proxy Hostname
 s_text_796=Specifies the hostname or IP address assigned to <@record proxy.config.product_name>.
 s_text_797=Proxy Port
-s_text_798=Specifies the proxy port used by <@record proxy.config.product_name> to listen to FTP traffic.
-s_text_799=FTP Server
-s_text_800=Specifies the hostname or IP address assigned to the FTP server to which you want to redirect requests.
-s_text_801=FTP Server Port
-s_text_802=Specifies the port number used by the FTP server to handle requests.
 
 s_text_809=Authentication and Authorization Specifiers
 s_text_810=Specifies the rule action to define how <@record proxy.config.product_name> denies or allows particular URL requests, keeps or strips header information from client requests, and authenticates users.

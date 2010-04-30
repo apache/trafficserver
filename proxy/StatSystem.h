@@ -64,7 +64,7 @@ public:
   ink_hrtime ua_close;
 
   ////////////////////////////////////////////////////////
-  // server (origin_server , parent, ftp, blind tunnnel //
+  // server (origin_server , parent, blind tunnnel //
   ////////////////////////////////////////////////////////
   ink_hrtime server_first_connect;
   ink_hrtime server_connect;

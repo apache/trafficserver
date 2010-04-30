@@ -144,20 +144,18 @@ Ag_cachePercent()
 }
 
 
-// HTTP/FTP hit stats
+// HTTP hit stats
 // NOTE: no cache hit info. for WMT, QT
 static const char *hitCounters[] = {
   "proxy.process.http.cache_hit_fresh", // 0
   "proxy.process.http.cache_hit_revalidated",   // 1
   "proxy.process.http.cache_hit_ims",   // 2
   "proxy.process.http.cache_hit_stale_served",  // 3
-  "proxy.process.ftp.cache_hits",       // 4 FTP over HTTP
-  "proxy.process.ftp.cache_hit_fresh",  // 5
-  "proxy.process.rni.block_hit_count",  // 6
+  "proxy.process.rni.block_hit_count",  // 4
   NULL
 };
 
-// HTTP/FTP miss stats
+// HTTP miss stats
 // NOTE: no cache miss info. for WMT, QT
 static const char *missCounters[] = {
   "proxy.process.http.cache_miss_cold", // 0
@@ -166,15 +164,13 @@ static const char *missCounters[] = {
   "proxy.process.http.cache_miss_client_no_cache",      // 3
   "proxy.process.http.cache_miss_ims",  // 4
   "proxy.process.http.cache_read_error",        // 5
-  "proxy.process.ftp.cache_misses",     // 6 FTP over HTTP
-  "proxy.process.ftp.cache_miss_cold",  // 7
-  "proxy.process.rni.block_miss_count", // 8
+  "proxy.process.rni.block_miss_count", // 6
   NULL
 };
 
 //
 // Calculate Node cache hits/misses i.e. hit ratio
-// Should include HTTP/FTP and maybe RNI(?)
+// Should include HTTP and maybe RNI(?)
 //
 void
 Ag_cacheHits()
@@ -195,9 +191,7 @@ Ag_cacheHits()
     {"proxy.process.http.cache_hit_revalidated", 0, 0, 0, 0},   // 1
     {"proxy.process.http.cache_hit_ims", 0, 0, 0, 0},   // 2
     {"proxy.process.http.cache_hit_stale_served", 0, 0, 0, 0},  // 3
-    {"proxy.process.ftp.cache_hits", 0, 0, 0, 0},       // 4 FTP over HTTP
-    {"proxy.process.ftp.cache_hit_fresh", 0, 0, 0, 0},  // 5
-    {"proxy.process.rni.block_hit_count", 0, 0, 0, 0},  // 7
+    {"proxy.process.rni.block_hit_count", 0, 0, 0, 0},  // 6
     {NULL, -1, -1, -1, -1}
   };
 
@@ -209,9 +203,7 @@ Ag_cacheHits()
     {"proxy.process.http.cache_miss_client_no_cache", 0, 0, 0, 0},      // 3
     {"proxy.process.http.cache_miss_ims", 0, 0, 0, 0},  // 4
     {"proxy.process.http.cache_read_error", 0, 0, 0, 0},        // 5 
-    {"proxy.process.ftp.cache_misses", 0, 0, 0, 0},     // 6 FTP over HTTP
-    {"proxy.process.ftp.cache_miss_cold", 0, 0, 0, 0},  // 7
-    {"proxy.process.rni.block_miss_count", 0, 0, 0, 0}, // 9
+    {"proxy.process.rni.block_miss_count", 0, 0, 0, 0}, // 6
     {NULL, -1, -1, -1, -1}
   };
 
@@ -221,9 +213,7 @@ Ag_cacheHits()
     "proxy.node.http.cache_hit_revalidated_avg_10s",    // 1
     "proxy.node.http.cache_hit_ims_avg_10s",    // 2
     "proxy.node.http.cache_hit_stale_served_avg_10s",   // 3
-    "proxy.node.ftp.cache_hits_avg_10s",        // 4 FTP over HTTP
-    "proxy.node.ftp.cache_hit_fresh_avg_10s",   // 6
-    "proxy.node.rni.block_hit_count_avg_10s",   // 8
+    "proxy.node.rni.block_hit_count_avg_10s",   // 4
     NULL
   };
 
@@ -235,9 +225,7 @@ Ag_cacheHits()
     "proxy.node.http.cache_miss_client_no_cache_avg_10s",       // 3
     "proxy.node.http.cache_miss_ims_avg_10s",   // 4
     "proxy.node.http.cache_read_error_avg_10s", // 5
-    "proxy.node.ftp.cache_misses_avg_10s",      // 6 FTP over HTTP
-    "proxy.node.ftp.cache_miss_cold_avg_10s",   // 7
-    "proxy.node.rni.block_miss_count_avg_10s",  // 9
+    "proxy.node.rni.block_miss_count_avg_10s",  // 6
     NULL
   };
 
@@ -689,24 +677,18 @@ Ag_Throughput()
   const ink_hrtime window = 10 * HRTIME_SECOND; // update every 10 seconds
   static StatTwoIntSamples node_http_user_agent_total_response_bytes =
     { "proxy.node.http.user_agent_total_response_bytes", 0, 0, 0, 0 };
-  static StatTwoIntSamples node_ftp_downstream_total_bytes = { "proxy.node.ftp.downstream_total_bytes", 0, 0, 0, 0 };
   static StatTwoIntSamples node_rni_downstream_total_bytes = { "proxy.node.rni.downstream_total_bytes", 0, 0, 0, 0 };
   static const char *node_http_ua_total_response_bytes_name = "proxy.node.http.user_agent_total_response_bytesavg_10s";
-  static const char *node_ftp_downstream_total_bytes_name = "proxy.node.ftp.downstream_total_bytes_avg_10s";
   static const char *node_rni_downstream_total_bytes_name = "proxy.node.rni.downstream_total_bytes_avg_10s";
   static ink_hrtime lastThroughputTime = 0;
   static MgmtInt lastBytesThrough = 0;
   // These aren't used.
   //static MgmtInt lastBytesHttpUAThrough;
   //static MgmtInt lastBytesHttpOSThrough;
-  //static MgmtInt lastBytesFTPUAThrough; 
-  //static MgmtInt lastBytesFTPOSThrough; 
   //static MgmtInt lastBytesRNIUAThrough; 
   MgmtInt bytesThrough;
   MgmtInt bytesHttpUAThrough;
   MgmtInt bytesHttpOSThrough;
-  MgmtInt bytesFTPUAThrough;
-  MgmtInt bytesFTPOSThrough;
   MgmtInt bytesRNIUAThrough;
   MgmtInt bytesWMTUAThrough = 0;
   MgmtInt bytesQTUAThrough = 0;
@@ -718,17 +700,13 @@ Ag_Throughput()
 
   // Avoid warnings, we might want to clear out some of these variables ... /leif.
   NOWARN_UNUSED(node_http_user_agent_total_response_bytes);
-  NOWARN_UNUSED(node_ftp_downstream_total_bytes);
   NOWARN_UNUSED(node_rni_downstream_total_bytes);
   NOWARN_UNUSED(node_http_ua_total_response_bytes_name);
-  NOWARN_UNUSED(node_ftp_downstream_total_bytes_name);
   NOWARN_UNUSED(node_rni_downstream_total_bytes_name);
 
   if (diffTime > window) {
     if (varIntFromName("proxy.node.http.user_agent_total_response_bytes", &bytesHttpUAThrough)
         && varIntFromName("proxy.node.http.origin_server_total_response_bytes", &bytesHttpOSThrough)
-        && varIntFromName("proxy.node.ftp.upstream_total_bytes", &bytesFTPOSThrough)
-        && varIntFromName("proxy.node.ftp.downstream_total_bytes", &bytesFTPUAThrough)
         && varIntFromName("proxy.node.rni.downstream_total_bytes", &bytesRNIUAThrough)
 #ifdef WMT_STATS_1
         && varIntFromName("proxy.node.wmt.downstream_total_bytes", &bytesWMTUAThrough)
@@ -737,10 +715,10 @@ Ag_Throughput()
         && varIntFromName("proxy.node.qt.downstream_total_bytes", &bytesQTUAThrough)
 #endif
       ) {
-      bytesThrough = bytesHttpUAThrough + bytesFTPUAThrough +
+      bytesThrough = bytesHttpUAThrough +
         bytesRNIUAThrough + bytesWMTUAThrough + bytesQTUAThrough;
       if (lastThroughputTime != 0 && bytesThrough != 0) {
-        if (lastBytesThrough > (bytesHttpUAThrough + bytesFTPUAThrough +
+        if (lastBytesThrough > (bytesHttpUAThrough +
                                 bytesRNIUAThrough + bytesWMTUAThrough + bytesQTUAThrough)) {
           // The proxy must have died so just set the value to zero
           intSum = 0;
@@ -802,14 +780,12 @@ Ag_XactsPerSecond()
   static ink_hrtime lastXactLookupTime = 0;
   static MgmtInt lastTotalXactLookup = 0;
   static MgmtInt lastHttpXactLookup = 0;
-  static MgmtInt lastFtpXactLookup = 0;
   static MgmtInt lastRniXactLookup = 0;
   static MgmtInt lastWmtXactLookup = 0;
   static MgmtInt lastQtXactLookup = 0;
   ink_hrtime nowTime = ink_get_hrtime();
   ink_hrtime diffTime = nowTime - lastXactLookupTime;
   MgmtInt totalXacts = 0;
-  MgmtInt ftpXacts = 0;
   MgmtInt httpXacts = 0;
   MgmtInt rniXacts = 0;
   MgmtInt wmtXacts = 0;
@@ -817,24 +793,21 @@ Ag_XactsPerSecond()
   double tmp;
   MgmtFloat totalfloatSum = 0.0;
   MgmtFloat httpSum = 0.0;
-  MgmtFloat ftpSum = 0.0;
   MgmtFloat rniSum = 0.0;
   MgmtFloat wmtSum = 0.0;
   MgmtFloat qtSum = 0.0;
 
   if (diffTime > hrThreshold) {
     if (varIntFromName("proxy.process.http.incoming_requests", &httpXacts)
-        && varIntFromName("proxy.process.ftp.incoming_requests", &ftpXacts)
         && varIntFromName("proxy.process.rni.downstream_requests", &rniXacts)
         && varIntFromName("proxy.process.wmt.downstream_requests", &wmtXacts)
         && varIntFromName("proxy.process.qt.downstream_requests", &qtXacts)) {
-      totalXacts = ftpXacts + httpXacts + rniXacts + wmtXacts + qtXacts;
+      totalXacts = httpXacts + rniXacts + wmtXacts + qtXacts;
       if (lastXactLookupTime != 0 && lastTotalXactLookup != 0) {
         if (lastTotalXactLookup > totalXacts) {
           // The proxy must have died so just set the value to zero
           totalfloatSum = 0.0;
           httpSum = 0.0;
-          ftpSum = 0.0;
           rniSum = 0.0;
           wmtSum = 0.0;
           qtSum = 0.0;
@@ -843,8 +816,6 @@ Ag_XactsPerSecond()
           totalfloatSum = (MgmtFloat) (tmp * HRTIME_SECOND);
           tmp = (MgmtFloat) ((double) (httpXacts - lastHttpXactLookup) / diffTime);
           httpSum = (MgmtFloat) (tmp * HRTIME_SECOND);
-          tmp = (MgmtFloat) ((double) (ftpXacts - lastFtpXactLookup) / diffTime);
-          ftpSum = (MgmtFloat) (tmp * HRTIME_SECOND);
           tmp = (MgmtFloat) ((double) (rniXacts - lastRniXactLookup) / diffTime);
           rniSum = (MgmtFloat) (tmp * HRTIME_SECOND);
           tmp = (MgmtFloat) ((double) (wmtXacts - lastWmtXactLookup) / diffTime);
@@ -854,7 +825,6 @@ Ag_XactsPerSecond()
         }
         varSetFloat("proxy.node.user_agent_xacts_per_second", totalfloatSum);
         varSetFloat("proxy.node.http.user_agent_xacts_per_second", httpSum);
-        varSetFloat("proxy.node.ftp.user_agent_xacts_per_second", ftpSum);
         varSetFloat("proxy.node.rni.user_agent_xacts_per_second", rniSum);
         varSetFloat("proxy.node.wmt.user_agent_xacts_per_second", wmtSum);
         varSetFloat("proxy.node.qt.user_agent_xacts_per_second", qtSum);
@@ -862,7 +832,6 @@ Ag_XactsPerSecond()
       lastXactLookupTime = nowTime;
       lastTotalXactLookup = totalXacts;
       lastHttpXactLookup = httpXacts;
-      lastFtpXactLookup = ftpXacts;
       lastRniXactLookup = rniXacts;
       lastWmtXactLookup = wmtXacts;
       lastQtXactLookup = qtXacts;
@@ -871,24 +840,22 @@ Ag_XactsPerSecond()
 }
 
 //
-// Aggregate total documents served for HTTP/FTP and RNI(?)
+// Aggregate total documents served for HTTP and RNI(?)
 //
 void
 Ag_TotalDocumentsServed()
 {
   MgmtInt http_docs = 0;
-  MgmtInt ftp_docs = 0;
   MgmtInt rni_docs = 0;
   MgmtInt wmt_docs = 0;
   MgmtInt qt_docs = 0;
   MgmtInt total_docs = 0;
 
   if (varIntFromName("proxy.node.http.user_agents_total_documents_served", &http_docs)
-      && varIntFromName("proxy.node.ftp.user_agents_total_documents_served", &ftp_docs)
       && varIntFromName("proxy.node.rni.user_agents_total_documents_served", &rni_docs)
       && varIntFromName("proxy.node.wmt.user_agents_total_documents_served", &wmt_docs)
       && varIntFromName("proxy.node.qt.user_agents_total_documents_served", &qt_docs)) {
-    total_docs = http_docs + ftp_docs + rni_docs + wmt_docs + qt_docs;
+    total_docs = http_docs + rni_docs + wmt_docs + qt_docs;
     varSetInt("proxy.node.user_agents_total_documents_served", total_docs);
   } else {
     varSetInt("proxy.node.user_agents_total_documents_served", -20);
@@ -898,7 +865,7 @@ Ag_TotalDocumentsServed()
 
 
 //
-// Aggregate client/server connections for HTTP/FTP and RNI(?)
+// Aggregate client/server connections for HTTP and RNI(?)
 //
 void
 Ag_Connections()
@@ -907,9 +874,6 @@ Ag_Connections()
   MgmtInt http_os_server_conn = 0;
   MgmtInt http_pp_server_conn = 0;
   MgmtInt http_cache_conn = 0;
-  MgmtInt ftp_client_conn = 0;
-  MgmtInt ftp_server_conn = 0;
-  MgmtInt ftp_cache_conn = 0;
   MgmtInt rni_client_conn = 0;
   MgmtInt rni_server_conn = 0;
   MgmtInt rni_cache_conn = 0;
@@ -927,9 +891,6 @@ Ag_Connections()
       && varIntFromName("proxy.node.http.origin_server_current_connections_count", &http_os_server_conn)
       && varIntFromName("proxy.node.http.current_parent_proxy_connections", &http_pp_server_conn)
       && varIntFromName("proxy.node.http.cache_current_connections_count", &http_cache_conn)
-      && varIntFromName("proxy.node.ftp.current_client_connections", &ftp_client_conn)
-      && varIntFromName("proxy.node.ftp.current_server_connections", &ftp_server_conn)
-      && varIntFromName("proxy.node.ftp.current_cache_connections", &ftp_cache_conn)
       && varIntFromName("proxy.node.rni.current_cache_connections", &rni_cache_conn)
       && varIntFromName("proxy.node.rni.current_client_connections", &rni_client_conn)
       && varIntFromName("proxy.node.rni.current_server_connections", &rni_server_conn)
@@ -941,11 +902,11 @@ Ag_Connections()
       && varIntFromName("proxy.node.qt.current_cache_connections", &qt_cache_conn)
 
     ) {
-    client_conn = http_ua_client_conn + ftp_client_conn +
+    client_conn = http_ua_client_conn +
       rni_client_conn + wmt_client_conn + qt_client_conn;
-    server_conn = http_os_server_conn + http_pp_server_conn + ftp_server_conn +
+    server_conn = http_os_server_conn + http_pp_server_conn +
       rni_server_conn + wmt_server_conn + qt_server_conn;
-    cache_conn = http_cache_conn + ftp_cache_conn + rni_cache_conn + wmt_cache_conn + qt_cache_conn;
+    cache_conn = http_cache_conn + rni_cache_conn + wmt_cache_conn + qt_cache_conn;
     varSetInt("proxy.node.current_client_connections", client_conn);
     varSetInt("proxy.node.current_server_connections", server_conn);
     varSetInt("proxy.node.current_cache_connections", cache_conn);
@@ -960,8 +921,8 @@ Ag_Connections()
 //
 // Calculate Node Bandwidth ratio i.e. bandwidth savings
 //
-// FIXME: Should reflext HTTP/FTP and maybe RNI(?)
-//        Currently only reflects HTTP/FTP
+// FIXME: Should reflext HTTP and maybe RNI(?)
+//        Currently only reflects HTTP
 //
 // NOTE: 8/21/98 (Bug INKqa03094)
 //       A special scenario is considered in this code where during fresh 
@@ -989,13 +950,12 @@ Ag_Bytes()
   MgmtInt PP_bytes;             // Parent Proxy(?)
   MgmtFloat bandwidthHitRate;
   MgmtInt cacheOn = 1;          // on by default
-  MgmtInt httpCacheOn, ftpCacheOn;
+  MgmtInt httpCacheOn;
   bool ok = true;
 
   // See if cache is on
   ink_assert(varIntFromName("proxy.config.http.cache.http", &httpCacheOn));
-  ink_assert(varIntFromName("proxy.config.http.cache.ftp", &ftpCacheOn));
-  cacheOn = httpCacheOn || ftpCacheOn;
+  cacheOn = httpCacheOn;
 
   /////////////////////////////////////////////////////////////
   // add up the downstream (client <-> proxy) traffic volume //
@@ -1018,17 +978,6 @@ Ag_Bytes()
   } else {
     ok = false;
     varSetInt("proxy.node.http.user_agent_total_response_bytes", -20);
-  }
-
-  // What about FTP user agent?. Included in HTTP.
-  // Add FTP User Agent request/response bytes
-  if (varIntFromName("proxy.process.ftp.downstream.request_bytes", &b) &&
-      varIntFromName("proxy.process.ftp.downstream.response_bytes", &h)) {
-    UA_bytes += h + b;
-    varSetInt("proxy.node.ftp.downstream_total_bytes", h + b);
-  } else {
-    ok = false;
-    varSetInt("proxy.node.ftp.downstream_total_bytes", -20);
   }
 
   // Add RNI User Agent request/response bytes
@@ -1086,18 +1035,6 @@ Ag_Bytes()
   } else {
     ok = false;
     varSetInt("proxy.node.http.origin_server_total_response_bytes", -20);
-  }
-
-  // What about FTP Origin Server? Included in HTTP
-
-  // Add FTP origin server request/response bytes
-  if (varIntFromName("proxy.process.ftp.upstream.request_bytes", &b) &&
-      varIntFromName("proxy.process.ftp.upstream.response_bytes", &h)) {
-    OS_bytes += h + b;
-    varSetInt("proxy.node.ftp.upstream_total_bytes", h + b);
-  } else {
-    ok = false;
-    varSetInt("proxy.node.ftp.upstream_total_bytes", -20);
   }
 
   // Add RNI origin server request/response bytes
@@ -1245,9 +1182,7 @@ void
 aggregateNodeRecords()
 {
   // HTTP
-  MgmtInt tmp1;                 // BUG: INKqa06052
-  MgmtInt tmp2;                 // BUG: INKqa06052
-
+  MgmtInt tmp1;
 
   /* NOTE: the following two stats are redunant and one of them should be remove */
   AgInt_generic("proxy.process.http.incoming_requests", "proxy.node.http.user_agents_total_documents_served");
@@ -1261,28 +1196,13 @@ aggregateNodeRecords()
   AgInt_generic("proxy.process.http.current_client_connections",
                 "proxy.node.http.user_agent_current_connections_count");
 
-  //
-  // BUG: INKqa06052
-  // the calculation for the number of O.S. server connections should include
-  // the proxy.process.http.current_server_connections stat AND the
-  // proxy.process.ftp.connections_currently_open stat
-  if (varIntFromName("proxy.process.http.current_server_connections", &tmp1) &&
-      varIntFromName("proxy.process.ftp.connections_currently_open", &tmp2)) {
-    varSetInt("proxy.node.http.origin_server_current_connections_count", tmp1 + tmp2);
+  if (varIntFromName("proxy.process.http.current_server_connections", &tmp1)) {
+    varSetInt("proxy.node.http.origin_server_current_connections_count", tmp1);
   } else {
     varSetInt("proxy.node.http.origin_server_current_connections_count", -20);
   }
-
-
   AgInt_generic("proxy.process.http.current_parent_proxy_connections",
                 "proxy.node.http.current_parent_proxy_connections");
-
-  // FTP
-  AgInt_generic("proxy.process.ftp.incoming_requests", "proxy.node.ftp.user_agents_total_documents_served");
-
-  AgInt_generic("proxy.process.ftp.current_client_connections", "proxy.node.ftp.current_client_connections");
-
-  AgInt_generic("proxy.process.ftp.current_cache_connections", "proxy.node.ftp.current_cache_connections");
 
   // RNI
   AgInt_generic("proxy.process.rni.downstream_requests", "proxy.node.rni.user_agents_total_documents_served");

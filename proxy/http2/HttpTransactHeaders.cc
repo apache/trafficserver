@@ -118,8 +118,6 @@ HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
     return true;
   } else if (the_scheme == URL_WKSIDX_HTTP || the_scheme == URL_WKSIDX_HTTPS)
     return is_this_http_method_supported(the_method);
-  else if (the_scheme == URL_WKSIDX_FTP)
-    return is_this_ftp_method_supported(the_method);
   else
     return false;
 }

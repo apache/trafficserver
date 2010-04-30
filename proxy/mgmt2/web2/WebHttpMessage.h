@@ -93,7 +93,6 @@ enum Scheme_t
   SCHEME_UNKNOWN = -1,
   SCHEME_NONE = 0,
   SCHEME_HTTP,
-  SCHEME_FTP,
   SCHEME_SHTTP
 };
 

@@ -357,9 +357,6 @@ print_pd_sspec(INKPdSsFormat info)
   case INK_SCHEME_HTTPS:
     printf("HTTPS\n");
     break;
-  case INK_SCHEME_FTP:
-    printf("FTP\n");
-    break;
   case INK_SCHEME_RTSP:
   case INK_SCHEME_MMS:
     printf("MIXT\n");
@@ -596,16 +593,6 @@ print_filter_ele(INKFilterEle * ele)
 }
 
 void
-print_ftp_remap_ele(INKFtpRemapEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-  printf("%s:%d %s:%d\n", ele->from_val, ele->from_port, ele->to_val, ele->to_port);
-}
-
-void
 print_hosting_ele(INKHostingEle * ele)
 {
   if (!ele) {
@@ -788,9 +775,6 @@ print_remap_ele(INKRemapEle * ele)
   case INK_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_SCHEME_FTP:
-    strncat(buf, "ftp", sizeof(buf) - strlen(buf) - 1);
-    break;
   case INK_SCHEME_RTSP:
     strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
     break;
@@ -828,9 +812,6 @@ print_remap_ele(INKRemapEle * ele)
     break;
   case INK_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case INK_SCHEME_FTP:
-    strncat(buf, "ftp", sizeof(buf) - strlen(buf) - 1);
     break;
   case INK_SCHEME_RTSP:
     strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
@@ -1010,9 +991,6 @@ print_ele_list(INKFileNameT file, INKCfgContext ctx)
       break;
     case INK_FNAME_FILTER:
       print_filter_ele((INKFilterEle *) ele);
-      break;
-    case INK_FNAME_FTP_REMAP:
-      print_ftp_remap_ele((INKFtpRemapEle *) ele);
       break;
     case INK_FNAME_HOSTING:
       print_hosting_ele((INKHostingEle *) ele);
@@ -1779,8 +1757,6 @@ test_cfg_context_get(char *args)
     file = INK_FNAME_CONGESTION;
   } else if (strcmp(name, "filter.config") == 0) {
     file = INK_FNAME_FILTER;
-  } else if (strcmp(name, "ftp_remap.config") == 0) {
-    file = INK_FNAME_FTP_REMAP;
   } else if (strcmp(name, "hosting.config") == 0) {
     file = INK_FNAME_HOSTING;
   } else if (strcmp(name, "icp.config") == 0) {
@@ -1859,8 +1835,6 @@ test_cfg_context_move(char *args)
     file = INK_FNAME_CONGESTION;
   } else if (strcmp(name, "filter.config") == 0) {
     file = INK_FNAME_FILTER;
-  } else if (strcmp(name, "ftp_remap.config") == 0) {
-    file = INK_FNAME_FTP_REMAP;
   } else if (strcmp(name, "hosting.config") == 0) {
     file = INK_FNAME_HOSTING;
   } else if (strcmp(name, "icp.config") == 0) {
@@ -2488,7 +2462,6 @@ set_stats()
   INKRecordSetFloat("proxy.node.http.cache_hit_fresh_avg_10s", 110, &action);
   INKRecordSetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", 110, &action);
   INKRecordSetFloat("proxy.node.http.cache_hit_ims_avg_10s", 100, &action);
-  INKRecordSetFloat("proxy.node.ftp.cache_hits_avg_10s", 110, &action);
   INKRecordSetFloat("proxy.node.client_throughput_out", 110, &action);
 
   INKRecordSetInt("proxy.node.http.cache_hit_ratio_int_pct", 110, &action);
@@ -2519,7 +2492,7 @@ set_stats()
 void
 print_stats()
 {
-  INKFloat f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12;
+  INKFloat f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11;
   INKInt i1, i2, i3, i4, i5, i6, i7, i8, i9, i10;
 
   fprintf(stderr, "[print_stats]\n");
@@ -2546,11 +2519,10 @@ print_stats()
   INKRecordGetFloat("proxy.node.http.cache_hit_fresh_avg_10s", &f8);
   INKRecordGetFloat("proxy.node.http.cache_hit_revalidated_avg_10s", &f9);
   INKRecordGetFloat("proxy.node.http.cache_hit_ims_avg_10s", &f10);
-  INKRecordGetFloat("proxy.node.ftp.cache_hits_avg_10s", &f11);
-  INKRecordGetFloat("proxy.node.client_throughput_out", &f12);
+  INKRecordGetFloat("proxy.node.client_throughput_out", &f11);
 
-  fprintf(stderr, "NODE stats: \n%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
-          f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12);
+  fprintf(stderr, "NODE stats: \n%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
+          f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11);
 
   INKRecordGetInt("proxy.node.http.cache_hit_ratio_int_pct", &i1);
   INKRecordGetInt("proxy.node.http.bandwidth_hit_ratio_int_pct", &i2);

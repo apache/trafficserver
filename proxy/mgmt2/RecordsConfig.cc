@@ -903,8 +903,6 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.http.share_server_sessions", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.http.ftp_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
   {CONFIG, "proxy.config.http.wuts_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.http.log_spider_codes", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -1138,8 +1136,6 @@ RecordElement RecordsConfig[] = {
   //        #################
   {CONFIG, "proxy.config.http.cache.http", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
-  {CONFIG, "proxy.config.http.cache.ftp", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
   {CONFIG, "proxy.config.http.cache.ignore_client_no_cache", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]",
    RA_NULL}
   ,
@@ -1247,24 +1243,6 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.http.cache.vary_default_other", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_STR, ".*", RA_NULL}
   ,
-  //        ##########################
-  //        # anonymous ftp password #
-  //        ##########################
-  {CONFIG, "proxy.config.http.ftp.anonymous_passwd", "", INK_STRING, "<admin_email>", RU_REREAD, RR_REQUIRED, RC_STR,
-   "^[^[:space:]]+$", RA_NULL}
-  ,
-  //        ################################
-  //        # cached ftp document lifetime #
-  //        ################################
-  {CONFIG, "proxy.config.http.ftp.cache.document_lifetime", "", INK_INT, "259200", RU_REREAD, RR_NULL, RC_STR,
-   "^[0-9]+$", RA_NULL}
-  ,
-  //        ################################
-  //        # ftp transfer mode            #
-  //        ################################
-  {CONFIG, "proxy.config.http.ftp.binary_transfer_only", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_STR, "[0-1]", RA_NULL}
-  ,
-
   //        ###################
   //        # Error Reporting #
   //        ###################
@@ -1759,219 +1737,6 @@ RecordElement RecordsConfig[] = {
   ,
   //##############################################################################
   //#
-  //# Ftp Engine
-  //#
-  //##############################################################################
-  {CONFIG, "proxy.config.ftp.ftp_enabled", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.cache_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.logging_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.proxy_server_port", "", INK_INT, "21", RU_REREAD, RR_NULL, RC_INT, "[0-65535]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.open_lisn_port_mode", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, "[1-3]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.min_lisn_port", "", INK_INT, "32768", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.max_lisn_port", "", INK_INT, "65535", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.server_data_default_pasv", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.different_client_port_ip_allowed", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.try_pasv_times", "", INK_INT, "1024", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.try_port_times", "", INK_INT, "1024", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.try_server_ctrl_connect_times", "", INK_INT, "6", RU_REREAD, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.try_server_data_connect_times", "", INK_INT, "3", RU_REREAD, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.try_client_data_connect_times", "", INK_INT, "3", RU_REREAD, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.client_ctrl_no_activity_timeout", "", INK_INT, "900", RU_REREAD, RR_NULL, RC_STR,
-   "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.client_ctrl_active_timeout", "", INK_INT, "14400", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.server_ctrl_no_activity_timeout", "", INK_INT, "120", RU_REREAD, RR_NULL, RC_STR,
-   "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.server_ctrl_active_timeout", "", INK_INT, "14400", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.client_data_no_activity_timeout", "", INK_INT, "120", RU_REREAD, RR_NULL, RC_STR,
-   "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.client_data_active_timeout", "", INK_INT, "14400", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.server_data_no_activity_timeout", "", INK_INT, "120", RU_REREAD, RR_NULL, RC_STR,
-   "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.server_data_active_timeout", "", INK_INT, "14400", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.pasv_accept_timeout", "", INK_INT, "120", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.port_accept_timeout", "", INK_INT, "120", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.share_ftp_server_ctrl_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.share_only_after_session_end", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.server_ctrl_keep_alive_no_activity_timeout", "", INK_INT, "90", RU_REREAD, RR_NULL, RC_STR,
-   "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.reverse_ftp_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.reverse_ftp_remap_file_name", "", INK_STRING, "ftp_remap.config", RU_REREAD, RR_NULL,
-   RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.login_info_fresh_in_cache_time", "", INK_INT, "2592000", RU_REREAD, RR_NULL, RC_STR,
-   "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.directory_listing_fresh_in_cache_time", "", INK_INT, "604800", RU_REREAD, RR_NULL, RC_STR,
-   "^[0-9]+$", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.file_fresh_in_cache_time", "", INK_INT, "259200", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.simple_directory_listing_cache_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT,
-   "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.full_directory_listing_cache_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT,
-   "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.file_fresh_mdtm_checking_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.data_source_port_20_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]",
-   RA_NULL}
-  ,
-  //# default ftp server is only for testing purpose 
-  {CONFIG, "proxy.config.ftp.default_ftp_server_enabled", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.default_ftp_server_ip", "", INK_STRING, "192.48.96.9", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.default_ftp_server_port", "", INK_INT, "21", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  // # Ftp Proxy Stats
-  {PROCESS, "proxy.process.ftp.client_connections_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_ctrl_connections_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL,
-   NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_ctrl_bytes_read", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_ctrl_bytes_write", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_data_listening_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_data_connections_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL,
-   NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_data_bytes_read", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_data_bytes_write", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_connections_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_ctrl_connections_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL,
-   NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_ctrl_bytes_read", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_ctrl_bytes_write", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_data_listening_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_data_connections_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL,
-   NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_data_bytes_read", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_data_bytes_write", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.cache_connections_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_ctrl_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_data_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.client_commands", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_ctrl_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_data_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.server_commands", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.cwd_hits", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.cwd_misses", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.file_hits", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.file_misses", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.directory_hits", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.directory_misses", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.retr_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.list_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.stor_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  // Standardized Stats
-  {PROCESS, "proxy.process.ftp.incoming_requests", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.outgoing_requests", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.downstream.request_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.downstream.response_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.upstream.request_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.upstream.response_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.cache_hit_fresh", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.cache_miss_cold", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.transaction_counts.hit_fresh", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.transaction_counts.miss_cold", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.current_client_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.current_server_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.current_cache_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  //##############################################################################
-  //#
   //# SOCKS Processor
   //#
   //##############################################################################
@@ -2018,40 +1783,6 @@ RecordElement RecordsConfig[] = {
   {PROCESS, "proxy.process.socks.proxy.tunneled_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {PROCESS, "proxy.process.socks.proxy.http_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  //##############################################################################
-  //#
-  //# FTP Processor
-  //#
-  //##############################################################################
-  //        ######################################################
-  //        # ftp_mode 1 PASV then PORT, 2 PORT only 3 PASV only #
-  //        ######################################################
-  {CONFIG, "proxy.config.ftp.data_connection_mode", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[1-3]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.control_connection_timeout", "", INK_INT, "300", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.ftp.rc_to_switch_to_PORT", "", INK_STRING, NULL,
-   RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  //# Transaction-based ftp stats
-  {PROCESS, "proxy.process.ftp.cache_lookups", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.cache_hits", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.cache_misses", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  //# Dynamic ftp stats
-  {PROCESS, "proxy.process.ftp.connections_successful_pasv", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.connections_failed_pasv", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.connections_successful_port", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.connections_failed_port", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.ftp.connections_currently_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //##############################################################################
   //#
@@ -3688,10 +3419,6 @@ RecordElement RecordsConfig[] = {
   {NODE, "proxy.node.http.cache_hit_stale_served_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
-  {NODE, "proxy.node.ftp.cache_hits_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.ftp.cache_hit_fresh_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
   {NODE, "proxy.node.rni.block_hit_count_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {NODE, "proxy.node.wmt.block_hit_count_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -3713,10 +3440,6 @@ RecordElement RecordsConfig[] = {
   {NODE, "proxy.node.http.cache_miss_ims_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {NODE, "proxy.node.http.cache_read_error_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.ftp.cache_misses_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.ftp.cache_miss_cold_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {NODE, "proxy.node.rni.block_miss_count_avg_10s", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -3954,21 +3677,6 @@ RecordElement RecordsConfig[] = {
   {NODE, "proxy.node.http.cache_total_hits", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {NODE, "proxy.node.http.cache_total_misses", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  //#FTP
-  {NODE, "proxy.node.ftp.user_agents_total_documents_served", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.ftp.user_agent_xacts_per_second", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.ftp.upstream_total_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.ftp.downstream_total_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.ftp.current_client_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.ftp.current_server_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {NODE, "proxy.node.ftp.current_cache_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //#RNI
   {NODE, "proxy.node.rni.user_agents_total_documents_served", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -4223,23 +3931,6 @@ RecordElement RecordsConfig[] = {
   ,
   {CLUSTER, "proxy.cluster.http.parent_proxy_total_response_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
    RA_NULL}
-  ,
-  //#FTP
-  {CLUSTER, "proxy.cluster.ftp.user_agent_xacts_per_second", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.ftp.user_agents_total_documents_served", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.ftp.upstream_total_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.ftp.downstream_total_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.ftp.current_client_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.ftp.current_server_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CLUSTER, "proxy.cluster.ftp.current_cache_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //#RNI
   {CLUSTER, "proxy.cluster.rni.user_agent_xacts_per_second", "", INK_FLOAT, "0.0", RU_NULL, RR_NULL, RC_NULL, NULL,

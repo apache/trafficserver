@@ -384,19 +384,6 @@ http			HTTP Configuration
       Remove       (proxy.config.http.anonymize_remove_client_ip)
     ts>
     
-ftp			FTP Configuration
-  syntax: show:ftp
-  args:   none
-  behavior:  Display FTP Configuration
-
-  ts> show:ftp
-  FTP Caching ---------------------- on        (proxy.config.http.cache.ftp)
-  FTP Cached Objects Expire After -- 259200 s  (proxy.config.http.ftp.cache.document_lifetime)
-  FTP Connection Mode -------------- PASV/PORT (proxy.config.ftp.data_connection_mode)
-  FTP Inactivity Timeout ----------- 300 s     (proxy.config.ftp.control_connection_timeout)
-  Anonymous FTP password ----------- admin     (proxy.config.http.ftp.anonymous_passwd)
-  ts>
-
 icp			ICP Configuration
 			(on/off, rules, port, timeouts)
   syntax: show:icp [ peers ]
@@ -434,9 +421,8 @@ cache			Cache Configuration
 
   ts> show:cache
   HTTP Caching ------------------- on    (proxy.config.http.cache.http)
-  FTP Caching -------------------- on    (proxy.config.http.cache.ftp)
   Ignore User Requests To Bypass Cache --- off  (proxy.config.http.cache.ignore_client_no_cache)
-  Maximum HTTP/FTP Object Size --- NONE        (proxy.config.cache.max_doc_size)
+  Maximum HTTP Object Size --- NONE        (proxy.config.cache.max_doc_size)
 
   Freshness
     Verify Freshness By Checking --   (proxy.config.http.cache.when_to_revalidate)
@@ -446,7 +432,6 @@ cache			Cache Configuration
     If object has no expiration date:
       leave it in cache for at least ---- 3600 s   (proxy.config.http.cache.heuristic_min_lifetime)
       but no more than ------------------ 86400 s  (proxy.config.http.cache.heuristic_max_lifetime)
-    FTP cached objects expire after ----- 259200 s (proxy.config.http.ftp.cache.document_lifetime)
 
   Variable Content
     Do not cache responses to URLs that contain "?", ";", "cgi" or end in ".asp"  (proxy.config.http.cache.cache_urls_that_look_dynamic value)
@@ -806,19 +791,6 @@ http-stats		HTTP Protocol Summary
   Transactions In Progress -- 0         (current_server_transactions)
   ts>
 
-ftp-stats		FTP Statistics
-  syntax: show:ftp-stats
-  args:   none
-  behavior:  Display FTP statistics.
-
-  ts> show:ftp-stats
-  Open Connections ------------ 0      (proxy.process.ftp.connections_currently_open)
-  PASV Connections Successes -- 1592   (proxy.process.ftp.connections_successful_pasv)
-  PASV Connections Failures --- 0      (proxy.process.ftp.connections_failed_pasv)
-  PORT Connections Successes -- 1      (proxy.process.ftp.connections_successful_port)
-  PORT Connections Failures --- 0      (proxy.process.ftp.connections_failed_port)
-  ts>
-
 icp-stats		ICP Statistics
   syntax: show:icp-stats
   args:   none
@@ -1145,33 +1117,6 @@ ssl			SSL Configuration
     ts#
    
 
-ftp			FTP Configuration
-  syntax: config:ftp mode <pasv-port | pasv | port>
-  record: (proxy.config.ftp.data_connection_mode value) 
-          pasv-port = 1, pasv = 3, port = 2
-
-    ts# config:ftp mode pasv-port
-    ts#
-
-  syntax: config:ftp inactive-timeout <seconds>
-  record: (proxy.config.ftp.control_connection_timeout)
-
-    ts# config:ftp inactive-timeout 500
-    ts#
-
-  syntax: config:ftp anonymous-password <password>
-  record: (proxy.config.http.ftp.anonymous_passwd)
-  NOTE: anonymous ftp password can be in cleartext
-  
-    ts# config:ftp anonymous-password admin@
-    ts#
-
-  syntax: config:ftp expire-after <seconds>
-  record: (proxy.config.http.ftp.cache.document_lifetime)
-
-    ts# config:ftp expire-after 50000
-    ts#
-
 icp			ICP Configuration
 			(on/off, rules, port, timeouts)
   syntax: config:icp mode <receive | send-receive | disabled>
@@ -1209,7 +1154,7 @@ cache			Cache Configuration
 			(active protocols, bypass, storage, freshness, 
                          expires, variable content, rules, clear)
   syntax: config:cache <protocol> <on | off>
-  args:   <protocol> = <http | ftp>
+  args:   <protocol> = <http>
           <on | off> specifies the given protocol is cached
   behavior:  Enable/Disable caching of various protocols.
 
@@ -1218,14 +1163,6 @@ cache			Cache Configuration
     ts#
 
     ts# config:cache http
-    on
-    ts#
-
-    ts# config:cache ftp on       (proxy.config.http.cache.ftp)
-    +OK
-    ts#
-
-    ts# config:cache ftp
     on
     ts#
 
@@ -1582,7 +1519,7 @@ ports			Ports used by Traffic Server
 *** config:ports command is not implemented or supported ***
 			(including mgmt port)
   syntax: config:ports <http-server | http-other | webui | overseer | cluster
-                        cluster-rs | cluster-mc | ftp-server |
+                        cluster-rs | cluster-mc |
                         ssl | socks-server | icp> <port | ports>
   args:   some variables are single-port while other can be a list of ports
           <http-server>     (proxy.config.http.server_port) single
@@ -1592,7 +1529,6 @@ ports			Ports used by Traffic Server
           <cluster>         (proxy.config.cluster_port) single
           <cluster-rs>      (proxy.config.cluster.rsport) single
           <cluster-mc>      (proxy.config.cluster.mcport) single
-          <ftp-server>      (proxy.config.ftp.proxy_server_port) single
           <ssl>             (proxy.config.http.ssl_ports) list
           <socks-server>    (proxy.config.socks.socks_server_port) single
           <icp>             (proxy.config.icp.icp_port) single

@@ -118,7 +118,6 @@ class HdrHeap;
 
 class EThread;
 class UnixNetVConnection;
-class FtpSM;
 
 #ifdef READ_CORE_WMT
 class WMT_ServerFileSM;
@@ -228,7 +227,6 @@ public:
   **********************************************************************/
   static void test_HttpSM(void *);
   static void test_HttpSM_from_tunnel(void *);
-  static void test_FtpSM(void *);
 
 #ifdef READ_CORE_WMT
   static void test_wmtServerFile(void *);
@@ -244,7 +242,6 @@ public:
   * outputs: none
   **********************************************************************/
   static void process_HttpSM(HttpSM * core_ptr);
-  static void process_FtpSM(FtpSM * core_ptr);
   static void process_EThread(EThread * eth_test);
   static void process_NetVC(UnixNetVConnection * eth_test);
 

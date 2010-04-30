@@ -1300,11 +1300,9 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer * p)
   while (c) {
     if (c->alive) {
       c->alive = false;
-      if (c->vc_type != HT_FTP_SERVER) {
-        c->write_vio = NULL;
-        c->vc->do_io_close(EHTTP_ERROR);
-        update_stats_after_abort(c->vc_type);
-      }
+      c->write_vio = NULL;
+      c->vc->do_io_close(EHTTP_ERROR);
+      update_stats_after_abort(c->vc_type);
     }
 
     if (c->self_producer) {
@@ -1317,14 +1315,12 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer * p)
   if (p->alive) {
     p->alive = false;
     p->bytes_read = p->read_vio->ndone;
-    if (p->vc_type != HT_FTP_SERVER) {
-      if (p->self_consumer) {
-        p->self_consumer->alive = false;
-      }
-      p->read_vio = NULL;
-      p->vc->do_io_close(EHTTP_ERROR);
-      update_stats_after_abort(p->vc_type);
+    if (p->self_consumer) {
+      p->self_consumer->alive = false;
     }
+    p->read_vio = NULL;
+    p->vc->do_io_close(EHTTP_ERROR);
+    update_stats_after_abort(p->vc_type);
   }
 }
 
@@ -1509,7 +1505,7 @@ HttpTunnel::update_stats_after_abort(HttpTunnelType_t t)
     break;
   default:
     // Handled here:
-    // HT_HTTP_SERVER, HT_FTP_SERVER, HT_HTTP_CLIENT,
+    // HT_HTTP_SERVER, HT_HTTP_CLIENT,
     // HT_TRANSFORM, HT_STATIC
     break;
   };

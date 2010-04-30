@@ -75,9 +75,6 @@ convertRules(INKFileNameT file, INKIntList errRules, char *rules[])
     case INK_FNAME_FILTER:
       rule = formatFilterRule(rules[*index]);
       break;
-    case INK_FNAME_FTP_REMAP:
-      rule = formatFtpRemapRule(rules[*index]);
-      break;
     case INK_FNAME_HOSTING:
       rule = formatHostingRule(rules[*index]);
       break;
@@ -341,41 +338,6 @@ formatFilterRule(char *rule)
   }
   if (strlen(tokens[21]) > 0) {
     ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[17]);
-  }
-
-  return xstrdup(buf);
-}
-
-//-------------------------------------------------------------------------
-// formatFtpRemapRule
-//-------------------------------------------------------------------------
-//
-char *
-formatFtpRemapRule(char *rule)
-{
-  Tokenizer tokens(CFG_RULE_DELIMITER);
-  tokens.Initialize(rule, ALLOW_EMPTY_TOKS);
-  char buf[MAX_RULE_LENGTH];
-
-  if (!rule)
-    return NULL;
-  memset(buf, 0, MAX_RULE_LENGTH);
-
-  ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Traffic Server=");
-  if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", tokens[0], HTML_DELIM);
-  }
-  if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s%s", tokens[1], HTML_DELIM);
-  } else {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
-  }
-  ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "FTP Server=");
-  if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", tokens[2], HTML_DELIM);
-  }
-  if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s", tokens[3]);
   }
 
   return xstrdup(buf);
@@ -1494,73 +1456,6 @@ Lend:
     INKCfgContextDestroy(ctx);
   return err;
 }
-
-//-------------------------------------------------------------------------
-// updateFtpRemapConfig
-//-------------------------------------------------------------------------
-int
-updateFtpRemapConfig(char *rules[], int numRules, char **errBuff)
-{
-  INKCfgContext ctx = NULL;
-  INKFtpRemapEle *ele;
-  Tokenizer tokens(CFG_RULE_DELIMITER);
-  INKActionNeedT action_need;
-  INKError response;
-  int i, err = WEB_HTTP_ERR_OKAY;
-  INKIntList errRules = NULL;
-
-  ctx = INKCfgContextCreate(INK_FNAME_FTP_REMAP);
-  if (!ctx) {
-    Debug("config", "[updateFtpRemapConfig] can't allocate ctx memory");
-    err = WEB_HTTP_ERR_FAIL;
-    goto Lerror;
-  }
-  // since we want to preserve comments, we need to read in the 
-  // file using INKCfgContextGet and remove all the rules; starting from scratch
-  if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
-    Debug("config", "[updateFtpRemapConfig] Failed to Get and Clear CfgContext");
-    err = WEB_HTTP_ERR_FAIL;
-    goto Lerror;
-  }
-  // create Ele's by parsing the rules in the rules array 
-  // insert the Ele's into a Cfg Context; if invalid formatted rule, just skip it
-  for (i = 0; i < numRules; i++) {
-    tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
-
-    ele = INKFtpRemapEleCreate();
-
-    if (strlen(tokens[0]) <= 0 || strlen(tokens[1]) <= 0 ||
-        strlen(tokens[2]) <= 0 || strlen(tokens[3]) <= 0 || !isNumber(tokens[1]) || !isNumber(tokens[3])) {
-      ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
-      Debug("config", "[updateFtpRemapConfig] Invalid rule - SKIP");
-    } else {
-      ele->from_val = xstrdup(tokens[0]);
-      ele->from_port = ink_atoi(tokens[1]);
-      ele->to_val = xstrdup(tokens[2]);
-      ele->to_port = ink_atoi(tokens[3]);
-    }
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list     
-  }
-
-  // commit the CfgContext to write a new version of the file
-  errRules = INKIntListCreate();
-  response = INKCfgContextCommit(ctx, &action_need, errRules);
-  if (response == INK_ERR_INVALID_CONFIG_RULE) {
-    err = WEB_HTTP_ERR_INVALID_CFG_RULE;
-    *errBuff = convertRules(INK_FNAME_FTP_REMAP, errRules, rules);
-  } else if (response != INK_ERR_OKAY) {
-    err = WEB_HTTP_ERR_FAIL;
-    goto Lerror;
-  }
-
-Lerror:
-  if (errRules)
-    INKIntListDestroy(errRules);
-  if (ctx)
-    INKCfgContextDestroy(ctx);
-  return err;
-}
-
 //-------------------------------------------------------------------------
 // updateHostingConfig
 //-------------------------------------------------------------------------

@@ -53,18 +53,17 @@ struct CLI_configure
 
   /* Protocol Configuration */
 #define NUM_CONF_PROTOCOLS_HTTP_DESCS      15
-#define NUM_CONF_PROTOCOLS_FTP_DESCS        3
   /*------------------------------------------*/
-#define NUM_CONF_PROTOCOLS_DESCS           18
+#define NUM_CONF_PROTOCOLS_DESCS           15
   static const CLI_globals::VarNameDesc conf_protocols_desctable[NUM_CONF_PROTOCOLS_DESCS];
 
   /* Cache Configuration */
-#define NUM_CONF_CACHE_ACT_DESCS      4
+#define NUM_CONF_CACHE_ACT_DESCS      2
 #define NUM_CONF_CACHE_STORAGE_DESCS  2
-#define NUM_CONF_CACHE_FRESH_DESCS    5
+#define NUM_CONF_CACHE_FRESH_DESCS    4
 #define NUM_CONF_CACHE_VARC_DESCS     6
   /*------------------------------------------*/
-#define NUM_CONF_CACHE_DESCS         17
+#define NUM_CONF_CACHE_DESCS         14
   static const CLI_globals::VarNameDesc conf_cache_desctable[NUM_CONF_CACHE_DESCS];
 
   /* Security Configuration */
@@ -99,9 +98,9 @@ struct CLI_configure
 #define NUM_CONF_LOGGING_NSCPE2_DESCS    4
 #define NUM_CONF_LOGGING_CUSTOM_DESCS    1
 #define NUM_CONF_LOGGING_ROLL_DESCS      4
-#define NUM_CONF_LOGGING_SPLIT_DESCS     2
+#define NUM_CONF_LOGGING_SPLIT_DESCS     1
   /*------------------------------------------*/
-#define NUM_CONF_LOGGING_DESCS          32
+#define NUM_CONF_LOGGING_DESCS          31
   static const CLI_globals::VarNameDesc conf_logging_desctable[NUM_CONF_LOGGING_DESCS];
 
   /* Snapshots Configuration */

@@ -1296,7 +1296,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
     T("url_regex=cyclops method=put parent=sandwich:80\n")      /* L14 */
     T("url_regex=cyclops method=trace parent=mayo:80\n")        /* L15 */
     T("dest_host=pluto scheme=HTTP parent=strategy:80\n")       /* L16 */
-    T("dest_host=jupiter scheme=FTP parent=accuracy:80\n")      /* L17 */
     REBUILD
     // Test 3
     ST(3) REINIT br(request, "numeric_host", IP(209, 131, 62, 14));

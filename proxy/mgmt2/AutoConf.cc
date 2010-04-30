@@ -45,7 +45,7 @@ static const char fileHead[] = "function FindProxyForURL(url, host) {\n\n";
 
 
 static const char checkProtocol[] =
-  "\t// Make sure this a protcol we proxy\n\tif(!((url.substring(0,5) == \"http:\") ||\n\t\t(url.substring(0,4) == \"ftp:\") || \n\t\t(url.substring(0,6) == \"https:\"))) {\n\t\t return \"DIRECT\";\n\t}\n\n";
+  "\t// Make sure this a protcol we proxy\n\tif(!((url.substring(0,5) == \"http:\") || \n\t\t(url.substring(0,6) == \"https:\"))) {\n\t\t return \"DIRECT\";\n\t}\n\n";
 
 /*
 static const char checkProtocol[] = "\t// Make sure this a protcol we proxy\n\tif(!((url.substring(0,5) == \"http:\") || \n\t\t(url.substring(0,6) == \"https:\"))) {\n\t\t return \"DIRECT\";\n\t}\n\n";

@@ -97,22 +97,6 @@ const
   {"proxy.process.http.current_server_transactions\\c", NULL,
    "Transcations In Progress", "%-*s %*s\n",
    10, 10, 50, 3},
-  // FTP - 5 pairs
-  {"proxy.process.ftp.connections_currently_open\\c", NULL,
-   "Currently Open Connections", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.ftp.connections_successful_pasv\\c", NULL,
-   "Successful PASV Connections", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.ftp.connections_failed_pasv\\c", NULL,
-   "UnSuccessful PASV Connections", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.ftp.connections_successful_port\\c", NULL,
-   "Successful Port Connections", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.ftp.connections_failed_port\\c", NULL,
-   "UnSuccessful PORT Connections", "%-*s %*s\n",
-   10, 10, 50, 3},
   // ICP - 11 pairs
   // Queries from this Node - 7
   {"proxy.process.icp.icp_query_requests\\c", NULL,
@@ -509,7 +493,6 @@ CLI_monitor::doMonitorProtocolStats(CLI_DATA * c_data /* IN: client data */ )
   const char *line2 = "                              HTTP \n";
   const char *line3 = "                             Client \n";
   const char *line4 = "                             Server \n";
-  const char *line5 = "                              FTP \n";
   const char *line6 = "                              ICP \n";
   const char *line10 = "              Transaction Frequency and Speeds \n";
   const char *line11 = "Transaction Type              Frequency        Speed(ms)\n";
@@ -570,24 +553,6 @@ CLI_monitor::doMonitorProtocolStats(CLI_DATA * c_data /* IN: client data */ )
 
     // now we need to get all the stats
     for (i = highmark - NUM_PROT_HTTP_OS_DESCS; i < highmark; i++) {
-      if (varStrFromName(mon_prot_desctable[i].name, buf, sizeof(buf)) == true) {
-        snprintf(tmpbuf, sizeof(tmpbuf), mon_prot_desctable[i].format,
-                 mon_prot_desctable[i].desc_width, mon_prot_desctable[i].desc,
-                 mon_prot_desctable[i].name_value_width, buf);
-        c_data->output->copyFrom(tmpbuf, strlen(tmpbuf));
-      }
-    }
-
-    c_data->output->copyFrom("\n", strlen("\n"));
-  }
-  // output FTP header
-  highmark += NUM_PROT_FTP_DESCS;
-  if (CL_EV_ONE == c_data->cevent || CL_EV_THREE == c_data->cevent) {
-    c_data->output->copyFrom(CLI_globals::sep1, strlen(CLI_globals::sep1));
-    c_data->output->copyFrom(line5, strlen(line5));
-    c_data->output->copyFrom("\n", strlen("\n"));
-
-    for (i = highmark - NUM_PROT_FTP_DESCS; i < highmark; i++) {
       if (varStrFromName(mon_prot_desctable[i].name, buf, sizeof(buf)) == true) {
         snprintf(tmpbuf, sizeof(tmpbuf), mon_prot_desctable[i].format,
                  mon_prot_desctable[i].desc_width, mon_prot_desctable[i].desc,

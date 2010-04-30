@@ -33,7 +33,6 @@
 #include "StatPages.h"
 #include "Log.h"
 #include "LogAccessHttp.h"
-//#include "Ftp.h"
 #include "ICP.h"
 #include "PluginVC.h"
 #include "ReverseProxy.h"
@@ -265,15 +264,11 @@ HttpVCTable::cleanup_entry(HttpVCTableEntry * e)
     default:
       // This covers:
       // HTTP_UNKNOWN, HTTP_SERVER_VC, HTTP_TRANSFORM_VC, HTTP_CACHE_READ_VC,
-      // HTTP_CACHE_WRITE_VC, HTTP_RAW_SERVER_VC, HTTP_FTP_VC
+      // HTTP_CACHE_WRITE_VC, HTTP_RAW_SERVER_VC
       break;
     }
 
-    // The vc in our table  is the data vc and should not
-    // be closed out from under the FtpVConnection
-    if (e->vc_type != HTTP_FTP_VC) {
-      e->vc->do_io_close();
-    }
+    e->vc->do_io_close();
     e->vc = NULL;
   }
   remove_entry(e);
@@ -338,7 +333,7 @@ plugin_tunnel(NULL), reentrancy_count(0),
 history_pos(0), tunnel(), ua_entry(NULL),
 ua_session(NULL), background_fill(BACKGROUND_FILL_NONE),
 server_entry(NULL), server_session(NULL), shared_session_retries(0),
-server_buffer_reader(NULL), //ftp_session(NULL),
+server_buffer_reader(NULL),
 transform_info(), post_transform_info(), second_cache_sm(NULL),
 default_handler(NULL), pending_action(NULL), historical_action(NULL),
 last_action(HttpTransact::STATE_MACHINE_ACTION_UNDEFINED),
@@ -731,7 +726,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
   ink_assert(ua_entry->read_vio == (VIO *) data);
   ink_assert(server_entry == NULL);
   ink_assert(server_session == NULL);
-  //ink_assert(ftp_session == NULL);
 
   int bytes_used = 0;
   int return_val = EVENT_CONT;
@@ -1179,113 +1173,6 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 
 }
 
-//////////////////////////////////////////////////////////////////////////
-//
-//  HttpSM:state_ftp_server_open()
-//
-//  ftp processor is calling back the state machine. Possible events are
-//  FTP_EVENT_OPEN and FTP_EVENT_OPEN_FAILED. If the event is FTP_EVENT_OPEN
-//  the data field is an instance of FtpVConnection.
-//////////////////////////////////////////////////////////////////////////
-int
-HttpSM::state_ftp_server_open(int event, void *data)
-{
-/*
-  STATE_ENTER(&HttpSM::state_ftp_server_open, event);
-
-  NetVConnection *data_vc = NULL;
-  ink_assert(ftp_session == NULL);
-  // REQ_FLAVOR_SCHEDULED_UPDATE can be transformed in REQ_FLAVOR_REVPROXY
-  ink_assert(ua_entry != NULL
-             || t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE
-             || t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
-  pending_action = NULL;
-  // milestones.server_connect_end = ink_get_hrtime();
-
-  switch (event) {
-  case FTP_EVENT_OPEN:
-    Debug("http", "[%lld] Ftp says FTP_EVENT_OPEN", sm_id);
-
-    ftp_session = (FtpVConnection *) data;
-    data_vc = ftp_session->get_data_vconnection();
-
-    // Record the data VC in our table
-    server_entry = vc_table.new_entry();
-    server_entry->vc = data_vc;
-    server_entry->vc_type = HTTP_FTP_VC;
-
-    // We don't want the datavc closed out from
-    //  under the ftp vc since this leads to
-    //  badness
-    server_entry->in_tunnel = true;
-
-    ink_assert(server_entry->vc != NULL);
-
-    ///////////////////////////////////////
-    // set active and inactivity timeout //
-    ///////////////////////////////////////
-    data_vc->set_inactivity_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_no_activity_timeout_out));
-    data_vc->set_active_timeout(HRTIME_SECONDS(t_state.http_config_param->transaction_active_timeout_out));
-    t_state.ftp_info->is_directory = ftp_session->get_is_directory();
-    t_state.ftp_info->last_modified = ftp_session->get_last_modified();
-
-    if (t_state.ftp_info->is_directory) {
-      // this is the intersection of ftp_session, which knows current
-      // directory, and transformProcessor.
-      // our chance to add in absolute path into url
-      txn_hook_prepend(INK_HTTP_RESPONSE_TRANSFORM_HOOK,
-                       transformProcessor.ftp_list_transform(mutex, &t_state.hdr_info.client_request,
-                                                             ftp_session->steal_message_buffer(),
-                                                             ftp_session->get_current_directory()));
-    }
-
-    t_state.ftp_info->last_modified = ftp_session->get_last_modified();
-
-    if ((t_state.ftp_info->content_length = ftp_session->get_file_size()) < 0)
-      t_state.ftp_info->content_length = 0;
-    t_state.current.state = HttpTransact::CONNECTION_ALIVE;
-
-    if (HttpTransact::build_ftp_server_response(&t_state)) {
-      t_state.transact_return_point = HttpTransact::HandleFtpResponse;
-      t_state.api_next_action = HttpTransact::HTTP_API_READ_REPONSE_HDR;
-      do_api_callout();
-      return 0;
-    }
-
-    call_transact_and_set_next_state(HttpTransact::HandleFtpResponse);
-    break;
-
-  case FTP_EVENT_NOT_MODIFIED:
-    // Our document was revalidated with the FTP server
-    Debug("http", "[%lld] Ftp says FTP_EVENT_NOT_MODIFIED", sm_id);
-    t_state.ftp_info->last_modified = *((ink_time_t *) data);
-    call_transact_and_set_next_state(HttpTransact::HandleFtpRevalidate);
-    break;
-
-  case FTP_EVENT_OPEN_FAILED:
-
-    Debug("http", "[%lld] Ftp says FTP_EVENT_OPEN_FAILED. errno = %ld", sm_id, -(long) data);
-    t_state.ftp_info->last_error = ((FtpVConnection *) data)->get_last_error();
-    t_state.ftp_info->last_reply_code = ((FtpVConnection *) data)->get_reply_code();
-
-    Debug("http", "[%lld] Ftp says FTP_EVENT_OPEN_FAILED. errno = %d %d",
-          sm_id, t_state.ftp_info->last_error, ((FtpVConnection *) data)->get_reply_code());
-
-    HttpTransact::SetFtpErrorMessage(&t_state, (((FtpVConnection *) data)->get_message_buffer()));
-
-    t_state.current.state = HttpTransact::FTP_OPEN_FAILED;
-
-    call_transact_and_set_next_state(HttpTransact::HandleFtpResponse);
-    break;
-
-  default:
-    ink_release_assert(0);
-    break;
-  }
-*/
-  ink_release_assert(0);
-  return 0;
-}
 
 // int HttpSM::state_request_wait_for_transform_read(int event, void* data)
 //
@@ -1755,14 +1642,6 @@ HttpSM::handle_api_return()
       tunnel.tunnel_run();
       break;
     }
-  case HttpTransact::FTP_READ:
-    {
-      setup_ftp_transfer();
-      perform_cache_write_action();
-      tunnel.tunnel_run();
-      break;
-    }
-
   case HttpTransact::SERVE_FROM_CACHE:
     {
       setup_cache_read_transfer();
@@ -2708,7 +2587,7 @@ HttpSM::main_handler(int event, void *data)
 // void HttpSM::tunnel_handler_post_or_put()
 //
 //   Handles the common cleanup tasks for Http post/put
-//     and ftp put to prevent code duplication
+//   to prevent code duplication
 //
 void
 HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer * p)
@@ -2755,46 +2634,6 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer * p)
   default:
     ink_release_assert(0);
   }
-}
-
-// int HttpSM::tunnel_handler_ftp_put(int event, void* data)
-//
-//    Handles completion of an ftp put tunnel
-//
-int
-HttpSM::tunnel_handler_ftp_put(int event, void *data)
-{
-  STATE_ENTER(&HttpSM::tunnel_handler_ftp_put, event);
-
-  ink_assert(event == HTTP_TUNNEL_EVENT_DONE);
-  ink_assert(data == &tunnel);
-  // The tunnel calls this when it is done
-
-  HttpTunnelProducer *p = tunnel.get_producer(ua_session);
-  int p_handler_state = p->handler_state;
-  tunnel_handler_post_or_put(p);
-
-  switch (p_handler_state) {
-  case HTTP_SM_POST_SERVER_FAIL:
-    // The server broke the connection - send an error message
-    tunnel.deallocate_buffers();
-    tunnel.deallocate_redirect_postdata_buffers();
-    tunnel.reset();
-    ua_entry->in_tunnel = false;
-    server_entry->in_tunnel = false;
-    call_transact_and_set_next_state(HttpTransact::HandleFtpPutFailure);
-    break;
-
-  case HTTP_SM_POST_UA_FAIL:
-    break;
-
-  case HTTP_SM_POST_SUCCESS:
-    // Call transact to generate a PUT response header
-    call_transact_and_set_next_state(HttpTransact::HandleFtpPutSuccess);
-    break;
-  }
-
-  return 0;
 }
 
 // int HttpSM::tunnel_handler_post(int event, void* data)
@@ -3030,44 +2869,34 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     //  is an abort
     close_connection = true;
     t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
-    if (p->vc_type == HT_HTTP_SERVER) {
-      if (is_http_server_eos_truncation(p)) {
-        Debug("http", "[%lld] [HttpSM::tunnel_handler_server] "
-              "aborting cache writes due to server truncation", sm_id);
-        tunnel.abort_cache_write_finish_others(p);
-        t_state.current.server->abort = HttpTransact::ABORTED;
-        if (t_state.http_config_param->log_spider_codes) {
-          t_state.squid_codes.wuts_proxy_status_code = WUTS_PROXY_STATUS_SPIDER_TIMEOUT_WHILE_DRAINING;
-          t_state.squid_codes.log_code = SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING;
-          t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
-        }
-      } else {
-        p->read_success = true;
-        t_state.current.server->abort = HttpTransact::DIDNOT_ABORT;
-        // Appending reason to a response without Content-Length will result in
-        // the reason string being written to the client and a bad CL when reading from cache.
-        // I didn't find anywhere this appended reason is being used, so commenting it out.
-        /*
-           if (t_state.negative_caching && p->bytes_read == 0) {
-           int reason_len;
-           const char *reason = t_state.hdr_info.server_response.reason_get(&reason_len);
-           if (reason == NULL)
-           tunnel.append_message_to_producer_buffer(p, "Negative Response", sizeof("Negative Response") - 1);
-           else
-           tunnel.append_message_to_producer_buffer(p, reason, reason_len);
-           }
-         */
-        tunnel.local_finish_all(p);
+
+    ink_assert(p->vc_type == HT_HTTP_SERVER);
+    if (is_http_server_eos_truncation(p)) {
+      Debug("http", "[%lld] [HttpSM::tunnel_handler_server] "
+            "aborting cache writes due to server truncation", sm_id);
+      tunnel.abort_cache_write_finish_others(p);
+      t_state.current.server->abort = HttpTransact::ABORTED;
+      if (t_state.http_config_param->log_spider_codes) {
+        t_state.squid_codes.wuts_proxy_status_code = WUTS_PROXY_STATUS_SPIDER_TIMEOUT_WHILE_DRAINING;
+        t_state.squid_codes.log_code = SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING;
+        t_state.squid_codes.hier_code = SQUID_HIER_TIMEOUT_DIRECT;
       }
-
     } else {
-      // Handle FTP here
-      ink_assert(p->vc_type == HT_FTP_SERVER);
-
-      // Fix - Can we tell if the ftp server truncated
-      //   the document?
       p->read_success = true;
       t_state.current.server->abort = HttpTransact::DIDNOT_ABORT;
+      // Appending reason to a response without Content-Length will result in
+      // the reason string being written to the client and a bad CL when reading from cache.
+      // I didn't find anywhere this appended reason is being used, so commenting it out.
+      /*
+        if (t_state.negative_caching && p->bytes_read == 0) {
+        int reason_len;
+        const char *reason = t_state.hdr_info.server_response.reason_get(&reason_len);
+        if (reason == NULL)
+        tunnel.append_message_to_producer_buffer(p, "Negative Response", sizeof("Negative Response") - 1);
+        else
+        tunnel.append_message_to_producer_buffer(p, reason, reason_len);
+        }
+      */
       tunnel.local_finish_all(p);
     }
     break;
@@ -3132,45 +2961,32 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
   // We handled the event.  Now either shutdown the connection or
   //   setup it up for keep-alive
   ink_assert(server_entry->vc == p->vc);
-  if (p->vc_type == HT_HTTP_SERVER) {
-    ink_assert(p->vc == server_session);
-    if (close_connection) {
-      p->vc->do_io_close();
-      p->read_vio = NULL;
-    } else {
-      server_session->attach_hostname(t_state.current.server->name);
-      server_session->server_trans_stat--;
-      HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
+  ink_assert(p->vc_type == HT_HTTP_SERVER);
+  ink_assert(p->vc == server_session);
 
-      // If the client is still around, attach the the server session
-      //  to so the next ka request can use it.  We bind privately to the
-      //  client to add some degree of affinity to the system.  However,
-      //  we turn off private binding when outbound conenctions are being
-      //  limit since it makes it too expense to initiate a purge of idle
-      //  server keep-alive sessions
-      if (ua_session &&
-          t_state.client_info.keep_alive == HTTP_KEEPALIVE &&
-          t_state.http_config_param->server_max_connections <= 0 &&
-          t_state.http_config_param->origin_max_connections <= 0) {
-        ua_session->attach_server_session(server_session);
-      } else {
-        // Release the session back into the shared session pool
-        server_session->release();
-      }
-    }
-  } else {
-    ink_release_assert(0);
-    /*
-    // Ftp
-    ink_assert(p->vc_type == HT_FTP_SERVER);
-    //ink_assert(p->vc == ftp_session->get_data_vconnection());
+  if (close_connection) {
+    p->vc->do_io_close();
     p->read_vio = NULL;
+  } else {
+    server_session->attach_hostname(t_state.current.server->name);
+    server_session->server_trans_stat--;
+    HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
 
-    // Ftp sessions are really VConnections and need a special
-    //   close call
-    ftp_session->close();
-    ftp_session = NULL;
-    */
+    // If the client is still around, attach the the server session
+    //  to so the next ka request can use it.  We bind privately to the
+    //  client to add some degree of affinity to the system.  However,
+    //  we turn off private binding when outbound conenctions are being
+    //  limit since it makes it too expense to initiate a purge of idle
+    //  server keep-alive sessions
+    if (ua_session &&
+        t_state.client_info.keep_alive == HTTP_KEEPALIVE &&
+        t_state.http_config_param->server_max_connections <= 0 &&
+        t_state.http_config_param->origin_max_connections <= 0) {
+      ua_session->attach_server_session(server_session);
+    } else {
+      // Release the session back into the shared session pool
+      server_session->release();
+    }
   }
 
   return 0;
@@ -3295,7 +3111,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
         // Otherwise in case of large docs, producer iobuffer gets filled up,
         // waiting for a consumer to consume data and the connection is never closed.
         if (p->alive &&
-            ((p->vc_type == HT_CACHE_READ) || (p->vc_type == HT_HTTP_SERVER) || (p->vc_type == HT_FTP_SERVER))) {
+            ((p->vc_type == HT_CACHE_READ) || (p->vc_type == HT_HTTP_SERVER))) {
           tunnel.chain_abort_all(p);
         }
       }
@@ -3592,14 +3408,10 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer * c)
   case VC_EVENT_ACTIVE_TIMEOUT:
     //  Did not complete post tunnling
     //
-    //  There are two ways we got here.  Either
-    //    we're tunneling to an http server or
-    //    a ftp server.  In the http case, we don't
-    //    want to close the connection because the
+    //    In the http case, we don't want to close
+    //    the connection because the
     //    destroys the header buffer which may
     //    a response even though the tunnel failed.
-    //    If this ftp, we never close that connection
-    //    from tunnel handlers
 
     // Shutdown both sides of the connection.  This prevents us
     //  from getting any futher events and signals to client
@@ -3731,7 +3543,7 @@ HttpSM::tunnel_handler_ssl_producer(int event, HttpTunnelProducer * p)
     break;
   default:
     // Covered here:
-    // HT_FTP_SERVER, HT_CACHE_READ, HT_CACHE_WRITE,
+    // HT_CACHE_READ, HT_CACHE_WRITE,
     // HT_TRANSFORM, HT_STATIC.
     break;
   }
@@ -3800,7 +3612,7 @@ HttpSM::tunnel_handler_ssl_consumer(int event, HttpTunnelConsumer * c)
     break;
   default:
     // Handled here:
-    // HT_FTP_SERVER, HT_CACHE_READ, HT_CACHE_WRITE, HT_TRANSFORM,
+    // HT_CACHE_READ, HT_CACHE_WRITE, HT_TRANSFORM,
     // HT_STATIC
     break;
   }
@@ -4213,14 +4025,10 @@ HttpSM::do_cache_lookup_and_read()
   t_state.cache_info.lookup_url->MD5_get(&md5b);
   ink_assert(md5a == md5b ||
              t_state.http_config_param->maintain_pristine_host_hdr ||
-             t_state.pristine_host_hdr > 0 || t_state.cache_info.lookup_url->scheme_get_wksidx() == URL_WKSIDX_FTP);
+             t_state.pristine_host_hdr > 0);
 #endif
 
-  if (t_state.scheme == URL_WKSIDX_HTTP) {
-    HTTP_INCREMENT_TRANS_STAT(http_cache_lookups_stat);
-  } else {
-    HTTP_INCREMENT_TRANS_STAT(ftp_cache_lookups_stat);
-  }
+  HTTP_INCREMENT_TRANS_STAT(http_cache_lookups_stat);
 
   Debug("http_seq", "[HttpSM::do_cache_lookup_and_read] Issuing cache lookup");
   milestones.cache_open_read_begin = ink_get_hrtime();
@@ -4269,7 +4077,7 @@ HttpSM::do_cache_delete_all_alts(Continuation * cont)
   t_state.cache_info.lookup_url->MD5_get(&md5b);
   ink_assert(md5a == md5b ||
              t_state.http_config_param->maintain_pristine_host_hdr ||
-             t_state.pristine_host_hdr > 0 || t_state.cache_info.lookup_url->scheme_get_wksidx() == URL_WKSIDX_FTP);
+             t_state.pristine_host_hdr > 0);
 #endif
 
   Debug("http_seq", "[HttpSM::do_cache_update] Issuing cache delete for %s",
@@ -4673,73 +4481,6 @@ HttpSM::do_http_server_open(bool raw)
   return;
 }
 
-//////////////////////////////////////////////////////////////////////////
-//
-//  HttpSM::do_ftp_server_open()
-//
-//////////////////////////////////////////////////////////////////////////
-void
-HttpSM::do_ftp_server_open()
-{
-  /*
-  ///////////////////////////////////////////////////
-  // assert that we are not connecting to a parent //
-  ///////////////////////////////////////////////////
-  ink_release_assert(t_state.current.server == &t_state.server_info);
-
-  // we should not already have a connection to the ftp server.
-  ink_assert(ftp_session == NULL);
-
-  /////////////////////////
-  // open ftp connectiwon //
-  /////////////////////////
-  Debug("http_seq", "[HttpSM::do_ftp_server_open] " "Opening ftp server connection");
-
-
-  milestones.server_connect = ink_get_hrtime();
-  if (milestones.server_first_connect == 0) {
-    milestones.server_first_connect = milestones.server_connect;
-  }
-
-  Action *ftp_open_action_handle;
-  if (t_state.method == HTTP_WKSIDX_GET) {
-    ftp_open_action_handle = ftpProcessor.get(this,     // cont
-                                              t_state.server_info.ip,   // host_ip
-                                              t_state.hdr_info.client_request.url_get()->port_get(),    // port
-                                              t_state.http_config_param->outgoing_ip_to_bind_saddr, t_state.ftp_info->username, // username
-                                              t_state.ftp_info->password,       // password
-                                              t_state.ftp_info->path,   // path
-                                              t_state.ftp_info->filename,       // filename
-                                              t_state.ftp_info->transfer_mode,  // ftp_type
-                                              t_state.hdr_info.server_request.get_if_modified_since()   // revalidation
-      );
-  } else if (t_state.method == HTTP_WKSIDX_PUT) {
-    ftp_open_action_handle = ftpProcessor.put(this,
-                                              t_state.server_info.ip,
-                                              t_state.hdr_info.client_request.url_get()->port_get(),
-                                              t_state.http_config_param->outgoing_ip_to_bind_saddr,
-                                              t_state.ftp_info->username,
-                                              t_state.ftp_info->password,
-                                              t_state.ftp_info->path,
-                                              t_state.ftp_info->filename, t_state.ftp_info->transfer_mode);
-  } else {
-    ftp_open_action_handle = NULL;
-    HTTP_DEBUG_ASSERT(!"Unsupported ftp method. Should've been caught earlier.");
-  }
-
-  if (ftp_open_action_handle) {
-    if (ftp_open_action_handle != ACTION_RESULT_DONE) {
-      ink_assert(!pending_action);
-      pending_action = ftp_open_action_handle;
-      historical_action = pending_action;
-    }
-  }
-
-  return;
-  */
-  ink_release_assert(0);
-}
-
 //void
 //HttpSM::do_auth_callout()
 //{
@@ -5040,7 +4781,6 @@ HttpSM::handle_post_failure()
   STATE_ENTER(&HttpSM::handle_post_failure, VC_EVENT_NONE);
 
   ink_assert(ua_entry->vc == ua_session);
-  //ink_assert(server_entry->vc == server_session || server_entry->vc == ftp_session->get_data_vconnection());
   ink_assert(server_entry->eos == true);
 
   // First order of business is to clean up from
@@ -5220,64 +4960,6 @@ HttpSM::handle_server_setup_error(int event, void *data)
 
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
-
-void
-HttpSM::do_setup_put_tunnel_to_ftp()
-{
-
-  int put_bytes = t_state.hdr_info.request_content_length;
-  MIOBuffer *put_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-  IOBufferReader *buf_start = put_buffer->alloc_reader();
-  t_state.hdr_info.request_body_start = true;
-
-  client_request_body_bytes = put_buffer->write(ua_buffer_reader, put_bytes);
-  ua_buffer_reader->consume(client_request_body_bytes);
-
-  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_ftp_put);
-
-  tunnel.add_producer(ua_entry->vc,
-                      put_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT, "user agent put");
-
-  VConnection *server_source;
-
-  if (do_post_transform_open()) {
-    server_source = post_transform_info.vc;
-    MIOBuffer *trans_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-    IOBufferReader *trans_reader = trans_buffer->alloc_reader();
-
-
-    HttpTunnelConsumer *trans_c = tunnel.add_consumer(post_transform_info.vc,
-                                                      ua_entry->vc,
-                                                      &HttpSM::tunnel_handler_transform_write,
-                                                      HT_TRANSFORM,
-                                                      "put transform");
-
-    // Fortunately, ftp put does not require a content length so
-    //   we can just tunnel until EOS
-    HttpTunnelProducer *trans_p = tunnel.add_producer(post_transform_info.vc,
-                                                      INT_MAX,
-                                                      trans_reader,
-                                                      &HttpSM::tunnel_handler_transform_read,
-                                                      HT_TRANSFORM,
-                                                      "put transform");
-
-    trans_p->self_consumer = trans_c;
-    trans_c->self_producer = trans_p;
-    post_transform_info.entry->in_tunnel = true;
-
-  } else {
-    // No transform, tunnel directly from user agent
-    server_source = ua_entry->vc;
-  }
-
-  tunnel.add_consumer(server_entry->vc,
-                      server_source, &HttpSM::tunnel_handler_post_server, HT_FTP_SERVER, "ftp server put");
-  ua_entry->in_tunnel = true;
-  server_entry->in_tunnel = true;
-
-  tunnel.tunnel_run();
-}
-
 
 void
 HttpSM::setup_transform_to_server_transfer()
@@ -6193,66 +5875,6 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
   tunnel.tunnel_run();
 }
 
-HttpTunnelProducer *
-HttpSM::setup_ftp_transfer_to_transform()
-{
-  MIOBuffer *buf = new_MIOBuffer(find_ftp_buffer_size());
-  IOBufferReader *buf_start = buf->alloc_reader();
-
-  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_response_wait_for_transform_read);
-
-  HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc,
-                                              t_state.hdr_info.response_content_length,
-                                              buf_start,
-                                              &HttpSM::tunnel_handler_server,
-                                              HT_FTP_SERVER,
-                                              "ftp server");
-
-  tunnel.add_consumer(transform_info.vc,
-                      server_entry->vc, &HttpSM::tunnel_handler_transform_write, HT_TRANSFORM, "transform write");
-
-  server_entry->in_tunnel = true;
-  transform_info.entry->in_tunnel = true;
-
-  return p;
-}
-
-void
-HttpSM::setup_ftp_transfer()
-{
-
-  int hdr_size, nbytes;
-
-  MIOBuffer *buf = new_MIOBuffer(find_ftp_buffer_size());
-  buf->water_mark = (int) t_state.http_config_param->default_buffer_water_mark;
-  IOBufferReader *buf_start = buf->alloc_reader();
-
-  // Now dump the header into the buffer
-  client_response_hdr_bytes = hdr_size = write_response_header_into_buffer(&t_state.hdr_info.client_response, buf);
-
-  if (t_state.hdr_info.response_content_length == HTTP_UNDEFINED_CL) {
-    nbytes = -1;
-  } else {
-    nbytes = t_state.hdr_info.response_content_length + hdr_size;
-  }
-
-  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
-
-  HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc,
-                                              nbytes,
-                                              buf_start,
-                                              &HttpSM::tunnel_handler_server,
-                                              HT_FTP_SERVER,
-                                              "ftp server");
-
-  NOWARN_UNUSED(p);
-
-  tunnel.add_consumer(ua_entry->vc, server_entry->vc, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
-
-  ua_entry->in_tunnel = true;
-  server_entry->in_tunnel = true;
-}
-
 // int HttpSM::find_http_resp_buffer_size(int cl)
 //
 //   Returns the allocation index for the buffer for
@@ -6277,29 +5899,6 @@ HttpSM::find_http_resp_buffer_size(int content_length)
 #else
     buf_size = HTTP_HEADER_BUFFER_SIZE + content_length;
 #endif
-    alloc_index = buffer_size_to_index(buf_size);
-  }
-
-  return alloc_index;
-}
-
-// int HttpSM::find_server_buffer_size()
-//
-//   Returns the allocation index for the buffer for
-//     the server response
-//
-int
-HttpSM::find_ftp_buffer_size()
-{
-  int buf_size;
-  int alloc_index;
-
-  if (t_state.hdr_info.response_content_length == HTTP_UNDEFINED_CL) {
-    // Ftp documents tend to be large so use a big
-    //   buffer is we don't know what the size is
-    alloc_index = BUFFER_SIZE_INDEX_32K;
-  } else {
-    buf_size = HTTP_HEADER_BUFFER_SIZE + t_state.hdr_info.response_content_length;
     alloc_index = buffer_size_to_index(buf_size);
   }
 
@@ -6504,36 +6103,6 @@ HttpSM::setup_server_transfer_to_cache_only()
 
   server_entry->in_tunnel = true;
 }
-
-void
-HttpSM::setup_ftp_transfer_to_cache_only()
-{
-
-  int nbytes;
-
-  MIOBuffer *buf = new_MIOBuffer(find_ftp_buffer_size());
-  IOBufferReader *buf_start = buf->alloc_reader();
-
-  if (t_state.hdr_info.response_content_length == HTTP_UNDEFINED_CL) {
-    nbytes = -1;
-  } else {
-    nbytes = t_state.hdr_info.response_content_length;
-  }
-
-  HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
-
-  HttpTunnelProducer *p = tunnel.add_producer(server_entry->vc,
-                                              nbytes,
-                                              buf_start,
-                                              &HttpSM::tunnel_handler_server,
-                                              HT_FTP_SERVER,
-                                              "ftp server");
-
-  NOWARN_UNUSED(p);
-
-  setup_cache_write_transfer(&cache_sm, server_entry->vc, &t_state.cache_info.object_store, 0, "cache write");
-}
-
 
 void
 HttpSM::setup_server_transfer()
@@ -6809,12 +6378,6 @@ HttpSM::kill_this()
       plugin_tunnel = NULL;
     }
 
-    /*
-    if (ftp_session) {
-      ftp_session->close();
-      ftp_session = NULL;
-    }
-    */
     ua_session = NULL;
     server_session = NULL;
 
@@ -7357,32 +6920,6 @@ HttpSM::set_next_state()
       break;
     }
 
-  case HttpTransact::FTP_SERVER_OPEN:
-    {
-      HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_ftp_server_open);
-
-      do_ftp_server_open();
-      break;
-    }
-
-  case HttpTransact::FTP_READ:
-    {
-      t_state.source = HttpTransact::SOURCE_FTP_ORIGIN_SERVER;
-
-      if (transform_info.vc) {
-        ink_assert(t_state.hdr_info.client_response.valid() == 0);
-        ink_assert((t_state.hdr_info.transform_response.valid()? true : false) == true);
-        HttpTunnelProducer *p = setup_ftp_transfer_to_transform();
-        perform_cache_write_action();
-        tunnel.tunnel_run(p);
-      } else {
-        ink_assert((t_state.hdr_info.client_response.valid()? true : false) == true);
-        t_state.api_next_action = HttpTransact::HTTP_API_SEND_REPONSE_HDR;
-        do_api_callout();
-      }
-      break;
-    }
-
   case HttpTransact::SERVER_READ:
     {
       t_state.source = HttpTransact::SOURCE_HTTP_ORIGIN_SERVER;
@@ -7555,24 +7092,6 @@ HttpSM::set_next_state()
 
       do_icp_lookup();
 
-      break;
-    }
-
-  case HttpTransact::FTP_WRITE_CACHE_NOOP:
-    {
-      cache_sm.end_both();
-      do_setup_put_tunnel_to_ftp();
-      break;
-    }
-
-  case HttpTransact::FTP_WRITE_CACHE_DELETE:
-    {
-
-      // Write close deletes the old alternate
-      cache_sm.close_write();
-      cache_sm.close_read();
-
-      do_setup_put_tunnel_to_ftp();
       break;
     }
 

@@ -172,20 +172,6 @@
       </table>
     </td>
   </tr>
-  <tr> 
-    <td height="2" colspan="2" class="configureLabel"><@submit_error_flg proxy.config.ftp.control_connection_timeout>FTP Control Connection Timeout</td>
-  </tr>
-  <tr>
-    <td nowrap class="bodyText">
-      <input type="text" size="6" name="proxy.config.ftp.control_connection_timeout" value="<@record proxy.config.ftp.control_connection_timeout>">
-    </td>
-     <td class="configureHelp" valign="top" align="left"> 
-      <ul>
-        <li>Specifies how long <@record proxy.config.product_name>
-            waits for a response from the FTP server.
-      </ul>
-    </td>
-  </tr>
 </table>
 
 <@include /configure/c_buttons.ink>

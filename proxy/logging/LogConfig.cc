@@ -2599,8 +2599,6 @@ LogConfig::read_xml_log_config(int from_memory)
               val_array[numValid++] = LOG_ENTRY_MIXT;
             } else if (strcasecmp(t, "http") == 0) {
               val_array[numValid++] = LOG_ENTRY_HTTP;
-            } else if (strcasecmp(t, "ftp") == 0) {
-              val_array[numValid++] = LOG_ENTRY_FTP;
             }
           }
 
@@ -2618,7 +2616,7 @@ LogConfig::read_xml_log_config(int from_memory)
                                          etype_field, LogFilter::ACCEPT, LogFilter::MATCH, numValid, val_array);
             obj->add_filter(&protocol_filter);
           }
-          delete[]val_array;
+          delete[] val_array;
         } else {
           Warning("No value(s) in Protocol field of XML object, " "object will log all protocols.");
         }

@@ -180,16 +180,6 @@ const
   {"proxy.config.http.ssl_ports", NULL,
    "Restrict SSL connections to ports", "%*d) %-*s %*s\n",
    10, 10, 50, 3},
-  // FTP - 3
-  {"proxy.config.ftp.data_connection_mode", NULL,
-   "FTP connection mode", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.ftp.control_connection_timeout", NULL,
-   "FTP inactivity timeout", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.config.http.ftp.anonymous_passwd", NULL,
-   "Anonymous FTP password", "%*d) %-*s %*s\n",
-   10, 10, 50, 3},
 };
 
 
@@ -199,12 +189,9 @@ const
 const
   CLI_globals::VarNameDesc
   CLI_configure::conf_cache_desctable[NUM_CONF_CACHE_DESCS] = {
-  // Cache Activation - 4
+  // Cache Activation - 2
   {"proxy.config.http.cache.http", NULL,
    "Enable HTTP caching(1=On,0=Off)", "%*d) %-*s %*s\n",
-   15, 15, 50, 3},
-  {"proxy.config.http.cache.ftp", NULL,
-   "Enable FTP caching(1=On,0=Off)", "%*d) %-*s %*s\n",
    15, 15, 50, 3},
   {"proxy.config.http.cache.ignore_client_no_cache", NULL,
    "Ignore user requests to bypass cache(1=On,0=Off)", "%*d) %-*s %*s\n",
@@ -216,7 +203,7 @@ const
   {"proxy.config.cache.limits.http.max_alts", NULL,
    "Maximum number of alternates allowed for a URL", "%*d) %-*s %*s\n",
    15, 15, 50, 3},
-  // Freshness - 5
+  // Freshness - 4
   {"proxy.config.http.cache.when_to_revalidate", NULL,
    "Verify freshness by checking", "%*d) %-*s %*s\n",
    15, 15, 50, 3},
@@ -228,9 +215,6 @@ const
    15, 15, 50, 3},
   {"proxy.config.http.cache.heuristic_max_lifetime", NULL,
    "maximum life time (secs)", "%*d) %-*s %*s\n",
-   15, 15, 50, 3},
-  {"proxy.config.http.ftp.cache.document_lifetime", NULL,
-   "FTP cached objects expire after (secs)", "%*d) %-*s %*s\n",
    15, 15, 50, 3},
   // Variable Content,  Do not cache - 2
   {"proxy.config.http.cache.cache_urls_that_look_dynamic", NULL,
@@ -462,7 +446,7 @@ const
   {"proxy.config.log2.auto_delete_rolled_files", NULL,
    "Auto-delete rolled log files when space is low", "%*d) %-*s %*s\n",
    10, 10, 50, 3},
-  // Log Splitting - 2
+  // Log Splitting - 1
   {"proxy.config.log2.separate_host_logs", NULL,
    "Host Log Splitting", "%*d) %-*s %*s\n",
    10, 10, 50, 3}
@@ -675,7 +659,6 @@ CLI_configure::doConfigureProtocols(CLI_DATA * c_data /* IN: client data */ )
   char tmpbuf[256];
   const char *line1 = " No     Attribute                                          Value\n";
   const char *line2 = "                            HTTP \n";
-  const char *line3 = "                            FTP \n";
   const char *line4 = "\n      Keep-alive time-outs set how long idle keep-alive \n"
     "      connections remain open.\n\n";
   const char *line5 = "\n      Inactivity timeouts set how long the Traffic Server \n"
@@ -683,26 +666,9 @@ CLI_configure::doConfigureProtocols(CLI_DATA * c_data /* IN: client data */ )
   const char *line6 = "\n      Activity timeouts limit the duration of transactions.\n\n";
   const char *line7 = "\n      Remove HTTP headers to increase the privacy of your \n"
     "      site and users. Remove the following headers:\n\n";
-  const char *line8 = "    1=PASV/PORT (use PORT if PASV fails)  \n"
-    "    2=PASV only (initiate data connection)   \n" "    3=PORT only (receive data connection)\n\n";
   const char *line9 = "\n                            HTTPS \n";
-  //  const char *line11 = "\n     OPTIONS: \n";
-  //  const char *line12 = "     Inactivity timeout sets how long idle connections remain \n"
-  //  "     open. A 10 minute minimum is recommended.\n\n";
-  //  const char *line16 = "     Poll the other Traffic Servers in the cluster see if new \n"
-  //  "     articles have appeared this often.\n\n";
-  // const char *line18 = "     The Authorization Server will abort an authorization \n"
-  //  "     operation if it does not complete in this amount of time.\n" "     The client can retry the operation.\n\n";
-  // const char *line19 = "     Clients are limited to downloading no more than this number\n"
-  //  "     of bytes/second. A throttle of 0 means downloading is not\n" "     limited.\n\n";
-  // const char *line20 = "     The Authentication Server can be run on either the local \n"
-  //  "     host or on a remote host. Enter the hostname on which the  \n" "     Authentication Server will run.\n\n";
-  // const char *line21 = "     The locally run Authentication Server will accept connections\n"
-  //  "     on this port, and the Traffic Server will connect to the \n"
-  //  "     the Authentication Server on this port.\n\n";
   const char *line22 = "\n     Traffic Server can insert Client-ip headers to retain the \n"
     "     user's IP address through proxies. \n\n";
-  // const char *line23 = "                         Real Networks \n\n";
   int highmark = 0;
   int i;
 
@@ -747,28 +713,6 @@ CLI_configure::doConfigureProtocols(CLI_DATA * c_data /* IN: client data */ )
     }
     c_data->output->copyFrom("\n", strlen("\n"));
   }
-  // Output FTP header
-  highmark += NUM_CONF_PROTOCOLS_FTP_DESCS;
-  if (CL_EV_ONE == c_data->cevent || CL_EV_THREE == c_data->cevent) {
-    c_data->output->copyFrom(CLI_globals::sep1, strlen(CLI_globals::sep1));
-    c_data->output->copyFrom(line3, strlen(line3));
-
-    // now we need to get all the configuration variables
-    for (i = highmark - NUM_CONF_PROTOCOLS_FTP_DESCS; i < highmark; i++) {
-      if (varStrFromName(conf_protocols_desctable[i].name, buf, sizeof(buf)) == true) {
-        snprintf(tmpbuf, sizeof(tmpbuf), conf_protocols_desctable[i].format,
-                 conf_protocols_desctable[i].no_width, i,
-                 conf_protocols_desctable[i].desc_width, conf_protocols_desctable[i].desc,
-                 conf_protocols_desctable[i].name_value_width, buf);
-        c_data->output->copyFrom(tmpbuf, strlen(tmpbuf));
-      }
-      if (i == (highmark - NUM_CONF_PROTOCOLS_FTP_DESCS)) {
-        c_data->output->copyFrom(line8, strlen(line8));
-      }
-    }
-    c_data->output->copyFrom("\n", strlen("\n"));
-  }
-
   /* Removing RNI stuff for now.  These two variables have been
      either dropped or renamed.  Eventually, this section needs
      to be revisited to encompass QT and WMT as well. */

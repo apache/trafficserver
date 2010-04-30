@@ -24,7 +24,6 @@
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 #include "HttpDebugNames.h"
 #include "P_EventSystem.h"
-//#include "Ftp.h"
 #include "StatPages.h"
 #include "HttpTunnel.h"
 #include "Transform.h"
@@ -49,8 +48,6 @@ HttpDebugNames::get_server_state_name(HttpTransact::ServerState_t state)
     return "CONNECTION_CLOSED";
   case HttpTransact::CONNECTION_ERROR:
     return "CONNECTION_ERROR";
-  case HttpTransact::FTP_OPEN_FAILED:
-    return "FTP_OPEN_FAILED";
   case HttpTransact::INACTIVE_TIMEOUT:
     return "INACTIVE_TIMEOUT";
   case HttpTransact::OPEN_RAW_ERROR:
@@ -174,17 +171,6 @@ HttpDebugNames::get_event_name(int event)
     return ("DNS_EVENT_LOOKUP");
 
     ////////////////////
-    // FTP     EVENTS //
-    ////////////////////
-/*
-  case FTP_EVENT_OPEN:
-    return ("FTP_EVENT_OPEN");
-  case FTP_EVENT_ACCEPT:
-    return ("FTP_EVENT_ACCEPT");
-  case FTP_EVENT_OPEN_FAILED:
-    return ("FTP_EVENT_OPEN_FAILED");
-*/
-    ////////////////////
     // CACHE   EVENTS //
     ////////////////////
 
@@ -298,18 +284,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
 
   case HttpTransact::REVERSE_DNS_LOOKUP:
     return ("REVERSE_DNS_LOOKUP");
-
-  case HttpTransact::FTP_SERVER_OPEN:
-    return ("FTP_SERVER_OPEN");
-
-  case HttpTransact::FTP_READ:
-    return ("FTP_READ");
-
-  case HttpTransact::FTP_WRITE_CACHE_DELETE:
-    return ("FTP_WRITE_CACHE_DELETE");
-
-  case HttpTransact::FTP_WRITE_CACHE_NOOP:
-    return ("FTP_WRITE_CACHE_NOOP");
 
   case HttpTransact::ICP_QUERY:
     return ("ICP_QUERY");

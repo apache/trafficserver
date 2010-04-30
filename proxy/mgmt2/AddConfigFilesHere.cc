@@ -110,9 +110,6 @@ initializeRegistry()
   configFiles->addFile("partition.config", false);
   configFiles->addFile("hosting.config", false);
   configFiles->addFile("bypass.config", false);
-  configFiles->addFile("ftp_remap.config", false);
-  // INKqa10326
-  //configFiles->addFile("ldapsrvr.config", false);
   configFiles->addFile("congestion.config", false);
   configFiles->addFile("plugin.config", false);
   configFiles->addFile("ipnat.conf", false);

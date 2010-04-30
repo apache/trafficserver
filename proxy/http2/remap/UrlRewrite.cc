@@ -1779,15 +1779,15 @@ UrlRewrite::BuildTable()
     // Include support for HTTPS scheme
     // includes support for FILE scheme
     if ((fromScheme != URL_SCHEME_HTTP && fromScheme != URL_SCHEME_HTTPS &&
-         fromScheme != URL_SCHEME_FTP && fromScheme != URL_SCHEME_FILE &&
+         fromScheme != URL_SCHEME_FILE &&
          fromScheme != URL_SCHEME_RTSP && fromScheme != URL_SCHEME_TUNNEL &&
          fromScheme != URL_SCHEME_MMS && fromScheme != URL_SCHEME_MMSU &&
          fromScheme != URL_SCHEME_MMST) ||
         (toScheme != URL_SCHEME_HTTP && toScheme != URL_SCHEME_HTTPS &&
-         toScheme != URL_SCHEME_FTP && toScheme != URL_SCHEME_RTSP &&
+         toScheme != URL_SCHEME_RTSP &&
          toScheme != URL_SCHEME_TUNNEL && toScheme != URL_SCHEME_MMS &&
          toScheme != URL_SCHEME_MMSU && toScheme != URL_SCHEME_MMST)) {
-      errStr = "Only http, https, ftp, rtsp, mms, and tunnel remappings are supported";
+      errStr = "Only http, https, rtsp, mms, and tunnel remappings are supported";
       goto MAP_ERROR;
     }
     // Check if a tag is specified.

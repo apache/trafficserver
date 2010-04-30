@@ -23,8 +23,6 @@ dist_webui_DATA = \
 	m_dns.ink \
 	m_dns_proxy.ink \
 	m_footer.ink \
-	m_ftp_http.ink \
-	m_ftp.ink \
 	m_graphs.ink \
 	m_header.ink \
 	m_http.ink \

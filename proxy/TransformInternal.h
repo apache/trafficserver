@@ -112,44 +112,6 @@ public:
 };
 
 
-class FtpListTransform:public INKVConnInternal
-{
-public:
-  FtpListTransform(ProxyMutex * mutex, HTTPHdr * req, IOBufferReader * ftp_message, const char *currentdir);
-   ~FtpListTransform();
-
-  int handle_event(int event, void *edata);
-
-  void add_header();
-  void add_trailer();
-  void add_date(struct tm *tp);
-  void add_parent_directory();
-  void add_entry(const char *s, const char *e);
-  void add_entries();
-  void parse_unix_listing(const char *s, const char *e, const char *cur);
-  void parse_ms_listing(const char *s, const char *e, const char *cur);
-  void send_error_message(const char *s, const char *e, const char *cur);
-  void write_html_link(const char *s, const char *e, const char *cur, int type,
-                       const char *ne, const char *ns, struct tm *tp, int size);
-
-public:
-  HTTPHdr * m_req;
-  IOBufferReader *m_ftp_message;
-  IOBufferReader *m_output_reader;
-  MIOBuffer *m_output_buf;
-  VIO *m_output_vio;
-  char *m_url;
-  int m_url_length;
-  int m_done;
-  int m_header_needed;
-  int m_trailer_needed;
-  int m_icon_needed;
-  MIMEScanner m_scanner;
-  const char *m_current_dir;
-  int parent_directory_added_flag;
-};
-
-
 class RangeTransform:public INKVConnInternal
 {
 public:

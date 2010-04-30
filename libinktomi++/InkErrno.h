@@ -36,7 +36,6 @@
 #define SOCK_ERRNO                        INK_START_ERRNO
 #define NET_ERRNO                         INK_START_ERRNO+100
 #define CLUSTER_ERRNO                     INK_START_ERRNO+200
-#define FTP_ERRNO                         INK_START_ERRNO+300
 #define CACHE_ERRNO                       INK_START_ERRNO+400
 #define HTTP_ERRNO                        INK_START_ERRNO+600
 
@@ -54,22 +53,6 @@
 #define ECLUSTER_ORB_EIO            	  (CLUSTER_ERRNO+4)
 #define ECLUSTER_CHANNEL_INUSE       	  (CLUSTER_ERRNO+5)
 #define ECLUSTER_NOMORE_CHANNELS       	  (CLUSTER_ERRNO+6)
-
-#define EFTP_ILL_REPLY_SYNTAX             (FTP_ERRNO+0)
-#define EFTP_TIMEOUT                      (FTP_ERRNO+1)
-#define EFTP_CONNECTION_ERROR             (FTP_ERRNO+2)
-#define EFTP_NO_CTRL_CONN                 (FTP_ERRNO+3)
-#define EFTP_SEND_CMD                     (FTP_ERRNO+4)
-#define EFTP_ILL_REPLY_CODE               (FTP_ERRNO+5)
-#define EFTP_NO_PASV_CONN                 (FTP_ERRNO+6)
-#define EFTP_NO_ACCEPT                    (FTP_ERRNO+7)
-#define EFTP_LOGIN_INCORRECT              (FTP_ERRNO+8)
-#define EFTP_FILE_UNAVAILABLE             (FTP_ERRNO+9)
-#define EFTP_FTP_PROTOCOL_ERROR           (FTP_ERRNO+10)
-#define EFTP_SERVICE_UNAVAILABLE          (FTP_ERRNO+11)
-#define EFTP_NAME_TOO_LONG                (FTP_ERRNO+12)
-#define EFTP_INTERNAL                     (FTP_ERRNO+13)
-#define EFTP_ERROR                        (FTP_ERRNO+14)
 
 #define ECACHE_NO_DOC                     (CACHE_ERRNO+0)
 #define ECACHE_DOC_BUSY                   (CACHE_ERRNO+1)

@@ -1863,13 +1863,12 @@ overviewPage::agBandwidthHitRate()
   MgmtFloat hitRate;
   MgmtInt totalHits = 0;
   MgmtInt cacheOn = 1;          // on by default
-  MgmtInt httpCacheOn, ftpCacheOn;
+  MgmtInt httpCacheOn;
   int status;
 
   // See if cache is on
   ink_assert(varIntFromName("proxy.config.http.cache.http", &httpCacheOn));
-  ink_assert(varIntFromName("proxy.config.http.cache.ftp", &ftpCacheOn));
-  cacheOn = httpCacheOn || ftpCacheOn;
+  cacheOn = httpCacheOn;
 
   // Get total cluster hits first, only calculate bandwith if > 0
   varIntFromName("proxy.cluster.http.cache_total_hits", &totalHits);
@@ -1882,12 +1881,6 @@ overviewPage::agBandwidthHitRate()
   varIntFromName("proxy.cluster.http.user_agent_total_response_bytes", &bytes);
   UA_total += bytes;
 
-  // FTP
-  varIntFromName("proxy.cluster.ftp.downstream_total_bytes", &bytes);
-  UA_total += bytes;
-
-  // Origin Server and Parent Proxy
-
   // HTTP
   varIntFromName("proxy.cluster.http.origin_server_total_request_bytes", &bytes);
   OSPP_total += bytes;
@@ -1896,10 +1889,6 @@ overviewPage::agBandwidthHitRate()
   varIntFromName("proxy.cluster.http.parent_proxy_total_request_bytes", &bytes);
   OSPP_total += bytes;
   varIntFromName("proxy.cluster.http.parent_proxy_total_response_bytes", &bytes);
-  OSPP_total += bytes;
-
-  // FTP
-  varIntFromName("proxy.cluster.ftp.upstream_total_bytes", &bytes);
   OSPP_total += bytes;
 
   // Special negative bandwidth scenario is treated here
@@ -2264,17 +2253,6 @@ overviewPage::doClusterAg()
                "proxy.node.http.user_agents_total_documents_served");
   clusterAgInt("proxy.cluster.http.origin_server_total_transactions_count",
                "proxy.node.http.origin_server_total_transactions_count");
-
-  // FTP
-  clusterAgInt("proxy.cluster.ftp.upstream_total_bytes", "proxy.node.ftp.upstream_total_bytes");
-  clusterAgInt("proxy.cluster.ftp.downstream_total_bytes", "proxy.node.ftp.downstream_total_bytes");
-  clusterAgInt("proxy.cluster.ftp.current_server_connections", "proxy.node.ftp.current_server_connections");
-  clusterAgInt("proxy.cluster.ftp.current_client_connections", "proxy.node.ftp.current_client_connections");
-  clusterAgInt("proxy.cluster.ftp.current_cache_connections", "proxy.node.ftp.current_cache_connections");
-  clusterAgInt("proxy.cluster.ftp.user_agents_total_documents_served",
-               "proxy.node.ftp.user_agents_total_documents_served");
-
-  clusterAgFloat("proxy.cluster.ftp.user_agent_xacts_per_second", "proxy.node.ftp.user_agent_xacts_per_second");
 
   // RNI
   clusterAgInt("proxy.cluster.rni.upstream_total_bytes", "proxy.node.rni.upstream_total_bytes");

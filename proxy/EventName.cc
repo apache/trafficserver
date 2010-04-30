@@ -28,7 +28,6 @@
 
 #include "P_EventSystem.h"
 // #include "I_Disk.h" unused
-// #include "I_FTP.h" unavailable
 #include "I_Cache.h"
 #include "I_Net.h"
 #include "P_Cluster.h"
@@ -84,10 +83,6 @@ event_int_to_string(int event, char buffer[32])
     case DNS_EVENT_EVENTS_START: return "DNS_EVENT_EVENTS_START";
 
 #if 0
-    case FTP_EVENT_OPEN: return "FTP_EVENT_OPEN";
-    case FTP_EVENT_ACCEPT: return "FTP_EVENT_ACCEPT";
-    case FTP_EVENT_OPEN_FAILED: return "FTP_EVENT_OPEN_FAILED";
-
     case MANAGEMENT_EVENT: return "MANAGEMENT_EVENT";
 
     case LOGIO_FINISHED: return "LOGIO_FINISHED";

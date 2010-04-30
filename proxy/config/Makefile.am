@@ -27,7 +27,6 @@ dist_sysconf_DATA =	\
   cluster.config \
   congestion.config \
   filter.config \
-  ftp_remap.config \
   hosting.config \
   icp.config \
   ip_allow.config \

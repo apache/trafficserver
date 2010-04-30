@@ -45,10 +45,6 @@ int writeFilterConfigTable(WebHttpContext * whc);
 int writeFilterRuleList(textBuffer * output);
 int writeFilterConfigForm(WebHttpContext * whc);
 
-int writeFtpRemapConfigTable(WebHttpContext * whc);
-int writeFtpRemapRuleList(textBuffer * output);
-int writeFtpRemapConfigForm(WebHttpContext * whc);
-
 int writeHostingConfigTable(WebHttpContext * whc);
 int writeHostingRuleList(textBuffer * output);
 int writeHostingConfigForm(WebHttpContext * whc);
@@ -122,8 +118,6 @@ int convert_filter_ele_to_html_format(INKFilterEle * ele,
                                       char *hdr_type, char *server, char *dn, char *realm, char *uid_filter,
                                       char *attr_name, char *attr_val, char *redirect_url, char *bind_dn,
                                       char *bind_pwd_file, char *mixt);
-
-int convert_ftp_remap_ele_to_html_format(INKFtpRemapEle * ele, char *from_port, char *to_port);
 
 int convert_hosting_ele_to_html_format(INKHostingEle * ele, char *pdType, char *partitions);
 

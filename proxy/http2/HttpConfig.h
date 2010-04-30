@@ -288,12 +288,6 @@ enum
   http_server_transaction_time_stat,
   http_server_raw_transaction_time_stat,
 
-  // Ftp stats
-
-  ftp_cache_lookups_stat,
-  ftp_cache_hits_stat,
-  ftp_cache_misses_stat,
-
   // Http cache errors
   http_cache_write_errors,
   http_cache_read_errors,
@@ -433,10 +427,6 @@ public:
   char *proxy_response_via_string;
   int proxy_response_via_string_len;
 
-  /////////////
-  // schemes //
-  /////////////
-  MgmtInt ftp_enabled;
   //////////////////
   // WUTS headers //
   //////////////////
@@ -568,7 +558,6 @@ public:
   // cache control //
   ///////////////////
   MgmtInt cache_http;
-  MgmtInt cache_ftp;
   MgmtInt cache_ignore_client_no_cache;
   MgmtInt cache_ignore_client_cc_max_age;
   MgmtInt cache_ims_on_client_no_cache;
@@ -598,13 +587,6 @@ public:
   // Push //
   //////////
   MgmtInt push_method_enabled;
-
-  /////////
-  // Ftp //
-  /////////
-  char *ftp_anonymous_passwd;
-  MgmtInt cache_ftp_document_lifetime;
-  MgmtInt ftp_binary_transfer_only;
 
 
   ////////////////////////////
@@ -874,7 +856,6 @@ proxy_request_via_string(0),
 proxy_request_via_string_len(0),
 proxy_response_via_string(0),
 proxy_response_via_string_len(0),
-ftp_enabled(false),
 wuts_enabled(false),
 log_spider_codes(false),
 url_expansions_string(0),
@@ -947,7 +928,6 @@ cache_open_read_retry_time(0),
 max_cache_open_write_retries(0),
 cache_open_write_retry_time(0),
 cache_http(false),
-cache_ftp(false),
 cache_ignore_client_no_cache(false),
 cache_ignore_client_cc_max_age(true),
 cache_ims_on_client_no_cache(false),
@@ -964,9 +944,6 @@ ssl_ports(0),
 request_hdr_max_size(0),
 response_hdr_max_size(0),
 push_method_enabled(0),
-ftp_anonymous_passwd(0),
-cache_ftp_document_lifetime(0),
-ftp_binary_transfer_only(0),
 referer_filter_enabled(0),
 referer_format_redirect(0),
 accept_encoding_filter_enabled(0),
@@ -1031,7 +1008,6 @@ HttpConfigParams()
   xfree(cache_vary_default_images);
   xfree(cache_vary_default_other);
   xfree(ssl_ports_string);
-  xfree(ftp_anonymous_passwd);
   xfree(reverse_proxy_no_host_redirect);
 
   if (ssl_ports) {

@@ -43,8 +43,6 @@ FileInfo file_info_entries[] = {
   {"proxy.config.icp.icp_configuration", INK_FNAME_ICP_PEER, &convertIcpRule_ts, &convertIcpRule_xml},
   {"proxy.config.url_remap.filename", INK_FNAME_REMAP, &convertRemapRule_ts, &convertRemapRule_xml},
   {"proxy.config.dns.splitdns.filename", INK_FNAME_SPLIT_DNS, &convertSplitDnsRule_ts, &convertSplitDnsRule_xml},
-  {"proxy.config.ftp.reverse_ftp_remap_file_name", INK_FNAME_FTP_REMAP, &convertFtpRemapRule_ts,
-   &convertFtpRemapRule_xml},
   {"proxy.config.cache.hosting_filename", INK_FNAME_HOSTING, &convertHostingRule_ts, &convertHostingRule_xml},
   {"proxy.config.cache.ip_allow.filename", INK_FNAME_IP_ALLOW, &convertIpAllowRule_ts, &convertIpAllowRule_xml},
   {"proxy.config.admin.ip_allow.filename", INK_FNAME_MGMT_ALLOW, &convertMgmtAllowRule_ts, &convertMgmtAllowRule_xml},
@@ -70,7 +68,6 @@ const char *config_files[] = {
   "bypass.config",
   "cache.config",
   "congestion.config",
-  "ftp_remap.config",
   "hosting.config",
   "icp.config",
   "ip_allow.config",
@@ -369,49 +366,6 @@ convertCongestionRule_xml(XMLNode * rule_node)
   return rule;
 }
 
-// ---------------------------------------------------------------------
-// convertFtpRemapRule_xml
-// ---------------------------------------------------------------------
-char *
-convertFtpRemapRule_xml(XMLNode * rule_node)
-{
-  INKFtpRemapEle *ele = NULL;
-  XMLNode *child;
-  char *name, *tempStr;
-
-  if (!rule_node)
-    return NULL;
-
-  ele = INKFtpRemapEleCreate();
-
-  // iterate through each subelement of a rule node
-  for (int i = 0; i < rule_node->getChildCount(); i++) {
-    child = rule_node->getChildNode(i);
-    name = child->getNodeName();
-
-    if (strcmp(name, "src") == 0) {
-      tempStr = child->getAttributeValueByName("port");
-      if (tempStr) {
-        ele->from_port = ink_atoi(tempStr);
-      }
-      tempStr = child->getAttributeValueByName("host");
-      ele->from_val = xstrdup(tempStr);
-    } else if (strcmp(name, "dest") == 0) {
-      tempStr = child->getAttributeValueByName("port");
-      if (tempStr) {
-        ele->to_port = ink_atoi(tempStr);
-      }
-      tempStr = child->getAttributeValueByName("host");
-      ele->to_val = xstrdup(tempStr);
-    }
-  }
-
-  // convert Ele into "one-liner" text format
-  FtpRemapObj ele_obj(ele);
-  char *rule = ele_obj.formatEleToRule();
-
-  return rule;
-}
 
 // ---------------------------------------------------------------------
 // convertHostingRule_xml
@@ -1462,30 +1416,6 @@ Lerror:
   return INK_ERR_FAIL;
 }
 
-// ---------------------------------------------------------------------
-// convertFtpRemapRule_ts
-// ---------------------------------------------------------------------
-int
-convertFtpRemapRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
-{
-  INKFtpRemapEle *ele = (INKFtpRemapEle *) cfg_ele;
-
-  writeXmlStartTag(xml_file, "rule");
-
-  writeXmlAttrStartTag(xml_file, "src");
-  writeXmlAttribute(xml_file, "host", ele->from_val);
-  writeXmlAttribute_int(xml_file, "port", ele->from_port);
-  writeXmlClose(xml_file);
-
-  writeXmlAttrStartTag(xml_file, "dest");
-  writeXmlAttribute(xml_file, "host", ele->to_val);
-  writeXmlAttribute_int(xml_file, "port", ele->to_port);
-  writeXmlClose(xml_file);
-
-  writeXmlEndTag(xml_file, "rule");
-
-  return INK_ERR_OKAY;
-}
 
 // ---------------------------------------------------------------------
 // convertHostingRule_ts

@@ -558,43 +558,6 @@
         </tr>
 <!-- realmem end -->
 
-        <!--------------------------- PROTOCOLS -------------------------->
-		<!-- FTP -->
-<!-- fccon start -->
-        <tr align="center"> 
-          <td align=center class="bodyText">
-            FTP Client Connections:<BR>
-            <A HREF="fccon.html"><IMG HEIGHT=135 WIDTH=500 SRC="fccon-<@query mrtg>.png"></A>
-          </td>
-          <td align=left class="bodyText">
-            This is an instantaneous snapshot of the FTP client/server connection count.
-            The blue curve and the orange line represent the client/server connection count, respectively. <i>(not including FTP over HTTP traffic)</i>
-          </td>
-        </tr>
-<!-- fccon end -->
-<!-- fdoc start -->
-        <tr align="center"> 
-          <td align=center class="bodyText">
-            FTP Hit Rate:<BR>
-            <A HREF="fdoc.html"><IMG HEIGHT=135 WIDTH=500 SRC="fdoc-<@query mrtg>.png"></A>
-          </td>
-          <td align=left class="bodyText">
-            The blue curve shows the 5 minute average FTP hit rate. <i>(not including FTP over HTTP traffic)</i>
-          </td>
-        </tr>
-<!-- fdoc end -->
-<!-- fbw start -->
-        <tr align="center"> 
-          <td align=center class="bodyText">
-            FTP Bandwidth Savings:<BR>
-            <A HREF="fbw.html"><IMG HEIGHT=135 WIDTH=500 SRC="fbw-<@query mrtg>.png"></A>
-          </td>
-          <td align=left class="bodyText">
-            This shows the FTP bandwidth savings percentage. <i>(not including FTP over HTTP traffic)</i>
-          </td>
-        </tr>
-<!-- fbw end -->
-
         <!--------------------- MIXT TPROTOCOLS -------------------------->
         <tr> 
           <td height="2" colspan="2" class="configureLabel">Media Protocols</td>

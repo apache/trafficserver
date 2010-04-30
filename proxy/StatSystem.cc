@@ -1129,9 +1129,6 @@ TransactionMilestones::invariant()
      ((user_agent_begin <= raw_origin_server_connect_begin) ||
      (raw_origin_server_connect_begin == 0)));
      UIF(order_correct,
-     ((user_agent_begin <= ftp_server_connect_begin) || 
-     (ftp_server_connect_begin == 0)));
-     UIF(order_correct,
      ((user_agent_begin <= cache_lookup_begin) || (cache_lookup_begin == 0)));
      UIF(order_correct,
      ((user_agent_begin <= transform_open_begin) || (transform_open_begin == 0)));
@@ -1154,13 +1151,6 @@ TransactionMilestones::invariant()
      UIF(order_correct, (raw_origin_server_connect_begin <= raw_origin_server_connect_end));
      UIF(order_correct, (raw_origin_server_connect_end <= raw_origin_server_begin_read_write));
      UIF(order_correct, (raw_origin_server_connect_end <= raw_origin_server_close));
-     /////////////////
-     // ftp server  //
-     /////////////////
-     UIF(order_correct, (ftp_server_connect_begin <= ftp_server_connect_end));
-     UIF(order_correct, 
-     ((ftp_server_connect_end <= ftp_server_read_begin) || (ftp_server_read_begin == 0)));
-     UIF(order_correct, (ftp_server_read_begin <= ftp_server_read_end));
      ///////////
      // cache //
      ///////////

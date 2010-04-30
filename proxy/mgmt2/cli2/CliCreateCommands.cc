@@ -59,8 +59,6 @@ CliCreateCommands()
 
   createCommand("show:http", Cmd_ShowHttp, NULL, CLI_COMMAND_EXTERNAL, "show:http", "HTTP protocol configuration");
 
-  createCommand("show:ftp", Cmd_ShowFtp, NULL, CLI_COMMAND_EXTERNAL, "show:ftp", "FTP protocol configuration");
-
   createCommand("show:icp", Cmd_ShowIcp, CmdArgs_ShowIcp, CLI_COMMAND_EXTERNAL,
                 "show:icp [peer]", "ICP protocol configuration");
 
@@ -113,8 +111,6 @@ CliCreateCommands()
                 "show:http-trans-stats", "HTTP transaction statistics");
 
   createCommand("show:http-stats", Cmd_ShowHttpStats, NULL, CLI_COMMAND_EXTERNAL, "show:http-stats", "HTTP statistics");
-
-  createCommand("show:ftp-stats", Cmd_ShowFtpStats, NULL, CLI_COMMAND_EXTERNAL, "show:ftp-stats", "FTP statistics");
 
   createCommand("show:icp-stats", Cmd_ShowIcpStats, NULL, CLI_COMMAND_EXTERNAL, "show:icp-stats", "ICP statistics");
 
@@ -213,11 +209,6 @@ CliCreateCommands()
                 "config:http <insert-ip | remove-ip> <on | off>\n"
                 "config:http proxy <fwd | rev | fwd-rev>", "Configure HTTP");
 
-  createCommand("config:ftp", Cmd_ConfigFtp, CmdArgs_ConfigFtp, CLI_COMMAND_EXTERNAL,
-                "config:ftp mode <pasv-port | port | pasv>\n"
-                "config:ftp <inactivity-timeout | expire-after> <seconds>\n"
-                "config:ftp anonymous-password <string>\n" "config:ftp proxy <fwd | rev | fwd-rev>", "Configure FTP");
-
   createCommand("config:icp", Cmd_ConfigIcp, CmdArgs_ConfigIcp, CLI_COMMAND_EXTERNAL,
                 "config:icp mode <disabled | receive | send-receive>\n"
                 "config:icp port <int>\n"
@@ -242,7 +233,7 @@ CliCreateCommands()
 
 
   createCommand("config:cache", Cmd_ConfigCache, CmdArgs_ConfigCache, CLI_COMMAND_EXTERNAL,
-                "config:cache <http | ftp> <on | off>\n"
+                "config:cache <http> <on | off>\n"
                 "config:cache ignore-bypass <on | off>\n"
                 "config:cache <max-object-size | max-alternates> <int>\n"
                 "config:cache file <url-config-file>\n"

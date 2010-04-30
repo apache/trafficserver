@@ -150,7 +150,6 @@ int program_counter = 0;
 #include "WMT-Datapump.h"
 #endif
 
-//#include "FtpSM.h"
 #include "http2/HttpSM.h"
 
 bool inTable;
@@ -163,7 +162,6 @@ char *event_int_to_string(int event, char buffer[32]);
 const int HDR_HEAP_HDR_SIZE = ROUND(sizeof(HdrHeap), HDR_PTR_SIZE);
 HTTPHdrImpl *global_http;
 HttpSM *last_seen_http_sm = NULL;
-FtpSM *last_seen_ftp_sm = NULL;
 
 #ifdef READ_CORE_WMT
 WMT_ServerFileSM *last_seen_wmt_sfsm = NULL;
@@ -632,27 +630,6 @@ CoreUtils::test_HttpSM(void *arg)
 }
 
 
-// test whether a given register is an FtpSM
-//   if it is, call process_FtpSM on it
-void
-CoreUtils::test_FtpSM(void *arg)
-{
-  /*
-  FtpSM *fsm_test = (FtpSM *) arg;
-
-  int *magic_ptr = &(fsm_test->magic);
-  int magic = 0;
-  if (read_from_core((intptr_t) magic_ptr, sizeof(int), (char *) &magic) != 0) {
-    if (magic == FTP_SM_ALIVE || magic == FTP_SM_DEAD) {
-      printf("test_FtpSM:******MATCH*****\n");
-      process_FtpSM(fsm_test);
-    }
-  }
-  */
-  ink_release_assert(0);
-}
-
-
 #ifdef READ_CORE_WMT
 void
 CoreUtils::test_wmtTop(void *arg)
@@ -1086,64 +1063,6 @@ CoreUtils::read_heap_header(intptr_t vaddr, intptr_t bytes, HdrHeap h)
   }
   return -1;
 }
-
-
-void
-CoreUtils::process_FtpSM(FtpSM * core_ptr)
-{
-/*
-#if defined(sparc)
-  intptr_t id = get_active_thread_Id();
-#endif
-  // extracting the FtpSM from the core file
-  if (last_seen_ftp_sm != core_ptr) {
-    FtpSM *ftp_sm = (FtpSM *) malloc(sizeof(FtpSM));;
-
-    if (read_from_core((intptr_t) core_ptr, sizeof(FtpSM), (char *) ftp_sm) < 0) {
-      // This is most likely not 64-bit safe. /leif
-      printf("ERROR: Failed to read FtpSM @ 0x%X from core\n", (unsigned int) core_ptr);
-      free(ftp_sm);
-      return;
-    }
-
-    if (ftp_sm->magic == FTP_SM_ALIVE) {
-      last_seen_ftp_sm = core_ptr;
-
-      if (is_debug_tag_set("magic")) {
-#if (HOST_OS == linux)
-        printf("\n*****match-ALIVE*****\n");
-#endif
-#if defined(sparc)
-        printf("\n*****match-ALIVE*****!! lwpid: %d\n", arrayLwp[id].lwpId);
-#endif
-      }
-      // This is probably not 64-bit correct. /leif
-      printf("---- Found FtpSM --- id %lld  ------ @ 0x%X -----\n\n", ftp_sm->sm_id, (unsigned int) ftp_sm);
-      FtpSM::print_ftpsm(ftp_sm);
-      printf("------------------------------------------------\n\n\n");
-    } else if (ftp_sm->magic == FTP_SM_DEAD) {
-      if (is_debug_tag_set("magic")) {
-#if (HOST_OS == linux)
-        printf("\n*****match-DEAD*****\n");
-#endif
-#if defined(sparc)
-        printf("\n*****match-DEAD*****!! lwpid: %d\n", arrayLwp[id].lwpId);
-#endif
-      }
-    } else {
-      if (is_debug_tag_set("magic")) {
-        // Nothing? /leif
-        ;
-      }
-    }
-
-    free(ftp_sm);
-  } else
-    printf("process_FtpSM : last_seen_http_sm == core_ptr\n");
-    */
-  ink_release_assert(0);
-}
-
 
 void
 CoreUtils::process_EThread(EThread * eth_test)
@@ -1695,7 +1614,6 @@ process_core(char *fname)
   // Write your actual tests here
   CoreUtils::find_stuff(&CoreUtils::test_HdrHeap);
   CoreUtils::find_stuff(&CoreUtils::test_HttpSM);
-  CoreUtils::find_stuff(&CoreUtils::test_FtpSM);
 
 #ifdef READ_CORE_WMT
   CoreUtils::find_stuff(&CoreUtils::test_wmtServerFile);
@@ -1878,7 +1796,6 @@ process_core(char *fname)
 
   CoreUtils::find_stuff(&CoreUtils::test_HdrHeap);
   CoreUtils::find_stuff(&CoreUtils::test_HttpSM);
-  CoreUtils::find_stuff(&CoreUtils::test_FtpSM);
 
 #ifdef READ_CORE_WMT
   CoreUtils::find_stuff(&CoreUtils::test_wmtServerFile);

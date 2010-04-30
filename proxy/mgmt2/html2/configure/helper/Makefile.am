@@ -17,7 +17,6 @@
 webuidir = $(DESTDIR)$(pkgdatadir)/configure/helper
 dist_webui_DATA = \
 	INKMgmtAPICheckTcl.sh \
-	INKMgmtAPIFtp.tcl \
 	log.sh \
 	otwu.tcl \
 	traffic_shell.cgi

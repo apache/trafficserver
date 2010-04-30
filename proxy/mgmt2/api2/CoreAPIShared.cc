@@ -440,8 +440,6 @@ get_event_id(const char *event_name)
     return MGMT_ALARM_PROXY_LOGGING_ERROR;
   } else if (strcmp("MGMT_ALARM_PROXY_LOGGING_WARNING", event_name) == 0) {
     return MGMT_ALARM_PROXY_LOGGING_WARNING;
-  } else if (strcmp("MGMT_ALARM_PROXY_FTP_ERROR", event_name) == 0) {
-    return MGMT_ALARM_PROXY_FTP_ERROR;
   } else if (strcmp("MGMT_ALARM_MGMT_TEST", event_name) == 0) {
     return MGMT_ALARM_MGMT_TEST;
   } else if (strcmp("MGMT_ALARM_CONFIG_UPDATE_FAILED", event_name) == 0) {
@@ -500,9 +498,6 @@ get_event_name(int id)
     break;
   case MGMT_ALARM_PROXY_LOGGING_WARNING:
     ink_strncpy(name, "MGMT_ALARM_PROXY_LOGGING_WARNING", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_FTP_ERROR:
-    ink_strncpy(name, "MGMT_ALARM_PROXY_FTP_ERROR", sizeof(name));
     break;
   case MGMT_ALARM_MGMT_TEST:
     ink_strncpy(name, "MGMT_ALARM_MGMT_TEST", sizeof(name));

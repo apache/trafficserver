@@ -198,30 +198,6 @@ private:
   INKFilterEle * m_ele;
 };
 
-/* ftp_remap.config *********************************************/
-class FtpRemapObj:public CfgEleObj
-{
-public:
-  FtpRemapObj(INKFtpRemapEle * ele);
-  FtpRemapObj(TokenList * tokens);      //creates the ele
-  ~FtpRemapObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
-  {
-    return (INKCfgEle *) m_ele;
-  }
-  virtual INKRuleTypeT getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  INKFtpRemapEle * m_ele;
-};
-
 /* hosting.config ************************************************/
 class HostingObj:public CfgEleObj
 {

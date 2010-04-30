@@ -23,7 +23,6 @@ man_MANS = \
   config_clock.1 \
   config_dns.1 \
   config_filter.1 \
-  config_ftp.1 \
   config_get.1 \
   config_hard-restart.1 \
   config_hostdb.1 \
@@ -64,8 +63,6 @@ man_MANS = \
   show_dns-resolver.1 \
   show_dns-stats.1 \
   show_filter.1 \
-  show_ftp.1 \
-  show_ftp-stats.1 \
   show_hostdb.1 \
   show_hostdb-stats.1 \
   show_http.1 \

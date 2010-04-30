@@ -60,13 +60,6 @@ create_url(const char *url_string)
 
   // get specifics for this scheme
   switch (url.getScheme()) {
-  case URL_SCHEME_FTP:
-    len = url.getFtpPath(buf, sizeof(buf));
-    buf[len] = '\0';
-    cout << "ftp path      : " << buf << endl;
-    cout << "ftp type      : " << url.getFtpType() << endl;
-    break;
-
   case URL_SCHEME_NONE:
   case URL_SCHEME_HTTP:
   case URL_SCHEME_HTTPS:
@@ -122,9 +115,6 @@ test_marshal(URL * url)
 
 main()
 {
-  //create_url("ftp://ivry:semel@ftp.inktomi.com/index.html");
-  //create_url("/file://ftp.inktomi.com/index.html");
-//    create_url("ftp://www.inktomi.com//index.html;type=I");
 //    test_marshal(create_url("http://ivry:semel@www.inktomi.com:8080/index.html;type=I?query=what#http_fragment"));
 //    create_url("http://www.inktomi.com/index.html;type=I#http_fragment");
   create_url("www.microsoft.com/isapi/redir.dll?TARGET=%2Foffice%2Fmigration%2F&nonie3home&homepage&&&&headline1&1006");

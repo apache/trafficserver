@@ -394,9 +394,6 @@ HdrTest::test_url()
     "http://foo:bar@some.place",
     "http://foo:bar@some.place/",
 
-    "ftp://some.place/path",
-    "ftp://some.place/path;type=c",
-
     "mms://sm02.tsqa.inktomi.com/0102rally.asf",
     "pnm://foo:bar@some.place:80/path;params?query#fragment",
     "rtsp://foo:bar@some.place:80/path;params?query#fragment",
@@ -877,48 +874,7 @@ HdrTest::test_http_hdr_print_and_copy()
         "HTTP/1.0 200 OK\r\n"
         "Content-Length: 16428\r\n"
         "Content-Type: text/html\r\n"
-        "\r\n", "HTTP/1.0 200 OK\r\n" "Content-Length: 16428\r\n" "Content-Type: text/html\r\n" "\r\n"}, {
-    "GET ftp://cust read:Rcus 01#@update.sym antec.com/foo bar/blah HTTP/1.0\r\n"
-        "Cache-Control: max-age=1234,private=\"foo\", community=\"UCI\"\r\n"
-        "Connection: keep-alive\r\n"
-        "Pragma: no-cache\r\n"
-        "Referer: foobar\r\n"
-        "Host: xach.dorknet.com\r\n"
-        "If-Modified-Since: Wed, 30 Jul 1997 00:07:30 GMT\r\n"
-        "Cokie: foo; bar, argh\r\n"
-        "Bazz: foo\r\n"
-        "Baz: foo bar\r\n"
-        "User-Agent: Mozilla/3.01 (X11; I; Linux 2.0.30 i586)\r\n"
-        "User-Agent: Mozilla/3.01 (X11; I; SunOS 5.5.1 i86pc)\r\n"
-        "\r\n",
-        "GET ftp://cust read:Rcus 01#@update.sym antec.com/foo bar/blah HTTP/1.0\r\n"
-        "Cache-Control: max-age=1234,private=\"foo\", community=\"UCI\"\r\n"
-        "Connection: keep-alive\r\n"
-        "Pragma: no-cache\r\n"
-        "Referer: foobar\r\n"
-        "Host: xach.dorknet.com\r\n"
-        "If-Modified-Since: Wed, 30 Jul 1997 00:07:30 GMT\r\n"
-        "Cokie: foo; bar, argh\r\n"
-        "Bazz: foo\r\n"
-        "Baz: foo bar\r\n"
-        "User-Agent: Mozilla/3.01 (X11; I; Linux 2.0.30 i586)\r\n"
-        "User-Agent: Mozilla/3.01 (X11; I; SunOS 5.5.1 i86pc)\r\n"
-        "\r\n",
-        "HTTP/1.0 200 OK\r\n"
-        "Date: 6 Nov 1994 08:49:37 GMT\r\n"
-        "Content-Length: 10307\r\n"
-        "X-ETag: \"10\"\r\n"
-        "Cache-Control: private, no-cache\r\n"
-        "Pragma: no-cache\r\n"
-        "X-Xact: 26877940.1896887846:2147483643\r\n"
-        "Connection: close\r\n"
-        "\r\n",
-        "HTTP/1.0 200 OK\r\n"
-        "Date: 6 Nov 1994 08:49:37 GMT\r\n"
-        "Content-Length: 10307\r\n"
-        "X-ETag: \"10\"\r\n"
-        "Cache-Control: private, no-cache\r\n"
-        "Pragma: no-cache\r\n" "X-Xact: 26877940.1896887846:2147483643\r\n" "Connection: close\r\n" "\r\n"}
+        "\r\n", "HTTP/1.0 200 OK\r\n" "Content-Length: 16428\r\n" "Content-Type: text/html\r\n" "\r\n"}
   };
 
   int ntests = sizeof(tests) / sizeof(tests[0]);
@@ -1292,22 +1248,6 @@ HdrTest::test_http()
       "Host: people.netscape.com\r\n" "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n" "\r\n"
   };
 
-  static const char request2[] = {
-    "GET ftp://cust read:Rcus 01#@update.sym antec.com/foo bar/blah HTTP/1.0\r\n" "Cache-Control: max-age=1234,private=\"foo\", community=\"UCI\"\r\n" "Connection: keep-alive\r\n" "Pragma: no-cache\r\n" "Accept:  image/gif;\r\n"    // NOTE: continuation lines below
-    "         q=0.1, image/x-xbitmap,\r\n"
-      "         image/jpeg, image/pjpeg, */*\r\n"
-      "Referer: foobar\r\n"
-      "Host: xach.dorknet.com\r\n"
-      "If-Modified-Since: Wed, 30 Jul 1997 00:07:30 GMT\r\n"
-      ": empty header field\r\n"
-      "Cokie: foo; bar, argh\r\n"
-      "coKie: bar, foo; argh\r\n"
-      "Bazz: foo\r\n"
-      "Baz: foo bar\r\n"
-      "User-Agent: Mozilla/3.01 (X11; I; Linux 2.0.30 i586)\r\n"
-      "User-Agent: Mozilla/3.01 (X11; I; SunOS 5.5.1 i86pc)\r\n" "\r\n"
-  };
-
   static const char request_no_colon[] = {
     "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
       "If-Modified-Since Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
@@ -1409,29 +1349,6 @@ HdrTest::test_http()
       "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n" "Content-Type: text/html\r\n" "\r\n"
   };
 
-  static const char response2[] = {
-    "HTTP/1.0 200 OK\r\n"
-      "Date: 6 Nov 1994 08:49:37 GMT\r\n"
-      "Content-Length: 10307\r\n"
-      "X-ETag: \"10\"\r\n"
-      "Cache-Control: private, no-cache\r\n"
-      "Pragma: no-cache\r\n" "X-Xact: 26877940.1896887846:2147483643\r\n" "Connection: close\r\n" "\r\n"
-  };
-
-  static const char response_lf[] = {
-    "HTTP/1.0 200 OK\n"
-      "X-Content-Length: 10307\n"
-      "X-Cache-Control: private, no-cache\n"
-      "X-Pragma: no-cache\n" "X-Xact: 26877940.1896887846:2147483643\n" "X-Connection: close\n" "\n"
-  };
-
-  static const char response_lflf[] = {
-    "HTTP/1.0 200 OK\n\n"
-      "X-Content-Length: 10307\n\n"
-      "X-Cache-Control: private, no-cache\n\n"
-      "X-Pragma: no-cache\n\n" "X-Xact: 26877940.1896887846:2147483643\n\n" "X-Connection: close\n\n" "\n\n"
-  };
-
   static const char response_no_colon[] = {
     "HTTP/1.0 200 OK\r\n"
       "Server Netscape-Communications/1.12\r\n"
@@ -1461,9 +1378,6 @@ HdrTest::test_http()
   status = status & test_http_aux(request0, response0);
   status = status & test_http_aux(request09, response09);
   status = status & test_http_aux(request1, response1);
-  status = status & test_http_aux(request2, response2);
-  status = status & test_http_aux(request2, response_lf);
-  status = status & test_http_aux(request2, response_lflf);
   status = status & test_http_aux(request_no_colon, response_no_colon);
   status = status & test_http_aux(request_no_val, response_no_colon);
   status = status & test_http_aux(request_leading_space, response0);

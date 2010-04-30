@@ -1052,127 +1052,6 @@ FilterObj::getCfgEleCopy()
 }
 
 //--------------------------------------------------------------------------
-// FtpRemapObj
-//--------------------------------------------------------------------------
-FtpRemapObj::FtpRemapObj(INKFtpRemapEle * ele)
-{
-  m_ele = ele;
-  m_valid = true;
-  m_valid = isValid();
-}
-
-FtpRemapObj::FtpRemapObj(TokenList * tokens)
-{
-  char *fromStr, *toStr;        // The string contain IP and port
-  char *fromColon, *toColon;    // The location of the ':', where the port starts 
-  int fromPort, toPort;         // The numerical form of port number
-  char *fromIP, *toIP;          // The IP address
-  Token *token;
-
-  m_ele = INKFtpRemapEleCreate();
-  m_ele->cfg_ele.error = INK_ERR_OKAY;
-  m_valid = true;
-
-  if (!tokens || tokens->length != 1) {
-    goto FORMAT_ERR;
-  }
-  // What do we expect from GenericParser
-  // - two nodes with only name, but no value
-  // - we have to tokenize the ip address and port number from name
-  token = tokens->first();
-  if (!token->name || !token->value) {
-    goto FORMAT_ERR;
-  }
-
-  fromStr = xstrdup(token->name);
-  toStr = xstrdup(token->value);
-  fromColon = strstr(fromStr, ":");
-  toColon = strstr(toStr, ":");
-
-  // Do we find ":" in both tokens? If not, trouble
-  if (!fromColon || !toColon) {
-    xfree(fromStr);
-    xfree(toStr);
-    goto FORMAT_ERR;
-  }
-
-  fromPort = ink_atoi(fromColon + 1);
-  toPort = ink_atoi(toColon + 1);
-
-  fromIP = xstrndup(fromStr, strlen(fromStr) - strlen(fromColon));
-  toIP = xstrndup(toStr, strlen(toStr) - strlen(toColon));
-
-  // set ele type
-  m_ele->cfg_ele.type = get_rule_type(tokens, INK_FNAME_FTP_REMAP);
-  if (m_ele->cfg_ele.type == INK_TYPE_UNDEFINED) {
-    xfree(fromStr);
-    xfree(toStr);
-    xfree(fromIP);
-    xfree(toIP);
-    goto FORMAT_ERR;
-  }
-
-  m_ele->from_val = fromIP;
-  m_ele->from_port = fromPort;
-  m_ele->to_val = toIP;
-  m_ele->to_port = toPort;
-
-  xfree(fromStr);
-  xfree(toStr);
-
-  return;
-
-FORMAT_ERR:
-  m_ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
-}
-
-FtpRemapObj::~FtpRemapObj()
-{
-  INKFtpRemapEleDestroy(m_ele);
-}
-
-char *
-FtpRemapObj::formatEleToRule()
-{
-  if (!isValid()) {
-    m_ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
-    return NULL;
-  }
-
-  char buf[MAX_RULE_SIZE];
-  memset(buf, 0, MAX_RULE_SIZE);
-
-  snprintf(buf, sizeof(buf), "%s:%d %s:%d", m_ele->from_val, m_ele->from_port, m_ele->to_val, m_ele->to_port);
-
-  return xstrdup(buf);
-}
-
-bool FtpRemapObj::isValid()
-{
-  if (m_ele->cfg_ele.error != INK_ERR_OKAY) {
-    m_valid = false;
-  }
-
-  if (m_ele->from_val == NULL || m_ele->to_val == NULL ||
-      !ccu_checkPortNum(m_ele->from_port) || !ccu_checkPortNum(m_ele->to_port)) {
-    m_valid = false;
-  }
-
-  if (!m_valid) {
-    m_ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
-  }
-
-  return m_valid;
-}
-
-INKCfgEle *
-FtpRemapObj::getCfgEleCopy()
-{
-  return (INKCfgEle *) copy_ftp_remap_ele(m_ele);
-}
-
-//--------------------------------------------------------------------------
 // HostingObj
 //--------------------------------------------------------------------------
 HostingObj::HostingObj(INKHostingEle * ele)
@@ -2313,8 +2192,6 @@ RemapObj::RemapObj(TokenList * tokens)
     m_ele->from_scheme = INK_SCHEME_HTTP;
   } else if (strcmp(fromTok[0], "https") == 0) {
     m_ele->from_scheme = INK_SCHEME_HTTPS;
-  } else if (strcmp(fromTok[0], "ftp") == 0) {
-    m_ele->from_scheme = INK_SCHEME_FTP;
   } else if (strcmp(fromTok[0], "rtsp") == 0) {
     m_ele->from_scheme = INK_SCHEME_RTSP;
   } else if (strcmp(fromTok[0], "mms") == 0) {
@@ -2373,8 +2250,6 @@ RemapObj::RemapObj(TokenList * tokens)
     m_ele->to_scheme = INK_SCHEME_HTTP;
   } else if (strcmp(toTok[0], "https") == 0) {
     m_ele->to_scheme = INK_SCHEME_HTTPS;
-  } else if (strcmp(toTok[0], "ftp") == 0) {
-    m_ele->to_scheme = INK_SCHEME_FTP;
   } else if (strcmp(toTok[0], "rtsp") == 0) {
     m_ele->to_scheme = INK_SCHEME_RTSP;
   } else if (strcmp(toTok[0], "mms") == 0) {
@@ -2495,9 +2370,6 @@ RemapObj::formatEleToRule()
   case INK_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_SCHEME_FTP:
-    strncat(buf, "ftp", sizeof(buf) - strlen(buf) - 1);
-    break;
   case INK_SCHEME_RTSP:
     strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
     break;
@@ -2534,9 +2406,6 @@ RemapObj::formatEleToRule()
     break;
   case INK_SCHEME_HTTPS:
     strncat(buf, "https", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case INK_SCHEME_FTP:
-    strncat(buf, "ftp", sizeof(buf) - strlen(buf) - 1);
     break;
   case INK_SCHEME_RTSP:
     strncat(buf, "rtsp", sizeof(buf) - strlen(buf) - 1);
@@ -2604,7 +2473,6 @@ bool RemapObj::isValid()
   switch (m_ele->from_scheme) {
   case INK_SCHEME_HTTP:
   case INK_SCHEME_HTTPS:
-  case INK_SCHEME_FTP:
   case INK_SCHEME_RTSP:
   case INK_SCHEME_MMS:
     break;
@@ -2615,7 +2483,6 @@ bool RemapObj::isValid()
   switch (m_ele->to_scheme) {
   case INK_SCHEME_HTTP:
   case INK_SCHEME_HTTPS:
-  case INK_SCHEME_FTP:
   case INK_SCHEME_RTSP:
   case INK_SCHEME_MMS:
     break;
@@ -3294,7 +3161,7 @@ bool UpdateObj::isValid()
   // check url 
   if (!m_ele->url || strcmp(m_ele->url, "") == 0 ||
       strstr(m_ele->url, "\\") ||
-      (!strstr(m_ele->url, "http") && !strstr(m_ele->url, "ftp") && !strstr(m_ele->url, "rtsp"))) {
+      (!strstr(m_ele->url, "http") && !strstr(m_ele->url, "rtsp"))) {
     m_valid = false;
   }
   // bug 49322: check that there are no "\" in the url or headers 

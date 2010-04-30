@@ -69,7 +69,6 @@ typedef int (HttpSM::*HttpConsumerHandler) (int event, HttpTunnelConsumer * c);
 enum HttpTunnelType_t
 {
   HT_HTTP_SERVER,
-  HT_FTP_SERVER,
   HT_HTTP_CLIENT,
   HT_CACHE_READ,
   HT_CACHE_WRITE,

@@ -155,6 +155,7 @@ info_t schemes[] = {
   {"https", "URL_SCHEME_HTTPS", 0},
   {"mailto", "URL_SCHEME_MAILTO", 0},
   {"news", "URL_SCHEME_NEWS", 0},
+  {"nntp", "URL_SCHEME_NNTP", 0},
   {"prospero", "URL_SCHEME_PROSPERO", 0},
   {"telnet", "URL_SCHEME_TELNET", 0},
   {"wais", "URL_SCHEME_WAIS", 0},

@@ -125,18 +125,6 @@
         </tr>
 
 	<tr>
-          <td height="2" colspan="3" class="configureLabelSmall">Protocols</td>
-        </tr>
-        <tr> 
-          <td class="bodyText" align=left>&nbsp;&nbsp;<@submit_error_flg proxy.config.ftp.ftp_enabled>FTP</td>
-          <td>
-            <input type="radio" name="proxy.config.ftp.ftp_enabled" value="1" <@checked proxy.config.ftp.ftp_enabled\1>>
-          </td>
-          <td>
-            <input type="radio" name="proxy.config.ftp.ftp_enabled" value="0" <@checked proxy.config.ftp.ftp_enabled\0>>
-          </td>
-        </tr>
-	<tr>
           <td height="2" colspan="3" class="configureLabelSmall">Streaming Media</td>
         </tr>
         <tr> 

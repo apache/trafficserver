@@ -108,11 +108,10 @@ static const char *MonNodeHelpStrings[numCmdMonNode] = {
 };
 
 // Help usage at cli->monitor->protocols level
-const int numCmdMonProtocols = 8;
+const int numCmdMonProtocols = 7;
 static const char *MonProtHelpStrings[numCmdMonProtocols] = {
   "1. stats              # displays all the protocol statistics \n",
   "2. http               # displays the HTTP protocol statistics \n",
-  "3. ftp                # displays the FTP protocol statistics \n",
   "4. icp                # displays the ICP protocol statistics \n",
   "     Select above options by number \n",
   ".                     # Move back to previous level \n",
@@ -192,11 +191,10 @@ static const char *ConfigureServerHelpStrings[numCmdConfServer] = {
 };
 
 // Help usage at cli->configure->protocols level
-const int numCmdConfProtocols = 8;
+const int numCmdConfProtocols = 7;
 static const char *ConfigureProtHelpStrings[numCmdConfProtocols] = {
   "1. display            # displays all configuration variables \n",
   "2. http               # HTTP configuration variables \n",
-  "3. ftp                # FTP configuration variables \n",
   "     Select above options by number \n",
   "change <no> <value>   # sets variable shown by <no> to <value>\n",
   ".                     # Move back to previous level \n",
@@ -309,10 +307,10 @@ CLI_globals::Help(textBuffer * output,  /* IN/OUT: output buffer */
   // create appropriate Help response
   // 
   // See 'MgmtFeat.cc'
-  // advui == 1(10) -> Advanced UI only           (Regular TS HTTP/FTP)
+  // advui == 1(10) -> Advanced UI only           (Regular TS HTTP)
   //       == 0(00) -> Simple UI only             (on hold....)
   //       == 2(01) -> RNI UI only                (TS for Real Networks, only does RNI caching)
-  //       == 3(11) -> Advanced UI + RNI features (TS w/ RN support HTTP/FTP/RNI )
+  //       == 3(11) -> Advanced UI + RNI features (TS w/ RN support HTTP/RNI )
   // Currently only used to implement cheesy licensing
   // featset == 1 -> indicates that Advanced UI is enabled 
   //         == 0 -> indicates that Advanced UI is disabled

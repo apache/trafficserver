@@ -60,7 +60,6 @@
 #define CLUSTER_EVENT_EVENTS_START                400
 #define HOSTDB_EVENT_EVENTS_START                 500
 #define DNS_EVENT_EVENTS_START                    600
-#define FTP_EVENT_EVENTS_START                    700
 #define CONFIG_EVENT_EVENTS_START                 800
 #define LOG_EVENT_EVENTS_START	                  900
 #define MULTI_CACHE_EVENT_EVENTS_START            1000
@@ -103,7 +102,7 @@
 
 /*
 enum EventType { ET_SPAWN = 0, ET_CALL, ET_NET, ET_CLUSTER, ET_AUTH,
-		 ET_DNS, ET_FTP, ET_CACHE , ET_GC, ET_LOG, ET_ICP,
+		 ET_DNS,ET_CACHE , ET_GC, ET_LOG, ET_ICP,
                  ET_UDP, ET_SSL, ET_NET_9x, ET_REMAP, ET_LAST};
 const int N_EVENT_TYPES = ET_LAST;
 */

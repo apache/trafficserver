@@ -149,7 +149,6 @@ private:
   char *m_proxy_resp_content_type_str;
   int m_proxy_resp_content_type_len;
 
-  int remove_ftp_password(char *buf, const char *url_str, int url_str_len);
   void validate_unmapped_url(void);
   void validate_unmapped_url_path(void);
 

@@ -3648,9 +3648,6 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
         err = updateFilterConfig(rules, numRules, &errBuff);
       }
       break;
-    case INK_FNAME_FTP_REMAP:
-      err = updateFtpRemapConfig(rules, numRules, &errBuff);
-      break;
     case INK_FNAME_HOSTING:
       err = updateHostingConfig(rules, numRules, &errBuff);
       break;
@@ -6640,7 +6637,6 @@ WebHttpInit()
   g_display_config_ht = ink_hash_table_create(InkHashTableKeyType_String);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_CACHE_CONFIG, (void *) INK_FNAME_CACHE_OBJ);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_FILTER_CONFIG, (void *) INK_FNAME_FILTER);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_FTP_REMAP_CONFIG, (void *) INK_FNAME_FTP_REMAP);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_HOSTING_CONFIG, (void *) INK_FNAME_HOSTING);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_ICP_CONFIG, (void *) INK_FNAME_ICP_PEER);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_IP_ALLOW_CONFIG, (void *) INK_FNAME_IP_ALLOW);

@@ -47,7 +47,6 @@ extern int nstrhex(char *d, unsigned int i);
 class HttpTransactHeaders
 {
 public:
-  static bool is_this_ftp_method_supported(int method);
   static bool is_this_http_method_supported(int method);
   static bool is_method_cacheable(int method);
   static bool is_method_cache_lookupable(int method);
@@ -129,14 +128,6 @@ public:
  ****                                                                     ****
  *****************************************************************************
  *****************************************************************************/
-
-inline bool
-HttpTransactHeaders::is_this_ftp_method_supported(int method)
-{
-  // BZ 40810 - not supporting PURGE at the moment
-  // another case of INKqa11403/BZ40437
-  return ((method == HTTP_WKSIDX_GET) || (method == HTTP_WKSIDX_PUT));
-}
 
 inline bool
 HttpTransactHeaders::is_this_http_method_supported(int method)

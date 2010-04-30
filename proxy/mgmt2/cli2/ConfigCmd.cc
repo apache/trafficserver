@@ -844,7 +844,6 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
       case CMD_CONFIG_PORTS_CLUSTER:
       case CMD_CONFIG_PORTS_CLUSTER_RS:
       case CMD_CONFIG_PORTS_CLUSTER_MC:
-      case CMD_CONFIG_PORTS_FTP_SERVER:
       case CMD_CONFIG_PORTS_SOCKS_SERVER:
       case CMD_CONFIG_PORTS_ICP:
         return (ConfigPortsSet(argtable[0].parsed_args, &argtable[0].arg_int));
@@ -852,7 +851,7 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
     }
   }
   Cli_Error(ERR_COMMAND_SYNTAX,
-            "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n ftp-server | ssl | \n socks-server | icp > \n <port | ports list>\n");
+            "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n  ssl | \n socks-server | icp > \n <port | ports list>\n");
   return CMD_ERROR;
 
 }
@@ -879,8 +878,6 @@ CmdArgs_ConfigPorts()
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER_RS, "Set Ports for cluster-rs", (char *) NULL);
   createArgument("cluster-mc", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER_MC, "Set Ports for cluster-mc", (char *) NULL);
-  createArgument("ftp-server", 1, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_PORTS_FTP_SERVER, "Set Ports for ftp-server", (char *) NULL);
   createArgument("ssl", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_SSL, "Set Ports for ssl", (char *) NULL);
   createArgument("socks-server", 1, CLI_ARGV_OPTION_INT_VALUE,
@@ -1377,104 +1374,6 @@ CmdArgs_ConfigHttp()
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ConfigFtp
-//
-// This is the callback function for the "config:ftp" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ConfigFtp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  if (cliCheckIfEnabled("config:ftp") == CLI_ERROR) {
-    return CMD_ERROR;
-  }
-  Cli_Debug("Cmd_ConfigFtp argc %d\n", argc);
-
-  cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
-
-  cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
-
-
-  int setvar = 0;
-
-  if (argc == 3) {
-    setvar = 1;
-  }
-
-  if (argtable->parsed_args != CLI_PARSED_ARGV_END) {
-    switch (argtable->parsed_args) {
-    case CMD_CONFIG_FTP_MODE:
-      return (ConfigFtpMode(argtable[1].parsed_args, setvar));
-    case CMD_CONFIG_FTP_INACT_TIMEOUT:
-      return (ConfigFtpInactTimeout(argtable->arg_int, setvar));
-    case CMD_CONFIG_FTP_ANON_PASSWD:
-      return (Cli_RecordString_Action(setvar, "proxy.config.http.ftp.anonymous_passwd", argtable->arg_string));
-    case CMD_CONFIG_FTP_EXPIRE_AFTER:
-      return (ConfigFtpExpireAfter(argtable->arg_int, setvar));
-    case CMD_CONFIG_FTP_PROXY:
-      return (ConfigFtpProxy(argtable[1].parsed_args, setvar));
-    }
-  }
-  Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-  return CMD_ERROR;
-}
-
-////////////////////////////////////////////////////////////////
-// CmdArgs_ConfigFtp
-//
-// Register "config:ftp" arguments with the Tcl interpreter.
-//
-int
-CmdArgs_ConfigFtp()
-{
-  createArgument("mode", 1, CLI_ARGV_CONST_OPTION,
-                 (char *) NULL, CMD_CONFIG_FTP_MODE, "FTP Mode <pasv-port | port | pasv>", (char *) NULL);
-
-  createArgument("pasv-port", CMD_CONFIG_FTP_MODE, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_FTP_MODE_PASVPORT, "Specify ftp mode to be pasv-port", (char *) NULL);
-
-  createArgument("pasv", CMD_CONFIG_FTP_MODE, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_FTP_MODE_PASV, "Specify ftp mode to be pasv", (char *) NULL);
-
-  createArgument("port", CMD_CONFIG_FTP_MODE, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_FTP_MODE_PORT, "Specify ftp mode to be port", (char *) NULL);
-
-  createArgument("inactivity-timeout", 1, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_FTP_INACT_TIMEOUT, "Inactive timeout <seconds>", (char *) NULL);
-  createArgument("anonymous-password", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_FTP_ANON_PASSWD, "FTP password <string>", (char *) NULL);
-  createArgument("expire-after", 1, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_FTP_EXPIRE_AFTER, "Expire after value <seconds>", (char *) NULL);
-  createArgument("proxy", 1, CLI_ARGV_CONST_OPTION,
-                 (char *) NULL, CMD_CONFIG_FTP_PROXY, "Proxy Mode <fwd | rev | fwd-rev>", (char *) NULL);
-  createArgument("fwd", CMD_CONFIG_FTP_PROXY, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_FTP_FWD, "Specify proxy mode to be forward", (char *) NULL);
-  createArgument("rev", CMD_CONFIG_FTP_PROXY, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_FTP_REV, "Specify proxy mode to be reverse", (char *) NULL);
-  createArgument("fwd-rev", CMD_CONFIG_FTP_PROXY, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_FTP_FWD_REV, "Specify proxy mode to be both)", (char *) NULL);
-  return 0;
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ConfigIcp
 //
 // This is the callback function for the "config:icp" command.
@@ -1854,9 +1753,6 @@ Cmd_ConfigCache(ClientData clientData, Tcl_Interp * interp, int argc, const char
     case CMD_CONFIG_CACHE_HTTP:
       return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.http.cache.http", argtable->arg_string));
 
-    case CMD_CONFIG_CACHE_FTP:
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.http.cache.ftp", argtable->arg_string));
-
     case CMD_CONFIG_CACHE_IGNORE_BYPASS:
       return (Cli_RecordOnOff_Action((argc == 3),
                                      "proxy.config.http.cache.ignore_client_no_cache", argtable->arg_string));
@@ -1941,8 +1837,6 @@ CmdArgs_ConfigCache()
 {
   createArgument("http", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_CACHE_HTTP, "HTTP Protocol caching <on|off>", (char *) NULL);
-  createArgument("ftp", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_CACHE_FTP, "FTP Protocol caching <on|off>", (char *) NULL);
   createArgument("ignore-bypass", 1, CLI_ARGV_OPTION_NAME_VALUE,
                  (char *) NULL, CMD_CONFIG_CACHE_IGNORE_BYPASS, "Ignore Bypass <on|off>", (char *) NULL);
   createArgument("max-object-size", 1, CLI_ARGV_OPTION_INT_VALUE,
@@ -3074,9 +2968,6 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
   case CMD_CONFIG_PORTS_CLUSTER_MC:
     status = Cli_RecordSetInt("proxy.config.cluster.mcport", *(INKInt *) valuePtr, &action_need);
     break;
-  case CMD_CONFIG_PORTS_FTP_SERVER:
-    status = Cli_RecordSetInt("proxy.config.ftp.proxy_server_port", *(INKInt *) valuePtr, &action_need);
-    break;
   case CMD_CONFIG_PORTS_SSL:
     status = Cli_RecordSetString("proxy.config.http.ssl_ports", (INKString) valuePtr, &action_need);
     break;
@@ -3162,13 +3053,6 @@ ConfigPortsGet(int arg_ref)
     }
     Cli_Printf("%d\n", int_val);
     break;
-  case CMD_CONFIG_PORTS_FTP_SERVER:
-    status = Cli_RecordGetInt("proxy.config.ftp.proxy_server_port", &int_val);
-    if (status) {
-      return status;
-    }
-    Cli_Printf("%d\n", int_val);
-    break;
   case CMD_CONFIG_PORTS_SSL:
     status = Cli_RecordGetString("proxy.config.http.ssl_ports", &str_val);
     if (status) {
@@ -3196,7 +3080,7 @@ ConfigPortsGet(int arg_ref)
     break;
   default:
     Cli_Error(ERR_COMMAND_SYNTAX,
-              "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n ftp-server | ssl | \n socks-server | icp > \n <port | ports list>\n");
+              "\n\nconfig:ports <http-server | http-other | webui | \n overseer | cluster-rs | cluster-mc | \n ssl | \n socks-server | icp > \n <port | ports list>\n");
 
     return CLI_ERROR;
   }
@@ -3718,202 +3602,6 @@ ConfigHttpProxy(int arg_ref, int setvar)
     }
   default:
     return CLI_ERROR;
-  }
-}
-
-// config ftp proxy sub-command
-int
-ConfigFtpProxy(int arg_ref, int setvar)
-{
-  Cli_Debug("ConfigFtpProxy: proxy %d\n", arg_ref);
-
-  INKInt fwd_val = 0;
-  INKInt rev_val = 0;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKError status = INK_ERR_OKAY;
-
-  switch (setvar) {
-  case 0:                      //get
-
-    status = Cli_RecordGetInt("proxy.config.ftp.ftp_enabled", &fwd_val);
-    if (status) {
-      return status;
-    }
-    status = Cli_RecordGetInt("proxy.config.ftp.reverse_ftp_enabled", &rev_val);
-    if (status) {
-      return status;
-    }
-    if ((fwd_val) && (!rev_val))
-      Cli_Printf("fwd\n");
-    if ((!fwd_val) && (rev_val))
-      Cli_Printf("rev\n");
-    if ((fwd_val) && (rev_val))
-      Cli_Printf("fwd-rev\n");
-    if ((!fwd_val) && (!rev_val)) {
-      Cli_Printf("invalid value retrieved\n");
-      return CLI_ERROR;
-    }
-    return CLI_OK;
-
-
-  case 1:                      //set
-    {
-      switch (arg_ref) {
-      case CMD_CONFIG_FTP_FWD:
-        status = Cli_RecordSetInt("proxy.config.ftp.ftp_enabled", (INKInt) 1, &action_need);
-        status = Cli_RecordSetInt("proxy.config.ftp.reverse_ftp_enabled", (INKInt) 0, &action_need);
-        if (status) {
-          return status;
-        }
-        return (Cli_ConfigEnactChanges(action_need));
-      case CMD_CONFIG_FTP_REV:
-        status = Cli_RecordSetInt("proxy.config.ftp.ftp_enabled", (INKInt) 0, &action_need);
-        status = Cli_RecordSetInt("proxy.config.ftp.reverse_ftp_enabled", (INKInt) 1, &action_need);
-        if (status) {
-          return status;
-        }
-        return (Cli_ConfigEnactChanges(action_need));
-      case CMD_CONFIG_FTP_FWD_REV:
-        status = Cli_RecordSetInt("proxy.config.ftp.ftp_enabled", (INKInt) 1, &action_need);
-        status = Cli_RecordSetInt("proxy.config.ftp.reverse_ftp_enabled", (INKInt) 1, &action_need);
-        if (status) {
-          return status;
-        }
-        return (Cli_ConfigEnactChanges(action_need));
-      }
-      return CLI_ERROR;
-    }
-  default:
-    return CLI_ERROR;
-  }
-}
-
-// config ftp mode sub-command
-int
-ConfigFtpMode(int arg_ref, int setvar)
-{
-  int mode_num = -1;
-  Cli_Debug("ConfigFtpMode: mode %d\n", arg_ref);
-
-  if (setvar == 1) {
-
-    // convert string into mode number
-    if (arg_ref == CMD_CONFIG_FTP_MODE_PASVPORT) {
-      mode_num = 1;
-    } else if (arg_ref == CMD_CONFIG_FTP_MODE_PORT) {
-      mode_num = 2;
-    } else if (arg_ref == CMD_CONFIG_FTP_MODE_PASV) {
-      mode_num = 3;
-    } else {
-      mode_num = -1;
-    }
-
-    Cli_Debug("ConfigFtpMode: mode_num %d\n", mode_num);
-
-    if (mode_num == -1) {
-      return CLI_ERROR;
-    }
-
-    INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-    INKError status = Cli_RecordSetInt("proxy.config.ftp.data_connection_mode",
-                                       mode_num, &action_need);
-    if (status) {
-      return status;
-    }
-
-    return (Cli_ConfigEnactChanges(action_need));
-
-  } else {
-
-    INKInt value_in = -1;
-    INKError status = Cli_RecordGetInt("proxy.config.ftp.data_connection_mode",
-                                       &value_in);
-
-    if (status) {
-      return status;
-    }
-
-    switch (value_in) {
-    case 1:
-      Cli_Printf("pasv-port\n");
-      break;
-    case 2:
-      Cli_Printf("port\n");
-      break;
-    case 3:
-      Cli_Printf("pasv\n");
-      break;
-    default:
-      Cli_Printf("?\n");
-      break;
-    }
-    return CLI_OK;
-  }
-}
-
-// config ftp inactivity-timeout sub-command
-int
-ConfigFtpInactTimeout(int timeout, int setvar)
-{
-  if (setvar) {
-
-    Cli_Debug("ConfigFtpInactTimeout: timeout %d\n", timeout);
-
-    INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-    INKError status = Cli_RecordSetInt("proxy.config.ftp.control_connection_timeout",
-                                       timeout, &action_need);
-
-    if (status) {
-      return status;
-    }
-
-    return (Cli_ConfigEnactChanges(action_need));
-
-  } else {
-
-    INKInt value_in = -1;
-    INKError status = Cli_RecordGetInt("proxy.config.ftp.control_connection_timeout",
-                                       &value_in);
-
-    if (status) {
-      return status;
-    }
-
-    Cli_Printf("%d\n", value_in);
-
-    return CLI_OK;
-  }
-}
-
-// config ftp expire-after sub-command
-int
-ConfigFtpExpireAfter(int limit, int setvar)
-{
-  if (setvar) {
-
-    Cli_Debug("ConfigFtpExpireAfter: expire-after %d\n", limit);
-
-    INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-    INKError status = Cli_RecordSetInt("proxy.config.http.ftp.cache.document_lifetime",
-                                       limit, &action_need);
-
-    if (status) {
-      return status;
-    }
-    return (Cli_ConfigEnactChanges(action_need));
-
-  } else {
-    INKInt value_in = -1;
-    INKError status = Cli_RecordGetInt("proxy.config.http.ftp.cache.document_lifetime",
-                                       &value_in);
-
-    if (status) {
-      return status;
-    }
-
-    Cli_Printf("%d\n", value_in);
-
-    return CLI_OK;
   }
 }
 

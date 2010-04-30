@@ -1415,9 +1415,6 @@ fileUpdated(char *fname)
   } else if (strcmp(fname, "splitdns.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] splitdns.config file has been modified\n");
 
-  } else if (strcmp(fname, "ftp_remap.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.ftp.reverse_ftp_remap_file_name");
-
   } else if (strcmp(fname, "plugin.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] plugin.config file has been modified\n");
 

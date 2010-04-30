@@ -61,8 +61,6 @@ extern "C" int plock(int);
 #include "Transform.h"
 #include "ProcessManager.h"
 #include "ProxyConfig.h"
-//#include "Ftp.h"
-//#include "FtpProxy.h"
 #include "HttpProxyServerMain.h"
 #include "HttpBodyFactory.h"
 #include "logging/Log.h"
@@ -148,7 +146,6 @@ int run_test_hook = 0;
 int http_accept_port_number = DEFAULT_HTTP_ACCEPT_PORT_NUMBER;
 int http_accept_file_descriptor = NO_FD;
 int ssl_accept_file_descriptor = NO_FD;
-int ftp_accept_file_descriptor = NO_FD;
 int qt_accept_file_descriptor = NO_FD;
 int dns_proxy_file_descriptor = NO_FD;
 char accept_fd_list[1024] = "";
@@ -1016,9 +1013,6 @@ print_accept_fd(HttpPortEntry * e)
 // If the SSL Accept fd is in the list, sets global
 //   ssl_accept_fd
 //
-// If the FTP Accept fd is in the list, sets global
-//   ftp_accept_file_descriptor
-//
 // If there is no -A arg, returns NULL
 //
 //  Otherwise returns an array of HttpPortEntry which
@@ -1068,11 +1062,6 @@ parse_accept_fd_list()
           // S is the special case of SSL term
           ink_assert(ssl_accept_file_descriptor == NO_FD);
           ssl_accept_file_descriptor = fd;
-          continue;
-        case 'F':
-          // F is the special case of FTP
-          ink_assert(ftp_accept_file_descriptor == NO_FD);
-          ftp_accept_file_descriptor = fd;
           continue;
         case 'Q':
           // Q is the special case of QT port
@@ -1993,12 +1982,6 @@ main(int argc, char **argv)
     //if (auto_clear_authdb_flag)
      // acc.clear_cache();
     //acc.start();
-#ifndef INK_NO_FTP
-#ifndef RNI_ONLY
-    //ftpProcessor.start();
-#endif
-#endif
-
     // pmgmt initialization moved up, needed by RecProcessInit
     //pmgmt->start();
     start_stats_snap();
@@ -2079,9 +2062,6 @@ main(int argc, char **argv)
         cacheProcessor.hashtable_tracker.createHashTable();
       }
     }
-#ifndef INK_NO_FTP
-    //ftpProxyProcessor.start();
-#endif
 #ifndef INK_NO_ICP
     icpProcessor.start();
 #endif

@@ -202,7 +202,6 @@ private:
                              unsigned short minNumToken = MIN_CONFIG_TOKEN,
                              unsigned short maxNumToken = MAX_CONFIG_TOKEN);
   TokenList *filterParse(char *rule);
-  TokenList *ftp_remapParse(char *rule);
   TokenList *icpParse(char *rule,
                       unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
   TokenList *ipnatParse(char *rule);

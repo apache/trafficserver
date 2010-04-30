@@ -63,7 +63,6 @@
 #define MGMT_ALARM_PING_FAILURE	                 16
 #define MGMT_ALARM_MGMT_CONFIG_ERROR             17
 #define MGMT_ALARM_ADD_ALARM                     18
-#define MGMT_ALARM_PROXY_FTP_ERROR	         22
 
 // used by INKReadFromUrl
 #define HTTP_DIVIDER "\r\n\r\n"

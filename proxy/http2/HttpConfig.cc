@@ -468,18 +468,6 @@ register_stat_callbacks()
                      RECD_INT, RECP_NULL, (int) http_server_raw_transaction_time_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.ftp.cache_lookups",
-                     RECD_COUNTER, RECP_NULL, (int) ftp_cache_lookups_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.ftp.cache_hits",
-                     RECD_COUNTER, RECP_NULL, (int) ftp_cache_hits_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.ftp.cache_misses",
-                     RECD_COUNTER, RECP_NULL, (int) ftp_cache_misses_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.user_agent_request_header_total_size",
                      RECD_INT, RECP_NULL, (int) http_user_agent_request_header_total_size_stat, RecRawStatSyncSum);
 
@@ -1048,8 +1036,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.proxy_response_via_string, "proxy.config.http.response_via_str");
   c.proxy_response_via_string_len = -1;
 
-  HttpEstablishStaticConfigLongLong(c.ftp_enabled, "proxy.config.http.ftp_enabled");
-
   HttpEstablishStaticConfigLongLong(c.wuts_enabled, "proxy.config.http.wuts_enabled");
   HttpEstablishStaticConfigLongLong(c.log_spider_codes, "proxy.config.http.log_spider_codes");
 
@@ -1175,7 +1161,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.cache_open_write_retry_time, "proxy.config.http.cache.open_write_retry_time");
 
   HttpEstablishStaticConfigLongLong(c.cache_http, "proxy.config.http.cache.http");
-  HttpEstablishStaticConfigLongLong(c.cache_ftp, "proxy.config.http.cache.ftp");
   HttpEstablishStaticConfigLongLong(c.cache_ignore_client_no_cache, "proxy.config.http.cache.ignore_client_no_cache");
   HttpEstablishStaticConfigLongLong(c.cache_ignore_client_cc_max_age,
                                     "proxy.config.http.cache.ignore_client_cc_max_age");
@@ -1210,12 +1195,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.response_hdr_max_size, "proxy.config.http.response_header_max_size");
 
   HttpEstablishStaticConfigLongLong(c.push_method_enabled, "proxy.config.http.push_method_enabled");
-
-  HttpEstablishStaticConfigStringAlloc(c.ftp_anonymous_passwd, "proxy.config.http.ftp.anonymous_passwd");
-
-  HttpEstablishStaticConfigLongLong(c.cache_ftp_document_lifetime, "proxy.config.http.ftp.cache.document_lifetime");
-
-  HttpEstablishStaticConfigLongLong(c.ftp_binary_transfer_only, "proxy.config.http.ftp.binary_transfer_only");
 
   HttpEstablishStaticConfigLongLong(c.reverse_proxy_enabled, "proxy.config.reverse_proxy.enabled");
   HttpEstablishStaticConfigLongLong(c.url_remap_required, "proxy.config.url_remap.remap_required");
@@ -1412,7 +1391,6 @@ HttpConfig::reconfigure()
   params->proxy_response_via_string_len =
     (params->proxy_response_via_string) ? (strlen(params->proxy_response_via_string)) : (0);
 
-  params->ftp_enabled = INT_TO_BOOL(m_master.ftp_enabled);
   params->wuts_enabled = INT_TO_BOOL(m_master.wuts_enabled);
   params->log_spider_codes = INT_TO_BOOL(m_master.log_spider_codes);
 
@@ -1511,7 +1489,6 @@ HttpConfig::reconfigure()
   params->cache_open_write_retry_time = m_master.cache_open_write_retry_time;
 
   params->cache_http = INT_TO_BOOL(m_master.cache_http);
-  params->cache_ftp = INT_TO_BOOL(m_master.cache_ftp);
   params->cache_ignore_client_no_cache = INT_TO_BOOL(m_master.cache_ignore_client_no_cache);
   params->cache_ignore_client_cc_max_age = INT_TO_BOOL(m_master.cache_ignore_client_cc_max_age);
   params->cache_ims_on_client_no_cache = INT_TO_BOOL(m_master.cache_ims_on_client_no_cache);
@@ -1538,10 +1515,6 @@ HttpConfig::reconfigure()
   params->request_hdr_max_size = m_master.request_hdr_max_size;
   params->response_hdr_max_size = m_master.response_hdr_max_size;
   params->push_method_enabled = m_master.push_method_enabled;
-
-  params->ftp_anonymous_passwd = xstrdup(m_master.ftp_anonymous_passwd);
-  params->cache_ftp_document_lifetime = m_master.cache_ftp_document_lifetime;
-  params->ftp_binary_transfer_only = m_master.ftp_binary_transfer_only;
 
   params->reverse_proxy_enabled = INT_TO_BOOL(m_master.reverse_proxy_enabled);
   params->url_remap_required = INT_TO_BOOL(m_master.url_remap_required);

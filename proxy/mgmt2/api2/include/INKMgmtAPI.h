@@ -369,7 +369,6 @@ typedef enum
     INK_SCHEME_NONE,
     INK_SCHEME_HTTP,
     INK_SCHEME_HTTPS,
-    INK_SCHEME_FTP,
     INK_SCHEME_RTSP,
     INK_SCHEME_MMS,
     INK_SCHEME_UNDEFINED
@@ -416,7 +415,6 @@ typedef enum
     INK_FNAME_CACHE_OBJ,        /* cache.config */
     INK_FNAME_CONGESTION,       /* congestion.config */
     INK_FNAME_FILTER,           /* filter.config */
-    INK_FNAME_FTP_REMAP,        /* ftp_remap.config */
     INK_FNAME_HOSTING,          /* hosting.config */
     INK_FNAME_ICP_PEER,         /* icp.config */
     INK_FNAME_IP_ALLOW,         /* ip_allow.config */
@@ -462,7 +460,6 @@ typedef enum
     INK_FILTER_RADIUS,
     INK_FILTER_KEEP_HDR,
     INK_FILTER_STRIP_HDR,
-    INK_FTP_REMAP,              /* ftp_remap.config */
     INK_HOSTING,                /* hosting.config */
     INK_ICP,                    /* icp.config */
     INK_IP_ALLOW,               /* ip_allow.config */
@@ -608,7 +605,7 @@ typedef enum
     char *suffix;               /* suffix in the URL */
     INKPortEle *port;           /* requested URL port */
     INKMethodT method;          /* get, post, put, trace */
-    INKSchemeT scheme;          /* HTTP, FTP */
+    INKSchemeT scheme;          /* HTTP */
     INKMixtTagT mixt;           /* optional MIXT tag: RNI, QT, or WMT */
   } INKSspec;                   /* Sspec = Secondary Specifier */
 
@@ -717,16 +714,6 @@ typedef enum
     char *bind_dn;              /* (optional) */
     char *bind_pwd_file;        /* (optional) */
   } INKFilterEle;
-
-/* ftp_remap.config */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    char *from_val;             /* either an IP address or hostname */
-    int from_port;
-    char *to_val;               /* either an IP address or hostname */
-    int to_port;
-  } INKFtpRemapEle;
 
 /* hosting.config */
   typedef struct
@@ -853,7 +840,7 @@ typedef enum
   {
     INKCfgEle cfg_ele;
     bool map;                   /* if true: map, if false: remap */
-    INKSchemeT from_scheme;     /* ftp, http, https, <scheme>://<host>:<port>/<path_prefix> */
+    INKSchemeT from_scheme;     /* http, https, <scheme>://<host>:<port>/<path_prefix> */
     char *from_host;            /* from host */
     int from_port;              /* from port (can be 0) */
     char *from_path_prefix;     /* from path_prefix (can be NULL) */
@@ -909,7 +896,7 @@ typedef enum
   typedef struct
   {
     INKCfgEle cfg_ele;
-    char *url;                  /* url to update (HTTP and FTP based URLs) */
+    char *url;                  /* url to update (HTTP based URLs) */
     INKStringList headers;      /* list of headers, separated by semicolons (can be NULL) */
     int offset_hour;            /* offset hour to start update; must be 00-23 hrs  */
     int interval;               /* in secs, frequency of updates starting at offset_hour */
@@ -1083,8 +1070,6 @@ typedef enum
   inkapi void INKCongestionEleDestroy(INKCongestionEle * ele);
   inkapi INKFilterEle *INKFilterEleCreate(INKRuleTypeT type);
   inkapi void INKFilterEleDestroy(INKFilterEle * ele);
-  inkapi INKFtpRemapEle *INKFtpRemapEleCreate();
-  inkapi void INKFtpRemapEleDestroy(INKFtpRemapEle * ele);
   inkapi INKHostingEle *INKHostingEleCreate();
   inkapi void INKHostingEleDestroy(INKHostingEle * ele);
   inkapi INKIcpEle *INKIcpEleCreate();
@@ -1347,13 +1332,6 @@ typedef enum
  * Input:
  * Output: INKError
  */
-//inkapi INKError INKMgmtFtpGet(const char* ftp_server_name, const char* ftp_login, const char* ftp_password, const char* file, const char*destDir);
-
-/* INKMgmtFtpGet: retrieves a file from the specified ftp server
- * Input:
- * Output: INKError
- */
-//inkapi INKError INKMgmtFtpPut(const char* ftp_server_name, const char* ftp_login, const char* ftp_password, const char* localDir, const char *remoteDir);
   inkapi INKError INKMgmtFtp(const char *ftpCmd, const char *ftp_server_name, const char *ftp_login, const char *ftp_password, const char *local,
                              const char *remote, char *output);
 /*--- statistics operations -----------------------------------------------*/

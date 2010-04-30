@@ -80,14 +80,6 @@
         <LINK name="Transaction" refresh="true"
               file_link="/monitor/m_http_trans.ink"
               help_link="/help/ts.ink?help=s_http.htm"/>
-        <LINK name="FTP over HTTP" refresh="true"
-              file_link="/monitor/m_ftp_http.ink"
-              help_link="/help/ts.ink?help=s_http.htm"/>
-      </ITEM>
-      <ITEM name="FTP" enable_record="proxy.config.ftp.ftp_enabled">
-        <LINK refresh="true"
-              file_link="/monitor/m_ftp.ink"
-              help_link="/help/ts.ink?help=s_ftp.htm"/>
       </ITEM>
     </MENU>
 
@@ -232,9 +224,6 @@
         <LINK name="File System" refresh="false"
               file_link="/configure/c_snapshot_filesystem.ink"
               help_link="/help/ts.ink?help=c_snap.htm"/>
-        <LINK name="FTP Server" refresh="false"
-              file_link="/configure/c_snapshot_ftpsystem.ink"
-              help_link="/help/ts.ink?help=c_snap.htm"/>
         <LINK name="Floppy Disk" refresh="false"
               file_link="/configure/c_snapshot_floppy.ink"
               help_link="/help/ts.ink?help=c_snap.htm"/>
@@ -288,17 +277,6 @@
               file_link="/configure/c_http_update_urls.ink"
               help_link="/help/ts.ink?help=c_httpsc.htm"/>
       </ITEM>
-      <ITEM name="FTP" enable_record="proxy.config.ftp.ftp_enabled">
-        <LINK name="General" refresh="false"
-              file_link="/configure/c_ftp_general.ink"
-              help_link="/help/ts.ink?help=c_ftp.htm"/>
-        <LINK name="Cacheability" refresh="false"
-              file_link="/configure/c_ftp_cachability.ink"
-              help_link="/help/ts.ink?help=c_ftp.htm"/>
-        <LINK name="Timeouts" refresh="false"
-              file_link="/configure/c_ftp_timeout.ink"
-              help_link="/help/ts.ink?help=c_ftp.htm"/>
-      </ITEM>
     </MENU>
     <MENU name="Streaming Media" enable_record="proxy.config.qt.enabled|proxy.config.rni.enabled|proxy.config.wmt.enabled">
       <ITEM name="Shared Settings">
@@ -344,16 +322,10 @@
         <LINK name="General" refresh="false"
               file_link="/configure/c_reverse_proxy.ink"
               help_link="/help/ts.ink?help=c_revp.htm"/>
-        <LINK name="FTP" refresh="false" enable_record="proxy.config.ftp.ftp_enabled"
-              file_link="/configure/c_reverse_proxy_ftp.ink"
-              help_link="/help/ts.ink?help=c_revp.htm"/>
       </ITEM> 
       <ITEM name="Mapping and Redirection">
         <LINK name="General" refresh="false"
               file_link="/configure/c_mapping.ink"
-              help_link="/help/ts.ink?help=c_map.htm"/>
-        <LINK name="FTP" refresh="false" enable_record="proxy.config.ftp.ftp_enabled"
-              file_link="/configure/c_mapping_ftp.ink"
               help_link="/help/ts.ink?help=c_map.htm"/>
       </ITEM>
       <ITEM name="Browser Auto-Config">

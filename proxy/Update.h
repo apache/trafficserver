@@ -337,10 +337,8 @@ public:
   };
 
   static int http_scheme(UpdateSM *);
-  static int ftp_scheme(UpdateSM *);
   static int rtsp_scheme(UpdateSM *);
   static int http_scheme_postproc(UpdateSM *);
-  static int ftp_scheme_postproc(UpdateSM *);
   static int rtsp_scheme_postproc(UpdateSM *);
 
     UpdateSM(UpdateScheduler *, Ptr<UpdateConfigParams>, UpdateEntry *);

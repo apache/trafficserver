@@ -54,7 +54,6 @@ typedef enum
   CMD_CONFIG_PORTS_CLUSTER,
   CMD_CONFIG_PORTS_CLUSTER_RS,
   CMD_CONFIG_PORTS_CLUSTER_MC,
-  CMD_CONFIG_PORTS_FTP_SERVER,
   CMD_CONFIG_PORTS_SSL,
   CMD_CONFIG_PORTS_SOCKS_SERVER,
   CMD_CONFIG_PORTS_ICP,
@@ -144,18 +143,6 @@ typedef enum
   CMD_CONFIG_HTTP_FWD,
   CMD_CONFIG_HTTP_REV,
   CMD_CONFIG_HTTP_FWD_REV,
-  CMD_CONFIG_FTP,
-  CMD_CONFIG_FTP_MODE,
-  CMD_CONFIG_FTP_MODE_PASVPORT,
-  CMD_CONFIG_FTP_MODE_PASV,
-  CMD_CONFIG_FTP_MODE_PORT,
-  CMD_CONFIG_FTP_INACT_TIMEOUT,
-  CMD_CONFIG_FTP_ANON_PASSWD,
-  CMD_CONFIG_FTP_EXPIRE_AFTER,
-  CMD_CONFIG_FTP_PROXY,
-  CMD_CONFIG_FTP_FWD,
-  CMD_CONFIG_FTP_REV,
-  CMD_CONFIG_FTP_FWD_REV,
   CMD_CONFIG_ICP,
   CMD_CONFIG_ICP_MODE,
   CMD_CONFIG_ICP_MODE_RECEIVE,
@@ -181,7 +168,6 @@ typedef enum
   CMD_CONFIG_CACHE_ON,
   CMD_CONFIG_CACHE_OFF,
   CMD_CONFIG_CACHE_HTTP,
-  CMD_CONFIG_CACHE_FTP,
   CMD_CONFIG_CACHE_IGNORE_BYPASS,
   CMD_CONFIG_CACHE_MAX_OBJECT_SIZE,
   CMD_CONFIG_CACHE_MAX_ALTERNATES,
@@ -668,26 +654,6 @@ int Cmd_ConfigHttp(ClientData clientData, Tcl_Interp * interp, int argc, const c
 int CmdArgs_ConfigHttp();
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ConfigFtp
-//
-// This is the callback function for the "config:ftp" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int Cmd_ConfigFtp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-
-////////////////////////////////////////////////////////////////
-// CmdArgs_ConfigFtp
-//
-// Register "config:ftp" arguments with the Tcl interpreter.
-//
-int CmdArgs_ConfigFtp();
-
-////////////////////////////////////////////////////////////////
 // Cmd_ConfigIcp
 //
 // This is the callback function for the "config:icp" command.
@@ -975,18 +941,6 @@ int ConfigRemap(const char *url);
 
 // config http proxy sub-command
 int ConfigHttpProxy(int arg_ref, int setvar);
-
-// config ftp mode sub-command
-int ConfigFtpProxy(int arg_ref, int setvar);
-
-// config ftp mode sub-command
-int ConfigFtpMode(int arg_ref, int setvar);
-
-// config ftp inactivity-timeout sub-command
-int ConfigFtpInactTimeout(int timeout, int setvar);
-
-// config ftp expire-after sub-command
-int ConfigFtpExpireAfter(int limit, int setvar);
 
 // config icp mode sub-command
 int ConfigIcpMode(int arg_ref, int setvar);

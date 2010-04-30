@@ -410,101 +410,6 @@ writeFilterConfigTable(WebHttpContext * whc)
 }
 
 //-------------------------------------------------------------------------
-// writeFtpRemapConfigTable
-//-------------------------------------------------------------------------
-int
-writeFtpRemapConfigTable(WebHttpContext * whc)
-{
-  INKFtpRemapEle *ele;
-  char from_port[MAX_RULE_PART_SIZE];
-  char to_port[MAX_RULE_PART_SIZE];
-
-  int count;
-
-  textBuffer *output = whc->response_bdy;
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_FTP_REMAP);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeFtpRemapConfigTable] Error: INKCfgContextGet failed");
-    INKCfgContextDestroy(ctx);
-    return WEB_HTTP_ERR_FAIL;
-  }
-
-  HtmlRndrTableOpen(output, "100%", 1, 0, 0, BORDER_COLOR);
-
-  // write the table headings
-  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL_SMALL, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_PROXY);
-  HtmlRndrTdClose(output);
-
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL_SMALL, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_PROXY_PORT);
-  HtmlRndrTdClose(output);
-
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL_SMALL, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_SERVER);
-  HtmlRndrTdClose(output);
-
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL_SMALL, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_SERVER_PORT);
-  HtmlRndrTdClose(output);
-
-  HtmlRndrTrClose(output);
-
-  count = INKCfgContextGetCount(ctx);
-  for (int i = 0; i < count; i++) {
-    ele = (INKFtpRemapEle *) INKCfgContextGetEleAt(ctx, i);
-
-    memset(from_port, 0, MAX_RULE_PART_SIZE);
-    memset(to_port, 0, MAX_RULE_PART_SIZE);
-    if (convert_ftp_remap_ele_to_html_format(ele, from_port, to_port) != WEB_HTTP_ERR_OKAY) {
-      Debug("config", "[writeFtpRemapConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
-    }
-    // write the rule info into the table row
-    HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
-
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-    HtmlRndrSpace(output, 2);
-    output->copyFrom(ele->from_val, strlen(ele->from_val));
-    HtmlRndrTdClose(output);
-
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-    HtmlRndrSpace(output, 2);
-    output->copyFrom(from_port, strlen(from_port));
-    HtmlRndrTdClose(output);
-
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-    HtmlRndrSpace(output, 2);
-    output->copyFrom(ele->to_val, strlen(ele->to_val));
-    HtmlRndrTdClose(output);
-
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-    HtmlRndrSpace(output, 2);
-    output->copyFrom(to_port, strlen(to_port));
-    HtmlRndrTdClose(output);
-
-    HtmlRndrTrClose(output);
-  }                             // end for loop 
-
-  // no rules
-  if (count == 0) {
-    HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-    HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 4);
-    HtmlRndrSpace(output, 2);
-    HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_NO_RULES);
-    HtmlRndrTdClose(output);
-    HtmlRndrTrClose(output);
-  }
-
-  HtmlRndrTableClose(output);
-  INKCfgContextDestroy(ctx);
-  return WEB_HTTP_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
 // writeHostingConfigTable
 //-------------------------------------------------------------------------
 int
@@ -1886,52 +1791,6 @@ writeFilterRuleList(textBuffer * output)
 
 
 //-------------------------------------------------------------------------
-// writeFtpRemapRuleList
-//-------------------------------------------------------------------------
-int
-writeFtpRemapRuleList(textBuffer * output)
-{
-  INKFtpRemapEle *ele;
-  int count, i;
-  const char ruleList[] = "var ruleList = new Object();\n";
-
-  INKCfgContext ctx = INKCfgContextCreate(INK_FNAME_FTP_REMAP);
-  INKError err = INKCfgContextGet(ctx);
-  if (err != INK_ERR_OKAY) {
-    mgmt_log(stderr, "[writeFtpRemapRuleList] Error INKCfgContextGet");
-    return WEB_HTTP_ERR_FAIL;
-  }
-
-  output->copyFrom(ruleList, strlen(ruleList));
-
-  char rule[MAX_RULE_SIZE];
-  char from_port[MAX_RULE_PART_SIZE];
-  char to_port[MAX_RULE_PART_SIZE];
-
-  count = INKCfgContextGetCount(ctx);
-  for (i = 0; i < count; i++) {
-    ele = (INKFtpRemapEle *) INKCfgContextGetEleAt(ctx, i);
-
-    memset(from_port, 0, MAX_RULE_PART_SIZE);
-    memset(to_port, 0, MAX_RULE_PART_SIZE);
-    if (convert_ftp_remap_ele_to_html_format(ele, from_port, to_port) != WEB_HTTP_ERR_OKAY) {
-      Debug("config", "[writeFtpRemapRuleList] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
-    }
-
-    memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\");\n",
-                 i, ele->from_val, from_port, ele->to_val, to_port);
-
-    output->copyFrom(rule, strlen(rule));
-  }
-
-  INKCfgContextDestroy(ctx);
-  return WEB_HTTP_ERR_OKAY;
-}
-
-
-//-------------------------------------------------------------------------
 // writeHostingRuleList
 //-------------------------------------------------------------------------
 int
@@ -3081,89 +2940,6 @@ writeFilterConfigForm(WebHttpContext * whc)
   HtmlRndrUlOpen(output);
   HtmlRndrLi(output);
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_LDAP_RDR_URL_HELP);
-  HtmlRndrUlClose(output);
-  HtmlRndrTdClose(output);
-  HtmlRndrTrClose(output);
-
-  return WEB_HTTP_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// writeFtpRemapConfigForm
-//-------------------------------------------------------------------------
-// Form contains:
-//    Traffic Server IP Address        from_ip
-//    Traffic Server Port              from_port
-//    FTP IP Address                   to_ip
-//    FTP Port                         to_port
-int
-writeFtpRemapConfigForm(WebHttpContext * whc)
-{
-  textBuffer *output = whc->response_bdy;
-
-  // write the hidden "filename" tag 
-  HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_FTP_REMAP_CONFIG, NULL, NULL);
-
-  // from IP
-  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_PROXY);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrInput(output, HTML_CSS_BODY_TEXT, "text", "from_ip", NULL, NULL, NULL);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_HELP, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-  HtmlRndrUlOpen(output);
-  HtmlRndrLi(output);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_PROXY_HELP);
-  HtmlRndrUlClose(output);
-  HtmlRndrTdClose(output);
-  HtmlRndrTrClose(output);
-
-  // from port
-  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_PROXY_PORT);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrInput(output, HTML_CSS_BODY_TEXT, "text", "from_port", NULL, NULL, NULL);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_HELP, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-  HtmlRndrUlOpen(output);
-  HtmlRndrLi(output);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_PROXY_PORT_HELP);
-  HtmlRndrUlClose(output);
-  HtmlRndrTdClose(output);
-  HtmlRndrTrClose(output);
-
-  // to 
-  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_SERVER);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrInput(output, HTML_CSS_BODY_TEXT, "text", "to_ip", NULL, NULL, NULL);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_HELP, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-  HtmlRndrUlOpen(output);
-  HtmlRndrLi(output);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_SERVER_HELP);
-  HtmlRndrUlClose(output);
-  HtmlRndrTdClose(output);
-  HtmlRndrTrClose(output);
-
-  // to Port
-  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_SERVER_PORT);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrInput(output, HTML_CSS_BODY_TEXT, "text", "to_port", NULL, NULL, NULL);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_HELP, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-  HtmlRndrUlOpen(output);
-  HtmlRndrLi(output);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_FTP_SERVER_PORT_HELP);
   HtmlRndrUlClose(output);
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
@@ -4843,41 +4619,6 @@ Lerror:
 }
 
 //-------------------------------------------------------------------------
-// convert_ftp_remap_ele_to_html_format
-//-------------------------------------------------------------------------
-int
-convert_ftp_remap_ele_to_html_format(INKFtpRemapEle * ele, char *from_port, char *to_port)
-{
-  // from IP and Port
-  if (!ele->from_val) {
-    goto Lerror;
-  }
-
-  if (ele->from_port != INK_INVALID_PORT) {
-    ink_snprintf(from_port, MAX_RULE_PART_SIZE, "%d", ele->from_port);
-  } else {
-    goto Lerror;
-  }
-
-  // FTP IP and port
-  if (!ele->to_val) {
-    goto Lerror;
-  }
-
-  if (ele->to_port != INK_INVALID_PORT) {
-    ink_snprintf(to_port, MAX_RULE_PART_SIZE, "%d", ele->to_port);
-  } else {
-    goto Lerror;
-  }
-
-  return WEB_HTTP_ERR_OKAY;
-
-Lerror:
-  Debug("config", "[convert_ftp_remap_ele_to_html_format] ERROR - invalid Ele");
-  return WEB_HTTP_ERR_FAIL;
-}
-
-//-------------------------------------------------------------------------
 // convert_hosting_ele_to_html_format
 //-------------------------------------------------------------------------
 int
@@ -5194,9 +4935,6 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
   case INK_SCHEME_HTTPS:
     ink_snprintf(from_scheme, MAX_RULE_PART_SIZE, "https");
     break;
-  case INK_SCHEME_FTP:
-    ink_snprintf(from_scheme, MAX_RULE_PART_SIZE, "ftp");
-    break;
   case INK_SCHEME_RTSP:
     ink_snprintf(from_scheme, MAX_RULE_PART_SIZE, "rtsp");
     break;
@@ -5225,9 +4963,6 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
     break;
   case INK_SCHEME_HTTPS:
     ink_snprintf(to_scheme, MAX_RULE_PART_SIZE, "https");
-    break;
-  case INK_SCHEME_FTP:
-    ink_snprintf(to_scheme, MAX_RULE_PART_SIZE, "ftp");
     break;
   case INK_SCHEME_RTSP:
     ink_snprintf(to_scheme, MAX_RULE_PART_SIZE, "rtsp");
@@ -5601,9 +5336,6 @@ convert_pdss_to_html_format(INKPdSsFormat info,
   case INK_SCHEME_HTTPS:
     ink_snprintf(scheme, MAX_RULE_PART_SIZE, "https");
     break;
-  case INK_SCHEME_FTP:
-    ink_snprintf(scheme, MAX_RULE_PART_SIZE, "ftp");
-    break;
   case INK_SCHEME_RTSP:
     ink_snprintf(scheme, MAX_RULE_PART_SIZE, "rtsp");
     break;
@@ -5826,13 +5558,12 @@ writeMethodSelect(textBuffer * html, const char *listName)
 void
 writeSchemeSelect(textBuffer * html, const char *listName)
 {
-  const char *options[6];
+  const char *options[5];
   options[0] = "";
   options[1] = "http";
   options[2] = "https";
-  options[3] = "ftp";
-  options[4] = "rtsp";
-  options[5] = "mms";
+  options[3] = "rtsp";
+  options[4] = "mms";
 
   HtmlRndrSelectList(html, listName, options, 6);
 }
@@ -5850,12 +5581,11 @@ writeSchemeSelect_partition(textBuffer * html, const char *listName)
 void
 writeSchemeSelect_remap(textBuffer * html, const char *listName)
 {
-  const char *options[5];
+  const char *options[4];
   options[0] = "http";
   options[1] = "https";
-  options[2] = "ftp";
-  options[3] = "rtsp";
-  options[4] = "mms";
+  options[2] = "rtsp";
+  options[3] = "mms";
 
   HtmlRndrSelectList(html, listName, options, 5);
 }

@@ -343,7 +343,6 @@ extern "C"
     INK_SRVSTATE_CONNECTION_ALIVE,
     INK_SRVSTATE_CONNECTION_CLOSED,
     INK_SRVSTATE_CONNECTION_ERROR,
-    INK_SRVSTATE_FTP_OPEN_FAILED,
     INK_SRVSTATE_INACTIVE_TIMEOUT,
     INK_SRVSTATE_OPEN_RAW_ERROR,
     INK_SRVSTATE_PARSE_ERROR,
@@ -377,7 +376,6 @@ extern "C"
     INK_CACHE_DATA_TYPE_MIXT_RTSP,
     INK_CACHE_DATA_TYPE_MIXT_WMT,
     INK_CACHE_DATA_TYPE_MIXT_QTIME,
-    INK_CACHE_DATA_TYPE_FTP,
     INK_CACHE_DATA_TYPE_OTHER
   } INKCacheDataType;
 
@@ -1285,7 +1283,7 @@ extern "C"
   inkapi INKReturnCode INKUrlPortSet(INKMBuffer bufp, INKMLoc offset, int port);
 
   // --------------------------------------------------------------------------
-  // FTP and HTTP specific URLs
+  // HTTP specific URLs
 
   /**
       Retrieves the path portion of the URL located at url_loc within

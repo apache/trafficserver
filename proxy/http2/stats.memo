@@ -12,8 +12,7 @@ Proxy Schems:
   Name          :  SchemeEnabled
   Type          :  A bit vector. a bit per scheme. 
   Who It Affects:  HTTP Engine
-  Comments      :  Current schemes are { HTTP, FTP }
-                   Future Schemes { GOPHER, HTTPS }
+  Comments      :  Current schemes are HTTP / HTTPS
 
   Name          :  TunnelingEnabled
   Type          :  boolean
@@ -194,7 +193,7 @@ Caching Policies:
   Name          :  CachableSchemes
   Type          :  A bit vector
   Who It Affects:  HTTP Engine
-  Comments      :  which schemes to cache. HTTP, FTP, etc.
+  Comments      :  which schemes to cache. HTTP etc.
 
   Name          :  CachableMimeTypes
   Type          :  A bit vector

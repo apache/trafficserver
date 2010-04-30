@@ -72,7 +72,6 @@
 #define HTTP_SERVER_RESP_HDR_BUFFER_INDEX BUFFER_SIZE_INDEX_8K
 
 class HttpServerSession;
-//class FtpVConnection;
 class AuthHttpAdapter;
 
 class HttpSM;
@@ -81,8 +80,7 @@ typedef int (HttpSM::*HttpSMHandler) (int event, void *data);
 enum HttpVC_t
 { HTTP_UNKNOWN = 0, HTTP_UA_VC, HTTP_SERVER_VC,
   HTTP_TRANSFORM_VC, HTTP_CACHE_READ_VC,
-  HTTP_CACHE_WRITE_VC, HTTP_RAW_SERVER_VC,
-  HTTP_FTP_VC
+  HTTP_CACHE_WRITE_VC, HTTP_RAW_SERVER_VC
 };
 
 enum BackgroundFill_t
@@ -324,8 +322,6 @@ protected:
   IOBufferReader *server_buffer_reader;
   void remove_server_entry();
 
-  //FtpVConnection *ftp_session;
-
   HttpTransformInfo transform_info;
   HttpTransformInfo post_transform_info;
 
@@ -349,7 +345,6 @@ protected:
   //YTS Team, yamsat Plugin
   int tunnel_handler_for_partial_post(int event, void *data);
 
-  int tunnel_handler_ftp_put(int event, void *data);
   void tunnel_handler_post_or_put(HttpTunnelProducer * p);
 
   int tunnel_handler_100_continue(int event, void *data);
@@ -386,9 +381,6 @@ protected:
   int state_acquire_server_read(int event, void *data);
   int state_read_server_response_header(int event, void *data);
 
-  // FTP Server Handlers
-  int state_ftp_server_open(int event, void *data);
-
   // API
   int state_request_wait_for_transform_read(int event, void *data);
   int state_response_wait_for_transform_read(int event, void *data);
@@ -413,9 +405,7 @@ protected:
   void do_hostdb_reverse_lookup();
   void do_cache_lookup_and_read();
   void do_http_server_open(bool raw = false);
-  void do_ftp_server_open();
   void do_setup_post_tunnel(HttpVC_t to_vc_type);
-  void do_setup_put_tunnel_to_ftp();
   void do_cache_prepare_write();
   void do_cache_prepare_write_transform();
   void do_cache_prepare_update();
@@ -454,8 +444,6 @@ protected:
   void setup_server_send_request_api();
   void setup_server_transfer();
   void setup_server_transfer_to_cache_only();
-  void setup_ftp_transfer();
-  void setup_ftp_transfer_to_cache_only();
   void setup_cache_read_transfer();
   void setup_internal_transfer(HttpSMHandler handler);
   void setup_error_transfer();
@@ -470,7 +458,6 @@ protected:
   void perform_nca_cache_action();
   void setup_blind_tunnel(bool send_response_hdr);
   HttpTunnelProducer *setup_server_transfer_to_transform();
-  HttpTunnelProducer *setup_ftp_transfer_to_transform();
   HttpTunnelProducer *setup_transfer_from_transform();
   HttpTunnelProducer *setup_cache_transfer_to_transform();
   HttpTunnelProducer *setup_transfer_from_transform_to_cache_only();
@@ -484,7 +471,6 @@ protected:
   bool is_bg_fill_necessary(HttpTunnelConsumer * c);
   int find_server_buffer_size();
   int find_http_resp_buffer_size(int cl);
-  int find_ftp_buffer_size();
   int server_transfer_init(MIOBuffer * buf, int hdr_size);
 
 public:

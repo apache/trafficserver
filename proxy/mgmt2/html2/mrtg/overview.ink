@@ -99,20 +99,6 @@
         </tr>
 
         <tr>
-          <td height="2" colspan="2" class="configureLabel">Protocols</td>
-        </tr>
-        <tr align="center"> 
-          <td align=center class="bodyText">
-            FTP Client / Server Connections:<BR>
-            <A HREF="fccon.html"><IMG HEIGHT=88 WIDTH=325 SRC="fccon-day.png"></A>
-          </td>
-          <td align=center class="bodyText">
-            FTP Hit Rate:<BR>
-            <A HREF="fdoc.html"><IMG HEIGHT=88 WIDTH=325 SRC="fdoc-day.png"></A>
-          </td>
-        </tr>
-
-        <tr>
           <td height="2" colspan="2" class="configureLabel">Media Protocols</td>
         </tr>
         <tr align="center"> 

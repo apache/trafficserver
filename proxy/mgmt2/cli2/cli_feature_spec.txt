@@ -88,7 +88,6 @@ show:status                  Proxy status
 show:version                 Version information
 show:security                Security information
 show:http                    HTTP protocol configuration
-show:ftp                     FTP protocol configuration
 show:icp [peer]              ICP protocol configuration
 show:proxy                   Proxy configuration
 show:cache [rules|storage]   Cache configuration
@@ -108,7 +107,6 @@ show:scheduled-update        Scheduled update configuration
 show:proxy-stats             Proxy statistics
 show:http-trans-stats        HTTP transaction statistics
 show:http-stats              HTTP statistics
-show:ftp-stats               FTP statistics
 show:icp-stats               ICP statistics
 show:cache-stats             Cache statistics
 show:hostdb-stats            Host database statistics
@@ -156,11 +154,6 @@ config:http <remove-header> <string>
 config:http <insert-ip | remove-ip> <on | off>
 config:http proxy <fwd | rev | fwd-rev>      
 
-config:ftp mode <pasv-port | port | pasv>
-config:ftp <inactivity-timeout | expire-after> <seconds>
-config:ftp anonymous-password <string>
-config:ftp proxy <fwd | rev | fwd-rev>       
-    
 config:icp mode <disabled | receive | send-receive>
 config:icp port <int>
 config:icp multicast <on | off>
@@ -182,7 +175,7 @@ config:socks timeout <seconds>
     
     
 config:cache <on | off>
-config:cache <http | ftp> <on | off>
+config:cache <http> <on | off>
 config:cache ignore-bypass <on | off>
 config:cache <max-object-size | max-alternates> <int>
 config:cache file <url-config-file>

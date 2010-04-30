@@ -17,7 +17,5 @@
 
 webuidir = $(DESTDIR)$(pkgdatadir)/agent-installer
 dist_webui_DATA = \
-	ftp.exp \
-	ftp.pl \
 	installer.cgi \
 	installer.html

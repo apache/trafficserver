@@ -136,9 +136,6 @@ dumpMessage(const HttpMessage & msg)
   case HttpMessage::SCHEME_HTTP:
     cout << "HTTP" << endl;
     break;
-  case HttpMessage::SCHEME_FTP:
-    cout << "FTP" << endl;
-    break;
   }
   cout << "Status code: " << msg.getStatusCode() << endl;
   cout << "Request URI: " << msg.getRequestURI() << endl;

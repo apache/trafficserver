@@ -309,16 +309,6 @@
 #define HTML_ID_CFG_EDIT_SEARCH_LIST_HELP   "s_text_788"
 #define HTML_ID_CFG_EDIT_SEARCH_LIST_EG     "s_text_789"
 
-// ftp_remap.config
-#define HTML_ID_CFG_EDIT_FTP_PROXY            "s_text_795"
-#define HTML_ID_CFG_EDIT_FTP_PROXY_HELP       "s_text_796"
-#define HTML_ID_CFG_EDIT_FTP_PROXY_PORT       "s_text_797"
-#define HTML_ID_CFG_EDIT_FTP_PROXY_PORT_HELP  "s_text_798"
-#define HTML_ID_CFG_EDIT_FTP_SERVER           "s_text_799"
-#define HTML_ID_CFG_EDIT_FTP_SERVER_HELP      "s_text_800"
-#define HTML_ID_CFG_EDIT_FTP_SERVER_PORT      "s_text_801"
-#define HTML_ID_CFG_EDIT_FTP_SERVER_PORT_HELP "s_text_802"
-
 // filter.config
 #define HTML_ID_CFG_EDIT_AUTH_SPEC            "s_text_809"
 #define HTML_ID_CFG_EDIT_RULE_TYPE_HELP_5     "s_text_810"
@@ -523,7 +513,6 @@
 #define HTML_FILE_BYPASS_CONFIG         "/configure/f_bypass_config.ink"
 #define HTML_FILE_CACHE_CONFIG          "/configure/f_cache_config.ink"
 #define HTML_FILE_FILTER_CONFIG         "/configure/f_filter_config.ink"
-#define HTML_FILE_FTP_REMAP_CONFIG      "/configure/f_ftp_remap_config.ink"
 #define HTML_FILE_HOSTING_CONFIG        "/configure/f_hosting_config.ink"
 #define HTML_FILE_ICP_CONFIG            "/configure/f_icp_config.ink"
 #define HTML_FILE_IP_ALLOW_CONFIG       "/configure/f_ip_allow_config.ink"
@@ -541,7 +530,6 @@
 #define HTML_HELP_LINK_BYPASS           "/help/ts.ink?help=c_bypass.htm"
 #define HTML_HELP_LINK_CACHE            "/help/ts.ink?help=ccache.htm"
 #define HTML_HELP_LINK_FILTER           "/help/ts.ink?help=c_filter.htm"
-#define HTML_HELP_LINK_FTP_REMAP        "/help/ts.ink?help=ftprmap.htm"
 #define HTML_HELP_LINK_HOSTING          "/help/ts.ink?help=c_host.htm"
 #define HTML_HELP_LINK_ICP              "/help/ts.ink?help=c_icp.htm"
 #define HTML_HELP_LINK_IP_ALLOW         "/help/ts.ink?help=ipallow.htm"

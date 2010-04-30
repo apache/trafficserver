@@ -516,11 +516,7 @@ how_to_open_connection(HttpTransact::State * s)
     break;
   }
 
-  if (s->next_hop_scheme == URL_WKSIDX_FTP) {
-    // disable user agent keep-alive for ftp
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
-    return HttpTransact::FTP_SERVER_OPEN;
-  } else if (s->method == HTTP_WKSIDX_CONNECT && s->parent_result.r != PARENT_SPECIFIED) {
+  if (s->method == HTTP_WKSIDX_CONNECT && s->parent_result.r != PARENT_SPECIFIED) {
     s->cdn_saved_next_action = HttpTransact::ORIGIN_SERVER_RAW_OPEN;
   } else {
     s->cdn_saved_next_action = HttpTransact::ORIGIN_SERVER_OPEN;
@@ -1288,11 +1284,7 @@ HttpTransact::HandleRequest(State * s)
   if (handle_internal_request(s, &s->hdr_info.client_request)) {
     TRANSACT_RETURN(PROXY_INTERNAL_REQUEST, NULL);
   }
-  // If this an ftp request, we need to setup ftp state
-  if (s->scheme == URL_WKSIDX_FTP && !setup_ftp_request(s)) {
-    HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
-    return;
-  }
+
   // this needs to be called after initializing state variables from request
   // it tries to handle the problem that MSIE only adds no-cache
   // headers to reload requests when there is an explicit proxy --- the
@@ -1469,7 +1461,6 @@ HttpTransact::HandleApiErrorJump(State * s)
 
 // - HttpTransact::DNS_LOOKUP;
 // - HttpTransact::ORIGIN_SERVER_RAW_OPEN;
-// - HttpTransact::FTP_SERVER_OPEN;
 // - HttpTransact::ORIGIN_SERVER_OPEN;
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -1538,7 +1529,6 @@ HttpTransact::PPDNSLookup(State * s)
 //  
 // Possible Next States From Here:
 // - HttpTransact::ORIGIN_SERVER_RAW_OPEN;
-// - HttpTransact::FTP_SERVER_OPEN;
 // - HttpTransact::ORIGIN_SERVER_OPEN;
 // - HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
 //
@@ -1639,7 +1629,6 @@ HttpTransact::ReDNSRoundRobin(State * s)
 // - HttpTransact::CACHE_LOOKUP;
 // - HttpTransact::DNS_LOOKUP;
 // - HttpTransact::ORIGIN_SERVER_RAW_OPEN;
-// - HttpTransact::FTP_SERVER_OPEN;
 // - HttpTransact::ORIGIN_SERVER_OPEN;
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -1987,7 +1976,7 @@ HttpTransact::DecideCacheLookup(State * s)
 
     if (s->cache_info.lookup_url == NULL) {
 
-      if (s->pristine_host_hdr > 0 || s->http_config_param->maintain_pristine_host_hdr || s->scheme == URL_WKSIDX_FTP) {
+      if (s->pristine_host_hdr > 0 || s->http_config_param->maintain_pristine_host_hdr) {
         s->cache_info.lookup_url_storage.create(NULL);
         s->cache_info.lookup_url_storage.copy(s->hdr_info.client_request.url_get());
         s->cache_info.lookup_url = &(s->cache_info.lookup_url_storage);
@@ -2021,15 +2010,6 @@ HttpTransact::DecideCacheLookup(State * s)
         }
       }
       HTTP_DEBUG_ASSERT(s->cache_info.lookup_url->valid() == true);
-    }
-    // For ftp requests remove user name and
-    // password from the url when doing lookup
-    int tmp;
-    if (s->scheme == URL_WKSIDX_FTP) {
-      if (s->cache_info.lookup_url->user_get(&tmp))
-        s->cache_info.lookup_url->user_set("", 0);
-      if (s->cache_info.lookup_url->password_get(&tmp))
-        s->cache_info.lookup_url->password_set("", 0);
     }
 
     TRANSACT_RETURN(CACHE_LOOKUP, NULL);
@@ -2241,8 +2221,8 @@ HttpTransact::HandlePushError(State *s, const char *reason)
 // Details    :
 //   
 // the cache lookup succeeded. first check if the lookup resulted in
-// a hit or a miss, if the lookup was for an http request or an ftp
-// request. this function just funnels the result into the appropriate
+// a hit or a miss, if the lookup was for an http request.
+// This function just funnels the result into the appropriate
 // functions which handle these different cases.
 //
 //
@@ -2292,13 +2272,6 @@ HttpTransact::HandleCacheOpenRead(State * s)
       TRANSACT_RETURN(DNS_LOOKUP, OSDNSLookup);
     }
   }
-#ifndef INK_NO_FTP
-  // cache hit - http or ftp?
-  else if (s->scheme == URL_WKSIDX_FTP) {
-    Debug("http_trans", "CacheOpenRead -- ftp hit");
-    TRANSACT_RETURN(HTTP_API_READ_CACHE_HDR, HandleCacheOpenReadFtpFreshness);
-  }
-#endif
   else {
     // cache hit
     Debug("http_trans", "CacheOpenRead -- hit");
@@ -2308,181 +2281,6 @@ HttpTransact::HandleCacheOpenRead(State * s)
   return;
 }
 
-#ifndef INK_NO_FTP
-void
-HttpTransact::HandleCacheOpenReadFtpFreshness(State * s)
-{
-  if (diags->on()) {
-    DebugOn("http_trans", "[HttpTransact::HandleCacheOpenReadFtpFreshness]");
-    DebugOn("http_seq", "[HttpTransact::HandleCacheOpenReadFtpFreshness] Ftp hit in cache");
-  }
-  HTTP_DEBUG_ASSERT(s->cache_info.object_read != 0);
-
-  if (delete_all_document_alternates_and_return(s, TRUE)) {
-    Debug("http_trans", "[HandleCacheOpenReadFtpFreshness] Delete and return");
-    s->cache_info.action = CACHE_DO_DELETE;
-    s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_DELETE;
-    return;
-  }
-  // If the request has a user name which
-  // is not anonymous treat this as a MISS.
-  if (s->ftp_info->username && s->ftp_info->username[0] &&
-      strcmp(s->ftp_info->username, "anonymous") != 0 && strcmp(s->ftp_info->username, "ftp") != 0) {
-    s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_FTP_NON_ANONYMOUS;
-    Debug("http_seq", "[HttpTransact::HandleCacheOpenReadFtpFreshness] Not anon user");
-  } else {
-    // calculate the freshness of the document
-    s->request_sent_time = s->cache_info.object_read->request_sent_time_get();
-    s->response_received_time = s->cache_info.object_read->response_received_time_get();
-
-    HTTP_DEBUG_ASSERT(s->request_sent_time <= s->response_received_time);
-
-    if (diags->on()) {
-      DebugOn("http_trans", "[HandleCacheOpenReadFtpFreshness] request_sent_time : %ld", s->request_sent_time);
-      DebugOn("http_trans",
-              "[HandleCacheOpenReadFtpFreshness] response_received_time : %ld", s->response_received_time);
-    }
-    // if the plugin hasn't decided about the freshness
-    if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_NONE) {
-      HTTPHdr *resp = s->cache_info.object_read->response_get();
-      int current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time,
-                                                                    s->response_received_time,
-                                                                    resp,
-                                                                    resp->get_date(),
-                                                                    s->current.now);
-
-      // is the document fresh enough to be served to client?
-      if (current_age < s->http_config_param->cache_ftp_document_lifetime) {
-        s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_FRESH;
-      } else {
-        Debug("http_seq", "[HttpTransact::HandleCacheOpenReadFtpFreshness] Not fresh enough");
-        s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_STALE;
-      }
-    }
-  }
-
-  TRANSACT_RETURN(HTTP_API_CACHE_LOOKUP_COMPLETE, HandleCacheOpenReadFtp);
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-// Name       : HandleCacheOpenReadFtp
-// Description: 
-//
-// Details    :
-//   
-//  1. If the request has a user name and the user name is not "anonymous"
-//     then the document is not cached (only "anonymous" documents are
-//     cached.
-//  2. If the request does not have a user name or the user name is
-//     "anonymous" check if the document is still fresh.
-//
-//
-// Possible Next States From Here:
-// - HttpTransact::PROXY_INTERNAL_CACHE_DELETE;
-// - HttpTransact::DNS_LOOKUP;
-// - HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
-// - HttpTransact::FTP_SERVER_OPEN;
-// - HttpTransact::SERVE_FROM_CACHE;
-//
-//////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::HandleCacheOpenReadFtp(State * s)
-{
-  ink_assert(s->cache_lookup_result ==
-             HttpTransact::CACHE_LOOKUP_HIT_FTP_NON_ANONYMOUS ||
-             s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_HIT_STALE
-             || s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_HIT_FRESH);
-
-  // cached response may not be returnable, such as if the method is PUT
-  bool response_returnable = is_cache_response_returnable(s);
-
-  // If the request has a user name which
-  // is not anonymous treat this as a MISS.
-  if (s->cache_lookup_result == CACHE_LOOKUP_HIT_FTP_NON_ANONYMOUS) {
-    response_returnable = false;
-    Debug("http_seq", "[HttpTransact::HandleCacheOpenReadFtp] Not anon user");
-    SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
-  }
-  // If the response is returnable, determine if it is fresh
-  bool response_fresh = s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_HIT_FRESH ? true : false;
-  if (response_returnable) {
-    // set the via string to indicate expiration miss, update stat
-    if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_HIT_STALE) {
-      SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_STALE);
-      SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
-    }
-  }
-
-  bool serve_from_cache = response_returnable && response_fresh;
-
-  if (serve_from_cache) {
-    // the incoming request has an anonymous user name and
-    // the document is fresh enough in the cache.
-
-    Debug("http_seq", "[HttpTransact::HandleCacheOpenReadFtp] Fresh in cache");
-    if (s->cache_info.is_ram_cache_hit) {
-      SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_RAM_CACHE_FRESH);
-    } else {
-      SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_FRESH);
-    }
-    SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_HIT_SERVED);
-    if (s->method == HTTP_WKSIDX_HEAD) {
-      s->cache_info.action = CACHE_DO_NO_ACTION;
-      s->next_action = PROXY_INTERNAL_CACHE_NOOP;
-    } else {
-      s->cache_info.action = CACHE_DO_SERVE;
-      s->next_action = SERVE_FROM_CACHE;
-    }
-    if (s->next_action == SERVE_FROM_CACHE && s->state_machine->do_transform_open()) {
-      set_header_for_transform(s, s->cache_info.object_read->response_get());
-    } else {
-      build_response(s, s->cache_info.object_read->response_get(),
-                     &s->hdr_info.client_response, s->client_info.http_version);
-    }
-  } else {
-
-    // incoming request did not use an anonymouse user name
-    // or the document has expired in the cache. revalidate the
-    //  document
-    find_server_and_update_current_info(s);
-    if (s->current.server->ip == 0) {
-
-      HTTP_ASSERT(s->current.request_to == PARENT_PROXY ||
-                  s->http_config_param->no_dns_forward_to_parent != 0);
-
-      // Set ourselves up to handle pending revalidate issues
-      //  after the PP DNS lookup
-      HTTP_DEBUG_ASSERT(s->pending_work == NULL);
-      s->pending_work = issue_revalidate;
-
-      // We must be going a PARENT PROXY since so did
-      //  origin server DNS lookup right after state Start
-      //
-      // If we end up here in the release case just fall
-      //  through.  The request will fail because of the
-      //  missing ip but we won't take down the system
-      //
-      if (s->current.request_to == PARENT_PROXY) {
-        TRANSACT_RETURN(DNS_LOOKUP, PPDNSLookup);
-      } else {
-        handle_parent_died(s);
-        return;
-      }
-    }
-    build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
-
-    issue_revalidate(s);
-
-    // this can not be anything but a simple origin server connection.
-    // in other words, we would not have looked up the cache for a
-    // connect request, so the next action can not be origin_server_raw_open.
-    s->next_action = how_to_open_connection(s);
-  }
-
-  return;
-}
-#endif //INK_NO_FTP
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : issue_revalidate
@@ -3341,7 +3139,7 @@ HttpTransact::handle_cache_write_lock(State * s)
     StateMachineAction_t next;
     if (s->stale_icp_lookup == false) {
       next = how_to_open_connection(s);
-      if (next == ORIGIN_SERVER_OPEN || next == ORIGIN_SERVER_RAW_OPEN || next == FTP_SERVER_OPEN) {
+      if (next == ORIGIN_SERVER_OPEN || next == ORIGIN_SERVER_RAW_OPEN) {
         s->next_action = next;
         TRANSACT_RETURN(next, NULL);
       } else {
@@ -3369,7 +3167,6 @@ HttpTransact::handle_cache_write_lock(State * s)
 // - HttpTransact::DNS_LOOKUP;
 // - HttpTransact::ORIGIN_SERVER_OPEN;
 // - HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
-// - HttpTransact::FTP_SERVER_OPEN;
 // - result of how_to_open_connection()
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -3536,287 +3333,6 @@ HttpTransact::HandleICPLookup(State * s)
 }
 #endif //INK_NO_ICP
 
-#ifndef INK_NO_FTP
-void
-HttpTransact::HandleFtpPutSuccess(State * s)
-{
-  Debug("http_trans", "[HttpTransact::HandleFtpPutSuccess]");
-
-  build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTP_STATUS_OK);
-
-  TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
-
-  return;
-}
-
-void
-HttpTransact::HandleFtpPutFailure(State * s)
-{
-  Debug("http_trans", "[HttpTransact::HandleFtpPutFailure]");
-
-  build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTP_STATUS_GATEWAY_TIMEOUT);
-
-  TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
-
-  return;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Name       : HandleFtpRevalidate
-// Description: 
-//
-// Details    :
-//
-//   
-//
-// Possible Next States From Here:
-//
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::HandleFtpRevalidate(State * s)
-{
-  if (diags->on()) {
-    DebugOn("http_trans", "[HttpTransact::HandleFtpRevalidate]");
-    DebugOn("http_seq", "[HttpTransact::HandleFtpRevalidate] " "Successful revalidation");
-  }
-
-  s->response_received_time = ink_cluster_time();
-  HTTP_DEBUG_ASSERT(s->response_received_time >= s->request_sent_time);
-  s->current.now = s->response_received_time;
-
-  Debug("http_trans", "[HandleFtpRevalidate] response_received_time: %ld", s->response_received_time);
-
-  SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_NOT_MODIFIED);
-
-  if (s->cache_info.object_read == NULL || s->cache_info.write_lock_state == CACHE_WL_FAIL) {
-    Debug("http_ftp_revalidate", "Ftp revalidate succeeded - cannot update cache");
-    ink_assert(s->hdr_info.client_request.presence(MIME_PRESENCE_IF_MODIFIED_SINCE));
-    s->cache_info.action = CACHE_DO_NO_ACTION;
-    build_response(s, &(s->hdr_info.client_response), s->client_info.http_version, HTTP_STATUS_NOT_MODIFIED);
-    TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
-  }
-  // We need update the cached copy.  Since the ftp server doesn't
-  //   send us headers, we update with the old cached headers.  The
-  //   only thing that changes in the response received and request
-  //   sent time
-  s->cache_info.action = CACHE_DO_SERVE_AND_UPDATE;
-  s->cache_info.object_store.create();
-  s->cache_info.object_store.request_set(s->cache_info.object_read->request_get());
-  s->cache_info.object_store.response_set(s->cache_info.object_read->response_get());
-
-  if (s->http_config_param->wuts_enabled)
-    HttpTransactHeaders::convert_wuts_code_to_normal_reason(s->cache_info.object_store.response_get());
-
-  // Reset Date on Ftp docs which have been revalidated, in order
-  // to enforce ftp_document_lifetime config value
-  s->cache_info.object_store.response_get()->set_date(s->request_sent_time);
-
-  SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
-  HTTP_INCREMENT_TRANS_STAT(http_cache_updates_stat);
-
-  if (s->method == HTTP_WKSIDX_HEAD) {
-    s->next_action = PROXY_INTERNAL_CACHE_UPDATE_HEADERS;
-  } else {
-    s->next_action = SERVE_FROM_CACHE;
-  }
-
-  if (s->next_action == SERVE_FROM_CACHE && s->state_machine->do_transform_open()) {
-    set_header_for_transform(s, s->cache_info.object_read->response_get());
-  } else {
-    if (s->hdr_info.client_request.presence(MIME_PRESENCE_IF_MODIFIED_SINCE)
-        && s->hdr_info.client_request.get_if_modified_since() == s->ftp_info->last_modified) {
-      s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_UPDATE_HEADERS;
-
-      build_response(s, &(s->hdr_info.client_response), s->client_info.http_version, HTTP_STATUS_NOT_MODIFIED);
-    } else
-      build_response(s, s->cache_info.object_read->response_get(),
-                     &s->hdr_info.client_response, s->client_info.http_version);
-  }
-}
-
-bool
-HttpTransact::build_ftp_server_response(State * s)
-{
-  if (s->method == HTTP_WKSIDX_GET) {
-    // Since we don't have a server response, build one here
-    s->hdr_info.server_response.create(HTTP_TYPE_RESPONSE);
-    build_response(s, &s->hdr_info.server_response, s->client_info.http_version, HTTP_STATUS_OK);
-    if (s->ftp_info->last_modified > 0) {
-      s->hdr_info.server_response.set_last_modified(s->ftp_info->last_modified);
-    }
-    // add mime type and content length.
-    if (!s->ftp_info->is_directory) {
-      HTTP_ASSERT(s->ftp_info->mime_type != 0);
-      s->hdr_info.server_response.value_set(MIME_FIELD_CONTENT_TYPE,
-                                            MIME_LEN_CONTENT_TYPE,
-                                            s->ftp_info->mime_type->
-                                            mime_type, strlen(s->ftp_info->mime_type->mime_type));
-      ////////////////////////////////////////////////////////
-      // do not write content length for ascii transfer     //
-      // mode because the ftp server may do transformation  //
-      // on the content of the file.                        //
-      ////////////////////////////////////////////////////////
-      if (s->ftp_info->content_length > 0 && s->ftp_info->transfer_mode == 'I') {
-        s->hdr_info.server_response.set_content_length(s->ftp_info->content_length);
-        s->hdr_info.response_content_length = s->ftp_info->content_length;
-      } else {
-        s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
-      }
-    } else {
-      char ct[] = "text/html";
-      s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
-      s->hdr_info.server_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, ct, sizeof(ct) - 1);
-
-      // We don't cache directories since they are supposedly 
-      //  dynamic.  As such, we must add a no-store so downstream
-      //  caches don't cache them either
-      if (s->http_return_code != HTTP_STATUS_MOVED_PERMANENTLY)
-        s->hdr_info.server_response.value_set(MIME_FIELD_CACHE_CONTROL, MIME_LEN_CACHE_CONTROL, "no-store", 8);
-      s->hdr_info.server_response.value_set(MIME_FIELD_PRAGMA, MIME_LEN_PRAGMA, "no-cache", 8);
-    }
-    return true;
-  }
-  return false;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Name       : HandleFtpResponse
-// Description: 
-//
-// Details    :
-//
-//   
-//
-// Possible Next States From Here:
-//
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::HandleFtpResponse(State * s)
-{
-  if (diags->on()) {
-    DebugOn("http_trans", "[HttpTransact::HandleFtpResponse]");
-    DebugOn("http_seq", "[HttpTransact::HandleFtpResponse] " "Response received");
-  }
-
-  HTTP_ASSERT(s->cache_info.action != CACHE_PREPARE_TO_DELETE);
-  HTTP_ASSERT(s->cache_info.action != CACHE_PREPARE_TO_UPDATE);
-  HTTP_ASSERT(s->cache_info.action != CACHE_PREPARE_TO_WRITE);
-
-  s->source = SOURCE_FTP_ORIGIN_SERVER;
-  s->response_received_time = ink_cluster_time();
-  HTTP_DEBUG_ASSERT(s->response_received_time >= s->request_sent_time);
-  s->current.now = s->response_received_time;
-
-  Debug("http_trans", "[HandleFtpResponse] response_received_time: %ld", s->response_received_time);
-  if (!s->cop_test_page)
-    DUMP_HEADER("http_hdrs", &s->hdr_info.server_response, s->state_machine_id, "Incoming O.S. Response");
-
-  HTTP_INCREMENT_TRANS_STAT(http_incoming_responses_stat);
-
-  if (!is_ftp_response_valid(s)) {
-    Debug("http_seq", "[HttpTransact::HandleFtpResponse] " "Response not valid");
-    handle_server_died(s);
-    s->next_action = PROXY_SEND_ERROR_CACHE_NOOP;
-//      s->next_action = PROXY_INTERNAL_CACHE_NOOP;
-    return;
-  }
-  Debug("http_seq", "[HttpTransact::HandleFtpResponse] " "Response valid");
-
-  // Intialize some state variables for the ftp response
-  s->current.server->transfer_encoding = NO_TRANSFER_ENCODING;
-  s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
-  s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-
-  ///////////////////////////////////////////////////////////
-  // open is successfull:                                  //
-  // - If we opened a directory using NLST and it went ok, //
-  //   let's open the directory using LIST.                //
-  // - If we opened a file or a directory using LIST and   //
-  //   it went ok, write the data back to the user agent.  //
-  ///////////////////////////////////////////////////////////
-  HTTP_ASSERT(s->current.state == CONNECTION_ALIVE);
-
-  if (s->method == HTTP_WKSIDX_PUT) {
-    if (s->cache_info.action == CACHE_DO_DELETE) {
-      s->next_action = FTP_WRITE_CACHE_DELETE;
-    } else {
-      HTTP_DEBUG_ASSERT(s->cache_info.object_read == 0);
-      HTTP_DEBUG_ASSERT(s->cache_info.action == CACHE_DO_NO_ACTION);
-      s->next_action = FTP_WRITE_CACHE_NOOP;
-    }
-  } else if (s->method == HTTP_WKSIDX_GET) {
-
-    ink_release_assert(s->hdr_info.server_response.valid());
-
-    if (s->state_machine->do_transform_open()) {
-      // VIA will get added back in after the transform
-      s->hdr_info.server_response.field_delete(MIME_FIELD_VIA, MIME_LEN_VIA);
-      set_header_for_transform(s, &s->hdr_info.server_response);
-    } else {
-      // No transform - just copy our server response to
-      //   the ua response
-      ink_assert(s->ftp_info->is_directory == false);
-      s->hdr_info.client_response.create(HTTP_TYPE_RESPONSE);
-      s->hdr_info.client_response.copy(&s->hdr_info.server_response);
-    }
-
-    //////////////////////////////////////////////
-    // decide if to write document to the cache //
-    //////////////////////////////////////////////
-    if (diags->on()) {
-      DebugOn("http_trans", "[HandleFtpResponse] ConfigCacheFtp:         %lld", s->http_config_param->cache_ftp);
-      DebugOn("http_trans", "[HandleFtpResponse] Is this a directory:    %d", s->ftp_info->is_directory);
-      DebugOn("http_trans",
-              "[HandleFtpResponse] Client permits storing: %d", s->cache_info.directives.does_client_permit_storing);
-    }
-
-    if (is_response_cacheable(s,
-                              &s->hdr_info.client_request,
-                              &(s->hdr_info.server_response)) && s->cache_info.write_lock_state == CACHE_WL_SUCCESS) {
-      Debug("http_trans", "[HandleFtpResponse] Ftp response cacheable");
-
-      if (s->cache_info.object_read != 0) {
-        Debug("http_trans", "[HandleFtpResponse] " "Deleting and caching ftp document.");
-        s->cache_info.action = CACHE_DO_REPLACE;
-        s->next_action = FTP_READ;
-      } else {
-        Debug("http_trans", "[HandleFtpResponse] Caching ftp document.");
-        s->cache_info.action = CACHE_DO_WRITE;
-        s->next_action = FTP_READ;
-      }
-      ////////////////////////////////////////////////////////
-      // initialize cache object info to store the document //
-      // since ftp server does not send http headers with   //
-      // the document, we store our generated response      //
-      // header to the user agent as the cached response.   //
-      ////////////////////////////////////////////////////////
-      s->cache_info.object_store.create();
-      s->cache_info.object_store.request_set(&s->hdr_info.client_request);
-      s->cache_info.object_store.response_set(&s->hdr_info.server_response);
-
-      if (s->http_config_param->wuts_enabled)
-        HttpTransactHeaders::convert_wuts_code_to_normal_reason(s->cache_info.object_store.response_get());
-
-      /////////////////////////////////////////////////////////////
-      // Remove the VIA field from headers for the cache since   //
-      //  the proxy genrated it as part of the client response   //
-      //  contruction.  Ftp servers do not send VIA headers      //
-      /////////////////////////////////////////////////////////////
-      s->cache_info.object_store.response_get()->field_delete(MIME_FIELD_VIA, MIME_LEN_VIA);
-
-      HTTP_DEBUG_ASSERT(s->request_sent_time <= s->response_received_time);
-    } else {
-      Debug("http_trans", "[HandleFtpResponse] Ftp response not cacheable.");
-      s->cache_info.action = CACHE_DO_NO_ACTION;
-      s->next_action = FTP_READ;
-    }
-  } else {
-    HTTP_DEBUG_ASSERT(!"Invalid Ftp method.");
-  }
-
-  return;
-}
-#endif //INK_NO_FTP
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : OriginServerRawOpen
@@ -4275,8 +3791,6 @@ HttpTransact::handle_response_from_server(State * s)
   case PARSE_ERROR:
     /* fall through */
   case CONNECTION_CLOSED:
-    /* fall through */
-  case FTP_OPEN_FAILED:
     /* fall through */
   case BAD_INCOMING_RESPONSE:
     s->current.server->connect_failure = 1;
@@ -5546,9 +5060,6 @@ HttpTransact::handle_transform_ready(State * s)
     case SOURCE_HTTP_ORIGIN_SERVER:
       transform_store_request = &s->hdr_info.server_request;
       break;
-    case SOURCE_FTP_ORIGIN_SERVER:
-      transform_store_request = &s->hdr_info.client_request;
-      break;
     default:
       ink_release_assert(0);
     }
@@ -6154,9 +5665,6 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
   if (!((scheme == URL_WKSIDX_HTTP) && (method == HTTP_WKSIDX_GET))) {
 
     if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS &&
-#ifndef INK_NO_FTP
-        scheme != URL_WKSIDX_FTP &&
-#endif
         method != HTTP_WKSIDX_CONNECT) {
       if (scheme < 0) {
         return NO_REQUEST_SCHEME;
@@ -6166,7 +5674,7 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
     }
 
     if (!HttpTransactHeaders::is_this_method_supported(scheme, method)) {
-      return ((scheme == URL_WKSIDX_FTP) ? FTP_METHOD_NOT_SUPPORTED : METHOD_NOT_SUPPORTED);
+      return METHOD_NOT_SUPPORTED;
     }
     if ((method == HTTP_WKSIDX_CONNECT) && (!is_ssl_port_ok(s, incoming_hdr->url_get()->port_get()))) {
 
@@ -6247,23 +5755,6 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
   }
 
   return NO_REQUEST_HEADER_ERROR;
-}
-
-HttpTransact::ResponseError_t HttpTransact::check_ftp_response_validity(State * s)
-{
-  ink_assert(s->next_hop_scheme == URL_WKSIDX_FTP);
-
-  // request may have required authorization information.
-  if (s->ftp_info->last_error == EFTP_LOGIN_INCORRECT) {
-    return FTP_LOGIN_INCORRECT;
-  }
-  // connection problem. ftp open failed. not much else
-  // to do, but bail out.
-  if (s->current.state == FTP_OPEN_FAILED) {
-    return FTP_CONNECTION_OPEN_FAILED;
-
-  }
-  return NO_RESPONSE_HEADER_ERROR;
 }
 
 HttpTransact::ResponseError_t HttpTransact::check_response_validity(State * s, HTTPHdr * incoming_hdr)
@@ -7193,22 +6684,6 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
     return false;
   }
 
-  if (s->scheme == URL_WKSIDX_FTP) {
-    bool
-      request_has_username =
-      (s->ftp_info->username && s->ftp_info->username[0] &&
-       (strcmp(s->ftp_info->username, "anonymous") != 0) && (strcmp(s->ftp_info->username, "ftp") != 0));
-
-    if (request_has_username) {
-      return (false);
-    }
-    if (!s->http_config_param->cache_ftp) {
-      return (false);
-    }
-    if (s->ftp_info->is_directory) {
-      return (false);
-    }
-  }
   // check if cache control overrides default cacheability
   int indicator;
   indicator = response_cacheable_indicated_by_cc(response);
@@ -7401,14 +6876,6 @@ HttpTransact::is_request_valid(State * s, HTTPHdr * incoming_request)
     Debug("http_trans", "[is_request_valid]" "unsupported method");
     s->current.mode = TUNNELLING_PROXY;
     return TRUE;
-  case FTP_METHOD_NOT_SUPPORTED:
-    {
-      Debug("http_trans", "[is_request_valid] unsupported ftp method");
-      SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Unsupported FTP Method", "ftp#unsupported_method",
-                           const_cast < char *>(URL_MSG));
-      return FALSE;
-    }
   case BAD_SSL_PORT:
     int port;
     port = url ? url->port_get() : 0;
@@ -7440,34 +6907,6 @@ HttpTransact::is_request_valid(State * s, HTTPHdr * incoming_request)
   }
 
   return TRUE;
-}
-
-bool
-HttpTransact::is_ftp_response_valid(State * s)
-{
-
-  s->hdr_info.response_error = check_ftp_response_validity(s);
-
-  switch (s->hdr_info.response_error) {
-  case FTP_LOGIN_INCORRECT:
-    HTTP_DEBUG_ASSERT(s->scheme == URL_WKSIDX_FTP);
-    Debug("http_trans", "[is_ftp_response_valid] Response Error: ftp login incorrect");
-    s->current.state = FTP_OPEN_FAILED;
-    return false;
-
-  case FTP_CONNECTION_OPEN_FAILED:
-    HTTP_DEBUG_ASSERT(s->scheme == URL_WKSIDX_FTP);
-    Debug("http_trans", "[is_ftp_response_valid] Response Error: ftp connection open failed");
-    s->current.state = FTP_OPEN_FAILED;
-    return false;
-  default:
-    Debug("http_trans", "[is_ftp_response_valid] Errors in response");
-    s->current.state = BAD_INCOMING_RESPONSE;
-    return false;
-  case NO_RESPONSE_HEADER_ERROR:
-    Debug("http_trans", "[is_response_valid] No errors in response");
-    return true;
-  }
 }
 
 // bool HttpTransact::is_request_retryable
@@ -7507,8 +6946,8 @@ HttpTransact::is_response_valid(State * s, HTTPHdr * incoming_response)
                       (s->current.state == CONNECTION_CLOSED) ||
                       (s->current.state == INACTIVE_TIMEOUT) ||
                       (s->current.state == ACTIVE_TIMEOUT) ||
-                      (s->current.state == FTP_OPEN_FAILED) || (s->current.state == CONGEST_CONTROL_CONGESTED_ON_M)
-                      || (s->current.state == CONGEST_CONTROL_CONGESTED_ON_F));
+                      (s->current.state == CONGEST_CONTROL_CONGESTED_ON_M) ||
+                      (s->current.state == CONGEST_CONTROL_CONGESTED_ON_F));
 
     s->hdr_info.response_error = CONNECTION_OPEN_FAILED;
     return false;
@@ -7551,14 +6990,9 @@ HttpTransact::is_response_valid(State * s, HTTPHdr * incoming_response)
     return false;
 
   case MISSING_STATUS_CODE:
-    if (s->next_hop_scheme == URL_WKSIDX_FTP) {
-      Debug("http_trans", "[is_response_valid] Response Error: Missing status code - allowing");
-      return true;
-    } else {
-      Debug("http_trans", "[is_response_valid] Response Error: Missing status code");
-      s->current.state = BAD_INCOMING_RESPONSE;
-      return false;
-    }
+    Debug("http_trans", "[is_response_valid] Response Error: Missing status code");
+    s->current.state = BAD_INCOMING_RESPONSE;
+    return false;
 
   default:
     Debug("http_trans", "[is_response_valid] Errors in response");
@@ -7587,135 +7021,6 @@ bool
 HttpTransact::service_transaction_in_proxy_only_mode(State * s)
 {
   return false;
-}
-
-//////////////////////////////////////////////////////////////////
-//
-//  HttpTransact::setup_ftp_request()
-//
-//  setup ftp path, user name and password
-//////////////////////////////////////////////////////////////////
-bool
-HttpTransact::setup_ftp_request(State * s)
-{
-#ifndef INK_NO_FTP
-  HTTPHdr *r = &s->hdr_info.client_request;
-  MimeTableEntry *e = NULL;
-  const char *t;
-  int j;
-
-  char *tmp;
-  int ftp_path_len, user_name_len, password_len, ftp_filename_len;
-
-  // Create the struct for holding ftp info
-  s->ftp_info = (FtpInfo *) s->arena.alloc(sizeof(FtpInfo));
-  s->ftp_info->init();
-
-  ///////////////////////////////////////////////////////
-  // get ftp path. separate the path from the filename //
-  // path1/file1  => [path1, file1]
-  // path1/file1  => [path1, file1]
-  // file1        => [., file1]
-  ///////////////////////////////////////////////////////
-  t = r->url_get()->path_get(&ftp_path_len);
-  if (!t)
-    return false;               // This probably shouldn't happen ...
-
-  if (t[0] == '/') {
-    t++;
-    ftp_path_len--;
-  }                             // a bug in
-
-  for (j = ftp_path_len - 1; j >= 0; j--) {
-    if (t[j] == '/') {
-      // make a copy of the path name
-      bool filename_exists = (j < ftp_path_len - 1);
-      ftp_filename_len = (filename_exists) ? (ftp_path_len - j - 1) : 0;
-
-      ftp_path_len = j;
-      s->ftp_info->path = URL::unescapify(&s->arena, &t[0], ftp_path_len);
-
-      if (filename_exists) {    // not ending with '/'. There is a filename
-        s->ftp_info->filename = URL::unescapify(&s->arena, &t[j + 1], ftp_filename_len);
-      }
-      break;
-    }
-  }
-  if (j == -1 && s->ftp_info->path == 0) {      // no '/' found
-    // don't default to "." for directory here
-    s->ftp_info->path = NULL;
-    if (t && t[0] != '\0')
-      s->ftp_info->filename = URL::unescapify(&s->arena, t, ftp_path_len);
-  }
-  /////////////////////////////////////////////////////////////////
-  // get user name and password.                                 //
-  // If an Authorization header field exist, try to get the user //
-  // name and password from there. Else try to get them from the //
-  // url.                                                        //
-  /////////////////////////////////////////////////////////////////
-  if (r->presence(MIME_PRESENCE_AUTHORIZATION)) {
-    if (!HttpTransactHeaders::generate_basic_authorization_from_request(&s->arena, r, (char**)&s->ftp_info->username, &s->ftp_info->password)) {
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Bad HTTP Request For FTP Object", "ftp#bad_request", "");
-      s->next_action = PROXY_SEND_ERROR_CACHE_NOOP;;
-      return false;
-    }
-  } else {
-    ////////////////////////////
-    // get user name from url //
-    ////////////////////////////
-    r->url_get()->user_get(&user_name_len);
-    if (user_name_len == 0) {
-      s->ftp_info->username = "anonymous";
-      s->ftp_info->password = s->http_config_param->ftp_anonymous_passwd;
-    } else {
-      /////////////////////////////////////////
-      // get user name and password from url //
-      /////////////////////////////////////////
-      char anon[] = "anonymous";
-      char ftp[] = "ftp";
-      tmp = (char *) r->url_get()->user_get(&user_name_len);
-      s->ftp_info->username = s->arena.str_store(tmp, user_name_len);
-      tmp = (char *) r->url_get()->password_get(&password_len);
-      s->ftp_info->password = s->arena.str_store(tmp, password_len);
-      if (password_len <= 0 &&
-          ((ptr_len_cmp
-            (s->ftp_info->username, user_name_len, anon,
-             sizeof(anon) - 1) == 0) ||
-           (ptr_len_cmp(s->ftp_info->username, user_name_len, ftp, sizeof(ftp) - 1) == 0))) {
-        s->ftp_info->password = s->http_config_param->ftp_anonymous_passwd;
-      }
-    }
-  }
-  ////////////////////////
-  // Get mime type info //
-  ////////////////////////
-  e = (s->ftp_info->filename) ? (mimeTable.get_entry_path(s->ftp_info->filename)) : (0);
-  if (e && strcmp(e->name, "unknown") == 0)
-    e = &unknown_ftp_mime_type;
-  s->ftp_info->mime_type = e;
-
-  /////////////////////////////////////////////
-  // set ftp type. If it not explicit in the //
-  // url then get it from the mime entry     //
-  /////////////////////////////////////////////
-  s->ftp_info->transfer_mode = r->url_get()->type_get();
-  if (s->ftp_info->transfer_mode == 0) {
-    if (!s->ftp_info->filename)
-      s->ftp_info->transfer_mode = 'A'; // directory (ASCII)
-    else if (s->http_config_param->ftp_binary_transfer_only)
-      s->ftp_info->transfer_mode = 'I';
-    else if (!s->ftp_info->mime_type)
-      s->ftp_info->transfer_mode = 'I'; // no mime type, use default (binary)
-    else if (strcmp(s->ftp_info->mime_type->mime_encoding, "7bit") == 0)
-      s->ftp_info->transfer_mode = 'A'; // text files (ASCII)
-    else
-      s->ftp_info->transfer_mode = 'I'; // all other mime encodings (binary)
-  }
-
-  return (true);
-#else
-  return (false);
-#endif //INK_NO_FTP
 }
 
 bool
@@ -8919,11 +8224,6 @@ HttpTransact::handle_server_died(State * s)
     reason = "Tunnel Connection Failed";
     body_type = "connect#failed_connect";
     break;
-  case FTP_OPEN_FAILED:
-    status = HTTP_STATUS_BAD_GATEWAY;
-    reason = "FTP Connection Failed";
-    body_type = "connect#failed_connect";
-    break;
   case CONNECTION_CLOSED:
     status = HTTP_STATUS_BAD_GATEWAY;
     reason = "Server Hangup";
@@ -8990,16 +8290,6 @@ HttpTransact::handle_server_died(State * s)
   ////////////////////////////////////////////////////////
 
   switch (s->hdr_info.response_error) {
-  case FTP_CONNECTION_OPEN_FAILED:
-    status = HTTP_STATUS_BAD_GATEWAY;
-    reason = "FTP Error";
-    body_type = "ftp#error";
-    break;
-  case FTP_LOGIN_INCORRECT:
-    status = HTTP_STATUS_UNAUTHORIZED;
-    reason = "FTP Authentication Required";
-    body_type = "ftp#auth_required";
-    break;
   case NON_EXISTANT_RESPONSE_HEADER:
     status = HTTP_STATUS_BAD_GATEWAY;
     reason = "No Response Header From Server";
@@ -9016,7 +8306,6 @@ HttpTransact::handle_server_died(State * s)
     body_type = "response#bad_response";
     break;
   case MISSING_STATUS_CODE:
-    HTTP_ASSERT(s->next_hop_scheme != URL_WKSIDX_FTP);
     status = HTTP_STATUS_BAD_GATEWAY;
     reason = "Malformed Server Response Status";
     body_type = "response#bad_response";
@@ -9030,16 +8319,8 @@ HttpTransact::handle_server_died(State * s)
     reason = "Server Connection Failed";
     body_type = "connect#failed_connect";
   }
-  /////////////////////////////////////////////////
-  // now add a default body, which is either the //
-  // ftp error text or the reason phrase         //
-  /////////////////////////////////////////////////
-  const char *body_text;
-  if ((s->next_hop_scheme == URL_WKSIDX_FTP) && (s->ftp_info->error_msg))
-    body_text = s->ftp_info->error_msg;
-  else
-    body_text = reason;         // Reason can never be NULL here (see above)
-  build_error_response(s, status, reason, body_type, body_text);
+
+  build_error_response(s, status, reason, body_type, reason);
 
   return;
 }
@@ -9688,183 +8969,6 @@ HttpTransact::get_error_string(int erno)
   }
 }
 
-#ifndef INK_NO_FTP
-/////////////////////////////////////////////////////////////////////////
-// Somewhat nasty of a solution for translating reply codes into
-// reason phrases for ftp servers that do not provide them. This 
-// is rare, but I lifted these directly from the FTP rfc. If nothing
-// else this will prevent us from serving error pages with no error
-// string. 
-// I went ahead a listed all the reply codes, not just the errors below.
-// nasty, but I needed a quick solution.
-/////////////////////////////////////////////////////////////////////////
-const char *
-HttpTransact::FtpReplyCodeToReasonPhrase(int code)
-{
-  const char *msg = "Unspecified Reply";
-
-  switch (code) {
-  case 110:
-    msg = "Restart marker reply";
-    break;
-  case 120:
-    msg = "Service ready shortly, please try again later";
-    break;
-  case 125:
-    msg = "Data connection already open; transfer starting";
-    break;
-  case 150:
-    msg = "File status okay; about to open data connection";
-    break;
-  case 200:
-    msg = "Command okay";
-    break;
-  case 202:
-    msg = "Command not implemented";
-    break;
-  case 211:
-    msg = "System status";
-    break;
-  case 212:
-    msg = "Directory status";
-    break;
-  case 213:
-    msg = "File status";
-    break;
-  case 214:
-    msg = "Help message";
-    break;
-  case 215:
-    msg = "NAME system type";
-    break;
-  case 220:
-    msg = "Service ready for new user";
-    break;
-  case 221:
-    msg = "Service closing control connection";
-    break;
-  case 225:
-    msg = "Data connection open; no transfer in progress";
-    break;
-  case 226:
-    msg = "Closing data connection. Requested file action successful";
-    break;
-  case 227:
-    msg = "Entering Passive Mode";
-    break;
-  case 230:
-    msg = "User logged in, proceed";
-    break;
-  case 250:
-    msg = "Requested file action completed";
-    break;
-  case 257:
-    msg = "PATHNAME created";
-    break;
-  case 331:
-    msg = "User name okay, need password";
-    break;
-  case 332:
-    msg = "Need account for login";
-    break;
-  case 350:
-    msg = "Requested file action pending further information";
-    break;
-  case 421:
-    msg = "Service not available";
-    break;
-  case 425:
-    msg = "Can't open data connection";
-    break;
-  case 426:
-    msg = "Connection closed; transfer aborted";
-    break;
-  case 450:
-    msg = "Request failed, file unavailable";
-    break;
-  case 451:
-    msg = "Request aborted; local error in processing";
-    break;
-  case 452:
-    msg = "Request aborted; Insufficient storage space on system";
-    break;
-  case 500:
-    msg = "Syntax error, command unrecognized";
-    break;
-  case 501:
-    msg = "Syntax error in parameters or arguments";
-    break;
-  case 502:
-    msg = "Command not implemented";
-    break;
-  case 503:
-    msg = "Bad sequence of commands";
-    break;
-  case 504:
-    msg = "Command not implemented for given parameter";
-    break;
-  case 530:
-    msg = "Not logged in";
-    break;
-  case 532:
-    msg = "Need account for storing files";
-    break;
-  case 550:
-    msg = "File not found or access is denied";
-    break;
-  case 551:
-    msg = "Request aborted; page type unknown";
-    break;
-  case 552:
-    msg = "Request aborted; Exceeded storage allocation";
-    break;
-  case 553:
-    msg = "Request aborted; file name not allowed";
-    break;
-  default:
-    msg = "Unspecified Reply";
-    break;
-  }
-  return (msg);
-}
-
-void
-HttpTransact::SetFtpErrorMessage(State * s, IOBufferReader * error_message_reader)
-{
-  int message_len = error_message_reader->read_avail();
-
-  if (s->ftp_info->error_msg) {
-    xfree(s->ftp_info->error_msg);
-  }
-  if (message_len > 0) {
-    s->ftp_info->error_msg = (char *) xmalloc(message_len + 1);
-    error_message_reader->memcpy(s->ftp_info->error_msg, message_len, 0);
-    s->ftp_info->error_msg[message_len] = '\0';
-  } else {
-    ////////////////////////////
-    // no error message input //
-    ////////////////////////////
-    s->ftp_info->error_msg = 0;
-  }
-
-  if (!s->ftp_info->error_msg || strcmp(s->ftp_info->error_msg, "") == 0) {
-    ////////////////////////////////////////////
-    // There was no message text from the ftp //
-    // server, or there was an ftp connection //
-    // error. use our own message text.       //
-    ////////////////////////////////////////////
-    const char *msg = FtpReplyCodeToReasonPhrase(s->ftp_info->last_reply_code);
-    if (msg) {
-      if (s->ftp_info->error_msg) {
-        xfree(s->ftp_info->error_msg);
-      }
-      s->ftp_info->error_msg = xstrdup(msg);
-    }
-  }
-
-  return;
-}
-#endif //INK_NO_FTP
 
 volatile ink_time_t global_time;
 volatile ink32 cluster_time_delta;
@@ -10000,58 +9104,56 @@ HttpTransact::client_result_stat(State * s, ink_hrtime total_time, ink_hrtime re
   switch (s->squid_codes.log_code) {
   case SQUID_LOG_ERR_CONNECT_FAIL:
   case SQUID_LOG_ERR_SPIDER_CONNECT_FAILED:
-    HTTP_INCREMENT_TRANS_STAT((s->scheme == URL_WKSIDX_FTP) ? ftp_cache_misses_stat : http_cache_miss_cold_stat);
+    HTTP_INCREMENT_TRANS_STAT(http_cache_miss_cold_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL;
     break;
 
   case SQUID_LOG_TCP_HIT:
   case SQUID_LOG_TCP_MEM_HIT:
     // It's possible to have two stat's instead of one, if needed.
-    HTTP_INCREMENT_TRANS_STAT((s->scheme == URL_WKSIDX_FTP) ? ftp_cache_hits_stat : http_cache_hit_fresh_stat);
+    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_fresh_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_REFRESH_HIT:
-    HTTP_INCREMENT_TRANS_STAT((s->scheme == URL_WKSIDX_FTP) ? ftp_cache_hits_stat : http_cache_hit_reval_stat);
+    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_reval_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_REVALIDATED;
     break;
 
   case SQUID_LOG_TCP_IMS_HIT:
-    HTTP_INCREMENT_TRANS_STAT((s->scheme == URL_WKSIDX_FTP) ? ftp_cache_hits_stat : http_cache_hit_ims_stat);
+    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_ims_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_REF_FAIL_HIT:
-    HTTP_INCREMENT_TRANS_STAT((s->scheme == URL_WKSIDX_FTP) ? ftp_cache_hits_stat : http_cache_hit_stale_served_stat);
+    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_stale_served_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_MISS:
     if ((GET_VIA_STRING(VIA_CACHE_RESULT) == VIA_IN_CACHE_NOT_ACCEPTABLE)
         || (GET_VIA_STRING(VIA_CACHE_RESULT) == VIA_CACHE_MISS)) {
-      HTTP_INCREMENT_TRANS_STAT((s->scheme == URL_WKSIDX_FTP) ? ftp_cache_misses_stat : http_cache_miss_cold_stat);
+      HTTP_INCREMENT_TRANS_STAT(http_cache_miss_cold_stat);
       client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_COLD;
     } else {
       // FIX: what case is this for?  can it ever happen?
-      HTTP_INCREMENT_TRANS_STAT((s->scheme ==
-                                 URL_WKSIDX_FTP) ? ftp_cache_misses_stat : http_cache_miss_uncacheable_stat);
+      HTTP_INCREMENT_TRANS_STAT(http_cache_miss_uncacheable_stat);
       client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_UNCACHABLE;
     }
     break;
 
   case SQUID_LOG_TCP_REFRESH_MISS:
-    HTTP_INCREMENT_TRANS_STAT((s->scheme == URL_WKSIDX_FTP) ? ftp_cache_misses_stat : http_cache_miss_changed_stat);
+    HTTP_INCREMENT_TRANS_STAT(http_cache_miss_changed_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_CHANGED;
     break;
 
   case SQUID_LOG_TCP_CLIENT_REFRESH:
-    HTTP_INCREMENT_TRANS_STAT((s->scheme ==
-                               URL_WKSIDX_FTP) ? ftp_cache_misses_stat : http_cache_miss_client_no_cache_stat);
+    HTTP_INCREMENT_TRANS_STAT(http_cache_miss_client_no_cache_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_CLIENT_NO_CACHE;
     break;
 
   case SQUID_LOG_TCP_IMS_MISS:
-    HTTP_INCREMENT_TRANS_STAT((s->scheme == URL_WKSIDX_FTP) ? ftp_cache_misses_stat : http_cache_miss_ims_stat);
+    HTTP_INCREMENT_TRANS_STAT(http_cache_miss_ims_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_COLD;
     break;
 
@@ -10467,11 +9569,6 @@ HttpTransact::delete_warning_value(HTTPHdr * to_warn, HTTPWarningCode warning_co
     }
   }
 }
-
-MimeTableEntry unknown_ftp_mime_type = { "ftp_unknown", "application/octet-stream", "binary", "unknown" };
-
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////

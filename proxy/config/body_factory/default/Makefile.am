@@ -31,10 +31,6 @@ dist_bodyfactory_DATA = \
   connect\#failed_connect \
   connect\#hangup \
   default \
-  ftp\#auth_required \
-  ftp\#bad_request \
-  ftp\#error \
-  ftp\#unsupported_method \
   interception\#no_host \
   README \
   redirect\#moved_temporarily \

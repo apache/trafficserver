@@ -60,52 +60,9 @@
         <destination>proxy.node.http.origin_server_current_connections_count</destination>
         <destination scope="cluster">proxy.cluster.http.origin_server_current_connections_count</destination>
         <expression>
-            proxy.process.http.current_server_connections +
-            proxy.process.ftp.connections_currently_open
+            proxy.process.http.current_server_connections
         </expression>
     </statistics>
-
-
-    <!-- FTP -->
-    <statistics
-	minimum="0">
-        <destination>proxy.node.ftp.user_agents_total_documents_served</destination>
-        <destination scope="cluster">proxy.cluster.ftp.user_agents_total_documents_served</destination>
-        <expression>
-            proxy.process.ftp.incoming_requests
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.ftp.current_server_connections</destination>
-        <destination scope="cluster">proxy.cluster.ftp.current_server_connections</destination>
-       <expression>
-            proxy.process.ftp.current_server_connections
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.ftp.current_client_connections</destination>
-        <destination scope="cluster">proxy.cluster.ftp.current_client_connections</destination>
-        <expression>
-            proxy.process.ftp.current_client_connections
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.ftp.current_cache_connections</destination>
-        <destination scope="cluster">proxy.cluster.ftp.current_cache_connections</destination>
-        <expression>
-            proxy.process.ftp.current_cache_connections
-        </expression>
-    </statistics>
-
 
     <!-- RNI -->
     <statistics
@@ -560,20 +517,6 @@
         </expression>
     </statistics>
 
-  
-    <statistics
-        interval="10"
-	minimum="0">
-        <destination>proxy.node.ftp.user_agent_xacts_per_second</destination>
-        <destination scope="cluster">proxy.cluster.ftp.user_agent_xacts_per_second</destination>
-        <expression>
-            #proxy.process.ftp.incoming_requests *
-            $HRTIME_SECOND                  /
-            _DIFFTIME
-        </expression>
-    </statistics>
-
-  
     <statistics
         interval="10"
 	minimum="0">
@@ -633,7 +576,6 @@
         <destination scope="cluster">proxy.cluster.user_agent_xacts_per_second</destination>
         <expression>
             proxy.node.http.user_agent_xacts_per_second  +
-            proxy.node.ftp.user_agent_xacts_per_second   +
             proxy.node.rni.user_agent_xacts_per_second   +
             proxy.node.wmt.user_agent_xacts_per_second   +
             proxy.node.qt.user_agent_xacts_per_second    +
@@ -650,7 +592,6 @@
         <destination>proxy.node.user_agents_total_documents_served</destination>
         <expression>
             proxy.node.http.user_agents_total_documents_served +
-            proxy.node.ftp.user_agents_total_documents_served  +
             proxy.node.rni.user_agents_total_documents_served  +
             proxy.node.wmt.user_agents_total_documents_served  +
             proxy.node.qt.user_agents_total_documents_served   +
@@ -747,17 +688,6 @@
 
     <statistics
 	minimum="0">
-        <destination>proxy.node.ftp.downstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.ftp.downstream_total_bytes</destination>
-        <expression>
-            proxy.process.ftp.downstream.request_bytes +
-            proxy.process.ftp.downstream.response_bytes
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
         <destination>proxy.node.rni.downstream_total_bytes</destination>
         <destination scope="cluster">proxy.cluster.rni.downstream_total_bytes</destination>
         <expression>
@@ -846,17 +776,6 @@
 
     <statistics
 	minimum="0">
-        <destination>proxy.node.ftp.upstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.ftp.upstream_total_bytes</destination>
-        <expression>
-            proxy.process.ftp.upstream.request_bytes +
-            proxy.process.ftp.upstream.response_bytes
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
         <destination>proxy.node.rni.upstream_total_bytes</destination>
         <destination scope="cluster">proxy.cluster.rni.upstream_total_bytes</destination>
        <expression>
@@ -907,7 +826,6 @@
         <expression>
             proxy.node.http.user_agent_total_request_bytes  +
             proxy.node.http.user_agent_total_response_bytes +
-            proxy.node.ftp.downstream_total_bytes           +
             proxy.node.rni.downstream_total_bytes           +
             proxy.node.wmt.downstream_total_bytes           +
             proxy.node.qt.downstream_total_bytes            +
@@ -925,7 +843,6 @@
             proxy.node.http.origin_server_total_response_bytes +
             proxy.node.http.parent_proxy_total_request_bytes   +
             proxy.node.http.parent_proxy_total_response_bytes  +
-            proxy.node.ftp.upstream_total_bytes                +
             proxy.node.rni.upstream_total_bytes                +
             proxy.node.wmt.upstream_total_bytes                +
             proxy.node.qt.upstream_total_bytes                 +
@@ -1019,7 +936,6 @@
         <expression>
             (
             #proxy.node.http.user_agent_total_response_bytes +
-            #proxy.node.ftp.downstream_total_bytes           +
             #proxy.node.rni.downstream_total_bytes           +
             #proxy.node.wmt.downstream_total_bytes           +
             #proxy.node.qt.downstream_total_bytes            +
@@ -1080,26 +996,6 @@
         <destination>proxy.node.http.cache_hit_stale_served_avg_10s</destination>
         <expression>
             #proxy.process.http.cache_hit_stale_served
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.ftp.cache_hits_avg_10s</destination>
-        <expression>
-            #proxy.process.ftp.cache_hits
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.ftp.cache_hit_fresh_avg_10s</destination>
-        <expression>
-            #proxy.process.ftp.cache_hit_fresh
         </expression>
     </statistics>
 
@@ -1205,26 +1101,6 @@
 
 
     <statistics
-        interval="10"
-	minimum="0">
-        <destination>proxy.node.ftp.cache_misses_avg_10s</destination>
-        <expression>
-            #proxy.process.ftp.cache_misses
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.ftp.cache_miss_cold_avg_10s</destination>
-        <expression>
-            #proxy.process.ftp.cache_miss_cold
-        </expression>
-    </statistics>
-
-
-    <statistics
 	minimum="0"
         interval="10">
         <destination>proxy.node.rni.block_miss_count_avg_10s</destination>
@@ -1274,8 +1150,6 @@
             proxy.node.http.cache_hit_revalidated_avg_10s  +
             proxy.node.http.cache_hit_ims_avg_10s          +
             proxy.node.http.cache_hit_stale_served_avg_10s +
-            proxy.node.ftp.cache_hits_avg_10s              +
-	    proxy.node.ftp.cache_hit_fresh_avg_10s         +
             proxy.node.rni.block_hit_count_avg_10s         +
             proxy.node.wmt.block_hit_count_avg_10s         +
             proxy.node.qt.block_hit_count_avg_10s          +
@@ -1296,8 +1170,6 @@
             proxy.node.http.cache_miss_client_no_cache_avg_10s +
             proxy.node.http.cache_miss_ims_avg_10s             +
             proxy.node.http.cache_read_error_avg_10s           +
-            proxy.node.ftp.cache_misses_avg_10s                +
-	    proxy.node.ftp.cache_miss_cold_avg_10s             +
             proxy.node.rni.block_miss_count_avg_10s            +
             proxy.node.wmt.block_miss_count_avg_10s            +
             proxy.node.qt.block_miss_count_avg_10s             +
@@ -1343,8 +1215,6 @@
             proxy.process.http.cache_hit_revalidated  +
             proxy.process.http.cache_hit_ims          +
             proxy.process.http.cache_hit_stale_served +
-            proxy.process.ftp.cache_hits              +
-	    proxy.process.ftp.cache_hit_fresh         +
             proxy.process.rni.block_hit_count         +
             proxy.process.wmt.block_hit_count         +
             proxy.process.qt.block_hit_count          +
@@ -1364,8 +1234,6 @@
             proxy.process.http.cache_miss_client_no_cache +
             proxy.process.http.cache_miss_ims             +
             proxy.process.http.cache_read_error           +
-            proxy.process.ftp.cache_misses                +
-	    proxy.process.ftp.cache_miss_cold             +
             proxy.process.rni.block_miss_count            +
             proxy.process.wmt.block_miss_count            +
             proxy.process.qt.block_miss_count             +
@@ -2376,7 +2244,6 @@
         <destination scope="cluster">proxy.cluster.current_client_connections</destination>
         <expression>
             proxy.node.http.user_agent_current_connections_count +
-            proxy.node.ftp.current_client_connections            +
             proxy.node.rni.current_client_connections            +
             proxy.node.wmt.current_client_connections            +
             proxy.node.qt.current_client_connections             +
@@ -2392,7 +2259,6 @@
         <expression>
             proxy.node.http.origin_server_current_connections_count +
             proxy.node.http.current_parent_proxy_connections        +
-            proxy.node.ftp.current_server_connections               + 
             proxy.node.rni.current_server_connections               +
             proxy.node.wmt.current_server_connections               +
             proxy.node.qt.current_server_connections                +
@@ -2407,7 +2273,6 @@
         <destination scope="cluster">proxy.cluster.current_cache_connections</destination>
         <expression>
             proxy.node.http.cache_current_connections_count +
-            proxy.node.ftp.current_cache_connections        +
             proxy.node.rni.current_cache_connections	    +
             proxy.node.wmt.current_cache_connections        +
             proxy.node.qt.current_cache_connections         +

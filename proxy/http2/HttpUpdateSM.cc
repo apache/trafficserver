@@ -158,33 +158,6 @@ HttpUpdateSM::handle_api_return()
 #endif //INK_NO_TRANSFORM
   case HttpTransact::PROXY_INTERNAL_CACHE_WRITE:
   case HttpTransact::SERVER_READ:
-  case HttpTransact::FTP_READ:
-    {
-      // If we are supposed to write the document to the cache,
-      //   do so.   Otherwise something else happened.  Probably,
-      //   a non 200 status code from the origin server, like
-      //   a gateway timeout.  In that case, handle the
-      //   cache and declare an error
-      if (t_state.cache_info.action == HttpTransact::CACHE_DO_WRITE ||
-          t_state.cache_info.action == HttpTransact::CACHE_DO_REPLACE) {
-        cb_event = HTTP_SCH_UPDATE_EVENT_WRITTEN;
-#ifndef INK_NO_FTP
-        if (t_state.next_hop_scheme == URL_WKSIDX_FTP) {
-          setup_ftp_transfer_to_cache_only();
-        } else
-#endif //INK_NO_FTP
-        {
-          setup_server_transfer_to_cache_only();
-        }
-        tunnel.tunnel_run();
-      } else {
-        perform_cache_write_action();
-        cb_event = HTTP_SCH_UPDATE_EVENT_ERROR;
-        terminate_sm = true;
-      }
-      return;
-    }
-
   case HttpTransact::PROXY_INTERNAL_CACHE_NOOP:
   case HttpTransact::PROXY_SEND_ERROR_CACHE_NOOP:
   case HttpTransact::SERVE_FROM_CACHE:

@@ -1528,13 +1528,11 @@ UpdateSM::HandleSMEvent(int event, Event * e)
 
 struct dispatch_entry scheme_dispatch_table[UpdateSM::N_SCHEMES] = {
   {&URL_SCHEME_HTTP, UpdateSM::http_scheme},
-  {&URL_SCHEME_FTP, UpdateSM::ftp_scheme},
   {&URL_SCHEME_RTSP, UpdateSM::rtsp_scheme}
 };
 
 struct dispatch_entry scheme_post_dispatch_table[UpdateSM::N_SCHEMES] = {
   {&URL_SCHEME_HTTP, UpdateSM::http_scheme_postproc},
-  {&URL_SCHEME_FTP, UpdateSM::ftp_scheme_postproc},
   {&URL_SCHEME_RTSP, UpdateSM::rtsp_scheme_postproc}
 };
 
@@ -1579,44 +1577,6 @@ UpdateSM::http_scheme_postproc(UpdateSM * sm)
     sm->_return_status = sm->_EN->_update_event_status;
     break;
 
-  case HTTP_SCH_UPDATE_EVENT_WRITTEN:
-  case HTTP_SCH_UPDATE_EVENT_UPDATED:
-  case HTTP_SCH_UPDATE_EVENT_DELETED:
-  case HTTP_SCH_UPDATE_EVENT_NOT_CACHED:
-  case HTTP_SCH_UPDATE_EVENT_NO_ACTION:
-    sm->_EN->_update_event_status = UPDATE_EVENT_SUCCESS;
-    sm->_return_status = UPDATE_EVENT_SUCCESS;
-    break;
-
-  case HTTP_SCH_UPDATE_EVENT_ERROR:
-  default:
-    sm->_EN->_update_event_status = UPDATE_EVENT_FAILED;
-    sm->_return_status = UPDATE_EVENT_FAILED;
-    break;
-  }
-  return 0;
-}
-
-int
-UpdateSM::ftp_scheme(UpdateSM * sm)
-{
-  Debug("update", "Start FTP GET id: %d [%s]", sm->_EN->_id, sm->_EN->_url);
-  HttpUpdateSM *current_reader;
-  Action *a;
-
-  current_reader = HttpUpdateSM::allocate();
-  current_reader->init();
-  a = current_reader->start_scheduled_update(sm, sm->_EN->_http_hdr);
-
-  return 0;
-}
-
-int
-UpdateSM::ftp_scheme_postproc(UpdateSM * sm)
-{
-  // Map HttpUpdateSM return event code to internal status code
-
-  switch (sm->_EN->_update_event_status) {
   case HTTP_SCH_UPDATE_EVENT_WRITTEN:
   case HTTP_SCH_UPDATE_EVENT_UPDATED:
   case HTTP_SCH_UPDATE_EVENT_DELETED:
@@ -2645,16 +2605,8 @@ ObjectReloadCont::Init(Continuation * cont, char *url, int url_len,
     _send_data->fill(total_len);
 
   } else {
-    // FTP case
-
-    total_len = len_GET_METHOD + url_len + len_HTTP_VERSION + len_REQUEST_TERMINATOR;
-    _send_data = new_MIOBuffer(buffer_size_to_index(total_len));
-    memcpy(_send_data->end(), GET_METHOD, len_GET_METHOD);
-    memcpy(&(_send_data->end())[len_GET_METHOD], url, url_len);
-    memcpy(&(_send_data->end())[len_GET_METHOD + url_len], HTTP_VERSION, len_HTTP_VERSION);
-    memcpy(&(_send_data->end())[len_GET_METHOD + url_len + len_HTTP_VERSION],
-           REQUEST_TERMINATOR, len_REQUEST_TERMINATOR);
-    _send_data->fill(total_len);
+    // Unhandled case... TODO: Do we need to actually handle this?
+    ink_debug_assert(false);
   }
   handleEvent(EVENT_IMMEDIATE, (void *) NULL);
 }

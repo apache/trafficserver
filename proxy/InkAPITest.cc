@@ -3283,12 +3283,6 @@ REGRESSION_TEST(SDK_API_INKUrl) (RegressionTest * test, int atype, int *pstatus)
     INKfree(url_string_from_print);
   }
 
-  // FTP Type
-  if (INKUrlSchemeSet(bufp1, url_loc1, INK_URL_SCHEME_FTP, -1) != INK_SUCCESS) {
-    SDK_RPRINT(test, "INKUrlSchemeSet", "TestCase2", TC_FAIL, "INKUrlSchemeSet Returned INK_ERROR");
-    test_passed_scheme = false;
-  }
-
   if (INKUrlFtpTypeSet(bufp1, url_loc1, type) != INK_SUCCESS) {
     SDK_RPRINT(test, "INKUrlFtpTypeSet", "TestCase1", TC_FAIL, "INKUrlFtpTypeSet Returned INK_ERROR");
   } else {
@@ -6710,7 +6704,6 @@ typedef enum
   ORIG_INK_CACHE_DATA_TYPE_MIXT_RTSP,
   ORIG_INK_CACHE_DATA_TYPE_MIXT_WMT,
   ORIG_INK_CACHE_DATA_TYPE_MIXT_QTIME,
-  ORIG_INK_CACHE_DATA_TYPE_FTP,
   ORIG_INK_CACHE_DATA_TYPE_OTHER
 } ORIG_INKCacheDataType;
 
@@ -6879,7 +6872,6 @@ REGRESSION_TEST(SDK_API_INKConstant) (RegressionTest * test, int atype, int *pst
   PRINT_DIFF(INK_CACHE_DATA_TYPE_MIXT_RTSP);
   PRINT_DIFF(INK_CACHE_DATA_TYPE_MIXT_WMT);
   PRINT_DIFF(INK_CACHE_DATA_TYPE_MIXT_QTIME);
-  PRINT_DIFF(INK_CACHE_DATA_TYPE_FTP);
   PRINT_DIFF(INK_CACHE_DATA_TYPE_OTHER);
 
   PRINT_DIFF(INK_CACHE_ERROR_NO_DOC);

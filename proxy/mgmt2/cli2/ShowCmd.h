@@ -44,7 +44,6 @@ typedef enum
   CMD_SHOW_CLUSTER,
   CMD_SHOW_SECURITY,
   CMD_SHOW_HTTP,
-  CMD_SHOW_FTP,
   CMD_SHOW_ICP,
   CMD_SHOW_ICP_PEER,
   CMD_SHOW_PROXY,
@@ -72,7 +71,6 @@ typedef enum
   CMD_SHOW_PROXY_STATS,
   CMD_SHOW_HTTP_TRANS_STATS,
   CMD_SHOW_HTTP_STATS,
-  CMD_SHOW_FTP_STATS,
   CMD_SHOW_ICP_STATS,
   CMD_SHOW_CACHE_STATS,
   CMD_SHOW_HOSTDB_STATS,
@@ -107,7 +105,6 @@ int Cmd_ShowPorts(ClientData clientData, Tcl_Interp * interp, int argc, const ch
 int Cmd_ShowCluster(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowSecurity(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowHttp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int Cmd_ShowFtp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowIcp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_ShowIcp();
 int Cmd_ShowProxy(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
@@ -135,7 +132,6 @@ int CmdArgs_ShowScheduledUpdate();
 int Cmd_ShowProxyStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowHttpTransStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowHttpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int Cmd_ShowFtpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowIcpStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowCacheStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowHostDbStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
@@ -175,9 +171,6 @@ int ShowSecurity();
 
 // show http sub-command
 int ShowHttp();
-
-// show ftp sub-command
-int ShowFtp();
 
 // show icp sub-command
 int ShowIcp();
@@ -263,9 +256,6 @@ int ShowHttpTransStats();
 
 // show proxy-stats sub-command
 int ShowHttpStats();
-
-// show proxy-stats sub-command
-int ShowFtpStats();
 
 // show proxy-stats sub-command
 int ShowIcpStats();

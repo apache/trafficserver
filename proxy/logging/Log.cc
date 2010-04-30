@@ -602,7 +602,6 @@ Log::init_fields()
          SQUID_LOG_ERR_NO_RELAY, "ERR_NO_RELAY",
          SQUID_LOG_ERR_DISK_IO, "ERR_DISK_IO",
          SQUID_LOG_ERR_ZERO_SIZE_OBJECT, "ERR_ZERO_SIZE_OBJECT",
-         SQUID_LOG_ERR_FTP_DISABLED, "ERR_FTP_DISABLED",
          SQUID_LOG_ERR_PROXY_DENIED, "ERR_PROXY_DENIED",
          SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED",
          SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1",
@@ -829,7 +828,6 @@ Log::init_fields()
   Ptr<LogFieldAliasTable> entry_type_map = NEW(new LogFieldAliasTable);
   entry_type_map->init(N_LOG_ENTRY_TYPES,
                        LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP",
-                       LOG_ENTRY_FTP, "LOG_ENTRY_FTP",
                        LOG_ENTRY_ICP, "LOG_ENTRY_ICP", LOG_ENTRY_MIXT, "LOG_ENTRY_MIXT");
   field = NEW(new LogField("log_entry_type", "etype",
                            LogField::sINT,

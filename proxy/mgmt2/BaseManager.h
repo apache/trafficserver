@@ -92,7 +92,6 @@
 #define MGMT_SIGNAL_LIBRECORDS            16
 #define MGMT_SIGNAL_HTTP_CONGESTED_SERVER   20  /* Congestion control -- congested server */
 #define MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER  21  /* Congestion control -- alleviated server */
-#define MGMT_SIGNAL_FTP_ERROR             22
 
 // Wireless (WDA) plugin signal
 // Warning: 1. Don't change the # mapping 'cuase 3rd party software depends on them.

@@ -61,22 +61,6 @@
                   </ul>
                 </td>
               </tr>
-              <tr> 
-                <td height="2" colspan="2" class="configureLabelSmall"><@submit_error_flg proxy.config.http.cache.ftp>FTP over HTTP Caching</td>
-              </tr>
-              <tr> 
-                <td nowrap class="bodyText">
-                  <input type="radio" name="proxy.config.http.cache.ftp" value="1" <@checked proxy.config.http.cache.ftp\1>>
-                    Enabled <br>
-                  <input type="radio" name="proxy.config.http.cache.ftp" value="0" <@checked proxy.config.http.cache.ftp\0>>
-                    Disabled
-                </td>
-                <td class="configureHelp" valign="top" align="left"> 
-                  <ul>
-                    <li>Enables/Disables caching of FTP requests sent via HTTP.
-                  </ul>
-                </td>
-              </tr>
             </table>
           </td>
         </tr>
@@ -209,20 +193,6 @@
                  <td class="configureHelp" valign="top" align="left"> 
                   <ul>
                     <li>Specifies the maximum amount of time that a document in the cache can be considered fresh if an explicit Expires header is not present.
-                  </ul>
-                </td>
-              </tr>
-              <tr> 
-                <td height="2" colspan="2" class="configureLabelSmall"><@submit_error_flg proxy.config.http.ftp.cache.document_lifetime>FTP Document Lifetime</td>
-              </tr>
-              <tr>
-                <td nowrap class="bodyText">
-                  <input type="text" size="6" name="proxy.config.http.ftp.cache.document_lifetime" value="<@record proxy.config.http.ftp.cache.document_lifetime>">
-                </td>
-                 <td class="configureHelp" valign="top" align="left"> 
-                  <ul>
-                    <li>Specifies the maximum amount of time that an FTP document 
-                        can stay in the <@record proxy.config.product_name> cache.
                   </ul>
                 </td>
               </tr>

@@ -172,47 +172,6 @@ LogAccessHttp::marshal_client_auth_user_name(char *buf)
   return len;
 }
 
-/*-------------------------------------------------------------------------
-  Private utility function to remove ftp password, if there is any
-  Only return the size of the new url if buf is null.
-  -------------------------------------------------------------------------*/
-int
-LogAccessHttp::remove_ftp_password(char *buf, const char *url_str, int url_str_len)
-{
-  //INKqa09824
-  if (m_url && url_str_len > 6 && memcmp(url_str, "ftp://", 6) == 0) {
-    const char *pass_word = NULL;
-    int pass_word_len = 0;
-    int len1, len2;
-
-    pass_word = m_url->password_get(&pass_word_len);
-    if (pass_word != NULL && pass_word_len > 0) {
-      pass_word = (const char *) memchr((void *) (url_str + 6), ':', url_str_len - 6);
-      if (pass_word != NULL) {
-        int size = url_str_len - pass_word_len + 6;
-        int tsize = round_strlen(size + 1);     // +1 for trailing 0
-
-        // If buf is not null, perform the removing of the password,
-        // otherwise, just return the size the new url would have been.
-        if (buf != NULL) {
-          char *new_url = (char *) xmalloc(tsize);
-
-          len1 = (int) (pass_word - url_str + 1);
-          len2 = (int) (url_str_len - len1 - pass_word_len);
-          memcpy(new_url, url_str, len1);
-          memcpy(new_url + len1, "*****", 5);
-          memcpy(new_url + len1 + 5, url_str + len1 + pass_word_len, len2);
-          new_url[size - 1] = '\0';
-          marshal_mem(buf, new_url, size - 1, tsize);
-          xfree(new_url);
-        }
-        return tsize;
-      }
-    }
-  }
-
-  return -1;
-}
 
 /*-------------------------------------------------------------------------
   Private utility function to validate m_client_req_unmapped_url_canon_str &
@@ -328,13 +287,9 @@ LogAccessHttp::marshal_client_req_http_method(char *buf)
 int
 LogAccessHttp::marshal_client_req_url(char *buf)
 {
-  int res;
   int len = round_strlen(m_client_req_url_len + 1);     // +1 for trailing 0
-  //INKqa09824
-  res = remove_ftp_password(buf, m_client_req_url_canon_str, m_client_req_url_canon_len);
-  if (res > 0) {
-    len = res;
-  } else if (buf) {
+
+  if (buf) {
     marshal_mem(buf, m_client_req_url_str, m_client_req_url_len, len);
   }
   return len;
@@ -346,13 +301,9 @@ LogAccessHttp::marshal_client_req_url(char *buf)
 int
 LogAccessHttp::marshal_client_req_url_canon(char *buf)
 {
-  int res;
   int len = round_strlen(m_client_req_url_canon_len + 1);
-  //INKqa09824
-  res = remove_ftp_password(buf, m_client_req_url_canon_str, m_client_req_url_canon_len);
-  if (res > 0) {
-    len = res;
-  } else if (buf) {
+
+  if (buf) {
     marshal_mem(buf, m_client_req_url_canon_str, m_client_req_url_canon_len, len);
   }
   return len;
@@ -368,13 +319,9 @@ LogAccessHttp::marshal_client_req_unmapped_url_canon(char *buf)
 
   validate_unmapped_url();
 
-  int res;
   int len = round_strlen(m_client_req_unmapped_url_canon_len + 1);      // +1 for eos
-  //INKqa09824
-  res = remove_ftp_password(buf, m_client_req_unmapped_url_canon_str, m_client_req_unmapped_url_canon_len);
-  if (res > 0) {
-    len = res;
-  } else if (buf) {
+
+  if (buf) {
     marshal_mem(buf, m_client_req_unmapped_url_canon_str, m_client_req_unmapped_url_canon_len, len);
   }
   return len;

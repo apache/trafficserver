@@ -307,19 +307,6 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
       pnum++;
     }
   }
-  // Check to see if we are running FTP
-  RecInt ftp_enabled = REC_readInteger("proxy.config.ftp.ftp_enabled", &found);
-  ink_assert(found);
-  if (found && ftp_enabled) {
-    // Get the FTP port
-    RecInt ftp_port = REC_readInteger("proxy.config.ftp.proxy_server_port", &found);
-    ink_assert(found);
-    if (found) {
-      proxy_server_port[pnum] = (int) ftp_port;
-      ink_strncpy((char *) proxy_server_port_attributes[pnum], "F", sizeof(proxy_server_port_attributes[pnum]));
-      pnum++;
-    }
-  }
   // Check to see if we are running DNS proxy
   RecInt dns_proxy_enabled = REC_readInteger("proxy.config.dns.proxy.enabled", &found);
   ink_assert(found);
@@ -808,10 +795,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER, data_raw);
     break;
     // Congestion Control - end
-  case MGMT_SIGNAL_FTP_ERROR:
-    alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_FTP_ERROR, data_raw);
-    break;
-    // Wireless plugin signal - begin
   case INK_MGMT_SIGNAL_WDA_BILLING_CONNECTION_DIED:
     alarm_keeper->signalAlarm(MGMT_ALARM_WDA_BILLING_CONNECTION_DIED, data_raw);
     break;

@@ -378,8 +378,6 @@ url_scheme_set(HdrHeap * heap, URLImpl * url, const char *scheme_str, int scheme
 
   if (scheme_wks == URL_SCHEME_HTTP)
     url->m_url_type = URL_TYPE_HTTP;
-  else if (scheme_wks == URL_SCHEME_FTP)
-    url->m_url_type = URL_TYPE_FTP;
   else if (scheme_wks == URL_SCHEME_MMS)
     url->m_url_type = URL_TYPE_MMS;
   else if (scheme_wks == URL_SCHEME_MMSU)
@@ -799,19 +797,14 @@ url_length_get(URLImpl * url)
   else
     length += 1;                // +1 for /
 
-  if (url->m_url_type == URL_TYPE_FTP) {
-    if (url->m_type_code)
-      length += 7;              // +7 for ";type=?"
-  } else {
-    if (url->m_ptr_params)
-      length += url->m_len_params + 1;  // +1 for ";"
+  if (url->m_ptr_params)
+    length += url->m_len_params + 1;  // +1 for ";"
 
-    if (url->m_ptr_query)
-      length += url->m_len_query + 1;   // +1 for "?"
+  if (url->m_ptr_query)
+    length += url->m_len_query + 1;   // +1 for "?"
 
-    if (url->m_ptr_fragment)
-      length += url->m_len_fragment + 1;        // +1 for "/"
-  }
+  if (url->m_ptr_fragment)
+    length += url->m_len_fragment + 1;        // +1 for "/"
 
   return (length);
 }
@@ -874,30 +867,22 @@ url_to_string(URLImpl * url, Arena * arena, int *length)
   memcpy(&str[idx], url->m_ptr_path, url->m_len_path);
   idx += url->m_len_path;
 
-  if (url->m_url_type == URL_TYPE_FTP) {
-    if (url->m_type_code) {
-      memcpy(&str[idx], ";type=", 6);
-      idx += 6;
-      str[idx++] = url->m_type_code;
-    }
-  } else {
-    if (url->m_ptr_params) {
-      str[idx++] = ';';
-      memcpy(&str[idx], url->m_ptr_params, url->m_len_params);
-      idx += url->m_len_params;
-    }
+  if (url->m_ptr_params) {
+    str[idx++] = ';';
+    memcpy(&str[idx], url->m_ptr_params, url->m_len_params);
+    idx += url->m_len_params;
+  }
 
-    if (url->m_ptr_query) {
-      str[idx++] = '?';
-      memcpy(&str[idx], url->m_ptr_query, url->m_len_query);
-      idx += url->m_len_query;
-    }
+  if (url->m_ptr_query) {
+    str[idx++] = '?';
+    memcpy(&str[idx], url->m_ptr_query, url->m_len_query);
+    idx += url->m_len_query;
+  }
 
-    if (url->m_ptr_fragment) {
-      str[idx++] = '#';
-      memcpy(&str[idx], url->m_ptr_fragment, url->m_len_fragment);
-      idx += url->m_len_fragment;
-    }
+  if (url->m_ptr_fragment) {
+    str[idx++] = '#';
+    memcpy(&str[idx], url->m_ptr_fragment, url->m_len_fragment);
+    idx += url->m_len_fragment;
   }
 
   str[idx++] = '\0';
@@ -1145,10 +1130,7 @@ skip_ws:
   url_scheme_set(heap, url, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings);
 
   *start = scheme_end;
-  if (scheme_wks == URL_SCHEME_FTP)
-    return url_parse_ftp(heap, url, start, end, copy_strings);
-  else
-    return url_parse_http(heap, url, start, end, copy_strings);
+  return url_parse_http(heap, url, start, end, copy_strings);
 
 done:
   *start = scheme_start;
@@ -1223,10 +1205,7 @@ skip_ws:
   url_scheme_set(heap, url, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings);
 
   *start = scheme_end;
-  if (scheme_wks == URL_SCHEME_FTP)
-    return url_parse_ftp(heap, url, start, end, copy_strings);
-  else
-    return url_parse_http_no_path_component_breakdown(heap, url, start, end, copy_strings);
+  return url_parse_http_no_path_component_breakdown(heap, url, start, end, copy_strings);
 
 done:
   *start = scheme_start;
@@ -1417,72 +1396,6 @@ eof:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-MIMEParseResult
-url_parse_ftp(HdrHeap * heap, URLImpl * url, const char **start, const char *end, bool copy_strings)
-{
-  MIMEParseResult err;
-  const char *cur;
-  const char *path_start = NULL;
-  const char *path_end = NULL;
-  char typecode = 0;
-
-  err = url_parse_internet(heap, url, start, end, copy_strings);
-  if (err < 0)
-    return err;
-
-  cur = *start;
-  if (*start == end)
-    goto done;
-
-  path_start = cur;
-parse_path2:
-  if (*cur == ';') {
-    path_end = cur;
-    GETNEXT(done);
-    goto parse_type1;
-  }
-  GETNEXT(done);
-  goto parse_path2;
-
-parse_type1:
-  if (*cur != 't')
-    goto error;
-  GETNEXT(error);
-  if (*cur != 'y')
-    goto error;
-  GETNEXT(error);
-  if (*cur != 'p')
-    goto error;
-  GETNEXT(error);
-  if (*cur != 'e')
-    goto error;
-  GETNEXT(error);
-  if (*cur != '=')
-    goto error;
-  GETNEXT(error);
-  if ((cur + 1) != end)
-    goto error;
-  typecode = *cur;
-
-done:
-  if (path_start) {
-    if (!path_end)
-      path_end = cur;
-    url_path_set(heap, url, path_start, path_end - path_start, copy_strings);
-  }
-  if (typecode)
-    url_type_set(url, typecode);
-
-  *start = cur;
-  return PARSE_DONE;
-
-error:
-  return PARSE_ERROR;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 // empties params/query/fragment component
 
 MIMEParseResult
@@ -1641,7 +1554,7 @@ url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, 
       ((url->m_len_scheme + url->m_len_user + url->m_len_host
         + url->m_len_params + url->m_len_query + url->m_len_fragment
         + *buf_chars_to_skip_inout) == 0) &&
-      (url->m_url_type != URL_TYPE_FTP) && (1 + url->m_len_path < buf_length - *buf_index_inout)) {
+      (1 + url->m_len_path < buf_length - *buf_index_inout)) {
 
     char *p = buf_start + *buf_index_inout;
     *p++ = '/';
@@ -1689,30 +1602,22 @@ url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, 
                        buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
-  if (url->m_url_type == URL_TYPE_FTP) {
-    if (url->m_type_code) {
-      char c = (char) url->m_type_code;
-      TRY(mime_mem_print(";type=", 6, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print(&c, 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    }
-  } else {
-    if (url->m_ptr_params) {
-      TRY(mime_mem_print(";", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print(url->m_ptr_params, url->m_len_params,
-                         buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    }
+  if (url->m_ptr_params) {
+    TRY(mime_mem_print(";", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(url->m_ptr_params, url->m_len_params,
+                       buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+  }
 
-    if (url->m_ptr_query) {
-      TRY(mime_mem_print("?", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print(url->m_ptr_query, url->m_len_query,
-                         buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    }
+  if (url->m_ptr_query) {
+    TRY(mime_mem_print("?", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(url->m_ptr_query, url->m_len_query,
+                       buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+  }
 
-    if (url->m_ptr_fragment) {
-      TRY(mime_mem_print("#", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-      TRY(mime_mem_print(url->m_ptr_fragment, url->m_len_fragment,
-                         buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    }
+  if (url->m_ptr_fragment) {
+    TRY(mime_mem_print("#", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY(mime_mem_print(url->m_ptr_fragment, url->m_len_fragment,
+                       buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
   return (1);
@@ -1827,7 +1732,6 @@ url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
 
   char buffer[BUFSIZE];
   char *p, *e;
-  char tmpbuf[2];
   const char *strs[13], *ends[13];
   const char *t;
   inku16 port;
@@ -1853,27 +1757,14 @@ url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
   ends[7] = strs[7] + 1;
   ends[8] = strs[8] + url->m_len_path;
 
-  if (url->m_url_type == URL_TYPE_FTP) {
-    tmpbuf[0] = (char) (url->m_type_code);
-    tmpbuf[1] = '\0';
-    strs[9] = ";type=";
-    strs[10] = tmpbuf;
-    strs[11] = NULL;
-    strs[12] = NULL;
-    ends[9] = strs[9] + 6;
-    ends[10] = strs[10] + 1;
-    ends[11] = NULL;
-    ends[12] = NULL;
-  } else {
-    strs[9] = ";";
-    strs[10] = url->m_ptr_params;
-    strs[11] = "?";
-    strs[12] = url->m_ptr_query;
-    ends[9] = strs[9] + 1;
-    ends[10] = strs[10] + url->m_len_params;
-    ends[11] = strs[11] + 1;
-    ends[12] = strs[12] + url->m_len_query;
-  }
+  strs[9] = ";";
+  strs[10] = url->m_ptr_params;
+  strs[11] = "?";
+  strs[12] = url->m_ptr_query;
+  ends[9] = strs[9] + 1;
+  ends[10] = strs[10] + url->m_len_params;
+  ends[11] = strs[11] + 1;
+  ends[12] = strs[12] + url->m_len_query;
 
   p = buffer;
   e = buffer + BUFSIZE;
