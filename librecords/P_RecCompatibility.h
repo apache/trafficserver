@@ -59,8 +59,8 @@ int RecFileExists(const char *file);
 // RecPipe
 //-------------------------------------------------------------------------
 
-RecHandle RecPipeCreate(char *base_path, char *name);
-RecHandle RecPipeConnect(char *base_path, char *name);
+RecHandle RecPipeCreate(const char *base_path, const char *name);
+RecHandle RecPipeConnect(const char *base_path, const char *name);
 int RecPipeClose(RecHandle h_pipe);
 int RecPipeRead(RecHandle h_pipe, char *buf, int size);
 int RecPipeWrite(RecHandle h_pipe, char *buf, int size);
