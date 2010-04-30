@@ -17,59 +17,59 @@ Committers: add modules as needed and any qualifications after your e-mail addre
 
 all/general interest
         jplevyak@apache.org
-	bcall@apache.org
+        bcall@apache.org
 libinktomi++
         jplevyak@apache.org
-	zwoop@apache.org
-	bcall@apache.org
+        zwoop@apache.org
+        bcall@apache.org
         georgep@apache.org
 Event System/Buffering/VIO/VConnection
         jplevyak@apache.org
-	bcall@apache.org
+        bcall@apache.org
         georgep@apache.org
 Network I/O
         jplevyak@apache.org - not including SSL or UDP except where it intersects the other code
-	bcall@apache.org
+        bcall@apache.org
         georgep@apache.org
 Raw Cache and AIO
         jplevyak@apache.org
-	bcall@apache.org
+        bcall@apache.org
         georgep@apache.org
 HTTP Caching
-	bcall@apache.org
+        bcall@apache.org
 Pluggable Cache/NewCacheVC
-	bcall@apache.org
+        bcall@apache.org
 Block-Cache
 Clustering
         jplevyak@apache.org
         georgep@apache.org
 DNS/HostDB
         jplevyak@apache.org
-	zwoop@apache.org
-	bcall@apache.org
+        zwoop@apache.org
+        bcall@apache.org
         georgep@apache.org
 FastIO
 Docs
 Examples/Plugins
-	zwoop@apache.org
-	bcall@apache.org
+        zwoop@apache.org
+        bcall@apache.org
 librecords
-	bcall@apache.org
+        bcall@apache.org
         georgep@apache.org
 HDRs
-	bcall@apache.org
+        bcall@apache.org
 HTTP
-	bcall@apache.org
+        bcall@apache.org
 Remap
-	zwoop@apache.org
-	bcall@apache.org
+        zwoop@apache.org
+        bcall@apache.org
 API
-	zwoop@apache.org
-	bcall@apache.org
+        zwoop@apache.org
+        bcall@apache.org
         georgep@apache.org
 Config
-	zwoop@apache.org
-	bcall@apache.org
+        zwoop@apache.org
+        bcall@apache.org
         georgep@apache.org
 Congest
 DNS Cache
@@ -78,9 +78,9 @@ Logging
 MGMT
         georgep@apache.org
 Stats
-	bcall@apache.org
+        bcall@apache.org
         georgep@apache.org
 Build System
         zwoop@apache.org
-	bcall@apache.org
+        bcall@apache.org
         georgep@apache.org
