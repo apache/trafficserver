@@ -156,7 +156,7 @@ RecFileExists(const char *file)
 //-------------------------------------------------------------------------
 
 RecHandle
-RecPipeCreate(char *base_path, char *name)
+RecPipeCreate(const char *base_path, const char *name)
 {
 
   RecHandle listenfd;
@@ -233,7 +233,7 @@ RecPipeCreate(char *base_path, char *name)
 //-------------------------------------------------------------------------
 
 RecHandle
-RecPipeConnect(char *base_path, char *name)
+RecPipeConnect(const char *base_path, const char *name)
 {
 
   RecHandle sockfd;
