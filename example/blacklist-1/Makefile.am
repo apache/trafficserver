@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: blacklist-1.so
+pkglib_LTLIBRARIES = blacklist-1.la
+blacklist_1_la_SOURCES = blacklist-1.c
+blacklist_1_la_LDFLAGS = -module
 
-blacklist-1.o: blacklist-1.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o blacklist-1.o -c blacklist-1.c
-
-blacklist-1.so: blacklist-1.o
-	$(CC) $(LDFLAGS) -o blacklist-1.so blacklist-1.o
-
-clean:
-	rm -f blacklist-1.so blacklist-1.o
+all:
+	ln -sf .libs/blacklist-1.so

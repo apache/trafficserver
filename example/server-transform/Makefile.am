@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: server-transform.so
+pkglib_LTLIBRARIES = server-transform.la
+server_transform_la_SOURCES = server-transform.c
+server_transform_la_LDFLAGS = -module
 
-server-transform.o: server-transform.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o server-transform.o -c server-transform.c
-
-server-transform.so: server-transform.o
-	$(CC) $(LDFLAGS) -o server-transform.so server-transform.o
-
-clean:
-	rm -f server-transform.so server-transform.o
+all:
+	ln -sf .libs/server-transform.so

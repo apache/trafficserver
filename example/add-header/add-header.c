@@ -33,6 +33,8 @@
  *          ith MIME header to be added to the client request
  */
 
+#include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 #include <ts/ts.h>
 
@@ -55,7 +57,7 @@ add_header(INKHttpTxn txnp, INKCont contp)
   }
 
   field_loc = INKMimeHdrFieldGet(hdr_bufp, hdr_loc, 0);
-  if (new_field_loc == INK_ERROR_PTR) {
+  if (field_loc == INK_ERROR_PTR) {
     INKError("[add_header] Error while getting field");
     goto error;
   }

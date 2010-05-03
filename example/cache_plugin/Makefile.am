@@ -14,21 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=cc
-LD=ld
-CFLAGS= -g -D_REENTRANT=1 -m32
-LDFLAGS= -g -shared -m32
+CXXFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-TS_BASE=../../../..
-API_INC= -I. -I$(TS_BASE)/proxy/api/include
+pkglib_LTLIBRARIES = cache_plugin.la
+cache_plugin_la_SOURCES = cache_plugin.cc
+cache_plugin_la_LDFLAGS = -module
 
-default: cache_plugin.so
-
-cache_plugin.o: cache_plugin.cc
-	$(CXX) $(CFLAGS) $(API_INC) -o cache_plugin.o -c cache_plugin.cc
-
-cache_plugin.so: cache_plugin.o
-	$(CXX) $(LDFLAGS) -o cache_plugin.so cache_plugin.o
-
-clean:
-	rm -f cache_plugin.so cache_plugin.o
+all:
+	ln -sf .libs/cache_plugin.so

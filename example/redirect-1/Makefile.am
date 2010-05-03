@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: redirect-1.so
+pkglib_LTLIBRARIES = redirect-1.la
+redirect_1_la_SOURCES = redirect-1.c
+redirect_1_la_LDFLAGS = -module
 
-redirect-1.o: redirect-1.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o redirect-1.o -c redirect-1.c
-
-redirect-1.so: redirect-1.o
-	$(CC) $(LDFLAGS) -o redirect-1.so redirect-1.o
-
-clean:
-	rm -f redirect-1.so redirect-1.o
+all:
+	ln -sf .libs/redirect-1.so

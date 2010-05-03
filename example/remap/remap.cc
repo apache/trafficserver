@@ -141,7 +141,7 @@ remap_entry::remove_from_list(remap_entry * re)
 
 /* ----------------------- store_my_error_message -------------------------- */
 static int
-store_my_error_message(int retcode, char *err_msg_buf, int buf_size, char *fmt, ...)
+store_my_error_message(int retcode, char *err_msg_buf, int buf_size, const char *fmt, ...)
 {
   if (likely(err_msg_buf && buf_size > 0 && fmt)) {
     va_list ap;
@@ -178,9 +178,9 @@ void
 INKPluginInit(int argc, const char *argv[])
 {
   INKPluginRegistrationInfo info;
-  info.plugin_name = "remap_plugin";
-  info.vendor_name = "Apache";
-  info.support_email = "";
+  info.plugin_name = (char*)"remap_plugin";
+  info.vendor_name = (char*)"Apache";
+  info.support_email = (char*)"";
 
   if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
     INKError("Plugin registration failed. \n");
@@ -227,6 +227,8 @@ tsremap_done(void)
 {
   fprintf(stderr, "Remap Plugin: tsremap_done()\n");
   /* do nothing */
+
+  return 0;
 }
 
 
@@ -346,7 +348,7 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
   // note: You can store up to INKHttpTxnGetMaxArgCnt() variables.
   if (INKHttpTxnGetMaxArgCnt() > 0) {
     fprintf(stderr,
-            "[tsremap_remap] Save processing counter %d inside request processing block\n", _processing_counter);
+            "[tsremap_remap] Save processing counter %lu inside request processing block\n", _processing_counter);
     INKHttpTxnSetArg((INKHttpTxn) rh, 1, (void *) _processing_counter); // save counter
   }
   // How to cancel request processing and return error message to the client

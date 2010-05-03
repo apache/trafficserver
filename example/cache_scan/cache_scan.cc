@@ -80,7 +80,7 @@ handle_scan(INKCont contp, INKEvent event, void *edata)
     cstate->done = 1;
     const char error[] = "Cache remove operation failed error=";
     char rc[12];
-    snprintf(rc, 12, "%d", (int) edata);
+    snprintf(rc, 12, "%p", edata);
     cstate->cache_vc = (INKVConn) edata;
     cstate->write_vio = INKVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT_MAX);
     cstate->total_bytes += INKIOBufferWrite(cstate->resp_buffer, error, sizeof(error) - 1);

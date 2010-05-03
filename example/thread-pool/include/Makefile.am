@@ -16,10 +16,10 @@
 
 CC=cc
 
-default: gen 
+all:  gen 
 
 gen: gen.c
 	$(CC) -o gen gen.c
 
-clean:
+clean-local:
 	rm -f gen gen.o 

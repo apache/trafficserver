@@ -52,6 +52,7 @@
    transformation. (i.e. A transformation which does not modify the
    content). */
 
+#include <string.h>
 #include <stdio.h>
 
 #if !defined (_WIN32)
@@ -397,9 +398,6 @@ transform_buffer_event(INKCont contp, TransformData * data, INKEvent event, void
   int avail;
 
   if (!data->input_buf) {
-    INKIOBufferData d;
-    INKIOBufferBlock b;
-
     data->input_buf = INKIOBufferCreate();
     if ((data->input_buf == NULL) || (data->input_buf == INK_ERROR_PTR)) {
       INKError("Error in Creating buffer");
@@ -672,7 +670,7 @@ transform_handler(INKCont contp, INKEvent event, void *edata)
     return 0;
   } else {
     TransformData *data;
-    int val;
+    int val = 0;
 
     data = (TransformData *) INKContDataGet(contp);
     if ((data == NULL) && (data == INK_ERROR_PTR)) {

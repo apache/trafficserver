@@ -33,6 +33,7 @@
  *
  */
 
+#include <stdio.h>
 #include <string.h>
 
 #if !defined (_WIN32)
@@ -216,9 +217,6 @@ handle_response(INKHttpTxn txnp)
 {
   INKMBuffer bufp;
   INKMLoc hdr_loc, newfield_loc;
-  INKMLoc url_loc;
-  char *url_str;
-  char *buf;
   char *errormsg_body = "All requests from this IP address are redirected.\n";
   char *tmp_body;
 

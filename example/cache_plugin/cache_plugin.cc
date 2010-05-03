@@ -28,12 +28,12 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <string.h>
+#include <stdint.h>
 
 
 using namespace std;
 
 
-static INKThread cacheThread;
 static map<string, string> cache;
 static INKMutex cacheMutex;
 
@@ -62,6 +62,8 @@ eventLoop(void *data)
       cout << "-";
     cout << endl;               // print a line
   }
+
+  return NULL;
 }
 
 
@@ -74,7 +76,7 @@ cache_read(INKCont contp, INKEvent event, void *edata)
   INKHttpTxn txnp = (INKHttpTxn) edata;
   void *key = 0;
   int keySize = 0;
-  uint64_t size, offset;
+  INKU64 size, offset;
 
   // get the key for the lookup
   INKCacheKeyGet(txnp, &key, &keySize);
@@ -229,7 +231,6 @@ cache_plugin(INKCont contp, INKEvent event, void *edata)
 {
 
   INKHttpTxn txnp = (INKHttpTxn) edata;
-  int retVal;
 
   switch (event) {
     // read events
@@ -265,7 +266,6 @@ void
 INKPluginInit(const int argc, const char **argv)
 {
   INKPluginRegistrationInfo info;
-  INKCont contp;
 
   INKDebug("cache_plugin", "[INKPluginInit] Starting cache plugin");
 

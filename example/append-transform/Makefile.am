@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: append-transform.so
+pkglib_LTLIBRARIES = append-transform.la
+append_transform_la_SOURCES = append-transform.c
+append_transform_la_LDFLAGS = -module
 
-append-transform.o: append-transform.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o append-transform.o -c append-transform.c
-
-append-transform.so: append-transform.o
-	$(CC) $(LDFLAGS) -o append-transform.so append-transform.o
-
-clean:
-	rm -f append-transform.so append-transform.o
+all:
+	ln -sf .libs/append-transform.so

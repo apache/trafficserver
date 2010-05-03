@@ -14,25 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@ -lz
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: gzip.so gunzip.so
+pkglib_LTLIBRARIES = gzip.la gunzip.la
+gzip_la_SOURCES = gzip.c
+gzip_la_LDFLAGS = -module
 
-gzip.o: gzip.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -I/usr/local/include -o gzip.o -c gzip.c
+gunzip_la_SOURCES = gunzip.c
+gunzip_la_LDFLAGS = -module
 
-gunzip.o: gunzip.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -I/usr/local/include -o gunzip.o -c gunzip.c
-
-gzip.so: gzip.o
-	$(CC) $(LDFLAGS) -L/usr/local/lib -o gzip.so gzip.o
-
-gunzip.so: gunzip.o
-	$(CC) $(LDFLAGS) -L/usr/local/lib -o gunzip.so gunzip.o
-
-clean:
-	rm -f gzip.so gzip.o gunzip.so gunzip.o 
+all:
+	ln -sf .libs/gzip.so
+	ln -sf .libs/gunzip.so

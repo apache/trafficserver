@@ -22,9 +22,9 @@
 ACLOCAL_AMFLAGS = -I m4
 
 if STANDALONE_IOCORE
-SUBDIRS =  libinktomi++ librecords iocore @hdr_dirs@ proxy
+SUBDIRS =  libinktomi++ librecords iocore @hdr_dirs@ proxy example
 else
-SUBDIRS =  libinktomi++ librecords iocore proxy doc rc
+SUBDIRS =  libinktomi++ librecords iocore proxy example doc rc
 endif
 
 DIST_BUILD_USER=`id -nu`

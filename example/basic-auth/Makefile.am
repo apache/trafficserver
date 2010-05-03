@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: basic-auth.so
+pkglib_LTLIBRARIES = basic-auth.la
+basic_auth_la_SOURCES = basic-auth.c
+basic_auth_la_LDFLAGS = -module
 
-basic-auth.o: basic-auth.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o basic-auth.o -c basic-auth.c
-
-basic-auth.so: basic-auth.o
-	$(CC) $(LDFLAGS) -o basic-auth.so basic-auth.o
-
-clean:
-	rm -f basic-auth.so basic-auth.o
+all:
+	ln -sf .libs/basic-auth.so

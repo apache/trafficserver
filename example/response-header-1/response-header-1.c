@@ -47,6 +47,7 @@
  *
  */
 
+#include <time.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -73,14 +74,13 @@ modify_header(INKHttpTxn txnp, INKCont contp)
   INKMLoc cached_loc;
   INKHttpStatus resp_status;
   INKMLoc new_field_loc;
-  INKMLoc new_value_loc;
   INKMLoc cached_field_loc;
   time_t recvd_time;
 
   const char *chkptr;
   int chklength;
 
-  int num_refreshes;
+  int num_refreshes = 0;
 
   if (!init_buffer_status)
     return;                     /* caller reenables */
@@ -273,8 +273,6 @@ INKPluginInit(int argc, const char *argv[])
 {
   INKMLoc chk_field_loc;
 
-  const char *p;
-  int i;
   INKPluginRegistrationInfo info;
 
   info.plugin_name = "response-header-1";
@@ -321,7 +319,7 @@ INKPluginInit(int argc, const char *argv[])
   field_loc = INKMimeHdrFieldCreate(hdr_bufp, hdr_loc);
   INKMimeHdrFieldInsert(hdr_bufp, hdr_loc, field_loc, -1);
   INKMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, mimehdr1_name, strlen(mimehdr1_name));
-  value_loc = INKMimeHdrFieldValueInsert(hdr_bufp, hdr_loc, field_loc, mimehdr1_value, strlen(mimehdr1_value), -1);
+  INKMimeHdrFieldValueInsert(hdr_bufp, hdr_loc, field_loc, mimehdr1_value, strlen(mimehdr1_value), -1);
   INKDebug("resphdr", "init buffer hdr, field and value locs are %d, %d and %d", hdr_loc, field_loc, value_loc);
   init_buffer_status = 1;
 

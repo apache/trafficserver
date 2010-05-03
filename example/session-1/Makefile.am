@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: session-1.so
+pkglib_LTLIBRARIES = session-1.la
+session_1_la_SOURCES = session-1.c
+session_1_la_LDFLAGS = -module
 
-session-1.o: session-1.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o session-1.o -c session-1.c
-
-session-1.so: session-1.o
-	$(CC) $(LDFLAGS) -o session-1.so session-1.o
-
-clean:
-	rm -f session-1.so session-1.o
+all:
+	ln -sf .libs/session-1.so

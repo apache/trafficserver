@@ -92,8 +92,6 @@ check_ts_version()
 void
 INKPluginInit(int argc, const char *argv[])
 {
-  int i;
-  INKCont contp;
   INKPluginRegistrationInfo info;
 
   info.plugin_name = "thread-1";

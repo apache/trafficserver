@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: hello.so
+pkglib_LTLIBRARIES = hello.la
+hello_la_SOURCES = hello.c
+hello_la_LDFLAGS = -module
 
-hello.o: hello.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o hello.o -c hello.c
-
-hello.so: hello.o
-	$(CC) $(LDFLAGS) -o hello.so hello.o
-
-clean:
-	rm -f hello.so hello.o
+all:
+	ln -sf .libs/hello.so

@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: output-header.so
+pkglib_LTLIBRARIES = output-header.la
+output_header_la_SOURCES = output-header.c
+output_header_la_LDFLAGS = -module
 
-output-header.o: output-header.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o output-header.o -c output-header.c
-
-output-header.so: output-header.o
-	$(CC) $(LDFLAGS) -o output-header.so output-header.o
-
-clean:
-	rm -f output-header.so output-header.o
+all:
+	ln -sf .libs/output-header.so

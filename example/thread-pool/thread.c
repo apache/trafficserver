@@ -160,11 +160,10 @@ thread_init()
   pthread_cond_init(&cond, NULL);
 }
 
-void *
+void
 thread_loop(void *arg)
 {
   Job *job_todo;
-  char *thread_name = (char *) arg;
 
   /* Infinite loop */
   for (;;) {

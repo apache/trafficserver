@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: null-transform.so
+pkglib_LTLIBRARIES = null-transform.la
+null_transform_la_SOURCES = null-transform.c
+null_transform_la_LDFLAGS = -module
 
-null-transform.o: null-transform.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o null-transform.o -c null-transform.c
-
-null-transform.so: null-transform.o
-	$(CC) $(LDFLAGS) -o null-transform.so null-transform.o
-
-clean:
-	rm -f null-transform.so null-transform.o
+all:
+	ln -sf .libs/null-transform.so

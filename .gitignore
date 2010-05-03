@@ -1,8 +1,11 @@
 *.o
 *.a
+*.so
 *.in
 *~
 *.tar.gz
+*.lo
+*.la
 
 .deps
 
@@ -59,3 +62,6 @@ m4/lt~obsolete.m4
 
 rc/trafficserver
 rc/update_records
+
+proxy/api/include/ts
+example/*/.libs

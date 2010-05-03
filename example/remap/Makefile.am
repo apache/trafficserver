@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CXXFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: remap.so
+pkglib_LTLIBRARIES = remap.la
+remap_la_SOURCES = remap.cc
+remap_la_LDFLAGS = -module
 
-remap.o: replace-header.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o remap.o -c remap.c
-
-remap.so: remap.o
-	$(CC) $(LDFLAGS) -o remap.so remap.o
-
-clean:
-	rm -f remap.so remap.o
+all:
+	ln -sf .libs/remap.so

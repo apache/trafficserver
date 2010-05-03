@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: response-header-1.so
+pkglib_LTLIBRARIES = response-header-1.la
+response_header_1_la_SOURCES = response-header-1.c
+response_header_1_la_LDFLAGS = -module
 
-response-header-1.o: response-header-1.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o response-header-1.o -c response-header-1.c
-
-response-header-1.so: response-header-1.o
-	$(CC) $(LDFLAGS) -o response-header-1.so response-header-1.o
-
-clean:
-	rm -f response-header-1.so response-header-1.o
+all:
+	ln -sf .libs/response-header-1.so

@@ -14,23 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: protocol.so
+pkglib_LTLIBRARIES = protocol.la
+protocol_la_SOURCES = Protocol.c TxnSM.c
+protocol_la_LDFLAGS = -module
 
-TxnSM.o: TxnSM.c TxnSM.h $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o TxnSM.o -c TxnSM.c
-
-Protocol.o: Protocol.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o Protocol.o -c Protocol.c
-
-protocol.so: Protocol.o TxnSM.o
-	$(CC) $(LDFLAGS) -o protocol.so Protocol.o TxnSM.o
-
-clean:
-	rm -f protocol.so Protocol.o TxnSM.o
-
+all:
+	ln -sf .libs/protocol.so

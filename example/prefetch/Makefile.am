@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=@ld@
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: prefetch-plugin-eg1.so
+pkglib_LTLIBRARIES = prefetch.la
+prefetch_la_SOURCES = prefetch.c
+prefetch_la_LDFLAGS = -module
 
-prefetch-plugin-eg1.o: prefetch-plugin-eg1.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o prefetch-plugin-eg1.o -c prefetch-plugin-eg1.c
-
-prefetch-plugin-eg1.so: prefetch-plugin-eg1.o
-	$(CC) $(LDFLAGS) -o prefetch-plugin-eg1.so prefetch-plugin-eg1.o
-
-clean:
-	rm -f prefetch-plugin-eg1.so prefetch-plugin-eg1.o
+all:
+	ln -sf .libs/prefetch.so

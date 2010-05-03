@@ -14,19 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: bnull-transform.so
+pkglib_LTLIBRARIES = bnull-transform.la
+bnull_transform_la_SOURCES = bnull-transform.c
+bnull_transform_la_LDFLAGS = -module
 
-bnull-transform.o: bnull-transform.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o bnull-transform.o -c bnull-transform.c
-
-bnull-transform.so: bnull-transform.o
-	$(CC) $(LDFLAGS) -o bnull-transform.so bnull-transform.o
-
-clean:
-	rm -f bnull-transform.so bnull-transform.o
+all:
+	ln -sf .libs/bnull-transform.so

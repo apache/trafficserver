@@ -14,11 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CXXFLAGS+=-I$(top_srcdir)/proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-pkglib_LTLIBRARIES = cache_scan.la
-cache_scan_la_SOURCES = cache_scan.cc
-cache_scan_la_LDFLAGS = -module
+pkglib_LTLIBRARIES = query_remap.la
+query_remap_la_SOURCES = query_remap.c
+query_remap_la_LDFLAGS = -module
 
 all:
-	ln -sf .libs/cache_scan.so
+	ln -sf .libs/query_remap.so

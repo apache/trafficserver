@@ -88,7 +88,6 @@ handle_dns(INKHttpTxn txnp, INKCont contp)
   const char *host;
   int i;
   int host_length;
-  cdata *cd;
   int lock;
   INKReturnCode ret_code;
 
@@ -167,7 +166,6 @@ handle_response(INKHttpTxn txnp, INKCont contp)
   char *url_str;
   char *buf;
   int url_length;
-  cdata *cd;
 
   if (!INKHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
     INKError("couldn't retrieve client response header\n");

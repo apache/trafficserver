@@ -58,8 +58,6 @@ char dictionary[800000];
 void
 load_dictionary(char *dict, uLong * adler)
 {
-  char path[DICT_PATH_MAX];
-  char line[1024];
   FILE *fp;
   int i = 0;
 
@@ -71,10 +69,11 @@ load_dictionary(char *dict, uLong * adler)
 
   i = 0;
   while (!feof(fp)) {
-    fscanf(fp, "%s\n", dict + i);
-    i = strlen(dict);
-    strcat(dict + i, " ");
-    i++;
+    if (fscanf(fp, "%s\n", dict + i) == 1) {
+      i = strlen(dict);
+      strcat(dict + i, " ");
+      i++;
+    }
   }
   dict[i - 1] = '\0';
 
@@ -100,7 +99,6 @@ static GzipData *
 gzip_data_alloc()
 {
   GzipData *data;
-  int err;
 
   data = (GzipData *) INKmalloc(sizeof(GzipData));
   data->output_vio = NULL;
@@ -151,9 +149,6 @@ static void
 gzip_transform_init(INKCont contp, GzipData * data)
 {
   INKVConn output_conn;
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKMLoc field_loc;
 
   data->state = 1;
 
@@ -172,10 +167,8 @@ gzip_transform_one(GzipData * data, INKIOBufferReader input_reader, int amount)
   INKIOBufferBlock blkp;
   const char *ibuf;
   char *obuf;
-  int ilength, olength, i;
+  int ilength, olength;
   int err = Z_OK;
-
-  int size;
 
   while (amount > 0) {
     blkp = INKIOBufferReaderStart(input_reader);
@@ -242,12 +235,9 @@ gzip_transform_finish(GzipData * data)
 {
   if (data->state == 1) {
     INKIOBufferBlock blkp;
-    char buf[8], *p;
     char *obuf;
     int olength;
     int err;
-    uLong tmp;
-    int length;
 
     data->state = 2;
 
@@ -437,9 +427,6 @@ gzip_transformable(INKHttpTxn txnp, int server)
   INKMLoc hdr_loc;
   INKMLoc field_loc;
   const char *value;
-  int nvalues;
-  int i;
-
 
   if (server) {
     INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
@@ -473,7 +460,6 @@ static void
 gzip_transform_add(INKHttpTxn txnp, int flag)
 {
   INKVConn connp;
-  INKVConn request_connp;
   GzipData *data;
 
   data = gzip_data_alloc();
@@ -496,7 +482,6 @@ transform_plugin(INKCont contp, INKEvent event, void *edata)
     {
       INKMBuffer bufp;
       INKMLoc hdr_loc;
-      INKMLoc field_loc;
       INKMLoc ae_loc;           /* for the accept encoding mime field */
 
       INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc);

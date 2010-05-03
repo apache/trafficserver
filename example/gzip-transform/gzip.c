@@ -57,8 +57,6 @@ char dictionary[800000];
 void
 load_dictionary(char *dict, uLong * adler)
 {
-  char path[DICT_PATH_MAX];
-  char line[1024];
   FILE *fp;
   int i = 0;
 
@@ -72,10 +70,11 @@ load_dictionary(char *dict, uLong * adler)
 
   i = 0;
   while (!feof(fp)) {
-    fscanf(fp, "%s\n", dict + i);
-    i = strlen(dict);
-    strcat(dict + i, " ");
-    i++;
+    if (fscanf(fp, "%s\n", dict + i) == 1) {
+      i = strlen(dict);
+      strcat(dict + i, " ");
+      i++;
+    }
   }
   dict[i - 1] = '\0';
 
@@ -102,7 +101,6 @@ gzip_data_alloc()
 {
   GzipData *data;
   int err;
-  int size, i;
 
   data = (GzipData *) INKmalloc(sizeof(GzipData));
   data->output_vio = NULL;
@@ -167,7 +165,6 @@ gzip_transform_init(INKCont contp, GzipData * data)
   INKVConn output_conn;
   INKMBuffer bufp;
   INKMLoc hdr_loc;
-  INKMLoc field_loc;
   INKMLoc ce_loc;               /* for the content encoding mime field */
 
   data->state = 1;
@@ -250,12 +247,9 @@ gzip_transform_finish(GzipData * data)
 {
   if (data->state == 1) {
     INKIOBufferBlock blkp;
-    char buf[8], *p;
     char *obuf;
     int olength;
     int err;
-    uLong tmp;
-    int length;
 
     data->state = 2;
 

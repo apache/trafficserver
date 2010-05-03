@@ -84,6 +84,6 @@ void thread_signal_job();
 
 void thread_init();
 
-void *thread_loop(void *arg);
+void thread_loop(void *arg);
 
 #endif

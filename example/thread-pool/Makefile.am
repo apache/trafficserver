@@ -14,23 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CC=@CC@
-LD=ld
-CFLAGS=@CFLAGS@ @SHARED_CFLAGS@
-LDFLAGS=@LDFLAGS@ @SHARED_LDFLAGS@
-API_INC=../../proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api/include
 
-default: psi.so
+pkglib_LTLIBRARIES = psi.la
+psi_la_SOURCES = psi.c thread.c
+psi_la_LDFLAGS = -module
 
-thread.o: thread.c thread.h $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o thread.o -c thread.c
-
-psi.o: psi.c $(API_INC)/ts.h
-	$(CC) $(CFLAGS) -I$(API_INC) -o psi.o -c psi.c
-
-psi.so: psi.o thread.o
-	$(CC) $(LDFLAGS) -o psi.so psi.o thread.o
-
-clean:
-	rm -f psi.so psi.o thread.o
-
+all:
+	ln -sf .libs/psi.so

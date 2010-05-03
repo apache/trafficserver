@@ -22,6 +22,8 @@
  */
 
 #include "Protocol.h"
+#include "TxnSM.h"
+#include <math.h>
 
 /* global variable */
 INKTextLogObject protocol_plugin_log;

@@ -130,6 +130,9 @@ extern Queue job_queue;
 static INKTextLogObject log;
 static char psi_directory[PSI_PATH_MAX_SIZE];
 
+
+static int trylock_handler(INKCont contp, INKEvent event, void *edata);
+
 /*-------------------------------------------------------------------------
   cont_data_alloc
   Allocate and initialize a ContData structure associated to a transaction
@@ -460,6 +463,7 @@ parse_data(INKCont contp, INKIOBufferReader input_reader, int avail, int *tocons
     INKAssert(!"strextract_ioreader returned bad status");
   }
 
+  return 0;
 }
 
 /*-------------------------------------------------------------------------
@@ -589,11 +593,6 @@ psi_include(INKCont contp, void *edata)
   /* Note: if the blocking call was not in the transformation state (i.e. in
      INK_HTTP_READ_REQUEST_HDR, INK_HTTP_OS_DNS and so on...) we could
      use INKHttpTxnReenable to wake up the transaction instead of sending an event. */
-done:
-  INKContSchedule(contp, 0);
-  data->state = STATE_DUMP_PSI;
-  INKMutexUnlock(INKContMutexGet(contp));
-  return 1;
 
 error:
   INKContSchedule(contp, 0);
@@ -881,26 +880,6 @@ dump_psi(INKCont contp)
   return 0;
 }
 
-/*-------------------------------------------------------------------------
-  trylock_handler
-  Small handler to handle INKMutexTryLock failures
-
-  Input:
-    contp      continuation for the current transaction
-    event      event received
-    data       pointer on optional data
-  Output :
-  Return Value:
-  -------------------------------------------------------------------------*/
-static int
-trylock_handler(INKCont contp, INKEvent event, void *edata)
-{
-  TryLockData *data = INKContDataGet(contp);
-  transform_handler(data->contp, data->event, NULL);
-  INKfree(data);
-  INKContDestroy(contp);
-  return 0;
-}
 
 /*-------------------------------------------------------------------------
   transform_handler
@@ -1003,6 +982,27 @@ transform_handler(INKCont contp, INKEvent event, void *edata)
 
   INKMutexUnlock(INKContMutexGet(contp));
   return 1;
+}
+
+/*-------------------------------------------------------------------------
+  trylock_handler
+  Small handler to handle INKMutexTryLock failures
+
+  Input:
+    contp      continuation for the current transaction
+    event      event received
+    data       pointer on optional data
+  Output :
+  Return Value:
+  -------------------------------------------------------------------------*/
+static int
+trylock_handler(INKCont contp, INKEvent event, void *edata)
+{
+  TryLockData *data = INKContDataGet(contp);
+  transform_handler(data->contp, data->event, NULL);
+  INKfree(data);
+  INKContDestroy(contp);
+  return 0;
 }
 
 
@@ -1191,7 +1191,7 @@ void
 INKPluginInit(int argc, const char *argv[])
 {
   INKPluginRegistrationInfo info;
-  int error, i;
+  int i;
   INKReturnCode retval;
 
   info.plugin_name = "psi";
