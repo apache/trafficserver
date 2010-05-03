@@ -16,8 +16,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
+if STANDALONE_IOCORE
+SUBDIRS =
+noinst_LIBRARIES = libTrafficServerStandalone.a
+bin_PROGRAMS =
+noinst_PROGRAMS =
+else
 SUBDIRS = congest dns_cache http2 hdrs logging mgmt2 config stats
+noinst_LIBRARIES =
+bin_PROGRAMS = \
+  traffic_server \
+  traffic_logcat \
+  traffic_logstats \
+  traffic_sac
+
+noinst_PROGRAMS =  traffic_cust_log_fmt_cnvrt
+endif
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -37,13 +51,6 @@ AM_CPPFLAGS = \
   -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
   -DPKGSYSUSER=\"$(pkgsysuser)\"
 
-bin_PROGRAMS = \
-  traffic_server \
-  traffic_logcat \
-  traffic_logstats \
-  traffic_sac
-
-noinst_PROGRAMS =  traffic_cust_log_fmt_cnvrt
 
 includedir=$(prefix)/include/ts
 

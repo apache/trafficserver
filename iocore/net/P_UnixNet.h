@@ -281,6 +281,7 @@ get_PollDescriptor(EThread * t)
 
 enum ThrottleType
 { ACCEPT, CONNECT };
+
 TS_INLINE int
 net_connections_to_throttle(ThrottleType t)
 {

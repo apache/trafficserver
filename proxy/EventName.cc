@@ -30,7 +30,7 @@
 // #include "I_Disk.h" unused
 #include "I_Cache.h"
 #include "I_Net.h"
-#include "P_Cluster.h"
+//#include "P_Cluster.h"
 #include "I_HostDB.h"
 #include "BaseManager.h"
 #include "P_MultiCache.h"
@@ -71,12 +71,13 @@ event_int_to_string(int event, char buffer[32])
     case DISK_EVENT_SEEK_COMPLETE: return "DISK_EVENT_SEEK_COMPLETE";
 #endif
 
+#ifdef CLUSTER_CACHE
     case CLUSTER_EVENT_CHANGE: return "CLUSTER_EVENT_CHANGE";
     case CLUSTER_EVENT_CONFIGURATION: return "CLUSTER_EVENT_CONFIGURATION";
     case CLUSTER_EVENT_OPEN: return "CLUSTER_EVENT_OPEN";
     case CLUSTER_EVENT_OPEN_FAILED: return "CLUSTER_EVENT_OPEN_FAILED";
     case CLUSTER_EVENT_STEAL_THREAD: return "CLUSTER_EVENT_STEAL_THREAD";
-
+#endif
     case EVENT_HOST_DB_LOOKUP: return "EVENT_HOST_DB_LOOKUP";
     case EVENT_HOST_DB_GET_RESPONSE: return "EVENT_HOST_DB_GET_RESPONSE";
 

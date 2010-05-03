@@ -1299,13 +1299,13 @@ TS_INLINE IOBufferData *new_IOBufferData_internal(
                                                     ink64 size_index = default_large_iobuffer_size,
                                                     AllocType type = DEFAULT_ALLOC);
 
-inline IOBufferData *new_xmalloc_IOBufferData_internal(
+TS_INLINE IOBufferData *new_xmalloc_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
                                                             const char *location,
 #endif
                                                             void *b, ink64 size);
 
-inline IOBufferData *new_constant_IOBufferData_internal(
+TS_INLINE IOBufferData *new_constant_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
                                                              const char *loc,
 #endif
@@ -1342,8 +1342,8 @@ new_constant_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), \
 #define  new_constant_IOBufferData new_constant_IOBufferData_internal
 #endif
 
-inline ink64 iobuffer_size_to_index(ink64 size, ink64 max = max_iobuffer_size);
-inline ink64 index_to_buffer_size(ink64 idx);
+TS_INLINE ink64 iobuffer_size_to_index(ink64 size, ink64 max = max_iobuffer_size);
+TS_INLINE ink64 index_to_buffer_size(ink64 idx);
 /**
   Clone a IOBufferBlock chain. Used to snarf a IOBufferBlock chain
   w/o copy.
@@ -1354,7 +1354,7 @@ inline ink64 index_to_buffer_size(ink64 idx);
   @return ptr to head of new IOBufferBlock chain.
 
 */
-inline IOBufferBlock *iobufferblock_clone(IOBufferBlock * b, ink64 offset, ink64 len);
+TS_INLINE IOBufferBlock *iobufferblock_clone(IOBufferBlock * b, ink64 offset, ink64 len);
 /**
   Skip over specified bytes in chain. Used for dropping references.
 
@@ -1366,5 +1366,5 @@ inline IOBufferBlock *iobufferblock_clone(IOBufferBlock * b, ink64 offset, ink64
   @return ptr to head of new IOBufferBlock chain.
 
 */
-inline IOBufferBlock *iobufferblock_skip(IOBufferBlock * b, ink64 *poffset, ink64 *plen, ink64 write);
+TS_INLINE IOBufferBlock *iobufferblock_skip(IOBufferBlock * b, ink64 *poffset, ink64 *plen, ink64 write);
 #endif

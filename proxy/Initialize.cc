@@ -31,17 +31,15 @@
    
 
  ****************************************************************************/
-#include "ink_port.h"
+#include "inktomi++.h"
 #include "Diags.h"
 #include "DiagsConfig.h"
 #include "Main.h"
-#include "EThread.h"
-#include "EventProcessor.h"
-#include "Net.h"
+#include "I_EventSystem.h"
+#include "I_Net.h"
 #include "ProxyConfig.h"
 #include "ProcessManager.h"
 #include "I_Version.h"
-#include "ink_syslog.h"
 #include "MgmtUtils.h"
 
 #if (HOST_OS == freebsd)
@@ -107,7 +105,9 @@ init_system()
 
   max_out_limit(RLIMIT_DATA, true);
   max_out_limit(RLIMIT_FSIZE, true);
+#ifdef RLIMIT_RSS
   max_out_limit(RLIMIT_RSS, true);
+#endif
 }
 
 
@@ -121,84 +121,82 @@ initialize_standalone()
   // Local process manager
   initialize_process_manager();
 
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags); diags = diagsConfig->diags; diags_init = 1; eventProcessor.start(1,       //n_spawn_threads
-                                                                                                                               1,       // n_call_threads
-                                                                                                                               num_of_net_threads,      //n_net_threads
-                                                                                                                               1,       // n_disk_threads
-                                                                                                                               0,       //n_cluster_threads (unused)
-                                                                                                                               0,       // No FTP threads
-                                                                                                                               num_of_cache_threads     // n_cache_threads
-                    );
-                    // Set up IO Buffers
-                    int config_max_iobuffer_size = DEFAULT_MAX_BUFFER_SIZE;
-                    ReadConfigInteger(config_max_iobuffer_size,
-                                      "proxy.config.io.max_buffer_size");
-                    max_iobuffer_size = buffer_size_to_index(config_max_iobuffer_size,
-                                                             DEFAULT_BUFFER_SIZES - 1);
-                    if (default_small_iobuffer_size > max_iobuffer_size)
-                    default_small_iobuffer_size = max_iobuffer_size;
-                    if (default_large_iobuffer_size > max_iobuffer_size)
-                    default_large_iobuffer_size = max_iobuffer_size;
-                    init_buffer_allocators(); netProcessor.start(); return;}
+  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags)); 
+  diags = diagsConfig->diags; diags_init = 1; 
+  eventProcessor.start(ink_number_of_processors());
+
+  // Set up IO Buffers
+  int config_max_iobuffer_size = DEFAULT_MAX_BUFFER_SIZE;
+  ReadConfigInteger(config_max_iobuffer_size,
+                    "proxy.config.io.max_buffer_size");
+  max_iobuffer_size = iobuffer_size_to_index(config_max_iobuffer_size,
+                                           DEFAULT_BUFFER_SIZES - 1);
+  if (default_small_iobuffer_size > max_iobuffer_size)
+    default_small_iobuffer_size = max_iobuffer_size;
+  if (default_large_iobuffer_size > max_iobuffer_size)
+    default_large_iobuffer_size = max_iobuffer_size;
+  init_buffer_allocators(); netProcessor.start(); return;}
 
 //
 // Startup process manager
 //
-                    void initialize_process_manager()
-                    {
-                    ProcessRecords * precs; mgmt_use_syslog();
-                    // Temporary Hack to Enable Communuication with LocalManager
-                    if (getenv("PROXY_REMOTE_MGMT")) {
-                    remote_management_flag = true;}
-
-                    //
-                    // Remove excess '/'
-                    //
-                    if (management_directory[strlen(management_directory) - 1] == '/')
-                    management_directory[strlen(management_directory) - 1] = 0;
-                    //
-                    // Start up manager
-                    //
-                    precs = NEW(new ProcessRecords(management_directory, "records.config", "lm.config"));
-                    pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory,
-                                                   precs));
-                    ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
-                    //
-                    // Define version info records
-                    //
-                    precs->setString("proxy.process.version.server.short",
-                                     appVersionInfo.VersionStr);
-                    precs->setString("proxy.process.version.server.long",
-                                     appVersionInfo.FullVersionInfoStr);
-                    precs->setString("proxy.process.version.server.build_number",
-                                     appVersionInfo.BldNumStr);
-                    precs->setString("proxy.process.version.server.build_time",
+void initialize_process_manager()
+{
+  ProcessRecords * precs; mgmt_use_syslog();
+  // Temporary Hack to Enable Communuication with LocalManager
+  if (getenv("PROXY_REMOTE_MGMT")) {
+    remote_management_flag = true;}
+  
+  //
+  // Remove excess '/'
+  //
+  if (management_directory[strlen(management_directory) - 1] == '/')
+    management_directory[strlen(management_directory) - 1] = 0;
+  //
+  // Start up manager
+  //
+  char rstr[] = "records.config";
+  char lstr[] = "lm.config";
+  precs = NEW(new ProcessRecords(management_directory, rstr, lstr));
+  pmgmt = NEW(new ProcessManager(remote_management_flag, management_directory,
+                                 precs));
+  ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
+  //
+  // Define version info records
+  //
+  precs->setString("proxy.process.version.server.short",
+                   appVersionInfo.VersionStr);
+  precs->setString("proxy.process.version.server.long",
+                   appVersionInfo.FullVersionInfoStr);
+  precs->setString("proxy.process.version.server.build_number",
+                   appVersionInfo.BldNumStr);
+  precs->setString("proxy.process.version.server.build_time",
                                      appVersionInfo.BldTimeStr);
-                    precs->setString("proxy.process.version.server.build_date",
-                                     appVersionInfo.BldDateStr);
-                    precs->setString("proxy.process.version.server.build_machine",
-                                     appVersionInfo.BldMachineStr);
-                    precs->setString("proxy.process.version.server.build_person", appVersionInfo.BldPersonStr);
-//  precs->setString("proxy.process.version.server.build_compile_flags",
-//                   appVersionInfo.BldCompileFlagsStr);
-                    }
+  precs->setString("proxy.process.version.server.build_date",
+                   appVersionInfo.BldDateStr);
+  precs->setString("proxy.process.version.server.build_machine",
+                   appVersionInfo.BldMachineStr);
+  precs->setString("proxy.process.version.server.build_person", appVersionInfo.BldPersonStr);
+  //  precs->setString("proxy.process.version.server.build_compile_flags",
+  //                   appVersionInfo.BldCompileFlagsStr);
+}
 
 
-                    void clear_http_handler_times()
-                    {
-                    return;}
+void clear_http_handler_times()
+{
+  return;}
 
-                    void initialize_thread_for_icp(EThread * thread)
-                    {
-                    (void) thread; return;}
+void initialize_thread_for_icp(EThread * thread)
+{
+  (void) thread; return;}
 
-                    void initialize_thread_for_ftp(EThread * thread)
-                    {
-                    (void) thread; return;}
+void initialize_thread_for_ftp(EThread * thread)
+{
+  (void) thread; return;}
 
-                    void initialize_thread_for_cluster(EThread * thread)
-                    {
-                    (void) thread;}
+void initialize_thread_for_cluster(EThread * thread)
+{
+  (void) thread;}
 
 // void syslog_thr_init()
 //
@@ -208,6 +206,6 @@ initialize_standalone()
 //     with stored facility information from system
 //     startup
 //
-                    void syslog_thr_init()
-                    {
-                    }
+void syslog_thr_init()
+{
+}
