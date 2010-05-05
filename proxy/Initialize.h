@@ -34,6 +34,25 @@
 #if !defined (_Initialize_h_)
 #define _Initialize_h_
 
-void initialize_standalone();
+#define MAX_NUMBER_OF_THREADS  1024
+#define DIAGS_LOG_FILE         "diags.log"
+
+extern Diags *diags;
+extern int fds_limit; // TODO: rename
+extern int system_num_of_net_threads;
+extern int system_syslog_facility;
+
+void init_system_settings(void);
+void init_system_dirs(void);
+void init_system_core_size(void);
+void init_system_memalign_heap(void);
+void init_system_syslog_log_configure(void);
+//void init_system_logging();
+void init_system_reconfigure_diags(void);
+void init_system_diags(char *bdt, char *bat);
+
+void init_system_adjust_num_of_net_threads(void);
+
+//void initialize_standalone();
 
 #endif

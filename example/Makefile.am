@@ -19,4 +19,8 @@ API_INC=$(top_srcdir)/proxy/api/include
 all-am:
 	ln -sfn . $(top_srcdir)/proxy/api/include/ts
 
+if STANDALONE_IOCORE
+SUBDIRS = app-template
+else
 SUBDIRS = . add-header append-transform basic-auth blacklist-0 blacklist-1 bnull-transform cache_plugin cache_scan file-1 file_system_cache gzip-transform hello null-transform output-header protocol query_remap redirect-1 remap replace-header response-header-1 server-transform session-1 thread-1 thread-pool
+endif

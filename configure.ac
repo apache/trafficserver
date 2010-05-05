@@ -997,6 +997,9 @@ AC_CONFIG_FILES([example/server-transform/Makefile])
 AC_CONFIG_FILES([example/session-1/Makefile])
 AC_CONFIG_FILES([example/thread-1/Makefile])
 AC_CONFIG_FILES([example/thread-pool/Makefile])
+# example app w/ standalone iocore
+AC_CONFIG_FILES([example/app-template/Makefile])
+AC_CONFIG_FILES([example/app-template/records.config])
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
