@@ -108,26 +108,6 @@ root_access_needed(root_access_needed_)
   configDir = new char[configDirLen];
   ink_snprintf(configDir, configDirLen, "%s%s", configTmp, DIR_SEP);
 
-#ifdef OEM
-  // since these plugin files are not in the config directory,
-  // need  to reset the config dir and filename
-  if (strcmp(fileName, "plugins/vscan.config") == 0 ||
-      strcmp(fileName, "plugins/trusted-host.config") == 0 || strcmp(fileName, "plugins/extensions.config") == 0) {
-    Tokenizer fileTokens("/");
-    if (fileTokens.Initialize(fileName) != 2) {
-      mgmt_log(stderr, "[Rollback::Rollback] Error initializing Rollback for %s", baseFileName);
-    } else {
-      delete[]configDir;
-      configDir = new char[strlen(configTmp) + strlen(fileTokens[0]) + 5];
-      ink_sprintf(configDir, ".%s%s%s%s%s", DIR_SEP, configTmp, DIR_SEP, fileTokens[0], DIR_SEP);
-
-      delete[]fileName;
-      fileNameLen = strlen(fileTokens[1]);
-      fileName = new char[fileNameLen + 1];
-      strcpy(fileName, fileTokens[1]);
-    }
-  }
-#endif
 
   ink_mutex_init(&fileAccessLock, "RollBack Mutex");
 

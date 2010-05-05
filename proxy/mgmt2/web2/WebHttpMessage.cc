@@ -137,9 +137,6 @@ httpMessage::httpMessage()
   modificationTime = -1;
   modContentLength = -1;
   client_request = NULL;
-#ifdef OEM
-  cookie = NULL;
-#endif //OEM
 }
 
 void
@@ -261,16 +258,9 @@ httpMessage::addHeader(char *hdr)
   if (strncasecmp("Content-length:", hdrName, 15) == 0) {
     conLen = atoi(hdrArg1);
   } else if (strncasecmp("Referer:", hdrName, 8) == 0) {
-#ifdef OEM
-    referer = NULL;
-    if (hdrArg1 != NULL) {
-#endif //OEM
       unsigned int amtToAllocate = strlen(hdrArg1);
       referer = new char[amtToAllocate + 1];
       ink_strncpy(referer, hdrArg1, amtToAllocate);
-#ifdef OEM
-    }
-#endif //OEM
   } else if (strncasecmp("Content-type:", hdrName, 13) == 0) {
     unsigned int amtToAllocate = strlen(hdrArg1);
     conType_str = new char[amtToAllocate + 1];
@@ -286,26 +276,8 @@ httpMessage::addHeader(char *hdr)
   } else if (strncasecmp("If-Modified-Since:", hdrName, 18) == 0) {
     // Disabled due to thread safety issues
     getModDate();
-#ifdef OEM
-  } else if (strncasecmp("Cookie:", hdrName, 7) == 0) {
-    int index = 1;
-    char cookieString[1024];
-    while ((hdrName = (*parser)[index++])) {
-      if (strncasecmp("SessionID=", hdrName, 10) == 0) {
-        sessionID = strdup((strchr(hdrName, '=') + (sizeof(char))));
-#endif //OEM
       }
-#ifdef OEM
-      strcat(cookieString, hdrName);
-#endif //OEM
     }
-#ifdef OEM
-    if (cookieString != NULL) {
-      cookie = xstrdup(cookieString);
-    }
-  }
-}
-#endif //OEM
 
 
 // httpMessage::getModDate()
@@ -461,13 +433,7 @@ httpResponse::httpResponse()
   authRealm = NULL;
   dateResponse = NULL;
   status = STATUS_INTERNAL_SERVER_ERROR;
-#ifdef OEM
-  cookie = NULL;
-#endif //OEM
   locationURL = NULL;
-#ifdef OEM
-  contentLocationURL = NULL;
-#endif //OEM
   cachable = 1;
 }
 
@@ -488,12 +454,6 @@ httpResponse::~httpResponse()
   if (locationURL != NULL) {
     xfree(locationURL);
   }
-#ifdef OEM
-
-  if (contentLocationURL != NULL) {
-    xfree(contentLocationURL);
-  }
-#endif //OEM
 
   xfree(dateResponse);
 }
@@ -513,10 +473,6 @@ httpResponse::writeHdr(SocketInfo socketD)
   const char lastModStr[] = "Last-modified: ";
   const char expiresStr[] = "Expires: ";
   const char locationStr[] = "Location: ";
-#ifdef OEM
-  const char contentLocationStr[] = "Content-Location: ";
-  const char setCookieStr[] = "Set-Cookie: ";
-#endif //OEM
   const char refreshURLStr[] = "; URL=";
   time_t currentTime;
   const int bufSize = 512;
@@ -550,20 +506,6 @@ httpResponse::writeHdr(SocketInfo socketD)
     }
     hdr.copyFrom("\r\n", 2);
   }
-#ifdef OEM
-  if (cookie != NULL) {
-    SimpleTokenizer cookiesTokens(cookie, ':');
-    int cookiesCount = cookiesTokens.getNumTokensRemaining();
-    for (int index = 0; index < cookiesCount; index++) {
-      char *nextCookie = cookiesTokens.getNext();
-      hdr.copyFrom(setCookieStr, strlen(setCookieStr));
-      hdr.copyFrom(nextCookie, strlen(nextCookie));
-      hdr.copyFrom(";path=/;", strlen(";path=/;"));
-      //hdr.copyFrom(";expires=Wednesday, 10-Oct-2001 23:12:40 GMT", strlen(";expires=Wednesday, 10-Oct-2001 23:12:40 GMT"));
-      hdr.copyFrom("\r\n", 2);
-    }
-  }
-#endif //OEM
 
   // Location Header
   if (locationURL != NULL) {
@@ -571,15 +513,6 @@ httpResponse::writeHdr(SocketInfo socketD)
     hdr.copyFrom(locationURL, strlen(locationURL));
     hdr.copyFrom("\r\n", 2);
   }
-#ifdef OEM
-
-  // Location Header
-  if (contentLocationURL != NULL) {
-    hdr.copyFrom(contentLocationStr, strlen(contentLocationStr));
-    hdr.copyFrom(contentLocationURL, strlen(contentLocationURL));
-    hdr.copyFrom("\r\n", 2);
-  }
-#endif //OEM
 
   // Always send the current time
   currentTime = time(NULL);
@@ -665,15 +598,6 @@ httpResponse::setLocationURL(const char *url)
   }
 }
 
-#ifdef OEM
-void
-httpResponse::setContentLocationURL(const char *url)
-{
-  if (url != NULL) {
-    contentLocationURL = xstrdup(url);
-  }
-}
-#endif //OEM
 
 void
 httpResponse::getLogInfo(const char **date, HttpStatus_t * statusIn, int *length)

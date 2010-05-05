@@ -130,26 +130,6 @@ public:
   {
     return file;
   };
-#ifdef OEM
-  const char *getCookie()
-  {
-    if (cookie != NULL) {
-      return cookie;
-    }
-    return NULL;
-  };
-  const char *getSessionID()
-  {
-    if (sessionID != NULL) {
-      return sessionID;
-    }
-    return NULL;
-  };
-  void setAuthMessage()
-  {
-    authMessage = NULL;
-  };
-#endif //OEM
   const char *getQuery()
   {
     return query;
@@ -201,10 +181,6 @@ private:
   void getModDate();
   Method_t method;
   char *file;
-#ifdef OEM
-  char *cookie;
-  char *sessionID;
-#endif //OEM
   //char* referer;
   char *query;
   Scheme_t scheme;
@@ -252,18 +228,6 @@ public:
     return status;
   };
 
-#ifdef OEM
-  void setCookie(char *s)
-  {
-    cookie = xstrdup(s);
-  };
-  const char *getContentLocationURL()
-  {
-    return contentLocationURL;
-  };
-  void setContentLocationURL(const char *url);
-
-#endif //OEM
 
   void setRefresh(int i)
   {
@@ -309,10 +273,6 @@ public:
 private:
   httpResponse(const httpResponse &);
   HttpStatus_t status;
-#ifdef OEM
-  char *cookie;
-  char *contentLocationURL;
-#endif //OEM
   int refresh;
   int conLen;
   Content_t conType;

@@ -199,12 +199,6 @@ INKStorageEle *copy_storage_ele(INKStorageEle * ele);
 INKUpdateEle *copy_update_ele(INKUpdateEle * ele);
 INKVirtIpAddrEle *copy_virt_ip_addr_ele(INKVirtIpAddrEle * ele);
 INKCommentEle *copy_comment_ele(INKCommentEle * ele);
-#ifdef OEM
-INKRmServerEle *copy_rmserver_ele(INKRmServerEle * ele);
-INKVscanEle *copy_vscan_ele(INKVscanEle * ele);
-INKVsTrustedHostEle *copy_vs_trusted_host_ele(INKVsTrustedHostEle * ele);
-INKVsExtensionEle *copy_vs_extension_ele(INKVsExtensionEle * ele);
-#endif
 
 /***************************************************************************
  * Functions needed by implementation but must be hidden from user

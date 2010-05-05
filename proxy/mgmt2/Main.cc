@@ -73,10 +73,6 @@
 #include "P_RecCore.h"
 
 
-#if defined(OEM)
-#include "tools/ConfigAPI.h"
-#include "tools/SysAPI.h"
-#endif
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 
@@ -1437,16 +1433,6 @@ fileUpdated(char *fname)
     mgmt_log(stderr, "[fileUpdated] stats.config.xml file has been modified\n");
   } else if (strcmp(fname, "congestion.config") == 0) {
     lmgmt->signalFileChange("proxy.config.http.congestion_control.filename");
-#if defined(OEM)
-  } else if (strcmp(fname, "net.config.xml") == 0) {
-    mgmt_log(stderr, "[fileUpdated] net.config.xml file has been modified\n");
-  } else if (strcmp(fname, "plugins/vscan.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] plugins/vscan.config file has been modified\n");
-  } else if (strcmp(fname, "plugins/trusted-host.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] plugins/trusted-host.config file has been modified\n");
-  } else if (strcmp(fname, "plugins/extensions.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] plugins/extensions.config file has been modified\n");
-#endif
   } else {
     mgmt_elog(stderr, "[fileUpdated] Unknown config file updated '%s'\n", fname);
 

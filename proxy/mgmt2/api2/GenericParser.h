@@ -221,12 +221,6 @@ private:
   TokenList *logsParse(char *rule);
   TokenList *pluginParse(char *rule);
   TokenList *storageParse(char *rule);
-#if defined(OEM)
-  TokenList *rmserverParse(char *rule);
-  TokenList *vscanParse(char *rule);
-  TokenList *vsTrustedHostParse(char *rule);
-  TokenList *vsExtensionParse(char *rule);
-#endif
   TokenList *log_hostsParse(char *rule);
   bool inQuote(const char *str);
 };

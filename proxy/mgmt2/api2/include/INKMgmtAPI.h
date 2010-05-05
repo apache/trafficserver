@@ -482,19 +482,6 @@ typedef enum
     INK_STORAGE,                /* storage.config */
     INK_UPDATE_URL,             /* update.config */
     INK_VADDRS,                 /* vaddrs.config */
-#ifdef OEM
-    INK_RM_ADMIN_PORT,          /* rmserver.cfg */
-    INK_RM_REALM,
-    INK_RM_PNA_PORT,
-    INK_RM_MAX_PROXY_CONN,
-    INK_RM_MAX_GWBW,
-    INK_RM_MAX_PXBW,
-    INK_RM_PNA_RDT_PORT,
-    INK_RM_PNA_RDT_IP,
-    INK_VSCAN,                  /* vscan.config */
-    INK_VS_TRUSTED_HOST,        /* trusted-host.config */
-    INK_VS_EXTENSION,           /* extensions.config */
-#endif
     INK_TYPE_UNDEFINED,
     INK_TYPE_COMMENT            /* for internal use only */
   } INKRuleTypeT;
@@ -1104,16 +1091,6 @@ typedef enum
   inkapi void INKUpdateEleDestroy(INKUpdateEle * ele);
   inkapi INKVirtIpAddrEle *INKVirtIpAddrEleCreate();
   inkapi void INKVirtIpAddrEleDestroy(INKVirtIpAddrEle * ele);
-#ifdef OEM
-  inkapi INKRmServerEle *INKRmServerEleCreate(INKRuleTypeT);
-  inkapi void INKRmServerEleDestroy(INKRmServerEle * ele);
-  inkapi INKVscanEle *INKVscanEleCreate();
-  inkapi void INKVscanEleDestroy(INKVscanEle * ele);
-  inkapi INKVsTrustedHostEle *INKVsTrustedHostEleCreate();
-  inkapi void INKVsTrustedHostEleDestroy(INKVsTrustedHostEle * ele);
-  inkapi INKVsExtensionEle *INKVsExtensionEleCreate();
-  inkapi void INKVsExtensionEleDestroy(INKVsExtensionEle * ele);
-#endif
 /*--- Ele helper operations -------------------------------------*/
 
 /* INKIsValid: checks if the fields in the ele are all valid

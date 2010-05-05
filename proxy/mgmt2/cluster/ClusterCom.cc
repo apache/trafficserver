@@ -1583,9 +1583,6 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
 
     /* Some files are local only */
     if (strcmp(line, "ipnat.conf") == 0 || strcmp(line, "storage.config") == 0 ||
-#if defined(OEM)
-        strcmp(line, "net.config.xml") == 0 ||
-#endif
         strcmp(line, "lm.config") == 0 ||       // legacy: should remove
         strcmp(line, "internal.config") == 0) { // legacy: should remove
       continue;

@@ -244,16 +244,6 @@ Rule::parse(const char *const_rule, INKFileNameT filetype)
     return updateParse(rule);
   case INK_FNAME_VADDRS:       /* vaddrs.config */
     return vaddrsParse(rule);
-#if defined(OEM)
-  case INK_FNAME_RMSERVER:     /* rmserver.cfg */
-    return rmserverParse(rule);
-  case INK_FNAME_VSCAN:        /* vscan.config */
-    return vscanParse(rule);
-  case INK_FNAME_VS_TRUSTED_HOST:      /* trusted-host.config */
-    return vsTrustedHostParse(rule);
-  case INK_FNAME_VS_EXTENSION: /* extensions.config */
-    return vsExtensionParse(rule);
-#endif
   default:
     return NULL;
   }
@@ -1029,74 +1019,6 @@ Rule::storageParse(char *rule)
   return m_tokenList;
 }
 
-#if defined(OEM)
-/**
- * RmServerParse
- * ------------
- * The line should be in XXX=VVV format
- * 
- **/
-TokenList *
-Rule::rmserverParse(char *rule)
-{
-  return cacheParse(rule, 1, 1);
-}
-
-/*
-  Rule::vscanParse
-  parse plugins/vscan.config
-  each line is in attr_name=attr_value format
- */
-TokenList *
-Rule::vscanParse(char *rule)
-{
-  return cacheParse(rule, 1, 1);
-}
-
-/*
-  Rule::vsTrustedHostParse
-  parse plugins/trusted-host.config
-  each line is in <hostname> format
-  ex: internal.inktomi.com
- */
-TokenList *
-Rule::vsTrustedHostParse(char *rule)
-{
-  Tokenizer ruleTok(" \t");
-  int numRuleTok = ruleTok.Initialize(rule);
-  tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-
-  if (numRuleTok != 1) {
-    setErrorHint("Expecting one token");
-    return NULL;
-  }
-
-  Token *token;
-  TokenList *m_tokenList = NEW(new TokenList());
-
-  // at least one token, anyways
-  token = NEW(new Token());
-  token->setName(tokenStr);
-  m_tokenList->enqueue(token);
-
-  return m_tokenList;
-}
-
-/*
-  Rule::vsExtensionParse
-  parse plugins/extensions.config
-  each line is in <file_extension> format
-  ex: txt
- */
-TokenList *
-Rule::vsExtensionParse(char *rule)
-{
-  // currently, format is same as trusted, no need to duplicate the code
-  // this fact may change later
-  return vsTrustedHostParse(rule);
-}
-#endif
 
 /*
  * bool Rule::inQuote(char *str)
@@ -1208,17 +1130,6 @@ RuleList::parse(char *fileBuf, const char *filename)
   } else if (strstr(filename, "storage.config")) {
     m_filetype = INK_FNAME_STORAGE;     /* storage.config */
   }
-#if defined(OEM)
-  else if (strstr(filename, "rmserver.cfg")) {
-    m_filetype = INK_FNAME_RMSERVER;    /* rmserver.cfg */
-  } else if (strstr(filename, "plugins/vscan.config")) {
-    m_filetype = INK_FNAME_VSCAN;       /* vscan.config */
-  } else if (strstr(filename, "plugins/trusted-host.config")) {
-    m_filetype = INK_FNAME_VS_TRUSTED_HOST;     /* trusted-host.config */
-  } else if (strstr(filename, "plugins/extensions.config")) {
-    m_filetype = INK_FNAME_VS_EXTENSION;        /* extensions.config */
-  }
-#endif
   else {
     m_filetype = INK_FNAME_UNDEFINED;
   }

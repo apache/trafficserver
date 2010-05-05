@@ -88,9 +88,6 @@
 #define HTML_ID_AUTH_MONITOR_CHANGE     "s_text_035"
 #define HTML_ID_USER                    "s_text_036"
 #define HTML_ID_NO_PLUGINS              "s_text_037"
-#ifdef OEM
-#define HTML_ID_OEM_NO_PLUGINS          "s_text_038"
-#endif
 #define HTML_ID_NO_STATS                "s_text_039"
 
 #define HTML_ID_SUBMIT_WARN_FLG         "s_text_100"
@@ -115,10 +112,6 @@
 #define HTML_ID_SUBMIT_NOTE_FLG         "s_text_150"
 #define HTML_ID_RESTART_REQUIRED        "s_text_151"
 #define HTML_ID_NEW_ADMIN_PASSWD_SET    "s_text_152"
-#ifdef OEM
-#define HTML_ID_RM_RESTART_REQUIRED     "s_text_153"
-#define HTML_ID_IPNAT_CHANGE_REQUIRED   "s_text_154"
-#endif
 #define HTML_ID_RESTART_REQUIRED_FILE   "s_text_155"
 
 #define HTML_ID_INSPECTOR_REGEX_MISSED  "s_text_300"
@@ -373,39 +366,10 @@
 #define HTML_ID_CFG_COMMIT_ERROR              "s_text_905"
 #define HTML_ID_CFG_INVALID_RULE              "s_text_906"
 
-#ifdef OEM
-#define HTML_ID_CFG_WEBSENSE                  "s_text_2000"
-#define HTML_ID_CFG_WEBSENSE_HELP             "s_text_2001"
-
-#define HTML_ID_CFG_RM_PNA_PORT               "s_text_2010"
-#define HTML_ID_CFG_RM_PNA_RDT_PORT           "s_text_2011"
-#define HTML_ID_CFG_RM_PNA_PORT_HELP          "s_text_2012"
-#define HTML_ID_CFG_RM_PNA_RDT_PORT_HELP      "s_text_2013"
-#endif
 
 #define HTML_ID_CLEAR_CLUSTER_STAT            "s_text_2020"
 #define HTML_ID_CLEAR_CLUSTER_STAT_HELP       "s_text_2021"
 
-#ifdef OEM
-/* vscan.config */
-#define HTML_ID_CFG_VIRUS_SCAN                   "s_text_2030"
-#define HTML_ID_CFG_VIRUS_SCAN_HELP              "s_text_2031"
-#define HTML_ID_CFG_VSCAN_IP_FORMAT_ERROR        "s_text_2032"
-#define HTML_ID_CFG_VSCAN_PORT_FORMAT_ERROR      "s_text_2033"
-#define HTML_ID_CFG_VSCAN_SERVER_FORMAT_ERROR    "s_text_2034"
-#define HTML_ID_CFG_VSCAN_PRIMARY_SERVER_ERROR   "s_text_2035"
-#define HTML_ID_REBOOT_REQUIRED                  "s_text_2036"
-/* trusted-host.config */
-#define HTML_ID_CFG_VSCAN_NO_TRUSTED_HOSTS       "s_text_2040"
-#define HTML_ID_CFG_VSCAN_HOST_URL_ERROR         "s_text_2041"
-#define HTML_ID_CFG_VSCAN_HOST_IP_ERROR          "s_text_2042"
-#define HTML_ID_CFG_VSCAN_HOST_NAME_ERROR        "s_text_2043"
-#define HTML_ID_CFG_VSCAN_HOST_DUPLICATE_ERROR   "s_text_2044"
-/* extensions.config */
-#define HTML_ID_CFG_VSCAN_EXT_ERROR              "s_text_2050"
-#define HTML_ID_CFG_VSCAN_EXT_DUPLICATE_ERROR    "s_text_2051"
-#define HTML_ID_CFG_VSCAN_EXTFR_FILE_MISSING     "s_text_2052"
-#endif
 
 /*********************/
 
@@ -451,9 +415,6 @@
 #define HTML_TYPE_SUBMIT                "submit"
 #define HTML_TYPE_CHECKBOX              "checkbox"
 #define HTML_TYPE_BUTTON                "button"
-#ifdef OEM
-#define HTML_TYPE_TEXT                  "text"
-#endif
 
 #define HTML_WRAP_OFF                   "off"
 
@@ -470,9 +431,6 @@
 #define HTML_OTW_UPGRADE_CGI_FILE       "/configure/helper/traffic_shell.cgi"
 #define HTML_FEATURE_ON_OFF_FILE        "/configure/c_basic.ink"
 #define HTML_DEFAULT_HELP_FILE          "/help/ts.ink"
-#ifdef OEM
-#define HTML_DEFAULT_RM_FILE            "/configure/c_realnetworks_realproxy.ink"
-#endif
 
 #define HTML_CHART_FILE                 "/charting/chart.cgi"
 #define HTML_SUBMIT_ALARM_FILE          "/submit_alarm.cgi"
@@ -490,15 +448,6 @@
 #define HTML_SUBMIT_CONFIG_DISPLAY      "/configure/submit_config_display.cgi"
 #define HTML_SUBMIT_NET_CONFIG          "/submit_net_config.cgi"
 #define HTML_SUBMIT_OTW_UPGRADE_FILE    "/submit_otw_upgrade.cgi"
-#ifdef OEM
-#define HTML_SUBMIT_SNMP_CONFIG         "/submit_snmp_config.cgi"
-#define HTML_SUBMIT_SESSION             "/submit_session.cgi"
-#define HTML_SUBMIT_RELOGIN             "/submit_relogin.cgi"
-#define HTML_SUBMIT_PLUGIN_WEBSENSE     "/submit_plugin_websense.cgi"
-#define HTML_SUBMIT_RMSERVER            "/submit_rmserver.cgi"
-#define RMSERVER_WEB_ENTRY              5
-#define HTML_SUBMIT_PLUGIN_VSCAN        "/submit_plugin_vscan.cgi"
-#endif
 #define HTML_BACKDOOR_STATS             "/monitor/m_records.cgi"
 #define HTML_BACKDOOR_CONFIGS           "/configure/c_records.cgi"
 #define HTML_BACKDOOR_STATS_REC         "/monitor/m_records_rec.cgi"
@@ -586,12 +535,7 @@ int HtmlRndrOptionClose(textBuffer * html);
 int HtmlRndrPreClose(textBuffer * html);
 int HtmlRndrUlClose(textBuffer * html);
 
-#ifdef OEM
-int HtmlRndrInput(textBuffer * html, HtmlCss css, HtmlType type, char *name, char *value, char *target, char *onclick,
-                  char *size = NULL);
-#else
 int HtmlRndrInput(textBuffer * html, const HtmlCss css, const HtmlType type, const char *name, const char *value, const char *target, const char *onclick);
-#endif
 
 int HtmlRndrInput(textBuffer * html, MgmtHashTable * dict_ht, HtmlCss css, HtmlType type, char *name, HtmlId value_id);
 int HtmlRndrBr(textBuffer * html);
@@ -604,20 +548,4 @@ int HtmlRndrImg(textBuffer * html, const char *src, const char *border, const ch
 int HtmlRndrDotClear(textBuffer * html, int width, int height);
 int HtmlRndrSelectList(textBuffer * html, const char *listName, const char *options[], int numOpts);
 
-#ifdef OEM
-int getMaximumClientConnections();
-enum Plugin_t
-{
-  PLUGIN_NONE = 0,
-  PLUGIN_WEBSENSE,
-  PLUGIN_VSCAN,
-};
-enum VscanObj_t
-{
-  VSCAN_SERVER = 0,
-  VSCAN_PORT,
-};
-
-const static int NUM_VSERVERS = 3;
-#endif
 #endif // _WEB_HTTP_RENDER_H_

@@ -25,9 +25,6 @@
 #include "ink_platform.h"
 #include "CfgContextUtils.h"
 #include "Tokenizer.h"
-#if defined(OEM)
-#include "CoreAPI.h"
-#endif
 /***************************************************************************
  * Conversion Functions
  ***************************************************************************/
@@ -1566,16 +1563,6 @@ filename_to_string(INKFileNameT file)
   case INK_FNAME_VADDRS:
     return xstrdup("vaddrs.config");
 
-#if defined(OEM)
-  case INK_FNAME_RMSERVER:
-    return xstrdup("rmserver.cfg");
-  case INK_FNAME_VSCAN:
-    return xstrdup("plugins/vscan.config");
-  case INK_FNAME_VS_TRUSTED_HOST:
-    return xstrdup("plugins/trusted-host.config");
-  case INK_FNAME_VS_EXTENSION:
-    return xstrdup("plugins/extensions.config");
-#endif
 
   default:                     /* no such config file */
     return NULL;
@@ -2125,27 +2112,6 @@ create_ele_obj_from_rule_node(Rule * rule)
   case INK_VADDRS:             /* vaddrs.config */
     ele = (CfgEleObj *) new VirtIpAddrObj(token_list);
     break;
-#if defined(OEM)
-  case INK_RM_ADMIN_PORT:      /* rmserver.cfg */
-  case INK_RM_PNA_PORT:
-  case INK_RM_MAX_PROXY_CONN:
-  case INK_RM_MAX_GWBW:
-  case INK_RM_MAX_PXBW:
-  case INK_RM_REALM:
-  case INK_RM_PNA_RDT_PORT:
-  case INK_RM_PNA_RDT_IP:
-    ele = (CfgEleObj *) new RmServerObj(token_list);
-    break;
-  case INK_VSCAN:
-    ele = (CfgEleObj *) new VscanObj(token_list);
-    break;
-  case INK_VS_TRUSTED_HOST:
-    ele = (CfgEleObj *) new VsTrustedHostObj(token_list);
-    break;
-  case INK_VS_EXTENSION:
-    ele = (CfgEleObj *) new VsExtensionObj(token_list);
-    break;
-#endif
   default:
     return NULL;                //invalid rule type
   }
@@ -2264,26 +2230,6 @@ create_ele_obj_from_ele(INKCfgEle * ele)
   case INK_VADDRS:             /* vaddrs.config */
     ele_obj = (CfgEleObj *) new VirtIpAddrObj((INKVirtIpAddrEle *) ele);
     break;
-#if defined(OEM)
-  case INK_RM_ADMIN_PORT:      /* rmserver.cfg */
-  case INK_RM_PNA_PORT:
-  case INK_RM_MAX_PROXY_CONN:
-  case INK_RM_MAX_GWBW:
-  case INK_RM_REALM:
-  case INK_RM_PNA_RDT_PORT:
-  case INK_RM_PNA_RDT_IP:
-    ele_obj = (CfgEleObj *) new RmServerObj((INKRmServerEle *) ele);
-    break;
-  case INK_VSCAN:
-    ele_obj = (CfgEleObj *) new VscanObj((INKVscanEle *) ele);
-    break;
-  case INK_VS_TRUSTED_HOST:
-    ele_obj = (CfgEleObj *) new VsTrustedHostObj((INKVsTrustedHostEle *) ele);
-    break;
-  case INK_VS_EXTENSION:
-    ele_obj = (CfgEleObj *) new VsExtensionObj((INKVsExtensionEle *) ele);
-    break;
-#endif
   case INK_TYPE_UNDEFINED:
   default:
     return NULL;                // error
@@ -2446,35 +2392,6 @@ get_rule_type(TokenList * token_list, INKFileNameT file)
 
   case INK_FNAME_VADDRS:       /* vaddrs.config */
     return INK_VADDRS;
-#if defined(OEM)
-  case INK_FNAME_RMSERVER:
-    tok = token_list->first();
-    if (strcmp(tok->name, RM_ADMIN_PORT) == 0) {
-      return INK_RM_ADMIN_PORT;
-    } else if (strcmp(tok->name, RM_PNA_PORT) == 0) {
-      return INK_RM_PNA_PORT;
-    } else if (strcmp(tok->name, RM_REALM) == 0) {
-      return INK_RM_REALM;
-    } else if (strcmp(tok->name, RM_MAX_PROXY_CONN) == 0) {
-      return INK_RM_MAX_PROXY_CONN;
-    } else if (strcmp(tok->name, RM_MAX_GWBW) == 0) {
-      return INK_RM_MAX_GWBW;
-    } else if (strcmp(tok->name, RM_MAX_PXBW) == 0) {
-      return INK_RM_MAX_PXBW;
-    } else if (strcmp(tok->name, RM_PNA_RDT_PORT) == 0) {
-      return INK_RM_PNA_RDT_PORT;
-    } else if (strcmp(tok->name, RM_PNA_RDT_IP) == 0) {
-      return INK_RM_PNA_RDT_IP;
-    } else {
-      return INK_TYPE_UNDEFINED;
-    }
-  case INK_FNAME_VSCAN:        /* vscan.config */
-    return INK_VSCAN;
-  case INK_FNAME_VS_TRUSTED_HOST:      /* trusted-host.config */
-    return INK_VS_TRUSTED_HOST;
-  case INK_FNAME_VS_EXTENSION: /* extensions.config */
-    return INK_VS_EXTENSION;
-#endif
   case INK_FNAME_UNDEFINED:
   default:
     return INK_TYPE_UNDEFINED;
@@ -3188,81 +3105,6 @@ copy_comment_ele(INKCommentEle * ele)
   return nele;
 }
 
-#if defined(OEM)
-INKRmServerEle *
-copy_rmserver_ele(INKRmServerEle * ele)
-{
-  if (!ele)
-    return NULL;
-
-  INKRmServerEle *nele = INKRmServerEleCreate(INK_TYPE_UNDEFINED);
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->Vname)
-    nele->Vname = xstrdup(ele->Vname);
-  if (ele->str_val)
-    nele->str_val = xstrdup(ele->str_val);
-  nele->int_val = ele->int_val;
-
-  return nele;
-}
-
-INKVscanEle *
-copy_vscan_ele(INKVscanEle * ele)
-{
-  if (!ele)
-    return NULL;
-
-  INKVscanEle *nele = INKVscanEleCreate();
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->attr_name)
-    nele->attr_name = xstrdup(ele->attr_name);
-  if (ele->attr_val)
-    nele->attr_val = xstrdup(ele->attr_val);
-
-  return nele;
-}
-
-INKVsTrustedHostEle *
-copy_vs_trusted_host_ele(INKVsTrustedHostEle * ele)
-{
-  if (!ele)
-    return NULL;
-
-  INKVsTrustedHostEle *nele = INKVsTrustedHostEleCreate();
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->hostname)
-    nele->hostname = xstrdup(ele->hostname);
-
-  return nele;
-}
-
-INKVsExtensionEle *
-copy_vs_extension_ele(INKVsExtensionEle * ele)
-{
-  if (!ele)
-    return NULL;
-
-  INKVsExtensionEle *nele = INKVsExtensionEleCreate();
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->file_ext)
-    nele->file_ext = xstrdup(ele->file_ext);
-
-  return nele;
-}
-
-#endif
 /***************************************************************************
  * Functions needed by implementation but must be hidden from user
  ***************************************************************************/

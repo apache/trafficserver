@@ -43,27 +43,6 @@ testcall(char *foo)
   Debug("lm", "Received Callback that %s has changed\n", foo);
 }
 
-#if defined(OEM)
-
-bool
-pluginInstalled()
-{
-  Rollback *file_rb;
-  version_t ver;
-  textBuffer *file_content = NULL;
-  bool retval = false;
-  if (configFiles->getRollbackObj("plugin.config", &file_rb)) {
-    ver = file_rb->getCurrentVersion();
-    file_rb->getVersion(ver, &file_content);
-    if (strstr(file_content->bufPtr(), "vscan.so") != NULL)
-      retval = true;
-  }
-  if (file_content)
-    delete file_content;
-  return retval;
-}
-
-#endif
 
 //
 // initializeRegistry()
@@ -118,14 +97,5 @@ initializeRegistry()
   configFiles->addFile("splitdns.config", false);
   configFiles->addFile("ssl_multicert.config", false);
   configFiles->addFile("stats.config.xml", false);
-#if defined(OEM)
-  configFiles->addFile("net.config.xml", true);
-  /* only if the vscan plugin is installed would this file be read */
-  if (pluginInstalled()) {
-    configFiles->addFile("plugins/vscan.config", false);
-    configFiles->addFile("plugins/trusted-host.config", false);
-    configFiles->addFile("plugins/extensions.config", false);
-  }
-#endif
   configFiles->registerCallback(testcall);
 }

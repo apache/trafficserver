@@ -43,21 +43,4 @@ int WebHttpSessionDelete(char *key);
 
 char *WebHttpMakeSessionKey_Xmalloc();
 
-#ifdef OEM
-struct current_session_ele
-{
-  char *session_id;
-  time_t created;
-  time_t last_access;
-  char *last_state;
-  bool session_status;
-};
-
-static ink_mutex current_session_mutex;
-
-void WebHttpCurrentSessionInit();
-int WebHttpCurrentSessionStore(char *key);
-int WebHttpCurrentSessionRetrieve(char *key, current_session_ele ** data);
-int WebHttpCurrentSessionDelete(char *key);
-#endif // OEM
 #endif // _WEB_HTTP_SESSION_

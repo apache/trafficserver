@@ -1046,74 +1046,6 @@ computeXactMax()
 //  CALLEE must deallocate the returned hash table with
 //   ink_hash_table_destroy_and_xfree_values(InkHashTable *ht_ptr)
 //
-#ifdef OEM
-
-// OEM version supports select multiple 
-// once this is stablized, will merge this code to GA
-InkHashTable *
-processFormSubmission(char *submission)
-{
-
-  InkHashTable *nameVal = ink_hash_table_create(InkHashTableKeyType_String);
-  Tokenizer updates("&\n\r");
-  Tokenizer pair("=");
-  int numUpdates;
-  char *name;
-  char *value;
-  char *submission_copy;
-  int pairNum;
-  char *old_value;
-  char buffer[2048];
-
-  if (submission == NULL) {
-    ink_hash_table_destroy(nameVal);
-    return NULL;
-  }
-
-  submission_copy = xstrdup(submission);
-  numUpdates = updates.Initialize(submission_copy, SHARE_TOKS);
-
-  for (int i = 0; i < numUpdates; i++) {
-    pairNum = pair.Initialize(updates[i]);
-
-    // We should have gotten either either 1 or 2 tokens
-    //    One token indicates an variable being set to
-    //    blank.  Two indicates the variable being set to
-    //    a value.  If the submission is invalid, just forget
-    //    about it.
-    if (pairNum == 1 || pairNum == 2) {
-      name = xstrdup(pair[0]);
-      substituteUnsafeChars(name);
-
-      // If the value is blank, store it as a null
-      //   since BaseRecords represents empty as NULL
-      //   as opposed to the empty string
-      if (pairNum == 1) {
-        value = NULL;
-      } else {
-        value = xstrdup(pair[1]);
-        if (ink_hash_table_lookup(nameVal, (char *) name, (void **) &old_value)) {
-          if (old_value) {
-            strcpy(buffer, old_value);
-            strcat(buffer, "&");
-            value = xstrdup(strcat(buffer, value));
-            ink_hash_table_delete(nameVal, name);
-            xfree(old_value);
-          }
-        }
-        substituteUnsafeChars(value);
-      }
-
-      ink_hash_table_insert(nameVal, name, value);
-      xfree(name);
-    }
-  }
-  xfree(submission_copy);
-
-  return nameVal;
-}
-
-#else
 
 InkHashTable *
 processFormSubmission(char *submission)
@@ -1166,7 +1098,6 @@ processFormSubmission(char *submission)
 
   return nameVal;
 }
-#endif
 
 // InkHashTable* processFormSubmission_noSubstitute(char* submission) 
 //

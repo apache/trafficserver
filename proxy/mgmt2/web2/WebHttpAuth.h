@@ -55,8 +55,5 @@ struct WebHttpContext;
 
 void WebHttpAuthInit();
 int WebHttpAuthenticate(WebHttpContext * whc);
-#ifdef OEM
-int WebHttpAuthenticateWithoutNewSession(WebHttpContext * whc);
-#endif
 
 #endif // _WEB_HTTP_AUTH_H_
