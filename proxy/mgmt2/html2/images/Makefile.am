@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-webuidir = $(DESTDIR)$(pkgdatadir)/images
+webuidir = $(pkgdatadir)/images
 dist_webui_DATA = \
 	arrow_add.gif \
 	arrow_cross.gif \

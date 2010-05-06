@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 
-webuidir = $(DESTDIR)$(pkgdatadir)/agent-installer
+webuidir = $(pkgdatadir)/agent-installer
 dist_webui_DATA = \
 	installer.cgi \
 	installer.html
