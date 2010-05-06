@@ -70,7 +70,8 @@ libinkcache_a_SOURCES = \
   P_CacheInternal.h \
   P_CachePart.h \
   P_RamCache.h \
-  RamCache.cc \
+  RamCacheLRU.cc \
+  RamCacheCLFUS.cc \
   Store.cc \
   Inline.cc $(ADD_SRC)
 

@@ -582,6 +582,8 @@ AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
 AC_CHECK_LIB([iconv],[iconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
 AC_CHECK_LIB([iconv],[libiconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
 AC_CHECK_LIB([ev],[ev_sleep],[AC_SUBST([LIBEV],["-lev"])])
+AC_CHECK_LIB([ev],[ev_sleep],[AC_SUBST([LIBEV],["-lev"])])
+AX_CHECK_ZLIB()
 
 AC_CHECK_LIB([ssl],[SSL_CTX_new],
   [AC_SUBST([LIBSSL],["-lssl -lcrypto"])
@@ -590,6 +592,14 @@ AC_CHECK_LIB([ssl],[SSL_CTX_new],
   [AC_MSG_FAILURE([check for libssl failed. Have you installed openssl-devel?])],
   [-lcrypto]
 )
+
+AC_CHECK_HEADER(lzma.h,have_lzma_hdr=yes)
+AC_CHECK_LIB(lzma,lzma_code, have_lzma_lib=yes)
+if test x$have_lzma_hdr == xyes -a x$have_lzma_lib == xyes ; then
+  have_lzma=yes
+  LIBS="$LIBS -llzma"
+  AC_DEFINE(HAVE_LZMA,1,[Compiling with LZMA support])
+fi
 
 #
 # Tcl macros provided by m4/tcl.m4

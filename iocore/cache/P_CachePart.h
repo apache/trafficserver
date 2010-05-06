@@ -158,7 +158,7 @@ struct Part:public Continuation
   Event *trigger;
 
   OpenDir open_dir;
-  RamCache ram_cache;
+  RamCache *ram_cache;
   int evacuate_size;
   DLL<EvacuationBlock> *evacuate;
   DLL<EvacuationBlock> lookaside[LOOKASIDE_SIZE];
@@ -175,7 +175,10 @@ struct Part:public Continuation
   bool dir_sync_waiting;
   bool dir_sync_in_progress;
   bool writing_end_marker;
-  RamCacheEntry first_fragment;
+
+  CacheKey first_fragment_key;
+  ink64 first_fragment_offset;
+  Ptr<IOBufferData> first_fragment_data;
 
   void cancel_trigger();
 

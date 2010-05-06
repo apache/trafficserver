@@ -86,7 +86,6 @@ public:
     if (sigusr1_received) {
       sigusr1_received = 0;
 
-      Cache::print_stats(stderr);
       xdump_to_file(stderr);
       ink_freelists_dump(stderr);
       if (!end)

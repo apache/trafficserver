@@ -117,6 +117,8 @@ libinktomi___a_SOURCES = \
   InkTime.h \
   inktomi++.h \
   ink_unused.h \
+  fastlz.h \
+  fastlz.c \
   I_Version.h \
   List.h \
   llqueue.cc \

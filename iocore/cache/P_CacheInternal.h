@@ -184,6 +184,10 @@ extern RecRawStatBlock *cache_rsb;
 	RecIncrRawStat(cache_rsb, mutex->thread_holding, (int) (x), (int) (y)); \
 	RecIncrRawStat(part->cache_part->part_rsb, mutex->thread_holding, (int) (x), (int) (y));
 
+#define CACHE_SUM_DYN_STAT_THREAD(x, y) \
+	RecIncrRawStat(cache_rsb, this_ethread(), (int) (x), (int) (y)); \
+	RecIncrRawStat(part->cache_part->part_rsb, this_ethread(), (int) (x), (int) (y));
+
 #define GLOBAL_CACHE_SUM_GLOBAL_DYN_STAT(x, y) \
 	RecIncrGlobalRawStatSum(cache_rsb,(x),(y))
 
@@ -214,6 +218,8 @@ extern int cache_config_read_while_writer;
 extern char cache_system_config_directory[PATH_NAME_MAX + 1];
 extern int cache_clustering_enabled;
 extern int cache_config_agg_write_backlog;
+extern int cache_config_ram_cache_compress;
+extern int cache_config_ram_cache_compress_percent;
 #ifdef HIT_EVACUATE
 extern int cache_config_hit_evacuate_percent;
 extern int cache_config_hit_evacuate_size_limit;
@@ -464,9 +470,10 @@ struct CacheVC:CacheVConnection
       unsigned int open_read_timeout:1; // UNUSED
       unsigned int data_done:1;
       unsigned int read_from_writer_called:1;
-      unsigned int not_from_ram_cache:1;        // entire doc was from ram cache
+      unsigned int not_from_ram_cache:1;        // entire object was from ram cache
       unsigned int rewrite_resident_alt:1;
       unsigned int readers:1;
+      unsigned int doc_from_ram_cache:1;
 #ifdef HIT_EVACUATE
       unsigned int hit_evacuate:1;
 #endif
@@ -974,7 +981,6 @@ struct Cache
   void part_initialized(bool result);
 
   int open_done();
-  static void print_stats(FILE *fp, int verbose = 0);
 
   Part *key_to_part(CacheKey *key, char *hostname, int host_len);
 

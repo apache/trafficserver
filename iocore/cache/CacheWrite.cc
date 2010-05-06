@@ -528,7 +528,7 @@ CacheVC::evacuateDocDone(int event, Event *e)
 
           }
           if (dir_overwrite(&doc->first_key, part, &dir, &overwrite_dir)) {
-            part->ram_cache.fixup(&doc->first_key, 0, dir_offset(&overwrite_dir), 0, dir_offset(&dir));
+            part->ram_cache->fixup(&doc->first_key, 0, dir_offset(&overwrite_dir), 0, dir_offset(&dir));
           }
         } else {
           DDebug("cache_evac", "evacuating earliest: %X %d", (int) doc->key.word(0), (int) dir_offset(&overwrite_dir));

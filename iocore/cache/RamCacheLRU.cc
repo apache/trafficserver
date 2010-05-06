@@ -1,0 +1,197 @@
+/** @file
+
+  A brief file description
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+#include "P_Cache.h"
+
+struct RamCacheLRUEntry {
+  INK_MD5 key;
+  inku32 auxkey1;
+  inku32 auxkey2;
+  LINK(RamCacheLRUEntry, lru_link);
+  LINK(RamCacheLRUEntry, hash_link);
+  Ptr<IOBufferData> data;
+};
+
+struct RamCacheLRU : RamCache {
+  ink64 max_bytes;
+  ink64 bytes;
+  ink64 objects;
+
+  // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
+  int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
+  int put(INK_MD5 *key, IOBufferData *data, inku32 len, bool copy = false, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
+  int fixup(INK_MD5 *key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2);
+
+  void init(ink64 max_bytes, Part *part);
+
+  // private
+  inku16 *seen;
+  Que(RamCacheLRUEntry, lru_link) lru;
+  DList(RamCacheLRUEntry, hash_link) *bucket;
+  int nbuckets;
+  int ibuckets;
+  Part *part;
+
+  void resize_hashtable();
+  RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
+
+  RamCacheLRU():bytes(0), objects(0), seen(0), bucket(0), nbuckets(0), ibuckets(0), part(NULL) {}
+};
+
+ClassAllocator<RamCacheLRUEntry> ramCacheLRUEntryAllocator("RamCacheLRUEntry");
+
+const static int bucket_sizes[] = {
+  127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749, 65521, 131071, 262139,
+  524287, 1048573, 2097143, 4194301, 8388593, 16777213, 33554393, 67108859,
+  134217689, 268435399, 536870909
+};
+
+void RamCacheLRU::resize_hashtable() {
+  int anbuckets = bucket_sizes[ibuckets];
+  DDebug("ram_cache", "resize hashtable %d", anbuckets);
+  ink64 s = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
+  DList(RamCacheLRUEntry, hash_link) *new_bucket = (DList(RamCacheLRUEntry, hash_link) *)xmalloc(s);
+  memset(new_bucket, 0, s);
+  if (bucket) {
+    for (ink64 i = 0; i < nbuckets; i++) {
+      RamCacheLRUEntry *e = 0;
+      while ((e = bucket[i].pop()))
+        new_bucket[e->key.word(3) % anbuckets].push(e);
+    }
+    xfree(bucket);
+  }
+  bucket = new_bucket;
+  nbuckets = anbuckets;
+  if (seen) xfree(seen);
+  int size = bucket_sizes[ibuckets] * sizeof(inku16);
+  seen = (inku16*)xmalloc(size);
+  memset(seen, 0, size);
+}
+
+void
+RamCacheLRU::init(ink64 abytes, Part *apart) {
+  part = apart;
+  max_bytes = abytes;
+  DDebug("ram_cache", "initializing ram_cache %lld bytes", abytes);
+  if (!max_bytes)
+    return;
+  resize_hashtable();
+}
+
+int
+RamCacheLRU::get(INK_MD5 * key, Ptr<IOBufferData> *ret_data, inku32 auxkey1, inku32 auxkey2) {
+  if (!max_bytes)
+    return 0;
+  inku32 i = key->word(3) % nbuckets;
+  RamCacheLRUEntry *e = bucket[i].head;
+  while (e) {
+    if (e->key == *key && e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2) {
+      lru.remove(e);
+      lru.enqueue(e);
+      (*ret_data) = e->data;
+      DDebug("ram_cache", "get %X %d %d HIT", key->word(3), auxkey1, auxkey2);
+      CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_hits_stat, 1);
+      return 1;
+    }
+    e = e->hash_link.next;
+  }
+  DDebug("ram_cache", "get %X %d %d MISS", key->word(3), auxkey1, auxkey2);
+  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
+  return 0;
+}
+
+RamCacheLRUEntry * RamCacheLRU::remove(RamCacheLRUEntry *e) {
+  RamCacheLRUEntry *ret = e->hash_link.next;
+  inku32 b = e->key.word(3) % nbuckets;
+  bucket[b].remove(e);
+  lru.remove(e);
+  bytes -= e->data->block_size();
+  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -e->data->block_size());
+  DDebug("ram_cache", "put %X %d %d FREED", e->key.word(3), e->auxkey1, e->auxkey2);
+  e->data = NULL;
+  THREAD_FREE(e, ramCacheLRUEntryAllocator, this_ethread());
+  objects--;
+  return ret;
+}
+
+// ignore 'len' and 'copy' since we don't touch the data
+int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, inku32, bool, inku32 auxkey1, inku32 auxkey2) {
+  if (!max_bytes)
+    return 0;
+  inku32 i = key->word(3) % nbuckets;
+  RamCacheLRUEntry *e = bucket[i].head;
+  while (e) {
+    if (e->key == *key) {
+      if (e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2)
+        break;
+      else { // discard when aux keys conflict
+        e = remove(e);
+        continue;
+      }
+    }
+    e = e->hash_link.next;
+  }
+  e = THREAD_ALLOC(ramCacheLRUEntryAllocator, this_ethread());
+  e->key = *key;
+  e->auxkey1 = auxkey1;
+  e->auxkey2 = auxkey2;
+  e->data = data;
+  bucket[i].push(e);
+  lru.enqueue(e);
+  bytes += data->block_size();
+  objects++;
+  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, data->block_size());
+  while (bytes > max_bytes) {
+    RamCacheLRUEntry *ee = lru.dequeue();
+    if (ee)
+      remove(ee);
+    else
+      break;
+  }
+  DDebug("ram_cache", "put %X %d %d INSERTED", key->word(3), auxkey1, auxkey2);
+  if (objects > nbuckets) {
+    ++ibuckets;
+    resize_hashtable();
+  }
+  return 1;
+}
+
+int RamCacheLRU::fixup(INK_MD5 * key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2) {
+  if (!max_bytes)
+    return 0;
+  inku32 i = key->word(3) % nbuckets;
+  RamCacheLRUEntry *e = bucket[i].head;
+  while (e) {
+    if (e->key == *key && e->auxkey1 == old_auxkey1 && e->auxkey2 == old_auxkey2) {
+      e->auxkey1 = new_auxkey1;
+      e->auxkey2 = new_auxkey2;
+      return 1;
+    }
+    e = e->hash_link.next;
+  }
+  return 0;
+}
+
+RamCache *new_RamCacheLRU() {
+  return new RamCacheLRU;
+}

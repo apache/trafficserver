@@ -398,9 +398,3 @@ CacheVC::scanUpdateDone(int event, Event * e)
   }
 }
 
-void
-Cache::print_stats(FILE * fp, int verbose)
-{
-  for (int i = 0; i < gnpart; i++)
-    gpart[i]->ram_cache.print_stats(fp, verbose);
-}

@@ -273,7 +273,8 @@ public:
   ProxyAllocator cacheVConnectionAllocator;
   ProxyAllocator newCacheVConnectionAllocator;
   ProxyAllocator openDirEntryAllocator;
-  ProxyAllocator ramCacheEntryAllocator;
+  ProxyAllocator ramCacheCLFUSEntryAllocator;
+  ProxyAllocator ramCacheLRUEntryAllocator;
   ProxyAllocator evacuationBlockAllocator;
   ProxyAllocator ioDataAllocator;
   ProxyAllocator ioBlockAllocator;

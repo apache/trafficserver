@@ -51,6 +51,14 @@
 
 #define SCAN_KB_PER_SECOND      8192 // 1TB/8MB = 131072 = 36 HOURS to scan a TB
 
+#define RAM_CACHE_ALGORITHM_CLFUS        0
+#define RAM_CACHE_ALGORITHM_LRU          1
+
+#define CACHE_COMPRESSION_NONE           0
+#define CACHE_COMPRESSION_FASTLZ         1
+#define CACHE_COMPRESSION_LIBZ           2
+#define CACHE_COMPRESSION_LIBLZMA        3
+
 class CacheVC;
 #ifdef HTTP_CACHE
 class CacheLookupHttpConfig;

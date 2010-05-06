@@ -24,71 +24,20 @@
 #ifndef _P_RAM_CACHE_H__
 #define _P_RAM_CACHE_H__
 
-
 #include "I_Cache.h"
 
-#define RAM_CACHE_SEEN_PER_OBJECT    2
-#define RAM_CACHE_FAST_LOAD_SIZE     32768
-#define n_partitions 1
+// Generic Ram Cache interface
 
-struct Part;
+struct RamCache {
+  // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
+  virtual int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, inku32 auxkey1 = 0, inku32 auxkey2 = 0) = 0;
+  virtual int put(INK_MD5 *key, IOBufferData *data, inku32 len, bool copy = false, inku32 auxkey1 = 0, inku32 auxkey2 = 0) = 0;
+  virtual int fixup(INK_MD5 *key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2) = 0;
 
-struct RamCacheEntry
-{
-  INK_MD5 key;
-  inku32 auxkey1;
-  inku32 auxkey2;
-  LINK(RamCacheEntry, lru_link);
-  LINK(RamCacheEntry, hash_link);
-  Ptr<IOBufferData> data;
+  virtual void init(ink64 max_bytes, Part *part) = 0;
 };
 
-struct RamCachePartition
-{
-  int cur_bytes;
-  int cur_objects;
-  DList(RamCacheEntry, hash_link) *bucket;
-  Que(RamCacheEntry, lru_link) lru;
-  unsigned short *seen;
-  ProxyMutexPtr lock;
-
-  RamCachePartition():cur_bytes(0), cur_objects(0), bucket(0), seen(0), lock(NULL)
-  {
-  }
-};
-
-struct RamCache
-{
-  // Partition Read-only data
-  ink64 bytes;
-  ink64 objects;
-  ink64 partition_size;
-  ink64 seen_size;
-  inku32 cutoff_size;
-  RamCachePartition *partition;
-  RamCachePartition one_partition;
-  Part *part;                   // back pointer to partition
-
-  // returns 1 on found/stored, 0 on not found/stored
-  // if provided, auxkey1 and auxkey2 must match
-  int get(INK_MD5 * key, Ptr<IOBufferData> *ret_data, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
-  int put(INK_MD5 * key, IOBufferData * data, EThread * t, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
-  int fixup(INK_MD5 * key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2);
-  // also returns -1 if locked 
-  int get_lock(INK_MD5 * key, Ptr<IOBufferData> *ret_data, EThread * t, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
-  int put_lock(INK_MD5 * key, IOBufferData * data, EThread * t, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
-
-  void remove_entry(RamCacheEntry * ee, RamCachePartition * p, EThread * t);
-
-  void print_stats(FILE * fp, int verbose = 0);
-
-
-  void init(ink64 bytes, ink64 objects, int cutoff, Part * _part, ProxyMutex * mutex = NULL);
-    RamCache():bytes(0), objects(0), partition_size(0), seen_size(0), cutoff_size(0), partition(0), part(NULL)
-  {
-  }
-};
-
-extern ClassAllocator<RamCacheEntry> ramCacheEntryAllocator;
+RamCache *new_RamCacheLRU();
+RamCache *new_RamCacheCLFUS();
 
 #endif /* _P_RAM_CACHE_H__ */

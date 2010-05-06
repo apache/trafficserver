@@ -53,6 +53,9 @@ do { \
 // Configuration
 
 ink64 cache_config_ram_cache_size = AUTO_SIZE_RAM_CACHE;
+int cache_config_ram_cache_algorithm = 0;
+int cache_config_ram_cache_compress = 0;
+int cache_config_ram_cache_compress_percent = 90;
 int cache_config_http_max_alts = 3;
 int cache_config_dir_sync_frequency = 60;
 int cache_config_permit_pinning = 0;
@@ -61,7 +64,7 @@ int cache_config_select_alternate = 1;
 int cache_config_max_doc_size = 0;
 int cache_config_min_average_object_size = ESTIMATED_OBJECT_SIZE;
 ink64 cache_config_ram_cache_cutoff = 1048576;  // 1 MB
-ink64 cache_config_ram_cache_mixt_cutoff = 1048576;     // 1 MB
+//ink64 cache_config_ram_cache_mixt_cutoff = 1048576;     // 1 MB
 int cache_config_max_disk_errors = 5;
 int cache_config_agg_write_backlog = 5242880;
 #ifdef HIT_EVACUATE
@@ -710,26 +713,24 @@ CacheProcessor::cacheInitialized()
   if (caches_ready) {
     Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0lX, gnpart=%d",
           (unsigned long) caches_ready, gnpart);
+    ink64 ram_cache_bytes = 0;
     if (gnpart) {
-      ink64 ram_cache_bytes = 0;
-      ink32 ram_cache_object_size;
+      for (i = 0; i < gnpart; i++) {
+        switch (cache_config_ram_cache_algorithm) {
+          default: 
+          case RAM_CACHE_ALGORITHM_CLFUS:
+            gpart[i]->ram_cache = new_RamCacheCLFUS();
+            break;
+          case RAM_CACHE_ALGORITHM_LRU:
+            gpart[i]->ram_cache = new_RamCacheLRU();
+            break;
+        }
+      }
       if (cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE) {
         Debug("cache_init", "CacheProcessor::cacheInitialized - cache_config_ram_cache_size == AUTO_SIZE_RAM_CACHE");
         for (i = 0; i < gnpart; i++) {
           part = gpart[i];
-          if (gpart[i]->cache == theCache) {
-            ram_cache_object_size = ((cache_config_ram_cache_cutoff < cache_config_min_average_object_size) &&
-                                     cache_config_ram_cache_cutoff) ?
-              cache_config_ram_cache_cutoff : cache_config_min_average_object_size;
-            gpart[i]->ram_cache.init(part_dirlen(gpart[i]), part_dirlen(gpart[i]) / ram_cache_object_size,
-                                     cache_config_ram_cache_cutoff, gpart[i], gpart[i]->mutex);
-          } else {
-            ram_cache_object_size = ((cache_config_ram_cache_mixt_cutoff < cache_config_min_average_object_size) &&
-                                     cache_config_ram_cache_mixt_cutoff) ?
-              cache_config_ram_cache_mixt_cutoff : cache_config_min_average_object_size;
-            gpart[i]->ram_cache.init(part_dirlen(gpart[i]), part_dirlen(gpart[i]) / ram_cache_object_size,
-                                     cache_config_ram_cache_mixt_cutoff, gpart[i], gpart[i]->mutex);
-          }
+          gpart[i]->ram_cache->init(part_dirlen(part), part);
           ram_cache_bytes += part_dirlen(gpart[i]);
           Debug("cache_init", "CacheProcessor::cacheInitialized - ram_cache_bytes = %lld = %lldMb",
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
@@ -778,25 +779,15 @@ CacheProcessor::cacheInitialized()
           if (gpart[i]->cache == theCache) {
             factor = (double) (ink64) (gpart[i]->len >> STORE_BLOCK_SHIFT) / (ink64) theCache->cache_size;
             Debug("cache_init", "CacheProcessor::cacheInitialized - factor = %f", factor);
-            gpart[i]->ram_cache.init((ink64) (http_ram_cache_size * factor),
-                                     (ink64) ((http_ram_cache_size * factor) /
-                                              cache_config_min_average_object_size),
-                                     cache_config_ram_cache_cutoff, gpart[i], gpart[i]->mutex);
-
+            gpart[i]->ram_cache->init((ink64) (http_ram_cache_size * factor), part);
             ram_cache_bytes += (ink64) (http_ram_cache_size * factor);
             CACHE_PART_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (ink64) (http_ram_cache_size * factor));
           } else {
             factor = (double) (ink64) (gpart[i]->len >> STORE_BLOCK_SHIFT) / (ink64) theStreamCache->cache_size;
             Debug("cache_init", "CacheProcessor::cacheInitialized - factor = %f", factor);
-            gpart[i]->ram_cache.init((ink64) (stream_ram_cache_size * factor),
-                                     (ink64) ((stream_ram_cache_size * factor) /
-                                              cache_config_min_average_object_size),
-                                     cache_config_ram_cache_mixt_cutoff, gpart[i], gpart[i]->mutex);
-
+            gpart[i]->ram_cache->init((ink64) (stream_ram_cache_size * factor), part);
             ram_cache_bytes += (ink64) (stream_ram_cache_size * factor);
             CACHE_PART_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (ink64) (stream_ram_cache_size * factor));
-
-
           }
           Debug("cache_init", "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %lld = %lldMb",
                 i, ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
@@ -1768,6 +1759,21 @@ CacheVC::dead(int event, Event *e)
 
 #define STORE_COLLISION 1
 
+static void unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay) {
+  char *tmp = doc->hdr();
+  int len = doc->hlen;
+  while (len > 0) {
+    int r = HTTPInfo::unmarshal(tmp, len, buf._ptr());
+    if (r < 0) {
+      ink_assert(!"CacheVC::handleReadDone unmarshal failed");
+      okay = 0;
+      break;
+    }
+    len -= r;
+    tmp += r;
+  }
+}
+
 int
 CacheVC::handleReadDone(int event, Event *e)
 {
@@ -1810,7 +1816,8 @@ CacheVC::handleReadDone(int event, Event *e)
     if (io.ok() &&
         ((doc->first_key == *read_key) || (doc->key == *read_key) || STORE_COLLISION) && doc->magic == DOC_MAGIC) {
       int okay = 1;
-      f.not_from_ram_cache = 1;
+      if (!f.doc_from_ram_cache)
+        f.not_from_ram_cache = 1;
       if (cache_config_enable_checksum && doc->checksum != DOC_NO_CHECKSUM) {
         // verify that the checksum matches
         inku32 checksum = 0;
@@ -1825,23 +1832,14 @@ CacheVC::handleReadDone(int event, Event *e)
           okay = 0;
         }
       }
-      // If http doc, we need to unmarshal the headers before putting
-      // in the ram cache. 
+      bool http_copy_hdr = false;
 #ifdef HTTP_CACHE
-      if (doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay) {
-        char *tmp = doc->hdr();
-        int len = doc->hlen;
-        while (len > 0) {
-          int r = HTTPInfo::unmarshal(tmp, len, buf._ptr());
-          if (r < 0) {
-            ink_assert(!"CacheVC::handleReadDone unmarshal failed");
-            okay = 0;
-            break;
-          }
-          len -= r;
-          tmp += r;
-        }
-      }
+      http_copy_hdr = cache_config_ram_cache_compress && !f.doc_from_ram_cache && 
+        doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen;
+      // If http doc we need to unmarshal the headers before putting in the ram cache
+      // unless it could be compressed
+      if (!http_copy_hdr && doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
+        unmarshal_helper(doc, buf, okay);
 #endif
       // Put the request in the ram cache only if its a open_read or lookup
       if (vio.op == VIO::READ && okay) {
@@ -1852,20 +1850,27 @@ CacheVC::handleReadDone(int event, Event *e)
         //                doc->total_len
         // After that, the decision is based of doc_len (doc_len != 0)
         // (cache_config_ram_cache_cutoff == 0) : no cutoffs
-        cutoff_check = ((!doc_len && doc->total_len < part->ram_cache.cutoff_size)
-                        || (doc_len && doc_len < part->ram_cache.cutoff_size)
-                        || !part->ram_cache.cutoff_size);
-        if (cutoff_check)
-          part->ram_cache.put(read_key, buf, mutex->thread_holding, 0, dir_offset(&dir));
+        cutoff_check = ((!doc_len && (ink64)doc->total_len < cache_config_ram_cache_cutoff)
+                        || (doc_len && (ink64)doc_len < cache_config_ram_cache_cutoff)
+                        || !cache_config_ram_cache_cutoff);
+        if (cutoff_check && !f.doc_from_ram_cache) {
+          inku64 o = dir_offset(&dir);
+          part->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (inku32)(o >> 32), (inku32)o);
+        }
         if (!doc_len) {
           // keep a pointer to it. In case the state machine decides to
           // update this document, we don't have to read it back in memory
           // again
-          part->first_fragment.key = *read_key;
-          part->first_fragment.auxkey1 = dir_offset(&dir);
-          part->first_fragment.data = buf;
+          part->first_fragment_key = *read_key;
+          part->first_fragment_offset = dir_offset(&dir);
+          part->first_fragment_data = buf;
         }
       }                           // end VIO::READ check
+#ifdef HTTP_CACHE
+      // If it could be compressed, unmarshal after
+      if (http_copy_hdr && doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
+        unmarshal_helper(doc, buf, okay);
+#endif
     }                             // end io.ok() check
   }
 Ldone:
@@ -1880,16 +1885,17 @@ CacheVC::handleRead(int event, Event *e)
   NOWARN_UNUSED(e);
   cancel_trigger();
 
+  f.doc_from_ram_cache = false;
   // check ram cache
   ink_debug_assert(part->mutex->thread_holding == this_ethread());
-  if (part->ram_cache.get(read_key, &buf, 0, dir_offset(&dir))) {
+  if (part->ram_cache->get(read_key, &buf, 0, dir_offset(&dir))) {
     CACHE_INCREMENT_DYN_STAT(cache_ram_cache_hits_stat);
     goto LramHit;
   }
-  // check if it was read in the last open_read call.
-  if (*read_key == part->first_fragment.key && dir_offset(&dir) == part->first_fragment.auxkey1) {
-    buf = part->first_fragment.data;
-    goto LramHit;
+  // check if it was read in the last open_read call
+  if (*read_key == part->first_fragment_key && dir_offset(&dir) == part->first_fragment_offset) {
+    buf = part->first_fragment_data;
+    goto LmemHit;
   }
 
   CACHE_INCREMENT_DYN_STAT(cache_ram_cache_misses_stat);
@@ -1920,7 +1926,16 @@ CacheVC::handleRead(int event, Event *e)
   CACHE_DEBUG_INCREMENT_DYN_STAT(cache_pread_count_stat);
   return EVENT_CONT;
 
-LramHit:
+LramHit: {
+    io.aio_result = io.aiocb.aio_nbytes;
+    Doc *doc = (Doc*)buf->data();
+    if (cache_config_ram_cache_compress && doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
+      SET_HANDLER(&CacheVC::handleReadDone);
+      f.doc_from_ram_cache = true;
+      return EVENT_RETURN;
+    }
+  }
+LmemHit:
   io.aio_result = io.aiocb.aio_nbytes;
   POP_HANDLER;
   return EVENT_RETURN; // allow the caller to release the partition lock
@@ -1929,7 +1944,6 @@ LramHit:
 Action *
 Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
 {
-
   if (!(CacheProcessor::cache_ready & type)) {
     cont->handleEvent(CACHE_EVENT_LOOKUP_FAILED, 0);
     return ACTION_RESULT_DONE;
@@ -2585,6 +2599,12 @@ ink_cache_init(ModuleVersion v)
   IOCORE_EstablishStaticConfigLLong(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
   Debug("cache_init", "proxy.config.cache.ram_cache.size = %lld = %lldMb",
         cache_config_ram_cache_size, cache_config_ram_cache_size / (1024 * 1024));
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.ram_cache.algorithm", 0, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.ram_cache.compress", 0, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.ram_cache.compress_percent", 90, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
 
   IOCORE_RegisterConfigInteger(RECT_CONFIG,
                                "proxy.config.cache.limits.http.max_alts", 3, RECU_DYNAMIC, RECC_NULL, NULL);
@@ -2597,11 +2617,13 @@ ink_cache_init(ModuleVersion v)
   Debug("cache_init", "cache_config_ram_cache_cutoff = %lld = %lldMb",
         cache_config_ram_cache_cutoff, cache_config_ram_cache_cutoff / (1024 * 1024));
 
+#if 0
   IOCORE_RegisterConfigInteger(RECT_CONFIG,
                                "proxy.config.cache.ram_cache_mixt_cutoff", 1048576, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInteger(cache_config_ram_cache_mixt_cutoff, "proxy.config.cache.ram_cache_mixt_cutoff");
   Debug("cache_init", "proxy.config.cache.ram_cache_mixt_cutoff = %lld = %lldMb",
         cache_config_ram_cache_mixt_cutoff, cache_config_ram_cache_mixt_cutoff / (1024 * 1024));
+#endif
 
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.permit.pinning", 0, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(cache_config_permit_pinning, "proxy.config.cache.permit.pinning");
