@@ -1199,12 +1199,6 @@ test_error_records()
   ret = INKRecordSetInt("proy.config.cop.core_signal", new_port, &action);
   print_err("INKRecordSetInt", ret);
 
-#if 0
-  fprintf(stderr, "Test invalid record values\n");
-  printf("[INKRecordSetInt] proxy.config.arm.enabled = 2\n");
-  ret = INKRecordSetInt("proxy.config.arm.enabled", 2, &action);
-  print_err("INKRecordsSetInt", ret);
-#endif
 
   printf("[INKRecordSetString] proxy.config.ldap.proc.ldap.server.name = invalid name\n");
   ret = INKRecordSetString("proxy.config.ldap.proc.ldap.server.name", "invalid name", &action);
@@ -1626,7 +1620,6 @@ test_read_url(bool valid)
     if (header)
       INKfree(header);
 
-#if 1                           // try invalid url second time
     err = INKReadFromUrlEx("http://sadfasdfi.com:80/", &header, &headerSize, &body, &bodySize, 50000);
     if (err != INK_ERR_OKAY) {
       print_err("INKReadFromUrlEx", err);
@@ -1640,7 +1633,6 @@ test_read_url(bool valid)
       INKfree(header);
     if (body)
       INKfree(body);
-#endif
 
   } else {                      // use valid urls
     err = INKReadFromUrlEx("lakota.inktomi.com:80/", &header, &headerSize, &body, &bodySize, 50000);
@@ -1873,7 +1865,6 @@ test_cfg_context_move(char *args)
   int count = INKCfgContextGetCount(ctx);
   printf("%d rules in file: %s\n", count, name);
 
-#if 1
   // shift all the ele's up so that the top ele is now the bottom ele
   printf("\nShift all ele's up so that top ele is now bottom ele\n");
   for (i = 1; i < count; i++) {
@@ -1883,9 +1874,7 @@ test_cfg_context_move(char *args)
       goto END;
     }
   }
-#endif
 
-#if 1
   // shift all the ele's down so that the next to bottom ele is now top ele 
   // move all ele's above the last ele down; bottom ele becomes top ele
   printf("\nShift all Ele's above second to last ele down; bottom ele becomes top ele\n");
@@ -1896,7 +1885,6 @@ test_cfg_context_move(char *args)
       goto END;
     }
   }
-#endif
 
   // clean up; commit change
   INKCfgContextCommit(ctx, NULL, NULL);
@@ -1930,7 +1918,6 @@ test_cfg_context_ops()
   int count = INKCfgContextGetCount(ctx);
   printf("# ele's = %d\n", count);
 
-#if 1
   printf("\nShifted all Ele's < %d up\n", rm_index);
   // move all ele's below rm_index up one; this shifts the rm_index ele to 
   // bottom of INKCfgContext
@@ -1942,9 +1929,7 @@ test_cfg_context_ops()
     }
   }
   //print_VirtIpAddr_ele_list(ctx);
-#endif
 
-#if 1
   printf("\nREMOVE LAST ELE (originally the first ele)\n");
   // remove the last ele (which was originally the first ele)
   err = INKCfgContextRemoveEleAt(ctx, (count - 1));
@@ -1952,18 +1937,14 @@ test_cfg_context_ops()
     printf("ERROR: removing ele at index %d\n", count - 1);
     goto END;
   }
-#endif
 
-#if 1                           // remove second to last ele
   printf("\nRemoving second to last Ele \n");
   err = INKCfgContextRemoveEleAt(ctx, (count - 2));
   if (err != INK_ERR_OKAY) {
     printf("ERROR: removing ele at index %d\n", count - 2);
     goto END;
   }
-#endif
 
-#if 1
   // append a new ele 
   printf("\nappend new ele\n");
   ele = INKVirtIpAddrEleCreate();
@@ -1985,10 +1966,8 @@ test_cfg_context_ops()
     printf("Can't create VirtIpAddrEle\n");
   }
   //print_VirtIpAddr_ele_list(ctx);
-#endif
 
   insert_at = 1;
-#if 1
   // insert a new ele in insert_at index 
   printf("\nINSERT NEW ELE at %d index\n", insert_at);
   ele = INKVirtIpAddrEleCreate();
@@ -2010,10 +1989,8 @@ test_cfg_context_ops()
     printf("Can't create VirtIpAddrEle\n");
   }
   //print_VirtIpAddr_ele_list(ctx);
-#endif
 
 
-#if 1                           // move the newly inserted ele to bottom of list
   printf("\nMove ele at index %d to botoom of list\n", insert_at);
   for (i = insert_at; i < INKCfgContextGetCount(ctx); i++) {
     err = INKCfgContextMoveEleDown(ctx, i);
@@ -2023,9 +2000,7 @@ test_cfg_context_ops()
     }
   }
   //print_VirtIpAddr_ele_list(ctx);
-#endif
 
-#if 1                           // move all ele's above the last ele down; bottom ele becomes top ele
   printf("\nShift all Ele's above last ele down; bottom ele becomes top ele\n");
   count = INKCfgContextGetCount(ctx);
   for (i = count - 2; i >= 0; i--) {
@@ -2036,7 +2011,6 @@ test_cfg_context_ops()
     }
   }
   //print_VirtIpAddr_ele_list(ctx);
-#endif
 
 
   // commit change
@@ -2069,7 +2043,6 @@ test_cfg_plugin()
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY)
     printf("ERROR READING FILE\n");
 
-#if 1
   // retrieve and modify ele
   printf("test_cfg_plugin: modifying the first ele...\n");
   cfg_ele = INKCfgContextGetEleAt(ctx, 0);
@@ -2078,15 +2051,11 @@ test_cfg_plugin()
     //free(ele->name);
     ele->name = xstrdup("change-plugin.so");
   }
-#endif
 
-#if 1
   // remove the second ele
   printf("test_cfg_plugin: removing the second ele...\n");
   INKCfgContextRemoveEleAt(ctx, 1);
-#endif
 
-#if 1
   // create and add new ele
   printf("test_socks_set: appending a new ele...\n");
   ele = INKPluginEleCreate();
@@ -2097,7 +2066,6 @@ test_cfg_plugin()
   INKStringListEnqueue(ele->args, xstrdup("arg1"));
   INKStringListEnqueue(ele->args, xstrdup("arg2"));
   INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);
-#endif
 
   // commit change
   INKCfgContextCommit(ctx, NULL, NULL);
@@ -2125,7 +2093,6 @@ test_cfg_socks()
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY)
     printf("ERROR READING FILE\n");
 
-#if 1
   // retrieving an ele
   printf("test_socks_set: modifying the fourth ele...\n");
   cfg_ele = INKCfgContextGetEleAt(ctx, 3);
@@ -2134,15 +2101,11 @@ test_cfg_socks()
     if (ele->rr != INK_RR_NONE)
       ele->rr = INK_RR_FALSE;
   }
-#endif
 
-#if 1
   // remove the second ele
   printf("test_socks_set: removing the second ele...\n");
   INKCfgContextRemoveEleAt(ctx, 1);
-#endif
 
-#if 1
   // create new structs for new rules
   INKIpAddrEle *ip1 = INKIpAddrEleCreate();
   ip1->type = INK_IP_SINGLE;
@@ -2177,7 +2140,6 @@ test_cfg_socks()
   } else {
     printf("Can't create SocksEle\n");
   }
-#endif
 
   // commit change
   INKCfgContextCommit(ctx, NULL, NULL);
@@ -2591,12 +2553,10 @@ sync_test()
   else
     printf("[INKRecordSet] proxy.config.http.cache.fuzz.probability=-0.3333\n");
 
-#if 1
   INKError ret;
   if ((ret = INKProxyStateSet(INK_PROXY_OFF, INK_CACHE_CLEAR_OFF)) != INK_ERR_OKAY)
     printf("[INKProxyStateSet] turn off FAILED\n");
   print_err("stop_TS", ret);
-#endif
 }
 
 void

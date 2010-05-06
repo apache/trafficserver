@@ -1478,12 +1478,6 @@ runAsUser(char *userName)
     result = NULL;
     int res = getpwnam_r(&userName[0], &passwdInfo, buf, bufSize, &ppasswd);
 
-#if 0
-// non-POSIX
-    struct passwd *ppasswd = NULL;
-    result = NULL;
-    int res = (int) getpwnam_r(&userName[0], ppasswd, buf, bufSize);
-#endif
     if (!res && ppasswd) {
       result = ppasswd;
     }

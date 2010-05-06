@@ -82,17 +82,6 @@ ink_memchr(const void *as, int ac, size_t an)
     unsigned int ibb = ibp ^ ib;
     ibb = ((ibb + im) ^ ~ibb) & ~im;
     if (ibb) {
-#if 0
-      // only works for bigendian
-      if (((ibp << 0) >> 24) == c)
-        return &s[0];
-      if (((ibp << 8) >> 24) == c)
-        return &s[1];
-      if (((ibp << 16) >> 24) == c)
-        return &s[2];
-      if (((ibp << 24) >> 24) == c)
-        return &s[3];
-#else
       if (s[0] == c)
         return &s[0];
       if (s[1] == c)
@@ -101,7 +90,6 @@ ink_memchr(const void *as, int ac, size_t an)
         return &s[2];
       if (s[3] == c)
         return &s[3];
-#endif
     }
     s += 4;
   }
@@ -118,28 +106,6 @@ ink_memchr(const void *as, int ac, size_t an)
     bb = ((bb + m) ^ ~bb) & ~m;
     if (bb) {
       s = (unsigned char *) p;
-#if 0
-      unsigned int bbb = (unsigned int) (bp >> 32);
-      if (bb >> 32) {
-        if (((bbb << 0) >> 24) == c)
-          return &s[0];
-        if (((bbb << 8) >> 24) == c)
-          return &s[1];
-        if (((bbb << 16) >> 24) == c)
-          return &s[2];
-        if (((bbb << 24) >> 24) == c)
-          return &s[3];
-      }
-      bbb = (unsigned int) bp;
-      if (((bbb << 0) >> 24) == c)
-        return &s[4];
-      if (((bbb << 8) >> 24) == c)
-        return &s[5];
-      if (((bbb << 16) >> 24) == c)
-        return &s[6];
-      if (((bbb << 24) >> 24) == c)
-        return &s[7];
-#else
       if (s[0] == c)
         return &s[0];
       if (s[1] == c)
@@ -156,7 +122,6 @@ ink_memchr(const void *as, int ac, size_t an)
         return &s[6];
       if (s[7] == c)
         return &s[7];
-#endif
     }
     p++;
   }
@@ -173,16 +138,6 @@ ink_memchr(const void *as, int ac, size_t an)
     unsigned int ibb = ibp ^ ib;
     ibb = ((ibb + im) ^ ~ibb) & ~im;
     if (ibb) {
-#if 0
-      if (((ibp << 0) >> 24) == c)
-        return &s[0];
-      if (((ibp << 8) >> 24) == c)
-        return &s[1];
-      if (((ibp << 16) >> 24) == c)
-        return &s[2];
-      if (((ibp << 24) >> 24) == c)
-        return &s[3];
-#else
       if (s[0] == c)
         return &s[0];
       if (s[1] == c)
@@ -191,7 +146,6 @@ ink_memchr(const void *as, int ac, size_t an)
         return &s[2];
       if (s[3] == c)
         return &s[3];
-#endif
     }
     s += 4;
   }

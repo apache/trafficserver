@@ -40,42 +40,6 @@ CliCreateUpgradeCmd()
 
   // Fix INKqa12225: removed config:write, config:read, config:save-url since they
   //                 are not used by the OTW Upgrade feature
-#if 0
-  createCommand("config:write", Cmd_ConfigWrite, CmdArgs_ConfigWrite, CLI_COMMAND_EXTERNAL,
-                "config:write ifc-head ts-version <ts_version> build-date <date> platform <platform> nodes <no_of_nodes>\n"
-                "config:write feature <feature-string>\n"
-                "config:write tar <tarfilelist>\n"
-                "config:write tar-info <tarball-name> filelist <filelist>\n"
-                "config:write tar-common <filelist>\n"
-                "config:write bin-dir <sub-dir> filelist <dir-file-lists>\n"
-                "config:write bin-group <filelist>\n"
-                "config:write bin-common <filelist>\n"
-                "config:write lib-dir <sub-dir> filelist <dir-file-lists>\n"
-                "config:write lib-group <filelist>\n"
-                "config:write lib-common <filelist>\n"
-                "config:write config-dir <sub-dir> filelist <dir-file-filelists>\n"
-                "config:write config-group <filelist>\n"
-                "config:write config-common <filelist>\n" "config:write common-file <filelist>", "Write the ifc file");
-
-  createCommand("config:read", Cmd_ConfigRead, CmdArgs_ConfigRead, CLI_COMMAND_EXTERNAL,
-                "config:read ifc-head\n "
-                "config:read feature \n"
-                "config:read tar \n"
-                "config:read tar-info \n"
-                "config:read tar-common \n"
-                "config:read bin-dir \n"
-                "config:read bin-group \n"
-                "config:read bin-common \n"
-                "config:read lib-dir \n"
-                "config:read lib-group \n"
-                "config:read lib-common \n"
-                "config:read config-dir \n"
-                "config:read config-group \n"
-                "config:read config-common \n" "config:read common-file ", "Read the ifc file");
-
-  createCommand("config:save-url", Cmd_ConfigSaveUrl,
-                CmdArgs_ConfigSaveUrl, CLI_COMMAND_EXTERNAL, NULL, "save the URL file");
-#endif
 
   return CLI_OK;
 }

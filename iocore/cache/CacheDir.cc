@@ -225,35 +225,6 @@ dir_init_segment(int s, Part *d)
 
 // break the infinite loop in directory entries
 // Note : abuse of the token bit in dir entries
-#if 0
-int
-dir_bucket_loop_fix(Dir *start_dir, int s, Part *d)
-{
-  int ret = 0;
-  if (start_dir == NULL)
-    return 0;
-
-  Dir *p1 = start_dir;
-  Dir *p2 = start_dir;
-  Dir *seg = dir_segment(s, d);
-  while (p2) {
-    dir_set_token(p1, 1);
-    p2 = next_dir(p2, seg);
-    if (p2 && dir_token(p2)) {
-      // Loop exists
-      Warning("cache directory loop broken");
-      ink_stack_trace_dump();
-      dir_set_next(p1, 0);
-      ret = 1;
-      break;
-    }
-    p1 = p2;
-  }
-  for (Dir *p3 = start_dir; p3; p3 = next_dir(p3, seg))
-    dir_set_token(p3, 0);
-  return ret;
-}
-#else
 int
 dir_bucket_loop_fix(Dir *start_dir, int s, Part *d)
 {
@@ -264,7 +235,6 @@ dir_bucket_loop_fix(Dir *start_dir, int s, Part *d)
   }
   return 0;
 }
-#endif
 
 int
 dir_freelist_length(Part *d, int s)
@@ -814,16 +784,6 @@ dir_lookaside_fixup(CacheKey *key, Part *d)
             key->word(0), key->word(1), dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
       d->ram_cache->fixup(key, 0, dir_offset(&b->dir), 0, dir_offset(&b->new_dir));
       d->lookaside[i].remove(b);
-#if 0
-      // we need to do this because in case of a small cache, the scan
-      // might have occured before we inserted this directory entry (if we 
-      // wrapped around fast enough)
-      ink_off_t part_end_offset = offset_to_part_offset(d, d->len + d->skip);
-      ink_off_t part_write_offset = offset_to_part_offset(d, d->header->write_pos);
-      if ((dir_offset(&b->new_dir) + part_end_offset - part_write_offset)
-          % part_end_offset <= offset_to_part_offset(d, EVAC_SIZE + (d->len / PIN_SCAN_EVERY)))
-        d->force_evacuate_head(&b->new_dir, dir_pinned(&b->new_dir));
-#endif
       free_EvacuationBlock(b, d->mutex->thread_holding);
       return res;
     }

@@ -365,67 +365,6 @@ bool ClusterProcessor::disable_remote_cluster_ops(ClusterMachine * m)
 ////////////////////////////////////////////////////////////////////////////
 // Simplify debug access to stats
 ////////////////////////////////////////////////////////////////////////////
-#if 0
-#define GS RecRawStat// FIXME: GS conflicts with define in /usr/include/sys/regset.h
-GS *p_CLUSTER_CONNECTIONS_OPEN_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CONNECTIONS_OPEN_STAT);
-GS *p_CLUSTER_CONNECTIONS_OPENNED_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CONNECTIONS_OPENNED_STAT);
-GS *p_CLUSTER_CON_TOTAL_TIME_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CON_TOTAL_TIME_STAT);
-GS *p_CLUSTER_CTRL_MSGS_SENT_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CTRL_MSGS_SENT_STAT);
-GS *p_CLUSTER_SLOW_CTRL_MSGS_SENT_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_SLOW_CTRL_MSGS_SENT_STAT);
-GS *p_CLUSTER_CTRL_MSGS_RECVD_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CTRL_MSGS_RECVD_STAT);
-GS *p_CLUSTER_SLOW_CTRL_MSGS_RECVD_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_SLOW_CTRL_MSGS_RECVD_STAT);
-GS *p_CLUSTER_CTRL_MSGS_SEND_TIME_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CTRL_MSGS_SEND_TIME_STAT);
-GS *p_CLUSTER_CTRL_MSGS_RECV_TIME_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CTRL_MSGS_RECV_TIME_STAT);
-GS *p_CLUSTER_READ_BYTES_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_READ_BYTES_STAT);
-GS *p_CLUSTER_WRITE_BYTES_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_WRITE_BYTES_STAT);
-GS *p_CLUSTER_OP_DELAYED_FOR_LOCK_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_OP_DELAYED_FOR_LOCK_STAT);
-GS *p_CLUSTER_CONNECTIONS_LOCKED_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CONNECTIONS_LOCKED_STAT);
-GS *p_CLUSTER_CONNECTIONS_BUMPED_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CONNECTIONS_BUMPED_STAT);
-GS *p_CLUSTER_NODES_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_NODES_STAT);
-GS *p_CLUSTER_NET_BACKUP_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_NET_BACKUP_STAT);
-GS *p_machines_allocated_stat = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_MACHINES_ALLOCATED_STAT);
-GS *p_machines_freed_stat = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_MACHINES_FREED_STAT);
-GS *p_configuration_changes_stat = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CONFIGURATION_CHANGES_STAT);
-GS *p_delayed_reads_stat = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_DELAYED_READS_STAT);
-GS *p_byte_bank_used_stat = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_BYTE_BANK_USED_STAT);
-GS *p_alloc_data_news_stat = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_ALLOC_DATA_NEWS_STAT);
-GS *p_write_bb_mallocs_stat = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_WRITE_BB_MALLOCS_STAT);
-GS *p_partial_reads_stat = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_PARTIAL_READS_STAT);
-GS *p_partial_writes_stat = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_PARTIAL_WRITES_STAT);
-GS *p_cache_outstanding = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CACHE_OUTSTANDING_STAT);
-GS *p_remote_op_timeouts = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_REMOTE_OP_TIMEOUTS_STAT);
-GS *p_remote_op_reply_timeouts = RecGetGlobalRawStatPtr(cluster_rsb,
-                                                      CLUSTER_REMOTE_OP_REPLY_TIMEOUTS_STAT);
-GS *p_chan_inuse = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CHAN_INUSE_STAT);
-GS *p_CLUSTER_OPEN_DELAYS_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_OPEN_DELAYS_STAT);
-GS *p_CLUSTER_OPEN_DELAY_TIME_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_OPEN_DELAY_TIME_STAT);
-GS *p_CLUSTER_CACHE_CALLBACKS_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CACHE_CALLBACKS_STAT);
-GS *p_CLUSTER_CACHE_CALLBACK_TIME_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_CACHE_CALLBACK_TIME_STAT);
-GS *p_cluster_thread_steal_expires = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_THREAD_STEAL_EXPIRES_STAT);
-GS *p_CLUSTER_RDMSG_ASSEMBLE_TIME_STAT = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_RDMSG_ASSEMBLE_TIME_STAT);
-GS *p_cluster_ping_time = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_PING_TIME_STAT);
-GS *p_cluster_setdata_no_clustervc = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_SETDATA_NO_CLUSTERVC_STAT);
-GS *p_cluster_setdata_no_tunnel = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_SETDATA_NO_TUNNEL_STAT);
-GS *p_cluster_setdata_no_cachevc = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_SETDATA_NO_CACHEVC_STAT);
-GS *p_cluster_setdata_no_cluster = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_SETDATA_NO_CLUSTER_STAT);
-GS *p_cluster_vc_write_stall = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_VC_WRITE_STALL_STAT);
-GS *p_cluster_no_remote_space = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_NO_REMOTE_SPACE_STAT);
-GS *p_cluster_level1_bank = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_LEVEL1_BANK_STAT);
-GS *p_cluster_multilevel_bank = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_MULTILEVEL_BANK_STAT);
-GS *p_cluster_vc_cache_insert_lock_misses = RecGetGlobalRawStatPtr(cluster_rsb,
-                                                                 CLUSTER_VC_CACHE_INSERT_LOCK_MISSES_STAT);
-GS *p_cluster_vc_cache_inserts = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_VC_CACHE_INSERTS_STAT);
-GS *p_cluster_vc_cache_lookup_lock_misses = RecGetGlobalRawStatPtr(cluster_rsb,
-                                                                 CLUSTER_VC_CACHE_LOOKUP_LOCK_MISSES_STAT);
-GS *p_cluster_vc_cache_lookup_hits = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_VC_CACHE_LOOKUP_HITS_STAT);
-GS *p_cluster_vc_cache_lookup_misses = RecGetGlobalRawStatPtr(cluster_rsb,
-                                                            CLUSTER_VC_CACHE_LOOKUP_MISSES_STAT);
-GS *p_cluster_vc_cache_scans = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_VC_CACHE_SCANS_STAT);
-GS *p_cluster_vc_cache_scan_lock_misses = RecGetGlobalRawStatPtr(cluster_rsb,
-                                                               CLUSTER_VC_CACHE_SCAN_LOCK_MISSES_STAT);
-GS *p_cluster_vc_cache_purges = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_VC_CACHE_PURGES_STAT);
-GS *p_cluster_write_lock_misses = RecGetGlobalRawStatPtr(cluster_rsb, CLUSTER_WRITE_LOCK_MISSES_STAT);
-#endif
 ////////////////////////////////////////////////////////////////////////////
 
 GlobalClusterPeriodicEvent *

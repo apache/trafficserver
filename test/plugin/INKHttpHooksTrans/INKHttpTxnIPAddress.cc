@@ -31,56 +31,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if 0
-/* HTTP transactions 
- * 
- * TODO call each interface at each event:
- * 1. where the call is not applicable, the interface should
- *    return error value. Currently, only calling where apparently 
- *    applicable.
- *
- * 2. where call is applicable, process results  
- *    Code lacks organization, its partly due to not knowing
- *    where interfaces can be called from. In some cases a 
- *    was left in even though it may not be the correct event 
- *    to call from.  
- * 
- * 3. Current approach is to only report when an error
- *    occurs. This allows quick development of test code.
- *    No news is good news. Add more reporting 
- *    support that can be configurable. 
- *
- * 4. Uh, yes. This is a "C++" plug-in but you'd never
- *    know the difference from C. We need to leverage
- *    OO principles.
- * 
- * 5. Run this under stress/load tests.
- * 
-*/
-
-/* Call as soon as we have a transaction: INK_HTTP_TXN_START
- * Client port 
-*/
-inkapi int INKHttpTxnClientIncomingPortGet(INKHttpTxn txnp);
-/* Call as soon as we have a transaction: INK_HTTP_TXN_START
-/* Client IP for a transaction (not incoming) */
-inkapi unsigned int INKHttpTxnClientIPGet(INKHttpTxn txnp);
-/* Origin Server (destination) or Parent IP 
-*/
-inkapi unsigned int INKHttpTxnNextHopIPGet(INKHttpTxn txnp);
-/* Results if parent proxy not enabled, results if parent proxy is enabled
-*/
-inkapi void INKHttpTxnParentProxyGet(INKHttpTxn txnp, char **hostname, int *port);
-/* hostname is copied into the txn and is deletable upon return
-*/
-inkapi void INKHttpTxnParentProxySet(INKHttpTxn txnp, char *hostname, int port);
-/* 
- * Origin Server IP
- * DETAILS: zero before INK_HTTP_OS_DNS_HOOK 
- *          IP addr after INK_HTTP_OS_DNS_HOOK 
-*/
-inkapi unsigned int INKHttpTxnServerIPGet(INKHttpTxn txnp);
-#endif
 
 /* cvrt unsigned int address to dotted decimal address  
  * delete on the otherside, otherwise: don't care

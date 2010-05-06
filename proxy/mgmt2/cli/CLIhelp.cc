@@ -58,10 +58,6 @@ static const char *HelpStrings[numCmd] = {
   "7.  bounce_cluster    # Restarts the traffic_server (cluster wide)\n",
   "8.  restart_local     # Restarts the traffic_manager (local node)\n",
   "9.  restart_cluster   # Restarts the traffic_manager (cluster wide)\n",
-#if 0                           /* Don't allow clearing of statistics */
-  "10. clear_cluster     # Clears Statistics (cluster wide)\n",
-  "11. clear_node        # Clears Statistics (local node)\n",
-#endif
   "     Select above options by number \n",
   "help                  # displays a list of commands\n",
   "exit                  # exits the cmd line tool\n"

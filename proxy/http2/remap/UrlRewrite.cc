@@ -2052,16 +2052,6 @@ UrlRewrite::BuildTable()
       }
       xfree(toHost_null_ended);
     }
-#if 0
-    char *dFrom = new_mapping->fromURL.string_get(NULL);
-    char *dTo = new_mapping->toURL.string_get(NULL);
-
-    Debug("url_rewrite", "[BuildTable] Added From URL \"%s\"", dFrom);
-    Debug("url_rewrite", "[BuildTable] Added To URL \"%s\"", dTo);
-
-    xfree(dFrom);
-    xfree(dTo);
-#endif
 
     // Check "remap" plugin options and load .so object
     if ((bti.remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 && (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER)) {

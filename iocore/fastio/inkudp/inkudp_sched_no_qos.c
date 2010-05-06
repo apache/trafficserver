@@ -192,9 +192,6 @@ inkudp_add_split_rule(queue_t * incomingQ, struct fastIO_split_rule *rule)
   redirect_enabled = 1;
   redirect_passthrough = 1;
 
-#if 0
-  cmn_err(CE_CONT, "inkudp_add_split_rule\n");
-#endif
 
   /* 
    * bail out if this is an error or we have successfully added to
@@ -494,9 +491,6 @@ inkudp_handle_cmsg(mblk_t * mp, queue_t * q)
   switch (cmsg->cmd) {
 
   case INK_CMD_SPLIT_ADD:
-#if 0
-    cmn_err(CE_CONT, "Adding split rule for port = %d, q = 0x%x\n", cmsg->payload.split_rule.srcPort, q);
-#endif
     inkudp_add_split_rule(q, &(cmsg->payload.split_rule));
     break;
   case INK_CMD_SPLIT_DELETE:

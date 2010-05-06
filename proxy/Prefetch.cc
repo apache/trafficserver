@@ -563,15 +563,6 @@ PrefetchTransform::hash_add(char *s)
   if (normalize_url(s, &str_len) > 0)
     Debug("PrefetchParserURLs", "Normalized URL: %s\n", s);
 
-#if 0
-  int i = 0, len = 1;
-  while (len <= str_len) {
-    i = (i << 8) | s[str_len - len];
-    if (len % sizeof(index) == 0)
-      index ^= i;
-  }
-  index %= HASH_TABLE_LENGTH;
-#endif
 
   INK_MD5 md5;
   md5.encodeBuffer(s, str_len);

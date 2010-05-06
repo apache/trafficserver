@@ -782,12 +782,10 @@ test_http()
   test_http_aux(request_09p, response0);
   test_http_aux(request_09ht, response0);
   test_http_aux(request_11, response0);
-#if 1
   test_http_aux(request_unterminated, response_unterminated);
   test_http_aux(request_blank, response_blank);
   test_http_aux(request_blank2, response_blank2);
   test_http_aux(request_blank3, response_blank3);
-#endif
 }
 
 static void

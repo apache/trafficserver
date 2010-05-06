@@ -484,14 +484,6 @@ set_nonblocking_socket(int s)
     cout << "fcntl F_SETFD O_NDELAY failed (" << error << ")" << endl;
     return (error);
   }
-#if 0
-  if (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(int)) < 0) {
-    error = -errno;
-    ::close(s);
-    cout << "setsockopt failed (" << error << ")" << endl;
-    return (error);
-  }
-#endif
 
   return (s);
 }

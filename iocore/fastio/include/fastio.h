@@ -37,12 +37,6 @@
 
 #include "IncludeFiles.h"
 
-#if 0
-#ifdef	__cplusplus
-extern "C"
-{
-#endif
-#endif
 
   struct fastIO_state;
   struct fastIO_session;
@@ -201,11 +195,6 @@ extern "C"
 #define INKUDP_SENDTO_RETRY   0x1
 
 
-#if 0
-#ifdef	__cplusplus
-}
-#endif
-#endif
 
 
 #endif

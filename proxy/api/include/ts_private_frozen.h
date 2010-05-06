@@ -321,33 +321,21 @@ extern "C"
  *  ??
  *  Return
  ****************************************************************************/
-#if 0                           // Not used.
-  inkapi INKIPLookup INKIPLookupCreate();
-#endif
 
 /****************************************************************************
  *  ??
  *  Return
  ****************************************************************************/
-#if 0                           // Not used.
-  inkapi void INKIPLookupDestroy(INKIPLookup iplu);
-#endif
 
 /****************************************************************************
  *  ??
  *  Return
  ****************************************************************************/
-#if 0                           // Not used.
-  inkapi INKIPLookupState INKIPLookupStateCreate();
-#endif
 
 /****************************************************************************
  *  ??
  *  Return
  ****************************************************************************/
-#if 0                           // Not used.
-  inkapi void INKIPLookupStateDestroy(INKIPLookupState iplus);
-#endif
 
   inkapi void INKIPLookupNewEntry(INKIPLookup iplu, INKU32 addr1, INKU32 addr2, void *data);
   inkapi int INKIPLookupMatchFirst(INKIPLookup iplu, INKU32 addr, INKIPLookupState iplus, void **data);
@@ -600,10 +588,6 @@ extern "C"
  *
  * ----------------------------------------------------------------------  */
 #define INK_EVENT_MIXT_READ_REQUEST_HDR INK_EVENT_INTERNAL_60201
-#if 0
-#define INK_EVENT_MIXT_CONTINUE         INK_EVENT_INTERNAL_60200
-#define INK_EVENT_MIXT_ERROR            INK_EVENT_INTERNAL_60202
-#endif
 /* ---------------------------------------------------------------------- 
  * Prefetch APIs
  * ----------------------------------------------------------------------  */

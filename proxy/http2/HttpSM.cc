@@ -4369,7 +4369,6 @@ HttpSM::do_http_server_open(bool raw)
       return;
     }
   }
-#if 1
 
   // We did not manage to get an exisiting session
   //  and need to open a new connection
@@ -4460,23 +4459,6 @@ HttpSM::do_http_server_open(bool raw)
     pending_action = connect_action_handle;
     historical_action = pending_action;
   }
-#else
-  NetVConnection *vc = NULL;
-  Action *connect_action_handle = netProcessor.connect(this,
-                                                       &vc,
-                                                       t_state.current.server->ip,      // host_op
-                                                       t_state.current.server->port,    // host_port
-                                                       t_state.http_config_param->outgoing_ip_to_bind_saddr,
-                                                       &opt);
-
-  if (connect_action_handle != ACTION_RESULT_DONE) {
-    ink_assert(!pending_action);
-    pending_action = connect_action_handle;
-    historical_action = pending_action;
-  } else {
-    state_http_server_open(NET_EVENT_OPEN, vc);
-  }
-#endif
 
   return;
 }

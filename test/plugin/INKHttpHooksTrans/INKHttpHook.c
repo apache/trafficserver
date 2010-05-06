@@ -35,125 +35,6 @@ TODO TRANSFORM hooks are not "global" but transactional--address this
 #include <stdio.h>
 
 
-#if 0
-/************************************************************************** 
- * HTTP sessions 
- *************************************************************************/
-
-/* HTTP hooks */
-inkapi void INKHttpHookAdd(INKHttpHookID id, INKCont contp);
-typedef enum
-{
-  INK_HTTP_READ_REQUEST_HDR_HOOK,
-  INK_HTTP_OS_DNS_HOOK,
-  INK_HTTP_SEND_REQUEST_HDR_HOOK,
-  INK_HTTP_READ_CACHE_HDR_HOOK,
-  INK_HTTP_READ_RESPONSE_HDR_HOOK,
-  INK_HTTP_SEND_RESPONSE_HDR_HOOK,
-  INK_HTTP_REQUEST_TRANSFORM_HOOK,
-  INK_HTTP_RESPONSE_TRANSFORM_HOOK,
-  INK_HTTP_SELECT_ALT_HOOK,
-  INK_HTTP_TXN_START_HOOK,
-  INK_HTTP_TXN_CLOSE_HOOK,
-  INK_HTTP_SSN_START_HOOK,
-  INK_HTTP_SSN_CLOSE_HOOK,
-
-  INK_HTTP_LAST_HOOK
-} INKHttpHookID;
-
-typedef enum
-{
-  INK_EVENT_NONE = 0,
-  INK_EVENT_IMMEDIATE = 1,
-  INK_EVENT_TIMEOUT = 2,
-  INK_EVENT_ERROR = 3,
-  INK_EVENT_CONTINUE = 4,
-  INK_CACHE_COULD_NOT_FIND = 5,
-  INK_CACHE_LOOKUP_COMPLETE = 6,
-  INK_CACHE_TIMEOUT_ERROR = 7,
-
-  INK_EVENT_VCONN_READ_READY = 100,
-  INK_EVENT_VCONN_WRITE_READY = 101,
-  INK_EVENT_VCONN_READ_COMPLETE = 102,
-  INK_EVENT_VCONN_WRITE_COMPLETE = 103,
-  INK_EVENT_VCONN_EOS = 104,
-  INK_EVENT_VCONN_INACTIVITY_TIMEOUT = 105,
-
-  INK_EVENT_NET_CONNECT = 200,
-  INK_EVENT_NET_CONNECT_FAILED = 201,
-  INK_EVENT_NET_ACCEPT = 202,
-  INK_EVENT_NET_ACCEPT_FAILED = 204,
-
-  INK_EVENT_DNS_LOOKUP = 500,
-
-  INK_EVENT_CACHE_OPEN_READ = 1102,
-  INK_EVENT_CACHE_OPEN_READ_FAILED = 1103,
-  INK_EVENT_CACHE_OPEN_WRITE = 1108,
-  INK_EVENT_CACHE_OPEN_WRITE_FAILED = 1109,
-  INK_EVENT_CACHE_REMOVE = 1112,
-  INK_EVENT_CACHE_REMOVE_FAILED = 1113,
-  INK_EVENT_CACHE_SCAN = 1120,
-  INK_EVENT_CACHE_SCAN_FAILED = 1121,
-  INK_EVENT_CACHE_SCAN_OBJECT = 1122,
-  INK_EVENT_CACHE_SCAN_DONE = 1123,
-
-  /* Used by INKHttpSssnReenable() to cont/term a _session_ */
-  /* Used by INKHttpTxnReenable()  to cont/term a _transaction_ */
-  INK_EVENT_HTTP_CONTINUE = 60000,
-  INK_EVENT_HTTP_ERROR = 60001,
-
-
-  INK_EVENT_HTTP_READ_REQUEST_HDR = 60002,
-  INK_EVENT_HTTP_OS_DNS = 60003,
-  INK_EVENT_HTTP_SEND_REQUEST_HDR = 60004,
-  INK_EVENT_HTTP_READ_CACHE_HDR = 60005,
-  INK_EVENT_HTTP_READ_RESPONSE_HDR = 60006,
-  INK_EVENT_HTTP_SEND_RESPONSE_HDR = 60007,
-  INK_EVENT_HTTP_REQUEST_TRANSFORM = 60008,
-  INK_EVENT_HTTP_RESPONSE_TRANSFORM = 60009,
-  INK_EVENT_HTTP_SELECT_ALT = 60010,
-  INK_EVENT_HTTP_TXN_START = 60011,
-  INK_EVENT_HTTP_TXN_CLOSE = 60012,
-  INK_EVENT_HTTP_SSN_START = 60013,
-  INK_EVENT_HTTP_SSN_CLOSE = 60014,
-
-  INK_EVENT_MGMT_UPDATE = 60100
-} INKEvent;
-
-
-1. inkapi void INKHttpHookAdd(INKHttpHookID id, INKCont contp);
-Called for each of 13 known HookIDs specified in INKHttpHookID.
-  2. inkapi void INKHttpSsnHookAdd(INKHttpSsn ssnp, INKHttpHookID id, INKCont contp);
-
-Called for each of 13 known HookIDs specified in INKHttpHookID.
-  3. inkapi void INKHttpSsnReenable(INKHttpSsn ssnp, INKEvent event);
-INK_EVENT_HTTP_CONTINUE INK_EVENT_HTTP_ERROR HTTP Transactions 4. void
-INKHttpTxnReenable(INKHttpTxn txnp, INKEvent INK_EVENT_HTTP_ERROR)
-INK_EVENT_HTTP_CONTINUE INK_EVENT_HTTP_ERROR
-/************************************************************************** 
- * HTTP sessions 
- *************************************************************************/
-#endif
-#if 0
-typedef enum
-{
-  INK_HTTP_READ_REQUEST_HDR_HOOK,
-  INK_HTTP_OS_DNS_HOOK,
-  INK_HTTP_SEND_REQUEST_HDR_HOOK,
-  INK_HTTP_READ_CACHE_HDR_HOOK,
-  INK_HTTP_READ_RESPONSE_HDR_HOOK,
-  INK_HTTP_SEND_RESPONSE_HDR_HOOK,
-  INK_HTTP_REQUEST_TRANSFORM_HOOK,
-  INK_HTTP_RESPONSE_TRANSFORM_HOOK,
-  INK_HTTP_SELECT_ALT_HOOK,
-  INK_HTTP_TXN_START_HOOK,
-  INK_HTTP_TXN_CLOSE_HOOK,
-  INK_HTTP_SSN_START_HOOK,
-  INK_HTTP_SSN_CLOSE_HOOK,
-
-  INK_HTTP_LAST_HOOK
-} INKHttpHookID;
-#endif
 
 const char *const INKEventStrId[] = {
   "INK_EVENT_HTTP_CONTINUE",    /* 60000 */
@@ -287,18 +168,6 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
     ChkEvents(INK_EVENT_HTTP_SSN_START);
     INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
 
-#if 0
-    /* For this session, call this plug-in back at the start
-     * of each txn 
-     */
-    INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_START_HOOK, contp);
-
-    if (ssn_start_firstTime) {
-      INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE);
-      ssn_start_firstTime = B_FALSE;
-    } else
-      INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_ERROR);
-#endif
     break;
 
   case INK_EVENT_HTTP_SSN_CLOSE:
@@ -320,17 +189,6 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
 
     INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
 
-#if 0
-    /* For this session, call this plug-in back at the close
-     * of each txn 
-     */
-    INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_CLOSE_HOOK, contp);
-    if (ssn_close_firstTime) {
-      INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE);
-      ssn_close_firstTime = B_FALSE;
-    } else
-      INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_ERROR);
-#endif
     break;
 
   default:

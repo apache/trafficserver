@@ -168,12 +168,6 @@ main(int argc, char *argv[])
   /* histogram_display(&H); */
   for (j = 0; j < npoints; j++) {
     val = random() % (1000 * nintervals);
-#if 0
-    if ((random() % 5) == 0)
-      val = 0.0;
-    if ((random() % 5) == 0)
-      val = 1000.0 * nintervals;
-#endif
     histogram_point(&H, val);
   }
   histogram_display(&H);

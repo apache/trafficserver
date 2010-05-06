@@ -148,14 +148,6 @@ iobuffer_mem_inc(const char *_loc, ink64 _size_index)
   ink64 r = ink_atomic_increment64(&res->value,
                                    index_to_buffer_size(_size_index));
   NOWARN_UNUSED(r);
-#if 0
-  printf("========================================================\n");
-  printf("iobuffer_mem_inc: %s [%d], (resource: %p, value = %d)\n", _loc, _size_index, res,
-         r + index_to_buffer_size(_size_index));
-  printf("========================================================\n");
-  ink_stack_trace_dump();
-  printf("========================================================\n\n");
-#endif
   ink_debug_assert(r >= 0);
 }
 
@@ -174,13 +166,6 @@ iobuffer_mem_dec(const char *_loc, ink64 _size_index)
   ink64 r = ink_atomic_increment64(&res->value,
                                    -index_to_buffer_size(_size_index));
   NOWARN_UNUSED(r);
-#if 0
-  printf("========================================================\n");
-  printf("iobuffer_mem_dec: %s [-%d], (resource %p, value = %d)\n", _loc, _size_index, res,
-         r - index_to_buffer_size(_size_index));
-  printf("========================================================\n");
-  ink_stack_trace_dump();
-#endif
   ink_debug_assert(r >= index_to_buffer_size(_size_index));
 }
 #endif

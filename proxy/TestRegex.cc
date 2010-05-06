@@ -28,35 +28,4 @@
 void
 test()
 {
-#if 0
-  char **s;
-  MultiRegex regex_table;
-  char *strings[] = {
-    "booble",
-    "ofrobbery",
-    "ofrobblescum",
-    NULL
-  };
-
-  fprintf(stderr, "\n*** Dumping MultiRegex With No Contents ***\n\n");
-  regex_table.dump();
-
-  fprintf(stderr, "\n*** Adding Three Patterns ***\n\n");
-  regex_table.addPattern("^frobble$", 1.0);
-  regex_table.addPattern("^.*frob.*$", 0.0);
-  regex_table.addPattern("frobbles", 2.0);
-  regex_table.dump();
-
-  for (s = strings; *s != NULL; s++) {
-    bool is_match;
-    MultiRegexCell *cell;
-
-    is_match = regex_table.match(*s, &cell);
-
-    if (is_match)
-      fprintf(stderr, "match(%s) = <priority %f, pattern '%s'>\n", *s, cell->getPriority(), cell->getPattern());
-    else
-      fprintf(stderr, "match(%s) = <NO MATCH>\n", *s);
-  }
-#endif
 }

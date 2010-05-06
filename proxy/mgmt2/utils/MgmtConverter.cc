@@ -2673,7 +2673,6 @@ testConvertFile_ts(char *file)
       xfree(xml_file);
       xml_file = NULL;
     }
-#if 1
     // convert files in alphabetical order so easy to compare
     // to template "correct" file 
     int i = 0;
@@ -2689,23 +2688,6 @@ testConvertFile_ts(char *file)
       }
       i++;
     }
-# else
-    // order of conversion depends on how inserted in file_info_ht
-    InkHashTableEntry *entry;
-    InkHashTableIteratorState iterator_state;
-    for (entry = ink_hash_table_iterator_first(file_info_ht, &iterator_state);
-         entry != NULL; entry = ink_hash_table_iterator_next(file_info_ht, &iterator_state)) {
-      filename = (char *) ink_hash_table_entry_key(file_info_ht, entry);
-      convertFile_ts(filename, &xml_file);
-      if (xml_file) {
-        fprintf(fp, "\n\n<!-- CONVERT %s: -->\n%s\n\n", filename, xml_file);
-        xfree(xml_file);
-        xml_file = NULL;
-      } else {
-        fprintf(fp, "\n\n<!-- CONVERT %s: ERROR -->\n\n", filename);
-      }
-    }
-#endif
 
   } else {
     convertFile_ts(file, &xml_file);

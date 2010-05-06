@@ -314,10 +314,6 @@ DNS_Cache::process_hostdb_info(HostDBInfo * r)
       char tmp_cname[MAXDNAME];
       memset(tmp_cname, 0, MAXDNAME);
 
-#if 0
-      strcpy(tmp_cname, rr->cname((char *) rr));
-      if (*tmp_cname) {
-#endif
         // for now, in case canonical name is not given, use
         // dname to fill in names for round-robin servers.
         strncpy(tmp_cname, dname, sizeof(tmp_cname));
@@ -335,10 +331,6 @@ DNS_Cache::process_hostdb_info(HostDBInfo * r)
 
         cp += n;
         answers++;
-#if 0
-      } else {
-      }
-#endif
       // increment the round-robin count
       rr->increment_round_robin();
       int current = rr->current % rr->good;

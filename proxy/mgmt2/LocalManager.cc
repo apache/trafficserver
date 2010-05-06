@@ -474,14 +474,7 @@ LocalManager::initMgmtProcessServer()
   struct sockaddr_un serv_addr;
 
   snprintf(fpath, sizeof(fpath), "%s/%s", pserver_path, LM_CONNECTION_SERVER);
-#if 0 /* (HOST_OS == freebsd) */
-  char ulpath[1024];
-  strcpy(ulpath, fpath);
-  ulpath[strlen(fpath) - 1] = 0;
-  unlink(ulpath);
-#else
   unlink(fpath);
-#endif
   if ((process_server_sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
     mgmt_fatal(stderr, "[LocalManager::initMgmtProcessServer] Unable to open socket exiting\n");
   }

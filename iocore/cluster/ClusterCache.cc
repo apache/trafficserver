@@ -1658,13 +1658,6 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
   ink_release_assert(expect_cache_callback);
   expect_cache_callback = false;        // make sure we are called back exactly once
 
-#if 0
-  ink_hrtime cur_time = ink_get_hrtime();
-  ink_hrtime delta = cur_time - start_time;
-  if (delta >= HRTIME_SECONDS(1)) {
-    Note("Cache callback time > 1 sec, t=%0.2f secs seqno=%d", ink_hrtime_to_msec(delta) / 1000.0, seq_number);
-  }
-#endif
 
   result = event;
   bool open = event_is_open(event);
@@ -2376,12 +2369,6 @@ retry:
 
   if (result == CACHE_EVENT_LOOKUP_FAILED) {
 
-#if 0
-    // attempt to initiate a remote probe
-
-    if (do_remote_lookup(action.continuation, NULL, this))
-      return EVENT_DONE;
-#endif
 
     // check for local probes
 
@@ -2498,31 +2485,9 @@ CacheContinuation::probeLookupEvent(int event, void *d)
 int
 CacheContinuation::lookupEvent(int event, void *d)
 {
-#if 1
   ink_release_assert(!"Invalid call CacheContinuation::lookupEvent");
   return EVENT_DONE;
 
-#else
-  ink_assert(magicno == (int) MagicNo);
-  // If the lookup was a failure
-  if (event == CACHE_EVENT_LOOKUP_FAILED) {
-
-    if (local_lookup_only) {
-      callback_user(CACHE_EVENT_LOOKUP_FAILED, 0);
-      return EVENT_DONE;
-    }
-    // Try a remote lookup
-    if (!do_remote_lookup(action.continuation, NULL, this)) {
-
-      // If that is not possible, signal failure to the user
-      callback_user(CACHE_EVENT_LOOKUP_FAILED, 0);
-    }
-  } else {
-    // If we succeeded, signal the user
-    callback_user(CACHE_EVENT_LOOKUP, 0);
-  }
-  return EVENT_DONE;
-#endif
 }
 
 
@@ -3033,13 +2998,6 @@ CacheContinuation::forwardEvent(int event, VConnection * c)
     cache_read = true;
     cluster_vc = c;
     break;
-#if 0
-  case CACHE_EVENT_OPEN_READ_VIO:
-    cache_read = true;
-    vio = (VIO *) c;
-    cluster_vc = vio->vc_server;
-    break;
-#endif
   }
   SET_HANDLER((CacheContHandler) & CacheContinuation::forwardWaitEvent);
   return ret;
@@ -3071,12 +3029,6 @@ CacheContinuation::forwardWaitEvent(int event, VConnection * c)
     vc = c;
     break;
 
-#if 0
-  case CACHE_EVENT_OPEN_READ_VIO:
-    vio = (VIO *) c;
-    vc = vio->vc_server;
-    break;
-#endif
   }
   VConnection *read_vc = (cache_read ? cluster_vc : vc);
   VConnection *write_vc = (!cache_read ? cluster_vc : vc);

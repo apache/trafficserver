@@ -139,14 +139,6 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
 
     /* session level event with the session */
     INKHttpSsnHookAdd(ssnp, INK_HTTP_SSN_CLOSE_HOOK, contp);
-#if 0
-    /* INK_HTTP_TXN_CLOSE_HOOK will not be delivered if registered 
-     *  here since the hook id lives in the session and the 
-     *  transaction is deleted before the session.  Register the
-     *  the event at TXN_START, event will live in the txn.
-     */
-    INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_CLOSE_HOOK, contp);
-#endif
     INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE);
     break;
 

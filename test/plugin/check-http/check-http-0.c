@@ -948,11 +948,6 @@ handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
 
   HdrInfo_T *pReqHdrInfo = NULL, *pNewReqHdrInfo = NULL;
 
-#if 0
-  const char *constant_request_header_str =
-    "GET http://www.joes-hardware.com/ HTTP/1.0\r\nDate: Wed, 05 Jul 2000 22:12:26 GMT\r\nConnection: Keep-Alive\r\nUser-Agent: Mozilla/4.51 [en] (X11; U; IRIX 6.2 IP22)\r\nHost: www.joes-hardware.com\r\nCache-Control: no-cache\r\nAccept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\nAccept-Charset: iso-8859-1,*,utf-8\r\nAccept-Encoding: gzip\r\nAccept-Language: en\r\nX-Number-Header: 12345\r\nX-Silly-Header: frobnichek grobbledegook\r\nAccept-Charset: windows-1250, koi8-r\r\nX-Silly-Header: wawaaa\r\n\r\n";
-
-#endif
 
 
   pReqHdrInfo = initHdr();

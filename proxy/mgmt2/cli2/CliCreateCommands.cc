@@ -50,10 +50,6 @@ CliCreateCommands()
 
   createCommand("show:version", Cmd_ShowVersion, NULL, CLI_COMMAND_EXTERNAL, "show:version", "Version information");
 
-#if 0
-  // Tech Support wants us to handle all ports in their protocol or function area
-  createCommand("show:ports", Cmd_ShowPorts, NULL, CLI_COMMAND_EXTERNAL, "show:ports", "Port value assignments");
-#endif
 
   createCommand("show:security", Cmd_ShowSecurity, NULL, CLI_COMMAND_EXTERNAL, "show:security", "Security information");
 
@@ -172,11 +168,6 @@ CliCreateCommands()
   createCommand("config:remap", Cmd_ConfigRemap, NULL, CLI_COMMAND_EXTERNAL,
                 "config:remap <url>", "Update remap configuration file <url>");
 
-#if 0
-  // Tech Support wants us to handle all ports in their protocol or function area
-  createCommand("config:ports", Cmd_ConfigPorts, CmdArgs_ConfigPorts, CLI_COMMAND_EXTERNAL,
-                "config:ports <port> <value>", "Configure port number assignments");
-#endif
 
   createCommand("config:snmp", Cmd_ConfigSnmp, CmdArgs_ConfigSnmp, CLI_COMMAND_EXTERNAL,
                 "config:snmp status <on|off>", "Configure SNMP <on|off>");

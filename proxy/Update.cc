@@ -1596,35 +1596,6 @@ UpdateSM::http_scheme_postproc(UpdateSM * sm)
 }
 
 // Not used anywhere.
-#if 0
-static int
-rtsp_progress_cont(INKCont contp, INKEvent event, void *data)
-{
-  struct MCOPreloadReport *pr = (struct MCOPreloadReport *) data;
-  UpdateSM *sm = (UpdateSM *) pr->context;
-
-  ink_assert(event == MIXT_API_EVENT_MCO_PRELOAD_REPORT);
-  switch (pr->result) {
-  case RESULT_DONE:
-    {
-      sm->handleEvent(VC_EVENT_READ_COMPLETE, 0);
-      INKContDestroy(contp);
-      break;
-    }
-  case RESULT_IN_PROGRESS:
-    {
-      break;
-    }
-  default:
-    {
-      sm->handleEvent(VC_EVENT_ERROR, 0);
-      INKContDestroy(contp);
-      break;
-    }
-  }
-  return 0;
-}
-#endif
 
 int
 UpdateSM::rtsp_scheme(UpdateSM * sm)

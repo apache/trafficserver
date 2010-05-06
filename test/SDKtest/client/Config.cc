@@ -307,9 +307,6 @@ Config::Config(long warmup, char *config_file, INKPlugin * aplug_in, int aread_t
         strcpy(log_file, rhs);
       } else if (!strcmp(lhs, "users")) {
         users = atoi(rhs);
-#if 0
-        assert((users) > 0 && (users) < MAX_USERS);
-#endif
         assert((users) > 0);
       } else if (!strcmp(lhs, "execution_interval")) {
         execution_interval = atoi(rhs);
@@ -385,10 +382,6 @@ Config::Config(long warmup, char *config_file, INKPlugin * aplug_in, int aread_t
           }
           origin_server_ports[j] = p + 1;
           *p = '\0';
-#if 0
-          fprintf(stderr, "Origin server %d is host '%s' port '%s'\n",
-                  j, origin_server_names[j], origin_server_ports[j]);
-#endif
         }
       } else if (!strcmp(lhs, "docsize_dist_file")) {
         strcpy(docsize_dist_file, rhs);

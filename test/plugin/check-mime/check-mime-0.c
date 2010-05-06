@@ -750,51 +750,6 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
      * name and values)
      * -----------------------------------------------------------------------*/
 
-#if 0
-    /* DEPRECATED: ** do not use section 6.1 ** 
-     * INKMimeHdrFieldInsert w/ idx == 0 and hence the Functionality to 
-     * "pre-pend" a MIME field is deprecated starting bobcat */
-
-                /*** (6.1): prepend a MIME field ******/
-    /* Create a MIME field */
-    if ((newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpMimeHdrLoc)) == INK_ERROR_PTR) {
-      LOG_API_ERROR_COMMENT("INKMimeHdrFieldCreate", "Skip to section 6.2");
-      goto section_62;
-    } else if (INKMimeHdrFieldNameSet(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "Prepend-Field",
-                                      strlen("Prepend-Field") == INK_ERROR)) {
-      LOG_API_ERROR("INKMimeHdrFieldNameSet");
-    } else if (INKMimeHdrFieldValueInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, "prepend-field-value-1",
-                                          strlen("prepend-field-value-1"), -1) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldValueInsert");
-    }
-
-    /* Now, do the insert : prepend it to the list of fields */
-    if (INKMimeHdrFieldInsert(tmpBuf, tmpMimeHdrLoc, newFieldLoc, 0) == INK_ERROR) {
-      LOG_API_ERROR("INKMimeHdrFieldInsert");
-    }
-
-    /* auto: check the pre-pended field */
-    if ((tmpFieldLoc = INKMimeHdrFieldGet(tmpBuf, tmpMimeHdrLoc, 0)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKMimeHdrFieldGet");
-    } else if (!tmpFieldLoc) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldInsert", "Cannot INK_Get the newly inserted field");
-    } else {
-      if ((tmpFieldName = INKMimeHdrFieldNameGet(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc,
-                                                 &tmpFieldNameLength)) == INK_ERROR_PTR) {
-        LOG_API_ERROR("INKMimeHdrFieldNameGet");
-      } else {
-        if (strncmp(tmpFieldName, "Prepend-Field", strlen("Prepend-Field"))) {
-          LOG_AUTO_ERROR("INKMimeHdrFieldInsert", "New field not pre-pended! - INKqa8057");
-        }
-        STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldName);
-      }
-      HANDLE_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldLoc);
-    }
-
-    printMimeFields(tmpBuf, tmpMimeHdrLoc, RESP, 6.1);
-
-  section_62:
-#endif
     INKDebug(RESP, "***********************( 6.2 )***********************");
 
         /*** (6.2): append some *field value* ******/
@@ -1288,36 +1243,6 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValue1);
     STR_RELEASE(tmpBuf, tmpMimeHdrLoc, tmpFieldValue2);
 
-#if 0
-    /* FIXME: Why the "auto:" case is failing here? */
-                /***** (13): play with INKMimeHdrFieldValueSet* *****/
-    currentTime = time(&currentTime);
-    INKMimeHdrFieldValueInsertDate(tmpBuf, tmpMimeHdrLoc, fieldLoc3, currentTime, -1);
-
-    /* set other values to the field */
-    valueInt = -2;
-    valueUint = 1;
-    INKMimeHdrFieldValueSetInt(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 0, valueInt);
-    INKMimeHdrFieldValueSetUint(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 1, valueUint);
-    INKMimeHdrFieldValueSetDate(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 2, currentTime);
-    printDateDifference(tmpBuf, tmpMimeHdrLoc, MY_TEST_HDR_3, currentTime, RESP, 13);
-    printField(tmpBuf, tmpMimeHdrLoc, MY_TEST_HDR_3, RESP, 13);
-
-    /* auto: Get the field values again and check */
-    if (INKMimeHdrFieldValueGetInt(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 0) != valueInt) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueSetInt",
-                     "INKMimeHdrFieldValueGetInt different from INKMimeHdrFieldValueSetInt");
-    }
-    if (INKMimeHdrFieldValueGetUint(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 1) != valueUint) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueSetUint",
-                     "INKMimeHdrFieldValueGetUint different from INKMimeHdrFieldValueSetUint");
-    }
-    fieldTime = INKMimeHdrFieldValueGetDate(tmpBuf, tmpMimeHdrLoc, fieldLoc3, 2);
-    if (fieldTime != currentTime) {
-      LOG_AUTO_ERROR("INKMimeHdrFieldValueSetDate",
-                     "INKMimeHdrFieldValueGetDate different from INKMimeHdrFieldValueSetDate");
-    }
-#endif
 
         /***** (13): play with INKMimeHdrFieldValueSet* *****/
     currentTime = time(&currentTime);

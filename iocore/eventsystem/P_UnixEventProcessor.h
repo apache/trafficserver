@@ -81,15 +81,6 @@ EventProcessor::schedule(Event * e, EventType etype, bool fast_signal)
   return e;
 }
 
-#if 0
-/* getting rid of this, i dont see anybody using this */
-TS_INLINE Event *
-EventProcessor::schedule_spawn(Continuation * cont)
-{
-  Event *e = eventAllocator.alloc();
-  return schedule(e->init(cont, 0, 0), ET_SPAWN);
-}
-#endif
 
 TS_INLINE Event *
 EventProcessor::schedule_imm_signal(Continuation * cont, EventType et, int callback_event, void *cookie)

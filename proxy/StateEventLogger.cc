@@ -252,14 +252,6 @@ test_thread(void *i)
   start = ink_get_hrtime();
   for (j = 0; j < calls; j++) {
     (*sel) (TestStateEvent(pi, j));
-#if 0
-    if (lrand48() % 1000 < 900) {       // sleep 90% of time
-      struct timespec x;
-      x.tv_sec = 0;
-      x.tv_nsec = lrand48() % 1000;
-      nanosleep(&x, NULL);      // random wait
-    }
-#endif
   }
 #ifdef __alpha
 #define LL_FMT "%ld"

@@ -83,7 +83,6 @@ fastIO_swap(struct fastIO_state *fio, int noblock)
   time(&thetime);
 
   {
-#if 1
     int j, nfree = 0;
 
     for (j = 0; j < fio->blockcount; j++)
@@ -92,47 +91,6 @@ fastIO_swap(struct fastIO_state *fio, int noblock)
       }
     printf("\nnfree = %d\n", nfree);
 
-#else
-
-    int j, nfree = 0;
-    int startblk, endblk;
-
-    memcpy(recycledblks_temp, recycledblks, fio->blockcount);
-    memset(recycledblks, 0, fio->blockcount);
-
-    for (j = 0; j < fio->blockcount; j++) {
-      if (fio->activefl[j] != 0xffffffff) {
-        nfree++;
-        recycledblks[fio->activefl[j]] = 1;
-      }
-    }
-
-    for (j = 0; j < fio->blockcount; j++)
-      /* A non-recycled block better have been free before this swap */
-      if ((!recycledblks[j]) & (!recycledblks_temp[j]))
-        printf("Non-recycled and non-free block: %d\n", j);
-
-    printf("\nnfree = %d\n", nfree);
-
-    printf("Non-recycled: ");
-    startblk = -1;
-    for (j = 0; j < fio->blockcount; j++) {
-      if (!recycledblks[j]) {
-        if (startblk == -1)
-          startblk = j;
-        endblk = j;
-      } else if (startblk != -1) {
-        /* freeblks[j] is set; and the sequence of non-recycled blks has ended */
-        printf(" %d-%d ", startblk, endblk);
-        startblk = -1;
-      }
-    }
-    if (startblk != -1) {
-      /* freeblks[j] is set; and the sequence of non-recycled blks has ended */
-      printf(" %d-%d ", startblk, endblk);
-      startblk = -1;
-    }
-#endif
   }
 
   /* Don't block if we failed and noblock is set */
@@ -314,9 +272,6 @@ fastIO_udpsession_create(struct fastIO_state *fio, int fd)
   fs->type = FASTIO_SESSION_UDP;
 
   fs->fd = fd;
-#if 0
-  printf("fastIO_create_session: UDP Queue: 0x%x\n", fs->udp_queue);
-#endif
 
 
   return fs;
@@ -366,9 +321,6 @@ fastIO_session_destroy(struct fastIO_session *sessioncookie)
 {
   struct strioctl strioctl;
 
-#if 0
-  printf("fastIO_session_destroy: Destroyign session with quid %d.\n", sessioncookie->udp_queue);
-#endif
 
 
   switch (sessioncookie->type) {
@@ -378,10 +330,6 @@ fastIO_session_destroy(struct fastIO_session *sessioncookie)
       perror("ioctl I_POP inkio failed");
       break;
     }
-#if 0
-    if (ioctl(sessioncookie->fio->fiofd, FIO_DELETE_QUEUE, sessioncookie->udp_queue) == -1)
-      perror("ioctl");
-#endif
 
     break;
   case FASTIO_SESSION_VIRTUAL:
@@ -546,18 +494,11 @@ fastIO_add_split_rule(struct fastIO_session *srcSession, struct fastIO_split_rul
 
   struct ink_cmd_msg msg;
 
-#if 0
-  printf("fastIO_add_split_rule\n");
-#endif
 
   msg.cmd = INK_CMD_SPLIT_ADD;
   rule->dst_queue = (queue_t *) rule->splitTo->udp_queue;
   memcpy(&(msg.payload.split_rule), rule, sizeof(struct fastIO_split_rule));
 
-#if 0
-  printf("Adding split rule for src port = %d, dest port = %d \n",
-         msg.payload.split_rule.srcPort, msg.payload.split_rule.dstPort);
-#endif
 
   switch (srcSession->type) {
   case FASTIO_SESSION_UDP:
@@ -745,10 +686,6 @@ fastIO_get_stats(struct fastIO_state *cookie, struct ink_fio_stats *stats)
 {
   ioctl(cookie->fiofd, FIO_GET_STATS, stats);
 
-#if 0
-  printf("Packets Sent: %d\n", stats->pkts_sent);
-  printf("Bytes Sent: %d\n", stats->bytes_sent);
-#endif
 
 }
 

@@ -1536,17 +1536,7 @@ CmdLine_EventHandler::ConfigureLevel(void *cdata)
     CLI_globals::Help(cli_data->output, CL_CONF_HOSTDB, cli_data->advui, cli_data->featset);
     break;
   case CL_EV_EIGHT:            // Snapshots
-#if 0                           /* Don't handle for now */
-    Debug("cli_event", "ConfigureLevel: entered snapshots case \n");
-    command_prompt(CLI_globals::cmdLD[CL_CONF_SNAPSHOTS].cmdprompt);
-    command_mode(cli_data->cmdmode);
-    arguments(cli_data->args);
-    current_state(CL_CONF_SNAPSHOTS);
-    CLI_globals::set_response(cli_data->output, CLI_globals::successStr, " ", CL_CONF_SNAPSHOTS);
-    break;
-#else
     /* Fall through */
-#endif
   case CL_EV_NINE:
     /* Fall through */
   case CL_EV_TEN:

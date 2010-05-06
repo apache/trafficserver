@@ -882,69 +882,6 @@ LogFile::do_filesystem_checks()
 /***************************************************************************
  LogFileList IS NOT USED 
 ****************************************************************************/
-#if 0
-
-/**************************************************************************
-
-  LogFileList methods
-
- **************************************************************************/
-
-LogFileList::LogFileList()
-{
-}
-
-LogFileList::~LogFileList()
-{
-  clear();
-}
-
-void
-LogFileList::add(LogFile * out, bool copy)
-{
-  ink_assert(out != NULL);
-  if (copy) {
-    m_output_list.enqueue(NEW(new LogFile(*out)));
-  } else {
-    m_output_list.enqueue(out);
-  }
-}
-
-unsigned
-LogFileList::count()
-{
-  unsigned cnt = 0;
-  for (LogFile * out = first(); out; out = next(out)) {
-    cnt++;
-  }
-  return cnt;
-}
-
-void
-LogFileList::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_file)
-{
-  for (LogFile * out = first(); out; out = next(out)) {
-    out->write(lb, to_disk, to_net, to_file);
-  }
-}
-
-void
-LogFileList::clear()
-{
-  LogFile *out;
-  while ((out = m_output_list.dequeue())) {
-    delete out;
-  }
-}
-
-void
-LogFileList::display(FILE * fd)
-{
-  for (LogFile * out = first(); out; out = next(out)) {
-    out->display(fd);
-  }
-}
-#endif
 
 
 /****************************************************************************

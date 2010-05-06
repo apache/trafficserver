@@ -646,18 +646,6 @@ inkudp_wput(queue_t * q, mblk_t * mp)
     putnext(q, mp);
 
 
-#if 0
-  if (msgcount == 200)
-  {
-    cmn_err(CE_CONT, "starting to ignore next time.\n");
-
-  }
-  if (msgcount > 200) {
-    freemsg(mp);
-
-    return 0;
-  }
-#endif
 
 
 

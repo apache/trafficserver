@@ -1774,16 +1774,7 @@ ICPRequestCont::BuildICPMsg(ICPopcode_t op, unsigned int seqno,
 // Static ICPRequestCont data declarations
 unsigned int
   ICPRequestCont::ICPRequestSeqno = 1;
-#if 0
-//**********************************************************************
-// Currently, placing this in class scope generates numerous
-// warnings on DEC (OK on Solaris).  For now, place this in file scope
-// to avoid these warnings.
-//**********************************************************************
-Queue<ICPRequestCont> ICPRequestCont::ICPRequestQueue[ICPRequestCont::ICP_REQUEST_HASH_SIZE];
-#else
 Queue<ICPRequestCont> ICPRequestQueue[ICPRequestCont::ICP_REQUEST_HASH_SIZE];
-#endif
 
 // Static member function
 unsigned int

@@ -134,9 +134,6 @@ inkudp_adjust_flow_bw_share()
   node = G_redirect_incoming_list;
   while (node) {
     node->m_flow_bw_share = (G_MAX_BYTES_PER_ROUND * node->m_flow_bw_weight) / total_flow_weights;
-#if 0
-    cmn_err(CE_NOTE, "setting flow's bw share: %d, %d\n", node->m_flow_bw_weight, node->m_flow_bw_share);
-#endif
     node = node->next;
   }
   return 1;
@@ -195,9 +192,6 @@ inkudp_add_split_rule(queue_t * incomingQ, struct fastIO_split_rule *rule)
   redirect_enabled = 1;
   redirect_passthrough = 1;
 
-#if 0
-  cmn_err(CE_CONT, "inkudp_add_split_rule\n");
-#endif
 
   /* 
    * bail out if this is an error or we have successfully added to

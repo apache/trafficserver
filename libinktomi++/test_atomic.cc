@@ -53,32 +53,6 @@
 
 
 #ifndef LONG_ATOMICLIST_TEST
-#if 0
-InkQueue Q;
-void *
-testfun(InkQueue * q)
-{
-  int num;
-
-  if (q == NULL) {
-    for (num = 2; num < 2000; num += 2) {
-      assert(ink_queue_enqueue(&Q, (void *) num));
-      if (num % 200 == 0) {
-        ink_queue_print(stderr, &Q);
-      }
-    }
-    sleep(10);
-    exit(0);
-  } else {
-    for (;;) {
-      num = (int) ink_queue_try_dequeue(q);
-      if (num != 0)
-        printf("%d\n", num);
-    }
-  }
-  return NULL;
-}
-#endif
 
 #define MAX_ALIST_TEST 10
 #define MAX_ALIST_ARRAY 100000
@@ -187,28 +161,12 @@ int
 main(int argc, const char *argv[])
 {
 #ifndef LONG_ATOMICLIST_TEST
-#if 0
-  InkSpinlock s;
-  ink_spinlock_init(&s);
-  InkQueue *q;
-  ink_queue_init(&Q, "test");
-  q = &Q;
-#endif
   ink32 m = 1, n = 100;
   //ink64 lm = 1LL, ln = 100LL;
   char *m2 = "hello", *n2;
 
   printf("sizeof(ink32)==%d   sizeof(void *)==%d\n", (int)sizeof(ink32), (int)sizeof(void *));
 
-#if 0
-  INK_SPINLOCK_ACQUIRE(&s);
-  printf("acquired: %s, %d\n", s.locked ? "locked" : "free", s.waiting);
-  ink_spinlock_print(stdout, &s);
-
-  ink_spinlock_release(&s);
-  printf("released: %s, %d\n", s.locked ? "locked" : "free", s.waiting);
-  ink_spinlock_print(stdout, &s);
-#endif
 
   printf("CAS: %d == 1  then  2\n", m);
   n = ink_atomic_cas(&m, 1, 2);
@@ -231,41 +189,6 @@ main(int argc, const char *argv[])
   m = ink_atomic_increment((int *) &n, 1);
   printf("changed to: %d,  result=%d\n", n, m);
 
-#if 0
-  printf("CAS64: %lld == 1  then  2\n", lm);
-  n = ink_atomic_cas64(&lm, 1, 2);
-#ifdef __alpha
-  printf("changed to: %ld,  result=%s\n", lm, ln ? "true" : "false");
-#else
-  printf("changed to: %lld,  result=%s\n", lm, ln ? "true" : "false");
-#endif
-
-#ifdef __alpha
-  printf("CAS64: %ld == 1  then  3\n", lm);
-#else
-  printf("CAS64: %lld == 1  then  3\n", lm);
-#endif
-  n = ink_atomic_cas64(&lm, 1, 3);
-#ifdef __alpha
-  printf("changed to: %ld,  result=%s\n", lm, n ? "true" : "false");
-#else
-  printf("changed to: %lld,  result=%s\n", lm, n ? "true" : "false");
-#endif
-
-  ln = 10000001000LL;
-#ifdef __alpha
-  printf("Atomic 64 Inc of %ld by %ld\n", ln, 10000000000100LL);
-#else
-  printf("Atomic 64 Inc of %lld by %lld\n", ln, 10000000000100LL);
-#endif
-  lm = ink_atomic_increment64((long long *) &ln, 10000000000100LL);
-#ifdef __alpha
-  printf("changed to: %lld,  result=%lld\n", ln, lm);
-#else
-  printf("changed to: %lld,  result=%lld\n", ln, lm);
-#endif
-
-#endif /* ! NO_64BIT_ATOMIC */
 
   printf("Atomic Fetch-and-Add 2 to pointer to '%s'\n", m2);
   n2 = (char *) ink_atomic_increment_ptr((pvvoidp) & m2, 2);
@@ -309,20 +232,5 @@ main(int argc, const char *argv[])
   }
 #endif // LONG_ATOMICLIST_TEST
 
-#if 0
-  assert(thr_create(NULL, 0, testfun, 0, THR_NEW_LWP, NULL) == 0);
-  assert(thr_create(NULL, 0, testfun, 0, THR_NEW_LWP, NULL) == 0);
-  assert(thr_create(NULL, 0, testfun, q, THR_NEW_LWP, NULL) == 0);
-  assert(thr_create(NULL, 0, testfun, q, THR_NEW_LWP, NULL) == 0);
-  assert(thr_create(NULL, 0, testfun, q, THR_NEW_LWP, NULL) == 0);
-  assert(thr_create(NULL, 0, testfun, q, THR_NEW_LWP, NULL) == 0);
-  assert(thr_create(NULL, 0, testfun, q, THR_NEW_LWP, NULL) == 0);
-  assert(thr_create(NULL, 0, testfun, q, THR_NEW_LWP, NULL) == 0);
-  assert(thr_create(NULL, 0, testfun, q, THR_NEW_LWP, NULL) == 0);
-  assert(thr_create(NULL, 0, testfun, q, THR_NEW_LWP, NULL) == 0);
-  while (1) {
-    ;
-  }
-#endif
   return 0;
 }

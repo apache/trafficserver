@@ -883,59 +883,6 @@ server_state_done(INKCont contp, int event, INKVIO vio)
 // Next States:
 //
 //////////////////////////////////////////////////////////////////////////
-#if 0
-int
-state_dns_lookup(int event, INKDNSInfo host_info)
-{
-  ENTER_STATE(serversm, Server->q_sm_id, state_dns_lookup, event);
-
-  assert(Server->q_server_name);
-  if (event != INK_EVENT_DNS_LOOKUP) {
-    //      Server->q_error_type = RAFT_INTERNAL_PROXY_ERROR;
-    INKDebug("serversm", "[%u][state_dns_lookup], unexpected event", Server->q_sm_id);
-
-    if (Server->q_server_vc) {
-      INKVConnAbort(Server->q_server_vc, 1);
-      Server->q_server_vc = NULL;
-    }
-    Server->q_server_read_vio = NULL;
-    Server->q_server_write_vio = NULL;
-
-    return call_back_sub_sm_with_error();
-  }
-  // ok, the dns processor always returns an EVENT_HOST_DB_LOOKUP
-  // regardless of whether there was success or not. however, if
-  // it calls us back with a null hostdbinfo structure, it means
-  // that the lookup was unsuccessful.
-  if (!host_info) {
-    //        Server->q_error_type = RAFT_DNS_FAILURE;
-    INKDebug("serversm", "[%u][state_dns_lookup] Unable to resolve DNS for %s", Server->q_sm_id, Server->q_server_name);
-
-    // FUTURE: we may at some point want to try doing automatic
-    // name expansion (appending local domain name or prepending www) 
-    // and retrying the dns lookup. for now, however, just bail out.
-
-    return call_back_sub_sm_with_error();
-  }
-  // ok, we have DNS resolution. set the ip address and connect to the server.
-  Server->q_server_ip = INKDNSInfoIPGet(host_info);
-
-  assert(Server->q_server_ip > 0);
-  assert(Server->q_server_port > 0);
-
-  // issue server connect.
-  unsigned char *p = (unsigned char *) &(Server->q_server_ip);
-  INKDebug("serversm", "[%u][state_dns_resolve] %s has resolved to %d.%d.%d.%d:%d",
-           Server->q_sm_id, Server->q_server_name, p[0], p[1], p[2], p[3], Server->q_server_port);
-
-//    SET_HANDLER((ServerSMHandler)&state_connect_to_server);
-  set_handler(Server->q_server_current_handler, &state_connect_to_server);
-  Server->q_pending_action = INKNetConnect(contp, Server->q_server_ip, Server->q_server_port);
-
-  return INK_EVENT_IMMEDIATE;
-}
-
-#endif
 
 int
 state_dns_lookup(INKCont contp, int event, INKHostDBInfo host_info)

@@ -101,23 +101,6 @@ static int manager_failures = 0;
 static int server_failures = 0;
 static int server_not_found = 0;
 
-#if 0 // TODO: REMOVE RNI
-// connect to proxy port and hand it the RTSP port
-static time_t rni_last_restart = 0;
-static int rni_proxy_start_succeed = 1;
-static int rni_watcher_enabled = 0;
-static char rni_proxy_pid_path[PATH_MAX] = "";
-static char rni_proxy_restart_cmd[PATH_MAX] = "";
-static char rni_proxy_binary[PATH_MAX] = "";
-
-#define RNI_RPASS_LOCK "rpass.lock"
-
-// non-Real passthrough
-static int rni_rpass_watcher_enabled = 0;
-static char rni_rpass_lockfile[PATH_MAX];
-static char rni_rpass_restart_cmd[PATH_MAX] = "";
-static char rni_rpass_binary[PATH_MAX] = "";
-#endif
 
 static const int sleep_time = 10;       // 10 sec
 static const int manager_timeout = 3 * 60;      //  3 min
@@ -140,12 +123,6 @@ static ink_hrtime manager_flap_retry_start_time = 0;    // first time we attempt
 
 static const int kill_timeout = 1 * 60; //  1 min
 
-#if 0 // TODO: REMOVE RNI
-#define DEFAULT_RNI_RESTART_INTERVAL 20 // 20 seconds
-static int rni_restart_interval = DEFAULT_RNI_RESTART_INTERVAL;
-#define DEFAULT_RNI_RPASS_SWITCH_INTERVAL 60
-static int rni_rpass_switch_interval = DEFAULT_RNI_RPASS_SWITCH_INTERVAL;
-#endif
 
 static int child_pid = 0;
 static int child_status = 0;
@@ -617,34 +594,6 @@ ConfigIntFatalError:
   exit(1);
 }
 
-#if 0 // Used by RNI
-// extract the binary name from a cmd
-static void
-get_binary_from_cmd(char *cmdline, char *binary)
-{
-  char *bin, *path, *cmd;
-
-
-#ifdef TRACE_LOG_COP
-  cop_log(COP_DEBUG, "Entering get_binary_from_cmd(%s, <ptr>)\n", cmdline);
-#endif
-  cmd = xstrdup(cmdline);
-  bin = path = strtok(cmd, " \t");
-  while (*bin != '\0')
-    bin++;
-  while ((bin > path) && (*bin != '/'))
-    bin--;
-  if (*bin == '/')
-    bin++;
-  if (bin) {
-    ink_strncpy(binary, bin, PATH_MAX);
-  }
-  xfree(cmd);
-#ifdef TRACE_LOG_COP
-  cop_log(COP_DEBUG, "Leaving get_binary_from_cmd(%s, <%s>)\n", cmdline, binary);
-#endif
-}
-#endif
 
 static void
 read_config()
@@ -729,118 +678,11 @@ read_config()
   read_config_int("proxy.config.cop.linux_min_swapfree_kb", &check_memory_min_swapfree_kb);
   read_config_int("proxy.config.cop.linux_min_memfree_kb", &check_memory_min_memfree_kb);
 
-#if 0 // TODO: REMOVE RNI
-  // Real Networks stuff
-  read_config_int("proxy.config.rni.watcher_enabled", &rni_watcher_enabled);
-  if (rni_watcher_enabled) {
-    read_config_string("proxy.config.rni.proxy_pid_path", rni_proxy_pid_path, sizeof(rni_proxy_pid_path));
-    read_config_int("proxy.config.rni.proxy_restart_interval", &rni_restart_interval);
-    read_config_string("proxy.config.rni.proxy_restart_cmd", rni_proxy_restart_cmd, sizeof(rni_proxy_restart_cmd));
-    // extract the rni_proxy_binary name
-    if ((strcmp(rni_proxy_restart_cmd, "NULL") != 0) && (*rni_proxy_restart_cmd != '\0')) {
-      get_binary_from_cmd(rni_proxy_restart_cmd, rni_proxy_binary);
-    }
-  }
-  // initialize rni_proxy_start_succeed to rni_watcher_enabled
-  // so that rpass can be started if RealProxy is not available
-  rni_proxy_start_succeed = rni_watcher_enabled;
-
-  // Real Passthrough stuff
-  read_config_int("proxy.config.rni.rpass_watcher_enabled", &rni_rpass_watcher_enabled);
-  if (rni_rpass_watcher_enabled) {
-    read_config_int("proxy.config.rni.proxy_restart_interval", &rni_restart_interval);
-
-    read_config_string("proxy.config.rni.rpass_restart_cmd", rni_rpass_restart_cmd, sizeof(rni_rpass_restart_cmd));
-    // extract the rni_rpass_binary name
-    if ((strcmp(rni_rpass_restart_cmd, "NULL") != 0) && (*rni_rpass_restart_cmd != '\0')) {
-      get_binary_from_cmd(rni_rpass_restart_cmd, rni_rpass_binary);
-    }
-  }
-#endif
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving read_config()\n");
 #endif
 }
 
-#if 0 // Used by RNI
-//
-// Get process ID in file
-//
-static pid_t
-getholding_pid(const char *pid_path)
-{
-  int err;
-  int fd;
-  int size;
-  int val;
-  char buf[16];
-  char *t = NULL;
-  pid_t holding_pid;
-
-#ifdef TRACE_LOG_COP
-  cop_log(COP_DEBUG, "Entering getholding_pid(%s)\n", pid_path);
-#endif
-  // Can not use 'locfile_open()' to get the lockfile.
-  // Instead see if the lockfile exists and get the holding pid
-  // coverity[fs_check_call]
-  if (0 == access(pid_path, R_OK)) {
-    // Open file Read-only
-    do {
-      // coverity[toctou]
-      fd = open(pid_path, O_RDONLY, 0600);
-    } while ((fd < 0) && (errno == EINTR));
-
-    if (fd < 0) {
-      cop_log(COP_WARNING, "Failed to open proccess id file %s(%d)\n", pid_path, errno);
-#ifdef TRACE_LOG_COP
-      cop_log(COP_DEBUG, "Leaving getholding_pid(%s) --> %d\n", pid_path, 0);
-#endif
-      return 0;
-    }
-
-    t = buf;
-    for (size = 15; size > 0;) {
-      do {
-        err = read(fd, t, size);
-      } while ((err < 0) && (errno == EINTR));
-
-      if (err < 0) {
-        cop_log(COP_WARNING, "Failed to read pid from file %s(%d)\n", pid_path, errno);
-#ifdef TRACE_LOG_COP
-        cop_log(COP_DEBUG, "Leaving getholding_pid(%s) --> %d\n", pid_path, 0);
-#endif
-        return 0;
-      }
-      if (err == 0)
-        break;
-
-      size -= err;
-      t += err;
-    }
-    *t = '\0';
-
-    // buf is null-terminated and it is read to an integer type, disable coverity check
-    // coverity[secure_coding]
-    if (sscanf(buf, "%d\n", &val) != 1) {
-      holding_pid = 0;
-    } else {
-      holding_pid = val;
-    }
-    // cleanup
-    if (fd)
-      close(fd);
-
-#ifdef TRACE_LOG_COP
-    cop_log(COP_DEBUG, "Leaving getholding_pid(%s) --> %d\n", pid_path, holding_pid);
-#endif
-    return holding_pid;
-  }
-#ifdef TRACE_LOG_COP
-  cop_log(COP_DEBUG, "Leaving getholding_pid(%s) --> %d\n", pid_path, 0);
-#endif
-  return 0;
-}
-#endif
 
 static void
 spawn_manager()
@@ -944,219 +786,6 @@ spawn_manager()
 #endif
 }
 
-#if 0 // TODO: REMOVE RNI
-//
-// Spawn G2 Real Server
-//
-static void
-spawn_rni()
-{
-
-  static time_t last_restart = 0;
-
-  // Check to see if we are restarting
-  // the rmserver too quickly.
-  if (last_restart != 0 && rni_restart_interval != 0) {
-    time_t time_diff = time(NULL) - last_restart;
-    if (time_diff < rni_restart_interval) {
-      return;
-    }
-  }
-
-  char *restart_cmd = NULL;
-  int err;
-
-  // Grab binary and args
-  // deal with multiple args
-#define MAX_ARGS 10
-  restart_cmd = strdup(rni_proxy_restart_cmd);
-  char *args[MAX_ARGS + 1];
-  {
-    int i;
-    for (i = 0; i < MAX_ARGS + 1; i++)
-      args[i] = NULL;
-    char *p;
-    i = 0;
-    p = restart_cmd;
-    char *tok;
-    int max_args = 0;
-    while ((tok = strtok(p, " \t"))) {
-      if (i < MAX_ARGS) {
-        if (i == 0) {
-          // first argument should be the program argument
-          // that required RealProxy to be under Traffic Server
-          // install directory to start, use absolute path otherwise
-          if (strstr(tok, root_dir)) {
-            tok = tok + strlen(root_dir) + 1;
-          }
-        }
-        args[i] = strdup(tok);
-        i++;
-      } else {
-        max_args = 1;
-      }
-      p = NULL;
-    }
-    if (max_args) {
-      cop_log(COP_WARNING, "more than %d args in '%s'\n", MAX_ARGS, rni_proxy_restart_cmd);
-    }
-  }
-  if (args[0]) {
-    last_restart = time(NULL);
-    rni_last_restart = last_restart;
-    err = fork();
-    if (err == 0) {
-      err = execv(args[0], &args[0]);
-      if (-1 == err) {
-        cop_log(COP_WARNING, "unable to execv[%s,%s,...]\n", args[0], args[1]);
-        exit(1);
-      }
-    } else if (err == -1) {
-      cop_log(COP_FATAL, "unable to fork [%d '%s']\n", errno, strerror(errno));
-      exit(1);
-    }
-    for (int i = 0; i < MAX_ARGS; i++) {
-      if (args[i]) {
-        free(args[i]);
-      }
-    }
-    if (restart_cmd)
-      free(restart_cmd);
-  }
-}
-
-//
-// Kill G2 Real Server
-//
-// This doesn't seem to be used.
-static void INK_UNUSED
-safe_kill_rni(void)
-{
-  int err;
-  pid_t pid;
-
-  set_alarm_warn();
-  alarm(kill_timeout);
-  // Can not use lockfile_kill()
-  // lockfile_kill (rni_proxy_pid_path, killsig, coresig);
-  pid = getholding_pid(rni_proxy_pid_path);
-  if (pid != 0) {
-    pid = -pid;
-    if (coresig > 0) {
-      kill(pid, coresig);
-      // Sleep for a bit give time for the first signal
-      //  to be delivered
-      sleep(1);
-    }
-    do {
-      err = kill(pid, rni_killsig);
-    } while ((err == 0) || ((err < 0) && (errno == EINTR)));
-#if (HOST_OS == linux)
-    // linux: be sure that we've killed all of the process
-    ink_killall(rni_proxy_binary, killsig);
-#endif
-  }
-
-  alarm(0);
-  set_alarm_death();
-  // remove old rmserver.pid file
-  unlink(rni_proxy_pid_path);
-}
-
-
-//
-// Spawn G2 non-Real passthrough
-//
-static void
-spawn_rpass()
-{
-  int err;
-  FILE *fd;
-  char *restart_cmd = NULL;
-  static time_t last_restart = 0;
-
-  // Check to see if we are restarting
-  // the rtspd too quickly.
-  if (last_restart != 0 && rni_restart_interval != 0) {
-    time_t time_diff = time(NULL) - last_restart;
-    if (time_diff < rni_restart_interval) {
-      return;
-    }
-  }
-
-  // Grab binary and args
-  // deal with multiple args
-#define MAX_ARGS 10
-  restart_cmd = strdup(rni_rpass_restart_cmd);
-  char *args[MAX_ARGS + 3];
-  {
-    int i;
-    for (i = 0; i < MAX_ARGS + 3; i++)
-      args[i] = NULL;
-    char *p;
-    i = 0;
-    p = restart_cmd;
-    char *tok;
-    int max_args = 0;
-    while ((tok = strtok(p, " \t"))) {
-      if (i < MAX_ARGS) {
-        if (i == 0) {
-          // first argument should be the program argument
-          // that required Real Passthrough to be under Traffic Server
-          // install directory to start, use absolute path otherwise
-          if (strstr(tok, root_dir)) {
-            tok = tok + strlen(root_dir) + 1;
-          }
-        }
-        args[i] = strdup(tok);
-        i++;
-      } else {
-        max_args = 1;
-      }
-      p = NULL;
-    }
-    if (max_args) {
-      cop_log(COP_WARNING, "more than %d args in '%s'\n", MAX_ARGS, rni_rpass_restart_cmd);
-    }
-    // add the '-d pid_path' arguments at the end of the args list
-    args[i] = strdup("-d");
-    args[i + 1] = strdup(rni_rpass_lockfile);
-  }
-  if (args[0]) {
-    last_restart = time(NULL);
-    err = fork();
-
-    if (err == 0) {
-      fd = fopen(rni_rpass_lockfile, "w+");
-      if (fd > 0) {
-#if (HOST_OS == solaris)
-	fprintf(fd, "%d\n", (int)getpid());
-#else
-        fprintf(fd, "%d\n", getpid());
-#endif
-        fclose(fd);
-      }
-
-      err = execv(args[0], &args[0]);
-      if (-1 == err) {
-        cop_log(COP_WARNING, "unable to execv[%s,%s,...]\n", args[0], args[1]);
-        exit(1);
-      }
-    } else if (err == -1) {
-      cop_log(COP_FATAL, "unable to fork [%d '%s']\n", errno, strerror(errno));
-      exit(1);
-    }
-    for (int i = 0; i < MAX_ARGS + 2; i++) {
-      if (args[i]) {
-        free(args[i]);
-      }
-    }
-    if (restart_cmd)
-      free(restart_cmd);
-  }
-}
-
-#endif // TODO: REMOVE RNI
 
 
 static int
@@ -1744,62 +1373,6 @@ server_up()
   }
 }
 
-#if 0 // TODO: REMOVE RNI
-//
-// Check health status for G2 Real Server
-//
-static void
-check_rni()
-{
-#ifndef _WIN32
-  // Cannot use 'lockfile_open()' to get the lockfile.
-  // Instead see if the pid file exists and get the holding pid
-  pid_t rni_pid = getholding_pid(rni_proxy_pid_path);
-
-  // Make sure the pid is valid
-  if (rni_pid == 0 || kill(rni_pid, 0) == -1) {
-#if (HOST_OS == linux)
-    // linux: the pid is invalid, killall to be safe
-    ink_killall(rni_proxy_binary, rni_killsig);
-#endif
-    // Spawn G2 Real Server
-    cop_log(COP_WARNING, "restarting G2 Real server\n");
-    spawn_rni();
-  }
-}
-
-//
-// Check health status for Real Passthrough
-//
-static void
-check_rpass()
-{
-  pid_t rpass_pid;
-
-  // Cannot use 'lockfile_open()' to get the lockfile.
-  // Instead see if the pid file exists and get the holding pid
-  rpass_pid = getholding_pid(rni_rpass_lockfile);
-
-  // rni_rpass_spawned is used here to only spawn the Real Passthrough
-  // process, but not monitoring here 'cause we can't find
-  // a way to get the pid of the rtspd process correctly here
-  // the pid returned by fork() doesn't match the actual pid of 
-  // rtspd.  One possibility is that after rtspd is exec, the binary
-  // itself exec another process afterwards.
-
-  // Make sure the pid is valid
-  if (rpass_pid == 0 || kill(rpass_pid, 0) == -1) {
-#if (HOST_OS == linux)
-    // linux: the pid is invalid, killall to be safe
-    ink_killall(rni_rpass_binary, rni_killsig);
-#endif
-    // Spawn G2 Real Server
-    cop_log(COP_WARNING, "restarting Real Passthrough Daemon\n");
-    spawn_rpass();
-  }
-#endif
-}
-#endif // TODO: REMOVE RNI
 
 //         |  state  |  status  |  action
 // --------|---------|----------|---------------
@@ -1825,39 +1398,6 @@ check_programs()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering check_programs()\n");
 #endif
-#if 0 // TODO: REMOVE RNI
-  pid_t rni_pid;
-  if (rni_last_restart > 0) {
-    rni_pid = getholding_pid(rni_proxy_pid_path);
-    if (rni_pid == 0 || kill(rni_pid, 0) == -1) {
-      time_t time_diff = time(NULL) - rni_last_restart;
-      if (time_diff > rni_restart_interval && time_diff < rni_rpass_switch_interval) {
-        // we should switch from RealProxy to Real Passthrough
-        if (rni_proxy_start_succeed) {
-
-          fprintf(stderr, "**********************************************************\n");
-          fprintf(stderr, "* Traffic Cop is unable to start RealProxy successfully. *\n");
-          fprintf(stderr, "*   It may be due to one of the following reasons        *\n");
-          fprintf(stderr, "*   - invalid or missing license file                    *\n");
-          fprintf(stderr, "*   - port dependency with other applications (eg:TM)    *\n");
-          fprintf(stderr, "*   - signals from other applications                    *\n");
-          fprintf(stderr, "*   RealNetworks streams will be bypassed instead of be  *\n");
-          fprintf(stderr, "*   cached.  If you have RealProxy license purchased,    *\n");
-          fprintf(stderr, "*   make sure it is installed correctly and check the    *\n");
-          fprintf(stderr, "*   proxyerr.log for errors.                             *\n");
-          fprintf(stderr, "**********************************************************\n\n");
-        }
-        rni_proxy_start_succeed = 0;
-      }
-    }
-  }
-  if (rni_watcher_enabled && rni_proxy_start_succeed) {
-    check_rni();
-  }
-  if (rni_rpass_watcher_enabled && !rni_proxy_start_succeed) {
-    check_rpass();
-  }
-#endif // TODO: REMOVE RNI
 
   // Try to get the manager lock file. If we succeed in doing this,
   // it means there is no manager running.
@@ -2297,9 +1837,6 @@ init_lockfiles()
   snprintf(cop_lockfile, sizeof(cop_lockfile), "%s%s%s", local_state_dir, DIR_SEP, COP_LOCK);
   snprintf(manager_lockfile, sizeof(manager_lockfile), "%s%s%s", local_state_dir, DIR_SEP, MANAGER_LOCK);
   snprintf(server_lockfile, sizeof(server_lockfile), "%s%s%s", local_state_dir, DIR_SEP, SERVER_LOCK);
-#if 0 // TODO: REMOVE RNI
-  snprintf(rni_rpass_lockfile, sizeof(rni_rpass_lockfile), "%s%s%s", local_state_dir, DIR_SEP, RNI_RPASS_LOCK);
-#endif
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving init_lockfiles()\n");

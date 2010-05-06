@@ -81,11 +81,6 @@ bmark_build_request()
     pkt->delaydelta = bmark.delay;
     pkt++;
 
-#if 0
-    /* write some data into the packet */
-    sprintf(databuf, "This is packet %d.  Ain't that just dandy?\n", i);
-    memcpy(fioblocks[i]->ptr, databuf, strlen(databuf));
-#endif
 
   }
 

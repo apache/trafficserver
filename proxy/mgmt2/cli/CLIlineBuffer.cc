@@ -78,14 +78,6 @@ CLIlineBuffer::reset()
 {
   //n_fields = 0;
   c_fields = 0;
-#if 0
-  if (f_format)
-    (*f_format).clear();
-  if (o_string)
-    (*o_string).clear();
-  if (f_widths)
-    (*f_widths).clear();
-#endif
 }
 
 int

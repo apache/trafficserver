@@ -193,12 +193,6 @@ struct CacheContinuation:public Continuation
   int tunnelClosedEvent(int event, void *);
   int remove_and_delete(int, Event *);
 
-#if 0
-  int forwardEvent(int event, VConnection * vc);
-  int forwardWaitEvent(int event, VConnection * vc);
-  int tunnelEvent(int event, VConnection * e);
-  int remoteConnectEvent(int event, VConnection * vc);
-#endif
 
   inline void setMsgBufferLen(int l, IOBufferData * b = 0) {
     ink_assert(rw_buf_msg == 0);

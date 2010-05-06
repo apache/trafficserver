@@ -227,11 +227,7 @@ main(int argc, char *argv[])
     warmup = (long) config->hotset;
     // if warmup is true, we pass the hotset to do_test
   }
-#if 0
-  alarm(config->reporting_interval);
-#else
   alarm(config->execution_interval);
-#endif
 
   do_test = new DoTest(config->debug,
                        config->ssl,

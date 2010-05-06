@@ -208,16 +208,6 @@ INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
             "GET /%ld/length%ld HTTP/1.0\r\nAccept: */*\r\nHost: %s:%s\r\nProxy-Authorization: Basic %s\r\n\r\n",
             serial_number, doc_size, origin_server_host, origin_server_port, my_plugin.credentials);
   }
-#if 0
-  else {
-    sprintf(origin_server_host, my_plugin.target_host);
-    sprintf(origin_server_port, my_plugin.target_port);
-    sprintf(request_buf,
-            "GET http://%s:%s/%ld/length%ld HTTP/1.0\r\nAccept: */*\r\nProxy-Authorization: Basic %s\r\n\r\n",
-            my_plugin.origin_host[origin_server_num],
-            my_plugin.origin_port[origin_server_num], serial_number, doc_size, my_plugin.credentials);
-  }
-#endif
   /* SDKtest in "Proxy" mode */
   else {
     printf("credentials: %s\n", my_plugin.credentials);

@@ -1919,15 +1919,6 @@ HttpTransact::HandleFiltering(State * s)
   // from build_request.
   //
   // strip out the headers content control says we need to remove
-#if 0
-  HeaderFilter *aclHdrs = s->content_control.hdrs;
-  while (aclHdrs != NULL) {
-    if (aclHdrs->hdr_action == ACCESS_HDR_STRIP) {
-      s->hdr_info.client_request.field_delete(aclHdrs->header_name, strlen(aclHdrs->header_name));
-    }
-    aclHdrs = aclHdrs->next;
-  }
-#endif
 
   // request is not black listed so now decided if we ought to
   //  lookup the cache
@@ -6482,18 +6473,6 @@ HttpTransact::is_request_cache_lookupable(State * s, HTTPHdr * incoming)
       return false;
     }
   }
-#if 0                           // ckwong (already fixed and no need this) see build_request()
-  // if the request has authorization don't look up the cache
-  //  Putting this request through the cachable path will cause
-  //  conditional headers to be unecessarily stripped (INKqa04463)
-  //  We don't cache responses that were obtained with authorization
-  //  headers anyway.  Even if they come with Cache-Control: public
-  //  see is_response_cacheable()
-  if (s->hdr_info.client_request.presence(MIME_PRESENCE_AUTHORIZATION) && s->http_config_param->cache_ignore_auth == 0) {
-    SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_AUTHORIZATION);
-    return false;
-  }
-#endif
 
   // Don't cache if it's a RANGE request but the cache is not enabled for RANGE.
   if (!s->http_config_param->cache_range_lookup && s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {

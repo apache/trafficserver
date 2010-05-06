@@ -218,10 +218,6 @@ Rule::parse(const char *const_rule, INKFileNameT filetype)
     return icpParse(rule, 8, 8);
   case INK_FNAME_IP_ALLOW:     /* ip_allow.config */
     return ip_allowParse(rule);
-#if 0
-  case INK_FNAME_LOG_HOSTS:    /* log_hosts.config */
-    return log_hostsParse(rule);;
-#endif
   case INK_FNAME_LOGS_XML:     /* logs_xml.config */
     return logs_xmlParse(rule);
   case INK_FNAME_MGMT_ALLOW:   /* mgmt_allow.config */
@@ -1101,10 +1097,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = INK_FNAME_IP_ALLOW;    /* ip_allow.config */
   } else if (strstr(filename, "logs.config")) {
     m_filetype = INK_FNAME_UNDEFINED;   /* logs.config */
-#if 0
-  } else if (strstr(filename, "log_hosts.config")) {
-    m_filetype = INK_FNAME_LOG_HOSTS;   /* log_hosts.config */
-#endif
   } else if (strstr(filename, "logs_xml.config")) {
     m_filetype = INK_FNAME_LOGS_XML;    /* logs_xml.config */
   } else if (strstr(filename, "mgmt_allow.config")) {

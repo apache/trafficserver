@@ -53,12 +53,6 @@ typedef u_int32_t uint32_t;
 
 #include "fastio.h"
 
-#if 0
-#ifdef	__cplusplus
-extern "C"
-{
-#endif
-#endif
 
 
 

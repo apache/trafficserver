@@ -274,17 +274,6 @@ const
    "Update Failures", "%-*s %*s\n",
    10, 10, 50, 3},
   // Links
-#if 0
-  {"proxy.process.cache.link.active\\c", NULL,
-   "Links in Progress", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.cache.link.success\\c", NULL,
-   "Link Sucesses", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.cache.link.failure\\c", NULL,
-   "Link Failures", "%-*s %*s\n",
-   10, 10, 50, 3},
-#endif
   // Removes
   {"proxy.process.cache.remove.active\\c", NULL,
    "Removes in Progress", "%-*s %*s\n",
@@ -499,12 +488,6 @@ CLI_monitor::doMonitorProtocolStats(CLI_DATA * c_data /* IN: client data */ )
   const char *line12 = "                 Queries Originating From This Node \n";
   const char *line13 = "                 Queries Originating From ICP Peers\n";
   // const char *line14 = "                           Operations\n";
-#if 0
-  const char *line15 = "                             WCCP\n";
-  const char *line16 = "                      Router Statistics\n";
-  const char *line17 = "                      Node Statistics\n";
-  const char *line18 = "                      Protocol Statistics\n";
-#endif
   const char *line19 = "                              RTSP\n";
   const char *line20 = "                      Client Statistics\n";
   const char *line21 = "                      Server Statistics\n";

@@ -340,39 +340,6 @@ check_output_file(char *output_file)
   return error;
 }
 
-#if 0
-int
-open_output_file(char *output_file)
-{
-  int fd = -1;
-  int error = 0;
-
-  if (!overwrite_existing_file) {
-    if (access(output_file, F_OK)) {
-      if (errno != ENOENT) {
-        cerr << "Error accessing output file " << output_file << ": ";
-        perror(0);
-        error = 1;
-      }
-    } else {
-      cerr << "Error, output file " << output_file << " already exists."
-        "\nSelect a different filename or use the -w flag\n";
-      error = 1;
-    }
-  }
-
-  if (!error) {
-    fd = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-
-    if (fd < 0) {
-      cerr << "Error opening output file " << output_file << ": ";
-      perror(0);
-    }
-  }
-
-  return fd;
-}
-#endif
 
 int
 process_file(const char *in_filename, istream & is, ostream & os)

@@ -542,9 +542,6 @@ fio_register_queue(queue_t * q)
     if (!g_fio_instance->session[i]) {
       g_fio_instance->session[i] = q;
       g_fio_instance->session_count++;
-#if 0
-      cmn_err(CE_CONT, "Registered queue 0x%x as id#%d.\n", q, i);
-#endif
 
       /* update statistics */
       g_fio_instance->stats.sessions_open = g_fio_instance->session_count;
@@ -592,9 +589,7 @@ fio_unregister_queue(int qid)
   g_fio_instance->stats.sessions_open = g_fio_instance->session_count;
 
 
-#if 1
   cmn_err(CE_CONT, "fio_unregister queue: %d.\n", qid);
-#endif
 
   return;
 

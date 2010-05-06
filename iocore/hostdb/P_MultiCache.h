@@ -178,18 +178,7 @@ struct UnsunkPtrRegistry
 //
 // Broken SunCC
 //
-#if 0
-class PtrMutex:public Ptr<ProxyMutex>
-{
-public:
-  ProxyMutex * operator =(ProxyMutex * m)
-  {
-    return Ptr<ProxyMutex>::operator=(m);
-  }
-};
-#else
 #define PtrMutex Ptr<ProxyMutex>
-#endif
 
 //
 // used by windows only - to keep track 

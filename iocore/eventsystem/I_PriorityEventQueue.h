@@ -46,10 +46,6 @@ struct PriorityEventQueue
   {
     ink_hrtime t = e->timeout_at - now;
     int i = 0;
-#if 0
-    while (t > PQ_BUCKET_TIME(i) && i < N_PQ_LIST - 1)
-        i++;
-#else
     // equivalent but faster
     if (t <= PQ_BUCKET_TIME(3))
     {
@@ -90,7 +86,6 @@ struct PriorityEventQueue
         }
       }
     }
-#endif
     e->in_the_priority_queue = 1;
     e->in_heap = i;
     after[i].enqueue(e);

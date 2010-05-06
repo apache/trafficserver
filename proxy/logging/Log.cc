@@ -206,26 +206,6 @@ Log::add_to_inactive(LogObject * object)
   just in case it's sleeping on the job.
   -------------------------------------------------------------------------*/
 
-#if 0
-struct PeriodicWakeup;
-typedef int (PeriodicWakeup::*PeriodicWakeupHandler) (int, void *);
-struct PeriodicWakeup:Continuation
-{
-
-  int wakeup(int event, Event * e)
-  {
-    NOWARN_UNUSED(event);
-    NOWARN_UNUSED(e);
-    ink_cond_signal(&Log::flush_cond);
-    return EVENT_CONT;
-  }
-
-  PeriodicWakeup():Continuation(new_ProxyMutex())
-  {
-    SET_HANDLER((PeriodicWakeupHandler) & PeriodicWakeup::wakeup);
-  }
-};
-#endif
 
 /*------------------------------------------------------------------------- 
   Log::periodic_tasks

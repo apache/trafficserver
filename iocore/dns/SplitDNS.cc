@@ -196,13 +196,6 @@ SplitDNSConfig::startup()
   dnsHandler_mutex = new_ProxyMutex();
   reconfigure();
 
-#if 0
-  IOCORE_RegisterConfigUpdateFunc("proxy.config.dns.splitdns.filename", splitDNS_CB, NULL);
-
-  IOCORE_RegisterConfigUpdateFunc("proxy.config.dns.splitDNS.enabled", splitDNS_CB, NULL);
-
-  IOCORE_RegisterConfigUpdateFunc("proxy.config.dns.splitdns.def_domain", splitDNS_CB, NULL);
-#endif
 }
 
 

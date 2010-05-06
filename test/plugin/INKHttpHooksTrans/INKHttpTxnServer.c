@@ -24,29 +24,6 @@
 
 #include "ts.h"
 
-#if 0
-
-/* HTTP transactions */
-
-/* Need a transaction and a request: earliest point is 
- * not INK_HTTP_TXN_START_HOOK but INK_HTTP_READ_REQUEST_HDR_HOOK
- * process the request.
-*/
-inkapi int INKHttpTxnServerReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
-
-/* Need a transaction and a server response: earliest point is 
- * INK_HTTP_READ_RESPONSE_HDR_HOOK, then process the response. 
-*/
-inkapi int INKHttpTxnServerRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
-
-
-/* Call this as soon as a transaction has been created and retrieve the session
- * and do some processing.
-*/
-inkapi INKHttpSsn INKHttpTxnSsnGet(INKHttpTxn txnp);
-
-Delayed due to:INKqa08306.
-#endif
 const char *const INKEventStrId[] = {
   "INK_EVENT_HTTP_CONTINUE",    /* 60000 */
   "INK_EVENT_HTTP_ERROR",       /* 60001 */
@@ -99,18 +76,6 @@ DisplayBufferContents(INKMBuffer bufp, INKMLoc hdr_loc, INKHttpType type)
   }
   reader = INKIOBufferReaderAlloc(output_buffer);
 
-#if 0
-  /* Should not need the txnp to read the reqHdr/respHdr */
-
-  /* originally, just got the request */
-  if ((type == INK_HTTP_TYPE_REQUEST) && (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc))) {
-    INKError("couldn't retrieve client request header\n");
-    return;
-  } else if ((type == INK_HTTP_TYPE_RESPONSE) && (!INKHttpTxnClientRespGet(txnp, &bufp, &hdr_loc))) {
-    INKError("couldn't retrieve client request header\n");
-    return;
-  }
-#endif
 
     /****** Print the HTTP header (for either a resp or req) first ********/
   INKHttpHdrPrint(bufp, hdr_loc, output_buffer);
@@ -188,28 +153,6 @@ handle_HTTP_SEND_RESPONSE_HDR(INKCont contp, INKEvent event, void *eData)
 
   int re = 0, err = 0;
 
-#if 0
-/* INKqa08306 */
-  re = INKHttpTxnCachedReqGet(txnp, &reqBuf, &reqBufLoc);
-  if (re) {
-    /* Display all buffer contents */
-    /* TODO compare with a known value */
-    DisplayBufferContents(respBuf, respBufLoc, INK_HTTP_TYPE_REQUEST);
-  } else {
-    INKDebug("INKHttpTransaction", "INKHttpTxnCachedReqGet(): Failed.");
-    err++;
-  }
-
-  re = INKHttpTxnCachedRespGet(txnp, &respBuf, &respBufLoc);
-  if (re) {
-    /* Display buffer contents */
-    /* TODO compare with a known value */
-    DisplayBufferContents(respBuf, respBufLoc, INK_HTTP_TYPE_RESPONSE);
-  } else {
-    INKDebug("INKHttpTransaction", "INKHttpTxnCachedRespGet(): Failed.");
-    err++;
-  }
-#endif
   return err;
 }
 

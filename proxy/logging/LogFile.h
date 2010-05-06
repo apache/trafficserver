@@ -248,45 +248,5 @@ private:
 /***************************************************************************
  LogFileList IS NOT USED 
 ****************************************************************************/
-#if 0
-
-/*------------------------------------------------------------------------- 
-  LogFileList
-  -------------------------------------------------------------------------*/
-
-class LogFileList
-{
-public:
-  LogFileList();
-  ~LogFileList();
-
-  void add(LogFile * out, bool copy = true);
-  void write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pipe);
-  void clear();
-  unsigned count();
-
-  LogFile *first()
-  {
-    return m_output_list.head;
-  }
-  LogFile *next(LogFile * here)
-  {
-    return (here->link).next;
-  }
-  LogFile *dequeue()
-  {
-    return m_output_list.dequeue();
-  }
-
-  void display(FILE * fd = stdout);
-
-private:
-  Queue<LogFile> m_output_list;
-
-  // -- member functions not allowed --
-  LogFileList(const LogFileList &);
-  LogFileList & operator=(const LogFileList &);
-};
-#endif
 
 #endif

@@ -33,24 +33,6 @@ Tests for registering/processing events at the session level.
 #include <stdio.h>
 
 
-#if 0
-/************************************************************************** 
- * HTTP Sessions 
- *************************************************************************/
-
-1. inkapi void INKHttpHookAdd(INKHttpHookID id, INKCont contp);
-   Covered in INKHttpHookAdd.c
-2. inkapi void INKHttpSsnHookAdd(INKHttpSsn ssnp, INKHttpHookID id, INKCont contp);
-   Called for all events except INK_HTTP_SESSION_START, INK_EVENT_MGMT_UPDATE.
-3. inkapi void INKHttpSsnReenable(INKHttpSsn ssnp, INKEvent event);
-INK_EVENT_HTTP_CONTINUE
-TODO build a test case for event INK_EVENT_HTTP_ERROR HTTP Transactions
-4. void INKHttpTxnReenable(INKHttpTxn txnp, INKEvent INK_EVENT_HTTP_ERROR)
-   INK_EVENT_HTTP_ERROR is covered in INKHttpReenableStop.c INK_EVENT_HTTP_CONTINUE
-/************************************************************************** 
- * HTTP sessions 
- *************************************************************************/
-#endif
 const char *const
   INKEventStrId[] = {
   "INK_EVENT_HTTP_CONTINUE",    /* 60000 */

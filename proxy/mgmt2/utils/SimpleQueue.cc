@@ -231,20 +231,3 @@ SimpleQueue::isEmpty()
   return (head == NULL);
 }
 
-#if 0
-// SimpleQueue::Print()
-//
-//   Prints out the queue.  For DEBUG only, not thread safe
-//
-void
-SimpleQueue::Print()
-{
-  SimpleQueueEntry *current = head;
-  cout << "Simple Queue: " << this << endl;
-  while (current != NULL) {
-    cout << "\tdata: " << current->data << " next: " << current->next << " prev: " << current->prev << endl;
-    current = current->next;
-  }
-  cout << "-----------------------------------------" << endl;
-}
-#endif

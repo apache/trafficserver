@@ -203,9 +203,6 @@ struct DoTest
      cumulative_target_byterate_prob[num_thinktimes-1] 
      must be 1.0 */
 
-#if 0
-  UserInfo user_info[MAX_USERS];
-#endif
   UserInfo *user_info;
   int debug;                    /* Debugging Messages */
   int ssl;                      /* ssl flad  */
@@ -225,9 +222,6 @@ struct DoTest
   struct timeval rr_time;
   int total_reqs_last_poll;
 
-#if 0
-  struct pollfd poll_vector[MAX_USERS];
-#endif
   struct pollfd *poll_vector;
   char read_buf[MAX_READBUF_SIZE];
 

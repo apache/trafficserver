@@ -60,9 +60,7 @@ EventProcessor::spawn_event_threads(int n_threads)
 }
 
 
-#if 1
 #define INK_NO_CLUSTER
-#endif
 
 struct EventProcessor eventProcessor;
 

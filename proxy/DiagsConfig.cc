@@ -336,17 +336,7 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
       }
     }
   }
-#if 0
-  diags_logdir = REC_readString("proxy.config.log2.logfile_dir", &found);
-  if (!found || (diags_logdir == NULL) || (diags_logdir[0] == '\0')) {
-    ink_strncpy(diags_logpath, DIAGS_LOG_FILE, sizeof(diags_logpath));
-  } else {
-    snprintf(diags_logpath, sizeof(diags_logpath), "%s%s%s", diags_logdir, DIR_SEP, DIAGS_LOG_FILE);
-  }
-
-#else
     snprintf(diags_logpath, sizeof(diags_logpath), "%s%s%s", system_log_dir, DIR_SEP, DIAGS_LOG_FILE);
-#endif
 
   // open write append
   // diags_log_fp = fopen(diags_logpath,"w");

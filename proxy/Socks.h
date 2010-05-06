@@ -193,29 +193,5 @@ typedef int (SocksEntry::*SocksEntryHandler) (int, void *);
 
 extern ClassAllocator<SocksEntry> socksAllocator;
 
-#if 0
-struct ChangeSocksConfig:Continuation
-{
-  int change_config_handler(int etype, void *data)
-  {
-    socks_conf_struct *new_socks_conf_stuff, *old_socks_conf_stuff;
-      (void) data;
-      ink_assert(etype == EVENT_IMMEDIATE);
-      new_socks_conf_stuff = NEW(new socks_conf_struct);
-      loadSocksConfiguration(new_socks_conf_stuff);
-      old_socks_conf_stuff = netProcessor.socks_conf_stuff;
-      netProcessor.socks_conf_stuff = new_socks_conf_stuff;
-    if (file_changed)
-        pmgmt->signalManager(MGMT_SIGNAL_CONFIG_FILE_READ, "Socks Config File");
-    delete this;
-      return EVENT_DONE;
-  }
-  int file_changed;
-ChangeSocksConfig():Continuation(new_ProxyMutex()) {
-    SET_HANDLER(&ChangeSocksConfig::change_config_handler);
-    file_changed = 0;
-  }
-};
-#endif
 
 #endif //_SOCKS_H_

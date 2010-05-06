@@ -1525,10 +1525,6 @@ filename_to_string(INKFileNameT file)
   case INK_FNAME_IP_ALLOW:
     return xstrdup("ip_allow.config");
 
-#if 0
-  case INK_FNAME_LOG_HOSTS:
-    return xstrdup("log_hosts.config");
-#endif
 
   case INK_FNAME_LOGS_XML:
     return xstrdup("logs_xml.config");
@@ -2066,10 +2062,6 @@ create_ele_obj_from_rule_node(Rule * rule)
   case INK_IP_ALLOW:           /* ip_allow.config */
     ele = (CfgEleObj *) new IpAllowObj(token_list);
     break;
-#if 0
-  case INK_LOG_HOSTS:          /* log_hosts.config */
-    break;
-#endif
 
   case INK_LOG_FILTER:         /* logs_xml.config */
   case INK_LOG_OBJECT:
@@ -2327,10 +2319,6 @@ get_rule_type(TokenList * token_list, INKFileNameT file)
   case INK_FNAME_IP_ALLOW:     /* ip_allow.config */
     return INK_IP_ALLOW;
 
-#if 0
-  case INK_FNAME_LOG_HOSTS:    /* log_hosts.config */
-    return INK_LOG_HOSTS;
-#endif
 
   case INK_FNAME_LOGS_XML:     /* logs_xml.config */
     printf(" *** CfgContextUtils.cc: NOT DONE YET! **\n");

@@ -368,9 +368,6 @@ fio_ioctl_init(fio_devstate_t * rsp, intptr_t cmd)
   /* initialize the vsessions */
   for (i = 0; i < MAX_VSESSION; i++) {
 
-#if 0
-    rsp->vsession[i] = 0;
-#endif
     rsp->vsession_alloc[i] = 0;
 
   }
@@ -576,11 +573,6 @@ fio_ioctl_swap(fio_devstate_t * rsp, intptr_t cmd)
 
   if (rsp->activefl[rsp->nextflentry] == 0xffffffff && !rsp->signal_user) {
     /* swapping won't help the user.  Signal the user to wake up when it will */
-#if 0
-    rsp->signal_user = 1;
-    rsp->signal_ref = proc_ref();
-
-#endif
   }
 
 
@@ -671,25 +663,6 @@ fio_ioctl_get_stats(fio_devstate_t * rsp, intptr_t arg)
 
 
 
-#if 0
-int
-fio_regsendto(fio_devstate_t * rsp, intptr_t arg)
-{
-
-  struct fastIO_sendto_arg p;
-  int i;
-  int retval;
-
-  ddi_copyin((void *) arg, &p, sizeof(struct fastIO_sendto_arg), 0);
-
-  /*cmn_err(CE_CONT, "fio_regsendto(%d, 0x%x, %d, 0x%x, 0x%x, %d)\n",
-     p.s, p.msg, p.len, p.flags, p.to, p.tolen); */
-  for (i = 0; i < 50; i++)
-    retval = sendto(p.s, p.msg, p.len, p.flags, p.to, p.tolen);
-  /*cmn_err(CE_CONT, "sendto returns %d.\n"); */
-  return 0;
-}
-#endif
 
 
 int

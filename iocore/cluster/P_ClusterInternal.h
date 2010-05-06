@@ -38,13 +38,6 @@
 #define CLUSTER_TOMCAT			1
 #define CLUSTER_STATS			1
 
-#if 0                           // Debug/Test options
-#define CLUSTER_MESSAGE_CKSUM		1
-#define MSG_TRACE			1
-
-// Verify data using Peter's client/server
-#define VERIFY_PETERS_DATA             	1
-#endif
 
 #define ALIGN_DOUBLE(_p)   ((((unsigned long) (_p)) + 7) & ~7)
 #define ALLOCA_DOUBLE(_sz) ALIGN_DOUBLE(alloca((_sz) + 8))

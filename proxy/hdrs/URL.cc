@@ -1546,23 +1546,6 @@ int
 url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
 #define TRY(x)  if (!x) return 0
-#if 0                           //added by YTS Team, yamsat bug fix
-
-  // fast path for simple path-only request and enough buffer space
-
-  if ((buf_start != NULL) &&
-      ((url->m_len_scheme + url->m_len_user + url->m_len_host
-        + url->m_len_params + url->m_len_query + url->m_len_fragment
-        + *buf_chars_to_skip_inout) == 0) &&
-      (1 + url->m_len_path < buf_length - *buf_index_inout)) {
-
-    char *p = buf_start + *buf_index_inout;
-    *p++ = '/';
-    memcpy(p, url->m_ptr_path, url->m_len_path);
-    *buf_index_inout += 1 + url->m_len_path;
-    return 1;
-  }
-#endif
 
   if (url->m_ptr_scheme) {
     TRY(mime_mem_print(url->m_ptr_scheme, url->m_len_scheme,

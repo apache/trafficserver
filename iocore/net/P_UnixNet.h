@@ -710,17 +710,6 @@ TS_INLINE int EventIO::stop() {
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
     return epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
 #elif defined(USE_KQUEUE)
-#if 0
-    // this is not necessary and may result in a race if
-    // a file descriptor is reused between polls
-    int n = 0;
-    struct kevent ev[2];
-    if (events & EVENTIO_READ)
-      EV_SET(&ev[n++], fd, EVFILT_READ, EV_DELETE, 0, 0, this);
-    if (events & EVENTIO_WRITE)
-      EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, this);
-    return kevent(event_loop->kqueue_fd, &ev[0], n, NULL, 0, NULL);
-#endif
 #elif defined(USE_PORT)
     int retval = port_dissociate(event_loop->port_fd, PORT_SOURCE_FD, fd);
     NetDebug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd);

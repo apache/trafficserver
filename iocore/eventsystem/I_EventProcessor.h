@@ -116,12 +116,6 @@ public:
   */
   EventType spawn_event_threads(int n_threads);
 
-#if 0  
-  /**
-    Unused
-  */
-  Event *schedule_spawn(Continuation *cont);
-#endif
 
   /**
     Schedules the continuation on a specific EThread to receive an event

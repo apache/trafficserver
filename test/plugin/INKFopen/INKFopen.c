@@ -612,11 +612,6 @@ INKfopen_plugin(INKCont contp, INKEvent event, void *edata)
   switch (event) {
   case INK_EVENT_HTTP_OS_DNS:
 
-#if 0
-    status = INKfopenTest(txnp, contp);
-
-    status += INKMemAllocTest(txnp, contp);
-#endif
 
     status += INKThreadTest(txnp, contp);
 

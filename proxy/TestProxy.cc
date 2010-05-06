@@ -161,27 +161,6 @@ struct TestProxy:Continuation
         *portStr = ':';
       }
       url_end = strchr(url + 1, ' ');
-#if 0
-      {
-        INK_MD5 md5;
-        ink_code_md5((unsigned char *) host, url - host, (unsigned char *) &md5);
-        ClusterConfiguration *cc = this_cluster()->current_configuration();
-        if (cc->n_machines > 1) {
-          inku64 ll = fold_md5(md5);
-          ll = ll ^ (ll >> 32);
-          unsigned int l = ll;
-          Machine *m = cc->machine_hash(l);
-          if (m != this_cluster_machine()) {
-            // printf("sending remote to %X\n", m->ip);
-            *url = '/';
-            SET_HANDLER(clusterOpenEvent);
-            clusterProcessor.open(this, m, token);
-            clusterProcessor.invoke_remote(m, TEST_CLUSTER_FUNCTION, &token, sizeof(token));
-            return EVENT_DONE;
-          }
-        }
-      }
-#endif
       SET_HANDLER(dnsEvent);
       *url = '/';
       hostDBProcessor.getbyname(this, host);

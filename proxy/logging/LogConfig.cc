@@ -1836,20 +1836,6 @@ LogConfig::update_space_used()
   // issue any alarms or warnings about space
   //
 
-#if 0
-  // CVR See if we need to roll the files based on the configured rolling 
-  // log dir size - 11445
-  if ((m_space_used >= ((ink64) max_space_mb_for_rolling * LOG_MEGABYTE)) && rolling_based_on_directory_size_enabled) {
-
-    long now;
-    now = LogUtils::timestamp();
-    log_object_manager.roll_files_size_exceed(now);
-    rolling_based_on_directory_size_enabled = false;
-
-    LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, ROLLING_LIMIT_EXCEEDED_MESSAGE);
-    Warning(ROLLING_LIMIT_EXCEEDED_MESSAGE);
-  }
-#endif // if 0
 
   if (!space_to_write(headroom)) {
     logging_space_exhausted = true;

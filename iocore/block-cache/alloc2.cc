@@ -449,14 +449,6 @@ update(unsigned int block, unsigned int newstate)
           compressedmap[i].count--;
           assert(compressedmap[i + 1].state == newstate);
           compressedmap[i + 1].count++;
-#if 0
-          memmove(&compressedmap[i + 2], &compressedmap[i + 1], sizeof(compressedmap) * (cmap_max - (i + 1)));
-          compressedmap[i].count = untilblock - 1;
-          compressedmap[i + 1].state = newstate;
-          compressedmap[i + 1].count = 0;
-          assert(compressedmap[i].state != newstate);
-          cmap_max++;
-#endif
           assert(cmap_max > 0);
           if (rlecheck)
             check_rlestate();

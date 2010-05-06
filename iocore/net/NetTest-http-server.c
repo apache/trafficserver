@@ -86,13 +86,6 @@ struct NetTesterSM:public Continuation
       if (strcmp(&request[req_len - 4], "\r\n\r\n") == 0) {
         Debug("net_test", "The request header is :\n%s\n", request);
         // parse and get the doc size
-#if 0
-        int b = ink_strchr(request, ' ');
-        int e = ink_strchr(url_beg, ' ');
-        b = ink_strchr(b + strlen("http://"), '/');
-        b = ink_strchr(b, '/');
-        char doc strncpy();
-#endif
         SET_HANDLER(&NetTesterSM::handle_write);
         ink_debug_assert(doc_len == resp_reader->read_avail());
         vc->do_io_write(this, doc_len, resp_reader);

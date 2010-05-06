@@ -81,9 +81,6 @@ inkudp_add_split_rule(queue_t * incomingQ, struct fastIO_split_rule *rule)
   redirect_enabled = 1;
   redirect_passthrough = 1;
 
-#if 0
-  cmn_err(CE_CONT, "inkudp_add_split_rule\n");
-#endif
 
   /* 
    * bail out if this is an error or we have successfully added to
@@ -320,9 +317,6 @@ inkudp_handle_cmsg(mblk_t * mp, queue_t * q)
   int release_mutex = 0;
   struct ink_cmd_msg *cmsg;
 
-#if 0
-  cmn_err(CE_CONT, "inkdup_handle_csmg \n");
-#endif
 
   cmsg = (struct ink_cmd_msg *) mp->b_rptr;
 
@@ -334,9 +328,6 @@ inkudp_handle_cmsg(mblk_t * mp, queue_t * q)
   switch (cmsg->cmd) {
 
   case INK_CMD_SPLIT_ADD:
-#if 0
-    cmn_err(CE_CONT, "Adding split rule for port = %d, q = 0x%x\n", cmsg->payload.split_rule.srcPort, q);
-#endif
     inkudp_add_split_rule(q, &(cmsg->payload.split_rule));
     break;
   case INK_CMD_SPLIT_DELETE:
@@ -439,12 +430,6 @@ inkudp_recv(mblk_t * mp, queue_t * q)
   list_node = node->redirect_nodes;
 
   while (list_node) {
-#if 0
-    if ((!list_node->destSession) || (!canputnext(list_node->destSession))) {
-      list_node = list_node->next;
-      continue;
-    }
-#endif
     if (!list_node->destSession) {
       list_node = list_node->next;
       continue;
@@ -479,18 +464,8 @@ inkudp_recv(mblk_t * mp, queue_t * q)
 
     list_node = list_node->next;
   }
-#if 1
   freemsg(mp);
-#else
-  putnext(q, mp);
-#endif
 
-#if 0
-  if (redirect_passthrough) {
-    putnext(q, mp);
-  } else
-    freemsg(mp);
-#endif
 
   if (release_list_mutex)
     mutex_exit(&node->list_mutex);

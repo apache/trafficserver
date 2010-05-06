@@ -7539,43 +7539,11 @@ INKHttpTxnClientRemotePortGet(INKHttpTxn txnp, int *port)
 }
 
 /* IP Lookup */
-#if 0                           // Not used.
-INKIPLookup
-INKIPLookupCreate()
-{
-  return (INKIPLookup) (NEW(new IpLookup("INKIPLookup")));
-}
-#endif
 
 // This is very suspicious, INKILookup is a (void *), so how on earth
 // can we try to delete an instance of it?
-#if 0                           // Not used.
-void
-INKIPLookupDestroy(INKIPLookup iplu)
-{
-  if (iplu) {
-    delete iplu;
-  }
-}
-#endif
 
-#if 0                           // Not used.
-INKIPLookupState
-INKIPLookupStateCreate()
-{
-  return (INKIPLookupState) xmalloc(sizeof(IpLookupState));
-}
-#endif
 
-#if 0                           // Not used.
-void
-INKIPLookupStateDestroy(INKIPLookupState iplus)
-{
-  if (iplus) {
-    xfree(iplus);
-  }
-}
-#endif
 
 void
 INKIPLookupNewEntry(INKIPLookup iplu, INKU32 addr1, INKU32 addr2, void *data)

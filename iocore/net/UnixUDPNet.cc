@@ -942,16 +942,6 @@ UDPQueue::service(UDPNetHandler * nh)
       p1 += strlen(p1);
 
       ip = (unsigned char *) &(G_inkPipeInfo.perPipeInfo[i].destIP);
-#if 0
-      if (i == 0)
-        sprintf(bwMessage, "%d mixt Best-Effort %f %f\n", time(0), bw, bw / G_inkPipeInfo.interfaceMbps);
-      else
-        sprintf(bwMessage, "%d mixt %d.%d.%d.%d %f %f\n",
-                time(0), ip[0], ip[1], ip[2], ip[3], bw, bw / G_inkPipeInfo.interfaceMbps);
-
-      ::sendto(G_bwGrapherFd, bwMessage, strlen(bwMessage), 0,
-               (struct sockaddr *) &G_bwGrapherLoc, sizeof(struct sockaddr_in));
-#endif
       // use a weighted estimator of current usage
       G_inkPipeInfo.perPipeInfo[i].bwUsed = (4.0 * G_inkPipeInfo.perPipeInfo[i].bwUsed / 5.0) + (bw / 5.0);
       G_inkPipeInfo.perPipeInfo[i].bytesSent = 0;

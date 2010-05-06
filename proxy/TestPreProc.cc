@@ -184,15 +184,6 @@ main()
     cout << "Elapsed time for " << lc << "loops is " << elapsedTime << endl;
   }
 
-#if 0
-  cout << m->getMajorVersion() << endl;
-  cout << m->getMinorVersion() << endl;
-  cout << m->getMethod() << endl;
-  cout << m->getScheme() << endl;
-  cout << m->getHeaderFieldValue("Accept") << endl;
-  cout << m->getHeaderFieldValue("Accept-Charset") << endl;
-  cout << m->getRequestURI() << endl;
-#endif
 
 
   return (0);

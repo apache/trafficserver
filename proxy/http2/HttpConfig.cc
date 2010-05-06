@@ -80,26 +80,6 @@ public:
  * string 's', in a comma seperated manner, if 'a' is not already
  * in 's'.
  */
-#if 0
-char *
-add_comma_sep_string(char *s, char *a)
-{
-  if ((s == NULL) || (strstr(s, a) == NULL)) {
-    int len = (s == NULL) ? 0 : strlen(s);
-    char *t = (char *) xmalloc(len + strlen(a) + 3);
-    if (s != NULL) {
-      strcpy(t, s);
-      strcat(t + len, ", ");
-      strcat(t + len, a);
-      xfree(s);
-    } else {
-      strcpy(t, a);
-    }
-    s = t;
-  }
-  return s;
-}
-#endif
 
 ////////////////////////////////////////////////////////////////
 //

@@ -379,18 +379,6 @@ partial_writev(int fd, IOVec * iov, int n_iov, int seq)
   int rnd = seq;
   int sum = 0;
   int i = 0;
-#if 0
-  int element = rand_r((unsigned int *) &rnd);
-  element = element % n_iov;
-  fprintf(stderr, "partial_writev %d", element,);
-  if ((seq % 16) == 7) {
-    for (i = 0; i < element - 1; i++) {
-      int res = socketManager.write(fd, iov[i].iov_base, iov[i].iov_len);
-      if (res < 0)
-        return res;
-      sum += res;
-    }
-#endif
     for (i = 0; i < n_iov; i++) {
       int l = iov[i].iov_len;
       int r = rand_r((unsigned int *) &rnd);
@@ -412,10 +400,6 @@ partial_writev(int fd, IOVec * iov, int n_iov, int seq)
       }
     }
     return sum;
-#if 0
-  } else
-    return socketManager.write_vector(fd, iov, n_iov);
-#endif
 }
 #endif // TEST_PARTIAL_WRITES
 

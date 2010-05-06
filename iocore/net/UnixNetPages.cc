@@ -214,16 +214,6 @@ register_ShowNet(Continuation * c, HTTPHdr * h)
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
   } else if (STREQ_PREFIX(path, path_len, "threads")) {
     SET_CONTINUATION_HANDLER(s, &ShowNet::showThreads);
-#if 0
-  } else if (STREQ_PREFIX(path, path_len, "connection/")) {
-    s->iarg = atoi(path + sizeof("connection/") - 1);
-    SET_CONTINUATION_HANDLER(s, &ShowNet::showSingleConnection);
-  } else if (STREQ_PREFIX(path, path_len, "hostnames")) {
-    s->sarg = xstrdup(h->url_get().query_get());
-    if (s->sarg && *s->sarg) {
-      SET_CONTINUATION_HANDLER(s, &ShowNet::showHostnames);
-    }
-#endif
   } else if (STREQ_PREFIX(path, path_len, "ips")) {
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);

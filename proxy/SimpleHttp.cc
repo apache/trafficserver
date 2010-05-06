@@ -33,15 +33,9 @@
 
 #if COMPILE_SIMPLE_HTTP
 
-#if 0
-#define HISTORY_SIZE     128
-#define HISTORY_DECL     int history_idx; int history[HISTORY_SIZE];
-#define HISTORY_MARK()   history[history_idx++ % HISTORY_SIZE] = __LINE__
-#else
 #define HISTORY_SIZE     0
 #define HISTORY_DECL
 #define HISTORY_MARK()
-#endif
 
 
 static int enabled = 0;

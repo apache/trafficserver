@@ -41,13 +41,6 @@
 
 #include "P_SSLConfig.h"
 
-#if 0
-#ifndef _IOCORE_WIN32_WINNT
-#include "SSLNetAccept.h"
-#else
-#include <winsock2.h>
-#endif
-#endif
 struct UnixNetVConnection;
 struct NetAccept;
 

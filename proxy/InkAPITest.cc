@@ -127,32 +127,6 @@ REGRESSION_TEST(SDK_API_INKTrafficServerVersionGet) (RegressionTest * test, int 
   return;
 }
 
-#if 0
-////////////////////////////////////////////////
-//       SDK_API_INKPluginRegister
-//
-// Unit Test for API: INKPluginRegister
-////////////////////////////////////////////////
-REGRESSION_TEST(SDK_API_INKPluginRegister) (RegressionTest * test, int atype, int *pstatus) {
-  *pstatus = REGRESSION_TEST_INPROGRESS;
-
-  /* Assume UT is for SDK3.0 and higher */
-  INKPluginRegistrationInfo info;
-  info.plugin_name = "hello_world";
-  info.vendor_name = "my_company";
-  info.support_email = "ts-api-support@my_company.com";
-
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    SDK_RPRINT(test, "INKPluginRegister", "TestCase1", TC_FAIL, "can't register plugin");
-    *pstatus = REGRESSION_TEST_FAILED;
-    return;
-  }
-
-  SDK_RPRINT(test, "INKPluginRegister", "TestCase1", TC_PASS, "ok");
-  *pstatus = REGRESSION_TEST_PASSED;
-  return;
-}
-#endif
 
 ////////////////////////////////////////////////
 //       SDK_API_INKPluginDirGet
@@ -560,18 +534,6 @@ cache_handler(INKCont contp, INKEvent event, void *data)
     }
     Debug(UTDBG_TAG "_cache_write", "finishing up [d]");
 
-#if 0
-    //
-    // [INKqa12105]  INKVConnWriteVIOGet is only for VConnection implementors, we are a user here.
-    //
-    if (INKVConnWriteVIOGet(cache_vconn->write_vconnp) != cache_vconn->write_vio) {
-      SDK_RPRINT(SDK_Cache_test, "INKVConnWriteVIOGet", "TestCase1", TC_FAIL, "write_vio/vc is corrupted");
-      *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
-      return 1;
-    } else {
-      SDK_RPRINT(SDK_Cache_test, "INKVConnWriteVIOGet", "TestCase1", TC_PASS, "ok");
-    }
-#endif
 
     if (INKVIOBufferGet(cache_vconn->write_vio) != cache_vconn->bufp) {
       SDK_RPRINT(SDK_Cache_test, "INKVIOBufferGet", "TestCase1", TC_FAIL, "write_vio corrupted");
@@ -623,22 +585,6 @@ cache_handler(INKCont contp, INKEvent event, void *data)
 
     Debug(UTDBG_TAG "_cache_write", "finishing up [h]");
 
-#if 0                           // FIXME? -- we need to decide when/if to change cache vconnection behavior
-    // for the cache APIs we cannot used 'VConnClosedGet' currently because the 
-    // VConnection that we have is not to a INKVConnInternal, its a CacheVC of 
-    // some sort.
-
-    if (INKVConnClosedGet(cache_vconn->write_vconnp) != 1) {
-      SDK_RPRINT(SDK_Cache_test, "INKVConnClose", "TestCase1", TC_PASS, "failed to close vc");
-      SDK_RPRINT(SDK_Cache_test, "INKVConnClosedGet", "TestCase1", TC_PASS, "failed to close vc");
-
-      *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
-      return 1;
-    } else {
-      SDK_RPRINT(SDK_Cache_test, "INKVConnClose", "TestCase1", TC_PASS, "ok");
-      SDK_RPRINT(SDK_Cache_test, "INKVConnClosedGet", "TestCase1", TC_PASS, "ok");
-    }
-#endif
 
     // start to read data out of cache
     read_counter++;
@@ -672,19 +618,6 @@ cache_handler(INKCont contp, INKEvent event, void *data)
       *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
       return 1;
     }
-#if 0                           // FIXME? -- we need to decide when/if to change cache vconnection behavior
-    // for the cache APIs we cannot get read/write VIOs currently because the 
-    // VConnection that we have is not to a INKVConnInternal, its a CacheVC of 
-    // some sort.
-
-    if (INKVConnReadVIOGet(cache_vconn->read_vconnp) != cache_vconn->read_vio) {
-      SDK_RPRINT(SDK_Cache_test, "INKVConnReadVIOGet", "TestCase1", TC_FAIL, "read vconn corruputed");
-      // no need to continue, return
-      *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
-      return 1;
-    } else
-      SDK_RPRINT(SDK_Cache_test, "INKVConnReadVIOGet", "TestCase1", TC_PASS, "ok");
-#endif
 
     nbytes = INKVIONBytesGet(cache_vconn->read_vio);
     ntodo = INKVIONTodoGet(cache_vconn->read_vio);
@@ -1318,31 +1251,6 @@ REGRESSION_TEST(SDK_API_INKActionCancel) (RegressionTest * test, int atype, int 
    to use reentrant call. But in both cases it's not
    guaranteed to get ActionDone.
    */
-#if 0
-static RegressionTest *SDK_ActionDone_test;
-static int *SDK_ActionDone_pstatus;
-
-static INKAction actionp;
-
-int
-action_done_handler(INKCont contp, INKEvent event, void *edata)
-{
-  INKContDestroy(contp);
-  return 0;
-}
-
-REGRESSION_TEST(SDK_API_INKActionDone) (RegressionTest * test, int atype, int *pstatus) {
-  bool test_passed = false;
-  *pstatus = REGRESSION_TEST_INPROGRESS;
-
-  // For asynchronous APIs, use static vars to store test and pstatus
-  SDK_ActionDone_test = test;
-  SDK_ActionDone_pstatus = pstatus;
-
-  INKCont contp = INKContCreate(action_done_handler, INKMutexCreate());
-  actionp = INKContSchedule(contp, 0);
-}
-#endif
 
 /* Continuations */
 
@@ -1895,50 +1803,6 @@ REGRESSION_TEST(SDK_API_INKIOBufferBlockNext) (RegressionTest * test, int atype,
 }
 
 
-#if 0
-//////////////////////////////////////////////////
-//       SDK_API_INKIOBuffer
-//
-// Unit Test for API: INKIOBufferBlockDataSizeGet
-//////////////////////////////////////////////////
-
-REGRESSION_TEST(SDK_API_INKIOBufferBlockDataSizeGet) (RegressionTest * test, int atype, int *pstatus) {
-  bool test_passed_1 = false;
-  bool test_passed_2 = false;
-  *pstatus = REGRESSION_TEST_INPROGRESS;
-
-  int i = 10000;
-  INKIOBuffer bufp = INKIOBufferCreate();
-  INKIOBufferData datap = INKIOBufferDataCreate(&i, sizeof(int), INK_DATA_CONSTANT);
-  INKIOBufferBlock blockp = INKIOBufferBlockCreate(datap, sizeof(int), 0);
-  INKIOBufferAppend(bufp, blockp);
-
-  // In this case, the data (BUFFER_FOR_CONSTANT is just the size of the data type (int).
-  if (INKIOBufferBlockDataSizeGet(blockp) == sizeof(int)) {
-    SDK_RPRINT(test, "INKIOBufferBlockDataSizeGet", "TestCase1", TC_PASS, "ok");
-    test_passed_1 = true;
-  } else {
-    SDK_RPRINT(test, "INKIOBufferBlockDataSizeGet", "TestCase1", TC_FAIL, "size is not for BUFFER_FOR_CONSTANT");
-  }
-
-  INKIOBufferBlock start_blockp = INKIOBufferStart(bufp);
-  if (IOBufferBlockDataSizeGet(start_blockp) == 4096) {
-    SDK_RPRINT(test, "INKIOBufferBlockDataSizeGet", "TestCase1", TC_PASS, "ok");
-    test_passed_1 = true;
-  } else {
-    SDK_RPRINT(test, "INKIOBufferBlockDataSizeGet", "TestCase1", TC_FAIL, "size is not for the normal 4K block");
-  }
-
-  if (test_passed_1 && test_passed_2) {
-    *pstatus = REGRESSION_TEST_PASSED;
-  } else {
-    *pstatus = REGRESSION_TEST_FAILED;
-  }
-
-  return;
-
-}
-#endif
 
 /* Stats */
 
@@ -5951,38 +5815,9 @@ REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int 
     SDK_RPRINT(test, "INKMimeHdrCopy", "TestCase1", TC_FAIL, "Unable to run test as parsing failed.");
   }
 
-#if 0
-  //INKMimeHdrClone
-  if (test_passed_parse == true) {
-    bufp3 = INKMBufferCreate();
-    if (bufp3 == INK_ERROR_PTR) {
-      SDK_RPRINT(test, "INKMimeHdrClone", "TestCase1", TC_FAIL, "Cannot create buffer for cloning.");
-    } else {
-      mime_hdr_loc3 = INKMimeHdrClone(bufp3, bufp1, mime_hdr_loc1);
-      if (mime_hdr_loc3 == INK_ERROR_PTR) {
-        SDK_RPRINT(test, "INKMimeHdrClone", "TestCase1", TC_FAIL, "Cannot create Mime hdr for cloning");
-        if (INKMBufferDestroy(bufp3) == INK_ERROR) {
-          SDK_RPRINT(test, "INKMimeHdrCopy", "TestCase1", TC_FAIL, "Error in Destroying MBuffer");
-        }
-      } else {
-        temp = convert_mime_hdr_to_string(bufp3, mime_hdr_loc3);        // Implements INKMimeHdrPrint.
-        if (strcmp(parse_string, temp) == 0) {
-          SDK_RPRINT(test, "INKMimeHdrClone", "TestCase1", TC_PASS, "ok");
-          test_passed_mime_hdr_clone = true;
-        } else {
-          SDK_RPRINT(test, "INKMimeHdrClone", "TestCase1", TC_FAIL, "Value's Mismatch");
-        }
-        INKfree(temp);
-      }
-    }
-  } else {
-    SDK_RPRINT(test, "INKMimeHdrClone", "TestCase1", TC_FAIL, "Unable to run test as parsing failed.");
-  }
-#else
   bufp3 = INKMBufferCreate();
   mime_hdr_loc3 = INKMimeHdrCreate(bufp3);
   test_passed_mime_hdr_clone = true;
-#endif
 
   // INKMimeHdrFieldRemove
   if (test_passed_mime_hdr_copy == true) {

@@ -94,19 +94,8 @@ MgmtDBM::mgmt_batch_open()
 
     time_t start = time(NULL);
 
-#if 0
-    while ((status = WaitForSingleObject(mgmt_hsem, 0)) == WAIT_TIMEOUT) {
-      time_t current = time(NULL);
-      if ((current - start) > 60) {
-        break;
-      }
-      mgmt_sleep_msec(20);
-    }
-
-#else
     /* Wait for 60 secs for the semaphore */
     status = WaitForSingleObject(mgmt_hsem, 60 * 1000);
-#endif
 
     if (status != WAIT_OBJECT_0) {
       time_t current = time(NULL);

@@ -161,12 +161,6 @@ thread_main(void *nuttin)
     gettimeofday(&tv2, 0);
 
     ComputeTimeDiff(&delay, &tv1, &tv2);
-#if 0
-    if (delay > 1.0)
-      printf("*");
-    else
-      printf(".");
-#endif
     printf("Time: %6.2f.\n", delay);
     fflush(stdout);
   }

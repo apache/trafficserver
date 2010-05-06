@@ -892,28 +892,6 @@ private:
   {
     return _last_recv_peer_bias;
   }
-#if 0
-  inline void SetPeerIDPollIndex(int id, int pix)
-  {
-    _PeerIDtoPollIndex[id] = pix;
-  }
-  inline int GetPeerIDPollIndex(int id)
-  {
-    return _PeerIDtoPollIndex[id];
-  }
-  inline void MarkPollDataValid()
-  {
-    _ValidPollData = 1;
-  }
-  inline void InvalidatePollData()
-  {
-    _ValidPollData = 0;
-  }
-  inline int IsPollDataValid()
-  {
-    return _ValidPollData;
-  }
-#endif
   void CancelPendingReads();
   void DumpICPConfig();
 
@@ -1210,14 +1188,6 @@ private:
 
   // Static data
   static inku32 ICPRequestSeqno;
-#if 0
-  //**********************************************************************
-  // Currently, placing this in class scope generates numerous
-  // warnings on DEC (OK on Solaris).  For now, place this in file scope
-  // to avoid these warnings.
-  //**********************************************************************
-  static Queue<ICPRequestCont> ICPRequestQueue[ICP_REQUEST_HASH_SIZE];
-#endif
 
   // Passed request data
   Continuation *_cont;

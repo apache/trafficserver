@@ -74,18 +74,5 @@ align_pointer_forward_and_zero(const void *pointer_, int widthmask)
 // We could handle this using casts, but that's more prone to
 // errors during porting.
 //
-#if 0
-static inline void *
-DOUBLE_ALIGN(void *_x)
-{
-  return align_pointer_forward(_x, INK_ALIGN_DOUBLE);
-}
-
-static inline inku64
-DOUBLE_ALIGN(inku64 _x)
-{
-  return (inku64) align_pointer_forward((void *) _x, INK_ALIGN_DOUBLE);
-}
-#endif
 
 #endif

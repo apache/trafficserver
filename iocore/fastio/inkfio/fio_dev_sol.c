@@ -540,9 +540,6 @@ fio_register_queue(queue_t * q)
     if (!g_fio_instance->session[i]) {
       g_fio_instance->session[i] = q;
       g_fio_instance->session_count++;
-#if 0
-      cmn_err(CE_CONT, "Registered queue 0x%x as id#%d.\n", q, i);
-#endif
 
       /* update statistics */
       g_fio_instance->stats.sessions_open = g_fio_instance->session_count;
@@ -635,49 +632,6 @@ fio_emergency_unregister_queue(queue_t * q)
       fio_release_queue(i);
 
       return;
-#if 0
-      /* Go thru and remove all the pending requests for this queue */
-      if (!mutex_owned(&g_fio_instance->reqmx)) {
-        mutex_enter(&g_fio_instance->reqmx);
-        release_reqmx = 1;
-      }
-
-      if (g_fio_instance->pRequests) {
-
-        /* If the request is at the head, it is ok---we are not freeing it
-           here */
-        trav = g_fio_instance->pRequests->next;
-        while (trav != g_fio_instance->pRequests) {
-          if (trav->destQ == removalQ) {
-            while (trav->pktsRemaining > 0) {
-              if (getBlockPtr(g_fio_instance, trav->nextPkt->blockID))
-                /* make sure that we are freeing a valid block */
-                fio_free_cb((char *) &g_fio_instance->free_arg[trav->nextPkt->blockID]);
-              trav->nextPkt++;
-              trav->pktsRemaining--;
-            }
-            /* Remove the request from the pending request list */
-            trav->prev->next = trav->next;
-            trav->next->prev = trav->prev;
-            nextreq = trav->next;
-            freemsg(trav->dst_mblk);
-            trav->dst_mblk = 0;
-
-            /* delete the request itself: remember we copied the request into a
-               kernel block; free the kernel block */
-            kmem_free(trav->req, FASTIO_BLOCK_SIZE);
-
-            /* delete the request structure */
-            kmem_free(trav, sizeof(struct pending_request));
-
-            trav = nextreq;
-          }
-        }
-      }
-
-      if (release_reqmx)
-        mutex_exit(&g_fio_instance->reqmx);
-#endif
       return;
     }
   }

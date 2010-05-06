@@ -341,30 +341,6 @@ private:
   INKLogObjectEle * m_ele;
 };
 
-#if 0
-/* log_hosts.config    *******************************************/
-class LogHostsObj:public CfgEleObj
-{
-public:
-  LogHostsObj(INKLogHostsEle * ele);
-  LogHostsObj(TokenList * tokens);
-  ~LogHostsObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual INKCfgEle *getCfgEle()
-  {
-    return (INKCfgEle *) m_ele;
-  }
-  virtual INKRuleTypeT getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  INKLogHostsEle * m_ele;
-};
-#endif
 
 /* mgmt_allow.config   *******************************************/
 class MgmtAllowObj:public CfgEleObj
