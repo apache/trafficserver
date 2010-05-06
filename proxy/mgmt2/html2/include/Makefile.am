@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-webuidir = $(pkgdatadir)/include
+webuidir = $(DESTDIR)$(pkgdatadir)/include
 dist_webui_DATA = \
 	body_footer.ink \
 	body_header.ink \

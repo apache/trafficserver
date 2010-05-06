@@ -34,7 +34,7 @@ install-data-local:
 uninstall-hook:
 	-rm -rf $(DESTDIR)$(pkgdatadir)
 
-webuidir = $(pkgdatadir)
+webuidir = $(DESTDIR)$(pkgdatadir)
 dist_webui_DATA = \
 	checkCookies.ink \
 	enableCookies.ink \
