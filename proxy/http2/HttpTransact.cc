@@ -178,12 +178,8 @@ is_request_conditional(HTTPHdr * header)
 }
 
 static inline bool
-is_ssl_port_ok(HttpTransact::State * s, int port)
+is_port_in_range(int port, HttpConfigPortRange *pr)
 {
-  HttpConfigSSLPortRange *pr;
-
-  pr = s->http_config_param->ssl_ports;
-
   while (pr) {
     if (pr->low == -1) {
       return true;
@@ -5667,9 +5663,9 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
     if (!HttpTransactHeaders::is_this_method_supported(scheme, method)) {
       return METHOD_NOT_SUPPORTED;
     }
-    if ((method == HTTP_WKSIDX_CONNECT) && (!is_ssl_port_ok(s, incoming_hdr->url_get()->port_get()))) {
+    if ((method == HTTP_WKSIDX_CONNECT) && (!is_port_in_range(incoming_hdr->url_get()->port_get(), s->http_config_param->connect_ports))) {
 
-      return BAD_SSL_PORT;
+      return BAD_CONNECT_PORT;
     }
 
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
@@ -6855,15 +6851,15 @@ HttpTransact::is_request_valid(State * s, HTTPHdr * incoming_request)
     Debug("http_trans", "[is_request_valid]" "unsupported method");
     s->current.mode = TUNNELLING_PROXY;
     return TRUE;
-  case BAD_SSL_PORT:
+  case BAD_CONNECT_PORT:
     int port;
     port = url ? url->port_get() : 0;
-    Debug("http_trans", "[is_request_valid]" "%d is an invalid ssl port", port);
+    Debug("http_trans", "[is_request_valid]" "%d is an invalid connect port", port);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s,
                          HTTP_STATUS_FORBIDDEN,
-                         "Tunnel or SSL Forbidden",
-                         "access#ssl_forbidden", "%d is not an allowed port for Tunnel or SSL connections", port);
+                         "Tunnel Forbidden",
+                         "access#connect_forbidden", "%d is not an allowed port for Tunnel connections", port);
     return FALSE;
   case NO_POST_CONTENT_LENGTH:
     {

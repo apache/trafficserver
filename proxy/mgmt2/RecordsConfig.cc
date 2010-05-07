@@ -2374,6 +2374,13 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.http.ssl_ports", "", INK_STRING, "443 563", RU_REREAD, RR_NULL, RC_STR,
    "^[[:digit:][:space:]]+$", RA_NULL}
   ,
+  //##########################################################################
+  //        ###########
+  //        # CONNECT #
+  //        ###########
+  {CONFIG, "proxy.config.http.connect_ports", "", INK_STRING, "443 563", RU_REREAD, RR_NULL, RC_STR,
+   "^[[:digit:][:space:]]+$", RA_NULL}
+  ,
   //        #########
   //        # Stats #
   //        #########

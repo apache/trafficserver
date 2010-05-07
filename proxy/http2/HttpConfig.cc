@@ -1170,6 +1170,8 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigStringAlloc(c.ssl_ports_string, "proxy.config.http.ssl_ports");
 
+  HttpEstablishStaticConfigStringAlloc(c.connect_ports_string, "proxy.config.http.connect_ports");
+
   HttpEstablishStaticConfigLongLong(c.request_hdr_max_size, "proxy.config.http.request_header_max_size");
 
   HttpEstablishStaticConfigLongLong(c.response_hdr_max_size, "proxy.config.http.response_header_max_size");
@@ -1490,7 +1492,10 @@ HttpConfig::reconfigure()
   params->cache_range_lookup = INT_TO_BOOL(m_master.cache_range_lookup);
 
   params->ssl_ports_string = xstrdup(m_master.ssl_ports_string);
-  params->ssl_ports = parse_ssl_ports(params->ssl_ports_string);
+  params->ssl_ports = parse_ports_list(params->ssl_ports_string);
+
+  params->connect_ports_string = xstrdup(m_master.connect_ports_string);
+  params->connect_ports = parse_ports_list(params->connect_ports_string);
 
   params->request_hdr_max_size = m_master.request_hdr_max_size;
   params->response_hdr_max_size = m_master.response_hdr_max_size;
@@ -1831,31 +1836,31 @@ HttpUserAgent_RegxEntry::create(char *_refexp_str, char *errmsgbuf, int errmsgbu
 
 ////////////////////////////////////////////////////////////////
 //
-//  HttpConfig::parse_ssl_ports()
+//  HttpConfig::parse_ports_list()
 //
 ////////////////////////////////////////////////////////////////
-HttpConfigSSLPortRange *
-HttpConfig::parse_ssl_ports(char *ssl_ports)
+HttpConfigPortRange *
+HttpConfig::parse_ports_list(char *ports_string)
 {
-  HttpConfigSSLPortRange *ssl_config = 0;
+  HttpConfigPortRange *ports_list = 0;
 
-  if (!ssl_ports)
+  if (!ports_string)
     return (0);
 
-  if (strchr(ssl_ports, '*')) {
-    ssl_config = NEW(new HttpConfigSSLPortRange);
-    ssl_config->low = -1;
-    ssl_config->high = -1;
-    ssl_config->next = NULL;
+  if (strchr(ports_string, '*')) {
+    ports_list = NEW(new HttpConfigPortRange);
+    ports_list->low = -1;
+    ports_list->high = -1;
+    ports_list->next = NULL;
   } else {
-    HttpConfigSSLPortRange *pr, *prev;
+    HttpConfigPortRange *pr, *prev;
     char *start;
     char *end;
 
     pr = NULL;
     prev = NULL;
 
-    start = ssl_ports;
+    start = ports_string;
 
     while (1) {                 // eat whitespace
       while ((start[0] != '\0') && ParseRules::is_space(start[0]))
@@ -1870,7 +1875,7 @@ HttpConfig::parse_ssl_ports(char *ssl_ports)
       if (start == end)
         break;
 
-      pr = NEW(new HttpConfigSSLPortRange);
+      pr = NEW(new HttpConfigPortRange);
       pr->low = atoi(start);
       pr->high = pr->low;
       pr->next = NULL;
@@ -1878,7 +1883,7 @@ HttpConfig::parse_ssl_ports(char *ssl_ports)
       if (prev)
         prev->next = pr;
       else
-        ssl_config = pr;
+        ports_list = pr;
       prev = pr;
 
       // if the next character after the current port
@@ -1903,7 +1908,7 @@ HttpConfig::parse_ssl_ports(char *ssl_ports)
       HTTP_ASSERT(pr->low <= pr->high);
     }
   }
-  return (ssl_config);
+  return (ports_list);
 }
 
 ////////////////////////////////////////////////////////////////
