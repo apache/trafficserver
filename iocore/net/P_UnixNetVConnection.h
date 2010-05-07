@@ -92,7 +92,6 @@ public:
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
   virtual void cancel_OOB();
 
-  virtual bool is_over_ssl() { return (false); }
   virtual void setSSLHandshakeWantsRead(bool flag) { return; }
   virtual bool getSSLHandshakeWantsRead() { return false; }
   virtual void setSSLHandshakeWantsWrite(bool flag) { return; }
@@ -123,10 +122,7 @@ public:
   virtual void reenable(VIO *vio);
   virtual void reenable_re(VIO *vio);
 
-  virtual SOCKET get_socket()
-  {
-    return con.fd;
-  }
+  virtual SOCKET get_socket();
 
   virtual ~ UnixNetVConnection();
 
@@ -342,11 +338,11 @@ UnixNetVConnection::cancel_active_timeout()
   }
 }
 
-TS_INLINE
-UnixNetVConnection::~
-UnixNetVConnection()
-{
-  return;
+TS_INLINE UnixNetVConnection::~UnixNetVConnection() { }
+
+TS_INLINE SOCKET
+UnixNetVConnection::get_socket() {
+  return con.fd;
 }
 
 // declarations for local use (within the net module)

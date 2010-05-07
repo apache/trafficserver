@@ -44,25 +44,3 @@ NetVConnection::cancel_OOB()
   return;
 }
 
-int
-NetVConnection::get_last_error()
-{
-  return 0;
-}
-
-
-void
-NetVConnection::boost()
-{
-}
-
-NetVConnection::~NetVConnection()
-{
-}
-
-SOCKET
-NetVConnection::get_socket()
-{
-  ink_release_assert(!"Not Implemented");
-  return (SOCKET) 0;
-}

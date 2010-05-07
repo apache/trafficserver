@@ -49,12 +49,6 @@ enum NetDataType
   NET_DATA_ATTRIBUTES = VCONNECTION_NET_DATA_BASE
 };
 
-/* can this be moved to NT files */
-enum
-{ IOCORE_NETVC_MAGIC_ALIVE = 0x0000BEEF,
-  IOCORE_NETVC_MAGIC_DEAD = 0xDEADBEEF
-};
-
 /**
   Holds user options for NetVConnection. This class holds various
   options a user can specify for NetVConnection. Right now this
@@ -94,10 +88,7 @@ enum
   rest get sensible default values.
 
 */
-class NetVCOptions
-{
-
-public:
+struct NetVCOptions {
   int local_port;
 
   inku32 spoof_ip;
@@ -116,11 +107,9 @@ public:
   void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags);
 
 
-    NetVCOptions()
-  {
+  NetVCOptions() {
     reset();
   }
-
   /* Add more options here instead of adding them to connect_re() args etc */
 };
 
@@ -345,13 +334,6 @@ public:
   /** @return current inactivity_timeout value in nanosecs */
   virtual ink_hrtime get_inactivity_timeout() = 0;
 
-  /**
-    Boosts the priority of the VConnection. Used by SM to indicate
-    that the connection is likely to be actively used soon.
-
-  */
-  virtual void boost();
-
   /** Returns local sockaddr in. */
   const struct sockaddr_in &get_local_addr();
 
@@ -391,7 +373,7 @@ public:
   virtual void reenable_re(VIO * vio) = 0;
 
   /// PRIVATE
-    virtual ~ NetVConnection();
+  virtual ~NetVConnection() {}
 
   /**
     PRIVATE: instances of NetVConnection cannot be created directly
@@ -400,16 +382,9 @@ public:
     just to avoid compile errors.
 
   */
-    NetVConnection();
+  NetVConnection();
 
-  /// PRIVATE: SSL specific stuff 
-  virtual bool is_over_ssl() = 0;
-
-  /// NOT IMPLEMENTED
-  virtual SOCKET get_socket();
-
-  /// NOT IMPLEMENTED
-  virtual int get_last_error();
+  virtual SOCKET get_socket() = 0;
 
   /** Set local sock addr struct. */
   virtual void set_local_addr() = 0;
@@ -417,6 +392,7 @@ public:
   /** Set remote sock addr struct. */
   virtual void set_remote_addr() = 0;
 
+  // for InkAPI
   bool get_is_internal_request() const {
     return is_internal_request;
   }
@@ -493,22 +469,18 @@ protected:
 
 inline
 NetVConnection::NetVConnection():
-VConnection(NULL),
-attributes(0),
-thread(NULL),
+  VConnection(NULL),
+  attributes(0),
+  thread(NULL),
 #if WITH_DETAILED_VCONNECTION_LOGGING
-logging(NULL),
+  logging(NULL),
 #endif
-got_local_addr(0),
-got_remote_addr(0),
-is_internal_request(false)
+  got_local_addr(0),
+  got_remote_addr(0),
+  is_internal_request(false)
 {
   memset(&local_addr, 0, sizeof(local_addr));
   memset(&remote_addr, 0, sizeof(remote_addr));
 }
-
-#if defined (_IOCORE_WIN32_WINNT)
-#include "NTNetVConnection.h"
-#endif
 
 #endif

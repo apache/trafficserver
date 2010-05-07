@@ -200,7 +200,6 @@ HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int po
         Debug("http_ss", "[%lld] [acquire session] returning attached session ", to_return->con_id);
         to_return->state = HSS_ACTIVE;
         sm->attach_server_session(to_return);
-        to_return->get_netvc()->boost();
         return HSM_DONE;
       }
     }
@@ -255,7 +254,6 @@ HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int po
           to_return = b;
           Debug("http_ss", "[%lld] [acquire session] " "return session from shared pool", to_return->con_id);
           sm->attach_server_session(to_return);
-          to_return->get_netvc()->boost();
           return HSM_DONE;
         }
       }

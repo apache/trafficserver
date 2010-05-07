@@ -365,7 +365,6 @@ ClusterState::build_do_io_vector()
 #define REENABLE_IO() \
   if (!ch->on_stolen_thread && !io_complete) { \
     v->reenable_re(); \
-    ch->net_vc->boost(); \
   }
 
 #else // !CLUSTER_TOMCAT

@@ -79,10 +79,7 @@ public:
   int write_want_syscal;
   int write_want_x509;
   int write_error_zero;
-  virtual bool is_over_ssl()
-  {
-    return (true);
-  }
+
   virtual int sslStartHandShake(int event, int &err);
   virtual void free(EThread * t);
   virtual void enableRead()
@@ -90,14 +87,9 @@ public:
     read.enabled = 1;
     write.enabled = 1;
   };
-//  virtual int  loadBufferAndCallRead (int toread, int &rattempted,
-//                                                                        int &total_read, MIOBufferAccessor &buf);
-
-  virtual int loadBufferAndCallWrite(int towrite, int &wattempted, int &total_wrote, MIOBufferAccessor & buf);
-
   virtual bool getSSLHandShakeComplete()
   {
-    return (sslHandShakeComplete);
+    return sslHandShakeComplete;
   };
   void setSSLHandShakeComplete(bool state)
   {
@@ -105,7 +97,7 @@ public:
   };
   virtual bool getSSLClientConnection()
   {
-    return (sslClientConnection);
+    return sslClientConnection;
   };
   virtual void setSSLClientConnection(bool state)
   {
@@ -113,14 +105,9 @@ public:
   };
   int sslServerHandShakeEvent(int &err);
   int sslClientHandShakeEvent(int &err);
-//  virtual void readInternalSSLBuffers (int &r, int toread, int &rattempted,
-//                                                                         int &total_read, MIOBufferAccessor &buf, 
-//                                                                         NetHandler * nh);
-
   virtual void net_read_io(NetHandler * nh, EThread * lthread);
-
-  virtual ~ SSLNetVConnection() {
-  };
+  virtual ink64 load_buffer_and_write(ink64 towrite, ink64 &wattempted, ink64 &total_wrote, MIOBufferAccessor & buf);
+  virtual ~ SSLNetVConnection() { }
   ////////////////////////////////////////////////////////////
   // instances of NetVConnection should be allocated        //
   // only from the free list using NetVConnection::alloc(). //

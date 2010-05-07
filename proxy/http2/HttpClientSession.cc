@@ -585,8 +585,6 @@ HttpClientSession::release(IOBufferReader * r)
   HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
   client_trans_stat--;
 
-  client_vc->boost();
-
   // Check to see there is remaining data in the
   //  buffer.  If there is, spin up a new state
   //  machine to process it.  Otherwise, issue an
