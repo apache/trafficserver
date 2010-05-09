@@ -1040,7 +1040,7 @@ AH_TEMPLATE([INK_USE_MUTEX_FOR_FREELISTS],[Use mutex for free lists.])
 AH_TEMPLATE([MODULARIZED],[Build modularized Trafficserver.])
 AH_TEMPLATE([NEED_UNION_SEMUN],[Define to 1 if sys/sem.h declares 'union semun'])
 AH_TEMPLATE([PURIFY],[Define to 1 if support for Purify was enabled.])
-AH_TEMPLATE([TS_MICRO],[Define to 1 if builng minimal Trafficserver.])
+AH_TEMPLATE([TS_MICRO],[Define to 1 if building 'micro' Trafficserver distribution.])
 AH_TEMPLATE([USE_DIAGS],[Use diagnostics support.])
 AH_TEMPLATE([USE_EPOLL],[Use epoll for  I/O event notification.])
 AH_TEMPLATE([USE_KQUEUE],[Use kqueue for  I/O event notification.])
@@ -1055,7 +1055,7 @@ AH_TEMPLATE([solaris],[Define to 1 if compiling for solaris.])
 AH_TEMPLATE([FIXME_NONMODULAR],[FIXME_NONMODULAR])
 AH_TEMPLATE([SPLIT_DNS],[Compile wit 'split' DNS support.])
 AH_TEMPLATE([NON_MODULAR],[Compile without modular support.])
-AH_TEMPLATE([HAVE_PROFILER],[Define to 1 if have Google profiler library.])
+AH_TEMPLATE([HAVE_PROFILER],[Define to 1 if you have Google profiler library.])
 
 AC_OUTPUT
 
