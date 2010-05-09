@@ -59,8 +59,8 @@ case $host_os in
     AC_DEFINE_UNQUOTED([HOST_OS],[solaris])
     AC_DEFINE_UNQUOTED([solaris],[1])
     ;;
-  *)         
-    AC_DEFINE_UNQUOTED([HOST_OS],[unknown]) 
+  *)
+    AC_DEFINE_UNQUOTED([HOST_OS],[unknown])
     ;;
 esac
 
@@ -299,7 +299,7 @@ if test "x${with_sqlite3}" = "x"; then
    with_sqlite3="yes"
 fi
 AC_MSG_RESULT([$with_sqlite3])
-          
+
 AC_MSG_CHECKING([whether to enable libdb])
 AC_ARG_WITH([libdb],
   [AS_HELP_STRING([--with-libdb],[compile with libdb support [default=no]])],
@@ -312,7 +312,7 @@ AC_MSG_RESULT([$with_libdb])
 AC_ARG_WITH([bdb],
    [AC_HELP_STRING([--with-bdb=DIR],[Berkeley DB installation directory])],
    [with_bdb=$withval],
-   [with_bdb=no]   
+   [with_bdb=no]
 )
 
 if test "x$with_bdb" != "xno" ; then
@@ -347,7 +347,7 @@ AC_ARG_ENABLE([eventfd],
   [enable_eventfd="yes"]
 )
 AC_MSG_RESULT([$enable_eventfd])
-          
+
 #
 # Installation directories
 #
@@ -449,7 +449,7 @@ case $host_os in
       CCASFLAGS="-Wa,-32" # TODO: add 64bit support to atomic ops
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt -xO3"
-      cxx_opt="-library=stlport4 -erroff"    
+      cxx_opt="-library=stlport4 -erroff"
       AC_DEFINE([_POSIX_PTHREAD_SEMANTICS],1,
        [posix thread semantics]
       )
@@ -461,7 +461,7 @@ case $host_os in
     fi
     LDFLAGS="${LDFLAGS} -L/lib -L/usr/local/lib"
     ;;
-  *)         
+  *)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
@@ -484,7 +484,7 @@ SHARED_CXXLINKFLAGS=-shared
 # Here are all the extra linux-specific C(XX)FLAGS additions and
 # so forth.
 # TODO cpu architecture settings separate from operating system settings
-# 
+#
 
 # Examine the current CXXFLAGS / CFLAGS for patterns we might need
 # ToDo: This needs to be made conditional on compiler used (only gcc is supported here)
@@ -537,8 +537,8 @@ case $host_os in
   darwin*)
     ;;
   solaris*)
-    ;;	
-  *)         
+    ;;
+  *)
     EXTRA_CXX_LDFLAGS="-rdynamic"
    ;;
 esac
@@ -616,7 +616,7 @@ case $host_os in
   darwin*)
     TCL_LIB_FLAG="-ltcl" # OSX fails to populate this variable
     ;;
-  *)         
+  *)
    ;;
 esac
 AC_SUBST([LIBTCL],[$TCL_LIB_FLAG])
@@ -628,7 +628,7 @@ case $host_os in
   solaris*)
     CPPFLAGS="$CPPFLAGS -I/usr/local/include $TCL_INCLUDE_SPEC"
     ;;
-  *)         
+  *)
    CPPFLAGS="$CPPFLAGS $TCL_INCLUDE_SPEC"
    ;;
 esac
@@ -640,7 +640,7 @@ AC_CHECK_LIB([expat],[XML_SetUserData],
 )
 
 if test "x${with_sqlite3}" = "xyes"; then
-  AC_CHECK_LIB([sqlite3], [sqlite3_open_v2], 
+  AC_CHECK_LIB([sqlite3], [sqlite3_open_v2],
     [AC_SUBST([LIBSQLITE3], ["-lsqlite3"])
     ],
     [AC_MSG_FAILURE([check for sqlite3 failed. Have you installed sqlite3-devel?])],
@@ -649,7 +649,7 @@ fi
 
 
 if test "x${with_libdb}" = "xyes"; then
-  # Berkeley DB check: 
+  # Berkeley DB check:
   # TODO: Better checking for versions/directories similar to TCL
   ts_have_db=0
   save_LDFLAGS="$LDFLAGS"
@@ -657,11 +657,11 @@ if test "x${with_libdb}" = "xyes"; then
   if test "x$with_bdb" != "xno" ; then
     case $host_os in
       solaris*)
-        LDFLAGS="$LDFLAGS -L$PATH_BDB_LIB -R$PATH_BDB_LIB" 
+        LDFLAGS="$LDFLAGS -L$PATH_BDB_LIB -R$PATH_BDB_LIB"
         CPPFLAGS="$CPPFLAGS -I$PATH_BDB_INC"
         ;;
-      *)         
-        LDFLAGS="$LDFLAGS -L$PATH_BDB_LIB" 
+      *)
+        LDFLAGS="$LDFLAGS -L$PATH_BDB_LIB"
         CPPFLAGS="$CPPFLAGS -I$PATH_BDB_INC"
         ;;
     esac
@@ -703,7 +703,7 @@ AS_IF([test "x$enable_eventfd" = "xyes"],
 )
 
 
-AC_CHECK_LIB([pcre], [pcre_exec], 
+AC_CHECK_LIB([pcre], [pcre_exec],
   [AC_SUBST([LIBPCRE],["-lpcre"])],
   [AC_MSG_FAILURE([check for pcre failed. Have you installed pcre-devel?])],
 )
@@ -712,11 +712,11 @@ AC_CHECK_LIB([pcre], [pcre_exec],
 AC_CHECK_HEADERS([execinfo.h], [have_backtrace=yes],[])
 if test "x${have_backtrace}" = "xyes"; then
   # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
-  AC_CHECK_LIB([execinfo], [backtrace], [have_backtrace_lib=yes 
+  AC_CHECK_LIB([execinfo], [backtrace], [have_backtrace_lib=yes
                                          AC_SUBST([LIBEXECINFO],["-lexecinfo"])])
   if test "x${have_backtrace_lib}" = "xyes"; then
     AC_MSG_NOTICE([Using backtrace library '-lexecinfo'])
-  fi	
+  fi
   AC_DEFINE(HAVE_BACKTRACE, 1, [Define if you have backtrace()])
 else
   AC_MSG_WARN([No backtrace() support found])
@@ -743,7 +743,7 @@ else
 fi
 
 if test "x${with_profiler}" = "xyes"; then
-  AC_CHECK_LIB([profiler], [ProfilerStart], 
+  AC_CHECK_LIB([profiler], [ProfilerStart],
     [AC_SUBST([LIBPROFILER], ["-lprofiler"])
      AC_DEFINE([HAVE_PROFILER])
     ],
@@ -826,7 +826,7 @@ AC_CHECK_HEADERS([sys/epoll.h \
 		  net/ppp_defs.h \
                   ], [], [])
 
-AC_CHECK_HEADERS([pcre/pcre.h], 
+AC_CHECK_HEADERS([pcre/pcre.h],
                  [], [],[])
 
 AC_CHECK_HEADERS([netinet/ip.h], [], [],
@@ -873,8 +873,8 @@ fi
 APR_CHECK_GETHOSTBYNAME_R_STYLE
 
 #
-# use modular IOCORE 
-# 
+# use modular IOCORE
+#
 iocore_include_dirs="-I\$(top_srcdir)/librecords \
  -I\$(top_srcdir)/libinktomi++ \
  -I\$(top_srcdir)/iocore/eventsystem \
@@ -1014,48 +1014,48 @@ AC_CONFIG_FILES([example/app-template/records.config])
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
 
-AH_TEMPLATE([BUILD_MACHINE],[BUILD_MACHINE])
-AH_TEMPLATE([BUILD_PERSON],[BUILD_PERSON])
-AH_TEMPLATE([DEBUG],[DEBUG])
-AH_TEMPLATE([HAVE_DEMANGLE],[HAVE_DEMANGLE])
-AH_TEMPLATE([HOST_OS],[HOST_OS])
-AH_TEMPLATE([HTTP_CACHE],[HTTP_CACHE])
-AH_TEMPLATE([INKDISKAIO],[INKDISKAIO])
-AH_TEMPLATE([INK_NO_ACL],[INK_NO_ACL])
-AH_TEMPLATE([INK_NO_API],[INK_NO_API])
-AH_TEMPLATE([INK_NO_CLUSTER],[INK_NO_CLUSTER])
-AH_TEMPLATE([INK_NO_DIAGS],[INK_NO_DIAGS])
-AH_TEMPLATE([INK_NO_HOSTDB],[INK_NO_HOSTDB])
-AH_TEMPLATE([INK_NO_ICP],[INK_NO_ICP])
-AH_TEMPLATE([INK_NO_LOG],[INK_NO_LOG])
-AH_TEMPLATE([INK_NO_REMAP],[INK_NO_REMAP])
-AH_TEMPLATE([INK_NO_REVERSE],[INK_NO_REVERSE])
-AH_TEMPLATE([INK_NO_SOCKS],[INK_NO_SOCKS])
-AH_TEMPLATE([INK_NO_STAT_PAGES],[INK_NO_STAT_PAGES])
-AH_TEMPLATE([INK_NO_TESTS],[INK_NO_TESTS])
-AH_TEMPLATE([INK_NO_TRANSFORM],[INK_NO_TRANSFORM])
-AH_TEMPLATE([INK_SINGLE_THREADED],[INK_SINGLE_THREADED])
-AH_TEMPLATE([INK_USE_MUTEX_FOR_ATOMICLISTS],[INK_USE_MUTEX_FOR_ATOMICLISTS])
-AH_TEMPLATE([INK_USE_MUTEX_FOR_FREELISTS],[INK_USE_MUTEX_FOR_FREELISTS])
-AH_TEMPLATE([MODULARIZED],[MODULARIZED])
-AH_TEMPLATE([NEED_UNION_SEMUN],[NEED_UNION_SEMUN])
-AH_TEMPLATE([PURIFY],[PURIFY])
-AH_TEMPLATE([TS_MICRO],[TS_MICRO])
-AH_TEMPLATE([USE_DIAGS],[USE_DIAGS])
-AH_TEMPLATE([USE_EPOLL],[USE_EPOLL])
-AH_TEMPLATE([USE_KQUEUE],[USE_KQUEUE])
-AH_TEMPLATE([USE_LIBEV],[USE_LIBEV])
-AH_TEMPLATE([USE_MD5_FOR_MMH],[USE_MD5_FOR_MMH])
-AH_TEMPLATE([USE_PORT],[USE_PORT])
-AH_TEMPLATE([_NO_FREELIST],[_NO_FREELIST])
-AH_TEMPLATE([darwin],[darwin])
-AH_TEMPLATE([freebsd],[freebsd])
-AH_TEMPLATE([linux],[linux])
-AH_TEMPLATE([solaris],[solaris])
+AH_TEMPLATE([HOST_OS],[Host used for built.])
+AH_TEMPLATE([BUILD_MACHINE],[Machine used for built.])
+AH_TEMPLATE([BUILD_PERSON],[User that built the package.])
+AH_TEMPLATE([DEBUG],[Define to 1 if compiling with debugging support.])
+AH_TEMPLATE([HAVE_DEMANGLE],[Compiling with demangle support.])
+AH_TEMPLATE([HTTP_CACHE],[Compiling with HTTP cache support.])
+AH_TEMPLATE([INKDISKAIO],[Define to 1 if Disk AIO is supported.])
+AH_TEMPLATE([INK_NO_ACL],[Disable ACL support.])
+AH_TEMPLATE([INK_NO_API],[Disable API support.])
+AH_TEMPLATE([INK_NO_CLUSTER],[Disable clustering support.])
+AH_TEMPLATE([INK_NO_DIAGS],[Disable diagnostic support.])
+AH_TEMPLATE([INK_NO_HOSTDB],[Disable host DB.])
+AH_TEMPLATE([INK_NO_ICP],[Disable ICP.])
+AH_TEMPLATE([INK_NO_LOG],[Disable logging.])
+AH_TEMPLATE([INK_NO_REMAP],[Disable remapping.])
+AH_TEMPLATE([INK_NO_REVERSE],[Disable reverse proxy.])
+AH_TEMPLATE([INK_NO_SOCKS],[Disable socks protocol.])
+AH_TEMPLATE([INK_NO_STAT_PAGES],[Disable status pages.])
+AH_TEMPLATE([INK_NO_TESTS],[Disable test.])
+AH_TEMPLATE([INK_NO_TRANSFORM],[Disable transformation support.])
+AH_TEMPLATE([INK_SINGLE_THREADED],[Disable threading])
+AH_TEMPLATE([INK_USE_MUTEX_FOR_ATOMICLISTS],[Use mutex for atomic lists.])
+AH_TEMPLATE([INK_USE_MUTEX_FOR_FREELISTS],[Use mutex for free lists.])
+AH_TEMPLATE([MODULARIZED],[Build modularized Trafficserver.])
+AH_TEMPLATE([NEED_UNION_SEMUN],[Define to 1 if sys/sem.h declares 'union semun'])
+AH_TEMPLATE([PURIFY],[Define to 1 if support for Purify was enabled.])
+AH_TEMPLATE([TS_MICRO],[Define to 1 if builng minimal Trafficserver.])
+AH_TEMPLATE([USE_DIAGS],[Use diagnostics support.])
+AH_TEMPLATE([USE_EPOLL],[Use epoll for  I/O event notification.])
+AH_TEMPLATE([USE_KQUEUE],[Use kqueue for  I/O event notification.])
+AH_TEMPLATE([USE_LIBEV],[Define to 1 if using libev.])
+AH_TEMPLATE([USE_MD5_FOR_MMH],[Use MD5 for MMH])
+AH_TEMPLATE([USE_PORT],[Use port for  I/O event notification.])
+AH_TEMPLATE([_NO_FREELIST],[Disable free list support.])
+AH_TEMPLATE([darwin],[Define to 1 if compiling for darwin.])
+AH_TEMPLATE([freebsd],[Define to 1 if compiling for freebsd.])
+AH_TEMPLATE([linux],[Define to 1 if compiling for linux.])
+AH_TEMPLATE([solaris],[Define to 1 if compiling for solaris.])
 AH_TEMPLATE([FIXME_NONMODULAR],[FIXME_NONMODULAR])
-AH_TEMPLATE([SPLIT_DNS],[SPLIT_DNS])
-AH_TEMPLATE([NON_MODULAR],[NON_MODULAR])
-AH_TEMPLATE([HAVE_PROFILER],[HAVE_PROFILER])
+AH_TEMPLATE([SPLIT_DNS],[Compile wit 'split' DNS support.])
+AH_TEMPLATE([NON_MODULAR],[Compile without modular support.])
+AH_TEMPLATE([HAVE_PROFILER],[Define to 1 if have Google profiler library.])
 
 AC_OUTPUT
 
