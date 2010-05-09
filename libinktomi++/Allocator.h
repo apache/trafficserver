@@ -108,7 +108,7 @@ public:
   /** Allocates objects of the templated type. */
   C * alloc();
 
-  /** 
+  /**
     Deallocates objects of the templated type.
 
     @param ptr pointer to be freed.
@@ -116,7 +116,7 @@ public:
   */
   void free(C * ptr);
 
-  /** 
+  /**
     Allocate objects of the templated type via the inherited interface
     using void pointers.
 
@@ -126,7 +126,7 @@ public:
     return (void *) alloc();
   }
 
-  /** 
+  /**
     Deallocate objects of the templated type via the inherited
     interface using void pointers.
 
@@ -268,7 +268,7 @@ template<class C> inline C * ClassAllocator<C>::alloc()
 #endif
   if (sizeof(C) < 512) {
     for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(ink64); i++)
-      ((ink64 *) ptr)[i] = ((ink64 *) & this->proto.typeObject)[i];
+      ((ink64 *) ptr)[i] = ((ink64 *) &this->proto.typeObject)[i];
   } else
     memcpy(ptr, &this->proto.typeObject, sizeof(C));
   return (C *) ptr;
@@ -284,11 +284,11 @@ template<class C> inline C * SparceClassAllocator<C>::alloc()
   if (!instantiate) {
     if (sizeof(C) < 512) {
       for (unsigned int i = 0; i < RND16(sizeof(C)) / sizeof(ink64); i++)
-        ((ink64 *) ptr)[i] = ((ink64 *) & this->proto.typeObject)[i];
+        ((ink64 *) ptr)[i] = ((ink64 *) &this->proto.typeObject)[i];
     } else
       memcpy(ptr, &this->proto.typeObject, sizeof(C));
   } else
-    (*instantiate) ((C *) & this->proto.typeObject, (C *) ptr);
+    (*instantiate) ((C *) &this->proto.typeObject, (C *) ptr);
   return (C *) ptr;
 }
 
@@ -319,7 +319,7 @@ template<class C> inline C * SparceClassAllocator<C>::alloc()
   if (instantiate == NULL)
     memcpy(ptr, &this->proto.typeObject, sizeof(C));
   else
-    (*instantiate) ((C *) & this->proto.typeObject, (C *) ptr);
+    (*instantiate) ((C *) &this->proto.typeObject, (C *) ptr);
 
   return (C *) ptr;
 }
