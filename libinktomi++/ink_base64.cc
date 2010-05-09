@@ -69,8 +69,8 @@ ink_base64_decode(const char *input, int input_len, int *output_len)
       codes[i] = cc++;
     for (i = '0'; i <= '9'; i++)
       codes[i] = cc++;
-    codes['+'] = cc++;
-    codes['/'] = cc++;
+    codes[0 + '+'] = cc++;
+    codes[0 + '/'] = cc++;
     initialized = TRUE;
   }
   // compute ciphertext length
