@@ -35,7 +35,7 @@ struct RamCache {
   virtual int fixup(INK_MD5 *key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2) = 0;
 
   virtual void init(ink64 max_bytes, Part *part) = 0;
-  virtual ~RamCache() = 0;
+  virtual ~RamCache() {};
 };
 
 RamCache *new_RamCacheLRU();
