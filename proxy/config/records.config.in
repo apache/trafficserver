@@ -20,7 +20,7 @@
 #
 ##############################################################################
 CONFIG proxy.config.proxy_name STRING <proxy_name>
-CONFIG proxy.config.bin_path STRING bin
+CONFIG proxy.config.bin_path STRING @pkgbindir@
 CONFIG proxy.config.proxy_binary STRING traffic_server
 CONFIG proxy.config.proxy_binary_opts STRING -M
 CONFIG proxy.config.manager_binary STRING traffic_manager

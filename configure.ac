@@ -370,6 +370,17 @@ AC_SUBST([pkglibexecdir],["$libexecdir/trafficserver"])
 # default: /usr/local/share/trafficserver
 AC_SUBST([pkgdatadir],["$datadir/trafficserver"])
 
+# default: /usr/local/bin
+if test "$exec_prefix" = NONE ; then
+  if test "$prefix" = NONE ; then
+   AC_SUBST([pkgbindir],["$ac_default_prefix/bin"])
+  else
+   AC_SUBST([pkgbindir],["$prefix/bin"])
+  fi
+else
+ AC_SUBST([pkgbindir],["$exec_prefix/bin"])
+fi
+
 # -----------------------------------------------------------------------------
 # 3. CHECK FOR PROGRAMS
 

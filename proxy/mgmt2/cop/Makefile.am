@@ -27,6 +27,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/proxy \
   -DPREFIX=\"$(prefix)\" \
+  -DBINDIR=\"$(bindir)\" \
   -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
   -DPKGLOGDIR=\"$(pkglogdir)\" \
   -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \

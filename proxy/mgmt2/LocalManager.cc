@@ -377,10 +377,20 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
   proxy_options = REC_readString("proxy.config.proxy_binary_opts", &found);
   env_prep = REC_readString("proxy.config.env_prep", &found);
 
-  const size_t absolute_proxy_binary_size = sizeof(char) * (strlen(bin_path) + strlen(proxy_binary)) + 2;
+  const size_t absolute_proxy_binary_size = sizeof(char) * (strlen(system_root_dir) + strlen(bin_path) + strlen(proxy_binary)) + 2;
   absolute_proxy_binary = (char *) xmalloc(absolute_proxy_binary_size);
   snprintf(absolute_proxy_binary, absolute_proxy_binary_size, "%s%s%s", bin_path, DIR_SEP, proxy_binary);
 
+  if ((err = stat(absolute_proxy_binary, &s)) < 0) {
+    // Try 'root_dir/bin_path' directory
+    snprintf(absolute_proxy_binary, absolute_proxy_binary_size, "%s%s%s%s", system_root_dir,bin_path, DIR_SEP, proxy_binary);
+    // coverity[fs_check_call]
+    if ((err = stat(absolute_proxy_binary, &s)) < 0) {
+        mgmt_elog("[LocalManager::LocalManager] Unable to find '%s': %d %d, %s\n", 
+                absolute_proxy_binary, err, errno, strerror(errno));
+        mgmt_fatal("[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
+    }
+  }
 
   internal_ticker = 0;
 
