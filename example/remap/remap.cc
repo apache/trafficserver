@@ -36,7 +36,6 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <dlfcn.h>
-#include <malloc.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>

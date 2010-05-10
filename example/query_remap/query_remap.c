@@ -25,11 +25,12 @@
 #include <ts/ts.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #define PLUGIN_NAME "query_remap"
 
 //function prototypes
-u_int32_t hash_fnv32(char *buf, size_t len);
+uint32_t hash_fnv32(char *buf, size_t len);
 
 typedef struct _query_remap_info {
   char *param_name;
@@ -134,7 +135,7 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
         ++val;
         //the param key matched the configured param_name
         //hash the param value to pick a host
-        hostidx = hash_fnv32(val, strlen(val)) % (u_int32_t)qri->num_hosts;
+        hostidx = hash_fnv32(val, strlen(val)) % (uint32_t)qri->num_hosts;
         INKDebug(PLUGIN_NAME, "modifying host based on %s", key);
         break;
       }
@@ -164,14 +165,14 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
 
 // FNV (Fowler/Noll/Vo) hash
 // (description: http://www.isthe.com/chongo/tech/comp/fnv/index.html)
-u_int32_t 
+uint32_t 
 hash_fnv32(char *buf, size_t len)
 {
-  u_int32_t hval = (u_int32_t)0x811c9dc5; //FNV1_32_INIT
+  uint32_t hval = (uint32_t)0x811c9dc5; //FNV1_32_INIT
 
   for (; len > 0; --len) {
-    hval *= (u_int32_t)0x01000193; //FNV_32_PRIME
-    hval ^= (u_int32_t)*buf++;
+    hval *= (uint32_t)0x01000193; //FNV_32_PRIME
+    hval ^= (uint32_t)*buf++;
   }
 
   return hval;
