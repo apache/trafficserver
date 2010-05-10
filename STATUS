@@ -109,12 +109,18 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=927302
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=930004
     Jira: https://issues.apache.org/jira/browse/TS-162
-    +1: bcall
+    +1: bcall, zwoop
 
   * cleanup: Backport part of TS-322 that deals with indexing arrays with char.
     Patch: Attached to ticket TS-334
     Jira: https://issues.apache.org/jira/browse/TS-334
-    +1: bcall
+    +1: bcall, zwoop
+
+  * build: Problems with make install DESTDIR=...
+    Trunk patch: http://svn.apache.org/viewvc?rev=941910&view=rev
+    Trunk Patch: http://svn.apache.org/viewvc?rev=942639&view=rev
+    Jira: http://issues.apache.org/jira/browse/TS-336
+    +1: zwoop
 
 RELEASE PROCESS
 
