@@ -1,4 +1,10 @@
                                                          -*- coding: utf-8 -*-
+
+Changes with Apache Traffic Server 2.0.1
+
+  *) Improvements to build system (TS-336) and portability (TS-334).
+
+
 Changes with Apache Traffic Server 2.0.0
 
   *) Change SDK versioning schemes to 2.0 [TS-249).
