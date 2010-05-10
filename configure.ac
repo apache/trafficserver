@@ -1069,7 +1069,7 @@ AH_TEMPLATE([freebsd],[Define to 1 if compiling for freebsd.])
 AH_TEMPLATE([linux],[Define to 1 if compiling for linux.])
 AH_TEMPLATE([solaris],[Define to 1 if compiling for solaris.])
 AH_TEMPLATE([FIXME_NONMODULAR],[FIXME_NONMODULAR])
-AH_TEMPLATE([SPLIT_DNS],[Compile wit 'split' DNS support.])
+AH_TEMPLATE([SPLIT_DNS],[Compile with 'split' DNS support.])
 AH_TEMPLATE([NON_MODULAR],[Compile without modular support.])
 AH_TEMPLATE([HAVE_PROFILER],[Define to 1 if you have Google profiler library.])
 
