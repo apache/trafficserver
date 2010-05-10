@@ -37,6 +37,11 @@ AC_CONFIG_MACRO_DIR([m4])
 AM_CONFIG_HEADER([config.h])
 
 #
+# Generate ./config.nice for reproducing runs of configure
+#
+APR_CONFIG_NICE(config.nice)
+
+#
 # Host detection
 #
 
