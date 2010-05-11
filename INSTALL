@@ -8,6 +8,9 @@ APACHE TRAFFIC SERVER INSTALLATION
         http://trafficserver.apache.org/docs.html
 
   Configure & Build:
+    Source (SVN)
+      $ autoreconf -i  # generate the configure script and Makefile.in files
+
     On Linux, OSX and FreeBSD:
       $ ./configure [--prefix=PREFIX]
       $ make
@@ -15,7 +18,6 @@ APACHE TRAFFIC SERVER INSTALLATION
     On OpenSolaris:
       $ ./configure [--prefix=PREFIX] CC=/usr/bin/gcc-4.3.2 CXX=/usr/bin/g++-4.3.2
       $ make
-
 
   Next set the cluster interface in 'records.config'
     On Linux: e.g
@@ -37,13 +39,10 @@ APACHE TRAFFIC SERVER INSTALLATION
     On FreeBSD, OSX and OpenSolaris:
       $ sudo PREFIX/bin/traffic_cop
 
-
   The default PREFIX is /usr/local, unless explicitly specified.
 
   The easiest way to find all of the configuration flags for Traffic Server
   is to run ./configure --help.
-
-
 
   Postscript
   ----------
@@ -54,8 +53,7 @@ APACHE TRAFFIC SERVER INSTALLATION
 
       http://cwiki.apache.org/confluence/display/TS/Traffic+Server
 
-
-  Thanks for using the Apache Traffic Server, version 2.0.
+  Thanks for using the Apache Traffic Server, version 2.1.
 
                                      The Apache Software Foundation
                                      http://www.apache.org/
