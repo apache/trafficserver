@@ -24,7 +24,7 @@
 #include "P_Cache.h"
 
 #ifdef NON_MODULAR
-#include "api/include/ts.h"
+#include "api/ts/ts.h"
 #include "Show.h"
 
 struct ShowCache:ShowCont

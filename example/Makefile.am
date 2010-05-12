@@ -14,11 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-API_INC=$(top_srcdir)/proxy/api/include
-
-all-am:
-	ln -sfn . $(top_srcdir)/proxy/api/include/ts
-
 if STANDALONE_IOCORE
 SUBDIRS = app-template
 else

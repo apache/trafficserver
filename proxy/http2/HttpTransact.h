@@ -39,7 +39,7 @@
 #include "ProxyConfig.h"
 #include "Transform.h"
 //#include "HttpAuthParams.h"
-#include "api/include/remap.h"
+#include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
 
 

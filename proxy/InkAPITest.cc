@@ -33,7 +33,7 @@ extern int errno;
 #include <string.h>
 
 #include "Regression.h"
-#include "api/include/ts_private.h"
+#include "api/ts/ts_private.h"
 #include "I_RecCore.h"
 
 #include "InkAPITestTool.cc"

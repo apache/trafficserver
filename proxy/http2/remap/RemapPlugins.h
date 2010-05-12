@@ -31,7 +31,7 @@
 #include "inktomi++.h"
 #include "I_EventSystem.h"
 #include "RemapProcessor.h"
-#include "api/include/remap.h"
+#include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
 #include "HttpTransact.h"
 #include "ReverseProxy.h"

@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CFLAGS+=-I$(top_srcdir)/proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = file-1.la
 file_1_la_SOURCES = file-1.c

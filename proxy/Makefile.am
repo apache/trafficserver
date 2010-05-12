@@ -44,7 +44,7 @@ AM_CPPFLAGS = \
   -I$(srcdir)/mgmt2/preparse \
   -I$(srcdir)/mgmt2/utils \
   -I$(srcdir)/mgmt2/web2 \
-  -I$(srcdir)/api/include \
+  -I$(srcdir)/api/ts \
   -DPKGLOGDIR=\"$(pkglogdir)\" \
   -DPREFIX=\"$(prefix)\" \
   -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
@@ -55,15 +55,15 @@ AM_CPPFLAGS = \
 includedir=$(prefix)/include/ts
 
 include_HEADERS = \
-  api/include/ts.h \
-  api/include/remap.h \
-  api/include/ts_private.h \
-  api/include/ts_private_frozen.h
+  api/ts/ts.h \
+  api/ts/remap.h \
+  api/ts/ts_private.h \
+  api/ts/ts_private_frozen.h
 
 noinst_HEADERS = \
-  api/include/InkAPIHughes.h \
-  api/include/InkAPIaaa.h \
-  api/include/InkAPIPrivateIOCore.h \
+  api/ts/InkAPIHughes.h \
+  api/ts/InkAPIaaa.h \
+  api/ts/InkAPIPrivateIOCore.h \
   ConfigParse.h \
   NTDefs.h \
   Show.h

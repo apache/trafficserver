@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CFLAGS+=-I$(top_srcdir)/proxy/api/include
+CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = add-header.la
 add_header_la_SOURCES = add-header.c

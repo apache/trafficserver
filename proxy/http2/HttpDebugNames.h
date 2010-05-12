@@ -25,7 +25,7 @@
 #define _HttpDebugNames_h_
 
 #include "HttpTransact.h"
-#include "api/include/ts.h"
+#include "api/ts/ts.h"
 
 class HttpDebugNames
 {

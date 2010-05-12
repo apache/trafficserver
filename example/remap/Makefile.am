@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CXXFLAGS+=-I$(top_srcdir)/proxy/api/include
+CXXFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = remap.la
 remap_la_SOURCES = remap.cc

@@ -24,7 +24,7 @@
 
 #include "P_Cache.h"
 #include "P_CacheTest.h"
-#include "api/include/ts.h"
+#include "api/ts/ts.h"
 
 
 void verify_cache_api() {

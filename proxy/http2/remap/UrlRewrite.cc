@@ -31,7 +31,7 @@
 #include "ReverseProxy.h"
 #include "MatcherUtils.h"
 #include "Tokenizer.h"
-#include "api/include/remap.h"
+#include "api/ts/remap.h"
 #include "UrlMappingPathIndex.h"
 
 #include "ink_string.h"

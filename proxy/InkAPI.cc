@@ -50,12 +50,12 @@
 #include "LogConfig.h"
 //#include "UserNameCache.h"
 #include "PluginVC.h"
-#include "api/include/ts_private.h"
+#include "api/ts/ts_private.h"
 #include "ICP.h"
 #include "HttpAccept.h"
 #include "PluginVC.h"
 //#include "MixtAPIInternal.h"
-#include "api/include/InkAPIaaa.h"
+#include "api/ts/InkAPIaaa.h"
 
 /****************************************************************
  *  IMPORTANT - READ ME

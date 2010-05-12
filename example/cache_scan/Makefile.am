@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-CXXFLAGS+=-I$(top_srcdir)/proxy/api/include
+CXXFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = cache_scan.la
 cache_scan_la_SOURCES = cache_scan.cc

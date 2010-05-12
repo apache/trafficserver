@@ -24,7 +24,7 @@
 #if !defined (_REMAPPLUGININFO_h_)
 #define _REMAPPLUGININFO_h_
 #include "inktomi++.h"
-#include "api/include/remap.h"
+#include "api/ts/remap.h"
 
 // Remap inline options
 #define REMAP_OPTFLG_MAP_WITH_REFERER 0x01      /* "map_with_referer" option */

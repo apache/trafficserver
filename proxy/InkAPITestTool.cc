@@ -22,7 +22,7 @@
  */
 
 #include "Regression.h"
-#include "api/include/ts.h"
+#include "api/ts/ts.h"
 
 #include <arpa/inet.h>          /* For htonl */
 #include "P_Net.h"
