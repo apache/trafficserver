@@ -3005,7 +3005,7 @@ HtmlRndrTdOpen(textBuffer * html,
 int
 HtmlRndrAOpen(textBuffer * html, const HtmlCss css, const char *href, const char *target, const char *onclick)
 {
-  char tmp[512 + 1];            // larger, since href's can be lengthy
+  char tmp[MAX_TMP_BUF_LEN + 1];            // larger, since href's can be lengthy
   html->copyFrom("<a", 2);
   if (css) {
     snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
