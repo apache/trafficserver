@@ -4579,36 +4579,36 @@ convert_filter_ele_to_html_format(INKFilterEle * ele,
 
   // server 
   if (ele->server)
-    snprintf(server, MAX_RULE_PART_SIZE, ele->server);
+    ink_strncpy(server, ele->server, MAX_RULE_PART_SIZE);
 
   // dn
   if (ele->dn)
-    snprintf(dn, MAX_RULE_PART_SIZE, ele->dn);
+    ink_strncpy(dn, ele->dn, MAX_RULE_PART_SIZE);
 
   // realm
   if (ele->realm)
-    snprintf(realm, MAX_RULE_PART_SIZE, ele->realm);
+    ink_strncpy(realm, ele->realm, MAX_RULE_PART_SIZE);
 
   // uid filter
   if (ele->uid_filter)
-    snprintf(uid_filter, MAX_RULE_PART_SIZE, ele->uid_filter);
+    ink_strncpy(uid_filter, ele->uid_filter, MAX_RULE_PART_SIZE);
 
   // attr name
   if (ele->attr)
-    snprintf(attr_name, MAX_RULE_PART_SIZE, ele->attr);
+    ink_strncpy(attr_name, ele->attr, MAX_RULE_PART_SIZE);
 
   // attr value
   if (ele->attr_val)
-    snprintf(attr_val, MAX_RULE_PART_SIZE, ele->attr_val);
+    ink_strncpy(attr_val, ele->attr_val, MAX_RULE_PART_SIZE);
 
   if (ele->redirect_url)
-    snprintf(redirect_url, MAX_RULE_PART_SIZE, ele->redirect_url);
+    ink_strncpy(redirect_url, ele->redirect_url, MAX_RULE_PART_SIZE);
 
   if (ele->bind_dn)
-    snprintf(bind_dn, MAX_RULE_PART_SIZE, ele->bind_dn);
+    ink_strncpy(bind_dn, ele->bind_dn, MAX_RULE_PART_SIZE);
 
   if (ele->bind_pwd_file)
-    snprintf(bind_pwd_file, MAX_RULE_PART_SIZE, ele->bind_pwd_file);
+    ink_strncpy(bind_pwd_file, ele->bind_pwd_file, MAX_RULE_PART_SIZE);
 
   return WEB_HTTP_ERR_OKAY;
 
@@ -4644,7 +4644,7 @@ convert_hosting_ele_to_html_format(INKHostingEle * ele, char *pdType, char *part
   // partitions list
   if (ele->partitions) {
     list = int_list_to_string(ele->partitions, ",");
-    snprintf(partitions, MAX_RULE_PART_SIZE, list);
+    ink_strncpy(partitions, list, MAX_RULE_PART_SIZE);
     xfree(list);
   } else {
     goto Lerror;
@@ -4679,7 +4679,7 @@ convert_icp_ele_to_html_format(INKIcpEle * ele,
   // host_ip 
   if (ele->peer_host_ip_addr) {
     tmpStr = ip_addr_to_string(ele->peer_host_ip_addr);
-    snprintf(host_ip, MAX_RULE_PART_SIZE, tmpStr);
+    ink_strncpy(host_ip, tmpStr, MAX_RULE_PART_SIZE);
     xfree(tmpStr);
   }
   // cache type
@@ -4710,7 +4710,7 @@ convert_icp_ele_to_html_format(INKIcpEle * ele,
   // mc ip
   if (ele->mc_ip_addr != INK_INVALID_IP_ADDR) {
     tmpStr = ip_addr_to_string(ele->mc_ip_addr);
-    snprintf(mc_ip, MAX_RULE_PART_SIZE, tmpStr);
+    ink_strncpy(mc_ip, tmpStr, MAX_RULE_PART_SIZE);
     xfree(tmpStr);
   }
   // mc ttl
@@ -5122,7 +5122,7 @@ convert_split_dns_ele_to_html_format(INKSplitDnsEle * ele,
   // dns servers ip's
   if (ele->dns_servers_addrs) {
     domain_list = domain_list_to_string((DomainList *) (ele->dns_servers_addrs), ";");
-    snprintf(dns_server, MAX_RULE_PART_SIZE, domain_list);
+    ink_strncpy(dns_server, domain_list, MAX_RULE_PART_SIZE);
     xfree(domain_list);
   } else {
     goto Lerror;
@@ -5130,13 +5130,13 @@ convert_split_dns_ele_to_html_format(INKSplitDnsEle * ele,
 
   // default domain is optional
   if (ele->def_domain) {
-    snprintf(def_domain, MAX_RULE_PART_SIZE, ele->def_domain);
+    ink_strncpy(def_domain, ele->def_domain, MAX_RULE_PART_SIZE);
   }
   // search list is optional
   if (ele->search_list) {
     domain_list = domain_list_to_string((DomainList *) (ele->search_list), ";");
     if (domain_list) {
-      snprintf(search_list, MAX_RULE_PART_SIZE, domain_list);
+      ink_strncpy(search_list, domain_list, MAX_RULE_PART_SIZE);
       xfree(domain_list);
     } else {
       goto Lerror;
