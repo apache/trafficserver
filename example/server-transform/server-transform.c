@@ -744,7 +744,7 @@ server_response_ok(INKHttpTxn txnp)
     return 0;
   }
 
-  if ((resp_status = INKHttpHdrStatusGet(bufp, hdr_loc)) == INK_ERROR) {
+  if ((resp_status = INKHttpHdrStatusGet(bufp, hdr_loc)) == (INKHttpStatus)INK_ERROR) {
     INKError("Error in Getting Status from Server response");
     if (INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc) != INK_SUCCESS) {
       INKError("Unable to release handle to server request");

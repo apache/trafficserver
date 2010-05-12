@@ -1030,10 +1030,10 @@ transformable(INKHttpTxn txnp)
   INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
 
   resp_status = INKHttpHdrStatusGet(bufp, hdr_loc);
-  if (resp_status == INK_ERROR) {
+  if (resp_status == (INKHttpStatus)INK_ERROR) {
     INKError("[transformable] Error while getting http status");
   }
-  if ((resp_status == INK_ERROR) || (resp_status != INK_HTTP_STATUS_OK)) {
+  if ((resp_status == (INKHttpStatus)INK_ERROR) || (resp_status != INK_HTTP_STATUS_OK)) {
     INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
     return 0;
   }
