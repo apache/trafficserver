@@ -2227,7 +2227,7 @@ writeXmlElement_int(textBuffer * xml, const char *elemName, int value, const cha
 {
   char tempStr[128];
   memset(tempStr, 0, 128);
-  ink_snprintf(tempStr, 128, "%d", value);
+  snprintf(tempStr, 128, "%d", value);
 
   writeXmlStartTag(xml, elemName, nsp);
   xml->copyFrom(tempStr, strlen(tempStr));
@@ -2257,7 +2257,7 @@ writeXmlAttribute_int(textBuffer * xml, const char *attrName, int value)
 {
   char tempStr[128];
   memset(tempStr, 0, 128);
-  ink_snprintf(tempStr, 128, "%d", value);
+  snprintf(tempStr, 128, "%d", value);
 
   xml->copyFrom(" ", 1);
   xml->copyFrom(attrName, strlen(attrName));
@@ -2291,7 +2291,7 @@ strcmptag(char *fulltag, char *name, char *nsp)
 
   if (nsp) {
     memset(new_tag, 0, 128);
-    ink_snprintf(new_tag, 128, "%s:%s", nsp, name);
+    snprintf(new_tag, 128, "%s:%s", nsp, name);
     return strcmp(fulltag, new_tag);
   }
 
@@ -2327,7 +2327,7 @@ convertRecordsFile_ts(char **xml_file)
       memset(value, 0, 256);
       xml.copyFrom("  ", 2);
       varStrFromName(RecordsConfig[r].name, value, 256);
-      ink_snprintf(record, 1024, "%s=\"%s\"", RecordsConfig[r].name, value);
+      snprintf(record, 1024, "%s=\"%s\"", RecordsConfig[r].name, value);
       xml.copyFrom(record, strlen(record));
       xml.copyFrom("\n", 1);
     }
@@ -2408,15 +2408,15 @@ getXmlRecType(struct RecordElement rec, char *buf, int buf_size)
   case RC_NULL:                // no check type defined, use field type
     switch (rec.value_type) {
     case INK_STRING:
-      ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:string\" default=\"%s\"/>", rec.name, rec.value);
+      sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:string\" default=\"%s\"/>", rec.name, rec.value);
       break;
     case INK_FLOAT:
-      ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:float\" default=\"%s\"/>", rec.name, rec.value);
+      sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:float\" default=\"%s\"/>", rec.name, rec.value);
       break;
     case INK_INT:
     case INK_COUNTER:
     case INK_LLONG:
-      ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:integer\" default=\"%s\"/>", rec.name, rec.value);
+      sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:integer\" default=\"%s\"/>", rec.name, rec.value);
       break;
     default:
       // Handled here:
@@ -2426,17 +2426,17 @@ getXmlRecType(struct RecordElement rec, char *buf, int buf_size)
     break;
 
   case RC_IP:
-    ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"cnp:ipaddr\" default=\"%s\"/>", rec.name, rec.value);
+    sprintf(buf, "<xs:attribute name=\"%s\" type=\"cnp:ipaddr\" default=\"%s\"/>", rec.name, rec.value);
     break;
 
   case RC_INT:
     if (rec.regex) {
       if (strcmp(rec.regex, "[0-1]") == 0) {    // for [0-1] range, make into boolean type
-        ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:boolean\" default=\"%s\"/>", rec.name, rec.value);
+        sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:boolean\" default=\"%s\"/>", rec.name, rec.value);
       } else {                  // break up [x-y] into ts:range_x_y type 
         Tokenizer range("[]-");
         if (range.Initialize(rec.regex) == 2) {
-          ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"ts:range_%s_%s\" default=\"%s\"/>",
+          sprintf(buf, "<xs:attribute name=\"%s\" type=\"ts:range_%s_%s\" default=\"%s\"/>",
                       rec.name, range[0], range[1], rec.value);
         }
       }
@@ -2446,21 +2446,21 @@ getXmlRecType(struct RecordElement rec, char *buf, int buf_size)
   case RC_STR:
     if (rec.regex) {
       if (strcmp(rec.regex, ".*") == 0) {
-        ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:string\" default=\"%s\"/>", rec.name, rec.value);
+        sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:string\" default=\"%s\"/>", rec.name, rec.value);
       } else if (strcmp(rec.regex, "^[0-9]+$") == 0) {
-        ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:integer\" default=\"%s\"/>", rec.name, rec.value);
+        sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:integer\" default=\"%s\"/>", rec.name, rec.value);
       } else if (strcmp(rec.regex, "^[^[:space:]]*") == 0) {
-        ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:pattern_no_space\" default=\"%s\"/>",
+        sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:pattern_no_space\" default=\"%s\"/>",
                     rec.name, rec.value);
       } else if (strcmp(rec.regex, ".+") == 0) {
-        ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:pattern_not_empty\" default=\"%s\"/>",
+        sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:pattern_not_empty\" default=\"%s\"/>",
                     rec.name, rec.value);
       }
     }
     break;
 
   default:                     // uses special simpleType in schema
-    ink_sprintf(buf, "<xs:attribute name=\"%s\" type=\"FIXME\" default=\"%s\"/>", rec.name, rec.value);
+    sprintf(buf, "<xs:attribute name=\"%s\" type=\"FIXME\" default=\"%s\"/>", rec.name, rec.value);
     break;
   }
 }
@@ -2663,7 +2663,7 @@ testConvertFile_ts(char *file)
 
   char name[128];
   memset(name, 0, 128);
-  ink_snprintf(name, 128, "%s.xml", file);
+  snprintf(name, 128, "%s.xml", file);
   fp = fopen(name, "w");
 
   if (strcmp(file, "all") == 0) {

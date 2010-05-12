@@ -771,7 +771,7 @@ ClusterHandler::machine_down()
 #ifdef NON_MODULAR
   machine_offline_APIcallout(ip);
 #endif
-  ink_snprintf(textbuf, sizeof(textbuf), "%u.%u.%u.%u:%d", DOT_SEPARATED(ip), port);
+  snprintf(textbuf, sizeof(textbuf), "%u.%u.%u.%u:%d", DOT_SEPARATED(ip), port);
   REC_SignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
   if (net_vc) {
     net_vc->do_io(VIO::CLOSE);
@@ -1069,7 +1069,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         machine_online_APIcallout(ip);
 #endif
         // Signal the manager
-        ink_snprintf(textbuf, sizeof(textbuf), "%u.%u.%u.%u:%d", DOT_SEPARATED(ip), port);
+        snprintf(textbuf, sizeof(textbuf), "%u.%u.%u.%u:%d", DOT_SEPARATED(ip), port);
         REC_SignalManager(REC_SIGNAL_MACHINE_UP, textbuf);
 #ifdef LOCAL_CLUSTER_TEST_MODE
         Note("machine up %u.%u.%u.%u:%d, protocol version=%d.%d",

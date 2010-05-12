@@ -287,7 +287,7 @@ adjustCmdLine(char *cmdLine, int cmdline_len, const char *cgiFullPath)
   }
 
   if (interpreter) {
-    ink_snprintf(cmdLine, cmdline_len, "\"%s\" \"%s\"", interpreter, cgiFullPath);
+    snprintf(cmdLine, cmdline_len, "\"%s\" \"%s\"", interpreter, cgiFullPath);
   } else {
     ink_strncpy(cmdLine, cgiFullPath, cmdline_len);
   }
@@ -350,7 +350,7 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
     qlen = request->getConLen();
     if (qlen <= 0)
       qlen = strlen(query_string);
-    ink_snprintf(content_length_buffer, sizeof(content_length_buffer), "%d", qlen);
+    snprintf(content_length_buffer, sizeof(content_length_buffer), "%d", qlen);
     env.setVar("CONTENT_LENGTH", content_length_buffer);
     env.setVar("QUERY_STRING", query_string);
 
@@ -488,7 +488,7 @@ encryptToFileAuth_malloc(const char *password)
   time_t my_time_t;
   time(&my_time_t);
   memset(file_path, 0, MAX_TMP_BUF_LEN);
-  ink_snprintf(file_path, MAX_TMP_BUF_LEN, "%s%spwd_%ld.enc", dir_path, DIR_SEP, my_time_t);
+  snprintf(file_path, MAX_TMP_BUF_LEN, "%s%spwd_%ld.enc", dir_path, DIR_SEP, my_time_t);
   if (dir_path)
     xfree(dir_path);
 
@@ -707,7 +707,7 @@ handle_chart(WebHttpContext * whc, const char *file)
   if (clusterGraph == true) {
     replyMsg->copyFrom("CLUSTER", 7);
   } else {
-    ink_snprintf(numGraphStr, sizeof(numGraphStr), "%d", numGraphs);
+    snprintf(numGraphStr, sizeof(numGraphStr), "%d", numGraphs);
     replyMsg->copyFrom(numGraphStr, strlen(numGraphStr));
   }
 
@@ -848,16 +848,16 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
       }
       Debug("web2", "%s", g_records[r].name);
       if (okay) {
-        ink_snprintf(line, sizeof(line), "<tr>\n");
+        snprintf(line, sizeof(line), "<tr>\n");
         replyMsg->copyFrom(line, strlen(line));
         // record type
-        ink_snprintf(line, sizeof(line), "<td>%s</td>\n", rec_type_a[g_records[r].rec_type]);
+        snprintf(line, sizeof(line), "<td>%s</td>\n", rec_type_a[g_records[r].rec_type]);
         replyMsg->copyFrom(line, strlen(line));
         // name
-        ink_snprintf(line, sizeof(line), "<td>%s</td>\n", g_records[r].name);
+        snprintf(line, sizeof(line), "<td>%s</td>\n", g_records[r].name);
         replyMsg->copyFrom(line, strlen(line));
         // data type
-        ink_snprintf(line, sizeof(line), "<td>%s</td>\n", data_type_a[g_records[r].data_type]);
+        snprintf(line, sizeof(line), "<td>%s</td>\n", data_type_a[g_records[r].data_type]);
         replyMsg->copyFrom(line, strlen(line));
         // current value (computation)
         same = false;
@@ -869,8 +869,8 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             RecInt data = g_records[r].data.rec_int;
             RecInt data_default = g_records[r].data_default.rec_int;
-            ink_snprintf(cur_value, BUF_SIZE, "%lld", data);
-            ink_snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
+            snprintf(cur_value, BUF_SIZE, "%lld", data);
+            snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
             same = (data == data_default);
           }
           break;
@@ -878,8 +878,8 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             RecLLong data = g_records[r].data.rec_llong;
             RecLLong data_default = g_records[r].data_default.rec_llong;
-            ink_snprintf(cur_value, BUF_SIZE, "%lld", data);
-            ink_snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
+            snprintf(cur_value, BUF_SIZE, "%lld", data);
+            snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
             same = (data == data_default);
           }
           break;
@@ -887,8 +887,8 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             RecFloat data = g_records[r].data.rec_float;
             RecFloat data_default = g_records[r].data_default.rec_float;
-            ink_snprintf(cur_value, BUF_SIZE, "%f", data);
-            ink_snprintf(def_value_rec, BUF_SIZE, "%f", data_default);
+            snprintf(cur_value, BUF_SIZE, "%f", data);
+            snprintf(def_value_rec, BUF_SIZE, "%f", data_default);
             float d = data - data_default;
             same = ((d > -0.000001f) && (d < 0.000001f));
           }
@@ -915,8 +915,8 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             RecCounter data = g_records[r].data.rec_counter;
             RecCounter data_default = g_records[r].data_default.rec_counter;
-            ink_snprintf(cur_value, BUF_SIZE, "%lld", data);
-            ink_snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
+            snprintf(cur_value, BUF_SIZE, "%lld", data);
+            snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
             same = (data == data_default);
           }
           break;
@@ -934,17 +934,17 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
 
         // current value (print)
         if (same) {
-          ink_snprintf(line, sizeof(line), "<td bgcolor=\"#EEEEEE\">%s</td>", cur_value_safe);
+          snprintf(line, sizeof(line), "<td bgcolor=\"#EEEEEE\">%s</td>", cur_value_safe);
         } else {
-          ink_snprintf(line, sizeof(line), "<td>%s</td>\n", cur_value_safe);
+          snprintf(line, sizeof(line), "<td>%s</td>\n", cur_value_safe);
         }
         replyMsg->copyFrom(line, strlen(line));
 
         // default value (print)
-        ink_snprintf(line, sizeof(line), "<td bgcolor=\"#EEEEEE\">%s</td>\n", def_value_safe);
+        snprintf(line, sizeof(line), "<td bgcolor=\"#EEEEEE\">%s</td>\n", def_value_safe);
         replyMsg->copyFrom(line, strlen(line));
 
-        ink_snprintf(line, sizeof(line), "</tr>\n");
+        snprintf(line, sizeof(line), "</tr>\n");
         replyMsg->copyFrom(line, strlen(line));
 
         // free mem
@@ -982,37 +982,37 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
     }
 
     // start generating document
-    ink_snprintf(line, sizeof(line), "<html>\n<head>\n<title>%s</title>\n</head>\n<body>\n", title);
+    snprintf(line, sizeof(line), "<html>\n<head>\n<title>%s</title>\n</head>\n<body>\n", title);
     replyMsg->copyFrom(line, strlen(line));
-    ink_snprintf(line, sizeof(line), "<body bgcolor=\"#FFFFFF\">\n");
+    snprintf(line, sizeof(line), "<body bgcolor=\"#FFFFFF\">\n");
     replyMsg->copyFrom(line, strlen(line));
-    ink_snprintf(line, sizeof(line), "<h1>%s</h1>\n", title);
+    snprintf(line, sizeof(line), "<h1>%s</h1>\n", title);
     replyMsg->copyFrom(line, strlen(line));
 
     // start table
-    ink_snprintf(line, sizeof(line), "<table border=1 cellspacing=0 cellpadding=1 width=\"100%%\" bordercolor=#CCCCCC "
+    snprintf(line, sizeof(line), "<table border=1 cellspacing=0 cellpadding=1 width=\"100%%\" bordercolor=#CCCCCC "
                  "style=\"font-size: smaller\">\n");
     replyMsg->copyFrom(line, strlen(line));
 
     // generate column title row
-    ink_snprintf(line, sizeof(line), "<tr>\n");
+    snprintf(line, sizeof(line), "<tr>\n");
     replyMsg->copyFrom(line, strlen(line));
-    ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
+    snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
                  "<p align=\"center\"><strong>Type</strong></td>\n", type_pcnt);
     replyMsg->copyFrom(line, strlen(line));
-    ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
+    snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
                  "<p align=\"center\"><strong>Name</strong></td>\n", name_pcnt);
     replyMsg->copyFrom(line, strlen(line));
-    ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
+    snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
                  "<p align=\"center\"><strong>Value Type</strong></td>\n", value_type_pcnt);
     replyMsg->copyFrom(line, strlen(line));
-    ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
+    snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
                  "<p align=\"center\"><strong>Current Value</strong></td>\n", cur_value_pcnt);
     replyMsg->copyFrom(line, strlen(line));
-    ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
+    snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#E0E0F6\" nowrap>"
                  "<p align=\"center\"><strong>Default Value</strong></td>\n", def_value_pcnt);
     replyMsg->copyFrom(line, strlen(line));
-    ink_snprintf(line, sizeof(line), "</tr>\n");
+    snprintf(line, sizeof(line), "</tr>\n");
     replyMsg->copyFrom(line, strlen(line));
 
     // generate all other rows of the table
@@ -1027,18 +1027,18 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
                 (RecordsConfig[r].type == PLUGIN) || (RecordsConfig[r].type == LOCAL));
       }
       if (okay) {
-        ink_snprintf(line, sizeof(line), "<tr>\n");
+        snprintf(line, sizeof(line), "<tr>\n");
         replyMsg->copyFrom(line, strlen(line));
         // type
-        ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#FFFFFF\">"
+        snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#FFFFFF\">"
                      "<p align=\"left\">%s</td>\n", type_pcnt, type_a[RecordsConfig[r].type]);
         replyMsg->copyFrom(line, strlen(line));
         // name
-        ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#FFFFFF\">"
+        snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#FFFFFF\">"
                      "<p align=\"left\">%s</td>\n", name_pcnt, RecordsConfig[r].name);
         replyMsg->copyFrom(line, strlen(line));
         // value type
-        ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#FFFFFF\">"
+        snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#FFFFFF\">"
                      "<p align=\"left\">%s</td>\n", value_type_pcnt, value_type_a[RecordsConfig[r].value_type]);
         replyMsg->copyFrom(line, strlen(line));
         // current value (computation)
@@ -1049,7 +1049,7 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             MgmtInt i = lmgmt->record_data->readInteger(RecordsConfig[r].name, &found);
             if (found) {
-              ink_snprintf(cur_value, BUF_SIZE, "%lld", i);
+              snprintf(cur_value, BUF_SIZE, "%lld", i);
               if (i == ink_atoll(RecordsConfig[r].value)) {
                 same = true;
               }
@@ -1060,7 +1060,7 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             MgmtLLong i = lmgmt->record_data->readLLong(RecordsConfig[r].name, &found);
             if (found) {
-              ink_snprintf(cur_value, BUF_SIZE, "%lld", i);
+              snprintf(cur_value, BUF_SIZE, "%lld", i);
               if (i == ink_atoll(RecordsConfig[r].value)) {
                 same = true;
               }
@@ -1072,7 +1072,7 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
             float d;
             MgmtFloat f = lmgmt->record_data->readFloat(RecordsConfig[r].name, &found);
             if (found) {
-              ink_snprintf(cur_value, BUF_SIZE, "%f", f);
+              snprintf(cur_value, BUF_SIZE, "%f", f);
               d = f - atof(RecordsConfig[r].value);
               if ((d > -0.000001f) && (d < 0.000001f)) {
                 same = true;
@@ -1109,7 +1109,7 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             MgmtIntCounter ic = lmgmt->record_data->readCounter(RecordsConfig[r].name, &found);
             if (found) {
-              ink_snprintf(cur_value, BUF_SIZE, "%lld", ic);
+              snprintf(cur_value, BUF_SIZE, "%lld", ic);
               if (ic == ink_atoll(RecordsConfig[r].value)) {
                 same = true;
               }
@@ -1132,20 +1132,20 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
 
         // current value (print)
         if (same) {
-          ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#EEEEEE\">"
+          snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#EEEEEE\">"
                        "<p align=\"left\">%s</td>\n", cur_value_pcnt, cur_value_safe);
         } else {
-          ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#FFFFFF\">"
+          snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#FFFFFF\">"
                        "<p align=\"left\">%s</td>\n", cur_value_pcnt, cur_value_safe);
         }
         replyMsg->copyFrom(line, strlen(line));
 
         // default value (print)
-        ink_snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#EEEEEE\">"
+        snprintf(line, sizeof(line), "<td width=\"%d%%\" align=\"center\" bgcolor=\"#EEEEEE\">"
                      "<p align=\"left\">%s</td>\n", def_value_pcnt, def_value_safe);
         replyMsg->copyFrom(line, strlen(line));
 
-        ink_snprintf(line, sizeof(line), "</tr>\n");
+        snprintf(line, sizeof(line), "</tr>\n");
         replyMsg->copyFrom(line, strlen(line));
 
         // free mem
@@ -1156,11 +1156,11 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
     }
 
     // end table
-    ink_snprintf(line, sizeof(line), "</table>\n");
+    snprintf(line, sizeof(line), "</table>\n");
     replyMsg->copyFrom(line, strlen(line));
 
     // finish generating document
-    ink_snprintf(line, sizeof(line), "</body>\n</html>\n");
+    snprintf(line, sizeof(line), "</body>\n</html>\n");
     replyMsg->copyFrom(line, strlen(line));
 
   }
@@ -1449,11 +1449,11 @@ handle_submit_mgmt_auth(WebHttpContext * whc, const char *file)
     ctx_updated = false;
     user_count = ink_atoi(aa_user_count);
     for (user = user_count - 1; user >= 0; user--) {
-      ink_snprintf(tmp_a, sizeof(tmp_a), "user:%d", user);
-      ink_snprintf(tmp_b, sizeof(tmp_b), "access:%d", user);
+      snprintf(tmp_a, sizeof(tmp_a), "user:%d", user);
+      snprintf(tmp_b, sizeof(tmp_b), "access:%d", user);
       if (ink_hash_table_lookup(whc->post_data_ht, tmp_a, (void **) &aa_user) &&
           ink_hash_table_lookup(whc->post_data_ht, tmp_b, (void **) &aa_access)) {
-        ink_snprintf(tmp_a, sizeof(tmp_a), "delete:%d", user);
+        snprintf(tmp_a, sizeof(tmp_a), "delete:%d", user);
         if (ink_hash_table_lookup(whc->post_data_ht, tmp_a, (void **) &aa_delete)) {
           INKCfgContextRemoveEleAt(ctx, user);
           ctx_updated = true;
@@ -1593,7 +1593,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
           if (snapDirFromRecordsConf == NULL) {
             // coverity[size_is_strlen]
             snapDirFromRecordsConf = new char[strlen("snapshots")];
-            ink_snprintf(snapDirFromRecordsConf, strlen("snapshots"), "%s", "snapshots");
+            snprintf(snapDirFromRecordsConf, strlen("snapshots"), "%s", "snapshots");
             ink_assert(RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf)
                        == REC_ERR_OKAY);
             ink_assert(RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf)
@@ -1613,7 +1613,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
               snap_directory = new char[newLen];
               ink_assert(snap_directory != NULL);
               // coverity[noescape]
-              ink_snprintf(snap_directory, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
+              snprintf(snap_directory, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
               //snap_directory = newPathString(config_dir, snap_dir_cpy);
               RecSetRecordString("proxy.config.snapshot_dir", snap_dir_cpy);
               if (snap_dir_cpy)
@@ -1633,7 +1633,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
                   newLen = strlen(tok) + 2;
                   absoluteDir = new char[newLen];
                   ink_assert(absoluteDir != NULL);
-                  ink_snprintf(absoluteDir, newLen, "/%s", tok);
+                  snprintf(absoluteDir, newLen, "/%s", tok);
 
                   if ((ret_val = mkdir(absoluteDir, DIR_MODE)) < 0) {
                     perror("Absolute snapPath Directory creation:");
@@ -1704,7 +1704,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
           snap_directory = new char[newLen];
           ink_assert(snap_directory != NULL);
           // coverity[noescape]
-          ink_snprintf(snap_directory, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
+          snprintf(snap_directory, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
           if (snap_dir_cpy)
             free(snap_dir_cpy);
         }
@@ -1742,8 +1742,8 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
           ink_assert(newStr != NULL);
           ftp_remote_dir_name = new char[remoteDirLength];
           ink_assert(ftp_remote_dir_name != NULL);
-          ink_snprintf(newStr, localDirLength, "/tmp%s%s", DIR_SEP, snap_name);
-          ink_snprintf(ftp_remote_dir_name, remoteDirLength, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
+          snprintf(newStr, localDirLength, "/tmp%s%s", DIR_SEP, snap_name);
+          snprintf(ftp_remote_dir_name, remoteDirLength, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
           snap_result = configFiles->takeSnap(snap_name, "/tmp");
           INKMgmtFtp("put", ftp_server_name, ftp_login, ftp_password, newStr, ftp_remote_dir_name, NULL);
         } else {
@@ -1757,7 +1757,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
             newLen = strlen(snap_dir_cpy) + strlen(config_dir) + strlen(snap_name) + 3;
             snapDirFromRecordsConf = new char[newLen];
             ink_assert(snapDirFromRecordsConf != NULL);
-            ink_snprintf(snapDirFromRecordsConf, newLen, "%s%s%s%s%s", config_dir, DIR_SEP, snap_dir_cpy, DIR_SEP,
+            snprintf(snapDirFromRecordsConf, newLen, "%s%s%s%s%s", config_dir, DIR_SEP, snap_dir_cpy, DIR_SEP,
                          snap_name);
             if (snap_dir_cpy)
               free(snap_dir_cpy);
@@ -1769,7 +1769,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
             newLen = strlen(snap_dir_cpy) + strlen(config_dir) + strlen(snap_name) + 3;
             snapDirFromRecordsConf = new char[newLen];
             ink_assert(snapDirFromRecordsConf != NULL);
-            ink_snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", snap_dir_cpy, DIR_SEP, snap_name);
+            snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", snap_dir_cpy, DIR_SEP, snap_name);
             if (snap_dir_cpy)
               free(snap_dir_cpy);
           }
@@ -1780,7 +1780,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
           newLen = strlen(snap_name) + strlen(ftp_remote_dir) + 2;
           newStr = new char[newLen];
           ink_assert(newStr != NULL);
-          ink_snprintf(newStr, newLen, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
+          snprintf(newStr, newLen, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
 
           if ((ret_val = mkdir(snapDirFromRecordsConf, DIR_MODE)) < 0) {
             mgmt_log(stderr, "Cannot create %s\n", snapDirFromRecordsConf);
@@ -1800,7 +1800,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
         } else {
           char args[256];
           RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-          ink_snprintf(args, sizeof(args), "cp -fr %s/%s %s", floppyMountPoint, snap_name, snapDirFromRecordsConf);
+          snprintf(args, sizeof(args), "cp -fr %s/%s %s", floppyMountPoint, snap_name, snapDirFromRecordsConf);
           const char *argv[] = { args,
             NULL
           };
@@ -1824,7 +1824,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
             newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
             snapDirFromRecordsConf = new char[newLen];
             ink_assert(snapDirFromRecordsConf != NULL);
-            ink_snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
+            snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
             if (snap_dir_cpy)
               free(snap_dir_cpy);
           }
@@ -1845,7 +1845,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
             newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
             snapDirFromRecordsConf = new char[newLen];
             ink_assert(snapDirFromRecordsConf != NULL);
-            ink_snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
+            snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
             if (snap_dir_cpy)
               free(snap_dir_cpy);
           }
@@ -1957,7 +1957,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
       ink_assert(found);
       if (snapDirFromRecordsConf == NULL) {
         snapDirFromRecordsConf = new char[strlen("snapshots")];
-        ink_snprintf(snapDirFromRecordsConf, strlen("snapshots"), "%s", "snapshots");
+        snprintf(snapDirFromRecordsConf, strlen("snapshots"), "%s", "snapshots");
         RecSetRecordString("proxy.config.snapshot_dir", snapDirFromRecordsConf);
       }
       if (strcasecmp(snapDirFromRecordsConf, snap_directory)) {
@@ -1970,7 +1970,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
           newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
           snap_directory = new char[newLen];
           ink_assert(snap_directory != NULL);
-          ink_snprintf(snap_directory, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
+          snprintf(snap_directory, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
           RecSetRecordString("proxy.config.snapshot_dir", snap_dir_cpy);
           if (snap_dir_cpy)
             free(snap_dir_cpy);
@@ -2048,7 +2048,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
               newLen = strlen(tok) + 2;
               absoluteDir = new char[newLen];
               ink_assert(absoluteDir != NULL);
-              ink_snprintf(absoluteDir, newLen, "/%s", tok);
+              snprintf(absoluteDir, newLen, "/%s", tok);
 
 #ifndef _WIN32
               if ((ret_val = mkdir(absoluteDir, DIR_MODE)) < 0) {
@@ -2131,7 +2131,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
         newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
         snap_directory = new char[newLen];
         ink_assert(snap_directory != NULL);
-        ink_snprintf(snap_directory, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
+        snprintf(snap_directory, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
         if (snap_dir_cpy)
           free(snap_dir_cpy);
       }
@@ -2161,7 +2161,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
           newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
           snapDirFromRecordsConf = new char[newLen];
           ink_assert(snapDirFromRecordsConf != NULL);
-          ink_snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
+          snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
           if (snap_dir_cpy)
             free(snap_dir_cpy);
         }
@@ -2186,7 +2186,7 @@ Ldelete:
           newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
           snapDirFromRecordsConf = new char[newLen];
           ink_assert(snapDirFromRecordsConf != NULL);
-          ink_snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
+          snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
           if (snap_dir_cpy)
             free(snap_dir_cpy);
         }
@@ -2365,12 +2365,12 @@ handle_submit_snapshot_to_ftpserver(WebHttpContext * whc, const char *file)
       newLen = strlen(tempDirFromRecordsConf) + strlen(snap_name) + 2;
       char *tmp_ftp_snap = new char[newLen];
       ink_assert(tmp_ftp_snap != NULL);
-      ink_snprintf(tmp_ftp_snap, newLen, "%s%s%s", tempDirFromRecordsConf, DIR_SEP, snap_name);
+      snprintf(tmp_ftp_snap, newLen, "%s%s%s", tempDirFromRecordsConf, DIR_SEP, snap_name);
 
       newLen = strlen(snap_name) + strlen(ftp_remote_dir) + 2;
       newStr = new char[newLen];
       ink_assert(newStr != NULL);
-      ink_snprintf(newStr, newLen, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
+      snprintf(newStr, newLen, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
 
       if ((ret_val = mkdir(tmp_ftp_snap, DIR_MODE)) < 0) {
         mgmt_log(stderr, "[WebHttp::handle_submit_snapshot_to_ftpsystem] Cannot create %s\n", tmp_ftp_snap);
@@ -2403,8 +2403,8 @@ handle_submit_snapshot_to_ftpserver(WebHttpContext * whc, const char *file)
       ink_assert(newStr != NULL);
       ftp_remote_dir_name = new char[remoteDirLength];
       ink_assert(ftp_remote_dir_name != NULL);
-      ink_snprintf(newStr, localDirLength, "/tmp%s%s", DIR_SEP, snap_name);
-      ink_snprintf(ftp_remote_dir_name, remoteDirLength, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
+      snprintf(newStr, localDirLength, "/tmp%s%s", DIR_SEP, snap_name);
+      snprintf(ftp_remote_dir_name, remoteDirLength, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
       snap_result = configFiles->takeSnap(snap_name, "/tmp");
       char ftpOutput[4096];
       INKMgmtFtp("put", ftp_server_name, ftp_login, ftp_password, newStr, ftp_remote_dir_name, ftpOutput);
@@ -2501,7 +2501,7 @@ handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
 
         if (ink_hash_table_lookup(whc->post_data_ht, "FloppyPath", (void **) &floppy_drive_mount_point)) {
           if (floppy_drive_mount_point != NULL)
-            ink_snprintf(unmountPath, sizeof(unmountPath), "/bin/umount %s", floppy_drive_mount_point);
+            snprintf(unmountPath, sizeof(unmountPath), "/bin/umount %s", floppy_drive_mount_point);
           else {
             NOWARN_UNUSED_RETURN(system("sync;sync;sync"));
             linkFile = "/configure/c_snapshot_floppy.ink";
@@ -2575,7 +2575,7 @@ handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
             snapDirFromRecordsConf = new char[newLen];
             ink_assert(snapDirFromRecordsConf != NULL);
             // coverity[noescape]
-            ink_snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
+            snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
             if (snap_dir_cpy)
               free(snap_dir_cpy);
           }
@@ -2841,7 +2841,7 @@ handle_submit_view_logs(WebHttpContext * whc, const char *file)
 
   } else if (strcmp(action, "remove") == 0) {
 
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, "/bin/rm -f %s", logfile);
+    snprintf(tmp, MAX_TMP_BUF_LEN, "/bin/rm -f %s", logfile);
     if (system(tmp)) {
       Debug("web2", "[handle_submit_view_logs] unable to execute \"%s\"", tmp);
       if (!(whc->request_state & WEB_HTTP_STATE_SUBMIT_WARN)) {
@@ -3155,7 +3155,7 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
       rules = new char *[maxRules];
       for (i = 0; i < maxRules; i++) {
         memset(name, 0, 10);
-        ink_snprintf(name, sizeof(name), "rule%d", i);
+        snprintf(name, sizeof(name), "rule%d", i);
 
         if (ink_hash_table_lookup(whc->post_data_ht, name, (void **) &(rules[i]))) {
           // do not delete entry from table yet
@@ -3724,7 +3724,7 @@ handle_submit_otw_upgrade(WebHttpContext * whc, const char *file)
       // upgrade cancelled = return to HTML_OTW_UPGRADE_FILE
       if (ink_hash_table_lookup(whc->post_data_ht, "working_dir", (void **) &working_dir)) {
         // cleanup
-        ink_snprintf(tmp, MAX_TMP_BUF_LEN, "/bin/rm -rf %s", working_dir);
+        snprintf(tmp, MAX_TMP_BUF_LEN, "/bin/rm -rf %s", working_dir);
         NOWARN_UNUSED_RETURN(system(tmp));
       }
       if (submit_from_page)

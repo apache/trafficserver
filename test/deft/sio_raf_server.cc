@@ -33,7 +33,7 @@
 #include <errno.h>
 
 #include "Diags.h"
-#include "ink_snprintf.h"
+#include "snprintf.h"
 #include "rafencode.h"
 
 #include "sio_raf_server.h"
@@ -280,7 +280,7 @@ SioRafServer::send_raf_resp(RafCmd * cmd, int result_code, const char *msg_fmt, 
   sprintf(msg_buf, " %d ", result_code);
   resp_buffer->fill(msg_buf, strlen(msg_buf));
 
-  int r = ink_vsnprintf(msg_buf, 2048, msg_fmt, ap);
+  int r = vsnprintf(msg_buf, 2048, msg_fmt, ap);
 
   // We need to raf encode the message so that it through as a single
   //   argument

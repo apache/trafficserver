@@ -291,7 +291,7 @@ CacheControlRecord::Init(matcher_line * line_info)
        // d_found = true;
       } else {
         errBuf = (char *) xmalloc(errBufLen * sizeof(char));
-        ink_snprintf(errBuf, errBufLen, "%s Invalid action at line %d in cache.config", modulePrefix, line_num);
+        snprintf(errBuf, errBufLen, "%s Invalid action at line %d in cache.config", modulePrefix, line_num);
         return errBuf;
       }
     } else {
@@ -314,7 +314,7 @@ CacheControlRecord::Init(matcher_line * line_info)
 
         } else {
           errBuf = (char *) xmalloc(errBufLen * sizeof(char));
-          ink_snprintf(errBuf, errBufLen, "%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+          snprintf(errBuf, errBufLen, "%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
           return errBuf;
         }
       }
@@ -330,7 +330,7 @@ CacheControlRecord::Init(matcher_line * line_info)
 
   if (d_found == false) {
     errBuf = (char *) xmalloc(errBufLen * sizeof(char));
-    ink_snprintf(errBuf, errBufLen, "%s No directive in cache.config at line %d", modulePrefix, line_num);
+    snprintf(errBuf, errBufLen, "%s No directive in cache.config at line %d", modulePrefix, line_num);
     return errBuf;
   }
   // Process any modifiers to the directive, if they exist
@@ -339,7 +339,7 @@ CacheControlRecord::Init(matcher_line * line_info)
 
     if (tmp != NULL) {
       errBuf = (char *) xmalloc(errBufLen * sizeof(char));
-      ink_snprintf(errBuf, errBufLen, "%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+      snprintf(errBuf, errBufLen, "%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
       return errBuf;
     }
   }

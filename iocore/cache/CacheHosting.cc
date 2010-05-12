@@ -465,7 +465,7 @@ CacheHostRecord::Init(int typ)
     }
   }
   if (!num_cachepart) {
-    ink_snprintf(err, 1024, "error: No partitions found for Cache Type %d\n", type);
+    snprintf(err, 1024, "error: No partitions found for Cache Type %d\n", type);
     IOCORE_SignalError(err, alarmAlready);
     return -1;
   }
@@ -514,7 +514,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
           s++;
           if (!(*s)) {
             const char *errptr = "A partition number expected";
-            ink_snprintf(err, 1024,
+            snprintf(err, 1024,
                          "%s discarding %s entry at line %d :%s",
                          "[CacheHosting]", config_file, line_info->line_num, errptr);
             IOCORE_SignalError(err, alarmAlready);
@@ -525,7 +525,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
           }
         }
         if ((*s<'0') || (*s> '9')) {
-          ink_snprintf(err, 1024,
+          snprintf(err, 1024,
                        "%s discarding %s entry at line %d : bad token [%c]",
                        "[CacheHosting]", config_file, line_info->line_num, *s);
           IOCORE_SignalError(err, alarmAlready);
@@ -563,7 +563,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
             }
           }
           if (!is_part_present) {
-            ink_snprintf(err, 1024,
+            snprintf(err, 1024,
                          "%s discarding %s entry at line %d : bad partition number [%d]",
                          "[CacheHosting]", config_file, line_info->line_num, partition_number);
             IOCORE_SignalError(err, alarmAlready);
@@ -584,7 +584,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
       break;
     }
 
-    ink_snprintf(err, 1024,
+    snprintf(err, 1024,
                  "%s discarding %s entry at line %d : bad token [%s]",
                  "[CacheHosting]", config_file, line_info->line_num, label);
     IOCORE_SignalError(err, alarmAlready);
@@ -592,7 +592,7 @@ CacheHostRecord::Init(matcher_line * line_info, int typ)
   }
 
   if (i == MATCHER_MAX_TOKENS) {
-    ink_snprintf(err, 1024,
+    snprintf(err, 1024,
                  "%s discarding %s entry at line %d : No partitions specified",
                  "[CacheHosting]", config_file, line_info->line_num);
     IOCORE_SignalError(err, alarmAlready);

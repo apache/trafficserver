@@ -1421,7 +1421,7 @@ dumpICPstatEntry(int i, const char *name)
   sval = p->sum;
   cval = p->count;
 
-  ink_printf("%s%s %12b64d %16b64d %17.4f\n",
+  printf("%s%s %12lld %16lld %17.4f\n",
              l > 30 ? "" : &SPACES[48 + l],
              &name[l > 31 ? l - 31 : 0], cval, sval, cval ? (((double) sval) / ((double) cval)) : 0.0);
 }
@@ -1429,7 +1429,7 @@ dumpICPstatEntry(int i, const char *name)
 void
 dumpICPstats()
 {
-  ink_printf("\n");
+  printf("\n");
   int i;
   for (i = 0; i < icp_stat_count; ++i) {
     dumpICPstatEntry(i, ICPstatNames[i]);

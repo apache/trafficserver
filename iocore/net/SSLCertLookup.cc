@@ -99,7 +99,7 @@ SSLCertLookup::buildTable()
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
 
       if (errPtr != NULL) {
-        ink_snprintf(errBuf, 1024, "%s discarding %s entry at line %d : %s",
+        snprintf(errBuf, 1024, "%s discarding %s entry at line %d : %s",
                      moduleName, configFilePath, line_num, errPtr);
         IOCORE_SignalError(errBuf, alarmAlready);
       } else {
@@ -108,7 +108,7 @@ SSLCertLookup::buildTable()
         errPtr = extractIPAndCert(&line_info, &addr, &sslCert, &priKey);
 
         if (errPtr != NULL) {
-          ink_snprintf(errBuf, 1024, "%s discarding %s entry at line %d : %s",
+          snprintf(errBuf, 1024, "%s discarding %s entry at line %d : %s",
                        moduleName, configFilePath, line_num, errPtr);
           IOCORE_SignalError(errBuf, alarmAlready);
         } else {

@@ -7661,7 +7661,7 @@ INKMgmtConfigIntSet(const char *var_name, INKMgmtInt value)
   // construct a buffer
   int buffer_size = strlen(var_name) + 1 + 32 + 1 + 64 + 1;
   buffer = (char *) alloca(buffer_size);
-  ink_snprintf(buffer, buffer_size, "%s %d %lld", var_name, INK_INT, value);
+  snprintf(buffer, buffer_size, "%s %d %lld", var_name, INK_INT, value);
 
   // tell manager to set the configuration; note that this is not
   // transactional (e.g. we return control to the plugin before the

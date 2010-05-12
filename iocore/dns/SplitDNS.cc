@@ -670,7 +670,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
     if (strcasecmp(label, "def_domain") == 0) {
 
       if (NULL != (errPtr = ProcessDefDomain(val))) {
-        ink_snprintf(errBuf, errBufLen, "%s %s at line %d", modulePrefix, errPtr, line_num);
+        snprintf(errBuf, errBufLen, "%s %s at line %d", modulePrefix, errPtr, line_num);
         return errBuf;
       }
 
@@ -683,7 +683,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
     if (strcasecmp(label, "search_list") == 0) {
 
       if (NULL != (errPtr = ProcessDomainSrchList(val))) {
-        ink_snprintf(errBuf, errBufLen, "%s %s at line %d", modulePrefix, errPtr, line_num);
+        snprintf(errBuf, errBufLen, "%s %s at line %d", modulePrefix, errPtr, line_num);
         return errBuf;
       }
 
@@ -696,7 +696,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
     if (strcasecmp(label, "named") == 0) {
 
       if (NULL != (errPtr = ProcessDNSHosts(val))) {
-        ink_snprintf(errBuf, errBufLen, "%s %s at line %d", modulePrefix, errPtr, line_num);
+        snprintf(errBuf, errBufLen, "%s %s at line %d", modulePrefix, errPtr, line_num);
         return errBuf;
       }
 
@@ -707,7 +707,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
 
   if (this->m_servers.x_server_ip[0] == 0) {
 
-    ink_snprintf(errBuf, errBufLen, "%s No server specified in splitdns.config at line %d", modulePrefix, line_num);
+    snprintf(errBuf, errBufLen, "%s No server specified in splitdns.config at line %d", modulePrefix, line_num);
     return errBuf;
 
   }
@@ -721,7 +721,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
                           &m_servers.x_dns_server_port[0],
                           &m_servers.x_def_domain[0], &m_servers.x_domain_srch_list[0]))) {
 
-    ink_snprintf(errBuf, errBufLen,
+    snprintf(errBuf, errBufLen,
                  "Failed to build res record for the servers %ld ... on port %d",
                  m_servers.x_server_ip[0], m_servers.x_dns_server_port[0]);
 
@@ -749,7 +749,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
 
     if (tmp != NULL) {
 
-      ink_snprintf(errBuf, errBufLen, "%s %s at line %d in splitdns.config", modulePrefix, tmp, line_num);
+      snprintf(errBuf, errBufLen, "%s %s at line %d in splitdns.config", modulePrefix, tmp, line_num);
       return errBuf;
     }
   }

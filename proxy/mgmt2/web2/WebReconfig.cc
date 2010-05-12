@@ -26,8 +26,6 @@
 #include "ink_config.h"
 #include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
-#include "ink_snprintf.h"
-
 #include "WebReconfig.h"
 #include "LocalManager.h"
 #include "MgmtUtils.h"
@@ -293,7 +291,7 @@ configAuthOtherUsers()
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.admin.access_control_file", &file);
   if (rec_err != REC_ERR_OKAY)
     return;
-  ink_snprintf(fpath, sizeof(fpath), "%s%s%s", mgmt_path, DIR_SEP, file);
+  snprintf(fpath, sizeof(fpath), "%s%s%s", mgmt_path, DIR_SEP, file);
 
 #if !defined (_WIN32)
   if ((fd =::mgmt_open(fpath, O_RDONLY)) < 0) {
@@ -361,26 +359,26 @@ configAuthOtherUsers()
       goto Labort;
     }
     if (strlen(p) > WEB_HTTP_AUTH_USER_MAX) {
-      ink_snprintf(error_msg, sizeof(error_msg), "Length of username too long, ignoring entry");
+      snprintf(error_msg, sizeof(error_msg), "Length of username too long, ignoring entry");
       goto Lerror;
     }
     ink_strncpy(au->user, p, WEB_HTTP_AUTH_USER_MAX);
     if ((p = st.getNext()) == NULL) {
-      ink_snprintf(error_msg, sizeof(error_msg), "Parse error, ignoring entry");
+      snprintf(error_msg, sizeof(error_msg), "Parse error, ignoring entry");
       goto Lerror;
     }
     if (strlen(p) != WEB_HTTP_AUTH_ENCRYPT_PASSWD_LEN) {
-      ink_snprintf(error_msg, sizeof(error_msg), "Malformed password, ignoring entry");
+      snprintf(error_msg, sizeof(error_msg), "Malformed password, ignoring entry");
       goto Lerror;
     }
     ink_strncpy(au->encrypt_passwd, p, WEB_HTTP_AUTH_ENCRYPT_PASSWD_LEN);
     if ((p = st.getNext()) == NULL) {
-      ink_snprintf(error_msg, sizeof(error_msg), "Parse error, ignoring entry");
+      snprintf(error_msg, sizeof(error_msg), "Parse error, ignoring entry");
       goto Lerror;
     }
     au->access = atoi(p);
     if (au->access < 0 || au->access >= WEB_HTTP_AUTH_ACCESS_MODES) {
-      ink_snprintf(error_msg, sizeof(error_msg), "Invalid access mode '%d', ignoring entry", au->access);
+      snprintf(error_msg, sizeof(error_msg), "Invalid access mode '%d', ignoring entry", au->access);
       goto Lerror;
     }
     // check for duplicates
@@ -391,7 +389,7 @@ configAuthOtherUsers()
         xfree(p);
       }
       ht->mgmt_hash_table_delete(au->user);
-      ink_snprintf(error_msg, sizeof(error_msg), "Duplicate users defined, disabling user '%s'", au->user);
+      snprintf(error_msg, sizeof(error_msg), "Duplicate users defined, disabling user '%s'", au->user);
       // blacklist this username
       blacklist_ht->mgmt_hash_table_insert(au->user, 0);
       goto Lerror;
@@ -409,7 +407,7 @@ configAuthOtherUsers()
   }
 
   if (error) {
-    ink_snprintf(error_msg, sizeof(error_msg), "Parse error(s) reading '%s'; some accounts may be disabled", file);
+    snprintf(error_msg, sizeof(error_msg), "Parse error(s) reading '%s'; some accounts may be disabled", file);
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_MGMT_CONFIG_ERROR, error_msg);
   }
 
@@ -446,7 +444,7 @@ configLangDict()
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.admin.lang_dict", &file);
   if (rec_err != REC_ERR_OKAY)
     return;
-  ink_snprintf(fpath, FILE_NAME_MAX, "%s%s%s", mgmt_path, DIR_SEP, file);
+  snprintf(fpath, FILE_NAME_MAX, "%s%s%s", mgmt_path, DIR_SEP, file);
   fbuf = 0;
   if (WebFileImport_Xmalloc(fpath, &file_buf, &file_size) != WEB_HTTP_ERR_OKAY) {
     mgmt_log(stderr, "[configLangDict] could not find language dictionary "

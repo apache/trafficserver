@@ -44,7 +44,6 @@
 #include "Diags.h"
 #include <time.h>
 #include "ink_platform.h"
-#include "ink_snprintf.h"
 //fixme #include "BaseRecords.h"
 #include "ink_port.h"
 #include "Compatability.h"
@@ -72,9 +71,9 @@ SrcLoc::str(char *buf, int buflen)
   if (!valid || buflen < 1)
     return (NULL);
   if (func != NULL) {
-    ink_snprintf(buf, buflen, "%s:%d (%s)", file, line, func);
+    snprintf(buf, buflen, "%s:%d (%s)", file, line, func);
   } else {
-    ink_snprintf(buf, buflen, "%s:%d", file, line);
+    snprintf(buf, buflen, "%s:%d", file, line);
   }
   buf[buflen - 1] = NUL;
   return (buf);
@@ -290,7 +289,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
       va_copy(ap_scratch, ap);
       char *buffer;
       buffer = format_buf_w_ts;
-      ink_vfprintf(diags_log_fp, buffer, ap_scratch);
+      vfprintf(diags_log_fp, buffer, ap_scratch);
       {
         int len = strlen(buffer);
         if (len > 0 && buffer[len - 1] != '\n') {
@@ -305,7 +304,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
     va_copy(ap_scratch, ap);
     char *buffer;
     buffer = format_buf_w_ts;
-    ink_vfprintf(stdout, buffer, ap_scratch);
+    vfprintf(stdout, buffer, ap_scratch);
     {
       int len = strlen(buffer);
       if (len > 0 && buffer[len - 1] != '\n') {
@@ -319,7 +318,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
     va_copy(ap_scratch, ap);
     char *buffer;
     buffer = format_buf_w_ts;
-    ink_vfprintf(stderr, buffer, ap_scratch);
+    vfprintf(stderr, buffer, ap_scratch);
     {
       int len = strlen(buffer);
       if (len > 0 && buffer[len - 1] != '\n') {
@@ -367,7 +366,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
       priority = LOG_NOTICE;
       break;
     }
-    ink_vsnprintf(syslog_buffer, sizeof(syslog_buffer) - 1, format_buf, ap);
+    vsnprintf(syslog_buffer, sizeof(syslog_buffer) - 1, format_buf, ap);
     syslog(priority, "%s", syslog_buffer);
   }
 #if (HOST_OS == freebsd)

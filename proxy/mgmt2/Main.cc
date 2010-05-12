@@ -149,7 +149,7 @@ check_lockfile()
   //////////////////////////////////////
   // test for presence of server lock //
   //////////////////////////////////////
-  ink_snprintf(lockfile, PATH_MAX, "%s%s%s", system_local_state_dir, DIR_SEP, SERVER_LOCK);
+  snprintf(lockfile, PATH_MAX, "%s%s%s", system_local_state_dir, DIR_SEP, SERVER_LOCK);
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Open(&holding_pid);
   if (err == 1) {
@@ -174,7 +174,7 @@ check_lockfile()
   ///////////////////////////////////////////
   // try to get the exclusive manager lock //
   ///////////////////////////////////////////
-  ink_snprintf(lockfile, sizeof(lockfile), "%s%s%s", system_local_state_dir, DIR_SEP, MANAGER_LOCK);
+  snprintf(lockfile, sizeof(lockfile), "%s%s%s", system_local_state_dir, DIR_SEP, MANAGER_LOCK);
   Lockfile manager_lockfile(lockfile);
   err = manager_lockfile.Get(&holding_pid);
   if (err != 1) {
@@ -627,7 +627,7 @@ main(int argc, char **argv)
 
             j = 0;
             while (i < argc) {
-              ink_snprintf(&tsArgs[j], ((size_of_args + 1) - j), " %s", argv[i]);
+              snprintf(&tsArgs[j], ((size_of_args + 1) - j), " %s", argv[i]);
               j += strlen(argv[i]) + 1;
               ++i;
             }
@@ -696,7 +696,7 @@ main(int argc, char **argv)
 
   check_lockfile();
 
-  ink_snprintf(config_internal_dir, sizeof(config_internal_dir), 
+  snprintf(config_internal_dir, sizeof(config_internal_dir), 
                "%s%sinternal", mgmt_path, DIR_SEP);
   url_init(config_internal_dir);
   mime_init(config_internal_dir);
@@ -913,7 +913,7 @@ main(int argc, char **argv)
     char absolute_vipconf_binary[1024];
     struct stat buf;
 
-    ink_snprintf(absolute_vipconf_binary, sizeof(absolute_vipconf_binary), "%s/vip_config", lmgmt->bin_path);
+    snprintf(absolute_vipconf_binary, sizeof(absolute_vipconf_binary), "%s/vip_config", lmgmt->bin_path);
     if (stat(absolute_vipconf_binary, &buf) < 0) {
       mgmt_elog(stderr, "[main] Unable to stat vip_config for proper permissions\n");
     } else if (!((buf.st_mode & S_ISUID) &&
@@ -942,7 +942,7 @@ main(int argc, char **argv)
   //For OEM releases we check here whether a floppy with the correct config file exists
   //if it does, we first configure the network, then we continue
   char floppyLockFile[256];
-  ink_snprintf(floppyLockFile, sizeof(floppyLockFile), "./etc/trafficserver/internal/floppy.dat");
+  snprintf(floppyLockFile, sizeof(floppyLockFile), "./etc/trafficserver/internal/floppy.dat");
   struct stat lockFileStat;
   FILE *floppy_lock_fd;
   bool floppyRestore = true;
@@ -1525,9 +1525,9 @@ extractConfigInfo(char *mgmt_path, const char *recs_conf, char *userName, int *f
   /* Figure out what user we should run as */
   if (mgmt_path && recs_conf) {
     FILE *fin;
-    ink_snprintf(file, sizeof(file), "%s%s%s.shadow", mgmt_path, DIR_SEP, recs_conf);
+    snprintf(file, sizeof(file), "%s%s%s.shadow", mgmt_path, DIR_SEP, recs_conf);
     if (!(fin = fopen(file, "r"))) {
-      ink_snprintf(file, sizeof(file), "%s%s%s", mgmt_path, DIR_SEP, recs_conf);
+      snprintf(file, sizeof(file), "%s%s%s", mgmt_path, DIR_SEP, recs_conf);
       if (!(fin = fopen(file, "r"))) {
         mgmt_elog(stderr, "[extractConfigInfo] Unable to open config file(%s)\n", file);
         _exit(1);

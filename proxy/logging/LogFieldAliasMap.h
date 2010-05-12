@@ -216,7 +216,7 @@ public:
 /*
 	int retVal;
 	size_t numChars;
-	size_t n = ink_snprintf (buf, bufLen, "%u.%u.%u.%u",
+	size_t n = snprintf (buf, bufLen, "%u.%u.%u.%u",
 				 (ip >> 24) & 0xff, 
 				 (ip >> 16) & 0xff, 
 				 (ip >> 8)  & 0xff, 

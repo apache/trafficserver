@@ -567,7 +567,7 @@ commaStrFromInt(RecInt bytes, char *bufVal)
   int numCommas;
   char *curPtr;
 
-  ink_sprintf(bufVal, "%lld", bytes);
+  sprintf(bufVal, "%lld", bytes);
   len = strlen(bufVal);
 
   // The string is too short to need commas
@@ -605,7 +605,7 @@ commaStrFromLLong(RecLLong bytes, char *bufVal)
   int numCommas;
   char *curPtr;
 
-  ink_sprintf(bufVal, "%lld", bytes);
+  sprintf(bufVal, "%lld", bytes);
   len = strlen(bufVal);
 
   // The string is too short to need commas
@@ -642,7 +642,7 @@ MbytesFromInt(RecInt bytes, char *bufVal)
 {
   RecInt mBytes = bytes / 1048576;
 
-  ink_sprintf(bufVal, "%lld", mBytes);
+  sprintf(bufVal, "%lld", mBytes);
 }
 
 // void MbytesFromLLong(RecLLong bytes, char* bufVal) 
@@ -656,7 +656,7 @@ MbytesFromLLong(RecLLong bytes, char *bufVal)
 {
   RecLLong mBytes = bytes / 1048576;
 
-  ink_sprintf(bufVal, "%lld", mBytes);
+  sprintf(bufVal, "%lld", mBytes);
 }
 
 // void bytesFromInt(RecInt bytes, char* bufVal) 
@@ -792,7 +792,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     } else if (formatOption == 'c') {
       commaStrFromInt(data.rec_int, bufVal);
     } else {
-      ink_sprintf(bufVal, "%lld", data.rec_int);
+      sprintf(bufVal, "%lld", data.rec_int);
     }
     break;
 
@@ -805,7 +805,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     } else if (formatOption == 'c') {
       commaStrFromLLong(data.rec_llong, bufVal);
     } else {
-      ink_sprintf(bufVal, "%lld", data.rec_llong);
+      sprintf(bufVal, "%lld", data.rec_llong);
     }
     break;
 
@@ -818,7 +818,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     } else if (formatOption == 'c') {
       commaStrFromInt(data.rec_counter, bufVal);
     } else {
-      ink_sprintf(bufVal, "%lld", data.rec_counter);
+      sprintf(bufVal, "%lld", data.rec_counter);
     }
     break;
   case RECD_FLOAT:

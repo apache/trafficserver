@@ -632,7 +632,7 @@ clear_rn_cache()
         return CMD_FAILED;
       }
       char remove_cmd[PATH_NAME_MAX + 6];
-      ink_snprintf(remove_cmd, sizeof(remove_cmd), "%s %s/*", "rm -f", rn_cache_path);
+      snprintf(remove_cmd, sizeof(remove_cmd), "%s %s/*", "rm -f", rn_cache_path);
       do {
         result = system(remove_cmd);
       }
@@ -1272,7 +1272,7 @@ struct ShowStats:Continuation
       NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
     ink64 d_p = cval - last_p;
       last_p += d_p;
-      ink_printf("%lld:%lld %lld:%lld %lld:%lld %lld:%lld %lld %lld\n",
+      printf("%lld:%lld %lld:%lld %lld:%lld %lld:%lld %lld %lld\n",
                  d_rb, d_r, d_wb, d_w, d_nrb, d_nr, d_nwb, d_nw, d_o, d_p);
 #ifdef ENABLE_TIME_TRACE
     int i;

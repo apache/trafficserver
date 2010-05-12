@@ -687,7 +687,7 @@ ClusterCom::generateClusterDelta(void)
   if (highest_delta != LastHighestDelta) {
     LastHighestDelta = highest_delta;
     char highest_delta_str[32];
-    ink_snprintf(highest_delta_str, 31, "%ld", highest_delta);
+    snprintf(highest_delta_str, 31, "%ld", highest_delta);
     lmgmt->signalEvent(MGMT_EVENT_HTTP_CLUSTER_DELTA, highest_delta_str);
   }
 
@@ -1485,12 +1485,12 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
 
     switch (rec->data_type) {
     case RECD_COUNTER:
-      ink_sprintf(tmp, "%d:%d: %lld\n", j, rec->data_type, rec->data.rec_counter);
+      sprintf(tmp, "%d:%d: %lld\n", j, rec->data_type, rec->data.rec_counter);
       ink_strncpy(&message[running_sum], tmp, (max - running_sum));
       running_sum += strlen(tmp);
       break;
     case RECD_INT:
-      ink_sprintf(tmp, "%d:%d: %lld\n", j, rec->data_type, rec->data.rec_int);
+      sprintf(tmp, "%d:%d: %lld\n", j, rec->data_type, rec->data.rec_int);
       ink_strncpy(&message[running_sum], tmp, (max - running_sum));
       running_sum += strlen(tmp);
       break;
@@ -2413,7 +2413,7 @@ checkBackDoor(int req_fd, char *message)
         {
           ink64 val = (stype == RECD_COUNTER ? REC_readCounter(variable, &found) : REC_readInteger(variable, &found));
           if (found) {
-            rep_len = ink_snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%lld'\n", variable, val);
+            rep_len = snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%lld'\n", variable, val);
           }
           break;
         }
@@ -2421,7 +2421,7 @@ checkBackDoor(int req_fd, char *message)
         {
           RecFloat val = REC_readFloat(variable, &found);
           if (found) {
-            rep_len = ink_snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%f'\n", variable, val);
+            rep_len = snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%f'\n", variable, val);
           }
           break;
         }
@@ -2429,7 +2429,7 @@ checkBackDoor(int req_fd, char *message)
         {
           char *val = REC_readString(variable, &found);
           if (found) {
-            rep_len = ink_snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%s'\n", variable, val);
+            rep_len = snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%s'\n", variable, val);
             xfree(val);
           }
           break;

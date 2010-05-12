@@ -156,28 +156,28 @@ RafProcessQueryStat(textBuffer * resp, const char *id, int argc, int start_index
           } else {
             RecGetRecordInt(var, &i);
           }
-          ink_snprintf(val_output, 256, "%lld", i);
+          snprintf(val_output, 256, "%lld", i);
           break;
         }
       case RECD_LLONG:
         {
           RecLLong ll = 0;
           RecGetRecordLLong(var, &ll);
-          ink_snprintf(val_output, 256, "%lld", ll);
+          snprintf(val_output, 256, "%lld", ll);
           break;
         }
       case RECD_FLOAT:
         {
           RecFloat f = 0;
           RecGetRecordFloat(var, &f);
-          ink_snprintf(val_output, 256, "%f", f);
+          snprintf(val_output, 256, "%f", f);
           break;
         }
       case RECD_STRING:
         {
           char *s = NULL;
           RecGetRecordString_Xmalloc(var, &s);
-          ink_snprintf(val_output, 256, "\"%s\"", s);
+          snprintf(val_output, 256, "\"%s\"", s);
           val_output[256] = '\0';
           xfree(s);
           break;
@@ -192,7 +192,7 @@ RafProcessQueryStat(textBuffer * resp, const char *id, int argc, int start_index
       // buffer overflow?
       if ((strlen(temp_resp) + strlen(var) + 1 + strlen(val_output)) > (max_resp_len - 1)) {
         char msg[257];
-        ink_snprintf(msg, 256, "response length exceed %d bytes", max_resp_len);
+        snprintf(msg, 256, "response length exceed %d bytes", max_resp_len);
         msg[256] = '\0';
         RafOutputHeader(resp, id, "1");
         RafOutputArg(resp, msg);
@@ -215,7 +215,7 @@ RafProcessQueryStat(textBuffer * resp, const char *id, int argc, int start_index
     RafOutputArg(resp, temp_resp);
   } else {
     char msg[257];
-    ink_snprintf(msg, 256, "%s not found", var);
+    snprintf(msg, 256, "%s not found", var);
     msg[256] = '\0';
     RafOutputHeader(resp, id, "1");
     RafOutputArg(resp, msg);
@@ -241,7 +241,7 @@ RafProcessAlarmCmd(textBuffer * resp, char **argv, int argc)
 
   if (alarm != NULL) {
     RafOutputHeader(resp, argv[0], "0");
-    ink_snprintf(msg, 1024, "%d %s", alarm->type, alarm->desc);
+    snprintf(msg, 1024, "%d %s", alarm->type, alarm->desc);
     rafAlarmListLen--;
     RafOutputArg(resp, msg);
     xfree(alarm);
@@ -325,7 +325,7 @@ RafProcessQueryCmd(textBuffer * resp, char **argv, int argc)
       RafProcessQueryStat(resp, argv[0], argc, qstring_index, argv);
     } else {
       char msg[257];
-      ink_snprintf(msg, 256, "Node %s not found", argv[qstring_index]);
+      snprintf(msg, 256, "Node %s not found", argv[qstring_index]);
       msg[256] = '\0';
       RafOutputHeader(resp, argv[0], "1");
       RafOutputArg(resp, msg);

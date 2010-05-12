@@ -887,7 +887,7 @@ LogAccess::marshal_record(char *record, char *buf)
       LogFloat val = REC_readFloat(record, &found);
 
       if (found) {
-        // ink_snprintf does not support "%e" in the format
+        // snprintf does not support "%e" in the format
         // and we want to use "%e" because it is the most concise
         // notation
 
@@ -1067,7 +1067,7 @@ LogAccess::unmarshal_with_map(LOG_INT code, char *dest, int len, Ptr<LogFieldAli
     if (msg) {
       const int bufSize = 64;
       char invalidCodeMsg[bufSize];
-      codeStrLen = ink_snprintf(invalidCodeMsg, 64, "%s(%d)", msg, code);
+      codeStrLen = snprintf(invalidCodeMsg, 64, "%s(%d)", msg, code);
       if (codeStrLen < bufSize && codeStrLen < len) {
         ink_strncpy(dest, invalidCodeMsg, len);
       } else {
@@ -1248,7 +1248,7 @@ LogAccess::unmarshal_ttmsf(char **buf, char *dest, int len)
 
   LOG_INT val = unmarshal_int(buf);
   float secs = (float) val / 1000;
-  int val_len = ink_snprintf(dest, len, "%.3f", secs);
+  int val_len = snprintf(dest, len, "%.3f", secs);
   return val_len;
 }
 

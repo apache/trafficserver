@@ -235,7 +235,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
   for (i = 0; i < argc; i++) {
     if ((ul = check_remap_option(&argv[i], 1, 0, NULL, &argptr)) == 0) {
       Debug("url_rewrite", "[validate_filter_args] Unknow remap option - %s", argv[i]);
-      ink_snprintf(errStrBuf, errStrBufSize, "Unknown option - \"%s\"", argv[i]);
+      snprintf(errStrBuf, errStrBufSize, "Unknown option - \"%s\"", argv[i]);
       errStrBuf[errStrBufSize - 1] = 0;
       if (new_rule_flg) {
         delete rule;
@@ -245,7 +245,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
     }
     if (!argptr || !argptr[0]) {
       Debug("url_rewrite", "[validate_filter_args] Empty argument in %s", argv[i]);
-      ink_snprintf(errStrBuf, errStrBufSize, "Empty argument in \"%s\"", argv[i]);
+      snprintf(errStrBuf, errStrBufSize, "Empty argument in \"%s\"", argv[i]);
       errStrBuf[errStrBufSize - 1] = 0;
       if (new_rule_flg) {
         delete rule;
@@ -257,7 +257,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
     if (ul & REMAP_OPTFLG_METHOD) {     /* "method=" option */
       if (rule->method_cnt >= ACL_FILTER_MAX_METHODS) {
         Debug("url_rewrite", "[validate_filter_args] Too many \"method=\" filters");
-        ink_snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"method=\" filters!", ACL_FILTER_MAX_METHODS);
+        snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"method=\" filters!", ACL_FILTER_MAX_METHODS);
         errStrBuf[errStrBufSize - 1] = 0;
         if (new_rule_flg) {
           delete rule;
@@ -291,7 +291,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
         m = HTTP_WKSIDX_PUSH;
       else {
         Debug("url_rewrite", "[validate_filter_args] Unknown method value %s", argptr);
-        ink_snprintf(errStrBuf, errStrBufSize, "Unknown method \"%s\"", argptr);
+        snprintf(errStrBuf, errStrBufSize, "Unknown method \"%s\"", argptr);
         errStrBuf[errStrBufSize - 1] = 0;
         if (new_rule_flg) {
           delete rule;
@@ -309,7 +309,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
         j = j - HTTP_WKSIDX_CONNECT;    // get method index
         if (j<0 || j>= ACL_FILTER_MAX_METHODS) {
           Debug("url_rewrite", "[validate_filter_args] Incorrect method index! Method sequence in HTTP.cc is broken");
-          ink_snprintf(errStrBuf, errStrBufSize, "Incorrect method index %d", j);
+          snprintf(errStrBuf, errStrBufSize, "Incorrect method index %d", j);
           errStrBuf[errStrBufSize - 1] = 0;
           if (new_rule_flg) {
             delete rule;
@@ -324,7 +324,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
     } else if (ul & REMAP_OPTFLG_SRC_IP) {      /* "src_ip=" option */
       if (rule->src_ip_cnt >= ACL_FILTER_MAX_SRC_IP) {
         Debug("url_rewrite", "[validate_filter_args] Too many \"src_ip=\" filters");
-        ink_snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"src_ip=\" filters!", ACL_FILTER_MAX_SRC_IP);
+        snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"src_ip=\" filters!", ACL_FILTER_MAX_SRC_IP);
         errStrBuf[errStrBufSize - 1] = 0;
         if (new_rule_flg) {
           delete rule;
@@ -339,7 +339,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
       tmpbuf[sizeof(tmpbuf) - 1] = 0; // important! use copy of argument
       if ((c = ExtractIpRange(tmpbuf, (unsigned long*) &ipi->start, &ipi->end)) != NULL) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
-        ink_snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
+        snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;
         if (new_rule_flg) {
           delete rule;
@@ -365,7 +365,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
         rule->allow_flag = 1;
       } else {
         Debug("url_rewrite", "[validate_filter_args] Unknown argument \"%s\"", argv[i]);
-        ink_snprintf(errStrBuf, errStrBufSize, "Unknown argument \"%s\"", argv[i]);
+        snprintf(errStrBuf, errStrBufSize, "Unknown argument \"%s\"", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;
         if (new_rule_flg) {
           delete rule;
@@ -400,18 +400,18 @@ parse_directive(BUILD_TABLE_INFO * bti, char *errbuf, int errbufsize)
   Debug("url_rewrite", "[parse_directive] Start processing \"%s\" directive", directive);
 
   if (directive[0] != '.' || directive[1] == 0) {
-    ink_snprintf(errbuf, errbufsize, "Invalid directive \"%s\"", directive);
+    snprintf(errbuf, errbufsize, "Invalid directive \"%s\"", directive);
     Debug("url_rewrite", "[parse_directive] %s", errbuf);
     return (const char *) errbuf;
   }
   if (is_inkeylist(&directive[1], "definefilter", "deffilter", "defflt", NULL)) {
     if (bti->paramc < 2) {
-      ink_snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
+      snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
       Debug("url_rewrite", "[parse_directive] %s", errbuf);
       return (const char *) errbuf;
     }
     if (bti->argc < 1) {
-      ink_snprintf(errbuf, errbufsize, "Directive \"%s\" must have filter parameter(s)", directive);
+      snprintf(errbuf, errbufsize, "Directive \"%s\" must have filter parameter(s)", directive);
       Debug("url_rewrite", "[parse_directive] %s", errbuf);
       return (const char *) errbuf;
     }
@@ -430,19 +430,19 @@ parse_directive(BUILD_TABLE_INFO * bti, char *errbuf, int errbufsize)
     }
   } else if (is_inkeylist(&directive[1], "deletefilter", "delfilter", "delflt", NULL)) {
     if (bti->paramc < 2) {
-      ink_snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
+      snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
       Debug("url_rewrite", "[parse_directive] %s", errbuf);
       return (const char *) errbuf;
     }
     acl_filter_rule::delete_byname(&bti->rules_list, (const char *) bti->paramv[1]);
   } else if (is_inkeylist(&directive[1], "usefilter", "activefilter", "activatefilter", "useflt", NULL)) {
     if (bti->paramc < 2) {
-      ink_snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
+      snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
       Debug("url_rewrite", "[parse_directive] %s", errbuf);
       return (const char *) errbuf;
     }
     if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *) bti->paramv[1])) == NULL) {
-      ink_snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
+      snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
       Debug("url_rewrite", "[parse_directive] %s", errbuf);
       return (const char *) errbuf;
     }
@@ -451,18 +451,18 @@ parse_directive(BUILD_TABLE_INFO * bti, char *errbuf, int errbufsize)
     if (is_inkeylist(&directive[1], "unusefilter", "deactivatefilter", "unactivefilter", "deuseflt", "unuseflt", NULL))
   {
     if (bti->paramc < 2) {
-      ink_snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
+      snprintf(errbuf, errbufsize, "Directive \"%s\" must have name argument", directive);
       Debug("url_rewrite", "[parse_directive] %s", errbuf);
       return (const char *) errbuf;
     }
     if ((rp = acl_filter_rule::find_byname(bti->rules_list, (const char *) bti->paramv[1])) == NULL) {
-      ink_snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
+      snprintf(errbuf, errbufsize, "Undefined filter \"%s\" in directive \"%s\"", bti->paramv[1], directive);
       Debug("url_rewrite", "[parse_directive] %s", errbuf);
       return (const char *) errbuf;
     }
     acl_filter_rule::requeue_in_passive_list(&bti->rules_list, rp);
   } else {
-    ink_snprintf(errbuf, errbufsize, "Unknown directive \"%s\"", directive);
+    snprintf(errbuf, errbufsize, "Unknown directive \"%s\"", directive);
     Debug("url_rewrite", "[parse_directive] %s", errbuf);
     return (const char *) errbuf;
   }
@@ -1231,7 +1231,7 @@ bool
                 break;
               };
               if (c && tmp < (int) (sizeof(tmp_redirect_buf) - 1)) {
-                tmp += ink_snprintf(&tmp_redirect_buf[tmp], sizeof(tmp_redirect_buf) - tmp, "%s", c);
+                tmp += snprintf(&tmp_redirect_buf[tmp], sizeof(tmp_redirect_buf) - tmp, "%s", c);
               }
             }
             tmp_redirect_buf[sizeof(tmp_redirect_buf) - 1] = 0;
@@ -1285,7 +1285,7 @@ bool
         tmp = remapped_host_len;
         memcpy(host_hdr_buf, remapped_host, remapped_host_len);
         if (remapped_port) {
-          tmp += ink_snprintf(host_hdr_buf + remapped_host_len, host_buf_len - remapped_host_len - 1,
+          tmp += snprintf(host_hdr_buf + remapped_host_len, host_buf_len - remapped_host_len - 1,
                               ":%d", remapped_port);
         }
       } else {
@@ -1647,7 +1647,7 @@ UrlRewrite::BuildTable()
 
     // Initial verification for number of arguments
     if (bti.paramc<1 || (bti.paramc < 3 && bti.paramv[0][0] != '.') || bti.paramc> BUILD_TABLE_MAX_ARGS) {
-      ink_snprintf(errBuf, sizeof(errBuf), "%s Malformed line %d in file %s", modulePrefix, cln + 1, config_file_path);
+      snprintf(errBuf, sizeof(errBuf), "%s Malformed line %d in file %s", modulePrefix, cln + 1, config_file_path);
       Debug("url_rewrite", "[BuildTable] %s", errBuf);
       SignalError(errBuf, alarm_already);
       cur_line = tokLine(NULL, &tok_state);
@@ -1661,7 +1661,7 @@ UrlRewrite::BuildTable()
     // Check directive keywords (starting from '.')
     if (bti.paramv[0][0] == '.') {
       if ((errStr = parse_directive(&bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
-        ink_snprintf(errBuf, sizeof(errBuf) - 1, "%s Error on line %d - %s", modulePrefix, cln + 1, errStr);
+        snprintf(errBuf, sizeof(errBuf) - 1, "%s Error on line %d - %s", modulePrefix, cln + 1, errStr);
         Debug("url_rewrite", "[BuildTable] %s", errBuf);
         SignalError(errBuf, alarm_already);
       }
@@ -1691,7 +1691,7 @@ UrlRewrite::BuildTable()
       Debug("url_rewrite", "[BuildTable] - FORWARD_MAP_REFERER");
       maptype = FORWARD_MAP_REFERER;
     } else {
-      ink_snprintf(errBuf, sizeof(errBuf) - 1, "%s Unknown mapping type at line %d", modulePrefix, cln + 1);
+      snprintf(errBuf, sizeof(errBuf) - 1, "%s Unknown mapping type at line %d", modulePrefix, cln + 1);
       Debug("url_rewrite", "[BuildTable] - %s", errBuf);
       SignalError(errBuf, alarm_already);
       cur_line = tokLine(NULL, &tok_state);
@@ -1808,7 +1808,7 @@ UrlRewrite::BuildTable()
                   referer_info((char *) bti.paramv[j - 1], &refinfo_error, refinfo_error_buf,
                                sizeof(refinfo_error_buf)));
             if (refinfo_error) {
-              ink_snprintf(errBuf, sizeof(errBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s",
+              snprintf(errBuf, sizeof(errBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s",
                            modulePrefix, bti.paramv[j - 1], cln + 1, refinfo_error_buf);
               SignalError(errBuf, alarm_already);
               delete ri;
@@ -1951,7 +1951,7 @@ UrlRewrite::BuildTable()
         url_mapping *u_mapping;
         for (int i = 0; h->h_addr_list[i] != NULL; i++) {
           ipv4_name[0] = '\0';
-          int tmp = ink_snprintf(ipv4_name, sizeof(ipv4_name), "%d.%d.%d.%d",
+          int tmp = snprintf(ipv4_name, sizeof(ipv4_name), "%d.%d.%d.%d",
                                  (unsigned char) h->h_addr_list[i][0],
                                  (unsigned char) h->h_addr_list[i][1],
                                  (unsigned char) h->h_addr_list[i][2],
@@ -1993,7 +1993,7 @@ UrlRewrite::BuildTable()
         for (int i = 0; h->h_addr_list[i] != NULL; i++) {
           ipv4_name[0] = '\0';
           int tmp;
-          tmp = ink_snprintf(ipv4_name, sizeof(ipv4_name), "%d.%d.%d.%d",
+          tmp = snprintf(ipv4_name, sizeof(ipv4_name), "%d.%d.%d.%d",
                              (unsigned char) h->h_addr_list[i][0],
                              (unsigned char) h->h_addr_list[i][1],
                              (unsigned char) h->h_addr_list[i][2], (unsigned char) h->h_addr_list[i][3]);
@@ -2029,7 +2029,7 @@ UrlRewrite::BuildTable()
         for (int i = 0; h->h_addr_list[i] != NULL; i++) {
           ipv4_name[0] = '\0';
           int tmp;
-          tmp = ink_snprintf(ipv4_name, sizeof(ipv4_name), "%d.%d.%d.%d",
+          tmp = snprintf(ipv4_name, sizeof(ipv4_name), "%d.%d.%d.%d",
                              (unsigned char) h->h_addr_list[i][0],
                              (unsigned char) h->h_addr_list[i][1],
                              (unsigned char) h->h_addr_list[i][2], (unsigned char) h->h_addr_list[i][3]);
@@ -2097,7 +2097,7 @@ UrlRewrite::BuildTable()
     continue;
 
   MAP_ERROR:
-    ink_snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
+    snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
     SignalError(errBuf, alarm_already);
     if (new_mapping) {
       delete new_mapping;
@@ -2257,13 +2257,13 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     }
   } else {
     if (unlikely(!mp || (check_remap_option(argv, argc, REMAP_OPTFLG_PLUGIN, &idx) & REMAP_OPTFLG_PLUGIN) == 0)) {
-      ink_snprintf(errbuf, errbufsize, "Can't find remap plugin keyword or \"url_mapping\" is NULL");
+      snprintf(errbuf, errbufsize, "Can't find remap plugin keyword or \"url_mapping\" is NULL");
       return -1;                /* incorrect input data - almost impossible case */
     }
   }
 
   if (unlikely((c = strchr(argv[idx], (int) '=')) == NULL || !(*(++c)))) {
-    ink_snprintf(errbuf, errbufsize, "Can't find remap plugin file name in \"@%s\"", argv[idx]);
+    snprintf(errbuf, errbufsize, "Can't find remap plugin file name in \"@%s\"", argv[idx]);
     return -2;                  /* incorrect input data */
   }
 
@@ -2281,7 +2281,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     Debug("remap_plugin", "stat successful on %s using that", default_path);
     c = &default_path[0];
   } else if (stat(c, &stat_buf) != 0) {
-    ink_snprintf(errbuf, errbufsize, "Can't find remap plugin file \"%s\"", c);
+    snprintf(errbuf, errbufsize, "Can't find remap plugin file \"%s\"", c);
     return -3;                  /* incorrect input data */
   }
 
@@ -2302,7 +2302,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
 #else
       err = dlerror();
 #endif
-      ink_snprintf(errbuf, errbufsize, "Can't load plugin \"%s\" - %s", c, err ? err : "Unknown dlopen() error");
+      snprintf(errbuf, errbufsize, "Can't load plugin \"%s\" - %s", c, err ? err : "Unknown dlopen() error");
       return -4;
     }
     pi->fp_tsremap_init = (_tsremap_init *) dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT);
@@ -2313,14 +2313,14 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     pi->fp_tsremap_os_response = (_tsremap_os_response *) dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE);
 
     if (!pi->fp_tsremap_init) {
-      ink_snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_INIT, c);
+      snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_INIT, c);
       retcode = -10;
     } else if (!pi->fptsremap_new_instance) {
-      ink_snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"",
+      snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"",
                    TSREMAP_FUNCNAME_NEW_INSTANCE, c);
       retcode = -11;
     } else if (!pi->fp_tsremap_remap) {
-      ink_snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_REMAP, c);
+      snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_REMAP, c);
       retcode = -12;
     }
     if (retcode) {
@@ -2338,7 +2338,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     if ((retcode = pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1)) != 0) {
       Error("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
       exit(-1);                 //see my comment re: exit() about 60 lines down
-      ink_snprintf(errbuf, errbufsize, "Remap plugin initialization error - %d:%s", retcode,
+      snprintf(errbuf, errbufsize, "Remap plugin initialization error - %d:%s", retcode,
                    tmpbuf[0] ? tmpbuf : "Unknown error");
       dlclose(pi->dlh);
       pi->dlh = NULL;
@@ -2348,19 +2348,19 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
   }
 
   if (!pi->dlh) {
-    ink_snprintf(errbuf, errbufsize, "Can't load plugin \"%s\"", c);
+    snprintf(errbuf, errbufsize, "Can't load plugin \"%s\"", c);
     return -5;
   }
 
   if ((err = mp->fromURL.string_get(NULL)) == NULL) {
-    ink_snprintf(errbuf, errbufsize, "Can't load fromURL from URL class");
+    snprintf(errbuf, errbufsize, "Can't load fromURL from URL class");
     return -6;
   }
   parv[parc++] = xstrdup(err);
   xfree(err);
 
   if ((err = mp->toURL.string_get(NULL)) == NULL) {
-    ink_snprintf(errbuf, errbufsize, "Can't load toURL from URL class");
+    snprintf(errbuf, errbufsize, "Can't load toURL from URL class");
     return -6;
   }
   parv[parc++] = xstrdup(err);
@@ -2404,7 +2404,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
 
   if (retcode != 0) {
     mp->delete_instance(pi);
-    ink_snprintf(errbuf, errbufsize, "Can't create new remap instance for plugin \"%s\" - %s", c,
+    snprintf(errbuf, errbufsize, "Can't create new remap instance for plugin \"%s\" - %s", c,
                  tmpbuf[0] ? tmpbuf : "Unknown plugin error");
     Error("Failed to create new instance for plugin %s (non-zero retval)... bailing out", pi->path);
  	 	 /**

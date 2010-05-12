@@ -113,7 +113,7 @@ convertRules(INKFileNameT file, INKIntList errRules, char *rules[])
     }
     if (rule) {
       memset(num, 0, 10);
-      ink_snprintf(num, 10, "[%d] ", *index);
+      snprintf(num, 10, "[%d] ", *index);
       buf.copyFrom(num, strlen(num));
       buf.copyFrom(rule, strlen(rule));
       buf.copyFrom("<BR>", strlen("<BR>"));
@@ -144,25 +144,25 @@ formatArmSecurityRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Connection Type=%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Connection Type=%s%s", tokens[1], HTML_DELIM);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[2], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[2], HTML_DELIM);
   }
   if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Destination IP=%s%s", tokens[3], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Destination IP=%s%s", tokens[3], HTML_DELIM);
   }
   if (strlen(tokens[4]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Open Ports=%s%s", tokens[4], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Open Ports=%s%s", tokens[4], HTML_DELIM);
   }
   if (strlen(tokens[5]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Dest Ports=%s%s", tokens[5], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Dest Ports=%s%s", tokens[5], HTML_DELIM);
   }
   if (strlen(tokens[6]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source Ports=%s", tokens[6]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source Ports=%s", tokens[6]);
   }
 
   return xstrdup(buf);
@@ -185,13 +185,13 @@ formatBypassRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[1], HTML_DELIM);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Destination IP=%s", tokens[2]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Destination IP=%s", tokens[2]);
   }
 
   return xstrdup(buf);
@@ -212,42 +212,42 @@ formatCacheRule(char *rule)
     return NULL;
   memset(buf, 0, MAX_RULE_LENGTH);
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[1]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[1]);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[2], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[2], HTML_DELIM);
   } else {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
   }
   if (strlen(tokens[10]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Time Period=%s%s", tokens[10], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Time Period=%s%s", tokens[10], HTML_DELIM);
   }
   if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Time=%s%s", tokens[3], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Time=%s%s", tokens[3], HTML_DELIM);
   }
   if (strlen(tokens[4]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[4], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[4], HTML_DELIM);
   }
   if (strlen(tokens[5]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Prefix=%s%s", tokens[5], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Prefix=%s%s", tokens[5], HTML_DELIM);
   }
   if (strlen(tokens[6]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Suffix=%s%s", tokens[6], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Suffix=%s%s", tokens[6], HTML_DELIM);
   }
   if (strlen(tokens[7]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Port=%s%s", tokens[7], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Port=%s%s", tokens[7], HTML_DELIM);
   }
   if (strlen(tokens[8]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Method=%s%s", tokens[8], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Method=%s%s", tokens[8], HTML_DELIM);
   }
   if (strlen(tokens[9]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[9], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[9], HTML_DELIM);
   }
   if (strlen(tokens[11]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[11]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[11]);
   }
 
   return xstrdup(buf);
@@ -269,75 +269,75 @@ formatFilterRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[1]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[1]);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[2], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[2], HTML_DELIM);
   } else {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
   }
 
   if (strlen(tokens[10]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Header Type=%s%s", tokens[10], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Header Type=%s%s", tokens[10], HTML_DELIM);
   }
   if (strlen(tokens[11]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Server Name=%s%s", tokens[11], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Server Name=%s%s", tokens[11], HTML_DELIM);
   }
   if (strlen(tokens[12]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "DN=%s%s", tokens[12], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "DN=%s%s", tokens[12], HTML_DELIM);
   }
   if (strlen(tokens[14]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "UID Filter=%s%s", tokens[14], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "UID Filter=%s%s", tokens[14], HTML_DELIM);
   }
   if (strlen(tokens[15]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Attribute Name=%s%s", tokens[15], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Attribute Name=%s%s", tokens[15], HTML_DELIM);
   }
   if (strlen(tokens[16]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Attribute Value=%s%s", tokens[16], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Attribute Value=%s%s", tokens[16], HTML_DELIM);
   }
   if (strlen(tokens[13]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Realm=%s%s", tokens[13], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Realm=%s%s", tokens[13], HTML_DELIM);
   }
   if (strlen(tokens[17]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Redirect URL=%s%s", tokens[17], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Redirect URL=%s%s", tokens[17], HTML_DELIM);
   }
   if (strlen(tokens[18]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Bind DN=%s%s", tokens[18], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Bind DN=%s%s", tokens[18], HTML_DELIM);
   }
   if (strlen(tokens[19]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Bind Password=%s%s", tokens[19], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Bind Password=%s%s", tokens[19], HTML_DELIM);
   }
   if (strlen(tokens[20]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Bind Password File=%s%s", tokens[20], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Bind Password File=%s%s", tokens[20], HTML_DELIM);
   }
 
 
   if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Time=%s%s", tokens[3], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Time=%s%s", tokens[3], HTML_DELIM);
   }
   if (strlen(tokens[4]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[4], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[4], HTML_DELIM);
   }
   if (strlen(tokens[5]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Prefix=%s%s", tokens[5], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Prefix=%s%s", tokens[5], HTML_DELIM);
   }
   if (strlen(tokens[6]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Suffix=%s%s", tokens[6], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Suffix=%s%s", tokens[6], HTML_DELIM);
   }
   if (strlen(tokens[7]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Port=%s%s", tokens[7], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Port=%s%s", tokens[7], HTML_DELIM);
   }
   if (strlen(tokens[8]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Method=%s%s", tokens[8], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Method=%s%s", tokens[8], HTML_DELIM);
   }
   if (strlen(tokens[9]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[9], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[9], HTML_DELIM);
   }
   if (strlen(tokens[21]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[17]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[17]);
   }
 
   return xstrdup(buf);
@@ -359,15 +359,15 @@ formatHostingRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[0]);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[1], HTML_DELIM);
   } else {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Partitions=%s", tokens[2]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Partitions=%s", tokens[2]);
   }
 
   return xstrdup(buf);
@@ -389,28 +389,28 @@ formatIcpRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Peer Hostname=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Peer Hostname=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Peer IP=%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Peer IP=%s%s", tokens[1], HTML_DELIM);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Peer Type=%s%s", tokens[2], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Peer Type=%s%s", tokens[2], HTML_DELIM);
   }
   if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Proxy Port=%s%s", tokens[3], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Proxy Port=%s%s", tokens[3], HTML_DELIM);
   }
   if (strlen(tokens[4]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "ICP Port=%s%s", tokens[4], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "ICP Port=%s%s", tokens[4], HTML_DELIM);
   }
   if (strlen(tokens[5]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Multicast=%s%s", tokens[5], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Multicast=%s%s", tokens[5], HTML_DELIM);
   }
   if (strlen(tokens[6]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Multicast IP=%s%s", tokens[6], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Multicast IP=%s%s", tokens[6], HTML_DELIM);
   }
   if (strlen(tokens[7]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Multicast TTL=%s", tokens[7]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Multicast TTL=%s", tokens[7]);
   }
 
   return xstrdup(buf);
@@ -432,10 +432,10 @@ formatIpAllowRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "IP Action=%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "IP Action=%s%s", tokens[1], HTML_DELIM);
   }
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s", tokens[0]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s", tokens[0]);
   }
 
   return xstrdup(buf);
@@ -457,30 +457,30 @@ formatIpnatRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Interface=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Interface=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[6]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Connection Type=%s%s", tokens[6], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Connection Type=%s%s", tokens[6], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source=%s", tokens[1]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source=%s", tokens[1]);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "/%s", tokens[2]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "/%s", tokens[2]);
   }
   if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s", tokens[3]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s", tokens[3]);
   }
-  ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
+  snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
   if (strlen(tokens[4]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Destination=%s", tokens[4]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Destination=%s", tokens[4]);
   }
   if (strlen(tokens[5]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s", tokens[5]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s", tokens[5]);
   }
-  ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
+  snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
   if (strlen(tokens[7]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Protocol=%s", tokens[7]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Protocol=%s", tokens[7]);
   }
 
   return xstrdup(buf);
@@ -502,10 +502,10 @@ formatMgmtAllowRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "IP Action=%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "IP Action=%s%s", tokens[1], HTML_DELIM);
   }
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s", tokens[0]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s", tokens[0]);
   }
 
 
@@ -528,47 +528,47 @@ formatParentRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[0]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[0]);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[1], HTML_DELIM);
   } else {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
   }
 
   if (strlen(tokens[10]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Parents=%s%s", tokens[10], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Parents=%s%s", tokens[10], HTML_DELIM);
   }
   if (strlen(tokens[11]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Round Robin=%s%s", tokens[11], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Round Robin=%s%s", tokens[11], HTML_DELIM);
   }
   if (strlen(tokens[12]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Go Direct=%s%s", tokens[12], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Go Direct=%s%s", tokens[12], HTML_DELIM);
   }
 
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Time=%s%s", tokens[2], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Time=%s%s", tokens[2], HTML_DELIM);
   }
   if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[3], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Source IP=%s%s", tokens[3], HTML_DELIM);
   }
   if (strlen(tokens[4]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Prefix=%s%s", tokens[4], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Prefix=%s%s", tokens[4], HTML_DELIM);
   }
   if (strlen(tokens[5]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Suffix=%s%s", tokens[5], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Suffix=%s%s", tokens[5], HTML_DELIM);
   }
   if (strlen(tokens[6]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Port=%s%s", tokens[6], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Port=%s%s", tokens[6], HTML_DELIM);
   }
   if (strlen(tokens[7]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Method=%s%s", tokens[7], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Method=%s%s", tokens[7], HTML_DELIM);
   }
   if (strlen(tokens[8]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[8], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[8], HTML_DELIM);
   }
   if (strlen(tokens[9]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[9]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[9]);
   }
 
   return xstrdup(buf);
@@ -590,18 +590,18 @@ formatPartitionRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Partition=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Partition=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[1], HTML_DELIM);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Size=%s", tokens[2]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Size=%s", tokens[2]);
   }
   if (strcmp(tokens[3], "absolute") == 0)
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), " MB");
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), " MB");
   else if (strcmp(tokens[3], "percent") == 0)
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), " %%");
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), " %%");
 
   return xstrdup(buf);
 }
@@ -622,39 +622,39 @@ formatRemapRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
   }
-  ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "From URL=");
+  snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "From URL=");
   if (strlen(tokens[1]) > 0) {  // scheme
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s://", tokens[1]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s://", tokens[1]);
   }
   if (strlen(tokens[2]) > 0) {  // from path
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", tokens[2]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", tokens[2]);
   }
   if (strlen(tokens[3]) > 0) {  // from port
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s", tokens[3]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s", tokens[3]);
   }
   if (strlen(tokens[4]) > 0) {  // from path
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "/%s", tokens[4]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "/%s", tokens[4]);
   }
-  ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
+  snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
 
-  ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "To URL=");
+  snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "To URL=");
   if (strlen(tokens[1]) > 0) {  // scheme
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s://", tokens[1]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s://", tokens[1]);
   }
   if (strlen(tokens[5]) > 0) {  // to host
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", tokens[5]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", tokens[5]);
   }
   if (strlen(tokens[6]) > 0) {  // to port
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s", tokens[6]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), ":%s", tokens[6]);
   }
   if (strlen(tokens[7]) > 0) {  // to path
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "/%s", tokens[7]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "/%s", tokens[7]);
   }
 
   if (strlen(tokens[8]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[8]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[8]);
   }
 
   return xstrdup(buf);
@@ -676,22 +676,22 @@ formatSocksRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Rule Type=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "User=%s%s", tokens[2], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "User=%s%s", tokens[2], HTML_DELIM);
   }
   if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Password=%s%s", tokens[3], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Password=%s%s", tokens[3], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Destination IP=%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Destination IP=%s%s", tokens[1], HTML_DELIM);
   }
   if (strlen(tokens[4]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Socsk Servers=%s%s", tokens[4], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Socsk Servers=%s%s", tokens[4], HTML_DELIM);
   }
   if (strlen(tokens[5]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Round Robin=%s", tokens[5]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Round Robin=%s", tokens[5]);
   }
 
   return xstrdup(buf);
@@ -713,21 +713,21 @@ formatSplitDnsRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[0]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s=", tokens[0]);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s%s", tokens[1], HTML_DELIM);
   } else {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "%s", HTML_DELIM);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "DNS Server IP(s)=%s%s", tokens[2], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "DNS Server IP(s)=%s%s", tokens[2], HTML_DELIM);
   }
   if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Default Domain Name=%s%s", tokens[3], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Default Domain Name=%s%s", tokens[3], HTML_DELIM);
   }
   if (strlen(tokens[4]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Domain Search List=%s", tokens[4]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Domain Search List=%s", tokens[4]);
   }
 
   return xstrdup(buf);
@@ -749,19 +749,19 @@ formatUpdateRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "URL=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "URL=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Headers=%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Headers=%s%s", tokens[1], HTML_DELIM);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Offset Hour=%s%s", tokens[2], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Offset Hour=%s%s", tokens[2], HTML_DELIM);
   }
   if (strlen(tokens[3]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Interval=%s%s", tokens[3], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Interval=%s%s", tokens[3], HTML_DELIM);
   }
   if (strlen(tokens[4]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Recursion Depth=%s", tokens[4]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Recursion Depth=%s", tokens[4]);
   }
 
   return xstrdup(buf);
@@ -783,13 +783,13 @@ formatVaddrsRule(char *rule)
   memset(buf, 0, MAX_RULE_LENGTH);
 
   if (strlen(tokens[0]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Virtual IP=%s%s", tokens[0], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Virtual IP=%s%s", tokens[0], HTML_DELIM);
   }
   if (strlen(tokens[1]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Ethernet Interface=%s%s", tokens[1], HTML_DELIM);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Ethernet Interface=%s%s", tokens[1], HTML_DELIM);
   }
   if (strlen(tokens[2]) > 0) {
-    ink_snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Sub-Interface=%s", tokens[2]);
+    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Sub-Interface=%s", tokens[2]);
   }
 
   return xstrdup(buf);
@@ -1162,107 +1162,107 @@ updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
   if (!rule_type) {
     valid = false;              // ERROR: this must be specified! 
   } else {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Rule Type=%s%s", rule_type, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Rule Type=%s%s", rule_type, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "pd_type", (void **) &pd_type);
   if (table_lookup_value && !pd_type) {
     valid = false;              // ERROR: this must be specified! 
   } else {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "%s=", pd_type);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "%s=", pd_type);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "pd_val", (void **) &pd_val);
   if (table_lookup_value && !pd_val) {
     valid = false;              // ERROR: this must be specified! 
   } else {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "%s%s", pd_val, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "%s%s", pd_val, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "time", (void **) &time);
   if (table_lookup_value && time) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Time=%s%s", time, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Time=%s%s", time, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "src_ip", (void **) &src_ip);
   if (table_lookup_value && src_ip) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Source IP=%s%s", src_ip, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Source IP=%s%s", src_ip, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "prefix", (void **) &prefix);
   if (table_lookup_value && prefix) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Prefix=%s%s", prefix, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Prefix=%s%s", prefix, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "suffix", (void **) &suffix);
   if (table_lookup_value && suffix) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Suffix=%s%s", suffix, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Suffix=%s%s", suffix, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "port", (void **) &port);
   if (table_lookup_value && port) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Port=%s%s", port, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Port=%s%s", port, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "method", (void **) &method);
   if (table_lookup_value && method) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Method=%s%s", method, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Method=%s%s", method, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "scheme", (void **) &scheme);
   if (table_lookup_value && scheme) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Scheme=%s%s", scheme, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Scheme=%s%s", scheme, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "mixt", (void **) &mixt);
   if (table_lookup_value && mixt) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "MIXT Scheme=%s%s", mixt, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "MIXT Scheme=%s%s", mixt, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "hdr_type", (void **) &hdr_type);
   // coverity[DEADCODE]
   if (table_lookup_value && hdr_type) {
     valid = false;              // ERROR: this should not be specified! 
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Header Type=%s%s", hdr_type,
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Header Type=%s%s", hdr_type,
                  HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "server", (void **) &server);
   if (table_lookup_value && server) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Server Name=%s%s", server, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Server Name=%s%s", server, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "dn", (void **) &dn);
   if (table_lookup_value && dn) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "DN=%s%s", dn, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "DN=%s%s", dn, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "realm", (void **) &realm);
   if (table_lookup_value && realm) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Realm=%s%s", realm, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Realm=%s%s", realm, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "uid_filter", (void **) &uid_filter);
   if (table_lookup_value && uid_filter) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "UID Filter=%s%s", uid_filter,
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "UID Filter=%s%s", uid_filter,
                  HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "attr_name", (void **) &attr_name);
   if (table_lookup_value && attr_name) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Attribute Name=%s%s", attr_name,
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Attribute Name=%s%s", attr_name,
                  HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "attr_val", (void **) &attr_val);
   if (table_lookup_value && attr_val) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Attribute Value=%s%s", attr_val,
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Attribute Value=%s%s", attr_val,
                  HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "redirect_url", (void **) &redirect_url);
   if (table_lookup_value && redirect_url) {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Redirect URL=%s%s", redirect_url,
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Redirect URL=%s%s", redirect_url,
                  HTML_DELIM);
   }
 
@@ -1270,14 +1270,14 @@ updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
   if (table_lookup_value && !bind_dn) {
     valid = false;              // ERROR: should have 
   } else {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Bind DN=%s%s", bind_dn, HTML_DELIM);
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Bind DN=%s%s", bind_dn, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "bind_pwd", (void **) &bind_pwd);
   if (table_lookup_value && !bind_pwd) {
     valid = false;              // ERROR: should have    
   } else {
-    ink_snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Bind Password=%s%s", bind_pwd,
+    snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Bind Password=%s%s", bind_pwd,
                  HTML_DELIM);
   }
 

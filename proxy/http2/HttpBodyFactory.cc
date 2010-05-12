@@ -654,7 +654,7 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
 
     if ((entry_buffer->d_name)[0] == '.')
       continue;
-    ink_snprintf(subdir, sizeof(subdir), "%s" DIR_SEP "%s", set_dir, entry_buffer->d_name);
+    snprintf(subdir, sizeof(subdir), "%s" DIR_SEP "%s", set_dir, entry_buffer->d_name);
     status = stat(subdir, &stat_buf);
     if (status != 0)
       continue;                 // can't stat
@@ -702,7 +702,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   // ensure a .body_factory_info file exists //
   /////////////////////////////////////////////
 
-  ink_snprintf(path, sizeof(path), "%s" DIR_SEP ".body_factory_info", tmpl_dir);
+  snprintf(path, sizeof(path), "%s" DIR_SEP ".body_factory_info", tmpl_dir);
   status = stat(path, &stat_buf);
   if ((status < 0) || !S_ISREG(stat_buf.st_mode)) {
     ink_closedir(dir);
@@ -731,7 +731,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
 
     if (strchr(entry_buffer->d_name, '#') == NULL)
       continue;
-    ink_snprintf(path, sizeof(path), "%s/%s", tmpl_dir, entry_buffer->d_name);
+    snprintf(path, sizeof(path), "%s/%s", tmpl_dir, entry_buffer->d_name);
     status = stat(path, &stat_buf);
     if (status != 0)
       continue;                 // can't stat
@@ -795,7 +795,7 @@ HttpBodySet::init(char *set, char *dir)
 
   char buffer[1024], name[1025], value[1024];
 
-  ink_snprintf(info_path, sizeof(info_path), "%s" DIR_SEP ".body_factory_info", dir);
+  snprintf(info_path, sizeof(info_path), "%s" DIR_SEP ".body_factory_info", dir);
   fd = ink_open(info_path, O_RDONLY | _O_ATTRIB_NORMAL);
   if (fd < 0)
     return (-1);
@@ -976,7 +976,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   // ensure this is actually a file //
   ////////////////////////////////////
 
-  ink_snprintf(path, sizeof(path), "%s/%s", dir, file);
+  snprintf(path, sizeof(path), "%s/%s", dir, file);
   // coverity[fs_check_call]
   status = stat(path, &stat_buf);
   if (status != 0)

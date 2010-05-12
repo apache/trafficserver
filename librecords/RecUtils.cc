@@ -154,7 +154,7 @@ RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, ink64 data_ink64)
       if (data_dst->rec_string) {
         xfree(data_dst->rec_string);
       }
-      ink_snprintf(buf, 32, "%lld", data_ink64);
+      snprintf(buf, 32, "%lld", data_ink64);
       data_dst->rec_string = xstrdup(buf);
       break;
     }
@@ -194,7 +194,7 @@ RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float)
       if (data_dst->rec_string) {
         xfree(data_dst->rec_string);
       }
-      ink_snprintf(buf, 32, "%f", data_float);
+      snprintf(buf, 32, "%f", data_float);
       data_dst->rec_string = xstrdup(buf);
       break;
     }

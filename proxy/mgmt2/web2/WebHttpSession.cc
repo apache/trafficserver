@@ -32,7 +32,6 @@
 #include "ink_platform.h"
 #include "ink_resource.h"
 #include "ink_hash_table.h"
-#include "ink_snprintf.h"
 #include "ink_hash_table.h"
 
 #include "INKMgmtAPI.h"
@@ -208,9 +207,9 @@ WebHttpMakeSessionKey_Xmalloc()
 {
   char *session_key_str = (char *) xmalloc(SESSION_KEY_LEN + 2);
   long session_key = WebRand();
-  // note: ink_snprintf takes the buffer length, not the string
+  // note: snprintf takes the buffer length, not the string
   // length? Add 2 to xmalloc above to be safe.  ^_^
-  ink_snprintf(session_key_str, SESSION_KEY_LEN + 1, "%x", session_key);
+  snprintf(session_key_str, SESSION_KEY_LEN + 1, "%lx", session_key);
   return session_key_str;
 }
 

@@ -165,7 +165,7 @@ sendHTTPRequest(int sock, char *req, inku64 timeout)
   size_t length = 0;
 
   memset(request, 0, BUFSIZ);
-  ink_snprintf(request, BUFSIZ, "GET %s HTTP/1.0\r\n\r\n", req);
+  snprintf(request, BUFSIZ, "GET %s HTTP/1.0\r\n\r\n", req);
   length = strlen(request);
 
 #ifdef _WIN32

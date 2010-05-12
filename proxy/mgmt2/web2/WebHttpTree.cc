@@ -32,7 +32,6 @@
 #include "ink_config.h"
 #include "ink_platform.h"
 #include "ink_hash_table.h"
-#include "ink_snprintf.h"
 #include "ink_rwlock.h"
 
 #include "MgmtUtils.h"
@@ -369,7 +368,7 @@ build_and_index_tree(InkHashTable * mode_ht, InkHashTable * menu_ht, InkHashTabl
           }
           ink_debug_assert(item_count <= WHT_MAX_ITEMS);
           // add 'menu_block' to output
-          ink_snprintf(tmp, WHT_MAX_BUF_LEN, "menu_block[%d]=", menu_id);
+          snprintf(tmp, WHT_MAX_BUF_LEN, "menu_block[%d]=", menu_id);
           mode->tree_js->copyFrom(tmp, strlen(tmp));
           // look at items
           item = menu->items;
@@ -385,7 +384,7 @@ build_and_index_tree(InkHashTable * mode_ht, InkHashTable * menu_ht, InkHashTabl
                 link->tab_id = link_id;
                 if (link_id == 0) {
                   // link item to first link in list
-                  ink_snprintf(tmp, WHT_MAX_BUF_LEN, "\"%s|%s?mode=%d&menu=%d&item=%d&tab=%d%s\"\n",
+                  snprintf(tmp, WHT_MAX_BUF_LEN, "\"%s|%s?mode=%d&menu=%d&item=%d&tab=%d%s\"\n",
                                menu->node.name, link->file_name, link->mode_id, link->menu_id,
                                link->item_id, link->tab_id, link->query);
                   mode->tree_js->copyFrom(tmp, strlen(tmp));
@@ -408,7 +407,7 @@ build_and_index_tree(InkHashTable * mode_ht, InkHashTable * menu_ht, InkHashTabl
             while (item->node.name != NULL) {
               if (is_enabled(item->node.enabled)) {
                 if (!write_menu_name) { // output menu name
-                  ink_snprintf(tmp, WHT_MAX_BUF_LEN, "\"%s;\" +\n", menu->node.name);
+                  snprintf(tmp, WHT_MAX_BUF_LEN, "\"%s;\" +\n", menu->node.name);
                   mode->tree_js->copyFrom(tmp, strlen(tmp));
                   write_menu_name = true;
                 }
@@ -421,7 +420,7 @@ build_and_index_tree(InkHashTable * mode_ht, InkHashTable * menu_ht, InkHashTabl
                     link->item_id = item_id;
                     link->tab_id = link_id;
                     if (link_id == 0) {
-                      ink_snprintf(tmp, WHT_MAX_BUF_LEN, "  \"%s|%s?mode=%d&menu=%d&item=%d&tab=%d%s",
+                      snprintf(tmp, WHT_MAX_BUF_LEN, "  \"%s|%s?mode=%d&menu=%d&item=%d&tab=%d%s",
                                    item->node.name, link->file_name, link->mode_id, link->menu_id,
                                    link->item_id, link->tab_id, link->query);
                       mode->tree_js->copyFrom(tmp, strlen(tmp));
@@ -563,7 +562,7 @@ WebHttpRenderTabs(textBuffer * output, int active_mode)
       item_node *item = &menu->items[0];
       link_node *link = &item->links[0];
 
-      ink_snprintf(buf, WHT_MAX_BUF_LEN, "%s%s", link->file_name, link->query);
+      snprintf(buf, WHT_MAX_BUF_LEN, "%s%s", link->file_name, link->query);
 
       if (default_link)
         xfree(default_link);
@@ -659,7 +658,7 @@ WebHttpRenderHtmlTabs(textBuffer * output, char *file_link, int active_tab)
     active_tab = link_count - 1;
 
   // compute the width percentage
-  ink_snprintf(width_pcnt, 8, "%d%%", 100 / WHT_MAX_LINKS);
+  snprintf(width_pcnt, 8, "%d%%", 100 / WHT_MAX_LINKS);
 
   // render items
   HtmlRndrTableOpen(output, "95%", 0, 0, 0);
@@ -699,7 +698,7 @@ WebHttpRenderHtmlTabs(textBuffer * output, char *file_link, int active_tab)
       HtmlRndrSpanClose(output);
       HtmlRndrTdClose(output);
     } else {
-      ink_snprintf(buf, WHT_MAX_BUF_LEN, "%s?mode=%d&menu=%d&item=%d&tab=%d%s",
+      snprintf(buf, WHT_MAX_BUF_LEN, "%s?mode=%d&menu=%d&item=%d&tab=%d%s",
                    link_array[i]->file_name, link_array[i]->mode_id, link_array[i]->menu_id,
                    link_array[i]->item_id, link_array[i]->tab_id, link_array[i]->query);
       HtmlRndrTdOpen(output, HTML_CSS_UNHILIGHT_COLOR, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, width_pcnt, "20", 0);
@@ -762,7 +761,7 @@ WebHttpGetLink_Xmalloc(const char *file_link)
   link_node *link;
   char *buf = (char *) xmalloc(WHT_MAX_BUF_LEN + 1);
   if (ink_hash_table_lookup(g_link_ht, file_link, (void **) &link)) {
-    ink_snprintf(buf, WHT_MAX_BUF_LEN, "%s?mode=%d&menu=%d&item=%d&tab=%d%s",
+    snprintf(buf, WHT_MAX_BUF_LEN, "%s?mode=%d&menu=%d&item=%d&tab=%d%s",
                  link->file_name, link->mode_id, link->menu_id, link->item_id, link->tab_id, link->query);
   } else {
     *buf = '\0';
@@ -780,7 +779,7 @@ WebHttpGetLinkQuery_Xmalloc(char *file_link)
   link_node *link;
   char *buf = (char *) xmalloc(WHT_MAX_BUF_LEN + 1);
   if (ink_hash_table_lookup(g_link_ht, file_link, (void **) &link)) {
-    ink_snprintf(buf, WHT_MAX_BUF_LEN, "mode=%d&menu=%d&item=%d&tab=%d%s",
+    snprintf(buf, WHT_MAX_BUF_LEN, "mode=%d&menu=%d&item=%d&tab=%d%s",
                  link->mode_id, link->menu_id, link->item_id, link->tab_id, link->query);
   } else {
     *buf = '\0';

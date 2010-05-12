@@ -150,7 +150,7 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
       offset = zone / -60;
       sign = '+';
     }
-    int glen = ink_snprintf(gmtstr, 16, "%c%.2d%.2d",
+    int glen = snprintf(gmtstr, 16, "%c%.2d%.2d",
                             sign, offset / 60, offset % 60);
 
     strftime(timebuf, 64 - glen, "%d/%b/%Y:%H:%M:%S ", tms);
@@ -272,7 +272,7 @@ LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
     snprintf(msg_buf, sizeof(msg_buf), "No Message");
   } else {
     va_start(ap, msg);
-    ink_vsnprintf(msg_buf, LOG_MAX_FORMATTED_LINE, msg, ap);
+    vsnprintf(msg_buf, LOG_MAX_FORMATTED_LINE, msg, ap);
     va_end(ap);
   }
 
@@ -511,7 +511,7 @@ LogUtils::timestamp_to_hex_str(unsigned ip, char *buf, size_t bufLen, size_t * n
 int
 LogUtils::ip_to_str (unsigned ip, char *str, unsigned len)
 {
-    int ret = ink_snprintf (str, len, "%u.%u.%u.%u",
+    int ret = snprintf (str, len, "%u.%u.%u.%u",
 			    (ip >> 24) & 0xff, 
 			    (ip >> 16) & 0xff, 
 			    (ip >> 8)  & 0xff, 

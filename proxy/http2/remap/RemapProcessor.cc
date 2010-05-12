@@ -231,7 +231,7 @@ RemapProcessor::finish_remap(HttpTransact::State * s)
             };
 
             if (c && tmp < (int) (sizeof(tmp_redirect_buf) - 1)) {
-              tmp += ink_snprintf(&tmp_redirect_buf[tmp], sizeof(tmp_redirect_buf) - tmp, "%s", c);
+              tmp += snprintf(&tmp_redirect_buf[tmp], sizeof(tmp_redirect_buf) - tmp, "%s", c);
             }
           }
           tmp_redirect_buf[sizeof(tmp_redirect_buf) - 1] = 0;
@@ -284,7 +284,7 @@ RemapProcessor::finish_remap(HttpTransact::State * s)
       tmp = remapped_host_len;
       memcpy(host_hdr_buf, remapped_host, remapped_host_len);
       if (remapped_port) {
-        tmp += ink_snprintf(host_hdr_buf + remapped_host_len, host_buf_len - remapped_host_len - 1, ":%d", remapped_port);
+        tmp += snprintf(host_hdr_buf + remapped_host_len, host_buf_len - remapped_host_len - 1, ":%d", remapped_port);
     }
     } else {
       tmp = host_buf_len;

@@ -93,8 +93,6 @@ libinktomi___a_SOURCES = \
   ink_resource.h \
   ink_rwlock.cc \
   ink_rwlock.h \
-  ink_snprintf.cc \
-  ink_snprintf.h \
   ink_sock.cc \
   ink_sock.h \
   ink_spill.cc \

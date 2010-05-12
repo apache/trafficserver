@@ -463,7 +463,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     } else if (formatOption == 'c') {
       commaStrFromInt(data.int_data, bufVal);
     } else {
-      ink_sprintf(bufVal, "%lld", data.int_data);
+      sprintf(bufVal, "%lld", data.int_data);
     }
     break;
   case RECD_LLONG:
@@ -475,7 +475,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     } else if (formatOption == 'c') {
       commaStrFromInt(data.int_data, bufVal);
     } else {
-      ink_sprintf(bufVal, "%lld", data.int_data);
+      sprintf(bufVal, "%lld", data.int_data);
     }
     break;
   case RECD_COUNTER:
@@ -487,7 +487,7 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     } else if (formatOption == 'c') {
       commaStrFromInt(data.counter_data, bufVal);
     } else {
-      ink_sprintf(bufVal, "%lld", data.counter_data);
+      sprintf(bufVal, "%lld", data.counter_data);
     }
     break;
   case RECD_FLOAT:
@@ -1094,7 +1094,7 @@ overviewPage::generateTable(WebHttpContext * whc)
     // objects served
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
     current->varIntFromName("proxy.node.user_agents_total_documents_served", &objs);
-    ink_snprintf(outBuf, sizeof(outBuf), "%.10b64d", objs);
+    snprintf(outBuf, sizeof(outBuf), "%.10lld", objs);
     output->copyFrom(outBuf, strlen(outBuf));
     HtmlRndrTdClose(output);
 
@@ -1107,35 +1107,35 @@ overviewPage::generateTable(WebHttpContext * whc)
       found = true;
     }
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
-    ink_snprintf(outBuf, 16, "%.2f", ops);
+    snprintf(outBuf, 16, "%.2f", ops);
     output->copyFrom(outBuf, strlen(outBuf));
     HtmlRndrTdClose(output);
 
     // hit rate
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
     current->varFloatFromName("proxy.node.cache_hit_ratio_avg_10s", &hits);
-    ink_snprintf(outBuf, sizeof(outBuf), "%.2f%% ", hits * 100.0);
+    snprintf(outBuf, sizeof(outBuf), "%.2f%% ", hits * 100.0);
     output->copyFrom(outBuf, strlen(outBuf));
     HtmlRndrTdClose(output);
 
     // throughput
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
     current->varFloatFromName("proxy.node.client_throughput_out", &mbps);
-    ink_snprintf(outBuf, sizeof(outBuf), "%.2f", mbps);
+    snprintf(outBuf, sizeof(outBuf), "%.2f", mbps);
     output->copyFrom(outBuf, strlen(outBuf));
     HtmlRndrTdClose(output);
 
     // hit latency
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
     current->varIntFromName("proxy.node.http.transaction_msec_avg_10s.hit_fresh", &t_hit);
-    ink_snprintf(outBuf, sizeof(outBuf), "%lld", t_hit);
+    snprintf(outBuf, sizeof(outBuf), "%lld", t_hit);
     output->copyFrom(outBuf, strlen(outBuf));
     HtmlRndrTdClose(output);
 
     // miss latency
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
     current->varIntFromName("proxy.node.http.transaction_msec_avg_10s.miss_cold", &t_miss);
-    ink_snprintf(outBuf, sizeof(outBuf), "%lld", t_miss);
+    snprintf(outBuf, sizeof(outBuf), "%lld", t_miss);
     output->copyFrom(outBuf, strlen(outBuf));
     HtmlRndrTdClose(output);
 
@@ -1203,7 +1203,7 @@ overviewPage::generateTableCLI(textBuffer * output)
     else
       hostLen = domainStart - hostName;
 
-    ink_snprintf(namebuf, hostLen + 1, nameFormat, hostName);
+    snprintf(namebuf, hostLen + 1, nameFormat, hostName);
     namebuf[hostLen] = '\0';
 
     // Add On/Off/Down status
@@ -1248,8 +1248,8 @@ overviewPage::generateTableCLI(textBuffer * output)
       found = true;
     }
 
-    ink_snprintf(docCountBuf, sizeof(docCountBuf), "%lld", docCount);
-    ink_snprintf(loadMetricBuf, sizeof(loadMetricBuf), "%lld", loadMetric);
+    snprintf(docCountBuf, sizeof(docCountBuf), "%lld", docCount);
+    snprintf(loadMetricBuf, sizeof(loadMetricBuf), "%lld", loadMetric);
 
     // create output status line
     // coverity[non_const_printf_format_string]
@@ -1329,10 +1329,10 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
   SEPARATOR;
-  ink_snprintf(tmp, sizeof(tmp), "%.1f%% (%.1f%% ", hits * 100.0, hit_f * 100.0);
+  snprintf(tmp, sizeof(tmp), "%.1f%% (%.1f%% ", hits * 100.0, hit_f * 100.0);
   output->copyFrom(tmp, strlen(tmp));
   HtmlRndrText(output, dict_ht, HTML_ID_FRESH);
-  ink_snprintf(tmp, sizeof(tmp), ", %.1f%% ", hit_r * 100.0);
+  snprintf(tmp, sizeof(tmp), ", %.1f%% ", hit_r * 100.0);
   output->copyFrom(tmp, strlen(tmp));
   HtmlRndrText(output, dict_ht, HTML_ID_REFRESH);
   output->copyFrom(")", 1);
@@ -1345,7 +1345,7 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
   SEPARATOR;
-  ink_snprintf(tmp, sizeof(tmp), "%.1f%%", errs * 100.0);
+  snprintf(tmp, sizeof(tmp), "%.1f%%", errs * 100.0);
   output->copyFrom(tmp, strlen(tmp));
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
@@ -1356,7 +1356,7 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
   SEPARATOR;
-  ink_snprintf(tmp, sizeof(tmp), "%.1f%%", abts * 100.0);
+  snprintf(tmp, sizeof(tmp), "%.1f%%", abts * 100.0);
   output->copyFrom(tmp, strlen(tmp));
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
@@ -1379,7 +1379,7 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
   SEPARATOR;
-  ink_snprintf(tmp, sizeof(tmp), "%lld", clients);
+  snprintf(tmp, sizeof(tmp), "%lld", clients);
   output->copyFrom(tmp, strlen(tmp));
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
@@ -1390,7 +1390,7 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
   HtmlRndrTdClose(output);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
   SEPARATOR;
-  ink_snprintf(tmp, sizeof(tmp), "%lld", servers);
+  snprintf(tmp, sizeof(tmp), "%lld", servers);
   output->copyFrom(tmp, strlen(tmp));
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);

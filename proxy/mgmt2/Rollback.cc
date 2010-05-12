@@ -106,7 +106,7 @@ root_access_needed(root_access_needed_)
   }
   int configDirLen = strlen(configTmp) + 4;
   configDir = new char[configDirLen];
-  ink_snprintf(configDir, configDirLen, "%s%s", configTmp, DIR_SEP);
+  snprintf(configDir, configDirLen, "%s%s", configTmp, DIR_SEP);
 
 
   ink_mutex_init(&fileAccessLock, "RollBack Mutex");
@@ -161,7 +161,7 @@ root_access_needed(root_access_needed_)
 #endif
         if (fd >= 0) {
           alarmMsg = (char *) xmalloc(2048);
-          ink_snprintf(alarmMsg, 2048, "Created zero length place holder for config file %s", fileName);
+          snprintf(alarmMsg, 2048, "Created zero length place holder for config file %s", fileName);
           mgmt_log(stderr, "[RollBack::Rollback] %s\n", alarmMsg);
           lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
           xfree(alarmMsg);
@@ -227,13 +227,13 @@ root_access_needed(root_access_needed_)
     if (testFD < 0) {
 
       // We are unable to either read or write the file
-      ink_snprintf(alarmMsg, 2048, "Unable to read or write config file");
+      snprintf(alarmMsg, 2048, "Unable to read or write config file");
       mgmt_log(stderr, "[Rollback::Rollback] %s %s: %s\n", alarmMsg, fileName, strerror(errno));
       lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
 
     } else {
       // Read is OK and write fails
-      ink_snprintf(alarmMsg, 2048, "Config file is read-only");
+      snprintf(alarmMsg, 2048, "Config file is read-only");
       mgmt_log(stderr, "[Rollback::Rollback] %s : %s\n", alarmMsg, fileName);
       lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
       closeFile(testFD);
@@ -801,7 +801,7 @@ Rollback::findVersions_ml(ExpandingArray * listNames)
   // Append '*' as a wildcard for FindFirstFile()
   size_t configDirLen = strlen(configDir) + 2;
   searchPattern = new char[configDirLen];
-  ink_snprintf(searchPattern, configDirLen, "%s*", configDir);
+  snprintf(searchPattern, configDirLen, "%s*", configDir);
   HANDLE hDInfo = FindFirstFile(searchPattern, &W32FD);
 
   if (INVALID_HANDLE_VALUE == hDInfo) {

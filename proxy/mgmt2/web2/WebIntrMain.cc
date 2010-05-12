@@ -254,7 +254,7 @@ setUpLogging()
 	       == REC_ERR_OKAY);
     if ((err = stat(log_dir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
-      ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+      snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
       if ((err = stat(system_log_dir, &s)) < 0) {
         mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
@@ -267,7 +267,7 @@ setUpLogging()
     }
   } 
 
-  ink_snprintf(log_file, sizeof(log_file), "%s%s%s", system_log_dir, DIR_SEP, "lm.log");
+  snprintf(log_file, sizeof(log_file), "%s%s%s", system_log_dir, DIR_SEP, "lm.log");
 
   int diskFD = open(log_file, O_WRONLY | O_APPEND | O_CREAT, 0644);
 
@@ -722,7 +722,7 @@ webIntr_main(void *x)
   adminContext.pluginDocRootLen = strlen(ts_base_dir) + strlen(plugin_dir) + strlen(DIR_SEP);
   adminContext.pluginDocRoot = (char *) xmalloc(adminContext.pluginDocRootLen + 1);
 
-  ink_snprintf(adminContext.pluginDocRoot, adminContext.pluginDocRootLen + 1,
+  snprintf(adminContext.pluginDocRoot, adminContext.pluginDocRootLen + 1,
                "%s%s%s", ts_base_dir, DIR_SEP, plugin_dir);
   xfree(plugin_dir);
 
@@ -850,8 +850,8 @@ webIntr_main(void *x)
 
   bzero(api_sock_path, 1024);
   bzero(event_sock_path, 1024);
-  ink_snprintf(api_sock_path, sizeof(api_sock_path), "%s%smgmtapisocket", system_local_state_dir, DIR_SEP);
-  ink_snprintf(event_sock_path, sizeof(event_sock_path), "%s%seventapisocket", system_local_state_dir, DIR_SEP);
+  snprintf(api_sock_path, sizeof(api_sock_path), "%s%smgmtapisocket", system_local_state_dir, DIR_SEP);
+  snprintf(event_sock_path, sizeof(event_sock_path), "%s%seventapisocket", system_local_state_dir, DIR_SEP);
 
   // INKqa12562: MgmtAPI sockets should be created with 775 permission
   mode_t oldmask = umask(S_IWOTH);

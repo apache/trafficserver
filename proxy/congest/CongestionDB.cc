@@ -605,11 +605,11 @@ remove_congested_entry(char *buf, MIOBuffer * out_buffer)
   inku64 key;
   if (strcasecmp(buf, "all") == 0) {
     remove_all_congested_entry();
-    len = ink_snprintf(msg, MSG_LEN, "all entries in congestion control table removed\n");
+    len = snprintf(msg, MSG_LEN, "all entries in congestion control table removed\n");
     // coverity[secure_coding]
   } else if (sscanf(buf, "key=%llu", &key) == 1) {
     remove_congested_entry(key);
-    len = ink_snprintf(msg, MSG_LEN, "key %llu removed\n", key);
+    len = snprintf(msg, MSG_LEN, "key %llu removed\n", key);
   } else if (strncasecmp(buf, "host=", 5) == 0) {
     char *p = buf + 5;
     char *prefix = strchr(p, '/');
@@ -621,7 +621,7 @@ remove_congested_entry(char *buf, MIOBuffer * out_buffer)
     }
     key = make_key(p, strlen(p), 0, prefix, prelen);
     remove_congested_entry(key);
-    len = ink_snprintf(msg, MSG_LEN, "host=%s prefix=%s removed\n", p, prefix ? prefix : "(nil)");
+    len = snprintf(msg, MSG_LEN, "host=%s prefix=%s removed\n", p, prefix ? prefix : "(nil)");
   } else if (strncasecmp(buf, "ip=", 3) == 0) {
     char *p = buf + 3;
     ip_addr_t ip = 0;
@@ -634,11 +634,11 @@ remove_congested_entry(char *buf, MIOBuffer * out_buffer)
     }
     ip = htonl(inet_addr(p));
     if (ip == (ip_addr_t) - 1 && strcmp(p, "255.255.255.255") != 0) {
-      len = ink_snprintf(msg, MSG_LEN, "invalid ip: %s\n", buf);
+      len = snprintf(msg, MSG_LEN, "invalid ip: %s\n", buf);
     } else {
       key = make_key(NULL, 0, ip, prefix, prelen);
       remove_congested_entry(key);
-      len = ink_snprintf(msg, MSG_LEN, "ip=%s prefix=%s removed\n", p, prefix ? prefix : "(nil)");
+      len = snprintf(msg, MSG_LEN, "ip=%s prefix=%s removed\n", p, prefix ? prefix : "(nil)");
     }
   }
   out_buffer->write(msg, len);

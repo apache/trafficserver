@@ -2326,7 +2326,7 @@ INKReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, i
   }
 
   /* sending the HTTP request via the established socket */
-  ink_snprintf(request, BUFSIZE, "http://%s:%d/%s", httpHost, httpPort, httpPath);
+  snprintf(request, BUFSIZE, "http://%s:%d/%s", httpHost, httpPort, httpPath);
   if ((status = sendHTTPRequest(hFD, request, (inku64) timeout)) != INK_ERR_OKAY)
     goto END;
 
@@ -2373,7 +2373,7 @@ INKLookupFromCacheUrl(INKString url, INKString * info)
     err = INK_ERR_FAIL;
     goto END;
   }
-  ink_snprintf(request, BUFSIZE, "http://{cache}/lookup_url?url=%s", url);
+  snprintf(request, BUFSIZE, "http://{cache}/lookup_url?url=%s", url);
   if ((err = sendHTTPRequest(fd, request, (inku64) timeout)) != INK_ERR_OKAY)
     goto END;
 
@@ -2411,7 +2411,7 @@ INKLookupFromCacheUrlRegex(INKString url_regex, INKString * list)
     err = INK_ERR_FAIL;
     goto END;
   }
-  ink_snprintf(request, BUFSIZE, "http://{cache}/lookup_regex?url=%s", url_regex);
+  snprintf(request, BUFSIZE, "http://{cache}/lookup_regex?url=%s", url_regex);
   if ((err = sendHTTPRequest(fd, request, (inku64) timeout)) != INK_ERR_OKAY)
     goto END;
 
@@ -2448,7 +2448,7 @@ INKDeleteFromCacheUrl(INKString url, INKString * info)
     err = INK_ERR_FAIL;
     goto END;
   }
-  ink_snprintf(request, BUFSIZE, "http://{cache}/delete_url?url=%s", url);
+  snprintf(request, BUFSIZE, "http://{cache}/delete_url?url=%s", url);
   if ((err = sendHTTPRequest(fd, request, (inku64) timeout)) != INK_ERR_OKAY)
     goto END;
 
@@ -2486,7 +2486,7 @@ INKDeleteFromCacheUrlRegex(INKString url_regex, INKString * list)
     err = INK_ERR_FAIL;
     goto END;
   }
-  ink_snprintf(request, BUFSIZE, "http://{cache}/delete_regex?url=%s", url_regex);
+  snprintf(request, BUFSIZE, "http://{cache}/delete_regex?url=%s", url_regex);
   if ((err = sendHTTPRequest(fd, request, (inku64) timeout)) != INK_ERR_OKAY)
     goto END;
 
@@ -2523,7 +2523,7 @@ INKInvalidateFromCacheUrlRegex(INKString url_regex, INKString * list)
     err = INK_ERR_FAIL;
     goto END;
   }
-  ink_snprintf(request, BUFSIZE, "http://{cache}/invalidate_regex?url=%s", url_regex);
+  snprintf(request, BUFSIZE, "http://{cache}/invalidate_regex?url=%s", url_regex);
   if ((err = sendHTTPRequest(fd, request, (inku64) timeout)) != INK_ERR_OKAY)
     goto END;
 

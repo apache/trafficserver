@@ -420,7 +420,7 @@ RafCont::process_raf_cmd(const char *cmd_s, const char *cmd_e)
   }
 
   char msg[257];
-  ink_snprintf(msg, 256, "Unknown cmd '%s' sent", cmd_ptrs[1]);
+  snprintf(msg, 256, "Unknown cmd '%s' sent", cmd_ptrs[1]);
   msg[256] = '\0';
   output_raf_error(cmd_ptrs[0], msg);
   free_cmd_strs(cmd_ptrs, argc);
@@ -450,28 +450,28 @@ RafCont::process_query_stat(const char *id, char *var)
         } else {
           i = REC_readInteger(var, &tmp);
         }
-        ink_snprintf(val_output, 256, "%lld", i);
+        snprintf(val_output, 256, "%lld", i);
         break;
       }
     case RECD_LLONG:
       {
         bool tmp = false;
         RecLLong i = REC_readLLong(var, &tmp);
-        ink_snprintf(val_output, 256, "%lld", i);
+        snprintf(val_output, 256, "%lld", i);
         break;
       }
     case RECD_FLOAT:
       {
         bool tmp = false;
         RecFloat f = REC_readFloat(var, &tmp);
-        ink_snprintf(val_output, 256, "%f", f);
+        snprintf(val_output, 256, "%f", f);
         break;
       }
     case RECD_STRING:
       {
         bool tmp;
         char *s = REC_readString(var, &tmp);
-        ink_snprintf(val_output, 256, "%s", s);
+        snprintf(val_output, 256, "%s", s);
         val_output[256] = '\0';
         xfree(s);
         break;
@@ -488,7 +488,7 @@ RafCont::process_query_stat(const char *id, char *var)
     output_raf_arg(val_output);
   } else {
     char msg[257];
-    ink_snprintf(msg, 256, "%s not found", var);
+    snprintf(msg, 256, "%s not found", var);
     msg[256] = '\0';
     output_raf_error(id, msg);
   }
@@ -521,7 +521,7 @@ RafCont::process_congestion_cmd(char **argv, int argc)
     process_congest_remove_entries(argv + qstring_index, argc - qstring_index);
   } else {
     char msg[257];
-    ink_snprintf(msg, 256, "Node %s not found", argv[qstring_index]);
+    snprintf(msg, 256, "Node %s not found", argv[qstring_index]);
     msg[256] = '\0';
     output_raf_error(argv[0], msg);
   }
@@ -608,7 +608,7 @@ RafCont::process_query_cmd(char **argv, int argc)
       process_query_stat(argv[0], var);
     } else {
       char msg[257];
-      ink_snprintf(msg, 256, "Node %s not found", argv[qstring_index]);
+      snprintf(msg, 256, "Node %s not found", argv[qstring_index]);
       msg[256] = '\0';
       output_raf_error(argv[0], msg);
     }

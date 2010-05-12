@@ -202,7 +202,7 @@ send_cli_congest_request(const char *arguments)
   }
   // send RAF query request 
   memset(request, 0, 257);
-  ink_snprintf(request, 256, "0 congest %s\n", arguments);
+  snprintf(request, 256, "0 congest %s\n", arguments);
   raf_writen(s, request, strlen(request));
 
   return s;

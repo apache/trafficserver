@@ -321,7 +321,7 @@ LogHost::create_orphan_LogFile_object()
   ink_assert(name_buf != NULL);
   // NT: replace ':'s with '-'s.  This change is necessary because
   // NT doesn't like filenames with ':'s in them.  ^_^
-  ink_snprintf(name_buf, name_len, "%s%s%s-%u.%s",
+  snprintf(name_buf, name_len, "%s%s%s-%u.%s",
                m_object_filename, LOGFILE_SEPARATOR_STRING, name(), port(), orphan_ext);
 
   // should check for conflicts with orphan filename

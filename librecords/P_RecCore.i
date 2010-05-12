@@ -24,7 +24,6 @@
 #include "TextBuffer.h"
 #include "Tokenizer.h"
 #include "ink_string.h"
-#include "ink_snprintf.h"
 
 #include "P_RecCompatibility.h"
 #include "P_RecUtils.h"
@@ -988,17 +987,17 @@ RecSyncConfigToTB(textBuffer * tb)
             switch (r->data_type) {
             case RECD_INT:
               tb->copyFrom("INT ", 4);
-              ink_snprintf(b, 1023, "%lld", r->data.rec_int);
+              snprintf(b, 1023, "%lld", r->data.rec_int);
               tb->copyFrom(b, strlen(b));
               break;
             case RECD_LLONG:
               tb->copyFrom("LLONG ", 6);
-              ink_snprintf(b, 1023, "%lld", r->data.rec_llong);
+              snprintf(b, 1023, "%lld", r->data.rec_llong);
               tb->copyFrom(b, strlen(b));
               break;
             case RECD_FLOAT:
               tb->copyFrom("FLOAT ", 6);
-              ink_snprintf(b, 1023, "%f", r->data.rec_float);
+              snprintf(b, 1023, "%f", r->data.rec_float);
               tb->copyFrom(b, strlen(b));
               break;
             case RECD_STRING:
@@ -1011,7 +1010,7 @@ RecSyncConfigToTB(textBuffer * tb)
               break;
             case RECD_COUNTER:
               tb->copyFrom("COUNTER ", 8);
-              ink_snprintf(b, 1023, "%lld", r->data.rec_counter);
+              snprintf(b, 1023, "%lld", r->data.rec_counter);
               tb->copyFrom(b, strlen(b));
               break;
             default:

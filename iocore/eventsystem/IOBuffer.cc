@@ -56,7 +56,7 @@ init_buffer_allocators()
       a = s;
 
     name = NEW(new char[64]);
-    ink_snprintf(name, 64, "ioBufAllocator[%d]", i);
+    snprintf(name, 64, "ioBufAllocator[%d]", i);
     ioBufAllocator[i].re_init(name, s, n, a);
   }
 }

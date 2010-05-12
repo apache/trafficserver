@@ -256,6 +256,6 @@ MultiFile::newPathString(const char *s1, const char *s2)
   newLen = strlen(s1) + strlen(s2) + 2;
   newStr = new char[newLen];
   ink_assert(newStr != NULL);
-  ink_snprintf(newStr, newLen, "%s%s%s", s1, DIR_SEP, s2);
+  snprintf(newStr, newLen, "%s%s%s", s1, DIR_SEP, s2);
   return newStr;
 }

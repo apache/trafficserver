@@ -545,7 +545,7 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
   int scratch;
   char p[PATH_NAME_MAX + 1], buf[256];
 
-  ink_snprintf(p, PATH_NAME_MAX + 1, "%s%s%s%s%s", system_config_directory,
+  snprintf(p, PATH_NAME_MAX + 1, "%s%s%s%s%s", system_config_directory,
                DIR_SEP, "internal", DIR_SEP, config_filename);
 
   int fd =::open(p, O_RDONLY);
@@ -772,11 +772,11 @@ Lfail:
     if (!silent) {
       char msg[PATH_NAME_MAX + 1024];
       if (reconfigure) {
-        ink_snprintf(msg, PATH_NAME_MAX + 1024, "%s: [%s] %s: disabling database\n"
+        snprintf(msg, PATH_NAME_MAX + 1024, "%s: [%s] %s: disabling database\n"
                      "You may need to 'reconfigure' your cache manually.  Please refer to\n"
                      "the 'Configuration' chapter in the manual.", err, config_filename, serr ? serr : "");
       } else {
-        ink_snprintf(msg, PATH_NAME_MAX + 1024, "%s: [%s] %s: reinitializing database", err, config_filename,
+        snprintf(msg, PATH_NAME_MAX + 1024, "%s: [%s] %s: reinitializing database", err, config_filename,
                      serr ? serr : "");
       }
       IOCORE_SignalWarning(REC_SIGNAL_CONFIG_ERROR, msg);

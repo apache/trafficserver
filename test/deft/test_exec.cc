@@ -28,7 +28,7 @@
 #include <netdb.h>
 
 #include "ink_args.h"
-#include "ink_snprintf.h"
+#include "snprintf.h"
 #include "ink_hrtime.h"
 #include "Diags.h"
 #include "Tokenizer.h"
@@ -152,7 +152,7 @@ TE_output_log_line(const char *start, const char *end, const char *iname, const 
   sprintf(&(timestamp_buf[19]), ".%03d", (int) (tp.tv_usec / 1000));
 
   char prefix_buffer[1024];
-  int r = ink_snprintf(prefix_buffer, 1024, "[%s %s %s] ",
+  int r = snprintf(prefix_buffer, 1024, "[%s %s %s] ",
                        timestamp_buf, iname, stream_id);
 
   sio_buffer output_buffer;
@@ -191,7 +191,7 @@ TE_log_line_va(const char *level, const char *format_str, va_list ap)
 {
 
   char line_buf[2048];
-  int r = ink_vsnprintf(line_buf, 2047, format_str, ap);
+  int r = vsnprintf(line_buf, 2047, format_str, ap);
   if (r >= 2047) {
     line_buf[2047] = '\0';
     r = 2047;
@@ -725,7 +725,7 @@ push_package(HostRecord * hrec, const char *pkg_name, const char *pkg_filename, 
   }
 
   length_buf = (char *) malloc(32);
-  ink_sprintf(length_buf, "%lld", stat_info.st_size);
+  sprintf(length_buf, "%lld", stat_info.st_size);
 
   // Send the raf request
   request(0) = hrec->get_id_str();
@@ -1496,10 +1496,10 @@ set_cur_script_path(const char *default_script_dir, const char *script_name)
 {
 
   if (*script_name == '/') {
-    ink_snprintf(cur_script_path, PATH_MAX, "%s", script_name);
+    snprintf(cur_script_path, PATH_MAX, "%s", script_name);
     cur_script_path[PATH_MAX] = '\0';
   } else {
-    ink_snprintf(cur_script_path, PATH_MAX, "%s/%s", default_script_dir, script_name);
+    snprintf(cur_script_path, PATH_MAX, "%s/%s", default_script_dir, script_name);
     cur_script_path[PATH_MAX] = '\0';
   }
 
@@ -3351,7 +3351,7 @@ prep_and_run_perl(const char *test_script_arg, char **script_args_in)
 
   char *argv_str = (char *) malloc(len + 1 + 2);
 
-  ink_sprintf(argv_str, "%s %s%s%s %s",
+  sprintf(argv_str, "%s %s%s%s %s",
               perl_args,
               (test_script_arg[0] == '/') ? "" : script_dir,
               (test_script_arg[0] == '/') ? "" : "/", test_script_arg, (script_args_in == NULL) ? script_args : "");
@@ -3397,7 +3397,7 @@ find_and_run_tests()
 
   // Start by loading the test group file
   char test_group_path[1024];
-  ink_snprintf(test_group_path, 1023, "%s/%s", defs_dir, test_group_file);
+  snprintf(test_group_path, 1023, "%s/%s", defs_dir, test_group_file);
   test_group_path[1023] = '\0';
 
   int r = load_group_file(test_group_path);

@@ -38,7 +38,7 @@
 
 #include "ink_platform.h"
 #include "Diags.h"
-#include "ink_snprintf.h"
+#include "snprintf.h"
 
 // From test_exec.cc
 extern UserDirInfo *ud_info;
@@ -147,7 +147,7 @@ TestRunResults::start(const char *tname, const char *uname, const char *bid)
 
   if (save_results) {
     char tmp[1024];
-    ink_snprintf(tmp, 1023, "%s/%s", save_results_dir, run_id_str);
+    snprintf(tmp, 1023, "%s/%s", save_results_dir, run_id_str);
     tmp[1023] = '\0';
 
     int r;
@@ -167,7 +167,7 @@ TestRunResults::output_summary_html()
 {
 
   char summary_file[1024];
-  ink_snprintf(summary_file, 1023, "%s/%s/index.html", save_results_dir, run_id_str);
+  snprintf(summary_file, 1023, "%s/%s/index.html", save_results_dir, run_id_str);
   summary_file[1023] = '\0';
 
   int fd;
@@ -490,7 +490,7 @@ TestRunResults::build_tinderbox_message_hdr(const char *status, time_t now, sio_
     output->fill(ud_hdr, sizeof(ud_hdr) - 1);
 
     char tmp[1024];
-    r = ink_snprintf(tmp, 1023, "%s/%s/", save_results_url, run_id_str);
+    r = snprintf(tmp, 1023, "%s/%s/", save_results_url, run_id_str);
     tmp[1023] = '\0';
     output->fill(tmp, r);
     output->fill("\n", 1);

@@ -3461,7 +3461,7 @@ ConfigTimezone(int index, int setvar)
     if (system("/bin/mv /tmp/clock.tmp /etc/sysconfig/clock") == -1)
       return CLI_ERROR;
 
-    ink_snprintf(command, sizeof(command), "/bin/cp -f /usr/share/zoneinfo/%s /etc/localtime", new_zone);
+    snprintf(command, sizeof(command), "/bin/cp -f /usr/share/zoneinfo/%s /etc/localtime", new_zone);
     if (system(command) == -1)
       return CLI_ERROR;
 
@@ -5806,7 +5806,7 @@ ConfigRadiusKeys(const char *record)
   time_t my_time_t;
   time(&my_time_t);
   memset(file_path, 0, 1024);
-  ink_snprintf(file_path, 1024, "%s%spwd_%ld.enc", dir_path, DIR_SEP, my_time_t);
+  snprintf(file_path, 1024, "%s%spwd_%ld.enc", dir_path, DIR_SEP, my_time_t);
   if (dir_path)
     xfree(dir_path);
 

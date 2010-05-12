@@ -396,7 +396,7 @@ clientCLI::CliResult clientCLI::getVariable(const char *name, char **value)
   char
     requestStr[512];
 
-  ink_snprintf(requestStr, sizeof(requestStr), "b get %s", name);
+  snprintf(requestStr, sizeof(requestStr), "b get %s", name);
   sendCommand(requestStr, &response);
   //responseStr = response.bufPtr();
 

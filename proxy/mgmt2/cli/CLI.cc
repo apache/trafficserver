@@ -1164,7 +1164,7 @@ handleOverseer(int fd, int mode)
           RecAccessT access = RECA_NO_ACCESS;
           RecGetRecordAccessType(cur, &access);
           if (access == RECA_NO_ACCESS) {
-            ink_snprintf(reply, sizeof(reply), "%s is unavailable", cur);
+            snprintf(reply, sizeof(reply), "%s is unavailable", cur);
             mgmt_writeline(fd, reply, strlen(reply));
             cur = ink_strtok_r(NULL, ",", &lasts);
             continue;
@@ -1176,44 +1176,44 @@ handleOverseer(int fd, int mode)
             case RECD_COUNTER:{
                 RecCounter val;
                 RecGetRecordCounter(cur, &val);
-                ink_snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
+                snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
                 break;
               }
             case RECD_INT:{
                 RecInt val;
                 RecGetRecordInt(cur, &val);
-                ink_snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
+                snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
                 break;
               }
             case RECD_LLONG:{
                 RecLLong val;
                 RecGetRecordLLong(cur, &val);
-                ink_snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
+                snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
                 break;
               }
             case RECD_FLOAT:{
                 RecFloat val;
                 RecGetRecordFloat(cur, &val);
-                ink_snprintf(reply, sizeof(reply), "%s = \"%f\"", cur, val);
+                snprintf(reply, sizeof(reply), "%s = \"%f\"", cur, val);
                 break;
               }
             case RECD_STRING:{
                 RecString val;
                 RecGetRecordString_Xmalloc(cur, &val);
                 if (val) {
-                  ink_snprintf(reply, sizeof(reply), "%s = \"%s\"", cur, val);
+                  snprintf(reply, sizeof(reply), "%s = \"%s\"", cur, val);
                   xfree(val);
                 } else {
-                  ink_snprintf(reply, sizeof(reply), "%s = \"\"", cur);
+                  snprintf(reply, sizeof(reply), "%s = \"\"", cur);
                 }
                 break;
               }
             default:
-              ink_snprintf(reply, sizeof(reply), "%s = UNDEFINED", cur);
+              snprintf(reply, sizeof(reply), "%s = UNDEFINED", cur);
               break;
             }
           } else {
-            ink_snprintf(reply, sizeof(reply), "%s = UNDEFINED", cur);
+            snprintf(reply, sizeof(reply), "%s = UNDEFINED", cur);
           }
           mgmt_writeline(fd, reply, strlen(reply));
           cur = ink_strtok_r(NULL, ",", &lasts);
@@ -1271,7 +1271,7 @@ handleOverseer(int fd, int mode)
       err = (rec_err != REC_ERR_OKAY);
 
       if (err) {
-        ink_snprintf(reply, sizeof(reply), "%s = UNDEFINED", var);
+        snprintf(reply, sizeof(reply), "%s = UNDEFINED", var);
         mgmt_writeline(fd, reply, strlen(reply));
         mgmt_writeline(fd, ok, strlen(ok));
         continue;

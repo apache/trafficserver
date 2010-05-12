@@ -810,7 +810,7 @@ TextLogObject::va_write(const char *format, va_list ap)
     return Log::FAIL;
   }
 
-  len += ink_vsnprintf(&entry[len], MAX_ENTRY - len, format, ap);
+  len += vsnprintf(&entry[len], MAX_ENTRY - len, format, ap);
 
   //
   // Now that we have an entry and it's length (len), we can place it

@@ -49,7 +49,7 @@ struct ShowCont:Continuation
     va_list aap;
       va_start(aap, s);
     int l = ebuf - buf;
-    int done = ink_vsnprintf(buf, l, s, aap);
+    int done = vsnprintf(buf, l, s, aap);
     if (done > l - 256)
     {
       char *start2 = (char *) xrealloc(start, (ebuf - start) * 2);
@@ -57,7 +57,7 @@ struct ShowCont:Continuation
         buf = start2 + (buf - start);
         start = start2;
         l = ebuf - buf;
-        done = ink_vsnprintf(buf, l, s, aap);
+        done = vsnprintf(buf, l, s, aap);
       if (done > l - 256)
       {
         va_end(aap);

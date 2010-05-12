@@ -418,7 +418,7 @@ Store::write_config_data(int fd)
   for (int i = 0; i < n_disks; i++)
     for (Span * sd = disk[i]; sd; sd = sd->link.next) {
       char buf[PATH_NAME_MAX + 64];
-      ink_snprintf(buf, sizeof(buf), "%s %lld\n", sd->pathname, (ink64) sd->blocks * (ink64) STORE_BLOCK_SIZE);
+      snprintf(buf, sizeof(buf), "%s %lld\n", sd->pathname, (ink64) sd->blocks * (ink64) STORE_BLOCK_SIZE);
       if (ink_file_fd_writestring(fd, buf) == -1)
         return (-1);
     }
@@ -914,7 +914,7 @@ Span::write(int fd)
   if (ink_file_fd_writestring(fd, "\n") == -1)
     return (-1);
 
-  ink_snprintf(buf, sizeof(buf), "%llu\n", blocks);
+  snprintf(buf, sizeof(buf), "%llu\n", blocks);
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 
@@ -922,7 +922,7 @@ Span::write(int fd)
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 
-  ink_snprintf(buf, sizeof(buf), "%llu\n", offset);
+  snprintf(buf, sizeof(buf), "%llu\n", offset);
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 

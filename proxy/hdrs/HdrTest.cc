@@ -1436,38 +1436,38 @@ HdrTest::test_http_mutation()
   char field_name[1024];
   char field_value[1024];
   for (i = 1; i <= 100; i++) {
-    ink_snprintf(field_name, sizeof(field_name), "Test%d", i);
-    ink_snprintf(field_value, sizeof(field_value), "%d %d %d %d %d", i, i, i, i, i);
+    snprintf(field_name, sizeof(field_name), "Test%d", i);
+    snprintf(field_value, sizeof(field_value), "%d %d %d %d %d", i, i, i, i, i);
     resp_hdr.value_set(field_name, (int) strlen(field_name), field_value, (int) strlen(field_value));
   }
 
     /**** (3) delete all the even numbered fields *****/
   for (i = 2; i <= 100; i += 2) {
-    ink_snprintf(field_name, sizeof(field_name), "Test%d", i);
+    snprintf(field_name, sizeof(field_name), "Test%d", i);
     resp_hdr.field_delete(field_name, (int) strlen(field_name));
   }
 
     /***** (4) add in secondary fields for all multiples of 3 ***/
   for (i = 3; i <= 100; i += 3) {
-    ink_snprintf(field_name, sizeof(field_name), "Test%d", i);
+    snprintf(field_name, sizeof(field_name), "Test%d", i);
     MIMEField *f = resp_hdr.field_create(field_name, (int) strlen(field_name));
     resp_hdr.field_attach(f);
-    ink_snprintf(field_value, sizeof(field_value), "d %d %d %d %d %d", i, i, i, i, i);
+    snprintf(field_value, sizeof(field_value), "d %d %d %d %d %d", i, i, i, i, i);
     f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, field_value, (int) strlen(field_value));
 
   }
 
     /***** (5) append all fields with multiples of 5 ***/
   for (i = 5; i <= 100; i += 5) {
-    ink_snprintf(field_name, sizeof(field_name), "Test%d", i);
-    ink_snprintf(field_value, sizeof(field_value), "a %d", i);
+    snprintf(field_name, sizeof(field_name), "Test%d", i);
+    snprintf(field_value, sizeof(field_value), "a %d", i);
 
     resp_hdr.value_append(field_name, (int) strlen(field_name), field_value, (int) strlen(field_value), true);
   }
 
     /**** (6) delete all multiples of nine *****/
   for (i = 9; i <= 100; i += 9) {
-    ink_snprintf(field_name, sizeof(field_name), "Test%d", i);
+    snprintf(field_name, sizeof(field_name), "Test%d", i);
     resp_hdr.field_delete(field_name, (int) strlen(field_name));
   }
 
@@ -1814,7 +1814,7 @@ HdrTest::test_comma_vals()
   hdr.create(HTTP_TYPE_REQUEST);
 
   for (i = 0; i < ntests; i++) {
-    ink_snprintf(field_name, sizeof(field_name), "Test%d", i);
+    snprintf(field_name, sizeof(field_name), "Test%d", i);
 
     MIMEField *f = hdr.field_create(field_name, (int) strlen(field_name));
     ink_release_assert(f->m_ptr_value == NULL);
@@ -1915,7 +1915,7 @@ HdrTest::test_set_comma_vals()
   hdr.create(HTTP_TYPE_REQUEST);
 
   for (i = 0; i < ntests; i++) {
-    ink_snprintf(field_name, sizeof(field_name), "Test%d", i);
+    snprintf(field_name, sizeof(field_name), "Test%d", i);
 
     MIMEField *f = hdr.field_create(field_name, (int) strlen(field_name));
     hdr.field_value_set(f, tests[i].old_raw, strlen(tests[i].old_raw));
@@ -2030,7 +2030,7 @@ HdrTest::test_comma_val_slice()
   hdr.create(HTTP_TYPE_REQUEST);
 
   for (i = 0; i < ntests; i++) {
-    ink_snprintf(field_name, sizeof(field_name), "Test%d", i);
+    snprintf(field_name, sizeof(field_name), "Test%d", i);
 
     MIMEField *f = hdr.field_create(field_name, (int) strlen(field_name));
     hdr.field_value_set(f, tests[i].str, strlen(tests[i].str));

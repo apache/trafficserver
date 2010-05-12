@@ -263,7 +263,7 @@ CongestionControlRecord::Init(matcher_line * line_info)
 
     if (tmp != NULL) {
       errBuf = (char *) xmalloc(errBufLen * sizeof(char));
-      ink_snprintf(errBuf, errBufLen, "%s %s at line %d in congestion.config", congestPrefix, tmp, line_num);
+      snprintf(errBuf, errBufLen, "%s %s at line %d in congestion.config", congestPrefix, tmp, line_num);
       return errBuf;
     }
 
@@ -734,16 +734,16 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
     timestamp = m_last_congested;
     state = (m_congested ? 'F' : ' ');
   }
-  len += ink_snprintf(buf + len, buflen - len, "%lld|%d|%s|%s",
+  len += snprintf(buf + len, buflen - len, "%lld|%d|%s|%s",
                       timestamp,
                       pRecord->line_num,
                       (m_hostname ? m_hostname : " "), (m_ip ? (addr.s_addr = htonl(m_ip), inet_ntoa(addr)) : " "));
 
-  len += ink_snprintf(buf + len, buflen - len, "|%s|%s|%c",
+  len += snprintf(buf + len, buflen - len, "|%s|%s|%c",
                       (pRecord->congestion_scheme == PER_IP ? "per_ip" : "per_host"),
                       (pRecord->prefix ? pRecord->prefix : " "), state);
 
-  len += ink_snprintf(buf + len, buflen - len, "|%d|%d", m_stat_congested_conn_failures, m_stat_congested_max_conn);
+  len += snprintf(buf + len, buflen - len, "|%d|%d", m_stat_congested_conn_failures, m_stat_congested_max_conn);
 
   if (format > 0) {
     if (m_congested) {
@@ -754,24 +754,24 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
       } else {
         ink_gmtime_r(&seconds, &time);
       }
-      ink_snprintf(str_time, sizeof(str_time), "%04d/%02d/%02d %02d:%02d:%02d",
+      snprintf(str_time, sizeof(str_time), "%04d/%02d/%02d %02d:%02d:%02d",
                    time.tm_year + 1900, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
     }
-    len += ink_snprintf(buf + len, buflen - len, "|%s", str_time);
+    len += snprintf(buf + len, buflen - len, "|%s", str_time);
 
     if (format > 1) {
-      len += ink_snprintf(buf + len, buflen - len, "|%llu", m_key);
+      len += snprintf(buf + len, buflen - len, "|%llu", m_key);
 
       if (format > 2) {
-        len += ink_snprintf(buf + len, buflen - len, "|%ld", m_history.last_event);
+        len += snprintf(buf + len, buflen - len, "|%ld", m_history.last_event);
 
         if (format > 3) {
-          len += ink_snprintf(buf + len, buflen - len, "|%d|%d|%d", m_history.events, m_ref_count, m_num_connections);
+          len += snprintf(buf + len, buflen - len, "|%d|%d|%d", m_history.events, m_ref_count, m_num_connections);
         }
       }
     }
   }
-  len += ink_snprintf(buf + len, buflen - len, "\n");
+  len += snprintf(buf + len, buflen - len, "\n");
   return len;
 }
 

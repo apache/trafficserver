@@ -66,8 +66,8 @@
 { \
     if (diags->on(T)) { \
     ACQUIRE_PRINT_LOCK() \
-    ink_fprintf(stderr, "+++++++++ %s +++++++++\n", S); \
-    ink_fprintf(stderr, "-- State Machine Id: %lld\n", I); \
+    fprintf(stderr, "+++++++++ %s +++++++++\n", S); \
+    fprintf(stderr, "-- State Machine Id: %lld\n", I); \
         char b[4096]; \
         int used, tmp, offset; \
         int done; \
@@ -79,7 +79,7 @@
               done = (H)->print (b, 4095, &used, &tmp); \
               offset += used; \
               b[used] = '\0'; \
-              ink_fprintf (stderr, "%s", b); \
+              fprintf (stderr, "%s", b); \
           } while (!done); \
         } \
     RELEASE_PRINT_LOCK() \

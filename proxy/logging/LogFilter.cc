@@ -206,7 +206,7 @@ LogFilter::filter_from_specification(char *spec,
   const size_t buff_size = 256;
   char filter_name[buff_size];
 
-  ink_snprintf(filter_name, buff_size, "%s: %s %s %s", *format_name, field_name, OPERATOR_NAME[oper], value);
+  snprintf(filter_name, buff_size, "%s: %s %s %s", *format_name, field_name, OPERATOR_NAME[oper], value);
 
   // Ok, now create the LogFilter.  There are two types: int and string
   // filters.  Look at the field type to determine which is the one to

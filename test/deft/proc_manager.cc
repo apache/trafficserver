@@ -42,7 +42,7 @@
 
 #include "Diags.h"
 #include "ink_args.h"
-#include "ink_snprintf.h"
+#include "snprintf.h"
 #include "rafencode.h"
 #include "InkTime.h"
 #include "ParseRules.h"
@@ -109,7 +109,7 @@ PM_output_log_line(const char *start, const char *end, const char *iname, const 
   sprintf(&(timestamp_buf[19]), ".%03d", (int) (tp.tv_usec / 1000));
 
   char prefix_buffer[1024];
-  int r = ink_snprintf(prefix_buffer, 1024, "[%s %s %s] ",
+  int r = snprintf(prefix_buffer, 1024, "[%s %s %s] ",
                        timestamp_buf, iname, stream_id);
 
   log_sender->add_to_output_log(prefix_buffer, prefix_buffer + r);
@@ -126,7 +126,7 @@ PM_log_line_va(const char *level, const char *format_str, va_list ap)
 {
 
   char line_buf[2048];
-  int r = ink_vsnprintf(line_buf, 2047, format_str, ap);
+  int r = vsnprintf(line_buf, 2047, format_str, ap);
   if (r >= 2047) {
     line_buf[2047] = '\0';
     r = 2047;
@@ -981,7 +981,7 @@ NetCmdHandler::setup_anon_run_dir()
   // FIX ME - buffer overruns
   char tmp[1024];
 
-  ink_snprintf(tmp, 1023, "%s/run/_anon", stuff_dir);
+  snprintf(tmp, 1023, "%s/run/_anon", stuff_dir);
   tmp[1023] = '\0';
 
   int err;
@@ -1006,7 +1006,7 @@ NetCmdHandler::find_anon_binary_path(const char *binary)
   int num_path_els = path_tok.Initialize(path);
 
   for (int i = 0; i < num_path_els; i++) {
-    ink_snprintf(tmp, 1023, "%s/%s", path_tok[i], binary);
+    snprintf(tmp, 1023, "%s/%s", path_tok[i], binary);
     tmp[1023] = '\0';
 
     int r;
@@ -1187,7 +1187,7 @@ NetCmdHandler::process_get_file_cmd(RafCmd * cmd)
   Debug("get_file", "succeeded for %s : %d bytes", file_name, get_len_left);
 
   char tmp_buf[512];
-  r = ink_snprintf(tmp_buf, 511, "%s 0 %d\n", (*cmd)[0], get_len_left);
+  r = snprintf(tmp_buf, 511, "%s 0 %d\n", (*cmd)[0], get_len_left);
   tmp_buf[511] = '\0';
   this->resp_buffer->fill(tmp_buf, r);
 
@@ -1228,12 +1228,12 @@ NetCmdHandler::process_stat_file_cmd(RafCmd * cmd)
   reply(1) = strdup("0");
   reply(2) = strdup("size");
 
-  ink_snprintf(num_buf, 63, "%lld", (ink64) stat_info.st_size);
+  snprintf(num_buf, 63, "%lld", (ink64) stat_info.st_size);
   num_buf[63] = '\0';
   reply(3) = strdup(num_buf);
 
   reply(4) = strdup("mod_date");
-  ink_snprintf(num_buf, 63, "%b32d", (inku32) stat_info.st_mtime);
+  snprintf(num_buf, 63, "%b32d", (inku32) stat_info.st_mtime);
   num_buf[63] = '\0';
   reply(5) = strdup(num_buf);
 
@@ -1489,7 +1489,7 @@ NetCmdHandler::process_take_pkg_cmd(RafCmd * cmd)
   }
   // FIX ME - buffer overrun
   char tmp[1024];
-  ink_snprintf(tmp, 1023, "%s/install/%s", stuff_dir, package_name);
+  snprintf(tmp, 1023, "%s/install/%s", stuff_dir, package_name);
   tmp[1023] = '\0';
 
   int r;
@@ -1510,7 +1510,7 @@ NetCmdHandler::process_take_pkg_cmd(RafCmd * cmd)
     }
   }
 
-  ink_snprintf(tmp, 1023, "%s/install/%s/%s", stuff_dir, package_name, file_name);
+  snprintf(tmp, 1023, "%s/install/%s/%s", stuff_dir, package_name, file_name);
   tmp[1023] = '\0';
 
   int output_fd;
@@ -1611,7 +1611,7 @@ NetCmdHandler::process_show_pkgs_cmd(RafCmd * cmd)
 
   // FIX ME - buffer overrun
   char tmp[1024];
-  ink_snprintf(tmp, 1023, "%s/install", stuff_dir);
+  snprintf(tmp, 1023, "%s/install", stuff_dir);
   tmp[1023] = '\0';
 
   DIR *d = opendir(tmp);
@@ -1638,7 +1638,7 @@ NetCmdHandler::process_show_pkgs_cmd(RafCmd * cmd)
       continue;
     }
 
-    ink_snprintf(active_link, 1023, "%s/install/%s/active", stuff_dir, de->d_name);
+    snprintf(active_link, 1023, "%s/install/%s/active", stuff_dir, de->d_name);
     active_link[1023] = '\0';
 
     r = readlink(active_link, lc, 1023);
@@ -1798,13 +1798,13 @@ NetCmdHandler::output_query_process_int(ProcRecord * pr,
 {
   char tmp[1024];
 
-  ink_snprintf(tmp, 1023, "/processes/%s/%s", pr->instance_name, q_proc_value);
+  snprintf(tmp, 1023, "/processes/%s/%s", pr->instance_name, q_proc_value);
   tmp[1023] = '\0';
 
   (*raf_resp) (*next_index) = strdup(tmp);
   (*next_index)++;
 
-  ink_sprintf(tmp, "%d", value);
+  sprintf(tmp, "%d", value);
   (*raf_resp) (*next_index) = strdup(tmp);
   (*next_index)++;
 }
@@ -1816,13 +1816,13 @@ NetCmdHandler::output_query_process_str(ProcRecord * pr,
 {
   char tmp[1024];
 
-  ink_snprintf(tmp, 1023, "/processes/%s/%s", pr->instance_name, q_proc_value);
+  snprintf(tmp, 1023, "/processes/%s/%s", pr->instance_name, q_proc_value);
   tmp[1023] = '\0';
 
   (*raf_resp) (*next_index) = strdup(tmp);
   (*next_index)++;
 
-  ink_snprintf(tmp, 1023, "%s", value);
+  snprintf(tmp, 1023, "%s", value);
   (*raf_resp) (*next_index) = strdup(tmp);
   tmp[1023] = '\0';
   (*next_index)++;
@@ -2209,7 +2209,7 @@ ProcRecord::init_managed_proc(const char *iname)
 
     // FIX ME - buffer overruns
     char tmp[1024];
-    ink_snprintf(tmp, 1023, "%s/install/%s/active", stuff_dir, package_name);
+    snprintf(tmp, 1023, "%s/install/%s/active", stuff_dir, package_name);
     tmp[1023] = '\0';
     package_dir = strdup(tmp);
     bin_dir = package_dir;
@@ -2236,7 +2236,7 @@ ProcRecord::init_managed_rundir()
     // FIX ME - buffer overruns
     char tmp[1024];
 
-    ink_snprintf(tmp, 1023, "%s/run/%s", stuff_dir, instance_name);
+    snprintf(tmp, 1023, "%s/run/%s", stuff_dir, instance_name);
     tmp[1023] = '\0';
     run_dir = strdup(tmp);
 
@@ -2287,7 +2287,7 @@ ProcRecord::find_installer()
   // Fix me - buffer overrun
   int prefix_len;
   char installer_name_prefix[1024];
-  ink_snprintf(installer_name_prefix, 1023, "%s-instantiate", package_name);
+  snprintf(installer_name_prefix, 1023, "%s-instantiate", package_name);
   installer_name_prefix[1023] = '\0';
   prefix_len = strlen(installer_name_prefix);
 
@@ -2297,7 +2297,7 @@ ProcRecord::find_installer()
   for (int i = 0; i < num_search_dirs; i++) {
 
     char dir_str[1024];
-    ink_snprintf(dir_str, 1023, "%s%s%s", idir,
+    snprintf(dir_str, 1023, "%s%s%s", idir,
                  (*(search_dirs[i]) != '\0') ? "/" : "", (*(search_dirs[i]) != '\0') ? search_dirs[i] : "");
     dir_str[1023] = '\0';
 
@@ -2854,7 +2854,7 @@ ProcRecord::write_config(const char *config)
   // FIX ME - buffer overruns
   char tmp[1024];
 
-  ink_snprintf(tmp, 1023, "%s/%s", run_dir, "config_blob");
+  snprintf(tmp, 1023, "%s/%s", run_dir, "config_blob");
   tmp[1023] = '\0';
   config_file = strdup(tmp);
 
@@ -3551,7 +3551,7 @@ init_log_stuff()
   if (*log_collator == '\0') {
     pid_t
       mypid = getpid();
-    ink_snprintf(log_file, 1023, "%s/log.%d", stuff_log_dir, mypid);
+    snprintf(log_file, 1023, "%s/log.%d", stuff_log_dir, mypid);
     log_file[1023] = '\0';
     log_sender->start_to_file(log_file);
   } else {
@@ -3621,21 +3621,21 @@ init_dir_stuff()
     PM_Fatal("no stuff dir %s : %s : %s", rmsg, stuff_dir, strerror(error_code));
   }
 
-  ink_snprintf(stuff_install_dir, 1023, "%s/%s", stuff_dir, "install");
+  snprintf(stuff_install_dir, 1023, "%s/%s", stuff_dir, "install");
   stuff_install_dir[1023] = '\0';
   create_or_verify_dir(stuff_install_dir, &error_code);
   if (rmsg) {
     PM_Fatal("%s : %s : %s", rmsg, stuff_install_dir, strerror(error_code));
   }
 
-  ink_snprintf(stuff_run_dir, 1023, "%s/%s", stuff_dir, "run");
+  snprintf(stuff_run_dir, 1023, "%s/%s", stuff_dir, "run");
   stuff_run_dir[1023] = '\0';
   create_or_verify_dir(stuff_run_dir, &error_code);
   if (rmsg) {
     PM_Fatal("%s : %s : %s", rmsg, stuff_install_dir, strerror(error_code));
   }
 
-  ink_snprintf(stuff_log_dir, 1023, "%s/%s", stuff_dir, "log");
+  snprintf(stuff_log_dir, 1023, "%s/%s", stuff_dir, "log");
   stuff_log_dir[1023] = '\0';
   create_or_verify_dir(stuff_log_dir, &error_code);
   if (rmsg) {
@@ -3648,7 +3648,7 @@ manage_lockfile()
 {
   char
     tmp[1024];
-  ink_snprintf(tmp, 1023, "%s/%s", stuff_run_dir, "proc_manager.lock");
+  snprintf(tmp, 1023, "%s/%s", stuff_run_dir, "proc_manager.lock");
   tmp[1023] = '\0';
 
   pid_t
@@ -3781,7 +3781,7 @@ redirect_stdout_stderr()
 
   char
     tmp[1024];
-  ink_snprintf(tmp, 1023, "%s/%s", stuff_log_dir, "proc_manager.out");
+  snprintf(tmp, 1023, "%s/%s", stuff_log_dir, "proc_manager.out");
   tmp[1023] = '\0';
 
   int

@@ -309,7 +309,7 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
   if (!re_array[num_el]) {
     errBuf = (char *) xmalloc(1024 * sizeof(char));
     *errBuf = '\0';
-    ink_snprintf(errBuf, 1024, "%s regular expression error at line %d position %d : %s",
+    snprintf(errBuf, 1024, "%s regular expression error at line %d position %d : %s",
                  matcher_name, line_info->line_num, erroffset, error);
     re_array[num_el] = NULL;
     return errBuf;

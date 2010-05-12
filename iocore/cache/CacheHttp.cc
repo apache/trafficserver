@@ -145,7 +145,7 @@ CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
         data[i].alternate.request_url_get(&u);
         url = u.string_get(&arena);
         if (url) {
-          ink_snprintf(p, buf_size, "[%s] ", url);
+          snprintf(p, buf_size, "[%s] ", url);
           tmp = strlen(p);
           p += tmp;
           buf_size -= tmp;
@@ -153,7 +153,7 @@ CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
       }
 
       if (temps || !(data[i].alternate.object_key_get() == zero_key)) {
-        ink_snprintf(p, buf_size, "[%d %s]", data[i].alternate.id_get(),
+        snprintf(p, buf_size, "[%d %s]", data[i].alternate.id_get(),
                      CacheKey(data[i].alternate.object_key_get()).string(buf));
         tmp = strlen(p);
         p += tmp;

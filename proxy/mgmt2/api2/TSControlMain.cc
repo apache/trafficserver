@@ -817,7 +817,7 @@ handle_event_get_mlt(struct SocketInfo sock_info)
   while (!queue_is_empty(event_list)) {
     event_name = (char *) dequeue(event_list);
     if (event_name) {
-      ink_snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", event_name, REMOTE_DELIM);
+      snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", event_name, REMOTE_DELIM);
       buf_pos += (strlen(event_name) + 1);
       xfree(event_name);        //free the llq entry
     }
@@ -931,7 +931,7 @@ handle_snapshot_get_mlt(struct SocketInfo sock_info)
   while (!queue_is_empty(snap_list)) {
     snap_name = (char *) dequeue(snap_list);
     if (snap_name) {
-      ink_snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", snap_name, REMOTE_DELIM);
+      snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", snap_name, REMOTE_DELIM);
       buf_pos += (strlen(snap_name) + 1);
       xfree(snap_name);         //free the llq entry
     }

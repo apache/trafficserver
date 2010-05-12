@@ -58,7 +58,7 @@ WebHttpLogInit()
 	       == REC_ERR_OKAY);
     if ((err = stat(log_dir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
-      ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+      snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
       if ((err = stat(system_log_dir, &s)) < 0) {
         mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
@@ -71,7 +71,7 @@ WebHttpLogInit()
     }
   } 
 
-  ink_snprintf(log_file, sizeof(log_file), "%s%s%s", system_log_dir, DIR_SEP, "lm.log");
+  snprintf(log_file, sizeof(log_file), "%s%s%s", system_log_dir, DIR_SEP, "lm.log");
   if (WebHttpLogHandle == WEB_HANDLE_INVALID) {
     WebHttpLogHandle = WebFileOpenW(log_file);
   }

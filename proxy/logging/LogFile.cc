@@ -425,7 +425,7 @@ LogFile::roll(long interval_start, long interval_end)
   //
   LogUtils::timestamp_to_str((long) start, start_time_ext, 64);
   LogUtils::timestamp_to_str((long) end, end_time_ext, 64);
-  ink_snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s%s",
+  snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s%s",
                m_name,
                LOGFILE_SEPARATOR_STRING,
                this_machine()->hostname, start_time_ext, end_time_ext, LOGFILE_ROLLED_EXTENSION);
@@ -440,7 +440,7 @@ LogFile::roll(long interval_start, long interval_end)
   while (LogFile::exists(roll_name)) {
     Note("The rolled file %s already exists; adding version "
          "tag %d to avoid clobbering the existing file.", roll_name, version);
-    ink_snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s.%d%s",
+    snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s.%d%s",
                  m_name,
                  LOGFILE_SEPARATOR_STRING,
                  this_machine()->hostname, start_time_ext, end_time_ext, version, LOGFILE_ROLLED_EXTENSION);
@@ -967,7 +967,7 @@ MetaInfo::_write_to_file()
   } else {
     int n;
     if (_flags & VALID_CREATION_TIME) {
-      n = ink_snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", (unsigned long) _creation_time);
+      n = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", (unsigned long) _creation_time);
       // TODO modify this runtime check so that it is not an assertion
       ink_release_assert(n <= BUF_SIZE);
       if (write(fd, _buffer, n) == -1) {
@@ -975,7 +975,7 @@ MetaInfo::_write_to_file()
       }
     }
     if (_flags & VALID_SIGNATURE) {
-      n = ink_snprintf(_buffer, BUF_SIZE, "object_signature = %llu\n", _log_object_signature);
+      n = snprintf(_buffer, BUF_SIZE, "object_signature = %llu\n", _log_object_signature);
       // TODO modify this runtime check so that it is not an assertion
       ink_release_assert(n <= BUF_SIZE);
       if (write(fd, _buffer, n) == -1) {

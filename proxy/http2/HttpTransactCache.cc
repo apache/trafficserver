@@ -239,7 +239,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector,
           done = cached_request->print(b, sizeof(b) - 1, &used, &tmp);
           offset += used;
           b[used] = '\0';
-          ink_fprintf(stderr, "%s", b);
+          fprintf(stderr, "%s", b);
         } while (!done);
 
         offset = 0;
@@ -249,7 +249,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector,
           done = cached_response->print(b, sizeof(b) - 1, &used, &tmp);
           offset += used;
           b[used] = '\0';
-          ink_fprintf(stderr, "%s", b);
+          fprintf(stderr, "%s", b);
         } while (!done);
       }
 

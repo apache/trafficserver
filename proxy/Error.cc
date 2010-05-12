@@ -36,7 +36,6 @@
 #include "Error.h"
 #include <time.h>
 #include "ink_platform.h"
-#include "ink_snprintf.h"
 
 ErrorClass::~ErrorClass()
 {

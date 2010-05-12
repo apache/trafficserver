@@ -32,7 +32,6 @@
 #include "ink_platform.h"
 
 #include "ink_hash_table.h"
-#include "ink_snprintf.h"
 #include "I_Version.h"
 #include "SimpleTokenizer.h"
 
@@ -521,7 +520,7 @@ handle_file_edit(WebHttpContext * whc, char *tag, char *arg)
       }
       rb->releaseLock();
       if (file) {
-        ink_snprintf(version_str, sizeof(version_str), "%d:%s", version, arg);
+        snprintf(version_str, sizeof(version_str), "%d:%s", version, arg);
         HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, "file_version", version_str, NULL, NULL);
         fileCheckSum(file->bufPtr(), file->spaceUsed(), checksum, sizeof(checksum));
         HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, "file_checksum", checksum, NULL, NULL);
@@ -708,7 +707,7 @@ handle_record_version(WebHttpContext * whc, char *tag, char *arg)
     return WEB_HTTP_ERR_OKAY;
   }
   //fix me --> lmgmt->record_data->pid
-  ink_snprintf(id_str, sizeof(id_str), "%ld:%d", lmgmt->record_data->pid, id);
+  snprintf(id_str, sizeof(id_str), "%ld:%d", lmgmt->record_data->pid, id);
   whc->response_bdy->copyFrom(id_str, strlen(id_str));
   return WEB_HTTP_ERR_OKAY;
 }
@@ -747,7 +746,7 @@ handle_summary_object(WebHttpContext * whc, char *tag, char *arg)
     char *r = ink_ctime_r(&upTime, dateBuf);
     if (r != NULL) {
       HtmlRndrText(output, dict_ht, HTML_ID_UP_SINCE);
-      ink_snprintf(tmpBuf, sizeof(tmpBuf), ": %s (%ld:%02ld:%02ld:%02ld)", dateBuf, d, h, m, s);
+      snprintf(tmpBuf, sizeof(tmpBuf), ": %s (%ld:%02ld:%02ld:%02ld)", dateBuf, d, h, m, s);
       output->copyFrom(tmpBuf, strlen(tmpBuf));
       HtmlRndrBr(output);
     }
@@ -849,27 +848,27 @@ handle_mgmt_auth_object(WebHttpContext * whc, char *tag, char *arg)
   while (ele) {
     // render table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-    ink_snprintf(tmp, sizeof(tmp), "user:%d", user_count);
+    snprintf(tmp, sizeof(tmp), "user:%d", user_count);
     HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, tmp, ele->user, NULL, NULL);
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, "33%", NULL, 0);
     output->copyFrom(ele->user, strlen(ele->user));
     HtmlRndrTdClose(output);
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_NONE, "33%", NULL, 0);
-    ink_snprintf(tmp, sizeof(tmp), "access:%d", user_count);
+    snprintf(tmp, sizeof(tmp), "access:%d", user_count);
     HtmlRndrSelectOpen(output, HTML_CSS_BODY_TEXT, tmp, 1);
-    ink_snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_NONE);
+    snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_NONE);
     HtmlRndrOptionOpen(output, tmp, ele->access == INK_ACCESS_NONE);
     HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_AUTH_NO_ACCESS);
     HtmlRndrOptionClose(output);
-    ink_snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_MONITOR);
+    snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_MONITOR);
     HtmlRndrOptionOpen(output, tmp, ele->access == INK_ACCESS_MONITOR);
     HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_AUTH_MONITOR);
     HtmlRndrOptionClose(output);
-    ink_snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_MONITOR_VIEW);
+    snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_MONITOR_VIEW);
     HtmlRndrOptionOpen(output, tmp, ele->access == INK_ACCESS_MONITOR_VIEW);
     HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_AUTH_MONITOR_VIEW);
     HtmlRndrOptionClose(output);
-    ink_snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_MONITOR_CHANGE);
+    snprintf(tmp, sizeof(tmp), "%d", INK_ACCESS_MONITOR_CHANGE);
     HtmlRndrOptionOpen(output, tmp, ele->access == INK_ACCESS_MONITOR_CHANGE);
     HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_AUTH_MONITOR_CHANGE);
     HtmlRndrOptionClose(output);
@@ -879,7 +878,7 @@ handle_mgmt_auth_object(WebHttpContext * whc, char *tag, char *arg)
     output->copyFrom(ele->password, strlen(ele->password));
     HtmlRndrTdClose(output);
     HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
-    ink_snprintf(tmp, sizeof(tmp), "delete:%d", user_count);
+    snprintf(tmp, sizeof(tmp), "delete:%d", user_count);
     HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_CHECKBOX, tmp, ele->user, NULL, NULL);
     HtmlRndrTdClose(output);
     HtmlRndrTrClose(output);
@@ -899,7 +898,7 @@ handle_mgmt_auth_object(WebHttpContext * whc, char *tag, char *arg)
   ctx_key = WebHttpMakeSessionKey_Xmalloc();
   WebHttpSessionStore(ctx_key, (void *) ctx, InkMgmtApiCtxDeleter);
   // add hidden form tags
-  ink_snprintf(tmp, sizeof(tmp), "%d", user_count);
+  snprintf(tmp, sizeof(tmp), "%d", user_count);
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, "user_count", tmp, NULL, NULL);
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, "session_id", ctx_key, NULL, NULL);
   xfree(ctx_key);
@@ -1208,10 +1207,10 @@ handle_ftp_select(WebHttpContext * whc)
         char str[1024];
         if (ink_hash_table_lookup(whc->post_data_ht, "FTPSaveName", (void **) &warn_name)) {
           if (warn_name != NULL) {
-            ink_snprintf(str, sizeof(str), "<input type=\"text\" size=\"22\" name=\"FTPSaveName\" value=\"%s\">",
+            snprintf(str, sizeof(str), "<input type=\"text\" size=\"22\" name=\"FTPSaveName\" value=\"%s\">",
                          warn_name);
           } else {
-            ink_snprintf(str, sizeof(str), "<input type=\"text\" size=\"22\" name=\"FTPSaveName\" value=\"\">");
+            snprintf(str, sizeof(str), "<input type=\"text\" size=\"22\" name=\"FTPSaveName\" value=\"\">");
           }
         }
         output->copyFrom(str, strlen(str));
@@ -1248,7 +1247,7 @@ floppyPathString(const char *s1, const char *s2)
   newLen = strlen(s1) + strlen(s2) + 2;
   newStr = new char[newLen];
   ink_assert(newStr != NULL);
-  ink_snprintf(newStr, newLen, "%s%s%s", s1, DIR_SEP, s2);
+  snprintf(newStr, newLen, "%s%s%s", s1, DIR_SEP, s2);
   return newStr;
 }
 
@@ -1372,7 +1371,7 @@ handle_floppy_select(WebHttpContext * whc)
                              strlen("<input type=\"text\" size=\"22\" name=\"FloppySnapName\" value=\"\">"));
           } else {
             char input_string[256];
-            ink_snprintf(input_string, sizeof(input_string),
+            snprintf(input_string, sizeof(input_string),
                          "<input type=\"text\" size=\"22\" name=\"FloppySnapName\" value=\"%s\">", snap_name);
             output->copyFrom(input_string, strlen(input_string));
           }
@@ -1507,20 +1506,20 @@ handle_select_system_logs(WebHttpContext * whc, char *tag, char *arg)
   // display all syslog in the select box
   if (syslog_path) {
     // check if 'message' is readable
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s", syslog_path, syslog);
+    snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s", syslog_path, syslog);
     if (readable(tmp, &fsize)) {
       selected = selected_log(whc, tmp);
       bytesFromInt(fsize, tmp3);
-      ink_snprintf(tmp2, MAX_TMP_BUF_LEN, "%s  [%s]", syslog, tmp3);
+      snprintf(tmp2, MAX_TMP_BUF_LEN, "%s  [%s]", syslog, tmp3);
       render_option(output, tmp, tmp2, selected);
     }
     // check if 'message.n' are exist
     for (i = 0; i < 10; i++) {
-      ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s.%d", syslog_path, syslog, i);
+      snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s.%d", syslog_path, syslog, i);
       if (readable(tmp, &fsize)) {
         selected = selected_log(whc, tmp);
         bytesFromInt(fsize, tmp3);
-        ink_snprintf(tmp2, MAX_TMP_BUF_LEN, "%s.%d  [%s]", syslog, i, tmp3);
+        snprintf(tmp2, MAX_TMP_BUF_LEN, "%s.%d  [%s]", syslog, i, tmp3);
         render_option(output, tmp, tmp2, selected);
       }
     }
@@ -1558,7 +1557,7 @@ handle_select_access_logs(WebHttpContext * whc, char *tag, char *arg)
 	       == REC_ERR_OKAY);
     if ((err = stat(logdir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
-      ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+      snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
       if ((err = stat(system_log_dir, &s)) < 0) {
         mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
@@ -1575,7 +1574,7 @@ handle_select_access_logs(WebHttpContext * whc, char *tag, char *arg)
     while ((dent = readdir(dirp)) != NULL) {
       // exclude traffic.out*
       if (strncmp(logfile, dent->d_name, strlen(logfile)) != 0) {
-        ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s%s", system_log_dir, DIR_SEP, dent->d_name);
+        snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s%s", system_log_dir, DIR_SEP, dent->d_name);
         if ((dirp2 = opendir(tmp))) {
           // exclude directory
           closedir(dirp2);
@@ -1591,7 +1590,7 @@ handle_select_access_logs(WebHttpContext * whc, char *tag, char *arg)
           if (readable(tmp, &fsize)) {
             selected = selected_log(whc, tmp);
             bytesFromInt(fsize, tmp3);
-            ink_snprintf(tmp2, MAX_TMP_BUF_LEN, "%s  [%s]", dent->d_name, tmp3);
+            snprintf(tmp2, MAX_TMP_BUF_LEN, "%s  [%s]", dent->d_name, tmp3);
             render_option(output, tmp, tmp2, selected);
           }
         }
@@ -1638,7 +1637,7 @@ handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
 	       == REC_ERR_OKAY);
     if ((err = stat(logdir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
-      ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
+      snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
       if ((err = stat(system_log_dir, &s)) < 0) {
         mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
@@ -1655,11 +1654,11 @@ handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
   if ((dirp = opendir(system_log_dir))) {
     while ((dent = readdir(dirp)) != NULL) {
       if (strncmp(logfile, dent->d_name, strlen(logfile)) == 0) {
-        ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s%s", system_log_dir, DIR_SEP, dent->d_name);
+        snprintf(tmp, MAX_TMP_BUF_LEN, "%s%s%s", system_log_dir, DIR_SEP, dent->d_name);
         if (readable(tmp, &fsize)) {
           selected = selected_log(whc, tmp);
           bytesFromInt(fsize, tmp3);
-          ink_snprintf(tmp2, MAX_TMP_BUF_LEN, "%s  [%s]", dent->d_name, tmp3);
+          snprintf(tmp2, MAX_TMP_BUF_LEN, "%s  [%s]", dent->d_name, tmp3);
           render_option(output, tmp, tmp2, selected);
         }
       }
@@ -1671,7 +1670,7 @@ handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
     if (readable(debug_logs[i], &fsize)) {
       selected = selected_log(whc, debug_logs[i]);
       bytesFromInt(fsize, tmp3);
-      ink_snprintf(tmp2, MAX_TMP_BUF_LEN, "%s  [%s]", debug_logs[i], tmp3);
+      snprintf(tmp2, MAX_TMP_BUF_LEN, "%s  [%s]", debug_logs[i], tmp3);
       render_option(output, debug_logs[i], tmp2, selected);
     }
   }
@@ -2042,7 +2041,7 @@ handle_cache_query(WebHttpContext * whc, char *tag, char *arg)
               HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_INSPECTOR_ALTERNATE_NUM);
               HtmlRndrTdClose(output);
               HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-              ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%d", alt_count);
+              snprintf(tmp, MAX_TMP_BUF_LEN, "%d", alt_count);
               output->copyFrom(tmp, strlen(tmp));
               HtmlRndrTdClose(output);
               HtmlRndrTrClose(output);
@@ -2052,7 +2051,7 @@ handle_cache_query(WebHttpContext * whc, char *tag, char *arg)
                 HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
                 HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL_SMALL, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, "2", 2);
                 HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_INSPECTOR_ALTERNATE);
-                ink_snprintf(tmp, MAX_TMP_BUF_LEN, " %d", i);
+                snprintf(tmp, MAX_TMP_BUF_LEN, " %d", i);
                 output->copyFrom(tmp, strlen(tmp));
                 HtmlRndrTdClose(output);
                 HtmlRndrTrClose(output);
@@ -2183,7 +2182,7 @@ handle_cache_query(WebHttpContext * whc, char *tag, char *arg)
 
             // document url
             HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-            ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s", url);
+            snprintf(tmp, MAX_TMP_BUF_LEN, "%s", url);
             output->copyFrom(tmp, strlen(tmp));
             HtmlRndrTdClose(output);
             // cache miss message
@@ -2275,7 +2274,7 @@ handle_cache_regex_query(WebHttpContext * whc, char *tag, char *arg)
                 url = xstrndup(cqr_tmp1, url_size);
                 if (strcmp(cache_op, "Lookup") == 0) {
                   // display document lookup link
-                  ink_snprintf(tmp, MAX_TMP_BUF_LEN, "%s?url_op=%s&url=%s", HTML_SUBMIT_INSPECTOR_DPY_FILE, cache_op,
+                  snprintf(tmp, MAX_TMP_BUF_LEN, "%s?url_op=%s&url=%s", HTML_SUBMIT_INSPECTOR_DPY_FILE, cache_op,
                                url);
                   HtmlRndrAOpen(output, HTML_CSS_GRAPH, tmp, "display", "window.open('display', 'width=350, height=400')");
                   output->copyFrom(url, url_size);
@@ -2427,7 +2426,7 @@ handle_plugin_object(WebHttpContext * whc, char *tag, char *arg)
       HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_NONE, HTML_VALIGN_TOP, NULL, NULL, 0);
       config_link_len = strlen(wpc->config_path) + 16;
       config_link = (char *) alloca(config_link_len + 1);
-      ink_snprintf(config_link, config_link_len, "/plugins/%s", wpc->config_path);
+      snprintf(config_link, config_link_len, "/plugins/%s", wpc->config_path);
       HtmlRndrAOpen(output, HTML_CSS_GRAPH, config_link, "_blank");
       output->copyFrom(wpc->name, strlen(wpc->name));
       HtmlRndrAClose(output);
@@ -2471,7 +2470,7 @@ handle_ssl_redirect_url(WebHttpContext * whc, char *tag, char *arg)
   link = WebHttpGetLink_Xmalloc(HTML_MGMT_GENERAL_FILE);
 
   // construct proper redirect url
-  ink_snprintf(ssl_redirect_url, sizeof(ssl_redirect_url), "%s://%s:%d%s",
+  snprintf(ssl_redirect_url, sizeof(ssl_redirect_url), "%s://%s:%d%s",
                ssl_value ? "https" : "http", hostname_FQ, wGlobals.webPort, link);
 
   whc->response_bdy->copyFrom(ssl_redirect_url, strlen(ssl_redirect_url));
@@ -2505,7 +2504,7 @@ handle_host_redirect_url(WebHttpContext * whc, char *tag, char *arg)
   link = WebHttpGetLink_Xmalloc("/configure/c_net_config.ink");
 
   // construct proper redirect url
-  ink_snprintf(host_redirect_url, sizeof(host_redirect_url), "%s://%s:%d%s",
+  snprintf(host_redirect_url, sizeof(host_redirect_url), "%s://%s:%d%s",
                ssl_value ? "https" : "http", hostname, wGlobals.webPort, link);
 
   whc->response_bdy->copyFrom(host_redirect_url, strlen(host_redirect_url));
@@ -2946,11 +2945,11 @@ HtmlRndrTrOpen(textBuffer * html, const HtmlCss css, const HtmlAlign align)
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<tr", 3);
   if (css) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (align) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " align=\"%s\"", align);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " align=\"%s\"", align);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">\n", 2);
@@ -2968,31 +2967,31 @@ HtmlRndrTdOpen(textBuffer * html,
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<td", 3);
   if (css) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (align) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " align=\"%s\"", align);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " align=\"%s\"", align);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (valign) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " valign=\"%s\"", valign);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " valign=\"%s\"", valign);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (width) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " width=\"%s\"", width);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " width=\"%s\"", width);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (height) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " height=\"%s\"", height);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " height=\"%s\"", height);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (colspan > 0) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " colspan=\"%d\"", colspan);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " colspan=\"%d\"", colspan);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (bg) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " background=\"%s\"", bg);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " background=\"%s\"", bg);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">", 1);
@@ -3009,19 +3008,19 @@ HtmlRndrAOpen(textBuffer * html, const HtmlCss css, const char *href, const char
   char tmp[512 + 1];            // larger, since href's can be lengthy
   html->copyFrom("<a", 2);
   if (css) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (href) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " href=\"%s\"", href);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " href=\"%s\"", href);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (target) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " target=\"%s\"", target);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " target=\"%s\"", target);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (onclick) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " onclick=\"%s\"", onclick);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " onclick=\"%s\"", onclick);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">", 1);
@@ -3038,15 +3037,15 @@ HtmlRndrFormOpen(textBuffer * html, const char *name, const HtmlMethod method, c
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<form", 5);
   if (name) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (method) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " method=\"%s\"", method);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " method=\"%s\"", method);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (action) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " action=\"%s\"", action);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " action=\"%s\"", action);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">\n", 2);
@@ -3063,27 +3062,27 @@ HtmlRndrTextareaOpen(textBuffer * html, const HtmlCss css, int cols, int rows, c
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<textarea", 9);
   if (css) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (cols > 0) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " cols=\"%d\"", cols);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " cols=\"%d\"", cols);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (rows > 0) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " rows=\"%d\"", rows);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " rows=\"%d\"", rows);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (wrap) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " wrap=\"%s\"", wrap);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " wrap=\"%s\"", wrap);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (name) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (readonly) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " readonly");
+    snprintf(tmp, MAX_TMP_BUF_LEN, " readonly");
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">\n", 2);
@@ -3100,17 +3099,17 @@ HtmlRndrTableOpen(textBuffer * html, const char *width, int border, int cellspac
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<table", 6);
   if (width > 0) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " width=\"%s\"", width);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " width=\"%s\"", width);
     html->copyFrom(tmp, strlen(tmp));
   }
-  ink_snprintf(tmp, MAX_TMP_BUF_LEN, " border=\"%d\"", border);
+  snprintf(tmp, MAX_TMP_BUF_LEN, " border=\"%d\"", border);
   html->copyFrom(tmp, strlen(tmp));
-  ink_snprintf(tmp, MAX_TMP_BUF_LEN, " cellspacing=\"%d\"", cellspacing);
+  snprintf(tmp, MAX_TMP_BUF_LEN, " cellspacing=\"%d\"", cellspacing);
   html->copyFrom(tmp, strlen(tmp));
-  ink_snprintf(tmp, MAX_TMP_BUF_LEN, " cellpadding=\"%d\"", cellpadding);
+  snprintf(tmp, MAX_TMP_BUF_LEN, " cellpadding=\"%d\"", cellpadding);
   html->copyFrom(tmp, strlen(tmp));
   if (bordercolor) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " bordercolor=\"%s\"", bordercolor);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " bordercolor=\"%s\"", bordercolor);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">\n", 2);
@@ -3127,7 +3126,7 @@ HtmlRndrSpanOpen(textBuffer * html, const HtmlCss css)
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<span", 5);
   if (css) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">", 1);
@@ -3144,15 +3143,15 @@ HtmlRndrSelectOpen(textBuffer * html, const HtmlCss css, const char *name, int s
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<select", 7);
   if (css) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (name) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (size > 0) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " size=\"%d\"", size);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " size=\"%d\"", size);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">\n", 2);
@@ -3169,7 +3168,7 @@ HtmlRndrOptionOpen(textBuffer * html, const char *value, bool selected)
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<option", 7);
   if (value) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " value=\"%s\"", value);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " value=\"%s\"", value);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (selected) {
@@ -3189,11 +3188,11 @@ HtmlRndrPreOpen(textBuffer * html, const HtmlCss css, const char *width)
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<PRE", 4);
   if (css) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (width) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " width=\"%s\"", width);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " width=\"%s\"", width);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">", 1);
@@ -3341,27 +3340,27 @@ HtmlRndrInput(textBuffer * html, const HtmlCss css, const HtmlType type, const c
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<input", 6);
   if (css) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (type) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " type=\"%s\"", type);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " type=\"%s\"", type);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (name) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (value) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " value=\"%s\"", value);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " value=\"%s\"", value);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (target) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " target=\"%s\"", target);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " target=\"%s\"", target);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (onclick) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " onclick=\"%s\"", onclick);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " onclick=\"%s\"", onclick);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">\n", 2);
@@ -3379,15 +3378,15 @@ HtmlRndrInput(textBuffer * html, MgmtHashTable * dict_ht, HtmlCss css, HtmlType 
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<input", 6);
   if (css) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " class=\"%s\"", css);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (type) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " type=\"%s\"", type);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " type=\"%s\"", type);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (name) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " name=\"%s\"", name);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (value_id) {
@@ -3463,23 +3462,23 @@ HtmlRndrImg(textBuffer * html, const char *src, const char *border, const char *
   char tmp[MAX_TMP_BUF_LEN + 1];
   html->copyFrom("<img", 4);
   if (src) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " src=\"%s\"", src);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " src=\"%s\"", src);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (border) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " border=\"%s\"", border);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " border=\"%s\"", border);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (width) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " width=\"%s\"", width);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " width=\"%s\"", width);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (height) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " height=\"%s\"", height);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " height=\"%s\"", height);
     html->copyFrom(tmp, strlen(tmp));
   }
   if (hspace) {
-    ink_snprintf(tmp, MAX_TMP_BUF_LEN, " HSPACE='%s'", hspace);
+    snprintf(tmp, MAX_TMP_BUF_LEN, " HSPACE='%s'", hspace);
     html->copyFrom(tmp, strlen(tmp));
   }
   html->copyFrom(">", 1);
@@ -3494,7 +3493,7 @@ int
 HtmlRndrDotClear(textBuffer * html, int width, int height)
 {
   char tmp[MAX_TMP_BUF_LEN + 1];
-  ink_snprintf(tmp, MAX_TMP_BUF_LEN, "<img src=\"" HTML_DOT_CLEAR "\" " "width=\"%d\" height=\"%d\">", width, height);
+  snprintf(tmp, MAX_TMP_BUF_LEN, "<img src=\"" HTML_DOT_CLEAR "\" " "width=\"%d\" height=\"%d\">", width, height);
   html->copyFrom(tmp, strlen(tmp));
   return WEB_HTTP_ERR_OKAY;
 }

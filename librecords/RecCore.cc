@@ -547,19 +547,19 @@ RecGetRecordGeneric_Xmalloc(const char *name, RecString * rec_string, bool lock)
   memset(*rec_string, 0, 1024);
   switch (data_type) {
   case RECD_INT:
-    ink_snprintf(*rec_string, 1023, "%lld", data.rec_int);
+    snprintf(*rec_string, 1023, "%lld", data.rec_int);
     break;
   case RECD_LLONG:
-    ink_snprintf(*rec_string, 1023, "%lld", data.rec_llong);
+    snprintf(*rec_string, 1023, "%lld", data.rec_llong);
     break;
   case RECD_FLOAT:
-    ink_snprintf(*rec_string, 1023, "%f", data.rec_float);
+    snprintf(*rec_string, 1023, "%f", data.rec_float);
     break;
   case RECD_STRING:
-    ink_snprintf(*rec_string, 1023, "%s", data.rec_string);
+    snprintf(*rec_string, 1023, "%s", data.rec_string);
     break;
   case RECD_COUNTER:
-    ink_snprintf(*rec_string, 1023, "%lld", data.rec_counter);
+    snprintf(*rec_string, 1023, "%lld", data.rec_counter);
     break;
   default:
     return REC_ERR_FAIL;
@@ -759,13 +759,13 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
 
     switch (r->data_type) {
     case RECD_INT:
-      ink_snprintf(*buf, 1023, "%lld", r->data_default.rec_int);
+      snprintf(*buf, 1023, "%lld", r->data_default.rec_int);
       break;
     case RECD_LLONG:
-      ink_snprintf(*buf, 1023, "%lld", r->data_default.rec_llong);
+      snprintf(*buf, 1023, "%lld", r->data_default.rec_llong);
       break;
     case RECD_FLOAT:
-      ink_snprintf(*buf, 1023, "%f", r->data_default.rec_float);
+      snprintf(*buf, 1023, "%f", r->data_default.rec_float);
       break;
     case RECD_STRING:
       if (r->data_default.rec_string) {
@@ -777,7 +777,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
       }
       break;
     case RECD_COUNTER:
-      ink_snprintf(*buf, 1023, "%lld", r->data_default.rec_counter);
+      snprintf(*buf, 1023, "%lld", r->data_default.rec_counter);
       break;
     default:
       ink_debug_assert(!"Unexpected RecD type");
@@ -1078,23 +1078,23 @@ RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
       switch (r->data_type) {
       case RECD_INT:
         num_matched++;
-        ink_sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_int);
+        sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_int);
         break;
       case RECD_LLONG:
         num_matched++;
-        ink_sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_llong);
+        sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_llong);
         break;
       case RECD_FLOAT:
         num_matched++;
-        ink_sprintf(&result[strlen(result)], "%s=%f\r\n", r->name, r->data.rec_float);
+        sprintf(&result[strlen(result)], "%s=%f\r\n", r->name, r->data.rec_float);
         break;
       case RECD_STRING:
         num_matched++;
-        ink_sprintf(&result[strlen(result)], "%s=%s\r\n", r->name, r->data.rec_string ? r->data.rec_string : "NULL");
+        sprintf(&result[strlen(result)], "%s=%s\r\n", r->name, r->data.rec_string ? r->data.rec_string : "NULL");
         break;
       case RECD_COUNTER:
         num_matched++;
-        ink_sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_int);
+        sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_int);
         break;
       default:
         break;

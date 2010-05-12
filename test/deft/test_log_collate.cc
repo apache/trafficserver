@@ -35,7 +35,7 @@
 #include "raf_cmd.h"
 
 #include "ink_args.h"
-#include "ink_snprintf.h"
+#include "snprintf.h"
 #include "Diags.h"
 
 /* Argument Stuff */
@@ -208,7 +208,7 @@ LogCollateHandler::process_cmd_log_roll()
   }
 
   char new_name[1024];
-  ink_snprintf(new_name, 1023, "%s.%s", log_file, (*raf_cmd)[2]);
+  snprintf(new_name, 1023, "%s.%s", log_file, (*raf_cmd)[2]);
   new_name[1023] = '\0';
 
   const char *result_str = log_sender->roll_log_file(new_name);
@@ -333,7 +333,7 @@ init_output_log()
 
   if (*log_file == '\0') {
     pid_t mypid = getpid();
-    ink_snprintf(log_file, 1023, "test_collate_log.%d", mypid);
+    snprintf(log_file, 1023, "test_collate_log.%d", mypid);
     log_file[1023] = '\0';
     Note("No log specified - using %s", log_file);
   }

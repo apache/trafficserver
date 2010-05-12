@@ -35,7 +35,6 @@
 #include "Main.h"
 #include "Plugin.h"
 #include "PluginDB.h"
-#include "ink_snprintf.h"
 #include "stats/Stats.h"
 
 // HPUX:
@@ -210,7 +209,7 @@ plugin_expand(char *arg)
         goto not_found;
       }
       str = (char *) xmalloc(128);
-      ink_snprintf(str, 128, "%f", (float) float_val);
+      snprintf(str, 128, "%f", (float) float_val);
       return str;
       break;
     }
@@ -221,7 +220,7 @@ plugin_expand(char *arg)
         goto not_found;
       }
       str = (char *) xmalloc(128);
-      ink_snprintf(str, 128, "%ld", (long int) int_val);
+      snprintf(str, 128, "%ld", (long int) int_val);
       return str;
       break;
     }
@@ -232,7 +231,7 @@ plugin_expand(char *arg)
         goto not_found;
       }
       str = (char *) xmalloc(128);
-      ink_snprintf(str, 128, "%lld", (long long) llong_val);
+      snprintf(str, 128, "%lld", (long long) llong_val);
       return str;
       break;
     }
@@ -243,7 +242,7 @@ plugin_expand(char *arg)
         goto not_found;
       }
       str = (char *) xmalloc(128);
-      ink_snprintf(str, 128, "%ld", (long int) count_val);
+      snprintf(str, 128, "%ld", (long int) count_val);
       return str;
       break;
     }

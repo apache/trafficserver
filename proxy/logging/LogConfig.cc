@@ -1129,7 +1129,7 @@ size_t
       // add a filter that accepts the specified hostname
       //
       char filter_name[LOG_MAX_FORMAT_LINE + 12];
-      ink_snprintf(filter_name, LOG_MAX_FORMAT_LINE, "__accept_%s__", host[i]);
+      snprintf(filter_name, LOG_MAX_FORMAT_LINE, "__accept_%s__", host[i]);
       rp_ah[num_filt] =
         NEW(new LogFilterString(filter_name,
                                 shn_field, LogFilter::ACCEPT, LogFilter::CASE_INSENSITIVE_CONTAIN, host[i]));
@@ -1736,7 +1736,7 @@ LogConfig::update_space_used()
       break;
     }
 
-    ink_snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, m_dir_entry->d_name);
+    snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, m_dir_entry->d_name);
 
     sret =::stat(path, &sbuf);
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
@@ -1914,7 +1914,7 @@ LogConfig::read_old_log_config()
     return;
   }
 
-  ink_snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, config_file);
+  snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, config_file);
 
   Debug("log2-config", "Reading log config file %s", config_path);
 
@@ -2098,14 +2098,14 @@ LogConfig::read_xml_log_config(int from_memory)
   char config_path[PATH_MAX];
 
   if (from_memory) {
-    ink_snprintf(config_path, PATH_MAX, "%s", "from_memory");
+    snprintf(config_path, PATH_MAX, "%s", "from_memory");
     Debug("log2", "Reading from memory %s", config_path);
   } else {
     if (xml_config_file == NULL) {
       Note("No log config file to read");
       return;
     }
-    ink_snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, xml_config_file);
+    snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, xml_config_file);
   }
 
 
@@ -2670,7 +2670,7 @@ LogConfig::read_log_hosts_file(size_t * num_hosts)
   char line[LOG_MAX_FORMAT_LINE];
   char **hosts = NULL;
 
-  ink_snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, hosts_config_file);
+  snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, hosts_config_file);
 
   Debug("log2-config", "Reading log hosts from %s", config_path);
 

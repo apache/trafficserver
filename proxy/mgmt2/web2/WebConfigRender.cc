@@ -32,7 +32,6 @@
 #include "ink_platform.h"
 
 #include "ink_hash_table.h"
-#include "ink_snprintf.h"
 #include "I_Version.h"
 #include "SimpleTokenizer.h"
 
@@ -317,7 +316,7 @@ writeFilterConfigTable(WebHttpContext * whc)
     if (strlen(server) > 0) {
       HtmlRndrSpace(output, 2);
       memset(line, 0, 30);
-      ink_snprintf(line, 30, "server=%s", server);
+      snprintf(line, 30, "server=%s", server);
       output->copyFrom(line, strlen(line));
       HtmlRndrBr(output);
       hasSspecs = true;
@@ -325,7 +324,7 @@ writeFilterConfigTable(WebHttpContext * whc)
     if (strlen(dn) > 0) {
       HtmlRndrSpace(output, 2);
       memset(line, 0, 30);
-      ink_snprintf(line, 30, "dn=%s", dn);
+      snprintf(line, 30, "dn=%s", dn);
       output->copyFrom(line, strlen(line));
       HtmlRndrBr(output);
       hasSspecs = true;
@@ -333,7 +332,7 @@ writeFilterConfigTable(WebHttpContext * whc)
     if (strlen(uid_filter) > 0) {
       HtmlRndrSpace(output, 2);
       memset(line, 0, 30);
-      ink_snprintf(line, 30, "uid_filter=%s", uid_filter);
+      snprintf(line, 30, "uid_filter=%s", uid_filter);
       output->copyFrom(line, strlen(line));
       HtmlRndrBr(output);
       hasSspecs = true;
@@ -341,7 +340,7 @@ writeFilterConfigTable(WebHttpContext * whc)
     if (strlen(attr_name) > 0) {
       HtmlRndrSpace(output, 2);
       memset(line, 0, 30);
-      ink_snprintf(line, 30, "attr=%s", attr_name);
+      snprintf(line, 30, "attr=%s", attr_name);
       output->copyFrom(line, strlen(line));
       HtmlRndrBr(output);
       hasSspecs = true;
@@ -349,7 +348,7 @@ writeFilterConfigTable(WebHttpContext * whc)
     if (strlen(attr_val) > 0) {
       HtmlRndrSpace(output, 2);
       memset(line, 0, 30);
-      ink_snprintf(line, 30, "attr_val=%s", attr_val);
+      snprintf(line, 30, "attr_val=%s", attr_val);
       output->copyFrom(line, strlen(line));
       HtmlRndrBr(output);
       hasSspecs = true;
@@ -357,7 +356,7 @@ writeFilterConfigTable(WebHttpContext * whc)
     if (strlen(realm) > 0) {
       HtmlRndrSpace(output, 2);
       memset(line, 0, 30);
-      ink_snprintf(line, 30, "realm=%s", realm);
+      snprintf(line, 30, "realm=%s", realm);
       output->copyFrom(line, strlen(line));
       HtmlRndrBr(output);
       hasSspecs = true;
@@ -365,7 +364,7 @@ writeFilterConfigTable(WebHttpContext * whc)
     if (strlen(redirect_url) > 0) {
       HtmlRndrSpace(output, 2);
       memset(line, 0, 30);
-      ink_snprintf(line, 30, "redirect_url=%s", redirect_url);
+      snprintf(line, 30, "redirect_url=%s", redirect_url);
       output->copyFrom(line, strlen(line));
       HtmlRndrBr(output);
       hasSspecs = true;
@@ -373,7 +372,7 @@ writeFilterConfigTable(WebHttpContext * whc)
     if (strlen(bind_dn) > 0) {
       HtmlRndrSpace(output, 2);
       memset(line, 0, 30);
-      ink_snprintf(line, 30, "bind_dn=%s", bind_dn);
+      snprintf(line, 30, "bind_dn=%s", bind_dn);
       output->copyFrom(line, strlen(line));
       HtmlRndrBr(output);
       hasSspecs = true;
@@ -1679,7 +1678,7 @@ writeCacheRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE,
+    snprintf(rule, MAX_RULE_SIZE,
                  "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
                  i, ruleType, pdType, ele->cache_info.pd_val, time, src_ip, prefix, suffix, port, method, scheme,
                  time_period, mixt);
@@ -1770,13 +1769,13 @@ writeFilterRuleList(textBuffer * output)
 
     memset(rule, 0, MAX_RULE_SIZE);
     if (strlen(bind_pwd_file) > 0) {
-      ink_snprintf(rule, MAX_RULE_SIZE,
+      snprintf(rule, MAX_RULE_SIZE,
                    "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"*****\", \"%s\", \"%s\");\n",
                    i, ruleType, pdType, ele->filter_info.pd_val, time, src_ip, prefix, suffix, port, method, scheme,
                    hdr_type, server, dn, realm, uid_filter, attr_name, attr_val, redirect_url, bind_dn, bind_pwd_file,
                    mixt);
     } else {
-      ink_snprintf(rule, MAX_RULE_SIZE,
+      snprintf(rule, MAX_RULE_SIZE,
                    "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"\", \"%s\", \"%s\");\n",
                    i, ruleType, pdType, ele->filter_info.pd_val, time, src_ip, prefix, suffix, port, method, scheme,
                    hdr_type, server, dn, realm, uid_filter, attr_name, attr_val, redirect_url, bind_dn, bind_pwd_file,
@@ -1827,7 +1826,7 @@ writeHostingRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\");\n",
+    snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\");\n",
                  i, pdType, ele->pd_val, partitions);
 
     output->copyFrom(rule, strlen(rule));
@@ -1887,7 +1886,7 @@ writeIcpRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE,
+    snprintf(rule, MAX_RULE_SIZE,
                  "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n", i, name,
                  host_ip, peer_type, proxy_port, icp_port, mc_state, mc_ip, mc_ttl);
 
@@ -1936,7 +1935,7 @@ writeIpAllowRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\");\n", i, src_ip, action);
+    snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\");\n", i, src_ip, action);
 
     output->copyFrom(rule, strlen(rule));
   }
@@ -1983,7 +1982,7 @@ writeMgmtAllowRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\");\n", i, src_ip, action);
+    snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\");\n", i, src_ip, action);
 
     output->copyFrom(rule, strlen(rule));
   }
@@ -2049,7 +2048,7 @@ writeParentRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE,
+    snprintf(rule, MAX_RULE_SIZE,
                  "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
                  i, pdType, ele->parent_info.pd_val, time, src_ip, prefix, suffix, port, method, scheme, mixt, parents,
                  round_robin, direct);
@@ -2101,7 +2100,7 @@ writePartitionRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\");\n",
+    snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\");\n",
                  i, part_num, scheme, size, size_fmt);
 
     output->copyFrom(rule, strlen(rule));
@@ -2160,7 +2159,7 @@ writeRemapRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE,
+    snprintf(rule, MAX_RULE_SIZE,
                  "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\",\"%s\",\"%s\" );\n",
                  i, rule_type, from_scheme, ele->from_host, from_port, from_path, to_scheme, ele->to_host, to_port,
                  to_path, mixt);
@@ -2216,7 +2215,7 @@ writeSocksRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
+    snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
                  i, rule_type, dest_ip, user, passwd, servers, rr);
 
     output->copyFrom(rule, strlen(rule));
@@ -2267,7 +2266,7 @@ writeSplitDnsRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
+    snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
                  i, pdType, ele->pd_val, dns_server, def_domain, search_list);
 
     output->copyFrom(rule, strlen(rule));
@@ -2317,7 +2316,7 @@ writeUpdateRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
+    snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
                  i, ele->url, hdrs, offset, interval, depth);
 
     output->copyFrom(rule, strlen(rule));
@@ -2362,7 +2361,7 @@ writeVaddrsRuleList(textBuffer * output)
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
-    ink_snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\");\n", i, ip, ele->intr, sub_intr);
+    snprintf(rule, MAX_RULE_SIZE, "ruleList[%d] = new Rule(\"%s\", \"%s\", \"%s\");\n", i, ip, ele->intr, sub_intr);
 
     output->copyFrom(rule, strlen(rule));
   }
@@ -4375,7 +4374,7 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
   if (strlen(time) > 0) {
     HtmlRndrSpace(output, 2);
     memset(line, 0, 30);
-    ink_snprintf(line, 30, "time=%s", time);
+    snprintf(line, 30, "time=%s", time);
     output->copyFrom(line, strlen(line));
     HtmlRndrBr(output);
     hasSspecs = true;
@@ -4383,7 +4382,7 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
   if (strlen(prefix) > 0) {
     HtmlRndrSpace(output, 2);
     memset(line, 0, 30);
-    ink_snprintf(line, 30, "prefix=%s", prefix);
+    snprintf(line, 30, "prefix=%s", prefix);
     output->copyFrom(line, strlen(line));
     HtmlRndrBr(output);
     hasSspecs = true;
@@ -4391,7 +4390,7 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
   if (strlen(suffix) > 0) {
     HtmlRndrSpace(output, 2);
     memset(line, 0, 30);
-    ink_snprintf(line, 30, "suffix=%s", suffix);
+    snprintf(line, 30, "suffix=%s", suffix);
     output->copyFrom(line, strlen(line));
     HtmlRndrBr(output);
     hasSspecs = true;
@@ -4399,7 +4398,7 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
   if (strlen(src_ip) > 0) {
     HtmlRndrSpace(output, 2);
     memset(line, 0, 30);
-    ink_snprintf(line, 30, "src_ip=%s", src_ip);
+    snprintf(line, 30, "src_ip=%s", src_ip);
     output->copyFrom(line, strlen(line));
     HtmlRndrBr(output);
     hasSspecs = true;
@@ -4407,7 +4406,7 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
   if (strlen(port) > 0) {
     HtmlRndrSpace(output, 2);
     memset(line, 0, 30);
-    ink_snprintf(line, 30, "port=%s", port);
+    snprintf(line, 30, "port=%s", port);
     output->copyFrom(line, strlen(line));
     HtmlRndrBr(output);
     hasSspecs = true;
@@ -4415,7 +4414,7 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
   if (strlen(method) > 0) {
     HtmlRndrSpace(output, 2);
     memset(line, 0, 30);
-    ink_snprintf(line, 30, "method=%s", method);
+    snprintf(line, 30, "method=%s", method);
     output->copyFrom(line, strlen(line));
     HtmlRndrBr(output);
     hasSspecs = true;
@@ -4423,7 +4422,7 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
   if (strlen(scheme) > 0) {
     HtmlRndrSpace(output, 2);
     memset(line, 0, 30);
-    ink_snprintf(line, 30, "scheme=%s", scheme);
+    snprintf(line, 30, "scheme=%s", scheme);
     output->copyFrom(line, strlen(line));
     HtmlRndrBr(output);
     hasSspecs = true;
@@ -4431,7 +4430,7 @@ writeSecondarySpecsTableElem(textBuffer * output, char *time, char *src_ip, char
   if (strlen(mixt) > 0) {
     HtmlRndrSpace(output, 2);
     memset(line, 0, 30);
-    ink_snprintf(line, 30, "mixt tag=%s", mixt);
+    snprintf(line, 30, "mixt tag=%s", mixt);
     output->copyFrom(line, strlen(line));
     HtmlRndrBr(output);
     hasSspecs = true;
@@ -4466,28 +4465,28 @@ convert_cache_ele_to_html_format(INKCacheEle * ele,
   // rule type
   switch (ele->cfg_ele.type) {
   case INK_CACHE_NEVER:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "never-cache");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "never-cache");
     break;
   case INK_CACHE_IGNORE_NO_CACHE:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "ignore-no-cache");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "ignore-no-cache");
     break;
   case INK_CACHE_IGNORE_CLIENT_NO_CACHE:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "ignore-client-no-cache");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "ignore-client-no-cache");
     break;
   case INK_CACHE_IGNORE_SERVER_NO_CACHE:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "ignore-server-no-cache");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "ignore-server-no-cache");
     break;
   case INK_CACHE_PIN_IN_CACHE:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "pin-in-cache");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "pin-in-cache");
     break;
   case INK_CACHE_REVALIDATE:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "revalidate");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "revalidate");
     break;
   case INK_CACHE_TTL_IN_CACHE:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "ttl-in-cache");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "ttl-in-cache");
     break;
   case INK_CACHE_AUTH_CONTENT:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "cache-auth-content");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "cache-auth-content");
     break;
   default:
     goto Lerror;
@@ -4500,7 +4499,7 @@ convert_cache_ele_to_html_format(INKCacheEle * ele,
   // time period (for pin_in_cache, ttl_in_cache, and revalidate only)
   hms_time = hms_time_to_string(ele->time_period);
   if (hms_time) {
-    ink_snprintf(time_period, MAX_RULE_PART_SIZE, "%s", hms_time);
+    snprintf(time_period, MAX_RULE_PART_SIZE, "%s", hms_time);
     xfree(hms_time);
   }
   return WEB_HTTP_ERR_OKAY;
@@ -4532,25 +4531,25 @@ convert_filter_ele_to_html_format(INKFilterEle * ele,
   // rule type
   switch (ele->cfg_ele.type) {
   case INK_FILTER_ALLOW:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "allow");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "allow");
     break;
   case INK_FILTER_DENY:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "deny");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "deny");
     break;
   case INK_FILTER_LDAP:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "ldap");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "ldap");
     break;
   case INK_FILTER_NTLM:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "ntlm");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "ntlm");
     break;
   case INK_FILTER_RADIUS:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "radius");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "radius");
     break;
   case INK_FILTER_KEEP_HDR:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "keep_hdr");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "keep_hdr");
     break;
   case INK_FILTER_STRIP_HDR:
-    ink_snprintf(ruleType, MAX_RULE_PART_SIZE, "strip_hdr");
+    snprintf(ruleType, MAX_RULE_PART_SIZE, "strip_hdr");
     break;
   default:
     goto Lerror;
@@ -4563,16 +4562,16 @@ convert_filter_ele_to_html_format(INKFilterEle * ele,
   // header type
   switch (ele->hdr) {
   case INK_HDR_DATE:
-    ink_snprintf(hdr_type, MAX_RULE_PART_SIZE, "date");
+    snprintf(hdr_type, MAX_RULE_PART_SIZE, "date");
     break;
   case INK_HDR_HOST:
-    ink_snprintf(hdr_type, MAX_RULE_PART_SIZE, "host");
+    snprintf(hdr_type, MAX_RULE_PART_SIZE, "host");
     break;
   case INK_HDR_COOKIE:
-    ink_snprintf(hdr_type, MAX_RULE_PART_SIZE, "cookie");
+    snprintf(hdr_type, MAX_RULE_PART_SIZE, "cookie");
     break;
   case INK_HDR_CLIENT_IP:
-    ink_snprintf(hdr_type, MAX_RULE_PART_SIZE, "client_ip");
+    snprintf(hdr_type, MAX_RULE_PART_SIZE, "client_ip");
     break;
   default:
     break;
@@ -4580,36 +4579,36 @@ convert_filter_ele_to_html_format(INKFilterEle * ele,
 
   // server 
   if (ele->server)
-    ink_snprintf(server, MAX_RULE_PART_SIZE, ele->server);
+    snprintf(server, MAX_RULE_PART_SIZE, ele->server);
 
   // dn
   if (ele->dn)
-    ink_snprintf(dn, MAX_RULE_PART_SIZE, ele->dn);
+    snprintf(dn, MAX_RULE_PART_SIZE, ele->dn);
 
   // realm
   if (ele->realm)
-    ink_snprintf(realm, MAX_RULE_PART_SIZE, ele->realm);
+    snprintf(realm, MAX_RULE_PART_SIZE, ele->realm);
 
   // uid filter
   if (ele->uid_filter)
-    ink_snprintf(uid_filter, MAX_RULE_PART_SIZE, ele->uid_filter);
+    snprintf(uid_filter, MAX_RULE_PART_SIZE, ele->uid_filter);
 
   // attr name
   if (ele->attr)
-    ink_snprintf(attr_name, MAX_RULE_PART_SIZE, ele->attr);
+    snprintf(attr_name, MAX_RULE_PART_SIZE, ele->attr);
 
   // attr value
   if (ele->attr_val)
-    ink_snprintf(attr_val, MAX_RULE_PART_SIZE, ele->attr_val);
+    snprintf(attr_val, MAX_RULE_PART_SIZE, ele->attr_val);
 
   if (ele->redirect_url)
-    ink_snprintf(redirect_url, MAX_RULE_PART_SIZE, ele->redirect_url);
+    snprintf(redirect_url, MAX_RULE_PART_SIZE, ele->redirect_url);
 
   if (ele->bind_dn)
-    ink_snprintf(bind_dn, MAX_RULE_PART_SIZE, ele->bind_dn);
+    snprintf(bind_dn, MAX_RULE_PART_SIZE, ele->bind_dn);
 
   if (ele->bind_pwd_file)
-    ink_snprintf(bind_pwd_file, MAX_RULE_PART_SIZE, ele->bind_pwd_file);
+    snprintf(bind_pwd_file, MAX_RULE_PART_SIZE, ele->bind_pwd_file);
 
   return WEB_HTTP_ERR_OKAY;
 
@@ -4629,10 +4628,10 @@ convert_hosting_ele_to_html_format(INKHostingEle * ele, char *pdType, char *part
   // pd type
   switch (ele->pd_type) {
   case INK_PD_DOMAIN:
-    ink_snprintf(pdType, MAX_RULE_PART_SIZE, "domain");
+    snprintf(pdType, MAX_RULE_PART_SIZE, "domain");
     break;
   case INK_PD_HOST:
-    ink_snprintf(pdType, MAX_RULE_PART_SIZE, "hostname");
+    snprintf(pdType, MAX_RULE_PART_SIZE, "hostname");
     break;
   default:
     goto Lerror;
@@ -4645,7 +4644,7 @@ convert_hosting_ele_to_html_format(INKHostingEle * ele, char *pdType, char *part
   // partitions list
   if (ele->partitions) {
     list = int_list_to_string(ele->partitions, ",");
-    ink_snprintf(partitions, MAX_RULE_PART_SIZE, list);
+    snprintf(partitions, MAX_RULE_PART_SIZE, list);
     xfree(list);
   } else {
     goto Lerror;
@@ -4675,52 +4674,52 @@ convert_icp_ele_to_html_format(INKIcpEle * ele,
 
   // check hostname
   if (ele->peer_hostname)
-    ink_snprintf(name, MAX_RULE_PART_SIZE, "%s", ele->peer_hostname);
+    snprintf(name, MAX_RULE_PART_SIZE, "%s", ele->peer_hostname);
 
   // host_ip 
   if (ele->peer_host_ip_addr) {
     tmpStr = ip_addr_to_string(ele->peer_host_ip_addr);
-    ink_snprintf(host_ip, MAX_RULE_PART_SIZE, tmpStr);
+    snprintf(host_ip, MAX_RULE_PART_SIZE, tmpStr);
     xfree(tmpStr);
   }
   // cache type
   switch (ele->peer_type) {
   case INK_ICP_PARENT:
-    ink_snprintf(peer_type, MAX_RULE_PART_SIZE, "parent");
+    snprintf(peer_type, MAX_RULE_PART_SIZE, "parent");
     break;
   case INK_ICP_SIBLING:
-    ink_snprintf(peer_type, MAX_RULE_PART_SIZE, "sibling");
+    snprintf(peer_type, MAX_RULE_PART_SIZE, "sibling");
     break;
   default:
     goto Lerror;
   }
 
   // proxy_port
-  ink_snprintf(proxy_port, MAX_RULE_PART_SIZE, "%d", ele->peer_proxy_port);
+  snprintf(proxy_port, MAX_RULE_PART_SIZE, "%d", ele->peer_proxy_port);
 
   // icp_port
-  ink_snprintf(icp_port, MAX_RULE_PART_SIZE, "%d", ele->peer_icp_port);
+  snprintf(icp_port, MAX_RULE_PART_SIZE, "%d", ele->peer_icp_port);
 
   // mc on/off?
   if (ele->is_multicast) {
-    ink_snprintf(mc_state, MAX_RULE_PART_SIZE, "on");
+    snprintf(mc_state, MAX_RULE_PART_SIZE, "on");
   } else {
-    ink_snprintf(mc_state, MAX_RULE_PART_SIZE, "off");
+    snprintf(mc_state, MAX_RULE_PART_SIZE, "off");
   }
 
   // mc ip
   if (ele->mc_ip_addr != INK_INVALID_IP_ADDR) {
     tmpStr = ip_addr_to_string(ele->mc_ip_addr);
-    ink_snprintf(mc_ip, MAX_RULE_PART_SIZE, tmpStr);
+    snprintf(mc_ip, MAX_RULE_PART_SIZE, tmpStr);
     xfree(tmpStr);
   }
   // mc ttl
   switch (ele->mc_ttl) {
   case INK_MC_TTL_SINGLE_SUBNET:
-    ink_snprintf(mc_ttl, MAX_RULE_PART_SIZE, "single subnet");
+    snprintf(mc_ttl, MAX_RULE_PART_SIZE, "single subnet");
     break;
   case INK_MC_TTL_MULT_SUBNET:
-    ink_snprintf(mc_ttl, MAX_RULE_PART_SIZE, "multiple subnets");
+    snprintf(mc_ttl, MAX_RULE_PART_SIZE, "multiple subnets");
     break;
   default:
     // Handled here:
@@ -4746,16 +4745,16 @@ convert_ip_allow_ele_to_html_format(INKIpAllowEle * ele, char *src_ip, char *act
   // src_ip
   if (ele->src_ip_addr) {
     ip = ip_addr_ele_to_string(ele->src_ip_addr);
-    ink_snprintf(src_ip, MAX_RULE_PART_SIZE, "%s", ip);
+    snprintf(src_ip, MAX_RULE_PART_SIZE, "%s", ip);
     xfree(ip);
   }
   // action 
   switch (ele->action) {
   case INK_IP_ALLOW_ALLOW:
-    ink_snprintf(action, MAX_RULE_PART_SIZE, "ip_allow");
+    snprintf(action, MAX_RULE_PART_SIZE, "ip_allow");
     break;
   case INK_IP_ALLOW_DENY:
-    ink_snprintf(action, MAX_RULE_PART_SIZE, "ip_deny");
+    snprintf(action, MAX_RULE_PART_SIZE, "ip_deny");
     break;
   default:
     goto Lerror;
@@ -4779,16 +4778,16 @@ convert_mgmt_allow_ele_to_html_format(INKMgmtAllowEle * ele, char *src_ip, char 
   // src_ip
   if (ele->src_ip_addr) {
     ip = ip_addr_ele_to_string(ele->src_ip_addr);
-    ink_snprintf(src_ip, MAX_RULE_PART_SIZE, "%s", ip);
+    snprintf(src_ip, MAX_RULE_PART_SIZE, "%s", ip);
     xfree(ip);
   }
   // action 
   switch (ele->action) {
   case INK_MGMT_ALLOW_ALLOW:
-    ink_snprintf(action, MAX_RULE_PART_SIZE, "ip_allow");
+    snprintf(action, MAX_RULE_PART_SIZE, "ip_allow");
     break;
   case INK_MGMT_ALLOW_DENY:
-    ink_snprintf(action, MAX_RULE_PART_SIZE, "ip_deny");
+    snprintf(action, MAX_RULE_PART_SIZE, "ip_deny");
     break;
   default:
     goto Lerror;
@@ -4824,19 +4823,19 @@ convert_parent_ele_to_html_format(INKParentProxyEle * ele,
   // parents 
   if (ele->proxy_list) {
     plist = domain_list_to_string((DomainList *) ele->proxy_list, ";");
-    ink_snprintf(parents, MAX_RULE_PART_SIZE, "%s", plist);
+    snprintf(parents, MAX_RULE_PART_SIZE, "%s", plist);
     xfree(plist);
   }
   // round_robin
   switch (ele->rr) {
   case INK_RR_TRUE:
-    ink_snprintf(round_robin, MAX_RULE_PART_SIZE, "true");
+    snprintf(round_robin, MAX_RULE_PART_SIZE, "true");
     break;
   case INK_RR_STRICT:
-    ink_snprintf(round_robin, MAX_RULE_PART_SIZE, "strict");
+    snprintf(round_robin, MAX_RULE_PART_SIZE, "strict");
     break;
   case INK_RR_FALSE:
-    ink_snprintf(round_robin, MAX_RULE_PART_SIZE, "false");
+    snprintf(round_robin, MAX_RULE_PART_SIZE, "false");
     break;
   default:
     // Handled here:
@@ -4846,9 +4845,9 @@ convert_parent_ele_to_html_format(INKParentProxyEle * ele,
 
   // go direct
   if (ele->direct)
-    ink_snprintf(direct, MAX_RULE_PART_SIZE, "true");
+    snprintf(direct, MAX_RULE_PART_SIZE, "true");
   else
-    ink_snprintf(direct, MAX_RULE_PART_SIZE, "false");
+    snprintf(direct, MAX_RULE_PART_SIZE, "false");
 
   return WEB_HTTP_ERR_OKAY;
 
@@ -4864,30 +4863,30 @@ int
 convert_partition_ele_to_html_format(INKPartitionEle * ele, char *part_num, char *scheme, char *size, char *size_fmt)
 {
   // partition number
-  ink_snprintf(part_num, MAX_RULE_PART_SIZE, "%d", ele->partition_num);
+  snprintf(part_num, MAX_RULE_PART_SIZE, "%d", ele->partition_num);
 
   // scheme
   switch (ele->scheme) {
   case INK_PARTITION_HTTP:
-    ink_snprintf(scheme, MAX_RULE_PART_SIZE, "http");
+    snprintf(scheme, MAX_RULE_PART_SIZE, "http");
     break;
   case INK_PARTITION_MIXT:
-    ink_snprintf(scheme, MAX_RULE_PART_SIZE, "mixt");
+    snprintf(scheme, MAX_RULE_PART_SIZE, "mixt");
     break;
   default:
     goto Lerror;
   }
 
   // size
-  ink_snprintf(size, MAX_RULE_PART_SIZE, "%d", ele->partition_size);
+  snprintf(size, MAX_RULE_PART_SIZE, "%d", ele->partition_size);
 
   // size format
   switch (ele->size_format) {
   case INK_SIZE_FMT_PERCENT:
-    ink_snprintf(size_fmt, MAX_RULE_PART_SIZE, "percent");
+    snprintf(size_fmt, MAX_RULE_PART_SIZE, "percent");
     break;
   case INK_SIZE_FMT_ABSOLUTE:
-    ink_snprintf(size_fmt, MAX_RULE_PART_SIZE, "absolute");
+    snprintf(size_fmt, MAX_RULE_PART_SIZE, "absolute");
     break;
   default:
     goto Lerror;
@@ -4912,16 +4911,16 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
   // rule type
   switch (ele->cfg_ele.type) {
   case INK_REMAP_MAP:
-    ink_snprintf(rule_type, MAX_RULE_PART_SIZE, "map");
+    snprintf(rule_type, MAX_RULE_PART_SIZE, "map");
     break;
   case INK_REMAP_REVERSE_MAP:
-    ink_snprintf(rule_type, MAX_RULE_PART_SIZE, "reverse_map");
+    snprintf(rule_type, MAX_RULE_PART_SIZE, "reverse_map");
     break;
   case INK_REMAP_REDIRECT:
-    ink_snprintf(rule_type, MAX_RULE_PART_SIZE, "redirect");
+    snprintf(rule_type, MAX_RULE_PART_SIZE, "redirect");
     break;
   case INK_REMAP_REDIRECT_TEMP:
-    ink_snprintf(rule_type, MAX_RULE_PART_SIZE, "redirect_temporary");
+    snprintf(rule_type, MAX_RULE_PART_SIZE, "redirect_temporary");
     break;
   default:
     goto Lerror;
@@ -4930,16 +4929,16 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
   // scheme
   switch (ele->from_scheme) {
   case INK_SCHEME_HTTP:
-    ink_snprintf(from_scheme, MAX_RULE_PART_SIZE, "http");
+    snprintf(from_scheme, MAX_RULE_PART_SIZE, "http");
     break;
   case INK_SCHEME_HTTPS:
-    ink_snprintf(from_scheme, MAX_RULE_PART_SIZE, "https");
+    snprintf(from_scheme, MAX_RULE_PART_SIZE, "https");
     break;
   case INK_SCHEME_RTSP:
-    ink_snprintf(from_scheme, MAX_RULE_PART_SIZE, "rtsp");
+    snprintf(from_scheme, MAX_RULE_PART_SIZE, "rtsp");
     break;
   case INK_SCHEME_MMS:
-    ink_snprintf(from_scheme, MAX_RULE_PART_SIZE, "mms");
+    snprintf(from_scheme, MAX_RULE_PART_SIZE, "mms");
     break;
   default:
     goto Lerror;
@@ -4950,25 +4949,25 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
 
   // from port 
   if (ele->from_port > 0) {
-    ink_snprintf(from_port, MAX_RULE_PART_SIZE, "%d", ele->from_port);
+    snprintf(from_port, MAX_RULE_PART_SIZE, "%d", ele->from_port);
   }
   // from path
   if (ele->from_path_prefix) {
-    ink_snprintf(from_path, MAX_RULE_PART_SIZE, "%s", ele->from_path_prefix);
+    snprintf(from_path, MAX_RULE_PART_SIZE, "%s", ele->from_path_prefix);
   }
 
   switch (ele->to_scheme) {
   case INK_SCHEME_HTTP:
-    ink_snprintf(to_scheme, MAX_RULE_PART_SIZE, "http");
+    snprintf(to_scheme, MAX_RULE_PART_SIZE, "http");
     break;
   case INK_SCHEME_HTTPS:
-    ink_snprintf(to_scheme, MAX_RULE_PART_SIZE, "https");
+    snprintf(to_scheme, MAX_RULE_PART_SIZE, "https");
     break;
   case INK_SCHEME_RTSP:
-    ink_snprintf(to_scheme, MAX_RULE_PART_SIZE, "rtsp");
+    snprintf(to_scheme, MAX_RULE_PART_SIZE, "rtsp");
     break;
   case INK_SCHEME_MMS:
-    ink_snprintf(to_scheme, MAX_RULE_PART_SIZE, "mms");
+    snprintf(to_scheme, MAX_RULE_PART_SIZE, "mms");
     break;
   default:
     goto Lerror;
@@ -4979,22 +4978,22 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
 
   // to port 
   if (ele->to_port > 0) {
-    ink_snprintf(to_port, MAX_RULE_PART_SIZE, "%d", ele->to_port);
+    snprintf(to_port, MAX_RULE_PART_SIZE, "%d", ele->to_port);
   }
   // to path
   if (ele->to_path_prefix) {
-    ink_snprintf(to_path, MAX_RULE_PART_SIZE, "%s", ele->to_path_prefix);
+    snprintf(to_path, MAX_RULE_PART_SIZE, "%s", ele->to_path_prefix);
   }
   // mixt
   switch (ele->mixt) {
   case INK_MIXT_RNI:
-    ink_snprintf(mixt, MAX_RULE_PART_SIZE, "RNI");
+    snprintf(mixt, MAX_RULE_PART_SIZE, "RNI");
     break;
   case INK_MIXT_QT:
-    ink_snprintf(mixt, MAX_RULE_PART_SIZE, "QT");
+    snprintf(mixt, MAX_RULE_PART_SIZE, "QT");
     break;
   case INK_MIXT_WMT:
-    ink_snprintf(mixt, MAX_RULE_PART_SIZE, "WMT");
+    snprintf(mixt, MAX_RULE_PART_SIZE, "WMT");
     break;
   default:
     break;
@@ -5021,13 +5020,13 @@ convert_socks_ele_to_html_format(INKSocksEle * ele,
   // rule type
   switch (ele->cfg_ele.type) {
   case INK_SOCKS_BYPASS:
-    ink_snprintf(rule_type, MAX_RULE_PART_SIZE, "no_socks");
+    snprintf(rule_type, MAX_RULE_PART_SIZE, "no_socks");
     break;
   case INK_SOCKS_AUTH:
-    ink_snprintf(rule_type, MAX_RULE_PART_SIZE, "auth");
+    snprintf(rule_type, MAX_RULE_PART_SIZE, "auth");
     break;
   case INK_SOCKS_MULTIPLE:
-    ink_snprintf(rule_type, MAX_RULE_PART_SIZE, "multiple_socks");
+    snprintf(rule_type, MAX_RULE_PART_SIZE, "multiple_socks");
     break;
   default:
     goto Lerror;
@@ -5037,17 +5036,17 @@ convert_socks_ele_to_html_format(INKSocksEle * ele,
   if (ele->ip_addrs) {
     list = ip_addr_list_to_string((IpAddrList *) ele->ip_addrs, ",");
     if (list) {
-      ink_snprintf(dest_ip, MAX_RULE_PART_SIZE, "%s", list);
+      snprintf(dest_ip, MAX_RULE_PART_SIZE, "%s", list);
       xfree(list);
     }
   }
   // username
   if (ele->username) {
-    ink_snprintf(user, MAX_RULE_PART_SIZE, "%s", ele->username);
+    snprintf(user, MAX_RULE_PART_SIZE, "%s", ele->username);
   }
   // password
   if (ele->password) {
-    ink_snprintf(passwd, MAX_RULE_PART_SIZE, "%s", ele->password);
+    snprintf(passwd, MAX_RULE_PART_SIZE, "%s", ele->password);
   }
   // dest ip
   if (ele->dest_ip_addr) {
@@ -5055,7 +5054,7 @@ convert_socks_ele_to_html_format(INKSocksEle * ele,
       goto Lerror;
     ip = ip_addr_ele_to_string(ele->dest_ip_addr);
     if (ip) {
-      ink_snprintf(dest_ip, MAX_RULE_PART_SIZE, "%s", ip);
+      snprintf(dest_ip, MAX_RULE_PART_SIZE, "%s", ip);
       xfree(ip);
     }
   }
@@ -5063,20 +5062,20 @@ convert_socks_ele_to_html_format(INKSocksEle * ele,
   if (ele->socks_servers) {
     list = domain_list_to_string((DomainList *) ele->socks_servers, ";");
     if (list) {
-      ink_snprintf(servers, MAX_RULE_PART_SIZE, "%s", list);
+      snprintf(servers, MAX_RULE_PART_SIZE, "%s", list);
       xfree(list);
     }
   }
   // round_robin
   switch (ele->rr) {
   case INK_RR_TRUE:
-    ink_snprintf(rr, MAX_RULE_PART_SIZE, "true");
+    snprintf(rr, MAX_RULE_PART_SIZE, "true");
     break;
   case INK_RR_STRICT:
-    ink_snprintf(rr, MAX_RULE_PART_SIZE, "strict");
+    snprintf(rr, MAX_RULE_PART_SIZE, "strict");
     break;
   case INK_RR_FALSE:
-    ink_snprintf(rr, MAX_RULE_PART_SIZE, "false");
+    snprintf(rr, MAX_RULE_PART_SIZE, "false");
     break;
   default:
     // Handled here:
@@ -5104,13 +5103,13 @@ convert_split_dns_ele_to_html_format(INKSplitDnsEle * ele,
   // pd type
   switch (ele->pd_type) {
   case INK_PD_DOMAIN:
-    ink_snprintf(pdType, MAX_RULE_PART_SIZE, "dest_domain");
+    snprintf(pdType, MAX_RULE_PART_SIZE, "dest_domain");
     break;
   case INK_PD_HOST:
-    ink_snprintf(pdType, MAX_RULE_PART_SIZE, "dest_host");
+    snprintf(pdType, MAX_RULE_PART_SIZE, "dest_host");
     break;
   case INK_PD_URL_REGEX:
-    ink_snprintf(pdType, MAX_RULE_PART_SIZE, "url_regex");
+    snprintf(pdType, MAX_RULE_PART_SIZE, "url_regex");
     break;
   default:
     goto Lerror;
@@ -5123,7 +5122,7 @@ convert_split_dns_ele_to_html_format(INKSplitDnsEle * ele,
   // dns servers ip's
   if (ele->dns_servers_addrs) {
     domain_list = domain_list_to_string((DomainList *) (ele->dns_servers_addrs), ";");
-    ink_snprintf(dns_server, MAX_RULE_PART_SIZE, domain_list);
+    snprintf(dns_server, MAX_RULE_PART_SIZE, domain_list);
     xfree(domain_list);
   } else {
     goto Lerror;
@@ -5131,13 +5130,13 @@ convert_split_dns_ele_to_html_format(INKSplitDnsEle * ele,
 
   // default domain is optional
   if (ele->def_domain) {
-    ink_snprintf(def_domain, MAX_RULE_PART_SIZE, ele->def_domain);
+    snprintf(def_domain, MAX_RULE_PART_SIZE, ele->def_domain);
   }
   // search list is optional
   if (ele->search_list) {
     domain_list = domain_list_to_string((DomainList *) (ele->search_list), ";");
     if (domain_list) {
-      ink_snprintf(search_list, MAX_RULE_PART_SIZE, domain_list);
+      snprintf(search_list, MAX_RULE_PART_SIZE, domain_list);
       xfree(domain_list);
     } else {
       goto Lerror;
@@ -5167,7 +5166,7 @@ convert_update_ele_to_html_format(INKUpdateEle * ele, char *hdrs, char *offset, 
   if (ele->headers) {
     list = string_list_to_string(ele->headers, ";");
     if (list) {
-      ink_snprintf(hdrs, MAX_RULE_PART_SIZE, "%s", list);
+      snprintf(hdrs, MAX_RULE_PART_SIZE, "%s", list);
       xfree(list);
     }
   } else {
@@ -5175,14 +5174,14 @@ convert_update_ele_to_html_format(INKUpdateEle * ele, char *hdrs, char *offset, 
   }
 
   // offset hour
-  ink_snprintf(offset, MAX_RULE_PART_SIZE, "%d", ele->offset_hour);
+  snprintf(offset, MAX_RULE_PART_SIZE, "%d", ele->offset_hour);
 
   // interval
-  ink_snprintf(interval, MAX_RULE_PART_SIZE, "%d", ele->interval);
+  snprintf(interval, MAX_RULE_PART_SIZE, "%d", ele->interval);
 
   // recursion depth
   if (ele->recursion_depth > 0) {
-    ink_snprintf(depth, MAX_RULE_PART_SIZE, "%d", ele->recursion_depth);
+    snprintf(depth, MAX_RULE_PART_SIZE, "%d", ele->recursion_depth);
   }
 
   return WEB_HTTP_ERR_OKAY;
@@ -5204,7 +5203,7 @@ convert_virt_ip_addr_ele_to_html_format(INKVirtIpAddrEle * ele, char *ip, char *
   // virtual IP
   if (ele->ip_addr) {
     ipt = ip_addr_to_string(ele->ip_addr);
-    ink_snprintf(ip, MAX_RULE_PART_SIZE, "%s", ipt);
+    snprintf(ip, MAX_RULE_PART_SIZE, "%s", ipt);
     xfree(ipt);
   } else {
     goto Lerror;
@@ -5215,7 +5214,7 @@ convert_virt_ip_addr_ele_to_html_format(INKVirtIpAddrEle * ele, char *ip, char *
     goto Lerror;
 
   // sub interface
-  ink_snprintf(sub_intr, MAX_RULE_PART_SIZE, "%d", ele->sub_intr);
+  snprintf(sub_intr, MAX_RULE_PART_SIZE, "%d", ele->sub_intr);
 
   return WEB_HTTP_ERR_OKAY;
 
@@ -5243,16 +5242,16 @@ convert_pdss_to_html_format(INKPdSsFormat info,
   // pd type
   switch (info.pd_type) {
   case INK_PD_DOMAIN:
-    ink_snprintf(pdType, MAX_RULE_PART_SIZE, "dest_domain");
+    snprintf(pdType, MAX_RULE_PART_SIZE, "dest_domain");
     break;
   case INK_PD_HOST:
-    ink_snprintf(pdType, MAX_RULE_PART_SIZE, "dest_host");
+    snprintf(pdType, MAX_RULE_PART_SIZE, "dest_host");
     break;
   case INK_PD_IP:
-    ink_snprintf(pdType, MAX_RULE_PART_SIZE, "dest_ip");
+    snprintf(pdType, MAX_RULE_PART_SIZE, "dest_ip");
     break;
   case INK_PD_URL_REGEX:
-    ink_snprintf(pdType, MAX_RULE_PART_SIZE, "url_regex");
+    snprintf(pdType, MAX_RULE_PART_SIZE, "url_regex");
     break;
   default:
     goto Lerror;
@@ -5268,61 +5267,61 @@ convert_pdss_to_html_format(INKPdSsFormat info,
       info.sec_spec.time.min_a > 0 || info.sec_spec.time.hour_b > 0 || info.sec_spec.time.min_b > 0) {
 
     if (info.sec_spec.time.min_a <= 0)
-      ink_snprintf(minA, 3, "00");
+      snprintf(minA, 3, "00");
     else if (info.sec_spec.time.min_a < 10)
-      ink_snprintf(minA, 3, "0%d", info.sec_spec.time.min_a);
+      snprintf(minA, 3, "0%d", info.sec_spec.time.min_a);
     else
-      ink_snprintf(minA, 3, "%d", info.sec_spec.time.min_a);
+      snprintf(minA, 3, "%d", info.sec_spec.time.min_a);
 
     if (info.sec_spec.time.min_b <= 0)
-      ink_snprintf(minB, 3, "00");
+      snprintf(minB, 3, "00");
     else if (info.sec_spec.time.min_b < 10)
-      ink_snprintf(minB, 3, "0%d", info.sec_spec.time.min_b);
+      snprintf(minB, 3, "0%d", info.sec_spec.time.min_b);
     else
-      ink_snprintf(minB, 3, "%d", info.sec_spec.time.min_b);
+      snprintf(minB, 3, "%d", info.sec_spec.time.min_b);
 
-    ink_snprintf(time, MAX_RULE_PART_SIZE, "%d:%s-%d:%s", info.sec_spec.time.hour_a,
+    snprintf(time, MAX_RULE_PART_SIZE, "%d:%s-%d:%s", info.sec_spec.time.hour_a,
                  minA, info.sec_spec.time.hour_b, minB);
   }
   // src_ip
   if (info.sec_spec.src_ip)
-    ink_snprintf(src_ip, MAX_RULE_PART_SIZE, "%s", info.sec_spec.src_ip);
+    snprintf(src_ip, MAX_RULE_PART_SIZE, "%s", info.sec_spec.src_ip);
 
   // prefix
   if (info.sec_spec.prefix)
-    ink_snprintf(prefix, MAX_RULE_PART_SIZE, "%s", info.sec_spec.prefix);
+    snprintf(prefix, MAX_RULE_PART_SIZE, "%s", info.sec_spec.prefix);
 
   // suffix
   if (info.sec_spec.suffix)
-    ink_snprintf(suffix, MAX_RULE_PART_SIZE, "%s", info.sec_spec.suffix);
+    snprintf(suffix, MAX_RULE_PART_SIZE, "%s", info.sec_spec.suffix);
 
   // port
   if (info.sec_spec.port) {
     if (info.sec_spec.port->port_a != 0 && info.sec_spec.port->port_b != 0) {
-      ink_snprintf(port, MAX_RULE_PART_SIZE, "%d-%d", info.sec_spec.port->port_a, info.sec_spec.port->port_b);
+      snprintf(port, MAX_RULE_PART_SIZE, "%d-%d", info.sec_spec.port->port_a, info.sec_spec.port->port_b);
     } else {
-      ink_snprintf(port, MAX_RULE_PART_SIZE, "%d", info.sec_spec.port->port_a);
+      snprintf(port, MAX_RULE_PART_SIZE, "%d", info.sec_spec.port->port_a);
     }
   }
   //method
   switch (info.sec_spec.method) {
   case INK_METHOD_GET:
-    ink_snprintf(method, MAX_RULE_PART_SIZE, "get");
+    snprintf(method, MAX_RULE_PART_SIZE, "get");
     break;
   case INK_METHOD_POST:
-    ink_snprintf(method, MAX_RULE_PART_SIZE, "post");
+    snprintf(method, MAX_RULE_PART_SIZE, "post");
     break;
   case INK_METHOD_PUT:
-    ink_snprintf(method, MAX_RULE_PART_SIZE, "put");
+    snprintf(method, MAX_RULE_PART_SIZE, "put");
     break;
   case INK_METHOD_TRACE:
-    ink_snprintf(method, MAX_RULE_PART_SIZE, "trace");
+    snprintf(method, MAX_RULE_PART_SIZE, "trace");
     break;
   case INK_METHOD_PUSH:
-    ink_snprintf(method, MAX_RULE_PART_SIZE, "PUSH");
+    snprintf(method, MAX_RULE_PART_SIZE, "PUSH");
     break;
   case INK_METHOD_NONE:
-    ink_snprintf(method, MAX_RULE_PART_SIZE, "none");
+    snprintf(method, MAX_RULE_PART_SIZE, "none");
     break;
   default:
     break;
@@ -5331,19 +5330,19 @@ convert_pdss_to_html_format(INKPdSsFormat info,
   // scheme
   switch (info.sec_spec.scheme) {
   case INK_SCHEME_HTTP:
-    ink_snprintf(scheme, MAX_RULE_PART_SIZE, "http");
+    snprintf(scheme, MAX_RULE_PART_SIZE, "http");
     break;
   case INK_SCHEME_HTTPS:
-    ink_snprintf(scheme, MAX_RULE_PART_SIZE, "https");
+    snprintf(scheme, MAX_RULE_PART_SIZE, "https");
     break;
   case INK_SCHEME_RTSP:
-    ink_snprintf(scheme, MAX_RULE_PART_SIZE, "rtsp");
+    snprintf(scheme, MAX_RULE_PART_SIZE, "rtsp");
     break;
   case INK_SCHEME_MMS:
-    ink_snprintf(scheme, MAX_RULE_PART_SIZE, "mms");
+    snprintf(scheme, MAX_RULE_PART_SIZE, "mms");
     break;
   case INK_SCHEME_NONE:
-    ink_snprintf(scheme, MAX_RULE_PART_SIZE, "none");
+    snprintf(scheme, MAX_RULE_PART_SIZE, "none");
     break;
   default:
     break;
@@ -5352,13 +5351,13 @@ convert_pdss_to_html_format(INKPdSsFormat info,
   // mixt tag
   switch (info.sec_spec.mixt) {
   case INK_MIXT_RNI:
-    ink_snprintf(mixt, MAX_RULE_PART_SIZE, "RNI");
+    snprintf(mixt, MAX_RULE_PART_SIZE, "RNI");
     break;
   case INK_MIXT_QT:
-    ink_snprintf(mixt, MAX_RULE_PART_SIZE, "QT");
+    snprintf(mixt, MAX_RULE_PART_SIZE, "QT");
     break;
   case INK_MIXT_WMT:
-    ink_snprintf(mixt, MAX_RULE_PART_SIZE, "WMT");
+    snprintf(mixt, MAX_RULE_PART_SIZE, "WMT");
     break;
   default:
     break;

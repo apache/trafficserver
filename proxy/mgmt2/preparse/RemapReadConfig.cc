@@ -33,7 +33,6 @@
 #include "ink_platform.h"
 #include "ink_string.h"
 #include "ink_file.h"
-#include "ink_snprintf.h"
 #include "Tokenizer.h"
 #include "URL.h"
 #include "MIME.h"
@@ -186,7 +185,7 @@ parseRemapFile(int fd)
 
 FAIL:
   errBuf = (char *) xmalloc(1024);
-  ink_snprintf(errBuf, 1024, "[Entry %d] %s", entry, err);
+  snprintf(errBuf, 1024, "[Entry %d] %s", entry, err);
   return errBuf;
 }
 

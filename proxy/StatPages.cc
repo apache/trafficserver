@@ -172,7 +172,7 @@ BaseStatPagesHandler::resp_add(const char *fmt, ...)
   int size;
 
   va_start(args, fmt);
-  length = ink_vsnprintf(buf, 16384, fmt, args);
+  length = vsnprintf(buf, 16384, fmt, args);
   va_end(args);
 
   size = response_size;

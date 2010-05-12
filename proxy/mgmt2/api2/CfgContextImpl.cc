@@ -524,7 +524,7 @@ CongestionObj::formatEleToRule()
   if (pos < sizeof(buf)) {
     switch (m_ele->pd_type) {
     case INK_PD_DOMAIN:
-      psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "dest_domain=%s ", m_ele->pd_val);
+      psize = snprintf(buf + pos, sizeof(buf) - pos, "dest_domain=%s ", m_ele->pd_val);
       break;
     case INK_PD_HOST:
       psize = snprintf(buf + pos, sizeof(buf) - pos, "dest_host=%s ", m_ele->pd_val);
@@ -546,58 +546,58 @@ CongestionObj::formatEleToRule()
   }
   // secondary specifiers
   if (m_ele->prefix) {
-    if (pos < sizeof(buf) && (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "prefix=%s ", m_ele->prefix)) > 0)
+    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "prefix=%s ", m_ele->prefix)) > 0)
       pos += psize;
   }
   if (m_ele->port > 0) {
-    if (pos < sizeof(buf) && (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "port=%d ", m_ele->port)) > 0)
+    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "port=%d ", m_ele->port)) > 0)
       pos += psize;
   }
 
 
   if (pos < sizeof(buf) &&
       (psize =
-       ink_snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0)
+       snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
-      (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "fail_window=%d ", m_ele->fail_window)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "fail_window=%d ", m_ele->fail_window)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
-      (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "proxy_retry_interval=%d ", m_ele->proxy_retry_interval)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "proxy_retry_interval=%d ", m_ele->proxy_retry_interval)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
-      (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "client_wait_interval=%d ", m_ele->client_wait_interval)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "client_wait_interval=%d ", m_ele->client_wait_interval)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
-      (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "wait_interval_alpha=%d ", m_ele->wait_interval_alpha)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "wait_interval_alpha=%d ", m_ele->wait_interval_alpha)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
-      (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_timeout=%d ", m_ele->live_os_conn_timeout)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_timeout=%d ", m_ele->live_os_conn_timeout)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
-      (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_retries=%d ", m_ele->live_os_conn_retries)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_retries=%d ", m_ele->live_os_conn_retries)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
-      (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_timeout=%d ", m_ele->dead_os_conn_timeout)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_timeout=%d ", m_ele->dead_os_conn_timeout)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
-      (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_retries=%d ", m_ele->dead_os_conn_retries)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_retries=%d ", m_ele->dead_os_conn_retries)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
-      (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "max_connection=%d ", m_ele->max_connection)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection=%d ", m_ele->max_connection)) > 0)
     pos += psize;
   if (m_ele->error_page_uri) {
     if (pos < sizeof(buf) &&
-        (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "error_page=%s ", m_ele->error_page_uri)) > 0)
+        (psize = snprintf(buf + pos, sizeof(buf) - pos, "error_page=%s ", m_ele->error_page_uri)) > 0)
       pos += psize;
   }
   switch (m_ele->scheme) {
   case INK_HTTP_CONGEST_PER_IP:
-    if (pos<sizeof(buf) && (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_ip "))> 0)
+    if (pos<sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_ip "))> 0)
       pos += psize;
     break;
   case INK_HTTP_CONGEST_PER_HOST:
-    if (pos<sizeof(buf) && (psize = ink_snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_host "))> 0)
+    if (pos<sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_host "))> 0)
       pos += psize;
     break;
   default:

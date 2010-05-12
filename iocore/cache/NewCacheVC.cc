@@ -540,7 +540,7 @@ NewCacheVC::add_sub_header(int index)
   _vio.ndone += getTunnel()->get_producer(this)->read_buffer->write("\r\n", 2);
   _vio.ndone += getTunnel()->get_producer(this)->read_buffer->write(cont_range, sizeof(cont_range) - 1);
 
-  ink_snprintf(numbers, sizeof(numbers), "%d-%d/%d", m_ranges[index]._start, m_ranges[index]._end, m_content_length);
+  snprintf(numbers, sizeof(numbers), "%d-%d/%d", m_ranges[index]._start, m_ranges[index]._end, m_content_length);
   len = strlen(numbers);
   if (len < RANGE_NUMBERS_LENGTH)
     _vio.ndone += getTunnel()->get_producer(this)->read_buffer->write(numbers, len);
@@ -740,7 +740,7 @@ NewCacheVC::modifyRespHdr()
     char numbers[60];
 
     field = response->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    ink_snprintf(numbers, sizeof(numbers), "bytes %d-%d/%d", m_ranges[0]._start, m_ranges[0]._end, m_content_length);
+    snprintf(numbers, sizeof(numbers), "bytes %d-%d/%d", m_ranges[0]._start, m_ranges[0]._end, m_content_length);
     field->value_append(response->m_heap, response->m_mime, numbers, strlen(numbers));
     response->field_attach(field);
   }

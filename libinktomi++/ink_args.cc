@@ -27,7 +27,6 @@ Process arguments
 ****************************************************************************/
 
 #include "inktomi++.h"
-#include "ink_snprintf.h"
 #include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
 //
@@ -120,7 +119,7 @@ show_argument_configuration(ArgumentDescription * argument_descriptions, int n_a
         printf("%f", *(double *) argument_descriptions[i].location);
         break;
       case 'L':
-        ink_printf("%lld", *(ink64 *) argument_descriptions[i].location);
+        printf("%lld", *(ink64 *) argument_descriptions[i].location);
         break;
       case 'S':
         printf("%s", (char *) argument_descriptions[i].location);

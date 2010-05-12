@@ -203,7 +203,7 @@ ProxyStateSet(INKProxyStateT state, INKCacheClearT clear)
       if (!found)
         goto Lerror;
 
-      ink_snprintf(tsArgs, MAX_BUF_SIZE, "%s", proxy_options);
+      snprintf(tsArgs, MAX_BUF_SIZE, "%s", proxy_options);
       xfree(proxy_options);
       break;
     }

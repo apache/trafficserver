@@ -88,11 +88,11 @@ BaseRecords::BaseRecords(char *mpath, const char *cfile, char *efile)
 
   /* Record our pid, for passing to local manager */
   pid = getpid();
-  ink_snprintf(str_pid, sizeof(str_pid), "%ld", pid);
+  snprintf(str_pid, sizeof(str_pid), "%ld", pid);
 
   for (int j = 0; j < MAX_RECORD_TYPE; j++) {
     char name[80];
-    ink_snprintf(name, sizeof(name), "mgmt-mutex-%d", j);
+    snprintf(name, sizeof(name), "mgmt-mutex-%d", j);
     ink_mutex_init(&mutex[j], name);
     updateCount[j] = 0;
   }
@@ -500,9 +500,9 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
     mgmt_fatal(stderr, "[BaseRecords::rereadRecordFile] Null path or file\n");
   }
   // Look for a "shadow" records.config file, internal for process(records.config) only
-  ink_snprintf(fname, sizeof(fname), "%s%s%s.shadow", path, DIR_SEP, f);
+  snprintf(fname, sizeof(fname), "%s%s%s.shadow", path, DIR_SEP, f);
   if (!(fin = mgmt_fopen(fname, "r+"))) {
-    ink_snprintf(fname, sizeof(fname), "%s%s%s", path, DIR_SEP, f);
+    snprintf(fname, sizeof(fname), "%s%s%s", path, DIR_SEP, f);
     if (!(fin = mgmt_fopen(fname, "r+"))) {
       mgmt_fatal(stderr, "[BaseRecords::rereadRecordFile] " "Unable to open file '%s', %s\n", fname, strerror(errno));
     }
@@ -1923,7 +1923,7 @@ BaseRecords::getExternalRecordValue(Record * rec, char *p)
     void *value;
 
     if (p) {
-      ink_snprintf(pname, sizeof(pname), "%s-%s", p, rec->name);
+      snprintf(pname, sizeof(pname), "%s-%s", p, rec->name);
       name = pname;
     } else {
       name = rec->name;
@@ -1978,9 +1978,9 @@ BaseRecords::removeExternalRecords(RecordType type, long p)
     if (record_db->mgmt_batch_open()) {
       for (int i = 0; i < recs->num_recs; i++) {
         if (p != -1) {
-          ink_snprintf(name, sizeof(name), "%ld-%s", p, recs->recs[i].name);
+          snprintf(name, sizeof(name), "%ld-%s", p, recs->recs[i].name);
         } else {
-          ink_snprintf(name, sizeof(name), "%ld-%s", pid, recs->recs[i].name);
+          snprintf(name, sizeof(name), "%ld-%s", pid, recs->recs[i].name);
         }
         record_db->mgmt_remove(name, strlen(name));
       }
@@ -2026,15 +2026,15 @@ BaseRecords::printRecord(Record rec)
   switch (rec.stype) {
   case INK_COUNTER:
     fprintf(stderr, "\tType: COUNTER\n");
-    ink_fprintf(stderr, "\tValue: '%lld'\n", rec.data.counter_data);
+    fprintf(stderr, "\tValue: '%lld'\n", rec.data.counter_data);
     break;
   case INK_INT:
     fprintf(stderr, "\tType: INT\n");
-    ink_fprintf(stderr, "\tValue: '%lld'\n", rec.data.int_data);
+    fprintf(stderr, "\tValue: '%lld'\n", rec.data.int_data);
     break;
   case INK_LLONG:
     fprintf(stderr, "\tType: LLONG\n");
-    ink_fprintf(stderr, "\tValue: '%lld'\n", rec.data.llong_data);
+    fprintf(stderr, "\tValue: '%lld'\n", rec.data.llong_data);
     break;
   case INK_FLOAT:
     fprintf(stderr, "\tType: FLOAT\n");
@@ -2170,7 +2170,7 @@ BaseRecords::createRecordsFile(char *fname)
           if (type == PROCESS)
             tmp = 0;
           newFile->copyFrom("COUNTER ", strlen("COUNTER "));
-          ink_snprintf(str_val, sizeof(str_val), "%lld\n", tmp);
+          snprintf(str_val, sizeof(str_val), "%lld\n", tmp);
           newFile->copyFrom(str_val, strlen(str_val));
           break;
         }
@@ -2179,7 +2179,7 @@ BaseRecords::createRecordsFile(char *fname)
           if (type == PROCESS)
             tmp = 0;
           newFile->copyFrom("INT ", strlen("INT "));
-          ink_snprintf(str_val, sizeof(str_val), "%lld\n", tmp);
+          snprintf(str_val, sizeof(str_val), "%lld\n", tmp);
           newFile->copyFrom(str_val, strlen(str_val));
           break;
         }
@@ -2188,7 +2188,7 @@ BaseRecords::createRecordsFile(char *fname)
           if (type == PROCESS)
             tmp = 0;
           newFile->copyFrom("LLONG ", strlen("LLONG "));
-          ink_snprintf(str_val, sizeof(str_val), "%lld\n", tmp);
+          snprintf(str_val, sizeof(str_val), "%lld\n", tmp);
           newFile->copyFrom(str_val, strlen(str_val));
           break;
         }

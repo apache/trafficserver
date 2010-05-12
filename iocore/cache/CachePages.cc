@@ -381,7 +381,7 @@ ShowCache::lookup_url(int event, Event * e)
 {
   char header_str[300];
 
-  ink_snprintf(header_str, sizeof(header_str), "<font color=red>%s</font>", show_cache_urlstrs[0]);
+  snprintf(header_str, sizeof(header_str), "<font color=red>%s</font>", show_cache_urlstrs[0]);
   CHECK_SHOW(begin(header_str));
   url.create(NULL);
   const char *s;

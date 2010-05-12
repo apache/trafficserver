@@ -38,7 +38,6 @@
 
 #include "ink_config.h"
 #include <strings.h>
-#include "ink_snprintf.h"
 #include "ink_string.h"
 #include "ParseRules.h"
 #include "CoreAPI.h"
@@ -372,7 +371,7 @@ Diags(INKDiagsT mode, const char *fmt, va_list ap)
 
   // format the diag message now so it can be sent
   // vsnprintf does not compile on DEC
-  ink_vsnprintf(diag_msg, MAX_BUF_SIZE - 1, fmt, ap);
+  vsnprintf(diag_msg, MAX_BUF_SIZE - 1, fmt, ap);
   INKError ret = send_diags_msg(main_socket_fd, mode, diag_msg);
   if (ret != INK_ERR_OKAY) {
     //fprintf(stderr, "[Diags] error sending diags message\n");
@@ -467,8 +466,8 @@ HardRestart()
   bzero(start_path, 1024);
   bzero(stop_path, 1024);
   char *root_copy = xstrdup(root_dir);
-  ink_snprintf(start_path, sizeof(start_path), "%s/bin/start_traffic_server", root_copy);
-  ink_snprintf(stop_path, sizeof(stop_path), "%s/bin/stop_traffic_server", root_copy);
+  snprintf(start_path, sizeof(start_path), "%s/bin/start_traffic_server", root_copy);
+  snprintf(stop_path, sizeof(stop_path), "%s/bin/stop_traffic_server", root_copy);
   xfree(root_copy);
 
   INKDiags(INK_DIAG_NOTE, "[HardRestart] start_path = %s", start_path);
@@ -558,7 +557,7 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_
     return INK_ERR_PARAMS;
 
   bzero(str_val, MAX_RECORD_SIZE);
-  ink_snprintf(str_val, sizeof(str_val), "%lld", int_val);
+  snprintf(str_val, sizeof(str_val), "%lld", int_val);
   ret = mgmt_record_set(rec_name, str_val, action_need);
 
   return ret;
@@ -575,7 +574,7 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKAction
     return INK_ERR_PARAMS;
 
   bzero(str_val, MAX_RECORD_SIZE);
-  ink_snprintf(str_val, sizeof(str_val), "%lld", counter_val);
+  snprintf(str_val, sizeof(str_val), "%lld", counter_val);
   ret = mgmt_record_set(rec_name, str_val, action_need);
 
   return ret;
@@ -589,7 +588,7 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * a
   INKError ret;
 
   bzero(str_val, MAX_RECORD_SIZE);
-  if (ink_snprintf(str_val, sizeof(str_val), "%f", float_val) < 0)
+  if (snprintf(str_val, sizeof(str_val), "%f", float_val) < 0)
     return INK_ERR_SYS_CALL;
   ret = mgmt_record_set(rec_name, str_val, action_need);
 

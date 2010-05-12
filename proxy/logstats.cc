@@ -1776,7 +1776,7 @@ main(int argc, char *argv[])
   // Get TS directory
   if (0 == get_ts_directory(ts_path,sizeof(ts_path))) {
     ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
-    ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s/var/log/trafficserver", system_root_dir);
+    snprintf(system_log_dir, sizeof(system_log_dir), "%s/var/log/trafficserver", system_root_dir);
   } else {
     ink_strncpy(system_log_dir, DEFAULT_LOG_DIRECTORY, sizeof(system_log_dir));
   }
@@ -1875,7 +1875,7 @@ main(int argc, char *argv[])
 
   // Change directory to the log dir
   if (chdir(system_log_dir) < 0) {
-    ink_snprintf(ymon_notice, sizeof(ymon_notice), "can't chdir to %s", system_log_dir);
+    snprintf(ymon_notice, sizeof(ymon_notice), "can't chdir to %s", system_log_dir);
     my_exit(YMON_CRITICAL, ymon_notice);
   }
 

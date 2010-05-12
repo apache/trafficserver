@@ -551,7 +551,7 @@ how_to_open_connection(HttpTransact::State * s)
         if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
           char *buf = (char *) xmalloc(host_len + 15);
           strncpy(buf, host, host_len);
-          host_len += ink_snprintf(buf + host_len, host_len + 15, ":%d", port);
+          host_len += snprintf(buf + host_len, host_len + 15, ":%d", port);
           s->hdr_info.server_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
           xfree(buf);
         } else {
@@ -3288,7 +3288,7 @@ HttpTransact::HandleICPLookup(State * s)
 
     s->icp_info.name = (char *) s->arena.alloc(17);
     unsigned char *p = (unsigned char *) &(s->icp_ip_result.sin_addr.s_addr);
-    ink_snprintf(s->icp_info.name, 17, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
+    snprintf(s->icp_info.name, 17, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
 
     update_current_info(&s->current, &s->icp_info, ICP_SUGGESTED_HOST, 1);
     s->next_hop_scheme = URL_WKSIDX_HTTP;
@@ -8379,7 +8379,7 @@ HttpTransact::build_request(State * s, HTTPHdr * base_request, HTTPHdr * outgoin
     if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
       char *buf = (char *) xmalloc(host_len + 15);
       strncpy(buf, host, host_len);
-      host_len += ink_snprintf(buf + host_len, host_len + 15, ":%d", port);
+      host_len += snprintf(buf + host_len, host_len + 15, ":%d", port);
       outgoing_request->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
       xfree(buf);
     } else {
@@ -8823,7 +8823,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     char *reason_buffer;
     int buf_len = sizeof(char) * (strlen(get_error_string(s->cause_of_death_errno)) + 50);
     reason_buffer = (char *) alloca(buf_len);
-    ink_snprintf(reason_buffer, buf_len, "Connect Error <%s/%d>", get_error_string(s->cause_of_death_errno),
+    snprintf(reason_buffer, buf_len, "Connect Error <%s/%d>", get_error_string(s->cause_of_death_errno),
                  s->cause_of_death_errno);
     reason_phrase = reason_buffer;
   }
