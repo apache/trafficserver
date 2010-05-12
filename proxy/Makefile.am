@@ -110,6 +110,7 @@ traffic_server_SOURCES = \
   ICPProcessor.h \
   ICPStats.cc \
   InkAPI.cc \
+  FetchSM.cc \
   InkAPIInternal.h \
   InkAPITest.cc \
   InkIOCoreAPI.cc \
@@ -208,6 +209,7 @@ traffic_logcat_LDADD = \
   Plugin.o \
   PluginDB.o \
   InkAPI.o \
+  FetchSM.o \
   InkIOCoreAPI.o \
   InkXml.o \
   http2/libhttp.a \
@@ -268,6 +270,7 @@ traffic_logstats_LDADD = \
   Plugin.o \
   PluginDB.o \
   InkAPI.o \
+  FetchSM.o \
   InkIOCoreAPI.o \
   InkXml.o \
   http2/libhttp.a \
@@ -329,6 +332,7 @@ traffic_sac_LDADD = \
   Plugin.o \
   PluginDB.o \
   InkAPI.o \
+  FetchSM.o \
   InkIOCoreAPI.o \
   InkXml.o \
   http2/libhttp.a \

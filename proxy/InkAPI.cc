@@ -56,6 +56,7 @@
 #include "PluginVC.h"
 //#include "MixtAPIInternal.h"
 #include "api/ts/InkAPIaaa.h"
+#include "FetchSM.h"
 
 /****************************************************************
  *  IMPORTANT - READ ME
@@ -8951,6 +8952,55 @@ const char* INKRedirectUrlGet(INKHttpTxn txnp, int* url_len_ptr)
   HttpSM *sm = (HttpSM*) txnp;
   *url_len_ptr = sm->redirect_url_len;
   return (const char*)sm->redirect_url;
+}
+
+char* INKFetchRespGet(INKHttpTxn txnp, int *length)
+{
+
+   FetchSM *fetch_sm = (FetchSM*)txnp;
+   return  fetch_sm->resp_get(length);
+}
+
+int
+INKFetchPageRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
+{
+    if ( sdk_sanity_check_null_ptr((void*)bufp) != INK_SUCCESS ||
+                sdk_sanity_check_null_ptr((void*)obj) != INK_SUCCESS) {
+        return 0;
+    }
+    HTTPHdr *hptr = (HTTPHdr*) txnp;
+
+    if (hptr->valid()) {
+        *bufp = hptr; 
+        *obj = hptr->m_http;
+        sdk_sanity_check_mbuffer(*bufp);
+
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+extern ClassAllocator<FetchSM> FetchSMAllocator;
+INKReturnCode INKFetchPages(INKFetchUrlParams_t * params) 
+{
+   INKFetchUrlParams_t *myparams = params;
+   while(myparams!=NULL) {
+
+     FetchSM *fetch_sm =  FetchSMAllocator.alloc();
+     fetch_sm->init(myparams->contp,myparams->options,myparams->events,myparams->request,myparams->request_len, myparams->ip, myparams->port);
+     fetch_sm->httpConnect();
+     myparams= myparams->next;
+  }
+  return INK_SUCCESS;
+}
+INKReturnCode  INKFetchUrl(const char* headers, int request_len, unsigned int ip, int port , INKCont contp, INKFetchWakeUpOptions callback_options,INKFetchEvent events) 
+{
+//  printf("calling INKFetchUrl\n");
+   FetchSM *fetch_sm =  FetchSMAllocator.alloc();
+   fetch_sm->init(contp,callback_options,events,headers,request_len,ip,port);
+   fetch_sm->httpConnect();
+  return INK_SUCCESS;
 }
 
 int

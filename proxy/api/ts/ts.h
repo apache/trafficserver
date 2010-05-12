@@ -437,6 +437,12 @@ extern "C"
     INK_SUCCESS = 0
   } INKReturnCode;
 
+  typedef enum
+  {
+     NO_CALLBACK = 0,
+     AFTER_HEADER ,
+     AFTER_BODY 
+  } INKFetchWakeUpOptions;
   extern inkapi const void *INK_ERROR_PTR;
 
   typedef int INK32;
@@ -482,6 +488,23 @@ extern "C"
   typedef void *(*INKThreadFunc) (void *data);
   typedef int (*INKEventFunc) (INKCont contp, INKEvent event, void *edata);
   typedef void (*INKConfigDestroyFunc) (void *data);
+  typedef struct 
+  {
+     int success_event_id;
+     int failure_event_id;
+     int timeout_event_id;
+  }INKFetchEvent;
+  typedef struct INKFetchUrlParams
+  {
+     const char *request;
+     int request_len;
+     unsigned int ip;
+     int port;
+     INKCont contp;
+     INKFetchEvent events;
+     INKFetchWakeUpOptions options;
+     struct INKFetchUrlParams *next;
+  }INKFetchUrlParams_t;
 
   // --------------------------------------------------------------------------
   // Init
@@ -1959,6 +1982,8 @@ extern "C"
   inkapi int INKHttpTxnServerRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnCachedReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnCachedRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
+  inkapi int               INKFetchPageRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *offset);
+  inkapi char*               INKFetchRespGet (INKHttpTxn txnp, int *length);
   inkapi INKReturnCode INKHttpTxnCacheLookupStatusGet(INKHttpTxn txnp, int *lookup_status);
 
   inkapi int INKHttpTxnTransformRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
@@ -2117,6 +2142,8 @@ extern "C"
 
    */
   inkapi INKReturnCode INKHttpConnect(unsigned int log_ip, int log_port, INKVConn * vc);
+  inkapi INKReturnCode INKFetchUrl(const char *request,int request_len, unsigned int ip, int port , INKCont contp, INKFetchWakeUpOptions callback_options,INKFetchEvent event);
+  inkapi INKReturnCode INKFetchPages(INKFetchUrlParams_t *params);
  
   /* Check if HTTP State machine is internal or not */ 
   inkapi int INKHttpIsInternalRequest(INKHttpTxn txnp);
