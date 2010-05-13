@@ -389,7 +389,7 @@ test_ClusterHashStandalone_LDADD = libClusterHashStandalone.a
 
 test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc DiagsConfig.cc
 
-versiondir = $(pkglocalstatedir)
+versiondir = $(pkgsysconfdir)
 dist_version_DATA = TS_version
 
 install-data-local:
