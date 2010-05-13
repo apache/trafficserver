@@ -24,8 +24,8 @@
 /****************************************************************************
  *
  *  Module: Simple Finite State Machine class
- *  Source: CUJ  
- * 
+ *  Source: CUJ
+ *
  ****************************************************************************/
 
 #include "ink_config.h"
@@ -48,7 +48,7 @@ FSMQueue::FSMQueue()
   tail = NULL;
 }                               // end FSMQueue
 
-// 
+//
 //    destory the queue
 //
 //    NOTE: Does not attempt to deallocate the entries
@@ -118,19 +118,19 @@ FSMQueue::enqueue(void *data /* IN: object to enqueue */ )
   }
 }                               // end enqueue()
 
-/* 
- * 01/14/99 elam - 
+/*
+ * 01/14/99 elam -
  * Commented out because g++ is not happy with iostream.h
 //
 //   Prints out the queue.  For DEBUG only
 //
-void 
-FSMQueue::Print() 
+void
+FSMQueue::Print()
 {
   FSMQueueEntry* current = head;
 
   cout << "FSM Queue: " << this << endl;
-  while (current != NULL) 
+  while (current != NULL)
     {
       cout << "\tdata: " << current->data << " next: " << current->next << " prev: " << current->prev <<endl;
       current = current->next;
@@ -180,7 +180,7 @@ FSM::~FSM()
 }                               // end ~FSM()
 
 //
-// Insert event onto queue 
+// Insert event onto queue
 //
 void
 FSM::insertInQueue(int inEvent, /* IN: event to insert */
@@ -204,7 +204,7 @@ FSM::insertInQueue(int inEvent, /* IN: event to insert */
 
 
 //
-// Used to find a place in the transition table to insert 
+// Used to find a place in the transition table to insert
 // the defined transition. Returns free index postion if available.
 //
 int
@@ -230,7 +230,7 @@ FSM::hash_search(int inSourceState,     /* IN: */
 
 
 //
-// Used to get transition number(i.e. index in transtion table) for event. 
+// Used to get transition number(i.e. index in transtion table) for event.
 //
 int
 FSM::hash_index(int inEvent /* IN: */ )
@@ -280,7 +280,7 @@ FSM::defineTransition(int inSourceState,        /* IN: */
 
 
 //
-// Control which event handler gets called and then sets the 
+// Control which event handler gets called and then sets the
 // next state in the FSM.
 //
 int

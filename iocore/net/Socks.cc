@@ -23,9 +23,9 @@
 
 /*
   Socks.cc
-  
-  
-  
+
+
+
   This file contains the Socks client functionality. Previously this code was
   duplicated in UnixNet.cc and NTNetProcessor.cc
 */
@@ -350,7 +350,7 @@ SocksEntry::mainEvent(int event, void *data)
 
     if (ret == EVENT_CONT)
       break;
-    // Fall Through 
+    // Fall Through
   case VC_EVENT_READ_COMPLETE:
     if (timeout) {
       timeout->cancel(this);
@@ -447,7 +447,7 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
 
   error_msg[0] = 0;
 
-  socks_conf_stuff->accept_enabled = 0; //initialize it INKqa08593 
+  socks_conf_stuff->accept_enabled = 0; //initialize it INKqa08593
   socks_conf_stuff->socks_needed = IOCORE_ConfigReadInteger("proxy.config.socks.socks_needed");
   if (!socks_conf_stuff->socks_needed) {
     Debug("Socks", "Socks Turned Off");

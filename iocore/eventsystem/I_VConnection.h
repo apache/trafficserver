@@ -236,7 +236,7 @@ public:
     @param nbytes Number of bytes to write. If unknown, nbytes must
       be set to INK64_MAX.
     @param buf Reader whose data is to be read from.
-    @param owner 
+    @param owner
     @return VIO representing the scheduled IO operation.
 
   */

@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-/* SimSynthServerCache.c 
+/* SimSynthServerCache.c
  *
- * 
+ *
  * Description:
  *   - Simulate the default way of responding requests by the SDKtest_server
  *     with cachability specified in the server response header in some
  *     ratio.
  *
- * Added Options in Synth_server.config -    
+ * Added Options in Synth_server.config -
  *     cachability : percentage of cachable response we want to generate
  */
 
@@ -140,7 +140,7 @@ INKResponsePut(void **resp_id /* return */ ,
   }
 
   /* copy the content into the response buffer and
-   * the response would be like "XXXXXX......E" 
+   * the response would be like "XXXXXX......E"
    */
   if (rid->status_code == 200) {
     if (rid->bytes_not_sent + i > resp_buffer_size) {
@@ -155,7 +155,7 @@ INKResponsePut(void **resp_id /* return */ ,
 
     }
   }
-  /* return NULL as the resp_id to indicate 
+  /* return NULL as the resp_id to indicate
    * if it is the last INKResponsePut call */
   if (rid->bytes_not_sent <= 0 || rid->status_code != 200) {
     free(rid);

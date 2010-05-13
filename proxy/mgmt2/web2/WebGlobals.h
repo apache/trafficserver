@@ -39,8 +39,8 @@
  *
  *  WebGlobals.h - Global Variables and types for the Web Interface
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "ink_mutex.h"

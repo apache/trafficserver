@@ -28,7 +28,7 @@
  *
  ****************************************************************************/
 
-/* 
+/*
  * CongestionDB is implemented in a Multithread-Safe hash table
  * the Data will be wrote to a disk file for recovery purpose.
  */
@@ -58,11 +58,11 @@ void initCongestionDB();
 
 /*
  * CongestRequestParam is the data structure passed to the request
- * to update the congestion db with the appropriate info 
- * It is used when the TS missed a try_lock, the request info will be 
+ * to update the congestion db with the appropriate info
+ * It is used when the TS missed a try_lock, the request info will be
  * stored in the CongestRequestParam and insert in the to-do list of the
  * approperiate DB partition.
- * The first operation after the TS get the lock for a partition is 
+ * The first operation after the TS get the lock for a partition is
  * to run the to do list
  */
 

@@ -27,7 +27,7 @@
 
   Multithread Safe Hash table implementation
 
-  
+
  ****************************************************************************/
 #ifndef MT_HASHTABLE_H_
 #define MT_HASHTABLE_H_
@@ -194,8 +194,8 @@ private:
   IMTHashTable(IMTHashTable &);
 };
 
-/* 
- * we can use ClassAllocator here if the malloc performance becomes a problem 
+/*
+ * we can use ClassAllocator here if the malloc performance becomes a problem
  */
 
 template<class key_t, class data_t> inline data_t IMTHashTable<key_t, data_t>::insert_entry(key_t key, data_t data)

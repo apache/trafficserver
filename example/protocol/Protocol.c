@@ -62,7 +62,7 @@ accept_handler(INKCont contp, INKEvent event, void *edata)
     break;
 
   default:
-    /* Something wrong with the network, if there are any 
+    /* Something wrong with the network, if there are any
        pending NetAccept, cancel them. */
     if (pending_action && !INKActionDone(pending_action))
       INKActionCancel(pending_action);

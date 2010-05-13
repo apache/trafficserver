@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-/* SimSynthServer.c 
+/* SimSynthServer.c
  *
  *
  * Description:
- *   - simulate the default way of responding requests by the 
+ *   - simulate the default way of responding requests by the
  *     SDKtest_server
  */
 
@@ -96,7 +96,7 @@ INKResponsePut(void **resp_id /* return */ ,
     rid->done_sent_header = TRUE;
   }
 
-  /* copy the content into the response buffer and 
+  /* copy the content into the response buffer and
    * the response would be like "XXXXXX......E"
    */
   if (rid->status_code == 200) {
@@ -112,7 +112,7 @@ INKResponsePut(void **resp_id /* return */ ,
 
     }
   }
-  /* return NULL as the resp_id to indicate 
+  /* return NULL as the resp_id to indicate
    * that it is the last INKResponsePut call */
   if (rid->bytes_not_sent <= 0 || rid->status_code != 200) {
     free(rid);

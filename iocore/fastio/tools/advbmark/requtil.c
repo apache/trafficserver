@@ -41,7 +41,7 @@
 
 /*
  *  Build a fastIO request
- *  Allocates required packet and data blocks, 
+ *  Allocates required packet and data blocks,
  *  returns the ID of the request block
  *
  *

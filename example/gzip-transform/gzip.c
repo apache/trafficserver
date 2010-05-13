@@ -169,8 +169,8 @@ gzip_transform_init(INKCont contp, GzipData * data)
 
   data->state = 1;
 
-  /* 
-   * Mark the output data as having gzip content encoding 
+  /*
+   * Mark the output data as having gzip content encoding
    */
   INKHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc);
   ce_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);

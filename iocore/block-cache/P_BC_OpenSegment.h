@@ -120,32 +120,32 @@ public:
     @param c caller
     @return Action* Cancelling this cancels the callback, but doesn't
     cancel the remove.
-    
+
     */
   Action *remove(Continuation * c);
 
   /**
     Wait for directory log to write out.
-    
+
     @param c caller
     @return Action* Cancelling this cancels the callback, but doesn't
     cancel the syncing of directory and log to disk.
-    
+
     */
   Action *sync(Continuation * c);
 
   /**
    register BlockVConnection as writer
-   
-   @param vc 
+
+   @param vc
 
   */
   void registerWriter(BlockCacheSegmentVConnection * vc);
 
   /**
    register BlockVConnection as reader
-   
-   @param vc 
+
+   @param vc
 
   */
   void registerReader(BlockCacheSegmentVConnection * vc);

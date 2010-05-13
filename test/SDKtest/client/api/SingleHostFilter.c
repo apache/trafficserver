@@ -27,9 +27,9 @@
  *   Added Options in SDKtest_client.config -
  *
  *     forbidden_ratio : percentage of forbidden requests we want to
- *                       generate		       
+ *                       generate
  *
- *     forbidden_host  : the blacklisted host name 
+ *     forbidden_host  : the blacklisted host name
  *                       eg. www.playboy.com
  */
 

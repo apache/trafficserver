@@ -22,18 +22,18 @@
  */
 
 /*****************************************************************************
-  ink_queue.cc (This used to be ink_queue.c) 
- 
+  ink_queue.cc (This used to be ink_queue.c)
+
   This implements an atomic push/pop queue, and the freelist memory
   pools that are built from it.
- 
-  The change from ink_queue.cc to ink_queue.c resulted in some changes 
+
+  The change from ink_queue.cc to ink_queue.c resulted in some changes
   in access and store of 64 bit values. This is standardized by using
   the INK_QUEUE_LD64 macro which loads the version before the pointer
   (independent of endianness of native architecture) on 32 bit platforms
   or loads the 64 bit quantity directory on the DECs.
- 
-  
+
+
   ****************************************************************************/
 
 #include "ink_config.h"
@@ -405,7 +405,7 @@ ink_freelist_free(InkFreeList * f, void *item)
 
     // search for DEADBEEF anywhere after a pointer offset in the item
     char *position = (char *) item + sizeof(void *);    // start
-    char *end = (char *) item + f->type_size;   // end 
+    char *end = (char *) item + f->type_size;   // end
 
     int i, j;
     for (i = sizeof(void *) & 0x3, j = 0; position < end; ++position) {

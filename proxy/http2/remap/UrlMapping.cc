@@ -24,19 +24,19 @@
 #include "UrlMapping.h"
 
 /**
- * 
+ *
 **/
 url_mapping::url_mapping(int rank /* = 0 */)
-  : from_path_len(0), fromURL(), toURL(), homePageRedirect(false), unique(false), default_redirect_url(false), 
-    optional_referer(false), negative_referer(false), no_negative_cache(false), wildcard_from_scheme(false), 
-    pristine_host_hdr(-1), chunking_enabled(-1), tag(NULL), filter_redirect_url(NULL), referer_list(0), 
+  : from_path_len(0), fromURL(), toURL(), homePageRedirect(false), unique(false), default_redirect_url(false),
+    optional_referer(false), negative_referer(false), no_negative_cache(false), wildcard_from_scheme(false),
+    pristine_host_hdr(-1), chunking_enabled(-1), tag(NULL), filter_redirect_url(NULL), referer_list(0),
     redir_chunk_list(0), filter(NULL), _plugin_count(0), _cur_instance_count(0), _rank(rank)
 { /* nop */ ;
 }
 
 
 /**
- * 
+ *
 **/
 bool url_mapping::add_plugin(remap_plugin_info * i)
 {
@@ -47,7 +47,7 @@ bool url_mapping::add_plugin(remap_plugin_info * i)
 
 
 /**
- * 
+ *
 **/
 remap_plugin_info *
 url_mapping::get_plugin(unsigned int index)
@@ -75,7 +75,7 @@ url_mapping::get_plugin(unsigned int index)
 
 
 /**
- * 
+ *
 **/
 bool url_mapping::set_instance(remap_plugin_info * p, ihandle * h)
 {
@@ -87,7 +87,7 @@ bool url_mapping::set_instance(remap_plugin_info * p, ihandle * h)
 
 
 /**
- * 
+ *
 **/
 ihandle *
 url_mapping::get_instance(remap_plugin_info * p)
@@ -100,7 +100,7 @@ url_mapping::get_instance(remap_plugin_info * p)
 }
 
 /**
- * 
+ *
 **/
 ihandle *
 url_mapping::get_another_instance(remap_plugin_info * p)
@@ -119,7 +119,7 @@ url_mapping::get_another_instance(remap_plugin_info * p)
 
 
 /**
- * 
+ *
 **/
 void
 url_mapping::delete_instance(remap_plugin_info * p)
@@ -136,7 +136,7 @@ url_mapping::delete_instance(remap_plugin_info * p)
 
 
 /**
- * 
+ *
 **/
 url_mapping::~url_mapping()
 {
@@ -181,7 +181,7 @@ url_mapping::~url_mapping()
 
 
 /**
- * 
+ *
 **/
 url_mapping_ext::url_mapping_ext(url_mapping * mapping)
 :m_mapping(mapping)
@@ -190,7 +190,7 @@ url_mapping_ext::url_mapping_ext(url_mapping * mapping)
 
 
 /**
- * 
+ *
 **/
 url_mapping_ext::~url_mapping_ext()
 {
@@ -199,7 +199,7 @@ url_mapping_ext::~url_mapping_ext()
 
 
 /**
- * 
+ *
 **/
 const char *
 url_mapping_ext::getToHost(int *lenp)
@@ -209,7 +209,7 @@ url_mapping_ext::getToHost(int *lenp)
 
 
 /**
- * 
+ *
 **/
 const char *
 url_mapping_ext::getToPath(int *lenp)
@@ -219,7 +219,7 @@ url_mapping_ext::getToPath(int *lenp)
 
 
 /**
- * 
+ *
 **/
 URL *
 url_mapping_ext::getFromURL()
@@ -229,7 +229,7 @@ url_mapping_ext::getFromURL()
 
 
 /**
- * 
+ *
 **/
 URL *
 url_mapping_ext::getToURL()
@@ -239,7 +239,7 @@ url_mapping_ext::getToURL()
 
 
 /**
- * 
+ *
 **/
 redirect_tag_str *
 redirect_tag_str::parse_format_redirect_url(char *url)
@@ -283,7 +283,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
 
 
 /**
- * 
+ *
 **/
 referer_info::referer_info(char *_ref, bool * error_flag, char *errmsgbuf, int errmsgbuf_size):next(0), referer(0), referer_size(0), any(false), negative(false),
 regx_valid(false)
@@ -320,7 +320,7 @@ regx_valid(false)
 
 
 /**
- * 
+ *
 **/
 referer_info::~referer_info()
 {

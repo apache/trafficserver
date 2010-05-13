@@ -60,8 +60,8 @@ char* FetchSM::resp_get(int *length) {
 *length = client_bytes;
 return client_response;
 }
- 
-int FetchSM::InvokePlugin(int event, void *data) 
+
+int FetchSM::InvokePlugin(int event, void *data)
 {
   Continuation *cont = (Continuation*) contp;
   EThread *mythread = this_ethread();
@@ -70,7 +70,7 @@ int FetchSM::InvokePlugin(int event, void *data)
   MUTEX_UNTAKE_LOCK(cont->mutex,mythread);
   return ret;
 }
-void 
+void
 FetchSM::get_info_from_buffer(INKIOBufferReader the_reader)
 {
   char *info;

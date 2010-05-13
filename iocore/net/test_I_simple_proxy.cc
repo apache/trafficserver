@@ -245,7 +245,7 @@ struct NetTesterAccept:public Continuation
 
   int handle_accept(int event, void *data)
   {
-    //printf("Accepted a connection\n");        
+    //printf("Accepted a connection\n");
     NetVConnection *vc = (NetVConnection *) data;
     NEW(new NetTesterSM(new_ProxyMutex(), vc));
     return EVENT_CONT;

@@ -41,8 +41,8 @@
  *
  *  MultiFile.cc - base class to handle reading and displaying config
  *                 files and directories
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 MultiFile::MultiFile()
@@ -88,7 +88,7 @@ MultiFile::addTableEntries(ExpandingArray * fileList, textBuffer * output)
 
 }
 
-// Mfresult MultiFile::WalkFiles(ExpandingArray* fileList) 
+// Mfresult MultiFile::WalkFiles(ExpandingArray* fileList)
 //
 //   Iterates through the managed directory and adds every managed file
 //     into the parameter snapList
@@ -220,12 +220,12 @@ MultiFile::addSelectOptions(textBuffer * output, ExpandingArray * options)
   output->copyFrom(selectEnd, strlen(selectEnd));
 }
 
-//  int fileEntryCmpFunc(void* e1, void* e2) 
-//  
+//  int fileEntryCmpFunc(void* e1, void* e2)
+//
 //  a cmp function for fileEntry structs that can
 //     used with qsort
 //
-//  compares c_time 
+//  compares c_time
 //
 int
 fileEntryCmpFunc(const void *e1, const void *e2)

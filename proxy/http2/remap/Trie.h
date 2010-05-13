@@ -48,12 +48,12 @@ public:
   const ValuePointerList &GetValues() const { return m_value_list; }
 
   virtual ~Trie() { Clear(); };
-  
+
 
 private:
   static const int N_NODE_CHILDREN = 256;
 
-  class Node 
+  class Node
   {
   public:
     T value;
@@ -73,7 +73,7 @@ private:
 
   Node m_root;
   ValuePointerList m_value_list;
-  
+
   void _CheckArgs(const char *key, int &key_len) const;
   void _Clear(Node *node);
 
@@ -89,15 +89,15 @@ Trie<T>::_CheckArgs(const char *key, int &key_len) const
 {
   if (!key) {
     key_len = 0;
-  } 
+  }
   else if (key_len == -1) {
     key_len = strlen(key);
   }
 }
 
-template<typename T> 
-bool 
-Trie<T>::Insert(const char *key, const T &value, int rank, int key_len /* = -1 */) 
+template<typename T>
+bool
+Trie<T>::Insert(const char *key, const T &value, int rank, int key_len /* = -1 */)
 {
   _CheckArgs(key, key_len);
 
@@ -142,13 +142,13 @@ Trie<T>::Insert(const char *key, const T &value, int rank, int key_len /* = -1 *
   }
   return retval;
 }
-  
+
 template<typename T>
 bool
 Trie<T>::Search(const char *key, T *&value_ptr, int key_len /* = -1 */)
 {
   _CheckArgs(key, key_len);
-  
+
   Node *found_node = 0;
   Node *curr_node = &m_root;
   int i = 0;
@@ -185,7 +185,7 @@ Trie<T>::Search(const char *key, T *&value_ptr, int key_len /* = -1 */)
 
 template<typename T>
 void
-Trie<T>::_Clear(Node *node) 
+Trie<T>::_Clear(Node *node)
 {
   Node *child;
   for (int i = 0; i < N_NODE_CHILDREN; ++i) {

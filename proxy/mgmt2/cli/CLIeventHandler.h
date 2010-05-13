@@ -25,8 +25,8 @@
 /****************************************************************************
  *
  *  Module: concrete class for comand line interface event handling
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #ifndef _CMDLINE_EVENTHANDLER_H
@@ -134,7 +134,7 @@ private:
   char *args;                   /* arugments passed to this level */
   cmdline_states curr_state;    /* current command line state */
 
-  /* Redefinition of the abstract base class's pure virtual function 
+  /* Redefinition of the abstract base class's pure virtual function
    * ref: AbsEvenhandler.h   */
   void FillHandlersArray(void);
 
@@ -157,7 +157,7 @@ private:
   bool ConfigureLoggingLevel(void *cdata);
   bool ConfigureSnapshotsLevel(void *cdata);
 
-  /* copy constructor and assignment operator are private 
+  /* copy constructor and assignment operator are private
    *  to prevent their use */
     CmdLine_EventHandler(const CmdLine_EventHandler & rhs);
     CmdLine_EventHandler & operator=(const CmdLine_EventHandler & rhs);

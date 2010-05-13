@@ -28,7 +28,7 @@
  *
  * $Date: 2003-06-01 18:37:18 $
  *
- * 
+ *
  */
 
 #include "inktomi++.h"
@@ -78,14 +78,14 @@ BaseManager::~BaseManager()
 /*
  * registerMgmtCallback(...)
  *   Function to register callback's for various management events, such
- * as shutdown, re-init, etc. The following callbacks should be 
+ * as shutdown, re-init, etc. The following callbacks should be
  * registered:
  *                MGMT_EVENT_SHUTDOWN  (graceful shutdown)
  *                MGMT_EVENT_RESTART   (graceful reboot)
  *                ...
  *
  *   Returns:   -1      on error(invalid event id passed in)
- *               or     value 
+ *               or     value
  */
 int
 BaseManager::registerMgmtCallback(int msg_id, MgmtCallback cb, void *opaque_cb_data)

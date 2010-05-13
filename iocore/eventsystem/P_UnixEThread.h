@@ -25,8 +25,8 @@
 
   P_UnixEThread.h
 
-  
-  
+
+
 *****************************************************************************/
 #ifndef _P_UnixEThread_h_
 #define _P_UnixEThread_h_
@@ -163,7 +163,7 @@ EThread::free_event(Event * e)
 }
 
 #if defined(USE_OLD_EVENTFD)
-TS_INLINE int 
+TS_INLINE int
 EThread::getEventFd()
 {
   return EventQueueExternal.getReadFd();

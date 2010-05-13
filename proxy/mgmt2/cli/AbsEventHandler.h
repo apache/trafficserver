@@ -24,9 +24,9 @@
 /***************************************/
 /****************************************************************************
  *
- *  Module: Abstract class for event handling 
+ *  Module: Abstract class for event handling
  *  Source: CUJ
- * 
+ *
  ****************************************************************************/
 
 #ifndef _ABS_EVENTHANDLER_H
@@ -77,7 +77,7 @@ protected:
   virtual void FillHandlersArray(void) = 0;
 
 private:
-  /* copy constructor and assignment operator are private 
+  /* copy constructor and assignment operator are private
    *  to prevent their use */
   AbsEventHandler(const AbsEventHandler & rhs);
   AbsEventHandler & operator=(const AbsEventHandler & rhs);

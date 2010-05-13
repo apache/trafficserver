@@ -22,13 +22,13 @@
  */
 
 /**************************************
- * 
+ *
  * ClusterCom.cc
  *   Member function definitions for Cluster communication class.
  *
  * $Date: 2008-05-20 17:26:19 $
  *
- * 
+ *
  */
 
 #include "inktomi++.h"
@@ -49,7 +49,7 @@ long LastHighestDelta = -1L;
 
 /*
  * drainIncomingChannel
- *   This function is blocking, it never returns. It is meant to allow for 
+ *   This function is blocking, it never returns. It is meant to allow for
  * continuous draining of the network. It drains and handles requests made on
  * the reliable and multicast channels between all the peers.
  */
@@ -207,9 +207,9 @@ drainIncomingChannel(void *arg)
             lmgmt->alarm_keeper->resolveAlarm(a);
           } else if (strstr(message, "unmap: ")) {
 
-            /* 
-             * Explicit virtual ip unmap request. Note order unmap then 
-             * map for strstr. 
+            /*
+             * Explicit virtual ip unmap request. Note order unmap then
+             * map for strstr.
              */
             char msg_ip[80];
             const char *msg;
@@ -455,9 +455,9 @@ receive_fd(0)
   peers = ink_hash_table_create(InkHashTableKeyType_String);
   mismatchLog = ink_hash_table_create(InkHashTableKeyType_String);
 
-  /* 
-   * Setup a temporary area for collating the node stats safe since 
-   * these are static 
+  /*
+   * Setup a temporary area for collating the node stats safe since
+   * these are static
    */
   // fix me -- what does aggregated_node_data do?
 
@@ -498,7 +498,7 @@ ClusterCom::checkPeers(time_t * ticker)
 
     Debug("ccom", "MultiCast Messages received: %d", MultiCastMessages);
 
-    /* 
+    /*
      * Need the lock here so that someone doesn't change the peer hash
      * table out from underneath you.
      */
@@ -544,7 +544,7 @@ ClusterCom::checkPeers(time_t * ticker)
     if (cluster_type == FULL_CLUSTER) {
       /*
        * Two pass loop. First loop over the peers hash table and count
-       * the number of peers. Second construct the new cluster config 
+       * the number of peers. Second construct the new cluster config
        * file for the proxy.
        */
       for (int c = 0; c <= 1; c++) {
@@ -563,7 +563,7 @@ ClusterCom::checkPeers(time_t * ticker)
             }
           } else if (!flag) {
 
-            /* 
+            /*
              * First time through second pass, cluster config file needs
              * to start with the number of nodes in the cluster, so we
              * stick this in the file
@@ -577,7 +577,7 @@ ClusterCom::checkPeers(time_t * ticker)
              * last time we checked, then we have emitted this file before.
              *
              * FIX: there is potentially a case where a node comes in and
-             *      a node leaves(for good) and we don't notice the change 
+             *      a node leaves(for good) and we don't notice the change
              *      of guard.
              */
             break;
@@ -599,14 +599,14 @@ ClusterCom::checkPeers(time_t * ticker)
            * last time we checked, then we have emitted this file before.
            *
            * FIX: there is potentially a case where a node comes in and
-           *      a node leaves(for good) and we don't notice the change 
+           *      a node leaves(for good) and we don't notice the change
            *      of guard.
            */
           break;
         } else if (num_peers == 0 && !c) {
-          /* 
+          /*
            *Handle the standalone case, you are on the second pass and
-           * there are no peers. Proxy expects 0 to be in the file to 
+           * there are no peers. Proxy expects 0 to be in the file to
            * signify standalone case.
            */
           buff->copyFrom("0\n", strlen("0\n"));
@@ -618,7 +618,7 @@ ClusterCom::checkPeers(time_t * ticker)
       //   proxy there are zero nodes in the cluster
       buff->copyFrom("0\n", strlen("0\n"));
     }
-    /* 
+    /*
      * The number of peers have changed, output the new file, this will
      * trigger an update callback which will eveutually signal the proxy.
      */
@@ -697,7 +697,7 @@ ClusterCom::generateClusterDelta(void)
 /*
  * handleMultCastMessage(...)
  *   Function is called to handle(parse) messages received from the broadcast
- * channel. 
+ * channel.
  */
 void
 ClusterCom::handleMultiCastMessage(char *message)
@@ -744,7 +744,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   /* Make sure this is a message for the cluster we belong to */
   if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* ClusterName of sender */
-  // coverity[secure_coding]   
+  // coverity[secure_coding]
   if (strlen(line) >= sizeof(cluster_name) || sscanf(line, "cluster: %s", cluster_name) != 1)
     goto Lbogus;
 
@@ -756,7 +756,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   /* Make sure this a message from a Traffic Server of the same version */
   if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;                /* TS version of sender */
-  // coverity[secure_coding]   
+  // coverity[secure_coding]
   if (strlen(line) >= sizeof(tsver) ||
       sscanf(line, "tsver: %s", tsver) != 1 || strcmp(line + 7, appVersionInfo.VersionStr) != 0) {
     logClusterMismatch(ip, TS_VER_MISMATCH, tsver);
@@ -1122,7 +1122,7 @@ insert_locals(textBuffer * rec_cfg_new, textBuffer * rec_cfg, MgmtHashTable * lo
 /*
  * handleMultiCastFilePacket(...)
  *   Functions handles file packets that come over the mc channel. Its
- * basic job is to determine whether or not the timestamps/version 
+ * basic job is to determine whether or not the timestamps/version
  * numbers that its peers are reporting are newer than the timestamps
  * and versions of the local config files. If there is a mis-match and
  * their files are newer then we initiate a request to get the newer file
@@ -1141,7 +1141,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
     Rollback *rb;
 
     file_update_failure = false;
-    // coverity[secure_coding]  
+    // coverity[secure_coding]
     if (sscanf(line, "%1023s %d %ld\n", file, &ver, &mod) != 3) {
       mgmt_elog("[ClusterCom::handleMultiCastFilePacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
       return;
@@ -1300,7 +1300,7 @@ ClusterCom::handleMultiCastVMapPacket(char *last, char *ip)
     if (strcmp(line, "virt: none") == 0) {
       break;
     }
-    // coverity[secure_coding]  
+    // coverity[secure_coding]
     if (sscanf(line, "virt: %79s", vaddr) != 1) {
       mgmt_elog("[ClusterCom::handleMultiCastVMapPacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
       return;
@@ -1322,7 +1322,7 @@ ClusterCom::handleMultiCastVMapPacket(char *last, char *ip)
 
 /*
  * sendSharedData
- *   Function serves as aggregator of NODE data to be shared with the 
+ *   Function serves as aggregator of NODE data to be shared with the
  * cluster. It collects the data, formats the message, and finally broadcasts
  * the message.
  */
@@ -1361,10 +1361,10 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
   lmgmt->alarm_keeper->constructAlarmMessage(addr, message, 61440);
   sendOutgoingMessage(message, strlen(message));
 
-  /* 
+  /*
    * Send alarms and file config information always, if we are not running
    * a proxy we should not send a stat packet(no stats to report since no
-   * proxy is running). The stat packet is used to hearbeat that the node 
+   * proxy is running). The stat packet is used to hearbeat that the node
    * is alive, since this packet is not sent the master peer will not assign
    * us ip addresses and if we are the master peer someone will take over our
    * duties.
@@ -1389,7 +1389,7 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
 
 /*
  * constructSharedGenericPacket(...)
- *   A generic packet builder that can construct config or stat 
+ *   A generic packet builder that can construct config or stat
  * broadcast packets. Basically the smarts to read the records values.
  */
 void
@@ -1464,7 +1464,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
    * the accessor API functions. This could be done via them, however, the
    * overhead for direct access is most likely smaller.
    *
-   *  Big lock technology(tm) 
+   *  Big lock technology(tm)
    */
   ink_mutex_acquire(&lmgmt->record_data->mutex[packet_type]);
 
@@ -1550,7 +1550,7 @@ ClusterCom::constructSharedPacketHeader(char *message, char *ip, int max)
 /*
  * constructSharedFilePacket(...)
  *   Foreach of the config files we are holding build a packet that
- * can be used to share the current version and time stamp of the 
+ * can be used to share the current version and time stamp of the
  * files, so others can tell if ours our newer.
  */
 void
@@ -1621,7 +1621,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
 
 /*
  * estabilishChannels(...)
- *   Sets up the multi-cast and reliable tcp channels for cluster 
+ *   Sets up the multi-cast and reliable tcp channels for cluster
  * communication.
  */
 void
@@ -1632,7 +1632,7 @@ ClusterCom::establishChannels()
 
   // We only setup the reliable service port when
   //   running no clustered.  We need the rs port so
-  //   that the cop can heartbeat us 
+  //   that the cop can heartbeat us
   if (cluster_type != NO_CLUSTER) {
     establishBroadcastChannel();
     establishReceiveChannel();
@@ -1867,8 +1867,8 @@ ClusterCom::establishReceiveChannel(int fatal_on_error)
 
 /*
  * sendOutgoingMessage
- *   Function basically writes a message to the broadcast_fd, it is blocking, 
- * but since the drainer thread is constantly draining the network for all 
+ *   Function basically writes a message to the broadcast_fd, it is blocking,
+ * but since the drainer thread is constantly draining the network for all
  * local managers it should not block for very long.
  */
 bool
@@ -2180,7 +2180,7 @@ ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int 
 
 /*
  * receiveIncomingMessage
- *   This function reads from the incoming channel. It is blocking, 
+ *   This function reads from the incoming channel. It is blocking,
  * this is ok since the channel is drained by an independent thread.
  */
 int
@@ -2231,9 +2231,9 @@ ClusterCom::isMaster()
 }                               /* End ClusterCom::isMaster */
 
 
-/* 
+/*
  * lowestPeer()
- *   Function finds the peer with the lowest number of current virtual 
+ *   Function finds the peer with the lowest number of current virtual
  * interfaces. It returns the ip and sets num to the no. of connections.
  */
 unsigned long
@@ -2305,9 +2305,9 @@ ClusterCom::logClusterMismatch(const char *ip, ClusterMismatch type, char *data)
   ink_hash_table_insert(mismatchLog, ip, (void *) type);
 }
 
-/* 
+/*
  * highestPeer()
- *   Function finds the peer with the highest number of current virtual 
+ *   Function finds the peer with the highest number of current virtual
  * interfaces. It returns the ip and sets num to the no. of connections.
  */
 unsigned long
@@ -2397,7 +2397,7 @@ checkBackDoor(int req_fd, char *message)
   } else if (strstr(message, "read ")) {
     char variable[1024];
 
-    // coverity[secure_coding]  
+    // coverity[secure_coding]
     if (sscanf(message, "read %s\n", variable) != 1) {
       mgmt_elog("[ClusterCom::CBD] Invalid message-line(%d) '%s'\n", __LINE__, message);
       return false;

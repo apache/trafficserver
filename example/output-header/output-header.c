@@ -21,17 +21,17 @@
   limitations under the License.
  */
 
-/* output_hdr.c: a plugin prints out the client request header 
+/* output_hdr.c: a plugin prints out the client request header
  *                 fields to stdout
  * A sample internal plugin to use the HdrPrint functions and the INKIOBuffers
  * that the functions untilize.
- * 
+ *
  * The plugin simply prints all the incoming request headers
- * 
+ *
  *
  *
  *   Note: tested on Solaris only.  Probably doesn't compile
- *    on NT.  
+ *    on NT.
  */
 
 #include <stdio.h>
@@ -145,7 +145,7 @@ handle_dns(INKHttpTxn txnp, INKCont contp)
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
        the loop. A block with no data to read means we've exhausted
-       buffer of data since if there was more data on a later 
+       buffer of data since if there was more data on a later
        block in the chain, this block would have been skipped over */
     if (block_avail == 0) {
       break;

@@ -42,16 +42,16 @@
  *
  *  WebOverview.h - code to overview page
  *
- * 
+ *
  ****************************************************************************/
 
-// 
+//
 //  There is one instance of the class overviewPage in the LocalManger
 //    process.  The overviewPage instance stores a record of type
 //    overviewRecord for each node that has been seen in the cluster.
 //    The node records contain a list of active alarms on that node.
 //
-//  overviewPage is responsible for the synchronization issues for both 
+//  overviewPage is responsible for the synchronization issues for both
 //    it self and all of its overviewRecords.  Whenever updates are made
 //    to instances of either class, overviewPage's accessLock must be held.
 //
@@ -62,9 +62,9 @@
 //
 //  Additional Notes
 //
-//  These classes have expanded over time.  overviewPage and 
+//  These classes have expanded over time.  overviewPage and
 //    overviewRecord are now clearing houses of cluster information
-//    for the UI.  
+//    for the UI.
 //  To simplify the locking issues, pointer to overviewRecords should
 //    NOT be returned by overviewPage.  overviewRecords are internal
 //    to overviewPage and any data needed from an overviewRecord
@@ -124,7 +124,7 @@ public:
   overviewPage();
   ~overviewPage();
   /*
-     void generateTable(textBuffer* output, 
+     void generateTable(textBuffer* output,
      const char* submission,
      WebContext* pContext);
    */

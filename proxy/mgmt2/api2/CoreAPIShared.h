@@ -27,7 +27,7 @@
  * Created: 01/29/00
  * Created by: Lan Tran
  *
- * 
+ *
  ***************************************************************************/
 
 #ifndef _CORE_API_SHARED_H_
@@ -40,9 +40,9 @@
 #define MAX_RECORD_SIZE     20  // max length of buffer to hold record values
 
 // LAN - BAD BHACK; copied from Alarms.h !!!!!
-/* Must be same as defined in Alarms.h; the reason we had to 
+/* Must be same as defined in Alarms.h; the reason we had to
  * redefine them here is because the remote client also needs
- * access to these values for its event handling 
+ * access to these values for its event handling
  */
 #define MGMT_ALARM_UNDEFINED                     0
 #define MGMT_ALARM_PROXY_PROCESS_DIED            1
@@ -71,7 +71,7 @@
 #define HTTP_PORT    80
 #define BUFSIZE      1024
 
-// used by INKReadFromUrl 
+// used by INKReadFromUrl
 INKError parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size);
 INKError readHTTPResponse(int sock, char *buffer, int bufsize, inku64 timeout);
 INKError sendHTTPRequest(int sock, char *request, inku64 timeout);

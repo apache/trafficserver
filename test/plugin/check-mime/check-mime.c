@@ -24,8 +24,8 @@
 /**************************************************************
  * Sample-1.c
  *
- * Plugin to test all the HTTP Header functions to make sure 
- * SDK 2.0 plugins developed on Panda are binary compatible 
+ * Plugin to test all the HTTP Header functions to make sure
+ * SDK 2.0 plugins developed on Panda are binary compatible
  * with Tomcat (on Sol only).
  *
  **************************************************************/
@@ -234,10 +234,10 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
                 /**** section 3 ****/
     /* --------------------------------------------------------------------
      * Now, insert some fields into the MIME buffer
-     * Note: 
+     * Note:
      *      1. Field name can be set before/after INKMimeHdrFieldInsert
      *      2. Field value could be set *only* after INKMimeHdrFieldValueInsert
-     *      
+     *
      * (Point 1. and 2. implies that its possible to insert fields with empty
      * name and values)
      * --------------------------------------------------------------------*/

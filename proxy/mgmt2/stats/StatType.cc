@@ -179,7 +179,7 @@ StatExprToken::assignTokenName(const char *name)
     break;
 
   default:
-    /*      
+    /*
        mgmt_log(stderr, "[StatPro] ERROR: Undefined token: %s\n",
        m_token_name);
        StatError = true;
@@ -266,7 +266,7 @@ StatExprToken::precedence()
   case '^':                    // fall through
   case '!':
     return 3;
-  case '*':                    // fall through   
+  case '*':                    // fall through
   case '/':
     return 2;
   case '+':                    // fall through
@@ -717,8 +717,8 @@ StatObject::infix2postfix()
 /**
  * StatObject::NodeStatEval()
  * --------------------------
- * 
- * 
+ *
+ *
  */
 StatFloat StatObject::NodeStatEval(bool cluster)
 {
@@ -832,8 +832,8 @@ StatFloat StatObject::NodeStatEval(bool cluster)
 /**
  * StatObject::ClusterStatEval()
  * -----------------------------
- * 
- * 
+ *
+ *
  */
 StatFloat StatObject::ClusterStatEval()
 {
@@ -873,7 +873,7 @@ StatFloat StatObject::ClusterStatEval()
  * If m_token_type is STAT_CONST, nothing to do.
  * If m_token_type is STAT_FX, right->m_token_value is the diff. in time.
  * If m_token_type is either STAT_INT or STAT_FLOAT, it can either
- * by a cluster variable or a node variable. 
+ * by a cluster variable or a node variable.
  *     If it is a cluster variable, just use varClusterFloatFromName
  *     to set right->m_token_value.
  *     If it is a node variable, then it can either be a variable
@@ -955,7 +955,7 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
  * ------------------------
  * Take the left token, the right token, an binary operation and perform an
  * arithmatic operations on them. This function is responsible for getting the
- * correct value from: 
+ * correct value from:
  * - (1) node variable
  * - (2) node variable with a delta structure
  * - (3) cluster variable

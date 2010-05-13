@@ -28,7 +28,7 @@
  * by other Record classes, who implmenet update methods dependent on
  * whether they are a supplier or consumer of the data.
  *
- * 
+ *
  */
 
 #ifndef _BASE_RECORDS_H
@@ -52,7 +52,7 @@ typedef enum
 } UpdateLockAction;
 typedef void *(*UpdateLockFunc) (UpdateLockAction action);
 
-/* 
+/*
  * RecordType
  *   A list of the types of records currently used.
  */
@@ -160,8 +160,8 @@ public:
   MgmtFloat readFloat(const char *name, bool * found = NULL);
   MgmtString readString(const char *name, bool * found = NULL);
 
-  /* 
-   * Special interface, requires lock(rl_). Use with care! 
+  /*
+   * Special interface, requires lock(rl_). Use with care!
    *    Created for use during change callbacks, in case you need to know the
    *    "current" value of another record in order to perform a reconfig.
    */

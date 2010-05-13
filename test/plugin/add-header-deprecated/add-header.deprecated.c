@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-/* add-header.c: a plugin that adds MIME headers to 
+/* add-header.c: a plugin that adds MIME headers to
  *               client request headers.
  *
  *
- *   Usage: 
+ *   Usage:
  *   (NT): AddHeader.dll "name1: value1" "name2: value2" ...
  *   (Solaris): add-header.so "name1: value1" "name2: value2" ...
  *
- *          namei and valuei are the name and value of the 
+ *          namei and valuei are the name and value of the
  *          ith MIME header to be added to the client request
  */
 

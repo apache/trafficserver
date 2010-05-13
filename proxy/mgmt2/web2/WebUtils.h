@@ -28,8 +28,8 @@
  *
  *  WebUtils.h - Misc Utility Functions for the web server internface
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "ink_platform.h"
@@ -39,7 +39,7 @@ struct WebContext;
 
 /* Ugly Hack - declare
  *  SSLcon as void* instead of SSL since this prevents  us from
- *  including ssl.h right here which creates a whole bunch of 
+ *  including ssl.h right here which creates a whole bunch of
  *  nasty problem to MD5 conflicts with ink_code.h.
  */
 struct SocketInfo

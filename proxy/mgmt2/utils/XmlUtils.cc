@@ -33,8 +33,8 @@
  *
  *  XmlUtils.cc - Functions for interfacing to XML parser (expat)
  *
- *  
- * 
+ *
+ *
  *
  *   This code was taken from the xmlparse library developed
  *   by Xing Xiong for SynText.
@@ -232,7 +232,7 @@ XMLNode::AppendChild(XMLNode * p)
   m_nChildCount++;
 }
 
-/* <pName pAttr>pValue</pName> 
+/* <pName pAttr>pValue</pName>
    pValue may be NULL.
    pAttr  may be NULL, otherwise, there is already a " " at its beginning.
  */

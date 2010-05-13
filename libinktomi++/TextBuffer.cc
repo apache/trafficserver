@@ -29,9 +29,9 @@
 /****************************************************************************
  *
  *  TextBuffer.cc - A self-expanding buffer, primarly meant for strings
- *                     
- *  
- * 
+ *
+ *
+ *
  ****************************************************************************/
 
 textBuffer::textBuffer(int size)
@@ -63,7 +63,7 @@ textBuffer::~textBuffer()
 
 // void textBuffer::reUse()
 //
-//   Sets the text buffer for reuse by repositioning the 
+//   Sets the text buffer for reuse by repositioning the
 //     ptrs to beginning of buffer.  The buffer space is
 //     reused
 void
@@ -82,7 +82,7 @@ textBuffer::reUse()
 //  Copy N bytes (determined by num_bytes) on to the
 //  end of the buffer.
 //
-//  Returns the number of bytes copies or 
+//  Returns the number of bytes copies or
 //  -1 if there was insufficient memory
 int
 textBuffer::copyFrom(const void *source, int num_bytes)
@@ -104,9 +104,9 @@ textBuffer::copyFrom(const void *source, int num_bytes)
   return num_bytes;
 }
 
-//  textBuffer::enlargeBuffer(int n) 
+//  textBuffer::enlargeBuffer(int n)
 //
-//  Enlarge the buffer so at least at N 
+//  Enlarge the buffer so at least at N
 //    bytes are free in the buffer.
 //
 //  Always enlarges by a power of two.
@@ -145,7 +145,7 @@ textBuffer::enlargeBuffer(int N)
 // int textBuffer::rawReadFromFile
 //
 // - Issues a single read command on the file descriptor or handle
-//   passed in and reads in raw data (not assumed to be text, no 
+//   passed in and reads in raw data (not assumed to be text, no
 //   string terminators added).
 // - Cannot read from file descriptor on win32 because the win32
 //   read() function replaces CR-LF with LF if the file is not
@@ -181,7 +181,7 @@ textBuffer::rawReadFromFile(int fd)
 //
 // Issues a single read command on the file
 // descritor passed in.  Attempts to read a minimum of
-// 512 bytes from file descriptor passed.  
+// 512 bytes from file descriptor passed.
 int
 textBuffer::readFromFD(int fd)
 {

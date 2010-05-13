@@ -26,7 +26,7 @@
    HttpTransactHeaders.cc --
    Created On      : Fri Mar 27 12:15:55 1998
 
-   
+
  ****************************************************************************/
 #include "inktomi++.h"
 
@@ -964,7 +964,7 @@ HttpTransactHeaders::generate_and_set_wuts_codes(HTTPHdr * header,
     // policy decision to call this a disk io error
     // in the absence of a corresponding status code
     // for TCP_SWAPFAIL. it seems as if disk io goes
-    // better with the ERR_DISK_IO log code, but 
+    // better with the ERR_DISK_IO log code, but
     // beep it. i am sick of second guessing wuts codes.
     status_code = WUTS_PROXY_STATUS_DISK_IO_ERROR;
     log_code = SQUID_LOG_TCP_SWAPFAIL;
@@ -1095,7 +1095,7 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
   char *warning_text = NULL;
   int bufsize, i, warning_text_len;
 
-  // + 23 for 20 possible digits of warning code (long long max 
+  // + 23 for 20 possible digits of warning code (long long max
   //  digits) & 2 spaces & the string terminator
   bufsize = http_config_param->proxy_response_via_string_len + 23;
   if (warn_text != NULL)
@@ -1155,18 +1155,18 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
 // Name       : insert_via_header_in_request
 // Description: takes in existing via_string and inserts it in header
 //
-// Input      : 
-// Output     : 
+// Input      :
+// Output     :
 //
 // Details    :
-//   
+//
 // [u<client-stuff> l<cache-lookup-stuff> o<server-stuff> f<cache-fill-stuff> p<proxy-stuff>]
 //
 //      client stuff
 //              I       IMS
 //              N       no-cache
 //              A       accept headers
-//              C       cookie          
+//              C       cookie
 //
 //      cache lookup stuff
 //              M       miss

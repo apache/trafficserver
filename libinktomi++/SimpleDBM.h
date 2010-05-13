@@ -120,7 +120,7 @@ private:
 
   // Backend type specific "state" data.
   union {
-#ifdef SIMPLEDBM_USE_LIBDB    
+#ifdef SIMPLEDBM_USE_LIBDB
     struct {
       DB *db;
     } libdb;
@@ -180,13 +180,13 @@ public:
 
   static int backends() {
     return
-#ifdef SIMPLEDBM_USE_LIBDB    
+#ifdef SIMPLEDBM_USE_LIBDB
       SimpleDBM_Type_LIBDB_Hash |
 #endif
-#ifdef SIMPLEDBM_USE_SQLITE3    
+#ifdef SIMPLEDBM_USE_SQLITE3
       SimpleDBM_Type_SQLITE3 |
 #endif
-#ifdef SIMPLEDBM_USE_MDBM    
+#ifdef SIMPLEDBM_USE_MDBM
       SimpleDBM_Type_MDBM |
 #endif
       0;

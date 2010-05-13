@@ -41,12 +41,12 @@ public:
   url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
 
   typedef std::list<url_mapping *> MappingList;
-  
+
   void GetMappings(MappingList &mapping_list) const;
 
   void Clear();
 
-  virtual ~UrlMappingPathIndex() 
+  virtual ~UrlMappingPathIndex()
   {
     Clear();
   }
@@ -54,12 +54,12 @@ public:
 
 private:
   typedef Trie<url_mapping *> UrlMappingTrie;
-  struct UrlMappingTrieKey 
+  struct UrlMappingTrieKey
   {
     int scheme_wks_idx;
     int port;
     UrlMappingTrieKey(int idx, int p) : scheme_wks_idx(idx), port(p) { };
-    bool operator <(const UrlMappingTrieKey &rhs) const 
+    bool operator <(const UrlMappingTrieKey &rhs) const
     {
       if (scheme_wks_idx == rhs.scheme_wks_idx) {
         return (port < rhs.port);
@@ -67,10 +67,10 @@ private:
       return (scheme_wks_idx < rhs.scheme_wks_idx);
     };
   };
-  
+
   typedef std::map<UrlMappingTrieKey, UrlMappingTrie *> UrlMappingGroup;
   UrlMappingGroup m_tries;
-    
+
   // make copy-constructor and assignment operator private
   // till we properly implement them
   UrlMappingPathIndex(const UrlMappingPathIndex &rhs) { };
@@ -91,7 +91,7 @@ private:
     }
     return 0;
   };
-  
+
 };
 
 #endif // _URL_MAPPING_PATH_INDEX_H

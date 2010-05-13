@@ -28,7 +28,7 @@
  *
  * $Date: 2007-10-05 16:56:44 $
  *
- * 
+ *
  */
 
 #include "inktomi++.h"
@@ -269,7 +269,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 
   /*
    * Exec alarm bin for priority alarms everytime, regardless if they are
-   * potentially duplicates. However, only exec this for you own alarms, 
+   * potentially duplicates. However, only exec this for you own alarms,
    * don't want every node in the cluster reporting the same alarm.
    */
   if (priority == 1 && alarm_bin && alarm_bin_path && !ip) {
@@ -288,7 +288,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     }
     snprintf(buf, sizeof(buf), "%d", a);
     if (ink_hash_table_lookup(local_alarms, buf, &hash_value) != 0) {
-      // INKqa11884: if wireless alarm already active, just 
+      // INKqa11884: if wireless alarm already active, just
       // update desc with new timestamp and skip to actions part
       if (a == MGMT_ALARM_WDA_BILLING_CONNECTION_DIED ||
           a == MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA ||
@@ -309,7 +309,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
       atmp = (Alarm *) hash_value;
       atmp->seen = true;
 
-      // INKqa11884: if wireless alarm already active, just 
+      // INKqa11884: if wireless alarm already active, just
       // update desc with new timstamp and skip to actions part
       if (a == MGMT_ALARM_WDA_BILLING_CONNECTION_DIED ||
           a == MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA ||
@@ -697,7 +697,7 @@ Alarms::execAlarmBin(const char *desc)
 // getAlarmText
 //
 // returns the corresponding text for the alarm id
-// 
+//
 const char *
 Alarms::getAlarmText(alarm_t id)
 {

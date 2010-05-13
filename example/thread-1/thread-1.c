@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-/* thread-1.c:  an example program that creates a thread 
- *                   
+/* thread-1.c:  an example program that creates a thread
  *
  *
- *	Usage:	
- *	(NT): Thread.dll 
+ *
+ *	Usage:
+ *	(NT): Thread.dll
  *	(Solaris): thread-1.so
  *
  *

@@ -22,12 +22,12 @@
  */
 
 /* hello.c:  an example hello world program
- *                   
  *
  *
- *	Usage:	
- * 	(NT): Hello.dll 
- * 	(Solaris): hello.so 
+ *
+ *	Usage:
+ * 	(NT): Hello.dll
+ * 	(Solaris): hello.so
  *
  *
  */

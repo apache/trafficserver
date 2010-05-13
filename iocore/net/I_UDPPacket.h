@@ -25,8 +25,8 @@
 
   I_UDPPacket.h
   UDPPacket interface
-  
-  
+
+
  ****************************************************************************/
 
 #ifndef __I_UDPPACKET_H_
@@ -59,7 +59,7 @@ public:
   void setPktTSSeq(ink64 seqno);
   int getPktLength();
   /**
-     Add IOBufferBlock (chain) to end of packet.	
+     Add IOBufferBlock (chain) to end of packet.
      @param block block chain to add.
 
    */

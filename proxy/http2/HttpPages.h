@@ -28,7 +28,7 @@
    Description:
        Data structurs and stat page generators for http info
 
-   
+
  ****************************************************************************/
 
 #ifndef _HTTP_PAGES_H_

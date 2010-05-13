@@ -57,7 +57,7 @@
 }
 
 
-/*********************************************************************** 
+/***********************************************************************
  * play with the functions in the INKHttpAltInfo* group
  ***********************************************************************/
 static void
@@ -106,11 +106,11 @@ handle_select_alt(INKHttpAltInfo infop)
   if (INKHttpAltInfoCachedRespGet(infop, &cache_resp_buf, &cache_resp_hdr) != INK_SUCCESS)
     LOG_ERROR_AND_CLEANUP("INKHttpAltInfoCachedRespGet");
 
-  /* 
+  /*
    * get the Accept-Language field value from the client request
    * get the Content-language field value from the cached response
    * if these two values are equivalent, set the quality of this alternate to 1
-   * otherwise set it to 0 
+   * otherwise set it to 0
    */
   if ((accept_language_field = INKMimeHdrFieldRetrieve(client_req_buf, client_req_hdr,
                                                        INK_MIME_FIELD_ACCEPT_LANGUAGE)) == INK_ERROR_PTR)

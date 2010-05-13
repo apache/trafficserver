@@ -54,9 +54,9 @@
 #define IP_END_DELIMITER     "#"
 #define LIST_DELIMITER       ", "
 
-/* Each opaque List handle in the INKMgmtAPI should have 
- * a corresponding typedef here. Using LLQ's to implement the 
- * lists 
+/* Each opaque List handle in the INKMgmtAPI should have
+ * a corresponding typedef here. Using LLQ's to implement the
+ * lists
  */
 typedef LLQ PortList;
 typedef LLQ IpAddrList;

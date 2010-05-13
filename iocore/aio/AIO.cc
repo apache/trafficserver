@@ -67,7 +67,7 @@ aio_stats_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBloc
   // The RecGetGlobalXXX stat functions are cheaper than the
   // RecGetXXX functions. The Global ones are expensive
   // for increments and decrements. But for AIO stats we
-  // only do Sets and Gets, so they are cheaper in our case. 
+  // only do Sets and Gets, so they are cheaper in our case.
   RecGetGlobalRawStatSum(aio_rsb, id, &sum);
   RecGetGlobalRawStatCount(aio_rsb, id, &count);
 
@@ -193,13 +193,13 @@ struct AIOThreadInfo:public Continuation
 
 /* priority scheduling */
 /* Have 2 queues per file descriptor - A queue for http requests and another
-   for non-http (streaming) request. Each file descriptor has a lock 
-   and condition variable associated with it. A dedicated number of threads 
-   (THREADS_PER_DISK) wait on the condition variable associated with the 
-   file descriptor. The cache threads try to put the request in the 
-   appropriate queue. If they fail to acquire the lock, they put the 
-   request in the atomic list. Requests are served in the order of 
-   highest priority first. If both the queues are empty, the aio threads 
+   for non-http (streaming) request. Each file descriptor has a lock
+   and condition variable associated with it. A dedicated number of threads
+   (THREADS_PER_DISK) wait on the condition variable associated with the
+   file descriptor. The cache threads try to put the request in the
+   appropriate queue. If they fail to acquire the lock, they put the
+   request in the atomic list. Requests are served in the order of
+   highest priority first. If both the queues are empty, the aio threads
    check if there is any request on the other disks */
 
 
@@ -247,7 +247,7 @@ aio_insert(AIOCallback *op, AIO_Reqs *req)
   num_requests++;
   req->queued++;
 #endif
-  if (op->aiocb.aio_reqprio == AIO_LOWEST_PRIORITY)     // http request 
+  if (op->aiocb.aio_reqprio == AIO_LOWEST_PRIORITY)     // http request
   {
     AIOCallback *cb = (AIOCallback *) req->http_aio_todo.tail;
     if (!cb)
@@ -320,9 +320,9 @@ aio_queue_req(AIOCallbackInternal *op)
         /* insert a new entry */
         req = aio_init_fildes(op->aiocb.aio_fildes);
       } else {
-        /* a new entry was inserted between the time we checked the 
-           aio_reqs and acquired the mutex. check the aio_reqs array to 
-           make sure the entry inserted does not correspond  to the current 
+        /* a new entry was inserted between the time we checked the
+           aio_reqs and acquired the mutex. check the aio_reqs array to
+           make sure the entry inserted does not correspond  to the current
            file descriptor */
         for (thread_ndx = 0; thread_ndx < num_filedes; thread_ndx++) {
           if (aio_reqs[thread_ndx]->filedes == op->aiocb.aio_fildes) {

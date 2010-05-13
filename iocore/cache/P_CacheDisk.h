@@ -67,7 +67,7 @@ struct DiskPartBlockQueue
 
 struct DiskPart
 {
-  int num_partblocks;           /* number of disk partition blocks in this discrete 
+  int num_partblocks;           /* number of disk partition blocks in this discrete
                                    partition */
   int part_number;              /* the partition number of this partition */
   ink_off_t size;               /* size in store blocks */

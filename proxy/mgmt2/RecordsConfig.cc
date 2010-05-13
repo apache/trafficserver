@@ -173,15 +173,15 @@ RecordElement RecordsConfig[] = {
   //#
   //# Connection Collapsing
   //#
-  //# 1. hashtable_enabled: if set to 1, requests will first search the 
+  //# 1. hashtable_enabled: if set to 1, requests will first search the
   //#    hashtable to see if another similar request is already being served.
-  //# 2. rww_wait_time: read-while-write wait time: While read while write is 
+  //# 2. rww_wait_time: read-while-write wait time: While read while write is
   //#    enabled, the secondary clients will wait this amount of time after which
   //#    cache lookup is retried.
-  //# 3. revaildate_window_period: while revaidation of a cached object is being 
+  //# 3. revaildate_window_period: while revaidation of a cached object is being
   //#    done, the secondary clients for the same url will serve the stale object for
   //#    this amount of time, after the revalidation had started.
-  //#  
+  //#
   //##############################################################################
 
   {CONFIG, "proxy.config.connection_collapsing.hashtable_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT,
@@ -196,7 +196,7 @@ RecordElement RecordsConfig[] = {
 
   //##############################################################################
   //#
-  //# Support for SRV records 
+  //# Support for SRV records
   //#
   //##############################################################################
   {CONFIG, "proxy.config.srv_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
@@ -204,7 +204,7 @@ RecordElement RecordsConfig[] = {
 
   //##############################################################################
   //#
-  //# Support for disabling check for Accept-* / Content-* header mismatch 
+  //# Support for disabling check for Accept-* / Content-* header mismatch
   //#
   //##############################################################################
   {CONFIG, "proxy.config.http.cache.ignore_accept_mismatch", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]",
@@ -222,10 +222,10 @@ RecordElement RecordsConfig[] = {
 
   //##############################################################################
   //#
-  //# Redirection 
+  //# Redirection
   //#
   //# 1. redirection_enabled: if set to 1, redirection is enabled.
-  //# 2. number_of_redirectionse: The maximum number of redirections TS permits 
+  //# 2. number_of_redirectionse: The maximum number of redirections TS permits
   //# 3. post_copy_size: The maximum POST data size TS permits to copy
   //#
   //##############################################################################
@@ -1149,7 +1149,7 @@ RecordElement RecordsConfig[] = {
    RA_NULL}
   ,
   //       # cache responses to cookies has 4 options
-  //       # 
+  //       #
   //       #  0 - do not cache any responses to cookies
   //       #  1 - cache for any content-type (ignore cookies)
   //       #  2 - cache only for image types
@@ -2241,7 +2241,7 @@ RecordElement RecordsConfig[] = {
   ,
   {PROCESS, "proxy.process.cache.hdr_marshal_bytes", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  // Disk Stats 
+  // Disk Stats
   {PROCESS, "proxy.process.cache.read_per_sec", "", INK_FLOAT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {PROCESS, "proxy.process.cache.KB_read_per_sec", "", INK_FLOAT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -2333,7 +2333,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.hostdb.serve_stale_for", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  //       # move entries to the owner on a lookup?  
+  //       # move entries to the owner on a lookup?
   {CONFIG, "proxy.config.hostdb.migrate_on_demand", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //       # find DNS results on another node in the cluster?
@@ -2342,7 +2342,7 @@ RecordElement RecordsConfig[] = {
   //       # find DNS results for round-robin hosts on another node in the cluster?
   {CONFIG, "proxy.config.hostdb.cluster.round_robin", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  //       # round-robin addresses for single clients 
+  //       # round-robin addresses for single clients
   //       # (can cause authentication problems)
   {CONFIG, "proxy.config.hostdb.strict_round_robin", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -4143,7 +4143,7 @@ RecordElement RecordsConfig[] = {
   //############
   //#
   //# Eric's super cool remap processor
-  //# 
+  //#
   //############
   {CONFIG, "proxy.config.remap.use_remap_processor", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,

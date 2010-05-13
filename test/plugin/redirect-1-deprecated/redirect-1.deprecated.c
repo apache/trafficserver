@@ -21,14 +21,14 @@
   limitations under the License.
  */
 
-/* 
- *   redirect-1.c:  
- *	an example program which redirects clients based on the source IP 
+/*
+ *   redirect-1.c:
+ *	an example program which redirects clients based on the source IP
  *
  *
- *	Usage:	
- * 	(NT): Redirect.dll block_ip url_redirect 
- * 	(Solaris): redirect-1.so block_ip url_redirect 
+ *	Usage:
+ * 	(NT): Redirect.dll block_ip url_redirect
+ * 	(Solaris): redirect-1.so block_ip url_redirect
  *
  *
  */
@@ -53,8 +53,8 @@ static unsigned int ip_deny;
 static unsigned int clientip;
 #endif
 
-/* 
- * uncoupled statistics variables: 
+/*
+ * uncoupled statistics variables:
  */
 static INKStat method_count_redirected_connect;
 static INKStat method_count_redirected_delete;
@@ -69,8 +69,8 @@ static INKStat method_count_redirected_trace;
 static INKStat method_count_redirected_unknown;
 
 
-/* 
- *	coupled statistics variables: 
+/*
+ *	coupled statistics variables:
  *		coupled stat category for the following stats
  *              is request_outcomes. The relationship among the stats is:
  *		requests_all = requests_redirects + requests_unchanged
@@ -98,8 +98,8 @@ handle_client_lookup(INKHttpTxn txnp, INKCont contp)
   char *clientstring;
   struct in_addr tempstruct;
 
-  /* 
-   * Here we declare local coupled statistics variables: 
+  /*
+   * Here we declare local coupled statistics variables:
    */
   INKCoupledStat local_request_outcomes;
   INKStat local_requests_all;
@@ -107,13 +107,13 @@ handle_client_lookup(INKHttpTxn txnp, INKCont contp)
   INKStat local_requests_unchanged;
 
   /*
-   *  Create local copy of the global coupled stat category: 
+   *  Create local copy of the global coupled stat category:
    */
   local_request_outcomes = INKStatCoupledLocalCopyCreate("local_request_outcomes", request_outcomes);
 
 
-  /* 
-   * Create the local copies of the global coupled stats: 
+  /*
+   * Create the local copies of the global coupled stats:
    */
   local_requests_all = INKStatCoupledLocalAdd(local_request_outcomes, "requests.all.local", INKSTAT_TYPE_FLOAT);
   local_requests_redirects = INKStatCoupledLocalAdd(local_request_outcomes,
@@ -122,8 +122,8 @@ handle_client_lookup(INKHttpTxn txnp, INKCont contp)
                                                     "requests.unchanged.local", INKSTAT_TYPE_INT64);
 
 
-  /* 
-   *   Increment the count of total requests: 
+  /*
+   *   Increment the count of total requests:
    *     (it is more natural to treat the number of requests as an
    *      integer, but we declare this a FLOAT in order to demonstrate
    *      how to increment coupled FLOAT stats)
@@ -159,7 +159,7 @@ handle_client_lookup(INKHttpTxn txnp, INKCont contp)
     goto done;
   }
 
-  /* 
+  /*
    *   Check to see if the client is already headed to the redirect site.
    */
   if (strcmp(host, url_redirect) == 0) {
@@ -173,8 +173,8 @@ handle_client_lookup(INKHttpTxn txnp, INKCont contp)
 
     update_redirected_method_stats(bufp, hdr_loc);
 
-    /* 
-     *   Increment the local redirect stat and do global update: 
+    /*
+     *   Increment the local redirect stat and do global update:
      */
     INKStatIncrement(local_requests_redirects);
     INKStatsCoupledUpdate(local_request_outcomes);
@@ -185,8 +185,8 @@ handle_client_lookup(INKHttpTxn txnp, INKCont contp)
 done:
   INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
 
-  /* 
-   * Increment the local number unchanged stat and do global update: 
+  /*
+   * Increment the local number unchanged stat and do global update:
    */
   INKStatIncrement(local_requests_unchanged);
   INKStatsCoupledUpdate(local_request_outcomes);
@@ -220,7 +220,7 @@ handle_response(INKHttpTxn txnp)
   INKMimeHdrFieldInsert(bufp, hdr_loc, newfield_loc, -1);
 
 
-  /* 
+  /*
    *  Note that we can't directly use errormsg_body, as INKHttpTxnBodySet()
    *  will try to free the passed buffer with INKfree().
    */
@@ -260,8 +260,8 @@ redirect_plugin(INKCont contp, INKEvent event, void *edata)
 
 
 
-/* 
- *  Global statistics functions: 
+/*
+ *  Global statistics functions:
  */
 
 void
@@ -349,7 +349,7 @@ INKPluginInit(int argc, const char *argv[])
     block_ip = INKstrdup(argv[1]);
 
     /*
-     *   The Location header must contain an absolute URI: 
+     *   The Location header must contain an absolute URI:
      */
 
     url_redirect = INKstrdup(argv[2]);

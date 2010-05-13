@@ -26,7 +26,7 @@
 
   Update.h
 
-  
+
 ****************************************************************************/
 
 #include "P_EventSystem.h"
@@ -246,7 +246,7 @@ extern UpdateManager updateManager;
 
 //////////////////////////////////////////////////////////////////////////
 // UpdateConfigManager -- Handle Update subsystem global configuration
-//                        and URL list updates 
+//                        and URL list updates
 //////////////////////////////////////////////////////////////////////////
 typedef int (UpdateConfigManager::*UpdateConfigManagerContHandler) (int, void *);
 
@@ -284,7 +284,7 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////
-// UpdateScheduler -- Handle scheduling of UpdateEntry objects 
+// UpdateScheduler -- Handle scheduling of UpdateEntry objects
 ////////////////////////////////////////////////////////////////////////
 typedef int (UpdateScheduler::*UpdateSchedulerContHandler) (int, void *);
 

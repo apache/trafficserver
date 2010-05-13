@@ -438,7 +438,7 @@ error:
 //
 //   Wrapper to Parse out the src ip range
 //
-//   On success, sets *opaque_ptr to a malloc allocated ipMod 
+//   On success, sets *opaque_ptr to a malloc allocated ipMod
 //      structure and returns NULL
 //   On failure, returns a static error string
 //
@@ -465,7 +465,7 @@ ControlBase::ProcessSrcIp(char *val, void **opaque_ptr)
 //
 //   On success, sets *seconds to number of seconds since midnight
 //      represented by time_str and returns NULL
-//      
+//
 //   On failure, returns a static error string
 //
 const char *
@@ -507,7 +507,7 @@ TODtoSeconds(const char *time_str, time_t * seconds)
 //
 //   Parse out a time of day range.
 //
-//   On success, sets *opaque_ptr to a malloc allocated timeMod 
+//   On success, sets *opaque_ptr to a malloc allocated timeMod
 //      structure and returns NULL
 //   On failure, returns a static error string
 //

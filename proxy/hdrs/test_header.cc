@@ -25,11 +25,11 @@
 
    test_header.cc
 
-   Description: 
+   Description:
        test code for sanity checking the header system is functioning
          properly
 
-   
+
  ****************************************************************************/
 
 #include <stdlib.h>

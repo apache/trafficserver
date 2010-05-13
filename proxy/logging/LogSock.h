@@ -29,7 +29,7 @@
 #include "inktomi++.h"
 #include "LogLimits.h"
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogSock
 
   This class implements a multiplexed socket class that supports both

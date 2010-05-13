@@ -28,7 +28,7 @@
  *
  * $Date: 2003-06-01 18:37:37 $
  *
- * 
+ *
  */
 
 #ifndef _VMAP_H
@@ -95,7 +95,7 @@ typedef struct _realip_info
  *   Class implements the protocol and support functions for mapping the
  * clusters virtual addresses. Member functions names are important here,
  * since this class shares a lock with the ClusterCom class:
- *          
+ *
  *      lt_   "Lock Taken"   -- release the lock prior to invoking
  *      rl_   "Require Lock" -- acquire the lock prior to invoking
  *

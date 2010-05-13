@@ -28,23 +28,23 @@
   struct Connection
   struct Server
   struct ConnectionManager
- 
+
   struct ConnectionManager
   ========================
 
   struct ConnectionManager provides the interface for network or disk
   connections.  There is a global ConnectionManager in the system
-  (connectionManager).  
+  (connectionManager).
 
-  Connection * connect() 
-  Connection * accept() 
+  Connection * connect()
+  Connection * accept()
 
   The accept call is a blocking call while connect is non-blocking. They
   returns a new Connection instance which is an handle to the newly created
   connection. The connection `q instance can be used later for read/writes
   using an intance of IOProcessor class.
 
-   
+
   **************************************************************************/
 
 #ifndef __CONNECTION_H__

@@ -26,7 +26,7 @@
    TestHeaderTokenizer.cc --
    Created On      : Mon Jan 20 11:48:10 1997
 
-   
+
  ****************************************************************************/
 #include "HttpHeaderTokenizer.h"
 #include "ink_assert.h"

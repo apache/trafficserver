@@ -22,13 +22,13 @@
  */
 
 /* bnull-transform.c:  an example program that illustrates a buffered
- *                     null transform. 
- *                   
+ *                     null transform.
  *
  *
- *    Usage:    
- *    (NT): BNullTransform.dll 
- *    (Solaris): bnull-transform.so 
+ *
+ *    Usage:
+ *    (NT): BNullTransform.dll
+ *    (Solaris): bnull-transform.so
  *
  *
  */
@@ -223,7 +223,7 @@ handle_transform(INKCont contp)
 static int
 bnull_transform(INKCont contp, INKEvent event, void *edata)
 {
-  /* Check to see if the transformation has been closed by a 
+  /* Check to see if the transformation has been closed by a
      call to INKVConnClose. */
 
   if (INKVConnClosedGet(contp)) {
@@ -256,8 +256,8 @@ bnull_transform(INKCont contp, INKEvent event, void *edata)
 
     case INK_EVENT_VCONN_WRITE_READY:
     default:
-      /* If we get a WRITE_READY event or any other type of event 
-         (sent, perhaps, because we were reenabled) then we'll attempt 
+      /* If we get a WRITE_READY event or any other type of event
+         (sent, perhaps, because we were reenabled) then we'll attempt
          to transform more data. */
       handle_transform(contp);
       break;

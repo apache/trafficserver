@@ -100,7 +100,7 @@ memcpy(void *s1, void *s2, size_t n)
 /*
  * Notes:
  *       - Do I need to screw with the packet size, watermarks?
- *       - where can I get a unique id number 
+ *       - where can I get a unique id number
  */
 static struct module_info minfo = {
   0xbabf,                       /* mi_idnum   module ID number */
@@ -476,14 +476,14 @@ getBlockPtr(uint16_t id)
 }
 
 /*
- * Initialize a STREAMS UDP request message body 
+ * Initialize a STREAMS UDP request message body
  */
 inline void
 inkudp_udppkt_init(struct udppkt *p)
 {
   /* the magic numbers get hardcoded
    *
-   * Fixme: are these platform-dependant?  
+   * Fixme: are these platform-dependant?
    * How will they work on sparc?
    */
 #ifdef i386

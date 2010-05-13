@@ -122,7 +122,7 @@ class Continuation;
 
    Currently, the documentation is exposed, but it is intended that
    <strong><em>only</em></strong> implementors of block cache make use
-   of these calls. 
+   of these calls.
 
  */
 

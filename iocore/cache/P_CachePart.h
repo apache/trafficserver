@@ -293,7 +293,7 @@ struct Frag {
   inku64 offset; // start offset of data stored in this fragment
 };
 
-// Note : hdr() needs to be 8 byte aligned. 
+// Note : hdr() needs to be 8 byte aligned.
 // If you change this, change sizeofDoc above
 struct Doc
 {
@@ -338,7 +338,7 @@ part_headerlen(Part *d) {
 TS_INLINE int
 part_dirlen(Part * d)
 {
-  return ROUND_TO_BLOCK(d->buckets * DIR_DEPTH * d->segments * SIZEOF_DIR) + 
+  return ROUND_TO_BLOCK(d->buckets * DIR_DEPTH * d->segments * SIZEOF_DIR) +
     part_headerlen(d) + ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
 }
 TS_INLINE int
@@ -407,7 +407,7 @@ Doc::single_fragment()
   return (total_len && (data_len() == total_len));
 }
 TS_INLINE inku32
-Doc::nfrags() { 
+Doc::nfrags() {
   return flen / sizeof(Frag);
 }
 TS_INLINE Frag *

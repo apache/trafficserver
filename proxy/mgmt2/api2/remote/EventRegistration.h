@@ -26,7 +26,7 @@
  * Purpose: This file contains sturctures intended for event notification
  * Created: 8/8/00
  * Created by: Stephanie Song
- * 
+ *
  ***************************************************************************/
 
 #ifndef _EVENT_REGISTRATION_H

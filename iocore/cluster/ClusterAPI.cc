@@ -293,8 +293,8 @@ clusterAPI_init()
  *  Add the given function to the node status callout list which is
  *  invoked on each machine up/down transition.
  *
- *  Note: Using blocking mutex since interface is synchronous and is only 
- *	  called at plugin load time. 
+ *  Note: Using blocking mutex since interface is synchronous and is only
+ *	  called at plugin load time.
  */
 int
 INKAddClusterStatusFunction(INKClusterStatusFunction Status_Function, INKMutex m, INKClusterStatusHandle_t * h)
@@ -321,11 +321,11 @@ INKAddClusterStatusFunction(INKClusterStatusFunction Status_Function, INKMutex m
 }
 
 /*
- *  Remove the given function from the node status callout list 
+ *  Remove the given function from the node status callout list
  *  established via INKAddClusterStatusFunction().
  *
- *  Note: Using blocking mutex since interface is synchronous and is only 
- *	  called at plugin unload time (unload currently not supported). 
+ *  Note: Using blocking mutex since interface is synchronous and is only
+ *	  called at plugin unload time (unload currently not supported).
  */
 int
 INKDeleteClusterStatusFunction(INKClusterStatusHandle_t * h)
@@ -431,8 +431,8 @@ machine_offline_APIcallout(int Ipaddr)
 /*
  *  Associate the given RPC function with the given key.
  *
- *  Note: Using blocking mutex since interface is synchronous and is only 
- *	  called at plugin load time. 
+ *  Note: Using blocking mutex since interface is synchronous and is only
+ *	  called at plugin load time.
  */
 int
 INKAddClusterRPCFunction(INKClusterRPCKey_t k, INKClusterRPCFunction func, INKClusterRPCHandle_t * h)
@@ -461,7 +461,7 @@ INKAddClusterRPCFunction(INKClusterRPCKey_t k, INKClusterRPCFunction func, INKCl
 /*
  *  Remove the given RPC function added via INKAddClusterRPCFunction().
  *
- *  Note: Using blocking mutex since interface is synchronous and is only 
+ *  Note: Using blocking mutex since interface is synchronous and is only
  *	  called at plugin unload time (unload currently not supported).
  */
 int

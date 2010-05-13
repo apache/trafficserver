@@ -24,11 +24,11 @@
 /*****************************************************************************
  * Filename: CfgContextUtils.h (based on FileOp.h)
  * ------------------------------------------------------------------------
- * Purpose: 
- * 1) Contains helper functions to convert "values" from TokenList to Ele 
+ * Purpose:
+ * 1) Contains helper functions to convert "values" from TokenList to Ele
  * format and from Ele Format to file Rule Format
  * 2) contains helper functions to check for valid info
- * 
+ *
  ***************************************************************************/
 
 #ifndef _CONTEXT_UTILS_H_
@@ -55,7 +55,7 @@ INKIpAddr string_to_ip_addr(const char *str);
 char *ip_addr_list_to_string(IpAddrList * list, const char *delimiter);
 INKIpAddrList string_to_ip_addr_list(const char *str_list, const char *delimiter);
 
-/* PortList <==> port_1<delim>port_2<delim>port_3<delim>...<delim>port_n 
+/* PortList <==> port_1<delim>port_2<delim>port_3<delim>...<delim>port_n
  * (Note: each port can be a port range */
 char *port_list_to_string(PortList * ports, const char *delimiter);
 INKPortList string_to_port_list(const char *str_list, const char *delimiter);

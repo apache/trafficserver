@@ -28,22 +28,22 @@ class Foo { public:
   int x;
 
   virtual void foo() {}
-  
+
   SLINK(Foo, slink);
   LINK(Foo, dlink);
-  
+
   Foo(int i = 0): x(i) {}
 };
 
 int main() {
-   SList(Foo,slink) s; 
-   DList(Foo,dlink) d; 
-   Que(Foo,dlink) q; 
+   SList(Foo,slink) s;
+   DList(Foo,dlink) d;
+   Que(Foo,dlink) q;
    Foo *f = new Foo;
    f->x = 7;
    s.push(f);
    d.push(s.pop());
-   q.enqueue(d.pop()); 
+   q.enqueue(d.pop());
    for (int i = 0; i < 100; i++)
      q.enqueue(new Foo(i));
    int tot = 0;

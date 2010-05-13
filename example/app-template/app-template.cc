@@ -23,7 +23,7 @@
 
 /*
  * Example application template to be used with the standalone iocore
- * 
+ *
  */
 
 #include "inktomi++.h"
@@ -69,19 +69,19 @@ int  tsapp_port = 12345;
 AppVersionInfo appVersionInfo;
 
 ArgumentDescription argument_descriptions[] = {
-  {"version", 'V', "Print Version Id", "T", 
+  {"version", 'V', "Print Version Id", "T",
    &version_flag, NULL, NULL},
-  {"tsapp_port", 'p', "tsapp port", "I", 
+  {"tsapp_port", 'p', "tsapp port", "I",
    &tsapp_port, "TSAPP_PORT",  NULL},
-  {"net_threads", 'n', "Number of Net Threads", "I", 
+  {"net_threads", 'n', "Number of Net Threads", "I",
    &system_num_of_net_threads, "TSAPP_NET_THREADS", NULL},
-  {"accept_thread", 'a', "Use an Accept Thread", "T", 
+  {"accept_thread", 'a', "Use an Accept Thread", "T",
    &use_accept_thread, "TSAPP_ACCEPT_THREAD", NULL},
-  {"poll_timeout", 't', "poll timeout in milliseconds", "I", 
+  {"poll_timeout", 't', "poll timeout in milliseconds", "I",
    &net_config_poll_timeout, NULL, NULL},
-  {"debug_tags", 'T', "Debug Tags ('|' separated)", "S1023", 
+  {"debug_tags", 'T', "Debug Tags ('|' separated)", "S1023",
    debug_tags, "TSAPP_DEBUG_TAGS",  NULL},
-  {"action_tags", 'T', "Action Tags ('|' separated)", "S1023", 
+  {"action_tags", 'T', "Action Tags ('|' separated)", "S1023",
    action_tags, "TSAPP_ACTION_TAGS",  NULL},
   {"help", 'h', "Help", NULL, NULL, NULL, usage}
 };
@@ -95,7 +95,7 @@ void init_app_config() {
     "proxy.config.net.max_poll_delay",
     128,
     RECU_DYNAMIC, RECC_NULL, NULL);
-  
+
    RecRegisterConfigInt(
     RECT_CONFIG,
     "proxy.config.net.listen_backlog",
@@ -106,20 +106,20 @@ void init_app_config() {
     RECT_CONFIG,
     "proxy.config.net.connections_throttle",
     8000,
-    RECU_DYNAMIC, RECC_NULL, NULL);  
+    RECU_DYNAMIC, RECC_NULL, NULL);
 
    RecRegisterConfigInt(
     RECT_CONFIG,
     "proxy.config.accept_threads",
     0,
-    RECU_DYNAMIC, RECC_NULL, NULL);  
+    RECU_DYNAMIC, RECC_NULL, NULL);
 
    // IO
    RecRegisterConfigInt(
     RECT_CONFIG,
     "proxy.config.io.max_buffer_size",
     32768,
-    RECU_DYNAMIC, RECC_NULL, NULL);  
+    RECU_DYNAMIC, RECC_NULL, NULL);
 
    // Cache, etc
 }
@@ -153,7 +153,7 @@ get_ts_directory(char *ts_path, size_t ts_path_len)
       if (ts_path[len - 1] == '/') {
         ts_path[len - 1] = '\0';
       }
-      
+
       fclose(fp);
     } else {
       ink_strncpy(ts_path, PREFIX, ts_path_len);
@@ -161,7 +161,7 @@ get_ts_directory(char *ts_path, size_t ts_path_len)
   }
 
   if ((err = stat(ts_path, &s)) < 0) {
-    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n", 
+    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n",
               ts_path, err, errno, strerror(errno));
     fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
     return -1;
@@ -200,7 +200,7 @@ int main(int argc, char * argv[])
 {
   char ts_path[PATH_NAME_MAX + 1];
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__, 
+  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   process_args(argument_descriptions, n_argument_descriptions, argv);
@@ -217,7 +217,7 @@ int main(int argc, char * argv[])
     ink_snprintf(system_config_directory, sizeof(system_config_directory), "%s/etc/trafficserver", system_root_dir);
     ink_snprintf(system_local_state_dir, sizeof(system_local_state_dir), "%s/var/trafficserver", system_root_dir);
     ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s/var/log/trafficserver", system_root_dir);
-  } 
+  }
 
   if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
     fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
@@ -230,13 +230,13 @@ int main(int argc, char * argv[])
   // Diags
   init_system_diags(debug_tags, NULL);
   if (is_debug_tag_set("tsapp"))
-    diags->dump(stdout); 
+    diags->dump(stdout);
 
   // Config & Stats
   RecModeT mode_type = RECM_STAND_ALONE;
   RecProcessInit(mode_type,diags);
   //RecProcessInitMessage(mode_type);
-  
+
   signal(SIGPIPE, SIG_IGN); // ignore broken pipe
 
   init_buffer_allocators();
@@ -266,11 +266,11 @@ int main(int argc, char * argv[])
   // Start processors
   eventProcessor.start(system_num_of_net_threads);
 
-  RecProcessStart(); 
+  RecProcessStart();
 
   init_signals2();
 
-  netProcessor.start(); 
+  netProcessor.start();
 
   dnsProcessor.start();
 
@@ -279,9 +279,9 @@ int main(int argc, char * argv[])
 
   //clusterProcessor.init();
 
-  cacheProcessor.start(); 
+  cacheProcessor.start();
 
-  //udpNet.start(system_num_of_udp_threads); // XXX : broken 
+  //udpNet.start(system_num_of_udp_threads); // XXX : broken
 
   //sslNetProcessor.start(getNumSSLThreads());
 

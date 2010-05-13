@@ -32,12 +32,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* INKAction 
- * 
+/* INKAction
+ *
  * TODO send and receive data on the connection
 */
 
-/* cvrt unsigned int address to dotted decimal address  
+/* cvrt unsigned int address to dotted decimal address
  * delete on the otherside, otherwise: don't care
 */
 char *
@@ -66,8 +66,8 @@ typedef struct clientInfo
   int port;
 } clientInfo_t;
 
-/* Assumes that type-o-serve.pl (or some other client accepting 
- * connections) is running on a client machine 
+/* Assumes that type-o-serve.pl (or some other client accepting
+ * connections) is running on a client machine
 */
 static int
 handle_INKAction(INKCont contp, INKEvent event, void *eData)
@@ -84,7 +84,7 @@ handle_INKAction(INKCont contp, INKEvent event, void *eData)
 
   switch (event) {
   case INK_EVENT_IMMEDIATE:
-    /* event scheduled at plugIn-init 
+    /* event scheduled at plugIn-init
      */
     clientInfop = (clientInfo_t *) INKContDataGet(contp);
     if (!clientInfop) {
@@ -113,7 +113,7 @@ handle_INKAction(INKCont contp, INKEvent event, void *eData)
              clientName, htonl(clientAddr), ntohl(clientInfop->port));
 
     /* We should get NET_CONNECT or NET_CONNECT_FAILED before
-     * this schedule timeout event 
+     * this schedule timeout event
      */
     INKContSchedule(contp, TIMEOUT_VAL);
 
@@ -163,8 +163,8 @@ handle_INKAction(INKCont contp, INKEvent event, void *eData)
 
 
 
-/* Usage: 
- * INKAction.so clientName clientPort 
+/* Usage:
+ * INKAction.so clientName clientPort
 */
 void
 INKPluginInit(int argc, const char *argv[])

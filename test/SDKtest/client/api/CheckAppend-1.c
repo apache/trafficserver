@@ -33,7 +33,7 @@
  * running.
  * Make sure that append-transform plugin is loaded on the TS-proxy used.
  *
- * Added Options in client/SDKtest_client.config -  
+ * Added Options in client/SDKtest_client.config -
  *   append-file-path : full path of the file containing the appended text
  *              eg. /home/user/file.txt
  *   use_live_url: 1 = use live url 0 = use SDKtest server
@@ -101,7 +101,7 @@ INKPluginInit(int client_id)
   my_plugin.go_direct = 0;
 
   fprintf(stderr, "*** CheckAppend-1 Test for append-transform-plugin v1.0***\n");
-  /* register the plugin functions that are called back 
+  /* register the plugin functions that are called back
    * later in the program */
   INKFuncRegister(INK_FID_OPTIONS_PROCESS);
   INKFuncRegister(INK_FID_OPTIONS_PROCESS_FINISH);
@@ -212,12 +212,12 @@ INKPluginFinish()
   fclose(my_plugin.url_file);
 }
 
-/* generate requests that are understood by the SDKtest_server 
+/* generate requests that are understood by the SDKtest_server
  *   URL Format:
  *     http://hostname:port/serial_number/lengthxxx
  *   Note:
  *     request_buf has to be filled in the complete request header
- *     i.e. GET URL HTTP/1.0 .... 
+ *     i.e. GET URL HTTP/1.0 ....
  */
 int
 INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
@@ -263,8 +263,8 @@ INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
   return TRUE;
 }
 
-/* process response header returned either from synthetic 
- * server or from proxy server 
+/* process response header returned either from synthetic
+ * server or from proxy server
  */
 INKRequestAction
 INKHeaderProcess(void *req_id, char *header, int length, char *request_str)

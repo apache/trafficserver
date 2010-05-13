@@ -1657,7 +1657,7 @@ memcpy_tolower(char *d, const char *s, int n)
 
 #define BUFSIZE 512
 
-// fast path for MMH, HTTP, no user/password/params/query, 
+// fast path for MMH, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
 
 static inline void

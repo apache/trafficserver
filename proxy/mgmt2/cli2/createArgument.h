@@ -23,12 +23,12 @@
 
 /*
  *   createArgument.h --
- * 
+ *
  *
  *    This file provides basic create Argument declartion,
  *    for any new arguments.
- * 
- *   
+ *
+ *
  *
  *
  *    Dated  : 12/11/2000.
@@ -40,7 +40,7 @@
 #include <commandOptions.h>
 
 typedef union arg_value
-{                               /* Value of the argument can be 
+{                               /* Value of the argument can be
                                    integr or float or string */
   char *arg_string;
   int arg_int;
@@ -63,10 +63,10 @@ typedef struct cli_ArgvInfo
 {
   char *key;                    /*  The key string that flags
                                    the option  in the argv array */
-  int position;                 /* indicates position of the 
+  int position;                 /* indicates position of the
                                    argument in command */
   int type;                     /* Indicates argument type;  */
-  int arg_ref;                  /* User creates an integer to 
+  int arg_ref;                  /* User creates an integer to
                                    refer to this argument */
   lower_range l_range;          /* lower_range */
   upper_range u_range;          /* upper_range */
@@ -101,7 +101,7 @@ typedef struct cli_CommandInfo
 {
   const char *command_name;           /* command name    */
   cli_ArgvInfo *argtable;       /* pointer to argv table */
-  char **reqd_args;             /* holds reference no for 
+  char **reqd_args;             /* holds reference no for
                                    required arguments */
   cli_parsedArgInfo *parsedArgTable;    /* holds parsed arguments */
   char *helpString;

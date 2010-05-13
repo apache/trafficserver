@@ -25,7 +25,7 @@
  *
  *  WebHttp.h - code to process requests, and create responses
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _WEB_HTTP_H_

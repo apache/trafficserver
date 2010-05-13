@@ -25,7 +25,7 @@
 
   MultiCache.h
 
-  
+
  ****************************************************************************/
 
 
@@ -181,7 +181,7 @@ struct UnsunkPtrRegistry
 #define PtrMutex Ptr<ProxyMutex>
 
 //
-// used by windows only - to keep track 
+// used by windows only - to keep track
 // of mapping handles
 //
 struct Unmaper

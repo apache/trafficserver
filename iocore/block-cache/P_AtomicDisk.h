@@ -35,7 +35,7 @@ class MIOBuffer;
 
  handle large writes to disk so that they appear to complete
  atomically, but use AIO to do it.
- 
+
  Like other processors, this doesn't have a lock or dedicated thread
  of its own.  It uses the caller's Continuation's lock and thread for
  activity.
@@ -52,7 +52,7 @@ public:
   void init();
   /**
      write IOBufferBlock chain to disk starting at offset.
-      
+
      data is written out with header and footer blocked into 512 byte
      regions.
      <pre>
@@ -86,7 +86,7 @@ public:
   Action *startRead(Continuation * c, int offset, char *buf);
   /**
      return how much data in disk region.  This region may or may not
-     actually be valid (i.e. completely written correctly) 
+     actually be valid (i.e. completely written correctly)
      @param descriptor
    */
   int length(void *descriptor);
@@ -95,10 +95,10 @@ public:
 
      successful if all data was written down,
      failure if any of header sequence #s mismatch.
-     
+
      Callback c when complete with success or failure.  Cancel Action
      to avoid callback.
-     
+
      @return Action* Cancellable
      @param c Continuation to be called back when complete.
      @param descriptor descriptor returned by startRead

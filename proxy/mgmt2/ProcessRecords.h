@@ -25,12 +25,12 @@
  *
  * ProcessRecords.h
  *   Process Records Class, derived from BaseRecords. Class provides access
- * to configuration information to proxy processes and records/updates 
+ * to configuration information to proxy processes and records/updates
  * statistics information for sharing with the outside world.
  *
  * $Date: 2003-06-01 18:37:18 $
  *
- * 
+ *
  */
 
 #ifndef _PROCESS_RECORDS_H
@@ -71,7 +71,7 @@ public:
 
   /*
    * readConfig*(...)
-   *   Read functions provide read access to config information. 
+   *   Read functions provide read access to config information.
    *
    * Returns:    data             impossible to gauge success from this, if
    *                              concerned pass in bool flag(true on success).
@@ -88,7 +88,7 @@ public:
 
   /*
    * readConfig*(...)
-   *   Read functions provide read access to local node information. 
+   *   Read functions provide read access to local node information.
    *
    * Returns:    data             impossible to gauge success from this, if
    *                              concerned pass in bool flag(true on success).

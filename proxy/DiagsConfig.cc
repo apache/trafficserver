@@ -328,7 +328,7 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
         snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                  system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
         if ((err = stat(system_log_dir, &s)) < 0) {
-          fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n", 
+          fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
                   system_log_dir, err, errno, strerror(errno));
           fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
           _exit(1);

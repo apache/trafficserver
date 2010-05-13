@@ -24,8 +24,8 @@
 /*
  *
  * libfastio tests
- * 
- * 
+ *
+ *
  *
  *
  */
@@ -109,7 +109,7 @@ main()
 
 
   /*record a sendto */
-  /* err = sendto(fd, blocks[0]->ptr, 1466, 0, (struct sockaddr *) &sa, 
+  /* err = sendto(fd, blocks[0]->ptr, 1466, 0, (struct sockaddr *) &sa,
      sizeof(struct sockaddr_in)); */
 
   if (err < 0)

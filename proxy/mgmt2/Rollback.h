@@ -28,8 +28,8 @@
  *
  *  Rollback.h - Interface for class to allow rollback of configuration
  *                  files
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "ink_platform.h"
@@ -65,7 +65,7 @@ struct versionInfo
 //  class Rollback
 //
 //  public functions
-//   
+//
 //  _ml functions assume the callee is handling locking issues
 //    via acquireLock() and releaseLock().  The non _ml
 //    simply grab the lock, call the corresponding _ml function,
@@ -84,10 +84,10 @@ struct versionInfo
 //  updateVersion(textBuffer* buf, version_t basedOn) - checks to
 //    if basedOn is the current version.  If it is not, the update
 //    rejected.  If it is current, the active file is versioned and
-//    the contents of buf become the new active file. newVersion tells us what 
+//    the contents of buf become the new active file. newVersion tells us what
 //    the new version number should be.  -1 means the next in sequence
 //
-//  forceUpdate(textBuffer* buf, version_t) - Does not check is the new version 
+//  forceUpdate(textBuffer* buf, version_t) - Does not check is the new version
 //    is based on the current version, which can lead to data loss.  versions
 //    the active file and places the contents of buf into the active file
 //
@@ -96,7 +96,7 @@ struct versionInfo
 //    a snap shot in time
 //
 //  numberOfVersions() - returns the number of versions in the config dir.
-//    Unless the callee was acquired the fileAccessLock, the return value 
+//    Unless the callee was acquired the fileAccessLock, the return value
 //    only represents a snap shot in time
 //
 //  checkForUserUpdate() - compares the last known modification time
@@ -176,7 +176,7 @@ public:
   int statVersion(version_t, struct stat *buf);
 
   // Lock not necessary since these are only valid for a
-  //  snap shot in time 
+  //  snap shot in time
   version_t getCurrentVersion()
   {
     return currentVersion;

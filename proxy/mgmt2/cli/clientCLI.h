@@ -26,7 +26,7 @@
  *
  *  clientCLI.h - A simple client to communicate to local manager
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _CLIENT_CLI_H_

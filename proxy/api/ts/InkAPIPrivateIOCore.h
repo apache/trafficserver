@@ -107,10 +107,10 @@ public:
   VConnection *m_output_vc;
 };
 
-/**************************************************************** 
+/****************************************************************
  *  IMPORTANT - READ ME
  * Any plugin using the IO Core must enter
- *   with a held mutex.  SDK 1.0, 1.1 & 2.0 did not 
+ *   with a held mutex.  SDK 1.0, 1.1 & 2.0 did not
  *   have this restriction so we need to add a mutex
  *   to Plugin's Continuation if it trys to use the IOCore
  * Not only does the plugin have to have a mutex
@@ -121,8 +121,8 @@ public:
 
 //
 // FORCE_PLUGIN_MUTEX -- define 'UNSAFE_FORCE_MUTEX' if you
-// do *not* want the locking macro to be thread safe.  
-// Otherwise, access during 'null-mutex' case will be serialized 
+// do *not* want the locking macro to be thread safe.
+// Otherwise, access during 'null-mutex' case will be serialized
 // in a locking manner (too bad for the net threads).
 //
 
@@ -165,10 +165,10 @@ extern "C"
   INKReturnCode sdk_sanity_check_hostlookup_structure(INKHostLookupResult);
   INKReturnCode sdk_sanity_check_iocore_structure(void *);
 
-/* ---------------------------------------------------------------------- 
+/* ----------------------------------------------------------------------
  *
  * Interfaces for Raft project
- * 
+ *
  * ---------------------------------------------------------------------- */
 
   inkapi INKMutex INKMutexCreateInternal(void);

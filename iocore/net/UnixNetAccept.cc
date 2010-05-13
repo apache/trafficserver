@@ -176,7 +176,7 @@ NetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
 
 // Virtual function allows the correct
 // etype to be used in NetAccept functions (ET_SSL
-// or ET_NET). 
+// or ET_NET).
 EventType NetAccept::getEtype()
 {
   return (ET_NET);

@@ -241,7 +241,7 @@ DNS_Cache::process_hostdb_info(HostDBInfo * r)
     }
 
     // round_robin indicates multiple ip's associate
-    // with host alias. 
+    // with host alias.
     if (!r->round_robin) {
       hp->rd = 1;
       //          hp->ra = (NoRecurse == 0);
@@ -287,13 +287,13 @@ DNS_Cache::process_hostdb_info(HostDBInfo * r)
       HostDBRoundRobin *rr = r->rr();
 
       // First, set up the hostname in reply with type being CNAME,
-      // Then need to put additional canonical name 
+      // Then need to put additional canonical name
 
       // Get ttl from r
       // Currently, the only ttl that is valid is from the initial
       // HostDBInfo structure, all HostDBInfo structs from HostDBInfoRoundRobin
       // are invalid. For now, just use ttl in initial HostDBInfo structures
-      // for all ttl in RR answers. 
+      // for all ttl in RR answers.
       ttl = r->ip_time_remaining() * 60;
       Debug("dns_cache", "first entries in ROUNDROBIN has ttl %d\n", ttl);
       // Jump over header section

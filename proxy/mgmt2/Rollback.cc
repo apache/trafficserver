@@ -35,8 +35,8 @@
  *
  *  Rollback.cc - code  for class to allow rollback of configuration
  *                  files
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #define MAX_VERSION_DIGITS 11
@@ -86,9 +86,9 @@ root_access_needed(root_access_needed_)
   }
 
   if ((err = stat(configTmp, &s)) < 0) {
-    ink_strncpy(configTmp, system_config_directory,PATH_NAME_MAX); 
+    ink_strncpy(configTmp, system_config_directory,PATH_NAME_MAX);
     if ((err = stat(configTmp, &s)) < 0) {
-        mgmt_elog("[Rollback::Rollback] unable to stat() directory '%s': %d %d, %s\n", 
+        mgmt_elog("[Rollback::Rollback] unable to stat() directory '%s': %d %d, %s\n",
                 mgmt_path, err, errno, strerror(errno));
         mgmt_elog("[Rollback::Rollback] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
         _exit(1);
@@ -124,7 +124,7 @@ root_access_needed(root_access_needed_)
 
     // If we can't find an active version because there is not
     //   one, attempt to rollback to a previous verision if one exists
-    // 
+    //
     // If it does not, create a zero length file to prevent total havoc
     //
     if (errno == ENOENT) {
@@ -308,7 +308,7 @@ Rollback::statFile(version_t version, struct stat *buf)
   return statResult;
 }
 
-// 
+//
 // int Rollback::openFile(version_t)
 //
 //  a wrapper for open()
@@ -586,7 +586,7 @@ UPDATE_CLEANUP:
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
     xfree(alarmMsg);
 
-    // Remove both the link from currentVersion_local 
+    // Remove both the link from currentVersion_local
     // to the active version and the new version
     //  that they will not screw up our version id on restart
     unlink(currentVersion_local);
@@ -622,7 +622,7 @@ Rollback::getVersion_ml(version_t version, textBuffer ** buffer)
   int diskFD;                   // file descriptor for version of the file we are fetching
   RollBackCodes returnCode;     // our eventual return value
   struct stat fileInfo;         // Info from fstat
-  int readResult;               // return val of (indirect) read calls 
+  int readResult;               // return val of (indirect) read calls
   textBuffer *newBuffer;        // return buffer
 
   *buffer = NULL;
@@ -650,7 +650,7 @@ Rollback::getVersion_ml(version_t version, textBuffer ** buffer)
     returnCode = FILE_NOT_FOUND_ROLLBACK;
     goto GET_CLEANUP;
   }
-  // Create a textbuffer of the 
+  // Create a textbuffer of the
   newBuffer = new textBuffer(fileInfo.st_size + 1);
 
   do {
@@ -746,7 +746,7 @@ Rollback::findVersions(ExpandingArray * listNames)
 // Rollback::findVersions_ml()
 //
 // scans the configuration directory and returns the high
-//   version number encountered.  If no versions of the 
+//   version number encountered.  If no versions of the
 //   file were found, zero is returned
 //
 version_t
@@ -855,7 +855,7 @@ Rollback::extractVersionInfo(ExpandingArray * listNames, const char *testFileNam
   if (strlen(testFileName) > fileNameLen) {
     if (strncmp(testFileName, fileName, fileNameLen) == 0) {
 
-      // Check for the underscore 
+      // Check for the underscore
       if (*(testFileName + fileNameLen) == '_') {
         // Check for the integer version number
         currentVersionStr = str = testFileName + fileNameLen + 1;
@@ -868,7 +868,7 @@ Rollback::extractVersionInfo(ExpandingArray * listNames, const char *testFileNam
 
           version = atoi(currentVersionStr);
 
-          // Add info about version number and modTime 
+          // Add info about version number and modTime
           if (listNames != NULL) {
             struct stat fileInfo;
             versionInfo *verInfo;
@@ -889,7 +889,7 @@ Rollback::extractVersionInfo(ExpandingArray * listNames, const char *testFileNam
 }
 
 // version_t Rollback::findVersions_ml(Queue<versionInfo>& q)
-// 
+//
 //   Add wrapper to
 //     version_t Rollback::findVersions_ml(ExpandingArray* listNames)
 //

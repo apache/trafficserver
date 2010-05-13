@@ -24,10 +24,10 @@
 /*****************************************************************************
  * Filename: TSControlMain.h
  * Purpose: The main section for traffic server that handles all the request
- *          from the user. 
+ *          from the user.
  * Created: 6/26/00
  * Created by: Stephanie Song
- * 
+ *
  ***************************************************************************/
 
 #ifndef TS_CONTROL_MAIN_H

@@ -35,7 +35,7 @@
      it self well to this approach as it's typically allocated through
      wrapper functions
 
-   
+
   ****************************************************************************/
 
 #ifndef _D_ALLOCATOR_H_

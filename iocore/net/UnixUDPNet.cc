@@ -25,8 +25,8 @@
 
   UnixUDPNet.cc
   UDPNet implementation
-  
-  
+
+
  ****************************************************************************/
 
 #include "P_Net.h"
@@ -488,7 +488,7 @@ UDPNetProcessor::sendmsg_re(Continuation * cont, void *token, int fd, struct msg
  *      buf->consume(len);
  *      return ACTION_RESULT_DONE
  *   else
- *      return error 
+ *      return error
  *
  */
 Action *
@@ -934,7 +934,7 @@ UDPQueue::service(UDPNetHandler * nh)
       totalBw = 1.0;
 
     for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++) {
-      // bw is in Mbps 
+      // bw is in Mbps
       bw = (G_inkPipeInfo.perPipeInfo[i].bytesSent * 8.0 * 1000.0) / (timeSpent * 1024.0 * 1024.0);
       snprintf(p1, sizeof(temp), "\t class[%d] = %f Mbps, alloc = %f Mbps, (conf'ed = %f, got = %f) \n",
                i, bw, (G_inkPipeInfo.perPipeInfo[i].bwAlloc / (1024.0 * 1024.0)),
@@ -1201,7 +1201,7 @@ UDPNetHandler::mainNetEvent(int event, Event * e)
   EventIO *temp_eptr = NULL;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
     temp_eptr = (EventIO*) get_ev_data(pc->pollDescriptor,i);
-    if ((get_ev_events(pc->pollDescriptor,i) & EVENTIO_READ) 
+    if ((get_ev_events(pc->pollDescriptor,i) & EVENTIO_READ)
         && temp_eptr->type == EVENTIO_UDP_CONNECTION) {
       uc = temp_eptr->data.uc;
       ink_assert(uc && uc->mutex && uc->continuation);
@@ -1213,7 +1213,7 @@ UDPNetHandler::mainNetEvent(int event, Event * e)
         udpNetInternal.udp_read_from_net(this, uc, pc->pollDescriptor, trigger_event->ethread);
         nread++;
       }
-    }                           //if EPOLLIN        
+    }                           //if EPOLLIN
   }                             //end for
 
   // remove dead UDP connections

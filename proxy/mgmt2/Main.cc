@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-/* 
+/*
  *
  * Main.cc
  * - Entry point to the traffic manager.
@@ -313,10 +313,10 @@ init_dirs(bool use_librecords = true)
       REC_ReadConfigString(mgmt_path, "proxy.config.config_dir", PATH_NAME_MAX);
     if ((err = stat(mgmt_path, &s)) < 0) {
       // Try 'system_root_dir/etc/trafficserver' directory
-      snprintf(mgmt_path, sizeof(mgmt_path), 
+      snprintf(mgmt_path, sizeof(mgmt_path),
                "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
       if ((err = stat(mgmt_path, &s)) < 0) {
-        mgmt_elog("unable to stat() mgmt path '%s': %d %d, %s\n", 
+        mgmt_elog("unable to stat() mgmt path '%s': %d %d, %s\n",
                 mgmt_path, err, errno, strerror(errno));
         mgmt_elog("please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
         _exit(1);
@@ -325,16 +325,16 @@ init_dirs(bool use_librecords = true)
   }
 
   if ((err = stat(system_config_directory, &s)) < 0) {
-    ink_strncpy(system_config_directory,mgmt_path,sizeof(system_config_directory)); 
+    ink_strncpy(system_config_directory,mgmt_path,sizeof(system_config_directory));
     if ((err = stat(system_config_directory, &s)) < 0) {
       if (use_librecords)
         REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
       if ((err = stat(system_config_directory, &s)) < 0) {
         // Try 'system_root_dir/etc/trafficserver' directory
-        snprintf(system_config_directory, sizeof(system_config_directory), 
+        snprintf(system_config_directory, sizeof(system_config_directory),
                  "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
         if ((err = stat(system_config_directory, &s)) < 0) {
-          mgmt_elog("unable to stat() config dir '%s': %d %d, %s\n", 
+          mgmt_elog("unable to stat() config dir '%s': %d %d, %s\n",
                     system_config_directory, err, errno, strerror(errno));
           mgmt_elog("please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
           _exit(1);
@@ -348,10 +348,10 @@ init_dirs(bool use_librecords = true)
       REC_ReadConfigString(system_local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
     if ((err = stat(system_local_state_dir, &s)) < 0) {
       // Try 'system_root_dir/var/trafficserver' directory
-      snprintf(system_local_state_dir, sizeof(system_local_state_dir), 
+      snprintf(system_local_state_dir, sizeof(system_local_state_dir),
                "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
       if ((err = stat(system_local_state_dir, &s)) < 0) {
-        mgmt_elog("unable to stat() local state dir '%s': %d %d, %s\n", 
+        mgmt_elog("unable to stat() local state dir '%s': %d %d, %s\n",
                 system_local_state_dir, err, errno, strerror(errno));
         mgmt_elog("please set 'proxy.config.local_state_dir'\n");
         _exit(1);
@@ -367,7 +367,7 @@ init_dirs(bool use_librecords = true)
       snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
       if ((err = stat(system_log_dir, &s)) < 0) {
-        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
+        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
                 system_log_dir, err, errno, strerror(errno));
         mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
         _exit(1);
@@ -514,7 +514,7 @@ main(int argc, char **argv)
   }
 
   // Set up the application version info
-  appVersionInfo.setup(PACKAGE_NAME,"traffic_manager", PACKAGE_VERSION, 
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_manager", PACKAGE_VERSION,
                        __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   initSignalHandlers();
 
@@ -696,7 +696,7 @@ main(int argc, char **argv)
 
   check_lockfile();
 
-  snprintf(config_internal_dir, sizeof(config_internal_dir), 
+  snprintf(config_internal_dir, sizeof(config_internal_dir),
                "%s%sinternal", mgmt_path, DIR_SEP);
   url_init(config_internal_dir);
   mime_init(config_internal_dir);

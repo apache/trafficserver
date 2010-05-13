@@ -26,7 +26,7 @@
  * Purpose: This file contains various utility functions which
  *          call the INKMgmtAPI.
  *
- * 
+ *
  ****************************************************************/
 
 #include "inktomi++.h"
@@ -578,7 +578,7 @@ GetTSDirectory(char *ts_path, size_t ts_path_len)
       if (ts_path[len - 1] == '/') {
         ts_path[len - 1] = '\0';
       }
-      
+
       fclose(fp);
     } else {
       ink_strncpy(ts_path, PREFIX, ts_path_len);
@@ -586,7 +586,7 @@ GetTSDirectory(char *ts_path, size_t ts_path_len)
   }
 
   if ((err = stat(ts_path, &s)) < 0) {
-    Cli_Error("unable to stat() TS PATH '%s': %d %d, %s\n", 
+    Cli_Error("unable to stat() TS PATH '%s': %d %d, %s\n",
               ts_path, err, errno, strerror(errno));
     Cli_Error(" Please set correct path in env variable TS_ROOT \n");
     return -1;

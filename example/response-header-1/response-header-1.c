@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-/* 
- * response-header-1.c:  
+/*
+ * response-header-1.c:
  *		an example program which illustrates adding and manipulating
  *		an HTTP response MIME header:
  *
@@ -33,16 +33,16 @@
  *
  *	add read_resp_header hook
  *	get http response header
- *	if 200, then 
+ *	if 200, then
  *		add mime extension header with count of zero
  *		add mime extension header with date response was received
  *		add "Cache-Control: public" header
- *	else if 304, then 
+ *	else if 304, then
  *		retrieve cached header
  *		get old value of mime header count
  *		increment mime header count
  *		store mime header with new count
- *	
+ *
  *
  *
  */
@@ -99,8 +99,8 @@ modify_header(INKHttpTxn txnp, INKCont contp)
     new_field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
     INKDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
 
-    /* copy name/values created at init 
-     * ( "x-num-served-from-cache" ) : ( "0"  )  
+    /* copy name/values created at init
+     * ( "x-num-served-from-cache" ) : ( "0"  )
      */
     INKMimeHdrFieldCopy(resp_bufp, resp_loc, new_field_loc, hdr_bufp, hdr_loc, field_loc);
 
@@ -117,7 +117,7 @@ modify_header(INKHttpTxn txnp, INKCont contp)
     INKMimeHdrFieldValueInsert(resp_bufp, resp_loc, new_field_loc,
                                INK_HTTP_VALUE_PUBLIC, strlen(INK_HTTP_VALUE_PUBLIC), -1);
 
-    /* 
+    /*
      * mimehdr2_name  = INKstrdup( "x-date-200-recvd" ) : CurrentDateTime
      */
     new_field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
@@ -172,14 +172,14 @@ modify_header(INKHttpTxn txnp, INKCont contp)
      * Since INKMimeHdrFieldValueGet returned with valid values
      * are we also guaranteed that INKMimeHdrFieldValueGetUint returns
      * valid values? There is no erro code for INKMimeHdrFieldValueGetUint
-     * and 0 is a valid value. 
+     * and 0 is a valid value.
      */
     /* Get the cached MIME value for this name in this HTTP header */
     /*
-       num_refreshes = 
-       INKMimeHdrFieldValueGetUint(cached_bufp, cached_loc, 
+       num_refreshes =
+       INKMimeHdrFieldValueGetUint(cached_bufp, cached_loc,
        cached_field_loc, 0);
-       INKDebug("resphdr", 
+       INKDebug("resphdr",
        "Cached header shows %d refreshes so far", num_refreshes );
 
        num_refreshes++ ;
@@ -189,11 +189,11 @@ modify_header(INKHttpTxn txnp, INKCont contp)
        * in resp_bufp, resp_loc
        *
        * Create a new MIME field/value. Cached value has been incremented.
-       * Insert new MIME field/value into the server response buffer, 
+       * Insert new MIME field/value into the server response buffer,
        * allow HTTP processing to continue. This will update
-       * (indirectly invalidates) the cached HTTP headers MIME field. 
+       * (indirectly invalidates) the cached HTTP headers MIME field.
        * It is apparently not necessary to update all of the MIME fields
-       * in the in-process response in order to have the cached response 
+       * in the in-process response in order to have the cached response
        * become invalid.
      */
     new_field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
@@ -309,8 +309,8 @@ INKPluginInit(int argc, const char *argv[])
   mimehdr1_name = INKstrdup("x-num-served-from-cache");
   mimehdr1_value = INKstrdup("0");
 
-  /* Create name here and set DateTime value when o.s. 
-   * response 200 is recieved 
+  /* Create name here and set DateTime value when o.s.
+   * response 200 is recieved
    */
   mimehdr2_name = INKstrdup("x-date-200-recvd");
 
@@ -328,7 +328,7 @@ INKPluginInit(int argc, const char *argv[])
 
   /*
    *  The following code demonstrates how to extract the field_loc from the header.
-   *  In this plugin, the init buffer and thus field_loc never changes.  Code 
+   *  In this plugin, the init buffer and thus field_loc never changes.  Code
    *  similar to this may be used to extract header fields from any buffer.
    */
 

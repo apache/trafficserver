@@ -386,7 +386,7 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
   // it won't be inherited by the child process
   DuplicateHandle(GetCurrentProcess(), hChildStdinW, GetCurrentProcess(), NULL, 0, FALSE, DUPLICATE_SAME_ACCESS);
 
-  // STDOUT 
+  // STDOUT
   HANDLE hChildStdoutR = NULL;
   HANDLE hChildStdoutW = NULL;
 
@@ -470,9 +470,9 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
 // encryptToFileAuth_malloc
 //
 // Given the clear-case password, this function will encrypt the password
-// and print the key to a unique file (name assembled from timestamp and 
+// and print the key to a unique file (name assembled from timestamp and
 // stored in the path specified by an auth record)
-// Returns the filename of this file or NULL if the encryption failed. 
+// Returns the filename of this file or NULL if the encryption failed.
 // Used for bind_pwd_file in filter.config and for radius shared keys.
 //-------------------------------------------------------------------------
 char *
@@ -1402,7 +1402,7 @@ handle_submit_mgmt_auth(WebHttpContext * whc, const char *file)
       aa_new_access = NULL;
     // check if the user is trying to add a new additional-user
     if (aa_new_user != NULL) {
-      // kwt 12.March.2001 check for username length     
+      // kwt 12.March.2001 check for username length
       if (strlen(aa_new_user) > WEB_HTTP_AUTH_USER_MAX) {
         ink_hash_table_insert(whc->submit_warn_ht, "additional_administrative_accounts", NULL);
         ink_hash_table_insert(whc->submit_warn_ht, "add_new_administrative_user", NULL);
@@ -1559,9 +1559,9 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
                "[WebHttp::handle_submit_snapshot] Unable to find configuration directory from proxy.config.config_dir\n");
 
   if ((err = stat(config_dir, &s)) < 0) {
-    ink_strncpy(config_dir, system_config_directory,sizeof(config_dir)); 
+    ink_strncpy(config_dir, system_config_directory,sizeof(config_dir));
     if ((err = stat(config_dir, &s)) < 0) {
-        mgmt_elog("[WebHttp::handle_submit_snapshot] unable to stat() directory '%s': %d %d, %s\n", 
+        mgmt_elog("[WebHttp::handle_submit_snapshot] unable to stat() directory '%s': %d %d, %s\n",
                 config_dir, err, errno, strerror(errno));
         mgmt_fatal("[WebHttp::handle_submit_snapshot] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
     }
@@ -1644,7 +1644,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
                   // These weren't used, so moved. /leif
                   //int newLen;
                   //char* absoluteDir;
-                  //const char *config_dir = lmgmt->record_data ->readString("proxy.config.config_dir", &found); 
+                  //const char *config_dir = lmgmt->record_data ->readString("proxy.config.config_dir", &found);
 
                   //newLen = strlen(tok) + strlen(config_dir) + 2;
                   //absoluteDir = new char[newLen];
@@ -1663,17 +1663,17 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
               }
             }                   //else {
             //if(snap_directory[0] == '/') {
-            //lmgmt->record_data ->setString("proxy.config.snapshot_dir", snap_directory); 
+            //lmgmt->record_data ->setString("proxy.config.snapshot_dir", snap_directory);
             //} else {
             //int newLen;
             //char* relativeDir;
-            //const char *config_dir = lmgmt->record_data ->readString("proxy.config.config_dir", &found); 
+            //const char *config_dir = lmgmt->record_data ->readString("proxy.config.config_dir", &found);
 
             //newLen = strlen(snap_directory) + strlen(config_dir) + 2;
             //relativeDir = new char[newLen];
             //ink_assert(relativeDir != NULL);
             //sprintf(relativeDir, "%s%s%s",config_dir, DIR_SEP, snap_directory);
-            //lmgmt->record_data ->setString("proxy.config.snapshot_dir", relativeDir); 
+            //lmgmt->record_data ->setString("proxy.config.snapshot_dir", relativeDir);
             //}
             //}
           }
@@ -1775,7 +1775,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
           }
           int newLen;
           char *newStr;
-          //const char *config_dir = lmgmt->record_data ->readString("proxy.config.config_dir", &found); 
+          //const char *config_dir = lmgmt->record_data ->readString("proxy.config.config_dir", &found);
 
           newLen = strlen(snap_name) + strlen(ftp_remote_dir) + 2;
           newStr = new char[newLen];
@@ -2692,7 +2692,7 @@ handle_submit_inspector(WebHttpContext * whc, const char *file)
   // internationalize.  we should put the button names into the
   // dictionary.
 
-  // handle URL Regex operation  
+  // handle URL Regex operation
   if (ink_hash_table_lookup(whc->post_data_ht, "regex_op", (void **) &regex_action)) {
     if (strcmp(regex_action, "Lookup") == 0) {
       // handle regex lookup
@@ -2964,7 +2964,7 @@ handle_submit_update(WebHttpContext * whc, const char *file)
     lmgmt->rollLogFiles();
     goto Ldone;
   }
-  // check for apply 
+  // check for apply
   if (ink_hash_table_lookup(whc->post_data_ht, "apply", (void **) &apply)) {
     ink_hash_table_delete(whc->post_data_ht, "apply");
     xfree(apply);
@@ -3035,7 +3035,7 @@ handle_submit_update(WebHttpContext * whc, const char *file)
 
         // delete the old password file and create a new one
         RecGetRecordString_Xmalloc(record, &old_pwd_file);
-        if (old_pwd_file) {     // remove the old_pwd_file 
+        if (old_pwd_file) {     // remove the old_pwd_file
           if (remove(old_pwd_file) != 0)
             Debug("web2", "[handle_submit_update] Failed to remove password file %s", old_pwd_file);
           xfree(old_pwd_file);
@@ -3088,19 +3088,19 @@ Ldone:
 // handle_submit_update_config
 //-------------------------------------------------------------------------
 // This handler is called when submit a post form for Configuration File Editor.
-// Uses the hidden tag values to construct and write  new config file. 
+// Uses the hidden tag values to construct and write  new config file.
 // If the user presses Cancel, then it should also close
 // the current window without committing any changes. If hit "Apply", then
-// commits the changes before closing editor window. 
-//    Since the Configuration File Editor opens in a separate window, 
+// commits the changes before closing editor window.
+//    Since the Configuration File Editor opens in a separate window,
 // each time a user hits "Apply", we need to also update the table listing all
-// the config rules on the original tab page from which the File Editor window 
+// the config rules on the original tab page from which the File Editor window
 // was launched - the orignal page is refreshed regularly in order to keep the
-// the values in sync with the Configuration File Editor page (is there a 
-// better way to do this??) 
-//    The file parameter is not used in this handler because a generic 
-// c_config_display.ink is used for all files. We determine which file 
-// is being revised by using the filename tag that's passed in with the 
+// the values in sync with the Configuration File Editor page (is there a
+// better way to do this??)
+//    The file parameter is not used in this handler because a generic
+// c_config_display.ink is used for all files. We determine which file
+// is being revised by using the filename tag that's passed in with the
 // GET request.
 static int
 handle_submit_update_config(WebHttpContext * whc, const char *file)
@@ -3122,7 +3122,7 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
     //goto Ldone;
     return WEB_HTTP_ERR_OKAY;
   }
-  // check for apply 
+  // check for apply
   if (ink_hash_table_lookup(whc->post_data_ht, "apply", (void **) &apply)) {
     ink_hash_table_delete(whc->post_data_ht, "apply");
     xfree(apply);
@@ -3131,10 +3131,10 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
   // the current ruleList information; commits this information as new config file
 
   // get the filename to create the INKCfgContext; do NOT delete the
-  // HTML_CONFIG_FILE_TAG entry because we need to use the filename 
+  // HTML_CONFIG_FILE_TAG entry because we need to use the filename
   // binding to refresh the page
   if (!ink_hash_table_lookup(whc->post_data_ht, HTML_CONFIG_FILE_TAG, (void **) &filename)) {
-    // ERROR: no config file specified!! 
+    // ERROR: no config file specified!!
     whc->response_hdr->setStatus(STATUS_NOT_FOUND);
     WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);
     goto Lerror;
@@ -3220,7 +3220,7 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
     }
 
     // do not delete the strings in the array because
-    // the binding still exists in the hashtable, so memory will 
+    // the binding still exists in the hashtable, so memory will
     // be freed when post_data_ht destroyed
     if (rules)
       delete[]rules;
@@ -3245,8 +3245,8 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
     HtmlRndrBr(whc->submit_warn);
     whc->request_state |= WEB_HTTP_STATE_SUBMIT_WARN;
   }
-  // do not remove and free frecord from post_data_ht because 
-  // the renderer fn will use it to write the hidden tag 
+  // do not remove and free frecord from post_data_ht because
+  // the renderer fn will use it to write the hidden tag
   if (ink_hash_table_lookup(whc->post_data_ht, "frecord", (void **) &frecord)) {
     if (recordRestartCheck(frecord)) {
       ink_hash_table_insert(whc->submit_note_ht, frecord, NULL);
@@ -3270,8 +3270,8 @@ Lerror:
 //-------------------------------------------------------------------------
 // handle_submit_config_display
 //-------------------------------------------------------------------------
-// This handler is called when user wants to open the Configuration Editor 
-// window to edit a config file; so it main purpose is simply to 
+// This handler is called when user wants to open the Configuration Editor
+// window to edit a config file; so it main purpose is simply to
 // render the configurator.ink page
 static int
 handle_submit_config_display(WebHttpContext * whc, const char *file)
@@ -3556,7 +3556,7 @@ handle_submit_net_config(WebHttpContext * whc, const char *file)
           SetWarning(whc, key);
           warning = true;
         }
-        //FIXNOW - Use SysAPI   
+        //FIXNOW - Use SysAPI
         if (!Config_GetNIC_Netmask(interface, old_value, sizeof(old_value))) {
           if (nic[no][4] != NULL && strcmp(nic[no][4], old_value) != 0) {
             nic_change[no] = 1;
@@ -3578,7 +3578,7 @@ handle_submit_net_config(WebHttpContext * whc, const char *file)
         }
       } else if (strcmp(param, "GATEWAY") == 0) {
         nic[no][5] = value;
-        //FIXNOW - Use SysAPI   
+        //FIXNOW - Use SysAPI
         if (!Net_IsValid_IP(nic[no][5])) {
           SetWarning(whc, key);
           warning = true;
@@ -4216,7 +4216,7 @@ WebHttpInit()
   ink_hash_table_insert(g_extn_bindings_ht, ".ink", (void *) handle_ink_extn);
 
   // initialize the configurator editing bindings which binds
-  // configurator display filename (eg. f_cache_config.ink) to 
+  // configurator display filename (eg. f_cache_config.ink) to
   // its mgmt API config file type (INKFileNameT)
   g_display_config_ht = ink_hash_table_create(InkHashTableKeyType_String);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_CACHE_CONFIG, (void *) INK_FNAME_CACHE_OBJ);

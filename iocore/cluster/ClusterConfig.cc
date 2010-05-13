@@ -54,7 +54,7 @@ ClusterAccept::~ClusterAccept()
 void
 ClusterAccept::Init()
 {
-  // Setup initial accept by simulating EVENT_INTERVAL 
+  // Setup initial accept by simulating EVENT_INTERVAL
   // where cluster accept port has changed.
 
   current_cluster_port = ~*p_cluster_port;

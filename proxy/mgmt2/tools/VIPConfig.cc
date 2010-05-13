@@ -25,12 +25,12 @@
 /*
  *
  * VIPConfig.cc
- *   Tool to configure up/down/create virtual ip interfaces. To be exec'ed 
+ *   Tool to configure up/down/create virtual ip interfaces. To be exec'ed
  * by management processes so they need not be running set uid root.
  *
  * $Date: 2008-05-20 17:26:18 $
  *
- * 
+ *
  */
 
 
@@ -71,7 +71,7 @@ char *get_broadcast_for_intr(char *intrName);
  * main(...)
  *   Main for the vip config tool. Return values are status to caller.
  *
- *  Return Value:  
+ *  Return Value:
  *
  */
 int
@@ -341,7 +341,7 @@ get_netmask_for_intr(char *intrName)
   static char static_buffer[17];        // static return buffer
   char *return_ptr = NULL;      // what we are planning to return to the callee
 
-  // Prevent UMRs 
+  // Prevent UMRs
   memset(ifbuf, 0, sizeof(ifbuf));
 
   if (intrName == NULL) {
@@ -399,7 +399,7 @@ get_broadcast_for_intr(char *intrName)
   static char static_buffer[17];        // static return buffer
   char *return_ptr = NULL;      // what we are planning to return to the callee
 
-  // Prevent UMRs 
+  // Prevent UMRs
   memset(ifbuf, 0, sizeof(ifbuf));
 
   if (intrName == NULL) {

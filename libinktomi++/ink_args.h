@@ -40,7 +40,7 @@ struct ArgumentDescription
 {
   const char *name;
   char key;
-  /* 
+  /*
      "I" = integer
      "L" = ink64
      "D" = double (floating point)

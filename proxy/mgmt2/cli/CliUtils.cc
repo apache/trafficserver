@@ -26,7 +26,7 @@
  *
  *  CliUtils.cc - Utilities to handle command line interface communication
  *
- * 
+ *
  ****************************************************************************/
 
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
@@ -76,10 +76,10 @@ cli_read(int fd, char *buf, int maxlen)
 }                               /* End cli_read() */
 
 
-/* 
+/*
  * cli_write(...)
  *   Simple, inefficient, write line function. Takes a fd to write to, an
- * unsigned char * containing the data, and the number of bytes to write. 
+ * unsigned char * containing the data, and the number of bytes to write.
  * It sends nbytes + 1 bytes worth of data, the + 1 being a NULL character
  *
  * Returns:    num bytes not written
@@ -118,7 +118,7 @@ cli_write(int fd, const char *data, int nbytes)
 //
 //
 
-// ink_hrtime milliTime() 
+// ink_hrtime milliTime()
 //
 // Returns the result of gettimeofday converted to
 // one 64bit int
@@ -193,7 +193,7 @@ cli_read_timeout(int fd, char *buf, int maxlen, ink_hrtime timeout)
       fprintf(stderr, "Read from traffic_manager failed : %s\n", strerror(errno));
       return -1;
     } else if (sys_r == 0) {
-      // No more data.  The connection was closed 
+      // No more data.  The connection was closed
       return bytesRead;
     } else {
       // More data was read
@@ -213,10 +213,10 @@ cli_read_timeout(int fd, char *buf, int maxlen, ink_hrtime timeout)
   return -1;
 }                               /* End cli_read_timeout */
 
-/* 
+/*
  * cli_write_timeout(...)
  * Takes a fd to write to, an unsigned char * containing the data,
- * and the number of bytes to write and timeout in 
+ * and the number of bytes to write and timeout in
  * milli-seconds.  Negative time out cause the function not to
  * return until all data is written
  * It sends nbytes + 1 bytes worth of data, the + 1 being a NULL character
@@ -328,7 +328,7 @@ GetTSDirectory(char *ts_path, size_t ts_path_len)
       if (ts_path[len - 1] == '/') {
         ts_path[len - 1] = '\0';
       }
-      
+
       fclose(fp);
     } else {
       ink_strncpy(ts_path, PREFIX, ts_path_len);
@@ -336,7 +336,7 @@ GetTSDirectory(char *ts_path, size_t ts_path_len)
   }
 
   if ((err = stat(ts_path, &s)) < 0) {
-    printf("unable to stat() TS PATH '%s': %d %d, %s\n", 
+    printf("unable to stat() TS PATH '%s': %d %d, %s\n",
               ts_path, err, errno, strerror(errno));
     printf(" Please set correct path in env variable TS_ROOT \n");
     return -1;

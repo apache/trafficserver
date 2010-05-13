@@ -289,7 +289,7 @@ int
 CacheVC::openReadFromWriter(int event, Event * e)
 {
   if (!f.read_from_writer_called) {
-    // The assignment to last_collision as NULL was 
+    // The assignment to last_collision as NULL was
     // made conditional after INKqa08411
     last_collision = NULL;
     // Let's restart the clock from here - the first time this a reader
@@ -347,7 +347,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     SET_HANDLER(&CacheVC::openReadStartHead);
     return openReadStartHead(EVENT_IMMEDIATE, 0);
   }
-  // allow reading from unclosed writer for http requests only. 
+  // allow reading from unclosed writer for http requests only.
   ink_assert(frag_type == CACHE_FRAG_TYPE_HTTP || write_vc->closed);
   if (!write_vc->closed && !write_vc->fragment) {
     if (!cache_config_read_while_writer || frag_type != CACHE_FRAG_TYPE_HTTP)
@@ -392,9 +392,9 @@ CacheVC::openReadFromWriter(int event, Event * e)
       doc_len = alternate.object_size_get();
       if (write_vc->update_key == cod->single_doc_key &&
           (cod->move_resident_alt || write_vc->f.rewrite_resident_alt) && write_vc->first_buf._ptr()) {
-        // the resident alternate is being updated and its a 
+        // the resident alternate is being updated and its a
         // header only update. The first_buf of the writer has the
-        // document body. 
+        // document body.
         Doc *doc = (Doc *) write_vc->first_buf->data();
         writer_buf = new_IOBufferBlock(write_vc->first_buf, doc->data_len(), doc->prefix_len());
         MUTEX_RELEASE(writer_lock);
@@ -409,7 +409,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
         CACHE_INCREMENT_DYN_STAT(cache_read_busy_success_stat);
         return callcont(CACHE_EVENT_OPEN_READ);
       }
-      // want to snarf the new headers from the writer 
+      // want to snarf the new headers from the writer
       // and then continue as if nothing happened
       last_collision = NULL;
       MUTEX_RELEASE(writer_lock);
@@ -476,7 +476,7 @@ CacheVC::openReadFromWriterMain(int event, Event * e)
     Warning("Document for %X truncated", earliest_key.word(0));
     return calluser(VC_EVENT_ERROR);
   }
-  /* its possible that the user did a do_io_close before 
+  /* its possible that the user did a do_io_close before
      openWriteWriteDone was called. */
   if (length > ((ink64)doc_len) - vio.ndone) {
     ink64 skip_bytes = length - (doc_len - vio.ndone);
@@ -487,7 +487,7 @@ CacheVC::openReadFromWriterMain(int event, Event * e)
     bytes = vio.ntodo();
   if (vio.ndone >= (ink64)doc_len) {
     ink_assert(bytes <= 0);
-    // reached the end of the document and the user still wants more 
+    // reached the end of the document and the user still wants more
     return calluser(VC_EVENT_EOS);
   }
   b = iobufferblock_clone(writer_buf, writer_offset, bytes);
@@ -573,13 +573,13 @@ CacheVC::openReadReadDone(int event, Event * e)
         last_collision = NULL;
         while (dir_probe(&earliest_key, part, &dir, &last_collision)) {
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
-            DDebug("cache_read_agg", "%x: key: %X ReadRead complete: %d", 
+            DDebug("cache_read_agg", "%x: key: %X ReadRead complete: %d",
                   this, first_key.word(1), (int)vio.ndone);
             doc_len = vio.ndone;
             goto Ldone;
           }
         }
-        DDebug("cache_read_agg", "%x: key: %X ReadRead writer aborted: %d", 
+        DDebug("cache_read_agg", "%x: key: %X ReadRead writer aborted: %d",
               this, first_key.word(1), (int)vio.ndone);
         goto Lerror;
       }
@@ -658,20 +658,20 @@ CacheVC::openReadMain(int event, Event * e)
   else {
     if (calluser(VC_EVENT_READ_READY) == EVENT_DONE)
       return EVENT_DONE;
-    // we have to keep reading until we give the user all the 
-    // bytes it wanted or we hit the watermark. 
+    // we have to keep reading until we give the user all the
+    // bytes it wanted or we hit the watermark.
     if (vio.ntodo() > 0 && !vio.buffer.writer()->high_water())
       goto Lread;
     return EVENT_CONT;
   }
 Lread: {
     if ((inku32)vio.ndone >= doc_len)
-      // reached the end of the document and the user still wants more 
+      // reached the end of the document and the user still wants more
       return calluser(VC_EVENT_EOS);
     last_collision = 0;
     writer_lock_retry = 0;
     // if the state machine calls reenable on the callback from the cache,
-    // we set up a schedule_imm event. The openReadReadDone discards 
+    // we set up a schedule_imm event. The openReadReadDone discards
     // EVENT_IMMEDIATE events. So, we have to cancel that trigger and set
     // a new EVENT_INTERVAL event.
     cancel_trigger();
@@ -691,13 +691,13 @@ Lread: {
         last_collision = NULL;
         while (dir_probe(&earliest_key, part, &dir, &last_collision)) {
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
-            DDebug("cache_read_agg", "%x: key: %X ReadMain complete: %d", 
+            DDebug("cache_read_agg", "%x: key: %X ReadMain complete: %d",
                   this, first_key.word(1), (int)vio.ndone);
             doc_len = vio.ndone;
             goto Leos;
           }
         }
-        DDebug("cache_read_agg", "%x: key: %X ReadMain writer aborted: %d", 
+        DDebug("cache_read_agg", "%x: key: %X ReadMain writer aborted: %d",
               this, first_key.word(1), (int)vio.ndone);
         goto Lerror;
       }
@@ -765,7 +765,7 @@ CacheVC::openReadStartEarliest(int event, Event * e)
       dir_delete(&key, part, &dir);
       // try going through the directory entries again
       // in case the dir entry we deleted doesnt correspond
-      // to the key we are looking for. This is possible 
+      // to the key we are looking for. This is possible
       // because of directory collisions
       last_collision = NULL;
       goto Lread;
@@ -786,16 +786,16 @@ CacheVC::openReadStartEarliest(int event, Event * e)
     }
 #endif
     goto Lsuccess;
-Lread: 
+Lread:
     if (dir_probe(&key, part, &earliest_dir, &last_collision) ||
-        dir_lookaside_probe(&key, part, &earliest_dir, NULL)) 
+        dir_lookaside_probe(&key, part, &earliest_dir, NULL))
     {
       dir = earliest_dir;
       if ((ret = do_read_call(&key)) == EVENT_RETURN)
         goto Lcallreturn;
       return ret;
     }
-    // read has detected that alternate does not exist in the cache. 
+    // read has detected that alternate does not exist in the cache.
     // rewrite the vector.
 #ifdef HTTP_CACHE
     if (!f.read_from_writer_called && frag_type == CACHE_FRAG_TYPE_HTTP) {
@@ -808,7 +808,7 @@ Lread:
         // if the vector had one alternate, delete it's directory entry
         if (len != doc1->hlen || !write_vector->count()) {
           // sometimes the delete fails when there is a race and another read
-          // finds that the directory entry has been overwritten 
+          // finds that the directory entry has been overwritten
           // (cannot assert on the return value)
           dir_delete(&first_key, part, &first_dir);
         } else {
@@ -820,7 +820,7 @@ Lread:
           key = first_key;
           // always use od->first_dir to overwrite a directory.
           // If an evacuation happens while a vector is being updated
-          // the evacuator changes the od->first_dir to the new directory 
+          // the evacuator changes the od->first_dir to the new directory
           // that it inserted
           od->first_dir = first_dir;
           od->writing_vec = 1;
@@ -967,7 +967,7 @@ CacheVC::openReadStartHead(int event, Event * e)
       dir_delete(&key, part, &dir);
       // try going through the directory entries again
       // in case the dir entry we deleted doesnt correspond
-      // to the key we are looking for. This is possible 
+      // to the key we are looking for. This is possible
       // because of directory collisions
       last_collision = NULL;
       goto Lread;

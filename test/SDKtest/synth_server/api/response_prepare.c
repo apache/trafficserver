@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-/* response_prepare.c 
+/* response_prepare.c
  *
  */
 

@@ -1760,7 +1760,7 @@ main(int argc, char *argv[])
   char ts_path[PATH_NAME_MAX + 1];
 
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__, 
+  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Initialize some globals

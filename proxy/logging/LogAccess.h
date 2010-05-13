@@ -24,7 +24,7 @@
 /***************************************************************************
  Logging - LogAccess.h
 
- 
+
  ***************************************************************************/
 #if !defined (INK_NO_LOG)
 #ifndef LOG_ACCESS_H
@@ -32,12 +32,12 @@
 #include "inktomi++.h"
 #include "LogField.h"
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogAccess
 
   This class defines the logging system interface for extracting
   information required to process a log entry.  This accessor is
-  implemented as an abstract base class with virtual functions for 
+  implemented as an abstract base class with virtual functions for
   accessing the data based on the derived class.
 
   NOTE that some accessors are declared non-virtual, meaning that they
@@ -45,7 +45,7 @@
   OVERRIDDEN.  This is used for fields that are already part of the
   LogEntryHeader, and thus do not need to be marshalled.  So, these
   functions do nothing and return 0.
-  
+
   Each function has the ability to marshal its data into a buffer that is
   provided, and return the number of bytes that were marshalled.  In the
   absence of a marshalling buffer, the routines will simply return the
@@ -54,9 +54,9 @@
   movement.
 
   Logging deals with values of just two possible data types: integers
-  (including enum) and strings.   Because the integers are multi-byte 
-  values that might need special alignment needs when being marshalled, 
-  this base class provides a static member function called marshal_int() 
+  (including enum) and strings.   Because the integers are multi-byte
+  values that might need special alignment needs when being marshalled,
+  this base class provides a static member function called marshal_int()
   that handles this (including checking for a NULL buffer).  The template
   for implementing integer and enum marshalling routines is:
 
@@ -246,7 +246,7 @@ public:
   inkcoreapi virtual int marshal_stream_duration_ms(char *);    // INT
 
   // streaming media fields
-  // 
+  //
   inkcoreapi virtual int marshal_client_dns_name(char *);       // STR
   inkcoreapi virtual int marshal_client_os(char *);     // STR
   inkcoreapi virtual int marshal_client_os_version(char *);     // STR
@@ -274,23 +274,23 @@ public:
   inkcoreapi virtual int marshal_http_header_field(LogField::Container container, char *field, char *buf);
   inkcoreapi virtual int marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf);
 
-  // 
+  //
   // named records.config int variables
   //
   int marshal_config_int_var(char *config_var, char *buf);
 
-  // 
+  //
   // named records.config string variables
   //
   int marshal_config_str_var(char *config_var, char *buf);
 
-  // 
+  //
   // generic record access
   //
   int marshal_record(char *record, char *buf);
 
   //
-  // unmarshalling routines 
+  // unmarshalling routines
   //
   // They used to return a string; now they unmarshal directly into the
   // destination buffer supplied.
@@ -343,7 +343,7 @@ LogAccess::round_strlen(int len)
   return LOG_ACCESS_ROUND_TO(len, MIN_ALIGN);
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogAccess::strlen
 
   Take trailing null and alignment padding into account.  This makes sure
@@ -372,7 +372,7 @@ LogAccess::marshal_int_no_byte_order_conversion(char *dest, LOG_INT source)
   *((LOG_INT *) dest) = source;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   resolve_logfield_string
 
   This external function takes a format string and a LogAccess context and

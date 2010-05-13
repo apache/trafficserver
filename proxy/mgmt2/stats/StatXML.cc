@@ -28,7 +28,7 @@
 
 //
 // Extract the text between a pair of XML tag and returns the length
-// of the extracted text. 
+// of the extracted text.
 //
 unsigned short
 XML_extractContent(const char *name, char *content, size_t result_len)

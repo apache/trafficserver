@@ -25,7 +25,7 @@
   This implements SOCKS server. We intecept the http traffic and send it
   through HTTP. Others are tunneled through directly to the socks server.
 
-  
+
 */
 #include "inktomi++.h"
 #include "StatSystem.h"

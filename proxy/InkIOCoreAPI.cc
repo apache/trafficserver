@@ -23,7 +23,7 @@
 
 /*
  * This file contains all the functions exported by the IOCore to the SDK.
- * Any IOCore symbol accessed by a plugin directly should be called in this 
+ * Any IOCore symbol accessed by a plugin directly should be called in this
  * file to ensure that it gets exported as a global symbol in TS
  */
 
@@ -199,7 +199,7 @@ INKMutexCreate()
 }
 
 /* The following two APIs are for Into work, actually, APIs of Mutex
-   should allow plugins to manually increase or decrease the refcount 
+   should allow plugins to manually increase or decrease the refcount
    of the mutex pointer, plugins may want more control of the creation
    and destroy of the mutex.*/
 
@@ -421,7 +421,7 @@ INKUDPSendTo(INKCont contp, INKUDPConn udp, unsigned int ip, int port, char *dat
 
   packet->append_block((IOBufferBlock *) blockp);
   /* (Jinsheng 11/27/00) set connection twice which causes:
-     FATAL: ../../../proxy/iocore/UDPPacket.h:136: 
+     FATAL: ../../../proxy/iocore/UDPPacket.h:136:
      failed assert `!m_conn` */
 
   /* packet->setConnection ((UDPConnection *)udp); */

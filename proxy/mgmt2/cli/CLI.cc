@@ -25,8 +25,8 @@
 /****************************************************************************
  *
  *  CLI.cc - code to handle server side command line interface
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -53,13 +53,13 @@
 #define MAX_BUF_READ_SIZE 1024
 
 /* Protocol strings
- *        
+ *
  *  Our protocol is that tranmissions always end
  *    with a null character
  *
- *  Replys from the server have 
+ *  Replys from the server have
  *     "1;" prefixed on success and
- *     "0;" prefixed on failure. 
+ *     "0;" prefixed on failure.
  *
  *   The client is responsible for stripping off the
  *     success/fail prefix
@@ -381,9 +381,9 @@ CLI_globals::TestAlarm(textBuffer * output,     /* IN/OUT: output buffer */
   CLI_globals::set_response(output, CLI_globals::successStr, result, plevel);
 }                               // end cliTestAlarm()
 
-// 
+//
 // OEM_ALARM
-// additional feature; allows the addition of a customized alarm to be 
+// additional feature; allows the addition of a customized alarm to be
 // added from the command line ( -a option)
 //
 void
@@ -406,7 +406,7 @@ CLI_globals::AddAlarm(char *largs,      /* IN; arguments */
 
 //   Initiate a shutdown of local manager  - local node only
 //
-//   Note: for the user this function is executed to do a manager 
+//   Note: for the user this function is executed to do a manager
 //         restart.  The watcher will immediately restart the manager
 //         so this function appears to "restart" the manger.  From
 //         manager's perspective, all this code does is prepare
@@ -430,7 +430,7 @@ CLI_globals::ShutdownMgmtL(char *largs, /*     IN: arguments */
 
 //    Initiate a shutdown of local manager  - cluster wide
 //
-//   Note: for the user this function is executed to do a manager 
+//   Note: for the user this function is executed to do a manager
 //         restart.  The watcher will immediately restart the manager
 //         so this function appears to "restart" the manger.  From
 //         manager's perspective, all this code does is prepare
@@ -491,9 +491,9 @@ CLI_globals::Startup(char *largs,       /*     IN: arguments */
 
 }                               // end Startup()
 
-// 
+//
 // Used for congestion control feature. Returns a list of congested servers.
-// 
+//
 void
 CLI_globals::QueryDeadhosts(char *largs,        /*     IN: arguments */
                             textBuffer * output,        /* IN/OUT: output buffer */
@@ -515,7 +515,7 @@ CLI_globals::QueryDeadhosts(char *largs,        /*     IN: arguments */
         break;
       memset(response, 0, MAX_BUF_READ_SIZE);
     }
-    if (send_exit_request(fd) < 0) {    // also closes the fd 
+    if (send_exit_request(fd) < 0) {    // also closes the fd
       Debug("cli", "[QueryDeadhosts] error closing RAF connection");
     }
   }
@@ -540,7 +540,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   CLI_DATA cli_data = { NULL, NULL, NULL, NULL, NULL, CL_EV_HELP, 0, 0 };
   cmdline_events event = CL_EV_ERROR;
 
-  // An instance of a command line events handler 
+  // An instance of a command line events handler
   CmdLine_EventHandler evHandler(MaxNumTransitions);
 
   // Create an instance of a FSM for command line event handler
@@ -550,11 +550,11 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   // Note all events have to be handled at each level since
   // users can input them anywhere by mistake. This makes
   // for a *huge* transition table but since we use a FSM there is
-  // no easy way around this for now. 
+  // no easy way around this for now.
 
 
   // base level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_BASE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_ERROR, Ind_BaseLevel);
   cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_HELP, Ind_BaseLevel);
@@ -580,7 +580,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_BASE, CL_BASE, CL_EV_ELEVEN, Ind_BaseLevel);
 
   // Monitor Level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_MONITOR, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_ERROR, Ind_MonitorLevel);
   cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_HELP, Ind_MonitorLevel);
@@ -605,7 +605,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_MONITOR, CL_MONITOR, CL_EV_ELEVEN, Ind_MonitorLevel);
 
   // Monitor->Dashboard Level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_MON_DASHBOARD, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_ERROR, Ind_MonitorDashboardLevel);
   cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_HELP, Ind_MonitorDashboardLevel);
@@ -630,7 +630,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_MON_DASHBOARD, CL_MON_DASHBOARD, CL_EV_ELEVEN, Ind_MonitorDashboardLevel);
 
   // Monitor->Node Level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_MON_NODE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_ERROR, Ind_MonitorNodeLevel);
   cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_HELP, Ind_MonitorNodeLevel);
@@ -655,7 +655,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_MON_NODE, CL_MON_NODE, CL_EV_ELEVEN, Ind_MonitorNodeLevel);
 
   // Monitor->Protocols Level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_ERROR, Ind_MonitorProtocolsLevel);
   cliFSM.defineTransition(CL_MON_PROTOCOLS, CL_MON_PROTOCOLS, CL_EV_HELP, Ind_MonitorProtocolsLevel);
@@ -681,7 +681,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
 
 
   // Monitor->Cache Level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_MON_CACHE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_ERROR, Ind_MonitorCacheLevel);
   cliFSM.defineTransition(CL_MON_CACHE, CL_MON_CACHE, CL_EV_HELP, Ind_MonitorCacheLevel);
@@ -707,7 +707,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
 
 
   // Monitor->Other Level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_MON_OTHER, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_ERROR, Ind_MonitorOtherLevel);
   cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_HELP, Ind_MonitorOtherLevel);
@@ -732,7 +732,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_MON_OTHER, CL_MON_OTHER, CL_EV_ELEVEN, Ind_MonitorOtherLevel);
 
   // Configure level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_CONFIGURE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_ERROR, Ind_ConfigureLevel);
   cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_HELP, Ind_ConfigureLevel);
@@ -758,7 +758,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_CONFIGURE, CL_CONFIGURE, CL_EV_ELEVEN, Ind_ConfigureLevel);
 
   // Configure->Server level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_CONF_SERVER, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_ERROR, Ind_ConfigureServerLevel);
   cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_HELP, Ind_ConfigureServerLevel);
@@ -783,7 +783,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_CONF_SERVER, CL_CONF_SERVER, CL_EV_ELEVEN, Ind_ConfigureServerLevel);
 
   // Configure->Protocols level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_ERROR, Ind_ConfigureProtocolsLevel);
   cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_HELP, Ind_ConfigureProtocolsLevel);
@@ -808,7 +808,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_CONF_PROTOCOLS, CL_CONF_PROTOCOLS, CL_EV_ELEVEN, Ind_ConfigureProtocolsLevel);
 
   // Configure->Cache level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_CONF_CACHE, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_ERROR, Ind_ConfigureCacheLevel);
   cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_HELP, Ind_ConfigureCacheLevel);
@@ -833,7 +833,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_CONF_CACHE, CL_CONF_CACHE, CL_EV_ELEVEN, Ind_ConfigureCacheLevel);
 
   // Configure->Security level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_CONF_SECURITY, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_ERROR, Ind_ConfigureSecurityLevel);
   cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_HELP, Ind_ConfigureSecurityLevel);
@@ -858,7 +858,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_CONF_SECURITY, CL_CONF_SECURITY, CL_EV_ELEVEN, Ind_ConfigureSecurityLevel);
 
   // Configure->Routing level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_CONF_ROUTING, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_ERROR, Ind_ConfigureRoutingLevel);
   cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_HELP, Ind_ConfigureRoutingLevel);
@@ -883,7 +883,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_CONF_ROUTING, CL_CONF_ROUTING, CL_EV_ELEVEN, Ind_ConfigureRoutingLevel);
 
   // Configure->HostDB level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_CONF_HOSTDB, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_ERROR, Ind_ConfigureHostDBLevel);
   cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_HELP, Ind_ConfigureHostDBLevel);
@@ -908,7 +908,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_CONF_HOSTDB, CL_CONF_HOSTDB, CL_EV_ELEVEN, Ind_ConfigureHostDBLevel);
 
   // Configure->Logging level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_CONF_LOGGING, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_ERROR, Ind_ConfigureLoggingLevel);
   cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_HELP, Ind_ConfigureLoggingLevel);
@@ -933,7 +933,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
   cliFSM.defineTransition(CL_CONF_LOGGING, CL_CONF_LOGGING, CL_EV_ELEVEN, Ind_ConfigureLoggingLevel);
 
   // Configure->Snapshots level
-  //                      source,  dest,   event,  index 
+  //                      source,  dest,   event,  index
   cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_BASE, INTERNAL_ERROR, Ind_InternalError);
   cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_ERROR, Ind_ConfigureSnapshotsLevel);
   cliFSM.defineTransition(CL_CONF_SNAPSHOTS, CL_CONF_SNAPSHOTS, CL_EV_HELP, Ind_ConfigureSnapshotsLevel);
@@ -959,7 +959,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
 
   // Get ready to parse input
   inputBuf[1024] = '\0';
-  cmdTok.setMaxTokens(3);       //input form -> <batch/interactive> <command> <args> 
+  cmdTok.setMaxTokens(3);       //input form -> <batch/interactive> <command> <args>
 
   // process command from 'cli'
   // NOTE: will need to change the protocol a little bit
@@ -1028,13 +1028,13 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
       Debug("cli", "event SET \n");
       event = CL_EV_SET;
     } else if (strcasecmp(cli_data.command, "display") == 0 || strcasecmp(cli_data.command, "alarms") == 0) {
-      // in the dashboard handler       
+      // in the dashboard handler
       Debug("cli", "event DISPLAY \n");
       event = CL_EV_DISPLAY;
     } else if (strcasecmp(cli_data.command, "add_alarm") == 0) {
       // OEM_ALARM
       Debug("cli", "customized ALARM added \n");
-      // created a new event = CL_EV_ADD_ALARM which 
+      // created a new event = CL_EV_ADD_ALARM which
       // calls AddAlarm function; add this transition to the FSM
       event = CL_EV_ADD_ALARM;
     } else if (strcasecmp(cli_data.command, "change") == 0 || strcasecmp(cli_data.command, "resolve") == 0) {

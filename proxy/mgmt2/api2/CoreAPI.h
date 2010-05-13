@@ -51,9 +51,9 @@ void Diags(INKDiagsT mode, const char *fmt, va_list ap);
 INKProxyStateT ProxyStateGet();
 INKError ProxyStateSet(INKProxyStateT state, INKCacheClearT clear);
 
-INKError Reconfigure();         // TS reread config files  
-INKError Restart(bool cluster); //restart TM 
-INKError HardRestart();         //restart traffic_cop 
+INKError Reconfigure();         // TS reread config files
+INKError Restart(bool cluster); //restart TM
+INKError HardRestart();         //restart traffic_cop
 
 /***************************************************************************
  * Record Operations
@@ -102,7 +102,7 @@ INKError StatsReset();
 INKError EncryptToFile(const char *passwd, const char *filepath);
 
 /*-------------------------------------------------------------
- * rmserver.cfg 
+ * rmserver.cfg
  *-------------------------------------------------------------*/
 
 /*  Define the lists in rmserver.cfg  */

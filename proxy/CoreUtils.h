@@ -133,10 +133,10 @@ class CoreUtils
 public:
 
   /**********************************************************************
-  * purpose: finds the index of the virtual address or finds what the 
+  * purpose: finds the index of the virtual address or finds what the
   *          index should be if the virtual address is not there
   * inputs: int vaddr, int upper, int lower
-  * outputs: returns the index of the vaddr or the index after where it 
+  * outputs: returns the index of the vaddr or the index after where it
   *          should be
   * notes: upper and lower stands for the lowest and highest indices
   *        the function should search between
@@ -192,7 +192,7 @@ public:
 #endif
 
   /**********************************************************************
-  * purpose: returns the base core_stack_state for the given thread id 
+  * purpose: returns the base core_stack_state for the given thread id
   * inputs: int threadId, core_stack_state* coress
   * outputs: returns the base core_stack_state for the given thread id
   **********************************************************************/
@@ -265,7 +265,7 @@ public:
 #endif
 
   /**********************************************************************
-  * purpose: fills in the given HTTPHdr * live_hdr with live information 
+  * purpose: fills in the given HTTPHdr * live_hdr with live information
   *          take from core_hdr the core file
   * inputs: HTTPHdr* core_hdr, HTTPHdr* live_hdr
   * outputs: -1 on failure or total bytes in the header heaps

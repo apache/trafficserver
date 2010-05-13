@@ -25,9 +25,9 @@
  *
  *
  * Description:
- *   - Response the client requests in the format of '0123456789012..' 
- *     until it reaches the number of bytes the client requested.  
- *     In that case, the client can check the correctness of the responsed 
+ *   - Response the client requests in the format of '0123456789012..'
+ *     until it reaches the number of bytes the client requested.
+ *     In that case, the client can check the correctness of the responsed
  *     document.
  *     Note: This example needs to work with CheckContentClient plugin
  *           for SDKtest_client.
@@ -139,7 +139,7 @@ INKResponsePut(void **resp_id /* return */ ,
       *resp_bytes += copy;
     }
   }
-  /* return NULL as the resp_id to indicate 
+  /* return NULL as the resp_id to indicate
    * that it is the last INKResponsePut call */
   if (rid->bytes_not_sent <= 0 || rid->status_code != 200) {
     free(rid);

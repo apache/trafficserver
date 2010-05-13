@@ -32,7 +32,7 @@
 /*-----------------------------------------------------------------------------
   SimpleTokenizer
 
-  
+
 
   This class provides easy token parsing from an input string. It supports:
 
@@ -43,18 +43,18 @@
 
   The class has two constructors, one that defines the input string,
   and another one that does not. If the latter is used, then the
-  setString method should be used to set the data string. 
+  setString method should be used to set the data string.
 
   Both constructors set the delimiter, the operation mode (which
-  defines bullets 1-3 above), and the escape character. 
+  defines bullets 1-3 above), and the escape character.
 
-  The available methods are: 
+  The available methods are:
 
   void setString(char *s)
   sets the data string to s. The mode specified upon construction of the
   tokenizer determines whether s is copied or not.
 
-  char *getNext() 
+  char *getNext()
   returns the next token, or NULL if there are no more tokens. This method
   uses the delimiter specified upon object construction.
 
@@ -67,7 +67,7 @@
   between).
 
   char *getNext(char delimiter, int count)
-  this is similar to getNext(int count) but allows user to specify the 
+  this is similar to getNext(int count) but allows user to specify the
   delimiter.
 
   IMPORTANT: the char pointers returned by the SimpleTokenizer are valid
@@ -80,13 +80,13 @@
 
   char *peekAtRestOfString()
   returns the rest of the input string, but DOES NOT advance pointer so a
-  subsequent call to getNext does return the next token (if there is still 
+  subsequent call to getNext does return the next token (if there is still
   one).
 
   size_t getNumTokensRemaining()
   returns the number of tokens remaining in the string (using the delimiter
   specified upon object construction).
-  
+
   size_t getNumTokensRemaining(char delimiter)
   similar to the above, but allows the user to change the delimiter (just for
   this call).
@@ -96,7 +96,7 @@
   examples:
 
   SimpleTokenizer tok("one    two\\ and\\ three four:   five : six");
-  tok.getNumTokensRemaining() --> 5     note calculation is done assuming 
+  tok.getNumTokensRemaining() --> 5     note calculation is done assuming
                                         space is the delimiter
   tok.getNext() -> "one"
   tok.getNext() -> "two and three"
@@ -104,12 +104,12 @@
   tok.peekAtRestOfString() -> "   five  : six"
   tok.getNext(':') -> "five"
 
-  SimpleTokenizer tok(",  with null fields ,,,", ',', 
+  SimpleTokenizer tok(",  with null fields ,,,", ',',
                       CONSIDER_NULL_FIELDS | KEEP_WHITESPACE);
   tok.getNext() -> ""
   tok.getNext() -> "  with null fields "
   tok.getNumTokensRemaining() -> 3
-  
+
   ---------------------------------------------------------------------------*/
 
 class SimpleTokenizer
@@ -241,7 +241,7 @@ private:
         _start = end + 1;
 
         // there can be delimiters at the end if the number of tokens
-        // requested is larger than 1, remove them if the 
+        // requested is larger than 1, remove them if the
         // CONSIDER_NULL_FIELDS flag is not set
         //
         if (!(_mode & CONSIDER_NULL_FIELDS)) {
@@ -257,7 +257,7 @@ private:
         if (!countOnly) {
           _data[end] = 0;
 
-          // remove escape characters only if the number of 
+          // remove escape characters only if the number of
           // delimiters is one
           //
           if (hasEsc && delimCount == 1) {

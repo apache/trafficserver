@@ -26,7 +26,7 @@
  * VMap.c
  *   Function defs for the virtual mapping mgmt stuff.
  *
- * 
+ *
  */
 
 #include "ink_config.h"
@@ -66,7 +66,7 @@ vmapEnableHandler(const char *tok, RecDataT data_type, RecData data, void *cooki
 void
 VMap::init()
 {
-//    int id; 
+//    int id;
 //    bool found;
 //    RecordType type;
 
@@ -140,8 +140,8 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
   /*
    * Perpetuating a hack for the cluster interface. Here I want to loop
    * at startup(before any virtual ips have been brought up) and get the real
-   * IP address for each interface. 
-   * 
+   * IP address for each interface.
+   *
    * Later this will be used to ping the interfaces that have virtual IP addrs
    * associated with them to detect if the interface is down.
    */
@@ -560,7 +560,7 @@ VMap::rl_clearUnSeen(char *ip)
 
 
 /*
- * rl_remote_map(...) 
+ * rl_remote_map(...)
  *   Function sends the up interface command to a remote node.
  */
 bool
@@ -582,7 +582,7 @@ VMap::rl_remote_map(char *virt_ip, char *real_ip)
 
 
 /*
- * rl_remote_unmap(...) 
+ * rl_remote_unmap(...)
  *   Function sends the up interface command to a remote node.
  */
 bool
@@ -774,7 +774,7 @@ VMap::rl_checkGlobConflict(char *virt_ip)
 /*
  * resolveConflict(...)
  *   This function is to be called after a conflict has been detected between
- * the local node and some peer. It will down the interface, pause for a bit, 
+ * the local node and some peer. It will down the interface, pause for a bit,
  * determine who wins in the conflict and potentially attempt to bring the
  * interface up again.
  */
@@ -849,9 +849,9 @@ VMap::rl_remap(char *virt_ip, char *cur_ip, char *dest_ip, int cur_naddr, int de
 }                               /* End VMap::rl_remap */
 
 
-/* 
+/*
  * boundAddr(...)
- *   Function tests whether or not the addr is bound. Returns 0(not bound), 
+ *   Function tests whether or not the addr is bound. Returns 0(not bound),
  * 1(bound locally), 2(bound in cluster).
  */
 int
@@ -1034,7 +1034,7 @@ VMap::rl_rebalance()
 
         if (strstr(key, high_ip)) {
           char vip[80], buf[80];
-          //coverity[secure_coding] 
+          //coverity[secure_coding]
           if (sscanf(key, "%79s %79s", vip, buf) != 2) {
             mgmt_fatal("[VMap::rl_rebalance] Corrupt VMap entry('%s'), bailing\n", key);
           }
@@ -1158,7 +1158,7 @@ VMap::downAddr(char *virt_ip)
 
   num_interfaces--;
 
-  // whenever the manager starts up, it tries to remove all vip's 
+  // whenever the manager starts up, it tries to remove all vip's
   // and at that time num_interfaces was 0
   ink_assert(num_interfaces >= 0 && num_interfaces < num_addrs);
 
@@ -1185,7 +1185,7 @@ VMap::downAddrs()
 {
 
 
-  // Now for WIN32, we have to find the nte_context for the virtual ip address 
+  // Now for WIN32, we have to find the nte_context for the virtual ip address
   // if its still bound to the machine
   // BUGBUG:
   // The way we are doing it is totally undocumented and can change...
@@ -1222,9 +1222,9 @@ VMap::downOurAddrs()
     some_address_mapped = true;
   }
 
-  /* 
+  /*
    * If any address was mapped, take no chance and down
-   * everything we know about 
+   * everything we know about
    */
   if (some_address_mapped) {
 

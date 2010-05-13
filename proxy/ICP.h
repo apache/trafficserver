@@ -26,7 +26,7 @@
 
   ICP.h
 
-  
+
 ****************************************************************************/
 
 #ifndef _ICP_H_
@@ -103,7 +103,7 @@ typedef enum
 #define ICP_OP_LAST		(ICP_OP_END_OF_OPS - 1)
 
 //-----------------------
-// version definitions 
+// version definitions
 //-----------------------
 #define ICP_VERSION_1		1
 #define ICP_VERSION_2		2
@@ -117,7 +117,7 @@ typedef enum
 #define ICP_FLAG_SRC_RTT 	0x40000000ul
 
 //-----------------
-// ICP Constants 
+// ICP Constants
 //-----------------
 #define MAX_ICP_MSGSIZE		   (16 * 1024)
 #define MAX_ICP_MSG_PAYLOAD_SIZE   (MAX_ICP_MSGSIZE - sizeof(ICPmsgHdr_t))
@@ -130,11 +130,11 @@ typedef enum
 //------------
 typedef struct ICPData
 {
-  ink8 *URL;                    // null terminated 
+  ink8 *URL;                    // null terminated
 } ICPData_t;
 
 //-------------
-// ICP Query 
+// ICP Query
 //-------------
 typedef struct ICPQuery
 {
@@ -147,7 +147,7 @@ typedef struct ICPQuery
 //------------
 typedef struct ICPHit
 {
-  ink8 *URL;                    // null terminated 
+  ink8 *URL;                    // null terminated
 } ICPHit_t;
 
 //------------
@@ -155,11 +155,11 @@ typedef struct ICPHit
 //------------
 typedef struct ICPMiss
 {
-  ink8 *URL;                    // null terminated 
+  ink8 *URL;                    // null terminated
 } ICPMiss_t;
 
 //------------------
-// ICP Hit Object 
+// ICP Hit Object
 //------------------
 typedef struct ICPHitObj
 {
@@ -474,7 +474,7 @@ private:
   // All ICP operation is based on "icp_data" and "peer_cdata".
   // The "icp_data_current" and "peer_cdata_current" reflect the
   // current state of the configuration.  "icp_data_current" is
-  // updated via configuration callouts.  "peer_cdata_current" 
+  // updated via configuration callouts.  "peer_cdata_current"
   // is updated by the periodic ICP processor event (ICPPeriodicCont),
   // when configuration management signals us with a callout on "icp.config".
   // We merge current to working only after disabling ICP operation and
@@ -700,16 +700,16 @@ private:
   Connection _send_chan;
   Connection _recv_chan;
   //---------------------------
-  // Multicast specific data 
+  // Multicast specific data
   //---------------------------
   struct sockaddr_in _mc_addr;
   int _mc_ttl;
   struct multicast_data
   {
-    double avg_members;         // running avg of multicast responders 
+    double avg_members;         // running avg of multicast responders
     int defined_members;        // as specified in icp.config
     int n_count_events;         // responder count events
-    int count_event_reqno;      // reqno associated with count event 
+    int count_event_reqno;      // reqno associated with count event
     int expected_replies;       // current expected responders on multicast
   } _mc;
 };
@@ -1140,7 +1140,7 @@ public:
   { ICP_REQUEST_HASH_SIZE = 1024 };
 
   //***********************************************************************
-  // ICPPeerReadCont::PeerReadStateMachine() to 
+  // ICPPeerReadCont::PeerReadStateMachine() to
   // ICPRequestCont::ICPStateMachine() calling sequence definition.
   //
   //     ICPRequestEvent(ICP_RESPONSE_MESSAGE, ICPRequestEventArgs_t *)

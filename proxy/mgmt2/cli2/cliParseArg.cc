@@ -26,7 +26,7 @@
 
  *
  *      cliParseArgument(int argc,char **argv,cli_ArgvInfo *argTable)
- *      compares the given arguments with the expected arguments and 
+ *      compares the given arguments with the expected arguments and
  *      returns error if they are not same
  *      If arguments are are valid it converts string arguments to the proper type
  *
@@ -152,7 +152,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
     for (infoPtr = argTable; (infoPtr->key != NULL); infoPtr++) {
       if (!strcmp(infoPtr->key, curArg)) {
         gotMatch = TRUE;
-        if (infoPtr->position != CLI_ARGV_NO_POS) {     /* Don't do position checking for 
+        if (infoPtr->position != CLI_ARGV_NO_POS) {     /* Don't do position checking for
                                                            CLI_ARGV_NO_POS */
           /* check if the 1st position argument comes at 1st position */
           if ((infoPtr->position == CLI_PARENT_ARGV) && (srcIndex - 1) != 1) {

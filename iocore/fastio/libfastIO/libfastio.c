@@ -23,8 +23,8 @@
 
 /*
  *
- * FastIO Userland Library 
- * 
+ * FastIO Userland Library
+ *
  *
  *
  *
@@ -187,7 +187,7 @@ fastIO_fio_init(struct fastIO_state *fio)
 
 
 /*
- * Initialize the fastIO system for a file descriptor 
+ * Initialize the fastIO system for a file descriptor
  */
 struct fastIO_state *
 fastIO_init(int blockcount)
@@ -229,7 +229,7 @@ fastIO_init(int blockcount)
 
 
   /* you don't need to call mutex_init() on an intraprocess mutex.
-   * just make sure it's zero'ed out 
+   * just make sure it's zero'ed out
    */
   bzero(&fio->mem_mutex, sizeof(mutex_t));
 
@@ -239,7 +239,7 @@ fastIO_init(int blockcount)
 
 
 /*
- * Create a fastIO session 
+ * Create a fastIO session
  */
 struct fastIO_session *
 fastIO_udpsession_create(struct fastIO_state *fio, int fd)
@@ -280,7 +280,7 @@ fastIO_udpsession_create(struct fastIO_state *fio, int fd)
 
 
 /*
- * Create a fastIO virtual session 
+ * Create a fastIO virtual session
  */
 struct fastIO_session *
 fastIO_vsession_create(struct fastIO_state *fio)
@@ -313,8 +313,8 @@ fastIO_vsession_create(struct fastIO_state *fio)
 }
 
 
-/* 
- * Delete a fastIO Session 
+/*
+ * Delete a fastIO Session
  */
 void
 fastIO_session_destroy(struct fastIO_session *sessioncookie)
@@ -407,7 +407,7 @@ fastIO_sendto(struct fastIO_session *fio, uint32_t requestBlock)
   switch (fio->type) {
 
   case FASTIO_SESSION_UDP:
-/*	printf("sending on destination queue 0x%x.\n", 
+/*	printf("sending on destination queue 0x%x.\n",
 		fio->udp_queue);*/
 
     req->destQ = fio->udp_queue;
@@ -650,7 +650,7 @@ fastIO_fini(struct fastIO_state *cookie)
   printf("fastIO_fini:\n");
 #endif
 
-  /* This doesn't seem to result in a devunmap handler inside inkfio, 
+  /* This doesn't seem to result in a devunmap handler inside inkfio,
    * so I clean up memory in DDI close()
    */
   munmap((char *) cookie->buffer, cookie->size);

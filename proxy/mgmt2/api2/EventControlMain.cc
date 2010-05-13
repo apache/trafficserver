@@ -23,10 +23,10 @@
 
 /*****************************************************************************
  * Filename: EventControlMain.cc
- * Purpose: Handles all event requests from the user. 
+ * Purpose: Handles all event requests from the user.
  * Created: 01/08/01
  * Created by: lant
- * 
+ *
  ***************************************************************************/
 
 #include "inktomi++.h"
@@ -92,11 +92,11 @@ delete_event_client(EventClientT * client)
 
 /*********************************************************************
  * remove_event_client
- * 
+ *
  * purpose: removes the EventClientT from the specified hashtable; includes
  *          removing the binding and freeing the ClientT
  * input: client - the ClientT to remove
- * output: 
+ * output:
  *********************************************************************/
 void
 remove_event_client(EventClientT * client, InkHashTable * table)
@@ -118,7 +118,7 @@ remove_event_client(EventClientT * client, InkHashTable * table)
  *
  * purpose: initializes the mgmt_events queue which is intended to hold
  *          TM events.
- * input: 
+ * input:
  * output: INK_ERR_xx
  * note: None
  *********************************************************************/
@@ -145,9 +145,9 @@ init_mgmt_events()
 
 /*********************************************************************
  * delete_mgmt_events
- *								     
+ *
  * purpose: frees the mgmt_events queue.
- * input: 
+ * input:
  * output: None
  * note: None
  *********************************************************************/
@@ -201,18 +201,18 @@ delete_event_queue(LLQ * q)
 
 /*********************************************************************
  * apiEventCallback
- * 						     
- * purpose: callback function registered with alarm processor so that 
- *          each time alarm is signalled, can enqueue it in the mgmt_events 
+ *
+ * purpose: callback function registered with alarm processor so that
+ *          each time alarm is signalled, can enqueue it in the mgmt_events
  *          queue
- * input: 
+ * input:
  * output: None
  * note: None
  *********************************************************************/
 void
 apiEventCallback(alarm_t newAlarm, char *ip, char *desc)
 {
-  // create an INKEvent 
+  // create an INKEvent
   // addEvent(new_alarm, ip, desc) // adds event to mgmt_events
   INKEvent *newEvent;
 
@@ -236,10 +236,10 @@ apiEventCallback(alarm_t newAlarm, char *ip, char *desc)
 /*********************************************************************
  * event_callback_main
  *
- * This function is run as a thread in WebIntrMain.cc that listens on a 
- * specified socket. It loops until Traffic Manager dies. 
+ * This function is run as a thread in WebIntrMain.cc that listens on a
+ * specified socket. It loops until Traffic Manager dies.
  * In the loop, it just listens on a socket, ready to accept any connections,
- * until receives a request from the remote API client. Parse the request 
+ * until receives a request from the remote API client. Parse the request
  * to determine which CoreAPI call to make.
  *********************************************************************/
 void *
@@ -329,8 +329,8 @@ event_callback_main(void *arg)
         }
       }                         // end if (new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
 
-      // some other file descriptor; for each one, service request 
-      if (fds_ready > 0) {      // RECEIVED A REQUEST from remote API client 
+      // some other file descriptor; for each one, service request
+      if (fds_ready > 0) {      // RECEIVED A REQUEST from remote API client
         // see if there are more fd to set - iterate through all entries in hash table
         con_entry = ink_hash_table_iterator_first(accepted_clients, &con_state);
         while (con_entry) {
@@ -353,7 +353,7 @@ event_callback_main(void *arg)
             case EVENT_REG_CALLBACK:
               handle_event_reg_callback(client_entry, req);
               if (req)
-                xfree(req);     // free the request allocated by preprocess_msg        
+                xfree(req);     // free the request allocated by preprocess_msg
               if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
                 Debug("event", "[event_callback_main] ERROR: handle_event_reg_callback\n");
                 remove_event_client(client_entry, accepted_clients);
@@ -366,7 +366,7 @@ event_callback_main(void *arg)
 
               handle_event_unreg_callback(client_entry, req);
               if (req)
-                xfree(req);     // free the request allocated by preprocess_msg        
+                xfree(req);     // free the request allocated by preprocess_msg
               if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
                 Debug("event", "[event_callback_main] ERROR: handle_event_unreg_callback\n");
                 remove_event_client(client_entry, accepted_clients);
@@ -389,13 +389,13 @@ event_callback_main(void *arg)
     }                           // end if (fds_ready > 0)
 
     // ------------ service loop is done, check for events now -------------
-    // for each event in the mgmt_events list, uses the event id to check the 
+    // for each event in the mgmt_events list, uses the event id to check the
     // events_registered queue for each client connection to see if that client
     // has a callback registered for that event_id
 
     INKEvent *event;
 
-    if (!mgmt_events || queue_is_empty(mgmt_events)) {  //no events to process 
+    if (!mgmt_events || queue_is_empty(mgmt_events)) {  //no events to process
       //fprintf(stderr, "[event_callback_main] NO EVENTS TO PROCESS\n");
       Debug("event", "[event_callback_main] NO EVENTS TO PROCESS\n");
       continue;
@@ -403,15 +403,15 @@ event_callback_main(void *arg)
     // iterate through each event in mgmt_events
     while (!queue_is_empty(mgmt_events)) {
       ink_mutex_acquire(&mgmt_events_lock);     //acquire lock
-      event = (INKEvent *) dequeue(mgmt_events);        // get what we want   
-      ink_mutex_release(&mgmt_events_lock);     // release lock     
+      event = (INKEvent *) dequeue(mgmt_events);        // get what we want
+      ink_mutex_release(&mgmt_events_lock);     // release lock
 
       if (!event)
         continue;
 
       //fprintf(stderr, "[event_callback_main] have an EVENT TO PROCESS\n");
 
-      // iterate through all entries in hash table, if any    
+      // iterate through all entries in hash table, if any
       con_entry = ink_hash_table_iterator_first(accepted_clients, &con_state);
       while (con_entry) {
         client_entry = (EventClientT *) ink_hash_table_entry_value(accepted_clients, con_entry);

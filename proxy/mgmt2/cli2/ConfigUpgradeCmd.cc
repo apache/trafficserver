@@ -23,7 +23,7 @@
 
 /****************************************************************
  * Filename: ConfigUpgradeCmd.cc
- * Purpose: This file contains the CLI's "config:write/read/install/upgrade" 
+ * Purpose: This file contains the CLI's "config:write/read/install/upgrade"
    command implementation.
  *
  ****************************************************************/

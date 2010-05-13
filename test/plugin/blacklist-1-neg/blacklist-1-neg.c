@@ -21,16 +21,16 @@
   limitations under the License.
  */
 
-/* blacklist-1.c:  an example program that denies client access                 
+/* blacklist-1.c:  an example program that denies client access
  *                 to blacklisted sites. This plugin illustrates
- *                 how to use configuration information from a 
+ *                 how to use configuration information from a
  *                 configuration file (blacklist.txt) that can be
  *                 updated through the Traffic Manager UI.
  *
  *
- *	Usage:	
- *	(NT) : BlackList.dll 
- *	(Solaris) : blacklist-1.so 
+ *	Usage:
+ *	(NT) : BlackList.dll
+ *	(Solaris) : blacklist-1.so
  *
  *
  */
@@ -105,7 +105,7 @@ handle_dns(INKHttpTxn txnp, INKCont contp)
   }
 
   /*  the continuation we are dealing here is created for each transaction.
-     since the transactions themselves have a mutex associated to them, 
+     since the transactions themselves have a mutex associated to them,
      we don't need to lock that mutex explicitly. */
   for (i = 0; i < nsites; i++) {
     if (strncmp(host, sites[i], host_length) == 0) {
@@ -130,7 +130,7 @@ handle_dns(INKHttpTxn txnp, INKCont contp)
 
 done:
   INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
-  /* If not a blacklist site, then destroy the continuation created for 
+  /* If not a blacklist site, then destroy the continuation created for
      this transaction */
   cd = (cdata *) INKContDataGet(contp);
   INKfree(cd);
@@ -195,7 +195,7 @@ handle_response(INKHttpTxn txnp, INKCont contp)
 
 done:
   INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
-  /* After everything's done, Destroy the continuation 
+  /* After everything's done, Destroy the continuation
      created for this transaction */
   cd = (cdata *) INKContDataGet(contp);
   INKfree(cd);
@@ -303,9 +303,9 @@ blacklist_plugin(INKCont contp, INKEvent event, void *edata)
       break;
     }
   case INK_EVENT_TIMEOUT:
-    /* when mutex lock is not acquired and continuation is rescheduled, 
-       the plugin is called back with INK_EVENT_TIMEOUT with a NULL 
-       edata. We need to decide, in which function did the MutexLock 
+    /* when mutex lock is not acquired and continuation is rescheduled,
+       the plugin is called back with INK_EVENT_TIMEOUT with a NULL
+       edata. We need to decide, in which function did the MutexLock
        failed and call that function again */
     if (contp != global_contp) {
       cd = (cdata *) INKContDataGet(contp);

@@ -25,8 +25,8 @@
 /****************************************************************************
  *
  *  Module: Help facility for CLI
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -146,7 +146,7 @@ static const char *MonOtherHelpStrings[numCmdMonOther] = {
 // to select. This would entail adding more functionality
 // that comes for free if you use 'curses'.
 //
-// One possiblity is for ascii based use isto use 'lynx' WWW to access 
+// One possiblity is for ascii based use isto use 'lynx' WWW to access
 // the web configuration
 //
 
@@ -301,20 +301,20 @@ CLI_globals::Help(textBuffer * output,  /* IN/OUT: output buffer */
   Debug("cli", "help: advui(%d),featset(%d), hlevel(%d)\n", advui, featset, hlevel);
 
   // create appropriate Help response
-  // 
+  //
   // See 'MgmtFeat.cc'
   // advui == 1(10) -> Advanced UI only           (Regular TS HTTP)
   //       == 0(00) -> Simple UI only             (on hold....)
   //       == 2(01) -> RNI UI only                (TS for Real Networks, only does RNI caching)
   //       == 3(11) -> Advanced UI + RNI features (TS w/ RN support HTTP/RNI )
   // Currently only used to implement cheesy licensing
-  // featset == 1 -> indicates that Advanced UI is enabled 
+  // featset == 1 -> indicates that Advanced UI is enabled
   //         == 0 -> indicates that Advanced UI is disabled
   switch (hlevel) {
   case CL_MONITOR:
     for (i = 0; i < numCmdMonitor; i++) {
       if ((0 == advui || 2 == advui) && (1 == i || 3 == i))
-        continue;               // only show dashboard/protocols/other 
+        continue;               // only show dashboard/protocols/other
       // for simple/RNI UI
       output->copyFrom(MonitorHelpStrings[i], strlen(MonitorHelpStrings[i]));
     }
@@ -322,7 +322,7 @@ CLI_globals::Help(textBuffer * output,  /* IN/OUT: output buffer */
   case CL_MON_PROTOCOLS:
     for (i = 0; i < numCmdMonProtocols; i++) {
       if ((0 == advui || 2 == advui) && (1 == i || 2 == i || 4 == i))
-        continue;               // only show 
+        continue;               // only show
       // for simple/RNI UI
       output->copyFrom(MonProtHelpStrings[i], strlen(MonProtHelpStrings[i]));
     }

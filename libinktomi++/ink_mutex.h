@@ -30,7 +30,7 @@
 
     Uses atomic memory operations to minimize blocking.
 
-    
+
 ***********************************************************************/
 #include <stdio.h>
 

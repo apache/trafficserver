@@ -30,7 +30,7 @@
       NetVC.  Should implement all external attributes of NetVConnections.
       [See PluginVC.cc for further comments]
 
-   
+
  ****************************************************************************/
 
 #ifndef _PLUGIN_VC_H_

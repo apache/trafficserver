@@ -31,7 +31,7 @@
     Uses atomic memory operations to avoid blocking.
     Intended as a replacement for llqueue.
 
-    
+
 ***********************************************************************/
 
 #include "ink_port.h"
@@ -86,7 +86,7 @@ extern "C"
  * Think of a list like this -> A -> C -> D
  * and you are popping from the list
  * Between the time you take the ptr(A) and swap the head pointer
- * the list could start looking like this 
+ * the list could start looking like this
  * -> A -> B -> C -> D
  * If the version check is not there, the list will look like
  * -> C -> D after the pop, which will result in the loss of "B"

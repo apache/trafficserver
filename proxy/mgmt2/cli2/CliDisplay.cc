@@ -26,7 +26,7 @@
  * Purpose: This file contains the implementation of CliDisplay
  *          routines for the use of TB
  *
- * 
+ *
  ****************************************************************/
 
 #include "inktomi++.h"

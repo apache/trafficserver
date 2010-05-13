@@ -27,7 +27,7 @@
 
   Implements general time functions.
 
-  
+
  ****************************************************************************/
 
 #include "inktomi++.h"

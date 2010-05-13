@@ -134,7 +134,7 @@ RemapPlugins::run_plugin(remap_plugin_info * plugin, char *origURLBuf, int origU
   rri.remap_from_path = fromPath;
   rri.remap_from_path_size = fromPathLen;
 
-  // Set "remap to" path        
+  // Set "remap to" path
   rri.remap_to_path = toPath;
   rri.remap_to_path_size = toPathLen;
 
@@ -368,7 +368,7 @@ RemapPlugins::run_single_remap()
   }
 
   if ((!plugin && _cur == 0) || plugin_retcode == 0) {
-    // Handle cross protocol mapping when there are no remap plugin(s) 
+    // Handle cross protocol mapping when there are no remap plugin(s)
     // or if plugin did not make any modifications.
     Debug("url_rewrite", "no plugins available for this request");
     int to_len, from_len;
@@ -574,7 +574,7 @@ RemapPlugins::run_remap(int event, Event * e)
     Debug("url_rewrite", "handling immediate event inside RemapPlugins::run_remap");
     ret = run_single_remap();
                         /**
-			 * If ret !=0 then we are done with this processor and we call back into the SM; 
+			 * If ret !=0 then we are done with this processor and we call back into the SM;
 			 * otherwise, we call this function again immediately (which really isn't immediate)
 			 * thru the eventProcessor, thus forcing another run of run_single_remap() which will
 			 * then operate on _request_url, etc performing additional remaps (mainly another plugin run)

@@ -24,8 +24,8 @@
 /*
  *
  * Solaris UDP FastIO bench
- * 
- * 
+ *
+ *
  *
  *
  */
@@ -93,7 +93,7 @@ intsig(int nuttin)
 }
 
 /*
- * Signal handler for SIGUSR1.  
+ * Signal handler for SIGUSR1.
  * Required for memory management
  */
 void

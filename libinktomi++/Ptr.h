@@ -25,12 +25,12 @@
 
    Atmic and non-atomic smart pointers.
 
-   Note: it would have been nice to have one 'Ptr' class, but the 
+   Note: it would have been nice to have one 'Ptr' class, but the
    templating system on some compilers is so broken that it cannot
    correctly compile Ptr without downcasting the m_ptr object to
-   a RefCountObj. 
+   a RefCountObj.
 
-   
+
  ****************************************************************************/
 #if !defined (_Ptr_h_)
 #define _Ptr_h_

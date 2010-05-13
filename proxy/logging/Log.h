@@ -125,7 +125,7 @@
         +---------------------+
         |      fixed-size     |
         +---------------------+
-        |                     |  contains strings and any custom logging 
+        |                     |  contains strings and any custom logging
         :     variable-size   :  fields not in the union set.
         |                     |
         +---------------------+

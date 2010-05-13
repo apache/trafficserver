@@ -25,8 +25,8 @@
 /****************************************************************************
  *
  *  Module: handles creating formated line output for the CLI
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -195,7 +195,7 @@ CLIlineBuffer::addField(const char *field_format,       /* IN: field format stri
 char *
 CLIlineBuffer::getline()
 {
-  char tmpbuf[1024];            // assume no text is greater than 
+  char tmpbuf[1024];            // assume no text is greater than
   // this for now
   DynArray < const char *>*f_ptrs = NULL;
   char *line_buf = NULL;
@@ -218,7 +218,7 @@ CLIlineBuffer::getline()
   //  Debug("cli","getline: iters=%d, line_size=%d, buf_size=%d, c_fields=%d, depth=%d \n",
   //         iters,line_size,buf_size,c_fields,buf_depth);
 
-  // clear line buffer 
+  // clear line buffer
   memset(line_buf, '\0', buf_size);
 
   // assign running ptrs to the output strings

@@ -35,7 +35,7 @@
 
 extern int exited_children;
 typedef void (*sig_callback_fptr) (int signo);
-/* 
+/*
 *  plugins use this to attach clean up handlers
 *  for SIGSEGV and SIGBUS
 *  Return value: 0 on success, -1 on failure

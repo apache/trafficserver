@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-// 
+//
 
 #ifndef _HTTP_CONNECTION_COUNT_H_
 

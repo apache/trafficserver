@@ -69,7 +69,7 @@ private:
     Queue<BlockCacheSegmentVConnection> m_readers;   // who is reading
   /**
      who is writing.  XXX: This implicitly assumes only one writer.  I
-     think this assumption is reasonable. 
+     think this assumption is reasonable.
   */
   BlockCacheSegmentVConnection *m_writer;
 };

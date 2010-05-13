@@ -28,7 +28,7 @@
    Description:
       Common elements for protocol state machines
 
-   
+
  ****************************************************************************/
 
 #ifndef _PROTO_SM_H_
@@ -112,7 +112,7 @@ template<class VCTentry, int max_entries>
 
 // void ProtoVCTable::cleanup_entry(HttpVCEntry* e)
 //
-//    Closes the associate vc for the entry, 
+//    Closes the associate vc for the entry,
 //     and the call remove_entry
 //
 template<class VCTentry, int max_entries>

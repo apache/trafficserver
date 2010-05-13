@@ -184,23 +184,23 @@ queue_highwater(LLQ * Q)
 
 
 
-/* 
+/*
  *---------------------------------------------------------------------------
  *
  * queue_is_empty
- *  
+ *
  *  Is the queue empty?
- *  
+ *
  * Results:
  *  nonzero if empty, zero else.
- *  
+ *
  * Side Effects:
  *  none.
- *  
+ *
  * Reentrancy:     n/a.
  * Thread Safety:  safe.
  * Mem Management: n/a.
- *  
+ *
  *---------------------------------------------------------------------------
  */
 int

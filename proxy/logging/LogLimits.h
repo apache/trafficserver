@@ -25,7 +25,7 @@
  This file contains constants and other limitis used within the logging
  module.
 
- 
+
  ***************************************************************************/
 
 #ifndef LOG_LIMITS_H

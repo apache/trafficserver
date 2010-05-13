@@ -60,7 +60,7 @@ public:
 
     When considering each operation (AccessType), we have to consider
     the following situations:
-  
+
     <ul>
     <li> A. no BC_OpenSegment, no Dir entry exists.
     <li> B. no BC_OpenSegment, a Dir entry exists (because of hash
@@ -124,7 +124,7 @@ public:
     @param key desired BlockCacheKey of new or existing entry
     @param access_type mode of access to the data.
     @return BC_OpenSegment* newly created or existing BC_OpenSegment
-    
+
     */
   BC_OpenSegment *lookupOrCreateOpenSegment(BlockCacheKey * key, AccessType access_type);
 

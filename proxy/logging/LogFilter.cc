@@ -24,7 +24,7 @@
 /***************************************************************************
  LogFilter.cc
 
- 
+
  ***************************************************************************/
 #include "inktomi++.h"
 
@@ -85,7 +85,7 @@ LogFilter::~LogFilter()
   delete m_field;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFilter::filter_from_specification
 
   Build a LogFilter object from the given logs.config specification.
@@ -123,7 +123,7 @@ LogFilter::filter_from_specification(char *spec,
     return NULL;
   }
 
-  // Next is the name of a format 
+  // Next is the name of a format
   //
   token = strtok(NULL, ":");
   if (token == NULL) {
@@ -139,7 +139,7 @@ LogFilter::filter_from_specification(char *spec,
       return NULL;
     }
   }
-  // Next is the field name 
+  // Next is the field name
   //
   token = strtok(NULL, ":");
   if (token == NULL) {
@@ -406,7 +406,7 @@ bool LogFilterString::toss_this_entry(LogAccess * lad)
   case MATCH:
     // marsh_len is an upper bound on the length of the marshalled string
     // because marsh_len counts padding and the eos. So for a MATCH
-    // operator, we use the DATA_LENGTH_LARGER length condition rather 
+    // operator, we use the DATA_LENGTH_LARGER length condition rather
     // than DATA_LENGTH_EQUAL, which we would use if we had the actual
     // length of the string. It is probably not worth computing the
     // actual length, so we just use the fact that a MATCH is not possible
@@ -643,7 +643,7 @@ bool LogFilterInt::toss_this_entry(LogAccess * lad)
   value = ntohl(value);
 
   // we don't use m_operator because we consider all operators to be
-  // equivalent to "MATCH" for an integer field 
+  // equivalent to "MATCH" for an integer field
   //
 
   // most common case is single value, speed it up a little bit by unrolling

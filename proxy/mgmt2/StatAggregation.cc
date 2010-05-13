@@ -198,11 +198,11 @@ Ag_cacheHits()
   // the position in this array is significant, hardcoded, and inter-related
   static StatTwoIntSamples miss_count_table[] = {
     {"proxy.process.http.cache_miss_cold", 0, 0, 0, 0}, // 0
-    {"proxy.process.http.cache_miss_changed", 0, 0, 0, 0},      // 1 
+    {"proxy.process.http.cache_miss_changed", 0, 0, 0, 0},      // 1
     {"proxy.process.http.cache_miss_not_cacheable", 0, 0, 0, 0},        // 2
     {"proxy.process.http.cache_miss_client_no_cache", 0, 0, 0, 0},      // 3
     {"proxy.process.http.cache_miss_ims", 0, 0, 0, 0},  // 4
-    {"proxy.process.http.cache_read_error", 0, 0, 0, 0},        // 5 
+    {"proxy.process.http.cache_read_error", 0, 0, 0, 0},        // 5
     {"proxy.process.rni.block_miss_count", 0, 0, 0, 0}, // 6
     {NULL, -1, -1, -1, -1}
   };
@@ -220,7 +220,7 @@ Ag_cacheHits()
   // the position in this array is significant and hardcoded
   static const char *miss_counts_names[] = {
     "proxy.node.http.cache_miss_cold_avg_10s",  // 0
-    "proxy.node.http.cache_miss_changed_avg_10s",       // 1 
+    "proxy.node.http.cache_miss_changed_avg_10s",       // 1
     "proxy.node.http.cache_miss_not_cacheable_avg_10s", // 2
     "proxy.node.http.cache_miss_client_no_cache_avg_10s",       // 3
     "proxy.node.http.cache_miss_ims_avg_10s",   // 4
@@ -685,7 +685,7 @@ Ag_Throughput()
   // These aren't used.
   //static MgmtInt lastBytesHttpUAThrough;
   //static MgmtInt lastBytesHttpOSThrough;
-  //static MgmtInt lastBytesRNIUAThrough; 
+  //static MgmtInt lastBytesRNIUAThrough;
   MgmtInt bytesThrough;
   MgmtInt bytesHttpUAThrough;
   MgmtInt bytesHttpOSThrough;
@@ -738,7 +738,7 @@ Ag_Throughput()
     } else {
       // old stat
       varSetInt("proxy.node.http.throughput", -20);
-      // new stats 
+      // new stats
       varSetFloat("proxy.node.client_throughput_out", -20.0);
     }
   }
@@ -925,7 +925,7 @@ Ag_Connections()
 //        Currently only reflects HTTP
 //
 // NOTE: 8/21/98 (Bug INKqa03094)
-//       A special scenario is considered in this code where during fresh 
+//       A special scenario is considered in this code where during fresh
 //       cache start and no documents are in the cache, the number of bytes sent
 //       to the Origin servers can exceed the number of bytes sent to
 //       the client where by negative bandwidth savings are reported.

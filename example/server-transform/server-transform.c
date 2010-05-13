@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-/* server-transform.c:  an example program that sends response content 
- *                      to a server to be transformed, and sends the 
- *                      transformed content to the client 
+/* server-transform.c:  an example program that sends response content
+ *                      to a server to be transformed, and sends the
+ *                      transformed content to the client
  *
  *
- *	Usage:	
- *	(NT): ServerTransform.dll 
+ *	Usage:
+ *	(NT): ServerTransform.dll
  *	(Solaris): server-transform.so
  *
  *
@@ -718,10 +718,10 @@ cache_response_ok(INKHttpTxn txnp)
 {
   /* Is the response we're reading from cache OK for
    * transformation. This is a good place to check the cached
-   * response to see if it is transformable. The default 
+   * response to see if it is transformable. The default
    * behavior is to cache transformed content; therefore
    * to avoid transforming twice we will not transform
-   * content served from the cache. 
+   * content served from the cache.
    */
   return 0;
 }
@@ -732,7 +732,7 @@ server_response_ok(INKHttpTxn txnp)
   /* Is the response the server sent OK for transformation. This is
    * a good place to check the server's response to see if it is
    * transformable. In this example, we will transform only "200 OK"
-   * responses.  
+   * responses.
    */
 
   INKMBuffer bufp;

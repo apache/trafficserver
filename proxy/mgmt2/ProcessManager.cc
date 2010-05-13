@@ -29,7 +29,7 @@
  *
  * $Date: 2007-10-05 16:56:44 $
  *
- * 
+ *
  */
 
 #include "inktomi++.h"
@@ -492,8 +492,8 @@ ProcessManager::addPluginString(const char *name, MgmtString value)
 static bool checkBackDoorP(int req_fd, char *message);
 /*
  * drainBackDoor(...)
- *   This function is blocking, it never returns. It is meant to allow for 
- * continuous draining of the network. 
+ *   This function is blocking, it never returns. It is meant to allow for
+ * continuous draining of the network.
  */
 static void *
 drainBackDoor(void *arg)

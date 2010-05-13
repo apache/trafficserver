@@ -58,9 +58,9 @@ OpenDir::OpenDir()
   SET_HANDLER(&OpenDir::signal_readers);
 }
 
-/* 
+/*
    If allow_if_writers is false, open_write fails if there are other writers.
-   max_writers sets the maximum number of concurrent writers that are 
+   max_writers sets the maximum number of concurrent writers that are
    allowed. Only The first writer can set the max_writers. It is ignored
    for later writers.
    Returns 1 on success and 0 on failure.
@@ -522,8 +522,8 @@ Lagain:
     do {
       if (dir_compare_tag(e, key)) {
         ink_debug_assert(dir_offset(e));
-        // Bug: 51680. Need to check collision before checking 
-        // dir_valid(). In case of a collision, if !dir_valid(), we 
+        // Bug: 51680. Need to check collision before checking
+        // dir_valid(). In case of a collision, if !dir_valid(), we
         // don't want to call dir_delete_entry.
         if (collision) {
           if (collision == e) {
@@ -802,7 +802,7 @@ dir_lookaside_cleanup(Part *d)
     while (b) {
       if (!dir_valid(d, &b->new_dir)) {
         EvacuationBlock *nb = b->link.next;
-        DDebug("dir_lookaside", "cleanup %X %X cleaned up", 
+        DDebug("dir_lookaside", "cleanup %X %X cleaned up",
               b->evac_frags.earliest_key.word(0), b->evac_frags.earliest_key.word(1));
         d->lookaside[i].remove(b);
         free_CacheVC(b->earliest_evacuator);
@@ -999,7 +999,7 @@ Lrestart:
     return EVENT_CONT;
   }
   if (event == AIO_EVENT_DONE) {
-    // AIO Thread 
+    // AIO Thread
     if (io.aio_result != (int) io.aiocb.aio_nbytes) {
       Warning("part write error during directory sync '%s'", gpart[part]->hash_id);
       event = EVENT_NONE;

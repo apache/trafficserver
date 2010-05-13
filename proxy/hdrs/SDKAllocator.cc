@@ -25,9 +25,9 @@
 
   SDKAllocator.cc
 
-  Description: 
+  Description:
 
-  
+
  ****************************************************************************/
 
 #include "SDKAllocator.h"
@@ -107,7 +107,7 @@ SDKAllocator::free_str(char *str)
 
   SDKAllocHdr *obj = (SDKAllocHdr *) (str - SDKAllocHdrSize);
 
-  // Sanity check the object to make sure it's 
+  // Sanity check the object to make sure it's
   //   good and from the correct allocator
   if (obj->m_magic != SDK_ALLOC_MAGIC_STR) {
     return 0;
@@ -128,7 +128,7 @@ SDKAllocator::free_mfield(MIMEField * f)
 
   SDKAllocHdr *obj = (SDKAllocHdr *) (((char *) f) - SDKAllocHdrSize);
 
-  // Sanity check the object to make sure it's 
+  // Sanity check the object to make sure it's
   //   good and from the correct allocator
   if (obj->m_magic != SDK_ALLOC_MAGIC_STAND_ALONE_FIELD) {
     return 0;
@@ -150,7 +150,7 @@ SDKAllocator::free_mhandle(MIMEFieldSDKHandle * h)
 
   SDKAllocHdr *obj = (SDKAllocHdr *) (((char *) h) - SDKAllocHdrSize);
 
-  // Sanity check the object to make sure it's 
+  // Sanity check the object to make sure it's
   //   good and from the correct allocator
   if (obj->m_magic != SDK_ALLOC_MAGIC_MIME_FIELD_HANDLE) {
     return 0;
@@ -186,7 +186,7 @@ SDKAllocator::free_all()
       break;
     case SDK_ALLOC_MAGIC_DEAD:
     default:
-      // Bad element 
+      // Bad element
       ink_assert(0);
     }
   }

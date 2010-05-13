@@ -25,10 +25,10 @@
 
   Error.h
 
-  The objective of the error system is to enable graceful recovery 
+  The objective of the error system is to enable graceful recovery
   from all errors.
-  
-  
+
+
  ****************************************************************************/
 
 #if !defined _Error_h_
@@ -40,7 +40,7 @@
 //////////////////////////////////////////////////////////////////////////////
 //
 // Base Error class (abstract)
-// 
+//
 //////////////////////////////////////////////////////////////////////////////
 
 struct ErrorClass

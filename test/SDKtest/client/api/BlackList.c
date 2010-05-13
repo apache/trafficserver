@@ -25,18 +25,18 @@
  *
  *
  * Description
- *   - Generate requests to the web servers listed in the files specified 
- *     by allowed_host_file and forbidden_host_file in some forbidden 
- *     ratio specified in the configuration file.  This example is 
- *     targeted to test the performance of proxy server with filtering 
+ *   - Generate requests to the web servers listed in the files specified
+ *     by allowed_host_file and forbidden_host_file in some forbidden
+ *     ratio specified in the configuration file.  This example is
+ *     targeted to test the performance of proxy server with filtering
  *     functionality.
  *
  * Added Options in SDKtest_client.config -
- *   forbidden_ratio     : percentage of blacklisted requests we 
+ *   forbidden_ratio     : percentage of blacklisted requests we
  *                         want to generate
- *   allowed_host_file   : full path of the file that contains the 
+ *   allowed_host_file   : full path of the file that contains the
  *                         allowed sites
- *   forbidden_host_file : full path of the file that contains the 
+ *   forbidden_host_file : full path of the file that contains the
  *                         forbidden sites
  */
 
@@ -213,7 +213,7 @@ INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
     return INK_KEEP_GOING;
   }
 
-  /* we consider the request to the blacklisted 
+  /* we consider the request to the blacklisted
    * sites to be successful documents */
   else if (strstr(header, "403 Forbidden")) {
     my_plugin.forbidden_documents++;

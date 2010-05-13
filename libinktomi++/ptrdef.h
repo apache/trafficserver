@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-/* ------------------------------------------------------------------------- */  
-/* -                             PTRDEF.H                                  - */ 
-/* ------------------------------------------------------------------------- */ 
- 
-  
+/* ------------------------------------------------------------------------- */
+/* -                             PTRDEF.H                                  - */
+/* ------------------------------------------------------------------------- */
+
+
 #ifndef H_PTRDEF_H
 #define H_PTRDEF_H
-  
-/* lv: special typedef for pointer to integer conversion in order to avoid incorrect cast in 64 bit case. */ 
+
+/* lv: special typedef for pointer to integer conversion in order to avoid incorrect cast in 64 bit case. */
 #ifdef __WORDSIZE
 #if (__WORDSIZE == 64) || (__WORDSIZE == 32)
 #if (__WORDSIZE == 64)
@@ -53,5 +53,5 @@ typedef unsigned  __PTRDIFF_TYPE__ int_pointer;
 #endif /* __PTRDIFF_TYPE__ */
 #endif /* _LP64 */
 #endif  /* #ifdef __WORDSIZE  */
-  
+
 #endif  /* #ifndef H_PTRDEF_H */

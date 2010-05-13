@@ -27,7 +27,7 @@
 
   This file implements an I/O Processor for network I/O.
 
-  
+
  ****************************************************************************/
 #ifndef __P_SSLNETPROCESSOR_H
 #define __P_SSLNETPROCESSOR_H
@@ -97,11 +97,11 @@ SSLNetProcessor():UnixNetProcessor(), verify_depth(0), ctx(NULL), client_ctx(NUL
 #if !defined (_IOCORE_WIN32_WINNT)
 
   // Virtual function allows etype
-  // to be set to ET_SSL for SSLNetProcessor.  
+  // to be set to ET_SSL for SSLNetProcessor.
   virtual void setEtype(EventType & etype);
   // Functions all THREAD_FREE and THREAD_ALLOC to be performed
   // for both SSL and regular NetVConnection transparent to
-  // netProcessor connect functions. 
+  // netProcessor connect functions.
   virtual UnixNetVConnection *allocateThread(EThread * t);
   virtual void freeThread(UnixNetVConnection * vc, EThread * t);
   virtual NetAccept *createNetAccept();

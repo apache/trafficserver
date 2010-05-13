@@ -30,7 +30,7 @@
    A short test program intended to be used with Purify to detect problems
    with the arnea code
 
-   
+
  ****************************************************************************/
 
 #include "Arena.h"

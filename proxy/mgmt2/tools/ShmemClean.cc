@@ -28,7 +28,7 @@
  *
  * $Date: 2003-06-01 18:38:21 $
  *
- * 
+ *
  */
 
 #include "ink_config.h"
@@ -56,7 +56,7 @@ union semun
 
 /*
  * main(...)
- *   Function takes an int id to start and walks through (as the Local 
+ *   Function takes an int id to start and walks through (as the Local
  * manager does) ids until it fails to delete an id. To delete a seg id
  * you need the uid of the creator or root, be careful not to nuke any
  * that may be running.

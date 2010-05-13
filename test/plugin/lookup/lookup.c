@@ -32,7 +32,7 @@
 #define TIMEOUT 10
 
 /**************************************************
-   Log macros for error code return verification 
+   Log macros for error code return verification
 **************************************************/
 #define PLUGIN_NAME "lookup"
 #define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))
@@ -143,8 +143,8 @@ destroyContData(INKCont txn_contp)
     Call the API at a bad hook and
     verify it returns an error
 **************************************/
-/* Comment out because it seems to be 
-   working at every hook after 
+/* Comment out because it seems to be
+   working at every hook after
    INK_HTTP_TXN_CACHE_LOOKUP_COMPLETE */
 /* void neg_cache_lookup_bad_hook(INKHttpTxn txnp) { */
 /*     LOG_SET_FUNCTION_NAME("neg_cache_lookup_bad_hook"); */
@@ -204,8 +204,8 @@ fake_handler2(INKCont fake_contp, INKEvent event, void *edata)
 
 /**************************************
     Negative testing 1 for host lookup:
-    Call the INKHostLookup with bad 
-    arguments and verify it returns an 
+    Call the INKHostLookup with bad
+    arguments and verify it returns an
     error
 **************************************/
 void
@@ -234,7 +234,7 @@ neg1_host_lookup()
       INKContDestroy(fake_contp1);
 
       /* Call with a 0 HOSTNAME_LENGTH */
-      /* Use different continuation to call this API because it is reentrant, 
+      /* Use different continuation to call this API because it is reentrant,
          i.e. we might use fake_contp1 while it has already been destroyed */
       pending_action = INKHostLookup(fake_contp2, HOSTNAME, 0);
       if (pending_action != INK_ERROR_PTR) {
@@ -249,8 +249,8 @@ neg1_host_lookup()
 
 /**************************************
     Negative testing 2 for host lookup:
-    Call the INKHostLookupResultIPGet 
-    with NULL lookup result and verify 
+    Call the INKHostLookupResultIPGet
+    with NULL lookup result and verify
     it returns an error
 **************************************/
 void
@@ -267,8 +267,8 @@ neg2_host_lookup()
 }
 
 /**************************************************
-    This function is called to verify that the 
-    value returned by INKHttpTxnClientRemotePortGet 
+    This function is called to verify that the
+    value returned by INKHttpTxnClientRemotePortGet
     remains consistent along the HTTP state machine
 ***************************************************/
 int
@@ -283,7 +283,7 @@ check_client_port(INKHttpTxn txnp, ContData * contData)
     LOG_ERROR_AND_RETURN("INKHttpTxnClientRemotePortGet");
   } else {
     INKDebug(DEBUG_TAG, "INKHttpTxnClientRemotePortGet returned %d", clientPortGot);
-    /* Make sure the client port was set at Read_request hook, to avoid 
+    /* Make sure the client port was set at Read_request hook, to avoid
        firing the assert because the client aborted */
     if (contData->client_port != 0) {
       if (clientPortGot != contData->client_port) {
@@ -328,7 +328,7 @@ handle_txn_close(INKHttpTxn txnp, INKCont txn_contp)
 }
 
 /***************************************************
-   Insert the Host-IP header in the client response 
+   Insert the Host-IP header in the client response
 ***************************************************/
 int
 handle_send_response(INKHttpTxn txnp, ContData * contData)
@@ -670,8 +670,8 @@ Lcleanup:
   }
 
   /* Call INKHostLookup */
-  /* Called completly at the end because right after the call, 
-     the DNS processor might call back txn_contp wih the 
+  /* Called completly at the end because right after the call,
+     the DNS processor might call back txn_contp wih the
      INK_EVENT_HOST_LOOKUP, and txnp will be reenabled while
      txnp is still being accessed in this handler, that would
      be bad!!! */
@@ -689,15 +689,15 @@ Lcleanup:
    - be called back by the DNS processor when the host lookup is done
    - store all the transaction specific data
    Tricks:
-   - when called back with INK_EVENT_HTTP_READ_REQUEST_HDR, do not 
-   reenable the transaction, instead return, and reenable the 
-   transaction when called back with INK_EVENT_HOST_LOOKUP, so that 
+   - when called back with INK_EVENT_HTTP_READ_REQUEST_HDR, do not
+   reenable the transaction, instead return, and reenable the
+   transaction when called back with INK_EVENT_HOST_LOOKUP, so that
    when we don't need to maintain a state in the continuation. And
    also when we need the host lookup result at the send response hook
    we are sure that the result will be available.
-   - we don't need a lock for this continuation because we are garanteed 
+   - we don't need a lock for this continuation because we are garanteed
    that we will be called back for only one HTTP hook at a time, and the
-   asynchronous part (host lookup) 
+   asynchronous part (host lookup)
 **********************************************************************/
 static int
 txn_cont_handler(INKCont txn_contp, INKEvent event, void *edata)
@@ -756,8 +756,8 @@ txn_cont_handler(INKCont txn_contp, INKEvent event, void *edata)
         /*********************/
   case INK_EVENT_HOST_LOOKUP:
     if (contData == INK_ERROR_PTR) {
-      /* In this case we are stuck, we cannot get the continuation 
-         data which contains the HTTP txn pointer, i.e. we cannot 
+      /* In this case we are stuck, we cannot get the continuation
+         data which contains the HTTP txn pointer, i.e. we cannot
          reenable the transaction, so we might as well assert here */
       LOG_ERROR("INKContDataGet");
       INKReleaseAssert(!"Could not get contp data");
@@ -796,9 +796,9 @@ txn_cont_handler(INKCont txn_contp, INKEvent event, void *edata)
     When the global plugin continuation is called back here:
     - for every HTTP txn, it creates a continuation
     - init the continuation data
-    - set the transaction pointer to the mother HTTP txn. This 
+    - set the transaction pointer to the mother HTTP txn. This
     pointer is part of the daughter continuation's data.
-    - registers the new continuation to be called back for all 
+    - registers the new continuation to be called back for all
     other HTTP hooks.
 ***************************************************************/
 int
@@ -908,7 +908,7 @@ handle_txn_start(INKHttpTxn txnp)
 
 /********************************************************
    Plugin Continuation handler:
-   The plugin continuation will be called back by every 
+   The plugin continuation will be called back by every
    HTTP transaction when it reach INK_HTTP_TXN_START_HOOK
 ********************************************************/
 static int
@@ -936,11 +936,11 @@ plugin_cont_handler(INKCont contp, INKEvent event, void *edata)
 }
 
 /********************************************************
-   Parse the 2 eventual arguments passed to the plugin, 
+   Parse the 2 eventual arguments passed to the plugin,
    else use the defaults.
-   Here, there is no need to grab the HOSTNAME_LOCK, this 
-   code should be executes before any HTTP state machine 
-   is created. 
+   Here, there is no need to grab the HOSTNAME_LOCK, this
+   code should be executes before any HTTP state machine
+   is created.
    Register globally INK_HTTP_TXN_START_HOOK
 ********************************************************/
 void

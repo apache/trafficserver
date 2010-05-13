@@ -106,13 +106,13 @@ SafeShell::Run()
         fprintf(stdout, "\n");
         return EOF;
       }
-      // Get rid of the newline 
+      // Get rid of the newline
       Command[strlen(Command) - 1] = '\0';
       char Command2[SAFESHELL_CMD_LENGTH];
       char *commandname = NULL;
-      // something was read 
+      // something was read
       strncpy(Command2, Command, SAFESHELL_CMD_LENGTH);
-      // Get the first word out of it 
+      // Get the first word out of it
       commandname = strtok(Command2, " ");
 
       if (commandname) {
@@ -158,13 +158,13 @@ main(int argc, char *argv[])
 
   if ((fp = fopen(configfile, "r")) == NULL) {
 
-    // If the file cannot be opened, default to the def_commands     ; 
+    // If the file cannot be opened, default to the def_commands     ;
     for (int i = 0; i < DEF_CMD_SIZE; i++) {
       safeShell.AddSafeShellCommand(default_cmds[i]);
     }
   } else {
 
-    // Otherwise we have the file open and can read the list of commands from there 
+    // Otherwise we have the file open and can read the list of commands from there
     for (int i = 0; i < SAFESHELL_MAX_COMMANDS; i++) {
       if (fgets(Commands, SAFESHELL_MAX_COMMANDS, fp) == NULL) {
         break;

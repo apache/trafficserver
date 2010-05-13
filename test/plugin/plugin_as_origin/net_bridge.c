@@ -24,7 +24,7 @@
 /*   net_bridge.c - another test program to test plugin as origin
  *     server interface.  Connects to origin server allowing
  *     the use all existing test & load tools
- * 
+ *
  *
  */
 
@@ -42,7 +42,7 @@
 #define DEBUG_TAG "net_bridge-dbg"
 
 /**************************************************
-   Log macros for error code return verification 
+   Log macros for error code return verification
 **************************************************/
 #define PLUGIN_NAME "net_bridge"
 #define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))

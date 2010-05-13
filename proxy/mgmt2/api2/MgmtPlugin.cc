@@ -27,7 +27,7 @@
 
    Description: mgmt api plugin init code
 
-   
+
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -116,9 +116,9 @@ dll_close(void *dlp)
   dlclose(dlp);
 }
 
-// 
+//
 // mgmt_plugin_load
-// 
+//
 // loads the plugin passing it the argc, argv arguments
 //
 static void
@@ -187,7 +187,7 @@ mgmt_plugin_expand(char *arg)
     return (xstrdup(str));
 }
 
-// 
+//
 // plugin_init
 //
 // Reads in the plugin_mgmt.config file and loads each plugin listed

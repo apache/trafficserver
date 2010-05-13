@@ -22,12 +22,12 @@
  */
 
 /****************************************************************************
- 
+
    HttpTunnel.cc
- 
+
    Description:
- 
-   
+
+
 ****************************************************************************/
 
 #include "ink_config.h"
@@ -861,8 +861,8 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
   }
 
   //YTS Team, yamsat Plugin
-  // Allocate and copy partial POST data to buffers. Check for the various parameters 
-  // including the maximum configured post data size 
+  // Allocate and copy partial POST data to buffers. Check for the various parameters
+  // including the maximum configured post data size
   if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection
       && sm->redirection_tries == 0 && (p->vc_type == HT_HTTP_CLIENT)) {
     Debug("http_redirect", "[HttpTunnel::producer_run] client post: %d max size: %d",
@@ -889,7 +889,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     // If there is data to process in the buffer, do it now
     if (p->chunked_handler.dechunked_reader->read_avail())
       producer_handler(VC_EVENT_READ_READY, p);
-  } else if (p->do_dechunking || p->do_chunked_passthru) {      
+  } else if (p->do_dechunking || p->do_chunked_passthru) {
     // remove the dechunked reader marker so that it doesn't act like a buffer guard
     if (p->do_dechunking)
       p->chunked_handler.dechunked_buffer->dealloc_reader(dechunked_buffer_start);
@@ -912,8 +912,8 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       producer_handler(VC_EVENT_READ_READY, p);
     } else if (sm->redirection_tries > 0 && p->vc_type == HT_HTTP_CLIENT) {     // read_avail() == 0
       // [bug 2579251]
-      // Ugh, this is horrible but in the redirect case they are running a the tunnel again with the 
-      // now closed/empty producer to trigger PRECOMPLETE.  If the POST was chunked, producer_n is set 
+      // Ugh, this is horrible but in the redirect case they are running a the tunnel again with the
+      // now closed/empty producer to trigger PRECOMPLETE.  If the POST was chunked, producer_n is set
       // (incorrectly) to INT_MAX.  It needs to be set to 0 to prevent triggering another read.
       producer_n = 0;
     }

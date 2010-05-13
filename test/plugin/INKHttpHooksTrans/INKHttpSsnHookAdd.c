@@ -24,7 +24,7 @@
 
 /*
 Tests for registering/processing events at the session level.
-      INKHttpSsnHookAdd( HOOK_ID is either SSN_START or SSN_CLOSE ) 
+      INKHttpSsnHookAdd( HOOK_ID is either SSN_START or SSN_CLOSE )
 */
 
 
@@ -54,10 +54,10 @@ const char *const
   "INK_EVENT_MGMT_UPDATE"       /* 60100 */
 };
 
-/* 
+/*
  * We track that each hook was called using this array. We start with
- * all values set to zero, meaning that the INKEvent has not been 
- * received. 
+ * all values set to zero, meaning that the INKEvent has not been
+ * received.
  * There 16 entries.
 */
 static int inktHookTbl[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -115,7 +115,7 @@ handle_transform(INKCont contp)
    * ourself. This VIO contains the buffer that we are to read from
    * as well as the continuation we are to call when the buffer is
    * empty. This is the input VIO (the write VIO for the upstream
-   * vconnection). 
+   * vconnection).
    */
   input_vio = INKVConnWriteVIOGet(contp);
 
@@ -139,7 +139,7 @@ handle_transform(INKCont contp)
    * more WRITE_READY or WRITE_COMPLETE events. For this simplistic
    * transformation that means we're done. In a more complex
    * transformation we might have to finish writing the transformed
-   * data to our output connection. 
+   * data to our output connection.
    */
   if (!INKVIOBufferGet(input_vio)) {
     INKVIONBytesSet(data->output_vio, INKVIONDoneGet(input_vio));
@@ -149,12 +149,12 @@ handle_transform(INKCont contp)
 
   /* Determine how much data we have left to read. For this null
    * transform plugin this is also the amount of data we have left
-   * to write to the output connection. 
+   * to write to the output connection.
    */
   towrite = INKVIONTodoGet(input_vio);
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
-     * the amount of data actually in the read buffer. 
+     * the amount of data actually in the read buffer.
      */
     avail = INKIOBufferReaderAvail(INKVIOReaderGet(input_vio));
     if (towrite > avail) {
@@ -166,31 +166,31 @@ handle_transform(INKCont contp)
       INKIOBufferCopy(INKVIOBufferGet(data->output_vio), INKVIOReaderGet(input_vio), towrite, 0);
 
       /* Tell the read buffer that we have read the data and are no
-       * longer interested in it. 
+       * longer interested in it.
        */
       INKIOBufferReaderConsume(INKVIOReaderGet(input_vio), towrite);
 
       /* Modify the input VIO to reflect how much data we've
-       * completed. 
+       * completed.
        */
       INKVIONDoneSet(input_vio, INKVIONDoneGet(input_vio) + towrite);
     }
   }
 
   /* Now we check the input VIO to see if there is data left to
-   * read. 
+   * read.
    */
   if (INKVIONTodoGet(input_vio) > 0) {
     if (towrite > 0) {
       /* If there is data left to read, then we reenable the output
        * connection by reenabling the output VIO. This will wake up
        * the output connection and allow it to consume data from the
-       * output buffer. 
+       * output buffer.
        */
       INKVIOReenable(data->output_vio);
 
       /* Call back the input VIO continuation to let it know that we
-       * are ready for more data. 
+       * are ready for more data.
        */
       INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_READY, input_vio);
     }
@@ -199,13 +199,13 @@ handle_transform(INKCont contp)
      * VIO to reflect how much data the output connection should
      * expect. This allows the output connection to know when it
      * is done reading. We then reenable the output connection so
-     * that it can consume the data we just gave it. 
+     * that it can consume the data we just gave it.
      */
     INKVIONBytesSet(data->output_vio, INKVIONDoneGet(input_vio));
     INKVIOReenable(data->output_vio);
 
     /* Call back the input VIO continuation to let it know that we
-     * have completed the write operation. 
+     * have completed the write operation.
      */
     INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_COMPLETE, input_vio);
   }
@@ -218,15 +218,15 @@ handle_transform(INKCont contp)
 static int
 null_transform(INKCont contp, INKEvent event, void *edata)
 {
-  /* This is the "event(s)" that are delivered for 
-   * INK_EVENT_HTTP_RESPONSE_TRANSFORM. 
+  /* This is the "event(s)" that are delivered for
+   * INK_EVENT_HTTP_RESPONSE_TRANSFORM.
    */
   inktHookTbl[index(INK_EVENT_HTTP_RESPONSE_TRANSFORM)] = 1;
   ChkEvents(INK_EVENT_HTTP_RESPONSE_TRANSFORM);
 
 
   /* Check to see if the transformation has been closed by a call to
-   * INKVConnClose. 
+   * INKVConnClose.
    */
   if (INKVConnClosedGet(contp)) {
     my_data_destroy(INKContDataGet(contp));
@@ -240,12 +240,12 @@ null_transform(INKCont contp, INKEvent event, void *edata)
 
         /* Get the write VIO for the write operation that was
          * performed on ourself. This VIO contains the continuation of
-         * our parent transformation. This is the input VIO.  
+         * our parent transformation. This is the input VIO.
          */
         input_vio = INKVConnWriteVIOGet(contp);
 
         /* Call back the write VIO continuation to let it know that we
-         * have completed the write operation. 
+         * have completed the write operation.
          */
         INKContCall(INKVIOContGet(input_vio), INK_EVENT_ERROR, input_vio);
       }
@@ -262,7 +262,7 @@ null_transform(INKCont contp, INKEvent event, void *edata)
     default:
       /* If we get a WRITE_READY event or any other type of
        * event (sent, perhaps, because we were reenabled) then
-       * we'll attempt to transform more data. 
+       * we'll attempt to transform more data.
        */
       handle_transform(contp);
       break;
@@ -274,7 +274,7 @@ null_transform(INKCont contp, INKEvent event, void *edata)
 
 
 
-/* Since this is event based, it can be re-used with 
+/* Since this is event based, it can be re-used with
  * INKHttpHookAdd()
  * INKHttpSsnHookAdd()
  * INKHttpTxnHokkAdd()
@@ -295,8 +295,8 @@ ChkEvents(const int event)
   return re;
 }
 
-/* event routine: for each INKHttpHookID this routine should be called 
- * with a matching event. 
+/* event routine: for each INKHttpHookID this routine should be called
+ * with a matching event.
 */
 static int
 SsnHookAddEvent(INKCont contp, INKEvent event, void *eData)
@@ -308,15 +308,15 @@ SsnHookAddEvent(INKCont contp, INKEvent event, void *eData)
   switch (event) {
   case INK_EVENT_HTTP_READ_REQUEST_HDR:
     inktHookTbl[index(INK_EVENT_HTTP_READ_REQUEST_HDR)] = 1;
-    /* List what events have been called back at 
-     * this point in procesing 
+    /* List what events have been called back at
+     * this point in procesing
      */
     ChkEvents(INK_EVENT_HTTP_READ_REQUEST_HDR);
 
     /* TODO test for INK_HTTP_REQUEST_TRANSFORM_HOOK */
 
     /* This event is delivered to a transaction. Reenable the
-     * txnp pointer not the session. 
+     * txnp pointer not the session.
      */
     INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
     break;
@@ -352,10 +352,10 @@ SsnHookAddEvent(INKCont contp, INKEvent event, void *eData)
     /* TODO verify
      * should be:
      *              INK_EVENT_HTTP_READ_REQUEST_HDR_HOOK
-     *              INK_HTTP_REQUEST_TRANSFORM_HOOK 
-     * for 
+     *              INK_HTTP_REQUEST_TRANSFORM_HOOK
+     * for
      *              INK_EVENT_HTTP_READ_RESPONSE_HDR_HOOK
-     *              INK_HTTP_RESPONSE_TRANSFORM_HOOK 
+     *              INK_HTTP_RESPONSE_TRANSFORM_HOOK
      * Registering with a new continuation / callback.
      */
 
@@ -375,8 +375,8 @@ SsnHookAddEvent(INKCont contp, INKEvent event, void *eData)
     break;
 
   case INK_EVENT_HTTP_RESPONSE_TRANSFORM:
-    /* This event is not delivered here. See null_transform 
-     * and verify that INK_EVENT_ERROR, 
+    /* This event is not delivered here. See null_transform
+     * and verify that INK_EVENT_ERROR,
      * INK_EVENT_VCONN_WRITE_COMPLETE, INK_EVENT_CVONN_WRITE_READY
      *
      * TODO do not use as a defined event if it does not get delivered
@@ -429,9 +429,9 @@ SsnHookAddEvent(INKCont contp, INKEvent event, void *eData)
 
     INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_START_HOOK, contp);
 
-                /******************************************************** 
-		* We've already registered for this event as a global 
-		* hook. Registering for this event at the session 
+                /********************************************************
+		* We've already registered for this event as a global
+		* hook. Registering for this event at the session
 		* level will send this event twice: once for the registration
 		* done at PluginInit and once for the sessions.
 		*
@@ -445,15 +445,15 @@ SsnHookAddEvent(INKCont contp, INKEvent event, void *eData)
     break;
 
   case INK_EVENT_HTTP_SSN_CLOSE:
-    /* Here as a result of: 
-     * INKHTTPSsnHookAdd(ssnp, INK_HTTP_SSN_CLOSE_HOOK, contp) 
+    /* Here as a result of:
+     * INKHTTPSsnHookAdd(ssnp, INK_HTTP_SSN_CLOSE_HOOK, contp)
      */
     inktHookTbl[index(INK_EVENT_HTTP_SSN_CLOSE)] = 1;
 
     /* Assumption: at this point all other events have
      * have been called. Since a session can have one or
      * more transactions, the close of a session should
-     * prompt us to check that all events have been called back 
+     * prompt us to check that all events have been called back
      */
     if (ChkEvents(INK_EVENT_HTTP_SSN_CLOSE))
       INKError("INKHttpHook: Fail: All events not called back.\n");

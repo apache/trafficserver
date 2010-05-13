@@ -206,7 +206,7 @@ write_signal_error(NetHandler *nh, UnixNetVConnection *vc, int lerrno)
 }
 
 // Read the data for a UnixNetVConnection.
-// Rescheduling the UnixNetVConnection by moving the VC 
+// Rescheduling the UnixNetVConnection by moving the VC
 // onto or off of the ready_list.
 // Had to wrap this function with net_read_io for SSL.
 static void
@@ -225,7 +225,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     read_reschedule(nh, vc);
     return;
   }
-  // if it is not enabled.  
+  // if it is not enabled.
   if (!s->enabled || s->vio.op != VIO::READ) {
     vc->addLogMessage("not enabled");
     read_disable(nh, vc);
@@ -405,7 +405,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     } else if (ret == EVENT_DONE) {
       vc->read.triggered = 1;
       if (vc->read.enabled)
-        nh->read_ready_list.in_or_enqueue(vc); 
+        nh->read_ready_list.in_or_enqueue(vc);
     } else
       write_reschedule(nh, vc);
     return;
@@ -458,7 +458,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   ink64 r = vc->load_buffer_and_write(towrite, wattempted, total_wrote, buf);
   if (vc->loggingEnabled()) {
     char message[256];
-    snprintf(message, sizeof(message), "rval: %lld towrite: %lld ntodo: %lld total_wrote: %lld", 
+    snprintf(message, sizeof(message), "rval: %lld towrite: %lld ntodo: %lld total_wrote: %lld",
              r, towrite, ntodo, total_wrote);
     vc->addLogMessage(message);
   }
@@ -1033,7 +1033,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   *signal_timeout = 0;
   *signal_timeout_at = 0;
   writer_cont = write.vio._cont;
-  
+
   if (closed) {
     close_UnixNetVConnection(this, thread);
     return EVENT_DONE;
@@ -1113,7 +1113,7 @@ UnixNetVConnection::connectUp(EThread *t)
 
   SET_HANDLER(&UnixNetVConnection::mainEvent);
   // This function is empty for regular UnixNetVConnection, it has code
-  // in it for the inherited SSLUnixNetVConnection.  Allows the connectUp 
+  // in it for the inherited SSLUnixNetVConnection.  Allows the connectUp
   // function code not to be duplicated in the inherited SSL class.
   //  sslStartHandShake (SSL_EVENT_CLIENT, err);
 

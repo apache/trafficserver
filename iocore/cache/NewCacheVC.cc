@@ -449,7 +449,7 @@ NewCacheVC::completeCacheHttpInfo(const void *data, const inku64 size)
   // we should get the Httpinfo for the corresponding alternate
   CacheHTTPInfo *obj = _httpInfoVector.get(m_alt_index);
   if (obj != NULL) {
-    //marshaled httpinfo is not writable, 
+    //marshaled httpinfo is not writable,
     //need to deep copy since headers may be modified
     _readCacheHttpInfo.copy((HTTPInfo *) obj);
 
@@ -810,7 +810,7 @@ NewCacheVC::_writeHttpInfo()
   _state = NEW_CACHE_WRITE_HEADER;
 
   if (m_alt_index >= 0) {
-    //it's an update, remove the stale httpinfo 
+    //it's an update, remove the stale httpinfo
     _httpInfoVector.remove(m_alt_index, false);
   }
 
@@ -825,7 +825,7 @@ NewCacheVC::_writeHttpInfo()
 
     _httpInfoVector.insert(&_writeCacheHttpInfo);
 
-    _writeCacheHttpInfo.clear();        //prevent double destroy   
+    _writeCacheHttpInfo.clear();        //prevent double destroy
 
 
     // get the length of the marshaled vector and create a buffer for it

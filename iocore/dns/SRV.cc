@@ -21,16 +21,16 @@
   limitations under the License.
  */
 
-/* 
-  
-  indent -ncs -nut -npcs -l 132 -br SRV.cc 
-  
+/*
+
+  indent -ncs -nut -npcs -l 132 -br SRV.cc
+
         Support for SRV records
-        
+
         http://www.faqs.org/rfcs/rfc2782.html
         http://www.nongnu.org/ruli/
         http://libsrv.cvs.sourceforge.net/libsrv/libsrv/src/libsrv.c
-        
+
 */
 
 #include "P_DNS.h"
@@ -39,7 +39,7 @@ struct HostDBRoundRobin;
 
 ClassAllocator<SRV> SRVAllocator("SRVAllocator");
 
-/* 
+/*
 To select a target to be contacted next, arrange all SRV RRs
 (that have not been ordered yet) in any order, except that all
 those with weight 0 are placed at the beginning of the list.
@@ -78,7 +78,7 @@ SRVHosts::getWeightedHost(char *ret_val)
     goto err;
   }
 
-  /* Step 1/2 Sort based on 'priority': handled by operator< 
+  /* Step 1/2 Sort based on 'priority': handled by operator<
    */
 
   hosts.sort();

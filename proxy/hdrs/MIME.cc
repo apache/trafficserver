@@ -1099,7 +1099,7 @@ mime_hdr_destroy(HdrHeap * heap, MIMEHdrImpl * mh)
   mime_hdr_destroy_field_block_list(heap, mh->m_first_fblock.m_next);
 
   // INKqa11458: if we deallocate mh here and call INKMLocRelease
-  // again, the plugin fails in assert. We leave deallocating to 
+  // again, the plugin fails in assert. We leave deallocating to
   // the plugin using INKMLocRelease
 
   //heap->deallocate_obj(mh);
@@ -1115,7 +1115,7 @@ mime_hdr_copy_onto(MIMEHdrImpl * s_mh, HdrHeap * s_heap, MIMEHdrImpl * d_mh, Hdr
   MIMEFieldBlockImpl *s_fblock, *d_fblock, *prev_d_fblock;
 
   // If there are chained field blocks beyond the first one, we're just going to
-  //   destroy them.  Ideally, we'd use them if the copied in header needed 
+  //   destroy them.  Ideally, we'd use them if the copied in header needed
   //   extra blocks.  It's too late in the Tomcat code cycle to implement
   //   reuse.
   if (d_mh->m_first_fblock.m_next) {
@@ -2841,8 +2841,8 @@ mime_parser_parse(MIMEParser * parser,
     field_name_first = line_c;
         /**
 	 * Fix for INKqa09141. The is_token function fails for '@' character.
-	 * Header names starting with '@' signs are valid headers. Hence we 
-	 * have to add one more check to see if the first parameter is '@' 
+	 * Header names starting with '@' signs are valid headers. Hence we
+	 * have to add one more check to see if the first parameter is '@'
 	 * character then, the header name is valid.
 	 **/
     if ((!ParseRules::is_token(*field_name_first)) && (*field_name_first != '@'))
@@ -3146,7 +3146,7 @@ mime_str_u16_set(HdrHeap * heap, const char *s_str, inku16 s_len, const char **d
 {
   // INKqa08287 - keep track of free string space.
   //  INVARIENT: passed in result pointers must be to
-  //    either NULL or be valid ptr for a string already 
+  //    either NULL or be valid ptr for a string already
   //    the string heaps
   heap->free_string(*d_str, *d_len);
 
@@ -3616,17 +3616,17 @@ mime_parse_uint(const char *buf, const char *end)
   table shows string, hash (24 bit values of 3 characters), and the
   resulting string index.
 
-        Fri 0x467269 5    Apr 0x417072 3 
-        Mon 0x4D6F6E 1    Aug 0x417567 7 
+        Fri 0x467269 5    Apr 0x417072 3
+        Mon 0x4D6F6E 1    Aug 0x417567 7
         Sat 0x536174 6    Dec 0x446563 11
-        Sun 0x53756E 0    Feb 0x466562 1 
-        Thu 0x546875 4    Jan 0x4A616E 0 
-        Tue 0x547565 2    Jul 0x4A756C 6 
-        Wed 0x576564 3    Jun 0x4A756E 5 
-                          Mar 0x4D6172 2 
-                          May 0x4D6179 4 
+        Sun 0x53756E 0    Feb 0x466562 1
+        Thu 0x546875 4    Jan 0x4A616E 0
+        Tue 0x547565 2    Jul 0x4A756C 6
+        Wed 0x576564 3    Jun 0x4A756E 5
+                          Mar 0x4D6172 2
+                          May 0x4D6179 4
                           Nov 0x4E6F76 10
-                          Oct 0x4F6374 9 
+                          Oct 0x4F6374 9
                           Sep 0x536570 8
 
   -------------------------------------------------------------------------*/

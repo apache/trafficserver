@@ -59,7 +59,7 @@ public:
 
   char *memchr(int c, int len = INT_MAX, int offset = 0);
 
-  // consume data 
+  // consume data
   int read(char *buf, int len);
 
   // does not consume data

@@ -24,15 +24,15 @@
 /*
  * append-transform.c:  an example program that appends the text
  *                      contained in a file to all HTTP/text response
- *                      bodies.  
- *                    
+ *                      bodies.
  *
  *
- *    Usage:    
+ *
+ *    Usage:
  *     (NT): AppendTransform.dll <filename>
  *     (Solaris): append-transform.so <filename>
- * 
- *              <filename> is the name of the file containing the 
+ *
+ *              <filename> is the name of the file containing the
  *              text to be appended
  *
  */

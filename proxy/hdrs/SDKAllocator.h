@@ -25,9 +25,9 @@
 
    SDKAllocator.h
 
-   Description: 
+   Description:
 
-   
+
  ****************************************************************************/
 
 #ifndef _SDK_ALLOCATOR_H_

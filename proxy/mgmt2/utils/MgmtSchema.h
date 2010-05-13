@@ -30,8 +30,8 @@
  *
  *  MgmtSchema.h - Functions for interfacing to manage Traffic Server Schema
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "ink_hash_table.h"

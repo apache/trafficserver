@@ -381,7 +381,7 @@ safe_kill(const char *lockfile_name, const char *pname, bool group)
 }
 
 
-// ink_hrtime milliseconds() 
+// ink_hrtime milliseconds()
 //
 // Returns the result of gettimeofday converted to
 // one 64bit int
@@ -1315,7 +1315,7 @@ heartbeat_server()
       // INKqa02622: Change the ALRM signal handler while
       //   trying to kill the process since if a core
       //   is being written, it could take a long time
-      //   Set a new alarm so that we can print warnings 
+      //   Set a new alarm so that we can print warnings
       //   if it is taking too long to kill the server
       //
       safe_kill(server_lockfile, server_binary, false);
@@ -1763,7 +1763,7 @@ static void
 init_config_dir()
 {
   // Fix INKqa05946
-  // 
+  //
   // The traffic_cop binary should be run from either the TS root
   // directory or the bin/ directory. In either case, there should
   // always be a etc/trafficserver directory there.
@@ -1815,11 +1815,11 @@ init_config_dir()
       exit(1);
     }
   }
-  
+
   snprintf(local_state_dir, sizeof(config_dir), DEFAULT_LOCAL_STATE_DIRECTORY);
   if (stat(local_state_dir, &info) < 0) {
     // Try 'root_dir/var/trafficserver' directory
-    snprintf(local_state_dir, sizeof(local_state_dir), 
+    snprintf(local_state_dir, sizeof(local_state_dir),
              "%s%s%s%s%s",root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
     if (stat(local_state_dir, &info) < 0) {
       cop_log(COP_FATAL, "unable to locate local state directory '%s'\n",local_state_dir);
@@ -1912,7 +1912,7 @@ int
 main(int argc, char *argv[])
 {
   int fd;
-  appVersionInfo.setup(PACKAGE_NAME,"traffic_cop", PACKAGE_VERSION, __DATE__, 
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_cop", PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   for (int i = 1; i < argc; i++) {

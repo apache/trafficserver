@@ -25,12 +25,12 @@
 
   ClusterHashStandalone.h
 
-  
+
  ****************************************************************************/
 
 /*
   Takes: escapified URL: http://www.foo.com/lookup?some+thing+to+find
-  Returns: the machine IP address or -1 (0xFFFFFFFF) on error 
+  Returns: the machine IP address or -1 (0xFFFFFFFF) on error
   */
 unsigned int standalone_machine_hash(char *url);
 

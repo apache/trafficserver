@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-/* 
- *                   
+/*
  *
  *
- *	Usage:	
+ *
+ *	Usage:
  * 	(NT): psi.dll
  *	(Solaris): psi.so
  *
@@ -39,7 +39,7 @@
  *  The plugin illustrates how to use a pool of threads in order to do blocking
  *  calls (here, some disk i/o) in a Traffic Server plugin.
  *
- *  
+ *
  *   Details:
  *
  *  Refer to README file.
@@ -138,7 +138,7 @@ static int trylock_handler(INKCont contp, INKEvent event, void *edata);
   Allocate and initialize a ContData structure associated to a transaction
 
   Input:
-  Output:  
+  Output:
   Return Value:
     Pointer on a new allocated ContData structure
   -------------------------------------------------------------------------*/

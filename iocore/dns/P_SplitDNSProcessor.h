@@ -25,7 +25,7 @@
  *
  * P_SplitDNSProcessor.h - Interface to DNS server selection
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _P_SPLIT_DNSProcessor_H_
@@ -78,8 +78,8 @@ struct SplitDNSResult
 
   SplitDNSResult();
 
-  /* ------------ 
-     public 
+  /* ------------
+     public
      ------------ */
 
   DNSResultType r;
@@ -87,8 +87,8 @@ struct SplitDNSResult
   DNSServer *get_dns_record();
   int get_dns_srvr_count();
 
-  /* ------------ 
-     private 
+  /* ------------
+     private
      ------------ */
   int m_line_number;
 

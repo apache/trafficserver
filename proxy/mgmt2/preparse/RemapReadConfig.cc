@@ -114,7 +114,7 @@ parseRemapFile(int fd)
         fromScheme = fromURL.scheme_get(&fromSchemeLen);
         toScheme = toURL.scheme_get(&toSchemeLen);
 
-        if ((fromScheme != URL_SCHEME_HTTP 
+        if ((fromScheme != URL_SCHEME_HTTP
              && fromScheme != URL_SCHEME_HTTPS
              && fromScheme != URL_SCHEME_MMS && fromScheme != URL_SCHEME_RTSP) ||
             (toScheme != URL_SCHEME_HTTP
@@ -171,7 +171,7 @@ parseRemapFile(int fd)
 
         // INKqa09603
         // check to see if there's an extra tag(RNI/QT/WMT) for Media-IXT
-        if (numToks == 4) {     // there's a tag 
+        if (numToks == 4) {     // there's a tag
           if (strcmp(whiteTok[3], "RNI") != 0 && strcmp(whiteTok[3], "QT") != 0 && strcmp(whiteTok[3], "WMT") != 0) {
             err = "Invalid Tag";
             goto FAIL;

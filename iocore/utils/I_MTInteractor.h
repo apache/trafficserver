@@ -172,7 +172,7 @@ class MTClient:public Continuation { public:
 
     @param t interactor to attach to
     @return return value for state handler.
-    
+
   */
   virtual int startAttach(MTInteractor * t);
 
@@ -196,7 +196,7 @@ class MTClient:public Continuation { public:
 
   /**
     Handler for detached state.
-    
+
   */
   virtual int handleDetached(int event, void *data);
 
@@ -211,14 +211,14 @@ class MTClient:public Continuation { public:
   };
 private:
   /**
-    Intermediate state when trying to attach. 
-    
+    Intermediate state when trying to attach.
+
   */
   int handleAttaching(int event, void *data);
 
   /**
-    Intermediate state when trying to detach. 
-    
+    Intermediate state when trying to detach.
+
   */
   int handleDetaching(int event, void *data);
 

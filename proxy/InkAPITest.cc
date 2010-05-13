@@ -351,7 +351,7 @@ REGRESSION_TEST(SDK_API_INKNetVConn) (RegressionTest * test, int atype, int *pst
 //////////////////////////////////////////////
 
 // INKVConnAbort can't be tested
-// Fix me: test INKVConnShutdown, INKCacheKeyDataTypeSet, 
+// Fix me: test INKVConnShutdown, INKCacheKeyDataTypeSet,
 //         INKCacheKeyHostNameSet, INKCacheKeyPinnedSet
 
 // Logic of the test:
@@ -410,7 +410,7 @@ cache_handler(INKCont contp, INKEvent event, void *data)
     cache_vconn->out_bufp = INKIOBufferCreate();
     cache_vconn->out_readerp = INKIOBufferReaderAlloc(cache_vconn->out_bufp);
 
-    // Write content into upstream IOBuffer         
+    // Write content into upstream IOBuffer
     ntodo = OBJECT_SIZE;
     ndone = 0;
     while (ntodo > 0) {
@@ -796,7 +796,7 @@ REGRESSION_TEST(SDK_API_INKCache) (RegressionTest * test, int atype, int *pstatu
 //                    INKfwrite
 //////////////////////////////////////////////
 
-// Used to create tmp file 
+// Used to create tmp file
 //#define TMP_DIR "/var/tmp"
 #define	PFX	"plugin.config"
 
@@ -805,9 +805,9 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
 
   char write_file_name[256];
 
-  INKFile source_read_file;     // existing file 
-  INKFile write_file;           // to be created 
-  INKFile cmp_read_file;        // read & compare 
+  INKFile source_read_file;     // existing file
+  INKFile write_file;           // to be created
+  INKFile cmp_read_file;        // read & compare
 
   char input_buffer[BUFSIZ];
   char cmp_buffer[BUFSIZ];
@@ -873,7 +873,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
 
   memset(input_buffer, '\0', BUFSIZ);
 
-  // source_read_file and input_file_full_path are the same file 
+  // source_read_file and input_file_full_path are the same file
   if (stat(input_file_full_path, &stat_buffer_input) != 0) {
     SDK_RPRINT(test, "stat", "std func", TC_FAIL, "source file and input file messed up");
     error_counter++;
@@ -950,7 +950,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
     return;
   }
 
-  INKfflush(write_file);        // write_file should point to write_file_name 
+  INKfflush(write_file);        // write_file should point to write_file_name
 
   if (stat(write_file_name, &stat_buffer_post) != 0) {
     SDK_RPRINT(test, "stat", "std func", TC_FAIL, "INKfflush error");
@@ -980,8 +980,8 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
     return;
   }
 
-  // INKfread    
-  // open again for reading 
+  // INKfread
+  // open again for reading
   cmp_read_file = INKfopen(write_file_name, "r");
   if (cmp_read_file == NULL) {
     SDK_RPRINT(test, "INKfopen", "TestCase3", TC_FAIL, "can't open file for reading");
@@ -998,7 +998,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
 
   read_amount = (stat_buffer_input.st_size <= (off_t)sizeof(cmp_buffer)) ? (stat_buffer_input.st_size) : (sizeof(cmp_buffer));
 
-  // INKfread on read file 
+  // INKfread on read file
   read = INKfread(cmp_read_file, cmp_buffer, read_amount);
   if (read != read_amount) {
     SDK_RPRINT(test, "INKfread", "TestCase1", TC_FAIL, "can't reading");
@@ -1016,7 +1016,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
   } else
     SDK_RPRINT(test, "INKfread", "TestCase1", TC_PASS, "ok");
 
-  // compare input_buffer and cmp_buffer buffers 
+  // compare input_buffer and cmp_buffer buffers
   if (memcmp(input_buffer, cmp_buffer, read_amount) != 0) {
     SDK_RPRINT(test, "INKfread", "TestCase2", TC_FAIL, "reading error");
     error_counter++;
@@ -1033,7 +1033,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
   } else
     SDK_RPRINT(test, "INKfread", "TestCase2", TC_PASS, "ok");
 
-  // remove the tmp file 
+  // remove the tmp file
   if (unlink(write_file_name) != 0) {
     SDK_RPRINT(test, "unlink", "std func", TC_FAIL, "can't remove temp file");
   }
@@ -1091,10 +1091,10 @@ thread_create_handler(void *arg)
   return NULL;
 }
 
-// Fix me: Solaris threads/Win2K threads tests 
+// Fix me: Solaris threads/Win2K threads tests
 
-// Argument data passed to thread init functions 
-//  cannot be allocated on the stack. 
+// Argument data passed to thread init functions
+//  cannot be allocated on the stack.
 
 REGRESSION_TEST(SDK_API_INKThread) (RegressionTest * test, int atype, int *pstatus) {
 
@@ -1153,7 +1153,7 @@ pthread_start_func(void *arg)
   } else
     SDK_RPRINT(SDK_ThreadInit_test, "INKThreadInit", "TestCase2", TC_PASS, "ok");
 
-  // Clean up this thread 
+  // Clean up this thread
   if (temp_thread)
     INKThreadDestroy(temp_thread);
 
@@ -1333,7 +1333,7 @@ cont_data_handler(INKCont contp, INKEvent event, void *edata)
 
     *SDK_ContData_pstatus = REGRESSION_TEST_PASSED;
   } else {
-    // If we get bad data, it's a failure 
+    // If we get bad data, it's a failure
     SDK_RPRINT(SDK_ContData_test, "INKContDataSet", "TestCase1", TC_FAIL, "bad data");
     SDK_RPRINT(SDK_ContData_test, "INKContDataGet", "TestCase1", TC_FAIL, "bad data");
 
@@ -1426,7 +1426,7 @@ cont_schedule_handler(INKCont contp, INKEvent event, void *edata)
     SDK_RPRINT(SDK_ContSchedule_test, "INKContSchedule", "TestCase2", TC_PASS, "ok");
     tc2_count++;
   } else {
-    // If we receive a bad event, it's a failure 
+    // If we receive a bad event, it's a failure
     SDK_RPRINT(SDK_ContSchedule_test, "INKContSchedule", "TestCase1|2",
                TC_FAIL, "received unexpected event number %d", event);
     *SDK_ContSchedule_pstatus = REGRESSION_TEST_FAILED;
@@ -1448,8 +1448,8 @@ cont_schedule_handler(INKCont contp, INKEvent event, void *edata)
 
 /* Mutex */
 
-/* 
-   Fix me: test for grabbing the mutex from two 
+/*
+   Fix me: test for grabbing the mutex from two
    different threads.
    */
 
@@ -2722,7 +2722,7 @@ test_url_print(INKMBuffer bufp, INKMLoc hdr_loc)
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
        the loop. A block with no data to read means we've exhausted
-       buffer of data since if there was more data on a later 
+       buffer of data since if there was more data on a later
        block in the chain, this block would have been skipped over */
     if (block_avail == 0) {
       break;
@@ -3579,7 +3579,7 @@ REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *psta
     SDK_RPRINT(test, "INKHttpHdrReasonLookup", "TestCase4", TC_PASS, "ok");
   }
 
-  // Copy 
+  // Copy
   if (test_passed_Http_Hdr_Create == true) {
     if (INKHttpHdrCopy(bufp3, hdr_loc3, bufp1, hdr_loc1) == INK_ERROR) {
       SDK_RPRINT(test, "INKHttpHdrCopy", "TestCase1", TC_FAIL, "INKHttpHdrCopy returns INK_ERROR");
@@ -3769,7 +3769,7 @@ REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *psta
     SDK_RPRINT(test, "INKHttpHdrCopy", "All Test Cases", TC_PASS, "Cannot run test as INKHttpHdrCreate has failed");
   }
 
-  // Clone 
+  // Clone
   if (test_passed_Http_Hdr_Create == true) {
     if ((hdr_loc4 = INKHttpHdrClone(bufp4, bufp1, hdr_loc1)) == INK_ERROR_PTR) {
       SDK_RPRINT(test, "INKHttpHdrClone", "TestCase1", TC_FAIL, "INKHttpHdrClone returns INK_ERROR_PTR");
@@ -5217,7 +5217,7 @@ convert_http_hdr_to_string(INKMBuffer bufp, INKMLoc hdr_loc)
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
        the loop. A block with no data to read means we've exhausted
-       buffer of data since if there was more data on a later 
+       buffer of data since if there was more data on a later
        block in the chain, this block would have been skipped over */
     if (block_avail == 0) {
       break;
@@ -5410,19 +5410,19 @@ REGRESSION_TEST(SDK_API_INKHttpHdrParse) (RegressionTest * test, int atype, int 
 //////////////////////////////////////////////
 //       SDK_API_INKMimeHdrParse
 //
-// Unit Test for API: INKMimeHdrCopy 
+// Unit Test for API: INKMimeHdrCopy
 //                    INKMimeHdrClone
-//                    INKMimeHdrFieldCopy 
-//                    INKMimeHdrFieldClone 
-//                    INKMimeHdrFieldCopyValues 
-//                    INKMimeHdrFieldNextDup 
-//                    INKMimeHdrFieldRemove 
-//                    INKMimeHdrLengthGet 
-//                    INKMimeHdrParse 
-//                    INKMimeHdrPrint 
-//                    INKMimeParserClear 
-//                    INKMimeParserCreate 
-//                    INKMimeParserDestroy 
+//                    INKMimeHdrFieldCopy
+//                    INKMimeHdrFieldClone
+//                    INKMimeHdrFieldCopyValues
+//                    INKMimeHdrFieldNextDup
+//                    INKMimeHdrFieldRemove
+//                    INKMimeHdrLengthGet
+//                    INKMimeHdrParse
+//                    INKMimeHdrPrint
+//                    INKMimeParserClear
+//                    INKMimeParserCreate
+//                    INKMimeParserDestroy
 //                    INKHandleMLocRelease
 //                    INKHandleStringRelease
 //////////////////////////////////////////////
@@ -5475,7 +5475,7 @@ convert_mime_hdr_to_string(INKMBuffer bufp, INKMLoc hdr_loc)
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
        the loop. A block with no data to read means we've exhausted
-       buffer of data since if there was more data on a later 
+       buffer of data since if there was more data on a later
        block in the chain, this block would have been skipped over */
     if (block_avail == 0) {
       break;
@@ -6948,7 +6948,7 @@ ssn_handler(INKCont contp, INKEvent event, void *edata)
 
       // transaction is over. clean up.
       synclient_txn_delete(data->browser);
-      /* Don't need it as didn't initialize the server 
+      /* Don't need it as didn't initialize the server
          synserver_delete(data->os);
        */
       data->magic = MAGIC_DEAD;
@@ -7339,8 +7339,8 @@ handle_transform(INKCont contp)
     data->output_buffer = INKIOBufferCreate();
     data->output_reader = INKIOBufferReaderAlloc(data->output_buffer);
     data->output_vio = INKVConnWrite(output_conn, contp, data->output_reader, towrite);
-    // Don't need this as the structure is encapsulated in another structure 
-    // which is set to be Continuation's Data. 
+    // Don't need this as the structure is encapsulated in another structure
+    // which is set to be Continuation's Data.
     // INKContDataSet (contp, data);
   }
 
@@ -7708,7 +7708,7 @@ transform_hook_handler(INKCont contp, INKEvent event, void *edata)
       // for squid log: if this is the last (or only) test in your
       // regression run you will not see any log entries in squid
       // (because logging is buffered and not flushed before
-      // termination when running regressions) 
+      // termination when running regressions)
       // sleep(10);
       break;
     default:
@@ -8092,7 +8092,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo) (RegressionTest * test, int atype
 // 2 Test cases.
 //
 // Same test strategy:
-//  - create a synthetic server listening on port A 
+//  - create a synthetic server listening on port A
 //  - use HttpConnect to send a request to TS for an url on a remote host H, port B
 //  - use TxnIntercept or TxnServerIntercept to forward the request
 //    to the synthetic server on local host, port A

@@ -24,7 +24,7 @@
 /***************************************************************************
  LogFormat.cc
 
- 
+
  ***************************************************************************/
 
 #include "ink_config.h"
@@ -74,7 +74,7 @@ const char *const
   "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
   "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> " "%<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>";
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFormat::setup
   -------------------------------------------------------------------------*/
 
@@ -111,7 +111,7 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
   }
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFormat::id_from_name
   -------------------------------------------------------------------------*/
 
@@ -137,7 +137,7 @@ ink32 LogFormat::id_from_name(const char *name)
   return id;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFormat::init_variables
   -------------------------------------------------------------------------*/
 
@@ -399,9 +399,9 @@ LogFormat::format_from_specification(char *spec, char **file_name, char **file_h
   SimpleTokenizer tok(spec, ':');
 
   //
-  // Divide the specification string into tokens using the ':' as a 
-  // field separator.  There are currently eight (8) tokens that comprise 
-  // a format specification.  Verify each of the token values and if 
+  // Divide the specification string into tokens using the ':' as a
+  // field separator.  There are currently eight (8) tokens that comprise
+  // a format specification.  Verify each of the token values and if
   // everything looks ok, then build the LogFormat object.
   //
   // First should be the "format" keyword that says this is a format spec.
@@ -643,7 +643,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   return field_count;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFormat::parse_format_string
 
   This function will parse a custom log format string, which is a

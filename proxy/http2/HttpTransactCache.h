@@ -26,7 +26,7 @@
    HttpTransactCache.h --
    Created On      : Thu Mar 26 17:19:35 1998
 
-   
+
  ****************************************************************************/
 #if !defined (_HttpTransactCache_h_)
 #define _HttpTransactCache_h_

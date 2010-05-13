@@ -27,7 +27,7 @@
    Created On      : Fri Feb  5 18:22:05 1999
 
    Description:
-   
+
 
  ****************************************************************************/
 #include "inktomi++.h"
@@ -104,10 +104,10 @@ init_system_dirs(void)
 
   if ((err = stat(system_config_directory, &s)) < 0) {
     // Try 'system_root_dir/etc/trafficserver' directory
-    snprintf(system_config_directory, sizeof(system_config_directory), 
+    snprintf(system_config_directory, sizeof(system_config_directory),
              "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
     if ((err = stat(system_config_directory, &s)) < 0) {
-      fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n", 
+      fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n",
               system_config_directory, err, errno, strerror(errno));
       fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
       _exit(1);
@@ -116,10 +116,10 @@ init_system_dirs(void)
 
   if ((err = stat(system_local_state_dir, &s)) < 0) {
     // Try 'system_root_dir/var/trafficserver' directory
-    snprintf(system_local_state_dir, sizeof(system_local_state_dir), 
+    snprintf(system_local_state_dir, sizeof(system_local_state_dir),
              "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
     if ((err = stat(system_local_state_dir, &s)) < 0) {
-      fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n", 
+      fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n",
               system_local_state_dir, err, errno, strerror(errno));
       fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
       _exit(1);
@@ -131,7 +131,7 @@ init_system_dirs(void)
     snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
              system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
     if ((err = stat(system_log_dir, &s)) < 0) {
-      fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n", 
+      fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
               system_log_dir, err, errno, strerror(errno));
       fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
       _exit(1);
@@ -248,7 +248,7 @@ init_system_logging()
 }
 */
 
-void 
+void
 init_system_adjust_num_of_net_threads(void)
 {
   float autoconfig_scale = 1.0;
@@ -331,7 +331,7 @@ init_system_reconfigure_diags(void)
   diags->deactivate_all(DiagsTagType_Action);
 
   //////////////////////////////////////////////////////////////////////
-  //                     add new tag tables 
+  //                     add new tag tables
   //////////////////////////////////////////////////////////////////////
   if (diags->base_debug_tags)
     diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
@@ -419,9 +419,9 @@ initialize_standalone()
   // Local process manager
   initialize_process_manager();
 
-  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags)); 
-  diags = diagsConfig->diags; 
-  diags_init = 1; 
+  diagsConfig = NEW(new DiagsConfig(error_tags, action_tags));
+  diags = diagsConfig->diags;
+  diags_init = 1;
   eventProcessor.start(num_of_net_threads);
 
   // Set up IO Buffers
@@ -435,9 +435,9 @@ initialize_standalone()
   if (default_large_iobuffer_size > max_iobuffer_size)
     default_large_iobuffer_size = max_iobuffer_size;
 
-  init_buffer_allocators(); 
+  init_buffer_allocators();
 
-  netProcessor.start(); 
+  netProcessor.start();
 
   return;
 }
@@ -465,10 +465,10 @@ void initialize_process_manager()
 
   if ((err = stat(management_directory, &s)) < 0) {
     // Try 'system_root_dir/etc/trafficserver' directory
-    snprintf(management_directory, sizeof(management_directory), 
+    snprintf(management_directory, sizeof(management_directory),
              "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
     if ((err = stat(management_directory, &s)) < 0) {
-      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n", 
+      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n",
                 management_directory, err, errno, strerror(errno));
       fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
       _exit(1);
@@ -514,6 +514,6 @@ void initialize_process_manager()
   //             RECP_NULL);
 }
 
-#endif 
+#endif
 
 

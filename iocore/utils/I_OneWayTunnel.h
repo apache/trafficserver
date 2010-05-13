@@ -69,7 +69,7 @@ struct OneWayTunnel:Continuation
   //
 
   //  Copy nbytes from vcSource to vcTarget.  When done, call
-  //  aCont back with either VC_EVENT_EOS (on success) or 
+  //  aCont back with either VC_EVENT_EOS (on success) or
   //  VC_EVENT_ERROR (on error)
   //
 
@@ -144,7 +144,7 @@ struct OneWayTunnel:Continuation
     @param aCont The Continuation to call back when the tunnel
       finishes. If not specified, the tunnel deallocates itself without
       calling back anybody.
-    @param SourceVio VIO of the vcSource. 
+    @param SourceVio VIO of the vcSource.
     @param reader IOBufferReader that reads from the vcSource. This
       reader is provided to vcTarget.
     @param aclose_source if true, the tunnel closes vcSource at the
@@ -159,14 +159,14 @@ struct OneWayTunnel:Continuation
 
   /**
     Use this init function if both the read and the write sides have
-    already been setup. The tunnel assumes that the read VC and the 
+    already been setup. The tunnel assumes that the read VC and the
     write VC are using the same buffer and frees that buffer
     when the transfer is done (either successful or unsuccessful)
-    @param aCont The Continuation to call back when the tunnel finishes. If 
+    @param aCont The Continuation to call back when the tunnel finishes. If
     not specified, the tunnel deallocates itself without calling back
     anybody.
 
-    @param SourceVio read VIO of the Source VC. 
+    @param SourceVio read VIO of the Source VC.
     @param TargetVio write VIO of the Target VC.
     @param aclose_source if true, the tunnel closes vcSource at the
       end. If aCont is not specified, this should be set to true.

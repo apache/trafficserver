@@ -23,11 +23,11 @@
 
 /*
  *   createCommand.c --
- * 
+ *
  *
  *    This file provides basic create command definition,
  *    for any new commands.
- * 
+ *
  *    It overrides any existing commands with the new command
  *    without any warning
  *
@@ -59,7 +59,7 @@ createCommand(const char *cmdName, Tcl_CmdProc cmdFuncPtr,
   /* No code to support threads for Tcl */
 
   /* If required add thread Specific code
-     here 
+     here
      Hint: Use Tcl_GetThreadData
 
    */
@@ -148,7 +148,7 @@ int
 cmd_ok()
 {
   /* if it called many times, the interperter will store only
-     the latest. 
+     the latest.
    */
   Tcl_AppendElement(interp, "+OK");
   return TCL_OK;

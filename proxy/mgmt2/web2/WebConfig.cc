@@ -49,13 +49,13 @@
 
 //-------------------------------------------------------------------------
 // convertRules
-//------------------------------------------------------------------------- 
+//-------------------------------------------------------------------------
 // "list" contains the indices of the invalid rules in the "rules" array
 // Need to convert all the rules into displayable format and put it
-// into a buffer. 
+// into a buffer.
 // Return an allocated buffer containing the HTML of the invalid rules
-// that will appear in "Rule" format. Returns NULL if error. 
-// Note, that it will dequeue the elements from errRules list, but will 
+// that will appear in "Rule" format. Returns NULL if error.
+// Note, that it will dequeue the elements from errRules list, but will
 // not free it (it is up to the caller to free the INKIntList)
 //
 char *
@@ -108,7 +108,7 @@ convertRules(INKFileNameT file, INKIntList errRules, char *rules[])
     case INK_FNAME_VADDRS:
       rule = formatVaddrsRule(rules[*index]);
       break;
-    default:                   // UH-OH!!! 
+    default:                   // UH-OH!!!
       goto Lerror;
     }
     if (rule) {
@@ -819,14 +819,14 @@ updateCacheConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateCacheConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -880,7 +880,7 @@ updateCacheConfig(char *rules[], int numRules, char **errBuff)
     // FIXME: lots of parsing and conversion to do - similar to CfgContextUtils.cc
     // secondary specifiers
 
-    // time    
+    // time
     if (strlen(tokens[3]) > 0) {
       if (string_to_time_struct(tokens[3], &(pdss->sec_spec)) != INK_ERR_OKAY) {
         ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
@@ -975,14 +975,14 @@ updateFilterConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateFilterConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -1033,7 +1033,7 @@ updateFilterConfig(char *rules[], int numRules, char **errBuff)
     // FIXME: lots of parsing and conversion to do - similar to CfgContextUtils.cc
     // secondary specifiers
 
-    // time    
+    // time
     if (strlen(tokens[3]) > 0) {
       if (string_to_time_struct(tokens[3], &(pdss->sec_spec)) != INK_ERR_OKAY) {
         ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
@@ -1136,9 +1136,9 @@ Lerror:
 //-------------------------------------------------------------------------
 // updateFilterConfigPassword
 //-------------------------------------------------------------------------
-// Create new rule by reading the values from the form which are specified in 
+// Create new rule by reading the values from the form which are specified in
 // WebConfigRender::writeFilterConfigForm(). Be sure to encrypt the password
-// and create a bind_pwd_file. 
+// and create a bind_pwd_file.
 int
 updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
 {
@@ -1157,24 +1157,24 @@ updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
 
   memset(ruleStr, 0, MAX_RULE_LENGTH);
 
-  // make sure all required fields are specified 
+  // make sure all required fields are specified
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "rule_type", (void **) &rule_type);
   if (!rule_type) {
-    valid = false;              // ERROR: this must be specified! 
+    valid = false;              // ERROR: this must be specified!
   } else {
     snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Rule Type=%s%s", rule_type, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "pd_type", (void **) &pd_type);
   if (table_lookup_value && !pd_type) {
-    valid = false;              // ERROR: this must be specified! 
+    valid = false;              // ERROR: this must be specified!
   } else {
     snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "%s=", pd_type);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "pd_val", (void **) &pd_val);
   if (table_lookup_value && !pd_val) {
-    valid = false;              // ERROR: this must be specified! 
+    valid = false;              // ERROR: this must be specified!
   } else {
     snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "%s%s", pd_val, HTML_DELIM);
   }
@@ -1222,7 +1222,7 @@ updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "hdr_type", (void **) &hdr_type);
   // coverity[DEADCODE]
   if (table_lookup_value && hdr_type) {
-    valid = false;              // ERROR: this should not be specified! 
+    valid = false;              // ERROR: this should not be specified!
     snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Header Type=%s%s", hdr_type,
                  HTML_DELIM);
   }
@@ -1268,14 +1268,14 @@ updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "bind_dn", (void **) &bind_dn);
   if (table_lookup_value && !bind_dn) {
-    valid = false;              // ERROR: should have 
+    valid = false;              // ERROR: should have
   } else {
     snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Bind DN=%s%s", bind_dn, HTML_DELIM);
   }
 
   table_lookup_value = ink_hash_table_lookup(whc->post_data_ht, "bind_pwd", (void **) &bind_pwd);
   if (table_lookup_value && !bind_pwd) {
-    valid = false;              // ERROR: should have    
+    valid = false;              // ERROR: should have
   } else {
     snprintf(ruleStr + strlen(ruleStr), MAX_RULE_LENGTH - strlen(ruleStr), "Bind Password=%s%s", bind_pwd,
                  HTML_DELIM);
@@ -1284,7 +1284,7 @@ updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
   if (!valid)
     goto Lerror_commit;
 
-  // add the rule to end of the file 
+  // add the rule to end of the file
   ctx = INKCfgContextCreate(INK_FNAME_FILTER);
   if (!ctx) {
     Debug("config", "[updateFilterConfigPassword] can't allocate ctx memory");
@@ -1343,7 +1343,7 @@ updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
     Debug("config", "[updateFilterConfigPassword] invalid rule - SKIP");
   }
 
-  // time    
+  // time
   if (time) {
     if (string_to_time_struct(time, &(pdss->sec_spec)) != INK_ERR_OKAY) {
       ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
@@ -1415,7 +1415,7 @@ updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
   if (bind_dn) {
     ele->bind_dn = xstrdup(bind_dn);
   }
-  if (bind_pwd) {               // encrypt the password 
+  if (bind_pwd) {               // encrypt the password
     char *pwd_file = encryptToFileAuth_malloc(bind_pwd);
     if (pwd_file) {
       ele->bind_pwd_file = pwd_file;
@@ -1476,14 +1476,14 @@ updateHostingConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateHostingConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -1515,7 +1515,7 @@ updateHostingConfig(char *rules[], int numRules, char **errBuff)
       Debug("config", "[updateHostingConfig] invalid rule - SKIP");
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list     
+    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
@@ -1557,14 +1557,14 @@ updateIcpConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateIcpConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -1644,7 +1644,7 @@ updateIcpConfig(char *rules[], int numRules, char **errBuff)
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list     
+    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
@@ -1687,14 +1687,14 @@ updateIpAllowConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateIpAllowConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -1704,7 +1704,7 @@ updateIpAllowConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[0]) > 0) {
       ele->src_ip_addr = string_to_ip_addr_ele(tokens[0]);
     }
-    // ip action 
+    // ip action
     if (strlen(tokens[1]) > 0) {
       if (strcmp(tokens[1], "ip_allow") == 0) {
         ele->action = INK_IP_ALLOW_ALLOW;
@@ -1716,7 +1716,7 @@ updateIpAllowConfig(char *rules[], int numRules, char **errBuff)
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list     
+    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
@@ -1759,14 +1759,14 @@ updateMgmtAllowConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateMgmtAllowConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -1776,7 +1776,7 @@ updateMgmtAllowConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[0]) > 0) {
       ele->src_ip_addr = string_to_ip_addr_ele(tokens[0]);
     }
-    // ip action 
+    // ip action
     if (strlen(tokens[1]) > 0) {
       if (strcmp(tokens[1], "ip_allow") == 0) {
         ele->action = INK_MGMT_ALLOW_ALLOW;
@@ -1788,7 +1788,7 @@ updateMgmtAllowConfig(char *rules[], int numRules, char **errBuff)
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list     
+    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
@@ -1831,14 +1831,14 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateParentConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -1872,7 +1872,7 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
     // FIXME: lots of parsing and conversion to do - similar to CfgContextUtils.cc
     // secondary specifiers
 
-    // time    
+    // time
     if (strlen(tokens[2]) > 0) {
       if (string_to_time_struct(tokens[2], &(pdss->sec_spec)) != INK_ERR_OKAY) {
         ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
@@ -1997,14 +1997,14 @@ updatePartitionConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updatePartitionConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -2046,7 +2046,7 @@ updatePartitionConfig(char *rules[], int numRules, char **errBuff)
       Debug("config", "[updatePartitionConfig] invalid size format - SKIP");
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list     
+    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
@@ -2088,14 +2088,14 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateRemapConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -2127,7 +2127,7 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
       Debug("config", "[updateRemapConfig] invalid scheme - SKIP");
     }
 
-    // from host 
+    // from host
     if (strlen(tokens[2]) > 0) {
       ele->from_host = xstrdup(tokens[2]);
     } else {
@@ -2160,7 +2160,7 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
       Debug("config", "[updateRemapConfig] invalid scheme - SKIP");
     }
 
-    // to host 
+    // to host
     if (strlen(tokens[6]) > 0) {
       ele->to_host = xstrdup(tokens[6]);
     } else {
@@ -2228,14 +2228,14 @@ updateSocksConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateSocksConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -2337,14 +2337,14 @@ updateSplitDnsConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateSplitDnsConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -2393,7 +2393,7 @@ updateSplitDnsConfig(char *rules[], int numRules, char **errBuff)
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list     
+    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
@@ -2435,14 +2435,14 @@ updateUpdateConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateUpdateConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -2486,7 +2486,7 @@ updateUpdateConfig(char *rules[], int numRules, char **errBuff)
       }
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list     
+    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file
@@ -2529,14 +2529,14 @@ updateVaddrsConfig(char *rules[], int numRules, char **errBuff)
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY || INKCfgContextRemoveAll(ctx) != INK_ERR_OKAY) {
     Debug("config", "[updateVaddrsConfig] Failed to Get and Clear CfgContext");
     err = WEB_HTTP_ERR_FAIL;
     goto Lerror;
   }
-  // create Ele's by parsing the rules in the rules array 
+  // create Ele's by parsing the rules in the rules array
   // insert the Ele's into a Cfg Context; if get invalid formatted rule, just skip it
   for (i = 0; i < numRules; i++) {
     tokens.Initialize(rules[i], ALLOW_EMPTY_TOKS);
@@ -2566,7 +2566,7 @@ updateVaddrsConfig(char *rules[], int numRules, char **errBuff)
       Debug("config", "[updateVaddrsConfig] invalid sub-interface - SKIP");
     }
 
-    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list     
+    INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
   }
 
   // commit the CfgContext to write a new version of the file

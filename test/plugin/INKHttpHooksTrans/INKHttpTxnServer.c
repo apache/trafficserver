@@ -47,10 +47,10 @@ const char *const INKEventStrId[] = {
 #define		index(x)	((x)%(1000))
 
 
-/* 
- * handle_dns() from output-header.c: 
- * prints in it's entirety either the 
- * response or the request 
+/*
+ * handle_dns() from output-header.c:
+ * prints in it's entirety either the
+ * response or the request
  * TODO byte for byte buff compare alg that guarantees data integrity for cached and non-cached data buffs
 */
 
@@ -105,7 +105,7 @@ DisplayBufferContents(INKMBuffer bufp, INKMLoc hdr_loc, INKHttpType type)
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
        the loop. A block with no data to read means we've exhausted
-       buffer of data since if there was more data on a later 
+       buffer of data since if there was more data on a later
        block in the chain, this block would have been skipped over */
     if (block_avail == 0) {
       break;
@@ -136,8 +136,8 @@ DisplayBufferContents(INKMBuffer bufp, INKMLoc hdr_loc, INKHttpType type)
 
   INKfree(output_string);
 
-  /* Caller reenable the session/transaction: 
-   * INKHttpTxnReenable (txnp, INK_EVENT_HTTP_CONTINUE); 
+  /* Caller reenable the session/transaction:
+   * INKHttpTxnReenable (txnp, INK_EVENT_HTTP_CONTINUE);
    */
 
 }
@@ -166,8 +166,8 @@ handle_READ_REQUEST_HDR(INKCont cont, INKEvent event, void *eData)
 
   int err = 0, re = 0;
 
-  /* Non-cached, 
-   * get client req after recieving INK_HTTP_READ_REQUEST_HDR_HOOK 
+  /* Non-cached,
+   * get client req after recieving INK_HTTP_READ_REQUEST_HDR_HOOK
    */
   re = INKHttpTxnClientReqGet(txnp, &reqBuf, &reqBufLoc);
   if (re) {
@@ -191,8 +191,8 @@ handle_READ_RESPONSE_HDR(INKCont contp, INKEvent event, void *eData)
 
   int err = 0, re = 0;
 
-  /* Non-cached, 
-   * get "client" resp after recieving INK_HTTP_READ_RESPONSE_HDR_HOOK 
+  /* Non-cached,
+   * get "client" resp after recieving INK_HTTP_READ_RESPONSE_HDR_HOOK
    */
   re = INKHttpTxnClientRespGet(txnp, &respBuf, &respBufLoc);
   if (re) {

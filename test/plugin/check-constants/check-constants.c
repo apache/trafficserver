@@ -24,8 +24,8 @@
 /*****************************************************************************
  * check-constants
  *
- * Description:	This sample plugins simply compares all the constants 
- *				values in the curent ts/ts.h against the values as they 
+ * Description:	This sample plugins simply compares all the constants
+ *				values in the curent ts/ts.h against the values as they
  *				exist in the SDK 2.0 FCS ts/ts.h, and prints them out if they
  *				happen to differ.
  *****************************************************************************/

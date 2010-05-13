@@ -226,7 +226,7 @@ ink_sem_destroy(ink_sem * sp)
 }
 
 #if (HOST_OS == darwin)
-static inline ink_sem * 
+static inline ink_sem *
 ink_sem_open(const char *name , int oflag, mode_t mode, unsigned int value)
 {
   ink_sem *sptr;

@@ -27,8 +27,8 @@
 /****************************************************************************
  *
  *  AutoConf.h - code to generate and delete client autoconf files
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "MultiFile.h"
@@ -53,7 +53,7 @@ public:
   ~AutoConf();
   void processAction(char *submission, textBuffer * output);
   void displayAutoConfPage(textBuffer * output);
-  void handleView(textBuffer * output, int flag);       // Moved from private->public to help handle 
+  void handleView(textBuffer * output, int flag);       // Moved from private->public to help handle
   // Bug INKqa00991 -GV
 private:
     PACresult handleCreate(InkHashTable * params);

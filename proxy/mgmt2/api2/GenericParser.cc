@@ -27,7 +27,7 @@
 /***************************************************************************
  * Token
  *   a token is a name/value pairs of data. The data are of the type char *.
- *   The setName and setValue are not meant for data encapsulation, but 
+ *   The setName and setValue are not meant for data encapsulation, but
  *   free callers from allocating the memory.
  ***************************************************************************/
 
@@ -53,7 +53,7 @@ Token::setName(const char *str)
 }
 
 //
-// need to allocate more memory than the actual str len in case 
+// need to allocate more memory than the actual str len in case
 // more characters are appended to the value
 //
 void
@@ -106,7 +106,7 @@ Token::Print()
  * TokenList
  *   a token list is a list of token (obviously). It uses List.h to link
  *   the tokens together. This object includes some queue and stack manlipuation
- *   function calls in addition to the common length() and the debugging 
+ *   function calls in addition to the common length() and the debugging
  *   print() member functions.
  ***************************************************************************/
 TokenList::TokenList():length(0)
@@ -136,7 +136,7 @@ TokenList::Print()
  *   a rule is nothing more than just a token list. This object also
  *   contains a very important member function -- parse(). Depending on
  *   on the configuration file type, a specific parse function is invoked.
- *   Since the user of "Rule" are not expected to access the member data 
+ *   Since the user of "Rule" are not expected to access the member data
  *   driectly, the get/set member functions are used for data encapsulation.
  ***************************************************************************/
 
@@ -393,7 +393,7 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
   bool insideQuote = false;
   const char *newStr;
 
-  // Sanity Check -- number of token 
+  // Sanity Check -- number of token
   if (numRuleTok < minNumToken) {
     setErrorHint("Expecting more space delimited tokens!");
     return NULL;
@@ -446,7 +446,7 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
 
       newStr = strtrim(subtoken, '\"');
       if (!insideQuote) {
-        //          printf("!insideQuote: %s\n", subtoken);   
+        //          printf("!insideQuote: %s\n", subtoken);
         token->setValue(newStr);
         m_tokenList->enqueue(token);
       } else {
@@ -508,7 +508,7 @@ Rule::hostingParse(char *rule)
 }
 
 
-/** 
+/**
  * icpParse
  *   - mimic proxy/ICPConfig/icp_config_change_callback
  **/
@@ -522,7 +522,7 @@ Rule::icpParse(char *rule, unsigned short minNumToken, unsigned short maxNumToke
   Token *token;
   TokenList *m_tokenList = NEW(new TokenList());
 
-  // Sanity Check -- number of token 
+  // Sanity Check -- number of token
   if (numRuleTok < minNumToken) {
     setErrorHint("Expecting more ':' delimited tokens!");
     return NULL;
@@ -805,7 +805,7 @@ Rule::socksParse(char *rule)
 
         newStr = strtrim(subtoken, '\"');
         if (!insideQuote) {
-          //          printf("!insideQuote: %s\n", subtoken);   
+          //          printf("!insideQuote: %s\n", subtoken);
           token->setValue(newStr);
           m_tokenList->enqueue(token);
         } else {
@@ -851,7 +851,7 @@ Rule::splitdnsParse(char *rule)
   bool insideQuote = false;
   const char *newStr;
 
-  // Sanity Check -- number of token 
+  // Sanity Check -- number of token
   if (numRuleTok < 0) {
     setErrorHint("Expecting more space delimited tokens!");
     return NULL;
@@ -935,7 +935,7 @@ Rule::updateParse(char *rule)
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
 
   // NOTE: ignore white spaces before/after the '\'
-  // There should only be 5 tokens; if there are 6 tokens, the 
+  // There should only be 5 tokens; if there are 6 tokens, the
   // sixth token must be all white spaces
   if (numRuleTok<5 || numRuleTok> 6 || (numRuleTok == 6 && strspn(ruleTok[5], " ") != strlen(ruleTok[5]))) {
     setErrorHint("Expecting exactly 5 '\' delimited tokens");
@@ -1018,7 +1018,7 @@ Rule::storageParse(char *rule)
 
 /*
  * bool Rule::inQuote(char *str)
- *   Counts the number of quote found in "str"   
+ *   Counts the number of quote found in "str"
  *   RETURN true  if "str" contains odd  number of quotes (")
  *          false if "str" contains even number of quotes (including zero)
  */
@@ -1072,9 +1072,9 @@ RuleList::Print()
 
 /*
  * void RuleList::parse(char *fileBuf, const char *filename)
- *   Takes configuration file buffer, tokenize the buffer according carriage 
+ *   Takes configuration file buffer, tokenize the buffer according carriage
  *   return. For each line, pasre it.
- *   
+ *
  */
 void
 RuleList::parse(char *fileBuf, const char *filename)
@@ -1131,13 +1131,13 @@ RuleList::parse(char *fileBuf, const char *filename)
 }
 
 /*
- * void RuleList::parse(char *fileBuf, INKFileNameT filetype) 
- *   Takes configuration file buffer, tokenize the buffer according carriage 
+ * void RuleList::parse(char *fileBuf, INKFileNameT filetype)
+ *   Takes configuration file buffer, tokenize the buffer according carriage
  *   return. For each line, pasre it.
  *   NOTE: (1) comment line must start with '#' as the first character without
  *             leading spaces
  *         (2) a line must
- *   
+ *
  */
 void
 RuleList::parse(char *fileBuf, INKFileNameT filetype)

@@ -112,12 +112,12 @@ public:
     ink_assert(!"implemented");
     return 0;
   }
-  int get_header(void **ptr, int *len) 
+  int get_header(void **ptr, int *len)
   {
     ink_assert(!"implemented");
     return -1;
   }
-  int set_header(void *ptr, int len) 
+  int set_header(void *ptr, int len)
   {
     ink_assert(!"implemented");
     return -1;

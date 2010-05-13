@@ -1673,8 +1673,8 @@ HTTPInfo::marshal(char *buf, int len)
   buf += HTTP_ALT_MARSHAL_SIZE;
   used += HTTP_ALT_MARSHAL_SIZE;
 
-  // The m_{request,response}_hdr->m_heap pointers are converted 
-  //    to zero based offsets from the start of the buffer we're 
+  // The m_{request,response}_hdr->m_heap pointers are converted
+  //    to zero based offsets from the start of the buffer we're
   //    marshalling in to
   if (m_alt->m_request_hdr.valid()) {
     tmp = m_alt->m_request_hdr.m_heap->marshal(buf, len - used);
@@ -1763,7 +1763,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj * block_ref)
   return alt->m_unmarshal_len;
 }
 
-// bool HTTPInfo::check_marshalled(char* buf, int len) 
+// bool HTTPInfo::check_marshalled(char* buf, int len)
 //  Checks a marhshalled HTTPInfo buffer to make
 //    sure it's sane.  Returns true if sane, false otherwise
 //

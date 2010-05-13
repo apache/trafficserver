@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-/*************************************************************************** 
+/***************************************************************************
  LogConfig.cc
 
  This file implements the LogConfig object.
- 
+
  ***************************************************************************/
 #include "inktomi++.h"
 
@@ -45,7 +45,7 @@
 #include <sys/statvfs.h>
 #elif (HOST_OS != freebsd)
 #include <sys/statvfs.h>
-#endif  // linux 
+#endif  // linux
 
 #include "ink_platform.h"
 
@@ -293,13 +293,13 @@ LogConfig::read_configuration_variables()
         snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                  system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
         if ((err = stat(system_log_dir, &s)) < 0) {
-          fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n", 
+          fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
                   system_log_dir, err, errno, strerror(errno));
           fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
           _exit(1);
-        } 
+        }
 
-      } 
+      }
       logfile_dir = xstrdup(system_log_dir);
     }
   }
@@ -422,7 +422,7 @@ LogConfig::read_configuration_variables()
   // SPLITTING
   // 0 means no splitting
   // 1 means splitting
-  // for icp and mixt 
+  // for icp and mixt
   //   -1 means filter out (do not log and do not create split file)
   val = (int) LOG_ConfigReadInteger("proxy.config.log2.separate_icp_logs");
   if (val == 0 || val == 1 || val == -1) {
@@ -442,7 +442,7 @@ LogConfig::read_configuration_variables()
 
   // COLLATION
   val = (int) LOG_LocalReadInteger("proxy.local.log2.collation_mode");
-  // do not restrict value so that error message is logged if 
+  // do not restrict value so that error message is logged if
   // collation_mode is out of range
   collation_mode = val;
 
@@ -696,7 +696,7 @@ LogConfig::setup_collation(LogConfig * prev_config)
          "Log collation disabled", collation_mode, NO_COLLATION, N_COLLATION_MODES - 1);
   } else if (collation_mode == NO_COLLATION) {
     // if the previous configuration had a collation accept, delete it
-    // 
+    //
     if (prev_config && prev_config->m_log_collation_accept) {
       delete prev_config->m_log_collation_accept;
       prev_config->m_log_collation_accept = NULL;
@@ -769,7 +769,7 @@ LogConfig::init(LogConfig * prev_config)
   TextLogObject *old_elog = Log::error_log;
   TextLogObject *new_elog = 0;
 
-  // swap new error log for old error log unless 
+  // swap new error log for old error log unless
   // -there was no error log and we don't want one
   // -there was an error log, and the new one is identical
   //  (the logging directory did not change)
@@ -890,7 +890,7 @@ LogConfig::display(FILE * fd)
 }
 
 //-----------------------------------------------------------------------------
-// setup_pre_defined_info 
+// setup_pre_defined_info
 //
 // This function adds all the pre defined formats to the global_format_list
 // and gathers the information for the active formats in a single place
@@ -1040,7 +1040,7 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
 //-----------------------------------------------------------------------------
 // split_by_protocol
 //
-// This function creates the objects needed to log different protocols on 
+// This function creates the objects needed to log different protocols on
 // their own file if any of the "separate_xxx_logs" config. variable is set.
 //
 // Upon return, the pf_list argument holds the filters that reject the
@@ -1196,7 +1196,7 @@ LogConfig::setup_log_objects()
   setup_pre_defined_info(&pre_def_info_list);
 
   // do protocol splitting
-  // 
+  //
   LogFilter *reject_protocol_filter = split_by_protocol(pre_def_info_list);
 
   // do host splitting
@@ -1473,7 +1473,7 @@ LogConfig::register_config_callbacks()
   LOG_RegisterConfigUpdateFunc("proxy.config.log2.common_log_name", &LogConfig::reconfigure, NULL);
   LOG_RegisterConfigUpdateFunc("proxy.config.log2.common_log_header", &LogConfig::reconfigure, NULL);
 
-  // EXTENDED 
+  // EXTENDED
   LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended_log_enabled", &LogConfig::reconfigure, NULL);
   LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended_log_is_ascii", &LogConfig::reconfigure, NULL);
   LOG_RegisterConfigUpdateFunc("proxy.config.log2.extended_log_name", &LogConfig::reconfigure, NULL);
@@ -1614,7 +1614,7 @@ LogConfig::register_mgmt_callbacks()
 }
 
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogConfig::space_to_write
 
   This function returns true if there is enough disk space to write the
@@ -1644,7 +1644,7 @@ bool LogConfig::space_to_write(ink64 bytes_to_write)
   return space;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogConfig::update_space_used
 
   Update the m_space_used variable by reading the logging dir and counting
@@ -1832,7 +1832,7 @@ LogConfig::update_space_used()
   }
 
   //
-  // Now that we've updated the m_space_used value, see if we need to 
+  // Now that we've updated the m_space_used value, see if we need to
   // issue any alarms or warnings about space
   //
 
@@ -1943,7 +1943,7 @@ LogConfig::read_old_log_config()
     if (entry_type) {
 
       // format
-      // 
+      //
       if (strcasecmp(entry_type, "format") == 0) {
 
         char *file_name = NULL;
@@ -2045,7 +2045,7 @@ LogConfig::read_old_log_config()
   ::close(fd);
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogConfig::read_xml_log_config
 
   This is a new routine for reading the XML-based log config file.
@@ -2227,7 +2227,7 @@ LogConfig::read_xml_log_config(int from_memory)
         } else if (interval.count() > 1) {
           Note("Multiple values for 'Interval' attribute in %s; " "using the first one", xobj->object_name());
         }
-        // interval 
+        // interval
         //
         interval_num = ink_atoui(interval.dequeue());
       } else if (interval.count() > 0) {

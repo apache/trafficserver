@@ -54,7 +54,7 @@ extern FileManager *configFiles;
 extern overviewPage *overviewGenerator;
 extern AppVersionInfo appVersionInfo;
 
-// Global strings 
+// Global strings
 extern char mgmt_path[];
 extern const char *recs_conf;
 //extern char *lm_conf;

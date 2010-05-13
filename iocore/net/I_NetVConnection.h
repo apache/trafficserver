@@ -172,7 +172,7 @@ public:
         <td>signified that error occured during write.</td>
       </tr>
     </table>
-   
+
     The vio returned during callbacks is the same as the one returned
     by do_io_write(). The vio can be changed only during call backs
     from the vconnection. The vconnection deallocates the reader
@@ -205,7 +205,7 @@ public:
   */
   virtual void do_io_close(int lerrno = -1) = 0;
 
-  /** 
+  /**
     Shuts down read side, write side, or both. do_io_shutdown() can
     be used to terminate one or both sides of the VConnection. The
     howto is one of IO_SHUTDOWN_READ, IO_SHUTDOWN_WRITE,
@@ -224,7 +224,7 @@ public:
   virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
 
 
-  /** 
+  /**
     Sends out of band messages over the connection. This function
     is used to send out of band messages (is this still useful?).
     cont is called back with VC_EVENT_OOB_COMPLETE - on successful
@@ -261,7 +261,7 @@ public:
   // or the NetVConnection creation callback.               //
   ////////////////////////////////////////////////////////////
 
-  /** 
+  /**
     Sets time after which SM should be notified.
 
     Sets the amount of time (in nanoseconds) after which the state
@@ -299,7 +299,7 @@ public:
   */
   virtual void set_active_timeout(ink_hrtime timeout_in) = 0;
 
-  /** 
+  /**
     Sets time after which SM should be notified if the requested
     IO could not be performed. Sets the amount of time (in nanoseconds),
     if the NetVConnection is idle on both the read or write side,
@@ -313,14 +313,14 @@ public:
    */
   virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
 
-  /** 
+  /**
     Clears the active timeout. No active timeouts will be sent until
     set_active_timeout() is used to reset the active timeout.
 
   */
   virtual void cancel_active_timeout() = 0;
 
-  /** 
+  /**
     Clears the inactivity timeout. No inactivity timeouts will be
     sent until set_inactivity_timeout() is used to reset the
     inactivity timeout.

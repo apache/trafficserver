@@ -24,9 +24,9 @@
 /***************************************/
 /****************************************************************************
  *
- *  Module: 
- *  
- * 
+ *  Module:
+ *
+ *
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -58,7 +58,7 @@
 // functionality is there. This should all be
 // internationalized with LOCALE stuff(gettext() or catgets()) at some point.
 //
-// It would also be nice if all display textual info is in file 
+// It would also be nice if all display textual info is in file
 // that can be read in for each level/mode so that changing
 // the layout/format could be more easily controlled.
 // Unfortunately this might lead to having to develop infrastruture
@@ -344,7 +344,7 @@ const
   {"proxy.process.socks.connections_currently_open\\c", NULL,
    "Connections in progress", "%-*s %*s\n",
    10, 10, 50, 3},
-  // LOGGING - 5 
+  // LOGGING - 5
   {"proxy.process.log2.log_files_open\\c", NULL,
    "Currently Open Log Files", "%-*s %*s\n",
    10, 10, 50, 3},
@@ -570,7 +570,7 @@ CLI_monitor::doMonitorProtocolStats(CLI_DATA * c_data /* IN: client data */ )
     }
     c_data->output->copyFrom("\n", strlen("\n"));
   }
-  // Check if RNI enabled 
+  // Check if RNI enabled
   if (3 == c_data->advui || 2 == c_data->advui) {       // yes, so show stats
     highmark += NUM_PROT_RNI_DESCS;
     if (CL_EV_ONE == c_data->cevent || CL_EV_SEVEN == c_data->cevent) {
@@ -773,7 +773,7 @@ CLI_monitor::doMonitorOtherStats(CLI_DATA * c_data /* IN: client data */ )
 }                               // end doMonitorOtherStats()
 
 //
-// Handle displaying monitor->dashboard 
+// Handle displaying monitor->dashboard
 //
 void
 CLI_monitor::doMonitorDashboard(CLI_DATA * c_data /* IN: client data */ )
@@ -791,7 +791,7 @@ CLI_monitor::doMonitorDashboard(CLI_DATA * c_data /* IN: client data */ )
   // Need to change outputing of headers to use CLIlineBuffer()
   // Obuf = new CLIlineBuffer(6);
 
-  if (CL_EV_ONE == c_data->cevent) {    // dashboard header 
+  if (CL_EV_ONE == c_data->cevent) {    // dashboard header
     // output seperator
     c_data->output->copyFrom(CLI_globals::sep2, strlen(CLI_globals::sep2));
     c_data->output->copyFrom(line1, strlen(line1));

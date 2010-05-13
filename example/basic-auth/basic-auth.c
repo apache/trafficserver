@@ -24,9 +24,9 @@
 /* basic-auth.c: a plugin that performs basic HTTP proxy
  *               authentication
  *
- * 
- * Usage: 
- * (NT): BasicAuth.dll 
+ *
+ * Usage:
+ * (NT): BasicAuth.dll
  * (Solaris): basic-auth.so
  *
  */
@@ -84,24 +84,24 @@ base64_decode(const char *input)
 static int
 authorized(char *user, char *password)
 {
-  /* 
-   * This routine checks the validity of the user name and 
+  /*
+   * This routine checks the validity of the user name and
    * password. Sample NT code is provided for illustration.
    * For UNIX systems, enter your own authorization code
-   * here. 
+   * here.
    */
 
 #if !defined (_WIN32)
 
 #else
-  // LogonUser() will work only if the account is set with 
+  // LogonUser() will work only if the account is set with
   // SE_TCB_NAME privilege. If SE_TCB_NAME is missing,
   // Traffic server will attempt to  add this privilege to
   // the running account, but may fail depending on the access
-  // levels provided to the said account. In such a case, an 
-  // NT systems administrator will have to set the privilege 
+  // levels provided to the said account. In such a case, an
+  // NT systems administrator will have to set the privilege
   // "Act as part of the operating system" from the NT user manager.
-  // 
+  //
   int nErr = 0;
   HANDLE hToken = 0;
   BOOL bRet = LogonUser(user, NULL, password, LOGON32_LOGON_NETWORK,

@@ -75,7 +75,7 @@ const char *STORAGE_CONFIG_HEADER = "# 									\n\
 #									\n\
 ";
 
-// Global 
+// Global
 Store theStore;
 
 

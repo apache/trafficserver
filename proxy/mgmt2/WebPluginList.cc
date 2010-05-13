@@ -29,8 +29,8 @@
  *
  *  WebPluginList.cc - Keep track of a list of web configurable plugins
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 WebPluginList::WebPluginList(void)

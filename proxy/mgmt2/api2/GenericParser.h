@@ -24,7 +24,7 @@
 /***************************************************************************
  GenericParser.h
 
- 
+
  ***************************************************************************/
 #ifndef _STATTYPE_H_
 #define	_STATTYPE_H_
@@ -44,7 +44,7 @@
 /***************************************************************************
  * Token
  *   a token is a name/value pairs of data. The data are of the type char *.
- *   The setName and setValue are not meant for data encapsulation, but 
+ *   The setName and setValue are not meant for data encapsulation, but
  *   free callers from allocating the memory.
  ***************************************************************************/
 class Token
@@ -67,7 +67,7 @@ public:
  * TokenList
  *   a token list is a list of token (obviously). It uses List.h to link
  *   the tokens together. This object includes some queue and stack manlipuation
- *   function calls in addition to the common length() and the debugging 
+ *   function calls in addition to the common length() and the debugging
  *   print() member functions.
  ***************************************************************************/
 class TokenList
@@ -149,7 +149,7 @@ private:
  *   a rule is nothing more than just a token list. This object also
  *   contains a very important member function -- parse(). Depending on
  *   on the configuration file type, a specific parse function is invoked.
- *   Since the user of "Rule" are not expected to access the member data 
+ *   Since the user of "Rule" are not expected to access the member data
  *   driectly, the get/set member functions are used for data encapsulation.
  ***************************************************************************/
 class Rule

@@ -92,9 +92,9 @@ int poll_stat_var;
 #endif
 int poll_retval;
 
-/* 
+/*
    initialize the default values for memory allocation. the size of
-   the solaris executable with the default values is around 60MB 
+   the solaris executable with the default values is around 60MB
  */
 long max_output_string = MAX_OUTPUT;
 long max_users = MAX_USERS;
@@ -136,7 +136,7 @@ int num_sizes;
 long sizes[MAX_SIZES];
     /* actual sizes                                        */
 float cumulative_size_prob[MAX_SIZES];
-    /* Cumulative probability of selecting different sizes 
+    /* Cumulative probability of selecting different sizes
      * cumulative_size_prob[num_sizes-1] must be 1.0       */
 
 #define COMM_OK           (0)

@@ -80,7 +80,7 @@ public:
       BlockCacheKey_util::new_from_segmentid).
     @param len how much data will be written (estimated).
     @return cancels the callback.
-  
+
   */
 
   Action *open_unabortable_write_segment(Continuation * c, BlockCacheKey * key, int len) = 0;
@@ -101,7 +101,7 @@ public:
     @param key of segment to write (this should been created with
       BlockCacheKey_util::new_from_segmentid).
     @return cancels the callback.
-  
+
   */
 
   Action *open_read_segment(Continuation * c, BlockCacheKey * key) = 0;

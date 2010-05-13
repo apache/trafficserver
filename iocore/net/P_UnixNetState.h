@@ -25,17 +25,17 @@
 
   UnixNetState.h
 
-  
+
    NetState
-  
+
    State information for a particular channel of a NetVConnection
    This information is private to the Net module.   It is only here
    because of the the C++ compiler needs it to define NetVConnection.
-  
-   Shared with Cluster.cc
-  
 
-  
+   Shared with Cluster.cc
+
+
+
  ****************************************************************************/
 #if !defined (_UnixNetState_h_)
 #define _UnixNetState_h_

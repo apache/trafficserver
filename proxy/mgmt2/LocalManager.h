@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-/* 
+/*
  *
  * LocalManager.h
  *   Definitions for the LocalManager class.

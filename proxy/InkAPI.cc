@@ -1895,7 +1895,7 @@ INKPluginRegister(INKSDKVersion sdk_version, INKPluginRegistrationInfo * plugin_
 
 ////////////////////////////////////////////////////////////////////
 //
-// Plugin info registration - coded in 2.0, but not documented 
+// Plugin info registration - coded in 2.0, but not documented
 //
 ////////////////////////////////////////////////////////////////////
 
@@ -4950,11 +4950,11 @@ INKAction INKHttpSchedule(INKCont contp ,INKHttpTxn txnp, unsigned int timeout)
   HttpSM *sm = (HttpSM*)txnp;
   sm->set_http_schedule(cont);
 
-  if (timeout == 0) { 
+  if (timeout == 0) {
     action = eventProcessor.schedule_imm (sm, ET_NET);
   } else {
     action = eventProcessor.schedule_in (sm, HRTIME_MSECONDS (timeout), ET_NET);
-  }    
+  }
 
   action = (INKAction) ((paddr_t) action | 0x1);
 
@@ -8971,7 +8971,7 @@ INKFetchPageRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
     HTTPHdr *hptr = (HTTPHdr*) txnp;
 
     if (hptr->valid()) {
-        *bufp = hptr; 
+        *bufp = hptr;
         *obj = hptr->m_http;
         sdk_sanity_check_mbuffer(*bufp);
 
@@ -8982,7 +8982,7 @@ INKFetchPageRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 }
 
 extern ClassAllocator<FetchSM> FetchSMAllocator;
-INKReturnCode INKFetchPages(INKFetchUrlParams_t * params) 
+INKReturnCode INKFetchPages(INKFetchUrlParams_t * params)
 {
    INKFetchUrlParams_t *myparams = params;
    while(myparams!=NULL) {
@@ -8994,7 +8994,7 @@ INKReturnCode INKFetchPages(INKFetchUrlParams_t * params)
   }
   return INK_SUCCESS;
 }
-INKReturnCode  INKFetchUrl(const char* headers, int request_len, unsigned int ip, int port , INKCont contp, INKFetchWakeUpOptions callback_options,INKFetchEvent events) 
+INKReturnCode  INKFetchUrl(const char* headers, int request_len, unsigned int ip, int port , INKCont contp, INKFetchWakeUpOptions callback_options,INKFetchEvent events)
 {
 //  printf("calling INKFetchUrl\n");
    FetchSM *fetch_sm =  FetchSMAllocator.alloc();

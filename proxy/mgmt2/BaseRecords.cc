@@ -1360,7 +1360,7 @@ BaseRecords::readString(const char *name, bool * found)
 
 
 /*
- * Special purpose read functions for reading records of a name from a 
+ * Special purpose read functions for reading records of a name from a
  * copy of the BaseRecords records array.
  */
 MgmtIntCounter
@@ -2356,7 +2356,7 @@ BaseRecords::registerUpdateLockFunc(UpdateLockFunc func)
 }                               /* End BaseRecords::registerUpdateLockFunc */
 
 /*
- * Special interface that does not take out the lock(assumes caller has) 
+ * Special interface that does not take out the lock(assumes caller has)
  */
 MgmtIntCounter
 BaseRecords::rl_readCounter(int id, RecordType type, bool * found)

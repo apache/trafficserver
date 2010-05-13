@@ -27,7 +27,7 @@
 
   Handle the allocation of the socket descriptor (fd) resource.
 
-  
+
 ****************************************************************************/
 #ifndef _P_UnixSocketManager_h_
 #define _P_UnixSocketManager_h_
@@ -416,35 +416,35 @@ SocketManager::kevent(int kq, const struct kevent *changelist, int nchanges,
 }
 #elif defined(USE_PORT)
 TS_INLINE int
-SocketManager::port_create() 
+SocketManager::port_create()
 {
   return ::port_create();
 }
 
 TS_INLINE int
 SocketManager::port_associate(int port, int source, uintptr_t obj,
-                              int events, void *user) 
+                              int events, void *user)
 {
   int r;
   r =::port_associate(port, source, obj, events, user);
-  if(r < 0) 
+  if(r < 0)
     r = -errno;
   return r;
 }
 
 TS_INLINE int
-SocketManager::port_dissociate(int port, int source, uintptr_t obj) 
+SocketManager::port_dissociate(int port, int source, uintptr_t obj)
 {
   int r;
   r =::port_dissociate(port, source, obj);
-  if(r < 0) 
+  if(r < 0)
     r = -errno;
   return r;
 }
 
 TS_INLINE int
 SocketManager::port_getn(int port, port_event_t *list, uint_t max,
-                         uint_t *nget, timespec_t *timeout) 
+                         uint_t *nget, timespec_t *timeout)
 {
   int r;
   do {

@@ -735,7 +735,7 @@ ClusterProcessor::init()
   IOCORE_EstablishStaticConfigInt32(RPC_only_CacheCluster, "proxy.config.cluster.rpc_cache_cluster");
 
   int cluster_type = 0;
-  // note : local variables work now using the same function. 
+  // note : local variables work now using the same function.
   // They are demarcated by their names
   IOCORE_RegisterConfigInteger(RECT_LOCAL, "proxy.local.cluster.type", 3, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(cluster_type, "proxy.local.cluster.type");

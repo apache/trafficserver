@@ -35,7 +35,7 @@
 #include "BaseManager.h"
 #include "P_MultiCache.h"
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   event_int_to_string
 
   This routine will translate an integer event number to a string

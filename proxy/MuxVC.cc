@@ -25,9 +25,9 @@
 
     MuxVC.cc
 
-    Description: 
+    Description:
 
-    
+
   ****************************************************************************/
 
 #include "MuxVC.h"
@@ -640,7 +640,7 @@ MuxClientVC::setup_retry_event(int ms)
 // void MuxClientVC::process_retry_event()
 //
 //   We've gotten this event because we missed a lock or needed to do something
-//     on a different callstack.  We need to figure out our state and act 
+//     on a different callstack.  We need to figure out our state and act
 //     appropriately
 //
 void
@@ -814,7 +814,7 @@ MuxClientVC::process_write()
     //
     //   But by not limiting it, we allow one transaction
     //     to starve others
-    //    
+    //
     // act_on = MIN(act_on, MUX_MAX_BYTES_SLOT);
 
     ink_debug_assert(act_on >= 0);
@@ -873,7 +873,7 @@ MuxClientVC::process_write()
 
 // void MuxClientVC::process_channel_close_for_read()
 //
-//    Handles sending EOS to the read side of the client 
+//    Handles sending EOS to the read side of the client
 //      when the the remote side closes the channel
 //
 //    CALLER is responsible for handling reentrant closes
@@ -899,7 +899,7 @@ MuxClientVC::process_channel_close_for_read()
 
 // void MuxClientVC::process_channel_close_for_write()
 //
-//    Handles sending ERROR to the write side of the client 
+//    Handles sending ERROR to the write side of the client
 //      when the the remote side closes the channel
 //
 //    CALLER is responsible for handling reentrant closes
@@ -1202,7 +1202,7 @@ MuxVC::state_send_init_response(int event, void *data)
 
       // We doing lazy reentrancy counting.  Only doing
       //   where we know there are issues.  So if the count
-      //   is zero no one is blocking us from deallocating 
+      //   is zero no one is blocking us from deallocating
       //   ourselves
       if (reentrancy_count == 0) {
         kill();
@@ -1291,7 +1291,7 @@ MuxVC::kill()
     process_event = NULL;
   }
   // If we are on the mux processor list, we must remove ourself
-  //    before we can dealloc ourself 
+  //    before we can dealloc ourself
   if (on_mux_list) {
     if (try_processor_list_remove() == 0) {
       SET_HANDLER(MuxVC::state_remove_from_list);
@@ -2103,7 +2103,7 @@ MuxVC::state_idle(int event, void *data)
         // We don't want to hear from the read side anymore
         //
         //  FIX ME - Is there a race between new sessions
-        //     being opened from the remote and the 
+        //     being opened from the remote and the
         //     shutdown being issues?
         net_vc->do_io_shutdown(IO_SHUTDOWN_READ);
         read_vio = NULL;

@@ -26,7 +26,7 @@
  *  WebConfigRender.h - html rendering and assembly for the Configuration
  *                      File Editor
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _WEB_CONFIG_RENDER_H_

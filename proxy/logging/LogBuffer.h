@@ -87,13 +87,13 @@ struct LogBufferHeader
 
   unsigned fmt_name_offset;     // offset to format name string
   unsigned fmt_fieldlist_offset;        // offset to format fieldlist string
-  unsigned fmt_printf_offset;   // offset to format printf string 
+  unsigned fmt_printf_offset;   // offset to format printf string
   unsigned src_hostname_offset; // offset to source (client) hostname
   unsigned log_filename_offset; // offset to log filename
-  unsigned data_offset;         // offset to start of data entry 
+  unsigned data_offset;         // offset to start of data entry
   // section
 
-  // some helper functions to return the header strings 
+  // some helper functions to return the header strings
 
   char *fmt_name();             // not used
   char *fmt_fieldlist();
@@ -153,7 +153,7 @@ public:
   void *operator  new(size_t size);
   void operator  delete(void *p);
 
- iObject() 
+ iObject()
  {                             /* nop */
  }
 
@@ -314,7 +314,7 @@ private:
 
   volatile LB_State m_state;    // buffer state
 
-  int m_max_entries;            // max number of entries allowed 
+  int m_max_entries;            // max number of entries allowed
   long m_expiration_time;       // buffer expiration time
 
   LogObject *m_owner;           // the LogObject that owns this buf.

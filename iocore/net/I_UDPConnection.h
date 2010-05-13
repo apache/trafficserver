@@ -25,8 +25,8 @@
 
   I_UDPConnection.h
   UDPConnection interface
-  
-  
+
+
  ****************************************************************************/
 
 #ifndef __I_UDPCONNECTION_H_
@@ -37,8 +37,8 @@
 class UDPPacket;
 /**
    UDP Connection endpoint
-   
-   You can schedule packet to be sent immediately or for the future, 
+
+   You can schedule packet to be sent immediately or for the future,
    and set up a persistent receive() operation.
  */
 
@@ -62,11 +62,11 @@ public:
   double get_allocatedBandwidth();
   /**
      <p>
-     <b>Callbacks:</b><br> 
+     <b>Callbacks:</b><br>
      cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, UDPPacket *) on error
      <br>
      no callback on success.
-     
+
      @return Action* send can't be cancelled via this Action
      @param c continuation to be called back
      @param p packet to be sent.
@@ -75,7 +75,7 @@ public:
 
   /**
      <p>
-     <b>Callbacks:</b><br> 
+     <b>Callbacks:</b><br>
      cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, UDPConnection *) on error
      <br>
      cont->handleEvent(NET_EVENT_DATAGRAM_READ_READY, Queue&lt;UDPPacketInternal&gt; *) on incoming packets.

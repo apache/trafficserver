@@ -145,7 +145,7 @@ CoupledStats::CreateStat(const char *name, ink64 init_val)
     return NULL;
   }
   //FIXME: old sdk didnt use category, we _should_ but how to config ...
-  //else if (ret = StatDescriptor::CreateDescriptor(m_name, name, init_val)) 
+  //else if (ret = StatDescriptor::CreateDescriptor(m_name, name, init_val))
   else if ((ret = StatDescriptor::CreateDescriptor(name, init_val))) {
     ink_mutex_acquire(&m_mux);
     grow_check(ret);
@@ -165,7 +165,7 @@ CoupledStats::CreateStat(const char *name, float init_val)
     return NULL;
   }
   //FIXME: old sdk didnt use category, we _should_ but how to config ...
-  //else if (ret = StatDescriptor::CreateDescriptor(m_name, name, init_val)) 
+  //else if (ret = StatDescriptor::CreateDescriptor(m_name, name, init_val))
   else if ((ret = StatDescriptor::CreateDescriptor(name, init_val))) {
     ink_mutex_acquire(&m_mux);
     grow_check(ret);

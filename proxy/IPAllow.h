@@ -25,7 +25,7 @@
  *
  *  IPAllow.h - Interface to IP Access Control systtem
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _IP_ALLOW_H_

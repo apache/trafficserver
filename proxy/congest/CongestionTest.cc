@@ -37,7 +37,7 @@
 //-------------------------------------------------------------
 // Test the HashTable implementation
 //-------------------------------------------------------------
-/* all of the elements inserted into the HashTable should be in the 
+/* all of the elements inserted into the HashTable should be in the
  * table and can be easily retrived
  * also exercise the resizing of the table
  */
@@ -166,7 +166,7 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable) (RegressionTest * t, int atype, 
 //-------------------------------------------------------------
 // Test the FailHistory implementation
 //-------------------------------------------------------------
-/* regesiter events into the FailHistory and the number of events 
+/* regesiter events into the FailHistory and the number of events
  * should be correct
  */
 struct CCFailHistoryTestCont:Continuation
@@ -361,7 +361,7 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_FailHistory) (RegressionTest * t, int atype
 //-------------------------------------------------------------
 // Test the CongestionDB implementation
 //-------------------------------------------------------------
-/* Insert simulated CongestionEntry into the CongestionDB and 
+/* Insert simulated CongestionEntry into the CongestionDB and
  * exercise the GC of the DB, remove entries from DB
  */
 

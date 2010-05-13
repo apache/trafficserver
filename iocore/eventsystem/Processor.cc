@@ -37,7 +37,7 @@
   or more conveniently, by calling a method service call which synthesizes
   the appropriate request Continuation and places it in the queue.
 
-  
+
  ****************************************************************************/
 
 #include "P_EventSystem.h"

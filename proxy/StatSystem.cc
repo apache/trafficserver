@@ -22,7 +22,7 @@
  */
 
 /****************************************************************************
- 
+
   StatSystem.cc --
   Created On          : Fri Apr 3 19:41:39 1998
  ****************************************************************************/
@@ -581,7 +581,7 @@ initialize_all_global_stats()
   // Jira TS-21
   REC_ReadConfigString(local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
   if ((err = stat(local_state_dir, &s)) < 0) {
-    ink_strncpy(local_state_dir,system_local_state_dir,sizeof(local_state_dir)); 
+    ink_strncpy(local_state_dir,system_local_state_dir,sizeof(local_state_dir));
     if ((err = stat(local_state_dir, &s)) < 0) {
       Warning("Unable to stat() local state directory '%s': %d %d, %s", local_state_dir, err, errno, strerror(errno));
       Warning(" Please set 'proxy.config.local_state_dir' to allow statistics collection");
@@ -1110,22 +1110,22 @@ TransactionMilestones::invariant()
      ///////////////////////////
      // user agent milestones //
      ///////////////////////////
-     UIF(order_correct, 
+     UIF(order_correct,
      ((user_agent_accept <= user_agent_begin_read) || (user_agent_accept == 0)));
      UIF(order_correct, (user_agent_begin_read <= user_agent_read_header_done));
-     UIF(order_correct, 
-     ((user_agent_read_header_done <= user_agent_begin_write) || 
+     UIF(order_correct,
+     ((user_agent_read_header_done <= user_agent_begin_write) ||
      (user_agent_begin_write == 0)));
      UIF(order_correct, (user_agent_read_header_done <= user_agent_close));
-     UIF(order_correct, 
+     UIF(order_correct,
      ((user_agent_begin_write <= user_agent_close) || (user_agent_begin_write == 0)));
      /////////////////////////////////
      // user agent  -- data sources //
      /////////////////////////////////
-     UIF(order_correct, 
+     UIF(order_correct,
      ((user_agent_begin <= origin_server_open_begin) ||
      (origin_server_open_begin == 0)));
-     UIF(order_correct, 
+     UIF(order_correct,
      ((user_agent_begin <= raw_origin_server_connect_begin) ||
      (raw_origin_server_connect_begin == 0)));
      UIF(order_correct,
@@ -1136,10 +1136,10 @@ TransactionMilestones::invariant()
      // origin server //
      ///////////////////
      UIF(order_correct, (origin_server_open_begin <= origin_server_open_end));
-     UIF(order_correct, 
+     UIF(order_correct,
      ((origin_server_open_end <= origin_server_begin_write) ||
      (origin_server_begin_write == 0)));
-     UIF(order_correct, 
+     UIF(order_correct,
      ((origin_server_open_end <= origin_server_begin_read) ||
      (origin_server_begin_read == 0)));
 

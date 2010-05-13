@@ -30,7 +30,7 @@
  *
  * $Date: 2003-06-01 18:37:18 $
  *
- * 
+ *
  */
 
 #ifndef _PROCESS_MANAGER_H

@@ -23,12 +23,12 @@
 
 /*****************************************************************************
  * Filename: EventRegistration.cc
- * Purpose: This file contains functions and structures used in event 
- *          notification and callbacks for remote clients; also has the 
+ * Purpose: This file contains functions and structures used in event
+ *          notification and callbacks for remote clients; also has the
  *          thread that services event notification.
  * Created: 2/15/01
- * 
- * 
+ *
+ *
  ***************************************************************************/
 
 #include "inktomi++.h"
@@ -54,21 +54,21 @@ CallbackTable *remote_event_callbacks;
 
 /**********************************************************************
  * event_poll_thread_main
- * 
- * purpose: thread listens on the client's event socket connection; 
- *          only reads from the event_socket connection and  
- *          processes EVENT_NOTIFY messages; each time client 
+ *
+ * purpose: thread listens on the client's event socket connection;
+ *          only reads from the event_socket connection and
+ *          processes EVENT_NOTIFY messages; each time client
  *          makes new event-socket connection to TM, must launch
- *          a new event_poll_thread_main thread 
+ *          a new event_poll_thread_main thread
  * input:   arg - contains the socket_fd to listen on
  * output:  NULL - if error
  * notes:   each time the client's socket connection to TM is reset
- *          a new thread will be launched as old one dies; there are 
+ *          a new thread will be launched as old one dies; there are
  *          only two places where a new thread is created:
  *          1) when client first connects (INKInit call)
  *          2) client reconnects() due to a TM restart
  * Uses blocking socket; so blocks until receives an event notification.
- * Shouldn't need to use select since only waiting for a notification 
+ * Shouldn't need to use select since only waiting for a notification
  * message from event_callback_main thread!
  **********************************************************************/
 void *
@@ -165,7 +165,7 @@ event_callback_thread(void *arg)
     (*cb) (event_notice->name, event_notice->description, event_notice->priority, NULL);
   }
 
-  // clean up event notice 
+  // clean up event notice
   INKEventDestroy(event_notice);
   delete_queue(func_q);
 

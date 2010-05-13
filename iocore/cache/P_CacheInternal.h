@@ -247,17 +247,17 @@ struct CacheVC:CacheVConnection
     ink_assert(vio.op == VIO::READ);
     return !f.not_from_ram_cache;
   }
-  int get_header(void **ptr, int *len) 
+  int get_header(void **ptr, int *len)
   {
     if (first_buf.m_ptr) {
       Doc *doc = (Doc*)first_buf->data();
       *ptr = doc->hdr();
-      *len = doc->hlen;   
+      *len = doc->hlen;
       return 0;
     } else
       return -1;
   }
-  int set_header(void *ptr, int len) 
+  int set_header(void *ptr, int len)
   {
     header_to_write = ptr;
     header_to_write_len = len;
@@ -405,8 +405,8 @@ struct CacheVC:CacheVConnection
   // These variables are memset to 0 when the structure is freed.
   // The size of this region is size_to_init which is initialized
   // in the CacheVC constuctor. It assumes that vio is the start
-  // of this region. 
-  // NOTE: NOTE: NOTE: If vio is NOT the start, then CHANGE the 
+  // of this region.
+  // NOTE: NOTE: NOTE: If vio is NOT the start, then CHANGE the
   // size_to_init initialization
   VIO vio;
   EThread *initial_thread;  // initial thread open_XX was called on
@@ -447,7 +447,7 @@ struct CacheVC:CacheVConnection
   CacheVC *write_vc;
   char *hostname;
   int host_len;
-  int header_to_write_len;  
+  int header_to_write_len;
   void *header_to_write;
   short writer_lock_retry;
 
@@ -490,12 +490,12 @@ struct CacheVC:CacheVConnection
 #define POP_HANDLER do {                                          \
     handler = save_handler;                                       \
     ink_assert(handler != (ContinuationHandler)(&CacheVC::dead)); \
-  } while (0) 
+  } while (0)
 
 struct CacheRemoveCont:Continuation
 {
   int event_handler(int event, void *data);
-  
+
   CacheRemoveCont():Continuation(NULL) { }
 };
 
@@ -952,7 +952,7 @@ struct Cache
                                 CacheFragType frag_type, int options = 0,
                                 time_t pin_in_cache = (time_t) 0, char *hostname = 0, int host_len = 0);
   inkcoreapi Action *remove(Continuation *cont, CacheKey *key,
-                            CacheFragType type = CACHE_FRAG_TYPE_HTTP, 
+                            CacheFragType type = CACHE_FRAG_TYPE_HTTP,
                             bool user_agents = true, bool link = false,
                             char *hostname = 0, int host_len = 0);
   Action *scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second = 2500);
@@ -1133,8 +1133,8 @@ CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *k
 
 
 TS_INLINE inkcoreapi Action *
-CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type, 
-                           int expected_size, int options, time_t pin_in_cache, 
+CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
+                           int expected_size, int options, time_t pin_in_cache,
                            char *hostname, int host_len)
 {
   (void) expected_size;
@@ -1152,9 +1152,9 @@ CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag
 }
 
 TS_INLINE Action *
-CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *key, 
-                                  CacheFragType frag_type, int options, time_t pin_in_cache, 
-                                  char *hostname, int host_len) 
+CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *key,
+                                  CacheFragType frag_type, int options, time_t pin_in_cache,
+                                  char *hostname, int host_len)
 {
   (void)cont;
   (void)buf;

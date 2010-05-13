@@ -39,7 +39,7 @@
   Ok, as of 3.1, the role of the LogFormat object changes greatly.  Before
   it was the central object in the logging system that defined each "file"
   that would be created, and all other objects hung off of it.
-  
+
   Now, this object will simply store the characteristics of a log format,
   which is defined as a set of fields.
   -------------------------------------------------------------------------*/

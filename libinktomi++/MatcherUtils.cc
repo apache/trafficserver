@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  MatcherUtils.cc - Various helper routines used in ControlMatcher 
+ *  MatcherUtils.cc - Various helper routines used in ControlMatcher
  *                    and ReverseProxy
  *
  *
@@ -151,7 +151,7 @@ unescapifyStr(char *buffer)
 //     address addr2 = addr1) and returns NULL
 //
 //   If the extraction fails, returns a static string
-//     that describes the reason for the error. 
+//     that describes the reason for the error.
 //
 const char *
 ExtractIpRange(char *match_str, ip_addr_t *addr1, ip_addr_t *addr2)
@@ -249,7 +249,7 @@ tokLine(char *buf, char **last)
     cur++;
   }
 
-  // Return the last line even if it does 
+  // Return the last line even if it does
   //  not end in a newline
   if (cur > (*last + 1)) {
     *last = cur - 1;
@@ -382,7 +382,7 @@ const matcher_tags socks_server_tags = {
   NULL, NULL, "dest_ip", NULL, NULL, false
 };
 
-// char* parseConfigLine(char* line, matcher_line* p_line, 
+// char* parseConfigLine(char* line, matcher_line* p_line,
 //                       const matcher_tags* tags)
 //
 //   Parse out a config file line suitable for passing to

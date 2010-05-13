@@ -27,7 +27,7 @@
  * mcast_snoop - a small utility to dump traffic manager
  *     multicast packets
  *
- *  
+ *
  *
  ******************************************************************/
 

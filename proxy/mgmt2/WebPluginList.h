@@ -28,8 +28,8 @@
  *
  *  WebPluginList.h - Keep track of a list of web configurable plugins
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "ink_platform.h"

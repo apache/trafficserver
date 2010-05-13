@@ -21,7 +21,7 @@
   limitations under the License.
 
   @section details Details
-  
+
   This C++ class encapsulates a simple DBM.  It is implemented
   internally with libdb or gdbm or a similar basic DBM.  The underlying
   implementation can be specified in the constructor, currently sqlite3
@@ -695,7 +695,7 @@ SimpleDBM::iterate(SimpleDBMIteratorFunction f, void *client_data)
             return_code = nelems;
             retries = 0; // We're done, or so the callback thinks
           }
-        }        
+        }
         break;
       case SQLITE_BUSY:
         --retries;

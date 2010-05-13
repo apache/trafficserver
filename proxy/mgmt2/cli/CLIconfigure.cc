@@ -24,9 +24,9 @@
 /***************************************/
 /****************************************************************************
  *
- *  Module: 
- *  
- * 
+ *  Module:
+ *
+ *
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -56,7 +56,7 @@
 // functionality is there. This should all be
 // internationalized with LOCALE stuff(gettext() or catgets()) at some point.
 //
-// It would also be nice if all display textual info is in file 
+// It would also be nice if all display textual info is in file
 // that can be read in for each level/mode so that changing
 // the layout/format could be more easily controlled.
 // Unfortunately this might lead to having to develop infrastruture
@@ -224,7 +224,7 @@ const
    "to requests that contain cookies(1=Yes,0=No)", "%*d) %-*s %*s\n",
    15, 15, 50, 3},
   // Variable Content,  Do not serve - 4
-  // and Match these HTTP header fields 
+  // and Match these HTTP header fields
   {"proxy.config.http.cache.enable_default_vary_headers", NULL,
    "Enable Alternates(1=Yes,0=No)", "%*d) %-*s %*s\n",
    15, 15, 50, 3},
@@ -461,7 +461,7 @@ const
 const
   CLI_globals::VarNameDesc
   CLI_configure::conf_snapshots_desctable[NUM_CONF_SNAPSHOTS_DESCS] = {
-  // 
+  //
   {"proxy.config.", NULL,
    "", "%*d) %-*s %*s\n",
    10, 10, 50, 3}
@@ -844,7 +844,7 @@ CLI_configure::doConfigureCache(CLI_DATA * c_data /* IN: client data */ )
                  conf_cache_desctable[i].name_value_width, buf);
         c_data->output->copyFrom(tmpbuf, strlen(tmpbuf));
       }
-      // 11 
+      // 11
       if (i == (highmark - NUM_CONF_CACHE_FRESH_DESCS)) {
         c_data->output->copyFrom(line19, strlen(line19));
       } else if (i == (1 + highmark - NUM_CONF_CACHE_FRESH_DESCS)) {

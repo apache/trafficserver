@@ -42,8 +42,8 @@
 /****************************************************************************
  *
  *  WebReconfig.cc - code to handle config vars that can change on the fly
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 // Since we don't want to steal the manager's main thread we get

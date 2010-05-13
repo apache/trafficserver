@@ -56,7 +56,7 @@ main(int argc, char *argv[])
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Argument description table used to describe how to parse command line args,
-  // see 'ink_args.h' for meanings of the various fields 
+  // see 'ink_args.h' for meanings of the various fields
   ArgumentDescription argument_descriptions[] = {
     {"version", 'V', "Print Version Id", "T", &version_flag, NULL, NULL}
   };

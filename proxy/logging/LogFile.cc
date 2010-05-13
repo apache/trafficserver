@@ -24,7 +24,7 @@
 /***************************************************************************
  LogFile.cc
 
- 
+
  ***************************************************************************/
 
 #include "inktomi++.h"
@@ -57,17 +57,17 @@
 // the FILESIZE_SAFE_THRESHOLD_FACTOR is used to compute the file size
 // limit as follows:
 //
-// size_limit = system_filesize_limit - 
+// size_limit = system_filesize_limit -
 //              FILESIZE_SAFE_THRESHOLD_FACTOR * log_buffer_size
 //
-// where system_filesize_limit is the current filesize limit as returned by 
-// getrlimit(), and log_buffer_size is the config. value for the size of 
+// where system_filesize_limit is the current filesize limit as returned by
+// getrlimit(), and log_buffer_size is the config. value for the size of
 // a LogBuffer.
 //
 // This means that a file reaches its size_limit once it has no room to fit
-// FILESIZE_SAFE_THRESHOLD_FACTOR LogBuffers. 
+// FILESIZE_SAFE_THRESHOLD_FACTOR LogBuffers.
 //
-// A LogBuffer, when converted to ascii, can produce more than 
+// A LogBuffer, when converted to ascii, can produce more than
 // log_buffer_size bytes, depending on the type of the logging fields it
 // stores. String fields don't change size, but integer fields do.
 // A 32 bit integer has a maximum value of 10 digits, which means it
@@ -76,7 +76,7 @@
 // amount of ascii data a LogBuffer can produce is 2.5 times its size, so
 // we should make sure we can always write this amount to a file.
 //
-// However, to be extra safe, we should set the 
+// However, to be extra safe, we should set the
 // FILESIZE_SAFE_THRESHOLD_FACTOR higher than 3
 //
 static const int FILESIZE_SAFE_THRESHOLD_FACTOR = 10;
@@ -155,7 +155,7 @@ bool LogFile::exists(const char *pathname)
   return (::access(pathname, F_OK) == 0);
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFile::change_name
   -------------------------------------------------------------------------*/
 
@@ -166,7 +166,7 @@ LogFile::change_name(char *new_name)
   m_name = xstrdup(new_name);
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFile::change_header
   -------------------------------------------------------------------------*/
 
@@ -303,7 +303,7 @@ LogFile::close_file()
   m_filesystem_checks_done = false;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFile::rolled_logfile
 
   This function will return true if the given filename corresponds to a
@@ -336,17 +336,17 @@ bool LogFile::rolled_logfile(char *path)
 
   Under normal operating conditions, this LogFile object was in existence
   for all writes to the file.  In this case, the LogFile members m_start_time
-  and m_end_time will have the starting and ending times for the actual 
+  and m_end_time will have the starting and ending times for the actual
   entries written to the file.
 
-  On restart situations, it is possible to re-open an existing logfile, 
-  which means that the m_start_time variable will be later than the actual 
-  entries recorded in the file.  In this case, we'll use the creation time 
-  of the file, which should be recorded in the meta-information located on 
+  On restart situations, it is possible to re-open an existing logfile,
+  which means that the m_start_time variable will be later than the actual
+  entries recorded in the file.  In this case, we'll use the creation time
+  of the file, which should be recorded in the meta-information located on
   disk.
 
-  If we can't use the meta-file, either because it's not there or because 
-  it's not valid, then we'll use timestamp 0 (Jan 1, 1970) as the starting 
+  If we can't use the meta-file, either because it's not there or because
+  it's not valid, then we'll use timestamp 0 (Jan 1, 1970) as the starting
   bound.
 
   Return 1 if file rolled, 0 otherwise
@@ -369,7 +369,7 @@ LogFile::roll(long interval_start, long interval_end)
   }
   //
   // Create the new file name, which consists of a timestamp and rolled
-  // extension added to the previous file name.  The timestamp format is 
+  // extension added to the previous file name.  The timestamp format is
   // ".%Y%m%d.%Hh%Mm%Ss-%Y%m%d.%Hh%Mm%Ss", where the two date/time values
   // represent the starting and ending times for entries in the rolled
   // log file.  In addition, we add the hostname.  So, the entire rolled
@@ -708,7 +708,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, char *alt_forma
 
     ssize_t bytes_written;
 
-    // try to write any data that may not have been written in a 
+    // try to write any data that may not have been written in a
     // previous attempt
     //
     if (m_overspill_bytes) {
@@ -880,7 +880,7 @@ LogFile::do_filesystem_checks()
 }
 
 /***************************************************************************
- LogFileList IS NOT USED 
+ LogFileList IS NOT USED
 ****************************************************************************/
 
 

@@ -30,7 +30,7 @@
 #include <netinet/udp.h>
 #endif
 
-/* 
+/*
  * We are following the convention of the ioctl cmd constants:
  *  - the first 8 bits contain the character representing the device
  *  - bits 8-15 refer to the ioctl
@@ -116,7 +116,7 @@ struct InkBulkIOSendtoRequest
  *      describes if there is a per-receiver specific header that has to be
  *      tacked on before each data-payload.
  *   - a list of InkBulkIOPkt that describes the payload being split;
- *   - a list of tuples <receiver info, {optional InkBulkIOPkt}> 
+ *   - a list of tuples <receiver info, {optional InkBulkIOPkt}>
  *      terminate list by 0xffffffff
  */
 
@@ -152,7 +152,7 @@ struct InkBulkIORequest
 #define MAX(x, y) (x > y ? x : y)
 #endif
 
-/* 
+/*
  * Purposely, under specify the size; we need to leave space for the "terminating" packet.
  * Every block contains at least 1 request.
  */

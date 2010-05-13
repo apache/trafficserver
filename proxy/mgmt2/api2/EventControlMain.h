@@ -26,7 +26,7 @@
  * Purpose: Handles event callbacks only
  * Created: 6/26/00
  * Created by: lant
- * 
+ *
  ***************************************************************************/
 
 #ifndef EVENT_CONTROL_MAIN_H
@@ -40,7 +40,7 @@
 //use events_registered[event_id] as index to check if alarm is registered
 typedef struct
 {
-  SocketInfo sock_info;         // stores event socket info 
+  SocketInfo sock_info;         // stores event socket info
   struct sockaddr *adr;
   bool events_registered[NUM_EVENTS];
 } EventClientT;

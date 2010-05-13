@@ -27,7 +27,7 @@
 
   Handle the allocation of the socket descriptor (fd) resource.
 
-  
+
  ****************************************************************************/
 
 #ifndef _I_SocketManager_h_
@@ -91,10 +91,10 @@ struct SocketManager
              const struct timespec *timeout);
 #elif defined(USE_PORT)
   int port_create();
-  int port_associate(int port, int fd, uintptr_t obj, 
+  int port_associate(int port, int fd, uintptr_t obj,
 		     int events, void *user);
   int port_dissociate(int port, int fd, uintptr_t obj);
-  int port_getn(int port, port_event_t *list, uint_t max, 
+  int port_getn(int port, port_event_t *list, uint_t max,
 		uint_t *nget, timespec_t *timeout);
 #endif
   int shutdown(int s, int how);

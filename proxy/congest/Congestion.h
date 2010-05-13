@@ -289,7 +289,7 @@ struct CongestionEntry:RequestData
   void stat_inc_F();
   void stat_inc_M();
 
-  // fail history operations 
+  // fail history operations
   void clearFailHistory();
   bool compCongested();
 
@@ -463,7 +463,7 @@ inku64 make_key(char *hostname, unsigned long ip, CongestionControlRecord * reco
 inku64 make_key(char *hostname, int len, unsigned long ip, char *prefix, int prelen, short port = 0);
 
 //----------------------------------------------------
-// the following functions are actually declared in 
+// the following functions are actually declared in
 // CongestionDB.h and defined in CongestionDB.cc
 // They are included here only to make the
 // editing & compiling process faster

@@ -23,11 +23,11 @@
 
 /***************************************************************************
  * NetworkUtilsDefs.h
- * 
- * contains general definitions used by both NetworkUtilsRemote and 
+ *
+ * contains general definitions used by both NetworkUtilsRemote and
  * NetworkUtilsLocal
  *
- * 
+ *
  ***************************************************************************/
 
 #ifndef _NETWORK_UTILS_DEFS_H_
@@ -54,7 +54,7 @@
 #define SIZE_EVENT_ID 2         // num bytes used to specify event_id
 
 
-// the possible operations or msg types sent from remote client to TM 
+// the possible operations or msg types sent from remote client to TM
 #define TOTAL_NUM_OP_TYPES 22
 typedef enum
 {

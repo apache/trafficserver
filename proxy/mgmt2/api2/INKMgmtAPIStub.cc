@@ -26,7 +26,7 @@
  * Purpose: This file implements the management api stub functions
  * Created: 12/17/00
  * Created by: Eric Wong
- * 
+ *
  ***************************************************************************/
 
 #include "INKMgmtAPI.h"

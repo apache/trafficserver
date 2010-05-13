@@ -25,8 +25,8 @@
 
   I_UDPNet.h
   This file provides UDP interface. To be included in I_Net.h
-  
-  
+
+
  ****************************************************************************/
 
 #ifndef __UDPNET_H_
@@ -53,14 +53,14 @@ public:
 
   /**
      create UDPConnection
-     
+
      Why was this implemented as an asynchronous call?  Just in case
      Windows requires it...
      <p>
-     <b>Callbacks:</b><br> 
+     <b>Callbacks:</b><br>
      cont->handleEvent( NET_EVENT_DATAGRAM_OPEN, UDPConnection *) is
      called for new socket.
-     
+
      @param c Continuation that is called back with newly created
      socket.
      @param my_port Local port to be bound (required)

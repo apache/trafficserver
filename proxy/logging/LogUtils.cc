@@ -27,7 +27,7 @@
  This file contains a set of utility routines that are used throughout the
  logging implementation.
 
- 
+
  ***************************************************************************/
 
 #include "ink_config.h"
@@ -163,7 +163,7 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
 /*-------------------------------------------------------------------------
   LogUtils::timestamp_to_date_str
 
-  This routine will convert a timestamp (seconds) into a W3C compatible 
+  This routine will convert a timestamp (seconds) into a W3C compatible
   date string.
   -------------------------------------------------------------------------*/
 
@@ -195,7 +195,7 @@ LogUtils::timestamp_to_date_str(long timestamp)
 /*-------------------------------------------------------------------------
   LogUtils::timestamp_to_time_str
 
-  This routine will convert a timestamp (seconds) into a W3C compatible 
+  This routine will convert a timestamp (seconds) into a W3C compatible
   time string.
   -------------------------------------------------------------------------*/
 
@@ -312,7 +312,7 @@ LogUtils::strip_trailing_newline(char *buf)
   }
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogUtils::escapify_url
 
   This routine will escapify a URL to remove spaces (and perhaps other ugly
@@ -325,7 +325,7 @@ char *
 LogUtils::escapify_url(Arena * arena, char *url, int len_in, int *len_out)
 {
   // codes_to_escape is a bitmap encoding the codes that should be escaped.
-  // These are all the codes defined in section 2.4.3 of RFC 2396 
+  // These are all the codes defined in section 2.4.3 of RFC 2396
   // (control, space, delims, and unwise) plus the tilde. In RFC 2396
   // the tilde is an "unreserved" character, but we escape it because
   // historically this is what the traffic_server has done.
@@ -336,9 +336,9 @@ LogUtils::escapify_url(Arena * arena, char *url, int len_in, int *len_out)
     0xB4,                       // space " # %
     0x00, 0x00,                 //
     0x0A,                       // < >
-    0x00, 0x00, 0x00,           // 
+    0x00, 0x00, 0x00,           //
     0x1E, 0x80,                 // [ \ ] ^ `
-    0x00, 0x00,                 // 
+    0x00, 0x00,                 //
     0x1F,                       // { | } ~ DEL
     0x00, 0x00, 0x00, 0x00,     // all non-ascii characters unmodified
     0x00, 0x00, 0x00, 0x00,     //               .
@@ -378,7 +378,7 @@ LogUtils::escapify_url(Arena * arena, char *url, int len_in, int *len_out)
   // three characters long.  Count this and allocate the string required.
   //
   // make sure we take into account the characters we are substituting
-  // for when we calculate out_len !!! in other words, 
+  // for when we calculate out_len !!! in other words,
   // out_len = len_in + 3*count - count
   //
   int out_len = len_in + 2 * count;
@@ -408,7 +408,7 @@ LogUtils::escapify_url(Arena * arena, char *url, int len_in, int *len_out)
   return new_url;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogUtils::remove_content_type_attributes
 
   HTTP allows content types to have attributes following the main type and
@@ -432,14 +432,14 @@ LogUtils::remove_content_type_attributes(char *type_str, int *type_len)
   }
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogUtils::ip_to_hex_str
 
   This routine simply writes the given IP integer [ip] in the equivalent
   hexadecimal string format "xxxxxxxxxx" into the provided buffer [buf] of
-  size [bufLen]. 
+  size [bufLen].
 
-  It returns 1 if the provided buffer is not big enough to hold the 
+  It returns 1 if the provided buffer is not big enough to hold the
   equivalent ip string (and its null terminator), and 0 otherwise.
   If the buffer is not big enough, only the ip "segments" that completely
   fit into it are written, and the buffer is null terminated.
@@ -472,14 +472,14 @@ LogUtils::ip_to_hex_str(unsigned ip, char *buf, size_t bufLen, size_t * numChars
   return retVal;
 };
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogUtils::timestamp_to_hex_str
 
   This routine simply writes the given timestamp integer [time_t] in the equivalent
   hexadecimal string format "xxxxxxxxxx" into the provided buffer [buf] of
-  size [bufLen]. 
+  size [bufLen].
 
-  It returns 1 if the provided buffer is not big enough to hold the 
+  It returns 1 if the provided buffer is not big enough to hold the
   equivalent ip string (and its null terminator), and 0 otherwise.
   If the buffer is not big enough, only the ip "segments" that completely
   fit into it are written, and the buffer is null terminated.
@@ -512,23 +512,23 @@ int
 LogUtils::ip_to_str (unsigned ip, char *str, unsigned len)
 {
     int ret = snprintf (str, len, "%u.%u.%u.%u",
-			    (ip >> 24) & 0xff, 
-			    (ip >> 16) & 0xff, 
-			    (ip >> 8)  & 0xff, 
+			    (ip >> 24) & 0xff,
+			    (ip >> 16) & 0xff,
+			    (ip >> 8)  & 0xff,
 			    ip         & 0xff);
 
     return ((ret <= (int)len)? ret : (int)len);
 }
 */
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogUtils::ip_to_str
 
   This routine simply writes the given IP integer [ip] in the equivalent
   string format "aaa.bbb.ccc.ddd" into the provided buffer [buf] of size
-  [bufLen]. 
+  [bufLen].
 
-  It returns 1 if the provided buffer is not big enough to hold the 
+  It returns 1 if the provided buffer is not big enough to hold the
   equivalent ip string (and its null terminator), and 0 otherwise.
   If the buffer is not big enough, only the ip "segments" that completely
   fit into it are written, and the buffer is null terminated.
@@ -607,7 +607,7 @@ LogUtils::ip_to_str(unsigned ip, char *buf, size_t bufLen, size_t * numCharsPtr)
   return retVal;
 };
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogUtils::str_to_ip
 
   This routine converts the string form of an IP address
@@ -627,7 +627,7 @@ LogUtils::str_to_ip(char *ipstr)
   return ip;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogUtils::valid_ipstr_format
 
   This routine checks for a string formated as an ip address.
@@ -692,16 +692,16 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
   return ((tr >= sidl ? (tr - sidl) % rolling_interval : (86400 - (sidl - tr)) % rolling_interval));
 }
 
-// Converts the ink64 val argument to a null terminated string, returning a 
+// Converts the ink64 val argument to a null terminated string, returning a
 // pointer to the beginning of the string.
 //
-// The string is stored in the provided buffer if the buffer is large 
+// The string is stored in the provided buffer if the buffer is large
 // enough, otherwise the buffer is not touched, and the function returns NULL.
 //
 // The argument total_chars returns the number of characters that were
-// converted or that would have been converted if the buffer had been large 
+// converted or that would have been converted if the buffer had been large
 // enough. total_chars includes the null terminator.
-// 
+//
 // The optional arguments req_width and pad_char allow users to
 // specify a requested width of the output string (including the null
 // terminator), and a padding character to use to reach that width. Padding
@@ -814,7 +814,7 @@ LogUtils::ink64_to_str(char *buf, unsigned int buf_size, ink64 val,
 // resulting string, then places the string in buf WITHOUT A
 // NULL-TERMINATING CHARACTER, and returns the number of characters written.
 //
-// If the provided buffer is too small, leaves it untouched and 
+// If the provided buffer is too small, leaves it untouched and
 // returns -(required_buffer_size)
 //
 int
@@ -868,8 +868,8 @@ LogUtils::squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestam
 // returns:
 //  0 on success
 // -1 on system error (no permission, etc.)
-//  1 if the file full_filename points to is neither a regular file 
-//    nor a pipe 
+//  1 if the file full_filename points to is neither a regular file
+//    nor a pipe
 //
 int
 LogUtils::file_is_writeable(const char *full_filename,

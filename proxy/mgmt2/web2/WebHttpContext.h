@@ -53,7 +53,7 @@ struct WebHttpContext
   InkHashTable *query_data_ht;  // client query name/value hash-table
   InkHashTable *post_data_ht;   // client POST name/value hash-table
   InkHashTable *submit_warn_ht; // ht of warn submission records
-  InkHashTable *submit_note_ht; // ht of info submission records 
+  InkHashTable *submit_note_ht; // ht of info submission records
   sockaddr_in *client_info;     // client conection information
   SocketInfo si;                // socket information
   ssl_ctx_st *ssl_ctx;          // SSL information

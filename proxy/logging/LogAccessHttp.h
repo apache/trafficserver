@@ -34,10 +34,10 @@
 class HttpSM;
 class URL;
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogAccessHttp
 
-  This class extends the logging system interface as implemented by the 
+  This class extends the logging system interface as implemented by the
   HttpStateMachineGet class.
   -------------------------------------------------------------------------*/
 
@@ -119,7 +119,7 @@ public:
   virtual int marshal_transfer_time_ms(char *); // INT
   virtual int marshal_transfer_time_s(char *);  // INT
 
-  // 
+  //
   // named fields from within a http header
   //
   virtual int marshal_http_header_field(LogField::Container container, char *field, char *buf);

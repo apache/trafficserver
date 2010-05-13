@@ -75,7 +75,7 @@
  * might want to be changed some time. */
 #define ADMIN_USER "admin"
 
-/* NOTE: all scripts should have two defines one for the script and 
+/* NOTE: all scripts should have two defines one for the script and
 *        the other for the trailing args */
 #define SPI_DOMAIN_NAME    "/usr/bin/domainname"
 

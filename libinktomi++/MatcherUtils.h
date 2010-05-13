@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  MatcherUtils.h - Various helper routines used in ControlMatcher 
+ *  MatcherUtils.h - Various helper routines used in ControlMatcher
  *                    and ReverseProxy
  *
  *

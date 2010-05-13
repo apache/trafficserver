@@ -25,8 +25,8 @@
 /****************************************************************************
  *
  *  Module: handles creating formated line output for the CLI
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #ifndef _CLI_LINEBUFFER_H_
@@ -45,7 +45,7 @@ private:
     DynArray < const char *>*o_string;  /* array of output strings */
     DynArray<int>*f_widths;  /* array of field widths */
 
-  /* copy constructor and assignment operator are private 
+  /* copy constructor and assignment operator are private
    *  to prevent their use */
     CLIlineBuffer(const CLIlineBuffer & rhs);
     CLIlineBuffer & operator=(const CLIlineBuffer & rhs);

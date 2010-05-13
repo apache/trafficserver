@@ -28,7 +28,7 @@
 class INK_MD5;
 /**
    This is intended to be used by cache internals only.  External
-   callers should use BlockCacheKey_util to create keys. 
+   callers should use BlockCacheKey_util to create keys.
 */
 
 class BlockCacheKey

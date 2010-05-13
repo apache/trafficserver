@@ -318,7 +318,7 @@ signal_handler(int sig, siginfo_t * t, void *c)
 #else
   snprintf(sig_msg, sizeof(sig_msg), "NOTE: Traffic Server received Sig %d: %s\n", sig, strsignal(sig));
   NOWARN_UNUSED_RETURN(write(2, sig_msg, strlen(sig_msg)));
-  //syslog(LOG_ERR, sig_msg); 
+  //syslog(LOG_ERR, sig_msg);
 #endif
 
 #ifdef HAVE_PROFILER
@@ -487,7 +487,7 @@ init_signals(bool do_stackdump)
 //  set_signal(SIGSEGV,(SigActionFunc_t)signal_handler);
 //
 //  There was an an addtional #if 0 w/ a note about SIGABRT
-//   // Do not catch, results in recursive 
+//   // Do not catch, results in recursive
 //   //  SIGABRT loop on solaris assert() failures
 //  set_signal(SIGABRT,(SigActionFunc_t)signal_handler);
 //

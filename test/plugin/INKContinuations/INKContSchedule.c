@@ -27,19 +27,19 @@ Verification of INKqa06643
 
 Schedule a continuation that is simply called back with a later timeout
 value. Explicitly call INKContSchedule() without a mutex, the mutex should
-be created in InkAPI.cc/INKContSchedule. 
+be created in InkAPI.cc/INKContSchedule.
 
-This plug-in will not complete the client request (request times-out), 
-since the event routine calls INKContSchedule() in the event handler.  
-A simple change to the event routine can be made so that INKHttpTxnReenable() 
+This plug-in will not complete the client request (request times-out),
+since the event routine calls INKContSchedule() in the event handler.
+A simple change to the event routine can be made so that INKHttpTxnReenable()
 is called in place of INKContSchedule().
 
-Entry points to the core now use either 
-	FORCE_PLUGIN_MUTEX 
+Entry points to the core now use either
+	FORCE_PLUGIN_MUTEX
 or
-	new_ProxyMutex() 
+	new_ProxyMutex()
 
-to create/init a mutex. 
+to create/init a mutex.
 
 **************************************************************************/
 

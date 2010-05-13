@@ -58,8 +58,8 @@ inkcoreapi char *ink_string_find_dotted_extension(char *str, char *ext, int max_
 
 /* these are supposed to make your life easier */
 
-/* 
- * the results of all of these are put in freshly malloc()ed memory 
+/*
+ * the results of all of these are put in freshly malloc()ed memory
  */
 
         /*
@@ -70,7 +70,7 @@ char *ink_string_mpath(int nstrings, ...);
          * s = ink_string_mcopy(old);
          */
 char *ink_string_mcopy(char *source);
-        /* 
+        /*
          *  s = ink_string_mjoin(2, "/foo", false, "/bar", false);
          */
 char *ink_string_mjoin(int nstrings, ...);
@@ -649,7 +649,7 @@ ptr_len_cmp(const char *p1, int l1, const char *str)
 }
 
 // char* ptr_len_pbrk(const char* p1, int l1, const char* str)
-// 
+//
 //   strpbrk() like functionality for ptr & len pair strings
 //
 inline char *

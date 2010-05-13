@@ -22,14 +22,14 @@
  */
 
 /*************************** -*- Mod: C++ -*- ******************************
- 
+
   HttpConfig.h
    Created On      : Tue Oct 22 20:19:04 1996
- 
+
    Description:
    Http Configurations
- 
-   
+
+
  ****************************************************************************/
 #ifndef _HttpConfig_h_
 #define _HttpConfig_h_
@@ -720,7 +720,7 @@ public:
   MgmtInt revalidate_window_period;
   MgmtInt srv_enabled;          /* added by: ebalsa */
 
-  //############################################################################## 
+  //##############################################################################
 //#
   //# Redirection
   //#

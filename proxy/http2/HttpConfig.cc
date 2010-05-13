@@ -1540,7 +1540,7 @@ HttpConfig::reconfigure()
 
   ///////////////////////////////////////////////////////////////////////////
   //  Added by YTS Team, yamsat                                                 //
-  //   Connection collapsing Configuration parameters                      //            
+  //   Connection collapsing Configuration parameters                      //
   // 1. hashtable_enabled: if set to 1, requests will first search the     //
   //    hashtable to see if another similar request is already being served//
   // 2. rww_wait_time: read-while-write wait time: While read while write  //
@@ -1577,7 +1577,7 @@ HttpConfig::reconfigure()
 
 #undef INT_TO_BOOL
 
-// Connection collapsing debug statements 
+// Connection collapsing debug statements
   Debug("http_init", "proxy.config.connection_collapsing.hashtable_enabled = %d", params->hashtable_enabled);
   Debug("http_init", "proxy.config.connection_collapsing.rww_wait_time = %d", params->rww_wait_time);
   Debug("http_init", "proxy.config.connection_collapsing.revalidate_window_period = %d",
@@ -1616,7 +1616,7 @@ HttpConfig::release(HttpConfigParams * params)
   configProcessor.release(m_id, params);
 }
 
-/* 
+/*
   Static Accept-Encoding/User-Agent filtering table
   The format of this table is compatible with ae_ua.config file
   */
@@ -1929,7 +1929,7 @@ HttpConfig::parse_url_expansions(char *url_expansions_str, int *num_expansions)
   // First count the number of URL expansions in the string
   char *start = url_expansions_str, *end;
   while (1) {
-    // Skip whitespace 
+    // Skip whitespace
     while (isspace(*start))
       start++;
     if (*start == '\0')
@@ -1937,7 +1937,7 @@ HttpConfig::parse_url_expansions(char *url_expansions_str, int *num_expansions)
     count++;
     end = start + 1;
 
-    // Find end of expansion 
+    // Find end of expansion
     while (!isspace(*end) && *end != '\0')
       end++;
     start = end;
@@ -1948,7 +1948,7 @@ HttpConfig::parse_url_expansions(char *url_expansions_str, int *num_expansions)
     expansions = (char **) xmalloc(count * sizeof(char *));
     start = url_expansions_str;
     for (i = 0; i < count; i++) {
-      // Skip whitespace 
+      // Skip whitespace
       while (isspace(*start))
         start++;
       expansions[i] = start;

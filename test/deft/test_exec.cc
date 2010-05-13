@@ -1443,8 +1443,8 @@ set_var_value(const char *var, const char *var_value)
 }
 
 // char* construct_instance_file_path(InstanceRecord* irec, const char* file)
-// 
-//  CALLER FREES return value 
+//
+//  CALLER FREES return value
 static char *
 construct_instance_file_path(InstanceRecord * irec, const char *file)
 {
@@ -1471,8 +1471,8 @@ construct_instance_file_path(InstanceRecord * irec, const char *file)
 }
 
 // char* construct_instance_file_path(InstanceRecord* irec, const char* file)
-// 
-//  CALLER FREES return value 
+//
+//  CALLER FREES return value
 static char *
 construct_script_file_path(const char *file)
 {
@@ -1565,7 +1565,7 @@ put_instance_file_raw(const char *instance, const char *relative_path, const cha
 
   Debug("put_file", "sending put_file %s %s %s", full_path, length_buf, mode_buf);
 
-  // Set up 
+  // Set up
   RafCmd request;
   RafCmd response;
   request(0) = irec->host_rec->get_id_str();
@@ -1674,7 +1674,7 @@ put_instance_file_subs(const char *instance, const char *relative_path, const ch
 
   Debug("put_file", "sending put_file %s %s %s", full_path, length_buf, mode_buf);
 
-  // Set up 
+  // Set up
   RafCmd request;
   RafCmd response;
   request(0) = irec->host_rec->get_id_str();
@@ -1852,7 +1852,7 @@ wait_for_server_port(const char *instance, const char *port_str, int timeout_ms)
   //
   //   1) all digits - converted to int
   //   2) %%(var) - deft var substitution done and then converted to int
-  //   3) other string - looked up in port bindings has for instance 
+  //   3) other string - looked up in port bindings has for instance
   //      and then converted to int
   int port = -1;
   if (isdigit(port_str[0])) {

@@ -82,7 +82,7 @@ inkudp_add_split_rule(queue_t * incomingQ, struct fastIO_split_rule *rule)
   redirect_passthrough = 1;
 
 
-  /* 
+  /*
    * bail out if this is an error or we have successfully added to
    * the appropriate split list; otherwise, try to add the thing.
    */
@@ -302,7 +302,7 @@ inkudp_flush_split_rule(queue_t * incomingQ, struct fastIO_split_rule *rule)
 
 /*
  *  inkudp_handle_cmsg()
- *  Process a control message.  
+ *  Process a control message.
  *
  *  These messages sometimes contain important data, so we should
  *  make sure they are all ignored.

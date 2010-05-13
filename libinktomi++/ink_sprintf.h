@@ -22,13 +22,13 @@
  */
 
 /*****************************************************************************
-  
+
   ink_sprintf.h
 
   This file implements some Inktomi variants of sprintf, to do bounds
   checking and length counting.
 
-  
+
   ****************************************************************************/
 
 #ifndef _ink_sprintf_h_

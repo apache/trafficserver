@@ -361,8 +361,8 @@ CacheVC::scanOpenWrite(int event, Event * e)
       break;
     }
 
-    // the document was not modified 
-    // we are safe from now on as we hold the 
+    // the document was not modified
+    // we are safe from now on as we hold the
     // writer lock on the doc
     SET_HANDLER(&CacheVC::scanUpdateDone);
     ret = do_write_call();
@@ -382,7 +382,7 @@ CacheVC::scanUpdateDone(int event, Event * e)
   // get partition lock
   CACHE_TRY_LOCK(lock, part->mutex, mutex->thread_holding);
   if (lock) {
-    // insert a directory entry for the previous fragment 
+    // insert a directory entry for the previous fragment
     dir_overwrite(&first_key, part, &dir, &od->first_dir, false);
     if (od->move_resident_alt) {
       dir_insert(&od->single_doc_key, part, &od->single_doc_dir);

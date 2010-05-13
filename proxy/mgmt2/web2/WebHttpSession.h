@@ -25,7 +25,7 @@
  *
  *  WebHttpSession.h - Manage session data
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _WEB_HTTP_SESSION_

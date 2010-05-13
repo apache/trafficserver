@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #include "ink_config.h"
@@ -204,7 +204,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
   conn_decrease = true;
   HTTP_INCREMENT_DYN_STAT(http_total_client_connections_stat);
-  /* inbound requests stat should be incremented here, not after the 
+  /* inbound requests stat should be incremented here, not after the
    * header has been read */
   HTTP_INCREMENT_DYN_STAT(http_total_incoming_connections_stat);
   // Record api hook set state
@@ -289,8 +289,8 @@ HttpClientSession::do_io_close(int alerrno)
     ka_vio = client_vc->do_io_read(this, INT_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
 
-    // [bug 2610799] Drain any data read.  
-    // If the buffer is full and the client writes again, we will not receive a 
+    // [bug 2610799] Drain any data read.
+    // If the buffer is full and the client writes again, we will not receive a
     // READ_READY event.
     sm_reader->consume(sm_reader->read_avail());
 

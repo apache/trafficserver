@@ -138,7 +138,7 @@ PollCont::pollEvent(int event, Event *e)
   ptimeout.tv_sec = poll_timeout / 1000;
   ptimeout.tv_nsec = 1000000 * (poll_timeout % 1000);
   unsigned nget = 1;
-  if((retval = port_getn(pollDescriptor->port_fd, 
+  if((retval = port_getn(pollDescriptor->port_fd,
 			pollDescriptor->Port_Triggered_Events,
 			POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) < 0) {
     pollDescriptor->result = 0;
@@ -157,8 +157,8 @@ PollCont::pollEvent(int event, Event *e)
   } else {
     pollDescriptor->result = (int)nget;
   }
-  NetDebug("iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)", 
-	   retval,retval < 0 ? strerror(errno) : "ok", 
+  NetDebug("iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)",
+	   retval,retval < 0 ? strerror(errno) : "ok",
 	   pollDescriptor->port_fd, pollDescriptor->Port_Triggered_Events,
 	   POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pollDescriptor->result);
 #else
@@ -175,7 +175,7 @@ net_signal_hook_callback(EThread *thread) {
 #else
   char dummy[1024];
   NOWARN_UNUSED_RETURN(read(thread->evpipe[0], &dummy[0], 1024));
-#endif  
+#endif
 }
 
 static void
@@ -186,7 +186,7 @@ net_signal_hook_function(EThread *thread) {
 #else
   char dummy;
   NOWARN_UNUSED_RETURN(write(thread->evpipe[1], &dummy, 1));
-#endif  
+#endif
 }
 
 void
@@ -354,7 +354,7 @@ NetHandler::mainNetEvent(int event, Event *e)
   ptimeout.tv_sec = poll_timeout / 1000;
   ptimeout.tv_nsec = 1000000 * (poll_timeout % 1000);
   unsigned nget = 1;
-  if((retval = port_getn(pd->port_fd, pd->Port_Triggered_Events, 
+  if((retval = port_getn(pd->port_fd, pd->Port_Triggered_Events,
 			POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) < 0) {
     pd->result = 0;
     switch(errno) {
@@ -372,8 +372,8 @@ NetHandler::mainNetEvent(int event, Event *e)
   } else {
     pd->result = (int)nget;
   }
-  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)", 
-	   retval,retval < 0 ? strerror(errno) : "ok", 
+  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)",
+	   retval,retval < 0 ? strerror(errno) : "ok",
 	   pd->port_fd, pd->Port_Triggered_Events,
 	   POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pd->result);
 #else
@@ -418,11 +418,11 @@ NetHandler::mainNetEvent(int event, Event *e)
 	epd->refresh(EVENTIO_READ);
 #endif
       }
-    } 
+    }
 #if !defined(USE_OLD_EVENTFD)
     else if (epd->type == EVENTIO_ASYNC_SIGNAL){
       net_signal_hook_callback(trigger_event->ethread);
-    } 
+    }
 #else /* USE_OLD_EVENTFD */
     else if (epd->type == EVENTFD) { // use: EVENTIO_ASYNC_SIGNAL
       char buf[1024];

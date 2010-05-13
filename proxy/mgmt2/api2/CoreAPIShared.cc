@@ -23,12 +23,12 @@
 
 /*****************************************************************************
  * Filename: CoreAPIShared.cc
- * Purpose: This file contains functions that are shared by local and remote 
+ * Purpose: This file contains functions that are shared by local and remote
  *          API; in particular it has helper functions used by INKMgmtAPI.cc
  * Created: 01/20/00
  * Created by: Lan Tran
  *
- * 
+ *
  ***************************************************************************/
 
 #include "inktomi++.h"
@@ -339,9 +339,9 @@ poll_write(int fd, int timeout)
 
 /***************************************************************************
  * socket_read_timeout
- * 
- * purpose: need timeout for socket after sending a request and waiting to 
- *          read reply check to see if anything to read; 
+ *
+ * purpose: need timeout for socket after sending a request and waiting to
+ *          read reply check to see if anything to read;
  *          but only wait for fixed time specified in timeout struct
  * input: fd   - the socket to wait for
  *        sec  - time to wait in secs
@@ -349,7 +349,7 @@ poll_write(int fd, int timeout)
  * output: returns 0 if time expires and the fd is not ready
  *         return > 0 (actually 1) if fd is ready to read
  * reason: the client could send a reply, but if TM is down or has
- *         problems sending a reply then the client could end up hanging, 
+ *         problems sending a reply then the client could end up hanging,
  *         waiting to read a replay from the local side
  ***************************************************************************/
 int
@@ -371,7 +371,7 @@ socket_read_timeout(int fd, int sec, int usec)
 
 /***************************************************************************
  * socket_write_timeout
- * 
+ *
  * purpose: checks if the specified socket is ready to be written too; only
  *          checks for the specified time
  * input: fd   - the socket to wait for
@@ -411,9 +411,9 @@ socket_write_timeout(int fd, int sec, int usec)
  * get_event_id
  *
  * Purpose: Given the event_name, returns the event's corresponding
- *          event id 
- * Note: this conversion is based on list defined in Alarms.h and 
- *       the identical list defined in CoreAPIShared.cc 
+ *          event id
+ * Note: this conversion is based on list defined in Alarms.h and
+ *       the identical list defined in CoreAPIShared.cc
  *********************************************************************/
 int
 get_event_id(const char *event_name)

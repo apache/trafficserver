@@ -31,7 +31,7 @@
 
 /**
   Represents an operation initiated on a Processor.
-  
+
   The Action class is an abstract representation of an operation
   being executed by some Processor. A reference to an Action object
   allows you to cancel an ongoing asynchronous operation before it

@@ -64,11 +64,11 @@ extern "C"
 
 #endif /*_INK_ASSERT_H*/
 
-/* workaround a bug in the  stupid Sun preprocessor 
+/* workaround a bug in the  stupid Sun preprocessor
 
 #undef assert
 #define assert __DONT_USE_BARE_assert_USE_ink_assert__
-#define _ASSERT_H 
-#undef __ASSERT_H__ 
-#define __ASSERT_H__ 
+#define _ASSERT_H
+#undef __ASSERT_H__
+#define __ASSERT_H__
 */

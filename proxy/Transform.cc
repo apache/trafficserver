@@ -273,7 +273,7 @@ TransformTerminus::handle_event(int event, void *edata)
         m_write_vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
       }
 
-      // We could have closed on the write callback 
+      // We could have closed on the write callback
       if (m_closed != 0 && m_tvc->m_closed != 0) {
         return 0;
       }
@@ -1073,7 +1073,7 @@ RangeTransform::transform_to_range()
         m_output_vio->nbytes = m_done;
         m_output_vio->reenable();
 
-        // if we are detaching before processing all the 
+        // if we are detaching before processing all the
         //   input data, send VC_EVENT_EOS to let the upstream know
         //   that it can rely on us consuming any more data
         int cb_event = (m_write_vio.ntodo() > 0) ? VC_EVENT_EOS : VC_EVENT_WRITE_COMPLETE;
@@ -1094,9 +1094,9 @@ RangeTransform::transform_to_range()
         // keep this part for future support of out-of-order Range
         // if this is NOT a sequential Range compared to the previous one -
         // start of current Range is larger than the end of last Range, do
-        // not need to go back to the start of the IOBuffereReader. 
-        // Otherwise, reset the IOBufferReader. 
-        //if ( *start > prev_end ) 
+        // not need to go back to the start of the IOBuffereReader.
+        // Otherwise, reset the IOBufferReader.
+        //if ( *start > prev_end )
         *done_byte = prev_end;
         //else
         //  reader->reset();
@@ -1105,7 +1105,7 @@ RangeTransform::transform_to_range()
       }
     }
 
-    // When we need to read and there is nothing available 
+    // When we need to read and there is nothing available
     avail = reader->read_avail();
     if (avail == 0)
       break;
@@ -1172,8 +1172,8 @@ RangeTransform::add_sub_header(int index)
   -------------------------------------------------------------------------*/
 
 /*
- * this function changes the response header to reflect this is 
- * a Range response. 
+ * this function changes the response header to reflect this is
+ * a Range response.
  */
 
 void

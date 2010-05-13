@@ -23,13 +23,13 @@
 
 /*****************************************************************************
  * Filename: NetworkUtilsRemote.cc
- * Purpose: This file contains functions used by remote api client to 
+ * Purpose: This file contains functions used by remote api client to
  *          marshal requests to TM and unmarshal replies from TM.
  *          Also stores the information about the client's current
  *          socket connection to Traffic Manager
  * Created: 8/9/00
- * 
- * 
+ *
+ *
  ***************************************************************************/
 
 #include "ink_config.h"
@@ -47,8 +47,8 @@ int main_socket_fd = -1;
 int event_socket_fd = -1;
 
 // need to store for reconnecting scenario
-char *main_socket_path = NULL;  // "<path>/mgmtapisocket" 
-char *event_socket_path = NULL; // "<path>/eventapisocket" 
+char *main_socket_path = NULL;  // "<path>/mgmtapisocket"
+char *event_socket_path = NULL; // "<path>/eventapisocket"
 
 /**********************************************************************
  * Socket Helper Functions
@@ -158,7 +158,7 @@ ts_connect()
     //fprintf(stderr, "[connect] ERROR: can't open socket\n");
     goto ERROR;                 // ERROR - can't open socket
   }
-  // setup Unix domain socket 
+  // setup Unix domain socket
   memset(&client_sock, 0, sizeof(sockaddr_un));
   client_sock.sun_family = AF_UNIX;
   ink_strncpy(client_sock.sun_path, main_socket_path, sizeof(client_sock.sun_path));
@@ -260,7 +260,7 @@ reconnect()
     return err;
 
   // use the socket_path that was called by remote client on first init
-  // use connect instead of INKInit() b/c if TM restarted, client-side tables 
+  // use connect instead of INKInit() b/c if TM restarted, client-side tables
   // would be recreated; just want to reconnect to same socket_path
   err = ts_connect();
   if (err != INK_ERR_OKAY)      // problem establishing connection
@@ -280,12 +280,12 @@ reconnect()
 /***************************************************************************
  * reconnect_loop
  *
- * purpose: attempts to reconnect to TM (eg. when TM restarts) for the 
+ * purpose: attempts to reconnect to TM (eg. when TM restarts) for the
  *          specified number of times
  * input:  num_attempts - number of reconnection attempts to try before quit
  * output: INK_ERR_OKAY - if succesfully reconnected within num_attempts
  *         INK_ERR_xx - the reason the reconnection failed
- * notes: 
+ * notes:
  ***************************************************************************/
 INKError
 reconnect_loop(int num_attempts)
@@ -300,7 +300,7 @@ reconnect_loop(int num_attempts)
       //fprintf(stderr, "[reconnect_loop] Successful reconnction; Leave loop\n");
       return INK_ERR_OKAY;      // successful connection
     }
-    sleep(1);                   // to make it slower  
+    sleep(1);                   // to make it slower
   }
 
   //fprintf(stderr, "[reconnect_loop] FAIL TO CONNECT after %d tries\n", num_attempts);
@@ -310,18 +310,18 @@ reconnect_loop(int num_attempts)
 /*************************************************************************
  * connect_and_send
  *
- * purpose: 
- * When sending a request, it's possible that the user had restarted 
- * Traffic Manager. This means that the connection between TM and 
+ * purpose:
+ * When sending a request, it's possible that the user had restarted
+ * Traffic Manager. This means that the connection between TM and
  * the remote client has been broken, so the client needs to re-"connect"
- * to Traffic Manager. So, after "writing" to the socket in each 
- * "send_xx_request" function, need to check if the TM socket has 
+ * to Traffic Manager. So, after "writing" to the socket in each
+ * "send_xx_request" function, need to check if the TM socket has
  * been closed or not; the "write" function's errno will indicate if
  * the other end of the socket has been closed or not. If it is closed,
- * then need to try to re"connect", then resend the message request if 
- * the "connect" was successful. 
- * 1) try connect() 
- * 2) if connect() success, then resend the request. 
+ * then need to try to re"connect", then resend the message request if
+ * the "connect" was successful.
+ * 1) try connect()
+ * 2) if connect() success, then resend the request.
  * output: INK_ERR_NET_xx - connection problem or INK_ERR_OKAY
  * notes:
  * This function is basically called by the special "socket_write_conn" fn
@@ -380,16 +380,16 @@ connect_and_send(const char *msg, int msg_len)
 
 /**************************************************************************
  * socket_write_conn
- * 
- * purpose: guarantees writing of n bytes; if connection error, tries 
+ *
+ * purpose: guarantees writing of n bytes; if connection error, tries
  *          reconnecting to TM again (in case TM was restarted)
  * input:   fd to write to, buffer to write from & number of bytes to write
  * output:  INK_ERR_xx
- * note:   EPIPE - this happens if client makes a call after stopping then 
- *         starting TM again. 
- *         ENOTCONN - this happens if the client tries to make a call after 
+ * note:   EPIPE - this happens if client makes a call after stopping then
+ *         starting TM again.
+ *         ENOTCONN - this happens if the client tries to make a call after
  *         stopping TM, but before starting it; then restarts TM and makes a
- *          new call 
+ *          new call
  * In the send_xx_request function, use a special socket writing function
  * which calls connect_and_send() instead of just the basic connect():
  * 1) if the write returns EPIPE error, then call connect_and_send()
@@ -422,7 +422,7 @@ socket_write_conn(int fd, const char *msg_buf, int bytes)
       } else
         return INK_ERR_NET_WRITE;
     }
-    // we are all good here   
+    // we are all good here
     byte_wrote += ret;
   }
 
@@ -432,22 +432,22 @@ socket_write_conn(int fd, const char *msg_buf, int bytes)
 /**********************************************************************
  * socket_test_thread
  *
- * purpose: continually polls to check if local end of socket connection 
- *          is still open; this thread is created when the client calls 
+ * purpose: continually polls to check if local end of socket connection
+ *          is still open; this thread is created when the client calls
  *          Init() to initialize the API; and will not
  *          die until the client process dies
- * input: none 
- * output: if other end is closed, it reconnects to TM 
- * notes: uses the current main_socket_fd because the main_socket_fd could be 
+ * input: none
+ * output: if other end is closed, it reconnects to TM
+ * notes: uses the current main_socket_fd because the main_socket_fd could be
  *        in flux; basically it is possible that the client will reconnect
  *        from some other call, thus making the main_socket_fd actually
  *        valid when socket_test is called
- * reason: decided to create this "watcher" thread for the socket 
+ * reason: decided to create this "watcher" thread for the socket
  *         connection because if TM is restarted or the client process
- *         is started before the TM process, then the client will not 
+ *         is started before the TM process, then the client will not
  *         be able to receive any event notifications until a "request"
  *         is issued. In order to prevent losing an event notifications
- *         that are called in between the time TM is restarted and 
+ *         that are called in between the time TM is restarted and
  *         client issues a first request, we just run this thread which
  *         will try to reconnect to TM if it is not already connected
  **********************************************************************/
@@ -459,10 +459,10 @@ socket_test_thread(void *arg)
     if (socket_test(main_socket_fd) <= 0) {
       // ASSUMES that in between the time the socket_test is made
       // and this reconnect call is made, the main_socket_fd remains
-      // the same (eg. no one else called reconnect to TM successfully!! 
+      // the same (eg. no one else called reconnect to TM successfully!!
       // WHAT IF in between this time, the client had issued a request
       // calling socket_write_conn which then calls reconnect(); then
-      // reconnect will return an "ALREADY CONNECTED" error when it 
+      // reconnect will return an "ALREADY CONNECTED" error when it
       // tries to connect, and on the next loop iteration, the socket_test
       // will actually pass because main_socket_fd is valid!!
       if (reconnect() == INK_ERR_OKAY) {
@@ -484,11 +484,11 @@ socket_test_thread(void *arg)
  * send_request
  *
  * purpose: sends file read request to Traffic Manager
- * input:   fd - file descriptor to use to send to 
+ * input:   fd - file descriptor to use to send to
  *          op - the type of OpType request sending
  * output:  INK_ERR_xx
  * notes:  used by operations which don't need to send any additional
- *         parameters 
+ *         parameters
  * format: <OpType> <msg_len=0>
  **********************************************************************/
 INKError
@@ -553,7 +553,7 @@ send_request_name(int fd, OpType op, char *name)
     memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, name, msg_len);
 
 
-  // send message  
+  // send message
   err = socket_write_conn(fd, msg_buf, total_len);
   if (msg_buf)
     xfree(msg_buf);
@@ -624,8 +624,8 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
  * send_file_read_request
  *
  * purpose: sends file read request to Traffic Manager
- * input:   fd - file descriptor to use to send to 
- *          file - file to read 
+ * input:   fd - file descriptor to use to send to
+ *          file - file to read
  * output:  INK_ERR_xx
  * notes:   first must create the message and then send it across network
  *          msg format = <OpType> <msg_len> <INKFileNameT>
@@ -669,7 +669,7 @@ send_file_read_request(int fd, INKFileNameT file)
  *
  * purpose: sends file write request to Traffic Manager
  * input: fd - file descriptor to use
- *        file - file to read 
+ *        file - file to read
  *        text - new text to write to specified file
  *        size - length of the text
  *        ver  - version of the file to be written
@@ -767,7 +767,7 @@ send_record_get_request(int fd, char *rec_name)
   // fill in record name
   memcpy(msg_buf + msg_pos, rec_name, strlen(rec_name));
 
-  // send message  
+  // send message
   err = socket_write_conn(fd, msg_buf, total_len);
   xfree(msg_buf);
   return err;
@@ -832,7 +832,7 @@ send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
   cache_t = (ink16) clear;
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T, (void *) &cache_t, SIZE_TS_ARG_T);
 
-  // send message  
+  // send message
   err = socket_write_conn(fd, msg_buf, total_len);
   xfree(msg_buf);
   return err;
@@ -878,7 +878,7 @@ send_restart_request(int fd, bool cluster)
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &clust_t, SIZE_BOOL);
 
 
-  // send message  
+  // send message
   err = socket_write_conn(fd, msg_buf, total_len);
   xfree(msg_buf);
   return err;
@@ -895,8 +895,8 @@ send_restart_request(int fd, bool cluster)
  *          registered for each event
  * input: None
  * output: return INK_ERR_OKAY only if ALL events sent okay
- * notes: could create a function which just sends a list of all the events to 
- * reregister; but actually just reuse the function 
+ * notes: could create a function which just sends a list of all the events to
+ * reregister; but actually just reuse the function
  * send_request_name(EVENT_REG_CALLBACK) and call it for each event
  * 1) get list of all events with callbacks
  * 2) for each event, call send_request_name
@@ -951,8 +951,8 @@ send_register_all_callbacks(int fd, CallbackTable * cb_table)
  *          callbacks registered for that event
  * input: None
  * output: INK_ERR_OKAY only if all send requests are okay
- * notes: could create a function which just sends a list of all the events to 
- * unregister; but actually just reuse the function 
+ * notes: could create a function which just sends a list of all the events to
+ * unregister; but actually just reuse the function
  * send_request_name(EVENT_UNREG_CALLBACK) and call it for each event
  **********************************************************************/
 INKError
@@ -995,7 +995,7 @@ send_unregister_all_callbacks(int fd, CallbackTable * cb_table)
       }
       // REMEMBER: WON"T GET A REPLY!
       // only the event_poll_thread_main does any reading of the event_socket;
-      // so DO NOT parse reply b/c a reply won't be sent            
+      // so DO NOT parse reply b/c a reply won't be sent
     }
   }
 
@@ -1050,7 +1050,7 @@ send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg)
   // fill in diags msg
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN + SIZE_DIAGS_T + SIZE_LEN, diag_msg, diag_msg_len);
 
-  // send message  
+  // send message
   err = socket_write_conn(fd, msg_buf, total_len);
   if (msg_buf)
     xfree(msg_buf);
@@ -1062,17 +1062,17 @@ send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg)
  * UNMARSHAL REPLIES
  **********************************************************************/
 
-/* Error handling implementation: 
+/* Error handling implementation:
  * All the parsing functions which parse the reply returned from local side
- * also must read the INKERror return value sent from local side; this return 
+ * also must read the INKERror return value sent from local side; this return
  * value is the same value that will be returned by the parsing function.
  * ALL PARSING FUNCTIONS MUST FIRST CHECK that the retval is INK_ERR_OKAY;
  * if it is not, then DON"T PARSE THE REST OF THE REPLY!!
  */
 
 /* Reading replies:
- * The reading is done in while loop in the parse_xx_reply functions; 
- * need to add a timeout so that the function is not left looping and 
+ * The reading is done in while loop in the parse_xx_reply functions;
+ * need to add a timeout so that the function is not left looping and
  * waiting if a msg isn't sent to the socket from local side (eg. TM died)
  */
 
@@ -1080,10 +1080,10 @@ send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg)
  * parse_reply
  *
  * purpose: parses a reply from traffic manager. return that error
- * input: fd 
- * output: errors on error or fill up class with response & 
+ * input: fd
+ * output: errors on error or fill up class with response &
  *         return INK_ERR_xx
- * notes: only returns an INKError 
+ * notes: only returns an INKError
  **********************************************************************/
 INKError
 parse_reply(int fd)
@@ -1222,12 +1222,12 @@ parse_reply_list(int fd, char **list)
 /**********************************************************************
  * parse_file_read_reply
  *
- * purpose: parses a file read reply from traffic manager. 
- * input: fd 
+ * purpose: parses a file read reply from traffic manager.
+ * input: fd
  *        ver -
  *        size - size of text
- *        text - 
- * output: errors on error or fill up class with response & 
+ *        text -
+ * output: errors on error or fill up class with response &
  *         return INK_ERR_xx
  * notes: reply format = <INKError> <file_version> <file_size> <text>
  **********************************************************************/
@@ -1246,7 +1246,7 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
     return INK_ERR_NET_TIMEOUT;
   }
-  // get the error return value 
+  // get the error return value
   while (amount_read < SIZE_ERR_T) {
     ret = read(fd, (void *) &ret_val, SIZE_ERR_T - amount_read);
 
@@ -1350,16 +1350,16 @@ parse_file_read_reply(int fd, int *ver, int *size, char **text)
 /**********************************************************************
  * parse_record_get_reply
  *
- * purpose: parses a record_get reply from traffic manager. 
- * input: fd 
+ * purpose: parses a record_get reply from traffic manager.
+ * input: fd
  *        retval   -
  *        rec_type - the type of the record
- *        rec_value - the value of the record in string format 
- * output: errors on error or fill up class with response & 
+ *        rec_value - the value of the record in string format
+ * output: errors on error or fill up class with response &
  *         return SUCC
- * notes: reply format = <INKError> <val_size> <rec_type> <record_value> 
- * It's the responsibility of the calling function to conver the rec_value 
- * based on the rec_type!! 
+ * notes: reply format = <INKError> <val_size> <rec_type> <record_value>
+ * It's the responsibility of the calling function to conver the rec_value
+ * based on the rec_type!!
  **********************************************************************/
 INKError
 parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
@@ -1372,7 +1372,7 @@ parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
   if (!rec_type || !rec_val)
     return INK_ERR_PARAMS;
 
-  // check to see if anything to read; wait for specified time 
+  // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { //time expired before ready to read
     return INK_ERR_NET_TIMEOUT;
   }
@@ -1481,13 +1481,13 @@ parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
 /**********************************************************************
  * parse_record_set_reply
  *
- * purpose: parses a record_set reply from traffic manager. 
- * input: fd 
+ * purpose: parses a record_set reply from traffic manager.
+ * input: fd
  *        action_need - will contain the type of action needed from the set
  * output: INK_ERR_xx
- * notes: reply format = <INKError> <val_size> <rec_type> <record_value> 
- * It's the responsibility of the calling function to conver the rec_value 
- * based on the rec_type!! 
+ * notes: reply format = <INKError> <val_size> <rec_type> <record_value>
+ * It's the responsibility of the calling function to conver the rec_value
+ * based on the rec_type!!
  **********************************************************************/
 INKError
 parse_record_set_reply(int fd, INKActionNeedT * action_need)
@@ -1499,7 +1499,7 @@ parse_record_set_reply(int fd, INKActionNeedT * action_need)
   if (!action_need)
     return INK_ERR_PARAMS;
 
-  // check to see if anything to read; wait for specified time 
+  // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
     return INK_ERR_NET_TIMEOUT;
   }
@@ -1555,11 +1555,11 @@ parse_record_set_reply(int fd, INKActionNeedT * action_need)
  * parse_proxy_state_get_reply
  *
  * purpose: parses a TM reply to a PROXY_STATE_GET request
- * input: fd 
+ * input: fd
  *        state - will contain the state of the proxy
  * output: INK_ERR_xx
  * notes: function is DIFFERENT becuase it has NO INKError at head of msg
- * format: <INKProxyStateT> 
+ * format: <INKProxyStateT>
  **********************************************************************/
 INKError
 parse_proxy_state_get_reply(int fd, INKProxyStateT * state)
@@ -1570,7 +1570,7 @@ parse_proxy_state_get_reply(int fd, INKProxyStateT * state)
   if (!state)
     return INK_ERR_PARAMS;
 
-  // check to see if anything to read; wait for specified time 
+  // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
     return INK_ERR_NET_TIMEOUT;
   }
@@ -1620,7 +1620,7 @@ parse_event_active_reply(int fd, bool * is_active)
   if (!is_active)
     return INK_ERR_PARAMS;
 
-  // check to see if anything to read; wait for specified time 
+  // check to see if anything to read; wait for specified time
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) {
     return INK_ERR_NET_TIMEOUT;
   }
@@ -1699,11 +1699,11 @@ parse_event_notification(int fd, INKEvent * event)
   while (amount_read < SIZE_OP_T) {
     ret = read(fd, (void *) &type_op, SIZE_OP_T - amount_read);
 
-    // the thread can receive a bad file descriptor error(EBADF) 
-    // if the current socket_fd being used by this thread is invalid; 
+    // the thread can receive a bad file descriptor error(EBADF)
+    // if the current socket_fd being used by this thread is invalid;
     // this occurs when TM restarts and the client has to reconnect and
-    // get a new socket_fd; in this case, this thread will return null 
-    // and die; and the client will launch a new event_poll_thread_main 
+    // get a new socket_fd; in this case, this thread will return null
+    // and die; and the client will launch a new event_poll_thread_main
     // when it reconnects to TM
 
     // connection broken or error

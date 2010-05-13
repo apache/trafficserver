@@ -22,7 +22,7 @@
  */
 
 
-/* 
+/*
 Tests for "global" hooks, i.e., registering for events not at the session
 or transaction level and processing those events.
 
@@ -56,10 +56,10 @@ const char *const INKEventStrId[] = {
   "INK_EVENT_MGMT_UPDATE"       /* 60100 */
 };
 
-/* 
+/*
  * We track that each hook was called using this array. We start with
- * all values set to zero, meaning that the INKEvent has not been 
- * received. 
+ * all values set to zero, meaning that the INKEvent has not been
+ * received.
  * There 16 entries.
 */
 static int inktHookTbl[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -83,8 +83,8 @@ ChkEvents(const int event)
 }
 
 
-/* event routine: for each INKHttpHookID this routine should be called 
- * with a matching event. 
+/* event routine: for each INKHttpHookID this routine should be called
+ * with a matching event.
 */
 static int
 INKHttpHook(INKCont contp, INKEvent event, void *eData)
@@ -95,8 +95,8 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
   switch (event) {
   case INK_EVENT_HTTP_READ_REQUEST_HDR:
     inktHookTbl[index(INK_EVENT_HTTP_READ_REQUEST_HDR)] = 1;
-    /* List what events have been called back at 
-     * this point in procesing 
+    /* List what events have been called back at
+     * this point in procesing
      */
     ChkEvents(INK_EVENT_HTTP_READ_REQUEST_HDR);
     INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
@@ -171,16 +171,16 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
     break;
 
   case INK_EVENT_HTTP_SSN_CLOSE:
-    /* Here as a result of: 
-     * INKHTTPHookAdd(INK_HTTP_SSN_CLOSE_HOOK) 
+    /* Here as a result of:
+     * INKHTTPHookAdd(INK_HTTP_SSN_CLOSE_HOOK)
      */
     inktHookTbl[index(INK_EVENT_HTTP_SSN_CLOSE)] = 1;
 
     /* Assumption: at this point all other events have
      * have been called. Since a session can have one or
      * more transactions, the close of a session should
-     * prompt us to check that all events have been called back 
-     * CAUTION: can a single request trigger all events? 
+     * prompt us to check that all events have been called back
+     * CAUTION: can a single request trigger all events?
      */
     if (ChkEvents(INK_EVENT_HTTP_SSN_CLOSE))
       INKError("INKHttpHook: Fail: All events not called back.\n");
@@ -213,7 +213,7 @@ INKPluginInit(int argc, const char *argv[])
     INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, myCont);
     INKHttpHookAdd(INK_HTTP_SEND_RESPONSE_HDR_HOOK, myCont);
 
-    /* These are transactional 
+    /* These are transactional
      * INKHttpHookAdd(INK_HTTP_REQUEST_TRANSFORM_HOOK, myCont);
      * INKHttpHookAdd(INK_HTTP_RESPONSE_TRANSFORM_HOOK, myCont);
      */

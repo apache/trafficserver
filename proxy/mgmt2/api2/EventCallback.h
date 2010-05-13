@@ -23,16 +23,16 @@
 
 /***************************************************************************
  * EventCallback.h
- * Purpose:  defines the CallbackTable which stores callback functions for 
+ * Purpose:  defines the CallbackTable which stores callback functions for
  *           specific events
  *
- * 
+ *
  ***************************************************************************/
 /*
  * EventCallback.h
  *
- * defines the CallbackTable which stores callback functions for 
- * specific events. Used by both local api and remote api. 
+ * defines the CallbackTable which stores callback functions for
+ * specific events. Used by both local api and remote api.
  */
 
 #ifndef _EVENT_CALLBACK_H_
@@ -43,7 +43,7 @@
 #include "INKMgmtAPI.h"
 #include "CoreAPIShared.h"
 
-// when registering the callback function, can pass in void* data which 
+// when registering the callback function, can pass in void* data which
 // will then be passed to the callback function; need to store this data with
 // the callback in a struct
 typedef struct

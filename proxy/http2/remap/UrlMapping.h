@@ -40,7 +40,7 @@
 #endif
 
 /**
- * Used to store http referer strings (and/or regexp) 
+ * Used to store http referer strings (and/or regexp)
 **/
 class referer_info
 {
@@ -57,7 +57,7 @@ public:
 };
 
 /**
- * 
+ *
 **/
 class redirect_tag_str
 {
@@ -82,7 +82,7 @@ public:
 };
 
 /**
- * 
+ *
 **/
 class url_mapping_ext
 {

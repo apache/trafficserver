@@ -26,7 +26,7 @@
  *  WebHttpTree.cc - dynamic, javascript web-ui tree hierarchy and
  *                   web-ui link index
  *
- * 
+ *
  ****************************************************************************/
 
 #include "ink_config.h"
@@ -71,7 +71,7 @@ struct tree_node
 };
 
 // link_node - The link_node describes a page in the web-ui.  The
-// structure contains the following: 
+// structure contains the following:
 // the disk file for the page; where the page should appear in
 // the web-ui (mode, menu, item, tab); and lastly, any additional
 // query items required to make this page render correctly.
@@ -128,7 +128,7 @@ static int g_item_id = 0;
 static int g_link_id = 0;
 
 //-------------------------------------------------------------------------
-// XML Element Handlers 
+// XML Element Handlers
 //-------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
@@ -585,7 +585,7 @@ WebHttpRenderTabs(textBuffer * output, int active_mode)
     if (mode->node.name) {
       HtmlRndrTdOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE, HTML_VALIGN_NONE, NULL, NULL, 0);
       if (mode_index == active_mode) {
-        // if current mode is active, we need on-off separator      
+        // if current mode is active, we need on-off separator
         HtmlRndrImg(output, "/images/menu_separator_on_off.gif", NULL, NULL, NULL, NULL);
       } else if (mode_index + 1 == active_mode) {
         // if next mode is active, we need off-on separator
@@ -788,7 +788,7 @@ WebHttpGetLinkQuery_Xmalloc(char *file_link)
 }
 
 //------------------------------------------------------------------------
-// WebHttpTreeReturnRefresh 
+// WebHttpTreeReturnRefresh
 //------------------------------------------------------------------------
 
 bool

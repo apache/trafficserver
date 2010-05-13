@@ -157,7 +157,7 @@ Lerror:
 
 int
 Connection::bind_connect(unsigned int target_ip, int target_port, unsigned int my_ip,
-                         NetVCOptions *opt, int sock, bool non_blocking_connect, bool use_tcp, 
+                         NetVCOptions *opt, int sock, bool non_blocking_connect, bool use_tcp,
                          bool non_blocking, bool bc_no_connect, bool bc_no_bind)
 {
   ink_assert(fd == NO_FD);
@@ -180,7 +180,7 @@ Connection::bind_connect(unsigned int target_ip, int target_port, unsigned int m
 
     fd = res;
 
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) 
+    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0))
       goto Lerror;
 
     struct sockaddr_in bind_sa;

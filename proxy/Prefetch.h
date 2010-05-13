@@ -110,7 +110,7 @@ public:
   int len;
   INK_MD5 md5;
 
-  //PrefetchBlastType   resp_blast_proto;  
+  //PrefetchBlastType   resp_blast_proto;
   //HTTPHdr *           request;
   PrefetchBlaster *resp_blaster;
 

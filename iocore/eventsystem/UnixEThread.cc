@@ -43,7 +43,7 @@ EThread::EThread()
    ethreads_to_be_signalled(NULL),
    n_ethreads_to_be_signalled(0),
    main_accept_index(-1),
-   id(NO_ETHREAD_ID), event_types(0), 
+   id(NO_ETHREAD_ID), event_types(0),
    signal_hook(0),
    tt(REGULAR), eventsem(NULL)
 {
@@ -79,7 +79,7 @@ EThread::EThread(ThreadType att, int anid)
   fcntl(evfd, F_SETFD, FD_CLOEXEC);
   fcntl(evfd, F_SETFL, O_NONBLOCK);
 #else
-  ink_release_assert(pipe(evpipe) >= 0); 
+  ink_release_assert(pipe(evpipe) >= 0);
   fcntl(evpipe[0], F_SETFD, FD_CLOEXEC);
   fcntl(evpipe[0], F_SETFL, O_NONBLOCK);
   fcntl(evpipe[1], F_SETFD, FD_CLOEXEC);
@@ -92,7 +92,7 @@ EThread::EThread(ThreadType att, Event * e, ink_sem * sem)
    ethreads_to_be_signalled(NULL),
    n_ethreads_to_be_signalled(0),
    main_accept_index(-1),
-   id(NO_ETHREAD_ID), event_types(0), 
+   id(NO_ETHREAD_ID), event_types(0),
    signal_hook(0),
    tt(att), oneevent(e), eventsem(sem)
 {
@@ -235,8 +235,8 @@ EThread::execute() {
                 free_event(e);
               else {
                 // If its a negative event, it must be a result of
-                // a negative event, which has been turned into a 
-                // timed-event (because of a missed lock), executed 
+                // a negative event, which has been turned into a
+                // timed-event (because of a missed lock), executed
                 // before the poll. So, it must
                 // be executed in this round (because you can't have
                 // more than one poll between two executions of a

@@ -24,8 +24,8 @@
 /*
  *
  * Benchmark for fastIO and userIO
- * 
- * 
+ *
+ *
  *
  *
  */
@@ -88,7 +88,7 @@ extern struct bmark_options bmark;
 
 /*
  *  Build a fastIO request
- *  Allocates required packet and data blocks, 
+ *  Allocates required packet and data blocks,
  *  returns the ID of the request block
  */
 uint32_t bmark_build_request();

@@ -35,10 +35,10 @@
 
 // The protected queue is designed to delay signaling of threads
 // until some amount of work has been completed on the current thread
-// in order to prevent excess context switches. 
+// in order to prevent excess context switches.
 //
 // Defining EAGER_SIGNALLING disables this behavior and causes
-// threads to be made runnable immediately. 
+// threads to be made runnable immediately.
 //
 //#define EAGER_SIGNALLING
 
@@ -59,7 +59,7 @@ ProtectedQueue::enqueue(Event * e , bool fast_signal)
     if (inserting_thread != e_ethread) {
       if (!inserting_thread || !inserting_thread->ethreads_to_be_signalled) {
         signal();
-        if (fast_signal) { 
+        if (fast_signal) {
           if (e_ethread->signal_hook)
             e_ethread->signal_hook(e_ethread);
         }
@@ -70,8 +70,8 @@ ProtectedQueue::enqueue(Event * e , bool fast_signal)
         if (e_ethread->EventQueueExternal.try_signal())
           return;
 #endif
-        
-        if (fast_signal) { 
+
+        if (fast_signal) {
           if (e_ethread->signal_hook)
             e_ethread->signal_hook(e_ethread);
         }
@@ -80,7 +80,7 @@ ProtectedQueue::enqueue(Event * e , bool fast_signal)
         if ((t + 1) >= eventProcessor.n_ethreads) {
           // we have run out of room
           if ((t + 1) == eventProcessor.n_ethreads) {
-            // convert to direct map, put each ethread (sig_e[i]) into 
+            // convert to direct map, put each ethread (sig_e[i]) into
             // the direct map loation: sig_e[sig_e[i]->id]
             for (int i = 0; i < t; i++) {
               EThread *cur = sig_e[i];  // put this ethread

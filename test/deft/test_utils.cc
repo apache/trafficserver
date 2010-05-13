@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #include <strings.h>
@@ -44,7 +44,7 @@
 #include "raf_cmd.h"
 
 // char** build_argv(const char* arg0, const char* rest)
-//    
+//
 //   Uses rafdecode to handle quoting on arg 'rest'
 //
 char **

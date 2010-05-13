@@ -368,7 +368,7 @@ CacheDisk::update_header()
       }
     }
     if (j == n) {
-      // did not find a matching partition number. create a new 
+      // did not find a matching partition number. create a new
       // one
       disk_parts[j] = NEW(new DiskPart());
       disk_parts[j]->part_number = part_number;

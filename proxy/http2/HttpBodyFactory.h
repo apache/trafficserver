@@ -49,7 +49,7 @@
     HttpBodyTemplate      The template loaded from the directory to be
                           instantiated with variables, producing a body.
 
-  
+
  ****************************************************************************/
 
 #ifndef _HttpBodyFactory_h_

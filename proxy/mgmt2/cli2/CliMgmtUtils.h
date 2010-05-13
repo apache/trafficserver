@@ -26,7 +26,7 @@
  * Purpose: This file declares various utility functions which
  *          call the INKMgmtAPI.
  *
- * 
+ *
  ****************************************************************/
 
 #include "../api2/include/INKMgmtAPI.h"
@@ -69,7 +69,7 @@ INKError Cli_RecordSetInt(const char *rec_name, INKInt int_val, INKActionNeedT *
 //Set a float type records.config variable
 INKError Cli_RecordSetFloat(const char *rec_name, INKFloat float_val, INKActionNeedT * action_need);
 
-// Set a string type records.config variable  
+// Set a string type records.config variable
 INKError Cli_RecordSetString(const char *rec_name, INKString str_val, INKActionNeedT * action_need);
 
 // Retrieve and display contents of a rules file

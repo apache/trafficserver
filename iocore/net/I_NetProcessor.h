@@ -254,7 +254,7 @@ private:
 extern inkcoreapi NetProcessor & netProcessor;
 
 #ifdef HAVE_LIBSSL
-/** 
+/**
   Global netProcessor singleton object for making ssl enabled net
   calls. As far as the SM is concerned this behaves excatly like
   netProcessor. The only difference is that the connections are

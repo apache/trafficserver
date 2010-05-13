@@ -25,7 +25,7 @@
 
   P_HostDBProcessor.h
 
-  
+
  ****************************************************************************/
 
 #ifndef _P_HostDBProcessor_h_
@@ -231,8 +231,8 @@ HostDBRoundRobin::select_best_http(unsigned int client_ip, time_t now, ink32 fai
       } else {
         // Entry is marked down.  Make sure some nasty clock skew
         //  did not occur.  Use the retry time to set an upper bound
-        //  as to how far in the future we should tolerate bogus last 
-        //  failure times.  This sets the upper bound that we would ever 
+        //  as to how far in the future we should tolerate bogus last
+        //  failure times.  This sets the upper bound that we would ever
         //  consider a server down to 2*down_server_timeout
         if (now + fail_window < (ink32) (info[i].app.http_data.last_failure)) {
 #ifdef DEBUG

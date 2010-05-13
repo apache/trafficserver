@@ -34,7 +34,7 @@ void RecDumpRecordsHt(RecT rec_type);
 //-------------------------------------------------------------------------
 // Test01: Callback Test
 //
-// The following test verifies that the callbacks are executed. 
+// The following test verifies that the callbacks are executed.
 //-------------------------------------------------------------------------
 int g_config_update_result = 0;
 

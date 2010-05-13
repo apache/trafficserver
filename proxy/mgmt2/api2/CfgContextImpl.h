@@ -24,7 +24,7 @@
 /***********************************************************************
  * CfgContext.h
  *
- * Describes the CfgContext class. CfgContext has file name and set of Ele's 
+ * Describes the CfgContext class. CfgContext has file name and set of Ele's
  ***********************************************************************/
 
 #ifndef _CFG_CONTEXT_IMPL_H_
@@ -38,14 +38,14 @@
 
 
 /**********************************************************************
- * CfgEleObj 
- * 
- * abstract base class; basic element in a CfgContext 
+ * CfgEleObj
+ *
+ * abstract base class; basic element in a CfgContext
  **********************************************************************/
 class CfgEleObj
 {
 public:
-  /* Each subclass must provide two constructors: 
+  /* Each subclass must provide two constructors:
      using INK<file>Ele or a TokenList */
 
   virtual ~ CfgEleObj()
@@ -67,15 +67,15 @@ protected:
 };
 
 /********************************************************************
- * Ele Subclasses 
+ * Ele Subclasses
  ********************************************************************/
 /* Each subclass can be constructed from a TokenList (creates the Ele)
  * or from passing in the Ele itself. Typically, objects with dynamically
- * allocated memory should also have a copy constructor and an 
+ * allocated memory should also have a copy constructor and an
  * overloaded assignment operator. However, sine these subclasses function
  * more as wrappers for the C based Ele structs, we only require that
- * each subclass implements a function which returns a dynamic copy of 
- * its m_ele data member 
+ * each subclass implements a function which returns a dynamic copy of
+ * its m_ele data member
  */
 
 /* CommentEle */

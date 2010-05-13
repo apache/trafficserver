@@ -275,7 +275,7 @@ SslConfigParams::initialize()
 
   snprintf(serverCertPathOnly, serverCertPathOnlySize, "%s%s%s%s",
 	   system_root_dir, DIR_SEP,serverCertRelativePath,DIR_SEP);
-  snprintf(serverCertPath, serverCertPathSize, 
+  snprintf(serverCertPath, serverCertPathSize,
 	   "%s%s",serverCertPathOnly, serverCertFilename);
 
 #ifdef _WIN32

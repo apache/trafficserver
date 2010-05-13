@@ -51,7 +51,7 @@ struct LoadGenerator
   long max_hotset_serial_num;
   long max_docset_serial_num;
 
-  // Config variables 
+  // Config variables
   int debug;
   int ssl;
   int keepalive;                /* how many requests per connection */
@@ -77,7 +77,7 @@ struct LoadGenerator
   int direct;
   INKPlugin *plug_in;
   double *cumulative_size_prob;
-  /* Cumulative probability of selecting different sizes 
+  /* Cumulative probability of selecting different sizes
      cumulative_size_prob[num_sizes-1] must be 1.0 */
 
   // Stats
@@ -127,7 +127,7 @@ struct LoadGenerator
                 int anum_sizes, /* Number of sizes in the docsize distribution */
                 long *asizes,   /* actual sizes */
                 double *acumulative_size_prob,
-                /* Cumulative probability of selecting different sizes 
+                /* Cumulative probability of selecting different sizes
                    cumulative_size_prob[num_sizes-1] must be 1.0 */
                 int adirect, INKPlugin * aplug_in)
   {

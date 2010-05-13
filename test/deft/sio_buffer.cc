@@ -29,7 +29,7 @@
       A simple single reader io buffer which keeps data continguous
          by copying it
 
-   
+
  ****************************************************************************/
 
 #include <stdlib.h>

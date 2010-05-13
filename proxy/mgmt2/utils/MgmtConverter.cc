@@ -36,7 +36,7 @@
 
 #define SCHEMA_FILE "/home/lant/cnp/TrafficServer.xsd"
 
-// each file entry in the table stores the info needed for that file in 
+// each file entry in the table stores the info needed for that file in
 // order to convert it to XML format
 FileInfo file_info_entries[] = {
   {"proxy.config.cache.control.filename", INK_FNAME_CACHE_OBJ, &convertCacheRule_ts, &convertCacheRule_xml},
@@ -62,7 +62,7 @@ int num_file_entries = SIZE(file_info_entries);
 
 static InkHashTable *file_info_ht = 0;
 
-// This is for TESTING ONLY!! (used in testConvertFile_ts) 
+// This is for TESTING ONLY!! (used in testConvertFile_ts)
 const char *config_files[] = {
   "admin_access.config",
   "bypass.config",
@@ -86,7 +86,7 @@ const char *config_files[] = {
 
 
 // ---------------------------------------------------------------------
-// converterInit 
+// converterInit
 // ---------------------------------------------------------------------
 // Need to create hashtable that maps the record name used in the
 // XML instance file with the file_info_entries.
@@ -96,7 +96,7 @@ converterInit()
   int i, j;
   InkHashTableValue hash_value;
   // This isn't used.
-  //FileInfo *file_info; 
+  //FileInfo *file_info;
   XMLDom schema;
   XMLNode *ts_node, *seq_node, *file_node;
   char *schema_name, *record_name;
@@ -105,19 +105,19 @@ converterInit()
   // Step 1:
   // Create a temporary hashtable from file_info_entries list where:
   // key = record_name (eg. proxy.config.cache.filename)
-  // value = corresponding FileInfo struct 
+  // value = corresponding FileInfo struct
   InkHashTable *temp_info_ht = ink_hash_table_create(InkHashTableKeyType_String);
   for (i = 0; i < num_file_entries; i++) {
     ink_hash_table_insert(temp_info_ht, file_info_entries[i].record_name, &(file_info_entries[i]));
   }
 
-  // Step 2: THIS IS DEPENDENT ON STRUCTURE OF XML SCHEMA 
-  // Parse the trafficServer schema tag which should specify the 
+  // Step 2: THIS IS DEPENDENT ON STRUCTURE OF XML SCHEMA
+  // Parse the trafficServer schema tag which should specify the
   // file element name (eg. arm_security_file) and a record_name
   // attribute (eg. proxy.config.arm.security_filename)
   //    - create a new hashtable where:
   //      key = schema file element name
-  //      value = corresponding FileInfo struct (which is located by 
+  //      value = corresponding FileInfo struct (which is located by
   //      looking up the hashtable in 1) using the record_name attribute
   file_info_ht = ink_hash_table_create(InkHashTableKeyType_String);
   schema.LoadFile(SCHEMA_FILE);
@@ -153,15 +153,15 @@ converterInit()
 
 
 // ---------------------------------------------------------------------
-// convertFile_xml 
+// convertFile_xml
 // ---------------------------------------------------------------------
-// Purpose: Converts the entire XML tree into the TS  file format; 
-//          does not directly write result to disk; stores the 
-//          converted text in "file" parameter. 
+// Purpose: Converts the entire XML tree into the TS  file format;
+//          does not directly write result to disk; stores the
+//          converted text in "file" parameter.
 // Input: file_node - xml root node for all the rules
-//        file - buffer that converted text is stored 
+//        file - buffer that converted text is stored
 // Output:  returns INK_ERR_OKAY if all the rules converted correctly
-//          If there is a problem converting a rule, the rule is simply 
+//          If there is a problem converting a rule, the rule is simply
 //          skipped, and INK_ERR_FAIL is returned
 char *
 convertFile_xml(XMLNode * file_node)
@@ -180,7 +180,7 @@ convertFile_xml(XMLNode * file_node)
   RuleConverter_xml converter;
   FileInfo *info = NULL;
   InkHashTableValue lookup;
-  // iterate through each of the "rule" nodes 
+  // iterate through each of the "rule" nodes
   filename = file_node->getNodeName();
   for (i = 0; i < file_node->getChildCount(); i++) {
     child = file_node->getChildNode(i);
@@ -201,7 +201,7 @@ convertFile_xml(XMLNode * file_node)
         ts_file.copyFrom("\n", 1);
       }
       xfree(rule);
-    } else {                    // ERROR: converting 
+    } else {                    // ERROR: converting
       Debug("convert", "[convertFile_xml] Error converting XML rule %d", i);
       return 0;
     }
@@ -907,8 +907,8 @@ convertVaddrsRule_xml(XMLNode * rule_node)
 // ---------------------------------------------------------------------
 // convertPdssFormat_xml
 // ---------------------------------------------------------------------
-// Convert the XML pdssFormatType complexType into INKPdSsFormat struct; 
-// this can be used by any file which has INKPdSsFormat 
+// Convert the XML pdssFormatType complexType into INKPdSsFormat struct;
+// this can be used by any file which has INKPdSsFormat
 int
 convertPdssFormat_xml(XMLNode * pdss_node, INKPdSsFormat * pdss)
 {
@@ -949,7 +949,7 @@ convertPdssFormat_xml(XMLNode * pdss_node, INKPdSsFormat * pdss)
 // convertTimePeriod_xml
 // ---------------------------------------------------------------------
 // Convert XML timePeriodType into INKHmsTime struct;
-// <time_period> tag only has attribute values 
+// <time_period> tag only has attribute values
 int
 convertTimePeriod_xml(XMLNode * time_node, INKHmsTime * time)
 {
@@ -1050,7 +1050,7 @@ convertPortList_xml(XMLNode * port_node)
 // ---------------------------------------------------------------------
 // convertIpAddrEle_xml
 // ---------------------------------------------------------------------
-// Converts ip_range type into INKIpAddrEle 
+// Converts ip_range type into INKIpAddrEle
 int
 convertIpAddrEle_xml(XMLNode * ip_node, INKIpAddrEle * ip)
 {
@@ -1060,7 +1060,7 @@ convertIpAddrEle_xml(XMLNode * ip_node, INKIpAddrEle * ip)
   ip1 = ip_node->getChildNode(0);
   ip2 = ip_node->getChildNode(1);
 
-  if (!ip1)                     // required 
+  if (!ip1)                     // required
     return INK_ERR_FAIL;
 
   ip_val = ip1->getAttributeValueByName("ip");
@@ -1172,12 +1172,12 @@ convertDomain_xml(XMLNode * dom_node, INKDomain * dom)
 //######################################################################
 
 // ---------------------------------------------------------------------
-// convertFile_ts 
+// convertFile_ts
 // ---------------------------------------------------------------------
-// Purpose: converts TS text file into XML file 
-// Input: ts_file  - the TS config file we need to convert 
-//        xml_file - results of the conversion (allocated buffer) 
-// Output:   
+// Purpose: converts TS text file into XML file
+// Input: ts_file  - the TS config file we need to convert
+//        xml_file - results of the conversion (allocated buffer)
+// Output:
 int
 convertFile_ts(const char *filename, char **xml_file)
 {
@@ -1185,7 +1185,7 @@ convertFile_ts(const char *filename, char **xml_file)
   INKCfgEle *ele;
   // This isn't used.
   //INKActionNeedT action_need;
-  //INKError response; 
+  //INKError response;
   int i, ret = INK_ERR_OKAY, numRules;
   textBuffer xml(1024);
   textBuffer ruleBuf(512);
@@ -1209,12 +1209,12 @@ convertFile_ts(const char *filename, char **xml_file)
     return INK_ERR_FAIL;        /* lv: file info does not exist, */
   }
 
-  // read the file and convert each rule 
+  // read the file and convert each rule
   ctx = INKCfgContextCreate(type);
   if (!ctx) {
     return INK_ERR_FAIL;
   }
-  // since we want to preserve comments, we need to read in the 
+  // since we want to preserve comments, we need to read in the
   // file using INKCfgContextGet and remove all the rules; starting from scratch
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
     return INK_ERR_FAIL;
@@ -1224,8 +1224,8 @@ convertFile_ts(const char *filename, char **xml_file)
 
   // Convert each Ele into XML format and write it into the buffer
   // In general, there should be no problems converting the rule since
-  // only valid rules will be in the CfgContext, but if there is a 
-  // problem converting the rule, the rule should not be put in the 
+  // only valid rules will be in the CfgContext, but if there is a
+  // problem converting the rule, the rule should not be put in the
   // final buffer
   numRules = INKCfgContextGetCount(ctx);
   for (i = 0; i < numRules; i++) {
@@ -1249,7 +1249,7 @@ convertFile_ts(const char *filename, char **xml_file)
 }
 
 /***********************************************************************
- Make sure that each "convert...Rule_ts" functions only returns 
+ Make sure that each "convert...Rule_ts" functions only returns
  INK_ERR_OKAY if the Ele wass successfuly converted into XML.
  ***********************************************************************/
 
@@ -1592,7 +1592,7 @@ convertParentRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
   convertPdssFormat_ts(&(ele->parent_info), xml_file);
 
   tempStr = domain_list_to_string(ele->proxy_list, " ");
-  if (tempStr) {                // optional field 
+  if (tempStr) {                // optional field
     writeXmlElement(xml_file, "proxies", tempStr);
     xfree(tempStr);
   }
@@ -1686,7 +1686,7 @@ convertRemapRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
   }
   xml_file->copyFrom(">", 1);
 
-  // write Url's 
+  // write Url's
   writeXmlAttrStartTag(xml_file, "src_url");
   strPtr = scheme_type_to_string(ele->from_scheme);
   if (!strPtr)
@@ -1812,7 +1812,7 @@ convertSplitDnsRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
   writeXmlElement(xml_file, "dns_servers", strPtr);
   xfree(strPtr);
 
-  // INKDomainList search_list optional 
+  // INKDomainList search_list optional
   strPtr = domain_list_to_string(ele->search_list, " ");
   if (strPtr) {
     writeXmlElement(xml_file, "search_list", strPtr);
@@ -1895,7 +1895,7 @@ convertVaddrsRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
 //######################################################################
 
 // ---------------------------------------------------------------------
-// convertPortEle_ts 
+// convertPortEle_ts
 // ---------------------------------------------------------------------
 // corresponds to complex type "port_range"
 int
@@ -1914,7 +1914,7 @@ convertPortEle_ts(INKPortEle * ele, textBuffer * xml_file, char *tag_name)
 }
 
 // ---------------------------------------------------------------------
-// convertIpAddrEle_ts 
+// convertIpAddrEle_ts
 // ---------------------------------------------------------------------
 int
 convertIpAddrEle_ts(INKIpAddrEle * ele, textBuffer * xml_file, const char *tag_name)
@@ -1951,7 +1951,7 @@ convertIpAddrEle_ts(INKIpAddrEle * ele, textBuffer * xml_file, const char *tag_n
 // convertPdssFormat_ts
 // ---------------------------------------------------------------------
 // converts the INKPdssFormat struct into XML format and writes
-// the XML directly into xml_file 
+// the XML directly into xml_file
 int
 convertPdssFormat_ts(INKPdSsFormat * pdss, textBuffer * xml_file)
 {
@@ -1987,7 +1987,7 @@ convertPdssFormat_ts(INKPdSsFormat * pdss, textBuffer * xml_file)
 
     writeXmlAttrStartTag(xml_file, "sec_specs");
 
-    // write sec specs attributes 
+    // write sec specs attributes
     if (sspec.src_ip) {
       writeXmlAttribute(xml_file, "src_ip", sspec.src_ip);
     }
@@ -2023,7 +2023,7 @@ convertPdssFormat_ts(INKPdSsFormat * pdss, textBuffer * xml_file)
 
     if (sspec.time.hour_a != 0 || sspec.time.hour_b != 0 ||
         sspec.time.min_a != 0 || sspec.time.min_b != 0 || sspec.port) {
-      xml_file->copyFrom(">", 1);       //close sec_specs tag first 
+      xml_file->copyFrom(">", 1);       //close sec_specs tag first
 
       if (sspec.time.hour_a != 0 || sspec.time.hour_b != 0 || sspec.time.min_a != 0 || sspec.time.min_b != 0) {
         writeXmlAttrStartTag(xml_file, "time_range");
@@ -2066,10 +2066,10 @@ convertPdssFormat_ts(INKPdSsFormat * pdss, textBuffer * xml_file)
 }
 
 // ---------------------------------------------------------------------
-// convertTimePeriod_ts 
+// convertTimePeriod_ts
 // ---------------------------------------------------------------------
-// Before converting, first checks that there are valid values for 
-// time period 
+// Before converting, first checks that there are valid values for
+// time period
 int
 convertTimePeriod_ts(INKHmsTime * time, textBuffer * xml_file)
 {
@@ -2096,7 +2096,7 @@ convertTimePeriod_ts(INKHmsTime * time, textBuffer * xml_file)
 // ---------------------------------------------------------------------
 // convertIpAddrList_ts
 // ---------------------------------------------------------------------
-// converts into ipPortListType with the given "tag_name" 
+// converts into ipPortListType with the given "tag_name"
 int
 convertIpAddrList_ts(INKIpAddrList list, textBuffer * xml_file, const char *tag_name)
 {
@@ -2208,7 +2208,7 @@ writeXmlEndTag(textBuffer * xml, const char *name, const char *nsp)
 // writeXmlElement
 // ---------------------------------------------------------------------
 // writes into the file "xml": "<elemName>value</elemName>"
-// the nsp is optional 
+// the nsp is optional
 void
 writeXmlElement(textBuffer * xml, const char *elemName, const char *value, const char *nsp)
 {
@@ -2221,7 +2221,7 @@ writeXmlElement(textBuffer * xml, const char *elemName, const char *value, const
 // writeXmlElement_int
 // ---------------------------------------------------------------------
 // writes into the file "xml": "<elemName>value</elemName>"
-// the nsp is optional 
+// the nsp is optional
 void
 writeXmlElement_int(textBuffer * xml, const char *elemName, int value, const char *nsp)
 {
@@ -2279,7 +2279,7 @@ writeXmlClose(textBuffer * xml)
 // ---------------------------------------------------------------------
 //  strcmptag
 // ---------------------------------------------------------------------
-// namespace is optional argument, by default it is null; if null, then 
+// namespace is optional argument, by default it is null; if null, then
 // function is just like a strcmp
 // returns: 0 if "fulltag" == "namespace:name"
 //         <0 if "fulltag" < "namespace:name"
@@ -2304,10 +2304,10 @@ strcmptag(char *fulltag, char *name, char *nsp)
 // ---------------------------------------------------------------------
 // convertRecordsFile_ts
 // ---------------------------------------------------------------------
-// Unlike the other config files, each "rule" is actually an 
+// Unlike the other config files, each "rule" is actually an
 // attribute name-value pair. Instead of using the *.config file
-// to retrieve the values (no INKCfgContext) the XML 
-// values are retrieved from TM's internal record arrays 
+// to retrieve the values (no INKCfgContext) the XML
+// values are retrieved from TM's internal record arrays
 void
 convertRecordsFile_ts(char **xml_file)
 {
@@ -2321,7 +2321,7 @@ convertRecordsFile_ts(char **xml_file)
   }
   // write as list of attributes; will fit under trafficserver root tag probably?
   for (int r = 0; RecordsConfig[r].value_type != INVALID; r++) {
-    if (RecordsConfig[r].required == RR_REQUIRED) {     // need to write to xml 
+    if (RecordsConfig[r].required == RR_REQUIRED) {     // need to write to xml
       // get the value of the record
       memset(record, 0, 1024);
       memset(value, 0, 256);
@@ -2341,7 +2341,7 @@ convertRecordsFile_ts(char **xml_file)
 // convertRecordsFile_xml
 // ---------------------------------------------------------------------
 // Unlike other *.config files, this does not directly write a new
-// records.config. Instead, it updates TM's internal records arrays. 
+// records.config. Instead, it updates TM's internal records arrays.
 // (a new records.config file is created by TM when records are changed)
 void
 convertRecordsFile_xml(XMLNode * file_node)
@@ -2369,10 +2369,10 @@ convertRecordsFile_xml(XMLNode * file_node)
 // ---------------------------------------------------------------------
 // createXmlSchemaRecords
 // ---------------------------------------------------------------------
-// all the records are subdivided into various arrays; use these 
+// all the records are subdivided into various arrays; use these
 // arrays to look up the RecordElement data in RecordsElement table
 // and create the Record XML schema obj;
-// A record will be an attribute of the root trafficserver tag! 
+// A record will be an attribute of the root trafficserver tag!
 void
 createXmlSchemaRecords(char **output)
 {
@@ -2398,7 +2398,7 @@ createXmlSchemaRecords(char **output)
 // ---------------------------------------------------------------------
 // getXmlRecType
 // ---------------------------------------------------------------------
-// helper function that helps determine what the XML simple type 
+// helper function that helps determine what the XML simple type
 // should be used for the given RecordElement
 void
 getXmlRecType(struct RecordElement rec, char *buf, int buf_size)
@@ -2433,7 +2433,7 @@ getXmlRecType(struct RecordElement rec, char *buf, int buf_size)
     if (rec.regex) {
       if (strcmp(rec.regex, "[0-1]") == 0) {    // for [0-1] range, make into boolean type
         sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:boolean\" default=\"%s\"/>", rec.name, rec.value);
-      } else {                  // break up [x-y] into ts:range_x_y type 
+      } else {                  // break up [x-y] into ts:range_x_y type
         Tokenizer range("[]-");
         if (range.Initialize(rec.regex) == 2) {
           sprintf(buf, "<xs:attribute name=\"%s\" type=\"ts:range_%s_%s\" default=\"%s\"/>",
@@ -2473,11 +2473,11 @@ getXmlRecType(struct RecordElement rec, char *buf, int buf_size)
 // ---------------------------------------------------------------------
 // TrafficServer_xml
 // ---------------------------------------------------------------------
-// The trafficserver xml tag should be stored in a location which is 
+// The trafficserver xml tag should be stored in a location which is
 // passed to this function. This function will read in the trafficserver
-// xml, parse it, and convert each subsection of the xml configuration into 
-// TS config files and write them to disk. Must invoke a rereadConfig 
-// to indicate that a reread of the configuration files is needed. 
+// xml, parse it, and convert each subsection of the xml configuration into
+// TS config files and write them to disk. Must invoke a rereadConfig
+// to indicate that a reread of the configuration files is needed.
 void
 TrafficServer_xml(char *filepath)
 {
@@ -2501,10 +2501,10 @@ TrafficServer_xml(char *filepath)
   xtree.LoadFile(filepath);
   Debug("convert", "[TrafficServer_xml] convert %s to *.config files", filepath);
 
-  // process attributes for records.config (internally updated, not to disk) 
+  // process attributes for records.config (internally updated, not to disk)
   convertRecordsFile_xml((XMLNode *) & xtree);
 
-  // process the other *.config files 
+  // process the other *.config files
   for (int i = 0; i < xtree.getChildCount(); i++) {
     file_node = xtree.getChildNode(i);
     file_node->getNodeName();
@@ -2530,20 +2530,20 @@ TrafficServer_xml(char *filepath)
   }
 
 
-  // notify Traffic Server that config files changed 
+  // notify Traffic Server that config files changed
   configFiles->rereadConfig();
 }
 
 // ---------------------------------------------------------------------
 // TrafficServer_ts
 // ---------------------------------------------------------------------
-// Need to iterate through all the TS config files and convert them 
+// Need to iterate through all the TS config files and convert them
 // into XML format in order to assemble the entire TrafficServer xml tag
 void
 TrafficServer_ts(char **xml_file)
 {
   const char xml_hdr[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-  const char start_ts_tag[] = "<trafficserver xmlns=\"http://www.inktomi.com/CNP/trafficserver\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.inktomi.com/CNP/trafficserver cfg_sample.xsd\" \n";    // do not close the tag  
+  const char start_ts_tag[] = "<trafficserver xmlns=\"http://www.inktomi.com/CNP/trafficserver\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.inktomi.com/CNP/trafficserver cfg_sample.xsd\" \n";    // do not close the tag
   const char end_ts_tag[] = "</trafficserver>";
   char *filename;
   char *cfile = NULL;
@@ -2575,10 +2575,10 @@ TrafficServer_ts(char **xml_file)
     cfile = NULL;
   }
 
-  xml.copyFrom(">\n", 2);       // close trafficserver start tag 
+  xml.copyFrom(">\n", 2);       // close trafficserver start tag
 
 
-  // order of how the config files organized in trafficserver tag is 
+  // order of how the config files organized in trafficserver tag is
   // determined by order listed in hashtable (build from the schema)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
@@ -2603,8 +2603,8 @@ TrafficServer_ts(char **xml_file)
 // FOR TESTING ONLY
 //#######################################################################
 
-// If it hits a certain config file,it will convert the file and 
-// print the results to output file xml-ts.log 
+// If it hits a certain config file,it will convert the file and
+// print the results to output file xml-ts.log
 int
 testConvertFile_xml(XMLNode * file_node, char *file)
 {
@@ -2643,14 +2643,14 @@ testConvertFile_xml(XMLNode * file_node, char *file)
 
 // Converts the specified TS config file specified by "file" and outputs
 // the xml result in file.xml. If file = "all", then all the config files
-// are converted to xml. 
+// are converted to xml.
 int
 testConvertFile_ts(char *file)
 {
   char *xml_file = NULL;
   const char *filename;
   // Not used here.
-  //INKError err; 
+  //INKError err;
   FILE *fp;                     // output file for conversion results
 
   if (!file_info_ht)
@@ -2674,7 +2674,7 @@ testConvertFile_ts(char *file)
       xml_file = NULL;
     }
     // convert files in alphabetical order so easy to compare
-    // to template "correct" file 
+    // to template "correct" file
     int i = 0;
     while (config_files[i]) {
       filename = config_files[i];

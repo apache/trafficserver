@@ -23,12 +23,12 @@
 
 /*
  *   createArgument.cc --
- * 
+ *
  *
  *    This file provides basic create Argument defintion,
  *    for any new arguments.
- * 
- *   
+ *
+ *
  *
  *
  *    Dated  : 12/11/2000.

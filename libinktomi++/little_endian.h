@@ -39,14 +39,14 @@
   little_endian.h
 
   Contains implementation of inkuXX_to_le to functions that convert's known host order
-  to little endian order. If you don't know the "endianness" of your host, you may 
+  to little endian order. If you don't know the "endianness" of your host, you may
   want to use the LittleEndianBuffer class defined below.
 
   Contains implementation of class LittleEndianBuffer, which implements storing/loading
-  primitive types like char,int,short to/from a buffer stored in little indian order. 
-  That means variables in host order are converted to little indian before storing it on 
-  the buffer and variables from the buffer are converted to host order when loading. An 
-  example of its use (and a test to check that it works) is at the bottom of the file. 
+  primitive types like char,int,short to/from a buffer stored in little indian order.
+  That means variables in host order are converted to little indian before storing it on
+  the buffer and variables from the buffer are converted to host order when loading. An
+  example of its use (and a test to check that it works) is at the bottom of the file.
 
  ****************************************************************************/
 
@@ -286,7 +286,7 @@ LittleEndianBuffer::store(int i, inku32 val) const
      inku32 intuY = intuX;
 
      int i;
-     
+
      i =0;
      i = Buff.store(i,shortX);
      i = Buff.store(i,intX);
@@ -312,10 +312,10 @@ LittleEndianBuffer::store(int i, inku32 val) const
        printf("You are hosed, shortu!\n");
      i+=sizeof(inku16);
      Buff.load(i,intuX);
-     if (intuY != intuX) 
+     if (intuY != intuX)
        printf("You are hosed, intu!\n");
 
-     if (shortY != shortX || shortuY != shortuX || intY != intX || intuY != intuX) 
+     if (shortY != shortX || shortuY != shortuX || intY != intX || intuY != intuX)
        printf("You are hosed!\n");
      else
        printf("You may be still be hosed, but I have no proof\n");

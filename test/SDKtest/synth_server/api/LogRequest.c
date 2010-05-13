@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-/* LogRequest.c 
+/* LogRequest.c
  *
  *
  * Description:
- *   - Log the requests that are received from the clients into a file 
+ *   - Log the requests that are received from the clients into a file
  *     specified in the server configuration file.
  *
- * Added Options in Synth_server.config -  
- *   log_path : full path of the log file 
+ * Added Options in Synth_server.config -
+ *   log_path : full path of the log file
  *              eg. /home/user/file.log
  */
 

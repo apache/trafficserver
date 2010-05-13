@@ -21,18 +21,18 @@
   limitations under the License.
  */
 
-/* orderstartplugin.c: one of the set of 5 plugins that help determine if  
+/* orderstartplugin.c: one of the set of 5 plugins that help determine if
  *                 the order in which the plugins are invoked at any
  *                 hook is the same as the order in which they appear
- *                 in plugin.config file. The plugin logs an error 
+ *                 in plugin.config file. The plugin logs an error
  *                 message in logs/error.log file if the sequence in
  *                 which the plugin is invoked is incorrect.
  *
  *
- *   Usage: 
+ *   Usage:
  *   (NT):orderstartplugin.dll
  *   (Solaris):orderstartplugin.so
- *  
+ *
  *
  */
 

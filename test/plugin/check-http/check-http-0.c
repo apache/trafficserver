@@ -26,15 +26,15 @@
  *
  * Description: Covers HTTP section of Chap 7.
  *
- * APIs covered - 
+ * APIs covered -
  * - INKHttpHdrLengthGet
  * - INKHttpHdrMethodGet/Set
  * - INKHttpHdrReasonGet/Set
  * - INKHttpHdrStatusGet/Set
  * - INKHttpHdrTypeGet/Set
  * - INKHttpHdrVersionGet/Set
- * 
- * APIs not covered - 
+ *
+ * APIs not covered -
  * - INKHttpHdrUrlGet/Set (covered in check-url-0)
  * - INKHttpHdrReasonLookup
  * - INKHttpHdrPrint (covered in output-hdr.c)
@@ -342,7 +342,7 @@ negTesting(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
 /************************************************************************************
  * identical_hdr:
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *  Function to check whether 2 hdrInfos are identical (member to member)
  *
  * RETURN:
@@ -391,7 +391,7 @@ identical_hdr(HdrInfo_T * pHdrInfo1, HdrInfo_T * pHdrInfo2)
 /************************************************************************************
  * getHdrInfo:
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *  Function to store httpHdrBuffer (pointed by hdrBuf) information into pHdrInfo
  *
  * RETURN:
@@ -639,10 +639,10 @@ handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
   INKDebug(RESP, "--------------------------------");
 
     /*** INKHttpHdrTypeSet ***/
-  /* ERROR: 
-   * 1. Setting type other than INK_HTTP_TYPE_UNKNOWN, INK_HTTP_TYPE_REQUEST, 
+  /* ERROR:
+   * 1. Setting type other than INK_HTTP_TYPE_UNKNOWN, INK_HTTP_TYPE_REQUEST,
    * INK_HTTP_TYPE_RESPONSE, and,
-   * 2. Setting the type twice.  The hdr type has been already set during INKHttpHdrCopy 
+   * 2. Setting the type twice.  The hdr type has been already set during INKHttpHdrCopy
    * above, so setting it again is incorrect */
   if (INKHttpHdrTypeSet(newHttpHdrBuf, newHttpHdrLoc, INK_HTTP_TYPE_RESPONSE) == INK_ERROR) {
     LOG_API_ERROR("INKHttpHdrTypeSet");
@@ -657,10 +657,10 @@ handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
     sOldHttpReason = INKstrndup(sHttpHdrReason, iHttpHdrReasonLength);
   }
 
-  /* Note: 
+  /* Note:
    * INKHttpHdrReasonGet may return a NULL reason string (for e.g. I tried www.eyesong.8m.com).
-   * Do NOT assume that INKstrndup always returns a null terminated string.  INKstrndup does 
-   * not returns a NULL terminated string for a NULL ptr as i/p parameter.  It simply returns 
+   * Do NOT assume that INKstrndup always returns a null terminated string.  INKstrndup does
+   * not returns a NULL terminated string for a NULL ptr as i/p parameter.  It simply returns
    * it backs. So functions like strlen() on the return value might cause TS to crash */
 
 
@@ -711,7 +711,7 @@ handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
 
   /* Restore the original values */
 
-  /* Here we can't use strlen(sOldHttpReason) to set the length.  This would crash TS if 
+  /* Here we can't use strlen(sOldHttpReason) to set the length.  This would crash TS if
    * sOldHttpReason happens to be NULL */
   if (INKHttpHdrReasonSet(newHttpHdrBuf, newHttpHdrLoc, sOldHttpReason, iHttpHdrReasonLength) == INK_ERROR) {
     LOG_API_ERROR("INKHttpHdrReasonSet");
@@ -773,8 +773,8 @@ resp_4:
 
 
     /*** INKHttpHdrTypeSet ***/
-  /* ERROR: 
-   * 1. Setting type other than INK_HTTP_TYPE_UNKNOWN, INK_HTTP_TYPE_REQUEST, 
+  /* ERROR:
+   * 1. Setting type other than INK_HTTP_TYPE_UNKNOWN, INK_HTTP_TYPE_REQUEST,
    * INK_HTTP_TYPE_RESPONSE and,
    * 2. Setting the type twice.  The hdr type has been already set during INKHttpTxnClientRespGet
    * above, so setting it again should fail */
@@ -804,7 +804,7 @@ resp_4:
 
   /* restore the original values */
 
-  /* For INKHttpHdrReasonSet, do NOT use strlen(sOldHttpReason) to set the length.  
+  /* For INKHttpHdrReasonSet, do NOT use strlen(sOldHttpReason) to set the length.
    * This would crash TS if sOldHttpReason happened to be NULL */
   if (INKHttpHdrReasonSet(respHdrBuf, respHttpHdrLoc, sOldHttpReason, iHttpHdrReasonLength) == INK_ERROR) {
     LOG_API_ERROR("INKHttpHdrReasonSet");
@@ -974,7 +974,7 @@ handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
 #endif
 
     /*********** (2): Create/Copy/Destroy **********/
-  /* For every request, create, copy and destroy a new HTTP header and 
+  /* For every request, create, copy and destroy a new HTTP header and
    * print the details */
 
   INKDebug(REQ, "--------------------------------");

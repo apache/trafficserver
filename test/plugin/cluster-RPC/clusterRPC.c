@@ -22,15 +22,15 @@
  */
 
 /* clusterRPC.c:  Example usage of the Cluster RPC API
- *                   
+ *
  **************************************************************************
  *   INTERNAL USE ONLY.  NOT FOR GENERAL DISTRIBUTION.
  **************************************************************************
  *
  *
- *	Usage:	
- * 	(NT): clusterRPC.dll 
- * 	(Solaris): clusterRPC.so 
+ *	Usage:
+ * 	(NT): clusterRPC.dll
+ * 	(Solaris): clusterRPC.so
  *
  *
  */

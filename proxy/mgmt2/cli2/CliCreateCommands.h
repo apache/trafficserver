@@ -25,7 +25,7 @@
  * Filename: CliCreateCommands.h
  * Purpose: This file contains the CLI command creation function.
  *
- * 
+ *
  ****************************************************************/
 
 #ifndef __CLI_CREATE_COMMANDS_H__

@@ -26,7 +26,7 @@
  *
  * Description:
  *   - Do sanity check on every byte in the responsed documents
- *     Note: This plugin needs to work with CheckContentServer 
+ *     Note: This plugin needs to work with CheckContentServer
  *           plugin for SDKtest_server
  */
 
@@ -56,7 +56,7 @@ INKPartialBodyProcess(void *req_id, void *partial_content, int partial_length, i
 {
   int i, code;
 
-  /* check to see if the content in the 
+  /* check to see if the content in the
    * buffer is what we expect ie. "01234567890123..."
    */
   i = partial_length;

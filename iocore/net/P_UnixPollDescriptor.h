@@ -25,7 +25,7 @@
 
   UnixPollDescriptor.h
 
-  
+
 *****************************************************************************/
 #ifndef __P_UNIXPOLLDESCRIPTOR_H__
 #define __P_UNIXPOLLDESCRIPTOR_H__
@@ -81,7 +81,7 @@ struct PollDescriptor
 #define ev_next_event(a,x)
 #elif defined(USE_KQUEUE)
   struct kevent kq_Triggered_Events[POLL_DESCRIPTOR_SIZE];
-  /* we define these here as numbers, because for kqueue mapping them to a combination of 
+  /* we define these here as numbers, because for kqueue mapping them to a combination of
  * filters / flags is hard to do. */
 #define get_ev_port(a) ((a)->kqueue_fd)
 #define get_ev_events(a,x) ((a)->kq_event_convert((a)->kq_Triggered_Events[(x)].filter, (a)->kq_Triggered_Events[(x)].flags))
