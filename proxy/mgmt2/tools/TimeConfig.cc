@@ -87,7 +87,7 @@ main(int argc, char *argv[])
       }
       fclose(fp);
     } else {
-      strncpy(buffer, "/usr/local", sizeof(buffer) - 1);
+      strncpy(buffer, PREFIX, sizeof(buffer) - 1);
     }
   }
 

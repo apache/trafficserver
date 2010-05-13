@@ -181,7 +181,7 @@ Net_GetDefaultRouter(char *router, size_t router_len)
       DPRINTF(("[Net_GetDefaultRouter] run route -n\n"));
       return -1;
     }
-        
+
     fp = fopen(tmp_file, "r");
     if (fp == NULL) {
       DPRINTF(("[Net_GetDefaultRouter] can not open the temp file\n"));
@@ -251,7 +251,7 @@ Net_GetDomain(char *domain, size_t domain_len)
   if (!find_value("/etc/resolv.conf", "search", domain, " ", 0)) {
     return (!find_value("/etc/resolv.conf", "domain", domain, " ", 0));
   }else
-    return 1; 
+    return 1;
   **/
 }
 
@@ -780,7 +780,7 @@ Sys_User_Root(int *old_euid)
 int
 Sys_User_Inktomi(int euid)
 {
-// bug 50394 - preserve saved uid as root, 
+// bug 50394 - preserve saved uid as root,
 //             while changing effiective and real uid to input parameter value
   setreuid(euid, 0);
   seteuid(euid);
@@ -1135,7 +1135,7 @@ getTSdirectory(char *ts_path, size_t ts_path_len)
   }
 
   if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-    ink_strncpy(ts_path, "/usr/local", ts_path_len);
+    ink_strncpy(ts_path, PREFIX, ts_path_len);
     return 0;
   }
 
@@ -2024,7 +2024,7 @@ getDefaultRouterViaNetstat(char *gateway)
     while (*p && !isspace(*p))
       *(gateway_ptr++) = *(p++);
     *gateway_ptr = 0;
-    found_status = 0;           // success 
+    found_status = 0;           // success
   }
   pclose(fd);
   return found_status;
@@ -2132,7 +2132,7 @@ Net_GetDomain(char *domain, size_t domain_len)
      if (!find_value("/etc/resolv.conf", "search", domain, " ", 0)) {
      return (!find_value("/etc/resolv.conf", "domain", domain, " ", 0));
      }else
-     return 0; 
+     return 0;
    */
 }
 
@@ -2207,7 +2207,7 @@ Net_GetNetworkIntCount()
 {
   const int BUFFLEN = 80;
   char buffer[BUFFLEN];
-  /* 
+  /*
      get the list of network interfaces using pattern ^/etc/hostname.*[0-9]$
      need to get rid of any virtual IP definition which is defined with ':'
      Example of virtual IP definition is /etc/hostname.hme0:1
@@ -2230,7 +2230,7 @@ Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)//FIXME: us
   const int BUFFLEN = 200;
   char buffer[BUFFLEN];
 
-  /* 
+  /*
      get the list of network interfaces using pattern ^/etc/hostname.*[0-9]$
      need to get rid of any virtual IP definition which is defined with ':'
      Example of virtual IP definition is /etc/hostname.hme0:1
@@ -2338,7 +2338,7 @@ parseIfconfig(char *interface, const char *keyword, char *value)
   char command[BUFFLEN];
   FILE *fd;
 
-  // first check if the interface is attached 
+  // first check if the interface is attached
   snprintf(command, sizeof(command), "/sbin/ifconfig -a | grep %s", interface);
   fd = popen(command, "r");
   if (fd == NULL) {

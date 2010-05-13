@@ -25,15 +25,15 @@
  * Filename: CoreAPIRemote.cc
  * Purpose: Implementation of CoreAPI.h interface but from remote client
  *          perspective, so must also add networking calls. Basically, any
- *          INKMgmtAPI calls which are "special" for remote clients 
+ *          INKMgmtAPI calls which are "special" for remote clients
  *          need to be implemented here.
  * Note: For remote implementation of this interface, most functions will:
  *  1) marshal: create the message to send across network
  *  2) connect and send request
- *  3) unmarshal: parse the reply (checking for INKError) 
+ *  3) unmarshal: parse the reply (checking for INKError)
  *
- * Created: lant 
- * 
+ * Created: lant
+ *
  ***************************************************************************/
 
 #include "ink_config.h"
@@ -55,7 +55,7 @@
 #define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
 #define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
-// extern variables 
+// extern variables
 extern CallbackTable *remote_event_callbacks;   // from EventRegistration
 extern int main_socket_fd;      // from NetworkUtils
 extern int event_socket_fd;
@@ -69,7 +69,7 @@ bool start_binary(const char *abs_bin_path);
 char *get_root_dir();
 
 // global variables
-// need to store the thread id associated with socket_test_thread 
+// need to store the thread id associated with socket_test_thread
 // in case we want to  explicitly stop/cancel the testing thread
 ink_thread ink_test_thread;
 
@@ -80,7 +80,7 @@ ink_thread ink_test_thread;
  * send_and_parse_basic (helper function)
  *-------------------------------------------------------------------------
  * helper function used by operations which only require sending a simple
- * operation type and parsing a simple error return value 
+ * operation type and parsing a simple error return value
  */
 INKError
 send_and_parse_basic(OpType op)
@@ -100,7 +100,7 @@ send_and_parse_basic(OpType op)
  * send_and_parse_list (helper function)
  *-------------------------------------------------------------------------
  * helper function used by operations which only require sending a simple
- * operation type and parsing a string delimited list 
+ * operation type and parsing a string delimited list
  * (delimited with REMOTE_DELIM_STR) and storing the tokens in the list
  * parameter
  */
@@ -121,7 +121,7 @@ send_and_parse_list(OpType op, LLQ * list)
   if (ret != INK_ERR_OKAY)
     return ret;
 
-  // parse the reply = delimited list of ids of active event names 
+  // parse the reply = delimited list of ids of active event names
   ret = parse_reply_list(main_socket_fd, &list_str);
   if (ret != INK_ERR_OKAY)
     return ret;
@@ -148,7 +148,7 @@ send_and_parse_list(OpType op, LLQ * list)
  *-------------------------------------------------------------------------
  * helper function used by operations which only require sending a simple
  * operation type with one string name argument and then parsing a simple
- * INKError reply 
+ * INKError reply
  * NOTE: name can be a NULL parameter!
  */
 INKError
@@ -161,7 +161,7 @@ send_and_parse_name(OpType op, char *name)
   if (ret != INK_ERR_OKAY)
     return ret;
 
-  // parse the reply 
+  // parse the reply
   ret = parse_reply(main_socket_fd);
 
   return ret;
@@ -172,11 +172,11 @@ send_and_parse_name(OpType op, char *name)
  * mgmt_record_set (helper function)
  *-------------------------------------------------------------------------
  * Helper function for all Set functions:
- * NOTE: regardless of the type of the record being set, 
- * it is converted to a string. Then on the local side, the 
- * CoreAPI::MgmtRecordSet function will do the appropriate type 
+ * NOTE: regardless of the type of the record being set,
+ * it is converted to a string. Then on the local side, the
+ * CoreAPI::MgmtRecordSet function will do the appropriate type
  * converstion from the string to the record's type (eg. MgmtInt, MgmtString..)
- * Hence, on the local side, don't have to worry about typecasting a  
+ * Hence, on the local side, don't have to worry about typecasting a
  * void*. Just read out the string from socket and pass it MgmtRecordSet.
  */
 INKError
@@ -210,7 +210,7 @@ bool
 start_binary(const char *abs_bin_path)
 {
   INKDiags(INK_DIAG_NOTE, "[start_binary] abs_bin_path = %s", abs_bin_path);
-  // before doing anything, check for existence of binary and its execute 
+  // before doing anything, check for existence of binary and its execute
   // permissions
   if (access(abs_bin_path, F_OK) < 0) {
     // ERROR: can't find binary
@@ -236,8 +236,8 @@ start_binary(const char *abs_bin_path)
  * get_root_dir
  *-------------------------------------------------------------------------
  * This function retrieves the root directory path from DEFAULT_TS_DIRECTORY_FILE
- * file. If there is no DEFAULT_TS_DIRECTORY_FILE file to be found, returns NULL 
- * (copied from TrafficCop.cc). The string returned is NOT ALLOCATED. 
+ * file. If there is no DEFAULT_TS_DIRECTORY_FILE file to be found, returns NULL
+ * (copied from TrafficCop.cc). The string returned is NOT ALLOCATED.
  * Used by HardRestart to determine full path of start/stop_traffic_server scripts.
  */
 #ifndef _WIN32
@@ -267,7 +267,7 @@ get_root_dir()
     }
     root_dir[i] = '\0';
   } else {
-    ink_strncpy(root_dir, "/usr/local", sizeof(root_dir));
+    ink_strncpy(root_dir, PREFIX, sizeof(root_dir));
   }
 
   if (root_dir[0] == '\0')
@@ -307,7 +307,7 @@ Init(const char *socket_path)
 
   // need to ignore SIGPIPE signal; in the case that TM is restarted
   signal(SIGPIPE, SIG_IGN);
-  signal(SIGUSR1, terminate_signal);    // for cancelling socket_test_thread 
+  signal(SIGUSR1, terminate_signal);    // for cancelling socket_test_thread
 
   // EVENT setup - initialize callback queue
   remote_event_callbacks = create_callback_table("remote_callbacks");
@@ -315,8 +315,8 @@ Init(const char *socket_path)
     return INK_ERR_SYS_CALL;
 
   // try to connect to traffic manager
-  // do this last so that everything else on client side is set up even if 
-  // connection fails; this might happen if client is set up and running 
+  // do this last so that everything else on client side is set up even if
+  // connection fails; this might happen if client is set up and running
   // before TM
   err = ts_connect();
   if (err != INK_ERR_OKAY)
@@ -327,14 +327,14 @@ Init(const char *socket_path)
 
 END:
 
-  // create thread that periodically checks the socket connection 
+  // create thread that periodically checks the socket connection
   // with TM alive - reconnects if not alive
   ink_test_thread = ink_thread_create(socket_test_thread, NULL);
   return err;
 
 }
 
-// does clean up for remote API client; destroy structures and disconnects 
+// does clean up for remote API client; destroy structures and disconnects
 INKError
 Terminate()
 {
@@ -348,10 +348,10 @@ Terminate()
     return err;
 
   // cancel the listening socket thread
-  // it's important to call this before setting paths to NULL because the 
+  // it's important to call this before setting paths to NULL because the
   // socket_test_thread actually will try to reconnect() and this funntion
   // will seg fault if the socket paths are NULL while it is connecting;
-  // the thread will be cancelled at a cancellation point in the 
+  // the thread will be cancelled at a cancellation point in the
   // socket_test_thread, eg. sleep
   ink_thread_cancel(ink_test_thread);
 
@@ -360,7 +360,7 @@ Terminate()
   return INK_ERR_OKAY;
 }
 
-// ONLY have very basic diag functionality for remote cliets. 
+// ONLY have very basic diag functionality for remote cliets.
 // When a remote client tries to use diags (wants to output runtime
 // diagnostics, the diagnostics will be outputted to the machine
 // the remote client is logged into (the one TM is running on)
@@ -619,10 +619,10 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT
  * Input:   file - the config file to read
  *          text - a buffer is allocated on the text char* pointer
  *          size - the size of the buffer is returned
- * Output:  
- *  
+ * Output:
+ *
  * Marshals a read file request that can be sent over the unix domain socket.
- * Connects to the socket and sends request over. Parses the response from 
+ * Connects to the socket and sends request over. Parses the response from
  * Traffic Manager.
  */
 INKError
@@ -645,15 +645,15 @@ ReadFile(INKFileNameT file, char **text, int *size, int *version)
 /*-------------------------------------------------------------------------
  * WriteFile
  *-------------------------------------------------------------------------
- * Purpose: replaces the current file with the file passed in; 
+ * Purpose: replaces the current file with the file passed in;
  *  does forceUpdate for Rollback and FileManager so correct file
  *  versioning is maintained
  * Input: file - the config file to write
  *        text - text buffer to write
- *        size - the size of the buffer to write 
+ *        size - the size of the buffer to write
  *
  * Marshals a write file request that can be sent over the unix domain socket.
- * Connects to the socket and sends request over. Parses the response from 
+ * Connects to the socket and sends request over. Parses the response from
  * Traffic Manager.
  */
 INKError
@@ -745,11 +745,11 @@ EventIsActive(char *event_name, bool * is_current)
 /*-------------------------------------------------------------------------
  * EventSignalCbRegister
  *-------------------------------------------------------------------------
- * Adds the callback function in appropriate places in the remote side 
+ * Adds the callback function in appropriate places in the remote side
  * callback table.
  * If this is the first callback to be registered for a certain event type,
  * then sends a callback registration notification to TM so that TM will know
- * which events have remote callbacks registered on it. 
+ * which events have remote callbacks registered on it.
  */
 INKError
 EventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data)
@@ -777,15 +777,15 @@ EventSignalCbRegister(char *event_name, INKEventSignalFunc func, void *data)
 /*-------------------------------------------------------------------------
  * EventSignalCbUnregister
  *-------------------------------------------------------------------------
- * Removes the callback function from the remote side callback table. 
+ * Removes the callback function from the remote side callback table.
  * After removing the callback function, needs to check which events now
  * no longer have any callbacks registered at all; sends an unregister callback
- * notification to TM so that TM knows that that event doesn't have any 
- * remote callbacks registered for it 
- * Input: event_name - the event to unregister the callback from; if NULL, 
+ * notification to TM so that TM knows that that event doesn't have any
+ * remote callbacks registered for it
+ * Input: event_name - the event to unregister the callback from; if NULL,
  *                     unregisters the specified func from all events
- *        func       - the callback function to unregister; if NULL, then 
- *                     unregisters all callback functions for the event_name 
+ *        func       - the callback function to unregister; if NULL, then
+ *                     unregisters all callback functions for the event_name
  *                     specified
  */
 INKError
@@ -853,7 +853,7 @@ StatsReset()
  * EncryptToFile
  *-------------------------------------------------------------------------
  * Encrypts the password and stores the encrypted password in the
- * location specified by "filepath"  
+ * location specified by "filepath"
  */
 INKError
 EncryptToFile(const char *passwd, const char *filepath)
