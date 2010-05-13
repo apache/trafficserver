@@ -44,6 +44,7 @@ example/thread-pool/test/SDKTest/SDKtest_server.config
 example/thread-pool/test/SynTest/system.cfg
 example/thread-pool/test/SynTest/tests_psi.cfg
 example/thread-pool/test/SynTest/Tests/PsiPlugin/
+example/app-template/records.config
 test/SDKtest/client/SDKtest_client.config
 test/SDKtest/client/api/host.allow
 test/SDKtest/client/api/host.forbid
