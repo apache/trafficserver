@@ -6,6 +6,10 @@ iocore/fastio/inkfio/inkfio.conf
 **/*.o
 **/*.Po
 **/*.in
+**/*.Plo
+**/*.la
+**/*.lai
+**/*.lo
 **/Makefile
 .gitignore
 .indent.pro
@@ -19,6 +23,7 @@ tags
 libtool
 config.log
 config.status
+config.nice
 configure
 REVIEWERS
 proxy/README-stats.otl
@@ -39,6 +44,7 @@ example/thread-pool/test/SDKTest/SDKtest_server.config
 example/thread-pool/test/SynTest/system.cfg
 example/thread-pool/test/SynTest/tests_psi.cfg
 example/thread-pool/test/SynTest/Tests/PsiPlugin/
+example/app-template/records.config
 test/SDKtest/client/SDKtest_client.config
 test/SDKtest/client/api/host.allow
 test/SDKtest/client/api/host.forbid
@@ -58,6 +64,8 @@ doc/Doxyfile.in
 libinktomi++/ParseRulesCType
 libinktomi++/ParseRulesCTypeToLower
 libinktomi++/ParseRulesCTypeToUpper
+libinktomi++/fastlz.h
+libinktomi++/fastlz.c
 iocore/aio/sample.cfg
 iocore/cache/Notes
 iocore/cache/cache_test.config
@@ -78,5 +86,6 @@ libinktomi++/ink_res_mkquery.cc
 libinktomi++/ink_rand.h
 libinktomi++/ink_rand.cc
 README.libev
+README-EC2
 stamp-h1
 REVIEWERS

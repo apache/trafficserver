@@ -6,28 +6,14 @@ The Apache Software Foundation (http://www.apache.org/).
 
 ~~~
 
-Copyright (C) 2009, Yahoo! Inc. All rights reserved.
+Codebase originally donated by Yahoo:
 
-~~~
+Copyright (C) 2009 Yahoo! Inc.
 
-Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
-All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-See libinktomi++/ink_rand.cc, libinktomi++/ink_rand.h
+   http://www.apache.org/licenses/LICENSE-2.0
 
-~~~
 
-Copyright (c) 1985, 1989, 1993
-The Regents of the University of California. All rights reserved.
-
-Portions Copyright (c) 1993 by Digital Equipment Corporation.
-
-Portions Copyright (c) 1996-1999 by Internet Software Consortium.
-
-See libinktomi++/ink_res_init.cc, libinktomi++/ink_res_mkquery.cc
-
-~~~
-
-Copyright (c) 1997-1998 Sun Microsystems, Inc.
-
-See proxy/mgmt2/cli2/hashtable.cc, m4/tcl.m4
