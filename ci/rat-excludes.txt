@@ -6,6 +6,9 @@ iocore/fastio/inkfio/inkfio.conf
 **/*.o
 **/*.Po
 **/*.in
+**/*.Plo
+**/*.la
+**/*.lai
 **/Makefile
 .gitignore
 .indent.pro
