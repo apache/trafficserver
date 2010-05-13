@@ -29,7 +29,7 @@ remap_plugin_info_init
   instance_of_remap_plugin_info_init;
 
 /**
- * 
+ *
 **/
 remap_plugin_info_init::remap_plugin_info_init()
 {
@@ -38,7 +38,7 @@ remap_plugin_info_init::remap_plugin_info_init()
 
 
 /**
- * 
+ *
 **/
 remap_plugin_info::remap_plugin_info(char *_path)
   :
@@ -62,7 +62,7 @@ fp_tsremap_os_response(NULL)
 
 
 /**
- * 
+ *
 **/
 remap_plugin_info::~remap_plugin_info()
 {

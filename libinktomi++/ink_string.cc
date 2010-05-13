@@ -22,11 +22,11 @@
  */
 
 /****************************************************************************
- 
+
   ink_string.c
- 
+
   String and text processing routines for libinktomi.a.
- 
+
  ****************************************************************************/
 
 #include "inktomi++.h"   /* MAGIC_EDITING_TAG */
@@ -40,14 +40,14 @@
 #define INK_MAX_STRING_ARRAY_SIZE 128
 
 /*---------------------------------------------------------------------------*
- 
+
   char *ink_strncpy(char *dest, char *src, int n)
- 
+
   This routine is a safer version of strncpy which always NUL terminates
   the destination string.  Note that this routine has the SAME semantics
   as strncpy, such as copying exactly n bytes, padding dest with NULs
   is necessary.  Use ink_string_copy for a non-padding version.
- 
+
  *---------------------------------------------------------------------------*/
 
 char *
@@ -65,13 +65,13 @@ ink_strncpy(char *dest, const char *src, int n)
 
 
 /*---------------------------------------------------------------------------*
- 
+
   char *ink_string_concatenate_strings(char *dest, ...)
- 
+
   This routine concatenates a variable number of strings into the buffer
   <dest>, returning the pointer to <dest>.  The sequence of strings must end
   with NULL.
- 
+
  *---------------------------------------------------------------------------*/
 
 char *
@@ -99,14 +99,14 @@ ink_string_concatenate_strings(char *dest, ...)
 
 
 /*---------------------------------------------------------------------------*
- 
+
   char *ink_string_concatenate_strings_n(char *dest, int n, ...)
- 
+
   This routine concatenates a variable number of strings into the buffer
   <dest>, returning the pointer to <dest>.  The sequence of strings must end
   with NULL.  A NUL will always be placed after <dest>, and no more than
   <n> - 1 characters will ever be written to <dest>.
- 
+
  *---------------------------------------------------------------------------*/
 
 char *
@@ -136,13 +136,13 @@ ink_string_concatenate_strings_n(char *dest, int n, ...)
 
 
 /*---------------------------------------------------------------------------*
- 
+
   char *ink_string_append(char *dest, char *src, int n)
- 
+
   This routine appends <src> to the end of <dest>, but it insures the
   string pointed to by <dest> never grows beyond <n> characters, including
   the terminating NUL.  A NUL is always written if n > 0.
- 
+
  *---------------------------------------------------------------------------*/
 
 char *
@@ -188,12 +188,12 @@ ink_string_append(char *dest, char *src, int n)
 
 
 /*---------------------------------------------------------------------------*
- 
+
   char *ink_string_duplicate(char *ptr)
- 
+
   This routine allocates memory for the string <ptr>, and copies the string
   into the new buffer.  The pointer to the new buffer is returned.
- 
+
  *---------------------------------------------------------------------------*/
 
 char *
@@ -211,14 +211,14 @@ ink_string_duplicate(char *ptr)
 
 
 /*---------------------------------------------------------------------------*
- 
+
   char *ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
- 
+
   This routine takes a string <str>, copies the period-separated extension to
   <ext> (up to <max_ext_len - 1> characters) NUL terminates <ext>, and
   returns a pointer into the string <str> where the '.' of the extension
   begins, or NULL if there is no extension.
- 
+
  *---------------------------------------------------------------------------*/
 
 char *
@@ -243,18 +243,18 @@ ink_string_find_dotted_extension(char *str, char *ext, int max_ext_len)
 }                               /* End ink_string_find_dotted_extension */
 
 /*---------------------------------------------------------------------------*
- 
-  char *ink_string_mpath(int nstrings, char *str1, bool free1, 
+
+  char *ink_string_mpath(int nstrings, char *str1, bool free1,
     char *str2, bool free2, ...);
- 
-  This routine joins multiple path components together to make 
+
+  This routine joins multiple path components together to make
   a new path.  Each component can optionally start with a / in which
   case all the preceeding components are ignored.
- 
+
   Each component can optionally be free()d.
- 
+
   Space is malloc()d to hold the resulting path.
- 
+
  *---------------------------------------------------------------------------*/
 
 char *
@@ -317,11 +317,11 @@ ink_string_mpath(int nstrings, ...)
 }
 
 /*---------------------------------------------------------------------------*
- 
+
   char *ink_string_mcopy(char *source);
- 
+
   This simply makes a copy of a string into freshly malloc()ed space.
- 
+
  *---------------------------------------------------------------------------*/
 
 char *
@@ -338,15 +338,15 @@ ink_string_mcopy(char *source)
 }
 
 /*---------------------------------------------------------------------------*
- 
-  char *ink_string_mjoin(int nstrings, char *str1, bool free1, 
+
+  char *ink_string_mjoin(int nstrings, char *str1, bool free1,
     char *str2, bool free2, ...);
- 
-  This routine joins multiple strings components together to make 
+
+  This routine joins multiple strings components together to make
   a new string.  Each component can optionally be free()d.
- 
+
   Space is malloc()d to hold the resulting path.
- 
+
  *---------------------------------------------------------------------------*/
 
 char *
@@ -443,9 +443,9 @@ ink_utf8_to_latin1(const char *in, int inlen, char *out, int *outlen)
   inbytesleft = inlen;
   outbytesleft = *outlen;
 #if (HOST_OS == freebsd) || (HOST_OS == solaris)
-  if (iconv(ic, &in, &inbytesleft, &out, &outbytesleft) == (size_t) - 1) 
+  if (iconv(ic, &in, &inbytesleft, &out, &outbytesleft) == (size_t) - 1)
 #else
-  if (iconv(ic, (char **) &in, &inbytesleft, &out, &outbytesleft) == (size_t) - 1) 
+  if (iconv(ic, (char **) &in, &inbytesleft, &out, &outbytesleft) == (size_t) - 1)
 #endif
     {
       iconv_close(ic);

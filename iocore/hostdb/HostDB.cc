@@ -322,7 +322,7 @@ HostDBCache::start(int flags)
   struct stat s;
   int err;
   if ((err = stat(storage_path, &s)) < 0) {
-    ink_strncpy(storage_path,system_local_state_dir,sizeof(storage_path)); 
+    ink_strncpy(storage_path,system_local_state_dir,sizeof(storage_path));
     if ((err = stat(storage_path, &s)) < 0) {
       Warning("Unable to stat() directory '%s': %d %d, %s", storage_path, err, errno, strerror(errno));
       Warning(" Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir' ");
@@ -396,10 +396,10 @@ HostDBProcessor::start(int)
   /* mgmt stuff
      ink64 ii = pmgmt->record_data->readConfigInteger(
      "proxy.config.hostdb.strict_round_robin", &found);
-     if (found) { 
+     if (found) {
      hostdb_strict_round_robin = (ink32) ii;
      pmgmt->record_data->registerConfigUpdateFunc(
-     "proxy.config.hostdb.strict_round_robin",config_int_cb, 
+     "proxy.config.hostdb.strict_round_robin",config_int_cb,
      (void*)&hostdb_strict_round_robin);
      }
    */
@@ -699,10 +699,10 @@ HostDBProcessor::getby(Continuation * cont,
     // INK_MD5 the ip, pad on both sizes with 0's
     // so that it does not intersect the string space
     //
-    // suvasv: Changed from this 
+    // suvasv: Changed from this
     //    inku64 dummy = ip << 16;
     //  to inku64 dummy = ip*64*1024 for bug INKqa10029.
-    //  Problem was that ip << 16 would not work for architectures with 
+    //  Problem was that ip << 16 would not work for architectures with
     //  a different byte order. This takes cares of all byte orders.
     inku64 dummy = ((inku64) ip) * 64 * 1024;
     md5.encodeBuffer((char *) &dummy, 8);
@@ -997,10 +997,10 @@ HostDBProcessor::setby(char *hostname, int len, int port, unsigned int ip, HostD
     // so that it does not intersect the string space
     //
 
-    // suvasv: Changed from this 
+    // suvasv: Changed from this
     //    inku64 dummy = ip << 16;
     //  to inku64 dummy = ip*64*1024 for bug INKqa10029.
-    //  Problem was that ip << 16 would not work for architectures with 
+    //  Problem was that ip << 16 would not work for architectures with
     //  a different byte order. This takes cares of all byte orders.
     inku64 dummy = ((inku64) ip) * 64 * 1024;
     md5.encodeBuffer((char *) &dummy, 8);
@@ -1907,7 +1907,7 @@ HostDBContinuation::clusterEvent(int event, Event * e)
 
       if (!action.cancelled) {
         if (reply_to_cont(action.continuation, r)) {
-          // if we are not the owner and neither was the sender, 
+          // if we are not the owner and neither was the sender,
           // fill the owner
           //
           if (hostdb_migrate_on_demand) {
@@ -1982,7 +1982,7 @@ get_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
   /* -----------------------------------------
      we make a big assumption here! we presume
      that all the machines in the cluster are
-     set to use the same configuration for 
+     set to use the same configuration for
      DNS servers
      ----------------------------------------- */
 

@@ -43,9 +43,9 @@ int CONGESTION_DB_SIZE = 1024;
 CongestionDB *theCongestionDB = NULL;
 
 
-/* 
+/*
  * the CongestionDBCont is the continuation to do the congestion db related work
- * when the CongestionDB's corresponding function does not get the lock in the 
+ * when the CongestionDB's corresponding function does not get the lock in the
  * first try
  */
 
@@ -131,7 +131,7 @@ Free_CongestRequestParam(CongestRequestParam * param)
 static long
   congestEntryGCTime = 0;
 
-// Before the garbage collection of the congestion db, set the 
+// Before the garbage collection of the congestion db, set the
 //  current GC time, CongestionEntry::usefulInfo(t) will use the
 //  timestamp to determine if the entry contains useful infomation
 
@@ -305,7 +305,7 @@ CongestionDB::revalidateBucket(int buckId)
     if (!cur->validate()) {
       remove_entry(buckId, &it);
       cur->put();
-      // the next entry has been moved to the current pos 
+      // the next entry has been moved to the current pos
       //because of the remove_entry
       cur = cur_entry(buckId, &it);
     } else
@@ -501,7 +501,7 @@ get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry *
       Debug("congestion_control", "get_congest_entry, found entry 0x%x done", (void *) *ppEntry);
       return ACTION_RESULT_DONE;
     } else {
-      // create a new entry and add it to the congestDB 
+      // create a new entry and add it to the congestDB
       *ppEntry = new CongestionEntry(data->get_host(), data->get_ip(), p, key);
       (*ppEntry)->get();
       theCongestionDB->insert_entry(key, *ppEntry);
@@ -566,7 +566,7 @@ get_congest_list(Continuation * cont, MIOBuffer * buffer, int format)
 }
 
 /*
- * this function is to suport removing the congested state for a 
+ * this function is to suport removing the congested state for a
  * specific server when the administrator knows it is online again
  */
 
@@ -588,10 +588,10 @@ remove_congested_entry(inku64 key)
 
 //--------------------------------------------------------------
 //  remove_congested_entry(char* buf, MIOBuffer *out_buffer)
-//   INPUT: buf 
+//   INPUT: buf
 //         format: "all",
 //                 "host=<hostname>[/<prefix>]",
-//                 "ip=<ip addr>[/<prefix>]", 
+//                 "ip=<ip addr>[/<prefix>]",
 //                 "key=<internal key>"
 //   OUTPUT: out_buffer
 //           message to the Raf

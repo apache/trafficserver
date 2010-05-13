@@ -22,7 +22,7 @@
  */
 
 /*
- * cache_scan.cc:  use INKCacheScan to print URLs and headers for objects in 
+ * cache_scan.cc:  use INKCacheScan to print URLs and headers for objects in
  *                 the cache when endpoint /show-cache is requested
  */
 
@@ -218,8 +218,8 @@ cleanup(INKCont contp)
   cache_scan_state *cstate = (cache_scan_state *) INKContDataGet(contp);
 
   if (cstate) {
-    // cancel any pending cache scan actions, since we will be destroying the 
-    // continuation 
+    // cancel any pending cache scan actions, since we will be destroying the
+    // continuation
     if (cstate->pending_action) {
       INKActionCancel(cstate->pending_action);
     }
@@ -311,7 +311,7 @@ handle_io(INKCont contp, INKEvent event, void *edata)
     {
       INKDebug("cache_iter", "ndone: %d total_bytes: %d", INKVIONDoneGet(cstate->write_vio), cstate->total_bytes);
       cstate->write_pending = 0;
-      // the cache scan handler should call vio reenable when there is 
+      // the cache scan handler should call vio reenable when there is
       // available data
       //INKVIOReenable(cstate->write_vio);
       return 0;

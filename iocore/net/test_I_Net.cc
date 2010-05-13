@@ -72,7 +72,7 @@ reconfigure_diags()
   diags->deactivate_all(DiagsTagType_Action);
 
   //////////////////////////////////////////////////////////////////////
-  //                     add new tag tables 
+  //                     add new tag tables
   //////////////////////////////////////////////////////////////////////
 
   if (diags->base_debug_tags)
@@ -162,7 +162,7 @@ main()
   eventProcessor.start(nproc);
   RecProcessStart();
 
-  /* 
+  /*
    *  Reset necessary config variables
    */
 

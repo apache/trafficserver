@@ -26,7 +26,7 @@
  * Purpose: Generic module that deals with callbacks and a callback table
  * Created: 01/08/01
  * Created by: lant
- * 
+ *
  ***************************************************************************/
 
 #include "ink_config.h"
@@ -58,9 +58,9 @@ create_event_callback(INKEventSignalFunc func, void *data)
 
 /**********************************************************************
  * delete_event_callback
- * 
+ *
  * purpose:frees EventCallbackT
- * input: None 
+ * input: None
  * output: EventCallbackT
  * notes: also frees memory for the data passed in; ASSUMES data was
  *        dynamically allocated
@@ -71,7 +71,7 @@ delete_event_callback(EventCallbackT * event_cb)
 
   if (event_cb) {
     // LAN - can't free the data if don't know what it is?
-    //if (event_cb->data) xfree(event_cb->data); 
+    //if (event_cb->data) xfree(event_cb->data);
     xfree(event_cb);
   }
   return;
@@ -112,8 +112,8 @@ create_callback_table(const char *lock_name)
 /**********************************************************************
  * delete_callback_table
  *
- * purpose: frees the memory allocated for a CallbackTable; also 
- *          destroys the lock 
+ * purpose: frees the memory allocated for a CallbackTable; also
+ *          destroys the lock
  * input: None
  * output: None
  * notes: doesn't free pointers to functions
@@ -158,7 +158,7 @@ delete_callback_table(CallbackTable * cb_table)
  * input: cb_list - the table of callbacks to check
  * output: returns a list of event_ids with at least one callback fun;
  *         returns NULL if all the events have a registered callback
- * notes: 
+ * notes:
  **********************************************************************/
 LLQ *
 get_events_with_callbacks(CallbackTable * cb_table)
@@ -194,7 +194,7 @@ get_events_with_callbacks(CallbackTable * cb_table)
  *        func - the callback function
  *        first_cb - true only if this is the event's first callback
  * output: INK_ERR_xx
- * notes: 
+ * notes:
  **********************************************************************/
 INKError
 cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc func, void *data, bool * first_cb)
@@ -263,7 +263,7 @@ cb_table_register(CallbackTable * cb_table, char *event_name, INKEventSignalFunc
  *        func - the callback function
  *        first_cb - true only if this is the event's first callback
  * output: INK_ERR_xx
- * notes: 
+ * notes:
  **********************************************************************/
 INKError
 cb_table_unregister(CallbackTable * cb_table, char *event_name, INKEventSignalFunc func)
@@ -315,7 +315,7 @@ cb_table_unregister(CallbackTable * cb_table, char *event_name, INKEventSignalFu
       }
     }                           // end for (int i = 0; i < NUM_EVENTS; i++) {
   } else {
-    // unregister for specific event 
+    // unregister for specific event
     int id = get_event_id(event_name);
     if (cb_table->event_callback_l[id]) {
       int queue_depth;

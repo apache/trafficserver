@@ -25,16 +25,16 @@
 
   NetAccept.h
 
-  
+
    NetAccept is a generalized facility which allows
    Connections of different classes to be accepted either
    from a blockable thread or by adaptive polling.
-  
+
    It is used by the NetProcessor and the ClusterProcessor
    and should be considered PRIVATE to processor implementations.
 
 
-  
+
  ****************************************************************************/
 #ifndef __P_NETACCEPT_H__
 #define __P_NETACCEPT_H__

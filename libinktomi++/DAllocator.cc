@@ -28,7 +28,7 @@
    A pool allocator with some debugging feature including double free
      detection and integration with the mem-tracker
 
-   
+
   ****************************************************************************/
 
 #include "DAllocator.h"

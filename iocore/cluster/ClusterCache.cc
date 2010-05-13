@@ -154,7 +154,7 @@ dump_sndtrace_table()
 // Cluster write VC cache.
 ///////////////////////////////////////////////////////////////////////
 //
-// In the event that a remote open read fails (HTTP only), an 
+// In the event that a remote open read fails (HTTP only), an
 // open write is issued and if successful a open write connection
 // is returned for the open read.  We cache the open write VC and
 // resolve the subsequent open write locally from the write VC cache
@@ -192,7 +192,7 @@ public:
 
   enum
   { MAX_TABLE_ENTRIES = 256,    // must be power of 2
-    SCAN_INTERVAL = 10          // seconds 
+    SCAN_INTERVAL = 10          // seconds
   };
   Queue<Entry> hash_table[MAX_TABLE_ENTRIES];
   Ptr<ProxyMutex> hash_lock[MAX_TABLE_ENTRIES];
@@ -733,15 +733,15 @@ CacheContinuation::lookupOpenWriteVC()
     SET_CONTINUATION_HANDLER(this, (CacheContHandler)
                              & CacheContinuation::lookupOpenWriteVCEvent);
     //
-    // Note: In the lookupOpenWriteVCEvent handler, we use EVENT_IMMEDIATE 
-    //       to distinguish the lookup retry from a request timeout 
+    // Note: In the lookupOpenWriteVCEvent handler, we use EVENT_IMMEDIATE
+    //       to distinguish the lookup retry from a request timeout
     //       which uses EVENT_INTERVAL.
     //
     lookup_open_write_vc_event = eventProcessor.schedule_imm(this, ET_CACHE_CONT_SM);
 
   } else if (vc != ((ClusterVConnection *) - 1)) {
-    // Hit, found open_write VC in cache.  
-    // Post open_write completion by simulating a 
+    // Hit, found open_write VC in cache.
+    // Post open_write completion by simulating a
     // remote cache op result message.
 
     vc->action_ = action;       // establish new continuation
@@ -857,8 +857,8 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection * vc)
       CLUSTER_INCREMENT_DYN_STAT(CLUSTER_REMOTE_OP_TIMEOUTS_STAT);
       timeout = (Event *) 1;    // Note timeout
       /////////////////////////////////////////////////////////////////
-      // Note: Failure callback is sent now, but the deallocation of 
-      //       the CacheContinuation is deferred until we receive the 
+      // Note: Failure callback is sent now, but the deallocation of
+      //       the CacheContinuation is deferred until we receive the
       //       open_local() callback.
       /////////////////////////////////////////////////////////////////
       if (!action.cancelled)
@@ -1493,7 +1493,7 @@ CacheContinuation::setupVCdataRead(int event, VConnection * vc)
     MIOBuffer *buf = new_MIOBuffer(size_index);
     readahead_reader = buf->alloc_reader();
 
-    MUTEX_TRY_LOCK(lock, mutex, this_ethread());        // prevent immediate callback 
+    MUTEX_TRY_LOCK(lock, mutex, this_ethread());        // prevent immediate callback
     readahead_vio = vc->do_io_read(this, caller_buf_freebytes, buf);
     return EVENT_DONE;
 
@@ -1599,7 +1599,7 @@ CacheContinuation::setupReadWriteVC(int event, VConnection * vc)
   case CACHE_EVENT_OPEN_READ_FAILED:
     {
       if (frag_type == CACHE_FRAG_TYPE_HTTP) {
-        // HTTP open read failed, attempt open write now to avoid an additional 
+        // HTTP open read failed, attempt open write now to avoid an additional
         //  message round trip
 
         CacheKey key(url_md5);
@@ -1672,7 +1672,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
   if ((request_opcode == CACHE_OPEN_READ_LONG)
       && cvc && (event == CACHE_EVENT_OPEN_WRITE)) {
     //////////////////////////////////////////////////////////////////////////
-    // open read failed, but open write succeeded, set result to 
+    // open read failed, but open write succeeded, set result to
     // CACHE_EVENT_OPEN_READ_FAILED and make result token non zero to
     // signal to the remote node that we have established a write connection.
     //////////////////////////////////////////////////////////////////////////
@@ -1837,7 +1837,7 @@ CacheContinuation::setupReadBufTunnel(VConnection * cache_read_vc, VConnection *
   tunnel_cont->tunnel = tunnel;
   tunnel_cont->tunnel_cont = tunnel_cont;
 
-  // Disable cluster_write_vc 
+  // Disable cluster_write_vc
   ((ClusterVConnection *) cluster_write_vc)->write.enabled = 0;
 
   // Disable cache read VC
@@ -1845,7 +1845,7 @@ CacheContinuation::setupReadBufTunnel(VConnection * cache_read_vc, VConnection *
 
   /////////////////////////////////////////////////////////////////////
   // At this point, the OneWayTunnel is blocked awaiting a reenable
-  // on both the source and target VCs. Reenable occurs after the 
+  // on both the source and target VCs. Reenable occurs after the
   // message containing the initial data and open read reply are sent.
   /////////////////////////////////////////////////////////////////////
 }
@@ -1915,7 +1915,7 @@ CacheContinuation::disposeOfDataBuffer(void *d)
 
   if (cc->have_all_data) {
     //
-    // All object data resides in the buffer, no OneWayTunnel 
+    // All object data resides in the buffer, no OneWayTunnel
     // started and the Cache VConnection has already been closed.
     // Close write_cluster_vc and set remote close to avoid send of
     // close message to remote node.
@@ -1944,7 +1944,7 @@ CacheContinuation::handleDisposeEvent(int event, CacheContinuation * cc)
   ink_assert(cc->magicno == (int) MagicNo);
   MUTEX_TRY_LOCK(lock, cc->tunnel_mutex, this_ethread());
   if (lock) {
-    // Write of initial object data is complete.  
+    // Write of initial object data is complete.
 
     if (!cc->tunnel_closed) {
       // Start tunnel by reenabling source and target VCs.
@@ -2249,7 +2249,7 @@ retry:
         timeout = 0;
         //
         // Post error completion now and defer deallocation of
-        // the continuation until we receive the reply or the 
+        // the continuation until we receive the reply or the
         // target node goes down.
         //
         if (!action.cancelled)
@@ -2408,13 +2408,13 @@ retry:
       ink_assert(read_cluster_vc && !write_cluster_vc);
       //
       // OPEN_READ_LONG has failed, but the remote node was able to
-      // establish an OPEN_WRITE_LONG connection.  
+      // establish an OPEN_WRITE_LONG connection.
       // Convert the cluster read VC to a write VC and insert it
-      // into the global write VC cache.  This will allow us to 
+      // into the global write VC cache.  This will allow us to
       // locally resolve the subsequent OPEN_WRITE_LONG request.
       //
 
-      // Note: We do not allow remote close on this VC while 
+      // Note: We do not allow remote close on this VC while
       //       it resides in cache
       //
       read_cluster_vc->set_type(CLUSTER_OPT_CONN_WRITE);
@@ -2657,7 +2657,7 @@ cache_lookup_ClusterFunction(ClusterMachine * from, void *data, int len)
   log_cache_op_msg(msg->seq_number, 0, "cache_lookup");
 #endif
 
-  // Extract hostname data if passed.  
+  // Extract hostname data if passed.
 
   char *hostname;
   int hostname_len = len - op_to_sizeof_fixedlen_msg(CACHE_LOOKUP_OP);
@@ -2758,7 +2758,7 @@ ink32 CacheContinuation::getObjectSize(VConnection * vc, int opcode, CacheHTTPIn
 }
 
 //////////////////////////////////////////////////////////////////////////
-// insert_cache_callback_user() 
+// insert_cache_callback_user()
 //  Insert write VC into global cache prior to performing user callback.
 //////////////////////////////////////////////////////////////////////////
 void

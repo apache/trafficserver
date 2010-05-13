@@ -27,8 +27,8 @@
 /****************************************************************************
  *
  *  FileManager.h - Interface for class to manage configuration updates
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include <stdio.h>
@@ -75,7 +75,7 @@ class ExpandingArray;
 //
 //  addFile(char*, configFileInfo*) - adds a new config file to be
 //       managed.  A rollback object is created for the file.
-//       if the file_info ptr is not NULL, a WebFileEdit object 
+//       if the file_info ptr is not NULL, a WebFileEdit object
 //       is also created
 //
 //  getRollbckObj(char* , RollbackPtr**) - sets *rbPtr to Rollback
@@ -88,7 +88,7 @@ class ExpandingArray;
 //
 //  registerCallback(FileCallbackFunc) - registers a callback function
 //       which will get called everytime a managed file changes.  The
-//       callback function should NOT use the calling thread to 
+//       callback function should NOT use the calling thread to
 //       access any Rollback objects or block for a long time
 //
 //  fileChanged(const char* baseFileName) - called by Rollback objects

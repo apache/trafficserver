@@ -311,7 +311,7 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
   while (compressed && target > ncompressed) {
     RamCacheCLFUSEntry *e = compressed;
     if (e->incompressible || e->compressed)
-      goto Lcontinue; 
+      goto Lcontinue;
     n++;
     if (do_at_most < n)
       break;
@@ -340,7 +340,7 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
 #if HAVE_LIBZ
         case CACHE_COMPRESSION_LIBZ: {
           uLongf ll = l;
-          if ((Z_OK != compress((Bytef*)b, &ll, (Bytef*)e->data->data(), e->len))) 
+          if ((Z_OK != compress((Bytef*)b, &ll, (Bytef*)e->data->data(), e->len)))
             goto Lfailed;
           l = (int)ll;
           break;
@@ -349,7 +349,7 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
 #ifdef HAVE_LZMA
         case CACHE_COMPRESSION_LIBLZMA: {
           size_t pos = 0, ll = l;
-          if (LZMA_OK != lzma_easy_buffer_encode(LZMA_PRESET_DEFAULT, LZMA_CHECK_NONE, NULL, 
+          if (LZMA_OK != lzma_easy_buffer_encode(LZMA_PRESET_DEFAULT, LZMA_CHECK_NONE, NULL,
                                                  (uint8_t*)e->data->data(), e->len, (uint8_t*)b, &pos, ll))
             goto Lfailed;
           l = (int)pos;
@@ -387,12 +387,12 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
       check_accounting(this);
     }
     goto Lcontinue;
-  Lfailed:    
+  Lfailed:
     xfree(b);
     e->incompressible = 1;
   Lcontinue:;
-    DDebug("ram_cache", "compress %X %d %d %d %d %d %d", 
-           e->key.word(3), e->auxkey1, e->auxkey2, e->incompressible, e->compressed, 
+    DDebug("ram_cache", "compress %X %d %d %d %d %d %d",
+           e->key.word(3), e->auxkey1, e->auxkey2, e->incompressible, e->compressed,
            e->len, e->compressed_len);
     if (!e->lru_link.next)
       break;
@@ -403,11 +403,11 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
 
 void RamCacheCLFUS::requeue_victims(RamCacheCLFUS *c, Que(RamCacheCLFUSEntry, lru_link) &victims) {
   RamCacheCLFUSEntry *victim = 0;
-  while ((victim = victims.dequeue())) { 
-    c->bytes += victim->size + ENTRY_OVERHEAD; 
+  while ((victim = victims.dequeue())) {
+    c->bytes += victim->size + ENTRY_OVERHEAD;
     CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, victim->size);
     victim->hits = REQUEUE_HITS(victim->hits);
-    c->lru[0].enqueue(victim); 
+    c->lru[0].enqueue(victim);
   }
 }
 
@@ -497,7 +497,7 @@ int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, inku32 len, bool copy, 
       if (bytes + victim->size + size > max_bytes && CACHE_VALUE(victim) > CACHE_VALUE(e)) {
         requeue_victims(this, victims);
         lru[1].enqueue(e);
-        DDebug("ram_cache", "put %X %d %d size %d INC %d HISTORY", 
+        DDebug("ram_cache", "put %X %d %d size %d INC %d HISTORY",
                key->word(3), auxkey1, auxkey2, e->size, e->hits);
         return 0;
       }

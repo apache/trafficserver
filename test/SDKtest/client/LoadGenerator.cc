@@ -99,7 +99,7 @@ LoadGenerator::initialize_targets()
 
 // generates strings "size0" to "sizeN" where total number of sizes
 // is N+1. Used only for synthetic documents. Also returns the
-// corresponding expected size 
+// corresponding expected size
 
 void
 LoadGenerator::generate_size_str(char *size_str, long *size_requested_p)
@@ -157,7 +157,7 @@ LoadGenerator::generate_serial_number_str(char *serial_number_str)
 }
 
 /* Generate a server str of the form: "server0"..
-"serverN-1", where N is the number of origin servers. 
+"serverN-1", where N is the number of origin servers.
 Only applicable for synthetic load */
 
 void
@@ -233,11 +233,11 @@ LoadGenerator::create_synthetic_request(char *req_string,       /* Return reques
     }
     if (!more_request) {
       strcpy(req_string, "");
-      // ready to finish inkbench and print stats      
+      // ready to finish inkbench and print stats
       return;
     } else if (strcmp(dynamic_origin_server_name, "") != 0 &&
                strcmp(dynamic_origin_server_port, "") != 0 && strcmp(req_string, "") != 0) {
-      // generate new sockaddr and origin_server_str based on the 
+      // generate new sockaddr and origin_server_str based on the
       // dynamic_origin_server_name and dynamic_origin_server_port
       if (direct) {
         generate_dynamic_origin_server_target(dynamic_origin_server_name, dynamic_origin_server_port, target);
@@ -318,7 +318,7 @@ LoadGenerator::create_synthetic_request(char *req_string,       /* Return reques
       return;
     } else if (strcmp(dynamic_origin_server_name, "") != 0 &&
                strcmp(dynamic_origin_server_port, "") != 0 && strcmp(req_string, "") != 0) {
-      // generate new sockaddr and origin_server_str based on the 
+      // generate new sockaddr and origin_server_str based on the
       // dynamic_origin_server_name and dynamic_origin_server_port
       if (direct) {
         generate_dynamic_origin_server_target(dynamic_origin_server_name, dynamic_origin_server_port, target);

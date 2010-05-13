@@ -247,7 +247,7 @@ server_send_request(INKCont contp)
   ServerSM *Server = (ServerSM *) INKContDataGet(contp);
   assert(Server->q_server_conn_status != CONNECTED_SENDING);
   Server->q_server_conn_status = CONNECTED_SENDING;
-/*    
+/*
     if (Server->q_server_request_buffer != NULL)
 	Server->q_server_request_buffer->reset();
 
@@ -255,10 +255,10 @@ server_send_request(INKCont contp)
 	  "[send_request] first pop up from sending_sms and then add it in call back queue");
     RaftSubSM *current_sub_sm = (RaftSubSM *) pop_item_from_raft_list(&Server->q_sending_sms);
     assert(current_sub_sm != NULL);
-    
+
     add_item_to_raft_list(&Server->q_sms_to_call_back, current_sub_sm);
     Server->q_server_request_buffer = ((RaftSubSM*)current_sub_sm)->Server->q_server_request_buffer;
-    Server->q_server_request_buffer_reader = 
+    Server->q_server_request_buffer_reader =
 	((RaftSubSM*)current_sub_sm)->Server->q_server_request_buffer_reader;
 */
   assert(Server->q_server_request_buffer);
@@ -364,9 +364,9 @@ state_main_event(INKCont contp, int event, void *data)
 
     break;
 /*       case INK_EVENT_VCONN_INACTIVITY_TIMEOUT:
-	 INKDebug("serversm","[%u][state_main_event]state_main_event, INACTIVITY_TIME_OUT", 
+	 INKDebug("serversm","[%u][state_main_event]state_main_event, INACTIVITY_TIME_OUT",
 	 Server->q_sm_id);
-	 
+
 	 return INK_EVENT_IMMEDIATE;
 */
   default:
@@ -424,7 +424,7 @@ state_wait_for_write(INKCont contp, int event, INKVIO vio)
     Server->q_server_request_buffer = NULL;
     Server->q_server_request_buffer_reader = NULL;
 
-    // well, the server has read the request.       
+    // well, the server has read the request.
     // clear the vio.
     Server->q_server_write_vio = NULL;
 
@@ -438,7 +438,7 @@ state_wait_for_write(INKCont contp, int event, INKVIO vio)
 
 //          SET_HANDLER((ServerSMHandler)&state_main_event);
 //          Server->q_server_vc->set_inactivity_timeout(RAFT_SERVER_INACTIVITY_TIMEOUT);
-/*	    
+/*
 	    Server->q_server_read_vio = Server->q_server_vc->do_io_read(this,
 							RAFT_DEFAULT_BUFFER_SIZE,
 							Server->q_server_response_buffer);
@@ -600,7 +600,7 @@ state_read_response_from_server(INKCont contp, int event, INKVIO vio)
     assert(!"[serversm], [state_read_response_from_server], invalid events.");
     return call_back_sub_sm_with_error(contp);
   default:
-    // there should be some "invalid event" assertion. Think carefully 
+    // there should be some "invalid event" assertion. Think carefully
     // what race condition can happen here.
     break;
   }
@@ -702,7 +702,7 @@ call_back_sub_sm_with_error(INKCont contp)
 
 
   // this is, of course, done by adding the current reading
-  // sub_sms to the waiting_to_be_called_back list and 
+  // sub_sms to the waiting_to_be_called_back list and
   // calling the state_call_back_sub_sm function.
   // easy as blueberry pie.
   if (Server->q_reading_sub_contp) {
@@ -913,7 +913,7 @@ state_dns_lookup(INKCont contp, int event, INKHostDBInfo host_info)
     INKDebug("serversm", "[%u][state_dns_lookup] Unable to resolve DNS for %s", Server->q_sm_id, Server->q_server_name);
 
     // FUTURE: we may at some point want to try doing automatic
-    // name expansion (appending local domain name or prepending www) 
+    // name expansion (appending local domain name or prepending www)
     // and retrying the dns lookup. for now, however, just bail out.
 
     return call_back_sub_sm_with_error(contp);

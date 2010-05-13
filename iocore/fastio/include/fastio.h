@@ -24,8 +24,8 @@
 /*
  *
  * fastio.h
- * 
- * 
+ *
+ *
  * Data structures for FastIO
  *
  *
@@ -167,7 +167,7 @@
 #define INKFIO_DEST_VSESSION    0xffffffff
 
 
-/* 
+/*
  * Ioctl CMD's
  */
 #define INKUDP_INIT    0x0

@@ -226,7 +226,7 @@ struct ReRegressionSM : RegressionSM {
 
 REGRESSION_TEST(RegressionSM)(RegressionTest *t, int atype, int *pstatus) {
   r_sequential(
-    t, 
+    t,
     r_parallel(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL),
     r_sequential(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL),
     r_parallel(t, 3, new ReRegressionSM(t)),

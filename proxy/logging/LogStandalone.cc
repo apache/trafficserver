@@ -24,7 +24,7 @@
 /***************************************************************************
  LogStandalone.cc
 
- 
+
  ***************************************************************************/
 
 #include "inktomi++.h"
@@ -82,7 +82,7 @@ HttpBodyFactory *body_factory = NULL;
 AppVersionInfo appVersionInfo;
 
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   max_out_limit
   -------------------------------------------------------------------------*/
 #if (HOST_OS == linux)
@@ -109,7 +109,7 @@ max_out_limit(int which, bool max_it)
   return ret;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   init_system
   -------------------------------------------------------------------------*/
 
@@ -125,7 +125,7 @@ init_system()
   syslog(LOG_NOTICE, "NOTE: SAC Version: %s", appVersionInfo.FullVersionInfoStr);
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   initialize_process_manager
   -------------------------------------------------------------------------*/
 
@@ -150,10 +150,10 @@ initialize_process_manager()
 
   if ((err = stat(management_directory, &s)) < 0) {
     // Try 'system_root_dir/etc/trafficserver' directory
-    snprintf(management_directory, sizeof(management_directory), 
+    snprintf(management_directory, sizeof(management_directory),
              "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
     if ((err = stat(management_directory, &s)) < 0) {
-      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n", 
+      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n",
                 management_directory, err, errno, strerror(errno));
       fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
       _exit(1);
@@ -203,7 +203,7 @@ initialize_process_manager()
 //                         RECP_NULL);
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   shutdown_system
   -------------------------------------------------------------------------*/
 
@@ -213,7 +213,7 @@ shutdown_system()
 }
 
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   check_lockfile
   -------------------------------------------------------------------------*/
 
@@ -228,15 +228,15 @@ check_lockfile(const char *config_dir, const char *pgm_name)
 
   if ((err = stat(lockdir, &s)) < 0) {
     // Try 'system_root_dir/var/trafficserver' directory
-    snprintf(lockdir, sizeof(lockdir), 
+    snprintf(lockdir, sizeof(lockdir),
              "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
     if ((err = stat(lockdir, &s)) < 0) {
-      fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n", 
+      fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n",
                 lockdir, err, errno, strerror(errno));
       fprintf(stderr," please set correct path in env variable TS_ROOT \n");
       _exit(1);
     }
-  } 
+  }
   int nn = snprintf(lockfile, sizeof(lockfile),"%s%s%s", lockdir,DIR_SEP,SERVER_LOCK);
 
   ink_assert(nn > 0);
@@ -265,7 +265,7 @@ check_lockfile(const char *config_dir, const char *pgm_name)
   }
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   syslog_thr_init
 
   For the DEC alpha, the syslog call must be made for each thread.
@@ -276,7 +276,7 @@ syslog_thr_init()
 {
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   init_log_standalone
 
   This routine should be called from the main() function of the standalone
@@ -305,7 +305,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
   diags_init = 1;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   init_log_standalone_basic
 
   This routine is similar to init_log_standalone, but it is intended for
@@ -364,7 +364,7 @@ get_ts_directory(char *ts_path, size_t ts_path_len)
       if (ts_path[len - 1] == '/') {
         ts_path[len - 1] = '\0';
       }
-      
+
       fclose(fp);
     } else {
       ink_strncpy(ts_path, PREFIX, ts_path_len);
@@ -372,7 +372,7 @@ get_ts_directory(char *ts_path, size_t ts_path_len)
   }
 
   if ((err = stat(ts_path, &s)) < 0) {
-    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n", 
+    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n",
               ts_path, err, errno, strerror(errno));
     fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
     return -1;

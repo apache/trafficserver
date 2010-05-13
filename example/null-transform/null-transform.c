@@ -23,10 +23,10 @@
 
 /* null-transform.c:  an example program that does a null transform
  *                    of response body content
- *                   
  *
  *
- *	Usage:	
+ *
+ *	Usage:
  * 	(NT): NullTransform.dll
  *	(Solaris): null-transform.so
  *
@@ -85,7 +85,7 @@ handle_transform(INKCont contp)
    * ourself. This VIO contains the buffer that we are to read from
    * as well as the continuation we are to call when the buffer is
    * empty. This is the input VIO (the write VIO for the upstream
-   * vconnection). 
+   * vconnection).
    */
   input_vio = INKVConnWriteVIOGet(contp);
   if (input_vio == INK_ERROR_PTR) {
@@ -116,7 +116,7 @@ handle_transform(INKCont contp)
    * more WRITE_READY or WRITE_COMPLETE events. For this simplistic
    * transformation that means we're done. In a more complex
    * transformation we might have to finish writing the transformed
-   * data to our output connection. 
+   * data to our output connection.
    */
   buf_test = INKVIOBufferGet(input_vio);
 
@@ -141,13 +141,13 @@ handle_transform(INKCont contp)
 
   /* Determine how much data we have left to read. For this null
    * transform plugin this is also the amount of data we have left
-   * to write to the output connection. 
+   * to write to the output connection.
    */
   towrite = INKVIONTodoGet(input_vio);
 
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
-     * the amount of data actually in the read buffer. 
+     * the amount of data actually in the read buffer.
      */
     avail = INKIOBufferReaderAvail(INKVIOReaderGet(input_vio));
     if (towrite > avail) {
@@ -162,7 +162,7 @@ handle_transform(INKCont contp)
       }
 
       /* Tell the read buffer that we have read the data and are no
-       * longer interested in it. 
+       * longer interested in it.
        */
       if (INKIOBufferReaderConsume(INKVIOReaderGet(input_vio), towrite)
           == INK_ERROR) {
@@ -171,7 +171,7 @@ handle_transform(INKCont contp)
       }
 
       /* Modify the input VIO to reflect how much data we've
-       * completed. 
+       * completed.
        */
       if (INKVIONDoneSet(input_vio, INKVIONDoneGet(input_vio) + towrite) == INK_ERROR) {
         INKError("[null-plugin] unable to update VIO\n");
@@ -184,21 +184,21 @@ handle_transform(INKCont contp)
   }
 
   /* Now we check the input VIO to see if there is data left to
-   * read. 
+   * read.
    */
   if (INKVIONTodoGet(input_vio) > 0) {
     if (towrite > 0) {
       /* If there is data left to read, then we reenable the output
        * connection by reenabling the output VIO. This will wake up
        * the output connection and allow it to consume data from the
-       * output buffer. 
+       * output buffer.
        */
       if (INKVIOReenable(data->output_vio) == INK_ERROR) {
         INKError("[null-plugin] error reenabling transaction\n");
         goto Lerror;
       }
       /* Call back the input VIO continuation to let it know that we
-       * are ready for more data. 
+       * are ready for more data.
        */
       INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_READY, input_vio);
     }
@@ -207,7 +207,7 @@ handle_transform(INKCont contp)
      * VIO to reflect how much data the output connection should
      * expect. This allows the output connection to know when it
      * is done reading. We then reenable the output connection so
-     * that it can consume the data we just gave it. 
+     * that it can consume the data we just gave it.
      */
     INKVIONBytesSet(data->output_vio, INKVIONDoneGet(input_vio));
     if (INKVIOReenable(data->output_vio) == INK_ERROR) {
@@ -216,7 +216,7 @@ handle_transform(INKCont contp)
     }
 
     /* Call back the input VIO continuation to let it know that we
-     * have completed the write operation. 
+     * have completed the write operation.
      */
     INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_COMPLETE, input_vio);
   }
@@ -230,7 +230,7 @@ static int
 null_transform(INKCont contp, INKEvent event, void *edata)
 {
   /* Check to see if the transformation has been closed by a call to
-   * INKVConnClose. 
+   * INKVConnClose.
    */
   if (INKVConnClosedGet(contp)) {
     my_data_destroy(INKContDataGet(contp));
@@ -244,12 +244,12 @@ null_transform(INKCont contp, INKEvent event, void *edata)
 
         /* Get the write VIO for the write operation that was
          * performed on ourself. This VIO contains the continuation of
-         * our parent transformation. This is the input VIO.  
+         * our parent transformation. This is the input VIO.
          */
         input_vio = INKVConnWriteVIOGet(contp);
 
         /* Call back the write VIO continuation to let it know that we
-         * have completed the write operation. 
+         * have completed the write operation.
          */
         INKContCall(INKVIOContGet(input_vio), INK_EVENT_ERROR, input_vio);
       }
@@ -266,7 +266,7 @@ null_transform(INKCont contp, INKEvent event, void *edata)
     default:
       /* If we get a WRITE_READY event or any other type of
        * event (sent, perhaps, because we were reenabled) then
-       * we'll attempt to transform more data. 
+       * we'll attempt to transform more data.
        */
       handle_transform(contp);
       break;

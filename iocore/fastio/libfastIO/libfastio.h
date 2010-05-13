@@ -23,8 +23,8 @@
 
 /*
  *
- * FastIO Userland Library 
- * 
+ * FastIO Userland Library
+ *
  *
  *
  *
@@ -115,18 +115,18 @@ typedef u_int32_t uint32_t;
   struct fastIO_state *fastIO_init(int blockcount);
 
 /*
- * Create a fastIO UDP session 
+ * Create a fastIO UDP session
  */
   struct fastIO_session *fastIO_udpsession_create(struct fastIO_state *cookie, int fd);
 
 /*
- * Create a fastIO virtual session 
+ * Create a fastIO virtual session
  */
   struct fastIO_session *fastIO_vsession_create(struct fastIO_state *cookie);
 
 
-/* 
- * Delete a fastIO Session 
+/*
+ * Delete a fastIO Session
  */
   void fastIO_session_destroy(struct fastIO_session *sessioncookie);
 
@@ -199,7 +199,7 @@ typedef u_int32_t uint32_t;
 
 
 /*
- * Create a fastIO UDP session 
+ * Create a fastIO UDP session
  */
   static struct fastIO_session *fastIO_udpsession_create(struct fastIO_state *cookie, int fd)
   {
@@ -207,7 +207,7 @@ typedef u_int32_t uint32_t;
   }
 
 /*
- * Create a fastIO virtual session 
+ * Create a fastIO virtual session
  */
   static struct fastIO_session *fastIO_vsession_create(struct fastIO_state *cookie)
   {
@@ -215,8 +215,8 @@ typedef u_int32_t uint32_t;
   }
 
 
-/* 
- * Delete a fastIO Session 
+/*
+ * Delete a fastIO Session
  */
   static void fastIO_session_destroy(struct fastIO_session *sessioncookie)
   {

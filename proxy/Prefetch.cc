@@ -49,7 +49,7 @@ struct html_tag prefetch_allowable_html_tags[] = {
   {NULL, NULL}
 };
 
-// this attribute table is hard coded. It has to be the same size as 
+// this attribute table is hard coded. It has to be the same size as
 // the prefetch_allowable_html_tags table
 struct html_tag prefetch_allowable_html_attrs[] = {
   {NULL, NULL},
@@ -96,7 +96,7 @@ setup_object_header(char *header, inku32 size, bool url_promise)
 {
   inku32 *hdr = (inku32 *) header;
   hdr[0] = htonl(size);
-  hdr[1] = 0;                   //we are not pinning 
+  hdr[1] = 0;                   //we are not pinning
   hdr[2] = (url_promise) ? htonl(PRELOAD_HDR_URL_PROMISE_FLAG) : 0;
 }
 
@@ -143,7 +143,7 @@ findDomainFromHost(const char *host, int host_len, bool & no_dot)
       }
     }
   }
-  // for non-top level domains, require the first char is not '.' and 
+  // for non-top level domains, require the first char is not '.' and
   // two '.' minimum, e.g. abc.va.us
   int num_dots = 0;
   while (h_cur != host) {
@@ -461,8 +461,8 @@ PrefetchTransform::redirect(HTTPHdr * resp)
   char *req_url = NULL;
   char *redirect_url = NULL;
 
-  /* Check for responses validity. If the response is valid, determine the status of the response. 
-     We need to find out if there was a redirection (301, 302, 303, 307). 
+  /* Check for responses validity. If the response is valid, determine the status of the response.
+     We need to find out if there was a redirection (301, 302, 303, 307).
    */
   if ((resp != NULL) && (resp->valid())) {
     response_status = resp->status_get();
@@ -975,7 +975,7 @@ PrefetchBlaster::init(PrefetchUrlEntry * entry, HTTPHdr * req_hdr, PrefetchTrans
       const char *host_end = host_start + host_len - 1;
       int cmp_len = p_trans->domain_end - p_trans->domain_start + 1;
 
-      if (cmp_len <= 0 || host_len<cmp_len || (host_len> cmp_len && host_start[host_len - cmp_len - 1] != '.') ||    //nbc.com != cnbc.com 
+      if (cmp_len <= 0 || host_len<cmp_len || (host_len> cmp_len && host_start[host_len - cmp_len - 1] != '.') ||    //nbc.com != cnbc.com
           strncasecmp(p_trans->domain_start, host_end - (cmp_len - 1), cmp_len) != 0) {
         delete_auth = true;
       } else
@@ -1130,7 +1130,7 @@ PrefetchBlaster::handleCookieHeaders(HTTPHdr * req_hdr,
     return;
 
   if (!domain_start && (!thost_start || no_dot == false)) {
-    // mising domain name information 
+    // mising domain name information
     add_cookies = false;
     goto Lcheckcookie;
   }
@@ -1149,7 +1149,7 @@ PrefetchBlaster::handleCookieHeaders(HTTPHdr * req_hdr,
   if (domain_start) {
     cmp_len = domain_end - domain_start + 1;
 
-    if (host_len<cmp_len || (host_len> cmp_len && host_start[host_len - cmp_len - 1] != '.') ||      //nbc.com != cnbc.com 
+    if (host_len<cmp_len || (host_len> cmp_len && host_start[host_len - cmp_len - 1] != '.') ||      //nbc.com != cnbc.com
         strncasecmp(domain_start, host_end - (cmp_len - 1), cmp_len) != 0) {
       add_cookies = false;
       goto Lcheckcookie;
@@ -1243,8 +1243,8 @@ PrefetchBlaster::handleCookieHeaders(HTTPHdr * req_hdr,
           if (prefix_len > 0 && memchr(host_start, '.', prefix_len))
             goto Lnotmatch;
 
-          // Ok, when we get here, it should be a real match as far as 
-          //        domain is concerned. 
+          // Ok, when we get here, it should be a real match as far as
+          //        domain is concerned.
           // possibly overwrite the default domain matching result
           domain_match = true;
           continue;
@@ -1367,7 +1367,7 @@ PrefetchBlaster::handleCookieHeaders(HTTPHdr * req_hdr,
         }
       }
     }
-    // add_cookies now means whether new Cookie headers are created 
+    // add_cookies now means whether new Cookie headers are created
     // from the Set-Cookie headers
     // now also check the existing Cookie headers from the req_hdr
     add_cookies = add_cookies || existing_req_cookies;

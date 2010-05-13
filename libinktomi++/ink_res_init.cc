@@ -115,7 +115,7 @@ static void
 ink_res_nclose(ink_res_state statp) {
   int ns;
 
-  if (statp->_vcsock >= 0) { 
+  if (statp->_vcsock >= 0) {
     (void) close(statp->_vcsock);
     statp->_vcsock = -1;
     statp->_flags &= ~(INK_RES_F_VC | INK_RES_F_CONN);
@@ -185,7 +185,7 @@ ink_res_setservers(ink_res_state statp, const union ink_res_sockaddr_union *set,
     set++;
   }
   statp->nscount = nserv;
-	
+
 }
 
 int
@@ -197,7 +197,7 @@ ink_res_getservers(ink_res_state statp, union ink_res_sockaddr_union *set, int c
   for (i = 0; i < statp->nscount && i < cnt; i++) {
     if (statp->_u._ext.ext)
       family = statp->_u._ext.ext->nsaddrs[i].sin.sin_family;
-    else 
+    else
       family = statp->nsaddr_list[i].sin_family;
 
     switch (family) {
@@ -411,7 +411,7 @@ ink_res_get_nibblesuffix2(ink_res_state statp) {
  * since it was noted that INADDR_ANY actually meant ``the first interface
  * you "ifconfig"'d at boot time'' and if this was a SLIP or PPP interface,
  * it had to be "up" in order for you to reach your own name server.  It
- * was later decided that since the recommended practice is to always 
+ * was later decided that since the recommended practice is to always
  * install local static routes through 127.0.0.1 for all your network
  * interfaces, that we could solve this problem without a code change.
  *
@@ -567,7 +567,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
     *cp = '\0';
     *pp++ = 0;
   }
-        
+
   /* ---------------------------------------------
      Default domain name and doamin Search list:
 
@@ -760,11 +760,11 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
               if (inet_aton(net, &a)) {
                 statp->sort_list[nsort].mask = a.s_addr;
               } else {
-                statp->sort_list[nsort].mask = 
+                statp->sort_list[nsort].mask =
                   net_mask(statp->sort_list[nsort].addr);
               }
             } else {
-              statp->sort_list[nsort].mask = 
+              statp->sort_list[nsort].mask =
                 net_mask(statp->sort_list[nsort].addr);
             }
             nsort++;
@@ -779,7 +779,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
         continue;
       }
     }
-    if (nserv > 0) 
+    if (nserv > 0)
       statp->nscount = nserv;
 #ifdef RESOLVSORT
     statp->nsort = nsort;

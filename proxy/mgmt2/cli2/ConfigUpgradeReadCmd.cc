@@ -23,7 +23,7 @@
 
 /****************************************************************
  * Filename: ConfigUpgradeReadCmd.cc
- * Purpose: This file contains the CLI's "config:read" 
+ * Purpose: This file contains the CLI's "config:read"
    command implementation.
  *
  ****************************************************************/
@@ -99,7 +99,7 @@ CIFCReadEntry::ConfigReadPrintIFCEle()
      p += strlen(ListEle);
      if (Tcl_ListObjAppendElement(interp, ListPtr, ObjPtr) == CLI_ERROR){
      return CLI_ERROR;
-     } 
+     }
      }
      return CLI_OK; */
 
@@ -166,7 +166,7 @@ CIFCReadEntry::ConfigReadIFCEle()
     sscanf(p1, "%d\n", &Count);
     snprintf(CountString, sizeof(CountString), "%d", Count);
     p1 += (strlen(CountString));
-    //fall through    
+    //fall through
 
   case 0:
     p1++;

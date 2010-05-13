@@ -28,12 +28,12 @@
    Last Modified By: Ivry Semel
    Last Modified On: Tue Dec 17 14:27:41 1996
    Update Count    : 3
-   Status          : 
+   Status          :
 
    Description:
    define type bool for the compilers that don't define it.
 
-   
+
  ****************************************************************************/
 #if !defined (_ink_bool_h_)
 #define _ink_bool_h_

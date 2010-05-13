@@ -48,7 +48,7 @@ typedef struct src_ip_info_t
 } SRC_IP_INFO;
 
 /**
- * 
+ *
 **/
 class acl_filter_rule
 {
@@ -70,7 +70,7 @@ public:
   int method_array[ACL_FILTER_MAX_METHODS];     // any HTTP method (actually only WKSIDX from HTTP.cc)
   int method_idx[ACL_FILTER_MAX_METHODS];       // HTTP method index (actually method flag)
 
-  // src_ip    
+  // src_ip
   int src_ip_cnt;               // how many valid src_ip rules we have
   SRC_IP_INFO src_ip_array[ACL_FILTER_MAX_SRC_IP];
     acl_filter_rule();

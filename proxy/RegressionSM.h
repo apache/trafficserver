@@ -62,7 +62,7 @@ struct RegressionSM : Continuation {
   void child_done(int status);
   void xrun(RegressionSM *parent);
 
-  RegressionSM(RegressionTest *at = NULL) : 
+  RegressionSM(RegressionTest *at = NULL) :
     t(at), status(REGRESSION_TEST_INPROGRESS),
     pstatus(0), parent(0), nwaiting(0), nchildren(0), children(0), ichild(0), par(false), rep(false),
     pending_action(0)

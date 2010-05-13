@@ -58,7 +58,7 @@ struct CacheTestHost {
   double xprev_host_prob;
   double xnext_host_prob;
 
-  CacheTestHost():name(NULL), xlast_cachable_id(0), 
+  CacheTestHost():name(NULL), xlast_cachable_id(0),
                   xprev_host_prob(0), xnext_host_prob(0) {}
 };
 

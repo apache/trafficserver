@@ -31,7 +31,7 @@ int net_config_max_poll_delay = 0;
 int net_config_listen_backlog = 1024;
 
 
-// SSL config   
+// SSL config
 // # proxy.config.ssl.enabled should be:
 // #   0 - none
 // #   1 - SSL enabled

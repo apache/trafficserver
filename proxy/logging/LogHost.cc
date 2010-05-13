@@ -24,7 +24,7 @@
 /***************************************************************************
  LogHost.cc
 
- 
+
  ***************************************************************************/
 #include "inktomi++.h"
 
@@ -94,9 +94,9 @@ LogHost::~LogHost()
   xfree(m_object_filename);
 }
 
-// 
-// There are 3 ways to establish a LogHost: 
-// - by "hostname:port" or IP:port", where IP is a string of the 
+//
+// There are 3 ways to establish a LogHost:
+// - by "hostname:port" or IP:port", where IP is a string of the
 //   form "xxx.xxx.xxx.xxx".
 // - by specifying a hostname and a port (as separate arguments).
 // - by specifying an ip and a port (as separate arguments).

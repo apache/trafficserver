@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #include "HttpCacheSM.h"
@@ -90,7 +90,7 @@ lookup_url(NULL), lookup_max_recursive(0), current_lookup_level(0)
 //     machine. Keep in mind that the document may NOT
 //     match any of the request headers - it just matches
 //     the URL. In other words, the document that is being
-//     written to by another state machine may be an 
+//     written to by another state machine may be an
 //     alternate of the document the request wants.
 // - EVENT_INTERVAL
 //   - a previous open_read returned "failed_in_progress". we
@@ -139,7 +139,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
 
   case EVENT_INTERVAL:
     // Retry the cache open read if the number retries is less
-    // than or equal to the max number of open read retries, 
+    // than or equal to the max number of open read retries,
     // else treat as a cache miss.
     ink_assert(open_read_tries <= master_sm->t_state.http_config_param->max_cache_open_read_retries || write_locked);
     Debug("http_cache", "[%lld] [state_cache_open_read] cache open read failure %d. "
@@ -253,7 +253,7 @@ HttpCacheSM::open_read(URL * url, HTTPHdr * hdr, CacheLookupHttpConfig * params,
   current_lookup_level++;
   open_read_cb = false;
   act_return = do_cache_open_read();
-  // the following logic is based on the assumption that the secnod 
+  // the following logic is based on the assumption that the secnod
   // lookup won't happen if the HttpSM hasn't been called back for the
   // first lookup
   if (current_lookup_level == lookup_max_recursive) {
@@ -297,7 +297,7 @@ HttpCacheSM::open_write(URL * url,
   this->read_request_hdr = request;
 
   // Make sure we are not stuck in a loop where the write
-  //  fails but the retry read succeeds causing to issue 
+  //  fails but the retry read succeeds causing to issue
   //  a new write (could happen on a very busy document
   //  that must be revalidated every time)
   // Changed by YTS Team, yamsat Plugin

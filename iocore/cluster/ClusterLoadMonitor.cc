@@ -108,7 +108,7 @@ ClusterLoadMonitor::~ClusterLoadMonitor()
   //
   // Note: Since the ClusterLoadMonitor is only associated
   //       with the ClusterHandler, a periodic callback operating
-  //       on a freed ClusterLoadMonitor is not possible, since the 
+  //       on a freed ClusterLoadMonitor is not possible, since the
   //       ClusterHandler is only deleted after several minutes.  Allowing
   //       plenty of time for the periodic to cancel itself via the
   //       "cancel_periodic" flag.
@@ -173,12 +173,12 @@ ClusterLoadMonitor::compute_cluster_load()
   // the configured limits.  We determine the state as follows.
   //   if (cluster overloaded)
   //     Determine if it is still in the overload state by examining
-  //     the last 'cluster_load_clear_duration' entries in the history 
+  //     the last 'cluster_load_clear_duration' entries in the history
   //     buffer and declaring it not overloaded if none of the entries
   //     exceed the threshold.
   //   else
   //     Determine if it is now in the overload state by examining
-  //     the last 'cluster_load_exceed_duration' entries in the history 
+  //     the last 'cluster_load_exceed_duration' entries in the history
   //     buffer and declaring it overloaded if all of the entries
   //     exceed the threshold.
 
@@ -243,7 +243,7 @@ ClusterLoadMonitor::note_ping_response_time(ink_hrtime response_time, int sequen
 void
 ClusterLoadMonitor::recv_cluster_load_msg(cluster_load_ping_msg * m)
 {
-  // We have received back our ping message.  
+  // We have received back our ping message.
   ink_hrtime now = ink_get_hrtime();
 
   if ((now >= m->send_time)

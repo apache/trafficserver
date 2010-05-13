@@ -321,7 +321,7 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
   // if no path is given for the server private key,
   // assume it is contained in the server certificate file.
 /*  serverKeyPtr = param->serverKeyPath;
-  if (serverKeyPtr == NULL) 
+  if (serverKeyPtr == NULL)
 	  serverKeyPtr = param->serverCertPath;
 */
   return (initSSLServerCTX(param, ctx, param->serverCertPath, param->serverKeyPath, true));
@@ -332,27 +332,27 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
   // if no path is given for the server private key,
   // assume it is contained in the server certificate file.
   serverKeyPtr = param->serverKeyPath;
-  if (serverKeyPtr == NULL) 
+  if (serverKeyPtr == NULL)
 	  serverKeyPtr = param->serverCertPath;
 
-  if (SSL_CTX_use_certificate_file(ctx, param->serverCertPath, SSL_FILETYPE_PEM) <= 0) 
+  if (SSL_CTX_use_certificate_file(ctx, param->serverCertPath, SSL_FILETYPE_PEM) <= 0)
   {
     logSSLError("Cannot use server certificate file");
     return(-2);
   }
-  
-  if(SSL_CTX_use_PrivateKey_file(ctx, serverKeyPtr, SSL_FILETYPE_PEM) <= 0) 
+
+  if(SSL_CTX_use_PrivateKey_file(ctx, serverKeyPtr, SSL_FILETYPE_PEM) <= 0)
   {
     logSSLError("Cannot use server private key file");
     return(-3);
   }
 
-  if(!SSL_CTX_check_private_key(ctx)) 
+  if(!SSL_CTX_check_private_key(ctx))
   {
     logSSLError("Server private key does not match the certificate public key");
     return(-4);
   }
-  
+
 
   if(param->clientCertLevel != 0)
   {

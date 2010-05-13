@@ -29,7 +29,7 @@
  *
  * $Date: 2007-10-05 16:56:44 $
  *
- * 
+ *
  */
 
 #ifndef _ALARMS_H
@@ -84,7 +84,7 @@
 
 #define MGMT_ALARM_SAC_SERVER_DOWN		400
 
-// ACC alarms -- 200-300 -- I tried using just one, but a bunch of 'ACL was dropped' 
+// ACC alarms -- 200-300 -- I tried using just one, but a bunch of 'ACL was dropped'
 // warnings didn't get to the manager UI, that's badness.
 #define MGMT_ALARM_ACC_ALARMS_START              200
 #define MGMT_ALARM_ACC_ALARMS_END                299
@@ -93,8 +93,8 @@ extern const char *alarmText[];
 extern const int alarmTextNum;
 
 
-/* OEM_ALARM: the alarm type is used as a key for hash tables; 
-   need offset and modulo constants which will keep the unique 
+/* OEM_ALARM: the alarm type is used as a key for hash tables;
+   need offset and modulo constants which will keep the unique
    keys for OEM alarms within a specified range */
 const int minOEMkey = 1000;     // used as offset
 const int maxOEMkey = 6000;
@@ -151,7 +151,7 @@ private:
   InkHashTable *local_alarms;
   InkHashTable *remote_alarms;
 
-  /* counter is added in order to provide unique keys for OEM alarms, 
+  /* counter is added in order to provide unique keys for OEM alarms,
      since an OEM_ALARM type can be associated with many different
      alarm descriptions */
   int alarmOEMcount;

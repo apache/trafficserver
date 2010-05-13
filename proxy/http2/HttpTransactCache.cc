@@ -132,7 +132,7 @@ do_strings_match_weakly(const char *raw_tag_field,
     if ((tag->len == 1) && (tag->str[0] == '*'))
       return true;
 
-    // strip off the leading 'W/' and quotation marks from the 
+    // strip off the leading 'W/' and quotation marks from the
     // current tag, then compare for equality with above tag.
     cur_tag = find_etag(tag->str, tag->len, &cur_tag_len);
     if ((cur_tag_len == etag_length) && (strncmp(cur_tag, etag_start, cur_tag_len) == 0))
@@ -997,7 +997,7 @@ encoding_wildcard:
       return (float) -1.0;
     }
   }
-//      q = (float)-1.0;        
+//      q = (float)-1.0;
   return (q);
 }
 
@@ -1486,7 +1486,7 @@ L1:
   }
 
   // Handling If-Range header:
-  // As Range && If-Range don't occur often, we want to put the 
+  // As Range && If-Range don't occur often, we want to put the
   // If-Range code in the end
   if (request->presence(MIME_PRESENCE_RANGE) && request->presence(MIME_PRESENCE_IF_RANGE)) {
     int raw_len, comma_sep_list_len;

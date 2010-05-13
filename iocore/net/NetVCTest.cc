@@ -26,12 +26,12 @@
    NetVCTest.cc
 
    Description:
-       Unit test for infastructure for VConnections implementing the 
+       Unit test for infastructure for VConnections implementing the
          NetVConnection interface
 
-  
 
-  
+
+
  ****************************************************************************/
 
 #include "P_Net.h"

@@ -30,7 +30,7 @@
 
   The main state machine is encapulated in the StateMachine instance.
 
-  
+
  ****************************************************************************/
 
 #include "DNS.h"
@@ -64,7 +64,7 @@ FILE *fin;
 //
 //      TestDnsStateMachine
 //
-//  An instance of TestDnsStateMachine is created for each host 
+//  An instance of TestDnsStateMachine is created for each host
 //
 //////////////////////////////////////////////////////////////////////////////
 class TestDnsStateMachine:public Continuation
@@ -189,13 +189,13 @@ complete()
     cumul_throughput = state_machines_finished * 1.0 * HRTIME_SECOND / (now - start_time);
     throughput = measurement_interval * 1.0 * HRTIME_SECOND / (now - last_measurement_time);
     last_measurement_time = now;
-//    cout << state_machines_finished << ": " << 
-//    "Cumul. Thrput " << cumul_throughput << 
+//    cout << state_machines_finished << ": " <<
+//    "Cumul. Thrput " << cumul_throughput <<
 //    " per sec; Thrput for last " << measurement_interval << " requests: "
 //    << throughput << " per sec\n";
 //    cout.flush();
-//    fout_rate << state_machines_finished << ": " << 
-//    "Cumul. Thrput " << cumul_throughput << 
+//    fout_rate << state_machines_finished << ": " <<
+//    "Cumul. Thrput " << cumul_throughput <<
 //    " per sec; Thrput for last " << measurement_interval << " requests: "
 //    << throughput << " per sec\n";
     fout_rate << (now - start_time) * 1.0 / HRTIME_SECOND << " " << state_machines_finished << " " << cumul_throughput

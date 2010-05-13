@@ -25,19 +25,19 @@
  *
  *
  * Description
- *   - Generate requests to the web servers listed in the files specified 
- *     in the request lists, specified in the configuration file. 
+ *   - Generate requests to the web servers listed in the files specified
+ *     in the request lists, specified in the configuration file.
  *     Also use the ratio specified with the request lists to generate the
  *     right distribution of requests.
- *     
+ *
  *
  * Added Options in SDKtest_client.config -
- *   request_lists : full path of the file[s] that contain the 
- *                   request lists. Also need to specify the 
- *                   request ratio. Example : 
+ *   request_lists : full path of the file[s] that contain the
+ *                   request lists. Also need to specify the
+ *                   request ratio. Example :
  *                   request_lists=/home/bob/list1:20,/home/bob/list2:80
  *                   Note: comma is the seperator. do not leave space or tabs inbetween
- *                   This will cause 20 % of requests to go from list1 and 
+ *                   This will cause 20 % of requests to go from list1 and
  *                   80 % from list2.
  *                   Note : the ratios MUST add upto 100.
  */

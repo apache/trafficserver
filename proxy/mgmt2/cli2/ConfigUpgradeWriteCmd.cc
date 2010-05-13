@@ -23,7 +23,7 @@
 
 /****************************************************************
  * Filename: ConfigUpgradeWriteCmd.cc
- * Purpose: This file contains the CLI's "config:write" 
+ * Purpose: This file contains the CLI's "config:write"
    command implementation.
  *
  ****************************************************************/

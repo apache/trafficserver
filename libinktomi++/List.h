@@ -48,7 +48,7 @@
   cell within an object, given the location of the link cell in another
   object.  This is useful when iterating along lists.
 
-  
+
  ****************************************************************************/
 
 #ifndef _List_h_
@@ -118,7 +118,7 @@ template <class C, class L = typename C::Link_link> class SLL {
 #define SListM(_c, _m, _ml, _l) SLL<_c, _c::Link##_##_ml##_##_l>
 #define forl_LL(_c, _p, _l) for (_c *_p = (_l).head; _p; _p = (_l).next(_p))
 
-template <class C, class L> inline void 
+template <class C, class L> inline void
 SLL<C,L>::push(C *e) {
   next(e) = head;
   head = e;
@@ -154,7 +154,7 @@ template <class C, class L = typename C::Link_link> struct DLL {
 #define DList(_c, _f)  DLL<_c, _c::Link##_##_f>
 #define DListM(_c, _m, _ml, _l) DLL<_c, _c::Link##_##_ml##_##_l>
 
-template <class C, class L> inline void 
+template <class C, class L> inline void
 DLL<C,L>::push(C *e) {
   if (head)
     prev(head) = e;
@@ -188,7 +188,7 @@ DLL<C,L>::pop() {
 template <class C, class L> inline void
 DLL<C,L>::insert(C *e, C *after) {
   if (!after) { push(e); return; }
-  prev(e) = after; 
+  prev(e) = after;
   next(e) = next(after);
   next(after) = e;
   if (next(e)) prev(next(e)) = e;
@@ -211,13 +211,13 @@ template <class C, class L = typename C::Link_link> class Queue : public DLL<C,L
   void append(Queue<C,L> q);
   void append(DLL<C,L> q);
   void clear() { head = NULL; tail = NULL; }
-  
+
   Queue() : tail(NULL) {}
 };
 #define Que(_c, _f) Queue<_c, _c::Link##_##_f>
 #define QueM(_c, _m, _mf, _f) Queue<_c, _c::Link##_##_mf##_##_f>
 
-template <class C, class L> inline void 
+template <class C, class L> inline void
 Queue<C,L>::push(C *e) {
   DLL<C,L>::push(e);
   if (!tail) tail = head;
@@ -278,7 +278,7 @@ Queue<C,L>::append(Queue<C,L> q) {
   }
 }
 
-template <class C, class L> inline void 
+template <class C, class L> inline void
 Queue<C,L>::enqueue(C *e) {
   if (tail)
     insert(e, tail);
@@ -286,7 +286,7 @@ Queue<C,L>::enqueue(C *e) {
     push(e);
 }
 
-template <class C, class L> inline void 
+template <class C, class L> inline void
 Queue<C,L>::in_or_enqueue(C *e) {
   if (!in(e)) enqueue(e);
 }

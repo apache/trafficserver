@@ -137,7 +137,7 @@ public:
   */
   Event *schedule_imm(Continuation * c,
                       EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
-  /* 
+  /*
     provides the same functionality as schedule_imm and also signals the thread immediately
   */
   Event *schedule_imm_signal(Continuation * c,
@@ -214,7 +214,7 @@ public:
 
 
   ////////////////////////////////////////////
-  // reschedule an already scheduled event. // 
+  // reschedule an already scheduled event. //
   // may be called directly or called by    //
   // schedule_xxx Event member functions.   //
   // The returned value may be different    //

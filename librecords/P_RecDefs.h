@@ -155,7 +155,7 @@ struct RecMessageHdr
   int o_write;
   int o_end;
   int entries;
-  int alignment;                //needs to be 8 byte aligned 
+  int alignment;                //needs to be 8 byte aligned
 };
 
 struct RecMessageEleHdr

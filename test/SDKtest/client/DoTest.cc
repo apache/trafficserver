@@ -80,10 +80,10 @@ DoTest::initialize_stats()
     target_byterate_generated[i] = 0;
   }
 
-  // number of transactions that had limited target_byterate 
+  // number of transactions that had limited target_byterate
   num_limited_byterate = 0;
 
-  // Total error among all the limited byterate trans 
+  // Total error among all the limited byterate trans
   total_limited_byterate_error = 0;
 
   connections_open = 0;
@@ -283,7 +283,7 @@ DoTest::create_new_connection_and_send_request(int user, struct timeval current_
 }
 
 
-// User i just finished, update stats 
+// User i just finished, update stats
 void
 DoTest::update_completion_stats(int i)
 {
@@ -858,7 +858,7 @@ DoTest::actual_test(int rr_flag)
             }
             finished_requests += keepalive;
             update_completion_stats(i);
-          } else {              // 200 response            
+          } else {              // 200 response
             fprintf(stderr,
                     "Error: user %d got 200 response:\n%s but got only %ld bytes when %ld bytes were requested;\nRequest sent [%s]\n%ld msec since connection opened; %ld msec since last read\nPOLLIN count = %d;  number of read calls returning data = %d\n\n",
                     i, user_info[i].status_line_info.buffer, user_info[i].bytes_read, user_info[i].bytes_requested,
@@ -931,7 +931,7 @@ DoTest::actual_test(int rr_flag)
 
           }
 
-        } else {                // s > 0 
+        } else {                // s > 0
           /* Transaction is not complete yet. You just read some
              bytes so update stats.. */
 

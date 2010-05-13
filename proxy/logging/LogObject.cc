@@ -24,7 +24,7 @@
 /***************************************************************************
  LogObject.cc
 
- 
+
  ***************************************************************************/
 #include "inktomi++.h"
 
@@ -113,7 +113,7 @@ LogObject::LogObject(LogFormat * format, const char *log_dir,
   m_signature = compute_signature(m_format, m_basename, m_flags);
 
 #ifndef TS_MICRO
-  // by default, create a LogFile for this object, if a loghost is 
+  // by default, create a LogFile for this object, if a loghost is
   // later specified, then we will delete the LogFile object
   //
   m_logFile = NEW(new LogFile(m_filename, header, file_format,
@@ -280,7 +280,7 @@ LogObject::add_loghost(LogHost * host, bool copy)
 
 // we conpute the object signature from the fieldlist_str and the printf_str
 // of the LogFormat rather than from the format_str because the format_str
-// is not part of a LogBuffer header 
+// is not part of a LogBuffer header
 //
 inku64 LogObject::compute_signature(LogFormat * format, char *filename, unsigned int flags)
 {
@@ -398,7 +398,7 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed)
       //
       new_buffer = NEW(new LogBuffer(this, Log::config->log_buffer_size));
 
-      // swap the new buffer for the old one (only this thread 
+      // swap the new buffer for the old one (only this thread
       // should be doing this, so there should be no problem)
       //
       INK_WRITE_MEMORY_BARRIER;
@@ -591,7 +591,7 @@ LogObject::_setup_rolling(int rolling_enabled, int rolling_interval_sec, int rol
     if (rolling_enabled == LogConfig::ROLL_ON_TIME_ONLY ||
         rolling_enabled == LogConfig::ROLL_ON_TIME_OR_SIZE || rolling_enabled == LogConfig::ROLL_ON_TIME_AND_SIZE) {
       if (rolling_interval_sec < LogConfig::MIN_ROLLING_INTERVAL_SEC) {
-        // check minimum 
+        // check minimum
         m_rolling_interval_sec = LogConfig::MIN_ROLLING_INTERVAL_SEC;
       } else if (rolling_interval_sec > 86400) {
         // 1 day maximum
@@ -651,19 +651,19 @@ LogObject::roll_files_if_needed(long time_now)
       // changed underneath us. This could happen during daylight
       // savings time adjustments, or if time is adjusted via NTP.
       //
-      // For this reason we don't cache the number of seconds 
+      // For this reason we don't cache the number of seconds
       // remaining until the next roll, but we calculate this figure
       // every time ...
       //
       int secs_to_next = LogUtils::seconds_to_next_roll(time_now, m_rolling_offset_hr,
                                                         m_rolling_interval_sec);
 
-      // ... likewise, we make sure we compute the absolute value 
+      // ... likewise, we make sure we compute the absolute value
       // of the seconds since the last roll (which would otherwise
       // be negative if time "went back"). We will use this value
       // to make sure we don't roll twice if time goes back shortly
       // after rolling.
-      // 
+      //
       int secs_since_last = (m_last_roll_time < time_now ? time_now - m_last_roll_time : m_last_roll_time - time_now);
 
       // number of seconds we allow for periodic_tasks() not to be
@@ -945,7 +945,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
 
     if (meta_info.file_open_successful()) {
       if (meta_info.pre_panda_metafile()) {
-        // assume no conflicts if pre-panda metafile and 
+        // assume no conflicts if pre-panda metafile and
         // write Panda style metafile with old creation_time and
         // signature of the object requesting filename
         //
@@ -994,7 +994,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
           struct stat s;
           if (stat(filename, &s) < 0) {
             // an error happened while trying to get file info
-            // 
+            //
             const char *msg = "Cannot stat log file %s: %s";
             char *se = strerror(errno);
             Error(msg, filename, se);
@@ -1016,7 +1016,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
           long time_now = LogUtils::timestamp();
           if (logfile.roll(time_now - log_object->get_rolling_interval(), time_now) == 0) {
             // an error happened while trying to roll the file
-            // 
+            //
             const char *msg = "Cannot roll log file %s to fix log " "filename conflicts";
             Error(msg, filename);
             LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename);
@@ -1039,9 +1039,9 @@ bool
   for (int i = 0; i < numObjects; i++) {
     LogObject *obj = objects[i];
     if (!obj->is_collation_client()) {
-      // an internal conflict exists if two objects request the 
+      // an internal conflict exists if two objects request the
       // same filename, regardless of the object signatures, since
-      // two objects writing to the same file would produce a 
+      // two objects writing to the same file would produce a
       // log with duplicate entries and non monotonic timestamps
       if (strcmp(obj->get_full_filename(), filename) == 0) {
         return true;
@@ -1093,10 +1093,10 @@ LogObjectManager::_roll_files(long time_now, bool roll_only_if_needed)
       num_rolled += _objects[i]->roll_files(time_now);
     }
   }
-  // we don't care if we miss an object that may be added to the set of api 
-  // objects just after we have read _numAPIobjects and found it to be zero; 
+  // we don't care if we miss an object that may be added to the set of api
+  // objects just after we have read _numAPIobjects and found it to be zero;
   // we will get a chance to roll this object next time
-  // 
+  //
   if (_numAPIobjects) {
     ACQUIRE_API_MUTEX("A LogObjectManager::roll_files");
     for (i = 0; i < _numAPIobjects; i++) {
@@ -1131,10 +1131,10 @@ LogObjectManager::check_buffer_expiration(long time_now)
     _objects[i]->check_buffer_expiration(time_now);
   }
 
-  // we don't care if we miss an object that may be added to the set of api 
-  // objects just after we have read _numAPIobjects and found it to be zero; 
-  // we will get a chance to check the buffer expiration next time 
-  // 
+  // we don't care if we miss an object that may be added to the set of api
+  // objects just after we have read _numAPIobjects and found it to be zero;
+  // we will get a chance to check the buffer expiration next time
+  //
   if (_numAPIobjects) {
     ACQUIRE_API_MUTEX("A LogObjectManager::check_buffer_expiration");
     for (i = 0; i < _numAPIobjects; i++) {
@@ -1211,7 +1211,7 @@ LogObjectManager::add_filter_to_all(LogFilter * filter)
 void
 LogObjectManager::open_local_pipes()
 {
-  // for all local objects that write to a pipe, call open_file to force 
+  // for all local objects that write to a pipe, call open_file to force
   // the creation of the pipe so that any potential reader can see it
   //
   for (size_t i = 0; i < _numObjects; i++) {
@@ -1252,7 +1252,7 @@ LogObjectManager::transfer_objects(LogObjectManager & old_mgr)
 
     Debug("log2-config-transfer", "examining existing object %s", old_obj->get_base_filename());
 
-    // see if any of the new objects is just a copy of an old one, 
+    // see if any of the new objects is just a copy of an old one,
     // if so, keep the old one and delete the new one
     //
     size_t j = _numObjects;

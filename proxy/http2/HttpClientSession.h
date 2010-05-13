@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #ifndef _HTTP_CLIENT_SESSION_H_
@@ -146,7 +146,7 @@ private:
   APIHook *cur_hook;
   int cur_hooks;
 
-  // api_hooks must not be changed directly  
+  // api_hooks must not be changed directly
   //  Use ssn_hook_{ap,pre}pend so hooks_set is
   //  updated
   HttpAPIHooks api_hooks;
@@ -160,7 +160,7 @@ public:
   bool m_bAuthComplete;
   SecurityContext *secCtx;
 
-  // for DI. An active connection is one that a request has 
+  // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to
   // be active until the transaction goes through or the client
   // aborts.

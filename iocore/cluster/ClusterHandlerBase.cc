@@ -333,7 +333,7 @@ ClusterState::~ClusterState()
 void
 ClusterState::build_do_io_vector()
 {
-  // 
+  //
   // Construct the do_io_xxx data structures allowing transfer
   // of the data described by the iovec structure.
   //
@@ -403,7 +403,7 @@ ClusterState::doIO()
     to_do = 0;
     return 1;
   }
-  // 
+  //
   // Setup and initiate or resume Cluster i/o request to the NetProcessor.
   //
   if ((to_do && (io_complete_event == VC_EVENT_READ_READY)) || (io_complete_event == VC_EVENT_WRITE_READY)) {
@@ -709,7 +709,7 @@ ClusterHandler::alloc_channel(ClusterVConnection * vc, int requested)
     } while (loops--);
 
     ink_release_assert(i != 0); // required
-    ink_release_assert(channels[i] == (ClusterVConnection *) 1);        // required 
+    ink_release_assert(channels[i] == (ClusterVConnection *) 1);        // required
     Debug(CL_TRACE, "alloc_channel local chan=%d VC=0x%x", i, vc);
 
   } else {
@@ -1108,7 +1108,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
           callout_events[n] = eventProcessor.schedule_every(callout_cont[n], COMPLETION_CALLBACK_PERIOD, ET_NET);
         }
 
-        // Start cluster interconnect load monitoring 
+        // Start cluster interconnect load monitoring
 
         if (!clm) {
           clm = new ClusterLoadMonitor(machine);
@@ -1212,7 +1212,7 @@ ClusterHandler::protoZombieEvent(int event, Event * e)
     }
   }
   ///////////////////////////////////////////////////////////////
-  // Deallocate current read control data 
+  // Deallocate current read control data
   ///////////////////////////////////////////////////////////////
   IncomingControl *ic;
   while ((ic = incoming_control.dequeue())) {

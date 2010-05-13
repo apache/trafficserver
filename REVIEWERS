@@ -18,6 +18,8 @@ Committers: add modules as needed and any qualifications after your e-mail addre
 all/general interest
         jplevyak@apache.org
         bcall@apache.org
+        mturk@apache.org
+	zwoop@apache.org
 libinktomi++
         jplevyak@apache.org
         zwoop@apache.org
@@ -50,6 +52,7 @@ DNS/HostDB
         georgep@apache.org
 FastIO
 Docs
+	dianes@apache.org
 Examples/Plugins
         zwoop@apache.org
         bcall@apache.org
@@ -60,6 +63,7 @@ HDRs
         bcall@apache.org
 HTTP
         bcall@apache.org
+	zwoop@apache.org
 Remap
         zwoop@apache.org
         bcall@apache.org
@@ -84,3 +88,4 @@ Build System
         zwoop@apache.org
         bcall@apache.org
         georgep@apache.org
+        mturk@apache.org

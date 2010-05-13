@@ -33,14 +33,14 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
   const char *from_path;
 
   trie = _GetTrie(&(mapping->fromURL), scheme_idx, port);
-  
+
   if (!trie) {
     trie = new UrlMappingTrie();
     m_tries.insert(UrlMappingGroup::value_type(UrlMappingTrieKey(scheme_idx, port), trie));
     Debug("UrlMappingPathIndex::Insert", "Created new trie for scheme index, port combo <%d, %d>",
           scheme_idx, port);
   }
-  
+
   from_path = mapping->fromURL.path_get(&from_path_len);
   if (!trie->Insert(from_path, mapping, mapping->getRank(), from_path_len)) {
     Error("Couldn't insert into trie!");
@@ -60,7 +60,7 @@ UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_sear
   const char *path;
 
   trie = _GetTrie(request_url, scheme_idx, request_port, normal_search);
-  
+
   if (!trie) {
     Debug("UrlMappingPathIndex::Search", "No mappings exist for scheme index, port combo <%d, %d>",
           scheme_idx, request_port);
@@ -73,7 +73,7 @@ UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_sear
     goto lFail;
   }
   return *retval;
-  
+
 lFail:
   return 0;
 }
@@ -81,7 +81,7 @@ lFail:
 void
 UrlMappingPathIndex::GetMappings(MappingList &mapping_list) const
 {
-  for (UrlMappingGroup::const_iterator group_iter = m_tries.begin(); 
+  for (UrlMappingGroup::const_iterator group_iter = m_tries.begin();
        group_iter != m_tries.end(); ++group_iter) {
     const UrlMappingTrie::ValuePointerList &value_pointers = group_iter->second->GetValues();
     for (UrlMappingTrie::ValuePointerList::const_iterator list_iter = value_pointers.begin();

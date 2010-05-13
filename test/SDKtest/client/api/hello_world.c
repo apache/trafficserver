@@ -23,9 +23,9 @@
 
 /* hello_world.c
  *
- * 
+ *
  * Description:
- *   - demonstrate the most basic routine of writing the SDKtest_client 
+ *   - demonstrate the most basic routine of writing the SDKtest_client
  *     plugin
  */
 

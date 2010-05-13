@@ -401,7 +401,7 @@ HttpCompat::parse_mime_type_with_len(const char *mime_string, int mime_string_le
 //         Vary header are present in the new request, and all of the stored
 //         selecting request-headers from the previous request match the
 //         corresponding headers in the new request.
-//      
+//
 //         The selecting request-headers from two requests are defined to
 //         match if and only if the selecting request-headers in the first
 //         request can be transformed to the selecting request-headers in

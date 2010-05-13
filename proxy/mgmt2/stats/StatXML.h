@@ -38,7 +38,7 @@ typedef enum
 } StatXMLTag;
 
 /***************************************************************
- *                      General Methods 
+ *                      General Methods
  ***************************************************************/
 bool isOperator(char);
 int XML_getContent(const char *, int, char *, StatXMLTag);

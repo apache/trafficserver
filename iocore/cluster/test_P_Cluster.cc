@@ -23,8 +23,8 @@
 
 /*
   This is a bogus test file because it does not need any cluster
-  functions : the actual test file is in the cache directory. 
-  This file is a placeholder because each module is supposed to 
+  functions : the actual test file is in the cache directory.
+  This file is a placeholder because each module is supposed to
   have a test file
   */
 
@@ -77,7 +77,7 @@ reconfigure_diags()
   diags->deactivate_all(DiagsTagType_Action);
 
   //////////////////////////////////////////////////////////////////////
-  //                     add new tag tables 
+  //                     add new tag tables
   //////////////////////////////////////////////////////////////////////
 
   if (diags->base_debug_tags)

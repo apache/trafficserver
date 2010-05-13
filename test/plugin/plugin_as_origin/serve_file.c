@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-/* serve_file.c: plugin to test plugin as origin server interface by 
+/* serve_file.c: plugin to test plugin as origin server interface by
  *   serving a file from the file system
  *
  *
@@ -42,7 +42,7 @@
 /* #define DEBUG 1 */
 
 /**************************************************
-   Log macros for error code return verification 
+   Log macros for error code return verification
 **************************************************/
 #define PLUGIN_NAME "serve_file"
 #define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))

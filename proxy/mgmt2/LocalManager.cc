@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-/* 
+/*
  *
  * LocalManager.cc
  * - The Local Manager process of the management system.
@@ -84,7 +84,7 @@ LocalManager::mgmtShutdown(int status, bool mainThread)
     if (processRunning()) {
       waitpid(watched_process_pid, &status, 0);
 #if (HOST_OS == linux)
-      /* Avert race condition, wait for the thread to complete, 
+      /* Avert race condition, wait for the thread to complete,
          before getting one more restart process */
       /* Workaround for bugid INKqa10060 */
       mgmt_sleep_msec(1);
@@ -363,7 +363,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
     xfree(config_path);
     config_path = xstrdup(system_config_directory);
     if ((err = stat(config_path, &s)) < 0) {
-        mgmt_elog("[LocalManager::LocalManager] unable to stat() directory '%s': %d %d, %s\n", 
+        mgmt_elog("[LocalManager::LocalManager] unable to stat() directory '%s': %d %d, %s\n",
                 config_path, err, errno, strerror(errno));
         mgmt_fatal("[LocalManager::LocalManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
     }
@@ -386,7 +386,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
     snprintf(absolute_proxy_binary, absolute_proxy_binary_size, "%s%s%s%s", system_root_dir,bin_path, DIR_SEP, proxy_binary);
     // coverity[fs_check_call]
     if ((err = stat(absolute_proxy_binary, &s)) < 0) {
-        mgmt_elog("[LocalManager::LocalManager] Unable to find '%s': %d %d, %s\n", 
+        mgmt_elog("[LocalManager::LocalManager] Unable to find '%s': %d %d, %s\n",
                 absolute_proxy_binary, err, errno, strerror(errno));
         mgmt_fatal("[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
     }
@@ -912,7 +912,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
 
       // In case of Linux, sometimes when the TS dies, the connection between TS and TM
       // is not closed properly. the socket does not receive an EOF. So, the TM does
-      // not detect that the connection and hence TS has gone down. Hence it still 
+      // not detect that the connection and hence TS has gone down. Hence it still
       // tries to send a message to TS, but encounters an error and enters here
       // Also, ensure that this whole thing is done only once because there will be a
       // deluge of message in the traffic.log otherwise
@@ -1084,7 +1084,7 @@ LocalManager::convert_filters()
     char *absolute_convert_binary = (char *) alloca(absolute_convert_binary_size);
     snprintf(absolute_convert_binary, absolute_convert_binary_size, "%s%s%s", bin_path, DIR_SEP, convert_bin);
 
-    // check that the binary exists 
+    // check that the binary exists
     struct stat fileInfo;
     if (stat(absolute_convert_binary, &fileInfo) < 0) {
       mgmt_elog(stderr,

@@ -29,7 +29,7 @@
 
    Opens a file with a dbx dump of an http hdr and prints it out
 
-   
+
  ****************************************************************************/
 
 #include "Marshal.h"

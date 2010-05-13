@@ -29,8 +29,8 @@
  *
  *  XmlUtils.h - Functions for interfacing to XML parser (expat)
  *
- *  
- * 
+ *
+ *
  *
  *   This code was taken from the xmlparse library developed
  *   by Xing Xiong for SynText.

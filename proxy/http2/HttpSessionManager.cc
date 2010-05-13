@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #include "HttpSessionManager.h"
@@ -81,9 +81,9 @@ SessionBucket::session_handler(int event, void *data)
   while (s != NULL) {
     if (s->get_netvc() == net_vc) {
 
-      // if there was a timeout of some kind on a keep alive connection, and 
+      // if there was a timeout of some kind on a keep alive connection, and
       // keeping the connection alive will not keep us above the # of max connections
-      // to the origin and we are below the min number of keep alive connections to this 
+      // to the origin and we are below the min number of keep alive connections to this
       // origin, then reset the timeouts on our end and do not close the connection
       if( (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) &&
            s->state == HSS_KA_SHARED &&
@@ -160,7 +160,7 @@ HttpSessionManager::purge_keepalives()
         sess->do_io_close();
       }
     } else {
-      // Fix me, should retry 
+      // Fix me, should retry
     }
   }
 }
@@ -174,13 +174,13 @@ HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int po
   // We compute the mmh for matching the hostname as the last
   //  check for a match between the session the HttpSM is
   //  looking for and the sessions we have.  The reason it's
-  //  the last check is to save the cycles of needless 
-  //  computing extra mmhs.  We have to use the hostname 
-  //  as part of the match because some stupid servers can't 
+  //  the last check is to save the cycles of needless
+  //  computing extra mmhs.  We have to use the hostname
+  //  as part of the match because some stupid servers can't
   //  handle getting request for different virtual hosts over
-  //  the same keep-alive session (INKqa05429).  
-  // Also, note the ip is required as well to maintain client 
-  //  to server affinity so that we don't break certain types 
+  //  the same keep-alive session (INKqa05429).
+  // Also, note the ip is required as well to maintain client
+  //  to server affinity so that we don't break certain types
   //  of authentication.
   bool hash_computed = false;
   INK_MD5 hostname_hash;
@@ -243,9 +243,9 @@ HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int po
         if (hostname_hash == b->hostname_hash) {
 
           // We found a match.  Since the lock for the 1st level
-          //  bucket is the same one that we use for the read 
-          //  on the keep alive connection, we are safe since 
-          //  we can not get called back from the netProcessor 
+          //  bucket is the same one that we use for the read
+          //  on the keep alive connection, we are safe since
+          //  we can not get called back from the netProcessor
           //  here.  The SM will do a do_io when it gets the session,
           //  effectively canceling the keep-alive read
           bucket->lru_list.remove(b);

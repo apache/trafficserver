@@ -318,7 +318,7 @@ OneWayTunnel::startEvent(int event, void *data)
   return ret;
 }
 
-// If result is Non-zero, the vc should be aborted. 
+// If result is Non-zero, the vc should be aborted.
 void
 OneWayTunnel::close_source_vio(int result)
 {

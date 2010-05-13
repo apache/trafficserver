@@ -25,7 +25,7 @@
 
   Protected Queue
 
-  
+
  ****************************************************************************/
 #ifndef _P_ProtectedQueue_h_
 #define _P_ProtectedQueue_h_
@@ -123,19 +123,19 @@ ProtectedQueue::dequeue_local()
 }
 
 #if defined(USE_OLD_EVENTFD)
-TS_INLINE void 
+TS_INLINE void
 ProtectedQueue::setReadFd(int fd)
 {
   read_pipe_fd = fd;
 }
 
-TS_INLINE void 
+TS_INLINE void
 ProtectedQueue::setWriteFd(int fd)
 {
   write_pipe_fd = fd;
 }
 
-TS_INLINE int 
+TS_INLINE int
 ProtectedQueue::getReadFd()
 {
   int pfd[2] = {-1,-1};

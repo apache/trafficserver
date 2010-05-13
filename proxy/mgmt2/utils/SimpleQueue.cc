@@ -31,12 +31,12 @@
 /****************************************************************************
  *
  *  SimpleQueue.cc - a thread safe queue
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 //
-// class SimpleQueue 
+// class SimpleQueue
 //
 //   The queue is a doublely linked list.  The two operations
 //     permitted are add a new item to the end of the queue
@@ -65,7 +65,7 @@ SimpleQueue::SimpleQueue()
   tail = NULL;
 }
 
-// 
+//
 // destory the queue
 //
 //    Does not attempt to deallocate the entries

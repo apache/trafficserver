@@ -23,9 +23,9 @@
 
 /***************************************************************************
  *
- *  FetchSM.h header file for Fetch Page 
+ *  FetchSM.h header file for Fetch Page
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _FETCH_SM_H
@@ -62,7 +62,7 @@ public:
     mutex = new_ProxyMutex();
     callback_events = events;
     callback_options = options;
-    _ip = ip; 
+    _ip = ip;
     _port = port;
     writeRequest(headers,length);
     SET_HANDLER(&FetchSM::fetch_handler);
@@ -87,7 +87,7 @@ private:
   {
     return req_reader->read_avail();
   }
-  
+
   INKVConn http_vc;
   VIO *read_vio;
   VIO *write_vio;

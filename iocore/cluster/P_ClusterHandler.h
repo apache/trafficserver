@@ -70,7 +70,7 @@ struct ClusterControl:Continuation
 
   enum
   {
-    // DATA_HDR = size_index (1 byte) + magicno (1 byte) + sizeof(this) 
+    // DATA_HDR = size_index (1 byte) + magicno (1 byte) + sizeof(this)
 
     DATA_HDR = (sizeof(ink64) * 2)      // must be multiple of sizeof(ink64)
   };
@@ -399,7 +399,7 @@ struct ClusterState:Continuation
 };
 
 //
-// ClusterHandlerBase superclass for processors with 
+// ClusterHandlerBase superclass for processors with
 // bi-directional VConnections.
 //
 struct ClusterHandlerBase:Continuation

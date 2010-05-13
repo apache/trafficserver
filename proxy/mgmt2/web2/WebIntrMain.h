@@ -28,8 +28,8 @@
  *
  *  WebIntrMain.h - main loop for the Web Interface
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 struct WebContext;

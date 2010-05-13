@@ -45,7 +45,7 @@
 class url_mapping;
 
 /**
- * 
+ *
 **/
 class remap_plugin_info
 {
@@ -75,7 +75,7 @@ public:
 
 
 /**
- * 
+ *
 **/
 class remap_plugin_info_init
 {

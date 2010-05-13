@@ -25,7 +25,7 @@
  *
  * P_SplitDNS.h - Interface to DNS server selection
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _P_SPLIT_DNS_H_

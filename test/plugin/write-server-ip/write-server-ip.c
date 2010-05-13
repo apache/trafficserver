@@ -72,7 +72,7 @@
 static const char *plugin_dir;
 static INKMutex file_mutex;
 
-/******************************************************************** 
+/********************************************************************
  * When the client sends the same request the second time, get the
  * header field MY_HDR from the caches response header, print it out
  * and save it in a text file.
@@ -142,9 +142,9 @@ Lcleanup:
 
 
 /***********************************************************************
- * Get the server ip and request method in the client request. Get the 
- * next hop ip from the server response. 
- * Create a new http header field MY_HDR in the server response and 
+ * Get the server ip and request method in the client request. Get the
+ * next hop ip from the server response.
+ * Create a new http header field MY_HDR in the server response and
  * insert server ip, request method and next hop ip into the field as
  * field values.
  ***********************************************************************/

@@ -25,11 +25,11 @@
 
    HdrTest.cc
 
-   Description: 
+   Description:
        Unit test code for sanity checking the header system is functioning
          properly
 
-   
+
  ****************************************************************************/
 
 #include "inktomi++.h"

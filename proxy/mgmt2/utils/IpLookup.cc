@@ -311,7 +311,7 @@ IpLookup::MatchNext(IpLookupState * s, void **opaque_ptr)
   if (cur == NULL) {
     return false;
   }
-  // We must adjust the cur_mask and cur_shift_bits based 
+  // We must adjust the cur_mask and cur_shift_bits based
   //  on the current table level otherwise we get garbage r
   //  results for subsequent calls to nextMatch (INKqa04167)
   for (int q = 0; q < s->table_level; q++) {
@@ -378,7 +378,7 @@ IpLookup::MatchNext(IpLookupState * s, void **opaque_ptr)
   return false;
 }
 
-// void IpLookup::PrintArray(void* array_in, IpLookupPrintFunc f) 
+// void IpLookup::PrintArray(void* array_in, IpLookupPrintFunc f)
 //
 //   Note void* is used for array_in hide all typing from the header file
 //     the type must be DynArray<ip_match_el>*

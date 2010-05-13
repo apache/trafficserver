@@ -23,9 +23,9 @@
 
 
 /*****************************************************************************
-TODO test for the debugging family of functions  
+TODO test for the debugging family of functions
 
-	Test for the INKfopen family of functions  
+	Test for the INKfopen family of functions
 
 INKfclose
 INKfflush
@@ -34,14 +34,14 @@ INKfopen
 INKfread
 INKfwrite
 
-	Test for the Memory allocation family of functions  
+	Test for the Memory allocation family of functions
 INKfree
 INKmalloc
 INKrealloc
 INKstrdup
-INKstrndup 
+INKstrndup
 
-	Test for the Thread family of functions  
+	Test for the Thread family of functions
 
 INKThreadCreate
 INKThreadDestroy
@@ -53,14 +53,14 @@ The approach taken is to write a large test that excercises the major
 portions of each api within each section. The order of the test is based
 on the order that the tests are written in the programmers guide.
 
-This approach makes it difficult to allow for a test case to fail and to 
-continue with other tests. In this approach, if a tests fails the remaining 
+This approach makes it difficult to allow for a test case to fail and to
+continue with other tests. In this approach, if a tests fails the remaining
 tests are not attempted since the remaining tests depend on results from
 prior tests.
 
 A different approach would be to write each test case as completely
-individual tests not depending on the results of prior tests. 
-This approach leads to less complicated code but takes more time to 
+individual tests not depending on the results of prior tests.
+This approach leads to less complicated code but takes more time to
 write the code.  Guesstimate: 3X more code and time. Easier to maintane.
 
 *****************************************************************************/
@@ -78,9 +78,9 @@ extern int errno;
 /* solaris threads: deprecated */
 #include <pthread.h>
 
-/* 
- * INKDebug() is used for generic messaging 
- * INKerror() is used as an error reporting 
+/*
+ * INKDebug() is used for generic messaging
+ * INKerror() is used as an error reporting
 */
 
 /* Used to create tmp file */
@@ -92,18 +92,18 @@ extern int errno;
 /* There are three threads tests */
 #define NUM_THREAD_TESTS (3)
 /* This is the third test
- * Arbritrary number of to INKThreadInit()/INKThreadDestroy() 
+ * Arbritrary number of to INKThreadInit()/INKThreadDestroy()
 */
 #define	NUM_THREADS	(1000)
 
 
-/* Number of total INKfopen test: 16 
+/* Number of total INKfopen test: 16
  * non-negative tests: 10
 */
 #define	NUM_FOPEN_TESTS	(10)
-/* 
+/*
 1. INKfclose:
-   1.1 INKfclose on read file	         1.2 INKfclose on write file 
+   1.1 INKfclose on read file	         1.2 INKfclose on write file
    1.3 flush data on read file [neg]     1.4 flush data on write file
 
 2. INKfflush
@@ -169,7 +169,7 @@ INKfopenTest(INKHttpTxn txnp, INKCont contp)
     return ++fopenErrCount;
   }
 
-  /* 
+  /*
    * 4. INKfopen
    *    4.2 INKfopen (create) for write
    *
@@ -185,7 +185,7 @@ INKfopenTest(INKHttpTxn txnp, INKCont contp)
   /*
    *  3. INKfgets
    *     3.1 INKfgets on read file
-   * inputReadFile                is the file to read from, 
+   * inputReadFile                is the file to read from,
    * inputBuf                     is the buffer to write to
    * statBuffInputText.st_size    is the size of the buffer to read into
    */
@@ -209,15 +209,15 @@ INKfopenTest(INKHttpTxn txnp, INKCont contp)
   } else
     INKDebug("INKfopen_plug-in", "INKfopenTest() INKfgets passed on file open for read mode.\n");
 
-        /*************************************************************** 
+        /***************************************************************
 	* TODO how do we rewind to the begining of a file (sourceReadFile)?
 	*****************************************************************/
 
-  /* 
+  /*
    * 6. INKfwrite
-   *    6.1 INKfwrite on a write file 
+   *    6.1 INKfwrite on a write file
    * writeFile    is the (tmp) file to write data to
-   * inputBuf             buffer to read data from 
+   * inputBuf             buffer to read data from
    * BUFSIZ       is the amount of data to write
    *
    */
@@ -259,7 +259,7 @@ INKfopenTest(INKHttpTxn txnp, INKCont contp)
     return ++fopenErrCount;
   }
 
-  /*  
+  /*
    * 5. INKfread
    *    5.1 INKfread on read file
    * Read the tempnameWriteFile back in and compare to original
@@ -306,10 +306,10 @@ INKfopenTest(INKHttpTxn txnp, INKCont contp)
   } else
     INKDebug("INKfopen_plug-in", "INKfopen: INKfclose: on read file passed\n");
 
-  /* 1. INKfclose: 
+  /* 1. INKfclose:
    * 1.2 INKfclose on write file
-   * Any operation (read) on a closed file should return an error 
-   * message 
+   * Any operation (read) on a closed file should return an error
+   * message
    */
   INKfclose(writeFile);
 
@@ -330,7 +330,7 @@ INKfopenTest(INKHttpTxn txnp, INKCont contp)
    * a buffer, then just read the buffer.
    */
 
-  /* Create unique tmp _file_name_ do not use any TS file_name 
+  /* Create unique tmp _file_name_ do not use any TS file_name
    */
   if ((tempnamFlushFile = tempnam(TMP_DIR, PFX)) == NULL) {
     INKError("INKfopenTest(): tempnam failed for tempnamFlushFile\n");
@@ -357,9 +357,9 @@ INKfopenTest(INKHttpTxn txnp, INKCont contp)
   /* clear inputBuf, could fill buffer here and avoid the file read */
   memset(inputBuf, '\0', BUFSIZ);
 
-  /* inputReadFile is the file to read from, 
+  /* inputReadFile is the file to read from,
    *  inputBuf         is the buffer to write to
-   *  statBuffInputText.st_size   is the amount  of data to read 
+   *  statBuffInputText.st_size   is the amount  of data to read
    */
   if ((retVal = INKfgets(sourceReadFile, inputBuf, statBuffInputText.st_size))
       == NULL) {
@@ -395,13 +395,13 @@ INKfopenTest(INKHttpTxn txnp, INKCont contp)
     return ++fopenErrCount;
   }
 
-  /* 
+  /*
    * 4. INKfopen
-   *    4.4 INKfopen for write: Open existing file for write 
+   *    4.4 INKfopen for write: Open existing file for write
    */
 
-  /* Does this append or does this truncate ? 
-   * Guess: truncate as in fopen(3S) 
+  /* Does this append or does this truncate ?
+   * Guess: truncate as in fopen(3S)
    * API: open(2) or fopen(3S) or NT? We just need to pick one.
    */
   /* writeFile just closed, temporary file still exists, reopen */
@@ -452,7 +452,7 @@ INKfree
 INKmalloc
 INKrealloc
 INKstrdup
-INKstrndup 
+INKstrndup
 */
 
   return INKMemAllocErrors;
@@ -507,16 +507,16 @@ INKThreadCallee(void *arg)
 
 /* TODO POSIX/Solaris Threads
  * It appears that Traffic Server support both POSIX and Solaris threads
- * as part of the SDK. 
- * 1. Verify. 
- * 2. Write Solaris based thread code here to compliment these POSIX 
+ * as part of the SDK.
+ * 1. Verify.
+ * 2. Write Solaris based thread code here to compliment these POSIX
  *    (pthread) based test.
- * 3. POSIX tests were written first since Solaris threads are being 
- *    deprecated in favor of POSIX. 
+ * 3. POSIX tests were written first since Solaris threads are being
+ *    deprecated in favor of POSIX.
 */
 
-/* Argument data passed to thread init functions 
- * cannot be allocated on the stack. 
+/* Argument data passed to thread init functions
+ * cannot be allocated on the stack.
 */
 pthread_t currTid, newTid;
 
@@ -546,8 +546,8 @@ INKThreadTest(INKHttpTxn txnp, INKCont contp)
     INKDebug("INKfopen_plug-in", "INKThreadSelf(): passed: current INKThread:0x%08x\n", INKCurrThread);
   /* Test 2: */
   threadFunc = (INKThreadFunc) INKThreadCallee;
-  /* Try to attach this thread to a function that does not have the 
-   * the same prototype described in the p.g. 
+  /* Try to attach this thread to a function that does not have the
+   * the same prototype described in the p.g.
    */
   /* INKThreadCreate(threadFunc, (void*)&argInt); */
   /* INKThreadCreate((INKThreadFunc)INKThreadCallee, (void*)&argInt); */
@@ -563,10 +563,10 @@ INKThreadTest(INKHttpTxn txnp, INKCont contp)
    * Create pthreads and register the thread init code.
    *
    * TODO track threads created and on what thread with actual init function invocation
-   * Could use global data with mutex lock or 
+   * Could use global data with mutex lock or
    * tsd. If a thread created here does not execute in the registered
    * init function these tests will not catch this as an error. This
-   * type of error would be less of an SDK error an more of a system 
+   * type of error would be less of an SDK error an more of a system
    * error or TrafficServer/system interaction.
    */
   for (i = 0; i < NUM_THREADS; i++) {
@@ -584,7 +584,7 @@ INKThreadTest(INKHttpTxn txnp, INKCont contp)
 
                         /********************************************
 			if (firstThreadError)
-				continue;          skip these tests 
+				continue;          skip these tests
 			********************************************/
     } else
       INKDebug("INKfopen_plug-in", "INKThreadTest(): pthread_create created: %d\n", newTid);
@@ -619,7 +619,7 @@ INKfopen_plugin(INKCont contp, INKEvent event, void *edata)
     break;
   }
   /* Always reeneable HTTP transaction after processing of each
-   * transaction event. 
+   * transaction event.
    */
   INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
   return status;

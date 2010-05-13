@@ -87,7 +87,7 @@ struct ink_recv_pktQ_node
   uint32_t m_finish_xmitTime;
   /* the redirect list to which this packet belongs */
   struct ink_redirect_list *m_redir_list;
-  /* 
+  /*
    * The meaning of next depends on where this node is placed: if it is in
    * the q of the incoming packets, then next points to the next packet of
    * the redir list of this packet; if it is in the queue of outgoing

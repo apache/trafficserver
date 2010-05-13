@@ -952,7 +952,7 @@ get_client_req(INKHttpTxn txnp, char **p_url_line, char **p_client_req, int *neg
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
        the loop. A block with no data to read means we've exhausted
-       buffer of data since if there was more data on a later 
+       buffer of data since if there was more data on a later
        block in the chain, this block would have been skipped over */
     if (block_avail == 0) {
       break;

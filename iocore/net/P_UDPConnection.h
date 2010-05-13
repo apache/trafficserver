@@ -25,8 +25,8 @@
 
   P_UDPConnection.h
   Internal UDPConnection holds data members and defines member functions
-  
-  
+
+
  ****************************************************************************/
 #ifndef __P_UDPCONNECTION_H_
 #define __P_UDPCONNECTION_H_

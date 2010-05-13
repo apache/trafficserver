@@ -86,7 +86,7 @@ strnchr(char *s, char c, int len)
 static inline inku16
 ink_get16(const inku8 *src) {
   inku16 dst;
-  
+
   NS_GET16(dst, src);
   return dst;
 }
@@ -442,7 +442,7 @@ DNSHandler::startEvent_sdns(int event, Event * e)
   // If this is for the default server, get it
   //
 
-  //added by YTS Team, yamsat 
+  //added by YTS Team, yamsat
   Debug("dns", "DNSHandler::startEvent_sdns: on thread%d\n", e->ethread->id);
 
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
@@ -653,7 +653,7 @@ good_rcode(char *buf)
 void
 DNSHandler::recv_dns(int event, Event * e)
 {
-  NetHandler *nh = get_NetHandler(e->ethread);  //added by YTS Team, yamsat 
+  NetHandler *nh = get_NetHandler(e->ethread);  //added by YTS Team, yamsat
   DNSConnection *dnsc = NULL;   //added by YTS Team, yamsat
 
   while ((dnsc = (DNSConnection *) nh->dnsqueue.dequeue())) {
@@ -1322,7 +1322,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
       memset(&try_server_names[try_servers][strlen(e->qname)], 0, 1);
     }
 
-    /* added for SRV support [ebalsa] 
+    /* added for SRV support [ebalsa]
        this skips the query section (qdcount)
      */
     unsigned char *here = (unsigned char *) buf->buf + HFIXEDSZ;

@@ -191,7 +191,7 @@ init_HttpProxyServer(void)
 
 #ifndef INK_NO_API
   // Used to give plugins the ability to create http requests
-  //   The equivalent of the connecting to localhost on the  proxy 
+  //   The equivalent of the connecting to localhost on the  proxy
   //   port but without going through the operating system
   //
   if (plugin_http_accept == NULL) {

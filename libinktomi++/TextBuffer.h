@@ -28,8 +28,8 @@
  *
  *  TextBuffer.h - A self-expanding buffer, primarly meant for strings
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "ink_platform.h"

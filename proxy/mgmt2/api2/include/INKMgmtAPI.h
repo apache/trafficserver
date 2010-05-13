@@ -27,7 +27,7 @@
  * order to eliminate the interdependencies of other library calls, new
  * types and structs will be defined and used in the wrapper function calls.
  *
- * 
+ *
  ***************************************************************************/
 
 #ifndef __INK_MGMT_API_H__
@@ -437,9 +437,9 @@ typedef enum
   } INKFileNameT;
 
 
-/* Each rule type within a file has its own enumeration. 
- * Need this enumeration because it's possible there are different Ele's used 
- * for rule types within the same file 
+/* Each rule type within a file has its own enumeration.
+ * Need this enumeration because it's possible there are different Ele's used
+ * for rule types within the same file
  */
   typedef enum
   {
@@ -574,7 +574,7 @@ typedef enum
   } INKDomain;
 
 /* there are a variety of secondary specifiers that can be used in a rule; more than
- * one secondary specifier can be used per rule, but a secondary specifier can only 
+ * one secondary specifier can be used per rule, but a secondary specifier can only
  * be used once per rule (eg. time, src_ip, prefix, suffix, port, method, scheme)
  */
   typedef struct
@@ -606,9 +606,9 @@ typedef enum
   } INKPdSsFormat;              /* PdSs = Primary Destination Secondary Specifier */
 
 
-/* Generic Ele struct which is used as first member in all other Ele structs. 
- * The INKCfgContext operations deal with INKCfgEle* type, so must typecast 
- * all Ele's to an INKCfgEle*  
+/* Generic Ele struct which is used as first member in all other Ele structs.
+ * The INKCfgContext operations deal with INKCfgEle* type, so must typecast
+ * all Ele's to an INKCfgEle*
  */
   typedef struct
   {
@@ -632,19 +632,19 @@ typedef enum
     INKConnectT type_con;       /* determines if ports will be opened for TCP or UDP */
     INKIpAddrEle *src_ip_addr;  /* arm-deny rule: the ip address or range of ip addresses that
                                    will be denied access to ports (can be NULL);
-                                   arm-allow rule: the ip address or range of ip addressess 
+                                   arm-allow rule: the ip address or range of ip addressess
                                    specifying the source of communication (can be NULL) */
     INKIpAddrEle *dest_ip_addr; /* destination ip address (can be NULL) */
     INKPortEle *open_ports;     /* open source ports (can be INVALID) */
     INKPortEle *src_ports;      /* source ports (can be INVALID) */
     /* arm-open rule: list of ports/port-ranges to open by default */
-    INKPortEle *dest_ports;     /* the destination port(s) that TCP traffic will be 
+    INKPortEle *dest_ports;     /* the destination port(s) that TCP traffic will be
                                    allowed/denied access to (can be INVALID)  */
     INKIntList src_port_list;   /* alternative for src_ports */
     INKIntList dest_port_list;  /* alternative for dest_ports */
-  } INKArmSecurityEle;          /* + at least of src_ip_addr, dest_ip_addr, dest_ports, 
-                                   src_ports is specified for arm allow rules; 
-                                   + at least of dest_ports or src_ip_addr is specified for arm 
+  } INKArmSecurityEle;          /* + at least of src_ip_addr, dest_ip_addr, dest_ports,
+                                   src_ports is specified for arm allow rules;
+                                   + at least of dest_ports or src_ip_addr is specified for arm
                                    deny rules */
 
 /* bypass.config */
@@ -722,9 +722,9 @@ typedef enum
     int peer_icp_port;          /* port number of the UDP port used by the ICP peer for ICP communication  */
     bool is_multicast;          /* false: multicast not enabled; true: multicast enabled */
     INKIpAddr mc_ip_addr;       /* multicast ip (can be 0 if is_multicast == false */
-    INKMcTtlT mc_ttl;           /* multicast time to live; either IP multicast datagrams will not 
+    INKMcTtlT mc_ttl;           /* multicast time to live; either IP multicast datagrams will not
                                    be forwarded beyond a single subnetwork, or allow delivery
-                                   of IP multicast datagrams to more than one subnet 
+                                   of IP multicast datagrams to more than one subnet
                                    (can be UNDEFINED if is_multicast == false */
   } INKIcpEle;
 
@@ -839,17 +839,17 @@ typedef enum
   } INKRemapEle;
 
 /* socks.config */
-/* INKqa10915: supports two rules types - the first rule type specifies the 
-   IP addresses of origin servers that TS should bypass SOCKS and access 
+/* INKqa10915: supports two rules types - the first rule type specifies the
+   IP addresses of origin servers that TS should bypass SOCKS and access
    directly (this is when ip_addrs is used); the second rule
-   type specifies which SOCKS servers to use for the addresses specified 
-   in dest_ip_addr; so this means that either ip_addrs is specified OR 
+   type specifies which SOCKS servers to use for the addresses specified
+   in dest_ip_addr; so this means that either ip_addrs is specified OR
    dest_ip_addr/socks_servers/rr are */
   typedef struct
   {
     INKCfgEle cfg_ele;
     INKIpAddrList ip_addrs;     /* list of ip addresses to bypass SOCKS server (INK_SOCKS_BYPASS) */
-    INKIpAddrEle *dest_ip_addr; /* ip address(es) that will use the socks server 
+    INKIpAddrEle *dest_ip_addr; /* ip address(es) that will use the socks server
                                    specified in parent_list (INK_SOCKS_MULTIPLE rule) */
     INKDomainList socks_servers;        /* ordered list of SOCKS servers (INK_SOCKS_MULTIPLE rule) */
     INKRrT rr;                  /* possible values are INK_RRT_TRUE (go through proxy
@@ -1013,21 +1013,21 @@ typedef enum
 /*--- allocate/deallocate operations -------------------------------------*/
 /* NOTE:
  * 1) Default values for INKxxEleCreate functions:
- *    - for all lists, default value is INK_INVALID_LIST. NO memory is 
- *      allocated for an Ele's  list type member. The user must 
- *      explicity call the INKxxListCreate() function to initialize it. 
- *    - for char*'s and INKIpAddr the default is NULL (or INK_INVALID_IP_ADDR 
- *      for INKIpAddr's); user must assign allocated memory to initialize any 
+ *    - for all lists, default value is INK_INVALID_LIST. NO memory is
+ *      allocated for an Ele's  list type member. The user must
+ *      explicity call the INKxxListCreate() function to initialize it.
+ *    - for char*'s and INKIpAddr the default is NULL (or INK_INVALID_IP_ADDR
+ *      for INKIpAddr's); user must assign allocated memory to initialize any
  *      string or INKIpAddr members of an INKxxxEle
- * 
- * 2) An Ele corresponds to a rule type in a file; this is why each Ele has an 
- * INKRuleType to identify which type of rule it corresponds to. 
- * For config files which only have one rule type, we can easily set the 
+ *
+ * 2) An Ele corresponds to a rule type in a file; this is why each Ele has an
+ * INKRuleType to identify which type of rule it corresponds to.
+ * For config files which only have one rule type, we can easily set the
  * rule type of the Ele in the EleCreate function since there's only one possible
  * option. However, note that for those config files with more than one rule
  * type, we cannot set the rule type in the EleCreate function since
- * we don't know which rule type the Ele corresponds to yet. Thus, the user must 
- * specify the INKRuleTypeT when he/she creates the Ele. 
+ * we don't know which rule type the Ele corresponds to yet. Thus, the user must
+ * specify the INKRuleTypeT when he/she creates the Ele.
  */
 
   inkapi INKEvent *INKEventCreate();
@@ -1095,7 +1095,7 @@ typedef enum
 
 /* INKIsValid: checks if the fields in the ele are all valid
  * Input:  ele - the ele to check (typecast any of the INKxxxEle's to an INKCfgEle)
- * Output: true if ele has valid fields for its rule type, false otherwise 
+ * Output: true if ele has valid fields for its rule type, false otherwise
  */
   bool INKIsValid(INKCfgEle * ele);
 
@@ -1108,7 +1108,7 @@ typedef enum
  * Input: socket_path - not applicable for local clients
  *                      for remote users, the path to the config directory
  *         (eg. run from bin, socket_path = "../etc/trafficserver")
- * Output: INK_ERR_xx 
+ * Output: INK_ERR_xx
  * Note: If remote client successfully connects, returns INK_ERR_OKAY; but
  *       even if not successful connection (eg. client program is started
  *       before TM) then can still make API calls and will try connecting then
@@ -1127,15 +1127,15 @@ typedef enum
  *         argv - argument array
  * Output: <none>
  * Note: To implement a program as a plugin, need to implement the INKPluginInit
- *       function and then add the plugin's name (eg. test-plugin.so) and argument 
- *       list (if any) to the list in the plugin_mgmt.config file. The location of the 
- *       mgmt plugins should be specified in the records.config variable 
+ *       function and then add the plugin's name (eg. test-plugin.so) and argument
+ *       list (if any) to the list in the plugin_mgmt.config file. The location of the
+ *       mgmt plugins should be specified in the records.config variable
  *       "proxy.config.plugin.plugin_mgmt_dir" (if this directory is a relative
  *       pathname then, it is assumed that it is relative to the root directory
  *       stored in DEFAULT_TS_DIRECTORY_FILE). The default value is "etc/trafficserver/plugins_mgmt",
  *       which tells Traffic Manager to use the directory plugins_mgmt located in the
  *       same directory as records.config. You should place your shared library (*.so)
- *       into the directory you have specified. 
+ *       into the directory you have specified.
  */
   inkexp extern void INKPluginInit(int argc, const char *argv[]);
 
@@ -1156,7 +1156,7 @@ typedef enum
 
 /* INKProxyStateSet: set the proxy state (on/off)
  * Input:  proxy_state - set to on/off
- *         clear - specifies if want to start TS with clear_cache or 
+ *         clear - specifies if want to start TS with clear_cache or
  *                 clear_cache_hostdb option, or just run TS with no options;
  *                  only applies when turning proxy on
  * Output: INKError
@@ -1210,12 +1210,12 @@ typedef enum
  */
   inkapi INKError INKEncryptPassword(char *passwd, char **e_passwd);
 
-/* INKEncryptToFile: Given the plain text password, this function will 
- *                   encrypt the password and stores it to the specified file 
+/* INKEncryptToFile: Given the plain text password, this function will
+ *                   encrypt the password and stores it to the specified file
  * Input: passwd - the plain text password
  *        filepath - the file location to store the encyrpted password
- * Output: INKError  
- * Note: Uses certificate in ACL module for encryption. 
+ * Output: INKError
+ * Note: Uses certificate in ACL module for encryption.
  */
   inkapi INKError INKEncryptToFile(const char *passwd, const char *filepath);
 
@@ -1232,8 +1232,8 @@ typedef enum
  * Input:  file - the config file to write
  *         text - text buffer to write
  *         size - the size of the buffer to write
- *         version - the current version level; new file will have the 
- *                  version number above this one  (if version < 0, then 
+ *         version - the current version level; new file will have the
+ *                  version number above this one  (if version < 0, then
  *                  just uses the next version number in the sequence)
  * Output: INKError
  */
@@ -1322,7 +1322,7 @@ typedef enum
 /* INKRecordGet: gets a record
  * Input:  rec_name - the name of the record (proxy.config.record_name)
  *         rec_val  - allocated INKRecordEle structure, value stored inside
- * Output: INKError (if the rec_name does not exist, returns INK_ERR_FAIL) 
+ * Output: INKError (if the rec_name does not exist, returns INK_ERR_FAIL)
  */
   inkapi INKError INKRecordGet(char *rec_name, INKRecordEle * rec_val);
 
@@ -1330,7 +1330,7 @@ typedef enum
  * Input:  rec_name - the name of the record (proxy.config.record_name)
  *         *_val    - allocated INKRecordEle structure, value stored inside
  * Output: INKError
- * Note: For INKRecordGetString, the function will allocate memory for the 
+ * Note: For INKRecordGetString, the function will allocate memory for the
  *       *string_val, so the caller must free (*string_val);
  */
   inkapi INKError INKRecordGetInt(const char *rec_name, INKInt * int_val);
@@ -1339,7 +1339,7 @@ typedef enum
   inkapi INKError INKRecordGetString(const char *rec_name, INKString * string_val);
 
 /* INKRecordGetMlt: gets a set of records
- * Input:  rec_list - list of record names the user wants to retrieve; 
+ * Input:  rec_list - list of record names the user wants to retrieve;
  *                    resulting gets will be stored in the same list;
  *                    if one get fails, transaction will be aborted
  * Output: INKError
@@ -1360,7 +1360,7 @@ typedef enum
   inkapi INKError INKRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT * action_need);
 
 /* INKRecordSetMlt: sets a set of records
- * Input:  rec_list     - list of record names the user wants to set; 
+ * Input:  rec_list     - list of record names the user wants to set;
  *                        if one set fails, transaction will be aborted
  *         *action_need - indicates which operation required by user for changes to take effect
  * Output: INKError
@@ -1377,7 +1377,7 @@ typedef enum
 /* UNIMPLEMENTED - wait for new alarm processor */
 /* INKEventSignal: enables the user to trigger an event
  * Input:  event_name - "MGMT_ALARM_ADD_ALARM"
- *         ...        - variable argument list of parameters that go 
+ *         ...        - variable argument list of parameters that go
  *                       go into event description when it is signalled
  * Output: INKError
  */
@@ -1391,9 +1391,9 @@ typedef enum
   inkapi INKError INKEventResolve(char *event_name);
 
 /* INKActiveEventGetMlt: query for a list of all the currently active events
- * Input:  active_events - an empty INKList; if function call is successful, 
+ * Input:  active_events - an empty INKList; if function call is successful,
  *                         active_events will contain names of the currently
- *                         active events 
+ *                         active events
  * Output: INKError
  */
   inkapi INKError INKActiveEventGetMlt(INKList active_events);
@@ -1420,7 +1420,7 @@ typedef enum
 /* INKEventSignalCbUnregister: unregister a callback for a specific event
  *                             or for any event
  * Input: event_name - the name of event to unregister callback for;
- *                     if NULL, the callback is unregistered for all events 
+ *                     if NULL, the callback is unregistered for all events
  *         func       - callback function
  * Output: INKError
  */
@@ -1429,9 +1429,9 @@ typedef enum
 
 /*--- abstracted file operations ------------------------------------------*/
 /* INKCfgContextCreate: allocates memory for an empty INKCfgContext for the specified file
- * Input:  file - the file 
+ * Input:  file - the file
  * Output: INKCfgContext
- * Note: This function does not read the current rules in the file into 
+ * Note: This function does not read the current rules in the file into
  * the INKCfgContext (must call INKCfgContextGet to do this). If you
  * do not call INKCfgContextGet before calling INKCfgContextCommit, then
  * you will overwite all the old rules in the config file!
@@ -1454,54 +1454,54 @@ typedef enum
   inkapi INKError INKCfgContextCommit(INKCfgContext ctx, INKActionNeedT * action_need, INKIntList errRules);
 
 
-/* INKCfgContextGet: retrieves all the Ele's for the file specified in the ctx and 
- *                puts them into ctx; note that the ele's in the INKCfgContext don't 
- *                all have to be of the same ele type 
+/* INKCfgContextGet: retrieves all the Ele's for the file specified in the ctx and
+ *                puts them into ctx; note that the ele's in the INKCfgContext don't
+ *                all have to be of the same ele type
  * Input: ctx - where all the most currfile's eles are stored
  * Output: INKError
- * 
+ *
  */
   inkapi INKError INKCfgContextGet(INKCfgContext ctx);
 
 
 /*--- INKCfgContext Operations --------------------------------------------*/
-/* 
- * These operations are used to manipulate the opaque INKCfgContext type, 
+/*
+ * These operations are used to manipulate the opaque INKCfgContext type,
  * eg. when want to modify a file
  */
 
-/* INKCfgContextGetCount: returns number of Ele's in the INKCfgContext 
+/* INKCfgContextGetCount: returns number of Ele's in the INKCfgContext
  * Input:  ctx - the INKCfgContext to count the number of ele's in
- * Output: the number of Ele's 
+ * Output: the number of Ele's
  */
   int INKCfgContextGetCount(INKCfgContext ctx);
 
-/* INKCfgContextGetEleAt: retrieves the Ele at the specified index; user must 
- *                        typecast the INKCfgEle to appropriate INKEle before using 
+/* INKCfgContextGetEleAt: retrieves the Ele at the specified index; user must
+ *                        typecast the INKCfgEle to appropriate INKEle before using
  * Input:  ctx   - the INKCfgContext to retrieve the ele from
  *         index - the Ele position desired; first Ele located at index 0
- * Output: the Ele (typecasted as an INKCfgEle) 
+ * Output: the Ele (typecasted as an INKCfgEle)
  */
   INKCfgEle *INKCfgContextGetEleAt(INKCfgContext ctx, int index);
 
-/* INKCfgContextGetFirst: retrieves the first Ele in the INKCfgContext  
- * Input:  ctx   - the INKCfgContext 
- *         state - the current position in the Ele that the iterator is at 
+/* INKCfgContextGetFirst: retrieves the first Ele in the INKCfgContext
+ * Input:  ctx   - the INKCfgContext
+ *         state - the current position in the Ele that the iterator is at
  * Output: returns first Ele in the ctx (typecasted as an INKCfgEle)
  */
   INKCfgEle *INKCfgContextGetFirst(INKCfgContext ctx, INKCfgIterState * state);
 
 /* INKCfgContextGetNext: retrieves the next ele in the ctx that's located after
  *                       the one pointed to by the INKCfgIterState
- * Input:  ctx   - the INKCfgContext 
- *         state - the current position in the Ele that the iterator is at 
+ * Input:  ctx   - the INKCfgContext
+ *         state - the current position in the Ele that the iterator is at
  * Output: returns the next Ele in the ctx (typecasted as an INKCfgEle)
  */
   INKCfgEle *INKCfgContextGetNext(INKCfgContext ctx, INKCfgIterState * state);
 
 /* INKCfgContextMoveEleUp: shifts the Ele at the specified index one position up;
  *                         does nothing if Ele is at first position in the INKCfgContext
- * Input:  ctx   - the INKCfgContext 
+ * Input:  ctx   - the INKCfgContext
  *         index - the position of the Ele that needs to be shifted up
  * Output: INKError
  */
@@ -1509,44 +1509,44 @@ typedef enum
 
 /* INKCfgContextMoveEleDown: shifts the Ele at the specified index one position down;
  *                           does nothing if Ele is last in the INKCfgContext
- * Input:  ctx   - the INKCfgContext 
+ * Input:  ctx   - the INKCfgContext
  *         index - the position of the Ele that needs to be shifted down
  * Output: INKError
  */
   INKError INKCfgContextMoveEleDown(INKCfgContext ctx, int index);
 
 /* INKCfgContextAppendEle: apppends the ele to the end of the INKCfgContext
- * Input:  ctx   - the INKCfgContext 
+ * Input:  ctx   - the INKCfgContext
  *         ele - the Ele (typecasted as an INKCfgEle) to append to ctx
  * Output: INKError
- * Note: When appending the ele to the INKCfgContext, this function does NOT 
+ * Note: When appending the ele to the INKCfgContext, this function does NOT
  *       make a copy of the ele passed in; it uses the same memory! So you probably
- *       do not want to append the ele and then free the memory for the ele 
+ *       do not want to append the ele and then free the memory for the ele
  *       without first removing the ele from the INKCfgContext
  */
   INKError INKCfgContextAppendEle(INKCfgContext ctx, INKCfgEle * ele);
 
 /* INKCfgContextInsertEleAt: inserts the ele at the specified index
- * Input:  ctx   - the INKCfgContext 
+ * Input:  ctx   - the INKCfgContext
  *         ele   - the Ele (typecasted as an INKCfgEle) to insert into ctx
  *         index - the position in ctx to insert the Ele
  * Output: INKError
- * Note: When inserting the ele into the INKCfgContext, this function does NOT 
+ * Note: When inserting the ele into the INKCfgContext, this function does NOT
  *       make a copy of the ele passed in; it uses the same memory! So you probably
- *       do not want to insert the ele and then free the memory for the ele 
- *       without first removing the ele from the INKCfgContext 
+ *       do not want to insert the ele and then free the memory for the ele
+ *       without first removing the ele from the INKCfgContext
  */
   INKError INKCfgContextInsertEleAt(INKCfgContext ctx, INKCfgEle * ele, int index);
 
 /* INKCfgContextRemoveEleAt: removes the Ele at the specified index from the INKCfgContext
- * Input:  ctx   - the INKCfgContext 
+ * Input:  ctx   - the INKCfgContext
  *         index - the position of the Ele in the ctx to remove
  * Output: INKError
  */
   INKError INKCfgContextRemoveEleAt(INKCfgContext ctx, int index);
 
   /* INKCfgContextRemoveAll: removes all Eles from the INKCfgContext
-   * Input:  ctx   - the INKCfgContext 
+   * Input:  ctx   - the INKCfgContext
    * Output: INKError
    */
   INKError INKCfgContextRemoveAll(INKCfgContext ctx);
@@ -1554,7 +1554,7 @@ typedef enum
 /*--- INK Cache Inspector Operations --------------------------------------------*/
 
 /* INKLookupFromCacheUrl
- *   Function takes an url and an 'info' buffer as input, 
+ *   Function takes an url and an 'info' buffer as input,
  *   lookups cache information of the url and saves the
  *   cache info to the info buffer
  */
@@ -1589,9 +1589,9 @@ typedef enum
 
   inkapi INKError INKInvalidateFromCacheUrlRegex(INKString url_regex, INKString * list);
 
-/* These functions support the network configuration functionality 
+/* These functions support the network configuration functionality
  * For each change of hostname, gateway, dns servers, and nick configurations
- * we should use these APIs to accomodate for it in TS, TM 
+ * we should use these APIs to accomodate for it in TS, TM
  ******************************************************************/
   /* rmserver.cfg */
 

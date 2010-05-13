@@ -41,16 +41,16 @@ public:
   virtual ~ BC_OpenDirTable();
   /**
     Return BC_OpenDir entry for key.
-    
+
     if found in table, then return it.
 
     if found, but in process of being removed, or if not found in
     table, then create new BC_OpenDir for key, insert into table and
     return it.
-    
+
     @param key desired BlockCacheKey of new or existing entry
     @return newly created or existing BC_OpenDir
-    
+
     */
   BC_OpenDir *lookupOrCreateOpenDir(BlockCacheKey * key);
 private:

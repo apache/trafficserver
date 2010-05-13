@@ -26,7 +26,7 @@
  *
  *  clientCLI.cc - A simple client to communicate to local manager
  *
- * 
+ *
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -100,7 +100,7 @@ clientCLI::GetTSDirectory(char *ts_path, size_t ts_path_len)
       if (ts_path[len - 1] == '/') {
         ts_path[len - 1] = '\0';
       }
-      
+
       fclose(fp);
     } else {
       ink_strncpy(ts_path, PREFIX, ts_path_len);
@@ -108,7 +108,7 @@ clientCLI::GetTSDirectory(char *ts_path, size_t ts_path_len)
   }
 
   if ((err = stat(ts_path, &s)) < 0) {
-    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n", 
+    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n",
               ts_path, err, errno, strerror(errno));
     fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
     return -1;
@@ -275,7 +275,7 @@ clientCLI::sendCommand(const char *cmd, textBuffer * response, ink_hrtime timeou
     if (timeLeft < 0)
       timeLeft = 0;
   }
-  // read and get response string from Local Manager 
+  // read and get response string from Local Manager
   return readResponse(response, timeLeft);
 }
 

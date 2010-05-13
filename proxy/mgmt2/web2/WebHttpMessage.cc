@@ -408,7 +408,7 @@ httpMessage::~httpMessage()
   delete parser;
 }
 
-/* 01/14/99 elam - 
+/* 01/14/99 elam -
  * Commented out because g++ is not happy with iostream.h
 void httpMessage::Print() {
   cout << "Method: " << method << endl;

@@ -26,7 +26,7 @@
  *
  *  Module: Simple Finite State Machine class
  *  Source: CUJ
- * 
+ *
  ****************************************************************************/
 
 #ifndef _FSM_H
@@ -70,8 +70,8 @@ typedef struct StructEvent
 } STRUCT_EVENT;
 
 
-/* 
-** Finite State Machine class 
+/*
+** Finite State Machine class
 **/
 class FSM
 {
@@ -104,7 +104,7 @@ private:
 
   int hash_index(int inEvent /* IN: */ );
 
-  /* copy constructor and assignment operator are private 
+  /* copy constructor and assignment operator are private
    *  to prevent their use */
     FSM(const FSM & rhs);
     FSM & operator=(const FSM & rhs);

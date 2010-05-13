@@ -25,7 +25,7 @@
  * Filename: ShowCmd.cc
  * Purpose: This file contains the "show" command implementation.
  *
- * 
+ *
  ****************************************************************/
 
 #include <stdlib.h>
@@ -2572,7 +2572,7 @@ ShowHttpTransStats()
                    &msec_avg_10s_errors_pre_accept_hangups);
   Cli_RecordGetInt("proxy.node.http.transaction_msec_avg_10s.other.unclassified", &msec_avg_10s_other_unclassified);
 
-  //display 
+  //display
   Cli_Printf("\n");
   Cli_Printf("HTTP Transaction Frequency and Speeds\n");
   Cli_Printf("Transaction Type              Frequency   Speed(ms)\n");
@@ -2755,7 +2755,7 @@ ShowCacheStats()
   Cli_RecordGetInt("proxy.process.cache.remove.success", &remove_success);
   Cli_RecordGetInt("proxy.process.cache.remove.failure", &remove_failure);
 
-  //display values  
+  //display values
   Cli_Printf("\n");
   Cli_Printf("Bytes Used --- %d GB\n", bytes_used / (1024 * 1024 * 1024));
   Cli_Printf("Cache Size --- %d GB\n", bytes_total / (1024 * 1024 * 1024));
@@ -2793,7 +2793,7 @@ ShowCacheStats()
 int
 ShowHostDbStats()
 {
-  //variables 
+  //variables
   INKFloat hit_ratio = -1.0;
   INKFloat lookups_per_second = -1.0;
 

@@ -118,7 +118,7 @@ printHeader(INKMBuffer bufp, INKMLoc hdr_loc, INKIOBuffer output_buffer, int sec
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
        the loop. A block with no data to read means we've exhausted
-       buffer of data since if there was more data on a later 
+       buffer of data since if there was more data on a later
        block in the chain, this block would have been skipped over */
     if (block_avail == 0) {
       break;
@@ -159,11 +159,11 @@ Lcleanup:
     INKfree(output_string);
 }
 
-/* 
+/*
  * Play with the functions in INKMimeHdr* and INKMimeParser* categories.
  * This function covers the following functions:
  *   - INKMimeHdrParse
- *   - INKMimeParserClear 
+ *   - INKMimeParserClear
  *   - INKMimeParserCreate
  *   - INKMimeParserDestroy
  *

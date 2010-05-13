@@ -285,7 +285,7 @@ Config::Config(long warmup, char *config_file, INKPlugin * aplug_in, int aread_t
       process_line(line_no, line, i, lhs, rhs);
 
 #ifdef _PLUG_IN
-      // target_host, target_port, and document_base 
+      // target_host, target_port, and document_base
       // will be passed to the INKOptionProcess() later, and
       // comments are skipped.
       if ((strcmp(lhs, "target_host") || strcmp(lhs, "target_port") || strcmp(lhs, "document_base")) && strcmp(lhs, "")) {
@@ -525,5 +525,5 @@ Config::Config(long warmup, char *config_file, INKPlugin * aplug_in, int aread_t
     (plug_in->options_process_finish_fcn) ();
   }
 #endif
-  /////////////////////////////    
+  /////////////////////////////
 }

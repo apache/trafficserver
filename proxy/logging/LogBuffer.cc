@@ -28,7 +28,7 @@
  for recording log entries.  See the header file LogBuffer.h for more
  information on the structure of a LogBuffer.
 
- 
+
  ***************************************************************************/
 
 #include "inktomi++.h"
@@ -200,9 +200,9 @@ iObject::operator delete(void *p)
   ink_mutex_release(&iObjectMutex);
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   The following LogBufferHeader routines are used to grab strings out from
-  the data section using the offsets held in the buffer header. 
+  the data section using the offsets held in the buffer header.
   -------------------------------------------------------------------------*/
 
 char *
@@ -298,7 +298,7 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, int buf_align_mask, int wri
 
   m_expiration_time = LogUtils::timestamp() + Log::config->max_secs_per_buffer;
 
-//    Debug("log2-logbuffer","[%p] Created buffer %u for %s at address %p, size %d", 
+//    Debug("log2-logbuffer","[%p] Created buffer %u for %s at address %p, size %d",
 //        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer, (int)size);
 }
 
@@ -313,8 +313,8 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
   m_buf_align_mask(LB_DEFAULT_ALIGN_MASK),
   m_write_align_mask(MIN_ALIGN - 1), m_max_entries(0), m_expiration_time(0), m_owner(owner), m_header(header)
 {
-  // This constructor does not allocate a buffer because it gets it as 
-  // an argument. We set m_unaligned_buffer to NULL, which means that 
+  // This constructor does not allocate a buffer because it gets it as
+  // an argument. We set m_unaligned_buffer to NULL, which means that
   // no checkout writes or checkin writes are allowed. This is enforced
   // by the asserts in checkout_write and checkin_write
 
@@ -326,7 +326,7 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
   //
   m_id = (inku32) ink_atomic_increment((pvink32) & M_ID, 1);
 
-//    Debug("log2-logbuffer","[%p] Created buffer %u for %s at address %p", 
+//    Debug("log2-logbuffer","[%p] Created buffer %u for %s at address %p",
 //        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer);
 }
 
@@ -344,7 +344,7 @@ LogBuffer::~LogBuffer()
     m_bb = iLogBufferBuffer::Delete_iLogBufferBuffer(m_bb);
 //      Debug("log2-logbuffer", "[%p] Deleted buffer %u", this_ethread(), m_id);
   }
-//    else 
+//    else
 //      Debug("log2-logbuffer", "Incorrect signature 0x%08lX inside LogBuffer::~LogBuffer()", sign);
 }
 
@@ -387,7 +387,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
       ret_val = LB_RETRY;
       break;
     } else {
-      // determine what the state would be if nobody changes it 
+      // determine what the state would be if nobody changes it
       // before we do
 
       if (write_offset) {
@@ -413,7 +413,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
           }
         }
       } else {
-        // this is a request to set the buffer as full 
+        // this is a request to set the buffer as full
         // (write_offset == NULL)
 
         if (old_s.s.num_entries) {
@@ -437,7 +437,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
     ret_val = LB_BUSY;
   } while (--retries);
 
-  // add the entry header to the buffer if this was a real checkout and 
+  // add the entry header to the buffer if this was a real checkout and
   // the checkout was successful
   //
   if (write_offset && ret_val == LB_OK) {
@@ -458,7 +458,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
 
     *write_offset = offset + sizeof(LogEntryHeader);
   }
-//    Debug("log2-logbuffer","[%p] %s for buffer %u (%s) returning %d", 
+//    Debug("log2-logbuffer","[%p] %s for buffer %u (%s) returning %d",
 //        this_ethread(),
 //        (write_offset ? "checkout_write" : "force_new_buffer"),
 //        m_id, m_owner->get_base_filename(), ret_val);
@@ -547,7 +547,7 @@ LogBuffer::_add_buffer_header()
   m_header->id = lrand48();
 #endif // defined(LOG_BUFFER_TRACKING)
 
-  // 
+  //
   // The remaining header fields actually point into the data section of
   // the buffer.  Write the data into the buffer and update the total
   // size of the buffer header.
@@ -623,7 +623,7 @@ size_t LogBuffer::max_entry_bytes()
   return (Log::config->log_buffer_size - sizeof(LogBufferHeader));
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogBuffer::resolve_custom_entry
   -------------------------------------------------------------------------*/
 
@@ -940,7 +940,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
   return ret;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogBuffer::convert_to_network_order
 
   This routine will convert all of the integer fields in the buffer header
@@ -1000,7 +1000,7 @@ LogBuffer::convert_to_network_order(LogBufferHeader * header)
   header->log_object_signature = ((inku64) sig[1] << 32) | sig[0];
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogBuffer::convert_to_host_order
 
   This routine will convert all of the integer fields in the buffer header

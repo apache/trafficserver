@@ -28,9 +28,9 @@
 #include "HttpTransactCache.h"
 
 /* void HashTable::createHashTable()
-** 
+**
 ** Allocates memory for the Buckets and initializes the mutexes
-** 
+**
 */
 void
 HashTable::createHashTable()
@@ -45,9 +45,9 @@ HashTable::createHashTable()
 
 
 /* HashTable::~HashTable()
-** 
+**
 ** Deallocates memory for the Buckets and destroys the mutexes
-** 
+**
 */
 HashTable::~HashTable()
 {
@@ -60,10 +60,10 @@ HashTable::~HashTable()
 }
 
 /* unsigned int HashTable::KeyToIndex(register char * string)
-** 
+**
 ** Creates an index from <string> which is the url to be used in the hash table
 ** Used before lookup(), insert() and remove()
-** 
+**
 */
 unsigned int
 HashTable::KeyToIndex(register char *string)
@@ -85,10 +85,10 @@ HashTable::KeyToIndex(register char *string)
 }
 
 /* RequestNode *HashTable::find_request(int index, char *url)
-** 
+**
 ** Searches Bucket[<index>] for <url> and returns the found RequestNode.
 ** If match is not found, returns NULL.
-** 
+**
 */
 RequestNode *
 HashTable::find_request(int index, char *url)
@@ -109,11 +109,11 @@ HashTable::find_request(int index, char *url)
 }
 
 /* HeaderAlternate *HashTable::lookup(int index, char *url, HTTPHdr *hdr)
-** 
+**
 ** Searches for <url> in Bucket[<index>] and then finds a match amoung the
 ** header alternates of that <url>. Returns the HeaderAlternate matched. If no
 ** match is found, returns NULL.
-** 
+**
 */
 HeaderAlternate *
 HashTable::lookup(int index, char *url, HTTPHdr * hdr)
@@ -140,14 +140,14 @@ HashTable::lookup(int index, char *url, HTTPHdr * hdr)
 }
 
 /* int HashTable::insert(int index, char *url, HeaderAlternate *alternate)
-** 
+**
 ** Inserts <url> and <alternate> if <url> is not in the hash table,
 ** else, finds <url> in the hash table and adds <alternate> as a header
 ** alternate to that node. Waits for current readers of bucket to
 ** complete operation and then tries to acquire write lock on the bucket.
 ** If after HT_WRITER_MAX_RETRIES readers are still active,
 ** then returns 0, indicating that the alternate was not inserted to the hash table.
-** 
+**
 */
 HeaderAlternate *
 HashTable::insert(int index, HttpRequestData * url, bool revalidation)
@@ -212,11 +212,11 @@ HashTable::insert(int index, HttpRequestData * url, bool revalidation)
 }
 
 /* int HashTable::remove(int index, char *url, HeaderAlternate *alternate)
-** 
+**
 ** Removes <url> and <alternate> if <alternate> is the only alternate of <url>,
 ** else, removes only <alternate> from that node. Waits for current readers of
-** bucket to complete operation and then tries to acquire write lock on the bucket 
-** 
+** bucket to complete operation and then tries to acquire write lock on the bucket
+**
 */
 int
 HashTable::remove(int index, char *url, HeaderAlternate * alternate)
@@ -303,11 +303,11 @@ HashTable::remove(int index, char *url, HeaderAlternate * alternate)
 }
 
 /* float HashTable::match_Headers( HTTPHdr * client_request, HTTPHdr * existing_request)
-** 
+**
 ** Api to match two HTTPHdr objects and return a 'quality of match'
-** The logic has been customized from the functionality used by cache to find match among 
+** The logic has been customized from the functionality used by cache to find match among
 ** alternates.
-** 
+**
 */
 float
 HashTable::match_Headers(HTTPHdr * client_request, HTTPHdr * existing_request)
@@ -367,10 +367,10 @@ HashTable::match_Headers(HTTPHdr * client_request, HTTPHdr * existing_request)
 }
 
 /* HeaderAlternate *HashTable::update_revalidation_start_time(int index, char *url, HTTPHdr *hdr)
-** 
+**
 ** Updates the revalidation_start_time for a particular request url.Acquires the lock for
 ** updating the same
-** 
+**
 */
 void
 HashTable::update_revalidation_start_time(int index, HeaderAlternate * alternate)

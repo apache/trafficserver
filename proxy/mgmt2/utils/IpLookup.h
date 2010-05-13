@@ -78,7 +78,7 @@ protected:
   ip_match_el *match_els;       // array of match elements in the table
   //int array_len;          // size of the arrays - its not being used
   int num_el;                   // number of elements in the table
-  int table_depth;              // number of levels in the table 
+  int table_depth;              // number of levels in the table
   const char *table_name;       // a string identifing the table
 
 };

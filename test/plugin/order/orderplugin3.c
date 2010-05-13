@@ -21,21 +21,21 @@
   limitations under the License.
  */
 
-/* orderplugin3.c: one of the set of 54 plugins that help determine if  
+/* orderplugin3.c: one of the set of 54 plugins that help determine if
  *                 the order in which the plugins are invoked at any
  *                 hook is the same as the order in which they appear
- *                 in plugin.config file. The plugin logs an error 
+ *                 in plugin.config file. The plugin logs an error
  *                 message in logs/error.log file if the sequence in
  *                 which the plugin is invoked is incorrect.
  *
  *
- *   Usage: 
+ *   Usage:
  *   (NT):orderplugin3.dll valuei
  *   (Solaris):orderplugin3.so valuei
- *  
- *   valuei is the order in which the plugin name appears in 
- *          plugin.config file among the set of the 5 plugins 
- *          (ignore orderstartplugin.so). 
+ *
+ *   valuei is the order in which the plugin name appears in
+ *          plugin.config file among the set of the 5 plugins
+ *          (ignore orderstartplugin.so).
  *          i.e. If the plugin is listed on top of the other
  *           3 plugins then valuei is 1.
  *

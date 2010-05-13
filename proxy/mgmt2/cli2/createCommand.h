@@ -23,13 +23,13 @@
 
 /*
  *   createCommand.h --
- * 
+ *
  *
  *    This file provides basic create command declartion,
  *    for any new commands.
- * 
+ *
  *    It overrides any existing commands with the new command
- *   
+ *
  *
  *
  *    Dated  : 12/11/2000.
@@ -42,14 +42,14 @@
 
 
 
-/* First Argument  cmdName: New command name for CLI 
+/* First Argument  cmdName: New command name for CLI
    Second Argument cmdFuncPtr : A 'C' function to be invoked
                                 for the new Command
    Third Argument argvFuncPtr : Function to attach arguments
                                 Pass NULL for no arguments.
    Fourth Argument cmdScope   : Scope of the command.
                                 Pass NULL, if the new command
-                                needs to be visible for 
+                                needs to be visible for
                                 the customer.
 */
 

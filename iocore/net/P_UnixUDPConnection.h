@@ -25,8 +25,8 @@
 
   P_UnixUDPConnection.h
   Unix UDPConnection implementation
-  
-  
+
+
  ****************************************************************************/
 #ifndef __UNIXUDPCONNECTION_H_
 #define __UNIXUDPCONNECTION_H_

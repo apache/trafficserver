@@ -25,7 +25,7 @@
  *
  *  WebHttpRender.cc - html rendering/assembly
  *
- * 
+ *
  ****************************************************************************/
 
 #include "ink_config.h"
@@ -150,9 +150,9 @@ handle_alarm_summary_object(WebHttpContext * whc, char *tag, char *arg)
 //-------------------------------------------------------------------------
 // Displays rules of config file in table format. The arg specifies
 // the "/configure/f_xx_config.ink" of the config file; this arg is used
-// to determine which file table to render. Each of the 
-// writeXXConfigTable function writes the html for displaying all the rules 
-// by using an INKCfgContext to read all the rules and converting 
+// to determine which file table to render. Each of the
+// writeXXConfigTable function writes the html for displaying all the rules
+// by using an INKCfgContext to read all the rules and converting
 // each rule into a row of the table.
 static int
 handle_config_table_object(WebHttpContext * whc, char *tag, char *arg)
@@ -282,13 +282,13 @@ handle_help_config_link(WebHttpContext * whc, char *tag, char *arg)
 //-------------------------------------------------------------------------
 // handle_dynamic_javascript
 //-------------------------------------------------------------------------
-// This creates the Javascript Rule object and its properties; 
-// Must open the config file and see how many rules; create a javascript Rule 
-// object so that it can be inserted into the ruleList object; writes the 
+// This creates the Javascript Rule object and its properties;
+// Must open the config file and see how many rules; create a javascript Rule
+// object so that it can be inserted into the ruleList object; writes the
 // functions which must interact between the config data form. All
 // the config file specific javascript goes here. This javascript is actually
-// stored in the "/configure/f_XXX_config.ink" file.    
-// 
+// stored in the "/configure/f_XXX_config.ink" file.
+//
 static int
 handle_dynamic_javascript(WebHttpContext * whc, char *tag, char *arg)
 {
@@ -299,10 +299,10 @@ handle_dynamic_javascript(WebHttpContext * whc, char *tag, char *arg)
   char *file_buf = NULL;
   int file_size;
 
-  // the configurator page can be invoked from two places so it 
+  // the configurator page can be invoked from two places so it
   // can retreive the "filename" information from 2 possible places:
-  // 1) as a GET request (HTML_SUBMIT_CONFIG_DISPLAY) when click on "Edit file" button 
-  // 2) refreshing page after clicking  "Apply" button (HTML_SUBMIT_UPDATE_CONFIG) 
+  // 1) as a GET request (HTML_SUBMIT_CONFIG_DISPLAY) when click on "Edit file" button
+  // 2) refreshing page after clicking  "Apply" button (HTML_SUBMIT_UPDATE_CONFIG)
   if (ink_hash_table_lookup(whc->query_data_ht, HTML_CONFIG_FILE_TAG, (void **) &ink_file) ||
       ink_hash_table_lookup(whc->post_data_ht, HTML_CONFIG_FILE_TAG, (void **) &ink_file)) {
 
@@ -384,11 +384,11 @@ Ldone:
 //-------------------------------------------------------------------------
 // handle_config_input_form
 //-------------------------------------------------------------------------
-// Writes the html for the section of the Config File Editor that requires 
+// Writes the html for the section of the Config File Editor that requires
 // user input/modifications (eg. has the INSERT, MODIFY.... buttons).
-// Corresponds to the "writeConfigForm" tag. 
-// Each config file has different fields so each form will have different 
-// fields on the form (refer to data in corresponding Ele structs). 
+// Corresponds to the "writeConfigForm" tag.
+// Each config file has different fields so each form will have different
+// fields on the form (refer to data in corresponding Ele structs).
 static int
 handle_config_input_form(WebHttpContext * whc, char *tag, char *arg)
 {
@@ -471,8 +471,8 @@ handle_config_input_form(WebHttpContext * whc, char *tag, char *arg)
 //-------------------------------------------------------------------------
 // HtmlRndrSelectList
 //-------------------------------------------------------------------------
-// Creates a select list where the options are the strings passed in 
-// the options array. Assuming the value and text of the option are the same. 
+// Creates a select list where the options are the strings passed in
+// the options array. Assuming the value and text of the option are the same.
 int
 HtmlRndrSelectList(textBuffer * html, const char *listName, const char *options[], int numOpts)
 {
@@ -1494,7 +1494,7 @@ handle_select_system_logs(WebHttpContext * whc, char *tag, char *arg)
   MgmtInt fsize;;
 
   // define the name of syslog in different OS
-#if (HOST_OS == linux) 
+#if (HOST_OS == linux)
   syslog = "messages";
 #endif
 
@@ -1553,22 +1553,22 @@ handle_select_access_logs(WebHttpContext * whc, char *tag, char *arg)
              == REC_ERR_OKAY);
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir) 
+    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir)
 	       == REC_ERR_OKAY);
     if ((err = stat(logdir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
       snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
       if ((err = stat(system_log_dir, &s)) < 0) {
-        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
+        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
                 system_log_dir, err, errno, strerror(errno));
         mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
         //_exit(1);
       }
     } else {
-      ink_strncpy(system_log_dir,logdir,sizeof(system_log_dir)); 
+      ink_strncpy(system_log_dir,logdir,sizeof(system_log_dir));
     }
-  } 
+  }
 
   if ((dirp = opendir(system_log_dir))) {
     while ((dent = readdir(dirp)) != NULL) {
@@ -1633,22 +1633,22 @@ handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
              == REC_ERR_OKAY);
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir) 
+    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &logdir)
 	       == REC_ERR_OKAY);
     if ((err = stat(logdir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
       snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
       if ((err = stat(system_log_dir, &s)) < 0) {
-        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
+        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
                 system_log_dir, err, errno, strerror(errno));
         mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
         //_exit(1);
       }
     } else {
-      ink_strncpy(system_log_dir,logdir,sizeof(system_log_dir)); 
+      ink_strncpy(system_log_dir,logdir,sizeof(system_log_dir));
     }
-  } 
+  }
 
   // traffic.out*
   if ((dirp = opendir(system_log_dir))) {
@@ -2795,7 +2795,7 @@ WebHttpRender(WebHttpContext * whc, const char *file)
   char *doc_root_file;
   ink_debug_assert(file != NULL);
 #if (HOST_OS == linux) || (HOST_OS == solaris)
-//Bug 49922, for those .ink files which may meet the root-only system files,  
+//Bug 49922, for those .ink files which may meet the root-only system files,
 //upgrade the uid to root.
   int old_euid;
   bool change_uid = false;

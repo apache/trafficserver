@@ -489,7 +489,7 @@ HTTPStatus http_parse_status(const char *start, const char *end);
 ink32 http_parse_version(const char *start, const char *end);
 
 
-/*    
+/*
 HTTPValAccept*         http_parse_accept (const char *buf, Arena *arena);
 HTTPValAcceptCharset*  http_parse_accept_charset (const char *buf, Arena *arena);
 HTTPValAcceptEncoding* http_parse_accept_encoding (const char *buf, Arena *arena);

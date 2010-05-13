@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #ifndef _HTTP_SERVER_SESSION_H_
@@ -39,7 +39,7 @@
 * the net code in read_from_net when data is actually written into
 * the buffer. By allocating memory only when it is required we can
 * reduce the memory consumed by TS process.
-* 
+*
 * IMPORTANT NOTE: enable/disable LAZY_BUF_ALLOC in HttpSM.h as well.
 */
 #define LAZY_BUF_ALLOC
@@ -115,7 +115,7 @@ public:
   // Used to determine whether the session is for parent proxy
   // it is session to orgin server
   // We need to determine whether a closed connection was to
-  // close parent proxy to update the 
+  // close parent proxy to update the
   // proxy.process.http.current_parent_proxy_connections
   bool to_parent_proxy;
 

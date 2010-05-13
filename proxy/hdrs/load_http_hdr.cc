@@ -29,7 +29,7 @@
 
    Opens a file with a dbx dump of an http hdr and loads it
 
-   
+
  ****************************************************************************/
 
 /***************************************************************************
@@ -39,7 +39,7 @@
  *    are more complicated but much faster.  This program has been adapted
  *    read headers that have been unmarshalled from cache, in which
  *    case they are contiguious.  It's conversion is in a half baked
- *    state and is therefore not useful for must purposes.  
+ *    state and is therefore not useful for must purposes.
  ***************************************************************************/
 
 

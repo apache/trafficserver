@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-/* file-1.c:  an example program that opens files and reads them  
- *            into a buffer       
+/* file-1.c:  an example program that opens files and reads them
+ *            into a buffer
  *
  *
- *	Usage:	
+ *	Usage:
  *	(NT): File.dll <filename1> <filename2> ...
  *	(Solaris): file-1.so <filename1> <filename2> ...
  *

@@ -326,9 +326,9 @@ public:
   RawHashTableIter(RawHashTable & ht);
   ~RawHashTableIter();
 
-  RawHashTable_Value & operator ++();   // get next   
+  RawHashTable_Value & operator ++();   // get next
   RawHashTable_Value & operator () () const;    // get current
-  operator  const void *() const;       // is valid   
+  operator  const void *() const;       // is valid
 
     RawHashTable_Value & value() const; // get current value
   const char *key() const;      // get current key

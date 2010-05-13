@@ -60,7 +60,7 @@ StringHash::StringHash(int _hash_size, bool _ignore_case)
 
   if ((hash = (StringHashEntry **) xmalloc(hash_size * sizeof(StringHashEntry *))) != NULL)
     memset(hash, 0, hash_size * sizeof(StringHashEntry *));
-  //printf("StringHash::StringHash  hash = 0x%0X, mask = 0x%0lX, hash_mask_size = %d\n",hash_size,(long)hash_mask,hash_mask_size);   
+  //printf("StringHash::StringHash  hash = 0x%0X, mask = 0x%0lX, hash_mask_size = %d\n",hash_size,(long)hash_mask,hash_mask_size);
 }
 
 StringHash::~StringHash()

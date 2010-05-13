@@ -21,16 +21,16 @@
   limitations under the License.
  */
 
-/* blacklist-1.c:  an example program that denies client access                 
+/* blacklist-1.c:  an example program that denies client access
  *                 to blacklisted sites. This plugin illustrates
- *                 how to use configuration information from a 
+ *                 how to use configuration information from a
  *                 configuration file (blacklist.txt) that can be
  *                 updated through the Traffic Manager UI.
  *
  *
- *	Usage:	
- *	(NT) : BlackList.dll 
- *	(Solaris) : blacklist-1.so 
+ *	Usage:
+ *	(NT) : BlackList.dll
+ *	(Solaris) : blacklist-1.so
  *
  *
  */
@@ -111,7 +111,7 @@ handle_dns(INKHttpTxn txnp, INKCont contp)
     goto done;
   }
 
-  /* We need to lock the sites_mutex as that is the mutex that is 
+  /* We need to lock the sites_mutex as that is the mutex that is
      protecting the global list of all blacklisted sites. */
 
   ret_code = INKMutexLockTry(sites_mutex, &lock);
@@ -303,9 +303,9 @@ blacklist_plugin(INKCont contp, INKEvent event, void *edata)
       break;
     }
   case INK_EVENT_TIMEOUT:
-    /* when mutex lock is not acquired and continuation is rescheduled, 
-       the plugin is called back with INK_EVENT_TIMEOUT with a NULL 
-       edata. We need to decide, in which function did the MutexLock 
+    /* when mutex lock is not acquired and continuation is rescheduled,
+       the plugin is called back with INK_EVENT_TIMEOUT with a NULL
+       edata. We need to decide, in which function did the MutexLock
        failed and call that function again */
     if (contp != global_contp) {
       cd = (cdata *) INKContDataGet(contp);

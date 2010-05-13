@@ -187,7 +187,7 @@ log_request(ConnData * conn_data)
 }
 
 /*
- * Generate client response 
+ * Generate client response
  */
 static void
 generate_response(ConnData * conn_data)
@@ -570,7 +570,7 @@ accept_handler(INKCont contp, INKEvent event, void *edata)
     break;
 
   default:
-    /* Something wrong with the network, if there are any 
+    /* Something wrong with the network, if there are any
        pending NetAccept, cancel them. */
     if (actionp && !INKActionDone(actionp)) {
       INKActionCancel(actionp);

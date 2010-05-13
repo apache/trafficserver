@@ -24,7 +24,7 @@
 /*
  *
  * NetConfig.cc
- *   Tool to configure the OS/network settings. To be exec'ed 
+ *   Tool to configure the OS/network settings. To be exec'ed
  * by management processes so they need not be running set uid root.
  *
  *
@@ -145,7 +145,7 @@ isValidMask(char *mask)
 }
 
 /*
-  for each bit, if mask bit is 1, return bit is assigned to value of ip bit 
+  for each bit, if mask bit is 1, return bit is assigned to value of ip bit
                 if mask bit is 0, return bit is assigned to 1
  */
 char
@@ -753,7 +753,7 @@ up_interface(char *nic_name, bool static_ip, char *ip, char *netmask, bool onboo
         NOWARN_UNUSED_RETURN(fgets(buf, sizeof(buf), fp));
         while (!feof(fp)) {
           if (strcasestr(buf, hostname)) {
-            //now create the new entry for the new host 
+            //now create the new entry for the new host
             buf[0] = '\0';
             if (no_alias) {
               snprintf(buf, sizeof(buf), "%s %s\n", ip, hostname);
@@ -796,7 +796,7 @@ up_interface(char *nic_name, bool static_ip, char *ip, char *netmask, bool onboo
       }                         //else for gethostname
     }                           //else for set_interface
   } else {                      // static ip
-    // down the interface - perhaps it was active before as static 
+    // down the interface - perhaps it was active before as static
     // THIS IS FOR DHCP - WE NO LONGER SUPPORT THIS!!!
     down_interface(nic_name);
     if (set_interface_dhcp(nic_name, onboot) != 0) {
@@ -893,7 +893,7 @@ mrtg_hostname_change(char *hostname, char *old_hostname)
       } else if (pid > 0) {
         wait(&status);
       } else {
-        // printf("MV: %s %s %s \n",mv_binary,mrtg_path_new, mrtg_path); 
+        // printf("MV: %s %s %s \n",mv_binary,mrtg_path_new, mrtg_path);
         res = execl(mv_binary, "mv", mrtg_path_new, mrtg_path, (char *) NULL);
         if (res != 0) {
           perror("[net_config] mv of new mrtg file failed ");
@@ -969,8 +969,8 @@ set_hostname(char *hostname, char *old_hostname, char *ip_addr)
     wait(&status);
   } else {
     int res;
-    //printf("MV: %s %s %s \n",mv_binary,hostname_path_new, hostname_path); 
-    //snprintf(buf, sizeof(buf), "/bin/mv %s %s", hostname_path_new, hostname_path); 
+    //printf("MV: %s %s %s \n",mv_binary,hostname_path_new, hostname_path);
+    //snprintf(buf, sizeof(buf), "/bin/mv %s %s", hostname_path_new, hostname_path);
     //system(buf);
     res = execl(mv_binary, "mv", hostname_path_new, hostname_path, (char *) NULL);
     if (res != 0) {
@@ -1008,7 +1008,7 @@ set_hostname(char *hostname, char *old_hostname, char *ip_addr)
         perror("[net_config] /etc/hosts format is wrong - not changing it!!");
         return -1;
       }
-      //now create the new entry for the new host       
+      //now create the new entry for the new host
       buf[0] = '\0';
       snprintf(buf, sizeof(buf), "%s %s %s\n", ip_address, hostname, host_alias);
       fprintf(fp1, "%s", buf);
@@ -1235,7 +1235,7 @@ set_dns_server(char *dns_server_ips)
      while(dns_ip) {
      fprintf(fp1,"nameserver %s\n",dns_ip);
      dns_ip = strtok(NULL, " ");
-     } 
+     }
      fclose(fp1);
 
    */
@@ -1390,7 +1390,7 @@ rm_stop_proxy()
     ink_strncpy(ts_base_dir, tmp, sizeof(ts_base_dir));
   } else {
     if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-      ink_strncpy(ts_base_dir, "/usr/local", sizeof(ts_base_dir));
+      ink_strncpy(ts_base_dir, PREFIX, sizeof(ts_base_dir));
     } else {
       NOWARN_UNUSED_RETURN(fgets(buffer, sizeof(buffer), ts_file));
       fclose(ts_file);
@@ -1969,7 +1969,7 @@ setNetmaskForBoot(char *nic_name, char *old_ip, char *old_netmask, char *ip, cha
   //  printf("setNetMaskForBoot:old:%s, %s, %s\n", old_ip, old_netmask, old_network_number);
   //  printf("setNetMaskForBoot:new:%s, %s, %s\n", ip, netmask, network_number);
 
-  /* 
+  /*
      replace <old_network_number, old_netmask> pair in /etc/inet/netmasks
      with the new <network_number, network_mask> pair
    */
@@ -2094,7 +2094,7 @@ setGatewayForBoot(char *nic_name, char *gateway)
     /* add symbolic link */
     status = createSymbolicLink(static_filename, static_linkname);
   } else {                      // file exist
-    /* 
+    /*
        modify - find line of adding route to specific nic_name
        replace that line
      */
@@ -2174,7 +2174,7 @@ setInterfaceDownForBoot(char *nic_name)
   /*
      Move /etc/hostname.<interface> file to /etc/ink.save.hostname.<interface>
      check for all modified interface stuff.. make sure all the path are set correctly
-     we always look for /etc/hostname .. if can't find, then we modify on 
+     we always look for /etc/hostname .. if can't find, then we modify on
      /etc/ink.save.hostname<interface> .. if can't find.. then something is really wrong
      we go and create /etc/hostname .. < > and put the data there.
    */
@@ -2246,7 +2246,7 @@ bringUpInterface(char *nic_name, char *ip, char *default_gateway)
   char command[BUFFLEN];
   FILE *fd;
 
-  // first check if the interface is attached 
+  // first check if the interface is attached
   snprintf(command, sizeof(command), "/sbin/ifconfig -a | grep %s", nic_name);
   fd = popen(command, "r");
   if (fd == NULL) {
@@ -2367,9 +2367,9 @@ dropDHCP(char *nic_name)
   return status;
 }
 
-/* 
+/*
    Function : fillEntryEtcHostnameFile
-   Description: 
+   Description:
      fill entry in /etc/hostname.<interface>
        if <interface> = hme0 or le0
          use hostname as index
@@ -2464,7 +2464,7 @@ up_interface(char *nic_name, bool static_ip, char *ip, char *netmask, bool onboo
     if (strcmp(nic_name, "hme0") == 0 &&        // not sure about hme0, but to be competitable with Linux
         !defaultGatewayHasOwnEntry(default_gateway) &&  // default gateway does not have its own entry
         (strcmp(default_gateway, old_gateway) == 0)) {  // default gateway is the same as old gateway
-      // DO NOT DELETE  
+      // DO NOT DELETE
       // if we delete this, we may get rid of the default gateway route in the system
     } else if (old_gateway != NULL)
       delRoute("default", old_gateway, nic_name, "up_interface");
@@ -2586,7 +2586,7 @@ mrtg_hostname_change(char *hostname, char *old_hostname)
       } else if (pid > 0) {
         waitpid(pid, &status, 0);
       } else {
-        // printf("MV: %s %s %s \n",mv_binary,mrtg_path_new, mrtg_path); 
+        // printf("MV: %s %s %s \n",mv_binary,mrtg_path_new, mrtg_path);
         res = execl(mv_binary, "mv", mrtg_path_new, mrtg_path, (char*)NULL);
         if (res != 0) {
           perror("[net_config] mv of new mrtg file failed ");
@@ -2658,7 +2658,7 @@ set_hostname(char *hostname, char *old_hostname, char *ip_addr)
         perror("[net_config] /etc/hosts format is wrong - not changing it!!");
         return -1;
       }
-      //now create the new entry for the new host       
+      //now create the new entry for the new host
       buffer[0] = '\0';
       snprintf(buffer, sizeof(buffer), "%s \t%s\n", ip_address, hostname);
       fprintf(fd1, "%s", buffer);
@@ -2826,7 +2826,7 @@ set_dns_server(char *dns_server_ips)
      while(dns_ip) {
      fprintf(fp1,"nameserver %s\n",dns_ip);
      dns_ip = strtok(NULL, " ");
-     } 
+     }
      fclose(fp1);
 
    */

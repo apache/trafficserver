@@ -28,7 +28,7 @@
  *
  * $Date: 2004-02-03 22:12:02 $
  *
- * 
+ *
  */
 
 #ifndef _BASE_MANAGER_H
@@ -41,7 +41,7 @@
 #include "MgmtDefs.h"
 
 
-/******************************************* 
+/*******************************************
  * used by LocalManager and in Proxy Main. *
  */
 #define MAX_OPTION_SIZE        2048

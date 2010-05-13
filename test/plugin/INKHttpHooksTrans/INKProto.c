@@ -60,7 +60,7 @@ INKPluginInit(int argc, const char *argv[])
   INKCont contp = INKContCreate(INKProto, NULL);
 
   /* Context: INKHttpTxnTransformRespGet():
-   * Q: are both of these received and if so, in what order? 
+   * Q: are both of these received and if so, in what order?
    */
   INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, contp);
   INKHttpHookAdd(INK_HTTP_RESPONSE_TRANSFORM_HOOK, contp);

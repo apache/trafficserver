@@ -28,8 +28,8 @@
  *
  *  EnvBlock.h - class to store/retrieve a set of environment variables
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "ink_hash_table.h"

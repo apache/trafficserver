@@ -141,7 +141,7 @@ struct EventIO
   int refresh(int events);
   int stop();
   int close();
-  EventIO() { 
+  EventIO() {
 #ifndef USE_LIBEV
     fd = 0;
 #endif
@@ -177,7 +177,7 @@ extern int http_accept_port_number;
 
 //#define INACTIVITY_TIMEOUT
 //
-// Configuration Parameter had to move here to share 
+// Configuration Parameter had to move here to share
 // between UnixNet and UnixUDPNet or SSLNet modules.
 // Design notes are in Memo.NetDesign
 //
@@ -487,7 +487,7 @@ write_disable(NetHandler * nh, UnixNetVConnection * vc)
     }
   }
 #else
-  if (vc->next_inactivity_timeout_at) 
+  if (vc->next_inactivity_timeout_at)
     if (!vc->read.enabled)
       vc->next_inactivity_timeout_at = 0;
 #endif
@@ -585,8 +585,8 @@ TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
     EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD|INK_EV_EDGE_TRIGGER, 0, 0, this);
   return kevent(l->kqueue_fd, &ev[0], n, NULL, 0, NULL);
 #elif defined(USE_PORT)
-  events = e; 
-  int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this); 
+  events = e;
+  int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
   NetDebug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
   return retval;
 #else
@@ -644,7 +644,7 @@ TS_INLINE int EventIO::modify(int e) {
 	n++;
       if ((-e) & EVENTIO_WRITE)
 	n++;
-    } 
+    }
   } else {
     if (!(e & events)) {
       ne = events | e;
@@ -652,11 +652,11 @@ TS_INLINE int EventIO::modify(int e) {
 	n++;
       if (e & EVENTIO_WRITE)
 	n++;
-    } 
+    }
   }
   if (n && ne && event_loop) {
     events = ne;
-    int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this); 
+    int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
     NetDebug("iocore_eventio", "[EventIO::modify] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
     return retval;
   }
@@ -690,11 +690,11 @@ TS_INLINE int EventIO::refresh(int e) {
       n++;
     if (n && ne && event_loop) {
       events = ne;
-      int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this); 
+      int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
       NetDebug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
       return retval;
-    } 
-  } 
+    }
+  }
   return 0;
 #else
   return 0;

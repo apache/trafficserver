@@ -25,9 +25,9 @@
  *  ink_exception.h
  *
  *  Contains some global exception classes.
- *  
+ *
  *  $Date: 2003-06-01 18:36:43 $
- *  
+ *
  *
  */
 

@@ -24,11 +24,11 @@
 /*****************************************************************************
  * Filename: CfgContextManager.h (based on FileOp.h)
  * ------------------------------------------------------------------------
- * Purpose: 
+ * Purpose:
  *    Implements some of INKCfgContext functionality in the API; deals only
  *    with the CfgContext class though, not the INKCfgContext; typically
  *    the INKCfgContext function is a wrapper for the function whose purpose
- *    is to make the appropriate typecast to a CfgContext* 
+ *    is to make the appropriate typecast to a CfgContext*
  *
  ***************************************************************************/
 
@@ -44,8 +44,8 @@
  * CfgContext Operations
  ***************************************************************************/
 /* based on file to change, dequeues the add/rm rule, and translates it
- * into CoreAPI terms; because the file name stored , knows the format 
- * of the rules in the queue 
+ * into CoreAPI terms; because the file name stored , knows the format
+ * of the rules in the queue
  */
 CfgContext *CfgContextCreate(INKFileNameT filetype);
 INKError CfgContextDestroy(CfgContext * ctx);

@@ -773,7 +773,7 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
           state = INK_ERROR;
           break;
         }
-        tmp += 10;              //size of string partition including null 
+        tmp += 10;              //size of string partition including null
         partition_number = atoi(tmp);
 
         // XXX should this be < 0 instead of < 1
@@ -806,7 +806,7 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
           state = INK_ERROR;
           break;
         }
-        tmp += 7;               //size of string scheme including null 
+        tmp += 7;               //size of string scheme including null
 
         if (!strcasecmp(tmp, "http")) {
           tmp += 4;
@@ -846,7 +846,7 @@ ConfigPartitions::BuildListFromString(char *config_file_path, char *file_buf)
               break;
             }
           }
-          //ends here 
+          //ends here
           in_percent = 1;
           tmp++;
         } else
@@ -1084,7 +1084,7 @@ execute_and_verify(RegressionTest * t)
   if (cp_list_len != config_partitions.num_partitions)
     return REGRESSION_TEST_FAILED;
 
-  /* check that the partitions and sizes 
+  /* check that the partitions and sizes
      match the configuration */
   int matched = 0;
   ConfigPart *cp = config_partitions.cp_queue.head;

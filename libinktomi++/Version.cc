@@ -78,7 +78,7 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   snprintf(BldPersonStr, sizeof(BldPersonStr), "%s", build_person);
   snprintf(BldCompileFlagsStr, sizeof(BldCompileFlagsStr), "%s", build_cflags);
 
-  snprintf(FullVersionInfoStr, sizeof(FullVersionInfoStr), 
+  snprintf(FullVersionInfoStr, sizeof(FullVersionInfoStr),
            "%s - %s - %s - (build # %d%d%d on %s at %s)",
            PkgStr, AppStr, VersionStr, month, day, hour, build_date, build_time);
 

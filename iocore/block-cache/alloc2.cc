@@ -50,7 +50,7 @@
  * non-pinned region.  Maybe this suggests partitioning pinned and
  * non-pinned documents into different regions.  For greater fraction
  * of pinned space, fragmentation increases faster.
- 
+
  * for both 5% pinned or 75% pinned, top level RLE map is on the order
  * of 4 entries, so probably not expensive to maintain.  */
 
@@ -788,7 +788,7 @@ extern void dumpAllocState();
 /**
  Allocate contiguous blocks.  Returns offset and actual length, up to
  length blocks.
- 
+
  @return none
  @param length requested length of contiguous region
  @param offset starting offset of region which has been allocated.

@@ -39,12 +39,12 @@
     - pinning
     - extra metadata
     - how should partitioning be specified?
-  
+
   For testability, these can be created and activated without external
   structures, e.g. I_BlockCacheVConnection, BC_OpenDir,
   BC_OpenSegment.  If the external structures aren't supplied then
   default behavior is performed instead.
-  
+
  */
 
 class BlockCacheSegmentVConnection:public VConnection
@@ -68,7 +68,7 @@ public:
 
     @param seg BC_OpenSegment to associate with.
     @param type which type of access
-    
+
   */
 
   virtual void setBCOpenSegment(BC_OpenSegment * seg, AccessType type);
@@ -82,7 +82,7 @@ public:
     about pending do_io_writes?</i></b> Writes are not serviced until
     after the sync.  It only is valid to call this after a successful
     do_io_close().
-    
+
     @param c Caller
     @return Action* Canceling this cancels the callback, but sync
     will still occur.
@@ -142,7 +142,7 @@ public:
   and there is an active reader, then this call fails and the
   BlockCacheVConnection lives. Otherwise, it succeeds and
   BlockCacheVConnection is closed and data thrown away on disk.
-  
+
   This is similar to do_io_close with error (i.e. abort), but we don't
   allow VC to die if readers are still active.  So, caller should only
   call this if they are prepared to stay alive until the object is
@@ -174,7 +174,7 @@ private:
   This should really be in a separate header file.  The individual
   definitions will actually be spread across multiple files, not just
   the BlockCacheSegmentVConnection.cc file.
-  
+
   */
 struct BlockCacheSegmentVConnection_util
 {

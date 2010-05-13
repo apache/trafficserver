@@ -28,7 +28,7 @@
   This file implements an I/O Processor for network I/O for Unix.
   Contains additions for handling port pairs for RTSP/RTP.
 
-  
+
  ****************************************************************************/
 #include "ink_config.h"
 
@@ -85,7 +85,7 @@ SSLNetProcessor::setEtype(EventType & etype)
 
 // Virtual function allows the correct
 // etype to be used in NetAccept functions (ET_SSL
-// or ET_NET). 
+// or ET_NET).
 EventType
 SSLNetAccept::getEtype()
 {

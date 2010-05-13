@@ -33,7 +33,7 @@
  * ---------------------------------------------------------------------------
  * Converts ip address string format to an INKIpAddrEle.
  * Determines if single/range, cidr/not-cidr based on format of string.
- *  
+ *
  * if SINGLE =  ip_a/cidr_a
  * if RANGE =   ip_a/cidr_a-ip_b/cidr_b (possible to have spaces next to dash)
  * Returns NULL if invalid ele (eg. if ip's are invalid)
@@ -61,15 +61,15 @@ string_to_ip_addr_ele(const char *str)
   memset(buf, 0, MAX_BUF_SIZE);
   snprintf(buf, sizeof(buf), "%s", str);
 
-  // determine if range or single type 
+  // determine if range or single type
   range_tokens.Initialize(buf, COPY_TOKS);
   numTokens = range_tokens.getNumber();
-  if (numTokens == 1) {         // SINGLE TYPE 
+  if (numTokens == 1) {         // SINGLE TYPE
     ele->type = INK_IP_SINGLE;
     // determine if cidr type
     cidr_tokens.Initialize(buf, COPY_TOKS);
     numTokens = cidr_tokens.getNumber();
-    if (numTokens == 1) {       // Single, NON-CIDR TYPE 
+    if (numTokens == 1) {       // Single, NON-CIDR TYPE
       ele->ip_a = string_to_ip_addr(str);
     } else {                    // Single, CIDR TYPE
       if (!isNumber(cidr_tokens[1]))
@@ -77,19 +77,19 @@ string_to_ip_addr_ele(const char *str)
       ele->ip_a = string_to_ip_addr(cidr_tokens[0]);
       ele->cidr_a = ink_atoi(cidr_tokens[1]);
     }
-    if (!ele->ip_a)             // ERROR: Invalid ip 
+    if (!ele->ip_a)             // ERROR: Invalid ip
       goto Lerror;
-  } else {                      // RANGE TYPE 
+  } else {                      // RANGE TYPE
     ele->type = INK_IP_RANGE;
     const_ip_a = range_tokens[0];
     const_ip_b = range_tokens[1];
     ip_a = xstrdup(const_ip_a);
     ip_b = xstrdup(const_ip_b);
 
-    // determine if ip's are cidr type; only test if ip_a is cidr, assume both are same 
+    // determine if ip's are cidr type; only test if ip_a is cidr, assume both are same
     cidr_tokens.Initialize(ip_a, COPY_TOKS);
     numTokens = cidr_tokens.getNumber();
-    if (numTokens == 1) {       // Range, NON-CIDR TYPE 
+    if (numTokens == 1) {       // Range, NON-CIDR TYPE
       ele->ip_a = string_to_ip_addr(ip_a);
       ele->ip_b = string_to_ip_addr(ip_b);
     } else {                    // Range, CIDR TYPE */
@@ -147,11 +147,11 @@ ip_addr_ele_to_string(INKIpAddrEle * ele)
   if (ele->ip_a == INK_INVALID_IP_ADDR)
     goto Lerror;                // invalid ip_addr
 
-  if (ele->type == INK_IP_SINGLE) {     // SINGLE TYPE 
+  if (ele->type == INK_IP_SINGLE) {     // SINGLE TYPE
     ip_a_str = ip_addr_to_string(ele->ip_a);
-    if (!ip_a_str)              // ERROR: invalid IP address 
+    if (!ip_a_str)              // ERROR: invalid IP address
       goto Lerror;
-    if (ele->cidr_a != INK_INVALID_IP_CIDR) {   // a cidr type  
+    if (ele->cidr_a != INK_INVALID_IP_CIDR) {   // a cidr type
       snprintf(buf, sizeof(buf), "%s%c%d", ip_a_str, CIDR_DELIMITER, ele->cidr_a);
     } else {                    // not cidr type
       snprintf(buf, sizeof(buf), "%s", ip_a_str);
@@ -161,7 +161,7 @@ ip_addr_ele_to_string(INKIpAddrEle * ele)
     str = xstrdup(buf);
 
     return str;
-  } else if (ele->type == INK_IP_RANGE) {       // RANGE TYPE 
+  } else if (ele->type == INK_IP_RANGE) {       // RANGE TYPE
     ip_a_str = ip_addr_to_string(ele->ip_a);
     ip_b_str = ip_addr_to_string(ele->ip_b);
 
@@ -169,10 +169,10 @@ ip_addr_ele_to_string(INKIpAddrEle * ele)
       goto Lerror;
 
     if (ele->cidr_a != INK_INVALID_IP_CIDR && ele->cidr_b != INK_INVALID_IP_CIDR) {
-      // a cidr type 
+      // a cidr type
       snprintf(buf, sizeof(buf), "%s%c%d%c%s%c%d",
                ip_a_str, CIDR_DELIMITER, ele->cidr_a, RANGE_DELIMITER, ip_b_str, CIDR_DELIMITER, ele->cidr_b);
-    } else {                    // not cidr type 
+    } else {                    // not cidr type
       snprintf(buf, sizeof(buf), "%s%c%s", ip_a_str, RANGE_DELIMITER, ip_b_str);
     }
     if (ip_a_str)
@@ -195,7 +195,7 @@ Lerror:
  * ip_addr_to_string
  * ---------------------------------------------------------------------------
  * Converts an  INKIpAddr (char*) to dotted decimal string notation. Allocates
- * memory for the new INKIpAddr. 
+ * memory for the new INKIpAddr.
  * Returns NULL if invalid INKIpAddr
  */
 char *
@@ -214,7 +214,7 @@ ip_addr_to_string(INKIpAddr ip)
 /* ----------------------------------------------------------------------------
  * string_to_ip_addr
  * ---------------------------------------------------------------------------
- * Converts an ip address in dotted-decimal string format into a string; 
+ * Converts an ip address in dotted-decimal string format into a string;
  * allocates memory for string. If IP is invalid, then returns INK_INVALID_IP_ADDR.
  */
 INKIpAddr
@@ -229,10 +229,10 @@ string_to_ip_addr(const char *str)
   return (INKIpAddr) copy;
 }
 
-/* --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
  * ip_addr_list_to_string
- * --------------------------------------------------------------- 
- * converts INKIpAddrList <==> ip_addr1<delim>ip_addr2<delim>ip_addr3, ... 
+ * ---------------------------------------------------------------
+ * converts INKIpAddrList <==> ip_addr1<delim>ip_addr2<delim>ip_addr3, ...
  * Returns INKIpAddrList with original elements.
  * If encounters invalid INKIpAddrEle, returns NULL.
  */
@@ -274,10 +274,10 @@ ip_addr_list_to_string(IpAddrList * list, const char *delimiter)
   return new_str;
 }
 
-/* --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
  * string_to_ip_addr_list
- * --------------------------------------------------------------- 
- * Converts ip_addr1<delim>ip_addr2<delim>ip_addr3, ...==> INKIpAddrList 
+ * ---------------------------------------------------------------
+ * Converts ip_addr1<delim>ip_addr2<delim>ip_addr3, ...==> INKIpAddrList
  * Does checking to make sure that each ip_addr is valid; if encounter
  * an invalid ip addr, then returns INK_INVALID_LIST
  */
@@ -310,14 +310,14 @@ string_to_ip_addr_list(const char *str_list, const char *delimiter)
   return ip_list;
 }
 
-/* --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
  * port_list_to_string (REPLACE BY sprintf_ports)
- * --------------------------------------------------------------- 
+ * ---------------------------------------------------------------
  * Purpose: prints a list of ports in a PortList into string delimited format
- * Input:  ports - the queue of INKPortEle *'s. 
+ * Input:  ports - the queue of INKPortEle *'s.
  * Output: port_0<delim>port_1<delim>...<delim>port_n
  *         (each port can refer to a port range, eg 80-90)
- *         Return NULL if encounter invalid port or empty port list 
+ *         Return NULL if encounter invalid port or empty port list
  */
 char *
 port_list_to_string(PortList * ports, const char *delimiter)
@@ -337,19 +337,19 @@ port_list_to_string(PortList * ports, const char *delimiter)
   if (num_ports <= 0) {         // no ports specified
     goto Lerror;
   }
-  // now list all the ports, including ranges 
+  // now list all the ports, including ranges
   for (i = 0; i < num_ports; i++) {
     port_ele = (INKPortEle *) dequeue((LLQ *) ports);
     if (!ccu_checkPortEle(port_ele)) {
-      enqueue((LLQ *) ports, port_ele); // return INKPortEle to list 
+      enqueue((LLQ *) ports, port_ele); // return INKPortEle to list
       goto Lerror;
     }
 
     if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "%d", port_ele->port_a)) > 0) {
       pos += psize;
     }
-    if (port_ele->port_b != INK_INVALID_PORT) { //. is this a range 
-      // add in range delimiter & end of range 
+    if (port_ele->port_b != INK_INVALID_PORT) { //. is this a range
+      // add in range delimiter & end of range
       if (pos < sizeof(buf) &&
           (psize = snprintf(buf + pos, sizeof(buf) - pos, "%c%d", RANGE_DELIMITER, port_ele->port_b)) > 0)
         pos += psize;
@@ -360,7 +360,7 @@ port_list_to_string(PortList * ports, const char *delimiter)
         pos += psize;
     }
 
-    enqueue((LLQ *) ports, port_ele);   // return INKPortEle to list 
+    enqueue((LLQ *) ports, port_ele);   // return INKPortEle to list
   }
 
   str = xstrdup(buf);
@@ -370,10 +370,10 @@ Lerror:
   return NULL;
 }
 
-/* --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
  * string_to_port_list
- * --------------------------------------------------------------- 
- * Converts port1<delim>port2<delim>port3, ...==> INKPortList 
+ * ---------------------------------------------------------------
+ * Converts port1<delim>port2<delim>port3, ...==> INKPortList
  * Does checking to make sure that each ip_addr is valid; if encounter
  * an invalid ip addr, then returns INKT_INVALID_LIST
  */
@@ -426,7 +426,7 @@ port_ele_to_string(INKPortEle * ele)
 
   memset(buf, 0, MAX_BUF_SIZE);
 
-  if (ele->port_b == INK_INVALID_PORT) {        // Not a range 
+  if (ele->port_b == INK_INVALID_PORT) {        // Not a range
     snprintf(buf, sizeof(buf), "%d", ele->port_a);
   } else {
     snprintf(buf, sizeof(buf), "%d%c%d", ele->port_a, RANGE_DELIMITER, ele->port_b);
@@ -439,8 +439,8 @@ port_ele_to_string(INKPortEle * ele)
 /*----------------------------------------------------------------------------
  * string_to_port_ele
  *---------------------------------------------------------------------------
- * Converts a string formatted port_ele into actual port_ele. Returns NULL if 
- * invalid port(s). It is okay to have a single port specified. 
+ * Converts a string formatted port_ele into actual port_ele. Returns NULL if
+ * invalid port(s). It is okay to have a single port specified.
  */
 INKPortEle *
 string_to_port_ele(const char *str)
@@ -484,8 +484,8 @@ Lerror:
 /*----------------------------------------------------------------------------
  * string_list_to_string
  *----------------------------------------------------------------------------
- * Converts str list to delimited string. Does not alter the 
- * StringList passed in. 
+ * Converts str list to delimited string. Does not alter the
+ * StringList passed in.
  * eg. str1<delim>str2<delim>str3...
  */
 char *
@@ -505,7 +505,7 @@ string_list_to_string(INKStringList str_list, const char *delimiter)
   for (i = 0; i < numElems; i++) {
     str_ele = (char *) dequeue((LLQ *) str_list);
 
-    if (i == numElems - 1) {    // the last element shouldn't print comma 
+    if (i == numElems - 1) {    // the last element shouldn't print comma
       if (buf_pos<sizeof(buf) && (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%s", str_ele))> 0)
         buf_pos += psize;
     } else {
@@ -521,10 +521,10 @@ string_list_to_string(INKStringList str_list, const char *delimiter)
   return list_str;
 }
 
-/* --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
  * string_to_string_list
- * --------------------------------------------------------------- 
- * Converts port1<delim>port2<delim>port3, ...==> INKStringList 
+ * ---------------------------------------------------------------
+ * Converts port1<delim>port2<delim>port3, ...==> INKStringList
  * Does checking to make sure that each ip_addr is valid; if encounter
  * an invalid ip addr, then returns INVALID_HANDLE
  */
@@ -585,10 +585,10 @@ int_list_to_string(INKIntList list, const char *delimiter)
   return xstrdup(buf);
 }
 
-/* --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
  * string_to_int_list
- * --------------------------------------------------------------- 
- * converts domain1<delim>domain2<delim>domain3, ... ==> INKList 
+ * ---------------------------------------------------------------
+ * converts domain1<delim>domain2<delim>domain3, ... ==> INKList
  * Does checking to make sure that each integer is valid; if encounter
  * an invalid int, then returns INK_INVALID_LIST
  */
@@ -627,11 +627,11 @@ Lerror:
 }
 
 
-/* --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
  * string_to_domain_list
- * --------------------------------------------------------------- 
- * Converts domain1<delim>domain2<delim>domain3, ... ==> INKDomainList 
- * Returns INK_INVALID_LIST if encounter an invalid Domain. 
+ * ---------------------------------------------------------------
+ * Converts domain1<delim>domain2<delim>domain3, ... ==> INKDomainList
+ * Returns INK_INVALID_LIST if encounter an invalid Domain.
  */
 INKDomainList
 string_to_domain_list(const char *str_list, const char *delimiter)
@@ -671,7 +671,7 @@ string_to_domain_list(const char *str_list, const char *delimiter)
  * INKList(of char*'s only)==> elem1<delimiter>elem2<delimiter>elem3<delimiter>
  * Note: the string always ends with the delimiter
  * The list and its elements are not changed in any way.
- * Returns NULL if encounter an invalid INKDomain. 
+ * Returns NULL if encounter an invalid INKDomain.
  */
 char *
 domain_list_to_string(INKDomainList list, const char *delimiter)
@@ -697,7 +697,7 @@ domain_list_to_string(INKDomainList list, const char *delimiter)
     if (!dom_str) {
       return NULL;
     }
-    if (i == numElems - 1) {    // the last element shouldn't print comma 
+    if (i == numElems - 1) {    // the last element shouldn't print comma
       if (buf_pos<sizeof(buf) && (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%s", dom_str))> 0)
         buf_pos += psize;
     } else {
@@ -718,7 +718,7 @@ domain_list_to_string(INKDomainList list, const char *delimiter)
  * domain_to_string
  *----------------------------------------------------------------------------
  * Converts an INKDomain into string format, eg. www.host.com:8080
- * Return NULL if invalid INKDomain (eg. missing domain value). 
+ * Return NULL if invalid INKDomain (eg. missing domain value).
  */
 char *
 domain_to_string(INKDomain * domain)
@@ -731,12 +731,12 @@ domain_to_string(INKDomain * domain)
     return NULL;
 
   if (domain->domain_val) {
-    if (domain->port != INK_INVALID_PORT)       // host:port 
+    if (domain->port != INK_INVALID_PORT)       // host:port
       snprintf(buf, sizeof(buf), "%s:%d", domain->domain_val, domain->port);
     else                        // host
       snprintf(buf, sizeof(buf), "%s", domain->domain_val);
   } else {
-    return NULL;                // invalid INKDomain 
+    return NULL;                // invalid INKDomain
   }
 
   dom_str = xstrdup(buf);
@@ -749,8 +749,8 @@ domain_to_string(INKDomain * domain)
  *----------------------------------------------------------------------------
  * Converts string format, eg. www.host.com:8080, into INKDomain.
  * The string can consist of just the host (which can be a name or an IP)
- * or of the host and port. 
- * Return NULL if invalid INKDomain (eg. missing domain value). 
+ * or of the host and port.
+ * Return NULL if invalid INKDomain (eg. missing domain value).
  */
 INKDomain *
 string_to_domain(const char *str)
@@ -776,7 +776,7 @@ string_to_domain(const char *str)
 
   // get port, if exists
   if (remain) {
-    // check if the "remain" consist of all integers 
+    // check if the "remain" consist of all integers
     if (!isNumber(remain))
       goto Lerror;
     dom->port = ink_atoi(remain);
@@ -793,11 +793,11 @@ Lerror:
 
 /* ---------------------------------------------------------------
  * pdest_sspec_to_string
- * --------------------------------------------------------------- 
- * Converts the INKPrimeDest, primary dest, secondary spec struct 
+ * ---------------------------------------------------------------
+ * Converts the INKPrimeDest, primary dest, secondary spec struct
  * into string format: <pdT>:pdst_val:sspec1:sspec2:...:
  * <pdT> - dest_domain, dest_host, dest_ip, url_regex
- * even if sspec is missing the delimter is included; so if no 
+ * even if sspec is missing the delimter is included; so if no
  * sspecs, then : ::: ::: will appear
  */
 char *
@@ -843,7 +843,7 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
 
     // if there are secondary specifiers
     if (sspec) {
-      // convert the time into a string, eg. 8 to "08" 
+      // convert the time into a string, eg. 8 to "08"
       if (sspec->time.hour_a == 0) {
         snprintf(hour_a, sizeof(hour_a), "00");
       } else {
@@ -1005,7 +1005,7 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
 /*----------------------------------------------------------------------------
  * string_to_pdss_format
  *----------------------------------------------------------------------------
- * <pd_type>#<pd_value>#<sspecs> --> INKPdSsFormat 
+ * <pd_type>#<pd_value>#<sspecs> --> INKPdSsFormat
  * NOTE that the entire data line, including the action type is being passed in
  */
 INKError
@@ -1024,7 +1024,7 @@ string_to_pdss_format(const char *str, INKPdSsFormat * pdss)
 
   tokens.Initialize(copy, ALLOW_EMPTY_TOKS);
 
-  // pd type 
+  // pd type
   if (strcmp(tokens[1], "dest_domain") == 0) {
     pdss->pd_type = INK_PD_DOMAIN;
   } else if (strcmp(tokens[1], "dest_host") == 0) {
@@ -1037,42 +1037,42 @@ string_to_pdss_format(const char *str, INKPdSsFormat * pdss)
     goto Lerror;
   }
 
-  // pd_value 
+  // pd_value
   if (!tokens[2])
     goto Lerror;
   pdss->pd_val = xstrdup(tokens[2]);
 
-  // check secondary specifiers; exists only if not empty string 
+  // check secondary specifiers; exists only if not empty string
   // time
   if (strlen(tokens[3]) > 0) {
     if (string_to_time_struct(tokens[3], &(pdss->sec_spec)) != INK_ERR_OKAY)
       goto Lerror;
   }
-  // src_ip 
+  // src_ip
   if (strlen(tokens[4]) > 0) {
     pdss->sec_spec.src_ip = xstrdup(tokens[4]);
   }
-  // prefix 
+  // prefix
   if (strlen(tokens[5]) > 0) {
     pdss->sec_spec.prefix = xstrdup(tokens[5]);
   }
-  // suffix 
+  // suffix
   if (strlen(tokens[6]) > 0) {
     pdss->sec_spec.suffix = xstrdup(tokens[6]);
   }
-  // port 
-  if (strlen(tokens[7]) > 0) {  // no port 
+  // port
+  if (strlen(tokens[7]) > 0) {  // no port
     pdss->sec_spec.port = string_to_port_ele(tokens[7]);
   }
   // method
   if (strlen(tokens[8]) > 0) {
     pdss->sec_spec.method = string_to_method_type(tokens[8]);
   }
-  // scheme 
+  // scheme
   if (strlen(tokens[9]) > 0) {
     pdss->sec_spec.scheme = string_to_scheme_type(tokens[9]);
   }
-  // mixt tag 
+  // mixt tag
   if (strlen(tokens[10]) > 0) {
     pdss->sec_spec.mixt = string_to_mixt_type(tokens[10]);
   }
@@ -1119,8 +1119,8 @@ hms_time_to_string(INKHmsTime time)
 /*----------------------------------------------------------------------------
  * string_to_hms_time
  *----------------------------------------------------------------------------
- * Convert ?d?h?m?s ==> INKHmsTime 
- * Returns INK_ERR_FAIL if invalid hms format, eg. if there are invalid 
+ * Convert ?d?h?m?s ==> INKHmsTime
+ * Returns INK_ERR_FAIL if invalid hms format, eg. if there are invalid
  * characters, eg. "10xh", "10h15m30s34", or repeated values, eg. "10h15h"
  */
 INKError
@@ -1188,13 +1188,13 @@ Lerror:
  * string_to_time_struct
  *----------------------------------------------------------------------------
  * convert string "09:00-23:00" to time struct
- *  struct {                    
- *   int hour_a; 
- *   int min_a;  
- *   int hour_b; 
- *   int min_b;   
- *  } time 
- * Returns INK_ERR_FAIL if invalid time string. 
+ *  struct {
+ *   int hour_a;
+ *   int min_a;
+ *   int hour_b;
+ *   int min_b;
+ *  } time
+ * Returns INK_ERR_FAIL if invalid time string.
  */
 INKError
 string_to_time_struct(const char *str, INKSspec * sspec)
@@ -1234,7 +1234,7 @@ string_to_time_struct(const char *str, INKSspec * sspec)
     sspec->time.min_b = ink_atoi(time_tokens[3]);
   }
 
-  // check valid time values 
+  // check valid time values
   if (!ccu_checkTimePeriod(sspec))
     goto Lerror;
 
@@ -1248,7 +1248,7 @@ Lerror:
 /*----------------------------------------------------------------------------
  * string_to_header_type
  *----------------------------------------------------------------------------
- * string ==> INKHdrT 
+ * string ==> INKHdrT
  */
 INKHdrT
 string_to_header_type(const char *str)
@@ -1347,7 +1347,7 @@ string_to_method_type(const char *method)
     return INK_METHOD_PUT;
   } else if (strcasecmp(method, "trace") == 0) {
     return INK_METHOD_TRACE;
-  } else if (strcasecmp(method, "push") == 0) { // could be "push" or "PUSH" 
+  } else if (strcasecmp(method, "push") == 0) { // could be "push" or "PUSH"
     return INK_METHOD_PUSH;
   }
 
@@ -1461,7 +1461,7 @@ multicast_type_to_string(INKMcTtlT mc)
   return NULL;
 }
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * string_to_round_robin_type
  * -------------------------------------------------------------------------
  */
@@ -1565,7 +1565,7 @@ filename_to_string(INKFileNameT file)
   }
 }
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * string_to_congest_scheme_type
  * -------------------------------------------------------------------------
  */
@@ -1581,7 +1581,7 @@ string_to_congest_scheme_type(const char *scheme)
   return INK_HTTP_CONGEST_UNDEFINED;
 }
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * string_to_admin_acc_type
  * -------------------------------------------------------------------------
  */
@@ -1624,16 +1624,16 @@ admin_acc_type_to_string(INKAccessT access)
 /***************************************************************************
  * Tokens-to-Struct Converstion Functions
  ***************************************************************************/
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * tokens_to_pdss_format
- * ------------------------------------------------------------------------- 
+ * -------------------------------------------------------------------------
  * Pass in the TokenList and a pointer to first Token to start iterating from.
  * Iterates through the tokens, checking
- * for tokens that are either primary destination specifiers and secondary 
+ * for tokens that are either primary destination specifiers and secondary
  * specfiers. Returns pointer to the last valid pointer; eg. the last sec
- * spec that was in the list. If there are no primary dest or sec specs, 
- * then just returns same pointer originally passed in. 
- * 
+ * spec that was in the list. If there are no primary dest or sec specs,
+ * then just returns same pointer originally passed in.
+ *
  * Returns NULL, if the first token IS NOT a  Primary Dest Specifier
  */
 Token *
@@ -1727,9 +1727,9 @@ tokens_to_pdss_format(TokenList * tokens, Token * first_tok, INKPdSsFormat * pds
  * Validation Functions
  ***************************************************************************/
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * isNumber
- * ------------------------------------------------------------------------- 
+ * -------------------------------------------------------------------------
  * Returns true if the entire string is numerical
  */
 bool
@@ -1744,12 +1744,12 @@ isNumber(const char *strNum)
   return true;
 }
 
-/* ------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------
  * ccu_checkIpAddr (from WebFileEdit.cc)
- * ------------------------------------------------------------------------- 
+ * -------------------------------------------------------------------------
  *   Checks to see if the passed in string represents a valid
  *     ip address in dot notation (ie 209.1.33.20)
- *   If the min_addr and max_addr are specified, then it checks 
+ *   If the min_addr and max_addr are specified, then it checks
  *   that the ip address falls within the range; Otherwise
  *   the min_addr = 0.0.0.0 and max_addr = 255.255.255.255
  *
@@ -1766,7 +1766,7 @@ ccu_checkIpAddr(const char *addr, const char *min_addr, const char *max_addr)
   if (!addr || !min_addr || !max_addr)
     return false;
   // BZ47440
-  // truncate any leading or trailing white spaces from addr, 
+  // truncate any leading or trailing white spaces from addr,
   // which can occur if IP is from a list of IP addresses
   char *new_addr = chopWhiteSpaces_alloc((char *) addr);
   if (new_addr == NULL)
@@ -1819,9 +1819,9 @@ ccu_checkIpAddrEle(INKIpAddrEle * ele)
   if (!ele || ele->ip_a == INK_INVALID_IP_ADDR)
     return false;
 
-  if (ele->type == INK_IP_SINGLE) {     // SINGLE TYPE 
+  if (ele->type == INK_IP_SINGLE) {     // SINGLE TYPE
     return (ccu_checkIpAddr(ele->ip_a));
-  } else if (ele->type == INK_IP_RANGE) {       // RANGE TYPE 
+  } else if (ele->type == INK_IP_RANGE) {       // RANGE TYPE
     return (ccu_checkIpAddr(ele->ip_a) && ccu_checkIpAddr(ele->ip_b));
   } else {
     return false;
@@ -1851,9 +1851,9 @@ ccu_checkPortEle(INKPortEle * ele)
   }
 }
 
-/* --------------------------------------------------------------- 
- * checkPdSspec 
- * --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
+ * checkPdSspec
+ * ---------------------------------------------------------------
  * must have a prim dest value spsecified and have valid prim dest type
  */
 bool
@@ -1900,10 +1900,10 @@ Lerror:
   return false;
 }
 
-/* --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
  * ccu_checkUrl
- * --------------------------------------------------------------- 
- * Checks that there is not more than one instance of  ":/" in 
+ * ---------------------------------------------------------------
+ * Checks that there is not more than one instance of  ":/" in
  * the url.
  */
 bool
@@ -1912,7 +1912,7 @@ ccu_checkUrl(char *url)
   // Chop the protocol part, if it exists
   char *slashStr = strstr(url, "://");
   if (!slashStr) {
-    return false;               // missing protocol 
+    return false;               // missing protocol
   } else {
     url = slashStr + 3;         // advance two positions to get rid of leading '://'
   }
@@ -1934,17 +1934,17 @@ ccu_checkUrl(char *url)
   return true;
 }
 
-/* --------------------------------------------------------------- 
+/* ---------------------------------------------------------------
  * ccu_checkTimePeriod
- * --------------------------------------------------------------- 
- * Checks that the time struct used to specify the time period in the 
- * INKSspec has valid time values (eg. 0-23 hr, 0-59 min) and that 
+ * ---------------------------------------------------------------
+ * Checks that the time struct used to specify the time period in the
+ * INKSspec has valid time values (eg. 0-23 hr, 0-59 min) and that
  * time A <= time B
  */
 bool
 ccu_checkTimePeriod(INKSspec * sspec)
 {
-  // check valid time values 
+  // check valid time values
   if (sspec->time.hour_a < 0 || sspec->time.hour_a > 23 ||
       sspec->time.hour_b < 0 || sspec->time.hour_b > 23 ||
       sspec->time.min_a < 0 || sspec->time.min_a > 59 || sspec->time.min_b < 0 || sspec->time.min_b > 59)
@@ -1964,7 +1964,7 @@ ccu_checkTimePeriod(INKSspec * sspec)
 /* ----------------------------------------------------------------------------
  * chopWhiteSpaces_alloc
  * ---------------------------------------------------------------------------
- * eliminates any leading and trailing white spaces from str; returns 
+ * eliminates any leading and trailing white spaces from str; returns
  * the new allocated string
  */
 char *
@@ -2001,7 +2001,7 @@ chopWhiteSpaces_alloc(char *str)
  * create_ele_obj_from_rule_node
  *--------------------------------------------------------------
  * Calls the appropriate subclasses' constructor using TokenList.
- * Returns NULL if invalid Ele. 
+ * Returns NULL if invalid Ele.
  */
 CfgEleObj *
 create_ele_obj_from_rule_node(Rule * rule)
@@ -2174,7 +2174,7 @@ create_ele_obj_from_ele(INKCfgEle * ele)
   case INK_LOG_FILTER:         /* logs_xml.config */
   case INK_LOG_OBJECT:         // fall-through
   case INK_LOG_FORMAT:         // fall-through
-    //ele_obj = (CfgEleObj*) new LogFilterObj((INKLogFilterEle*)ele); 
+    //ele_obj = (CfgEleObj*) new LogFilterObj((INKLogFilterEle*)ele);
     break;
 
   case INK_MGMT_ALLOW:         /* mgmt_allow.config */
@@ -2390,11 +2390,11 @@ get_rule_type(TokenList * token_list, INKFileNameT file)
 
 ///////////////////////////////////////////////////////////////////
 // Since we are using the ele's as C structures wrapped in C++ classes
-// we need to write copy function that "copy" the C structures 
-// 1) need copy functions for each helper information struct which 
+// we need to write copy function that "copy" the C structures
+// 1) need copy functions for each helper information struct which
 //    are typically embedded in the Ele's (eg. any lists, INKSspec)
 // 2) need copy functions for each Ele; these functiosn will actually
-// be called by teh copy constructors and overloaded assignment 
+// be called by teh copy constructors and overloaded assignment
 // operators in each CfgEleObj subclass!!
 ///////////////////////////////////////////////////////////////////
 void

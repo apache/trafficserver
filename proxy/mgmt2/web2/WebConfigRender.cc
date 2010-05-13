@@ -25,7 +25,7 @@
  *
  *  WebConfigRender.cc - html rendering/assembly for Config File Editor
  *
- * 
+ *
  ****************************************************************************/
 
 #include "ink_config.h"
@@ -135,7 +135,7 @@ writeCacheConfigTable(WebHttpContext * whc)
                                          prefix, suffix, port, method, scheme,
                                          time_period, mixt) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeCacheConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -164,7 +164,7 @@ writeCacheConfigTable(WebHttpContext * whc)
     writeSecondarySpecsTableElem(output, time, src_ip, prefix, suffix, port, method, scheme, mixt);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -391,7 +391,7 @@ writeFilterConfigTable(WebHttpContext * whc)
     writeSecondarySpecsTableElem(output, time, src_ip, prefix, suffix, port, method, scheme, mixt);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -453,7 +453,7 @@ writeHostingConfigTable(WebHttpContext * whc)
     memset(partitions, 0, MAX_RULE_PART_SIZE);
     if (convert_hosting_ele_to_html_format(ele, pdType, partitions) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeHostingConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one  
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -475,7 +475,7 @@ writeHostingConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -570,7 +570,7 @@ writeIcpConfigTable(WebHttpContext * whc)
     if (convert_icp_ele_to_html_format(ele, name, host_ip, peer_type, proxy_port, icp_port, mc_state, mc_ip, mc_ttl) !=
         WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeIcpConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one  
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -618,7 +618,7 @@ writeIcpConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -679,7 +679,7 @@ writeIpAllowConfigTable(WebHttpContext * whc)
 
     if (convert_ip_allow_ele_to_html_format(ele, src_ip, action) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeIpAllowConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -695,7 +695,7 @@ writeIpAllowConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -757,7 +757,7 @@ writeMgmtAllowConfigTable(WebHttpContext * whc)
     memset(action, 0, MAX_RULE_PART_SIZE);
     if (convert_mgmt_allow_ele_to_html_format(ele, src_ip, action) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeMgmtAllowConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -773,7 +773,7 @@ writeMgmtAllowConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -869,7 +869,7 @@ writeParentConfigTable(WebHttpContext * whc)
         (ele, pdType, time, src_ip, prefix, suffix, port, method, scheme, mixt, parents, round_robin,
          direct) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeParentConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -903,7 +903,7 @@ writeParentConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     writeSecondarySpecsTableElem(output, time, src_ip, prefix, suffix, port, method, scheme, mixt);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -970,7 +970,7 @@ writePartitionConfigTable(WebHttpContext * whc)
     memset(size_fmt, 0, MAX_RULE_PART_SIZE);
     if (convert_partition_ele_to_html_format(ele, part_num, scheme, size, size_fmt) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writePartitionConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one  
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -1003,7 +1003,7 @@ writePartitionConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -1109,7 +1109,7 @@ writeRemapConfigTable(WebHttpContext * whc)
     if (convert_remap_ele_to_html_format
         (ele, rule_type, from_scheme, from_port, from_path, to_scheme, to_port, to_path, mixt) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeRemapConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -1167,7 +1167,7 @@ writeRemapConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -1252,7 +1252,7 @@ writeSocksConfigTable(WebHttpContext * whc)
     memset(rr, 0, MAX_RULE_PART_SIZE);
     if (convert_socks_ele_to_html_format(ele, rule_type, dest_ip, user, passwd, servers, rr) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeSocksConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -1293,7 +1293,7 @@ writeSocksConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -1370,7 +1370,7 @@ writeSplitDnsConfigTable(WebHttpContext * whc)
     memset(search_list, 0, MAX_RULE_PART_SIZE);
     if (convert_split_dns_ele_to_html_format(ele, pdType, dns_server, def_domain, search_list) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeSplitDnsConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one  
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -1404,7 +1404,7 @@ writeSplitDnsConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -1481,7 +1481,7 @@ writeUpdateConfigTable(WebHttpContext * whc)
     memset(depth, 0, MAX_RULE_PART_SIZE);
     if (convert_update_ele_to_html_format(ele, hdrs, offset, interval, depth) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeUpdateConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one  
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -1514,7 +1514,7 @@ writeUpdateConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -1579,7 +1579,7 @@ writeVaddrsConfigTable(WebHttpContext * whc)
     memset(sub_intr, 0, MAX_RULE_PART_SIZE);
     if (convert_virt_ip_addr_ele_to_html_format(ele, ip, sub_intr) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeVaddrsConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one  
+      continue;                 // invalid ele, so skip to next one
     }
     // write the rule info into the table row
     HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_CENTER);
@@ -1600,7 +1600,7 @@ writeVaddrsConfigTable(WebHttpContext * whc)
     HtmlRndrTdClose(output);
 
     HtmlRndrTrClose(output);
-  }                             // end for loop 
+  }                             // end for loop
 
   // no rules
   if (count == 0) {
@@ -1674,7 +1674,7 @@ writeCacheRuleList(textBuffer * output)
                                          prefix, suffix, port, method, scheme,
                                          time_period, mixt) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeCacheRuleList] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
@@ -1764,7 +1764,7 @@ writeFilterRuleList(textBuffer * output)
                                           bind_dn, bind_pwd_file, mixt)
         != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeFilterRuleList] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
@@ -1822,7 +1822,7 @@ writeHostingRuleList(textBuffer * output)
 
     if (convert_hosting_ele_to_html_format(ele, pdType, partitions) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeHostingRuleList] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one  
+      continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
@@ -1882,7 +1882,7 @@ writeIcpRuleList(textBuffer * output)
     if (convert_icp_ele_to_html_format(ele, name, host_ip, peer_type, proxy_port, icp_port, mc_state, mc_ip, mc_ttl) !=
         WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeIcpRuleList] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one  
+      continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
@@ -1931,7 +1931,7 @@ writeIpAllowRuleList(textBuffer * output)
 
     if (convert_ip_allow_ele_to_html_format(ele, src_ip, action) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeIpAllowRuleList] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one  
+      continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
@@ -1978,7 +1978,7 @@ writeMgmtAllowRuleList(textBuffer * output)
 
     if (convert_mgmt_allow_ele_to_html_format(ele, src_ip, action) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeMgmtAllowRuleList] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
@@ -2044,7 +2044,7 @@ writeParentRuleList(textBuffer * output)
         (ele, pdType, time, src_ip, prefix, suffix, port, method, scheme, mixt, parents, round_robin,
          direct) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeParentConfigTable] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
@@ -2155,7 +2155,7 @@ writeRemapRuleList(textBuffer * output)
     if (convert_remap_ele_to_html_format
         (ele, rule_type, from_scheme, from_port, from_path, to_scheme, to_port, to_path, mixt) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeRemapRuleList] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
@@ -2211,7 +2211,7 @@ writeSocksRuleList(textBuffer * output)
     memset(rr, 0, MAX_RULE_PART_SIZE);
     if (convert_socks_ele_to_html_format(ele, rule_type, dest_ip, user, passwd, servers, rr) != WEB_HTTP_ERR_OKAY) {
       Debug("config", "[writeSocksRuleList] invalid Ele, can't format - SKIP");
-      continue;                 // invalid ele, so skip to next one 
+      continue;                 // invalid ele, so skip to next one
     }
 
     memset(rule, 0, MAX_RULE_SIZE);
@@ -2389,7 +2389,7 @@ writeArmSecurityConfigForm(WebHttpContext * whc)
 {
   textBuffer *output = whc->response_bdy;
 
-  // write the hidden "filename" tag 
+  // write the hidden "filename" tag
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_ARM_SECURITY_CONFIG, NULL, NULL);
 
   // rule type
@@ -2523,7 +2523,7 @@ writeBypassConfigForm(WebHttpContext * whc)
 {
   textBuffer *output = whc->response_bdy;
 
-  // write the hidden "filename" tag 
+  // write the hidden "filename" tag
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_BYPASS_CONFIG, NULL, NULL);
 
   // rule type
@@ -2584,10 +2584,10 @@ writeBypassConfigForm(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 // writeCacheConfigForm
 //-------------------------------------------------------------------------
-// Form contains: 
+// Form contains:
 //    Rule Type                 rule_type
 //    Primary Dest Type         pd_type
-//    Primary Dest Value        pd_value        
+//    Primary Dest Value        pd_value
 //    Time                      time
 //    Source IP                 src_ip
 //    Prefix                    prefix
@@ -2689,7 +2689,7 @@ writeCacheConfigForm(WebHttpContext * whc)
 // Form contains:
 //    Rule Type                 rule_type (allow, deny, keep_hdr, strip_hdr, ldap)
 //    Primary Dest Type         pd_type
-//    Primary Dest Value        pd_value        
+//    Primary Dest Value        pd_value
 //    Time                      time
 //    Source IP                 src_ip
 //    Prefix                    prefix
@@ -2703,7 +2703,7 @@ writeCacheConfigForm(WebHttpContext * whc)
 //                              dn
 //                              realm
 //                              uid_filter
-//                              attr_name 
+//                              attr_name
 //                              attr_val
 //    Media-IXT tag             mixt
 int
@@ -3029,7 +3029,7 @@ writeIcpConfigForm(WebHttpContext * whc)
 {
   textBuffer *output = whc->response_bdy;
 
-  // write the hidden "filename" tag 
+  // write the hidden "filename" tag
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_ICP_CONFIG, NULL, NULL);
 
   // peer hostname
@@ -3168,14 +3168,14 @@ writeIcpConfigForm(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 // Form contains:
 //    Source IP Address (single or range)        src_ip
-//    IP action type                             ip_action 
-// 
+//    IP action type                             ip_action
+//
 int
 writeIpAllowConfigForm(WebHttpContext * whc)
 {
   textBuffer *output = whc->response_bdy;
 
-  // write the hidden "filename" tag 
+  // write the hidden "filename" tag
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_IP_ALLOW_CONFIG, NULL, NULL);
 
   // ip action
@@ -3225,13 +3225,13 @@ writeIpAllowConfigForm(WebHttpContext * whc)
 //    FTP IP Address                   to_ip
 //    FTP Port                         to_port
 //    Connection TYpe                  conn_type
-//    Protocol Type                    protocol 
+//    Protocol Type                    protocol
 int
 writeIpnatConfigForm(WebHttpContext * whc)
 {
   textBuffer *output = whc->response_bdy;
 
-  // write the hidden "filename" tag 
+  // write the hidden "filename" tag
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_IPNAT_CONFIG, NULL, NULL);
 
   // ethernet Interface
@@ -3372,14 +3372,14 @@ writeIpnatConfigForm(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 // Form contains:
 //    Source IP Address (single or range)        src_ip
-//    IP action type                             ip_action 
-// 
+//    IP action type                             ip_action
+//
 int
 writeMgmtAllowConfigForm(WebHttpContext * whc)
 {
   textBuffer *output = whc->response_bdy;
 
-  // write the hidden "filename" tag 
+  // write the hidden "filename" tag
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_MGMT_ALLOW_CONFIG, NULL, NULL);
 
   HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
@@ -3422,7 +3422,7 @@ writeMgmtAllowConfigForm(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 // Form contains:
 //    Primary Dest Type         pd_type
-//    Primary Dest Value        pd_value        
+//    Primary Dest Value        pd_value
 //    Time                      time
 //    Source IP                 src_ip
 //    Prefix                    prefix
@@ -3635,7 +3635,7 @@ writeRemapConfigForm(WebHttpContext * whc)
 {
   textBuffer *output = whc->response_bdy;
 
-  // write the hidden "filename" tag 
+  // write the hidden "filename" tag
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_REMAP_CONFIG, NULL, NULL);
 
   // rule type
@@ -3806,7 +3806,7 @@ writeRemapConfigForm(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 // Form contains:
 //    Rule Type                 rule_type
-//    (INK_SOCKS_BYPASS rule type) 
+//    (INK_SOCKS_BYPASS rule type)
 //    IP address list           dest_ip
 //    (INK_SOCKS_AUTH rule type)
 //    Username                  user
@@ -3819,7 +3819,7 @@ writeSocksConfigForm(WebHttpContext * whc)
 {
   textBuffer *output = whc->response_bdy;
 
-  // write the hidden "filename" tag 
+  // write the hidden "filename" tag
   HtmlRndrInput(output, HTML_CSS_NONE, HTML_TYPE_HIDDEN, HTML_CONFIG_FILE_TAG, HTML_FILE_SOCKS_CONFIG, NULL, NULL);
 
   // rule type
@@ -3871,7 +3871,7 @@ writeSocksConfigForm(WebHttpContext * whc)
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
 
-  // Destination IP 
+  // Destination IP
   HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
   HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_DEST_IP);
@@ -3936,7 +3936,7 @@ writeSocksConfigForm(WebHttpContext * whc)
 //    DNS server names (can have multiple values separated by spaces or ';')
 //    Domain Name (optional)
 //    Domain Search List (optional - separated by spaces or ';')
-//    
+//
 int
 writeSplitDnsConfigForm(WebHttpContext * whc)
 {
@@ -4142,7 +4142,7 @@ writeUpdateConfigForm(WebHttpContext * whc)
 // writeVaddrsConfigForm
 //-------------------------------------------------------------------------
 // Form Contains following:
-//    virtual IP            ip 
+//    virtual IP            ip
 //    Interface             intr
 //    Sub-Interface         sub_intr
 int
@@ -4209,9 +4209,9 @@ writeVaddrsConfigForm(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 // Helper function - writes the specific editable data fields for secondary
 // specifiers. Assumes that the html for a table are already created. This
-// function will only write the a sec spec field per row, and the 
+// function will only write the a sec spec field per row, and the
 // header for Secondary Specifiers
-// INKFileNameT parameter is needed because there might be some special 
+// INKFileNameT parameter is needed because there might be some special
 // handling of sec. specs for different files
 int
 writeSecondarySpecsForm(WebHttpContext * whc, INKFileNameT file)
@@ -4577,7 +4577,7 @@ convert_filter_ele_to_html_format(INKFilterEle * ele,
     break;
   }
 
-  // server 
+  // server
   if (ele->server)
     ink_strncpy(server, ele->server, MAX_RULE_PART_SIZE);
 
@@ -4676,7 +4676,7 @@ convert_icp_ele_to_html_format(INKIcpEle * ele,
   if (ele->peer_hostname)
     snprintf(name, MAX_RULE_PART_SIZE, "%s", ele->peer_hostname);
 
-  // host_ip 
+  // host_ip
   if (ele->peer_host_ip_addr) {
     tmpStr = ip_addr_to_string(ele->peer_host_ip_addr);
     ink_strncpy(host_ip, tmpStr, MAX_RULE_PART_SIZE);
@@ -4748,7 +4748,7 @@ convert_ip_allow_ele_to_html_format(INKIpAllowEle * ele, char *src_ip, char *act
     snprintf(src_ip, MAX_RULE_PART_SIZE, "%s", ip);
     xfree(ip);
   }
-  // action 
+  // action
   switch (ele->action) {
   case INK_IP_ALLOW_ALLOW:
     snprintf(action, MAX_RULE_PART_SIZE, "ip_allow");
@@ -4781,7 +4781,7 @@ convert_mgmt_allow_ele_to_html_format(INKMgmtAllowEle * ele, char *src_ip, char 
     snprintf(src_ip, MAX_RULE_PART_SIZE, "%s", ip);
     xfree(ip);
   }
-  // action 
+  // action
   switch (ele->action) {
   case INK_MGMT_ALLOW_ALLOW:
     snprintf(action, MAX_RULE_PART_SIZE, "ip_allow");
@@ -4820,7 +4820,7 @@ convert_parent_ele_to_html_format(INKParentProxyEle * ele,
       WEB_HTTP_ERR_OKAY)
     goto Lerror;
 
-  // parents 
+  // parents
   if (ele->proxy_list) {
     plist = domain_list_to_string((DomainList *) ele->proxy_list, ";");
     snprintf(parents, MAX_RULE_PART_SIZE, "%s", plist);
@@ -4947,7 +4947,7 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
   if (!ele->from_host)
     goto Lerror;
 
-  // from port 
+  // from port
   if (ele->from_port > 0) {
     snprintf(from_port, MAX_RULE_PART_SIZE, "%d", ele->from_port);
   }
@@ -4976,7 +4976,7 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
   if (!ele->to_host)
     goto Lerror;
 
-  // to port 
+  // to port
   if (ele->to_port > 0) {
     snprintf(to_port, MAX_RULE_PART_SIZE, "%d", ele->to_port);
   }
@@ -5228,7 +5228,7 @@ Lerror:
 // convert_pdss_to_html_format
 //-------------------------------------------------------------------------
 // Helper function that can be used by Ele's with embeded INKPdSsFormat
-// structures. 
+// structures.
 int
 convert_pdss_to_html_format(INKPdSsFormat info,
                             char *pdType,
@@ -5514,7 +5514,7 @@ writePdTypeSelect_hosting(textBuffer * html, const char *listName)
 //-------------------------------------------------------------------------
 // writeMethodSelect
 //-------------------------------------------------------------------------
-// some files may/may not include the PUSH option in their list. 
+// some files may/may not include the PUSH option in their list.
 void
 writeMethodSelect_push(textBuffer * html, const char *listName)
 {

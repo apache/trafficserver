@@ -25,7 +25,7 @@
  *
  *  WebOverview.cc - code to overview page
  *
- * 
+ *
  ****************************************************************************/
 
 #include "ink_config.h"
@@ -169,7 +169,7 @@ overviewRecord::getStatus(char **hostnamePtr, bool * upPtr, bool * alarms, Power
 // void overviewRecord::updateStatus(time_t, ClusterPeerInfo*)
 // updates up/down status based on the cluster peer info record
 //
-//   currentTime is the value of localtime(time()) - sent in as 
+//   currentTime is the value of localtime(time()) - sent in as
 //     a parameter so we do not have to make repetitive system calls.
 //     overviewPage::checkForUpdates can just make one call
 //
@@ -260,7 +260,7 @@ overviewRecord::checkAlarms()
 //  overview::readFloat, overview::readString
 //
 //  Accessor functions for node records.  For remote node,
-//    we get the value in the node_data array we maintain 
+//    we get the value in the node_data array we maintain
 //    in this object.  For the node, we do not maintain any data
 //    and rely on lmgmt->record_data for both the retrieval
 //    code and the records array
@@ -398,9 +398,9 @@ overviewRecord::readString(const char *name, bool * found)
 //  Accessor function for node records.  Looks up varName for
 //    this node and if found, turns it value into a string
 //    and places it in bufVal
-// 
+//
 //  return true if bufVal was succefully set
-//    and false otherwise 
+//    and false otherwise
 //
 //  EVIL ALERT: varStrFromName in WebMgmtUtils.cc is extremely
 //    similar to this function except in how it gets it's
@@ -620,7 +620,7 @@ overviewPage::checkForUpdates()
 }
 
 
-// overrviewPage::sortHosts() 
+// overrviewPage::sortHosts()
 //
 // resorts sortRecords, but always leaves the local node
 //   as the first record
@@ -634,7 +634,7 @@ overviewPage::sortHosts()
   qsort(array + 1, numHosts - 1, sizeof(void *), hostSortFunc);
 }
 
-// overviewPage::addRecord(ClusterPerrInfo* cpi) 
+// overviewPage::addRecord(ClusterPerrInfo* cpi)
 //   Adds a new node record
 //   Assuems that this->accessLock is already held
 //
@@ -886,8 +886,8 @@ overviewPage::generateAlarmsTableCLI(textBuffer * output)
     // Iterate through the list of alarms
     curAlarm = current->nodeAlarms.head;
     while (curAlarm != NULL) {
-      //  
-      //  The resolve input is <alarmId>:<ip addr>  
+      //
+      //  The resolve input is <alarmId>:<ip addr>
       //
       if (curAlarm->ip == NULL)
         snprintf(ipBuf, sizeof(ipBuf), "%s", "local");
@@ -925,7 +925,7 @@ overviewPage::generateAlarmsTableCLI(textBuffer * output)
     }                           // end while(.)
   }                             // end for(.)
 
-  // cleanup 
+  // cleanup
   delete Obuf;
 
   ink_mutex_release(&accessLock);
@@ -995,7 +995,7 @@ overviewPage::generateAlarmsSummary(WebHttpContext * whc)
 
 }
 
-// generates the table for the overview page 
+// generates the table for the overview page
 //
 //  the entries are   hostname, on/off, alarm
 //
@@ -1616,7 +1616,7 @@ overviewPage::agCachePercentFree()
   ink_assert(varSetFloat("proxy.cluster.cache.percent_free", pFree));
 }
 
-// void overviewPage::agCacheHitRate() 
+// void overviewPage::agCacheHitRate()
 //
 //   Updates OLD proxy.cluster.http.cache_hit_ratio
 //               proxy.cluster.http.cache_total_hits
@@ -1701,7 +1701,7 @@ overviewPage::agCacheHitRate()
       MgmtInt num_nodes;
       varIntFromName("proxy.process.cluster.nodes", &num_nodes);
       if (1 == num_nodes) {
-        // Only one node , so grab local value 
+        // Only one node , so grab local value
         varFloatFromName("proxy.node.cache_hit_ratio_avg_10s", &hitRate);
       }
       // new stat
@@ -1731,7 +1731,7 @@ overviewPage::agCacheHitRate()
   ink_assert(varSetInt("proxy.cluster.cache_total_misses", totalMisses));
 }
 
-// void overviewPage::agHostDBHitRate() 
+// void overviewPage::agHostDBHitRate()
 //
 //   Updates proxy.cluster.hostdb.hit_ratio
 //
@@ -1812,7 +1812,7 @@ overviewPage::agHostdbHitRate()
       MgmtInt num_nodes;
       varIntFromName("proxy.process.cluster.nodes", &num_nodes);
       if (1 == num_nodes) {
-        // Only one node , so grab local value 
+        // Only one node , so grab local value
         varFloatFromName("proxy.node.hostdb.hit_ratio_avg_10s", &hitRate);
       }
       // new stat
@@ -1843,7 +1843,7 @@ overviewPage::agHostdbHitRate()
   ink_assert(varSetFloat("proxy.cluster.hostdb.hit_ratio", hitRate));
 }
 
-// void overviewPage::agBandwidthHitRate() 
+// void overviewPage::agBandwidthHitRate()
 //
 //   Updates proxy.cluster.http.bandwidth_hit_ratio
 //
@@ -1873,7 +1873,7 @@ overviewPage::agBandwidthHitRate()
   // Get total cluster hits first, only calculate bandwith if > 0
   varIntFromName("proxy.cluster.http.cache_total_hits", &totalHits);
 
-  // User Agent 
+  // User Agent
 
   // HTTP
   varIntFromName("proxy.cluster.http.user_agent_total_request_bytes", &bytes);
@@ -1969,7 +1969,7 @@ overviewPage::agBandwidthHitRate()
       MgmtInt num_nodes;
       varIntFromName("proxy.process.cluster.nodes", &num_nodes);
       if (1 == num_nodes) {
-        // Only one node , so grab local value 
+        // Only one node , so grab local value
         varFloatFromName("proxy.node.bandwidth_hit_ratio_avg_10s", &hitRate);
       }
       // new stat
@@ -2379,7 +2379,7 @@ overviewPage::resolvePeerHostname_ml(const char *peerIP)
 //   Takes a hash-table returned by processFormSubmission
 //
 //   Note: resolving an alarm is asyncronous with the list of
-//      alarms maintained in overviewRecords.  That list 
+//      alarms maintained in overviewRecords.  That list
 //      is only updates when checkAlarms is called
 //
 void
@@ -2429,7 +2429,7 @@ resolveAlarmCLI(textBuffer * output, const char *request)
   const char *ipAddr = NULL;
   alarm_t alarmType;
 
-  // Get ipAddr of host to resolve alarm for 
+  // Get ipAddr of host to resolve alarm for
   // request is in form 'alarmType:ipAddr'
   if (request && colonTok.Initialize(request) == 2) {
     alarmType = atoi(colonTok[0]);
@@ -2476,7 +2476,7 @@ AlarmListable::~AlarmListable()
   }
 }
 
-// int hostSortFunc(const void* arg1, const void* arg2) 
+// int hostSortFunc(const void* arg1, const void* arg2)
 //
 //   A compare function that we can to qsort that sorts
 //    overviewRecord*

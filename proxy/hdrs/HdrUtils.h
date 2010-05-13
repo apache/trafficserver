@@ -28,7 +28,7 @@
    Description: Convenience routines for dealing with hdrs and
                  values
 
-   
+
  ****************************************************************************/
 
 #ifndef _HDR_UTILS_H_
@@ -72,13 +72,13 @@ private:
   //                 been skipped over
   // m_csv_len - the length of the current comma separated value
   //                 not including leading whitespace, trailing
-  //                 whitespace (unless quoted) or the terminating 
+  //                 whitespace (unless quoted) or the terminating
   //                 comma, or trailing quotes have been removed
   // m_csv_end - the terminating comma of the csv unit.  Either
   //                 the terminating comma or the final character
   //                 if this is the last csv in the string
   // m_cvs_index - the integer index of current csv starting
-  //                 at zero 
+  //                 at zero
   const char *m_csv_start;
   int m_csv_len;
   const char *m_csv_end;

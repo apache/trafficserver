@@ -250,22 +250,22 @@ setUpLogging()
   char log_file[PATH_NAME_MAX+1];
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &log_dir) 
+    ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &log_dir)
 	       == REC_ERR_OKAY);
     if ((err = stat(log_dir, &s)) < 0) {
       // Try 'system_root_dir/var/log/trafficserver' directory
       snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
       if ((err = stat(system_log_dir, &s)) < 0) {
-        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n", 
+        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
                 system_log_dir, err, errno, strerror(errno));
         mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
         //_exit(1);
       }
     } else {
-      ink_strncpy(system_log_dir,log_dir,sizeof(system_log_dir)); 
+      ink_strncpy(system_log_dir,log_dir,sizeof(system_log_dir));
     }
-  } 
+  }
 
   snprintf(log_file, sizeof(log_file), "%s%s%s", system_log_dir, DIR_SEP, "lm.log");
 
@@ -789,7 +789,7 @@ webIntr_main(void *x)
       xfree(autoconfContext.docRoot);
       autoconfContext.docRoot = xstrdup(system_config_directory);
       if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
-        mgmt_elog("[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n", 
+        mgmt_elog("[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n",
                 autoconfContext.docRoot, err, errno, strerror(errno));
         mgmt_elog("[WebIntrMain] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
         mgmt_fatal(stderr, "[WebIntrMain] No Client AutoConf Root\n");
@@ -843,8 +843,8 @@ webIntr_main(void *x)
 
 
   // INKqa09866
-  // fire up interface for ts configuration through API; use absolute path from root to 
-  // set up socket paths; 
+  // fire up interface for ts configuration through API; use absolute path from root to
+  // set up socket paths;
   char api_sock_path[1024];
   char event_sock_path[1024];
 

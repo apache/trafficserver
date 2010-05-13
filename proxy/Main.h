@@ -27,7 +27,7 @@
 
   This is the primary include file for the proxy cache system.
 
-  
+
  ****************************************************************************/
 
 #ifndef _Main_h_
@@ -60,7 +60,7 @@
 extern int use_accept_thread;
 extern int accept_till_done;
 //extern int ssl_accept_port_number;
-//extern int ssl_enabled;       
+//extern int ssl_enabled;
 extern int http_accept_port_number;
 extern int http_accept_file_descriptor;
 extern int command_flag;

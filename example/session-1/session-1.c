@@ -24,7 +24,7 @@
 /* session-1.c: a plugin that illustrates how to use
  *                session hooks
  *
- * 
+ *
  *  Usage: session-1.so
  *
  */

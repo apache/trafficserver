@@ -22,10 +22,10 @@
  */
 
 /****************************************************************************
- *  WebConfig.h - code to process config file editor requests, and 
+ *  WebConfig.h - code to process config file editor requests, and
  *                create responses
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _WEB_CONFIG_H_

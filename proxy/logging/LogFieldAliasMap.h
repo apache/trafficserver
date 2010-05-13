@@ -24,7 +24,7 @@
 /***************************************************************************
  LogFieldAliasMap.h
 
- 
+
  ***************************************************************************/
 
 #ifndef LOG_FIELD_ALIAS_MAP_H
@@ -59,7 +59,7 @@ This method takes an IntType key and writes its equivalent string to a
 bufer buf of length bufLen. It sets the number of written characters
 numChars (if numChars is not NULL), and returns an error status.
 
-The IntType to string conversion is used when unmarshaling data prior to 
+The IntType to string conversion is used when unmarshaling data prior to
 writing to a log file, and the string to IntType conversion is used when
 building filters (so that the filter value can be specified as a string,
 but the actual field comparison is done between IntTypes).
@@ -68,14 +68,14 @@ Note that LogFieldAliasMap is derived from RefCountObj, so once a map
 is constructed a pointer to it can be passed to other objects (e.g.,
 to a LogField object) without the object having to worry about freeing
 any memory the map may have allocated.
- 
+
  *****************************************************************************/
 
 
 class LogFieldAliasMap:public RefCountObj
 {
 public:
-  // the logging system assumes log entries of type sINT are 
+  // the logging system assumes log entries of type sINT are
   // unsigned integers (LOG_INT type) so we define IntType to be unsigned
   typedef unsigned int IntType;
   enum
@@ -217,9 +217,9 @@ public:
 	int retVal;
 	size_t numChars;
 	size_t n = snprintf (buf, bufLen, "%u.%u.%u.%u",
-				 (ip >> 24) & 0xff, 
-				 (ip >> 16) & 0xff, 
-				 (ip >> 8)  & 0xff, 
+				 (ip >> 24) & 0xff,
+				 (ip >> 16) & 0xff,
+				 (ip >> 8)  & 0xff,
 				 ip         & 0xff);
 	if (n < bufLen) {
 	    numChars = n;

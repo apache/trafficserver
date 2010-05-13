@@ -29,7 +29,7 @@
 
 //////////////////////////////////////////////////////////////
 //
-// returns 0 for DEFAULT_BUFFER_BASE_SIZE,  
+// returns 0 for DEFAULT_BUFFER_BASE_SIZE,
 // +1 for each power of 2
 //
 //////////////////////////////////////////////////////////////
@@ -865,7 +865,7 @@ MIOBuffer::block_write_avail()
 //
 //  MIOBuffer::append_block()
 //
-//  Appends a block to writer->next and make it the current 
+//  Appends a block to writer->next and make it the current
 //  block.
 //  Note that the block is not appended to the end of the list.
 //  That means that if writer->next was not null before this
@@ -953,7 +953,7 @@ MIOBuffer::get_current_block()
 //
 //  returns the total space available in all blocks.
 //  This function is different than write_avail() because
-//  it will not append a new block if there is no space 
+//  it will not append a new block if there is no space
 //  or below the watermark space available.
 //
 //////////////////////////////////////////////////////////////////

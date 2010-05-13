@@ -251,9 +251,9 @@ private:
   // the logging directory
   char *m_filename;             // the full path of the file associated
   // with this object
-  char *m_alt_filename;         // the full path of the file used 
+  char *m_alt_filename;         // the full path of the file used
   // instead of m_filename if the latter
-  // could not be used because of 
+  // could not be used because of
   // name conflicts
 
   unsigned int m_flags;         // diverse object flags (see above)
@@ -262,7 +262,7 @@ private:
   int m_rolling_enabled;
   int m_rolling_interval_sec;   // time interval between rolls
   // 0 means no rolling
-  int m_rolling_offset_hr;      // 
+  int m_rolling_offset_hr;      //
   int m_rolling_size_mb;        // size at which the log file rolls
   long m_last_roll_time;        // the last time this object rolled
   // its files
@@ -286,7 +286,7 @@ private:
   LogObject & operator=(const LogObject &);
 };
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   TextLog
   -------------------------------------------------------------------------*/
 

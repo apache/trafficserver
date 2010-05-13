@@ -155,11 +155,11 @@ struct DoTest
   /* It will report how many latencies were above this cutoff (in msec) */
   long above_round_trip_time_cutoff;    /* Req above latency cutoff */
   long first_byte_latency_cutoff;
-  /* It will report how many first byte latencies were above 
+  /* It will report how many first byte latencies were above
      this cutoff (in msec) */
   long above_first_byte_latency_cutoff; /* Req above first-byte cutoff */
   long connect_time_cutoff;
-  /* It will report how many connect times were above 
+  /* It will report how many connect times were above
      this cutoff (in msec) */
   long above_connect_time_cutoff;       /* Req above connect cutoff */
 
@@ -170,7 +170,7 @@ struct DoTest
   histogram connect_histogram;
 
   long generated_thinktime;     /* Total number of reqs generated */
-  long thinktime_generated[MAX_THINKTIMES];     /* Number of reqs with 
+  long thinktime_generated[MAX_THINKTIMES];     /* Number of reqs with
                                                    each thinktime */
   double total_actual_thinktime;
 
@@ -178,9 +178,9 @@ struct DoTest
   long target_byterate_generated[MAX_TARGET_BYTERATES];
   /* Number of reqs with each target_byterate */
   long num_limited_byterate;
-  // number of transactions that had limited target_byterate 
+  // number of transactions that had limited target_byterate
   double total_limited_byterate_error;
-  // Total error among all the limited byterate trans 
+  // Total error among all the limited byterate trans
   int reporting_interval;
 
   int connections_open;
@@ -198,9 +198,9 @@ struct DoTest
   int num_target_byterates;     /* Number of thinktimes in the distribution */
   long *target_byterates;       /* actual thinktimes */
   double *cumulative_target_byterate_prob;
-  /* Cumulative probability of selecting different 
-     target_byterates 
-     cumulative_target_byterate_prob[num_thinktimes-1] 
+  /* Cumulative probability of selecting different
+     target_byterates
+     cumulative_target_byterate_prob[num_thinktimes-1]
      must be 1.0 */
 
   UserInfo *user_info;
@@ -213,7 +213,7 @@ struct DoTest
   INKPlugin *plug_in;
   long warmup;
   // =0: real test, > 0 : warmup; create only warmup number of
-  // requests 
+  // requests
   int users;
   int poll_timeout;
   int keepalive;
@@ -245,7 +245,7 @@ struct DoTest
 
   long generate_target_byterate();
   long compute_bytes_to_read(int user, struct timeval current_time);
-  // User i just finished, update stats 
+  // User i just finished, update stats
   void update_completion_stats(int i);
   int create_new_connection_and_send_request(int user, struct timeval current_time);
   void initialize_stats();

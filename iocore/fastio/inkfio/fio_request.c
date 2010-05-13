@@ -147,7 +147,7 @@ fio_vsession_send(fio_devstate_t * rsp, struct pending_request *req)
 
 
 /*
- * Process a pending request. 
+ * Process a pending request.
  *
  * Return 0 if the request should now be dequeued, otherwise
  * return the time in mS till the next packet should be sent
@@ -171,7 +171,7 @@ fio_process_request(fio_devstate_t * rsp, struct pending_request *req, hrtime_t 
 
   if (now < rec_hrtime) {
     /* startTime and now are expresed in nanoseconds; return
-     * the time til the request can start in milliseconds 
+     * the time til the request can start in milliseconds
      */
     hrtime_t leftoverTime;
 
@@ -451,7 +451,7 @@ fio_process_queue(void *ptr)
 
 
 /*
- * Queue a partially completed request 
+ * Queue a partially completed request
  *
  */
 void
@@ -482,7 +482,7 @@ fio_queue_request(fio_devstate_t * rsp, struct pending_request *req)
     req->prev = rsp->pRequests->prev;
     rsp->pRequests->prev = req;
     req->next = rsp->pRequests;
-    /* since existing requests are pending, 
+    /* since existing requests are pending,
      * we don't need to schedule a callback
      *
      * Note: this may result in the next packet of the request being early

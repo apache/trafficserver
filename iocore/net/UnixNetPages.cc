@@ -72,7 +72,7 @@ struct ShowNet:ShowCont
       char interbuf[80];
       snprintf(interbuf, sizeof(interbuf), "%u.%u.%u.%u", PRINT_IP(vc->_interface));
       CHECK_SHOW(show("<tr>"
-                      // "<td><a href=\"/connection/%d\">%d</a></td>" 
+                      // "<td><a href=\"/connection/%d\">%d</a></td>"
                       "<td>%d</td>" "<td>%s</td>"       // ipbuf
                       "<td>%d</td>"     // port
                       "<td>%d</td>"     // fd

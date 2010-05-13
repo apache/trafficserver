@@ -25,7 +25,7 @@
 
   StatPages.h
 
-  
+
  ****************************************************************************/
 
 #ifndef _StatPages_h_
@@ -39,7 +39,7 @@
 //
 // 1. Access from Browswers
 //
-//    By special URLS: 
+//    By special URLS:
 //
 //      http://{module}/component/sub-component/request-type?arguments
 //
@@ -55,7 +55,7 @@
 //       extension type e.g.:
 //
 //         http://{http}/groups/use_graph.gif?august
-//  
+//
 //    B. Each protocol/sybsystem should have their own information.
 //       For example
 

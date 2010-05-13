@@ -88,21 +88,21 @@ struct CacheProcessor:public Processor
   Action *open_read_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *key,
                            CacheFragType frag_type = CACHE_FRAG_TYPE_NONE, char *hostname = 0, int host_len = 0);
 
-  inkcoreapi Action *open_write(Continuation *cont, 
-                                CacheKey *key, 
+  inkcoreapi Action *open_write(Continuation *cont,
+                                CacheKey *key,
                                 CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
                                 int expected_size = CACHE_EXPECTED_SIZE,
                                 int options = 0,
                                 time_t pin_in_cache = (time_t) 0,
                                 char *hostname = 0, int host_len = 0);
   Action *open_write_buffer(Continuation *cont, MIOBuffer *buf,
-                            CacheKey *key, 
-                            CacheFragType frag_type = CACHE_FRAG_TYPE_NONE, 
+                            CacheKey *key,
+                            CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
                             int options = 0,
                             time_t pin_in_cache = (time_t) 0,
                             char *hostname = 0, int host_len = 0);
   inkcoreapi Action *remove(Continuation *cont, CacheKey *key,
-                            CacheFragType frag_type = CACHE_FRAG_TYPE_NONE, 
+                            CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
                             bool rm_user_agents = true, bool rm_link = false,
                             char *hostname = 0, int host_len = 0);
   Action *scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);

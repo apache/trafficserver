@@ -25,7 +25,7 @@
 
   MultiCache.cc
 
-  
+
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -437,7 +437,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     // lots of useless stuff
 #if (HOST_OS == darwin)
     cur = (char *) mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE | MAP_ANON, -1, 0);
-#else 
+#else
     cur = (char *) mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE, fd, 0);
 #endif
     if (cur == NULL || cur == (caddr_t) MAP_FAILED) {
@@ -1034,7 +1034,7 @@ MultiCacheBase::sync_all()
 }
 
 //
-// Syncs MulitCache 
+// Syncs MulitCache
 //
 struct MultiCacheSync;
 typedef int (MultiCacheSync::*MCacheSyncHandler) (int, void *);

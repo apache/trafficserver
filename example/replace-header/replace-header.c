@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-/* 
- *   replace-header.c:  
+/*
+ *   replace-header.c:
  *	an example program...
  *
  *
- *	Usage:	
+ *	Usage:
  *
  *
  */

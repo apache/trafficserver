@@ -137,7 +137,7 @@ struct OneWayMultiTunnel:OneWayTunnel
             VIO * SourceVio, VIO ** TargetVios, int n_vioTargets, bool aclose_source = true, bool aclose_target = true);
 
   //
-  // Private 
+  // Private
   //
   int startEvent(int event, void *data);
 

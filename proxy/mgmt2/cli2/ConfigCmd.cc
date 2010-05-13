@@ -2529,7 +2529,7 @@ int
 Cmd_ConfigAlarm(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
   /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function 
+   * of each command's callback function
    */
   if (processArgForCommand(interp, argc, argv) != CLI_OK) {
     return CMD_ERROR;
@@ -3788,7 +3788,7 @@ ConfigCacheFreshnessMinimum(int arg_ref, int setvar)
   }
 }
 
-// config Cache FreshnessNoExpireLimit 
+// config Cache FreshnessNoExpireLimit
 int
 ConfigCacheFreshnessNoExpireLimit(INKInt min, INKInt max, int setvar)
 {
@@ -4087,7 +4087,7 @@ ConfigVirtualipAdd(char *ip, char *device, int subinterface, int setvar)
   case 0:                      //get
     return (ConfigVirtualIpList());
 
-  case 1:                      //set 
+  case 1:                      //set
 
     VipElePtr = INKVirtIpAddrEleCreate();
 
@@ -4124,7 +4124,7 @@ ConfigVirtualipAdd(char *ip, char *device, int subinterface, int setvar)
   }
 }
 
-//config virtualip delete 
+//config virtualip delete
 int
 ConfigVirtualipDelete(int ip_no, int setvar)
 {
@@ -4194,7 +4194,7 @@ int
 Cmd_ConfigNetwork(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
   /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function 
+   * of each command's callback function
    */
   if (processArgForCommand(interp, argc, argv) != CLI_OK) {
     return CMD_ERROR;
@@ -4494,7 +4494,7 @@ IsValidDomainname(char *str)
 int
 getnameserver(char *nameserver, int len)
 {
-#if (HOST_OS == linux) 
+#if (HOST_OS == linux)
   char buff[256];
   FILE *fstr;
   if ((fstr = fopen(NAMESERVER_PATH, "r")) == NULL)
@@ -4525,7 +4525,7 @@ getnameserver(char *nameserver, int len)
 #if (HOST_OS == solaris)
 /*
  * NOTE: This routine is found in libnsl (-lnsl). No prototype was found in
- * any of the header files in /usr/include. Define a prototype here to keep the 
+ * any of the header files in /usr/include. Define a prototype here to keep the
  * compiler happy.
  */
 extern int getdomainname(char *, int);
@@ -5790,7 +5790,7 @@ ConfigRadiusKeys(const char *record)
     return CLI_ERROR;
   }
   if (old_pwd_file && strcasecmp(old_pwd_file, "NULL")) {
-    // remove the old_pwd_file 
+    // remove the old_pwd_file
     if (remove(old_pwd_file) != 0)
       Cli_Debug("[ConfigRadiusKeys] Failed to remove password file %s", old_pwd_file);
     xfree(old_pwd_file);

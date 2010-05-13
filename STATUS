@@ -10,7 +10,9 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.1.0   : In development
+    2.1.0-unstable  : Released on May 13, 2010
+    2.0.0           : Released on April 28th, 2010
+    2.0.0-alpha     : Released March 13, 2010
 
 
 Contributors looking for a mission:
@@ -29,6 +31,7 @@ RELEASE SHOWSTOPPERS:
 A list of all bugs scheduled for this release can be found at
 
 https://issues.apache.org/jira/secure/IssueNavigator.jspa?reset=true&mode=hide&sorter/order=DESC&sorter/field=priority&resolution=-1&fixfor=12314485
+
 
 RELEASE PROCESS
 

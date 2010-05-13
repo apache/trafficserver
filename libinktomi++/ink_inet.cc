@@ -44,7 +44,7 @@ ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data * data)
 
 #else //RENTRENT_GETHOSTBYNAME
 #ifdef GETHOSTBYNAME_R_GLIBC2
-  
+
   struct hostent *addrp = NULL;
   int res = gethostbyname_r(hostname, &data->ent, data->buf,
                             INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp,

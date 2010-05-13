@@ -175,10 +175,10 @@ state_start(INKCont contp, INKEvent event, void *data)
   return INK_EVENT_IMMEDIATE;
 }
 
-/* This function is to call proper functions according to the 
+/* This function is to call proper functions according to the
    VIO argument. If it's read_vio, which means reading request from
    client_vc, call state_read_request_from_client. If it's write_vio,
-   which means sending response to client_vc, call 
+   which means sending response to client_vc, call
    state_send_response_to_client. If the event is INK_EVENT_VCONN_EOS,
    which means the client closed socket and thus implies the client
    drop all jobs between TxnSM and the client, so go to die. */
@@ -323,7 +323,7 @@ static void
 load_buffer_cache_data(TxnSM * txn_sm)
 {
   /* transfer the data from the cache buffer (which must
-     fully be consumed on a VCONN_READY event, to the 
+     fully be consumed on a VCONN_READY event, to the
      server response buffer */
   int rdr_avail = INKIOBufferReaderAvail(txn_sm->q_cache_read_buffer_reader);
 
@@ -417,7 +417,7 @@ state_handle_cache_prepare_for_write(INKCont contp, INKEvent event, INKVConn vc)
   return state_build_and_send_request(contp, 0, NULL);
 }
 
-/* Cache miss or error case. Start the process to send the request 
+/* Cache miss or error case. Start the process to send the request
    the origin server. */
 int
 state_build_and_send_request(INKCont contp, INKEvent event, void *data)
@@ -481,8 +481,8 @@ state_dns_lookup(INKCont contp, INKEvent event, INKHostLookupResult host_info)
 
 /* Net Processor calls back, if succeeded, the net_vc is returned.
    Note here, even if the event is INK_EVENT_NET_CONNECT, it doesn't
-   mean the net connection is set up because INKNetConnect is non-blocking. 
-   Do VConnWrite to the net_vc, if fails, that means there is no net 
+   mean the net connection is set up because INKNetConnect is non-blocking.
+   Do VConnWrite to the net_vc, if fails, that means there is no net
    connection. */
 int
 state_connect_to_server(INKCont contp, INKEvent event, INKVConn vc)
@@ -553,7 +553,7 @@ state_interface_with_server(INKCont contp, INKEvent event, INKVIO vio)
     return state_write_to_cache(contp, event, vio);
     /* Otherwise, handle events from server. */
   case INK_EVENT_VCONN_READ_READY:
-    /* Actually, we shouldn't get READ_COMPLETE because we set bytes 
+    /* Actually, we shouldn't get READ_COMPLETE because we set bytes
        count to be INT_MAX. */
   case INK_EVENT_VCONN_READ_COMPLETE:
     return state_read_response_from_server(contp, event, vio);
@@ -639,7 +639,7 @@ state_read_response_from_server(INKCont contp, INKEvent event, INKVIO vio)
       INKVIOReenable(txn_sm->q_cache_write_vio);
       txn_sm->q_block_bytes_read = bytes_read;
 /*
-	    txn_sm->q_cache_write_vio = INKVConnWrite (txn_sm->q_cache_vc, 
+	    txn_sm->q_cache_write_vio = INKVConnWrite (txn_sm->q_cache_vc,
 						       contp,
 						       txn_sm->q_cache_response_buffer_reader,
 						       bytes_read);
@@ -669,7 +669,7 @@ state_write_to_cache(INKCont contp, INKEvent event, INKVIO vio)
 
   case INK_EVENT_VCONN_WRITE_COMPLETE:
     INKDebug("protocol", "nbytes %d, ndone %d", INKVIONBytesGet(vio), INKVIONDoneGet(vio));
-    /* Since the first write is through INKVConnWrite, which aleady consume 
+    /* Since the first write is through INKVConnWrite, which aleady consume
        the data in cache_buffer_reader, don't consume it again. */
     if (txn_sm->q_cache_response_length > 0 && txn_sm->q_block_bytes_read > 0)
       INKIOBufferReaderConsume(txn_sm->q_cache_response_buffer_reader, txn_sm->q_block_bytes_read);
@@ -710,7 +710,7 @@ state_write_to_cache(INKCont contp, INKEvent event, INKVIO vio)
 }
 
 /* If the response has been fully written into the client_vc,
-   which means this txn is done, close the client_vc. Otherwise, 
+   which means this txn is done, close the client_vc. Otherwise,
    reenable the write_vio. */
 int
 state_send_response_to_client(INKCont contp, INKEvent event, INKVIO vio)

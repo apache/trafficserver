@@ -498,7 +498,7 @@ DiskCache::setNumberDirectories(const uint32_t directories)
 
   // set the number of directories to directory with to a power
   // each power is another directory level and there is a maximum
-  // of 10 levels 
+  // of 10 levels
 
   if (directories < _directoryWidth) {
     count = 1;

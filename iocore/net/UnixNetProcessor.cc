@@ -194,8 +194,8 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
     bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
 #ifdef SOCKS_WITH_TS
                         && (opt->socks_version != SOCKS_DEFAULT_VERSION ||
-                            /* This implies we are tunnelling. 
-                             * we need to connect using socks server even 
+                            /* This implies we are tunnelling.
+                             * we need to connect using socks server even
                              * if this ip is in no_socks list.
                              */
                             !socks_conf_stuff->ip_range.match(ip))
@@ -372,7 +372,7 @@ struct CheckConnect:public Continuation
           /* disable write on vc */
           vc->write.enabled = 0;
           vc->cancel_inactivity_timeout();
-          //write_disable(get_NetHandler(this_ethread()), vc); 
+          //write_disable(get_NetHandler(this_ethread()), vc);
           /* clean up vc fields */
           vc->write.vio.nbytes = 0;
           vc->write.vio.op = VIO::NONE;
@@ -454,7 +454,7 @@ UnixNetProcessor::start(int)
   netHandler_offset = eventProcessor.allocate(sizeof(NetHandler));
   pollCont_offset = eventProcessor.allocate(sizeof(PollCont));
 
-  // customize the threads for net 
+  // customize the threads for net
   setEtype(etype);
   // etype is ET_NET for netProcessor
   // and      ET_SSL for sslNetProcessor
@@ -487,7 +487,7 @@ UnixNetProcessor::start(int)
     }
   }
 #endif /*INK_NO_SOCKS */
-  // commented by vijay -  bug 2489945 
+  // commented by vijay -  bug 2489945
   /*if (use_accept_thread) // 0
      { NetAccept * na = createNetAccept();
      SET_CONTINUATION_HANDLER(na,&NetAccept::acceptLoopEvent);
@@ -524,7 +524,7 @@ UnixNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
 }
 
 
-// Virtual function allows creation of an 
+// Virtual function allows creation of an
 // SSLNetAccept or NetAccept transparent to NetProcessor.
 NetAccept *
 UnixNetProcessor::createNetAccept()

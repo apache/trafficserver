@@ -139,7 +139,7 @@ ChannelToCacheWriteVC(ClusterHandler * ch, int channel, inku32 channel_seqno, Cl
     CLUSTER_INCREMENT_DYN_STAT(cluster_setdata_no_CLUSTERVC_STAT);
     return NULL;
   }
-  // Tunneling from cluster to cache (remote write). 
+  // Tunneling from cluster to cache (remote write).
   // Get cache VC pointer.
 
   OneWayTunnel *owt = (OneWayTunnel *) cvc->read.vio._cont;
@@ -235,7 +235,7 @@ post_setchan_send_ClusterFunction(ClusterMachine * to, void *data, int len)
   // We are called on the ET_CLUSTER thread.
   // set_data() control message has been queued into cluster transfer message.
   // This allows us to assume that it has been sent.
-  // Decrement Cluster VC n_set_data_msgs to allow transmission of 
+  // Decrement Cluster VC n_set_data_msgs to allow transmission of
   // initial open_write data after (n_set_data_msgs == 0).
 
   SetChanDataMessage *m = (SetChanDataMessage *) data;
@@ -297,7 +297,7 @@ post_setchan_pin_ClusterFunction(ClusterMachine * to, void *data, int len)
   // We are called on the ET_CLUSTER thread.
   // Control message has been queued into cluster transfer message.
   // This allows us to assume that it has been sent.
-  // Decrement Cluster VC n_set_data_msgs to allow transmission of 
+  // Decrement Cluster VC n_set_data_msgs to allow transmission of
   // initial open_write data after (n_set_data_msgs == 0).
 
   SetChanPinMessage *m = (SetChanPinMessage *) data;
@@ -359,7 +359,7 @@ post_setchan_priority_ClusterFunction(ClusterMachine * to, void *data, int len)
   // We are called on the ET_CLUSTER thread.
   // Control message has been queued into cluster transfer message.
   // This allows us to assume that it has been sent.
-  // Decrement Cluster VC n_set_data_msgs to allow transmission of 
+  // Decrement Cluster VC n_set_data_msgs to allow transmission of
   // initial open_write data after (n_set_data_msgs == 0).
 
   SetChanPriorityMessage *m = (SetChanPriorityMessage *) data;

@@ -22,7 +22,7 @@
  */
 
 
-/* 
+/*
 TODO tests of stoping an event at the session and transaction level
 
 
@@ -33,8 +33,8 @@ TODO tests of stoping an event at the session and transaction level
 
 #if 0
 */
-/************************************************************************** 
- * HTTP Sessions 
+/**************************************************************************
+ * HTTP Sessions
  *************************************************************************/
 
 /*
@@ -50,6 +50,6 @@ TODO build a test case for event INK_EVENT_HTTP_ERROR HTTP Transactions
 TODO build a test case for event INK_EVENT_HTTP_ERROR
 */
 
-/************************************************************************** 
- * HTTP sessions 
+/**************************************************************************
+ * HTTP sessions
  *************************************************************************/

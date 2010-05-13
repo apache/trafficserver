@@ -49,7 +49,7 @@
 #define OPTIMAL_TCP_TIMED_WAIT_DELAY 0xb4
 
 
-// If this location is changed, then perfdll/TrafficServer.reg or the 
+// If this location is changed, then perfdll/TrafficServer.reg or the
 // install shield editor needs to be changed as well.
 #define TS_PERFMON_SVC_REG_KEY "SYSTEM\\CurrentControlSet\\Services\\TrafficServer\\Performance"
 #define TS_EVENT_LOG_SRC_KEY "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\TrafficServer"
@@ -76,13 +76,13 @@
 #define TS_MGR_SERVICE_DISPLAY_NAME "Inktomi Traffic Manager"
 
 // These are the attributes for creating the manager service.
-// 
-// LPCTSTR lpServiceName = TS_MGR_SERVICE_NAME          // pointer to name of service to start 
-// LPCTSTR lpDisplayName = TS_MGR_SERVICE_DISPLAY_NAME  // pointer to display name 
-// DWORD dwDesiredAccess = SERVICE_ALL_ACCESS           // type of access to service 
-// DWORD dwServiceType   = SERVICE_WIN32_OWN_PROCESS    // type of service 
-// DWORD dwStartType     = SERVICE_AUTO_START           // when to start service 
-// DWORD dwErrorControl  = SERVICE_ERROR_NORMAL         // severity if service fails to start 
+//
+// LPCTSTR lpServiceName = TS_MGR_SERVICE_NAME          // pointer to name of service to start
+// LPCTSTR lpDisplayName = TS_MGR_SERVICE_DISPLAY_NAME  // pointer to display name
+// DWORD dwDesiredAccess = SERVICE_ALL_ACCESS           // type of access to service
+// DWORD dwServiceType   = SERVICE_WIN32_OWN_PROCESS    // type of service
+// DWORD dwStartType     = SERVICE_AUTO_START           // when to start service
+// DWORD dwErrorControl  = SERVICE_ERROR_NORMAL         // severity if service fails to start
 
 #endif // MGMT_SERVICE
 
@@ -93,13 +93,13 @@
 #define TS_COP_SERVICE_DESCRIPTION  "Monitors the health of Traffic Server and Traffic Manager"
 
 // These are the attributes for creating the cop service.
-// 
-// LPCTSTR lpServiceName = TS_COP_SERVICE_NAME          // pointer to name of service to start 
-// LPCTSTR lpDisplayName = TS_COP_SERVICE_DISPLAY_NAME  // pointer to display name 
-// DWORD dwDesiredAccess = SERVICE_ALL_ACCESS           // type of access to service 
-// DWORD dwServiceType   = SERVICE_WIN32_OWN_PROCESS    // type of service 
-// DWORD dwStartType     = SERVICE_AUTO_START           // when to start service 
-// DWORD dwErrorControl  = SERVICE_ERROR_NORMAL         // severity if service fails to start 
+//
+// LPCTSTR lpServiceName = TS_COP_SERVICE_NAME          // pointer to name of service to start
+// LPCTSTR lpDisplayName = TS_COP_SERVICE_DISPLAY_NAME  // pointer to display name
+// DWORD dwDesiredAccess = SERVICE_ALL_ACCESS           // type of access to service
+// DWORD dwServiceType   = SERVICE_WIN32_OWN_PROCESS    // type of service
+// DWORD dwStartType     = SERVICE_AUTO_START           // when to start service
+// DWORD dwErrorControl  = SERVICE_ERROR_NORMAL         // severity if service fails to start
 
 #endif // COP_SERVICE
 

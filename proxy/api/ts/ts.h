@@ -441,7 +441,7 @@ extern "C"
   {
      NO_CALLBACK = 0,
      AFTER_HEADER ,
-     AFTER_BODY 
+     AFTER_BODY
   } INKFetchWakeUpOptions;
   extern inkapi const void *INK_ERROR_PTR;
 
@@ -488,7 +488,7 @@ extern "C"
   typedef void *(*INKThreadFunc) (void *data);
   typedef int (*INKEventFunc) (INKCont contp, INKEvent event, void *edata);
   typedef void (*INKConfigDestroyFunc) (void *data);
-  typedef struct 
+  typedef struct
   {
      int success_event_id;
      int failure_event_id;
@@ -2144,8 +2144,8 @@ extern "C"
   inkapi INKReturnCode INKHttpConnect(unsigned int log_ip, int log_port, INKVConn * vc);
   inkapi INKReturnCode INKFetchUrl(const char *request,int request_len, unsigned int ip, int port , INKCont contp, INKFetchWakeUpOptions callback_options,INKFetchEvent event);
   inkapi INKReturnCode INKFetchPages(INKFetchUrlParams_t *params);
- 
-  /* Check if HTTP State machine is internal or not */ 
+
+  /* Check if HTTP State machine is internal or not */
   inkapi int INKHttpIsInternalRequest(INKHttpTxn txnp);
 
   // --------------------------------------------------------------------------
@@ -2222,8 +2222,8 @@ extern "C"
 
       @param contp continuation that is called back when the attempted
         net connection either succeeds or fails.
-      @param ip of the host to connect to, in network byte order. 
-      @param port of the host to connect to, in host byte order. 
+      @param ip of the host to connect to, in network byte order.
+      @param port of the host to connect to, in host byte order.
       @return something allows you to check if the connection is complete,
         or cancel the attempt to connect.
 

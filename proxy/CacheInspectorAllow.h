@@ -25,7 +25,7 @@
  *
  *  CacheInspectorAllow.h - Interface to IP Access Control systtem
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _CACHE_INSPECTOR_ALLOW_H_

@@ -28,7 +28,7 @@
  *
  *  CliUtils.h - Utilities to handle command line interface communication
  *
- * 
+ *
  ****************************************************************************/
 #include "ink_platform.h"
 #include "ink_hrtime.h"

@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 // Avoiding getting the whole libinktomi++ header file since
@@ -3214,7 +3214,7 @@ InstallerHandler::set_read_status(int status)
 
   if (watch_proc == NULL) {
 
-    // Process has already exited 
+    // Process has already exited
     if (read_status == 1 && error_seen == false) {
       handle_install_success();
     } else {
@@ -3745,7 +3745,7 @@ finish_startup()
 
   memcpy(&orig_ports_avail, &ports_avail, sizeof(PortsAvail));
 
-  // Start the control port 
+  // Start the control port
   accept_handler = new AcceptHandler();
   accept_handler->start(control_port);
 
@@ -3810,7 +3810,7 @@ redirect_stdout_stderr()
 //
 //    redirect stdout/stderr to a file
 //
-//    fork ourselves 
+//    fork ourselves
 //
 void
 remote_startup()

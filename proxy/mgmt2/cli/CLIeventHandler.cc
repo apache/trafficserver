@@ -25,8 +25,8 @@
 /****************************************************************************
  *
  *  Module: concrete class for comand line interface event handling
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -147,7 +147,7 @@ CmdLine_EventHandler::BaseLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_BASE);
@@ -262,7 +262,7 @@ CmdLine_EventHandler::MonitorLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_MONITOR);
@@ -381,7 +381,7 @@ CmdLine_EventHandler::MonitorDashboardLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_MON_DASHBOARD);
@@ -460,7 +460,7 @@ CmdLine_EventHandler::MonitorNodeLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_MON_NODE);
@@ -541,7 +541,7 @@ CmdLine_EventHandler::MonitorProtocolsLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_MON_PROTOCOLS);
@@ -627,7 +627,7 @@ CmdLine_EventHandler::MonitorCacheLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_MON_CACHE);
@@ -707,7 +707,7 @@ CmdLine_EventHandler::MonitorOtherLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_MON_OTHER);
@@ -777,7 +777,7 @@ CmdLine_EventHandler::MonitorOtherLevel(void *cdata)
 }                               // end MonitorOtherLevel()
 
 
-// 
+//
 // Handle command at server configuration level
 //
 bool
@@ -794,7 +794,7 @@ CmdLine_EventHandler::ConfigureServerLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_CONF_SERVER);
@@ -821,7 +821,7 @@ CmdLine_EventHandler::ConfigureServerLevel(void *cdata)
     CLI_globals::Change(cli_data->args, CLI_configure::conf_server_desctable, NUM_SERVER_DESCS,
                         cli_data->output, curr_state);
     break;
-  case CL_EV_ONE:              // Display all server configuration 
+  case CL_EV_ONE:              // Display all server configuration
     /* Fall through */
   case CL_EV_TWO:              // show server only
     /* Fall through */
@@ -860,7 +860,7 @@ CmdLine_EventHandler::ConfigureServerLevel(void *cdata)
 }                               // end ConfigureServerLevel()
 
 
-// 
+//
 // Handle command at server protocols level
 //
 bool
@@ -877,7 +877,7 @@ CmdLine_EventHandler::ConfigureProtocolsLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_CONF_PROTOCOLS);
@@ -904,7 +904,7 @@ CmdLine_EventHandler::ConfigureProtocolsLevel(void *cdata)
     CLI_globals::Change(cli_data->args, CLI_configure::conf_protocols_desctable, NUM_CONF_PROTOCOLS_DESCS,
                         cli_data->output, curr_state);
     break;
-  case CL_EV_ONE:              // show protocols configuration 
+  case CL_EV_ONE:              // show protocols configuration
     /* Fall through */
   case CL_EV_TWO:              // show HTTP configuration
     /* Fall through */
@@ -941,7 +941,7 @@ CmdLine_EventHandler::ConfigureProtocolsLevel(void *cdata)
 }                               // end ConfigureProtocolsLevel()
 
 
-// 
+//
 // Handle command at server cache level
 //
 bool
@@ -958,7 +958,7 @@ CmdLine_EventHandler::ConfigureCacheLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_CONF_CACHE);
@@ -985,13 +985,13 @@ CmdLine_EventHandler::ConfigureCacheLevel(void *cdata)
     CLI_globals::Change(cli_data->args, CLI_configure::conf_cache_desctable, NUM_CONF_CACHE_DESCS,
                         cli_data->output, curr_state);
     break;
-  case CL_EV_ONE:              // show cache configuration 
+  case CL_EV_ONE:              // show cache configuration
     /* Fall through */
   case CL_EV_TWO:              // show cache storage configuration
     /* Fall through */
   case CL_EV_THREE:            // show cache activation configuration
     /* Fall through */
-  case CL_EV_FOUR:             // show cache freshness configuration 
+  case CL_EV_FOUR:             // show cache freshness configuration
     /* Fall through */
   case CL_EV_FIVE:             // show cache variable content configuration
     Debug("cli_event", "ConfigureCacheLevel: entered %d case \n", cli_data->cevent);
@@ -1024,7 +1024,7 @@ CmdLine_EventHandler::ConfigureCacheLevel(void *cdata)
 }                               // end ConfigureCacheLevel()
 
 
-// 
+//
 // Handle command at security configuration level
 //
 bool
@@ -1041,7 +1041,7 @@ CmdLine_EventHandler::ConfigureSecurityLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_CONF_SECURITY);
@@ -1068,11 +1068,11 @@ CmdLine_EventHandler::ConfigureSecurityLevel(void *cdata)
     CLI_globals::Change(cli_data->args, CLI_configure::conf_security_desctable, NUM_CONF_SECURITY_DESCS,
                         cli_data->output, curr_state);
     break;
-  case CL_EV_ONE:              // show security configuration 
+  case CL_EV_ONE:              // show security configuration
     /* Fall through */
-  case CL_EV_TWO:              // show access configuration 
+  case CL_EV_TWO:              // show access configuration
     /* Fall through */
-  case CL_EV_THREE:            // show firewall configuration 
+  case CL_EV_THREE:            // show firewall configuration
     Debug("cli_event", "ConfigureSecurityLevel: entered %d case \n", cli_data->cevent);
     CLI_configure::doConfigureSecurity(cli_data);
     break;
@@ -1106,7 +1106,7 @@ CmdLine_EventHandler::ConfigureSecurityLevel(void *cdata)
   return TRUE;
 }                               // end ConfigureSecurityLevel()
 
-// 
+//
 // Handle command at routing configuration level
 //
 bool
@@ -1123,7 +1123,7 @@ CmdLine_EventHandler::ConfigureRoutingLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_CONF_ROUTING);
@@ -1189,7 +1189,7 @@ CmdLine_EventHandler::ConfigureRoutingLevel(void *cdata)
 }                               // end ConfigureRoutingLevel()
 
 
-// 
+//
 // Handle command at hostDB configuration level
 //
 bool
@@ -1206,7 +1206,7 @@ CmdLine_EventHandler::ConfigureHostDBLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_CONF_HOSTDB);
@@ -1233,7 +1233,7 @@ CmdLine_EventHandler::ConfigureHostDBLevel(void *cdata)
     CLI_globals::Change(cli_data->args, CLI_configure::conf_hostdb_desctable, NUM_CONF_HOSTDB_DESCS,
                         cli_data->output, curr_state);
     break;
-  case CL_EV_ONE:              // show HostDB configuration 
+  case CL_EV_ONE:              // show HostDB configuration
     /* Fall through */
   case CL_EV_TWO:              // show host database configuration
     /* Fall through */
@@ -1272,7 +1272,7 @@ CmdLine_EventHandler::ConfigureHostDBLevel(void *cdata)
 }                               // end ConfigureHostDBLevel()
 
 
-// 
+//
 // Handle command at logging configuration level
 //
 bool
@@ -1289,7 +1289,7 @@ CmdLine_EventHandler::ConfigureLoggingLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_CONF_LOGGING);
@@ -1316,7 +1316,7 @@ CmdLine_EventHandler::ConfigureLoggingLevel(void *cdata)
     CLI_globals::Change(cli_data->args, CLI_configure::conf_logging_desctable, NUM_CONF_LOGGING_DESCS,
                         cli_data->output, curr_state);
     break;
-  case CL_EV_ONE:              // show Logging configuration 
+  case CL_EV_ONE:              // show Logging configuration
     /* Fall through */
   case CL_EV_TWO:              // show event logging configuration
     /* Fall through */
@@ -1355,9 +1355,9 @@ CmdLine_EventHandler::ConfigureLoggingLevel(void *cdata)
 }                               // end ConfigureLoggingLevel()
 
 
-// 
+//
 // Handle command at snapshots configuration level
-// 
+//
 // NOTE: not handled currently
 //
 bool
@@ -1374,7 +1374,7 @@ CmdLine_EventHandler::ConfigureSnapshotsLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_CONF_SNAPSHOTS);
@@ -1403,7 +1403,7 @@ CmdLine_EventHandler::ConfigureSnapshotsLevel(void *cdata)
                         cli_data->output, curr_state);
     break;
   case CL_EV_ONE:              // Display
-    // show Snapshots configuration 
+    // show Snapshots configuration
     Debug("cli_event", "ConfigureSnapshotsLevel: entered %d case \n", cli_data->cevent);
     CLI_configure::doConfigureSnapshots(cli_data);
     break;
@@ -1442,7 +1442,7 @@ CmdLine_EventHandler::ConfigureSnapshotsLevel(void *cdata)
 }                               // end ConfigureSnapshotsLevel()
 
 
-// 
+//
 // Handle command at base configuration level
 //
 bool
@@ -1459,7 +1459,7 @@ CmdLine_EventHandler::ConfigureLevel(void *cdata)
   case CL_EV_EXIT:
     // we don't handle exit command on server side
     // since it is handled on client side in 'traffic_cli'
-    // will need to handle in case of direct telnet to 
+    // will need to handle in case of direct telnet to
     // say a command line port
     // Ingore for now.
     CLI_globals::set_response(cli_data->output, CLI_globals::failStr, CLI_globals::unknownCmd, CL_CONFIGURE);
@@ -1562,7 +1562,7 @@ CmdLine_EventHandler::ConfigureLevel(void *cdata)
 }                               // end ConfigureLevel()
 
 //
-//  private Member fcn 
+//  private Member fcn
 //
 void
 CmdLine_EventHandler::FillHandlersArray(void)

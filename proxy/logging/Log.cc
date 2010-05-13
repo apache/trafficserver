@@ -32,7 +32,7 @@
  widely-implemented, Log could be implemented as a namespace rather than a
  class.
 
- 
+
  ***************************************************************************/
 #include "inktomi++.h"
 
@@ -128,7 +128,7 @@ InkHashTable *
 
 RecRawStatBlock *
   log_rsb;
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   Log::change_configuration
 
   This routine is invoked when the current LogConfig object says it needs
@@ -144,7 +144,7 @@ Log::change_configuration()
   ink_assert(new_config != NULL);
   new_config->read_configuration_variables();
 
-  // grab the _APImutex so we can transfer the api objects to 
+  // grab the _APImutex so we can transfer the api objects to
   // the new config
   //
   ink_mutex_acquire(Log::config->log_object_manager._APImutex);
@@ -185,7 +185,7 @@ Log::add_to_inactive(LogObject * object)
   Log::inactive_objects[Log::numInactiveObjects++] = object;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   PERIODIC EVENTS
 
   There are a number of things that need to get done on a periodic basis,
@@ -207,10 +207,10 @@ Log::add_to_inactive(LogObject * object)
   -------------------------------------------------------------------------*/
 
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   Log::periodic_tasks
 
-  This function contains all of the tasks that need to be done each 
+  This function contains all of the tasks that need to be done each
   second.
   -------------------------------------------------------------------------*/
 
@@ -219,10 +219,10 @@ Log::periodic_tasks(long time_now)
 {
   // delete inactive objects
   //
-  // we don't care if we miss an object that may be added to the set of 
-  // inactive objects just after we have read numInactiveObjects and found 
-  // it to be zero; we will get a chance to delete it next time 
-  // 
+  // we don't care if we miss an object that may be added to the set of
+  // inactive objects just after we have read numInactiveObjects and found
+  // it to be zero; we will get a chance to delete it next time
+  //
 
   Debug("log2-api-mutex", "entering Log::periodic_tasks");
   if (numInactiveObjects) {
@@ -261,7 +261,7 @@ Log::periodic_tasks(long time_now)
 
     Debug("log2-periodic", "Performing periodic tasks");
 
-    // Check if space is ok and update the space used 
+    // Check if space is ok and update the space used
     //
     if (config->space_is_short() || time_now % config->space_used_frequency == 0) {
       Log::config->update_space_used();
@@ -379,7 +379,7 @@ Log::init_fields()
                              &LogAccess::unmarshal_str));
   global_field_list.add (field, false);
   ink_hash_table_insert (field_symbol_hash, "caun", field);
-    
+
   field = NEW(new LogField("client_req_timestamp_sec", "cqts",
                            LogField::sINT,
                            &LogAccess::marshal_client_req_timestamp_sec, &LogAccess::unmarshal_int_to_str));
@@ -860,7 +860,7 @@ Log::init_fields()
   // the client DNS name.
   //
   // For WMT, this is equivalent to c-dns
-  //     
+  //
   ADD_LOG_FIELD("client_dns_name", "cdns", LogField::STRING,
                 &LogAccess::marshal_client_dns_name, &LogAccess::unmarshal_str);
 
@@ -939,7 +939,7 @@ Log::init_fields()
                 &LogAccess::marshal_client_pkts_received, &LogAccess::unmarshal_int_to_str);
 
   // This field is for the number of lost packets during transmission
-  // from server to client as reported by the client. 
+  // from server to client as reported by the client.
   //
   // For WMT, this is equivalent to c-pkts-lost-client
   //
@@ -1016,7 +1016,7 @@ Log::init_fields()
 
 
 /*-------------------------------------------------------------------------
-  
+
   Initialization functions
 
   -------------------------------------------------------------------------*/
@@ -1099,7 +1099,7 @@ Log::init(int flags)
 	LOG_CLEAR_DYN_STAT(log2_stat_event_log_access_stat);
 	LOG_CLEAR_DYN_STAT(log2_stat_event_log_access_skip_stat);
 	LOG_CLEAR_DYN_STAT(log2_stat_event_log_access_fail_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_event_log_error_stat); 
+	LOG_CLEAR_DYN_STAT(log2_stat_event_log_error_stat);
 */
     // if remote management is enabled, do all necessary initialization to
     // be able to handle a logging mode change
@@ -1483,7 +1483,7 @@ Log::collate_thread_main(void *args)
   return NULL;
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   Log::match_logobject
 
   This routine matches the given buffer with the local list of LogObjects.

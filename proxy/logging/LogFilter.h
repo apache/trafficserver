@@ -30,7 +30,7 @@
 #include "LogField.h"
 #include "LogFormat.h"
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFilter
 
   This is an abstract base class from which particular filters can be
@@ -119,7 +119,7 @@ private:
   LogFilter & operator=(LogFilter & rhs);
 };
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFilterString
 
   Filter for string fields.
@@ -174,7 +174,7 @@ private:
   LogFilterString & operator=(LogFilterString & rhs);
 };
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFilterInt
 
   Filter for int fields.
@@ -207,7 +207,7 @@ private:
 
 bool filters_are_equal(LogFilter * filt1, LogFilter * filt2);
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogFilterList
   -------------------------------------------------------------------------*/
 
@@ -248,7 +248,7 @@ private:
 
   bool m_does_conjunction;
   // If m_does_conjunction = true
-  // toss_this_entry returns true 
+  // toss_this_entry returns true
   // if ANY filter tosses entry away.
   // If m_does_conjunction = false,
   // toss this entry returns true if
@@ -260,7 +260,7 @@ private:
 };
 
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   Inline functions
   -------------------------------------------------------------------------*/
 
@@ -272,11 +272,11 @@ private:
   the arguments to the function are:
 
   - a function f of type OperatorFunction that determines if the
-    condition is true for a single filter value. Note that this function 
+    condition is true for a single filter value. Note that this function
     must return 0 if the condition is true.
   - the value of the field from the log record
   - the length of this field
-  - the array of filter values to compare to note that we pass this as an 
+  - the array of filter values to compare to note that we pass this as an
     argument because it can be either m_value or m_value_uppercase
   - a LengthCondition argument that determines if the length of the field value
     must be equal or larger to the length of the filter value (this is to

@@ -27,7 +27,7 @@
 
   This file implements an I/O Processor for network I/O.
 
-  
+
  ****************************************************************************/
 #if !defined (_SSLNetVConnection_h_)
 #define _SSLNetVConnection_h_

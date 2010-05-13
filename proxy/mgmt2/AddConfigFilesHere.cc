@@ -33,8 +33,8 @@ static char INK_UNUSED rcsId__AddConfigFilesHere_cc[] = "@(#)  built on " __DATE
 /****************************************************************************
  *
  *  AddConfigFilesHere.cc - Structs for config files and
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 void
@@ -49,7 +49,7 @@ testcall(char *foo)
 //
 // Code to initialze of registry of objects that represent
 //   Web Editable configuration files
-// 
+//
 // thread-safe: NO!  - Should only be executed once from the main
 //                     web interface thread, before any child
 //                     threads have been spawned

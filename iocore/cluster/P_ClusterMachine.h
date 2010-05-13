@@ -36,7 +36,7 @@
 #define _P_ClusterMachine_h
 
 //
-// Timeout the Machine * this amount of time after they 
+// Timeout the Machine * this amount of time after they
 // fall out of the current configuration that are deleted.
 //
 #define MACHINE_TIMEOUT            (HRTIME_DAY*2)
@@ -48,8 +48,8 @@
 //  For example, a Machine * is returned by the hash and used to do
 //  a remote invoke.  For the pointer to remain valid (or be recognized as
 //  invalid) he resource should not be raclaimed for NO_RACE_DELAY.
-//  
-//  Long running operations should use more sophisticated synchronization. 
+//
+//  Long running operations should use more sophisticated synchronization.
 //
 #define NO_RACE_DELAY                  HRTIME_HOUR      // a long long time
 
@@ -73,7 +73,7 @@ struct ClusterMachine:Server
     ClusterMachine(char *hostname = NULL, unsigned int ip = 0, int acluster_port = 0);
    ~ClusterMachine();
 
-  // Cluster message protocol version 
+  // Cluster message protocol version
   inku16 msg_proto_major;
   inku16 msg_proto_minor;
 

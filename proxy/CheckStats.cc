@@ -29,12 +29,12 @@
  than it does now. This is because the completely ayshronous nature of
  the execution model forbids most of these asserts from being of use.
 
- This is also partly as a consequence of the fact that this function 
+ This is also partly as a consequence of the fact that this function
  is called from within the SnapShotsContinuation function, which may
  execute at any time. So since the asserts may fire between consecutive
  stat updates, the asserts may not hold.
 
- 
+
  ***************************************************************************/
 #include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 #include "Error.h"
@@ -163,11 +163,11 @@ check_stats()
     syslog(LOG_WARNING, "Http Engine: COUNT(cache_connection_start) < COUNT(cache_connections_current_count)");
 
   /* http - transactions count */
-//   debug_tag_assert("checkstats", STATCOUNT(http_stats_user_agent_transactions_start) >= 
+//   debug_tag_assert("checkstats", STATCOUNT(http_stats_user_agent_transactions_start) >=
 //           STATCOUNT(http_stats_user_agent_connection_start));
-//   debug_tag_assert("checkstats", STATCOUNT(http_stats_origin_server_transactions_start) >= 
+//   debug_tag_assert("checkstats", STATCOUNT(http_stats_origin_server_transactions_start) >=
 //           STATCOUNT(http_stats_origin_server_connection_start));
-//   debug_tag_assert("checkstats", STATCOUNT(http_stats_parent_proxy_transactions_start) >= 
+//   debug_tag_assert("checkstats", STATCOUNT(http_stats_parent_proxy_transactions_start) >=
 //           STATCOUNT(http_stats_parent_proxy_connection_start));
   if (!(STATCOUNT(http_stats_user_agent_transactions_current_count) >= 0))
     syslog(LOG_WARNING, "Http Transactions: user_agent_transactions_current_count < 0");

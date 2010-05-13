@@ -27,9 +27,9 @@
 
 /**
   Single on disk Directory entry.
-  
-  possible sizes: 2^12 * size = 4kb, 8kb, ... 
-  
+
+  possible sizes: 2^12 * size = 4kb, 8kb, ...
+
 */
 struct BlockCacheDir
 {
@@ -110,13 +110,13 @@ struct Doc
   write, a portion of the directory is synced to disk.  The write
   occurs when the log fills up or when a timer expires.  The sizing of
   dir and log portions can be adjusted.
-  
+
   We will pack directories close together in memory and not keep more
   than a few KB of log in memory.  The syncing process requires doing
   two AIOs -- the header & log, the directories and the footer. With
   coordination among the other disk threads, this could be forced to
   be done without seeks.
-  
+
   Dir+Log area on disk:
   PartitionedDirLog0 PartitionedDirDir0 PartitionedDirLog1 PartitionedDirDir1 ...
 
@@ -246,7 +246,7 @@ public:
   /**
     Insert BlockCacheDir entry, suitably logging and updating in-core
     directory.
-    
+
     @param dirPart - which partition of partitioned directory to look at
     @param bucket - which entry in partitioned directory to look in
     @param key

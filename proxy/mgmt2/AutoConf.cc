@@ -35,8 +35,8 @@
 /****************************************************************************
  *
  *  AutoConf.cc - code to generate and delete client autoconf files
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #define FILE_MODE S_IRWXU
@@ -235,7 +235,7 @@ AutoConf::pacErrorResponse(const char *action, PACresult error, textBuffer * out
 // Added extra argument 'flag' to distinguish between displaying
 // the 'proxy.pac' info in a the frame or a seperate window.  - GV
 void
-AutoConf::handleView(textBuffer * output, int flag      // 0-> displaying in framset, 1-> displaying in seperate window 
+AutoConf::handleView(textBuffer * output, int flag      // 0-> displaying in framset, 1-> displaying in seperate window
   )
 {
   const char a[] =
@@ -289,7 +289,7 @@ AutoConf::handleView(textBuffer * output, int flag      // 0-> displaying in fra
       }
     }
   } else {
-    // in frame    
+    // in frame
     output->copyFrom(a, strlen(a));
 
     if (configFiles->getRollbackObj("proxy.pac", &pacRoll) == false) {

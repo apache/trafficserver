@@ -25,7 +25,7 @@
  *
  *  CacheControl.h - Interface to Cache Control systtem
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _CACHE_CONTROL_H_
@@ -63,7 +63,7 @@ public:
   void Print();
 
   // Data for external use
-  // 
+  //
   //   Describes the cache-control for a specific URL
   //
   int revalidate_after;

@@ -25,8 +25,8 @@
 
   Event Subsystem
 
-  
-  
+
+
 **************************************************************************/
 #ifndef _P_EventSystem_h
 #define _P_EventSystem_h

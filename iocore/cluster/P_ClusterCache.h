@@ -25,7 +25,7 @@
 
   Cluster.h
 
-  
+
 ****************************************************************************/
 
 #ifndef _P_Cluster_Cache_h
@@ -42,14 +42,14 @@
 //  is a test only mode where all cluster nodes reside on the same host.
 //
 //  Configuration notes:
-//   - For "cluster.config" entries, always use "127.0.0.1" as the IP 
+//   - For "cluster.config" entries, always use "127.0.0.1" as the IP
 //     address and select a host unique cluster port.
 //
 //  Restrictions:
-//   1) Does not work with the manager.  You must only run with the server 
+//   1) Does not work with the manager.  You must only run with the server
 //      and hand configure "cluster.config".
 //   2) Currently, this has only been tested in a two node configuration.
-//      
+//
 /****************************************************************************/
 
 #include "P_ClusterMachine.h"
@@ -366,7 +366,7 @@ struct ClusterVConnectionBase:CacheVConnection
   //   enabled* during which the connection was unable to sink/provide data.
   // calling these functions repeatedly resets the timeout.
   //   NOT THREAD-SAFE, may only be called when handing an event from this
-  //                    ClusterVConnectionBase, or the ClusterVConnectionBase 
+  //                    ClusterVConnectionBase, or the ClusterVConnectionBase
   //                    creation callback.
   //
   void set_active_timeout(ink_hrtime timeout_in);
@@ -789,7 +789,7 @@ ClusterFunctionDescriptor clusterFunction[]
   {false, true, CMSG_MAX_PRI, set_channel_priority_ClusterFunction,
    post_setchan_priority_ClusterFunction},
    /********************************************
-    * RESERVED for future cluster internal use * 
+    * RESERVED for future cluster internal use *
     ********************************************/
   {false, false, CMSG_LOW_PRI, 0, 0},
   {false, false, CMSG_LOW_PRI, 0, 0},
@@ -900,7 +900,7 @@ ClusterFuncToQpri(int cluster_func)
 #define SET_CHANNEL_PRIORITY_CLUSTER_FUNCTION  	     16
 
 /********************************************
- * RESERVED for future cluster internal use * 
+ * RESERVED for future cluster internal use *
  ********************************************/
 #define INTERNAL_RESERVED1_CLUSTER_FUNCTION  	     17
 #define INTERNAL_RESERVED2_CLUSTER_FUNCTION  	     18
@@ -990,7 +990,7 @@ ClusterFuncToQpri(int cluster_func)
 #define UNDEFINED_CLUSTER_FUNCTION                   0xFDEFFDEF
 
 //////////////////////////////////////////////
-// Initial cluster connect exchange message 
+// Initial cluster connect exchange message
 //////////////////////////////////////////////
 struct ClusterHelloMessage
 {

@@ -190,19 +190,19 @@ struct FreeDir
 // To allow this, move the vector from the CacheVC to the OpenDirEntry.
 // Each CacheVC now maintains a pointer to this vector. Adding/Deleting
 // alternates from this vector is done under the Part::lock. The alternate
-// is deleted/inserted into the vector just before writing the vector disk 
-// (CacheVC::updateVector). 
+// is deleted/inserted into the vector just before writing the vector disk
+// (CacheVC::updateVector).
 LINK_FORWARD_DECLARATION(CacheVC, opendir_link); // forward declaration
 struct OpenDirEntry
 {
   DLL<CacheVC, Link_CacheVC_opendir_link> writers;       // list of all the current writers
   DLL<CacheVC, Link_CacheVC_opendir_link> readers;         // list of all the current readers - not used
-  CacheHTTPInfoVector vector;   // Vector for the http document. Each writer 
-                                // maintains a pointer to this vector and 
-                                // writes it down to disk. 
-  CacheKey single_doc_key;      // Key for the resident alternate. 
+  CacheHTTPInfoVector vector;   // Vector for the http document. Each writer
+                                // maintains a pointer to this vector and
+                                // writes it down to disk.
+  CacheKey single_doc_key;      // Key for the resident alternate.
   Dir single_doc_dir;           // Directory for the resident alternate
-  Dir first_dir;                // Dir for the vector. If empty, a new dir is 
+  Dir first_dir;                // Dir for the vector. If empty, a new dir is
                                 // inserted, otherwise this dir is overwritten
   inku16 num_writers;           // num of current writers
   inku16 max_writers;           // max number of simultaneous writers allowed

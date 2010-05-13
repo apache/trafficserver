@@ -24,7 +24,7 @@
 /*   http_connect_bridge.c - Test program for INKHttpConnect() interface.
  *     Listens on a port and forwards all traffic to http system
  *     allowing the use all existing test & load tools
- * 
+ *
  *
  */
 
@@ -42,7 +42,7 @@
 /* #define DEBUG 1 */
 
 /**************************************************
-   Log macros for error code return verification 
+   Log macros for error code return verification
 **************************************************/
 #define PLUGIN_NAME "http_connect_bridge"
 #define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))

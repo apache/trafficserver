@@ -23,12 +23,12 @@
 
 /****************************************************************************
  *
- *  MgmtServerRPC.cc 
- * 
+ *  MgmtServerRPC.cc
+ *
  *  Deals with Traffic Manager communicating with Traffic Server's
  *  RAF port
  *
- *  
+ *
  *
  ****************************************************************************/
 
@@ -47,16 +47,16 @@
 #define SIZE_RESPONSE      1024
 
 
-// NOTE:  
-// Usually identifiers in messages are used to identify RAF requests; 
-// however, there is only one type of request being sent and per connection, 
+// NOTE:
+// Usually identifiers in messages are used to identify RAF requests;
+// however, there is only one type of request being sent and per connection,
 // so to keep it simple for now use the same id for all requests
 
 // --------------------------------------------------------------------------
 // raf_writen
 // --------------------------------------------------------------------------
 //   Simple, inefficient, write line function. Takes a fd to write to, an
-// unsigned char * containing the data, and the number of bytes to write. 
+// unsigned char * containing the data, and the number of bytes to write.
 // Returns:    num bytes not written
 //              -1  error
 ssize_t
@@ -117,11 +117,11 @@ raf_readn(int fd, char *ptr, size_t n)
 // --------------------------------------------------------------------------
 // send_exit_request
 // --------------------------------------------------------------------------
-// Input: the file descriptor to send the "0 exit" request to; 
+// Input: the file descriptor to send the "0 exit" request to;
 //        will close the fd !!!!
-// Output: returns 0 if exit successful 
-//         returns -1 if error code is non-zero 
-// 
+// Output: returns 0 if exit successful
+//         returns -1 if error code is non-zero
+//
 int
 send_exit_request(int fd)
 {
@@ -167,10 +167,10 @@ Lerror:
 // --------------------------------------------------------------------------
 // send_cli_congest_request
 // --------------------------------------------------------------------------
-// Sends the arguments in a RAF request to the Traffic Server RAF port. 
+// Sends the arguments in a RAF request to the Traffic Server RAF port.
 // Input: arguments - follows the "id congest ...." of RAF request
 // Output: returns the socket file descriptor to read the RAF response from
-// 
+//
 int
 send_cli_congest_request(const char *arguments)
 {
@@ -200,7 +200,7 @@ send_cli_congest_request(const char *arguments)
     Debug("raf", "[send_cli_congest_request] connect failed (%d)", connect_result);
     return -1;
   }
-  // send RAF query request 
+  // send RAF query request
   memset(request, 0, 257);
   snprintf(request, 256, "0 congest %s\n", arguments);
   raf_writen(s, request, strlen(request));

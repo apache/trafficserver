@@ -25,7 +25,7 @@
 
   StatPages.cc
 
-  
+
  ****************************************************************************/
 
 #include "ink_config.h"
@@ -114,8 +114,8 @@ bool StatPagesManager::is_stat_page(URL * url)
   host[length] = '\0';
   unescapifyStr(host);
   length = strlen(host);
-//return ((host[0] == '{') && (host[length-1] == '}')); 
-//Bug fixed by YTS Team, yamsat BZ58899    
+//return ((host[0] == '{') && (host[length-1] == '}'));
+//Bug fixed by YTS Team, yamsat BZ58899
   bool
     retVal;
   if ((host[0] == '{') && (host[length - 1] == '}'))

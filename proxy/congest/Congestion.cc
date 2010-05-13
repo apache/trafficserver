@@ -245,7 +245,7 @@ CongestionControlRecord::Init(matcher_line * line_info)
       prefix = xstrdup(val);
       prefix_len = strlen(prefix);
       rank += 1;
-      // prefix will be used in the ControlBase 
+      // prefix will be used in the ControlBase
       continue;
     } else if (strcasecmp(label, "port") == 0) {
       port = atoi(val);
@@ -352,7 +352,7 @@ struct CongestionControl_UpdateContinuation:Continuation
 
 extern void initCongestionDB();
 
-// place holder for congestion control enable config 
+// place holder for congestion control enable config
 static int
 CongestionControlEnabledChanged(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
@@ -777,7 +777,7 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
 
 //-------------------------------------------------------------
 // When a connection failure happened, try to get the lock
-//  first and change register the event, if we can not get 
+//  first and change register the event, if we can not get
 //  the lock, discard the event
 //-------------------------------------------------------------
 void

@@ -26,7 +26,7 @@
 
 //
 // Template of a static size pool of objects.
-// 
+//
 //
 template<class C> class InkStaticPool {
 public:

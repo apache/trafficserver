@@ -26,7 +26,7 @@
  * MgmtUtils.h
  *   Some utility and support functions for the management module.
  *
- * 
+ *
  */
 
 #include "ink_unused.h"      /* MAGIC_EDITING_TAG */
@@ -103,11 +103,11 @@ mgmt_readline(int soc, char *buf, int maxlen)
 }                               /* End mgmt_readline */
 
 
-/* 
+/*
  * mgmt_writeline(...)
  *   Simple, inefficient, write line function. Takes a soc to write to,
- * a char * containing the data, and the number of bytes to write. 
- * It sends nbytes + 1 bytes worth of data, the + 1 being the newline 
+ * a char * containing the data, and the number of bytes to write.
+ * It sends nbytes + 1 bytes worth of data, the + 1 being the newline
  * character.
  *
  * Returns:    num bytes not written
@@ -142,7 +142,7 @@ mgmt_writeline(int soc, const char *data, int nbytes)
 
 #if !defined(_WIN32)
 
-/* 
+/*
  * mgmt_read_pipe()
  * - Reads from a pipe
  *
@@ -184,7 +184,7 @@ mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
   return bytes_read;
 }
 
-/* 
+/*
  * mgmt_write_pipe()
  * - Writes to a pipe
  *
@@ -228,7 +228,7 @@ mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
 
 #else
 
-/* 
+/*
  * mgmt_read_pipe()
  * - Reads from a message type named pipe.
  * - Blocking.
@@ -264,7 +264,7 @@ mgmt_read_pipe(HANDLE hpipe, char *buf, int maxlen)
   return bytesRead;
 }
 
-/* 
+/*
  * mgmt_write_pipe()
  * - Writes to a message type named pipe.
  * - Blocking.
@@ -384,7 +384,7 @@ mgmt_log(const char *message_format, ...)
 
 /*
  * mgmt_log(...)
- *   Same as above, but intended for errors. 
+ *   Same as above, but intended for errors.
  */
 void
 mgmt_elog(FILE * log, const char *message_format, ...)
@@ -606,7 +606,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
   int lastlen;
   int len;
 
-  // Prevent UMRs 
+  // Prevent UMRs
   memset(addr, 0, sizeof(struct in_addr));
 
   if ((fakeSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {

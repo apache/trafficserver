@@ -27,7 +27,7 @@
 
   C++ support for string manipulation.
 
-  
+
  ****************************************************************************/
 
 #if !defined (_ink_string_pp_h_)

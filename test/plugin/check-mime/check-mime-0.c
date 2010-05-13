@@ -300,7 +300,7 @@ printHeader(INKMBuffer bufp, INKMLoc hdr_loc)
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
        the loop. A block with no data to read means we've exhausted
-       buffer of data since if there was more data on a later 
+       buffer of data since if there was more data on a later
        block in the chain, this block would have been skipped over */
     if (block_avail == 0) {
       break;
@@ -633,9 +633,9 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
 
     /* CAUTION: (reference - INKqa8336)
      * Here we are doing a INKMimeHdrCopy without creating a HTTP header first.
-     * So the dest MIME header (tmpMimeHdrLoc) is not associated with any HTTP header.  
-     * This is hardly ever the case, and should NOT be practised in general.  I am 
-     * doing so merely to test the API's functional correctness and NOT to suggest 
+     * So the dest MIME header (tmpMimeHdrLoc) is not associated with any HTTP header.
+     * This is hardly ever the case, and should NOT be practised in general.  I am
+     * doing so merely to test the API's functional correctness and NOT to suggest
      * a possible usage of the API */
 
     if ((tmpBuf = INKMBufferCreate()) == INK_ERROR_PTR) {
@@ -742,10 +742,10 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
                 /****** section (6) ******/
     /* -----------------------------------------------------------------------
      * Now, insert some fields into the MIME buffer
-     * Note: 
+     * Note:
      *      1. Field name can be set before and/or after INKMimeHdrFieldInsert
      *      2. Field value could be set *only* after INKMimeHdrFieldValueInsert
-     *      
+     *
      * (point 1. and 2. implies that its possible to insert fields with empty
      * name and values)
      * -----------------------------------------------------------------------*/

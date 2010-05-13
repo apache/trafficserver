@@ -265,7 +265,7 @@ CacheObj::CacheObj(TokenList * tokens)
     // must have a time specified
     if (strcmp(tok->name, "pin-in-cache") != 0 && strcmp(tok->name, "revalidate") != 0 &&
         strcmp(tok->name, "ttl-in-cache") != 0) {
-      goto FORMAT_ERR;          // wrong token!! 
+      goto FORMAT_ERR;          // wrong token!!
     }
     if (string_to_hms_time(tok->value, &(m_ele->time_period)) != INK_ERR_OKAY) {
       goto FORMAT_ERR;
@@ -506,7 +506,7 @@ CongestionObj::~CongestionObj()
 
 //
 // will always print defaults in the rule
-// 
+//
 char *
 CongestionObj::formatEleToRule()
 {
@@ -659,7 +659,7 @@ FilterObj::FilterObj(TokenList * tokens)
     goto FORMAT_ERR;
 
 
-  // must have another token 
+  // must have another token
   tok = tokens->next(tok);
   if (!tok || !tok->value)
     goto FORMAT_ERR;
@@ -745,7 +745,7 @@ FilterObj::FilterObj(TokenList * tokens)
       tok = tokens->next(tok);
     }
   } else {
-    // Sanity check -- should have no more token 
+    // Sanity check -- should have no more token
     if (tokens->next(tok)) {
       goto FORMAT_ERR;
     }
@@ -1166,7 +1166,7 @@ bool HostingObj::isValid()
     m_valid = false;
     goto Lend;
   }
-  // check that each partition is between 1-255 
+  // check that each partition is between 1-255
   len = INKIntListLen(m_ele->partitions);
   for (i = 0; i < len; i++) {
     part = INKIntListDequeue(m_ele->partitions);
@@ -1392,7 +1392,7 @@ bool IcpObj::isValid()
   if (m_ele->peer_host_ip_addr && !ccu_checkIpAddr(m_ele->peer_host_ip_addr)) {
     m_valid = false;
   }
-  // check valid cache type       
+  // check valid cache type
   if (m_ele->peer_type == INK_ICP_UNDEFINED) {
     m_valid = false;
   }
@@ -1404,7 +1404,7 @@ bool IcpObj::isValid()
   if (!ccu_checkPortNum(m_ele->peer_icp_port)) {
     m_valid = false;
   }
-  // check valid multicast values: mc_ttl, mc_ip, if enabled 
+  // check valid multicast values: mc_ttl, mc_ip, if enabled
   if (m_ele->is_multicast) {
     // a valid multicast address must be between 224.0.0.0-239.255.255.255
     if (!ccu_checkIpAddr(m_ele->mc_ip_addr, "224.0.0.0", "239.255.255.255") || m_ele->mc_ttl == INK_MC_TTL_UNDEFINED)
@@ -1671,7 +1671,7 @@ bool MgmtAllowObj::isValid()
   if (m_ele->cfg_ele.error != INK_ERR_OKAY) {
     m_valid = false;
   }
-  // must specify source IP addr 
+  // must specify source IP addr
   if (!m_ele->src_ip_addr) {
     m_valid = false;
   }
@@ -1943,7 +1943,7 @@ PartitionObj::PartitionObj(TokenList * tokens)
   if (strcmp(token->name, "size") || !token->value) {
     goto FORMAT_ERR;
   }
-  // CAUTION: we may need a tigher error check 
+  // CAUTION: we may need a tigher error check
   if (strstr(token->value, "%")) {
     m_ele->size_format = INK_SIZE_FMT_PERCENT;
   } else {
@@ -2128,7 +2128,7 @@ bool PluginObj::isValid()
   if (m_ele->cfg_ele.error != INK_ERR_OKAY) {
     m_valid = false;
   }
-  // check plugin name 
+  // check plugin name
   if (!m_ele->name || strcmp(m_ele->name, "") == 0) {
     m_valid = false;
   }
@@ -2298,7 +2298,7 @@ RemapObj::RemapObj(TokenList * tokens)
     }
   }
 
-  // Optional MIXT tag 
+  // Optional MIXT tag
   token = tokens->next(token);
   if (token) {
     if (!token->name) {
@@ -2543,7 +2543,7 @@ SocksObj::SocksObj(TokenList * tokens)
   if (m_ele->cfg_ele.type == INK_TYPE_UNDEFINED) {
     goto FORMAT_ERR;
   }
-  // Determine if it's  a "no-socks" rule or a "parent socks servers" rule 
+  // Determine if it's  a "no-socks" rule or a "parent socks servers" rule
   tok = tokens->first();
   if (strcmp(tok->name, "no_socks") == 0) {     // no-socks rule; INK_SOCKS_BYPASS
 
@@ -2568,8 +2568,8 @@ SocksObj::SocksObj(TokenList * tokens)
     } else {
       goto FORMAT_ERR;
     }
-  } else {                      // multiple socks servers rule; INK_SOCKS_MULTIPLE 
-    // should be dest_ip tag 
+  } else {                      // multiple socks servers rule; INK_SOCKS_MULTIPLE
+    // should be dest_ip tag
     if (strcmp(tok->name, "dest_ip") == 0) {
       m_ele->dest_ip_addr = string_to_ip_addr_ele(tok->value);
     } else {
@@ -2602,7 +2602,7 @@ SocksObj::SocksObj(TokenList * tokens)
         }
         m_ele->socks_servers = string_to_domain_list(tok->value, ";");
       }
-    }                           // end for loop 
+    }                           // end for loop
 
   }
 
@@ -2628,7 +2628,7 @@ SocksObj::formatEleToRule()
   char buf[MAX_RULE_SIZE];
   memset(buf, 0, MAX_RULE_SIZE);
 
-  if (m_ele->ip_addrs != NULL) {        // INK_SOCKS_BYPASS rule 
+  if (m_ele->ip_addrs != NULL) {        // INK_SOCKS_BYPASS rule
     char *str_list = ip_addr_list_to_string((LLQ *) m_ele->ip_addrs, ",");
     if (str_list) {
       snprintf(buf, sizeof(buf), "no_socks %s", str_list);
@@ -2636,10 +2636,10 @@ SocksObj::formatEleToRule()
     } else {
       return NULL;              // invalid ip_addr_list
     }
-  } else if (m_ele->username != NULL) { // INK_SOCKS_AUTH rule 
+  } else if (m_ele->username != NULL) { // INK_SOCKS_AUTH rule
     snprintf(buf, sizeof(buf), "auth u %s %s", m_ele->username, m_ele->password);
-  } else {                      // INK_SOCKS_MULTIPLE rule 
-    // destination ip 
+  } else {                      // INK_SOCKS_MULTIPLE rule
+    // destination ip
     char *ip_str = ip_addr_ele_to_string((INKIpAddrEle *) m_ele->dest_ip_addr);
     if (ip_str) {
       strncat(buf, "dest_ip=", sizeof(buf) - strlen(buf) - 1);
@@ -2692,9 +2692,9 @@ SocksObj::formatEleToRule()
   return xstrdup(buf);
 }
 
-// the rule must either have an ip addr list (exclusive) OR 
-// the dest_ip_addr * socks_servers OR 
-// the username and password 
+// the rule must either have an ip addr list (exclusive) OR
+// the dest_ip_addr * socks_servers OR
+// the username and password
 bool SocksObj::isValid()
 {
   if (m_ele->cfg_ele.error != INK_ERR_OKAY) {
@@ -2947,7 +2947,7 @@ bool SplitDnsObj::isValid()
   if (!INKDomainListIsValid(m_ele->dns_servers_addrs)) {
     m_valid = false;
   }
-  // search_list is optional 
+  // search_list is optional
   if (m_ele->search_list && !INKDomainListIsValid(m_ele->search_list)) {
     m_valid = false;
   }
@@ -3155,13 +3155,13 @@ bool UpdateObj::isValid()
   if (m_ele->cfg_ele.error != INK_ERR_OKAY) {
     m_valid = false;
   }
-  // check url 
+  // check url
   if (!m_ele->url || strcmp(m_ele->url, "") == 0 ||
       strstr(m_ele->url, "\\") ||
       (!strstr(m_ele->url, "http") && !strstr(m_ele->url, "rtsp"))) {
     m_valid = false;
   }
-  // bug 49322: check that there are no "\" in the url or headers 
+  // bug 49322: check that there are no "\" in the url or headers
   char *
     list_str = string_list_to_string(m_ele->headers, ";");
   if (list_str) {
@@ -3169,7 +3169,7 @@ bool UpdateObj::isValid()
       m_valid = false;
     xfree(list_str);
   }
-  // offset hour range is 00-23 
+  // offset hour range is 00-23
   if (m_ele->offset_hour < 0 || m_ele->offset_hour > 23)
     m_valid = false;
 
@@ -3328,7 +3328,7 @@ CfgContext::~CfgContext()
 INKError CfgContext::addEle(CfgEleObj * ele)
 {
   ink_assert(ele != NULL);
-  m_eles.enqueue(ele);          // enqueue CfgEleObj at end of Queue 
+  m_eles.enqueue(ele);          // enqueue CfgEleObj at end of Queue
   return INK_ERR_OKAY;
 }
 

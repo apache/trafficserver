@@ -92,7 +92,7 @@ is_asterisk(char *s)
 }
 
 
-// someday, reduce the amount of duplicate code between this 
+// someday, reduce the amount of duplicate code between this
 // function and _process_xxx_connection_field_in_outgoing_header
 inline static HTTPKeepAlive
 is_header_keep_alive(const HTTPVersion & http_version, const HTTPVersion & request_http_version, MIMEField * con_hdr    /*, bool* unknown_tokens */
@@ -138,7 +138,7 @@ is_header_keep_alive(const HTTPVersion & http_version, const HTTPVersion & reque
           break;
         } else if (ptr_len_casecmp(val, val_len, "close", 5) == 0) {
           con_token = CON_TOKEN_CLOSE;
-          /* 
+          /*
              if (!*unknown_tokens) {
              *unknown_tokens = (iter->get_next(&val_len) == NULL);
              } */
@@ -349,7 +349,7 @@ find_server_and_update_current_info(HttpTransact::State * s)
       break;
     case PARENT_FAIL:
       // Check to see if should bypass the parent and go direct
-      //   We can only do this if 
+      //   We can only do this if
       //   1) the parent was not set from API
       //   2) the config permits us
       //   3) the config permitted us to dns the origin server
@@ -545,7 +545,7 @@ how_to_open_connection(HttpTransact::State * s)
            !s->hdr_info.server_request.presence(MIME_PRESENCE_HOST)) {
         URL *url = s->hdr_info.server_request.url_get();
         host = url->host_get(&host_len);
-        // Add a ':port' to the HOST header if the request is not going 
+        // Add a ':port' to the HOST header if the request is not going
         // to the default port.
         int port = url->port_get();
         if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
@@ -845,9 +845,9 @@ HttpTransact::StartRemapRequest(State * s)
 
         /**
 	 * Check for URL remappings before checking request
-	 * validity or initializing state variables since       
-	 * the remappings can insert or change the destination  
-	 * host, port and protocol.                             
+	 * validity or initializing state variables since
+	 * the remappings can insert or change the destination
+	 * host, port and protocol.
 	**/
 
   HTTPHdr *incoming_request = &(s->hdr_info.client_request);
@@ -1073,7 +1073,7 @@ HttpTransact::ModifyRequest(State * s)
 
   Debug("http_trans", "START HttpTransact::ModifyRequest");
 
-  // Intialize the state vars necessary to sending error responses      
+  // Intialize the state vars necessary to sending error responses
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
 
   ////////////////////////////////////////////////
@@ -1270,7 +1270,7 @@ HttpTransact::HandleRequest(State * s)
   // initialize the cache_control structure read from cache.config
   update_cache_control_information_from_config(s);
 
-  // We still need to decide whether or not to do a cache lookup since 
+  // We still need to decide whether or not to do a cache lookup since
   // the scheduled update code depends on this info.
   if (is_request_cache_lookupable(s, &s->hdr_info.client_request))
     s->cache_info.action = CACHE_DO_LOOKUP;
@@ -1339,8 +1339,8 @@ HttpTransact::HandleRequest(State * s)
     }
   }
   // Added to skip the dns if the document is in the cache.
-  // DNS is requested before cache lookup only if there are rules in cache.config , parent.config or 
-  // if the newly added varible doc_in_cache_skip_dns is not enabled              
+  // DNS is requested before cache lookup only if there are rules in cache.config , parent.config or
+  // if the newly added varible doc_in_cache_skip_dns is not enabled
   if (s->dns_info.lookup_name[0] <= '9' &&
       s->dns_info.lookup_name[0] >= '0' &&
      // (s->state_machine->authAdapter.needs_rev_dns() ||
@@ -1348,7 +1348,7 @@ HttpTransact::HandleRequest(State * s)
     s->force_dns = 1;
   }
   //YTS Team, yamsat Plugin
-  //Doing a Cache Lookup in case of a Redirection to ensure that 
+  //Doing a Cache Lookup in case of a Redirection to ensure that
   //the newly requested object is not in the CACHE
   if (s->http_config_param->cache_http && s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
     TRANSACT_RETURN(CACHE_LOOKUP, NULL);
@@ -1358,7 +1358,7 @@ HttpTransact::HandleRequest(State * s)
   if (s->force_dns) {
     TRANSACT_RETURN(DNS_LOOKUP, OSDNSLookup);   // After handling the request, DNS is done.
   } else {
-    // After the requested is properly handled No need of requesting the DNS directly check the ACLs 
+    // After the requested is properly handled No need of requesting the DNS directly check the ACLs
     // if the request is Authorised
     StartAccessControl(s);
   }
@@ -1445,7 +1445,7 @@ HttpTransact::HandleApiErrorJump(State * s)
 // Description: called after DNS lookup of parent proxy name
 //
 // Details    :
-//   
+//
 // the configuration information gave us the name of the parent proxy
 // to send the request to. this function is called after the dns lookup
 // for that name. it may fail, in which case we look for the next parent
@@ -1521,8 +1521,8 @@ HttpTransact::PPDNSLookup(State * s)
 //
 // Details    :
 //
-//  
-//  
+//
+//
 // Possible Next States From Here:
 // - HttpTransact::ORIGIN_SERVER_RAW_OPEN;
 // - HttpTransact::ORIGIN_SERVER_OPEN;
@@ -1538,7 +1538,7 @@ HttpTransact::ReDNSRoundRobin(State * s)
 
   if (s->dns_info.lookup_success) {
 
-    // We using a new server now so clear the connection 
+    // We using a new server now so clear the connection
     //  failure mark
     s->current.server->connect_failure = 0;
 
@@ -1606,7 +1606,7 @@ HttpTransact::ReDNSRoundRobin(State * s)
 // Description: called after the DNS lookup of origin server name
 //
 // Details    :
-//   
+//
 // normally called after Start. may be called more than once, however,
 // if the dns lookup fails. this may be if the client does not specify
 // the full hostname (e.g. just cnn, instead of www.cnn.com), or because
@@ -1750,8 +1750,8 @@ HttpTransact::OSDNSLookup(State * s)
 
   if (return_action == CONNECTION_COLLAPSING_SCHEDULED) {
     // Changing the state from DNS_LOOKUP to STATE_MACHINE_ACTION_UNDEFINED
-    //As the handler has been scheduled, the event system would call back 
-    //after rww_wait_time. So lets return to Zero state from here so that 
+    //As the handler has been scheduled, the event system would call back
+    //after rww_wait_time. So lets return to Zero state from here so that
     //transaction starts afresh when piggybacked_handler is scheduled
     //YTS Team, yamsat
     TRANSACT_RETURN(STATE_MACHINE_ACTION_UNDEFINED, NULL);
@@ -1759,8 +1759,8 @@ HttpTransact::OSDNSLookup(State * s)
 
   else if (return_action == CACHE_RELOOKUP) {
     //This case arises if a client could not insert an entry in Hash Table
-    //as someother url has inserted it.Therefore there is a possibility 
-    //for this client to get the object from Cache instead of going to 
+    //as someother url has inserted it.Therefore there is a possibility
+    //for this client to get the object from Cache instead of going to
     //origin server connection -- YTS Team, yamsat
     TRANSACT_RETURN(CACHE_LOOKUP, NULL);
   }
@@ -1770,7 +1770,7 @@ HttpTransact::OSDNSLookup(State * s)
   // return a response to the client with the expanded host name
   // and a tasty little blurb explaining what happened.
 
-  // if a DNS lookup succeeded on a user-defined 
+  // if a DNS lookup succeeded on a user-defined
   // hostname expansion, forward the request to the expanded hostname.
   // On the other hand, if the lookup succeeded on a www.<hostname>.com
   // expansion, return a 302 response.
@@ -1804,7 +1804,7 @@ HttpTransact::OSDNSLookup(State * s)
              s->dns_info.lookup_name[0] >= '0' &&
              //(s->state_machine->authAdapter.needs_rev_dns() ||
              ( host_rule_in_CacheControlTable() || s->parent_params->ParentTable->hostMatch)) {
-    // note, broken logic: ACC fudges the OR stmt to always be true, 
+    // note, broken logic: ACC fudges the OR stmt to always be true,
     // 'AuthHttpAdapter' should do the rev-dns if needed, not here .
     TRANSACT_RETURN(REVERSE_DNS_LOOKUP, HttpTransact::StartAccessControl);
   } else {
@@ -1820,7 +1820,7 @@ HttpTransact::OSDNSLookup(State * s)
         TRANSACT_RETURN(HttpTransact::HTTP_API_OS_DNS, HandleCacheOpenReadMiss);
       } else if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_SKIPPED) {
         TRANSACT_RETURN(HttpTransact::HTTP_API_OS_DNS, LookupSkipOpenServer);
-        // DNS Lookup is done after LOOKUP Skipped  and after we get response 
+        // DNS Lookup is done after LOOKUP Skipped  and after we get response
         // from the DNS we need to call LookupSkipOpenServer
       } else if (s->cache_lookup_result == CACHE_LOOKUP_HIT_FRESH ||
                  s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
@@ -1844,7 +1844,7 @@ HttpTransact::StartAccessControl(State * s)
 {
   //if (s->cop_test_page || s->traffic_net_req || (s->state_machine->authAdapter.disabled() == true)) {
     // Heartbeats should always be allowed.
-    // s->content_control.access = ACCESS_ALLOW;   
+    // s->content_control.access = ACCESS_ALLOW;
     HandleRequestAuthorized(s);
   //  return;
  // }
@@ -1852,7 +1852,7 @@ HttpTransact::StartAccessControl(State * s)
   // Don't use req_flavor to do the test because if updated
   // urls are remapped, the req_flavor is changed to REV_PROXY.
   //if (s->state_machine->ua_session == NULL) {
-    // Scheduled updates should always be allowed 
+    // Scheduled updates should always be allowed
    // return;
   //}
   // pass the access control logic to the ACC module.
@@ -1926,7 +1926,7 @@ HttpTransact::DecideCacheLookup(State * s)
 {
   // Check if a client request is lookupable.
   if (s->redirect_info.redirect_in_process) {
-    // for redirect, we want to skip cache lookup and write into 
+    // for redirect, we want to skip cache lookup and write into
     // the cache directly with the URL before the redirect
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->current.mode = GENERIC_PROXY;
@@ -2020,7 +2020,7 @@ HttpTransact::DecideCacheLookup(State * s)
       s->cache_info.action = CACHE_DO_WRITE;
       LookupSkipOpenServer(s);
     } else {
-      // calling out CACHE_LOOKUP_COMPLETE_HOOK even when the cache 
+      // calling out CACHE_LOOKUP_COMPLETE_HOOK even when the cache
       // lookup is skipped
       s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_SKIPPED;
       if (s->force_dns) {
@@ -2061,7 +2061,7 @@ HttpTransact::LookupSkipOpenServer(State * s)
 
 //////////////////////////////////////////////////////////////////////////////
 // Name       : HandleCacheOpenReadPush
-// Description: 
+// Description:
 //
 // Details    :
 //
@@ -2082,7 +2082,7 @@ HttpTransact::HandleCacheOpenReadPush(State * s, bool read_successful)
 
 //////////////////////////////////////////////////////////////////////////////
 // Name       : HandlePushResponseHdr
-// Description: 
+// Description:
 //
 // Details    :
 //
@@ -2123,7 +2123,7 @@ HttpTransact::HandlePushResponseHdr(State * s)
 
 //////////////////////////////////////////////////////////////////////////////
 // Name       : HandlePushCacheWrite
-// Description: 
+// Description:
 //
 // Details    :
 //
@@ -2206,7 +2206,7 @@ HttpTransact::HandlePushError(State *s, const char *reason)
 // Description: the cache lookup succeeded - may have been a hit or a miss
 //
 // Details    :
-//   
+//
 // the cache lookup succeeded. first check if the lookup resulted in
 // a hit or a miss, if the lookup was for an http request.
 // This function just funnels the result into the appropriate
@@ -2284,7 +2284,7 @@ HttpTransact::HandleCacheOpenRead(State * s)
 //
 //
 // Possible Next States From Here:
-// - 
+// -
 //
 ///////////////////////////////////////////////////////////////////////////////
 void
@@ -2296,8 +2296,8 @@ HttpTransact::issue_revalidate(State * s)
 
   if (s->www_auth_content == CACHE_AUTH_FRESH) {
     s->hdr_info.server_request.method_set(HTTP_METHOD_HEAD, HTTP_LEN_HEAD);
-    // The document is fresh in cache and we just want to see if the 
-    // the client has the right credentials 
+    // The document is fresh in cache and we just want to see if the
+    // the client has the right credentials
     // this cache action is just to get us into the hcoofsr function
     s->cache_info.action = CACHE_DO_UPDATE;
     DUMP_HEADER("http_hdrs", &(s->hdr_info.server_request), s->state_machine_id, "Proxy's Request (Conditionalized)");
@@ -2318,7 +2318,7 @@ HttpTransact::issue_revalidate(State * s)
       Debug("http_seq", "[HttpTransact::issue_revalidate] cache action: UPDATE");
     }
   } else {
-    // We've looped back around due to missing the write lock 
+    // We've looped back around due to missing the write lock
     //  for the cache.  At this point we want to forget about the cache
     ink_assert(s->cache_info.write_lock_state == CACHE_WL_READ_RETRY);
     s->cache_info.action = CACHE_DO_NO_ACTION;
@@ -2445,7 +2445,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State * s)
     DebugOn("http_trans", "[HandleCacheOpenReadHitFreshness] request_sent_time      : %ld", s->request_sent_time);
     DebugOn("http_trans", "[HandleCacheOpenReadHitFreshness] response_received_time : %ld", s->response_received_time);
   }
-  // if the plugin has already decided the freshness, we don't need to 
+  // if the plugin has already decided the freshness, we don't need to
   // do it again
   if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_NONE) {
     // is the document still fresh enough to be served back to
@@ -2479,7 +2479,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State * s)
   if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_HIT_STALE)
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
 
-  if (!s->force_dns) {          // If DNS is not performed before 
+  if (!s->force_dns) {          // If DNS is not performed before
     if (need_to_revalidate(s)) {
       TRANSACT_RETURN(HTTP_API_CACHE_LOOKUP_COMPLETE, CallOSDNSLookup); // content needs to be revalidated and we did not perform a dns ....calling DNS lookup
     } else {                    // document can be served can cache
@@ -2507,9 +2507,9 @@ HttpTransact::CallOSDNSLookup(State * s)
 // Name       : need_to_revalidate
 // Description: Checks if a document which is in the cache needs to be revalidates
 //
-// Details    : Function calls AuthenticationNeeded and is_cache_response_returnable to determine 
-//              if the cached document can be served 
-/////////////////////////////////////////////////////////////////////////////   
+// Details    : Function calls AuthenticationNeeded and is_cache_response_returnable to determine
+//              if the cached document can be served
+/////////////////////////////////////////////////////////////////////////////
 bool
 HttpTransact::need_to_revalidate(State * s)
 {
@@ -2579,15 +2579,15 @@ HttpTransact::need_to_revalidate(State * s)
 // Description: handle result of a cache hit
 //
 // Details    :
-//   
+//
 // Cache lookup succeeded and resulted in a cache hit. This means
 // that the Accept* and Etags fields also matched. The cache lookup
 // may have resulted in a vector of alternates (since lookup may
 // be based on a url). A different function (SelectFromAlternates)
 // goes through the alternates and finds the best match. That is
 // then returned to this function. The result may not be sent back
-// to the client, still, if the document is not fresh enough, or 
-// does not have enough authorization, or if the client wants a 
+// to the client, still, if the document is not fresh enough, or
+// does not have enough authorization, or if the client wants a
 // reload, etc. that decision will be made in this routine.
 //
 //
@@ -2599,8 +2599,8 @@ HttpTransact::need_to_revalidate(State * s)
 // - HttpTransact::SERVE_FROM_CACHE;
 // - result of how_to_open_connection()
 //
-// 
-// For Range requests, we will decide to do simple tunnelling if one of the 
+//
+// For Range requests, we will decide to do simple tunnelling if one of the
 // following conditions hold:
 // - document stale
 // - cached response doesn't have Accept-Ranges and Content-Length
@@ -2661,9 +2661,9 @@ HttpTransact::HandleCacheOpenReadHit(State * s)
 
   // the response may not be directly returnable to the client. there
   // are several reasons for this: config may force revalidation or
-  // client may have forced a refresh by sending a Pragma:no-cache 
-  // or a Cache-Control:no-cache, or the client may have sent a 
-  // non-GET/HEAD request for a document that is cached. an example 
+  // client may have forced a refresh by sending a Pragma:no-cache
+  // or a Cache-Control:no-cache, or the client may have sent a
+  // non-GET/HEAD request for a document that is cached. an example
   // of a situation for this is when a client sends a DELETE, PUT
   // or POST request for a url that is cached. except for DELETE,
   // we may actually want to update the cached copy with the contents
@@ -2699,7 +2699,7 @@ HttpTransact::HandleCacheOpenReadHit(State * s)
   //Added by YTS Team, yamsat
 
   //At this juncture, the object needs to be revalidated. But check if some other client
-  //is already in the process of revalidation. Looking-up hashtable will enable to find 
+  //is already in the process of revalidation. Looking-up hashtable will enable to find
   //if someone's there.The foll cases arise
   // 1) if URL inserted and revalidation_window_period not expired, then this client will
   //    be served stale object.
@@ -2814,7 +2814,7 @@ HttpTransact::HandleCacheOpenReadHit(State * s)
   // cache hit, document is fresh, does not authorization,
   // is valid, etc. etc. send it back to the client.
   //
-  // the important thing to keep in mind is that if we are 
+  // the important thing to keep in mind is that if we are
   // here then we found a match in the cache and the document
   // is fresh and we have enough authorization for it to send
   // it back to the client without revalidating first with the
@@ -2987,7 +2987,7 @@ HttpTransact::build_response_from_cache(State * s, HTTPWarningCode warning_code)
           s->next_action = PROXY_INTERNAL_CACHE_NOOP;
           break;
         } else if (s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED) {
-          // we switch to tunneing for Range requests either 
+          // we switch to tunneing for Range requests either
           // 1. we need to revalidate or
           // 2. out-of-order Range requests
           Debug("http_seq", "[HttpTransact::HandleCacheOpenReadHit] Out-oforder Range request - tunneling");
@@ -3040,10 +3040,10 @@ HttpTransact::build_response_from_cache(State * s, HTTPWarningCode warning_code)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_cache_write_lock
-// Description: 
+// Description:
 //
 // Details    :
-//   
+//
 //
 //
 // Possible Next States From Here:
@@ -3074,7 +3074,7 @@ HttpTransact::handle_cache_write_lock(State * s)
     //  Write failed but retried and got a vector to read
     //  We need to clean up our state so that transact does
     //  not assert later on.  Then handle the open read hit
-    //  
+    //
     s->request_sent_time = UNDEFINED_TIME;
     s->response_received_time = UNDEFINED_TIME;
     s->cache_info.action = CACHE_DO_LOOKUP;
@@ -3106,8 +3106,8 @@ HttpTransact::handle_cache_write_lock(State * s)
   if (s->cache_info.write_lock_state == CACHE_WL_READ_RETRY) {
     s->hdr_info.server_request.destroy();
 
-    // We need to cleanup SDK handles to cached hdrs 
-    //   since those headers are no longer good as we've closed 
+    // We need to cleanup SDK handles to cached hdrs
+    //   since those headers are no longer good as we've closed
     //   the orginal cache read vc and replaced it with a new cache
     //   read vc on the write lock read retry loop
     if (s->cache_req_hdr_heap_handle) {
@@ -3146,7 +3146,7 @@ HttpTransact::handle_cache_write_lock(State * s)
 // Description: cache looked up, miss or hit, but needs authorization
 //
 // Details    :
-//   
+//
 //
 //
 // Possible Next States From Here:
@@ -3249,10 +3249,10 @@ HttpTransact::HandleCacheOpenReadMiss(State * s)
 #ifndef INK_NO_ICP
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : HandleICPLookup
-// Description: 
+// Description:
 //
 // Details    :
-//   
+//
 //
 //
 // Possible Next States From Here:
@@ -3326,7 +3326,7 @@ HttpTransact::HandleICPLookup(State * s)
 // Description: called for ssl tunnelling
 //
 // Details    :
-//   
+//
 // when the method is CONNECT, we open a raw connection to the origin
 // server. if the open succeeds, then do ssl tunnelling from the client
 // to the host.
@@ -3904,10 +3904,10 @@ HttpTransact::delete_srv_entry(State * s, int max_retries)
           TRANSACT_RETURN(OS_RR_MARK_DOWN, ReDNSRoundRobin);
         }
 
-        /* 
+        /*
            assert: at this point, we have (inside still_ok_hosts) those SRV records that were NOT pointing to the
            same hostname as the one that just failed; lets reenqueue those into the HostDB and perform another "lookup"
-           which [hopefully] will find these records inside the HostDB and use them. 
+           which [hopefully] will find these records inside the HostDB and use them.
          */
 
         new_r->ip_timeout_interval = 45;        /* good for 45 seconds, then lets re-validate? */
@@ -3965,7 +3965,7 @@ HttpTransact::delete_srv_entry(State * s, int max_retries)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : delete_server_rr_entry
-// Description: 
+// Description:
 //
 // Details    :
 //
@@ -3997,7 +3997,7 @@ HttpTransact::delete_server_rr_entry(State * s, int max_retries)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : retry_server_connection_not_open
-// Description: 
+// Description:
 //
 // Details    :
 //
@@ -4054,7 +4054,7 @@ HttpTransact::retry_server_connection_not_open(State * s, ServerState_t conn_sta
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_server_connection_not_open
-// Description: 
+// Description:
 //
 // Details    :
 //
@@ -4344,7 +4344,7 @@ HttpTransact::build_response_copy(State * s, HTTPHdr * base_response,
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_cache_operation_on_forward_server_response
-// Description: 
+// Description:
 //
 // Details    :
 //
@@ -4829,7 +4829,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_no_cache_operation_on_forward_server_response
-// Description: 
+// Description:
 //
 // Details    :
 //
@@ -4876,7 +4876,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State * s)
     if (!is_request_conditional(&s->hdr_info.client_request)) {
       // bogus server response. not a conditional request
       // from the client and probably not a conditional
-      // request from the proxy. 
+      // request from the proxy.
 
       // since this is bad, insert warning header into client response
       warn_text = "Proxy received unexpected 304 response; content may be stale";
@@ -5076,7 +5076,7 @@ HttpTransact::set_header_for_transform(State * s, HTTPHdr * base_header)
   s->hdr_info.transform_response.create(HTTP_TYPE_RESPONSE);
   s->hdr_info.transform_response.copy(base_header);
 
-  // Nuke the content length since 1) the transform will probably 
+  // Nuke the content length since 1) the transform will probably
   //   change it.  2) it would only be valid for the first transform
   //   in the chain
   s->hdr_info.transform_response.field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
@@ -5103,7 +5103,7 @@ HttpTransact::set_headers_for_cache_write(State * s, HTTPInfo * cache_info, HTTP
   //  Nasty hack. The set calls for
   //  marshalled types current do handle something being
   //  set to itself.  Make the check here for that case.
-  //  Why the request url is set before a copy made is 
+  //  Why the request url is set before a copy made is
   //  quite beyond me.  Seems like a unsafe practice so
   //  FIX ME!
 
@@ -5221,11 +5221,11 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr * cached_header, 
     if (name == MIME_FIELD_WARNING) {
       continue;
     }
-    // Copy all remaining headers with replacement      
+    // Copy all remaining headers with replacement
 
     // Duplicate header fields cause a bug problem
     //   since we need to duplicate with replacement.
-    //   Without dups, we can just nuke what is already 
+    //   Without dups, we can just nuke what is already
     //   there in the cached header.  With dups, we
     //   can't do this because what is already there
     //   may be a dup we've already copied in.  If
@@ -5234,7 +5234,7 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr * cached_header, 
     //   them in the cached response and then add in
     //   the remaining fields one by one from the
     //   response header
-    //    
+    //
     if (field->m_next_dup) {
       if (dups_seen == false) {
         MIMEField *dfield;
@@ -5286,7 +5286,7 @@ HttpTransact::merge_warning_header(HTTPHdr * cached_header, HTTPHdr * response_h
   //         doesn't deal with warning headers.
   //    2) If there are 1xx warning codes in the cached
   //         header, they need to be removed.  Removal
-  //         is difficult since the hdrs don't comma 
+  //         is difficult since the hdrs don't comma
   //         separate values, so build up a new header
   //         piecemal.  Very slow but shouldn't happen
   //         very often
@@ -5449,7 +5449,7 @@ HttpTransact::get_ka_info_from_host_db(State * s,
 //   0: never add no-cache headers to MSIE requests
 //   1: add no-cache headers to IMS MSIE requests
 //   2: add no-cache headers to all MSIE requests
-// 
+//
 //////////////////////////////////////////////////////////////////////////
 
 void
@@ -5705,8 +5705,8 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
   }
   // Check whether a Host header field is missing in the request.
   if (!incoming_hdr->presence(MIME_PRESENCE_HOST) && incoming_hdr->version_get() != HTTPVersion(0, 9)) {
-    // Update the number of incoming 1.0 or 1.1 requests that do 
-    // not contain Host header fields.  
+    // Update the number of incoming 1.0 or 1.1 requests that do
+    // not contain Host header fields.
     HTTP_INCREMENT_TRANS_STAT(http_missing_host_hdr_stat);
   }
   // Did the client send a "TE: identity;q=0"? We have to respond
@@ -5987,7 +5987,7 @@ HttpTransact::initialize_state_variables_from_request(State * s, HTTPHdr * incom
   //  when they are configured to use a proxy.  Proxy-Connection
   //  is not in the spec but was added to prevent problems
   //  with a dumb proxy forwarding all headers (including "Connection")
-  //  to the origin server and confusing it.  However, the 
+  //  to the origin server and confusing it.  However, the
   //  "Proxy-Connection" solution breaks down with transparent
   //  backbone caches since the request could be from dumb
   //  downstream caches that are forwarding the "Proxy-Connection"
@@ -6216,8 +6216,8 @@ HttpTransact::initialize_state_variables_from_response(State * s, HTTPHdr * inco
         s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
         s->hdr_info.trust_response_cl = false;
 
-        // OBJECTIVE: Since we are dechunking the request remove the 
-        //   chunked value If this is the only value, we need to remove 
+        // OBJECTIVE: Since we are dechunking the request remove the
+        //   chunked value If this is the only value, we need to remove
         //    the whole field.
         MIMEField *new_enc_field = NULL;
         HdrCsvIter new_enc_iter;
@@ -6564,7 +6564,7 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
     return (false);
 
   // Check whether the response is cachable based on its cookie
-  // If there are cookies in response but a ttl is set, allow caching 
+  // If there are cookies in response but a ttl is set, allow caching
   if ((s->cache_control.ttl_in_cache <= 0) &&
       do_cookies_prevent_caching((int) s->http_config_param->cache_responses_to_cookies, request, response)) {
     Debug("http_trans", "[is_response_cacheable] " "response has uncachable cookies, response is not cachable");
@@ -6628,7 +6628,7 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
         break;
 
       case HttpConfigParams::CACHE_REQUIRED_HEADERS_AT_LEAST_LAST_MODIFIED:
-        if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask) && 
+        if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask) &&
             !response->get_last_modified()) {
           Debug("http_trans", "[is_response_cacheable] " "last_modified, expires, or max-age is required");
 
@@ -6746,7 +6746,7 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
 //         if (! (response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE)) &&
 //             ! (response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) &&
 //             ! (response->is_cache_control_set(HTTP_VALUE_PUBLIC))) {
-	    
+
 	    Debug("http_trans", "[is_response_cacheable] request has AUTHORIZATION - not cacheable");
             return(false);
 //         }
@@ -6981,14 +6981,14 @@ HttpTransact::is_response_valid(State * s, HTTPHdr * incoming_response)
 // Description: uses some metric to force this transaction to be proxy-only
 //
 // Details    :
-//   
+//
 // Some metric may be employed to force the traffic server to enter
 // a proxy-only mode temporarily. This function is called to determine
 // if the current transaction should be proxy-only. The function is
 // called from initialize_state_variables_from_request and is used to
 // set s->current.mode to TUNNELLING_PROXY and just for safety to set
 // s->cache_info.action to CACHE_DO_NO_ACTION.
-// 
+//
 // Currently the function is just a placeholder and always returns false.
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -7815,12 +7815,12 @@ HttpTransact::calculate_document_freshness_limit(Arena * arena,
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-//  int HttpTransact::calculate_freshness_fuzz() 
+//  int HttpTransact::calculate_freshness_fuzz()
 //
 //    This function trys to revents many, many simulatenous revalidations in
 //     reverse proxy situations.  Statistically introduce a fuzz factor that
 //     brings revalidation forward for a small percentage of the requests/
-//     The hope is that is that the document early by a selected few, and 
+//     The hope is that is that the document early by a selected few, and
 //     the headers are updated in the cache before the regualr freshness
 //     limit is actually reached
 ////////////////////////////////////////////////////////////////////////////////////
@@ -7948,7 +7948,7 @@ HttpTransact::Freshness_t HttpTransact::what_is_document_freshness(State *
                                                    config->cache_guaranteed_max_lifetime, s->plugin_set_expire_time, s);
   HTTP_DEBUG_ASSERT(fresh_limit >= 0);
 
-  // Fuzz the freshness to prevent too many revalidates to popular 
+  // Fuzz the freshness to prevent too many revalidates to popular
   //  documents at the same time
   if (s->http_config_param->freshness_fuzz_time >= 0) {
     fresh_limit = fresh_limit - calculate_freshness_fuzz(s, fresh_limit);
@@ -8373,7 +8373,7 @@ HttpTransact::build_request(State * s, HTTPHdr * base_request, HTTPHdr * outgoin
     int host_len;
     const char *host = url->host_get(&host_len);
 
-    // Add a ':port' to the HOST header if the request is not going 
+    // Add a ':port' to the HOST header if the request is not going
     // to the default port.
     int port = url->port_get();
     if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
@@ -8964,8 +8964,8 @@ ink_cluster_time(void)
 #endif
 
   highest_delta = (int) HttpConfig::m_master.cluster_time_delta;
-//     highest_delta = 
-//      lmgmt->record_data->readInteger("proxy.process.http.cluster_delta", 
+//     highest_delta =
+//      lmgmt->record_data->readInteger("proxy.process.http.cluster_delta",
 //                                      &found);
 //     if (! found) {
 //      HTTP_DEBUG_ASSERT(!"Highest delta config value not found!");
@@ -9547,15 +9547,15 @@ HttpTransact::delete_warning_value(HTTPHdr * to_warn, HTTPWarningCode warning_co
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-//  
+//
 // Name    : is_connection_collapse_checks_success
 //
-// Details : This function is used to check for the success of various connection 
+// Details : This function is used to check for the success of various connection
 //           collapsing parameters.Connection collapsing is disabled in the foll cases
 //              1) If Cache DISK not present
 //              2) If read_while_writing is disabled
 //              3) If request is Https
-// 
+//
 // YTS Team, yamsat
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -9578,15 +9578,15 @@ HttpTransact::is_connection_collapse_checks_success(State * s)
 // Name         : ConnectionCollapsing
 //
 // Details      : This function is called from OSDNSLookup(). Checks if there is an
-//                ongoing transaction already in progress for the same object.This 
+//                ongoing transaction already in progress for the same object.This
 //                is done by looking-up the hashtable.There would be two cases here.
 //              1) If entry found, check if URL headers match perfectly. then return
 //                 for scheduling this client to be piggy backed.
-//              2) If entry not found in Hashtable, insert an entry and return with 
+//              2) If entry not found in Hashtable, insert an entry and return with
 //                 status indicating normal procedure for connecting to OriginServer
 //              3) If entry could not be inserted,this means that there was someother
 //                 client who has inserted the request.Therefore, return with a status
-//                 indicating CACHE_RELOOKUP.Then, this client could get the object 
+//                 indicating CACHE_RELOOKUP.Then, this client could get the object
 //                 from the cache because of the read-while-write behavior
 //
 // YTS Team, yamsat

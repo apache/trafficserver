@@ -26,7 +26,7 @@
  * MgmtPing.cc
  *   icmp ping class
  *
- * 
+ *
  */
 
 #include "ink_config.h"
@@ -183,7 +183,7 @@ MgmtPing::pingAddress(char *addr)
       //   we see our own reply to another ping query.  However, I'm
       //   already chaning alot of code in this EBF so I'm leaving this
       //   issue alone for now.  I would have thought the icmp_id field
-      //   would solve this problem but if you are externally pinging an 
+      //   would solve this problem but if you are externally pinging an
       //   up address on the machine you will never find the down
       //   address at least on Solaris
       if ((n < iphdrlen + ICMP_MINLEN) || (icp->icmp_type != ICMP_ECHOREPLY) || (icp->icmp_id != pid)) {

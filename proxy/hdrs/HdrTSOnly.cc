@@ -34,7 +34,7 @@
         we put the functions that only traffic_server uses since they
         need to know about IOBuffers.
 
-   
+
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -127,17 +127,17 @@ HTTPHdr::parse_resp(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bo
   return state;
 }
 
-// void HdrHeap::set_ronly_str_heap_end(int slot) 
+// void HdrHeap::set_ronly_str_heap_end(int slot)
 //
 //    The end pointer is where the header parser stopped parsing
 //      so that we don't get extraneous space in the block
 //      that then has to get marshalled (INKqa07409)
 //
-//    NOTE: the shortening the block relies on the fact that 
+//    NOTE: the shortening the block relies on the fact that
 //      IOBuffers are write once.  It's therefore not possible
 //      that a previous call actually used more the block than
 //      the current call which would mean we can't shorten the block
-//     
+//
 void
 HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
 {
@@ -156,7 +156,7 @@ HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
 //      to expand an existing string heap entry if necessary
 //
 //    Because the block may contain data at the front of it that
-//      we don't want (and will end up getting marshalled) 
+//      we don't want (and will end up getting marshalled)
 //      use_start specificies where we start using the block (INKqa07409)
 //
 int
@@ -177,7 +177,7 @@ RETRY:
       m_ronly_heap[i].m_heap_start = (char *) use_start;
       m_ronly_heap[i].m_heap_len = (int) (b->end() - b->start());
       m_ronly_heap[i].m_ref_count_ptr = b->data;
-//          printf("Attaching block at %X for %d in slot %d\n", 
+//          printf("Attaching block at %X for %d in slot %d\n",
 //                 m_ronly_heap[i].m_heap_start,
 //                 m_ronly_heap[i].m_heap_len,
 //                 i);
@@ -186,7 +186,7 @@ RETRY:
       // This block is already on the heap so just extend
       //   it's range
       m_ronly_heap[i].m_heap_len = (int) (b->end() - b->buf());
-//          printf("Extending block at %X to %d in slot %d\n", 
+//          printf("Extending block at %X to %d in slot %d\n",
 //                 m_ronly_heap[i].m_heap_start,
 //                 m_ronly_heap[i].m_heap_len,
 //                 i);

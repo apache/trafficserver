@@ -87,14 +87,14 @@ struct dirent;
 class LogCollationAccept;
 #endif
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogConfig
 
   This object keeps the state of the logging configuraion variables.  Upon
   construction, the log configuration file is read and the logging
   variables are initialized.
 
-  The "global" LogConfig object is kept as a static pointer in the Log 
+  The "global" LogConfig object is kept as a static pointer in the Log
   class, called "config", and changed whenever the configuration variables
   are changed in the config file, using Log::change_configuration().
 
@@ -103,11 +103,11 @@ class LogCollationAccept;
         The name in records.config should be "proxy.config.log2.xxx".
      2. Create a member variable to store the current value.
         The name of the member variable should be "xxx".
-     3. If the member variable is a string, add a delete for it in the 
+     3. If the member variable is a string, add a delete for it in the
         destructor, LogConfig::~LogConfig.
      4. Initialize the member variable in LogConfig::setup_default_values
      5. Update the member variable from the records.config file
-        in LogConfig::read_configuration_variables() using a call to 
+        in LogConfig::read_configuration_variables() using a call to
         ConfigReadInteger or ConfigReadString.
      6. Add a line in the LogConfig::register_config_callbacks() function
         for this new variable if it is exposed in the GUI
@@ -329,7 +329,7 @@ private:
   LogConfig & operator=(const LogConfig &);
 };
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogDeleteCandidate
   -------------------------------------------------------------------------*/
 

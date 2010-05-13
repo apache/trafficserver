@@ -28,7 +28,7 @@
    Description:
        Data structurs and stat page generators for http info
 
-   
+
  ****************************************************************************/
 #ifndef INK_NO_STAT_PAGES
 #include "HttpPages.h"
@@ -222,7 +222,7 @@ HttpPagesHandler::dump_history(HttpSM * sm)
   int size;
 
   // Figure out how big the history is and look
-  //  for wrap around 
+  //  for wrap around
   if (sm->history_pos > HISTORY_SIZE) {
     size = HISTORY_SIZE;
   } else {

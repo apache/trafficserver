@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-/* plugin_finish.c 
+/* plugin_finish.c
  *
  */
 

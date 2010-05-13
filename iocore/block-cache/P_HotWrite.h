@@ -45,7 +45,7 @@
   @code
   HotWrite hw(new_ProxyMutex());
   @endcode
-   
+
   Example usage in edge connection (writer or reader):
 
   @code

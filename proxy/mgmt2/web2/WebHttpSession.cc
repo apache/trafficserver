@@ -25,7 +25,7 @@
  *
  *  WebHttpSession.cc - Manage session data
  *
- * 
+ *
  ****************************************************************************/
 
 #include "ink_config.h"

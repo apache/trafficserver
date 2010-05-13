@@ -26,7 +26,7 @@
 
  Standalone Collator
 
- 
+
  ***************************************************************************/
 #include "ink_unused.h"
 
@@ -81,7 +81,7 @@ ArgumentDescription argument_descriptions[] = {
 int n_argument_descriptions = SIZE(argument_descriptions);
 
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   main
   -------------------------------------------------------------------------*/
 
@@ -91,7 +91,7 @@ main(int argc, char *argv[])
   char ts_path[PATH_NAME_MAX + 1];
   // build the application information structure
   //
-  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__, 
+  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // take care of command-line arguments
@@ -102,7 +102,7 @@ main(int argc, char *argv[])
   // Get TS directory
   if (0 == get_ts_directory(ts_path,sizeof(ts_path))) {
     ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
-  } 
+  }
 
   management_directory[0] = 0;
   strncat(management_directory, system_config_directory, 256 - 1);

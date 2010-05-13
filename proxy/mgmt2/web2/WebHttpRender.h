@@ -25,7 +25,7 @@
  *
  *  WebHttpRener.h - html rendering and assembly
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _WEB_HTTP_RENDER_H_
@@ -255,7 +255,7 @@
 #define HTML_ID_CFG_EDIT_SOURCE_CIDR        "s_text_731"
 #define HTML_ID_CFG_EDIT_SOURCE_CIDR_HELP   "s_text_732"
 
-// arm_security.config 
+// arm_security.config
 #define HTML_ID_CFG_EDIT_RULE_TYPE_HELP_3   "s_text_735"
 #define HTML_ID_CFG_EDIT_CONN_TYPE          "s_text_736"
 #define HTML_ID_CFG_EDIT_CONN_TYPE_HELP     "s_text_737"
@@ -362,7 +362,7 @@
 #define HTML_ID_CFG_EDIT_SUB_INTERFACE        "s_text_903"
 #define HTML_ID_CFG_EDIT_SUB_INTERFACE_HELP   "s_text_904"
 
-// Config File Editor error messages 
+// Config File Editor error messages
 #define HTML_ID_CFG_COMMIT_ERROR              "s_text_905"
 #define HTML_ID_CFG_INVALID_RULE              "s_text_906"
 

@@ -25,33 +25,33 @@
 #include "ts.h"
 
 /* This is a response to a client (req), which will be executed after reciept
- * of: 
+ * of:
  *   INK_HTTP_SEND_RESPONSE_HDR_HOOK
  *
- * htmlBody: text 
- * INKHttpTxnErrorBodySet(txnp, htmlBody, sizeof(htmlBody), NULL); 
+ * htmlBody: text
+ * INKHttpTxnErrorBodySet(txnp, htmlBody, sizeof(htmlBody), NULL);
  *
- * htmlBody: other fmt (?) 
- * INKHttpTxnErrorBodySet(txnp, htmlBody, sizeof(htmlBody), "image/jpeg"); 
+ * htmlBody: other fmt (?)
+ * INKHttpTxnErrorBodySet(txnp, htmlBody, sizeof(htmlBody), "image/jpeg");
  *
  * INKHttpTxnErrorBodySet(txnp, "inktomi.gif", 1308, "image/jpeg");
- * 
+ *
  * This api requires that a GET request of a site that does not exist or
- * of a site that is not answering requests. This API will not overwrite 
+ * of a site that is not answering requests. This API will not overwrite
  * the requested content if that content can be succsesfully returned.
- * 
+ *
  * TODO API should be tested by sending a request that indicates the type of error body to be set in the response
- * For example: 
- * GET http://www.bogusIMAGE.com HTTP/1.0 
- * GET http://www.bogusHTML.com HTTP/1.0 
- * GET http://www.bogusOTHER.com HTTP/1.0 
- * 
- * retrieve the URL: INKHttpHdrURLGet() 
- * strstr to parse and find a substring in the URL string  
- *        search for the above predefined sites and return the appropriate 
- *        body type. 
- * Perhaps not the most creative tests, but this should nicely tests this 
- * API in a single plug in. 
+ * For example:
+ * GET http://www.bogusIMAGE.com HTTP/1.0
+ * GET http://www.bogusHTML.com HTTP/1.0
+ * GET http://www.bogusOTHER.com HTTP/1.0
+ *
+ * retrieve the URL: INKHttpHdrURLGet()
+ * strstr to parse and find a substring in the URL string
+ *        search for the above predefined sites and return the appropriate
+ *        body type.
+ * Perhaps not the most creative tests, but this should nicely tests this
+ * API in a single plug in.
  */
 
 const char *const INKEventStrId[] = {
@@ -82,7 +82,7 @@ const char *const INKEventStrId[] = {
 #define		FMT_TXT		(NULL)
 
 
-/* Body of HTML page sent by INKHttpErrorBodySet() 
+/* Body of HTML page sent by INKHttpErrorBodySet()
 */
 const char htmlBody[] = " \
 <html> \
@@ -99,10 +99,10 @@ const char htmlBody[] = " \
 
 
 
-/* 
- * handle_dns() from output-header.c: 
- * prints in it's entirety either the 
- * response or the request 
+/*
+ * handle_dns() from output-header.c:
+ * prints in it's entirety either the
+ * response or the request
  * TODO byte for byte buff compare alg that guarantees data integrity for cached and non-cached data buffs
 */
 
@@ -158,7 +158,7 @@ DisplayBufferContents(INKMBuffer bufp, INKMLoc hdr_loc, INKHttpType type)
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
        the loop. A block with no data to read means we've exhausted
-       buffer of data since if there was more data on a later 
+       buffer of data since if there was more data on a later
        block in the chain, this block would have been skipped over */
     if (block_avail == 0) {
       break;
@@ -200,7 +200,7 @@ static unsigned char marker_gif_data[] = {
   0x01, 0x00, 0x3b,
 };
 
-/* Test of INKHttpTxnErrorBodySet() with an image/jpeg from 
+/* Test of INKHttpTxnErrorBodySet() with an image/jpeg from
  * INK_HTTP_SSN_START.  This code should be working. However,
  * there is no such thing as the image is too small. The telnet
  * client should see "GIF" in the body of the response.
@@ -222,9 +222,9 @@ handle_HTTP_SSN_START(INKCont contp, INKEvent event, void *eData)
   strncpy(fmtPtr, FMT_IMAGE_JPEG, sizeof(FMT_IMAGE_JPEG));
 
   INKHttpTxnErrorBodySet(txnp, (char *) markerPtr, sizeof(marker_gif_data), fmtPtr);
-  /* TS managed space: 
+  /* TS managed space:
    * INKfree(markerPtr);
-   * INKfree(fmtPtr); 
+   * INKfree(fmtPtr);
    */
 
   return err;
@@ -261,7 +261,7 @@ handle_HTTP_SEND_RESPONSE_HDR(INKCont contp, INKEvent event, void *eData)
     INKHttpTxnErrorBodySet(txnp, (char *) bufPtr, sizeof(htmlBody), fmtPtr);
     /* TS frees when no longer needed:
      * INKfree(bufPtr);
-     * INKfree(fmtPtr); 
+     * INKfree(fmtPtr);
      */
   }
   return err;

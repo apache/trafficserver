@@ -34,8 +34,8 @@
  *  WebHttpMessage.h - classes to store information about incoming requests
  *                        and create hdrs for outgoing requests
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 /* define method       */
@@ -282,7 +282,7 @@ private:
   char *locationURL;
   time_t lastMod;
   int cachable;
-  char *dateResponse;           // for logs 
+  char *dateResponse;           // for logs
 };
 
 #endif

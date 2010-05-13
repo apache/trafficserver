@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-/* SimSynthServerCache.c 
+/* SimSynthServerCache.c
  *
- * 
+ *
  * Description:
  *   Simulate server response that contains:
  *      - PSI header
@@ -31,7 +31,7 @@
  *
  *   Ratio for generating PSI response is specifid in config file.
  *
- * Added Options in Synth_server.config -    
+ * Added Options in Synth_server.config -
  *     psi_ratio : percentage of response with psi embedded we want to generate
  */
 
@@ -186,7 +186,7 @@ INKResponsePut(void **resp_id /* return */ ,
 
     }
   }
-  /* return NULL as the resp_id to indicate 
+  /* return NULL as the resp_id to indicate
    * if it is the last INKResponsePut call */
   if (rid->bytes_not_sent <= 0 || rid->status_code != 200) {
     free(rid);

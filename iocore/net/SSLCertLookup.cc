@@ -124,18 +124,18 @@ SSLCertLookup::buildTable()
           priKey = NULL;
         }
       }                         // else
-    }                           // if(*line != '\0' && *line != '#') 
+    }                           // if(*line != '\0' && *line != '#')
 
     line = tokLine(NULL, &tok_state);
   }                             //  while(line != NULL)
 
-/*  if(num_el == 0) 
+/*  if(num_el == 0)
   {
     Warning("%s No entries in %s. Using default server cert for all connections",
 	    moduleName, configFilePath);
   }
 
-  if(is_debug_tag_set("ssl")) 
+  if(is_debug_tag_set("ssl"))
   {
     Print();
   }

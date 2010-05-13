@@ -193,7 +193,7 @@ inkudp_add_split_rule(queue_t * incomingQ, struct fastIO_split_rule *rule)
   redirect_passthrough = 1;
 
 
-  /* 
+  /*
    * bail out if this is an error or we have successfully added to
    * the appropriate split list; otherwise, try to add the thing.
    */
@@ -888,7 +888,7 @@ inkudp_find_pkt_to_send(struct ink_redirect_list **incoming_list, struct ink_red
   min_list = NULL;
   cur_list = G_redirect_incoming_list;
 
-  /* 
+  /*
    *  Initialize the min. element.  Order here is critical: in the next loop,
    * we are deref'ing min_list->m_recvPktQ.m_head; better make sure that the
    * m_head pointer is not NULL.

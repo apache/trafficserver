@@ -23,11 +23,11 @@
 
 /***************************************************************************
  * NetworkUtilsLocal.cc
- * 
+ *
  * contains implementation of local networking utility functions, such as
  * unmarshalling requests from a remote client and marshalling replies
  *
- * 
+ *
  ***************************************************************************/
 
 #include "ink_config.h"
@@ -45,7 +45,7 @@
 /**************************************************************************
  * socket_flush
  *
- * flushes the socket by reading the entire message out of the socket 
+ * flushes the socket by reading the entire message out of the socket
  * and then gets rid of the msg
  **************************************************************************/
 INKError
@@ -54,7 +54,7 @@ socket_flush(struct SocketInfo sock_info)
   int ret, byte_read = 0;
   char buf[MAX_BUF_SIZE];
 
-  // check to see if anything to read; wait only for specified time 
+  // check to see if anything to read; wait only for specified time
   if (socket_read_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
     return INK_ERR_NET_TIMEOUT;
   }
@@ -86,11 +86,11 @@ socket_flush(struct SocketInfo sock_info)
 }
 
 /**************************************************************************
- * socket_read_n							  
- * 
- * purpose: guarantees reading of n bytes or return error. 
+ * socket_read_n
+ *
+ * purpose: guarantees reading of n bytes or return error.
  * input:   socket info struct, buffer to read into and number of bytes to read
- * output:  number of bytes read 
+ * output:  number of bytes read
  * note:    socket_read is implemented in WebUtils.cc
  *************************************************************************/
 INKError
@@ -98,7 +98,7 @@ socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
 {
   int ret, byte_read = 0;
 
-  // check to see if anything to read; wait for specified time 
+  // check to see if anything to read; wait for specified time
   if (socket_read_timeout(sock_info.fd, MAX_TIME_WAIT, 0) <= 0) {
     return INK_ERR_NET_TIMEOUT;
   }
@@ -130,7 +130,7 @@ socket_read_n(struct SocketInfo sock_info, char *buf, int bytes)
 
 /**************************************************************************
  * socket_write_n
- * 
+ *
  * purpose: guarantees writing of n bytes or return error
  * input:   socket info struct, buffer to write from & number of bytes to write
  * output:  INK_ERR_xx (depends on num bytes written)
@@ -177,7 +177,7 @@ socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes)
  *          (OpType + msg_len) and the request portion (used by the handle_xx fns)
  * input: sock_info - socket msg is read from
  *        op_t      - the operation type specified in the msg
- *        msg       - the data from the network message (no OpType or msg_len) 
+ *        msg       - the data from the network message (no OpType or msg_len)
  * output: INK_ERR_xx ( if INK_ERR_OKAY, then parameters set successfully)
  * notes: Since preprocess_msg already removes the OpType and msg_len, this part o
  *        the message is not dealt with by the other parsing functions
@@ -222,7 +222,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
   Debug("ts_main", "[preprocess_msg] length = %d\n", req_len);
 
   // use req msg length to fetch the rest of the message
-  // first check that there is a "rest of the msg", some msgs just 
+  // first check that there is a "rest of the msg", some msgs just
   // have the op specified
   if (req_len == 0) {
     *req = NULL;
@@ -259,7 +259,7 @@ Lerror:
  * parse_file_read_request
  *
  * purpose: parses a file read request from a remote API client
- * input: req - data that needs to be parsed 
+ * input: req - data that needs to be parsed
  *        file - the file type sent in the request
  * output: INK_ERR_xx
  * notes: request format = <INKFileNameT>
@@ -356,7 +356,7 @@ parse_request_name_value(char *req, char **name_1, char **val_1)
   name[name_len] = '\0';        // end string
   *name_1 = name;
 
-  // get record value - can be a MgmtInt, MgmtCounter ... 
+  // get record value - can be a MgmtInt, MgmtCounter ...
   val = (char *) xmalloc(sizeof(char) * (val_len + 1));
   if (!val)
     return INK_ERR_SYS_CALL;
@@ -434,22 +434,22 @@ parse_proxy_state_request(char *req, INKProxyStateT * state, INKCacheClearT * cl
 }
 
 /**********************************************************************
- * Marshal Replies 
+ * Marshal Replies
  **********************************************************************/
-/* NOTE: if the send function "return"s before writing to the socket 
-  then that means that an error occurred, and so the calling function 
+/* NOTE: if the send function "return"s before writing to the socket
+  then that means that an error occurred, and so the calling function
   must send_reply with the error that occurred. */
 
 /**********************************************************************
  * send_reply
  *
- * purpose: sends a simple INK_ERR_* reply to the request made 
- * input: return value - could be extended to support more complex 
+ * purpose: sends a simple INK_ERR_* reply to the request made
+ * input: return value - could be extended to support more complex
  *        error codes but for now use only INK_ERR_FAIL, INK_ERR_OKAY
  *        int fd - socket fd to use.
  * output: INK_ERR_*
  * notes: this function does not need to go through the internal structure
- *        so no cleaning up is done. 
+ *        so no cleaning up is done.
  **********************************************************************/
 INKError
 send_reply(struct SocketInfo sock_info, INKError retval)
@@ -469,15 +469,15 @@ send_reply(struct SocketInfo sock_info, INKError retval)
 }
 
 /**********************************************************************
- * send_reply_list 
+ * send_reply_list
  *
- * purpose: sends the reply in response to a request to get list of string 
+ * purpose: sends the reply in response to a request to get list of string
  *          tokens (delimited by REMOTE_DELIM_STR)
  * input: sock_info -
  *        retval - INKError return type for the CoreAPI call
  *        list - string delimited list of string tokens
  * output: INK_ERR_*
- * notes: 
+ * notes:
  * format: <INKError> <string_list_len> <delimited_string_list>
  **********************************************************************/
 INKError
@@ -522,16 +522,16 @@ send_reply_list(struct SocketInfo sock_info, INKError retval, char *list)
 /**********************************************************************
  * send_record_get_reply
  *
- * purpose: sends reply to the record_get request made 
+ * purpose: sends reply to the record_get request made
  * input: retval   - result of the record get request
  *        int fd   - socket fd to use.
- *        val      - the value of the record requested 
+ *        val      - the value of the record requested
  *        val_size - num bytes the value occupies
  *        rec_type - the type of the record value requested
  * output: INK_ERR_*
  * notes: this function does not need to go through the internal structure
- *        so no cleaning up is done. 
- *        format = <INKError> <rec_val_len> <rec_type> <rec_val> 
+ *        so no cleaning up is done.
+ *        format = <INKError> <rec_val_len> <rec_type> <rec_val>
  **********************************************************************/
 INKError
 send_record_get_reply(struct SocketInfo sock_info, INKError retval, void *val, int val_size, INKRecordT rec_type)
@@ -579,12 +579,12 @@ send_record_get_reply(struct SocketInfo sock_info, INKError retval, void *val, i
 /**********************************************************************
  * send_record_set_reply
  *
- * purpose: sends reply to the record_set request made 
- * input: 
+ * purpose: sends reply to the record_set request made
+ * input:
  * output: INK_ERR_*
  * notes: this function does not need to go through the internal structure
- *        so no cleaning up is done. 
- *        format = 
+ *        so no cleaning up is done.
+ *        format =
  **********************************************************************/
 INKError
 send_record_set_reply(struct SocketInfo sock_info, INKError retval, INKActionNeedT action_need)
@@ -619,13 +619,13 @@ send_record_set_reply(struct SocketInfo sock_info, INKError retval, INKActionNee
 /**********************************************************************
  * send_file_read_reply
  *
- * purpose: sends the reply in response to a file read request  
- * input: return value - could be extended to support more complex 
+ * purpose: sends the reply in response to a file read request
+ * input: return value - could be extended to support more complex
  *        error codes but for now use only INK_ERR_FAIL, INK_ERR_OKAY
  *        int fd - socket fd to use.
  * output: INK_ERR_*
  * notes: this function does not need to go through the internal structure
- *        so no cleaning up is done. 
+ *        so no cleaning up is done.
  *        reply format = <INKError> <file_ver> <file_size> <file_text>
  **********************************************************************/
 INKError
@@ -677,7 +677,7 @@ send_file_read_reply(struct SocketInfo sock_info, INKError retval, int ver, int 
  * send_proxy_state_get_reply
  *
  * purpose: sends the reply in response to a request to get state of proxy
- * input: 
+ * input:
  *        int fd - socket fd to use.
  * output: INK_ERR_*
  * notes: this function DOES NOT HAVE IT"S OWN INKError TO SEND!!!!
@@ -709,7 +709,7 @@ send_proxy_state_get_reply(struct SocketInfo sock_info, INKProxyStateT state)
  *        retval - INKError return type for the EventIsActive core call
  *        active - is the requested event active or not?
  * output: INK_ERR_*
- * notes: 
+ * notes:
  * format: <INKError> <bool>
  **********************************************************************/
 INKError

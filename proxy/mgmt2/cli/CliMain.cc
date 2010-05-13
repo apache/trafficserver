@@ -26,7 +26,7 @@
  *
  *  CliMain.cc - A simple client to communicate to local manager
  *
- * 
+ *
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -104,7 +104,7 @@ handleArgInvocation(clientCLI * cli)
   ink_strncpy(bufToLm, "b ", bufRemaining);
   --bufRemaining;
 
-  // Following options must be sent over as their numeric 
+  // Following options must be sent over as their numeric
   // equivalents that show up in the interactive menu
   // this is ugly but makes the number of handled events smaller
   // on the manager side
@@ -316,7 +316,7 @@ main(int argc, char **argv)
   timeout_arg = -1;
 
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME,"traffic_line", PACKAGE_VERSION, __DATE__, 
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_line", PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   clientCLI *cli = new clientCLI();

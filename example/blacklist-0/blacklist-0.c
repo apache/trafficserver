@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-/* 
- *   blacklist-0.c:  
+/*
+ *   blacklist-0.c:
  *	original version of blacklist-1, now used for internal testing
  *
  *
- *	Usage:	
+ *	Usage:
  *
  */
 

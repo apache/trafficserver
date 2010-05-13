@@ -35,8 +35,8 @@
 /****************************************************************************
  *
  *  FileManager.cc - Code for class to manage configuration updates
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 static const char snapDir[] = "snapshots";
@@ -82,9 +82,9 @@ FileManager::FileManager()
                "[FileManager::FileManager] Unable to find configuration directory from proxy.config.config_dir\n");
   }
   if ((err = stat(configTmp, &statBuf)) < 0) {
-    ink_strncpy(configTmp, system_config_directory,sizeof(configTmp)); 
+    ink_strncpy(configTmp, system_config_directory,sizeof(configTmp));
     if ((err = stat(configTmp, &statBuf)) < 0) {
-        mgmt_elog("[FileManager::FileManager] unable to stat() directory '%s': %d %d, %s\n", 
+        mgmt_elog("[FileManager::FileManager] unable to stat() directory '%s': %d %d, %s\n",
                 mgmt_path, err, errno, strerror(errno));
         mgmt_elog("[FileManager::FileManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
         _exit(1);
@@ -155,10 +155,10 @@ FileManager::~FileManager()
 }
 
 
-// void FileManager::registerCallback(FileCallbackFunc func) 
+// void FileManager::registerCallback(FileCallbackFunc func)
 //
 //  Adds a new callback function
-//    callbacks are made whenever a configuration file has 
+//    callbacks are made whenever a configuration file has
 //    changed
 //
 //  The callback function is responsible for free'ing
@@ -202,7 +202,7 @@ FileManager::addFile(const char *baseFileName, bool root_access_needed)
 // bool FileManager::getRollbackObj(char* baseFileName, Rollback** rbPtr)
 //
 //  Sets rbPtr to the rollback object associated
-//    with the passed in baseFileName. 
+//    with the passed in baseFileName.
 //
 //  If there is no binding, falseis returned
 //
@@ -253,7 +253,7 @@ FileManager::fileChanged(const char *baseFileName)
   ink_mutex_release(&cbListLock);
 }
 
-// textBuffer* FileManager::filesManaged() 
+// textBuffer* FileManager::filesManaged()
 //
 //  Returns a comma separated list of all files currently being
 //    managed by this object
@@ -289,7 +289,7 @@ FileManager::filesManaged()
   return result;
 }
 
-// void FileManager::doRollbackLocks(lockAction_t action) 
+// void FileManager::doRollbackLocks(lockAction_t action)
 //
 //  Iterates through the Rollback objects we are managing
 //    and performs the parameter specified action on each lock
@@ -324,7 +324,7 @@ FileManager::doRollbackLocks(lockAction_t action)
 }
 
 
-// void FileManager::abortRestore(const char* abortTo) 
+// void FileManager::abortRestore(const char* abortTo)
 //
 //  Iterates through the hash table of managed files
 //    and Rollsback one version until we get to the file
@@ -441,9 +441,9 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
 
 
 
-// SnapResult FileManager::removeSnap(const char* snapName) 
+// SnapResult FileManager::removeSnap(const char* snapName)
 //
-//  
+//
 SnapResult
 FileManager::removeSnap(const char *snapName, const char *snapDir)
 {
@@ -673,7 +673,7 @@ FileManager::readFile(const char *filePath, textBuffer * contents)
   return SNAP_OK;
 }
 
-//  SnapResult FileManager::copyFile(Rollback* rb, const char* snapPath) 
+//  SnapResult FileManager::copyFile(Rollback* rb, const char* snapPath)
 //
 //  Copies a file (represented by Rollback* rb) into a snapshot
 //    directory (snapPath)
@@ -730,7 +730,7 @@ FileManager::copyFile(Rollback * rb, const char *snapPath)
 
 
 
-// SnapResult FileManager::WalkSnaps(ExpandingArray* snapList) 
+// SnapResult FileManager::WalkSnaps(ExpandingArray* snapList)
 //
 //   Iterates through the snapshot directory and adds every snapshot
 //     into the parameter snapList
@@ -823,7 +823,7 @@ FileManager::rereadConfig()
   }
 }
 
-// void FileManager::displaySnapPage(textBuffer* output, httpResponse& answerHdr) 
+// void FileManager::displaySnapPage(textBuffer* output, httpResponse& answerHdr)
 //
 //  Generates an HTML page with the add form and the list
 //    of current snapshots
@@ -878,7 +878,7 @@ FileManager::createSelect(char *action, textBuffer * output, ExpandingArray * op
 }
 
 
-// bool checkValidName(const char* name) 
+// bool checkValidName(const char* name)
 //
 // if the string is invalid, ie. all white spaces or contains "irregular" chars,
 // returns 0 ; returns 1 if valid string
@@ -899,12 +899,12 @@ FileManager::checkValidName(const char *name)
 }
 
 
-//  int snapEntryCmpFunc(void* e1, void* e2) 
-//  
+//  int snapEntryCmpFunc(void* e1, void* e2)
+//
 //  a cmp function for snapshot structs that can
 //     used with qsort
 //
-//  compares c_time 
+//  compares c_time
 //
 int
 snapEntryCmpFunc(const void *e1, const void *e2)

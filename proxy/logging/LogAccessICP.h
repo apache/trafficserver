@@ -30,10 +30,10 @@
 
 class ICPlog;
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogAccessICP
 
-  This class extends the logging system interface as implemented by the 
+  This class extends the logging system interface as implemented by the
   ICPlog class.
   -------------------------------------------------------------------------*/
 

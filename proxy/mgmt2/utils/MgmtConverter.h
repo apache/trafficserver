@@ -44,9 +44,9 @@ struct FileInfo
   RuleConverter_xml converter_xml;
 };
 
-/* 
+/*
   .._xml means the function will convert the file from xml  to text format
-  .._ts means the function will convert from TS's text file format to XML 
+  .._ts means the function will convert from TS's text file format to XML
 */
 
 void converterInit();

@@ -32,9 +32,9 @@
 /****************************************************************************
  *
  *  Tokenizer.cc - A string tokenzier
- *                     
- *  
- * 
+ *
+ *
+ *
  ****************************************************************************/        /* MAGIC_EDITING_TAG */
 
 Tokenizer::Tokenizer(const char *StrOfDelimiters)
@@ -203,7 +203,7 @@ Tokenizer::Initialize(char *str, int opt)
       // First, skip the delimiters
       for (; *str != '\0' && isDelimiter(*str); str++);
 
-      // If there are only delimiters remaining, bail and set 
+      // If there are only delimiters remaining, bail and set
       //   so that we do not add the empty token
       if (*str == '\0') {
         priorCharWasDelimit = 1;

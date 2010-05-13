@@ -102,7 +102,7 @@ Config_SetHostname(char *hostname)
   if (status) {
     return status;
   }
-  //MgmtAPI call 
+  //MgmtAPI call
   status = INKSetHostname(hostname);
   if (status) {
     // If this fails, we need to restore old machine hostname
@@ -397,7 +397,7 @@ Config_SetNIC_Down(char *interface)
 #if (HOST_OS != freebsd) && (HOST_OS != darwin)
   char ip[80];
 
-  //validate 
+  //validate
   if (interface == NULL) {
     return -1;
   }
@@ -511,7 +511,7 @@ Config_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *
   }
 
   DPRINTF(("Config_SetNIC_Up: calling INKSetNICUp \n"));
-  //Rollback to keep consistent with CLI and snapshot 
+  //Rollback to keep consistent with CLI and snapshot
   status =
     INKSetNICUp(interface, strcmp(protocol, "dhcp") != 0, ip, old_ip, netmask, strcmp(onboot, "onboot") == 0, gateway);
 
@@ -1423,14 +1423,14 @@ Config_FloppyNetRestore()
   char *env_path;
 
   //first mount the floppy
-  // NOTE - this script is system specific, thus if you use this funciton not under LINUX, you need to provide the appropriate 
+  // NOTE - this script is system specific, thus if you use this funciton not under LINUX, you need to provide the appropriate
   // script for the specific OS you use
 
   if ((env_path = getenv("TS_ROOT"))) {
     ink_strncpy(ts_base_dir, env_path, sizeof(ts_base_dir));
   } else {
     if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-      ink_strncpy(ts_base_dir, "/usr/local", sizeof(ts_base_dir));
+      ink_strncpy(ts_base_dir, PREFIX, sizeof(ts_base_dir));
     } else {
       NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
       fclose(ts_file);
@@ -1486,7 +1486,7 @@ Config_FloppyNetRestore()
 
   // Copy the net_config.xml from floppy to /tmp/net_config.xml.
   // Unmount floppy and then use /tmp/net_config.xml to restore the
-  // settings. This is required as a restart of traffic_manager 
+  // settings. This is required as a restart of traffic_manager
   //  might hinder unmount of floppy
   NOWARN_UNUSED_RETURN(system("rm -f /tmp/net_config.xml"));
 

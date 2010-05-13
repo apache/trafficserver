@@ -25,7 +25,7 @@
  *
  *
  * Description:
- *   - demonstrate the most basic routine of writing the SDKtest_server 
+ *   - demonstrate the most basic routine of writing the SDKtest_server
  *     plugin
  */
 

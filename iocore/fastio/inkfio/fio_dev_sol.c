@@ -495,7 +495,7 @@ fio_devmap(dev_t dev, devmap_cookie_t dhp, offset_t off, size_t len, size_t * ma
 }
 
 /*
- * 
+ *
  * MUNMAP handler
  */
 static void

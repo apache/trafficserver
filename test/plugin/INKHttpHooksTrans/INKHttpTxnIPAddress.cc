@@ -32,7 +32,7 @@
 #include <stdlib.h>
 
 
-/* cvrt unsigned int address to dotted decimal address  
+/* cvrt unsigned int address to dotted decimal address
  * delete on the otherside, otherwise: don't care
 */
 char *
@@ -66,7 +66,7 @@ handle_SEND_REQUEST(INKCont contp, INKEvent event, void *eData)
   int err = 0;
   char *ipAddrp = NULL;
 
-  /* Origin Server (destination) or Parent IP 
+  /* Origin Server (destination) or Parent IP
    * TODO use return addr with an actual network library routine (gethostbyaddr) to validate addr
    * TODO tests with an actual parent proxy
    */
@@ -78,8 +78,8 @@ handle_SEND_REQUEST(INKCont contp, INKEvent event, void *eData)
   ipAddrp = uint2ddip(nextHopIP);
   INKDebug("INKHttpTxnIPAddress", "INKHttpTxnNextHopIPGet passed for %s", ipAddrp ? ipAddrp : "NULL ptr!");
   INKfree(ipAddrp);
-  /* TODO validate this IP address, not just an integer value 
-   * see below 
+  /* TODO validate this IP address, not just an integer value
+   * see below
    */
   return err;
 }
@@ -89,9 +89,9 @@ handle_SEND_REQUEST(INKCont contp, INKEvent event, void *eData)
 * INKHttpTxnClientReqGet
 * INKHttpTxnServerIPGet (specific)
 * INKHttpHdrUrlGet
-* INKUrlHostGet 
+* INKUrlHostGet
 * Test is to use the address returend by INKHttpTxnServerIPGet
-* with a standard network interface api and compare that 
+* with a standard network interface api and compare that
 * host with the hostname found in the request URL.
 */
 static int
@@ -150,7 +150,7 @@ handle_OS_DNS(INKCont contp, INKEvent event, void *eData)
     INKHandleMLocRelease(buf, INK_NULL_MLOC, loc);
     return ++err;
   }
-  /* compare the domains of the hostname 
+  /* compare the domains of the hostname
    * from gethostbyaddr and INKURLHostGet: e.g.:
    * w1.someGiantSite.com with a request of: www.someGiantSite.com
    */
@@ -174,8 +174,8 @@ handle_OS_DNS(INKCont contp, INKEvent event, void *eData)
   return err;
 }
 
-/* Currently not used.  Interfaces like INKHttpTxnNextHopIPGet 
- * should only be called from SEND_REQUEST, inclusive, forward 
+/* Currently not used.  Interfaces like INKHttpTxnNextHopIPGet
+ * should only be called from SEND_REQUEST, inclusive, forward
 */
 static int
 handle_TXN_START(INKCont contp, INKEvent event, void *eData)
@@ -205,7 +205,7 @@ handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
     ++err;                      /* failure */
   }
   /* TODO validate this port, not just an integer value
-   * see below 
+   * see below
    */
 
   /* Client IP for a transaction (not incoming) */
@@ -215,33 +215,33 @@ handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
     err++;
   }
   /* TODO validate this IP address, not just an integer value
-   * see below 
+   * see below
    */
 
   /* See: handle_SEND_REQUEST(): nextHopIP = INKHttpTxnNextHopIPGet(txnp);
-   * 
-   * If origin server was contacted, its adress
-   * will be returned. Need a cach hit true/false interface ? 
    *
-   * Origin Server (destination) or Parent IP 
+   * If origin server was contacted, its adress
+   * will be returned. Need a cach hit true/false interface ?
+   *
+   * Origin Server (destination) or Parent IP
    * TODO tests with an actual parent proxy
    */
   nextHopIP = INKHttpTxnNextHopIPGet(txnp);
   if (!nextHopIP) {
     /* It is the responsibility of the plug-in to store hit/miss
      * details and resolve this as INKHttpTxnNextHopIPGet failure
-     * or cache miss (no o.s. contected). 
+     * or cache miss (no o.s. contected).
      */
     INKDebug("INKHttpTxnIPAddress", "INKHttpTxnNextHopIPGet failed for or cache miss");
     err++;
   }
-  /* TODO validate this IP address, not just an integer value 
-   * see below 
+  /* TODO validate this IP address, not just an integer value
+   * see below
    */
 
-        /*********************************************************** 
-	 * Failure in the following tests will cause remaining tests 
-	 * to not execute. 
+        /***********************************************************
+	 * Failure in the following tests will cause remaining tests
+	 * to not execute.
 	*/
   os_addr = INKHttpTxnServerIPGet(txnp);
   if (!os_addr) {
@@ -260,8 +260,8 @@ handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
     /* Allow other test to continue */
   }
 
-  /* 
-   * Get the parent/port that were set at plug-in init 
+  /*
+   * Get the parent/port that were set at plug-in init
    */
   dataPtr = INKContDataGet(contp);
   if (!dataPtr) {
@@ -366,12 +366,12 @@ INKPluginInit(int argc, const char *argv[])
   INKCont contp = INKContCreate(INKHttpTransaction, NULL);
   INKContDataSet(contp, (void *) parentInfop);  /* Used in txn */
 
-  /* Never: INKfree(parentInfop); 
+  /* Never: INKfree(parentInfop);
    * if you expect to use INKContDataGet
-   * not a leak since TS keeps a reference to this heap 
+   * not a leak since TS keeps a reference to this heap
    * space
    * Here's a leak (bad stuff man!):
-   * 
+   *
    *       ptr = INKmalloc() ;
    *       Init(ptr);
    *       INKConDataSet(contp, ptr);

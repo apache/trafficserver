@@ -38,8 +38,8 @@
  *
  *  WebMgmtUtils.cc - Functions for interfacing to management records
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 
@@ -50,8 +50,8 @@
 // value string to get it to the type of the local manager
 // variable
 //
-//  returns true if the variable was successfully set 
-//   and false otherwise 
+//  returns true if the variable was successfully set
+//   and false otherwise
 //
 bool
 varSetFromStr(const char *varName, const char *value)
@@ -120,7 +120,7 @@ varSetFromStr(const char *varName, const char *value)
   return found;
 }
 
-// bool varSetFloat(const char* varName, RecFloat value) 
+// bool varSetFloat(const char* varName, RecFloat value)
 //
 //  Sets the variable specifed by varName to value.  varName
 //   must be a RecFloat variable.  No conversion is done for
@@ -172,7 +172,7 @@ varSetFloat(const char *varName, RecFloat value, bool convert)
   return found;
 }
 
-// bool varSetCounter(const char* varName, RecCounter value) 
+// bool varSetCounter(const char* varName, RecCounter value)
 //
 //  Sets the variable specifed by varName to value.  varName
 //   must be an RecCounter variable.  No conversion is done for
@@ -222,7 +222,7 @@ varSetCounter(const char *varName, RecCounter value, bool convert)
   return found;
 }
 
-// bool varSetInt(const char* varName, RecInt value) 
+// bool varSetInt(const char* varName, RecInt value)
 //
 //  Sets the variable specifed by varName to value.  varName
 //   must be an RecInt variable.  No conversion is done for
@@ -272,7 +272,7 @@ varSetInt(const char *varName, RecInt value, bool convert)
   return found;
 }
 
-// bool varSetLLong(const char* varName, RecLLong value) 
+// bool varSetLLong(const char* varName, RecLLong value)
 //
 //  Sets the variable specifed by varName to value.  varName
 //   must be an RecLLong variable.  No conversion is done for
@@ -327,9 +327,9 @@ varSetLLong(const char *varName, RecLLong value, bool convert)
 // bool varCounterFromName (const char*, RecFloat* )
 //
 //   Sets the *value to value of the varName.
-// 
+//
 //  return true if bufVal was succefully set
-//    and false otherwise 
+//    and false otherwise
 //
 bool
 varCounterFromName(const char *varName, RecCounter * value)
@@ -382,9 +382,9 @@ varCounterFromName(const char *varName, RecCounter * value)
 // bool varFloatFromName (const char*, RecFloat* )
 //
 //   Sets the *value to value of the varName.
-// 
+//
 //  return true if bufVal was succefully set
-//    and false otherwise 
+//    and false otherwise
 //
 bool
 varFloatFromName(const char *varName, RecFloat * value)
@@ -433,9 +433,9 @@ varFloatFromName(const char *varName, RecFloat * value)
 // bool varIntFromName (const char*, RecInt* )
 //
 //   Sets the *value to value of the varName.
-// 
+//
 //  return true if bufVal was succefully set
-//    and false otherwise 
+//    and false otherwise
 //
 bool
 varIntFromName(const char *varName, RecInt * value)
@@ -488,9 +488,9 @@ varIntFromName(const char *varName, RecInt * value)
 // bool varLLongFromName (const char*, RecLLong* )
 //
 //   Sets the *value to value of the varName.
-// 
+//
 //  return true if bufVal was succefully set
-//    and false otherwise 
+//    and false otherwise
 //
 bool
 varLLongFromName(const char *varName, RecLLong * value)
@@ -631,7 +631,7 @@ commaStrFromLLong(RecLLong bytes, char *bufVal)
   ink_assert(curPtr + 1 == bufVal);
 }
 
-// void MbytesFromInt(RecInt bytes, char* bufVal) 
+// void MbytesFromInt(RecInt bytes, char* bufVal)
 //     Converts into a string in units of megabytes
 //      No unit specification is added
 //
@@ -645,7 +645,7 @@ MbytesFromInt(RecInt bytes, char *bufVal)
   sprintf(bufVal, "%lld", mBytes);
 }
 
-// void MbytesFromLLong(RecLLong bytes, char* bufVal) 
+// void MbytesFromLLong(RecLLong bytes, char* bufVal)
 //     Converts into a string in units of megabytes
 //      No unit specification is added
 //
@@ -659,7 +659,7 @@ MbytesFromLLong(RecLLong bytes, char *bufVal)
   sprintf(bufVal, "%lld", mBytes);
 }
 
-// void bytesFromInt(RecInt bytes, char* bufVal) 
+// void bytesFromInt(RecInt bytes, char* bufVal)
 //
 //    Converts mgmt into a string with one of
 //       GB, MB, KB, B units
@@ -696,7 +696,7 @@ bytesFromInt(RecInt bytes, char *bufVal)
   }
 }
 
-// void bytesFromLLong(RecLLong bytes, char* bufVal) 
+// void bytesFromLLong(RecLLong bytes, char* bufVal)
 //
 //    Converts mgmt into a string with one of
 //       GB, MB, KB, B units
@@ -730,9 +730,9 @@ bytesFromLLong(RecLLong bytes, char *bufVal)
 //
 //   Sets the bufVal string to the value of the local manager
 //     named by varName.  bufLen is size of bufVal
-// 
+//
 //  return true if bufVal was succefully set
-//    and false otherwise 
+//    and false otherwise
 //
 //  EVIL ALERT: overviewRecord::varStrFromName is extremely
 //    similar to this function except in how it gets it's
@@ -947,9 +947,9 @@ MgmtData::compareFromString(const char *str)
     break;
   case RECD_FLOAT:
     compData.rec_float = atof(str);
-    // HACK - There are some rounding problems with 
+    // HACK - There are some rounding problems with
     //   floating point numbers so say we have a match if there difference
-    //   is small 
+    //   is small
     floatDiff = data.rec_float - compData.rec_float;
     if (floatDiff > -0.001 && floatDiff < 0.001) {
       compare = true;
@@ -1038,7 +1038,7 @@ computeXactMax()
 }
 
 
-// InkHashTable* processFormSubmission(char* submission) 
+// InkHashTable* processFormSubmission(char* submission)
 //
 //  A generic way to handle a HTML form submission.
 //  Creates a hash table with name value pairs
@@ -1099,7 +1099,7 @@ processFormSubmission(char *submission)
   return nameVal;
 }
 
-// InkHashTable* processFormSubmission_noSubstitute(char* submission) 
+// InkHashTable* processFormSubmission_noSubstitute(char* submission)
 //
 //  A generic way to handle a HTML form submission.
 //  Creates a hash table with name value pairs
@@ -1158,7 +1158,7 @@ processFormSubmission_noSubstitute(char *submission)
   return nameVal;
 }
 
-//  
+//
 // Removes any cr/lf line breaks from the text data
 //
 int
@@ -1271,7 +1271,7 @@ substituteForHTMLChars(const char *buffer)
 }
 
 
-// bool ProxyShutdown() 
+// bool ProxyShutdown()
 //
 //  Attempts to turn the proxy off.  Returns
 //    true if the proxy is off when the call returns
@@ -1638,7 +1638,7 @@ processSpawn(const char *args[],
 
 //-------------------------------------------------------------------------
 // getFilesInDirectory
-// 
+//
 // copied from MultiFiles::WalkFiles - but slightly modified
 // returns -1 if directory does not exit
 // returns 1 if everything is ok

@@ -142,31 +142,31 @@ CacheVC::updateVector(int event, Event *e)
    - frag_type. Checked to see if a vector needs to be marshalled.
    - f.use_first_key. To decide if the vector should be marshalled and to set
      the doc->key to the appropriate key (first_key or earliest_key)
-   - f.evac_vector. If set, the writer is pushed in the beginning of the 
+   - f.evac_vector. If set, the writer is pushed in the beginning of the
      agg queue. And if !f.evac_vector && !f.update the alternate->object_size
      is set to vc->total_len
    - f.readers.  If set, assumes that this is an evacuation, so the write
      is not aborted even if part->agg_todo_size > agg_write_backlog
    - f.evacuator. If this is an evacuation.
    - f.rewrite_resident_alt. The resident alternate is rewritten.
-   - f.update. Used only if the write_vector needs to be written to disk. 
+   - f.update. Used only if the write_vector needs to be written to disk.
      Used to set the length of the alternate to total_len.
-   - write_vector. Used only if frag_type == CACHE_FRAG_TYPE_HTTP && 
+   - write_vector. Used only if frag_type == CACHE_FRAG_TYPE_HTTP &&
      (f.use_fist_key || f.evac_vector) is set. Write_vector is written to disk
    - alternate_index. Used only if write_vector needs to be written to disk.
-     Used to find out the VC's alternate in the write_vector and set its 
+     Used to find out the VC's alternate in the write_vector and set its
      length to tatal_len.
    - write_len. The number of bytes for this fragment.
-   - total_len. The total number of bytes for the document so far. 
+   - total_len. The total number of bytes for the document so far.
      Doc->total_len and alternate's total len is set to this value.
    - first_key. Doc's first_key is set to this value.
    - pin_in_cache. Doc's pinned value is set to this + ink_get_hrtime().
-   - earliest_key. If f.use_first_key, Doc's key is set to this value. 
+   - earliest_key. If f.use_first_key, Doc's key is set to this value.
    - key. If !f.use_first_key, Doc's key is set to this value.
    - blocks. Used only if write_len is set. Data to be written
    - offset. Used only if write_len is set. offset into the block to copy
      the data from.
-   - buf. Used only if f.evacuator is set. Should point to the old document. 
+   - buf. Used only if f.evacuator is set. Should point to the old document.
    The functions sets the length, offset, pinned, head and phase of vc->dir.
    */
 
@@ -195,7 +195,7 @@ CacheVC::handleWrite(int event, Event *e)
   agg_len = round_to_approx_size(write_len + header_len + frag_len + sizeofDoc);
   part->agg_todo_size += agg_len;
   ink_assert(agg_len <= AGG_SIZE);
-  bool agg_error = 
+  bool agg_error =
     (agg_len > AGG_SIZE ||
      (!f.readers && (part->agg_todo_size > cache_config_agg_write_backlog + AGG_SIZE) && write_len));
 #ifdef CACHE_AGG_FAIL_RATE
@@ -307,8 +307,8 @@ Part::scan_for_pinned_documents()
 
 /* NOTE:: This state can be called by an AIO thread, so DON'T DON'T
    DON'T schedule any events on this thread using VC_SCHED_XXX or
-   mutex->thread_holding->schedule_xxx_local(). ALWAYS use 
-   eventProcessor.schedule_xxx(). 
+   mutex->thread_holding->schedule_xxx_local(). ALWAYS use
+   eventProcessor.schedule_xxx().
    */
 int
 Part::aggWriteDone(int event, Event *e)
@@ -329,7 +329,7 @@ Part::aggWriteDone(int event, Event *e)
     header->last_write_pos = header->write_pos;
     header->write_pos += io.aiocb.aio_nbytes;
     ink_assert(header->write_pos >= start);
-    DDebug("cache_agg", "Dir %s, Write: %llu, last Write: %llu\n", 
+    DDebug("cache_agg", "Dir %s, Write: %llu, last Write: %llu\n",
           hash_id, header->write_pos, header->last_write_pos);
     ink_assert(header->write_pos == header->agg_pos);
     if (header->write_pos + EVACUATION_SIZE > scan_pos)
@@ -340,9 +340,9 @@ Part::aggWriteDone(int event, Event *e)
     // delete all the directory entries that we inserted
     // for fragments is this aggregation buffer
     Debug("cache_disk_error", "Write error on disk %s\n \
-              write range : [%llu - %llu bytes]  [%llu - %llu blocks] \n", 
-          hash_id, io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes, 
-          io.aiocb.aio_offset / INK_BLOCK_SIZE, 
+              write range : [%llu - %llu bytes]  [%llu - %llu blocks] \n",
+          hash_id, io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+          io.aiocb.aio_offset / INK_BLOCK_SIZE,
           (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / INK_BLOCK_SIZE);
     Dir del_dir;
     dir_clear(&del_dir);
@@ -961,7 +961,7 @@ Part::agg_wrap()
 
 /* NOTE: This state can be called by an AIO thread, so DON'T DON'T
    DON'T schedule any events on this thread using VC_SCHED_XXX or
-   mutex->thread_holding->schedule_xxx_local(). ALWAYS use 
+   mutex->thread_holding->schedule_xxx_local(). ALWAYS use
    eventProcessor.schedule_xxx().
    Also, make sure that any functions called by this also use
    the eventProcessor to schedule events
@@ -983,10 +983,10 @@ Lagain:
   for (c = (CacheVC *) agg.head; c;) {
     int writelen = c->agg_len;
     ink_assert(writelen < AGG_SIZE);
-    if (agg_buf_pos + writelen > AGG_SIZE || 
+    if (agg_buf_pos + writelen > AGG_SIZE ||
         header->write_pos + agg_buf_pos + writelen > (skip + len))
       break;
-    DDebug("agg_read", "copying: %d, %llu, key: %d", 
+    DDebug("agg_read", "copying: %d, %llu, key: %d",
           agg_buf_pos, header->write_pos + agg_buf_pos, c->first_key.word(0));
     int wrotelen = agg_copy(agg_buffer + agg_buf_pos, c);
     ink_assert(writelen == wrotelen);
@@ -1301,7 +1301,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
       ink_assert(key == earliest_key);
       earliest_dir = dir;
     } else {
-      if (!frag) 
+      if (!frag)
         frag = &integral_frags[0];
       else {
         if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((inku32)(fragment-1))) {
@@ -1466,8 +1466,8 @@ CacheVC::openWriteStartDone(int event, Event *e)
     }
 
     /* INKqa07123.
-       A directory entry which is nolonger valid may have been overwritten. 
-       We need to start afresh from the beginning by setting last_collision 
+       A directory entry which is nolonger valid may have been overwritten.
+       We need to start afresh from the beginning by setting last_collision
        to NULL.
      */
     if (!dir_valid(part, &dir)) {
@@ -1615,7 +1615,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
      would cause a problem if the key and the first_key collide. In case of
      a collision, old vector data could be served to HTTP. Need to avoid that.
      Also, when evacuating a fragment, we have to decide if its the first_key
-     or the earliest_key based on the dir_tag. 
+     or the earliest_key based on the dir_tag.
    */
   do {
     rand_CacheKey(&c->key, cont->mutex);
@@ -1679,7 +1679,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t
      would cause a problem if the key and the first_key collide. In case of
      a collision, old vector data could be served to HTTP. Need to avoid that.
      Also, when evacuating a fragment, we have to decide if its the first_key
-     or the earliest_key based on the dir_tag. 
+     or the earliest_key based on the dir_tag.
    */
   do {
     rand_CacheKey(&c->key, cont->mutex);
@@ -1694,8 +1694,8 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t
     /*
        Update has the following code paths :
        a) Update alternate header only :
-       In this case the vector has to be rewritten. The content 
-       length(update_len) and the key for the document are set in the 
+       In this case the vector has to be rewritten. The content
+       length(update_len) and the key for the document are set in the
        new_info in the set_http_info call.
        HTTP OPERATIONS
        open_write with info set
@@ -1703,9 +1703,9 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t
        (total_len == 0)
        close
        b) Update alternate and data
-       In this case both the vector and the data needs to be rewritten. 
-       This case is similar to the standard write of a document case except 
-       that the new_info is inserted into the vector at the alternate_index 
+       In this case both the vector and the data needs to be rewritten.
+       This case is similar to the standard write of a document case except
+       that the new_info is inserted into the vector at the alternate_index
        (overwriting the old alternate) rather than the end of the vector.
        HTTP OPERATIONS
        open_write with info set
@@ -1713,8 +1713,8 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t
        do_io_write =>  (total_len > 0)
        close
        c) Delete an alternate
-       The vector may need to be deleted (if there was only one alternate) or 
-       rewritten (if there were more than one alternate). The deletion of the 
+       The vector may need to be deleted (if there was only one alternate) or
+       rewritten (if there were more than one alternate). The deletion of the
        vector is done in openWriteRemoveVector.
        HTTP OPERATIONS
        open_write with info set
@@ -1734,7 +1734,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t
   {
     CACHE_TRY_LOCK(lock, c->part->mutex, cont->mutex->thread_holding);
     if (lock) {
-      if ((err = c->part->open_write(c, if_writers, 
+      if ((err = c->part->open_write(c, if_writers,
                                      cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0)
         goto Lfailure;
       // If there are multiple writers, then this one cannot be an update.

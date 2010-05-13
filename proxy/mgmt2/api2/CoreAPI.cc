@@ -25,8 +25,8 @@
  * CoreAPI.cc
  *
  * Implementation of many of INKMgmtAPI functions, but from local side.
- * 
- * 
+ *
+ *
  ***************************************************************************/
 
 #include "ink_config.h"
@@ -63,8 +63,8 @@ INKActionNeedT determine_action_need(const char *rec_name);
 /*-------------------------------------------------------------------------
  * Init
  *-------------------------------------------------------------------------
- * performs any necesary initializations for the local API client, 
- * eg. set up global structures; called by the INKMgmtAPI::INKInit() 
+ * performs any necesary initializations for the local API client,
+ * eg. set up global structures; called by the INKMgmtAPI::INKInit()
  */
 INKError
 Init(const char *socket_path)
@@ -80,8 +80,8 @@ Init(const char *socket_path)
 /*-------------------------------------------------------------------------
  * Terminate
  *-------------------------------------------------------------------------
- * performs any necesary cleanup of global structures, etc, 
- * for the local API client, 
+ * performs any necesary cleanup of global structures, etc,
+ * for the local API client,
  */
 INKError
 Terminate()
@@ -94,7 +94,7 @@ Terminate()
 
 /*-------------------------------------------------------------------------
  * Diags
- *------------------------------------------------------------------------- 
+ *-------------------------------------------------------------------------
  * Uses the Traffic Manager diags object to display the diags output.
  */
 void
@@ -149,7 +149,7 @@ Diags(INKDiagsT mode, const char *fmt, va_list ap)
  * ProxyStateGet
  *-------------------------------------------------------------------------
  * return INK_PROXY_OFF if  Traffic Server is off.
- * return INK_PROXY_ON if Traffic Server is on. 
+ * return INK_PROXY_ON if Traffic Server is on.
  */
 INKProxyStateT
 ProxyStateGet()
@@ -165,7 +165,7 @@ ProxyStateGet()
  *-------------------------------------------------------------------------
  * If state == INK_PROXY_ON, will turn on TS (unless it's already running).
  * If steat == INK_PROXY_OFF, will turn off TS (unless it's already off).
- * tsArgs  - (optional) a string with space delimited options that user 
+ * tsArgs  - (optional) a string with space delimited options that user
  *            wants to start traffic Server with
  */
 INKError
@@ -180,7 +180,7 @@ ProxyStateSet(INKProxyStateT state, INKCacheClearT clear)
 
   switch (state) {
   case INK_PROXY_OFF:
-    if (!ProxyShutdown())       // from WebMgmtUtils 
+    if (!ProxyShutdown())       // from WebMgmtUtils
       goto Lerror;              // unsuccessful shutdown
     break;
   case INK_PROXY_ON:
@@ -251,14 +251,14 @@ Reconfigure()
 /*-------------------------------------------------------------------------
  * Restart
  *-------------------------------------------------------------------------
- * Restarts Traffic Manager. Traffic Cop must be running in order to 
+ * Restarts Traffic Manager. Traffic Cop must be running in order to
  * restart Traffic Manager!!
  */
 INKError
 Restart(bool cluster)
 {
   if (cluster) {                // Enqueue an event to restart the proxies across the cluster
-    // this will kill TM completely;traffic_cop will restart TM/TS 
+    // this will kill TM completely;traffic_cop will restart TM/TS
     lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_SHUTDOWN_MANAGER);
   } else {                      // just bounce local proxy
     lmgmt->mgmtShutdown(0);
@@ -281,12 +281,12 @@ HardRestart()
 
 
 /**************************************************************************
- * RECORD OPERATIONS 	     
+ * RECORD OPERATIONS
  *************************************************************************/
 /*-------------------------------------------------------------------------
  * MgmtRecordGet
  *-------------------------------------------------------------------------
- * rec_ele has allocated memory already but with all empty fields. 
+ * rec_ele has allocated memory already but with all empty fields.
  * The record info associated with rec_name will be returned in rec_ele.
  */
 INKError
@@ -301,7 +301,7 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
 
   Debug("RecOp", "[MgmtRecordGet] Start\n");
 
-  // initialize the record name 
+  // initialize the record name
   rec_ele->rec_name = xstrdup(rec_name);
   memset(rec_val, 0, MAX_BUF_SIZE);
 
@@ -348,8 +348,8 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
       return INK_ERR_FAIL;
 
 
-    if (rec_val[0] != '\0') {   // non-NULL string value 
-      // allocate memory & duplicate string value 
+    if (rec_val[0] != '\0') {   // non-NULL string value
+      // allocate memory & duplicate string value
       str_val = xstrdup(rec_val);
     } else {
       str_val = xstrdup("NULL");
@@ -360,7 +360,7 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
     Debug("RecOp", "[MgmtRecordGet] Get String Var %s = %s\n", rec_ele->rec_name, rec_ele->string_val);
     break;
 
-  default:                     // UNKOWN TYPE 
+  default:                     // UNKOWN TYPE
     Debug("RecOp", "[MgmtRecordGet] Get Failed : %d is Unknown Var type %s\n", rec_type, rec_name);
     return INK_ERR_FAIL;
   }
@@ -372,8 +372,8 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
 /*-------------------------------------------------------------------------
  * determine_action_need (HELPER FN)
  *-------------------------------------------------------------------------
- * reads the RecordsConfig info to determine which type of action is needed 
- * when the record rec_name is changed; if the rec_name is invalid, 
+ * reads the RecordsConfig info to determine which type of action is needed
+ * when the record rec_name is changed; if the rec_name is invalid,
  * then returns INK_ACTION_UNDEFINED
  */
 INKActionNeedT
@@ -383,7 +383,7 @@ determine_action_need(const char *rec_name)
   RecordUpdateType update_t;
 
   // INKqa09916
-  // the hashtable lookup will return 0 if there is no binding for the 
+  // the hashtable lookup will return 0 if there is no binding for the
   // rec_name in the hashtable
   if (!RecordsConfigIndex->mgmt_hash_table_lookup((char *) rec_name, (void **) &r))
     return INK_ACTION_UNDEFINED;        // failed to find the rec_name in the records table
@@ -421,8 +421,8 @@ determine_action_need(const char *rec_name)
  * value string to get it to the type of the local manager
  * variable
  *
- *  returns true if the variable was successfully set 
- *   and false otherwise 
+ *  returns true if the variable was successfully set
+ *   and false otherwise
  */
 INKError
 MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_need)
@@ -465,7 +465,7 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_
   return MgmtRecordSet(rec_name, str_val, action_need);
 
   /* INKqa10300
-   *action_need = determine_action_need(rec_name); 
+   *action_need = determine_action_need(rec_name);
    if (recordValidityCheck(rec_name, str_val)) {
    if (varSetInt(rec_name, int_val))
    return INK_ERR_OKAY;
@@ -497,7 +497,7 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, INKAction
   /* INKqa10300
    *action_need = determine_action_need(rec_name);
    if (recordValidityCheck(rec_name, str_val)) {
-   if (varSetCounter(rec_name, counter_val)) 
+   if (varSetCounter(rec_name, counter_val))
    return INK_ERR_OKAY;
    }
    return INK_ERR_FAIL;
@@ -527,11 +527,11 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, INKActionNeedT * a
 
   /* INKqa10300
    *action_need = determine_action_need(rec_name);
-   if (recordValidityCheck(rec_name, str_val)) { 
+   if (recordValidityCheck(rec_name, str_val)) {
    if (varSetFloat(rec_name, float_val))
    return INK_ERR_OKAY;
    }
-   return INK_ERR_FAIL; 
+   return INK_ERR_FAIL;
    */
 }
 
@@ -549,7 +549,7 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, INKActionNeedT
 
 
 /**************************************************************************
- * FILE OPERATIONS 	     
+ * FILE OPERATIONS
  *************************************************************************/
 
 /*-------------------------------------------------------------------------
@@ -608,14 +608,14 @@ ReadFile(INKFileNameT file, char **text, int *size, int *version)
 /*-------------------------------------------------------------------------
  * WriteFile
  *-------------------------------------------------------------------------
- * Purpose: replaces the current file with the file passed in; 
+ * Purpose: replaces the current file with the file passed in;
  *  does forceUpdate for Rollback and FileManager so correct file
  *  versioning is maintained
  * Input: file - the config file to write
  *        text - text buffer to write
  *        size - the size of the buffer to write
- *        version - the current version level; new file will have the 
- *                  version number above this one  
+ *        version - the current version level; new file will have the
+ *                  version number above this one
  */
 INKError
 WriteFile(INKFileNameT file, char *text, int size, int version)
@@ -639,7 +639,7 @@ WriteFile(INKFileNameT file, char *text, int size, int version)
   }
   xfree(fname);
 
-  // if version < 0 then, just use next version in sequence; 
+  // if version < 0 then, just use next version in sequence;
   // otherwise check if trying to commit an old version
   if (version >= 0) {
     // check that the current version is equal to or less than the version
@@ -666,14 +666,14 @@ WriteFile(INKFileNameT file, char *text, int size, int version)
 }
 
 /**************************************************************************
- * EVENTS	     
+ * EVENTS
  *************************************************************************/
 /*-------------------------------------------------------------------------
  * EventSignal
  *-------------------------------------------------------------------------
- * LAN: THIS FUNCTION IS HACKED AND INCOMPLETE!!!!! 
+ * LAN: THIS FUNCTION IS HACKED AND INCOMPLETE!!!!!
  * with the current alarm processor system, the argument list is NOT
- * used; a set description is associated with each alarm already; 
+ * used; a set description is associated with each alarm already;
  * be careful because this alarm description is used to keep track
  * of alarms in the current alarm processor
  */
@@ -694,7 +694,7 @@ EventSignal(char *event_name, va_list ap)
  * EventResolve
  *-------------------------------------------------------------------------
  * Resolves the event of the given event_name. If the event is already
- * unresolved, just return INK_ERR_OKAY. 
+ * unresolved, just return INK_ERR_OKAY.
 
  */
 INKError
@@ -714,7 +714,7 @@ EventResolve(char *event_name)
 /*-------------------------------------------------------------------------
  * ActiveEventGetMlt
  *-------------------------------------------------------------------------
- * returns failure, and an incomplete active_alarms list if any of 
+ * returns failure, and an incomplete active_alarms list if any of
  * functions fail for a single event
  * note: returns list of local alarms at that instant of fn call (snapshot)
  */
@@ -730,8 +730,8 @@ ActiveEventGetMlt(LLQ * active_events)
   if (!active_events)
     return INK_ERR_PARAMS;
 
-  // Alarms stores a hashtable of all active alarms where: 
-  // key = alarm_t, 
+  // Alarms stores a hashtable of all active alarms where:
+  // key = alarm_t,
   // value = alarm_description defined in Alarms.cc alarmText[] array
   event_ht = lmgmt->alarm_keeper->getLocalAlarms();
 
@@ -785,7 +785,7 @@ EventIsActive(char *event_name, bool * is_current)
  * This differs from the remote side callback registered. Technically, I think
  * we need to redesign the alarm processor before we can handle the callback
  * functionality we want to accomplish. Because currently the alarm processor
- * only allow registering callbacks for general alarms. 
+ * only allow registering callbacks for general alarms.
  * Mimic remote side and have a separate structure (eg. hashtable) of
  * event callback functions for each type of event. The functions are also
  * stored in the the hashtable, not in the TM alarm processor model
@@ -955,10 +955,10 @@ SnapshotGetMlt(LLQ * snapshots)
  * StatsReset
  *-------------------------------------------------------------------------
  * Iterates through the RecordsConfig table, and for all stats
- * (type PROCESS, NODE, CLUSTER), sets them back to their default value 
- * If one stat fails to be set correctly, then continues onto next one, 
+ * (type PROCESS, NODE, CLUSTER), sets them back to their default value
+ * If one stat fails to be set correctly, then continues onto next one,
  * but will return INK_ERR_FAIL. Only returns INK_ERR_OKAY if all
- * stats are set back to defaults succesfully. 
+ * stats are set back to defaults succesfully.
  */
 INKError
 StatsReset()
@@ -986,7 +986,7 @@ StatsReset()
  * EncryptToFile
  *-------------------------------------------------------------------------
  * Encrypts the password and stores the encrypted password in the
- * location specified by "filepath"  
+ * location specified by "filepath"
  */
 INKError
 EncryptToFile(const char *passwd, const char *filepath)
@@ -1005,5 +1005,5 @@ EncryptToFile(const char *passwd, const char *filepath)
 /* Network conifguration functions */
 
 /*-------------------------------------------------------------
- * rmserver.cfg 
+ * rmserver.cfg
  *-------------------------------------------------------------*/

@@ -119,7 +119,7 @@ typedef enum
   //
   server_open_time,             // o_s_open_end - o_s_open_begin
   server_response_time,         // o_s_begin_read - o_s_begin_write
-  server_read_time,             // o_s_read_header_done - o_s_begin_read              
+  server_read_time,             // o_s_read_header_done - o_s_begin_read
   //
   TOTAL_HTTP_TRANSACTION_MILESTONES
 } HttpTransactionMilestone_t;
@@ -136,7 +136,7 @@ extern ink_hrtime TenSecondHttpMilestones[TOTAL_HTTP_TRANSACTION_MILESTONES];
 //                       Welcome to enum land!                         //
 //---------------------------------------------------------------------//
 
-// Before adding a stat variable, decide whether it is of 
+// Before adding a stat variable, decide whether it is of
 // a "transaction" type or if it is of a "dynamic" type.
 // Then add the stat variable to the appropriate enumeration
 // type. Make sure that DYN_STAT_START is large enough

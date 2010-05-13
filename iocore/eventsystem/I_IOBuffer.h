@@ -48,7 +48,7 @@ class IOBufferReader;
 class VIO;
 
 // Removing this optimization since this is breaking WMT over HTTP
-//#define WRITE_AND_TRANSFER 
+//#define WRITE_AND_TRANSFER
 
 inkcoreapi extern ink64 max_iobuffer_size;
 extern ink64 default_small_iobuffer_size;

@@ -149,7 +149,7 @@ history[history_pos%HISTORY_SIZE].event = _e; \
 history[history_pos%HISTORY_SIZE].ndone = _ndone; \
 history_pos++; }
 ////////////////////////////////////////////////////////////////////////
-// 
+//
 //      StateMachine::requestDataEvent
 //
 //      Called back whenever there is request data available.
@@ -186,7 +186,7 @@ StateMachine::requestDataEvent(int event, void *data)
 }
 
 ////////////////////////////////////////////////////////////////////////
-// 
+//
 //      StateMachine::parse
 //
 //      Called on a chunk of bytes representing a piece of a request
@@ -283,7 +283,7 @@ StateMachine::parse()
 }
 
 ////////////////////////////////////////////////////////////////////////
-// 
+//
 //      StateMachine::responseDataEvent
 //
 //      Called back whenever there is an event and we are generating
@@ -322,7 +322,7 @@ StateMachine::responseDataEvent(int event, void *data)
 }
 
 ////////////////////////////////////////////////////////////////////////
-// 
+//
 //      StateMachine::fill
 //
 //      This is the synthetic server routine that writes a header,
@@ -370,7 +370,7 @@ StateMachine::fill()
 }
 
 ////////////////////////////////////////////////////////////////////////
-// 
+//
 //      StateMachine::startResponse
 //
 //      Called when the request is parsed, to set up the state
@@ -397,7 +397,7 @@ StateMachine::startResponse()
 }
 
 ////////////////////////////////////////////////////////////////////////
-// 
+//
 //      StateMachine::killStateMachine
 //
 //      Called when the response is generated, to clean up and
@@ -415,7 +415,7 @@ StateMachine::killStateMachine()
 
 
 ////////////////////////////////////////////////////////////////////////
-// 
+//
 //      StateMachine::computeBodySize
 //
 //      Chooses a body size to send based on the URL.

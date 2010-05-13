@@ -28,7 +28,7 @@
 
 #include "LogAccess.h"
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogAccessTest
 
   This class is used to test the logging system standalone from the proxy
@@ -91,7 +91,7 @@ public:
   //
   virtual int marshal_transfer_time_ms(char *); // INT
 
-  // 
+  //
   // named fields from within a http header
   //
   virtual int marshal_http_header_field(char *header_symbol, char *field, char *buf);

@@ -25,7 +25,7 @@
  * Filename: CliDisplay.h
  * Purpose: This file contains the CLI display routines.
  *
- * 
+ *
  ****************************************************************/
 
 #include <stdarg.h>

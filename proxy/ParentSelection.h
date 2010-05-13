@@ -25,7 +25,7 @@
  *
  *  ParentSelection.h - Interface to Parent Selection System
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _PARENT_SELECTION_H_
@@ -75,7 +75,7 @@ struct ParentResult
   // Internal use only
   //   Not to be modified by HTTP
   int line_number;
-  P_table *epoch;               // A pointer to the table used.  
+  P_table *epoch;               // A pointer to the table used.
   ParentRecord *rec;
   inku32 last_parent;
   inku32 start_parent;

@@ -55,7 +55,7 @@
 #define BUILD_TABLE_MAX_ARGS 2048
 
 /**
- * 
+ *
 **/
 typedef struct s_build_table_info
 {
@@ -74,7 +74,7 @@ enum mapping_type
 { FORWARD_MAP, REVERSE_MAP, PERMANENT_REDIRECT, TEMPORARY_REDIRECT, FORWARD_MAP_REFERER, NONE };
 
 /**
- * 
+ *
 **/
 class UrlRewrite
 {
@@ -102,40 +102,40 @@ public:
     url_mapping *url_map;
     pcre *re;
     pcre_extra *re_extra;
-    
+
     // we store the host-string-to-substitute here; if a match is found,
     // the substitutions are made and the resulting url is stored
     // directly in toURL's host field
-    char *to_url_host_template; 
+    char *to_url_host_template;
     int to_url_host_template_len;
 
     // stores the number of substitutions
-    int n_substitutions;     
-    
+    int n_substitutions;
+
     // these two together point to template string places where
     // substitutions need to be made and the matching substring
     // to use
-    int substitution_markers[MAX_REGEX_SUBS]; 
+    int substitution_markers[MAX_REGEX_SUBS];
     int substitution_ids[MAX_REGEX_SUBS];
   };
-  
+
   typedef std::list<RegexMapping> RegexMappingList;
-  
-  struct MappingsStore 
+
+  struct MappingsStore
   {
     InkHashTable *hash_lookup;
     RegexMappingList regex_list;
-    bool empty() 
+    bool empty()
     {
       return ((hash_lookup == NULL) && (regex_list.size() == 0));
     }
   };
-  
+
   void PerformACLFiltering(HttpTransact::State * s, url_mapping * mapping);
   url_mapping *SetupPacMapping();       // manager proxy-autconfig mapping
   url_mapping *SetupBackdoorMapping();
   void PrintTable(InkHashTable * h_table);
-  void DestroyStore(MappingsStore &store) 
+  void DestroyStore(MappingsStore &store)
   {
     _destroyTable(store.hash_lookup);
     _destroyList(store.regex_list);
@@ -147,23 +147,23 @@ public:
   MappingsStore permanent_redirects;
   MappingsStore temporary_redirects;
 
-  url_mapping *forwardMappingLookup(URL *request_url, int request_port, const char *request_host, 
-                                    int request_host_len, char *tag = NULL) 
+  url_mapping *forwardMappingLookup(URL *request_url, int request_port, const char *request_host,
+                                    int request_host_len, char *tag = NULL)
   {
     return _mappingLookup(forward_mappings, request_url, request_port, request_host, request_host_len, tag);
   }
-  url_mapping *reverseMappingLookup(URL *request_url, int request_port, const char *request_host, 
-                                    int request_host_len, char *tag = NULL) 
+  url_mapping *reverseMappingLookup(URL *request_url, int request_port, const char *request_host,
+                                    int request_host_len, char *tag = NULL)
   {
     return _mappingLookup(reverse_mappings, request_url, request_port, request_host, request_host_len, tag);
   }
-  url_mapping *permanentRedirectLookup(URL *request_url, int request_port, const char *request_host, 
-                                       int request_host_len, char *tag = NULL) 
+  url_mapping *permanentRedirectLookup(URL *request_url, int request_port, const char *request_host,
+                                       int request_host_len, char *tag = NULL)
   {
     return _mappingLookup(permanent_redirects, request_url, request_port, request_host, request_host_len, tag);
   }
-  url_mapping *temporaryRedirectLookup(URL *request_url, int request_port, const char *request_host, 
-                                       int request_host_len, char *tag = NULL) 
+  url_mapping *temporaryRedirectLookup(URL *request_url, int request_port, const char *request_host,
+                                       int request_host_len, char *tag = NULL)
   {
     return _mappingLookup(temporary_redirects, request_url, request_port, request_host, request_host_len, tag);
   }
@@ -203,7 +203,7 @@ private:
   url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url,
                             int request_port, char *request_host, int request_host_len, char *tag);
   url_mapping *_regexMappingLookup(RegexMappingList &regex_mappings,
-                                   URL * request_url, int request_port, const char *request_host, 
+                                   URL * request_url, int request_port, const char *request_host,
                                    int request_host_len, char *tag, int rank_ceiling);
   int _expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
                            const char *matched_string, char *dest_buf, int dest_buf_size);

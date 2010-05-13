@@ -25,7 +25,7 @@
 #define __I_NETCONFIG_H__
 
 /*
- * Temporary file specifying all configurable parameters for the 
+ * Temporary file specifying all configurable parameters for the
  * net sub system.
  * For the default values look at NetConfig.cc
  */

@@ -29,9 +29,9 @@
 /****************************************************************************
  *
  *  Tokenizer.h - A string tokenzier
- *                     
- *  
- * 
+ *
+ *
+ *
  ****************************************************************************/
 
 /**********************************************************
@@ -44,7 +44,7 @@
  *
  *  There are three memory options.
  *     SHARE_TOKS - this modifies the original string passed in
- *          through Intialize() and shares its space.   NULLs 
+ *          through Intialize() and shares its space.   NULLs
  *          are inserted into string after each token.  Choosing
  *          this option means the user is reponsible for not
  *          deallocating the string storage before deallocating
@@ -73,17 +73,17 @@
  *  operator[index] - returns a pointer to the number token given
  *     by index.  If index > numTokens-1, NULL is returned.
  *     Because of way tokens are stored, this is O(n) operation
- *     It is very fast though for the first 16 tokens and 
+ *     It is very fast though for the first 16 tokens and
  *     is intended to be used on a small number of tokens
  *
  *  iterFirst(tok_iter_state* state) - Returns the first
  *     token and intializes state argument for subsequent
- *     calls to iterNext.  If no tokens exist, NULL is 
+ *     calls to iterNext.  If no tokens exist, NULL is
  *     returned
  *
  *  iterNext(tok_iter_state* state) - Returns the next token after
  *     what arg state returned next last time.   Returns NULL if no
- *     more tokens exists.  
+ *     more tokens exists.
  *
  *  Note: To iterate through a list using operator[] takes O(n^2) time
  *      Using iterFirst, iterNext the running time is O(n), so use
@@ -91,15 +91,15 @@
  *
  *  getNumber() - returns the number of tokens
  *
- *  setMaxTokens() - sets the maximum number of tokens.  Once maxTokens 
- *                     is reached, delimiters are ignored and the 
+ *  setMaxTokens() - sets the maximum number of tokens.  Once maxTokens
+ *                     is reached, delimiters are ignored and the
  *                     last token is rest of the string.  Negative numbers
  *                     mean no limit on the number of tokens
  *
  *  getMaxTokens() - returns maxTokens.  Negative number mean no limit
  *
  *  Print() - Debugging method to print out the tokens
- *     
+ *
  *******************************************************************/
 
 #include "ink_apidefs.h"

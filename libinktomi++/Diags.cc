@@ -31,7 +31,7 @@
 
   Joe User should only need to use the macros at the bottom of Diags.h
 
-  
+
  ****************************************************************************/
 
 #include "ink_config.h"

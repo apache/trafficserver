@@ -58,7 +58,7 @@
    // ...
    disklog(TestStateEvent(my_param1b,my_param2b));
   @endcode
-  
+
 */
 
 #ifndef _StateEventLogger_h_

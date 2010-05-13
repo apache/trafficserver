@@ -93,7 +93,7 @@ class CIFCWriteEntry
   char Input[CONFIG_UPGRADE_BUF_SIZE];
   int CountOn;
 
-  // write IFC file 
+  // write IFC file
   int ConfigWriteIFCEle();
 
 public:
@@ -172,7 +172,7 @@ class CIFCReadEntry
   int CountOn;
   int Count;
 
-  // read IFC file 
+  // read IFC file
   int ConfigReadIFCEle();
 
   int ConfigReadPrintIFCEle();

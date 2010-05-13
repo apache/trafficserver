@@ -26,7 +26,7 @@
 
   ICPProcessor.h
 
-  
+
 ****************************************************************************/
 
 #ifndef _ICPProcessor_h_
@@ -46,7 +46,7 @@ extern void initialize_thread_for_icp(EThread * e);
 class ICPProcessor;
 
 //***************************************************************************
-// External Interface to ICP 
+// External Interface to ICP
 //   Calling Sequence:
 //   =================
 //      void     icpProcessor.start()

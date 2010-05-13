@@ -21,13 +21,13 @@
   limitations under the License.
 
   @section details Details
- 
-  Log information regarding transactions (headers, bytes, 
+
+  Log information regarding transactions (headers, bytes,
   timing) in a specific log file (climate.log).
 
   Used by the Climate Lab log analysis that needs precise
   timing information not available in custom logs.
- 
+
   Basic design:
 
   1. INK_HTTP_TXN_START_HOOK is added to the main plug-in
@@ -609,7 +609,7 @@ retrieve_transaction_info(INKHttpTxn txnp, TransactionData * data)
 /*-------------------------------------------------------------------------
   log_transaction_info
 
-  Log all request and response info 
+  Log all request and response info
   Returns SUCCESS/FAILURE
   -------------------------------------------------------------------------*/
 static int
@@ -658,7 +658,7 @@ log_transaction_info(INKCont contp, TransactionData * data)
                         data->server_req_hdr_bytes,
                         data->server_req_body_bytes,
                         data->server_resp_hdr_bytes, data->server_resp_body_bytes, (long) txn_time,
-/*  Microseconds are enough. Log actual times instead of differences in case different differences 
+/*  Microseconds are enough. Log actual times instead of differences in case different differences
     become of interest */
                         data->txn_start_time / 1000,
                         data->read_request_hdr_time / 1000,

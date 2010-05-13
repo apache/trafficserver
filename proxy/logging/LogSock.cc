@@ -24,7 +24,7 @@
 /***************************************************************************
  LogSock.cc
 
- 
+
  ***************************************************************************/
 #include "ink_unused.h"
 
@@ -81,7 +81,7 @@ LogSock::~LogSock()
   delete[]ct;                   // delete the connection table
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   LogSock::listen
 
   This routine sets up the LogSock to begin accepting connections on the
@@ -622,7 +622,7 @@ bool LogSock::is_connected(int cid, bool ping)
   }
 }
 
-/*------------------------------------------------------------------------- 
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
@@ -655,7 +655,7 @@ bool LogSock::authorized_client(int cid, char *key)
   //
   // Ok, the client has a pending message, so check to see if it matches
   // the given key.
-  // 
+  //
   char
     buf[1024];
   int

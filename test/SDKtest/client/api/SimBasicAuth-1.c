@@ -25,8 +25,8 @@
  *
  *
  * Description:
- *  This SDKtest_client plugin sends live URL requests (from a URL file) w/ the 
- *  "Proxy-Authorization" header to load test the basic-auth plugin.  The url file and 
+ *  This SDKtest_client plugin sends live URL requests (from a URL file) w/ the
+ *  "Proxy-Authorization" header to load test the basic-auth plugin.  The url file and
  *  the credentials are specified in the configuration file.
  */
 
@@ -97,7 +97,7 @@ INKPluginInit(int client_id)
   my_plugin.requests = 0;
   my_plugin.successful_requests = 0;
 
-  /* register the plugin functions that are called back 
+  /* register the plugin functions that are called back
    * later in the program */
   INKFuncRegister(INK_FID_OPTIONS_PROCESS);
   INKFuncRegister(INK_FID_OPTIONS_PROCESS_FINISH);
@@ -176,12 +176,12 @@ INKPluginFinish()
   fclose(my_plugin.url_file);
 }
 
-/* generate requests that are understood by the SDKtest_server 
+/* generate requests that are understood by the SDKtest_server
  *   URL Format:
  *     http://hostname:port/serial_number/lengthxxx
  *   Note:
  *     request_buf has to be filled in the complete request header
- *     i.e. GET URL HTTP/1.0 .... 
+ *     i.e. GET URL HTTP/1.0 ....
  */
 int
 INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
@@ -226,8 +226,8 @@ INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
   return TRUE;
 }
 
-/* process response header returned either from synthetic 
- * server or from proxy server 
+/* process response header returned either from synthetic
+ * server or from proxy server
  */
 INKRequestAction
 INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
@@ -240,12 +240,12 @@ INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
  * server or from proxy server
  */
 /*
-INKRequestAction INKPartialBodyProcess(void *req_id, 
+INKRequestAction INKPartialBodyProcess(void *req_id,
 		void *partial_content,
-		int partial_length, 
-		int accum_length) 
+		int partial_length,
+		int accum_length)
 {
-	if (partial_length == 0) { 
+	if (partial_length == 0) {
 		if (accum_length >= ((User *)req_id)->doc_size_requested) {
 			my_plugin.total_bytes_received += (accum_length + ((User *)req_id)->header_bytes);
 			my_plugin.successful_requests++;
@@ -350,8 +350,8 @@ read_docsize_dist()
   }
 }
 
-/* parse the origin_server string in config file. 
- * value is in the form of "host1:port1 host2:port2 ..." 
+/* parse the origin_server string in config file.
+ * value is in the form of "host1:port1 host2:port2 ..."
  */
 void
 parse_origin_server_str(char *value)

@@ -29,7 +29,7 @@
   warnings and errors at runtime.  Action tags and debugging tags are
   supported, allowing run-time conditionals affecting diagnostics.
 
-  
+
  ****************************************************************************/
 
 #ifndef __DIAGS_H___

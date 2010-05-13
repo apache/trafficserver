@@ -117,7 +117,7 @@ struct PartInitInfo
     if ((part_h_f = (char *) valloc(4 * INK_BLOCK_SIZE)) != NULL)
       memset(part_h_f, 0, 4 * INK_BLOCK_SIZE);
   }
-  ~PartInitInfo() 
+  ~PartInitInfo()
   {
     for (int i = 0; i < 4; i++) {
       part_aio[i].action = NULL;
@@ -518,7 +518,7 @@ CacheProcessor::start_internal(int flags)
           Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
           diskok = 0;
 #if defined(_WIN32)
-          /* We can do a specific check for FAT32 systems on NT, 
+          /* We can do a specific check for FAT32 systems on NT,
            * to print a specific warning */
           if ((((inku64) blocks) * STORE_BLOCK_SIZE) > (1 << 32)) {
             Warning("If you are using a FAT32 file system, please ensure that cachesize"
@@ -561,7 +561,7 @@ CacheProcessor::diskInitialized()
     }
 
     if (bad_disks != 0) {
-      // create a new array 
+      // create a new array
       CacheDisk **p_good_disks;
       if ((gndisks - bad_disks) > 0)
         p_good_disks = (CacheDisk **) xmalloc((gndisks - bad_disks) * sizeof(CacheDisk *));
@@ -583,13 +583,13 @@ CacheProcessor::diskInitialized()
       gndisks = gndisks - bad_disks;
     }
 
-    /* create the cachepart list only if num partitions are greater 
+    /* create the cachepart list only if num partitions are greater
        than 0. */
     if (config_partitions.num_partitions == 0) {
       res = cplist_reconfigure();
       /* if no partitions, default to just an http cache */
     } else {
-      // else 
+      // else
       /* create the cachepart list. */
       cplist_init();
       /* now change the cachepart list based on the config file */
@@ -717,7 +717,7 @@ CacheProcessor::cacheInitialized()
     if (gnpart) {
       for (i = 0; i < gnpart; i++) {
         switch (cache_config_ram_cache_algorithm) {
-          default: 
+          default:
           case RAM_CACHE_ALGORITHM_CLFUS:
             gpart[i]->ram_cache = new_RamCacheCLFUS();
             break;
@@ -735,7 +735,7 @@ CacheProcessor::cacheInitialized()
           Debug("cache_init", "CacheProcessor::cacheInitialized - ram_cache_bytes = %lld = %lldMb",
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
           /*
-             CACHE_PART_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, 
+             CACHE_PART_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat,
              (ink64)part_dirlen(gpart[i]));
            */
           RecSetGlobalRawStatSum(part->cache_part->part_rsb,
@@ -994,10 +994,10 @@ Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
 #if !defined (_WIN32)
   raw_dir = (char *) valloc(part_dirlen(this));
 #else
-  /* the directory should be page aligned for raw disk transfers. 
+  /* the directory should be page aligned for raw disk transfers.
      WIN32 does not support valloc
-     or memalign, so we need to allocate extra space and then align the 
-     pointer ourselves. 
+     or memalign, so we need to allocate extra space and then align the
+     pointer ourselves.
      Don't need to keep track of the pointer to the original memory since
      we never free this */
   size_t alignment = getpagesize();
@@ -1097,37 +1097,37 @@ Part::handle_dir_read(int event, void *data)
   return handle_recover_from_data(EVENT_IMMEDIATE, 0);
 }
 
-/* 
-   Philosophy:  The idea is to find the region of disk that could be 
+/*
+   Philosophy:  The idea is to find the region of disk that could be
    inconsistent and remove all directory entries pointing to that potentially
-   inconsistent region. 
-   Start from a consistent position (the write_pos of the last directory 
+   inconsistent region.
+   Start from a consistent position (the write_pos of the last directory
    synced to disk) and scan forward. Two invariants for docs that were
    written to the disk after the directory was synced:
- 
-   1. doc->magic == DOC_MAGIC 
 
-   The following two cases happen only when the previous generation 
-   documents are aligned with the current ones. 
+   1. doc->magic == DOC_MAGIC
+
+   The following two cases happen only when the previous generation
+   documents are aligned with the current ones.
 
    2. All the docs written to the disk
    after the directory was synced will have their sync_serial <=
-   header->sync_serial + 1,  because the write aggregation can take 
-   indeterminate amount of time to sync. The doc->sync_serial can be 
+   header->sync_serial + 1,  because the write aggregation can take
+   indeterminate amount of time to sync. The doc->sync_serial can be
    equal to header->sync_serial + 1, because we increment the sync_serial
    before we sync the directory to disk.
 
-   3. The doc->sync_serial will always increase. If doc->sync_serial 
+   3. The doc->sync_serial will always increase. If doc->sync_serial
    decreases, the document was written in the previous phase
-   
-   If either of these conditions fail and we are not too close to the end 
+
+   If either of these conditions fail and we are not too close to the end
    (see the next comment ) then we're done
 
    We actually start from header->last_write_pos instead of header->write_pos
    to make sure that we haven't wrapped around the whole disk without
    syncing the directory.  Since the sync serial is 60 seconds, it is
    entirely possible to write through the whole cache without
-   once syncing the directory. In this case, we need to clear the 
+   once syncing the directory. In this case, we need to clear the
    cache.The documents written right before we synced the
    directory to disk should have the write_serial <= header->sync_serial.
 
@@ -1225,28 +1225,28 @@ Part::handle_recover_from_data(int event, void *data)
           if (doc->sync_serial > header->sync_serial)
             max_sync_serial = doc->sync_serial;
 
-          /* 
+          /*
              doc->magic == DOC_MAGIC, but doc->sync_serial != last_sync_serial
-             This might happen in the following situations 
-             1. We are starting off recovery. In this case the 
+             This might happen in the following situations
+             1. We are starting off recovery. In this case the
              last_sync_serial == header->sync_serial, but the doc->sync_serial
              can be anywhere in the range (0, header->sync_serial + 1]
              If this is the case, update last_sync_serial and continue;
 
-             2. A dir sync started between writing documents to the 
-             aggregation buffer and hence the doc->sync_serial went up. 
+             2. A dir sync started between writing documents to the
+             aggregation buffer and hence the doc->sync_serial went up.
              If the doc->sync_serial is greater than the last
-             sync serial and less than (header->sync_serial + 2) then 
+             sync serial and less than (header->sync_serial + 2) then
              continue;
 
              3. If the position we are recovering from is within AGG_SIZE
-             from the disk end, then we can't trust this document. The 
+             from the disk end, then we can't trust this document. The
              aggregation buffer might have been larger than the remaining space
-             at the end and we decided to wrap around instead of writing 
+             at the end and we decided to wrap around instead of writing
              anything at that point. In this case, wrap around and start
-             from the beginning. 
+             from the beginning.
 
-             If neither of these 3 cases happen, then we are indeed done. 
+             If neither of these 3 cases happen, then we are indeed done.
 
            */
 
@@ -1257,9 +1257,9 @@ Part::handle_recover_from_data(int event, void *data)
             s += round_to_approx_size(doc->len);
             continue;
           }
-          // case 3 - we have already recoverd some data and  
+          // case 3 - we have already recoverd some data and
           // (doc->sync_serial < last_sync_serial) ||
-          // (doc->sync_serial > header->sync_serial + 1). 
+          // (doc->sync_serial > header->sync_serial + 1).
           // if we are too close to the end, wrap around
           else if (recover_pos - (e - s) > (skip + len) - AGG_SIZE) {
             recover_wrapped = 1;
@@ -1274,7 +1274,7 @@ Part::handle_recover_from_data(int event, void *data)
         } else {
           // doc->magic != DOC_MAGIC
           // If we are in the danger zone - recover_pos is within AGG_SIZE
-          // from the end, then wrap around 
+          // from the end, then wrap around
           recover_pos -= e - s;
           if (recover_pos > (skip + len) - AGG_SIZE) {
             recover_wrapped = 1;
@@ -1293,10 +1293,10 @@ Part::handle_recover_from_data(int event, void *data)
       s += round_to_approx_size(doc->len);
     }
 
-    /* if (s > e) then we gone through RECOVERY_SIZE; we need to 
+    /* if (s > e) then we gone through RECOVERY_SIZE; we need to
        read more data off disk and continue recovering */
     if (s >= e) {
-      /* In the last iteration, we increment s by doc->len...need to undo 
+      /* In the last iteration, we increment s by doc->len...need to undo
          that change */
       if (s > e)
         s -= round_to_approx_size(doc->len);
@@ -1510,7 +1510,7 @@ build_part_hash_table(CacheHostRecord *cp)
   num_parts -= bad_parts;
 
   if (!num_parts) {
-    // all the disks are corrupt, 
+    // all the disks are corrupt,
     if (cp->part_hash_table) {
       new_Freer(cp->part_hash_table, CACHE_MEM_FREE_TIMEOUT);
     }
@@ -1606,7 +1606,7 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
         Warning(message);
         IOCORE_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
         /* subtract the disk space that was being used from  the cache size stat */
-        // dir entries stat 
+        // dir entries stat
         int p;
         inku64 total_bytes_delete = 0;
         inku64 total_dir_delete = 0;
@@ -1834,7 +1834,7 @@ CacheVC::handleReadDone(int event, Event *e)
       }
       bool http_copy_hdr = false;
 #ifdef HTTP_CACHE
-      http_copy_hdr = cache_config_ram_cache_compress && !f.doc_from_ram_cache && 
+      http_copy_hdr = cache_config_ram_cache_compress && !f.doc_from_ram_cache &&
         doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen;
       // If http doc we need to unmarshal the headers before putting in the ram cache
       // unless it could be compressed
@@ -1844,9 +1844,9 @@ CacheVC::handleReadDone(int event, Event *e)
       // Put the request in the ram cache only if its a open_read or lookup
       if (vio.op == VIO::READ && okay) {
         bool cutoff_check;
-        // cutoff_check : 
+        // cutoff_check :
         // doc_len == 0 for the first fragment (it is set from the vector)
-        //                The decision on the first fragment is based on 
+        //                The decision on the first fragment is based on
         //                doc->total_len
         // After that, the decision is based of doc_len (doc_len != 0)
         // (cache_config_ram_cache_cutoff == 0) : no cutoffs
@@ -2059,8 +2059,8 @@ Lfree:
 }
 
 Action *
-Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type, 
-              bool user_agents, bool link, 
+Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type,
+              bool user_agents, bool link,
               char *hostname, int host_len)
 {
   NOWARN_UNUSED(user_agents);
@@ -2191,7 +2191,7 @@ cplist_update()
     }
 
     if (!config_part) {
-      // did not find a matching partition in the config file. 
+      // did not find a matching partition in the config file.
       //Delete hte partition from the cache part list
       int d_no;
       for (d_no = 0; d_no < gndisks; d_no++) {
@@ -2267,7 +2267,7 @@ cplist_reconfigure()
     /* change percentages in the config patitions to absolute value */
     ink64 tot_space_in_blks = 0;
     int blocks_per_part = PART_BLOCK_SIZE / STORE_BLOCK_SIZE;
-    /* sum up the total space available on all the disks. 
+    /* sum up the total space available on all the disks.
        round down the space to 128 megabytes */
     for (i = 0; i < gndisks; i++)
       tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_part) * blocks_per_part;
@@ -2313,7 +2313,7 @@ cplist_reconfigure()
       size_in_blocks = ((ink_off_t) size * 1024 * 1024) / STORE_BLOCK_SIZE;
 
       if (!config_part->cachep) {
-        // we did not find a corresponding entry in cache part...creat one 
+        // we did not find a corresponding entry in cache part...creat one
 
         CachePart *new_cp = NEW(new CachePart());
         new_cp->disk_parts = (DiskPart **) xmalloc(gndisks * sizeof(DiskPart *));
@@ -2326,7 +2326,7 @@ cplist_reconfigure()
         gnpart += new_cp->num_parts;
         continue;
       }
-//    else 
+//    else
       CachePart *cp = config_part->cachep;
       ink_assert(cp->size <= size_in_blocks);
       if (cp->size == size_in_blocks) {
@@ -2373,8 +2373,8 @@ cplist_reconfigure()
         int largest_part = cp->disk_parts[sorted_part[gndisks - 1]]->size;
 
         /* allocate storage on new disk. Find the difference
-           between the biggest partition on any disk and 
-           the partition on this disk and try to make 
+           between the biggest partition on any disk and
+           the partition on this disk and try to make
            them equal */
         int size_diff = (cp->disk_parts[disk_no]) ? largest_part - cp->disk_parts[disk_no]->size : largest_part;
         size_diff = (size_diff < size_to_alloc) ? size_diff : size_to_alloc;
@@ -2490,7 +2490,7 @@ rebuild_host_table(Cache *cache)
   }
 }
 
-// if generic_host_rec.parts == NULL, what do we do??? 
+// if generic_host_rec.parts == NULL, what do we do???
 Part *
 Cache::key_to_part(CacheKey *key, char *hostname, int host_len)
 {
@@ -2650,13 +2650,13 @@ ink_cache_init(ModuleVersion v)
   IOCORE_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
   Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
   if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
-    ink_strncpy(cache_system_config_directory,system_config_directory,sizeof(cache_system_config_directory)); 
+    ink_strncpy(cache_system_config_directory,system_config_directory,sizeof(cache_system_config_directory));
     if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
       // Try 'system_root_dir/etc/trafficserver' directory
-      snprintf(cache_system_config_directory, sizeof(cache_system_config_directory), 
+      snprintf(cache_system_config_directory, sizeof(cache_system_config_directory),
                "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
       if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
-        fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n", 
+        fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n",
                 cache_system_config_directory, ierr, errno, strerror(errno));
         fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
         _exit(1);

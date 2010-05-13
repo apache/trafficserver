@@ -25,7 +25,7 @@
  *
  *  MgmtAllow.h - Interface to Manager IP Access Control systtem
  *
- * 
+ *
  ****************************************************************************/
 
 #ifndef _MGMT_ALLOW_H_

@@ -505,9 +505,9 @@ http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num
 num_rules_redirect_temporary(0), remap_pi_list(NULL)
 {
 
-  forward_mappings.hash_lookup = reverse_mappings.hash_lookup = 
+  forward_mappings.hash_lookup = reverse_mappings.hash_lookup =
     permanent_redirects.hash_lookup = temporary_redirects.hash_lookup = NULL;
-  
+
   char *config_file = NULL;
 
   ink_assert(file_var_in != NULL);
@@ -670,7 +670,7 @@ UrlRewrite::_destroyTable(InkHashTable * h_table)
     for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != NULL;) {
       item = (UrlMappingPathIndex *) ink_hash_table_entry_value(h_table, ht_entry);
       item->GetMappings(mappings);
-      for (UrlMappingPathIndex::MappingList::iterator mapping_iter = mappings.begin(); 
+      for (UrlMappingPathIndex::MappingList::iterator mapping_iter = mappings.begin();
            mapping_iter != mappings.end(); ++mapping_iter) {
         delete *mapping_iter;
       }
@@ -723,7 +723,7 @@ UrlRewrite::PrintTable(InkHashTable * h_table)
   url_mapping *um;
 
   for (ht_entry = ink_hash_table_iterator_first(h_table, &ht_iter); ht_entry != NULL;) {
-    value = (UrlMappingPathIndex *) ink_hash_table_entry_value(h_table, ht_entry); 
+    value = (UrlMappingPathIndex *) ink_hash_table_entry_value(h_table, ht_entry);
     value->GetMappings(mappings);
     for (UrlMappingPathIndex::MappingList::iterator mapping_iter = mappings.begin();
          mapping_iter != mappings.end(); ++mapping_iter) {
@@ -1576,7 +1576,7 @@ UrlRewrite::BuildTable()
   bool is_cur_mapping_regex;
   const char *type_id_str;
   bool add_result;
-  
+
   ink_assert(forward_mappings.empty());
   ink_assert(reverse_mappings.empty());
   ink_assert(permanent_redirects.empty());
@@ -1866,7 +1866,7 @@ UrlRewrite::BuildTable()
     // been removed.
 
 
-    /* 
+    /*
        commenting these out
      */
     // RemoveTrailingSlash(&new_mapping->toURL);
@@ -1904,22 +1904,22 @@ UrlRewrite::BuildTable()
     switch (maptype) {
     case FORWARD_MAP:
     case FORWARD_MAP_REFERER:
-      if ((add_result = _addToStore(forward_mappings, new_mapping, reg_map, fromHost_lower, 
+      if ((add_result = _addToStore(forward_mappings, new_mapping, reg_map, fromHost_lower,
                                     is_cur_mapping_regex, num_rules_forward)) == true) {
         SetHomePageRedirectFlag(new_mapping);   // @todo: is this applicable to regex mapping too?
       }
       break;
     case REVERSE_MAP:
-      add_result = _addToStore(reverse_mappings, new_mapping, reg_map, fromHost_lower, 
+      add_result = _addToStore(reverse_mappings, new_mapping, reg_map, fromHost_lower,
                                is_cur_mapping_regex, num_rules_reverse);
       new_mapping->homePageRedirect = false;
       break;
     case PERMANENT_REDIRECT:
-      add_result = _addToStore(permanent_redirects, new_mapping, reg_map, fromHost_lower, 
+      add_result = _addToStore(permanent_redirects, new_mapping, reg_map, fromHost_lower,
                                is_cur_mapping_regex, num_rules_redirect_permanent);
       break;
     case TEMPORARY_REDIRECT:
-      add_result = _addToStore(temporary_redirects, new_mapping, reg_map, fromHost_lower, 
+      add_result = _addToStore(temporary_redirects, new_mapping, reg_map, fromHost_lower,
                                is_cur_mapping_regex, num_rules_redirect_temporary);
       break;
     default:
@@ -2177,7 +2177,7 @@ UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, const cha
     src_host_tmp_buf[0] = 0;
   }
   // Insert the new_mapping into hash table
-  if (ink_hash_table_lookup(h_table, src_host, (void**) &ht_contents)) {       
+  if (ink_hash_table_lookup(h_table, src_host, (void**) &ht_contents)) {
     // There is already a path index for this host
     if (ht_contents == NULL) {
       // why should this happen?
@@ -2411,9 +2411,9 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
 		 * fail here, otherwise we *will* fail later
 		 * and that's some jacked backtrace inside CreateTableLookup [see bug 2316658]
 		 * at least this one will be obvious
-		 * We *really* don't want to continue when a plugin failed to init. We can't 
+		 * We *really* don't want to continue when a plugin failed to init. We can't
 		 * guarantee we are remapping what the user thought we were going to remap.
-		 * using something nice like exit() would be more ideal, but this should be 
+		 * using something nice like exit() would be more ideal, but this should be
 		 * caught in development, anyway.
      **/
     exit(-1);
@@ -2450,13 +2450,13 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url,
   request_host_lower[request_host_len] = 0;
 
   int rank_ceiling = -1;
-  url_mapping *mapping = _tableLookup(mappings.hash_lookup, request_url, request_port, request_host_lower, 
+  url_mapping *mapping = _tableLookup(mappings.hash_lookup, request_url, request_port, request_host_lower,
                                       request_host_len, tag);
   if (mapping != NULL) {
     rank_ceiling = mapping->getRank();
     Debug("url_rewrite", "Found 'simple' mapping with rank %d", rank_ceiling);
   }
-  url_mapping *regex_mapping = _regexMappingLookup(mappings.regex_list, request_url, request_port, 
+  url_mapping *regex_mapping = _regexMappingLookup(mappings.regex_list, request_url, request_port,
                                                    request_host_lower, request_host_len, tag, rank_ceiling);
   if (regex_mapping) {
     mapping = regex_mapping;
@@ -2465,10 +2465,10 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url,
   return mapping;
 }
 
-// does not null terminate return string 
+// does not null terminate return string
 int
 UrlRewrite::_expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
-                                 const char *matched_string, 
+                                 const char *matched_string,
                                  char *dest_buf, int dest_buf_size)
 {
   int cur_buf_size = 0;
@@ -2483,7 +2483,7 @@ UrlRewrite::_expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
     }
     memcpy(dest_buf + cur_buf_size, reg_map.to_url_host_template + token_start, n_bytes_needed);
     cur_buf_size += n_bytes_needed;
-    
+
     // then copy the sub pattern match
     match_index = reg_map.substitution_ids[i] * 2;
     n_bytes_needed = matches_info[match_index + 1] - matches_info[match_index];
@@ -2492,10 +2492,10 @@ UrlRewrite::_expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
     }
     memcpy(dest_buf + cur_buf_size, matched_string + matches_info[match_index], n_bytes_needed);
     cur_buf_size += n_bytes_needed;
-    
+
     token_start = reg_map.substitution_markers[i] + 2; // skip the place holder
   }
-  
+
   // copy last few bytes (if any)
   if (token_start < reg_map.to_url_host_template_len) {
     n_bytes_needed = reg_map.to_url_host_template_len - token_start;
@@ -2505,17 +2505,17 @@ UrlRewrite::_expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
     memcpy(dest_buf + cur_buf_size, reg_map.to_url_host_template + token_start, n_bytes_needed);
     cur_buf_size += n_bytes_needed;
   }
-  Debug("url_rewrite_regex", "Expanded substitutions and returning string [%.*s] with length %d", 
+  Debug("url_rewrite_regex", "Expanded substitutions and returning string [%.*s] with length %d",
         cur_buf_size, dest_buf, cur_buf_size);
   return cur_buf_size;
-  
+
  lOverFlow:
   Error("Overflow while expanding substitutions");
   return 0;
 }
 
 url_mapping *
-UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_url, int request_port, 
+UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_url, int request_port,
                                 const char *request_host, int request_host_len, char *tag, int rank_ceiling)
 {
   url_mapping *retval = NULL;
@@ -2549,10 +2549,10 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
             reg_map_rank);
       continue;
     }
-    
+
     if (reg_map.url_map->fromURL.port_get() != request_port) {
       Debug("url_rewrite_regex", "Skipping regex with rank %d as regex map port does not match request port. "
-            "regex map port: %d, request port %d", 
+            "regex map port: %d, request port %d",
             reg_map_rank, reg_map.url_map->fromURL.port_get(), request_port);
       continue;
     }
@@ -2571,21 +2571,21 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
     if (match_result > 0) {
       Debug("url_rewrite_regex", "Request URL host [%.*s] matched regex in mapping of rank %d "
             "with %d possible substitutions", request_host_len, request_host, reg_map_rank, match_result);
-      
+
       char buf[MAX_URL_STR_SIZE];
       int buf_len;
-      
+
       // Expand substitutions in the host field from the stored template
-      buf_len = _expandSubstitutions(matches_info, reg_map, request_host, 
+      buf_len = _expandSubstitutions(matches_info, reg_map, request_host,
                                      buf, MAX_URL_STR_SIZE);
       reg_map.url_map->toURL.host_set(buf, buf_len);
-      
-      Debug("url_rewrite_regex", "Expanded toURL to [%.*s]", 
+
+      Debug("url_rewrite_regex", "Expanded toURL to [%.*s]",
             reg_map.url_map->toURL.length_get(), reg_map.url_map->toURL.string_get_ref());
       retval = reg_map.url_map;
       break;
     } else if (match_result == PCRE_ERROR_NOMATCH) {
-      Debug("url_rewrite_regex", "Request URL host [%.*s] did NOT match regex in mapping of rank %d", 
+      Debug("url_rewrite_regex", "Request URL host [%.*s] did NOT match regex in mapping of rank %d",
             request_host_len, request_host, reg_map_rank);
     } else {
       Error("pcre_exec() failed with error code %d", match_result);
@@ -2597,7 +2597,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
 }
 
 void
-UrlRewrite::_destroyList(RegexMappingList &mappings) 
+UrlRewrite::_destroyList(RegexMappingList &mappings)
 {
   RegexMappingList::iterator list_iter;
   for (list_iter = mappings.begin(); list_iter != mappings.end(); ++list_iter) {
@@ -2636,7 +2636,7 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
   reg_map.to_url_host_template = NULL;
   reg_map.to_url_host_template_len = 0;
   reg_map.n_substitutions = 0;
-  
+
   reg_map.url_map = new_mapping;
 
   // using from_host_lower (and not new_mapping->fromURL.host_get())
@@ -2646,7 +2646,7 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
     Error("pcre_compile failed! Regex has error starting at %s", from_host_lower + str_index);
     goto lFail;
   }
-  
+
   reg_map.re_extra = pcre_study(reg_map.re, 0, &str);
   if ((reg_map.re_extra == NULL) && (str != NULL)) {
     Error("pcre_study failed with message [%s]", str);
@@ -2659,7 +2659,7 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
     goto lFail;
   }
   if (n_captures >= MAX_REGEX_SUBS) { // off by one for $0 (implicit capture)
-    Error("Regex has %d capturing subpatterns (including entire regex); Max allowed: %d", 
+    Error("Regex has %d capturing subpatterns (including entire regex); Max allowed: %d",
           n_captures + 1, MAX_REGEX_SUBS);
     goto lFail;
   }
@@ -2694,7 +2694,7 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
   memcpy(reg_map.to_url_host_template, str, str_index);
 
   return true;
-  
+
  lFail:
   if (reg_map.re) {
     pcre_free(reg_map.re);

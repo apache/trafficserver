@@ -31,8 +31,8 @@
  *
  *  WebMgmtUtils.h - Functions for interfacing to management records
  *
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "ink_hash_table.h"
@@ -101,7 +101,7 @@ int substituteUnsafeChars(char *buffer);
 char *substituteForHTMLChars(const char *buffer);
 
 // Produce a hash table based on a HTML form submission
-// 
+//
 //  CALLEE deallocates hashtable
 InkHashTable *processFormSubmission(char *submission);
 InkHashTable *processFormSubmission_noSubstitute(char *submission);

@@ -701,7 +701,7 @@ StufferCacheIncomingRequest(CacheVC * cache_vc)
 #undef BUF_SIZE
 }
 
-//simple hash_table implementation      
+//simple hash_table implementation
 int
 StufferHashTable::index(const char *s)
 {

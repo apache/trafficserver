@@ -27,7 +27,7 @@
 
   This file contains code to manipulate Error
 
-  
+
  ****************************************************************************/
 
 #include "ink_unused.h"    /* MAGIC_EDITING_TAG */

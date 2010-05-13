@@ -117,7 +117,7 @@ struct CacheContinuation:public Continuation
   int request_opcode;
   bool local_lookup_only;
   bool no_reply_message;
-  bool request_timeout;         // timeout occurred before 
+  bool request_timeout;         // timeout occurred before
   //   op complete
   bool expect_cache_callback;
 
@@ -140,9 +140,9 @@ struct CacheContinuation:public Continuation
   int cluster_vc_channel;
   ClusterVCToken open_local_token;
 
-  // Readahead on open read specific data 
+  // Readahead on open read specific data
 
-  int caller_buf_freebytes;     // remote bufsize for 
+  int caller_buf_freebytes;     // remote bufsize for
   //  initial data
   VIO *readahead_vio;
   IOBufferReader *readahead_reader;
@@ -343,7 +343,7 @@ CacheContinuation():
 // Cache OP specific args for do_op()  //
 /////////////////////////////////////////
 
-// Bit definitions for cfl_flags.  
+// Bit definitions for cfl_flags.
 // Note: Limited to 16 bits
 #define CFL_OVERWRITE_ON_WRITE 		(1 << 1)
 #define CFL_REMOVE_USER_AGENTS 		(1 << 2)
@@ -603,7 +603,7 @@ struct CacheOpReplyMsg:public ClusterMessageHeader
   inku32 seq_number;
   ink32 result;
   ClusterVCToken token;
-  inku8 moi[4];                 // Used by CACHE_OPEN_READ & CACHE_LINK reply 
+  inku8 moi[4];                 // Used by CACHE_OPEN_READ & CACHE_LINK reply
   enum
   {
     MIN_VERSION = 1,

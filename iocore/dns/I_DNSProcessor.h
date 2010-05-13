@@ -101,7 +101,7 @@ struct DNSProcessor:Processor
 
   // Processor API
   //
-  /* currently dns system uses event threads 
+  /* currently dns system uses event threads
    * dont pass any value to the call */
   int start(int no_of_extra_dns_threads = 0);
 

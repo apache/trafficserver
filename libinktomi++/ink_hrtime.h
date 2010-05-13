@@ -254,7 +254,7 @@ ink_hrtime_to_timeval2(ink_hrtime t, struct timeval *tv)
 }
 
 
-/* 
+/*
    using Jan 1 1970 as the base year, instead of Jan 1 1601,
    which translates to (365 + 0.25)369*24*60*60 seconds   */
 #define NT_TIMEBASE_DIFFERENCE_100NSECS 116444736000000000i64

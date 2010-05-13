@@ -23,13 +23,13 @@
 
 /*****************************************************************************
  * Filename: NetworkUtilsRemote.h
- * Purpose: This file contains functions used by remote api client to 
- *          marshal requests to TM and unmarshal replies from TM. 
- *          Also contains functions used to store information specific 
- *          to a remote client connection. 
+ * Purpose: This file contains functions used by remote api client to
+ *          marshal requests to TM and unmarshal replies from TM.
+ *          Also contains functions used to store information specific
+ *          to a remote client connection.
  * Created: 8/9/00
  * Created by: lant
- * 
+ *
  ***************************************************************************/
 
 #ifndef _NETWORK_UTILS_H_
@@ -54,8 +54,8 @@ void set_socket_paths(const char *path);
 int socket_test(int fd);
 
 /* The following functions are specific for a client connection; uses
- * the client connection information stored in the variables in 
- * NetworkUtilsRemote.cc 
+ * the client connection information stored in the variables in
+ * NetworkUtilsRemote.cc
  */
 INKError ts_connect(); /* TODO: update documenation, Renamed due to conflict with connect() in <sys/socket.h> on some platforms*/
 INKError disconnect();
@@ -66,7 +66,7 @@ INKError socket_write_conn(int fd, const char *msg_buf, int bytes);
 void *socket_test_thread(void *arg);
 
 /*****************************************************************************
- * Marshalling (create requests) 
+ * Marshalling (create requests)
  *****************************************************************************/
 INKError send_request(int fd, OpType op);
 INKError send_request_name(int fd, OpType op, char *name);
@@ -85,7 +85,7 @@ INKError send_unregister_all_callbacks(int fd, CallbackTable * cb_table);
 INKError send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg);
 
 /*****************************************************************************
- * Un-marshalling (parse responses) 
+ * Un-marshalling (parse responses)
  *****************************************************************************/
 INKError parse_reply(int fd);
 INKError parse_reply_list(int fd, char **list);

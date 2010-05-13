@@ -114,7 +114,7 @@ int CacheTestSM::event_handler(int event, void *data) {
         goto Lclose_error_next;
       else
         return EVENT_DONE;
-   
+
     case CACHE_EVENT_OPEN_READ_FAILED:
       goto Lcancel_next;
 
@@ -145,7 +145,7 @@ int CacheTestSM::event_handler(int event, void *data) {
         goto Lclose_error_next;
       else
         return EVENT_DONE;
-      
+
     case CACHE_EVENT_OPEN_WRITE_FAILED:
       goto Lcancel_next;
 
@@ -186,7 +186,7 @@ int CacheTestSM::event_handler(int event, void *data) {
     case AIO_EVENT_DONE:
       goto Lnext;
 
-    default: 
+    default:
       ink_assert(!"case");
       break;
   }
@@ -241,7 +241,7 @@ void CacheTestSM::fill_buffer() {
   }
 }
 
-int CacheTestSM::check_buffer() { 
+int CacheTestSM::check_buffer() {
   ink64 avail = buffer_reader->read_avail();
   CacheKey k = key;
   k.b[1] += content_salt;
@@ -264,11 +264,11 @@ int CacheTestSM::check_buffer() {
     pos += l;
     avail -= l;
   }
-  return 1; 
+  return 1;
 }
 
 int CacheTestSM::check_result(int event) {
-  return 
+  return
     initial_event == expect_initial_event &&
     event == expect_event;
 }
@@ -299,7 +299,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
   EThread *thread = this_ethread();
 
   CACHE_SM(t, write_test, { cacheProcessor.open_write(
-        this, &key, CACHE_FRAG_TYPE_NONE, 100, 
+        this, &key, CACHE_FRAG_TYPE_NONE, 100,
         CACHE_WRITE_OPT_SYNC); } );
   write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   write_test.expect_event = VC_EVENT_WRITE_COMPLETE;
@@ -309,7 +309,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
   CACHE_SM(t, lookup_test, { cacheProcessor.lookup(this, &key); } );
   lookup_test.expect_event = CACHE_EVENT_LOOKUP;
   lookup_test.key = write_test.key;
-  
+
   CACHE_SM(t, read_test, { cacheProcessor.open_read(this, &key); } );
   read_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
   read_test.expect_event = VC_EVENT_READ_COMPLETE;
@@ -327,13 +327,13 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
   CACHE_SM(t, read_fail_test, { cacheProcessor.open_read(this, &key); } );
   read_fail_test.expect_event = CACHE_EVENT_OPEN_READ_FAILED;
   read_fail_test.key = write_test.key;
-  
+
   CACHE_SM(t, remove_fail_test, { cacheProcessor.remove(this, &key); } );
   remove_fail_test.expect_event = CACHE_EVENT_REMOVE_FAILED;
   rand_CacheKey(&remove_fail_test.key, thread->mutex);
 
-  CACHE_SM(t, replace_write_test, { 
-      cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100, 
+  CACHE_SM(t, replace_write_test, {
+      cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100,
                                 CACHE_WRITE_OPT_SYNC);
     }
     int open_write_callout() {
@@ -350,7 +350,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
   CACHE_SM(t, replace_test, {
       cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100,
                                 CACHE_WRITE_OPT_OVERWRITE_SYNC);
-    }   
+    }
     int open_write_callout() {
       CacheTestHeader *h = 0;
       int hlen = 0;
@@ -370,7 +370,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
   replace_test.content_salt = 1;
 
   CACHE_SM(t, replace_read_test, {
-      cacheProcessor.open_read(this, &key); 
+      cacheProcessor.open_read(this, &key);
     }
     int open_read_callout() {
       CacheTestHeader *h = 0;

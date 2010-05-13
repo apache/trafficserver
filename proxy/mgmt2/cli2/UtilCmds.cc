@@ -25,7 +25,7 @@
  * Filename: UtilCmds.cc
  * Purpose: This file contains the CLI's utility commands.
  *
- * 
+ *
  ****************************************************************/
 
 #include "UtilCmds.h"
@@ -52,7 +52,7 @@ int
 DebugCmd(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
   /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function 
+   * of each command's callback function
    */
   if (processArgForCommand(interp, argc, argv) != CLI_OK) {
     return CMD_ERROR;
@@ -149,7 +149,7 @@ int
 Cmd_ConfigRoot(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
   /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function 
+   * of each command's callback function
    */
   if (processArgForCommand(interp, argc, argv) != CLI_OK) {
     return CMD_ERROR;

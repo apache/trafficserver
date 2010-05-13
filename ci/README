@@ -1,0 +1,6 @@
+This directory is used by Apache Build Services (Buildbot)
+
+Any file listed in the rat-excludes.txt file won't figure in the rat reports
+since some files don't need license headers, and can be excluded
+Every build by buildbot also produces a rat report and publishes it on the
+Build Services website

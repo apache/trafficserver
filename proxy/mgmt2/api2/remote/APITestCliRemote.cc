@@ -24,8 +24,8 @@
 /*****************************************************************************
  * Filename: APITestCliRemote.cc
  * Purpose: An interactive cli to test remote mgmt API; UNIT TEST for mgmtAPI
- * Created: lant 
- * 
+ * Created: lant
+ *
  ***************************************************************************/
 
 /***************************************************************************
@@ -34,7 +34,7 @@
  * Control Operations:
  * -------------------
  * state:   returns ON (proxy is on) or OFF (proxy is off)
- * start:<tsArgs>  -   turns Proxy on, the tsArgs is optional; 
+ * start:<tsArgs>  -   turns Proxy on, the tsArgs is optional;
  *                     it can either be  "hostdb" or "all",
  *                 eg. start, start:hostdb, start:all
  * stop:    turns Proxy off
@@ -46,7 +46,7 @@
  * read_file:  reads filter.config file
  * write_file: write some made-up text to filter.config file
  * proxy.config.xxx (a records.config variable): returns value of that record
- * records: tests get/set/get a record of each different type 
+ * records: tests get/set/get a record of each different type
  *          (int, float, counter, string)
  * err_recs: stress test record get/set functions by purposely entering
  *              invalid record names and/or values
@@ -54,24 +54,24 @@
  * set_mlt: tests INKRecordSetMlt
  *
  * read_url: tests INKReadFromUrl works by retrieving two valid urls
- * test_url: tests robustness of INKReadFromUrl using invalid urls 
+ * test_url: tests robustness of INKReadFromUrl using invalid urls
  *
  * CfgContext operations:
  * ---------------------
  * cfg_get:<config-filename>: prints out the rules in confg-filename
- * cfg:<config-filename>: switches the position of first and last rule of 
+ * cfg:<config-filename>: switches the position of first and last rule of
  *                        <config-filename>
  * cfg_context: calls all the INKCfgCOntext helper function calls using
  *              vaddrs.config
  * cfg_socks: does some basic testing of socks.config (reads in file,
  *            modifies it, eg. add new rules, then commits changes)
- * 
+ *
  * Event Operations:
- * ---------------- 
+ * ----------------
  * active_events: lists the names of all currently active events
- * MGMT_ALARM_xxx (event_name specified in CoreAPIShared.h or Alarms.h): 
+ * MGMT_ALARM_xxx (event_name specified in CoreAPIShared.h or Alarms.h):
  *                 resolves the specified event
- * register: registers a generic callback (=eventCallbackFn) which 
+ * register: registers a generic callback (=eventCallbackFn) which
  *           prints out the event name whenever an event is signalled
  * unregister: unregisters the generic callback function eventCallbackFn
  *
@@ -124,7 +124,7 @@
 /* ------------------------------------------------------------------------
  * print_err
  * ------------------------------------------------------------------------
- * used to print the error description associated with the INKError err 
+ * used to print the error description associated with the INKError err
  */
 void
 print_err(const char *module, INKError err)
@@ -388,7 +388,7 @@ print_pd_sspec(INKPdSsFormat info)
 
 //
 // Ele printing functions
-// 
+//
 
 void
 print_admin_access_ele(INKAdminAccessEle * ele)
@@ -532,7 +532,7 @@ print_cache_ele(INKCacheEle * ele)
 
   /*
      print_pd_sspec(ele->cache_info);
-     printf("Time: %d day, %d hr, %d min, %d sec\n", ele->time_period.d, ele->time_period.h, 
+     printf("Time: %d day, %d hr, %d min, %d sec\n", ele->time_period.d, ele->time_period.h,
      ele->time_period.m, ele->time_period.s);
    */
   return;
@@ -960,11 +960,11 @@ print_vaddrs_ele(INKVirtIpAddrEle * ele)
   printf("ip=%s, intr=%s, sub_intr=%d\n", ele->ip_addr, ele->intr, ele->sub_intr);
 }
 
-// 
+//
 // print_ele_list
 //
 // prints a list of Ele's
-// 
+//
 
 void
 print_ele_list(INKFileNameT file, INKCfgContext ctx)
@@ -1222,7 +1222,7 @@ test_error_records()
  * test_records
  * ------------------------------------------------------------------------
  * stress test record functionality by getting and setting different
- * records types; use the #defines defined above to determine which 
+ * records types; use the #defines defined above to determine which
  * type of tests you'd like turned on/off
  */
 void
@@ -1275,7 +1275,7 @@ test_records()
 #endif
 
 #if TEST_STRING
-  // retrieve an string value record using GetString  
+  // retrieve an string value record using GetString
   err = INKRecordGetString("proxy.config.proxy_name", &rec_value);
   if (err != INK_ERR_OKAY)
     print_err("INKRecordGetString", err);
@@ -1291,7 +1291,7 @@ test_records()
     printf("[INKRecordSetString] proxy.config.proxy_name=%s\n", new_str);
 
 
-  // get 
+  // get
   err = INKRecordGetString("proxy.config.proxy_name", &rec_value);
   if (err != INK_ERR_OKAY)
     print_err("INKRecordGetString", err);
@@ -1423,7 +1423,7 @@ test_rec_get(char *rec_name)
 /* ------------------------------------------------------------------------
  * test_record_get_mlt
  * ------------------------------------------------------------------------
- * Creates a list of record names to retrieve, and then batch request to 
+ * Creates a list of record names to retrieve, and then batch request to
  * get list of records
  */
 void
@@ -1512,7 +1512,7 @@ test_record_get_mlt(void)
     INKRecordEleDestroy(rec_ele);
   }
 
-  INKListDestroy(rec_list);     // must dequeue and free each string individually  
+  INKListDestroy(rec_list);     // must dequeue and free each string individually
 
   return;
 }
@@ -1521,7 +1521,7 @@ test_record_get_mlt(void)
  * test_record_set_mlt
  * ------------------------------------------------------------------------
  * Creates a list of INKRecordEle's, and then batch request to set records
- * Also checks to make sure correct action_need type is set. 
+ * Also checks to make sure correct action_need type is set.
  */
 void
 test_record_set_mlt(void)
@@ -1692,7 +1692,7 @@ test_read_file()
 /* ------------------------------------------------------------------------
  * test_write_file
  * ------------------------------------------------------------------------
- * writes filter.config with some garbage text then reads the file and 
+ * writes filter.config with some garbage text then reads the file and
  * prints the new file to stdout
  */
 void
@@ -1796,7 +1796,7 @@ test_cfg_context_get(char *args)
   return;
 }
 
-// 
+//
 // tests the INKCfgContextMoveEleUp/Down functions (which end up calling
 // the new "copy" utility functions in CfgContextUtils.cc
 // depending on the file specified, this will move the top rule to the bottom,
@@ -1875,7 +1875,7 @@ test_cfg_context_move(char *args)
     }
   }
 
-  // shift all the ele's down so that the next to bottom ele is now top ele 
+  // shift all the ele's down so that the next to bottom ele is now top ele
   // move all ele's above the last ele down; bottom ele becomes top ele
   printf("\nShift all Ele's above second to last ele down; bottom ele becomes top ele\n");
   for (i = count - 3; i >= 0; i--) {
@@ -1919,7 +1919,7 @@ test_cfg_context_ops()
   printf("# ele's = %d\n", count);
 
   printf("\nShifted all Ele's < %d up\n", rm_index);
-  // move all ele's below rm_index up one; this shifts the rm_index ele to 
+  // move all ele's below rm_index up one; this shifts the rm_index ele to
   // bottom of INKCfgContext
   for (i = (rm_index + 1); i < count; i++) {
     err = INKCfgContextMoveEleUp(ctx, i);
@@ -1945,7 +1945,7 @@ test_cfg_context_ops()
     goto END;
   }
 
-  // append a new ele 
+  // append a new ele
   printf("\nappend new ele\n");
   ele = INKVirtIpAddrEleCreate();
   if (ele) {
@@ -1968,7 +1968,7 @@ test_cfg_context_ops()
   //print_VirtIpAddr_ele_list(ctx);
 
   insert_at = 1;
-  // insert a new ele in insert_at index 
+  // insert a new ele in insert_at index
   printf("\nINSERT NEW ELE at %d index\n", insert_at);
   ele = INKVirtIpAddrEleCreate();
   if (ele) {
@@ -2213,13 +2213,13 @@ check_active(char *event_name)
 /* ------------------------------------------------------------------------
  * try_resolve
  * ------------------------------------------------------------------------
- * checks if the event_name is still unresolved; if it is, it then 
+ * checks if the event_name is still unresolved; if it is, it then
  * resolves it, and checks the status of the event again to make sure
  * the event was actually resolved
- * 
+ *
  * NOTE: all the special string manipulation is needed because the CLI
  * appends extra newline character to end of the user input; normally
- * do not have to do all this special string manipulation 
+ * do not have to do all this special string manipulation
  */
 void
 try_resolve(char *event_name)
@@ -2274,7 +2274,7 @@ register_event_callback(void)
  * unregister_event_callback
  * ------------------------------------------------------------------------
  * unregisters the eventCallbackFn above for all events; this just means
- * that it will remove this eventCallbackFn entirely so that for any 
+ * that it will remove this eventCallbackFn entirely so that for any
  * event called, the eventCallbackFn will NOT be called
  */
 void
@@ -2395,7 +2395,7 @@ test_diags()
  * Statistics
  ***************************************************************************/
 
-// generate dummy values for statistics 
+// generate dummy values for statistics
 void
 set_stats()
 {
@@ -2686,7 +2686,7 @@ runInteractive()
 /* ------------------------------------------------------------------------
  * main
  * ------------------------------------------------------------------------
- * Main entry point which connects the client to the API, does any 
+ * Main entry point which connects the client to the API, does any
  * clean up on exit, and gets the interactive command-line running
  */
 int
@@ -2694,7 +2694,7 @@ main(int argc, char **argv)
 {
   INKError ret;
 
-  // initialize 
+  // initialize
 #if INSTALL_TEST
   if ((ret = INKInit("../etc/trafficserver/")) != INK_ERR_OKAY)
 #else
@@ -2708,7 +2708,7 @@ main(int argc, char **argv)
   // Interactive mode
   runInteractive();
 
-  // clean-up 
+  // clean-up
   INKTerminate();               //ERROR:Causes infinite!!
   printf("END REMOTE API TEST\n");
 

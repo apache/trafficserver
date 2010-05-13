@@ -22,18 +22,18 @@
  */
 
 /***************************************************************************
- * NetworkUtils.h 
+ * NetworkUtils.h
  *
- * Defines interface for marshalling requests and unmarshalling responses 
+ * Defines interface for marshalling requests and unmarshalling responses
  * between the remote API client and Traffic Manager
  *
- * 
+ *
  ***************************************************************************/
 
 /*****************************************************************************
- * NetworkUtils.h 
+ * NetworkUtils.h
  *
- * Defines interface for marshalling requests and unmarshalling responses 
+ * Defines interface for marshalling requests and unmarshalling responses
  * between the remote API client and Traffic Manager
  *****************************************************************************/
 
@@ -54,7 +54,7 @@ INKError socket_read_n(struct SocketInfo sock_info, char *buf, int bytes);
 INKError socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes);
 
 /*****************************************************************************
- * Unmarshalling/marshalling 
+ * Unmarshalling/marshalling
  *****************************************************************************/
 INKError preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **msg);
 

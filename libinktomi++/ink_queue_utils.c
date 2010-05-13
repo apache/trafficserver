@@ -31,38 +31,38 @@
 /*
  * This file was added during the debugging of Bug 50475.
  * It was found that a race condition was introduced on the sparc architecture
- * when the ink_queue.c file was moved over to ink_queue.cc. Debugging this 
- * problem resulted in the discovery that gcc was spitting out the 
+ * when the ink_queue.c file was moved over to ink_queue.cc. Debugging this
+ * problem resulted in the discovery that gcc was spitting out the
  * "ldd" (load double) instruction for loading of the 64 bit field "data"
  * while CC was spitting out two "ld" (load) instructions. The old code
  * was calling item.data = head.data on sparcs and not putting any restriction
  * on the order of loading of the fields.
  *
  * This is a problem on the sparcs because the "pointer" field was being loaded
- * before the "version" field. This can result in a very subtle race condition 
+ * before the "version" field. This can result in a very subtle race condition
  * which subverts the addition of the "version" field.
- * 
+ *
  * Take this scenario
- * item.ptr = head.ptr 
- * (call to ink_freelist_new ) 
+ * item.ptr = head.ptr
+ * (call to ink_freelist_new )
  * next.ptr = *(item.ptr) <---- Error
- * (call to ink_freelist_free ) 
+ * (call to ink_freelist_free )
  * item.version = head.version
  * next.version = item.version ++;
  * cas64(head, item, next)
 
  * Note, that the cas64 call will be succesful and the next.ptr will probably
  * be a pointer into the vtable entry. The next alloc will result in a write into
- * the vtable area. 
+ * the vtable area.
  *
  * The fix for this problem is to read the version before reading the pointer
- * on 32 bit architectures (currently everything other than alphas). This is 
+ * on 32 bit architectures (currently everything other than alphas). This is
  * done using the following function. This file only contains one function
  * to make looking at the assembly code simple.
  *
- * If you ever change the compiler or the compiler options to this file, make 
+ * If you ever change the compiler or the compiler options to this file, make
  * sure you look at the assembly generated to see if the version is read first.
- * Also, make sure that you run the test_freelist microbenchmark for at least 
+ * Also, make sure that you run the test_freelist microbenchmark for at least
  * 24 hours on a dual processor box.
  */
 

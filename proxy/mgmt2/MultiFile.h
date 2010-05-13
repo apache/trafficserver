@@ -28,8 +28,8 @@
  *
  *  MultiFile.h - base class to handle reading and displaying config
  *                 files and directories
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 //#include "inktomi++.h"

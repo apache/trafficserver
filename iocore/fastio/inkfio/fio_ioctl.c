@@ -181,10 +181,10 @@ fio_dump_mblk(mblk_t * mp)
 
 
 /*
- * Initialize a STREAMS UDP request message body 
+ * Initialize a STREAMS UDP request message body
  *
  *
- *  Magic numbers for Solaris... maybe not 
+ *  Magic numbers for Solaris... maybe not
  *  relevant for other platforms
  */
 inline void
@@ -595,7 +595,7 @@ fio_ioctl_swap(fio_devstate_t * rsp, intptr_t cmd)
 
 
 /*
- * Handle a metarequest 
+ * Handle a metarequest
  *
  * Metarequests are a list of request block numbers stored in a metarequest block
  * Metarequests increase single-syscall bandwidth by a factor of 750. :)

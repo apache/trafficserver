@@ -147,7 +147,7 @@ main(int argc, char *argv[])
 
   printf("START REMOTE API TEST\n");
 
-  // initialize 
+  // initialize
   if (INKInit("../../../../etc/trafficserver/mgmtapisocket") != INK_ERR_OKAY) {
     printf("INKInit failed!\n");
     return -1;
@@ -191,7 +191,7 @@ main(int argc, char *argv[])
 #endif
 
 #if TEST_STRING
-  // retrieve an string value record using GetString  
+  // retrieve an string value record using GetString
   if (INKRecordGetString("proxy.config.proxy_name", &rec_value) != INK_ERR_OKAY)
     printf("INKRecordGetString FAILED!\n");
   else
@@ -203,7 +203,7 @@ main(int argc, char *argv[])
   else
     printf("[INKRecordSetString] proxy.config.proxy_name=%s\n", new_str);
 
-  // get 
+  // get
   if (INKRecordGetString("proxy.config.proxy_name", &rec_value) != INK_ERR_OKAY)
     printf("INKRecordGetString FAILED!\n");
   else
@@ -318,7 +318,7 @@ main(int argc, char *argv[])
   printf("\n\n");
 
   /********************* END TEST SECTION *********************/
-  INKTerminate();               //ERROR:Causes infinite!! 
+  INKTerminate();               //ERROR:Causes infinite!!
 
   printf("END REMOTE API TEST\n");
 }

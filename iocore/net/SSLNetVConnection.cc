@@ -47,7 +47,7 @@ do_SSL_write(SSL * ssl, void *buf, int size)
 {
   int r = 0;
   do {
-    // need to check into SSL error handling 
+    // need to check into SSL error handling
     // to see if this is good enough.
     r = SSL_write(ssl, (const char *) buf, size);
     if (r >= 0)
@@ -173,9 +173,9 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
   if (!lock) {
     return;
   }
-  // If it is not enabled, lower its priority.  This allows 
-  // a fast connection to speed match a slower connection by 
-  // shifting down in priority even if it could read. 
+  // If it is not enabled, lower its priority.  This allows
+  // a fast connection to speed match a slower connection by
+  // shifting down in priority even if it could read.
   if (!s->enabled || s->vio.op != VIO::READ) {
     read_disable(nh, this);
     return;
@@ -206,11 +206,11 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
       write.triggered = 1;
       if (write.enabled)
         nh->write_ready_list.in_or_enqueue(this);
-    } else 
+    } else
       readReschedule(nh);
     return;
   }
-  // If there is nothing to do, disable connection 
+  // If there is nothing to do, disable connection
   int ntodo = s->vio.ntodo();
   if (ntodo <= 0) {
     read_disable(nh, this);
@@ -492,10 +492,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     if (client_cert != NULL) {
 /*		str = X509_NAME_oneline (X509_get_subject_name (client_cert), 0, 0);
 		Free (str);
-    
+
 		str = X509_NAME_oneline (X509_get_issuer_name  (client_cert), 0, 0);
 		Free (str);
-    
+
 		// Add any extra client cert verification stuff here.  SSL
 		// is set up in SSLNetProcessor::start to automatically verify
 		// the client cert's CA, if required.
@@ -564,7 +564,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 */
 
 /*	 Add certificate verification stuff here before
-     deallocating the certificate. 
+     deallocating the certificate.
 */
 
     X509_free(server_cert);

@@ -136,7 +136,7 @@ ParentConfig::startup()
   PARENT_RegisterConfigUpdateFunc(default_var, parentSelection_CB, (void *) PARENT_DEFAULT_CB);
   //   Retry time
   PARENT_RegisterConfigUpdateFunc(retry_var, parentSelection_CB, (void *) PARENT_RETRY_CB);
-  //   Enable 
+  //   Enable
   PARENT_RegisterConfigUpdateFunc(enable_var, parentSelection_CB, (void *) PARENT_ENABLE_CB);
 
   //   Fail Threshold
@@ -1218,7 +1218,7 @@ REGRESSION_TEST(ParentResult) {
       }
     }
   }
-  
+
   return err;
 }
 
@@ -1315,8 +1315,8 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
     // Test 6+ BUGBUG needs to be fixed
 //   ST(7) REINIT
 //   br(request, "www.microsoft.net");
-//   FP RE( verify(result,PARENT_SPECIFIED,"zoo.net",341) + 
-//       verify(result,PARENT_SPECIFIED,"zoo.net",347) + 
+//   FP RE( verify(result,PARENT_SPECIFIED,"zoo.net",341) +
+//       verify(result,PARENT_SPECIFIED,"zoo.net",347) +
 //       verify(result,PARENT_SPECIFIED,"zoo.edu",111) ,7)
     // Test 6++ BUGBUG needs to be fixed
 //   ST(7) REINIT

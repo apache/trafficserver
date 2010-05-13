@@ -368,8 +368,8 @@ struct HostDBRoundRobin
   static int size(int nn, bool using_srv)
   {
     if (using_srv) {
-      /*     sizeof this struct       
-         minus    
+      /*     sizeof this struct
+         minus
          unused round-robin entries [info]
          minus
          unused srv host data [rr_srv_hosts]

@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #include "Raf.h"
@@ -665,7 +665,7 @@ RafCont::output_resp_hdr(const char *id, int result_code)
 }
 
 // void RafCont::output_raf_arg(const char* arg)
-//  
+//
 //  Outputs an encoded raf argument.  Adds a leading space to it
 //
 void

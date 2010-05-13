@@ -28,8 +28,8 @@
  *
  *  StatProcessor.h - Functions for computing node and cluster stat
  *                          aggregation
- *  
- * 
+ *
+ *
  ****************************************************************************/
 
 #include "ink_platform.h"
@@ -66,11 +66,11 @@ public:
 };
 
 
-/** 
+/**
  * External expression evaluation API.
  *
  * INPUT: an expression string, e.g.:
- * "(proxy.node.user_agent_total_bytes-proxy.node.origin_server_total_bytes) 
+ * "(proxy.node.user_agent_total_bytes-proxy.node.origin_server_total_bytes)
  *  / proxy.node.user_agent_total_bytes"
  *
  * RETURN: the resulting value of the expression.

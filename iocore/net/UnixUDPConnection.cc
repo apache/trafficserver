@@ -25,8 +25,8 @@
 
   UnixUDPConnection.cc
   Unix UDPConnection implementation
-  
-  
+
+
  ****************************************************************************/
 
 #include "P_Net.h"
@@ -138,7 +138,7 @@ UDPConnection::send(Continuation * c, UDPPacket * xp)
 }
 
 void
-UDPConnection::Release() 
+UDPConnection::Release()
 {
   UnixUDPConnection *p = (UnixUDPConnection *) this;
 

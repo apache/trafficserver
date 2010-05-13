@@ -245,8 +245,8 @@ AbstractBuffer::flush_complete()
   VolatileState old_vs;
   VolatileState new_vs;
 
-  /* INKqa06826 - Race Condition. Must make sure that setting the new state is 
-     atomic. If there is a context switch in the middle of setting the state to 
+  /* INKqa06826 - Race Condition. Must make sure that setting the new state is
+     atomic. If there is a context switch in the middle of setting the state to
      AB_STATE_FLUSH_COMPLETE, the checkin_read would be lost, the reader_count
      will never go to 0, resulting in memory leak */
 

@@ -42,7 +42,7 @@ handle_HTTP_SEND_RESPONSE_HDR(INKCont contp, INKEvent event, void *eData)
     err++;
   }
 
-/* 
+/*
 INKHttpTxnCachedRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *offset);
 */
 /* Display buffer contents */

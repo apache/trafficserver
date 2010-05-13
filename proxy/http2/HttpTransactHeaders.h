@@ -26,7 +26,7 @@
    HttpTransactHeaders.h --
    Created On      : Fri Mar 27 12:13:52 1998
 
-   
+
  ****************************************************************************/
 #if !defined (_HttpTransactHeaders_h_)
 #define _HttpTransactHeaders_h_

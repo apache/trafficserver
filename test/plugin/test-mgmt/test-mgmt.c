@@ -24,7 +24,7 @@
 /***************************************************************
  * test-mgmt:
  * This sample plugins calls the Plugin Management APIs
- * The API covered in this plugin are - 
+ * The API covered in this plugin are -
  * 		- INKMgmtCounterGet
  *		- INKMgmtFloatGet
  * 		- INKMgmtIntGet

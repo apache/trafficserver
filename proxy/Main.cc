@@ -27,7 +27,7 @@
 
   This is the primary source file for the proxy cache system.
 
-  
+
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -385,15 +385,15 @@ check_lockfile()
 #ifndef _DLL_FOR_HNS
   if ((err = stat(lockdir, &s)) < 0) {
     // Try 'system_root_dir/var/trafficserver' directory
-    snprintf(lockdir, sizeof(lockdir), 
+    snprintf(lockdir, sizeof(lockdir),
              "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
     if ((err = stat(lockdir, &s)) < 0) {
-      fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n", 
+      fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n",
                 lockdir, err, errno, strerror(errno));
       fprintf(stderr," please set correct path in env variable TS_ROOT \n");
       _exit(1);
     }
-  } 
+  }
   snprintf(lockfile, sizeof(lockfile),"%s%s%s", lockdir,DIR_SEP,SERVER_LOCK);
 #else
 #define MAX_ENVVAR_LENGTH 128
@@ -434,15 +434,15 @@ init_dirs(void)
 
 
   if ((err = stat(system_config_directory, &s)) < 0) {
-    ink_strncpy(system_config_directory,management_directory,sizeof(system_config_directory)); 
+    ink_strncpy(system_config_directory,management_directory,sizeof(system_config_directory));
     if ((err = stat(system_config_directory, &s)) < 0) {
       REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
       if ((err = stat(system_config_directory, &s)) < 0) {
         // Try 'system_root_dir/etc/trafficserver' directory
-        snprintf(system_config_directory, sizeof(system_config_directory), 
+        snprintf(system_config_directory, sizeof(system_config_directory),
                  "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
         if ((err = stat(system_config_directory, &s)) < 0) {
-          fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n", 
+          fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n",
                     system_config_directory, err, errno, strerror(errno));
           fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
           _exit(1);
@@ -455,10 +455,10 @@ init_dirs(void)
     REC_ReadConfigString(system_local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
     if ((err = stat(system_local_state_dir, &s)) < 0) {
       // Try 'system_root_dir/var/trafficserver' directory
-      snprintf(system_local_state_dir, sizeof(system_local_state_dir), 
+      snprintf(system_local_state_dir, sizeof(system_local_state_dir),
                "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
       if ((err = stat(system_local_state_dir, &s)) < 0) {
-        fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n", 
+        fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n",
                 system_local_state_dir, err, errno, strerror(errno));
         fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
         _exit(1);
@@ -473,7 +473,7 @@ init_dirs(void)
       snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
                system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
       if ((err = stat(system_log_dir, &s)) < 0) {
-        fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n", 
+        fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
                 system_log_dir, err, errno, strerror(errno));
         fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
         _exit(1);
@@ -507,10 +507,10 @@ initialize_process_manager()
 
   if ((err = stat(management_directory, &s)) < 0) {
     // Try 'system_root_dir/etc/trafficserver' directory
-    snprintf(management_directory, sizeof(management_directory), 
+    snprintf(management_directory, sizeof(management_directory),
              "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
     if ((err = stat(management_directory, &s)) < 0) {
-      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n", 
+      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n",
                 management_directory, err, errno, strerror(errno));
       fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
       _exit(1);

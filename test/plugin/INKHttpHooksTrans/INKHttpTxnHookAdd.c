@@ -56,10 +56,10 @@ const char *const INKEventStrId[] = {
   "INK_EVENT_MGMT_UPDATE"       /* 60100 */
 };
 
-/* 
+/*
  * We track that each hook was called using this array. We start with
- * all values set to zero, meaning that the INKEvent has not been 
- * received. 
+ * all values set to zero, meaning that the INKEvent has not been
+ * received.
  * There 16 entries.
 */
 static int inktHookTbl[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -84,8 +84,8 @@ ChkEvents(const int event)
 }
 
 
-/* event routine: for each INKHttpHookID this routine should be called 
- * with a matching event. 
+/* event routine: for each INKHttpHookID this routine should be called
+ * with a matching event.
 */
 static int
 INKHttpHook(INKCont contp, INKEvent event, void *eData)
@@ -99,7 +99,7 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
     ChkEvents(INK_EVENT_HTTP_TXN_START);
 
     /*
-     * We do have a transaction. 
+     * We do have a transaction.
      * Probably, both of these will activate this event. This
      * is an implementation detail: where do you want the hook to
      * live, session or transaction ? Should be transparent.
@@ -125,15 +125,15 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
     break;
 
   case INK_EVENT_HTTP_SSN_START:
-    /* Reged at the "session" level, all but 
-     * INK_HTTP_TXN_CLOSE_HOOK is received. 
+    /* Reged at the "session" level, all but
+     * INK_HTTP_TXN_CLOSE_HOOK is received.
      */
     inktHookTbl[index(INK_EVENT_HTTP_SSN_START)] = 1;
     ChkEvents(INK_EVENT_HTTP_SSN_START);
 
     /* There has to be some way to get from the session to
      * the transaction. This is how:
-     * No transaction yet, register TXN_START with the session 
+     * No transaction yet, register TXN_START with the session
      */
     INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_START_HOOK, contp);
 
@@ -143,16 +143,16 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
     break;
 
   case INK_EVENT_HTTP_SSN_CLOSE:
-    /* Here as a result of: 
-     * INKHTTPHookAdd(INK_HTTP_SSN_CLOSE_HOOK) 
+    /* Here as a result of:
+     * INKHTTPHookAdd(INK_HTTP_SSN_CLOSE_HOOK)
      */
     inktHookTbl[index(INK_EVENT_HTTP_SSN_CLOSE)] = 1;
 
     /* Assumption: at this point all other events have
      * have been called. Since a session can have one or
      * more transactions, the close of a session should
-     * prompt us to check that all events have been called back 
-     * CAUTION: can a single request trigger all events? 
+     * prompt us to check that all events have been called back
+     * CAUTION: can a single request trigger all events?
      */
     if (ChkEvents(INK_EVENT_HTTP_SSN_CLOSE))
       INKError("INKHttpHook: Fail: All events not called back.\n");
@@ -179,7 +179,7 @@ INKPluginInit(int argc, const char *argv[])
   if (myCont != NULL) {
 
     /* Reged at the "global" level, these 4 events are
-     * received. 
+     * received.
      */
     INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, myCont);
   } else

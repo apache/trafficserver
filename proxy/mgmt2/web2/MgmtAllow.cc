@@ -25,7 +25,7 @@
  *
  *  IPAllow.cc - Implementation to IP Access Control systtem
  *
- * 
+ *
  ****************************************************************************/
 
 #include "ink_config.h"

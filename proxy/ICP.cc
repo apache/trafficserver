@@ -28,7 +28,7 @@
 
   ICP.cc
 
-  
+
 ****************************************************************************/
 
 #include "inktomi++.h"
@@ -123,8 +123,8 @@ HTTPHdr gclient_request;
 //      ICPHandlerCont : PeriodicCont -- Periodic which monitors incoming
 //                 ICP sockets and starts processing of the incoming ICP data.
 //
-//    ICPPeerReadCont -- Implements the incoming data state machine.  
-//                 Processes remote ICP query requests and passes query 
+//    ICPPeerReadCont -- Implements the incoming data state machine.
+//                 Processes remote ICP query requests and passes query
 //                 responses to ICPRequestCont via a callout.
 //    ICPlog -- Logging object which encapsulates ICP query info required
 //              by the new logging subsystem to produce squid access log
@@ -234,7 +234,7 @@ ICPHandlerCont::PeriodicEvent(int event, Event * e)
       ink_release_assert(!"unexpected event");
       break;
     }
-  }                             // End of switch  
+  }                             // End of switch
   return EVENT_CONT;
 }
 
@@ -458,7 +458,7 @@ ICPPeerReadCont::ICPPeerQueryEvent(int event, Event * e)
       break;
     }
   }
-  // Process result 
+  // Process result
   _state->_queryResult = event;
   SET_HANDLER((ICPPeerReadContHandler) & ICPPeerReadCont::ICPPeerReadEvent);
   return handleEvent(event, e);
@@ -488,7 +488,7 @@ ICPPeerReadCont::ICPPeerQueryCont(int event, Event * e)
     _start_time = ink_get_hrtime();
     if (pluginFreshnessCalcFunc && _ICPpr->GetConfig()->globalConfig()->ICPStaleLookup()) {
       //////////////////////////////////////////////////////////////
-      // Note: _cache_lookup_local is ignored in this case, since 
+      // Note: _cache_lookup_local is ignored in this case, since
       //       cache clustering is not used with stale lookup.
       //////////////////////////////////////////////////////////////
       a = cacheProcessor.open_read(this, &_state->_cachelookupURL,
@@ -688,7 +688,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
             break;              // move to next_state
           }
         }
-        // Validate receiver and convert the received sockaddr 
+        // Validate receiver and convert the received sockaddr
         //   to internal sockaddr format.
         struct sockaddr_in from;
         if (!s->_peer->ExtToIntRecvSockAddr(&s->_peer->fromaddr, &from)) {
@@ -764,7 +764,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
             break;              // move to next_state
           }
         }
-        // we hand off the decoded buffer from the Peer to the PeerReadData 
+        // we hand off the decoded buffer from the Peer to the PeerReadData
         s->_sender = from;
         s->_rICPmsg_len = s->_bytesReceived;
         ink_assert(s->_buf == NULL);
@@ -1156,7 +1156,7 @@ ICPRequestCont::remove_all_pendingActions()
 int
 ICPRequestCont::ICPRequestEvent(int event, Event * e)
 {
-  // Note: Passed parameter 'e' is not an Event * 
+  // Note: Passed parameter 'e' is not an Event *
   //       if event == ICP_RESPONSE_MESSAGE
 
   ink_assert(event == NET_EVENT_DATAGRAM_WRITE_COMPLETE ||
@@ -2032,7 +2032,7 @@ ICPProcessor::BuildPeerList()
   //
   // From the working copy of the ICP configuration data, build the
   // internal Peer data structures for ICP processing.
-  // First, establish the Local Peer descriptor before processing 
+  // First, establish the Local Peer descriptor before processing
   // parents and siblings.
   //
   Pcfg = _ICPConfig->indexToPeerConfigData(0);
@@ -2071,7 +2071,7 @@ ICPProcessor::BuildPeerList()
     //
     // Ignore parent and sibling entries corresponding to "localhost".
     // This is possible in a cluster configuration where parents and
-    // siblings are cluster members.  Note that in a cluster 
+    // siblings are cluster members.  Note that in a cluster
     // configuration, "icp.config" is shared by all nodes.
     //
     if (Pcfg->GetIP()->s_addr == _LocalPeer->GetIP()->s_addr)
@@ -2430,7 +2430,7 @@ ICPProcessor::CancelPendingReads()
 {
   int status;
 
-  // Cancel pending ICP read by sending a bogus message to 
+  // Cancel pending ICP read by sending a bogus message to
   //  the local ICP port.
 
   ICPRequestCont *r = new(ICPRequestCont_allocator.alloc())

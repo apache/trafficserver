@@ -368,7 +368,7 @@ ClusterHandler::close_free_lock(ClusterVConnection * vc, ClusterVConnState * s)
 
 bool ClusterHandler::build_data_vector(char *d, int len, bool read_flag)
 {
-  // Internal interface to general network i/o facility allowing  
+  // Internal interface to general network i/o facility allowing
   // single vector read/write to static data buffer.
 
   ClusterState & s = (read_flag ? read : write);
@@ -401,7 +401,7 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
 {
   //
   // Build initial read/write struct iovec and corresponding IOBufferData
-  // structures from the given struct descriptor(s).  
+  // structures from the given struct descriptor(s).
   // Required vector adjustments for partial i/o conditions is handled
   // by adjust_vector().
   //
@@ -502,10 +502,10 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
 
   ////////////////////////////////////////////////////////////
   // Build vector for data section of the cluster message.
-  // For read, we only do this if we are in data phase 
+  // For read, we only do this if we are in data phase
   // of the read (msg.state == 2)
   //////////////////////////////////////////////////////////////
-  //  Note: We are assuming that free space descriptors follow 
+  //  Note: We are assuming that free space descriptors follow
   //        the data descriptors.
   //////////////////////////////////////////////////////////////
   for (i = 0; i<(read_flag ? ((s.msg.state>= 2) ? s.msg.count : 0)
@@ -578,7 +578,7 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
             }
 
             ///////////////////////////////////////
-            // Allocate read data block 
+            // Allocate read data block
             ///////////////////////////////////////
             if (s.msg.descriptor[i].length) {
               vc->iov_map = new_n_iov;
@@ -720,7 +720,7 @@ bool ClusterHandler::get_read_locks()
       if (i < 0) {
         i = n;                  // note i/o start vector
 
-        // Now at vector where last transfer started, 
+        // Now at vector where last transfer started,
         // make considerations for the last transfer on this vector.
 
         vec_bytes_remainder = (s.iov[n].iov_len - iov_done[n]);
@@ -740,10 +740,10 @@ bool ClusterHandler::get_read_locks()
   }
   ink_release_assert(i >= 0);
 
-  // Start lock acquisition at the first vector where we started 
-  //  the last read.  
+  // Start lock acquisition at the first vector where we started
+  //  the last read.
   //
-  //  Note: We are assuming that free space descriptors follow 
+  //  Note: We are assuming that free space descriptors follow
   //        the data descriptors.
 
   for (; i < s.n_iov; ++i) {
@@ -798,7 +798,7 @@ bool ClusterHandler::get_write_locks()
 {
   ///////////////////////////////////////////////////////////////////////
   // Reacquire locks for the request setup by build_initial_vector().
-  // We are called after the entire write completes prior to 
+  // We are called after the entire write completes prior to
   // posting completion.
   ///////////////////////////////////////////////////////////////////////
   ClusterState & s = write;
@@ -849,11 +849,11 @@ void
 ClusterHandler::process_set_data_msgs()
 {
   inku32 cluster_function_index;
-  // 
+  //
   // Cluster set_data messages must always be processed ahead of all
   // messages and data.  By convention, set_data messages (highest priority
   // messages) always reside in the beginning of the descriptor
-  // and small control message structures.  
+  // and small control message structures.
   //
 
   /////////////////////////////////////////////
@@ -914,7 +914,7 @@ ClusterHandler::process_set_data_msgs()
           swap32((inku32 *) p); // length
           swap32((inku32 *) (p + sizeof(ink32)));       // function code
         }
-        // Mark message as processed.  
+        // Mark message as processed.
         // Defer dellocation until entire read is complete.
         *((inku32 *) p) = ~*((inku32 *) p);
 
@@ -1011,7 +1011,7 @@ ClusterHandler::process_large_control_msgs()
     ink_release_assert(cluster_function_index != SET_CHANNEL_DATA_CLUSTER_FUNCTION);
 
     if (cluster_function_index == (inku32) ~ SET_CHANNEL_DATA_CLUSTER_FUNCTION) {
-      // SET_CHANNEL_DATA_CLUSTER_FUNCTION already processed. 
+      // SET_CHANNEL_DATA_CLUSTER_FUNCTION already processed.
       // Just do memory deallocation.
 
       if (!clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].fMalloced)
@@ -1059,8 +1059,8 @@ ClusterHandler::process_freespace_msgs()
       if (c < n_channels && VALID_CHANNEL(channels[c]) &&
           (CLUSTER_SEQUENCE_NUMBER(channels[c]->token.sequence_number) == read.msg.descriptor[i].sequence_number)) {
         //
-        // VC received freespace message, move it to the 
-        // current bucket, since it may have data to 
+        // VC received freespace message, move it to the
+        // current bucket, since it may have data to
         // write (WRITE_VC_PRIORITY).
         //
         channels[c]->remote_free = read.msg.descriptor[i].length;
@@ -1335,7 +1335,7 @@ ClusterHandler::update_channels_partial_read()
                 Debug("cluster_vc_xfer", "Partial read, credit ch %d 0x%x %d bytes", vc->channel, vc, len);
                 s->vio.buffer.writer()->append_block(vc->read_block->clone());
                 if (complete_channel_read(len, vc)) {
-                  vc->read_block->consume(len); // note bytes moved to user 
+                  vc->read_block->consume(len); // note bytes moved to user
                 }
 
               } else {
@@ -1403,7 +1403,7 @@ bool ClusterHandler::complete_channel_read(int len, ClusterVConnection * vc)
 
   } else {
     //
-    // VC received data, move VC to current bucket since 
+    // VC received data, move VC to current bucket since
     // it may have freespace data to send (READ_VC_PRIORITY).
     //
     ClusterVC_remove_read(vc);
@@ -2279,7 +2279,7 @@ retry:
     }
   }
   // At this point, all initial read data passed in the open_read reply
-  // has been moved into the user VC.  
+  // has been moved into the user VC.
   // Now allow send of freespace to receive additional data.
 
   int nextfree = vc->read.vio.ndone;
@@ -2866,7 +2866,7 @@ ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
 #endif
         if (!on_stolen_thread && !only_write_control_msgs) {
           /////////////////////////////////////////////////////////////
-          // Build a complete write descriptor containing control, 
+          // Build a complete write descriptor containing control,
           // data and freespace message data.
           /////////////////////////////////////////////////////////////
 

@@ -24,10 +24,10 @@
 
 /*
  * assembly.c: plugin to dynamically assemble pages.
- *                   
  *
  *
- *	Usage:	
+ *
+ *	Usage:
  *	  assembly.so <cache_port>
  *
  *
@@ -35,7 +35,7 @@
  *
  */
 
-/* 
+/*
 
   PAGE TEMPLATE SYNTAX
   ---------------------
@@ -44,7 +44,7 @@
 
   <TEMPLATE>
       TEMPLATENAME=String         // Unique identifier for the template
-                                  
+
 
       CACHEABLE="true"|"false"    // Is this template cacheable ?
                                   // If not, template will be fetch from OS
@@ -71,7 +71,7 @@
       URL=String                  // Url to use to fetch the block
                                   // ${QUERYSTRING} is substituted client request
 				  // query string
-      
+
       CACHESIZE=Integer           // Max number of different version of this
                                   // block stored in the cache
 
@@ -147,7 +147,7 @@ Example:
    - Cache the assembled page
        To be done in the final release. The assembled page
        should be cached in the dynamic partition of the cache.
-       
+
        Make sure it is really realistic to cache assembled page:
        Potentially, the # of assembled page can be huge.
        What is the chance to hit an assembled page ?
@@ -288,7 +288,7 @@ strstr_block(const char *block, const char *str, int blocklen)
 /*-------------------------------------------------------------------------
   print_iobuffer
 
-  Prints out an iobuffer on the standard output 
+  Prints out an iobuffer on the standard output
   -------------------------------------------------------------------------*/
 static void
 print_iobuffer(INKIOBuffer buf)
@@ -595,7 +595,7 @@ asm_input_buffer(INKCont contp, AsmData * data)
   INKAssert(data->magic == MAGIC_ALIVE);
   INKDebug(MED, "In asm_input_buffer");
 
-  /* If it's the first time the function is called, we need to create 
+  /* If it's the first time the function is called, we need to create
      the input buffer. */
   if (!data->input_buffer) {
     /* Create the buffer into which the upstream connection will
@@ -2695,7 +2695,7 @@ check_ts_version()
 /*-------------------------------------------------------------------------
   INKPluginInit
 
-  
+
   -------------------------------------------------------------------------*/
 void
 INKPluginInit(int argc, const char *argv[])

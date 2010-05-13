@@ -22,10 +22,10 @@
  */
 
 /*
- *   Interfaces in this header file are experimental, undocumented and 
+ *   Interfaces in this header file are experimental, undocumented and
  *   are subject to change even across minor releases of Traffic Server.
- *   None of the interfaces in this file are committed to be stable 
- *   unless they are migrated to ts/ts.h  If you require stable APIs to 
+ *   None of the interfaces in this file are committed to be stable
+ *   unless they are migrated to ts/ts.h  If you require stable APIs to
  *   Traffic Server, DO NOT USE anything in this file.
  */
 
@@ -40,7 +40,7 @@ extern "C"
 #endif                          /* __cplusplus */
 
 /****************************************************************************
- *  Create a new field and assign it a name 
+ *  Create a new field and assign it a name
  *  contact: MIXT
  ****************************************************************************/
   inkapi INKMLoc INKMimeHdrFieldCreateNamed(INKMBuffer bufp, INKMLoc mh_mloc, const char *name, int name_len);
@@ -386,24 +386,24 @@ extern "C"
  *	 must be dealt with by the user.
  *    3) Upon receipt of a machine offline, no guarantees are made about
  *	 messages sent prior to the machine offline.
- *    4) A node transitioning to the online state in an active cluster, 
+ *    4) A node transitioning to the online state in an active cluster,
  *	 is assumed to have no prior knowledge of messages processed in
  *	 the past.
- *    5) Key point to reiterate, actions taken in the functions specified in 
- *	 INKAddClusterStatusFunction() and INKAddClusterRPCFunction() must 
- *       be non-blocking (i.e. usage of INKMutexLock() and file i/o is 
+ *    5) Key point to reiterate, actions taken in the functions specified in
+ *	 INKAddClusterStatusFunction() and INKAddClusterRPCFunction() must
+ *       be non-blocking (i.e. usage of INKMutexLock() and file i/o is
  *       not allowed).
  *    6) INKSendClusterRPC() can only process INKClusterRPCMsg_t generated
  *	 by INKAllocClusterRPCMsg().  Failure to adhere to this rule will
  *	 result in heap corruption.
  *    7) Messages sent via INKSendClusterRPC() must be at least 4 bytes in
  * 	 length.
- *    8) The user is not provided with any alignment guarantees on the 
- *	 'm_data' field in the INKClusterRPCMsg_t returned via 
+ *    8) The user is not provided with any alignment guarantees on the
+ *	 'm_data' field in the INKClusterRPCMsg_t returned via
  *	 INKAllocClusterRPCMsg().  Assume byte alignment.
  *    9) INKSendClusterRPC() interface owns the memory and is responsible
  *       for freeing the memory.
- *   10) RPC functions defined via INKAddClusterRPCFunction() own the 
+ *   10) RPC functions defined via INKAddClusterRPCFunction() own the
  *       memory when invoked and are responsible for freeing it via
  *	 INKFreeRPCMsg().
  */
@@ -450,7 +450,7 @@ extern "C"
  *  Subscribe to node up/down status notification.     			    *
  *	Return == 0 Success						    *
  *	Return != 0 Failure						    *
- * contact: OXY, DY 
+ * contact: OXY, DY
  ****************************************************************************/
   inkapi int
     INKAddClusterStatusFunction(INKClusterStatusFunction Status_Function, INKMutex m, INKClusterStatusHandle_t * h);
@@ -458,7 +458,7 @@ extern "C"
  *  Cancel subscription to node up/down status notification. 		    *
  *	Return == 0 Success						    *
  *	Return != 0 Failure						    *
- * contact: OXY, DY 
+ * contact: OXY, DY
  ****************************************************************************/
   inkapi int INKDeleteClusterStatusFunction(INKClusterStatusHandle_t * h);
 
@@ -466,7 +466,7 @@ extern "C"
  *  Get the struct in_addr associated with the INKNodeHandle_t.	    	    *
  *	Return == 0 Success						    *
  *	Return != 0 Failure						    *
- * contact: OXY, DY 
+ * contact: OXY, DY
  ****************************************************************************/
   inkapi int INKNodeHandleToIPAddr(INKNodeHandle_t * h, struct in_addr *in);
 
@@ -525,7 +525,7 @@ extern "C"
  ****************************************************************************/
   inkapi int INKSendClusterRPC(INKNodeHandle_t * nh, INKClusterRPCMsg_t * msg);
 
-/* ---------------------------------------------------------------------- 
+/* ----------------------------------------------------------------------
  * Interfaces used for the AAA project
  * ---------------------------------------------------------------------- */
 
@@ -581,14 +581,14 @@ extern "C"
  ****************************************************************************/
   inkapi INKReturnCode INKUserPolicyFetch(INKU32 ip, char *name);
 
-/* ---------------------------------------------------------------------- 
+/* ----------------------------------------------------------------------
  *
  * Aerocast, MIXT SDK
  * contact: MIXT
  *
  * ----------------------------------------------------------------------  */
 #define INK_EVENT_MIXT_READ_REQUEST_HDR INK_EVENT_INTERNAL_60201
-/* ---------------------------------------------------------------------- 
+/* ----------------------------------------------------------------------
  * Prefetch APIs
  * ----------------------------------------------------------------------  */
 

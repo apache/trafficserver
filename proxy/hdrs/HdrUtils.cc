@@ -28,7 +28,7 @@
    Description: Convenience routines for dealing with hdrs and
                  values
 
-   
+
  ****************************************************************************/
 
 #include "inktomi++.h"

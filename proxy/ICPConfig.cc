@@ -25,7 +25,7 @@
 
   ICPConfig.cc
 
-  
+
 ****************************************************************************/
 
 #include "inktomi++.h"
@@ -472,9 +472,9 @@ ICPConfiguration::UpdatePeerConfig()
 {
   // Note: Entry zero reserved for "localhost"
   for (int i = 1; i <= MAX_DEFINED_PEERS; ++i) {
-    // 
+    //
     // Broken on DEC and Solaris x86
-    // *_peer_cdata[i] = *_peer_cdata_current[i];   
+    // *_peer_cdata[i] = *_peer_cdata_current[i];
     //
     memcpy(_peer_cdata[i], _peer_cdata_current[i], sizeof(*_peer_cdata[i]));
     // Setup IP address

@@ -58,10 +58,10 @@ const char *const INKEventStrId[] = {
   "INK_EVENT_MGMT_UPDATE"       /* 60100 */
 };
 
-/* 
+/*
  * We track that each hook was called using this array. We start with
- * all values set to zero, meaning that the INKEvent has not been 
- * received. 
+ * all values set to zero, meaning that the INKEvent has not been
+ * received.
  * There 16 entries.
 */
 static int inktHookTbl[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -86,8 +86,8 @@ ChkEvents(const int event)
 }
 
 
-/* event routine: for each INKHttpHookID this routine should be called 
- * with a matching event. 
+/* event routine: for each INKHttpHookID this routine should be called
+ * with a matching event.
 */
 static int
 INKHttpHook(INKCont contp, INKEvent event, void *eData)
@@ -101,8 +101,8 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
 
   case INK_EVENT_HTTP_SSN_START:
 
-    /* Reged at the "session" level, all but 
-     * INK_HTTP_TXN_CLOSE_HOOK is received. 
+    /* Reged at the "session" level, all but
+     * INK_HTTP_TXN_CLOSE_HOOK is received.
      */
     inktHookTbl[index(INK_EVENT_HTTP_SSN_START)] = 1;
     ChkEvents(INK_EVENT_HTTP_SSN_START);
@@ -118,7 +118,7 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
     inktHookTbl[index(INK_EVENT_HTTP_SELECT_ALT)] = 1;
     ChkEvents(INK_EVENT_HTTP_SELECT_ALT);
 
-    /* Cache hit 
+    /* Cache hit
      * Now set mult value based on cached req IP address.
      */
 
@@ -134,7 +134,7 @@ INKHttpHook(INKCont contp, INKEvent event, void *eData)
 
     /* Get the cached client req  URL for this pAltInfo/multiplier value */
 
-    /* Wrong: 
+    /* Wrong:
        /* Get the cached client resp URL for this pAltInfo/multiplier value */
     /* Should be:
        /* Get the cached o.s.   resp URL for this pAltInfo/multiplier value */
@@ -161,7 +161,7 @@ INKPluginInit(int argc, const char *argv[])
   if (myCont != NULL) {
 
     /* Reged at the "global" level, these 4 events are
-     * received. 
+     * received.
      */
     INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, myCont);
     INKHttpHookAdd(INK_HTTP_SELECT_ALT_HOOK, myCont);

@@ -321,8 +321,8 @@ read_docsize_dist()
   }
 }
 
-/* parse the origin_server string in config file. 
- * value is in the form of "host1:port1 host2:port2 ..." 
+/* parse the origin_server string in config file.
+ * value is in the form of "host1:port1 host2:port2 ..."
  */
 void
 parse_origin_server_str(char *value)

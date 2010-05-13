@@ -27,7 +27,7 @@
  * Created: 9/11/00
  * Created by: Lan Tran
  *
- * 
+ *
  ***************************************************************************/
 #include "inktomi++.h"
 #include <limits.h>
@@ -207,7 +207,7 @@ INKIpAddrListDestroy(INKIpAddrList ip_addrl)
     return;
   }
 
-  /* dequeue each element and free it; 
+  /* dequeue each element and free it;
      currently, an element can only be an INKIpAddrEle
      or it can be an INKIpAddr ?? */
   while (!queue_is_empty((LLQ *) ip_addrl)) {
@@ -275,7 +275,7 @@ INKIpAddrListIsEmpty(INKIpAddrList ip_addrl)
 }
 
 // returns false if any of the IpAddrEle is not an valid IP address by making
-// use of ccu_checkIpAddrEle; if return false, the ip's may be reordered 
+// use of ccu_checkIpAddrEle; if return false, the ip's may be reordered
 // from the original list
 inkapi bool
 INKIpAddrListIsValid(INKIpAddrList ip_addrl)
@@ -313,7 +313,7 @@ INKPortListDestroy(INKPortList portl)
   if (!portl) {
     return;
   }
-  // dequeue each element and free it 
+  // dequeue each element and free it
   while (!queue_is_empty((LLQ *) portl)) {
     port_ele = (INKPortEle *) dequeue((LLQ *) portl);
 
@@ -947,7 +947,7 @@ INKPdSsFormatDestroy(INKPdSsFormat * ele)
 }
 
 /*-------------------------------------------------------------
- * INKAdminAccessEle 
+ * INKAdminAccessEle
  *-------------------------------------------------------------*/
 inkapi INKAdminAccessEle *
 INKAdminAccessEleCreate()
@@ -1027,8 +1027,8 @@ INKCacheEleDestroy(INKCacheEle * ele)
 /*-------------------------------------------------------------
  * CongestionObj
  *-------------------------------------------------------------*/
-// FIXME: for now use defaults specified in feature spec; the 
-// defaults though are configurable as records, so should use 
+// FIXME: for now use defaults specified in feature spec; the
+// defaults though are configurable as records, so should use
 // records values instead
 inkapi INKCongestionEle *
 INKCongestionEleCreate()
@@ -1838,21 +1838,21 @@ END:
 
 
 /*-------------------------------------------------------------------------
- * INKRecordGetMlt 
+ * INKRecordGetMlt
  *-------------------------------------------------------------------------
  * Purpose: Retrieves list of record values specified in the rec_names list
  * Input: rec_names - list of record names to retrieve
- *        rec_vals  - queue of INKRecordEle* that correspons to rec_names 
- * Output: If at any point, while retrieving one of the records there's a 
- *         a failure then the entire process is aborted, all the allocated 
+ *        rec_vals  - queue of INKRecordEle* that correspons to rec_names
+ * Output: If at any point, while retrieving one of the records there's a
+ *         a failure then the entire process is aborted, all the allocated
  *         INKRecordEle's are deallocated and INK_ERR_FAIL is returned.
  * Note: rec_names is not freed; if function is successful, the rec_names
  *       list is unchanged!
- * 
+ *
  * IS THIS FUNCTION AN ATOMIC TRANSACTION? Technically, all the variables
- * requested should refer to the same config file. But a lock is only 
- * put on each variable it is looked up. Need to be able to lock 
- * a file while retrieving all the requested records!  
+ * requested should refer to the same config file. But a lock is only
+ * put on each variable it is looked up. Need to be able to lock
+ * a file while retrieving all the requested records!
  */
 
 inkapi INKError
@@ -1868,7 +1868,7 @@ INKRecordGetMlt(INKStringList rec_names, INKList rec_vals)
 
   num_recs = queue_len((LLQ *) rec_names);
   for (i = 0; i < num_recs; i++) {
-    rec_name = (char *) dequeue((LLQ *) rec_names);     // remove name from list 
+    rec_name = (char *) dequeue((LLQ *) rec_names);     // remove name from list
     if (!rec_name)
       return INK_ERR_PARAMS;    // NULL is invalid record name
 
@@ -1887,7 +1887,7 @@ INKRecordGetMlt(INKStringList rec_names, INKList rec_vals)
       }
       return ret;
     }
-    enqueue((LLQ *) rec_vals, ele);     // all is good; add ele to end of list    
+    enqueue((LLQ *) rec_vals, ele);     // all is good; add ele to end of list
   }
 
   return INK_ERR_OKAY;
@@ -1927,20 +1927,20 @@ INKRecordSetString(const char *rec_name, const char *str_val, INKActionNeedT * a
 
 
 /*-------------------------------------------------------------------------
- * INKRecordSetMlt 
+ * INKRecordSetMlt
  *-------------------------------------------------------------------------
- * Basically iterates through each RecordEle in rec_list and calls the 
+ * Basically iterates through each RecordEle in rec_list and calls the
  * appropriate "MgmtRecordSetxx" function for that record
  * Input: rec_list - queue of INKRecordEle*; each INKRecordEle* must have
  *        a valid record name (remains unchanged on return)
  * Output: if there is an error during the setting of one of the variables then
  *         will continue to try to set the other variables. Error response will
- *         indicate though that not all set operations were successful. 
+ *         indicate though that not all set operations were successful.
  *         INK_ERR_OKAY is returned if all the records are set successfully
- * Note: Determining the action needed is more complex b/c need to keep 
- * track of which record change is the most drastic out of the group of 
- * records; action_need will be set to the most severe action needed of 
- * all the "Set" calls  
+ * Note: Determining the action needed is more complex b/c need to keep
+ * track of which record change is the most drastic out of the group of
+ * records; action_need will be set to the most severe action needed of
+ * all the "Set" calls
  */
 inkapi INKError
 INKRecordSetMlt(INKList rec_list, INKActionNeedT * action_need)
@@ -2049,7 +2049,7 @@ INKProxyStateGet()
 
 /* INKProxyStateSet: set the proxy state (on/off)
  * Input:  proxy_state - set to on/off
- *         clear - start TS with cache clearing option, 
+ *         clear - start TS with cache clearing option,
  *                 when stopping TS should always be INK_CACHE_CLEAR_OFF
  * Output: INKError
  */
@@ -2080,7 +2080,7 @@ INKRestart(bool cluster)
 }
 
 /* INKHardRestart: a traffic_cop restart (restarts TM and TS),
- * essentially does a "start_traffic_server"/"stop_traffic_server" sequence 
+ * essentially does a "start_traffic_server"/"stop_traffic_server" sequence
  * Input:  <none>
  * Output: INKError
  * Note: only for remote API clients
@@ -2882,7 +2882,7 @@ INKMgmtFtp(const char *ftpCmd, const char *ftp_server_name, const char *ftp_logi
 
 
 /*-------------------------------------------------------------
- * rmserver.cfg 
+ * rmserver.cfg
  *-------------------------------------------------------------*/
 
 char *
@@ -2906,7 +2906,7 @@ get_rmserver_path()
     ink_strncpy(ts_base_dir, env_path, sizeof(ts_base_dir));
   } else {
     if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-      ink_strncpy(ts_base_dir, "/usr/local", sizeof(ts_base_dir));
+      ink_strncpy(ts_base_dir, PREFIX, sizeof(ts_base_dir));
     } else {
       NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
       fclose(ts_file);
@@ -2969,11 +2969,11 @@ inkapi INKError rm_change_ip(int cnt, char **ip)
   pid_t pid;
 
   if (cnt == 0) {
-    //fprintf(stderr,"Error:No IP to change!\n"); 
+    //fprintf(stderr,"Error:No IP to change!\n");
     return INK_ERR_FAIL;
   }
   if (!ip[0]) {
-    //fprintf(stderr,"Error[rm_change_ip]:Null IP passed!\n"); 
+    //fprintf(stderr,"Error[rm_change_ip]:Null IP passed!\n");
     return INK_ERR_FAIL;
   }
   //printf("ip[0]: %s",ip[0]);
@@ -2981,7 +2981,7 @@ inkapi INKError rm_change_ip(int cnt, char **ip)
 
   path = get_rmserver_path();
   if (!path) {
-    //fprintf(stderr,"Error:rmserver.cfg path not found!\n"); 
+    //fprintf(stderr,"Error:rmserver.cfg path not found!\n");
     return INK_ERR_FAIL;
   }
   ink_strncpy(temp, path, sizeof(temp));
@@ -3019,7 +3019,7 @@ inkapi INKError rm_change_ip(int cnt, char **ip)
       // Currently we always put 0.0.0.0 since this solves all kinds of problems the field encountered
       //for(i = 0;i < cnt;i++) {
       //  if(!ip[i]) {
-      //      fprintf(stderr,"Error[rm_change_ip]:Null IP passed!\n"); 
+      //      fprintf(stderr,"Error[rm_change_ip]:Null IP passed!\n");
       //      return INK_ERR_FAIL;
       //  }
       fprintf(fp1, "<Var Address_01=\"0.0.0.0\"/> \n");
@@ -3067,18 +3067,18 @@ inkapi INKError rm_remove_ip(int cnt, char **ip)
   pid_t pid;
 
   if (cnt == 0) {
-    //fprintf(stderr,"Error[rm_remove_ip]:No IP to change!\n"); 
+    //fprintf(stderr,"Error[rm_remove_ip]:No IP to change!\n");
     return INK_ERR_FAIL;
   }
   if (!ip[0]) {
-    //fprintf(stderr,"Error[rm_remove_ip]:Null IP passed!\n"); 
+    //fprintf(stderr,"Error[rm_remove_ip]:Null IP passed!\n");
     return INK_ERR_FAIL;
   }
   //printf("ip[0]: %s",ip[0]);
 
   path = get_rmserver_path();
   if (!path) {
-    //fprintf(stderr,"Error:rmserver.cfg path not found!\n"); 
+    //fprintf(stderr,"Error:rmserver.cfg path not found!\n");
     return INK_ERR_FAIL;
   }
   ink_strncpy(temp, path, sizeof(temp));
@@ -3109,7 +3109,7 @@ inkapi INKError rm_remove_ip(int cnt, char **ip)
       flag = 0;
       for (i = 0; i < cnt; i++) {
         if (!ip[i]) {
-          //fprintf(stderr,"Error[rm_remove_ip]:Null IP passed!\n"); 
+          //fprintf(stderr,"Error[rm_remove_ip]:Null IP passed!\n");
           fclose(fp);
           fclose(fp1);
           return INK_ERR_FAIL;
@@ -3162,13 +3162,13 @@ inkapi INKError rm_change_hostname(INKString hostname)
   pid_t pid;
 
   if (!hostname) {
-    //fprintf(stderr,"Error[rm_change_hostname]:no hostname specified!\n"); 
+    //fprintf(stderr,"Error[rm_change_hostname]:no hostname specified!\n");
     return INK_ERR_FAIL;
   }
 
   path = get_rmserver_path();
   if (!path) {
-    //fprintf(stderr,"Error[rm_change_hostname]:rmserver.cfg path not found!\n"); 
+    //fprintf(stderr,"Error[rm_change_hostname]:rmserver.cfg path not found!\n");
     return INK_ERR_FAIL;
   }
   ink_strncpy(temp, path, sizeof(temp));
@@ -3179,7 +3179,7 @@ inkapi INKError rm_change_hostname(INKString hostname)
     tmp[tmp1 - tmp] = '\0';
 
   snprintf(rmserver_path1, sizeof(rmserver_path1), "%s/rmservernew.cfg", tmp);
-  //printf("rmserver new path: %s\n",rmserver_path1); 
+  //printf("rmserver new path: %s\n",rmserver_path1);
   if ((fp = fopen(rmserver_path, "r")) == NULL) {
     //fprintf(stderr, "Error: unable to open rmserver.cfg\n");
     return INK_ERR_READ_FILE;
@@ -3224,7 +3224,7 @@ inkapi INKError rm_change_hostname(INKString hostname)
         }
       }
       if (!part1 || !part3) {
-        //fprintf(stderr,"Error[rm_change_hostname]:realm string not proper!\n"); 
+        //fprintf(stderr,"Error[rm_change_hostname]:realm string not proper!\n");
         if (tmp1)
           free(tmp1);
         if (part1)
@@ -3331,7 +3331,7 @@ closeAllFds()
       while (!feof(fd)) {
         NOWARN_UNUSED_RETURN(fgets(buffer, BUFFLEN, fd));
         num = atoi(buffer);
-        if (num != fd->_fileno && num != 0 && num != 1 && num != 2) {   // for out put 
+        if (num != fd->_fileno && num != 0 && num != 1 && num != 2) {   // for out put
           //printf("closing fd (%d)\n", num); fflush(stdout);
           close(num);
         }
@@ -3351,7 +3351,7 @@ inkapi INKError rm_start_proxy()
 
   time_t time_diff = time(NULL) - rm_last_stop;
 
-  if (time_diff > 60 || time_diff < 0) {        // wrap around??  shall never happen 
+  if (time_diff > 60 || time_diff < 0) {        // wrap around??  shall never happen
     pid_t pid;
     const char *argv[3];
     argv[0] = "net_config";
@@ -3473,21 +3473,21 @@ INKSetNICUp(INKString nic_name, bool static_ip, INKString ip, INKString old_ip, 
      }
 
      if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     //if (ctx) INKCfgContextDestroy(ctx);
      return INK_ERR_READ_FILE;
-     } 
+     }
 
      if ((i =  INKCfgContextGetCount(ctx)) <=0 ) {
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     //if (ctx) INKCfgContextDestroy(ctx);
      return INK_ERR_FAIL;
      }
 
      if (strcmp(nic_name, "eth0") == 0) {  //currently we hard code it - should be changed
      for (index=0 ; index<i ; index++) {
      ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) { 
+     if (ele != NULL) {
      if (strcmp(ele->intr,nic_name) == 0) {
-     //if (strcmp(ele->dest_ip_addr, old_ip) == 0) //INKqa12486 
+     //if (strcmp(ele->dest_ip_addr, old_ip) == 0) //INKqa12486
      ele->dest_ip_addr =  string_to_ip_addr(ip);
      }
      }
@@ -3497,31 +3497,31 @@ INKSetNICUp(INKString nic_name, bool static_ip, INKString ip, INKString old_ip, 
      bool found = false;
      for (index=0 ; index<i ; index++) {
      ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) { 
+     if (ele != NULL) {
      if (strcmp(ele->intr,nic_name) == 0) {
      found = true;
      //if (strcmp(ele->dest_ip_addr, old_ip) == 0)  //INKqa12486
-     ele->dest_ip_addr =  string_to_ip_addr(ip); 
+     ele->dest_ip_addr =  string_to_ip_addr(ip);
      }
      }
      }
      if (!found) { //create the rules for the new NIC according to eth0
      for (index=0 ; index<i ; index++) {
      ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) { 
+     if (ele != NULL) {
      if (strcmp(ele->intr, "eth0") == 0) {
      ele_copy = INKIpFilterEleCreate();
      //copy the ele
      ele_copy->intr =  xstrdup(nic_name); // ethernet interface
      ele_copy->src_ip_addr = ele->src_ip_addr;  // from IP
-     ele_copy->src_cidr = ele->src_cidr; 
+     ele_copy->src_cidr = ele->src_cidr;
      ele_copy->src_port = ele->src_port;  // from port
      ele_copy->dest_ip_addr =  string_to_ip_addr(ip); // to IP
      ele_copy->dest_port = ele->dest_port;     // to port
      ele_copy->type_con = ele->type_con;
      ele_copy->protocol = ele->protocol;
 
-     INKCfgContextAppendEle(ctx, (INKCfgEle*)ele_copy); // add new ele to end of list     
+     INKCfgContextAppendEle(ctx, (INKCfgEle*)ele_copy); // add new ele to end of list
      }
      }
      }
@@ -3530,10 +3530,10 @@ INKSetNICUp(INKString nic_name, bool static_ip, INKString ip, INKString old_ip, 
 
      // commit the CfgContext to write a new version of the file
      if (INKCfgContextCommit(ctx, &action_need, NULL) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     //if (ctx) INKCfgContextDestroy(ctx);
      return INK_ERR_FAIL;
-     }   
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     }
+     //if (ctx) INKCfgContextDestroy(ctx);
 
 
      if ( action_need != INK_ACTION_UNDEFINED ){
@@ -3548,7 +3548,7 @@ INKSetNICUp(INKString nic_name, bool static_ip, INKString ip, INKString old_ip, 
 inkapi INKError
 INKSetProxyPort(INKString proxy_port)
 {
-  /* there is no ipnat.conf file anymore, 
+  /* there is no ipnat.conf file anymore,
      commenting out the rest of this function */
   return INK_ERR_READ_FILE;
 
@@ -3565,31 +3565,31 @@ INKSetProxyPort(INKString proxy_port)
      }
 
      if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     //if (ctx) INKCfgContextDestroy(ctx);
      return INK_ERR_READ_FILE;
-     } 
+     }
 
      if ((i =  INKCfgContextGetCount(ctx)) <=0 ) {
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     //if (ctx) INKCfgContextDestroy(ctx);
      return INK_ERR_FAIL;
      }
 
      for (index=0 ; index<i ; index++) {
      ele = (INKIpFilterEle *)INKCfgContextGetEleAt(ctx, index);
-     if (ele != NULL) { 
+     if (ele != NULL) {
      if (ele->src_port == 80) {
      ele->dest_port = ink_atoi(proxy_port);
-     //  Debug("api2","[INKSetProxyPort] %d is the dest_port for port %d now.\n",ele->dest_port, ele->src_port); 
+     //  Debug("api2","[INKSetProxyPort] %d is the dest_port for port %d now.\n",ele->dest_port, ele->src_port);
      }
      }
      }
 
      // commit the CfgContext to write a new version of the file
      if (INKCfgContextCommit(ctx, &action_need, NULL) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     //if (ctx) INKCfgContextDestroy(ctx);
      return INK_ERR_FAIL;
-     }   
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     }
+     //if (ctx) INKCfgContextDestroy(ctx);
 
      if ( action_need != INK_ACTION_UNDEFINED ){
      return INKActionDo(action_need);
@@ -3624,15 +3624,15 @@ INKSetNICDown(INKString nic_name, INKString ip_addrr)
      }
 
      if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx); 
-     return INK_ERR_READ_FILE; 
+     //if (ctx) INKCfgContextDestroy(ctx);
+     return INK_ERR_READ_FILE;
      }
 
-     ele = (INKIpFilterEle *)INKCfgContextGetFirst(ctx, &ctx_state); 
+     ele = (INKIpFilterEle *)INKCfgContextGetFirst(ctx, &ctx_state);
 
      while (ele) {
      if (strcmp(ele->intr, nic_name) == 0)  INKCfgContextRemoveEleAt (ctx, index);
-     ele = (INKIpFilterEle *)INKCfgContextGetNext(ctx, &ctx_state); 
+     ele = (INKIpFilterEle *)INKCfgContextGetNext(ctx, &ctx_state);
 
      }
      found = true;
@@ -3646,15 +3646,15 @@ INKSetNICDown(INKString nic_name, INKString ip_addrr)
      found = true;
      }
      }
-     } 
+     }
      }
 
      // commit the CfgContext to write a new version of the file
      if (INKCfgContextCommit(ctx, &action_need, NULL) != INK_ERR_OKAY) {
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     //if (ctx) INKCfgContextDestroy(ctx);
      return INK_ERR_FAIL;
-     }   
-     //if (ctx) INKCfgContextDestroy(ctx); 
+     }
+     //if (ctx) INKCfgContextDestroy(ctx);
 
      if ( action_need != INK_ACTION_UNDEFINED) {
      return INKActionDo(action_need);
@@ -3702,7 +3702,7 @@ INKSetRmRealm(const char *hostname)
     goto Lerror;
   }
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-//    Debug("config", "[net_config:Config] Failed to Get CfgContext"); 
+//    Debug("config", "[net_config:Config] Failed to Get CfgContext");
     goto Lerror;
   }
   ele = (INKRmServerEle *) CfgContextGetEleAt((CfgContext *) ctx, (int) INK_RM_RULE_SCU_ADMIN_REALM);
@@ -3748,7 +3748,7 @@ INKSetRmPNA_RDT_IP(const char *ip)
     goto Lerror;
   }
   if (INKCfgContextGet(ctx) != INK_ERR_OKAY) {
-//    Debug("config", "[net_config:Config] Failed to Get CfgContext"); 
+//    Debug("config", "[net_config:Config] Failed to Get CfgContext");
     goto Lerror;
   }
   ele = (INKRmServerEle *) CfgContextGetEleAt((CfgContext *) ctx, (int) INK_RM_RULE_PNA_RDT_IP);

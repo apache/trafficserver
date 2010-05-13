@@ -30,7 +30,7 @@
        amount of time, or until a new element is inserted, whichever
        is earlier
 
-  
+
  ****************************************************************************/
 #ifndef _I_ProtectedQueue_h_
 #define _I_ProtectedQueue_h_

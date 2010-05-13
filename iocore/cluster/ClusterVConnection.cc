@@ -94,21 +94,21 @@ ClusterVConnectionBase::do_io_pread(Continuation * acont, ink64 anbytes, MIOBuff
 }
 
 int
-ClusterVConnection::get_header(void **ptr, int *len) 
+ClusterVConnection::get_header(void **ptr, int *len)
 {
   ink_assert(!"implemented");
   return -1;
 }
 
 int
-ClusterVConnection::set_header(void *ptr, int len) 
+ClusterVConnection::set_header(void *ptr, int len)
 {
   ink_assert(!"implemented");
   return -1;
 }
 
 int
-ClusterVConnection::get_single_data(void **ptr, int *len) 
+ClusterVConnection::get_single_data(void **ptr, int *len)
 {
   ink_assert(!"implemented");
   return -1;
@@ -496,7 +496,7 @@ ClusterVConnection::set_http_info(CacheHTTPInfo * d)
   // Cache semantics dictate that set_http_info() be established prior
   // to transferring any data on the ClusterVConnection.
   //
-  ink_release_assert(this->write.vio.op == VIO::NONE);  // not true if do_io() 
+  ink_release_assert(this->write.vio.op == VIO::NONE);  // not true if do_io()
   //   already done
   ink_release_assert(this->read.vio.op == VIO::NONE);   // should always be true
 
@@ -548,7 +548,7 @@ bool ClusterVConnection::set_pin_in_cache(time_t t)
   // open_write() ClusterVConnection.  It is only allowed after a
   // successful open_write() and prior to issuing the do_io(VIO::WRITE).
   //
-  ink_release_assert(this->write.vio.op == VIO::NONE);  // not true if do_io() 
+  ink_release_assert(this->write.vio.op == VIO::NONE);  // not true if do_io()
   //   already done
   ink_release_assert(this->read.vio.op == VIO::NONE);   // should always be true
   time_pin = t;
@@ -591,7 +591,7 @@ bool ClusterVConnection::set_disk_io_priority(int priority)
   // open_write() ClusterVConnection.  It is only allowed after a
   // successful open_write() and prior to issuing the do_io(VIO::WRITE).
   //
-  ink_release_assert(this->write.vio.op == VIO::NONE);  // not true if do_io() 
+  ink_release_assert(this->write.vio.op == VIO::NONE);  // not true if do_io()
   //   already done
   ink_release_assert(this->read.vio.op == VIO::NONE);   // should always be true
   disk_io_priority = priority;

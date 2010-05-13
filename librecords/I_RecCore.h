@@ -247,7 +247,7 @@ int RecResetStatRecord(char *name);
 int RecResetStatRecord(RecT type = RECT_NULL);
 
 //------------------------------------------------------------------------
-// Set RecRecord attributes 
+// Set RecRecord attributes
 //------------------------------------------------------------------------
 int RecSetSyncRequired(char *name, bool lock = true);
 

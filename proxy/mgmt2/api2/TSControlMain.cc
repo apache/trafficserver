@@ -24,10 +24,10 @@
 /*****************************************************************************
  * Filename: TSControlMain.cc
  * Purpose: The main section for traffic server that handles all the requests
- *          from the user. 
+ *          from the user.
  * Created: 01/08/01
  * Created by: Stephanie Song
- * 
+ *
  ***************************************************************************/
 
 #include "inktomi++.h"
@@ -48,11 +48,11 @@ InkHashTable *accepted_con;     // a list of all accepted client connections
 
 /*********************************************************************
  * create_client
- * 
+ *
  * purpose: creates a new ClientT and return pointer to it
  * input: None
  * output: ClientT
- * note: created for each accepted client connection 
+ * note: created for each accepted client connection
  *********************************************************************/
 ClientT *
 create_client()
@@ -72,10 +72,10 @@ create_client()
 
 /*********************************************************************
  * delete_client
- * 
+ *
  * purpose: frees dynamic memory allocated for a ClientT
  * input: client - the ClientT to free
- * output: 
+ * output:
  *********************************************************************/
 void
 delete_client(ClientT * client)
@@ -90,11 +90,11 @@ delete_client(ClientT * client)
 
 /*********************************************************************
  * remove_client
- * 
+ *
  * purpose: removes the ClientT from the specified hashtable; includes
  *          removing the binding and freeing the ClientT
  * input: client - the ClientT to remove
- * output: 
+ * output:
  *********************************************************************/
 void
 remove_client(ClientT * client, InkHashTable * table)
@@ -112,12 +112,12 @@ remove_client(ClientT * client, InkHashTable * table)
 }
 
 /*********************************************************************
- * ts_ctrl_main 
- * 
- * This function is run as a thread in WebIntrMain.cc that listens on a 
- * specified socket. It loops until Traffic Manager dies. 
+ * ts_ctrl_main
+ *
+ * This function is run as a thread in WebIntrMain.cc that listens on a
+ * specified socket. It loops until Traffic Manager dies.
  * In the loop, it just listens on a socket, ready to accept any connections,
- * until receives a request from the remote API client. Parse the request 
+ * until receives a request from the remote API client. Parse the request
  * to determine which CoreAPI call to make.
  *********************************************************************/
 void *
@@ -144,7 +144,7 @@ ts_ctrl_main(void *arg)
   InkHashTableEntry *con_entry; // used to obtain client connection info
   ClientT *client_entry;        // an entry of fd to alarms mapping
   InkHashTableIteratorState con_state;  // used to iterate through hash table
-  int fds_ready;                // stores return value for select 
+  int fds_ready;                // stores return value for select
   struct timeval timeout;
   int addr_len = (sizeof(struct sockaddr));
 
@@ -197,8 +197,8 @@ ts_ctrl_main(void *arg)
         }
       }                         // end if(new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
 
-      // some other file descriptor; for each one, service request 
-      if (fds_ready > 0) {      // RECEIVED A REQUEST from remote API client 
+      // some other file descriptor; for each one, service request
+      if (fds_ready > 0) {      // RECEIVED A REQUEST from remote API client
         // see if there are more fd to set - iterate through all entries in hash table
         con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
         while (con_entry) {
@@ -216,7 +216,7 @@ ts_ctrl_main(void *arg)
                     client_entry->sock_info.fd);
               mgmt_log("[ts_ctrl_main] preprocess_msg - remove client %d\n", client_entry->sock_info.fd);
               remove_client(client_entry, accepted_con);
-              // get next client connection (if any) 
+              // get next client connection (if any)
               con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
               continue;
             }
@@ -290,7 +290,7 @@ ts_ctrl_main(void *arg)
             case PROXY_STATE_SET:
               ret = handle_proxy_state_set(client_entry->sock_info, req);
               if (req)
-                xfree(req);     // free the request allocated by preprocess_msg        
+                xfree(req);     // free the request allocated by preprocess_msg
               if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_proxy_state_set\n");
                 remove_client(client_entry, accepted_con);
@@ -328,7 +328,7 @@ ts_ctrl_main(void *arg)
             case EVENT_RESOLVE:
               ret = handle_event_resolve(client_entry->sock_info, req);
               if (req)
-                xfree(req);     // free the request allocated by preprocess_msg        
+                xfree(req);     // free the request allocated by preprocess_msg
               if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:handle_event_resolve\n");
                 remove_client(client_entry, accepted_con);
@@ -340,7 +340,7 @@ ts_ctrl_main(void *arg)
             case EVENT_GET_MLT:
               ret = handle_event_get_mlt(client_entry->sock_info);
               if (req)
-                xfree(req);     // free the request allocated by preprocess_msg        
+                xfree(req);     // free the request allocated by preprocess_msg
               if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:event_get_mlt\n");
                 remove_client(client_entry, accepted_con);
@@ -352,7 +352,7 @@ ts_ctrl_main(void *arg)
             case EVENT_ACTIVE:
               ret = handle_event_active(client_entry->sock_info, req);
               if (req)
-                xfree(req);     // free the request allocated by preprocess_msg        
+                xfree(req);     // free the request allocated by preprocess_msg
               if (ret == INK_ERR_NET_WRITE || ret == INK_ERR_NET_EOF) {
                 Debug("ts_main", "[ts_ctrl_main] ERROR:event_active\n");
                 remove_client(client_entry, accepted_con);
@@ -458,15 +458,15 @@ ts_ctrl_main(void *arg)
 /*-------------------------------------------------------------------------
                              HANDLER FUNCTIONS
  --------------------------------------------------------------------------*/
-/* NOTE: all the handle_xx functions basically, take the request, parse it, 
+/* NOTE: all the handle_xx functions basically, take the request, parse it,
  * and send a reply back to the remote client. So even if error occurs,
  * each handle functions MUST SEND A REPLY BACK!! If an error occurs during
  * parsing the request, or while doing the API call, then must send reply back
- * with only the error return value in the msg!!! It's important that if 
+ * with only the error return value in the msg!!! It's important that if
  * an error does occur, the "send_reply" function is used; otherwise the socket
- * will get written with too much extraneous stuff; the remote side will 
+ * will get written with too much extraneous stuff; the remote side will
  * only read the INKError type since that's all it expects to be in the message
- * (for an INKError != INK_ERR_OKAY). 
+ * (for an INKError != INK_ERR_OKAY).
  */
 
 /**************************************************************************
@@ -477,7 +477,7 @@ ts_ctrl_main(void *arg)
  * input: socket information
  *        req - the msg sent (should = record name to get)
  * output: SUCC or ERR
- * note: 
+ * note:
  *************************************************************************/
 INKError
 handle_record_get(struct SocketInfo sock_info, char *req)
@@ -547,7 +547,7 @@ handle_record_set(struct SocketInfo sock_info, char *req)
     ret = send_reply(sock_info, INK_ERR_PARAMS);
     return ret;
   }
-  // parse request msg 
+  // parse request msg
   ret = parse_request_name_value(req, &name, &val);
   if (ret != INK_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
@@ -604,7 +604,7 @@ handle_file_read(struct SocketInfo sock_info, char *req)
     ret = send_reply(sock_info, ret);
     return ret;
   }
-  // marshal the file info message that can be returned to client 
+  // marshal the file info message that can be returned to client
   ret = send_file_read_reply(sock_info, ret, version, size, text);
   if (ret != INK_ERR_OKAY) {
     ret = send_reply(sock_info, ret);
@@ -647,7 +647,7 @@ handle_file_write(struct SocketInfo sock_info, char *req)
   ret = send_reply(sock_info, ret);
 
   if (text)
-    xfree(text);                // free memory allocated by parsing fn. 
+    xfree(text);                // free memory allocated by parsing fn.
 
   return ret;
 }
@@ -747,7 +747,7 @@ handle_restart(struct SocketInfo sock_info, char *req)
 
   if (!req) {
     ret = send_reply(sock_info, INK_ERR_PARAMS);
-    return ret;                 // shouldn't get here 
+    return ret;                 // shouldn't get here
   }
   // the req should be a boolean value - typecase it
   memcpy(&cluster, req, SIZE_BOOL);
@@ -764,7 +764,7 @@ handle_restart(struct SocketInfo sock_info, char *req)
 /**************************************************************************
  * handle_event_resolve
  *
- * purpose: handles request to resolve an event 
+ * purpose: handles request to resolve an event
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: INK_ERR_xx
  * note: the req should be the event name
@@ -777,7 +777,7 @@ handle_event_resolve(struct SocketInfo sock_info, char *req)
   // parse msg - don't really need since the request itself is the record name
   if (!req) {
     ret = send_reply(sock_info, INK_ERR_PARAMS);
-    return ret;                 // shouldn't get here 
+    return ret;                 // shouldn't get here
   }
   // call CoreAPI call on Traffic Manager side; req == event_name
   ret = EventResolve(req);
@@ -833,7 +833,7 @@ handle_event_get_mlt(struct SocketInfo sock_info)
 /**************************************************************************
  * handle_event_active
  *
- * purpose: handles request to resolve an event 
+ * purpose: handles request to resolve an event
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  * output: INK_ERR_xx
  * note: the req should be the event name
@@ -847,7 +847,7 @@ handle_event_active(struct SocketInfo sock_info, char *req)
   // parse msg - don't really need since the request itself is the record name
   if (!req) {
     ret = send_reply(sock_info, INK_ERR_PARAMS);
-    return ret;                 // shouldn't get here 
+    return ret;                 // shouldn't get here
   }
   // call CoreAPI call on Traffic Manager side; req == event_name
   ret = EventIsActive(req, &active);
@@ -1038,7 +1038,7 @@ handle_stats_reset(struct SocketInfo sock_info, char *req)
 /**************************************************************************
  * handle_encrypt_to_file
  *
- * purpose: handles request to encrypt password to file 
+ * purpose: handles request to encrypt password to file
  * input: struct SocketInfo sock_info - the socket to use to talk to client
  *        req - should be NULL
  * output: INK_ERR_xx
@@ -1053,7 +1053,7 @@ handle_encrypt_to_file(struct SocketInfo sock_info, char *req)
     ret = send_reply(sock_info, INK_ERR_PARAMS);
     return ret;
   }
-  // parse request msg 
+  // parse request msg
   ret = parse_request_name_value(req, &pwd, &filepath);
   if (ret != INK_ERR_OKAY) {
     ret = send_reply(sock_info, ret);

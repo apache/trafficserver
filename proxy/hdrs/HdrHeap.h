@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #ifndef _HDR_HEAP_H_
@@ -267,7 +267,7 @@ HdrHeap::free_string(const char *s, int len)
 }
 
 
-// 
+//
 struct MarshalXlate
 {
   char *start;
@@ -373,7 +373,7 @@ if (ptr) { \
    } \
 }
 
-// Nasty macro to do verify all strings it 
+// Nasty macro to do verify all strings it
 //   in attached heaps
 #define CHECK_STR(str, len, _heaps, _num_heaps) \
 { \
@@ -391,7 +391,7 @@ if (ptr) { \
 
 // struct HdrHeapSDKHandle()
 //
-//   Handle to a HdrHeap.  
+//   Handle to a HdrHeap.
 //
 //   Intended to be subclassed and contain a
 //     object pointer that points into the heap

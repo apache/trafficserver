@@ -26,7 +26,7 @@
 
   This file implements an I/O Processor for network I/O on Unix.
 
-  
+
  ****************************************************************************/
 
 #ifndef __P_UNIXNETVCONNECTION_H__

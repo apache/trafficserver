@@ -22,40 +22,40 @@
  */
 
 /****************************************************************************
- 
+
    PluginVC.cc
- 
+
    Description: Allows bi-directional transfer for data from one
       continuation to another via a mechanism that impersonates a
       NetVC.  Should implement all external attributes of NetVConnections.
- 
+
    Since data is transfered within Traffic Server, this is a two
-   headed beast.  One NetVC on initiating side (active side) and 
+   headed beast.  One NetVC on initiating side (active side) and
    one NetVC on the receiving side (passive side).
- 
+
    The two NetVC subclasses, PluginVC, are part PluginVCCore object.  All
    three objects share the same mutex.  That mutex is required
    for doing operations that affect the shared buffers,
    read state from the PluginVC on the other side or deal with deallocation.
- 
+
    To simplify the code, all data passing through the system goes initially
    into a shared buffer.  There are two shared buffers, one for each
    direction of the connection.  While it's more efficient to transfer
    the data from one buffer to another directly, this creates a lot
    of tricky conditions since you must be holding the lock for both
-   sides, in additional this VC's lock.  Additionally, issues like 
-   watermarks are very hard to deal with.  Since we try to 
+   sides, in additional this VC's lock.  Additionally, issues like
+   watermarks are very hard to deal with.  Since we try to
    to move data by IOBufferData references the efficiency penalty shouldn't
-   be too bad and if it is a big pentaly, a brave soul can reimplement 
+   be too bad and if it is a big pentaly, a brave soul can reimplement
    to move the data directly without the intermediate buffer.
- 
+
    Locking is difficult issue for this multi-headed beast.  In each
-   PluginVC, there a two locks. The one we got from our PluginVCCore and 
-   the lock from the state machine using the PluginVC.  The read side 
-   lock & the write side lock must be the same.  The regular net processor has 
-   this constraint as well.  In order to handle scheduling of retry events cleanly, 
+   PluginVC, there a two locks. The one we got from our PluginVCCore and
+   the lock from the state machine using the PluginVC.  The read side
+   lock & the write side lock must be the same.  The regular net processor has
+   this constraint as well.  In order to handle scheduling of retry events cleanly,
    we have two event poitners, one for each lock.  sm_lock_retry_event can only
-   be changed while holding the using state machine's lock and 
+   be changed while holding the using state machine's lock and
    core_lock_retry_event can only be manipulated while holding the PluginVC's
    lock.  On entry to PluginVC::main_handler, we obtain all the locks
    before looking at the events.  If we can't get all the locks
@@ -63,12 +63,12 @@
    obtained in the beginning of the handler, we know we are running
    exclusively in the later parts of the handler and we will
    be free from do_io or reenable calls on the PluginVC.
- 
+
    The assumption is made (conistant with IO Core spec) that any close,
-   shutdown, reenable, or do_io_{read,write) operation is done by the callee 
+   shutdown, reenable, or do_io_{read,write) operation is done by the callee
    while holding the lock for that side of the operation.
-   
-   
+
+
  ****************************************************************************/
 
 #include "PluginVC.h"

@@ -212,7 +212,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     g_stats_snap_fpath = REC_RAW_STATS_DIR REC_RAW_STATS_FILE;
     RecReadStatsFile();
   }
-  // read configs  
+  // read configs
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
     ink_mutex_init(&g_rec_config_lock, NULL);
     g_rec_config_contents_llq = create_queue();

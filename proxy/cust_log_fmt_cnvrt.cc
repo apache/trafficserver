@@ -173,7 +173,7 @@ process_format(SimpleTokenizer * tok, LogFormat ** formats, int &numFormats)
   char *header = tok->getRest();
 
 
-  // check if we have already defined a LogFormat we can use 
+  // check if we have already defined a LogFormat we can use
 
   char *escaped_fmt_string = create_escaped_string(fmt_string);
 
@@ -495,7 +495,7 @@ main(int argc, char **argv)
   // build the application information structure
   //
   AppVersionInfo appVersionInfo;
-  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, 
+  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // process command-line arguments

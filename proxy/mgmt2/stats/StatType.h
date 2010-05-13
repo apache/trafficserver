@@ -105,7 +105,7 @@ struct StatFloatSamples
  *                       StatExprToken
  * a statistics expression token can either be a binary operator,
  * name '+', '-', '*', '/', or parenthesis '(', ')' or a TS variable.
- * In the former case, the arithSymbol stores the operator or 
+ * In the former case, the arithSymbol stores the operator or
  * paranthesis; otherwise arithSymbol is '/0';
  ***************************************************************/
 class StatExprToken
@@ -142,7 +142,7 @@ public:
 };
 
 
-/** 
+/**
  * StatExprList
  *   simply a list of StatExprToken.
  **/
@@ -176,7 +176,7 @@ private:
 
 /***************************************************************
  *                        StatObject
- * Each entry in the statistics XML file is represented by a 
+ * Each entry in the statistics XML file is represented by a
  * StatObject.
  ***************************************************************/
 class StatObject

@@ -34,7 +34,7 @@
 enum RecordUpdateType
 {
   RU_NULL,                      // default: don't know the behavior
-  RU_REREAD,                    // config can be updated dynamically w/ traffic_line -x 
+  RU_REREAD,                    // config can be updated dynamically w/ traffic_line -x
   RU_RESTART_TS,                // config requires TS to be restarted to take effect
   RU_RESTART_TM,                // config requires TM/TS to be restarted to take effect
   RU_RESTART_TC                 // config requires TC/TM/TS to be restarted to take effect
@@ -58,7 +58,7 @@ enum RecordAccessType
 {
   RA_NULL,                      // default: no access type defined
   RA_NO_ACCESS,                 // config cannot be read or set
-  RA_READ_ONLY                  // config can only be read 
+  RA_READ_ONLY                  // config can only be read
 };
 
 // Retain this struct for ease of CVS merging
@@ -73,7 +73,7 @@ struct RecordElement
   RecordRequiredType required;  // is records required to be in records.config?
   RecordCheckType check;
   const char *regex;
-  RecordAccessType access;      // access level of the record 
+  RecordAccessType access;      // access level of the record
 };
 
 extern RecordElement RecordsConfig[];   // big struct of all system records

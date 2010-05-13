@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #include "test_log_collate.h"
@@ -363,7 +363,7 @@ main(int argc, char **argv)
   SIO::add_exit_handler(new ExitHandler);
   init_output_log();
 
-  // Start the control port 
+  // Start the control port
   accept_handler = new LogAcceptHandler();
   accept_handler->start(collate_port);
 

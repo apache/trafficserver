@@ -25,8 +25,8 @@
 
   Async Struct definition.
 
-  
-  
+
+
  ****************************************************************************/
 
 #ifndef _ink_aiocb_h_
@@ -49,7 +49,7 @@ typedef struct ink_aiocb
 #endif
   size_t aio_nbytes;            /* length of transfer */
 
-  // TODO change to off_t 
+  // TODO change to off_t
   ink_off_t aio_offset;         /* file offset */
 
   int aio_reqprio;              /* request priority offset */

@@ -133,7 +133,7 @@ ReadCheck(INKCont contp, CheckData_T * pCheckData)
   int Avail;
 
   if (INK_HTTP_TYPE_REQUEST != INKHttpHdrTypeGet(pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc)) {
-    /* If the function returns something else, the transaction was canceled. 
+    /* If the function returns something else, the transaction was canceled.
        Therefore don't do anything...simply exit... */
     Log("HTTP header was not a INK_HTTP_TYPE_REQUEST (in ReadCheck)");
     /*fwrite (pCheckData->m_Buffer, pCheckData->m_ClientHeaderLoc, 1,stderr); */

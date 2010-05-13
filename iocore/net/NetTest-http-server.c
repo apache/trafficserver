@@ -103,8 +103,8 @@ struct NetTesterSM:public Continuation
     case VC_EVENT_ERROR:
     case VC_EVENT_INACTIVITY_TIMEOUT:
       vc->do_io_close();
-      // fixme 
-      // handle timeout events      
+      // fixme
+      // handle timeout events
       break;
     default:
       ink_release_assert(!"unknown event");

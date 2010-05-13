@@ -27,7 +27,7 @@
 
    Description:
 
-   
+
  ****************************************************************************/
 
 #include "inktomi++.h"
@@ -102,7 +102,7 @@ HdrHeap::init()
 
   // We need to clear m_ptr directly since it's garbage and
   //  using the operator functions will to free() what ever
-  //  garbage it is pointing to 
+  //  garbage it is pointing to
   m_read_write_heap.m_ptr = NULL;
 
   m_ronly_heap[0].m_heap_start = NULL;
@@ -344,7 +344,7 @@ HdrHeap::expand_str(const char *old_str, int old_len, int new_len)
 //
 //  Allocates a new string and copies the old data.
 //  Returns the new string pointer.
-// 
+//
 char *
 HdrHeap::duplicate_str(const char *str, int nbytes)
 {
@@ -359,7 +359,7 @@ HdrHeap::duplicate_str(const char *str, int nbytes)
 //  Returns 0 on success and non-zero failure
 //   Failure means all the read only heap slots
 //   were full
-// 
+//
 int
 HdrHeap::demote_rw_str_heap()
 {
@@ -373,7 +373,7 @@ HdrHeap::demote_rw_str_heap()
       m_ronly_heap[i].m_heap_start = (char *) m_read_write_heap.m_ptr;
       m_ronly_heap[i].m_heap_len = m_read_write_heap->m_heap_size - m_read_write_heap->m_free_size;
 
-//          Debug("hdrs", "Demoted rw heap of %d size", m_read_write_heap->m_heap_size); 
+//          Debug("hdrs", "Demoted rw heap of %d size", m_read_write_heap->m_heap_size);
       m_read_write_heap = NULL;
       return 0;
     }
@@ -644,7 +644,7 @@ HdrHeap::marshal(char *buf, int len)
   int str_heaps = 0;
 
   // Variables used later on.  Sunpro doesn't like
-  //   bypassing initializations with gotos 
+  //   bypassing initializations with gotos
   int used;
   int i;
 
@@ -753,7 +753,7 @@ HdrHeap::marshal(char *buf, int len)
     }
   }
 
-  // Patch the str heap len 
+  // Patch the str heap len
   marshal_hdr->m_ronly_heap[0].m_heap_len = str_size;
 
   // Take our translation tables and loop over the objects
@@ -875,7 +875,7 @@ HdrHeap::check_marshalled(inku32 buf_length)
 //     type obj_type in the heap
 //
 //   Return value is the number of bytes unmarshalled or -1
-//     if error.  Caller is responsible for memory 
+//     if error.  Caller is responsible for memory
 //     management policy
 //
 int
@@ -1068,13 +1068,13 @@ HdrHeap::inherit_string_heaps(const HdrHeap * inherit_from)
 
   if (free_slots < 0 || new_lost_space > (int)MAX_LOST_STR_SPACE) {
     // Not enough free slots.  We need to force a coalesce of
-    //  string heaps for both old heaps and the inherited from heaps.  
+    //  string heaps for both old heaps and the inherited from heaps.
     // Coalesce can't know the inherited str size so we pass it
     //  it in so that it can allocate a new read-write string heap
-    //  large enough (INKqa07513).  
-    // INVARIENT: inherit_str_heaps can only be called after 
+    //  large enough (INKqa07513).
+    // INVARIENT: inherit_str_heaps can only be called after
     //  all the objects the callee wants to inherit strings for
-    //  are put into the heap 
+    //  are put into the heap
     coalesce_str_heaps(inherit_str_size);
   } else {
 
@@ -1086,7 +1086,7 @@ HdrHeap::inherit_string_heaps(const HdrHeap * inherit_from)
                                str_size, inherit_from->m_read_write_heap, &first_free);
       ink_release_assert(result != 0);
     }
-    // Copy over read only string heaps 
+    // Copy over read only string heaps
     for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
       if (inherit_from->m_ronly_heap[i].m_heap_start) {
         result = attach_str_heap(inherit_from->m_ronly_heap[i].m_heap_start,

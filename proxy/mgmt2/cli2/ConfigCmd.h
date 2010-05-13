@@ -25,7 +25,7 @@
  * Filename: ConfigCmd.h
  * Purpose: This file contains the CLI's "config" command definitions.
  *
- * 
+ *
  ****************************************************************/
 
 #include "../api2/include/INKMgmtAPI.h"
@@ -951,7 +951,7 @@ int ConfigCacheFreshnessVerify(int arg_ref, int setvar);
 // config Cache Freshness Minimum sub-command
 int ConfigCacheFreshnessMinimum(int arg_ref, int setvar);
 
-// config Cache FreshnessNoExpireLimit 
+// config Cache FreshnessNoExpireLimit
 int ConfigCacheFreshnessNoExpireLimit(INKInt min, INKInt max, int setvar);
 
 // config Cache Vary sub-command
@@ -972,7 +972,7 @@ int ConfigVirtualIpList();
 //config virtualip add
 int ConfigVirtualipAdd(char *ip, char *device, int subinterface, int set_var);
 
-//config virtualip delete 
+//config virtualip delete
 int ConfigVirtualipDelete(int ip_no, int set_var);
 
 // config Logging Event sub-command

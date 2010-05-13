@@ -78,7 +78,7 @@ static const char *sdns_def_domain = "proxy.config.dns.splitdns.def_domain";
 
 /* --------------------------------------------------------------
    used by a lot of protocols. We do not have dest ip in most
-   cases. 
+   cases.
    -------------------------------------------------------------- */
 
 const matcher_tags sdns_dest_tags = {
@@ -505,7 +505,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
   }
 
   /* ------------------------------------------------
-     Allocate the servers array and Loop through the 
+     Allocate the servers array and Loop through the
      set of servers specified
      ------------------------------------------------ */
 
@@ -522,7 +522,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
     }
 
     /* ----------------------------------------
-       Make sure that is no garbage beyond the 
+       Make sure that is no garbage beyond the
        server port
        ---------------------------------------- */
     if (tmp) {
@@ -640,7 +640,7 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
 /* --------------------------------------------------------------
    SplitDNSRecord::Init()
 
-   matcher_line* line_info - contains parsed label/value pairs 
+   matcher_line* line_info - contains parsed label/value pairs
    of the current split.config line
    -------------------------------------------------------------- */
 

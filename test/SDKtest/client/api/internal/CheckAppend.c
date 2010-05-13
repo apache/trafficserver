@@ -33,7 +33,7 @@
  * running.
  * Make sure that append-transform plugin is loaded on the TS-proxy used.
  *
- * Added Options in client/SDKtest_client.config -  
+ * Added Options in client/SDKtest_client.config -
  *   append-file-path : full path of the file containing the appended text
  *              eg. /home/user/file.txt
  */
