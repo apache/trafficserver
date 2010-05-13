@@ -22,6 +22,7 @@
 Makefile
 config.log
 config.status
+config.nice
 doc/Doxyfile
 libinktomi++/CompileParseRules
 libinktomi++/ParseRulesCType
