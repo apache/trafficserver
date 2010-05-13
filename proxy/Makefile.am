@@ -390,7 +390,7 @@ test_ClusterHashStandalone_LDADD = libClusterHashStandalone.a
 test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc DiagsConfig.cc
 
 versiondir = $(pkgsysconfdir)
-dist_version_DATA = TS_version
+dist_version_DATA = trafficserver-release
 
 install-data-local:
 	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir)

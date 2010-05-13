@@ -25,7 +25,7 @@ proxy/README-stats.otl
 proxy/http2/README.via
 proxy/ClassH.txt
 proxy/DebugStreamLevels.txt
-proxy/TS_version
+proxy/trafficserver-release
 proxy/cache_test.config
 proxy/congest/FeatureSpec.txt
 proxy/http2/stats.memo
