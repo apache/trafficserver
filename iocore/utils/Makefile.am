@@ -19,19 +19,34 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/iocore/eventsystem \
-  -I$(top_srcdir)/libinktomi++
+  -I$(top_srcdir)/libinktomi++ \
+  -DPREFIX=\"$(prefix)\" \
+  -DEXEC_PREFIX=\"$(exec_prefix)\" \
+  -DBINDIR=\"$(bindir)\" \
+  -DSBINDIR=\"$(sbindir)\" \
+  -DSYSCONFDIR=\"$(sysconfdir)\" \
+  -DDATADIR=\"$(datadir)\" \
+  -DINCLUDEDIR=\"$(includedir)\" \
+  -DLIBDIR=\"$(libdir)\" \
+  -DLIBEXECDIR=\"$(libexecdir)\" \
+  -DLOCALSTATEDIR=\"$(localstatedir)\" \
+  -DSHAREDSTATEDIR=\"$(sharedstatedir)\" \
+  -DMANDIR=\"$(mandir)\" \
+  -DINFODIR=\"$(infodir)\"
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
 
 noinst_LIBRARIES = libinkutils.a
 
 libinkutils_a_SOURCES = \
+  I_Layout.h \
   I_Machine.h \
   I_MTInteractor.h \
   I_OneWayMultiTunnel.h \
   I_OneWayTunnel.h \
   I_OpQueue.h \
   I_RadixSort.h \
+  Layout.cc \
   MTInteractor.cc \
   Machine.cc \
   OneWayMultiTunnel.cc \
