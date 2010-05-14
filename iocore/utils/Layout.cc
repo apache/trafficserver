@@ -72,6 +72,12 @@ Layout::relative(const char *file)
   return layout_relative(prefix, file);
 }
 
+char *
+Layout::relative_to(const char *dir, const char *file)
+{
+  return layout_relative(dir, file);
+}
+
 Layout::Layout(const char *_prefix)
 {
   if (_prefix) {
@@ -165,6 +171,21 @@ Layout::Layout(const char *_prefix)
 
 Layout::~Layout()
 {
-  if (prefix)
-    xfree(prefix);
+#define SafeFree(x) \
+  if (x) xfree(x);
+
+  SafeFree(prefix);
+  SafeFree(exec_prefix);
+  SafeFree(bindir);
+  SafeFree(sbindir);
+  SafeFree(sysconfdir);
+  SafeFree(datadir);
+  SafeFree(includedir);
+  SafeFree(libdir);
+  SafeFree(libexecdir);
+  SafeFree(localstatedir);
+  SafeFree(sharedstatedir);
+  SafeFree(mandir);
+  SafeFree(infodir);
 }
+

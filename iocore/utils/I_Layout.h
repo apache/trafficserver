@@ -61,6 +61,14 @@ struct Layout
 
   */
   char *relative(const char *file);
+
+  /**
+   Return file path relative to dir
+   Memory is allocated, so use free() when no longer needed
+   Example usage: Layout::relative_to(default_layout()->sysconfdir, "foo.bar");
+
+  */
+  static char *relative_to(const char *dir, const char *file);
 };
 
 /**
