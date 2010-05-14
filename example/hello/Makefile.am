@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = hello.la
 hello_la_SOURCES = hello.c
-hello_la_LDFLAGS = -module
+hello_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/hello.so

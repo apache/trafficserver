@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = redirect-1.la
 redirect_1_la_SOURCES = redirect-1.c
-redirect_1_la_LDFLAGS = -module
+redirect_1_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/redirect-1.so

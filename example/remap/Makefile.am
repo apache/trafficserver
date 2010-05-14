@@ -18,7 +18,7 @@ CXXFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = remap.la
 remap_la_SOURCES = remap.cc
-remap_la_LDFLAGS = -module
+remap_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/remap.so

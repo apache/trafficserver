@@ -28,13 +28,40 @@
 # -----------------------------------------------------------------------------
 # 1. INITIALIZATION
 
-AC_INIT([Apache Traffic Server], [2.1.0-unstable], [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
+# These first two version numbers are updated automatically on each release.
+# Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
+# Version string is in the form of MAJOR.MINOR.MICRO[sufix]
+#
+m4_define([ATS_VERSION_S],[2.1.0-unstable])
+m4_define([ATS_VERSION_N],[2001000])
+
+AC_INIT([Apache Traffic Server], ATS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([tar-ustar -Wall -Werror foreign no-installinfo no-installman 1.9.2])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([m4])
 AM_CONFIG_HEADER([config.h])
+
+# Libtool versioning uses different conventions on different
+# platforms.  At least on FreeBSD, libtool uses an overly complex
+# convention that attempts to solve problems that most people just
+# don't have and which just causes confusion for most end users.
+#
+ATS_VERSION_MAJOR=$((ATS_VERSION_N() / 1000000 ))
+ATS_VERSION_MINOR=$(((ATS_VERSION_N() / 1000) % 1000 ))
+ATS_VERSION_MICRO=$((ATS_VERSION_N() % 1000 ))
+ATS_LIBTOOL_MAJOR=`echo $((${ATS_VERSION_MAJOR} + ${ATS_VERSION_MINOR}))`
+ATS_LIBTOOL_VERSION=$ATS_LIBTOOL_MAJOR:$ATS_VERSION_MICRO:$ATS_VERSION_MINOR
+ATS_VERSION_STRING=ATS_VERSION_S()
+ATS_VERSION_NUMBER=ATS_VERSION_N()
+
+#
+# Substitute the above version numbers into the various files below.
+#
+AC_SUBST(ATS_LIBTOOL_VERSION)
+AC_SUBST(ATS_VERSION_STRING)
+AC_SUBST(ATS_VERSION_NUMBER)
 
 #
 # Generate ./config.nice for reproducing runs of configure

@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = file-1.la
 file_1_la_SOURCES = file-1.c
-file_1_la_LDFLAGS = -module
+file_1_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/file-1.so

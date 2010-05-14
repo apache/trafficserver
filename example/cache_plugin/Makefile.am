@@ -18,7 +18,7 @@ CXXFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = cache_plugin.la
 cache_plugin_la_SOURCES = cache_plugin.cc
-cache_plugin_la_LDFLAGS = -module
+cache_plugin_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/cache_plugin.so

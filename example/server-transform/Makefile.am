@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = server-transform.la
 server_transform_la_SOURCES = server-transform.c
-server_transform_la_LDFLAGS = -module
+server_transform_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/server-transform.so

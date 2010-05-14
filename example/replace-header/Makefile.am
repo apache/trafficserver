@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = replace-header.la
 replace_header_la_SOURCES = replace-header.c
-replace_header_la_LDFLAGS = -module
+replace_header_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/replace-header.so

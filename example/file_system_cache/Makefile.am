@@ -17,8 +17,8 @@
 CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = diskcache.la
-diskcache_la_SOURCES = 
-diskcache_la_LDFLAGS = -module
+diskcache_la_SOURCES =
+diskcache_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/diskcache.so

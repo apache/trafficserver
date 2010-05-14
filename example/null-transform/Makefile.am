@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = null-transform.la
 null_transform_la_SOURCES = null-transform.c
-null_transform_la_LDFLAGS = -module
+null_transform_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/null-transform.so
