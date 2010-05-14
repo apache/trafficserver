@@ -121,7 +121,6 @@ CONFIG proxy.config.http.chunking_enabled INT 1
    #         has returned 1.1 before
 CONFIG proxy.config.http.send_http11_requests INT 1
 CONFIG proxy.config.http.share_server_sessions INT 1
-CONFIG proxy.config.http.ftp_enabled INT 0
 CONFIG proxy.config.http.record_heartbeat INT 0
 CONFIG proxy.config.http.origin_server_pipeline INT 1
 CONFIG proxy.config.http.user_agent_pipeline INT 8
