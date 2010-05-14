@@ -409,7 +409,7 @@ CONFIG proxy.config.log2.collation_secret STRING foobar
 CONFIG proxy.config.log2.collation_host_tagged INT 0
 CONFIG proxy.config.log2.collation_retry_sec INT 5
 CONFIG proxy.config.log2.rolling_enabled INT 1
-CONFIG proxy.config.log2.rolling_interval_sec INT 43200
+CONFIG proxy.config.log2.rolling_interval_sec INT 86400
 CONFIG proxy.config.log2.rolling_offset_hr INT 0
 CONFIG proxy.config.log2.rolling_size_mb INT 10
 CONFIG proxy.config.log2.auto_delete_rolled_files INT 1
