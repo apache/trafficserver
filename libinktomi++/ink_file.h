@@ -43,6 +43,28 @@
 
 #include <dirent.h>
 
+// Cause ink_filepath_merge to fail if addpath is above rootpath
+//
+#define INK_FILEPATH_NOTABOVEROOT   0x01
+// internal: Only meaningful with INK_FILEPATH_NOTABOVEROOT
+#define INK_FILEPATH_SECUREROOTTEST 0x02
+// Cause ink_filepath_merge to fail if addpath is above rootpath,
+// even given a rootpath /foo/bar and an addpath ../bar/bash
+//
+#define INK_FILEPATH_SECUREROOT     0x03
+// Fail ink_filepath_merge if the merged path is relative
+#define INK_FILEPATH_NOTRELATIVE    0x04
+// Fail ink_filepath_merge if the merged path is absolute
+#define INK_FILEPATH_NOTABSOLUTE    0x08
+// Return the file system's native path format (e.g. path delimiters
+// of ':' on MacOS9, '\' on Win32, etc.)
+#define INK_FILEPATH_NATIVE         0x10
+// Resolve the true case of existing directories and file elements
+// of addpath, (resolving any aliases on Win32) and append a proper
+// trailing slash if a directory
+//
+#define INK_FILEPATH_TRUENAME       0x20
+
 int ink_access_extension(char *base, char *ext, int amode);
 int ink_readdir_r(DIR * dirp, struct dirent *entry, struct dirent **pentry);
 DIR *ink_opendir(const char *path);
@@ -70,5 +92,7 @@ int ink_file_trylock(int fd, int type);
 
 int ink_file_fd_readline(int fd, int bufsz, char *buf);
 int ink_file_fd_writestring(int fd, const char *buf);
+int ink_filepath_merge(char *buf, int bufsz, const char *rootpath,
+                       const char *addpath, int flags);
 
 #endif // _ink_file_h_

@@ -312,3 +312,199 @@ ink_file_fd_writestring(int fd, const char *buf)
 
   return i;                     /* return chars written */
 }                               /* End ink_file_fd_writestring */
+
+int
+ink_filepath_merge(char *path, int pathsz, const char *rootpath,
+                   const char *addpath, int flags)
+{
+  size_t rootlen; // is the length of the src rootpath
+  size_t maxlen;  // maximum total path length
+  size_t keptlen; // is the length of the retained rootpath
+  size_t pathlen; // is the length of the result path
+  size_t seglen;  // is the end of the current segment
+  char curdir[PATH_MAX];
+
+  /* Treat null as an empty path.
+  */
+  if (!addpath)
+    addpath = "";
+
+  if (addpath[0] == '/') {
+    // If addpath is rooted, then rootpath is unused.
+    // Ths violates any INK_FILEPATH_SECUREROOTTEST and
+    // INK_FILEPATH_NOTABSOLUTE flags specified.
+    //
+    if (flags & INK_FILEPATH_SECUREROOTTEST)
+      return EACCES; // APR_EABOVEROOT;
+    if (flags & INK_FILEPATH_NOTABSOLUTE)
+      return EISDIR; // APR_EABSOLUTE;
+
+    // If INK_FILEPATH_NOTABOVEROOT wasn't specified,
+    // we won't test the root again, it's ignored.
+    // Waste no CPU retrieving the working path.
+    //
+    if (!rootpath && !(flags & INK_FILEPATH_NOTABOVEROOT))
+      rootpath = "";
+  }
+  else {
+    // If INK_FILEPATH_NOTABSOLUTE is specified, the caller
+    // requires a relative result.  If the rootpath is
+    // ommitted, we do not retrieve the working path,
+    // if rootpath was supplied as absolute then fail.
+    //
+    if (flags & INK_FILEPATH_NOTABSOLUTE) {
+      if (!rootpath)
+        rootpath = "";
+      else if (rootpath[0] == '/')
+        return EISDIR; //APR_EABSOLUTE;
+    }
+  }
+  if (!rootpath) {
+    // Start with the current working path.  This is bass akwards,
+    // but required since the compiler (at least vc) doesn't like
+    // passing the address of a char const* for a char** arg.
+    //
+    if (!getcwd(curdir, sizeof(curdir))) {
+      return errno;
+    }
+    rootpath = curdir;
+  }
+  rootlen = strlen(rootpath);
+  maxlen = rootlen + strlen(addpath) + 4; // 4 for slashes at start, after
+                                          // root, and at end, plus trailing
+                                          // null
+  if (maxlen > (size_t)pathsz) {
+    return E2BIG; //APR_ENAMETOOLONG;
+  }
+  if (addpath[0] == '/') {
+    // Ignore the given root path, strip off leading
+    // '/'s to a single leading '/' from the addpath,
+    // and leave addpath at the first non-'/' character.
+    //
+    keptlen = 0;
+    while (addpath[0] == '/')
+      ++addpath;
+    path[0] = '/';
+    pathlen = 1;
+  }
+  else {
+    // If both paths are relative, fail early
+    //
+    if (rootpath[0] != '/' && (flags & INK_FILEPATH_NOTRELATIVE))
+      return EBADF; //APR_ERELATIVE;
+
+    // Base the result path on the rootpath
+    //
+    keptlen = rootlen;
+    memcpy(path, rootpath, rootlen);
+
+    // Always '/' terminate the given root path
+    //
+    if (keptlen && path[keptlen - 1] != '/') {
+      path[keptlen++] = '/';
+    }
+    pathlen = keptlen;
+  }
+
+  while (*addpath) {
+    // Parse each segment, find the closing '/'
+    //
+    const char *next = addpath;
+    while (*next && (*next != '/')) {
+      ++next;
+    }
+    seglen = next - addpath;
+
+    if (seglen == 0 || (seglen == 1 && addpath[0] == '.')) {
+      // noop segment (/ or ./) so skip it
+      //
+    }
+    else if (seglen == 2 && addpath[0] == '.' && addpath[1] == '.') {
+      // backpath (../)
+      if (pathlen == 1 && path[0] == '/') {
+        // Attempt to move above root.  Always die if the
+        // INK_FILEPATH_SECUREROOTTEST flag is specified.
+        //
+        if (flags & INK_FILEPATH_SECUREROOTTEST) {
+          return EACCES; //APR_EABOVEROOT;
+        }
+
+        // Otherwise this is simply a noop, above root is root.
+        // Flag that rootpath was entirely replaced.
+        //
+        keptlen = 0;
+      }
+      else if (pathlen == 0
+               || (pathlen == 3
+               && !memcmp(path + pathlen - 3, "../", 3))
+               || (pathlen  > 3
+               && !memcmp(path + pathlen - 4, "/../", 4))) {
+        // Path is already backpathed or empty, if the
+        // INK_FILEPATH_SECUREROOTTEST.was given die now.
+        //
+        if (flags & INK_FILEPATH_SECUREROOTTEST) {
+          return EACCES; //APR_EABOVEROOT;
+        }
+
+        // Otherwise append another backpath, including
+        // trailing slash if present.
+        //
+        memcpy(path + pathlen, "../", *next ? 3 : 2);
+        pathlen += *next ? 3 : 2;
+      }
+      else {
+        // otherwise crop the prior segment
+        //
+        do {
+            --pathlen;
+        } while (pathlen && path[pathlen - 1] != '/');
+      }
+
+      // Now test if we are above where we started and back up
+      // the keptlen offset to reflect the added/altered path.
+      //
+      if (pathlen < keptlen) {
+        if (flags & INK_FILEPATH_SECUREROOTTEST) {
+          return EACCES; //APR_EABOVEROOT;
+        }
+        keptlen = pathlen;
+      }
+    }
+    else {
+        // An actual segment, append it to the destination path
+        //
+      if (*next) {
+        seglen++;
+      }
+      memcpy(path + pathlen, addpath, seglen);
+      pathlen += seglen;
+    }
+
+    // Skip over trailing slash to the next segment
+    //
+    if (*next) {
+      ++next;
+    }
+
+    addpath = next;
+  }
+  path[pathlen] = '\0';
+
+  // keptlen will be the rootlen unless the addpath contained
+  // backpath elements.  If so, and INK_FILEPATH_NOTABOVEROOT
+  // is specified (INK_FILEPATH_SECUREROOTTEST was caught above),
+  // compare the original root to assure the result path is
+  // still within given root path.
+  //
+  if ((flags & INK_FILEPATH_NOTABOVEROOT) && keptlen < rootlen) {
+    if (strncmp(rootpath, path, rootlen)) {
+      return EACCES; //APR_EABOVEROOT;
+    }
+    if (rootpath[rootlen - 1] != '/'
+        && path[rootlen] && path[rootlen] != '/') {
+      return EACCES; //APR_EABOVEROOT;
+    }
+  }
+
+  return 0;
+}
