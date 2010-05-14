@@ -314,6 +314,16 @@ CONFIG proxy.config.cache.permit.pinning INT 0
    # alternatively, set to a fixed value such as 20971520 (20MB)
 CONFIG proxy.config.cache.ram_cache.size LLONG -1
 CONFIG proxy.config.cache.ram_cache_cutoff LLONG 1048576
+   # Replacement algorithm
+   #  0 : Clocked Least Frequently Used by Size (CLFUS) w/optional compression
+   #  1 : LRU w/o optional compression - trivially simple
+CONFIG proxy.config.cache.ram_cache.algorithm INT 0
+   # Compress the content of the ram cache:
+   #  0 : no compression
+   #  1 : fastlz (extremely fast, relatively low compression)
+   #  2 : libz (moderate speed, reasonable compression)
+   #  3 : liblzma (very slow, high compression)
+CONFIG proxy.config.cache.ram_cache.compress INT 0
    # The maximum number of alternates that are allowed for any given URL.
    # It is not possible to strictly enforce this if the variable
    #   'proxy.config.cache.vary_on_user_agent' is set to 1.
