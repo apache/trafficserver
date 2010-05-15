@@ -1659,23 +1659,58 @@ change_uid_gid(const char *user)
   char *buf = (char *)xmalloc(buflen);
 #endif
 
-  // read the entry from the passwd file
-  getpwnam_r(user, &pwbuf, buf, buflen, &pwbufp);
-
-  // check to see if we found an entry
-  if (pwbufp == NULL) {
-    ink_fatal_die("Can't find entry in password file for user: %s", user);
+  if (geteuid()) {
+    // We cannot change user if not running as root
+    ink_fatal_die("Can't change user to : %s, because not running as root",
+                  user);
   }
-  // change the gid to passwd entry if we are not already running as that gid
-  if (getgid() != pwbuf.pw_gid) {
-    if (setgid(pwbuf.pw_gid) != 0) {
-      ink_fatal_die("Can't change group to user: %s, gid: %d", user, pwbuf.pw_gid);
+  else {
+    if (user[0] == '#') {
+      // numeric user notation
+      int uid = atoi(&user[1]);
+      if (uid == -1) {
+        // TODO: proxy.config.admin.user_id=#-1 is the same specifying no user?
+#if !defined(__GNUC__)
+        xfree(buf);
+#endif
+        return;
+      }
+      getpwuid_r((uid_t)uid, &pwbuf, buf, buflen, &pwbufp);
     }
-  }
-  // change the uid to passwd entry if we are not already running as that uid
-  if (getuid() != pwbuf.pw_uid) {
-    if (setuid(pwbuf.pw_uid) != 0) {
-      ink_fatal_die("Can't change uid to user: %s, uid: %d", user, pwbuf.pw_uid);
+    else {
+      // read the entry from the passwd file
+      getpwnam_r(user, &pwbuf, buf, buflen, &pwbufp);
+    }
+    // check to see if we found an entry
+    if (pwbufp == NULL) {
+      ink_fatal_die("Can't find entry in password file for user: %s", user);
+    }
+#if !defined (BIG_SECURITY_HOLE)
+    if (pwbuf.pw_uid == 0) {
+      ink_fatal_die("Trafficserver has not been designed to serve pages while\n"
+        "\trunning as root.  There are known race conditions that\n"
+        "\twill allow any local user to read any file on the system.\n"
+        "\tIf you still desire to serve pages as root then\n"
+        "\tadd -DBIG_SECURITY_HOLE to the CFLAGS env variable\n"
+        "\tand then rebuild the server.\n"
+        "\tIt is strongly suggested that you instead modify the\"
+        "\tproxy.config.admin.user_id  directive in your\n"
+        "\trecords.config file to list a non-root user.\n");
+    }
+#endif
+    // change the gid to passwd entry if we are not already running as that gid
+    if (getgid() != pwbuf.pw_gid) {
+      if (setgid(pwbuf.pw_gid) != 0) {
+        ink_fatal_die("Can't change group to user: %s, gid: %d",
+                      user, pwbuf.pw_gid);
+      }
+    }
+    // change the uid to passwd entry if we are not already running as that uid
+    if (getuid() != pwbuf.pw_uid) {
+      if (setuid(pwbuf.pw_uid) != 0) {
+        ink_fatal_die("Can't change uid to user: %s, uid: %d",
+                      user, pwbuf.pw_uid);
+      }
     }
   }
 #if !defined(__GNUC__)
@@ -1714,7 +1749,7 @@ void init_stat_collector()
         StatSystemV2::setNumStatsEstimate((uint32_t)num_stats_estimate);
     }
     StatSystemV2::init();
-    
+
     StatCollectorContinuation::setStatCommandPort(stat_collector_port);
     eventProcessor.schedule_every(NEW (new StatCollectorContinuation()),
                                   HRTIME_SECONDS(stat_collection_interval), ET_CALL);
