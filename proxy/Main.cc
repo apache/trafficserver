@@ -1660,9 +1660,10 @@ change_uid_gid(const char *user)
 #endif
 
   if (geteuid()) {
-    // We cannot change user if not running as root
-    ink_fatal_die("Can't change user to : %s, because not running as root",
-                  user);
+    // Not running as root
+    Debug("server",
+          "Can't change user to : %s because running with effective uid=%d",
+          user, geteuid());
   }
   else {
     if (user[0] == '#') {
@@ -2197,6 +2198,10 @@ main(int argc, char **argv)
                            strcmp(user, "#-1")) {
     change_uid_gid(user);
   }
+  Debug("server",
+        "running as uid=%u, gid=%u, effective uid=%u, gid=%u",
+        (unsigned)getuid(), (unsigned)getgid(),
+        (unsigned)geteuid(), (unsigned)getegid());
 
   this_thread()->execute();
 }
