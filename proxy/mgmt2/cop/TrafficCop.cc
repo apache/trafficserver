@@ -185,9 +185,11 @@ chown_file_to_user(const char *file, const char *user)
   if (user && *user) {
     if (*user == '#') {
       int uid = atoi(user + 1);
-      if (uid == -1)
-        uid = (int)getuid();
-      pwd = getpwuid((int)uid);
+      if (uid == -1) {
+        // XXX: Can this call hapen after setuid?
+        uid = (int)geteuid();
+      }
+      pwd = getpwuid((uid_t)uid);
     }
     else {
       pwd = getpwnam(user);
