@@ -37,7 +37,7 @@
 #include "PluginVC.h"
 #include "ReverseProxy.h"
 #include "RemapProcessor.h"
-
+#include "StatSystemV2.h"
 
 #ifdef USE_NCA
 #include "NcaProcessor.h"
@@ -343,6 +343,7 @@ server_response_hdr_bytes(0), server_response_body_bytes(0),
 client_response_hdr_bytes(0), client_response_body_bytes(0),
 pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
 hooks_set(0), cur_hook_id(INK_HTTP_LAST_HOOK), cur_hook(NULL),
+prev_hook_start_time(0), prev_hook_stats_enabled(false),
 cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false)
 {
   static int scatter_init = 0;
@@ -1453,6 +1454,25 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
+        // Do per plugin stats
+        // Increment calls made to plugin
+        hook->m_cont->statCallsMade(cur_hook_id);
+
+        // Stat time spent in previous plugin
+        INK64 curr_time = INKhrtime();
+        if(prev_hook_stats_enabled && prev_hook_start_time) {
+          INK64 time_in_plugin_ms = (curr_time - prev_hook_start_time)/1000000;
+          prev_hook_stats.inc(time_in_plugin_ms);
+          Debug("http", "[%b64d] Time spent in plugin %s = %b64d", 
+                sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
+        }
+
+        // store time and plugin info before invoking it
+        prev_hook_start_time = curr_time;
+        prev_hook_stats_enabled = hook->m_cont->isStatsEnabled();
+        if(prev_hook_stats_enabled)
+          prev_hook_stats = hook->m_cont->cont_time_stats[cur_hook_id];
+
         hook->invoke(INK_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
 
         if (plugin_lock) {
@@ -1527,6 +1547,20 @@ HttpSM::state_api_callout(int event, void *data)
   case API_RETURN_CONTINUE:
     if (t_state.api_next_action == HttpTransact::HTTP_API_SEND_REPONSE_HDR)
       do_redirect();
+
+    // Do per plugin stats
+    // Handle last plugin on current state
+    if(prev_hook_stats_enabled && prev_hook_start_time) {
+      INK64 time_in_plugin_ms = (INKhrtime() - prev_hook_start_time)/1000000;
+      Debug("http", "[%b64d] Last plugin : Time spent : %s %b64d", 
+            sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
+      prev_hook_stats.inc(time_in_plugin_ms);
+    }
+    
+    // Get ready for next state
+    prev_hook_stats_enabled = false;
+    prev_hook_start_time = 0;
+
     handle_api_return();
     break;
   case API_RETURN_DEFERED_CLOSE:

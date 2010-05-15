@@ -40,6 +40,7 @@
 #include "HttpTunnel.h"
 #include "InkAPIInternal.h"
 #include "StatSystem.h"
+#include "StatTypes.h"
 #include "HttpClientSession.h"
 //#include "AuthHttpAdapter.h"
 
@@ -495,6 +496,14 @@ public:
 protected:
   INKHttpHookID cur_hook_id;
   APIHook *cur_hook;
+
+  //
+  // Continuation time keeper
+  INK64 prev_hook_start_time;
+
+  bool prev_hook_stats_enabled;
+  HistogramStats prev_hook_stats;
+  
   int cur_hooks;
   HttpApiState_t callout_state;
 

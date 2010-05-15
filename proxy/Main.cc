@@ -102,6 +102,8 @@ extern "C" int plock(int);
 
 #include "XmlUtils.h"
 
+#include "StatSystemV2.h"
+
 #ifdef HAVE_PROFILER
 #include <google/profiler.h>
 #endif
@@ -1681,6 +1683,42 @@ change_uid_gid(const char *user)
 #endif
 }
 
+void init_stat_collector()
+{
+    static int stat_collection_interval;
+    static int stat_collector_port;
+    static int max_stats_allowed = 0;
+    static int num_stats_estimate = 0;
+
+    static int temp = 0;
+    // Read config variables
+    TS_ReadConfigInteger(stat_collection_interval, "proxy.config.stat_collector.interval");
+    TS_ReadConfigInteger(stat_collector_port, "proxy.config.stat_collector.port");
+    TS_ReadConfigInteger(max_stats_allowed, "proxy.config.stat_systemV2.max_stats_allowed");
+    TS_ReadConfigInteger(num_stats_estimate, "proxy.config.stat_systemV2.num_stats_estimate");
+    TS_ReadConfigInteger(temp, "proxy.config.cache.threads_per_disk");
+
+    // Set to default if not defined in config file
+    if(!stat_collector_port) {
+        stat_collector_port = 8091;
+    }
+    if(!stat_collection_interval) {
+        stat_collection_interval = 600;
+    }
+
+    if(max_stats_allowed) {
+        StatSystemV2::setMaxStatsAllowed((uint32_t)max_stats_allowed);
+    }
+
+    if(num_stats_estimate) {
+        StatSystemV2::setNumStatsEstimate((uint32_t)num_stats_estimate);
+    }
+    StatSystemV2::init();
+    
+    StatCollectorContinuation::setStatCommandPort(stat_collector_port);
+    eventProcessor.schedule_every(NEW (new StatCollectorContinuation()),
+                                  HRTIME_SECONDS(stat_collection_interval), ET_CALL);
+}
 
 
 //
@@ -1889,6 +1927,9 @@ main(int argc, char **argv)
   ink_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   eventProcessor.start(num_of_net_threads);
+
+  // Must be called after starting event processor
+  init_stat_collector();
 
   int use_separate_thread = 0;
   int num_remap_threads = 1;

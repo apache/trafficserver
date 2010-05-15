@@ -30,6 +30,7 @@
 #include "I_PriorityEventQueue.h"
 #include "I_ProxyAllocator.h"
 #include "I_ProtectedQueue.h"
+#include <vector>
 
 #define PER_THREAD_DATA (1024*1024)
 
@@ -346,6 +347,9 @@ public:
   ThreadType tt;
   Event *oneevent;              // For dedicated event thread
   ink_sem *eventsem;            // For dedicated event thread
+
+  std::vector<long long> thread_stats;
+  ProxyMutex *thread_stats_mutex;
 };
 
 /**

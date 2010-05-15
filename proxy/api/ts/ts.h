@@ -31,6 +31,7 @@
 #define __INK_API_H__
 
 #include <sys/types.h>
+#include <stdint.h>
 
 #define inkapi
 #define inkexp
@@ -2453,6 +2454,17 @@ extern "C"
   inkapi INKStat INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char *the_name, INKStatTypes the_type);
   inkapi INKStat INKStatCoupledLocalAdd(INKCoupledStat local_copy, const char *the_name, INKStatTypes the_type);
   inkapi INKReturnCode INKStatsCoupledUpdate(INKCoupledStat local_copy);
+
+  /* new stat system */
+  inkapi INKReturnCode     INKStatCreateV2(const char *name, uint32_t *stat_num);
+  inkapi INKReturnCode     INKStatIncrementV2(uint32_t stat_num, INK64 inc_by);
+  inkapi INKReturnCode     INKStatIncrementByNameV2(const char *stat_name, INK64 inc_by);
+  inkapi INKReturnCode     INKStatDecrementV2(uint32_t stat_num, INK64 dec_by);
+  inkapi INKReturnCode     INKStatDecrementByNameV2(const char *stat_name, INK64 dec_by);
+  inkapi INKReturnCode     INKStatGetCurrentV2(uint32_t stat_num, INK64 *stat_val);
+  inkapi INKReturnCode     INKStatGetCurrentByNameV2(const char *stat_name, INK64 *stat_val);
+  inkapi INKReturnCode     INKStatGetV2(uint32_t stat_num, INK64 *stat_val);
+  inkapi INKReturnCode     INKStatGetByNameV2(const char *stat_name, INK64 *stat_val);
 
   // --------------------------------------------------------------------------
   // tracing api

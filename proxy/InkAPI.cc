@@ -57,6 +57,8 @@
 //#include "MixtAPIInternal.h"
 #include "api/ts/InkAPIaaa.h"
 #include "FetchSM.h"
+#include "StatSystemV2.h"
+#include "HttpDebugNames.h"
 
 /****************************************************************
  *  IMPORTANT - READ ME
@@ -1039,6 +1041,31 @@ INKContInternal::handle_event_count(int event)
 
     m_deletable = m_deletable && (val == 1);
   }
+}
+
+void INKContInternal::setName(const char *name) {
+    cont_name = name;
+    
+    cont_time_stats.resize((int)(INK_HTTP_LAST_HOOK + 1));
+    cont_calls.resize((int)(INK_HTTP_LAST_HOOK + 1));
+    
+    for(INKHttpHookID cur_hook_id = INK_HTTP_READ_REQUEST_HDR_HOOK; cur_hook_id <= INK_HTTP_LAST_HOOK; cur_hook_id = INKHttpHookID(cur_hook_id+1)) {
+        std::string stat_base = "cont." + cont_name + "." + HttpDebugNames::get_api_hook_name(cur_hook_id);
+        cont_time_stats[cur_hook_id].init(stat_base + ".time_spent", 64000);
+        
+        StatSystemV2::registerStat((stat_base + ".calls").c_str(), &cont_calls[cur_hook_id]);
+    }
+    stats_enabled = true;
+}
+
+const char *INKContInternal::getName() {
+    return cont_name.c_str();
+}
+
+void INKContInternal::statCallsMade(INKHttpHookID hook_id) {
+    if(cont_name == "")
+        return;
+    StatSystemV2::increment(cont_calls[hook_id]);
 }
 
 int
@@ -7187,6 +7214,90 @@ INKStatIncrement(INKStat the_stat)
   return INK_SUCCESS;
 }
 
+INKReturnCode
+INKStatCreateV2(
+    const char *the_name,
+    uint32_t *stat_num)
+{
+    if(StatSystemV2::registerStat(the_name, stat_num)) {
+        return INK_SUCCESS;
+    }
+    return INK_ERROR;
+}
+
+INKReturnCode
+INKStatIncrementV2(
+    uint32_t stat_num,
+    INK64 inc_by)
+{
+    if(StatSystemV2::increment(stat_num, inc_by)) {
+        return INK_SUCCESS;
+    }
+    return INK_ERROR;
+}
+
+INKReturnCode
+INKStatIncrementByNameV2(
+    const char *stat_name,
+    INK64 inc_by)
+{
+    if(StatSystemV2::increment(stat_name, inc_by)) {
+        return INK_SUCCESS;
+    }
+    return INK_ERROR;
+}
+
+INKReturnCode
+INKStatDecrementV2(
+    uint32_t stat_num,
+    INK64 dec_by)
+{
+    return INKStatIncrementV2(stat_num, (-1)*dec_by);
+}
+
+INKReturnCode
+INKStatDecrementByNameV2(
+    const char *stat_name,
+    INK64 dec_by)
+{
+    return INKStatIncrementByNameV2(stat_name, (-1)*dec_by);
+}
+
+INKReturnCode
+INKStatGetCurrentV2(
+    uint32_t stat_num, INK64 *stat_val)
+{
+    if(StatSystemV2::get_current(stat_num, stat_val))
+        return INK_SUCCESS;
+    return INK_ERROR;
+}
+
+INKReturnCode
+INKStatGetCurrentByNameV2(
+    const char *stat_name, INK64 *stat_val)
+{
+    if(StatSystemV2::get_current(stat_name, stat_val))
+        return INK_SUCCESS;
+    return INK_ERROR;
+}
+
+INKReturnCode
+INKStatGetV2(
+    uint32_t stat_num, INK64 *stat_val)
+{
+    if(StatSystemV2::get(stat_num, stat_val))
+        return INK_SUCCESS;
+    return INK_ERROR;
+}
+
+INKReturnCode
+INKStatGetByNameV2(
+    const char *stat_name, INK64 *stat_val)
+{
+    if(StatSystemV2::get(stat_name, stat_val))
+        return INK_SUCCESS;
+    return INK_ERROR;
+}
 
 INKReturnCode
 INKStatIntGet(INKStat the_stat, INK64 * value)

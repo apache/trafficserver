@@ -34,6 +34,10 @@
 #include "P_Net.h"
 #endif
 
+#include <string>
+#include <vector>
+#include "StatTypes.h"
+
 enum INKContInternalMagic_t
 {
   INKCONT_INTERN_MAGIC_ALIVE = 0x00009631,
@@ -51,6 +55,10 @@ public:
 
   void handle_event_count(int event);
   int handle_event(int event, void *edata);
+  void setName(const char *name);
+  const char *getName();
+  void statCallsMade(INKHttpHookID hook_id);
+  bool isStatsEnabled() { return stats_enabled; }
 
 public:
   void *mdata;
@@ -61,6 +69,12 @@ public:
   int m_deleted;
   //INKqa07670: Nokia memory leak bug fix
   INKContInternalMagic_t m_free_magic;
+
+  std::string cont_name;
+  std::vector<HistogramStats> cont_time_stats;
+  std::vector<uint32_t> cont_calls;
+  bool stats_enabled;
+
 };
 
 
