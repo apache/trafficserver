@@ -1660,6 +1660,10 @@ change_uid_gid(const char *user)
 #endif
 
   if (geteuid()) {
+    if (strcmp(user, "#-1") == 0) {
+      // User was not specified
+      return;
+    }
     // We cannot change user if not running as root
     ink_fatal_die("Can't change user to : %s, because not running as root",
                   user);
