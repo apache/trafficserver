@@ -180,7 +180,19 @@ cop_log(int priority, const char *format, ...)
 void
 chown_file_to_user(const char *file, const char *user)
 {
-  struct passwd *pwd = getpwnam(user);
+  struct passwd *pwd = NULL;
+
+  if (user && *user) {
+    if (*user == '#') {
+      int uid = atoi(user + 1);
+      if (uid == -1)
+        uid = (int)getuid();
+      pwd = getpwuid((int)uid);
+    }
+    else {
+      pwd = getpwnam(user);
+    }
+  }
   if (pwd) {
     if (chown(file, pwd->pw_uid, pwd->pw_gid) < 0) {
       //cop_log(COP_FATAL, "cop couldn't chown the  file: %s\n", file);
