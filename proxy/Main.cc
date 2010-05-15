@@ -1660,10 +1660,6 @@ change_uid_gid(const char *user)
 #endif
 
   if (geteuid()) {
-    if (strcmp(user, "#-1") == 0) {
-      // User was not specified
-      return;
-    }
     // We cannot change user if not running as root
     ink_fatal_die("Can't change user to : %s, because not running as root",
                   user);
@@ -1671,15 +1667,8 @@ change_uid_gid(const char *user)
   else {
     if (user[0] == '#') {
       // numeric user notation
-      int uid = atoi(&user[1]);
-      if (uid == -1) {
-        // TODO: proxy.config.admin.user_id=#-1 is the same specifying no user?
-#if !defined(__GNUC__)
-        xfree(buf);
-#endif
-        return;
-      }
-      getpwuid_r((uid_t)uid, &pwbuf, buf, buflen, &pwbufp);
+      uid_t uid = (uid_t)atoi(&user[1]);
+      getpwuid_r(uid, &pwbuf, buf, buflen, &pwbufp);
     }
     else {
       // read the entry from the passwd file
@@ -2202,7 +2191,10 @@ main(int argc, char **argv)
 
   // change the user of the process
   char user[_POSIX_LOGIN_NAME_MAX] = "\0";
-  if ((TS_ReadConfigString(user, "proxy.config.admin.user_id", sizeof(user)) == REC_ERR_OKAY) && user[0] != '\0') {
+  if ((TS_ReadConfigString(user, "proxy.config.admin.user_id",
+                           sizeof(user)) == REC_ERR_OKAY) &&
+                           user[0] != '\0' &&
+                           strcmp(user, "#-1")) {
     change_uid_gid(user);
   }
 
