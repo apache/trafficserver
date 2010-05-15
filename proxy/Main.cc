@@ -1693,7 +1693,7 @@ change_uid_gid(const char *user)
         "\tIf you still desire to serve pages as root then\n"
         "\tadd -DBIG_SECURITY_HOLE to the CFLAGS env variable\n"
         "\tand then rebuild the server.\n"
-        "\tIt is strongly suggested that you instead modify the\"
+        "\tIt is strongly suggested that you instead modify the\n"
         "\tproxy.config.admin.user_id  directive in your\n"
         "\trecords.config file to list a non-root user.\n");
     }
