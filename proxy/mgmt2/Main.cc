@@ -1476,7 +1476,16 @@ runAsUser(char *userName)
     struct passwd passwdInfo;
     struct passwd *ppasswd = NULL;
     result = NULL;
-    int res = getpwnam_r(&userName[0], &passwdInfo, buf, bufSize, &ppasswd);
+    int res;
+    if (*userName == '#') {
+      int uuid = atoi(userName + 1);
+      if (uuid == -1)
+        uuid = (int)uid;
+      res = getpwuid_r((uid_t)uuid, &passwdInfo, buf, bufSize, &ppasswd);
+    }
+    else {
+      res = getpwnam_r(&userName[0], &passwdInfo, buf, bufSize, &ppasswd);
+    }
 
     if (!res && ppasswd) {
       result = ppasswd;
