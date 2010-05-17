@@ -144,7 +144,7 @@ traffic_server_SOURCES = \
   StatSystem.cc \
   StatSystem.h \
   StatSystemV2.cc \
-  StatTypes.cc \
+  StatAPITypes.cc \
   TestHook.cc \
   Transform.cc \
   Transform.h \
@@ -194,7 +194,7 @@ traffic_logcat_LDADD = \
   ControlMatcher.o CacheControl.o  \
   StatSystem.o \
   StatSystemV2.o \
-  StatTypes.o \
+  StatAPITypes.o \
   CacheInspectorAllow.o \
   ReverseProxy.o \
   ProxyConfig.o \
@@ -257,7 +257,7 @@ traffic_logstats_LDADD = \
   CacheControl.o  \
   StatSystem.o \
   StatSystemV2.o \
-  StatTypes.o \
+  StatAPITypes.o \
   CacheInspectorAllow.o \
   ReverseProxy.o \
   ProxyConfig.o \
@@ -321,7 +321,7 @@ traffic_sac_LDADD = \
   CacheControl.o \
   StatSystem.o \
   StatSystemV2.o \
-  StatTypes.o \
+  StatAPITypes.o \
   CacheInspectorAllow.o \
   ReverseProxy.o \
   ProxyConfig.o \
@@ -388,7 +388,7 @@ libTrafficServerStandalone_a_SOURCES = \
   StatPages.cc \
   StatSystem.cc \
   StatSystemV2.cc \
-  StatTypes.cc \
+  StatAPITypes.cc \
   AbstractBuffer.cc \
   Initialize.cc
 

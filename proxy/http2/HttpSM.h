@@ -40,7 +40,7 @@
 #include "HttpTunnel.h"
 #include "InkAPIInternal.h"
 #include "StatSystem.h"
-#include "StatTypes.h"
+#include "StatAPITypes.h"
 #include "HttpClientSession.h"
 //#include "AuthHttpAdapter.h"
 

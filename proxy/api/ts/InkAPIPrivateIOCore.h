@@ -36,7 +36,7 @@
 
 #include <string>
 #include <vector>
-#include "StatTypes.h"
+#include "StatAPITypes.h"
 
 enum INKContInternalMagic_t
 {
