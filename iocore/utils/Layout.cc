@@ -144,6 +144,7 @@ Layout::Layout(const char *_prefix)
   sharedstatedir = layout_relative(prefix, SHAREDSTATEDIR);
   mandir = layout_relative(prefix, MANDIR);
   infodir = layout_relative(prefix, INFODIR);
+  cachedir = layout_relative(prefix, CACHEDIR);
 
 #ifdef DEBUG
 // TODO: Use a propper Debug logging
@@ -165,6 +166,7 @@ Layout::Layout(const char *_prefix)
   PrintSTR(sharedstatedir);
   PrintSTR(mandir);
   PrintSTR(infodir);
+  PrintSTR(cachedir);
 #endif
 
 }
@@ -187,5 +189,6 @@ Layout::~Layout()
   SafeFree(sharedstatedir);
   SafeFree(mandir);
   SafeFree(infodir);
+  SafeFree(cachedir);
 }
 

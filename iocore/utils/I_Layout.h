@@ -51,6 +51,7 @@ struct Layout
   char *sharedstatedir;
   char *mandir;
   char *infodir;
+  char *cachedir;
 
   Layout(const char *prefix = 0);
    ~Layout();

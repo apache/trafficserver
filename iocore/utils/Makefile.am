@@ -21,18 +21,19 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/eventsystem \
   -I$(top_srcdir)/libinktomi++ \
   -DPREFIX=\"$(prefix)\" \
-  -DEXEC_PREFIX=\"$(exec_prefix)\" \
-  -DBINDIR=\"$(bindir)\" \
-  -DSBINDIR=\"$(sbindir)\" \
-  -DSYSCONFDIR=\"$(sysconfdir)\" \
-  -DDATADIR=\"$(datadir)\" \
-  -DINCLUDEDIR=\"$(includedir)\" \
-  -DLIBDIR=\"$(libdir)\" \
-  -DLIBEXECDIR=\"$(libexecdir)\" \
-  -DLOCALSTATEDIR=\"$(localstatedir)\" \
-  -DSHAREDSTATEDIR=\"$(sharedstatedir)\" \
-  -DMANDIR=\"$(mandir)\" \
-  -DINFODIR=\"$(infodir)\"
+  -DEXEC_PREFIX=\"$(rel_exec_prefix)\" \
+  -DBINDIR=\"$(rel_bindir)\" \
+  -DSBINDIR=\"$(rel_sbindir)\" \
+  -DSYSCONFDIR=\"$(rel_sysconfdir)\" \
+  -DDATADIR=\"$(rel_datadir)\" \
+  -DINCLUDEDIR=\"$(rel_includedir)\" \
+  -DLIBDIR=\"$(rel_libdir)\" \
+  -DLIBEXECDIR=\"$(rel_libexecdir)\" \
+  -DLOCALSTATEDIR=\"$(rel_localstatedir)\" \
+  -DSHAREDSTATEDIR=\"$(rel_sharedstatedir)\" \
+  -DMANDIR=\"$(rel_mandir)\" \
+  -DCACHEDIR=\"$(rel_cachedir)\" \
+  -DINFODIR=\"$(rel_infodir)\"
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
 
