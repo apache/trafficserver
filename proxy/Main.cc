@@ -1783,7 +1783,7 @@ main(int argc, char **argv)
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
   chdir_root(); // change directory to the install root of traffic server.
 
   process_args(argument_descriptions, n_argument_descriptions, argv);

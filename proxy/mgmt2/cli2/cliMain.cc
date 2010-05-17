@@ -58,7 +58,7 @@ main(int argc, char *argv[])
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
 
   // Argument description table used to describe how to parse command line args,
   // see 'ink_args.h' for meanings of the various fields

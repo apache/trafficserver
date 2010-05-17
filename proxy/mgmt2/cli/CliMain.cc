@@ -321,7 +321,7 @@ main(int argc, char **argv)
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
   clientCLI *cli = new clientCLI();
 
 /* Argument description table used to describe how to parse command line args, */

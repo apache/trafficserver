@@ -81,7 +81,7 @@ main(int argc, char **argv)
   char binary[1024], tinterface[1024], interface[1024], vip[1024];
 
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
 
   if (argc != 6 || (argc != 2 && strstr(argv[1], "help"))) {
     ink_fputln(stderr, "[vip_config] Usage incorrect(1)");

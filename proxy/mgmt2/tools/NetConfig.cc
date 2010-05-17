@@ -2977,7 +2977,7 @@ main(int argc, char **argv)
 
   fun_no = atoi(argv[1]);
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
 
   switch (fun_no) {
   case 0:

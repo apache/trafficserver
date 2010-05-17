@@ -487,7 +487,7 @@ int
 main(int argc, char **argv)
 {
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
   // change the directory to the "root" directory
   chdir_root();
 

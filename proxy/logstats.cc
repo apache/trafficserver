@@ -1768,7 +1768,7 @@ main(int argc, char *argv[])
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
   // Initialize some globals
   memset(&totals, 0, sizeof(totals));   // Make sure counters are zero
   // Initialize "elapsed" field

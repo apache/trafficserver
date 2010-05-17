@@ -284,10 +284,10 @@ int
 main(int argc, char **argv)
 {
 
+  // Before accessing file system initialize Layout engine
+  Layout::create();
   // Process command line arguments and dump into variables
   process_args(argument_descriptions, n_argument_descriptions, argv);
-  // Before accessing file system initialize Layout engine
-  create_default_layout();
 
   init();
 

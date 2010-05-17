@@ -99,7 +99,7 @@ main(int argc, char *argv[])
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
   // take care of command-line arguments
   //
   snprintf(configDirectoryType, sizeof(configDirectoryType), "S%d", PATH_NAME_MAX - 1);

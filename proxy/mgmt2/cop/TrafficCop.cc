@@ -1931,7 +1931,7 @@ main(int argc, char *argv[])
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-stop") == 0) {

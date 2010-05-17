@@ -79,7 +79,7 @@ main(int argc, char *argv[])
   }
   buffer[0] = 0;
   // Before accessing file system initialize Layout engine
-  create_default_layout();
+  Layout::create();
 
   if ((env_path = getenv("TS_ROOT"))) {
     strncpy(buffer, env_path, sizeof(buffer) - 1);
