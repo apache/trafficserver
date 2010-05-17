@@ -371,6 +371,7 @@ traffic_sac_LDADD = \
 
 traffic_cust_log_fmt_cnvrt_SOURCES = cust_log_fmt_cnvrt.cc
 traffic_cust_log_fmt_cnvrt_LDADD = \
+  $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ \
   @LIBTCL@ @LIBRT@ @LIBICONV@ @LIBDL@ @LIBEXECINFO@

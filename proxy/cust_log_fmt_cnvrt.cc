@@ -35,6 +35,7 @@ using namespace std;
 #include <unistd.h>
 #include "SimpleTokenizer.h"
 #include "ink_args.h"
+#include "I_Layout.h"
 #include "I_Version.h"
 #include "ink_assert.h"
 
@@ -498,6 +499,8 @@ main(int argc, char **argv)
   appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
   // process command-line arguments
   //
   output_file[0] = 0;

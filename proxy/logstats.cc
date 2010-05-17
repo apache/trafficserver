@@ -21,7 +21,11 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
+#include "ink_file.h"
 #include "ink_unused.h"
+#include "I_Layout.h"
+#include "I_Version.h"
 
 // Includes and namespaces etc.
 #include "LogStandalone.cc"
@@ -1763,6 +1767,8 @@ main(int argc, char *argv[])
   appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
   // Initialize some globals
   memset(&totals, 0, sizeof(totals));   // Make sure counters are zero
   // Initialize "elapsed" field

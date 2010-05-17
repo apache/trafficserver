@@ -21,10 +21,14 @@
   limitations under the License.
  */
 
+#include "ink_config.h"
+#include "ink_file.h"
 #include "ink_unused.h"
+#include "I_Layout.h"
+#include "I_Version.h"
 
-#define PROGRAM_NAME		"traffic_logcat"
-#define MAX_LOGBUFFER_SIZE	65536
+#define PROGRAM_NAME        "traffic_logcat"
+#define MAX_LOGBUFFER_SIZE  65536
 
 #include <poll.h>
 
@@ -243,6 +247,8 @@ main(int argc, char *argv[])
   appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
   // process command-line arguments
   //
   output_file[0] = 0;
