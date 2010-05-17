@@ -31,7 +31,6 @@
 #ifndef _I_Layout_h
 #define _I_Layout_h
 
-
 /**
   The Layout is a simple place holder for the distribution layout.
 
@@ -58,31 +57,49 @@ struct Layout
 
   /**
    Return file path relative to Layout->prefix
-   Memory is allocated, so use free() when no longer needed
+   Memory is allocated, so use xfree() when no longer needed
 
   */
   char *relative(const char *file);
 
   /**
+   Return file path relative to Layout->prefix
+   Store the path to buf. The buf should be large eough to store
+   PATH_MAX characters
+
+   */
+  void relative(char *buf, size_t bufsz, const char *file);
+
+  /**
    Return file path relative to dir
-   Memory is allocated, so use free() when no longer needed
+   Memory is allocated, so use xfree() when no longer needed
    Example usage: Layout::relative_to(default_layout()->sysconfdir, "foo.bar");
 
   */
   static char *relative_to(const char *dir, const char *file);
+
+  /**
+   Return file path relative to dir
+   Store the path to buf. The buf should be large eough to store
+   PATH_MAX characters
+   Example usage: Layout::relative_to(default_layout()->sysconfdir, "foo.bar");
+
+  */
+  static void relative_to(char *buf, size_t bufsz, const char *dir, const char *file);
+
+  /**
+   Creates a Layout Object with the given prefix.  If no
+   prefix is given, the prefix defaults to the one specified
+   at the compile time.
+
+  */
+  static void create(const char *prefix = 0);
+
+  /**
+   Returns the Layout object created by create_default_layout().
+
+  */
+  static Layout *get();
 };
-
-/**
-  Creates a Layout Object with the given prefix.  If no
-  prefix is given, the prefix defaults to the one specified
-  at the compile time.
-
- */
-void create_default_layout(const char *prefix = 0);
-
-/**
-  Returns the Layout object created by create_default_layout().
- */
-Layout *default_layout();
 
 #endif

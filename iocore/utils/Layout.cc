@@ -29,7 +29,7 @@
 static Layout *layout = NULL;
 
 Layout *
-default_layout()
+Layout::get()
 {
   if (layout == NULL) {
     ink_assert("need to call create_default_layout before accessing" "default_layout()");
@@ -38,9 +38,11 @@ default_layout()
 }
 
 void
-create_default_layout(const char *prefix)
+Layout::create(const char *prefix)
 {
-  layout = NEW(new Layout(prefix));
+  if (layout == NULL) {
+    layout = NEW(new Layout(prefix));
+  }
 }
 
 static char *
@@ -72,10 +74,44 @@ Layout::relative(const char *file)
   return layout_relative(prefix, file);
 }
 
+void
+Layout::relative(char *buf, size_t bufsz, const char *file)
+{
+  char *path = layout_relative(prefix, file);
+  if (path) {
+    size_t path_len = strlen(path) + 1;
+    if (path_len > bufsz) {
+      ink_error("Provided buffer is too small: %d, required %d\n",
+                bufsz, path_len);
+    }
+    else {
+      strcpy(buf, path);
+    }
+    xfree(path);
+  }
+}
+
 char *
 Layout::relative_to(const char *dir, const char *file)
 {
   return layout_relative(dir, file);
+}
+
+void
+Layout::relative_to(char *buf, size_t bufsz, const char *dir, const char *file)
+{
+  char *path = layout_relative(dir, file);
+  if (path) {
+    size_t path_len = strlen(path) + 1;
+    if (path_len > bufsz) {
+      ink_error("Provided buffer is too small: %d, required %d\n",
+                bufsz, path_len);
+    }
+    else {
+      strcpy(buf, path);
+    }
+    xfree(path);
+  }
 }
 
 Layout::Layout(const char *_prefix)
