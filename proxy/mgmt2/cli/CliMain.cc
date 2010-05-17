@@ -32,6 +32,7 @@
 #include "inktomi++.h"
 
 #include "ink_args.h"
+#include "I_Layout.h"
 #include "I_Version.h"
 #include "Tokenizer.h"
 #include "TextBuffer.h"
@@ -319,6 +320,8 @@ main(int argc, char **argv)
   appVersionInfo.setup(PACKAGE_NAME,"traffic_line", PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
   clientCLI *cli = new clientCLI();
 
 /* Argument description table used to describe how to parse command line args, */
@@ -363,7 +366,7 @@ main(int argc, char **argv)
 
   // check for the version number request
   if (version_flag) {
-    fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
+    ink_fputln(stderr, appVersionInfo.FullVersionInfoStr);
     exit(0);
   }
 
