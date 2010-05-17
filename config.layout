@@ -1,0 +1,128 @@
+##
+##  config.layout -- Pre-defined Installation Path Layouts
+##
+##  Hints:
+##  - layouts can be loaded with configure's --enable-layout=ID option
+##  - when no --enable-layout option is given, the default layout is
+##    `Trafficserver'
+##  - a trailing plus character (`+') on paths is replaced with a
+##    `/<target>' suffix where <target> is currently hardcoded to
+##    'trafficserver'.
+##    (This may become a configurable parameter at some point.)
+##
+
+#   Classical Trafficserver path layout.
+<Layout Trafficserver>
+    prefix:        /usr/local/trafficserver
+    exec_prefix:   ${prefix}
+    bindir:        ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/bin
+    libdir:        ${exec_prefix}/lib
+    libexecdir:    ${exec_prefix}/modules
+    mandir:        ${prefix}/man
+    sysconfdir:    ${prefix}/conf
+    datadir:       ${prefix}
+    installbuilddir: ${datadir}/build
+    includedir:    ${prefix}/include
+    localstatedir: ${prefix}
+    runtimedir:    ${localstatedir}/logs
+    logdir:        ${localstatedir}/logs
+    cachedir:      ${localstatedir}/cache
+</Layout>
+
+#   GNU standards conforming path layout.
+#   See FSF's GNU project `make-stds' document for details.
+<Layout GNU>
+    prefix:        /usr/local
+    exec_prefix:   ${prefix}
+    bindir:        ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/sbin
+    libdir:        ${exec_prefix}/lib
+    libexecdir:    ${exec_prefix}/libexec
+    mandir:        ${prefix}/man
+    sysconfdir:    ${prefix}/etc+
+    datadir:       ${prefix}/share+
+    installbuilddir: ${datadir}/build
+    includedir:    ${prefix}/include+
+    localstatedir: ${prefix}/var+
+    runtimedir:    ${localstatedir}/run
+    logdir:        ${localstatedir}/log
+    cachedir:      ${localstatedir}/cache
+</Layout>
+
+#   Mac OS X Server (Rhapsody)
+<Layout Mac OS X Server>
+    prefix:        /Local/Library/TrafficServer
+    exec_prefix:   /usr
+    bindir:        ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/sbin
+    libdir:        ${exec_prefix}/lib
+    libexecdir:    /System/Library/TrafficServer/Modules
+    mandir:        ${exec_prefix}/share/man
+    sysconfdir:    ${prefix}/Configuration
+    datadir:       ${prefix}
+    installbuilddir: /System/Library/TrafficServer/Build
+    includedir:    /System/Library/Frameworks/TrafficServer.framework/Versions/2.0/Headers
+    localstatedir: /var
+    runtimedir:    ${prefix}/Logs
+    logdir:        ${prefix}/Logs
+    cachedir:      ${prefix}/TrafficServerCache
+</Layout>
+
+#   Darwin/Mac OS Layout
+<Layout Darwin>
+    prefix:        /usr
+    exec_prefix:   ${prefix}
+    bindir:        ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/sbin
+    libdir:        ${exec_prefix}/lib
+    libexecdir:    ${exec_prefix}/libexec+
+    mandir:        ${prefix}/share/man
+    datadir:       /Library/TrafficServer
+    sysconfdir:    /etc+
+    installbuilddir: ${prefix}/share/trafficserver/build
+    includedir:    ${prefix}/include+
+    localstatedir: /var
+    runtimedir:    ${localstatedir}/run
+    logdir:        ${localstatedir}/log+
+    cachedir:      ${runtimedir}/cache
+</Layout>
+
+#   According to the /opt filesystem conventions
+<Layout opt>
+    prefix:        /opt/trafficserver
+    exec_prefix:   ${prefix}
+    bindir:        ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/sbin
+    libdir:        ${exec_prefix}/lib
+    libexecdir:    ${exec_prefix}/libexec
+    mandir:        ${prefix}/man
+    sysconfdir:    /etc${prefix}
+    datadir:       ${prefix}/share
+    installbuilddir: ${datadir}/build
+    includedir:    ${prefix}/include
+    localstatedir: /var${prefix}
+    runtimedir:    ${localstatedir}/run
+    logdir:        ${localstatedir}/logs
+    cachedir:      ${localstatedir}/cache
+</Layout>
+
+
+#   Solaris 8 Layout
+<Layout Solaris>
+    prefix:        /usr/trafficserver
+    exec_prefix:   ${prefix}
+    bindir:        ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/bin
+    libdir:        ${exec_prefix}/lib
+    libexecdir:    ${exec_prefix}/libexec
+    mandir:        ${exec_prefix}/man
+    sysconfdir:    /etc/trafficserver
+    datadir:       /var/trafficserver
+    installbuilddir: ${datadir}/build
+    includedir:    ${exec_prefix}/include
+    localstatedir: ${prefix}
+    runtimedir:    /var/run
+    logdir:        ${datadir}/logs
+    cachedir:      ${datadir}/cache
+</Layout>
