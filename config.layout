@@ -19,6 +19,7 @@
     sbindir:       ${exec_prefix}/bin
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/modules
+    infodir:       ${prefix}/info
     mandir:        ${prefix}/man
     sysconfdir:    ${prefix}/conf
     datadir:       ${prefix}
@@ -39,6 +40,7 @@
     sbindir:       ${exec_prefix}/sbin
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec
+    infodir:       ${prefix}/info
     mandir:        ${prefix}/man
     sysconfdir:    ${prefix}/etc+
     datadir:       ${prefix}/share+
@@ -58,6 +60,7 @@
     sbindir:       ${exec_prefix}/sbin
     libdir:        ${exec_prefix}/lib
     libexecdir:    /System/Library/TrafficServer/Modules
+    infodir:       ${exec_prefix}/share/info
     mandir:        ${exec_prefix}/share/man
     sysconfdir:    ${prefix}/Configuration
     datadir:       ${prefix}
@@ -77,15 +80,16 @@
     sbindir:       ${exec_prefix}/sbin
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec+
+    infodir:       ${prefix}/share/info
     mandir:        ${prefix}/share/man
     datadir:       /Library/TrafficServer
     sysconfdir:    /etc+
     installbuilddir: ${prefix}/share/trafficserver/build
     includedir:    ${prefix}/include+
-    localstatedir: /var
+    localstatedir: /var+
     runtimedir:    ${localstatedir}/run
-    logdir:        ${localstatedir}/log+
-    cachedir:      ${runtimedir}/cache
+    logdir:        ${localstatedir}/log
+    cachedir:      ${localstatedir}/cache
 </Layout>
 
 #   According to the /opt filesystem conventions
@@ -96,6 +100,7 @@
     sbindir:       ${exec_prefix}/sbin
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec
+    infodir:       ${prefix}/info
     mandir:        ${prefix}/man
     sysconfdir:    /etc${prefix}
     datadir:       ${prefix}/share
@@ -116,13 +121,14 @@
     sbindir:       ${exec_prefix}/bin
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec
-    mandir:        ${exec_prefix}/man
-    sysconfdir:    /etc/trafficserver
-    datadir:       /var/trafficserver
+    infodir:       ${prefix}/info
+    mandir:        ${prefix}/man
+    sysconfdir:    /etc+
+    datadir:       /var+
     installbuilddir: ${datadir}/build
-    includedir:    ${exec_prefix}/include
+    includedir:    ${prefix}/include
     localstatedir: ${prefix}
-    runtimedir:    /var/run
+    runtimedir:    /var/run+
     logdir:        ${datadir}/logs
     cachedir:      ${datadir}/cache
 </Layout>
