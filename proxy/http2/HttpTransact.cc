@@ -5924,11 +5924,11 @@ HttpTransact::handle_trace_and_options_requests(State * s, HTTPHdr * incoming_hd
     return TRUE;
   } else {                      /* max-forwards != 0 */
 
-    if ((max_forwards <= 0) || (max_forwards > MAXINT)) {
+    if ((max_forwards <= 0) || (max_forwards > INT_MAX)) {
       if (!s->traffic_net_req) {
-        Log::error("HTTP: snapping invalid max-forwards value %d to %d", max_forwards, MAXINT);
+        Log::error("HTTP: snapping invalid max-forwards value %d to %d", max_forwards, INT_MAX);
       }
-      max_forwards = MAXINT;
+      max_forwards = INT_MAX;
     }
 
     --max_forwards;
@@ -8024,7 +8024,7 @@ HttpTransact::Freshness_t HttpTransact::what_is_document_freshness(State *
       } else {
         int max_stale_val = client_request->get_cooked_cc_max_stale();
 
-        if (max_stale_val != MAXINT)
+        if (max_stale_val != INT_MAX)
           age_limit += max_stale_val;
         else
           age_limit = max_stale_val;

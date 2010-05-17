@@ -90,7 +90,6 @@ typedef off_t ink_off_t;
 
 #if (HOST_OS == freebsd)
 #define NO_MEMALIGN
-#define MAXINT INT_MAX
 #endif
 
 #if (HOST_OS == darwin)

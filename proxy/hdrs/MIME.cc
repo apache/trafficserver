@@ -4206,10 +4206,10 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField * changing_field_or_null)
                   m_cooked_stuff.m_cache_control.m_secs_s_maxage = value;
               } else {
 #if TRACK_COOKING
-                Debug("http", "                        set integer value %d\n", MAXINT);
+                Debug("http", "                        set integer value %d\n", INT_MAX);
 #endif
                 if (token_wks == MIME_VALUE_MAX_STALE)
-                  m_cooked_stuff.m_cache_control.m_secs_max_stale = MAXINT;
+                  m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;
               }
             }
           }

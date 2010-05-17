@@ -5931,7 +5931,7 @@ int
 HttpSM::server_transfer_init(MIOBuffer * buf, int hdr_size)
 {
   int nbytes;
-  int to_copy = MAXINT;
+  int to_copy = INT_MAX;
 
   if (server_entry->eos == true) {
     // The server has shutdown on us already so the only data
