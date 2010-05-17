@@ -155,6 +155,18 @@ ink_fgets(char *s, int n, FILE * stream)
   return (p);
 }                               /* End ink_fgets */
 
+int
+ink_fputln(FILE * stream, const char *s)
+{
+  if (stream && s) {
+    int rc = fputs(s, stream);
+    if (rc > 0)
+      rc += fputc('\n', stream);
+    return rc;
+  }
+  else
+    return -EINVAL;
+}                               /* End ink_fgets */
 
 size_t
 ink_fread(void *ptr, size_t size, size_t nitems, FILE * stream)

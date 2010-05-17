@@ -77,6 +77,7 @@ void ink_fseek(FILE * stream, long offset, int ptrname);
 long ink_ftell(FILE * stream);
 void ink_rewind(FILE * stream);
 char *ink_fgets(char *s, int n, FILE * stream);
+int  ink_fputln(FILE * stream, const char *s);
 size_t ink_fread(void *ptr, size_t size, size_t nitems, FILE * stream);
 size_t ink_fwrite(void *ptr, size_t size, size_t nitems, FILE * stream);
 int ink_file_name_mtime(char *path, time_t * tp);
