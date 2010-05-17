@@ -32,15 +32,15 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([ATS_VERSION_S],[2.1.0-unstable])
+m4_define([ATS_VERSION_S],[2.1.1-unstable])
 m4_define([ATS_VERSION_N],[2001000])
 
 AC_INIT([Apache Traffic Server], ATS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
-AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([tar-ustar -Wall -Werror foreign no-installinfo no-installman 1.9.2])
+AC_CONFIG_AUX_DIR([build/aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
-AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_MACRO_DIR([build])
+AM_INIT_AUTOMAKE([tar-ustar -Wall -Werror foreign no-installinfo no-installman 1.9.2])
 AM_CONFIG_HEADER([config.h])
 
 # Libtool versioning uses different conventions on different
@@ -66,7 +66,19 @@ AC_SUBST(ATS_VERSION_NUMBER)
 #
 # Generate ./config.nice for reproducing runs of configure
 #
-APR_CONFIG_NICE(config.nice)
+ATS_CONFIG_NICE(config.nice)
+
+# XXX we can't just use AC_PREFIX_DEFAULT because that isn't subbed in
+# by configure until it is too late.  Is that how it should be or not?
+# Something seems broken here.
+# AC_PREFIX_DEFAULT(/usr/local/trafficserver)
+
+# Get the layout here, so we can pass the required variables to Trafficserver
+# ATS_ENABLE_LAYOUT(Trafficserver, [cachedir])
+
+# Reparse the configure arguments so we can override the layout.
+ATS_PARSE_ARGUMENTS
+
 
 #
 # Host detection
@@ -316,48 +328,6 @@ AC_ARG_WITH([architecture],
 AS_IF([test "x$with_architecture" = "xyes"], [echo "--with-architecture needs an argument"; AS_EXIT()]
 )
 
-
-#
-# DB support. By default, we require sqlite3, but we also optionally support BDB. You can
-# disable / flip these behaviors with these flags.
-#
-AC_MSG_CHECKING([whether to enable sqlite3])
-AC_ARG_WITH([sqlite3],
-  [AS_HELP_STRING([--without-sqlite3],[disable support for sqlite3 [default=no]])],
-  [],
-  [with_sqlite3=yes]
-)
-if test "x${with_sqlite3}" = "x"; then
-   with_sqlite3="yes"
-fi
-AC_MSG_RESULT([$with_sqlite3])
-
-AC_MSG_CHECKING([whether to enable libdb])
-AC_ARG_WITH([libdb],
-  [AS_HELP_STRING([--with-libdb],[compile with libdb support [default=no]])],
-  [with_libdb=$withval],
-  [with_libdb=no]
-)
-AC_MSG_RESULT([$with_libdb])
-
-# Berkeley DB (bdb)
-AC_ARG_WITH([bdb],
-   [AC_HELP_STRING([--with-bdb=DIR],[Berkeley DB installation directory])],
-   [with_bdb=$withval],
-   [with_bdb=no]
-)
-
-if test "x$with_bdb" != "xno" ; then
-   PATH_BDB_INC="$with_bdb/include"
-   PATH_BDB_LIB="$with_bdb/lib"
-fi
-
-
-# Make sure there is at least one supported backend DB for SimpleDBM
-if test "${with_sqlite3}" = "no" -a "${with_libdb}" = "no"; then
-   AC_MSG_ERROR([Need at least one DB backend, --with-sqlite3 and --with-libdb are supported])
-fi
-
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
 AC_ARG_WITH([profiler],
@@ -365,7 +335,7 @@ AC_ARG_WITH([profiler],
   [with_profiler=$withval],
   [with_profiler=no]
 )
-AC_MSG_RESULT([$with_sqlite3])
+AC_MSG_RESULT([$with_profiler])
 
 #
 # use eventfd() or pipes
@@ -476,15 +446,15 @@ case $host_os in
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
-    CPPFLAGS="$CPPFLAGS -I/opt/local/include"
-    LDFLAGS="${LDFLAGS} -L/opt/local/lib"
+    ATS_ADDTO(CPPFLAGS, [-I/opt/local/include])
+    ATS_ADDTO(LDFLAGS, [-L/opt/local/lib])
     ;;
   freebsd*)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
-    LDFLAGS="${LDFLAGS} -L/usr/local/lib"
+    ATS_ADDTO(LDFLAGS, [-L/usr/local/lib])
     ;;
   solaris*)
     if test "x${base_cc}" = "xcc" ;then
@@ -502,7 +472,8 @@ case $host_os in
       release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     fi
-    LDFLAGS="${LDFLAGS} -L/lib -L/usr/local/lib"
+    ATS_ADDTO(LDFLAGS, [-L/lib])
+    ATS_ADDTO(LDFLAGS, [-L/usr/local/lib])
     ;;
   *)
     common_opt="-pipe -Wall -Werror"
@@ -612,9 +583,7 @@ fi
 AC_CHECK_LIB([m],[sin],[AC_SUBST([LIBM],["-lm"])])
 AC_CHECK_LIB([exc],[exc_capture_context],[AC_SUBST([LIBEXC],["-lexc"])])
 AC_CHECK_LIB([mld],[MLD_demangle_string],[AC_SUBST([LIBMLD],["-lmld"])])
-AC_CHECK_LIB([crypt],[crypt],[AC_SUBST([LIBCRYPT],["-lcrypt"])])
 AC_CHECK_LIB([dl],[dlopen],[AC_SUBST([LIBDL],["-ldl"])])
-AC_CHECK_LIB([xml],[XML_SetUserData],[AC_SUBST([LIBXML],["-lxml"])])
 AC_CHECK_LIB([socket],[socket],[AC_SUBST([LIBSOCKET],["-lsocket"])])
 AC_CHECK_LIB([nsl],[gethostbyname],[AC_SUBST([LIBNSL],["-lnsl"])])
 AC_CHECK_LIB([resolv],[res_init],[AC_SUBST([LIBRESOLV],["-lresolv"])])
@@ -625,29 +594,25 @@ AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
 AC_CHECK_LIB([iconv],[iconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
 AC_CHECK_LIB([iconv],[libiconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
 AC_CHECK_LIB([ev],[ev_sleep],[AC_SUBST([LIBEV],["-lev"])])
-AC_CHECK_LIB([ev],[ev_sleep],[AC_SUBST([LIBEV],["-lev"])])
-AX_CHECK_ZLIB()
 
-AC_CHECK_LIB([ssl],[SSL_CTX_new],
-  [AC_SUBST([LIBSSL],["-lssl -lcrypto"])
-   AC_DEFINE([HAVE_LIBSSL],[1],[Define if you have libssl])
-  ],
-  [AC_MSG_FAILURE([check for libssl failed. Have you installed openssl-devel?])],
-  [-lcrypto]
-)
-
-AC_CHECK_HEADER(lzma.h,have_lzma_hdr=yes)
-AC_CHECK_LIB(lzma,lzma_code, have_lzma_lib=yes)
-if test x$have_lzma_hdr == xyes -a x$have_lzma_lib == xyes ; then
-  have_lzma=yes
-  LIBS="$LIBS -llzma"
-  AC_DEFINE(HAVE_LZMA,1,[Compiling with LZMA support])
+#
+# Check for SSL presence and usability
+ATS_CHECK_CRYPTO
+if test "x${enable_crypto}" != "xyes"; then
+  AC_MSG_ERROR([Need at least one SSL library, --with-openssl is supported])
 fi
+
+#
+# Check for zlib presence and usability
+ATS_CHECK_ZLIB
+
+#
+# Check for lzma presence and usability
+ATS_CHECK_LZMA
 
 #
 # Tcl macros provided by m4/tcl.m4
 #
-
 # this will error out if tclConfig.sh is not found
 SC_PATH_TCLCONFIG
 
@@ -666,75 +631,30 @@ AC_SUBST([LIBTCL],[$TCL_LIB_FLAG])
 
 case $host_os in
   freebsd*)
-    CPPFLAGS="$CPPFLAGS -I/usr/local/include $TCL_INCLUDE_SPEC"
+    ATS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     ;;
   solaris*)
-    CPPFLAGS="$CPPFLAGS -I/usr/local/include $TCL_INCLUDE_SPEC"
+    ATS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     ;;
-  *)
-   CPPFLAGS="$CPPFLAGS $TCL_INCLUDE_SPEC"
-   ;;
 esac
+ATS_ADDTO(CPPFLAGS, [$TCL_INCLUDE_SPEC])
 
-AC_CHECK_LIB([expat],[XML_SetUserData],
-  [AC_SUBST([LIBEXPAT],["-lexpat"])],
-  [AC_MSG_FAILURE([check for libexpat failed. Have you installed expat-devel?])],
-  [$LIBTHREAD]
-)
-
-if test "x${with_sqlite3}" = "xyes"; then
-  AC_CHECK_LIB([sqlite3], [sqlite3_open_v2],
-    [AC_SUBST([LIBSQLITE3], ["-lsqlite3"])
-    ],
-    [AC_MSG_FAILURE([check for sqlite3 failed. Have you installed sqlite3-devel?])],
-  )
+#
+# Check for XML parser
+#
+ATS_CHECK_XML
+if test "x${enable_xml}" != "xyes"; then
+  AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
 fi
 
-
-if test "x${with_libdb}" = "xyes"; then
-  # Berkeley DB check:
-  # TODO: Better checking for versions/directories similar to TCL
-  ts_have_db=0
-  save_LDFLAGS="$LDFLAGS"
-  save_CPPFLAGS="$CPPFLAGS"
-  if test "x$with_bdb" != "xno" ; then
-    case $host_os in
-      solaris*)
-        LDFLAGS="$LDFLAGS -L$PATH_BDB_LIB -R$PATH_BDB_LIB"
-        CPPFLAGS="$CPPFLAGS -I$PATH_BDB_INC"
-        ;;
-      *)
-        LDFLAGS="$LDFLAGS -L$PATH_BDB_LIB"
-        CPPFLAGS="$CPPFLAGS -I$PATH_BDB_INC"
-        ;;
-    esac
-  fi
-
-  AC_CHECK_LIB([db],[__db_open],
-    [LIBDB="-ldb"
-     ts_have_db=1
-    ],
-     [AC_MSG_WARN([check for libdb failed. Have you installed Berkeley DB e.g. BerkeleyDB.4.7?])
-     LDFLAGS="$save_LDFLAGS"
-     CPPFLAGS="$save_CPPFLAGS"
-    ]
-  )
-
-  AC_CHECK_LIB([db],[__db185_open],
-    [LIBDB="-ldb"
-     ts_have_db=1
-    ],
-    [AC_MSG_WARN([check for libdb failed. Have you installed db4-devel?])]
-  )
-
-  AC_CHECK_LIB([c],[dbopen],
-      [LIBDB=""
-      ts_have_db=1
-      ])
-  AC_SUBST([LIBDB])
-
-  if test "$ts_have_db" = "0"; then
-    AC_MSG_FAILURE([No DB interface found, try specifying --with-bdb=<Berkeley DB DIR>])
+#
+# Check for default sqlite3 DB backend
+#
+ATS_CHECK_SQLITE3
+if test "x${enable_sqlite3}" != "xyes"; then
+  ATS_CHECK_BDB
+  if test "x${enable_libdb}" != "xyes"; then
+    AC_MSG_ERROR([Need at least one DB backend, --with-sqlite3 and --with-libdb are supported])
   fi
 fi
 
@@ -745,11 +665,13 @@ AS_IF([test "x$enable_eventfd" = "xyes"],
   [AC_CHECK_FUNCS([eventfd])]
 )
 
-
-AC_CHECK_LIB([pcre], [pcre_exec],
-  [AC_SUBST([LIBPCRE],["-lpcre"])],
-  [AC_MSG_FAILURE([check for pcre failed. Have you installed pcre-devel?])],
-)
+#
+# Check for pcre library
+#
+ATS_CHECK_PCRE
+if test "x${enable_pcre}" != "xyes"; then
+  AC_MSG_ERROR([Cannot find pcre library. Configure --with-pcre=DIR])
+fi
 
 # Check for backtrace() support
 AC_CHECK_HEADERS([execinfo.h], [have_backtrace=yes],[])
@@ -847,8 +769,8 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   sys/sysctl.h \
                   sys/sysinfo.h \
                   sys/systeminfo.h \
-		  arpa/inet.h \
-		  arpa/nameser.h \
+                  arpa/inet.h \
+                  arpa/nameser.h \
                   arpa/nameser_compat.h \
                   execinfo.h \
                   netdb.h \
@@ -864,13 +786,10 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   stropts.h \
                   sys/mount.h \
                   sys/param.h \
-		  sys/sysmacros.h \
+                  sys/sysmacros.h \
                   math.h \
-		  net/ppp_defs.h \
+                  net/ppp_defs.h \
                   ], [], [])
-
-AC_CHECK_HEADERS([pcre/pcre.h],
-                 [], [],[])
 
 AC_CHECK_HEADERS([netinet/ip.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
@@ -896,24 +815,13 @@ AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
                    #endif
                  ]])
 
-if test "x${with_libdb}" = "xyes"; then
-AC_CHECK_HEADERS([db_185.h \
-                  db.h \
-                  ], [], [])
-fi
-
-if test "x${with_sqlite3}" = "xyes"; then
-AC_CHECK_HEADERS([sqlite3.h \
-                  ], [], [])
-fi
-
 if test "x${with_profiler}" = "xyes"; then
 AC_CHECK_HEADERS([google/profiler.h \
                   ], [], [])
 fi
 
 
-APR_CHECK_GETHOSTBYNAME_R_STYLE
+ATS_CHECK_GETHOSTBYNAME_R_STYLE
 
 #
 # use modular IOCORE

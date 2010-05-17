@@ -19,7 +19,7 @@
 
 # Local Macros
 # http://www.gnu.org/software/automake/manual/automake.html#Local-Macros
-ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = -I build
 
 if STANDALONE_IOCORE
 SUBDIRS =  libinktomi++ librecords iocore @hdr_dirs@ proxy example
