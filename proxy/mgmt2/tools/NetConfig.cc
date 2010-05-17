@@ -1568,8 +1568,10 @@ struct ifafilt;
 #include<string.h>
 #include<sys/types.h>
 
+#include "inktomi++.h"
 #include "ink_bool.h"
 #include "ink_string.h"
+#include "I_Layout.h"
 
 #define UP_INTERFACE     0
 #define DOWN_INTERFACE   1

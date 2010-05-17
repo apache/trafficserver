@@ -26,6 +26,7 @@
 
  ***************************************************************************/
 
+#include "ink_config.h"
 #include "api/ts/ts.h"
 #include "StatAPITypes.h"
 #include "StatSystemV2.h"

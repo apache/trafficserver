@@ -21,6 +21,7 @@
     limitations under the License.
 */
 
+#include "ink_config.h"
 #include "StatSystemV2.h"
 #include "P_EventSystem.h"
 #include "Log.h"
