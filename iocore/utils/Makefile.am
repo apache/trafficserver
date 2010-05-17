@@ -25,6 +25,7 @@ AM_CPPFLAGS = \
   -DBINDIR=\"$(rel_bindir)\" \
   -DSBINDIR=\"$(rel_sbindir)\" \
   -DSYSCONFDIR=\"$(rel_sysconfdir)\" \
+  -DSYSCONFIGDIR=\"$(exp_sysconfdir)\" \
   -DDATADIR=\"$(rel_datadir)\" \
   -DINCLUDEDIR=\"$(rel_includedir)\" \
   -DLIBDIR=\"$(rel_libdir)\" \

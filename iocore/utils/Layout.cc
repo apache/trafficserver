@@ -24,7 +24,7 @@
 #include "inktomi++.h"
 #include "I_Layout.h"
 
-#define DEFAULT_TS_DIRECTORY_FILE SYSCONFDIR "/trafficserver-root"
+#define DEFAULT_TS_DIRECTORY_FILE SYSCONFIGDIR "/trafficserver-root"
 
 static Layout *layout = NULL;
 
