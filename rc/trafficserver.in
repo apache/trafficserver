@@ -66,8 +66,8 @@ PATH=/usr/sbin:/usr/bin:/sbin:/bin
 DESC="start/stop Traffic Server"
 NAME=trafficserver
 
-if [ -f @prefix@/etc/traffic_server ]; then
-  TS_PREFIX=`${HEAD} -1 @prefix@/etc/traffic_server`
+if [ -f @exp_sysconfdir@/trafficserver-root ]; then
+  TS_PREFIX=`${HEAD} -1 @exp_sysconfdir@/trafficserver-root`
 else
   TS_PREFIX="@prefix@"
 fi
@@ -76,21 +76,21 @@ TS_ROOT=${TS_ROOT:-$TS_PREFIX}
 TC_NAME=${TS_NAME:-traffic_cop}
 TM_NAME=${TS_NAME:-traffic_manager}
 TS_NAME=${TS_NAME:-traffic_server}
-TC_DAEMON=${TC_DAEMON:-$TS_ROOT@exec_prefix@/bin/traffic_cop}
+TC_DAEMON=${TC_DAEMON:-$TS_ROOT@exp_bindir@/traffic_cop}
 TC_DAEMON_ARGS=""
-TM_DAEMON=${TM_DAEMON:-$TS_ROOT@exec_prefix@/bin/traffic_manager}
+TM_DAEMON=${TM_DAEMON:-$TS_ROOT@exp_bindir@/traffic_manager}
 TM_DAEMON_ARGS=""
-TS_DAEMON=${TS_DAEMON:-$TS_ROOT@exec_prefix@/bin/traffic_server}
+TS_DAEMON=${TS_DAEMON:-$TS_ROOT@exp_bindir@/traffic_server}
 TS_DAEMON_ARGS=""
-TC_PIDFILE=${TC_PIDFILE:-$TS_ROOT/var/trafficserver/cop.lock}
-TM_PIDFILE=${TM_PIDFILE:-$TS_ROOT/var/trafficserver/manager.lock}
-TS_PIDFILE=${TS_PIDFILE:-$TS_ROOT/var/trafficserver/server.lock}
+TC_PIDFILE=${TC_PIDFILE:-$TS_ROOT@exp_runtimedir@/cop.lock}
+TM_PIDFILE=${TM_PIDFILE:-$TS_ROOT@exp_runtimedir@/manager.lock}
+TS_PIDFILE=${TS_PIDFILE:-$TS_ROOT@exp_runtimedir@/server.lock}
 # number of times to retry check on pid lock file
 PIDFILE_CHECK_RETRIES=${PIDFILE_CHECK_RETRIES:-30}
 # stdout file of executable
-STDOUTLOG=${STDOUTLOG:-$TS_ROOT/var/log/trafficserver/traffic_server.stdout}
+STDOUTLOG=${STDOUTLOG:-$TS_ROOT@exp_logdir@/traffic_server.stdout}
 # stderr file of executable
-STDERRLOG=${STDERRLOG:-$TS_ROOT/var/log/trafficserver/traffic_server.stderr}
+STDERRLOG=${STDERRLOG:-$TS_ROOT@exp_logdir@/traffic_server.stderr}
 if [ -d /etc/rc.d/init.d ]; then
     SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
 elif [ -d /etc/init.d ]; then
@@ -106,7 +106,7 @@ if [ ! -x "$TS_DAEMON" ]; then
     echo "Error: Can not find $TS_DAEMON using TS_ROOT=$TS_ROOT"
     echo "       Please set TS_ROOT to point to base installation."
     exit 0
-fi 
+fi
 
 # Ubuntu: Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -126,10 +126,10 @@ fi
 
 
 #
-# Fedora: 
+# Fedora:
 #  launches $* in the background
 #  and checks if program creates its own pid lock file
-#  redirects stdout and stderr to files 
+#  redirects stdout and stderr to files
 #  this function is meant to substitute 'daemon'
 #  because 'daemon' expects $1 to fork itself
 forkdaemon() {
@@ -226,7 +226,7 @@ do_reload() {
 
 
 
-# main 
+# main
 case "$1" in
   start)
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then

@@ -250,6 +250,7 @@ dnl the default config file.
 AC_DEFUN([ATS_SUBST_LAYOUT_PATH], [
   ATS_EXPAND_VAR(exp_$1, [$]$1)
   ATS_PATH_RELATIVE(rel_$1, [$]exp_$1, ${prefix})
+  ATS_SUBST(exp_$1)
   ATS_SUBST(rel_$1)
   ATS_SUBST($1)
 ])
