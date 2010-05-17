@@ -403,11 +403,11 @@ test_xml_parser_SOURCES = test_xml_parser.cc InkXml.cc DiagsConfig.cc
 versiondir = $(pkgsysconfdir)
 
 install-data-local:
-	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir)
+	$(INSTALL) -d -o $(pkgsysuser) -g $(pkgsysgroup) $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir)  $(DESTDIR)$(pkgruntimedir) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgsysconfdir)/internal $(DESTDIR)$(pkgdatadir)
 
 install-data-hook:
 	-chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgdatadir)
-	-echo $(DESTDIR)$(prefix) > $(DESTDIR)$(prefix)/etc/traffic_server
+	-echo $(DESTDIR)$(prefix) > $(DESTDIR)$(sysconfdir)/trafficserver-root
 	-echo "<TS_VERSION> $(PACKAGE_VERSION)" > $(DESTDIR)$(prefix)/etc/trafficserver-release
 
 install-exec-local:
@@ -417,7 +417,7 @@ install-exec-hook:
 	-chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkglibexecdir)
 
 uninstall-hook:
-	-rm -rf $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkglibexecdir)
-	-rm -f $(DESTDIR)$(prefix)/etc/traffic_server
+	-rm -rf $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) $(DESTDIR)$(pkgruntimedir) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkglibexecdir)
+	-rm -f $(DESTDIR)$(sysconfdir)/trafficserver-root
 
 

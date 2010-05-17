@@ -11,8 +11,8 @@
 ##    (This may become a configurable parameter at some point.)
 ##
 
-#   Classical Trafficserver path layout.
-<Layout Trafficserver>
+#   Classical TrafficServer path layout.
+<Layout TrafficServer>
     prefix:        /usr/local/trafficserver
     exec_prefix:   ${prefix}
     bindir:        ${exec_prefix}/bin
@@ -22,7 +22,7 @@
     infodir:       ${prefix}/info
     mandir:        ${prefix}/man
     sysconfdir:    ${prefix}/conf
-    datadir:       ${prefix}
+    datadir:       ${prefix}/share
     installbuilddir: ${datadir}/build
     includedir:    ${prefix}/include
     localstatedir: ${prefix}
@@ -63,7 +63,7 @@
     infodir:       ${exec_prefix}/share/info
     mandir:        ${exec_prefix}/share/man
     sysconfdir:    ${prefix}/Configuration
-    datadir:       ${prefix}
+    datadir:       ${prefix}/Share
     installbuilddir: /System/Library/TrafficServer/Build
     includedir:    /System/Library/Frameworks/TrafficServer.framework/Versions/2.0/Headers
     localstatedir: /var

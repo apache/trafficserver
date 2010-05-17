@@ -322,8 +322,8 @@ AC_DEFUN([ATS_LAYOUT], [
     fi
     eval "$var='$val'"
   done
-  for var in bindir sbindir libexecdir sysconfdir datadir \
-             localstatedir logdir libdir runtimedir $3; do
+  for var in bindir sbindir libexecdir mandir infodir sysconfdir \
+             datadir localstatedir runtimedir logdir libdir $3; do
     eval "val=\"\$$var\""
     org_val=
     exp_val="$val"

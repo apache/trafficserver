@@ -66,15 +66,15 @@ AC_SUBST(ATS_VERSION_NUMBER)
 #
 # Generate ./config.nice for reproducing runs of configure
 #
-ATS_CONFIG_NICE(config.nice)
+ATS_CONFIG_NICE([config.nice])
 
 # XXX we can't just use AC_PREFIX_DEFAULT because that isn't subbed in
 # by configure until it is too late.  Is that how it should be or not?
 # Something seems broken here.
-# AC_PREFIX_DEFAULT(/usr/local/trafficserver)
+AC_PREFIX_DEFAULT([/usr/local/trafficserver])
 
 # Get the layout here, so we can pass the required variables to Trafficserver
-# ATS_ENABLE_LAYOUT(Trafficserver, [cachedir])
+ATS_ENABLE_LAYOUT(TrafficServer, [cachedir])
 
 # Reparse the configure arguments so we can override the layout.
 ATS_PARSE_ARGUMENTS
@@ -115,6 +115,7 @@ esac
 build_person="`id -nu`"
 build_group="`id -ng`"
 build_machine="`uname -n`"
+AC_SUBST([build_machine])
 AC_DEFINE_UNQUOTED(BUILD_PERSON, "$build_person")
 AC_DEFINE_UNQUOTED(BUILD_MACHINE, "$build_machine")
 
@@ -352,36 +353,37 @@ AC_MSG_RESULT([$enable_eventfd])
 
 #
 # Installation directories
+# For each var the following is evaluated
+# foo      Standard variable  eg. ${prefix}/foo
+# rel_foo  Relative to prefix eg. foo
 #
+ATS_SUBST_LAYOUT_PATH([prefix])
+ATS_SUBST_LAYOUT_PATH([exec_prefix])
+ATS_SUBST_LAYOUT_PATH([bindir])
+ATS_SUBST_LAYOUT_PATH([sbindir])
+ATS_SUBST_LAYOUT_PATH([libdir])
+ATS_SUBST_LAYOUT_PATH([libexecdir])
+ATS_SUBST_LAYOUT_PATH([infodir])
+ATS_SUBST_LAYOUT_PATH([mandir])
+ATS_SUBST_LAYOUT_PATH([sysconfdir])
+ATS_SUBST_LAYOUT_PATH([datadir])
+ATS_SUBST_LAYOUT_PATH([installbuilddir])
+ATS_SUBST_LAYOUT_PATH([includedir])
+ATS_SUBST_LAYOUT_PATH([localstatedir])
+ATS_SUBST_LAYOUT_PATH([runtimedir])
+ATS_SUBST_LAYOUT_PATH([logdir])
+ATS_SUBST_LAYOUT_PATH([cachedir])
 
-# default: /usr/local/var/log
-AC_SUBST([logdir],["$localstatedir/log"])
+ATS_SUBST([pkgbindir])
+ATS_SUBST([pkgsbindir])
+ATS_SUBST([pkglibdir])
+ATS_SUBST([pkglibexecdir])
+ATS_SUBST([pkgsysconfdir])
+ATS_SUBST([pkgdatadir])
+ATS_SUBST([pkglocalstatedir])
+ATS_SUBST([pkgruntimedir])
+ATS_SUBST([pkglogdir])
 
-# default: /usr/local/var/log/trafficserver
-AC_SUBST([pkglogdir],["$logdir/trafficserver"])
-
-# default: /usr/local/var/trafficserver
-AC_SUBST([pkglocalstatedir],["$localstatedir/trafficserver"])
-
-# default: /usr/local/etc/trafficserver
-AC_SUBST([pkgsysconfdir],["$sysconfdir/trafficserver"])
-
-# default: /usr/local/libexec/trafficserver
-AC_SUBST([pkglibexecdir],["$libexecdir/trafficserver"])
-
-# default: /usr/local/share/trafficserver
-AC_SUBST([pkgdatadir],["$datadir/trafficserver"])
-
-# default: /usr/local/bin
-if test "$exec_prefix" = NONE ; then
-  if test "$prefix" = NONE ; then
-   AC_SUBST([pkgbindir],["$ac_default_prefix/bin"])
-  else
-   AC_SUBST([pkgbindir],["$prefix/bin"])
-  fi
-else
- AC_SUBST([pkgbindir],["$exec_prefix/bin"])
-fi
 
 # -----------------------------------------------------------------------------
 # 3. CHECK FOR PROGRAMS

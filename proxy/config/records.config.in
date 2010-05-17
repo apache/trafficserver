@@ -19,15 +19,15 @@
 # System Variables
 #
 ##############################################################################
-CONFIG proxy.config.proxy_name STRING <proxy_name>
-CONFIG proxy.config.bin_path STRING @pkgbindir@
+CONFIG proxy.config.proxy_name STRING @build_machine@
+CONFIG proxy.config.bin_path STRING @rel_bindir@
 CONFIG proxy.config.proxy_binary STRING traffic_server
 CONFIG proxy.config.proxy_binary_opts STRING -M
 CONFIG proxy.config.manager_binary STRING traffic_manager
 CONFIG proxy.config.cli_binary STRING traffic_line
 CONFIG proxy.config.watch_script STRING traffic_cop
 CONFIG proxy.config.env_prep STRING example_prep.sh
-CONFIG proxy.config.config_dir STRING etc/@PACKAGE@
+CONFIG proxy.config.config_dir STRING @rel_sysconfdir@
 CONFIG proxy.config.temp_dir STRING /tmp
 CONFIG proxy.config.alarm_email STRING @pkgsysuser@
 CONFIG proxy.config.syslog_facility STRING LOG_DAEMON
@@ -56,7 +56,7 @@ CONFIG proxy.config.cluster.mcport INT 8089
 CONFIG proxy.config.cluster.mc_group_addr STRING 224.0.1.37
 CONFIG proxy.config.cluster.mc_ttl INT 1
 CONFIG proxy.config.cluster.log_bogus_mc_msgs INT 1
-CONFIG proxy.config.admin.html_doc_root STRING share/@PACKAGE@
+CONFIG proxy.config.admin.html_doc_root STRING @rel_datadir@
 CONFIG proxy.config.admin.web_interface_port INT 8081
 CONFIG proxy.config.admin.autoconf_port INT 8083
 CONFIG proxy.config.admin.overseer_port INT 9898
@@ -233,7 +233,7 @@ CONFIG proxy.config.http.cache.ignore_server_no_cache INT 0
    #   2 - cache only for image types
    #   3 - cache for all but text content-types
    #   4 - cache for all but text content-types except OS response
-   #       without "Set-Cookie" or with "Cache-Control: public"   
+   #       without "Set-Cookie" or with "Cache-Control: public"
 CONFIG proxy.config.http.cache.cache_responses_to_cookies INT 1
 CONFIG proxy.config.http.cache.ignore_authentication INT 0
 CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 1
@@ -283,7 +283,7 @@ CONFIG proxy.config.http.cache.vary_default_other STRING NULL
    # 2 - enable language-targeted user response pages
 CONFIG proxy.config.body_factory.enable_customizations INT 0
 CONFIG proxy.config.body_factory.enable_logging INT 0
-CONFIG proxy.config.body_factory.template_sets_dir STRING etc/@PACKAGE@/body_factory
+CONFIG proxy.config.body_factory.template_sets_dir STRING @rel_sysconfdir@/body_factory
    # 0 - never suppress generated responses
    # 1 - always suppress generated responses
    # 2 - suppress responses for intercepted traffic
@@ -343,7 +343,7 @@ CONFIG proxy.config.cache.enable_read_while_writer INT 0
 CONFIG proxy.config.dns.search_default_domains INT 1
 CONFIG proxy.config.dns.splitDNS.enabled INT 0
 CONFIG proxy.config.dns.splitdns.def_domain STRING NULL
-   # Additional URL expansions for http DNS lookup 
+   # Additional URL expansions for http DNS lookup
 CONFIG proxy.config.dns.url_expansions STRING NULL
 CONFIG proxy.config.dns.round_robin_nameservers INT 0
 CONFIG proxy.config.dns.nameservers STRING NULL
@@ -369,7 +369,7 @@ CONFIG proxy.config.hostdb.size INT 200000
 CONFIG proxy.config.hostdb.ttl_mode INT 0
    # in minutes...
 CONFIG proxy.config.hostdb.timeout INT 1440
-   # round-robin addresses for single clients 
+   # round-robin addresses for single clients
    # (can cause authentication problems)
 CONFIG proxy.config.hostdb.strict_round_robin INT 0
 ##############################################################################
@@ -388,7 +388,7 @@ CONFIG proxy.config.log2.max_space_mb_for_logs INT 25000
 CONFIG proxy.config.log2.max_space_mb_for_orphan_logs INT 25
 CONFIG proxy.config.log2.max_space_mb_headroom INT 3000
 CONFIG proxy.config.log2.hostname STRING localhost
-CONFIG proxy.config.log2.logfile_dir STRING var/log/@PACKAGE@
+CONFIG proxy.config.log2.logfile_dir STRING @rel_logdir@
 CONFIG proxy.config.log2.logfile_perm STRING rw-r--r--
 CONFIG proxy.config.log2.custom_logs_enabled INT 0
 # 0: old log format, 1: new xml log format (default)
@@ -447,7 +447,7 @@ CONFIG proxy.config.url_remap.pristine_host_hdr INT 0
 ##############################################################################
    # proxy.config.ssl.enabled should be:
    #   0 - none
-   #   1 - SSL enabled 
+   #   1 - SSL enabled
 CONFIG proxy.config.ssl.enabled INT 0
    # proxy.config.ssl.accelerator_required should be:
    #   0 - not required
@@ -467,7 +467,7 @@ CONFIG proxy.config.ssl.TLSv1 INT 1
    #   3 - Compaq Atalla accelerator card
 CONFIG proxy.config.ssl.accelerator.type INT 0
    # the following accelerator library paths only need
-   # to be changed if the default path was not used 
+   # to be changed if the default path was not used
    # while installing the accelerator card.
 CONFIG proxy.config.ssl.atalla.lib.path STRING /opt/atalla/lib
 CONFIG proxy.config.ssl.ncipher.lib.path STRING /opt/nfast/toolkits/hwcrhk
@@ -483,12 +483,12 @@ CONFIG proxy.config.ssl.client.certification_level INT 0
    # for a multiple cert system.
 CONFIG proxy.config.ssl.server.cert.filename STRING server.pem
    # Server cert chain filename is the name of the cert chain file
-   # for a single cert system. 
+   # for a single cert system.
 CONFIG proxy.config.ssl.server.cert_chain.filename STRING NULL
    # This is the path that will be used for both single and
    # multi cert systems.
-CONFIG proxy.config.ssl.server.cert.path STRING etc/@PACKAGE@
-   # Fill in private key file and path only if the server's 
+CONFIG proxy.config.ssl.server.cert.path STRING @rel_sysconfdir@
+   # Fill in private key file and path only if the server's
    # private key is not contained in the server certificate file.
    # For multiple cert systems, if any private key is not contained
    # in the cert file, you must fill in the private key path.
@@ -496,7 +496,7 @@ CONFIG proxy.config.ssl.server.private_key.filename STRING NULL
 CONFIG proxy.config.ssl.server.private_key.path STRING NULL
    # The CA file name and path are the
    # certificate authority certificate that
-   # client certificates will be verified against.   
+   # client certificates will be verified against.
 CONFIG proxy.config.ssl.CA.cert.filename STRING NULL
 CONFIG proxy.config.ssl.CA.cert.path STRING NULL
    ################################
@@ -504,14 +504,14 @@ CONFIG proxy.config.ssl.CA.cert.path STRING NULL
    ################################
 CONFIG proxy.config.ssl.client.verify.server INT 0
 CONFIG proxy.config.ssl.client.cert.filename STRING NULL
-CONFIG proxy.config.ssl.client.cert.path STRING etc/@PACKAGE@
-   # Fill in private key file and path only if the client's 
+CONFIG proxy.config.ssl.client.cert.path STRING @rel_sysconfdir@
+   # Fill in private key file and path only if the client's
    # private key is not contained in the client certificate file.
 CONFIG proxy.config.ssl.client.private_key.filename STRING NULL
 CONFIG proxy.config.ssl.client.private_key.path STRING NULL
    # The CA file name and path are the
    # certificate authority certificate that
-   # server certificates will be verified against.   
+   # server certificates will be verified against.
 CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
 CONFIG proxy.config.ssl.client.CA.cert.path STRING NULL
 ##############################################################################
@@ -544,7 +544,7 @@ CONFIG proxy.config.update.concurrent_updates INT 100
 #
 ##############################################################################
    # Directory in which to find plugins
-CONFIG proxy.config.plugin.plugin_dir STRING libexec/@PACKAGE@
+CONFIG proxy.config.plugin.plugin_dir STRING @rel_libexecdir@
 ##############################################################################
 #
 # Remote Access Framework
