@@ -26,12 +26,13 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/proxy \
+  $(iocore_include_dirs) \
   -DPREFIX=\"$(prefix)\" \
   -DBINDIR=\"$(bindir)\" \
   -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
   -DPKGLOGDIR=\"$(pkglogdir)\" \
   -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
-  -DPKGSYSUSER=\"$(pkgsysuser)\" 
+  -DPKGSYSUSER=\"$(pkgsysuser)\"
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
@@ -42,6 +43,7 @@ traffic_cop_SOURCES = TrafficCop.cc
 traffic_cop_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_cop_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/iocore/utils/libinkutils.a \
   @LIBTCL@ \
   @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBTHREAD@ @LIBDL@ @LIBRT@ @LIBICONV@ @LIBEXECINFO@

@@ -22,6 +22,7 @@
  */
 
 #include "inktomi++.h"
+#include "I_Layout.h"
 #include "I_Version.h"
 
 #if (HOST_OS == linux)
@@ -1929,6 +1930,12 @@ main(int argc, char *argv[])
   appVersionInfo.setup(PACKAGE_NAME,"traffic_cop", PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
+  // TODO: Figure out why is this needed
+  if (argc < 0) {
+    ink_ftell(stdout);
+  }
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-stop") == 0) {
       fprintf(stdout, "Cool! I think I'll be a STOP cop!\n");
@@ -1938,7 +1945,6 @@ main(int argc, char *argv[])
       exit(0);
     }
   }
-
   // Detach STDIN, STDOUT, and STDERR (basically, "nohup"). /leif
   signal(SIGHUP, SIG_IGN);
   signal(SIGTSTP, SIG_IGN);

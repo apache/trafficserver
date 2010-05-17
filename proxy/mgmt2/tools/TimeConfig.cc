@@ -21,6 +21,10 @@
   limitations under the License.
  */
 
+#include "ink_defs.h"
+#include "ink_file.h"
+#include "I_Layout.h"
+
 #include <ctype.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -33,8 +37,6 @@
 #include <sys/time.h>
 #include <signal.h>
 #include <time.h>
-
-#include "ink_defs.h"
 
 // TODO: consolidate location of these defaults
 #define DEFAULT_ROOT_DIRECTORY            PREFIX
@@ -76,6 +78,8 @@ main(int argc, char *argv[])
     close(fd);
   }
   buffer[0] = 0;
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
 
   if ((env_path = getenv("TS_ROOT"))) {
     strncpy(buffer, env_path, sizeof(buffer) - 1);

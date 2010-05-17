@@ -71,9 +71,10 @@ struct ifafilt;
 #include <sys/raw.h>
 #include <signal.h>
 #include <errno.h>
-#include <inktomi++.h>
-
+#include "inktomi++.h"
 #include "ink_bool.h"
+#include "I_Layout.h"
+#include "I_Version.h"
 
 // TODO: consolidate location of these defaults
 #define DEFAULT_ROOT_DIRECTORY            PREFIX
@@ -2975,6 +2976,8 @@ main(int argc, char **argv)
   }
 
   fun_no = atoi(argv[1]);
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
 
   switch (fun_no) {
   case 0:

@@ -56,6 +56,7 @@ extern "C" int plock(int);
 #include "P_Cluster.h"
 #include "P_HostDB.h"
 #include "P_Cache.h"
+#include "I_Layout.h"
 #include "I_Machine.h"
 #include "RecordsConfig.h"
 #include "Transform.h"
@@ -1781,6 +1782,8 @@ main(int argc, char **argv)
   appVersionInfo.setup(PACKAGE_NAME,"traffic_server", PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
   chdir_root(); // change directory to the install root of traffic server.
 
   process_args(argument_descriptions, n_argument_descriptions, argv);

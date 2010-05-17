@@ -27,6 +27,8 @@
 #include "tcl.h"
 #include <string.h>
 #include "ink_args.h"
+#include "ink_file.h"
+#include "I_Layout.h"
 #include "I_Version.h"
 #include <CliMgmtUtils.h>
 #include "../api2/include/INKMgmtAPI.h"
@@ -54,6 +56,13 @@ main(int argc, char *argv[])
   // build the application information structure
   appVersionInfo.setup(PACKAGE_NAME,"traffic_shell", PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
+  // TODO: Figure out why is this needed
+  if (argc < 0) {
+    ink_ftell(stdout);
+  }
 
   // Argument description table used to describe how to parse command line args,
   // see 'ink_args.h' for meanings of the various fields

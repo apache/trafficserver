@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include "inktomi++.h"
 /*
  *
  * VIPConfig.cc
@@ -33,6 +32,9 @@
  *
  */
 
+#include "inktomi++.h"
+#include "I_Layout.h"
+#include "I_Version.h"
 
 #include <sys/un.h>
 struct ifafilt;
@@ -54,8 +56,6 @@ struct ifafilt;
 
 #define UP_INTERFACE     0
 #define DOWN_INTERFACE   1
-
-#include "inktomi++.h"
 
 void up_interface(char *binary, char *vip, char *interface);
 void down_interface(char *binary, char *vip, char *interface);
@@ -79,6 +79,13 @@ main(int argc, char **argv)
 {
   int operation, interface_id;
   char binary[1024], tinterface[1024], interface[1024], vip[1024];
+
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
+  // TODO: Figure out why is this needed
+  if (argc < 0) {
+    ink_ftell(stdout);
+  }
 
   if (argc != 6 || (argc != 2 && strstr(argv[1], "help"))) {
 #ifdef DEBUG

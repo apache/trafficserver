@@ -37,6 +37,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "I_Layout.h"
+#include "I_Version.h"
 #include "Tokenizer.h"
 
 
@@ -284,6 +286,12 @@ main(int argc, char **argv)
 
   // Process command line arguments and dump into variables
   process_args(argument_descriptions, n_argument_descriptions, argv);
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
+  // TODO: Figure out why is this needed
+  if (argc < 0) {
+    ink_ftell(stdout);
+  }
 
   init();
 

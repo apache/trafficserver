@@ -31,6 +31,7 @@
  ***************************************************************************/
 #include "inktomi++.h"
 #include <limits.h>
+#include "I_Layout.h"
 
 #include "INKMgmtAPI.h"
 #include "CfgContextManager.h"

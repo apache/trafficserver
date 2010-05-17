@@ -43,6 +43,7 @@
 #include "WebOverview.h"
 #include "FileManager.h"
 #include "WebReconfig.h"
+#include "I_Layout.h"
 #include "I_Version.h"
 #include "ink_syslog.h"
 #include "ink_lockfile.h"
@@ -485,6 +486,8 @@ set_process_limits(int fds_throttle)
 int
 main(int argc, char **argv)
 {
+  // Before accessing file system initialize Layout engine
+  create_default_layout();
   // change the directory to the "root" directory
   chdir_root();
 

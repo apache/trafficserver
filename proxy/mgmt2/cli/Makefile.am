@@ -28,6 +28,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/proxy \
+  $(iocore_include_dirs) \
   -DPREFIX=\"$(prefix)\" \
   -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
   -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\"
@@ -72,5 +73,6 @@ traffic_line_LDADD = \
   libcli_tl.a \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   $(top_builddir)/librecords/libreclocal.a \
+  $(top_builddir)/iocore/utils/libinkutils.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBTCL@ @LIBRT@ @LIBDL@ @LIBICONV@ @LIBEXECINFO@

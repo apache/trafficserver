@@ -39,6 +39,7 @@
 #include "ink_config.h"
 #include <strings.h>
 #include "ink_string.h"
+#include "I_Layout.h"
 #include "ParseRules.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"

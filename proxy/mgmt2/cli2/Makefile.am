@@ -24,6 +24,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/libinktomi++ \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/mgmt2/tools \
+  $(iocore_include_dirs) \
   -DPREFIX=\"$(prefix)\" \
   -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
   -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\"
@@ -81,6 +82,7 @@ traffic_shell_LDADD = \
   $(top_builddir)/proxy/mgmt2/tools/libinkconfigapi.a \
   $(top_builddir)/proxy/mgmt2/utils/libutils_lm.a \
   $(top_builddir)/libinktomi++/libinktomi++.a \
+  $(top_builddir)/iocore/utils/libinkutils.a \
   $(LIBTCL) \
   @LIBDL@ \
   @LIBM@ \
