@@ -33,7 +33,7 @@ std::map<std::string, uint32_t> StatSystemV2::stat_name_to_num;
 std::vector< std::pair<std::string, INK64> > StatSystemV2::global_stats;
 uint32_t StatSystemV2::MAX_STATS_ALLOWED = 500000;
 uint32_t StatSystemV2::NUM_STATS_ESTIMATE = 5000;
-static INKMutex statsMutex = INKMutexCreate();
+static INKMutex statsMutex = NULL;
 
 void StatSystemV2::incrementGlobal(uint32_t stat_num, INK64 stat_val)
 {
@@ -181,6 +181,9 @@ void StatSystemV2::setNumStatsEstimate(uint32_t num_stats_estimate)
 
 void StatSystemV2::init()
 {
+  if (statsMutex == NULL)
+    statsMutex = INKMutexCreate();
+
     if (INKMutexLock(statsMutex) != INK_SUCCESS) {
         return;
     }
