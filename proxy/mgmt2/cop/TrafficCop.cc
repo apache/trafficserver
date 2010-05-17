@@ -1932,16 +1932,13 @@ main(int argc, char *argv[])
 
   // Before accessing file system initialize Layout engine
   create_default_layout();
-  // TODO: Figure out why is this needed
-  if (argc < 0) {
-    ink_ftell(stdout);
-  }
+
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-stop") == 0) {
-      fprintf(stdout, "Cool! I think I'll be a STOP cop!\n");
+      ink_fputln(stdout, "Cool! I think I'll be a STOP cop!");
       killsig = SIGSTOP;
     } else if (strcmp(argv[i], "-V") == 0) {
-      fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
+      ink_fputln(stderr, appVersionInfo.FullVersionInfoStr);
       exit(0);
     }
   }
@@ -1967,7 +1964,7 @@ main(int argc, char *argv[])
     fcntl(fd, F_DUPFD, STDERR_FILENO);
     close(fd);
   } else {
-    fprintf(stdout, "Unable to open /dev/null\n");
+    ink_fputln(stderr, "Unable to open /dev/null");
     return 0;
   }
 

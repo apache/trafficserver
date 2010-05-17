@@ -82,15 +82,9 @@ main(int argc, char **argv)
 
   // Before accessing file system initialize Layout engine
   create_default_layout();
-  // TODO: Figure out why is this needed
-  if (argc < 0) {
-    ink_ftell(stdout);
-  }
 
   if (argc != 6 || (argc != 2 && strstr(argv[1], "help"))) {
-#ifdef DEBUG
-    fprintf(stderr, "[vip_config] Usage incorrect(1)\n");
-#endif
+    ink_fputln(stderr, "[vip_config] Usage incorrect(1)");
     exit(1);
   } else {                      /* Handle args */
 
@@ -100,7 +94,7 @@ main(int argc, char **argv)
       operation = DOWN_INTERFACE;
     } else {
 #ifdef DEBUG
-      fprintf(stderr, "[vip_config] Usage incorrect(2)\n");
+      ink_fputln(stderr, "[vip_config] Usage incorrect(2)");
 #endif
       exit(1);
     }

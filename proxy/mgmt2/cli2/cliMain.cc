@@ -59,10 +59,6 @@ main(int argc, char *argv[])
 
   // Before accessing file system initialize Layout engine
   create_default_layout();
-  // TODO: Figure out why is this needed
-  if (argc < 0) {
-    ink_ftell(stdout);
-  }
 
   // Argument description table used to describe how to parse command line args,
   // see 'ink_args.h' for meanings of the various fields
@@ -78,7 +74,7 @@ main(int argc, char *argv[])
 
   // check for the version number request
   if (version_flag) {
-    fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
+    ink_fputln(stderr, appVersionInfo.FullVersionInfoStr);
     exit(0);
   }
 

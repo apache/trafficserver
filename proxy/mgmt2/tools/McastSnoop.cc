@@ -288,17 +288,13 @@ main(int argc, char **argv)
   process_args(argument_descriptions, n_argument_descriptions, argv);
   // Before accessing file system initialize Layout engine
   create_default_layout();
-  // TODO: Figure out why is this needed
-  if (argc < 0) {
-    ink_ftell(stdout);
-  }
 
   init();
 
   int fd = establishReceiveChannel(mcast_group, mcast_port);
 
   if (fd < 0) {
-    fprintf(stderr, "Failed to setup multicast channel\n");
+    ink_fputln(stderr, "Failed to setup multicast channel");
     exit(1);
   }
 
