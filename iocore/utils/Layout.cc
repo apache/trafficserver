@@ -63,7 +63,7 @@ layout_relative(const char *root, const char *file)
     }
     return NULL;
   }
-  return strdup(path);
+  return xstrdup(path);
 }
 
 char *
@@ -81,7 +81,7 @@ Layout::relative_to(const char *dir, const char *file)
 Layout::Layout(const char *_prefix)
 {
   if (_prefix) {
-    prefix = strdup(_prefix);
+    prefix = xstrdup(_prefix);
   }
   else {
     FILE *fp;
@@ -130,7 +130,7 @@ Layout::Layout(const char *_prefix)
                 path, err, errno, strerror(errno));
       return;
     }
-    prefix = strdup(path);
+    prefix = xstrdup(path);
   }
   exec_prefix = layout_relative(prefix, EXEC_PREFIX);
   bindir = layout_relative(prefix, BINDIR);
