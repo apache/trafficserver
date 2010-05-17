@@ -256,6 +256,18 @@ AC_DEFUN([ATS_SUBST_EXPANDED_ARG], [
   ATS_SUBST($1)
 ])
 
+dnl
+dnl ATS_SUBST_PATH_ARG
+dnl Export (via ATS_SUBST) the various path-related variables that
+dnl trafficserver will use while generating scripts and
+dnl the default config file.
+AC_DEFUN([ATS_SUBST_EXPANDED_ARG], [
+  ATS_EXPAND_VAR(exp_$1, [$]$1)
+  ATS_PATH_RELATIVE(rel_$1, [$]exp_$1, ${prefix})
+  ATS_SUBST(rel_$1)
+  ATS_SUBST($1)
+])
+
 dnl ATS_HELP_STRING(LHS, RHS)
 dnl Autoconf 2.50 can not handle substr correctly.  It does have
 dnl AC_HELP_STRING, so let's try to call it if we can.
