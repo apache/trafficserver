@@ -47,15 +47,15 @@ AC_ARG_WITH(pcre, [AC_HELP_STRING([--with-pcre=DIR],[use a specific pcre library
 
 if test "x$pcre_base_dir" = "x"; then
   AC_MSG_CHECKING([for pcre location])
-  AC_CACHE_VAL(cv_pcre_dir,[
+  AC_CACHE_VAL(ats_cv_pcre_dir,[
   for dir in /usr/local /usr ; do
     if test -d $dir && ( test -f $dir/include/pcre.h || test -f $dir/include/pcre/pcre.h ); then
-      cv_pcre_dir=$dir
+      ats_cv_pcre_dir=$dir
       break
     fi
   done
   ])
-  pcre_base_dir=$cv_pcre_dir
+  pcre_base_dir=$ats_cv_pcre_dir
   if test "x$pcre_base_dir" = "x"; then
     enable_pcre=no
     AC_MSG_RESULT([not found])

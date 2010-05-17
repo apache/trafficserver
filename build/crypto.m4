@@ -56,15 +56,15 @@ AC_ARG_WITH(openssl, [AC_HELP_STRING([--with-openssl=DIR],[use a specific OpenSS
 
 if test "x$openssl_base_dir" = "x"; then
   AC_MSG_CHECKING([for OpenSSL location])
-  AC_CACHE_VAL(cv_openssl_dir,[
+  AC_CACHE_VAL(ats_cv_openssl_dir,[
   for dir in /usr/local/ssl /usr/pkg /usr/sfw /usr/local /usr; do
     if test -d $dir && test -f $dir/include/openssl/x509.h; then
-      cv_openssl_dir=$dir
+      ats_cv_openssl_dir=$dir
       break
     fi
   done
   ])
-  openssl_base_dir=$cv_openssl_dir
+  openssl_base_dir=$ats_cv_openssl_dir
   if test "x$openssl_base_dir" = "x"; then
     enable_openssl=no
     AC_MSG_RESULT([not found])

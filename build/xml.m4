@@ -55,15 +55,15 @@ AC_ARG_WITH(expat, [AC_HELP_STRING([--with-expat=DIR],[use a specific Expat libr
 
 if test "x$expat_base_dir" = "x"; then
   AC_MSG_CHECKING([for Expat location])
-  AC_CACHE_VAL(cv_expat_dir,[
+  AC_CACHE_VAL(ats_cv_expat_dir,[
   for dir in /usr/local /usr; do
     if test -d $dir && test -f $dir/include/expat.h; then
-      cv_expat_dir=$dir
+      ats_cv_expat_dir=$dir
       break
     fi
   done
   ])
-  expat_base_dir=$cv_expat_dir
+  expat_base_dir=$ats_cv_expat_dir
   if test "x$expat_base_dir" = "x"; then
     enable_expat=no
     AC_MSG_RESULT([not found])

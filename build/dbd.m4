@@ -47,15 +47,15 @@ AC_ARG_WITH(sqlite3, [AC_HELP_STRING([--with-sqlite3=DIR],[use a specific sqlite
 
 if test "x$sqlite3_base_dir" = "x"; then
   AC_MSG_CHECKING([for sqlite3 location])
-  AC_CACHE_VAL(cv_sqlite3_dir,[
+  AC_CACHE_VAL(ats_cv_sqlite3_dir,[
   for dir in /usr/local /usr ; do
     if test -d $dir && test -f $dir/include/sqlite3.h; then
-      cv_sqlite3_dir=$dir
+      ats_cv_sqlite3_dir=$dir
       break
     fi
   done
   ])
-  sqlite3_base_dir=$cv_sqlite3_dir
+  sqlite3_base_dir=$ats_cv_sqlite3_dir
   if test "x$sqlite3_base_dir" = "x"; then
     enable_sqlite3=no
     AC_MSG_RESULT([not found])
@@ -131,15 +131,15 @@ AC_ARG_WITH(bdb, [AC_HELP_STRING([--with-libdb=DIR],[use a specific Berkeley-DB 
 
 if test "x$libdb_base_dir" = "x"; then
   AC_MSG_CHECKING([for libdb location])
-  AC_CACHE_VAL(cv_libdb_dir,[
+  AC_CACHE_VAL(ats_cv_libdb_dir,[
   for dir in /usr/local /usr ; do
     if test -d $dir && test -f $dir/include/db.h; then
-      cv_libdb_dir=$dir
+      ats_cv_libdb_dir=$dir
       break
     fi
   done
   ])
-  libdb_base_dir=$cv_libdb_dir
+  libdb_base_dir=$ats_cv_libdb_dir
   if test "x$libdb_base_dir" = "x"; then
     enable_libdb=no
     AC_MSG_RESULT([not found])

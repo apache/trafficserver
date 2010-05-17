@@ -47,15 +47,15 @@ AC_ARG_WITH(lzma, [AC_HELP_STRING([--with-lzma=DIR],[use a specific lzma library
 
 if test "x$lzma_base_dir" = "x"; then
   AC_MSG_CHECKING([for lzma location])
-  AC_CACHE_VAL(cv_lzma_dir,[
+  AC_CACHE_VAL(ats_cv_lzma_dir,[
   for dir in /usr/local /usr ; do
     if test -d $dir && test -f $dir/include/lzma.h; then
-      cv_lzma_dir=$dir
+      ats_cv_lzma_dir=$dir
       break
     fi
   done
   ])
-  lzma_base_dir=$cv_lzma_dir
+  lzma_base_dir=$ats_cv_lzma_dir
   if test "x$lzma_base_dir" = "x"; then
     enable_lzma=no
     AC_MSG_RESULT([not found])

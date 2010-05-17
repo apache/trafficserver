@@ -47,15 +47,15 @@ AC_ARG_WITH(zlib, [AC_HELP_STRING([--with-zlib=DIR],[use a specific zlib library
 
 if test "x$zlib_base_dir" = "x"; then
   AC_MSG_CHECKING([for zlib location])
-  AC_CACHE_VAL(cv_zlib_dir,[
+  AC_CACHE_VAL(ats_cv_zlib_dir,[
   for dir in /usr/local /usr ; do
     if test -d $dir && test -f $dir/include/zlib.h; then
-      cv_zlib_dir=$dir
+      ats_cv_zlib_dir=$dir
       break
     fi
   done
   ])
-  zlib_base_dir=$cv_zlib_dir
+  zlib_base_dir=$ats_cv_zlib_dir
   if test "x$zlib_base_dir" = "x"; then
     enable_zlib=no
     AC_MSG_RESULT([not found])
