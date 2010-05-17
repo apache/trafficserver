@@ -19,6 +19,13 @@
 /stamp-h1
 /config.h
 
+build/aux/
+build/libtool.m4
+build/ltoptions.m4
+build/ltsugar.m4
+build/ltversion.m4
+build/lt~obsolete.m4
+
 Makefile
 config.log
 config.status
