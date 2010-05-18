@@ -30,6 +30,7 @@
  ****************************************************************************/
 
 #include "inktomi++.h"
+#include "I_Layout.h"
 #include "Main.h"
 #include "BaseRecords.h"
 #include "WebHttp.h"
@@ -252,22 +253,19 @@ setUpLogging()
   if ((err = stat(system_log_dir, &s)) < 0) {
     ink_assert(RecGetRecordString_Xmalloc("proxy.config.log2.logfile_dir", &log_dir)
 	       == REC_ERR_OKAY);
+    Layout::relative_to(system_log_dir, sizeof(system_log_dir),
+                        Layout::get()->prefix, log_dir);
     if ((err = stat(log_dir, &s)) < 0) {
-      // Try 'system_root_dir/var/log/trafficserver' directory
-      snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
-               system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
-      if ((err = stat(system_log_dir, &s)) < 0) {
-        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
+      mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
                 system_log_dir, err, errno, strerror(errno));
-        mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
-        //_exit(1);
-      }
+      mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+      //_exit(1);
     } else {
       ink_strncpy(system_log_dir,log_dir,sizeof(system_log_dir));
     }
   }
-
-  snprintf(log_file, sizeof(log_file), "%s%s%s", system_log_dir, DIR_SEP, "lm.log");
+  Layout::relative_to(log_file, sizeof(log_file),
+                      system_log_dir, log_dir);
 
   int diskFD = open(log_file, O_WRONLY | O_APPEND | O_CREAT, 0644);
 
@@ -916,7 +914,14 @@ webIntr_main(void *x)
   cliEnabled = (int) tempInt;
   if (found && cliEnabled) {
     found = (RecGetRecordString_Xmalloc("proxy.config.admin.cli_path", &cliPath) == REC_ERR_OKAY);
-    if (!found || (cliFD = newUNIXsocket(cliPath)) < 0) {
+    if (found) {
+      char *sockPath = Layout::relative_to(Layout::get()->runtimedir, cliPath);
+      if ((cliFD = newUNIXsocket(sockPath)) < 0) {
+        found = false;
+      }
+      xfree(sockPath);
+    }
+    if (!found) {
       mgmt_elog(stderr,
                 "[WebIntrMain] Unable to start Command Line Interface server.  The command line tool will not work\n");
       lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, cliFailMsg);

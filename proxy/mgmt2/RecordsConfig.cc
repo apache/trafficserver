@@ -372,7 +372,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.admin.cli_enabled", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.admin.cli_path", "", INK_STRING, "var/trafficserver/cli", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.admin.cli_path", "", INK_STRING, "cli", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.admin.cli_port", "", INK_INT, "9000", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
