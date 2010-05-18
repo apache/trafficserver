@@ -41,23 +41,23 @@ TS_PACKAGE_VERSION="@PACKAGE_VERSION@"
 TS_PACKAGE_BUGREPORT="@PACKAGE_BUGREPORT@"
 
 if [ -e /etc/SuSE-release ]; then
-    DISTRIB_ID="suse"
+  DISTRIB_ID="suse"
 elif [ -e /etc/fedora-release ]; then
-    DISTRIB_ID="fedora"
+  DISTRIB_ID="fedora"
 elif [ -e /etc/redhat-release ]; then
-    DISTRIB_ID="redhat" # also exists on Fedora
+  DISTRIB_ID="redhat" # also exists on Fedora
 elif [ -e /etc/lsb-release ]; then
-    DISTRIB_ID="ubuntu"
+  DISTRIB_ID="ubuntu"
 elif [ -e /etc/debian_version ]; then
-    DISTRIB_ID="debian" # also exists on Ubuntu
+  DISTRIB_ID="debian" # also exists on Ubuntu
 elif [ -e /etc/slackware-version ]; then
-    DISTRIB_ID="slackware"
+  DISTRIB_ID="slackware"
 fi
 
 # /usr/bin/lsb_release -rd # Ubuntu release & description info
 
 HEAD=/usr/bin/head
-[ -x $HEAD ] || HEAD=head
+test -x $HEAD || HEAD=head
 
 # Ubuntu: Do NOT "set -e"
 
@@ -92,37 +92,37 @@ STDOUTLOG=${STDOUTLOG:-$TS_ROOT@exp_logdir@/traffic_server.stdout}
 # stderr file of executable
 STDERRLOG=${STDERRLOG:-$TS_ROOT@exp_logdir@/traffic_server.stderr}
 if [ -d /etc/rc.d/init.d ]; then
-    SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
+  SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
 elif [ -d /etc/init.d ]; then
-    SCRIPTNAME=/etc/init.d/$NAME # Ubuntu
+  SCRIPTNAME=/etc/init.d/$NAME # Ubuntu
 else
-    echo "This script needs to be ported to this OS"
-    exit 1
+  echo "This script needs to be ported to this OS"
+  exit 1
 fi
 
 
 # Exit if the package can not be found
 if [ ! -x "$TS_DAEMON" ]; then
-    echo "Error: Can not find $TS_DAEMON using TS_ROOT=$TS_ROOT"
-    echo "       Please set TS_ROOT to point to base installation."
-    exit 0
+  echo "Error: Can not find $TS_DAEMON using TS_ROOT=$TS_ROOT"
+  echo "       Please set TS_ROOT to point to base installation."
+  exit 0
 fi
 
 # Ubuntu: Read configuration variable file if it is present
-[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+test -r /etc/default/$NAME && . /etc/default/$NAME
 
 # Ubuntu: Load the VERBOSE setting and other rcS variables
-[ -f /etc/default/rcS ] && . /etc/default/rcS
+test -f /etc/default/rcS && . /etc/default/rcS
 
 # Suse: load rc.status
-[ -f /etc/rc.status ] && . /etc/rc.status
+test -f /etc/rc.status && . /etc/rc.status
 
 # Fedora: make avail helper functions 'action', 'killproc', 'status', etc
-[ -f /etc/rc.d/init.d/functions ] && . /etc/rc.d/init.d/functions
+test -f /etc/rc.d/init.d/functions && . /etc/rc.d/init.d/functions
 
 # Ubuntu: Define LSB log_* functions.
 #         Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
-[ -f /lib/lsb/init-functions ] && . /lib/lsb/init-functions
+test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
 
 
 #
@@ -132,7 +132,8 @@ fi
 #  redirects stdout and stderr to files
 #  this function is meant to substitute 'daemon'
 #  because 'daemon' expects $1 to fork itself
-forkdaemon() {
+forkdaemon()
+{
   local i=0
 
   # launch in background, i.e. fork
@@ -164,18 +165,18 @@ forkdaemon() {
 #
 do_start()
 {
-	# Return
-	#   0 if daemon has been started
-	#   1 if daemon was already running
-	#   2 if daemon could not be started
-	start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON --test > /dev/null \
-		|| return 1
-	start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON -- \
-		$TC_DAEMON_ARGS \
-		|| return 2
-	# Add code here, if necessary, that waits for the process to be ready
-	# to handle requests from services started subsequently which depend
-	# on this one.  As a last resort, sleep for some time.
+  # Return
+  #   0 if daemon has been started
+  #   1 if daemon was already running
+  #   2 if daemon could not be started
+  start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON --test > /dev/null \
+    || return 1
+  start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON -- \
+    $TC_DAEMON_ARGS \
+    || return 2
+  # Add code here, if necessary, that waits for the process to be ready
+  # to handle requests from services started subsequently which depend
+  # on this one.  As a last resort, sleep for some time.
 }
 
 #
@@ -183,45 +184,46 @@ do_start()
 #
 do_stop()
 {
-	# Return
-	#   0 if daemon has been stopped
-	#   1 if daemon was already stopped
-	#   2 if daemon could not be stopped
-	#   other if a failure occurred
-	start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TC_PIDFILE --name $TC_NAME
-	RETVAL="$?"
-	[ "$RETVAL" = 2 ] && return 2
-	# Wait for children to finish too if this is a daemon that forks
-	# and if the daemon is only ever run from this initscript.
-	# If the above conditions are not satisfied then add some other code
-	# that waits for the process to drop all resources that could be
-	# needed by services started subsequently.  A last resort is to
-	# sleep for some time.
-	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TC_DAEMON
-	[ "$?" = 2 ] && return 2
+  # Return
+  #   0 if daemon has been stopped
+  #   1 if daemon was already stopped
+  #   2 if daemon could not be stopped
+  #   other if a failure occurred
+  start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TC_PIDFILE --name $TC_NAME
+  RETVAL="$?"
+  test "$RETVAL" = 2 && return 2
+  # Wait for children to finish too if this is a daemon that forks
+  # and if the daemon is only ever run from this initscript.
+  # If the above conditions are not satisfied then add some other code
+  # that waits for the process to drop all resources that could be
+  # needed by services started subsequently.  A last resort is to
+  # sleep for some time.
+  start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TC_DAEMON
+  test "$?" = 2 && return 2
         # Need to stop the TM and TS also
-	start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
-	[ "$?" = 2 ] && return 2
-	start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
-	[ "$?" = 2 ] && return 2
-	# Many daemons don't delete their pidfiles when they exit.
-	rm -f $TC_PIDFILE
-	rm -f $TM_PIDFILE
-	rm -f $TS_PIDFILE
-	return "$RETVAL"
+  start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
+  test "$?" = 2 && return 2
+  start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
+  test "$?" = 2 && return 2
+  # Many daemons don't delete their pidfiles when they exit.
+  rm -f $TC_PIDFILE
+  rm -f $TM_PIDFILE
+  rm -f $TS_PIDFILE
+  return "$RETVAL"
 }
 
 #
 # Ubuntu: Function that sends a SIGHUP to the daemon/service
 #
-do_reload() {
-	#
-	# If the daemon can reload its configuration without
-	# restarting (for example, when it is sent a SIGHUP),
-	# then implement that here.
-	#
-	start-stop-daemon --stop --signal 1 --quiet --pidfile $TS_PIDFILE --name $TS_NAME
-	return 0
+do_reload()
+{
+  #
+  # If the daemon can reload its configuration without
+  # restarting (for example, when it is sent a SIGHUP),
+  # then implement that here.
+  #
+  start-stop-daemon --stop --signal 1 --quiet --pidfile $TS_PIDFILE --name $TS_NAME
+  return 0
 }
 
 
@@ -229,125 +231,132 @@ do_reload() {
 # main
 case "$1" in
   start)
-        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-	    [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
-	    do_start
-	    case "$?" in
-		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
-	    esac
-        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
-        elif [ "$DISTRIB_ID" = "suse" ]; then
-	    echo -n "Starting ${TS_PACKAGE_NAME}"
-            startproc -p $TC_PIDFILE $TC_DAEMON $TC_DAEMON_ARGS
-	    rc_status -v
-        else
-            echo "This script needs to be ported to this OS"
-            exit 1
-        fi
-	;;
-  stop)
-        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-	    [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
-	    do_stop
-	    case "$?" in
-		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
-	    esac
-        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE $TC_DAEMON
-            action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE $TM_DAEMON
-            action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE $TS_DAEMON
-        elif [ "$DISTRIB_ID" = "suse" ]; then
-	    echo -n "Stopping ${TC_NAME}"
-            killproc -p $TC_PIDFILE $TC_DAEMON
-	    rc_status -v
-	    echo -n "Stopping ${TM_NAME}"
-            killproc -p $TM_PIDFILE $TM_DAEMON
-	    rc_status -v
-	    echo -n "Stopping ${TS_NAME}"
-            killproc -p $TS_PIDFILE $TS_DAEMON
-	    rc_status -v
-        else
-            echo "This script needs to be ported to this OS"
-            exit 1
-        fi
-	;;
-  #reload|force-reload)
-	#
-	# If do_reload() is not implemented then leave this commented out
-	# and leave 'force-reload' as an alias for 'restart'.
-	#
-	#log_daemon_msg "Reloading $DESC" "$NAME"
-	#do_reload
-	#log_end_msg $?
-	#;;
-  restart|force-reload)
-        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-	#
-	# If the "reload" option is implemented then remove the
-	# 'force-reload' alias
-	#
-	    log_daemon_msg "Restarting $DESC" "$NAME"
-	    do_stop
-	    case "$?" in
-	        0|1)
-		    do_start
-		    case "$?" in
-			0) log_end_msg 0 ;;
-			1) log_end_msg 1 ;; # Old process is still running
-			*) log_end_msg 1 ;; # Failed to start
-		    esac
-		    ;;
-	        *)
-	  	# Failed to stop
-		    log_end_msg 1
-		    ;;
-	    esac
-        else
-	    # This is the typical process for restart
-            $0 'stop'
-            $0 'start'
-         fi
-	;;
-  status)
-        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            status -p $TC_PIDFILE $TC_NAME
-        elif [  "$DISTRIB_ID" = "suse" ]; then
-            echo -n "Checking for service ${DM}: "
-            checkproc -p $TC_PIDFILE $TC_NAME
-            rc_status -v
-	else
-            echo "This script needs to be ported to this OS"
-            exit 1
-        fi
+    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+      test "x$VERBOSE" != "xno" && log_daemon_msg "Starting $DESC" "$NAME"
+      do_start
+      case "$?" in
+        0|1)
+          test "$VERBOSE" != no && log_end_msg 0
         ;;
+        2)
+          test "$VERBOSE" != no && log_end_msg 1
+        ;;
+      esac
+    elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+      action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
+    elif [ "$DISTRIB_ID" = "suse" ]; then
+      echo -n "Starting ${TS_PACKAGE_NAME}"
+      startproc -p $TC_PIDFILE $TC_DAEMON $TC_DAEMON_ARGS
+      rc_status -v
+    else
+        echo "This script needs to be ported to this OS"
+        exit 1
+    fi
+  ;;
+  stop)
+    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+      test "x$VERBOSE" != "xno" && log_daemon_msg "Stopping $DESC" "$NAME"
+      do_stop
+      case "$?" in
+        0|1)
+          test "x$VERBOSE" != "xno" && log_end_msg 0
+        ;;
+        2)
+          test "x$VERBOSE" != "xno" && log_end_msg 1
+        ;;
+      esac
+    elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+      action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE $TC_DAEMON
+      action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE $TM_DAEMON
+      action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE $TS_DAEMON
+    elif [ "$DISTRIB_ID" = "suse" ]; then
+      echo -n "Stopping ${TC_NAME}"
+      killproc -p $TC_PIDFILE $TC_DAEMON
+      rc_status -v
+      echo -n "Stopping ${TM_NAME}"
+      killproc -p $TM_PIDFILE $TM_DAEMON
+      rc_status -v
+      echo -n "Stopping ${TS_NAME}"
+      killproc -p $TS_PIDFILE $TS_DAEMON
+      rc_status -v
+    else
+      echo "This script needs to be ported to this OS"
+      exit 1
+    fi
+  ;;
+  #reload|force-reload)
+  #
+  # If do_reload() is not implemented then leave this commented out
+  # and leave 'force-reload' as an alias for 'restart'.
+  #
+  #log_daemon_msg "Reloading $DESC" "$NAME"
+  #do_reload
+  #log_end_msg $?
+  #;;
+  restart|force-reload)
+    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+      #
+      # If the "reload" option is implemented then remove the
+      # 'force-reload' alias
+      #
+      log_daemon_msg "Restarting $DESC" "$NAME"
+      do_stop
+      case "$?" in
+          0|1)
+            do_start
+            case "$?" in
+              0) log_end_msg 0 ;;
+              1) log_end_msg 1 ;; # Old process is still running
+              *) log_end_msg 1 ;; # Failed to start
+            esac
+          ;;
+          *)
+            # Failed to stop
+            log_end_msg 1
+          ;;
+      esac
+    else
+      # This is the typical process for restart
+      $0 'stop'
+      $0 'start'
+    fi
+  ;;
+  status)
+    if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+      status -p $TC_PIDFILE $TC_NAME
+    elif [  "$DISTRIB_ID" = "suse" ]; then
+      echo -n "Checking for service ${DM}: "
+      checkproc -p $TC_PIDFILE $TC_NAME
+      rc_status -v
+    else
+      echo "This script needs to be ported to this OS"
+      exit 1
+    fi
+  ;;
   condrestart)
-        if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            if ! $0 'status'
-            then
-                $0 'stop'
-                $0 'start'
-            fi
-        else
-            echo "This script needs to be ported to this OS"
-            exit 1
-        fi
-    ;;
+    if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+      if ! $0 'status'
+      then
+        $0 'stop'
+        $0 'start'
+      fi
+    else
+      echo "This script needs to be ported to this OS"
+      exit 1
+    fi
+  ;;
   *)
-        if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-	    echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
-        elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            echo "Usage: $0 {start|stop|status|restart|condrestart}"
-        elif [ "$DISTRIB_ID" = "suse" ]; then
-            echo "Usage: $0 {start|stop|restart|status}"
-        else
-            echo "This script needs to be ported to this OS"
-            exit 1
-        fi
-	exit 3
-	;;
+    if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+      echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+    elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
+      echo "Usage: $0 {start|stop|status|restart|condrestart}"
+    elif [ "$DISTRIB_ID" = "suse" ]; then
+      echo "Usage: $0 {start|stop|restart|status}"
+    else
+      echo "This script needs to be ported to this OS"
+      exit 1
+    fi
+    exit 3
+  ;;
 esac
-
 
