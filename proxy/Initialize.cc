@@ -97,6 +97,7 @@ init_system_settings(void)
 #endif
 }
 
+#if 0
 // XXX: This is unused function
 //      Either remove it or implement Layout functions
 void
@@ -142,6 +143,7 @@ init_system_dirs(void)
   }
 
 }
+#endif
 
 #if (HOST_OS == linux)
 #include <sys/prctl.h>

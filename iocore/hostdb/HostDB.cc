@@ -24,6 +24,7 @@
 #define _HOSTDB_CC_
 
 #include "P_HostDB.h"
+#include "I_Layout.h"
 
 #ifndef NON_MODULAR
 //char system_config_directory[512] = "etc/trafficserver";
@@ -319,10 +320,14 @@ HostDBCache::start(int flags)
 #endif
   IOCORE_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
 
+  if (storage_path[0] != '/') {
+    Layout::relative_to(storage_path, PATH_NAME_MAX,
+                        system_root_dir, storage_path);
+  }
   struct stat s;
   int err;
   if ((err = stat(storage_path, &s)) < 0) {
-    ink_strncpy(storage_path,system_runtime_dir,sizeof(storage_path));
+    ink_strncpy(storage_path, system_runtime_dir, sizeof(storage_path));
     if ((err = stat(storage_path, &s)) < 0) {
       Warning("Unable to stat() directory '%s': %d %d, %s", storage_path, err, errno, strerror(errno));
       Warning(" Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir' ");
@@ -336,8 +341,9 @@ HostDBCache::start(int flags)
   if (open(hostDBStore, "hostdb.config", hostdb_filename, hostdb_size, reconfigure, fix, false /* slient */ ) < 0) {
     Note("reconfiguring host database");
 
-    char p[PATH_NAME_MAX];
-    snprintf(p, sizeof(p), "%s%s%s%s%s", system_config_directory, DIR_SEP, "internal", DIR_SEP, "hostdb.config");
+    char p[PATH_NAME_MAX + 1];
+    Layout::relative_to(p, PATH_NAME_MAX,
+                        system_config_directory, "internal/hostdb.config");
     if (unlink(p) < 0)
       Debug("hostdb", "unable to unlink %s", p);
 

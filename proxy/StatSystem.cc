@@ -36,6 +36,7 @@
 #include "StatPages.h"
 #include "HTTP.h"
 #include "RecordsConfig.h"
+#include "I_Layout.h"
 
 // defines
 
@@ -573,13 +574,17 @@ void
 initialize_all_global_stats()
 {
   int istat, i;
-  char snap_file[PATH_NAME_MAX];
-  char local_state_dir[PATH_NAME_MAX];
+  char snap_file[PATH_NAME_MAX + 1];
+  char local_state_dir[PATH_NAME_MAX + 1];
   struct stat s;
   int err;
 
   // Jira TS-21
   REC_ReadConfigString(local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
+  if (local_state_dir[0] != '/') {
+    // Not an absolute path
+    ink_strncpy(local_state_dir, Layout::get()->runtimedir, sizeof(local_state_dir));
+  }
   if ((err = stat(local_state_dir, &s)) < 0) {
     ink_strncpy(local_state_dir,system_runtime_dir,sizeof(local_state_dir));
     if ((err = stat(local_state_dir, &s)) < 0) {
@@ -588,8 +593,8 @@ initialize_all_global_stats()
     }
   }
   REC_ReadConfigString(snap_file, "proxy.config.stats.snap_file", PATH_NAME_MAX);
-  snprintf(snap_filename, sizeof(snap_filename), "%s%s%s", local_state_dir,
-           DIR_SEP, snap_file);
+  Layout::relative_to(snap_filename, sizeof(snap_filename),
+                      local_state_dir, snap_file);
   Debug("stats", "stat snap filename %s", snap_filename);
 
   stat_callback_init();
