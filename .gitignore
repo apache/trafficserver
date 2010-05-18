@@ -37,6 +37,7 @@ libinktomi++/ParseRulesCTypeToLower
 libinktomi++/ParseRulesCTypeToUpper
 libinktomi++/mkdfa
 proxy/config/records.config
+proxy/config/storage.config
 
 proxy/mgmt2/api2/remote/traffic_api_cli_remote
 proxy/mgmt2/tools/traffic_mcast_snoop
