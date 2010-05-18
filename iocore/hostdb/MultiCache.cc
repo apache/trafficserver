@@ -484,7 +484,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     if (!mmap_region(1, fds, cur, private_flag, fd))
       goto Labort;
 #if (HOST_OS != darwin)
-    ink_assert(!socketManager.close(fd, keFile));
+    ink_assert(!socketManager.close(fd));
 #endif
     store = saved;
   }
@@ -492,7 +492,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 
   for (i = 0; i < n_fds; i++)
     if (fds[i] >= 0)
-      ink_assert(!socketManager.close(fds[i], keFile));
+      ink_assert(!socketManager.close(fds[i]));
   return 0;
 Lvalloc:
   {
@@ -512,13 +512,13 @@ Lvalloc:
     mapped_header = (MultiCacheHeader *) cur;
     for (i = 0; i < n_fds; i++)
       if (fds[i] >= 0)
-        socketManager.close(fds[i], keFile);
+        socketManager.close(fds[i]);
     return 0;
   }
 Labort:
   for (i = 0; i < n_fds; i++)
     if (fds[i] >= 0)
-      socketManager.close(fds[i], keFile);
+      socketManager.close(fds[i]);
   return -1;
 }
 

@@ -112,7 +112,7 @@ SocketManager::pread(int fd, void *buf, int size, off_t offset, char *tag)
 }
 
 TS_INLINE ink64
-SocketManager::readv(int fd, struct iovec *vector, size_t count, teFDType eT)
+SocketManager::readv(int fd, struct iovec *vector, size_t count)
 {
   ink64 r;
   do {
@@ -219,7 +219,7 @@ SocketManager::pwrite(int fd, void *buf, int size, off_t offset, char *tag)
 }
 
 TS_INLINE ink64
-SocketManager::writev(int fd, struct iovec *vector, size_t count, teFDType eT)
+SocketManager::writev(int fd, struct iovec *vector, size_t count)
 {
   ink64 r;
   do {

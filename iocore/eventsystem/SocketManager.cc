@@ -154,7 +154,7 @@ SocketManager::ink_bind(SOCKET s, struct sockaddr *name, int namelen, short Prot
 
 
 int
-SocketManager::close(int s, teFDType eT)
+SocketManager::close(int s)
 {
   int res;
   if (!s) {
@@ -162,8 +162,6 @@ SocketManager::close(int s, teFDType eT)
     return 0;
   }
   do {
-    if (keSocket == eT) {
-    }
     res =::close(s);
     if (res < 0)
       res = -errno;

@@ -57,7 +57,6 @@ libinktomi___a_SOURCES = \
   ink_error.cc \
   ink_error.h \
   ink_exception.h \
-  ink__exit.c \
   ink_file.cc \
   ink_file.h \
   ink_hash_table.cc \

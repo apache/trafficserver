@@ -109,7 +109,7 @@ Connection::close()
   if (fd >= 2) {
     int fd_save = fd;
     fd = NO_FD;
-    return socketManager.close(fd_save, keSocket);
+    return socketManager.close(fd_save);
   } else {
     fd = NO_FD;
     return -EBADF;

@@ -581,14 +581,14 @@ UDPNetProcessor::CreateUDPSocket(int *resfd,
 SoftError:
   Debug("udpnet", "creating a udp socket port = %d---soft failure", my_port);
   if (fd != -1)
-    socketManager.close(fd, keSocket);
+    socketManager.close(fd);
   *resfd = -1;
   *status = NULL;
   return false;
 HardError:
   Debug("udpnet", "creating a udp socket port = %d---hard failure", my_port);
   if (fd != -1)
-    socketManager.close(fd, keSocket);
+    socketManager.close(fd);
   *resfd = -1;
   *status = ACTION_IO_ERROR;
   return false;
@@ -688,7 +688,7 @@ UDPNetProcessor::UDPBind(Continuation * cont, int my_port, int my_ip, int send_b
   return ACTION_RESULT_DONE;
 Lerror:
   if (fd != NO_FD)
-    socketManager.close(fd, keSocket);
+    socketManager.close(fd);
   cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, NULL);
   return ACTION_IO_ERROR;
 }
@@ -1328,7 +1328,7 @@ UDPWorkContinuation::StateCreatePortPairs(int event, void *data)
         ink_atomic_swap(&lastAllocPort, portNum + 2);
       } else {
         if (fd1 != NO_FD)
-          socketManager.close(fd1, keSocket);
+          socketManager.close(fd1);
         if (status == ACTION_IO_ERROR)
           goto Lerror;
       }

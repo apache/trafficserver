@@ -1171,10 +1171,6 @@ SignalHandler(int sig)
     }
     lmgmt->mgmtCleanup();
   }
-// INKqa08323 (linux/mgmt: tm process doesn't exit on SIGxxx)
-#if (HOST_OS == linux) && defined(_exit)
-#undef _exit                    // _exit redefined below to be ink__exit()
-#endif
 
   switch (sig) {
   case SIGQUIT:
@@ -1198,11 +1194,6 @@ SignalHandler(int sig)
   fprintf(stderr, "[TrafficManager] ==> signal2 #%d\n", sig);
   mgmt_elog(stderr, "[TrafficManager] ==> signal2 #%d\n", sig);
   _exit(sig);
-
-#if (HOST_OS == linux)
-#define _exit(val) ink__exit(val)
-#endif
-
 }                               /* End SignalHandler */
 
 

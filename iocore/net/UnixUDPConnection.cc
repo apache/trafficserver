@@ -53,7 +53,7 @@ UnixUDPConnection::~UnixUDPConnection()
   }
   Debug("udpnet", "Destroying udp port = %d", getPortNum());
   if (fd != -1) {
-    socketManager.close(fd, keSocket);
+    socketManager.close(fd);
   }
   fd = -1;
 }

@@ -156,11 +156,7 @@ process_args(ArgumentDescription * argument_descriptions, int n_argument_descrip
         *(double *) argument_descriptions[i].location = atof(env);
         break;
       case 'L':
-#ifdef HAVE_64_BIT
-        *(long *) argument_descriptions[i].location = atol(env);
-#else
         *(ink64 *) argument_descriptions[i].location = atoll(env);
-#endif
         break;
       case 'S':
         strncpy((char *) argument_descriptions[i].location, env, atoi(argument_descriptions[i].type + 1));
@@ -230,15 +226,7 @@ usage(ArgumentDescription * argument_descriptions, int n_argument_descriptions, 
       fprintf(stderr, "          ");
       break;
     case 'L':
-      fprintf(stderr,
-#ifdef __alpha
-              " %-9ld",
-#elif (HOST_OS == freebsd)
-              " %-9qd",
-#else
-              " %-9lld",
-#endif
-              *(ink64 *) argument_descriptions[i].location);
+      fprintf(stderr, " %-9lld", *(ink64 *) argument_descriptions[i].location);
       break;
     case 'S':
       if (*(char *) argument_descriptions[i].location) {

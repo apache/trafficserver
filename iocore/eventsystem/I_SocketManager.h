@@ -57,7 +57,7 @@ struct SocketManager
   // result is the number of bytes or -errno
   ink64 read(int fd, void *buf, int len, void *pOLP = NULL);
   ink64 vector_io(int fd, struct iovec *vector, size_t count, int read_request, void *pOLP = 0);
-  ink64 readv(int fd, struct iovec *vector, size_t count, teFDType eT = KeDontCare);
+  ink64 readv(int fd, struct iovec *vector, size_t count);
   ink64 read_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
   ink64 pread(int fd, void *buf, int len, off_t offset, char *tag = NULL);
 
@@ -65,7 +65,7 @@ struct SocketManager
   int recvfrom(int fd, void *buf, int size, int flags, struct sockaddr *addr, socklen_t *addrlen);
 
   ink64 write(int fd, void *buf, int len, void *pOLP = NULL);
-  ink64 writev(int fd, struct iovec *vector, size_t count, teFDType eT = KeDontCare);
+  ink64 writev(int fd, struct iovec *vector, size_t count);
   ink64 write_vector(int fd, struct iovec *vector, size_t count, void *pOLP = 0);
   ink64 pwrite(int fd, void *buf, int len, off_t offset, char *tag = NULL);
 
@@ -112,7 +112,7 @@ struct SocketManager
   int getsockname(int s, struct sockaddr *, socklen_t *);
 
   // result is 0 or -errno
-  int close(int sock, teFDType eT = KeDontCare);
+  int close(int sock);
   int fast_close(int sock);
 
   int ink_bind(SOCKET s, struct sockaddr *name, int namelen, short protocol = 0);

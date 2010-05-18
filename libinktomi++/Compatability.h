@@ -69,12 +69,6 @@ typedef long paddr_t;
 #ifndef __x86_64
 typedef unsigned long long uint64_t;
 #endif
-
-extern "C"
-{
-  int ink__exit(int);
-#define _exit(val) ink__exit(val)
-}
 #endif
 
 #if ((HOST_OS == freebsd) || (HOST_OS == darwin))

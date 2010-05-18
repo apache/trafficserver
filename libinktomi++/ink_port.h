@@ -52,18 +52,6 @@ typedef off_t ink_off_t;
 #define INK32_MAX (2147483647)
 #define INK32_MIN (-2147483647-1)
 
-/*******************************************************************
- ** x86
-  ******************************************************************/
-
-#if (defined(i386) || defined(__i386))
-# define ink_atomic_cas_long(x,y) ink_atomic_cas ((ink32*) x, y)
-# define ink_atomic_swap_long(x,y) ink_atomic_swap ((ink32*) x, y)
-#else
-# define ink_atomic_cas_long(x,y) ink_atomic_cas64 ((ink64*) x, y)
-# define ink_atomic_swap_long(x,y) ink_atomic_swap64 ((ink64*) x, y)
-#endif
-
 #define _CRTIMP
 #define HAVE_64_BIT
 
@@ -87,7 +75,6 @@ typedef off_t ink_off_t;
 #endif
 #endif
 
-
 #if (HOST_OS == freebsd)
 #define NO_MEMALIGN
 #endif
@@ -99,17 +86,5 @@ typedef off_t ink_off_t;
 #endif
 
 #define NUL '\0'
-
-/* copy from ink_ntio.h */
-typedef enum
-{
-  keSocket = 0xbad,
-  keFile,
-  KeDontCare
-} teFDType;
-
-/********************************* PROTOTYPES *******************************/
-
-void ink_port_check_type_sizes();
 
 #endif

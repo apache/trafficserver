@@ -300,14 +300,14 @@ read_stats_snap()
   Debug("stats", "read_stats_snap: read statistics");
 
   // close(fd);
-  socketManager.close(fd, keFile);
+  socketManager.close(fd);
   return;
 
 Lmissmatch:
   Note("clearing statistics");
   clear_stats();
   //close(fd);
-  socketManager.close(fd, keFile);
+  socketManager.close(fd);
 }
 
 static void
@@ -372,7 +372,7 @@ write_stats_snap()
   if (buf)
     xfree(buf);
   //close(fd);
-  socketManager.close(fd, keFile);
+  socketManager.close(fd);
   Debug("stats", "snapped stats");
   return;
 Lerror:
@@ -380,7 +380,7 @@ Lerror:
     xfree(buf);
   Warning("unable to snap statistics");
   //close(fd);
-  socketManager.close(fd, keFile);
+  socketManager.close(fd);
 }
 
 struct SnapStatsContinuation:Continuation
