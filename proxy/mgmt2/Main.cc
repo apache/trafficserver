@@ -114,12 +114,13 @@ char *schema_path = NULL;
 bool xml_on = false;
 char *xml_path = NULL;
 
-char system_root_dir[PATH_NAME_MAX + 1] = DEFAULT_ROOT_DIRECTORY;
-char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
-char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
-char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
+// TODO: Check if really need those
+char system_root_dir[PATH_NAME_MAX + 1];
+char system_local_state_dir[PATH_NAME_MAX + 1];
+char system_config_directory[PATH_NAME_MAX + 1];
+char system_log_dir[PATH_NAME_MAX + 1];
 
-char mgmt_path[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
+char mgmt_path[PATH_NAME_MAX + 1];
 
 // By default, set the current directory as base
 const char *ts_base_dir = ".";
@@ -150,7 +151,7 @@ check_lockfile()
   //////////////////////////////////////
   // test for presence of server lock //
   //////////////////////////////////////
-  snprintf(lockfile, PATH_MAX, "%s%s%s", system_local_state_dir, DIR_SEP, SERVER_LOCK);
+  Layout::relative_to(lockfile, PATH_MAX, Layout::get()->runtimedir, SERVER_LOCK);
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Open(&holding_pid);
   if (err == 1) {
@@ -175,7 +176,7 @@ check_lockfile()
   ///////////////////////////////////////////
   // try to get the exclusive manager lock //
   ///////////////////////////////////////////
-  snprintf(lockfile, sizeof(lockfile), "%s%s%s", system_local_state_dir, DIR_SEP, MANAGER_LOCK);
+  Layout::relative_to(lockfile, PATH_MAX, Layout::get()->runtimedir, MANAGER_LOCK);
   Lockfile manager_lockfile(lockfile);
   err = manager_lockfile.Get(&holding_pid);
   if (err != 1) {
@@ -308,71 +309,49 @@ init_dirs(bool use_librecords = true)
 {
   struct stat s;
   int err;
+  char buf[PATH_NAME_MAX+1];
 
-  if ((err = stat(mgmt_path, &s)) < 0) {
-    if (use_librecords)
-      REC_ReadConfigString(mgmt_path, "proxy.config.config_dir", PATH_NAME_MAX);
-    if ((err = stat(mgmt_path, &s)) < 0) {
-      // Try 'system_root_dir/etc/trafficserver' directory
-      snprintf(mgmt_path, sizeof(mgmt_path),
-               "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
-      if ((err = stat(mgmt_path, &s)) < 0) {
-        mgmt_elog("unable to stat() mgmt path '%s': %d %d, %s\n",
-                mgmt_path, err, errno, strerror(errno));
-        mgmt_elog("please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
-        _exit(1);
-      }
-    }
-  }
+  ink_strncpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
+  ink_strncpy(system_local_state_dir, Layout::get()->localstatedir, PATH_NAME_MAX);
+  ink_strncpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
 
   if ((err = stat(system_config_directory, &s)) < 0) {
-    ink_strncpy(system_config_directory,mgmt_path,sizeof(system_config_directory));
+    if (use_librecords) {
+      REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
+      Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
+    }
     if ((err = stat(system_config_directory, &s)) < 0) {
-      if (use_librecords)
-        REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
-      if ((err = stat(system_config_directory, &s)) < 0) {
-        // Try 'system_root_dir/etc/trafficserver' directory
-        snprintf(system_config_directory, sizeof(system_config_directory),
-                 "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
-        if ((err = stat(system_config_directory, &s)) < 0) {
-          mgmt_elog("unable to stat() config dir '%s': %d %d, %s\n",
-                    system_config_directory, err, errno, strerror(errno));
-          mgmt_elog("please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
-          _exit(1);
-        }
-      }
+      mgmt_elog("unable to stat() config dir '%s': %d %d, %s\n",
+              system_config_directory, err, errno, strerror(errno));
+      mgmt_elog("please set config path via 'proxy.config.config_dir' \n");
+      _exit(1);
     }
   }
+  strcpy(mgmt_path, system_config_directory);
 
   if ((err = stat(system_local_state_dir, &s)) < 0) {
-    if (use_librecords)
-      REC_ReadConfigString(system_local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
+    if (use_librecords) {
+      REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
+      Layout::get()->relative(system_local_state_dir, PATH_NAME_MAX, buf);
+    }
     if ((err = stat(system_local_state_dir, &s)) < 0) {
-      // Try 'system_root_dir/var/trafficserver' directory
-      snprintf(system_local_state_dir, sizeof(system_local_state_dir),
-               "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
-      if ((err = stat(system_local_state_dir, &s)) < 0) {
-        mgmt_elog("unable to stat() local state dir '%s': %d %d, %s\n",
-                system_local_state_dir, err, errno, strerror(errno));
-        mgmt_elog("please set 'proxy.config.local_state_dir'\n");
-        _exit(1);
-      }
+      mgmt_elog("unable to stat() local state dir '%s': %d %d, %s\n",
+              system_local_state_dir, err, errno, strerror(errno));
+      mgmt_elog("please set 'proxy.config.local_state_dir'\n");
+      _exit(1);
     }
   }
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    if (use_librecords)
-      REC_ReadConfigString(system_log_dir, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    if (use_librecords) {
+      REC_ReadConfigString(buf, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+      Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
+    }
     if ((err = stat(system_log_dir, &s)) < 0) {
-      // Try 'system_root_dir/var/log/trafficserver' directory
-      snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
-               system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
-      if ((err = stat(system_log_dir, &s)) < 0) {
-        mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
-                system_log_dir, err, errno, strerror(errno));
-        mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
-        _exit(1);
-      }
+      mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
+              system_log_dir, err, errno, strerror(errno));
+      mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
+      _exit(1);
     }
   }
 
@@ -381,26 +360,6 @@ init_dirs(bool use_librecords = true)
 void
 chdir_root()
 {
-  char buffer[1024];
-  char *env_path;
-  FILE *ts_file;
-  int i = 0;
-
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(system_root_dir, env_path, sizeof(system_root_dir));
-  } else {
-    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
-      fclose(ts_file);
-      while (!isspace(buffer[i])) {
-        system_root_dir[i] = buffer[i];
-        i++;
-      }
-      system_root_dir[i] = '\0';
-    } else {
-      ink_strncpy(system_root_dir, PREFIX, sizeof(system_root_dir));
-    }
-  }
 
   if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
     mgmt_elog("unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
@@ -488,6 +447,9 @@ main(int argc, char **argv)
 {
   // Before accessing file system initialize Layout engine
   Layout::create();
+  ink_strncpy(system_root_dir, Layout::get()->prefix, PATH_NAME_MAX);
+  ink_strncpy(mgmt_path, Layout::get()->sysconfdir, PATH_NAME_MAX);
+
   // change the directory to the "root" directory
   chdir_root();
 
@@ -699,8 +661,8 @@ main(int argc, char **argv)
 
   check_lockfile();
 
-  snprintf(config_internal_dir, sizeof(config_internal_dir),
-               "%s%sinternal", mgmt_path, DIR_SEP);
+  Layout::relative_to(config_internal_dir, sizeof(config_internal_dir),
+                      mgmt_path, "internal");
   url_init(config_internal_dir);
   mime_init(config_internal_dir);
   http_init(config_internal_dir);
