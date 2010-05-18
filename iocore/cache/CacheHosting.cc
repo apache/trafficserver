@@ -22,6 +22,7 @@
  */
 
 #include "P_Cache.h"
+#include "I_Layout.h"
 
 extern int gndisks;
 
@@ -205,9 +206,8 @@ CacheHostTable::CacheHostTable(Cache * c, int typ)
   char *config_file = NULL;
   IOCORE_ReadConfigStringAlloc(config_file, "proxy.config.cache.hosting_filename");
   ink_release_assert(config_file != NULL);
-  ink_strncpy(config_file_path, cache_system_config_directory, sizeof(config_file_path));
-  strncat(config_file_path, DIR_SEP, (sizeof(config_file_path) - strlen(config_file_path) - 1));
-  strncat(config_file_path, config_file, (sizeof(config_file_path) - strlen(config_file_path) - 1));
+  Layout::relative_to(config_file_path, sizeof(config_file_path),
+                      cache_system_config_directory, config_file);
   xfree(config_file);
   hostMatch = NULL;
 
@@ -642,9 +642,8 @@ ConfigPartitions::read_config_file()
 
   IOCORE_ReadConfigStringAlloc(config_file, "proxy.config.cache.partition_filename");
   ink_release_assert(config_file != NULL);
-  ink_strncpy(config_file_path, cache_system_config_directory, sizeof(config_file_path));
-  strncat(config_file_path, DIR_SEP, (sizeof(config_file_path) - strlen(config_file_path) - 1));
-  strncat(config_file_path, config_file, (sizeof(config_file_path) - strlen(config_file_path) - 1));
+  Layout::relative_to(config_file_path, sizeof(config_file_path),
+                      cache_system_config_directory, config_file);
   xfree(config_file);
 
   file_buf = readIntoBuffer(config_file_path, "[CachePartition]", NULL);

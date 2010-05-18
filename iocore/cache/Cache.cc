@@ -32,6 +32,8 @@
 #include "StatPages.h"
 #endif
 
+#include "I_Layout.h"
+
 #ifdef HTTP_CACHE
 #include "HttpTransactCache.h"
 #include "HttpSM.h"
@@ -2648,19 +2650,19 @@ ink_cache_init(ModuleVersion v)
 
   IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.config_dir", SYSCONFDIR, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
+  if (cache_system_config_directory[0] != '/') {
+    // Not an absolute path so use system one
+    ink_strncpy(cache_system_config_directory, system_config_directory, sizeof(cache_system_config_directory));
+  }
   Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
   if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
-    ink_strncpy(cache_system_config_directory,system_config_directory,sizeof(cache_system_config_directory));
+    ink_strncpy(cache_system_config_directory, Layout::get()->sysconfdir,
+                sizeof(cache_system_config_directory));
     if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
-      // Try 'system_root_dir/etc/trafficserver' directory
-      snprintf(cache_system_config_directory, sizeof(cache_system_config_directory),
-               "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
-      if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
-        fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n",
-                cache_system_config_directory, ierr, errno, strerror(errno));
-        fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
-        _exit(1);
-      }
+      fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n",
+              cache_system_config_directory, ierr, errno, strerror(errno));
+      fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
+      _exit(1);
     }
   }
 #ifdef HIT_EVACUATE
