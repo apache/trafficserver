@@ -23,6 +23,7 @@
 
 
 #include "inktomi++.h"
+#include "I_Layout.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -39,19 +40,12 @@
 #include <grp.h>
 
 #include <ctype.h>
-#include "../api2/include/INKMgmtAPI.h"
+#include "INKMgmtAPI.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
 #define NETCONFIG_HOSTNAME  0
 #define NETCONFIG_GATEWAY   1
@@ -80,7 +74,6 @@ int Net_GetNIC_Values(char *interface, char *status, char *onboot, char *static_
                       char *gateway);
 int find_value(const char *pathname, const char *key, char *value, size_t value_len, const char *delim, int no);
 static bool recordRegexCheck(const char *pattern, const char *value);
-static int getTSdirectory(char *ts_path, size_t ts_path_len);
 
 int
 Net_GetHostname(char *hostname, size_t hostname_len)
@@ -1007,18 +1000,12 @@ NetConfig_Action(int index, ...)
     close(1);                   // close STDOUT
     close(2);                   // close STDERR
 
-    char ts_path[256];
-    char command_path[512];
+    char *command_path;
 
-    if (getTSdirectory(ts_path, sizeof(ts_path))) {
-      DPRINTF(("[SysAPI] unable to determine install directory\n"));
-      _exit(-1);
-    }
-
-    snprintf(command_path, sizeof(command_path), "%s/bin/net_config", ts_path);
-
+    command_path = Layout::relative_to(Layout::get()->bindir, "net_config");
     res = execv(command_path, (char* const*)argv);
 
+    xfree(command_path);
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call net_config\n"));
     }
@@ -1120,41 +1107,6 @@ Net_GetEncryptedRootPassword(char **password)
   else
     *password = strtok(strdup(shadowPasswd), ":");
   setreuid(old_euid, old_euid);
-  return 0;
-}
-
-int
-getTSdirectory(char *ts_path, size_t ts_path_len)
-{
-  FILE *fp;
-  char *env_path;
-
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, ts_path_len);
-    return 0;
-  }
-
-  if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-    ink_strncpy(ts_path, PREFIX, ts_path_len);
-    return 0;
-  }
-
-  if (fgets(ts_path, ts_path_len, fp) == NULL) {
-    fclose(fp);
-    return -1;
-  }
-  // strip newline if it exists
-  int len = strlen(ts_path);
-  if (ts_path[len - 1] == '\n') {
-    ts_path[len - 1] = '\0';
-  }
-  // strip trailing "/" if it exists
-  len = strlen(ts_path);
-  if (ts_path[len - 1] == '/') {
-    ts_path[len - 1] = '\0';
-  }
-
-  fclose(fp);
   return 0;
 }
 
@@ -1332,17 +1284,12 @@ TimeConfig_Action(int index, bool restart ...)
     //close(1);  // close STDOUT
     //close(2);  // close STDERR
 
-    char ts_path[256];
-    char command_path[512];
+    char *command_path;
 
-    if (getTSdirectory(ts_path, sizeof(ts_path))) {
-      DPRINTF(("[SysAPI] unable to determine install directory\n"));
-      _exit(-1);
-    }
-    snprintf(command_path, sizeof(command_path), "%s/bin/time_config", ts_path);
-
+    command_path = Layout::relative_to(Layout::get()->bindir, "time_config");
     res = execv(command_path, (char* const*)argv);
 
+    xfree(command_path);
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call time_config\n"));
     }
@@ -1417,12 +1364,11 @@ int
 setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapenable, char *trap_community,
         char *trap_host)
 {
-  char snmp_path[1024], ts_snmp_path[1024], snmp_path_new[1024], ts_snmp_path_new[1024], buffer[1024],
-    ts_base_dir[1024], buf[1024];
+  char snmp_path[1024], ts_snmp_path[1024], snmp_path_new[1024], ts_snmp_path_new[1024], buf[1024];
   char *tmp, tmp1[1024];
-  FILE *fp, *ts_file, *fp1, *fp_ts, *fp1_ts, *snmppass_fp, *snmppass_fp1;
+  FILE *fp, *fp1, *fp_ts, *fp1_ts, *snmppass_fp, *snmppass_fp1;
   pid_t pid;
-  int i, status;
+  int status;
   const char *mv_binary = MV_BINARY;
 
   bool sys_location_flag = false;
@@ -1431,7 +1377,6 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
   bool authtrapenable_flag = false;
   bool trap_community_flag = false;
   bool trap_host_flag = false;
-  char *env_path;
 
   DPRINTF(("setSNMP(): sys_location: %s, sys_contact: %s, sys_name: %s, authtrapenable: %s, trap_community: %s, trap_host: %s\n", sys_location, sys_contact, sys_name, authtrapenable, trap_community, trap_host));
 
@@ -1442,22 +1387,8 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     return 1;
   }
 
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_base_dir, env_path, sizeof(ts_base_dir));
-  } else {
-    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-      ink_strncpy(ts_base_dir, "/usr/local", sizeof(ts_base_dir));
-    } else {
-      NOWARN_UNUSED_RETURN(fgets(buffer, sizeof(buf), ts_file));
-      fclose(ts_file);
-
-      for (i = 0; !isspace(buffer[i]); i++)
-        ts_base_dir[i] = buffer[i];
-      ts_base_dir[i] = '\0';
-    }
-  }
-
-  snprintf(ts_snmp_path, sizeof(ts_snmp_path), "%s/etc/trafficserver/%s", ts_base_dir, TS_SNMP_PATH);
+  Layout::relative_to(ts_snmp_path, sizeof(ts_snmp_path),
+                      Layout::get()->sysconfdir, TS_SNMP_PATH);
   if ((fp_ts = fopen(ts_snmp_path, "r")) == NULL && (fp_ts = fopen(ts_snmp_path, "a+")) == NULL) {
     DPRINTF(("[SysAPI] failed to open ts snmp configuration file\n"));
     fclose(fp);
@@ -1468,7 +1399,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     DPRINTF(("[SysAPI] failed to open new snmp configuration file\n"));
     return 1;
   }
-  snprintf(ts_snmp_path_new, sizeof(ts_snmp_path_new), "%s/%s.new", ts_base_dir, TS_SNMP_PATH);
+  snprintf(ts_snmp_path_new, sizeof(ts_snmp_path_new), "%s.new", ts_snmp_path);
   if ((fp1_ts = fopen(ts_snmp_path_new, "w")) == NULL) {
     DPRINTF(("[SysAPI] failed to open new ts snmp configuration file\n"));
     return 1;
@@ -1637,8 +1568,8 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
     snprintf(community_string, sizeof(community_string), "%s %s %s\n", community1, trap_community, community2);
 
     //now open the file for modification.
-
-    snprintf(snmp_pass, sizeof(snmp_pass), "%s/bin/snmppass.sh", ts_base_dir);
+    Layout::relative_to(snmp_pass, sizeof(snmp_pass),
+                        Layout::get()->bindir, "snmppass.sh");
     if ((snmppass_fp = fopen(snmp_pass, "r")) == NULL) {
       if ((fp = fopen(snmp_pass, "a+")) == NULL) {
         DPRINTF(("[SysAPI] failed to open ts snmp script file\n"));
@@ -1646,7 +1577,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
       }
       fclose(fp);
     }
-    snprintf(snmp_pass_new, sizeof(snmp_pass_new), "%s/bin/snmppass.sh.new", ts_base_dir);
+    snprintf(snmp_pass_new, sizeof(snmp_pass_new), "%s.new", snmp_pass);
     if ((snmppass_fp1 = fopen(snmp_pass_new, "w")) == NULL) {
       DPRINTF(("[SysAPI] failed to open new snmp script file\n"));
       return 1;
@@ -1714,14 +1645,11 @@ Net_SNMPSetUp(char *sys_location, char *sys_contact, char *sys_name, char *autht
   } else {
     int res;
 
-    char ts_path[256];
     char command_path[512];
 
-    if (getTSdirectory(ts_path, sizeof(ts_path))) {
-      DPRINTF(("[SysAPI] unable to determine install directory\n"));
-      _exit(-1);
-    }
-    snprintf(command_path, sizeof(command_path), "%s/bin/stop_snmp && %s/bin/start_snmp", ts_path, ts_path);
+    snprintf(command_path, sizeof(command_path),
+             "%s/stop_snmp && %s/start_snmp",
+             Layout::get()->bindir, Layout::get()->bindir);
 
     sleep(30);
     char *argv[] = { NULL };
@@ -1786,20 +1714,17 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
                 size_t sys_name_len, char *authtrapenable, size_t authtrapenable_len, char *trap_community,
                 size_t trap_community_len, char *trap_host, size_t trap_host_len)
 {
-  char ts_path[256], snmp_config[256], buf[1024];
+  char *snmp_config, buf[1024];
   FILE *fp;
   int status;
 
-  if (getTSdirectory(ts_path, sizeof(ts_path))) {
-    DPRINTF(("[SysAPI]:SNMPGetInfo: unable to determine TS install directory\n"));
-    return -1;
-  }
-
-  snprintf(snmp_config, sizeof(snmp_config), "%s/etc/trafficserver/snmpd.cnf", ts_path);
+  snmp_config = Layout::relative_to(Layout::get()->sysconfdir, "snmpd.conf");
   if ((fp = fopen(snmp_config, "r")) == NULL && (fp = fopen(snmp_config, "a+")) == NULL) {
-    DPRINTF(("[SysAPI] failed to open ts snmp script file\n"));
+    DPRINTF(("[SysAPI] failed to open ts snmp script file %s\n", snmp_config));
+    xfree(snmp_config);
     return 1;
   }
+  xfree(snmp_config);
 
   NOWARN_UNUSED_RETURN(fgets(buf, 1024, fp));
   while (!feof(fp)) {
@@ -1925,7 +1850,6 @@ int Net_GetNIC_Values(char *interface, char *status, char *onboot, char *static_
                       char *gateway);
 int find_value(const char *pathname, const char *key, char *value, const char *delim, int no);
 static bool recordRegexCheck(const char *pattern, const char *value);
-static int getTSdirectory(char *ts_path, size_t ts_path_len);
 
 int
 Net_GetHostname(char *hostname, size_t hostname_len)
@@ -2872,16 +2796,10 @@ NetConfig_Action(int index, ...)
   va_list ap;
   va_start(ap, index);
 
-  char ts_path[256];
-  char command_path[512];
+  char *command_path;
 
+  command_path = Layout::relative_to(Layout::get()->bindir, "net_config");
 
-  if (getTSdirectory(ts_path, sizeof(ts_path))) {
-    DPRINTF(("[SysAPI] unable to determine install directory\n"));
-    _exit(-1);
-  }
-
-  snprintf(command_path, sizeof(command_path), "%s/bin/net_config", ts_path);
 
   argv[0] = command_path;
 
@@ -2951,7 +2869,7 @@ NetConfig_Action(int index, ...)
     }
     _exit(res);
   }
-
+  xfree(command_path);
   return 0;
 }
 
@@ -3048,40 +2966,6 @@ Net_GetEncryptedRootPassword(char **password)
   else
     *password = strtok(strdup(shadowPasswd), ":");
   setreuid(old_euid, old_euid);
-  return 0;
-}
-
-int
-getTSdirectory(char *ts_path, size_t ts_path_len)
-{
-  FILE *fp;
-  char *env_path;
-
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, ts_path_len);
-    return 0;
-  }
-  if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-    ink_strncpy(ts_path, "/usr/local", ts_path_len);
-    return 0;
-  }
-
-  if (fgets(ts_path, ts_path_len, fp) == NULL) {
-    fclose(fp);
-    return -1;
-  }
-  // strip newline if it exists
-  int len = strlen(ts_path);
-  if (ts_path[len - 1] == '\n') {
-    ts_path[len - 1] = '\0';
-  }
-  // strip trailing "/" if it exists
-  len = strlen(ts_path);
-  if (ts_path[len - 1] == '/') {
-    ts_path[len - 1] = '\0';
-  }
-
-  fclose(fp);
   return 0;
 }
 
@@ -3249,17 +3133,11 @@ TimeConfig_Action(int index, bool restart ...)
     //close(1);  // close STDOUT
     //close(2);  // close STDERR
 
-    char ts_path[256];
-    char command_path[512];
+    char *command_path;
 
-    if (getTSdirectory(ts_path, sizeof(ts_path))) {
-      DPRINTF(("[SysAPI] unable to determine install directory\n"));
-      _exit(-1);
-    }
-    snprintf(command_path, sizeof(command_path), "%s/bin/time_config", ts_path);
-
+    command_path = Layout::relative_to(Layout::get()->bindir, "time_config");
     res = execv(command_path, (char* const*) argv);
-
+    xfree(command_path);
     if (res != 0) {
       DPRINTF(("[SysAPI] fail to call time_config"));
     }

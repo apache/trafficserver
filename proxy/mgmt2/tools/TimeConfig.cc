@@ -38,13 +38,6 @@
 #include <signal.h>
 #include <time.h>
 
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
-
 #define CHANGE_ALL 	0
 #define CHANGE_TIME 	1
 #define CHANGE_DATE 	2
@@ -59,8 +52,10 @@ main(int argc, char *argv[])
   struct tm *mPtr;
   struct timeval v;
   FILE *fp, *tmp;
+  // TODO: Use defines instead hard coding 1024
+  //
   char zonepath[1024], no_cop_path[1024], buffer[1024], command[1024];
-  char stop_traffic_server[1024], start_traffic_server[1024];
+  char stop_traffic_server[PATH_MAX_LEN + 1], start_traffic_server[1024];
   char *hour = 0, *minute = 0, *second = 0, *month = 0, *day = 0, *year = 0, *timezone = 0, *ntpservers = 0;
   int reset_all = 0, reset_time = 0, reset_date = 0, reset_timezone = 0, reset_ntp = 0;
   int restart;
@@ -81,28 +76,13 @@ main(int argc, char *argv[])
   // Before accessing file system initialize Layout engine
   Layout::create();
 
-  if ((env_path = getenv("TS_ROOT"))) {
-    strncpy(buffer, env_path, sizeof(buffer) - 1);
-  } else {
-    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, fp));
-      if (buffer[strlen(buffer) - 1] == '\n') {
-        buffer[strlen(buffer) - 1] = '\0';
-      }
-      fclose(fp);
-    } else {
-      strncpy(buffer, PREFIX, sizeof(buffer) - 1);
-    }
-  }
-
-  strncpy(stop_traffic_server, buffer, sizeof(stop_traffic_server) - 1);
-  strncat(stop_traffic_server, "/bin/stop_traffic_server",
-          sizeof(stop_traffic_server) - 1 - strlen(stop_traffic_server));
-  strncpy(start_traffic_server, buffer, sizeof(start_traffic_server) - 1);
-  strncat(start_traffic_server, "/bin/start_traffic_server",
-          sizeof(start_traffic_server) - 1 - strlen(start_traffic_server));
-  strncpy(no_cop_path, buffer, sizeof(no_cop_path) - 1);
-  strncat(no_cop_path, "/etc/trafficserver/internal/no_cop", sizeof(no_cop_path) - 1 - strlen(no_cop_path));
+  Layout::relative_to(stop_traffic_server, sizeof(stop_traffic_server) - 1,
+                      Layout::get()->bindir, "stop_traffic_server");
+  Layout::relative_to(start_traffic_server, sizeof(start_traffic_server) - 1,
+                      Layout::get()->bindir, "start_traffic_server");
+  Layout::relative_to(no_cop_path, sizeof(no_cop_path) - 1,
+                      Layout::get()->bindir, "internal/no_cop");
+  // XXX: Why strncpy here?
   strncpy(zonepath, "/usr/share/zoneinfo/", sizeof(zonepath) - 1);
 
 //  while(access(no_cop_path, F_OK) == -1);

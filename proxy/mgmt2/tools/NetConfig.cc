@@ -76,13 +76,6 @@ struct ifafilt;
 #include "I_Layout.h"
 #include "I_Version.h"
 
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
-
 #define UP_INTERFACE     0
 #define DOWN_INTERFACE   1
 #define HOSTNAME         2
@@ -1378,37 +1371,22 @@ rm_stop_proxy()
 {
 
 
-  FILE *ts_file, *rec_file, *pid_file;
+  FILE *rec_file, *pid_file;
   int i = 0, found_pid_path = 0;
   pid_t pid, old_pid;
   char buffer[1024];
   char proxy_pid_path[1024];
-  char ts_base_dir[1024];
-  char rec_config[1024];
+  char *rec_config;
   char *tmp;
 
-  if ((tmp = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_base_dir, tmp, sizeof(ts_base_dir));
-  } else {
-    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-      ink_strncpy(ts_base_dir, PREFIX, sizeof(ts_base_dir));
-    } else {
-      NOWARN_UNUSED_RETURN(fgets(buffer, sizeof(buffer), ts_file));
-      fclose(ts_file);
-      while (!isspace(buffer[i])) {
-        ts_base_dir[i] = buffer[i];
-        i++;
-      }
-      ts_base_dir[i] = '\0';
-    }
-  }
-
-  snprintf(rec_config, sizeof(rec_config), "%s/etc/trafficserver/records.config", ts_base_dir);
-
+  rec_config = Layout::relative_to(Layout::get()->sysconfdir, "records.config");
+  printf("rec_config %s\n", rec_config);
   if ((rec_file = fopen(rec_config, "r")) == NULL) {
     //fprintf(stderr, "Error: unable to open %s.\n", rec_config);
+    xfree(rec_config);
     return -1;
   }
+  xfree(rec_config);
 
   while (fgets(buffer, sizeof(buffer), rec_file) != NULL) {
     if (strstr(buffer, "proxy.config.rni.proxy_pid_path") != NULL) {
@@ -1492,12 +1470,13 @@ int
 main(int argc, char **argv)
 {
 
-  int fun_no;
+  int fun_no = 0;
+
   if (argv) {
     fun_no = atoi(argv[1]);
   }
-
-  fun_no = atoi(argv[1]);
+  // Before accessing file system initialize Layout engine
+  Layout::create();
 
   switch (fun_no) {
   case 0:
@@ -2972,12 +2951,12 @@ int
 main(int argc, char **argv)
 {
 
-  int fun_no;
+  int fun_no = 0;
+
   if (argv) {
     fun_no = atoi(argv[1]);
   }
 
-  fun_no = atoi(argv[1]);
   // Before accessing file system initialize Layout engine
   Layout::create();
 
