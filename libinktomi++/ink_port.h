@@ -100,7 +100,7 @@ typedef off_t ink_off_t;
 
 #define NUL '\0'
 
-// copy from ink_ntio.h
+/* copy from ink_ntio.h */
 typedef enum
 {
   keSocket = 0xbad,

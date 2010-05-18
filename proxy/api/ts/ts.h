@@ -252,7 +252,7 @@ extern "C"
     INK_EVENT_NET_ACCEPT = 202,
     INK_EVENT_NET_ACCEPT_FAILED = 204,
 
-    // EVENTS 206 - 212 for internal use
+    /* EVENTS 206 - 212 for internal use */
     INK_EVENT_INTERNAL_206 = 206,
     INK_EVENT_INTERNAL_207 = 207,
     INK_EVENT_INTERNAL_208 = 208,
@@ -286,7 +286,7 @@ extern "C"
     INK_EVENT_CACHE_READ_READY = 1134,
     INK_EVENT_CACHE_READ_COMPLETE = 1135,
 
-    // EVENT 1200 for internal use
+    /* EVENT 1200 for internal use */
     INK_EVENT_INTERNAL_1200 = 1200,
 
     INK_EVENT_HTTP_CONTINUE = 60000,
@@ -308,7 +308,7 @@ extern "C"
     INK_EVENT_HTTP_READ_REQUEST_PRE_REMAP = 60016,
     INK_EVENT_MGMT_UPDATE = 60100,
 
-    // EVENTS 60200 - 60202 for internal use
+    /* EVENTS 60200 - 60202 for internal use */
     INK_EVENT_INTERNAL_60200 = 60200,
     INK_EVENT_INTERNAL_60201 = 60201,
     INK_EVENT_INTERNAL_60202 = 60202,
@@ -451,9 +451,9 @@ extern "C"
   typedef long long INK64;
   typedef unsigned long long INKU64;
 
-  // These typedefs are used with the corresponding INKMgmt*Get functions
-  // for storing the values retrieved by those functions. For example,
-  // INKMgmtCounterGet() retrieves an INKMgmtCounter.
+  /* These typedefs are used with the corresponding INKMgmt*Get functions
+     for storing the values retrieved by those functions. For example,
+     INKMgmtCounterGet() retrieves an INKMgmtCounter. */
   typedef INK64 INKMgmtInt;
   typedef INK64 INKMgmtLLong;
   typedef INK64 INKMgmtCounter;
@@ -507,8 +507,8 @@ extern "C"
      struct INKFetchUrlParams *next;
   }INKFetchUrlParams_t;
 
-  // --------------------------------------------------------------------------
-  // Init
+  /* --------------------------------------------------------------------------
+     Init */
 
   /**
       This function must be defined by all plugins. Traffic Server
@@ -527,9 +527,8 @@ extern "C"
    */
   extern inkexp void INKPluginInit(int argc, const char *argv[]);
 
-  // --------------------------------------------------------------------------
-  // License
-
+  /* --------------------------------------------------------------------------
+     License */
   /**
       This function lets Traffic Server know that a license key is
       required for the plugin. You implement this function to return the
@@ -540,13 +539,11 @@ extern "C"
 
       @return Zero if no license is required. Returns 1 if a license
         is required.
-
-   */
+  */
   extern inkexp int INKPluginLicenseRequired(void);
 
-  // --------------------------------------------------------------------------
-  // URL schemes
-
+  /* --------------------------------------------------------------------------
+     URL schemes */
   extern inkapi const char *INK_URL_SCHEME_FILE;
   extern inkapi const char *INK_URL_SCHEME_FTP;
   extern inkapi const char *INK_URL_SCHEME_GOPHER;
@@ -559,9 +556,8 @@ extern "C"
   extern inkapi const char *INK_URL_SCHEME_TELNET;
   extern inkapi const char *INK_URL_SCHEME_WAIS;
 
-  // --------------------------------------------------------------------------
-  // URL scheme string lengths
-
+  /* --------------------------------------------------------------------------
+     URL scheme string lengths */
   extern inkapi int INK_URL_LEN_FILE;
   extern inkapi int INK_URL_LEN_FTP;
   extern inkapi int INK_URL_LEN_GOPHER;
@@ -574,9 +570,8 @@ extern "C"
   extern inkapi int INK_URL_LEN_TELNET;
   extern inkapi int INK_URL_LEN_WAIS;
 
-  // --------------------------------------------------------------------------
-  // MIME fields
-
+  /* --------------------------------------------------------------------------
+     MIME fields */
   extern inkapi const char *INK_MIME_FIELD_ACCEPT;
   extern inkapi const char *INK_MIME_FIELD_ACCEPT_CHARSET;
   extern inkapi const char *INK_MIME_FIELD_ACCEPT_ENCODING;
@@ -649,9 +644,8 @@ extern "C"
   extern inkapi const char *INK_MIME_FIELD_XREF;
   extern inkapi const char *INK_MIME_FIELD_X_FORWARDED_FOR;
 
-  // --------------------------------------------------------------------------
-  // MIME fields string lengths
-
+  /* --------------------------------------------------------------------------
+     MIME fields string lengths */
   extern inkapi int INK_MIME_LEN_ACCEPT;
   extern inkapi int INK_MIME_LEN_ACCEPT_CHARSET;
   extern inkapi int INK_MIME_LEN_ACCEPT_ENCODING;
@@ -724,9 +718,8 @@ extern "C"
   extern inkapi int INK_MIME_LEN_XREF;
   extern inkapi int INK_MIME_LEN_X_FORWARDED_FOR;
 
-  // --------------------------------------------------------------------------
-  // HTTP values
-
+  /* --------------------------------------------------------------------------
+     HTTP values */
   extern inkapi const char *INK_HTTP_VALUE_BYTES;
   extern inkapi const char *INK_HTTP_VALUE_CHUNKED;
   extern inkapi const char *INK_HTTP_VALUE_CLOSE;
@@ -749,9 +742,8 @@ extern "C"
   extern inkapi const char *INK_HTTP_VALUE_PUBLIC;
   extern inkapi const char *INK_HTTP_VALUE_SMAX_AGE;
 
-  // --------------------------------------------------------------------------
-  // HTTP values string lengths
-
+  /* --------------------------------------------------------------------------
+     HTTP values string lengths */
   extern inkapi int INK_HTTP_LEN_BYTES;
   extern inkapi int INK_HTTP_LEN_CHUNKED;
   extern inkapi int INK_HTTP_LEN_CLOSE;
@@ -774,9 +766,8 @@ extern "C"
   extern inkapi int INK_HTTP_LEN_PUBLIC;
   extern inkapi int INK_HTTP_LEN_SMAX_AGE;
 
-  // --------------------------------------------------------------------------
-  // HTTP methods
-
+  /* --------------------------------------------------------------------------
+     HTTP methods */
   extern inkapi const char *INK_HTTP_METHOD_CONNECT;
   extern inkapi const char *INK_HTTP_METHOD_DELETE;
   extern inkapi const char *INK_HTTP_METHOD_GET;
@@ -788,9 +779,8 @@ extern "C"
   extern inkapi const char *INK_HTTP_METHOD_PUT;
   extern inkapi const char *INK_HTTP_METHOD_TRACE;
 
-  // --------------------------------------------------------------------------
-  // HTTP methods string lengths
-
+  /* --------------------------------------------------------------------------
+     HTTP methods string lengths */
   extern inkapi int INK_HTTP_LEN_CONNECT;
   extern inkapi int INK_HTTP_LEN_DELETE;
   extern inkapi int INK_HTTP_LEN_GET;
@@ -802,9 +792,8 @@ extern "C"
   extern inkapi int INK_HTTP_LEN_PUT;
   extern inkapi int INK_HTTP_LEN_TRACE;
 
-  // --------------------------------------------------------------------------
-  // MLoc Constants
-
+  /* --------------------------------------------------------------------------
+     MLoc Constants */
   /**
       Use INK_NULL_MLOC as the parent in calls that require a parent
       when an INKMLoc does not have a parent INKMLoc. For example if
@@ -813,9 +802,8 @@ extern "C"
    */
   extern inkapi const INKMLoc INK_NULL_MLOC;
 
-  // --------------------------------------------------------------------------
-  // Memory
-
+  /* --------------------------------------------------------------------------
+     Memory */
 #define INKmalloc(s)      _INKmalloc ((s), INK_RES_MEM_PATH)
 #define INKrealloc(p,s)   _INKrealloc ((p), (s), INK_RES_MEM_PATH)
 #define INKstrdup(p)      _INKstrdup ((p), -1, INK_RES_MEM_PATH)
@@ -827,9 +815,8 @@ extern "C"
   inkapi char *_INKstrdup(const char *str, int length, const char *path);
   inkapi void _INKfree(void *ptr);
 
-  // --------------------------------------------------------------------------
-  // Component object handles
-
+  /* --------------------------------------------------------------------------
+     Component object handles */
   /**
       Releases the INKMLoc mloc created from the INKMLoc parent.
       If there is no parent INKMLoc, use INK_NULL_MLOC.
@@ -856,9 +843,8 @@ extern "C"
    */
   inkapi INKReturnCode INKHandleStringRelease(INKMBuffer bufp, INKMLoc parent, const char *str);
 
-  // --------------------------------------------------------------------------
-  // Install and plugin locations
-
+  /* --------------------------------------------------------------------------
+     Install and plugin locations */
   /**
       Gets the path of the directory in which Traffic Server is installed.
       Use this function to specify the location of files that the
@@ -884,9 +870,8 @@ extern "C"
    */
   inkapi const char *INKPluginDirGet(void);
 
-  // --------------------------------------------------------------------------
-  // Traffic Server Version
-
+  /* --------------------------------------------------------------------------
+     Traffic Server Version */
   /**
       Gets the version of Traffic Server currently running. Use this
       function to make sure that the plugin version and Traffic Server
@@ -897,8 +882,8 @@ extern "C"
    */
   inkapi const char *INKTrafficServerVersionGet(void);
 
-  // --------------------------------------------------------------------------
-  // Plugin registration
+  /* --------------------------------------------------------------------------
+     Plugin registration */
 
   /**
       This function registers your plugin with a particular version
@@ -914,12 +899,10 @@ extern "C"
 
    */
   inkapi int INKPluginRegister(INKSDKVersion sdk_version, INKPluginRegistrationInfo * plugin_info);
-
   inkapi INKReturnCode INKPluginInfoRegister(INKPluginRegistrationInfo * plugin_info);
 
-  // --------------------------------------------------------------------------
-  // Files
-
+  /* --------------------------------------------------------------------------
+     Files */
   /**
       Opens a file for reading or writing and returns a descriptor for
       accessing the file. The current implementation cannot open a file
@@ -1002,9 +985,8 @@ extern "C"
    */
   inkapi char *INKfgets(INKFile filep, char *buf, int length);
 
-  // --------------------------------------------------------------------------
-  // Error logging
-
+  /* --------------------------------------------------------------------------
+     Error logging */
   /**
       Writes printf-style error messages to the Traffic Server error
       log. One advantage of INKError over printf is that each call is
@@ -1018,9 +1000,8 @@ extern "C"
   */
   inkapi void INKError(const char *fmt, ...);
 
-  // --------------------------------------------------------------------------
-  // Assertions
-
+  /* --------------------------------------------------------------------------
+     Assertions */
   inkapi int _INKReleaseAssert(const char *txt, const char *f, int l);
   inkapi int _INKAssert(const char *txt, const char *f, int l);
 
@@ -1030,9 +1011,8 @@ extern "C"
 #define INKAssert(EX) \
             (void)((EX) || (_INKAssert(#EX, __FILE__, __LINE__)))
 
-  // --------------------------------------------------------------------------
-  // Marshal buffers
-
+  /* --------------------------------------------------------------------------
+     Marshal buffers */
   /**
       Creates a new marshal buffer and initializes the reference count
       to 1.
@@ -1050,9 +1030,8 @@ extern "C"
    */
   inkapi INKReturnCode INKMBufferDestroy(INKMBuffer bufp);
 
-  // --------------------------------------------------------------------------
-  // URLs
-
+  /* --------------------------------------------------------------------------
+     URLs */
   /**
       Creates a new URL within the marshal buffer bufp. Returns a
       location for the URL within the marshal buffer.
@@ -1194,9 +1173,8 @@ extern "C"
    */
   inkapi INKReturnCode INKUrlSchemeSet(INKMBuffer bufp, INKMLoc offset, const char *value, int length);
 
-  // --------------------------------------------------------------------------
-  // Internet specific URLs
-
+  /* --------------------------------------------------------------------------
+     Internet specific URLs */
   /**
       Retrieves the user portion of the URL located at url_loc
       within bufp. Note: the returned string is not guaranteed to
@@ -1306,9 +1284,8 @@ extern "C"
    */
   inkapi INKReturnCode INKUrlPortSet(INKMBuffer bufp, INKMLoc offset, int port);
 
-  // --------------------------------------------------------------------------
-  // HTTP specific URLs
-
+  /* --------------------------------------------------------------------------
+     HTTP specific URLs */
   /**
       Retrieves the path portion of the URL located at url_loc within
       bufp. INKUrlPathGet() places the length of the returned string in
@@ -1338,9 +1315,8 @@ extern "C"
    */
   inkapi INKReturnCode INKUrlPathSet(INKMBuffer bufp, INKMLoc offset, const char *value, int length);
 
-  // --------------------------------------------------------------------------
-  // FTP specific URLs
-
+  /* --------------------------------------------------------------------------
+     FTP specific URLs */
   /**
       Retrieves the FTP type of the URL located at url_loc within bufp.
 
@@ -1362,9 +1338,8 @@ extern "C"
    */
   inkapi INKReturnCode INKUrlFtpTypeSet(INKMBuffer bufp, INKMLoc offset, int type);
 
-  // --------------------------------------------------------------------------
-  // HTTP specific URLs
-
+  /* --------------------------------------------------------------------------
+     HTTP specific URLs */
   /**
       Retrieves the HTTP params portion of the URL located at url_loc
       within bufp. The length of the returned string is in the length
@@ -1454,8 +1429,8 @@ extern "C"
    */
   inkapi INKReturnCode INKUrlHttpFragmentSet(INKMBuffer bufp, INKMLoc offset, const char *value, int length);
 
-  // --------------------------------------------------------------------------
-  // MIME headers
+  /* --------------------------------------------------------------------------
+     MIME headers */
 
   /**
       Creates a MIME parser. The parser's data structure contains
@@ -1748,9 +1723,8 @@ extern "C"
 
   inkapi INKReturnCode INKMimeHdrFieldValueDelete(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
 
-  // --------------------------------------------------------------------------
-  // HTTP headers
-
+  /* --------------------------------------------------------------------------
+     HTTP headers */
   inkapi INKHttpParser INKHttpParserCreate(void);
   inkapi INKReturnCode INKHttpParserClear(INKHttpParser parser);
   inkapi INKReturnCode INKHttpParserDestroy(INKHttpParser parser);
@@ -1844,17 +1818,15 @@ extern "C"
   inkapi INKReturnCode INKHttpHdrReasonSet(INKMBuffer bufp, INKMLoc offset, const char *value, int length);
   inkapi const char *INKHttpHdrReasonLookup(INKHttpStatus status);
 
-  // --------------------------------------------------------------------------
-  // Threads
-
+  /* --------------------------------------------------------------------------
+     Threads */
   inkapi INKThread INKThreadCreate(INKThreadFunc func, void *data);
   inkapi INKThread INKThreadInit(void);
   inkapi INKReturnCode INKThreadDestroy(INKThread thread);
   inkapi INKThread INKThreadSelf(void);
 
-  // --------------------------------------------------------------------------
-  // Mutexes
-
+  /* --------------------------------------------------------------------------
+     Mutexes */
   inkapi INKMutex INKMutexCreate(void);
   inkapi INKReturnCode INKMutexLock(INKMutex mutexp);
   inkapi INKReturnCode INKMutexLockTry(INKMutex mutexp, int *lock);
@@ -1864,9 +1836,8 @@ extern "C"
 
   inkapi INKReturnCode INKMutexUnlock(INKMutex mutexp);
 
-  // --------------------------------------------------------------------------
-  // cachekey
-
+  /* --------------------------------------------------------------------------
+     cachekey */
   /**
       Creates (allocates memory for) a new cache key.
 
@@ -1913,39 +1884,34 @@ extern "C"
    */
   inkapi INKReturnCode INKCacheKeyDestroy(INKCacheKey key);
 
-  // --------------------------------------------------------------------------
-  // cache url
-
+  /* --------------------------------------------------------------------------
+     cache url */
   inkapi INKReturnCode INKSetCacheUrl(INKHttpTxn txnp, const char *url);
 
-  // --------------------------------------------------------------------------
-  // cache plugin
-
+  /* --------------------------------------------------------------------------
+     cache plugin */
   inkapi INKReturnCode INKCacheKeyGet(INKCacheTxn txnp, void **key, int *length);
   inkapi INKReturnCode INKCacheHeaderKeyGet(INKCacheTxn txnp, void **key, int *length);
   inkapi INKIOBufferReader INKCacheBufferReaderGet(INKCacheTxn txnp);
   inkapi INKHttpTxn INKCacheGetStateMachine(INKCacheTxn txnp);
 
-  // --------------------------------------------------------------------------
-  // Configuration
-
+  /* --------------------------------------------------------------------------
+     Configuration */
   inkapi unsigned int INKConfigSet(unsigned int id, void *data, INKConfigDestroyFunc funcp);
   inkapi INKConfig INKConfigGet(unsigned int id);
   inkapi void INKConfigRelease(unsigned int id, INKConfig configp);
   inkapi void *INKConfigDataGet(INKConfig configp);
 
-  // --------------------------------------------------------------------------
-  // Management
-
+  /* --------------------------------------------------------------------------
+     Management */
   inkapi INKReturnCode INKMgmtUpdateRegister(INKCont contp, const char *plugin_name, const char *path);
   inkapi int INKMgmtIntGet(const char *var_name, INKMgmtInt * result);
   inkapi int INKMgmtCounterGet(const char *var_name, INKMgmtCounter * result);
   inkapi int INKMgmtFloatGet(const char *var_name, INKMgmtFloat * result);
   inkapi int INKMgmtStringGet(const char *var_name, INKMgmtString * result);
 
-  // --------------------------------------------------------------------------
-  // Continuations
-
+  /* --------------------------------------------------------------------------
+     Continuations */
   inkapi INKCont INKContCreate(INKEventFunc funcp, INKMutex mutexp);
   inkapi INKReturnCode INKContDestroy(INKCont contp);
   inkapi INKReturnCode INKContDataSet(INKCont contp, void *data);
@@ -1955,25 +1921,21 @@ extern "C"
   inkapi int INKContCall(INKCont contp, INKEvent event, void *edata);
   inkapi INKMutex INKContMutexGet(INKCont contp);
 
-  // --------------------------------------------------------------------------
-  // HTTP hooks
-
+  /* --------------------------------------------------------------------------
+     HTTP hooks */
   inkapi INKReturnCode INKHttpHookAdd(INKHttpHookID id, INKCont contp);
 
-  // --------------------------------------------------------------------------
-  // Cache hook
-
+  /* --------------------------------------------------------------------------
+     Cache hook */
   inkapi INKReturnCode INKCacheHookAdd(INKCacheHookID id, INKCont contp);
 
-  // --------------------------------------------------------------------------
-  // HTTP sessions
-
+  /* --------------------------------------------------------------------------
+     HTTP sessions */
   inkapi INKReturnCode INKHttpSsnHookAdd(INKHttpSsn ssnp, INKHttpHookID id, INKCont contp);
   inkapi INKReturnCode INKHttpSsnReenable(INKHttpSsn ssnp, INKEvent event);
 
-  // --------------------------------------------------------------------------
-  // HTTP transactions
-
+  /* --------------------------------------------------------------------------
+     HTTP transactions */
   inkapi INKReturnCode INKHttpTxnHookAdd(INKHttpTxn txnp, INKHttpHookID id, INKCont contp);
   inkapi INKHttpSsn INKHttpTxnSsnGet(INKHttpTxn txnp);
   inkapi int INKHttpTxnClientReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
@@ -2060,8 +2022,8 @@ extern "C"
 
   inkapi INKServerState INKHttpTxnServerStateGet(INKHttpTxn txnp);
 
-  // --------------------------------------------------------------------------
-  // Intercepting Http Transactions
+  /* --------------------------------------------------------------------------
+     Intercepting Http Transactions */
 
   /**
       Allows a plugin take over the servicing of the request as though
@@ -2121,9 +2083,8 @@ extern "C"
    */
   inkapi INKReturnCode INKHttpTxnServerIntercept(INKCont contp, INKHttpTxn txnp);
 
-  // --------------------------------------------------------------------------
-  // Initiate Http Connection
-
+  /* --------------------------------------------------------------------------
+     Initiate Http Connection */
   /**
       Allows the plugin to initiate an http connection. The INKVConn the
       plugin receives as the result of successful operates identically to
@@ -2149,23 +2110,20 @@ extern "C"
   /* Check if HTTP State machine is internal or not */
   inkapi int INKHttpIsInternalRequest(INKHttpTxn txnp);
 
-  // --------------------------------------------------------------------------
-  // HTTP alternate selection
-
+  /* --------------------------------------------------------------------------
+     HTTP alternate selection */
   inkapi INKReturnCode INKHttpAltInfoClientReqGet(INKHttpAltInfo infop, INKMBuffer * bufp, INKMLoc * offset);
   inkapi INKReturnCode INKHttpAltInfoCachedReqGet(INKHttpAltInfo infop, INKMBuffer * bufp, INKMLoc * offset);
   inkapi INKReturnCode INKHttpAltInfoCachedRespGet(INKHttpAltInfo infop, INKMBuffer * bufp, INKMLoc * offset);
   inkapi INKReturnCode INKHttpAltInfoQualitySet(INKHttpAltInfo infop, float quality);
 
-  // --------------------------------------------------------------------------
-  // Actions
-
+  /* --------------------------------------------------------------------------
+     Actions */
   inkapi INKReturnCode INKActionCancel(INKAction actionp);
   inkapi int INKActionDone(INKAction actionp);
 
-  // --------------------------------------------------------------------------
-  // VConnections
-
+  /* --------------------------------------------------------------------------
+     VConnections */
   inkapi INKVIO INKVConnReadVIOGet(INKVConn connp);
   inkapi INKVIO INKVConnWriteVIOGet(INKVConn connp);
   inkapi int INKVConnClosedGet(INKVConn connp);
@@ -2176,20 +2134,17 @@ extern "C"
   inkapi INKReturnCode INKVConnAbort(INKVConn connp, int error);
   inkapi INKReturnCode INKVConnShutdown(INKVConn connp, int read, int write);
 
-  // --------------------------------------------------------------------------
-  // Cache VConnections
-
+  /* --------------------------------------------------------------------------
+     Cache VConnections */
   inkapi INKReturnCode INKVConnCacheObjectSizeGet(INKVConn connp, int *obj_size);
 
-  // --------------------------------------------------------------------------
-  // Transformations
-
+  /* --------------------------------------------------------------------------
+     Transformations */
   inkapi INKVConn INKTransformCreate(INKEventFunc event_funcp, INKHttpTxn txnp);
   inkapi INKVConn INKTransformOutputVConnGet(INKVConn connp);
 
-  // --------------------------------------------------------------------------
-  // Net VConnections
-
+  /* --------------------------------------------------------------------------
+     Net VConnections */
   /**
       Returns the IP address of the remote host with which Traffic Server
       is connected through the vconnection vc.
@@ -2233,15 +2188,13 @@ extern "C"
 
   inkapi INKAction INKNetAccept(INKCont contp, int port);
 
-  // --------------------------------------------------------------------------
-  // DNS Lookups
-
+  /* --------------------------------------------------------------------------
+     DNS Lookups */
   inkapi INKAction INKHostLookup(INKCont contp, char *hostname, int namelen);
   inkapi INKReturnCode INKHostLookupResultIPGet(INKHostLookupResult lookup_result, unsigned int *ip);
 
-  // --------------------------------------------------------------------------
-  // Cache VConnections
-
+  /* --------------------------------------------------------------------------
+     Cache VConnections */
   /**
       Asks the Traffic Server cache if the object corresponding to key
       exists in the cache and can be read. If the object can be read,
@@ -2319,9 +2272,8 @@ extern "C"
   inkapi INKReturnCode INKCacheReady(int *is_ready);
   inkapi INKAction INKCacheScan(INKCont contp, INKCacheKey key, int KB_per_second);
 
-  // --------------------------------------------------------------------------
-  // VIOs
-
+  /* --------------------------------------------------------------------------
+     VIOs */
   inkapi INKReturnCode INKVIOReenable(INKVIO viop);
   inkapi INKIOBuffer INKVIOBufferGet(INKVIO viop);
   inkapi INKIOBufferReader INKVIOReaderGet(INKVIO viop);
@@ -2334,9 +2286,8 @@ extern "C"
   inkapi INKCont INKVIOContGet(INKVIO viop);
   inkapi INKVConn INKVIOVConnGet(INKVIO viop);
 
-  // --------------------------------------------------------------------------
-  // Buffers
-
+  /* --------------------------------------------------------------------------
+     Buffers */
   inkapi INKIOBuffer INKIOBufferCreate(void);
 
   /**
@@ -2413,9 +2364,8 @@ extern "C"
   inkapi INKReturnCode INKIOBufferReaderConsume(INKIOBufferReader readerp, int nbytes);
   inkapi int INKIOBufferReaderAvail(INKIOBufferReader readerp);
 
-  // --------------------------------------------------------------------------
-  // stats
-
+  /* --------------------------------------------------------------------------
+     stats */
   typedef enum
   {
     INKSTAT_TYPE_INT64,
@@ -2425,9 +2375,8 @@ extern "C"
   typedef void *INKStat;
   typedef void *INKCoupledStat;
 
-  // --------------------------------------------------------------------------
-  // uncoupled stats
-
+  /* --------------------------------------------------------------------------
+     uncoupled stats */
   inkapi INKStat INKStatCreate(const char *the_name, INKStatTypes the_type);
   inkapi INKReturnCode INKStatIntAddTo(INKStat the_stat, INK64 amount);
   inkapi INKReturnCode INKStatFloatAddTo(INKStat the_stat, float amount);
@@ -2445,9 +2394,8 @@ extern "C"
   inkapi INKReturnCode INKStatIntSet(INKStat the_stat, INK64 value);
   inkapi INKReturnCode INKStatFloatSet(INKStat the_stat, float value);
 
-  // --------------------------------------------------------------------------
-  // coupled stats
-
+  /* --------------------------------------------------------------------------
+     coupled stats */
   inkapi INKCoupledStat INKStatCoupledGlobalCategoryCreate(const char *the_name);
   inkapi INKCoupledStat INKStatCoupledLocalCopyCreate(const char *the_name, INKCoupledStat global_copy);
   inkapi INKReturnCode INKStatCoupledLocalCopyDestroy(INKCoupledStat local_copy);
@@ -2466,16 +2414,16 @@ extern "C"
   inkapi INKReturnCode     INKStatGetV2(uint32_t stat_num, INK64 *stat_val);
   inkapi INKReturnCode     INKStatGetByNameV2(const char *stat_name, INK64 *stat_val);
 
-  // --------------------------------------------------------------------------
-  // tracing api
+  /* --------------------------------------------------------------------------
+     tracing api */
 
   inkapi int INKIsDebugTagSet(const char *t);
   inkapi void INKDebug(const char *tag, const char *format_str, ...);
   extern int diags_on_for_plugins;
 #define INKDEBUG if (diags_on_for_plugins) INKDebug
 
-  // --------------------------------------------------------------------------
-  // logging api
+  /* --------------------------------------------------------------------------
+     logging api */
 
   /**
       The following enum values are flags, so they should be powers
@@ -2625,11 +2573,11 @@ extern "C"
    */
   inkapi INKReturnCode INKTextLogObjectRollingOffsetHrSet(INKTextLogObject the_object, int rolling_offset_hr);
 
-  // --------------------------------------------------------------------------
-  // Deprecated Functions
-  // Use of the following functions is strongly discouraged. These
-  // functions may incur performance penalties and may not be supported
-  // in future releases.
+  /* --------------------------------------------------------------------------
+     Deprecated Functions
+     Use of the following functions is strongly discouraged. These
+     functions may incur performance penalties and may not be supported
+     in future releases. */
 
   /** @deprecated
       The reason is even if VConn is created using this API, it is
@@ -2660,8 +2608,8 @@ extern "C"
    */
   inkapi INKVConn INKVConnCreate(INKEventFunc event_funcp, INKMutex mutexp);
 
-  // --------------------------------------------------------------------------
-  // Deprecated Buffer Functions
+  /* --------------------------------------------------------------------------
+     Deprecated Buffer Functions */
 
   /** @deprecated */
   inkapi INKReturnCode INKIOBufferAppend(INKIOBuffer bufp, INKIOBufferBlock blockp);
@@ -2672,8 +2620,8 @@ extern "C"
   /** @deprecated */
   inkapi INKIOBufferBlock INKIOBufferBlockCreate(INKIOBufferData datap, int size, int offset);
 
-  // --------------------------------------------------------------------------
-  // Deprecated MBuffer functions
+  /* --------------------------------------------------------------------------
+     Deprecated MBuffer functions */
 
   /** @deprecated */
   inkapi int INKMBufferDataSet(INKMBuffer bufp, void *data);
@@ -2693,14 +2641,14 @@ extern "C"
   /** @deprecated */
   inkapi void INKMBufferCompress(INKMBuffer bufp);
 
-  // --------------------------------------------------------------------------
-  // YTS Team, yamsat Plugin
+  /* --------------------------------------------------------------------------
+     YTS Team, yamsat Plugin */
 
   /** @deprecated */
   inkapi int INKHttpTxnCreateRequest(INKHttpTxn txnp, const char *, const char *, int);
 
-  // --------------------------------------------------------------------------
-  // Deprecated MIME field functions --- use INKMimeHdrFieldXXX instead
+  /* --------------------------------------------------------------------------
+     Deprecated MIME field functions --- use INKMimeHdrFieldXXX instead */
 
   /** @deprecated */
   inkapi INKMLoc INKMimeFieldCreate(INKMBuffer bufp);
@@ -2775,8 +2723,8 @@ extern "C"
   /** @deprecated */
   inkapi void INKMimeFieldValueDelete(INKMBuffer bufp, INKMLoc offset, int idx);
 
-  // --------------------------------------------------------------------------
-  // Deprecated MIME field functions in SDK3.0
+  /* --------------------------------------------------------------------------
+     Deprecated MIME field functions in SDK3.0 */
 
   /** @deprecated Use INKMimeHdrFieldAppend() instead */
   inkapi INKReturnCode INKMimeHdrFieldInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
@@ -2823,8 +2771,8 @@ extern "C"
   /** @deprecated */
   inkapi INKReturnCode INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 * length, INKU64 * offset);
 
-  // --------------------------------------------------------------------------
-  // cache http info APIs
+  /* --------------------------------------------------------------------------
+     cache http info APIs */
 
   /** @deprecated */
   inkapi INKCacheHttpInfo INKCacheHttpInfoCreate();

@@ -77,7 +77,7 @@ static inline int ink_atomic_increment(pvink32 mem, int value) { return ((inku32
 static inline ink64 ink_atomic_increment64(pvink64 mem, ink64 value) { return ((inku64_s)atomic_add_64_nv((pvinku64_s)mem, (inku64_s)value)) - value; }
 static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return (void*)(((char*)atomic_add_ptr_nv((vvoidp)mem, (ssize_t)value)) - value); }
 
-// not used for Intel Processors or Sparc which are mostly sequentally consistent
+/* not used for Intel Processors or Sparc which are mostly sequentally consistent */
 #define INK_WRITE_MEMORY_BARRIER
 #define INK_MEMORY_BARRIER
 
@@ -85,7 +85,7 @@ static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { retu
 
 #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 1)
 
-// see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+/* see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html */
 
 static inline ink32 ink_atomic_swap(pvink32 mem, ink32 value) { return __sync_lock_test_and_set(mem, value); }
 static inline ink64 ink_atomic_swap64(pvink64 mem, ink64 value) { return __sync_lock_test_and_set(mem, value); }
@@ -97,7 +97,7 @@ static inline int ink_atomic_increment(pvink32 mem, int value) { return __sync_f
 static inline ink64 ink_atomic_increment64(pvink64 mem, ink64 value) { return __sync_fetch_and_add(mem, value); }
 static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, value); }
 
-// not used for Intel Processors which have sequential(esque) consistency
+/* not used for Intel Processors which have sequential(esque) consistency */
 #define INK_WRITE_MEMORY_BARRIER
 #define INK_MEMORY_BARRIER
 
@@ -150,7 +150,7 @@ extern "C"
   {
     return (void *) ink_atomic_increment((int *) mem, value);
   }
-#else  // non-freebsd for the "else"
+#else  /* non-freebsd for the "else" */
 /* Atomic compare and swap 32-bit.
    if (*mem == old) *mem = new_value;
    Returns TRUE if swap was successful. */
@@ -163,7 +163,7 @@ extern "C"
 
 /* Atomic increment/decrement.  Returns the old value */
   int ink_atomic_increment(pvink32 mem, int value);
-#endif  // freebsd vs not freebsd check
+#endif  /* freebsd vs not freebsd check */
 
 /* Atomic 64-bit compare and swap
    THIS IS NOT DEFINED for x86 */
@@ -192,10 +192,10 @@ extern "C"
     } while (!ink_atomic_cas64(mem, old, old + value));
     return old;
   }
-#else  // non-freebsd for the "else"
+#else  /* non-freebsd for the "else" */
   int ink_atomic_cas64(pvink64 mem, ink64 old, ink64 new_value);
   ink64 ink_atomic_increment64(pvink64 mem, ink64 value);
-#endif  // freebsd vs not freebsd check
+#endif  /* freebsd vs not freebsd check */
 
 #define INK_WRITE_MEMORY_BARRIER
 #define INK_MEMORY_BARRIER

@@ -50,10 +50,12 @@
   the pointer was required by the standard.
 */
 
-//#if defined(POSIX_THREAD)
-//#include <pthread.h>
-//#include <stdlib.h>
-//#endif
+/*
+#if defined(POSIX_THREAD)
+#include <pthread.h>
+#include <stdlib.h>
+#endif
+*/
 
 /* #define USE_SPINLOCK_FOR_FREELIST */
 /* #define CHECK_FOR_DOUBLE_FREE */
@@ -123,10 +125,10 @@ extern "C"
     ink_mutex inkfreelist_mutex;
 #endif
 #if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE))
-    //
-    // This assumes  we will never use anything other than Pthreads
-    // on alpha
-    //
+    /*
+      This assumes  we will never use anything other than Pthreads
+      on alpha
+    */
     ink_mutex freelist_mutex;
     volatile void_p *head;
 #ifdef CHECK_FOR_DOUBLE_FREE
@@ -193,7 +195,7 @@ extern "C"
 #if !defined(INK_QUEUE_NT)
 #define INK_ATOMICLIST_EMPTY(_x) (!(TO_PTR(FREELIST_POINTER((_x.head)))))
 #else
-  // ink_queue_nt.c doesn't do the FROM/TO pointer swizzling
+  /* ink_queue_nt.c doesn't do the FROM/TO pointer swizzling */
 #define INK_ATOMICLIST_EMPTY(_x) (!(      (FREELIST_POINTER((_x.head)))))
 #endif
 
