@@ -55,16 +55,9 @@ union semun
 #define COP_WARNING  LOG_ERR
 #define COP_DEBUG    LOG_DEBUG
 
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
-
-static char root_dir[PATH_MAX];
-static char local_state_dir[PATH_MAX];
-static char config_dir[PATH_MAX];
+static const char *root_dir;
+static const char *runtime_dir;
+static const char *config_dir;
 static char config_file[PATH_MAX];
 
 static char cop_lockfile[PATH_MAX];
@@ -1786,61 +1779,32 @@ init_config_dir()
   // If there is no DEFAULT_TS_DIRECTORY_FILE file to be found, we will
   // assume there is one in the current working directory.
 
-  FILE *ts_file;
-  char buffer[1024];
-  int i = 0;
   struct stat info;
-  char *env_path;
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering init_config_dir()\n");
 #endif
 
-  root_dir[0] = '\0';
-  if ((env_path = getenv("TS_ROOT"))) {
-    strncpy(root_dir, env_path, sizeof(root_dir));
-  } else {
-    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
-      fclose(ts_file);
-      while (!isspace(buffer[i])) {
-        root_dir[i] = buffer[i];
-        i++;
-      }
-      root_dir[i] = '\0';
-    } else {
-      ink_strncpy(root_dir, PREFIX, sizeof(root_dir));
-    }
-  }
+  root_dir = Layout::get()->prefix;
+  runtime_dir = Layout::get()->runtimedir;
+  config_dir = Layout::get()->sysconfdir;
 
-  if (root_dir[0] && (chdir(root_dir) < 0)) {
+  if (chdir(root_dir) < 0) {
     cop_log(COP_FATAL, "unable to change to root directory \"%s\" [%d '%s']\n", root_dir, errno, strerror(errno));
     cop_log(COP_FATAL," please set correct path in env variable TS_ROOT \n");
     exit(1);
   }
 
-  snprintf(config_dir, sizeof(config_dir), DEFAULT_SYSTEM_CONFIG_DIRECTORY);
   if (stat(config_dir, &info) < 0) {
-    // Try 'root_dir/etc/trafficserver' directory
-    snprintf(config_dir, sizeof(config_dir), "%s%s%s%s%s",
-             root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
-    if (stat(config_dir, &info) < 0) {
-      cop_log(COP_FATAL, "unable to locate config directory '%s'\n",config_dir);
-      cop_log(COP_FATAL, " please try setting correct root path in env variable TS_ROOT \n");
-      exit(1);
-    }
+    cop_log(COP_FATAL, "unable to locate config directory '%s'\n",config_dir);
+    cop_log(COP_FATAL, " please try setting correct root path in env variable TS_ROOT \n");
+    exit(1);
   }
 
-  snprintf(local_state_dir, sizeof(config_dir), DEFAULT_LOCAL_STATE_DIRECTORY);
-  if (stat(local_state_dir, &info) < 0) {
-    // Try 'root_dir/var/trafficserver' directory
-    snprintf(local_state_dir, sizeof(local_state_dir),
-             "%s%s%s%s%s",root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
-    if (stat(local_state_dir, &info) < 0) {
-      cop_log(COP_FATAL, "unable to locate local state directory '%s'\n",local_state_dir);
-      cop_log(COP_FATAL, " please try setting correct root path in either env variable TS_ROOT \n");
-        exit(1);
-    }
+  if (stat(runtime_dir, &info) < 0) {
+    cop_log(COP_FATAL, "unable to locate local state directory '%s'\n",runtime_dir);
+    cop_log(COP_FATAL, " please try setting correct root path in either env variable TS_ROOT \n");
+    exit(1);
   }
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving init_config_dir()\n");
@@ -1854,9 +1818,12 @@ init_lockfiles()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering init_lockfiles()\n");
 #endif
-  snprintf(cop_lockfile, sizeof(cop_lockfile), "%s%s%s", local_state_dir, DIR_SEP, COP_LOCK);
-  snprintf(manager_lockfile, sizeof(manager_lockfile), "%s%s%s", local_state_dir, DIR_SEP, MANAGER_LOCK);
-  snprintf(server_lockfile, sizeof(server_lockfile), "%s%s%s", local_state_dir, DIR_SEP, SERVER_LOCK);
+  Layout::relative_to(cop_lockfile, sizeof(cop_lockfile),
+                      Layout::get()->runtimedir, COP_LOCK);
+  Layout::relative_to(manager_lockfile, sizeof(manager_lockfile),
+                      Layout::get()->runtimedir, MANAGER_LOCK);
+  Layout::relative_to(server_lockfile, sizeof(server_lockfile),
+                      Layout::get()->runtimedir, SERVER_LOCK);
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving init_lockfiles()\n");
@@ -1877,9 +1844,11 @@ init_config_file()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering init_config_file()\n");
 #endif
-  snprintf(config_file, sizeof(config_file), "%s/records.config.shadow", config_dir);
+  Layout::relative_to(config_file, sizeof(config_file),
+                      config_dir, "records.config.shadow");
   if (stat(config_file, &info) < 0) {
-    snprintf(config_file, sizeof(config_file), "%s/records.config", config_dir);
+    Layout::relative_to(config_file, sizeof(config_file),
+                        config_dir, "records.config");
     if (stat(config_file, &info) < 0) {
       cop_log(COP_FATAL, "unable to locate \"%s/records.config\" or \"%s/records.config.shadow\"\n",
               config_dir, config_dir);
