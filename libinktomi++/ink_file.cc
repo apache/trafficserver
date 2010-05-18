@@ -501,6 +501,14 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath,
     addpath = next;
   }
   path[pathlen] = '\0';
+  if (pathlen > 1 && path[pathlen - 1] == '/') {
+    // Trim trailing slash unless requested
+    size_t es = strlen(addpath);
+    if (es == 0 || addpath[es - 1] != '/') {
+      --pathlen;
+      path[pathlen] = '\0';
+    }
+  }
 
   // keptlen will be the rootlen unless the addpath contained
   // backpath elements.  If so, and INK_FILEPATH_NOTABOVEROOT

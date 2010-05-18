@@ -58,6 +58,8 @@ fi
 
 HEAD=/usr/bin/head
 test -x $HEAD || HEAD=head
+ESED=/usr/bin/sed
+test -x $ESED || ESED=sed
 
 # Ubuntu: Do NOT "set -e"
 
@@ -73,24 +75,28 @@ else
 fi
 
 TS_ROOT=${TS_ROOT:-$TS_PREFIX}
+# TS_BASE is offset inside the file system from where the layout starts
+# For standard installations TS_BASE will be empty
+eval TS_BASE="`echo $TS_ROOT | ${ESED} -e 's;@prefix@$;;'`"
+
 TC_NAME=${TS_NAME:-traffic_cop}
 TM_NAME=${TS_NAME:-traffic_manager}
 TS_NAME=${TS_NAME:-traffic_server}
-TC_DAEMON=${TC_DAEMON:-$TS_ROOT@exp_bindir@/traffic_cop}
+TC_DAEMON=${TC_DAEMON:-$TS_BASE@exp_bindir@/traffic_cop}
 TC_DAEMON_ARGS=""
-TM_DAEMON=${TM_DAEMON:-$TS_ROOT@exp_bindir@/traffic_manager}
+TM_DAEMON=${TM_DAEMON:-$TS_BASE@exp_bindir@/traffic_manager}
 TM_DAEMON_ARGS=""
-TS_DAEMON=${TS_DAEMON:-$TS_ROOT@exp_bindir@/traffic_server}
+TS_DAEMON=${TS_DAEMON:-$TS_BASE@exp_bindir@/traffic_server}
 TS_DAEMON_ARGS=""
-TC_PIDFILE=${TC_PIDFILE:-$TS_ROOT@exp_runtimedir@/cop.lock}
-TM_PIDFILE=${TM_PIDFILE:-$TS_ROOT@exp_runtimedir@/manager.lock}
-TS_PIDFILE=${TS_PIDFILE:-$TS_ROOT@exp_runtimedir@/server.lock}
+TC_PIDFILE=${TC_PIDFILE:-$TS_BASE@exp_runtimedir@/cop.lock}
+TM_PIDFILE=${TM_PIDFILE:-$TS_BASE@exp_runtimedir@/manager.lock}
+TS_PIDFILE=${TS_PIDFILE:-$TS_BASE@exp_runtimedir@/server.lock}
 # number of times to retry check on pid lock file
 PIDFILE_CHECK_RETRIES=${PIDFILE_CHECK_RETRIES:-30}
 # stdout file of executable
-STDOUTLOG=${STDOUTLOG:-$TS_ROOT@exp_logdir@/traffic_server.stdout}
+STDOUTLOG=${STDOUTLOG:-$TS_BASE@exp_logdir@/traffic_server.stdout}
 # stderr file of executable
-STDERRLOG=${STDERRLOG:-$TS_ROOT@exp_logdir@/traffic_server.stderr}
+STDERRLOG=${STDERRLOG:-$TS_BASE@exp_logdir@/traffic_server.stderr}
 if [ -d /etc/rc.d/init.d ]; then
   SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
 elif [ -d /etc/init.d ]; then
