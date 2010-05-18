@@ -29,6 +29,7 @@
  */
 
 #include "inktomi++.h"
+#include "I_Layout.h"
 #include "Main.h"
 #include "Main.h"
 #include "BaseRecords.h"
@@ -122,7 +123,7 @@ BaseRecords::BaseRecords(char *mpath, const char *cfile, char *efile)
   plugin_data.recs = (Record *) xmalloc(MAX_PLUGIN_RECORDS * sizeof(Record));
 
   /* For now, we are using a dbm for record sharing */
-  snprintf(fpath, sizeof(fpath), "%s%s%s", system_local_state_dir,DIR_SEP,MGMT_DB_FILENAME);
+  Layout::relative_to(fpath, sizeof(fpath), system_runtime_dir, MGMT_DB_FILENAME);
   unlink(fpath);
   record_db = new MgmtDBM(fpath);
 

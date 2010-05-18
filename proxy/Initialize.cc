@@ -117,13 +117,13 @@ init_system_dirs(void)
     }
   }
 
-  if ((err = stat(system_local_state_dir, &s)) < 0) {
+  if ((err = stat(system_runtime_dir, &s)) < 0) {
     // Try 'system_root_dir/var/trafficserver' directory
-    snprintf(system_local_state_dir, sizeof(system_local_state_dir),
+    snprintf(system_runtime_dir, sizeof(system_runtime_dir),
              "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
-    if ((err = stat(system_local_state_dir, &s)) < 0) {
+    if ((err = stat(system_runtime_dir, &s)) < 0) {
       fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n",
-              system_local_state_dir, err, errno, strerror(errno));
+              system_runtime_dir, err, errno, strerror(errno));
       fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
       _exit(1);
     }

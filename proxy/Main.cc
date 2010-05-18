@@ -171,7 +171,7 @@ int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
 char management_directory[PATH_NAME_MAX+1];      // Layout->sysconfdir
 char system_root_dir[PATH_NAME_MAX + 1];         // Layout->prefix
-char system_local_state_dir[PATH_NAME_MAX + 1];  // Layout->localstatedir
+char system_runtime_dir[PATH_NAME_MAX + 1];  // Layout->runtimedir
 char system_config_directory[PATH_NAME_MAX + 1]; // Layout->sysconfdir
 char system_log_dir[PATH_NAME_MAX + 1];          // Layout->logdir
 
@@ -435,7 +435,7 @@ init_dirs(void)
   char buf[PATH_NAME_MAX+1];
 
   ink_strncpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
-  ink_strncpy(system_local_state_dir, Layout::get()->localstatedir, PATH_NAME_MAX);
+  ink_strncpy(system_runtime_dir, Layout::get()->runtimedir, PATH_NAME_MAX);
   ink_strncpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
 
   /*
@@ -455,12 +455,12 @@ init_dirs(void)
     }
   }
 
-  if ((err = stat(system_local_state_dir, &s)) < 0) {
+  if ((err = stat(system_runtime_dir, &s)) < 0) {
     REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
-    Layout::get()->relative(system_local_state_dir, PATH_NAME_MAX, buf);
-    if ((err = stat(system_local_state_dir, &s)) < 0) {
+    Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
+    if ((err = stat(system_runtime_dir, &s)) < 0) {
       fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n",
-              system_local_state_dir, err, errno, strerror(errno));
+              system_runtime_dir, err, errno, strerror(errno));
       fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
       _exit(1);
     }

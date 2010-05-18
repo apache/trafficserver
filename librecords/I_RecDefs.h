@@ -181,7 +181,7 @@ typedef int (*RecRawStatSyncCb) (const char *name, RecDataT data_type, RecData *
 
 // System Defaults
 extern char system_root_dir[PATH_NAME_MAX + 1];
-extern char system_local_state_dir[PATH_NAME_MAX + 1];
+extern char system_runtime_dir[PATH_NAME_MAX + 1];
 extern char system_config_directory[PATH_NAME_MAX + 1];
 extern char system_log_dir[PATH_NAME_MAX + 1];
 

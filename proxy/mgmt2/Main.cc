@@ -116,7 +116,7 @@ char *xml_path = NULL;
 
 // TODO: Check if really need those
 char system_root_dir[PATH_NAME_MAX + 1];
-char system_local_state_dir[PATH_NAME_MAX + 1];
+char system_runtime_dir[PATH_NAME_MAX + 1];
 char system_config_directory[PATH_NAME_MAX + 1];
 char system_log_dir[PATH_NAME_MAX + 1];
 
@@ -312,7 +312,7 @@ init_dirs(bool use_librecords = true)
   char buf[PATH_NAME_MAX+1];
 
   ink_strncpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
-  ink_strncpy(system_local_state_dir, Layout::get()->localstatedir, PATH_NAME_MAX);
+  ink_strncpy(system_runtime_dir, Layout::get()->runtimedir, PATH_NAME_MAX);
   ink_strncpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
 
   if ((err = stat(system_config_directory, &s)) < 0) {
@@ -329,14 +329,14 @@ init_dirs(bool use_librecords = true)
   }
   strcpy(mgmt_path, system_config_directory);
 
-  if ((err = stat(system_local_state_dir, &s)) < 0) {
+  if ((err = stat(system_runtime_dir, &s)) < 0) {
     if (use_librecords) {
       REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
-      Layout::get()->relative(system_local_state_dir, PATH_NAME_MAX, buf);
+      Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
     }
-    if ((err = stat(system_local_state_dir, &s)) < 0) {
+    if ((err = stat(system_runtime_dir, &s)) < 0) {
       mgmt_elog("unable to stat() local state dir '%s': %d %d, %s\n",
-              system_local_state_dir, err, errno, strerror(errno));
+              system_runtime_dir, err, errno, strerror(errno));
       mgmt_elog("please set 'proxy.config.local_state_dir'\n");
       _exit(1);
     }

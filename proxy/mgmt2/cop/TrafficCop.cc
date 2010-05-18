@@ -83,8 +83,8 @@ static char manager_binary[PATH_MAX] = "traffic_manager";
 static char server_binary[PATH_MAX] = "traffic_server";
 static char manager_options[OPTIONS_LEN_MAX] = "";
 
-static char log_file[PATH_MAX] = "logs/traffic.out";
-static char bin_path[PATH_MAX] = BINDIR;
+static char log_file[PATH_MAX] = "traffic.out";
+static char bin_path[PATH_MAX];
 
 static int autoconf_port = 8083;
 static int rs_port = 8088;
@@ -649,18 +649,23 @@ read_config()
   read_config_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary));
   read_config_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary));
   read_config_string("proxy.config.bin_path", bin_path, sizeof(bin_path));
+  if (stat(bin_path, &stat_buf) < 0) {
+    ink_strncpy(Layout::get()->bindir, bin_path, sizeof(bin_path) - 1);
+    if (stat(log_dir, &stat_buf) < 0) {
+      cop_log(COP_FATAL, "could not stat \"%s\"\n", bin_path);
+      cop_log(COP_FATAL, "please set 'proxy.config.bin_path' \n");
+    }
+  }
   read_config_string("proxy.config.log2.logfile_dir", log_dir, sizeof(log_dir));
   if (stat(log_dir, &stat_buf) < 0) {
-    // Try 'root_dir/var/log/trafficserver' directory
-    snprintf(log_dir, sizeof(log_dir), "%s%s%s%s%s%s%s",
-             root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
+    ink_strncpy(Layout::get()->logdir, log_dir, sizeof(log_dir) - 1);
     if (stat(log_dir, &stat_buf) < 0) {
       cop_log(COP_FATAL, "could not stat \"%s\"\n", log_dir);
       cop_log(COP_FATAL, "please set 'proxy.config.log2.logfile_dir' \n");
     }
   }
   read_config_string("proxy.config.output.logfile", log_filename, sizeof(log_filename));
-  snprintf(log_file, sizeof(log_file), "%s%s%s", log_dir, DIR_SEP, log_filename);
+  Layout::relative_to(log_file, sizeof(log_file), log_dir, log_filename);
   read_config_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port);
   read_config_int("proxy.config.admin.autoconf_port", &autoconf_port);
   read_config_int("proxy.config.cluster.rsport", &rs_port);
@@ -729,15 +734,10 @@ spawn_manager()
     }
   }
 
-  snprintf(prog, sizeof(prog), "%s%s%s", bin_path, DIR_SEP, manager_binary);
+  Layout::relative_to(prog, sizeof(prog), bin_path, manager_binary);
   if (stat(prog, &info) < 0) {
-    // Try 'root_dir/bin_path' directory
-    snprintf(prog, sizeof(prog), "%s%s%s%s", root_dir,bin_path, DIR_SEP, manager_binary);
-    // coverity[fs_check_call]
-    if (stat(prog, &info) < 0) {
-      cop_log(COP_FATAL, "unable to find manager binary \"%s\" [%d '%s']\n", prog, errno, strerror(errno));
-      exit(1);
-    }
+    cop_log(COP_FATAL, "unable to find manager binary \"%s\" [%d '%s']\n", prog, errno, strerror(errno));
+    exit(1);
   }
 
 #ifdef TRACE_LOG_COP

@@ -53,7 +53,7 @@ int system_num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
 int system_num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 
 char system_root_dir[PATH_NAME_MAX + 1]         = DEFAULT_ROOT_DIRECTORY;
-char system_local_state_dir[PATH_NAME_MAX + 1]  = DEFAULT_LOCAL_STATE_DIRECTORY;
+char system_runtime_dir[PATH_NAME_MAX + 1]  = DEFAULT_LOCAL_STATE_DIRECTORY;
 char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
 char system_log_dir[PATH_NAME_MAX + 1]          = DEFAULT_LOG_DIRECTORY;
 
@@ -215,7 +215,7 @@ int main(int argc, char * argv[])
   if (0 == get_ts_directory(ts_path,sizeof(ts_path))) {
     ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
     ink_snprintf(system_config_directory, sizeof(system_config_directory), "%s/etc/trafficserver", system_root_dir);
-    ink_snprintf(system_local_state_dir, sizeof(system_local_state_dir), "%s/var/trafficserver", system_root_dir);
+    ink_snprintf(system_runtime_dir, sizeof(system_local_state_dir), "%s/var/trafficserver", system_root_dir);
     ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s/var/log/trafficserver", system_root_dir);
   }
 

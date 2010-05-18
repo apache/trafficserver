@@ -850,8 +850,8 @@ webIntr_main(void *x)
 
   bzero(api_sock_path, 1024);
   bzero(event_sock_path, 1024);
-  snprintf(api_sock_path, sizeof(api_sock_path), "%s%smgmtapisocket", system_local_state_dir, DIR_SEP);
-  snprintf(event_sock_path, sizeof(event_sock_path), "%s%seventapisocket", system_local_state_dir, DIR_SEP);
+  snprintf(api_sock_path, sizeof(api_sock_path), "%s%smgmtapisocket", system_runtime_dir, DIR_SEP);
+  snprintf(event_sock_path, sizeof(event_sock_path), "%s%seventapisocket", system_runtime_dir, DIR_SEP);
 
   // INKqa12562: MgmtAPI sockets should be created with 775 permission
   mode_t oldmask = umask(S_IWOTH);

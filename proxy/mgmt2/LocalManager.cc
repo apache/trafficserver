@@ -254,7 +254,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
     mgmt_log("Bad or missing proxy.config.lm.sem_id value; using default id %d\n", MGMT_SEMID_DEFAULT);
     mgmt_sync_key = MGMT_SEMID_DEFAULT;
   }
-  ink_strncpy(pserver_path, system_local_state_dir, sizeof(pserver_path));
+  ink_strncpy(pserver_path, system_runtime_dir, sizeof(pserver_path));
 
   virt_map = NULL;
 

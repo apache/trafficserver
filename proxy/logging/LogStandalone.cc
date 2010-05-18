@@ -41,13 +41,6 @@
 #include "MgmtUtils.h"
 #include "RecordsConfig.h"
 
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
-
 #define LOG_ReadConfigString REC_ReadConfigString
 
 #define HttpBodyFactory		int
@@ -65,11 +58,11 @@ int remote_management_flag = 0;
 int auto_clear_hostdb_flag = 0;
 char proxy_name[DOMAIN_NAME_MAX + 1] = "unknown";
 
-char system_root_dir[PATH_NAME_MAX + 1] = DEFAULT_ROOT_DIRECTORY;
-char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
-char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
-char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
-char management_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
+char system_root_dir[PATH_NAME_MAX + 1] = "";
+char system_config_directory[PATH_NAME_MAX + 1] = "";
+char system_runtime_dir[PATH_NAME_MAX + 1] = "";
+char system_log_dir[PATH_NAME_MAX + 1] = "";
+char management_directory[PATH_NAME_MAX + 1] = "";
 
 char error_tags[1024] = "";
 char action_tags[1024] = "";
@@ -142,19 +135,12 @@ initialize_process_manager()
   if (getenv("PROXY_REMOTE_MGMT")) {
     remote_management_flag = true;
   }
-  //
-  // Remove excess '/'
-  //
-  if (management_directory[strlen(management_directory) - 1] == '/')
-    management_directory[strlen(management_directory) - 1] = 0;
 
-  if ((err = stat(management_directory, &s)) < 0) {
-    // Try 'system_root_dir/etc/trafficserver' directory
-    snprintf(management_directory, sizeof(management_directory),
-             "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
+  if (management_directory[0] == '\0') {
+    ink_strncpy(management_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
     if ((err = stat(management_directory, &s)) < 0) {
       fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n",
-                management_directory, err, errno, strerror(errno));
+              management_directory, err, errno, strerror(errno));
       fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
       _exit(1);
     }
@@ -222,24 +208,16 @@ check_lockfile(const char *config_dir, const char *pgm_name)
 {
   int err;
   pid_t holding_pid;
-  char lockfile[PATH_NAME_MAX + 1];
-  char lockdir[PATH_NAME_MAX] = DEFAULT_LOCAL_STATE_DIRECTORY;
+  char *lockfile = NULL;
+
   struct stat s;
-
-  if ((err = stat(lockdir, &s)) < 0) {
-    // Try 'system_root_dir/var/trafficserver' directory
-    snprintf(lockdir, sizeof(lockdir),
-             "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
-    if ((err = stat(lockdir, &s)) < 0) {
-      fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n",
-                lockdir, err, errno, strerror(errno));
-      fprintf(stderr," please set correct path in env variable TS_ROOT \n");
-      _exit(1);
-    }
+  if ((err = stat(Layout::get()->runtimedir, &s)) < 0) {
+    fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n",
+            Layout::get()->runtimedir, err, errno, strerror(errno));
+    fprintf(stderr," please set correct path in env variable TS_ROOT \n");
+    _exit(1);
   }
-  int nn = snprintf(lockfile, sizeof(lockfile),"%s%s%s", lockdir,DIR_SEP,SERVER_LOCK);
-
-  ink_assert(nn > 0);
+  lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
 
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Get(&holding_pid);
@@ -263,6 +241,8 @@ check_lockfile(const char *config_dir, const char *pgm_name)
     }
     _exit(1);
   }
+  xfree(lockfile);
+
 }
 
 /*-------------------------------------------------------------------------
@@ -339,37 +319,11 @@ init_log_standalone_basic(const char *pgm_name)
 int
 get_ts_directory(char *ts_path, size_t ts_path_len)
 {
-  FILE *fp;
-  char *env_path;
   struct stat s;
   int err;
 
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, ts_path_len);
-  } else {
-    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-      if (fgets(ts_path, ts_path_len, fp) == NULL) {
-        fclose(fp);
-        fprintf(stderr,"\nInvalid contents in %s\n",DEFAULT_TS_DIRECTORY_FILE);
-        fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
-        return -1;
-      }
-      // strip newline if it exists
-      int len = strlen(ts_path);
-      if (ts_path[len - 1] == '\n') {
-        ts_path[len - 1] = '\0';
-      }
-      // strip trailing "/" if it exists
-      len = strlen(ts_path);
-      if (ts_path[len - 1] == '/') {
-        ts_path[len - 1] = '\0';
-      }
-
-      fclose(fp);
-    } else {
-      ink_strncpy(ts_path, PREFIX, ts_path_len);
-    }
-  }
+  // TODO: This should probably be logdir?
+  ink_strncpy(ts_path, Layout::get()->prefix, ts_path_len);
 
   if ((err = stat(ts_path, &s)) < 0) {
     fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n",

@@ -47,7 +47,7 @@ public:
   {
     //char fpath[PATH_NAME_MAX];
     time_last_config_change = 0;
-    //snprintf(fpath, sizeof(fpath), "%s%s%s", system_local_state_dir,DIR_SEP,MGMT_DB_FILENAME);
+    //snprintf(fpath, sizeof(fpath), "%s%s%s", system_runtime_dir,DIR_SEP,MGMT_DB_FILENAME);
     //unlink(fpath);
   };
   ~LMRecords() {

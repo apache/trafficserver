@@ -34,7 +34,8 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/proxy/hdrs
+  -I$(top_srcdir)/proxy/hdrs \
+  -DPKGSYSUSER=\"$(pkgsysuser)\"
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
