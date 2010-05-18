@@ -63,13 +63,13 @@ int http_accept_port_number = 0;
 int http_accept_file_descriptor = 0;
 int remote_management_flag = 0;
 int auto_clear_hostdb_flag = 0;
-char proxy_name[256] = "unknown";
+char proxy_name[DOMAIN_NAME_MAX + 1] = "unknown";
 
 char system_root_dir[PATH_NAME_MAX + 1] = DEFAULT_ROOT_DIRECTORY;
 char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
 char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
 char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
-char management_directory[256] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
+char management_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
 
 char error_tags[1024] = "";
 char action_tags[1024] = "";

@@ -35,6 +35,7 @@
 #include "Diags.h"
 #include "I_EventSystem.h"
 #include "I_Net.h"
+#include "I_Layout.h"
 #include "I_Version.h"
 
 #include "Initialize.h" // TODO: move to I_Initialize.h ???
@@ -96,6 +97,8 @@ init_system_settings(void)
 #endif
 }
 
+// XXX: This is unused function
+//      Either remove it or implement Layout functions
 void
 init_system_dirs(void)
 {

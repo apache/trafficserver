@@ -165,15 +165,15 @@ extern int cache_clustering_enabled;
 char cluster_host[DOMAIN_NAME_MAX + 1] = DEFAULT_CLUSTER_HOST;
 
 //         = DEFAULT_CLUSTER_PORT_NUMBER;
-char proxy_name[256] = "unknown";
+char proxy_name[DOMAIN_NAME_MAX + 1] = "unknown";
 char command_string[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
-char management_directory[256] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
 
-char system_root_dir[PATH_NAME_MAX + 1] = DEFAULT_ROOT_DIRECTORY;
-char system_local_state_dir[PATH_NAME_MAX + 1] = DEFAULT_LOCAL_STATE_DIRECTORY;
-char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
-char system_log_dir[PATH_NAME_MAX + 1] = DEFAULT_LOG_DIRECTORY;
+char management_directory[PATH_NAME_MAX+1];      // Layout->sysconfdir
+char system_root_dir[PATH_NAME_MAX + 1];         // Layout->prefix
+char system_local_state_dir[PATH_NAME_MAX + 1];  // Layout->localstatedir
+char system_config_directory[PATH_NAME_MAX + 1]; // Layout->sysconfdir
+char system_log_dir[PATH_NAME_MAX + 1];          // Layout->logdir
 
 int logging_port_override = 0;
 char logging_server_override[256] = " do not override";
@@ -379,30 +379,27 @@ init_system()
 static void
 check_lockfile()
 {
-  char lockfile[PATH_NAME_MAX];
-  char lockdir[PATH_NAME_MAX] = DEFAULT_LOCAL_STATE_DIRECTORY;
+  char *lockfile = NULL;
   int err;
   pid_t holding_pid;
   struct stat s;
 
 #ifndef _DLL_FOR_HNS
-  if ((err = stat(lockdir, &s)) < 0) {
-    // Try 'system_root_dir/var/trafficserver' directory
-    snprintf(lockdir, sizeof(lockdir),
-             "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
-    if ((err = stat(lockdir, &s)) < 0) {
-      fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n",
-                lockdir, err, errno, strerror(errno));
-      fprintf(stderr," please set correct path in env variable TS_ROOT \n");
-      _exit(1);
-    }
+  if ((err = stat(Layout::get()->runtimedir, &s)) < 0) {
+    fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n",
+            Layout::get()->runtimedir, err, errno, strerror(errno));
+    fprintf(stderr," please set correct path in env variable TS_ROOT \n");
+    _exit(1);
   }
-  snprintf(lockfile, sizeof(lockfile),"%s%s%s", lockdir,DIR_SEP,SERVER_LOCK);
+  lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
 #else
 #define MAX_ENVVAR_LENGTH 128
   char tempvar[MAX_ENVVAR_LENGTH + 1];
+  // TODO: Need an portable ink_file_tmppath()
+  // XXX:  What's the _DLL_FOR_HS?
+  //
   ink_assert(GetEnvironmentVariable("TEMP", tempvar, MAX_ENVVAR_LENGTH + 1));
-  snprintf(lockfile, sizeof(lockfile), "%s%s%s", tempvar, DIR_SEP, SERVER_LOCK);
+  lockfile = Layout::relative_to(tempvar, SERVER_LOCK);
 #endif
 
   Lockfile server_lockfile(lockfile);
@@ -427,6 +424,7 @@ check_lockfile()
     }
     _exit(1);
   }
+  xfree(lockfile);
 }
 
 static void
@@ -434,53 +432,48 @@ init_dirs(void)
 {
   struct stat s;
   int err;
+  char buf[PATH_NAME_MAX+1];
 
+  ink_strncpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
+  ink_strncpy(system_local_state_dir, Layout::get()->localstatedir, PATH_NAME_MAX);
+  ink_strncpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
 
+  /*
+   * XXX: There is not much sense in the following code
+   * The purpose of proxy.config.foo_dir should
+   * be checked BEFORE checking default foo directory.
+   * Otherwise one cannot change the config dir to something else
+   */
   if ((err = stat(system_config_directory, &s)) < 0) {
-    ink_strncpy(system_config_directory,management_directory,sizeof(system_config_directory));
+    REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
+    Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
     if ((err = stat(system_config_directory, &s)) < 0) {
-      REC_ReadConfigString(system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
-      if ((err = stat(system_config_directory, &s)) < 0) {
-        // Try 'system_root_dir/etc/trafficserver' directory
-        snprintf(system_config_directory, sizeof(system_config_directory),
-                 "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
-        if ((err = stat(system_config_directory, &s)) < 0) {
-          fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n",
-                    system_config_directory, err, errno, strerror(errno));
-          fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
-          _exit(1);
-        }
-      }
+      fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n",
+              system_config_directory, err, errno, strerror(errno));
+      fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
+      _exit(1);
     }
   }
 
   if ((err = stat(system_local_state_dir, &s)) < 0) {
-    REC_ReadConfigString(system_local_state_dir, "proxy.config.local_state_dir", PATH_NAME_MAX);
+    REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
+    Layout::get()->relative(system_local_state_dir, PATH_NAME_MAX, buf);
     if ((err = stat(system_local_state_dir, &s)) < 0) {
-      // Try 'system_root_dir/var/trafficserver' directory
-      snprintf(system_local_state_dir, sizeof(system_local_state_dir),
-               "%s%s%s%s%s",system_root_dir, DIR_SEP,"var",DIR_SEP,"trafficserver");
-      if ((err = stat(system_local_state_dir, &s)) < 0) {
-        fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n",
-                system_local_state_dir, err, errno, strerror(errno));
-        fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
-        _exit(1);
-      }
+      fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n",
+              system_local_state_dir, err, errno, strerror(errno));
+      fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
+      _exit(1);
     }
   }
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    REC_ReadConfigString(system_log_dir, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    REC_ReadConfigString(buf, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
     if ((err = stat(system_log_dir, &s)) < 0) {
-      // Try 'system_root_dir/var/log/trafficserver' directory
-      snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
-               system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
-      if ((err = stat(system_log_dir, &s)) < 0) {
-        fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
-                system_log_dir, err, errno, strerror(errno));
-        fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
-        _exit(1);
-      }
+      fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
+              system_log_dir, err, errno, strerror(errno));
+      fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+      _exit(1);
     }
   }
 
@@ -502,16 +495,9 @@ initialize_process_manager()
   if (getenv("PROXY_REMOTE_MGMT")) {
     remote_management_flag = true;
   }
-  //
-  // Remove excess '/'
-  //
-  if (management_directory[strlen(management_directory) - 1] == '/')
-    management_directory[strlen(management_directory) - 1] = 0;
 
   if ((err = stat(management_directory, &s)) < 0) {
-    // Try 'system_root_dir/etc/trafficserver' directory
-    snprintf(management_directory, sizeof(management_directory),
-             "%s%s%s%s%s",system_root_dir, DIR_SEP,"etc",DIR_SEP,"trafficserver");
+    ink_strncpy(management_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
     if ((err = stat(management_directory, &s)) < 0) {
       fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n",
                 management_directory, err, errno, strerror(errno));
@@ -781,7 +767,8 @@ cmd_clear(char *cmd)
   char p[PATH_NAME_MAX];
   if (c_all || c_hdb) {
     Note("Clearing Configuration");
-    snprintf(p, sizeof(p), "%s" DIR_SEP "internal" DIR_SEP "hostdb.config", system_config_directory);
+    Layout::relative_to(p, sizeof(p), system_config_directory,
+                        "internal" DIR_SEP "hostdb.config");
     if (unlink(p) < 0)
       Note("unable to unlink %s", p);
   }
@@ -1520,33 +1507,13 @@ run_RegressionTest()
 static void
 chdir_root()
 {
-  char buffer[1024];
-  char *env_path;
-  FILE *ts_file;
-  int i = 0;
-
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(system_root_dir, env_path, sizeof(system_root_dir));
-  } else {
-    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
-      fclose(ts_file);
-      while (!isspace(buffer[i])) {
-        system_root_dir[i] = buffer[i];
-        i++;
-      }
-      system_root_dir[i] = '\0';
-    } else {
-      ink_strncpy(system_root_dir, PREFIX, sizeof(system_root_dir));
-    }
-  }
-
   if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
-    fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
+    fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n",
+            system_root_dir, errno, strerror(errno));
     fprintf(stderr," please set correct path in env variable TS_ROOT \n");
     _exit(1);
   } else {
-    printf("[TrafficServer] using root directory '%s'\n",system_root_dir);
+    printf("[TrafficServer] using root directory '%s'\n", system_root_dir);
   }
 }
 
@@ -1784,6 +1751,8 @@ main(int argc, char **argv)
 
   // Before accessing file system initialize Layout engine
   Layout::create();
+  ink_strncpy(system_root_dir, Layout::get()->prefix, PATH_NAME_MAX);
+  ink_strncpy(management_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
   chdir_root(); // change directory to the install root of traffic server.
 
   process_args(argument_descriptions, n_argument_descriptions, argv);

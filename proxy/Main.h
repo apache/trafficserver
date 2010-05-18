@@ -71,10 +71,10 @@ extern int fds_limit;
 extern int debug_level;
 extern char cluster_host[DOMAIN_NAME_MAX + 1];
 extern int cluster_port_number;
-extern char proxy_name[256];
+extern char proxy_name[DOMAIN_NAME_MAX + 1];
 
 extern int remote_management_flag;
-extern char management_directory[256];
+extern char management_directory[PATH_NAME_MAX + 1];
 
 inkcoreapi extern int qt_accept_file_descriptor;
 inkcoreapi extern int CacheClusteringEnabled;
