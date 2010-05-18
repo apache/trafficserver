@@ -178,6 +178,8 @@ Layout::Layout(const char *_prefix)
   libexecdir = layout_relative(prefix, LIBEXECDIR);
   localstatedir = layout_relative(prefix, LOCALSTATEDIR);
   sharedstatedir = layout_relative(prefix, SHAREDSTATEDIR);
+  runtimedir = layout_relative(prefix, RUNTIMEDIR);
+  logdir = layout_relative(prefix, LOGDIR);
   mandir = layout_relative(prefix, MANDIR);
   infodir = layout_relative(prefix, INFODIR);
   cachedir = layout_relative(prefix, CACHEDIR);
@@ -200,6 +202,8 @@ Layout::Layout(const char *_prefix)
   PrintSTR(libexecdir);
   PrintSTR(localstatedir);
   PrintSTR(sharedstatedir);
+  PrintSTR(runtimedir);
+  PrintSTR(logdir);
   PrintSTR(mandir);
   PrintSTR(infodir);
   PrintSTR(cachedir);
@@ -223,6 +227,8 @@ Layout::~Layout()
   SafeFree(libexecdir);
   SafeFree(localstatedir);
   SafeFree(sharedstatedir);
+  SafeFree(runtimedir);
+  SafeFree(logdir);
   SafeFree(mandir);
   SafeFree(infodir);
   SafeFree(cachedir);

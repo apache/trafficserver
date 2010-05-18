@@ -48,6 +48,8 @@ struct Layout
   char *libexecdir;
   char *localstatedir;
   char *sharedstatedir;
+  char *runtimedir;
+  char *logdir;
   char *mandir;
   char *infodir;
   char *cachedir;
