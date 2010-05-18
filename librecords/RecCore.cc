@@ -27,6 +27,7 @@
 #include "P_RecCore.h"
 #include "P_RecUtils.h"
 #include "P_RecTree.h"
+#include "I_Layout.h"
 
 static bool g_initialized = false;
 
@@ -209,7 +210,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
   // read stats
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    g_stats_snap_fpath = REC_RAW_STATS_DIR REC_RAW_STATS_FILE;
+    g_stats_snap_fpath = Layout::relative_to(Layout::get()->runtimedir, REC_RAW_STATS_FILE);
     RecReadStatsFile();
   }
   // read configs
@@ -223,18 +224,14 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     // ./etc/trafficserver/records.config
     // ./records.config
     bool file_exists = true;
-    g_rec_config_fpath = REC_CONFIG_DIR REC_CONFIG_FILE REC_SHADOW_EXT;
+    g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir,
+                                             REC_CONFIG_FILE REC_SHADOW_EXT);
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-      g_rec_config_fpath = REC_CONFIG_FILE REC_SHADOW_EXT;
+      g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir,
+                                               REC_CONFIG_FILE);
       if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-        g_rec_config_fpath = REC_CONFIG_DIR REC_CONFIG_FILE;
-        if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-          g_rec_config_fpath = REC_CONFIG_FILE;
-          if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-            RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
-            file_exists = false;
-          }
-        }
+        RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
+        file_exists = false;
       }
     }
     if (file_exists) {

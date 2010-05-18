@@ -37,9 +37,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/http2 \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/libinktomi++ \
-  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
-  -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\"
+  -I$(top_srcdir)/libinktomi++
 
 noinst_LIBRARIES = libreclocal.a librecprocess.a
 

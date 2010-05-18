@@ -26,6 +26,7 @@
 #include "P_RecCompatibility.h"
 #include "P_RecMessage.h"
 #include "P_RecUtils.h"
+#include "I_Layout.h"
 
 static bool g_message_initialized = false;
 static RecMessageRecvCb g_recv_cb = NULL;
@@ -99,7 +100,7 @@ accept_thr(void *data)
 {
   REC_NOWARN_UNUSED(data);
   RecHandle h_pipe;
-  h_pipe = RecPipeCreate(REC_PIPE_DIR, REC_PIPE_NAME);
+  h_pipe = RecPipeCreate(Layout::get()->runtimedir, REC_PIPE_NAME);
   ink_thread_create(send_thr, (void *) h_pipe);
   ink_thread_create(recv_thr, (void *) h_pipe);
   return NULL;

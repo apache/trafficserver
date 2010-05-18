@@ -33,7 +33,7 @@
 #include "inktomi++.h"
 #include "ink_platform.h"
 #include "ink_unused.h"       /* MAGIC_EDITING_TAG */
-
+#include "I_Layout.h"
 #include "Compatability.h"
 #include "LocalManager.h"
 #include "NTDefs.h"
@@ -144,7 +144,7 @@ char snap_filename[FILE_NAME_MAX+1] = "stats.snap";
 void
 LocalManager::clearStats()
 {
-  const char *statsPath;
+  char *statsPath;
   char local_state_dir[FILE_NAME_MAX];
   char snap_file[FILE_NAME_MAX];
   struct stat s;
@@ -177,12 +177,13 @@ LocalManager::clearStats()
   //   that operation works even when the proxy is off
   //
   if (this->proxy_running == 0) {
-    statsPath = REC_RAW_STATS_DIR REC_RAW_STATS_FILE;
+    statsPath = Layout::relative_to(Layout::get()->runtimedir, REC_RAW_STATS_FILE);
     if (unlink(statsPath) < 0) {
       if (errno != ENOENT) {
         mgmt_log(stderr, "[LocalManager::clearStats] Unlink of %s failed : %s\n", REC_RAW_STATS_FILE, strerror(errno));
       }
     }
+    xfree(statsPath);
   }
 
 }                               /* End LocalManager::clearStats */
