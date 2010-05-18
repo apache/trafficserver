@@ -310,7 +310,7 @@ INKPluginInit(int argc, const char *argv[])
   mimehdr1_value = INKstrdup("0");
 
   /* Create name here and set DateTime value when o.s.
-   * response 200 is recieved
+   * response 200 is received
    */
   mimehdr2_name = INKstrdup("x-date-200-recvd");
 

@@ -301,7 +301,7 @@ transform_add(INKHttpTxn txnp)
   connp = INKTransformCreate(append_transform, txnp);
 
   if (INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, connp) == INK_ERROR) {
-    INKError("[append-transform] Unable to attach plugin to " "http transaction\n");
+    INKError("[append-transform] Unable to attach plugin to http transaction\n");
   }
 }
 
@@ -416,7 +416,7 @@ INKPluginInit(int argc, const char *argv[])
   }
 
   if (INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, INKContCreate(transform_plugin, NULL)) == INK_ERROR) {
-    INKError("[append-transoform] Unable to set read response header\n");
+    INKError("[append-transform] Unable to set read response header\n");
     goto Lerror;
   }
 
@@ -424,5 +424,5 @@ INKPluginInit(int argc, const char *argv[])
 
 Lerror:
 
-  INKError("[append-transoform] Unable to initialize plugin\n");
+  INKError("[append-transform] Unable to initialize plugin\n");
 }

@@ -60,10 +60,10 @@ my_preparse_hook(int hook, INKPrefetchInfo * info)
 {
   unsigned char *ip = (unsigned char *) &info->client_ip;
 
-  printf("preparese hook (%d): request from child %u.%u.%u.%u\n", hook, ip[0], ip[1], ip[2], ip[3]);
+  printf("preparse hook (%d): request from child %u.%u.%u.%u\n", hook, ip[0], ip[1], ip[2], ip[3]);
 
 
-  /* we will let TS parese the page */
+  /* we will let TS parse the page */
   return INK_PREFETCH_CONTINUE;
 }
 
