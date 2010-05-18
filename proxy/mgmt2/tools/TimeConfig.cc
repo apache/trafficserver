@@ -55,7 +55,7 @@ main(int argc, char *argv[])
   // TODO: Use defines instead hard coding 1024
   //
   char zonepath[1024], no_cop_path[1024], buffer[1024], command[1024];
-  char stop_traffic_server[PATH_MAX_LEN + 1], start_traffic_server[1024];
+  char stop_traffic_server[PATH_MAX + 1], start_traffic_server[1024];
   char *hour = 0, *minute = 0, *second = 0, *month = 0, *day = 0, *year = 0, *timezone = 0, *ntpservers = 0;
   int reset_all = 0, reset_time = 0, reset_date = 0, reset_timezone = 0, reset_ntp = 0;
   int restart;
@@ -64,7 +64,6 @@ main(int argc, char *argv[])
   int fd;
   int fd_max = USHRT_MAX;       // just in case getrlimit() fails
   struct rlimit rl;
-  char *env_path;
 
   if (getrlimit(RLIMIT_NOFILE, &rl) == 0) {
     fd_max = rl.rlim_max;
