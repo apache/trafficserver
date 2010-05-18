@@ -1,5 +1,11 @@
                                                          -*- coding: utf-8 -*-
 
+Changes with Apache Traffic Server 2.1.1
+
+  *) Reorganization of the path layout system [TODO: mturk please
+  update this section when it's done].
+
+
 Changes with Apache Traffic Server 2.1.0
 
   *) Support for many more platforms, including FreeBSD, MacOSX and Solaris.
