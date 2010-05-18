@@ -383,6 +383,7 @@ ATS_SUBST([pkgdatadir])
 ATS_SUBST([pkglocalstatedir])
 ATS_SUBST([pkgruntimedir])
 ATS_SUBST([pkglogdir])
+ATS_SUBST([pkgcachedir])
 
 
 # -----------------------------------------------------------------------------
@@ -903,6 +904,7 @@ AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([proxy/config/body_factory/default/Makefile])
 AC_CONFIG_FILES([proxy/config/body_factory/Makefile])
 AC_CONFIG_FILES([proxy/config/records.config])
+AC_CONFIG_FILES([proxy/config/storage.config])
 AC_CONFIG_FILES([proxy/config/Makefile])
 AC_CONFIG_FILES([proxy/congest/Makefile])
 AC_CONFIG_FILES([proxy/dns_cache/Makefile])

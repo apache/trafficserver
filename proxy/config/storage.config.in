@@ -1,4 +1,4 @@
-# 
+#
 # Storage Configuration file
 #
 #
@@ -11,19 +11,19 @@
 #
 # <pathname> <size>
 #
-# Where 'pathname' is full path to the directory where you want 
+# Where 'pathname' is full path to the directory where you want
 # the cache-file to live and 'size' is size in bytes
 #
-# Example: 128MB cache file(/usr/local/trafficserver/cache/cache.db)
-#/usr/local/trafficserver/cache 134217728
+# Example: 128MB cache file(@exp_cachedir@/cache.db)
+# @exp_cachedir@ 134217728
 #
-# Example: 144MB cache file(/usr/local/var/trafficserver/cache.db) 
-#          assuming prefix of '/usr/local'
-./var/trafficserver 150994944
+# Example: 144MB cache file(@exp_cachedir@/cache.db)
+#          assuming prefix of '@prefix@'
+@rel_cachedir@ 150994944
 #
-# Example: 512MB cache file(/usr/local/var/trafficserver/cache.db) 
-#          assuming prefix of '/usr/local'
-#./var/trafficserver 536870912
+# Example: 512MB cache file(@exp_cachedir@/cache.db)
+#          assuming prefix of '@prefix@'
+# @rel_cachedir@ 536870912
 #
 #
 #############################################################
@@ -34,7 +34,7 @@
 #       kernel 2.6.3. http://lkml.org/lkml/2007/2/16/431
 #       in favor of 'O_DIRECT' flag (Jira TS-13)
 #
-# Example: Using O_DIRECT on disks (kernel >= 2.6.3) 
+# Example: Using O_DIRECT on disks (kernel >= 2.6.3)
 #          or cooked disks (kernel < 2.6.3)
 #
 #      /dev/sdb            # 250GB drive
@@ -48,10 +48,10 @@
 #       to bind a raw device to a an existing block device.
 #
 #  e.g. Binding the above 3 block devices to raw devices
-#       
+#
 #        You can set up a few raw devices to start with via mknod:
 #
-#	 mkdir /dev/raw
+#        mkdir /dev/raw
 #        mknod /dev/rawctl c 162 0
 #        chmod 600 /dev/rawctl      # This is important!
 #
@@ -69,7 +69,7 @@
 #
 #        /usr/bin/raw -q /dev/raw/rawN
 #
-#        or 
+#        or
 #
 #        /usr/bin/raw -a
 #
@@ -77,7 +77,7 @@
 #
 # Example:  raw disk entries for the above must include the *SIZE*
 #
-#	/dev/raw_sdb   9105018880
-#	/dev/raw_sdc   18210037760
-#       /dev/raw_sdd   18210037760
+#      /dev/raw_sdb   9105018880
+#      /dev/raw_sdc   18210037760
+#      /dev/raw_sdd   18210037760
 

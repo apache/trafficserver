@@ -23,6 +23,7 @@
 
 #include "inktomi++.h"
 #include "P_Cache.h"
+#include "I_Layout.h"
 
 const char *STORAGE_CONFIG_HEADER = "# 									\n\
 # Storage Configuration file                                            \n\
@@ -311,19 +312,21 @@ Store::read_config(int fd)
   // Get pathname if not checking file
 
   if (fd < 0) {
-    char p[PATH_NAME_MAX];
-
-    ink_strncpy(p, cache_system_config_directory, sizeof(p));
-    strncat(p, DIR_SEP, sizeof(p) - (strlen(p) + sizeof(DIR_SEP) + 1));
-
+    char storage_path[PATH_NAME_MAX + 1];
+    char storage_file[PATH_NAME_MAX + 1];
+    // XXX: cache_system_config_directory is initialized
+    //      inside ink_cache_init() which is called AFTER
+    //      initialize_store().
+    //
+    // ink_strncpy(p, cache_system_config_directory, sizeof(p));
     IOCORE_RegisterConfigString(RECT_CONFIG,
                                 "proxy.config.cache.storage_filename",
                                 "storage.config", RECU_RESTART_TS, RECC_NULL, NULL);
-    IOCORE_ReadConfigString(p + strlen(p), "proxy.config.cache.storage_filename", PATH_NAME_MAX - strlen(p) - 1);
-    if (p[strlen(p) - 1] == DIR_SEP[0])
-      strncat(p, "storage.config", sizeof(p) - (strlen(p) + sizeof("storage.config") + 1));
-    Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", p);
-    fd =::open(p, O_RDONLY);
+    IOCORE_ReadConfigString(storage_file, "proxy.config.cache.storage_filename", PATH_NAME_MAX);
+    Layout::relative_to(storage_path, PATH_NAME_MAX, Layout::get()->sysconfdir,
+                        storage_file);
+    Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", storage_path);
+    fd =::open(storage_path, O_RDONLY);
     if (fd < 0) {
       err = "error on open";
       goto Lfail;
@@ -364,18 +367,19 @@ Store::read_config(int fd)
     }
 
     n[len] = 0;
-
+    char *pp = Layout::get()->relative(n);
     ns = NEW(new Span);
-    Debug("cache_init", "Store::read_config - ns = NEW (new Span); ns->init(\"%s\",%lld)", n, size);
-    if ((err = ns->init(n, size))) {
+    Debug("cache_init", "Store::read_config - ns = NEW (new Span); ns->init(\"%s\",%lld)", pp, size);
+    if ((err = ns->init(pp, size))) {
       char buf[4096];
-      snprintf(buf, sizeof(buf), "could not initialize storage \"%s\" [%s]", n, err);
+      snprintf(buf, sizeof(buf), "could not initialize storage \"%s\" [%s]", pp, err);
       IOCORE_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, buf);
       Debug("cache_init", "Store::read_config - %s", buf);
       delete ns;
+      xfree(pp);
       continue;
     }
-
+    xfree(pp);
     n_dsstore++;
 
     // new Span

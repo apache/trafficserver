@@ -17,9 +17,15 @@
 #  limitations under the License.
 
 SUBDIRS = body_factory
-EXTRA_DIST = records.config.in
+EXTRA_DIST = \
+  records.config.in \
+  storage.config.in
+
 sysconfdir = $(pkgsysconfdir)
-nodist_sysconf_DATA = records.config
+nodist_sysconf_DATA = \
+  records.config \
+  storage.config
+
 dist_sysconf_DATA =	\
   admin_access.config \
   ae_ua.config \
@@ -45,7 +51,6 @@ dist_sysconf_DATA =	\
   splitdns.config \
   ssl_multicert.config \
   stats.config.xml \
-  storage.config \
   update.config \
   vaddrs.config
 
