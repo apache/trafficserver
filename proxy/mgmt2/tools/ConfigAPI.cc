@@ -24,8 +24,13 @@
 #if (HOST_OS == linux) || (HOST_OS == solaris) || (HOST_OS == freebsd) || (HOST_OS == darwin)
 
 #include "inktomi++.h"
+#include "I_Layout.h"
 #include "ConfigAPI.h"
 #include "SysAPI.h"
+#include "CoreAPI.h"
+#include "SimpleTokenizer.h"
+#include "XmlUtils.h"
+#include "INKMgmtAPI.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,19 +39,6 @@
 #include <sys/wait.h>
 #include <stdarg.h>
 #include <string.h>
-
-#include "CoreAPI.h"
-
-#include "../utils/XmlUtils.h"
-#include "../../../libinktomi++/SimpleTokenizer.h"
-#include "../api2/include/INKMgmtAPI.h"
-
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
 #define NETCONFIG_HOSTNAME  0
 #define NETCONFIG_GATEWAY   1
@@ -1406,43 +1398,22 @@ int
 Config_FloppyNetRestore()
 {
 
-  FILE *ts_file, *tmp_floppy_config;
+  FILE *tmp_floppy_config;
   int i = 0;
   pid_t pid;
   char buffer[1024];
-  char ts_base_dir[1024];
   char floppy_config_file[1024];
   char mount_dir[1024];
-  char net_floppy_config[1024]; //script file which mounts the floppy
+  char net_floppy_config[PATH_NAME_MAX + 1]; //script file which mounts the floppy
   // None of these seems to be used ...
   //char *mail_address, *sys_location, *sys_contact, *sys_name, *authtrapenable, *trap_community, *trap_host;
   //char *gui_passwd, *e_gui_passwd;
   //INKActionNeedT action_need, top_action_req = INK_ACTION_UNDEFINED;
-  int status;
+  int status = 0;
   struct stat buf;
-  char *env_path;
 
-  //first mount the floppy
-  // NOTE - this script is system specific, thus if you use this funciton not under LINUX, you need to provide the appropriate
-  // script for the specific OS you use
-
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_base_dir, env_path, sizeof(ts_base_dir));
-  } else {
-    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-      ink_strncpy(ts_base_dir, PREFIX, sizeof(ts_base_dir));
-    } else {
-      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
-      fclose(ts_file);
-      while (!isspace(buffer[i])) {
-        ts_base_dir[i] = buffer[i];
-        i++;
-      }
-      ts_base_dir[i] = '\0';
-    }
-  }
-
-  snprintf(net_floppy_config, sizeof(net_floppy_config), "%s/bin/net_floppy_config", ts_base_dir);
+  Layout::relative_to(net_floppy_config, PATH_NAME_MAX,
+                      Layout::get()->bindir, "net_floppy_config");
 
   if (stat(net_floppy_config, &buf) < 0) {
     DPRINTF(("Config_FloppyNetRestore: net_floppy_config does not exist - abort\n"));
@@ -1453,16 +1424,15 @@ Config_FloppyNetRestore()
     DPRINTF(("Config_FloppyNetRestore: unable to fork()\n"));
     return 1;
   } else if (pid > 0) {         /* Parent */
-    int status;
     waitpid(pid, &status, 0);
 
     if (status != 0) {
       DPRINTF(("Config_FloppyNetRestore: %s do failed!\n", net_floppy_config));
-      return 1;
+      return status;
     }
   } else {
-    int res = execl(net_floppy_config,"net_floppy_config","do", (char*)NULL);
-    return res;
+    status = execl(net_floppy_config,"net_floppy_config","do", (char*)NULL);
+    return status;
   }
 
   //now the floppy is mounted with the right file
@@ -1496,6 +1466,8 @@ Config_FloppyNetRestore()
   uMountFloppy(net_floppy_config);      //umount the floppy
 
   //sprintf(floppy_config_file, "%s/net_config.xml", mount_dir);
+  // TODO: Make this real temp file, so that multiple instances
+  //       of TrafficServer can operate
   snprintf(floppy_config_file, sizeof(floppy_config_file), "/tmp/net_config.xml");
 
 /** Lock file manipulation. We should implement this
