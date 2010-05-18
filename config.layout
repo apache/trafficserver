@@ -13,6 +13,26 @@
 
 #   Classical TrafficServer path layout.
 <Layout TrafficServer>
+    prefix:        /usr/local
+    exec_prefix:   ${prefix}
+    bindir:        ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/bin
+    libdir:        ${exec_prefix}/lib+
+    libexecdir:    ${exec_prefix}/libexec+
+    infodir:       ${prefix}/info
+    mandir:        ${prefix}/man
+    sysconfdir:    ${prefix}/etc+
+    datadir:       ${prefix}/share+
+    installbuilddir: ${datadir}/build
+    includedir:    ${prefix}/include
+    localstatedir: ${prefix}/var
+    runtimedir:    ${localstatedir}+
+    logdir:        ${localstatedir}/log+
+    cachedir:      ${localstatedir}+
+</Layout>
+
+#   Classical Apache path layout.
+<Layout Apache>
     prefix:        /usr/local/trafficserver
     exec_prefix:   ${prefix}
     bindir:        ${exec_prefix}/bin
