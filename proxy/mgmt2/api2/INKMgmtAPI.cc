@@ -42,13 +42,6 @@
 
 #include "TextBuffer.h"
 
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
-
 // forward declarations
 void init_pdss_format(INKPdSsFormat * info);
 
@@ -2892,35 +2885,17 @@ get_rmserver_path()
   char *path = NULL;
 #if (HOST_OS == linux)
 
-  FILE *ts_file, *rec_file;
+  FILE *rec_file;
   int i = 0, num_args = 0;
   char buffer[1024];
   char proxy_restart_cmd[1024];
-  char ts_base_dir[1024];
   char rec_config[1024];
   static char *restart_cmd_args[100];
   INKString tmp;
   INKString tmp2;
-  char *env_path;
 
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_base_dir, env_path, sizeof(ts_base_dir));
-  } else {
-    if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-      ink_strncpy(ts_base_dir, PREFIX, sizeof(ts_base_dir));
-    } else {
-      NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
-      fclose(ts_file);
-      while (!isspace(buffer[i])) {
-        ts_base_dir[i] = buffer[i];
-        i++;
-      }
-      ts_base_dir[i] = '\0';
-    }
-  }
-
-  snprintf(rec_config, sizeof(rec_config), "%s/etc/trafficserver/records.config", ts_base_dir);
-
+  Layout::relative_to(rec_config, sizeof(rec_config),
+                      Layout::get()->sysconfdir, "records.config");
   if ((rec_file = fopen(rec_config, "r")) == NULL) {
     //fprintf(stderr, "Error: unable to open %s.\n", rec_config);
     return NULL;
@@ -3271,42 +3246,6 @@ inkapi INKError rm_change_hostname(INKString hostname)
   return INK_ERR_OKAY;
 }
 
-#if (HOST_OS == linux)
-int
-getTSdirectory(char *ts_path, size_t ts_path_len)
-{
-  FILE *fp;
-  char *env_path;
-
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, ts_path_len);
-    return 0;
-  }
-
-  if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) == NULL) {
-    ink_strncpy(ts_path, "/usr/local", ts_path_len);
-    return 0;
-  }
-
-  if (fgets(ts_path, ts_path_len, fp) == NULL) {
-    fclose(fp);
-    return INK_ERR_READ_FILE;
-  }
-  // strip newline if it exists
-  int len = strlen(ts_path);
-  if (ts_path[len - 1] == '\n') {
-    ts_path[len - 1] = '\0';
-  }
-  // strip trailing "/" if it exists
-  len = strlen(ts_path);
-  if (ts_path[len - 1] == '/') {
-    ts_path[len - 1] = '\0';
-  }
-
-  fclose(fp);
-  return INK_ERR_OKAY;
-}
-
 // close all file descriptors belong to process specified by pid
 void
 closeAllFds()
@@ -3342,8 +3281,6 @@ closeAllFds()
   }
 }
 
-#endif
-
 inkapi INKError rm_start_proxy()
 {
 
@@ -3358,13 +3295,9 @@ inkapi INKError rm_start_proxy()
     argv[0] = "net_config";
     argv[1] = "7";
     argv[2] = NULL;
-    char command_path[512];
-    char ts_path[256];
-    if (getTSdirectory(ts_path, sizeof(ts_path))) {
-      perror("[rm_start_proxy] unable to determine install directory\n");
-      return INK_ERR_READ_FILE;
-    }
-    snprintf(command_path, sizeof(command_path), "%s/bin/net_config", ts_path);
+    char command_path[PATH_NAME_MAX + 1];
+    Layout::relative_to(command_path, sizeof(command_path),
+                        Layout::get()->bindir, "net_config");
 
     rm_last_stop = time(NULL);
 

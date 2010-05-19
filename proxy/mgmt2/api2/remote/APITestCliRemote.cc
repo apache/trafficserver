@@ -100,6 +100,7 @@
 #include <stdio.h>
 #include <strings.h>
 #include "ink_string.h"
+#include "I_Layout.h"
 
 #include "INKMgmtAPI.h"
 #include "CfgContextUtils.h"
@@ -2695,10 +2696,17 @@ main(int argc, char **argv)
   INKError ret;
 
   // initialize
+  Layout::create();
+  // XXX: What's the INSTALL_TEST?
+  //      IMKInit calls setup_socket which
+  //      setup unix sockets which live inside
+  //      runtimedir not sysconfdir
 #if INSTALL_TEST
-  if ((ret = INKInit("../etc/trafficserver/")) != INK_ERR_OKAY)
+  // XXX: This was ../etc/trafficserver/
+  if ((ret = INKInit(Layout::get()->runtimedir)) != INK_ERR_OKAY)
 #else
-  if ((ret = INKInit("../../../../etc/trafficserver/")) != INK_ERR_OKAY)
+  // XXX: This was even more wired; ../../../../etc/trafficserver/
+  if ((ret = INKInit(Layout::get()->runtimedir)) != INK_ERR_OKAY)
 #endif
   {
     print_err("main", ret);

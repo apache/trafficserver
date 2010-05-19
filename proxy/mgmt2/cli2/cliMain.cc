@@ -30,8 +30,8 @@
 #include "ink_file.h"
 #include "I_Layout.h"
 #include "I_Version.h"
-#include <CliMgmtUtils.h>
-#include "../api2/include/INKMgmtAPI.h"
+#include "CliMgmtUtils.h"
+#include "INKMgmtAPI.h"
 
 extern int Tcl_AppInit(Tcl_Interp * interp);
 extern int CliDisplayPrintf;
@@ -49,8 +49,8 @@ int version_flag = 0;
 int
 main(int argc, char *argv[])
 {
-  char ts_path[512];
-  char config_path[512];
+  char root_path[PATH_NAME_MAX + 1];
+  char runtime_path[PATH_NAME_MAX + 1];
   INKError status;
 
   // build the application information structure
@@ -81,22 +81,25 @@ main(int argc, char *argv[])
   // traffic_shell binary should use printf to display information onscreen
   CliDisplayPrintf = 1;
 
-  // initialize MgmtAPI using TS directory specified in DEFAULT_TS_DIRECTORY_FILE
-  // or DEFAULT_LOCAL_STATE_DIRECTORY if DEFAULT_TS_DIRECTORY_FILE does not exist
-
-  if (GetTSDirectory(ts_path, sizeof(ts_path))) {
-    status = INKInit(DEFAULT_LOCAL_STATE_DIRECTORY);
+  // initialize MgmtAPI using TS runtime directory
+  // TODO: This can be simplified
+  if (GetTSDirectory(root_path, sizeof(root_path))) {
+    status = INKInit(Layout::get()->runtimedir);
     if (status) {
-      printf("INKInit %d: Failed to initialize MgmtAPI in %s\n", status, DEFAULT_LOCAL_STATE_DIRECTORY);
+      printf("INKInit %d: Failed to initialize MgmtAPI in %s\n",
+             status, Layout::get()->runtimedir);
     } else {
-      printf("Successfully Initialized MgmtAPI in %s \n", DEFAULT_LOCAL_STATE_DIRECTORY);
+      printf("Successfully Initialized MgmtAPI in %s \n",
+             Layout::get()->runtimedir);
     }
   } else {
-    snprintf(config_path, sizeof(config_path), "%s/var/trafficserver/", ts_path);
+    Layout::relative_to(runtime_path, sizeof(runtime_path),
+                        root_path, Layout::get()->runtimedir);
     // initialize MgmtAPI
-    INKError status = INKInit(config_path);
+    INKError status = INKInit(runtime_path);
     if (status) {
-      printf("INKInit %d: Failed to initialize MgmtAPI in %s\n", status, config_path);
+      printf("INKInit %d: Failed to initialize MgmtAPI in %s\n",
+             status, runtime_path);
     }
   }
 

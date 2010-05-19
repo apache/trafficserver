@@ -49,13 +49,6 @@
 #include "EventRegistration.h"
 #include "EventCallback.h"
 
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
-
 // extern variables
 extern CallbackTable *remote_event_callbacks;   // from EventRegistration
 extern int main_socket_fd;      // from NetworkUtils
@@ -67,7 +60,6 @@ INKError send_and_parse_list(OpType op, LLQ * list);
 INKError send_and_parse_name(OpType op, char *name);
 INKError mgmt_record_set(const char *rec_name, const char *rec_val, INKActionNeedT * action_need);
 bool start_binary(const char *abs_bin_path);
-char *get_root_dir();
 
 // global variables
 // need to store the thread id associated with socket_test_thread
@@ -233,50 +225,6 @@ start_binary(const char *abs_bin_path)
   return true;
 }
 
-/*-------------------------------------------------------------------------
- * get_root_dir
- *-------------------------------------------------------------------------
- * This function retrieves the root directory path from DEFAULT_TS_DIRECTORY_FILE
- * file. If there is no DEFAULT_TS_DIRECTORY_FILE file to be found, returns NULL
- * (copied from TrafficCop.cc). The string returned is NOT ALLOCATED.
- * Used by HardRestart to determine full path of start/stop_traffic_server scripts.
- */
-#ifndef _WIN32
-char *
-get_root_dir()
-{
-  FILE *ts_file;
-  char buffer[1024];
-  int i = 0;
-  // Changed this to static, this function is not reentrant ... /leif
-  static char root_dir[1024];
-  char *env_path;
-
-  bzero(root_dir, 1024);
-
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(root_dir, env_path, sizeof(root_dir));
-    return root_dir;
-  }
-
-  if ((ts_file = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-    NOWARN_UNUSED_RETURN(fgets(buffer, 1024, ts_file));
-    fclose(ts_file);
-    while (!ParseRules::is_space(buffer[i])) {
-      root_dir[i] = buffer[i];
-      i++;
-    }
-    root_dir[i] = '\0';
-  } else {
-    ink_strncpy(root_dir, PREFIX, sizeof(root_dir));
-  }
-
-  if (root_dir[0] == '\0')
-    return NULL;
-  else
-    return root_dir;
-}
-#endif
 
 /***************************************************************************
  * SetUp Operations
@@ -458,18 +406,15 @@ HardRestart()
   char start_path[1024];
   char stop_path[1024];
 
-  // determine the path of where start and stop TS scripts stored
-  char *root_dir = get_root_dir();
-  INKDiags(INK_DIAG_NOTE, "Root Directory: %s", root_dir);
-  if (!root_dir)
+  if (!Layout::get() || !Layout::get()->bindir)
     return INK_ERR_FAIL;
+  // determine the path of where start and stop TS scripts stored
+  INKDiags(INK_DIAG_NOTE, "Root Directory: %s", Layout::get()->bindir);
 
-  bzero(start_path, 1024);
-  bzero(stop_path, 1024);
-  char *root_copy = xstrdup(root_dir);
-  snprintf(start_path, sizeof(start_path), "%s/bin/start_traffic_server", root_copy);
-  snprintf(stop_path, sizeof(stop_path), "%s/bin/stop_traffic_server", root_copy);
-  xfree(root_copy);
+  Layout::relative_to(start_path, sizeof(start_path),
+                      Layout::get()->bindir, "start_traffic_server");
+  Layout::relative_to(stop_path, sizeof(stop_path),
+                      Layout::get()->bindir, "stop_traffic_server");
 
   INKDiags(INK_DIAG_NOTE, "[HardRestart] start_path = %s", start_path);
   INKDiags(INK_DIAG_NOTE, "[HardRestart] stop_path = %s", stop_path);

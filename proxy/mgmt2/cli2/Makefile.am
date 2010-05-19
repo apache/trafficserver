@@ -23,6 +23,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/libinktomi++ \
   -I$(top_srcdir)/proxy \
+  -I$(top_srcdir)/proxy/mgmt2/api2/include \
   -I$(top_srcdir)/proxy/mgmt2/tools \
   $(iocore_include_dirs) \
   -DPREFIX=\"$(prefix)\" \

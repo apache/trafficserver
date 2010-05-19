@@ -35,6 +35,7 @@
 #include "ink_config.h"
 #include "ink_sock.h"
 #include "ink_string.h"
+#include "I_Layout.h"
 #include "NetworkUtilsRemote.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
@@ -65,15 +66,8 @@ set_socket_paths(const char *path)
   // construct paths based on user input
   // form by replacing "mgmtapisocket" with "eventapisocket"
   if (path) {
-    int api_len = strlen(path) + strlen("mgmtapisocket");
-    int event_len = strlen(path) + strlen("eventapisocket");
-
-    main_socket_path = (char *) xmalloc(sizeof(char) * (api_len + 1));
-    event_socket_path = (char *) xmalloc(sizeof(char) * (event_len + 1));
-    snprintf(main_socket_path, (sizeof(char) * (api_len + 1)), "%smgmtapisocket", path);
-    snprintf(event_socket_path, (sizeof(char) * (event_len + 1)), "%seventapisocket", path);
-    main_socket_path[api_len] = '\0';
-    event_socket_path[event_len] = '\0';
+    main_socket_path = Layout::relative_to(path, "mgmtapisocket");
+    event_socket_path = Layout::relative_to(path, "eventapisocket");
   } else {
     main_socket_path = NULL;
     event_socket_path = NULL;

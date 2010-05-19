@@ -29,12 +29,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/api2 \
   -I$(top_srcdir)/proxy/mgmt2/api2/remote \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
-  $(iocore_include_dirs) \
-  -DPREFIX=\"$(prefix)\" \
-  -DPKGLIBEXECDIR=\"$(pkglibexecdir)\" \
-  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\" \
-  -DPKGLOGDIR=\"$(pkglogdir)\" \
-  -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\"
+  $(iocore_include_dirs)
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS  += $(MGMT_DEFS)
@@ -59,7 +54,7 @@ libmgmtapiremote_a_SOURCES = \
 traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
 traffic_api_cli_remote_LDADD = \
   libmgmtapiremote.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
   $(top_builddir)/iocore/utils/libinkutils.a \
+  $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ \
   @LIBTCL@ @LIBDB@ @LIBRT@ @LIBDL@ @LIBSSL@ @LIBICONV@ @LIBEXECINFO@
