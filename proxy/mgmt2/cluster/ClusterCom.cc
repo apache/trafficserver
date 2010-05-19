@@ -827,17 +827,20 @@ ClusterCom::handleMultiCastMessage(char *message)
   /* Their wall clock time and last config change time */
   if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;
-  if (sscanf(line, "time: %ld", &peer_wall_clock) != 1) {
+  ink64 tt;
+  if (sscanf(line, "time: %lld", &tt) != 1) {
     mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
+  peer_wall_clock = (time_t)tt;
 
   if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;
-  if (sscanf(line, "ctime: %ld", &peer_update_time) != 1) {
+  if (sscanf(line, "ctime: %lld", &tt) != 1) {
     mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
+  peer_update_time = (time_t)tt;
 
   /* Have we see this guy before? */
   ink_mutex_acquire(&(mutex));  /* Grab cluster lock to access hash table */
@@ -1134,6 +1137,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
   char *line, file[1024];
   version_t ver, our_ver;
   time_t mod;
+  ink64 tt;
   InkHashTableValue hash_value;
   bool file_update_failure;
 
@@ -1142,10 +1146,11 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
 
     file_update_failure = false;
     // coverity[secure_coding]
-    if (sscanf(line, "%1023s %d %ld\n", file, &ver, &mod) != 3) {
+    if (sscanf(line, "%1023s %d %lld\n", file, &ver, &tt) != 3) {
       mgmt_elog("[ClusterCom::handleMultiCastFilePacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
       return;
     }
+    mod = (time_t)tt;
     if (configFiles->getRollbackObj(file, &rb)) {
 
       our_ver = rb->getCurrentVersion();
@@ -1395,7 +1400,6 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
 void
 ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type)
 {
-
   int running_sum = 0;          /* Make sure we never go over max */
   char tmp[1024];
   struct in_addr resolved_addr;
@@ -1451,7 +1455,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
 
   /* Current time stamp, for xntp like synching */
   if ((t = time(NULL)) > 0) {
-    snprintf(tmp, sizeof(tmp), "time: %ld\n", time(NULL));
+    snprintf(tmp, sizeof(tmp), "time: %lld\n", (ink64)time(NULL));
     ink_strncpy(&message[running_sum], tmp, (max - running_sum));
     running_sum += strlen(tmp);
   } else {
@@ -1474,7 +1478,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
     the_records = &(lmgmt->record_data->node_data);
   }
 
-  snprintf(tmp, sizeof(tmp), "ctime: %ld\n", lmgmt->record_data->time_last_config_change);
+  snprintf(tmp, sizeof(tmp), "ctime: %lld\n", (ink64)lmgmt->record_data->time_last_config_change);
   ink_strncpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
@@ -1605,7 +1609,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
       //time_t mod = rb->versionTimeStamp(ver);
       time_t mod = 0;
 
-      snprintf(tmp, sizeof(tmp), "%s %d %ld\n", line, ver, mod);
+      snprintf(tmp, sizeof(tmp), "%s %d %lld\n", line, ver, (ink64)mod);
       ink_strncpy(&message[running_sum], tmp, (max - running_sum));
       running_sum += strlen(tmp);
       ink_release_assert(running_sum < max);
@@ -2505,8 +2509,8 @@ checkBackDoor(int req_fd, char *message)
       mgmt_writeline(req_fd, reply, strlen(reply));
 
       snprintf(reply, sizeof(reply),
-               "Idle-Our-WC: %ld   Peer-WC-Last-Time: %ld  Delta: %ld Mgmt-Idle: %ld M-Alive: %d",
-               tmp->idle_ticks, tmp->last_time_recorded, tmp->delta, tmp->manager_idle_ticks, tmp->manager_alive);
+               "Idle-Our-WC: %lld   Peer-WC-Last-Time: %ld  Delta: %ld Mgmt-Idle: %lld M-Alive: %d",
+               (ink64)tmp->idle_ticks, tmp->last_time_recorded, tmp->delta, (ink64)tmp->manager_idle_ticks, tmp->manager_alive);
       mgmt_writeline(req_fd, reply, strlen(reply));
 
 
@@ -2526,7 +2530,7 @@ checkBackDoor(int req_fd, char *message)
     snprintf(reply, sizeof(reply), "\tproxy_running: %s", (lmgmt->proxy_running ? "true" : "false"));
     mgmt_writeline(req_fd, reply, strlen(reply));
 
-    snprintf(reply, sizeof(reply), "\tproxy_started_at: %ld", lmgmt->proxy_started_at);
+    snprintf(reply, sizeof(reply), "\tproxy_started_at: %lld", (ink64)lmgmt->proxy_started_at);
     mgmt_writeline(req_fd, reply, strlen(reply));
 
     snprintf(reply, sizeof(reply), "\trun_proxy: %s", (lmgmt->run_proxy ? "true" : "false"));
