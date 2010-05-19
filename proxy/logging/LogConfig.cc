@@ -28,6 +28,7 @@
 
  ***************************************************************************/
 #include "inktomi++.h"
+#include "I_Layout.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -284,21 +285,18 @@ LogConfig::read_configuration_variables()
   ptr = LOG_ConfigReadString("proxy.config.log2.logfile_dir");
   if (ptr != NULL) {
     xfree(logfile_dir);
-    logfile_dir = ptr;
+    // Make it relative from Layout
+    logfile_dir = Layout::get()->relative(ptr);
+    xfree(ptr);
     if ((err = stat(logfile_dir, &s)) < 0) {
       xfree(logfile_dir);
       logfile_dir = NULL;
       if ((err = stat(system_log_dir, &s)) < 0) {
         // Try 'system_root_dir/var/log/trafficserver' directory
-        snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
-                 system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
-        if ((err = stat(system_log_dir, &s)) < 0) {
-          fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
-                  system_log_dir, err, errno, strerror(errno));
-          fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
-          _exit(1);
-        }
-
+        fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
+                system_log_dir, err, errno, strerror(errno));
+        fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+        _exit(1);
       }
       logfile_dir = xstrdup(system_log_dir);
     }
@@ -1316,7 +1314,7 @@ LogConfig::register_configs()
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.hostname", "localhost", RECU_DYNAMIC, RECC_NULL, NULL);
 
   RecRegisterConfigString(RECT_CONFIG,
-                          "proxy.config.log2.logfile_dir", "./logs", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]+$");
+                          "proxy.config.log2.logfile_dir", "var/log/trafficserver", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]+$");
 
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.log2.logfile_perm", "rw-r--r--", RECU_DYNAMIC, RECC_NULL, NULL);
 
