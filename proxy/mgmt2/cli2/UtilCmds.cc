@@ -169,13 +169,14 @@ Cmd_ConfigRoot(ClientData clientData, Tcl_Interp * interp, int argc, const char 
     return CLI_OK;
 
   }
-  char ts_path[256];
+  char ts_path[1024];
   if (GetTSDirectory(ts_path,sizeof(ts_path))) {
     return CLI_ERROR;
   }
 
-  char command[512];
-  snprintf(command, sizeof(command), "/bin/su - root -c \"%s/bin/start_traffic_shell\"", ts_path);
+  char command[1024];
+  snprintf(command, sizeof(command),
+           "/bin/su - root -c \"%s/start_traffic_shell\"", ts_path);
 
   // start traffic_shell as root user
   // su will prompt user for root password

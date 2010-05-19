@@ -49,8 +49,6 @@ int version_flag = 0;
 int
 main(int argc, char *argv[])
 {
-  char root_path[PATH_NAME_MAX + 1];
-  char runtime_path[PATH_NAME_MAX + 1];
   INKError status;
 
   // build the application information structure
@@ -82,25 +80,13 @@ main(int argc, char *argv[])
   CliDisplayPrintf = 1;
 
   // initialize MgmtAPI using TS runtime directory
-  // TODO: This can be simplified
-  if (GetTSDirectory(root_path, sizeof(root_path))) {
-    status = INKInit(Layout::get()->runtimedir);
-    if (status) {
-      printf("INKInit %d: Failed to initialize MgmtAPI in %s\n",
-             status, Layout::get()->runtimedir);
-    } else {
-      printf("Successfully Initialized MgmtAPI in %s \n",
-             Layout::get()->runtimedir);
-    }
+  status = INKInit(Layout::get()->runtimedir);
+  if (status) {
+    printf("INKInit %d: Failed to initialize MgmtAPI in %s\n",
+           status, Layout::get()->runtimedir);
   } else {
-    Layout::relative_to(runtime_path, sizeof(runtime_path),
-                        root_path, Layout::get()->runtimedir);
-    // initialize MgmtAPI
-    INKError status = INKInit(runtime_path);
-    if (status) {
-      printf("INKInit %d: Failed to initialize MgmtAPI in %s\n",
-             status, runtime_path);
-    }
+    printf("Successfully Initialized MgmtAPI in %s \n",
+          Layout::get()->runtimedir);
   }
 
   register_event_callback();

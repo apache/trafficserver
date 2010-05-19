@@ -30,6 +30,7 @@
  ****************************************************************/
 
 #include "inktomi++.h"
+#include "I_Layout.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include "CliMgmtUtils.h"
@@ -552,39 +553,10 @@ cliCheckIfEnabled(const char *command)
 int
 GetTSDirectory(char *ts_path, size_t ts_path_len)
 {
-  FILE *fp;
-  char *env_path;
-
-  struct stat s;
   int err;
+  struct stat s;
 
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, ts_path_len);
-  } else {
-    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-      if (fgets(ts_path, ts_path_len, fp) == NULL) {
-        fclose(fp);
-        Cli_Error("\nInvalid contents in %s\n",DEFAULT_TS_DIRECTORY_FILE);
-        Cli_Error(" Please set correct path in env variable TS_ROOT \n");
-        return -1;
-      }
-      // strip newline if it exists
-      int len = strlen(ts_path);
-      if (ts_path[len - 1] == '\n') {
-        ts_path[len - 1] = '\0';
-      }
-      // strip trailing "/" if it exists
-      len = strlen(ts_path);
-      if (ts_path[len - 1] == '/') {
-        ts_path[len - 1] = '\0';
-      }
-
-      fclose(fp);
-    } else {
-      ink_strncpy(ts_path, PREFIX, ts_path_len);
-    }
-  }
-
+  ink_strncpy(ts_path, Layout::get()->bindir, ts_path_len);
   if ((err = stat(ts_path, &s)) < 0) {
     Cli_Error("unable to stat() TS PATH '%s': %d %d, %s\n",
               ts_path, err, errno, strerror(errno));
@@ -598,13 +570,13 @@ GetTSDirectory(char *ts_path, size_t ts_path_len)
 int
 StopTrafficServer()
 {
-  char ts_path[512];
+  char ts_path[PATH_NAME_MAX + 1];
   char stop_ts[1024];
 
   if (GetTSDirectory(ts_path,sizeof(ts_path))) {
     return CLI_ERROR;
   }
-  snprintf(stop_ts, sizeof(stop_ts), "%s/bin/stop_traffic_server", ts_path);
+  snprintf(stop_ts, sizeof(stop_ts), "%s/stop_traffic_server", ts_path);
   if (system(stop_ts) == -1)
     return CLI_ERROR;
 
@@ -614,7 +586,7 @@ StopTrafficServer()
 int
 StartTrafficServer()
 {
-  char ts_path[512];
+  char ts_path[PATH_NAME_MAX + 1];
   char start_ts[1024];
 
   if (GetTSDirectory(ts_path,sizeof(ts_path))) {
@@ -622,9 +594,9 @@ StartTrafficServer()
   }
   // root user should start_traffic_shell as inktomi user
   if (getuid() == 0) {
-    snprintf(start_ts, sizeof(start_ts), "/bin/su - inktomi -c \"%s/bin/start_traffic_server\"", ts_path);
+    snprintf(start_ts, sizeof(start_ts), "/bin/su - inktomi -c \"%s/start_traffic_server\"", ts_path);
   } else {
-    snprintf(start_ts, sizeof(start_ts), "%s/bin/start_traffic_server", ts_path);
+    snprintf(start_ts, sizeof(start_ts), "%s/start_traffic_server", ts_path);
   }
   if (system(start_ts) == -1)
     return CLI_ERROR;

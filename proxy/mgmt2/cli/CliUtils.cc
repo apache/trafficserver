@@ -31,6 +31,7 @@
 
 #include "ink_unused.h"        /* MAGIC_EDITING_TAG */
 #include "inktomi++.h"
+#include "I_Layout.h"
 #include "CliUtils.h"
 #include "clientCLI.h"
 #include "MgmtSocket.h"
@@ -303,37 +304,10 @@ DEFAULT_TS_DIRECTORY_FILE
 int
 GetTSDirectory(char *ts_path, size_t ts_path_len)
 {
-  FILE *fp;
-  const char *env_path;
   struct stat s;
   int err;
 
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, ts_path_len);
-  } else {
-    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-      if (fgets(ts_path, ts_path_len, fp) == NULL) {
-        fclose(fp);
-        printf("\nInvalid contents in %s\n",DEFAULT_TS_DIRECTORY_FILE);
-        printf(" Please set correct path in env variable TS_ROOT \n");
-        return -1;
-      }
-      // strip newline if it exists
-      int len = strlen(ts_path);
-      if (ts_path[len - 1] == '\n') {
-        ts_path[len - 1] = '\0';
-      }
-      // strip trailing "/" if it exists
-      len = strlen(ts_path);
-      if (ts_path[len - 1] == '/') {
-        ts_path[len - 1] = '\0';
-      }
-
-      fclose(fp);
-    } else {
-      ink_strncpy(ts_path, PREFIX, ts_path_len);
-    }
-  }
+  ink_strncpy(ts_path, Layout::get()->bindir, ts_path_len);
 
   if ((err = stat(ts_path, &s)) < 0) {
     printf("unable to stat() TS PATH '%s': %d %d, %s\n",

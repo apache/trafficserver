@@ -25,10 +25,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
   -I$(top_srcdir)/proxy/mgmt2/tools \
-  $(iocore_include_dirs) \
-  -DPREFIX=\"$(prefix)\" \
-  -DPKGSYSCONFDIR=\"$(pkgsysconfdir)\" \
-  -DPKGLOCALSTATEDIR=\"$(pkglocalstatedir)\"
+  $(iocore_include_dirs)
 
 
 bin_PROGRAMS = traffic_shell

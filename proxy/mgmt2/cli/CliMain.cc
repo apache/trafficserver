@@ -380,13 +380,10 @@ main(int argc, char **argv)
   // Connect to Local Manager
 #ifndef _WIN32
   if (cli->connectToLM() != clientCLI::err_none) {
-    char ts_path[PATH_NAME_MAX + 1];
     char sock_path[PATH_NAME_MAX + 1];
-    if (0 == cli->GetTSDirectory(ts_path, sizeof(ts_path))) {
-      snprintf(sock_path, sizeof(sock_path), "%s/var/trafficserver/cli", ts_path);
-    } else {
-      ink_strncpy(sock_path, clientCLI::defaultSockPath, sizeof(sock_path));
-    }
+
+    Layout::relative_to(sock_path, sizeof(sock_path),
+                        Layout::get()->runtimedir, clientCLI::defaultSockPath);
     cli->setSockPath(sock_path);
     if (cli->connectToLM() != clientCLI::err_none) {
       fprintf(stderr, "%s: unable to connect to traffic_manager via %s\n", programName, cli->sockPath);

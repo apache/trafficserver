@@ -30,6 +30,7 @@
  ****************************************************************************/
 
 #include "inktomi++.h"
+#include "I_Layout.h"
 #include "Tokenizer.h"
 #include "TextBuffer.h"
 #include "CliUtils.h"           /* cli_read_timeout(), cli_write_timeout(),GetTSDirectory() */
@@ -46,7 +47,7 @@ const char *
 
 #ifndef _WIN32
 const char *
-  clientCLI::defaultSockPath = DEFAULT_LOCAL_STATE_DIRECTORY "/cli";
+  clientCLI::defaultSockPath = "cli";
 #else
 const int
   clientCLI::defaultCliPort = 9000;
@@ -74,39 +75,10 @@ clientCLI::~clientCLI(void)
 int
 clientCLI::GetTSDirectory(char *ts_path, size_t ts_path_len)
 {
-  FILE *fp;
-  char *env_path;
-
   struct stat s;
   int err;
 
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, ts_path_len);
-  } else {
-    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-      if (fgets(ts_path, ts_path_len, fp) == NULL) {
-        fclose(fp);
-        fprintf(stderr,"\nInvalid contents in %s\n",DEFAULT_TS_DIRECTORY_FILE);
-        fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
-        return -1;
-      }
-      // strip newline if it exists
-      int len = strlen(ts_path);
-      if (ts_path[len - 1] == '\n') {
-        ts_path[len - 1] = '\0';
-      }
-      // strip trailing "/" if it exists
-      len = strlen(ts_path);
-      if (ts_path[len - 1] == '/') {
-        ts_path[len - 1] = '\0';
-      }
-
-      fclose(fp);
-    } else {
-      ink_strncpy(ts_path, PREFIX, ts_path_len);
-    }
-  }
-
+  ink_strncpy(ts_path, Layout::get()->bindir, ts_path_len);
   if ((err = stat(ts_path, &s)) < 0) {
     fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n",
               ts_path, err, errno, strerror(errno));
@@ -116,6 +88,7 @@ clientCLI::GetTSDirectory(char *ts_path, size_t ts_path_len)
 
   return 0;
 }
+
 void
 clientCLI::setSockPath(const char *path)
 {
