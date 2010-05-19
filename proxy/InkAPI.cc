@@ -24,6 +24,7 @@
 #ifndef INK_NO_API
 
 #include "inktomi++.h"
+#include "I_Layout.h"
 
 #include "InkAPIInternal.h"
 #include <stdio.h>
@@ -1045,14 +1046,14 @@ INKContInternal::handle_event_count(int event)
 
 void INKContInternal::setName(const char *name) {
     cont_name = name;
-    
+
     cont_time_stats.resize((int)(INK_HTTP_LAST_HOOK + 1));
     cont_calls.resize((int)(INK_HTTP_LAST_HOOK + 1));
-    
+
     for(INKHttpHookID cur_hook_id = INK_HTTP_READ_REQUEST_HDR_HOOK; cur_hook_id <= INK_HTTP_LAST_HOOK; cur_hook_id = INKHttpHookID(cur_hook_id+1)) {
         std::string stat_base = "cont." + cont_name + "." + HttpDebugNames::get_api_hook_name(cur_hook_id);
         cont_time_stats[cur_hook_id].init(stat_base + ".time_spent", 64000);
-        
+
         StatSystemV2::registerStat((stat_base + ".calls").c_str(), &cont_calls[cur_hook_id]);
     }
     stats_enabled = true;
@@ -1867,13 +1868,10 @@ INKPluginDirGet(void)
       Error("Unable to read %s", CFG_NM);
       return NULL;
     }
-
-    if (*plugin_dir == '/') {
-      ink_strncpy(path, plugin_dir, sizeof(path));
-    } else {
-      snprintf(path, sizeof(path), "%s%s%s", system_root_dir, DIR_SEP, plugin_dir);
-    }
-
+    // TODO: We could check for the path itself and in
+    //       case of failure use the Layout::get()->libexecdir
+    //
+    Layout::get()->relative(path, sizeof(path), plugin_dir);
   }
 
   return path;

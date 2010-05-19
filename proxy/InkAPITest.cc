@@ -35,6 +35,7 @@ extern int errno;
 #include "Regression.h"
 #include "api/ts/ts_private.h"
 #include "I_RecCore.h"
+#include "I_Layout.h"
 
 #include "InkAPITestTool.cc"
 #include "http2/HttpSM.h"
@@ -152,6 +153,9 @@ REGRESSION_TEST(SDK_API_INKPluginDirGet) (RegressionTest * test, int atype, int 
     return;
   }
 
+  // XXX: This doesn't have to be true
+  //      since the location can be anywhere
+  //
   if (strstr(plugin_dir, "libexec/trafficserver") == NULL) {
     SDK_RPRINT(test, "INKPluginDirGet", "TestCase2", TC_FAIL, "plugin dir(%s) is incorrect, expected (%s) in path",plugin_dir,"libexec/trafficserver");
     *pstatus = REGRESSION_TEST_FAILED;
@@ -822,15 +826,18 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
 
 
   // Set full path to file at run time.
+  // TODO: This can never fail since we are
+  //       returning the char[]
+  //       Better check the dir itself.
+  //
   if ((install_dir = INKInstallDirGet()) == NULL) {
     error_counter++;
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
   // Add "etc/trafficserver" to point to config directory
-  snprintf(input_file_full_path, sizeof(input_file_full_path), "%s%s%s%s", install_dir, DIR_SEP, "etc/trafficserver", DIR_SEP);
-
-  strncat(input_file_full_path, INPUT_TEXT_FILE, sizeof(INPUT_TEXT_FILE));
+  snprintf(input_file_full_path, sizeof(input_file_full_path),
+           "%s/%s", Layout::get()->sysconfdir, INPUT_TEXT_FILE);
 
   // open existing file for reading
   if (!(source_read_file = INKfopen(input_file_full_path, "r"))) {
