@@ -588,6 +588,10 @@ template<class Data, class Result>
     strncat(config_file_path, config_file, sizeof(config_file_path) - strlen(config_file_path) - 1);
     xfree(config_file);
   }
+  // XXX: memory leak if flags have DONT_BUILD_TABLE ?
+  // else {
+  //  xfree(config_file)
+  // }
 
   reMatch = NULL;
   hostMatch = NULL;
