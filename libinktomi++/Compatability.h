@@ -64,19 +64,13 @@ template<class T> T max(const T a, const T b)
 #endif
 
 #if (HOST_OS == linux)
-/* typedef int rlim_t; */
-typedef long paddr_t;
 #ifndef __x86_64
 typedef unsigned long long uint64_t;
 #endif
 #endif
 
 #if ((HOST_OS == freebsd) || (HOST_OS == darwin))
-typedef long paddr_t;
-typedef unsigned int in_addr_t;
-#elif (HOST_OS == solaris)
-#include <sys/types.h> /* paddr_t should be defined here*/
-typedef uint64_t  paddr_t;
+typedef uint32_t in_addr_t;
 #endif
 
 #define NEED_HRTIME
@@ -128,21 +122,6 @@ extern "C" void bcopy(const void *s1, void *s2, size_t n);
 #define ink_fstat      fstat
 #define ink_mmap       mmap
 #define ink_sleep      sleep
-
-#if (__GNUC__ >= 3) && ((HOST_OS == darwin) || (HOST_OS == solaris))
-#define ink_offsetof(TYPE, MEMBER) (__builtin_offsetof (TYPE, MEMBER))
-#else /* !GNUC */
-#if (HOST_OS == solaris)
-//#include <stddef.h> // FIXME: pulled offsetof() from here
-#if __cplusplus >= 199711L
-#define	ink_offsetof(s, m)  (std::size_t)(&(((s *)0)->m))
-#else
-#define	ink_offsetof(s, m)  (size_t)(&(((s *)0)->m))
-#endif
-#else /* !GNUC & !solaris */
-#define ink_offsetof offsetof
-#endif
-#endif
 
 #include "Resource.h"
 

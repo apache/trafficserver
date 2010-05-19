@@ -44,8 +44,8 @@ thread_data_used(0)
 TS_INLINE off_t
 EventProcessor::allocate(int size)
 {
-  static off_t start = (ink_offsetof(EThread, thread_private) + 7) & ~7;
-  static off_t loss = start - ink_offsetof(EThread, thread_private);
+  static off_t start = (offsetof(EThread, thread_private) + 7) & ~7;
+  static off_t loss = start - offsetof(EThread, thread_private);
   size = (size + 7) & ~7;       // 8 byte alignment
 
   int old;

@@ -4961,7 +4961,7 @@ INKContSchedule(INKCont contp, unsigned int timeout)
   }
 
 /* This is a hack. SHould be handled in ink_types */
-  action = (INKAction) ((paddr_t) action | 0x1);
+  action = (INKAction) ((uintptr_t) action | 0x1);
 
   return action;
 }
@@ -4983,7 +4983,7 @@ INKAction INKHttpSchedule(INKCont contp ,INKHttpTxn txnp, unsigned int timeout)
     action = eventProcessor.schedule_in (sm, HRTIME_MSECONDS (timeout), ET_NET);
   }
 
-  action = (INKAction) ((paddr_t) action | 0x1);
+  action = (INKAction) ((uintptr_t) action | 0x1);
 
   return action;
 }
@@ -6607,8 +6607,8 @@ INKActionCancel(INKAction actionp)
   INKContInternal *i;
 
 /* This is a hack. SHould be handled in ink_types */
-  if ((paddr_t) actionp & 0x1) {
-    a = (Action *) ((paddr_t) actionp - 1);
+  if ((uintptr_t) actionp & 0x1) {
+    a = (Action *) ((uintptr_t) actionp - 1);
     i = (INKContInternal *) a->continuation;
     i->handle_event_count(EVENT_IMMEDIATE);
   } else {

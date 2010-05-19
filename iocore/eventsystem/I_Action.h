@@ -203,11 +203,11 @@ Action():continuation(NULL), cancelled(false) {
 // #define ACTION_RESULT_HOST_DB_OFFLINE
 //   MAKE_ACTION_RESULT(ACTION_RESULT_HOST_DB_BASE + 0)
 
-#define MAKE_ACTION_RESULT(_x) (Action*)(((paddr_t)((_x<<1)+1)))
+#define MAKE_ACTION_RESULT(_x) (Action*)(((uintptr_t)((_x<<1)+1)))
 
 #define ACTION_RESULT(_x) \
-  (int)((((paddr_t)_x)&1)!=0?(((paddr_t_x)>>1):(paddr_t)0))
+  (int)((((uintptr_t)_x)&1)!=0?(((uintptr_t)>>1):(uintptr_t)0))
 
-#define IS_ACTION_RESULT(_x) ((((paddr_t)_x)&1) != 0)
+#define IS_ACTION_RESULT(_x) ((((uintptr_t)_x)&1) != 0)
 
 #endif /*_Action_h_*/

@@ -1164,8 +1164,8 @@ UDPQueue::send(UDPPacket * p)
 UDPNetHandler::UDPNetHandler()
 {
   mutex = new_ProxyMutex();
-  ink_atomiclist_init(&udpOutQueue.atomicQueue, "Outgoing UDP Packet queue", ink_offsetof(UDPPacketInternal, alink.next));
-  ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", ink_offsetof(UnixUDPConnection, newconn_alink.next));
+  ink_atomiclist_init(&udpOutQueue.atomicQueue, "Outgoing UDP Packet queue", offsetof(UDPPacketInternal, alink.next));
+  ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", offsetof(UnixUDPConnection, newconn_alink.next));
   nextCheck = ink_get_hrtime_internal() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
   SET_HANDLER((UDPNetContHandler) & UDPNetHandler::startNetEvent);
