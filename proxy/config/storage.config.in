@@ -41,6 +41,10 @@
 #      /dev/sdc            # 250GB drive
 #      /dev/sdd            # 500GB drive
 #
+# Note that when using these raw devices in O_DIRECT mode, you
+# do not need to specify the partition size. It's automatically
+# detected.
+#
 #############################################################
 #             USING RAW DISK ON LINUX( kernel < 2.6.3 )
 #############################################################
