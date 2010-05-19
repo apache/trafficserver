@@ -1789,20 +1789,13 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
 
 #include "ink_string.h"
 
-#include "../api2/include/INKMgmtAPI.h"
+#include "INKMgmtAPI.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 
 #include "ParseRules.h"
-
-// TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
 #define NETCONFIG_HOSTNAME  0
 #define NETCONFIG_GATEWAY   1
@@ -2551,6 +2544,9 @@ int
 Net_SetNIC_IP(char *interface, char *nic_ip)
 {
   //int status;
+  // XXX: Why this test?
+  //      We are inside #define HOST_OS == solaris
+  //
 #if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   char nic_boot[80], nic_protocol[80], nic_netmask[80], nic_gateway[80], old_ip[80];
   Net_GetNIC_IP(interface, old_ip, sizeof(old_ip));
@@ -2568,6 +2564,9 @@ Net_SetNIC_IP(char *interface, char *nic_ip)
 int
 Net_SetNIC_Netmask(char *interface, char *nic_netmask)
 {
+  // XXX: Why this test?
+  //      We are inside #define HOST_OS == solaris
+  //
 #if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_gateway[80];
   Net_GetNIC_Start(interface, nic_boot);
@@ -2584,6 +2583,9 @@ Net_SetNIC_Netmask(char *interface, char *nic_netmask)
 int
 Net_SetNIC_Gateway(char *interface, char *nic_gateway)
 {
+  // XXX: Why this test?
+  //      We are inside #define HOST_OS == solaris
+  //
 #if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80];
   Net_GetNIC_Start(interface, nic_boot);
