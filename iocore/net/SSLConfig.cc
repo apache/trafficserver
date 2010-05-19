@@ -29,7 +29,8 @@
    SSL Configurations
  ****************************************************************************/
 
-#include "ink_config.h"
+#include "inktomi++.h"
+#include "I_Layout.h"
 
 #ifdef HAVE_LIBSSL
 #include <string.h>
@@ -148,8 +149,8 @@ SslConfigParams::cleanup()
 void
 SslConfigParams::initialize()
 {
-  char serverCertFilename[PATH_NAME_MAX];
-  char serverCertRelativePath[PATH_NAME_MAX];
+  char serverCertFilename[PATH_NAME_MAX] = "";
+  char serverCertRelativePath[PATH_NAME_MAX] = "";
   char *ssl_server_private_key_filename = NULL;
   char *ssl_server_private_key_path = NULL;
   char *CACertRelativePath = NULL;
@@ -160,8 +161,6 @@ SslConfigParams::initialize()
   char *clientCACertRelativePath = NULL;
   char *multicert_config_file = NULL;
 
-  int system_root_dir_len = strlen(system_root_dir) + 1;
-  int system_config_directory_len = strlen(system_config_directory) + 1;
   int ssl_mode = SSL_TERM_MODE_NONE;
   int ret_val = 0;
 #ifdef _WIN32
@@ -261,22 +260,11 @@ SslConfigParams::initialize()
   if (!prot)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
 
-  *serverCertFilename = 0;
-  *serverCertRelativePath = 0;
   IOCORE_ReadConfigString(serverCertFilename, "proxy.config.ssl.server.cert.filename", PATH_NAME_MAX);
   IOCORE_ReadConfigString(serverCertRelativePath, "proxy.config.ssl.server.cert.path", PATH_NAME_MAX);
 
-  const size_t serverCertPathSize =
-    system_root_dir_len + strlen(serverCertRelativePath) + strlen(serverCertFilename) + 2;
-  serverCertPath = (char *) xmalloc(serverCertPathSize);
-
-  const size_t serverCertPathOnlySize = system_root_dir_len + strlen(serverCertRelativePath) + 5;
-  serverCertPathOnly = (char *) xmalloc(serverCertPathOnlySize);
-
-  snprintf(serverCertPathOnly, serverCertPathOnlySize, "%s%s%s%s",
-	   system_root_dir, DIR_SEP,serverCertRelativePath,DIR_SEP);
-  snprintf(serverCertPath, serverCertPathSize,
-	   "%s%s",serverCertPathOnly, serverCertFilename);
+  serverCertPathOnly = Layout::get()->relative(serverCertRelativePath);
+  serverCertPath = Layout::relative_to(serverCertPathOnly, serverCertFilename);
 
 #ifdef _WIN32
   i = 0;
@@ -298,11 +286,8 @@ SslConfigParams::initialize()
   char *cert_chain;
   IOCORE_ReadConfigStringAlloc(cert_chain, "proxy.config.ssl.server.cert_chain.filename");
   if (cert_chain != NULL) {
-    const size_t serverCertChainPathSize = strlen(serverCertPathOnly) + strlen(cert_chain) + 1;
-    serverCertChainPath = (char *) xmalloc(serverCertChainPathSize);
+    serverCertChainPath = Layout::relative_to(serverCertPathOnly, cert_chain);
 
-    ink_strncpy(serverCertChainPath, (const char *) serverCertPathOnly, serverCertChainPathSize);
-    strncat(serverCertChainPath, cert_chain, (serverCertChainPathSize - strlen(serverCertChainPath) - 1));
 #ifdef _WIN32
     i = 0;
     while (serverCertChainPath[i] != 0) {
@@ -316,12 +301,8 @@ SslConfigParams::initialize()
 
   IOCORE_ReadConfigStringAlloc(multicert_config_file, "proxy.config.ssl.server.multicert.filename");
   if (multicert_config_file != NULL) {
-    const size_t configFilePathSize = system_config_directory_len + strlen(multicert_config_file) + 2;
-    configFilePath = (char *) xmalloc(configFilePathSize);
+    configFilePath = Layout::relative_to(Layout::get()->sysconfdir, multicert_config_file);
 
-    ink_strncpy(configFilePath, system_config_directory, configFilePathSize);
-    strncat(configFilePath, DIR_SEP, (configFilePathSize - strlen(configFilePath) - 1));
-    strncat(configFilePath, multicert_config_file, (configFilePathSize - strlen(configFilePath) - 1));
 #ifdef _WIN32
     i = 0;
     while (configFilePath[i] != 0) {
@@ -341,15 +322,17 @@ SslConfigParams::initialize()
   IOCORE_ReadConfigStringAlloc(ssl_server_private_key_filename, "proxy.config.ssl.server.private_key.filename");
   IOCORE_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
 
+  if (ssl_server_private_key_path != NULL) {
+    serverKeyPathOnly = Layout::get()->relative(ssl_server_private_key_path);
+    xfree(ssl_server_private_key_path);
+  }
+  else {
+    // XXX: private_key.filename is relative to prefix or sysconfdir?
+    //
+    serverKeyPathOnly = xstrdup(Layout::get()->prefix);
+  }
   if (ssl_server_private_key_filename != NULL) {
-    const size_t serverKeyPathSize =
-      system_root_dir_len + strlen(ssl_server_private_key_path) + strlen(ssl_server_private_key_filename) + 1;
-    serverKeyPath = (char *) xmalloc(serverKeyPathSize);
-
-    ink_strncpy(serverKeyPath, system_root_dir, serverKeyPathSize);
-    strncat(serverKeyPath, ssl_server_private_key_path, (serverKeyPathSize - strlen(serverKeyPath) - 1));
-    strncat(serverKeyPath, "/", (serverKeyPathSize - strlen(serverKeyPath) - 1));
-    strncat(serverKeyPath, ssl_server_private_key_filename, (serverKeyPathSize - strlen(serverKeyPath) - 1));
+    serverKeyPath = Layout::relative_to(serverKeyPathOnly, ssl_server_private_key_path);
 
 #ifdef _WIN32
     i = 0;
@@ -360,16 +343,6 @@ SslConfigParams::initialize()
     }
 #endif
     xfree(ssl_server_private_key_filename);
-  }
-
-  if (ssl_server_private_key_path != NULL) {
-    const size_t serverKeyPathOnlySize = system_root_dir_len + strlen(ssl_server_private_key_path) + 1;
-    serverKeyPathOnly = (char *) xmalloc(serverKeyPathOnlySize);
-
-    ink_strncpy(serverKeyPathOnly, system_root_dir, serverKeyPathOnlySize);
-    strncat(serverKeyPathOnly, ssl_server_private_key_path, (serverKeyPathOnlySize - strlen(serverKeyPathOnly) - 1));
-    strncat(serverKeyPathOnly, "/", (serverKeyPathOnlySize - strlen(serverKeyPathOnly) - 1));
-    xfree(ssl_server_private_key_path);
   }
 
   ssl_server_private_key_path = NULL;
@@ -383,11 +356,9 @@ SslConfigParams::initialize()
   IOCORE_ReadConfigStringAlloc(CACertRelativePath, "proxy.config.ssl.CA.cert.pathname");
 
   if (CACertRelativePath != NULL) {
-    const size_t CACertPathSize = system_root_dir_len + strlen(CACertRelativePath) + 1;
-    CACertPath = (char *) xmalloc(CACertPathSize);
+    char *abs_path = Layout::get()->relative(CACertRelativePath);
+    CACertPath = Layout::relative_to(abs_path, CACertFilename);
 
-    ink_strncpy(CACertPath, system_root_dir, CACertPathSize);
-    strncat(CACertPath, CACertRelativePath, (CACertPathSize - strlen(CACertPath) - 1));
 #ifdef _WIN32
     i = 0;
     while (CACertPath[i] != 0) {
@@ -396,6 +367,7 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
+    xfree(abs_path);
     xfree(CACertRelativePath);
   }
 // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
@@ -407,15 +379,12 @@ SslConfigParams::initialize()
   IOCORE_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   IOCORE_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
 
+  if (ssl_client_cert_path == NULL) {
+    ssl_client_cert_path = xstrdup(Layout::get()->prefix);
+  }
   if (ssl_client_cert_filename != NULL) {
-    const size_t clientCertPathSize =
-      system_root_dir_len + strlen(ssl_client_cert_path) + strlen(ssl_client_cert_filename) + 1;
-    clientCertPath = (char *) xmalloc(clientCertPathSize);
-
-    ink_strncpy(clientCertPath, system_root_dir, clientCertPathSize);
-    strncat(clientCertPath, ssl_client_cert_path, (clientCertPathSize - strlen(clientCertPath) - 1));
-    strncat(clientCertPath, "/", (clientCertPathSize - strlen(clientCertPath) - 1));
-    strncat(clientCertPath, ssl_client_cert_filename, (clientCertPathSize - strlen(clientCertPath) - 1));
+    char *abs_path = Layout::get()->relative(ssl_client_cert_path);
+    clientCertPath = Layout::relative_to(abs_path, ssl_client_cert_filename);
 
 #ifdef _WIN32
     i = 0;
@@ -425,11 +394,10 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
+    xfree(abs_path);
     xfree(ssl_client_cert_filename);
   }
-
-  if (ssl_client_cert_path != NULL)
-    xfree(ssl_client_cert_path);
+  xfree(ssl_client_cert_path);
 
   ssl_client_cert_filename = NULL;
   ssl_client_cert_path = NULL;
@@ -437,16 +405,13 @@ SslConfigParams::initialize()
   IOCORE_ReadConfigStringAlloc(ssl_client_private_key_filename, "proxy.config.ssl.client.private_key.filename");
   IOCORE_ReadConfigStringAlloc(ssl_client_private_key_path, "proxy.config.ssl.client.private_key.path");
 
+  if (ssl_client_private_key_path == NULL) {
+    ssl_client_private_key_path = xstrdup(Layout::get()->prefix);
+  }
 
   if (ssl_client_private_key_filename != NULL) {
-    const size_t clientKeyPathSize =
-      system_root_dir_len + strlen(ssl_client_private_key_path) + strlen(ssl_client_private_key_filename) + 1;
-    clientKeyPath = (char *) xmalloc(clientKeyPathSize);
-
-    ink_strncpy(clientKeyPath, system_root_dir, clientKeyPathSize);
-    strncat(clientKeyPath, ssl_client_private_key_path, (clientKeyPathSize - strlen(clientKeyPath) - 1));
-    strncat(clientKeyPath, "/", (clientKeyPathSize - strlen(clientKeyPath) - 1));
-    strncat(clientKeyPath, ssl_client_private_key_filename, (clientKeyPathSize - strlen(clientKeyPath) - 1));
+    char *abs_path = Layout::get()->relative(ssl_client_private_key_path);
+    clientCertPath = Layout::relative_to(abs_path, ssl_client_private_key_filename);
 
 #ifdef _WIN32
     i = 0;
@@ -456,10 +421,10 @@ SslConfigParams::initialize()
       i++;
     }
 #endif
+    xfree(abs_path);
     xfree(ssl_client_private_key_filename);
   }
-  if (ssl_client_private_key_path != NULL)
-    xfree(ssl_client_private_key_path);
+  xfree(ssl_client_private_key_path);
 
   ssl_client_private_key_path = NULL;
 
@@ -476,9 +441,7 @@ SslConfigParams::initialize()
 // Notice that we don't put the filename at the
 // end of this path.  Its a quirk of the SSL lib interface.
   if (clientCACertRelativePath != NULL) {
-    clientCACertPath = (char *) xmalloc(system_root_dir_len + strlen(clientCACertRelativePath) + 1);
-    strcpy(clientCACertPath, system_root_dir);
-    strcat(clientCACertPath, clientCACertRelativePath);
+    clientCACertPath = Layout::get()->relative(clientCACertRelativePath);
 #ifdef _WIN32
     i = 0;
     while (clientCACertPath[i] != 0) {
