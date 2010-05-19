@@ -5806,7 +5806,7 @@ ConfigRadiusKeys(const char *record)
   time_t my_time_t;
   time(&my_time_t);
   memset(file_path, 0, 1024);
-  snprintf(file_path, 1024, "%s%spwd_%ld.enc", dir_path, DIR_SEP, my_time_t);
+  snprintf(file_path, 1024, "%s%spwd_%lld.enc", dir_path, DIR_SEP, (ink64)my_time_t);
   if (dir_path)
     xfree(dir_path);
 
