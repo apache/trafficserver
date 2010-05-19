@@ -15,15 +15,15 @@
 # the cache-file to live and 'size' is size in bytes
 #
 # Example: 128MB cache file(@exp_cachedir@/cache.db)
-# @exp_cachedir@ 134217728
+#      @exp_cachedir@ 134217728
 #
 # Example: 144MB cache file(@exp_cachedir@/cache.db)
 #          assuming prefix of '@prefix@'
-# @rel_cachedir@ 150994944
+#      @rel_cachedir@ 150994944
 #
 # Example: 512MB cache file(@exp_cachedir@/cache.db)
 #          assuming prefix of '@prefix@'
-# @rel_cachedir@ 536870912
+#      @rel_cachedir@ 536870912
 #
 #
 #############################################################
@@ -80,4 +80,6 @@
 #      /dev/raw_sdb   9105018880
 #      /dev/raw_sdc   18210037760
 #      /dev/raw_sdd   18210037760
-
+#
+# a small default cache (140MB)
+@rel_cachedir@ 150994944
