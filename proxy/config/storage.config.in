@@ -19,7 +19,7 @@
 #
 # Example: 144MB cache file(@exp_cachedir@/cache.db)
 #          assuming prefix of '@prefix@'
-@rel_cachedir@ 150994944
+# @rel_cachedir@ 150994944
 #
 # Example: 512MB cache file(@exp_cachedir@/cache.db)
 #          assuming prefix of '@prefix@'
