@@ -21,7 +21,8 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "inktomi++.h"
+#include "I_Layout.h"
 #include "DiagsConfig.h"
 #ifdef LOCAL_MANAGER
 
@@ -292,14 +293,12 @@ DiagsConfig::RegisterDiagConfig()
 
 DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
 {
-  char *diags_logdir = NULL;
-  char diags_logpath[PATH_NAME_MAX];
+  char diags_logpath[PATH_NAME_MAX + 1];
   struct stat s;
   int err;
   callbacks_established = false;
   diags_log_fp = (FILE *) NULL;
   diags = NULL;
-  bool found;
 
   ////////////////////////////////////////////////////////////////////
   //  If we aren't using the manager records for configuation       //
@@ -317,26 +316,18 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
   ////////////////////////
 
   if ((err = stat(system_log_dir, &s)) < 0) {
-    REC_ReadConfigString(system_log_dir, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    REC_ReadConfigString(diags_logpath, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    Layout::get()->relative(system_log_dir, PATH_NAME_MAX, diags_logpath);
+
     if ((err = stat(system_log_dir, &s)) < 0) {
-      diags_logdir = REC_readString("proxy.config.log2.logfile_dir", &found);
-      if (found && (diags_logdir != NULL)) {
-        snprintf(system_log_dir, sizeof(system_log_dir), "%s",diags_logdir);
-      }
-      if ((err = stat(system_log_dir, &s)) < 0) {
-        // Try 'system_root_dir/var/log/trafficserver' directory
-        snprintf(system_log_dir, sizeof(system_log_dir), "%s%s%s%s%s%s%s",
-                 system_root_dir, DIR_SEP,"var",DIR_SEP,"log",DIR_SEP,"trafficserver");
-        if ((err = stat(system_log_dir, &s)) < 0) {
-          fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
-                  system_log_dir, err, errno, strerror(errno));
-          fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
-          _exit(1);
-        }
-      }
+      fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
+              system_log_dir, err, errno, strerror(errno));
+      fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+      _exit(1);
     }
   }
-    snprintf(diags_logpath, sizeof(diags_logpath), "%s%s%s", system_log_dir, DIR_SEP, DIAGS_LOG_FILE);
+  snprintf(diags_logpath, sizeof(diags_logpath),
+           "%s/%s", system_log_dir, DIAGS_LOG_FILE);
 
   // open write append
   // diags_log_fp = fopen(diags_logpath,"w");

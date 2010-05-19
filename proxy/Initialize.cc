@@ -361,7 +361,8 @@ init_system_diags(char *bdt, char *bat)
   FILE *diags_log_fp = NULL;
   char diags_logpath[PATH_NAME_MAX + 1];
 
-  ink_snprintf(diags_logpath, sizeof(diags_logpath), "%s%s%s", system_log_dir,DIR_SEP,DIAGS_LOG_FILE);
+  ink_snprintf(diags_logpath, sizeof(diags_logpath),
+               "%s/%s", system_log_dir, DIAGS_LOG_FILE);
 
   diags_log_fp = fopen(diags_logpath, "w");
   if (diags_log_fp) {
