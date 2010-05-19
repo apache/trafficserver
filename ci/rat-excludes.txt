@@ -15,9 +15,8 @@ iocore/fastio/inkfio/inkfio.conf
 .indent.pro
 aclocal.m4
 CHANGES
-m4/
 autom4te.cache/
-build-aux/
+build/
 configure
 tags
 libtool
