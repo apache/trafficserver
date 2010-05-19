@@ -111,8 +111,8 @@ LastState last_state;
 // Store the collected counters and stats, per Origin Server (or total)
 struct StatsCounter
 {
-  ink64 count;
-  ink64 bytes;
+  int64 count;
+  int64 bytes;
 };
 
 struct ElapsedStats
@@ -304,7 +304,7 @@ static struct
   char origin_file[1024];
   char origin_list[2048];
   char state_tag[1024];
-  ink64 min_hits;
+  int64 min_hits;
   int max_age;
   int line_len;
   int incremental;              // Do an incremental run
@@ -1195,11 +1195,11 @@ format_center(const char *str, std::ostream & out)
 }
 
 inline void
-format_int(ink64 num, std::ostream & out)
+format_int(int64 num, std::ostream & out)
 {
   if (num > 0) {
-    ink64 mult = (ink64) pow((double)10, (int) (log10((double)num) / 3) * 3);
-    ink64 div;
+    int64 mult = (int64) pow((double)10, (int) (log10((double)num) / 3) * 3);
+    int64 div;
     std::stringstream ss;
 
     ss.fill('0');

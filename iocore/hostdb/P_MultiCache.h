@@ -61,7 +61,7 @@
 
 #define MULTI_CACHE_HEAP_HIGH_WATER  0.8
 
-#define MULTI_CACHE_HEAP_INITIAL     sizeof(inku32)
+#define MULTI_CACHE_HEAP_INITIAL     sizeof(uint32)
 #define MULTI_CACHE_HEAP_ALIGNMENT   8
 
 // unused.. possible optimization
@@ -83,13 +83,13 @@ struct Continuation;
 
 struct MultiCacheBlock
 {
-  inku64 tag();
+  uint64 tag();
   bool is_deleted();
   void set_deleted();
   bool is_empty();
   void set_empty();
   void reset();
-  void set_full(inku64 folded_md5, int buckets);
+  void set_full(uint64 folded_md5, int buckets);
   int heap_size()
   {
     return 0;
@@ -329,9 +329,9 @@ struct MultiCacheBase:MultiCacheHeader
   {
     return locks[partition_of_bucket(bucket)];
   }
-  inku64 make_tag(inku64 folded_md5)
+  uint64 make_tag(uint64 folded_md5)
   {
-    inku64 ttag = folded_md5 / (inku64) buckets;
+    uint64 ttag = folded_md5 / (uint64) buckets;
 #if !defined (_WIN32)
     if (!ttag)
       return 1LL;
@@ -341,14 +341,14 @@ struct MultiCacheBase:MultiCacheHeader
 #endif
     // beeping gcc 2.7.2 is broken
     if (tag_bits > 32) {
-      inku64 mask = 0x100000000LL << (tag_bits - 32);
+      uint64 mask = 0x100000000LL << (tag_bits - 32);
       mask = mask - 1;
       return ttag & mask;
     } else {
 #if !defined (_WIN32)
-      inku64 mask = 1LL;
+      uint64 mask = 1LL;
 #else
-      inku64 mask = 1i 64;
+      uint64 mask = 1i 64;
 #endif
       mask <<= tag_bits;
       mask = mask - 1;
@@ -456,16 +456,16 @@ template<class C> struct MultiCache:MultiCacheBase
   // template operations
   //
   int level_of_block(C * b);
-  bool match(inku64 folded_md5, C * block);
-  C *cache_bucket(inku64 folded_md5, int level);
-  C *insert_block(inku64 folded_md5, C * new_block, int level);
+  bool match(uint64 folded_md5, C * block);
+  C *cache_bucket(uint64 folded_md5, int level);
+  C *insert_block(uint64 folded_md5, C * new_block, int level);
   void flush(C * b, int bucket, int level);
   void delete_block(C * block);
-  C *lookup_block(inku64 folded_md5, int level);
+  C *lookup_block(uint64 folded_md5, int level);
   void copy_heap(int paritition, MultiCacheHeapGC *);
 };
 
-inline inku64
+inline uint64
 fold_md5(INK_MD5 & md5)
 {
   return (md5.fold());
@@ -481,7 +481,7 @@ template<class C> inline int MultiCache<C>::level_of_block(C * b)
   return 0;
 }
 
-template<class C> inline C * MultiCache<C>::cache_bucket(inku64 folded_md5, int level)
+template<class C> inline C * MultiCache<C>::cache_bucket(uint64 folded_md5, int level)
 {
   int bucket = (int) (folded_md5 % buckets);
   char *offset = data + level_offset[level] + bucketsize[level] * bucket;
@@ -491,7 +491,7 @@ template<class C> inline C * MultiCache<C>::cache_bucket(inku64 folded_md5, int 
 //
 // Insert an entry
 //
-template<class C> inline C * MultiCache<C>::insert_block(inku64 folded_md5, C * new_block, int level)
+template<class C> inline C * MultiCache<C>::insert_block(uint64 folded_md5, C * new_block, int level)
 {
   C *b = cache_bucket(folded_md5, level);
   C *block = NULL, *empty = NULL;
@@ -500,7 +500,7 @@ template<class C> inline C * MultiCache<C>::insert_block(inku64 folded_md5, C * 
 
   // Find the entry
   //
-  inku64 tag = make_tag(folded_md5);
+  uint64 tag = make_tag(folded_md5);
   int n_empty = 0;
 
   for (block = b; block < b + elements[level]; block++) {
@@ -557,7 +557,7 @@ Lfound:
 }
 
 #define REBUILD_FOLDED_MD5(_cl) \
-((_cl->tag() * (inku64)buckets + (inku64)bucket))
+((_cl->tag() * (uint64)buckets + (uint64)bucket))
 
 //
 // This function ejects some number of entries.
@@ -583,7 +583,7 @@ template<class C> inline void MultiCache<C>::flush(C * b, int bucket, int level)
 //
 // Match a cache line and a folded md5 key
 //
-template<class C> inline bool MultiCache<C>::match(inku64 folded_md5, C * block)
+template<class C> inline bool MultiCache<C>::match(uint64 folded_md5, C * block)
 {
   return block->tag() == make_tag(folded_md5);
 }
@@ -609,10 +609,10 @@ template<class C> inline void MultiCache<C>::delete_block(C * b)
 //
 // Lookup an entry up to some level in the cache
 //
-template<class C> inline C * MultiCache<C>::lookup_block(inku64 folded_md5, int level)
+template<class C> inline C * MultiCache<C>::lookup_block(uint64 folded_md5, int level)
 {
   C *b = cache_bucket(folded_md5, 0);
-  inku64 tag = make_tag(folded_md5);
+  uint64 tag = make_tag(folded_md5);
   int i = 0;
   // Level 0
   for (i = 0; i < elements[0]; i++)

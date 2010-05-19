@@ -161,11 +161,11 @@ int
 main(int argc, const char *argv[])
 {
 #ifndef LONG_ATOMICLIST_TEST
-  ink32 m = 1, n = 100;
-  //ink64 lm = 1LL, ln = 100LL;
+  int32 m = 1, n = 100;
+  //int64 lm = 1LL, ln = 100LL;
   char *m2 = "hello", *n2;
 
-  printf("sizeof(ink32)==%d   sizeof(void *)==%d\n", (int)sizeof(ink32), (int)sizeof(void *));
+  printf("sizeof(int32)==%d   sizeof(void *)==%d\n", (int)sizeof(int32), (int)sizeof(void *));
 
 
   printf("CAS: %d == 1  then  2\n", m);

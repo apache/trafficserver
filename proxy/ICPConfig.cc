@@ -1137,7 +1137,7 @@ MultiCastPeer::AddMultiCastChild(Peer * P)
   // Make sure child (ip,port) is unique.
   if (FindMultiCastChild(P->GetIP(), P->GetPort())) {
     unsigned char x[4] = { 0, 0, 0, 0 };
-    *(inku32 *) & x = (inku32) P->GetIP()->s_addr;
+    *(uint32 *) & x = (uint32) P->GetIP()->s_addr;
     Warning("bad icp.config, multiple multicast child definitions for ip=%d.%d.%d.%d", x[0], x[1], x[2], x[3]);
     return 0;                   // Not added, already exists
   } else {
@@ -1415,7 +1415,7 @@ void
 dumpICPstatEntry(int i, const char *name)
 {
   int l = strlen(name);
-  ink64 sval, cval;
+  int64 sval, cval;
 
   RecRawStat *p = RecGetGlobalRawStatPtr(icp_rsb, i);
   sval = p->sum;
@@ -1458,7 +1458,7 @@ ICPProcessor::DumpICPConfig()
     P = _PeerList[i];
     id = P->GetPeerID();
     type = P->GetType();
-    *(inku32 *) & ip = (inku32) (P->GetIP())->s_addr;
+    *(uint32 *) & ip = (uint32) (P->GetIP())->s_addr;
     icp_port = P->GetPort();
     const char *str_type;
 
@@ -1499,7 +1499,7 @@ ICPProcessor::DumpICPConfig()
             id, str_type, ip[0], ip[1], ip[2], ip[3], icp_port,
             Pps->GetConfig()->GetProxyPort(), Pps->GetConfig()->GetHostname());
 
-      *(inku32 *) & ip = (inku32) (Pps->GetConfig()->GetMultiCastIP())->s_addr;
+      *(uint32 *) & ip = (uint32) (Pps->GetConfig()->GetMultiCastIP())->s_addr;
 
       Debug("icp",
             "[%d]: MC ON=%d MC_IP=%d.%d.%d.%d MC_TTL=%d",

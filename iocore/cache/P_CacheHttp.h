@@ -80,7 +80,7 @@ struct CacheHTTPInfoVector
 
   int marshal_length();
   int marshal(char *buf, int length);
-  inku32 get_handles(const char *buf, int length, RefCountObj * block_ptr = NULL);
+  uint32 get_handles(const char *buf, int length, RefCountObj * block_ptr = NULL);
   int unmarshal(const char *buf, int length, RefCountObj * block_ptr);
 
   CacheArray<vec_info> data;

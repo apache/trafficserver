@@ -94,11 +94,11 @@ public:
         snap = (char *) sbrk(0);
       char *now = (char *) sbrk(0);
       fprintf(stderr, "sbrk %llX from first %lld from last %lld\n",
-              (inku64) ((int_pointer) now), (inku64) ((int_pointer) (now - end)),
-              (inku64) ((int_pointer) (now - snap)));
+              (uint64) ((int_pointer) now), (uint64) ((int_pointer) (now - end)),
+              (uint64) ((int_pointer) (now - snap)));
 #ifdef DEBUG
       int fmdelta = fastmemtotal - fastmemsnap;
-      fprintf(stderr, "fastmem %lld from last %lld\n", (ink64) fastmemtotal, (ink64) fmdelta);
+      fprintf(stderr, "fastmem %lld from last %lld\n", (int64) fastmemtotal, (int64) fmdelta);
       fastmemsnap += fmdelta;
 #endif
       snap = now;

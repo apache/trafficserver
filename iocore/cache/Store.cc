@@ -217,7 +217,7 @@ Store::sort()
 }
 
 int
-Span::path(char *filename, ink64 * aoffset, char *buf, int buflen)
+Span::path(char *filename, int64 * aoffset, char *buf, int buflen)
 {
   ink_assert(!aoffset);
   Span *ds = this;
@@ -264,7 +264,7 @@ Span::~Span()
 }
 
 inline int
-get_ink64(int fd, ink64 & data)
+get_int64(int fd, int64 & data)
 {
   char buf[PATH_NAME_MAX + 1];
   if (ink_file_fd_readline(fd, PATH_NAME_MAX, buf) <= 0)
@@ -358,7 +358,7 @@ Store::read_config(int fd)
     char *e = strpbrk(n, " \t\n");
     int len = e ? e - n : strlen(n);
     (void) len;
-    ink64 size = -1;
+    int64 size = -1;
     while (e && *e && !ParseRules::is_digit(*e))
       e++;
     if (e && *e) {
@@ -424,7 +424,7 @@ Store::write_config_data(int fd)
   for (int i = 0; i < n_disks; i++)
     for (Span * sd = disk[i]; sd; sd = sd->link.next) {
       char buf[PATH_NAME_MAX + 64];
-      snprintf(buf, sizeof(buf), "%s %lld\n", sd->pathname, (ink64) sd->blocks * (ink64) STORE_BLOCK_SIZE);
+      snprintf(buf, sizeof(buf), "%s %lld\n", sd->pathname, (int64) sd->blocks * (int64) STORE_BLOCK_SIZE);
       if (ink_file_fd_writestring(fd, buf) == -1)
         return (-1);
     }
@@ -453,7 +453,7 @@ Store::write_config_data(int fd)
 #include <string.h>
 
 const char *
-Span::init(char *an, ink64 size)
+Span::init(char *an, int64 size)
 {
   int devnum = 0;
   const char *err = NULL;
@@ -517,7 +517,7 @@ Span::init(char *an, ink64 size)
 #endif
 
   disk_block_size = fs.f_bsize;
-  ink64 fsize = (ink64) fs.f_blocks * (ink64) fs.f_bsize;
+  int64 fsize = (int64) fs.f_blocks * (int64) fs.f_bsize;
 
   switch ((s.st_mode & S_IFMT)) {
 
@@ -561,11 +561,11 @@ Span::init(char *an, ink64 size)
             goto LpartError;
           if (slice >= (int) ds.dss_nslices || !ds.dss_slices[slice].ds_size)
             goto LpartError;
-          fsize = (ink64) ds.dss_slices[slice].ds_size * dl.d_secsize;
+          fsize = (int64) ds.dss_slices[slice].ds_size * dl.d_secsize;
         } else {
           if (part < 0)
             goto LpartError;
-          fsize = (ink64) dl.d_partitions[part].p_size * dl.d_secsize;
+          fsize = (int64) dl.d_partitions[part].p_size * dl.d_secsize;
         }
         devnum = s.st_rdev;
         if (size <= 0)
@@ -584,7 +584,7 @@ Span::init(char *an, ink64 size)
   case S_IFDIR:
   case S_IFREG:
     if (size <= 0 || size > fsize) {
-      Warning("bad or missing size for '%s': size %lld fsize %lld", n, (ink64) size, fsize);
+      Warning("bad or missing size for '%s': size %lld fsize %lld", n, (int64) size, fsize);
       err = "bad or missing size";
       goto Lfail;
     }
@@ -629,7 +629,7 @@ Lfail:
 
 
 const char *
-Span::init(char *filename, ink64 size)
+Span::init(char *filename, int64 size)
 {
   int devnum = 0, fd, arg;
   int ret = 0, is_disk = 0;
@@ -985,7 +985,7 @@ Span::read(int fd)
     return (-1);
   }
   pathname = xstrdup(p);
-  if (get_ink64(fd, blocks) < 0) {
+  if (get_int64(fd, blocks) < 0) {
     return -1;
   }
 
@@ -999,7 +999,7 @@ Span::read(int fd)
     return (-1);
   file_pathname = (b ? true : false);
 
-  if (get_ink64(fd, offset) < 0) {
+  if (get_int64(fd, offset) < 0) {
     return -1;
   }
 

@@ -50,7 +50,7 @@ public:
   int binding_valid;
   int tobedestroyed;
   int sendGenerationNum;
-  ink64 lastSentPktTSSeqNum;
+  int64 lastSentPktTSSeqNum;
 
   // this is for doing packet scheduling: we keep two values so that we can
   // implement cancel.  The first value tracks the startTime of the last
@@ -58,15 +58,15 @@ public:
   // startTime of the last packet when we are doing scheduling;  whenever the
   // associated continuation cancels a packet, we rest lastPktStartTime to be
   // the same as the lastSentPktStartTime.
-  inku64 lastSentPktStartTime;
-  inku64 lastPktStartTime;
-  ink32 pipe_class;
-  inku32 nBytesDone;
-  inku32 nBytesTodo;
+  uint64 lastSentPktStartTime;
+  uint64 lastPktStartTime;
+  int32 pipe_class;
+  uint32 nBytesDone;
+  uint32 nBytesTodo;
   // flow rate in Bytes per sec.
   double flowRateBps;
   double avgPktSize;
-  ink64 allocedbps;
+  int64 allocedbps;
 
   //this class is abstract
 };
@@ -180,7 +180,7 @@ UDPConnection::getPortNum(void)
   return ((UDPConnectionInternal *) this)->binding.sin_port;
 }
 
-TS_INLINE ink64
+TS_INLINE int64
 UDPConnection::cancel(void)
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *) this;
@@ -191,7 +191,7 @@ UDPConnection::cancel(void)
 };
 
 TS_INLINE void
-UDPConnection::SetLastSentPktTSSeqNum(ink64 sentSeqNum)
+UDPConnection::SetLastSentPktTSSeqNum(int64 sentSeqNum)
 {
   ((UDPConnectionInternal *) this)->lastSentPktTSSeqNum = sentSeqNum;
 };

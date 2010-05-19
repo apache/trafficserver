@@ -162,7 +162,7 @@ struct EventIO
 struct UnixNetVConnection;
 struct NetHandler;
 typedef int (NetHandler::*NetContHandler) (int, void *);
-typedef unsigned int inku32;
+typedef unsigned int uint32;
 
 extern ink_hrtime last_throttle_warning;
 extern ink_hrtime last_shedding_warning;
@@ -213,7 +213,7 @@ extern int http_accept_port_number;
 #define NET_THROTTLE_DELAY                        50    /* mseconds */
 #define INK_MIN_PRIORITY                          0
 
-#define PRINT_IP(x) ((inku8*)&(x))[0],((inku8*)&(x))[1], ((inku8*)&(x))[2],((inku8*)&(x))[3]
+#define PRINT_IP(x) ((uint8*)&(x))[0],((uint8*)&(x))[1], ((uint8*)&(x))[2],((uint8*)&(x))[3]
 
 
 // function prototype needed for SSLUnixNetVConnection
@@ -287,7 +287,7 @@ net_connections_to_throttle(ThrottleType t)
 {
 
   double headroom = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
-  ink64 sval = 0, cval = 0;
+  int64 sval = 0, cval = 0;
 
 #ifdef HTTP_NET_THROTTLE
   NET_READ_DYN_STAT(http_current_client_connections_stat, cval, sval);

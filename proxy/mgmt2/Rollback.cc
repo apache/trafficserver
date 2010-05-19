@@ -774,7 +774,7 @@ Rollback::findVersions_ml(ExpandingArray * listNames)
   //     size
   dirEntrySpace = (struct dirent *) xmalloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
 
-  while (ink_readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
+  while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
     if (!entryPtr)
       break;
 

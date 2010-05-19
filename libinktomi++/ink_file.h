@@ -65,33 +65,8 @@
 //
 #define INK_FILEPATH_TRUENAME       0x20
 
-int ink_access_extension(char *base, char *ext, int amode);
-int ink_readdir_r(DIR * dirp, struct dirent *entry, struct dirent **pentry);
-DIR *ink_opendir(const char *path);
-int ink_closedir(DIR * d);
-
-FILE *ink_fopen_extension(char *base, char *ext, char *mode);
-FILE *ink_fopen(char *name, char *mode);
-void ink_fclose(FILE * fp);
-void ink_fseek(FILE * stream, long offset, int ptrname);
-long ink_ftell(FILE * stream);
-void ink_rewind(FILE * stream);
-char *ink_fgets(char *s, int n, FILE * stream);
-int  ink_fputln(FILE * stream, const char *s);
-size_t ink_fread(void *ptr, size_t size, size_t nitems, FILE * stream);
-size_t ink_fwrite(void *ptr, size_t size, size_t nitems, FILE * stream);
-int ink_file_name_mtime(char *path, time_t * tp);
-int ink_file_name_size(char *path, off_t * op);
-
-/* these routines use fcntl arguments */
-
-int ink_file_lock_raw(int fd, int cmd, int type, off_t offset, int whence, off_t len);
-int ink_file_region_lock(int fd, int type, off_t start, off_t len);
-int ink_file_region_trylock(int fd, int type, off_t start, off_t len);
-int ink_file_lock(int fd, int type);
-int ink_file_trylock(int fd, int type);
-
-int ink_file_fd_readline(int fd, int bufsz, char *buf);
+int ink_fputln(FILE *stream, const char *s);
+int ink_file_fd_readline(int fd, int bufsize, char *buf);
 int ink_file_fd_writestring(int fd, const char *buf);
 int ink_filepath_merge(char *buf, int bufsz, const char *rootpath,
                        const char *addpath, int flags);

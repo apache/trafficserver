@@ -54,20 +54,20 @@ readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr)
   }
   // Open the file for Blocking IO.  We will be reading this
   //   at start up and infrequently afterward
-  if ((fd = ink_open(file_path, O_RDONLY | _O_ATTRIB_NORMAL)) < 0) {
+  if ((fd = open(file_path, O_RDONLY | _O_ATTRIB_NORMAL)) < 0) {
     Error("%s Can not open %s file : %s", module_name, file_path, strerror(errno));
     return NULL;
   }
 
-  if (ink_fstat(fd, &file_info) < 0) {
+  if (fstat(fd, &file_info) < 0) {
     Error("%s Can not stat %s file : %s", module_name, file_path, strerror(errno));
-    ink_close(fd);
+    close(fd);
     return NULL;
   }
 
   if (file_info.st_size < 0) {
     Error("%s Can not get correct file size for %s file : %lld", module_name, file_path, (long long) file_info.st_size);
-    ink_close(fd);
+    close(fd);
     return NULL;
   }
   // Allocate a buffer large enough to hold the entire file
@@ -77,7 +77,7 @@ readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr)
     // Null terminate the buffer so that string operations will work
     file_buf[file_info.st_size] = '\0';
 
-    read_size = (file_info.st_size > 0) ? ink_read(fd, file_buf, file_info.st_size) : 0;
+    read_size = (file_info.st_size > 0) ? read(fd, file_buf, file_info.st_size) : 0;
 
     // Check to make sure that we got the whole file
     if (read_size < 0) {
@@ -99,7 +99,7 @@ readIntoBuffer(char *file_path, const char *module_name, int *read_size_ptr)
     *read_size_ptr = read_size;
   }
 
-  ink_close(fd);
+  close(fd);
 
   return file_buf;
 }

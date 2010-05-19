@@ -221,15 +221,15 @@ Lnext:
 }
 
 void CacheTestSM::fill_buffer() {
-  ink64 avail = buffer->write_avail();
+  int64 avail = buffer->write_avail();
   CacheKey k = key;
   k.b[1] += content_salt;
-  ink64 sk = (ink64)sizeof(key);
+  int64 sk = (int64)sizeof(key);
   while (avail > 0) {
-    ink64 l = avail;
+    int64 l = avail;
     if (l > sk)
       l = sk;
-    ink64 pos = cvio->ndone +  buffer_reader->read_avail();
+    int64 pos = cvio->ndone +  buffer_reader->read_avail();
     int o = pos % sk;
     if (l > sk - o)
       l = sk - o;
@@ -242,14 +242,14 @@ void CacheTestSM::fill_buffer() {
 }
 
 int CacheTestSM::check_buffer() {
-  ink64 avail = buffer_reader->read_avail();
+  int64 avail = buffer_reader->read_avail();
   CacheKey k = key;
   k.b[1] += content_salt;
   char b[sizeof(key)];
-  ink64 sk = (ink64)sizeof(key);
-  ink64 pos = cvio->ndone -  buffer_reader->read_avail();
+  int64 sk = (int64)sizeof(key);
+  int64 pos = cvio->ndone -  buffer_reader->read_avail();
   while (avail > 0) {
-    ink64 l = avail;
+    int64 l = avail;
     if (l > sk)
       l = sk;
     int o = pos % sk;

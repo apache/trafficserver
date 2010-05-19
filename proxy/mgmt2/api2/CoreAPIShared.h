@@ -73,9 +73,9 @@
 
 // used by INKReadFromUrl
 INKError parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size);
-INKError readHTTPResponse(int sock, char *buffer, int bufsize, inku64 timeout);
-INKError sendHTTPRequest(int sock, char *request, inku64 timeout);
-int connectDirect(const char *host, int port, inku64 timeout);
+INKError readHTTPResponse(int sock, char *buffer, int bufsize, uint64 timeout);
+INKError sendHTTPRequest(int sock, char *request, uint64 timeout);
+int connectDirect(const char *host, int port, uint64 timeout);
 
 // used by NetworkUtilRemote.cc and NetworkUtilLocal.cc
 int socket_read_timeout(int fd, int sec, int usec);

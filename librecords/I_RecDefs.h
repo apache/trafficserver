@@ -47,12 +47,12 @@ enum RecErrT
 
 #define RecStringNull NULL
 
-typedef ink64 RecInt;
-typedef ink64 RecLLong;
+typedef int64 RecInt;
+typedef int64 RecLLong;
 typedef float RecFloat;
 typedef char *RecString;
 typedef const char *RecStringConst;
-typedef ink64 RecCounter;
+typedef int64 RecCounter;
 
 enum RecT
 {
@@ -140,13 +140,13 @@ union RecData
 
 struct RecRawStat
 {
-  ink64 sum;
-  ink64 count;
+  int64 sum;
+  int64 count;
   // XXX - these will waist some space because they are only needed for the globals
   // this is a fix for bug TS-162, so I am trying to do as few code changes as
   // possible, this should be revisted -bcall
-  ink64 last_sum; // value from the last global sync
-  ink64 last_count; // value from the last global sync
+  int64 last_sum; // value from the last global sync
+  int64 last_count; // value from the last global sync
 };
 
 // WARNING!  It's advised that developers do not modify the contents of
@@ -154,7 +154,7 @@ struct RecRawStat
 
 struct RecRawStatBlock
 {
-  ink_off_t ethr_stat_offset;   // thread local raw-stat storage
+  off_t ethr_stat_offset;   // thread local raw-stat storage
   RecRawStat **global;          // global raw-stat storage (ptr to RecRecord)
   int num_stats;                // number of stats in this block
   int max_stats;                // maximum number of stats for this block

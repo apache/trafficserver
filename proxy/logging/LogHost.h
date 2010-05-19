@@ -51,7 +51,7 @@ class LogHost:public LogBufferSink
 //#endif
 
 public:
-    LogHost(char *object_filename, inku64 object_signature);
+    LogHost(char *object_filename, uint64 object_signature);
     LogHost(const LogHost &);
    ~LogHost();
 
@@ -101,7 +101,7 @@ private:
 
 private:
   char *m_object_filename;
-  inku64 m_object_signature;
+  uint64 m_object_signature;
   unsigned m_ip;
   char *m_ipstr;
   char *m_name;

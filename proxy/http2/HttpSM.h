@@ -261,7 +261,7 @@ public:
   void add_cache_sm();
   bool decide_cached_url(URL * s_url);
 
-  ink64 sm_id;
+  int64 sm_id;
   unsigned int magic;
 
   //YTS Team, yamsat Plugin

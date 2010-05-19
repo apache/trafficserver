@@ -623,8 +623,8 @@ public:
 
   struct StatRecord_t
   {
-    inku16 index;
-    ink64 increment;
+    uint16 index;
+    int64 increment;
   };
 
   enum CacheLookupResult_t
@@ -692,7 +692,7 @@ public:
 
     StatRecord_t stats[StatBlockEntries];
     StatBlock *next;
-    inku16 next_insert;
+    uint16 next_insert;
   };
 
   struct State;
@@ -1007,7 +1007,7 @@ public:
 
     char via_string[MAX_VIA_INDICES + 1];
 
-    ink64 state_machine_id;
+    int64 state_machine_id;
 
     HttpTransactMagic_t _separator7;
     //HttpAuthParams auth_params;
@@ -1590,7 +1590,7 @@ HttpTransact::update_stat(State * s, int stat, ink_statval_t increment)
     add_new_stat_block(s);
   }
 
-  inku16 *next_insert = &s->current_stats->next_insert;
+  uint16 *next_insert = &s->current_stats->next_insert;
   s->current_stats->stats[*next_insert].index = stat;
   s->current_stats->stats[*next_insert].increment = increment;
   (*next_insert)++;

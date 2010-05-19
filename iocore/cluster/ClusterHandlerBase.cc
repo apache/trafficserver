@@ -66,20 +66,20 @@ Continuation(NULL), len(0), size_index(-1), real_data(0), data(0), free_proc(0),
 }
 
 void
-ClusterControl::real_alloc_data(int read_access, bool align_ink32_on_non_ink64_boundary)
+ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_boundary)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
 
   ink_assert(!data);
-  if ((len + DATA_HDR + sizeof(ink32)) <= DEFAULT_MAX_BUFFER_SIZE) {
-    size_index = buffer_size_to_index(len + DATA_HDR + sizeof(ink32), MAX_BUFFER_SIZE_INDEX);
+  if ((len + DATA_HDR + sizeof(int32)) <= DEFAULT_MAX_BUFFER_SIZE) {
+    size_index = buffer_size_to_index(len + DATA_HDR + sizeof(int32), MAX_BUFFER_SIZE_INDEX);
     iob_block = new_IOBufferBlock();
     iob_block->alloc(size_index);       // aligns on 8 byte boundary
-    real_data = (ink64 *) iob_block->buf();
+    real_data = (int64 *) iob_block->buf();
 
-    if (align_ink32_on_non_ink64_boundary) {
-      data = ((char *) real_data) + sizeof(ink32) + DATA_HDR;
+    if (align_int32_on_non_int64_boundary) {
+      data = ((char *) real_data) + sizeof(int32) + DATA_HDR;
     } else {
       data = ((char *) real_data) + DATA_HDR;
     }
@@ -87,14 +87,14 @@ ClusterControl::real_alloc_data(int read_access, bool align_ink32_on_non_ink64_b
     memset((char *) real_data, 0, BUFFER_SIZE_FOR_INDEX(size_index));
 #endif
   } else {
-    int size = sizeof(ink64) * (((len + DATA_HDR + sizeof(ink32) + sizeof(ink64) - 1) / sizeof(ink64)) + 1);
+    int size = sizeof(int64) * (((len + DATA_HDR + sizeof(int32) + sizeof(int64) - 1) / sizeof(int64)) + 1);
     size_index = -1;
     iob_block = new_IOBufferBlock();
     iob_block->alloc(BUFFER_SIZE_FOR_XMALLOC(size));
-    real_data = (ink64 *) iob_block->buf();
+    real_data = (int64 *) iob_block->buf();
 
-    if (align_ink32_on_non_ink64_boundary) {
-      data = (char *) DOUBLE_ALIGN(real_data) + sizeof(ink32) + DATA_HDR;
+    if (align_int32_on_non_int64_boundary) {
+      data = (char *) DOUBLE_ALIGN(real_data) + sizeof(int32) + DATA_HDR;
     } else {
       data = (char *) DOUBLE_ALIGN(real_data) + DATA_HDR;
     }
@@ -140,8 +140,8 @@ ClusterControl::free_data()
       return;
     }
     if (real_data) {
-      ink_release_assert(*(((inku8 *) data) - DATA_HDR + 1) == (inku8) ALLOC_DATA_MAGIC);
-      *(((inku8 *) data) - DATA_HDR + 1) = (inku8) ~ ALLOC_DATA_MAGIC;
+      ink_release_assert(*(((uint8 *) data) - DATA_HDR + 1) == (uint8) ALLOC_DATA_MAGIC);
+      *(((uint8 *) data) - DATA_HDR + 1) = (uint8) ~ ALLOC_DATA_MAGIC;
 
       if (size_index >= 0) {
         ink_release_assert(*(((char *) data) - DATA_HDR) == size_index);
@@ -205,8 +205,8 @@ OutgoingControl::startEvent(int event, Event * e)
   if (!ch || !ch->thread)
     return EVENT_DONE;
 
-  ink32 cluster_fn = *(ink32 *) this->data;
-  ink32 pri = ClusterFuncToQpri(cluster_fn);
+  int32 cluster_fn = *(int32 *) this->data;
+  int32 pri = ClusterFuncToQpri(cluster_fn);
   ink_atomiclist_push(&ch->outgoing_control_al[pri], (void *) this);
 
   return EVENT_DONE;
@@ -267,7 +267,7 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
   iov = (IOVec *) iob_iov->data();
 
-  inku64 page_addr = (inku64) (((inku64) ((int_pointer) iov) + (inku64) pagesize) & ~(pagesize - 1));
+  uint64 page_addr = (uint64) (((uint64) ((int_pointer) iov) + (uint64) pagesize) & ~(pagesize - 1));
   iov = (IOVec *) ((int_pointer) page_addr);
 
 #if (defined(__sparc) || defined(__alpha))
@@ -285,13 +285,13 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   msg.iob_descriptor_block->alloc(BUFFER_SIZE_FOR_XMALLOC(size));
 
   char *a = msg.iob_descriptor_block->data->data();
-  page_addr = (inku64) (((inku64) ((int_pointer) a) + (inku64) pagesize) & ~(pagesize - 1));
+  page_addr = (uint64) (((uint64) ((int_pointer) a) + (uint64) pagesize) & ~(pagesize - 1));
 
 #if (defined(__sparc) || defined(__alpha))
   if (mprotect((char *) page_addr, pagesize, PROT_NONE))
     perror("ClusterState mprotect failed");
 #endif
-  a = (char *) ((int_pointer) (page_addr + (inku64) pagesize));
+  a = (char *) ((int_pointer) (page_addr + (uint64) pagesize));
   memset(a, 0, size - (2 * pagesize));
   msg.descriptor = (Descriptor *) (a + sizeof(ClusterMsgHeader));
 
@@ -1386,7 +1386,7 @@ ClusterHandler::dump_write_msg(int res)
   // Debug support for inter cluster message trace
   unsigned char x[4];
   memset(x, 0, sizeof(x));
-  *(inku32 *) & x = (inku32) net_vc->get_remote_addr().sin_addr.s_addr;
+  *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
 
   fprintf(stderr,
           "[W] %u.%u.%u.%u SeqNo=%d, Cnt=%d, CntlCnt=%d Todo=%d, Res=%d\n",
@@ -1405,7 +1405,7 @@ ClusterHandler::dump_read_msg()
   // Debug support for inter cluster message trace
   unsigned char x[4];
   memset(x, 0, sizeof(x));
-  *(inku32 *) & x = (inku32) net_vc->get_remote_addr().sin_addr.s_addr;
+  *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
 
   fprintf(stderr, "[R] %u.%u.%u.%u  SeqNo=%d, Cnt=%d, CntlCnt=%d\n",
           x[0], x[1], x[2], x[3], read.sequence_number, read.msg.count, read.msg.control_bytes);

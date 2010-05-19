@@ -49,7 +49,7 @@ struct ClusterControl:Continuation
 {
   int len;
   char size_index;
-  ink64 *real_data;
+  int64 *real_data;
   char *data;
   void (*free_proc) (void *);
   void *free_proc_arg;
@@ -72,7 +72,7 @@ struct ClusterControl:Continuation
   {
     // DATA_HDR = size_index (1 byte) + magicno (1 byte) + sizeof(this)
 
-    DATA_HDR = (sizeof(ink64) * 2)      // must be multiple of sizeof(ink64)
+    DATA_HDR = (sizeof(int64) * 2)      // must be multiple of sizeof(int64)
   };
 
   ClusterControl();
@@ -89,8 +89,8 @@ struct OutgoingControl:ClusterControl
   static OutgoingControl *alloc();
 
     OutgoingControl();
-  void alloc_data(bool align_ink32_on_non_ink64_boundary = true) {
-    real_alloc_data(1, align_ink32_on_non_ink64_boundary);      /* read access */
+  void alloc_data(bool align_int32_on_non_int64_boundary = true) {
+    real_alloc_data(1, align_int32_on_non_int64_boundary);      /* read access */
   }
 
   void set_data(char *adata, int alen)
@@ -131,8 +131,8 @@ struct IncomingControl:ClusterControl
   static IncomingControl *alloc();
 
     IncomingControl();
-  void alloc_data(bool align_ink32_on_non_ink64_boundary = true) {
-    real_alloc_data(0, align_ink32_on_non_ink64_boundary);      /* write access */
+  void alloc_data(bool align_int32_on_non_int64_boundary = true) {
+    real_alloc_data(0, align_int32_on_non_int64_boundary);      /* write access */
   }
   virtual void freeall();
 };
@@ -142,7 +142,7 @@ struct IncomingControl:ClusterControl
 //
 struct invoke_remote_data_args
 {
-  ink32 magicno;
+  int32 magicno;
   OutgoingControl *msg_oc;
   OutgoingControl *data_oc;
   int dest_channel;
@@ -169,27 +169,27 @@ struct invoke_remote_data_args
 
 struct Descriptor
 {                               // Note: Over the Wire structure
-  inku32 type:1;
-  inku32 channel:15;
-  inku16 sequence_number;       // lower 16 bits of the ClusterVCToken.seq
-  inku32 length;
+  uint32 type:1;
+  uint32 channel:15;
+  uint16 sequence_number;       // lower 16 bits of the ClusterVCToken.seq
+  uint32 length;
 
   inline void SwapBytes()
   {
-    swap16((inku16 *) this);    // Hack
-    swap16((inku16 *) & sequence_number);
-    swap32((inku32 *) & length);
+    swap16((uint16 *) this);    // Hack
+    swap16((uint16 *) & sequence_number);
+    swap32((uint32 *) & length);
   }
 };
 
 struct ClusterMsgHeader
 {                               // Note: Over the Wire structure
-  inku16 count;
-  inku16 descriptor_cksum;
-  inku16 control_bytes_cksum;
-  inku16 unused;
-  inku32 control_bytes;
-  inku32 count_check;
+  uint16 count;
+  uint16 descriptor_cksum;
+  uint16 control_bytes_cksum;
+  uint16 unused;
+  uint32 control_bytes;
+  uint32 count_check;
 
   void clear()
   {
@@ -205,12 +205,12 @@ struct ClusterMsgHeader
   }
   inline void SwapBytes()
   {
-    swap16((inku16 *) & count);
-    swap16((inku16 *) & descriptor_cksum);
-    swap16((inku16 *) & control_bytes_cksum);
-    swap16((inku16 *) & unused);
-    swap32((inku32 *) & control_bytes);
-    swap32((inku32 *) & count_check);
+    swap16((uint16 *) & count);
+    swap16((uint16 *) & descriptor_cksum);
+    swap16((uint16 *) & control_bytes_cksum);
+    swap16((uint16 *) & unused);
+    swap32((uint32 *) & control_bytes);
+    swap32((uint32 *) & count_check);
   }
 };
 
@@ -291,9 +291,9 @@ struct ClusterMsg
     did_large_control_msgs = 0;
     did_freespace_msgs = 0;
   }
-  inku16 calc_control_bytes_cksum()
+  uint16 calc_control_bytes_cksum()
   {
-    inku16 cksum = 0;
+    uint16 cksum = 0;
     char *p = (char *) &descriptor[count];
     char *endp = p + control_bytes;
     while (p < endp) {
@@ -302,9 +302,9 @@ struct ClusterMsg
     }
     return cksum;
   }
-  inku16 calc_descriptor_cksum()
+  uint16 calc_descriptor_cksum()
   {
-    inku16 cksum = 0;
+    uint16 cksum = 0;
     char *p = (char *) &descriptor[0];
     char *endp = (char *) &descriptor[count];
     while (p < endp) {
@@ -431,7 +431,7 @@ struct ClusterHandler:public ClusterHandlerBase
   ClusterMachine *machine;
   int ifd;
 
-  ink32 active;                 // handler currently running
+  int32 active;                 // handler currently running
   bool on_stolen_thread;
 
   struct ChannelData

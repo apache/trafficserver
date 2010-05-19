@@ -53,7 +53,7 @@ struct MIMEFieldSDKHandle;
 
 struct SDKAllocHdr
 {
-  inku32 m_magic;
+  uint32 m_magic;
   SDKAllocator *m_source;
   LINK(SDKAllocHdr, link);
 };

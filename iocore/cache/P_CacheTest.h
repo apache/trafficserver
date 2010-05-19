@@ -63,7 +63,7 @@ struct CacheTestHost {
 };
 
 struct CacheTestHeader {
-  inku64 serial;
+  uint64 serial;
 };
 
 struct CacheTestSM : RegressionSM {
@@ -80,13 +80,13 @@ struct CacheTestSM : RegressionSM {
   CacheHTTPInfo info;
   char urlstr[1024];
 #endif
-  ink64 total_size;
+  int64 total_size;
   CacheKey key;
   int repeat_count;
   int expect_event;
   int expect_initial_event;
   int initial_event;
-  inku64 content_salt;
+  uint64 content_salt;
   CacheTestHeader header;
   int end_memcpy_on_clone; // place all variables to be copied between these markers
 

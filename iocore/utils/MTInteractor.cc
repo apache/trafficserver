@@ -31,8 +31,8 @@
 
 #define MAYBE_FAIL_TRY_LOCK(_l,_t) \
   if (MUTEX_TAKE_TRY_LOCK(_l, _t)) { \
-    if ((inku32)_t->generator.random() < \
-       (inku32)(UINT_MAX * LOCK_FAIL_RATE)) { \
+    if ((uint32)_t->generator.random() < \
+       (uint32)(UINT_MAX * LOCK_FAIL_RATE)) { \
        MUTEX_UNTAKE_LOCK(_l,_t); \
        return false; \
     } else { \

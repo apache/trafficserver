@@ -86,8 +86,8 @@ class UnixNetVConnection:public NetVConnection
 {
 public:
 
-  virtual VIO *do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *buf);
-  virtual VIO *do_io_write(Continuation *c, ink64 nbytes, IOBufferReader *buf, bool owner = false);
+  virtual VIO *do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf);
+  virtual VIO *do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner = false);
 
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
   virtual void cancel_OOB();
@@ -166,7 +166,7 @@ public:
     (void) state;
   }
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
-  virtual ink64 load_buffer_and_write(ink64 towrite, ink64 &wattempted, ink64 &total_wrote, MIOBufferAccessor & buf);
+  virtual int64 load_buffer_and_write(int64 towrite, int64 &wattempted, int64 &total_wrote, MIOBufferAccessor & buf);
   void readTempPriority(NetHandler *nh, int priority);
   void readDisable(NetHandler *nh);
   void readSignalError(NetHandler *nh, int err);

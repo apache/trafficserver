@@ -25,7 +25,7 @@
 
 
 int
-CacheDisk::open(char *s, ink_off_t blocks, ink_off_t dir_skip, int fildes, bool clear)
+CacheDisk::open(char *s, off_t blocks, off_t dir_skip, int fildes, bool clear)
 {
   path = xstrdup(s);
   fd = fildes;
@@ -37,7 +37,7 @@ CacheDisk::open(char *s, ink_off_t blocks, ink_off_t dir_skip, int fildes, bool 
   io.aiocb.aio_fildes = fd;
   io.aiocb.aio_reqprio = 0;
   io.action = this;
-  inku64 l;
+  uint64 l;
   for (int i = 0; i < 3; i++) {
     l = (len * STORE_BLOCK_SIZE) - (start - skip);
     if (l >= MIN_PART_SIZE) {
@@ -53,7 +53,7 @@ CacheDisk::open(char *s, ink_off_t blocks, ink_off_t dir_skip, int fildes, bool 
   memset(disk_parts, 0, (l / MIN_PART_SIZE + 1) * sizeof(DiskPart **));
   header_len = ROUND_TO_BLOCK(header_len);
   start = skip + header_len;
-  num_usable_blocks = (ink_off_t(len * STORE_BLOCK_SIZE) - (start - start_offset)) >> STORE_BLOCK_SHIFT;
+  num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - start_offset)) >> STORE_BLOCK_SHIFT;
 
 #if defined(_WIN32)
   header = (DiskHeader *) malloc(header_len);
@@ -199,7 +199,7 @@ CacheDisk::syncDone(int event, void *data)
 
 /* size is in store blocks */
 DiskPartBlock *
-CacheDisk::create_partition(int number, ink_off_t size_in_blocks, int scheme)
+CacheDisk::create_partition(int number, off_t size_in_blocks, int scheme)
 {
   if (size_in_blocks == 0)
     return NULL;
@@ -209,7 +209,7 @@ CacheDisk::create_partition(int number, ink_off_t size_in_blocks, int scheme)
 
   if (!q)
     return NULL;
-  ink_off_t max_blocks = MAX_PART_SIZE >> STORE_BLOCK_SHIFT;
+  off_t max_blocks = MAX_PART_SIZE >> STORE_BLOCK_SHIFT;
   size_in_blocks = (size_in_blocks <= max_blocks) ? size_in_blocks : max_blocks;
 
   int blocks_per_part = PART_BLOCK_SIZE / STORE_BLOCK_SIZE;
@@ -251,7 +251,7 @@ CacheDisk::create_partition(int number, ink_off_t size_in_blocks, int scheme)
     DiskPartBlock *dpb = &header->part_info[header->num_diskpart_blks];
     *dpb = *p;
     dpb->len -= size_in_blocks;
-    dpb->offset += ((ink_off_t) size_in_blocks * STORE_BLOCK_SIZE);
+    dpb->offset += ((off_t) size_in_blocks * STORE_BLOCK_SIZE);
 
     DiskPartBlockQueue *new_q = NEW(new DiskPartBlockQueue());
     new_q->b = dpb;

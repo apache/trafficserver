@@ -102,7 +102,7 @@ void
 remove_event_client(EventClientT * client, InkHashTable * table)
 {
   // close client socket
-  ink_close_socket(client->sock_info.fd);       // close client socket
+  close_socket(client->sock_info.fd);       // close client socket
 
   // remove client binding from hash table
   ink_hash_table_delete(table, (char *) &client->sock_info.fd);
@@ -440,7 +440,7 @@ event_callback_main(void *arg)
   while (con_entry) {
     client_entry = (EventClientT *) ink_hash_table_entry_value(accepted_clients, con_entry);
     if (client_entry->sock_info.fd >= 0) {
-      ink_close_socket(client_entry->sock_info.fd);     // close socket
+      close_socket(client_entry->sock_info.fd);     // close socket
     }
     ink_hash_table_delete(accepted_clients, (char *) &client_entry->sock_info.fd);      // remove binding
     delete_event_client(client_entry);  // free ClientT

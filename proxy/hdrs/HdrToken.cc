@@ -309,9 +309,9 @@ int hdrtoken_num_wks = SIZEOF(_hdrtoken_strs);  // # of well-known strings
 const char *hdrtoken_strs[SIZEOF(_hdrtoken_strs)];      // wks_idx -> heap ptr
 int hdrtoken_str_lengths[SIZEOF(_hdrtoken_strs)];       // wks_idx -> length
 HdrTokenType hdrtoken_str_token_types[SIZEOF(_hdrtoken_strs)];  // wks_idx -> token type
-ink32 hdrtoken_str_slotids[SIZEOF(_hdrtoken_strs)];     // wks_idx -> slot id
-inku64 hdrtoken_str_masks[SIZEOF(_hdrtoken_strs)];      // wks_idx -> presence mask
-inku32 hdrtoken_str_flags[SIZEOF(_hdrtoken_strs)];      // wks_idx -> flags
+int32 hdrtoken_str_slotids[SIZEOF(_hdrtoken_strs)];     // wks_idx -> slot id
+uint64 hdrtoken_str_masks[SIZEOF(_hdrtoken_strs)];      // wks_idx -> presence mask
+uint32 hdrtoken_str_flags[SIZEOF(_hdrtoken_strs)];      // wks_idx -> flags
 
 DFA *hdrtoken_strs_dfa = NULL;
 

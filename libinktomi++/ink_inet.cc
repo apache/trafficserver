@@ -99,13 +99,13 @@ host_to_ip(char *hostname)
   return *(unsigned int *) he->h_addr;
 }
 
-inku32
+uint32
 ink_inet_addr(const char *s)
 {
-  inku32 u[4];
-  inku8 *pc = (inku8 *) s;
+  uint32 u[4];
+  uint8 *pc = (uint8 *) s;
   int n = 0;
-  inku32 base = 10;
+  uint32 base = 10;
 
   while (n < 4) {
 
@@ -142,23 +142,23 @@ ink_inet_addr(const char *s)
   }
 
   if (*pc && !ParseRules::is_wslfcr(*pc))
-    return htonl((inku32) - 1);
+    return htonl((uint32) - 1);
 
   switch (n) {
   case 1:
     return htonl(u[0]);
   case 2:
     if (u[0] > 0xff || u[1] > 0xffffff)
-      return htonl((inku32) - 1);
+      return htonl((uint32) - 1);
     return htonl((u[0] << 24) | u[1]);
   case 3:
     if (u[0] > 0xff || u[1] > 0xff || u[2] > 0xffff)
-      return htonl((inku32) - 1);
+      return htonl((uint32) - 1);
     return htonl((u[0] << 24) | (u[1] << 16) | u[2]);
   case 4:
     if (u[0] > 0xff || u[1] > 0xff || u[2] > 0xff || u[3] > 0xff)
-      return htonl((inku32) - 1);
+      return htonl((uint32) - 1);
     return htonl((u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3]);
   }
-  return htonl((inku32) - 1);
+  return htonl((uint32) - 1);
 }

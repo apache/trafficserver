@@ -34,34 +34,28 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <stdint.h>
 
-typedef char ink8;
-typedef unsigned char inku8;
-typedef short ink16;
-typedef unsigned short inku16;
-typedef int ink32;
-typedef unsigned int inku32;
-typedef long long ink64;
-typedef unsigned long long inku64;
-typedef off_t ink_off_t;
+typedef char int8;
+typedef unsigned char uint8;
+typedef short int16;
+typedef unsigned short uint16;
+typedef int int32;
+typedef unsigned int uint32;
+typedef long long int64;
+typedef unsigned long long uint64;
 
-#define INKU64_MAX (18446744073709551615ULL)
-#define INK64_MAX (9223372036854775807LL)
-#define INK64_MIN (-INK64_MAX -1LL)
-#define INKU32_MAX (4294967295U)
-#define INK32_MAX (2147483647)
-#define INK32_MIN (-2147483647-1)
+#ifndef INT64_MIN
+#define INTU64_MAX (18446744073709551615ULL)
+#define INT64_MAX (9223372036854775807LL)
+#define INT64_MIN (-INT64_MAX -1LL)
+#define INTU32_MAX (4294967295U)
+#define INT32_MAX (2147483647)
+#define INT32_MIN (-2147483647-1)
+#endif
 
-#define _CRTIMP
-#define HAVE_64_BIT
-
-#if (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin) || (HOST_OS == solaris)
 #define POSIX_THREAD
 #define POSIX_THREAD_10031c
-#else
-/* # define POSIX_THREAD */
-#error "Unknown OS!"
-#endif
 
 #ifndef ETIME
 #ifdef ETIMEDOUT

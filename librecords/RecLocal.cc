@@ -62,7 +62,7 @@ sync_thr(void *data)
       RecFileWrite(h_file, tb.bufPtr(), tb.spaceUsed(), &nbytes);
       RecFileClose(h_file);
     }
-    ink_sleep(REC_REMOTE_SYNC_INTERVAL_SEC);
+    sleep(REC_REMOTE_SYNC_INTERVAL_SEC);
   }
   return NULL;
 }
@@ -104,7 +104,7 @@ sync_thr(void *data)
         RecFileClose(h_file);
       }
     }
-    ink_sleep(REC_REMOTE_SYNC_INTERVAL_SEC);
+    sleep(REC_REMOTE_SYNC_INTERVAL_SEC);
   }
   return NULL;
 }
@@ -121,7 +121,7 @@ config_update_thr(void *data)
   REC_NOWARN_UNUSED(data);
   while (true) {
     RecExecConfigUpdateCbs();
-    ink_sleep(REC_CONFIG_UPDATE_INTERVAL_SEC);
+    sleep(REC_CONFIG_UPDATE_INTERVAL_SEC);
   }
   return NULL;
 }

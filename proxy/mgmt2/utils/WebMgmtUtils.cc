@@ -668,7 +668,7 @@ MbytesFromLLong(RecLLong bytes, char *bufVal)
 void
 bytesFromInt(RecInt bytes, char *bufVal)
 {
-  const ink64 gb = 1073741824;
+  const int64 gb = 1073741824;
   const long int mb = 1048576;
   const long int kb = 1024;
   int bytesP;
@@ -705,7 +705,7 @@ bytesFromInt(RecInt bytes, char *bufVal)
 void
 bytesFromLLong(RecLLong bytes, char *bufVal)
 {
-  const ink64 gb = 1073741824;
+  const int64 gb = 1073741824;
   const long int mb = 1048576;
   const long int kb = 1024;
   double unitBytes;
@@ -1535,7 +1535,7 @@ processSpawn(const char *args[],
   } else if (pid == 0) {        // child process
     // close all the listening port in child process
     for (int i = 0; i < MAX_PROXY_SERVER_PORTS && lmgmt->proxy_server_fd[i] >= 0; i++) {
-      ink_close_socket(lmgmt->proxy_server_fd[i]);
+      close_socket(lmgmt->proxy_server_fd[i]);
     }
     // set uid to be the effective uid if it's run as root
     if (run_as_root) {
@@ -1670,7 +1670,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
   dirEntry = (struct dirent *) xmalloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
 
   struct dirent *result;
-  while (ink_readdir_r(dir, dirEntry, &result) == 0) {
+  while (readdir_r(dir, dirEntry, &result) == 0) {
     if (!result)
       break;
     fileName = dirEntry->d_name;

@@ -488,7 +488,7 @@ encryptToFileAuth_malloc(const char *password)
   time_t my_time_t;
   time(&my_time_t);
   memset(file_path, 0, MAX_TMP_BUF_LEN);
-  snprintf(file_path, MAX_TMP_BUF_LEN, "%s%spwd_%lld.enc", dir_path, DIR_SEP, (ink64)my_time_t);
+  snprintf(file_path, MAX_TMP_BUF_LEN, "%s%spwd_%lld.enc", dir_path, DIR_SEP, (int64)my_time_t);
   if (dir_path)
     xfree(dir_path);
 
@@ -2616,7 +2616,7 @@ handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
         //     size
         dirEntry = (struct dirent *) xmalloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
         struct dirent *result;
-        while (ink_readdir_r(dir, dirEntry, &result) == 0) {
+        while (readdir_r(dir, dirEntry, &result) == 0) {
           if (!result)
             break;
           fileName = dirEntry->d_name;
@@ -3981,7 +3981,7 @@ read_request(WebHttpContext * whc)
     if (ioctlsocket(whc->si.fd, FIONREAD, &i) != SOCKET_ERROR) {
       if (i) {
         char *buf = (char *) alloca(i * sizeof(char));
-        ink_read_socket(whc->si.fd, buf, i);
+        read_socket(whc->si.fd, buf, i);
       }
     }
   }
@@ -4388,7 +4388,7 @@ Ltransaction_send:
     }
   }
 #endif
-  ink_close_socket(whc->si.fd);
+  close_socket(whc->si.fd);
   whc->si.fd = -1;
 
   // log transaction
@@ -4408,7 +4408,7 @@ Ltransaction_close:
       }
     }
 #endif
-    ink_close_socket(whc->si.fd);
+    close_socket(whc->si.fd);
   }
   // clean up ssl
   if (whc->server_state & WEB_HTTP_SERVER_STATE_SSL_ENABLED)

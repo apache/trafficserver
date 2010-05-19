@@ -29,7 +29,7 @@
 #include "ink_resource.h"
 #include "ink_stack_trace.h"
 
-volatile ink64 resource_allocated_mem = 0;
+volatile int64 resource_allocated_mem = 0;
 volatile int res_track_memory = RES_TRACK_MEMORY_DEFAULT;
 
 #ifdef TRACK_MEMORY
@@ -75,10 +75,10 @@ volatile int res_zorch_mem = 0;
 volatile int res_fence_post = 0;
 
 #define res_memadd(_x_) \
-   ink_atomic_increment64(&resource_allocated_mem, (ink64) (_x_));
+   ink_atomic_increment64(&resource_allocated_mem, (int64) (_x_));
 
 #define res_memsub(_x_) \
-   ink_atomic_increment64(&resource_allocated_mem, (ink64) -(_x_));
+   ink_atomic_increment64(&resource_allocated_mem, (int64) -(_x_));
 
 static int
 _xres_init()
@@ -234,7 +234,7 @@ res_lookup(const char *path)
   -------------------------------------------------------------------------*/
 
 static Resource *
-res_stat(const char *path, ink64 value)
+res_stat(const char *path, int64 value)
 {
   if (path) {
     Resource *res;
@@ -319,7 +319,7 @@ _xfree(void *ptr)
 
       if (info->res) {
         res_check(info->res);
-        res_inc(info->res, -((ink64) info->size));
+        res_inc(info->res, -((int64) info->size));
       }
 
       mem = (char *) info;
@@ -457,7 +457,7 @@ _xrealloc(void *ptr, unsigned int size, const char *path)
 
     if (info->res) {
       res_check(info->res);
-      res_inc(info->res, -((ink64) info->size));
+      res_inc(info->res, -((int64) info->size));
     }
 
     mem = (char *) info;
@@ -537,7 +537,7 @@ _xtrack(void *ptr, const char *path)
 
     if (info->res) {
       res_check(info->res);
-      res_inc(info->res, -((ink64) info->size));
+      res_inc(info->res, -((int64) info->size));
     }
 
     if (res_track_memory) {
@@ -571,8 +571,8 @@ void
 xdump_to_file_baseline_rel(FILE * fp)
 {
   Resource *res;
-  ink64 value;
-  ink64 diff;
+  int64 value;
+  int64 diff;
   int i;
   struct timeval timestamp;
   char time_string[32], *time_str;
@@ -613,8 +613,8 @@ void
 xdump_to_file(FILE * fp)
 {
   Resource *res;
-  ink64 value;
-  ink64 diff;
+  int64 value;
+  int64 diff;
   int i;
   struct timeval timestamp;
   char time_string[32], *time_str;

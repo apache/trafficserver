@@ -22,7 +22,7 @@
  */
 
 #include <stdio.h>
-typedef unsigned long long inku64;
+typedef unsigned long long uint64;
 
 //
 // fast memchr
@@ -84,15 +84,15 @@ ink_memchr(const void *as, int ac, size_t an)
     s += 4;
   }
   // next 8x bytes
-  inku64 m = 0x7efefefefefefeffLL;
-  inku64 b = ((inku64) ib);
+  uint64 m = 0x7efefefefefefeffLL;
+  uint64 b = ((uint64) ib);
   b |= (b << 32);
-  inku64 *p = (inku64 *) s;
+  uint64 *p = (uint64 *) s;
   unsigned int n = (((unsigned int) an) - (s - (unsigned char *) as)) >> 3;
-  inku64 *end = p + n;
+  uint64 *end = p + n;
   while (p < end) {
-    inku64 bp = *p;
-    inku64 bb = bp ^ b;
+    uint64 bp = *p;
+    uint64 bb = bp ^ b;
     bb = ((bb + m) ^ ~bb) & ~m;
     if (bb) {
       s = (unsigned char *) p;

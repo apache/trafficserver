@@ -53,9 +53,9 @@ public:
 
   SLINK(UDPPacketInternal, alink);  // atomic link
   // packet scheduling stuff: keep it a doubly linked list
-  inku64 pktSendStartTime;
-  inku64 pktSendFinishTime;
-  inku32 pktLength;
+  uint64 pktSendStartTime;
+  uint64 pktSendFinishTime;
+  uint32 pktLength;
 
   bool isReliabilityPkt;
 
@@ -67,7 +67,7 @@ public:
   // "WMT seq. #", WMT code maintains a mapping betweeen WMT seq. # and TS
   // seq. #.  If pktTSSeqNum is set to -1, then this value is ignored by the
   // UDP code.
-  ink64 pktTSSeqNum;
+  int64 pktTSSeqNum;
 
   ink_hrtime delivery_time;   // when to deliver packet
   ink_hrtime arrival_time;    // when packet arrived
@@ -145,7 +145,7 @@ UDPPacket::setReliabilityPkt()
 }
 
 TS_INLINE void
-UDPPacket::setPktTSSeq(ink64 seqno)
+UDPPacket::setPktTSSeq(int64 seqno)
 {
   UDPPacketInternal *p = (UDPPacketInternal *) this;
   p->pktTSSeqNum = seqno;

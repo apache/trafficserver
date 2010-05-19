@@ -449,7 +449,7 @@ handleRaf(int fd)
 
   }
 
-  ink_close_socket(fd);
+  close_socket(fd);
 }
 
 

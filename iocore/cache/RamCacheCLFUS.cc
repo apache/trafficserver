@@ -45,20 +45,20 @@
 
 struct RamCacheCLFUSEntry {
   INK_MD5 key;
-  inku32 auxkey1;
-  inku32 auxkey2;
-  inku64 hits;
-  inku32 size; // memory used including paddding in buffer
-  inku32 len;  // actual data length
-  inku32 compressed_len;
+  uint32 auxkey1;
+  uint32 auxkey2;
+  uint64 hits;
+  uint32 size; // memory used including paddding in buffer
+  uint32 len;  // actual data length
+  uint32 compressed_len;
   union {
     struct {
-      inku32 compressed:3; // compression type
-      inku32 incompressible:1;
-      inku32 lru:1;
-      inku32 copy:1; // copy-in-copy-out
+      uint32 compressed:3; // compression type
+      uint32 incompressible:1;
+      uint32 lru:1;
+      uint32 copy:1; // copy-in-copy-out
     };
-    inku32 flags;
+    uint32 flags;
   };
   LINK(RamCacheCLFUSEntry, lru_link);
   LINK(RamCacheCLFUSEntry, hash_link);
@@ -66,25 +66,25 @@ struct RamCacheCLFUSEntry {
 };
 
 struct RamCacheCLFUS : RamCache {
-  ink64 max_bytes;
-  ink64 bytes;
-  ink64 objects;
+  int64 max_bytes;
+  int64 bytes;
+  int64 objects;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
-  int put(INK_MD5 *key, IOBufferData *data, inku32 len, bool copy = false, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
-  int fixup(INK_MD5 *key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2);
+  int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32 auxkey1 = 0, uint32 auxkey2 = 0);
+  int put(INK_MD5 *key, IOBufferData *data, uint32 len, bool copy = false, uint32 auxkey1 = 0, uint32 auxkey2 = 0);
+  int fixup(INK_MD5 *key, uint32 old_auxkey1, uint32 old_auxkey2, uint32 new_auxkey1, uint32 new_auxkey2);
 
-  void init(ink64 max_bytes, Part *part);
+  void init(int64 max_bytes, Part *part);
 
   // private
   Part *part; // for stats
-  ink64 history;
+  int64 history;
   int ibuckets;
   int nbuckets;
   DList(RamCacheCLFUSEntry, hash_link) *bucket;
   Que(RamCacheCLFUSEntry, lru_link) lru[2];
-  inku16 *seen;
+  uint16 *seen;
   int ncompressed;
   RamCacheCLFUSEntry *compressed; // first uncompressed lru[0] entry
   void compress_entries(int do_at_most = INT_MAX);
@@ -109,11 +109,11 @@ const static int bucket_sizes[] = {
 void RamCacheCLFUS::resize_hashtable() {
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
-  ink64 s = anbuckets * sizeof(DList(RamCacheCLFUSEntry, hash_link));
+  int64 s = anbuckets * sizeof(DList(RamCacheCLFUSEntry, hash_link));
   DList(RamCacheCLFUSEntry, hash_link) *new_bucket = (DList(RamCacheCLFUSEntry, hash_link) *)xmalloc(s);
   memset(new_bucket, 0, s);
   if (bucket) {
-    for (ink64 i = 0; i < nbuckets; i++) {
+    for (int64 i = 0; i < nbuckets; i++) {
       RamCacheCLFUSEntry *e = 0;
       while ((e = bucket[i].pop()))
         new_bucket[e->key.word(3) % anbuckets].push(e);
@@ -123,12 +123,12 @@ void RamCacheCLFUS::resize_hashtable() {
   bucket = new_bucket;
   nbuckets = anbuckets;
   if (seen) xfree(seen);
-  int size = bucket_sizes[ibuckets] * sizeof(inku16);
-  seen = (inku16*)xmalloc(size);
+  int size = bucket_sizes[ibuckets] * sizeof(uint16);
+  seen = (uint16*)xmalloc(size);
   memset(seen, 0, size);
 }
 
-void RamCacheCLFUS::init(ink64 abytes, Part *apart) {
+void RamCacheCLFUS::init(int64 abytes, Part *apart) {
   part = apart;
   max_bytes = abytes;
   DDebug("ram_cache", "initializing ram_cache %lld bytes", abytes);
@@ -139,7 +139,7 @@ void RamCacheCLFUS::init(ink64 abytes, Part *apart) {
 
 #ifdef CHECK_ACOUNTING
 static void check_accounting(RamCacheCLFUS *c) {
-  ink64 x = 0, xsize = 0, h = 0;
+  int64 x = 0, xsize = 0, h = 0;
   RamCacheCLFUSEntry *y = c->lru[0].head;
   while (y) { x++; xsize += y->size + ENTRY_OVERHEAD; y = y->lru_link.next; }
   y = c->lru[1].head;
@@ -152,10 +152,10 @@ static void check_accounting(RamCacheCLFUS *c) {
 #define check_accounting(_c)
 #endif
 
-int RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, inku32 auxkey1, inku32 auxkey2) {
+int RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32 auxkey1, uint32 auxkey2) {
   if (!max_bytes)
     return 0;
-  ink64 i = key->word(3) % nbuckets;
+  int64 i = key->word(3) % nbuckets;
   RamCacheCLFUSEntry *e = bucket[i].head;
   char *b = 0;
   while (e) {
@@ -197,7 +197,7 @@ int RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, inku32 auxkey1
           IOBufferData *data = new_xmalloc_IOBufferData(b, e->len);
           data->_mem_type = DEFAULT_ALLOC;
           if (!e->copy) { // don't bother if we have to copy anyway
-            ink64 delta = ((ink64)e->compressed_len) - (ink64)e->size;
+            int64 delta = ((int64)e->compressed_len) - (int64)e->size;
             bytes += delta;
             CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
             e->size = e->compressed_len;
@@ -253,7 +253,7 @@ void RamCacheCLFUS::tick() {
 Lfree:
   e->lru = 0;
   history--;
-  inku32 b = e->key.word(3) % nbuckets;
+  uint32 b = e->key.word(3) % nbuckets;
   bucket[b].remove(e);
   DDebug("ram_cache", "put %X %d %d size %d FREED", e->key.word(3), e->auxkey1, e->auxkey2, e->size);
   THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_ethread());
@@ -291,7 +291,7 @@ RamCacheCLFUSEntry *RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e) {
     e->data = NULL;
   } else
     history--;
-  inku32 b = e->key.word(3) % nbuckets;
+  uint32 b = e->key.word(3) % nbuckets;
   bucket[b].remove(e);
   DDebug("ram_cache", "put %X %d %d DESTROYED", e->key.word(3), e->auxkey1, e->auxkey2);
   THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_ethread());
@@ -367,7 +367,7 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
         memcpy(bb, b, l);
         xfree(b);
         e->compressed_len = l;
-        ink64 delta = ((ink64)l) - (ink64)e->size;
+        int64 delta = ((int64)l) - (int64)e->size;
         bytes += delta;
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
         e->size = l;
@@ -376,7 +376,7 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
         e->compressed = 0;
         bb = (char*)xmalloc(e->len);
         memcpy(bb, e->data->data(), e->len);
-        ink64 delta = ((ink64)e->len) - (ink64)e->size;
+        int64 delta = ((int64)e->len) - (int64)e->size;
         bytes += delta;
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
         e->size = e->len;
@@ -411,12 +411,12 @@ void RamCacheCLFUS::requeue_victims(RamCacheCLFUS *c, Que(RamCacheCLFUSEntry, lr
   }
 }
 
-int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, inku32 len, bool copy, inku32 auxkey1, inku32 auxkey2) {
+int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32 len, bool copy, uint32 auxkey1, uint32 auxkey2) {
   if (!max_bytes)
     return 0;
-  inku32 i = key->word(3) % nbuckets;
+  uint32 i = key->word(3) % nbuckets;
   RamCacheCLFUSEntry *e = bucket[i].head;
-  inku32 size = copy ? len : data->block_size();
+  uint32 size = copy ? len : data->block_size();
   while (e) {
     if (e->key == *key) {
       if (e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2)
@@ -434,7 +434,7 @@ int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, inku32 len, bool copy, 
       move_compressed(e);
       lru[e->lru].remove(e);
       lru[e->lru].enqueue(e);
-      ink64 delta = ((ink64)size) - (ink64)e->size;
+      int64 delta = ((int64)size) - (int64)e->size;
       bytes += delta;
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
       if (!copy) {
@@ -461,9 +461,9 @@ int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, inku32 len, bool copy, 
     if (bytes + size <= max_bytes)
       goto Linsert;
   if (!e) {
-    inku32 s = key->word(3) % bucket_sizes[ibuckets];
-    inku16 k = key->word(3) >> 16;
-    inku16 kk = seen[s];
+    uint32 s = key->word(3) % bucket_sizes[ibuckets];
+    uint16 k = key->word(3) >> 16;
+    uint16 kk = seen[s];
     seen[s] = k;
     if (history >= objects && kk != k) {
       DDebug("ram_cache", "put %X %d %d size %d UNSEEN", key->word(3), auxkey1, auxkey2, size);
@@ -569,10 +569,10 @@ Lhistory:
   return 0;
 }
 
-int RamCacheCLFUS::fixup(INK_MD5 * key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2) {
+int RamCacheCLFUS::fixup(INK_MD5 * key, uint32 old_auxkey1, uint32 old_auxkey2, uint32 new_auxkey1, uint32 new_auxkey2) {
   if (!max_bytes)
     return 0;
-  inku32 i = key->word(3) % nbuckets;
+  uint32 i = key->word(3) % nbuckets;
   RamCacheCLFUSEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey1 == old_auxkey1 && e->auxkey2 == old_auxkey2) {

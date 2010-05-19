@@ -91,9 +91,9 @@ ink_mutex debug_sm_list_mutex;
 //  make_scatter_list should be called only once (during static
 //  initialization, since it isn't thread safe).
 
-#define MAX_SCATTER_LEN  (sizeof(HttpSM)/sizeof(inku32) + 1)
-static inku32 val[MAX_SCATTER_LEN];
-static inku16 to[MAX_SCATTER_LEN];
+#define MAX_SCATTER_LEN  (sizeof(HttpSM)/sizeof(uint32) + 1)
+static uint32 val[MAX_SCATTER_LEN];
+static uint16 to[MAX_SCATTER_LEN];
 static int scat_count = 0;
 
 
@@ -127,8 +127,8 @@ HttpSM::_make_scatter_list(HttpSM * prototype)
   int j;
   int total_len = sizeof(HttpSM);
 
-  inku32 *p = (inku32 *) prototype;
-  int n = total_len / sizeof(inku32);
+  uint32 *p = (uint32 *) prototype;
+  int n = total_len / sizeof(uint32);
   scat_count = 0;
   for (j = 0; j < n; j++) {
     if (p[j]) {
@@ -152,7 +152,7 @@ HttpSM::_instantiate_func(HttpSM * prototype, HttpSM * new_instance)
 #ifndef SIMPLE_MEMCPY_INIT
   memset(((char *) new_instance), 0, pre_history_len);
   memset(((char *) new_instance) + post_offset, 0, post_history_len);
-  inku32 *pd = (inku32 *) new_instance;
+  uint32 *pd = (uint32 *) new_instance;
   for (j = 0; j < scat_count; j++) {
     pd[to[j]] = val[j];
   }
@@ -401,14 +401,14 @@ HttpSM::init()
   redirect_url_len = 0;
 
   // Unique state machine identifier.
-  //  changed next_sm_id from ink64 to int because
+  //  changed next_sm_id from int64 to int because
   //  atomic(32) is faster than atomic64.  The id is just
   //  for debugging, so it's OK if it wraps every few days,
   //  as long as the http_info bucket hash still works.
   //  (To test this, initialize next_sm_id to 0x7ffffff0)
-  //  Leaving sm_id as ink64 to minimize code changes.
+  //  Leaving sm_id as int64 to minimize code changes.
 
-  sm_id = (ink64) ink_atomic_increment((&next_sm_id), 1);
+  sm_id = (int64) ink_atomic_increment((&next_sm_id), 1);
   t_state.state_machine_id = sm_id;
   t_state.state_machine = this;
 
@@ -3940,7 +3940,7 @@ HttpSM::do_hostdb_reverse_lookup()
 
   Debug("http_seq", "[HttpSM::do_hostdb_reverse_lookup] Doing reverse DNS Lookup");
 
-  inku32 addr = ink_inet_addr(t_state.dns_info.lookup_name);
+  uint32 addr = ink_inet_addr(t_state.dns_info.lookup_name);
   Action *dns_lookup_action_handle = hostDBProcessor.getbyaddr_re(this, addr);
 
   if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
@@ -4379,7 +4379,7 @@ HttpSM::do_http_server_open(bool raw)
   // Atomically read the current number of connections and check to see
   // if we have gone above the max allowed.
   if (t_state.http_config_param->server_max_connections > 0) {
-    ink64 Count, Sum;
+    int64 Count, Sum;
     HTTP_READ_DYN_STAT(http_current_server_connections_stat, Count, Sum);
     // Note that there is a potential race condition here where
     // the value of the http_current_server_connections_stat gets changed

@@ -89,7 +89,7 @@ static const int FILESIZE_SAFE_THRESHOLD_FACTOR = 10;
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format,
-                 inku64 signature, size_t ascii_buffer_size, size_t max_line_size, size_t overspill_report_count)
+                 uint64 signature, size_t ascii_buffer_size, size_t max_line_size, size_t overspill_report_count)
   :
 m_file_format(format),
 m_name(xstrdup(name)),
@@ -865,7 +865,7 @@ LogFile::do_filesystem_checks()
     Error("Filesystem checks for log file %s failed: %s", m_name, strerror(errno));
     ret_val = -1;
   } else if (m_has_size_limit) {
-    inku64 safe_threshold =
+    uint64 safe_threshold =
       (m_file_format == ASCII_PIPE ? 0 : Log::config->log_buffer_size * FILESIZE_SAFE_THRESHOLD_FACTOR);
     if (safe_threshold > m_size_limit_bytes) {
       Error("Filesize limit is too low for log file %s", m_name);
@@ -939,7 +939,7 @@ MetaInfo::_read_from_file()
         } else if (strcmp(t, "object_signature") == 0) {
           t = tok.getNext();
           if (t) {
-            _log_object_signature = (inku64) ink_atoll(t);
+            _log_object_signature = (uint64) ink_atoll(t);
             _flags |= VALID_SIGNATURE;
             Debug("log2-meta", "MetaInfo::_read_from_file\n"
                   "\tfilename = %s\n"

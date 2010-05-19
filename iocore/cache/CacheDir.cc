@@ -379,7 +379,7 @@ dir_clean_part(Part *d)
 }
 
 void
-dir_clear_range(ink_off_t start, ink_off_t end, Part *part)
+dir_clear_range(off_t start, off_t end, Part *part)
 {
   for (int i = 0; i < part->buckets * DIR_DEPTH * part->segments; i++) {
     Dir *e = dir_index(part, i);
@@ -452,7 +452,7 @@ dir_segment_accounted(int s, Part *d, int offby, int *f, int *u, int *et, int *v
   int free = dir_freelist_length(d, s);
   int used = 0, empty = 0;
   int valid = 0, agg_valid = 0;
-  ink64 agg_size = 0;
+  int64 agg_size = 0;
   Dir *seg = dir_segment(s, d);
   for (int bi = 0; bi < d->buckets; bi++) {
     Dir *b = dir_bucket(bi, seg);
@@ -847,7 +847,7 @@ dir_sync_init()
 }
 
 void
-CacheSync::aio_write(int fd, char *b, int n, ink_off_t o)
+CacheSync::aio_write(int fd, char *b, int n, off_t o)
 {
   io.aiocb.aio_fildes = fd;
   io.aiocb.aio_offset = o;
@@ -858,11 +858,11 @@ CacheSync::aio_write(int fd, char *b, int n, ink_off_t o)
   ink_assert(ink_aio_write(&io) >= 0);
 }
 
-inku64
+uint64
 dir_entries_used(Part *d)
 {
-  inku64 full = 0;
-  inku64 sfull = 0;
+  uint64 full = 0;
+  uint64 sfull = 0;
   for (int s = 0; s < d->segments; full += sfull, s++) {
     Dir *seg = dir_segment(s, d);
     sfull = 0;
@@ -960,7 +960,7 @@ sync_cache_dir_on_shutdown(void)
     CHECK_DIR(d);
     memcpy(buf, d->raw_dir, dirlen);
     int B = d->header->sync_serial & 1;
-    ink_off_t start = d->skip + (B ? dirlen : 0);
+    off_t start = d->skip + (B ? dirlen : 0);
     B = pwrite(d->fd, buf, dirlen, start);
     ink_debug_assert(B == dirlen);
     Debug("cache_dir_sync", "done syncing dir for part %s", d->hash_id);
@@ -1061,7 +1061,7 @@ Lrestart:
       d->dir_sync_in_progress = 1;
     }
     int B = d->header->sync_serial & 1;
-    ink_off_t start = d->skip + (B ? dirlen : 0);
+    off_t start = d->skip + (B ? dirlen : 0);
 
     if (!writepos) {
       // write header
@@ -1138,8 +1138,8 @@ Part::dir_check(bool fix)
   int total = buckets * segments * DIR_DEPTH;
   printf("    Directory for [%s]\n", hash_id);
   printf("        Bytes:     %d\n", total * SIZEOF_DIR);
-  printf("        Segments:  %lld\n", (inku64)segments);
-  printf("        Buckets:   %lld\n", (inku64)buckets);
+  printf("        Segments:  %lld\n", (uint64)segments);
+  printf("        Buckets:   %lld\n", (uint64)buckets);
   printf("        Entries:   %d\n", total);
   printf("        Full:      %d\n", full);
   printf("        Empty:     %d\n", empty);
@@ -1175,7 +1175,7 @@ Part::dir_check(bool fix)
 //
 
 // permutation table
-inku8 CacheKey_next_table[256] = {
+uint8 CacheKey_next_table[256] = {
   21, 53, 167, 51, 255, 126, 241, 151,
   115, 66, 155, 174, 226, 215, 80, 188,
   12, 95, 8, 24, 162, 201, 46, 104,
@@ -1211,7 +1211,7 @@ inku8 CacheKey_next_table[256] = {
 };
 
 // permutation table
-inku8 CacheKey_prev_table[256] = {
+uint8 CacheKey_prev_table[256] = {
   57, 55, 119, 141, 158, 152, 218, 165,
   18, 178, 89, 172, 16, 68, 34, 146,
   153, 233, 114, 48, 229, 0, 187, 154,
@@ -1344,11 +1344,11 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int atype, int *status)
     regress_rand_CacheKey(&key);
     dir_insert(&key, d, &dir);
   }
-  inku64 us = (ink_get_hrtime_internal() - ttime) / HRTIME_USECOND;
+  uint64 us = (ink_get_hrtime_internal() - ttime) / HRTIME_USECOND;
   //On windows us is sometimes 0. I don't know why.
   //printout the insert rate only if its not 0
   if (us)
-    rprintf(t, "insert rate = %d / second\n", (int) ((newfree * (inku64) 1000000) / us));
+    rprintf(t, "insert rate = %d / second\n", (int) ((newfree * (uint64) 1000000) / us));
   regress_rand_init(13);
   ttime = ink_get_hrtime_internal();
   for (i = 0; i < newfree; i++) {
@@ -1361,7 +1361,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int atype, int *status)
   //On windows us is sometimes 0. I don't know why.
   //printout the probe rate only if its not 0
   if (us)
-    rprintf(t, "probe rate = %d / second\n", (int) ((newfree * (inku64) 1000000) / us));
+    rprintf(t, "probe rate = %d / second\n", (int) ((newfree * (uint64) 1000000) / us));
 
 
   for (int c = 0; c < part_dirlen(d) * 0.1; c++) {

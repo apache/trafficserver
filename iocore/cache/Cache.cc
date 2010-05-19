@@ -54,7 +54,7 @@ do { \
 
 // Configuration
 
-ink64 cache_config_ram_cache_size = AUTO_SIZE_RAM_CACHE;
+int64 cache_config_ram_cache_size = AUTO_SIZE_RAM_CACHE;
 int cache_config_ram_cache_algorithm = 0;
 int cache_config_ram_cache_compress = 0;
 int cache_config_ram_cache_compress_percent = 90;
@@ -65,8 +65,8 @@ int cache_config_vary_on_user_agent = 0;
 int cache_config_select_alternate = 1;
 int cache_config_max_doc_size = 0;
 int cache_config_min_average_object_size = ESTIMATED_OBJECT_SIZE;
-ink64 cache_config_ram_cache_cutoff = 1048576;  // 1 MB
-//ink64 cache_config_ram_cache_mixt_cutoff = 1048576;     // 1 MB
+int64 cache_config_ram_cache_cutoff = 1048576;  // 1 MB
+//int64 cache_config_ram_cache_mixt_cutoff = 1048576;     // 1 MB
 int cache_config_max_disk_errors = 5;
 int cache_config_agg_write_backlog = 5242880;
 #ifdef HIT_EVACUATE
@@ -88,7 +88,7 @@ Cache *caches[1 << NumCacheFragTypes] = { 0 };
 CacheSync *cacheDirSync = 0;
 Store theCacheStore;
 volatile int CacheProcessor::initialized = CACHE_INITIALIZING;
-volatile inku32 CacheProcessor::cache_ready = 0;
+volatile uint32 CacheProcessor::cache_ready = 0;
 volatile int CacheProcessor::start_done = 0;
 int CacheProcessor::clear = 0;
 int CacheProcessor::fix = 0;
@@ -109,7 +109,7 @@ CacheKey zero_key(0, 0);
 
 struct PartInitInfo
 {
-  ink_off_t recover_pos;
+  off_t recover_pos;
   AIOCallbackInternal part_aio[4];
   char *part_h_f;
 
@@ -140,10 +140,10 @@ Queue<CachePart> cp_list;
 int cp_list_len = 0;
 ConfigPartitions config_partitions;
 
-ink64
+int64
 cache_bytes_used(void)
 {
-  inku64 used = 0;
+  uint64 used = 0;
   for (int i = 0; i < gnpart; i++) {
     if (!DISK_BAD(gpart[i]->disk)) {
       if (!gpart[i]->header->cycle)
@@ -155,10 +155,10 @@ cache_bytes_used(void)
   return used;
 }
 
-ink64
+int64
 cache_bytes_total(void)
 {
-  ink64 total = 0;
+  int64 total = 0;
   for (int i = 0; i < gnpart; i++)
     total += gpart[i]->len - part_dirlen(gpart[i]) - EVACUATION_SIZE;
 
@@ -209,7 +209,7 @@ CacheVC::CacheVC():alternate_index(CACHE_ALT_INDEX_DEFAULT)
 }
 
 VIO *
-CacheVC::do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *abuf)
+CacheVC::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *abuf)
 {
   ink_assert(vio.op == VIO::READ);
   vio.buffer.writer_for(abuf);
@@ -224,7 +224,7 @@ CacheVC::do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *abuf)
 }
 
 VIO *
-CacheVC::do_io_pread(Continuation *c, ink64 nbytes, MIOBuffer *abuf, ink64 offset)
+CacheVC::do_io_pread(Continuation *c, int64 nbytes, MIOBuffer *abuf, int64 offset)
 {
   ink_assert(vio.op == VIO::READ);
   vio.buffer.writer_for(abuf);
@@ -240,7 +240,7 @@ CacheVC::do_io_pread(Continuation *c, ink64 nbytes, MIOBuffer *abuf, ink64 offse
 }
 
 VIO *
-CacheVC::do_io_write(Continuation *c, ink64 nbytes, IOBufferReader *abuf, bool owner)
+CacheVC::do_io_write(Continuation *c, int64 nbytes, IOBufferReader *abuf, bool owner)
 {
   ink_assert(vio.op == VIO::WRITE);
   ink_assert(!owner);
@@ -507,22 +507,22 @@ CacheProcessor::start_internal(int flags)
     opts |= O_DSYNC;
 #endif
 
-    int fd = ink_open(path, opts, 0644);
+    int fd = open(path, opts, 0644);
     int blocks = sd->blocks;
-    ink_off_t offset = sd->offset;
+    off_t offset = sd->offset;
     p = 0;
     if (fd > 0) {
 #if defined (_WIN32)
       aio_completion_port.register_handle((void *) fd, 0);
 #endif
       if (!sd->file_pathname) {
-        if (ink_ftruncate64(fd, ((inku64) blocks) * STORE_BLOCK_SIZE) < 0) {
+        if (ftruncate(fd, ((uint64) blocks) * STORE_BLOCK_SIZE) < 0) {
           Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
           diskok = 0;
 #if defined(_WIN32)
           /* We can do a specific check for FAT32 systems on NT,
            * to print a specific warning */
-          if ((((inku64) blocks) * STORE_BLOCK_SIZE) > (1 << 32)) {
+          if ((((uint64) blocks) * STORE_BLOCK_SIZE) > (1 << 32)) {
             Warning("If you are using a FAT32 file system, please ensure that cachesize"
                     "specified in storage.config, does not exceed 4GB!. ");
           }
@@ -668,13 +668,13 @@ CacheProcessor::cacheInitialized()
   int cache_init_ok = 0;
   /* allocate ram size in proportion to the disk space the
      partition accupies */
-  ink64 total_size = 0;
-  inku64 total_cache_bytes = 0;
-  inku64 total_direntries = 0;
-  inku64 used_direntries = 0;
-  inku64 part_total_cache_bytes = 0;
-  inku64 part_total_direntries = 0;
-  inku64 part_used_direntries = 0;
+  int64 total_size = 0;
+  uint64 total_cache_bytes = 0;
+  uint64 total_direntries = 0;
+  uint64 used_direntries = 0;
+  uint64 part_total_cache_bytes = 0;
+  uint64 part_total_direntries = 0;
+  uint64 part_used_direntries = 0;
   Part *part;
 
   ProxyMutex *mutex = this_ethread()->mutex;
@@ -715,7 +715,7 @@ CacheProcessor::cacheInitialized()
   if (caches_ready) {
     Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0lX, gnpart=%d",
           (unsigned long) caches_ready, gnpart);
-    ink64 ram_cache_bytes = 0;
+    int64 ram_cache_bytes = 0;
     if (gnpart) {
       for (i = 0; i < gnpart; i++) {
         switch (cache_config_ram_cache_algorithm) {
@@ -738,10 +738,10 @@ CacheProcessor::cacheInitialized()
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
           /*
              CACHE_PART_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat,
-             (ink64)part_dirlen(gpart[i]));
+             (int64)part_dirlen(gpart[i]));
            */
           RecSetGlobalRawStatSum(part->cache_part->part_rsb,
-                                 cache_ram_cache_bytes_total_stat, (ink64) part_dirlen(gpart[i]));
+                                 cache_ram_cache_bytes_total_stat, (int64) part_dirlen(gpart[i]));
           part_total_cache_bytes = gpart[i]->len - part_dirlen(gpart[i]);
           total_cache_bytes += part_total_cache_bytes;
           Debug("cache_init", "CacheProcessor::cacheInitialized - total_cache_bytes = %lld = %lldMb",
@@ -763,11 +763,11 @@ CacheProcessor::cacheInitialized()
       } else {
         Debug("cache_init", "CacheProcessor::cacheInitialized - %lld != AUTO_SIZE_RAM_CACHE",
               cache_config_ram_cache_size);
-        ink64 http_ram_cache_size =
-          (theCache) ? (ink64) (((double) theCache->cache_size / total_size) * cache_config_ram_cache_size) : 0;
+        int64 http_ram_cache_size =
+          (theCache) ? (int64) (((double) theCache->cache_size / total_size) * cache_config_ram_cache_size) : 0;
         Debug("cache_init", "CacheProcessor::cacheInitialized - http_ram_cache_size = %lld = %lldMb",
               http_ram_cache_size, http_ram_cache_size / (1024 * 1024));
-        ink64 stream_ram_cache_size = cache_config_ram_cache_size - http_ram_cache_size;
+        int64 stream_ram_cache_size = cache_config_ram_cache_size - http_ram_cache_size;
         Debug("cache_init", "CacheProcessor::cacheInitialized - stream_ram_cache_size = %lld = %lldMb",
               stream_ram_cache_size, stream_ram_cache_size / (1024 * 1024));
 
@@ -779,17 +779,17 @@ CacheProcessor::cacheInitialized()
           part = gpart[i];
           double factor;
           if (gpart[i]->cache == theCache) {
-            factor = (double) (ink64) (gpart[i]->len >> STORE_BLOCK_SHIFT) / (ink64) theCache->cache_size;
+            factor = (double) (int64) (gpart[i]->len >> STORE_BLOCK_SHIFT) / (int64) theCache->cache_size;
             Debug("cache_init", "CacheProcessor::cacheInitialized - factor = %f", factor);
-            gpart[i]->ram_cache->init((ink64) (http_ram_cache_size * factor), part);
-            ram_cache_bytes += (ink64) (http_ram_cache_size * factor);
-            CACHE_PART_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (ink64) (http_ram_cache_size * factor));
+            gpart[i]->ram_cache->init((int64) (http_ram_cache_size * factor), part);
+            ram_cache_bytes += (int64) (http_ram_cache_size * factor);
+            CACHE_PART_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64) (http_ram_cache_size * factor));
           } else {
-            factor = (double) (ink64) (gpart[i]->len >> STORE_BLOCK_SHIFT) / (ink64) theStreamCache->cache_size;
+            factor = (double) (int64) (gpart[i]->len >> STORE_BLOCK_SHIFT) / (int64) theStreamCache->cache_size;
             Debug("cache_init", "CacheProcessor::cacheInitialized - factor = %f", factor);
-            gpart[i]->ram_cache->init((ink64) (stream_ram_cache_size * factor), part);
-            ram_cache_bytes += (ink64) (stream_ram_cache_size * factor);
-            CACHE_PART_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (ink64) (stream_ram_cache_size * factor));
+            gpart[i]->ram_cache->init((int64) (stream_ram_cache_size * factor), part);
+            ram_cache_bytes += (int64) (stream_ram_cache_size * factor);
+            CACHE_PART_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64) (stream_ram_cache_size * factor));
           }
           Debug("cache_init", "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %lld = %lldMb",
                 i, ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
@@ -963,7 +963,7 @@ Part::clear_dir()
 }
 
 int
-Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
+Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
   dir_skip = ROUND_TO_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
   path = strdup(s);
@@ -1019,15 +1019,15 @@ Part::init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear)
 
   init_info = new PartInitInfo();
   int footerlen = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
-  ink_off_t footer_offset = part_dirlen(this) - footerlen;
+  off_t footer_offset = part_dirlen(this) - footerlen;
   // try A
-  ink_off_t as = skip;
+  off_t as = skip;
   if (is_debug_tag_set("cache_init"))
     Note("reading directory '%s'", hash_id);
   SET_HANDLER(&Part::handle_header_read);
   init_info->part_aio[0].aiocb.aio_offset = as;
   init_info->part_aio[1].aiocb.aio_offset = as + footer_offset;
-  ink_off_t bs = skip + part_dirlen(this);
+  off_t bs = skip + part_dirlen(this);
   init_info->part_aio[2].aiocb.aio_offset = bs;
   init_info->part_aio[3].aiocb.aio_offset = bs + footer_offset;
 
@@ -1140,7 +1140,7 @@ Part::handle_recover_from_data(int event, void *data)
 {
   (void) data;
   int got_len = 0;
-  inku32 max_sync_serial = header->sync_serial;
+  uint32 max_sync_serial = header->sync_serial;
   char *s, *e;
   if (event == EVENT_IMMEDIATE) {
     if (header->sync_serial == 0) {
@@ -1163,7 +1163,7 @@ Part::handle_recover_from_data(int event, void *data)
     io.aiocb.aio_buf = (char *) valloc(RECOVERY_SIZE);
 #endif
     io.aiocb.aio_nbytes = RECOVERY_SIZE;
-    if ((ink_off_t)(recover_pos + io.aiocb.aio_nbytes) > (ink_off_t)(skip + len))
+    if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
   } else if (event == AIO_EVENT_DONE) {
     if ((int) io.aiocb.aio_nbytes != (int) io.aio_result) {
@@ -1306,7 +1306,7 @@ Part::handle_recover_from_data(int event, void *data)
       if (recover_pos >= skip + len)
         recover_pos = start;
       io.aiocb.aio_nbytes = RECOVERY_SIZE;
-      if ((ink_off_t)(recover_pos + io.aiocb.aio_nbytes) > (ink_off_t)(skip + len))
+      if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
         io.aiocb.aio_nbytes = (skip + len) - recover_pos;
     }
   }
@@ -1336,13 +1336,13 @@ Ldone:{
     if (recover_pos > skip + len)
       recover_pos -= skip + len;
     // bump sync number so it is different from that in the Doc structs
-    inku32 next_sync_serial = max_sync_serial + 1;
+    uint32 next_sync_serial = max_sync_serial + 1;
     // make that the next sync does not overwrite our good copy!
     if (!(header->sync_serial & 1) == !(next_sync_serial & 1))
       next_sync_serial++;
     // clear effected portion of the cache
-    ink_off_t clear_start = offset_to_part_offset(this, header->write_pos);
-    ink_off_t clear_end = offset_to_part_offset(this, recover_pos);
+    off_t clear_start = offset_to_part_offset(this, header->write_pos);
+    off_t clear_end = offset_to_part_offset(this, recover_pos);
     if (clear_start <= clear_end)
       dir_clear_range(clear_start, clear_end, this);
     else {
@@ -1364,7 +1364,7 @@ Ldone:{
     int footerlen = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
     int dirlen = part_dirlen(this);
     int B = header->sync_serial & 1;
-    ink_off_t ss = skip + (B ? dirlen : 0);
+    off_t ss = skip + (B ? dirlen : 0);
 
     init_info->part_aio[0].aiocb.aio_buf = raw_dir;
     init_info->part_aio[0].aiocb.aio_nbytes = footerlen;
@@ -1493,7 +1493,7 @@ build_part_hash_table(CacheHostRecord *cp)
 
   memset(mapping, 0, num_parts * sizeof(unsigned int));
   memset(p, 0, num_parts * sizeof(Part *));
-  inku64 total = 0;
+  uint64 total = 0;
   int i = 0;
   int used = 0;
   int bad_parts = 0;
@@ -1538,7 +1538,7 @@ build_part_hash_table(CacheHostRecord *cp)
   }
   // seed random number generator
   for (i = 0; i < num_parts; i++) {
-    inku64 x = p[i]->hash_id_md5.fold();
+    uint64 x = p[i]->hash_id_md5.fold();
     rnd[i] = (unsigned int) x;
   }
   // initialize table to "empty"
@@ -1610,9 +1610,9 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
         /* subtract the disk space that was being used from  the cache size stat */
         // dir entries stat
         int p;
-        inku64 total_bytes_delete = 0;
-        inku64 total_dir_delete = 0;
-        inku64 used_dir_delete = 0;
+        uint64 total_bytes_delete = 0;
+        uint64 total_dir_delete = 0;
+        uint64 used_dir_delete = 0;
 
         for (p = 0; p < gnpart; p++) {
           if (d->fd == gpart[p]->fd) {
@@ -1699,7 +1699,7 @@ Cache::open(bool clear, bool fix)
 {
   NOWARN_UNUSED(fix);
   int i;
-  ink_off_t blocks;
+  off_t blocks;
   cache_read_done = 0;
   total_initialized_part = 0;
   total_npart = 0;
@@ -1822,7 +1822,7 @@ CacheVC::handleReadDone(int event, Event *e)
         f.not_from_ram_cache = 1;
       if (cache_config_enable_checksum && doc->checksum != DOC_NO_CHECKSUM) {
         // verify that the checksum matches
-        inku32 checksum = 0;
+        uint32 checksum = 0;
         for (char *b = doc->hdr(); b < (char *) doc + doc->len; b++)
           checksum += *b;
         ink_assert(checksum == doc->checksum);
@@ -1852,12 +1852,12 @@ CacheVC::handleReadDone(int event, Event *e)
         //                doc->total_len
         // After that, the decision is based of doc_len (doc_len != 0)
         // (cache_config_ram_cache_cutoff == 0) : no cutoffs
-        cutoff_check = ((!doc_len && (ink64)doc->total_len < cache_config_ram_cache_cutoff)
-                        || (doc_len && (ink64)doc_len < cache_config_ram_cache_cutoff)
+        cutoff_check = ((!doc_len && (int64)doc->total_len < cache_config_ram_cache_cutoff)
+                        || (doc_len && (int64)doc_len < cache_config_ram_cache_cutoff)
                         || !cache_config_ram_cache_cutoff);
         if (cutoff_check && !f.doc_from_ram_cache) {
-          inku64 o = dir_offset(&dir);
-          part->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (inku32)(o >> 32), (inku32)o);
+          uint64 o = dir_offset(&dir);
+          part->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (uint32)(o >> 32), (uint32)o);
         }
         if (!doc_len) {
           // keep a pointer to it. In case the state machine decides to
@@ -1917,7 +1917,7 @@ CacheVC::handleRead(int event, Event *e)
 
   io.aiocb.aio_fildes = part->fd;
   io.aiocb.aio_offset = part_offset(part, &dir);
-  if ((ink_off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (ink_off_t)(part->skip + part->len))
+  if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(part->skip + part->len))
     io.aiocb.aio_nbytes = part->skip + part->len - io.aiocb.aio_offset;
   buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   io.aiocb.aio_buf = buf->data();
@@ -2237,10 +2237,10 @@ cplist_reconfigure()
         gdisks[i]->delete_all_partitions();
       }
       if (gdisks[i]->cleared) {
-        inku64 free_space = gdisks[i]->free_space * STORE_BLOCK_SIZE;
+        uint64 free_space = gdisks[i]->free_space * STORE_BLOCK_SIZE;
         int parts = (free_space / MAX_PART_SIZE) + 1;
         for (int p = 0; p < parts; p++) {
-          ink_off_t b = gdisks[i]->free_space / (parts - p);
+          off_t b = gdisks[i]->free_space / (parts - p);
           Debug("cache_hosting", "blocks = %d\n", b);
           DiskPartBlock *dpb = gdisks[i]->create_partition(0, b, CACHE_HTTP_TYPE);
           ink_assert(dpb && dpb->len == b);
@@ -2267,7 +2267,7 @@ cplist_reconfigure()
     }
 
     /* change percentages in the config patitions to absolute value */
-    ink64 tot_space_in_blks = 0;
+    int64 tot_space_in_blks = 0;
     int blocks_per_part = PART_BLOCK_SIZE / STORE_BLOCK_SIZE;
     /* sum up the total space available on all the disks.
        round down the space to 128 megabytes */
@@ -2312,7 +2312,7 @@ cplist_reconfigure()
 
       partition_number = config_part->number;
 
-      size_in_blocks = ((ink_off_t) size * 1024 * 1024) / STORE_BLOCK_SIZE;
+      size_in_blocks = ((off_t) size * 1024 * 1024) / STORE_BLOCK_SIZE;
 
       if (!config_part->cachep) {
         // we did not find a corresponding entry in cache part...creat one
@@ -2496,7 +2496,7 @@ rebuild_host_table(Cache *cache)
 Part *
 Cache::key_to_part(CacheKey *key, char *hostname, int host_len)
 {
-  inku32 h = (key->word(2) >> DIR_TAG_WIDTH) % PART_HASH_TABLE_SIZE;
+  uint32 h = (key->word(2) >> DIR_TAG_WIDTH) % PART_HASH_TABLE_SIZE;
   unsigned short *hash_table = hosttable->gen_host_rec.part_hash_table;
   CacheHostRecord *host_rec = &hosttable->gen_host_rec;
   if (hosttable->m_numEntries > 0 && host_len) {

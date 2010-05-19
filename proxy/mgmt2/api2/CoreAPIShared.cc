@@ -90,7 +90,7 @@ END:
  * OUTPUT: bool -- true if everything went well. false otherwise
  */
 INKError
-readHTTPResponse(int sock, char *buffer, int bufsize, inku64 timeout)
+readHTTPResponse(int sock, char *buffer, int bufsize, uint64 timeout)
 {
 #ifdef _WIN32
   TimedIOStatus ret;
@@ -102,7 +102,7 @@ readHTTPResponse(int sock, char *buffer, int bufsize, inku64 timeout)
     //      printf("(test) TimedRead failed: %d\n", ret);
     goto error;
   } else {
-    ink_close_socket(sock);
+    close_socket(sock);
     return INK_ERR_OKAY;
   }
 #else
@@ -145,7 +145,7 @@ readHTTPResponse(int sock, char *buffer, int bufsize, inku64 timeout)
 
 error:                         /* "Houston, we have a problem!" (Apollo 13) */
   if (sock >= 0) {
-    ink_close_socket(sock);
+    close_socket(sock);
   }
   return INK_ERR_NET_READ;
 }
@@ -158,7 +158,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
  *                 closed)
  */
 INKError
-sendHTTPRequest(int sock, char *req, inku64 timeout)
+sendHTTPRequest(int sock, char *req, uint64 timeout)
 {
   char request[BUFSIZ];
   char *requestPtr;
@@ -209,7 +209,7 @@ sendHTTPRequest(int sock, char *req, inku64 timeout)
 
 error:                         /* "Houston, we have a problem!" (Apollo 13) */
   if (sock >= 0) {
-    ink_close_socket(sock);
+    close_socket(sock);
   }
   return INK_ERR_NET_WRITE;
 }
@@ -218,7 +218,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
 
 /* Modified from TrafficCop.cc (open_socket) */
 int
-connectDirect(const char *host, int port, inku64 timeout)
+connectDirect(const char *host, int port, uint64 timeout)
 {
 #ifdef _WIN32
   TimedIOStatus ret;
@@ -285,7 +285,7 @@ connectDirect(const char *host, int port, inku64 timeout)
 
 error:
   if (sock >= 0) {
-    ink_close_socket(sock);
+    close_socket(sock);
   }
   return -1;
 }                               /* connectDirect */

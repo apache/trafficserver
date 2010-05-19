@@ -25,27 +25,27 @@
 
 struct RamCacheLRUEntry {
   INK_MD5 key;
-  inku32 auxkey1;
-  inku32 auxkey2;
+  uint32 auxkey1;
+  uint32 auxkey2;
   LINK(RamCacheLRUEntry, lru_link);
   LINK(RamCacheLRUEntry, hash_link);
   Ptr<IOBufferData> data;
 };
 
 struct RamCacheLRU : RamCache {
-  ink64 max_bytes;
-  ink64 bytes;
-  ink64 objects;
+  int64 max_bytes;
+  int64 bytes;
+  int64 objects;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
-  int put(INK_MD5 *key, IOBufferData *data, inku32 len, bool copy = false, inku32 auxkey1 = 0, inku32 auxkey2 = 0);
-  int fixup(INK_MD5 *key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2);
+  int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32 auxkey1 = 0, uint32 auxkey2 = 0);
+  int put(INK_MD5 *key, IOBufferData *data, uint32 len, bool copy = false, uint32 auxkey1 = 0, uint32 auxkey2 = 0);
+  int fixup(INK_MD5 *key, uint32 old_auxkey1, uint32 old_auxkey2, uint32 new_auxkey1, uint32 new_auxkey2);
 
-  void init(ink64 max_bytes, Part *part);
+  void init(int64 max_bytes, Part *part);
 
   // private
-  inku16 *seen;
+  uint16 *seen;
   Que(RamCacheLRUEntry, lru_link) lru;
   DList(RamCacheLRUEntry, hash_link) *bucket;
   int nbuckets;
@@ -69,11 +69,11 @@ const static int bucket_sizes[] = {
 void RamCacheLRU::resize_hashtable() {
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
-  ink64 s = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
+  int64 s = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
   DList(RamCacheLRUEntry, hash_link) *new_bucket = (DList(RamCacheLRUEntry, hash_link) *)xmalloc(s);
   memset(new_bucket, 0, s);
   if (bucket) {
-    for (ink64 i = 0; i < nbuckets; i++) {
+    for (int64 i = 0; i < nbuckets; i++) {
       RamCacheLRUEntry *e = 0;
       while ((e = bucket[i].pop()))
         new_bucket[e->key.word(3) % anbuckets].push(e);
@@ -83,13 +83,13 @@ void RamCacheLRU::resize_hashtable() {
   bucket = new_bucket;
   nbuckets = anbuckets;
   if (seen) xfree(seen);
-  int size = bucket_sizes[ibuckets] * sizeof(inku16);
-  seen = (inku16*)xmalloc(size);
+  int size = bucket_sizes[ibuckets] * sizeof(uint16);
+  seen = (uint16*)xmalloc(size);
   memset(seen, 0, size);
 }
 
 void
-RamCacheLRU::init(ink64 abytes, Part *apart) {
+RamCacheLRU::init(int64 abytes, Part *apart) {
   part = apart;
   max_bytes = abytes;
   DDebug("ram_cache", "initializing ram_cache %lld bytes", abytes);
@@ -99,10 +99,10 @@ RamCacheLRU::init(ink64 abytes, Part *apart) {
 }
 
 int
-RamCacheLRU::get(INK_MD5 * key, Ptr<IOBufferData> *ret_data, inku32 auxkey1, inku32 auxkey2) {
+RamCacheLRU::get(INK_MD5 * key, Ptr<IOBufferData> *ret_data, uint32 auxkey1, uint32 auxkey2) {
   if (!max_bytes)
     return 0;
-  inku32 i = key->word(3) % nbuckets;
+  uint32 i = key->word(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2) {
@@ -122,7 +122,7 @@ RamCacheLRU::get(INK_MD5 * key, Ptr<IOBufferData> *ret_data, inku32 auxkey1, ink
 
 RamCacheLRUEntry * RamCacheLRU::remove(RamCacheLRUEntry *e) {
   RamCacheLRUEntry *ret = e->hash_link.next;
-  inku32 b = e->key.word(3) % nbuckets;
+  uint32 b = e->key.word(3) % nbuckets;
   bucket[b].remove(e);
   lru.remove(e);
   bytes -= e->data->block_size();
@@ -135,10 +135,10 @@ RamCacheLRUEntry * RamCacheLRU::remove(RamCacheLRUEntry *e) {
 }
 
 // ignore 'len' and 'copy' since we don't touch the data
-int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, inku32, bool, inku32 auxkey1, inku32 auxkey2) {
+int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32, bool, uint32 auxkey1, uint32 auxkey2) {
   if (!max_bytes)
     return 0;
-  inku32 i = key->word(3) % nbuckets;
+  uint32 i = key->word(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key) {
@@ -176,10 +176,10 @@ int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, inku32, bool, inku32 auxk
   return 1;
 }
 
-int RamCacheLRU::fixup(INK_MD5 * key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2) {
+int RamCacheLRU::fixup(INK_MD5 * key, uint32 old_auxkey1, uint32 old_auxkey2, uint32 new_auxkey1, uint32 new_auxkey2) {
   if (!max_bytes)
     return 0;
-  inku32 i = key->word(3) % nbuckets;
+  uint32 i = key->word(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey1 == old_auxkey1 && e->auxkey2 == old_auxkey2) {

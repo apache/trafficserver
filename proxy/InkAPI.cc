@@ -779,19 +779,19 @@ FileImpl::fopen(const char *filename, const char *mode)
       return 0;
     }
     m_mode = READ;
-    m_fd = ink_open(filename, O_RDONLY | _O_ATTRIB_NORMAL);
+    m_fd = open(filename, O_RDONLY | _O_ATTRIB_NORMAL);
   } else if (mode[0] == 'w') {
     if (mode[1] != '\0') {
       return 0;
     }
     m_mode = WRITE;
-    m_fd = ink_open(filename, O_WRONLY | O_CREAT | _O_ATTRIB_NORMAL, 0644);
+    m_fd = open(filename, O_WRONLY | O_CREAT | _O_ATTRIB_NORMAL, 0644);
   } else if (mode[0] == 'a') {
     if (mode[1] != '\0') {
       return 0;
     }
     m_mode = WRITE;
-    m_fd = ink_open(filename, O_WRONLY | O_CREAT | O_APPEND | _O_ATTRIB_NORMAL, 0644);
+    m_fd = open(filename, O_WRONLY | O_CREAT | O_APPEND | _O_ATTRIB_NORMAL, 0644);
   }
 
   if (m_fd < 0) {
@@ -808,7 +808,7 @@ FileImpl::fclose()
   if (m_fd != -1) {
     fflush();
 
-    ink_close(m_fd);
+    close(m_fd);
     m_fd = -1;
     m_mode = CLOSED;
   }
@@ -850,7 +850,7 @@ FileImpl::fread(void *buf, int length)
     }
 
     do {
-      err = ink_read(m_fd, &m_buf[m_bufpos], amount);
+      err = read(m_fd, &m_buf[m_bufpos], amount);
     } while ((err < 0) && (errno == EINTR));
 
     if (err < 0) {
@@ -930,7 +930,7 @@ FileImpl::fflush()
 
     while (p != e) {
       do {
-        err = ink_write(m_fd, p, e - p);
+        err = write(m_fd, p, e - p);
       } while ((err < 0) && (errno == EINTR));
 
       if (err < 0) {
@@ -1145,7 +1145,7 @@ INKVConnInternal::handle_event(int event, void *edata)
 }
 
 VIO *
-INKVConnInternal::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
+INKVConnInternal::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
 {
   m_read_vio.buffer.writer_for(buf);
   m_read_vio.op = VIO::READ;
@@ -1163,7 +1163,7 @@ INKVConnInternal::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
 }
 
 VIO *
-INKVConnInternal::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner)
+INKVConnInternal::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner)
 {
   ink_assert(!owner);
   m_write_vio.buffer.reader_for(buf);
@@ -3390,7 +3390,7 @@ INKMimeHdrFieldInsert(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc, int 
     if (field_handle->field_ptr->m_ptr_name == NULL) {
       char noname[20];
       intptr_t addr = (intptr_t) (field_handle->field_ptr);
-      snprintf(noname, sizeof(noname), "@X-Noname-%016llX", (ink64)addr);
+      snprintf(noname, sizeof(noname), "@X-Noname-%016llX", (int64)addr);
       INKMimeFieldNameSet(bufp, field_mloc, noname, 26);
     }
 
@@ -5033,7 +5033,7 @@ INKCacheHookAdd(INKCacheHookID id, INKCont contp)
 void
 INKHttpIcpDynamicSet(int value)
 {
-  ink32 old_value, new_value;
+  int32 old_value, new_value;
 
   new_value = (value == 0) ? 0 : 1;
   old_value = icp_dynamic_enabled;
@@ -6380,7 +6380,7 @@ INKHttpTxnStartTimeGet(INKHttpTxn txnp, INK64 * start_time)
   if (sm->milestones.ua_begin == 0)
     return 0;
   else {
-    *start_time = (ink64) (sm->milestones.ua_begin);
+    *start_time = (int64) (sm->milestones.ua_begin);
     return 1;
   }
 }
@@ -6392,7 +6392,7 @@ INKHttpTxnEndTimeGet(INKHttpTxn txnp, INK64 * end_time)
   if (sm->milestones.ua_close == 0)
     return 0;
   else {
-    *end_time = (ink64) (sm->milestones.ua_close);
+    *end_time = (int64) (sm->milestones.ua_close);
     return 1;
   }
 }
@@ -6448,7 +6448,7 @@ INKHttpTxnLookingUpTypeGet(INKHttpTxn txnp)
 int
 INKHttpCurrentClientConnectionsGet(int *num_connections)
 {
-  ink64 S;
+  int64 S;
 
   HTTP_READ_DYN_SUM(http_current_client_connections_stat, S);
   *num_connections = (int) S;
@@ -6458,7 +6458,7 @@ INKHttpCurrentClientConnectionsGet(int *num_connections)
 int
 INKHttpCurrentActiveClientConnectionsGet(int *num_connections)
 {
-  ink64 S;
+  int64 S;
 
   HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, S);
   *num_connections = (int) S;
@@ -6468,8 +6468,8 @@ INKHttpCurrentActiveClientConnectionsGet(int *num_connections)
 int
 INKHttpCurrentIdleClientConnectionsGet(int *num_connections)
 {
-  ink64 total = 0;
-  ink64 active = 0;
+  int64 total = 0;
+  int64 active = 0;
   HTTP_READ_DYN_SUM(http_current_client_connections_stat, total);
   HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, active);
 
@@ -6484,7 +6484,7 @@ INKHttpCurrentIdleClientConnectionsGet(int *num_connections)
 int
 INKHttpCurrentCacheConnectionsGet(int *num_connections)
 {
-  ink64 S;
+  int64 S;
   HTTP_READ_DYN_SUM(http_current_cache_connections_stat, S);
   *num_connections = (int) S;
   return 1;
@@ -6493,7 +6493,7 @@ INKHttpCurrentCacheConnectionsGet(int *num_connections)
 int
 INKHttpCurrentServerConnectionsGet(int *num_connections)
 {
-  ink64 S;
+  int64 S;
 
   HTTP_READ_DYN_SUM(http_current_server_connections_stat, S);
   *num_connections = (int) S;
@@ -7153,7 +7153,7 @@ INKStatCreate(const char *the_name, INKStatTypes the_type)
 
   switch (the_type) {
   case INKSTAT_TYPE_INT64:
-    n = StatDescriptor::CreateDescriptor(the_name, (ink64) 0);
+    n = StatDescriptor::CreateDescriptor(the_name, (int64) 0);
     break;
 
   case INKSTAT_TYPE_FLOAT:
@@ -7420,7 +7420,7 @@ INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char *the_name, INKSta
 
   switch (the_type) {
   case INKSTAT_TYPE_INT64:
-    n = category->CreateStat(the_name, (ink64) 0);
+    n = category->CreateStat(the_name, (int64) 0);
     break;
 
   case INKSTAT_TYPE_FLOAT:

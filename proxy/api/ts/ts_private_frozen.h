@@ -140,7 +140,7 @@ extern "C"
   inkapi double INKdrandom(void);
 
 /****************************************************************************
- *  Return Hi-resolution current time. (ink64)
+ *  Return Hi-resolution current time. (int64)
  ****************************************************************************/
   inkapi INK64 INKhrtime(void);
 

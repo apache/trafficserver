@@ -43,8 +43,8 @@ struct WebHttpContext
 {
 
   WebHttpAuthUser current_user; // current user and access privileges
-  inku32 request_state;         // client request state
-  inku32 server_state;          // bit-mask of enabled server features
+  uint32 request_state;         // client request state
+  uint32 server_state;          // bit-mask of enabled server features
   httpMessage *request;         // client request
   httpResponse *response_hdr;   // server response headers
   textBuffer *response_bdy;     // server repsonse body

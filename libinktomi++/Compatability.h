@@ -27,7 +27,6 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <strings.h>
 
@@ -71,30 +70,6 @@ typedef uint32_t in_addr_t;
 #endif
 
 #define NEED_HRTIME
-
-#define ink_pread      pread
-#define ink_pwrite     pwrite
-#define ink_open       open
-#define ink_close      close
-#define ink_lseek      lseek
-#define ink_write      write
-#define ink_pwrite     pwrite
-#define ink_read       read
-#define ink_pread      pread
-#define ink_writev     writev
-#define ink_readv      readv
-#define ink_fsync      fsync
-#define ink_ftruncate  ftruncate
-
-#if (HOST_OS == freebsd) || (HOST_OS == darwin)
-#define ink_ftruncate64(_fd,_s)  ftruncate(_fd, (off_t)(_s))
-#else
-#define ink_ftruncate64  ftruncate64
-#endif
-
-#define ink_fstat      fstat
-#define ink_mmap       mmap
-#define ink_sleep      sleep
 
 #include "Resource.h"
 

@@ -741,7 +741,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
             _ICPpr->GetConfig()->Unlock();
 
             unsigned char x[4];
-            *(inku32 *) & x = (inku32) P->GetIP()->s_addr;
+            *(uint32 *) & x = (uint32) P->GetIP()->s_addr;
             if (status) {
               Warning("ICP bind_connect(2) failed, res=%d, ip=%d.%d.%d.%d", status, x[0], x[1], x[2], x[3]);
               REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP bind_connect(2) failed");
@@ -779,7 +779,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
             && (s->_rICPmsg->h.version != ICP_VERSION_3)) {
           ICP_INCREMENT_DYN_STAT(read_not_v2_icp_stat);
           Debug("icp", "Received (v=%d) !v2 && !v3 msg from sender [%s:%d]",
-                (inku32) s->_rICPmsg->h.version, inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+                (uint32) s->_rICPmsg->h.version, inet_ntoa(from.sin_addr), ntohs(from.sin_port));
 
           s->_rICPmsg = NULL;
           s->_buf = NULL;
@@ -889,7 +889,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           // Partial write.
           ICP_INCREMENT_DYN_STAT(query_response_partial_write_stat);
           unsigned char x[4];
-          *(inku32 *) & x = (inku32) s->_sender.sin_addr.s_addr;
+          *(uint32 *) & x = (uint32) s->_sender.sin_addr.s_addr;
           // coverity[uninit_use_in_call]
           Debug("icp_warn", "ICP response send, sent=%d res=%d, ip=%d.%d.%d.%d",
                 ntohs(s->_rICPmsg->h.msglen), -1, x[0], x[1], x[2], x[3]);
@@ -918,7 +918,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
           // Partial write.
           ICP_INCREMENT_DYN_STAT(query_response_partial_write_stat);
           unsigned char x[4];
-          *(inku32 *) & x = (inku32) s->_sender.sin_addr.s_addr;
+          *(uint32 *) & x = (uint32) s->_sender.sin_addr.s_addr;
           // coverity[uninit_use_in_call]
           Debug("icp_warn", "ICP response send, sent=%d res=%d, ip=%d.%d.%d.%d",
                 ntohs(s->_rICPmsg->h.msglen), len, x[0], x[1], x[2], x[3]);
@@ -1358,7 +1358,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
             // Partial or failed write.
             ICP_INCREMENT_DYN_STAT(send_query_partial_write_stat);
             unsigned char x[4];
-            *(inku32 *) & x = (inku32) (*P->GetIP()).s_addr;
+            *(uint32 *) & x = (uint32) (*P->GetIP()).s_addr;
             // coverity[uninit_use_in_call]
             Debug("icp_warn",
                   "ICP query send, res=%d, ip=%d.%d.%d.%d", ntohs(_ICPmsg.h.msglen), x[0], x[1], x[2], x[3]);
@@ -1631,7 +1631,7 @@ ICPRequestCont::ICPResponseMessage(int event, ICPMsg_t * m, int ICPMsg_len, Peer
       {
         ICP_INCREMENT_DYN_STAT(invalid_icp_query_response_stat);
         unsigned char x[4];
-        *(inku32 *) & x = (inku32) peer->GetIP()->s_addr;
+        *(uint32 *) & x = (uint32) peer->GetIP()->s_addr;
         // coverity[uninit_use_in_call]
         Warning("Invalid ICP response, op=%d reqno=%d ip=%d.%d.%d.%d",
                 m->h.opcode, m->h.requestno, x[0], x[1], x[2], x[3]);
@@ -2221,7 +2221,7 @@ ICPProcessor::SetupListenSockets()
                                               CONNECT_WITH_UDP, NON_BLOCKING, BC_NO_CONNECT, BC_NO_BIND);
         if (status) {
           unsigned char x[4];
-          *(inku32 *) & x = (inku32) pPS->GetIP()->s_addr;
+          *(uint32 *) & x = (uint32) pPS->GetIP()->s_addr;
           Warning("ICP bind_connect failed, res=%d, ip=%d.%d.%d.%d", status, x[0], x[1], x[2], x[3]);
           REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP bind_connect failed");
           return 1;             // Failed
@@ -2239,8 +2239,8 @@ ICPProcessor::SetupListenSockets()
                                                    NON_BLOCKING, pMC->GetTTL(), DISABLE_MC_LOOPBACK, _mcastCB_handler);
         if (status) {
           unsigned char x[4], y[4];
-          *(inku32 *) & x = (inku32) pMC->GetIP()->s_addr;
-          *(inku32 *) & y = (inku32) _LocalPeer->GetIP()->s_addr;
+          *(uint32 *) & x = (uint32) pMC->GetIP()->s_addr;
+          *(uint32 *) & y = (uint32) _LocalPeer->GetIP()->s_addr;
           // coverity[uninit_use_in_call]
           Warning("ICP MC send setup failed, res=%d, ip=%d.%d.%d.%d:%d bind_ip=%d.%d.%d.%d:%d",
                   status, x[0], x[1], x[2], x[3], pMC->GetPort(), y[0], y[1], y[2], y[3], 0);
@@ -2253,7 +2253,7 @@ ICPProcessor::SetupListenSockets()
                                                       NON_BLOCKING, pMC->GetSendChan(), _mcastCB_handler);
         if (status) {
           unsigned char x[4];
-          *(inku32 *) & x = (inku32) pMC->GetIP()->s_addr;
+          *(uint32 *) & x = (uint32) pMC->GetIP()->s_addr;
           // coverity[uninit_use_in_call]
           Warning("ICP MC recv setup failed, res=%d, ip=%d.%d.%d.%d:%d",
                   status, x[0], x[1], x[2], x[3], pMC->GetPort());
@@ -2280,7 +2280,7 @@ ICPProcessor::SetupListenSockets()
                                         NON_BLOCKING_CONNECT, CONNECT_WITH_UDP, NON_BLOCKING, BC_NO_CONNECT, BC_BIND);
   if (status) {
     unsigned char x[4];
-    *(inku32 *) & x = (inku32) pPS->GetIP()->s_addr;
+    *(uint32 *) & x = (uint32) pPS->GetIP()->s_addr;
     // coverity[uninit_use_in_call]
     Warning("ICP bind_connect failed, res=%d, ip=%d.%d.%d.%d", status, x[0], x[1], x[2], x[3]);
     REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP bind_connect for localhost failed");
@@ -2498,7 +2498,7 @@ ICPProcessor::AddPeer(Peer * P)
   //
   if (FindPeer(P->GetIP(), P->GetPort())) {
     unsigned char x[4];
-    *(inku32 *) & x = (inku32) P->GetIP()->s_addr;
+    *(uint32 *) & x = (uint32) P->GetIP()->s_addr;
     // coverity[uninit_use_in_call]
     Warning("bad icp.config, multiple peer definitions for ip=%d.%d.%d.%d", x[0], x[1], x[2], x[3]);
     REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "bad icp.config, multiple peer definitions");

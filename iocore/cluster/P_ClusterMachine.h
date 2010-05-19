@@ -74,8 +74,8 @@ struct ClusterMachine:Server
    ~ClusterMachine();
 
   // Cluster message protocol version
-  inku16 msg_proto_major;
-  inku16 msg_proto_minor;
+  uint16 msg_proto_major;
+  uint16 msg_proto_minor;
 
   // Private data for ClusterProcessor
   //

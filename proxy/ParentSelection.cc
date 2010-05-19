@@ -527,12 +527,12 @@ ParentRecord::FindParent(bool first_call, ParentResult * result, RD * rdata, Par
       ink_assert(go_direct == true);
       goto NO_PARENTS;
     } else if (round_robin == true) {
-      cur_index = ink_atomic_increment((ink32 *) & rr_next, 1);
+      cur_index = ink_atomic_increment((int32 *) & rr_next, 1);
       cur_index = result->start_parent = cur_index % num_parents;
     } else {
       switch (round_robin) {
       case P_STRICT_ROUND_ROBIN:
-        cur_index = ink_atomic_increment((ink32 *) & rr_next, 1);
+        cur_index = ink_atomic_increment((int32 *) & rr_next, 1);
         cur_index = cur_index % num_parents;
         break;
       case P_HASH_ROUND_ROBIN:
@@ -996,17 +996,17 @@ setup_socks_servers(ParentRecord * rec_arr, int len)
     int n_parents = rec_arr[j].num_parents;
 
     for (int i = 0; i < n_parents; i++) {
-      inku32 bad_ip = (inku32) - 1;
-      inku8 *ip;
+      uint32 bad_ip = (uint32) - 1;
+      uint8 *ip;
 
       ink_gethostbyname_r_data data;
       struct hostent *ent = ink_gethostbyname_r(pr[i].hostname, &data);
 
       if (ent) {
-        ip = (inku8 *) ent->h_addr_list[0];
+        ip = (uint8 *) ent->h_addr_list[0];
       } else {
         Warning("Could not resolve socks server name \"%s\". " "Please correct it", pr[i].hostname);
-        ip = (inku8 *) & bad_ip;
+        ip = (uint8 *) & bad_ip;
       }
       snprintf(pr[i].hostname, DOMAIN_NAME_MAX + 1, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
     }
@@ -1407,8 +1407,8 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
     FP RE(verify(result, PARENT_DIRECT, 0, 0), 32 + i)
   }
 
-  // ink_sleep(5); // parents should come back up; they don't
-  ink_sleep(params->ParentRetryTime + 1);
+  // sleep(5); // parents should come back up; they don't
+  sleep(params->ParentRetryTime + 1);
 
   // Fix: The following tests failed because
   // br() should set xact_start correctly instead of 0.
@@ -1416,7 +1416,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_le
   // Test 132 - 631
   for (i = 0; i < 40; i++) {
     ST(132 + i) REINIT br(request, "i.am.rabbit.net");
-    FP ink_sleep(1);
+    FP sleep(1);
     switch ((i + 1) % 4) {
     case 0:
       RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 132 + i) break;

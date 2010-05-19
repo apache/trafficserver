@@ -43,7 +43,7 @@ enum
   LOG_MAX_FORMATTED_LINE = 10240
 };
 
-#define LOG_KILOBYTE		((ink64)1024)
-#define LOG_MEGABYTE		((ink64)1048576)
+#define LOG_KILOBYTE		((int64)1024)
+#define LOG_MEGABYTE		((int64)1048576)
 
 #endif

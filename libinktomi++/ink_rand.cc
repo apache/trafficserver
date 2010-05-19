@@ -62,7 +62,7 @@
 #define mixBits(u, v)  (hiBit(u)|loBits(v))     // move hi bit of u to hi bit of v
 
 
-InkRand::InkRand(inku32 d)
+InkRand::InkRand(uint32 d)
 {
   seed(d);
   next = state + 1;             // settting next to the same as reload()
@@ -123,17 +123,17 @@ InkRand::InkRand(inku32 d)
 
 */
 void
-InkRand::seed(inku32 d)
+InkRand::seed(uint32 d)
 {
-  register inku32 x = (d | 1U) & 0xFFFFFFFFU, *s = state;
+  register uint32 x = (d | 1U) & 0xFFFFFFFFU, *s = state;
   register int j;
 
   for (left = 0, *s++ = x, j = N; --j; *s++ = (x *= 69069U) & 0xFFFFFFFFU);
 }
 
-inku32 InkRand::random()
+uint32 InkRand::random()
 {
-  inku32
+  uint32
     y;
 
   if (--left < 0)
@@ -153,9 +153,9 @@ InkRand::drandom()
   // return ((double) random () / (double) 0xffffffff);
 }
 
-inku32 InkRand::reload()
+uint32 InkRand::reload()
 {
-  register inku32 *
+  register uint32 *
     p0 = state, *p2 = state + 2, *pM = state + M, s0, s1;
   register int
     j;
@@ -176,8 +176,8 @@ inku32 InkRand::reload()
 }
 
 int
-ink_rand_r(inku32 * p)
+ink_rand_r(uint32 * p)
 {
-  return (((*p) = (*p) * 1103515245 + 12345) % ((inku32) 0x7fffffff + 1));
+  return (((*p) = (*p) * 1103515245 + 12345) % ((uint32) 0x7fffffff + 1));
 }
 

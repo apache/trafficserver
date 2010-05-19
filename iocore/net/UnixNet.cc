@@ -170,8 +170,8 @@ PollCont::pollEvent(int event, Event *e)
 static void
 net_signal_hook_callback(EThread *thread) {
 #if HAVE_EVENTFD
-  inku64 counter;
-  NOWARN_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(inku64)));
+  uint64 counter;
+  NOWARN_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64)));
 #else
   char dummy[1024];
   NOWARN_UNUSED_RETURN(read(thread->evpipe[0], &dummy[0], 1024));
@@ -181,8 +181,8 @@ net_signal_hook_callback(EThread *thread) {
 static void
 net_signal_hook_function(EThread *thread) {
 #if HAVE_EVENTFD
-  inku64 counter = 1;
-  NOWARN_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(inku64)));
+  uint64 counter = 1;
+  NOWARN_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(uint64)));
 #else
   char dummy;
   NOWARN_UNUSED_RETURN(write(thread->evpipe[1], &dummy, 1));

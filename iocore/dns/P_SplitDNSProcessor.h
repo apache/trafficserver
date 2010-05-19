@@ -143,7 +143,7 @@ struct SplitDNS:public SplitDNSConfigInfo
   DNS_table *m_DNSSrvrTable;
   SplitDNSRecord *m_DefaultDNSSrvr;
 
-  ink32 m_SplitDNSlEnable;
+  int32 m_SplitDNSlEnable;
 
   char m_def_domain[MAXDNAME];
   int m_def_domain_len;

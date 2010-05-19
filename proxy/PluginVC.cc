@@ -219,7 +219,7 @@ PluginVC::main_handler(int event, void *data)
 }
 
 VIO *
-PluginVC::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
+PluginVC::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
 {
 
   ink_assert(!closed);
@@ -251,7 +251,7 @@ PluginVC::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
 }
 
 VIO *
-PluginVC::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * abuffer, bool owner)
+PluginVC::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * abuffer, bool owner)
 {
 
   ink_assert(!closed);
@@ -932,7 +932,7 @@ PluginVC::set_data(int id, void *data)
 
 // PluginVCCore
 
-vink32
+vint32
   PluginVCCore::nextid = 0;
 
 PluginVCCore::~PluginVCCore()
@@ -1120,14 +1120,14 @@ PluginVCCore::kill_no_connect()
 }
 
 void
-PluginVCCore::set_passive_addr(inku32 ip, int port)
+PluginVCCore::set_passive_addr(uint32 ip, int port)
 {
   passive_addr_struct.sin_addr.s_addr = htonl(ip);
   passive_addr_struct.sin_port = htons(port);
 }
 
 void
-PluginVCCore::set_active_addr(inku32 ip, int port)
+PluginVCCore::set_active_addr(uint32 ip, int port)
 {
   active_addr_struct.sin_addr.s_addr = htonl(ip);
   active_addr_struct.sin_port = htons(port);

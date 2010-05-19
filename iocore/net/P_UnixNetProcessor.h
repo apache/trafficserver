@@ -81,8 +81,8 @@ public:
   AtomicSLL<NetAccept, NetAccept::Link_link> accepts_on_thread;
 
   // offsets for per thread data structures
-  ink_off_t netHandler_offset;
-  ink_off_t pollCont_offset;
+  off_t netHandler_offset;
+  off_t pollCont_offset;
 
   // we probably wont need these members
   int n_netthreads;

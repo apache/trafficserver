@@ -627,7 +627,7 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   // try to open the requested template directory //
   //////////////////////////////////////////////////
 
-  dir = ink_opendir(set_dir);
+  dir = opendir(set_dir);
   if (dir == NULL) {
     Warning("can't open response template directory '%s' (%s)",
             set_dir, (strerror(errno) ? strerror(errno) : "unknown reason"));
@@ -643,7 +643,7 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   // loop over each language subdirectory //
   //////////////////////////////////////////
 
-  while ((ink_readdir_r(dir, entry_buffer, &result) == 0) && (result != NULL)) {
+  while ((readdir_r(dir, entry_buffer, &result) == 0) && (result != NULL)) {
     int status;
     struct stat stat_buf;
     char subdir[MAXPATHLEN + 1];
@@ -673,7 +673,7 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   }
 
   xfree(entry_buffer);
-  ink_closedir(dir);
+  closedir(dir);
 
   return (new_table_of_sets);
 }
@@ -694,7 +694,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   ////////////////////////////////////////////////
 
   Debug("body_factory", "  load_body_set_from_directory(%s)", tmpl_dir);
-  dir = ink_opendir(tmpl_dir);
+  dir = opendir(tmpl_dir);
   if (dir == NULL)
     return (NULL);
 
@@ -705,7 +705,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   snprintf(path, sizeof(path), "%s" DIR_SEP ".body_factory_info", tmpl_dir);
   status = stat(path, &stat_buf);
   if ((status < 0) || !S_ISREG(stat_buf.st_mode)) {
-    ink_closedir(dir);
+    closedir(dir);
     return (NULL);
   }
   Debug("body_factory", "    found '%s'", path);
@@ -722,7 +722,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   entry_buffer = (struct dirent *)
     xmalloc(sizeof(struct dirent) + MAXPATHLEN + 1);
 
-  while ((ink_readdir_r(dir, entry_buffer, &result) == 0) && (result != NULL)) {
+  while ((readdir_r(dir, entry_buffer, &result) == 0) && (result != NULL)) {
     HttpBodyTemplate *tmpl;
 
     ///////////////////////////////////////////////////////////////
@@ -751,7 +751,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
     }
   }
   xfree(entry_buffer);
-  ink_closedir(dir);
+  closedir(dir);
   return (body_set);
 }
 
@@ -796,7 +796,7 @@ HttpBodySet::init(char *set, char *dir)
   char buffer[1024], name[1025], value[1024];
 
   snprintf(info_path, sizeof(info_path), "%s" DIR_SEP ".body_factory_info", dir);
-  fd = ink_open(info_path, O_RDONLY | _O_ATTRIB_NORMAL);
+  fd = open(info_path, O_RDONLY | _O_ATTRIB_NORMAL);
   if (fd < 0)
     return (-1);
 
@@ -895,7 +895,7 @@ HttpBodySet::init(char *set, char *dir)
   if (!this->content_charset)
     this->content_charset = xstrdup("iso-8859-1");
 
-  ink_close(fd);
+  close(fd);
   return (lines_added);
 }
 
@@ -989,7 +989,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   ///////////////////
 
   // coverity[toctou]
-  fd = ink_open(path, O_RDONLY | _O_ATTRIB_NORMAL);
+  fd = open(path, O_RDONLY | _O_ATTRIB_NORMAL);
   if (fd < 0)
     return (0);
 
@@ -999,9 +999,9 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
 
   new_byte_count = stat_buf.st_size;
   new_template_buffer = (char *) xmalloc(new_byte_count + 1);
-  bytes_read = ink_read(fd, new_template_buffer, new_byte_count);
+  bytes_read = read(fd, new_template_buffer, new_byte_count);
   new_template_buffer[new_byte_count] = '\0';
-  ink_close(fd);
+  close(fd);
 
   ///////////////////////////
   // check for read errors //

@@ -70,7 +70,7 @@ typedef struct
 #define MICRO_SYS 2
 #define MICRO_REAL 3
 
-inku64 ink_microseconds(int which);
+uint64 ink_microseconds(int which);
 double ink_time_wall_seconds();
 
 int ink_time_gmt_string_to_tm(char *string, struct tm *bdt);

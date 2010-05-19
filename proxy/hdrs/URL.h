@@ -46,16 +46,16 @@ enum URLType
 struct URLImpl:public HdrHeapObjImpl
 {
   // HdrHeapObjImpl is 4 bytes
-  inku16 m_len_scheme;
-  inku16 m_len_user;
-  inku16 m_len_password;
-  inku16 m_len_host;
-  inku16 m_len_port;
-  inku16 m_len_path;
-  inku16 m_len_params;
-  inku16 m_len_query;
-  inku16 m_len_fragment;
-  inku16 m_len_printed_string;
+  uint16 m_len_scheme;
+  uint16 m_len_user;
+  uint16 m_len_password;
+  uint16 m_len_host;
+  uint16 m_len_port;
+  uint16 m_len_path;
+  uint16 m_len_params;
+  uint16 m_len_query;
+  uint16 m_len_fragment;
+  uint16 m_len_printed_string;
   // 4 + 20 byte = 24, 8 bytes aligned
 
   const char *m_ptr_scheme;
@@ -71,15 +71,15 @@ struct URLImpl:public HdrHeapObjImpl
   // pointer aligned (4 or 8)
 
   // Tokenized values
-  ink16 m_scheme_wks_idx;
-  inku16 m_port;
-  inku8 m_url_type;             // e.g. HTTP
-  inku8 m_type_code;            // RFC 1738 limits type code to 1 char
+  int16 m_scheme_wks_idx;
+  uint16 m_port;
+  uint8 m_url_type;             // e.g. HTTP
+  uint8 m_type_code;            // RFC 1738 limits type code to 1 char
   // 6 bytes
 
-  inku16 m_capacity_host;
+  uint16 m_capacity_host;
   // 8 bytes
-  inku32 m_clean:1;
+  uint32 m_clean:1;
   // 8 bytes + 1 bit, will result in padding
 
   // Marshaling Functions

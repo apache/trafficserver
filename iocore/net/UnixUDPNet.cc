@@ -50,10 +50,10 @@ EventType ET_UDP;
 UDPNetProcessorInternal udpNetInternal;
 UDPNetProcessor &udpNet = udpNetInternal;
 
-inku64 g_udp_bytesPending;
-ink32 g_udp_periodicCleanupSlots;
-ink32 g_udp_periodicFreeCancelledPkts;
-ink32 g_udp_numSendRetries;
+uint64 g_udp_bytesPending;
+int32 g_udp_periodicCleanupSlots;
+int32 g_udp_periodicFreeCancelledPkts;
+int32 g_udp_numSendRetries;
 
 #include "P_LibBulkIO.h"
 void *G_bulkIOState = NULL;
@@ -697,7 +697,7 @@ bool
 UDPNetProcessor::AllocBandwidth(Continuation * udpConn, double desiredMbps)
 {
   UDPConnectionInternal *udpIntConn = (UDPConnectionInternal *) udpConn;
-  ink64 desiredbps = (ink64) (desiredMbps * 1024.0 * 1024.0);
+  int64 desiredbps = (int64) (desiredMbps * 1024.0 * 1024.0);
 
   if (G_inkPipeInfo.numPipes == 0) {
     udpIntConn->flowRateBps = (desiredMbps * 1024.0 * 1024.0) / 8.0;
@@ -724,8 +724,8 @@ bool
 UDPNetProcessor::ChangeBandwidth(Continuation * udpConn, double desiredMbps)
 {
   UDPConnectionInternal *udpIntConn = (UDPConnectionInternal *) udpConn;
-  ink64 desiredbps = (ink64) (desiredMbps * 1024.0 * 1024.0);
-  ink64 oldbps = (ink64) (udpIntConn->flowRateBps * 8.0);
+  int64 desiredbps = (int64) (desiredMbps * 1024.0 * 1024.0);
+  int64 oldbps = (int64) (udpIntConn->flowRateBps * 8.0);
 
   if (G_inkPipeInfo.numPipes == 0) {
     udpIntConn->flowRateBps = (desiredMbps * 1024.0 * 1024.0) / 8.0;
@@ -753,7 +753,7 @@ void
 UDPNetProcessor::FreeBandwidth(Continuation * udpConn)
 {
   UDPConnectionInternal *udpIntConn = (UDPConnectionInternal *) udpConn;
-  ink64 bps;
+  int64 bps;
 
   if (G_inkPipeInfo.numPipes == 0)
     return;
@@ -817,19 +817,19 @@ void
 UDPQueue::service(UDPNetHandler * nh)
 {
   ink_hrtime now = ink_get_hrtime_internal();
-  inku64 timeSpent = 0;
+  uint64 timeSpent = 0;
   UDPPacketInternal *p;
   ink_hrtime pktSendTime;
   double minPktSpacing;
-  inku32 pktSize;
-  ink32 pktLen;
+  uint32 pktSize;
+  int32 pktLen;
   int i;
   bool addToGuaranteedQ;
   (void) nh;
   static ink_hrtime lastPrintTime = ink_get_hrtime_internal();
   static ink_hrtime lastSchedTime = ink_get_hrtime_internal();
-  static inku32 schedJitter = 0;
-  static inku32 numTimesSched = 0;
+  static uint32 schedJitter = 0;
+  static uint32 numTimesSched = 0;
 
   schedJitter += ink_hrtime_to_msec(now - lastSchedTime);
   numTimesSched++;
@@ -867,7 +867,7 @@ UDPQueue::service(UDPNetHandler * nh)
           // NOTE: this is flow rate in Bytes per sec.; convert to milli-sec.
           minPktSpacing = 1000.0 / (p->conn->flowRateBps / p->conn->avgPktSize);
 
-          pktSendTime = p->conn->lastPktStartTime + ink_hrtime_from_msec((inku32) minPktSpacing);
+          pktSendTime = p->conn->lastPktStartTime + ink_hrtime_from_msec((uint32) minPktSpacing);
         } else {
           minPktSpacing = 0.0;
           pktSendTime = p->delivery_time;
@@ -968,19 +968,19 @@ UDPQueue::SendPackets()
   // ink_hrtime send_threshold_time = now + HRTIME_MSECONDS(5);
   // send packets for SLOT_TIME per attempt
   ink_hrtime send_threshold_time = now + SLOT_TIME;
-  ink32 bytesThisSlot = INT_MAX, bytesUsed = 0, reliabilityBytes = 0;
-  ink32 bytesThisPipe, sentOne, i;
-  ink32 pktLen;
+  int32 bytesThisSlot = INT_MAX, bytesUsed = 0, reliabilityBytes = 0;
+  int32 bytesThisPipe, sentOne, i;
+  int32 pktLen;
   ink_hrtime timeDelta = 0;
 
   if (now > last_service)
     timeDelta = ink_hrtime_to_msec(now - last_service);
 
   if (G_inkPipeInfo.numPipes > 0) {
-    bytesThisSlot = (ink32) (((G_inkPipeInfo.reliabilityMbps * 1024.0 * 1024.0) / (8.0 * 1000.0)) * timeDelta);
+    bytesThisSlot = (int32) (((G_inkPipeInfo.reliabilityMbps * 1024.0 * 1024.0) / (8.0 * 1000.0)) * timeDelta);
     if (bytesThisSlot == 0) {
       // use at most 10% for reliability
-      bytesThisSlot = (ink32) (((G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0) / (8.0 * 1000.0)) * timeDelta * 0.1);
+      bytesThisSlot = (int32) (((G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0) / (8.0 * 1000.0)) * timeDelta * 0.1);
       reliabilityBytes = bytesThisSlot;
     }
   }
@@ -1007,7 +1007,7 @@ UDPQueue::SendPackets()
 
 
   if (G_inkPipeInfo.numPipes > 0)
-    bytesThisSlot = (ink32) (((G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0) /
+    bytesThisSlot = (int32) (((G_inkPipeInfo.interfaceMbps * 1024.0 * 1024.0) /
                               (8.0 * 1000.0)) * timeDelta - reliabilityBytes);
   else
     bytesThisSlot = INT_MAX;
@@ -1016,7 +1016,7 @@ sendPackets:
   sentOne = false;
   send_threshold_time = now + SLOT_TIME;
   for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++) {
-    bytesThisPipe = (ink32) (bytesThisSlot * G_inkPipeInfo.perPipeInfo[i].wt);
+    bytesThisPipe = (int32) (bytesThisSlot * G_inkPipeInfo.perPipeInfo[i].wt);
     while ((bytesThisPipe > 0) && (G_inkPipeInfo.perPipeInfo[i].queue->firstPacket(send_threshold_time))) {
       p = G_inkPipeInfo.perPipeInfo[i].queue->getFirstPacket();
       pktLen = p->getPktLength();
@@ -1057,7 +1057,7 @@ sendPackets:
 
   if ((g_udp_periodicFreeCancelledPkts) &&
       (now - lastCleanupTime > ink_hrtime_from_sec(g_udp_periodicFreeCancelledPkts))) {
-    inku64 nbytes = g_udp_bytesPending;
+    uint64 nbytes = g_udp_bytesPending;
     ink_hrtime startTime = ink_get_hrtime_internal(), endTime;
     for (i = 0; i < G_inkPipeInfo.numPipes + 1; i++) {
       G_inkPipeInfo.perPipeInfo[i].queue->FreeCancelledPackets(g_udp_periodicCleanupSlots);
@@ -1070,7 +1070,7 @@ sendPackets:
 }
 
 void
-UDPQueue::SendUDPPacket(UDPPacketInternal * p, ink32 pktLen)
+UDPQueue::SendUDPPacket(UDPPacketInternal * p, int32 pktLen)
 {
   IOBufferBlock *b;
   struct msghdr msg;

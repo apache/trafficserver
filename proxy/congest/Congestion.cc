@@ -486,7 +486,7 @@ CongestionControlled(RD * rdata)
   return NULL;
 }
 
-inku64
+uint64
 make_key(char *hostname, unsigned long ip, CongestionControlRecord * record)
 {
   int host_len = 0;
@@ -496,7 +496,7 @@ make_key(char *hostname, unsigned long ip, CongestionControlRecord * record)
   return make_key(hostname, host_len, ip, record);
 }
 
-inku64
+uint64
 make_key(char *hostname, int len, unsigned long ip, CongestionControlRecord * record)
 {
   INK_MD5 md5;
@@ -536,7 +536,7 @@ make_key(char *hostname, int len, unsigned long ip, CongestionControlRecord * re
   return md5.fold();
 }
 
-inku64
+uint64
 make_key(char *hostname, int len, unsigned long ip, char *prefix, int prelen, short port)
 {
   /* if the hostname != NULL, use hostname, else, use ip */
@@ -640,7 +640,7 @@ FailHistory::regist_event(long t, int n)
 //----------------------------------------------------------
 // CongestionEntry Implementation
 //----------------------------------------------------------
-CongestionEntry::CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, inku64 key)
+CongestionEntry::CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, uint64 key)
 :m_key(key),
 m_ip(ip),
 m_last_congested(0),
@@ -677,7 +677,7 @@ CongestionEntry::validate()
     return false;
   }
 
-  inku64 key = make_key(m_hostname,
+  uint64 key = make_key(m_hostname,
                         m_ip,
                         p);
   if (key != m_key) {
@@ -792,7 +792,7 @@ CongestionEntry::failed_at(ink_hrtime t)
   if (lock) {
     m_history.regist_event(time);
     if (!m_congested) {
-      ink32 new_congested = compCongested();
+      int32 new_congested = compCongested();
       if (new_congested && !ink_atomic_swap(&m_congested, 1)) {
         m_last_congested = m_history.last_event;
         snmp_sig_congested();

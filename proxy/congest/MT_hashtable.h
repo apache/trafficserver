@@ -398,7 +398,7 @@ private:
   ProxyMutexPtr locks[MT_HASHTABLE_PARTITIONS];
   // MT_ListEntry chain_heads[MT_HASHTABLE_PARTITIONS];
   // int last_GC_time[MT_HASHTABLE_PARTITIONS];
-  // ink32 cur_items;
+  // int32 cur_items;
 };
 
 #endif /* MT_HASHTABLE_H_ */

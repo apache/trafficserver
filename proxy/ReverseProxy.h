@@ -42,7 +42,7 @@
 #include "UrlRewrite.h"
 #include "UrlMapping.h"
 
-#define EMPTY_PORT_MAPPING (ink32)~0
+#define EMPTY_PORT_MAPPING (int32)~0
 
 struct url_mapping;
 struct host_hdr_info;

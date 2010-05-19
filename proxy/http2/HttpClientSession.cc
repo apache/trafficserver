@@ -53,7 +53,7 @@ enum
 DLL<HttpClientSession> debug_cs_list;
 ink_mutex debug_cs_list_mutex;
 
-static ink64 next_cs_id = (ink64) 0;
+static int64 next_cs_id = (int64) 0;
 ClassAllocator<HttpClientSession> httpClientSessionAllocator("httpClientSessionAllocator");
 
 HttpClientSession::HttpClientSession():
@@ -199,7 +199,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   this->backdoor_connect = backdoor;
 
   // Unique client session identifier.
-  con_id = ink_atomic_increment64((ink64 *) (&next_cs_id), 1);
+  con_id = ink_atomic_increment64((int64 *) (&next_cs_id), 1);
 
   HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
   conn_decrease = true;
@@ -233,13 +233,13 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
 }
 
 VIO *
-HttpClientSession::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
+HttpClientSession::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
 {
   return client_vc->do_io_read(c, nbytes, buf);
 }
 
 VIO *
-HttpClientSession::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner)
+HttpClientSession::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner)
 {
   return client_vc->do_io_write(c, nbytes, buf, owner);
 }

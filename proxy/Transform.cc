@@ -335,7 +335,7 @@ TransformTerminus::handle_event(int event, void *edata)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformTerminus::do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *buf)
+TransformTerminus::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
 {
   m_read_vio.buffer.writer_for(buf);
   m_read_vio.op = VIO::READ;
@@ -358,7 +358,7 @@ TransformTerminus::do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *buf)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformTerminus::do_io_write(Continuation *c, ink64 nbytes, IOBufferReader *buf, bool owner)
+TransformTerminus::do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner)
 {
   // In the process of eliminating 'owner' mode so asserting against it
   ink_assert(!owner);
@@ -496,7 +496,7 @@ TransformVConnection::handle_event(int event, void *edata)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformVConnection::do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *buf)
+TransformVConnection::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
 {
   Debug("transform", "TransformVConnection do_io_read: 0x%lx [0x%lx]", (long) c, (long) this);
 
@@ -507,7 +507,7 @@ TransformVConnection::do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *buf)
   -------------------------------------------------------------------------*/
 
 VIO *
-TransformVConnection::do_io_write(Continuation *c, ink64 nbytes, IOBufferReader *buf, bool owner)
+TransformVConnection::do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner)
 {
   Debug("transform", "TransformVConnection do_io_write: 0x%lx [0x%lx]", (long) c, (long) this);
 

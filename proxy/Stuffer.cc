@@ -29,17 +29,17 @@
 #include "ParentSelection.h"
 
 StufferHashTable *stuffer_htable;
-static inku32 *stuffer_parent_ip_array = 0;
+static uint32 *stuffer_parent_ip_array = 0;
 static int stuffer_num_parents;
 
 static inline bool
-connAllowed(inku32 ip)
+connAllowed(uint32 ip)
 {
   if (((unsigned char *) &ip)[0] == 127)        // allow localhost connetions
     return true;
 
   int n = stuffer_num_parents;
-  inku32 *ips = stuffer_parent_ip_array;
+  uint32 *ips = stuffer_parent_ip_array;
 
   for (int i = 0; i < n; i++)
     if (ip == ips[i])
@@ -65,7 +65,7 @@ struct StufferAccepter:Continuation
     if (connAllowed(netvc->get_remote_ip())) {
       stufferAllocator.alloc()->init(netvc);
     } else {
-      inku32 ip = netvc->get_remote_ip();
+      uint32 ip = netvc->get_remote_ip();
       unsigned char *str = (unsigned char *) &ip;
       Debug("stuffer", "rejecting connection from %d.%d.%d.%d", str[0], str[1], str[2], str[3]);
       netvc->do_io_close();
@@ -78,7 +78,7 @@ struct StufferAccepter:Continuation
 
 #define MAX_PARENTS 64
 static int
-readIPs(ParentRecord * parentRec, inku32 * ip_arr, int max)
+readIPs(ParentRecord * parentRec, uint32 * ip_arr, int max)
 {
   if (!parentRec)
     return 0;
@@ -94,7 +94,7 @@ readIPs(ParentRecord * parentRec, inku32 * ip_arr, int max)
     ink_gethostbyname_r_data data;
     struct hostent *ent = ink_gethostbyname_r(pr[i].hostname, &data);
     if (ent)
-      ip_arr[n++] = *(inku32 *) ent->h_addr_list[0];
+      ip_arr[n++] = *(uint32 *) ent->h_addr_list[0];
 #else
     ip_arr[n++] = inet_addr(pr[i].hostname);
 #endif
@@ -106,7 +106,7 @@ readIPs(ParentRecord * parentRec, inku32 * ip_arr, int max)
 static void
 buildParentIPTable()
 {
-  inku32 ips[MAX_PARENTS];
+  uint32 ips[MAX_PARENTS];
   int n = 0;
 
   ParentConfigParams *params = ParentConfig::acquire();
@@ -129,8 +129,8 @@ buildParentIPTable()
 
   stuffer_num_parents = n;
   if (n > 0) {
-    stuffer_parent_ip_array = (inku32 *) xmalloc(n * sizeof(inku32));
-    memcpy(stuffer_parent_ip_array, &ips[0], n * sizeof(inku32));
+    stuffer_parent_ip_array = (uint32 *) xmalloc(n * sizeof(uint32));
+    memcpy(stuffer_parent_ip_array, &ips[0], n * sizeof(uint32));
     for (int i = 0; i < n; i++) {
       unsigned char *str = (unsigned char *) &ips[i];
       Debug("stuffer_parent_ips", "parent ip [%d] = %d.%d.%d.%d", i, str[0], str[1], str[2], str[3]);

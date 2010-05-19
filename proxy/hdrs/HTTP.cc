@@ -184,7 +184,7 @@ is_ws(char c)
  ***********************************************************************/
 
 void
-http_hdr_adjust(HTTPHdrImpl * hdrp, ink32 offset, ink32 length, ink32 delta)
+http_hdr_adjust(HTTPHdrImpl * hdrp, int32 offset, int32 length, int32 delta)
 {
   ink_release_assert(!"http_hdr_adjust not implemented");
 }
@@ -403,7 +403,7 @@ http_hdr_clone(HTTPHdrImpl * s_hh, HdrHeap * s_heap, HdrHeap * d_heap)
   -------------------------------------------------------------------------*/
 
 static inline char *
-http_hdr_version_to_string(ink32 version, char *buf9)
+http_hdr_version_to_string(int32 version, char *buf9)
 {
   ink_debug_assert(HTTP_MAJOR(version) < 10);
   ink_debug_assert(HTTP_MINOR(version) < 10);
@@ -425,7 +425,7 @@ http_hdr_version_to_string(ink32 version, char *buf9)
   -------------------------------------------------------------------------*/
 
 int
-http_version_print(ink32 version, char *buf, int bufsize, int *bufindex, int *dumpoffset)
+http_version_print(int32 version, char *buf, int bufsize, int *bufindex, int *dumpoffset)
 {
 #define TRY(x)  if (!x) return 0
 
@@ -673,7 +673,7 @@ http_hdr_type_set(HTTPHdrImpl * hh, HTTPType type)
   -------------------------------------------------------------------------*/
 
 void
-http_hdr_version_set(HTTPHdrImpl * hh, ink32 ver)
+http_hdr_version_set(HTTPHdrImpl * hh, int32 ver)
 {
   hh->m_version = ver;
 }
@@ -704,7 +704,7 @@ http_hdr_method_get(HTTPHdrImpl * hh, int *length)
 
 void
 http_hdr_method_set(HdrHeap * heap,
-                    HTTPHdrImpl * hh, const char *method, ink16 method_wks_idx, int method_length, bool must_copy)
+                    HTTPHdrImpl * hh, const char *method, int16 method_wks_idx, int method_length, bool must_copy)
 {
   ink_debug_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
@@ -953,7 +953,7 @@ http_parser_parse_req(HTTPParser * parser,
       if (&(cur[4]) >= &(end[-11]))
         goto slow_case;
 
-      ink32 version = HTTP_VERSION(end[-5] - '0', end[-3] - '0');
+      int32 version = HTTP_VERSION(end[-5] - '0', end[-3] - '0');
 
       http_hdr_method_set(heap, hh, &(cur[0]), hdrtoken_wks_to_index(HTTP_METHOD_GET), 3, must_copy_strings);
       ink_debug_assert(hh->u.req.m_url_impl != NULL);
@@ -1089,7 +1089,7 @@ http_parser_parse_req(HTTPParser * parser,
     if (err < 0)
       return err;
 
-    ink32 version;
+    int32 version;
     if (version_start && version_end) {
       version = http_parse_version(version_start, version_end);
     } else
@@ -1159,7 +1159,7 @@ http_parser_parse_resp(HTTPParser * parser,
       while ((reason_end > reason_start + 1) && (ParseRules::is_space(reason_end[-1])))
         --reason_end;
 
-      ink32 version = HTTP_VERSION(cur[5] - '0', cur[7] - '0');
+      int32 version = HTTP_VERSION(cur[5] - '0', cur[7] - '0');
       HTTPStatus status = (HTTPStatus) ((cur[9] - '0') * 100 + (cur[10] - '0') * 10 + (cur[11] - '0'));
 
       http_hdr_version_set(hh, version);
@@ -1301,7 +1301,7 @@ http_parse_status(const char *start, const char *end)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-ink32
+int32
 http_parse_version(const char *start, const char *end)
 {
   int maj;

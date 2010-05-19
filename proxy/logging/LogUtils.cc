@@ -692,7 +692,7 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
   return ((tr >= sidl ? (tr - sidl) % rolling_interval : (86400 - (sidl - tr)) % rolling_interval));
 }
 
-// Converts the ink64 val argument to a null terminated string, returning a
+// Converts the int64 val argument to a null terminated string, returning a
 // pointer to the beginning of the string.
 //
 // The string is stored in the provided buffer if the buffer is large
@@ -709,7 +709,7 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
 // and if there is room in the buffer to accomodate the padding.
 //
 char *
-LogUtils::ink64_to_str(char *buf, unsigned int buf_size, ink64 val,
+LogUtils::int64_to_str(char *buf, unsigned int buf_size, int64 val,
                        unsigned int *total_chars, unsigned int req_width, char pad_char)
 {
   const int local_buf_size = 32;
@@ -719,7 +719,7 @@ LogUtils::ink64_to_str(char *buf, unsigned int buf_size, ink64 val,
   char *out_buf;
 
   if (buf_size < 22) {
-    // ink64 may not fit in provided buffer, use the local one
+    // int64 may not fit in provided buffer, use the local one
     out_buf = &local_buf[local_buf_size - 1];
     using_local_buffer = true;
   } else {
@@ -827,7 +827,7 @@ LogUtils::squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestam
   // convert seconds
   //
   unsigned int num_chars_s;
-  char *ts_s = LogUtils::ink64_to_str(tmp_buf, tmp_buf_size - 4,
+  char *ts_s = LogUtils::int64_to_str(tmp_buf, tmp_buf_size - 4,
                                       timestamp_sec, &num_chars_s);
   ink_debug_assert(ts_s);
 
@@ -836,7 +836,7 @@ LogUtils::squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestam
   tmp_buf[tmp_buf_size - 5] = '.';
   int ms = timestamp_usec / 1000;
   unsigned int num_chars_ms;
-  char RELEASE_UNUSED *ts_ms = LogUtils::ink64_to_str(&tmp_buf[tmp_buf_size - 4],
+  char RELEASE_UNUSED *ts_ms = LogUtils::int64_to_str(&tmp_buf[tmp_buf_size - 4],
                                                       4, ms, &num_chars_ms, 4, '0');
   ink_debug_assert(ts_ms && num_chars_ms == 4);
 
@@ -873,7 +873,7 @@ LogUtils::squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestam
 //
 int
 LogUtils::file_is_writeable(const char *full_filename,
-                            off_t * size_bytes, bool * has_size_limit, inku64 * current_size_limit_bytes)
+                            off_t * size_bytes, bool * has_size_limit, uint64 * current_size_limit_bytes)
 {
   int ret_val = 0;
   int e;

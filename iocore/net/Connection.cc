@@ -120,7 +120,7 @@ Connection::close()
 int
 Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * opt, const int sock)
 {
-  inku32 *z;
+  uint32 *z;
   int res = 0;
 
   if (sock < 0) {
@@ -135,7 +135,7 @@ Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * o
   sa.sin_family = AF_INET;
   sa.sin_port = htons(port);
   sa.sin_addr.s_addr = ip;
-  z = (inku32 *) & sa.sin_zero;
+  z = (uint32 *) & sa.sin_zero;
   z[0] = 0;
   z[1] = 0;
 

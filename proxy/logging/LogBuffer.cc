@@ -68,7 +68,7 @@ enum
 
 FieldListCacheElement fieldlist_cache[FIELDLIST_CACHE_SIZE];
 int fieldlist_cache_entries = 0;
-vink32 LogBuffer::M_ID = 0;
+vint32 LogBuffer::M_ID = 0;
 
 //iObjectActivator  iObjectActivatorInstance;     /* just to do ::Init() before main() */
 
@@ -294,7 +294,7 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, int buf_align_mask, int wri
   m_state.s.byte_count = hdr_size;
 
   // update the buffer id (m_id gets the old value)
-  m_id = (inku32) ink_atomic_increment((pvink32) & M_ID, 1);
+  m_id = (uint32) ink_atomic_increment((pvint32) & M_ID, 1);
 
   m_expiration_time = LogUtils::timestamp() + Log::config->max_secs_per_buffer;
 
@@ -324,7 +324,7 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
 
   // update the buffer id (m_id gets the old value)
   //
-  m_id = (inku32) ink_atomic_increment((pvink32) & M_ID, 1);
+  m_id = (uint32) ink_atomic_increment((pvint32) & M_ID, 1);
 
 //    Debug("log2-logbuffer","[%p] Created buffer %u for %s at address %p",
 //        this_ethread(), m_id, m_owner->get_base_filename(), m_buffer);
@@ -375,8 +375,8 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
   size_t
     actual_write_size = (write_size + sizeof(LogEntryHeader) + m_write_align_mask) & ~m_write_align_mask;
 
-  inku64
-    retries = (inku64) - 1;
+  uint64
+    retries = (uint64) - 1;
   do {
     old_s = m_state;
     new_s = old_s;
@@ -994,10 +994,10 @@ LogBuffer::convert_to_network_order(LogBufferHeader * header)
 
   // signature 64 bits long, convert each 32 bit part separately
   //
-  inku32 sig[2];
-  sig[0] = htonl((inku32) header->log_object_signature);
-  sig[1] = htonl((inku32) (header->log_object_signature >> 32));
-  header->log_object_signature = ((inku64) sig[1] << 32) | sig[0];
+  uint32 sig[2];
+  sig[0] = htonl((uint32) header->log_object_signature);
+  sig[1] = htonl((uint32) (header->log_object_signature >> 32));
+  header->log_object_signature = ((uint64) sig[1] << 32) | sig[0];
 }
 
 /*-------------------------------------------------------------------------
@@ -1043,10 +1043,10 @@ LogBuffer::convert_to_host_order(LogBufferHeader * header)
 
   // signature 64 bits long, convert each 32 bit part separately
   //
-  inku32 sig[2];
-  sig[0] = ntohl((inku32) header->log_object_signature);
-  sig[1] = ntohl((inku32) (header->log_object_signature >> 32));
-  header->log_object_signature = ((inku64) sig[1] << 32) | sig[0];
+  uint32 sig[2];
+  sig[0] = ntohl((uint32) header->log_object_signature);
+  sig[1] = ntohl((uint32) (header->log_object_signature >> 32));
+  header->log_object_signature = ((uint64) sig[1] << 32) | sig[0];
 
   //
   // Next, convert the entry headers

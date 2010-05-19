@@ -32,7 +32,7 @@
 
 struct MMH_CTX
 {
-  inku64 state[4];
+  uint64 state[4];
   unsigned char buffer[32];
   int buffer_size;
   int blocks;
@@ -54,7 +54,7 @@ int inkcoreapi ink_code_MMH(unsigned char *input, int len, unsigned char *sixtee
 */
 struct MMH
 {
-  inku64 b[2];
+  uint64 b[2];
     MMH & operator =(MMH & MMH)
   {
     b[0] = MMH.b[0];
@@ -112,11 +112,11 @@ struct MMH
   {
     return (ink_code_md5_stringify_fast(hex_MMH, str()));
   }
-  inku64 fold() const
+  uint64 fold() const
   {
     return (b[0] ^ b[1]);
   }
-  inku64 operator[] (int i) const
+  uint64 operator[] (int i) const
   {
     return b[i];
   }

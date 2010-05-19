@@ -40,7 +40,7 @@ struct PriorityEventQueue
 
   Que(Event, link) after[N_PQ_LIST];
   ink_hrtime last_check_time;
-  inku32 last_check_buckets;
+  uint32 last_check_buckets;
 
   void enqueue(Event * e, ink_hrtime now)
   {

@@ -57,7 +57,7 @@ cli_read(int fd, char *buf, int maxlen)
   char c;
 
   for (n = 1; n < maxlen; n++) {
-    if ((rc = ink_read_socket(fd, &c, 1)) == 1) {
+    if ((rc = read_socket(fd, &c, 1)) == 1) {
       *buf++ = c;
       if (c == '\0') {
         --buf;
@@ -94,7 +94,7 @@ cli_write(int fd, const char *data, int nbytes)
 
   nleft = nbytes;
   while (nleft > 0) {
-    nwritten = ink_write_socket(fd, tmp, nleft);
+    nwritten = write_socket(fd, tmp, nleft);
     if (nwritten <= 0)          /* Error or nothing written */
       return nwritten;
 
@@ -102,7 +102,7 @@ cli_write(int fd, const char *data, int nbytes)
     tmp += nwritten;
   }
 
-  if ((n = ink_write_socket(fd, "\0", 1)) <= 0) {       /* Terminating newline */
+  if ((n = write_socket(fd, "\0", 1)) <= 0) {       /* Terminating newline */
     if (n < 0)
       return n;
     else
@@ -189,7 +189,7 @@ cli_read_timeout(int fd, char *buf, int maxlen, ink_hrtime timeout)
     }
 
     ink_assert(bytesRead < maxlen);
-    sys_r = ink_read_socket(fd, readCur, maxlen - bytesRead);
+    sys_r = read_socket(fd, readCur, maxlen - bytesRead);
     if (sys_r < 0) {
       fprintf(stderr, "Read from traffic_manager failed : %s\n", strerror(errno));
       return -1;
@@ -283,7 +283,7 @@ cli_write_timeout(int fd, const char *data, int nbytes, ink_hrtime timeout)
         return -1;
       }
 
-      sys_r = ink_write_socket(fd, requestCur, bytesToSend);
+      sys_r = write_socket(fd, requestCur, bytesToSend);
       if (sys_r < 0) {
         fprintf(stderr, "Write to traffic_manager failed, connection probably closed : %s\n", strerror(errno));
         return -1;

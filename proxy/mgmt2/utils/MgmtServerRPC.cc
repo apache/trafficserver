@@ -67,7 +67,7 @@ raf_writen(int fd, const char *ptr, size_t n)
 
   nleft = n;
   while (nleft > 0) {
-    if ((nwritten = ink_write_socket(fd, ptr, nleft)) <= 0) {
+    if ((nwritten = write_socket(fd, ptr, nleft)) <= 0) {
       if (errno == EINTR)
         nwritten = 0;           /* and call write() again */
       else
@@ -97,7 +97,7 @@ raf_readn(int fd, char *ptr, size_t n)
 
   nleft = n;
   while (nleft > 0) {
-    if ((nread = ink_read_socket(fd, ptr, nleft)) < 0) {
+    if ((nread = read_socket(fd, ptr, nleft)) < 0) {
       if (errno == EINTR)
         nread = 0;              /* and call read() again */
       else

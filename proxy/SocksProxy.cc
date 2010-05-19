@@ -309,7 +309,7 @@ SocksProxy::mainEvent(int event, void *data)
               break;
             }
 
-            inku32 ip;
+            uint32 ip;
             memcpy(&ip, &p[4], 4);
 
             state = SERVER_TUNNEL;

@@ -538,7 +538,7 @@ HdrTest::test_mime()
   hdr.set_date(t1);
   t2 = hdr.get_date();
   if (t1 != t2) {
-    printf("FAILED: set_date(%lld) ... get_date = %lld\n\n", (ink64)t1, (ink64)t2);
+    printf("FAILED: set_date(%lld) ... get_date = %lld\n\n", (int64)t1, (int64)t2);
     return (failures_to_status("test_mime", 1));
   }
 

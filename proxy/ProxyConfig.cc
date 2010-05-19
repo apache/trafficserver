@@ -31,7 +31,7 @@ ConfigProcessor configProcessor;
 void *
 config_int_cb(void *data, void *value)
 {
-  *(int *) data = *(ink64 *) value;
+  *(int *) data = *(int64 *) value;
   return NULL;
 }
 
@@ -45,7 +45,7 @@ config_float_cb(void *data, void *value)
 void *
 config_long_long_cb(void *data, void *value)
 {
-  *(ink64 *) data = *(ink64 *) value;
+  *(int64 *) data = *(int64 *) value;
   return NULL;
 }
 

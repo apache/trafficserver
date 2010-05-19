@@ -49,7 +49,7 @@ struct CacheVC;
 #define DIR_BLOCK_SIZE(_i)              (INK_BLOCK_SIZE << DIR_BLOCK_SHIFT(_i))
 #define DIR_SIZE_WITH_BLOCK(_i)         ((1<<DIR_SIZE_WIDTH) * DIR_BLOCK_SIZE(_i))
 #define DIR_OFFSET_BITS                 40
-#define DIR_OFFSET_MAX                  ((((ink_off_t)1) << DIR_OFFSET_BITS) - 1)
+#define DIR_OFFSET_MAX                  ((((off_t)1) << DIR_OFFSET_BITS) - 1)
 #define MAX_DOC_SIZE                    ((1<<DIR_SIZE_WIDTH)*(1<<B8K_SHIFT)) // 1MB
 
 #define SYNC_MAX_WRITE                  (2 * 1024 * 1024)
@@ -111,7 +111,7 @@ struct CacheVC;
 #define OPEN_DIR_BUCKETS           256
 
 struct EvacuationBlock;
-typedef inku32 DirInfo;
+typedef uint32 DirInfo;
 // Global Data
 
 // Cache Directory
@@ -124,7 +124,7 @@ typedef inku32 DirInfo;
 // on the processor.
 struct Dir
 {
-  inku16 w[5];
+  uint16 w[5];
   Dir() { dir_clear(this); }
 };
 
@@ -132,25 +132,25 @@ struct Dir
 // accessors below (e.g. dir_offset, dir_set_offset)
 struct FreeDir
 {
-  inku16 w[5];
+  uint16 w[5];
   FreeDir() { dir_clear(this); }
 };
 
-#define dir_bit(_e, _w, _b) ((inku32)(((_e)->w[_w] >> (_b)) & 1))
-#define dir_set_bit(_e, _w, _b, _v) (_e)->w[_w] = (inku16)(((_e)->w[_w] & ~(1<<(_b))) | (((_v)?1:0)<<(_b)))
-#define dir_offset(_e) ((ink64)                                         \
-                         (((inku64)(_e)->w[0]) |                        \
-                          (((inku64)((_e)->w[1] & 0xFF)) << 16) |       \
-                          (((inku64)(_e)->w[4]) << 24)))
+#define dir_bit(_e, _w, _b) ((uint32)(((_e)->w[_w] >> (_b)) & 1))
+#define dir_set_bit(_e, _w, _b, _v) (_e)->w[_w] = (uint16)(((_e)->w[_w] & ~(1<<(_b))) | (((_v)?1:0)<<(_b)))
+#define dir_offset(_e) ((int64)                                         \
+                         (((uint64)(_e)->w[0]) |                        \
+                          (((uint64)((_e)->w[1] & 0xFF)) << 16) |       \
+                          (((uint64)(_e)->w[4]) << 24)))
 #define dir_set_offset(_e,_o) do { \
-    (_e)->w[0] = (inku16)_o;                                                    \
-    (_e)->w[1] = (inku16)((((_o) >> 16) & 0xFF) | ((_e)->w[1] & 0xFF00));       \
-    (_e)->w[4] = (inku16)((_o) >> 24);                                          \
+    (_e)->w[0] = (uint16)_o;                                                    \
+    (_e)->w[1] = (uint16)((((_o) >> 16) & 0xFF) | ((_e)->w[1] & 0xFF00));       \
+    (_e)->w[4] = (uint16)((_o) >> 24);                                          \
 } while (0)
-#define dir_big(_e) ((inku32)((((_e)->w[1]) >> 8)&0x3))
-#define dir_set_big(_e, _v) (_e)->w[1] = (inku16)(((_e)->w[1] & 0xFCFF) | (((inku16)(_v))&0x3)<<8)
-#define dir_size(_e) ((inku32)(((_e)->w[1]) >> 10))
-#define dir_set_size(_e, _v) (_e)->w[1] = (inku16)(((_e)->w[1] & ((1<<10)-1)) | ((_v)<<10))
+#define dir_big(_e) ((uint32)((((_e)->w[1]) >> 8)&0x3))
+#define dir_set_big(_e, _v) (_e)->w[1] = (uint16)(((_e)->w[1] & 0xFCFF) | (((uint16)(_v))&0x3)<<8)
+#define dir_size(_e) ((uint32)(((_e)->w[1]) >> 10))
+#define dir_set_size(_e, _v) (_e)->w[1] = (uint16)(((_e)->w[1] & ((1<<10)-1)) | ((_v)<<10))
 #define dir_set_approx_size(_e, _s) do {                         \
   if ((_s) <= DIR_SIZE_WITH_BLOCK(0)) {                          \
     dir_set_big(_e,0);                                           \
@@ -171,8 +171,8 @@ struct FreeDir
                                   (_s <= DIR_SIZE_WITH_BLOCK(1) ? ROUND_TO(_s, DIR_BLOCK_SIZE(1)) : \
                                    (_s <= DIR_SIZE_WITH_BLOCK(2) ? ROUND_TO(_s, DIR_BLOCK_SIZE(2)) : \
                                     ROUND_TO(_s, DIR_BLOCK_SIZE(3)))))
-#define dir_tag(_e) ((inku32)((_e)->w[2]&((1<<DIR_TAG_WIDTH)-1)))
-#define dir_set_tag(_e,_t) (_e)->w[2] = (inku16)(((_e)->w[2]&~((1<<DIR_TAG_WIDTH)-1)) | ((_t)&((1<<DIR_TAG_WIDTH)-1)))
+#define dir_tag(_e) ((uint32)((_e)->w[2]&((1<<DIR_TAG_WIDTH)-1)))
+#define dir_set_tag(_e,_t) (_e)->w[2] = (uint16)(((_e)->w[2]&~((1<<DIR_TAG_WIDTH)-1)) | ((_t)&((1<<DIR_TAG_WIDTH)-1)))
 #define dir_phase(_e) dir_bit(_e,2,12)
 #define dir_set_phase(_e,_v) dir_set_bit(_e,2,12,_v)
 #define dir_head(_e) dir_bit(_e,2,13)
@@ -182,9 +182,9 @@ struct FreeDir
 #define dir_token(_e) dir_bit(_e,2,15)
 #define dir_set_token(_e, _v) dir_set_bit(_e,2,15,_v)
 #define dir_next(_e) (_e)->w[3]
-#define dir_set_next(_e, _o) (_e)->w[3] = (inku16)(_o)
+#define dir_set_next(_e, _o) (_e)->w[3] = (uint16)(_o)
 #define dir_prev(_e) (_e)->w[2]
-#define dir_set_prev(_e,_o) (_e)->w[2] = (inku16)(_o)
+#define dir_set_prev(_e,_o) (_e)->w[2] = (uint16)(_o)
 
 // INKqa11166 - Cache can not store 2 HTTP alternates simultaneously.
 // To allow this, move the vector from the CacheVC to the OpenDirEntry.
@@ -204,8 +204,8 @@ struct OpenDirEntry
   Dir single_doc_dir;           // Directory for the resident alternate
   Dir first_dir;                // Dir for the vector. If empty, a new dir is
                                 // inserted, otherwise this dir is overwritten
-  inku16 num_writers;           // num of current writers
-  inku16 max_writers;           // max number of simultaneous writers allowed
+  uint16 num_writers;           // num of current writers
+  uint16 max_writers;           // max number of simultaneous writers allowed
   bool dont_update_directory;   // if set, the first_dir is not updated.
   bool move_resident_alt;       // if set, single_doc_dir is inserted.
   volatile bool reading_vec;    // somebody is currently reading the vector
@@ -243,7 +243,7 @@ struct CacheSync:Continuation
   AIOCallbackInternal io;
   Event *trigger;
   int mainEvent(int event, Event *e);
-  void aio_write(int fd, char *b, int n, ink_off_t o);
+  void aio_write(int fd, char *b, int n, off_t o);
 
   CacheSync():Continuation(new_ProxyMutex()), part(0), buf(0), buflen(0), writepos(0), trigger(0)
   {
@@ -268,11 +268,11 @@ void dir_free_entry(Dir *e, int s, Part *d);
 void dir_sync_init();
 int check_dir(Part *d);
 void dir_clean_part(Part *d);
-void dir_clear_range(ink_off_t start, ink_off_t end, Part *d);
+void dir_clear_range(off_t start, off_t end, Part *d);
 int dir_segment_accounted(int s, Part *d, int offby = 0,
                           int *free = 0, int *used = 0,
                           int *empty = 0, int *valid = 0, int *agg_valid = 0, int *avg_size = 0);
-inku64 dir_entries_used(Part *d);
+uint64 dir_entries_used(Part *d);
 void sync_cache_dir_on_shutdown();
 
 // Global Data

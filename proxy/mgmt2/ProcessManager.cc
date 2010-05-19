@@ -342,7 +342,7 @@ ProcessManager::pollLMConnection()
       }
       // handle EOF
       if (res == 0) {
-        ink_close_socket(local_manager_sockfd);
+        close_socket(local_manager_sockfd);
         mgmt_fatal(stderr, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
       }
 
@@ -558,7 +558,7 @@ drainBackDoor(void *arg)
 
       if (fcntl(req_fd, F_SETFD, 1) < 0) {
         mgmt_elog(stderr, "[drainBackDoor] Unable to set close on exec flag\n");
-        ink_close_socket(req_fd);
+        close_socket(req_fd);
         continue;
       }
 
@@ -569,11 +569,11 @@ drainBackDoor(void *arg)
 
         if (mgmt_readline(req_fd, message, 61440) > 0 && !checkBackDoorP(req_fd, message)) {    /* Heh... */
           mgmt_elog(stderr, "[drainBackDoor] Received unknown message: '%s'\n", message);
-          ink_close_socket(req_fd);
+          close_socket(req_fd);
           continue;
         }
       }
-      ink_close_socket(req_fd);
+      close_socket(req_fd);
     }
   }
   return ret;

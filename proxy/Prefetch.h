@@ -116,10 +116,10 @@ public:
 
   int object_buf_status;
 
-  inku32 req_ip;                /*ip address where request is coming from */
-  inku32 child_ip;
-  inku32 url_multicast_ip;
-  inku32 data_multicast_ip;
+  uint32 req_ip;                /*ip address where request is coming from */
+  uint32 child_ip;
+  uint32 url_multicast_ip;
+  uint32 data_multicast_ip;
 
   PrefetchUrlEntry *blaster_link;
   PrefetchUrlEntry *hash_link;
@@ -336,8 +336,8 @@ public:
   CacheLookupHttpConfig cache_lookup_config;
 
   //udp related:
-  inku32 n_pkts_sent;
-  inku32 seq_no;
+  uint32 n_pkts_sent;
+  uint32 seq_no;
   IOBufferBlock *io_block;
 };
 

@@ -72,35 +72,35 @@ int RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData * dat
 // Note: The following RecIncrRawStatXXX calls are fast and don't
 // require any ink_atomic_xxx64()'s to be executed.  Use these RawStat
 // functions over other RawStat functions whenever possible.
-inline int RecIncrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 incr = 1);
-inline int RecIncrRawStatSum(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 incr = 1);
-inline int RecIncrRawStatCount(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 incr = 1);
+inline int RecIncrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, int64 incr = 1);
+inline int RecIncrRawStatSum(RecRawStatBlock * rsb, EThread * ethread, int id, int64 incr = 1);
+inline int RecIncrRawStatCount(RecRawStatBlock * rsb, EThread * ethread, int id, int64 incr = 1);
 int RecIncrRawStatBlock(RecRawStatBlock * rsb, EThread * ethread, RecRawStat * stat_array);
 
-int RecSetRawStatSum(RecRawStatBlock * rsb, int id, ink64 data);
-int RecSetRawStatCount(RecRawStatBlock * rsb, int id, ink64 data);
+int RecSetRawStatSum(RecRawStatBlock * rsb, int id, int64 data);
+int RecSetRawStatCount(RecRawStatBlock * rsb, int id, int64 data);
 int RecSetRawStatBlock(RecRawStatBlock * rsb, RecRawStat * stat_array);
 
-int RecGetRawStatSum(RecRawStatBlock * rsb, int id, ink64 * data);
-int RecGetRawStatCount(RecRawStatBlock * rsb, int id, ink64 * data);
+int RecGetRawStatSum(RecRawStatBlock * rsb, int id, int64 * data);
+int RecGetRawStatCount(RecRawStatBlock * rsb, int id, int64 * data);
 
 //-------------------------------------------------------------------------
 // Global RawStat Items (e.g. same as above, but no thread-local behavior)
 //-------------------------------------------------------------------------
 
-int RecIncrGlobalRawStat(RecRawStatBlock * rsb, int id, ink64 incr = 1);
-int RecIncrGlobalRawStatSum(RecRawStatBlock * rsb, int id, ink64 incr = 1);
-int RecIncrGlobalRawStatCount(RecRawStatBlock * rsb, int id, ink64 incr = 1);
+int RecIncrGlobalRawStat(RecRawStatBlock * rsb, int id, int64 incr = 1);
+int RecIncrGlobalRawStatSum(RecRawStatBlock * rsb, int id, int64 incr = 1);
+int RecIncrGlobalRawStatCount(RecRawStatBlock * rsb, int id, int64 incr = 1);
 
-int RecSetGlobalRawStatSum(RecRawStatBlock * rsb, int id, ink64 data);
-int RecSetGlobalRawStatCount(RecRawStatBlock * rsb, int id, ink64 data);
+int RecSetGlobalRawStatSum(RecRawStatBlock * rsb, int id, int64 data);
+int RecSetGlobalRawStatCount(RecRawStatBlock * rsb, int id, int64 data);
 
-int RecGetGlobalRawStatSum(RecRawStatBlock * rsb, int id, ink64 * data);
-int RecGetGlobalRawStatCount(RecRawStatBlock * rsb, int id, ink64 * data);
+int RecGetGlobalRawStatSum(RecRawStatBlock * rsb, int id, int64 * data);
+int RecGetGlobalRawStatCount(RecRawStatBlock * rsb, int id, int64 * data);
 
 RecRawStat *RecGetGlobalRawStatPtr(RecRawStatBlock * rsb, int id);
-ink64 *RecGetGlobalRawStatSumPtr(RecRawStatBlock * rsb, int id);
-ink64 *RecGetGlobalRawStatCountPtr(RecRawStatBlock * rsb, int id);
+int64 *RecGetGlobalRawStatSumPtr(RecRawStatBlock * rsb, int id);
+int64 *RecGetGlobalRawStatCountPtr(RecRawStatBlock * rsb, int id);
 
 //-------------------------------------------------------------------------
 // RecIncrRawStatXXX
@@ -122,7 +122,7 @@ raw_stat_get_tlp(RecRawStatBlock * rsb, int id, EThread * ethread)
 
 
 inline int
-RecIncrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 incr)
+RecIncrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, int64 incr)
 {
   RecRawStat *tlp = raw_stat_get_tlp(rsb, id, ethread);
   tlp->sum += incr;
@@ -132,7 +132,7 @@ RecIncrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 incr)
 
 /* This does not seem to work as intended ... */
 inline int
-RecDecrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 decr)
+RecDecrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, int64 decr)
 {
   RecRawStat *tlp = raw_stat_get_tlp(rsb, id, ethread);
   if (decr <= tlp->sum) {       // Assure that we stay positive
@@ -143,7 +143,7 @@ RecDecrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 decr)
 }
 
 inline int
-RecIncrRawStatSum(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 incr)
+RecIncrRawStatSum(RecRawStatBlock * rsb, EThread * ethread, int id, int64 incr)
 {
   RecRawStat *tlp = raw_stat_get_tlp(rsb, id, ethread);
   tlp->sum += incr;
@@ -151,7 +151,7 @@ RecIncrRawStatSum(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 incr)
 }
 
 inline int
-RecIncrRawStatCount(RecRawStatBlock * rsb, EThread * ethread, int id, ink64 incr)
+RecIncrRawStatCount(RecRawStatBlock * rsb, EThread * ethread, int id, int64 incr)
 {
   RecRawStat *tlp = raw_stat_get_tlp(rsb, id, ethread);
   tlp->count += incr;

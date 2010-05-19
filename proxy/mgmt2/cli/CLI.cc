@@ -509,7 +509,7 @@ CLI_globals::QueryDeadhosts(char *largs,        /*     IN: arguments */
     int nread;
     char response[MAX_BUF_READ_SIZE];
     memset(response, 0, MAX_BUF_READ_SIZE);
-    while ((nread = ink_read_socket(fd, response, MAX_BUF_READ_SIZE)) > 0) {
+    while ((nread = read_socket(fd, response, MAX_BUF_READ_SIZE)) > 0) {
       output->copyFrom(response, nread);
       if (nread < MAX_BUF_READ_SIZE)
         break;
@@ -980,7 +980,7 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
     } while (readResult == 1024);
 
     if (readResult < 0 || input.spaceUsed() <= 0) {
-      ink_close_socket(cliFD);
+      close_socket(cliFD);
       return;
     }
     // parse command request from client
@@ -1088,15 +1088,15 @@ handleCLI(int cliFD,            /* IN: UNIX domain socket descriptor */
 
     // execute transition and associated actions
     if (cliFSM.control(event, (void *) &cli_data) == FALSE) {
-      ink_close_socket(cliFD);
+      close_socket(cliFD);
       return;
     }
     // send response back to client
     if (event != CL_EV_EXIT && (cli_write(cliFD, output.bufPtr(), output.spaceUsed()) < 0)) {
-      ink_close_socket(cliFD);
+      close_socket(cliFD);
       return;
     } else if (CL_EV_EXIT == event) {
-      ink_close_socket(cliFD);
+      close_socket(cliFD);
     }
   }                             // end while
 
@@ -1361,6 +1361,6 @@ handleOverseer(int fd, int mode)
     mgmt_writeline(fd, ok, strlen(ok));
     memset(buf, 0, 8192);
   }
-  ink_close_socket(fd);
+  close_socket(fd);
   return;
 }

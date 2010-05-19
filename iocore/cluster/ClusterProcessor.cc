@@ -67,14 +67,14 @@ ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
   OutgoingControl *c;
 
   ClusterHandler *ch = m->clusterHandler;
-  if (!ch || (!malloced && !((unsigned int) cluster_fn < (inku32) SIZE_clusterFunction))) {
+  if (!ch || (!malloced && !((unsigned int) cluster_fn < (uint32) SIZE_clusterFunction))) {
     // Invalid message or node is down, free message data
     if (malloced) {
       xfree(data);
     }
     if (cmsg) {
       invoke_remote_data_args *args = (invoke_remote_data_args *)
-        (((OutgoingControl *) cmsg)->data + sizeof(ink32));
+        (((OutgoingControl *) cmsg)->data + sizeof(int32));
       ink_assert(args->magicno == invoke_remote_data_args::MagicNo);
 
       args->data_oc->freeall();
@@ -100,15 +100,15 @@ ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
     c->set_data((char *) data, len);
   } else {
     if (!data_in_ocntl) {
-      c->len = len + sizeof(ink32);
+      c->len = len + sizeof(int32);
       c->alloc_data();
     }
     if (!c->fast_data()) {
       CLUSTER_INCREMENT_DYN_STAT(CLUSTER_SLOW_CTRL_MSGS_SENT_STAT);
     }
-    *(ink32 *) c->data = cluster_fn;
+    *(int32 *) c->data = cluster_fn;
     if (!data_in_ocntl) {
-      memcpy(c->data + sizeof(ink32), data, len);
+      memcpy(c->data + sizeof(int32), data, len);
     }
   }
 
@@ -119,7 +119,7 @@ ClusterProcessor::internal_invoke_remote(ClusterMachine * m, int cluster_fn,
   /////////////////////////////////////
   if (cmsg) {
     invoke_remote_data_args *args = (invoke_remote_data_args *)
-      (((OutgoingControl *) cmsg)->data + sizeof(ink32));
+      (((OutgoingControl *) cmsg)->data + sizeof(int32));
     ink_assert(args->magicno == invoke_remote_data_args::MagicNo);
     args->msg_oc = c;
     c = (OutgoingControl *) cmsg;
@@ -189,10 +189,10 @@ ClusterProcessor::invoke_remote_data(ClusterMachine * m, int cluster_fn,
 
   OutgoingControl *chdr = OutgoingControl::alloc();
   chdr->submit_time = ink_get_hrtime();
-  chdr->len = sizeof(ink32) + sizeof(mh);
+  chdr->len = sizeof(int32) + sizeof(mh);
   chdr->alloc_data();
-  *(ink32 *) chdr->data = -1;   // always -1 for compound message
-  memcpy(chdr->data + sizeof(ink32), (char *) &mh, sizeof(mh));
+  *(int32 *) chdr->data = -1;   // always -1 for compound message
+  memcpy(chdr->data + sizeof(int32), (char *) &mh, sizeof(mh));
 
   return internal_invoke_remote(m, cluster_fn, data, data_len, options, (void *) chdr);
 }
@@ -200,10 +200,10 @@ ClusterProcessor::invoke_remote_data(ClusterMachine * m, int cluster_fn,
 void
 ClusterProcessor::free_remote_data(char *p, int l)
 {
-  char *d = p - sizeof(ink32);  // reset to ptr to function code
+  char *d = p - sizeof(int32);  // reset to ptr to function code
   int data_hdr = ClusterControl::DATA_HDR;
 
-  ink_release_assert(*((inku8 *) (d - data_hdr + 1)) == (inku8) ALLOC_DATA_MAGIC);
+  ink_release_assert(*((uint8 *) (d - data_hdr + 1)) == (uint8) ALLOC_DATA_MAGIC);
   char size_index = *(d - data_hdr);
   if (size_index >= 0) {
     ink_release_assert((0 <= size_index) && (size_index <= (DEFAULT_BUFFER_SIZES - 1)));
@@ -862,7 +862,7 @@ ClusterProcessor::send_machine_list(ClusterMachine * m)
     }
     msg->n_ip = n;
     data = (void *) msg;
-    len = msg->sizeof_fixedlen_msg() + (n * sizeof(inku32));
+    len = msg->sizeof_fixedlen_msg() + (n * sizeof(uint32));
 
   } else {
     //////////////////////////////////////////////////////////////

@@ -76,7 +76,7 @@ mgmt_readline(int soc, char *buf, int maxlen)
 
   for (n = 1; n < maxlen; n++) {
 
-    if ((rc = ink_read_socket(soc, &c, 1)) == 1) {
+    if ((rc = read_socket(soc, &c, 1)) == 1) {
 
       *buf++ = c;
       if (c == '\n') {
@@ -121,7 +121,7 @@ mgmt_writeline(int soc, const char *data, int nbytes)
 
   nleft = nbytes;
   while (nleft > 0) {
-    nwritten = ink_write_socket(soc, tmp, nleft);
+    nwritten = write_socket(soc, tmp, nleft);
     if (nwritten <= 0) {        /* Error or nothing written */
       return nwritten;
     }
@@ -129,7 +129,7 @@ mgmt_writeline(int soc, const char *data, int nbytes)
     tmp += nwritten;
   }
 
-  if ((n = ink_write_socket(soc, "\n", 1)) <= 0) {      /* Terminating newline */
+  if ((n = write_socket(soc, "\n", 1)) <= 0) {      /* Terminating newline */
     if (n < 0) {
       return n;
     } else {
@@ -158,7 +158,7 @@ mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
   char *p = buf;
   int bytes_read = 0;
   while (bytes_to_read > 0) {
-    err = ink_read_socket(fd, p, bytes_to_read);
+    err = read_socket(fd, p, bytes_to_read);
     if (err == 0) {
       return err;
     } else if (err < 0) {
@@ -200,7 +200,7 @@ mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
   char *p = buf;
   int bytes_written = 0;
   while (bytes_to_write > 0) {
-    err = ink_write_socket(fd, p, bytes_to_write);
+    err = write_socket(fd, p, bytes_to_write);
     if (err == 0) {
       return err;
     } else if (err < 0) {

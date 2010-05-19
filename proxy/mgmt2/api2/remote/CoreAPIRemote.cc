@@ -492,7 +492,7 @@ MgmtRecordSet(const char *rec_name, const char *val, INKActionNeedT * action_nee
 }
 
 // first convert the MgmtInt into a string
-// NOTE: use long long, not just long, MgmtInt = ink64
+// NOTE: use long long, not just long, MgmtInt = int64
 INKError
 MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, INKActionNeedT * action_need)
 {

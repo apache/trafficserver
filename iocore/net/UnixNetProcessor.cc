@@ -218,7 +218,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
       socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
       socksEntry->action_ = cont;
       cont = socksEntry;
-      if (socksEntry->server_ip == (inku32) - 1) {
+      if (socksEntry->server_ip == (uint32) - 1) {
         socksEntry->lerrno = ESOCK_NO_SOCK_SERVER_CONN;
         socksEntry->free();
         return ACTION_RESULT_DONE;

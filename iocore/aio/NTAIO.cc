@@ -34,10 +34,10 @@
 extern Continuation *aio_err_callbck;
 
 // AIO Stats
-extern inku64 aio_num_read;
-extern inku64 aio_bytes_read;
-extern inku64 aio_num_write;
-extern inku64 aio_bytes_written;
+extern uint64 aio_num_read;
+extern uint64 aio_bytes_read;
+extern uint64 aio_num_write;
+extern uint64 aio_bytes_written;
 
 NTIOCompletionPort aio_completion_port(1);
 

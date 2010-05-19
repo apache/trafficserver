@@ -238,19 +238,19 @@ fd_read_line(int fd, char *s, int len)
 
 
 int
-ink_close_socket(int s)
+close_socket(int s)
 {
   return close(s);
 }
 
 int
-ink_write_socket(int s, const char *buffer, int length)
+write_socket(int s, const char *buffer, int length)
 {
   return write(s, (const void *) buffer, length);
 }
 
 int
-ink_read_socket(int s, char *buffer, int length)
+read_socket(int s, char *buffer, int length)
 {
   return read(s, (void *) buffer, length);
 }

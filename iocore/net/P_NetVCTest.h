@@ -101,8 +101,8 @@ public:
                  NetVConnection * nvc, RegressionTest * robj,
                  NVC_test_def * my_def, const char *module_name_arg, const char *debug_tag_arg);
   void start_test();
-  int fill_buffer(MIOBuffer * buf, inku8 * seed, int bytes);
-  int consume_and_check_bytes(IOBufferReader * r, inku8 * seed);
+  int fill_buffer(MIOBuffer * buf, uint8 * seed, int bytes);
+  int consume_and_check_bytes(IOBufferReader * r, uint8 * seed);
 
   void write_finished();
   void read_finished();
@@ -131,8 +131,8 @@ public:
   bool write_done;
   bool read_done;
 
-  inku8 read_seed;
-  inku8 write_seed;
+  uint8 read_seed;
+  uint8 write_seed;
 
   int bytes_to_send;
   int bytes_to_read;

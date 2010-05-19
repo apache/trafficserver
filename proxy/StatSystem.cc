@@ -421,7 +421,6 @@ struct SnapCont:Continuation
 {
   int mainEvent(int event, Event * e)
   {
-    init_hrtime_basis();
     take_rusage_snap();
     e->schedule_every(SNAP_USAGE_PERIOD);
     return EVENT_CONT;

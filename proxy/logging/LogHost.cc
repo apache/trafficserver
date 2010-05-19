@@ -53,7 +53,7 @@
   LogHost
   -------------------------------------------------------------------------*/
 
-LogHost::LogHost(char *object_filename, inku64 object_signature)
+LogHost::LogHost(char *object_filename, uint64 object_signature)
   : m_object_filename(xstrdup(object_filename))
   , m_object_signature(object_signature)
   , m_ip(0)

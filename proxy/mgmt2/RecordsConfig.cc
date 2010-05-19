@@ -4205,7 +4205,7 @@ LibRecordsConfigInit()
 
   int r = 0;
   RecInt tempInt = 0;
-  ink64 tempLLong = 0;
+  int64 tempLLong = 0;
   RecFloat tempFloat = 0.0;
   RecCounter tempCounter = 0;
 

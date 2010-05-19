@@ -36,7 +36,7 @@
 #include "HttpSessionManager.h"
 #include "HttpSM.h"
 
-static ink64 next_ss_id = (ink64) 0;
+static int64 next_ss_id = (int64) 0;
 ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
 
 enum
@@ -95,7 +95,7 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
 #endif
 
   // Unique client session identifier.
-  con_id = ink_atomic_increment64((ink64 *) (&next_ss_id), 1);
+  con_id = ink_atomic_increment64((int64 *) (&next_ss_id), 1);
 
   magic = HTTP_SS_MAGIC_ALIVE;
   HTTP_INCREMENT_DYN_STAT(http_current_server_connections_stat);
@@ -120,13 +120,13 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
 }
 
 VIO *
-HttpServerSession::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
+HttpServerSession::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
 {
   return server_vc->do_io_read(c, nbytes, buf);
 }
 
 VIO *
-HttpServerSession::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner)
+HttpServerSession::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner)
 {
   return server_vc->do_io_write(c, nbytes, buf, owner);
 }

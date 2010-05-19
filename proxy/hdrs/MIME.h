@@ -102,13 +102,13 @@ struct MIMEField
   const char *m_ptr_name;       // 4
   const char *m_ptr_value;      // 4
   MIMEField *m_next_dup;        // 4
-  ink16 m_wks_idx;              // 2
-  inku16 m_len_name;            // 2
-  inku32 m_len_value:24;        // 3
-  inku8 m_n_v_raw_printable:1;  // 1/8
-  inku8 m_n_v_raw_printable_pad:3;      // 3/8
-  inku8 m_readiness:2;          // 2/8
-  inku8 m_flags:2;              // 2/8
+  int16 m_wks_idx;              // 2
+  uint16 m_len_name;            // 2
+  uint32 m_len_value:24;        // 3
+  uint8 m_n_v_raw_printable:1;  // 1/8
+  uint8 m_n_v_raw_printable_pad:3;      // 3/8
+  uint8 m_readiness:2;          // 2/8
+  uint8 m_flags:2;              // 2/8
 
   int is_dup_head()
   {
@@ -133,16 +133,16 @@ struct MIMEField
   const char *name_get(int *length);
 
   const char *value_get(int *length);
-  ink32 value_get_int();
-  inku32 value_get_uint();
+  int32 value_get_int();
+  uint32 value_get_uint();
   time_t value_get_date();
   int value_get_comma_list(StrList * list);
 
   void name_set(HdrHeap * heap, MIMEHdrImpl * mh, const char *name, int length);
 
   void value_set(HdrHeap * heap, MIMEHdrImpl * mh, const char *value, int length);
-  void value_set_int(HdrHeap * heap, MIMEHdrImpl * mh, ink32 value);
-  void value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, inku32 value);
+  void value_set_int(HdrHeap * heap, MIMEHdrImpl * mh, int32 value);
+  void value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, uint32 value);
   void value_set_date(HdrHeap * heap, MIMEHdrImpl * mh, time_t value);
   void value_clear(HdrHeap * heap, MIMEHdrImpl * mh);
   // MIME standard separator ',' is used as the default value
@@ -155,7 +155,7 @@ struct MIMEField
 struct MIMEFieldBlockImpl:public HdrHeapObjImpl
 {
   // HdrHeapObjImpl is 4 bytes
-  inku32 m_freetop;
+  uint32 m_freetop;
   MIMEFieldBlockImpl *m_next;
   MIMEField m_field_slots[MIME_FIELD_BLOCK_SLOTS];
   // mime_hdr_copy_onto assumes that m_field_slots is last --
@@ -196,11 +196,11 @@ enum MIMECookedMask
 
 struct MIMECookedCacheControl
 {
-  inku32 m_mask;
-  ink32 m_secs_max_age;
-  ink32 m_secs_s_maxage;
-  ink32 m_secs_max_stale;
-  ink32 m_secs_min_fresh;
+  uint32 m_mask;
+  int32 m_secs_max_age;
+  int32 m_secs_s_maxage;
+  int32 m_secs_max_stale;
+  int32 m_secs_min_fresh;
 };
 
 struct MIMECookedPragma
@@ -223,8 +223,8 @@ struct MIMECooked
 struct MIMEHdrImpl:public HdrHeapObjImpl
 {
   // HdrHeapObjImpl is 4 bytes, so this will result in 4 bytes padding
-  inku64 m_presence_bits;
-  inku32 m_slot_accelerators[4];
+  uint64 m_presence_bits;
+  uint32 m_slot_accelerators[4];
 
   MIMECooked m_cooked_stuff;
 
@@ -264,7 +264,7 @@ struct MIMEScanner
 struct MIMEParser
 {
   MIMEScanner m_scanner;
-  ink32 m_field;
+  int32 m_field;
   int m_field_flags;
   int m_value;
 };
@@ -563,8 +563,8 @@ extern int MIME_WKSIDX_X_ID;
  *                                                                     *
  ***********************************************************************/
 
-inku64 mime_field_presence_mask(const char *well_known_str);
-inku64 mime_field_presence_mask(int well_known_str_index);
+uint64 mime_field_presence_mask(const char *well_known_str);
+uint64 mime_field_presence_mask(int well_known_str_index);
 int mime_field_presence_get(MIMEHdrImpl * h, const char *well_known_str);
 int mime_field_presence_get(MIMEHdrImpl * h, int well_known_str_index);
 void mime_hdr_presence_set(MIMEHdrImpl * h, const char *well_known_str);
@@ -619,11 +619,11 @@ void mime_field_destroy(MIMEHdrImpl * mh, MIMEField * field);
 
 const char *mime_field_name_get(MIMEField * field, int *length);
 void mime_field_name_set(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field,
-                         ink16 name_wks_idx_or_neg1, const char *name, int length, bool must_copy_string);
+                         int16 name_wks_idx_or_neg1, const char *name, int length, bool must_copy_string);
 
 inkcoreapi const char *mime_field_value_get(MIMEField * field, int *length);
-ink32 mime_field_value_get_int(MIMEField * field);
-inku32 mime_field_value_get_uint(MIMEField * field);
+int32 mime_field_value_get_int(MIMEField * field);
+uint32 mime_field_value_get_uint(MIMEField * field);
 time_t mime_field_value_get_date(MIMEField * field);
 const char *mime_field_value_get_comma_val(MIMEField * field, int *length, int idx);
 int mime_field_value_get_comma_val_count(MIMEField * field);
@@ -649,11 +649,11 @@ void mime_field_value_insert_comma_val(HdrHeap * heap, MIMEHdrImpl * mh, MIMEFie
 
 inkcoreapi void mime_field_value_set(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field,
                                      const char *value, int length, bool must_copy_string);
-void mime_field_value_set_int(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, ink32 value);
-void mime_field_value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, inku32 value);
+void mime_field_value_set_int(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, int32 value);
+void mime_field_value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, uint32 value);
 void mime_field_value_set_date(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, time_t value);
 void mime_field_name_value_set(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field,
-                               ink16 name_wks_idx_or_neg1, const char *name,
+                               int16 name_wks_idx_or_neg1, const char *name,
                                int name_length, const char *value,
                                int value_length, int n_v_raw_printable, int n_v_raw_length, bool must_copy_strings);
 
@@ -682,20 +682,20 @@ int mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length
 int mime_field_print(MIMEField * field, char *buf_start, int buf_length,
                      int *buf_index_inout, int *buf_chars_to_skip_inout);
 
-const char *mime_str_u16_set(HdrHeap * heap, const char *s_str, inku16 s_len,
-                             const char **d_str, inku16 * d_len, bool must_copy);
+const char *mime_str_u16_set(HdrHeap * heap, const char *s_str, uint16 s_len,
+                             const char **d_str, uint16 * d_len, bool must_copy);
 
 int mime_field_length_get(MIMEField * field);
-int mime_format_int(char *buf, ink32 val, size_t buf_len);
-int mime_format_uint(char *buf, inku32 val, size_t buf_len);
+int mime_format_int(char *buf, int32 val, size_t buf_len);
+int mime_format_uint(char *buf, uint32 val, size_t buf_len);
 
 void mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970,
                                            int *m_return, int *d_return, int *y_return);
 void mime_days_since_epoch_to_mdy(unsigned int days_since_jan_1_1970, int *m_return, int *d_return, int *y_return);
 int mime_format_date(char *buffer, time_t value);
 
-ink32 mime_parse_int(const char *buf, const char *end = NULL);
-inku32 mime_parse_uint(const char *buf, const char *end = NULL);
+int32 mime_parse_int(const char *buf, const char *end = NULL);
+uint32 mime_parse_uint(const char *buf, const char *end = NULL);
 int mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp);
 time_t mime_parse_date(const char *buf, const char *end = NULL);
 int mime_parse_day(const char *&buf, const char *end, int *day);
@@ -726,7 +726,7 @@ MIMEField::name_get(int *length)
 inline void
 MIMEField::name_set(HdrHeap * heap, MIMEHdrImpl * mh, const char *name, int length)
 {
-  ink16 name_wks_idx;
+  int16 name_wks_idx;
   const char *name_wks;
 
   if (hdrtoken_is_wks(name)) {
@@ -747,13 +747,13 @@ MIMEField::value_get(int *length)
   return (mime_field_value_get(this, length));
 }
 
-inline ink32
+inline int32
 MIMEField::value_get_int()
 {
   return (mime_field_value_get_int(this));
 }
 
-inline inku32
+inline uint32
 MIMEField::value_get_uint()
 {
   return (mime_field_value_get_uint(this));
@@ -781,13 +781,13 @@ MIMEField::value_set(HdrHeap * heap, MIMEHdrImpl * mh, const char *value, int le
 }
 
 inline void
-MIMEField::value_set_int(HdrHeap * heap, MIMEHdrImpl * mh, ink32 value)
+MIMEField::value_set_int(HdrHeap * heap, MIMEHdrImpl * mh, int32 value)
 {
   mime_field_value_set_int(heap, mh, this, value);
 }
 
 inline void
-MIMEField::value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, inku32 value)
+MIMEField::value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, uint32 value)
 {
   mime_field_value_set_uint(heap, mh, this, value);
 }
@@ -831,7 +831,7 @@ MIMEField::has_dups()
 
 struct MIMEFieldIter
 {
-  inku32 m_slot;
+  uint32 m_slot;
   MIMEFieldBlockImpl *m_block;
 };
 
@@ -873,21 +873,21 @@ public:
   MIMEField *iter_get_first(MIMEFieldIter * iter);
   MIMEField *iter_get_next(MIMEFieldIter * iter);
 
-  inku64 presence(inku64 mask);
+  uint64 presence(uint64 mask);
 
   int print(char *buf, int bufsize, int *bufindex, int *chars_to_skip);
 
   int parse(MIMEParser * parser, const char **start, const char *end, bool must_copy_strs, bool eof);
 
   const char *value_get(const char *name, int name_length, int *value_length);
-  ink32 value_get_int(const char *name, int name_length);
-  inku32 value_get_uint(const char *name, int name_length);
+  int32 value_get_int(const char *name, int name_length);
+  uint32 value_get_uint(const char *name, int name_length);
   time_t value_get_date(const char *name, int name_length);
   int value_get_comma_list(const char *name, int name_length, StrList * list);
 
   void value_set(const char *name, int name_length, const char *value, int value_length);
-  void value_set_int(const char *name, int name_length, ink32 value);
-  void value_set_uint(const char *name, int name_length, inku32 value);
+  void value_set_int(const char *name, int name_length, int32 value);
+  void value_set_uint(const char *name, int name_length, uint32 value);
   void value_set_date(const char *name, int name_length, time_t value);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
@@ -895,43 +895,43 @@ public:
                     const char *value, int value_length, bool prepend_comma = false, const char separator = ',');
 
   void field_value_set(MIMEField * field, const char *value, int value_length);
-  void field_value_set_int(MIMEField * field, ink32 value);
-  void field_value_set_uint(MIMEField * field, inku32 value);
+  void field_value_set_int(MIMEField * field, int32 value);
+  void field_value_set_uint(MIMEField * field, uint32 value);
   void field_value_set_date(MIMEField * field, time_t value);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void field_value_append(MIMEField * field,
                           const char *value, int value_length, bool prepend_comma = false, const char separator = ',');
-  ink32 get_age();
-  ink32 get_content_length();
+  int32 get_age();
+  int32 get_content_length();
   time_t get_date();
   time_t get_expires();
   time_t get_if_modified_since();
   time_t get_if_unmodified_since();
   time_t get_last_modified();
   time_t get_if_range_date();
-  ink32 get_max_forwards();
-  ink32 get_warning(int idx = 0);
+  int32 get_max_forwards();
+  int32 get_warning(int idx = 0);
 
-  inku32 get_cooked_cc_mask();
-  ink32 get_cooked_cc_max_age();
-  ink32 get_cooked_cc_s_maxage();
-  ink32 get_cooked_cc_max_stale();
-  ink32 get_cooked_cc_min_fresh();
+  uint32 get_cooked_cc_mask();
+  int32 get_cooked_cc_max_age();
+  int32 get_cooked_cc_s_maxage();
+  int32 get_cooked_cc_max_stale();
+  int32 get_cooked_cc_min_fresh();
   bool get_cooked_pragma_no_cache();
 
   void set_cooked_cc_need_revalidate_once();
   void unset_cooked_cc_need_revalidate_once();
 
-  void set_age(ink32 value);
-  void set_content_length(ink32 value);
+  void set_age(int32 value);
+  void set_content_length(int32 value);
   void set_date(time_t value);
   void set_expires(time_t value);
   void set_if_modified_since(time_t value);
   void set_if_unmodified_since(time_t value);
   void set_last_modified(time_t value);
-  void set_max_forwards(ink32 value);
-  void set_warning(ink32 value);
+  void set_max_forwards(int32 value);
+  void set_warning(int32 value);
   void set_server(const char *server_id_tag, int server_id_tag_size);
 
 private:
@@ -1117,8 +1117,8 @@ MIMEHdr::iter_get_next(MIMEFieldIter * iter)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline inku64
-MIMEHdr::presence(inku64 mask)
+inline uint64
+MIMEHdr::presence(uint64 mask)
 {
   return (m_mime->m_presence_bits & mask);
 }
@@ -1162,7 +1162,7 @@ MIMEHdr::value_get(const char *name, int name_length, int *value_length_return)
     return (NULL);
 }
 
-inline ink32
+inline int32
 MIMEHdr::value_get_int(const char *name, int name_length)
 {
   MIMEField *field = field_find(name, name_length);
@@ -1173,7 +1173,7 @@ MIMEHdr::value_get_int(const char *name, int name_length)
     return (0);
 }
 
-inline inku32
+inline uint32
 MIMEHdr::value_get_uint(const char *name, int name_length)
 {
   MIMEField *field = field_find(name, name_length);
@@ -1216,13 +1216,13 @@ MIMEHdr::field_value_set(MIMEField * field, const char *value, int value_length)
 }
 
 inline void
-MIMEHdr::field_value_set_int(MIMEField * field, ink32 value)
+MIMEHdr::field_value_set_int(MIMEField * field, int32 value)
 {
   field->value_set_int(m_heap, m_mime, value);
 }
 
 inline void
-MIMEHdr::field_value_set_uint(MIMEField * field, inku32 value)
+MIMEHdr::field_value_set_uint(MIMEField * field, uint32 value)
 {
   field->value_set_uint(m_heap, m_mime, value);
 }
@@ -1255,7 +1255,7 @@ MIMEHdr::value_set(const char *name, int name_length, const char *value, int val
 }
 
 inline void
-MIMEHdr::value_set_int(const char *name, int name_length, ink32 value)
+MIMEHdr::value_set_int(const char *name, int name_length, int32 value)
 {
   MIMEField *field;
   field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
@@ -1263,7 +1263,7 @@ MIMEHdr::value_set_int(const char *name, int name_length, ink32 value)
 }
 
 inline void
-MIMEHdr::value_set_uint(const char *name, int name_length, inku32 value)
+MIMEHdr::value_set_uint(const char *name, int name_length, uint32 value)
 {
   MIMEField *field;
   field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
@@ -1302,7 +1302,7 @@ MIMEHdr::value_append(const char *name, int name_length,
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline ink32
+inline int32
 MIMEHdr::get_age()
 {
   return (value_get_int(MIME_FIELD_AGE, MIME_LEN_AGE));
@@ -1311,7 +1311,7 @@ MIMEHdr::get_age()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline ink32
+inline int32
 MIMEHdr::get_content_length()
 {
   return (value_get_int(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH));
@@ -1374,7 +1374,7 @@ MIMEHdr::get_if_range_date()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline ink32
+inline int32
 MIMEHdr::get_max_forwards()
 {
   return (value_get_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS));
@@ -1383,7 +1383,7 @@ MIMEHdr::get_max_forwards()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline ink32
+inline int32
 MIMEHdr::get_warning(int idx)
 {
   (void) idx;
@@ -1395,7 +1395,7 @@ MIMEHdr::get_warning(int idx)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline inku32
+inline uint32
 MIMEHdr::get_cooked_cc_mask()
 {
   return (m_mime->m_cooked_stuff.m_cache_control.m_mask);
@@ -1404,7 +1404,7 @@ MIMEHdr::get_cooked_cc_mask()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline ink32
+inline int32
 MIMEHdr::get_cooked_cc_max_age()
 {
   return (m_mime->m_cooked_stuff.m_cache_control.m_secs_max_age);
@@ -1413,7 +1413,7 @@ MIMEHdr::get_cooked_cc_max_age()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline ink32
+inline int32
 MIMEHdr::get_cooked_cc_s_maxage()
 {
   return (m_mime->m_cooked_stuff.m_cache_control.m_secs_s_maxage);
@@ -1422,7 +1422,7 @@ MIMEHdr::get_cooked_cc_s_maxage()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline ink32
+inline int32
 MIMEHdr::get_cooked_cc_max_stale()
 {
   return (m_mime->m_cooked_stuff.m_cache_control.m_secs_max_stale);
@@ -1431,7 +1431,7 @@ MIMEHdr::get_cooked_cc_max_stale()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline ink32
+inline int32
 MIMEHdr::get_cooked_cc_min_fresh()
 {
   return (m_mime->m_cooked_stuff.m_cache_control.m_secs_min_fresh);
@@ -1461,14 +1461,14 @@ MIMEHdr::set_cooked_cc_need_revalidate_once()
 inline void
 MIMEHdr::unset_cooked_cc_need_revalidate_once()
 {
-  m_mime->m_cooked_stuff.m_cache_control.m_mask &= ~((inku32) MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE);
+  m_mime->m_cooked_stuff.m_cache_control.m_mask &= ~((uint32) MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE);
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::set_age(ink32 value)
+MIMEHdr::set_age(int32 value)
 {
   value_set_int(MIME_FIELD_AGE, MIME_LEN_AGE, value);
 }
@@ -1477,7 +1477,7 @@ MIMEHdr::set_age(ink32 value)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::set_content_length(ink32 value)
+MIMEHdr::set_content_length(int32 value)
 {
   value_set_int(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, value);
 }
@@ -1531,7 +1531,7 @@ MIMEHdr::set_last_modified(time_t value)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::set_max_forwards(ink32 value)
+MIMEHdr::set_max_forwards(int32 value)
 {
   value_set_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS, value);
 }
@@ -1540,7 +1540,7 @@ MIMEHdr::set_max_forwards(ink32 value)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::set_warning(ink32 value)
+MIMEHdr::set_warning(int32 value)
 {
   value_set_int(MIME_FIELD_WARNING, MIME_LEN_WARNING, value);
 }

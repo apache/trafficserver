@@ -135,18 +135,18 @@ RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src)
 //-------------------------------------------------------------------------
 
 bool
-RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, ink64 data_ink64)
+RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64 data_int64)
 {
 
   switch (data_type) {
   case RECD_INT:
-    data_dst->rec_int = data_ink64;
+    data_dst->rec_int = data_int64;
     break;
   case RECD_LLONG:
-    data_dst->rec_llong = data_ink64;
+    data_dst->rec_llong = data_int64;
     break;
   case RECD_FLOAT:
-    data_dst->rec_float = (float) (data_ink64);
+    data_dst->rec_float = (float) (data_int64);
     break;
   case RECD_STRING:
     {
@@ -154,12 +154,12 @@ RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, ink64 data_ink64)
       if (data_dst->rec_string) {
         xfree(data_dst->rec_string);
       }
-      snprintf(buf, 32, "%lld", data_ink64);
+      snprintf(buf, 32, "%lld", data_int64);
       data_dst->rec_string = xstrdup(buf);
       break;
     }
   case RECD_COUNTER:
-    data_dst->rec_counter = data_ink64;
+    data_dst->rec_counter = data_int64;
     break;
   default:
     ink_debug_assert(!"Unexpected RecD type");

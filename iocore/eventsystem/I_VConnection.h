@@ -185,12 +185,12 @@ public:
 
     @param c Continuation to be called back with events.
     @param nbytes Number of bytes to read. If unknown, nbytes must
-      be set to INK64_MAX.
+      be set to INT64_MAX.
     @param buf buffer to read into.
     @return VIO representing the scheduled IO operation.
 
   */
-  virtual VIO *do_io_read(Continuation *c = NULL, ink64 nbytes = INK64_MAX, MIOBuffer *buf = 0) = 0;
+  virtual VIO *do_io_read(Continuation *c = NULL, int64 nbytes = INT64_MAX, MIOBuffer *buf = 0) = 0;
 
   /**
     Write data to the VConnection.
@@ -234,14 +234,14 @@ public:
 
     @param c Continuation to be called back with events.
     @param nbytes Number of bytes to write. If unknown, nbytes must
-      be set to INK64_MAX.
+      be set to INT64_MAX.
     @param buf Reader whose data is to be read from.
     @param owner
     @return VIO representing the scheduled IO operation.
 
   */
   virtual VIO *do_io_write(Continuation *c = NULL,
-                           ink64 nbytes = INK64_MAX, IOBufferReader *buf = 0, bool owner = false) = 0;
+                           int64 nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) = 0;
 
   /**
     Indicate that the VConnection is no longer needed.
@@ -306,11 +306,11 @@ public:
     VConnection(ProxyMutex *aMutex);
 
 #if defined (_IOCORE_WIN32_WINNT)
-  virtual void set_nbytes(VIO *vio, ink64 nbytes);
+  virtual void set_nbytes(VIO *vio, int64 nbytes);
 #endif
 
   /** @deprecated */
-  VIO *do_io(int op, Continuation *c = NULL, ink64 nbytes = INK64_MAX, MIOBuffer *buf = 0, int data = 0);
+  VIO *do_io(int op, Continuation *c = NULL, int64 nbytes = INT64_MAX, MIOBuffer *buf = 0, int data = 0);
 
   // Private
   // Set continuation on a given vio. The public interface
@@ -380,7 +380,7 @@ public:
 
 struct DummyVConnection:VConnection
 {
-  virtual VIO *do_io_write(Continuation *c = NULL, ink64 nbytes = INK64_MAX, IOBufferReader *buf = 0, bool owner = false) {
+  virtual VIO *do_io_write(Continuation *c = NULL, int64 nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) {
     (void) c;
     (void) nbytes;
     (void) buf;
@@ -388,7 +388,7 @@ struct DummyVConnection:VConnection
     ink_debug_assert(!"VConnection::do_io_write -- " "cannot use default implementation");
     return NULL;
   }
-  virtual VIO *do_io_read(Continuation *c = NULL, ink64 nbytes = INK64_MAX, MIOBuffer *buf = 0) {
+  virtual VIO *do_io_read(Continuation *c = NULL, int64 nbytes = INT64_MAX, MIOBuffer *buf = 0) {
     (void) c;
     (void) nbytes;
     (void) buf;
@@ -405,7 +405,7 @@ struct DummyVConnection:VConnection
     ink_debug_assert(!"VConnection::do_io_shutdown -- " "cannot use default implementation");
   }
 #ifdef _IOCORE_WIN32_WINNT
-  virtual void set_nbytes(VIO *vio, ink64 nbytes)
+  virtual void set_nbytes(VIO *vio, int64 nbytes)
   {
     (void) vio;
     (void) nbytes;

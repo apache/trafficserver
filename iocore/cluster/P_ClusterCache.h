@@ -106,44 +106,44 @@
 // Miscellaneous byte swap routines
 //////////////////////////////////////////////////////////////
 inline void
-swap16(inku16 * d)
+swap16(uint16 * d)
 {
   unsigned char *p = (unsigned char *) d;
   *d = ((p[1] << 8) | p[0]);
 }
 
-inline inku16
-swap16(inku16 d)
+inline uint16
+swap16(uint16 d)
 {
   swap16(&d);
   return d;
 }
 
 inline void
-swap32(inku32 * d)
+swap32(uint32 * d)
 {
   unsigned char *p = (unsigned char *) d;
   *d = ((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
 }
 
-inline inku32
-swap32(inku32 d)
+inline uint32
+swap32(uint32 d)
 {
   swap32(&d);
   return d;
 }
 
 inline void
-swap64(inku64 * d)
+swap64(uint64 * d)
 {
   unsigned char *p = (unsigned char *) d;
-  *d = (((inku64) p[7] << 56) | ((inku64) p[6] << 48) |
-        ((inku64) p[5] << 40) | ((inku64) p[4] << 32) |
-        ((inku64) p[3] << 24) | ((inku64) p[2] << 16) | ((inku64) p[1] << 8) | (inku64) p[0]);
+  *d = (((uint64) p[7] << 56) | ((uint64) p[6] << 48) |
+        ((uint64) p[5] << 40) | ((uint64) p[4] << 32) |
+        ((uint64) p[3] << 24) | ((uint64) p[2] << 16) | ((uint64) p[1] << 8) | (uint64) p[0]);
 }
 
-inline inku64
-swap64(inku64 d)
+inline uint64
+swap64(uint64 d)
 {
   swap64(&d);
   return d;
@@ -284,8 +284,8 @@ struct ClusterVCToken
   //
   // Marshal this data to send the token across the cluster
   //
-  inku32 ip_created;
-  inku32 sequence_number;
+  uint32 ip_created;
+  uint32 sequence_number;
 
   bool is_clear()
   {
@@ -350,15 +350,15 @@ struct ClusterVConnectionBase:CacheVConnection
   //                creation callback.
   //
 
-  virtual VIO *do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf);
-  virtual VIO *do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner = false);
+  virtual VIO *do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf);
+  virtual VIO *do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner = false);
   virtual void do_io_shutdown(ShutdownHowTo_t howto)
   {
     (void) howto;
     ink_assert(!"shutdown of cluster connection");
   }
   virtual void do_io_close(int lerrno = -1);
-  virtual VIO* do_io_pread(Continuation*, ink64, MIOBuffer*, ink64);
+  virtual VIO* do_io_pread(Continuation*, int64, MIOBuffer*, int64);
 
   // Set the timeouts associated with this connection.
   // active_timeout is for the total elasped time of the connection.
@@ -615,7 +615,7 @@ struct ClusterVConnection:ClusterVConnectionBase
 
 struct ClusterRemoteDataHeader
 {
-  ink32 cluster_function;
+  int32 cluster_function;
 };
 //
 // ClusterProcessor
@@ -994,13 +994,13 @@ ClusterFuncToQpri(int cluster_func)
 //////////////////////////////////////////////
 struct ClusterHelloMessage
 {
-  inku16 _NativeByteOrder;
-  inku16 _major;
-  inku16 _minor;
-  inku16 _min_major;
-  inku16 _min_minor;
+  uint16 _NativeByteOrder;
+  uint16 _major;
+  uint16 _minor;
+  uint16 _min_major;
+  uint16 _min_minor;
 #ifdef LOCAL_CLUSTER_TEST_MODE
-  ink16 _port;
+  int16 _port;
   char _pad[116];               // pad out to 128 bytes
 #else
   char _pad[118];               // pad out to 128 bytes
@@ -1034,10 +1034,10 @@ struct ClusterHelloMessage
 ///////////////////////////////////////////////////////////////////
 struct ClusterMessageHeader
 {
-  inku16 _InNativeByteOrder;    // always non-zero
-  inku16 _MsgVersion;           // always non-zero
+  uint16 _InNativeByteOrder;    // always non-zero
+  uint16 _MsgVersion;           // always non-zero
 
-  void _init(inku16 msg_version)
+  void _init(uint16 msg_version)
   {
     _InNativeByteOrder = 1;
     _MsgVersion = msg_version;
@@ -1045,7 +1045,7 @@ struct ClusterMessageHeader
   ClusterMessageHeader():_InNativeByteOrder(0), _MsgVersion(0)
   {
   }
-  ClusterMessageHeader(inku16 msg_version) {
+  ClusterMessageHeader(uint16 msg_version) {
     _init(msg_version);
   }
   int MsgInNativeByteOrder()
@@ -1085,7 +1085,7 @@ struct PingMessage:public ClusterMessageHeader
     PING_MESSAGE_VERSION = MAX_VERSION
   };
 
-    PingMessage(inku16 vers = PING_MESSAGE_VERSION)
+    PingMessage(uint16 vers = PING_MESSAGE_VERSION)
 :  ClusterMessageHeader(vers), fn(NULL) {
     data[0] = '\0';
   }
@@ -1101,7 +1101,7 @@ struct PingMessage:public ClusterMessageHeader
     // Maybe use offsetof here instead. /leif
     return (uintptr_t) (&p->data[0]);
   }
-  void init(inku16 vers = PING_MESSAGE_VERSION) {
+  void init(uint16 vers = PING_MESSAGE_VERSION) {
     _init(vers);
   }
   inline void SwapBytes()

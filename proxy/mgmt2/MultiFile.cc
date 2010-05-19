@@ -123,7 +123,7 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
   dirEntry = (struct dirent *) xmalloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
 
   struct dirent *result;
-  while (ink_readdir_r(dir, dirEntry, &result) == 0) {
+  while (readdir_r(dir, dirEntry, &result) == 0) {
     if (!result)
       break;
     fileName = dirEntry->d_name;

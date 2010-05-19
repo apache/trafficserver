@@ -106,7 +106,7 @@ public:
   int sslServerHandShakeEvent(int &err);
   int sslClientHandShakeEvent(int &err);
   virtual void net_read_io(NetHandler * nh, EThread * lthread);
-  virtual ink64 load_buffer_and_write(ink64 towrite, ink64 &wattempted, ink64 &total_wrote, MIOBufferAccessor & buf);
+  virtual int64 load_buffer_and_write(int64 towrite, int64 &wattempted, int64 &total_wrote, MIOBufferAccessor & buf);
   virtual ~ SSLNetVConnection() { }
   ////////////////////////////////////////////////////////////
   // instances of NetVConnection should be allocated        //

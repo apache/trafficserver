@@ -84,7 +84,7 @@ UU_decode(const char *inBuffer, int outBufSize, unsigned char *outBuffer)
   int inputBytesDecoded = 0;
 
   // Figure out much encoded string is really there
-  while (printableToSixBit[(inku8)inBuffer[inBytes]] <= MAX_PRINT_VAL) {
+  while (printableToSixBit[(uint8)inBuffer[inBytes]] <= MAX_PRINT_VAL) {
     inBytes++;
   }
 
@@ -133,7 +133,7 @@ socket_write(SocketInfo socketD, const char *buf, size_t nbyte)
 #endif
 
   } else {
-    return ink_write_socket(socketD.fd, buf, nbyte);
+    return write_socket(socketD.fd, buf, nbyte);
   }
   return -1;
 }
@@ -148,7 +148,7 @@ socket_read(SocketInfo socketD, char *buf, size_t nbyte)
     mgmt_fatal(stderr, "[socket_read] Attempt to use disabled SSL\n");
 #endif
   } else {
-    return ink_read_socket(socketD.fd, buf, nbyte);
+    return read_socket(socketD.fd, buf, nbyte);
   }
   return -1;
 }

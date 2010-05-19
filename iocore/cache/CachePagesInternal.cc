@@ -175,7 +175,7 @@ ShowCacheInternal::showPartConnections(int event, Event * e)
                     vc->part->hash_id,
                     url,
                     vc->vio.ndone,
-                    vc->vio.nbytes == INK64_MAX ? "all" : nbytes, vc->vio.nbytes == INK64_MAX ? "all" : todo));
+                    vc->vio.nbytes == INT64_MAX ? "all" : nbytes, vc->vio.nbytes == INT64_MAX ? "all" : todo));
   }
   part_index++;
   if (part_index < gnpart)
@@ -216,7 +216,7 @@ ShowCacheInternal::showPartEvacuations(int event, Event * e)
   for (int i = 0; i < last; i++) {
     for (b = p->evacuate[i].head; b; b = b->link.next) {
       char offset[60];
-      sprintf(offset, "%lld", (inku64) part_offset(p, &b->dir));
+      sprintf(offset, "%lld", (uint64) part_offset(p, &b->dir));
       CHECK_SHOW(show("<tr>" "<td>%s</td>"      // offset
                       "<td>%d</td>"     // estimated size
                       "<td>%d</td>"     // reader count
@@ -284,7 +284,7 @@ ShowCacheInternal::showPartPartitions(int event, Event * e)
                   "</tr>\n",
                   p->hash_id,
                   (int) ((p->len - (p->start - p->skip)) / INK_BLOCK_SIZE),
-                  (inku64)(p->buckets * DIR_DEPTH * p->segments),
+                  (uint64)(p->buckets * DIR_DEPTH * p->segments),
                   (int) ((p->header->write_pos - p->start) / INK_BLOCK_SIZE),
                   agg_todo,
                   p->agg_todo_size,

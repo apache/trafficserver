@@ -33,8 +33,8 @@
 // +1 for each power of 2
 //
 //////////////////////////////////////////////////////////////
-TS_INLINE ink64
-buffer_size_to_index(ink64 size, ink64 max = max_iobuffer_size)
+TS_INLINE int64
+buffer_size_to_index(int64 size, int64 max = max_iobuffer_size)
 {
   int r = max;
   while (r && BUFFER_SIZE_FOR_INDEX(r - 1) >= size)
@@ -42,16 +42,16 @@ buffer_size_to_index(ink64 size, ink64 max = max_iobuffer_size)
   return r;
 }
 
-TS_INLINE ink64
-iobuffer_size_to_index(ink64 size, ink64 max)
+TS_INLINE int64
+iobuffer_size_to_index(int64 size, int64 max)
 {
   if (size > BUFFER_SIZE_FOR_INDEX(max))
     return BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(size);
   return buffer_size_to_index(size, max);
 }
 
-TS_INLINE ink64
-index_to_buffer_size(ink64 idx)
+TS_INLINE int64
+index_to_buffer_size(int64 idx)
 {
   if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(idx))
     return BUFFER_SIZE_FOR_INDEX(idx);
@@ -65,7 +65,7 @@ index_to_buffer_size(ink64 idx)
 }
 
 TS_INLINE IOBufferBlock *
-iobufferblock_clone(IOBufferBlock * b, ink64 offset, ink64 len)
+iobufferblock_clone(IOBufferBlock * b, int64 offset, int64 len)
 {
 
   IOBufferBlock *start_buf = NULL;
@@ -74,14 +74,14 @@ iobufferblock_clone(IOBufferBlock * b, ink64 offset, ink64 len)
   while (b && len >= 0) {
     char *start = b->_start;
     char *end = b->_end;
-    ink64 max_bytes = end - start;
+    int64 max_bytes = end - start;
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
       b = b->next;
       continue;
     }
-    ink64 bytes = len;
+    int64 bytes = len;
     if (bytes >= max_bytes)
       bytes = max_bytes;
     IOBufferBlock *new_buf = b->clone();
@@ -102,12 +102,12 @@ iobufferblock_clone(IOBufferBlock * b, ink64 offset, ink64 len)
 }
 
 TS_INLINE IOBufferBlock *
-iobufferblock_skip(IOBufferBlock * b, ink64 *poffset, ink64 *plen, ink64 write)
+iobufferblock_skip(IOBufferBlock * b, int64 *poffset, int64 *plen, int64 write)
 {
-  ink64 offset = *poffset;
-  ink64 len = write;
+  int64 offset = *poffset;
+  int64 len = write;
   while (b && len >= 0) {
-    ink64 max_bytes = b->read_avail();
+    int64 max_bytes = b->read_avail();
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
@@ -133,7 +133,7 @@ struct Resource;
 extern Resource *res_lookup(const char *path);
 
 TS_INLINE void
-iobuffer_mem_inc(const char *_loc, ink64 _size_index)
+iobuffer_mem_inc(const char *_loc, int64 _size_index)
 {
   if (!res_track_memory)
     return;
@@ -145,14 +145,14 @@ iobuffer_mem_inc(const char *_loc, ink64 _size_index)
     _loc = "memory/IOBuffer/UNKNOWN-LOCATION";
   Resource *res = res_lookup(_loc);
   ink_debug_assert(strcmp(_loc, res->path) == 0);
-  ink64 r = ink_atomic_increment64(&res->value,
+  int64 r = ink_atomic_increment64(&res->value,
                                    index_to_buffer_size(_size_index));
   NOWARN_UNUSED(r);
   ink_debug_assert(r >= 0);
 }
 
 TS_INLINE void
-iobuffer_mem_dec(const char *_loc, ink64 _size_index)
+iobuffer_mem_dec(const char *_loc, int64 _size_index)
 {
   if (!res_track_memory)
     return;
@@ -163,7 +163,7 @@ iobuffer_mem_dec(const char *_loc, ink64 _size_index)
     _loc = "memory/IOBuffer/UNKNOWN-LOCATION";
   Resource *res = res_lookup(_loc);
   ink_debug_assert(strcmp(_loc, res->path) == 0);
-  ink64 r = ink_atomic_increment64(&res->value,
+  int64 r = ink_atomic_increment64(&res->value,
                                    -index_to_buffer_size(_size_index));
   NOWARN_UNUSED(r);
   ink_debug_assert(r >= index_to_buffer_size(_size_index));
@@ -181,7 +181,7 @@ iobuffer_mem_dec(const char *_loc, ink64 _size_index)
 //         inline functions definitions
 //
 //////////////////////////////////////////////////////////////////
-TS_INLINE ink64
+TS_INLINE int64
 IOBufferData::block_size()
 {
   return index_to_buffer_size(_size_index);
@@ -192,7 +192,7 @@ new_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
                            const char *location,
 #endif
-                           void *b, ink64 size, ink64 asize_index)
+                           void *b, int64 size, int64 asize_index)
 {
   (void) size;
   IOBufferData *d = ioDataAllocator.alloc();
@@ -211,7 +211,7 @@ new_constant_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
                                     const char *loc,
 #endif
-                                    void *b, ink64 size)
+                                    void *b, int64 size)
 {
   return new_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
@@ -225,7 +225,7 @@ new_xmalloc_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
                                    const char *location,
 #endif
-                                   void *b, ink64 size)
+                                   void *b, int64 size)
 {
   return new_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
@@ -239,7 +239,7 @@ new_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
                            const char *location,
 #endif
-                           void *b, ink64 size)
+                           void *b, int64 size)
 {
   return new_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
@@ -253,7 +253,7 @@ new_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
                            const char *loc,
 #endif
-                           ink64 size_index, AllocType type)
+                           int64 size_index, AllocType type)
 {
   IOBufferData *d = ioDataAllocator.alloc();
 #ifdef TRACK_BUFFER_USER
@@ -268,7 +268,7 @@ new_IOBufferData_internal(
 // so it is DUPLICATED in IOBuffer.cc
 // ****** IF YOU CHANGE THIS FUNCTION change that one as well.
 TS_INLINE void
-IOBufferData::alloc(ink64 size_index, AllocType type)
+IOBufferData::alloc(int64 size_index, AllocType type)
 {
   if (_data)
     dealloc();
@@ -357,7 +357,7 @@ new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
                             const char *location,
 #endif
-                            IOBufferData * d, ink64 len, ink64 offset)
+                            IOBufferData * d, int64 len, int64 offset)
 {
   IOBufferBlock *b = ioBlockAllocator.alloc();
 #ifdef TRACK_BUFFER_USER
@@ -381,14 +381,14 @@ _location(0)
 }
 
 TS_INLINE void
-IOBufferBlock::consume(ink64 len)
+IOBufferBlock::consume(int64 len)
 {
   _start += len;
   ink_assert(_start <= _end);
 }
 
 TS_INLINE void
-IOBufferBlock::fill(ink64 len)
+IOBufferBlock::fill(int64 len)
 {
   _end += len;
   ink_assert(_end <= _buf_end);
@@ -402,7 +402,7 @@ IOBufferBlock::reset()
 }
 
 TS_INLINE void
-IOBufferBlock::alloc(ink64 i)
+IOBufferBlock::alloc(int64 i)
 {
   ink_debug_assert(BUFFER_SIZE_ALLOCATED(i));
 #ifdef TRACK_BUFFER_USER
@@ -465,7 +465,7 @@ IOBufferBlock::free()
 }
 
 TS_INLINE void
-IOBufferBlock::set_internal(void *b, ink64 len, ink64 asize_index)
+IOBufferBlock::set_internal(void *b, int64 len, int64 asize_index)
 {
 #ifdef TRACK_BUFFER_USER
   data = new_IOBufferData_internal(_location, BUFFER_SIZE_NOT_ALLOCATED);
@@ -482,7 +482,7 @@ IOBufferBlock::set_internal(void *b, ink64 len, ink64 asize_index)
 }
 
 TS_INLINE void
-IOBufferBlock::set(IOBufferData * d, ink64 len, ink64 offset)
+IOBufferBlock::set(IOBufferData * d, int64 len, int64 offset)
 {
   data = d;
   _start = buf() + offset;
@@ -491,9 +491,9 @@ IOBufferBlock::set(IOBufferData * d, ink64 len, ink64 offset)
 }
 
 TS_INLINE void
-IOBufferBlock::realloc_set_internal(void *b, ink64 buf_size, ink64 asize_index)
+IOBufferBlock::realloc_set_internal(void *b, int64 buf_size, int64 asize_index)
 {
-  ink64 data_size = size();
+  int64 data_size = size();
   memcpy(b, _start, size());
   dealloc();
   set_internal(b, buf_size, asize_index);
@@ -501,29 +501,29 @@ IOBufferBlock::realloc_set_internal(void *b, ink64 buf_size, ink64 asize_index)
 }
 
 TS_INLINE void
-IOBufferBlock::realloc(void *b, ink64 buf_size)
+IOBufferBlock::realloc(void *b, int64 buf_size)
 {
   realloc_set_internal(b, buf_size, BUFFER_SIZE_NOT_ALLOCATED);
 }
 
 TS_INLINE void
-IOBufferBlock::realloc_xmalloc(void *b, ink64 buf_size)
+IOBufferBlock::realloc_xmalloc(void *b, int64 buf_size)
 {
   realloc_set_internal(b, buf_size, -buf_size);
 }
 
 TS_INLINE void
-IOBufferBlock::realloc_xmalloc(ink64 buf_size)
+IOBufferBlock::realloc_xmalloc(int64 buf_size)
 {
   realloc_set_internal(xmalloc(buf_size), buf_size, -buf_size);
 }
 
 TS_INLINE void
-IOBufferBlock::realloc(ink64 i)
+IOBufferBlock::realloc(int64 i)
 {
   if (i == data->_size_index)
     return;
-  if (i >= (ink64) sizeof(ioBufAllocator))
+  if (i >= (int64) sizeof(ioBufAllocator))
     return;
 
   ink_release_assert(i > data->_size_index && i != BUFFER_SIZE_NOT_ALLOCATED);
@@ -588,13 +588,13 @@ IOBufferReader::end()
   return block->end();
 }
 
-TS_INLINE ink64
+TS_INLINE int64
 IOBufferReader::block_read_avail()
 {
   if (block == 0)
     return (0);
   skip_empty_blocks();
-  return (ink64) (block->end() - (block->start() + start_offset));
+  return (int64) (block->end() - (block->start() + start_offset));
 }
 
 TS_INLINE int
@@ -609,32 +609,32 @@ IOBufferReader::block_count()
   return count;
 }
 
-TS_INLINE ink64
+TS_INLINE int64
 IOBufferReader::read_avail()
 {
-  ink64 t = 0;
+  int64 t = 0;
   IOBufferBlock *b = block;
   while (b) {
     t += b->read_avail();
     b = b->next;
   }
   t -= start_offset;
-  if (size_limit != INK64_MAX && t > size_limit)
+  if (size_limit != INT64_MAX && t > size_limit)
     t = size_limit;
   return t;
 }
 
 TS_INLINE void
-IOBufferReader::consume(ink64 n)
+IOBufferReader::consume(int64 n)
 {
   start_offset += n;
-  if (size_limit != INK64_MAX)
+  if (size_limit != INT64_MAX)
     size_limit -= n;
   ink_assert(size_limit >= 0);
   if (block == 0)
     return;
-  ink64 r = block->read_avail();
-  ink64 s = start_offset;
+  int64 r = block->read_avail();
+  int64 s = start_offset;
   while (r <= s && block->next && block->next->read_avail()) {
     s -= r;
     start_offset = s;
@@ -645,7 +645,7 @@ IOBufferReader::consume(ink64 n)
 }
 
 TS_INLINE char &
-IOBufferReader::operator[] (ink64 i)
+IOBufferReader::operator[] (int64 i)
 {
   static char
     _error = '\0';
@@ -654,7 +654,7 @@ IOBufferReader::operator[] (ink64 i)
     b = block;
   i += start_offset;
   while (b) {
-    ink64 bytes = b->read_avail();
+    int64 bytes = b->read_avail();
     if (bytes > i)
       return b->start()[i];
     i -= bytes;
@@ -675,7 +675,7 @@ IOBufferReader::clear()
   block = NULL;
   mbuf = NULL;
   start_offset = 0;
-  size_limit = INK64_MAX;
+  size_limit = INT64_MAX;
 }
 
 TS_INLINE void
@@ -683,7 +683,7 @@ IOBufferReader::reset()
 {
   block = mbuf->_writer;
   start_offset = 0;
-  size_limit = INK64_MAX;
+  size_limit = INT64_MAX;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -707,7 +707,7 @@ inkcoreapi extern ClassAllocator<MIOBuffer> ioAllocator;
 //
 ////////////////////////////////////////////////////////////////
 TS_INLINE
-MIOBuffer::MIOBuffer(void *b, ink64 bufsize, ink64 aWater_mark)
+MIOBuffer::MIOBuffer(void *b, int64 bufsize, int64 aWater_mark)
 {
   set(b, bufsize);
   water_mark = aWater_mark;
@@ -719,7 +719,7 @@ MIOBuffer::MIOBuffer(void *b, ink64 bufsize, ink64 aWater_mark)
 }
 
 TS_INLINE
-MIOBuffer::MIOBuffer(ink64 default_size_index)
+MIOBuffer::MIOBuffer(int64 default_size_index)
 {
   clear();
   size_index = default_size_index;
@@ -751,7 +751,7 @@ TS_INLINE MIOBuffer * new_MIOBuffer_internal(
 #ifdef TRACK_BUFFER_USER
                                                const char *location,
 #endif
-                                               ink64 size_index)
+                                               int64 size_index)
 {
   MIOBuffer *b = ioAllocator.alloc();
 #ifdef TRACK_BUFFER_USER
@@ -773,7 +773,7 @@ TS_INLINE MIOBuffer * new_empty_MIOBuffer_internal(
 #ifdef TRACK_BUFFER_USER
                                                      const char *location,
 #endif
-                                                     ink64 size_index)
+                                                     int64 size_index)
 {
   MIOBuffer *b = ioAllocator.alloc();
   b->size_index = size_index;
@@ -827,7 +827,7 @@ MIOBuffer::alloc_reader()
   return e;
 }
 
-TS_INLINE ink64
+TS_INLINE int64
 MIOBuffer::block_size()
 {
   return index_to_buffer_size(size_index);
@@ -854,7 +854,7 @@ MIOBuffer::clone_reader(IOBufferReader * r)
   return e;
 }
 
-TS_INLINE ink64
+TS_INLINE int64
 MIOBuffer::block_write_avail()
 {
   IOBufferBlock *b = first_write_block();
@@ -915,7 +915,7 @@ MIOBuffer::append_block(IOBufferBlock * b)
 //
 ////////////////////////////////////////////////////////////////
 TS_INLINE void
-MIOBuffer::append_block(ink64 asize_index)
+MIOBuffer::append_block(int64 asize_index)
 {
   ink_debug_assert(BUFFER_SIZE_ALLOCATED(asize_index));
 #ifdef TRACK_BUFFER_USER
@@ -957,10 +957,10 @@ MIOBuffer::get_current_block()
 //  or below the watermark space available.
 //
 //////////////////////////////////////////////////////////////////
-TS_INLINE ink64
+TS_INLINE int64
 MIOBuffer::current_write_avail()
 {
-  ink64 t = 0;
+  int64 t = 0;
   IOBufferBlock *b = _writer;
   while (b) {
     t += b->write_avail();
@@ -978,7 +978,7 @@ MIOBuffer::current_write_avail()
 //  the current block then a new block is appended.
 //
 //////////////////////////////////////////////////////////////////
-TS_INLINE ink64
+TS_INLINE int64
 MIOBuffer::write_avail()
 {
   check_add_block();
@@ -986,9 +986,9 @@ MIOBuffer::write_avail()
 }
 
 TS_INLINE void
-MIOBuffer::fill(ink64 len)
+MIOBuffer::fill(int64 len)
 {
-  ink64 f = _writer->write_avail();
+  int64 f = _writer->write_avail();
   while (f < len) {
     _writer->fill(f);
     len -= f;
@@ -1014,14 +1014,14 @@ MIOBuffer::max_block_count()
   return maxb;
 }
 
-TS_INLINE ink64
+TS_INLINE int64
 MIOBuffer::max_read_avail()
 {
-  ink64 s = 0;
+  int64 s = 0;
   int found = 0;
   for (int i = 0; i < MAX_MIOBUFFER_READERS; i++) {
     if (readers[i].allocated()) {
-      ink64 ss = readers[i].read_avail();
+      int64 ss = readers[i].read_avail();
       if (ss > s) {
         s = ss;
       }
@@ -1034,7 +1034,7 @@ MIOBuffer::max_read_avail()
 }
 
 TS_INLINE void
-MIOBuffer::set(void *b, ink64 len)
+MIOBuffer::set(void *b, int64 len)
 {
 #ifdef TRACK_BUFFER_USER
   _writer = new_IOBufferBlock_internal(_location);
@@ -1046,7 +1046,7 @@ MIOBuffer::set(void *b, ink64 len)
 }
 
 TS_INLINE void
-MIOBuffer::set_xmalloced(void *b, ink64 len)
+MIOBuffer::set_xmalloced(void *b, int64 len)
 {
 #ifdef TRACK_BUFFER_USER
   _writer = new_IOBufferBlock_internal(_location);
@@ -1058,7 +1058,7 @@ MIOBuffer::set_xmalloced(void *b, ink64 len)
 }
 
 TS_INLINE void
-MIOBuffer::append_xmalloced(void *b, ink64 len)
+MIOBuffer::append_xmalloced(void *b, int64 len)
 {
 #ifdef TRACK_BUFFER_USER
   IOBufferBlock *x = new_IOBufferBlock_internal(_location);
@@ -1070,7 +1070,7 @@ MIOBuffer::append_xmalloced(void *b, ink64 len)
 }
 
 TS_INLINE void
-MIOBuffer::append_fast_allocated(void *b, ink64 len, ink64 fast_size_index)
+MIOBuffer::append_fast_allocated(void *b, int64 len, int64 fast_size_index)
 {
 #ifdef TRACK_BUFFER_USER
   IOBufferBlock *x = new_IOBufferBlock_internal(_location);
@@ -1082,7 +1082,7 @@ MIOBuffer::append_fast_allocated(void *b, ink64 len, ink64 fast_size_index)
 }
 
 TS_INLINE void
-MIOBuffer::alloc(ink64 i)
+MIOBuffer::alloc(int64 i)
 {
 #ifdef TRACK_BUFFER_USER
   _writer = new_IOBufferBlock_internal(_location);
@@ -1095,7 +1095,7 @@ MIOBuffer::alloc(ink64 i)
 }
 
 TS_INLINE void
-MIOBuffer::alloc_xmalloc(ink64 buf_size)
+MIOBuffer::alloc_xmalloc(int64 buf_size)
 {
   char *b = (char *) xmalloc(buf_size);
   set_xmalloced(b, buf_size);
@@ -1133,7 +1133,7 @@ MIOBuffer::dealloc_all_readers()
 }
 
 TS_INLINE void
-MIOBuffer::set_size_index(ink64 size)
+MIOBuffer::set_size_index(int64 size)
 {
   size_index = iobuffer_size_to_index(size);
 }

@@ -242,7 +242,7 @@ struct HostDBInfo
     unsigned int ip;
     int hostname_offset;
     // int srv_host_offset;
-    inku64 dummy_pad;
+    uint64 dummy_pad;
   } data;
 
   unsigned int srv_weight:16;
@@ -266,7 +266,7 @@ struct HostDBInfo
   unsigned int md5_low_low:24;
   unsigned int md5_low;
 
-  inku64 md5_high;
+  uint64 md5_high;
 
   bool failed() {
     return !ip();
@@ -303,9 +303,9 @@ struct HostDBInfo
     srv_count = 0;
   }
 
-  void set_full(inku64 folded_md5, int buckets)
+  void set_full(uint64 folded_md5, int buckets)
   {
-    inku64 ttag = folded_md5 / buckets;
+    uint64 ttag = folded_md5 / buckets;
     if (!ttag)
       ttag = 1;
     md5_low_low = (unsigned int) ttag;
@@ -325,8 +325,8 @@ struct HostDBInfo
     reverse_dns = 0;
   }
 
-  inku64 tag() {
-    inku64 f = md5_low;
+  uint64 tag() {
+    uint64 f = md5_low;
     return (f << 24) + md5_low_low;
   }
 
@@ -386,7 +386,7 @@ struct HostDBRoundRobin
   HostDBInfo *find_ip(unsigned int ip);
   HostDBInfo *select_best(unsigned int client_ip, HostDBInfo * r = NULL);
 
-  HostDBInfo *select_best_http(unsigned int client_ip, time_t now, ink32 fail_window);
+  HostDBInfo *select_best_http(unsigned int client_ip, time_t now, int32 fail_window);
 
   HostDBInfo *increment_round_robin()
   {

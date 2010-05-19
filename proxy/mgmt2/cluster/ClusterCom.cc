@@ -201,7 +201,7 @@ drainIncomingChannel(void *arg)
 
             // coverity[secure_coding]
             if (sscanf(message, "aresolv: %d", &a) != 1) {
-              ink_close_socket(req_fd);
+              close_socket(req_fd);
               continue;
             }
             lmgmt->alarm_keeper->resolveAlarm(a);
@@ -214,7 +214,7 @@ drainIncomingChannel(void *arg)
             char msg_ip[80];
             const char *msg;
             if (sscanf(message, "unmap: %79s", msg_ip) != 1) {
-              ink_close_socket(req_fd);
+              close_socket(req_fd);
               continue;
             }
 
@@ -240,7 +240,7 @@ drainIncomingChannel(void *arg)
             char msg_ip[80];
             const char *msg;
             if (sscanf(message, "map: %79s", msg_ip) != 1) {
-              ink_close_socket(req_fd);
+              close_socket(req_fd);
               continue;
             }
 
@@ -277,7 +277,7 @@ drainIncomingChannel(void *arg)
 
             /* Get the file and blast it back */
             if (sscanf(message, "file: %1023s %d", fname, &ver) != 2) {
-              ink_close_socket(req_fd);
+              close_socket(req_fd);
               continue;
             }
 
@@ -285,7 +285,7 @@ drainIncomingChannel(void *arg)
                 (rb->getCurrentVersion() == ver) && (rb->getVersion(ver, &buff) == OK_ROLLBACK)) {
               size_t bytes_written = 0;
               stat = true;
-              bytes_written = ink_write_socket(req_fd, buff->bufPtr(), strlen(buff->bufPtr()));
+              bytes_written = write_socket(req_fd, buff->bufPtr(), strlen(buff->bufPtr()));
               if (bytes_written != strlen(buff->bufPtr())) {
                 stat = false;
                 mgmt_log(stderr, "[drainIncomingChannel] Failed file req: %s v: %d\n", fname, ver);
@@ -321,12 +321,12 @@ drainIncomingChannel(void *arg)
           } else if (!checkBackDoor(req_fd, message)) { /* Heh... */
             mgmt_log("[ClusterCom::drainIncomingChannel] Unexpected message on cluster" " port.  Possibly an attack\n");
             Debug("ccom", "Unknown message to rsport received: %s", message);
-            ink_close_socket(req_fd);
+            close_socket(req_fd);
             continue;
           }
         }
       }
-      ink_close_socket(req_fd);
+      close_socket(req_fd);
     }
   }
   return ret;
@@ -827,7 +827,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   /* Their wall clock time and last config change time */
   if ((line = ink_strtok_r(NULL, "\n", &last)) == NULL)
     goto Lbogus;
-  ink64 tt;
+  int64 tt;
   if (sscanf(line, "time: %lld", &tt) != 1) {
     mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
@@ -1137,7 +1137,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
   char *line, file[1024];
   version_t ver, our_ver;
   time_t mod;
-  ink64 tt;
+  int64 tt;
   InkHashTableValue hash_value;
   bool file_update_failure;
 
@@ -1455,7 +1455,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
 
   /* Current time stamp, for xntp like synching */
   if ((t = time(NULL)) > 0) {
-    snprintf(tmp, sizeof(tmp), "time: %lld\n", (ink64)time(NULL));
+    snprintf(tmp, sizeof(tmp), "time: %lld\n", (int64)time(NULL));
     ink_strncpy(&message[running_sum], tmp, (max - running_sum));
     running_sum += strlen(tmp);
   } else {
@@ -1478,7 +1478,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
     the_records = &(lmgmt->record_data->node_data);
   }
 
-  snprintf(tmp, sizeof(tmp), "ctime: %lld\n", (ink64)lmgmt->record_data->time_last_config_change);
+  snprintf(tmp, sizeof(tmp), "ctime: %lld\n", (int64)lmgmt->record_data->time_last_config_change);
   ink_strncpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
@@ -1609,7 +1609,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
       //time_t mod = rb->versionTimeStamp(ver);
       time_t mod = 0;
 
-      snprintf(tmp, sizeof(tmp), "%s %d %lld\n", line, ver, (ink64)mod);
+      snprintf(tmp, sizeof(tmp), "%s %d %lld\n", line, ver, (int64)mod);
       ink_strncpy(&message[running_sum], tmp, (max - running_sum));
       running_sum += strlen(tmp);
       ink_release_assert(running_sum < max);
@@ -2002,16 +2002,16 @@ ClusterCom::rl_sendReliableMessage(unsigned long addr, const char *buf, int len)
 
   if (connect(fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
     mgmt_elog("[ClusterCom::rl_sendReliableMessage] Unable to connect to peer\n");
-    ink_close_socket(fd);
+    close_socket(fd);
     return false;
   }
 
   if (mgmt_writeline(fd, buf, len) != 0) {
     mgmt_elog(stderr, "[ClusterCom::rl_sendReliableMessage] Write failed\n");
-    ink_close_socket(fd);
+    close_socket(fd);
     return false;
   }
-  ink_close_socket(fd);
+  close_socket(fd);
   return true;
 }                               /* End ClusterCom::rl_sendReliableMessage */
 
@@ -2070,7 +2070,7 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len, char *re
     if (take_lock) {
       ink_mutex_release(&mutex);
     }
-    ink_close_socket(fd);
+    close_socket(fd);
     return false;
   }
 
@@ -2079,7 +2079,7 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len, char *re
     if (take_lock) {
       ink_mutex_release(&mutex);
     }
-    ink_close_socket(fd);
+    close_socket(fd);
     return false;
   }
 
@@ -2090,11 +2090,11 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len, char *re
     if (take_lock) {
       ink_mutex_release(&mutex);
     }
-    ink_close_socket(fd);
+    close_socket(fd);
     return false;
   }
 
-  ink_close_socket(fd);
+  close_socket(fd);
   if (take_lock) {
     ink_mutex_release(&mutex);
   }
@@ -2146,21 +2146,21 @@ ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int 
   if (connect(fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
     mgmt_elog("[ClusterCom::sendReliableMessageReadTillClose] Unable to connect\n");
     ink_mutex_release(&mutex);
-    ink_close_socket(fd);
+    close_socket(fd);
     return false;
   }
 
   if (mgmt_writeline(fd, buf, len) != 0) {
     mgmt_elog("[ClusterCom::sendReliableMessageReadTillClose] Write failed\n");
     ink_mutex_release(&mutex);
-    ink_close_socket(fd);
+    close_socket(fd);
     return false;
   } else {
     Debug("ccom", "[ClusterCom::sendReliableMessageREadTillClose] Sent '%s' len: %d on fd: %d\n", buf, len, fd);
   }
 
   memset(tmp_reply, 0, 1024);
-  while ((res = ink_read_socket(fd, tmp_reply, 1022) > 0)) {
+  while ((res = read_socket(fd, tmp_reply, 1022) > 0)) {
     if (tmp_reply[0] == EOF) {
       break;
     }
@@ -2172,11 +2172,11 @@ ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int 
     mgmt_elog("[ClusterCom::sendReliableMessageReadTillClose] Read failed\n");
     perror("ClusterCom::sendReliableMessageReadTillClose");
     ink_mutex_release(&mutex);
-    ink_close_socket(fd);
+    close_socket(fd);
     return false;
   }
 
-  ink_close_socket(fd);
+  close_socket(fd);
   ink_mutex_release(&mutex);
   return true;
 }                               /* End ClusterCom::sendReliableMessageReadTillClose */
@@ -2415,7 +2415,7 @@ checkBackDoor(int req_fd, char *message)
       case RECD_COUNTER:
       case RECD_INT:
         {
-          ink64 val = (stype == RECD_COUNTER ? REC_readCounter(variable, &found) : REC_readInteger(variable, &found));
+          int64 val = (stype == RECD_COUNTER ? REC_readCounter(variable, &found) : REC_readInteger(variable, &found));
           if (found) {
             rep_len = snprintf(reply, sizeof(reply), "\nRecord '%s' Val: '%lld'\n", variable, val);
           }
@@ -2510,7 +2510,7 @@ checkBackDoor(int req_fd, char *message)
 
       snprintf(reply, sizeof(reply),
                "Idle-Our-WC: %lld   Peer-WC-Last-Time: %ld  Delta: %ld Mgmt-Idle: %lld M-Alive: %d",
-               (ink64)tmp->idle_ticks, tmp->last_time_recorded, tmp->delta, (ink64)tmp->manager_idle_ticks, tmp->manager_alive);
+               (int64)tmp->idle_ticks, tmp->last_time_recorded, tmp->delta, (int64)tmp->manager_idle_ticks, tmp->manager_alive);
       mgmt_writeline(req_fd, reply, strlen(reply));
 
 
@@ -2530,7 +2530,7 @@ checkBackDoor(int req_fd, char *message)
     snprintf(reply, sizeof(reply), "\tproxy_running: %s", (lmgmt->proxy_running ? "true" : "false"));
     mgmt_writeline(req_fd, reply, strlen(reply));
 
-    snprintf(reply, sizeof(reply), "\tproxy_started_at: %lld", (ink64)lmgmt->proxy_started_at);
+    snprintf(reply, sizeof(reply), "\tproxy_started_at: %lld", (int64)lmgmt->proxy_started_at);
     mgmt_writeline(req_fd, reply, strlen(reply));
 
     snprintf(reply, sizeof(reply), "\trun_proxy: %s", (lmgmt->run_proxy ? "true" : "false"));

@@ -104,7 +104,7 @@ CacheVC::updateVector(int event, Event *e)
 
     if (od->move_resident_alt && first_buf._ptr() && !od->has_multiple_writers()) {
       Doc *doc = (Doc *) first_buf->data();
-      int small_doc = (ink64)doc->data_len() < (ink64)cache_config_alt_rewrite_max_size;
+      int small_doc = (int64)doc->data_len() < (int64)cache_config_alt_rewrite_max_size;
       int have_res_alt = doc->key == od->single_doc_key;
       // if the new alternate is not written with the vector
       // then move the old one with the vector
@@ -199,12 +199,12 @@ CacheVC::handleWrite(int event, Event *e)
     (agg_len > AGG_SIZE ||
      (!f.readers && (part->agg_todo_size > cache_config_agg_write_backlog + AGG_SIZE) && write_len));
 #ifdef CACHE_AGG_FAIL_RATE
-  agg_error = agg_error || ((inku32) mutex->thread_holding->generator.random() <
-                            (inku32) (UINT_MAX * CACHE_AGG_FAIL_RATE));
+  agg_error = agg_error || ((uint32) mutex->thread_holding->generator.random() <
+                            (uint32) (UINT_MAX * CACHE_AGG_FAIL_RATE));
 #endif
   bool max_doc_error = (cache_config_max_doc_size &&
                         (cache_config_max_doc_size < vio.ndone ||
-                         (vio.nbytes != INK64_MAX && (cache_config_max_doc_size < vio.nbytes))));
+                         (vio.nbytes != INT64_MAX && (cache_config_max_doc_size < vio.nbytes))));
 
   if (agg_error || max_doc_error) {
     CACHE_INCREMENT_DYN_STAT(cache_write_backlog_failure_stat);
@@ -641,7 +641,7 @@ Part::evacuateDocReadDone(int event, Event *e)
   }
   if (!b)
     goto Ldone;
-  if ((b->f.pinned && !b->readers) && doc->pinned < (inku32) (ink_get_based_hrtime() / HRTIME_SECOND))
+  if ((b->f.pinned && !b->readers) && doc->pinned < (uint32) (ink_get_based_hrtime() / HRTIME_SECOND))
     goto Ldone;
 
   if (dir_head(&b->dir) && b->f.evacuate_head) {
@@ -699,7 +699,7 @@ Ldone:
 }
 
 int
-Part::evac_range(ink_off_t low, ink_off_t high, int evac_phase)
+Part::evac_range(off_t low, off_t high, int evac_phase)
 {
   int s = offset_to_part_offset(this, low);
   int e = offset_to_part_offset(this, high);
@@ -711,7 +711,7 @@ Part::evac_range(ink_off_t low, ink_off_t high, int evac_phase)
     EvacuationBlock *first = 0;
     int first_offset = INT_MAX;
     for (; b; b = b->link.next) {
-      ink64 offset = dir_offset(&b->dir);
+      int64 offset = dir_offset(&b->dir);
       int phase = dir_phase(&b->dir);
       if (offset >= s && offset < e && !b->f.done && phase == evac_phase)
         if (offset < first_offset) {
@@ -724,7 +724,7 @@ Part::evac_range(ink_off_t low, ink_off_t high, int evac_phase)
       io.aiocb.aio_fildes = fd;
       io.aiocb.aio_nbytes = dir_approx_size(&first->dir);
       io.aiocb.aio_offset = part_offset(this, &first->dir);
-      if ((ink_off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (ink_off_t)(skip + len))
+      if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(skip + len))
         io.aiocb.aio_nbytes = skip + len - io.aiocb.aio_offset;
       doc_evacuator = new_DocEvacuator(io.aiocb.aio_nbytes, this);
       doc_evacuator->overwrite_dir = first->dir;
@@ -746,13 +746,13 @@ static int
 agg_copy(char *p, CacheVC *vc)
 {
   Part *part = vc->part;
-  ink_off_t o = part->header->write_pos + part->agg_buf_pos;
+  off_t o = part->header->write_pos + part->agg_buf_pos;
 
   if (!vc->f.evacuator) {
     Doc *doc = (Doc *) p;
     IOBufferBlock *res_alt_blk = 0;
 
-    inku32 len = vc->write_len + vc->header_len + vc->frag_len + sizeofDoc;
+    uint32 len = vc->write_len + vc->header_len + vc->frag_len + sizeofDoc;
     ink_assert(vc->frag_type != CACHE_FRAG_TYPE_HTTP || len != sizeofDoc);
     int writelen = round_to_approx_size(len);
     // update copy of directory entry for this document
@@ -774,7 +774,7 @@ agg_copy(char *p, CacheVC *vc)
     doc->checksum = DOC_NO_CHECKSUM;
     if (vc->pin_in_cache) {
       dir_set_pinned(&vc->dir, 1);
-      doc->pinned = (inku32) (ink_get_based_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
+      doc->pinned = (uint32) (ink_get_based_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
     } else {
       dir_set_pinned(&vc->dir, 0);
       doc->pinned = 0;
@@ -913,10 +913,10 @@ Part::evacuate_cleanup_blocks(int i)
 void
 Part::evacuate_cleanup()
 {
-  ink64 eo = ((header->write_pos - start) / INK_BLOCK_SIZE) + 1;
-  ink64 e = dir_offset_evac_bucket(eo);
-  ink64 sx = e - (evacuate_size / PIN_SCAN_EVERY) - 1;
-  ink64 s = sx;
+  int64 eo = ((header->write_pos - start) / INK_BLOCK_SIZE) + 1;
+  int64 e = dir_offset_evac_bucket(eo);
+  int64 sx = e - (evacuate_size / PIN_SCAN_EVERY) - 1;
+  int64 s = sx;
   int i;
 
   if (e > evacuate_size)
@@ -1029,7 +1029,7 @@ Lagain:
   }
 
   // evacuate space
-  ink_off_t end = header->write_pos + agg_buf_pos + EVACUATION_SIZE;
+  off_t end = header->write_pos + agg_buf_pos + EVACUATION_SIZE;
   if (evac_range(header->write_pos, end, !header->phase) < 0)
     goto Lwait;
   if (end > skip + len)
@@ -1190,7 +1190,7 @@ CacheVC::openWriteCloseHead(int event, Event *e)
   cancel_trigger();
   f.use_first_key = 1;
   if (io.ok())
-    ink_assert(fragment || (length == (ink64)total_len));
+    ink_assert(fragment || (length == (int64)total_len));
   else
     return openWriteCloseDir(event, e);
   if (f.data_done)
@@ -1304,7 +1304,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
       if (!frag)
         frag = &integral_frags[0];
       else {
-        if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((inku32)(fragment-1))) {
+        if (fragment-1 >= INTEGRAL_FRAGS && IS_POWER_2((uint32)(fragment-1))) {
           Frag *t = frag;
           frag = (Frag*)xmalloc(sizeof(Frag) * (fragment-1)*2);
           memcpy(frag, t, sizeof(Frag) * (fragment-2));
@@ -1350,10 +1350,10 @@ Lagain:
     if (vio.ntodo() <= 0)
       return EVENT_CONT;
   }
-  ink64 ntodo = (ink64)(vio.ntodo() + length);
-  ink64 total_avail = vio.buffer.reader()->read_avail();
-  ink64 avail = total_avail;
-  ink64 towrite = avail + length;
+  int64 ntodo = (int64)(vio.ntodo() + length);
+  int64 total_avail = vio.buffer.reader()->read_avail();
+  int64 avail = total_avail;
+  int64 towrite = avail + length;
   if (towrite > ntodo) {
     avail -= (towrite - ntodo);
     towrite = ntodo;
@@ -1371,7 +1371,7 @@ Lagain:
     vio.ndone += avail;
     total_len += avail;
   }
-  length = (inku64)towrite;
+  length = (uint64)towrite;
   if (length > TARGET_FRAG_SIZE && length < SHRINK_TARGET_FRAG_SIZE)
     write_len = TARGET_FRAG_SIZE;
   else
@@ -1627,7 +1627,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
   c->f.overwrite = (options & CACHE_WRITE_OPT_OVERWRITE) != 0;
   c->f.close_complete = (options & CACHE_WRITE_OPT_CLOSE_COMPLETE) != 0;
   c->f.sync = (options & CACHE_WRITE_OPT_SYNC) == CACHE_WRITE_OPT_SYNC;
-  c->pin_in_cache = (inku32) apin_in_cache;
+  c->pin_in_cache = (uint32) apin_in_cache;
 
   if ((res = c->part->open_write_lock(c, false, 1)) > 0) {
     // document currently being written, abort
@@ -1729,7 +1729,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t
   } else
     c->base_stat = cache_write_active_stat;
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
-  c->pin_in_cache = (inku32) apin_in_cache;
+  c->pin_in_cache = (uint32) apin_in_cache;
 
   {
     CACHE_TRY_LOCK(lock, c->part->mutex, cont->mutex->thread_holding);

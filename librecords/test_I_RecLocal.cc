@@ -88,7 +88,7 @@ Test01()
   RecSetRecordString("proxy.config.local.cb_test_1", "cb_test_1__original");
   RecSetRecordString("proxy.config.local.cb_test_2", "cb_test_2__original");
   printf("    - sleep(2*REC_CONFIG_UPDATE_INTERVAL_SEC)\n");
-  ink_sleep(2 * REC_CONFIG_UPDATE_INTERVAL_SEC);
+  sleep(2 * REC_CONFIG_UPDATE_INTERVAL_SEC);
 
   // Register config update callbacks
   RecRegisterConfigUpdateCb("proxy.config.local.cb_test_1", cb_test_1a, (void *) 0x12345678);
@@ -99,7 +99,7 @@ Test01()
   // Change proxy.config.cb_test_1
   RecSetRecordString("proxy.config.local.cb_test_1", "cb_test_1__changed");
   printf("    - sleep(2*REC_CONFIG_UPDATE_INTERVAL_SEC)\n");
-  ink_sleep(2 * REC_CONFIG_UPDATE_INTERVAL_SEC);
+  sleep(2 * REC_CONFIG_UPDATE_INTERVAL_SEC);
 
   // Check globals to make sure the right thing happened
   if (g_config_update_result == 2) {
@@ -157,7 +157,7 @@ Test02()
   // Initialize variables
   RecSetRecordString("proxy.config.local.cb_test_3", "cb_test_3__original");
   printf("    - sleep(2*REC_CONFIG_UPDATE_INTERVAL_SEC)\n");
-  ink_sleep(2 * REC_CONFIG_UPDATE_INTERVAL_SEC);
+  sleep(2 * REC_CONFIG_UPDATE_INTERVAL_SEC);
 
   // Register config update callbacks
   RecRegisterConfigUpdateCb("proxy.config.local.cb_test_3", cb_test_3a, (void *) 0x12344321);
@@ -166,7 +166,7 @@ Test02()
   // Change proxy.config.cb_test_1
   RecSetRecordString("proxy.config.local.cb_test_3", "cb_test_3__changed");
   printf("    - sleep(2*REC_CONFIG_UPDATE_INTERVAL_SEC)\n");
-  ink_sleep(2 * REC_CONFIG_UPDATE_INTERVAL_SEC);
+  sleep(2 * REC_CONFIG_UPDATE_INTERVAL_SEC);
 
   // Check globals to make sure the right thing happened
   if (g_config_update_result == 2) {
@@ -291,7 +291,7 @@ main(int argc, char **argv)
 
   while (true) {
     RecDumpRecordsHt(RECT_NULL);
-    ink_sleep(10);
+    sleep(10);
   }
 
   return 0;

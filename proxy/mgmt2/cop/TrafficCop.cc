@@ -909,7 +909,7 @@ open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
 
 error:
   if (sock >= 0) {
-    ink_close_socket(sock);
+    close_socket(sock);
   }
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving open_socket(%d, %s, %s) --> %d\n", port, ip, ip_to_bind, -1);
@@ -919,9 +919,9 @@ error:
 
 static int
 test_port(int port, const char *request, char *buffer, int bufsize,
-          ink64 test_timeout, char *ip = NULL, char *ip_to_bind = NULL)
+          int64 test_timeout, char *ip = NULL, char *ip_to_bind = NULL)
 {
-  ink64 start_time, timeout;
+  int64 start_time, timeout;
   int sock;
   size_t length = strlen(request);
   int err, idx;
@@ -1004,7 +1004,7 @@ test_port(int port, const char *request, char *buffer, int bufsize,
 
 error:
   if (sock >= 0) {
-    ink_close_socket(sock);
+    close_socket(sock);
   }
   return -1;
 }
@@ -1226,7 +1226,7 @@ test_manager_http_port()
 static int
 heartbeat_manager()
 {
-  inku64 start;
+  uint64 start;
   int err;
 
 #ifdef TRACE_LOG_COP
@@ -1291,7 +1291,7 @@ heartbeat_server()
 // are running in rni only mode
 #ifndef RNI_ONLY
 
-  inku64 start;
+  uint64 start;
   int err;
 
 #ifdef TRACE_LOG_COP

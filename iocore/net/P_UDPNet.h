@@ -58,8 +58,8 @@ struct UDPNetProcessorInternal : public UDPNetProcessor
   EThread *ethread;
   UDPNetHandler *udpNetHandler;
 #else
-  ink_off_t pollCont_offset;
-  ink_off_t udpNetHandler_offset;
+  off_t pollCont_offset;
+  off_t udpNetHandler_offset;
 #endif
 
 public:
@@ -80,7 +80,7 @@ public:
   void BulkIOSend();
   // In the absence of bulk-io, we are down sending packet after packet
   void SendPackets();
-  void SendUDPPacket(UDPPacketInternal * p, ink32 pktLen);
+  void SendUDPPacket(UDPPacketInternal * p, int32 pktLen);
 
   // Interface exported to the outside world
   void send(UDPPacket * p);
@@ -105,7 +105,7 @@ public:
 #define SLOT_TIME HRTIME_MSECONDS(SLOT_TIME_MSEC)
 #define N_SLOTS 2048
 
-extern inku64 g_udp_bytesPending;
+extern uint64 g_udp_bytesPending;
 
 class PacketQueue
 {
@@ -414,14 +414,14 @@ struct InkSinglePipeInfo
 
   double wt;
   // all are in bps (bits per sec.) so that we can do ink_atomic_increment
-  ink64 bwLimit;
-  ink64 bwAlloc;
+  int64 bwLimit;
+  int64 bwAlloc;
   // this is in Mbps
   double bwUsed;
-  ink32 destIP;
-  inku32 count;
-  inku64 bytesSent;
-  inku64 pktsSent;
+  int32 destIP;
+  uint32 count;
+  uint64 bytesSent;
+  uint64 pktsSent;
   PacketQueue *queue;
 };
 

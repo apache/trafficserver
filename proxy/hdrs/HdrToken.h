@@ -62,9 +62,9 @@ struct HdrTokenTypeBinding
 struct HdrTokenFieldInfo
 {
   const char *name;
-  ink32 slotid;
-  inku64 mask;
-  inku32 flags;
+  int32 slotid;
+  uint64 mask;
+  uint32 flags;
 };
 
 struct HdrTokenTypeSpecific
@@ -73,7 +73,7 @@ struct HdrTokenTypeSpecific
   {
     struct
     {
-      inku32 cc_mask;
+      uint32 cc_mask;
     } cache_control;
   } u;
 };
@@ -108,9 +108,9 @@ extern int hdrtoken_num_wks;
 extern const char *hdrtoken_strs[];
 extern int hdrtoken_str_lengths[];
 extern HdrTokenType hdrtoken_str_token_types[];
-extern ink32 hdrtoken_str_slotids[];
-extern inku64 hdrtoken_str_masks[];
-extern inku32 hdrtoken_str_flags[];
+extern int32 hdrtoken_str_slotids[];
+extern uint64 hdrtoken_str_masks[];
+extern uint32 hdrtoken_str_flags[];
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -186,7 +186,7 @@ hdrtoken_index_to_slotid(int wks_idx)
   return (hdrtoken_str_slotids[wks_idx]);
 }
 
-inline inku64
+inline uint64
 hdrtoken_index_to_mask(int wks_idx)
 {
   ink_debug_assert(hdrtoken_is_valid_wks_idx(wks_idx));
@@ -238,7 +238,7 @@ hdrtoken_wks_to_slotid(const char *wks)
   return (hdrtoken_wks_to_prefix(wks)->wks_info.slotid);
 }
 
-inline inku64
+inline uint64
 hdrtoken_wks_to_mask(const char *wks)
 {
   ink_debug_assert(hdrtoken_is_wks(wks));

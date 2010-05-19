@@ -40,9 +40,9 @@
 #include "ink_port.h"
 #include "ink_hrtime.h"
 
-typedef ink64 MgmtIntCounter;
-typedef ink64 MgmtInt;
-typedef ink64 MgmtLLong;
+typedef int64 MgmtIntCounter;
+typedef int64 MgmtInt;
+typedef int64 MgmtLLong;
 typedef float MgmtFloat;
 typedef char *MgmtString;
 

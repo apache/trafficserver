@@ -155,7 +155,7 @@ make_cluster_connections(MachineList * l, MachineList * old)
   //
   // Connect to all new machines.
   //
-  inku32 ip = this_cluster_machine()->ip;
+  uint32 ip = this_cluster_machine()->ip;
   if (l) {
     for (int i = 0; i < l->n; i++)
 #ifdef LOCAL_CLUSTER_TEST_MODE

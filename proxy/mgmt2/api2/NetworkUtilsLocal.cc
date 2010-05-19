@@ -187,7 +187,7 @@ preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **req)
 {
   INKError ret;
   int req_len;
-  ink16 op;
+  int16 op;
 
   // read operation type
   ret = socket_read_n(sock_info, (char *) &op, SIZE_OP_T);
@@ -267,7 +267,7 @@ Lerror:
 INKError
 parse_file_read_request(char *req, INKFileNameT * file)
 {
-  ink16 file_t;
+  int16 file_t;
 
   if (!req || !file)
     return INK_ERR_PARAMS;
@@ -294,8 +294,8 @@ parse_file_read_request(char *req, INKFileNameT * file)
 INKError
 parse_file_write_request(char *req, INKFileNameT * file, int *ver, int *size, char **text)
 {
-  ink16 file_t, f_ver;
-  ink32 f_size;
+  int16 file_t, f_ver;
+  int32 f_size;
 
   // check input is non-NULL
   if (!req || !file || !ver || !size || !text)
@@ -336,7 +336,7 @@ parse_file_write_request(char *req, INKFileNameT * file, int *ver, int *size, ch
 INKError
 parse_request_name_value(char *req, char **name_1, char **val_1)
 {
-  ink32 name_len, val_len;
+  int32 name_len, val_len;
   char *name, *val;
 
   if (!req || !name_1 || !val_1)
@@ -380,8 +380,8 @@ parse_request_name_value(char *req, char **name_1, char **val_1)
 INKError
 parse_diags_request(char *req, INKDiagsT * mode, char **diag_msg)
 {
-  ink16 diag_t;
-  ink32 msg_len;
+  int16 diag_t;
+  int32 msg_len;
 
   // check input is non-NULL
   if (!req || !mode || !diag_msg)
@@ -416,7 +416,7 @@ parse_diags_request(char *req, INKDiagsT * mode, char **diag_msg)
 INKError
 parse_proxy_state_request(char *req, INKProxyStateT * state, INKCacheClearT * clear)
 {
-  ink16 state_t, cache_t;
+  int16 state_t, cache_t;
 
   // check input is non-NULL
   if (!req || !state || !clear)
@@ -456,10 +456,10 @@ send_reply(struct SocketInfo sock_info, INKError retval)
 {
   INKError ret;
   char msg[SIZE_ERR_T];
-  ink16 ret_val;
+  int16 ret_val;
 
   // write the return value
-  ret_val = (ink16) retval;
+  ret_val = (int16) retval;
   memcpy(msg, (void *) &ret_val, SIZE_ERR_T);
 
   // now push it to the socket
@@ -486,8 +486,8 @@ send_reply_list(struct SocketInfo sock_info, INKError retval, char *list)
   INKError ret;
   int msg_pos = 0, total_len;
   char *msg;
-  ink16 ret_val;
-  ink32 list_size;              // to be safe, typecast
+  int16 ret_val;
+  int32 list_size;              // to be safe, typecast
 
   if (!list) {
     return INK_ERR_PARAMS;
@@ -499,12 +499,12 @@ send_reply_list(struct SocketInfo sock_info, INKError retval, char *list)
     return INK_ERR_SYS_CALL;    // ERROR - malloc failed
 
   // write the return value
-  ret_val = (ink16) retval;
+  ret_val = (int16) retval;
   memcpy(msg, (void *) &ret_val, SIZE_ERR_T);
   msg_pos += SIZE_ERR_T;
 
   // write the length of the string list
-  list_size = (ink32) strlen(list);
+  list_size = (int32) strlen(list);
   memcpy(msg + msg_pos, (void *) &list_size, SIZE_LEN);
   msg_pos += SIZE_LEN;
 
@@ -539,8 +539,8 @@ send_record_get_reply(struct SocketInfo sock_info, INKError retval, void *val, i
   INKError ret;
   int msg_pos = 0, total_len;
   char *msg;
-  ink16 record_t, ret_val;
-  ink32 v_size;                 // to be safe, typecast
+  int16 record_t, ret_val;
+  int32 v_size;                 // to be safe, typecast
 
   if (!val) {
     return INK_ERR_PARAMS;
@@ -552,17 +552,17 @@ send_record_get_reply(struct SocketInfo sock_info, INKError retval, void *val, i
     return INK_ERR_SYS_CALL;    // ERROR - malloc failed
 
   // write the return value
-  ret_val = (ink16) retval;
+  ret_val = (int16) retval;
   memcpy(msg, (void *) &ret_val, SIZE_ERR_T);
   msg_pos += SIZE_ERR_T;
 
   // write the size of the record value
-  v_size = (ink32) val_size;
+  v_size = (int32) val_size;
   memcpy(msg + msg_pos, (void *) &v_size, SIZE_LEN);
   msg_pos += SIZE_LEN;
 
   // write the record type
-  record_t = (ink16) rec_type;
+  record_t = (int16) rec_type;
   memcpy(msg + msg_pos, (void *) &record_t, SIZE_REC_T);
   msg_pos += SIZE_REC_T;
 
@@ -592,7 +592,7 @@ send_record_set_reply(struct SocketInfo sock_info, INKError retval, INKActionNee
   INKError ret;
   int total_len;
   char *msg;
-  ink16 action_t, ret_val;
+  int16 action_t, ret_val;
 
   total_len = SIZE_ERR_T + SIZE_ACTION_T;
   msg = (char *) xmalloc(sizeof(char) * total_len);
@@ -600,11 +600,11 @@ send_record_set_reply(struct SocketInfo sock_info, INKError retval, INKActionNee
     return INK_ERR_SYS_CALL;    // ERROR - malloc failed!
 
   // write the return value
-  ret_val = (ink16) retval;
+  ret_val = (int16) retval;
   memcpy(msg, (void *) &ret_val, SIZE_ERR_T);
 
   // write the action needed
-  action_t = (ink16) action_need;
+  action_t = (int16) action_need;
   memcpy(msg + SIZE_ERR_T, (void *) &action_t, SIZE_ACTION_T);
 
   // now push it to the socket
@@ -634,8 +634,8 @@ send_file_read_reply(struct SocketInfo sock_info, INKError retval, int ver, int 
   INKError ret;
   int msg_pos = 0, msg_len;
   char *msg;
-  ink16 ret_val, f_ver;
-  ink32 f_size;                 // to be safe
+  int16 ret_val, f_ver;
+  int32 f_size;                 // to be safe
 
   if (!text)
     return INK_ERR_PARAMS;
@@ -647,17 +647,17 @@ send_file_read_reply(struct SocketInfo sock_info, INKError retval, int ver, int 
     return INK_ERR_SYS_CALL;
 
   // write the return value
-  ret_val = (ink16) retval;
+  ret_val = (int16) retval;
   memcpy(msg, (void *) &ret_val, SIZE_ERR_T);
   msg_pos += SIZE_ERR_T;
 
   // write file version
-  f_ver = (ink16) ver;
+  f_ver = (int16) ver;
   memcpy(msg + msg_pos, (void *) &f_ver, SIZE_VER);
   msg_pos += SIZE_VER;
 
   // write file size
-  f_size = (ink32) size;
+  f_size = (int32) size;
   memcpy(msg + msg_pos, (void *) &f_size, SIZE_LEN);
   msg_pos += SIZE_LEN;
 
@@ -688,10 +688,10 @@ send_proxy_state_get_reply(struct SocketInfo sock_info, INKProxyStateT state)
 {
   INKError ret;
   char msg[SIZE_PROXY_T];
-  ink16 state_t;
+  int16 state_t;
 
   // write the state
-  state_t = (ink16) state;
+  state_t = (int16) state;
   memcpy(msg, (void *) &state_t, SIZE_PROXY_T);
 
   // now push it to the socket
@@ -718,7 +718,7 @@ send_event_active_reply(struct SocketInfo sock_info, INKError retval, bool activ
   INKError ret;
   int total_len;
   char *msg;
-  ink16 is_active, ret_val;
+  int16 is_active, ret_val;
 
   total_len = SIZE_ERR_T + SIZE_BOOL;
   msg = (char *) xmalloc(sizeof(char) * total_len);
@@ -726,11 +726,11 @@ send_event_active_reply(struct SocketInfo sock_info, INKError retval, bool activ
     return INK_ERR_SYS_CALL;    // ERROR - malloc failed!
 
   // write the return value
-  ret_val = (ink16) retval;
+  ret_val = (int16) retval;
   memcpy(msg, (void *) &ret_val, SIZE_ERR_T);
 
   // write the boolean active state
-  is_active = (ink16) active;
+  is_active = (int16) active;
   memcpy(msg + SIZE_ERR_T, (void *) &is_active, SIZE_BOOL);
 
   // now push it to the socket
@@ -757,8 +757,8 @@ send_event_notification(struct SocketInfo sock_info, INKEvent * event)
   INKError ret;
   int total_len, name_len, desc_len;
   char *msg;
-  ink16 op_t;
-  ink32 len;
+  int16 op_t;
+  int32 len;
 
   if (!event || !event->name || !event->description)
     return INK_ERR_PARAMS;
@@ -771,18 +771,18 @@ send_event_notification(struct SocketInfo sock_info, INKEvent * event)
     return INK_ERR_SYS_CALL;    // ERROR - malloc failed!
 
   // write the operation
-  op_t = (ink16) EVENT_NOTIFY;
+  op_t = (int16) EVENT_NOTIFY;
   memcpy(msg, (void *) &op_t, SIZE_OP_T);
 
   // write the size of the event name
-  len = (ink32) name_len;
+  len = (int32) name_len;
   memcpy(msg + SIZE_OP_T, (void *) &len, SIZE_LEN);
 
   // write the event name
   memcpy(msg + SIZE_OP_T + SIZE_LEN, event->name, name_len);
 
   // write size of description
-  len = (ink32) desc_len;
+  len = (int32) desc_len;
   memcpy(msg + SIZE_OP_T + SIZE_LEN + name_len, (void *) &len, SIZE_LEN);
 
   // write the description

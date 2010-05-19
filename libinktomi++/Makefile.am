@@ -82,7 +82,7 @@ libinktomi___a_SOURCES = \
   ink_port.h \
   ink_queue.cc \
   ink_queue.h \
-  ink_queue_utils.c \
+  ink_queue_utils.cc \
   ink_rand.cc \
   ink_rand.h \
   ink_res_init.cc \

@@ -1978,8 +1978,8 @@ void *
 HttpConfig::cluster_delta_cb(void *opaque_token, char *data_raw, int data_len)
 {
 
-  ink32 delta32 = (ink32) atoi(data_raw);
-  ink32 old;
+  int32 delta32 = (int32) atoi(data_raw);
+  int32 old;
 
   // Using ink_atomic_swap is mostly paranoia since a thirty bit write
   //  really ought to atomic.  However, any risk of bogus time is
@@ -1991,4 +1991,4 @@ HttpConfig::cluster_delta_cb(void *opaque_token, char *data_raw, int data_len)
 
 }
 
-volatile ink32 icp_dynamic_enabled;
+volatile int32 icp_dynamic_enabled;

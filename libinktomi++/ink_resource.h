@@ -32,7 +32,7 @@
 #include "ink_port.h"
 #include "ink_memory.h"
 
-extern volatile ink64 resource_allocated_mem;
+extern volatile int64 resource_allocated_mem;
 extern volatile int res_track_memory;   /* set this to zero to disable resource tracking */
 
 #define __RES_PATH(x)   #x
@@ -46,9 +46,9 @@ struct Resource
   void *magic;
   struct Resource *next;
   const char *path;
-  ink64 value;
-  ink64 snapshot;
-  ink64 baseline;
+  int64 value;
+  int64 snapshot;
+  int64 baseline;
 };
 
 //#define TRACK_MEMORY

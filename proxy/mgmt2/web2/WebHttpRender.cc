@@ -746,7 +746,7 @@ handle_summary_object(WebHttpContext * whc, char *tag, char *arg)
     char *r = ink_ctime_r(&upTime, dateBuf);
     if (r != NULL) {
       HtmlRndrText(output, dict_ht, HTML_ID_UP_SINCE);
-      snprintf(tmpBuf, sizeof(tmpBuf), ": %s (%lld:%02lld:%02lld:%02lld)", dateBuf, (ink64)d, (ink64)h, (ink64)m, (ink64)s);
+      snprintf(tmpBuf, sizeof(tmpBuf), ": %s (%lld:%02lld:%02lld:%02lld)", dateBuf, (int64)d, (int64)h, (int64)m, (int64)s);
       output->copyFrom(tmpBuf, strlen(tmpBuf));
       HtmlRndrBr(output);
     }
@@ -1319,7 +1319,7 @@ handle_floppy_select(WebHttpContext * whc)
         HtmlRndrOptionClose(output);
 
         struct dirent *result;
-        while (ink_readdir_r(dir, dirEntry, &result) == 0) {
+        while (readdir_r(dir, dirEntry, &result) == 0) {
           if (!result)
             break;
           fileName = dirEntry->d_name;

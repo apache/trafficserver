@@ -53,7 +53,7 @@ enum hdr_type
 };
 
 void walk_mime_field(MIMEField f);
-void walk_mstring(MBuffer * bufp, ink32 offset);
+void walk_mstring(MBuffer * bufp, int32 offset);
 void walk_mbuffer(MBuffer * bufp);
 void print_http_info_impl(HTTPInfo hi);
 void print_http_hdr_impl(HTTPHdr h);
@@ -319,13 +319,13 @@ walk_mbuffer(MBuffer * bufp)
 }
 
 void
-walk_mstring(MBuffer * bufp, ink32 offset)
+walk_mstring(MBuffer * bufp, int32 offset)
 {
   int bufindex = 0;
   int dumpoffset = 0;
   char fbuf[4096];
 
-//    ink32 soffset = field_offset;
+//    int32 soffset = field_offset;
 //    soffset <<= MARSHAL_ALIGNMENT;
 //    printf("offset: %d.  shifted field_offset: %d\n",
 //         field_offset, soffset);
@@ -344,7 +344,7 @@ walk_mime_field(MIMEField f)
   int dumpoffset = 0;
   char fbuf[4096];
 
-//    ink32 soffset = field_offset;
+//    int32 soffset = field_offset;
 //    soffset <<= MARSHAL_ALIGNMENT;
 //    printf("offset: %d.  shifted field_offset: %d\n",
 //         field_offset, soffset);
@@ -369,7 +369,7 @@ walk_http_resp_hdr(HTTPHdr resp)
     return;
   }
 
-  ink16 field_offset = r->m_fields_offset;
+  int16 field_offset = r->m_fields_offset;
 
   while (field_offset != MARSHAL_NULL_OFFSET) {
     MIMEFieldImpl *f = MIMEFieldPtr(resp.m_buffer, field_offset);

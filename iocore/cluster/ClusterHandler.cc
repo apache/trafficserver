@@ -529,7 +529,7 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
               CLUSTER_INCREMENT_DYN_STAT(CLUSTER_SLOW_CTRL_MSGS_RECVD_STAT);
             }
             // Mark message data as invalid
-            *((inku32 *) ic->data) = UNDEFINED_CLUSTER_FUNCTION;
+            *((uint32 *) ic->data) = UNDEFINED_CLUSTER_FUNCTION;
             incoming_control.enqueue(ic);
           }
           s.iov[new_n_iov].iov_base = 0;
@@ -848,7 +848,7 @@ ClusterHandler::swap_descriptor_bytes()
 void
 ClusterHandler::process_set_data_msgs()
 {
-  inku32 cluster_function_index;
+  uint32 cluster_function_index;
   //
   // Cluster set_data messages must always be processed ahead of all
   // messages and data.  By convention, set_data messages (highest priority
@@ -864,25 +864,25 @@ ClusterHandler::process_set_data_msgs()
     char *endp = p + read.msg.control_bytes;
     while (p < endp) {
       if (needByteSwap) {
-        swap32((inku32 *) p);   // length
-        swap32((inku32 *) (p + sizeof(ink32))); // function code
+        swap32((uint32 *) p);   // length
+        swap32((uint32 *) (p + sizeof(int32))); // function code
       }
-      int len = *(ink32 *) p;
-      cluster_function_index = *(inku32 *) (p + sizeof(ink32));
+      int len = *(int32 *) p;
+      cluster_function_index = *(uint32 *) (p + sizeof(int32));
 
-      if ((cluster_function_index < (inku32) SIZE_clusterFunction)
+      if ((cluster_function_index < (uint32) SIZE_clusterFunction)
           && (cluster_function_index == SET_CHANNEL_DATA_CLUSTER_FUNCTION)) {
-        clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].pfn(machine, p + (2 * sizeof(inku32)), len - sizeof(inku32));
+        clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].pfn(machine, p + (2 * sizeof(uint32)), len - sizeof(uint32));
         // Mark message as processed.
-        *((inku32 *) (p + sizeof(inku32))) = ~*((inku32 *) (p + sizeof(inku32)));
-        p += (2 * sizeof(inku32)) + (len - sizeof(inku32));
+        *((uint32 *) (p + sizeof(uint32))) = ~*((uint32 *) (p + sizeof(uint32)));
+        p += (2 * sizeof(uint32)) + (len - sizeof(uint32));
         p = (char *) DOUBLE_ALIGN(p);
       } else {
         // Reverse swap since this message will be reprocessed.
 
         if (needByteSwap) {
-          swap32((inku32 *) p); // length
-          swap32((inku32 *) (p + sizeof(ink32)));       // function code
+          swap32((uint32 *) p); // length
+          swap32((uint32 *) (p + sizeof(int32)));       // function code
         }
         break;                  // End of set_data messages
       }
@@ -898,31 +898,31 @@ ClusterHandler::process_set_data_msgs()
 
     while (ic) {
       if (needByteSwap) {
-        swap32((inku32 *) ic->data);    // function code
+        swap32((uint32 *) ic->data);    // function code
       }
-      cluster_function_index = *((inku32 *) ic->data);
+      cluster_function_index = *((uint32 *) ic->data);
 
-      if ((cluster_function_index < (inku32) SIZE_clusterFunction)
+      if ((cluster_function_index < (uint32) SIZE_clusterFunction)
           && (cluster_function_index == SET_CHANNEL_DATA_CLUSTER_FUNCTION)) {
 
         char *p = ic->data;
         clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].pfn(machine,
-                                                               (void *) (p + sizeof(ink32)), ic->len - sizeof(ink32));
+                                                               (void *) (p + sizeof(int32)), ic->len - sizeof(int32));
 
         // Reverse swap since this will be processed again for deallocation.
         if (needByteSwap) {
-          swap32((inku32 *) p); // length
-          swap32((inku32 *) (p + sizeof(ink32)));       // function code
+          swap32((uint32 *) p); // length
+          swap32((uint32 *) (p + sizeof(int32)));       // function code
         }
         // Mark message as processed.
         // Defer dellocation until entire read is complete.
-        *((inku32 *) p) = ~*((inku32 *) p);
+        *((uint32 *) p) = ~*((uint32 *) p);
 
         ic = (IncomingControl *) ic->link.next;
       } else {
         // Reverse swap action this message will be reprocessed.
         if (needByteSwap) {
-          swap32((inku32 *) ic->data);  // function code
+          swap32((uint32 *) ic->data);  // function code
         }
         break;
       }
@@ -950,15 +950,15 @@ ClusterHandler::process_small_control_msgs()
     // incoming queue for processing by callout threads.
     /////////////////////////////////////////////////////////////////
     if (needByteSwap) {
-      swap32((inku32 *) p);     // length
-      swap32((inku32 *) (p + sizeof(ink32)));   // function code
+      swap32((uint32 *) p);     // length
+      swap32((uint32 *) (p + sizeof(int32)));   // function code
     }
-    int len = *(ink32 *) p;
-    p += sizeof(ink32);
-    inku32 cluster_function_index = *(inku32 *) p;
+    int len = *(int32 *) p;
+    p += sizeof(int32);
+    uint32 cluster_function_index = *(uint32 *) p;
     ink_release_assert(cluster_function_index != SET_CHANNEL_DATA_CLUSTER_FUNCTION);
 
-    if (cluster_function_index >= (inku32) SIZE_clusterFunction) {
+    if (cluster_function_index >= (uint32) SIZE_clusterFunction) {
       Warning("1Bad cluster function index (small control)");
       p += len;
 
@@ -966,9 +966,9 @@ ClusterHandler::process_small_control_msgs()
       //////////////////////////////////////////////////////////////////////
       // Cluster function, can only be processed in ET_CLUSTER thread
       //////////////////////////////////////////////////////////////////////
-      p += sizeof(inku32);
-      clusterFunction[cluster_function_index].pfn(machine, p, len - sizeof(ink32));
-      p += (len - sizeof(ink32));
+      p += sizeof(uint32);
+      clusterFunction[cluster_function_index].pfn(machine, p, len - sizeof(int32));
+      p += (len - sizeof(int32));
 
     } else {
       ///////////////////////////////////////////////////////
@@ -1001,16 +1001,16 @@ ClusterHandler::process_large_control_msgs()
   // incoming queue for processing by callout threads.
   ////////////////////////////////////////////////////////////////
   IncomingControl *ic = NULL;
-  inku32 cluster_function_index;
+  uint32 cluster_function_index;
 
   while ((ic = incoming_control.dequeue())) {
     if (needByteSwap) {
-      swap32((inku32 *) ic->data);      // function code
+      swap32((uint32 *) ic->data);      // function code
     }
-    cluster_function_index = *((inku32 *) ic->data);
+    cluster_function_index = *((uint32 *) ic->data);
     ink_release_assert(cluster_function_index != SET_CHANNEL_DATA_CLUSTER_FUNCTION);
 
-    if (cluster_function_index == (inku32) ~ SET_CHANNEL_DATA_CLUSTER_FUNCTION) {
+    if (cluster_function_index == (uint32) ~ SET_CHANNEL_DATA_CLUSTER_FUNCTION) {
       // SET_CHANNEL_DATA_CLUSTER_FUNCTION already processed.
       // Just do memory deallocation.
 
@@ -1019,14 +1019,14 @@ ClusterHandler::process_large_control_msgs()
       continue;
     }
 
-    if (cluster_function_index >= (inku32) SIZE_clusterFunction) {
+    if (cluster_function_index >= (uint32) SIZE_clusterFunction) {
       Warning("Bad cluster function index (large control)");
       ic->freeall();
 
     } else if (clusterFunction[cluster_function_index].ClusterFunc) {
       // Cluster message, process in ET_CLUSTER thread
-      clusterFunction[cluster_function_index].pfn(machine, (void *) (ic->data + sizeof(ink32)),
-                                                  ic->len - sizeof(ink32));
+      clusterFunction[cluster_function_index].pfn(machine, (void *) (ic->data + sizeof(int32)),
+                                                  ic->len - sizeof(int32));
 
       // Deallocate memory
       if (!clusterFunction[cluster_function_index].fMalloced)
@@ -1207,15 +1207,15 @@ ClusterHandler::process_incoming_callouts(ProxyMutex * m)
       if (small_control_msg) {
         int len = ic->len;
         char *p = ic->data;
-        inku32 cluster_function_index = *(inku32 *) p;
-        p += sizeof(inku32);
+        uint32 cluster_function_index = *(uint32 *) p;
+        p += sizeof(uint32);
 
-        if (cluster_function_index < (inku32) SIZE_clusterFunction) {
+        if (cluster_function_index < (uint32) SIZE_clusterFunction) {
           ////////////////////////////////
           // Invoke processing function
           ////////////////////////////////
           ink_assert(!clusterFunction[cluster_function_index].ClusterFunc);
-          clusterFunction[cluster_function_index].pfn(machine, p, len - sizeof(ink32));
+          clusterFunction[cluster_function_index].pfn(machine, p, len - sizeof(int32));
           now = ink_get_hrtime();
           CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_RECV_TIME_STAT, now - ic->recognized_time);
         } else {
@@ -1227,17 +1227,17 @@ ClusterHandler::process_incoming_callouts(ProxyMutex * m)
 
       } else {
         ink_assert(ic->len > 4);
-        inku32 cluster_function_index = *(inku32 *) ic->data;
+        uint32 cluster_function_index = *(uint32 *) ic->data;
         bool valid_index;
 
-        if (cluster_function_index < (inku32) SIZE_clusterFunction) {
+        if (cluster_function_index < (uint32) SIZE_clusterFunction) {
           valid_index = true;
           ////////////////////////////////
           // Invoke processing function
           ////////////////////////////////
           ink_assert(!clusterFunction[cluster_function_index].ClusterFunc);
-          clusterFunction[cluster_function_index].pfn(machine, (void *) (ic->data + sizeof(ink32)),
-                                                      ic->len - sizeof(ink32));
+          clusterFunction[cluster_function_index].pfn(machine, (void *) (ic->data + sizeof(int32)),
+                                                      ic->len - sizeof(int32));
           now = ink_get_hrtime();
           CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_RECV_TIME_STAT, now - ic->recognized_time);
         } else {
@@ -1561,7 +1561,7 @@ ClusterHandler::update_channels_written(bool bump_unhandled_channels)
   invoke_remote_data_args *args;
   OutgoingControl *hdr_oc;
   while ((hdr_oc = write.msg.outgoing_callout.dequeue())) {
-    args = (invoke_remote_data_args *) (hdr_oc->data + sizeof(ink32));
+    args = (invoke_remote_data_args *) (hdr_oc->data + sizeof(int32));
     ink_assert(args->magicno == invoke_remote_data_args::MagicNo);
 
     // Free data descriptor
@@ -1735,17 +1735,17 @@ ClusterHandler::build_controlmsg_descriptors()
       continue;
 
     } else {
-      compound_msg = (*((ink32 *) c->data) == -1);      // (msg+chan data)?
+      compound_msg = (*((int32 *) c->data) == -1);      // (msg+chan data)?
     }
     if (!compound_msg && c->len <= SMALL_CONTROL_MESSAGE &&
         // check if the receiving cluster function will want to malloc'ed data
-        !clusterFunction[*(ink32 *) c->data].fMalloced && control_bytes + c->len + sizeof(ink32) * 2 + 7 < CONTROL_DATA) {
+        !clusterFunction[*(int32 *) c->data].fMalloced && control_bytes + c->len + sizeof(int32) * 2 + 7 < CONTROL_DATA) {
       write.msg.outgoing_small_control.enqueue(c);
-      control_bytes += c->len + sizeof(ink32) * 2 + 7;  // safe approximation
+      control_bytes += c->len + sizeof(int32) * 2 + 7;  // safe approximation
       control_msgs_built++;
 
-      if (clusterFunction[*(ink32 *) c->data].post_pfn) {
-        clusterFunction[*(ink32 *) c->data].post_pfn(machine, c->data + sizeof(ink32), c->len);
+      if (clusterFunction[*(int32 *) c->data].post_pfn) {
+        clusterFunction[*(int32 *) c->data].post_pfn(machine, c->data + sizeof(int32), c->len);
       }
       continue;
     }
@@ -1754,7 +1754,7 @@ ClusterHandler::build_controlmsg_descriptors()
     //
     if (compound_msg) {
       // Extract out components of compound message.
-      invoke_remote_data_args *cmhdr = (invoke_remote_data_args *) (c->data + sizeof(ink32));
+      invoke_remote_data_args *cmhdr = (invoke_remote_data_args *) (c->data + sizeof(int32));
       OutgoingControl *oc_header = c;
       OutgoingControl *oc_msg = cmhdr->msg_oc;
       OutgoingControl *oc_data = cmhdr->data_oc;
@@ -1841,8 +1841,8 @@ ClusterHandler::build_controlmsg_descriptors()
       tcount++;
       control_msgs_built++;
 
-      if (clusterFunction[*(ink32 *) c->data].post_pfn) {
-        clusterFunction[*(ink32 *) c->data].post_pfn(machine, c->data + sizeof(ink32), c->len);
+      if (clusterFunction[*(int32 *) c->data].post_pfn) {
+        clusterFunction[*(int32 *) c->data].post_pfn(machine, c->data + sizeof(int32), c->len);
       }
     }
   }
@@ -1859,8 +1859,8 @@ ClusterHandler::add_small_controlmsg_descriptors()
   OutgoingControl *c = NULL;
 
   while ((c = write.msg.outgoing_small_control.dequeue())) {
-    *(ink32 *) p = c->len;
-    p += sizeof(ink32);
+    *(int32 *) p = c->len;
+    p += sizeof(int32);
     memcpy(p, c->data, c->len);
     c->free_data();
     c->mutex = NULL;

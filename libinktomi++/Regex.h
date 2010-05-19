@@ -88,10 +88,10 @@ public:
   int size();
 
 private:
-    DynArray<ink32> basetbl;
-    DynArray<ink32> accepttbl;
-    DynArray<ink32> nexttbl;
-    DynArray<ink32> checktbl;
+    DynArray<int32> basetbl;
+    DynArray<int32> accepttbl;
+    DynArray<int32> nexttbl;
+    DynArray<int32> checktbl;
 };
 
 

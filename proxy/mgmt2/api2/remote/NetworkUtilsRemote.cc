@@ -90,12 +90,12 @@ int
 socket_test(int fd)
 {
   char msg[6];                  /* 6 = SIZE_OP + SIZE_LEN */
-  ink16 op;
-  ink32 msg_len = 0;
+  int16 op;
+  int32 msg_len = 0;
   int ret, amount_read = 0;
 
   // write the op
-  op = (ink16) UNDEFINED_OP;
+  op = (int16) UNDEFINED_OP;
   memcpy(msg, (void *) &op, SIZE_OP_T);
 
   // write msg-len = 0
@@ -488,13 +488,13 @@ socket_test_thread(void *arg)
 INKError
 send_request(int fd, OpType op)
 {
-  ink16 op_t;
-  ink32 msg_len;
+  int16 op_t;
+  int32 msg_len;
   char msg_buf[SIZE_OP_T + SIZE_LEN];
   INKError err;
 
   // fill in op type
-  op_t = (ink16) op;
+  op_t = (int16) op;
   memcpy(msg_buf, &op_t, SIZE_OP_T);
 
   // fill in msg_len == 0
@@ -519,15 +519,15 @@ INKError
 send_request_name(int fd, OpType op, char *name)
 {
   char *msg_buf;
-  ink16 op_t;
-  ink32 msg_len;
+  int16 op_t;
+  int32 msg_len;
   int total_len;
   INKError err;
 
   if (name == NULL) {           //reg callback for all events when op==EVENT_REG_CALLBACK
     msg_len = 0;
   } else {
-    msg_len = (ink32) strlen(name);
+    msg_len = (int32) strlen(name);
   }
 
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
@@ -536,7 +536,7 @@ send_request_name(int fd, OpType op, char *name)
     return INK_ERR_SYS_CALL;
 
   // fill in op type
-  op_t = (ink16) op;
+  op_t = (int16) op;
   memcpy(msg_buf, (void *) &op_t, SIZE_OP_T);
 
   // fill in msg_len
@@ -568,8 +568,8 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
-  ink32 msg_len, name_len, val_size;    // these are written to msg
-  ink16 op_t;
+  int32 msg_len, name_len, val_size;    // these are written to msg
+  int16 op_t;
   INKError err;
 
   if (!name || !value)
@@ -585,7 +585,7 @@ send_request_name_value(int fd, OpType op, const char *name, const char *value)
     return INK_ERR_SYS_CALL;
 
   // fill in op type
-  op_t = (ink16) op;
+  op_t = (int16) op;
   memcpy(msg_buf + msg_pos, (void *) &op_t, SIZE_OP_T);
   msg_pos += SIZE_OP_T;
 
@@ -629,8 +629,8 @@ send_file_read_request(int fd, INKFileNameT file)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
-  ink32 msg_len = (ink32) SIZE_FILE_T;  //marshalled values
-  ink16 op, file_t;
+  int32 msg_len = (int32) SIZE_FILE_T;  //marshalled values
+  int16 op, file_t;
   INKError err;
 
   total_len = SIZE_OP_T + SIZE_LEN + SIZE_FILE_T;
@@ -639,7 +639,7 @@ send_file_read_request(int fd, INKFileNameT file)
     return INK_ERR_SYS_CALL;
 
   // fill in op type
-  op = (ink16) FILE_READ;
+  op = (int16) FILE_READ;
   memcpy(msg_buf + msg_pos, &op, SIZE_OP_T);
   msg_pos += SIZE_OP_T;
 
@@ -648,7 +648,7 @@ send_file_read_request(int fd, INKFileNameT file)
   msg_pos += SIZE_LEN;
 
   // fill in file type
-  file_t = (ink16) file;
+  file_t = (int16) file;
   memcpy(msg_buf + msg_pos, &file_t, SIZE_FILE_T);
 
   // send message
@@ -675,8 +675,8 @@ send_file_write_request(int fd, INKFileNameT file, int ver, int size, char *text
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
-  ink32 msg_len, f_size;        //marshalled values
-  ink16 op, file_t, f_ver;
+  int32 msg_len, f_size;        //marshalled values
+  int16 op, file_t, f_ver;
   INKError err;
 
   if (!text)
@@ -689,7 +689,7 @@ send_file_write_request(int fd, INKFileNameT file, int ver, int size, char *text
     return INK_ERR_SYS_CALL;
 
   // fill in op type
-  op = (ink16) FILE_WRITE;
+  op = (int16) FILE_WRITE;
   memcpy(msg_buf + msg_pos, &op, SIZE_OP_T);
   msg_pos += SIZE_OP_T;
 
@@ -698,17 +698,17 @@ send_file_write_request(int fd, INKFileNameT file, int ver, int size, char *text
   msg_pos += SIZE_LEN;
 
   // fill in file type
-  file_t = (ink16) file;
+  file_t = (int16) file;
   memcpy(msg_buf + msg_pos, &file_t, SIZE_FILE_T);
   msg_pos += SIZE_FILE_T;
 
   // fill in file version
-  f_ver = (ink16) ver;
+  f_ver = (int16) ver;
   memcpy(msg_buf + msg_pos, &f_ver, SIZE_VER);
   msg_pos += SIZE_VER;
 
   // fill in file size
-  f_size = (ink32) size;        //typecase to be safe
+  f_size = (int32) size;        //typecase to be safe
   memcpy(msg_buf + msg_pos, &f_size, SIZE_LEN);
   msg_pos += SIZE_LEN;
 
@@ -736,8 +736,8 @@ send_record_get_request(int fd, char *rec_name)
 {
   char *msg_buf;
   int msg_pos = 0, total_len;
-  ink16 op;
-  ink32 msg_len;
+  int16 op;
+  int32 msg_len;
   INKError err;
 
   if (!rec_name)
@@ -749,12 +749,12 @@ send_record_get_request(int fd, char *rec_name)
     return INK_ERR_SYS_CALL;
 
   // fill in op type
-  op = (ink16) RECORD_GET;
+  op = (int16) RECORD_GET;
   memcpy(msg_buf + msg_pos, (void *) &op, SIZE_OP_T);
   msg_pos += SIZE_OP_T;
 
   // fill in msg length
-  msg_len = (ink32) strlen(rec_name);
+  msg_len = (int32) strlen(rec_name);
   memcpy(msg_buf + msg_pos, (void *) &msg_len, SIZE_LEN);
   msg_pos += SIZE_LEN;
 
@@ -799,8 +799,8 @@ send_proxy_state_get_request(int fd)
 INKError
 send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
 {
-  ink16 op, state_t, cache_t;
-  ink32 msg_len;
+  int16 op, state_t, cache_t;
+  int32 msg_len;
   int total_len;
   char *msg_buf;
   INKError err;
@@ -811,19 +811,19 @@ send_proxy_state_set_request(int fd, INKProxyStateT state, INKCacheClearT clear)
     return INK_ERR_SYS_CALL;
 
   // fill in op type
-  op = (ink16) PROXY_STATE_SET;
+  op = (int16) PROXY_STATE_SET;
   memcpy(msg_buf, (void *) &op, SIZE_OP_T);
 
   // fill in msg_len
-  msg_len = (ink32) (SIZE_PROXY_T + SIZE_TS_ARG_T);
+  msg_len = (int32) (SIZE_PROXY_T + SIZE_TS_ARG_T);
   memcpy(msg_buf + SIZE_OP_T, (void *) &msg_len, SIZE_LEN);
 
   // fill in proxy state
-  state_t = (ink16) state;
+  state_t = (int16) state;
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &state_t, SIZE_PROXY_T);
 
   // fill in cache clearing option
-  cache_t = (ink16) clear;
+  cache_t = (int16) clear;
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN + SIZE_PROXY_T, (void *) &cache_t, SIZE_TS_ARG_T);
 
   // send message
@@ -846,8 +846,8 @@ INKError
 send_restart_request(int fd, bool cluster)
 {
   char *msg_buf;
-  ink16 op, clust_t;
-  ink32 msg_len;
+  int16 op, clust_t;
+  int32 msg_len;
   int total_len;
   INKError err;
 
@@ -857,11 +857,11 @@ send_restart_request(int fd, bool cluster)
     return INK_ERR_SYS_CALL;
 
   // fill in op type
-  op = (ink16) RESTART;
+  op = (int16) RESTART;
   memcpy(msg_buf, (void *) &op, SIZE_OP_T);
 
   // fill in msg_len = SIZE_BOOL
-  msg_len = (ink32) SIZE_BOOL;
+  msg_len = (int32) SIZE_BOOL;
   memcpy(msg_buf + SIZE_OP_T, (void *) &msg_len, SIZE_LEN);
 
   // fill in cluster?; true=0, false=1
@@ -1012,15 +1012,15 @@ INKError
 send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg)
 {
   char *msg_buf;
-  ink16 op_t, diag_t;
-  ink32 msg_len, diag_msg_len;
+  int16 op_t, diag_t;
+  int32 msg_len, diag_msg_len;
   int total_len;
   INKError err;
 
   if (!diag_msg)
     return INK_ERR_PARAMS;
 
-  diag_msg_len = (ink32) strlen(diag_msg);
+  diag_msg_len = (int32) strlen(diag_msg);
   msg_len = SIZE_DIAGS_T + SIZE_LEN + diag_msg_len;
   total_len = SIZE_OP_T + SIZE_LEN + msg_len;
   msg_buf = (char *) xmalloc(sizeof(char) * total_len);
@@ -1028,14 +1028,14 @@ send_diags_msg(int fd, INKDiagsT mode, const char *diag_msg)
     return INK_ERR_SYS_CALL;
 
   // fill in op type
-  op_t = (ink16) DIAGS;
+  op_t = (int16) DIAGS;
   memcpy(msg_buf, (void *) &op_t, SIZE_OP_T);
 
   // fill in entire msg len
   memcpy(msg_buf + SIZE_OP_T, (void *) &msg_len, SIZE_LEN);
 
   // fill in INKDiagsT
-  diag_t = (ink16) mode;
+  diag_t = (int16) mode;
   memcpy(msg_buf + SIZE_OP_T + SIZE_LEN, (void *) &diag_t, SIZE_DIAGS_T);
 
   // fill in diags msg_len
@@ -1083,7 +1083,7 @@ INKError
 parse_reply(int fd)
 {
   int ret, amount_read = 0;
-  ink16 ret_val;
+  int16 ret_val;
 
   // check to see if anything to read; wait for specified time = 1 sec
   if (socket_read_timeout(fd, MAX_TIME_WAIT, 0) <= 0) { // time expires before ready to read
@@ -1126,8 +1126,8 @@ INKError
 parse_reply_list(int fd, char **list)
 {
   int ret, amount_read = 0;
-  ink16 ret_val;
-  ink32 list_size;
+  int16 ret_val;
+  int32 list_size;
   INKError err_t;
 
   if (!list)
@@ -1229,8 +1229,8 @@ INKError
 parse_file_read_reply(int fd, int *ver, int *size, char **text)
 {
   int ret, amount_read = 0;
-  ink32 f_size;
-  ink16 ret_val, f_ver;
+  int32 f_size;
+  int16 ret_val, f_ver;
   INKError err_t;
 
   if (!ver || !size || !text)
@@ -1359,8 +1359,8 @@ INKError
 parse_record_get_reply(int fd, INKRecordT * rec_type, void **rec_val)
 {
   int ret, amount_read = 0;
-  ink16 ret_val, rec_t;
-  ink32 rec_size;
+  int16 ret_val, rec_t;
+  int32 rec_size;
   INKError err_t;
 
   if (!rec_type || !rec_val)
@@ -1487,7 +1487,7 @@ INKError
 parse_record_set_reply(int fd, INKActionNeedT * action_need)
 {
   int ret, amount_read = 0;
-  ink16 ret_val, action_t;
+  int16 ret_val, action_t;
   INKError err_t;
 
   if (!action_need)
@@ -1559,7 +1559,7 @@ INKError
 parse_proxy_state_get_reply(int fd, INKProxyStateT * state)
 {
   int ret, amount_read = 0;
-  ink16 state_t;
+  int16 state_t;
 
   if (!state)
     return INK_ERR_PARAMS;
@@ -1608,7 +1608,7 @@ INKError
 parse_event_active_reply(int fd, bool * is_active)
 {
   int ret, amount_read = 0;
-  ink16 ret_val, active;
+  int16 ret_val, active;
   INKError err_t;
 
   if (!is_active)
@@ -1681,8 +1681,8 @@ parse_event_notification(int fd, INKEvent * event)
 {
   int amount_read, ret;
   OpType msg_type;
-  ink16 type_op;
-  ink32 msg_len;
+  int16 type_op;
+  int32 msg_len;
   char *event_name = NUL, *desc = NULL;
 
   if (!event)

@@ -102,7 +102,7 @@ public:
   int snmp_enabled;
 
   CongestionControlRecord *pRecord;
-  ink32 ref_count;
+  int32 ref_count;
 
   void get()
   {
@@ -204,7 +204,7 @@ struct FailHistory
 struct CongestionEntry:RequestData
 {
   // key in the hash table;
-  inku64 m_key;
+  uint64 m_key;
   // host info
   ip_addr_t m_ip;
   char *m_hostname;
@@ -230,7 +230,7 @@ struct CongestionEntry:RequestData
   // Reference count
   int m_ref_count;
 
-    CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, inku64 key);
+    CongestionEntry(const char *hostname, ip_addr_t ip, CongestionControlRecord * rule, uint64 key);
     CongestionEntry();
     virtual ~ CongestionEntry();
 
@@ -458,9 +458,9 @@ void initCongestionControl();
 CongestionControlRecord *CongestionControlled(RD * rdata);
 void reloadCongestionControl();
 
-inku64 make_key(char *hostname, int len, unsigned long ip, CongestionControlRecord * record);
-inku64 make_key(char *hostname, unsigned long ip, CongestionControlRecord * record);
-inku64 make_key(char *hostname, int len, unsigned long ip, char *prefix, int prelen, short port = 0);
+uint64 make_key(char *hostname, int len, unsigned long ip, CongestionControlRecord * record);
+uint64 make_key(char *hostname, unsigned long ip, CongestionControlRecord * record);
+uint64 make_key(char *hostname, int len, unsigned long ip, char *prefix, int prelen, short port = 0);
 
 //----------------------------------------------------
 // the following functions are actually declared in
@@ -470,7 +470,7 @@ inku64 make_key(char *hostname, int len, unsigned long ip, char *prefix, int pre
 //----------------------------------------------------
 extern Action *get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry ** ppEntry);
 extern Action *get_congest_list(Continuation * cont, MIOBuffer * buffer, int format);
-extern void remove_congested_entry(inku64 key);
+extern void remove_congested_entry(uint64 key);
 
 extern void remove_all_congested_entry(void);
 

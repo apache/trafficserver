@@ -64,11 +64,11 @@ HttpPagesHandler::~HttpPagesHandler()
 {
 }
 
-ink64
+int64
 HttpPagesHandler::extract_id(const char *query)
 {
   char *p;
-  ink64 id;
+  int64 id;
 
   p = (char *) strstr(query, "id=");
   if (!p) {

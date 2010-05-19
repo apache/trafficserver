@@ -60,18 +60,18 @@
 class InkRand
 {
 public:
-  InkRand(inku32 d);
+  InkRand(uint32 d);
 
-  void seed(inku32 d);
-  inkcoreapi inku32 random();
+  void seed(uint32 d);
+  inkcoreapi uint32 random();
   double drandom();
 
 private:
-    inku32 reload();
+    uint32 reload();
 
 private:
-    inku32 state[624 + 1];      // N+1...N is specifed as 624 in inkrand.cc
-  inku32 *next;
+    uint32 state[624 + 1];      // N+1...N is specifed as 624 in inkrand.cc
+  uint32 *next;
   int left;
 };
 

@@ -44,10 +44,10 @@ Continuation *aio_err_callbck = 0;
 RecInt cache_config_threads_per_disk = 12;
 
 // AIO Stats
-inku64 aio_num_read = 0;
-inku64 aio_bytes_read = 0;
-inku64 aio_num_write = 0;
-inku64 aio_bytes_written = 0;
+uint64 aio_num_read = 0;
+uint64 aio_bytes_read = 0;
+uint64 aio_num_write = 0;
+uint64 aio_bytes_written = 0;
 
 static void aio_move(AIO_Reqs *req);
 
@@ -60,9 +60,9 @@ aio_stats_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBloc
 {
   (void) data_type;
   (void) rsb;
-  ink64 new_val = 0;
-  ink64 diff = 0;
-  ink64 count, sum;
+  int64 new_val = 0;
+  int64 diff = 0;
+  int64 count, sum;
   ink_hrtime now = ink_get_hrtime();
   // The RecGetGlobalXXX stat functions are cheaper than the
   // RecGetXXX functions. The Global ones are expensive
@@ -71,7 +71,7 @@ aio_stats_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBloc
   RecGetGlobalRawStatSum(aio_rsb, id, &sum);
   RecGetGlobalRawStatCount(aio_rsb, id, &count);
 
-  ink64 time_diff = ink_hrtime_to_msec(now - count);
+  int64 time_diff = ink_hrtime_to_msec(now - count);
   if (time_diff == 0) {
     data->rec_float = 0.0;
     return 0;
@@ -368,9 +368,9 @@ cache_op(AIOCallbackInternal *op)
     while (a->aio_nbytes - res > 0) {
       do {
         if (read)
-          err = ink_pread(a->aio_fildes, ((char *) a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pread(a->aio_fildes, ((char *) a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
         else
-          err = ink_pwrite(a->aio_fildes, ((char *) a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pwrite(a->aio_fildes, ((char *) a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
       } while ((err < 0) && (errno == EINTR || errno == ENOBUFS || errno == ENOMEM));
       if (err <= 0) {
         Warning("cache disk operation failed %s %d %d\n",

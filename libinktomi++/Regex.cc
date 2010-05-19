@@ -1688,8 +1688,8 @@ re_build(REState ** states,
   delete[]counts;
 }
 
-static const ink32 negative_one = -1;
-static const ink32 zero = 0;
+static const int32 negative_one = -1;
+static const int32 zero = 0;
 
 DFA::DFA()
 :basetbl(&negative_one), accepttbl(&negative_one), nexttbl(&zero), checktbl(&negative_one)
@@ -1755,7 +1755,7 @@ DFA::compile(const char **patterns, int npatterns, REFlags flags)
 int
 DFA::compile(const char *filename, const char **patterns, int npatterns, REFlags flags)
 {
-  static ink32 magic = 0x01020304;
+  static int32 magic = 0x01020304;
   DynArray<int>*tables[4];
   int length;
   INK_DIGEST_CTX md5_context;
@@ -1777,44 +1777,44 @@ DFA::compile(const char *filename, const char **patterns, int npatterns, REFlags
   ink_code_incr_md5_final((char *) &md5, &md5_context);
 
 #ifndef TS_MICRO
-  fd = ink_open(filename, O_RDONLY | _O_ATTRIB_NORMAL);
+  fd = open(filename, O_RDONLY | _O_ATTRIB_NORMAL);
 #else
   fd = -1;
 #endif
   if (fd > 0) {
     INK_MD5 old_md5;
-    ink32 old_magic;
+    int32 old_magic;
 
     tables[0] = &basetbl;
     tables[1] = &accepttbl;
     tables[2] = &nexttbl;
     tables[3] = &checktbl;
 
-    err = ink_read(fd, &old_magic, sizeof(old_magic));
+    err = read(fd, &old_magic, sizeof(old_magic));
     if ((err != sizeof(old_magic)) || (old_magic != magic)) {
       goto fail;
     }
 
-    err = ink_read(fd, &old_md5, sizeof(old_md5));
+    err = read(fd, &old_md5, sizeof(old_md5));
     if ((err != sizeof(old_md5)) || (!(old_md5 == md5))) {
       goto fail;
     }
 
     for (i = 0; i < 4; i++) {
-      err = ink_read(fd, &length, sizeof(length));
+      err = read(fd, &length, sizeof(length));
       if (err != sizeof(length)) {
         goto fail;
       }
       tables[i]->set_length(length);
       (*tables[i]) (tables[i]->length() - 1) = tables[i]->defvalue();
 
-      err = ink_read(fd, (ink32 *) (*tables[i]), sizeof(ink32) * (tables[i]->length()));
-      if (err != (int) (sizeof(ink32) * (tables[i]->length()))) {
+      err = read(fd, (int32 *) (*tables[i]), sizeof(int32) * (tables[i]->length()));
+      if (err != (int) (sizeof(int32) * (tables[i]->length()))) {
         goto fail;
       }
     }
 
-    ink_close(fd);
+    close(fd);
     return 0;
 
   fail:
@@ -1822,7 +1822,7 @@ DFA::compile(const char *filename, const char **patterns, int npatterns, REFlags
     tables[1]->clear();
     tables[2]->clear();
     tables[3]->clear();
-    ink_close(fd);
+    close(fd);
   }
 
   err = compile(patterns, npatterns, flags);
@@ -1830,17 +1830,17 @@ DFA::compile(const char *filename, const char **patterns, int npatterns, REFlags
     return err;
   }
 #ifndef TS_MICRO
-  fd = ink_open(filename, O_CREAT | O_TRUNC | O_WRONLY | _O_ATTRIB_NORMAL, 0755);
+  fd = open(filename, O_CREAT | O_TRUNC | O_WRONLY | _O_ATTRIB_NORMAL, 0755);
   if (fd < 0) {
     return 0;
   }
 
-  err = ink_write(fd, &magic, sizeof(magic));
+  err = write(fd, &magic, sizeof(magic));
   if (err != sizeof(magic)) {
     goto done;
   }
 
-  err = ink_write(fd, &md5, sizeof(md5));
+  err = write(fd, &md5, sizeof(md5));
   if (err != sizeof(md5)) {
     goto done;
   }
@@ -1852,19 +1852,19 @@ DFA::compile(const char *filename, const char **patterns, int npatterns, REFlags
 
   for (i = 0; i < 4; i++) {
     length = tables[i]->length();
-    err = ink_write(fd, &length, sizeof(length));
+    err = write(fd, &length, sizeof(length));
     if (err != sizeof(length)) {
       goto done;
     }
 
-    err = ink_write(fd, (ink32 *) (*tables[i]), sizeof(ink32) * (tables[i]->length()));
-    if (err != (int) (sizeof(ink32) * (tables[i]->length()))) {
+    err = write(fd, (int32 *) (*tables[i]), sizeof(int32) * (tables[i]->length()));
+    if (err != (int) (sizeof(int32) * (tables[i]->length()))) {
       goto done;
     }
   }
 
 done:
-  ink_close(fd);
+  close(fd);
 #endif // TS_MICRO
   return 0;
 }

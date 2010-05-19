@@ -56,11 +56,11 @@ int read_ready(int fd);
 char fd_read_char(int fd);
 int fd_read_line(int fd, char *s, int len);
 
-int ink_close_socket(int s);
-int ink_write_socket(int s, const char *buffer, int length);
-int ink_read_socket(int s, char *buffer, int length);
+int close_socket(int s);
+int write_socket(int s, const char *buffer, int length);
+int read_socket(int s, char *buffer, int length);
 
-inkcoreapi inku32 ink_inet_addr(const char *s);
+inkcoreapi uint32 ink_inet_addr(const char *s);
 
 
 #endif /* _ink_sock_h_ */

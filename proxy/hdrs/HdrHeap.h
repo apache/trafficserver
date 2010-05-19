@@ -44,7 +44,7 @@
 // Objects in the heap must currently be aligned to 8 byte boundaries,
 // so their (address & HDR_PTR_ALIGNMENT_MASK) == 0
 
-#define HDR_PTR_SIZE		(sizeof(inku64))
+#define HDR_PTR_SIZE		(sizeof(uint64))
 #define	HDR_PTR_ALIGNMENT_MASK	((HDR_PTR_SIZE) - 1L)
 
 #define ROUND(x,l)  (((x) + ((l) - 1L)) & ~((l) - 1L))
@@ -74,9 +74,9 @@ enum
 
 struct HdrHeapObjImpl
 {
-  inku32 m_type:8;
-  inku32 m_length:20;
-  inku32 m_obj_flags:4;
+  uint32 m_type:8;
+  uint32 m_length:20;
+  uint32 m_obj_flags:4;
 };
 
 /*-------------------------------------------------------------------------
@@ -118,7 +118,7 @@ obj_copy(HdrHeapObjImpl * s_obj, char *d_addr)
 }
 
 inline void
-obj_init_header(HdrHeapObjImpl * obj, inku32 type, inku32 nbytes, inku32 obj_flags)
+obj_init_header(HdrHeapObjImpl * obj, uint32 type, uint32 nbytes, uint32 obj_flags)
 {
   obj->m_type = type;
   obj->m_length = nbytes;
@@ -141,7 +141,7 @@ struct StrHeapDesc
   StrHeapDesc();
   Ptr<RefCountObj> m_ref_count_ptr;
   char *m_heap_start;
-  ink32 m_heap_len;
+  int32 m_heap_len;
   bool m_locked;
 };
 
@@ -158,9 +158,9 @@ public:
   char *expand(char *ptr, int old_size, int new_size);
   int space_avail();
 
-  inku32 m_heap_size;
+  uint32 m_heap_size;
   char *m_free_start;
-  inku32 m_free_size;
+  uint32 m_free_size;
 };
 
 class CoreUtils;
@@ -222,15 +222,15 @@ public:
 
   // Sanity Check Functions
   void sanity_check_strs();
-  bool check_marshalled(inku32 buf_length);
+  bool check_marshalled(uint32 buf_length);
 
   // Debugging functions
   void dump_heap(int len = -1);
 
-  inku32 m_magic;
+  uint32 m_magic;
   char *m_free_start;
   char *m_data_start;
-  inku32 m_size;
+  uint32 m_size;
 
   bool m_writeable;
 
@@ -244,7 +244,7 @@ public:
   HdrHeap *m_next;
 
   // HdrBuf heap pointers
-  inku32 m_free_size;
+  uint32 m_free_size;
 
   int demote_rw_str_heap();
   void coalesce_str_heaps(int incoming_size = 0);

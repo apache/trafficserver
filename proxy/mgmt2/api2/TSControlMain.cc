@@ -100,7 +100,7 @@ void
 remove_client(ClientT * client, InkHashTable * table)
 {
   // close client socket
-  ink_close_socket(client->sock_info.fd);       // close client socket
+  close_socket(client->sock_info.fd);       // close client socket
 
   // remove client binding from hash table
   ink_hash_table_delete(table, (char *) &client->sock_info.fd);
@@ -435,14 +435,14 @@ ts_ctrl_main(void *arg)
 
   // if we get here something's wrong, just clean up
   Debug("ts_main", "[ts_ctrl_main] CLOSING AND SHUTTING DOWN OPERATIONS\n");
-  ink_close_socket(con_socket_fd);
+  close_socket(con_socket_fd);
 
   // iterate through hash table; close client socket connections and remove entry
   con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
   while (con_entry) {
     client_entry = (ClientT *) ink_hash_table_entry_value(accepted_con, con_entry);
     if (client_entry->sock_info.fd >= 0) {
-      ink_close_socket(client_entry->sock_info.fd);     // close socket
+      close_socket(client_entry->sock_info.fd);     // close socket
     }
     ink_hash_table_delete(accepted_con, (char *) &client_entry->sock_info.fd);  // remove binding
     delete_client(client_entry);        // free ClientT
@@ -742,7 +742,7 @@ handle_reconfigure(struct SocketInfo sock_info)
 INKError
 handle_restart(struct SocketInfo sock_info, char *req)
 {
-  ink16 cluster;
+  int16 cluster;
   INKError ret;
 
   if (!req) {

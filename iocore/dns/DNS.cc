@@ -83,9 +83,9 @@ strnchr(char *s, char c, int len)
   return *s == c ? s : (char *) NULL;
 }
 
-static inline inku16
-ink_get16(const inku8 *src) {
-  inku16 dst;
+static inline uint16
+ink_get16(const uint8 *src) {
+  uint16 dst;
 
   NS_GET16(dst, src);
   return dst;
@@ -152,7 +152,7 @@ DNSProcessor::open(unsigned int aip, int aport, int aoptions)
 void
 DNSProcessor::dns_init()
 {
-  ink64 sval, cval = 0;
+  int64 sval, cval = 0;
 
   DNS_READ_DYN_STAT(dns_sequence_number_stat, sval, cval);
 
@@ -1207,7 +1207,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
   DNSEntry *e = get_dns(handler, (u_short) ntohs(h->id));
   bool retry = false;
   bool server_ok = true;
-  inku32 temp_ttl = 0;
+  uint32 temp_ttl = 0;
 
   //
   // Do we have an entry for this id?

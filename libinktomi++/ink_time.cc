@@ -49,13 +49,13 @@ int getrusage(int who, struct rusage *rusage);
 
 /*---------------------------------------------------------------------------*
 
-  inku64 microseconds(which)
+  uint64 microseconds(which)
 
   returns microsecond-resolution clock info
 
  *---------------------------------------------------------------------------*/
 
-inku64
+uint64
 ink_microseconds(int which)
 {
   struct timeval tp;

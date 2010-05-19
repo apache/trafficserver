@@ -189,7 +189,7 @@ SocksEntry::startEvent(int event, void *data)
 
     findServer();
 
-    if (server_ip == (inku32) - 1) {
+    if (server_ip == (uint32) - 1) {
       Debug("Socks", "Unable to open connection to the SOCKS server");
       lerrno = ESOCK_NO_SOCK_SERVER_CONN;
       free();

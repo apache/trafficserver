@@ -98,9 +98,9 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation *c, ink64 nbytes, MIOBuffer *buf);
+  VIO *do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf);
 
-  VIO *do_io_write(Continuation *c, ink64 nbytes, IOBufferReader *buf, bool owner = false);
+  VIO *do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner = false);
 
   void do_io_transform(VConnection *vc);
 

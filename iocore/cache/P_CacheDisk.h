@@ -47,7 +47,7 @@ struct CacheDisk;
 
 struct DiskPartBlock
 {
-  ink_off_t offset;
+  off_t offset;
   unsigned short number;
   unsigned int len:26;
   unsigned int type:3;
@@ -70,7 +70,7 @@ struct DiskPart
   int num_partblocks;           /* number of disk partition blocks in this discrete
                                    partition */
   int part_number;              /* the partition number of this partition */
-  ink_off_t size;               /* size in store blocks */
+  off_t size;               /* size in store blocks */
   CacheDisk *disk;
   Queue<DiskPartBlockQueue> dpb_queue;
 };
@@ -82,7 +82,7 @@ struct DiskHeader
   unsigned int num_free;        /* number of disk partition blocks free */
   unsigned int num_used;        /* number of disk partition blocks in use */
   unsigned int num_diskpart_blks;       /* number of disk partition blocks */
-  ink_off_t num_blocks;
+  off_t num_blocks;
   DiskPartBlock part_info[1];
 };
 
@@ -93,14 +93,14 @@ struct CacheDisk:public Continuation
   char *path;
   int header_len;
   AIOCallbackInternal io;
-  ink_off_t len;                // in blocks (STORE_BLOCK)
-  ink_off_t start;
-  ink_off_t skip;
-  ink_off_t start_offset;
+  off_t len;                // in blocks (STORE_BLOCK)
+  off_t start;
+  off_t skip;
+  off_t start_offset;
   int num_usable_blocks;
   int fd;
-  ink_off_t free_space;
-  ink_off_t wasted_space;
+  off_t free_space;
+  off_t wasted_space;
   DiskPart **disk_parts;
   DiskPart *free_blocks;
   int num_errors;
@@ -115,7 +115,7 @@ struct CacheDisk:public Continuation
   }
 
    ~CacheDisk();
-  int open(char *s, ink_off_t blocks, ink_off_t dir_skip, int fildes, bool clear);
+  int open(char *s, off_t blocks, off_t dir_skip, int fildes, bool clear);
 
   int clearDisk();
 
@@ -129,7 +129,7 @@ struct CacheDisk:public Continuation
 
   int syncDone(int event, void *data);
 
-  DiskPartBlock *create_partition(int number, ink_off_t size, int scheme);
+  DiskPartBlock *create_partition(int number, off_t size, int scheme);
 
   int delete_partition(int number);
 

@@ -77,8 +77,8 @@ struct ParentResult
   int line_number;
   P_table *epoch;               // A pointer to the table used.
   ParentRecord *rec;
-  inku32 last_parent;
-  inku32 start_parent;
+  uint32 last_parent;
+  uint32 start_parent;
   bool wrap_around;
   bool retry;
 };
@@ -129,10 +129,10 @@ struct ParentConfigParams:public ConfigInfo
 
   P_table *ParentTable;
   ParentRecord *DefaultParent;
-  ink32 ParentRetryTime;
-  ink32 ParentEnable;
-  ink32 FailThreshold;
-  ink32 DNS_ParentOnly;
+  int32 ParentRetryTime;
+  int32 ParentEnable;
+  int32 FailThreshold;
+  int32 DNS_ParentOnly;
 };
 
 struct ParentConfig
@@ -160,9 +160,9 @@ struct pRecord
 {
   char hostname[DOMAIN_NAME_MAX + 1];
   int port;
-  ink32 failedAt;
+  int32 failedAt;
   int failCount;
-  ink32 upAt;
+  int32 upAt;
   const char *scheme;           // for which parent matches (if any)
 };
 
@@ -198,7 +198,7 @@ public:
   //private:
   const char *ProcessParents(char *val);
   ParentRR_t round_robin;
-  volatile inku32 rr_next;
+  volatile uint32 rr_next;
   bool go_direct;
 };
 

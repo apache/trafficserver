@@ -50,7 +50,7 @@ typedef struct ink_aiocb
   size_t aio_nbytes;            /* length of transfer */
 
   // TODO change to off_t
-  ink_off_t aio_offset;         /* file offset */
+  off_t aio_offset;         /* file offset */
 
   int aio_reqprio;              /* request priority offset */
   //    struct sigevent aio_sigevent;   /* signal number and offset */

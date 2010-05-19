@@ -30,11 +30,11 @@
 
 struct RamCache {
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  virtual int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, inku32 auxkey1 = 0, inku32 auxkey2 = 0) = 0;
-  virtual int put(INK_MD5 *key, IOBufferData *data, inku32 len, bool copy = false, inku32 auxkey1 = 0, inku32 auxkey2 = 0) = 0;
-  virtual int fixup(INK_MD5 *key, inku32 old_auxkey1, inku32 old_auxkey2, inku32 new_auxkey1, inku32 new_auxkey2) = 0;
+  virtual int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32 auxkey1 = 0, uint32 auxkey2 = 0) = 0;
+  virtual int put(INK_MD5 *key, IOBufferData *data, uint32 len, bool copy = false, uint32 auxkey1 = 0, uint32 auxkey2 = 0) = 0;
+  virtual int fixup(INK_MD5 *key, uint32 old_auxkey1, uint32 old_auxkey2, uint32 new_auxkey1, uint32 new_auxkey2) = 0;
 
-  virtual void init(ink64 max_bytes, Part *part) = 0;
+  virtual void init(int64 max_bytes, Part *part) = 0;
   virtual ~RamCache() {};
 };
 

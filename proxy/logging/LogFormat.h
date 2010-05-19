@@ -72,7 +72,7 @@ public:
   {
     return m_format_str;
   };
-  ink32 name_id()
+  int32 name_id()
   {
     return m_name_id;
   }
@@ -102,7 +102,7 @@ public:
   };
 
 public:
-  static ink32 id_from_name(const char *name);
+  static int32 id_from_name(const char *name);
   static LogFormat *format_from_specification(char *spec,
                                               char **file_name, char **file_header, LogFileFormat * file_type);
   static int parse_symbol_string(const char *symbol_string, LogFieldList *field_list, bool *contains_aggregates);
@@ -139,7 +139,7 @@ private:
   // variable
   bool m_valid;
   char *m_name_str;
-  ink32 m_name_id;
+  int32 m_name_id;
   char *m_fieldlist_str;
   unsigned m_fieldlist_id;
   unsigned m_field_count;
@@ -169,7 +169,7 @@ public:
 
   void add(LogFormat * format, bool copy = true);
   LogFormat *find_by_name(const char *name) const;
-  LogFormat *find_by_type(LogFormatType type, ink32 id) const;
+  LogFormat *find_by_type(LogFormatType type, int32 id) const;
 
   LogFormat *first() const
   {

@@ -41,7 +41,7 @@
 #include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 
 char *
-ink64_to_str(char *buf, unsigned int buf_size, ink64 val,
+int64_to_str(char *buf, unsigned int buf_size, int64 val,
              unsigned int *total_chars, unsigned int req_width, char pad_char)
 {
   const int local_buf_size = 32;
@@ -51,7 +51,7 @@ ink64_to_str(char *buf, unsigned int buf_size, ink64 val,
   char *out_buf;
 
   if (buf_size < 22) {
-    // ink64 may not fit in provided buffer, use the local one
+    // int64 may not fit in provided buffer, use the local one
     out_buf = &local_buf[local_buf_size - 1];
     using_local_buffer = 1;
   } else {
@@ -145,7 +145,7 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
   char tmp_buf[tmp_buf_size];
 
   unsigned int num_chars_s;
-  char *ts_s = ink64_to_str(tmp_buf, tmp_buf_size - 4, timestamp_sec, &num_chars_s, 0, '0');
+  char *ts_s = int64_to_str(tmp_buf, tmp_buf_size - 4, timestamp_sec, &num_chars_s, 0, '0');
   ink_debug_assert(ts_s);
 
   // convert milliseconds
@@ -153,7 +153,7 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
   tmp_buf[tmp_buf_size - 5] = '.';
   int ms = timestamp_usec / 1000;
   unsigned int num_chars_ms;
-  char RELEASE_UNUSED *ts_ms = ink64_to_str(&tmp_buf[tmp_buf_size - 4],
+  char RELEASE_UNUSED *ts_ms = int64_to_str(&tmp_buf[tmp_buf_size - 4],
                                             4, ms, &num_chars_ms, 4, '0');
   ink_debug_assert(ts_ms && num_chars_ms == 4);
 
@@ -170,7 +170,7 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
 }
 
 #ifdef USE_TIME_STAMP_COUNTER_HRTIME
-inku32
+uint32
 init_hrtime_TCS()
 {
   int freqlen = sizeof(hrtime_freq);
@@ -183,7 +183,7 @@ init_hrtime_TCS()
 }
 
 double hrtime_freq_float = 0.5; // 500 Mhz
-inku32 hrtime_freq = init_hrtime_TCS();
+uint32 hrtime_freq = init_hrtime_TCS();
 #endif
 
 #ifdef NEED_HRTIME_BASIS

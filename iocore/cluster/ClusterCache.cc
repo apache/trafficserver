@@ -243,8 +243,8 @@ ClusterVConnectionCache::init()
 inline int
 ClusterVConnectionCache::MD5ToIndex(INK_MD5 * p)
 {
-  inku64 i = p->fold();
-  ink32 h, l;
+  uint64 i = p->fold();
+  int32 h, l;
   h = i >> 32;
   l = i & 0xFFFFFFFF;
   return ((h ^ l) % MAX_TABLE_ENTRIES) & (MAX_TABLE_ENTRIES - 1);
@@ -477,7 +477,7 @@ CacheContinuation::do_op(Continuation * c, ClusterMachine * mp, void *args,
       m->frag_type = ((CacheOpArgs_General *) args)->frag_type;
       if (opcode == CACHE_OPEN_WRITE) {
         m->nbytes = nbytes;
-        m->data = (inku32) ((CacheOpArgs_General *) args)->pin_in_cache;
+        m->data = (uint32) ((CacheOpArgs_General *) args)->pin_in_cache;
       } else {
         m->nbytes = 0;
         m->data = 0;
@@ -535,8 +535,8 @@ CacheContinuation::do_op(Continuation * c, ClusterMachine * mp, void *args,
       cc->url_md5 = m->url_md5;
       m->seq_number = (c ? cc->seq_number : CACHE_NO_RESPONSE);
       m->nbytes = nbytes;
-      m->data = (inku32) ((CacheOpArgs_General *) args)->pin_in_cache;
-      m->frag_type = (inku32) ((CacheOpArgs_General *) args)->frag_type;
+      m->data = (uint32) ((CacheOpArgs_General *) args)->pin_in_cache;
+      m->frag_type = (uint32) ((CacheOpArgs_General *) args)->frag_type;
 
       if (opcode == CACHE_OPEN_READ_LONG) {
         //
@@ -1512,7 +1512,7 @@ CacheContinuation::VCdataRead(int event, VIO * target_vio)
 
   VConnection *vc = target_vio->vc_server;
   int reply = CACHE_EVENT_OPEN_READ;
-  ink32 object_size;
+  int32 object_size;
 
   switch (event) {
   case VC_EVENT_EOS:
@@ -1748,7 +1748,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
     msg->token.clear();         // Tell sender no conn established
 
     // Reallocate reply message, allowing for marshalled data
-    len += sizeof(ink32);
+    len += sizeof(int32);
     CacheOpReplyMsg *reply = (CacheOpReplyMsg *) ALLOCA_DOUBLE(flen + len);
 
     // Initialize reply message header
@@ -1767,7 +1767,7 @@ CacheContinuation::replyOpEvent(int event, VConnection * cvc)
         write_cluster_vc->remote_closed = 1;    // avoid remote close msg
         write_cluster_vc->do_io(VIO::CLOSE);
       }
-      *((ink32 *) reply->moi) = (ink32) ((uintptr_t) cvc & 0xffffffff);    // code describing failure
+      *((int32 *) reply->moi) = (int32) ((uintptr_t) cvc & 0xffffffff);    // code describing failure
     }
     // Make reply message the current message
     msg = reply;
@@ -1985,7 +1985,7 @@ cache_op_result_ClusterFunction(ClusterMachine * from, void *d, int l)
   int flen, len = l;
   CacheHTTPInfo ci;
   CacheOpReplyMsg *msg = (CacheOpReplyMsg *) data;
-  ink32 op_result_error = 0;
+  int32 op_result_error = 0;
   ClusterMessageHeader *mh = (ClusterMessageHeader *) data;
 
   if (mh->GetMsgVersion() != CacheOpReplyMsg::CACHE_OP_REPLY_MESSAGE_VERSION) { ////////////////////////////////////////////////
@@ -2025,10 +2025,10 @@ cache_op_result_ClusterFunction(ClusterMachine * from, void *d, int l)
     case CACHE_EVENT_DEREF_FAILED:
       {
         // Unmarshal the error code
-        ink_assert(((len - flen) == sizeof(ink32)));
-        op_result_error = *(ink32 *) msg->moi;
+        ink_assert(((len - flen) == sizeof(int32)));
+        op_result_error = *(int32 *) msg->moi;
         if (mh->NeedByteSwap())
-          swap32((inku32 *) & op_result_error);
+          swap32((uint32 *) & op_result_error);
         op_result_error = -op_result_error;
         break;
       }
@@ -2718,11 +2718,11 @@ CacheContinuation::replyLookupEvent(int event, void *d)
   return EVENT_DONE;
 }
 
-ink32 CacheContinuation::getObjectSize(VConnection * vc, int opcode, CacheHTTPInfo * ret_ci)
+int32 CacheContinuation::getObjectSize(VConnection * vc, int opcode, CacheHTTPInfo * ret_ci)
 {
   CacheHTTPInfo *
     ci = 0;
-  ink32
+  int32
     object_size = 0;
   if ((opcode == CACHE_OPEN_READ_LONG)
       || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {

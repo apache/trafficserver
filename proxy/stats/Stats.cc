@@ -87,7 +87,7 @@ RecData StatDescriptor::update_value()
 }
 
 StatDescriptor *
-StatDescriptor::CreateDescriptor(const char *prefix, char *name, size_t name_len, ink64 init_value)
+StatDescriptor::CreateDescriptor(const char *prefix, char *name, size_t name_len, int64 init_value)
 {
   char *t = name;
   char tv[128];
@@ -139,7 +139,7 @@ StatDescriptor::CreateDescriptor(const char *prefix, char *name, size_t name_len
 }
 
 StatDescriptor *
-StatDescriptor::CreateDescriptor(const char *name, ink64 init_value)
+StatDescriptor::CreateDescriptor(const char *name, int64 init_value)
 {
   int n_stat = ink_atomic_increment(&top_stat, 1);
   RecDataT dt;
@@ -217,7 +217,7 @@ StatDescriptor::CreateDescriptor(const char *name, float init_value)
 }
 
 void
-StatDescriptor::set(ink64 val)
+StatDescriptor::set(int64 val)
 {
   if (m_magic == SHALLOW_COPY) {
     ink_atomic_swap64(&m_value.rec_int, val);
@@ -249,7 +249,7 @@ StatDescriptor::set(float val)
 }
 
 void
-StatDescriptor::add(ink64 val)
+StatDescriptor::add(int64 val)
 {
   if (m_magic == SHALLOW_COPY) {
     ink_atomic_increment64(&m_value.rec_int, val);

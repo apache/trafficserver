@@ -104,7 +104,7 @@ clientCLI::setCliPort(int port)
 
 clientCLI::CliResult clientCLI::disconnectFromLM(void)
 {
-  ink_close_socket(socketFD);
+  close_socket(socketFD);
   socketFD = 0;
   return err_none;
 }                               // end disconnectFromLM()

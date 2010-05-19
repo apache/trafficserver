@@ -98,7 +98,7 @@ public:
     @return The number of bytes to be processed by the operation.
 
   */
-  ink64 ntodo();
+  int64 ntodo();
 
   /////////////////////
   // buffer settings //
@@ -169,7 +169,7 @@ public:
     The total number of bytes this operation must complete.
 
   */
-  ink64 nbytes;
+  int64 nbytes;
 
   /**
     Number of bytes already completed.
@@ -179,7 +179,7 @@ public:
     the lock.
 
   */
-  ink64 ndone;
+  int64 ndone;
 
   /**
     Type of operation.

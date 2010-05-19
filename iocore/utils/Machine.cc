@@ -80,7 +80,7 @@ ip(aip)
     if (r == NULL) {
       unsigned char x[4];
       memset(x, 0, sizeof(x));
-      *(inku32 *) & x = (inku32) ip;
+      *(uint32 *) & x = (uint32) ip;
       Debug("machine_debug", "unable to reverse DNS %u.%u.%u.%u: %d", x[0], x[1], x[2], x[3], data.herrno);
     } else
       hostname = xstrdup(r->h_name);
@@ -93,7 +93,7 @@ ip(aip)
   {
     unsigned char x[4];
     memset(x, 0, sizeof(x));
-    *(inku32 *) & x = (inku32) ip;
+    *(uint32 *) & x = (uint32) ip;
     const size_t ip_string_size = sizeof(char) * 16;
     ip_string = (char *) xmalloc(ip_string_size);
     snprintf(ip_string, ip_string_size, "%u.%u.%u.%u", x[0], x[1], x[2], x[3]);

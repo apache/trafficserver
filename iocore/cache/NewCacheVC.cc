@@ -122,7 +122,7 @@ NewCacheVC::reenable(VIO * vio)
 
 //----------------------------------------------------------------------------
 VIO *
-NewCacheVC::do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf)
+NewCacheVC::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
 {
   Debug("cache_plugin", "[NewCacheVC::do_io_read] this=%lX c=%lX nbytes=%d", (long) this, (long) c, nbytes);
   switch (_state) {
@@ -176,7 +176,7 @@ NewCacheVC::handleRead(int event, Event * e)
 
 //----------------------------------------------------------------------------
 VIO *
-NewCacheVC::do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner)
+NewCacheVC::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner)
 {
   Debug("cache_plugin", "[NewCacheVC::do_io_write] this=%lX c=%lX", (long) this, (long) c);
 
@@ -355,7 +355,7 @@ NewCacheVC::get_http_info(CacheHTTPInfo ** info)
 }
 
 void
-NewCacheVC::_append_unmarshal_buf(const void *data, const inku64 size)
+NewCacheVC::_append_unmarshal_buf(const void *data, const uint64 size)
 {
   if (data == NULL || size == 0)
     return;
@@ -405,7 +405,7 @@ NewCacheVC::handleLookup(int event, Event * e)
 
 //----------------------------------------------------------------------------
 bool
-NewCacheVC::appendCacheHttpInfo(const void *data, const inku64 size)
+NewCacheVC::appendCacheHttpInfo(const void *data, const uint64 size)
 {
   if (!data) {
     Debug("cache_plugin", "[NewCacheVC::appendCacheHttpInfo] data NULL");
@@ -423,7 +423,7 @@ NewCacheVC::appendCacheHttpInfo(const void *data, const inku64 size)
 
 //----------------------------------------------------------------------------
 bool
-NewCacheVC::completeCacheHttpInfo(const void *data, const inku64 size)
+NewCacheVC::completeCacheHttpInfo(const void *data, const uint64 size)
 {
   if (!data) {
     Error("[NewCacheVC::completeCacheHttpInfo] data NULL");
@@ -748,9 +748,9 @@ NewCacheVC::modifyRespHdr()
 
 
 //----------------------------------------------------------------------------
-//void NewCacheVC::getCacheBufferInfo(void **buff,inku64 *size, inku64 *offset)
+//void NewCacheVC::getCacheBufferInfo(void **buff,uint64 *size, uint64 *offset)
 void
-NewCacheVC::getCacheBufferInfo(inku64 * size, inku64 * offset)
+NewCacheVC::getCacheBufferInfo(uint64 * size, uint64 * offset)
 {
   //*buff = _vio.get_writer();
   *size = _size;

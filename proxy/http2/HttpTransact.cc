@@ -171,7 +171,7 @@ is_header_keep_alive(const HTTPVersion & http_version, const HTTPVersion & reque
 inline static bool
 is_request_conditional(HTTPHdr * header)
 {
-  inku64 mask = (MIME_PRESENCE_IF_UNMODIFIED_SINCE |
+  uint64 mask = (MIME_PRESENCE_IF_UNMODIFIED_SINCE |
                  MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_RANGE |
                  MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH);
   return (header->presence(mask) && (header->method_get_wksidx() == HTTP_WKSIDX_GET));
@@ -599,14 +599,14 @@ how_to_open_connection(HttpTransact::State * s)
 }
 
 #ifdef USE_NCA
-static inku64
+static uint64
 extract_ctag_from_response(HTTPHdr * h)
 {
 
   HTTP_DEBUG_ASSERT(h->type_get() == HTTP_TYPE_RESPONSE);
   MIMEField *ctag_field = h->field_find("@Ctag", 5);
 
-  inku64 ctag;
+  uint64 ctag;
   if (ctag_field != NULL) {
     int tmp;
     const char *ctag_str = ctag_field->value_get(&tmp);
@@ -1317,8 +1317,8 @@ HttpTransact::HandleRequest(State * s)
     // we need to see if the hostname is an
     //   ip address since the parent selection code result
     //   could change as a result of this ip address
-    inku32 addr = ink_inet_addr(s->server_info.name);
-    if ((ink32) addr != -1) {
+    uint32 addr = ink_inet_addr(s->server_info.name);
+    if ((int32) addr != -1) {
       s->request_data.dest_ip = addr;
     }
 
@@ -2845,7 +2845,7 @@ HttpTransact::HandleCacheOpenReadHit(State * s)
 #ifdef USE_NCA
   if (s->client_info.port_attribute == SERVER_PORT_NCA) {
 
-    inku64 ctag = extract_ctag_from_response(obj->response_get());
+    uint64 ctag = extract_ctag_from_response(obj->response_get());
     NcaCacheUp_t *nc = s->nca_info.request_info;
 
     if (nc->advisory) {
@@ -3867,7 +3867,7 @@ HttpTransact::delete_srv_entry(State * s, int max_retries)
       if (r->is_srv) {
         Debug("dns_srv", "Marking SRV records for %s [Origin: %s] as bad", hostname, s->dns_info.lookup_name);
 
-        inku64 folded_md5 = fold_md5(md5);
+        uint64 folded_md5 = fold_md5(md5);
 
         HostDBInfo *new_r = NULL;
 
@@ -5157,7 +5157,7 @@ HttpTransact::set_headers_for_cache_write(State * s, HTTPInfo * cache_info, HTTP
 #ifdef USE_NCA
   // With NCA set get a new ctag here since this is a new document
   if (s->client_info.port_attribute == SERVER_PORT_NCA) {
-    inku64 new_ctag = ncaProcessor.allocate_ctag();
+    uint64 new_ctag = ncaProcessor.allocate_ctag();
 
     char ctag_str[21];
     snprintf(ctag_str, sizeof(ctag_str), "%llu", new_ctag);
@@ -6109,7 +6109,7 @@ HttpTransact::initialize_state_variables_from_request(State * s, HTTPHdr * incom
   s->request_data.src_ip = s->client_info.ip;
   s->request_data.dest_ip = 0;
   if (s->state_machine->ua_session) {
-    s->request_data.incoming_port = (inku16) ntohs(s->state_machine->ua_session->get_netvc()->get_local_port());
+    s->request_data.incoming_port = (uint16) ntohs(s->state_machine->ua_session->get_netvc()->get_local_port());
   }
   s->request_data.xact_start = s->client_request_time;
   s->request_data.api_info = &s->api_info;
@@ -6320,7 +6320,7 @@ HttpTransact::is_stale_cache_response_returnable(State * s)
   // Spec says that we can not serve a stale document with a
   //   "must-revalidate header"
   // How about "s-maxage" and "no-cache" directives?
-  inku32 cc_mask;
+  uint32 cc_mask;
   cc_mask = (MIME_COOKED_MASK_CC_MUST_REVALIDATE |
              MIME_COOKED_MASK_CC_PROXY_REVALIDATE |
              MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE |
@@ -6507,7 +6507,7 @@ HttpTransact::is_request_cache_lookupable(State * s, HTTPHdr * incoming)
 int
 response_cacheable_indicated_by_cc(HTTPHdr * response)
 {
-  inku32 cc_mask;
+  uint32 cc_mask;
   // the following directives imply not cacheable
   cc_mask = (MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_PRIVATE);
   if (response->get_cooked_cc_mask() & cc_mask) {
@@ -6619,7 +6619,7 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
     // If a ttl is set: no header required for caching
     // otherwise: follow parameter http.cache.required_headers
     if (s->cache_control.ttl_in_cache <= 0) {
-      inku32 cc_mask = (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE);
+      uint32 cc_mask = (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE);
       // server did not send expires header or last modified
       // and we are configured to not cache without them.
       switch (s->http_config_param->cache_required_headers) {
@@ -7219,7 +7219,7 @@ HttpTransact::handle_content_length_header(State * s, HTTPHdr * header, HTTPHdr 
   if (header->type_get() == HTTP_TYPE_RESPONSE) {
     // This isn't used.
     // int status_code = base->status_get();
-    ink32 cl = HTTP_UNDEFINED_CL;
+    int32 cl = HTTP_UNDEFINED_CL;
     if (base->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
       cl = base->get_content_length();
       if (cl >= 0) {
@@ -7234,7 +7234,7 @@ HttpTransact::handle_content_length_header(State * s, HTTPHdr * header, HTTPHdr 
           //   Otherwise, set the state's machine view  //
           //   of c-l to undefined to turn off K-A      //
           ////////////////////////////////////////////////
-          if ((ink32) s->cache_info.object_read->object_size_get() == cl) {
+          if ((int32) s->cache_info.object_read->object_size_get() == cl) {
             s->hdr_info.trust_response_cl = true;
           } else {
             Debug("http_trans", "Content Length header and cache object size mismatch." "Disabling keep-alive");
@@ -7582,7 +7582,7 @@ HttpTransact::delete_all_document_alternates_and_return(State * s, bool cache_hi
      if (s->nca_info.request_info->advisory) {
      HTTPHdr cached_response = s->cache_info.object_read->response_get();
      ink_assert(cached_response.valid());
-     inku64 ctag = extract_ctag_from_response(cached_response);
+     uint64 ctag = extract_ctag_from_response(cached_response);
      s->nca_info.response_info.ctag = ctag;
      s->nca_info.response_info.advisory |= NCA_IO_ADVISE_FLUSH;
      s->nca_info.response_info.nocache = 1;
@@ -7709,7 +7709,7 @@ HttpTransact::calculate_document_freshness_limit(Arena * arena,
 
   *heuristic = false;
 
-  inku32 cc_mask = response->get_cooked_cc_mask();
+  uint32 cc_mask = response->get_cooked_cc_mask();
   if (cc_mask & (MIME_COOKED_MASK_CC_S_MAXAGE | MIME_COOKED_MASK_CC_MAX_AGE)) {
     if (cc_mask & MIME_COOKED_MASK_CC_S_MAXAGE) {
       freshness_limit = (int) response->get_cooked_cc_s_maxage();
@@ -7829,12 +7829,12 @@ int
 HttpTransact::calculate_freshness_fuzz(State * s, int fresh_limit)
 {
   static double LOG_YEAR = log10((double)NUM_SECONDS_IN_ONE_YEAR);
-  const inku32 granularity = 1000;
+  const uint32 granularity = 1000;
   int result = 0;
 
-  inku32 random_num = this_ethread()->generator.random();
-  inku32 index = random_num % granularity;
-  inku32 range = (inku32) (granularity * s->http_config_param->freshness_fuzz_prob);
+  uint32 random_num = this_ethread()->generator.random();
+  uint32 index = random_num % granularity;
+  uint32 range = (uint32) (granularity * s->http_config_param->freshness_fuzz_prob);
 
   if (index < range) {
     if (s->http_config_param->freshness_fuzz_min_time > 0) {
@@ -7894,10 +7894,10 @@ HttpTransact::Freshness_t HttpTransact::what_is_document_freshness(State *
     current_age;
   ink_time_t
     response_date;
-  inku32
+  uint32
     cc_mask,
     cooked_cc_mask;
-  inku32
+  uint32
     os_specifies_revalidate;
 
 
@@ -8507,7 +8507,7 @@ HttpTransact::build_response(State * s,
             MIME_LEN_CACHE_CONTROL,
             MIME_LEN_VARY
           };
-          inku64 field_presence[] = { MIME_PRESENCE_ETAG,
+          uint64 field_presence[] = { MIME_PRESENCE_ETAG,
             MIME_PRESENCE_CONTENT_LOCATION,
             MIME_PRESENCE_EXPIRES,
             MIME_PRESENCE_CACHE_CONTROL,
@@ -8946,7 +8946,7 @@ HttpTransact::get_error_string(int erno)
 
 
 volatile ink_time_t global_time;
-volatile ink32 cluster_time_delta;
+volatile int32 cluster_time_delta;
 
 ink_time_t
 ink_cluster_time(void)
@@ -8982,7 +8982,7 @@ ink_cluster_time(void)
   old = global_time;
 
   while (local_time > global_time) {
-    if (ink_atomic_cas((ink32 *) & global_time, *((ink32 *) & old), *((ink32 *) & local_time))) {
+    if (ink_atomic_cas((int32 *) & global_time, *((int32 *) & old), *((int32 *) & local_time))) {
       break;
     }
     old = global_time;
@@ -9039,7 +9039,7 @@ HttpTransact::histogram_request_document_size(State * s, int doc_size)
 void
 HttpTransact::user_agent_connection_speed(State * s, ink_hrtime transfer_time, int nbytes)
 {
-  float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float) nbytes / (float) (ink64) transfer_time);
+  float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float) nbytes / (float) (int64) transfer_time);
   int bytes_per_sec = (int) (bytes_per_hrtime * HRTIME_SECOND);
 
   if (bytes_per_sec <= 100) {
@@ -9215,7 +9215,7 @@ HttpTransact::client_result_stat(State * s, ink_hrtime total_time, ink_hrtime re
 void
 HttpTransact::origin_server_connection_speed(State * s, ink_hrtime transfer_time, int nbytes)
 {
-  float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float) nbytes / (float) (ink64) transfer_time);
+  float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float) nbytes / (float) (int64) transfer_time);
   int bytes_per_sec = (int) (bytes_per_hrtime * HRTIME_SECOND);
 
   if (bytes_per_sec <= 100) {

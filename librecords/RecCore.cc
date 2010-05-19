@@ -118,20 +118,20 @@ link_llong(const char *name, RecDataT data_type, RecData data, void *cookie)
 }
 
 static int
-link_ink32(const char *name, RecDataT data_type, RecData data, void *cookie)
+link_int32(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
-  *(ink32 *) cookie = (ink32) data.rec_int;
+  *(int32 *) cookie = (int32) data.rec_int;
   return REC_ERR_OKAY;
 }
 
 static int
-link_inku32(const char *name, RecDataT data_type, RecData data, void *cookie)
+link_uint32(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
-  *(inku32 *) cookie = (inku32) data.rec_int;
+  *(uint32 *) cookie = (uint32) data.rec_int;
   return REC_ERR_OKAY;
 }
 
@@ -289,15 +289,15 @@ RecLinkConfigLLong(const char *name, RecLLong * rec_llong)
 }
 
 int
-RecLinkConfigInk32(const char *name, ink32 * p_ink32)
+RecLinkConfigInk32(const char *name, int32 * p_int32)
 {
-  return RecRegisterConfigUpdateCb(name, link_ink32, (void *) p_ink32);
+  return RecRegisterConfigUpdateCb(name, link_int32, (void *) p_int32);
 }
 
 int
-RecLinkConfigInkU32(const char *name, inku32 * p_inku32)
+RecLinkConfigInkU32(const char *name, uint32 * p_uint32)
 {
-  return RecRegisterConfigUpdateCb(name, link_inku32, (void *) p_inku32);
+  return RecRegisterConfigUpdateCb(name, link_uint32, (void *) p_uint32);
 }
 
 int
@@ -1258,7 +1258,7 @@ REC_setFloat(const char *name, float value, bool dirty)
 }
 
 bool
-REC_setCounter(const char *name, ink64 value, bool dirty)
+REC_setCounter(const char *name, int64 value, bool dirty)
 {
   REC_NOWARN_UNUSED(dirty);
   return RecSetRecordCounter(name, value);

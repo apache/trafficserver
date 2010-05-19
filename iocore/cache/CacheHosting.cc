@@ -966,7 +966,7 @@ create_config(RegressionTest * t, int num)
       }
 
       // calculate the total free space
-      inku64 total_space = 0;
+      uint64 total_space = 0;
       for (i = 0; i < gndisks; i++) {
         int part_blocks = gdisks[i]->num_usable_blocks;
         /* round down the blocks to the nearest
@@ -1006,7 +1006,7 @@ create_config(RegressionTest * t, int num)
     {
       /* calculate the total disk space */
       InkRand *gen = &this_ethread()->generator;
-      inku64 total_space = 0;
+      uint64 total_space = 0;
       part_num = 1;
       if (num == 2) {
         rprintf(t, "Random Partitions after clearing the disks\n");
@@ -1031,12 +1031,12 @@ create_config(RegressionTest * t, int num)
       while (total_space > 0) {
         if (part_num > 255)
           break;
-        ink_off_t modu = MAX_PART_SIZE;
+        off_t modu = MAX_PART_SIZE;
         if (total_space<(MAX_PART_SIZE>> STORE_BLOCK_SHIFT)) {
           modu = total_space * STORE_BLOCK_SIZE;
         }
 
-        ink_off_t random_size = (gen->random() % modu) + 1;
+        off_t random_size = (gen->random() % modu) + 1;
         /* convert to 128 megs multiple */
         int scheme = (random_size % 2) ? CACHE_HTTP_TYPE : CACHE_RTSP_TYPE;
         random_size = ROUND_TO_PART_SIZE(random_size);

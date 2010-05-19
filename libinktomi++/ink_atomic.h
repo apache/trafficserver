@@ -45,36 +45,36 @@
 
 #include "ink_apidefs.h"
 
-typedef volatile ink32 vink32;
-typedef volatile ink64 vink64;
+typedef volatile int32 vint32;
+typedef volatile int64 vint64;
 typedef volatile void *vvoidp;
-typedef vink32 *pvink32;
-typedef vink64 *pvink64;
+typedef vint32 *pvint32;
+typedef vint64 *pvint64;
 typedef vvoidp *pvvoidp;
 
 #if defined(__SUNPRO_CC)
 
-typedef volatile inku32 vinku32;
+typedef volatile uint32 vuint32;
 #if __WORDSIZE == 64
-typedef unsigned long inku64_s;
+typedef unsigned long uint64_s;
 #else
-typedef inku64 inku64_s;
+typedef uint64 uint64_s;
 #endif
-typedef volatile inku64_s vinku64_s;
-typedef vinku32 *pvinku32;
-typedef vinku64_s *pvinku64_s;
+typedef volatile uint64_s vuint64_s;
+typedef vuint32 *pvuint32;
+typedef vuint64_s *pvuint64_s;
 
 
 #include <atomic.h>
 
-static inline ink32 ink_atomic_swap(pvink32 mem, ink32 value) { return (ink32)atomic_swap_32((pvinku32)mem, (inku32)value); }
-static inline ink64 ink_atomic_swap64(pvink64 mem, ink64 value) { return (ink64)atomic_swap_64((pvinku64_s)mem, (inku64_s)value); }
+static inline int32 ink_atomic_swap(pvint32 mem, int32 value) { return (int32)atomic_swap_32((pvuint32)mem, (uint32)value); }
+static inline int64 ink_atomic_swap64(pvint64 mem, int64 value) { return (int64)atomic_swap_64((pvuint64_s)mem, (uint64_s)value); }
 static inline void *ink_atomic_swap_ptr(vvoidp mem, void *value) { return atomic_swap_ptr((vvoidp)mem, value); }
-static inline int ink_atomic_cas(pvink32 mem, int old, int new_value) { return atomic_cas_32((pvinku32)mem, (inku32)old, (inku32)new_value) == old; }
-static inline int ink_atomic_cas64(pvink64 mem, ink64 old, ink64 new_value) { return atomic_cas_64((pvinku64_s)mem, (inku64_s)old, (inku64_s)new_value) == old; }
+static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return atomic_cas_32((pvuint32)mem, (uint32)old, (uint32)new_value) == old; }
+static inline int ink_atomic_cas64(pvint64 mem, int64 old, int64 new_value) { return atomic_cas_64((pvuint64_s)mem, (uint64_s)old, (uint64_s)new_value) == old; }
 static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return atomic_cas_ptr((vvoidp)mem, old, new_value) == old; }
-static inline int ink_atomic_increment(pvink32 mem, int value) { return ((inku32)atomic_add_32_nv((pvinku32)mem, (inku32)value)) - value; }
-static inline ink64 ink_atomic_increment64(pvink64 mem, ink64 value) { return ((inku64_s)atomic_add_64_nv((pvinku64_s)mem, (inku64_s)value)) - value; }
+static inline int ink_atomic_increment(pvint32 mem, int value) { return ((uint32)atomic_add_32_nv((pvuint32)mem, (uint32)value)) - value; }
+static inline int64 ink_atomic_increment64(pvint64 mem, int64 value) { return ((uint64_s)atomic_add_64_nv((pvuint64_s)mem, (uint64_s)value)) - value; }
 static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return (void*)(((char*)atomic_add_ptr_nv((vvoidp)mem, (ssize_t)value)) - value); }
 
 /* not used for Intel Processors or Sparc which are mostly sequentally consistent */
@@ -87,14 +87,14 @@ static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { retu
 
 /* see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html */
 
-static inline ink32 ink_atomic_swap(pvink32 mem, ink32 value) { return __sync_lock_test_and_set(mem, value); }
-static inline ink64 ink_atomic_swap64(pvink64 mem, ink64 value) { return __sync_lock_test_and_set(mem, value); }
+static inline int32 ink_atomic_swap(pvint32 mem, int32 value) { return __sync_lock_test_and_set(mem, value); }
+static inline int64 ink_atomic_swap64(pvint64 mem, int64 value) { return __sync_lock_test_and_set(mem, value); }
 static inline void *ink_atomic_swap_ptr(vvoidp mem, void *value) { return __sync_lock_test_and_set((void**)mem, value); }
-static inline int ink_atomic_cas(pvink32 mem, int old, int new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline ink64 ink_atomic_cas64(pvink64 mem, ink64 old, ink64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
+static inline int ink_atomic_cas(pvint32 mem, int old, int new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
+static inline int64 ink_atomic_cas64(pvint64 mem, int64 old, int64 new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
 static inline int ink_atomic_cas_ptr(pvvoidp mem, void* old, void* new_value) { return __sync_bool_compare_and_swap(mem, old, new_value); }
-static inline int ink_atomic_increment(pvink32 mem, int value) { return __sync_fetch_and_add(mem, value); }
-static inline ink64 ink_atomic_increment64(pvink64 mem, ink64 value) { return __sync_fetch_and_add(mem, value); }
+static inline int ink_atomic_increment(pvint32 mem, int value) { return __sync_fetch_and_add(mem, value); }
+static inline int64 ink_atomic_increment64(pvint64 mem, int64 value) { return __sync_fetch_and_add(mem, value); }
 static inline void *ink_atomic_increment_ptr(pvvoidp mem, intptr_t value) { return __sync_fetch_and_add((void**)mem, value); }
 
 /* not used for Intel Processors which have sequential(esque) consistency */
@@ -115,16 +115,16 @@ extern "C"
  *===========================================================================*/
 
 /* atomic swap 32-bit value */
-  ink32 ink_atomic_swap(pvink32 mem, ink32 value);
+  int32 ink_atomic_swap(pvint32 mem, int32 value);
 
 /* atomic swap a pointer */
   void *ink_atomic_swap_ptr(vvoidp mem, void *value);
 
-  ink64 ink_atomic_swap64(pvink64 mem, ink64 value);
+  int64 ink_atomic_swap64(pvint64 mem, int64 value);
 
 #if (HOST_OS == freebsd)
 
-  static inline int ink_atomic_cas(pvink32 mem, int old, int new_value)
+  static inline int ink_atomic_cas(pvint32 mem, int old, int new_value)
   {
     int result;
     __asm __volatile("/* %0 %1 */; lock; cmpxchg %2,(%3)":"=a"(result)
@@ -137,7 +137,7 @@ extern "C"
     return ink_atomic_cas((int *) mem, (int) old, (int) new_value);
   }
 
-  static inline int ink_atomic_increment(pvink32 mem, int value)
+  static inline int ink_atomic_increment(pvint32 mem, int value)
   {
     volatile int *memp = mem;
     int old;
@@ -154,7 +154,7 @@ extern "C"
 /* Atomic compare and swap 32-bit.
    if (*mem == old) *mem = new_value;
    Returns TRUE if swap was successful. */
-  int ink_atomic_cas(pvink32 mem, ink32 old, ink32 new_value);
+  int ink_atomic_cas(pvint32 mem, int32 old, int32 new_value);
 /* Atomic compare and swap of pointers */
   int ink_atomic_cas_ptr(pvvoidp mem, void *old, void *new_value);
 /* Atomic increment/decrement to a pointer.  Adds 'value' bytes to the
@@ -162,20 +162,20 @@ extern "C"
   void *ink_atomic_increment_ptr(pvvoidp mem, int value);
 
 /* Atomic increment/decrement.  Returns the old value */
-  int ink_atomic_increment(pvink32 mem, int value);
+  int ink_atomic_increment(pvint32 mem, int value);
 #endif  /* freebsd vs not freebsd check */
 
 /* Atomic 64-bit compare and swap
    THIS IS NOT DEFINED for x86 */
 #if (HOST_OS == freebsd)
 
-  static inline int ink_atomic_cas64(pvink64 az, ink64 ax, ink64 ay)
+  static inline int ink_atomic_cas64(pvint64 az, int64 ax, int64 ay)
   {
-    unsigned long x1 = (inku64) ax;
-    unsigned long x2 = ((inku64) ax) >> 32;
-    unsigned long y1 = (inku64) ay;
-    unsigned long y2 = ((inku64) ay) >> 32;
-    register pvink64 z asm("edi") = az;
+    unsigned long x1 = (uint64) ax;
+    unsigned long x2 = ((uint64) ax) >> 32;
+    unsigned long y1 = (uint64) ay;
+    unsigned long y2 = ((uint64) ay) >> 32;
+    register pvint64 z asm("edi") = az;
     int result;
     __asm __volatile("lock\n" "     cmpxchg8b (%1)\n" "     setz %%al\n" "     and $255,%%eax":"=a"(result)
                      :"r"(z), "a"(x1), "d"(x2), "b"(y1), "c"(y2)
@@ -183,18 +183,18 @@ extern "C"
       return result;
   }
 
-  static inline ink64 ink_atomic_increment64(pvink64 mem, ink64 value)
+  static inline int64 ink_atomic_increment64(pvint64 mem, int64 value)
   {
-    volatile ink64 *memp = mem;
-    ink64 old;
+    volatile int64 *memp = mem;
+    int64 old;
     do {
       old = *memp;
     } while (!ink_atomic_cas64(mem, old, old + value));
     return old;
   }
 #else  /* non-freebsd for the "else" */
-  int ink_atomic_cas64(pvink64 mem, ink64 old, ink64 new_value);
-  ink64 ink_atomic_increment64(pvink64 mem, ink64 value);
+  int ink_atomic_cas64(pvint64 mem, int64 old, int64 new_value);
+  int64 ink_atomic_increment64(pvint64 mem, int64 value);
 #endif  /* freebsd vs not freebsd check */
 
 #define INK_WRITE_MEMORY_BARRIER

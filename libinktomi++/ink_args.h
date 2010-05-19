@@ -42,7 +42,7 @@ struct ArgumentDescription
   char key;
   /*
      "I" = integer
-     "L" = ink64
+     "L" = int64
      "D" = double (floating point)
      "T" = toggle
      "F" = set flag to TRUE (default is FALSE)

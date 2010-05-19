@@ -70,7 +70,7 @@ int
 #endif
 
 VIO *
-ClusterVConnectionBase::do_io_read(Continuation * acont, ink64 anbytes, MIOBuffer * abuffer)
+ClusterVConnectionBase::do_io_read(Continuation * acont, int64 anbytes, MIOBuffer * abuffer)
 {
   ink_assert(!closed);
   read.vio.buffer.writer_for(abuffer);
@@ -87,7 +87,7 @@ ClusterVConnectionBase::do_io_read(Continuation * acont, ink64 anbytes, MIOBuffe
 }
 
 VIO *
-ClusterVConnectionBase::do_io_pread(Continuation * acont, ink64 anbytes, MIOBuffer * abuffer, ink64 off)
+ClusterVConnectionBase::do_io_pread(Continuation * acont, int64 anbytes, MIOBuffer * abuffer, int64 off)
 {
   ink_assert(!"implemented");
   return 0;
@@ -115,7 +115,7 @@ ClusterVConnection::get_single_data(void **ptr, int *len)
 }
 
 VIO *
-ClusterVConnectionBase::do_io_write(Continuation * acont, ink64 anbytes, IOBufferReader * abuffer, bool owner)
+ClusterVConnectionBase::do_io_write(Continuation * acont, int64 anbytes, IOBufferReader * abuffer, bool owner)
 {
   ink_assert(!closed);
   ink_assert(!owner);

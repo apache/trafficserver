@@ -45,14 +45,14 @@ int debug_on = 0;
 #define TSPORT 39679
 
 #define STREAM_TIMEOUT_SECS 6000
-typedef unsigned int inku32;
+typedef unsigned int uint32;
 
 /*taken from Prefetch.cc */
 struct prefetch_udp_header
 {
-  //inku32 response_flag:1, last_pkt:1, pkt_no:30;
-  inku32 pkt;
-  inku32 md5[4];
+  //uint32 response_flag:1, last_pkt:1, pkt_no:30;
+  uint32 pkt;
+  uint32 md5[4];
 };
 
 #define RESPONSE_FLAG (1<<31)
@@ -208,7 +208,7 @@ int
 processPacket(const char *packet, int pkt_sz)
 {
   prefetch_udp_header *hdr = (prefetch_udp_header *) packet;
-  inku32 flags = ntohl(hdr->pkt);
+  uint32 flags = ntohl(hdr->pkt);
 
   int close_socket = 1;
   int sock_fd = -1;
@@ -222,7 +222,7 @@ processPacket(const char *packet, int pkt_sz)
 
   if (flags & RESPONSE_FLAG) {
     Stream *s = stream_hash_table->lookup(hdr);
-    inku32 pkt_no = flags & PKT_NUM_MASK;
+    uint32 pkt_no = flags & PKT_NUM_MASK;
 
     if (pkt_no == 0 && !(flags & LAST_PKT_FLAG)) {
       if (s || !(s = new Stream)) {

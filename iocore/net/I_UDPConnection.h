@@ -93,8 +93,8 @@ public:
   int getPortNum(void);
 
   int GetSendGenerationNumber();        //const
-  void SetLastSentPktTSSeqNum(ink64 sentSeqNum);
-  ink64 cancel();
+  void SetLastSentPktTSSeqNum(int64 sentSeqNum);
+  int64 cancel();
   void setContinuation(Continuation * c);
 
   /**

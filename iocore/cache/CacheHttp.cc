@@ -229,7 +229,7 @@ CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj * block_
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-inku32
+uint32
 CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * block_ptr)
 {
   ink_assert(!(((long) buf) & 3));      // buf must be aligned
@@ -245,7 +245,7 @@ CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * bloc
     int tmp = info.get_handle((char *) buf, length - (buf - start));
     if (tmp < 0) {
       ink_assert(!"CacheHTTPInfoVector::unmarshal get_handle() failed");
-      return (inku32) -1;
+      return (uint32) -1;
     }
     buf += tmp;
 
@@ -345,7 +345,7 @@ CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj * block_
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-inku32
+uint32
 CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * block_ptr)
 {
   ink_assert(0);

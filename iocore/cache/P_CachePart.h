@@ -34,12 +34,12 @@
 
 #define PART_MAGIC			0xF1D0F00D
 #define START_BLOCKS                    32      // 8k
-#define START_POS			((ink_off_t)START_BLOCKS * INK_BLOCK_SIZE)
+#define START_POS			((off_t)START_BLOCKS * INK_BLOCK_SIZE)
 #define AGG_HEADER_SIZE                 INK_BLOCK_SIZE
 #define AGG_SIZE                        (4 * 1024 * 1024) // 4MB
 #define AGG_HIGH_WATER                  (AGG_SIZE / 2) // 2MB
 #define EVACUATION_SIZE                 (2 * AGG_SIZE)  // 8MB
-#define MAX_PART_SIZE                   ((ink_off_t)512 * 1024 * 1024 * 1024 * 1024)
+#define MAX_PART_SIZE                   ((off_t)512 * 1024 * 1024 * 1024 * 1024)
 #define STORE_BLOCKS_PER_DISK_BLOCK     (STORE_BLOCK_SIZE / INK_BLOCK_SIZE)
 #define MAX_PART_BLOCKS                 (MAX_PART_SIZE / INK_BLOCK_SIZE)
 #define TARGET_FRAG_SIZE                (DEFAULT_MAX_BUFFER_SIZE - sizeofDoc)
@@ -65,11 +65,11 @@
 
 // Documents
 
-#define DOC_MAGIC                       ((inku32)0x5F129B13)
-#define DOC_CORRUPT                     ((inku32)0xDEADBABE)
-#define DOC_NO_CHECKSUM                 ((inku32)0xA0B0C0D0)
+#define DOC_MAGIC                       ((uint32)0x5F129B13)
+#define DOC_CORRUPT                     ((uint32)0xDEADBABE)
+#define DOC_NO_CHECKSUM                 ((uint32)0xA0B0C0D0)
 
-#define sizeofDoc (((inku32)(uintptr_t)&((Doc*)0)->checksum)+(inku32)sizeof(inku32))
+#define sizeofDoc (((uint32)(uintptr_t)&((Doc*)0)->checksum)+(uint32)sizeof(uint32))
 
 struct Cache;
 struct Part;
@@ -83,16 +83,16 @@ struct PartHeaderFooter
   unsigned int magic;
   VersionNumber version;
   time_t create_time;
-  ink_off_t write_pos;
-  ink_off_t last_write_pos;
-  ink_off_t agg_pos;
-  inku32 generation;            // token generation (vary), this cannot be 0
-  inku32 phase;
-  inku32 cycle;
-  inku32 sync_serial;
-  inku32 write_serial;
-  inku32 dirty;
-  inku16 freelist[1];
+  off_t write_pos;
+  off_t last_write_pos;
+  off_t agg_pos;
+  uint32 generation;            // token generation (vary), this cannot be 0
+  uint32 phase;
+  uint32 cycle;
+  uint32 sync_serial;
+  uint32 write_serial;
+  uint32 dirty;
+  uint16 freelist[1];
 };
 
 // Key and Earliest key for each fragment that needs to be evacuated
@@ -137,14 +137,14 @@ struct Part:public Continuation
   PartHeaderFooter *header;
   PartHeaderFooter *footer;
   int segments;
-  ink_off_t buckets;
-  ink_off_t recover_pos;
-  ink_off_t prev_recover_pos;
-  ink_off_t scan_pos;
-  ink_off_t skip;               // start of headers
-  ink_off_t start;              // start of data
-  ink_off_t len;
-  ink_off_t data_blocks;
+  off_t buckets;
+  off_t recover_pos;
+  off_t prev_recover_pos;
+  off_t scan_pos;
+  off_t skip;               // start of headers
+  off_t start;              // start of data
+  off_t len;
+  off_t data_blocks;
   int hit_evacuate_window;
   AIOCallbackInternal io;
 
@@ -169,15 +169,15 @@ struct Part:public Continuation
   CacheDisk *disk;
   Cache *cache;
   CachePart *cache_part;
-  inku32 last_sync_serial;
-  inku32 last_write_serial;
+  uint32 last_sync_serial;
+  uint32 last_write_serial;
   bool recover_wrapped;
   bool dir_sync_waiting;
   bool dir_sync_in_progress;
   bool writing_end_marker;
 
   CacheKey first_fragment_key;
-  ink64 first_fragment_offset;
+  int64 first_fragment_offset;
   Ptr<IOBufferData> first_fragment_data;
 
   void cancel_trigger();
@@ -197,7 +197,7 @@ struct Part:public Continuation
 
   int clear_dir();
 
-  int init(char *s, ink_off_t blocks, ink_off_t dir_skip, bool clear);
+  int init(char *s, off_t blocks, off_t dir_skip, bool clear);
 
   int handle_dir_clear(int event, void *data);
   int handle_dir_read(int event, void *data);
@@ -236,7 +236,7 @@ struct Part:public Continuation
   int evacuateDocReadDone(int event, Event *e);
   int evacuateDoc(int event, Event *e);
 
-  int evac_range(ink_off_t start, ink_off_t end, int evac_phase);
+  int evac_range(off_t start, off_t end, int evac_phase);
   void periodic_scan();
   void scan_for_pinned_documents();
   void evacuate_cleanup_blocks(int i);
@@ -290,31 +290,31 @@ struct CachePart
 
 // element of the fragment table in the head of a multi-fragment document
 struct Frag {
-  inku64 offset; // start offset of data stored in this fragment
+  uint64 offset; // start offset of data stored in this fragment
 };
 
 // Note : hdr() needs to be 8 byte aligned.
 // If you change this, change sizeofDoc above
 struct Doc
 {
-  inku32 magic;                 // DOC_MAGIC
-  inku32 len;                   // length of this segment
-  inku64 total_len;             // total length of document
+  uint32 magic;                 // DOC_MAGIC
+  uint32 len;                   // length of this segment
+  uint64 total_len;             // total length of document
   INK_MD5 first_key;            // first key in document (http: vector)
   INK_MD5 key;
-  inku32 hlen;                  // header length
-  inku32 ftype:8;               // fragment type CACHE_FRAG_TYPE_XX
-  inku32 flen:24;               // fragment table length
-  inku32 sync_serial;
-  inku32 write_serial;
-  inku32 pinned;                // pinned until
-  inku32 checksum;
+  uint32 hlen;                  // header length
+  uint32 ftype:8;               // fragment type CACHE_FRAG_TYPE_XX
+  uint32 flen:24;               // fragment table length
+  uint32 sync_serial;
+  uint32 write_serial;
+  uint32 pinned;                // pinned until
+  uint32 checksum;
 
-  inku32 data_len();
-  inku32 prefix_len();
+  uint32 data_len();
+  uint32 prefix_len();
   int single_fragment();
   int no_data_in_fragment();
-  inku32 nfrags();
+  uint32 nfrags();
   char *hdr();
   Frag *frags();
   char *data();
@@ -333,7 +333,7 @@ extern unsigned short *part_hash_table;
 
 TS_INLINE int
 part_headerlen(Part *d) {
-  return ROUND_TO_BLOCK(sizeof(PartHeaderFooter) + sizeof(inku16) * (d->segments-1));
+  return ROUND_TO_BLOCK(sizeof(PartHeaderFooter) + sizeof(uint16) * (d->segments-1));
 }
 TS_INLINE int
 part_dirlen(Part * d)
@@ -366,18 +366,18 @@ part_in_phase_valid(Part * d, Dir * e)
 {
   return (dir_offset(e) - 1 < ((d->header->write_pos + d->agg_buf_pos - d->start) / INK_BLOCK_SIZE));
 }
-TS_INLINE ink_off_t
+TS_INLINE off_t
 part_offset(Part * d, Dir * e)
 {
-  return d->start + (ink_off_t) dir_offset(e) * INK_BLOCK_SIZE - INK_BLOCK_SIZE;
+  return d->start + (off_t) dir_offset(e) * INK_BLOCK_SIZE - INK_BLOCK_SIZE;
 }
-TS_INLINE ink_off_t
-offset_to_part_offset(Part * d, ink_off_t pos)
+TS_INLINE off_t
+offset_to_part_offset(Part * d, off_t pos)
 {
   return ((pos - d->start + INK_BLOCK_SIZE) / INK_BLOCK_SIZE);
 }
-TS_INLINE ink_off_t
-part_offset_to_offset(Part * d, ink_off_t pos)
+TS_INLINE off_t
+part_offset_to_offset(Part * d, off_t pos)
 {
   return d->start + pos * INK_BLOCK_SIZE - INK_BLOCK_SIZE;
 }
@@ -391,12 +391,12 @@ part_in_phase_agg_buf_valid(Part * d, Dir * e)
 {
   return (part_offset(d, e) >= d->header->write_pos && part_offset(d, e) < (d->header->write_pos + d->agg_buf_pos));
 }
-TS_INLINE inku32
+TS_INLINE uint32
 Doc::prefix_len()
 {
   return sizeofDoc + hlen + flen;
 }
-TS_INLINE inku32
+TS_INLINE uint32
 Doc::data_len()
 {
   return len - sizeofDoc - hlen - flen;
@@ -406,7 +406,7 @@ Doc::single_fragment()
 {
   return (total_len && (data_len() == total_len));
 }
-TS_INLINE inku32
+TS_INLINE uint32
 Doc::nfrags() {
   return flen / sizeof(Frag);
 }
@@ -427,7 +427,7 @@ Doc::data()
 }
 
 int part_dir_clear(Part * d);
-int part_init(Part * d, char *s, ink_off_t blocks, ink_off_t skip, bool clear);
+int part_init(Part * d, char *s, off_t blocks, off_t skip, bool clear);
 
 // inline Functions
 
@@ -482,9 +482,9 @@ Part::open_read(INK_MD5 * key)
 TS_INLINE int
 Part::within_hit_evacuate_window(Dir * xdir)
 {
-  ink_off_t oft = dir_offset(xdir) - 1;
-  ink_off_t write_off = (header->write_pos + AGG_SIZE - start) / INK_BLOCK_SIZE;
-  ink_off_t delta = oft - write_off;
+  off_t oft = dir_offset(xdir) - 1;
+  off_t write_off = (header->write_pos + AGG_SIZE - start) / INK_BLOCK_SIZE;
+  off_t delta = oft - write_off;
   if (delta >= 0)
     return delta < hit_evacuate_window;
   else

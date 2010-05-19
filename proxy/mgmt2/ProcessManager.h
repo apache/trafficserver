@@ -53,7 +53,7 @@ public:
   {
     delete record_data;
 #ifndef _WIN32
-      ink_close_socket(local_manager_sockfd);
+      close_socket(local_manager_sockfd);
 #else
       CloseHandle(local_manager_hpipe);
 #endif
@@ -74,7 +74,7 @@ public:
   {
     mgmt_log(stderr, "[ProcessManager::stop] Bringing down connection\n");
 #ifndef _WIN32
-    ink_close_socket(local_manager_sockfd);
+    close_socket(local_manager_sockfd);
 #else
     CloseHandle(local_manager_hpipe);
 #endif

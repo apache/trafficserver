@@ -79,22 +79,22 @@ Warning("** MUST MIGRATE TO LIBRECORDS ** file:%s line:%d\n", __FILE__, __LINE__
 #define ReadConfigInteger(_i,_s) do { \
   LIBRECORDS_WARN; \
   bool _found = 0; \
-  ink64 _ii = pmgmt->record_data->readConfigInteger(_s, &_found); \
+  int64 _ii = pmgmt->record_data->readConfigInteger(_s, &_found); \
   if (_found) _i = _ii; else Warning("Cannot read config %s",_s); \
 } while(0)
 
 #define ReadConfigInt32(_i,_s) do { \
   LIBRECORDS_WARN; \
   bool _found = 0; \
-  ink64 _ii = pmgmt->record_data->readConfigInteger(_s, &_found); \
-  if (_found) _i = (ink32)_ii; else Warning("Cannot read config %s",_s); \
+  int64 _ii = pmgmt->record_data->readConfigInteger(_s, &_found); \
+  if (_found) _i = (int32)_ii; else Warning("Cannot read config %s",_s); \
 } while(0)
 
 #define ReadConfigInt32U(_i,_s) do { \
   LIBRECORDS_WARN; \
   bool _found = 0; \
-  ink64 _ii = pmgmt->record_data->readConfigInteger(_s, &_found); \
-  if (_found) _i = (inku32)_ii; else Warning("Cannot read config %s",_s); \
+  int64 _ii = pmgmt->record_data->readConfigInteger(_s, &_found); \
+  if (_found) _i = (uint32)_ii; else Warning("Cannot read config %s",_s); \
 } while(0)
 
 #define ReadConfigFloat(_f,_s) do { \
@@ -107,7 +107,7 @@ Warning("** MUST MIGRATE TO LIBRECORDS ** file:%s line:%d\n", __FILE__, __LINE__
 #define ReadLocalInteger(_i,_s) do { \
   LIBRECORDS_WARN; \
   bool _found = 0; \
-  ink64 _ii = pmgmt->record_data->readLocalInteger(_s, &_found); \
+  int64 _ii = pmgmt->record_data->readLocalInteger(_s, &_found); \
   if (_found) _i = _ii; else Warning("Cannot read config %s",_s); \
 } while(0)
 
@@ -150,7 +150,7 @@ do { \
 #define RegisterConfigUpdateFuncLongLong(_ll,_n) \
 do { \
   LIBRECORDS_WARN; \
-  ink64* tmp_ptr = &_ll; \
+  int64* tmp_ptr = &_ll; \
   ink_assert(pmgmt->record_data->registerConfigUpdateFunc(_n,config_long_long_cb, (void*)tmp_ptr));\
 } while(0)
 

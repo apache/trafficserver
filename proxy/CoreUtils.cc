@@ -577,9 +577,9 @@ CoreUtils::test_HdrHeap(void *arg)
 {
   HdrHeap *hheap_test = (HdrHeap *) arg;
 
-  inku32 *magic_ptr = &(hheap_test->m_magic);
-  inku32 magic = 0;
-  if (read_from_core((intptr_t) magic_ptr, sizeof(inku32), (char *) &magic) != 0) {
+  uint32 *magic_ptr = &(hheap_test->m_magic);
+  uint32 magic = 0;
+  if (read_from_core((intptr_t) magic_ptr, sizeof(uint32), (char *) &magic) != 0) {
     if (magic == HDR_BUF_MAGIC_ALIVE ||
         magic == HDR_BUF_MAGIC_DEAD || magic == HDR_BUF_MAGIC_CORRUPT || magic == HDR_BUF_MAGIC_MARSHALED) {
       // This is not 64-bit correct ... /leif
@@ -1231,7 +1231,7 @@ print_read_block(OUTCONTROLMSG * o_msg)
   printf("      offset: %d,  length: %d \n", LE_TO_LONG(r_msg->offset), LE_TO_LONG(r_msg->length));
   printf("      flags: %d,  dummy: %d \n", LE_TO_LONG(r_msg->flags), LE_TO_LONG(r_msg->dummy));
   printf("      Earliest: %e,  Deadline: %e \n",
-         LE_TO_INT64((ink64) r_msg->tEarliest), LE_TO_INT64((ink64) r_msg->tDeadline));
+         LE_TO_INT64((int64) r_msg->tEarliest), LE_TO_INT64((int64) r_msg->tDeadline));
   printf("      UserIncarnation: %d,  playSequence: %d \n",
          LE_TO_LONG(r_msg->playIncarnation), LE_TO_LONG(r_msg->playSequence));
 }

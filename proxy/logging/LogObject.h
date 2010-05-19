@@ -161,7 +161,7 @@ public:
 
   void display(FILE * fd = stdout);
   void displayAsXML(FILE * fd = stdout, bool extended = false);
-  static inku64 compute_signature(LogFormat * format, char *filename, unsigned int flags);
+  static uint64 compute_signature(LogFormat * format, char *filename, unsigned int flags);
   char *get_original_filename() const
   {
     return m_filename;
@@ -175,7 +175,7 @@ public:
     return m_basename;
   };
   off_t get_file_size_bytes();
-  inku64 get_signature() const
+  uint64 get_signature() const
   {
     return m_signature;
   };
@@ -257,7 +257,7 @@ private:
   // name conflicts
 
   unsigned int m_flags;         // diverse object flags (see above)
-  inku64 m_signature;           // INK_MD5 signature for object
+  uint64 m_signature;           // INK_MD5 signature for object
 
   int m_rolling_enabled;
   int m_rolling_interval_sec;   // time interval between rolls
@@ -366,7 +366,7 @@ private:
 
   int _manage_object(LogObject * log_object, bool is_api_object, int maxConflicts);
 #ifndef TS_MICRO
-  static bool _has_internal_filename_conflict(char *filename, inku64 signature, LogObject ** objects, int numObjects);
+  static bool _has_internal_filename_conflict(char *filename, uint64 signature, LogObject ** objects, int numObjects);
 #endif                          // TS_MICRO
   int _solve_filename_conflicts(LogObject * log_obj, int maxConflicts);
   int _solve_internal_filename_conflicts(LogObject * log_obj, int maxConflicts, int fileNum = 0);
@@ -412,7 +412,7 @@ public:
   // return 1 if object is removed from array of managed objects, 0 otherwise
   int unmanage_api_object(LogObject * logObject);
 
-  LogObject *get_object_with_signature(inku64 signature);
+  LogObject *get_object_with_signature(uint64 signature);
   void check_buffer_expiration(long time_now);
   size_t get_num_objects()
   {

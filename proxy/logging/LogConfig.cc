@@ -626,7 +626,7 @@ LogConfig::LogConfig()
 :
 initialized(false),
 reconfiguration_needed(false),
-logging_space_exhausted(false), m_space_used(0), m_partition_space_left((ink64) UINT_MAX),
+logging_space_exhausted(false), m_space_used(0), m_partition_space_left((int64) UINT_MAX),
 #if defined (IOCORE_LOG_COLLATION)
   m_log_collation_accept(NULL),
 #endif
@@ -1619,23 +1619,23 @@ LogConfig::register_mgmt_callbacks()
   given number of bytes, false otherwise.
   -------------------------------------------------------------------------*/
 
-bool LogConfig::space_to_write(ink64 bytes_to_write)
+bool LogConfig::space_to_write(int64 bytes_to_write)
 {
-  ink64
+  int64
     config_space,
     partition_headroom;
-  ink64
+  int64
     logical_space_used,
     physical_space_left;
   bool
     space;
 
-  config_space = (ink64) get_max_space_mb() * LOG_MEGABYTE;
-  partition_headroom = (ink64) PARTITION_HEADROOM_MB *
+  config_space = (int64) get_max_space_mb() * LOG_MEGABYTE;
+  partition_headroom = (int64) PARTITION_HEADROOM_MB *
     LOG_MEGABYTE;
 
   logical_space_used = m_space_used + bytes_to_write;
-  physical_space_left = m_partition_space_left - (ink64) bytes_to_write;
+  physical_space_left = m_partition_space_left - (int64) bytes_to_write;
 
   space = ((logical_space_used<config_space) && (physical_space_left> partition_headroom));
 
@@ -1673,7 +1673,7 @@ LogConfig::update_space_used()
   static const int MAX_CANDIDATES = 128;
   LogDeleteCandidate candidates[MAX_CANDIDATES];
   int i, victim, candidate_count;
-  ink64 total_space_used, partition_space_left;
+  int64 total_space_used, partition_space_left;
   char path[MAXPATHLEN];
   int sret;
   struct dirent *result;
@@ -1728,7 +1728,7 @@ LogConfig::update_space_used()
 
   candidate_count = 0;
 
-  while (ink_readdir_r(ld, m_dir_entry, &result) == 0) {
+  while (readdir_r(ld, m_dir_entry, &result) == 0) {
 
     if (!result) {
       break;
@@ -1739,14 +1739,14 @@ LogConfig::update_space_used()
     sret =::stat(path, &sbuf);
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
 
-      total_space_used += (ink64) sbuf.st_size;
+      total_space_used += (int64) sbuf.st_size;
 
       if (auto_delete_rolled_files && LogFile::rolled_logfile(m_dir_entry->d_name) && candidate_count < MAX_CANDIDATES) {
         //
         // then add this entry to the candidate list
         //
         candidates[candidate_count].name = xstrdup(path);
-        candidates[candidate_count].size = (ink64) sbuf.st_size;
+        candidates[candidate_count].size = (int64) sbuf.st_size;
         candidates[candidate_count].mtime = sbuf.st_mtime;
         candidate_count++;
       }
@@ -1768,7 +1768,7 @@ LogConfig::update_space_used()
   int ret =::statfs(logfile_dir, &fs);
 #endif
   if (ret >= 0) {
-    partition_space_left = (ink64) fs.f_bavail * (ink64) fs.f_bsize;
+    partition_space_left = (int64) fs.f_bavail * (int64) fs.f_bsize;
   }
 
   //
@@ -1792,8 +1792,8 @@ LogConfig::update_space_used()
   // selected).
   //
 
-  ink64 max_space = (ink64) get_max_space_mb() * LOG_MEGABYTE;
-  ink64 headroom = (ink64) max_space_mb_headroom * LOG_MEGABYTE;
+  int64 max_space = (int64) get_max_space_mb() * LOG_MEGABYTE;
+  int64 headroom = (int64) max_space_mb_headroom * LOG_MEGABYTE;
 
   if (candidate_count > 0 && !space_to_write(headroom)) {
 

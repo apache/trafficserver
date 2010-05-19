@@ -404,19 +404,19 @@ newUNIXsocket(char *fpath)
 
   if ((bind(socketFD, (struct sockaddr *) &serv_addr, servlen)) < 0) {
     mgmt_log(stderr, "[newUNIXsocket] Unable to bind socket: %s\n", strerror(errno));
-    ink_close_socket(socketFD);
+    close_socket(socketFD);
     return -1;
   }
 
   if (chmod(fpath, 00755) < 0) {
     mgmt_log(stderr, "[newUNIXsocket] Unable to chmod unix-domain socket: %s\n", strerror(errno));
-    ink_close_socket(socketFD);
+    close_socket(socketFD);
     return -1;
   }
 
   if ((listen(socketFD, 5)) < 0) {
     mgmt_log(stderr, "[newUNIXsocket] Unable to listen on socket: %s", strerror(errno));
-    ink_close_socket(socketFD);
+    close_socket(socketFD);
     return -1;
   }
   // Set the close on exec flag so our children do not
@@ -464,13 +464,13 @@ newTcpSocket(int port)
   // Bind the port to the socket
   if (bind(socketFD, (sockaddr *) & socketInfo, sizeof(socketInfo)) < 0) {
     mgmt_elog(stderr, "[newTcpSocket] Unable to bind port %d to socket: %s\n", port, strerror(errno));
-    ink_close_socket(socketFD);
+    close_socket(socketFD);
     return -1;
   }
   // Listen on the new socket
   if (listen(socketFD, 5) < 0) {
     mgmt_elog(stderr, "[newTcpSocket] %s\n", "Unable to listen on the socket");
-    ink_close_socket(socketFD);
+    close_socket(socketFD);
     return -1;
   }
   // Set the close on exec flag so our children do not
@@ -484,7 +484,7 @@ newTcpSocket(int port)
 
 // Keep track of the number of service threads for debugging
 //  purposes
-static volatile ink32 numServiceThr = 0;
+static volatile int32 numServiceThr = 0;
 
 void
 printServiceThr(int sig)
@@ -559,7 +559,7 @@ serviceThrReaper(void *arg)
 #else
           ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-          ink_atomic_increment((ink32 *) & numServiceThr, -1);
+          ink_atomic_increment((int32 *) & numServiceThr, -1);
 
           wGlobals.serviceThrArray[i].alreadyShutdown = true;
           Debug("ui", "%s %d %s %d\n", "Shuting Down Socket FD ",
@@ -576,7 +576,7 @@ serviceThrReaper(void *arg)
 #else
       ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-      ink_atomic_increment((ink32 *) & numServiceThr, -1);
+      ink_atomic_increment((int32 *) & numServiceThr, -1);
     }
 
     usleep(300000);
@@ -1013,7 +1013,7 @@ webIntr_main(void *x)
 #else
     ink_sem_wait(&wGlobals.serviceThrCount);
 #endif
-    ink_atomic_increment((ink32 *) & numServiceThr, 1);
+    ink_atomic_increment((int32 *) & numServiceThr, 1);
 
     // INKqa11624 - setup sockaddr struct for unix/tcp socket in different sizes
     if (acceptFD == cliFD) {
@@ -1033,7 +1033,7 @@ webIntr_main(void *x)
 #else
       ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-      ink_atomic_increment((ink32 *) & numServiceThr, -1);
+      ink_atomic_increment((int32 *) & numServiceThr, -1);
     } else {                    // Accept succeeded
 
       if (serviceThr == HTTP_THR) {
@@ -1083,9 +1083,9 @@ webIntr_main(void *x)
 #else
         ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-        ink_atomic_increment((ink32 *) & numServiceThr, -1);
+        ink_atomic_increment((int32 *) & numServiceThr, -1);
         xfree(clientInfo);
-        ink_close_socket(clientFD);
+        close_socket(clientFD);
       } else {                  // IP is allowed
 
         for (i = 0; i < MAX_SERVICE_THREADS; i++) {
@@ -1107,13 +1107,13 @@ webIntr_main(void *x)
               mgmt_elog(stderr, "[WebIntrMain] Failed to create service thread\n");
               wGlobals.serviceThrArray[i].threadId = 0;
               wGlobals.serviceThrArray[i].fd = -1;
-              ink_close_socket(clientFD);
+              close_socket(clientFD);
 #if (HOST_OS == darwin)
               ink_sem_post(wGlobals.serviceThrCount);
 #else
               ink_sem_post(&wGlobals.serviceThrCount);
 #endif
-              ink_atomic_increment((ink32 *) & numServiceThr, -1);
+              ink_atomic_increment((int32 *) & numServiceThr, -1);
             }
 
             break;

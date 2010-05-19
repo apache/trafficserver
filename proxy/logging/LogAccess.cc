@@ -853,21 +853,21 @@ LogAccess::marshal_record(char *record, char *buf)
 
     if (LOG_INTEGER == stype || LOG_COUNTER == stype) {
 
-      // we assume MgmtInt and MgmtIntCounter are ink64 for the
+      // we assume MgmtInt and MgmtIntCounter are int64 for the
       // conversion below, if this ever changes we should modify
       // accordingly
       //
-      ink_debug_assert(sizeof(ink64) >= sizeof(LogInt) && sizeof(ink64) >= sizeof(LogCounter));
+      ink_debug_assert(sizeof(int64) >= sizeof(LogInt) && sizeof(int64) >= sizeof(LogCounter));
 
       // so that a 64 bit integer will fit (including sign and eos)
       //
       ink_debug_assert(max_chars > 21);
 
-      ink64 val = (ink64) (LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
+      int64 val = (int64) (LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
 
       if (found) {
 
-        out_buf = LogUtils::ink64_to_str(ascii_buf, max_chars, val, &num_chars);
+        out_buf = LogUtils::int64_to_str(ascii_buf, max_chars, val, &num_chars);
         ink_debug_assert(out_buf);
 
       } else {

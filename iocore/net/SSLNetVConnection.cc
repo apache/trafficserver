@@ -282,10 +282,10 @@ SSLNetVConnection::net_read_io(NetHandler * nh, EThread * lthread)
 }
 
 
-ink64 SSLNetVConnection::load_buffer_and_write(ink64 towrite, ink64 &wattempted, ink64 &total_wrote, MIOBufferAccessor & buf) {
+int64 SSLNetVConnection::load_buffer_and_write(int64 towrite, int64 &wattempted, int64 &total_wrote, MIOBufferAccessor & buf) {
   ProxyMutex *mutex = this_ethread()->mutex;
   int r = 0;
-  ink64 l = 0;
+  int64 l = 0;
   int offset = buf.entry->start_offset;
   IOBufferBlock *b = buf.entry->block;
 
@@ -299,7 +299,7 @@ ink64 SSLNetVConnection::load_buffer_and_write(ink64 towrite, ink64 &wattempted,
       continue;
     }
     // check if to amount to write exceeds that in this buffer
-    ink64 wavail = towrite - total_wrote;
+    int64 wavail = towrite - total_wrote;
     if (l > wavail)
       l = wavail;
     if (!l)

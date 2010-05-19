@@ -38,7 +38,7 @@
 #define DALLOC_DESCRIPTOR_MAGIC  0x343bbbff
 
 #define DALLOC_RED_ZONE_BYTES   16
-#define DALLOC_MAKE_RED_ZONE(x)   (inku32) x | 0x189dda3f
+#define DALLOC_MAKE_RED_ZONE(x)   (uint32) x | 0x189dda3f
 
 void
 write_red_zone(void *el, int el_size)
@@ -48,21 +48,21 @@ write_red_zone(void *el, int el_size)
     return;
   }
 
-  inku32 red = DALLOC_MAKE_RED_ZONE(el);
+  uint32 red = DALLOC_MAKE_RED_ZONE(el);
 
 
   int i;
-  inku32 *write_ptr = (inku32 *) el;
+  uint32 *write_ptr = (uint32 *) el;
 
   // Redzone the front the object
-  for (i = 0; i < DALLOC_RED_ZONE_BYTES / sizeof(inku32); i++) {
+  for (i = 0; i < DALLOC_RED_ZONE_BYTES / sizeof(uint32); i++) {
     *write_ptr = red;
     write_ptr++;
   }
 
   // Redzone the back of the object
-  write_ptr = (inku32 *) (((char *) el) + el_size - DALLOC_RED_ZONE_BYTES);
-  for (i = 0; i < DALLOC_RED_ZONE_BYTES / sizeof(inku32); i++) {
+  write_ptr = (uint32 *) (((char *) el) + el_size - DALLOC_RED_ZONE_BYTES);
+  for (i = 0; i < DALLOC_RED_ZONE_BYTES / sizeof(uint32); i++) {
     *write_ptr = red;
     write_ptr++;
   }
@@ -76,13 +76,13 @@ check_red_zone(void *el, int el_size)
     return 1;
   }
 
-  inku32 red = DALLOC_MAKE_RED_ZONE(el);
+  uint32 red = DALLOC_MAKE_RED_ZONE(el);
 
   int i;
-  inku32 *read_ptr = (inku32 *) el;
+  uint32 *read_ptr = (uint32 *) el;
 
   // Check the front the object
-  for (i = 0; i < DALLOC_RED_ZONE_BYTES / sizeof(inku32); i++) {
+  for (i = 0; i < DALLOC_RED_ZONE_BYTES / sizeof(uint32); i++) {
     if (*read_ptr != red) {
       return 0;
     }
@@ -90,8 +90,8 @@ check_red_zone(void *el, int el_size)
   }
 
   // Check the back of the object
-  read_ptr = (inku32 *) (((char *) el) + el_size - DALLOC_RED_ZONE_BYTES);
-  for (i = 0; i < DALLOC_RED_ZONE_BYTES / sizeof(inku32); i++) {
+  read_ptr = (uint32 *) (((char *) el) + el_size - DALLOC_RED_ZONE_BYTES);
+  for (i = 0; i < DALLOC_RED_ZONE_BYTES / sizeof(uint32); i++) {
     if (*read_ptr != red) {
       return 0;
     }

@@ -41,8 +41,8 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf);
-  VIO *do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner = false);
+  VIO *do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf);
+  VIO *do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner = false);
   void do_io_close(int lerrno = -1);
   void do_io_shutdown(ShutdownHowTo_t howto);
 
@@ -67,8 +67,8 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation * c, ink64 nbytes, MIOBuffer * buf);
-  VIO *do_io_write(Continuation * c, ink64 nbytes, IOBufferReader * buf, bool owner = false);
+  VIO *do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf);
+  VIO *do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner = false);
   void do_io_close(int lerrno = -1);
   void do_io_shutdown(ShutdownHowTo_t howto);
 

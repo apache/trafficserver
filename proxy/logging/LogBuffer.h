@@ -77,7 +77,7 @@ struct LogBufferHeader
   unsigned low_timestamp;       // lowest timestamp value of entries
   unsigned high_timestamp;      // highest timestamp value of entries
   unsigned int log_object_flags;        // log object flags
-  inku64 log_object_signature;  // log object signature
+  uint64 log_object_signature;  // log object signature
 #if defined(LOG_BUFFER_TRACKING)
   unsigned int id;
 #endif                          // defined(LOG_BUFFER_TRACKING)
@@ -120,14 +120,14 @@ union LB_State
     return *this;
   }
 
-  inku64 ival;
+  uint64 ival;
   struct
   {
-    inku16 offset;              // buffer should be <= 64KB
-    inku16 num_entries;         // number of entries in buffer
-    inku16 byte_count;          // bytes in buffer
-    inku16 full:1;              // not accepting more checkouts
-    inku16 num_writers:15;      // number of writers
+    uint16 offset;              // buffer should be <= 64KB
+    uint16 num_entries;         // number of entries in buffer
+    uint16 byte_count;          // bytes in buffer
+    uint16 full:1;              // not accepting more checkouts
+    uint16 num_writers:15;      // number of writers
   } s;
 };
 
@@ -256,7 +256,7 @@ public:
   int switch_state(LB_State & old_state, LB_State & new_state)
   {
     INK_WRITE_MEMORY_BARRIER;
-    return (ink_atomic_cas64((ink64 *) & m_state.ival, old_state.ival, new_state.ival));
+    return (ink_atomic_cas64((int64 *) & m_state.ival, old_state.ival, new_state.ival));
   };
 
   LB_ResultCode checkout_write(size_t * write_offset, size_t write_size);
@@ -276,7 +276,7 @@ public:
   void update_header_data();
   void convert_to_network_order();
   void convert_to_host_order();
-  inku32 get_id()
+  uint32 get_id()
   {
     return m_id;
   };
@@ -288,7 +288,7 @@ public:
   Link<LogBuffer> link;
 
   // static variables
-  static vink32 M_ID;
+  static vint32 M_ID;
 
   // static functions
   static size_t max_entry_bytes();
@@ -320,7 +320,7 @@ private:
   LogObject *m_owner;           // the LogObject that owns this buf.
   LogBufferHeader *m_header;
 
-  inku32 m_id;                  // unique buffer id (for debugging)
+  uint32 m_id;                  // unique buffer id (for debugging)
 
   // private functions
   size_t _add_buffer_header();

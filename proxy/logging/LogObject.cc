@@ -282,13 +282,13 @@ LogObject::add_loghost(LogHost * host, bool copy)
 // of the LogFormat rather than from the format_str because the format_str
 // is not part of a LogBuffer header
 //
-inku64 LogObject::compute_signature(LogFormat * format, char *filename, unsigned int flags)
+uint64 LogObject::compute_signature(LogFormat * format, char *filename, unsigned int flags)
 {
   char *
     fl = format->fieldlist();
   char *
     ps = format->printf_str();
-  inku64
+  uint64
     signature = 0;
 
   if (fl && ps && filename) {
@@ -939,7 +939,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
   } else {
     // file exists, try to read metafile to get object signature
     //
-    inku64 signature = 0;
+    uint64 signature = 0;
     MetaInfo meta_info(filename);
     bool conflicts = true;
 
@@ -957,7 +957,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
         Note("Added object_signature to metafile of %s", filename);
       } else {
         bool got_sig = meta_info.get_log_object_signature(&signature);
-        inku64 obj_sig = log_object->get_signature();
+        uint64 obj_sig = log_object->get_signature();
         if (got_sig && signature == obj_sig) {
           conflicts = false;
         }
@@ -1034,7 +1034,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject * log_object, int maxConfl
 #ifndef TS_MICRO
 bool
   LogObjectManager::_has_internal_filename_conflict(char *filename,
-                                                    inku64 signature, LogObject ** objects, int numObjects)
+                                                    uint64 signature, LogObject ** objects, int numObjects)
 {
   for (int i = 0; i < numObjects; i++) {
     LogObject *obj = objects[i];
@@ -1059,7 +1059,7 @@ LogObjectManager::_solve_internal_filename_conflicts(LogObject * log_object, int
 
 #ifndef TS_MICRO
   char *filename = log_object->get_full_filename();
-  inku64 signature = log_object->get_signature();
+  uint64 signature = log_object->get_signature();
 
   if (_has_internal_filename_conflict(filename, signature,
                                       _objects, _numObjects) ||
@@ -1112,7 +1112,7 @@ LogObjectManager::_roll_files(long time_now, bool roll_only_if_needed)
 };
 
 LogObject *
-LogObjectManager::get_object_with_signature(inku64 signature)
+LogObjectManager::get_object_with_signature(uint64 signature)
 {
   for (size_t i = 0; i < _numObjects; i++) {
     LogObject *obj = _objects[i];

@@ -47,11 +47,11 @@
 struct Span
 {
   char *pathname;
-  ink64 blocks;
-  ink64 disk_block_size;
+  int64 blocks;
+  int64 disk_block_size;
   bool file_pathname;           // the pathname is a file
   bool isRaw;
-  ink64 offset;                 // used only if (file == true)
+  int64 offset;                 // used only if (file == true)
   int disk_id;
   LINK(Span, link);
 
@@ -66,12 +66,12 @@ public:
   {
     is_mmapable_internal = s;
   }
-  ink64 size()
+  int64 size()
   {
     return blocks * STORE_BLOCK_SIZE;
   }
 
-  ink64 total_blocks()
+  int64 total_blocks()
   {
     if (link.next) {
       return blocks + link.next->total_blocks();
@@ -97,15 +97,15 @@ public:
   int read(int fd);
 
   Span *dup();
-  ink64 end()
+  int64 end()
   {
     return offset + blocks;
   }
 
-  const char *init(char *n, ink64 size);
+  const char *init(char *n, int64 size);
 
   int path(char *filename,      // for non-file, the filename in the director
-           ink64 * offset,      // for file, start offset (unsupported)
+           int64 * offset,      // for file, start offset (unsupported)
            char *buf, int buflen);      // where to store the path
 
   // 0 on success -1 on failure
@@ -164,7 +164,7 @@ struct Store
 
   // Non Thread-safe operations
   unsigned int total_blocks(int after = 0) {
-    ink64 t = 0;
+    int64 t = 0;
     for (int i = after; i < n_disks; i++)
       if (disk[i])
         t += disk[i]->total_blocks();

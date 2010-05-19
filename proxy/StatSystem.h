@@ -239,7 +239,7 @@ extern DynamicStatsString_t DynamicStatsStrings[];
 // For now, use mutexes. May later change to spin_locks, try_locks.
 #define ink_stat_lock_t ink_mutex
 
-typedef ink64 ink_statval_t;
+typedef int64 ink_statval_t;
 
 struct ink_local_stat_t
 {

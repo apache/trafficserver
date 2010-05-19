@@ -51,7 +51,7 @@
 
 
 #ifdef __x86_64__
-#define INK_QUEUE_LD64(dst,src) *((inku64*)&(dst)) = *((inku64*)&(src))
+#define INK_QUEUE_LD64(dst,src) *((uint64*)&(dst)) = *((uint64*)&(src))
 #else
 #define INK_QUEUE_LD64(dst,src) (ink_queue_load_64((void *)&(dst), (void *)&(src)))
 #endif
@@ -63,8 +63,8 @@ typedef struct _ink_freelist_list
 }
 ink_freelist_list;
 
-inkcoreapi volatile ink64 fastalloc_mem_in_use = 0;
-inkcoreapi volatile ink64 fastalloc_mem_total = 0;
+inkcoreapi volatile int64 fastalloc_mem_in_use = 0;
+inkcoreapi volatile int64 fastalloc_mem_total = 0;
 
 /*
  * SANITY and DEADBEEF are compute-intensive memory debugging to
@@ -87,14 +87,14 @@ static long page_size = 8192;   /* sysconf (_SC_PAGESIZE); */
 
 static ink_freelist_list *freelists = NULL;
 
-inkcoreapi volatile ink64 freelist_allocated_mem = 0;
+inkcoreapi volatile int64 freelist_allocated_mem = 0;
 
 #define fl_memadd(_x_) \
-   ink_atomic_increment64(&freelist_allocated_mem, (ink64) (_x_));
+   ink_atomic_increment64(&freelist_allocated_mem, (int64) (_x_));
 
 //static void ink_queue_load_64(void *dst, void *src)
 //{
-//    ink32 src_version =  (*(head_p *) src).s.version;
+//    int32 src_version =  (*(head_p *) src).s.version;
 //    void *src_pointer = (*(head_p *) src).s.pointer;
 //
 //    (*(head_p *) dst).s.version = src_version;
@@ -104,7 +104,7 @@ inkcoreapi volatile ink64 freelist_allocated_mem = 0;
 
 void
 ink_freelist_init(InkFreeList * f,
-                  const char *name, inku32 type_size, inku32 chunk_size, inku32 offset, inku32 alignment)
+                  const char *name, uint32 type_size, uint32 chunk_size, uint32 offset, uint32 alignment)
 {
   ink_freelist_list *fll;
 
@@ -144,7 +144,7 @@ ink_freelist_init(InkFreeList * f,
 }
 
 InkFreeList *
-ink_freelist_create(const char *name, inku32 type_size, inku32 chunk_size, inku32 offset, inku32 alignment)
+ink_freelist_create(const char *name, uint32 type_size, uint32 chunk_size, uint32 offset, uint32 alignment)
 {
   InkFreeList *f = ink_type_malloc(InkFreeList);
   ink_freelist_init(f, name, type_size, chunk_size, offset, alignment);
@@ -166,11 +166,11 @@ ink_freelist_new_wrap(InkFreeList * f)
 void *
 ink_freelist_new(InkFreeList * f)
 #endif                          /* !INK_USE_MUTEX_FOR_FREELISTS */
-{                               //static inku32 cntf = 0;
+{                               //static uint32 cntf = 0;
 
 #if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE))
   void *foo;
-  inku32 type_size = f->type_size;
+  uint32 type_size = f->type_size;
 
   ink_mutex_acquire(&(f->freelist_mutex));
   ink_assert(f->type_size != 0);
@@ -198,7 +198,7 @@ ink_freelist_new(InkFreeList * f)
      * Might as well unlock the freelist mutex, since
      * we're just going to do a malloc now..
      */
-    inku32 alignment;
+    uint32 alignment;
 
 #ifdef MEMPROTECT
     if (type_size >= MEMPROTECT_SIZE) {
@@ -240,8 +240,8 @@ ink_freelist_new(InkFreeList * f)
   do {
     INK_QUEUE_LD64(item, f->head);
     if (TO_PTR(FREELIST_POINTER(item)) == NULL) {
-      inku32 type_size = f->type_size;
-      inku32 i;
+      uint32 type_size = f->type_size;
+      uint32 i;
 
 #ifdef MEMPROTECT
       if (type_size >= MEMPROTECT_SIZE) {
@@ -288,7 +288,7 @@ ink_freelist_new(InkFreeList * f)
 
 #if !defined(INK_USE_MUTEX_FOR_FREELISTS)
       ink_atomic_increment((int *) &f->allocated, f->chunk_size);
-      ink_atomic_increment64(&fastalloc_mem_total, (ink64) f->chunk_size * f->type_size);
+      ink_atomic_increment64(&fastalloc_mem_total, (int64) f->chunk_size * f->type_size);
 #else
       f->allocated += f->chunk_size;
       fastalloc_mem_total += f->chunk_size * f->type_size;
@@ -312,7 +312,7 @@ ink_freelist_new(InkFreeList * f)
       }
 #if !defined(INK_USE_MUTEX_FOR_FREELISTS)
       ink_atomic_increment((int *) &f->count, f->chunk_size);
-      ink_atomic_increment64(&fastalloc_mem_in_use, (ink64) f->chunk_size * f->type_size);
+      ink_atomic_increment64(&fastalloc_mem_in_use, (int64) f->chunk_size * f->type_size);
 #else
       f->count += f->chunk_size;
       fastalloc_mem_in_use += f->chunk_size * f->type_size;
@@ -322,7 +322,7 @@ ink_freelist_new(InkFreeList * f)
       SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), f->offset),
                                    FREELIST_VERSION(item) + 1);
 #if !defined(INK_USE_MUTEX_FOR_FREELISTS)
-      result = ink_atomic_cas64((ink64 *) & f->head.data, item.data, next.data);
+      result = ink_atomic_cas64((int64 *) & f->head.data, item.data, next.data);
 #else
       f->head.data = next.data;
       result = 1;
@@ -345,7 +345,7 @@ ink_freelist_new(InkFreeList * f)
   ink_assert(!((uintptr_t)TO_PTR(FREELIST_POINTER(item))&(((uintptr_t)f->alignment)-1)));
 
   ink_atomic_increment((int *) &f->count, 1);
-  ink_atomic_increment64(&fastalloc_mem_in_use, (ink64) f->type_size);
+  ink_atomic_increment64(&fastalloc_mem_in_use, (int64) f->type_size);
 
   return TO_PTR(FREELIST_POINTER(item));
 #endif /* #if (defined(USE_SPINLOCK_FOR_FREELIST) || defined(CHECK_FOR_DOUBLE_FREE)) */
@@ -441,7 +441,7 @@ ink_freelist_free(InkFreeList * f, void *item)
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
     INK_MEMORY_BARRIER;
 #if !defined(INK_USE_MUTEX_FOR_FREELISTS)
-    result = ink_atomic_cas64((ink64 *) & f->head, h.data, item_pair.data);
+    result = ink_atomic_cas64((int64 *) & f->head, h.data, item_pair.data);
 #else
     f->head.data = item_pair.data;
     result = 1;
@@ -451,7 +451,7 @@ ink_freelist_free(InkFreeList * f, void *item)
   while (result == 0);
 
   ink_atomic_increment((int *) &f->count, -1);
-  ink_atomic_increment64(&fastalloc_mem_in_use, -(ink64) f->type_size);
+  ink_atomic_increment64(&fastalloc_mem_in_use, -(int64) f->type_size);
 #endif
 }
 
@@ -515,7 +515,7 @@ ink_freelists_dump(FILE * f)
 ink_freelist_create("<unknown>", sizeof(T), n, (uintptr_t)&((T *)0)->next, 4)
 
 void
-ink_atomiclist_init(InkAtomicList * l, const char *name, inku32 offset_to_next)
+ink_atomiclist_init(InkAtomicList * l, const char *name, uint32 offset_to_next)
 {
 #if defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
   ink_mutex_init(&(l->inkatomiclist_mutex), name);
@@ -543,7 +543,7 @@ ink_atomiclist_pop(InkAtomicList * l)
     SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset),
                                  FREELIST_VERSION(item) + 1);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas64((ink64 *) & l->head.data, item.data, next.data);
+    result = ink_atomic_cas64((int64 *) & l->head.data, item.data, next.data);
 #else
     l->head.data = next.data;
     result = 1;
@@ -575,7 +575,7 @@ ink_atomiclist_popall(InkAtomicList * l)
       return NULL;
     SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas64((ink64 *) & l->head.data, item.data, next.data);
+    result = ink_atomic_cas64((int64 *) & l->head.data, item.data, next.data);
 #else
     l->head.data = next.data;
     result = 1;
@@ -618,7 +618,7 @@ ink_atomiclist_push(InkAtomicList * l, void *item)
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
     INK_MEMORY_BARRIER;
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas64((ink64 *) & l->head, head.data, item_pair.data);
+    result = ink_atomic_cas64((int64 *) & l->head, head.data, item_pair.data);
 #else
     l->head.data = item_pair.data;
     result = 1;
@@ -652,7 +652,7 @@ ink_atomiclist_remove(InkAtomicList * l, void *item)
     head_p next;
     SET_FREELIST_POINTER_VERSION(next, item_next, FREELIST_VERSION(head) + 1);
 #if !defined(INK_USE_MUTEX_FOR_ATOMICLISTS)
-    result = ink_atomic_cas64((ink64 *) & l->head.data, head.data, next.data);
+    result = ink_atomic_cas64((int64 *) & l->head.data, head.data, next.data);
 #else
     l->head.data = next.data;
     result = 1;
