@@ -496,7 +496,7 @@ CacheProcessor::start_internal(int flags)
         Warning("It is suggested that you use raw disks if streaming and http are in the same cache");
       }
 #endif
-      strncat(path, DIR_SEP "cache.db", (sizeof(path) - strlen(path) - 1));
+      strncat(path, "/cache.db", (sizeof(path) - strlen(path) - 1));
       opts |= O_CREAT;
     }
     opts |= _O_ATTRIB_OVERLAPPED;

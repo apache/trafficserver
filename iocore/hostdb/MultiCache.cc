@@ -545,8 +545,8 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
   int scratch;
   char p[PATH_NAME_MAX + 1], buf[256];
 
-  snprintf(p, PATH_NAME_MAX + 1, "%s%s%s%s%s", system_config_directory,
-               DIR_SEP, "internal", DIR_SEP, config_filename);
+  snprintf(p, PATH_NAME_MAX + 1, "%s%s%s", system_config_directory,
+           "/internal/", config_filename);
 
   int fd =::open(p, O_RDONLY);
   if (fd < 0)
@@ -580,11 +580,13 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
 int
 MultiCacheBase::write_config(const char *config_filename, int nominal_size, int abuckets)
 {
-  char p[PATH_NAME_MAX], buf[256];
+  char p[PATH_NAME_MAX + 1], buf[256];
   int fd, retcode = -1;
 
-  snprintf(p, sizeof(p) - 1, "%s%s%s%s%s", system_config_directory, DIR_SEP, "internal", DIR_SEP, config_filename);
-  p[sizeof(p) - 1] = 0;
+  snprintf(p, PATH_NAME_MAX + 1, "%s%s%s", system_config_directory,
+           "/internal/", config_filename);
+  // XXX: Shouldn't that be 0664?
+  //
   if ((fd =::open(p, O_CREAT | O_WRONLY | O_TRUNC, 0666)) >= 0) {
     snprintf(buf, sizeof(buf) - 1, "%d\n%d\n%d\n", nominal_size, abuckets, heap_size);
     buf[sizeof(buf) - 1] = 0;
