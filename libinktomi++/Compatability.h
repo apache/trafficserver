@@ -27,6 +27,9 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <strings.h>
 
 #include "ink_port.h"
 #include "ink_resource.h"
@@ -63,41 +66,11 @@ template<class T> T max(const T a, const T b)
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED | MAP_NORESERVE)
 #endif
 
-#if (HOST_OS == linux)
-#ifndef __x86_64
-typedef unsigned long long uint64_t;
-#endif
-#endif
-
-#if ((HOST_OS == freebsd) || (HOST_OS == darwin))
+#if (HOST_OS == darwin)
 typedef uint32_t in_addr_t;
 #endif
 
 #define NEED_HRTIME
-
-#include <stdio.h>
-
-#if (HOST_OS == freebsd)
-static inline int
-ink_sscan_longlong(const char *str, ink64 * value)
-{
-  return sscanf(str, "%qd", value);
-}
-#else
-static inline int
-ink_sscan_longlong(const char *str, ink64 * value)
-{
-  // coverity[secure_coding]
-  return sscanf(str, "%lld", value);
-}
-#endif
-
-#if (HOST_OS == linux)
-#define BCOPY_TYPE (char *)
-#else
-#define BCOPY_TYPE (void *)
-extern "C" void bcopy(const void *s1, void *s2, size_t n);
-#endif
 
 #define ink_pread      pread
 #define ink_pwrite     pwrite

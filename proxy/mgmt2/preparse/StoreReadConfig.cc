@@ -59,7 +59,7 @@ parseStorageFile(int fd)
     while (*e && !isdigit(*e))
       e++;
     if (e && *e) {
-      if (1 != ink_sscan_longlong(e, &size)) {
+      if (1 != sscanf(e, "%lld", &size)) {
         err = "error parsing size";
         goto Lfail;
       }

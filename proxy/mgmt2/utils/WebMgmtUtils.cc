@@ -76,21 +76,21 @@ varSetFromStr(const char *varName, const char *value)
 
   switch (varDataType) {
   case RECD_INT:
-    if (ink_sscan_longlong(value, &data.rec_int) == 1) {
+    if (sscanf(value, "%lld", &data.rec_int) == 1) {
       RecSetRecordInt((char *) varName, data.rec_int);
     } else {
       found = false;
     }
     break;
   case RECD_LLONG:
-    if (ink_sscan_longlong(value, &data.rec_llong) == 1) {
+    if (sscanf(value, "%lld", &data.rec_llong) == 1) {
       RecSetRecordLLong((char *) varName, data.rec_llong);
     } else {
       found = false;
     }
     break;
   case RECD_COUNTER:
-    if (ink_sscan_longlong(value, &data.rec_counter) == 1) {
+    if (sscanf(value, "%lld", &data.rec_counter) == 1) {
       RecSetRecordCounter((char *) varName, data.rec_counter);
     } else {
       found = false;
