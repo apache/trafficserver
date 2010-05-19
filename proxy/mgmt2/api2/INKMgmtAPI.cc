@@ -3271,7 +3271,7 @@ closeAllFds()
       while (!feof(fd)) {
         NOWARN_UNUSED_RETURN(fgets(buffer, BUFFLEN, fd));
         num = atoi(buffer);
-        if (num != fd->_fileno && num != 0 && num != 1 && num != 2) {   // for out put
+        if (num != fileno(fd) && num != 0 && num != 1 && num != 2) {   // for out put
           //printf("closing fd (%d)\n", num); fflush(stdout);
           close(num);
         }
