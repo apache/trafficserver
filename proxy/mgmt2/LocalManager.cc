@@ -145,19 +145,19 @@ void
 LocalManager::clearStats()
 {
   char *statsPath;
-  char local_state_dir[FILE_NAME_MAX];
-  char snap_file[FILE_NAME_MAX];
+  char conf[PATH_NAME_MAX + 1];
+  char local_state_dir[PATH_NAME_MAX + 1];
   struct stat s;
   int err;
 
-  REC_ReadConfigString(local_state_dir, "proxy.config.local_state_dir", FILE_NAME_MAX);
+  REC_ReadConfigString(conf, "proxy.config.local_state_dir", PATH_NAME_MAX);
+  Layout::get()->relative(local_state_dir, sizeof(local_state_dir), conf);
   if ((err = stat(local_state_dir, &s)) < 0) {
     Warning("Unable to stat() local state directory '%s': %d %d, %s", local_state_dir, err, errno, strerror(errno));
     Warning(" Please set 'proxy.config.local_state_dir' to allow statistics collection");
   }
-  REC_ReadConfigString(snap_file, "proxy.config.stats.snap_file", FILE_NAME_MAX);
-  snprintf(snap_filename, sizeof(snap_filename), "%s%s%s", local_state_dir,
-           DIR_SEP, snap_file);
+  REC_ReadConfigString(conf, "proxy.config.stats.snap_file", PATH_NAME_MAX);
+  snprintf(snap_filename, sizeof(snap_filename), "%s/%s", local_state_dir, conf);
 
   // Clear our records and then send the signal.  There is a race condition
   //  here where our stats could get re-updated from the proxy
@@ -377,14 +377,17 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
   proxy_binary = REC_readString("proxy.config.proxy_binary", &found);
   proxy_options = REC_readString("proxy.config.proxy_binary_opts", &found);
   env_prep = REC_readString("proxy.config.env_prep", &found);
-
-  const size_t absolute_proxy_binary_size = sizeof(char) * (strlen(system_root_dir) + strlen(bin_path) + strlen(proxy_binary)) + 2;
-  absolute_proxy_binary = (char *) xmalloc(absolute_proxy_binary_size);
-  snprintf(absolute_proxy_binary, absolute_proxy_binary_size, "%s%s%s", bin_path, DIR_SEP, proxy_binary);
+  // Calculate configured bin_path from the prefix
+  char *absolute_bin_path = Layout::get()->relative(bin_path);
+  xfree(bin_path);
+  bin_path = absolute_bin_path;
+  // Calculate proxy_binary from the absolute bin_path
+  absolute_proxy_binary = Layout::relative_to(absolute_bin_path, proxy_binary);
 
   if ((err = stat(absolute_proxy_binary, &s)) < 0) {
-    // Try 'root_dir/bin_path' directory
-    snprintf(absolute_proxy_binary, absolute_proxy_binary_size, "%s%s%s%s", system_root_dir,bin_path, DIR_SEP, proxy_binary);
+    // Try 'Layout::bindir' directory
+    xfree(absolute_proxy_binary);
+    absolute_proxy_binary = Layout::relative_to(Layout::get()->bindir, proxy_binary);
     // coverity[fs_check_call]
     if ((err = stat(absolute_proxy_binary, &s)) < 0) {
         mgmt_elog("[LocalManager::LocalManager] Unable to find '%s': %d %d, %s\n",
@@ -1083,7 +1086,7 @@ LocalManager::convert_filters()
 
     const size_t absolute_convert_binary_size = (sizeof(char) * (strlen(bin_path) + strlen(convert_bin)) + 2);
     char *absolute_convert_binary = (char *) alloca(absolute_convert_binary_size);
-    snprintf(absolute_convert_binary, absolute_convert_binary_size, "%s%s%s", bin_path, DIR_SEP, convert_bin);
+    snprintf(absolute_convert_binary, absolute_convert_binary_size, "%s/%s", bin_path, convert_bin);
 
     // check that the binary exists
     struct stat fileInfo;
