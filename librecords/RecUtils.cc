@@ -223,10 +223,10 @@ RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
 
   switch (data_type) {
   case RECD_INT:
-    data_src.rec_int = ink_atoll(data_string);
+    data_src.rec_int = ink_atoi64(data_string);
     break;
   case RECD_LLONG:
-    data_src.rec_llong = ink_atoll(data_string);
+    data_src.rec_llong = ink_atoi64(data_string);
     break;
   case RECD_FLOAT:
     data_src.rec_float = atof(data_string);
@@ -238,7 +238,7 @@ RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
       data_src.rec_string = data_string;
     break;
   case RECD_COUNTER:
-    data_src.rec_counter = ink_atoll(data_string);
+    data_src.rec_counter = ink_atoi64(data_string);
     break;
   default:
     ink_debug_assert(!"Unexpected RecD type");

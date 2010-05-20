@@ -69,7 +69,7 @@ int ink_fputln(FILE *stream, const char *s);
 int ink_file_fd_readline(int fd, int bufsize, char *buf);
 int ink_file_fd_writestring(int fd, const char *buf);
 int ink_filepath_merge(char *buf, int bufsz, const char *rootpath,
-                       const char *addpath, int flags);
+                       const char *addpath, int flags = INK_FILEPATH_TRUENAME);
 /**
  Add addpath to the rootpath prepending slash if rootpath
  is not NULL and doesn't end with the slash already and put the

@@ -76,7 +76,7 @@ HttpPagesHandler::extract_id(const char *query)
   }
   p += sizeof("id=") - 1;
 
-  id = ink_atoll(p);
+  id = ink_atoi64(p);
 
   // Check to see if we found the id
   if (id == 0) {

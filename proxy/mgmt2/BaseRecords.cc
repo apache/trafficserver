@@ -441,10 +441,10 @@ BaseRecords::defineRecords()
 
     switch (recs[*cur_rec].stype) {
     case INK_INT:
-      recs[*cur_rec].data.int_data = (MgmtInt) ink_atoll(RecordsConfig[r].value);
+      recs[*cur_rec].data.int_data = (MgmtInt) ink_atoi64(RecordsConfig[r].value);
       break;
     case INK_LLONG:
-      recs[*cur_rec].data.llong_data = (MgmtLLong) ink_atoll(RecordsConfig[r].value);
+      recs[*cur_rec].data.llong_data = (MgmtLLong) ink_atoi64(RecordsConfig[r].value);
       break;
     case INK_FLOAT:
       recs[*cur_rec].data.float_data = (MgmtFloat) atof(RecordsConfig[r].value);
@@ -464,7 +464,7 @@ BaseRecords::defineRecords()
       }
       break;
     case INK_COUNTER:
-      recs[*cur_rec].data.counter_data = (MgmtIntCounter) ink_atoll(RecordsConfig[r].value);
+      recs[*cur_rec].data.counter_data = (MgmtIntCounter) ink_atoi64(RecordsConfig[r].value);
       break;
     default:
       // Handled here:
@@ -620,8 +620,8 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
               int rec_err = RecGetRecordInt(var_name, &tmp);
               found = (rec_err == REC_ERR_OKAY);
               if (found) {
-                if (tmp != (RecInt) ink_atoll(param)) {
-                  RecSetRecordInt(var_name, (RecInt) ink_atoll(param));
+                if (tmp != (RecInt) ink_atoi64(param)) {
+                  RecSetRecordInt(var_name, (RecInt) ink_atoi64(param));
                 }
               } else {
                 // Modularization: Switch mgmt_fatal to mgmt_log so that
@@ -639,8 +639,8 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
               int rec_err = RecGetRecordLLong(var_name, &tmp);
               found = (rec_err == REC_ERR_OKAY);
               if (found) {
-                if (tmp != (RecLLong) ink_atoll(param)) {
-                  RecSetRecordLLong(var_name, (RecLLong) ink_atoll(param));
+                if (tmp != (RecLLong) ink_atoi64(param)) {
+                  RecSetRecordLLong(var_name, (RecLLong) ink_atoi64(param));
                 }
               } else {
                 // Modularization: Switch mgmt_fatal to mgmt_log so that
@@ -704,8 +704,8 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
               int rec_err = RecGetRecordCounter(var_name, &tmp);
               found = (rec_err == REC_ERR_OKAY);
               if (found) {
-                if (tmp != (RecCounter) ink_atoll(param)) {
-                  RecSetRecordCounter(var_name, (RecCounter) ink_atoll(param));
+                if (tmp != (RecCounter) ink_atoi64(param)) {
+                  RecSetRecordCounter(var_name, (RecCounter) ink_atoi64(param));
                 }
               } else {
                 //mgmt_fatal("Invalid record specified in file '%s': '%s'\n", f, var_name);
@@ -752,10 +752,10 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
     RecordsConfigIndex->mgmt_hash_table_lookup(name, (void **) &r);
     switch (RecordsConfig[r].value_type) {
     case INK_INT:
-      setInteger(name, (MgmtInt) ink_atoll(RecordsConfig[r].value), dirty);
+      setInteger(name, (MgmtInt) ink_atoi64(RecordsConfig[r].value), dirty);
       break;
     case INK_LLONG:
-      setLLong(name, (MgmtLLong) ink_atoll(RecordsConfig[r].value), dirty);
+      setLLong(name, (MgmtLLong) ink_atoi64(RecordsConfig[r].value), dirty);
       break;
     case INK_FLOAT:
       setFloat(name, (MgmtFloat) atof(RecordsConfig[r].value), dirty);

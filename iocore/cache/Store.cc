@@ -362,7 +362,7 @@ Store::read_config(int fd)
     while (e && *e && !ParseRules::is_digit(*e))
       e++;
     if (e && *e) {
-      if ((size = ink_atoll(e)) <= 0) {
+      if ((size = ink_atoi64(e)) <= 0) {
         err = "error parsing size";
         goto Lfail;
       }

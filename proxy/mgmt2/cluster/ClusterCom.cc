@@ -938,7 +938,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
           tmp_type = (RecDataT) ink_atoi(v2 + 1);
           v3 = ink_strchr(v2 + 1, ':');
           if (v3)
-            tmp_msg_val = ink_atoll(v3 + 1);
+            tmp_msg_val = ink_atoi64(v3 + 1);
         }
         if (!v2 || !v3) {
           mgmt_elog("[ClusterCom::handleMultiCastStatPacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
@@ -2468,10 +2468,10 @@ checkBackDoor(int req_fd, char *message)
     if (lmgmt->record_data->idofRecord(variable, &id, &type)) {
       switch (lmgmt->record_data->typeofRecord(id, type)) {
       case INK_COUNTER:
-        lmgmt->record_data->setCounter(id, type, ink_atoll(value));
+        lmgmt->record_data->setCounter(id, type, ink_atoi64(value));
         break;
       case INK_INT:
-        lmgmt->record_data->setInteger(id, type, ink_atoll(value));
+        lmgmt->record_data->setInteger(id, type, ink_atoi64(value));
         break;
       case INK_FLOAT:
         lmgmt->record_data->setFloat(id, type, atof(value));

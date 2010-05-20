@@ -1299,17 +1299,17 @@ handleOverseer(int fd, int mode)
       RecGetRecordDataType(var, &mtype);
       switch (mtype) {
       case RECD_COUNTER:{
-          RecCounter val = (RecCounter) ink_atoll(config_value);
+          RecCounter val = (RecCounter) ink_atoi64(config_value);
           RecSetRecordCounter(var, val);
           break;
         }
       case RECD_INT:{
-          RecInt val = (RecInt) ink_atoll(config_value);
+          RecInt val = (RecInt) ink_atoi64(config_value);
           RecSetRecordInt(var, val);
           break;
         }
       case RECD_LLONG:{
-          RecLLong val = (RecLLong) ink_atoll(config_value);
+          RecLLong val = (RecLLong) ink_atoi64(config_value);
           RecSetRecordLLong(var, val);
           break;
         }

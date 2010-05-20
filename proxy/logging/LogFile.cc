@@ -933,13 +933,13 @@ MetaInfo::_read_from_file()
         if (strcmp(t, "creation_time") == 0) {
           t = tok.getNext();
           if (t) {
-            _creation_time = (time_t) atol(t);
+            _creation_time = (time_t) ink_atoi64(t);
             _flags |= VALID_CREATION_TIME;
           }
         } else if (strcmp(t, "object_signature") == 0) {
           t = tok.getNext();
           if (t) {
-            _log_object_signature = (uint64) ink_atoll(t);
+            _log_object_signature = ink_atoi64(t);
             _flags |= VALID_SIGNATURE;
             Debug("log2-meta", "MetaInfo::_read_from_file\n"
                   "\tfilename = %s\n"

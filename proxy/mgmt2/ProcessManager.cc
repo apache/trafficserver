@@ -652,13 +652,13 @@ checkBackDoorP(int req_fd, char *message)
     if (pmgmt->record_data->idofRecord(variable, &id, &type)) {
       switch (pmgmt->record_data->typeofRecord(id, type)) {
       case INK_COUNTER:
-        pmgmt->record_data->setCounter(id, type, ink_atoll(value));
+        pmgmt->record_data->setCounter(id, type, ink_atoi64(value));
         break;
       case INK_INT:
-        pmgmt->record_data->setInteger(id, type, ink_atoll(value));
+        pmgmt->record_data->setInteger(id, type, ink_atoi64(value));
         break;
       case INK_LLONG:
-        pmgmt->record_data->setLLong(id, type, ink_atoll(value));
+        pmgmt->record_data->setLLong(id, type, ink_atoi64(value));
         break;
       case INK_FLOAT:
         pmgmt->record_data->setFloat(id, type, atof(value));

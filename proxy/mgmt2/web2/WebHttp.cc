@@ -1050,7 +1050,7 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
             MgmtInt i = lmgmt->record_data->readInteger(RecordsConfig[r].name, &found);
             if (found) {
               snprintf(cur_value, BUF_SIZE, "%lld", i);
-              if (i == ink_atoll(RecordsConfig[r].value)) {
+              if (i == ink_atoi64(RecordsConfig[r].value)) {
                 same = true;
               }
             }
@@ -1061,7 +1061,7 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
             MgmtLLong i = lmgmt->record_data->readLLong(RecordsConfig[r].name, &found);
             if (found) {
               snprintf(cur_value, BUF_SIZE, "%lld", i);
-              if (i == ink_atoll(RecordsConfig[r].value)) {
+              if (i == ink_atoi64(RecordsConfig[r].value)) {
                 same = true;
               }
             }
@@ -1110,7 +1110,7 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
             MgmtIntCounter ic = lmgmt->record_data->readCounter(RecordsConfig[r].name, &found);
             if (found) {
               snprintf(cur_value, BUF_SIZE, "%lld", ic);
-              if (ic == ink_atoll(RecordsConfig[r].value)) {
+              if (ic == ink_atoi64(RecordsConfig[r].value)) {
                 same = true;
               }
             }

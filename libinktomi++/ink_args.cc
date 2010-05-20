@@ -80,7 +80,7 @@ process_arg(ArgumentDescription * argument_descriptions,
         *(double *) argument_descriptions[i].location = atof(arg);
         break;
       case 'L':
-        *(int64 *) argument_descriptions[i].location = ink_atoll(arg);
+        *(int64 *) argument_descriptions[i].location = ink_atoi64(arg);
         break;
       case 'S':
         strncpy((char *) argument_descriptions[i].location, arg, atoi(argument_descriptions[i].type + 1));

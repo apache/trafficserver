@@ -922,8 +922,9 @@ MgmtData::compareFromString(const char *str)
 
   switch (this->type) {
   case RECD_INT:
+    // TODO: Add SI decimal multipliers rule ?
     if (str && recordRegexCheck("^[0-9]+$", str)) {
-      compData.rec_int = ink_atoll(str);
+      compData.rec_int = ink_atoi64(str);
       if (data.rec_int == compData.rec_int) {
         compare = true;
       }
@@ -931,7 +932,7 @@ MgmtData::compareFromString(const char *str)
     break;
   case RECD_LLONG:
     if (str && recordRegexCheck("^[0-9]+$", str)) {
-      compData.rec_llong = ink_atoll(str);
+      compData.rec_llong = ink_atoi64(str);
       if (data.rec_llong == compData.rec_llong) {
         compare = true;
       }
@@ -939,7 +940,7 @@ MgmtData::compareFromString(const char *str)
     break;
   case RECD_COUNTER:
     if (str && recordRegexCheck("^[0-9]+$", str)) {
-      compData.rec_counter = ink_atoll(str);
+      compData.rec_counter = ink_atoi64(str);
       if (data.rec_counter == compData.rec_counter) {
         compare = true;
       }

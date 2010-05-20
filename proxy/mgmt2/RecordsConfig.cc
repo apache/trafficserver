@@ -4307,12 +4307,12 @@ LibRecordsConfigInit()
       switch (RecordsConfig[r].value_type) {
 
       case INK_INT:
-        tempInt = (RecInt) ink_atoi(RecordsConfig[r].value);
+        tempInt = (RecInt) ink_atoi64(RecordsConfig[r].value);
         RecRegisterConfigInt(type, RecordsConfig[r].name, tempInt, update, check, RecordsConfig[r].regex, access);
         break;
 
       case INK_LLONG:
-        tempLLong = (RecInt) ink_atoll(RecordsConfig[r].value);
+        tempLLong = (RecInt) ink_atoi64(RecordsConfig[r].value);
         RecRegisterConfigLLong(type, RecordsConfig[r].name, tempLLong, update, check, RecordsConfig[r].regex, access);
         break;
 
@@ -4328,7 +4328,7 @@ LibRecordsConfigInit()
         break;
 
       case INK_COUNTER:
-        tempCounter = (RecCounter) atoi(RecordsConfig[r].value);
+        tempCounter = (RecCounter) ink_atoi64(RecordsConfig[r].value);
         RecRegisterConfigCounter(type,
                                  RecordsConfig[r].name, tempCounter, update, check, RecordsConfig[r].regex, access);
         break;
@@ -4342,12 +4342,12 @@ LibRecordsConfigInit()
       switch (RecordsConfig[r].value_type) {
 
       case INK_INT:
-        tempInt = (RecInt) ink_atoi(RecordsConfig[r].value);
+        tempInt = (RecInt) ink_atoi64(RecordsConfig[r].value);
         RecRegisterStatInt(type, RecordsConfig[r].name, tempInt, RECP_NON_PERSISTENT);
         break;
 
       case INK_LLONG:
-        tempLLong = (RecLLong) ink_atoll(RecordsConfig[r].value);
+        tempLLong = (RecLLong) ink_atoi64(RecordsConfig[r].value);
         RecRegisterStatLLong(type, RecordsConfig[r].name, tempLLong, RECP_NON_PERSISTENT);
         break;
 
@@ -4361,7 +4361,7 @@ LibRecordsConfigInit()
         break;
 
       case INK_COUNTER:
-        tempCounter = (RecCounter) atoi(RecordsConfig[r].value);
+        tempCounter = (RecCounter) ink_atoi64(RecordsConfig[r].value);
         RecRegisterStatCounter(type, RecordsConfig[r].name, tempCounter, RECP_NON_PERSISTENT);
         break;
 

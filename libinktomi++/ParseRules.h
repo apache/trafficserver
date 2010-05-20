@@ -936,9 +936,8 @@ ink_atoui(const char *str)
   return num;
 }
 
-
 static inline int64
-ink_atoll(const char *str)
+ink_atoi64(const char *str)
 {
   int64 num = 0;
   int negative = 0;
@@ -957,9 +956,9 @@ ink_atoll(const char *str)
     }
 
     /*
-       NOTE: we first compute the value as negative then correct the
-       sign back to positive. This enables us to correctly parse MININT.
-     */
+    NOTE: we first compute the value as negative then correct the
+    sign back to positive. This enables us to correctly parse MININT.
+    */
     while (*str && ParseRules::is_digit(*str))
       num = (num * 10) - (*str++ - '0');
 #if USE_SI_MULTILIERS
@@ -979,4 +978,36 @@ ink_atoll(const char *str)
   }
   return num;
 }
+
+static inline uint64
+ink_atoui64(const char *str)
+{
+  uint64 num = 0;
+
+  while (*str && ParseRules::is_wslfcr(*str))
+    str += 1;
+
+  if (unlikely(str[0] == '0' && str[1] == 'x')) {
+    str += 2;
+    while (*str && ParseRules::is_hex(*str))
+      num = (num << 4) + ink_get_hex(*str++);
+  } else {
+    while (*str && ParseRules::is_digit(*str))
+      num = (num * 10) + (*str++ - '0');
+#if USE_SI_MULTILIERS
+    if (*str) {
+      if (*str == 'K')
+        num = num * (1LL << 10);
+      else if (*str == 'M')
+        num = num * (1LL << 20);
+      else if (*str == 'G')
+        num = num * (1LL << 30);
+      else if (*str == 'T')
+        num = num * (1LL << 40);
+    }
+#endif
+  }
+  return num;
+}
+
 #endif /* #if !defined (_ParseRules_h_) */

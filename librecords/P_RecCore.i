@@ -457,11 +457,11 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
           ink_assert(data->rec_string);
           switch (r1->data_type) {
           case RECD_INT:
-            r1->data.rec_int = atoi(data->rec_string);
+            r1->data.rec_int = ink_atoi64(data->rec_string);
             data_type = RECD_INT;
             break;
           case RECD_LLONG:
-            r1->data.rec_llong = ink_atoll(data->rec_string);
+            r1->data.rec_llong = ink_atoi64(data->rec_string);
             data_type = RECD_LLONG;
             break;
           case RECD_FLOAT:
@@ -473,7 +473,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
             r1->data.rec_string = data->rec_string;
             break;
           case RECD_COUNTER:
-            r1->data.rec_int = atoi(data->rec_string);
+            r1->data.rec_int = ink_atoi64(data->rec_string);
             data_type = RECD_COUNTER;
             break;
           default:
