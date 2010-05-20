@@ -46,6 +46,7 @@
 #include "CoreAPIShared.h"
 #include "CfgContextUtils.h"
 #include "EventCallback.h"
+#include "I_Layout.h"
 
 extern int diags_init;          // from Main.cc
 
@@ -816,6 +817,7 @@ SnapshotTake(char *snapshot_name)
 {
   char *snapDirFromRecordsConf;
   bool found;
+  char snapDir[PATH_NAME_MAX + 1];
 
   if (!snapshot_name)
     return INK_ERR_PARAMS;
@@ -824,27 +826,14 @@ SnapshotTake(char *snapshot_name)
   found = (rec_err == REC_ERR_OKAY);
 
   ink_assert(found);
-
-  if (snapDirFromRecordsConf[0] != '/') {
-    char *config_dir;
-    int rec_err = RecGetRecordString_Xmalloc("proxy.config.config_dir", &config_dir);
-    found = (rec_err == REC_ERR_OKAY);
-    ink_assert(found);
-
-    char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
-    int newLen;
-
-    newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
-    xfree(snapDirFromRecordsConf);
-    snapDirFromRecordsConf = new char[newLen];
-    ink_assert(snapDirFromRecordsConf != NULL);
-    snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
-    xfree(config_dir);
-    xfree(snap_dir_cpy);
-  }
-
-  SnapResult result = configFiles->takeSnap(snapshot_name, snapDirFromRecordsConf);
+  // XXX: Why was that offset to config dir?
+  //      Any path should be prefix relative thought
+  //
+  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir,
+                      snapDirFromRecordsConf);
   xfree(snapDirFromRecordsConf);
+
+  SnapResult result = configFiles->takeSnap(snapshot_name, snapDir);
   if (result != SNAP_OK)
     return INK_ERR_FAIL;
   else
@@ -856,6 +845,7 @@ SnapshotRestore(char *snapshot_name)
 {
   char *snapDirFromRecordsConf;
   bool found;
+  char snapDir[PATH_NAME_MAX + 1];
 
   if (!snapshot_name)
     return INK_ERR_PARAMS;
@@ -863,26 +853,14 @@ SnapshotRestore(char *snapshot_name)
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
   found = (rec_err == REC_ERR_OKAY);
   ink_assert(found);
+  // XXX: Why was that offset to config dir?
+  //      Any path should be prefix relative thought
+  //
+  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir,
+                      snapDirFromRecordsConf);
+  xfree(snapDirFromRecordsConf);
 
-  if (snapDirFromRecordsConf[0] != '/') {
-    char *config_dir;
-    int rec_err = RecGetRecordString_Xmalloc("proxy.config.config_dir", &config_dir);
-    found = (rec_err == REC_ERR_OKAY);
-    ink_assert(found);
-
-    char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
-    int newLen;
-
-    newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
-    xfree(snapDirFromRecordsConf);
-    snapDirFromRecordsConf = new char[newLen];
-    ink_assert(snapDirFromRecordsConf != NULL);
-    snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
-    xfree(config_dir);
-    xfree(snap_dir_cpy);
-  }
-
-  SnapResult result = configFiles->restoreSnap(snapshot_name, snapDirFromRecordsConf);
+  SnapResult result = configFiles->restoreSnap(snapshot_name, snapDir);
   xfree(snapDirFromRecordsConf);
   if (result != SNAP_OK)
     return INK_ERR_FAIL;
@@ -895,32 +873,22 @@ SnapshotRemove(char *snapshot_name)
 {
   char *snapDirFromRecordsConf;
   bool found;
+  char snapDir[PATH_NAME_MAX + 1];
+
   if (!snapshot_name)
     return INK_ERR_PARAMS;
 
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
   found = (rec_err == REC_ERR_OKAY);
   ink_assert(found);
+  // XXX: Why was that offset to config dir?
+  //      Any path should be prefix relative thought
+  //
+  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir,
+                      snapDirFromRecordsConf);
+  xfree(snapDirFromRecordsConf);
 
-  if (snapDirFromRecordsConf[0] != '/') {
-    char *config_dir;
-    rec_err = RecGetRecordString_Xmalloc("proxy.config.config_dir", &config_dir);
-    found = (rec_err == REC_ERR_OKAY);
-    ink_assert(found);
-
-    char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
-    int newLen;
-
-    newLen = strlen(snap_dir_cpy) + strlen(config_dir) + 2;
-    xfree(snapDirFromRecordsConf);
-    snapDirFromRecordsConf = new char[newLen];
-    ink_assert(snapDirFromRecordsConf != NULL);
-    snprintf(snapDirFromRecordsConf, newLen, "%s%s%s", config_dir, DIR_SEP, snap_dir_cpy);
-    xfree(config_dir);
-    xfree(snap_dir_cpy);
-  }
-
-  SnapResult result = configFiles->removeSnap(snapshot_name, snapDirFromRecordsConf);
+  SnapResult result = configFiles->removeSnap(snapshot_name, snapDir);
   xfree(snapDirFromRecordsConf);
   if (result != SNAP_OK)
     return INK_ERR_FAIL;
