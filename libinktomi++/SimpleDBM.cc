@@ -767,11 +767,20 @@ SimpleDBM::lock(bool shared_lock)
       return (-EBADF);
     }
     ink_ProcessMutex_release(&_lock);
+    struct flock lock;
+
+    lock.l_type   = shared_lock ? F_RDLCK : F_WRLCK;
+    lock.l_start  = 0;
+    lock.l_whence = SEEK_SET;
+    lock.l_len    = 0; // XXX: Shouldn't that be 1?
+
     //
     // ink_file_lock can block, so we shouldn't leave the mutex acquired,
     // or we might never be able to unlock the file lock.
     //
-    return_code = ink_file_lock(_dbm_fd, (shared_lock ? F_RDLCK : F_WRLCK));
+    while ((return_code = fcntl(_dbm_fd, F_SETLKW, &lock)) < 0 &&
+            errno == EINTR)
+      continue;
     if (return_code > 0)
       return_code = 0;
 #else // libdb not supported
@@ -832,7 +841,22 @@ SimpleDBM::unlock()
     }
     ink_ProcessMutex_release(&_lock);
 
-    return_code = ink_file_lock(_dbm_fd, F_UNLCK);
+    struct flock lock;
+
+    lock.l_type   = F_UNLCK;
+    lock.l_start  = 0;
+    lock.l_whence = SEEK_SET;
+    lock.l_len    = 0; // XXX: Shouldn't that be 1?
+
+    //
+    // ink_file_lock can block, so we shouldn't leave the mutex acquired,
+    // or we might never be able to unlock the file lock.
+    //
+    return_code = fcntl(_dbm_fd, F_SETLKW, &lock);
+    while ((return_code = fcntl(_dbm_fd, F_SETLKW, &lock)) < 0 &&
+            errno == EINTR)
+      continue;
+
     if (return_code > 0)
       return_code = 0;
 #else // libdb not supported
