@@ -86,4 +86,4 @@
 #      /dev/raw_sdd   18210037760
 #
 # a small default cache (140MB)
-@rel_cachedir@ 150994944
+@rel_cachedir@ 140M
