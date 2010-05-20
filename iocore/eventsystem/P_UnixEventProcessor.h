@@ -77,7 +77,7 @@ EventProcessor::schedule(Event * e, EventType etype, bool fast_signal)
     e->mutex = e->continuation->mutex;
   else
     e->mutex = e->continuation->mutex = e->ethread->mutex;
-  e->ethread->EventQueueExternal.enqueue(e,fast_signal);
+  e->ethread->EventQueueExternal.enqueue(e, fast_signal);
   return e;
 }
 
@@ -91,7 +91,7 @@ EventProcessor::schedule_imm_signal(Continuation * cont, EventType et, int callb
 #endif
   e->callback_event = callback_event;
   e->cookie = cookie;
-  return schedule(e->init(cont, 0, 0), et,true);
+  return schedule(e->init(cont, 0, 0), et, true);
 }
 
 TS_INLINE Event *

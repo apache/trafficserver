@@ -490,9 +490,9 @@ aio_thread_main(void *arg)
         if (!op->action.cancelled)
           op->action.continuation->handleEvent(AIO_EVENT_DONE, op);
       } else if (op->thread == AIO_CALLBACK_THREAD_ANY)
-        eventProcessor.schedule_imm(op);
+        eventProcessor.schedule_imm_signal(op);
       else
-        op->thread->schedule_imm(op);
+        op->thread->schedule_imm_signal(op);
       ink_mutex_acquire(&my_aio_req->aio_mutex);
     } while (1);
     ink_cond_wait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex);

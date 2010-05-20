@@ -54,6 +54,15 @@ EThread::schedule_imm(Continuation * cont, int callback_event, void *cookie)
 }
 
 TS_INLINE Event *
+EThread::schedule_imm_signal(Continuation * cont, int callback_event, void *cookie)
+{
+  Event *e =::eventAllocator.alloc();
+  e->callback_event = callback_event;
+  e->cookie = cookie;
+  return schedule(e->init(cont, 0, 0), true);
+}
+
+TS_INLINE Event *
 EThread::schedule_at(Continuation * cont, ink_hrtime t, int callback_event, void *cookie)
 {
   Event *e =::eventAllocator.alloc();
@@ -81,7 +90,7 @@ EThread::schedule_every(Continuation * cont, ink_hrtime t, int callback_event, v
 }
 
 TS_INLINE Event *
-EThread::schedule(Event * e)
+EThread::schedule(Event * e, bool fast_signal)
 {
   e->ethread = this;
   ink_assert(tt == REGULAR);
@@ -90,7 +99,7 @@ EThread::schedule(Event * e)
   else
     e->mutex = e->continuation->mutex = e->ethread->mutex;
   ink_assert(e->mutex.m_ptr);
-  EventQueueExternal.enqueue(e);
+  EventQueueExternal.enqueue(e, fast_signal);
   return e;
 }
 

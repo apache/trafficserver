@@ -34,10 +34,7 @@
 
 
 TS_INLINE
-ProtectedQueue::ProtectedQueue():write_pipe_fd(-1),read_pipe_fd(-1)
-#if defined(USE_OLD_EVENTFD)
-:write_pipe_fd(-1),read_pipe_fd(-1)
-#endif
+ProtectedQueue::ProtectedQueue()
 {
   Event e;
   ink_mutex_init(&lock, "ProtectedQueue");
@@ -49,48 +46,22 @@ TS_INLINE void
 ProtectedQueue::signal()
 {
   // Need to get the lock before you can signal the thread
-#if defined(USE_OLD_EVENTFD)
-  if(write_pipe_fd!=-1) {
-    int retVal = socketManager.write(write_pipe_fd,(void*)"W",1);
-    if(retVal <= 0) {
-      int fd = write_pipe_fd;
-      socketManager.close(fd);
-    }
-  } else {
-#endif
-    ink_mutex_acquire(&lock);
-    ink_cond_signal(&might_have_data);
-    ink_mutex_release(&lock);
-#if defined(USE_OLD_EVENTFD)
-  }
-#endif
+  ink_mutex_acquire(&lock);
+  ink_cond_signal(&might_have_data);
+  ink_mutex_release(&lock);
 }
 
 TS_INLINE int
 ProtectedQueue::try_signal()
 {
   // Need to get the lock before you can signal the thread
-#if defined(USE_OLD_EVENTFD)
-  if(write_pipe_fd!=-1) {
-    int retVal = socketManager.write(write_pipe_fd,(void*)"W",1);
-    if(retVal <= 0) {
-      int fd = write_pipe_fd;
-      write_pipe_fd = read_pipe_fd = -1;
-      socketManager.close(fd);
-    }
+  if (ink_mutex_try_acquire(&lock)) {
+    ink_cond_signal(&might_have_data);
+    ink_mutex_release(&lock);
     return 1;
   } else {
-#endif
-    if (ink_mutex_try_acquire(&lock)) {
-      ink_cond_signal(&might_have_data);
-      ink_mutex_release(&lock);
-      return 1;
-    } else {
-      return 0;
-    }
-#if defined(USE_OLD_EVENTFD)
+    return 0;
   }
-#endif
 }
 
 // Called from the same thread (don't need to signal)
@@ -121,29 +92,5 @@ ProtectedQueue::dequeue_local()
   }
   return e;
 }
-
-#if defined(USE_OLD_EVENTFD)
-TS_INLINE void
-ProtectedQueue::setReadFd(int fd)
-{
-  read_pipe_fd = fd;
-}
-
-TS_INLINE void
-ProtectedQueue::setWriteFd(int fd)
-{
-  write_pipe_fd = fd;
-}
-
-TS_INLINE int
-ProtectedQueue::getReadFd()
-{
-  int pfd[2] = {-1,-1};
-  ink_create_pipe(pfd);
-  setReadFd(pfd[0]);
-  setWriteFd(pfd[1]);
-  return pfd[0];
-}
-#endif /* USE_OLD_EVENTFD */
 
 #endif

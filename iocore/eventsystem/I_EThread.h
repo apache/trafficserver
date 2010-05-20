@@ -112,6 +112,7 @@ public:
 
   */
   Event * schedule_imm(Continuation * c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event * schedule_imm_signal(Continuation * c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -295,18 +296,18 @@ public:
 
     EThread();
     EThread(ThreadType att, int anid);
-    EThread(ThreadType att, Event * e, ink_sem * sem);
+    EThread(ThreadType att, Event *e, ink_sem *sem);
     virtual ~ EThread();
 
-  Event *schedule_spawn(Continuation * cont);
+  Event *schedule_spawn(Continuation *cont);
 
-  Event *schedule(Event * e);
+  Event *schedule(Event *e, bool fast_signal = false);
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
   char thread_private[PER_THREAD_DATA];
 
   // private data for UDP net processor
-  //UDPNetHandler * udpNetHandler;
+  //UDPNetHandler *udpNetHandler;
 
   /** Private Data for the Disk Processor. */
   DiskHandler *diskHandler;

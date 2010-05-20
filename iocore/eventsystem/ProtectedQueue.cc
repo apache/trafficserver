@@ -40,12 +40,12 @@
 // Defining EAGER_SIGNALLING disables this behavior and causes
 // threads to be made runnable immediately.
 //
-//#define EAGER_SIGNALLING
+// #define EAGER_SIGNALLING
 
 extern ClassAllocator<Event> eventAllocator;
 
 void
-ProtectedQueue::enqueue(Event * e , bool fast_signal)
+ProtectedQueue::enqueue(Event *e , bool fast_signal)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
   EThread *e_ethread = e->ethread;
@@ -64,13 +64,11 @@ ProtectedQueue::enqueue(Event * e , bool fast_signal)
             e_ethread->signal_hook(e_ethread);
         }
       } else {
-
 #ifdef EAGER_SIGNALLING
         // Try to signal now and avoid deferred posting.
         if (e_ethread->EventQueueExternal.try_signal())
           return;
 #endif
-
         if (fast_signal) {
           if (e_ethread->signal_hook)
             e_ethread->signal_hook(e_ethread);

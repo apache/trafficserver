@@ -125,9 +125,6 @@ struct EventIO
     DNSConnection *dnscon;
     NetAccept *na;
     UnixUDPConnection *uc;
-#if defined(USE_OLD_EVENTFD)
-    int fd;
-#endif
   } data;
   int start(EventLoop l, DNSConnection *vc, int events);
   int start(EventLoop l, NetAccept *vc, int events);

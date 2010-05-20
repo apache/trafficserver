@@ -71,12 +71,10 @@ EThread::EThread(ThreadType att, int anid)
   if (evfd < 0) {
     if (errno == EINVAL) { // flags invalid for kernel <= 2.6.26
       evfd = eventfd(0,0);
-      if (evfd < 0) {
+      if (evfd < 0)
         Fatal("EThread::EThread: %d=eventfd(0,0),errno(%d)",evfd,errno);
-      }
-    } else {
+    } else
       Fatal("EThread::EThread: %d=eventfd(0,O_NONBLOCK | FD_CLOEXEC),errno(%d)",evfd,errno);
-    }
   }
   fcntl(evfd, F_SETFD, FD_CLOEXEC);
   fcntl(evfd, F_SETFL, O_NONBLOCK);
