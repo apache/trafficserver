@@ -31,6 +31,7 @@
 */
 
 #include "P_Net.h"
+#include "I_Layout.h"
 
 socks_conf_struct *g_socks_conf_stuff = 0;
 
@@ -441,11 +442,8 @@ void
 loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
 {
   int socks_config_fd = -1;
-  char error_msg[512];
-  char config_pathname[512];
-  char *socks_config_file = 0, *config_dir = 0, *temp_str = 0;
-
-  error_msg[0] = 0;
+  char config_pathname[PATH_NAME_MAX + 1];
+  char *socks_config_file = NULL, *tmp;
 
   socks_conf_stuff->accept_enabled = 0; //initialize it INKqa08593
   socks_conf_stuff->socks_needed = IOCORE_ConfigReadInteger("proxy.config.socks.socks_needed");
@@ -458,7 +456,7 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
   Debug("Socks", "Socks Version %d", socks_conf_stuff->default_version);
 
   if (socks_conf_stuff->default_version != 4 && socks_conf_stuff->default_version != 5) {
-    snprintf(error_msg, 512, "Unsupported Version: %d", socks_conf_stuff->default_version);
+    Error("SOCKS Config: Unsupported Version: %d. SOCKS Turned off", socks_conf_stuff->default_version);
     goto error;
   }
 
@@ -483,57 +481,51 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
 #endif
 
   socks_config_file = IOCORE_ConfigReadString("proxy.config.socks.socks_config_file");
-  config_dir = IOCORE_ConfigReadString("proxy.config.config_dir");
 
-  if (!socks_config_file || !config_dir) {
-    snprintf(error_msg, 512, "could not read config file name");
+  if (!socks_config_file) {
+    Error("SOCKS Config: could not read config file name. SOCKS Turned off");
     goto error;
   }
 
-  snprintf(config_pathname, 512, "%.128s%s%.128s", config_dir, DIR_SEP, socks_config_file);
+  Layout::relative_to(config_pathname, sizeof(config_pathname),
+                      Layout::get()->sysconfdir, socks_config_file);
+  xfree(socks_config_file);
   Debug("Socks", "Socks Config File: %s", config_pathname);
 
   socks_config_fd =::open(config_pathname, O_RDONLY);
 
   if (socks_config_fd < 0) {
-    snprintf(error_msg, 512, "could not open config file '%s'", config_pathname);
+    Error("SOCKS Config: could not open config file '%s'. SOCKS Turned off", config_pathname);
     goto error;
   }
 #ifdef SOCKS_WITH_TS
-  temp_str = socks_conf_stuff->ip_range.read_table_from_file(socks_config_fd, "no_socks");
+  tmp = socks_conf_stuff->ip_range.read_table_from_file(socks_config_fd, "no_socks");
 
-  if (temp_str) {
-    snprintf(error_msg, 512, "Error while reading ip_range: %.256s", temp_str);
+  if (tmp) {
+    Error("SOCKS Config: Error while reading ip_range: %s.", tmp);
+    xfree(tmp);
     goto error;
   }
 #endif
 
   if (loadSocksAuthInfo(socks_config_fd, socks_conf_stuff) != 0) {
-    snprintf(error_msg, 512, "Error while reading Socks auth info");
+    Error("SOCKS Config: Error while reading Socks auth info");
     goto error;
   }
+  Debug("Socks", "Socks Turned on");
+  SOCKS_REG_STAT(connections_successful);
+  SOCKS_REG_STAT(connections_unsuccessful);
+  SOCKS_REG_STAT(connections_currently_open);
+  ::close(socks_config_fd);
 
+  return;
 error:
-  if (error_msg[0]) {
-    Error("SOCKS Config: %s. SOCKS Turned off", error_msg);
-    socks_conf_stuff->socks_needed = 0;
-    socks_conf_stuff->accept_enabled = 0;
-  } else {
-    Debug("Socks", "Socks Turned on");
-    SOCKS_REG_STAT(connections_successful);
-    SOCKS_REG_STAT(connections_unsuccessful);
-    SOCKS_REG_STAT(connections_currently_open);
-  }
 
+  socks_conf_stuff->socks_needed = 0;
+  socks_conf_stuff->accept_enabled = 0;
   if (socks_config_fd >= 0)
     ::close(socks_config_fd);
 
-  if (socks_config_file)
-    xfree(socks_config_file);
-  if (config_dir)
-    xfree(config_dir);
-  if (temp_str)
-    xfree(temp_str);
 }
 
 int
