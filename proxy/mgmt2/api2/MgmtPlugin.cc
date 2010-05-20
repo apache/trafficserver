@@ -32,6 +32,7 @@
 
 #include "inktomi++.h"
 #include "ink_platform.h"
+#include "I_Layout.h"
 #include <stdio.h>
 #include <list>
 //#include "ink_file.h"
@@ -55,8 +56,10 @@
 #define MAX_BUF_SIZE 1024
 #endif
 
-static const char *plugin_dir = ".";
-static const char *config_dir = "../etc/trafficserver";
+// TODO: Make those two char[PATH_NAME_MAX + 1]
+//       to avoid strdup
+static const char *plugin_dir = NULL;
+static const char *config_dir = NULL;
 
 typedef void (*init_func_t) (int argc, char *argv[]);
 typedef void (*init_func_w_handle_t) (void *handle, int argc, char *argv[]);
@@ -124,17 +127,16 @@ dll_close(void *dlp)
 static void
 mgmt_plugin_load(int argc, char *argv[])
 {
-  char path[PATH_NAME_MAX];
+  char path[PATH_NAME_MAX + 1];
   void *handle;
   init_func_t init;
 
   if (argc < 1) {
     return;
   }
-
-  memset(path, 0, PATH_NAME_MAX);
-
-  snprintf(path, sizeof(path), "%s%s%s", plugin_dir, DIR_SEP, argv[0]);
+  if (plugin_dir == NULL)
+    plugin_dir = Layout::get()->sysconfdir;
+  ink_filepath_make(path, sizeof(path), plugin_dir, argv[0]);
 
   Debug("plugin", "[mgmt_plugin_load] loading plugin: '%s'", path);
 
@@ -198,7 +200,7 @@ void
 mgmt_plugin_init(const char *config_path)
 {
   char temp_dir[MAX_BUF_SIZE];
-  char path[PATH_NAME_MAX];
+  char path[PATH_NAME_MAX + 1];
   char line[1024], *p;
   char *argv[64];
   char *vars[64];
@@ -212,7 +214,7 @@ mgmt_plugin_init(const char *config_path)
 
   // get the directory where plugins are stored from records.config
   // can be absolute or relative path
-  memset(temp_dir, 0, PATH_NAME_MAX);
+  memset(temp_dir, 0, MAX_BUF_SIZE);
   varStrFromName("proxy.config.plugin.plugin_mgmt_dir", temp_dir, MAX_BUF_SIZE);
 
   Debug("plugin", "[mgmt_plugin_init] proxy.config.plugin.pugin_mgmt_dir = %s", temp_dir);
@@ -220,14 +222,14 @@ mgmt_plugin_init(const char *config_path)
     Warning("[mgmt_plugin_init] unable to get proxy.config.plugin.plugin_mgmt_dir record value");
     return;
   } else {
-    plugin_dir = xstrdup(temp_dir);
+    plugin_dir = Layout::get()->relative(temp_dir);
   }
 
   if (config_path)
     config_dir = xstrdup(config_path);
-
-  memset(path, 0, PATH_NAME_MAX);
-  snprintf(path, sizeof(path), "%s%splugin_mgmt.config", config_dir, DIR_SEP);
+  else
+    config_dir = Layout::get()->sysconfdir;
+  ink_filepath_make(path, sizeof(path), config_dir, "plugin_mgmt.config");
 
   // open plugin_mgmt.config
   fd = open(path, O_RDONLY);
