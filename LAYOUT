@@ -1,0 +1,35 @@
+The Traffic Server 2.1 Default LAYOUT
+--------------------------------
+
+` ........................... Top-Level Traffic Server Directory
+|
+|
+|-- bin ..................... Binaries
+|-- etc ..................... Configuration files
+|   `-- trafficserver
+|       |-- body_factory
+|       |   `-- default
+|       |-- internal
+|       `-- snapshots
+|-- include
+|   `-- ts
+|-- lib
+|   `-- trafficserver
+|-- libexec
+|   `-- trafficserver
+|-- share
+|   `-- trafficserver
+|       |-- agent-installer
+|       |-- charting
+|       |-- configure
+|       |   `-- helper
+|       |-- images
+|       |-- include
+|       |-- monitor
+|       |-- mrtg
+|       `-- tune
+`-- var
+    |-- log
+    |   `-- trafficserver ... Log files
+    `-- trafficserver ....... Runtime data
+

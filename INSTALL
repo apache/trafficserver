@@ -39,10 +39,17 @@ APACHE TRAFFIC SERVER INSTALLATION
     On FreeBSD, OSX and OpenSolaris:
       $ sudo PREFIX/bin/traffic_cop
 
-  The default PREFIX is /usr/local, unless explicitly specified.
+  NOTES: * Replace PREFIX with the filesystem path under which
+           Traffic Server should be installed.  Default PREFIX
+           is "/usr/local" (without the quotes).
 
-  The easiest way to find all of the configuration flags for Traffic Server
-  is to run ./configure --help.
+         * If you want to build using different layout see the config.layout
+           file for possible alternatives. You can create your own layout and
+           enable it with ./configure --enable-layout=ID, where ID is the
+           layout name you have created.
+
+         * The easiest way to find all of the configuration flags
+           for Traffic Server is to run ./configure --help.
 
   Postscript
   ----------
