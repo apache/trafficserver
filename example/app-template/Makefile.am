@@ -17,8 +17,7 @@
 AM_CPPFLAGS =   -I$(top_srcdir)/libinktomi++ \
                 -I$(iocore_include_dirs) \
                 -I$(top_srcdir)/librecords \
-                -I$(top_srcdir)/proxy \
-                -DPREFIX=\"$(prefix)\"
+                -I$(top_srcdir)/proxy
 #                -I$(top_srcdir)/proxy/hdrs
 #                -I$(top_srcdir)/proxy/logging
 

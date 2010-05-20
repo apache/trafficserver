@@ -30,6 +30,7 @@
 
 #include "I_Version.h"
 #include "I_EventSystem.h"
+#include "I_Layout.h"
 #include "I_Net.h"
 #include "I_HostDB.h"
 #include "I_DNS.h"
@@ -52,10 +53,10 @@ int system_num_of_processors  = ink_number_of_processors();
 int system_num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
 int system_num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 
-char system_root_dir[PATH_NAME_MAX + 1]         = DEFAULT_ROOT_DIRECTORY;
-char system_runtime_dir[PATH_NAME_MAX + 1]  = DEFAULT_LOCAL_STATE_DIRECTORY;
-char system_config_directory[PATH_NAME_MAX + 1] = DEFAULT_SYSTEM_CONFIG_DIRECTORY;
-char system_log_dir[PATH_NAME_MAX + 1]          = DEFAULT_LOG_DIRECTORY;
+char system_root_dir[PATH_NAME_MAX + 1];
+char system_runtime_dir[PATH_NAME_MAX + 1];
+char system_config_directory[PATH_NAME_MAX + 1];
+char system_log_dir[PATH_NAME_MAX + 1];
 
 //int system_remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
@@ -124,53 +125,6 @@ void init_app_config() {
    // Cache, etc
 }
 
-// TODO: Move to I_Util.cc file ???
-int
-get_ts_directory(char *ts_path, size_t ts_path_len)
-{
-  FILE *fp;
-  char *env_path;
-  struct stat s;
-  int err;
-
-  if ((env_path = getenv("TS_ROOT"))) {
-    ink_strncpy(ts_path, env_path, ts_path_len);
-  } else {
-    if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-      if (fgets(ts_path, ts_path_len, fp) == NULL) {
-        fclose(fp);
-        fprintf(stderr,"\nInvalid contents in %s\n",DEFAULT_TS_DIRECTORY_FILE);
-        fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
-        return -1;
-      }
-      // strip newline if it exists
-      int len = strlen(ts_path);
-      if (ts_path[len - 1] == '\n') {
-        ts_path[len - 1] = '\0';
-      }
-      // strip trailing "/" if it exists
-      len = strlen(ts_path);
-      if (ts_path[len - 1] == '/') {
-        ts_path[len - 1] = '\0';
-      }
-
-      fclose(fp);
-    } else {
-      ink_strncpy(ts_path, PREFIX, ts_path_len);
-    }
-  }
-
-  if ((err = stat(ts_path, &s)) < 0) {
-    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n",
-              ts_path, err, errno, strerror(errno));
-    fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
-    return -1;
-  }
-
-  return 0;
-}
-
-
 int
 MyAccept::main_event(int event, void *data) {
   if (event == NET_EVENT_ACCEPT) {
@@ -198,11 +152,11 @@ shutdown_system()
 
 int main(int argc, char * argv[])
 {
-  char ts_path[PATH_NAME_MAX + 1];
   // build the application information structure
   appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
                        __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
-
+  // create the layout engine
+  Layout::create();
   process_args(argument_descriptions, n_argument_descriptions, argv);
 
   // check for the version number request
@@ -211,13 +165,11 @@ int main(int argc, char * argv[])
     _exit(0);
   }
 
-  // Get TS directory
-  if (0 == get_ts_directory(ts_path,sizeof(ts_path))) {
-    ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
-    ink_snprintf(system_config_directory, sizeof(system_config_directory), "%s/etc/trafficserver", system_root_dir);
-    ink_snprintf(system_runtime_dir, sizeof(system_local_state_dir), "%s/var/trafficserver", system_root_dir);
-    ink_snprintf(system_log_dir, sizeof(system_log_dir), "%s/var/log/trafficserver", system_root_dir);
-  }
+  // Get TS directories
+  ink_strncpy(system_root_dir, Layout::get()->prefix, sizeof(system_root_dir));
+  ink_strncpy(system_config_directory, Layout::get()->sysconfdir, sizeof(system_config_directory));
+  ink_strncpy(system_runtime_dir, Layout::get()->runtimedir, sizeof(system_runtime_dir));
+  ink_strncpy(system_log_dir, Layout::get()->logdir, sizeof(system_log_dir));
 
   if (system_root_dir[0] && (chdir(system_root_dir) < 0)) {
     fprintf(stderr,"unable to change to root directory \"%s\" [%d '%s']\n", system_root_dir, errno, strerror(errno));
