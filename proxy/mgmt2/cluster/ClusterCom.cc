@@ -363,7 +363,7 @@ receive_fd(0)
     found = false;
 
   init = false;
-  if (!(strlen(host) < 1024)) {
+  if (strlen(host) >= 1024) {
     mgmt_fatal(stderr, "[ClusterCom::ClusterCom] Hostname too large: %s\n", host);
   }
   // the constructor does a memset() on broadcast_addr and receive_addr, initializing them
@@ -403,8 +403,14 @@ receive_fd(0)
   if (!found || strlen(p) + strlen(cluster_file) >= 1024) {
     mgmt_fatal(stderr, "[ClusterCom::ClusterCom] path + filename too large\n");
   }
-
-  snprintf(cluster_conf, sizeof(cluster_conf), "%s%s%s", p, DIR_SEP, cluster_file);
+  // XXX: This allows to have absolute config cluster_configuration directive.
+  //      If that file must be inside config directory (p) use
+  //      ink_filepath_make
+  ink_filepath_merge(cluster_conf, sizeof(cluster_conf), p, cluster_file, INK_FILEPATH_TRUENAME);
+  // XXX: Shouldn't we pass the cluster_conf to the Rollback ???
+  //
+  Debug("ccom", "[ClusterCom::ClusterCom] Using  cluster file: %s", cluster_file);
+  Debug("ccom", "[ClusterCom::ClusterCom] Using  cluster conf: %s", cluster_conf);
   cluster_file_rb = new Rollback(cluster_file, false);
 
   xfree(cluster_file);
