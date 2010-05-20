@@ -654,7 +654,7 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
 
     if ((entry_buffer->d_name)[0] == '.')
       continue;
-    snprintf(subdir, sizeof(subdir), "%s" DIR_SEP "%s", set_dir, entry_buffer->d_name);
+    ink_filepath_make(subdir, sizeof(subdir), set_dir, entry_buffer->d_name);
     status = stat(subdir, &stat_buf);
     if (status != 0)
       continue;                 // can't stat
@@ -702,7 +702,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   // ensure a .body_factory_info file exists //
   /////////////////////////////////////////////
 
-  snprintf(path, sizeof(path), "%s" DIR_SEP ".body_factory_info", tmpl_dir);
+  ink_filepath_make(path, sizeof(path), tmpl_dir, ".body_factory_info");
   status = stat(path, &stat_buf);
   if ((status < 0) || !S_ISREG(stat_buf.st_mode)) {
     closedir(dir);
@@ -795,7 +795,7 @@ HttpBodySet::init(char *set, char *dir)
 
   char buffer[1024], name[1025], value[1024];
 
-  snprintf(info_path, sizeof(info_path), "%s" DIR_SEP ".body_factory_info", dir);
+  ink_filepath_make(info_path, sizeof(info_path), dir, ".body_factory_info");
   fd = open(info_path, O_RDONLY | _O_ATTRIB_NORMAL);
   if (fd < 0)
     return (-1);

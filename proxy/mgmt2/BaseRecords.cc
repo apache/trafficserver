@@ -501,9 +501,9 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
     mgmt_fatal(stderr, "[BaseRecords::rereadRecordFile] Null path or file\n");
   }
   // Look for a "shadow" records.config file, internal for process(records.config) only
-  snprintf(fname, sizeof(fname), "%s%s%s.shadow", path, DIR_SEP, f);
+  snprintf(fname, sizeof(fname), "%s/%s.shadow", path, f);
   if (!(fin = mgmt_fopen(fname, "r+"))) {
-    snprintf(fname, sizeof(fname), "%s%s%s", path, DIR_SEP, f);
+    ink_filepath_make(fname, sizeof(fname), path, f);
     if (!(fin = mgmt_fopen(fname, "r+"))) {
       mgmt_fatal(stderr, "[BaseRecords::rereadRecordFile] " "Unable to open file '%s', %s\n", fname, strerror(errno));
     }

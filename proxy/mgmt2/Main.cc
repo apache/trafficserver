@@ -1490,9 +1490,9 @@ extractConfigInfo(char *mgmt_path, const char *recs_conf, char *userName, int *f
   /* Figure out what user we should run as */
   if (mgmt_path && recs_conf) {
     FILE *fin;
-    snprintf(file, sizeof(file), "%s%s%s.shadow", mgmt_path, DIR_SEP, recs_conf);
+    snprintf(file, sizeof(file), "%s/%s.shadow", mgmt_path, recs_conf);
     if (!(fin = fopen(file, "r"))) {
-      snprintf(file, sizeof(file), "%s%s%s", mgmt_path, DIR_SEP, recs_conf);
+      ink_filepath_make(file, sizeof(file), mgmt_path, recs_conf);
       if (!(fin = fopen(file, "r"))) {
         mgmt_elog(stderr, "[extractConfigInfo] Unable to open config file(%s)\n", file);
         _exit(1);

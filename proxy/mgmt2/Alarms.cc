@@ -595,7 +595,7 @@ Alarms::execAlarmBin(const char *desc)
   int status;
   pid_t pid;
 
-  snprintf(cmd_line, sizeof(cmd_line), "%s%s%s", alarm_bin_path, DIR_SEP, alarm_bin);
+  ink_filepath_make(cmd_line, sizeof(cmd_line), alarm_bin_path, alarm_bin);
 
 #ifdef POSIX_THREAD
   if ((pid = fork()) < 0)
@@ -651,9 +651,9 @@ Alarms::execAlarmBin(const char *desc)
   }
 
   if (is_exe) {
-    sprintf(cmd_line, "%s%s%s", alarm_bin_path, DIR_SEP, alarm_bin);
+    ink_filepath_make(cmd_line, alarm_bin_path, alarm_bin);
   } else {
-    sprintf(cmd_line, "CMD.EXE /C \"%s%s%s\"", alarm_bin_path, DIR_SEP, alarm_bin);
+    sprintf(cmd_line, "CMD.EXE /C \"%s\\%s\"", alarm_bin_path, alarm_bin);
   }
 
   SetEnvironmentVariable("TRAFFIC_SERVER_ALARM_MSG", desc);

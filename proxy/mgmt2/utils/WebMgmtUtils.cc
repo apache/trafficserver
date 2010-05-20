@@ -1739,12 +1739,34 @@ getFilesInDirectory(char *managedDir, ExpandingArray * fileList)
 char *
 newPathString(const char *s1, const char *s2)
 {
-  int newLen;
   char *newStr;
+  int  srcLen; // is the length of the src rootpath
+  int  addLen; // maximum total path length
 
-  newLen = strlen(s1) + strlen(s2) + 2;
-  newStr = new char[newLen];
+  // Treat null as an empty path.
+  if (!s2)
+    s2 = "";
+  addLen = strlen(s2) + 1;
+  if (*s2 == '/') {
+    // If addpath is rooted, then rootpath is unused.
+    newStr = new char[addLen];
+    strcpy(newStr, s2);
+    return newStr;
+  }
+  if (!s1 || !*s1) {
+    // If there's no rootpath return the addpath
+    newStr = new char[addLen];
+    strcpy(newStr, s2);
+    return newStr;
+  }
+  srcLen = strlen(s1);
+  newStr = new char[srcLen + addLen + 1];
   ink_assert(newStr != NULL);
-  snprintf(newStr, newLen, "%s%s%s", s1, DIR_SEP, s2);
+
+  strcpy(newStr, s1);
+  if (newStr[srcLen - 1] != '/')
+    newStr[srcLen++] = '/';
+  strcpy(&newStr[srcLen], s2);
+
   return newStr;
 }
