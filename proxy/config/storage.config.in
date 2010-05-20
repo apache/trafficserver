@@ -15,7 +15,7 @@
 # the cache-file to live and 'size' is size in bytes
 #
 # Example: 128MB cache file(@exp_cachedir@/cache.db)
-#      @exp_cachedir@ 134217728
+#      @exp_cachedir@ 128M
 #
 # Example: 144MB cache file(@exp_cachedir@/cache.db)
 #          assuming prefix of '@prefix@'
@@ -23,7 +23,7 @@
 #
 # Example: 512MB cache file(@exp_cachedir@/cache.db)
 #          assuming prefix of '@prefix@'
-#      @rel_cachedir@ 536870912
+#      @rel_cachedir@ 512M
 #
 #
 #############################################################
