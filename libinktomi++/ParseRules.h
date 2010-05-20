@@ -35,6 +35,10 @@
 
 typedef unsigned int CTypeResult;
 
+// Set this to 0 to disable SI
+// decimal multipliers
+#define USE_SI_MULTILIERS    1
+
 #define is_char_BIT         (1 << 0)
 #define is_upalpha_BIT      (1 << 1)
 #define is_loalpha_BIT      (1 << 2)
@@ -843,6 +847,16 @@ ink_atoi(const char *str)
      */
     while (*str && ParseRules::is_digit(*str))
       num = (num * 10) - (*str++ - '0');
+#if USE_SI_MULTILIERS
+    if (*str) {
+      if (*str == 'K')
+        num = num * (1 << 10);
+      else if (*str == 'M')
+        num = num * (1 << 20);
+      else if (*str == 'G')
+        num = num * (1 << 30);
+    }
+#endif
 
     if (!negative)
       num = -num;
@@ -876,6 +890,16 @@ ink_atoi(const char *str, int len)
      */
     while (*str && ParseRules::is_digit(*str) && len-- > 0)
       num = (num * 10) - (*str++ - '0');
+#if USE_SI_MULTILIERS
+    if (*str && len) {
+      if (*str == 'K')
+        num = num * (1 << 10);
+      else if (*str == 'M')
+        num = num * (1 << 20);
+      else if (*str == 'G')
+        num = num * (1 << 30);
+    }
+#endif
 
     if (!negative)
       num = -num;
@@ -898,6 +922,16 @@ ink_atoui(const char *str)
   } else {
     while (*str && ParseRules::is_digit(*str))
       num = (num * 10) + (*str++ - '0');
+#if USE_SI_MULTILIERS
+    if (*str) {
+      if (*str == 'K')
+        num = num * (1 << 10);
+      else if (*str == 'M')
+        num = num * (1 << 20);
+      else if (*str == 'G')
+        num = num * (1 << 30);
+    }
+#endif
   }
   return num;
 }
@@ -928,7 +962,18 @@ ink_atoll(const char *str)
      */
     while (*str && ParseRules::is_digit(*str))
       num = (num * 10) - (*str++ - '0');
-
+#if USE_SI_MULTILIERS
+    if (*str) {
+      if (*str == 'K')
+        num = num * (1LL << 10);
+      else if (*str == 'M')
+        num = num * (1LL << 20);
+      else if (*str == 'G')
+        num = num * (1LL << 30);
+      else if (*str == 'T')
+        num = num * (1LL << 40);
+    }
+#endif
     if (!negative)
       num = -num;
   }
