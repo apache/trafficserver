@@ -635,14 +635,11 @@ mime_init(const char *path)
     init = 0;
 
     hdrtoken_init(path);
-
-    snprintf(buf, sizeof(buf), "%s%sdays.dat", path ? path : "", path ? DIR_SEP : "");
-
+    ink_filepath_make(buf, sizeof(buf), path, "days.dat");
     day_names_dfa = NEW(new DFA);
     day_names_dfa->compile(buf, day_names, SIZEOF(day_names), RE_CASE_INSENSITIVE);
 
-    snprintf(buf, sizeof(buf), "%s%smonths.dat", path ? path : "", path ? DIR_SEP : "");
-
+    ink_filepath_make(buf, sizeof(buf), path, "months.dat");
     month_names_dfa = NEW(new DFA);
     month_names_dfa->compile(buf, month_names, SIZEOF(month_names), RE_CASE_INSENSITIVE);
 

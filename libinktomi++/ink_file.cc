@@ -303,3 +303,39 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath,
 
   return 0;
 }
+
+int
+ink_filepath_make(char *path, int pathsz, const char *rootpath,
+                  const char *addpath)
+{
+  size_t rootlen; // is the length of the src rootpath
+  size_t maxlen;  // maximum total path length
+
+  /* Treat null as an empty path.
+  */
+  if (!addpath)
+    addpath = "";
+
+  if (addpath[0] == '/') {
+    // If addpath is rooted, then rootpath is unused.
+    ink_strncpy(path, addpath, pathsz);
+    return 0;
+  }
+  if (!rootpath || !*rootpath) {
+    // If there's no rootpath return the addpath
+    ink_strncpy(path, addpath, pathsz);
+    return 0;
+  }
+  rootlen = strlen(rootpath);
+  maxlen  = strlen(addpath) + 2;
+  if (maxlen > (size_t)pathsz) {
+    *path = '\0';
+    return (int)maxlen;
+  }
+  strcpy(path, rootpath);
+  path += rootlen;
+  if (*(path - 1) != '/')
+    *(path++) = '/';
+  strcpy(path, addpath);
+  return 0;
+}

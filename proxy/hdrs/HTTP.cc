@@ -198,7 +198,7 @@ http_init(const char *path)
   static int init = 1;
 
   if (init) {
-    char buf[4096];
+    char buf[4096] = "";
     int i;
 
     init = 0;
@@ -206,8 +206,7 @@ http_init(const char *path)
     mime_init(path);
     url_init(path);
 
-    snprintf(buf, sizeof(buf), "%s%scache-control.dat", path ? path : "", path ? DIR_SEP : "");
-
+    ink_filepath_make(buf, sizeof(buf), path, "cache-control.dat");
     cache_control_names_dfa = NEW(new DFA);
     cache_control_names_dfa->compile(buf, cache_control_names, SIZEOF(cache_control_names), RE_CASE_INSENSITIVE);
 
