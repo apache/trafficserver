@@ -31,12 +31,15 @@
  ****************************************************************/
 
 #include "inktomi++.h"
-#include "../api2/include/INKMgmtAPI.h"
+#include "I_Layout.h"
+#include "INKMgmtAPI.h"
 #include "ShowCmd.h"
 #include "ConfigCmd.h"
 #include "createArgument.h"
 #include "CliMgmtUtils.h"
 #include "CliDisplay.h"
+// TODO: Remove all those system defines
+//       and protecect them via #ifdef HAVE_FOO_H
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -55,8 +58,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "cli_scriptpaths.h"
-#include <ConfigAPI.h>
-#include <SysAPI.h>
+#include "ConfigAPI.h"
+#include "SysAPI.h"
 
 
 int enable_restricted_commands = FALSE;
@@ -163,6 +166,8 @@ Cmd_Enable(ClientData clientData, Tcl_Interp * interp, int argc, const char *arg
     Cli_Printf("Already Enabled\n");
     return CMD_OK;
   }
+  // TODO: Use here some proper getpass function
+  //       See APR's apr_password_get
   char passwd[256], ch = 'p';
   int i = 0;
   printf("Password:");
@@ -5755,6 +5760,11 @@ ConfigRadiusKeys(const char *record)
   INKString old_pwd_file = NULL;
   INKString dir_path = NULL;
 
+  // TODO: Use some proper getpass function here
+  //       depending on the system use either
+  //       getpass_r, getpassphrase or getpass
+  //       For platforms not having those
+  //       see apr_password_get
   Cli_Debug("ConfigRadiusKeys\n");
   Cli_Printf("\nEnter New Key:");
   fflush(stdout);
@@ -5795,7 +5805,8 @@ ConfigRadiusKeys(const char *record)
       Cli_Debug("[ConfigRadiusKeys] Failed to remove password file %s", old_pwd_file);
     xfree(old_pwd_file);
   }
-
+  // XXX: Is this an absolute or config relative path
+  //      Usage here smells like absolute.
   Cli_RecordGetString("proxy.config.auth.password_file_path", &dir_path);
   if (!dir_path) {
     Cli_Debug("[ConfigRadiusKeys] Failed to find the password file path.");
