@@ -186,7 +186,7 @@ Diags::~Diags()
 void
 Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
                 const char *prefix, SrcLoc * loc,
-                const char *format_string, va_list ap, unsigned int wID, eInsertStringType eIST)
+                const char *format_string, va_list ap)
 {
   struct timeval tp;
   const char *prefix_string, *s;
@@ -553,26 +553,6 @@ DiagsEClosure::operator() (const char *format_string ...)
   }
   va_end(ap);
 }
-
-
-// default: no location printed
-void
-DiagsEClosure::operator() (unsigned long wID, eInsertStringType eIST, const char *format_string ...)
-{
-  va_list ap;
-  va_start(ap, format_string);
-  SrcLoc *lp = (diags->show_location ? &src_location : NULL);
-  diags->print_va(NULL, level, NULL, lp, format_string, ap, wID, eIST);
-  va_end(ap);
-  va_start(ap, format_string);
-  if (DiagsLevel_IsTerminal(level)) {
-    if (diags->cleanup_func)
-      diags->cleanup_func();
-    ink_fatal_va(1, (char *) format_string, ap);
-  }
-  va_end(ap);
-}
-
 
 // location optionally printed
 void

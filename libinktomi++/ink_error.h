@@ -39,34 +39,23 @@
 #include "ink_defs.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif                          /* __cplusplus */
 
-/* used all over the place - currently used by NT only. */
-  typedef enum
-  {
-    keNo_OP = 0,
-    keENCAPSULATED_STRING = 1,
-    keINSERT_STRING = 2
-  } eInsertStringType;
+inkcoreapi void ink_fatal_va(int return_code, const char *message_format, va_list ap);
+void ink_fatal(int return_code, const char *message_format, ...) PRINTFLIKE(2, 3);
+void ink_pfatal(int return_code, const char *message_format, ...) PRINTFLIKE(2, 3);
+void ink_warning(const char *message_format, ...) PRINTFLIKE(1, 2);
+void ink_pwarning(const char *message_format, ...) PRINTFLIKE(1, 2);
+void ink_notice(const char *message_format, ...) PRINTFLIKE(1, 2);
+void ink_eprintf(const char *message_format, ...) PRINTFLIKE(1, 2);
+void ink_error(const char *message_format, ...) PRINTFLIKE(1, 2);
+void ink_dprintf(int debug_level, const char *message_format, ...) PRINTFLIKE(2, 3);
+void ink_fatal_die(const char *message_format, ...) PRINTFLIKE(1, 2);
 
-
-  inkcoreapi void ink_fatal_va(int return_code, const char *message_format, va_list ap);
-  void ink_fatal(int return_code, const char *message_format, ...) PRINTFLIKE(2, 3);
-  void ink_pfatal(int return_code, const char *message_format, ...) PRINTFLIKE(2, 3);
-  void ink_warning(const char *message_format, ...) PRINTFLIKE(1, 2);
-  void ink_pwarning(const char *message_format, ...) PRINTFLIKE(1, 2);
-  void ink_notice(const char *message_format, ...) PRINTFLIKE(1, 2);
-  void ink_eprintf(const char *message_format, ...) PRINTFLIKE(1, 2);
-  void ink_error(const char *message_format, ...) PRINTFLIKE(1, 2);
-  void ink_dprintf(int debug_level, const char *message_format, ...) PRINTFLIKE(2, 3);
-  void ink_fatal_die(const char *message_format, ...) PRINTFLIKE(1, 2);
-
-  void ink_die_die_die(int retval);
-  void ink_segv();
-  int ink_set_dprintf_level(int debug_level);
-
+void ink_die_die_die(int retval);
+void ink_segv();
+int ink_set_dprintf_level(int debug_level);
 
 #ifdef __cplusplus
 }

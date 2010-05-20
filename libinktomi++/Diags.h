@@ -188,8 +188,8 @@ public:
   const char *level_name(DiagsLevel dl);
 
   inkcoreapi void print_va(const char *tag, DiagsLevel dl, const char *prefix,
-                           SrcLoc * loc, const char *format_string, va_list ap,
-                           unsigned int wID = 0, eInsertStringType eIST = keNo_OP);
+                           SrcLoc * loc, const char *format_string, va_list ap);
+
 
   //////////////////////////////
   // user printing interfaces //
@@ -340,9 +340,6 @@ public:
 
   // default: no location printed
   void inkcoreapi operator() (const char *format_string ...);
-
-  // default: no location printed
-  void operator() (unsigned long wID, eInsertStringType eIST, const char *format_string ...);
 
   // location optionally printed
   void operator() (int show_loc, const char *format_string ...);
