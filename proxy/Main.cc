@@ -768,7 +768,7 @@ cmd_clear(char *cmd)
   if (c_all || c_hdb) {
     Note("Clearing Configuration");
     Layout::relative_to(p, sizeof(p), system_config_directory,
-                        "internal" DIR_SEP "hostdb.config");
+                        "internal/hostdb.config");
     if (unlink(p) < 0)
       Note("unable to unlink %s", p);
   }
@@ -1397,9 +1397,10 @@ init_logging()
 static void
 init_http_header()
 {
-  char internal_config_dir[PATH_NAME_MAX];
+  char internal_config_dir[PATH_NAME_MAX + 1];
 
-  snprintf(internal_config_dir, sizeof(internal_config_dir) - 1, "%s%sinternal", system_config_directory, DIR_SEP);
+  ink_filepath_make(internal_config_dir, sizeof(internal_config_dir),
+                    system_config_directory, "internal");
 
   url_init(internal_config_dir);
   mime_init(internal_config_dir);

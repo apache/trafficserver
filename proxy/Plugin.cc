@@ -31,6 +31,7 @@
 #include "Compatability.h"
 #include "ParseRules.h"
 #include "I_RecCore.h"
+#include "I_Layout.h"
 #include "InkAPIInternal.h"
 #include "Main.h"
 #include "Plugin.h"
@@ -111,18 +112,17 @@ dll_close(void *dlp)
 static void
 plugin_load(int argc, char *argv[], bool internal)
 {
-  char path[PATH_NAME_MAX];
+  char path[PATH_NAME_MAX + 1];
   void *handle;
   init_func_t init;
   lic_req_func_t lic_req;
   PluginRegInfo *plugin_reg_temp;
-  const char *P_DIR = internal ? extensions_dir : plugin_dir;
-
+  const char *pdir = internal ? extensions_dir : plugin_dir;
 
   if (argc < 1) {
     return;
   }
-  snprintf(path, sizeof(path), "%s%s%s", P_DIR, DIR_SEP, argv[0]);
+  ink_filepath_make(path, sizeof(path), pdir, argv[0]);
 
   Note("loading plugin '%s'", path);
 
@@ -261,14 +261,17 @@ not_found:
 int
 plugins_exist(const char *config_dir)
 {
-  char path[PATH_NAME_MAX];
+  char path[PATH_NAME_MAX + 1];
   char line[1024], *p;
   int fd;
   int plugin_count = 0;
 
-  RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", (char**)&plugin_dir);
+  // XXX: Commented out.
+  //      Why reading plugin_dir when unused?
+  //
+  // RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", (char **)&plugin_dir);
 
-  snprintf(path, sizeof(path), "%s%splugin.config", config_dir, DIR_SEP);
+  ink_filepath_make(path, sizeof(path), config_dir, "plugin.config");
   fd = open(path, O_RDONLY);
   if (fd < 0) {
     Warning("unable to open plugin config file '%s': %d, %s", path, errno, strerror(errno));
@@ -290,7 +293,7 @@ plugins_exist(const char *config_dir)
 void
 plugin_init(const char *config_dir, bool internal)
 {
-  char path[PATH_NAME_MAX];
+  char path[PATH_NAME_MAX + 1];
   char line[1024], *p;
   char *argv[64];
   char *vars[64];
@@ -302,11 +305,21 @@ plugin_init(const char *config_dir, bool internal)
   if (INIT_ONCE) {
     api_init();
     init_inkapi_stat_system();
+    char *cfg = NULL;
 
-    RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", (char**)&plugin_dir);
-    RecGetRecordString_Xmalloc("proxy.config.plugin.extensions_dir", (char**)&extensions_dir);
-
-    snprintf(path, sizeof(path), "%s%splugin.db", config_dir, DIR_SEP);
+    RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", (char**)&cfg);
+    if (cfg != NULL) {
+      plugin_dir = Layout::get()->relative(cfg);
+      xfree(cfg);
+      cfg = NULL;
+    }
+    RecGetRecordString_Xmalloc("proxy.config.plugin.extensions_dir", (char**)&cfg);
+    if (cfg != NULL) {
+      extensions_dir = Layout::get()->relative(cfg);
+      xfree(cfg);
+      cfg = NULL;
+    }
+    ink_filepath_make(path, sizeof(path), config_dir, "plugin.db");
     plugin_db = new PluginDB(path);
     INIT_ONCE = false;
   }
@@ -314,9 +327,9 @@ plugin_init(const char *config_dir, bool internal)
   ink_assert(plugin_db);
 
   if (internal == false) {
-    snprintf(path, sizeof(path), "%s%splugin.config", config_dir, DIR_SEP);
+    ink_filepath_make(path, sizeof(path), config_dir, "plugin.config");
   } else {
-    snprintf(path, sizeof(path), "%s%sextensions.config", config_dir, DIR_SEP);
+    ink_filepath_make(path, sizeof(path), config_dir, "extensions.config");
   }
 
   fd = open(path, O_RDONLY);

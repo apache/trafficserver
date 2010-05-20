@@ -153,9 +153,7 @@ err_allow_all(false)
 
   IPAllowReadConfigStringAlloc(config_file, (char *) config_file_var);
   ink_release_assert(config_file != NULL);
-  ink_strncpy(config_file_path, system_config_directory, sizeof(config_file_path));
-  strncat(config_file_path, DIR_SEP, (sizeof(config_file_path) - strlen(config_file_path) - 1));
-  strncat(config_file_path, config_file, (sizeof(config_file_path) - strlen(config_file_path) - 1));
+  ink_filepath_make(config_file_path, sizeof(config_file_path), system_config_directory, config_file);
   xfree(config_file);
 }
 
