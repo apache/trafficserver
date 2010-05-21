@@ -508,14 +508,14 @@ dnl  setting to 1 or 0, we set FLAG-TO-SET to yes or no.
 dnl
 AC_DEFUN([ATS_FLAG_HEADERS], [
 AC_CHECK_HEADERS($1)
-for aprt_i in $1
+for tsc_i in $1
 do
-    ac_safe=`echo "$aprt_i" | sed 'y%./+-%__p_%'`
-    atst_2=`echo "$aprt_i" | sed -e 's%/%_%g' -e 's/\.//g' -e 's/-//g'`
+    ac_safe=`echo "$tsc_i" | sed 'y%./+-%__p_%'`
+    tsc_2=`echo "$tsc_i" | sed -e 's%/%_%g' -e 's/\.//g' -e 's/-//g'`
     if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
-       eval "ifelse($2,,$atst_2,$2)=ifelse($3,yes,yes,1)"
+       eval "ifelse($2,,$tsc_2,$2)=ifelse($3,yes,yes,1)"
     else
-       eval "ifelse($2,,$atst_2,$2)=ifelse($3,yes,no,0)"
+       eval "ifelse($2,,$tsc_2,$2)=ifelse($3,yes,no,0)"
     fi
 done
 ])
@@ -529,13 +529,13 @@ dnl  to yes or no.
 dnl
 AC_DEFUN([ATS_FLAG_FUNCS], [
 AC_CHECK_FUNCS($1)
-for atct_j in $1
+for tsc_j in $1
 do
-    atct_3="have_$aprt_j"
-    if eval "test \"`echo '$ac_cv_func_'$atst_j`\" = yes"; then
-       eval "ifelse($2,,$atst_3,$2)=ifelse($3,yes,yes,1)"
+    tsc_3="have_$tsc_j"
+    if eval "test \"`echo '$ac_cv_func_'$tsc_j`\" = yes"; then
+       eval "ifelse($2,,$tsc_3,$2)=ifelse($3,yes,yes,1)"
     else
-       eval "ifelse($2,,$atst_3,$2)=ifelse($3,yes,no,0)"
+       eval "ifelse($2,,$tsc_3,$2)=ifelse($3,yes,no,0)"
     fi
 done
 ])

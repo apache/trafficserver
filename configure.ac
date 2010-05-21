@@ -496,40 +496,68 @@ SHARED_LDFLAGS=-shared
 SHARED_CXXFLAGS=-fPIC
 SHARED_CXXLINKFLAGS=-shared
 
+dnl Checks for pointer size
+AC_CHECK_SIZEOF(void*, 4)
+
+if test "x$ac_cv_sizeof_voidp" == "x"; then
+  AC_ERROR([Cannot determine size of void*])
+fi
 
 #
 # Here are all the extra linux-specific C(XX)FLAGS additions and
 # so forth.
 # TODO cpu architecture settings separate from operating system settings
 #
-
-# Examine the current CXXFLAGS / CFLAGS for patterns we might need
-# ToDo: This needs to be made conditional on compiler used (only gcc is supported here)
-AS_IF([test "x$with_architecture" != "xno"],
-  [CFLAGS="$CFLAGS -march=$with_architecture"; CXXFLAGS="$CXXFLAGS -march=$with_architecture"]
-)
-
-dnl Checks for pointer size
-AC_CHECK_SIZEOF(void*, 4)
-
-if test "x$ac_cv_sizeof_voidp" == "x"; then
-    AC_ERROR([Cannot determine size of void*])
-fi
-
+cpu_architecture=""
 # GCC: add a default march if there is not one set
 if test "x${GCC}" = "xyes"; then
- if test "${ac_cv_sizeof_voidp}" = "4"; then
-  case $CFLAGS in
-    *\-march=*) : ;;
-    *) CFLAGS="$CFLAGS -march=i586" ;;
-  esac
-
-  case $CXXFLAGS in
-    *\-march=*) : ;;
-    *) CXXFLAGS="$CXXFLAGS -march=i586" ;;
-  esac
- fi
+  if test "${ac_cv_sizeof_voidp}" = "4"; then
+    case "$host_cpu" in
+      i?86* | k[5-8]* | pentium* | athlon)
+        cpu_architecture="-march=i586"
+      ;;
+      *sparc*)
+        cpu_architecture="-mv8"
+      ;;
+    esac
+  else
+    case "$host_cpu" in
+      x86_64 | amd64)
+        cpu_architecture="-march=native"
+      ;;
+      *sparc*)
+        cpu_architecture="-march=ultrasparc"
+      ;;
+    esac
+  fi
+  # TODO: Add support for other compilers
+  #
 fi
+
+# Overrride detected architecture with the user suplied one
+#
+AC_ARG_WITH(architecture, [AC_HELP_STRING([--with-architecture=ARCH],[use a specific CPU architecture])],
+[
+  if test "x$withval" != "xyes" && test "x$withval" != "xno"; then
+    case "$withval" in
+      -*)
+        cpu_architecture="$withval"
+      ;;
+      *)
+        cpu_architecture="-march=$withval"
+      ;;
+    esac
+  elif test "x$withval" = "x"; then
+    AC_MSG_ERROR([--with-architecture requires an param])
+  fi
+])
+
+AS_IF([test "x$cpu_architecture" != "x"],
+[
+  ATS_ADDTO(CFLAGS, [$cpu_architecture])
+  ATS_ADDTO(CXXFLAGS [$cpu_architecture])
+]
+)
 
 # GCC atomics
 AC_CACHE_CHECK([for gcc atomic builtins],[support_cv_atomic],
@@ -665,11 +693,11 @@ if test "x${enable_sqlite3}" != "xyes"; then
   fi
 fi
 
-AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign lrand48_r srand48_r port_create])
-AC_CHECK_FUNCS([strndup])
+ATS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign lrand48_r srand48_r port_create])
+ATS_FLAG_FUNCS([strndup])
 
 AS_IF([test "x$enable_eventfd" = "xyes"],
-  [AC_CHECK_FUNCS([eventfd])]
+  [ATS_FLAG_FUNCS([eventfd])]
 )
 
 #
@@ -761,7 +789,7 @@ fi
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
-AC_CHECK_HEADERS([sys/epoll.h \
+ATS_FLAG_HEADERS([sys/epoll.h \
                   sys/event.h \
                   machine/endian.h \
                   endian.h \
@@ -798,7 +826,7 @@ AC_CHECK_HEADERS([sys/epoll.h \
                   net/ppp_defs.h \
                   ], [], [])
 
-AC_CHECK_HEADERS([netinet/ip.h], [], [],
+ATS_FLAG_HEADERS([netinet/ip.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -807,7 +835,7 @@ AC_CHECK_HEADERS([netinet/ip.h], [], [],
                    #endif
                  ]])
 
-AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
+ATS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -823,7 +851,7 @@ AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
                  ]])
 
 if test "x${with_profiler}" = "xyes"; then
-AC_CHECK_HEADERS([google/profiler.h \
+ATS_FLAG_HEADERS([google/profiler.h \
                   ], [], [])
 fi
 
