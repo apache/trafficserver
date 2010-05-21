@@ -150,8 +150,8 @@ ssl_read_from_net(NetHandler * nh, UnixNetVConnection * vc, EThread * lthread, i
   } else                        // if( bytes_read > 0 )
   {
 #if defined (_DEBUG)
-    if (readAvail == 0) {
-      Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] readAvail == 0");
+    if (bytes_read == 0) {
+      Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read == 0");
     }
 #endif
   }
