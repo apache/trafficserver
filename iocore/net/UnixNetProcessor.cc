@@ -170,95 +170,74 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
   // for SSLNetProcessor.  Does nothing if not overwritten.
   setEtype(opt->etype);
 
-  bool fast =
 #ifndef INK_NO_SOCKS
-    (opt->socks_support == NO_SOCKS || !socks_conf_stuff->socks_needed) &&
-#endif
-    cont->mutex->is_thread();
-
-  if (fast) {
-
-    NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
-    vc->id = net_next_connection_number();
-    vc->submit_time = ink_get_hrtime();
-    vc->setSSLClientConnection(true);
-    vc->ip = ip;
-    vc->port = port;
-    vc->action_ = cont;
-    vc->mutex = mutex;
-    vc->connectUp(t);
-    return ACTION_RESULT_DONE;
-  } else {
-
-#ifndef INK_NO_SOCKS
-    bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
+  bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
 #ifdef SOCKS_WITH_TS
-                        && (opt->socks_version != SOCKS_DEFAULT_VERSION ||
-                            /* This implies we are tunnelling.
-                             * we need to connect using socks server even
-                             * if this ip is in no_socks list.
-                             */
-                            !socks_conf_stuff->ip_range.match(ip))
+                      && (opt->socks_version != SOCKS_DEFAULT_VERSION ||
+                          /* This implies we are tunnelling.
+                           * we need to connect using socks server even
+                           * if this ip is in no_socks list.
+                           */
+                          !socks_conf_stuff->ip_range.match(ip))
 #endif
-      );
-    SocksEntry *socksEntry = NULL;
+    );
+  SocksEntry *socksEntry = NULL;
 #endif
-    NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
-    vc->id = net_next_connection_number();
-    vc->submit_time = ink_get_hrtime();
-    vc->setSSLClientConnection(true);
-    vc->ip = ip;
-    vc->port = port;
-    vc->mutex = cont->mutex;
-    Action *result = &vc->action_;
+  NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
+  vc->id = net_next_connection_number();
+  vc->submit_time = ink_get_hrtime();
+  vc->setSSLClientConnection(true);
+  vc->ip = ip;
+  vc->port = port;
+  vc->mutex = cont->mutex;
+  Action *result = &vc->action_;
 #ifndef INK_NO_SOCKS
-    if (using_socks) {
-      NetDebug("Socks", "Using Socks ip: %u.%u.%u.%u:%d\n", PRINT_IP(ip), port);
-      socksEntry = socksAllocator.alloc();
-      socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
-      socksEntry->action_ = cont;
-      cont = socksEntry;
-      if (socksEntry->server_ip == (uint32) - 1) {
-        socksEntry->lerrno = ESOCK_NO_SOCK_SERVER_CONN;
-        socksEntry->free();
-        return ACTION_RESULT_DONE;
-      }
-      vc->ip = socksEntry->server_ip;
-      vc->port = socksEntry->server_port;
-      result = &socksEntry->action_;
-      vc->action_ = socksEntry;
-    } else {
-      NetDebug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
-      vc->action_ = cont;
+  if (using_socks) {
+    NetDebug("Socks", "Using Socks ip: %u.%u.%u.%u:%d\n", PRINT_IP(ip), port);
+    socksEntry = socksAllocator.alloc();
+    socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
+    socksEntry->action_ = cont;
+    cont = socksEntry;
+    if (socksEntry->server_ip == (uint32) - 1) {
+      socksEntry->lerrno = ESOCK_NO_SOCK_SERVER_CONN;
+      socksEntry->free();
+      return ACTION_RESULT_DONE;
     }
-#else
+    vc->ip = socksEntry->server_ip;
+    vc->port = socksEntry->server_port;
+    result = &socksEntry->action_;
+    vc->action_ = socksEntry;
+  } else {
+    NetDebug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
     vc->action_ = cont;
+  }
+#else
+  vc->action_ = cont;
 #endif /*INK_NO_SOCKS */
 
-    if (t->is_event_type(opt->etype)) {
-      MUTEX_TRY_LOCK(lock, cont->mutex, t);
-      if (lock) {
-        MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
-        if (lock2) {
-          int ret;
-          ret = vc->connectUp(t);
+  if (t->is_event_type(opt->etype)) {
+    MUTEX_TRY_LOCK(lock, cont->mutex, t);
+    if (lock) {
+      MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
+      if (lock2) {
+        int ret;
+        ret = vc->connectUp(t);
 #ifndef INK_NO_SOCKS
-          if ((using_socks) && (ret == CONNECT_SUCCESS))
-            return &socksEntry->action_;
-          else
+        if ((using_socks) && (ret == CONNECT_SUCCESS))
+          return &socksEntry->action_;
+        else
 #endif
-            return ACTION_RESULT_DONE;
-        }
+          return ACTION_RESULT_DONE;
       }
     }
-    eventProcessor.schedule_imm(vc, opt->etype);
-#ifndef INK_NO_SOCKS
-    if (using_socks) {
-      return &socksEntry->action_;
-    } else
-#endif
-      return result;
   }
+  eventProcessor.schedule_imm(vc, opt->etype);
+#ifndef INK_NO_SOCKS
+  if (using_socks) {
+    return &socksEntry->action_;
+  } else
+#endif
+    return result;
 }
 
 Action *
@@ -266,68 +245,7 @@ UnixNetProcessor::connect(Continuation * cont,
                           UnixNetVConnection ** avc,
                           unsigned int ip, int port, unsigned int _interface, NetVCOptions * opt)
 {
-  bool fast =
-#ifndef INK_NO_SOCKS
-    !socks_conf_stuff->socks_needed &&
-#endif
-    cont->mutex->is_thread();
-  if (!fast) {
-    return connect_re(cont, ip, port, _interface, opt);
-  }
-  ProxyMutex *mutex = cont->mutex;
-  EThread *t = mutex->thread_holding;
-  //NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
-  UnixNetVConnection *vc = allocateThread(t);
-  vc->_interface = _interface;
-  if (opt)
-    vc->options = *opt;
-  else
-    opt = &vc->options;
-  vc->id = net_next_connection_number();
-  vc->submit_time = ink_get_hrtime();
-  vc->setSSLClientConnection(true);
-  vc->ip = ip;
-  vc->port = port;
-  vc->action_ = cont;
-  vc->thread = t;
-  vc->nh = get_NetHandler(t);   //added by YTS Team, yamsat
-  vc->mutex = mutex;
-  if (check_net_throttle(CONNECT, vc->submit_time)) {
-    check_throttle_warning();
-    free(t);
-    *avc = NULL;
-    return ACTION_RESULT_DONE;
-  }
-
-  int res = 0;
-  if (!_interface)
-    res = vc->con.fast_connect(vc->ip, vc->port, opt);
-  else
-    res = vc->con.bind_connect(vc->ip, vc->port, _interface, opt);
-
-  if (res) {
-    free(t);
-    *avc = NULL;
-    return ACTION_RESULT_DONE;
-  }
-
-  check_emergency_throttle(vc->con);
-
-  PollDescriptor *pd = get_PollDescriptor(t);
-
-  if (vc->ep.start(pd, vc, EVENTIO_READ|EVENTIO_WRITE) < 0) {
-    NetDebug("iocore_net", "connect : Error in adding to epoll list\n");
-    close_UnixNetVConnection(vc, vc->thread);
-    return ACTION_RESULT_DONE;
-  }
-
-  vc->nh->open_list.enqueue(vc);
-
-  SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::mainEvent);
-  ink_assert(!vc->inactivity_timeout_in);
-  ink_assert(!vc->active_timeout_in);
-  *avc = vc;
-  return ACTION_RESULT_DONE;
+  return connect_re(cont, ip, port, _interface, opt);
 }
 
 struct CheckConnect:public Continuation

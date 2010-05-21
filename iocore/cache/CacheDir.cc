@@ -111,17 +111,13 @@ OpenDir::signal_readers(int event, Event *e)
   EThread *t = mutex->thread_holding;
   CacheVC *c = NULL;
   while ((c = delayed_readers.dequeue())) {
-    if (c->mutex->is_thread() && c->mutex->thread_holding != t)
-      newly_delayed_readers.enqueue(c);
-    else {
-      CACHE_TRY_LOCK(lock, c->mutex, t);
-      if (lock) {
-        c->f.open_read_timeout = 0;
-        c->handleEvent(EVENT_IMMEDIATE, 0);
-        continue;
-      }
-      newly_delayed_readers.push(c);
+    CACHE_TRY_LOCK(lock, c->mutex, t);
+    if (lock) {
+      c->f.open_read_timeout = 0;
+      c->handleEvent(EVENT_IMMEDIATE, 0);
+      continue;
     }
+    newly_delayed_readers.push(c);
   }
   if (newly_delayed_readers.head) {
     delayed_readers = newly_delayed_readers;

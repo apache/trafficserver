@@ -1148,30 +1148,17 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
     ink_sem_post(&sem);
 #endif
   } else {
-    if (!action.mutex->is_thread()) {
-      MUTEX_TRY_LOCK(lock, action.mutex, h->mutex->thread_holding);
-      if (!lock) {
-        Debug("dns", "failed lock for result %s", qname);
-        return 1;
-      }
-      if (!action.cancelled) {
-        Debug("dns", "called back continuation for %s", qname);
-        action.continuation->handleEvent(DNS_EVENT_LOOKUP, ent);
-      }
-      if (ent && freeable && ink_atomic_increment(&ent->ref_count, -1) == 1)
-        dnsProcessor.free_hostent(ent);
-    } else {
-      if (!action.cancelled) {
-        result_ent = ent;
-        SET_HANDLER(&DNSEntry::postEvent);
-        if (action.mutex->thread_holding != h->mutex->thread_holding)
-          action.mutex->thread_holding->schedule_imm(this);
-        else {
-          this->handleEvent(0, 0);
-        }
-        return 0;
-      }
+    MUTEX_TRY_LOCK(lock, action.mutex, h->mutex->thread_holding);
+    if (!lock) {
+      Debug("dns", "failed lock for result %s", qname);
+      return 1;
     }
+    if (!action.cancelled) {
+      Debug("dns", "called back continuation for %s", qname);
+      action.continuation->handleEvent(DNS_EVENT_LOOKUP, ent);
+    }
+    if (ent && freeable && ink_atomic_increment(&ent->ref_count, -1) == 1)
+      dnsProcessor.free_hostent(ent);
   }
   //
   // Cancel the timeout and clear the mutex field

@@ -718,7 +718,7 @@ UnixNetVConnection::reenable(VIO *vio)
       else
         nh->write_ready_list.remove(this);
     }
-  } else if (!nh->mutex->is_thread()) {
+  } else {
     MUTEX_TRY_LOCK(lock, nh->mutex, t);
     if (!lock) {
       if (vio == &read.vio) {

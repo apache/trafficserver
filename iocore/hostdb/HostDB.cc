@@ -1477,12 +1477,6 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
     // try to callback the user
     //
     if (action.continuation) {
-      if (action.mutex->is_thread() && action.mutex->thread_holding != thread) {
-        remove_trigger_pending_dns();
-        SET_HANDLER((HostDBContHandler) & HostDBContinuation::probeEvent);
-        action.mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
-        return EVENT_CONT;
-      }
       MUTEX_TRY_LOCK_FOR(lock, action.mutex, thread, action.continuation);
       if (!lock) {
         remove_trigger_pending_dns();
@@ -1783,12 +1777,8 @@ HostDBContinuation::remove_trigger_pending_dns()
     }
     c = n;
   }
-  while ((c = qq.dequeue())) {
-    if (c->action.mutex->is_thread() && c->action.mutex->thread_holding != mutex->thread_holding)
-      c->action.mutex->thread_holding->schedule_imm(c);
-    else
-      c->handleEvent(EVENT_IMMEDIATE, NULL);
-  }
+  while ((c = qq.dequeue()))
+    c->handleEvent(EVENT_IMMEDIATE, NULL);
 }
 
 

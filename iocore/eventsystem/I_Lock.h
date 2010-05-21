@@ -154,11 +154,6 @@ public:
   void init(const char *name = "UnnamedMutex") {
     ink_mutex_init(&the_mutex, name);
   }
-
-  bool is_thread()
-  {
-    return false;
-  }
 };
 
 // The ClassAlocator for ProxyMutexes
