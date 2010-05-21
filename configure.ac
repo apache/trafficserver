@@ -587,20 +587,20 @@ esac
     #  existing CFLAGS/CXXFLAGS if some special values had been set.
     #
 if test "x${enable_debug}" = "xyes" ;then
-    ATS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
-    ATS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
-    ATS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
+  ATS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
+  ATS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
+  ATS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
 else
-    ATS_ADDTO(CFLAGS, [${cc_oflag_opt}])
-    ATS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
+  ATS_ADDTO(CFLAGS, [${cc_oflag_opt}])
+  ATS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
 fi
 
-    #
-    # Note:  These are site-specific macro's that do various tests
-    #         on the selected compilers.  There was some tunning
-    #         associated with our not wanting to use GNU for _everything_.
-    # Note:  This macro may set certain parameters when run.
-    #
+#
+# Note:  These are site-specific macro's that do various tests
+#         on the selected compilers.  There was some tunning
+#         associated with our not wanting to use GNU for _everything_.
+# Note:  This macro may set certain parameters when run.
+#
 
 
 # -----------------------------------------------------------------------------
@@ -720,22 +720,22 @@ fi
 AC_SUBST(HAVE_BACKTRACE)
 
 if test "x$enable_libev" = "xyes"; then
-   AC_DEFINE([USE_LIBEV])
-   have_good_poller=1
+  AC_DEFINE([USE_LIBEV])
+  have_good_poller=1
 elif test "$ac_cv_func_epoll_ctl" = "yes"; then
-   AC_DEFINE([USE_EPOLL])
-   have_good_poller=1
-   AC_MSG_NOTICE([Using epoll event interface])
+  AC_DEFINE([USE_EPOLL])
+  have_good_poller=1
+  AC_MSG_NOTICE([Using epoll event interface])
 elif test "$ac_cv_func_kqueue" = "yes"; then
-   AC_DEFINE([USE_KQUEUE])
-   have_good_poller=1
-   AC_MSG_NOTICE([Using kqueue event interface])
+  AC_DEFINE([USE_KQUEUE])
+  have_good_poller=1
+  AC_MSG_NOTICE([Using kqueue event interface])
 elif test "$ac_cv_func_port_create" = "yes"; then
-   AC_DEFINE([USE_PORT])
-   have_good_poller=1
-   AC_MSG_NOTICE([Using port event interface])
+  AC_DEFINE([USE_PORT])
+  have_good_poller=1
+  AC_MSG_NOTICE([Using port event interface])
 else
-   AC_MSG_FAILURE([No suitable polling interface found])
+  AC_MSG_FAILURE([No suitable polling interface found])
 fi
 
 if test "x${with_profiler}" = "xyes"; then
