@@ -251,6 +251,7 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
   submit_time = ink_get_hrtime();
   action = acont;
   sem_ent = wait;
+  submit_thread = acont->mutex->thread_holding;
 
 #ifdef SPLIT_DNS
   dnsH = SplitDNSConfig::gsplit_dns_enabled && adnsH ? adnsH : dnsProcessor.handler;
@@ -1022,7 +1023,6 @@ DNSProcessor::getby(const char *x, int len, int type,
 /**
   We have a result for an entry, return it to the user or retry if it
   is a retry-able and we have retries left.
-
 */
 static void
 dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
@@ -1123,10 +1123,8 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
 Lretry:
   e->result_ent = ent ? ent : BAD_DNS_RESULT;
   e->retries = 0;
-
   if (e->timeout)
     e->timeout->cancel();
-
   e->timeout = h->mutex->thread_holding->schedule_in(e, DNS_PERIOD);
 }
 
@@ -1137,10 +1135,8 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
     timeout->cancel(this);
     timeout = NULL;
   }
-  //
-  // If this call was synchronous, post to the semaphore
-  //
   if (sem_ent) {
+    // If this call was synchronous, post to the semaphore
     *sem_ent = ent;
 #if (HOST_OS == darwin)
     ink_sem_post(sem);
@@ -1148,25 +1144,23 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
     ink_sem_post(&sem);
 #endif
   } else {
-    MUTEX_TRY_LOCK(lock, action.mutex, h->mutex->thread_holding);
-    if (!lock) {
-      Debug("dns", "failed lock for result %s", qname);
-      return 1;
+    if (h->mutex->thread_holding == submit_thread) {
+      MUTEX_TRY_LOCK(lock, action.mutex, h->mutex->thread_holding);
+      if (!lock) {
+        Debug("dns", "failed lock for result %s", qname);
+        return 1;
+      }
+      postEvent(0, 0);
+    } else {
+      result_ent = ent;
+      mutex = action.mutex;
+      SET_HANDLER(&DNSEntry::postEvent);
+      submit_thread->schedule_imm_signal(this);
     }
-    if (!action.cancelled) {
-      Debug("dns", "called back continuation for %s", qname);
-      action.continuation->handleEvent(DNS_EVENT_LOOKUP, ent);
-    }
-    if (ent && freeable && ink_atomic_increment(&ent->ref_count, -1) == 1)
-      dnsProcessor.free_hostent(ent);
+    return 0;
   }
-  //
-  // Cancel the timeout and clear the mutex field
-  //
-  if (timeout)
-    timeout->cancel(this);
-  mutex = NULL;
   action.mutex = NULL;
+  mutex = NULL;
   dnsEntryAllocator.free(this);
   return 0;
 }
@@ -1181,6 +1175,8 @@ DNSEntry::postEvent(int event, Event * e)
   if (result_ent)
     if (ink_atomic_increment(&result_ent->ref_count, -1) == 1)
       dnsProcessor.free_hostent(result_ent);
+  action.mutex = NULL;
+  mutex = NULL;
   dnsEntryAllocator.free(this);
   return EVENT_DONE;
 }

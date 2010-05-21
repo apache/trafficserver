@@ -160,6 +160,7 @@ struct DNSEntry:Continuation
   int qname_len;
   char **domains;
   bool proxy_cache;
+  EThread *submit_thread;
 
 #ifdef DNS_PROXY
   bool proxy;
