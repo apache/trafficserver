@@ -466,9 +466,11 @@ parse_data(INKCont contp, INKIOBufferReader input_reader, int avail, int *tocons
   return 0;
 }
 
+//TODO: Use libc basename function
+//
 /*-------------------------------------------------------------------------
   strip_path
-  Utility func to strip path from a filename (= basename cmd on unix)
+  Utility func to strip path from a filename (= _basename cmd on unix)
   Input:
     filename
   Output :
@@ -477,7 +479,7 @@ parse_data(INKCont contp, INKIOBufferReader input_reader, int avail, int *tocons
     Filename with path stripped
   -------------------------------------------------------------------------*/
 static const char *
-basename(const char *filename)
+_basename(const char *filename)
 {
   char *cptr;
   const char *ptr = filename;
@@ -537,7 +539,7 @@ psi_include(INKCont contp, void *edata)
   /* For security reason, we do not allow to include files that are
      not in the directory <plugin_path>/include.
      Also include file cannot contain any path. */
-  sprintf(inc_file, "%s/%s", psi_directory, basename(data->psi_filename));
+  sprintf(inc_file, "%s/%s", psi_directory, _basename(data->psi_filename));
 
   /* Read the include file and copy content into iobuffer */
   if ((filep = INKfopen(inc_file, "r")) != NULL) {
