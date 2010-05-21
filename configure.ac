@@ -153,9 +153,6 @@ AC_ARG_ENABLE([debug],
   [enable_debug=no]
 )
 AC_MSG_RESULT([$enable_debug])
-AS_IF([test "x$enable_debug" = "xyes"],
-  [AC_DEFINE([DEBUG])]
-)
 
 #
 # Diags
@@ -319,14 +316,6 @@ AC_ARG_ENABLE([cli2],
 AC_MSG_RESULT([$enable_cli2])
 AS_IF([test "x$enable_cli2" = "xyes"],
   [AC_SUBST([CLI_DIR],[cli2])]
-)
-
-AC_ARG_WITH([architecture],
-  [AS_HELP_STRING([--with-architecture], [explicitly specify architecture for compiler])],
-  [with_architecture=$withval],
-  [with_architecture=no]
-)
-AS_IF([test "x$with_architecture" = "xyes"], [echo "--with-architecture needs an argument"; AS_EXIT()]
 )
 
 # Google profiler
@@ -555,12 +544,10 @@ AC_ARG_WITH(architecture, [AC_HELP_STRING([--with-architecture=ARCH],[use a spec
   fi
 ])
 
-AS_IF([test "x$cpu_architecture" != "x"],
-[
+if test "x$cpu_architecture" != "x"; then
   ATS_ADDTO(CFLAGS, [$cpu_architecture])
-  ATS_ADDTO(CXXFLAGS [$cpu_architecture])
-]
-)
+  ATS_ADDTO(CXXFLAGS, [$cpu_architecture])
+fi
 
 # GCC atomics
 AC_CACHE_CHECK([for gcc atomic builtins],[support_cv_atomic],
@@ -600,11 +587,12 @@ esac
     #  existing CFLAGS/CXXFLAGS if some special values had been set.
     #
 if test "x${enable_debug}" = "xyes" ;then
-    CFLAGS="${cc_oflag_dbg} ${CFLAGS}"
-    CXXFLAGS="${cxx_oflag_dbg} ${CXXFLAGS}"
+    ATS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
+    ATS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
+    ATS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
 else
-    CFLAGS="${cc_oflag_opt} ${CFLAGS}"
-    CXXFLAGS="${cxx_oflag_opt} ${CXXFLAGS}"
+    ATS_ADDTO(CFLAGS, [${cc_oflag_opt}])
+    ATS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
 fi
 
     #
