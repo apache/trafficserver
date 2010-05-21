@@ -302,7 +302,7 @@ CONFIG proxy.config.net.tcp_accept_defer_timeout INT 0
 #
 ##############################################################################
 CONFIG proxy.config.cluster.cluster_port INT 8086
-CONFIG proxy.config.cluster.ethernet_interface STRING eth0
+CONFIG proxy.config.cluster.ethernet_interface STRING @default_net_iface@
 ##############################################################################
 #
 # Cache

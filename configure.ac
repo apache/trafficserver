@@ -839,7 +839,7 @@ ATS_FLAG_HEADERS([google/profiler.h \
                   ], [], [])
 fi
 
-
+ATS_CHECK_DEFAULT_IFACE
 ATS_CHECK_GETHOSTBYNAME_R_STYLE
 
 #

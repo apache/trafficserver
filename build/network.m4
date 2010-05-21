@@ -85,3 +85,27 @@ if test "$ac_cv_gethostbyname_r_arg" = "hostent_data"; then
     AC_DEFINE(GETHOSTBYNAME_R_HOSTENT_DATA, 1, [Define if gethostbyname_r has the hostent_data for the third argument])
 fi
 ])
+
+dnl
+dnl ATS_CHECK_DEFAULT_IFACE: try to figure out default network interface
+dnl
+AC_DEFUN([ATS_CHECK_DEFAULT_IFACE], [
+default_net_iface=""
+AC_MSG_CHECKING([for default network interface])
+case $host_os in
+  linux*)
+    default_net_iface=[`/sbin/ifconfig | sed 's/^ *$/CRLF/g' | tr '\n' ' ' | sed 's/CRLF /\n/g' | grep -v LOOPBACK | grep 'UP.*RUNNING' | head -1 | awk '{ n=1; print $n; }' 2>/dev/null`]
+  ;;
+darwin* | freebsd* | solaris*)
+  default_net_iface=[`/sbin/ifconfig -a | grep 'UP.*RUNNING' | grep -v LOOPBACK | head -1 | awk -F: '{  n=1; print $n; }'`]
+  ;;
+esac
+if test "x$default_net_iface" = "x"; then
+  AC_MSG_RESULT([not found. Using default eth0])
+  default_net_iface=eth0
+else
+  AC_MSG_RESULT([$default_net_iface])
+fi
+AC_SUBST([default_net_iface])
+])
+dnl
