@@ -523,7 +523,8 @@ if test "x${GCC}" = "xyes"; then
   else
     case "$host_cpu" in
       x86_64 | amd64)
-        cpu_architecture="-march=native"
+        # XXX: Any need for 64-bit arch flags?
+        # cpu_architecture="-march=native"
       ;;
       *sparc*)
         cpu_architecture="-march=ultrasparc"
@@ -541,6 +542,8 @@ AC_ARG_WITH(architecture, [AC_HELP_STRING([--with-architecture=ARCH],[use a spec
   if test "x$withval" != "xyes" && test "x$withval" != "xno"; then
     case "$withval" in
       -*)
+        # TODO: In case we are cross compiling some of the provided flags
+        #       should be added to the LDFLAGS
         cpu_architecture="$withval"
       ;;
       *)
