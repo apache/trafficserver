@@ -509,11 +509,16 @@ AS_IF([test "x$with_architecture" != "xno"],
   [CFLAGS="$CFLAGS -march=$with_architecture"; CXXFLAGS="$CXXFLAGS -march=$with_architecture"]
 )
 
-AC_CHECK_SIZEOF(int *) # test for 64-bit pointers, this permits GCC CFLAGS=-m32 for 32-bit compiles on 64-bit systems
+dnl Checks for pointer size
+AC_CHECK_SIZEOF(void*, 4)
+
+if test "x$ac_cv_sizeof_voidp" == "x"; then
+    AC_ERROR([Cannot determine size of void*])
+fi
 
 # GCC: add a default march if there is not one set
 if test "x${GCC}" = "xyes"; then
- if test "${ac_cv_sizeof_int_p}" = "4"; then
+ if test "${ac_cv_sizeof_voidp}" = "4"; then
   case $CFLAGS in
     *\-march=*) : ;;
     *) CFLAGS="$CFLAGS -march=i586" ;;
@@ -535,17 +540,16 @@ return x;
 ]])],[support_cv_atomic="yes"],[support_cv_atomic="no"])])
 AM_CONDITIONAL([SUPPORT_ATOMICS],[test x$support_cv_atomic = xyes])
 
-# Feature Test Macros for the GNU C Library
-# http://www.gnu.org/s/libc/manual/html_node/Feature-Test-Macros.html
-AC_DEFINE([_FILE_OFFSET_BITS],64,
-  [Determines which file system interface shall be used.]
-)
-AC_DEFINE([_GNU_SOURCE],1,
-  [All extensions included: ISO C89, ISO C99, POSIX.1, POSIX.2, BSD, SVID, X/Open, LFS, and GNU extensions.]
-)
-AC_DEFINE([_REENTRANT],1,
-  [Reentrant version of several functions get declared.]
-)
+# 64-bit LFS support
+#
+ATS_ADDTO(CPPFLAGS, [-D_LARGEFILE64_SOURCE=1])
+if test "${ac_cv_sizeof_voidp}" = "8"; then
+  ATS_ADDTO(CPPFLAGS, [-D_COMPILE64BIT_SOURCE=1])
+else
+  ATS_ADDTO(CPPFLAGS, [-D_FILE_OFFSET_BITS=64])
+fi
+ATS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
+ATS_ADDTO(CPPFLAGS, [-D_REENTRANT])
 
 case $host_os in
   linux*)
