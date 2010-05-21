@@ -619,6 +619,11 @@ AC_CHECK_LIB([rt],[clock_gettime],[AC_SUBST([LIBRT],["-lrt"])])
 AC_CHECK_LIB([posix4],[clock_gettime],[AC_SUBST([LIBRT],["-lposix4"])])
 AC_CHECK_LIB([iconv],[iconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
 AC_CHECK_LIB([iconv],[libiconv_open],[AC_SUBST([LIBICONV],["-liconv"])])
+# TODO: We have --enable-libev but here we add it unconditionally
+#       making resulting binaries always linked to libev if present.
+#       Use a proper --with-libev and fail on --enable-libev and -lev
+#       is missing. Allow --with-libev=builtin? living in ./srclib/ev ?
+#
 AC_CHECK_LIB([ev],[ev_sleep],[AC_SUBST([LIBEV],["-lev"])])
 
 #
