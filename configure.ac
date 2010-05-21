@@ -33,7 +33,7 @@
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
 m4_define([ATS_VERSION_S],[2.1.1-unstable])
-m4_define([ATS_VERSION_N],[2001000])
+m4_define([ATS_VERSION_N],[2001001])
 
 AC_INIT([Apache Traffic Server], ATS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
@@ -62,6 +62,9 @@ ATS_VERSION_NUMBER=ATS_VERSION_N()
 AC_SUBST(ATS_LIBTOOL_VERSION)
 AC_SUBST(ATS_VERSION_STRING)
 AC_SUBST(ATS_VERSION_NUMBER)
+AC_SUBST(ATS_VERSION_MAJOR)
+AC_SUBST(ATS_VERSION_MINOR)
+AC_SUBST(ATS_VERSION_MICRO)
 
 #
 # Generate ./config.nice for reproducing runs of configure
@@ -79,45 +82,20 @@ ATS_ENABLE_LAYOUT(TrafficServer, [cachedir])
 # Reparse the configure arguments so we can override the layout.
 ATS_PARSE_ARGUMENTS
 
-
 #
 # Host detection
 #
-
 AC_CANONICAL_HOST
-
-case $host_os in
-  linux*)
-    AC_DEFINE_UNQUOTED([HOST_OS],[linux])
-    AC_DEFINE_UNQUOTED([linux],[1])
-    ;;
-  darwin*)
-    AC_DEFINE_UNQUOTED([HOST_OS],[darwin])
-    AC_DEFINE_UNQUOTED([darwin],[1])
-    ;;
-  freebsd*)
-    AC_DEFINE_UNQUOTED([HOST_OS],[freebsd])
-    AC_DEFINE_UNQUOTED([freebsd],[1])
-    ;;
-  solaris*)
-    AC_DEFINE_UNQUOTED([HOST_OS],[solaris])
-    AC_DEFINE_UNQUOTED([solaris],[1])
-    ;;
-  *)
-    AC_DEFINE_UNQUOTED([HOST_OS],[unknown])
-    ;;
-esac
 
 #
 # Build environment
 #
-
 build_person="`id -nu`"
 build_group="`id -ng`"
 build_machine="`uname -n`"
 AC_SUBST([build_machine])
-AC_DEFINE_UNQUOTED(BUILD_PERSON, "$build_person")
-AC_DEFINE_UNQUOTED(BUILD_MACHINE, "$build_machine")
+AC_SUBST([build_person])
+AC_SUBST([build_group])
 
 AC_ARG_WITH([user],
   [AS_HELP_STRING([--with-user],[specify the system user])],
@@ -572,20 +550,30 @@ ATS_ADDTO(CPPFLAGS, [-D_REENTRANT])
 case $host_os in
   linux*)
     EXTRA_CXX_LDFLAGS="-rdynamic"
+    HOST_OS=linux
     ;;
   darwin*)
+    HOST_OS=darwin
+    ;;
+  freebsd*)
+    EXTRA_CXX_LDFLAGS="-rdynamic"
+    HOST_OS=freebsd
     ;;
   solaris*)
+    HOST_OS=solaris
     ;;
   *)
     EXTRA_CXX_LDFLAGS="-rdynamic"
+    HOST_OS=unknown
    ;;
 esac
+ATS_ADDTO(CPPFLAGS, [-D$HOST_OS])
+AC_SUBST(HOST_OS)
 
-    #
-    # _Here_ is where we go ahead and add the _optimizations_ to already
-    #  existing CFLAGS/CXXFLAGS if some special values had been set.
-    #
+#
+# _Here_ is where we go ahead and add the _optimizations_ to already
+#  existing CFLAGS/CXXFLAGS if some special values had been set.
+#
 if test "x${enable_debug}" = "xyes" ;then
   ATS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
   ATS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
@@ -926,6 +914,7 @@ AC_CONFIG_FILES([iocore/hostdb/Makefile])
 AC_CONFIG_FILES([iocore/Makefile])
 AC_CONFIG_FILES([iocore/net/Makefile])
 AC_CONFIG_FILES([iocore/utils/Makefile])
+AC_CONFIG_FILES([libinktomi++/ink_config.h])
 AC_CONFIG_FILES([libinktomi++/Makefile])
 AC_CONFIG_FILES([librecords/Makefile])
 AC_CONFIG_FILES([Makefile])
@@ -997,10 +986,6 @@ AC_CONFIG_FILES([example/app-template/records.config])
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
 
-AH_TEMPLATE([HOST_OS],[Host used for built.])
-AH_TEMPLATE([BUILD_MACHINE],[Machine used for built.])
-AH_TEMPLATE([BUILD_PERSON],[User that built the package.])
-AH_TEMPLATE([DEBUG],[Define to 1 if compiling with debugging support.])
 AH_TEMPLATE([HAVE_DEMANGLE],[Compiling with demangle support.])
 AH_TEMPLATE([HTTP_CACHE],[Compiling with HTTP cache support.])
 AH_TEMPLATE([INKDISKAIO],[Define to 1 if Disk AIO is supported.])
