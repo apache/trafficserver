@@ -810,7 +810,7 @@ ATS_FLAG_HEADERS([sys/epoll.h \
                   net/ppp_defs.h \
                   ], [], [])
 
-ATS_FLAG_HEADERS([netinet/ip.h], [], [],
+AC_CHECK_HEADERS([netinet/ip.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -819,7 +819,7 @@ ATS_FLAG_HEADERS([netinet/ip.h], [], [],
                    #endif
                  ]])
 
-ATS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
+AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
