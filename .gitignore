@@ -17,7 +17,6 @@
 /configure
 /tags
 /stamp-h1
-/config.h
 
 build/aux/
 build/libtool.m4
@@ -31,6 +30,8 @@ config.log
 config.status
 config.nice
 doc/Doxyfile
+libinktomi++/ink_autoconf.h
+libinktomi++/ink_config.h
 libinktomi++/CompileParseRules
 libinktomi++/ParseRulesCType
 libinktomi++/ParseRulesCTypeToLower
