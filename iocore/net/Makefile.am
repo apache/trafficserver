@@ -19,12 +19,10 @@
 if STANDALONE_IOCORE
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/libinktomi++ \
-  -I$(top_srcdir)/librecords 
+  -I$(top_srcdir)/librecords
 else
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/libinktomi++ \
   -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/mgmt2/preparse \

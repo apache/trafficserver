@@ -20,7 +20,7 @@
 SUBDIRS = remote
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/libinktomi++ \
+  $(iocore_include_dirs) \
   -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/cli \
@@ -32,8 +32,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/iocore \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
-  -I$(top_srcdir)/proxy/mgmt2/api2 \
-  $(iocore_include_dirs)
+  -I$(top_srcdir)/proxy/mgmt2/api2
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)

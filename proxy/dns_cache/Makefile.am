@@ -17,8 +17,8 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/librecords \
   $(iocore_include_dirs) \
+  -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/http2 \
   -I$(top_srcdir)/proxy/mgmt2 \
@@ -26,8 +26,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/proxy/logging \
-  -I$(top_srcdir)/libinktomi++
+  -I$(top_srcdir)/proxy/logging
 
 noinst_LIBRARIES = libdnscache.a
 

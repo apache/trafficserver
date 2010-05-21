@@ -18,7 +18,7 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/libinktomi++ \
+  $(iocore_include_dirs) \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/cli \
   -I$(top_srcdir)/proxy/mgmt2/cluster \
@@ -26,7 +26,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/proxy \
-  $(iocore_include_dirs) \
   -DPKGSYSUSER=\"$(pkgsysuser)\"
 
 MGMT_DEFS = @MGMT_DEFS@

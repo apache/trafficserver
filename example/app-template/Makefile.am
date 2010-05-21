@@ -14,12 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS =   -I$(top_srcdir)/libinktomi++ \
-                -I$(iocore_include_dirs) \
-                -I$(top_srcdir)/librecords \
-                -I$(top_srcdir)/proxy
-#                -I$(top_srcdir)/proxy/hdrs
-#                -I$(top_srcdir)/proxy/logging
+AM_CPPFLAGS = -I$(iocore_include_dirs) \
+              -I$(top_srcdir)/librecords \
+              -I$(top_srcdir)/proxy
+#             -I$(top_srcdir)/proxy/hdrs
+#             I$(top_srcdir)/proxy/logging
 
 
 DEFS += @IOCORE_MODULARIZED_DEFS@

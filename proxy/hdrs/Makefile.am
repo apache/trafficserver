@@ -24,11 +24,10 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/proxy/logging \
-  -I$(top_srcdir)/libinktomi++
+  -I$(top_srcdir)/proxy/logging
 
 noinst_LIBRARIES = libhdrs.a
-EXTRA_PROGRAMS = load_http_hdr 
+EXTRA_PROGRAMS = load_http_hdr
 
 # Http library source files.
 libhdrs_a_SOURCES = \

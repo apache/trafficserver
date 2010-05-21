@@ -18,13 +18,12 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/libinktomi++ \
+  $(iocore_include_dirs) \
   -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/api2 \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  $(iocore_include_dirs)
+  -I$(top_srcdir)/proxy/mgmt2
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
