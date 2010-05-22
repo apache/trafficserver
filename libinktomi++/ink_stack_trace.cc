@@ -120,7 +120,8 @@ void
 ink_stack_trace_dump(int sighandler_frame)
 {
   const char msg[] = "ink_stack_trace_dump not implemented on this operating system\n";
-  write(2, msg, sizeof(msg) - 1);
+  if (write(2, msg, sizeof(msg) - 1)) == -1)
+      return;
 }
 
 #endif  /* !(HAVE_EXECINFO_H && AST_HAS_BACKTRACE) */
