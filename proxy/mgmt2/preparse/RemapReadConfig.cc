@@ -29,7 +29,6 @@
  *
  ****************************************************************************/
 
-#include "ink_config.h"
 #include "ink_platform.h"
 #include "ink_string.h"
 #include "ink_file.h"

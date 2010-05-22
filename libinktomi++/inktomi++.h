@@ -37,8 +37,6 @@
 #if !defined (_inktomiplus_h_)
 #define	_inktomiplus_h_
 
-#include "ink_config.h"
-
 #ifdef __cplusplus
 extern "C"
 {

@@ -67,7 +67,6 @@
 
 #if !defined (_WIN32)
 
-#include "ink_config.h"
 #include "ink_platform.h"
 
 #include <sys/types.h>

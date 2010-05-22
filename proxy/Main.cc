@@ -30,6 +30,8 @@
 
  ****************************************************************************/
 
+#include "ink_config.h"
+
 #include "inktomi++.h"
 #if !defined(linux)
 #include <sys/lock.h>

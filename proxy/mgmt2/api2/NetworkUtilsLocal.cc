@@ -30,7 +30,6 @@
  *
  ***************************************************************************/
 
-#include "ink_config.h"
 #include "ink_platform.h"
 #include "ink_sock.h"
 #include "Diags.h"
