@@ -66,20 +66,20 @@
 #if ATS_HAVE_NETINET_TCP_H
 # include <netinet/tcp.h>
 #endif
-#ifdef ATS_HAVE_NETINET_IP_H
+#if ATS_HAVE_NETINET_IP_H
 # include <netinet/ip.h>
 #endif
 #if ATS_HAVE_NETINET_IP_ICMP_H
 # include <netinet/ip_icmp.h>
 #endif
 #include <netdb.h>
-#ifdef ATS_HAVE_ARPA_INET_H
+#if ATS_HAVE_ARPA_INET_H
 # include <arpa/inet.h>
 #endif
-#ifdef ATS_HAVE_ARPA_NAMESER_H
+#if ATS_HAVE_ARPA_NAMESER_H
 # include <arpa/nameser.h>
 #endif
-#ifdef ATS_HAVE_ARPA_NAMESER_COMPAT_H
+#if ATS_HAVE_ARPA_NAMESER_COMPAT_H
 # include <arpa/nameser_compat.h>
 #endif
 
@@ -165,12 +165,12 @@ typedef unsigned int in_addr_t;
 #endif
 
 #if !defined(darwin)
-#ifdef HAVE_SYS_SYSCTL_H
+# if ATS_HAVE_SYS_SYSCTL_H
 #  include <sys/sysctl.h>
 # endif
 #endif
-#ifdef HAVE_SYS_SYSTEMINFO_H
-#  include <sys/systeminfo.h>
+#if ATS_HAVE_SYS_SYSTEMINFO_H
+# include <sys/systeminfo.h>
 #endif
 
 #include <dlfcn.h>
