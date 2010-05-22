@@ -55,21 +55,38 @@
 #include <sys/socket.h>
 #include <sys/mman.h>
 
-#include <netinet/in.h>
-#include <netinet/in_systm.h>
-#include <netinet/tcp.h>
+#if ATS_HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif
+#if ATS_HAVE_NETINET_IN_SYSTM_H
+# include <netinet/in_systm.h>
+#endif
+#if ATS_HAVE_NETINET_TCP_H
+# include <netinet/tcp.h>
+#endif
+#ifdef ATS_HAVE_NETINET_IP_H
+# include <netinet/ip.h>
+#endif
+#if ATS_HAVE_NETINET_IP_ICMP_H
+# include <netinet/ip_icmp.h>
+#endif
 #include <netdb.h>
-
-#include <arpa/inet.h>
-#include <arpa/nameser.h>
-#include <signal.h>
-
-#ifdef HAVE_SIGINFO_H
-#include <siginfo.h>
+#ifdef ATS_HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif
+#ifdef ATS_HAVE_ARPA_NAMESER_H
+# include <arpa/nameser.h>
+#endif
+#ifdef ATS_HAVE_ARPA_NAMESER_COMPAT_H
+# include <arpa/nameser_compat.h>
 #endif
 
-#ifdef HAVE_WAIT_H
-#include <wait.h>
+#include <signal.h>
+#if ATS_HAVE_SIGINFO_H
+# include <siginfo.h>
+#endif
+#if ATS_HAVE_WAIT_H
+# include <wait.h>
 #endif
 
 #include <syslog.h>
@@ -86,24 +103,24 @@
 #endif
 
 
-#ifdef HAVE_VALUES_H
-#include <values.h>
+#if ATS_HAVE_VALUES_H
+# include <values.h>
 #endif
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
+#if ATS_HAVE_ALLOCA_H
+# include <alloca.h>
 #endif
 
 #include <errno.h>
 #include <dirent.h>
 
-#ifdef HAVE_CPIO_H
-#include <cpio.h>
+#if ATS_HAVE_CPIO_H
+# include <cpio.h>
 #endif
 
 struct ifafilt;
 #include <net/if.h>
 
-#ifdef HAVE_STROPTS_H
+#if ATS_HAVE_STROPTS_H
 #include <stropts.h>
 #endif
 
@@ -115,41 +132,21 @@ struct ifafilt;
 #define __STDC__ 0
 #endif
 
-#ifdef HAVE_NETINET_IN_H
-  #include <netinet/in.h>
+#if ATS_HAVE_MACHINE_ENDIAN_H
+# include <machine/endian.h>
+#endif
+#if ATS_HAVE_ENDIAN_H
+# include <endian.h>
+#endif
+#if ATS_HAVE_SYS_BYTEORDER_H
+# include <sys/byteorder.h>
 #endif
 
-#ifdef HAVE_NETINET_IP_H
-  #include <netinet/ip.h>
+#if ATS_HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
 #endif
-
-#ifdef HAVE_NETINET_IN_SYSTM_H
-  #include <netinet/in_systm.h>
-#endif
-
-#ifdef HAVE_NETINET_IP_ICMP_H
-  #include <netinet/ip_icmp.h>
-#endif
-
-#ifdef HAVE_MACHINE_ENDIAN_H
-#  include <machine/endian.h>
-#endif
-
-#ifdef HAVE_ENDIAN_H
-#  include <endian.h>
-#endif
-
-#ifdef HAVE_SYS_IOCTL_H
-#  include <sys/ioctl.h>
-#endif
-
-
-#ifdef HAVE_SYS_BYTEORDER_H
-#  include <sys/byteorder.h>
-#endif
-
-#ifdef HAVE_SYS_SOCKIO_H
-#  include <sys/sockio.h>
+#if ATS_HAVE_SYS_SOCKIO_H
+# include <sys/sockio.h>
 #endif
 
 #include <resolv.h>
@@ -159,38 +156,27 @@ struct ifafilt;
 typedef unsigned int in_addr_t;
 #endif
 
-#ifdef HAVE_SYS_SYSINFO_H
-#  include <sys/sysinfo.h>
+#if ATS_HAVE_SYS_SYSINFO_H
+# include <sys/sysinfo.h>
 #endif
 
 #if !defined(darwin)
 #ifdef HAVE_SYS_SYSCTL_H
 #  include <sys/sysctl.h>
+# endif
 #endif
-#endif
-
 #ifdef HAVE_SYS_SYSTEMINFO_H
 #  include <sys/systeminfo.h>
 #endif
 
 #include <dlfcn.h>
 
-#ifdef HAVE_ARPA_INET_H
-#  include <arpa/inet.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_H
-#  include <arpa/nameser.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_COMPAT_H
-#  include <arpa/nameser_compat.h>
+#if ATS_HAVE_MATH_H
+# include <math.h>
 #endif
 
-#ifdef HAVE_MATH_H
-#include <math.h>
-#endif
-
-#ifdef HAVE_SYS_SYSMACROS_H
-#include <sys/sysmacros.h>
+#if ATS_HAVE_SYS_SYSMACROS_H
+# include <sys/sysmacros.h>
 #endif
 
 #ifndef PATH_NAME_MAX

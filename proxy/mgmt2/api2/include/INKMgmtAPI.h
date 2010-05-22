@@ -54,11 +54,10 @@
 #endif
 
 #if !defined(linux)
-
 #if defined (__SUNPRO_CC) || (defined (__GNUC__) || ! defined(__cplusplus))
-
 #if !defined (bool)
 #if !defined(darwin) && !defined(freebsd) && !defined(solaris)
+// XXX: What other platforms are there?
 #define bool int
 #endif
 #endif

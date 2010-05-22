@@ -414,9 +414,9 @@ NetHandler::mainNetEvent(int event, Event *e)
       read_ready_list.remove(vc);
 #if defined(solaris)
       if (vc->read.triggered && vc->write.enabled) {
-	vc->ep.modify(-EVENTIO_READ);
-	vc->ep.refresh(EVENTIO_WRITE);
-	vc->writeReschedule(this);
+        vc->ep.modify(-EVENTIO_READ);
+        vc->ep.refresh(EVENTIO_WRITE);
+        vc->writeReschedule(this);
       }
 #endif
     }
@@ -434,9 +434,9 @@ NetHandler::mainNetEvent(int event, Event *e)
       write_ready_list.remove(vc);
 #if defined(solaris)
       if (vc->write.triggered && vc->read.enabled) {
-	vc->ep.modify(-EVENTIO_WRITE);
-	vc->ep.refresh(EVENTIO_READ);
-	vc->readReschedule(this);
+        vc->ep.modify(-EVENTIO_WRITE);
+        vc->ep.refresh(EVENTIO_READ);
+        vc->readReschedule(this);
       }
 #endif
     }

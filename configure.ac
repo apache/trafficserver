@@ -781,12 +781,10 @@ ATS_FLAG_HEADERS([sys/epoll.h \
                   sys/systeminfo.h \
                   netinet/in.h \
                   netinet/in_systm.h \
+                  netinet/tcp.h \
                   sys/ioctl.h \
                   sys/byteorder.h \
                   sys/sockio.h \
-                  sys/sysctl.h \
-                  sys/sysinfo.h \
-                  sys/systeminfo.h \
                   arpa/inet.h \
                   arpa/nameser.h \
                   arpa/nameser_compat.h \
@@ -812,11 +810,9 @@ AC_SUBST(sys_epollh)
 AC_SUBST(sys_eventh)
 AC_SUBST(machine_endianh)
 AC_SUBST(endianh)
-AC_SUBST(sys_sysinfoh)
-AC_SUBST(sys_sysctlh)
-AC_SUBST(sys_systeminfoh)
 AC_SUBST(netinet_inh)
 AC_SUBST(netinet_in_systmh)
+AC_SUBST(netinet_tcph)
 AC_SUBST(sys_ioctlh)
 AC_SUBST(sys_byteorderh)
 AC_SUBST(sys_sockioh)

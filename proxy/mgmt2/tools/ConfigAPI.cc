@@ -66,6 +66,7 @@
 int
 Config_GetHostname(char *hostname, size_t hostname_len)
 {
+  // TODO: Use #if defined(linux) instead
 #if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   return (Net_GetHostname(hostname, hostname_len));
 #else

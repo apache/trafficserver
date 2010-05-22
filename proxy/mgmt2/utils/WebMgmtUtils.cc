@@ -27,7 +27,7 @@
 #include "BaseRecords.h"
 #include "RecordsConfig.h"
 
-#ifdef HAVE_PCRE_PCRE_H
+#if ATS_HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
 #else
 #include <pcre.h>

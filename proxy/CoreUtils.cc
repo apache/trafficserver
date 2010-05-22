@@ -133,6 +133,7 @@ int program_counter = 0;
 #endif  // linux check
 
 #if defined(darwin) || defined(freebsd) || defined(solaris) // FIXME: solaris x86
+// TODO: Cleanup multiple includes
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

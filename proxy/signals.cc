@@ -51,6 +51,7 @@
 struct obj_list *ObjList;
 #endif
 
+// TODO: Use a proper HAVE_PROFILER
 #ifdef HAVE_PROFILER
 #include <google/profiler.h>
 #endif
@@ -301,6 +302,7 @@ signal_handler(int sig, siginfo_t * t, void *c)
   //
   if (t) {
     if (t->si_code <= 0) {
+      // TODO: Use UID_FMT_T instead duplicating code
 #if defined(solaris)
       snprintf(sig_msg, sizeof(sig_msg), "NOTE: Traffic Server received User Sig %d from pid: %d uid: %d\n",
                sig, (int)t->si_pid, (int)t->si_uid);

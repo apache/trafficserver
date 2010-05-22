@@ -37,6 +37,7 @@
 #include <stdint.h>
 #endif
 
+// XXX: We don't have sunos in configure
 #if defined(sunos)
 #include <sys/inttypes.h>
 #endif

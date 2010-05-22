@@ -77,6 +77,7 @@
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 
+// TODO: Use positive instead negative selection
 #if !defined(linux) && !defined(darwin) && !defined(freebsd) && !defined(solaris)
 extern "C"
 {
@@ -129,6 +130,8 @@ const char *recs_conf = "records.config";
 int fds_limit;
 
 typedef void (*PFV) (int);
+// TODO: Use positive instead negative selection
+//       Thsis should just be #if defined(solaris)
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 void SignalHandler(int sig, siginfo_t * t, void *f);
 void SignalAlrmHandler(int sig, siginfo_t * t, void *f);
@@ -159,6 +162,7 @@ check_lockfile()
   } else {
     char *reason = strerror(-err);
     if (err == 0) {
+      // TODO: Add PID_FMT_T instead duplicating code just for printing
 #if defined(solaris)
       fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, (int)holding_pid);
 #else
@@ -387,9 +391,9 @@ max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = t
     if (rl.rlim_cur != rl.rlim_max) {
 #if defined(darwin)
       if (which == RLIMIT_NOFILE)
-	rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
+        rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
       else
-	rl.rlim_cur = rl.rlim_max;
+        rl.rlim_cur = rl.rlim_max;
 #else
       rl.rlim_cur = rl.rlim_max;
 #endif

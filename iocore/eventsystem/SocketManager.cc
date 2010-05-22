@@ -32,6 +32,7 @@
 #endif
 
 #if defined(solaris)
+// XXX: Those are already included from ink_platform.h!!!
 #include <sys/types.h>
 #include <sys/mman.h>
 extern "C" int madvise(caddr_t, size_t, int); // FIXME: why is this not being found

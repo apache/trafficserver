@@ -26,6 +26,7 @@
 #include "I_Version.h"
 
 #if defined(linux)
+// XXX: Nuke multiple includes
 #include "sys/utsname.h"
 #include "ink_killall.h"
 #include <sys/types.h>
@@ -226,6 +227,8 @@ sig_child(int signum)
 #endif
 }
 
+// TODO: Use positive instead negative checks
+//       This should be #if defined(solaris)
 static void
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 sig_fatal(int signum, siginfo_t * t, void *c)

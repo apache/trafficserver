@@ -2551,6 +2551,7 @@ checkBackDoor(int req_fd, char *message)
     mgmt_writeline(req_fd, reply, strlen(reply));
 
 #if !defined(_WIN32)
+    // XXX: Again multiple code caused by misssing PID_T_FMT
 #if defined(solaris)
     snprintf(reply, sizeof(reply), "\twatched_process_fd: %d  watched_process_pid: %ld\n",
              lmgmt->watched_process_fd, lmgmt->watched_process_pid);

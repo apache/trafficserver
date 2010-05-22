@@ -47,6 +47,7 @@ struct ifafilt;
 #endif
 
 #if defined(linux)
+// TODO: Cleanup multiple includes
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/if_ether.h>

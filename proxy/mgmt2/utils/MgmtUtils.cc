@@ -572,7 +572,7 @@ mgmt_cleanup()
 #endif
 }
 
-#ifndef _WIN32
+#if !defined(_WIN32)
 static inline int
 get_interface_mtu(int sock_fd, struct ifreq *ifr)
 {
@@ -596,7 +596,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
   if (intrName == NULL) {
     return false;
   }
-#ifndef _WIN32
+#if !defined(_WIN32)
 
   int fakeSocket;               // a temporary socket to pass to ioctl
   struct sockaddr_in *tmp;      // a tmp ptr for addresses

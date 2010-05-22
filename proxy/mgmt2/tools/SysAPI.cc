@@ -25,7 +25,7 @@
 #include "inktomi++.h"
 #include "I_Layout.h"
 
-#ifdef HAVE_PCRE_PCRE_H
+#if ATS_HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
 #else
 #include <pcre.h>
@@ -2545,7 +2545,7 @@ Net_SetNIC_IP(char *interface, char *nic_ip)
 {
   //int status;
   // XXX: Why this test?
-  //      We are inside #define(solaris)
+  //      We are inside #define host_os == solaris
   //
 #if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   char nic_boot[80], nic_protocol[80], nic_netmask[80], nic_gateway[80], old_ip[80];
@@ -2565,7 +2565,7 @@ int
 Net_SetNIC_Netmask(char *interface, char *nic_netmask)
 {
   // XXX: Why this test?
-  //      We are inside #define (solaris)
+  //      We are inside #define host_os == solaris
   //
 #if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_gateway[80];
@@ -2584,7 +2584,7 @@ int
 Net_SetNIC_Gateway(char *interface, char *nic_gateway)
 {
   // XXX: Why this test?
-  //      We are inside #define (solaris)
+  //      We are inside #define host_os == solaris
   //
 #if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80];

@@ -33,6 +33,7 @@
 
 #include <assert.h>
 #if defined(linux)
+// XXX: SHouldn't that be part of CPPFLAGS?
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif

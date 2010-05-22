@@ -23,6 +23,7 @@
 
 #include "ink_config.h"
 #include <stdio.h>
+// XXX: HP-UX ??? Not part of configure supported hosts
 #if defined(hpux)
 #include <dl.h>
 #endif

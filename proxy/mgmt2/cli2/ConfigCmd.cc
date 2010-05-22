@@ -4622,6 +4622,7 @@ pos_after_string(char *haystack, const char *needle)
 int
 getnetparms(char *ipnum, char *mask)
 {
+  // TODO: Use detected values from configure
 #define BUFFLEN 256
 #if defined(linux)
 #define interface_name "eth0"

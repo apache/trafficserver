@@ -82,6 +82,7 @@
   struct fastIO_split_rule
   {
     struct fastIO_session *splitTo;
+    // XXX: We don't have sunos in configure
 #if defined(sunos)
     /* FIXME: for other platfroms */
     queue_t *dst_queue;         /*internal use only */

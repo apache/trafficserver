@@ -50,6 +50,7 @@
 #if defined(solaris)
 #include <netdb.h>
 #else
+// XXX: This is just nonsense!!!
 #include "/usr/include/netdb.h" // need following instead of <netdb.h>
 #endif
 

@@ -65,7 +65,7 @@ struct core_stack_state
 #ifdef USE_LIBEV
 #undef EV_NONE
 #endif
-#include "../libinktomi++/DynArray.h"
+#include "DynArray.h"
 
 #define SP_REGNUM 15            /* Contains address of top of stack USP */
 #define PC_REGNUM 12            /* Contains program counter EIP */

@@ -436,6 +436,7 @@ Store::write_config_data(int fd)
 
 
 #if defined(freebsd) || defined(darwin) || defined(solaris)
+// TODO: Those are probaply already included from the ink_platform.h
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/param.h>
@@ -619,6 +620,7 @@ Lfail:
 #endif
 
 #if defined(linux)
+// TODO: Axe extra includes
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>

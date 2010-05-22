@@ -1496,10 +1496,6 @@ handle_select_system_logs(WebHttpContext * whc, char *tag, char *arg)
   // define the name of syslog in different OS
 #if defined(linux)
   syslog = "messages";
-#endif
-
-// define the path of syslog in different OS
-#if defined(linux)
   syslog_path = "/var/log/";
 #endif
 

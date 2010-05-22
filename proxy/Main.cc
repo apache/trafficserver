@@ -325,9 +325,9 @@ max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = t
     if (rl.rlim_cur != rl.rlim_max) {
 #if defined(darwin)
       if (which == RLIMIT_NOFILE)
-	rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
+        rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
       else
-	rl.rlim_cur = rl.rlim_max;
+        rl.rlim_cur = rl.rlim_max;
 #else
       rl.rlim_cur = rl.rlim_max;
 #endif

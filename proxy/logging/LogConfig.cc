@@ -30,10 +30,10 @@
 #include "inktomi++.h"
 #include "I_Layout.h"
 
-#ifdef HAVE_SYS_PARAM_H
+#if ATS_HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_MOUNT_H
+#if ATS_HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
 

@@ -28,7 +28,7 @@
  *
  ****************************************************************/
 
-#include "../api2/include/INKMgmtAPI.h"
+#include "INKMgmtAPI.h"
 #include <tcl.h>
 #include "createArgument.h"
 #include "definitions.h"

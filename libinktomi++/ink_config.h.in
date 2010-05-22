@@ -46,11 +46,9 @@
 #define ATS_HAVE_SYS_EVENT_H            @sys_eventh@
 #define ATS_HAVE_MACHINE_ENDIAN_H       @machine_endianh@
 #define ATS_HAVE_ENDIAN_H               @endianh@
-#define ATS_HAVE_SYS_SYSINFO_H          @sys_sysinfoh@
-#define ATS_HAVE_SYS_SYSCTL_H           @sys_sysctlh@
-#define ATS_HAVE_SYS_SYSTEMINFO_H       @sys_systeminfoh@
 #define ATS_HAVE_NETINET_IN_H           @netinet_inh@
 #define ATS_HAVE_NETINET_IN_SYSTM_H     @netinet_in_systmh@
+#define ATS_HAVE_NETINET_TCP_H          @netinet_tcph@
 #define ATS_HAVE_SYS_IOCTL_H            @sys_ioctlh@
 #define ATS_HAVE_SYS_BYTEORDER_H        @sys_byteorderh@
 #define ATS_HAVE_SYS_SOCKIO_H           @sys_sockioh@
