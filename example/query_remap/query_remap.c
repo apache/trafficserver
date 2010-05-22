@@ -120,7 +120,8 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
   INKDebug(PLUGIN_NAME, "tsremap_remap request: %.*s", rri->orig_url_size, rri->orig_url);
 
   if (rri && rri->request_query && rri->request_query_size > 0) {
-    char *q, *s, *key;
+    char *q, *key;
+    char *s = NULL;
 
     /* make a copy of the query, as it is read only */
     q = (char*) INKmalloc(rri->request_query_size+1);
