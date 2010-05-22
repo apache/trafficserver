@@ -25,7 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(freebsd) && !defined(darwin)
 #include <malloc.h>
 #endif
 #include <assert.h>
@@ -89,7 +89,7 @@ create_queue()
   if (!new_val)
     return NULL;
 
-#if (HOST_OS == darwin)
+#if defined(darwin)
   static int qnum = 0;
   char sname[NAME_MAX];
   qnum++;
@@ -150,7 +150,7 @@ enqueue(LLQ * Q, void *data)
   if (Q->len > Q->highwater)
     Q->highwater = Q->len;
   ink_mutex_release(&(Q->mux));
-#if (HOST_OS == darwin)
+#if defined(darwin)
   ink_sem_post(Q->sema);
 #else
   ink_sem_post(&(Q->sema));
@@ -221,7 +221,7 @@ dequeue(LLQ * Q)
 {
   LLQrec * rec;
   void *d;
-#if (HOST_OS == darwin)
+#if defined(darwin)
   ink_sem_wait(Q->sema);
 #else
   ink_sem_wait(&(Q->sema));

@@ -26,7 +26,7 @@
 
 #include "inktomi++.h"
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
 #include "ink_killall.h"
 #include "ink_resource.h"

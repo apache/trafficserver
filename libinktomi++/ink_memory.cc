@@ -32,7 +32,7 @@
 #include "inktomi++.h"
 
 #include <assert.h>
-#if (HOST_OS == linux)
+#if defined(linux)
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif
@@ -299,7 +299,7 @@ ink_memalign(size_t alignment, size_t size)
 #endif
   return (ptr);
 #else
-#if (HOST_OS == freebsd) || (HOST_OS == darwin)
+#if defined(freebsd) || defined(darwin)
   /*
    * DEC malloc calims to align for "any allocatable type",
    * and the following code checks that.

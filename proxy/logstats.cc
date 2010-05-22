@@ -35,7 +35,7 @@
 
 #include <math.h>
 #include <sys/utsname.h>
-#if (HOST_OS == solaris)
+#if defined(solaris)
 #include <sys/types.h>
 #include <unistd.h>
 #endif

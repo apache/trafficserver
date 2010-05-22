@@ -71,7 +71,7 @@ ink_mutex_init(ink_mutex * m, const char *name)
 {
   (void) name;
 
-#if (HOST_OS == solaris)
+#if defined(solaris)
   if ( pthread_mutex_init(m, NULL) != 0 ) {
     abort();
   }

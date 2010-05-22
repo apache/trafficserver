@@ -41,7 +41,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -80,7 +80,7 @@ main(int argc, char **argv)
   } else if (argc == 2) {
     start = atoi(argv[1]);
     for (;;) {
-#if (HOST_OS == linux)
+#if defined(linux)
       union semun semun_dummy;
       if ((tmp = semget(start, 1, 0666)) < 0 || semctl(tmp, 1, IPC_RMID, semun_dummy) < 0) {
 #else
@@ -94,7 +94,7 @@ main(int argc, char **argv)
   start = atoi(argv[1]);
   end = atoi(argv[2]);
   for (int i = start; i < end; i++) {
-#if (HOST_OS == linux)
+#if defined(linux)
     union semun semun_dummy;
     if ((tmp = semget(i, 1, 0666)) < 0 || semctl(tmp, 1, IPC_RMID, semun_dummy) < 0) {
 #else

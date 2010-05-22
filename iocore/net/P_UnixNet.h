@@ -410,7 +410,7 @@ accept_error_seriousness(int res)
     return 1;
   case -EMFILE:
   case -ENOMEM:
-#if (HOST_OS != freebsd)
+#if !defined(freebsd)
   case -ENOSR:
 #endif
     ink_assert(!"throttling misconfigured: set too high");
@@ -424,7 +424,7 @@ accept_error_seriousness(int res)
   case -EINTR:
     ink_assert(!"should be handled at a lower level");
     return 0;
-#if (HOST_OS != freebsd)
+#if !defined(freebsd)
   case -EPROTO:
 #endif
   case -EOPNOTSUPP:
@@ -443,7 +443,7 @@ check_transient_accept_error(int res)
   if (!last_transient_accept_error || t - last_transient_accept_error > TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY) {
     last_transient_accept_error = t;
     Warning("accept thread received transient error: errno = %d", -res);
-#if (HOST_OS == linux)
+#if defined(linux)
     if (res == -ENOBUFS || res == -ENFILE)
       Warning("errno : %d consider a memory upgrade", -res);
 #endif

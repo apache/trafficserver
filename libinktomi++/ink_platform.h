@@ -155,7 +155,7 @@ struct ifafilt;
 #include <resolv.h>
 
 
-#if (HOST_OS == linux)
+#if defined(linux)
 typedef unsigned int in_addr_t;
 #endif
 
@@ -163,7 +163,7 @@ typedef unsigned int in_addr_t;
 #  include <sys/sysinfo.h>
 #endif
 
-#if (HOST_OS != darwin)
+#if !defined(darwin)
 #ifdef HAVE_SYS_SYSCTL_H
 #  include <sys/sysctl.h>
 #endif

@@ -94,7 +94,7 @@ struct StatFloatSamples
 #endif
 
 // Urgly workaround -- no optimization in HPUX
-#if (HOST_OS == hpux)
+#if defined(hpux)
 #define inline
 #endif
 

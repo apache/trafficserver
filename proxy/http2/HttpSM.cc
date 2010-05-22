@@ -49,7 +49,7 @@
 //#include "HttpAuthParams.h"
 #include "congest/Congestion.h"
 
-#if (HOST_OS == solaris) && !defined(__GNUC__)
+#if defined(solaris) && !defined(__GNUC__)
 #include <string>
 #endif
 
@@ -289,7 +289,7 @@ HttpVCTable::cleanup_all()
 #define __REMEMBER(x)  #x
 #define _REMEMBER(x)   __REMEMBER(x)
 
-#if (HOST_OS == winnt)
+#if defined(_WIN32)
 // Proper macro expansion is beyond Visual C++
 #define RECORD_FILE_LINE() \
 history[pos].fileline = __FILE__; \
@@ -1463,7 +1463,7 @@ HttpSM::state_api_callout(int event, void *data)
         if(prev_hook_stats_enabled && prev_hook_start_time) {
           INK64 time_in_plugin_ms = (curr_time - prev_hook_start_time)/1000000;
           prev_hook_stats.inc(time_in_plugin_ms);
-          Debug("http", "[%b64d] Time spent in plugin %s = %b64d", 
+          Debug("http", "[%b64d] Time spent in plugin %s = %b64d",
                 sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
         }
 
@@ -1552,11 +1552,11 @@ HttpSM::state_api_callout(int event, void *data)
     // Handle last plugin on current state
     if(prev_hook_stats_enabled && prev_hook_start_time) {
       INK64 time_in_plugin_ms = (INKhrtime() - prev_hook_start_time)/1000000;
-      Debug("http", "[%b64d] Last plugin : Time spent : %s %b64d", 
+      Debug("http", "[%b64d] Last plugin : Time spent : %s %b64d",
             sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
       prev_hook_stats.inc(time_in_plugin_ms);
     }
-    
+
     // Get ready for next state
     prev_hook_stats_enabled = false;
     prev_hook_start_time = 0;
@@ -6690,7 +6690,7 @@ HttpSM::dump_state_on_assert()
   for (int i = 0; i < hist_size; i++) {
     int r = history[i].reentrancy;
     int e = history[i].event;
-#if (HOST_OS == winnt)
+#if defined(_WIN32)
     // Visual C++ preprocessor is unable to stringify __LINE__
     //   so we have to waste a ton a memory and store it
     //   as an integer

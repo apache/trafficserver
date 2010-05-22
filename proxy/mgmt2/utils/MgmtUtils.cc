@@ -165,7 +165,7 @@ mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
       switch (errno) {
       case EINTR:
       case EAGAIN:
-#if (HOST_OS == hpux)
+#if defined(hpux)
       case EWOULDBLOCK:
 #endif
         mgmt_sleep_msec(1);
@@ -207,7 +207,7 @@ mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
       switch (errno) {
       case EINTR:
       case EAGAIN:
-#if (HOST_OS == hpux)
+#if defined(hpux)
       case EWOULDBLOCK:
 #endif
         mgmt_sleep_msec(1);
@@ -304,7 +304,7 @@ mgmt_write_pipe(HANDLE hpipe, char *data, int nbytes)
 void
 mgmt_blockAllSigs()
 {
-#if (HOST_OS != linux) && !defined(_WIN32)
+#if !defined(linux) && !defined(_WIN32)
   // Start by blocking all signals
   sigset_t allSigs;             // Set of all signals
   sigfillset(&allSigs);
@@ -580,7 +580,7 @@ get_interface_mtu(int sock_fd, struct ifreq *ifr)
     mgmt_log(stderr, "[getAddrForIntr] Unable to obtain MTU for " "interface '%s'", ifr->ifr_name);
     return 0;
   } else
-#if (HOST_OS == solaris) || (HOST_OS == hpux)
+#if defined(solaris) || defined(hpux)
     return ifr->ifr_metric;
 #else
     return ifr->ifr_mtu;
@@ -662,7 +662,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
         }
       }
     }
-#if (HOST_OS == freebsd) || (HOST_OS == darwin)
+#if defined(freebsd) || defined(darwin)
     ifr = (struct ifreq *) ((char *) &ifr->ifr_addr + ifr->ifr_addr.sa_len);
 #else
     ifr = (struct ifreq *) (((char *) ifr) + sizeof(*ifr));

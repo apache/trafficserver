@@ -145,7 +145,7 @@ mgmt_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * errorfds, st
   // mgmt_select call will still timeout correctly, rather than
   // possibly extending our timeout period by up to
   // MGMT_MAX_TRANSIENT_ERRORS times.
-#if (HOST_OS == linux)
+#if defined(linux)
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
     r =::select(nfds, readfds, writefds, errorfds, timeout);

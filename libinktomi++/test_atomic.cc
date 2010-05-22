@@ -207,7 +207,7 @@ main(int argc, const char *argv[])
       pthread_attr_t attr;
 
       pthread_attr_init(&attr);
-#if (HOST_OS != freebsd)
+#if !defined(freebsd)
       pthread_attr_setstacksize(&attr, 1024 * 1024);
 #endif
       ink_assert(pthread_create(&tid, &attr, testalist, (void *) ali) == 0);

@@ -50,7 +50,7 @@
 #include "EventControlMain.h"
 #include "MgmtPlugin.h"
 
-#if (HOST_OS != linux)
+#if !defined(linux)
 // Solaris header files forget this one
 extern "C"
 {
@@ -393,7 +393,7 @@ newUNIXsocket(char *fpath)
 
   serv_addr.sun_family = AF_UNIX;
   ink_strncpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
-#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+#if defined(darwin) || defined(freebsd)
   servlen = sizeof(struct sockaddr_un);
 #else
   servlen = strlen(serv_addr.sun_path) + sizeof(serv_addr.sun_family);
@@ -551,10 +551,10 @@ serviceThrReaper(void *arg)
           // socket will give up
           shutdown(wGlobals.serviceThrArray[i].fd, 0);
 
-#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(freebsd) && !defined(darwin)
           ink_thread_cancel(wGlobals.serviceThrArray[i].threadId);
 #endif
-#if (HOST_OS == darwin)
+#if defined(darwin)
           ink_sem_post(wGlobals.serviceThrCount);
 #else
           ink_sem_post(&wGlobals.serviceThrCount);
@@ -571,7 +571,7 @@ serviceThrReaper(void *arg)
     ink_mutex_release(&wGlobals.serviceThrLock);
 
     for (int j = 0; j < numJoined; j++) {
-#if (HOST_OS == darwin)
+#if defined(darwin)
       ink_sem_post(wGlobals.serviceThrCount);
 #else
       ink_sem_post(&wGlobals.serviceThrCount);
@@ -612,7 +612,7 @@ webIntr_main(void *x)
   int overseerPort = -1;
   int rafEnabled = -1;
   int rafPort = -1;
-#if (HOST_OS != linux)
+#if !defined(linux)
   sigset_t allSigs;             // Set of all signals
 #endif
   char *cliPath = NULL;         // UNIX: socket path for cli
@@ -637,7 +637,7 @@ webIntr_main(void *x)
   // No Warning
   x = x;
 
-#if (HOST_OS != linux)
+#if !defined(linux)
   // Start by blocking all signals
   sigfillset(&allSigs);
   ink_thread_sigsetmask(SIG_SETMASK, &allSigs, NULL);
@@ -654,7 +654,7 @@ webIntr_main(void *x)
   //initFrameBindings();
 
   // Set up the threads management
-#if (HOST_OS == darwin)
+#if defined(darwin)
   static int qnum = 0;
   char sname[NAME_MAX];
   qnum++;
@@ -1008,7 +1008,7 @@ webIntr_main(void *x)
     } else {
       ink_assert(!"[webIntrMain] Error on mgmt_select()\n");
     }
-#if (HOST_OS == darwin)
+#if defined(darwin)
     ink_sem_wait(wGlobals.serviceThrCount);
 #else
     ink_sem_wait(&wGlobals.serviceThrCount);
@@ -1028,7 +1028,7 @@ webIntr_main(void *x)
     // coverity[noescape]
     if ((clientFD = mgmt_accept(acceptFD, (sockaddr *) clientInfo, &addrLen)) < 0) {
       mgmt_log(stderr, "[WebIntrMain]: %s%s\n", "Accept on incoming connection failed: ", strerror(errno));
-#if (HOST_OS == darwin)
+#if defined(darwin)
       ink_sem_post(wGlobals.serviceThrCount);
 #else
       ink_sem_post(&wGlobals.serviceThrCount);
@@ -1078,7 +1078,7 @@ webIntr_main(void *x)
 #endif
         ) {
         mgmt_log("WARNING: connect by disallowed client %s, closing\n", inet_ntoa(clientInfo->sin_addr));
-#if (HOST_OS == darwin)
+#if defined(darwin)
         ink_sem_post(wGlobals.serviceThrCount);
 #else
         ink_sem_post(&wGlobals.serviceThrCount);
@@ -1108,7 +1108,7 @@ webIntr_main(void *x)
               wGlobals.serviceThrArray[i].threadId = 0;
               wGlobals.serviceThrArray[i].fd = -1;
               close_socket(clientFD);
-#if (HOST_OS == darwin)
+#if defined(darwin)
               ink_sem_post(wGlobals.serviceThrCount);
 #else
               ink_sem_post(&wGlobals.serviceThrCount);

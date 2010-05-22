@@ -38,7 +38,6 @@
 #define ATS_VERSION_MINOR               @ATS_VERSION_MINOR@
 #define ATS_VERSION_MICRO               @ATS_VERSION_MICRO@
 
-#define HOST_OS                         @HOST_OS@
 #define BUILD_MACHINE                  "@build_machine@"
 #define BUILD_PERSON                   "@build_person@"
 #define BUILD_GROUP                    "@build_group@"

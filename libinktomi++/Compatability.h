@@ -56,16 +56,16 @@ template<class T> T max(const T a, const T b)
 // If you the gethostbyname() routines on your system are automatically
 // re-entrent (as in Digital Unix), define the following
 //
-#if (HOST_OS == linux)
+#if defined(linux)
 #define NEED_ALTZONE_DEFINED
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED)
-#elif (HOST_OS == darwin)
+#elif defined(darwin)
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED)
 #else
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED | MAP_NORESERVE)
 #endif
 
-#if (HOST_OS == darwin)
+#if defined(darwin)
 typedef uint32_t in_addr_t;
 #endif
 

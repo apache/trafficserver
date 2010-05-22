@@ -39,14 +39,14 @@
 #define _ink_bool_h_
 
 
-#if (HOST_OS != linux)
+#if !defined(linux)
 
 #if (defined (__GNUC__) || ! defined(__cplusplus))
 /*
  * bool, true, and false already declared in C++
  */
 #if !defined (bool)
-#if (HOST_OS != freebsd) && (HOST_OS != solaris)
+#if !defined(freebsd) && !defined(solaris)
 #define bool int
 #endif
 #endif

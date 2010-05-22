@@ -1097,7 +1097,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         // Startup the periodic events to process entries in
         //  external_incoming_control.
 
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
         int procs_online = 1;
 #else
         int procs_online = sysconf(_SC_NPROCESSORS_ONLN);

@@ -775,7 +775,7 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
     memset(&wvec[1], 0, sizeof(iovec));
     int bytes_this_write, vcnt = 1;
 
-#if (HOST_OS == solaris)
+#if defined(solaris)
     wvec[0].iov_base = (caddr_t) data;
 #else
     wvec[0].iov_base = (void *) data;
@@ -783,7 +783,7 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
     wvec[0].iov_len = (size_t) len;
 
     if (data[len - 1] != '\n') {
-#if (HOST_OS == solaris)
+#if defined(solaris)
       wvec[1].iov_base = (caddr_t) "\n";
 #else
       wvec[1].iov_base = (void *) "\n";

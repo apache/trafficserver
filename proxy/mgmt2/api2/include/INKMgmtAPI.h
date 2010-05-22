@@ -53,12 +53,12 @@
 #define inkimp
 #endif
 
-#if (HOST_OS != linux)
+#if !defined(linux)
 
 #if defined (__SUNPRO_CC) || (defined (__GNUC__) || ! defined(__cplusplus))
 
 #if !defined (bool)
-#if (HOST_OS != darwin) && (HOST_OS != freebsd) && (HOST_OS != solaris)
+#if !defined(darwin) && !defined(freebsd) && !defined(solaris)
 #define bool int
 #endif
 #endif

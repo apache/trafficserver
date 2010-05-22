@@ -40,13 +40,13 @@
 
 
 #ifndef _KERNEL
-#if (HOST_OS == sunos)
+#if defined(sunos)
 #include <thread.h>
 #include <synch.h>
 #endif
 #endif
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <sys/types.h>
 typedef u_int32_t uint32_t;
 #endif
@@ -83,7 +83,7 @@ typedef u_int32_t uint32_t;
     uint32_t *flist1;
     uint32_t *activefl;
     int nextflentry;
-#if (HOST_OS == sunos)
+#if defined(sunos)
     /* FIXME: for other platfroms */
     mutex_t mem_mutex;
 #endif
@@ -107,7 +107,7 @@ typedef u_int32_t uint32_t;
 
   };
 
-#if (HOST_OS == sunos)
+#if defined(sunos)
 
 /*
  * Initialize the fastIO system and create a state cookie

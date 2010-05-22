@@ -47,7 +47,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#if (HOST_OS == solaris)
+#if defined(solaris)
 #include <netdb.h>
 #else
 #include "/usr/include/netdb.h" // need following instead of <netdb.h>
@@ -135,7 +135,7 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
 #endif
     struct tm res;
     struct tm *tms = ink_localtime_r((const time_t *) &timestamp, &res);
-#if (HOST_OS == freebsd) || (HOST_OS == darwin)
+#if defined(freebsd) || defined(darwin)
     long zone = -tms->tm_gmtoff;        // double negative!
 #else
     long zone = (tms->tm_isdst > 0) ? altzone : timezone;

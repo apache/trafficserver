@@ -36,7 +36,7 @@
 #include <signal.h>
 #include <sys/stat.h>
 
-#if (HOST_OS != freebsd)
+#if !defined(freebsd)
 #include <stropts.h>
 #endif
 

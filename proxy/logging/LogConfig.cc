@@ -39,12 +39,12 @@
 
 #include <dirent.h>
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <sys/statfs.h>
-#elif (HOST_OS == solaris)
+#elif defined(solaris)
 #include <sys/statfs.h>
 #include <sys/statvfs.h>
-#elif (HOST_OS != freebsd)
+#elif !defined(freebsd)
 #include <sys/statvfs.h>
 #endif  // linux
 
@@ -72,7 +72,7 @@
 #include "LogCollationAccept.h"
 #endif
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <sys/vfs.h>
 #else
 extern "C"
@@ -1758,7 +1758,7 @@ LogConfig::update_space_used()
   // Now check the partition to see if there is enough *actual* space.
   //
   partition_space_left = m_partition_space_left;
-#if (HOST_OS == solaris)
+#if defined(solaris)
   struct statvfs fs;
   ::memset(&fs, 0, sizeof(fs));
   int ret =::statvfs(logfile_dir, &fs);

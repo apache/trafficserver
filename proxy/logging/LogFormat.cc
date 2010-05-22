@@ -123,7 +123,7 @@ int32 LogFormat::id_from_name(const char *name)
     INK_MD5
       name_md5;
     name_md5.encodeBuffer(name, (int)::strlen(name));
-#if (HOST_OS == linux)
+#if defined(linux)
     /* Mask most signficant bit so that return value of this function
      * is not sign extended to be a negative number.
      * This problem is only known to occur on Linux which

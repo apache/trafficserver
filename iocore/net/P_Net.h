@@ -130,7 +130,7 @@ do { \
                                        NET_SYSTEM_MODULE_MINOR_VERSION, \
                                        PRIVATE_MODULE_HEADER)
 // libev backend flags
-#if (HOST_OS == solaris)
+#if defined(solaris)
 #define LIBEV_BACKEND_LIST (EVBACKEND_POLL | EVBACKEND_SELECT) // Level-Triggered
 #else
   #define LIBEV_BACKEND_LIST 0 /* auto */

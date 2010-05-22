@@ -1013,9 +1013,9 @@ computeXactMax()
   RecInt maxXact = 0;
   int err = REC_ERR_FAIL;
 
-#if (HOST_OS == hpux)
+#if defined(hpux)
   numCPU = pthread_num_processors_np();
-#elif (HOST_OS == freebsd)
+#elif defined(freebsd)
   numCPU = 1;
 #else
   numCPU = sysconf(_SC_NPROCESSORS_ONLN);

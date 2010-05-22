@@ -2883,7 +2883,7 @@ char *
 get_rmserver_path()
 {
   char *path = NULL;
-#if (HOST_OS == linux)
+#if defined(linux)
 
   FILE *rec_file;
   int i = 0, num_args = 0;
@@ -2932,7 +2932,7 @@ get_rmserver_path()
 inkapi INKError rm_change_ip(int cnt, char **ip)
 {
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
   int status;
   char rmserver_path[512], rmserver_path1[512];
@@ -3030,7 +3030,7 @@ inkapi INKError rm_change_ip(int cnt, char **ip)
 inkapi INKError rm_remove_ip(int cnt, char **ip)
 {
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
   int i, status, flag;
   char rmserver_path[512], rmserver_path1[512];
@@ -3127,7 +3127,7 @@ inkapi INKError rm_remove_ip(int cnt, char **ip)
 inkapi INKError rm_change_hostname(INKString hostname)
 {
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
   char rmserver_path[512], rmserver_path1[512];
   char buf[1024], temp[512];
@@ -3284,7 +3284,7 @@ closeAllFds()
 inkapi INKError rm_start_proxy()
 {
 
-#if (HOST_OS == linux)
+#if defined(linux)
   static time_t rm_last_stop = 0;
 
   time_t time_diff = time(NULL) - rm_last_stop;

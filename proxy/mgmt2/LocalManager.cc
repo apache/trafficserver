@@ -83,7 +83,7 @@ LocalManager::mgmtShutdown(int status, bool mainThread)
 
     if (processRunning()) {
       waitpid(watched_process_pid, &status, 0);
-#if (HOST_OS == linux)
+#if defined(linux)
       /* Avert race condition, wait for the thread to complete,
          before getting one more restart process */
       /* Workaround for bugid INKqa10060 */
@@ -500,7 +500,7 @@ LocalManager::initMgmtProcessServer()
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sun_family = AF_UNIX;
   ink_strncpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
-#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+#if defined(darwin) || defined(freebsd)
   servlen = sizeof(struct sockaddr_un);
 #else
   servlen = strlen(serv_addr.sun_path) + sizeof(serv_addr.sun_family);

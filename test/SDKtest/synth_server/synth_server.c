@@ -56,7 +56,7 @@
 #include <assert.h>
 #include "api/ServerAPI.h"
 
-#if (HOST_OS != hpux)
+#if !defined(hpux)
 #include <dlfcn.h>
 #endif
 
@@ -164,7 +164,7 @@ char *Xstring;
   }
 */
 
-#if (HOST_OS == hpux)
+#if defined(hpux)
 #include <dl.h>
 #define RTLD_NOW BIND_IMMEDIATE
 

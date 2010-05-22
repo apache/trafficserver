@@ -48,7 +48,7 @@
 int
 main(int argc, char *argv[])
 {
-#if (HOST_OS == linux)
+#if defined(linux)
   struct tm *mPtr;
   struct timeval v;
   FILE *fp, *tmp;

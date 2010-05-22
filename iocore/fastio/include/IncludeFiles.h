@@ -33,25 +33,25 @@
 
 #include <sys/types.h>
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <stdint.h>
 #endif
 
-#if (HOST_OS == sunos)
+#if defined(sunos)
 #include <sys/inttypes.h>
 #endif
 
 #include <sys/socket.h>
 
 #ifndef _KERNEL
-#if (HOST_OS == sunos)
+#if defined(sunos)
 #include <thread.h>
 #include <synch.h>
 #endif
 #endif
 
 #include <stropts.h>
-#if (HOST_OS == sunos)
+#if defined(sunos)
 #include <sys/stream.h>
 #endif
 

@@ -156,7 +156,7 @@ ts_connect()
   memset(&client_sock, 0, sizeof(sockaddr_un));
   client_sock.sun_family = AF_UNIX;
   ink_strncpy(client_sock.sun_path, main_socket_path, sizeof(client_sock.sun_path));
-#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+#if defined(darwin) || defined(freebsd)
   sockaddr_len = sizeof(sockaddr_un);
 #else
   sockaddr_len = sizeof(client_sock.sun_family) + strlen(client_sock.sun_path);
@@ -181,7 +181,7 @@ ts_connect()
   memset(&client_event_sock, 0, sizeof(sockaddr_un));
   client_event_sock.sun_family = AF_UNIX;
   ink_strncpy(client_event_sock.sun_path, event_socket_path, sizeof(client_sock.sun_path));
-#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+#if defined(darwin) || defined(freebsd)
   sockaddr_len = sizeof(sockaddr_un);
 #else
   sockaddr_len = sizeof(client_event_sock.sun_family) + strlen(client_event_sock.sun_path);

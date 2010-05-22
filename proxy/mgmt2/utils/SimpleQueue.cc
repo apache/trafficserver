@@ -51,7 +51,7 @@
 SimpleQueue::SimpleQueue()
 {
   ink_mutex_init(&accessLock, "SimpleQueue Lock");
-#if (HOST_OS == darwin)
+#if defined(darwin)
   static int qnum = 0;
   char sname[NAME_MAX];
   qnum++;
@@ -86,7 +86,7 @@ SimpleQueue::~SimpleQueue()
   }
 
   ink_mutex_destroy(&accessLock);
-#if (HOST_OS == darwin)
+#if defined(darwin)
   ink_sem_close(waitSema);
 #else
   ink_sem_destroy(&waitSema);
@@ -106,7 +106,7 @@ SimpleQueue::dequeue()
   void *data;
 
   // Wait for something to be on the queue
-#if (HOST_OS == darwin)
+#if defined(darwin)
   ink_sem_wait(waitSema);
 #else
   ink_sem_wait(&waitSema);
@@ -147,7 +147,7 @@ SimpleQueue::pop()
   void *data;
 
   // Wait for something to be on the queue
-#if (HOST_OS == darwin)
+#if defined(darwin)
   ink_sem_wait(waitSema);
 #else
   ink_sem_wait(&waitSema);
@@ -203,7 +203,7 @@ SimpleQueue::enqueue(void *data)
   }
 
   ink_mutex_release(&accessLock);
-#if (HOST_OS == darwin)
+#if defined(darwin)
   ink_sem_post(waitSema);
 #else
   ink_sem_post(&waitSema);

@@ -77,7 +77,7 @@ MgmtDBM::mgmt_batch_open()
     }
     if (status == -1) {
 
-#if (HOST_OS == linux)
+#if defined(linux)
       union semun dummy_semun;
       holding_pid = semctl(mgmt_sem_id, 0, GETPID, dummy_semun);
       current_val = semctl(mgmt_sem_id, 0, GETVAL, dummy_semun);

@@ -122,7 +122,7 @@ lwpTable default_lwpTable = { 0, 0 };
 DynArray<struct lwpTable>arrayLwp(&default_lwpTable, 0);
 #endif /* sparc */
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include "CoreUtils.h"
 
 #define __p_type p_type         //ugly hack? - see resolv.h
@@ -132,7 +132,7 @@ int framepointer = 0;
 int program_counter = 0;
 #endif  // linux check
 
-#if (HOST_OS == darwin) || (HOST_OS == freebsd) || (HOST_OS == solaris) // FIXME: solaris x86
+#if defined(darwin) || defined(freebsd) || defined(solaris) // FIXME: solaris x86
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -454,7 +454,7 @@ CoreUtils::find_stuff(StuffTest_f f)
 
 /* Linux Specific functions */
 
-#if (HOST_OS == linux)
+#if defined(linux)
 // copies stack info for the thread's base frame to the given
 // core_stack_state pointer
 void
@@ -734,7 +734,7 @@ CoreUtils::process_HttpSM(HttpSM * core_ptr)
       last_seen_http_sm = core_ptr;
 
       if (is_debug_tag_set("magic")) {
-#if (HOST_OS == linux)
+#if defined(linux)
         printf("\n*****match-ALIVE*****\n");
 #endif
 #if defined(sparc)
@@ -754,7 +754,7 @@ CoreUtils::process_HttpSM(HttpSM * core_ptr)
       printf("------------------------------------------------\n\n\n");
     } else if (http_sm->magic == HTTP_SM_MAGIC_DEAD) {
       if (is_debug_tag_set("magic")) {
-#if (HOST_OS == linux)
+#if defined(linux)
         printf("\n*****match-DEAD*****\n");
 #endif
 #if defined(sparc)
@@ -1025,7 +1025,7 @@ CoreUtils::dump_history(HttpSM * hsm)
 
     fileline = (fileline != NULL) ? fileline : xstrdup("UNKNOWN");
 
-#if (HOST_OS == winnt)
+#if defined(_WIN32)
     // Visual C++ preprocessor is unable to stringify __LINE__
     //   so we have to waste a ton a memory and store it
     //   as an integer
@@ -1075,7 +1075,7 @@ CoreUtils::process_EThread(EThread * eth_test)
 
     // This is not 64-bit correct. /leif
     printf("----------- EThread @ 0x%p ----------\n", eth_test);
-#if (HOST_OS == freebsd) || (HOST_OS == darwin)
+#if defined(freebsd) || defined(darwin)
     printf("   thread_id: %p\n", loaded_eth->tid);
 #else
     printf("   thread_id: %i\n", (int) loaded_eth->tid);
@@ -1455,7 +1455,7 @@ CoreUtils::load_string(const char *addr)
 }
 
 // parses core file
-#if (HOST_OS == linux)
+#if defined(linux)
 void
 process_core(char *fname)
 {
@@ -1809,7 +1809,7 @@ process_core(char *fname)
 }
 #endif /* sparc */
 
-#if (HOST_OS != linux) && !defined(sparc)
+#if !defined(linux) && !defined(sparc)
 void
 process_core(char *fname)
 {

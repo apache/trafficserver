@@ -122,7 +122,7 @@ extern "C"
 
   int64 ink_atomic_swap64(pvint64 mem, int64 value);
 
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
 
   static inline int ink_atomic_cas(pvint32 mem, int old, int new_value)
   {
@@ -167,7 +167,7 @@ extern "C"
 
 /* Atomic 64-bit compare and swap
    THIS IS NOT DEFINED for x86 */
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
 
   static inline int ink_atomic_cas64(pvint64 az, int64 ax, int64 ay)
   {

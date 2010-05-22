@@ -30,7 +30,7 @@
 
 #include "ink_config.h"
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
 /*-------------------------------------------------------------------------
    ink_killall

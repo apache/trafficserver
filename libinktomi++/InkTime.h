@@ -47,7 +47,7 @@ enum
 inkcoreapi int ink_gmtime_r(const ink_time_t * clock, struct tm *res);
 ink_time_t convert_tm(const struct tm *tp);
 
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
 
 inline int
 ink_timezone()

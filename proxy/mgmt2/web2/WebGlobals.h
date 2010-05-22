@@ -108,7 +108,7 @@ struct WebInterFaceGlobals
 {
   ink_mutex serviceThrLock;
   ink_mutex submitLock;
-#if (HOST_OS == darwin)
+#if defined(darwin)
   ink_sem *serviceThrCount;
 #else
   ink_sem serviceThrCount;

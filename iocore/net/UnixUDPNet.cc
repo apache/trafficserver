@@ -39,7 +39,7 @@ inkcoreapi ClassAllocator<UDPWorkContinuation> udpWorkContinuationAllocator("udp
 
 EventType ET_UDP;
 
-#if (HOST_OS == linux) && !defined(DEBUG)
+#if defined(linux) && !defined(DEBUG)
 #define NODIAGS
 #endif
 
@@ -1084,7 +1084,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal * p, int32 pktLen)
   }
 
   Debug("udp-send", "Sending 0x%x", p);
-#if (HOST_OS != solaris)
+#if !defined(solaris)
   msg.msg_control = 0;
   msg.msg_controllen = 0;
   msg.msg_flags = 0;

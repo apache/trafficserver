@@ -45,7 +45,7 @@ typedef struct llq_s
   LLQrec * head, *tail, *free;
   unsigned long len, highwater;
     ink_mutex mux;
-#if (HOST_OS == darwin)
+#if defined(darwin)
   ink_sem *sema;
 #else /* !darwin */
   ink_sem sema;

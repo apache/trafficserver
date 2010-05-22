@@ -316,7 +316,7 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
   }
 #endif
   if (sem_ent) {
-#if (HOST_OS == darwin)
+#if defined(darwin)
     static int qnum = 0;
     char sname[NAME_MAX];
     int retval;
@@ -1011,7 +1011,7 @@ DNSProcessor::getby(const char *x, int len, int type,
   else
     e->handleEvent(EVENT_IMMEDIATE, 0);
   if (wait) {
-#if (HOST_OS == darwin)
+#if defined(darwin)
     ink_sem_wait(e->sem);
 #else
     ink_sem_wait(&e->sem);
@@ -1138,7 +1138,7 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
   if (sem_ent) {
     // If this call was synchronous, post to the semaphore
     *sem_ent = ent;
-#if (HOST_OS == darwin)
+#if defined(darwin)
     ink_sem_post(sem);
 #else
     ink_sem_post(&sem);

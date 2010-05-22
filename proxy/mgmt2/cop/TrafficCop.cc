@@ -25,7 +25,7 @@
 #include "I_Layout.h"
 #include "I_Version.h"
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include "sys/utsname.h"
 #include "ink_killall.h"
 #include <sys/types.h>
@@ -64,7 +64,7 @@ static char cop_lockfile[PATH_MAX];
 static char manager_lockfile[PATH_MAX];
 static char server_lockfile[PATH_MAX];
 
-#if (HOST_OS == linux)
+#if defined(linux)
 static bool check_memory_required = false;
 #endif
 static int check_memory_min_swapfree_kb = 10240;
@@ -227,7 +227,7 @@ sig_child(int signum)
 }
 
 static void
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
 sig_fatal(int signum, siginfo_t * t, void *c)
 #else
 sig_fatal(int signum)
@@ -236,7 +236,7 @@ sig_fatal(int signum)
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering sig_fatal(%d)\n", signum);
 #endif
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   if (t) {
     if (t->si_code <= 0) {
       cop_log(COP_FATAL, "cop received fatal user signal [%d] from"
@@ -247,7 +247,7 @@ sig_fatal(int signum)
   } else {
 #endif
     cop_log(COP_FATAL, "cop received fatal signal [%d]\n", signum);
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   }
 #endif
 #ifdef TRACE_LOG_COP
@@ -257,7 +257,7 @@ sig_fatal(int signum)
 }
 
 static void
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
 sig_alarm_warn(int signum, siginfo_t * t, void *c)
 #else
 sig_alarm_warn(int signum)
@@ -295,7 +295,7 @@ set_alarm_death()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering set_alarm_death()\n");
 #endif
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   action.sa_handler = NULL;
   action.sa_sigaction = sig_fatal;
   sigemptyset(&action.sa_mask);
@@ -320,7 +320,7 @@ set_alarm_warn()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering set_alarm_warn()\n");
 #endif
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   action.sa_handler = NULL;
   action.sa_sigaction = sig_alarm_warn;
   sigemptyset(&action.sa_mask);
@@ -446,7 +446,7 @@ transient_error(int error, int wait_ms)
 #ifdef ENOBUFS
   case ENOBUFS:
 #endif
-#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(freebsd) && !defined(darwin)
   case ENOSR:
 #endif
     if (wait_ms)
@@ -723,7 +723,7 @@ spawn_manager()
     if (err < 0) {
       break;
     }
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
     err = semctl(err, 1, IPC_RMID);
 #else
     union semun dummy_semun;
@@ -1417,7 +1417,7 @@ check_programs()
   Lockfile manager_lf(manager_lockfile);
   err = manager_lf.Open(&holding_pid);
   chown_file_to_user(manager_lockfile, admin_user);
-#if (HOST_OS == linux)
+#if defined(linux)
   // if lockfile held, but process doesn't exist, killall and try again
   if (err == 0) {
     if (kill(holding_pid, 0) == -1) {
@@ -1509,7 +1509,7 @@ check_programs()
 
     Lockfile server_lf(server_lockfile);
     err = server_lf.Open(&holding_pid);
-#if (HOST_OS == linux)
+#if defined(linux)
     // if lockfile held, but process doesn't exist, killall and try again
     if (err == 0) {
       if (kill(holding_pid, 0) == -1) {
@@ -1549,7 +1549,7 @@ check_memory()
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering check_memory()\n");
 #endif
-#if (HOST_OS == linux)
+#if defined(linux)
   if (check_memory_required) {
     FILE *fp;
     char buf[LINE_MAX];
@@ -1728,14 +1728,14 @@ init_signals()
   // these signals arrive in order to generate a core. There is some
   // difficulty with generating core files when linking with libthread
   // under solaris.
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   action.sa_handler = NULL;
   action.sa_sigaction = sig_fatal;
 #else
   action.sa_handler = sig_fatal;
 #endif
   sigemptyset(&action.sa_mask);
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   action.sa_flags = SA_SIGINFO;
 #else
   action.sa_flags = 0;
@@ -1746,7 +1746,7 @@ init_signals()
   sigaction(SIGFPE, &action, NULL);
   sigaction(SIGBUS, &action, NULL);
   sigaction(SIGSEGV, &action, NULL);
-#if (HOST_OS != linux)
+#if !defined(linux)
   sigaction(SIGEMT, &action, NULL);
   sigaction(SIGSYS, &action, NULL);
 #endif
@@ -1876,7 +1876,7 @@ init()
   init_lockfiles();
   check_lockfile();
 
-#if (HOST_OS == linux)
+#if defined(linux)
   struct utsname buf;
   if (uname(&buf) >= 0) {
     if (strncmp(buf.release, "2.2.", 4) == 0) {
@@ -1918,7 +1918,7 @@ main(int argc, char *argv[])
   signal(SIGTTIN, SIG_IGN);
 
   setsid();                     // Important, thanks Vlad. :)
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
   setpgrp(0,0);
 #else
   setpgrp();

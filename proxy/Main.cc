@@ -31,17 +31,17 @@
  ****************************************************************************/
 
 #include "inktomi++.h"
-#if (HOST_OS != linux)
+#if !defined(linux)
 #include <sys/lock.h>
 #endif
 #include <sys/resource.h>
-#if (HOST_OS == linux)
+#if defined(linux)
 extern "C" int plock(int);
 #else
 #include <sys/filio.h>
 #endif
 #include <syslog.h>
-#if (HOST_OS != darwin) && (HOST_OS != freebsd) && (HOST_OS != solaris)
+#if !defined(darwin) && !defined(freebsd) && !defined(solaris)
 #include <mcheck.h>
 #endif
 
@@ -282,7 +282,7 @@ ArgumentDescription argument_descriptions[] = {
   {"clear_cache", 'K', "Clear Cache on Startup", "F",
    &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
   {"vingid", 'v', "Vingid Flag", "S255", vingid_flag, "PROXY_VINGID", NULL},
-#if (HOST_OS == linux)
+#if defined(linux)
   {"read_core", 'c', "Read Core file", "S255",
    &core_file, NULL, NULL},
 #endif
@@ -314,7 +314,7 @@ max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = t
 {
   struct rlimit rl;
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #  define MAGIC_CAST(x) (enum __rlimit_resource)(x)
 #else
 #  define MAGIC_CAST(x) x
@@ -323,7 +323,7 @@ max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = t
   if (max_it) {
     ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
     if (rl.rlim_cur != rl.rlim_max) {
-#if (HOST_OS == darwin)
+#if defined(darwin)
       if (which == RLIMIT_NOFILE)
 	rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
       else
@@ -410,7 +410,7 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
-#if (HOST_OS == solaris)
+#if defined(solaris)
       fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
 #else
       fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);
@@ -1092,7 +1092,7 @@ parse_accept_fd_list()
   return accept_array;
 }
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <sys/prctl.h>
 #endif
 
@@ -1117,7 +1117,7 @@ set_core_size(const char *name, RecDataT data_type, RecData data, void *opaque_t
     if (setrlimit(RLIMIT_CORE, &lim) < 0) {
       failed = true;
     }
-#if (HOST_OS == linux)
+#if defined(linux)
 #ifndef PR_SET_DUMPABLE
 #define PR_SET_DUMPABLE 4
 #endif
@@ -1174,7 +1174,7 @@ init_ink_memalign_heap(void)
 static void
 adjust_sys_settings(void)
 {
-#if (HOST_OS == linux)
+#if defined(linux)
   struct rlimit lim;
   int mmap_max = -1;
   int fds_throttle = -1;
@@ -1613,7 +1613,7 @@ change_uid_gid(const char *user)
 {
   struct passwd pwbuf;
   struct passwd *pwbufp = NULL;
-#if (HOST_OS == freebsd) // TODO: investigate sysconf(_SC_GETPW_R_SIZE_MAX)) failure
+#if defined(freebsd) // TODO: investigate sysconf(_SC_GETPW_R_SIZE_MAX)) failure
   long buflen = 1024; // or 4096?
 #else
   long buflen = sysconf(_SC_GETPW_R_SIZE_MAX);

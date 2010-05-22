@@ -2297,7 +2297,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
     Debug("remap_plugin", "New remap plugin info created for \"%s\"", c);
 
     if ((pi->dlh = dlopen(c, RTLD_NOW)) == NULL) {
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
       err = (char *)dlerror();
 #else
       err = dlerror();

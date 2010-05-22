@@ -173,7 +173,7 @@ struct DNSEntry:Continuation
   HostEnt *result_ent;
 
   HostEnt **sem_ent;
-#if (HOST_OS == darwin)
+#if defined(darwin)
   ink_sem *sem;
 #else
   ink_sem sem;

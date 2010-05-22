@@ -77,14 +77,14 @@
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 
-#if (HOST_OS != linux) && (HOST_OS != darwin) && (HOST_OS != freebsd) && (HOST_OS != solaris)
+#if !defined(linux) && !defined(darwin) && !defined(freebsd) && !defined(solaris)
 extern "C"
 {
   int gethostname(char *name, int namelen);
 }
 #endif
 
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
 #endif
 
@@ -129,7 +129,7 @@ const char *recs_conf = "records.config";
 int fds_limit;
 
 typedef void (*PFV) (int);
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
 void SignalHandler(int sig, siginfo_t * t, void *f);
 void SignalAlrmHandler(int sig, siginfo_t * t, void *f);
 #else
@@ -159,7 +159,7 @@ check_lockfile()
   } else {
     char *reason = strerror(-err);
     if (err == 0) {
-#if (HOST_OS == solaris)
+#if defined(solaris)
       fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, (int)holding_pid);
 #else
       fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, holding_pid);
@@ -184,7 +184,7 @@ check_lockfile()
     fprintf(stderr, "FATAL: Can't acquire manager lockfile '%s'", lockfile);
     mgmt_elog(stderr, "FATAL: Can't acquire manager lockfile '%s'", lockfile);
     if (err == 0) {
-#if (HOST_OS == solaris)
+#if defined(solaris)
       fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
 #else
       fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);
@@ -212,7 +212,7 @@ initSignalHandlers()
   sigset_t sigsToBlock;
 
   // Set up the signal handler
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigHandler.sa_handler = NULL;
   sigHandler.sa_sigaction = SignalHandler;
 #else
@@ -232,7 +232,7 @@ initSignalHandlers()
   // Don't block the signal on entry to the signal
   //   handler so we can reissue it and get a core
   //   file in the appropriate circumstances
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigHandler.sa_flags = SA_RESETHAND | SA_SIGINFO;
 #else
   sigHandler.sa_flags = SA_RESETHAND;
@@ -244,7 +244,7 @@ initSignalHandlers()
   sigaction(SIGSEGV, &sigHandler, NULL);
   sigaction(SIGTERM, &sigHandler, NULL);
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigAlrmHandler.sa_handler = NULL;
   sigAlrmHandler.sa_sigaction = SignalAlrmHandler;
 #else
@@ -252,7 +252,7 @@ initSignalHandlers()
 #endif
 
   sigemptyset(&sigAlrmHandler.sa_mask);
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigAlrmHandler.sa_flags = SA_SIGINFO;
 #else
   sigAlrmHandler.sa_flags = 0;
@@ -288,13 +288,13 @@ initSignalHandlers()
 #endif /* !_WIN32 */
 }
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <sys/prctl.h>
 #endif
 static int
 setup_coredump()
 {
-#if (HOST_OS == linux)
+#if defined(linux)
 #ifndef PR_SET_DUMPABLE
 #define PR_SET_DUMPABLE 4       /* Ugly, but we cannot compile with 2.2.x otherwise.
                                    Should be removed when we compile only on 2.4.x */
@@ -376,7 +376,7 @@ max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = t
 {
   struct rlimit rl;
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #  define MAGIC_CAST(x) (enum __rlimit_resource)(x)
 #else
 #  define MAGIC_CAST(x) x
@@ -385,7 +385,7 @@ max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = t
   if (max_it) {
     ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
     if (rl.rlim_cur != rl.rlim_max) {
-#if (HOST_OS == darwin)
+#if defined(darwin)
       if (which == RLIMIT_NOFILE)
 	rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
       else
@@ -397,7 +397,7 @@ max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = t
     }
   }
 
-#if (HOST_OS != darwin)
+#if !defined(darwin)
   if (unlim_it) {
     ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
     if (rl.rlim_cur != RLIM_INFINITY) {
@@ -1075,7 +1075,7 @@ main(int argc, char **argv)
 
 
 #ifndef _WIN32
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
 void
 SignalAlrmHandler(int sig, siginfo_t * t, void *c)
 #else
@@ -1087,10 +1087,10 @@ SignalAlrmHandler(int sig)
      fprintf(stderr,"[TrafficManager] ==> SIGALRM received\n");
      mgmt_elog(stderr,"[TrafficManager] ==> SIGALRM received\n");
    */
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   if (t) {
     if (t->si_code <= 0) {
-#if (HOST_OS == solaris)
+#if defined(solaris)
       fprintf(stderr, "[TrafficManager] ==> User Alarm from pid: %d uid: %d\n", (int)t->si_pid, t->si_uid);
 #else
       fprintf(stderr, "[TrafficManager] ==> User Alarm from pid: %d uid: %d\n", t->si_pid, t->si_uid);
@@ -1107,7 +1107,7 @@ SignalAlrmHandler(int sig)
 }
 
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
 void
 SignalHandler(int sig, siginfo_t * t, void *c)
 #else
@@ -1118,10 +1118,10 @@ SignalHandler(int sig)
   static int clean = 0;
   int status;
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin)
   if (t) {
     if (t->si_code <= 0) {
-#if (HOST_OS == solaris)
+#if defined(solaris)
       fprintf(stderr, "[TrafficManager] ==> User Sig %d from pid: %d uid: %d\n", sig, (int)t->si_pid, t->si_uid);
 #else
       fprintf(stderr, "[TrafficManager] ==> User Sig %d from pid: %d uid: %d\n", sig, t->si_pid, t->si_uid);
@@ -1157,7 +1157,7 @@ SignalHandler(int sig)
       if (sig == SIGTERM || sig == SIGINT) {
         kill(lmgmt->watched_process_pid, sig);
         waitpid(lmgmt->watched_process_pid, &status, 0);
-#if (HOST_OS == linux) && defined (USE_SNMP)
+#if defined(linux) && defined (USE_SNMP)
         // INKqa08918: band-aid: for some reasons if snmpd.cnf is modified
         // the snmp processes are killed and restarted successfully. But
         // when traffic server is shut down, the snmp processes are not killed.
@@ -1176,7 +1176,7 @@ SignalHandler(int sig)
   case SIGQUIT:
   case SIGILL:
   case SIGTRAP:
-#if (HOST_OS != linux)
+#if !defined(linux)
   case SIGEMT:
   case SIGSYS:
 #endif

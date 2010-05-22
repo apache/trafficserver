@@ -56,12 +56,12 @@ typedef int WebHandle;
 // WebGetHostname
 //-------------------------------------------------------------------------
 
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
 //extern "C" struct hostent *gethostbyaddr_r(const char *addr, int length, int type,
 //                                  struct hostent *result, char *buffer, int buflen, int *h_errnop);
 #endif
 
-#if (HOST_OS == solaris)
+#if defined(solaris)
 extern "C"
 {
   struct hostent *gethostbyaddr_r(const char *addr,

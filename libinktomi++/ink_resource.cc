@@ -134,7 +134,7 @@ static int unused = atexit(exit_cb);
 unsigned int
 res_hash(const char *s)
 {
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && !defined(__i386__)
+#if !defined(linux) && !defined(freebsd) && !defined(__i386__)
 #define HASH_ONE(h,one)       ((h << 3) + (one) + (h >> 29))
 #define WORD_HAS_NULLBYTE(w)  ((((w) - 0x01010101) ^ (w)) & 0x80808080)
 
@@ -249,7 +249,7 @@ res_stat(const char *path, int64 value)
 }
 
 
-#if (HOST_OS == linux) || (HOST_OS == freebsd)
+#if defined(linux) || defined(freebsd)
 static const int magic_array_offset = 0;
 #else
 #error "I do not know about this platform."

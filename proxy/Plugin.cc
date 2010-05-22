@@ -23,7 +23,7 @@
 
 #include "ink_config.h"
 #include <stdio.h>
-#if (HOST_OS == hpux)
+#if defined(hpux)
 #include <dl.h>
 #endif
 #include "ink_platform.h"

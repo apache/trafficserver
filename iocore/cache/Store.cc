@@ -435,18 +435,18 @@ Store::write_config_data(int fd)
 
 
 
-#if (HOST_OS == freebsd) || (HOST_OS == darwin) || (HOST_OS == solaris)
+#if defined(freebsd) || defined(darwin) || defined(solaris)
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/mount.h>
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
 #include <sys/disklabel.h>
 //#include <sys/diskslice.h>
-#elif (HOST_OS == darwin)
+#elif defined(darwin)
 #include <sys/disk.h>
 #include <sys/statvfs.h>
-#elif (HOST_OS == solaris)
+#elif defined(solaris)
 #include <sys/statfs.h>
 #include <sys/statvfs.h>
 #endif
@@ -500,7 +500,7 @@ Span::init(char *an, int64 size)
     return "unable to open";
   }
 
-#if (HOST_OS == solaris)
+#if defined(solaris)
   struct statvfs fs;
   if ((ret = fstatvfs(fd, &fs)) < 0) {
     Warning("unable to statvfs '%s': %d %d, %s", n, ret, errno, strerror(errno));
@@ -618,7 +618,7 @@ Lfail:
 }
 #endif
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>

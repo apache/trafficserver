@@ -25,7 +25,7 @@
 #include "ink_platform.h"
 #include "ink_lockfile.h"
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include "ink_killall.h"
 #endif
 
@@ -207,7 +207,7 @@ lockfile_kill_internal(pid_t init_pid, int init_sig, pid_t pid, const char *pnam
 {
   int err;
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
   pid_t *pidv;
   int pidvcnt;

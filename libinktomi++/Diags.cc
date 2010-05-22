@@ -327,7 +327,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
     }
   }
 
-#if (HOST_OS != freebsd)
+#if !defined(freebsd)
   unlock();
 #endif
 
@@ -369,7 +369,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
     vsnprintf(syslog_buffer, sizeof(syslog_buffer) - 1, format_buf, ap);
     syslog(priority, "%s", syslog_buffer);
   }
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
   unlock();
 #endif
 }

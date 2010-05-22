@@ -78,7 +78,7 @@ AppVersionInfo appVersionInfo;
 /*-------------------------------------------------------------------------
   max_out_limit
   -------------------------------------------------------------------------*/
-#if (HOST_OS == linux)
+#if defined(linux)
    /* Stupid PICKY stupid (did I mention that?) C++ compielrs */
 #define RLIMCAST enum __rlimit_resource
 #else
@@ -227,7 +227,7 @@ check_lockfile(const char *config_dir, const char *pgm_name)
     fprintf(stderr, "FATAL: Can't acquire lockfile '%s'", lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
-#if (HOST_OS == solaris)
+#if defined(solaris)
       fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
 #else
       fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);

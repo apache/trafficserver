@@ -31,12 +31,12 @@
 #include "inktomi++.h"
 #include "ink_unused.h"
 #include "ink_platform.h"
-#if (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin)
+#if defined(linux) || defined(freebsd) || defined(darwin)
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <sys/utsname.h>
 #endif      /* MAGIC_EDITING_TAG */
 
@@ -49,7 +49,7 @@ ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
 {
   *name = 0;
   *release = 0;
-#if (HOST_OS == freebsd) || (HOST_OS == darwin)
+#if defined(freebsd) || defined(darwin)
   int mib[2];
   size_t len = namelen;
   mib[0] = CTL_KERN;
@@ -66,7 +66,7 @@ ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
     return -1;
 
   return 0;
-#elif (HOST_OS == linux)
+#elif defined(linux)
   struct utsname buf;
   int n;
 
@@ -94,7 +94,7 @@ ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
 int
 ink_number_of_processors()
 {
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
   int mib[2], n;
   mib[0] = CTL_HW;
   mib[1] = HW_NCPU;

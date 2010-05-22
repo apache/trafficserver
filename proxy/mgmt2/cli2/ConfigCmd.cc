@@ -4499,7 +4499,7 @@ IsValidDomainname(char *str)
 int
 getnameserver(char *nameserver, int len)
 {
-#if (HOST_OS == linux)
+#if defined(linux)
   char buff[256];
   FILE *fstr;
   if ((fstr = fopen(NAMESERVER_PATH, "r")) == NULL)
@@ -4527,7 +4527,7 @@ getnameserver(char *nameserver, int len)
 
 }
 
-#if (HOST_OS == solaris)
+#if defined(solaris)
 /*
  * NOTE: This routine is found in libnsl (-lnsl). No prototype was found in
  * any of the header files in /usr/include. Define a prototype here to keep the
@@ -4543,7 +4543,7 @@ setnameserver(char *nameserver)
   if ((fstr = fopen(NAMESERVER_PATH, "wb")) == NULL) {
     return -1;
   } else {
-#if (HOST_OS == linux) || (HOST_OS == darwin) || (HOST_OS == freebsd) //FIXME: solaris
+#if defined(linux) || defined(darwin) || defined(freebsd) //FIXME: solaris
     char domain[256];
     char resolventry[256];
 
@@ -4578,7 +4578,7 @@ int
 getrouter(char *router, int len)
 {
   FILE *fstr;
-#if (HOST_OS == linux) || (HOST_OS == darwin) || (HOST_OS == freebsd) || (HOST_OS == solaris)
+#if defined(linux) || defined(darwin) || defined(freebsd) || defined(solaris)
   char buff[256];
   char *p;
 
@@ -4623,13 +4623,13 @@ int
 getnetparms(char *ipnum, char *mask)
 {
 #define BUFFLEN 256
-#if (HOST_OS == linux)
+#if defined(linux)
 #define interface_name "eth0"
-#elif (HOST_OS == darwin)
+#elif defined(darwin)
 #define interface_name "en0"
-#elif (HOST_OS == freebsd)
+#elif defined(freebsd)
 #define interface_name "eth0"
-#elif (HOST_OS == solaris)
+#elif defined(solaris)
 #define interface_name "e1000g0" // FIXME: better way to get interface names
 #endif
 
@@ -4659,7 +4659,7 @@ getnetparms(char *ipnum, char *mask)
     fprintf(stderr, "me lines over %d characters long.\n", BUFFLEN);
     goto err;
   }
-#if (HOST_OS == linux) || (HOST_OS == darwin) || (HOST_OS == freebsd)
+#if defined(linux) || defined(darwin) || defined(freebsd)
   p = pos_after_string(buff, "inet addr:");
 #endif
 
@@ -5709,7 +5709,7 @@ find_value(const char *pathname, const char *key, char *value, int value_len, co
   int find = 0;
   int counter = 0;
 
-#if (HOST_OS == linux) || (HOST_OS == darwin) || (HOST_OS == freebsd) || (HOST_OS == solaris)
+#if defined(linux) || defined(darwin) || defined(freebsd) || defined(solaris)
   ink_strncpy(value, "", value_len);
   // coverity[fs_check_call]
   if (access(pathname, R_OK)) {

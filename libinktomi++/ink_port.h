@@ -69,11 +69,11 @@ typedef unsigned long long uint64;
 #endif
 #endif
 
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
 #define NO_MEMALIGN
 #endif
 
-#if (HOST_OS == darwin)
+#if defined(darwin)
 #define NO_MEMALIGN
 #define RENTRENT_GETHOSTBYNAME
 #define RENTRENT_GETHOSTBYADDR

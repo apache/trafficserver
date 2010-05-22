@@ -52,7 +52,7 @@ struct core_stack_state
 };
 #endif
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <stdio.h>
 #include <sys/procfs.h>
 #include <unistd.h>
@@ -82,7 +82,7 @@ struct core_stack_state
 };
 #endif  // linux check
 
-#if (HOST_OS == darwin) || (HOST_OS == freebsd) || (HOST_OS == solaris) // FIXME: solaris x86
+#if defined(darwin) || defined(freebsd) || defined(solaris) // FIXME: solaris x86
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -196,7 +196,7 @@ public:
   * inputs: int threadId, core_stack_state* coress
   * outputs: returns the base core_stack_state for the given thread id
   **********************************************************************/
-#if (HOST_OS == linux)
+#if defined(linux)
   static void get_base_frame(intptr_t framep, core_stack_state * coress);
 #endif
 

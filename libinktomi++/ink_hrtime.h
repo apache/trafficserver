@@ -246,7 +246,7 @@ ink_get_hrtime_internal()
 #if defined (NEED_HRTIME)
 #if defined (USE_TIME_STAMP_COUNTER_HRTIME)
   return get_hrtime_rdtsc();
-#elif (HOST_OS == freebsd)
+#elif defined(freebsd)
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
   return (ts.tv_sec * HRTIME_SECOND + ts.tv_nsec * HRTIME_NSECOND);

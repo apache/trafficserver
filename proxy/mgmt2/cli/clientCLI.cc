@@ -132,7 +132,7 @@ clientCLI::CliResult clientCLI::connectToLM(void)
   memset(&clientS, 0, sizeof(sockaddr_un));
   clientS.sun_family = AF_UNIX; // UNIX domain socket
   ink_strncpy(clientS.sun_path, sockPath, sizeof(clientS.sun_path));
-#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+#if defined(darwin) || defined(freebsd)
   sockaddrLen = sizeof(sockaddr_un);
 #else
   sockaddrLen = sizeof(clientS.sun_family) + strlen(clientS.sun_path);;

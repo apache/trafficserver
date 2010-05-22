@@ -36,7 +36,7 @@
 #include "List.h"
 #include "ink_hrtime.h"
 
-#if (HOST_OS == darwin)
+#if defined(darwin)
 #include "ink_poll.h"
 #else
 #include <poll.h>

@@ -31,7 +31,7 @@
 #include <pcre.h>
 #endif
 
-#if (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin)
+#if defined(linux) || defined(freebsd) || defined(darwin)
 
 #include "SysAPI.h"
 #include <unistd.h>
@@ -608,7 +608,7 @@ int
 Net_SetNIC_BootProtocol(char *interface, char *nic_protocol)
 {
   char nic_boot[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
-#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(freebsd) && !defined(darwin)
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
   Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
   Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
@@ -621,7 +621,7 @@ int
 Net_SetNIC_IP(char *interface, char *nic_ip)
 {
   //int status;
-#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(freebsd) && !defined(darwin)
   char nic_boot[80], nic_protocol[80], nic_netmask[80], nic_gateway[80], old_ip[80];
   Net_GetNIC_IP(interface, old_ip, sizeof(old_ip));
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
@@ -638,7 +638,7 @@ Net_SetNIC_IP(char *interface, char *nic_ip)
 int
 Net_SetNIC_Netmask(char *interface, char *nic_netmask)
 {
-#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
+#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_gateway[80];
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
   Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
@@ -654,7 +654,7 @@ Net_SetNIC_Netmask(char *interface, char *nic_netmask)
 int
 Net_SetNIC_Gateway(char *interface, char *nic_gateway)
 {
-#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
+#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80];
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
   Net_GetNIC_Protocol(interface, nic_protocol, sizeof(nic_protocol));
@@ -717,7 +717,7 @@ Net_SetNIC_Up(char *interface, char *onboot, char *protocol, char *ip, char *net
 }
 
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
 // Disable all previously disabled, and now active interfaces
 int
@@ -1771,9 +1771,9 @@ Net_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, 
   return 0;
 }
 
-#endif /* (HOST_OS == linux) || (HOST_OS == freebsd) || (HOST_OS == darwin) */
+#endif /* defined(linux) || defined(freebsd) || defined(darwin) */
 
-#if (HOST_OS == solaris)
+#if defined(solaris)
 
 #include "SysAPI.h"
 #include <stdio.h>
@@ -2528,7 +2528,7 @@ int
 Net_SetNIC_BootProtocol(char *interface, char *nic_protocol)
 {
   char nic_boot[80], nic_ip[80], nic_netmask[80], nic_gateway[80];
-#if (HOST_OS != freebsd) && (HOST_OS != darwin)
+#if !defined(freebsd) && !defined(darwin)
   Net_GetNIC_Start(interface, nic_boot, sizeof(nic_boot));
   Net_GetNIC_IP(interface, nic_ip, sizeof(nic_ip));
   Net_GetNIC_Netmask(interface, nic_netmask, sizeof(nic_netmask));
@@ -2545,9 +2545,9 @@ Net_SetNIC_IP(char *interface, char *nic_ip)
 {
   //int status;
   // XXX: Why this test?
-  //      We are inside #define HOST_OS == solaris
+  //      We are inside #define(solaris)
   //
-#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
+#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   char nic_boot[80], nic_protocol[80], nic_netmask[80], nic_gateway[80], old_ip[80];
   Net_GetNIC_IP(interface, old_ip, sizeof(old_ip));
   Net_GetNIC_Start(interface, nic_boot);
@@ -2565,9 +2565,9 @@ int
 Net_SetNIC_Netmask(char *interface, char *nic_netmask)
 {
   // XXX: Why this test?
-  //      We are inside #define HOST_OS == solaris
+  //      We are inside #define (solaris)
   //
-#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
+#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_gateway[80];
   Net_GetNIC_Start(interface, nic_boot);
   Net_GetNIC_Protocol(interface, nic_protocol);
@@ -2584,9 +2584,9 @@ int
 Net_SetNIC_Gateway(char *interface, char *nic_gateway)
 {
   // XXX: Why this test?
-  //      We are inside #define HOST_OS == solaris
+  //      We are inside #define (solaris)
   //
-#if (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
+#if !defined(freebsd) && !defined(darwin) && !defined(solaris)
   char nic_boot[80], nic_protocol[80], nic_ip[80], nic_netmask[80];
   Net_GetNIC_Start(interface, nic_boot);
   Net_GetNIC_Protocol(interface, nic_protocol);
@@ -3233,4 +3233,4 @@ Sys_Grp_Inktomi(int egid)
   return 0;
 }
 
-#endif /* (HOST_OS == solaris) */
+#endif /* defined(solaris) */

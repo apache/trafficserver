@@ -40,13 +40,13 @@
 struct ifafilt;
 #include <net/if.h>
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <sys/ioctl.h>
 #else
 #include <sys/sockio.h>
 #endif
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
@@ -60,7 +60,7 @@ struct ifafilt;
 void up_interface(char *binary, char *vip, char *interface);
 void down_interface(char *binary, char *vip, char *interface);
 
-#if (HOST_OS == linux)
+#if defined(linux)
 char *get_netmask_for_intr(char *intrName);
 char *get_broadcast_for_intr(char *intrName);
 #endif
@@ -131,7 +131,7 @@ up_interface(char *binary, char *vip, char *interface)
   int status;
   pid_t pid;
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
   char *netmask = NULL;
   char *broadcast = NULL;
@@ -248,7 +248,7 @@ down_interface(char *binary, char *vip, char *interface)
   int status;
   pid_t pid;
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
   if ((pid = fork()) < 0) {
     exit(1);
@@ -322,7 +322,7 @@ down_interface(char *binary, char *vip, char *interface)
   return;
 }                               /* End down_interface */
 
-#if (HOST_OS == linux)
+#if defined(linux)
 // char* get_netmask_for_intr(char* intrName)
 //
 //    Looks up the netmask for the interface specifiec by intrName

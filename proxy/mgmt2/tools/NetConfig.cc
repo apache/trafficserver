@@ -32,7 +32,7 @@
 
 #include "ink_config.h"
 
-#if (HOST_OS == darwin) || (HOST_OS == freebsd)
+#if defined(darwin) || defined(freebsd)
 /* This program has not been ported to these operating systems at all,
  * and even the linux one is insanely distro specific.
  */
@@ -42,7 +42,7 @@ int main()
 };
 #endif
 
-#if (HOST_OS == linux)
+#if defined(linux)
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -1512,7 +1512,7 @@ main(int argc, char **argv)
 
 #endif
 
-#if (HOST_OS == solaris)
+#if defined(solaris)
 
 #include <ctype.h>
 #include <stdlib.h>

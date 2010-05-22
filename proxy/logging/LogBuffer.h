@@ -39,7 +39,7 @@ class LogBufferIterator;
 #define LOG_SEGMENT_COOKIE 0xaceface
 #define LOG_SEGMENT_VERSION 2
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #define LB_DEFAULT_ALIGN_MASK 511
 #else
 #define LB_DEFAULT_ALIGN_MASK INK_ALIGN_INT

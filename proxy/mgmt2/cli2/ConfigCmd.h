@@ -821,7 +821,7 @@ int IsValidFQHostname(char *str);
 int IsValidDomainname(char *str);
 int IsValidIpAddress(char *str);
 int getnetparms(char *ipaddr, char *netmask);
-#if (HOST_OS == solaris)
+#if defined(solaris)
 int getnetmask(char *mask);
 #endif
 char *pos_after_string(char const *haystack, char const *needle);

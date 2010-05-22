@@ -90,7 +90,7 @@
 #include "ink_string.h"
 #include "ink_resolver.h"
 
-#if (HOST_OS != linux)
+#if !defined(linux)
 int inet_aton(register const char *cp, struct in_addr *addr);
 #endif
 

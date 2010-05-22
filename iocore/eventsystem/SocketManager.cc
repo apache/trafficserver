@@ -27,11 +27,11 @@
  ****************************************************************************/
 #include "inktomi++.h"
 
-#if (HOST_OS != linux)
+#if !defined(linux)
 #include <sys/filio.h>
 #endif
 
-#if (HOST_OS == solaris)
+#if defined(solaris)
 #include <sys/types.h>
 #include <sys/mman.h>
 extern "C" int madvise(caddr_t, size_t, int); // FIXME: why is this not being found
@@ -85,7 +85,7 @@ safe_msync(caddr_t addr, size_t len, caddr_t end, int flags)
     & ~(socketManager.pagesize - 1);
   if ((a + l) > end)
     l = end - a;                // strict limit
-#if (HOST_OS == linux)
+#if defined(linux)
 /* Fix INKqa06500
    Under Linux, msync(..., MS_SYNC) calls are painfully slow, even on
    non-dirty buffers. This is true as of kernel 2.2.12. We sacrifice
@@ -102,7 +102,7 @@ int
 safe_madvise(caddr_t addr, size_t len, caddr_t end, int flags)
 {
   (void) end;
-#if (HOST_OS == linux)
+#if defined(linux)
   (void) addr;
   (void) len;
   (void) end;

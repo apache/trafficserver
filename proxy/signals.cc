@@ -55,7 +55,7 @@ struct obj_list *ObjList;
 #include <google/profiler.h>
 #endif
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if !defined(linux) && !defined(freebsd)
 typedef void (*SigActionFunc_t) (int sig, siginfo_t * t, void *f);
 #else
 typedef void (*SigActionFunc_t) (int sig);
@@ -234,7 +234,7 @@ interrupt_handler(int sig)
   _exit(1);
 }
 
-#if (HOST_OS == linux)
+#if defined(linux)
 static void
 signal_handler(int sig)
 #else
@@ -286,7 +286,7 @@ signal_handler(int sig, siginfo_t * t, void *c)
 #endif
 
   char sig_msg[2048];
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if !defined(linux) && !defined(freebsd)
   // Print out information about where the signal came from
   //  so that we can debug signal related problems
   //
@@ -301,7 +301,7 @@ signal_handler(int sig, siginfo_t * t, void *c)
   //
   if (t) {
     if (t->si_code <= 0) {
-#if (HOST_OS == solaris)
+#if defined(solaris)
       snprintf(sig_msg, sizeof(sig_msg), "NOTE: Traffic Server received User Sig %d from pid: %d uid: %d\n",
                sig, (int)t->si_pid, (int)t->si_uid);
 #else
@@ -332,7 +332,7 @@ signal_handler(int sig, siginfo_t * t, void *c)
   case SIGQUIT:
   case SIGILL:
   case SIGTRAP:
-#if (HOST_OS != linux)
+#if !defined(linux)
   case SIGEMT:
   case SIGSYS:
 #endif
@@ -374,7 +374,7 @@ set_signal(int signal, SigActionFunc_t action_func)
   struct sigaction action;
   struct sigaction o_action;
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if !defined(linux) && !defined(freebsd)
   action.sa_handler = NULL;
   action.sa_sigaction = action_func;
 #else
@@ -394,7 +394,7 @@ check_signal(int signal, SigActionFunc_t action_func)
   struct sigaction action;
   struct sigaction o_action;
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if !defined(linux) && !defined(freebsd)
   action.sa_handler = NULL;
   action.sa_sigaction = action_func;
   action.sa_flags = SA_SIGINFO;
@@ -408,7 +408,7 @@ check_signal(int signal, SigActionFunc_t action_func)
   int res = sigaction(signal, &action, &o_action);
   ink_release_assert(res == 0);
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd)
+#if !defined(linux) && !defined(freebsd)
   if (o_action.sa_sigaction != action_func) {
     fprintf(stderr, "Handler for signal %d was %p, not %p as expected\n", signal, o_action.sa_sigaction, action_func);
   }
@@ -449,7 +449,7 @@ check_signals()
 // This thread checks the signals every 2 seconds to make
 // certain the DEC pthreads SIGPIPE bug isn't back..
 //
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && defined(DEBUG)
+#if !defined(linux) && !defined(freebsd) && defined(DEBUG)
 static void *
 check_signal_thread(void *)
 {
@@ -500,7 +500,7 @@ init_signals(bool do_stackdump)
   }
 #endif
 
-#if (HOST_OS != freebsd)
+#if !defined(freebsd)
   set_signal(SIGUSR1, (SigActionFunc_t) signal_handler);
 #endif
 
@@ -508,11 +508,11 @@ init_signals(bool do_stackdump)
   set_signal(SIGUSR2, (SigActionFunc_t) signal_handler);
 #endif
 
-#if (HOST_OS == linux)
+#if defined(linux)
   set_signal(SIGUSR2, (SigActionFunc_t) signal_handler);
 #endif
 
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && defined(DEBUG)
+#if !defined(linux) && !defined(freebsd) && defined(DEBUG)
   ink_thread_create(check_signal_thread, NULL);
 #endif
 

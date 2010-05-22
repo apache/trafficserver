@@ -27,7 +27,7 @@
 ******************************************************************/
 #include "Plugin.h"
 
-#if (HOST_OS == hpux)
+#if defined(hpux)
 #include <dl.h>
 
 void *

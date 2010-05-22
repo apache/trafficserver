@@ -1752,10 +1752,10 @@ ICPRequestCont::BuildICPMsg(ICPopcode_t op, unsigned int seqno,
 
   mhdr->msg_name = (caddr_t) 0;
   mhdr->msg_namelen = 0;
-#if (HOST_OS != linux) && (HOST_OS != freebsd) && (HOST_OS != darwin) && (HOST_OS != solaris)
+#if !defined(linux) && !defined(freebsd) && !defined(darwin) && !defined(solaris)
   mhdr->msg_accrights = (caddr_t) 0;
   mhdr->msg_accrightslen = 0;
-#elif (HOST_OS != solaris)
+#elif !defined(solaris)
   mhdr->msg_control = 0;
   mhdr->msg_controllen = 0;
   mhdr->msg_flags = 0;

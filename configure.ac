@@ -550,25 +550,24 @@ ATS_ADDTO(CPPFLAGS, [-D_REENTRANT])
 case $host_os in
   linux*)
     EXTRA_CXX_LDFLAGS="-rdynamic"
-    HOST_OS=linux
+    host_os_def=linux
     ;;
   darwin*)
-    HOST_OS=darwin
+    host_os_def=darwin
     ;;
   freebsd*)
     EXTRA_CXX_LDFLAGS="-rdynamic"
-    HOST_OS=freebsd
+    host_os_def=freebsd
     ;;
   solaris*)
-    HOST_OS=solaris
+    host_os_def=solaris
     ;;
   *)
     EXTRA_CXX_LDFLAGS="-rdynamic"
-    HOST_OS=unknown
+    host_os_def=unknown
    ;;
 esac
-ATS_ADDTO(CPPFLAGS, [-D$HOST_OS])
-AC_SUBST(HOST_OS)
+ATS_ADDTO(CPPFLAGS, [-D$host_os_def])
 
 #
 # _Here_ is where we go ahead and add the _optimizations_ to already

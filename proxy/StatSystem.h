@@ -153,7 +153,7 @@ typedef enum { \
     MAX_HTTP_TRANS_STATS \
 } HttpTransactionStat_t;
 
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
 #undef _D
 #endif
 #define _D(_x) _x,

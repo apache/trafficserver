@@ -82,7 +82,7 @@
   struct fastIO_split_rule
   {
     struct fastIO_session *splitTo;
-#if (HOST_OS == sunos)
+#if defined(sunos)
     /* FIXME: for other platfroms */
     queue_t *dst_queue;         /*internal use only */
 #endif

@@ -135,7 +135,7 @@ ink_thread_create(void *(*f) (void *), void *a, int detached = 0, size_t stacksi
 static inline void
 ink_thread_cancel(ink_thread who)
 {
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
   (void) who;
   ink_assert(!"not supported");
 #else
@@ -161,7 +161,7 @@ ink_thread_self()
 static inline int
 ink_thread_get_priority(ink_thread t, int *priority)
 {
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
   (void) t;
   (void) priority;
   ink_assert(!"not supported");
@@ -225,7 +225,7 @@ ink_sem_destroy(ink_sem * sp)
   ink_assert(!sem_destroy(sp));
 }
 
-#if (HOST_OS == darwin)
+#if defined(darwin)
 static inline ink_sem *
 ink_sem_open(const char *name , int oflag, mode_t mode, unsigned int value)
 {
@@ -274,7 +274,7 @@ ink_cond_timedwait(ink_cond * cp, ink_mutex * mp, ink_timestruc * t)
 {
   int err;
   while (EINTR == (err = pthread_cond_timedwait(cp, mp, t)));
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
   ink_assert((err == 0) || (err == ETIMEDOUT));
 #else
   ink_assert((err == 0) || (err == ETIME) || (err == ETIMEDOUT));

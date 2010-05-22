@@ -353,7 +353,7 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     goto Lerror;
 #endif
 
-#if (HOST_OS == linux)
+#if defined(linux)
   if (NetProcessor::accept_mss > 0)
     if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *) &NetProcessor::accept_mss, sizeof(int)) < 0))
       goto Lerror;
@@ -473,7 +473,7 @@ Server::listen(int port_number, bool non_blocking, int recv_bufsize, int send_bu
     goto Lerror;
 #endif
 
-#if (HOST_OS == linux)
+#if defined(linux)
   if (NetProcessor::accept_mss > 0)
     if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *) &NetProcessor::accept_mss, sizeof(int))) < 0)
       goto Lerror;

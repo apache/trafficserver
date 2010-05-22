@@ -45,7 +45,7 @@ enum LogFileFormat
   N_LOGFILE_TYPES
 };
 
-#if (HOST_OS == linux)
+#if defined(linux)
 #define ASCII_PIPE_FORMAT_SUPPORTED
 #endif
 

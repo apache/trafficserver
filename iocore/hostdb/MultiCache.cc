@@ -426,7 +426,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     int fd = -1;
 
 // find a good address to start
-#if (HOST_OS != darwin)
+#if !defined(darwin)
     fd = socketManager.open("/dev/zero", O_RDONLY, 0645);
     if (fd < 0) {
       Warning("unable to open /dev/zero: %d, %s", errno, strerror(errno));
@@ -435,14 +435,14 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 #endif
 
     // lots of useless stuff
-#if (HOST_OS == darwin)
+#if defined(darwin)
     cur = (char *) mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE | MAP_ANON, -1, 0);
 #else
     cur = (char *) mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE, fd, 0);
 #endif
     if (cur == NULL || cur == (caddr_t) MAP_FAILED) {
       store = saved;
-#if (HOST_OS == darwin)
+#if defined(darwin)
       Warning("unable to mmap anonymous region for %u bytes: %d, %s", totalsize, errno, strerror(errno));
 #else
       Warning("unable to mmap /dev/zero for %u bytes: %d, %s", totalsize, errno, strerror(errno));
@@ -452,7 +452,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     }
     if (munmap(cur, totalsize)) {
       store = saved;
-#if (HOST_OS == darwin)
+#if defined(darwin)
       Warning("unable to munmap anonymous region for %u bytes: %d, %s", totalsize, errno, strerror(errno));
 #else
       Warning("unable to munmap /dev/zero for %u bytes: %d, %s", totalsize, errno, strerror(errno));
@@ -483,7 +483,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     mapped_header = (MultiCacheHeader *) cur;
     if (!mmap_region(1, fds, cur, private_flag, fd))
       goto Labort;
-#if (HOST_OS != darwin)
+#if !defined(darwin)
     ink_assert(!socketManager.close(fd));
 #endif
     store = saved;

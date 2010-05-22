@@ -412,7 +412,7 @@ NetHandler::mainNetEvent(int event, Event *e)
       vc->net_read_io(this, trigger_event->ethread);
     else if (!vc->read.enabled) {
       read_ready_list.remove(vc);
-#if (HOST_OS == solaris)
+#if defined(solaris)
       if (vc->read.triggered && vc->write.enabled) {
 	vc->ep.modify(-EVENTIO_READ);
 	vc->ep.refresh(EVENTIO_WRITE);
@@ -432,7 +432,7 @@ NetHandler::mainNetEvent(int event, Event *e)
       write_to_net(this, vc, pd, trigger_event->ethread);
     else if (!vc->write.enabled) {
       write_ready_list.remove(vc);
-#if (HOST_OS == solaris)
+#if defined(solaris)
       if (vc->write.triggered && vc->read.enabled) {
 	vc->ep.modify(-EVENTIO_WRITE);
 	vc->ep.refresh(EVENTIO_READ);

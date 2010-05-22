@@ -31,7 +31,7 @@
 #include "ink_hrtime.h"
 #include "ink_assert.h"
 
-#if (HOST_OS == freebsd)
+#if defined(freebsd)
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>

@@ -29,7 +29,7 @@
  * net sub system.
  * For the default values look at NetConfig.cc
  */
-#if (HOST_OS == solaris)
+#if defined(solaris)
 #define DEFAULT_POLL_TIMEOUT                      30  /* mseconds */
 #else
 #define DEFAULT_POLL_TIMEOUT                      10  /* mseconds */

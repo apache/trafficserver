@@ -260,7 +260,7 @@ int ink_res_init(ink_res_state, unsigned long *pHostList,
 int ink_res_mkquery(ink_res_state, int, const char *, int, int,
                     const unsigned char *, int, const unsigned char *, unsigned char *, int);
 
-#if (HOST_OS != linux)
+#if !defined(linux)
 int inet_aton(register const char *cp, struct in_addr *addr);
 #endif
 

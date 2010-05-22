@@ -451,7 +451,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     if (res < 0) {
       res = -errno;
       if (res == -EAGAIN || res == -ECONNABORTED
-#if (HOST_OS == linux)
+#if defined(linux)
           || res == -EPIPE
 #endif
         ) {

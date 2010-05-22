@@ -32,7 +32,7 @@
 
 #include <unistd.h>
 
-#if (HOST_OS == darwin)
+#if defined(darwin)
 // Fix wierd conflict with Tcl #define for panic
 #include <sys/mman.h>
 #endif

@@ -23,7 +23,7 @@
 
 #include "inktomi++.h"
 
-#if (HOST_OS == darwin)
+#if defined(darwin)
 extern "C"
 {
   struct hostent *gethostbyname_r(const char *name, struct hostent *result, char *buffer, int buflen, int *h_errnop);
