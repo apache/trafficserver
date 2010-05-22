@@ -701,18 +701,18 @@ fi
 
 has_backtrace=0
 # Check for backtrace() support
-AC_CHECK_HEADERS([execinfo.h], [have_backtrace=yes],[])
-if test "x${have_backtrace}" = "xyes"; then
+ATS_FLAG_HEADERS([execinfo.h], [has_backtrace=1],[])
+if test "${has_backtrace}" = "1"; then
   # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
   AC_CHECK_LIB([execinfo], [backtrace], [have_backtrace_lib=yes
                                          AC_SUBST([LIBEXECINFO],["-lexecinfo"])])
   if test "x${have_backtrace_lib}" = "xyes"; then
     AC_MSG_NOTICE([Using backtrace library '-lexecinfo'])
-    has_backtrace=1
   fi
 else
   AC_MSG_WARN([No backtrace() support found])
 fi
+AC_SUBST(execinfoh)
 AC_SUBST(has_backtrace)
 
 use_libev=0

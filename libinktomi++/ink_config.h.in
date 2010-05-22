@@ -78,6 +78,7 @@
 #define ATS_HAVE_NET_PPP_DEFS_H         @net_ppp_defsh@
 #define ATS_HAVE_NETINET_IP_H           @netinet_iph@
 #define ATS_HAVE_NETINET_IP_ICMP_H      @netinet_ip_icmph@
+#define ATS_HAVE_EXECINFO_H             @execinfoh@
 
 /* Libraries */
 #define ATS_HAVE_ZLIB_H                 @zlibh@
