@@ -80,7 +80,7 @@ main(int argc, char *argv[])
   Layout::relative_to(start_traffic_server, sizeof(start_traffic_server) - 1,
                       Layout::get()->bindir, "start_traffic_server");
   Layout::relative_to(no_cop_path, sizeof(no_cop_path) - 1,
-                      Layout::get()->bindir, "internal/no_cop");
+                      Layout::get()->sysconfdir, "internal/no_cop");
   // XXX: Why strncpy here?
   strncpy(zonepath, "/usr/share/zoneinfo/", sizeof(zonepath) - 1);
 
