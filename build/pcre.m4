@@ -73,6 +73,8 @@ else
   fi
 fi
 
+pcreh=0
+pcre_pcreh=0
 if test "$enable_pcre" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -89,8 +91,8 @@ if test "$enable_pcre" != "no"; then
   fi
   AC_CHECK_LIB(pcre, pcre_exec, [pcre_have_libs=1])
   if test "$pcre_have_libs" != "0"; then
-    AC_CHECK_HEADERS(pcre.h, [pcre_have_headers=1])
-    AC_CHECK_HEADERS(pcre/pcre.h, [pcre_have_headers=1])
+    ATS_FLAG_HEADERS(pcre.h, [pcre_have_headers=1])
+    ATS_FLAG_HEADERS(pcre/pcre.h, [pcre_have_headers=1])
   fi
   if test "$pcre_have_headers" != "0"; then
     AC_DEFINE(HAVE_LIBPCRE,1,[Compiling with pcre support])
@@ -101,4 +103,6 @@ if test "$enable_pcre" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
+AC_SUBST(pcreh)
+AC_SUBST(pcre_pcreh)
 ])

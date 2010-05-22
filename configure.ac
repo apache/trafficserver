@@ -807,10 +807,46 @@ ATS_FLAG_HEADERS([sys/epoll.h \
                   sys/param.h \
                   sys/sysmacros.h \
                   math.h \
-                  net/ppp_defs.h \
-                  ], [], [])
+                  net/ppp_defs.h])
 
-AC_CHECK_HEADERS([netinet/ip.h], [], [],
+AC_SUBST(sys_epollh)
+AC_SUBST(sys_eventh)
+AC_SUBST(machine_endianh)
+AC_SUBST(endianh)
+AC_SUBST(sys_sysinfoh)
+AC_SUBST(sys_sysctlh)
+AC_SUBST(sys_systeminfoh)
+AC_SUBST(netinet_inh)
+AC_SUBST(netinet_in_systmh)
+AC_SUBST(sys_ioctlh)
+AC_SUBST(sys_byteorderh)
+AC_SUBST(sys_sockioh)
+AC_SUBST(sys_sysctlh)
+AC_SUBST(sys_sysinfoh)
+AC_SUBST(sys_systeminfoh)
+AC_SUBST(arpa_ineth)
+AC_SUBST(arpa_nameserh)
+AC_SUBST(arpa_nameser_compath)
+AC_SUBST(execinfoh)
+AC_SUBST(netdbh)
+AC_SUBST(ctypeh)
+
+AC_SUBST(siginfoh)
+AC_SUBST(malloch)
+AC_SUBST(waith)
+AC_SUBST(floath)
+AC_SUBST(libgenh)
+AC_SUBST(valuesh)
+AC_SUBST(allocah)
+AC_SUBST(cpioh)
+AC_SUBST(stroptsh)
+AC_SUBST(sys_mounth)
+AC_SUBST(sys_paramh)
+AC_SUBST(sys_sysmacrosh)
+AC_SUBST(mathh)
+AC_SUBST(net_ppp_defsh)
+
+ATS_FLAG_HEADERS([netinet/ip.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -819,7 +855,7 @@ AC_CHECK_HEADERS([netinet/ip.h], [], [],
                    #endif
                  ]])
 
-AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
+ATS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -833,6 +869,9 @@ AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
                     #include <netinet/in_systm.h>
                    #endif
                  ]])
+
+AC_SUBST(netinet_iph)
+AC_SUBST(netinet_ip_icmph)
 
 if test "x${with_profiler}" = "xyes"; then
 ATS_FLAG_HEADERS([google/profiler.h \

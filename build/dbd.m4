@@ -73,6 +73,7 @@ else
   fi
 fi
 
+sqlite3h=0
 if test "$enable_sqlite3" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -89,7 +90,7 @@ if test "$enable_sqlite3" != "no"; then
   fi
   AC_CHECK_LIB(sqlite3, sqlite3_open_v2, [sqlite3_have_libs=1])
   if test "$sqlite3_have_libs" != "0"; then
-    AC_CHECK_HEADERS(sqlite3.h, [sqlite3_have_headers=1])
+    ATS_FLAG_HEADERS(sqlite3.h, [sqlite3_have_headers=1])
   fi
   if test "$sqlite3_have_headers" != "0"; then
     AC_DEFINE(HAVE_SQLITE3,1,[Compiling with Sqlite3 support])
@@ -100,6 +101,7 @@ if test "$enable_sqlite3" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
+AC_SUBST(sqlite3h)
 ])
 
 dnl
@@ -157,6 +159,8 @@ else
   fi
 fi
 
+db_185h=0
+dbh=0
 if test "$enable_libdb" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -174,7 +178,7 @@ if test "$enable_libdb" != "no"; then
   AC_CHECK_LIB(db, __db_open, [libdb_have_libs=1])
   AC_CHECK_LIB(db, __db185_open, [libdb_have_libs=1])
   if test "$libdb_have_libs" != "0"; then
-    AC_CHECK_HEADERS(db_185.h db.h, [libdb_have_headers=1])
+    ATS_FLAG_HEADERS(db_185.h db.h, [libdb_have_headers=1])
   fi
   if test "$libdb_have_headers" != "0"; then
     AC_DEFINE(HAVE_LIBDB,1,[Compiling with Berkeley-DB support])
@@ -185,4 +189,7 @@ if test "$enable_libdb" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
+AC_SUBST(db_185h)
+AC_SUBST(dbh)
+
 ])

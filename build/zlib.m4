@@ -73,6 +73,7 @@ else
   fi
 fi
 
+zlibh=0
 if test "$enable_zlib" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -89,7 +90,7 @@ if test "$enable_zlib" != "no"; then
   fi
   AC_CHECK_LIB(z, zlibVersion, [zlib_have_libs=1])
   if test "$zlib_have_libs" != "0"; then
-    AC_CHECK_HEADERS(zlib.h, [zlib_have_headers=1])
+    ATS_FLAG_HEADERS(zlib.h, [zlib_have_headers=1])
   fi
   if test "$zlib_have_headers" != "0"; then
     AC_DEFINE(HAVE_LIBZ,1,[Compiling with ZLIB support])
@@ -100,4 +101,5 @@ if test "$enable_zlib" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
+AC_SUBST(zlibh)
 ])

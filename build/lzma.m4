@@ -73,6 +73,7 @@ else
   fi
 fi
 
+lzmah=0
 if test "$enable_lzma" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -89,7 +90,7 @@ if test "$enable_lzma" != "no"; then
   fi
   AC_CHECK_LIB(lzma, lzma_code, [lzma_have_libs=1])
   if test "$lzma_have_libs" != "0"; then
-    AC_CHECK_HEADERS(lzma.h, [lzma_have_headers=1])
+    ATS_FLAG_HEADERS(lzma.h, [lzma_have_headers=1])
   fi
   if test "$lzma_have_headers" != "0"; then
     AC_DEFINE(HAVE_LZMA,1,[Compiling with LZMA support])
@@ -100,4 +101,5 @@ if test "$enable_lzma" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
+AC_SUBST(lzmah)
 ])

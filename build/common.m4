@@ -499,33 +499,23 @@ done
 
 ])dnl
 
-dnl ATS_FLAG_HEADERS(HEADER-FILE ... [, FLAG-TO-SET ] [, "yes" ])
-dnl  we set FLAG-TO-SET to 1 if we find HEADER-FILE, otherwise we set to 0
-dnl  if FLAG-TO-SET is null, we automagically determine it's name
-dnl  by changing all "/" to "_" in the HEADER-FILE and dropping
-dnl  all "." and "-" chars. If the 3rd parameter is "yes" then instead of
-dnl  setting to 1 or 0, we set FLAG-TO-SET to yes or no.
+dnl ATS_FLAG_HEADERS(HEADER-FILE ... )
 dnl
 AC_DEFUN([ATS_FLAG_HEADERS], [
-AC_CHECK_HEADERS($1)
+AC_CHECK_HEADERS([$1], [$2], [$3], [$4])
 for tsc_i in $1
 do
     ac_safe=`echo "$tsc_i" | sed 'y%./+-%__p_%'`
     tsc_2=`echo "$tsc_i" | sed -e 's%/%_%g' -e 's/\.//g' -e 's/-//g'`
     if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
-       eval "ifelse($2,,$tsc_2,$2)=ifelse($3,yes,yes,1)"
+       eval "$tsc_2=1"
     else
-       eval "ifelse($2,,$tsc_2,$2)=ifelse($3,yes,no,0)"
+       eval "$tsc_2=0"
     fi
 done
 ])
 
-dnl ATS_FLAG_FUNCS(FUNC ... [, FLAG-TO-SET] [, "yes" ])
-dnl  if FLAG-TO-SET is null, we automagically determine it's name
-dnl  prepending "have_" to the function name in FUNC, otherwise
-dnl  we use what's provided as FLAG-TO-SET. If the 3rd parameter
-dnl  is "yes" then instead of setting to 1 or 0, we set FLAG-TO-SET
-dnl  to yes or no.
+dnl ATS_FLAG_FUNCS(FUNC ... )
 dnl
 AC_DEFUN([ATS_FLAG_FUNCS], [
 AC_CHECK_FUNCS($1)
@@ -533,9 +523,9 @@ for tsc_j in $1
 do
     tsc_3="have_$tsc_j"
     if eval "test \"`echo '$ac_cv_func_'$tsc_j`\" = yes"; then
-       eval "ifelse($2,,$tsc_3,$2)=ifelse($3,yes,yes,1)"
+       eval "$tsc_3=1"
     else
-       eval "ifelse($2,,$tsc_3,$2)=ifelse($3,yes,no,0)"
+       eval "$tsc_3=0"
     fi
 done
 ])

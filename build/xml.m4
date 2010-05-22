@@ -81,6 +81,7 @@ else
   fi
 fi
 
+expath=0
 if test "$enable_expat" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -97,7 +98,7 @@ if test "$enable_expat" != "no"; then
   fi
   AC_CHECK_LIB(expat, XML_SetUserData, [expat_have_libs=1])
   if test "$expat_have_libs" != "0"; then
-      AC_CHECK_HEADERS(expat.h, [expat_have_headers=1])
+      ATS_FLAG_HEADERS(expat.h, [expat_have_headers=1])
   fi
   if test "$expat_have_headers" != "0"; then
     enable_xml=yes
@@ -110,5 +111,5 @@ if test "$enable_expat" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
-
+AC_SUBST(expath)
 ])

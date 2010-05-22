@@ -54,7 +54,10 @@ tmp=0;
 ], ac_cv_gethostbyname_r_style=glibc2, ac_cv_gethostbyname_r_style=none))
 
 if test "$ac_cv_gethostbyname_r_style" = "glibc2"; then
-    AC_DEFINE(GETHOSTBYNAME_R_GLIBC2, 1, [Define if gethostbyname_r has the glibc style])
+  gethostbyname_r_glibc2=1
+  AC_DEFINE(GETHOSTBYNAME_R_GLIBC2, 1, [Define if gethostbyname_r has the glibc style])
+else
+  gethostbyname_r_glibc2=0
 fi
 
 AC_CACHE_CHECK([3rd argument to the gethostbyname_r routines], ac_cv_gethostbyname_r_arg,
@@ -82,8 +85,13 @@ tmp=0;
 ], ac_cv_gethostbyname_r_arg=hostent_data, ac_cv_gethostbyname_r_arg=char))
 
 if test "$ac_cv_gethostbyname_r_arg" = "hostent_data"; then
-    AC_DEFINE(GETHOSTBYNAME_R_HOSTENT_DATA, 1, [Define if gethostbyname_r has the hostent_data for the third argument])
+  gethostbyname_r_hostent_data=1
+  AC_DEFINE(GETHOSTBYNAME_R_HOSTENT_DATA, 1, [Define if gethostbyname_r has the hostent_data for the third argument])
+else
+  gethostbyname_r_hostent_data=0
 fi
+AC_SUBST(gethostbyname_r_glibc2)
+AC_SUBST(gethostbyname_r_hostent_data)
 ])
 
 dnl
