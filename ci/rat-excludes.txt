@@ -17,6 +17,7 @@ aclocal.m4
 CHANGES
 autom4te.cache/
 build/
+LAYOUT
 configure
 tags
 libtool
