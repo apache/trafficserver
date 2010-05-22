@@ -65,6 +65,7 @@ libinktomi++/ParseRulesCTypeToLower
 libinktomi++/ParseRulesCTypeToUpper
 libinktomi++/fastlz.h
 libinktomi++/fastlz.c
+libinktomi++/stamp-h1
 iocore/aio/sample.cfg
 iocore/cache/Notes
 iocore/cache/cache_test.config
@@ -86,5 +87,4 @@ libinktomi++/ink_rand.h
 libinktomi++/ink_rand.cc
 README.libev
 README-EC2
-stamp-h1
 REVIEWERS
