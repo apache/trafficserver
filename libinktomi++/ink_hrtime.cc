@@ -201,7 +201,7 @@ init_hrtime_basis()
 #endif
   do {
     t1 = ink_get_hrtime_internal();
-#ifdef HAVE_CLOCK_GETTIME
+#if ATS_HAS_CLOCK_GETTIME
     ink_assert(!clock_gettime(CLOCK_REALTIME, &timespec_basis));
 #else
     {

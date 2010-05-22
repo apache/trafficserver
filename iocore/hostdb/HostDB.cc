@@ -2268,7 +2268,7 @@ struct HostDBTestReverse:Continuation
 {
   int outstanding;
   int total;
-#ifdef HAVE_LRAND48_R
+#if ATS_HAVE_LRAND48_R
   struct drand48_data dr;
 #endif
 
@@ -2283,10 +2283,10 @@ struct HostDBTestReverse:Continuation
     while (outstanding < HOSTDB_TEST_MAX_OUTSTANDING && total < HOSTDB_TEST_LENGTH)
     {
       long l = 0;
-#ifndef HAVE_LRAND48_R
-      l = lrand48();
-#else
+#if ATS_HAVE_LRAND48_R
       lrand48_r(&dr, &l);
+#else
+      l = lrand48();
 #endif
       unsigned int ip = (unsigned int) l;
       outstanding++;
@@ -2303,10 +2303,10 @@ struct HostDBTestReverse:Continuation
   }
 HostDBTestReverse():Continuation(new_ProxyMutex()), outstanding(0), total(0) {
     SET_HANDLER((HostDBTestReverseHandler) & HostDBTestReverse::mainEvent);
-#ifndef HAVE_SRAND48_R
-    srand48(time(NULL));
-#else
+#if ATS_HAVE_SRAND48_R
     srand48_r(time(NULL), &dr);
+#else
+    srand48(time(NULL));
 #endif
   }
 };

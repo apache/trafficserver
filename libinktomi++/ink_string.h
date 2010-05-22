@@ -76,7 +76,7 @@ char *ink_string_mcopy(char *source);
 char *ink_string_mjoin(int nstrings, ...);
 
 /* Missing fcns */
-#ifdef HAVE_STRNDUP
+#if ATS_HAS_STRNDUP
 #define  ink_strndup strndup
 #else
 char *ink_strndup(const char *str, size_t n);

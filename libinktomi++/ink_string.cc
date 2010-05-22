@@ -391,7 +391,7 @@ ink_string_mjoin(int nstrings, ...)
   return ns;
 }
 
-#if !defined(HAVE_STRNDUP)
+#if !ATS_HAS_STRNDUP
 char *
 ink_strndup(const char *str, size_t n)
 {

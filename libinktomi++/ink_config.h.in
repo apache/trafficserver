@@ -92,6 +92,13 @@
 
 /* Features */
 #define ATS_HAS_EVENTFD                 @has_eventfd@
+#define ATS_HAS_CLOCK_GETTIME           @has_clock_gettime@
+#define ATS_HAS_POSIX_MEMALIGN          @has_posix_memalign@
+#define ATS_HAS_POSIX_FADVISE           @has_posix_fadvise@
+#define ATS_HAS_LRAND48_R               @has_lrand48_r@
+#define ATS_HAS_SRAND48_R               @has_srand48_r@
+#define ATS_HAS_STRNDUP                 @has_strndup@
+
 #define ATS_HAS_BACKTRACE               @has_backtrace@
 #define ATS_HAS_PROFILER                @has_profiler@
 #define ATS_USE_DIAGS                   @use_diags@
