@@ -127,9 +127,8 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
     strncpy(q, rri->request_query, rri->request_query_size);
     q[rri->request_query_size] = '\0';
 
-    s = q;
     /* parse query parameters */
-    for (key = strsep(&s, "&"); key != NULL; key = strsep(&s, "&")) {
+    for (key = strtok_r(q, "&", &s); key != NULL;) {
       char *val = strchr(key, '=');
       if (val && (size_t)(val-key) == qri->param_len &&
           !strncmp(key, qri->param_name, qri->param_len)) {
@@ -140,6 +139,7 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
         INKDebug(PLUGIN_NAME, "modifying host based on %s", key);
         break;
       }
+      key = strtok_r(NULL, "&", &s);
     }
 
     INKfree(q);
