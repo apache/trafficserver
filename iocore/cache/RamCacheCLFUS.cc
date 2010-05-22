@@ -25,10 +25,10 @@
 // See https://cwiki.apache.org/confluence/display/TS/RamCache
 
 #include "P_Cache.h"
-#ifdef HAVE_LIBZ
+#if ATS_HAVE_ZLIB_H
 #include <zlib.h>
 #endif
-#ifdef HAVE_LZMA
+#if ATS_HAVE_LZMA_H
 #include <lzma.h>
 #endif
 
@@ -175,7 +175,7 @@ int RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32 auxkey1
                 goto Lfailed;
               break;
             }
-#if HAVE_LIBZ
+#if ATS_HAVE_ZLIB_H
             case CACHE_COMPRESSION_LIBZ: {
               uLongf l = e->len;
               if (Z_OK != uncompress((Bytef*)b, &l, (Bytef*)e->data->data(), e->compressed_len))
@@ -183,7 +183,7 @@ int RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32 auxkey1
               break;
             }
 #endif
-#ifdef HAVE_LZMA
+#if ATS_HAVE_LZMA_H
             case CACHE_COMPRESSION_LIBLZMA: {
               size_t l = (size_t)e->len, ipos = 0, opos = 0;
               uint64_t memlimit = e->len * 2 + LZMA_BASE_MEMLIMIT;
@@ -322,10 +322,10 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
       switch (ctype) {
         default: goto Lcontinue;
         case CACHE_COMPRESSION_FASTLZ: l = (uLongf)((double)e->len * 1.05 + 66); break;
-#ifdef HAVE_LIBZ
+#if ATS_HAVE_ZLIB_H
         case CACHE_COMPRESSION_LIBZ: l = compressBound(e->len); break;
 #endif
-#ifdef HAVE_LZMA
+#if ATS_HAVE_LZMA_H
         case CACHE_COMPRESSION_LIBLZMA: l = e->len; break;
 #endif
       }
@@ -337,7 +337,7 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
           if ((l = fastlz_compress(e->data->data(), e->len, b)) <= 0)
             goto Lfailed;
           break;
-#if HAVE_LIBZ
+#if ATS_HAVE_ZLIB_H
         case CACHE_COMPRESSION_LIBZ: {
           uLongf ll = l;
           if ((Z_OK != compress((Bytef*)b, &ll, (Bytef*)e->data->data(), e->len)))
@@ -346,7 +346,7 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
           break;
         }
 #endif
-#ifdef HAVE_LZMA
+#if ATS_HAVE_LZMA_H
         case CACHE_COMPRESSION_LIBLZMA: {
           size_t pos = 0, ll = l;
           if (LZMA_OK != lzma_easy_buffer_encode(LZMA_PRESET_DEFAULT, LZMA_CHECK_NONE, NULL,

@@ -136,16 +136,16 @@ AC_MSG_RESULT([$enable_debug])
 # Diags
 #
 
+use_diags=0
 AC_MSG_CHECKING([whether to enable diags])
 AC_ARG_ENABLE([diags],
   [AS_HELP_STRING([--disable-diags],[turn off diags])],
   [],
-  [enable_diags="yes"]
+  [enable_diags="yes"
+   use_diags=1
+  ]
 )
-AC_MSG_RESULT([$enable_diags])
-AS_IF([test "x$enable_diags" = "xyes"],
-  [AC_DEFINE([USE_DIAGS])]
-)
+AC_SUBST(use_diags)
 
 #
 # Purify
@@ -668,6 +668,9 @@ fi
 #
 # Check for default sqlite3 DB backend
 #
+sqlite3h=0
+db_185h=0
+dbh=0
 ATS_CHECK_SQLITE3
 if test "x${enable_sqlite3}" != "xyes"; then
   ATS_CHECK_BDB
@@ -675,13 +678,18 @@ if test "x${enable_sqlite3}" != "xyes"; then
     AC_MSG_ERROR([Need at least one DB backend, --with-sqlite3 and --with-libdb are supported])
   fi
 fi
+AC_SUBST(sqlite3h)
+AC_SUBST(db_185h)
+AC_SUBST(dbh)
 
 ATS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign lrand48_r srand48_r port_create])
 ATS_FLAG_FUNCS([strndup])
 
+has_eventfd=0
 AS_IF([test "x$enable_eventfd" = "xyes"],
   [ATS_FLAG_FUNCS([eventfd])]
 )
+AC_SUBST(has_eventfd)
 
 #
 # Check for pcre library
@@ -691,6 +699,7 @@ if test "x${enable_pcre}" != "xyes"; then
   AC_MSG_ERROR([Cannot find pcre library. Configure --with-pcre=DIR])
 fi
 
+has_backtrace=0
 # Check for backtrace() support
 AC_CHECK_HEADERS([execinfo.h], [have_backtrace=yes],[])
 if test "x${have_backtrace}" = "xyes"; then
@@ -699,40 +708,50 @@ if test "x${have_backtrace}" = "xyes"; then
                                          AC_SUBST([LIBEXECINFO],["-lexecinfo"])])
   if test "x${have_backtrace_lib}" = "xyes"; then
     AC_MSG_NOTICE([Using backtrace library '-lexecinfo'])
+    has_backtrace=1
   fi
-  AC_DEFINE(HAVE_BACKTRACE, 1, [Define if you have backtrace()])
 else
   AC_MSG_WARN([No backtrace() support found])
 fi
-AC_SUBST(HAVE_BACKTRACE)
+AC_SUBST(has_backtrace)
 
+use_libev=0
+use_epoll=0
+use_kqueue=0
+use_port=0
 if test "x$enable_libev" = "xyes"; then
-  AC_DEFINE([USE_LIBEV])
+  use_libev=1
   have_good_poller=1
 elif test "$ac_cv_func_epoll_ctl" = "yes"; then
-  AC_DEFINE([USE_EPOLL])
+  use_epoll=1
   have_good_poller=1
   AC_MSG_NOTICE([Using epoll event interface])
 elif test "$ac_cv_func_kqueue" = "yes"; then
-  AC_DEFINE([USE_KQUEUE])
+  use_kqueue=1
   have_good_poller=1
   AC_MSG_NOTICE([Using kqueue event interface])
 elif test "$ac_cv_func_port_create" = "yes"; then
-  AC_DEFINE([USE_PORT])
+  use_port=1
   have_good_poller=1
   AC_MSG_NOTICE([Using port event interface])
 else
   AC_MSG_FAILURE([No suitable polling interface found])
 fi
+AC_SUBST(use_libev)
+AC_SUBST(use_epoll)
+AC_SUBST(use_kqueue)
+AC_SUBST(use_port)
 
+has_profiler=0
 if test "x${with_profiler}" = "xyes"; then
   AC_CHECK_LIB([profiler], [ProfilerStart],
     [AC_SUBST([LIBPROFILER], ["-lprofiler"])
-     AC_DEFINE([HAVE_PROFILER])
+     has_profiler=1
     ],
     [AC_MSG_FAILURE([check for profiler failed. Have you installed google-perftools-devel?])],
   )
 fi
+AC_SUBST(has_profiler)
 
 # For SunPro 5.2 - we need the demangle symbol for
 #  ink_stack_trace.cc in libinktomi++.  Because this
@@ -749,6 +768,7 @@ AC_SUBST([LIBDEMANGLE])
 AC_LANG_POP
 
 
+need_union_semun=0
 # It's stupid, but not all platforms have union semun, even those that need it.
 AC_MSG_CHECKING(for union semun in sys/sem.h)
 AC_TRY_COMPILE([
@@ -758,16 +778,13 @@ AC_TRY_COMPILE([
 ],[
 union semun arg;
 semctl(0, 0, 0, arg);
-], [have_union_semun="1" union_semun=yes ]
+], [union_semun=yes]
 msg=yes, [
-have_union_semun="0"
+need_union_semun="1"
 msg=no ] )
 AC_MSG_RESULT([$msg])
 
-if test "$have_union_semun" = "0"; then
-  AC_DEFINE([NEED_UNION_SEMUN])
-fi
-
+AC_SUBST(need_union_semun)
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
@@ -1040,24 +1057,13 @@ AH_TEMPLATE([INK_SINGLE_THREADED],[Disable threading])
 AH_TEMPLATE([INK_USE_MUTEX_FOR_ATOMICLISTS],[Use mutex for atomic lists.])
 AH_TEMPLATE([INK_USE_MUTEX_FOR_FREELISTS],[Use mutex for free lists.])
 AH_TEMPLATE([MODULARIZED],[Build modularized Trafficserver.])
-AH_TEMPLATE([NEED_UNION_SEMUN],[Define to 1 if sys/sem.h declares 'union semun'])
 AH_TEMPLATE([PURIFY],[Define to 1 if support for Purify was enabled.])
 AH_TEMPLATE([TS_MICRO],[Define to 1 if building 'micro' Trafficserver distribution.])
-AH_TEMPLATE([USE_DIAGS],[Use diagnostics support.])
-AH_TEMPLATE([USE_EPOLL],[Use epoll for  I/O event notification.])
-AH_TEMPLATE([USE_KQUEUE],[Use kqueue for  I/O event notification.])
-AH_TEMPLATE([USE_LIBEV],[Define to 1 if using libev.])
 AH_TEMPLATE([USE_MD5_FOR_MMH],[Use MD5 for MMH])
-AH_TEMPLATE([USE_PORT],[Use port for  I/O event notification.])
 AH_TEMPLATE([_NO_FREELIST],[Disable free list support.])
-AH_TEMPLATE([darwin],[Define to 1 if compiling for darwin.])
-AH_TEMPLATE([freebsd],[Define to 1 if compiling for freebsd.])
-AH_TEMPLATE([linux],[Define to 1 if compiling for linux.])
-AH_TEMPLATE([solaris],[Define to 1 if compiling for solaris.])
 AH_TEMPLATE([FIXME_NONMODULAR],[FIXME_NONMODULAR])
 AH_TEMPLATE([SPLIT_DNS],[Compile with 'split' DNS support.])
 AH_TEMPLATE([NON_MODULAR],[Compile without modular support.])
-AH_TEMPLATE([HAVE_PROFILER],[Define to 1 if you have Google profiler library.])
 
 AC_OUTPUT
 

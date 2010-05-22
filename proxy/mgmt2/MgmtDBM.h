@@ -45,7 +45,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
-#ifdef NEED_UNION_SEMUN
+#if NEED_UNION_SEMUN
 union semun
 {
   int val;                      /* value for SETVAL */

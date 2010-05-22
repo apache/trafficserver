@@ -521,7 +521,7 @@ AC_DEFUN([ATS_FLAG_FUNCS], [
 AC_CHECK_FUNCS($1)
 for tsc_j in $1
 do
-    tsc_3="have_$tsc_j"
+    tsc_3="has_$tsc_j"
     if eval "test \"`echo '$ac_cv_func_'$tsc_j`\" = yes"; then
        eval "$tsc_3=1"
     else

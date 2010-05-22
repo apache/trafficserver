@@ -29,12 +29,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
+#if defined(HAVE_EXECINFO_H) && ATS_HAS_BACKTRACE
 
 #include <execinfo.h>           /* for backtrace_symbols, etc. */
 #include <signal.h>
 
-#ifdef __linux__
+#if defined(linux)
 /* TODO: port this more correctly to non-Linux platforms. */
 #define HAVE_SIGCONTEXT
 #endif
@@ -114,7 +114,7 @@ ink_stack_trace_dump(int sighandler_frame)
   backtrace_symbols_fd(stack, btl, 2);
 }
 
-#else  /* !(HAVE_EXECINFO_H && HAVE_BACKTRACE) */
+#else  /* !(HAVE_EXECINFO_H && ATS_HAS_BACKTRACE) */
 
 void
 ink_stack_trace_dump(int sighandler_frame)
@@ -123,4 +123,4 @@ ink_stack_trace_dump(int sighandler_frame)
   write(2, msg, sizeof(msg) - 1);
 }
 
-#endif  /* !(HAVE_EXECINFO_H && HAVE_BACKTRACE) */
+#endif  /* !(HAVE_EXECINFO_H && AST_HAS_BACKTRACE) */

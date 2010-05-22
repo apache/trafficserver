@@ -338,7 +338,7 @@ public:
   void free_event(Event * e);
   void (*signal_hook)(EThread *);
 
-#ifdef HAVE_EVENTFD
+#if ATS_HAS_EVENTFD
   int evfd;
 #else
   int evpipe[2];

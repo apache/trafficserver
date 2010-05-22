@@ -96,11 +96,13 @@
 #include <strings.h>
 #include <poll.h>
 
-#if defined(USE_EPOLL)
+#if ATS_USE_EPOLL
 #include <sys/epoll.h>
-#elif defined(USE_KQUEUE)
+#endif
+#if ATS_USE_KQUEUE
 #include <sys/event.h>
-#elif defined(USE_PORT)
+#endif
+#if ATS_USE_PORT
 #include <port.h>
 #endif
 

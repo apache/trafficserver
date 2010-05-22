@@ -540,7 +540,7 @@ main(int argc, char **argv)
           } else if (strcmp(argv[i], "-clusterRSPort") == 0) {
             ++i;
             cluster_server_port = atoi(argv[i]);
-#ifndef NO_DIAGS
+#if ATS_USE_DIAGS
           } else if (strcmp(argv[i], "-debug") == 0) {
             ++i;
             strncpy(debug_tags, argv[i], 1023);

@@ -66,7 +66,7 @@ EThread::EThread(ThreadType att, int anid)
   memset((char *) ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
   memset(thread_private, 0, PER_THREAD_DATA);
   thread_stats_mutex = new_ProxyMutex();
-#ifdef HAVE_EVENTFD
+#if ATS_HAS_EVENTFD
   evfd = eventfd(0, O_NONBLOCK | FD_CLOEXEC);
   if (evfd < 0) {
     if (errno == EINVAL) { // flags invalid for kernel <= 2.6.26

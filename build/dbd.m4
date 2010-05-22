@@ -73,7 +73,6 @@ else
   fi
 fi
 
-sqlite3h=0
 if test "$enable_sqlite3" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -101,7 +100,6 @@ if test "$enable_sqlite3" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
-AC_SUBST(sqlite3h)
 ])
 
 dnl
@@ -159,8 +157,6 @@ else
   fi
 fi
 
-db_185h=0
-dbh=0
 if test "$enable_libdb" != "no"; then
   saved_ldflags=$LDFLAGS
   saved_cppflags=$CPPFLAGS
@@ -189,7 +185,4 @@ if test "$enable_libdb" != "no"; then
     LDFLAGS=$saved_ldflags
   fi
 fi
-AC_SUBST(db_185h)
-AC_SUBST(dbh)
-
 ])

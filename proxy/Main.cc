@@ -107,7 +107,7 @@ extern "C" int plock(int);
 
 #include "StatSystemV2.h"
 
-#ifdef HAVE_PROFILER
+#if ATS_HAS_PROFILER
 #include <google/profiler.h>
 #endif
 
@@ -263,7 +263,7 @@ ArgumentDescription argument_descriptions[] = {
    "T",
    &run_test_hook, "PROXY_RUN_TEST_HOOK", NULL},
 #endif //INK_NO_TESTS
-#ifndef NO_DIAGS
+#if ATS_USE_DIAGS
   {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
    "PROXY_DEBUG_TAGS", NULL},
   {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags,
@@ -1728,7 +1728,7 @@ void init_stat_collector()
 int
 main(int argc, char **argv)
 {
-#ifdef HAVE_PROFILER
+#if ATS_HAS_PROFILER
   ProfilerStart("/tmp/ts.prof");
 #endif
   int mem_throttling;

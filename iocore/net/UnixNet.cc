@@ -110,19 +110,19 @@ PollCont::pollEvent(int event, Event *e)
     }
   }
   // wait for fd's to tigger, or don't wait if timeout is 0
-#if defined(USE_LIBEV)
+#if ATS_USE_LIBEV
   struct ev_loop *eio = pollDescriptor->eio;
   double pt = (double)poll_timeout/1000.0;
   fd_reify(eio);
   eio->backend_poll(eio, pt);
   pollDescriptor->result = eio->pendingcnt[0];
   NetDebug("iocore_net_poll", "[PollCont::pollEvent] backend_poll(%d,%f), result=%d", eio->backend_fd,pt,pollDescriptor->result);
-#elif defined(USE_EPOLL)
+#elif ATS_USE_EPOLL
   pollDescriptor->result = epoll_wait(pollDescriptor->epoll_fd,
                                       pollDescriptor->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
   NetDebug("iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd, poll_timeout,
         pollDescriptor->result);
-#elif defined(USE_KQUEUE)
+#elif ATS_USE_KQUEUE
   struct timespec tv;
   tv.tv_sec = poll_timeout / 1000;
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
@@ -132,7 +132,7 @@ PollCont::pollEvent(int event, Event *e)
                                   &tv);
   NetDebug("iocore_net_poll", "[PollCont::pollEvent] kueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd, poll_timeout,
         pollDescriptor->result);
-#elif defined(USE_PORT)
+#elif ATS_USE_PORT
   int retval;
   timespec_t ptimeout;
   ptimeout.tv_sec = poll_timeout / 1000;
@@ -169,7 +169,7 @@ PollCont::pollEvent(int event, Event *e)
 
 static void
 net_signal_hook_callback(EThread *thread) {
-#if HAVE_EVENTFD
+#if ATS_HAS_EVENTFD
   uint64 counter;
   NOWARN_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64)));
 #else
@@ -180,7 +180,7 @@ net_signal_hook_callback(EThread *thread) {
 
 static void
 net_signal_hook_function(EThread *thread) {
-#if HAVE_EVENTFD
+#if ATS_HAS_EVENTFD
   uint64 counter = 1;
   NOWARN_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(uint64)));
 #else
@@ -208,7 +208,7 @@ initialize_thread_for_net(EThread *thread, int thread_index)
   get_NetHandler(thread)->mutex = new_ProxyMutex();
   PollCont *pc = get_PollCont(thread);
   PollDescriptor *pd = pc->pollDescriptor;
-#if defined(USE_LIBEV)
+#if ATS_USE_LIBEV
   if (!thread_index)
     pd->eio = ev_default_loop(LIBEV_BACKEND_LIST);
   else
@@ -224,7 +224,7 @@ initialize_thread_for_net(EThread *thread, int thread_index)
   thread->signal_hook = net_signal_hook_function;
   thread->ep = (EventIO*)malloc(sizeof(EventIO));
   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
-#if HAVE_EVENTFD
+#if ATS_HAS_EVENTFD
   thread->ep->start(pd, thread->evfd, 0, EVENTIO_READ);
 #else
   thread->ep->start(pd, thread->evpipe[0], 0, EVENTIO_READ);
@@ -305,17 +305,17 @@ NetHandler::mainNetEvent(int event, Event *e)
 
   PollDescriptor *pd = get_PollDescriptor(trigger_event->ethread);
   UnixNetVConnection *vc = NULL;
-#if defined(USE_LIBEV)
+#if ATS_USE_LIBEV
   struct ev_loop *eio = pd->eio;
   double pt = (double)poll_timeout/1000.0;
   fd_reify(eio);
   eio->backend_poll(eio, pt);
   pd->result = eio->pendingcnt[0];
   NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] backend_poll(%d,%f), result=%d", eio->backend_fd,pt,pd->result);
-#elif defined(USE_EPOLL)
+#elif ATS_USE_EPOLL
   pd->result = epoll_wait(pd->epoll_fd, pd->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
   NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] epoll_wait(%d,%f), result=%d", pd->epoll_fd,poll_timeout,pd->result);
-#elif defined(USE_KQUEUE)
+#elif ATS_USE_KQUEUE
   struct timespec tv;
   tv.tv_sec = poll_timeout / 1000;
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
@@ -323,7 +323,7 @@ NetHandler::mainNetEvent(int event, Event *e)
                       pd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE,
                       &tv);
   NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] kevent(%d,%f), result=%d", pd->kqueue_fd,poll_timeout,pd->result);
-#elif defined(USE_PORT)
+#elif ATS_USE_PORT
   int retval;
   timespec_t ptimeout;
   ptimeout.tv_sec = poll_timeout / 1000;
@@ -388,9 +388,9 @@ NetHandler::mainNetEvent(int event, Event *e)
       }
     } else if (epd->type == EVENTIO_DNS_CONNECTION) {
       if (epd->data.dnscon != NULL) {
-	dnsqueue.enqueue(epd->data.dnscon);
+        dnsqueue.enqueue(epd->data.dnscon);
 #if defined(USE_EDGE_TRIGGER)
-	epd->refresh(EVENTIO_READ);
+        epd->refresh(EVENTIO_READ);
 #endif
       }
     }
