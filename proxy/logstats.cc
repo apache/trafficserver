@@ -1829,13 +1829,16 @@ main(int argc, char *argv[])
   // Do we have a list of Origins on the command line?
   if (cl.origin_list[0] != '\0') {
     char *tok;
-    char *sep_ptr = cl.origin_list;
+    char *sep_ptr;
 
     if (origin_set == NULL)
       origin_set = NEW(new OriginSet);
-
-    while ((tok = strsep(&sep_ptr, ",")) != NULL)
-      origin_set->insert(tok);
+    if (cl.origin_list) {
+      for (tok = strtok_r(cl.origin_list, ",", &sep_ptr); tok != NULL;) {
+        origin_set->insert(tok);
+        tok = strtok_r(NULL, ",", &sep_ptr);
+      }
+    }
   }
   // Load origins from an "external" file (\n separated)
   if (cl.origin_file[0] != '\0') {
