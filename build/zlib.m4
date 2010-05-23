@@ -93,7 +93,6 @@ if test "$enable_zlib" != "no"; then
     ATS_FLAG_HEADERS(zlib.h, [zlib_have_headers=1])
   fi
   if test "$zlib_have_headers" != "0"; then
-    AC_DEFINE(HAVE_LIBZ,1,[Compiling with ZLIB support])
     ATS_ADDTO(LIBS, [-lz])
   else
     enable_zlib=no

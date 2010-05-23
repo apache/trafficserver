@@ -66,6 +66,18 @@ AC_SUBST(ATS_VERSION_MAJOR)
 AC_SUBST(ATS_VERSION_MINOR)
 AC_SUBST(ATS_VERSION_MICRO)
 
+dnl Hard-coded top of ink_autoconf.h:
+AH_TOP([
+#ifndef _ink_autoconf_h
+#define _ink_autoconf_h
+])
+
+dnl Hard-coded inclusion at the tail end of ink_autoconf.h:
+AH_BOTTOM([
+
+#endif /* _ink_autoconf_h */
+])
+
 #
 # Generate ./config.nice for reproducing runs of configure
 #
@@ -150,17 +162,15 @@ AC_SUBST(use_diags)
 #
 # Purify
 #
-
+has_purify=0
 AC_MSG_CHECKING([whether to enable purify])
 AC_ARG_ENABLE([purify],
   [AS_HELP_STRING([--enable-purify],[enable support for Purify])],
-  [],
+  [has_purify=1],
   [enable_purify=no]
 )
 AC_MSG_RESULT([$enable_purify])
-AS_IF([test "x$enable_purify" = "xyes"],
-  [AC_DEFINE([PURIFY])]
-)
+AC_SUBST(has_purify)
 
 #
 # libev
@@ -178,45 +188,28 @@ AC_MSG_RESULT([$enable_libev])
 #
 # Micro
 #
-
+is_micro_build=0
 AC_MSG_CHECKING([whether to enable micro-TS])
 AC_ARG_ENABLE([micro],
   [AS_HELP_STRING([--enable-micro],[enable micro-TS build])],
-  [],
+  [is_micro_build=1],
   [enable_micro=no]
 )
+AC_SUBST(is_micro_build)
 AC_MSG_RESULT([$enable_micro])
-AS_IF([test "x$enable_micro" = "xyes"],
-  [AC_DEFINE(TS_MICRO)
-   AC_DEFINE(INK_NO_ACL)
-   AC_DEFINE(INK_NO_CLUSTER)
-   AC_DEFINE(INK_NO_DIAGS)
-   AC_DEFINE(INK_NO_HOSTDB)
-   AC_DEFINE(INK_NO_ICP)
-   AC_DEFINE(INK_NO_LOG)
-   AC_DEFINE(INK_NO_REMAP)
-   AC_DEFINE(INK_NO_REVERSE)
-   AC_DEFINE(INK_NO_SOCKS)
-   AC_DEFINE(INK_NO_STAT_PAGES)
-   AC_DEFINE(INK_NO_TESTS)
-   AC_DEFINE(INK_USE_MUTEX_FOR_ATOMICLISTS)
-   AC_DEFINE(INK_USE_MUTEX_FOR_FREELISTS)
-   AC_DEFINE(USE_MD5_FOR_MMH)
-   AC_DEFINE(_NO_FREELIST)
-  ]
-)
 
 #
 # Standalone iocore
 #
-
+has_standalone_iocore=0
 AC_MSG_CHECKING([whether to build a standalone iocore])
 AC_ARG_ENABLE([standalone-iocore],
   [AS_HELP_STRING([--enable-standalone-iocore],[build just standalone iocore])],
-  [],
+  [has_standalone_iocore=1],
   [enable_standalone_iocore=no]
 )
 AC_MSG_RESULT([$enable_standalone_iocore])
+AC_SUBST(has_standalone_iocore)
 AS_IF([test "x$enable_standalone_iocore" = "xyes"],
   [AC_SUBST([IOCORE_MODULARIZED_DEFS],[""])
    AC_SUBST([ink_with_modules_def],["-DREC_BUILD_STAND_ALONE"])
@@ -224,16 +217,11 @@ AS_IF([test "x$enable_standalone_iocore" = "xyes"],
    AC_SUBST([ink_with_modules_process],[""])
    AC_SUBST([hdr_dirs],"proxy/hdrs")
   ],
-  [AC_DEFINE([FIXME_NONMODULAR])
-   AC_DEFINE([SPLIT_DNS])
-   AC_DEFINE([NON_MODULAR])
-   AC_DEFINE([HTTP_CACHE])
-   AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT2"])
+  [AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT2"])
    AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
    AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
   ]
 )
-AC_DEFINE([MODULARIZED])
 AM_CONDITIONAL([STANDALONE_IOCORE], [test "x$enable_standalone_iocore" = "xyes"])
 
 #
@@ -252,49 +240,44 @@ AC_SUBST([enable_remote_cov_commit])
 #
 # WebUI
 #
+has_webui=0
 AC_MSG_CHECKING([whether to enable Web UI])
 AC_ARG_ENABLE([webui],
   [AS_HELP_STRING([--enable-webui],[enable Web UI])],
-  [],
+  [has_webui=1],
   [enable_webui=no]
 )
 AC_MSG_RESULT([$enable_webui])
-AS_IF([test "x$enable_webui" = "xno"],
-  [AC_DEFINE([NO_WEBUI],1,[disable Web UI])]
-)
+AC_SUBST(has_webui)
 
 #
 # API
 #
-
+has_inkapi=1
 AC_MSG_CHECKING([whether to enable API and plugin support])
 AC_ARG_ENABLE([api],
   [AS_HELP_STRING([--disable-api],[do not enable API and plugin support])],
-  [],
+  [has_inkapi=0],
   [enable_api=yes]
 )
 AC_MSG_RESULT([$enable_api])
-AS_IF([test "x$enable_api" = "xno"],
-  [AC_DEFINE([INK_NO_TRANSFORM])
-   AC_DEFINE([INK_NO_API])
-   AC_DEFINE([INK_SINGLE_THREADED])
-  ]
-)
+AC_SUBST(has_inkapi)
 
 #
 # Cli2
 #
-
+has_cli2=1
 AC_MSG_CHECKING([whether to enable cli2])
 AC_ARG_ENABLE([cli2],
   [AS_HELP_STRING([--disable-cli2],[do not compile cli2])],
-  [],
+  [has_cli2=0],
   [enable_cli2=yes]
 )
 AC_MSG_RESULT([$enable_cli2])
 AS_IF([test "x$enable_cli2" = "xyes"],
   [AC_SUBST([CLI_DIR],[cli2])]
 )
+AC_SUBST(has_cli2)
 
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
@@ -382,6 +365,12 @@ if test "x${CCACHE}" = "xccache" ;then
  CC="$CCACHE $CC"
  CXX="$CCACHE $CXX"
 fi
+dnl AC_PROG_SED is only avaliable in recent autoconf versions.
+dnl Use AC_CHECK_PROG instead if AC_PROG_SED is not present.
+ifdef([AC_PROG_SED],
+      [AC_PROG_SED],
+      [AC_CHECK_PROG(SED, sed, sed)])
+
 AC_PROG_CPP
 AC_PROG_CXXCPP
 AM_PROG_AS
@@ -389,6 +378,10 @@ AC_PROG_AWK
 AC_PROG_LN_S
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
+AC_CHECK_PROG(RM, rm, rm)
+AC_CHECK_PROG(ASCPP, cpp, cpp)
+AC_CHECK_TOOL(AR, ar, ar)
+AC_ISC_POSIX
 
 AC_PATH_PROG([DOXYGEN], [doxygen]) # needed for Doxygen
 AC_PATH_PROG([PERL],[perl],[not found])
@@ -668,19 +661,19 @@ fi
 #
 # Check for default sqlite3 DB backend
 #
-sqlite3h=0
-db_185h=0
-dbh=0
+use_sqlite3=1
+use_libdb=0
 ATS_CHECK_SQLITE3
 if test "x${enable_sqlite3}" != "xyes"; then
   ATS_CHECK_BDB
   if test "x${enable_libdb}" != "xyes"; then
     AC_MSG_ERROR([Need at least one DB backend, --with-sqlite3 and --with-libdb are supported])
   fi
+  use_sqlite3=0
+  use_libdb=1
 fi
-AC_SUBST(sqlite3h)
-AC_SUBST(db_185h)
-AC_SUBST(dbh)
+AC_SUBST(use_sqlite3)
+AC_SUBST(use_libdb)
 
 ATS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise lrand48_r srand48_r port_create])
 ATS_FLAG_FUNCS([strndup])
@@ -760,6 +753,7 @@ if test "x${with_profiler}" = "xyes"; then
 fi
 AC_SUBST(has_profiler)
 
+has_demangle=0
 # For SunPro 5.2 - we need the demangle symbol for
 #  ink_stack_trace.cc in libinktomi++.  Because this
 #  library is part of the SunPro distribution, we need
@@ -768,12 +762,12 @@ AC_SUBST(has_profiler)
 AC_LANG_PUSH([C++])
 AC_CHECK_LIB([demangle],[cplus_demangle],
   [LIBDEMANGLE="-ldemangle"
-   AC_DEFINE([HAVE_DEMANGLE])
+   has_demangle=1
   ]
 )
 AC_SUBST([LIBDEMANGLE])
 AC_LANG_POP
-
+AC_SUBST(has_demangle)
 
 need_union_semun=0
 # It's stupid, but not all platforms have union semun, even those that need it.
@@ -1044,33 +1038,4 @@ AC_CONFIG_FILES([example/app-template/records.config])
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
 
-AH_TEMPLATE([HAVE_DEMANGLE],[Compiling with demangle support.])
-AH_TEMPLATE([HTTP_CACHE],[Compiling with HTTP cache support.])
-AH_TEMPLATE([INKDISKAIO],[Define to 1 if Disk AIO is supported.])
-AH_TEMPLATE([INK_NO_ACL],[Disable ACL support.])
-AH_TEMPLATE([INK_NO_API],[Disable API support.])
-AH_TEMPLATE([INK_NO_CLUSTER],[Disable clustering support.])
-AH_TEMPLATE([INK_NO_DIAGS],[Disable diagnostic support.])
-AH_TEMPLATE([INK_NO_HOSTDB],[Disable host DB.])
-AH_TEMPLATE([INK_NO_ICP],[Disable ICP.])
-AH_TEMPLATE([INK_NO_LOG],[Disable logging.])
-AH_TEMPLATE([INK_NO_REMAP],[Disable remapping.])
-AH_TEMPLATE([INK_NO_REVERSE],[Disable reverse proxy.])
-AH_TEMPLATE([INK_NO_SOCKS],[Disable socks protocol.])
-AH_TEMPLATE([INK_NO_STAT_PAGES],[Disable status pages.])
-AH_TEMPLATE([INK_NO_TESTS],[Disable test.])
-AH_TEMPLATE([INK_NO_TRANSFORM],[Disable transformation support.])
-AH_TEMPLATE([INK_SINGLE_THREADED],[Disable threading])
-AH_TEMPLATE([INK_USE_MUTEX_FOR_ATOMICLISTS],[Use mutex for atomic lists.])
-AH_TEMPLATE([INK_USE_MUTEX_FOR_FREELISTS],[Use mutex for free lists.])
-AH_TEMPLATE([MODULARIZED],[Build modularized Trafficserver.])
-AH_TEMPLATE([PURIFY],[Define to 1 if support for Purify was enabled.])
-AH_TEMPLATE([TS_MICRO],[Define to 1 if building 'micro' Trafficserver distribution.])
-AH_TEMPLATE([USE_MD5_FOR_MMH],[Use MD5 for MMH])
-AH_TEMPLATE([_NO_FREELIST],[Disable free list support.])
-AH_TEMPLATE([FIXME_NONMODULAR],[FIXME_NONMODULAR])
-AH_TEMPLATE([SPLIT_DNS],[Compile with 'split' DNS support.])
-AH_TEMPLATE([NON_MODULAR],[Compile without modular support.])
-
 AC_OUTPUT
-

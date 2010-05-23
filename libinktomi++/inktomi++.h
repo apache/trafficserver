@@ -37,44 +37,8 @@
 #if !defined (_inktomiplus_h_)
 #define	_inktomiplus_h_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <errno.h>
-#include <ctype.h>
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-#include <assert.h>
-#include <string.h>
-#include <memory.h>
-#include <strings.h>
-#include <unistd.h>
-#include <stdarg.h>
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
-#ifdef HAVE_LIBGEN_H
-#include <libgen.h>
-#endif
-#include <limits.h>
-#include <fcntl.h>
-#include <time.h>
-#include <sys/ioctl.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-
-#define		O_TRAPERRORS	0x40000000
-
-#ifdef __cplusplus
-}
-#endif
-
+#include "ink_config.h"
+#include "ink_platform.h"
 #include "ink_aiocb.h"
 #include "ink_align.h"
 #include "ink_apidefs.h"
@@ -97,7 +61,6 @@ extern "C"
 #include "ink_lockfile.h"
 #include "ink_memory.h"
 #include "ink_mutex.h"
-#include "ink_platform.h"
 #include "ink_port.h"
 #include "ink_queue.h"
 #include "ink_rand.h"

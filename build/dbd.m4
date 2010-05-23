@@ -177,7 +177,6 @@ if test "$enable_libdb" != "no"; then
     ATS_FLAG_HEADERS(db_185.h db.h, [libdb_have_headers=1])
   fi
   if test "$libdb_have_headers" != "0"; then
-    AC_DEFINE(HAVE_LIBDB,1,[Compiling with Berkeley-DB support])
     AC_SUBST([LIBDB], ["-ldb"])
   else
     enable_libdb=no

@@ -93,7 +93,6 @@ if test "$enable_lzma" != "no"; then
     ATS_FLAG_HEADERS(lzma.h, [lzma_have_headers=1])
   fi
   if test "$lzma_have_headers" != "0"; then
-    AC_DEFINE(HAVE_LZMA,1,[Compiling with LZMA support])
     ATS_ADDTO(LIBS, [-llzma])
   else
     enable_lzma=no

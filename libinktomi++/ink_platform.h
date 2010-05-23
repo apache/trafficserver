@@ -28,19 +28,32 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <stdlib.h>
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
 #include <ctype.h>
-#include <string.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
 #include <errno.h>
-
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
 #include <fcntl.h>
 
 #include <limits.h>
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include <sys/stat.h>
-
+#include <assert.h>
+#include <time.h>
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/file.h>
@@ -57,43 +70,44 @@
 #include <sys/socket.h>
 #include <sys/mman.h>
 
-#if ATS_HAVE_NETINET_IN_H
+#ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
 #endif
-#if ATS_HAVE_NETINET_IN_SYSTM_H
+#ifdef HAVE_NETINET_IN_SYSTM_H
 # include <netinet/in_systm.h>
 #endif
-#if ATS_HAVE_NETINET_TCP_H
+#ifdef HAVE_NETINET_TCP_H
 # include <netinet/tcp.h>
 #endif
-#if ATS_HAVE_NETINET_IP_H
+#ifdef HAVE_NETINET_IP_H
 # include <netinet/ip.h>
 #endif
-#if ATS_HAVE_NETINET_IP_ICMP_H
+#ifdef HAVE_NETINET_IP_ICMP_H
 # include <netinet/ip_icmp.h>
 #endif
-#include <netdb.h>
-#if ATS_HAVE_ARPA_INET_H
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
 # include <arpa/inet.h>
 #endif
-#if ATS_HAVE_ARPA_NAMESER_H
+#ifdef HAVE_ARPA_NAMESER_H
 # include <arpa/nameser.h>
 #endif
-#if ATS_HAVE_ARPA_NAMESER_COMPAT_H
+#ifdef HAVE_ARPA_NAMESER_COMPAT_H
 # include <arpa/nameser_compat.h>
 #endif
 
 #include <signal.h>
-#if ATS_HAVE_SIGINFO_H
+#ifdef HAVE_SIGINFO_H
 # include <siginfo.h>
 #endif
-#if ATS_HAVE_WAIT_H
+#ifdef HAVE_WAIT_H
 # include <wait.h>
 #endif
 
 #include <syslog.h>
 #include <pwd.h>
-#include <strings.h>
 #include <poll.h>
 
 #if ATS_USE_EPOLL
@@ -107,24 +121,27 @@
 #endif
 
 
-#if ATS_HAVE_VALUES_H
+#ifdef HAVE_VALUES_H
 # include <values.h>
 #endif
-#if ATS_HAVE_ALLOCA_H
+#ifdef HAVE_ALLOCA_H
 # include <alloca.h>
+#endif
+#ifdef HAVE_MALLOC_H
+# include <malloc.h>
 #endif
 
 #include <errno.h>
 #include <dirent.h>
 
-#if ATS_HAVE_CPIO_H
+#ifdef HAVE_CPIO_H
 # include <cpio.h>
 #endif
 
 struct ifafilt;
 #include <net/if.h>
 
-#if ATS_HAVE_STROPTS_H
+#ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
 
@@ -136,20 +153,20 @@ struct ifafilt;
 #define __STDC__ 0
 #endif
 
-#if ATS_HAVE_MACHINE_ENDIAN_H
+#ifdef HAVE_MACHINE_ENDIAN_H
 # include <machine/endian.h>
 #endif
-#if ATS_HAVE_ENDIAN_H
+#ifdef HAVE_ENDIAN_H
 # include <endian.h>
 #endif
-#if ATS_HAVE_SYS_BYTEORDER_H
+#ifdef HAVE_SYS_BYTEORDER_H
 # include <sys/byteorder.h>
 #endif
 
-#if ATS_HAVE_SYS_IOCTL_H
+#ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
 #endif
-#if ATS_HAVE_SYS_SOCKIO_H
+#ifdef HAVE_SYS_SOCKIO_H
 # include <sys/sockio.h>
 #endif
 
@@ -160,26 +177,30 @@ struct ifafilt;
 typedef unsigned int in_addr_t;
 #endif
 
-#if ATS_HAVE_SYS_SYSINFO_H
+#ifdef HAVE_SYS_SYSINFO_H
 # include <sys/sysinfo.h>
 #endif
 
 #if !defined(darwin)
-# if ATS_HAVE_SYS_SYSCTL_H
+# ifdef HAVE_SYS_SYSCTL_H
 #  include <sys/sysctl.h>
 # endif
 #endif
-#if ATS_HAVE_SYS_SYSTEMINFO_H
+#ifdef HAVE_SYS_SYSTEMINFO_H
 # include <sys/systeminfo.h>
 #endif
 
-#include <dlfcn.h>
-
-#if ATS_HAVE_MATH_H
+#ifdef HAVE_DLFCN_H
+# include <dlfcn.h>
+#endif
+#ifdef HAVE_MATH_H
 # include <math.h>
 #endif
+#ifdef HAVE_FLOAT_H
+# include <float.h>
+#endif
 
-#if ATS_HAVE_SYS_SYSMACROS_H
+#ifdef HAVE_SYS_SYSMACROS_H
 # include <sys/sysmacros.h>
 #endif
 
@@ -189,4 +210,4 @@ typedef unsigned int in_addr_t;
                           //                 windows-260,etc)
 #endif
 
-#endif /* _PLATFORM_H_ */
+#endif /* _ink_platform_h */

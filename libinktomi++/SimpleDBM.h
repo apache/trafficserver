@@ -43,7 +43,6 @@
 #ifndef _SimpleDBM_h_
 #define	_SimpleDBM_h_
 
-#include "ink_platform.h"
 #include "inktomi++.h"
 
 class SimpleDBM;
@@ -68,26 +67,28 @@ typedef enum
 
 extern "C"
 {
-#ifdef HAVE_SQLITE3_H
-#define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_SQLITE3
-#define SIMPLEDBM_USE_SQLITE3
-#include <sqlite3.h>
+#if ATS_USE_SQLITE3
+# define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_SQLITE3
+# define SIMPLEDBM_USE_SQLITE3
+# ifdef HAVE_SQLITE3_H
+#  include <sqlite3.h>
+# else
+#  error Cannot use sqlite3 without sqlite3.h header
+# endif
 #endif
 
-#ifdef HAVE_DB_185_H
-#ifndef DEFAULT_DB_IMPLEMENTATION
-#define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_LIBDB_Hash
-#endif
-#define SIMPLEDBM_USE_LIBDB
-#include <db_185.h>
-#else
-#ifdef HAVE_DB_H
-#ifndef DEFAULT_DB_IMPLEMENTATION
-#define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_LIBDB_Hash
-#endif
-#define SIMPLEDBM_USE_LIBDB
-#include <db.h>
-#endif
+#if ATS_USE_LIBDB
+# define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_LIBDB_Hash
+# define SIMPLEDBM_USE_LIBDB
+# ifdef HAVE_DB_185_H
+#  include <db_185.h>
+# else
+#  ifdef HAVE_DB_H
+#   include <db.h>
+#  else
+#    error Undefined db header
+#  endif
+# endif
 #endif
 }
 
