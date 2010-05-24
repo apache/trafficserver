@@ -1201,6 +1201,7 @@ get_control_msg_in(char *cmsg)
     if (CoreUtils::read_from_core((int) msg_ptr, sizeof(INCONTROLMSG_ENC), (char *) loaded_msg) != -1) {
       return loaded_msg;
     }
+    free(loaded_msg);
   }
 
   return NULL;
@@ -1217,6 +1218,7 @@ get_control_msg_out(char *cmsg)
     if (CoreUtils::read_from_core((int) msg_ptr, sizeof(OUTCONTROLMSG), (char *) loaded_msg) != -1) {
       return loaded_msg;
     }
+    free(loaded_msg);
   }
 
   return NULL;
