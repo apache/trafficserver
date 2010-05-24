@@ -79,23 +79,25 @@ struct SocketManager
   int ftruncate(int fildes, off_t length);
   int lockf(int fildes, int function, long size);
   int poll(struct pollfd *fds, unsigned long nfds, int timeout);
-#if defined(USE_EPOLL)
+#if ATS_USE_EPOLL
   int epoll_create(int size);
   int epoll_close(int eps);
   int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
   int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
-#elif defined(USE_KQUEUE)
+#endif
+#if ATS_USE_KQUEUE
   int kqueue();
   int kevent(int kq, const struct kevent *changelist, int nchanges,
              struct kevent *eventlist, int nevents,
              const struct timespec *timeout);
-#elif defined(USE_PORT)
+#endif
+#if ATS_USE_PORT
   int port_create();
   int port_associate(int port, int fd, uintptr_t obj,
-		     int events, void *user);
+                     int events, void *user);
   int port_dissociate(int port, int fd, uintptr_t obj);
   int port_getn(int port, port_event_t *list, uint_t max,
-		uint_t *nget, timespec_t *timeout);
+                uint_t *nget, timespec_t *timeout);
 #endif
   int shutdown(int s, int how);
   int dup(int s);
