@@ -1233,7 +1233,7 @@ NetCmdHandler::process_stat_file_cmd(RafCmd * cmd)
   reply(3) = strdup(num_buf);
 
   reply(4) = strdup("mod_date");
-  snprintf(num_buf, 63, "%b32d", (uint32) stat_info.st_mtime);
+  snprintf(num_buf, 63, "%d", (uint32) stat_info.st_mtime);
   num_buf[63] = '\0';
   reply(5) = strdup(num_buf);
 

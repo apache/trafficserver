@@ -562,7 +562,7 @@ void StatCollectorContinuation::setReadTimeout(int secs, long usecs)
 
 StatCollectorContinuation::StatCollectorContinuation() : Continuation(NULL)
 {
-    Debug("http", "YTS start time : %b64d", StatCollectorContinuation::_startTime);
+    Debug("http", "YTS start time : %lld", (long long) StatCollectorContinuation::_startTime);
     SET_HANDLER(&StatCollectorContinuation::mainEvent);
     statsCommandThread = INKThreadCreate(commandListen, &_statCommandPort);
 }

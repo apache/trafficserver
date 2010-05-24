@@ -1463,7 +1463,7 @@ HttpSM::state_api_callout(int event, void *data)
         if(prev_hook_stats_enabled && prev_hook_start_time) {
           INK64 time_in_plugin_ms = (curr_time - prev_hook_start_time)/1000000;
           prev_hook_stats.inc(time_in_plugin_ms);
-          Debug("http", "[%b64d] Time spent in plugin %s = %b64d",
+          Debug("http", "[%lld] Time spent in plugin %s = %lld",
                 sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
         }
 
@@ -1552,7 +1552,7 @@ HttpSM::state_api_callout(int event, void *data)
     // Handle last plugin on current state
     if(prev_hook_stats_enabled && prev_hook_start_time) {
       INK64 time_in_plugin_ms = (INKhrtime() - prev_hook_start_time)/1000000;
-      Debug("http", "[%b64d] Last plugin : Time spent : %s %b64d",
+      Debug("http", "[%lld] Last plugin : Time spent : %s %lld",
             sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
       prev_hook_stats.inc(time_in_plugin_ms);
     }

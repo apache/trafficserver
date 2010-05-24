@@ -1985,7 +1985,7 @@ HttpConfig::cluster_delta_cb(void *opaque_token, char *data_raw, int data_len)
   //  really ought to atomic.  However, any risk of bogus time is
   //  too ugly for me to contemplate
   old = ink_atomic_swap(&HttpConfig::m_master.cluster_time_delta, delta32);
-  Debug("http_trans", "Cluster time delta moving from %b32d to %b32d", old, delta32);
+  Debug("http_trans", "Cluster time delta moving from %d to %d", old, delta32);
 
   return NULL;
 
