@@ -279,6 +279,11 @@ void
 clusterAPI_init()
 {
   MachineStatusSM *mssmp = 0;
+  // XXX: BIG RED WARNING!!! Direct null pointer dereference
+  //      Either create MachineStatusSM before ose or axe this function.
+  //      It is used only if NON_MODULAR is defined making that
+  //      flag crashing ClusterProcessor::init()
+  //
   ink_atomiclist_init(&status_callout_atomic_q,
                       "cluster API status_callout_q", (char *) &mssmp->link.next - (char *) mssmp);
   ClusterAPI_mutex = new_ProxyMutex();
