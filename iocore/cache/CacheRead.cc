@@ -56,12 +56,12 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheFragType type, char *
       c->frag_type = type;
       c->od = od;
     }
+    if (!c)
+      goto Lmiss;
     if (!lock) {
       CONT_SCHED_LOCK_RETRY(c);
       return &c->_action;
     }
-    if (!c)
-      goto Lmiss;
     if (c->od)
       goto Lwriter;
     c->dir = result;
