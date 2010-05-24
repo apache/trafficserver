@@ -139,18 +139,10 @@ typedef struct _DIP_ele
 } DIP_ele;
 
 int
-SocketManager::ink_bind(SOCKET s, struct sockaddr *name, int namelen, short Proto)
+SocketManager::ink_bind(int s, struct sockaddr *name, int namelen, short Proto)
 {
   (void) Proto;
-  int retval;
-
-  retval = safe_bind(s, name, namelen);
-
-  if (retval < 0) {
-    return retval;
-  }
-
-  return retval;
+  return safe_bind(s, name, namelen);
 }
 
 
@@ -158,13 +150,15 @@ int
 SocketManager::close(int s)
 {
   int res;
-  if (!s) {
-    printf("broken UDPConnection trying to close stdin\n");
-    return 0;
-  }
+
+  if (s == 0)
+    return -EACCES;
+  else if (s < 0)
+    return -EINVAL;
+
   do {
-    res =::close(s);
-    if (res < 0)
+    res = ::close(s);
+    if (res == -1)
       res = -errno;
   } while (res == -EINTR);
   return res;

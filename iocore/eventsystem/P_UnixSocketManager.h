@@ -547,18 +547,6 @@ SocketManager::dup(int s)
   return res;
 }
 
-TS_INLINE int
-SocketManager::fast_close(int s)
-{
-  int res;
-  do {
-    if ((res =::close(s)) >= 0)
-      break;
-    res = -errno;
-  } while (res == -EINTR);
-  return res;
-}
-
 int safe_msync(caddr_t addr, size_t len, caddr_t end, int flags);
 
 #ifndef MADV_NORMAL

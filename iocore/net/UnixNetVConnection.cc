@@ -103,8 +103,7 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
   }
   vc->cancel_OOB();
   vc->ep.stop();
-  socketManager.fast_close(vc->con.fd);
-  vc->con.fd = NO_FD;
+  vc->con.close();
 #ifdef INACTIVITY_TIMEOUT
   if (vc->inactivity_timeout) {
     vc->inactivity_timeout->cancel_action(vc);

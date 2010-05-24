@@ -52,10 +52,10 @@ UnixUDPConnection::~UnixUDPConnection()
     callbackAction = NULL;
   }
   Debug("udpnet", "Destroying udp port = %d", getPortNum());
-  if (fd != -1) {
+  if (fd != NO_FD) {
     socketManager.close(fd);
   }
-  fd = -1;
+  fd = NO_FD;
 }
 
 // called with continuation lock taken out

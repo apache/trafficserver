@@ -43,6 +43,8 @@ struct Thread;
 
 #define SOCKET int
 
+/** Utility class for socket operations.
+ */
 struct SocketManager
 {
   SocketManager();
@@ -113,15 +115,15 @@ struct SocketManager
 
   int getsockname(int s, struct sockaddr *, socklen_t *);
 
-  // result is 0 or -errno
+  /** Close the socket.
+      @return 0 if successful, -errno on error.
+   */
   int close(int sock);
-  int fast_close(int sock);
-
-  int ink_bind(SOCKET s, struct sockaddr *name, int namelen, short protocol = 0);
+  int ink_bind(int s, struct sockaddr *name, int namelen, short protocol = 0);
 
   int pagesize;
 
-    virtual ~ SocketManager();
+  virtual ~ SocketManager();
 
 private:
   // just don't do it
