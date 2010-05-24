@@ -472,7 +472,7 @@ CacheProcessor::start_internal(int flags)
   start_internal_flags = flags;
   clear = !!(flags & PROCESSOR_RECONFIGURE) || auto_clear_flag;
   fix = !!(flags & PROCESSOR_FIX);
-  int i, p;
+  int i;
   start_done = 0;
   int diskok = 1;
 
@@ -510,7 +510,6 @@ CacheProcessor::start_internal(int flags)
     int fd = open(path, opts, 0644);
     int blocks = sd->blocks;
     off_t offset = sd->offset;
-    p = 0;
     if (fd > 0) {
 #if defined (_WIN32)
       aio_completion_port.register_handle((void *) fd, 0);
