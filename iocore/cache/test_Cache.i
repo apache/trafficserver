@@ -1271,8 +1271,8 @@ CacheSMTest::make_request()
     hdr->url_get(&url);
     start_time = ink_get_hrtime();
     action = cacheProcessor.open_read(this, &url, hdr, &params);
-#endif
   }
+#endif
 
   if ((action != ACTION_RESULT_DONE) && (gen->drandom() <= control->xcancel_probability)) {
     cache_action = action;
