@@ -79,8 +79,8 @@ TS_ROOT=${TS_ROOT:-$TS_PREFIX}
 # For standard installations TS_BASE will be empty
 eval TS_BASE="`echo $TS_ROOT | ${ESED} -e 's;@prefix@$;;'`"
 
-TC_NAME=${TS_NAME:-traffic_cop}
-TM_NAME=${TS_NAME:-traffic_manager}
+TC_NAME=${TC_NAME:-traffic_cop}
+TM_NAME=${TM_NAME:-traffic_manager}
 TS_NAME=${TS_NAME:-traffic_server}
 TC_DAEMON=${TC_DAEMON:-$TS_BASE@exp_bindir@/traffic_cop}
 TC_DAEMON_ARGS=""
