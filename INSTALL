@@ -55,7 +55,7 @@ APACHE TRAFFIC SERVER INSTALLATION
            $ make examples
            To installl the examples inside current layout libexecdir
            use the
-           $ sudo examples install
+           $ sudo make install-examples
 
   Postscript
   ----------
