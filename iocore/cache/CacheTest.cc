@@ -400,7 +400,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int atype, int *pstatus) {
     replace_write_test.clone(),
     replace_test.clone(),
     replace_read_test.clone(),
-    NULL
+    NULL_PTR
     )->run(pstatus);
   return;
 }

@@ -72,9 +72,9 @@ struct RegressionSM : Continuation {
   RegressionSM(const RegressionSM &);
 };
 
-RegressionSM *r_sequential(RegressionTest *t, ...); // terminate list in NULL
 RegressionSM *r_sequential(RegressionTest *t, int n, RegressionSM *sm);
-RegressionSM *r_parallel(RegressionTest *t, ...); // terminate list in NULL
+RegressionSM *r_sequential(RegressionTest *t, RegressionSM *sm, ...); // terminate list in NULL
 RegressionSM *r_parallel(RegressionTest *t, int n, RegressionSM *sm);
+RegressionSM *r_parallel(RegressionTest *t, RegressionSM *sm, ...); // terminate list in NULL
 
 #endif

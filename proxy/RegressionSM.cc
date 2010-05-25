@@ -93,19 +93,18 @@ int RegressionSM::regression_sm_start(int event, void *data) {
   return EVENT_CONT;
 }
 
-RegressionSM *r_sequential(RegressionTest *t, ...) {
+RegressionSM *r_sequential(RegressionTest *t, RegressionSM* sm, ...) {
   RegressionSM *new_sm = new RegressionSM(t);
   va_list ap;
-  va_start(ap, t);
+  va_start(ap, sm);
   new_sm->par = false;
   new_sm->rep = false;
   new_sm->ichild = 0;
   new_sm->nchildren = 0;
   new_sm->nwaiting = 0;
-  while (1) {
-    RegressionSM *x = va_arg(ap, RegressionSM*);
-    if (!x) break;
-    new_sm->children(new_sm->nchildren++) = x;
+  while (0 != sm) {
+    new_sm->children(new_sm->nchildren++) = sm;
+    sm = va_arg(ap, RegressionSM*);
   }
   new_sm->n = new_sm->nchildren;
   va_end(ap);
@@ -124,19 +123,18 @@ RegressionSM *r_sequential(RegressionTest *t, int an, RegressionSM *sm) {
   return new_sm;
 }
 
-RegressionSM *r_parallel(RegressionTest *t, ...) {
+RegressionSM *r_parallel(RegressionTest *t, RegressionSM *sm, ...) {
   RegressionSM *new_sm = new RegressionSM(t);
   va_list ap;
-  va_start(ap, t);
+  va_start(ap, sm);
   new_sm->par = true;
   new_sm->rep = false;
   new_sm->ichild = 0;
   new_sm->nchildren = 0;
   new_sm->nwaiting = 0;
-  while (1) {
-    RegressionSM *x = va_arg(ap, RegressionSM*);
-    if (!x) break;
-    new_sm->children(new_sm->nchildren++) = x;
+  while (sm) {
+    new_sm->children(new_sm->nchildren++) = sm;
+    sm = va_arg(ap, RegressionSM*);
   }
   new_sm->n = new_sm->nchildren;
   va_end(ap);
@@ -227,15 +225,14 @@ struct ReRegressionSM : RegressionSM {
 REGRESSION_TEST(RegressionSM)(RegressionTest *t, int atype, int *pstatus) {
   r_sequential(
     t,
-    r_parallel(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL),
-    r_sequential(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL),
+    r_parallel(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL_PTR),
+    r_sequential(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL_PTR),
     r_parallel(t, 3, new ReRegressionSM(t)),
     r_sequential(t, 3, new ReRegressionSM(t)),
     r_parallel(
       t,
       r_sequential(t, 2, new ReRegressionSM(t)),
       r_parallel(t, 2, new ReRegressionSM(t)),
-      NULL),
-    NULL)->run(pstatus);
+      NULL_PTR),
+    NULL_PTR)->run(pstatus);
 }
-
