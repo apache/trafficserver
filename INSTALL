@@ -51,6 +51,12 @@ APACHE TRAFFIC SERVER INSTALLATION
          * The easiest way to find all of the configuration flags
            for Traffic Server is to run ./configure --help.
 
+         * To build the examples in example directory use
+           $ make examples
+           To installl the examples inside current layout libexecdir
+           use the
+           $ sudo examples install
+
   Postscript
   ----------
 

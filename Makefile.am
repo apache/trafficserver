@@ -22,16 +22,16 @@
 ACLOCAL_AMFLAGS = -I build
 
 if STANDALONE_IOCORE
-SUBDIRS =  libinktomi++ librecords iocore @hdr_dirs@ proxy example
+SUBDIRS =  libinktomi++ librecords iocore @hdr_dirs@ proxy
 else
-SUBDIRS =  libinktomi++ librecords iocore proxy example doc rc
+SUBDIRS =  libinktomi++ librecords iocore proxy doc rc
 endif
 
 DIST_BUILD_USER=`id -nu`
 DIST_BUILD_USER_GROUP=`id -ng`
 DISTCHECK_CONFIGURE_FLAGS=--with-user=${DIST_BUILD_USER} --with-group=${DIST_BUILD_USER_GROUP}
 
-EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LICENSE example contrib README.libev README-EC2 REVIEWERS
+EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LAYOUT LICENSE example contrib README.libev README-EC2 REVIEWERS
 
 installcheck-local:
 	$(DESTDIR)$(bindir)/traffic_server -R 1
@@ -55,18 +55,26 @@ asf-dist-sign: asf-dist
 	sha1sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.sha1
 	gpg --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
 
+examples: all
+	@(cd example; $(MAKE))
+
+install-examples: examples
+	@(cd example; $(MAKE) install pkglibdir=$(pkglibexecdir))
+
 help:
-	@echo 'all            default target for building the package' && \
-   echo 'check          run the test suite, if any' && \
-   echo 'clean          remove whatever make created' && \
-   echo 'distclean      remove whatever configure created' && \
-   echo 'dist           DEPRECATED: recreate source package' && \
-   echo 'asf-dist       recreate source package' && \
-   echo 'asf-dist-sign  recreate source package, with checksums and signature' && \
-   echo 'distcheck      verify dist by performing VPATH build and then distclean' && \
-   echo 'doxygen        generate doxygen docs in doc/html dir' && \
-   echo 'help           display this list of make targets' && \
-   echo 'install        install by copying the built files to system-wide dirs' && \
-   echo 'install-strip  same as install but then strips debugging symbols' && \
-   echo 'uninstall      opposite of install, removes installed files'
+	@echo 'all              default target for building the package' && \
+   echo 'check            run the test suite, if any' && \
+   echo 'clean            remove whatever make created' && \
+   echo 'distclean        remove whatever configure created' && \
+   echo 'dist             DEPRECATED: recreate source package' && \
+   echo 'examples         make examples' && \
+   echo 'asf-dist         recreate source package' && \
+   echo 'asf-dist-sign    recreate source package, with checksums and signature' && \
+   echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
+   echo 'doxygen          generate doxygen docs in doc/html dir' && \
+   echo 'help             display this list of make targets' && \
+   echo 'install          install by copying the built files to system-wide dirs' && \
+   echo 'install-strip    same as install but then strips debugging symbols' && \
+   echo 'install-examples install examples by copying the built files to system-wide dirs' && \
+   echo 'uninstall        opposite of install, removes installed files'
 
