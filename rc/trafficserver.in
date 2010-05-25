@@ -23,9 +23,9 @@
 # Required-Stop:     $local_fs $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      S 0 1 6
-# Short-Description: initscript to start/stop Traffic Server
-# Description:       initscript to start/stop Traffic Server
-#                    This should be placed in /etc/init.d. on Ubuntu
+# Short-Description: Startup/shutdown script for the Apache Traffic Server
+# Description:       Apache Traffic Server is fast, scalable and extensible
+#                    HTTP/1.1 compliant caching proxy server.
 ### END INIT INFO
 
 # Fedora:
