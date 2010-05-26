@@ -78,7 +78,7 @@ start_test(RegressionTest * t)
   int tresult = t->status;
   if (tresult != REGRESSION_TEST_INPROGRESS) {
     fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", t->name,
-            40 - strlen(t->name), " ", regression_status_string(tresult));
+            40 - (int)strlen(t->name), " ", regression_status_string(tresult));
     t->printed = 1;
   }
   return tresult;
@@ -114,7 +114,7 @@ RegressionTest::run_some()
     if (!current->printed) {
       current->printed = true;
       fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", current->name,
-              40 - strlen(current->name), " ", regression_status_string(current->status));
+              40 - (int)strlen(current->name), " ", regression_status_string(current->status));
     }
     current = current->next;
   }
@@ -147,7 +147,7 @@ check_test_list:
     if ((t->status == REGRESSION_TEST_PASSED || t->status == REGRESSION_TEST_FAILED) && !t->printed) {
       t->printed = true;
       fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", t->name,
-              40 - strlen(t->name), " ", regression_status_string(t->status));
+              40 - (int)strlen(t->name), " ", regression_status_string(t->status));
     }
 
     switch (t->status) {
