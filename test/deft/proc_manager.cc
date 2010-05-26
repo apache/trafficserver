@@ -34,6 +34,11 @@
 //  it causes problems with Sunpro 5.0
 #define	_inktomiplus_h_
 
+#include "ink_platform.h"
+#include "ink_port.h"
+#include "ink_args.h"
+#include "ink_time.h"
+
 #include "proc_manager.h"
 #include "sio_buffer.h"
 #include "raf_cmd.h"
@@ -41,10 +46,8 @@
 #include "log_sender.h"
 
 #include "Diags.h"
-#include "ink_args.h"
 #include "snprintf.h"
 #include "rafencode.h"
-#include "InkTime.h"
 #include "ParseRules.h"
 #include "Ptr.h"
 #include "Tokenizer.h"

@@ -32,7 +32,10 @@
 #define _WEB_COMPATIBILITY_H_
 
 #include "ink_platform.h"
-#include "InkTime.h"
+#include "ink_port.h"
+#include "ink_inet.h"
+#include "ink_string.h"
+#include "ink_time.h"
 
 #include "WebGlobals.h"
 

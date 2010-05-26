@@ -22,11 +22,12 @@
  */
 
 #include "ink_platform.h"
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
-
+#include "ink_port.h"
 #include "ink_resource.h"
 #include "ink_string.h"
-#include "InkTime.h"
+#include "ink_time.h"
+#include "ink_unused.h"
+
 #include "WebUtils.h"
 #include "WebHttpMessage.h"
 #include "TextBuffer.h"

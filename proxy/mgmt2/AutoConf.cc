@@ -22,7 +22,10 @@
  */
 
 #include "ink_config.h"
-#include "InkTime.h"
+#include "ink_platform.h"
+#include "ink_port.h"
+#include "ink_time.h"
+
 #include "Main.h"
 #include "AutoConf.h"
 #include "TextBuffer.h"

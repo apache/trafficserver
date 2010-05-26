@@ -109,9 +109,7 @@ libinktomi___a_SOURCES = \
   ink_thread.cc \
   ink_thread.h \
   ink_time.cc \
-  InkTime.cc \
   ink_time.h \
-  InkTime.h \
   inktomi++.h \
   ink_unused.h \
   fastlz.h \
@@ -180,7 +178,7 @@ ParseRules.o: ParseRules.cc CompileParseRules
 test:: $(TESTS)
 	for f in $(TESTS) ; do $$f ; done
 
-#$(foreach F, $(TESTS), $(shell $F)) 
+#$(foreach F, $(TESTS), $(shell $F))
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper

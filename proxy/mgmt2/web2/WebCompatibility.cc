@@ -28,7 +28,6 @@
  *
  ****************************************************************************/
 
-#include "ink_config.h"
 #include "WebCompatibility.h"
 #include "MgmtSocket.h"
 

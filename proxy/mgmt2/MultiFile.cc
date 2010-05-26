@@ -22,13 +22,15 @@
  */
 
 #include "ink_platform.h"
-#include "ink_unused.h"    /* MAGIC_EDITING_TAG */
-
+#include "ink_port.h"
 #include "ink_assert.h"
 #include "ink_resource.h"
 #include "ink_error.h"
 #include "ink_file.h"
-#include "InkTime.h"
+#include "ink_string.h"
+#include "ink_time.h"
+#include "ink_unused.h"
+
 #include "Compatability.h"
 #include "MgmtUtils.h"
 #include "MultiFile.h"

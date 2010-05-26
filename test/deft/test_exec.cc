@@ -25,15 +25,17 @@
 //  it causes problems with Sunpro 5.0
 #define	_inktomiplus_h_
 
-#include <netdb.h>
 
+#include "ink_platform.h"
+#include "ink_port.h"
 #include "ink_args.h"
-#include "snprintf.h"
 #include "ink_hrtime.h"
+#include "ink_time.h"
+#include "snprintf.h"
 #include "Diags.h"
 #include "Tokenizer.h"
-#include "InkTime.h"
 
+#include <netdb.h>
 #include "sio_buffer.h"
 #include "sio_loop.h"
 #include "raf_cmd.h"

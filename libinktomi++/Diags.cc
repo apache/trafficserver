@@ -34,17 +34,15 @@
 
  ****************************************************************************/
 
+#include "ink_platform.h"
+#include "ink_port.h"
 #include "ink_unused.h"
 #include "ink_error.h"
 #include "ink_assert.h"
 #include "ink_time.h"
 #include "ink_hrtime.h"
-#include "InkTime.h"
 #include "Diags.h"
-#include <time.h>
-#include "ink_platform.h"
 //fixme #include "BaseRecords.h"
-#include "ink_port.h"
 #include "Compatability.h"
 
 

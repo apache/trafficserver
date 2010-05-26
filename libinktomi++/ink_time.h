@@ -34,15 +34,10 @@
 #ifndef _ink_time_h_
 #define	_ink_time_h_
 
-#include <stdio.h>
-#include <strings.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <time.h>
-#include <sys/resource.h>
-
 #include "ink_platform.h"
 #include "ink_port.h"
+#include "ink_hrtime.h"
+#include "ink_unused.h"
 
 /*===========================================================================*
 
@@ -69,6 +64,7 @@ typedef struct
 #define MICRO_USER 1
 #define MICRO_SYS 2
 #define MICRO_REAL 3
+#define UNDEFINED_TIME ((time_t)0)
 
 uint64 ink_microseconds(int which);
 double ink_time_wall_seconds();
@@ -126,9 +122,44 @@ ink_time_is_400th_year(int year)
   return ((year % 400) == 0);
 }                               /* End ink_time_is_400th_year */
 
-
-
 int cftime_replacement(char *s, int maxsize, const char *format, const time_t * clock);
 #define cftime(s, format, clock) cftime_replacement(s, 8192, format, clock)
+
+inkcoreapi int ink_gmtime_r(const ink_time_t * clock, struct tm *res);
+ink_time_t convert_tm(const struct tm *tp);
+
+#if defined(freebsd)
+
+inline int
+ink_timezone()
+{
+  struct timeval tp;
+  struct timezone tzp;
+  ink_assert(!gettimeofday(&tp, &tzp));
+  return tzp.tz_minuteswest * 60;
+}
+
+/* vl: not used
+inline int ink_daylight() {
+  struct tm atm;
+  time_t t = time(NULL);
+  ink_assert(!localtime_r(&t, &atm));
+  return atm.tm_isdst;
+}
+*/
+
+#else  // non-freebsd for the else
+
+inline int
+ink_timezone()
+{
+  return timezone;
+}
+
+/* vl: not used - inline int ink_daylight() { return daylight; } */
+#endif
+
+inkcoreapi char *ink_ctime_r(const ink_time_t * clock, char *buf);
+inkcoreapi struct tm *ink_localtime_r(const ink_time_t * clock, struct tm *res);
 
 #endif /* #ifndef _ink_time_h_ */
