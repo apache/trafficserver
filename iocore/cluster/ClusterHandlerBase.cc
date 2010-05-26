@@ -267,7 +267,7 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
   iov = (IOVec *) iob_iov->data();
   // TODO: This is align_pointer_forward
-  uint64 page_addr = (uint64) (((uint64) ((ptrdiff_t) iov) + (uint64) pagesize) & ~(pagesize - 1));
+  ptrdiff_t page_addr = ((ptrdiff_t) iov + (ptrdiff_t) pagesize) & ~((ptrdiff_t) pagesize - 1);
   iov = (IOVec *) ((ptrdiff_t) page_addr);
 
 #if (defined(__sparc) || defined(__alpha))
@@ -285,13 +285,13 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   msg.iob_descriptor_block->alloc(BUFFER_SIZE_FOR_XMALLOC(size));
 
   char *a = msg.iob_descriptor_block->data->data();
-  page_addr = (uint64) (((uint64) ((ptrdiff_t) a) + (uint64) pagesize) & ~(pagesize - 1));
+  page_addr = ((ptrdiff_t) a + (ptrdiff_t) pagesize) & ~((ptrdiff_t) pagesize - 1);
 
 #if (defined(__sparc) || defined(__alpha))
   if (mprotect((char *) page_addr, pagesize, PROT_NONE))
     perror("ClusterState mprotect failed");
 #endif
-  a = (char *) ((ptrdiff_t) (page_addr + (uint64) pagesize));
+  a = (char *) ((ptrdiff_t) page_addr + (ptrdiff_t) pagesize);
   memset(a, 0, size - (2 * pagesize));
   msg.descriptor = (Descriptor *) (a + sizeof(ClusterMsgHeader));
 
