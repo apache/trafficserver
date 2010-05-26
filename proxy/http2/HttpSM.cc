@@ -147,9 +147,10 @@ HttpSM::_instantiate_func(HttpSM * prototype, HttpSM * new_instance)
   int pre_history_len = (char *) (&(prototype->history)) - (char *) prototype;
   int post_history_len = total_len - history_len - pre_history_len;
   int post_offset = pre_history_len + history_len;
-  int j;
 
 #ifndef SIMPLE_MEMCPY_INIT
+  int j;
+
   memset(((char *) new_instance), 0, pre_history_len);
   memset(((char *) new_instance) + post_offset, 0, post_history_len);
   uint32 *pd = (uint32 *) new_instance;
