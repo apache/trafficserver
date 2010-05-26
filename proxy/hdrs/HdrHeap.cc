@@ -1118,11 +1118,11 @@ HdrHeap::dump_heap(int len)
   }
   end = ((char *) this) + len;
 
-  fprintf(stderr, "---- Dumping header heap @ 0x%llx - len %d ------", (uint64) ((int_pointer) this), len);
+  fprintf(stderr, "---- Dumping header heap @ 0x%llx - len %d ------", (uint64) ((ptrdiff_t) this), len);
 
   while (tmp < end) {
     if (count % 4 == 0) {
-      fprintf(stderr, "\n0x%llx: ", (uint64) ((int_pointer) tmp));
+      fprintf(stderr, "\n0x%llx: ", (uint64) ((ptrdiff_t) tmp));
     }
     count++;
 

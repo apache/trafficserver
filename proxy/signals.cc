@@ -21,15 +21,12 @@
   limitations under the License.
  */
 
-#include "ink_unused.h"  /* MAGIC_EDITING_TAG */
 /**************************************************************************
   Signal functions and handlers.
 
 **************************************************************************/
 
-
 #include "inktomi++.h"
-#include <unistd.h>
 #include "signals.h"
 #include "ProxyConfig.h"
 #include "P_EventSystem.h"
@@ -93,9 +90,13 @@ public:
       if (!snap)
         snap = (char *) sbrk(0);
       char *now = (char *) sbrk(0);
-      fprintf(stderr, "sbrk %llX from first %lld from last %lld\n",
-              (uint64) ((int_pointer) now), (uint64) ((int_pointer) (now - end)),
-              (uint64) ((int_pointer) (now - snap)));
+      // TODO: Use logging instead directly writing to stderr
+      //       This is not error condition at the first place
+      //       so why stderr?
+      //
+      fprintf(stderr, "sbrk 0x%llx from first %lld from last %lld\n",
+              (uint64) ((ptrdiff_t) now), (uint64) ((ptrdiff_t) (now - end)),
+              (uint64) ((ptrdiff_t) (now - snap)));
 #ifdef DEBUG
       int fmdelta = fastmemtotal - fastmemsnap;
       fprintf(stderr, "fastmem %lld from last %lld\n", (int64) fastmemtotal, (int64) fmdelta);
@@ -118,6 +119,10 @@ public:
   {
     SET_HANDLER(&TrackerContinuation::periodic);
     use_baseline = 0;
+    // TODO: ATS prefix all those environment struff or
+    //       even better use config since env can be
+    //       different for parent and child process users.
+    //
     if (getenv("MEMTRACK_BASELINE"))
     {
       use_baseline = 1;

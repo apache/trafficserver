@@ -867,7 +867,7 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection * vc)
     }
 
   } else if (((event == CLUSTER_EVENT_OPEN) || (event == CLUSTER_EVENT_OPEN_EXISTS))
-             && (((int_pointer) timeout & (int_pointer) 1) == 0)) {
+             && (((ptrdiff_t) timeout & (ptrdiff_t) 1) == 0)) {
     ink_hrtime now;
     now = ink_get_hrtime();
     CLUSTER_SUM_DYN_STAT(CLUSTER_OPEN_DELAY_TIME_STAT, now - start_time);
@@ -911,7 +911,7 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection * vc)
   } else {
     int send_failure_callback = 1;
 
-    if (((int_pointer) timeout & (int_pointer) 1) == 0) {
+    if (((ptrdiff_t) timeout & (ptrdiff_t) 1) == 0) {
       if (short_msg) {
         Debug("cache_proto", "2open_local-s (%s) failed, seqno=%d",
               (read_op ? "R" : "W"), ((CacheOpMsg_short *) getMsgBuffer())->seq_number);

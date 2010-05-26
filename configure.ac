@@ -822,6 +822,7 @@ ATS_FLAG_HEADERS([sys/epoll.h \
                   sys/param.h \
                   sys/sysmacros.h \
                   math.h \
+                  stdint.h \
                   net/ppp_defs.h])
 
 AC_SUBST(sys_epollh)

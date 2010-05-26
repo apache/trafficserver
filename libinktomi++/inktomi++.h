@@ -39,6 +39,7 @@
 
 #include "ink_config.h"
 #include "ink_platform.h"
+#include "ink_port.h"
 #include "ink_aiocb.h"
 #include "ink_align.h"
 #include "ink_apidefs.h"
@@ -61,7 +62,6 @@
 #include "ink_lockfile.h"
 #include "ink_memory.h"
 #include "ink_mutex.h"
-#include "ink_port.h"
 #include "ink_queue.h"
 #include "ink_rand.h"
 #include "ink_resolver.h"
