@@ -105,6 +105,5 @@
 #include "Regression.h"
 #include "HostLookup.h"
 #include "InkErrno.h"
-#include "ptrdef.h"
 
 #endif /*_inktomiplus_h_*/

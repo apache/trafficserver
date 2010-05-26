@@ -35,7 +35,6 @@
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "ptrdef.h"
 
 #define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))
 #define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)

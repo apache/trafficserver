@@ -112,6 +112,7 @@
 #define GETHOSTBYNAME_R_HOSTENT_DATA    @gethostbyname_r_hostent_data@
 #define GETHOSTBYNAME_R_GLIBC2          @gethostbyname_r_glibc2@
 #define NEED_UNION_SEMUN                @need_union_semun@
+#define SIZEOF_VOID_POINTER             @ac_cv_sizeof_voidp@
 
 /* API */
 #define ATS_IS_MICRO_BUILD              @is_micro_build@

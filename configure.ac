@@ -458,10 +458,10 @@ SHARED_CXXLINKFLAGS=-shared
 
 dnl Checks for pointer size
 AC_CHECK_SIZEOF(void*, 4)
-
 if test "x$ac_cv_sizeof_voidp" == "x"; then
   AC_ERROR([Cannot determine size of void*])
 fi
+AC_SUBST(ac_cv_sizeof_voidp)
 
 #
 # Here are all the extra linux-specific C(XX)FLAGS additions and

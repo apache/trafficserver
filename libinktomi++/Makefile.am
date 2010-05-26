@@ -126,7 +126,6 @@ libinktomi___a_SOURCES = \
   MMH.cc \
   MMH.h \
   ParseRules.h \
-  ptrdef.h \
   Ptr.h \
   RawHashTable.cc \
   RawHashTable.h \

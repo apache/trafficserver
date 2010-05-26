@@ -32,6 +32,7 @@
 #if !defined (_ink_port_h_)
 #define	_ink_port_h_
 
+#include "ink_config.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdint.h>
@@ -44,6 +45,16 @@ typedef int int32;
 typedef unsigned int uint32;
 typedef long long int64;
 typedef unsigned long long uint64;
+
+#if (SIZEOF_VOID_POINTER == 8) || (SIZEOF_VOID_POINTER == 4)
+#if (SIZEOF_VOID_POINTER == 8)
+typedef long long int_pointer;
+#else
+typedef unsigned long int_pointer;
+#endif
+#else
+#error "Invalid pointer size"
+#endif
 
 #ifndef INT64_MIN
 #define INTU64_MAX (18446744073709551615ULL)
