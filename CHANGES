@@ -2,8 +2,11 @@
 
 Changes with Apache Traffic Server 2.1.1
 
-  *) Reorganization of the path layout system [TODO: mturk please
-  update this section when it's done].
+  *) Reorganization of the path layout system [TODO: mturk please update
+  this section when it's done].
+
+  *) HTTP state machine is now 64-bit "clean", allowing for caching and
+   proxying documents larger than 2GB [TS-34].
 
 
 Changes with Apache Traffic Server 2.1.0
@@ -13,13 +16,16 @@ Changes with Apache Traffic Server 2.1.0
   *) Code cleanup to get the ATS software into a distributable shape. This
    means that certain things are missing, or not functional (intentionally).
   
-  *) Support for larger Cache Partitions up to .5 PB (Petabytes), reducing seeks/write.
+  *) Support for larger Cache Partitions up to .5 PB (Petabytes), reducing
+   seeks/write.
 
   *) Reduced Cache miss latency (sub millesecond).
 
   *) RAM Cache pluggability, new algorithm (CLFUS) and optional compression.
 
   *) Support for TCL v8.6 and later [TS-246].
+
+  *) The cache is now 64-bit "clean".
 
 
 Changes with Apache Traffic Server 2.0.0
