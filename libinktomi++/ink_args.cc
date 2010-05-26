@@ -104,8 +104,7 @@ show_argument_configuration(ArgumentDescription * argument_descriptions, int n_a
   printf("Argument Configuration\n");
   for (i = 0; i < n_argument_descriptions; i++) {
     if (argument_descriptions[i].type) {
-      printf("  %s%s", argument_descriptions[i].description,
-             &SPACES[strlen(argument_descriptions[i].description) + 45]);
+      printf("  %-34s ", argument_descriptions[i].description);
       switch (argument_descriptions[i].type[0]) {
       case 'F':
       case 'f':
@@ -211,11 +210,9 @@ usage(ArgumentDescription * argument_descriptions, int n_argument_descriptions, 
   for (int i = 0; i < n_argument_descriptions; i++) {
     if (!argument_descriptions[i].description)
       continue;
-    fprintf(stderr, "  -%c, --%s%s%s",
+    fprintf(stderr, "  -%c, --%-17s %s",
             argument_descriptions[i].key,
             argument_descriptions[i].name,
-            (strlen(argument_descriptions[i].name) + 61 < 81) ?
-            &SPACES[strlen(argument_descriptions[i].name) + 61] : "",
             argument_types_descriptions[argument_descriptions[i].type ?
                                         strchr(argument_types_keys,
                                                argument_descriptions[i].type[0]) -

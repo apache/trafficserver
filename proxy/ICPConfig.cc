@@ -1421,9 +1421,9 @@ dumpICPstatEntry(int i, const char *name)
   sval = p->sum;
   cval = p->count;
 
-  printf("%s%s %12lld %16lld %17.4f\n",
-             l > 30 ? "" : &SPACES[48 + l],
-             &name[l > 31 ? l - 31 : 0], cval, sval, cval ? (((double) sval) / ((double) cval)) : 0.0);
+  printf("%-32s %12lld %16lld %17.4f\n",
+         &name[l > 31 ? l - 31 : 0], cval, sval,
+         cval ? (((double) sval) / ((double) cval)) : 0.0);
 }
 
 void

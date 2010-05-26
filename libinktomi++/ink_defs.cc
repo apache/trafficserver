@@ -40,7 +40,6 @@
 #include <sys/utsname.h>
 #endif      /* MAGIC_EDITING_TAG */
 
-const char *SPACES = "                                                                               ";
 int off = 0;
 int on = 1;
 

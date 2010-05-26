@@ -76,7 +76,6 @@ typedef void (*VI_PFN) (int);
 
 /* Variables
 */
-extern const char *SPACES;
 extern int debug_level;
 extern int off;
 extern int on;
