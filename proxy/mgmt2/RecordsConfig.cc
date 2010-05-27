@@ -2312,7 +2312,7 @@ RecordElement RecordsConfig[] = {
   //       # in entries, may not be changed while running
   {CONFIG, "proxy.config.hostdb.size", "", INK_INT, "200000", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.hostdb.storage_path", "", INK_STRING, "/var/trafficserver", RU_REREAD, RR_NULL, RC_NULL, NULL,
+  {CONFIG, "proxy.config.hostdb.storage_path", "", INK_STRING, "etc/trafficserver/internal", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.hostdb.storage_size", "", INK_INT, "33554432", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
