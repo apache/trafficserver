@@ -81,10 +81,10 @@ int
 safe_msync(caddr_t addr, size_t len, caddr_t end, int flags)
 {
   (void) end;
-  // TODO: This is some sort of alignment
-  caddr_t a = (caddr_t) (((unsigned long) addr) & ~(socketManager.pagesize - 1));
-  size_t l = (len + (addr - a) + socketManager.pagesize - 1)
-    & ~(socketManager.pagesize - 1);
+  // align start back to page boundary
+  caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(socketManager.pagesize - 1));
+  // align length to page boundry covering region
+  size_t l = (len + (addr - a) + (socketManager.pagesize - 1)) & ~(socketManager.pagesize - 1);
   if ((a + l) > end)
     l = end - a;                // strict limit
 #if defined(linux)
@@ -93,8 +93,11 @@ safe_msync(caddr_t addr, size_t len, caddr_t end, int flags)
    non-dirty buffers. This is true as of kernel 2.2.12. We sacrifice
    restartability under OS in order to avoid a nasty performance hit
    from a kernel global lock. */
+#if 0
+  // this was long long ago
   if (flags & MS_SYNC)
     flags = (flags & ~MS_SYNC) | MS_ASYNC;
+#endif
 #endif
   int res = msync(a, l, flags);
   return res;
