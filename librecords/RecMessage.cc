@@ -338,8 +338,12 @@ RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
     rec_cfg_chk_len = strlen(record->config_meta.check_expr) + 1;
     msg_ele_size += rec_cfg_chk_len;
   }
-  msg_ele_size = (msg_ele_size + 7) & ~7;       // 8 byte alignmenet
+  // XXX: this is NOT 8 byte alignment
+  // msg_ele_size = 5;
+  // (msg_ele_size + 7) & ~7 == 5 !!!
+  // msg_ele_size = (msg_ele_size + 7) & ~7;       // 8 byte alignmenet
 
+  msg_ele_size = INK_ALIGN_DEFAULT(msg_ele_size);  // 8 byte alignmenet
   // get some space in our buffer
   while (msg->o_end - msg->o_write < msg_ele_size) {
     int realloc_size = (msg->o_end - msg->o_start) * 2;
