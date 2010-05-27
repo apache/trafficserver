@@ -1004,7 +1004,7 @@ Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   size_t alignment = getpagesize();
   size_t mem_to_alloc = part_dirlen(this) + (alignment - 1);
   raw_dir = (char *) malloc(mem_to_alloc);
-  raw_dir = (char *) (((unsigned int) ((char *) (raw_dir) + (alignment - 1))) & ~(alignment - 1));
+  raw_dir = (char *) align_pointer_forward(raw_dir, alignment);
 #endif
 
   dir = (Dir *) (raw_dir + part_headerlen(this));

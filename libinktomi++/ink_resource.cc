@@ -36,7 +36,9 @@ volatile int res_track_memory = RES_TRACK_MEMORY_DEFAULT;
 
 #define FENCE_POST_SIZE   16
 
+// TODO: Move this to ink_align.h
 #define ADJUST(mem,x)  (((char*) (mem)) + x)
+// TODO: Use INK_ALIGN instead
 #define ROUND(x,l)     (((x) + ((l) - 1L)) & ~((l) - 1L))
 #define TSIZE          16387
 

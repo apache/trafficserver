@@ -40,7 +40,7 @@ ABError AbstractBuffer::checkout_write(int *write_offset, int write_size, uint64
   VolatileState
     new_vs;
 
-  write_size = (write_size + (alignment - 1)) & ~(alignment - 1);
+  write_size = INK_ALIGN(write_size, alignment);
 
   // Initialize the buffer if it currently isn't in use.
   old_vs = vs;
@@ -192,7 +192,7 @@ AbstractBuffer::initialize()
 
   if (!unaligned_buffer) {
     unaligned_buffer = NEW(new char[size + 511]);
-    buffer = (char *) align_pointer_forward(unaligned_buffer, 511);
+    buffer = (char *) align_pointer_forward(unaligned_buffer, 512);
   }
 
   vs_history[AB_STATE_READ_WRITE] = vs;

@@ -73,7 +73,7 @@ LogAccessICP::marshal_client_host_ip(char *buf)
     // ip is already in network order
     marshal_int_no_byte_order_conversion(buf, ip);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 /*-------------------------------------------------------------------------
@@ -189,7 +189,7 @@ LogAccessICP::marshal_proxy_resp_squid_len(char *buf)
     LOG_INT val = m_icp_log->GetSize();
     marshal_int(buf, val);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 /*-------------------------------------------------------------------------
@@ -202,7 +202,7 @@ LogAccessICP::marshal_proxy_resp_content_len(char *buf)
     LOG_INT val = m_icp_log->GetSize();
     marshal_int(buf, val);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 /*-------------------------------------------------------------------------
@@ -215,7 +215,7 @@ LogAccessICP::marshal_proxy_resp_status_code(char *buf)
     LOG_INT status = 0;         // '000' for ICP
     marshal_int(buf, status);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 /*-------------------------------------------------------------------------
@@ -228,7 +228,7 @@ LogAccessICP::marshal_cache_result_code(char *buf)
     SquidLogCode code = m_icp_log->GetAction();
     marshal_int(buf, (LOG_INT) code);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 /*-------------------------------------------------------------------------
@@ -241,7 +241,7 @@ LogAccessICP::marshal_proxy_hierarchy_route(char *buf)
     SquidHierarchyCode code = m_icp_log->GetHierarchy();
     marshal_int(buf, (LOG_INT) code);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 /*-------------------------------------------------------------------------
@@ -270,7 +270,7 @@ LogAccessICP::marshal_transfer_time_ms(char *buf)
     LOG_INT val = (LOG_INT) elapsed;
     marshal_int(buf, val);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 int
@@ -282,6 +282,6 @@ LogAccessICP::marshal_transfer_time_s(char *buf)
     LOG_INT val = (LOG_INT) elapsed;
     marshal_int(buf, val);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 #endif // TS_MICRO

@@ -265,26 +265,26 @@ LogBufferHeader::log_filename()
   zero it inside 'operator new', Save CPU resources! :)
   -------------------------------------------------------------------------*/
 
-LogBuffer::LogBuffer(LogObject * owner, size_t size, int buf_align_mask, int write_align_mask):
+LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t write_align):
   sign(CLASS_SIGN_LOGBUFFER),
   next_flush(NULL),
   next_list(NULL),
   m_new_buffer(NULL),
   m_size(size),
-  m_buf_align_mask(buf_align_mask),
-  m_write_align_mask(write_align_mask), m_max_entries(Log::config->max_entries_per_buffer), m_owner(owner)
+  m_buf_align(buf_align),
+  m_write_align(write_align), m_max_entries(Log::config->max_entries_per_buffer), m_owner(owner)
 {
   size_t hdr_size;
 
-//    Debug("log2-logbuffer","LogBuffer::LogBuffer(owner,size=%ld, buf_align_mask=%d,write_align_mask=%d)",
-//          size,buf_align_mask,write_align_mask);
+//    Debug("log2-logbuffer","LogBuffer::LogBuffer(owner,size=%ld, buf_align=%ld,write_align=%ld)",
+//          size,buf_align,write_align);
 
-  // create the buffer: size + LB_DEFAULT_ALIGN_MASK(511)
-  m_bb = iLogBufferBuffer::New_iLogBufferBuffer(size + buf_align_mask);
+  // create the buffer: size + LB_DEFAULT_ALIGN(512)
+  m_bb = iLogBufferBuffer::New_iLogBufferBuffer(size + buf_align);
   ink_assert(m_bb != NULL);
 
   m_unaligned_buffer = m_bb->buf;
-  m_buffer = (char *) align_pointer_forward(m_unaligned_buffer, buf_align_mask);
+  m_buffer = (char *) align_pointer_forward(m_unaligned_buffer, buf_align);
 
   // add the header
   hdr_size = _add_buffer_header();
@@ -310,8 +310,8 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
   m_unaligned_buffer(NULL),
   m_buffer((char *) header),
   m_size(0),
-  m_buf_align_mask(LB_DEFAULT_ALIGN_MASK),
-  m_write_align_mask(MIN_ALIGN - 1), m_max_entries(0), m_expiration_time(0), m_owner(owner), m_header(header)
+  m_buf_align(LB_DEFAULT_ALIGN),
+  m_write_align(INK_MIN_ALIGN), m_max_entries(0), m_expiration_time(0), m_owner(owner), m_header(header)
 {
   // This constructor does not allocate a buffer because it gets it as
   // an argument. We set m_unaligned_buffer to NULL, which means that
@@ -372,8 +372,7 @@ LogBuffer::LB_ResultCode LogBuffer::checkout_write(size_t * write_offset, size_t
     new_s;
   size_t
     offset = 0;
-  size_t
-    actual_write_size = (write_size + sizeof(LogEntryHeader) + m_write_align_mask) & ~m_write_align_mask;
+  size_t actual_write_size = INK_ALIGN(write_size + sizeof(LogEntryHeader), m_write_align);
 
   uint64
     retries = (uint64) - 1;
@@ -586,9 +585,7 @@ LogBuffer::_add_buffer_header()
   // alignment mark.
   //
 
-#define __ROUND_TO(x,l)   (((x) + ((l) - 1L)) & ~((l) - 1L))
-  header_len = __ROUND_TO(header_len, MIN_ALIGN);
-#undef __ROUND_TO
+  header_len = INK_ALIGN_DEFAULT(header_len);
 
   m_header->byte_count = header_len;
   m_header->data_offset = header_len;
@@ -705,7 +702,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
             res = LogAccess::unmarshal_int_to_str(&ptr, to, write_to_len - bytes_written);
             if (buffer_version > 1) {
               // space was reserved in read buffer; remove it
-              read_from += MIN_ALIGN;
+              read_from += INK_MIN_ALIGN;
             }
 
             non_aggregate_timestamp = true;
@@ -719,7 +716,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
             res = LogAccess::unmarshal_int_to_str_hex(&ptr, to, write_to_len - bytes_written);
             if (buffer_version > 1) {
               // space was reserved in read buffer; remove it
-              read_from += MIN_ALIGN;
+              read_from += INK_MIN_ALIGN;
             }
 
             non_aggregate_timestamp = true;
@@ -732,7 +729,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
 
             if (buffer_version > 1) {
               // space was reserved in read buffer; remove it
-              read_from += MIN_ALIGN;
+              read_from += INK_MIN_ALIGN;
             }
 
             non_aggregate_timestamp = true;
@@ -748,7 +745,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
             }
             if (buffer_version > 1) {
               // space was reserved in read buffer; remove it
-              read_from += MIN_ALIGN;
+              read_from += INK_MIN_ALIGN;
             }
 
             non_aggregate_timestamp = true;
@@ -764,7 +761,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
             }
             if (buffer_version > 1) {
               // space was reserved in read buffer; remove it
-              read_from += MIN_ALIGN;
+              read_from += INK_MIN_ALIGN;
             }
 
             non_aggregate_timestamp = true;
@@ -780,7 +777,7 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
             }
             if (buffer_version > 1) {
               // space was reserved in read buffer; remove it
-              read_from += MIN_ALIGN;
+              read_from += INK_MIN_ALIGN;
             }
 
             non_aggregate_timestamp = true;

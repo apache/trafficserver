@@ -684,7 +684,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
     read_from = (char *) entry + sizeof(LogEntryHeader);
     // We read and skip over the first field, which is the timestamp.
     if ((field = fieldlist->first()))
-      read_from += MIN_ALIGN;
+      read_from += INK_MIN_ALIGN;
     else                        // This shouldn't happen, buffer must be messed up.
       break;
 
@@ -699,7 +699,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
       case P_STATE_ELAPSED:
         state = P_STATE_IP;
         elapsed = ntohl(*((LOG_INT *) (read_from)));
-        read_from += MIN_ALIGN;
+        read_from += INK_MIN_ALIGN;
         break;
 
       case P_STATE_IP:
@@ -714,7 +714,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
       case P_STATE_RESULT:
         state = P_STATE_CODE;
         result = ntohl(*((LOG_INT *) (read_from)));
-        read_from += MIN_ALIGN;
+        read_from += INK_MIN_ALIGN;
         if ((result<32) || (result> 255)) {
           flag = 1;
           state = P_STATE_END;
@@ -724,7 +724,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
       case P_STATE_CODE:
         state = P_STATE_SIZE;
         http_code = ntohl(*((LOG_INT *) (read_from)));
-        read_from += MIN_ALIGN;
+        read_from += INK_MIN_ALIGN;
         if ((http_code<0) || (http_code> 999)) {
           flag = 1;
           state = P_STATE_END;
@@ -737,7 +737,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         // this needs to be fixed as well.
         state = P_STATE_METHOD;
         size = ntohl(*((LOG_INT *) (read_from)));
-        read_from += MIN_ALIGN;
+        read_from += INK_MIN_ALIGN;
         //printf("Size == %d\n", size)
         break;
 
@@ -907,7 +907,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
           }
           break;
         }
-        read_from += MIN_ALIGN;
+        read_from += INK_MIN_ALIGN;
         break;
 
       case P_STATE_PEER:

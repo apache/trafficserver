@@ -66,7 +66,7 @@
 	      LOG_INT val = what_the_value_should_be;
               marshal_int (buf, val);
 	  }
-	  return MIN_ALIGN;
+	  return INK_MIN_ALIGN;
       }
 
   String values don't need byte swapping, but we do want to ensure things
@@ -91,27 +91,24 @@
 
 #include "ink_bool.h"
 
-#define LOG_ACCESS_ROUND_TO(x,l)   (((x) + ((l) - 1L)) & ~((l) - 1L))
-
 #define LOG_INT 	unsigned
-#define MIN_ALIGN	8
-// DEFAULT_STR_LEN MUST be less than MIN_ALIGN
+// DEFAULT_STR_LEN MUST be less than INK_MIN_ALIGN
 #define DEFAULT_STR	"-"
 #define DEFAULT_STR_LEN 1
 
 #define DEFAULT_INT_FIELD {\
     if (buf) { \
-	LOG_INT i = 0; \
-	marshal_int (buf, i); \
+      LOG_INT i = 0; \
+      marshal_int (buf, i); \
     } \
-    return MIN_ALIGN; \
+    return INK_MIN_ALIGN; \
 }
 
 #define DEFAULT_STR_FIELD {\
     char * str = NULL; \
-    int len = MIN_ALIGN; \
+    int len = INK_MIN_ALIGN; \
     if (buf) { \
-	marshal_str (buf, str, len); \
+      marshal_str (buf, str, len); \
     } \
     return (len); \
 }
@@ -121,7 +118,7 @@
 // ints + sign + eos, and enough for %e floating point representation
 // + eos
 //
-#define MARSHAL_RECORD_LENGTH LOG_ACCESS_ROUND_TO(32, MIN_ALIGN)
+#define MARSHAL_RECORD_LENGTH 32
 
 enum LogEntryType
 {
@@ -340,7 +337,7 @@ private:
 inline int
 LogAccess::round_strlen(int len)
 {
-  return LOG_ACCESS_ROUND_TO(len, MIN_ALIGN);
+  return INK_ALIGN_DEFAULT(len);
 }
 
 /*-------------------------------------------------------------------------

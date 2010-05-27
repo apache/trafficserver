@@ -40,9 +40,9 @@ class LogBufferIterator;
 #define LOG_SEGMENT_VERSION 2
 
 #if defined(linux)
-#define LB_DEFAULT_ALIGN_MASK 511
+#define LB_DEFAULT_ALIGN 512
 #else
-#define LB_DEFAULT_ALIGN_MASK INK_ALIGN_INT
+#define LB_DEFAULT_ALIGN 8
 #endif
 
 /*-------------------------------------------------------------------------
@@ -243,7 +243,7 @@ public:
   };
 
     LogBuffer(LogObject * owner, size_t size,
-              int buf_align_mask = LB_DEFAULT_ALIGN_MASK, int write_align_mask = MIN_ALIGN - 1);
+              size_t buf_align = LB_DEFAULT_ALIGN, size_t write_align = INK_MIN_ALIGN);
     LogBuffer(LogObject * owner, LogBufferHeader * header);
    ~LogBuffer();
   char &operator [] (int idx)
@@ -309,8 +309,8 @@ private:
   char *m_unaligned_buffer;     // the unaligned buffer
   char *m_buffer;               // the buffer
   size_t m_size;                // the buffer size
-  int m_buf_align_mask;         // the buffer alignment mask
-  int m_write_align_mask;       // the write alignment mask
+  size_t m_buf_align;           // the buffer alignment
+  size_t m_write_align;         // the write alignment mask
 
   volatile LB_State m_state;    // buffer state
 

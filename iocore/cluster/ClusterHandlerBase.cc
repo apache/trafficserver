@@ -262,19 +262,16 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   //////////////////////////////////////////////////
   // Place an invalid page in front of iovec data.
   //////////////////////////////////////////////////
-  int pagesize = getpagesize();
+  size_t pagesize = (size_t) getpagesize();
   size = ((MAX_TCOUNT + 1) * sizeof(IOVec)) + (2 * pagesize);
   iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
-  iov = (IOVec *) iob_iov->data();
-  // TODO: This is align_pointer_forward
-  ptrdiff_t page_addr = ((ptrdiff_t) iov + (ptrdiff_t) pagesize) & ~((ptrdiff_t) pagesize - 1);
-  iov = (IOVec *) ((ptrdiff_t) page_addr);
+  char *addr = (char *) align_pointer_forward(iob_iov->data(), pagesize);
 
 #if (defined(__sparc) || defined(__alpha))
-  if (mprotect((char *) page_addr, pagesize, PROT_NONE))
+  if (mprotect(addr, pagesize, PROT_NONE))
     perror("ClusterState mprotect0 failed");
 #endif
-  iov = (IOVec *) ((char *) iov + pagesize);
+  iov = (IOVec *) (addr + pagesize);
 
   ///////////////////////////////////////////////////
   // Place an invalid page in front of message data.
@@ -284,16 +281,15 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   msg.iob_descriptor_block = new_IOBufferBlock();
   msg.iob_descriptor_block->alloc(BUFFER_SIZE_FOR_XMALLOC(size));
 
-  char *a = msg.iob_descriptor_block->data->data();
-  page_addr = ((ptrdiff_t) a + (ptrdiff_t) pagesize) & ~((ptrdiff_t) pagesize - 1);
+  addr = (char *) align_pointer_forward(msg.iob_descriptor_block->data->data(), pagesize);
 
 #if (defined(__sparc) || defined(__alpha))
-  if (mprotect((char *) page_addr, pagesize, PROT_NONE))
+  if (mprotect(addr, pagesize, PROT_NONE))
     perror("ClusterState mprotect failed");
 #endif
-  a = (char *) ((ptrdiff_t) page_addr + (ptrdiff_t) pagesize);
-  memset(a, 0, size - (2 * pagesize));
-  msg.descriptor = (Descriptor *) (a + sizeof(ClusterMsgHeader));
+  addr = addr + pagesize;
+  memset(addr, 0, size - (2 * pagesize));
+  msg.descriptor = (Descriptor *) (addr + sizeof(ClusterMsgHeader));
 
   mbuf = new_empty_MIOBuffer();
 }

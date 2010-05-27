@@ -334,7 +334,7 @@ LogField::marshal_agg(char *buf)
   m_agg_val = 0;
   m_agg_cnt = 0;
 
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 /*-------------------------------------------------------------------------
@@ -502,7 +502,7 @@ LogFieldList::add(LogField * field, bool copy)
   }
 
   if (field->type() == LogField::sINT) {
-    m_marshal_len += MIN_ALIGN;
+    m_marshal_len += INK_MIN_ALIGN;
   }
 }
 
@@ -559,7 +559,7 @@ LogFieldList::marshal(LogAccess * lad, char *buf)
   for (LogField * f = first(); f; f = next(f)) {
     ptr = &buf[bytes];
     bytes += f->marshal(lad, ptr);
-    ink_debug_assert(bytes % MIN_ALIGN == 0);
+    ink_debug_assert(bytes % INK_MIN_ALIGN == 0);
   }
   return bytes;
 }

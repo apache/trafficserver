@@ -1438,7 +1438,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
           *hap++ = cp;
           cp += n;
         } else {
-          bp = (unsigned char *) align_pointer_forward(bp, INK_ALIGN_INT);
+          bp = (unsigned char *) align_pointer_forward(bp, sizeof(int));
           if (bp + n >= buf->hostbuf + DNS_HOSTBUF_SIZE) {
             ++error;
             break;

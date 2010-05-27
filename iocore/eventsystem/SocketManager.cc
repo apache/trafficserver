@@ -81,6 +81,7 @@ int
 safe_msync(caddr_t addr, size_t len, caddr_t end, int flags)
 {
   (void) end;
+  // TODO: This is some sort of alignment
   caddr_t a = (caddr_t) (((unsigned long) addr) & ~(socketManager.pagesize - 1));
   size_t l = (len + (addr - a) + socketManager.pagesize - 1)
     & ~(socketManager.pagesize - 1);

@@ -180,9 +180,9 @@ LogAccess::marshal_client_req_http_version(char *buf)
     LOG_INT major = 0;
     LOG_INT minor = 0;
     marshal_int(buf, major);
-    marshal_int((buf + MIN_ALIGN), minor);
+    marshal_int((buf + INK_MIN_ALIGN), minor);
   }
-  return (2 * MIN_ALIGN);
+  return (2 * INK_MIN_ALIGN);
 }
 
 /*-------------------------------------------------------------------------
@@ -463,9 +463,9 @@ LogAccess::marshal_server_resp_http_version(char *buf)
     LOG_INT major = 0;
     LOG_INT minor = 0;
     marshal_int(buf, major);
-    marshal_int((buf + MIN_ALIGN), minor);
+    marshal_int((buf + INK_MIN_ALIGN), minor);
   }
-  return (2 * MIN_ALIGN);
+  return (2 * INK_MIN_ALIGN);
 }
 
 int
@@ -771,7 +771,7 @@ LogAccess::marshal_entry_type(char *buf)
     LOG_INT val = (LOG_INT) entry_type();
     marshal_int(buf, val);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 /*-------------------------------------------------------------------------
@@ -784,7 +784,7 @@ LogAccess::marshal_config_int_var(char *config_var, char *buf)
     LOG_INT val = (LOG_INT) LOG_ConfigReadInteger(config_var);
     marshal_int(buf, val);
   }
-  return MIN_ALIGN;
+  return INK_MIN_ALIGN;
 }
 
 /*-------------------------------------------------------------------------
@@ -968,7 +968,7 @@ LogAccess::marshal_record(char *record, char *buf)
   LogAccess::marshal_int
 
   Place the given value into the buffer.  Note that the buffer needs to be
-  aligned with the size of MIN_ALIGN for this to succeed.  We also convert
+  aligned with the size of INK_MIN_ALIGN for this to succeed.  We also convert
   to network byte order, just in case we read the data on a different
   machine; unmarshal_int() will convert back to host byte order.
 
@@ -1100,7 +1100,7 @@ LOG_INT LogAccess::unmarshal_int(char **buf)
     val;
 
   val = ntohl(*((LOG_INT *) (*buf)));
-  *buf += MIN_ALIGN;
+  *buf += INK_MIN_ALIGN;
   return val;
 }
 

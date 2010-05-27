@@ -25,47 +25,51 @@
 #ifndef _ink_align_h_
 #define _ink_align_h_
 
-#define INK_ALIGN_LONG (sizeof(long) - 1)
-#define INK_ALIGN_DOUBLE (sizeof(double) - 1)
-#define INK_ALIGN_INT (sizeof(int) - 1)
-#define INK_ALIGN_SHORT (sizeof(short)-1)
+/**
+ * Alignment macros
+ */
+
+#define INK_MIN_ALIGN 8
+/* INK_ALIGN() is only to be used to align on a power of 2 boundary */
+#define INK_ALIGN(size, boundary) \
+    (((size) + ((boundary) - 1)) & ~((boundary) - 1))
+
+/** Default alignment */
+#define INK_ALIGN_DEFAULT(size) INK_ALIGN(size, INK_MIN_ALIGN)
 
 //
-// Move a pointer forward until it meets the alignment width
-// specified (as a mask).
+// Move a pointer forward until it meets the alignment width.
 //
-
 static inline void *
-align_pointer_forward(const void *pointer_, int widthmask)
+align_pointer_forward(const void *pointer_, size_t alignment)
 {
   char *pointer = (char *) pointer_;
   //
   // Round up alignment..
   //
-  pointer = (char *)
-    (((unsigned long) pointer + widthmask) & (~widthmask));
+  pointer = (char *) INK_ALIGN((ptrdiff_t) pointer, alignment);
 
   return (void *) pointer;
 }
 
 //
-// Move a pointer forward until it meets the alignment width specified
-// (as a mask), and zero out the contents of the space you're skipping
-// over.
+// Move a pointer forward until it meets the alignment width specified,
+// and zero out the contents of the space you're skipping over.
 //
 static inline void *
-align_pointer_forward_and_zero(const void *pointer_, int widthmask)
+align_pointer_forward_and_zero(const void *pointer_, size_t alignment)
 {
   char *pointer = (char *) pointer_;
+  char *aligned = (char *) INK_ALIGN((ptrdiff_t) pointer, alignment);
   //
-  // Round up alignment..
+  // Fill the skippings..
   //
-  while ((((unsigned long) pointer) & widthmask) != 0) {
+  while (pointer < aligned) {
     *pointer = 0;
     pointer++;
   }
 
-  return (void *) pointer;
+  return (void *) aligned;
 }
 
 //

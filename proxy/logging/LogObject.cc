@@ -500,7 +500,7 @@ LogObject::log(LogAccess * lad, char *text_entry)
       // convert to host order to do computations
       val = (f->is_time_field())? time_now : ntohl(*((LOG_INT *) data_ptr));
       f->update_aggregate(val);
-      data_ptr += MIN_ALIGN;
+      data_ptr += INK_MIN_ALIGN;
     }
 
     if (time_now < m_format->m_interval_next) {
@@ -509,8 +509,8 @@ LogObject::log(LogAccess * lad, char *text_entry)
       return Log::LOG_OK;
     }
     // can easily compute bytes_needed because all fields are INTs
-    // and will use MIN_ALIGN each
-    bytes_needed = m_format->field_count() * MIN_ALIGN;
+    // and will use INK_MIN_ALIGN each
+    bytes_needed = m_format->field_count() * INK_MIN_ALIGN;
   } else if (lad) {
     bytes_needed = m_format->m_field_list.marshal_len(lad);
   } else if (text_entry) {

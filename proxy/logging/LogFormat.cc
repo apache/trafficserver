@@ -154,7 +154,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
     m_valid = false;
   } else {
     if (m_aggregate) {
-      m_agg_marshal_space = (char *) xmalloc(m_field_count * MIN_ALIGN);
+      m_agg_marshal_space = (char *) xmalloc(m_field_count * INK_MIN_ALIGN);
     }
 
     if (m_name_str) {
