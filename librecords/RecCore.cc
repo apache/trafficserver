@@ -122,7 +122,7 @@ link_int32(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
-  *(int32 *) cookie = (int32) data.rec_int;
+  *((int32 *) cookie) = (int32) data.rec_int;
   return REC_ERR_OKAY;
 }
 
@@ -131,7 +131,7 @@ link_uint32(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
-  *(uint32 *) cookie = (uint32) data.rec_int;
+  *((uint32 *) cookie) = (uint32) data.rec_int;
   return REC_ERR_OKAY;
 }
 
@@ -140,7 +140,7 @@ link_float(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
-  *(int *) cookie = *((int *) &(data.rec_float));
+  *((RecFloat *) cookie) = data.rec_float;
   return REC_ERR_OKAY;
 }
 
@@ -149,7 +149,7 @@ link_counter(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
   REC_NOWARN_UNUSED(data_type);
-  RecCounter *rec_counter = (RecInt *) cookie;
+  RecCounter *rec_counter = (RecCounter *) cookie;
   ink_atomic_swap64(rec_counter, data.rec_counter);
   return REC_ERR_OKAY;
 }
