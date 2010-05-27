@@ -135,6 +135,7 @@ struct MIMEField
   const char *value_get(int *length);
   int32 value_get_int();
   uint32 value_get_uint();
+  int64 value_get_int64();
   time_t value_get_date();
   int value_get_comma_list(StrList * list);
 
@@ -624,6 +625,7 @@ void mime_field_name_set(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field,
 inkcoreapi const char *mime_field_value_get(MIMEField * field, int *length);
 int32 mime_field_value_get_int(MIMEField * field);
 uint32 mime_field_value_get_uint(MIMEField * field);
+int64 mime_field_value_get_int64(MIMEField * field);
 time_t mime_field_value_get_date(MIMEField * field);
 const char *mime_field_value_get_comma_val(MIMEField * field, int *length, int idx);
 int mime_field_value_get_comma_val_count(MIMEField * field);
@@ -696,6 +698,7 @@ int mime_format_date(char *buffer, time_t value);
 
 int32 mime_parse_int(const char *buf, const char *end = NULL);
 uint32 mime_parse_uint(const char *buf, const char *end = NULL);
+int64 mime_parse_int64(const char *buf, const char *end = NULL);
 int mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp);
 time_t mime_parse_date(const char *buf, const char *end = NULL);
 int mime_parse_day(const char *&buf, const char *end, int *day);
@@ -757,6 +760,12 @@ inline uint32
 MIMEField::value_get_uint()
 {
   return (mime_field_value_get_uint(this));
+}
+
+inline int64
+MIMEField::value_get_int64()
+{
+  return (mime_field_value_get_int64(this));
 }
 
 inline time_t
@@ -882,6 +891,7 @@ public:
   const char *value_get(const char *name, int name_length, int *value_length);
   int32 value_get_int(const char *name, int name_length);
   uint32 value_get_uint(const char *name, int name_length);
+  int64 value_get_int64(const char *name, int name_length);
   time_t value_get_date(const char *name, int name_length);
   int value_get_comma_list(const char *name, int name_length, StrList * list);
 
@@ -903,7 +913,7 @@ public:
   void field_value_append(MIMEField * field,
                           const char *value, int value_length, bool prepend_comma = false, const char separator = ',');
   int32 get_age();
-  int32 get_content_length();
+  int64 get_content_length();
   time_t get_date();
   time_t get_expires();
   time_t get_if_modified_since();
@@ -924,7 +934,7 @@ public:
   void unset_cooked_cc_need_revalidate_once();
 
   void set_age(int32 value);
-  void set_content_length(int32 value);
+  void set_content_length(int64 value);
   void set_date(time_t value);
   void set_expires(time_t value);
   void set_if_modified_since(time_t value);
@@ -1184,6 +1194,17 @@ MIMEHdr::value_get_uint(const char *name, int name_length)
     return (0);
 }
 
+inline int64
+MIMEHdr::value_get_int64(const char *name, int name_length)
+{
+  MIMEField *field = field_find(name, name_length);
+
+  if (field)
+    return (mime_field_value_get_int64(field));
+  else
+    return (0);
+}
+
 inline time_t
 MIMEHdr::value_get_date(const char *name, int name_length)
 {
@@ -1311,10 +1332,10 @@ MIMEHdr::get_age()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int32
+inline int64
 MIMEHdr::get_content_length()
 {
-  return (value_get_int(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH));
+  return (value_get_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH));
 }
 
 /*-------------------------------------------------------------------------
@@ -1477,7 +1498,7 @@ MIMEHdr::set_age(int32 value)
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::set_content_length(int32 value)
+MIMEHdr::set_content_length(int64 value)
 {
   value_set_int(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, value);
 }

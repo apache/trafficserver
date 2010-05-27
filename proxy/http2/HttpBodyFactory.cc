@@ -59,7 +59,7 @@
 
 char *
 HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * context,
-                                        int max_buffer_length, int *resulting_buffer_length,
+                                        int64 max_buffer_length, int64 *resulting_buffer_length,
                                         char content_language_out[256],
                                         char content_type_out[256],
                                         HTTPStatus status_code, const char *reason_or_null, const char *format, va_list ap)
@@ -242,7 +242,7 @@ HttpBodyFactory::dump_template_tables(FILE * fp)
           v2 = table_of_sets->getValueFromBinding(b2);
           HttpBodyTemplate *t = (HttpBodyTemplate *) v2;
 
-          fprintf(fp, "  %-30s: %d bytes\n", k2, t->byte_count);
+          fprintf(fp, "  %-30s: %lld bytes\n", k2, t->byte_count);
         }
       }
     }
@@ -420,7 +420,7 @@ char *
 HttpBodyFactory::fabricate(StrList * acpt_language_list,
                            StrList * acpt_charset_list,
                            const char *type, HttpTransact::State * context,
-                           int *buffer_length_return,
+                           int64 *buffer_length_return,
                            const char **content_language_return,
                            const char **content_charset_return, const char **set_return)
 {
@@ -966,11 +966,11 @@ int
 HttpBodyTemplate::load_from_file(char *dir, char *file)
 {
   int fd, status;
-  ssize_t bytes_read;
+  int64_t bytes_read;
   struct stat stat_buf;
   char path[MAXPATHLEN + 1];
   char *new_template_buffer;
-  unsigned int new_byte_count;
+  int64 new_byte_count;
 
   ////////////////////////////////////
   // ensure this is actually a file //
@@ -1007,7 +1007,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   // check for read errors //
   ///////////////////////////
 
-  if (bytes_read != (int) new_byte_count) {
+  if (bytes_read != new_byte_count) {
     Warning("reading template file '%s', got %d bytes instead of %d (%s)",
             path, bytes_read, new_byte_count, (strerror(errno) ? strerror(errno) : "unknown error"));
     xfree(new_template_buffer);
@@ -1031,7 +1031,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
 }
 
 char *
-HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int *buflen_return)
+HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64 *buflen_return)
 {
   char *buffer = NULL;
 #ifndef INK_NO_LOG

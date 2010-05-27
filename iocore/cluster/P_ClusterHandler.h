@@ -499,9 +499,9 @@ struct ClusterHandler:public ClusterHandlerBase
 #ifdef CLUSTER_STATS
     Ptr<IOBufferBlock> message_blk;
 
-  int _vc_writes;
-  int _vc_write_bytes;
-  int _control_write_bytes;
+  int64 _vc_writes;
+  int64 _vc_write_bytes;
+  int64 _control_write_bytes;
   int _dw_missed_lock;
   int _dw_not_enabled;
   int _dw_wait_remote_fill;

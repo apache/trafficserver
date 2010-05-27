@@ -183,8 +183,8 @@ private:
 class LogFilterInt:public LogFilter
 {
 public:
-  LogFilterInt(const char *name, LogField * field, Action a, Operator o, unsigned value);
-    LogFilterInt(const char *name, LogField * field, Action a, Operator o, size_t num_values, unsigned *value);
+  LogFilterInt(const char *name, LogField * field, Action a, Operator o, int64 value);
+    LogFilterInt(const char *name, LogField * field, Action a, Operator o, size_t num_values, int64 *value);
     LogFilterInt(const char *name, LogField * field, Action a, Operator o, char *values);
     LogFilterInt(const LogFilterInt & rhs);
    ~LogFilterInt();
@@ -195,10 +195,10 @@ public:
   void display_as_XML(FILE * fd = stdout);
 
 private:
-  unsigned *m_value;            // the array of values
+  int64 *m_value;            // the array of values
 
-  void _setValues(size_t n, unsigned *value);
-  int _convertStringToInt(char *val, unsigned *ival, LogFieldAliasMap * map);
+  void _setValues(size_t n, int64 *value);
+  int _convertStringToInt(char *val, int64 *ival, LogFieldAliasMap * map);
 
   // -- member functions that are not allowed --
     LogFilterInt();

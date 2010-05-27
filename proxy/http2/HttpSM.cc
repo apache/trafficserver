@@ -880,8 +880,8 @@ HttpSM::state_drain_client_request_body(int event, void *data)
     }
   case VC_EVENT_READ_READY:
     {
-      int avail = ua_buffer_reader->read_avail();
-      int left = t_state.hdr_info.request_content_length - client_request_body_bytes;
+      int64 avail = ua_buffer_reader->read_avail();
+      int64 left = t_state.hdr_info.request_content_length - client_request_body_bytes;
 
       // Since we are only reading what's needed to complete
       //   the post, there must be something left to do
@@ -1460,9 +1460,9 @@ HttpSM::state_api_callout(int event, void *data)
         hook->m_cont->statCallsMade(cur_hook_id);
 
         // Stat time spent in previous plugin
-        INK64 curr_time = INKhrtime();
+        int64 curr_time = INKhrtime();
         if(prev_hook_stats_enabled && prev_hook_start_time) {
-          INK64 time_in_plugin_ms = (curr_time - prev_hook_start_time)/1000000;
+          int64 time_in_plugin_ms = (curr_time - prev_hook_start_time)/1000000;
           prev_hook_stats.inc(time_in_plugin_ms);
           Debug("http", "[%lld] Time spent in plugin %s = %lld",
                 sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
@@ -1552,8 +1552,8 @@ HttpSM::state_api_callout(int event, void *data)
     // Do per plugin stats
     // Handle last plugin on current state
     if(prev_hook_stats_enabled && prev_hook_start_time) {
-      INK64 time_in_plugin_ms = (INKhrtime() - prev_hook_start_time)/1000000;
-      Debug("http", "[%lld] Last plugin : Time spent : %s %lld",
+      int64 time_in_plugin_ms = (INKhrtime() - prev_hook_start_time)/1000000;
+      Debug("http", "[%lld] Last plugin : Time spent : %s %lld", 
             sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
       prev_hook_stats.inc(time_in_plugin_ms);
     }
@@ -2853,7 +2853,8 @@ HttpSM::is_http_server_eos_truncation(HttpTunnelProducer * p)
   //    Received byts == C-L :  read success                  //
   //    Received byts > C-L  :  read success                  //
   //////////////////////////////////////////////////////////////
-  int cl = t_state.hdr_info.server_response.get_content_length();
+  int64 cl = t_state.hdr_info.server_response.get_content_length();
+
   if (cl != UNDEFINED_COUNT && cl > server_response_body_bytes) {
     Debug("http", "[%lld] server eos after %d.  Expected %d", sm_id, cl, server_response_body_bytes);
     return true;
@@ -3078,7 +3079,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
       return true;
     }
 
-    int ua_cl = t_state.hdr_info.client_response.get_content_length();
+    int64 ua_cl = t_state.hdr_info.client_response.get_content_length();
 
     if (ua_cl > 0) {
       int ua_body_done = c->bytes_written - client_response_hdr_bytes;
@@ -3178,7 +3179,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
   }
 
   client_response_body_bytes = c->bytes_written - client_response_hdr_bytes;
-  client_response_body_bytes =::max(0, client_response_body_bytes);
+  if (client_response_body_bytes < 0)
+    client_response_body_bytes = 0;
 
   ink_assert(ua_entry->vc == c->vc);
   if (close_connection) {
@@ -4984,7 +4986,7 @@ HttpSM::setup_transform_to_server_transfer()
   ink_assert(post_transform_info.vc != NULL);
   ink_assert(post_transform_info.entry->vc == post_transform_info.vc);
 
-  int nbytes = t_state.hdr_info.transform_request_cl;
+  int64 nbytes = t_state.hdr_info.transform_request_cl;
   int alloc_index = buffer_size_to_index(nbytes);
   MIOBuffer *post_buffer = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = post_buffer->alloc_reader();
@@ -5014,10 +5016,10 @@ HttpSM::setup_transform_to_server_transfer()
 void
 HttpSM::do_drain_request_body()
 {
-  int post_bytes = t_state.hdr_info.request_content_length;
-  int avail = ua_buffer_reader->read_avail();
+  int64 post_bytes = t_state.hdr_info.request_content_length;
+  int64 avail = ua_buffer_reader->read_avail();
 
-  int act_on = (avail < post_bytes) ? avail : post_bytes;
+  int64 act_on = (avail < post_bytes) ? avail : post_bytes;
 
   client_request_body_bytes = act_on;
   ua_buffer_reader->consume(act_on);
@@ -5061,7 +5063,6 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     tunnel.postbuf->postdata_producer_buffer = NULL;
     tunnel.postbuf->postdata_producer_reader = NULL;
   } else {
-
     int alloc_index;
     // content length is undefined, use default buffer size
     if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
@@ -5075,7 +5076,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     }
     MIOBuffer *post_buffer = new_MIOBuffer(alloc_index);
     IOBufferReader *buf_start = post_buffer->alloc_reader();
-    int post_bytes = chunked ? INT_MAX : t_state.hdr_info.request_content_length;
+    int64 post_bytes = chunked ? INT_MAX : t_state.hdr_info.request_content_length;
     t_state.hdr_info.request_body_start = true;
     // Note: Many browers, Netscape and IE included send two extra
     //  bytes (CRLF) at the end of the post.  We just ignore those
@@ -5523,7 +5524,8 @@ HttpSM::setup_server_send_request()
 {
 
   bool api_set;
-  int hdr_length, msg_len = 0;  /* lv: just make gcc happy */
+  int hdr_length;
+  int64 msg_len = 0;  /* lv: just make gcc happy */
 
   hsm_release_assert(server_entry != NULL);
   hsm_release_assert(server_session != NULL);
@@ -5642,7 +5644,8 @@ void
 HttpSM::setup_cache_read_transfer()
 {
 
-  int alloc_index, hdr_size, doc_size;
+  int alloc_index, hdr_size;
+  int64 doc_size;
 
   ink_assert(cache_sm.cache_read_vc != NULL);
 
@@ -5688,7 +5691,8 @@ HttpTunnelProducer *
 HttpSM::setup_cache_transfer_to_transform()
 {
 
-  int alloc_index, doc_size;
+  int alloc_index;
+  int64 doc_size;
 
   ink_assert(cache_sm.cache_read_vc != NULL);
   ink_assert(transform_info.vc != NULL);
@@ -5725,7 +5729,7 @@ HttpSM::setup_cache_transfer_to_transform()
 
 void
 HttpSM::setup_cache_write_transfer(HttpCacheSM * c_sm,
-                                   VConnection * source_vc, HTTPInfo * store_info, int skip_bytes, const char *name)
+                                   VConnection * source_vc, HTTPInfo * store_info, int64 skip_bytes, const char *name)
 {
 
   ink_assert(c_sm->cache_write_vc != NULL);
@@ -5748,7 +5752,7 @@ void
 HttpSM::setup_100_continue_transfer()
 {
 
-  int buf_size = HTTP_HEADER_BUFFER_SIZE;
+  int64 buf_size = HTTP_HEADER_BUFFER_SIZE;
 
   MIOBuffer *buf = new_MIOBuffer(buffer_size_to_index(buf_size));
   IOBufferReader *buf_start = buf->alloc_reader();
@@ -5843,14 +5847,14 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 
   t_state.source = HttpTransact::SOURCE_INTERNAL;
 
-  int buf_size = HTTP_HEADER_BUFFER_SIZE + (is_msg_buf_present ? t_state.internal_msg_buffer_size : 0);
+  int64 buf_size = HTTP_HEADER_BUFFER_SIZE + (is_msg_buf_present ? t_state.internal_msg_buffer_size : 0);
 
   MIOBuffer *buf = new_MIOBuffer(buffer_size_to_index(buf_size));
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // First write the client response header into the buffer
   client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, buf);
-  int nbytes = client_response_hdr_bytes;
+  int64 nbytes = client_response_hdr_bytes;
 
   // Next append the message onto the MIOBuffer
 
@@ -5898,9 +5902,9 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 //     a response based on the content length
 //
 int
-HttpSM::find_http_resp_buffer_size(int content_length)
+HttpSM::find_http_resp_buffer_size(int64 content_length)
 {
-  int buf_size;
+  int64 buf_size;
   int alloc_index;
 
   if (content_length == HTTP_UNDEFINED_CL) {
@@ -5928,11 +5932,11 @@ HttpSM::find_http_resp_buffer_size(int content_length)
 //      and return the number of bytes we should use for initiating the
 //      tunnel
 //
-int
+int64
 HttpSM::server_transfer_init(MIOBuffer * buf, int hdr_size)
 {
-  int nbytes;
-  int to_copy = INT_MAX;
+  int64 nbytes;
+  int64 to_copy = INT64_MAX;
 
   if (server_entry->eos == true) {
     // The server has shutdown on us already so the only data
@@ -5981,7 +5985,8 @@ HttpTunnelProducer *
 HttpSM::setup_server_transfer_to_transform()
 {
 
-  int alloc_index, nbytes;
+  int alloc_index;
+  int64 nbytes;
 
   alloc_index = find_server_buffer_size();
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
@@ -6094,7 +6099,8 @@ void
 HttpSM::setup_server_transfer_to_cache_only()
 {
   TunnelChunkingAction_t action;
-  int alloc_index, nbytes;
+  int alloc_index;
+  int64 nbytes;
 
   alloc_index = find_server_buffer_size();
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
@@ -6125,7 +6131,8 @@ void
 HttpSM::setup_server_transfer()
 {
 
-  int alloc_index, hdr_size, nbytes;
+  int alloc_index, hdr_size;
+  int64 nbytes;
 
   alloc_index = find_server_buffer_size();
 #ifndef USE_NEW_EMPTY_MIOBUFFER
@@ -6209,7 +6216,7 @@ void
 HttpSM::setup_push_transfer_to_cache()
 {
 
-  int nbytes, alloc_index;
+  int64 nbytes, alloc_index;
 
   alloc_index = find_http_resp_buffer_size(t_state.hdr_info.request_content_length);
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
@@ -6500,8 +6507,8 @@ HttpSM::update_stats()
 
   if (is_action_tag_set("bad_length_state_dump")) {
     if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTP_STATUS_OK) {
-      int p_resp_cl = t_state.hdr_info.client_response.get_content_length();
-      int resp_size = client_response_body_bytes;
+      int64 p_resp_cl = t_state.hdr_info.client_response.get_content_length();
+      int64 resp_size = client_response_body_bytes;
       if (!((p_resp_cl == -1 || p_resp_cl == resp_size || resp_size == 0))) {
         Error("[%lld] Truncated content detected", sm_id);
         dump_state_on_assert();
@@ -6514,8 +6521,8 @@ HttpSM::update_stats()
 
   if (is_action_tag_set("assert_jtest_length")) {
     if (t_state.hdr_info.client_response.valid() && t_state.hdr_info.client_response.status_get() == HTTP_STATUS_OK) {
-      int p_resp_cl = t_state.hdr_info.client_response.get_content_length();
-      int resp_size = client_response_body_bytes;
+      int64 p_resp_cl = t_state.hdr_info.client_response.get_content_length();
+      int64 resp_size = client_response_body_bytes;
       HTTP_ASSERT(p_resp_cl == -1 || p_resp_cl == resp_size || resp_size == 0);
     }
   }

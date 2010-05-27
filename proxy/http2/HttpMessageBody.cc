@@ -49,14 +49,15 @@ HttpMessageBody::StatusCodeName(HTTPStatus status_code)
 
 */
 char *
-HttpMessageBody::MakeErrorBodyVA(int max_buffer_length,
-                                 int *resulting_buffer_length,
+HttpMessageBody::MakeErrorBodyVA(int64 max_buffer_length,
+                                 int64 *resulting_buffer_length,
                                  const HttpConfigParams * config,
                                  HTTPStatus status_code, const char *reason, const char *format, va_list va)
 {
   char *p, *outbuf = NULL;
   char error_title[128];
-  int pass, l, output_length;
+  int pass;
+  int64 l, output_length;
 
   if (reason == NULL)
     reason = (char *) (StatusCodeName(status_code));

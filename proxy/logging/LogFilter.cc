@@ -375,23 +375,15 @@ bool LogFilterString::toss_this_entry(LogAccess * lad)
     return false;
   }
 
-  static const unsigned
-    BUFSIZE = 1024;
-  char
-    small_buf[BUFSIZE];
-  char
-    small_buf_upper[BUFSIZE];
-  char *
-    big_buf = NULL;
-  char *
-    big_buf_upper = NULL;
-  char *
-    buf = small_buf;
-  char *
-    buf_upper = small_buf_upper;
+  static const unsigned BUFSIZE = 1024;
+  char small_buf[BUFSIZE];
+  char small_buf_upper[BUFSIZE];
+  char *big_buf = NULL;
+  char *big_buf_upper = NULL;
+  char *buf = small_buf;
+  char *buf_upper = small_buf_upper;
+  size_t marsh_len = m_field->marshal_len(lad);      // includes null termination
 
-  size_t
-    marsh_len = m_field->marshal_len(lad);      // includes null termination
   if (marsh_len > BUFSIZE) {
     big_buf = (char *) xmalloc((unsigned int) marsh_len);
     ink_assert(big_buf != NULL);
@@ -495,18 +487,18 @@ LogFilterString::display_as_XML(FILE * fd)
   -------------------------------------------------------------------------*/
 
 void
-LogFilterInt::_setValues(size_t n, unsigned *value)
+LogFilterInt::_setValues(size_t n, int64 *value)
 {
   m_type = INT_FILTER;
   m_num_values = n;
   if (n) {
-    m_value = NEW(new unsigned[n]);
-    memcpy(m_value, value, n * sizeof(unsigned));
+    m_value = NEW(new int64[n]);
+    memcpy(m_value, value, n * sizeof(int64));
   }
 }
 
 int
-LogFilterInt::_convertStringToInt(char *value, unsigned *ival, LogFieldAliasMap * map)
+LogFilterInt::_convertStringToInt(char *value, int64 *ival, LogFieldAliasMap * map)
 {
   size_t i, l = strlen(value);
   for (i = 0; i < l && ParseRules::is_digit(value[i]); i++);
@@ -516,7 +508,8 @@ LogFilterInt::_convertStringToInt(char *value, unsigned *ival, LogFieldAliasMap 
     // value is an alias and try to get the actual integer value
     // from the log field alias map if field has one
     //
-    if (map == NULL || map->asInt(value, ival) != LogFieldAliasMap::ALL_OK) {
+    // TODO: should not cast
+    if (map == NULL || map->asInt(value, (unsigned int*)ival) != LogFieldAliasMap::ALL_OK) {
       return -1;                // error
     };
   } else {
@@ -529,16 +522,16 @@ LogFilterInt::_convertStringToInt(char *value, unsigned *ival, LogFieldAliasMap 
 }
 
 LogFilterInt::LogFilterInt(const char *name, LogField * field,
-                           LogFilter::Action action, LogFilter::Operator oper, unsigned value)
+                           LogFilter::Action action, LogFilter::Operator oper, int64 value)
 :LogFilter(name, field, action, oper)
 {
-  unsigned v[1];
+  int64  v[1];
   v[0] = value;
   _setValues(1, v);
 }
 
 LogFilterInt::LogFilterInt(const char *name, LogField * field,
-                           LogFilter::Action action, LogFilter::Operator oper, size_t num_values, unsigned *value)
+                           LogFilter::Action action, LogFilter::Operator oper, size_t num_values, int64 *value)
   :
 LogFilter(name, field, action, oper)
 {
@@ -552,15 +545,15 @@ LogFilter(name, field, action, oper)
 {
   // parse the comma-separated list of values and construct array
   //
-  unsigned *val_array = 0;
+  int64 *val_array = 0;
   size_t i = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
   if (n) {
-    val_array = NEW(new unsigned[n]);
+    val_array = NEW(new int64[n]);
     char *t;
     while (t = tok.getNext(), t != NULL) {
-      unsigned ival;
+      int64 ival;
       if (!_convertStringToInt(t, &ival, field->map())) {
         // conversion was successful, add entry to array
         //
@@ -635,10 +628,9 @@ bool LogFilterInt::toss_this_entry(LogAccess * lad)
     return false;
   }
 
-  bool
-    cond_satisfied = false;
-  unsigned
-    value;
+  bool cond_satisfied = false;
+  int64 value;
+
   m_field->marshal(lad, (char *) &value);
   value = ntohl(value);
 
@@ -675,9 +667,9 @@ LogFilterInt::display(FILE * fd)
   } else {
     fprintf(fd, "Filter \"%s\" %sS records if %s %s ", m_name,
             ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
-    fprintf(fd, "%u", m_value[0]);
+    fprintf(fd, "%lld", m_value[0]);
     for (size_t i = 1; i < m_num_values; ++i) {
-      fprintf(fd, ", %u", m_value[i]);
+      fprintf(fd, ", %lld", m_value[i]);
     }
     fprintf(fd, "\n");
   }
@@ -696,9 +688,9 @@ LogFilterInt::display_as_XML(FILE * fd)
   if (m_num_values == 0) {
     fprintf(fd, "<no values>\"\n");
   } else {
-    fprintf(fd, "%u", m_value[0]);
+    fprintf(fd, "%lld", m_value[0]);
     for (size_t i = 1; i < m_num_values; ++i) {
-      fprintf(fd, ", %u", m_value[i]);
+      fprintf(fd, ", %lld", m_value[i]);
     }
     fprintf(fd, "\"/>\n");
   }
@@ -851,6 +843,7 @@ unsigned
 LogFilterList::count()
 {
   unsigned cnt = 0;
+
   for (LogFilter * f = first(); f; f = next(f)) {
     cnt++;
   }

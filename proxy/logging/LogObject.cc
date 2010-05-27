@@ -495,10 +495,10 @@ LogObject::log(LogAccess * lad, char *text_entry)
     LogFieldList *fl = &m_format->m_field_list;
     char *data_ptr = m_format->m_agg_marshal_space;
     LogField *f;
-    LOG_INT val;
+    int64 val;
     for (f = fl->first(); f; f = fl->next(f)) {
       // convert to host order to do computations
-      val = (f->is_time_field())? time_now : ntohl(*((LOG_INT *) data_ptr));
+      val = (f->is_time_field())? time_now : ntohl(*((int64 *) data_ptr));
       f->update_aggregate(val);
       data_ptr += INK_MIN_ALIGN;
     }

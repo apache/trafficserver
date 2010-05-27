@@ -80,7 +80,7 @@ chunked_reenable(HttpTunnelProducer * p, HttpTunnel * tunnel)
         // INKqa05737 - since we explictly disabled the vc by setting
         //  nbytes = ndone when going into flow control, we need
         //  set nbytes up again here
-        p->read_vio->nbytes = INT_MAX;
+        p->read_vio->nbytes = INT64_MAX;
         p->read_vio->reenable();
       }
     } else {
@@ -166,12 +166,12 @@ ChunkedHandler::init(IOBufferReader * buffer_in, HttpTunnelProducer * p)
 void
 ChunkedHandler::read_size()
 {
-  int bytes_used;
+  int64 bytes_used;
   bool done = false;
 
   while (chunked_reader->read_avail() > 0 && !done) {
     const char *tmp = chunked_reader->start();
-    int data_size = chunked_reader->block_read_avail();
+    int64 data_size = chunked_reader->block_read_avail();
     ink_assert(data_size > 0);
     bytes_used = 0;
 
@@ -228,14 +228,14 @@ ChunkedHandler::read_size()
 //   size to move.  Otherwise, uses memcpy method
 //
 
-// We redefine MIN here, with out own funky implementation. /leif
+// We redefine MIN here, with our own funky implementation.  TODO: Do we need this ?
 #undef MIN
 #define MIN(x,y) ((x) <= (y)) ? (x) : (y);
 
-int
+int64
 ChunkedHandler::transfer_bytes()
 {
-  int block_read_avail, moved, to_move, total_moved = 0;
+  int64 block_read_avail, moved, to_move, total_moved = 0;
 
   // Handle the case where we are doing chunked passthrough.
   if (!dechunked_buffer) {
@@ -279,7 +279,7 @@ ChunkedHandler::transfer_bytes()
 void
 ChunkedHandler::read_chunk()
 {
-  int b = transfer_bytes();
+  int64 b = transfer_bytes();
 
   ink_assert(bytes_left >= 0);
   if (bytes_left == 0) {
@@ -302,12 +302,12 @@ ChunkedHandler::read_chunk()
 void
 ChunkedHandler::read_trailer()
 {
-  int bytes_used;
+  int64 bytes_used;
   bool done = false;
 
   while (chunked_reader->read_avail() > 0 && !done) {
     const char *tmp = chunked_reader->start();
-    int data_size = chunked_reader->block_read_avail();
+    int64 data_size = chunked_reader->block_read_avail();
 
     ink_assert(data_size > 0);
     for (bytes_used = 0; data_size > 0; data_size--) {
@@ -388,8 +388,7 @@ bool ChunkedHandler::generate_chunked_content()
   }
 
   while (dechunked_reader->read_avail() > 0 && state != CHUNK_WRITE_DONE) {
-    int
-      write_val = MIN(max_chunk_size, dechunked_reader->read_avail());
+    int write_val = MIN(max_chunk_size, dechunked_reader->read_avail());
 
     // If the server is still alive, check to see if too much data is
     //    pilling up on the client's buffer.  If the server is done, ignore
@@ -407,8 +406,7 @@ bool ChunkedHandler::generate_chunked_content()
 
       // Output the chunk size.
       if (write_val != max_chunk_size) {
-        int
-          len = snprintf(tmp, sizeof(tmp), "%x\r\n", write_val);
+        int len = snprintf(tmp, sizeof(tmp), "%x\r\n", write_val);
         chunked_buffer->write(tmp, len);
         chunked_size += len;
       } else {
@@ -565,7 +563,7 @@ HttpTunnel::deallocate_buffers()
 }
 
 void
-HttpTunnel::set_producer_chunking_action(HttpTunnelProducer * p, int skip_bytes, TunnelChunkingAction_t action)
+HttpTunnel::set_producer_chunking_action(HttpTunnelProducer * p, int64 skip_bytes, TunnelChunkingAction_t action)
 {
   p->chunked_handler.skip_bytes = skip_bytes;
   p->chunking_action = action;
@@ -589,7 +587,7 @@ HttpTunnel::set_producer_chunking_action(HttpTunnelProducer * p, int skip_bytes,
 //
 HttpTunnelProducer *
 HttpTunnel::add_producer(VConnection * vc,
-                         int nbytes_arg,
+                         int64 nbytes_arg,
                          IOBufferReader * reader_start,
                          HttpProducerHandler sm_handler, HttpTunnelType_t vc_type, const char *name_arg)
 {
@@ -649,7 +647,7 @@ HttpTunnel::add_producer(VConnection * vc,
 HttpTunnelConsumer *
 HttpTunnel::add_consumer(VConnection * vc,
                          VConnection * producer,
-                         HttpConsumerHandler sm_handler, HttpTunnelType_t vc_type, const char *name_arg, int skip_bytes)
+                         HttpConsumerHandler sm_handler, HttpTunnelType_t vc_type, const char *name_arg, int64 skip_bytes)
 {
 
   Debug("http_tunnel", "[%lld] adding consumer '%s'", sm->sm_id, name_arg);
@@ -754,15 +752,15 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     }
   }
 
-  int consumer_n;
-  int producer_n;
+  int64 consumer_n;
+  int64 producer_n;
 
   ink_assert(p->vc != NULL);
   active = true;
 
   IOBufferReader *chunked_buffer_start = NULL, *dechunked_buffer_start = NULL;
   if (p->do_chunking || p->do_dechunking || p->do_chunked_passthru) {
-    producer_n = (consumer_n = INT_MAX);
+    producer_n = (consumer_n = INT64_MAX);
     p->chunked_handler.init(p->buffer_start, p);
 
     // Copy the header into the chunked/dechunked buffers.
@@ -793,7 +791,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     consumer_n = p->nbytes;
     producer_n = p->ntodo;
   } else {
-    consumer_n = (producer_n = INT_MAX);
+    consumer_n = (producer_n = INT64_MAX);
   }
 
   // Do the IO on the consumers first so
@@ -831,21 +829,21 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       ink_assert(c->skip_bytes <= c->buffer_reader->read_avail());
       c->buffer_reader->consume(c->skip_bytes);
     }
-    int c_write = consumer_n;
+    int64 c_write = consumer_n;
 
     // INKqa05109 - if we don't know the length leave it at
-    //  INT_MAX or else the cache may bounce the write
-    //  because it thinks the document is too big.  INT_MAX
+    //  INT64_MAX or else the cache may bounce the write
+    //  because it thinks the document is too big.  INT64_MAX
     //  is a special case for the max document size code
     //  in the cache
-    if (c_write != INT_MAX) {
+    if (c_write != INT64_MAX) {
       c_write -= c->skip_bytes;
     }
     // Fix for problems with not chunked content being chunked and
     // not sending the entire data.  The content length grows when
     // it is being chunked.
     if (p->do_chunking == true) {
-      c_write = INT_MAX;
+      c_write = INT64_MAX;
     }
 
     if (c_write == 0) {
@@ -914,7 +912,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       // [bug 2579251]
       // Ugh, this is horrible but in the redirect case they are running a the tunnel again with the
       // now closed/empty producer to trigger PRECOMPLETE.  If the POST was chunked, producer_n is set
-      // (incorrectly) to INT_MAX.  It needs to be set to 0 to prevent triggering another read.
+      // (incorrectly) to INT64_MAX.  It needs to be set to 0 to prevent triggering another read.
       producer_n = 0;
     }
   }
@@ -1052,16 +1050,11 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer * p)
 //
 bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
 {
-  HttpTunnelConsumer *
-    c;
-  HttpProducerHandler
-    jump_point;
-  bool
-    sm_callback = false;
+  HttpTunnelConsumer *c;
+  HttpProducerHandler jump_point;
+  bool sm_callback = false;
 
   Debug("http_tunnel", "[%lld] producer_handler [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
-
-
 
   // Handle chunking/dechunking/chunked-passthrough if necessary.
   if (p->do_chunking) {
@@ -1199,10 +1192,8 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
 //
 bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer * c)
 {
-  bool
-    sm_callback = false;
-  HttpConsumerHandler
-    jump_point;
+  bool sm_callback = false;
+  HttpConsumerHandler jump_point;
 
   Debug("http_tunnel", "[%lld] consumer_handler [%s %s]", sm->sm_id, c->name, HttpDebugNames::get_event_name(event));
 
@@ -1294,7 +1285,6 @@ bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer * c)
 void
 HttpTunnel::chain_abort_all(HttpTunnelProducer * p)
 {
-
   HttpTunnelConsumer *c = p->consumer_list.head;
 
   while (c) {
@@ -1335,7 +1325,7 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer * p, bool chain)
 {
   ink_assert(p->alive == false);
   HttpTunnelConsumer *c = p->consumer_list.head;
-  int total_bytes = 0;
+  int64 total_bytes = 0;
 
   TunnelChunkingAction_t action = p->chunking_action;
 
@@ -1366,8 +1356,8 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer * p, bool chain)
 
       if (c->write_vio->nbytes < 0) {
         fprintf(stderr,
-                "[HttpTunnel::finish_all_internal] ERROR: Incorrect total_bytes - c->skip_bytes = %d\n",
-                (int) (total_bytes - c->skip_bytes));
+                "[HttpTunnel::finish_all_internal] ERROR: Incorrect total_bytes - c->skip_bytes = %lld\n",
+                (int64) (total_bytes - c->skip_bytes));
       }
 
       if (chain == true && c->self_producer) {
@@ -1536,6 +1526,7 @@ HttpTunnel::allocate_redirect_postdata_producer_buffer()
 
   ink_release_assert(postbuf->postdata_producer_buffer == NULL);
   int alloc_index = buffer_size_to_index(sm->t_state.hdr_info.request_content_length);
+
   postbuf->postdata_producer_buffer = new_MIOBuffer(alloc_index);
   postbuf->postdata_producer_reader = postbuf->postdata_producer_buffer->alloc_reader();
 }
@@ -1547,6 +1538,7 @@ HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader * ua_reader)
 {
   Debug("http_redirect", "[HttpTunnel::allocate_postdata_buffers]");
   int alloc_index = buffer_size_to_index(sm->t_state.hdr_info.request_content_length);
+
   if (postbuf == NULL) {
     postbuf = new PostDataBuffers();
   }

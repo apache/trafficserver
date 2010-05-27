@@ -2093,7 +2093,7 @@ HttpTransact::HandlePushResponseHdr(State * s)
 {
 
   // Verify the pushed header wasn't longer than the content length
-  int body_bytes = s->hdr_info.request_content_length - s->state_machine->pushed_response_hdr_bytes;
+  int64 body_bytes = s->hdr_info.request_content_length - s->state_machine->pushed_response_hdr_bytes;
   if (body_bytes < 0) {
     HandlePushError(s, "Bad Content Length");
     return;
@@ -4300,7 +4300,6 @@ void
 HttpTransact::build_response_copy(State * s, HTTPHdr * base_response,
                                   HTTPHdr * outgoing_response, HTTPVersion outgoing_version)
 {
-
   HttpTransactHeaders::copy_header_fields(base_response,
                                           outgoing_response,
                                           s->http_config_param->fwd_proxy_auth_to_parent, s->current.now);
@@ -6076,7 +6075,7 @@ HttpTransact::initialize_state_variables_from_request(State * s, HTTPHdr * incom
       (s->method == HTTP_WKSIDX_POST || s->method == HTTP_WKSIDX_PUT ||
        s->method == HTTP_WKSIDX_PUSH || s->hdr_info.extension_method)) {
 
-    int length = incoming_request->get_content_length();
+    int64 length = incoming_request->get_content_length();
     s->hdr_info.request_content_length = (length >= 0) ? length : HTTP_UNDEFINED_CL;    // content length less than zero is invalid
 
     Debug("http_trans", "[init_stat_vars_from_req] set req cont length to %d", s->hdr_info.request_content_length);
@@ -6182,7 +6181,7 @@ HttpTransact::initialize_state_variables_from_response(State * s, HTTPHdr * inco
         s->hdr_info.trust_response_cl = false;
         s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
       } else {
-        int cl = incoming_response->get_content_length();
+        int64 cl = incoming_response->get_content_length();
         s->hdr_info.response_content_length = (cl >= 0) ? cl : HTTP_UNDEFINED_CL;
         s->hdr_info.trust_response_cl = true;
       }
@@ -7219,7 +7218,7 @@ HttpTransact::handle_content_length_header(State * s, HTTPHdr * header, HTTPHdr 
   if (header->type_get() == HTTP_TYPE_RESPONSE) {
     // This isn't used.
     // int status_code = base->status_get();
-    int32 cl = HTTP_UNDEFINED_CL;
+    int64 cl = HTTP_UNDEFINED_CL;
     if (base->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
       cl = base->get_content_length();
       if (cl >= 0) {
@@ -7234,7 +7233,7 @@ HttpTransact::handle_content_length_header(State * s, HTTPHdr * header, HTTPHdr 
           //   Otherwise, set the state's machine view  //
           //   of c-l to undefined to turn off K-A      //
           ////////////////////////////////////////////////
-          if ((int32) s->cache_info.object_read->object_size_get() == cl) {
+          if ((int64) s->cache_info.object_read->object_size_get() == cl) {
             s->hdr_info.trust_response_cl = true;
           } else {
             Debug("http_trans", "Content Length header and cache object size mismatch." "Disabling keep-alive");
@@ -7270,7 +7269,7 @@ HttpTransact::handle_content_length_header(State * s, HTTPHdr * header, HTTPHdr 
         //   read-while-write mode and object hasn't been
         //   written into a cache completely.
         cl = s->cache_info.object_read->object_size_get();
-        if (cl == INT_MAX) { //INT_MAX cl in cache indicates rww in progress
+        if (cl == INT64_MAX) { //INT64_MAX cl in cache indicates rww in progress
           header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
           s->hdr_info.trust_response_cl = false;
           s->hdr_info.request_content_length = HTTP_UNDEFINED_CL;
@@ -8451,7 +8450,6 @@ HttpTransact::build_response(State * s,
                              HTTPHdr * outgoing_response,
                              HTTPVersion outgoing_version, HTTPStatus status_code, const char *reason_phrase)
 {
-
   if (reason_phrase == NULL) {
     reason_phrase = HttpMessageBody::StatusCodeName(status_code);
   }
@@ -8624,7 +8622,7 @@ HttpTransact::build_response(State * s,
         DUMP_HEADER("http_hdrs", base_response, s->state_machine_id, "Base Header for Building Response");
     }
     if (!s->cop_test_page)
-      DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response");
+      DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response 2");
   }
 
   return;
@@ -8995,7 +8993,7 @@ ink_cluster_time(void)
 // The stat functions
 //
 void
-HttpTransact::histogram_response_document_size(State * s, int doc_size)
+HttpTransact::histogram_response_document_size(State * s, int64 doc_size)
 {
   if (doc_size >= 0 && doc_size <= 100) {
     HTTP_INCREMENT_TRANS_STAT(http_response_document_size_100_stat);
@@ -9016,7 +9014,7 @@ HttpTransact::histogram_response_document_size(State * s, int doc_size)
 }
 
 void
-HttpTransact::histogram_request_document_size(State * s, int doc_size)
+HttpTransact::histogram_request_document_size(State * s, int64 doc_size)
 {
   if (doc_size >= 0 && doc_size <= 100) {
     HTTP_INCREMENT_TRANS_STAT(http_request_document_size_100_stat);
@@ -9037,7 +9035,7 @@ HttpTransact::histogram_request_document_size(State * s, int doc_size)
 }
 
 void
-HttpTransact::user_agent_connection_speed(State * s, ink_hrtime transfer_time, int nbytes)
+HttpTransact::user_agent_connection_speed(State * s, ink_hrtime transfer_time, int64 nbytes)
 {
   float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float) nbytes / (float) (int64) transfer_time);
   int bytes_per_sec = (int) (bytes_per_hrtime * HRTIME_SECOND);
@@ -9213,7 +9211,7 @@ HttpTransact::client_result_stat(State * s, ink_hrtime total_time, ink_hrtime re
 }
 
 void
-HttpTransact::origin_server_connection_speed(State * s, ink_hrtime transfer_time, int nbytes)
+HttpTransact::origin_server_connection_speed(State * s, ink_hrtime transfer_time, int64 nbytes)
 {
   float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float) nbytes / (float) (int64) transfer_time);
   int bytes_per_sec = (int) (bytes_per_hrtime * HRTIME_SECOND);
@@ -9297,31 +9295,31 @@ HttpTransact::update_size_and_time_stats(State * s,
                                          ink_hrtime cache_lookup_time,
                                          int
                                          user_agent_request_header_size,
-                                         int
+                                         int64
                                          user_agent_request_body_size,
                                          int
                                          user_agent_response_header_size,
-                                         int
+                                         int64
                                          user_agent_response_body_size,
                                          int
                                          origin_server_request_header_size,
-                                         int
+                                         int64
                                          origin_server_request_body_size,
                                          int
                                          origin_server_response_header_size,
-                                         int
+                                         int64
                                          origin_server_response_body_size,
                                          int pushed_response_header_size,
-                                         int pushed_response_body_size, CacheAction_t cache_action)
+                                         int64 pushed_response_body_size, CacheAction_t cache_action)
 {
 
-  int user_agent_request_size = user_agent_request_header_size + user_agent_request_body_size;
-  int user_agent_response_size = user_agent_response_header_size + user_agent_response_body_size;
-  int user_agent_bytes = user_agent_request_size + user_agent_response_size;
+  int64 user_agent_request_size = user_agent_request_header_size + user_agent_request_body_size;
+  int64 user_agent_response_size = user_agent_response_header_size + user_agent_response_body_size;
+  int64 user_agent_bytes = user_agent_request_size + user_agent_response_size;
 
-  int origin_server_request_size = origin_server_request_header_size + origin_server_request_body_size;
-  int origin_server_response_size = origin_server_response_header_size + origin_server_response_body_size;
-  int origin_server_bytes = origin_server_request_size + origin_server_response_size;
+  int64 origin_server_request_size = origin_server_request_header_size + origin_server_request_body_size;
+  int64 origin_server_response_size = origin_server_response_header_size + origin_server_response_body_size;
+  int64 origin_server_bytes = origin_server_request_size + origin_server_response_size;
 
   // Background fill stats
   switch (s->state_machine->background_fill) {
@@ -9334,8 +9332,10 @@ HttpTransact::update_size_and_time_stats(State * s,
     }
   case BACKGROUND_FILL_ABORTED:
     {
-      int bg_size = origin_server_response_body_size - user_agent_response_body_size;
-      bg_size = max(0, bg_size);
+      int64 bg_size = origin_server_response_body_size - user_agent_response_body_size;
+
+      if (bg_size < 0)
+        bg_size = 0;
       HTTP_SUM_TRANS_STAT(http_background_fill_bytes_aborted_stat, bg_size);
       break;
     }

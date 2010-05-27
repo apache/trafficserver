@@ -860,10 +860,10 @@ public:
     HTTPHdr server_response;
     HTTPHdr transform_response;
     HTTPHdr transform_cached_request;
-    int request_content_length;
-    int response_content_length;
-    int transform_request_cl;
-    int transform_response_cl;
+    int64 request_content_length;
+    int64 response_content_length;
+    int64 transform_request_cl;
+    int64 transform_response_cl;
     bool client_req_is_server_style;
     bool trust_response_cl;
     ResponseError_t response_error;
@@ -984,7 +984,7 @@ public:
     void (*transact_return_point) (HttpTransact::State * s);    // out
     char *internal_msg_buffer;  // out
     char *internal_msg_buffer_type;     // out
-    int internal_msg_buffer_size;       // out
+    int64 internal_msg_buffer_size;       // out
     int internal_msg_buffer_fast_allocator_size;
     int internal_msg_buffer_index;      // out
 
@@ -1112,7 +1112,7 @@ public:
 
 
 
-  static void free_internal_msg_buffer(char *buffer, int size);
+  static void free_internal_msg_buffer(char *buffer, int64 size);
 
   static void HandleBlindTunnel(State * s);
   static void StartRemapRequest(State * s);
@@ -1280,20 +1280,20 @@ public:
                                          ink_hrtime origin_server_read_time,
                                          ink_hrtime cache_lookup_time,
                                          int user_agent_request_header_size,
-                                         int user_agent_request_body_size,
+                                         int64 user_agent_request_body_size,
                                          int user_agent_response_header_size,
-                                         int user_agent_response_body_size,
+                                         int64 user_agent_response_body_size,
                                          int origin_server_request_header_size,
-                                         int origin_server_request_body_size,
+                                         int64 origin_server_request_body_size,
                                          int origin_server_response_header_size,
-                                         int origin_server_response_body_size,
+                                         int64 origin_server_response_body_size,
                                          int pushed_response_header_size,
-                                         int pushed_response_body_size, CacheAction_t cache_action);
+                                         int64 pushed_response_body_size, CacheAction_t cache_action);
   static void update_aol_stats(State * s, ink_hrtime cache_lookup_time);
-  static void histogram_request_document_size(State * s, int size);
-  static void histogram_response_document_size(State * s, int size);
-  static void user_agent_connection_speed(State * s, ink_hrtime transfer_time, int nbytes);
-  static void origin_server_connection_speed(State * s, ink_hrtime transfer_time, int nbytes);
+  static void histogram_request_document_size(State * s, int64 size);
+  static void histogram_response_document_size(State * s, int64 size);
+  static void user_agent_connection_speed(State * s, ink_hrtime transfer_time, int64 nbytes);
+  static void origin_server_connection_speed(State * s, ink_hrtime transfer_time, int64 nbytes);
   static void client_result_stat(State * s, ink_hrtime total_time, ink_hrtime request_process_time);
   static void initialize_bypass_variables(State * s);
   static void add_new_stat_block(State * s);
@@ -1427,7 +1427,7 @@ pristine_url()
 }
 
 inline void
-HttpTransact::free_internal_msg_buffer(char *buffer, int size)
+HttpTransact::free_internal_msg_buffer(char *buffer, int64 size)
 {
   HTTP_DEBUG_ASSERT(buffer);
   if (size >= 0) {

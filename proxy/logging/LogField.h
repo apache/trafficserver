@@ -20,14 +20,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-
-
 #ifndef LOG_FIELD_H
 #define LOG_FIELD_H
 
 #include "inktomi++.h"
 #include "LogFieldAliasMap.h"
+
+// This is setup for 64-bit log integers
+#define MIN_ALIGN	8
 
 class LogAccess;
 
@@ -126,7 +126,7 @@ public:
   }
 
   void set_aggregate_op(Aggregate agg_op);
-  void update_aggregate(unsigned val);  // SAME AS LOG_INT
+  void update_aggregate(int64 val);
 
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
@@ -141,8 +141,8 @@ private:
   UnmarshalFunc m_unmarshal_func;       // create a string of the data
   UnmarshalFuncWithMap m_unmarshal_func_map;
   Aggregate m_agg_op;
-  unsigned m_agg_cnt;           // SAME AS LOG_INT
-  unsigned m_agg_val;           // SAME AS LOG_INT
+  int64 m_agg_cnt;
+  int64 m_agg_val;
   bool m_time_field;
   Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
 

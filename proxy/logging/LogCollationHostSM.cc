@@ -297,7 +297,7 @@ LogCollationHostSM::host_recv(int event, void *data)
       unsigned version;
 
       ink_assert(m_read_buffer != NULL);
-      ink_assert(m_read_bytes_received >= sizeof(LogBufferHeader));
+      ink_assert(m_read_bytes_received >= (int64)sizeof(LogBufferHeader));
       log_buffer_header = (LogBufferHeader *) m_read_buffer;
 
       // convert the buffer we just received to host order

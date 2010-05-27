@@ -1489,7 +1489,7 @@ CacheContinuation::setupVCdataRead(int event, VConnection * vc)
     ink_release_assert(caller_buf_freebytes);
     SET_HANDLER((CacheContHandler) & CacheContinuation::VCdataRead);
 
-    int size_index = iobuffer_size_to_index(caller_buf_freebytes);
+    int64 size_index = iobuffer_size_to_index(caller_buf_freebytes);
     MIOBuffer *buf = new_MIOBuffer(size_index);
     readahead_reader = buf->alloc_reader();
 

@@ -540,7 +540,7 @@ NewCacheVC::add_sub_header(int index)
   _vio.ndone += getTunnel()->get_producer(this)->read_buffer->write("\r\n", 2);
   _vio.ndone += getTunnel()->get_producer(this)->read_buffer->write(cont_range, sizeof(cont_range) - 1);
 
-  snprintf(numbers, sizeof(numbers), "%d-%d/%d", m_ranges[index]._start, m_ranges[index]._end, m_content_length);
+  snprintf(numbers, sizeof(numbers), "%lld-%lld/%lld", m_ranges[index]._start, m_ranges[index]._end, m_content_length);
   len = strlen(numbers);
   if (len < RANGE_NUMBERS_LENGTH)
     _vio.ndone += getTunnel()->get_producer(this)->read_buffer->write(numbers, len);
@@ -610,12 +610,12 @@ NewCacheVC::parseRange()
       }
 
       s = value;
-      mime_parse_integer(s, e, &m_ranges[i]._start);
+      m_ranges[i]._start = mime_parse_int64(s, e);
 
       e++;
       s = e;
       e = value + value_len;
-      mime_parse_integer(s, e, &m_ranges[i]._end);
+      m_ranges[i]._end = mime_parse_int64(s, e);
 
       // check and change if necessary whether this is a right entry
       // the last _end bytes are required
@@ -740,7 +740,7 @@ NewCacheVC::modifyRespHdr()
     char numbers[60];
 
     field = response->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    snprintf(numbers, sizeof(numbers), "bytes %d-%d/%d", m_ranges[0]._start, m_ranges[0]._end, m_content_length);
+    snprintf(numbers, sizeof(numbers), "bytes %lld-%lld/%lld", m_ranges[0]._start, m_ranges[0]._end, m_content_length);
     field->value_append(response->m_heap, response->m_mime, numbers, strlen(numbers));
     response->field_attach(field);
   }

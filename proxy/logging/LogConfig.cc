@@ -1062,7 +1062,7 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
   };
   const char *name[] = { "icp", "mixt", "http" };
   const char *filter_name[] = { "__icp__", "__mixt__", "__http__" };
-  unsigned filter_val[http];    // protocols to reject
+  int64 filter_val[http];    // protocols to reject
   size_t n = 0;
 
   LogFilter *filter[1];
@@ -2573,7 +2573,7 @@ LogConfig::read_xml_log_config(int from_memory)
         size_t n = tok.getNumTokensRemaining();
 
         if (n) {
-          unsigned *val_array = NEW(new unsigned[n]);
+          int64 *val_array = NEW(new int64[n]);
           size_t numValid = 0;
           char *t;
           while (t = tok.getNext(), t != NULL) {

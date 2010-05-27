@@ -25,6 +25,12 @@
  Logging - LogAccess.h
 
 
+// Since we changed to 64-bit only for all int's. Look for htonl etc.
+#ifndef LITTLE_ENDIAN
+#error FIX_ME
+#endif
+
+
  ***************************************************************************/
 #if !defined (INK_NO_LOG)
 #ifndef LOG_ACCESS_H
@@ -63,7 +69,7 @@
       int marshal_some_int_value (char *buf)
       {
           if (buf) {
-	      LOG_INT val = what_the_value_should_be;
+	      int64 val = what_the_value_should_be;
               marshal_int (buf, val);
 	  }
 	  return INK_MIN_ALIGN;
@@ -91,15 +97,14 @@
 
 #include "ink_bool.h"
 
-#define LOG_INT 	unsigned
 // DEFAULT_STR_LEN MUST be less than INK_MIN_ALIGN
 #define DEFAULT_STR	"-"
 #define DEFAULT_STR_LEN 1
 
 #define DEFAULT_INT_FIELD {\
     if (buf) { \
-      LOG_INT i = 0; \
-      marshal_int (buf, i); \
+	int64 i = 0; \
+	marshal_int (buf, i); \
     } \
     return INK_MIN_ALIGN; \
 }
@@ -292,9 +297,9 @@ public:
   // They used to return a string; now they unmarshal directly into the
   // destination buffer supplied.
   //
-  static LOG_INT unmarshal_int(char **buf);
-  static LOG_INT unmarshal_itoa(LOG_INT val, char *dest, int field_width = 0, char leading_char = ' ');
-  static LOG_INT unmarshal_itox(LOG_INT val, char *dest, int field_width = 0, char leading_char = ' ');
+  static int64 unmarshal_int(char **buf);
+  static int unmarshal_itoa(int64 val, char *dest, int field_width = 0, char leading_char = ' ');
+  static int unmarshal_itox(int64 val, char *dest, int field_width = 0, char leading_char = ' ');
   static int unmarshal_int_to_str(char **buf, char *dest, int len);
   static int unmarshal_int_to_str_hex(char **buf, char *dest, int len);
   static int unmarshal_str(char **buf, char *dest, int len);
@@ -309,20 +314,20 @@ public:
   static int unmarshal_entry_type(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
 
-  static int unmarshal_with_map(LOG_INT code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg = 0);
+  static int unmarshal_with_map(int64 code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg = 0);
 
   static int unmarshal_record(char **buf, char *dest, int len);
 
   //
-  // our own strlen function that pads strings to even LOG_INT boundaries
+  // our own strlen function that pads strings to even int64 boundaries
   // so that there are no alignment problems with the int values.
   //
   static int round_strlen(int len);
   static int strlen(char *str);
 
 public:
-  inkcoreapi void static marshal_int(char *dest, LOG_INT source);
-  inkcoreapi void static marshal_int_no_byte_order_conversion(char *dest, LOG_INT source);
+  inkcoreapi void static marshal_int(char *dest, int64 source);
+  inkcoreapi void static marshal_int_no_byte_order_conversion(char *dest, int64 source);
   inkcoreapi void static marshal_str(char *dest, const char *source, int padded_len);
   inkcoreapi void static marshal_mem(char *dest, const char *source, int actual_len, int padded_len);
 
@@ -358,15 +363,16 @@ LogAccess::strlen(char *str)
 }
 
 inline void
-LogAccess::marshal_int(char *dest, LOG_INT source)
+LogAccess::marshal_int(char *dest, int64 source)
 {
-  *((LOG_INT *) dest) = htonl(source);
+  // TODO: This used to to htonl().
+  *((int64 *) dest) = source;
 }
 
 inline void
-LogAccess::marshal_int_no_byte_order_conversion(char *dest, LOG_INT source)
+LogAccess::marshal_int_no_byte_order_conversion(char *dest, int64 source)
 {
-  *((LOG_INT *) dest) = source;
+  *((int64 *) dest) = source;
 }
 
 /*-------------------------------------------------------------------------

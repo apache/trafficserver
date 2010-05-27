@@ -1860,6 +1860,7 @@ mime_field_value_get_int(MIMEField * field)
 {
   int length;
   const char *str = mime_field_value_get(field, &length);
+
   return (mime_parse_int(str, str + length));
 }
 
@@ -1869,6 +1870,15 @@ mime_field_value_get_uint(MIMEField * field)
   int length;
   const char *str = mime_field_value_get(field, &length);
   return (mime_parse_uint(str, str + length));
+}
+
+int64
+mime_field_value_get_int64(MIMEField * field)
+{
+  int length;
+  const char *str = mime_field_value_get(field, &length);
+
+  return (mime_parse_int64(str, str + length));
 }
 
 time_t
@@ -3590,6 +3600,45 @@ mime_parse_uint(const char *buf, const char *end)
   }
 }
 
+int64
+mime_parse_int64(const char *buf, const char *end)
+{
+  int64 num;
+  bool negative;
+
+  if (!buf || (buf == end))
+    return 0;
+
+  if (is_digit(*buf))           // fast case
+    {
+      num = *buf++ - '0';
+      while ((buf != end) && is_digit(*buf))
+        num = (num * 10) + (*buf++ - '0');
+      return (num);
+    } else {
+    num = 0;
+    negative = false;
+
+    while ((buf != end) && ParseRules::is_space(*buf))
+      buf += 1;
+
+    if ((buf != end) && (*buf == '-')) {
+      negative = true;
+      buf += 1;
+    }
+    // NOTE: we first compute the value as negative then correct the
+    // sign back to positive. This enables us to correctly parse MININT.
+    while ((buf != end) && is_digit(*buf))
+      num = (num * 10) - (*buf++ - '0');
+
+    if (!negative)
+      num = -num;
+
+    return num;
+  }
+}
+
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -3956,6 +4005,8 @@ mime_parse_time(const char *&buf, const char *end, int *hour, int *min, int *sec
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// TODO: Do we really need mime_parse_int() and mime_parse_integer() ? I know
+// they have slightly different prototypes, but still...
 int
 mime_parse_integer(const char *&buf, const char *end, int *integer)
 {
@@ -3990,6 +4041,7 @@ mime_parse_integer(const char *&buf, const char *end, int *integer)
 
   return 1;
 }
+
 
 /***********************************************************************
  *                                                                     *

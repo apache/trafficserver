@@ -258,24 +258,24 @@ private:
   IOBufferReader *_httpInfoBufferReader;
 
   uint64 _totalObjectSize;
+
   // Range related....
   typedef struct _RangeRecord
   {
-    _RangeRecord()
-    {
-      _start = _end = -1;
-      _done_byte = 0;
-    }
-    int _start;
-    int _end;
-    int _done_byte;
+  _RangeRecord() :
+    _start(-1), _end(-1), _done_byte(-1)
+    { }
+
+    int64 _start;
+    int64 _end;
+    int64 _done_byte;
   } RangeRecord;
 
   bool m_unsatisfiable_range;
   bool m_not_handle_range;
   bool m_range_present;
   bool m_range_csv_present;
-  int m_content_length;
+  int64 m_content_length;
   int m_num_chars_for_cl;
   int m_num_range_fields;
   int m_current_range;
@@ -283,8 +283,8 @@ private:
   const char *m_content_type;
   int m_content_type_len;
   RangeRecord *m_ranges;
-  int m_output_cl;
-  int m_done;
+  int64 m_output_cl;
+  int64 m_done;
   MIMEField *m_range_field;
   bool m_range_hdr_valid;
   //bool ctrlInPlugin;

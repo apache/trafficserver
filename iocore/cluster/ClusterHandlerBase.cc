@@ -1335,7 +1335,7 @@ ClusterHandler::dump_internal_data()
   n += r;
 
   r = snprintf(&b[n], b_size - n,
-               "chans: %d vc_writes: %d write_bytes: %d(d)+%d(c)=%d\n",
+               "chans: %d vc_writes: %lld write_bytes: %lld(d)+%lld(c)=%lld\n",
                compute_active_channels(),
                _vc_writes, _vc_write_bytes, _control_write_bytes, _vc_write_bytes + _control_write_bytes);
 

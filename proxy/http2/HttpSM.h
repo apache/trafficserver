@@ -270,7 +270,7 @@ public:
   char *redirect_url;           //url for force redirect (provide users a functionality to redirect to another url when needed)
   int redirect_url_len;
   int redirection_tries;        //To monitor number of redirections
-  int transfered_bytes;         //Added to calculate POST data
+  int64 transfered_bytes;         //Added to calculate POST data
   bool post_failed;             //Added to identify post failure
 
   bool is_cache_enabled;        //To check if cache is enabled  - YTS Team, yamsat
@@ -452,7 +452,7 @@ protected:
   void setup_push_transfer_to_cache();
   void setup_transform_to_server_transfer();
   void setup_cache_write_transfer(HttpCacheSM * c_sm,
-                                  VConnection * source_vc, HTTPInfo * store_info, int skip_bytes, const char *name);
+                                  VConnection * source_vc, HTTPInfo * store_info, int64 skip_bytes, const char *name);
   void issue_cache_update();
   void perform_cache_write_action();
   void perform_transform_cache_write_action();
@@ -471,21 +471,21 @@ protected:
   bool is_http_server_eos_truncation(HttpTunnelProducer *);
   bool is_bg_fill_necessary(HttpTunnelConsumer * c);
   int find_server_buffer_size();
-  int find_http_resp_buffer_size(int cl);
-  int server_transfer_init(MIOBuffer * buf, int hdr_size);
+  int find_http_resp_buffer_size(int64 cl);
+  int64 server_transfer_init(MIOBuffer * buf, int hdr_size);
 
 public:
   // Stats & Logging Info
   int client_request_hdr_bytes;
-  int client_request_body_bytes;
+  int64 client_request_body_bytes;
   int server_request_hdr_bytes;
-  int server_request_body_bytes;
+  int64 server_request_body_bytes;
   int server_response_hdr_bytes;
-  int server_response_body_bytes;
+  int64 server_response_body_bytes;
   int client_response_hdr_bytes;
-  int client_response_body_bytes;
+  int64 client_response_body_bytes;
   int pushed_response_hdr_bytes;
-  int pushed_response_body_bytes;
+  int64 pushed_response_body_bytes;
   TransactionMilestones milestones;
 
   // hooks_set records whether there are any hooks relevant
@@ -499,7 +499,7 @@ protected:
 
   //
   // Continuation time keeper
-  INK64 prev_hook_start_time;
+  int64 prev_hook_start_time;
 
   bool prev_hook_stats_enabled;
   HistogramStats prev_hook_stats;

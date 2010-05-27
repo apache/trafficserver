@@ -888,12 +888,12 @@ RangeTransform::parse_range_and_compare()
       }
 
       s = value;
-      mime_parse_integer(s, e, &m_ranges[i]._start);
+      m_ranges[i]._start = mime_parse_int64(s, e);
 
       e++;
       s = e;
       e = value + value_len;
-      mime_parse_integer(s, e, &m_ranges[i]._end);
+      m_ranges[i]._end = mime_parse_int64(s, e);
 
       // check and change if necessary whether this is a right entry
       // the last _end bytes are required
@@ -1017,9 +1017,9 @@ RangeTransform::transform_to_range()
 {
   IOBufferReader *reader = m_write_vio.get_reader();
   int done, toskip, tosend, avail;
-  const int *end, *start;
-  int prev_end = 0;
-  int *done_byte;
+  const int64 *end, *start;
+  int64 prev_end = 0;
+  int64 *done_byte;
 
   done = m_done;
 
@@ -1161,7 +1161,7 @@ RangeTransform::add_sub_header(int index)
   m_done += m_output_buf->write("\r\n", 2);
   m_done += m_output_buf->write(cont_range, sizeof(cont_range) - 1);
 
-  snprintf(numbers, sizeof(numbers), "%d-%d/%d", m_ranges[index]._start, m_ranges[index]._end, m_content_length);
+  snprintf(numbers, sizeof(numbers), "%lldd-%lldd/%lldd", m_ranges[index]._start, m_ranges[index]._end, m_content_length);
   len = strlen(numbers);
   if (len < RANGE_NUMBERS_LENGTH)
     m_done += m_output_buf->write(numbers, len);
@@ -1208,7 +1208,7 @@ RangeTransform::change_response_header()
     char numbers[RANGE_NUMBERS_LENGTH];
 
     field = m_transform_resp->field_create(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE);
-    snprintf(numbers, sizeof(numbers), "bytes %d-%d/%d", m_ranges[0]._start, m_ranges[0]._end, m_content_length);
+    snprintf(numbers, sizeof(numbers), "bytes %lld-%lld/%lld", m_ranges[0]._start, m_ranges[0]._end, m_content_length);
     field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, numbers, strlen(numbers));
     m_transform_resp->field_attach(field);
   }
