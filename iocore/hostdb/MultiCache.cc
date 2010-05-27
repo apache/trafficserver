@@ -114,6 +114,8 @@ MultiCacheBase::initialize(Store * astore, char *afilename,
                            int level1_elements_per_bucket, int level2_elements_per_bucket)
 {
   int64 size = 0;
+
+  Debug("multicache", "initializing %s with %d elements, %d buckets and %d levels", afilename, aelements, abuckets, alevels);
   ink_assert(alevels < 4);
   levels = alevels;
   elementsize = get_elementsize();

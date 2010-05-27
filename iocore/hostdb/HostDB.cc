@@ -324,6 +324,9 @@ HostDBCache::start(int flags)
     Layout::relative_to(storage_path, PATH_NAME_MAX,
                         system_root_dir, storage_path);
   }
+
+  Debug("hostdb", "Storage path is %s", storage_path);
+
   struct stat s;
   int err;
   if ((err = stat(storage_path, &s)) < 0) {
@@ -338,6 +341,7 @@ HostDBCache::start(int flags)
   hostDBSpan->init(storage_path, storage_size);
   hostDBStore->add(hostDBSpan);
 
+  Debug("hostdb", "Opening %s, size=%d", hostdb_filename, hostdb_size);
   if (open(hostDBStore, "hostdb.config", hostdb_filename, hostdb_size, reconfigure, fix, false /* slient */ ) < 0) {
     Note("reconfiguring host database");
 
@@ -360,7 +364,6 @@ HostDBCache::start(int flags)
       return -1;
     }
   }
-
   HOSTDB_SET_DYN_COUNT(hostdb_bytes_stat, totalsize);
   //  XXX I don't see this being reference in the previous function calls, so I am going to delete it -bcall
   delete hostDBStore;

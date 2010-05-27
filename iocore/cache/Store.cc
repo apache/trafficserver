@@ -228,11 +228,11 @@ Span::path(char *filename, int64 * aoffset, char *buf, int buflen)
     return -1;
   ink_strncpy(buf, ds->pathname, buflen);
   if (!ds->file_pathname) {
-    if (pl && buf[pl - 1] != '/') {
-      buf[pl - 1] = '/';
-      buf[pl++] = '\0';
+    if (pl && buf[pl-1] != '/') {
+      buf[pl] = '/';
+      buf[pl+1] = '\0';
     }
-    strncat(buf, filename, buflen - (pl + ll + 1));
+    strncat(buf, filename, buflen - (pl + ll + 2));
   }
 
   return strlen(buf);
