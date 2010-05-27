@@ -262,9 +262,8 @@ StrList::overflow_heap_clean()
 
 
 #define INIT_OVERFLOW_ALIGNMENT      8
-#define ROUND(x,l)  (((x) + ((l) - 1L)) & ~((l) - 1L))
-
-const int overflow_head_hdr_size = ROUND(sizeof(StrListOverflow), INIT_OVERFLOW_ALIGNMENT);
+// XXX: This is basically INK_ALIGN_DEFAULT
+const int overflow_head_hdr_size = INK_ALIGN(sizeof(StrListOverflow), INIT_OVERFLOW_ALIGNMENT);
 
 void
 StrListOverflow::init()
@@ -295,7 +294,7 @@ StrListOverflow::alloc(int size, StrListOverflow ** new_heap_ptr)
     int new_heap_size = heap_size * 2;
 
     if (new_heap_size < size) {
-      new_heap_size = ROUND(size, 2048);
+      new_heap_size = INK_ALIGN(size, 2048);
       ink_release_assert(new_heap_size >= size);
     }
 
