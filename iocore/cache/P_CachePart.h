@@ -25,16 +25,16 @@
 #ifndef _P_CACHE_PART_H__
 #define _P_CACHE_PART_H__
 
-#define INK_BLOCK_SHIFT			9
-#define INK_BLOCK_SIZE			(1<<INK_BLOCK_SHIFT)
-#define ROUND_TO_BLOCK(_x)	        (((_x)+(INK_BLOCK_SIZE-1))&~(INK_BLOCK_SIZE-1))
-#define ROUND_TO(_x, _y)	        (((_x)+((_y)-1))&~((_y)-1))
+#define INK_BLOCK_SHIFT                 9
+#define INK_BLOCK_SIZE                  (1<<INK_BLOCK_SHIFT)
+#define ROUND_TO_BLOCK(_x)              INK_ALIGN((_x), INK_BLOCK_SIZE)
+#define ROUND_TO(_x, _y)                INK_ALIGN((_x), (_y))
 
 // Part
 
-#define PART_MAGIC			0xF1D0F00D
+#define PART_MAGIC                      0xF1D0F00D
 #define START_BLOCKS                    32      // 8k
-#define START_POS			((off_t)START_BLOCKS * INK_BLOCK_SIZE)
+#define START_POS                       ((off_t)START_BLOCKS * INK_BLOCK_SIZE)
 #define AGG_HEADER_SIZE                 INK_BLOCK_SIZE
 #define AGG_SIZE                        (4 * 1024 * 1024) // 4MB
 #define AGG_HIGH_WATER                  (AGG_SIZE / 2) // 2MB
