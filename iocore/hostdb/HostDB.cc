@@ -2354,7 +2354,7 @@ ink_hostdb_init(ModuleVersion v)
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.size", 200000, RECU_DYNAMIC, RECC_NULL, NULL);
 
   IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.hostdb.storage_path", "etc/trafficserver/internal", RECU_DYNAMIC, RECC_NULL, NULL);
+                              "proxy.config.hostdb.storage_path", "var/trafficserver", RECU_DYNAMIC, RECC_NULL, NULL);
 
   IOCORE_RegisterConfigInteger(RECT_CONFIG,
                                "proxy.config.hostdb.storage_size", 33554432, RECU_DYNAMIC, RECC_NULL, NULL);
