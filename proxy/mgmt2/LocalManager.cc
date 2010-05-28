@@ -40,6 +40,10 @@
 #include "WebReconfig.h"
 #include "MgmtSocket.h"
 
+#if ATS_USE_POSIX_CAP
+#include <sys/capability.h>
+#endif
+
 int bindProxyPort(int, in_addr_t, int);
 
 bool
@@ -1279,7 +1283,7 @@ LocalManager::listenForProxy()
   if (!run_proxy)
     return;
 
-  // We we are not already bound, bind the port
+  // We are not already bound, bind the port
   for (int i = 0; i < MAX_PROXY_SERVER_PORTS; i++) {
     if (proxy_server_port[i] != -1) {
 
@@ -1307,6 +1311,35 @@ LocalManager::listenForProxy()
   return;
 }                               /* End LocalManager::listenForProxy */
 
+#if ATS_USE_POSIX_CAP
+/** Control file access privileges to bypass DAC.
+    @parm state Use @c true to enable elevated privileges,
+    @c false to disable.
+    @return @c true if successful, @c false otherwise.
+
+    @internal After some pondering I decided that the file access
+    privilege was worth the effort of restricting. Unlike the network
+    privileges this can protect a host system from programming errors
+    by not (usually) permitting such errors to access arbitrary
+    files. This is particularly true since none of the config files
+    current enable this feature so it's not actually called. Still,
+    best to program defensively and have it available.
+ */
+bool
+elevateFileAccess(bool state)
+{
+  bool zret = false; // return value.
+  cap_t cap_state = cap_get_proc(); // current capabilities
+  // Make a list of the capabilities we changed.
+  cap_value_t cap_list[] = { CAP_DAC_OVERRIDE };
+  static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
+
+  cap_set_flag(cap_state, CAP_EFFECTIVE, CAP_COUNT, cap_list, state ? CAP_SET : CAP_CLEAR);
+  zret = (0 == cap_set_proc(cap_state));
+  cap_free(cap_state);
+  return zret;
+}
+#else
 //  bool removeRootPriv()
 //
 //    - Returns true on success
@@ -1316,15 +1349,13 @@ bool
 removeRootPriv(uid_t euid)
 {
   if (seteuid(euid) < 0) {
-    Debug("lm", "[restoreRootPriv] seteuid failed : %s\n", strerror(errno));
+    Debug("lm", "[removeRootPriv] seteuid failed : %s\n", strerror(errno));
     return false;
   }
 
   Debug("lm", "[removeRootPriv] removed root privileges.  Euid is %d\n", euid);
-
   return true;
 }
-
 
 //  bool restoreRootPriv()
 //
@@ -1345,6 +1376,7 @@ restoreRootPriv(uid_t *old_euid)
 
   return true;
 }
+#endif
 
 /*
  * bindProxyPort()
@@ -1357,6 +1389,8 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
   int one = 1;
   struct sockaddr_in proxy_addr;
   int proxy_port_fd = -1;
+
+#if !ATS_USE_POSIX_CAP
   bool privBoost = false;
   uid_t euid = geteuid();
   uid_t saved_euid = 0;
@@ -1370,6 +1404,7 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
       privBoost = true;
     }
   }
+#endif
 
   /* Setup reliable connection, for large config changes */
   if ((proxy_port_fd = socket(AF_INET, type, 0)) < 0) {
@@ -1393,12 +1428,16 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
 
   Debug("lm", "[bindProxyPort] Successfully bound proxy port %d\n", proxy_port);
 
-  if (privBoost == true) {
-    if (removeRootPriv(saved_euid) == false) {
-      mgmt_elog(stderr, "[bindProxyPort] Unable to reset permissions to euid %d.  Exiting...\n", getuid());
-      _exit(1);
+#if !ATS_USE_POSIX_CAP
+  if (proxy_port < 1024 && euid != 0) {
+    if (privBoost == true) {
+      if (removeRootPriv(saved_euid) == false) {
+        mgmt_elog(stderr, "[bindProxyPort] Unable to reset permissions to euid %d.  Exiting...\n", getuid());
+        _exit(1);
+      }
     }
   }
+#endif
   return proxy_port_fd;
 
 }                               /* End bindProxyPort */

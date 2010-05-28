@@ -286,20 +286,37 @@ Rollback::statFile(version_t version, struct stat *buf)
 {
   char *filePath;
   int statResult;
+#if !ATS_USE_POSIX_CAP
   uid_t saved_euid = 0;
+#endif
 
   if (version == this->currentVersion) {
     version = ACTIVE_VERSION;
   }
   filePath = createPathStr(version);
+  
   if (root_access_needed) {
-    if (restoreRootPriv(&saved_euid) != true) {
+    if (
+#if ATS_USE_POSIX_CAP
+	elevateFileAccess(true)
+#else
+	restoreRootPriv(&saved_euid)
+#endif
+	!= true) {
       mgmt_log(stderr, "[Rollback] Unable to acquire root privileges.\n");
     }
   }
+
   statResult = stat(filePath, buf);
+
   if (root_access_needed) {
-    if (removeRootPriv(saved_euid) != true) {
+    if (
+#if ATS_USE_POSIX_CAP
+	elevateFileAccess(false)
+#else
+	removeRootPriv(saved_euid)
+#endif
+	!= true) {
       mgmt_log(stderr, "[Rollback] Unable to restore non-root privileges.\n");
     }
   }
@@ -318,21 +335,37 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
 {
   char *filePath;
   int fd;
+#if !ATS_USE_POSIX_CAP
   uid_t saved_euid = 0;
+#endif
 
   filePath = createPathStr(version);
 
   if (root_access_needed) {
-    if (restoreRootPriv(&saved_euid) != true) {
+    if (
+#if ATS_USE_POSIX_CAP
+	elevateFileAccess(true)
+#else
+	restoreRootPriv(&saved_euid)
+#endif
+	!= true) {
       mgmt_log(stderr, "[Rollback] Unable to acquire root privileges.\n");
     }
   }
+
   fd = mgmt_open_mode(filePath, oflags, 0644);
   if (root_access_needed) {
-    if (removeRootPriv(saved_euid) != true) {
+    if (
+#if ATS_USE_POSIX_CAP
+	elevateFileAccess(false)
+#else
+	removeRootPriv(saved_euid)
+#endif
+	!= true) {
       mgmt_log(stderr, "[Rollback] Unable to restore non-root privileges.\n");
     }
   }
+
   if (fd < 0) {
     if (errnoPtr != NULL) {
       *errnoPtr = errno;

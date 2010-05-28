@@ -73,7 +73,9 @@
 #include "P_RecLocal.h"
 #include "P_RecCore.h"
 
-
+#if ATS_USE_POSIX_CAP
+#include <sys/capability.h>
+#endif
 
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 
@@ -1400,6 +1402,39 @@ fileUpdated(char *fname)
   return;
 }                               /* End fileUpdate */
 
+#if ATS_USE_POSIX_CAP
+/** Restore capabilities after user id change.
+    This manipulates LINUX capabilities so that this process
+    can perform certain privileged operations even if it is
+    no longer running as a privilege user.
+
+    @internal
+    I tried using
+    @code
+    prctl(PR_SET_KEEPCAPS, 1);
+    @endcode
+    but that had no effect even though the call reported succes.
+    Only explicit capability manipulation was effective.
+    
+    It does not appear to be necessary to set the capabilities on the
+    executable if originally run as root. That may be needed if
+    started as a user without that capability.
+ */
+
+int
+restoreCapabilities() {
+  int zret = 0; // return value.
+  cap_t cap_set = cap_get_proc(); // current capabilities
+  // Make a list of the capabilities we want turned on.
+  cap_value_t cap_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE };
+  static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
+
+  cap_set_flag(cap_set, CAP_EFFECTIVE, CAP_COUNT, cap_list, CAP_SET);
+  zret = cap_set_proc(cap_set);
+  cap_free(cap_set);
+  return zret;
+}
+#endif
 
 //  void runAsUser(...)
 //
@@ -1430,6 +1465,7 @@ runAsUser(char *userName)
       mgmt_elog(stderr, "[runAsUser] Fatal Error: proxy.config.admin.user_id is not set\n", userName, strerror(errno));
       _exit(1);
     }
+
 // this is behaving weird.  refer to getpwnam(3C) sparc -jcoates
 // this looks like the POSIX getpwnam_r
 
@@ -1471,6 +1507,13 @@ runAsUser(char *userName)
       mgmt_elog(stderr, "[runAsUser] Fatal Error: Failed to switch to user %s\n", userName);
       _exit(1);
     }
+
+#if ATS_USE_POSIX_CAP
+    if (restoreCapabilities()) {
+      mgmt_elog(stderr, "[runAsUser] Error: Failed to restore capabilities after switch to user %s.\n", userName);
+    }
+#endif
+
   }
 }                               /* End runAsUser() */
 

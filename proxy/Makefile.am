@@ -174,7 +174,7 @@ traffic_server_LDADD = \
   $(top_builddir)/libinktomi++/libinktomi++.a \
   @LIBTHREAD@ @LIBSOCKET@ @LIBNSL@ @LIBRESOLV@ @LIBRT@ \
   @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ \
+  @LIBEXPAT@ @LIBDEMANGLE@ @LIBICONV@ @LIBCAP@ \
   @LIBMLD@ @LIBEXC@ @LIBM@ @LIBEV@ @LIBPROFILER@ @LIBEXECINFO@
 
 traffic_logcat_SOURCES = logcat.cc

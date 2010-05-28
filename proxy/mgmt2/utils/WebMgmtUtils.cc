@@ -1518,7 +1518,9 @@ processSpawn(const char *args[],
   long total;
   bool cutoff;
   const char *too_large_msg = "\nfile too large, truncated here...";
+#if !ATS_USE_POSIX_CAP
   uid_t saved_euid = 0;
+#endif
 
   if (pipe(stdinPipe) == -1)
     mgmt_elog(stderr, "[processSpawn] unable to create stdin pipe\n");
@@ -1538,6 +1540,27 @@ processSpawn(const char *args[],
     for (int i = 0; i < MAX_PROXY_SERVER_PORTS && lmgmt->proxy_server_fd[i] >= 0; i++) {
       close_socket(lmgmt->proxy_server_fd[i]);
     }
+#if ATS_USE_POSIX_CAP
+    /* There is no point in saving the current euid in order to
+       restore it because at this point the process will either exec
+       or exit. The thread of execution will neither linger nor return
+       here.
+
+       I don't understand what the point in the original code was of
+       setuid(geteuid()) after reverting to root euid. If the latter
+       works, you don't need the former, and if the latter doesn't
+       work, the former won't work either. Is it some sort of error
+       checking? But why not just check the return value of
+       restoreRootPriv?
+
+       AFAICT this code is used only by the web interface which is
+       currently non-functional. If that interface is recovered it
+       would be worthwhile to look at why, exactly, it needs to have
+       processes run as root.
+    */
+    if (-1 == seteuid(0))
+        mgmt_elog(stderr, "[processSpawn] unable to set effective user id to 0");
+#else
     // set uid to be the effective uid if it's run as root
     if (run_as_root) {
       restoreRootPriv(&saved_euid);
@@ -1545,6 +1568,7 @@ processSpawn(const char *args[],
         mgmt_elog(stderr, "[processSpawn] unable to set uid to euid");
       }
     }
+#endif
     if (nowait) {
       // nowait - detach from parent process
       if (setsid() == (pid_t) - 1) {
@@ -1630,9 +1654,11 @@ processSpawn(const char *args[],
     }
   }
 
+#if !ATS_USE_POSIX_CAP
   if (run_as_root) {
     removeRootPriv(saved_euid);
   }
+#endif
 #endif // _WIN32
   return status;
 }

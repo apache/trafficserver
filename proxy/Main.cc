@@ -47,6 +47,10 @@ extern "C" int plock(int);
 #include <mcheck.h>
 #endif
 
+#if ATS_USE_POSIX_CAP
+#include <sys/capability.h>
+#endif
+
 #include "Main.h"
 #include "signals.h"
 #include "Error.h"
@@ -1173,6 +1177,23 @@ init_ink_memalign_heap(void)
   }
 }
 
+#if ATS_USE_POSIX_CAP
+// Restore the effective capabilities that we need.
+int
+restoreCapabilities() {
+  int zret = 0; // return value.
+  cap_t cap_set = cap_get_proc(); // current capabilities
+  // Capabilities to restore.
+  cap_value_t cap_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE };
+  static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
+
+  cap_set_flag(cap_set, CAP_EFFECTIVE, CAP_COUNT, cap_list, CAP_SET);
+  zret = cap_set_proc(cap_set);
+  cap_free(cap_set);
+  return zret;
+}
+#endif
+
 static void
 adjust_sys_settings(void)
 {
@@ -1205,6 +1226,9 @@ adjust_sys_settings(void)
 #endif
 
 #endif  // linux check
+#if ATS_USE_POSIX_CAP
+  restoreCapabilities();
+#endif
 }
 
 struct ShowStats:Continuation

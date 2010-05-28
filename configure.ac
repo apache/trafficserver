@@ -302,6 +302,17 @@ AC_ARG_ENABLE([eventfd],
 AC_MSG_RESULT([$enable_eventfd])
 
 #
+# use POSIX capabilities instead of user ID switching.
+#
+AC_MSG_CHECKING([whether to use POSIX capabilities])
+AC_ARG_ENABLE([posix-cap],
+  [AS_HELP_STRING([--disable-posix-cap],[Use user id switching instead of POSIX capabilities])],
+  [],
+  [enable_posix_cap="yes"]
+)
+AC_MSG_RESULT([$enable_posix_cap])
+
+#
 # Installation directories
 # For each var the following is evaluated
 # foo      Standard variable  eg. ${prefix}/foo
@@ -789,6 +800,18 @@ AC_MSG_RESULT([$msg])
 
 AC_SUBST(need_union_semun)
 
+# Check for POSIX capabilities library.
+# If we don't find it, disable checking for header.
+use_posix_cap=0
+AS_IF([test "x$enable_posix_cap" = "xyes"],
+  AC_CHECK_LIB([cap],[cap_set_proc],
+    [AC_SUBST([LIBCAP], ["-lcap"])
+     use_posix_cap=1
+    ],
+    [enable_posix_cap=no]
+  )
+)
+AC_SUBST(use_posix_cap)
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
@@ -892,6 +915,14 @@ AC_SUBST(netinet_ip_icmph)
 if test "x${with_profiler}" = "xyes"; then
 ATS_FLAG_HEADERS([google/profiler.h \
                   ], [], [])
+fi
+
+if test "x${enable_posix_cap}" = "xyes"; then
+  AC_CHECK_HEADERS([sys/capability.h],
+    [],
+    [AC_MSG_FAILURE([POSIX capabilities header not found. Try --disable-posix-cap])],
+    []
+  )
 fi
 
 ATS_CHECK_DEFAULT_IFACE
