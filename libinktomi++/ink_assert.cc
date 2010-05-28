@@ -26,8 +26,7 @@ Assertions
 
 ***************************************************************************/
 
-#include <stdio.h>
-#include <string.h>
+#include "ink_platform.h"
 #include "ink_assert.h"
 #include "ink_error.h"
 #include "ink_unused.h"
@@ -36,14 +35,14 @@ Assertions
 int
 _ink_assert(const char *a, const char *f, int l)
 {
-  char buf1[101];
-  char buf2[256];
 
 #ifndef NO_ASSERTS
-  ink_strncpy(buf1, f, 100);
+  char buf1[256];
+  char buf2[512];
+  ink_strlcpy(buf1, f, sizeof(buf1));
   snprintf(buf2, sizeof(buf2), "%s:%d: failed assert `", buf1, l);
-  strncat(buf2, a, 100);
-  strncat(buf2, "`", 1);
+  ink_strlcat(buf2, a, sizeof(buf2));
+  ink_strlcat(buf2, "`", sizeof(buf2));
   ink_fatal(1, buf2);
 #endif /* NO_ASSERTS */
 

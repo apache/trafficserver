@@ -489,14 +489,14 @@ CacheProcessor::start_internal(int flags)
     sd = theCacheStore.disk[i];
     char path[PATH_MAX];
     int opts = O_RDWR;
-    ink_strncpy(path, sd->pathname, sizeof(path));
+    ink_strlcpy(path, sd->pathname, sizeof(path));
     if (!sd->file_pathname) {
 #if !defined(_WIN32)
       if (config_partitions.num_http_partitions && config_partitions.num_stream_partitions) {
         Warning("It is suggested that you use raw disks if streaming and http are in the same cache");
       }
 #endif
-      strncat(path, "/cache.db", (sizeof(path) - strlen(path) - 1));
+      ink_strlcat(path, "/cache.db", sizeof(path));
       opts |= O_CREAT;
     }
     opts |= _O_ATTRIB_OVERLAPPED;
@@ -2731,7 +2731,7 @@ ink_cache_init(ModuleVersion v)
     snprintf(p, sizeof(p), "%s/", cache_system_config_directory);
     IOCORE_ReadConfigString(p + strlen(p), "proxy.config.cache.storage_filename", PATH_NAME_MAX - strlen(p) - 1);
     if (p[strlen(p) - 1] == '/' || p[strlen(p) - 1] == '\\') {
-      strncat(p, "storage.config", (sizeof(p) - strlen(p) - 1));
+      ink_strlcat(p, "storage.config", sizeof(p));
     }
     Warning("no cache disks specified in %s: cache disabled\n", p);
     //exit(1);

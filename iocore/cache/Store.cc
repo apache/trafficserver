@@ -232,7 +232,7 @@ Span::path(char *filename, int64 * aoffset, char *buf, int buflen)
       buf[pl] = '/';
       buf[pl+1] = '\0';
     }
-    strncat(buf, filename, buflen - (pl + ll + 2));
+    ink_strlcat(buf, filename, buflen);
   }
 
   return strlen(buf);

@@ -97,6 +97,8 @@
 #define ATS_HAS_LRAND48_R               @has_lrand48_r@
 #define ATS_HAS_SRAND48_R               @has_srand48_r@
 #define ATS_HAS_STRNDUP                 @has_strndup@
+#define ATS_HAS_STRLCPY                 @has_strlcpy@
+#define ATS_HAS_STRLCAT                 @has_strlcat@
 
 #define ATS_USE_SQLITE3                 @use_sqlite3@
 #define ATS_USE_LIBDB                   @use_libdb@

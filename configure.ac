@@ -676,7 +676,7 @@ AC_SUBST(use_sqlite3)
 AC_SUBST(use_libdb)
 
 ATS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise lrand48_r srand48_r port_create])
-ATS_FLAG_FUNCS([strndup])
+ATS_FLAG_FUNCS([strndup strlcpy strlcat])
 
 AC_SUBST(has_clock_gettime)
 AC_SUBST(has_posix_memalign)
@@ -684,6 +684,8 @@ AC_SUBST(has_posix_fadvise)
 AC_SUBST(has_lrand48_r)
 AC_SUBST(has_srand48_r)
 AC_SUBST(has_strndup)
+AC_SUBST(has_strlcpy)
+AC_SUBST(has_strlcat)
 
 has_eventfd=0
 AS_IF([test "x$enable_eventfd" = "xyes"],

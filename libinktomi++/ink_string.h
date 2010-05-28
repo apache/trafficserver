@@ -81,6 +81,28 @@ char *ink_string_mjoin(int nstrings, ...);
 #else
 char *ink_strndup(const char *str, size_t n);
 #endif
+/*
+ * Copy src to string dst of size siz.  At most siz-1 characters
+ * will be copied.  Always NUL terminates (unless siz == 0).
+ * Returns strlen(src); if retval >= siz, truncation occurred.
+ */
+#if ATS_HAS_STRLCPY
+#define  ink_strlcpy strlcpy
+#else
+size_t ink_strlcpy(char *dst, const char *str, size_t siz);
+#endif
+/*
+ * Appends src to string dst of size siz (unlike strncat, siz is the
+ * full size of dst, not space left).  At most siz-1 characters
+ * will be copied.  Always NUL terminates (unless siz <= strlen(dst)).
+ * Returns strlen(src) + MIN(siz, strlen(initial dst)).
+ * If retval >= siz, truncation occurred.
+ */
+#if ATS_HAS_STRLCAT
+#define  ink_strlcat strlcat
+#else
+size_t ink_strlcat(char *dst, const char *str, size_t siz);
+#endif
 
 /* 9/3/98 elam: Added this because NT doesn't have strtok_r() */
 char *ink_strtok_r(char *s1, const char *s2, char **lasts);
