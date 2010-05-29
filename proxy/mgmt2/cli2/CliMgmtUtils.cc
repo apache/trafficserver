@@ -553,13 +553,11 @@ cliCheckIfEnabled(const char *command)
 int
 GetTSDirectory(char *ts_path, size_t ts_path_len)
 {
-  int err;
-  struct stat s;
 
   ink_strncpy(ts_path, Layout::get()->bindir, ts_path_len);
-  if ((err = stat(ts_path, &s)) < 0) {
-    Cli_Error("unable to stat() TS PATH '%s': %d %d, %s\n",
-              ts_path, err, errno, strerror(errno));
+  if (access(ts_path, R_OK) == -1) {
+    Cli_Error("unable to access() '%s': %d, %s\n",
+              ts_path, errno, strerror(errno));
     Cli_Error(" Please set correct path in env variable TS_ROOT \n");
     return -1;
   }

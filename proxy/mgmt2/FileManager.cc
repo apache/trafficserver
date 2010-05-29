@@ -22,6 +22,7 @@
  */
 
 #include "inktomi++.h"
+#include "I_Layout.h"
 #include "FileManager.h"
 #include "Main.h"
 #include "Rollback.h"
@@ -65,10 +66,8 @@ const char *SnapshotStrings[] = { "Request Successful\n",
 
 FileManager::FileManager()
 {
-  char configTmp[PATH_NAME_MAX];
+  char configTmp[PATH_NAME_MAX + 1];
   int pathLen;
-  struct stat statBuf;
-  int err;
 
   bindings = ink_hash_table_create(InkHashTableKeyType_String);
 
@@ -81,11 +80,15 @@ FileManager::FileManager()
     mgmt_fatal(stderr,
                "[FileManager::FileManager] Unable to find configuration directory from proxy.config.config_dir\n");
   }
-  if ((err = stat(configTmp, &statBuf)) < 0) {
+  if (configTmp[0] != '/') {
+    // Make it TS_ROOT relative
+    Layout::get()->relative(configTmp, sizeof(configTmp), configTmp);
+  }
+  if (access(configTmp, R_OK) == -1) {
     ink_strncpy(configTmp, system_config_directory,sizeof(configTmp));
-    if ((err = stat(configTmp, &statBuf)) < 0) {
-        mgmt_elog("[FileManager::FileManager] unable to stat() directory '%s': %d %d, %s\n",
-                mgmt_path, err, errno, strerror(errno));
+    if (access(configTmp, R_OK) == -1) {
+        mgmt_elog("[FileManager::FileManager] unable to access() directory '%s': %d, %s\n",
+                mgmt_path, errno, strerror(errno));
         mgmt_elog("[FileManager::FileManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
         _exit(1);
     }
@@ -102,7 +105,7 @@ FileManager::FileManager()
 
   // Check to see if the directory already exists, if not create
   //  it
-  if (stat(snapshotDir, &statBuf) < 0) {
+  if (access(snapshotDir, F_OK) == -1) {
 #ifndef _WIN32
     if (mkdir(snapshotDir, DIR_MODE) < 0) {
 #else
@@ -383,7 +386,6 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
   SnapResult result = SNAP_OK;
   char *snapPath;
   char *filePath = NULL;
-  struct stat fileInfo;
   textBuffer storage(2048);
 
   snapPath = newPathString(snapDir, snapName);
@@ -392,7 +394,7 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
 
 
 
-  if (stat(snapPath, &fileInfo) < 0) {
+  if (access(snapPath, F_OK) == -1) {
     delete[]snapPath;
     ink_mutex_release(&accessLock);
     return SNAP_NOT_FOUND;

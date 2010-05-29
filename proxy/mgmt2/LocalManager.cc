@@ -143,7 +143,7 @@ LocalManager::rollLogFiles()
   return;
 }
 
-char snap_filename[FILE_NAME_MAX+1] = "stats.snap";
+char snap_filename[PATH_NAME_MAX + 1] = "stats.snap";
 
 void
 LocalManager::clearStats()
@@ -151,17 +151,15 @@ LocalManager::clearStats()
   char *statsPath;
   char conf[PATH_NAME_MAX + 1];
   char local_state_dir[PATH_NAME_MAX + 1];
-  struct stat s;
-  int err;
 
   REC_ReadConfigString(conf, "proxy.config.local_state_dir", PATH_NAME_MAX);
   Layout::get()->relative(local_state_dir, sizeof(local_state_dir), conf);
-  if ((err = stat(local_state_dir, &s)) < 0) {
-    Warning("Unable to stat() local state directory '%s': %d %d, %s", local_state_dir, err, errno, strerror(errno));
+  if (access(local_state_dir, R_OK | W_OK) == -1) {
+    Warning("Unable to access() local state directory '%s': %d, %s", local_state_dir, errno, strerror(errno));
     Warning(" Please set 'proxy.config.local_state_dir' to allow statistics collection");
   }
   REC_ReadConfigString(conf, "proxy.config.stats.snap_file", PATH_NAME_MAX);
-  snprintf(snap_filename, sizeof(snap_filename), "%s/%s", local_state_dir, conf);
+  ink_filepath_make(snap_filename, sizeof(snap_filename), local_state_dir, conf);
 
   // Clear our records and then send the signal.  There is a race condition
   //  here where our stats could get re-updated from the proxy
@@ -240,8 +238,6 @@ LocalManager::LocalManager(char *mpath, LMRecords * rd, bool proxy_on):
 BaseManager(), run_proxy(proxy_on), record_data(rd)
 {
   bool found;
-  struct stat s;
-  int err;
 #ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;
 #endif
@@ -364,14 +360,17 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
     proxy_server_incoming_ip_to_bind = htonl(INADDR_ANY);
   }
   config_path = REC_readString("proxy.config.config_dir", &found);
-  if ((err = stat(config_path, &s)) < 0) {
-    xfree(config_path);
+  char *absolute_config_path = Layout::get()->relative(config_path);
+  xfree(config_path);
+  if (access(absolute_config_path, R_OK) == -1) {
     config_path = xstrdup(system_config_directory);
-    if ((err = stat(config_path, &s)) < 0) {
-        mgmt_elog("[LocalManager::LocalManager] unable to stat() directory '%s': %d %d, %s\n",
-                config_path, err, errno, strerror(errno));
+    if (access(config_path, R_OK) == -1) {
+        mgmt_elog("[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n",
+                config_path, errno, strerror(errno));
         mgmt_fatal("[LocalManager::LocalManager] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
     }
+  } else {
+    config_path = absolute_config_path;
   }
 
   bin_path = REC_readString("proxy.config.bin_path", &found);
@@ -388,14 +387,14 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
   // Calculate proxy_binary from the absolute bin_path
   absolute_proxy_binary = Layout::relative_to(absolute_bin_path, proxy_binary);
 
-  if ((err = stat(absolute_proxy_binary, &s)) < 0) {
+  if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
     // Try 'Layout::bindir' directory
     xfree(absolute_proxy_binary);
     absolute_proxy_binary = Layout::relative_to(Layout::get()->bindir, proxy_binary);
     // coverity[fs_check_call]
-    if ((err = stat(absolute_proxy_binary, &s)) < 0) {
-        mgmt_elog("[LocalManager::LocalManager] Unable to find '%s': %d %d, %s\n",
-                absolute_proxy_binary, err, errno, strerror(errno));
+    if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
+        mgmt_elog("[LocalManager::LocalManager] Unable to access() '%s': %d, %s\n",
+                absolute_proxy_binary, errno, strerror(errno));
         mgmt_fatal("[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
     }
   }
@@ -1093,8 +1092,7 @@ LocalManager::convert_filters()
     snprintf(absolute_convert_binary, absolute_convert_binary_size, "%s/%s", bin_path, convert_bin);
 
     // check that the binary exists
-    struct stat fileInfo;
-    if (stat(absolute_convert_binary, &fileInfo) < 0) {
+    if (access(absolute_convert_binary, R_OK | X_OK) == -1) {
       mgmt_elog(stderr,
                 "[LocalManager::startProxy] "
                 "%s cannot be executed because it does not exist", absolute_convert_binary);

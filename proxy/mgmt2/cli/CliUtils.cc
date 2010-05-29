@@ -304,14 +304,12 @@ DEFAULT_TS_DIRECTORY_FILE
 int
 GetTSDirectory(char *ts_path, size_t ts_path_len)
 {
-  struct stat s;
-  int err;
 
   ink_strncpy(ts_path, Layout::get()->bindir, ts_path_len);
 
-  if ((err = stat(ts_path, &s)) < 0) {
-    printf("unable to stat() TS PATH '%s': %d %d, %s\n",
-              ts_path, err, errno, strerror(errno));
+  if (access(ts_path, R_OK) == -1) {
+    printf("unable to stat() '%s': %d, %s\n",
+              ts_path, errno, strerror(errno));
     printf(" Please set correct path in env variable TS_ROOT \n");
     return -1;
   }

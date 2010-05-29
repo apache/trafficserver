@@ -313,49 +313,47 @@ setup_coredump()
 static void
 init_dirs(bool use_librecords = true)
 {
-  struct stat s;
-  int err;
-  char buf[PATH_NAME_MAX+1];
+  char buf[PATH_NAME_MAX + 1];
 
   ink_strncpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
   ink_strncpy(system_runtime_dir, Layout::get()->runtimedir, PATH_NAME_MAX);
   ink_strncpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
 
-  if ((err = stat(system_config_directory, &s)) < 0) {
+  if (access(system_config_directory, R_OK) == -1) {
     if (use_librecords) {
       REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
       Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
     }
-    if ((err = stat(system_config_directory, &s)) < 0) {
-      mgmt_elog("unable to stat() config dir '%s': %d %d, %s\n",
-              system_config_directory, err, errno, strerror(errno));
+    if (access(system_config_directory, R_OK) == -1) {
+      mgmt_elog("unable to access() config dir '%s': %d, %s\n",
+              system_config_directory, errno, strerror(errno));
       mgmt_elog("please set config path via 'proxy.config.config_dir' \n");
       _exit(1);
     }
   }
   strcpy(mgmt_path, system_config_directory);
 
-  if ((err = stat(system_runtime_dir, &s)) < 0) {
+  if (access(system_runtime_dir, W_OK) == -1) {
     if (use_librecords) {
       REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
       Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
     }
-    if ((err = stat(system_runtime_dir, &s)) < 0) {
-      mgmt_elog("unable to stat() local state dir '%s': %d %d, %s\n",
-              system_runtime_dir, err, errno, strerror(errno));
+    if (access(system_runtime_dir, R_OK) == -1) {
+      mgmt_elog("unable to access() local state dir '%s': %d, %s\n",
+              system_runtime_dir, errno, strerror(errno));
       mgmt_elog("please set 'proxy.config.local_state_dir'\n");
       _exit(1);
     }
   }
 
-  if ((err = stat(system_log_dir, &s)) < 0) {
+  if (access(system_log_dir, W_OK) == -1) {
     if (use_librecords) {
       REC_ReadConfigString(buf, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
       Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
     }
-    if ((err = stat(system_log_dir, &s)) < 0) {
-      mgmt_elog("unable to stat() log dir'%s': %d %d, %s\n",
-              system_log_dir, err, errno, strerror(errno));
+    if (access(system_log_dir, W_OK) == -1) {
+      mgmt_elog("unable to access() log dir'%s': %d, %s\n",
+              system_log_dir, errno, strerror(errno));
       mgmt_elog("please set 'proxy.config.log2.logfile_dir'\n");
       _exit(1);
     }
@@ -1415,7 +1413,7 @@ fileUpdated(char *fname)
     @endcode
     but that had no effect even though the call reported succes.
     Only explicit capability manipulation was effective.
-    
+
     It does not appear to be necessary to set the capabilities on the
     executable if originally run as root. That may be needed if
     started as a user without that capability.

@@ -2586,8 +2586,6 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
 void
 ink_cache_init(ModuleVersion v)
 {
-  struct stat s;
-  int ierr;
   ink_release_assert(!checkModuleVersion(v, CACHE_MODULE_VERSION));
 
   cache_rsb = RecAllocateRawStatBlock((int) cache_stat_count);
@@ -2651,15 +2649,16 @@ ink_cache_init(ModuleVersion v)
   IOCORE_ReadConfigString(cache_system_config_directory, "proxy.config.config_dir", PATH_NAME_MAX);
   if (cache_system_config_directory[0] != '/') {
     // Not an absolute path so use system one
-    ink_strncpy(cache_system_config_directory, system_config_directory, sizeof(cache_system_config_directory));
+    Layout::get()->relative(cache_system_config_directory, sizeof(cache_system_config_directory), cache_system_config_directory);
   }
   Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
-  if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
-    ink_strncpy(cache_system_config_directory, Layout::get()->sysconfdir,
+  if (access(cache_system_config_directory, R_OK) == -1) {
+    ink_strlcpy(cache_system_config_directory, Layout::get()->sysconfdir,
                 sizeof(cache_system_config_directory));
-    if ((ierr = stat(cache_system_config_directory, &s)) < 0) {
-      fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n",
-              cache_system_config_directory, ierr, errno, strerror(errno));
+    Debug("cache_init", "proxy.config.config_dir = \"%s\"", cache_system_config_directory);
+    if (access(cache_system_config_directory, R_OK) == -1) {
+      fprintf(stderr,"unable to access() config dir '%s': %d, %s\n",
+              cache_system_config_directory, errno, strerror(errno));
       fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
       _exit(1);
     }
@@ -2726,8 +2725,10 @@ ink_cache_init(ModuleVersion v)
     printf("%s  failed\n", err);
     exit(1);
   }
+  // XXX: The read for proxy.config.cache.storage_filename is unused!
+  //
   if (theCacheStore.n_disks == 0) {
-    char p[PATH_NAME_MAX];
+    char p[PATH_NAME_MAX + 1];
     snprintf(p, sizeof(p), "%s/", cache_system_config_directory);
     IOCORE_ReadConfigString(p + strlen(p), "proxy.config.cache.storage_filename", PATH_NAME_MAX - strlen(p) - 1);
     if (p[strlen(p) - 1] == '/' || p[strlen(p) - 1] == '\\') {

@@ -210,8 +210,6 @@ LogConfig::read_configuration_variables()
 {
   int val;
   char *ptr;
-  struct stat s;
-  int err;
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log2.log_buffer_size");
   if (val > 0) {
@@ -288,13 +286,13 @@ LogConfig::read_configuration_variables()
     // Make it relative from Layout
     logfile_dir = Layout::get()->relative(ptr);
     xfree(ptr);
-    if ((err = stat(logfile_dir, &s)) < 0) {
+    if (access(logfile_dir, W_OK) == -1) {
       xfree(logfile_dir);
       logfile_dir = NULL;
-      if ((err = stat(system_log_dir, &s)) < 0) {
+      if (access(system_log_dir, W_OK) == -1) {
         // Try 'system_root_dir/var/log/trafficserver' directory
-        fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
-                system_log_dir, err, errno, strerror(errno));
+        fprintf(stderr,"unable to access() log dir'%s': %d, %s\n",
+                system_log_dir, errno, strerror(errno));
         fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
         _exit(1);
       }

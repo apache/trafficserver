@@ -386,14 +386,13 @@ static void
 check_lockfile()
 {
   char *lockfile = NULL;
-  int err;
   pid_t holding_pid;
-  struct stat s;
+  int err;
 
 #ifndef _DLL_FOR_HNS
-  if ((err = stat(Layout::get()->runtimedir, &s)) < 0) {
-    fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n",
-            Layout::get()->runtimedir, err, errno, strerror(errno));
+  if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
+    fprintf(stderr,"unable to access() dir'%s': %d, %s\n",
+            Layout::get()->runtimedir, errno, strerror(errno));
     fprintf(stderr," please set correct path in env variable TS_ROOT \n");
     _exit(1);
   }
@@ -436,13 +435,11 @@ check_lockfile()
 static void
 init_dirs(void)
 {
-  struct stat s;
-  int err;
-  char buf[PATH_NAME_MAX+1];
+  char buf[PATH_NAME_MAX + 1];
 
-  ink_strncpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
-  ink_strncpy(system_runtime_dir, Layout::get()->runtimedir, PATH_NAME_MAX);
-  ink_strncpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
+  ink_strlcpy(system_config_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
+  ink_strlcpy(system_runtime_dir, Layout::get()->runtimedir, PATH_NAME_MAX);
+  ink_strlcpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
 
   /*
    * XXX: There is not much sense in the following code
@@ -450,34 +447,34 @@ init_dirs(void)
    * be checked BEFORE checking default foo directory.
    * Otherwise one cannot change the config dir to something else
    */
-  if ((err = stat(system_config_directory, &s)) < 0) {
+  if (access(system_config_directory, R_OK) == -1) {
     REC_ReadConfigString(buf, "proxy.config.config_dir", PATH_NAME_MAX);
     Layout::get()->relative(system_config_directory, PATH_NAME_MAX, buf);
-    if ((err = stat(system_config_directory, &s)) < 0) {
-      fprintf(stderr,"unable to stat() config dir '%s': %d %d, %s\n",
-              system_config_directory, err, errno, strerror(errno));
+    if (access(system_config_directory, R_OK) == -1) {
+      fprintf(stderr,"unable to access() config dir '%s': %d, %s\n",
+              system_config_directory, errno, strerror(errno));
       fprintf(stderr, "please set config path via 'proxy.config.config_dir' \n");
       _exit(1);
     }
   }
 
-  if ((err = stat(system_runtime_dir, &s)) < 0) {
+  if (access(system_runtime_dir, R_OK | W_OK) == -1) {
     REC_ReadConfigString(buf, "proxy.config.local_state_dir", PATH_NAME_MAX);
     Layout::get()->relative(system_runtime_dir, PATH_NAME_MAX, buf);
-    if ((err = stat(system_runtime_dir, &s)) < 0) {
-      fprintf(stderr,"unable to stat() local state dir '%s': %d %d, %s\n",
-              system_runtime_dir, err, errno, strerror(errno));
+    if (access(system_runtime_dir, R_OK | W_OK) == -1) {
+      fprintf(stderr,"unable to access() local state dir '%s': %d, %s\n",
+              system_runtime_dir, errno, strerror(errno));
       fprintf(stderr,"please set 'proxy.config.local_state_dir'\n");
       _exit(1);
     }
   }
 
-  if ((err = stat(system_log_dir, &s)) < 0) {
+  if (access(system_log_dir, W_OK) == -1) {
     REC_ReadConfigString(buf, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
     Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
-    if ((err = stat(system_log_dir, &s)) < 0) {
-      fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
-              system_log_dir, err, errno, strerror(errno));
+    if (access(system_log_dir, W_OK) == -1) {
+      fprintf(stderr,"unable to access() log dir'%s':%d, %s\n",
+              system_log_dir, errno, strerror(errno));
       fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
       _exit(1);
     }
@@ -492,8 +489,6 @@ static void
 initialize_process_manager()
 {
   ProcessRecords *precs;
-  struct stat s;
-  int err;
 
   mgmt_use_syslog();
 
@@ -502,11 +497,11 @@ initialize_process_manager()
     remote_management_flag = true;
   }
 
-  if ((err = stat(management_directory, &s)) < 0) {
+  if (access(management_directory, R_OK) == -1) {
     ink_strncpy(management_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
-    if ((err = stat(management_directory, &s)) < 0) {
-      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n",
-                management_directory, err, errno, strerror(errno));
+    if (access(management_directory, R_OK) == -1) {
+      fprintf(stderr,"unable to access() management path '%s': %d, %s\n",
+                management_directory, errno, strerror(errno));
       fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
       _exit(1);
     }
@@ -620,9 +615,9 @@ clear_rn_cache()
   if (rn_cache_path) {
     if (*rn_cache_path != '\0') {
       // first check if the directory exists.
-      struct stat s;
-      if ((result = stat(rn_cache_path, &s)) < 0) {
-        Warning("unable to stat '%s': %d %d, %s", rn_cache_path, result, errno, strerror(errno));
+      if (access(rn_cache_path, F_OK) == -1) {
+        result = errno;
+        Warning("unable to access() '%s': %d, %s", rn_cache_path, errno, strerror(errno));
         Note("unable to clear RN Cache, CLEAR failed [%d]", result);
         return CMD_FAILED;
       }

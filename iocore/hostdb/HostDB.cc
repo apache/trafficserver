@@ -327,12 +327,11 @@ HostDBCache::start(int flags)
 
   Debug("hostdb", "Storage path is %s", storage_path);
 
-  struct stat s;
-  int err;
-  if ((err = stat(storage_path, &s)) < 0) {
+  // XXX: Should this be W_OK?
+  if (access(storage_path, R_OK) == -1) {
     ink_strncpy(storage_path, system_runtime_dir, sizeof(storage_path));
-    if ((err = stat(storage_path, &s)) < 0) {
-      Warning("Unable to stat() directory '%s': %d %d, %s", storage_path, err, errno, strerror(errno));
+    if (access(storage_path, R_OK) == -1) {
+      Warning("Unable to access() directory '%s': %d, %s", storage_path, errno, strerror(errno));
       Warning(" Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir' ");
     }
   }

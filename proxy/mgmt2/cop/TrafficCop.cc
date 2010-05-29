@@ -652,18 +652,20 @@ read_config()
   read_config_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary));
   read_config_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary));
   read_config_string("proxy.config.bin_path", bin_path, sizeof(bin_path));
-  if (stat(bin_path, &stat_buf) < 0) {
-    ink_strncpy(Layout::get()->bindir, bin_path, sizeof(bin_path) - 1);
-    if (stat(log_dir, &stat_buf) < 0) {
-      cop_log(COP_FATAL, "could not stat \"%s\"\n", bin_path);
+  Layout::get()->relative(bin_path, sizeof(bin_path), bin_path);
+  if (access(bin_path, R_OK) == -1) {
+    ink_strlcpy(bin_path, Layout::get()->bindir, sizeof(bin_path));
+    if (access(bin_path, R_OK) == -1) {
+      cop_log(COP_FATAL, "could not access() \"%s\"\n", bin_path);
       cop_log(COP_FATAL, "please set 'proxy.config.bin_path' \n");
     }
   }
   read_config_string("proxy.config.log2.logfile_dir", log_dir, sizeof(log_dir));
-  if (stat(log_dir, &stat_buf) < 0) {
-    ink_strncpy(Layout::get()->logdir, log_dir, sizeof(log_dir) - 1);
-    if (stat(log_dir, &stat_buf) < 0) {
-      cop_log(COP_FATAL, "could not stat \"%s\"\n", log_dir);
+  Layout::get()->relative(log_dir, sizeof(log_dir), log_dir);
+  if (access(log_dir, W_OK) == -1) {
+    ink_strlcpy(log_dir, Layout::get()->logdir, sizeof(log_dir));
+    if (access(log_dir, W_OK) == -1) {
+      cop_log(COP_FATAL, "could not access() \"%s\"\n", log_dir);
       cop_log(COP_FATAL, "please set 'proxy.config.log2.logfile_dir' \n");
     }
   }
@@ -703,7 +705,6 @@ read_config()
 static void
 spawn_manager()
 {
-  struct stat info;
   char prog[PATH_MAX];
   char *options[OPTIONS_MAX];
   char *last;
@@ -738,8 +739,8 @@ spawn_manager()
   }
 
   Layout::relative_to(prog, sizeof(prog), bin_path, manager_binary);
-  if (stat(prog, &info) < 0) {
-    cop_log(COP_FATAL, "unable to find manager binary \"%s\" [%d '%s']\n", prog, errno, strerror(errno));
+  if (access(prog, R_OK | X_OK) == -1) {
+    cop_log(COP_FATAL, "unable to access() manager binary \"%s\" [%d '%s']\n", prog, errno, strerror(errno));
     exit(1);
   }
 

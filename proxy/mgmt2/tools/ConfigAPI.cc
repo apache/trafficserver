@@ -1411,12 +1411,11 @@ Config_FloppyNetRestore()
   //char *gui_passwd, *e_gui_passwd;
   //INKActionNeedT action_need, top_action_req = INK_ACTION_UNDEFINED;
   int status = 0;
-  struct stat buf;
 
-  Layout::relative_to(net_floppy_config, PATH_NAME_MAX,
-                      Layout::get()->bindir, "net_floppy_config");
+  ink_filepath_make(net_floppy_config, PATH_NAME_MAX,
+                    Layout::get()->bindir, "net_floppy_config");
 
-  if (stat(net_floppy_config, &buf) < 0) {
+  if (access(net_floppy_config, R_OK | X_OK) == -1) {
     DPRINTF(("Config_FloppyNetRestore: net_floppy_config does not exist - abort\n"));
     return 1;
   }

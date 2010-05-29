@@ -126,8 +126,6 @@ static void
 initialize_process_manager()
 {
   ProcessRecords *precs;
-  struct stat s;
-  int err;
 
   mgmt_use_syslog();
 
@@ -138,9 +136,9 @@ initialize_process_manager()
 
   if (management_directory[0] == '\0') {
     ink_strncpy(management_directory, Layout::get()->sysconfdir, PATH_NAME_MAX);
-    if ((err = stat(management_directory, &s)) < 0) {
-      fprintf(stderr,"unable to stat() management path '%s': %d %d, %s\n",
-              management_directory, err, errno, strerror(errno));
+    if (access(management_directory, R_OK) == -1) {
+      fprintf(stderr,"unable to access() management path '%s': %d, %s\n",
+              management_directory, errno, strerror(errno));
       fprintf(stderr,"please set management path via command line '-d <managment directory>'\n");
       _exit(1);
     }
@@ -210,10 +208,9 @@ check_lockfile(const char *config_dir, const char *pgm_name)
   pid_t holding_pid;
   char *lockfile = NULL;
 
-  struct stat s;
-  if ((err = stat(Layout::get()->runtimedir, &s)) < 0) {
-    fprintf(stderr,"unable to stat() dir'%s': %d %d, %s\n",
-            Layout::get()->runtimedir, err, errno, strerror(errno));
+  if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
+    fprintf(stderr,"unable to access() dir'%s': %d, %s\n",
+            Layout::get()->runtimedir, errno, strerror(errno));
     fprintf(stderr," please set correct path in env variable TS_ROOT \n");
     _exit(1);
   }
@@ -319,19 +316,16 @@ init_log_standalone_basic(const char *pgm_name)
 int
 get_ts_directory(char *ts_path, size_t ts_path_len)
 {
-  struct stat s;
-  int err;
 
   // TODO: This should probably be logdir?
   ink_strncpy(ts_path, Layout::get()->prefix, ts_path_len);
 
-  if ((err = stat(ts_path, &s)) < 0) {
-    fprintf(stderr,"unable to stat() TS PATH '%s': %d %d, %s\n",
-              ts_path, err, errno, strerror(errno));
+  if (access(ts_path, R_OK) == -1) {
+    fprintf(stderr,"unable to access() TS ROOT '%s': %d, %s\n",
+              ts_path, errno, strerror(errno));
     fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
     return -1;
   }
 
   return 0;
 }
-

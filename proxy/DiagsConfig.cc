@@ -294,8 +294,6 @@ DiagsConfig::RegisterDiagConfig()
 DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
 {
   char diags_logpath[PATH_NAME_MAX + 1];
-  struct stat s;
-  int err;
   callbacks_established = false;
   diags_log_fp = (FILE *) NULL;
   diags = NULL;
@@ -315,13 +313,13 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
   // open the diags log //
   ////////////////////////
 
-  if ((err = stat(system_log_dir, &s)) < 0) {
+  if (access(system_log_dir, R_OK) == -1) {
     REC_ReadConfigString(diags_logpath, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
     Layout::get()->relative(system_log_dir, PATH_NAME_MAX, diags_logpath);
 
-    if ((err = stat(system_log_dir, &s)) < 0) {
-      fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
-              system_log_dir, err, errno, strerror(errno));
+    if (access(system_log_dir, R_OK) == -1) {
+      fprintf(stderr,"unable to access() log dir'%s': %d, %s\n",
+              system_log_dir, errno, strerror(errno));
       fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
       _exit(1);
     }
