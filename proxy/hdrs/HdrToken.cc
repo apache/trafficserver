@@ -467,12 +467,10 @@ hdrtoken_init(const char *path)
   int i;
 
   if (!inited) {
-    char buf[4096];
+    char buf[PATH_NAME_MAX + 1];
 
     inited = 1;
-
-    snprintf(buf, sizeof(buf), "%s%shdrtoken.dat", path ? path : "", path ? DIR_SEP : "");
-
+    ink_filepath_make(buf, sizeof(buf), path, "hdrtoken.dat");
     hdrtoken_strs_dfa = NEW(new DFA);
     hdrtoken_strs_dfa->compile(buf,
                                _hdrtoken_strs,

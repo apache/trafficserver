@@ -5814,11 +5814,10 @@ ConfigRadiusKeys(const char *record)
     return CLI_ERROR;
   }
 
-  char file_path[1025];
-  time_t my_time_t;
-  time(&my_time_t);
-  memset(file_path, 0, 1024);
-  snprintf(file_path, 1024, "%s%spwd_%lld.enc", dir_path, DIR_SEP, (int64)my_time_t);
+  char file_name[64];
+  char file_path[PATH_NAME_MAX + 1];
+  snprintf(file_name, 64, "pwd_%llu.enc", ink_microseconds(MICRO_REAL));
+  ink_filepath_make(file_path, sizeof(file_path), dir_path, file_name);
   if (dir_path)
     xfree(dir_path);
 

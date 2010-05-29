@@ -29,7 +29,7 @@
  ****************************************************************************/
 
 #include "inktomi++.h"
-
+#include "I_Layout.h"
 #ifdef NON_MODULAR
 #include "P_HostDB.h"
 #else
@@ -122,8 +122,8 @@ MultiCacheBase::initialize(Store * astore, char *afilename,
   totalelements = 0;
   nominal_elements = aelements;
   buckets = abuckets;
-  strncpy(filename, afilename, PATH_NAME_MAX - 1);
-  filename[PATH_NAME_MAX - 1] = '\0';
+
+  ink_strlcpy(filename, afilename, sizeof(filename));
   //
   //  Allocate level 2 as the outermost
   //
@@ -546,9 +546,10 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
 {
   int scratch;
   char p[PATH_NAME_MAX + 1], buf[256];
+  char i[PATH_NAME_MAX + 1];
 
-  snprintf(p, PATH_NAME_MAX + 1, "%s%s%s", system_config_directory,
-           "/internal/", config_filename);
+  ink_filepath_make(i, sizeof(i), system_config_directory, "internal/");
+  Layout::relative_to(p, sizeof(p), i, config_filename);
 
   int fd =::open(p, O_RDONLY);
   if (fd < 0)
@@ -583,10 +584,12 @@ int
 MultiCacheBase::write_config(const char *config_filename, int nominal_size, int abuckets)
 {
   char p[PATH_NAME_MAX + 1], buf[256];
+  char i[PATH_NAME_MAX + 1];
   int fd, retcode = -1;
 
-  snprintf(p, PATH_NAME_MAX + 1, "%s%s%s", system_config_directory,
-           "/internal/", config_filename);
+  ink_filepath_make(i, sizeof(i), system_config_directory, "internal/");
+  Layout::relative_to(p, sizeof(p), i, config_filename);
+
   // XXX: Shouldn't that be 0664?
   //
   if ((fd =::open(p, O_CREAT | O_WRONLY | O_TRUNC, 0666)) >= 0) {

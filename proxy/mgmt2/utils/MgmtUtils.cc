@@ -671,7 +671,7 @@ mgmt_getAddrForIntr(char *intrName, struct in_addr * addr, int *mtu)
   xfree(ifbuf);
   close(fakeSocket);
 
-#else
+#else /* _WIN32 */
 
   // There is no notion of network interface names on NT.
   // So we use a winnt_intr.config file to give each of

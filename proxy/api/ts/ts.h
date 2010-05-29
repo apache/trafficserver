@@ -856,6 +856,14 @@ extern "C"
   inkapi const char *INKInstallDirGet(void);
 
   /**
+      Gets the path of the directory of Traffic Server configuration.
+
+      @return pointer to Traffic Server configuration directory.
+
+   */
+  inkapi const char *INKConfigDirGet(void);
+
+  /**
       Gets the path of the plugin directory relative to the Traffic Server
       install directory. For example, to open the file "config_ui.txt" in
       the plugin directory:

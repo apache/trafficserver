@@ -26,6 +26,7 @@
 #include "Prefetch.h"
 #include "HdrUtils.h"
 #include "HttpCompat.h"
+#include "I_Layout.h"
 
 #ifdef PREFETCH
 
@@ -1822,7 +1823,7 @@ int
 PrefetchConfiguration::readConfiguration()
 {
   char *conf_file_name;
-  char conf_path[256];
+  char conf_path[PATH_NAME_MAX + 1];
   int fd = -1;
 
   local_http_server_port = stuffer_port = 0;
@@ -1869,18 +1870,8 @@ PrefetchConfiguration::readConfiguration()
     Warning("PrefetchProcessor: No prefetch configuration file specified. Prefetch disabled\n");
     goto Lerror;
   }
-  //strip trailing and beginning white spaces
-  int fname_start, fname_end;
-  fname_start = 0;
-  while (isspace(conf_file_name[fname_start]))
-    fname_start++;
-  fname_end = strlen(conf_file_name) - 1;
-  while (isspace(conf_file_name[fname_end]))
-    fname_end--;
-  conf_file_name[fname_end + 1] = 0;
-
-  snprintf(conf_path, sizeof(conf_path), "%.190s%.1s%.64s", system_config_directory, DIR_SEP,
-           conf_file_name + fname_start);
+  Layout::relative_to(conf_path, sizeof(conf_path),
+                      system_config_directory, conf_file_name);
   xfree(conf_file_name);
 
   fd = open(conf_path, O_RDONLY);

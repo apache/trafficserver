@@ -221,18 +221,13 @@ Span::path(char *filename, int64 * aoffset, char *buf, int buflen)
 {
   ink_assert(!aoffset);
   Span *ds = this;
-  int pl = strlen(ds->pathname);
-  int ll = strlen(filename);
 
-  if (pl + ll + 3 >= buflen)
+  if ((strlen(ds->pathname) + strlen(filename) + 2) > (size_t)buflen)
     return -1;
-  ink_strncpy(buf, ds->pathname, buflen);
   if (!ds->file_pathname) {
-    if (pl && buf[pl-1] != '/') {
-      buf[pl] = '/';
-      buf[pl+1] = '\0';
-    }
-    ink_strlcat(buf, filename, buflen);
+    ink_filepath_make(buf, buflen, ds->pathname, filename);
+  } else {
+    ink_strlcpy(buf, ds->pathname, buflen);
   }
 
   return strlen(buf);

@@ -804,10 +804,11 @@ REGRESSION_TEST(SDK_API_INKCache) (RegressionTest * test, int atype, int *pstatu
 //#define TMP_DIR "/var/tmp"
 #define	PFX	"plugin.config"
 
-REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatus)
+{
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  char write_file_name[256];
+  char write_file_name[PATH_NAME_MAX + 1];
 
   INKFile source_read_file;     // existing file
   INKFile write_file;           // to be created
@@ -836,8 +837,8 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
     return;
   }
   // Add "etc/trafficserver" to point to config directory
-  snprintf(input_file_full_path, sizeof(input_file_full_path),
-           "%s/%s", Layout::get()->sysconfdir, INPUT_TEXT_FILE);
+  ink_filepath_make(input_file_full_path, sizeof(input_file_full_path),
+                    INKConfigDirGet(), INPUT_TEXT_FILE);
 
   // open existing file for reading
   if (!(source_read_file = INKfopen(input_file_full_path, "r"))) {
@@ -851,7 +852,10 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
     SDK_RPRINT(test, "INKfopen", "TestCase1", TC_PASS, "ok");
 
   // Create unique tmp _file_name_, do not use any TS file_name
-  snprintf(write_file_name, 256, "%sXXXXXX", PFX);
+  // XXX: Where is this file created?
+  //      It should be temporary file I presume so it should be
+  //      created either in /tmp or runtimedir
+  snprintf(write_file_name, PATH_NAME_MAX, "%sXXXXXX", PFX);
   int write_file_fd;            // this file will be reopened below
   if ((write_file_fd = mkstemp(write_file_name)) <= 0) {
     SDK_RPRINT(test, "mkstemp", "std func", TC_FAIL, "can't create file for writing");

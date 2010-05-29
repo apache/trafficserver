@@ -35,7 +35,9 @@
 #include "I_EventSystem.h"
 #include "I_Store.h"
 
+#ifndef PATH_NAME_MAX
 #define PATH_NAME_MAX         511
+#endif
 
 //
 // Constants
@@ -198,7 +200,7 @@ struct MultiCacheHeapGC;
 struct MultiCacheBase:MultiCacheHeader
 {
   Store *store;
-  char filename[PATH_NAME_MAX];
+  char filename[PATH_NAME_MAX + 1];
   MultiCacheHeader *mapped_header;
 
   MultiCacheHeader header_snap;

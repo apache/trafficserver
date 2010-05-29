@@ -326,8 +326,8 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
       _exit(1);
     }
   }
-  snprintf(diags_logpath, sizeof(diags_logpath),
-           "%s/%s", system_log_dir, DIAGS_LOG_FILE);
+  ink_filepath_make(diags_logpath, sizeof(diags_logpath),
+                    system_log_dir, DIAGS_LOG_FILE);
 
   // open write append
   // diags_log_fp = fopen(diags_logpath,"w");

@@ -1849,6 +1849,12 @@ INKInstallDirGet(void)
 }
 
 const char *
+INKConfigDirGet(void)
+{
+  return system_config_directory;
+}
+
+const char *
 INKTrafficServerVersionGet(void)
 {
   return traffic_server_version;
@@ -1857,21 +1863,18 @@ INKTrafficServerVersionGet(void)
 const char *
 INKPluginDirGet(void)
 {
-  const char *CFG_NM = "proxy.config.plugin.plugin_dir";
-  static char path[PATH_NAME_MAX];
-  static const char *plugin_dir = ".";
+  static char path[PATH_NAME_MAX + 1] = "";
 
   if (*path == '\0') {
-
-    RecGetRecordString_Xmalloc((char *) CFG_NM, (char**)&plugin_dir);
+    char *plugin_dir = NULL;
+    RecGetRecordString_Xmalloc("proxy.config.plugin.plugin_dir", &plugin_dir);
     if (!plugin_dir) {
-      Error("Unable to read %s", CFG_NM);
+      Error("Unable to read proxy.config.plugin.plugin_dir");
       return NULL;
     }
-    // TODO: We could check for the path itself and in
-    //       case of failure use the Layout::get()->libexecdir
-    //
-    Layout::get()->relative(path, sizeof(path), plugin_dir);
+    Layout::relative_to(path, sizeof(path),
+                        Layout::get()->prefix, plugin_dir);
+    xfree(plugin_dir);
   }
 
   return path;

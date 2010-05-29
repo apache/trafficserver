@@ -53,7 +53,7 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
   :
 root_access_needed(root_access_needed_)
 {
-  char configTmp[PATH_NAME_MAX];
+  char configTmp[PATH_NAME_MAX + 1];
   version_t highestSeen;        // the highest backup version
   ExpandingArray existVer(25, true);    // Exsisting versions
   struct stat fileInfo;
@@ -80,19 +80,19 @@ root_access_needed(root_access_needed_)
 
 
   // Get the configuration directory - SHOULD BE CENTRALIZED SOMEWHERE
-  if (varStrFromName("proxy.config.config_dir", configTmp, 256) == false) {
+  // TODO: Use the runtime directory for storing mutable data
+  // XXX: Sysconfdir should be imutable!!!
+  //
+  if (varStrFromName("proxy.config.config_dir", configTmp, PATH_NAME_MAX) == false) {
     mgmt_log(stderr, "[Rollback::Rollback] Unable to find configuration directory from proxy.config.config_dir\n");
     ink_assert(0);
   }
 
-  if ((err = stat(configTmp, &s)) < 0) {
-    ink_strncpy(configTmp, system_config_directory,PATH_NAME_MAX);
-    if ((err = stat(configTmp, &s)) < 0) {
-        mgmt_elog("[Rollback::Rollback] unable to stat() directory '%s': %d %d, %s\n",
-                mgmt_path, err, errno, strerror(errno));
-        mgmt_elog("[Rollback::Rollback] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
-        _exit(1);
-    }
+  if ((err = stat(system_config_directory, &s)) < 0) {
+    mgmt_elog("[Rollback::Rollback] unable to stat() directory '%s': %d %d, %s\n",
+              system_config_directory, err, errno, strerror(errno));
+    mgmt_elog("[Rollback::Rollback] please set config path via command line '-path <path>' or 'proxy.config.config_dir' \n");
+    _exit(1);
   }
 
   if (varIntFromName("proxy.config.admin.number_config_bak", &numBak) == true) {
@@ -104,9 +104,11 @@ root_access_needed(root_access_needed_)
   } else {
     numberBackups = DEFAULT_BACKUPS;
   }
-  int configDirLen = strlen(configTmp) + 4;
+  // TODO: Use strdup/free instead C++ new
+  //
+  int configDirLen = strlen(system_config_directory) + 1;
   configDir = new char[configDirLen];
-  snprintf(configDir, configDirLen, "%s%s", configTmp, DIR_SEP);
+  ink_strlcpy(configDir, system_config_directory, configDirLen);
 
 
   ink_mutex_init(&fileAccessLock, "RollBack Mutex");
@@ -264,8 +266,7 @@ Rollback::createPathStr(version_t version)
 
   buffer = new char[bufSize];
 
-  ink_strncpy(buffer, configDir, bufSize);
-  strncat(buffer, fileName, bufSize - strlen(buffer) - 1);
+  ink_filepath_make(buffer, bufSize, configDir, fileName);
 
   if (version != ACTIVE_VERSION) {
     size_t pos = strlen(buffer);
@@ -294,13 +295,13 @@ Rollback::statFile(version_t version, struct stat *buf)
     version = ACTIVE_VERSION;
   }
   filePath = createPathStr(version);
-  
+
   if (root_access_needed) {
     if (
 #if ATS_USE_POSIX_CAP
-	elevateFileAccess(true)
+      elevateFileAccess(true)
 #else
-	restoreRootPriv(&saved_euid)
+      restoreRootPriv(&saved_euid)
 #endif
 	!= true) {
       mgmt_log(stderr, "[Rollback] Unable to acquire root privileges.\n");
@@ -312,11 +313,11 @@ Rollback::statFile(version_t version, struct stat *buf)
   if (root_access_needed) {
     if (
 #if ATS_USE_POSIX_CAP
-	elevateFileAccess(false)
+      elevateFileAccess(false)
 #else
-	removeRootPriv(saved_euid)
+      removeRootPriv(saved_euid)
 #endif
-	!= true) {
+      != true) {
       mgmt_log(stderr, "[Rollback] Unable to restore non-root privileges.\n");
     }
   }
@@ -344,24 +345,27 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
   if (root_access_needed) {
     if (
 #if ATS_USE_POSIX_CAP
-	elevateFileAccess(true)
+      elevateFileAccess(true)
 #else
-	restoreRootPriv(&saved_euid)
+      restoreRootPriv(&saved_euid)
 #endif
-	!= true) {
+      != true) {
       mgmt_log(stderr, "[Rollback] Unable to acquire root privileges.\n");
     }
   }
 
+  // TODO: Use the original permissions
+  //       Anyhow the _1 files should not be created inside Syconfdir.
+  //
   fd = mgmt_open_mode(filePath, oflags, 0644);
   if (root_access_needed) {
     if (
 #if ATS_USE_POSIX_CAP
-	elevateFileAccess(false)
+      elevateFileAccess(false)
 #else
-	removeRootPriv(saved_euid)
+      removeRootPriv(saved_euid)
 #endif
-	!= true) {
+      != true) {
       mgmt_log(stderr, "[Rollback] Unable to restore non-root privileges.\n");
     }
   }
@@ -489,6 +493,7 @@ Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChan
   nextVersion = createPathStr(newVersion);
 
   // Create the new configuration file
+  // TODO: Make sure they are not created in Sysconfigdir!
 #ifndef _WIN32
   diskFD = openFile(newVersion, O_WRONLY | O_CREAT | O_TRUNC);
 #else
