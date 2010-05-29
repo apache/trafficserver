@@ -77,17 +77,30 @@ Layout::relative(const char *file)
 void
 Layout::relative(char *buf, size_t bufsz, const char *file)
 {
-  char *path = layout_relative(prefix, file);
-  if (path) {
-    size_t path_len = strlen(path) + 1;
-    if (path_len > bufsz) {
-      ink_error("Provided buffer is too small: %d, required %d\n",
-                bufsz, path_len);
+  char path[PATH_MAX];
+
+  if (ink_filepath_merge(path, PATH_MAX, prefix, file,
+      INK_FILEPATH_TRUENAME)) {
+    int err = errno;
+    // Log error
+    if (err == EACCES) {
+      ink_error("Cannot merge path '%s' above the root '%s'\n", file, prefix);
+    } else if (err == E2BIG) {
+      ink_error("Excedding file name length limit of %d characters\n", PATH_MAX);
     }
     else {
-      strcpy(buf, path);
+      // TODO: Make some pretty errors.
+      ink_error("Cannot merge '%s' with '%s' error=%d\n", file, prefix, err);
     }
-    xfree(path);
+    return;
+  }
+  size_t path_len = strlen(path) + 1;
+  if (path_len > bufsz) {
+    ink_error("Provided buffer is too small: %d, required %d\n",
+              bufsz, path_len);
+  }
+  else {
+    strcpy(buf, path);
   }
 }
 
@@ -100,17 +113,30 @@ Layout::relative_to(const char *dir, const char *file)
 void
 Layout::relative_to(char *buf, size_t bufsz, const char *dir, const char *file)
 {
-  char *path = layout_relative(dir, file);
-  if (path) {
-    size_t path_len = strlen(path) + 1;
-    if (path_len > bufsz) {
-      ink_error("Provided buffer is too small: %d, required %d\n",
-                bufsz, path_len);
+  char path[PATH_MAX];
+
+  if (ink_filepath_merge(path, PATH_MAX, dir, file,
+      INK_FILEPATH_TRUENAME)) {
+    int err = errno;
+    // Log error
+    if (err == EACCES) {
+      ink_error("Cannot merge path '%s' above the root '%s'\n", file, dir);
+    } else if (err == E2BIG) {
+      ink_error("Excedding file name length limit of %d characters\n", PATH_MAX);
     }
     else {
-      strcpy(buf, path);
+      // TODO: Make some pretty errors.
+      ink_error("Cannot merge '%s' with '%s' error=%d\n", file, dir, err);
     }
-    xfree(path);
+    return;
+  }
+  size_t path_len = strlen(path) + 1;
+  if (path_len > bufsz) {
+    ink_error("Provided buffer is too small: %d, required %d\n",
+              bufsz, path_len);
+  }
+  else {
+    strcpy(buf, path);
   }
 }
 
@@ -123,47 +149,49 @@ Layout::Layout(const char *_prefix)
     FILE *fp;
     char *env_path;
     char path[PATH_MAX];
-    size_t path_len = PATH_MAX - 1;
-    struct stat s;
-    int err;
+    int  len;
 
     if ((env_path = getenv("TS_ROOT"))) {
-      ink_strncpy(path, env_path, path_len);
-      // strip trailing "/" if it exists
-      int len = strlen(path);
-      if (path[len - 1] == '/') {
+      len = strlen(env_path);
+      if ((len + 1) > PATH_MAX) {
+        ink_error("TS_ROOT environment variable is too big: %d, max %d\n",
+                  len, PATH_MAX -1);
+        return;
+      }
+      strcpy(path, env_path);
+      while (len > 1 && path[len - 1] == '/') {
         path[len - 1] = '\0';
+        --len;
       }
     } else {
       if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-        if (fgets(path, path_len, fp) == NULL) {
+        if (fgets(path, sizeof(path), fp) == NULL) {
           fclose(fp);
           ink_error("Invalid contents in %s. "
-              "Please set correct path in env variable TS_ROOT\n",
-          DEFAULT_TS_DIRECTORY_FILE);
+                    "Please set correct path in env variable TS_ROOT\n",
+                    DEFAULT_TS_DIRECTORY_FILE);
           return;
         }
+        fclose(fp);
         // strip newline if it exists
-        int len = strlen(path);
-        if (path[len - 1] == '\n') {
-          path[len - 1] = '\0';
-        }
-        // strip trailing "/" if it exists
         len = strlen(path);
+        while (len > 1 && isspace((unsigned int)(path[len - 1]))) {
+          path[len - 1] = '\0';
+          --len;
+        }
         if (path[len - 1] == '/') {
           path[len - 1] = '\0';
         }
 
-        fclose(fp);
       } else {
         // Use compile time --prefix
-        ink_strncpy(path, PREFIX, path_len);
+        ink_strncpy(path, PREFIX, sizeof(path));
       }
     }
 
-    if ((err = stat(path, &s)) < 0) {
-      ink_error("unable to stat() TS_ROOT '%s': %d %d, %s\n",
-                path, err, errno, strerror(errno));
+    if (access(path, R_OK) == -1) {
+      ink_error("unable to access() TS_ROOT '%s': %d, %s\n",
+                path, errno, strerror(errno));
       return;
     }
     prefix = xstrdup(path);
