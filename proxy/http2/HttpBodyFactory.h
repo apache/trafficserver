@@ -158,21 +158,27 @@ public:
   ///////////////////////
   char *fabricate_with_old_api(const char *type, HttpTransact::State * context,
                                int64 max_buffer_length, int64 *resulting_buffer_length,
-                               char content_language_out[256],
-                               char content_type_out[256],
+                               char* content_language_out_buf,
+                               size_t content_language_buf_size,
+                               char* content_type_out_buf,
+                               size_t content_type_buf_size,
                                HTTPStatus status_code, const char *reason_or_null, const char *format, va_list ap);
 
   char *fabricate_with_old_api_build_va(const char *type, HttpTransact::State * context,
                                         int64 max_buffer_length, int64 *resulting_buffer_length,
-                                        char content_language_out[256],
-                                        char content_type_out[256],
+                                        char* content_language_out_buf,
+                                        size_t content_language_buf_size,
+                                        char* content_type_out_buf,
+                                        size_t content_type_buf_size,
                                         HTTPStatus status_code, const char *reason_or_null, const char *format, ...)
   {
     va_list ap;
       va_start(ap, format);
       return (fabricate_with_old_api(type, context, max_buffer_length,
                                      resulting_buffer_length,
-                                     content_language_out, content_type_out, status_code, reason_or_null, format, ap));
+                                     content_language_out_buf, content_language_buf_size,
+                                     content_type_out_buf, content_type_buf_size,
+                                     status_code, reason_or_null, format, ap));
   }
 
   void dump_template_tables(FILE * fp = stderr);

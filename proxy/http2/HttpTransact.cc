@@ -8806,7 +8806,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   s->internal_msg_buffer =
     body_factory->fabricate_with_old_api(error_body_type, s, 8192,
                                          &(s->internal_msg_buffer_size),
-                                         body_language, body_type, status_code, reason_phrase, format, ap);
+                                         body_language, sizeof(body_language), 
+                                         body_type, sizeof(body_type), 
+                                         status_code, reason_phrase, format, ap);
 
   s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, body_type, strlen(body_type));
 
@@ -8902,7 +8904,9 @@ HttpTransact::build_redirect_response(State * s)
     body_factory->
     fabricate_with_old_api_build_va("redirect#moved_temporarily", s, 8192,
                                     &(s->internal_msg_buffer_size),
-                                    body_language, body_type, status_code,
+                                    body_language, sizeof(body_language),
+                                    body_type, sizeof(body_type), 
+                                    status_code,
                                     reason_phrase,
                                     "%s <a href=\"%s\">%s</a>.  %s.",
                                     "The document you requested is now",

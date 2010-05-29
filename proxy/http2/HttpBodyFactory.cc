@@ -60,8 +60,10 @@
 char *
 HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * context,
                                         int64 max_buffer_length, int64 *resulting_buffer_length,
-                                        char content_language_out[256],
-                                        char content_type_out[256],
+                                        char* content_language_out_buf,
+                                        size_t content_language_buf_size,
+                                        char* content_type_out_buf,
+                                        size_t content_type_buf_size,
                                         HTTPStatus status_code, const char *reason_or_null, const char *format, va_list ap)
 {
   char *buffer = NULL;
@@ -76,8 +78,8 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
 
   *resulting_buffer_length = 0;
 
-  ink_strncpy(content_language_out, "en", sizeof(content_language_out));
-  ink_strncpy(content_type_out, "text/html", sizeof(content_type_out));
+  ink_strncpy(content_language_out_buf, "en", content_language_buf_size);
+  ink_strncpy(content_type_out_buf, "text/html", content_type_buf_size);
 
   ///////////////////////////////////////////////////////////////////
   // if logging turned on, buffer up the URL string for simplicity //
@@ -165,8 +167,8 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
   if (buffer)                   // got an instantiated template
   {
     if (!plain_flag) {
-      snprintf(content_language_out, sizeof(content_language_out), "%s", lang_ptr);
-      snprintf(content_type_out, sizeof(content_type_out), "text/html; charset=%s", charset_ptr);
+      snprintf(content_language_out_buf, content_language_buf_size, "%s", lang_ptr);
+      snprintf(content_type_out_buf, content_type_buf_size, "text/html; charset=%s", charset_ptr);
     }
 
     if (enable_logging && !context->traffic_net_req) {
