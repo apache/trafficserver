@@ -155,10 +155,10 @@
 # define INK_SINGLE_THREADED            1
 #endif
 
-#if ATS_STANDALONE_IOCORE
+#if ATS_HAS_STANDALONE_IOCORE
 # define STANDALONE_IOCORE              1
 #else
-# define FIXME_NONMODULAR
+# define FIXME_NONMODULAR               1
 # define SPLIT_DNS                      1
 # define NON_MODULAR                    1
 # define HTTP_CACHE                     1

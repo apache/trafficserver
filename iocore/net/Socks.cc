@@ -443,7 +443,10 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
 {
   int socks_config_fd = -1;
   char config_pathname[PATH_NAME_MAX + 1];
-  char *socks_config_file = NULL, *tmp;
+  char *socks_config_file = NULL;
+#ifdef SOCKS_WITH_TS 
+  char *tmp;
+#endif
 
   socks_conf_stuff->accept_enabled = 0; //initialize it INKqa08593
   socks_conf_stuff->socks_needed = IOCORE_ConfigReadInteger("proxy.config.socks.socks_needed");

@@ -1760,6 +1760,7 @@ CacheVC::dead(int event, Event *e)
 
 #define STORE_COLLISION 1
 
+#ifdef HTTP_CACHE
 static void unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay) {
   char *tmp = doc->hdr();
   int len = doc->hlen;
@@ -1774,6 +1775,7 @@ static void unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay) {
     tmp += r;
   }
 }
+#endif
 
 int
 CacheVC::handleReadDone(int event, Event *e)

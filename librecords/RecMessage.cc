@@ -146,7 +146,7 @@ RecMessageInit(RecModeT mode_type)
 
   switch (mode_type) {
   case RECM_CLIENT:
-    h_pipe = RecPipeConnect(REC_PIPE_DIR, REC_PIPE_NAME);
+    h_pipe = RecPipeConnect(Layout::get()->runtimedir, REC_PIPE_NAME);
     if (h_pipe == REC_HANDLE_INVALID) {
       return REC_ERR_FAIL;
     }
