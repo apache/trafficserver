@@ -2,21 +2,23 @@
 
 Changes with Apache Traffic Server 2.1.1
 
-  *) Allow SI decimal multipliers for numeric configuration
-    parameters [TS-361].
+  *) Allow SI decimal multipliers for numeric configuration parameters
+    [TS-361].
 
-  *) Standardize configure options by allowing to specify the
-    location for any third-party library, and split library
-    detection code into separate .m4 files [TS-345].
+  *) Standardize configure options by allowing to specify the location for
+    any third-party library, and split library detection code into separate
+    .m4 files [TS-345].
 
-  *) Reorganization of the path layout system.
-    Add --enable-layout=LAYOUT configure option that can select layout
-    from config.layout file [TS-280].
+  *) Reorganization of the path layout system.  Add --enable-layout=LAYOUT
+    configure option that can select layout from config.layout file
+    [TS-280].
 
   *) HTTP state machine is now 64-bit "clean", allowing for caching and
    proxying documents larger than 2GB [TS-34].
   
   *) Fix for truncated Content-Type on TS-generated responses [TS-290].
+
+  *) Performance improvements on cache for larger(ish) objects.
 
 
 Changes with Apache Traffic Server 2.1.0
