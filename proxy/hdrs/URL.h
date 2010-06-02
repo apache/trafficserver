@@ -77,8 +77,6 @@ struct URLImpl:public HdrHeapObjImpl
   uint8 m_type_code;            // RFC 1738 limits type code to 1 char
   // 6 bytes
 
-  uint16 m_capacity_host;
-  // 8 bytes
   uint32 m_clean:1;
   // 8 bytes + 1 bit, will result in padding
 
