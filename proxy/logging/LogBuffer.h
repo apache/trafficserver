@@ -377,7 +377,7 @@ public:
   LogEntryHeader *next();
 
 private:
-    bool m_in_network_order;
+  bool m_in_network_order;
   char *m_next;
   unsigned m_iter_entry_count;
   unsigned m_buffer_entry_count;
@@ -398,14 +398,10 @@ private:
 
 inline
 LogBufferIterator::LogBufferIterator(LogBufferHeader * header, bool in_network_order)
-  :
-m_in_network_order(in_network_order)
-  ,
-m_next(0)
-  ,
-m_iter_entry_count(0)
-  ,
-m_buffer_entry_count(0)
+                  : m_in_network_order(in_network_order),
+                  m_next(0),
+                  m_iter_entry_count(0),
+                  m_buffer_entry_count(0)
 {
   ink_debug_assert(header);
 

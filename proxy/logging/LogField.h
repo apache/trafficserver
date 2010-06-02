@@ -20,14 +20,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+
+
+
 #ifndef LOG_FIELD_H
 #define LOG_FIELD_H
 
 #include "inktomi++.h"
 #include "LogFieldAliasMap.h"
-
-// This is setup for 64-bit log integers
-#define MIN_ALIGN	8
 
 class LogAccess;
 

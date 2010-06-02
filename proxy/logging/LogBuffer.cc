@@ -1014,6 +1014,8 @@ LogBuffer::convert_to_host_order()
   convert_to_host_order(m_header);
 }
 
+
+// TODO: This is probably broken with the migration to 64-bit log ints.
 void
 LogBuffer::convert_to_host_order(LogBufferHeader * header)
 {
@@ -1050,6 +1052,7 @@ LogBuffer::convert_to_host_order(LogBufferHeader * header)
   //
   LogBufferIterator iter(header, true);
   LogEntryHeader *entry_header;
+
   while ((entry_header = iter.next())) {
     entry_header->timestamp = ntohl(entry_header->timestamp);
     entry_header->timestamp_usec = ntohl(entry_header->timestamp_usec);
@@ -1149,7 +1152,6 @@ LogEntryHeader *
 LogBufferIterator::next()
 {
   LogEntryHeader *ret_val = NULL;
-
   LogEntryHeader *entry = (LogEntryHeader *) m_next;
 
   if (entry) {

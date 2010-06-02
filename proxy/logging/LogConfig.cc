@@ -1053,10 +1053,13 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
     return NULL;
   }
   // http MUST be last entry
-  enum
-  { icp=0, mixt, http };
-  unsigned value[] = { LOG_ENTRY_ICP,
-    LOG_ENTRY_MIXT, LOG_ENTRY_HTTP
+  enum { icp=0,
+         mixt,
+         http
+  };
+
+  int64 value[] = { LOG_ENTRY_ICP,
+                    LOG_ENTRY_MIXT, LOG_ENTRY_HTTP
   };
   const char *name[] = { "icp", "mixt", "http" };
   const char *filter_name[] = { "__icp__", "__mixt__", "__http__" };

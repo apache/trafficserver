@@ -141,10 +141,8 @@ int
 LogAccessHttp::marshal_client_host_ip(char *buf)
 {
   if (buf) {
-    int64 ip = m_http_sm->t_state.client_info.ip;
-    // the ip is already in network order, no byte order conversion
-    // is needed
-    marshal_int_no_byte_order_conversion(buf, ip);
+    unsigned int ip = m_http_sm->t_state.client_info.ip;
+    marshal_int(buf, (int64)ntohl(ip));
   }
   return INK_MIN_ALIGN;
 }
@@ -643,9 +641,7 @@ LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
     if (m_http_sm->t_state.current.server != NULL) {
       the_ip = m_http_sm->t_state.current.server->ip;
     }
-    // the ip is already in network order, no byte order conversion
-    // is needed
-    marshal_int_no_byte_order_conversion(buf, (int64) the_ip);
+    marshal_int(buf, (int64)ntohl(the_ip));
   }
   return INK_MIN_ALIGN;
 }
@@ -670,16 +666,14 @@ int
 LogAccessHttp::marshal_server_host_ip(char *buf)
 {
   if (buf) {
-    int64 val = 0;
+    unsigned int val = 0;
     val = m_http_sm->t_state.server_info.ip;
     if (val == 0) {
       if (m_http_sm->t_state.current.server != NULL) {
         val = m_http_sm->t_state.current.server->ip;
       }
     }
-    // the ip is already in network order, no byte order conversion
-    // is needed
-    marshal_int_no_byte_order_conversion(buf, val);
+    marshal_int(buf, (int64)ntohl(val));
   }
   return INK_MIN_ALIGN;
 }

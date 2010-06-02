@@ -71,7 +71,7 @@ LogAccessICP::marshal_client_host_ip(char *buf)
   if (buf) {
     int64 ip = m_icp_log->GetClientIP()->s_addr;
     // ip is already in network order
-    marshal_int_no_byte_order_conversion(buf, ip);
+    marshal_int(buf, (int64)ntohl(ip));
   }
   return INK_MIN_ALIGN;
 }

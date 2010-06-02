@@ -57,6 +57,7 @@
 #include "LogBuffer.h"
 #include "Log.h"
 
+
 /*-------------------------------------------------------------------------
   LogAccess::init
   -------------------------------------------------------------------------*/
@@ -780,7 +781,7 @@ int
 LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
-    int64 val = (int64)LOG_ConfigReadInteger(config_var);
+    int64 val = (int64) LOG_ConfigReadInteger(config_var);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -834,7 +835,7 @@ LogAccess::marshal_record(char *record, char *buf)
 #define LOG_COUNTER RECD_COUNTER
 #define LOG_FLOAT   RECD_FLOAT
 #define LOG_STRING  RECD_STRING
-  typedef RecInt LogInt; // TODO/XXX: This needs to match changes made for LogInt
+  typedef RecInt LogInt; // TODO/XXX: This needs to match changes made for uint64
   typedef RecCounter LogCounter;
   typedef RecFloat LogFloat;
   typedef RecString LogString;
@@ -959,37 +960,6 @@ LogAccess::marshal_record(char *record, char *buf)
   return max_chars;
 }
 
-/*-------------------------------------------------------------------------
-  The following functions are helper functions for the LogAccess* classes
-  -------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------
-  LogAccess::marshal_int
-
-  Place the given value into the buffer.  Note that the buffer needs to be
-  aligned with the size of INK_MIN_ALIGN for this to succeed.  We also convert
-  to network byte order, just in case we read the data on a different
-  machine; unmarshal_int() will convert back to host byte order.
-
-  ASSUMES dest IS NOT NULL.
-  -------------------------------------------------------------------------*/
-
-#if DO_NOT_INLINE
-void
-LogAccess::marshal_int(char *dest, int64 source)
-{
-  ink_assert(dest != NULL);
-  // TODO: This used to do htonl
-  *((int64 *) dest) = source;
-}
-
-void
-LogAccess::marshal_int_no_byte_order_conversion(char *dest, int64 source)
-{
-  ink_assert(dest != NULL);
-  *((int64 *) dest) = source;
-}
-#endif
 
 /*-------------------------------------------------------------------------
   LogAccess::marshal_str
@@ -1092,14 +1062,15 @@ LogAccess::unmarshal_with_map(int64 code, char *dest, int len, Ptr<LogFieldAlias
   pointer past the int.  The int will be converted back to host byte order.
   -------------------------------------------------------------------------*/
 
-int64 LogAccess::unmarshal_int(char **buf)
+int64
+LogAccess::unmarshal_int(char **buf)
 {
   ink_assert(buf != NULL);
   ink_assert(*buf != NULL);
   int64 val;
 
-  // TODO: this used to do nthol
-  val = ntohl(*((int64 *) (*buf)));
+  // TODO: this used to do nthol, do we need to worrry?
+  val = *((int64 *)(*buf));
   *buf += INK_MIN_ALIGN;
   return val;
 }
@@ -1125,7 +1096,7 @@ LogAccess::unmarshal_itoa(int64 val, char *dest, int field_width, char leading_c
     while (dest - p < field_width) {
       *p-- = leading_char;
     }
-    return (int64) (dest - p);
+    return (int)(dest - p);
   }
 
   while (val) {
@@ -1135,7 +1106,7 @@ LogAccess::unmarshal_itoa(int64 val, char *dest, int field_width, char leading_c
   while (dest - p < field_width) {
     *p-- = leading_char;
   }
-  return (int) (dest - p);
+  return (int)(dest - p);
 }
 
 /*-------------------------------------------------------------------------
@@ -1152,19 +1123,18 @@ LogAccess::unmarshal_itox(int64 val, char *dest, int field_width, char leading_c
 {
   ink_assert(dest != NULL);
 
-  char *
-    p = dest;
-  static char
-    table[] = "0123456789abcdef?";
+  char *p = dest;
+  static char table[] = "0123456789abcdef?";
 
-  for (int i = 0; i < (int) (sizeof(int64) * 2); i++) {
+  for (int i = 0; i < (int)(sizeof(int64) * 2); i++) {
     *p-- = table[val & 0xf];
     val >>= 4;
   }
   while (dest - p < field_width) {
     *p-- = leading_char;
   }
-  return (int) (dest - p);
+
+  return (int64)(dest - p);
 }
 
 /*-------------------------------------------------------------------------
@@ -1182,8 +1152,8 @@ LogAccess::unmarshal_int_to_str(char **buf, char *dest, int len)
 
   char val_buf[128];
   int64 val = unmarshal_int(buf);
-
   int val_len = unmarshal_itoa(val, val_buf + 127);
+
   if (val_len < len) {
     memcpy(dest, val_buf + 128 - val_len, val_len);
     return val_len;
@@ -1207,6 +1177,7 @@ LogAccess::unmarshal_int_to_str_hex(char **buf, char *dest, int len)
   char val_buf[128];
   int64 val = unmarshal_int(buf);
   int val_len = unmarshal_itox(val, val_buf + 127);
+
   if (val_len < len) {
     memcpy(dest, val_buf + 128 - val_len, val_len);
     return val_len;
@@ -1234,6 +1205,7 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len)
 
   char *val_buf = *buf;
   int val_len = (int)::strlen(val_buf);
+
   *buf += LogAccess::strlen(val_buf);   // this is how it was stored
   if (val_len < len) {
     memcpy(dest, val_buf, val_len);

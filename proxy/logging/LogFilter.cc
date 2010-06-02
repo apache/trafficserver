@@ -497,8 +497,9 @@ LogFilterInt::_setValues(size_t n, int64 *value)
   }
 }
 
+// TODO: ival should be int64
 int
-LogFilterInt::_convertStringToInt(char *value, int64 *ival, LogFieldAliasMap * map)
+LogFilterInt::_convertStringToInt(char *value, unsigned *ival, LogFieldAliasMap * map)
 {
   size_t i, l = strlen(value);
   for (i = 0; i < l && ParseRules::is_digit(value[i]); i++);
@@ -508,8 +509,7 @@ LogFilterInt::_convertStringToInt(char *value, int64 *ival, LogFieldAliasMap * m
     // value is an alias and try to get the actual integer value
     // from the log field alias map if field has one
     //
-    // TODO: should not cast
-    if (map == NULL || map->asInt(value, (unsigned int*)ival) != LogFieldAliasMap::ALL_OK) {
+    if (map == NULL || map->asInt(value, ival) != LogFieldAliasMap::ALL_OK) {
       return -1;                // error
     };
   } else {
@@ -523,25 +523,23 @@ LogFilterInt::_convertStringToInt(char *value, int64 *ival, LogFieldAliasMap * m
 
 LogFilterInt::LogFilterInt(const char *name, LogField * field,
                            LogFilter::Action action, LogFilter::Operator oper, int64 value)
-:LogFilter(name, field, action, oper)
+ : LogFilter(name, field, action, oper)
 {
-  int64  v[1];
+  int64 v[1];
   v[0] = value;
   _setValues(1, v);
 }
 
 LogFilterInt::LogFilterInt(const char *name, LogField * field,
                            LogFilter::Action action, LogFilter::Operator oper, size_t num_values, int64 *value)
-  :
-LogFilter(name, field, action, oper)
+  : LogFilter(name, field, action, oper)
 {
   _setValues(num_values, value);
 }
 
 LogFilterInt::LogFilterInt(const char *name, LogField * field,
                            LogFilter::Action action, LogFilter::Operator oper, char *values)
-  :
-LogFilter(name, field, action, oper)
+  : LogFilter(name, field, action, oper)
 {
   // parse the comma-separated list of values and construct array
   //
@@ -549,11 +547,12 @@ LogFilter(name, field, action, oper)
   size_t i = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
+
   if (n) {
     val_array = NEW(new int64[n]);
     char *t;
     while (t = tok.getNext(), t != NULL) {
-      int64 ival;
+      unsigned ival;
       if (!_convertStringToInt(t, &ival, field->map())) {
         // conversion was successful, add entry to array
         //

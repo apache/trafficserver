@@ -25,12 +25,6 @@
  Logging - LogAccess.h
 
 
-// Since we changed to 64-bit only for all int's. Look for htonl etc.
-#ifndef LITTLE_ENDIAN
-#error FIX_ME
-#endif
-
-
  ***************************************************************************/
 #if !defined (INK_NO_LOG)
 #ifndef LOG_ACCESS_H
@@ -103,8 +97,8 @@
 
 #define DEFAULT_INT_FIELD {\
     if (buf) { \
-	int64 i = 0; \
-	marshal_int (buf, i); \
+      int64 i = 0; \
+      marshal_int (buf, i); \
     } \
     return INK_MIN_ALIGN; \
 }
@@ -327,7 +321,6 @@ public:
 
 public:
   inkcoreapi void static marshal_int(char *dest, int64 source);
-  inkcoreapi void static marshal_int_no_byte_order_conversion(char *dest, int64 source);
   inkcoreapi void static marshal_str(char *dest, const char *source, int padded_len);
   inkcoreapi void static marshal_mem(char *dest, const char *source, int actual_len, int padded_len);
 
@@ -365,14 +358,8 @@ LogAccess::strlen(char *str)
 inline void
 LogAccess::marshal_int(char *dest, int64 source)
 {
-  // TODO: This used to to htonl().
-  *((int64 *) dest) = source;
-}
-
-inline void
-LogAccess::marshal_int_no_byte_order_conversion(char *dest, int64 source)
-{
-  *((int64 *) dest) = source;
+  // TODO: This used to do htonl on the source
+  *((int64 *)dest) = source;
 }
 
 /*-------------------------------------------------------------------------
