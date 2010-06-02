@@ -42,7 +42,7 @@
 struct RemapPlugins:Continuation
 {
   unsigned int _cur;
-  url_mapping *_map;
+  UrlMappingContainer *_map_container;
   URL *_request_url;
   HTTPHdr *_request_header;
     HttpTransact::State * _s;
@@ -53,7 +53,7 @@ struct RemapPlugins:Continuation
 
   int run_remap(int, Event *);
   int run_single_remap();
-  void setMap(url_mapping *);
+  void setMap(UrlMappingContainer *);
   void setRequestUrl(URL *);
   void setRequestHeader(HTTPHdr *);
   int run_plugin(remap_plugin_info *, char *, int, bool *, bool *, bool *);

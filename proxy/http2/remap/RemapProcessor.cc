@@ -45,7 +45,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
 {
   Debug("url_rewrite", "setting up for remap: %x", s);
   URL *request_url = NULL;
-  url_mapping *map = NULL;
+  bool mapping_found = false;
   HTTPHdr *request_header = &s->hdr_info.client_request;
   char **redirect_url = &s->remap_redirect;
   char **orig_url = &s->unmapped_request_url;
@@ -55,6 +55,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
   bool proxy_request = false;
 
   s->reverse_proxy = rewrite_table->reverse_proxy;
+
+  s->url_map.set(s->hdr_info.client_request.m_heap);
 
   ink_assert(redirect_url != NULL);
 
@@ -78,9 +80,9 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
     //  the request URL since some user-agents send broken
     //  host headers.)
     proxy_request = true;
-    map =
+    mapping_found =
       rewrite_table->forwardMappingLookup(request_url, request_url->port_get(), request_url_host,
-                                          request_url_host_len, tag);
+                                          request_url_host_len, s->url_map, tag);
   } else {
     // Server request.  Use the host header to figure out where
     // it goes
@@ -109,7 +111,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
     }
 
     Debug("url_rewrite", "[lookup] attempting normal lookup");
-    map = rewrite_table->forwardMappingLookup(request_url, request_port, host_hdr, host_len, tag);
+    mapping_found = rewrite_table->forwardMappingLookup(request_url, request_port, host_hdr, host_len,
+                                                        s->url_map, tag);
 
     // Save this information for later
     s->hh_info.host_len = host_len;
@@ -118,12 +121,12 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
 
     // If no rules match, check empty host rules since
     //   they function as default rules for server requests
-    if (map == NULL && rewrite_table->nohost_rules && *host_hdr != '\0') {
+    if (!mapping_found && rewrite_table->nohost_rules && *host_hdr != '\0') {
       Debug("url_rewrite", "[lookup] nothing matched");
-      map = rewrite_table->forwardMappingLookup(request_url, 0, "", 0, tag);
+      mapping_found = rewrite_table->forwardMappingLookup(request_url, 0, "", 0, s->url_map, tag);
     }
 
-    if (map && orig_url) {
+    if (mapping_found && orig_url) {
       // We need to insert the host so that we have an accurate URL
       if (proxy_request == false) {
         request_url->host_set(s->hh_info.request_host, s->hh_info.host_len);
@@ -144,13 +147,11 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
     // }
   }
 
-  if (!map) {
-    Debug("url_rewrite", "RemapProcessor::setup_for_remap had map as NULL");
+  if (!mapping_found) {
+    Debug("url_rewrite", "RemapProcessor::setup_for_remap did not find a mapping");
   }
 
-  s->url_map = map;
-
-  return (map != NULL);
+  return mapping_found;
 }
 
 bool
@@ -169,7 +170,7 @@ RemapProcessor::finish_remap(HttpTransact::State * s)
   bool remap_found = false;
   referer_info *ri;
 
-  map = s->url_map;
+  map = s->url_map.getMapping();
   if (!map) {
     return false;
   }
@@ -218,7 +219,7 @@ RemapProcessor::finish_remap(HttpTransact::State * s)
             case 't':
               remapped_host =
                 (rc->type == 'f') ? map->fromURL.string_get_buf(tmp_buf, (int) sizeof(tmp_buf),
-                                                                &from_len) : map->toURL.string_get_buf(tmp_buf, (int)
+                                                                &from_len) : ((s->url_map).getToURL())->string_get_buf(tmp_buf, (int)
                                                                                                        sizeof(tmp_buf),
                                                                                                        &from_len);
               if (remapped_host && from_len > 0) {
@@ -312,7 +313,7 @@ RemapProcessor::perform_remap(Continuation * cont, HttpTransact::State * s)
   Debug("url_rewrite", "Beginning RemapProcessor::perform_remap");
   HTTPHdr *request_header = &s->hdr_info.client_request;
   URL *request_url = request_header->url_get();
-  url_mapping *map = s->url_map;
+  url_mapping *map = s->url_map.getMapping();
   host_hdr_info *hh_info = &(s->hh_info);
 
   if (!map) {
@@ -328,7 +329,7 @@ RemapProcessor::perform_remap(Continuation * cont, HttpTransact::State * s)
 
   RemapPlugins *plugins = pluginAllocator.alloc();
 
-  plugins->setMap(map);
+  plugins->setMap(&(s->url_map));
   plugins->setRequestUrl(request_url);
   plugins->setRequestHeader(request_header);
   plugins->setState(s);

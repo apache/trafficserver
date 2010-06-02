@@ -41,6 +41,7 @@
 //#include "HttpAuthParams.h"
 #include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
+#include "UrlMapping.h"
 
 
 #ifdef USE_NCA
@@ -1072,7 +1073,7 @@ public:
                                 /**
 				 * Remap plugin processor support
 				**/
-    url_mapping *url_map;
+    UrlMappingContainer url_map;
     host_hdr_info hh_info;
 
     //
@@ -1389,7 +1390,7 @@ api_lock_url(LOCK_URL_FIRST),
 saved_update_next_action(STATE_MACHINE_ACTION_UNDEFINED),
 saved_update_cache_action(CACHE_DO_UNDEFINED),
 stale_icp_lookup(false),
-url_map(NULL),
+url_map(),
 pCongestionEntry(NULL),
 congest_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
 congestion_control_crat(0),
@@ -1516,6 +1517,7 @@ HttpTransact::State::destroy()
     cache_resp_hdr_heap_handle->m_sdk_alloc.free_all();
   }
 
+  url_map.clear();
   arena.reset();
 
   return;

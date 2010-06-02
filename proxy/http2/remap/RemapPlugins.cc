@@ -36,9 +36,9 @@ RemapPlugins::~RemapPlugins()
 }
 
 void
-RemapPlugins::setMap(url_mapping * m)
+RemapPlugins::setMap(UrlMappingContainer * m)
 {
-  _map = m;
+  _map_container = m;
 }
 
 void
@@ -75,10 +75,11 @@ RemapPlugins::run_plugin(remap_plugin_info * plugin, char *origURLBuf, int origU
   const char *requestPath;
   int requestPathLen;
   int requestPort = 0;
-  URL *map_from = &_map->fromURL;
+  url_mapping *map = _map_container->getMapping();
+  URL *map_from = &(map->fromURL);
   const char *fromPath;
   int fromPathLen;
-  URL *map_to = &_map->toURL;
+  URL *map_to = _map_container->getToURL();
 
   const char *toHost;
   const char *toPath;
@@ -165,7 +166,7 @@ RemapPlugins::run_plugin(remap_plugin_info * plugin, char *origURLBuf, int origU
     rri.request_cookie_size = 0;
   }
 
-  ihandle *ih = _map->get_instance(plugin);
+  ihandle *ih = map->get_instance(plugin);
 
   ink_debug_assert(ih);
 
@@ -291,10 +292,11 @@ RemapPlugins::run_single_remap()
   const char *requestPath;
   int requestPathLen;
   int requestPort;
-  URL *map_from = &_map->fromURL;
+  url_mapping *map = _map_container->getMapping();
+  URL *map_from = &(map->fromURL);
   const char *fromPath;
   int fromPathLen;
-  URL *map_to = &_map->toURL;
+  URL *map_to = _map_container->getToURL();
 
   const char *fromHost;
   int fromHostLen;
@@ -311,9 +313,9 @@ RemapPlugins::run_single_remap()
   int retcode = 0;              // 0 - no redirect, !=0 - redirected
 
   if (_cur == 0 && _s) {        // it is important - we must copy "no_negative_cache" flag before possible plugin call [only do this on our first iteration of this function]
-    _s->no_negative_cache = _map->no_negative_cache;
-    _s->pristine_host_hdr = _map->pristine_host_hdr;
-    _s->remap_chunking_enabled = _map->chunking_enabled;
+    _s->no_negative_cache = map->no_negative_cache;
+    _s->pristine_host_hdr = map->pristine_host_hdr;
+    _s->remap_chunking_enabled = map->chunking_enabled;
   }
 
   requestPath = _request_url->path_get(&requestPathLen);
@@ -345,7 +347,7 @@ RemapPlugins::run_single_remap()
     debug_on = true;
 
   if (_request_header)
-    plugin = _map->get_plugin(_cur);    //get the nth plugin in our list of plugins
+    plugin = map->get_plugin(_cur);    //get the nth plugin in our list of plugins
 
   if (plugin || debug_on) {
     origURLBuf = _request_url->string_get(NULL);
@@ -354,7 +356,7 @@ RemapPlugins::run_single_remap()
   }
 
   if (plugin) {
-    Debug("url_rewrite", "Remapping rule id: %d matched; running it now", _map->map_id);
+    Debug("url_rewrite", "Remapping rule id: %d matched; running it now", map->map_id);
     plugin_retcode =
       run_plugin(plugin, origURLBuf, origURLBufSize, &plugin_modified_host, &plugin_modified_port,
                  &plugin_modified_path);
@@ -392,13 +394,13 @@ RemapPlugins::run_single_remap()
   }
 
   if (_cur > 0 && !plugin_modified_host && !plugin_modified_port && !plugin_modified_path &&
-      (_cur + 1) < _map->_plugin_count) {
+      (_cur + 1) < map->_plugin_count) {
     _cur++;
     Debug("url_rewrite", "Plugin didn't change anything, but we'll try the next one right now");
     return 0;                   //plugin didn't do anything for us, but maybe another will down the chain so lets assume there is something more for us to process
   }
 
-  if (_cur > 0 && (_cur + 1) >= _map->_plugin_count) {  //skip the !plugin_modified_* stuff if we are on our 2nd plugin (or greater) and there's no more plugins
+  if (_cur > 0 && (_cur + 1) >= map->_plugin_count) {  //skip the !plugin_modified_* stuff if we are on our 2nd plugin (or greater) and there's no more plugins
     goto done;
   }
 
@@ -482,7 +484,7 @@ RemapPlugins::run_single_remap()
 
     _request_url->path_set(newPath, newPathLen);
 
-    if (_map->homePageRedirect && fromPathLen == requestPathLen && _s->remap_redirect) {
+    if (map->homePageRedirect && fromPathLen == requestPathLen && _s->remap_redirect) {
       URL redirect_url;
       redirect_url.create(NULL);
       redirect_url.copy(_request_url);
@@ -537,7 +539,7 @@ done:
 
   _cur++;                       //important
 
-  if (_cur >= _map->_plugin_count) {
+  if (_cur >= map->_plugin_count) {
     //normally, we would callback into this function but we dont have anything more to do!
     Debug("url_rewrite", "we exhausted all available plugins");
     return 1;

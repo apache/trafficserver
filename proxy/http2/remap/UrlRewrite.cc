@@ -142,11 +142,11 @@ check_remap_option(char *argv[], int argc, unsigned long findmode = 0, int *_ret
 
 */
 void
-SetHomePageRedirectFlag(url_mapping * new_mapping)
+SetHomePageRedirectFlag(url_mapping * new_mapping, URL &new_to_url)
 {
   int fromLen, toLen;
   const char *from_path = new_mapping->fromURL.path_get(&fromLen);
-  const char *to_path = new_mapping->toURL.path_get(&toLen);
+  const char *to_path = new_to_url.path_get(&toLen);
 
   new_mapping->homePageRedirect = (from_path && !to_path) ? true : false;
 }
@@ -620,12 +620,12 @@ UrlRewrite::SetupPacMapping()
   mapping->fromURL.parse(from_url, strlen(from_url));
 
   state = error = 0;
-  mapping->toURL.create(NULL);
-  mapping->toURL.parse(local_url, strlen(local_url));
+  mapping->_default_to_url.create(NULL);
+  mapping->_default_to_url.parse(local_url, strlen(local_url));
 
   pac_generator_port = (default_to_pac_port < 0) ? mgmt_autoconf_port : default_to_pac_port;
 
-  mapping->toURL.port_set(pac_generator_port);
+  mapping->_default_to_url.port_set(pac_generator_port);
 
   return mapping;
 }
@@ -650,8 +650,8 @@ UrlRewrite::SetupBackdoorMapping()
   mapping->fromURL.parse(from_url, sizeof(from_url) - 1);
   mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
 
-  mapping->toURL.create(NULL);
-  mapping->toURL.parse(to_url, sizeof(to_url) - 1);
+  mapping->_default_to_url.create(NULL);
+  mapping->_default_to_url.parse(to_url, sizeof(to_url) - 1);
 
   return mapping;
 }
@@ -729,7 +729,7 @@ UrlRewrite::PrintTable(InkHashTable * h_table)
          mapping_iter != mappings.end(); ++mapping_iter) {
       um = *mapping_iter;
       um->fromURL.string_get_buf(from_url_buf, (int) sizeof(from_url_buf));
-      um->toURL.string_get_buf(to_url_buf, (int) sizeof(to_url_buf));
+      um->_default_to_url.string_get_buf(to_url_buf, (int) sizeof(to_url_buf));
       printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %d plugins]\n", from_url_buf,
              um->unique ? "(unique)" : "", to_url_buf,
              um->homePageRedirect ? "(R)" : "", um->tag ? um->tag : "",
@@ -768,8 +768,8 @@ UrlRewrite::_tableLookup(InkHashTable * h_table, URL * request_url,
 
 */
 int
-UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, url_mapping * mapPtr, URL * request_url,
-                    char **redirect, host_hdr_info * hh_ptr)
+UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, UrlMappingContainer &mapping_container,
+                    URL * request_url, char **redirect, host_hdr_info * hh_ptr)
 {
   // Plugin trackers.
   remap_plugin_info *plugin = NULL;
@@ -785,11 +785,12 @@ UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, url_mappi
   int requestPathLen;
   int requestPort;
 
+  url_mapping *mapPtr = mapping_container.getMapping();
   URL *map_from = &mapPtr->fromURL;
   const char *fromPath;
   int fromPathLen;
 
-  URL *map_to = &mapPtr->toURL;
+  URL *map_to = mapping_container.getToURL();
   const char *toHost;
   const char *toPath;
   int toPathLen;
@@ -967,8 +968,6 @@ bool UrlRewrite::ReverseMap(HTTPHdr * response_header, char *tag)
   int
     host_len;
 
-  url_mapping *
-    map;
   char *
     new_loc_hdr;
   int
@@ -990,15 +989,15 @@ bool UrlRewrite::ReverseMap(HTTPHdr * response_header, char *tag)
   location_url.parse(location_hdr, loc_length);
 
   host = location_url.host_get(&host_len);
-  map = reverseMappingLookup(&location_url, location_url.port_get(), host, host_len, tag);
-
-  if (map != NULL) {            /* HDR FIX ME
+  UrlMappingContainer reverse_mapping(response_header->m_heap);
+  if (reverseMappingLookup(&location_url, location_url.port_get(), host, host_len, reverse_mapping, tag)) {
+                                /* HDR FIX ME
                                    Debug("url_rewrite", "Location header before rewrite: %s",
                                    response_header->value_get(MIME_FIELD_LOCATION));
                                  */
 
     remap_found = true;
-    DoRemap(NULL, NULL, map, &location_url);
+    DoRemap(NULL, NULL, reverse_mapping, &location_url);
 
     new_loc_hdr = location_url.string_get(NULL, &new_loc_length);
     response_header->value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, new_loc_hdr, new_loc_length);
@@ -1072,7 +1071,7 @@ bool
                     char **redirect_url, char **orig_url, char *tag, unsigned int filter_mask)
 {
   URL *request_url = NULL;
-  url_mapping *map = NULL;
+  bool mapping_found;
 
   // Vars for building a new host header
   //
@@ -1112,7 +1111,8 @@ bool
     //  the request URL since some user-agents send broken
     //  host headers.)
     proxy_request = true;
-    map = forwardMappingLookup(request_url, request_url->port_get(), request_url_host, request_url_host_len, tag);
+    mapping_found = forwardMappingLookup(request_url, request_url->port_get(), request_url_host,
+                                         request_url_host_len, s->url_map, tag);
   } else {                      // Server request.  Use the host header to figure out where
     //    it goes
     int host_len, host_hdr_len;
@@ -1139,7 +1139,7 @@ bool
       }
     }
 
-    map = forwardMappingLookup(request_url, request_port, host_hdr, host_len, tag);
+    mapping_found = forwardMappingLookup(request_url, request_port, host_hdr, host_len, s->url_map, tag);
 
     // Save this information for passing to DoRemap
     hh_info.host_len = host_len;
@@ -1149,12 +1149,12 @@ bool
 
     // If no rules match, check empty host rules since
     //   they function as default rules for server requests
-    if (map == NULL && nohost_rules && *host_hdr != '\0') {
-      map = forwardMappingLookup(request_url, 0, "", 0, tag);
+    if (!mapping_found && nohost_rules && *host_hdr != '\0') {
+      mapping_found = forwardMappingLookup(request_url, 0, "", 0, s->url_map, tag);
     }
   }
 
-  if (map) {                    // Make a copy of the original URL. It is up to the callee to free this [which is t_state->unmapped_request_url freed inside HttpTransact::State::destroy()]
+  if (mapping_found) {              // Make a copy of the original URL. It is up to the callee to free this [which is t_state->unmapped_request_url freed inside HttpTransact::State::destroy()]
     if (orig_url) {             // We need to insert the host so that we have an accurate URL
       if (proxy_request == false) {
         request_url->host_set(hh_info.request_host, hh_info.host_len);
@@ -1168,10 +1168,12 @@ bool
       *orig_url = request_url->string_get_ref(NULL);
     }
     // Perform the actual URL rewrite
-    if (unlikely(DoRemap(s, request_header, map, request_url, redirect_url, hh_ptr) && *redirect_url != NULL)) {
+    if (unlikely(DoRemap(s, request_header, s->url_map, request_url, redirect_url, hh_ptr) &&
+                 *redirect_url != NULL)) {
       return false;             // There is a redirect, return now
     }
     // Do fast ACL filtering (it is safe to check map here)
+    url_mapping *map = s->url_map.getMapping();
     PerformACLFiltering(s, map);
 
     //printf("****************** PerformACLFiltering = %s ************\n",s->client_connection_enabled ? "ENABLED" : "DISABLED");
@@ -1219,7 +1221,7 @@ bool
               case 't':
                 remapped_host =
                   (rc->type == 'f') ? map->fromURL.string_get_buf(tmp_buf, (int) sizeof(tmp_buf),
-                                                                  &from_len) : map->toURL.string_get_buf(tmp_buf, (int)
+                                                                  &from_len) : ((s->url_map).getToURL())->string_get_buf(tmp_buf, (int)
                                                                                                          sizeof
                                                                                                          (tmp_buf),
                                                                                                          &from_len);
@@ -1319,10 +1321,8 @@ mapping_type UrlRewrite::Remap_redirect(HTTPHdr * request_header, char **redirec
 {
   URL *
     request_url;
-  url_mapping *
-    permanent_redirect = NULL, *temporary_redirect = NULL, *map = NULL;
   mapping_type
-    mappingType = NONE;
+    mappingType;
   const char *
     host = NULL;
   char
@@ -1422,21 +1422,20 @@ mapping_type UrlRewrite::Remap_redirect(HTTPHdr * request_header, char **redirec
   // the rationale behind this is that network administrators might
   // want quick redirects and not want to worry about all the existing
   // permanent rules
-  if (prt) {
-    permanent_redirect = permanentRedirectLookup(request_url, request_port, host, host_len, tag);
-  }
+  mappingType = NONE;
+  UrlMappingContainer redirect_mapping(request_header->m_heap);
   if (trt) {
-    temporary_redirect = temporaryRedirectLookup(request_url, request_port, host, host_len, tag);
+    if (temporaryRedirectLookup(request_url, request_port, host, host_len, redirect_mapping, tag)) {
+      mappingType = TEMPORARY_REDIRECT;
+    }
   }
-  if (temporary_redirect != NULL) {
-    mappingType = TEMPORARY_REDIRECT;
-    map = temporary_redirect;
-  } else if (permanent_redirect != NULL) {
-    mappingType = PERMANENT_REDIRECT;
-    map = permanent_redirect;
+  if ((mappingType == NONE) && prt) {
+    if (permanentRedirectLookup(request_url, request_port, host, host_len, redirect_mapping, tag)) {
+      mappingType = PERMANENT_REDIRECT;
+    }
   }
 
-  if (map != NULL) {
+  if (mappingType != NONE) {
     *orig_url = NULL;
 
     // Make a copy of the request url so that we can munge it
@@ -1447,7 +1446,7 @@ mapping_type UrlRewrite::Remap_redirect(HTTPHdr * request_header, char **redirec
     rurl.copy(request_url);
 
     // Perform the actual URL rewrite
-    if (!DoRemap(NULL, NULL, map, &rurl, redirect_url, hh_ptr)) {
+    if (!DoRemap(NULL, NULL, redirect_mapping, &rurl, redirect_url, hh_ptr)) {
       *redirect_url = rurl.string_get(NULL);
     } else {                    // vl: Do nothing because of "redirect_url" was created inside DoRemap!
       // There is potential memory leack was here (in the original version)
@@ -1757,8 +1756,8 @@ UrlRewrite::BuildTable()
     map_to_start = map_to;
     tmp = map_to;
 
-    new_mapping->toURL.create(NULL);
-    rparse = new_mapping->toURL.parse_no_path_component_breakdown(tmp, length);
+    new_mapping->_default_to_url.create(NULL);
+    rparse = new_mapping->_default_to_url.parse_no_path_component_breakdown(tmp, length);
     map_to_start[origLength] = '\0';    // Unwhack
 
     if (rparse != PARSE_DONE) {
@@ -1774,7 +1773,7 @@ UrlRewrite::BuildTable()
       fromScheme = new_mapping->fromURL.scheme_get(&fromSchemeLen);
       new_mapping->wildcard_from_scheme = true;
     }
-    toScheme = new_mapping->toURL.scheme_get(&toSchemeLen);
+    toScheme = new_mapping->_default_to_url.scheme_get(&toSchemeLen);
 
     // Include support for HTTPS scheme
     // includes support for FILE scheme
@@ -1851,7 +1850,7 @@ UrlRewrite::BuildTable()
       }
     }
 
-    toHost = new_mapping->toURL.host_get(&toHostLen);
+    toHost = new_mapping->_default_to_url.host_get(&toHostLen);
     if (toHost == NULL || toHostLen <= 0) {
       errStr = "The remap destinations require a hostname";
       goto MAP_ERROR;
@@ -1906,7 +1905,8 @@ UrlRewrite::BuildTable()
     case FORWARD_MAP_REFERER:
       if ((add_result = _addToStore(forward_mappings, new_mapping, reg_map, fromHost_lower,
                                     is_cur_mapping_regex, num_rules_forward)) == true) {
-        SetHomePageRedirectFlag(new_mapping);   // @todo: is this applicable to regex mapping too?
+        // @todo: is this applicable to regex mapping too?
+        SetHomePageRedirectFlag(new_mapping, new_mapping->_default_to_url);
       }
       break;
     case REVERSE_MAP:
@@ -1961,15 +1961,15 @@ UrlRewrite::BuildTable()
             u_mapping->fromURL.create(NULL);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
             u_mapping->fromURL.host_set(ipv4_name, strlen(ipv4_name));
-            u_mapping->toURL.create(NULL);
-            u_mapping->toURL.copy(&new_mapping->toURL);
+            u_mapping->_default_to_url.create(NULL);
+            u_mapping->_default_to_url.copy(&new_mapping->_default_to_url);
             if (bti.paramv[3] != NULL)
               u_mapping->tag = xstrdup(&(bti.paramv[3][0]));
             if (!TableInsert(forward_mappings.hash_lookup, u_mapping, ipv4_name)) {
               goto MAP_WARNING;
             }
             num_rules_forward++;
-            SetHomePageRedirectFlag(u_mapping);
+            SetHomePageRedirectFlag(u_mapping, u_mapping->_default_to_url);
           }
         }
       }
@@ -2003,15 +2003,15 @@ UrlRewrite::BuildTable()
             u_mapping->fromURL.create(NULL);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
             u_mapping->fromURL.host_set(ipv4_name, strlen(ipv4_name));
-            u_mapping->toURL.create(NULL);
-            u_mapping->toURL.copy(&new_mapping->toURL);
+            u_mapping->_default_to_url.create(NULL);
+            u_mapping->_default_to_url.copy(&new_mapping->_default_to_url);
             if (bti.paramv[3] != NULL)
               u_mapping->tag = xstrdup(&(bti.paramv[3][0]));
             if (!TableInsert(forward_mappings.hash_lookup, u_mapping, ipv4_name)) {
               goto MAP_WARNING;
             }
             num_rules_forward++;
-            SetHomePageRedirectFlag(u_mapping);
+            SetHomePageRedirectFlag(u_mapping, u_mapping->_default_to_url);
           }
         }
       }
@@ -2037,9 +2037,9 @@ UrlRewrite::BuildTable()
             u_mapping = NEW(new url_mapping);
             u_mapping->fromURL.create(NULL);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
-            u_mapping->toURL.create(NULL);
-            u_mapping->toURL.copy(&new_mapping->toURL);
-            u_mapping->toURL.host_set(ipv4_name, strlen(ipv4_name));
+            u_mapping->_default_to_url.create(NULL);
+            u_mapping->_default_to_url.copy(&new_mapping->_default_to_url);
+            u_mapping->_default_to_url.host_set(ipv4_name, strlen(ipv4_name));
             if (bti.paramv[3] != NULL)
               u_mapping->tag = xstrdup(&(bti.paramv[3][0]));
             if (!TableInsert(reverse_mappings.hash_lookup, u_mapping, fromHost_lower)) {
@@ -2195,35 +2195,6 @@ UrlRewrite::TableInsert(InkHashTable * h_table, url_mapping * mapping, const cha
   return true;
 }
 
-url_mapping_ext *
-UrlRewrite::forwardTableLookupExt(URL * request_url, int request_port, char *request_host, int host_len,
-                                  char *tag)
-{
-  if (forward_mappings.hash_lookup) {
-    url_mapping *m = _tableLookup(forward_mappings.hash_lookup, request_url, request_port,
-                                  request_host, host_len, tag);
-
-    return NEW(new url_mapping_ext(m));
-  }
-  return NULL;
-}
-
-
-url_mapping_ext *
-UrlRewrite::reverseTableLookupExt(URL * request_url, int request_port, char *request_host, int host_len,
-                                  char *tag)
-{
-  if (reverse_mappings.hash_lookup) {
-    url_mapping *m = _tableLookup(reverse_mappings.hash_lookup, request_url, request_port,
-                                  request_host, host_len, tag);
-
-    return NEW(new url_mapping_ext(m));
-  }
-  return NULL;
-}
-
-
-
 int
 UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *errbuf, int errbufsize, int jump_to_argc,
                               int *plugin_found_at)
@@ -2359,7 +2330,7 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
   parv[parc++] = xstrdup(err);
   xfree(err);
 
-  if ((err = mp->toURL.string_get(NULL)) == NULL) {
+  if ((err = mp->_default_to_url.string_get(NULL)) == NULL) {
     snprintf(errbuf, errbufsize, "Can't load toURL from URL class");
     return -6;
   }
@@ -2431,16 +2402,17 @@ UrlRewrite::load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *er
 
      Returns highest-ranked mapping on success, NULL on failure
 */
-url_mapping *
+bool
 UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url,
-                           int request_port, const char *request_host, int request_host_len, char *tag)
+                           int request_port, const char *request_host, int request_host_len,
+                           UrlMappingContainer &mapping_container, char *tag)
 {
   char request_host_lower[TSREMAP_RRI_MAX_HOST_SIZE];
 
   if (!request_host || !request_url ||
       (request_host_len < 0) || (request_host_len >= TSREMAP_RRI_MAX_HOST_SIZE)) {
     Debug("url_rewrite", "Invalid arguments!");
-    return NULL;
+    return false;
   }
 
   // lowercase
@@ -2449,20 +2421,22 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url,
   }
   request_host_lower[request_host_len] = 0;
 
+  bool retval = false;
   int rank_ceiling = -1;
   url_mapping *mapping = _tableLookup(mappings.hash_lookup, request_url, request_port, request_host_lower,
                                       request_host_len, tag);
   if (mapping != NULL) {
     rank_ceiling = mapping->getRank();
     Debug("url_rewrite", "Found 'simple' mapping with rank %d", rank_ceiling);
+    mapping_container.set(mapping);
+    retval = true;
   }
-  url_mapping *regex_mapping = _regexMappingLookup(mappings.regex_list, request_url, request_port,
-                                                   request_host_lower, request_host_len, tag, rank_ceiling);
-  if (regex_mapping) {
-    mapping = regex_mapping;
-    Debug("url_rewrite", "Using regex mapping with rank %d", mapping->getRank());
+  if (_regexMappingLookup(mappings.regex_list, request_url, request_port, request_host_lower, request_host_len,
+                          tag, rank_ceiling, mapping_container)) {
+    Debug("url_rewrite", "Using regex mapping with rank %d", (mapping_container.getMapping())->getRank());
+    retval = true;
   }
-  return mapping;
+  return retval;
 }
 
 // does not null terminate return string
@@ -2514,11 +2488,12 @@ UrlRewrite::_expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
   return 0;
 }
 
-url_mapping *
+bool
 UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_url, int request_port,
-                                const char *request_host, int request_host_len, char *tag, int rank_ceiling)
+                                const char *request_host, int request_host_len, char *tag, int rank_ceiling,
+                                UrlMappingContainer &mapping_container)
 {
-  url_mapping *retval = NULL;
+  bool retval = false;
   RegexMappingList::iterator list_iter;
 
   if (rank_ceiling == -1) { // we will now look at all regex mappings
@@ -2572,17 +2547,21 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       Debug("url_rewrite_regex", "Request URL host [%.*s] matched regex in mapping of rank %d "
             "with %d possible substitutions", request_host_len, request_host, reg_map_rank, match_result);
 
+      mapping_container.set(reg_map.url_map);
+
       char buf[MAX_URL_STR_SIZE];
       int buf_len;
 
       // Expand substitutions in the host field from the stored template
       buf_len = _expandSubstitutions(matches_info, reg_map, request_host,
                                      buf, MAX_URL_STR_SIZE);
-      reg_map.url_map->toURL.host_set(buf, buf_len);
+      URL *expanded_url = mapping_container.createNewToURL();
+      expanded_url->copy(&((reg_map.url_map)->_default_to_url));
+      expanded_url->host_set(buf, buf_len);
 
       Debug("url_rewrite_regex", "Expanded toURL to [%.*s]",
-            reg_map.url_map->toURL.length_get(), reg_map.url_map->toURL.string_get_ref());
-      retval = reg_map.url_map;
+            expanded_url->length_get(), expanded_url->string_get_ref());
+      retval = true;
       break;
     } else if (match_result == PCRE_ERROR_NOMATCH) {
       Debug("url_rewrite_regex", "Request URL host [%.*s] did NOT match regex in mapping of rank %d",
@@ -2664,7 +2643,7 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
     goto lFail;
   }
 
-  to_host = new_mapping->toURL.host_get(&to_host_len);
+  to_host = new_mapping->_default_to_url.host_get(&to_host_len);
   for (int i = 0; i < (to_host_len - 1); ++i) {
     if (to_host[i] == '$') {
       if (substitution_count > MAX_REGEX_SUBS) {
@@ -2686,9 +2665,8 @@ UrlRewrite::_processRegexMappingConfig(const char *from_host_lower, url_mapping 
 
   // so the regex itself is stored in fromURL.host; string to match
   // will be in the request; string to use for substitutions will be
-  // in this buffer and finally the substituted string will be stored
-  // in toURL.host on every successful regex match
-  str = new_mapping->toURL.host_get(&str_index); // reusing str and str_index
+  // in this buffer
+  str = new_mapping->_default_to_url.host_get(&str_index); // reusing str and str_index
   reg_map.to_url_host_template_len = str_index;
   reg_map.to_url_host_template = static_cast<char *>(ink_malloc(str_index));
   memcpy(reg_map.to_url_host_template, str, str_index);

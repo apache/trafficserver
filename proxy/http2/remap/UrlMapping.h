@@ -31,7 +31,6 @@
 #include "Error.h"
 #include "URL.h"
 #include "RemapPluginInfo.h"
-#include "HttpTransact.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -82,22 +81,6 @@ public:
 };
 
 /**
- *
-**/
-class url_mapping_ext
-{
-public:
-  url_mapping_ext(url_mapping *);
-  virtual ~ url_mapping_ext();
-  const char *getToHost(int *lenp = NULL);
-  const char *getToPath(int *lenp = NULL);
-  URL *getFromURL();
-  URL *getToURL();
-private:
-    url_mapping * m_mapping;
-};
-
-/**
  * Used to store the mapping for class UrlRewrite
 **/
 class url_mapping
@@ -115,7 +98,6 @@ public:
 
   int from_path_len;
   URL fromURL;
-  URL toURL;
   bool homePageRedirect;
   bool unique;                  // INKqa11970 - unique mapping
   bool default_redirect_url;
@@ -141,7 +123,71 @@ private:
     std::map<remap_plugin_info *, ihandle *>_instance_map;
   int _cur_instance_count;
   int _rank;
+  URL _default_to_url;
+
+  friend class UrlRewrite;
+  friend class UrlMappingContainer;
 };
 
+
+class UrlMappingContainer {
+
+public:
+
+  UrlMappingContainer() : _mapping(NULL), _toURLPtr(NULL), _heap(NULL) { };
+
+  UrlMappingContainer(url_mapping *m) : _heap(NULL) { set(m); };
+
+  UrlMappingContainer(HdrHeap *heap) : _mapping(NULL), _toURLPtr(NULL), _heap(heap) { };
+  
+  URL *getToURL() const { return _toURLPtr; };
+
+  url_mapping *getMapping() const { return _mapping; };
+
+  void set(url_mapping *m) { 
+    deleteToURL();
+    _mapping = m;
+    _toURLPtr = m ? &(m->_default_to_url) : NULL;
+  }
+
+  void set(HdrHeap *heap) {
+    _heap = heap;
+  }
+
+  URL *createNewToURL() {
+    ink_assert(_heap != NULL);
+    deleteToURL();
+    _toURL.create(_heap);
+    _toURLPtr = &_toURL;
+    return _toURLPtr; 
+  }
+
+  void deleteToURL() {
+    if (_toURLPtr == &_toURL) {
+      _toURL.clear();
+    }
+  }
+
+  void clear() {
+    deleteToURL();
+    _mapping = NULL;
+    _toURLPtr = NULL;
+    _heap = NULL;
+  }
+
+  ~UrlMappingContainer() { deleteToURL(); };
+
+private:
+
+  url_mapping *_mapping;
+  URL *_toURLPtr;
+  URL _toURL;
+  HdrHeap *_heap;
+  
+  // non-copyable, non-assignable
+  UrlMappingContainer(const UrlMappingContainer &orig);
+  UrlMappingContainer &operator =(const UrlMappingContainer &rhs);
+
+};
 
 #endif

@@ -26,6 +26,7 @@
 
 #include "StringHash.h"
 #include "UrlMapping.h"
+#include "HttpTransact.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -89,10 +90,6 @@ public:
   void SetReverseFlag(int flag);
   void SetPristineFlag(int flag);
   void Print();
-  url_mapping_ext *forwardTableLookupExt(URL * request_url,
-                                         int request_port, char *request_host, int host_len, char *tag = 0);
-  url_mapping_ext *reverseTableLookupExt(URL * request_url,
-                                         int request_port, char *request_host, int host_len, char *tag = 0);
 //  private:
 
   static const int MAX_REGEX_SUBS = 10;
@@ -147,27 +144,31 @@ public:
   MappingsStore permanent_redirects;
   MappingsStore temporary_redirects;
 
-  url_mapping *forwardMappingLookup(URL *request_url, int request_port, const char *request_host,
-                                    int request_host_len, char *tag = NULL)
+  bool forwardMappingLookup(URL *request_url, int request_port, const char *request_host,
+                            int request_host_len, UrlMappingContainer &mapping_container, char *tag = NULL)
   {
-    return _mappingLookup(forward_mappings, request_url, request_port, request_host, request_host_len, tag);
+    return _mappingLookup(forward_mappings, request_url, request_port, request_host, request_host_len,
+                          mapping_container, tag);
   }
-  url_mapping *reverseMappingLookup(URL *request_url, int request_port, const char *request_host,
-                                    int request_host_len, char *tag = NULL)
+  bool reverseMappingLookup(URL *request_url, int request_port, const char *request_host,
+                            int request_host_len, UrlMappingContainer &mapping_container, char *tag = NULL)
   {
-    return _mappingLookup(reverse_mappings, request_url, request_port, request_host, request_host_len, tag);
+    return _mappingLookup(reverse_mappings, request_url, request_port, request_host, request_host_len,
+                          mapping_container, tag);
   }
-  url_mapping *permanentRedirectLookup(URL *request_url, int request_port, const char *request_host,
-                                       int request_host_len, char *tag = NULL)
+  bool permanentRedirectLookup(URL *request_url, int request_port, const char *request_host,
+                               int request_host_len, UrlMappingContainer &mapping_container, char *tag = NULL)
   {
-    return _mappingLookup(permanent_redirects, request_url, request_port, request_host, request_host_len, tag);
+    return _mappingLookup(permanent_redirects, request_url, request_port, request_host, request_host_len,
+                          mapping_container, tag);
   }
-  url_mapping *temporaryRedirectLookup(URL *request_url, int request_port, const char *request_host,
-                                       int request_host_len, char *tag = NULL)
+  bool temporaryRedirectLookup(URL *request_url, int request_port, const char *request_host,
+                               int request_host_len, UrlMappingContainer &mapping_container, char *tag = NULL)
   {
-    return _mappingLookup(temporary_redirects, request_url, request_port, request_host, request_host_len, tag);
+    return _mappingLookup(temporary_redirects, request_url, request_port, request_host, request_host_len,
+                          mapping_container, tag);
   }
-  int DoRemap(HttpTransact::State * s, HTTPHdr * request_header, url_mapping * mapPtr,
+  int DoRemap(HttpTransact::State * s, HTTPHdr * request_header, UrlMappingContainer &mapping_container,
               URL * request_url, char **redirect = NULL, host_hdr_info * hh_ptr = NULL);
   int UrlWhack(char *toWhack, int *origLength);
   void RemoveTrailingSlash(URL * url);
@@ -198,13 +199,15 @@ public:
   remap_plugin_info *remap_pi_list;
 
 private:
-  url_mapping *_mappingLookup(MappingsStore &mappings, URL *request_url,
-                              int request_port, const char *request_host, int request_host_len, char *tag);
+  bool _mappingLookup(MappingsStore &mappings, URL *request_url,
+                      int request_port, const char *request_host, int request_host_len,
+                      UrlMappingContainer &mapping_container, char *tag);
   url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url,
                             int request_port, char *request_host, int request_host_len, char *tag);
-  url_mapping *_regexMappingLookup(RegexMappingList &regex_mappings,
-                                   URL * request_url, int request_port, const char *request_host,
-                                   int request_host_len, char *tag, int rank_ceiling);
+  bool _regexMappingLookup(RegexMappingList &regex_mappings,
+                           URL * request_url, int request_port, const char *request_host,
+                           int request_host_len, char *tag, int rank_ceiling,
+                           UrlMappingContainer &mapping_container);
   int _expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
                            const char *matched_string, char *dest_buf, int dest_buf_size);
   bool _processRegexMappingConfig(const char *from_host_lower, url_mapping *new_mapping, RegexMapping &reg_map);

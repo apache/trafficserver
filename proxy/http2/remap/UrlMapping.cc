@@ -27,10 +27,10 @@
  *
 **/
 url_mapping::url_mapping(int rank /* = 0 */)
-  : from_path_len(0), fromURL(), toURL(), homePageRedirect(false), unique(false), default_redirect_url(false),
+  : from_path_len(0), fromURL(), homePageRedirect(false), unique(false), default_redirect_url(false),
     optional_referer(false), negative_referer(false), no_negative_cache(false), wildcard_from_scheme(false),
     pristine_host_hdr(-1), chunking_enabled(-1), tag(NULL), filter_redirect_url(NULL), referer_list(0),
-    redir_chunk_list(0), filter(NULL), _plugin_count(0), _cur_instance_count(0), _rank(rank)
+    redir_chunk_list(0), filter(NULL), _plugin_count(0), _cur_instance_count(0), _rank(rank), _default_to_url()
 { /* nop */ ;
 }
 
@@ -176,67 +176,8 @@ url_mapping::~url_mapping()
 
   // Destroy the URLs
   fromURL.destroy();
-  toURL.destroy();
+  _default_to_url.destroy();
 }
-
-
-/**
- *
-**/
-url_mapping_ext::url_mapping_ext(url_mapping * mapping)
-:m_mapping(mapping)
-{
-}
-
-
-/**
- *
-**/
-url_mapping_ext::~url_mapping_ext()
-{
-  // free nothing -- there is a reference in the hash table
-}
-
-
-/**
- *
-**/
-const char *
-url_mapping_ext::getToHost(int *lenp)
-{
-  return m_mapping ? (const char *) m_mapping->toURL.host_get(lenp) : NULL;
-}
-
-
-/**
- *
-**/
-const char *
-url_mapping_ext::getToPath(int *lenp)
-{
-  return m_mapping ? m_mapping->toURL.path_get(lenp) : NULL;
-}
-
-
-/**
- *
-**/
-URL *
-url_mapping_ext::getFromURL()
-{
-  return m_mapping ? &m_mapping->fromURL : NULL;
-}
-
-
-/**
- *
-**/
-URL *
-url_mapping_ext::getToURL()
-{
-  return m_mapping ? &m_mapping->toURL : NULL;
-}
-
 
 /**
  *
