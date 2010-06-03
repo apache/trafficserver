@@ -1121,7 +1121,7 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
   if (!e->post(h, ent, true))
     return;
 Lretry:
-  e->result_ent = ent ? ent : BAD_DNS_RESULT;
+  e->result_ent = ent;
   e->retries = 0;
   if (e->timeout)
     e->timeout->cancel();
@@ -1144,6 +1144,7 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
     ink_sem_post(&sem);
 #endif
   } else {
+    result_ent = ent;
     if (h->mutex->thread_holding == submit_thread) {
       MUTEX_TRY_LOCK(lock, action.mutex, h->mutex->thread_holding);
       if (!lock) {
@@ -1152,7 +1153,6 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
       }
       postEvent(0, 0);
     } else {
-      result_ent = ent;
       mutex = action.mutex;
       SET_HANDLER(&DNSEntry::postEvent);
       submit_thread->schedule_imm_signal(this);
