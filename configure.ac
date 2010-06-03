@@ -32,8 +32,8 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([ATS_VERSION_S],[2.1.1-unstable])
-m4_define([ATS_VERSION_N],[2001001])
+m4_define([ATS_VERSION_S],[2.1.2-unstable])
+m4_define([ATS_VERSION_N],[2001002])
 
 AC_INIT([Apache Traffic Server], ATS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
