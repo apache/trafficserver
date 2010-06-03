@@ -698,7 +698,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
       switch (state) {
       case P_STATE_ELAPSED:
         state = P_STATE_IP;
-        elapsed = ntohl(*((int64 *) (read_from)));
+        elapsed = *((int64 *) (read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
@@ -713,7 +713,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_RESULT:
         state = P_STATE_CODE;
-        result = ntohl(*((int64 *) (read_from)));
+        result = *((int64 *) (read_from));
         read_from += INK_MIN_ALIGN;
         if ((result<32) || (result> 255)) {
           flag = 1;
@@ -723,7 +723,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_CODE:
         state = P_STATE_SIZE;
-        http_code = ntohl(*((int64 *) (read_from)));
+        http_code = *((int64 *) (read_from));
         read_from += INK_MIN_ALIGN;
         if ((http_code<0) || (http_code> 999)) {
           flag = 1;
@@ -736,7 +736,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         // Warning: This is not 64-bit safe, when converting the log format,
         // this needs to be fixed as well.
         state = P_STATE_METHOD;
-        size = ntohl(*((int64 *) (read_from)));
+        size = *((int64 *) (read_from));
         read_from += INK_MIN_ALIGN;
         //printf("Size == %d\n", size)
         break;
@@ -868,7 +868,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_HIERARCHY:
         state = P_STATE_PEER;
-        hier = ntohl(*((int64 *) (read_from)));
+        hier = *((int64 *) (read_from));
         switch (hier) {
         case SQUID_HIER_NONE:
           update_counter(totals.hierarchies.none, size);
