@@ -343,7 +343,7 @@ max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = t
 
   if (unlim_it) {
     ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
-    if (rl.rlim_cur != RLIM_INFINITY) {
+    if (rl.rlim_cur != (rlim_t)RLIM_INFINITY) {
       rl.rlim_cur = (rl.rlim_max = RLIM_INFINITY);
       ink_release_assert(setrlimit(MAGIC_CAST(which), &rl) >= 0);
     }

@@ -949,7 +949,7 @@ LogUtils::file_is_writeable(const char *full_filename,
     if (e < 0) {
       ret_val = -1;
     } else {
-      if (limit_data.rlim_cur != RLIM_INFINITY) {
+      if (limit_data.rlim_cur != (rlim_t)RLIM_INFINITY) {
         if (has_size_limit)
           *has_size_limit = true;
         if (current_size_limit_bytes)
