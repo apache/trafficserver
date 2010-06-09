@@ -289,6 +289,9 @@ extern "C"
     /* EVENT 1200 for internal use */
     INK_EVENT_INTERNAL_1200 = 1200,
 
+    /* EVENT 3900 is corresponding to event AIO_EVENT_DONE defined in I_AIO.h */
+    INK_AIO_EVENT_DONE = 3900,
+
     INK_EVENT_HTTP_CONTINUE = 60000,
     INK_EVENT_HTTP_ERROR = 60001,
     INK_EVENT_HTTP_READ_REQUEST_HDR = 60002,
@@ -2580,6 +2583,41 @@ extern "C"
 
    */
   inkapi INKReturnCode INKTextLogObjectRollingOffsetHrSet(INKTextLogObject the_object, int rolling_offset_hr);
+
+  /**
+      Async disk IO read
+
+      @return INK_SUCCESS or INK_ERROR.
+   */
+  inkapi INKReturnCode INKAIORead(int fd, INKU64 offset, char* buf, INKU64 buffSize, INKCont contp);
+
+  /**
+      Async disk IO buffer get
+
+      @return char* to the buffer
+   */
+  inkapi char* INKAIOBufGet(void* data);
+
+  /**
+      Async disk IO get number of bytes
+
+      @return the number of bytes
+   */
+  inkapi int INKAIONBytesGet(void* data);
+
+  /**
+      Async disk IO write
+
+      @return INK_SUCCESS or INK_ERROR.
+   */
+  inkapi INKReturnCode INKAIOWrite(int fd, INKU64 offset, char* buf, const INKU64 bufSize, INKCont contp);
+
+  /**
+      Async disk IO set number of threads
+
+      @return INK_SUCCESS or INK_ERROR.
+   */
+  inkapi INKReturnCode INKAIOThreadNumSet(int thread_num);
 
   /* --------------------------------------------------------------------------
      Deprecated Functions

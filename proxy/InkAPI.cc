@@ -60,6 +60,7 @@
 #include "FetchSM.h"
 #include "StatSystemV2.h"
 #include "HttpDebugNames.h"
+#include "I_AIO.h"
 
 /****************************************************************
  *  IMPORTANT - READ ME
@@ -9128,6 +9129,91 @@ INKHttpIsInternalRequest(INKHttpTxn txnp)
     return 0;
   }
   return vc->get_is_internal_request();
+}
+
+
+INKReturnCode
+INKAIORead(int fd, INKU64 offset, char* buf, INKU64 buffSize, INKCont contp)
+{
+
+  if (sdk_sanity_check_iocore_structure (contp) != INK_SUCCESS) {
+    return INK_ERROR;
+  }
+
+  Continuation* pCont = (Continuation*) contp;
+  AIOCallback* pAIO = new_AIOCallback();
+  if( pAIO == NULL ) {
+    return INK_ERROR;
+  }
+
+  pAIO->aiocb.aio_fildes = fd;
+  pAIO->aiocb.aio_offset = offset;
+  pAIO->aiocb.aio_nbytes = buffSize;
+
+
+  pAIO->aiocb.aio_buf = buf;
+  pAIO->action = pCont;
+  pAIO->thread = ((ProxyMutex*) pCont->mutex)->thread_holding;
+
+  if (ink_aio_read(pAIO, 1) == 1) {
+    return INK_SUCCESS;
+  } else {
+    return INK_ERROR;
+  }
+}
+
+char*
+INKAIOBufGet(void *data)
+{
+  AIOCallback* pAIO = (AIOCallback*)data;
+  return (char*)pAIO->aiocb.aio_buf;
+}
+
+int
+INKAIONBytesGet(void *data)
+{
+  AIOCallback* pAIO = (AIOCallback*)data;
+  return (int)pAIO->aio_result;
+}
+
+INKReturnCode
+INKAIOWrite(int fd, INKU64 offset, char* buf, const INKU64 bufSize, INKCont contp)
+{
+
+  if (sdk_sanity_check_iocore_structure (contp) != INK_SUCCESS) {
+    return INK_ERROR;
+  }
+
+  Continuation* pCont = (Continuation*) contp;
+
+  AIOCallback* pAIO = new_AIOCallback();
+  if( pAIO == NULL ) {
+    return INK_ERROR;
+  }
+
+  pAIO->aiocb.aio_fildes = fd;
+  pAIO->aiocb.aio_offset = offset;
+  pAIO->aiocb.aio_buf = buf;
+  pAIO->aiocb.aio_nbytes = bufSize;
+  pAIO->action = pCont;
+  pAIO->thread = ((ProxyMutex*) pCont->mutex)->thread_holding;
+
+  if (ink_aio_write(pAIO, 1) == 1) {
+    return INK_SUCCESS;
+  } else {
+    return INK_ERROR;
+  }
+}
+
+INKReturnCode
+INKAIOThreadNumSet(int thread_num)
+{
+  if (ink_aio_thread_num_set(thread_num) == 1) {
+    return INK_SUCCESS;
+  }
+  else {
+    return INK_ERROR;
+  }
 }
 
 #endif //INK_NO_API
