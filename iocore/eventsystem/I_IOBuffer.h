@@ -734,7 +734,7 @@ public:
       parameter buf is set to this value also.
 
   */
-  inkcoreapi char *memcpy(void *buf, int64 len = INT64_MAX, int64 offset = 0);
+  inkcoreapi char *memcpy(const void *buf, int64 len = INT64_MAX, int64 offset = 0);
 
   /**
     Subscript operator. Returns a reference to the character at the

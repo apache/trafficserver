@@ -593,7 +593,7 @@ INKIOBufferCopy(INKIOBuffer bufp, INKIOBufferReader readerp, int length, int off
 }
 
 int
-INKIOBufferWrite(INKIOBuffer bufp, const char *buf, int length)
+INKIOBufferWrite(INKIOBuffer bufp, const void *buf, int length)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != INK_SUCCESS) || (buf == NULL) || (length < 0)) {
     return INK_ERROR;
@@ -605,7 +605,7 @@ INKIOBufferWrite(INKIOBuffer bufp, const char *buf, int length)
 
 // not in SDK3.0
 void
-INKIOBufferReaderCopy(INKIOBufferReader readerp, char *buf, int length)
+INKIOBufferReaderCopy(INKIOBufferReader readerp, const void *buf, int length)
 {
   IOBufferReader *r = (IOBufferReader *) readerp;
   r->memcpy(buf, length);

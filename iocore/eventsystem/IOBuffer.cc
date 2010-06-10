@@ -240,7 +240,7 @@ IOBufferReader::memchr(char c, int64 len, int64 offset)
 }
 
 char *
-IOBufferReader::memcpy(void *ap, int64 len, int64 offset)
+IOBufferReader::memcpy(const void *ap, int64 len, int64 offset)
 {
   char *p = (char*)ap;
   IOBufferBlock *b = block;

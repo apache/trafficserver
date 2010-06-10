@@ -2359,7 +2359,7 @@ extern "C"
         in bytes.
 
    */
-  inkapi int INKIOBufferWrite(INKIOBuffer bufp, const char *buf, int length);
+  inkapi int INKIOBufferWrite(INKIOBuffer bufp, const void *buf, int length);
   inkapi INKReturnCode INKIOBufferProduce(INKIOBuffer bufp, int nbytes);
 
   inkapi INKIOBufferBlock INKIOBufferBlockNext(INKIOBufferBlock blockp);
