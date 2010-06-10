@@ -68,8 +68,6 @@
   Warning(_buf);                                                              \
 }
 #define IOCORE_SignalManager               REC_SignalManager
-#define IOCORE_MachineFatal                printf
-#define IOCORE_ProcessFatal                printf
 
 // configuration macros
 #define IOCORE_RegisterConfigInteger        REC_RegisterConfigInteger

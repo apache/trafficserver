@@ -214,10 +214,10 @@ DNSProcessor::dns_init()
     // The default domain (4th param) and search list (5th param) will
     // come from /etc/resolv.conf.
     if (ink_res_init(&l_res, &nameserver_ip[0], &nameserver_port[0], NULL, NULL) < 0)
-      IOCORE_MachineFatal("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
+      Warning("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
   } else {
     if (ink_res_init(&l_res, 0, 0, 0, 0) < 0)
-      IOCORE_MachineFatal("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
+      Warning("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
     dns_ns_rr = 0;
   }
 }
@@ -388,7 +388,7 @@ DNSHandler::startEvent(int event, Event * e)
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
     // seems that res_init always sets m_res.nscount to at least 1!
     if (!m_res->nscount)
-      IOCORE_MachineFatal("bad '/etc/resolv.conf': no nameservers given");
+      Warning("bad '/etc/resolv.conf': no nameservers given");
     struct sockaddr_in *sa = &m_res->nsaddr_list[0];
     ip = sa->sin_addr.s_addr;
     if (!ip)
@@ -449,7 +449,7 @@ DNSHandler::startEvent_sdns(int event, Event * e)
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
     // seems that res_init always sets m_res.nscount to at least 1!
     if (!m_res->nscount)
-      IOCORE_MachineFatal("bad '/etc/resolv.conf': no nameservers given");
+      Warning("bad '/etc/resolv.conf': no nameservers given");
     struct sockaddr_in *sa = &m_res->nsaddr_list[0];
     ip = sa->sin_addr.s_addr;
     if (!ip)

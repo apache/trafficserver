@@ -252,7 +252,7 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
   accept_port_number = param->ssl_accept_port_number;
 
   if ((unsigned int) accept_port_number >= 0xFFFF) {
-    IOCORE_ProcessFatal("\ncannot listen on port %d.\naccept port cannot be larger that 65535.\n"
+    MachineFatal("\ncannot listen on port %d.\naccept port cannot be larger that 65535.\n"
                         "please check your Traffic Server configurations", accept_port_number);
     return (1);
   }

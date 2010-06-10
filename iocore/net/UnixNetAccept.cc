@@ -323,7 +323,7 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
         MUTEX_LOCK(lock, action_->mutex, t);
         action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
         MUTEX_UNTAKE_LOCK(action_->mutex, t);
-        IOCORE_MachineFatal("accept thread received fatal error: errno = %d", errno);
+        Warning("accept thread received fatal error: errno = %d", errno);
       }
       return -1;
     }

@@ -241,7 +241,7 @@ Connection::connect(unsigned int ip, int port,
       }
       goto Lok;
     }
-    IOCORE_MachineFatal("unable to bind random DNS port");
+    Warning("unable to bind random DNS port");
   Lok:;
   }
 
