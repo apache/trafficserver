@@ -303,6 +303,10 @@ enum
   http_stat_count
 };
 
+// keep track of incoming accepted connections by address family;
+extern uint32_t http_stat_ipv4_accept;  /**< ipv4 incoming requests */
+extern uint32_t http_stat_ipv6_accept;  /**< ipv6 incoming requests */
+
 extern RecRawStatBlock *http_rsb;
 
 /* Stats should only be accessed using these macros */
