@@ -138,7 +138,7 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 
 	if test x"${ac_cv_c_tclconfig}" = x ; then
 	    TCL_BIN_DIR="# no Tcl configs found"
-	    AC_MSG_WARN([Can't find Tcl configuration definitions])
+	    AC_MSG_ERROR([Can't find Tcl configuration, install the TCL dev package])
 	    exit 0
 	else
 	    no_tcl=
