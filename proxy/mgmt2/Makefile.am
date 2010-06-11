@@ -17,8 +17,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = cli cluster cop \
-	preparse tools utils web2 html2 stats api2 $(CLI_DIR)
+if BUILD_WEBUI
+SUBDIRS = cli cluster cop preparse tools utils web2 html2 stats api2 $(CLI_DIR)
+else
+SUBDIRS = cli cluster cop preparse tools utils web2 stats api2 $(CLI_DIR)
+endif
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
