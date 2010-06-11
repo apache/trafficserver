@@ -26,7 +26,6 @@
 #include "HttpAssert.h"
 #include "HttpClientSession.h"
 #include "I_Machine.h"
-#include "StatSystemV2.h"
 
 
 int
@@ -74,24 +73,6 @@ HttpAccept::mainEvent(int event, void *data)
     netvc->attributes = attr;
 
     Debug("http_seq", "HttpAccept:mainEvent] accepted connection");
-
-  // check what type of socket address we just accepted
-  // by looking at the address family value of sockaddr_storage
-  // and logging to stat system
-  switch(netvc->get_remote_addr().ss_family) {
-    case AF_INET:
-      StatSystemV2::increment(http_stat_ipv4_accept);
-    break;
-    case AF_INET6:
-      StatSystemV2::increment(http_stat_ipv6_accept);
-    break;
-    default:
-      // don't do anything if the address family is not ipv4 or ipv6
-      // (there are many other address families in <sys/socket.h>
-      // but we don't have a need to report on all the others today)
-    break;
-  }
-
     HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, netvc->thread);
 
     new_session->new_connection(netvc, backdoor);

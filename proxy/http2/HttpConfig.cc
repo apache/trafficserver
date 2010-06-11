@@ -32,7 +32,6 @@
 #include "P_Net.h"
 #include "P_RecUtils.h"
 #include <iostream>
-#include "StatSystemV2.h"
 
 using namespace std;
 
@@ -87,10 +86,6 @@ public:
 //  static variables
 //
 ////////////////////////////////////////////////////////////////
-
-uint32_t http_stat_ipv4_accept;
-uint32_t http_stat_ipv6_accept;
-
 int
   HttpConfig::m_id = 0;
 HttpConfigParams
@@ -949,8 +944,6 @@ register_stat_callbacks()
                      RECD_COUNTER, RECP_NULL,
                      (int) http_total_x_redirect_stat, RecRawStatSyncCount);
 
-  StatSystemV2::registerStat("http.request.ipv4", &http_stat_ipv4_accept);
-  StatSystemV2::registerStat("http.request.ipv6", &http_stat_ipv6_accept);
 }
 
 
