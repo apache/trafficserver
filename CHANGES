@@ -1,5 +1,12 @@
                                                          -*- coding: utf-8 -*-
 
+Changes with Apache Traffic Server 2.1.2
+
+  *) Client side support for IPv6 [TS-18].
+
+  *) 
+
+
 Changes with Apache Traffic Server 2.1.1
 
   *) Allow SI decimal multipliers for numeric configuration parameters
