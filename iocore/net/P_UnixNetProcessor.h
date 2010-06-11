@@ -40,6 +40,7 @@ public:
   virtual Action * accept_internal(Continuation * cont,
                                    int fd,
                                    int port,
+                                   int domain,
                                    sockaddr * bound_sockaddr = NULL,
                                    int *bound_sockaddr_size = NULL,
                                    bool frequent_accept = true,
@@ -48,6 +49,7 @@ public:
                                    int send_bufsize = 0,
                                    unsigned long sockopt_flags = 0,
                                    unsigned int accept_ip = INADDR_ANY,
+                                   char *accept_ip_str = NULL,
                                    bool callback_on_open = false, EventType etype = ET_NET);
 
 

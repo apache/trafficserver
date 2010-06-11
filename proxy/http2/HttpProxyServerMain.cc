@@ -81,33 +81,48 @@ struct DumpStats:Continuation
   }
 };
 
-HttpPortTypes
-get_connection_attributes(char *attr)
-{
-  HttpPortTypes attributes = SERVER_PORT_DEFAULT;
-  if (attr) {
-    if (strlen(attr) > 1) {
-      Warning("too many port attributes: '%s'", attr);
-    } else {
-      switch (*attr) {
-      case 'C':
-        attributes = SERVER_PORT_COMPRESSED;
-        break;
-      case 'X':
-        attributes = SERVER_PORT_DEFAULT;
-        break;
-      case 'T':
-        attributes = SERVER_PORT_BLIND_TUNNEL;
-        break;
-      default:
-        Warning("unknown port attribute '%s'", attr);
-        break;
-      }
+
+typedef struct _Attributes {
+  HttpPortTypes type;
+  int domain;
+
+  _Attributes() : type(SERVER_PORT_DEFAULT), domain(AF_INET) {}
+}
+Attributes;
+
+void get_connection_attributes(const char *attr, Attributes *result) {
+  int attr_len;
+
+  result->type = SERVER_PORT_DEFAULT;
+  result->domain = AF_INET;
+
+  if (!attr ) return;
+
+  attr_len = strlen(attr);
+
+  if (attr_len > 2) {
+    Warning("too many port attributes: '%s'", attr);
+    return;
+  } else if (attr_len <= 0) {
+    return;
+  }
+
+  switch (*attr) {
+  case 'C': result->type = SERVER_PORT_COMPRESSED; break;
+  case 'X': result->type = SERVER_PORT_DEFAULT; break;
+  case 'T': result->type = SERVER_PORT_BLIND_TUNNEL; break;
+  default: Warning("unknown port attribute '%s'", attr); break;
+  }
+
+  if (attr_len >= 2) {
+    switch (*(attr + 1)) {
+    case '6': result->domain = AF_INET6; break;
+    default: result->domain = AF_INET;
     }
   }
-  return attributes;
-}
 
+  return;
+}
 
 static HttpOtherPortEntry *
 parse_http_server_other_ports()
@@ -154,7 +169,11 @@ parse_http_server_other_ports()
     }
 
     additional_ports_array[accept_index].port = port;
-    additional_ports_array[accept_index].type = get_connection_attributes(attr_str);
+
+    Attributes attr;
+    get_connection_attributes(attr_str, &attr);
+    additional_ports_array[accept_index].type = attr.type;
+    additional_ports_array[accept_index].domain = attr.domain;
 
     accept_index++;
   }
@@ -242,7 +261,8 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   int sock_send_buffer_size_in = 0;
   unsigned long sock_option_flag_in = 0;
   char *attr_string = 0;
-  static HttpPortTypes attr = SERVER_PORT_DEFAULT;
+  static HttpPortTypes type = SERVER_PORT_DEFAULT;
+  static int domain = AF_INET;
 
   if (!called_once) {
     // function can be called several times : do memory allocation once
@@ -261,7 +281,10 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
     // end of deprecated config options
 
     if (attr_string) {
-      attr = get_connection_attributes(attr_string);
+      Attributes attr;
+      get_connection_attributes(attr_string, &attr);
+      type = attr.type;
+      domain = attr.domain;
       xfree(attr_string);
     }
     called_once = true;
@@ -269,7 +292,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
       for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
         HttpPortEntry & e = http_port_attr_array[i];
         if (e.fd)
-          netProcessor.main_accept(NEW(new HttpAccept(e.type)), e.fd, 0, NULL, NULL, false,
+          netProcessor.main_accept(NEW(new HttpAccept(e.type)), e.fd, 0, AF_INET, NULL, NULL, false,
                                    sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
       }
     } else {
@@ -279,7 +302,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
     }
   }
   if (!http_port_attr_array) {
-    netProcessor.main_accept(NEW(new HttpAccept(attr)), fd, port, NULL, NULL, false,
+    netProcessor.main_accept(NEW(new HttpAccept(type)), fd, port, domain, NULL, NULL, false,
                              sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
 
     if (http_other_port_array) {
@@ -288,7 +311,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
         if ((e.port<1) || (e.port> 65535))
           Warning("additional port out of range ignored: %d", e.port);
         else
-          netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, e.port, NULL, NULL, false,
+          netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, e.port, e.domain, NULL, NULL, false,
                                    sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
       }
     }
@@ -296,7 +319,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
     for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
       HttpPortEntry & e = http_port_attr_array[i];
       if (!e.fd) {
-        netProcessor.main_accept(NEW(new HttpAccept(attr)), fd, port, NULL, NULL, false,
+        netProcessor.main_accept(NEW(new HttpAccept(type)), fd, port, domain, NULL, NULL, false,
                                  sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
       }
     }

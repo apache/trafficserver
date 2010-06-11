@@ -1122,15 +1122,15 @@ PluginVCCore::kill_no_connect()
 void
 PluginVCCore::set_passive_addr(uint32 ip, int port)
 {
-  passive_addr_struct.sin_addr.s_addr = htonl(ip);
-  passive_addr_struct.sin_port = htons(port);
+  ((struct sockaddr_in *)&(passive_addr_struct))->sin_addr.s_addr = htonl(ip);
+  ((struct sockaddr_in *)&(passive_addr_struct))->sin_port = htons(port);
 }
 
 void
 PluginVCCore::set_active_addr(uint32 ip, int port)
 {
-  active_addr_struct.sin_addr.s_addr = htonl(ip);
-  active_addr_struct.sin_port = htons(port);
+  ((struct sockaddr_in *)&(active_addr_struct))->sin_addr.s_addr = htonl(ip);
+  ((struct sockaddr_in *)&(active_addr_struct))->sin_port = htons(port);
 }
 
 void

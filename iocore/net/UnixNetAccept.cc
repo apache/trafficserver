@@ -119,9 +119,9 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     na->alloc_cache = NULL;
 
     vc->submit_time = ink_get_hrtime();
-    vc->ip = vc->con.sa.sin_addr.s_addr;
-    vc->port = ntohs(vc->con.sa.sin_port);
-    vc->accept_port = ntohs(na->server.sa.sin_port);
+    vc->ip = ((struct sockaddr_in *)(&(vc->con.sa)))->sin_addr.s_addr;
+    vc->port = ntohs(((struct sockaddr_in *)(&(vc->con.sa)))->sin_port);
+    vc->accept_port = ntohs(((struct sockaddr_in *)(&(na->server.sa)))->sin_port);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *na->action_;
     vc->closed  = 0;
@@ -268,7 +268,7 @@ NetAccept::do_listen(bool non_blocking)
     }
   } else {
   Lretry:
-    if ((res = server.listen(port, non_blocking, recv_bufsize, send_bufsize)))
+    if ((res = server.listen(port, domain, non_blocking, recv_bufsize, send_bufsize)))
       Warning("unable to listen on port %d: %d %d, %s", port, res, errno, strerror(errno));
   }
   if (callback_on_open && !action_->cancelled) {
@@ -332,9 +332,9 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
 
     RecIncrGlobalRawStatSum(net_rsb, net_connections_currently_open_stat, 1);
     vc->submit_time = now;
-    vc->ip = vc->con.sa.sin_addr.s_addr;
-    vc->port = ntohs(vc->con.sa.sin_port);
-    vc->accept_port = ntohs(server.sa.sin_port);
+    vc->ip = ((struct sockaddr_in *)(&(vc->con.sa)))->sin_addr.s_addr;
+    vc->port = ntohs(((struct sockaddr_in *)(&(vc->con.sa)))->sin_port);
+    vc->accept_port = ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *action_;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
@@ -374,8 +374,8 @@ NetAccept::acceptEvent(int event, void *ep)
       if ((res = accept_fn(this, e, false)) < 0) {
         NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
         /* INKqa11179 */
-        Warning("Accept on port %d failed with error no %d", ntohs(server.sa.sin_port), res);
-        Warning("Traffic Server may be unable to accept more network" "connections on %d", ntohs(server.sa.sin_port));
+        Warning("Accept on port %d failed with error no %d", ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port), res);
+        Warning("Traffic Server may be unable to accept more network" "connections on %d", ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port));
         e->cancel();
         delete this;
         return EVENT_DONE;
@@ -474,9 +474,9 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->id = net_next_connection_number();
 
     vc->submit_time = ink_get_hrtime();
-    vc->ip = vc->con.sa.sin_addr.s_addr;
-    vc->port = ntohs(vc->con.sa.sin_port);
-    vc->accept_port = ntohs(server.sa.sin_port);
+    vc->ip = ((struct sockaddr_in *)(&(vc->con.sa)))->sin_addr.s_addr;
+    vc->port = ntohs(((struct sockaddr_in *)(&(vc->con.sa)))->sin_port);
+    vc->accept_port = ntohs(((struct sockaddr_in *)(&(server.sa)))->sin_port);
     vc->mutex = new_ProxyMutex();
     vc->thread = e->ethread;
 

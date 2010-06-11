@@ -58,7 +58,7 @@ get_listen_backlog(void)
 //
 Connection::Connection()
 {
-  memset(&sa, 0, sizeof(struct sockaddr_in));
+  memset(&sa, 0, sizeof(struct sockaddr_storage));
   fd = NO_FD;
 }
 
@@ -132,10 +132,10 @@ Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * o
 
   fd = res;
 
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons(port);
-  sa.sin_addr.s_addr = ip;
-  z = (uint32 *) & sa.sin_zero;
+  sa.ss_family = AF_INET;
+  ((struct sockaddr_in *)(&sa))->sin_port = htons(port);
+  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = ip;
+  z = (uint32 *)(&(((struct sockaddr_in *)(&sa))->sin_zero));
   z[0] = 0;
   z[1] = 0;
 
@@ -227,13 +227,13 @@ Connection::connect(unsigned int ip, int port,
     int retries = 0;
     int offset = 0;
     while (retries++ < 10000) {
-      struct sockaddr_in bind_sa;
+      struct sockaddr_storage bind_sa;
       memset(&sa, 0, sizeof(bind_sa));
-      bind_sa.sin_family = AF_INET;
-      bind_sa.sin_addr.s_addr = INADDR_ANY;
+      bind_sa.ss_family = AF_INET;
+      ((struct sockaddr_in *)(&bind_sa))->sin_addr.s_addr = INADDR_ANY;
       int p = time(NULL) + offset;
       p = (p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT;
-      bind_sa.sin_port = htons(p);
+      ((struct sockaddr_in *)(&bind_sa))->sin_port = htons(p);
       NetDebug("dns", "random port = %d\n", p);
       if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa), Proto)) < 0) {
         offset += 101;
@@ -245,10 +245,10 @@ Connection::connect(unsigned int ip, int port,
   Lok:;
   }
 
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons(port);
-  sa.sin_addr.s_addr = ip;
-  memset(&sa.sin_zero, 0, 8);
+  sa.ss_family = AF_INET;
+  ((struct sockaddr_in *)(&sa))->sin_port = htons(port);
+  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = ip;
+  memset(&(((struct sockaddr_in *)(&sa))->sin_zero), 0, 8);
 
   if (non_blocking_connect)
     if ((res = safe_nonblocking(fd)) < 0)
@@ -383,12 +383,35 @@ Lerror:
 
 
 int
-Server::listen(int port_number, bool non_blocking, int recv_bufsize, int send_bufsize)
+Server::listen(int port_number, int domain, bool non_blocking, int recv_bufsize, int send_bufsize)
 {
   ink_assert(fd == NO_FD);
   int res = 0;
 
-  res = socketManager.socket(AF_INET, SOCK_STREAM, 0);
+  char port[6];
+  struct addrinfo hints;
+  struct addrinfo *ai_res = NULL;
+  struct addrinfo *ai;
+  snprintf(port, sizeof(port), "%d", port_number);
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = domain;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE|AI_NUMERICHOST;
+
+  if(getaddrinfo(accept_ip_str, port, &hints, &ai_res) != 0) {
+    return -1;
+  }
+
+  ai = ai_res;
+
+  res = socketManager.socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+
+  memset(&sa, 0, sizeof(sa));
+  memcpy(&sa, ai->ai_addr, ai->ai_addrlen);
+
+  freeaddrinfo(ai_res);
+
   if (res < 0)
     return res;
   fd = res;
@@ -439,13 +462,6 @@ Server::listen(int port_number, bool non_blocking, int recv_bufsize, int send_bu
     goto Lerror;
 #endif
 
-  memset(&sa, 0, sizeof(sa));
-  //
-  // Accept_ip should already be in network byte order..
-  //
-  sa.sin_addr.s_addr = accept_ip;
-  sa.sin_port = htons(port_number);
-  sa.sin_family = AF_INET;
 
 #ifdef SET_NO_LINGER
   {
@@ -456,6 +472,9 @@ Server::listen(int port_number, bool non_blocking, int recv_bufsize, int send_bu
       goto Lerror;
   }
 #endif
+
+  if (domain == AF_INET6 && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, ON, sizeof(int))) < 0)
+    goto Lerror;
 
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, ON, sizeof(int))) < 0)
     goto Lerror;

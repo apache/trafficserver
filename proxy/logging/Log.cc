@@ -358,9 +358,9 @@ Log::init_fields()
 
   Ptr<LogFieldAliasIP> ip_map = NEW(new LogFieldAliasIP);
   field = NEW(new LogField("client_host_ip", "chi",
-                           LogField::sINT,
+                           LogField::STRING,
                            &LogAccess::marshal_client_host_ip,
-                           &LogAccess::unmarshal_ip, (Ptr<LogFieldAliasMap>) ip_map));
+                           &LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "chi", field);
 

@@ -81,7 +81,7 @@ struct NetVCOptions;
 struct Connection
 {
   SOCKET fd;
-  struct sockaddr_in sa;
+  struct sockaddr_storage sa;
 
   int connect(unsigned int ip, int port,
               bool non_blocking_connect = NON_BLOCKING_CONNECT,
@@ -121,6 +121,7 @@ struct Server:Connection
   // IP address in network byte order
   //
   unsigned int accept_ip;
+  char *accept_ip_str;
 
   //
   // Use this call for the main proxy accept
@@ -135,7 +136,7 @@ struct Server:Connection
   // converted into network byte order
   //
 
-  int listen(int port, bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
+  int listen(int port, int domain = AF_INET, bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
   int setup_fd_for_listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
 
   Server():Connection(), accept_ip(INADDR_ANY) { }

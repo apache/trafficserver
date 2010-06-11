@@ -47,8 +47,10 @@ net_next_connection_number()
 Action *
 NetProcessor::accept(Continuation * cont,
                      int port,
+                     int domain,
                      bool frequent_accept,
                      unsigned int accept_ip,
+                     char *accept_ip_str,
                      bool callback_on_open,
                      SOCKET listen_socket_in,
                      int accept_pool_size,
@@ -64,17 +66,17 @@ NetProcessor::accept(Continuation * cont,
   (void) bound_sockaddr_size;   // NT only
   NetDebug("iocore_net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
         port, recv_bufsize, send_bufsize, sockopt_flags);
-  return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, port,
+  return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, port, domain,
                                                       bound_sockaddr,
                                                       bound_sockaddr_size,
                                                       frequent_accept,
                                                       net_accept,
                                                       recv_bufsize, send_bufsize, sockopt_flags,
-                                                      accept_ip, callback_on_open, etype);
+                                                      accept_ip, accept_ip_str, callback_on_open, etype);
 }
 
 Action *
-NetProcessor::main_accept(Continuation * cont, SOCKET fd, int port,
+NetProcessor::main_accept(Continuation * cont, SOCKET fd, int port, int domain,
                           sockaddr * bound_sockaddr, int *bound_sockaddr_size,
                           bool accept_only,
                           int recv_bufsize, int send_bufsize, unsigned long sockopt_flags,
@@ -83,7 +85,7 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd, int port,
   (void) accept_only;           // NT only
   NetDebug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
         port, recv_bufsize, send_bufsize, sockopt_flags);
-  return ((UnixNetProcessor *) this)->accept_internal(cont, fd, port,
+  return ((UnixNetProcessor *) this)->accept_internal(cont, fd, port, domain,
                                                       bound_sockaddr,
                                                       bound_sockaddr_size,
                                                       true,
@@ -92,6 +94,7 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd, int port,
                                                       send_bufsize,
                                                       sockopt_flags,
                                                       ((UnixNetProcessor *) this)->incoming_ip_to_bind_saddr,
+                                                      ((UnixNetProcessor *) this)->incoming_ip_to_bind,
                                                       callback_on_open, etype);
 }
 
@@ -101,6 +104,7 @@ Action *
 UnixNetProcessor::accept_internal(Continuation * cont,
                                   int fd,
                                   int port,
+                                  int domain,
                                   struct sockaddr * bound_sockaddr,
                                   int *bound_sockaddr_size,
                                   bool frequent_accept,
@@ -108,7 +112,7 @@ UnixNetProcessor::accept_internal(Continuation * cont,
                                   int recv_bufsize,
                                   int send_bufsize,
                                   unsigned long sockopt_flags,
-                                  unsigned int accept_ip, bool callback_on_open, EventType etype)
+                                  unsigned int accept_ip, char *accept_ip_str, bool callback_on_open, EventType etype)
 {
   setEtype(etype);
   NetAccept *na = createNetAccept();
@@ -117,9 +121,11 @@ UnixNetProcessor::accept_internal(Continuation * cont,
   ProxyMutex *mutex = thread->mutex;
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
   na->port = port;
+  na->domain = domain;
   na->accept_fn = fn;
   na->server.fd = fd;
   na->server.accept_ip = accept_ip;
+  na->server.accept_ip_str = accept_ip_str;
   na->action_ = NEW(new NetAcceptAction());
   *na->action_ = cont;
   na->action_->server = &na->server;

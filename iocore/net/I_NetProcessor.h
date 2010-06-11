@@ -60,10 +60,12 @@ public:
       continuation is not locked on callbacks and so the handler must
       be re-entrant.
     @param port port to bind for accept.
+    @param domain communication domain
     @param frequent_accept if true, accept is done on all event
       threads and throttle limit is imposed if false, accept is done
       just on one thread and no throttling is done.
     @param accept_ip DEPRECATED.
+    @param accept_ip_str for IPv6 Address
     @param callback_on_open if true, cont is called back with
       NET_EVENT_ACCEPT_SUCCEED, or NET_EVENT_ACCEPT_FAILED on success
       and failure resp.
@@ -84,9 +86,9 @@ public:
       port becomes free immediately.
 
   */
-  inkcoreapi virtual Action * accept(Continuation * cont, int port, bool frequent_accept = false,       // UNIX only ??
+  inkcoreapi virtual Action * accept(Continuation * cont, int port, int domain = AF_INET, bool frequent_accept = false,       // UNIX only ??
                                      // not used
-                                     unsigned int accept_ip = INADDR_ANY, bool callback_on_open = false,        // TBD for NT
+                                     unsigned int accept_ip = INADDR_ANY, char *accept_ip_str = NULL, bool callback_on_open = false,        // TBD for NT
                                      SOCKET listen_socket_in = NO_FD,   // NT only
                                      int accept_pool_size = ACCEPTEX_POOL_SIZE, // NT only
                                      bool accept_only = false,
@@ -115,6 +117,7 @@ public:
       be re-entrant.
     @param listen_socket_in if passed, used for listening.
     @param port port to bind for accept.
+    @param domain communication domain
     @param bound_sockaddr returns the sockaddr for the listen fd.
     @param bound_sockaddr_size size of the sockaddr returned.
     @param accept_only can be used to customize accept, accept a
@@ -133,7 +136,7 @@ public:
       port becomes free immediately.
 
   */
-  virtual Action *main_accept(Continuation * cont, SOCKET listen_socket_in, int port, sockaddr * bound_sockaddr = NULL, int *bound_sockaddr_size = NULL, bool accept_only = false, int recv_bufsize = 0, int send_bufsize = 0, unsigned long sockopt_flag = 0, EventType etype = ET_NET, bool callback_on_open = false  // TBD for NT
+  virtual Action *main_accept(Continuation * cont, SOCKET listen_socket_in, int port, int domain = AF_INET, sockaddr * bound_sockaddr = NULL, int *bound_sockaddr_size = NULL, bool accept_only = false, int recv_bufsize = 0, int send_bufsize = 0, unsigned long sockopt_flag = 0, EventType etype = ET_NET, bool callback_on_open = false  // TBD for NT
     );
 
   /**

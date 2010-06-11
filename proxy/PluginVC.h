@@ -200,8 +200,8 @@ private:
   MIOBuffer *a_to_p_buffer;
   IOBufferReader *a_to_p_reader;
 
-  struct sockaddr_in passive_addr_struct;
-  struct sockaddr_in active_addr_struct;
+  struct sockaddr_storage passive_addr_struct;
+  struct sockaddr_storage active_addr_struct;
 
   void *passive_data;
   void *active_data;

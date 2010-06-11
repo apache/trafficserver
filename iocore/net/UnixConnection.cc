@@ -69,10 +69,10 @@ Connection::setup_mc_send(unsigned int mc_ip, int mc_port,
     goto Lerror;
   }
 
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons(mc_port);
-  sa.sin_addr.s_addr = mc_ip;
-  memset(&sa.sin_zero, 0, 8);
+  sa.ss_family = AF_INET;
+  ((struct sockaddr_in *)(&sa))->sin_port = htons(mc_port);
+  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = mc_ip;
+  memset(&(((struct sockaddr_in *)(&sa))->sin_zero), 0, 8);
 
 #ifdef SET_CLOSE_ON_EXEC
   if ((res = safe_fcntl(fd, F_SETFD, 1)) < 0)
@@ -128,9 +128,9 @@ Connection::setup_mc_receive(unsigned int mc_ip, int mc_port,
     goto Lerror;
 
   memset(&sa, 0, sizeof(sa));
-  sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = mc_ip;
-  sa.sin_port = htons(mc_port);
+  sa.ss_family = AF_INET;
+  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = mc_ip;
+  ((struct sockaddr_in *)(&sa))->sin_port = htons(mc_port);
 
   if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &sa, sizeof(sa), IPPROTO_TCP)) < 0)
     goto Lerror;
@@ -195,10 +195,10 @@ Connection::bind_connect(unsigned int target_ip, int target_port, unsigned int m
           opt, opt ? opt->spoof_ip : 0, opt ? opt->spoof_port : 0);
   }
 
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons(target_port);
-  sa.sin_addr.s_addr = target_ip;
-  memset(&sa.sin_zero, 0, 8);
+  sa.ss_family = AF_INET;
+  ((struct sockaddr_in *)(&sa))->sin_port = htons(target_port);
+  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = target_ip;
+  memset(&(((struct sockaddr_in *)(&sa))->sin_zero), 0, 8);
 
   if (bc_no_bind)               // no socket
     return 0;

@@ -1044,8 +1044,8 @@ parse_accept_fd_list()
     if (attr_str == NULL) {
       attr = SERVER_PORT_DEFAULT;
     } else {
-      if (strlen(attr_str) > 1) {
-        Warning("too many port attribute fields (more than 1) '%s'", attr);
+      if (strlen(attr_str) > 2) {
+        Warning("too many port attribute fields (more than 2) '%s'", attr);
         attr = SERVER_PORT_DEFAULT;
       } else {
         switch (*attr_str) {

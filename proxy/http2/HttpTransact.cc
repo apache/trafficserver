@@ -5544,7 +5544,7 @@ HttpTransact::handle_msie_reload_badness(State * s, HTTPHdr * client_request)
 void
 HttpTransact::add_client_ip_to_outgoing_request(State * s, HTTPHdr * request)
 {
-  char ip_string[32];
+  char ip_string[INET6_ADDRSTRLEN + 1];
   size_t ip_string_size;
   bool client_ip_set;
   unsigned char *p = (unsigned char *) &(s->client_info.ip);
@@ -5553,9 +5553,9 @@ HttpTransact::add_client_ip_to_outgoing_request(State * s, HTTPHdr * request)
     return;
 
   // Always prepare the IP string. ip_to_str() expects host order instead of network order
-  if (LogUtils::ip_to_str(ntohl(s->client_info.ip), ip_string + 1, 30, &ip_string_size) == 0) {
+  if (ink_inet_ntop((struct sockaddr *)&(s->client_info.addr), ip_string + 1, sizeof(ip_string) - 1) != NULL) {
     ip_string[0] = ' ';         // Leading space always, in case we need to concatenate this IP
-    ip_string_size += 1;
+    ip_string_size = strlen(ip_string);
   } else {
     // Failure, omg
     ip_string_size = 0;

@@ -125,6 +125,7 @@ extern AppVersionInfo appVersionInfo;
 struct HttpOtherPortEntry
 {
   int port;
+  int domain;
   HttpPortTypes type;
 };
 extern HttpOtherPortEntry *http_other_port_array;
