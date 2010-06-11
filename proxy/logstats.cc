@@ -1761,7 +1761,6 @@ main(int argc, char *argv[])
   int main_fd;
   unsigned max_age;
   struct flock lck;
-  char ts_path[PATH_NAME_MAX + 1];
 
   // build the application information structure
   appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
@@ -1779,12 +1778,12 @@ main(int argc, char *argv[])
   origin_set = NULL;
   parse_errors = 0;
 
-  // Get TS directory
-  if (0 == get_ts_directory(ts_path,sizeof(ts_path))) {
-    ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
-    snprintf(system_log_dir, sizeof(system_log_dir), "%s/var/log/trafficserver", system_root_dir);
-  } else {
-    ink_strncpy(system_log_dir, DEFAULT_LOG_DIRECTORY, sizeof(system_log_dir));
+  // Get log directory
+  ink_strlcpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
+  if (access(system_log_dir, R_OK) == -1) {
+    fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
+    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
+    exit(1);
   }
 
   // process command-line arguments

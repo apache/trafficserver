@@ -92,7 +92,6 @@ int n_argument_descriptions = SIZE(argument_descriptions);
 int
 main(int argc, char *argv[])
 {
-  char ts_path[PATH_NAME_MAX + 1];
   // build the application information structure
   //
   appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
@@ -105,9 +104,12 @@ main(int argc, char *argv[])
   snprintf(configDirectoryType, sizeof(configDirectoryType), "S%d", PATH_NAME_MAX - 1);
   process_args(argument_descriptions, n_argument_descriptions, argv);
 
-  // Get TS directory
-  if (0 == get_ts_directory(ts_path,sizeof(ts_path))) {
-    ink_strncpy(system_root_dir, ts_path, sizeof(system_root_dir));
+  // Get log directory
+  ink_strlcpy(system_log_dir, Layout::get()->logdir, PATH_NAME_MAX);
+  if (access(system_log_dir, R_OK) == -1) {
+    fprintf(stderr, "unable to change to log directory \"%s\" [%d '%s']\n", system_log_dir, errno, strerror(errno));
+    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
+    exit(1);
   }
 
   management_directory[0] = 0;

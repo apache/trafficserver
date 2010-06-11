@@ -312,20 +312,3 @@ init_log_standalone_basic(const char *pgm_name)
 
   diags_init = 1;
 }
-
-int
-get_ts_directory(char *ts_path, size_t ts_path_len)
-{
-
-  // TODO: This should probably be logdir?
-  ink_strncpy(ts_path, Layout::get()->prefix, ts_path_len);
-
-  if (access(ts_path, R_OK) == -1) {
-    fprintf(stderr,"unable to access() TS ROOT '%s': %d, %s\n",
-              ts_path, errno, strerror(errno));
-    fprintf(stderr," Please set correct path in env variable TS_ROOT \n");
-    return -1;
-  }
-
-  return 0;
-}
