@@ -1033,8 +1033,7 @@ AS_IF([test "x$enable_webui" = "xyes"],
    AC_CONFIG_FILES([proxy/mgmt2/html2/monitor/Makefile])
    AC_CONFIG_FILES([proxy/mgmt2/html2/mrtg/Makefile])
    AC_CONFIG_FILES([proxy/mgmt2/html2/tune/Makefile])
-]
-)
+])
 AC_CONFIG_FILES([proxy/mgmt2/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/preparse/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/stats/Makefile])

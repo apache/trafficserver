@@ -23,6 +23,8 @@ else
 SUBDIRS = cli cluster cop preparse tools utils web2 stats api2 $(CLI_DIR)
 endif
 
+DIST_SUBDIRS = $(SUBDIRS)
+
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/librecords \
