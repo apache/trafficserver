@@ -198,6 +198,14 @@ register_stat_callbacks()
                      RECD_COUNTER, RECP_NULL, (int) http_total_client_connections_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.http.total_client_connections_ipv4",
+                     RECD_COUNTER, RECP_NULL, (int) http_total_client_connections_ipv4_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.http.total_client_connections_ipv6",
+                     RECD_COUNTER, RECP_NULL, (int) http_total_client_connections_ipv6_stat, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.total_server_connections",
                      RECD_COUNTER, RECP_NULL, (int) http_total_server_connections_stat, RecRawStatSyncCount);
 
