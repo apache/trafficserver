@@ -63,71 +63,43 @@
 #define FLUSH_THREAD_MIN_FLUSH_COUNTER (FLUSH_ARRAY_SIZE/4)
 
 // Log global objects
-
-inkcoreapi TextLogObject *
-  Log::error_log = NULL;
-LogConfig *
-  Log::config = NULL;
-LogFieldList
-  Log::global_field_list;
+inkcoreapi TextLogObject *Log::error_log = NULL;
+LogConfig *Log::config = NULL;
+LogFieldList Log::global_field_list;
 //LogBufferList Log::global_buffer_full_list;
 //LogBufferList Log::global_buffer_delete_list; - vl: not used
-LogFormat *
-  Log::global_scrap_format = NULL;
-LogObject *
-  Log::global_scrap_object = NULL;
+LogFormat *Log::global_scrap_format = NULL;
+LogObject *Log::global_scrap_object = NULL;
 Log::LoggingMode Log::logging_mode = LOG_NOTHING;
 
 // Inactive objects
-
-LogObject **
-  Log::inactive_objects;
-size_t
-  Log::numInactiveObjects;
-size_t
-  Log::maxInactiveObjects;
-
+LogObject **Log::inactive_objects;
+size_t Log::numInactiveObjects;
+size_t Log::maxInactiveObjects;
 
 // Flush thread stuff
-
-volatile unsigned long
-  Log::flush_counter = 0;
-ink_mutex
-  Log::flush_mutex;
-ink_cond
-  Log::flush_cond;
-ink_thread
-  Log::flush_thread;
+volatile unsigned long Log::flush_counter = 0;
+ink_mutex Log::flush_mutex;
+ink_cond Log::flush_cond;
+ink_thread Log::flush_thread;
 
 // Collate thread stuff
-
-ink_mutex
-  Log::collate_mutex;
-ink_cond
-  Log::collate_cond;
-ink_thread
-  Log::collate_thread;
-int
-  Log::collation_accept_file_descriptor;
-int
-  Log::collation_port;
+ink_mutex Log::collate_mutex;
+ink_cond Log::collate_cond;
+ink_thread Log::collate_thread;
+int Log::collation_accept_file_descriptor;
+int Log::collation_port;
 
 // Log private objects
-
-int
-  Log::init_status = 0;
-int
-  Log::config_flags = 0;
-bool
-  Log::logging_mode_changed = false;
+int Log::init_status = 0;
+int Log::config_flags = 0;
+bool Log::logging_mode_changed = false;
 
 // Hash table for LogField symbols
+InkHashTable *Log::field_symbol_hash = 0;
 
-InkHashTable *
-  Log::field_symbol_hash = 0;
+RecRawStatBlock *log_rsb;
 
-RecRawStatBlock *
-  log_rsb;
 /*-------------------------------------------------------------------------
   Log::change_configuration
 
