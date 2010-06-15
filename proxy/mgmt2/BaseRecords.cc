@@ -443,9 +443,6 @@ BaseRecords::defineRecords()
     case INK_INT:
       recs[*cur_rec].data.int_data = (MgmtInt) ink_atoi64(RecordsConfig[r].value);
       break;
-    case INK_LLONG:
-      recs[*cur_rec].data.llong_data = (MgmtLLong) ink_atoi64(RecordsConfig[r].value);
-      break;
     case INK_FLOAT:
       recs[*cur_rec].data.float_data = (MgmtFloat) atof(RecordsConfig[r].value);
       break;
@@ -600,8 +597,6 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
         case 2:                /* DATA TYPE */
           if (strcmp("INT", param) == 0) {
             mtype = RECD_INT;
-          } else if (strcmp("LLONG", param) == 0) {
-            mtype = RECD_LLONG;
           } else if (strcmp("FLOAT", param) == 0) {
             mtype = RECD_FLOAT;
           } else if (strcmp("STRING", param) == 0) {
@@ -622,25 +617,6 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
               if (found) {
                 if (tmp != (RecInt) ink_atoi64(param)) {
                   RecSetRecordInt(var_name, (RecInt) ink_atoi64(param));
-                }
-              } else {
-                // Modularization: Switch mgmt_fatal to mgmt_log so that
-                // we don't have problems while we tempoarily run with
-                // both BaseRecords and librecords (e.g. there could be a
-                // record defined for librecords that does not exist in
-                // BaseRecords).
-                //mgmt_fatal("Invalid record specified in file '%s': '%s'\n", f, var_name);
-                mgmt_log("Invalid record specified in file '%s': '%s'\n", f, var_name);
-              }
-              break;
-            }
-          case RECD_LLONG:{
-              RecLLong tmp = 0;
-              int rec_err = RecGetRecordLLong(var_name, &tmp);
-              found = (rec_err == REC_ERR_OKAY);
-              if (found) {
-                if (tmp != (RecLLong) ink_atoi64(param)) {
-                  RecSetRecordLLong(var_name, (RecLLong) ink_atoi64(param));
                 }
               } else {
                 // Modularization: Switch mgmt_fatal to mgmt_log so that
@@ -753,9 +729,6 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
     switch (RecordsConfig[r].value_type) {
     case INK_INT:
       setInteger(name, (MgmtInt) ink_atoi64(RecordsConfig[r].value), dirty);
-      break;
-    case INK_LLONG:
-      setLLong(name, (MgmtLLong) ink_atoi64(RecordsConfig[r].value), dirty);
       break;
     case INK_FLOAT:
       setFloat(name, (MgmtFloat) atof(RecordsConfig[r].value), dirty);
@@ -953,31 +926,6 @@ BaseRecords::setInteger(int id, RecordType type, MgmtInt value, bool dirty)
 }                               /* End BaseRecords::setInteger */
 
 
-MgmtLLong
-BaseRecords::setLLong(int id, RecordType type, MgmtLLong value, bool dirty)
-{
-  Record *rec;
-
-  if ((rec = getRecord(id, type)) && rec->stype == INK_LLONG) {
-    MgmtLLong ret;
-
-    ink_mutex_acquire(&mutex[type]);
-    if (value != rec->data.llong_data) {
-      ret = rec->data.llong_data = value;
-      if (dirty)
-        rec->changed = true;
-      updateCount[type]++;
-    } else {
-      ret = value;
-    }
-    ink_mutex_release(&mutex[type]);
-
-    return (ret);
-  }
-  return INVALID;
-}                               /* End BaseRecords::setLLong */
-
-
 MgmtFloat
 BaseRecords::setFloat(int id, RecordType type, MgmtFloat value, bool dirty)
 {
@@ -1086,19 +1034,6 @@ BaseRecords::setInteger(const char *name, MgmtInt value, bool dirty)
 }                               /* End BaseRecords::setInteger */
 
 
-MgmtLLong
-BaseRecords::setLLong(const char *name, MgmtInt value, bool dirty)
-{
-  int id;
-  RecordType type;
-
-  if (idofRecord(name, &id, &type)) {
-    return setLLong(id, type, value, dirty);
-  }
-  return INVALID;
-}                               /* End BaseRecords::setLLong */
-
-
 MgmtFloat
 BaseRecords::setFloat(const char *name, MgmtFloat value, bool dirty)
 {
@@ -1176,33 +1111,6 @@ BaseRecords::readInteger(int id, RecordType type, bool * found)
   }
   return INVALID;
 }                               /* End BaseRecords::readInteger */
-
-
-MgmtLLong
-BaseRecords::readLLong(int id, RecordType type, bool * found)
-{
-  Record *rec;
-
-  if (found)
-    *found = false;
-  if ((rec = getRecord(id, type)) && rec->stype == INK_LLONG) {
-    MgmtLLong ret;
-
-    ink_mutex_acquire(&mutex[type]);
-    ret = rec->data.llong_data;
-    rec->read = true;
-    ink_mutex_release(&mutex[type]);
-
-    if (found)
-      *found = true;
-    return ret;
-  }
-  if (!found) {
-    // die if the caller isn't checking 'found'
-    mgmt_fatal(stderr, "[Config Error] Unable to find record id: %d type: %d\n", id, type);
-  }
-  return INVALID;
-}                               /* End BaseRecords::readLLong */
 
 
 MgmtFloat
@@ -1303,25 +1211,6 @@ BaseRecords::readInteger(const char *name, bool * found)
 }                               /* End BaseRecords::readIntegerr */
 
 
-MgmtInt
-BaseRecords::readLLong(const char *name, bool * found)
-{
-  int id;
-  RecordType type;
-
-  if (found)
-    *found = false;
-  if (idofRecord(name, &id, &type)) {
-    return (readLLong(id, type, found));
-  }
-  if (!found) {
-    // die if the caller isn't checking 'found'
-    mgmt_fatal(stderr, "[Config Error] Unable to find record: %s\n", name);
-  }
-  return INVALID;
-}                               /* End BaseRecords::readLLong */
-
-
 MgmtFloat
 BaseRecords::readFloat(const char *name, bool * found)
 {
@@ -1402,26 +1291,6 @@ BaseRecords::readInteger(const char *name, Records * recs, bool * found)
   }
   return INVALID;
 }                               /* End BaseRecords::readIntegerr */
-
-
-MgmtLLong
-BaseRecords::readLLong(const char *name, Records * recs, bool * found)
-{
-  int id;
-  RecordType type;
-
-  if (found)
-    *found = false;
-  if (idofRecord(name, &id, &type) && recs->recs[id].stype == INK_LLONG) {
-    *found = true;
-    return (recs->recs[id].data.llong_data);
-  }
-  if (!found) {
-    // die if the caller isn't checking 'found'
-    mgmt_fatal(stderr, "[Config Error] Unable to find record: %s\n", name);
-  }
-  return INVALID;
-}                               /* End BaseRecords::readLLong */
 
 
 MgmtFloat
@@ -1570,15 +1439,6 @@ BaseRecords::updateRecord(Record * rec)
         }
         break;
       }
-    case INK_LLONG:{
-        MgmtLLong tmp = 0;
-        (*((RecordUpdateFunc) (rec->func))) (rec->opaque_token, &tmp);
-        if (rec->data.llong_data != tmp) {
-          rec->data.llong_data = tmp;
-          rec->changed = true;
-        }
-        break;
-      }
     case INK_FLOAT:{
         MgmtFloat tmp = 0;
         (*((RecordUpdateFunc) (rec->func))) (rec->opaque_token, &tmp);
@@ -1663,10 +1523,6 @@ BaseRecords::notifyChangeLists(RecordType type, bool no_reset)
             (*((RecordChangeFunc) (list->func)))
               (list->opaque_token, &the_records->recs[i].data.int_data);
             break;
-          case INK_LLONG:
-            (*((RecordChangeFunc) (list->func)))
-              (list->opaque_token, &the_records->recs[i].data.llong_data);
-            break;
           case INK_FLOAT:
             (*((RecordChangeFunc) (list->func)))
               (list->opaque_token, &the_records->recs[i].data.float_data);
@@ -1721,10 +1577,6 @@ BaseRecords::syncPutRecord(Record * rec, char *pref, bool force_flush)
         }
       case INK_INT:{
           res = record_db->mgmt_put(name, strlen(name), (void *) &rec->data.int_data, sizeof(rec->data.int_data));
-          break;
-        }
-      case INK_LLONG:{
-          res = record_db->mgmt_put(name, strlen(name), (void *) &rec->data.llong_data, sizeof(rec->data.llong_data));
           break;
         }
       case INK_FLOAT:{
@@ -1821,15 +1673,6 @@ BaseRecords::syncGetRecord(Record * rec, char *pref, bool ignore)
           MgmtInt tmp = *((MgmtInt *) value);
           if (rec->data.int_data != tmp) {
             rec->data.int_data = tmp;
-            if (!ignore)
-              rec->changed = true;
-          }
-          break;
-        }
-      case INK_LLONG:{
-          MgmtLLong tmp = *((MgmtLLong *) value);
-          if (rec->data.llong_data != tmp) {
-            rec->data.llong_data = tmp;
             if (!ignore)
               rec->changed = true;
           }
@@ -1939,9 +1782,6 @@ BaseRecords::getExternalRecordValue(Record * rec, char *p)
       case INK_INT:
         rec->data.int_data = *((MgmtInt *) value);
         break;
-      case INK_LLONG:
-        rec->data.llong_data = *((MgmtLLong *) value);
-        break;
       case INK_FLOAT:
         rec->data.float_data = *((MgmtFloat *) value);
         break;
@@ -2032,10 +1872,6 @@ BaseRecords::printRecord(Record rec)
   case INK_INT:
     fprintf(stderr, "\tType: INT\n");
     fprintf(stderr, "\tValue: '%lld'\n", rec.data.int_data);
-    break;
-  case INK_LLONG:
-    fprintf(stderr, "\tType: LLONG\n");
-    fprintf(stderr, "\tValue: '%lld'\n", rec.data.llong_data);
     break;
   case INK_FLOAT:
     fprintf(stderr, "\tType: FLOAT\n");
@@ -2184,15 +2020,6 @@ BaseRecords::createRecordsFile(char *fname)
           newFile->copyFrom(str_val, strlen(str_val));
           break;
         }
-      case INK_LLONG:{
-          MgmtLLong tmp = readLLong(id, type);
-          if (type == PROCESS)
-            tmp = 0;
-          newFile->copyFrom("LLONG ", strlen("LLONG "));
-          snprintf(str_val, sizeof(str_val), "%lld\n", tmp);
-          newFile->copyFrom(str_val, strlen(str_val));
-          break;
-        }
       case INK_FLOAT:{
           MgmtFloat tmp = readFloat(id, type);
           if (type == PROCESS)
@@ -2314,9 +2141,6 @@ BaseRecords::clearRecords(RecordType type)
     case INK_INT:
       current->data.int_data = 0LL;
       break;
-    case INK_LLONG:
-      current->data.llong_data = 0LL;
-      break;
     case INK_COUNTER:
       current->data.counter_data = 0LL;
       break;
@@ -2407,31 +2231,6 @@ BaseRecords::rl_readInteger(int id, RecordType type, bool * found)
   }
   return INVALID;
 }                               /* End BaseRecords::rl_readInteger */
-
-
-MgmtLLong
-BaseRecords::rl_readLLong(int id, RecordType type, bool * found)
-{
-  Record *rec;
-
-  if (found)
-    *found = false;
-  if ((rec = getRecord(id, type)) && rec->stype == INK_LLONG) {
-    MgmtLLong ret;
-
-    ret = rec->data.llong_data;
-    rec->read = true;
-
-    if (found)
-      *found = true;
-    return ret;
-  }
-  if (!found) {
-    // die if the caller isn't checking 'found'
-    mgmt_fatal(stderr, "[Config Error] Unable to find record id: %d type: %d\n", id, type);
-  }
-  return INVALID;
-}                               /* End BaseRecords::rl_readLLong */
 
 
 MgmtFloat
@@ -2624,24 +2423,6 @@ BaseRecords::addPluginInteger(const char *name, MgmtInt value)
 
   if ((new_rec = addPluginRecord(name, INK_INT)) != NULL) {
     new_rec->data.int_data = value;
-    retval = true;
-  }
-
-  ink_mutex_release(&mutex[PLUGIN]);
-
-  return retval;
-}
-
-bool
-BaseRecords::addPluginLLong(const char *name, MgmtLLong value)
-{
-  Record *new_rec;
-  bool retval = false;
-
-  ink_mutex_acquire(&mutex[PLUGIN]);
-
-  if ((new_rec = addPluginRecord(name, INK_LLONG)) != NULL) {
-    new_rec->data.llong_data = value;
     retval = true;
   }
 

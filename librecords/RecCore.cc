@@ -108,16 +108,6 @@ link_int(const char *name, RecDataT data_type, RecData data, void *cookie)
 }
 
 static int
-link_llong(const char *name, RecDataT data_type, RecData data, void *cookie)
-{
-  REC_NOWARN_UNUSED(name);
-  REC_NOWARN_UNUSED(data_type);
-  RecLLong *rec_llong = (RecLLong *) cookie;
-  ink_atomic_swap64(rec_llong, data.rec_llong);
-  return REC_ERR_OKAY;
-}
-
-static int
 link_int32(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
   REC_NOWARN_UNUSED(name);
@@ -277,15 +267,6 @@ RecLinkConfigInt(const char *name, RecInt * rec_int)
     return REC_ERR_FAIL;
   }
   return RecRegisterConfigUpdateCb(name, link_int, (void *) rec_int);
-}
-
-int
-RecLinkConfigLLong(const char *name, RecLLong * rec_llong)
-{
-  if (RecGetRecordLLong(name, rec_llong) == REC_ERR_FAIL) {
-    return REC_ERR_FAIL;
-  }
-  return RecRegisterConfigUpdateCb(name, link_llong, (void *) rec_llong);
 }
 
 int
@@ -454,16 +435,6 @@ RecGetRecordInt(const char *name, RecInt *rec_int, bool lock)
 }
 
 int
-RecGetRecordLLong(const char *name, RecLLong * rec_llong, bool lock)
-{
-  int err;
-  RecData data;
-  if ((err = RecGetRecord_Xmalloc(name, RECD_LLONG, &data, lock)) == REC_ERR_OKAY)
-    *rec_llong = data.rec_llong;
-  return err;
-}
-
-int
 RecGetRecordFloat(const char *name, RecFloat * rec_float, bool lock)
 {
   int err;
@@ -545,9 +516,6 @@ RecGetRecordGeneric_Xmalloc(const char *name, RecString * rec_string, bool lock)
   switch (data_type) {
   case RECD_INT:
     snprintf(*rec_string, 1023, "%lld", data.rec_int);
-    break;
-  case RECD_LLONG:
-    snprintf(*rec_string, 1023, "%lld", data.rec_llong);
     break;
   case RECD_FLOAT:
     snprintf(*rec_string, 1023, "%f", data.rec_float);
@@ -757,9 +725,6 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
     switch (r->data_type) {
     case RECD_INT:
       snprintf(*buf, 1023, "%lld", r->data_default.rec_int);
-      break;
-    case RECD_LLONG:
-      snprintf(*buf, 1023, "%lld", r->data_default.rec_llong);
       break;
     case RECD_FLOAT:
       snprintf(*buf, 1023, "%f", r->data_default.rec_float);
@@ -1008,9 +973,6 @@ RecDumpRecordsHt(RecT rec_type)
       case RECD_INT:
         RecDebug(DL_Note, "  ([%d] '%s', '%lld')", r->registered, r->name, r->data.rec_int);
         break;
-      case RECD_LLONG:
-        RecDebug(DL_Note, "  ([%d] '%s', '%lld')", r->registered, r->name, r->data.rec_llong);
-        break;
       case RECD_FLOAT:
         RecDebug(DL_Note, "  ([%d] '%s', '%f')", r->registered, r->name, r->data.rec_float);
         break;
@@ -1077,10 +1039,6 @@ RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
         num_matched++;
         sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_int);
         break;
-      case RECD_LLONG:
-        num_matched++;
-        sprintf(&result[strlen(result)], "%s=%lld\r\n", r->name, r->data.rec_llong);
-        break;
       case RECD_FLOAT:
         num_matched++;
         sprintf(&result[strlen(result)], "%s=%f\r\n", r->name, r->data.rec_float);
@@ -1118,18 +1076,6 @@ REC_ConfigReadInteger(const char *name)
 {
   RecInt t = 0;
   RecGetRecordInt(name, &t);
-  return t;
-}
-
-//-------------------------------------------------------------------------
-// REC_ConfigReadLLong (backwards compatibility)
-//-------------------------------------------------------------------------
-
-RecLLong
-REC_ConfigReadLLong(const char *name)
-{
-  RecLLong t = 0;
-  RecGetRecordLLong(name, &t);
   return t;
 }
 
@@ -1186,18 +1132,6 @@ REC_readInteger(const char *name, bool * found, bool lock)
   return _tmp;
 }
 
-RecLLong
-REC_readLLong(char *name, bool * found, bool lock)
-{
-  ink_debug_assert(name);
-  RecLLong _tmp = 0L;
-  bool _found;
-  _found = (RecGetRecordLLong(name, &_tmp, lock) == REC_ERR_OKAY);
-  if (found)
-    *found = _found;
-  return _tmp;
-}
-
 RecFloat
 REC_readFloat(char *name, bool * found, bool lock)
 {
@@ -1237,17 +1171,10 @@ REC_readString(const char *name, bool * found, bool lock)
 // MGMT2 Marco's -- converting lmgmt->record_data->setXXX
 
 bool
-REC_setInteger(const char *name, int value, bool dirty)
+REC_setInteger(const char *name, RecInt value, bool dirty)
 {
   REC_NOWARN_UNUSED(dirty);
   return RecSetRecordInt(name, value);
-}
-
-bool
-REC_setLLong(const char *name, RecLLong value, bool dirty)
-{
-  REC_NOWARN_UNUSED(dirty);
-  return RecSetRecordLLong(name, value);
 }
 
 bool

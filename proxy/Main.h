@@ -132,7 +132,6 @@ extern HttpOtherPortEntry *http_other_port_array;
 
 
 #define TS_ReadConfigInteger            REC_ReadConfigInteger
-#define TS_ReadConfigLLong              REC_ReadConfigLLong
 #define TS_ReadConfigFloat              REC_ReadConfigFloat
 #define TS_ReadConfigString             REC_ReadConfigString
 #define TS_EstablishStaticConfigInteger REC_EstablishStaticConfigInteger

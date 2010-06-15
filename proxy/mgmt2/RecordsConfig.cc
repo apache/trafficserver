@@ -2109,7 +2109,7 @@ RecordElement RecordsConfig[] = {
   ,
   //  # default the ram cache size to AUTO_SIZE (-1)
   //  # alternatively: 20971520 (20MB)
-  {CONFIG, "proxy.config.cache.ram_cache.size", "", INK_LLONG, "-1", RU_RESTART_TS, RR_NULL, RC_STR, "^-?[0-9]+$",
+  {CONFIG, "proxy.config.cache.ram_cache.size", "", INK_INT, "-1", RU_RESTART_TS, RR_NULL, RC_STR, "^-?[0-9]+$",
    RA_NULL}
   ,
   //  # how often should the directory be synced (seconds)
@@ -2120,7 +2120,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.cache.select_alternate", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.cache.ram_cache_cutoff", "", INK_LLONG, "1048576", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.cache.ram_cache_cutoff", "", INK_INT, "1048576", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cache.ram_cache_mixt_cutoff", "", INK_INT, "1048576", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
@@ -4205,7 +4205,6 @@ LibRecordsConfigInit()
 
   int r = 0;
   RecInt tempInt = 0;
-  int64 tempLLong = 0;
   RecFloat tempFloat = 0.0;
   RecCounter tempCounter = 0;
 
@@ -4311,11 +4310,6 @@ LibRecordsConfigInit()
         RecRegisterConfigInt(type, RecordsConfig[r].name, tempInt, update, check, RecordsConfig[r].regex, access);
         break;
 
-      case INK_LLONG:
-        tempLLong = (RecInt) ink_atoi64(RecordsConfig[r].value);
-        RecRegisterConfigLLong(type, RecordsConfig[r].name, tempLLong, update, check, RecordsConfig[r].regex, access);
-        break;
-
       case INK_FLOAT:
         tempFloat = (RecFloat) atof(RecordsConfig[r].value);
         RecRegisterConfigFloat(type, RecordsConfig[r].name, tempFloat, update, check, RecordsConfig[r].regex, access);
@@ -4344,11 +4338,6 @@ LibRecordsConfigInit()
       case INK_INT:
         tempInt = (RecInt) ink_atoi64(RecordsConfig[r].value);
         RecRegisterStatInt(type, RecordsConfig[r].name, tempInt, RECP_NON_PERSISTENT);
-        break;
-
-      case INK_LLONG:
-        tempLLong = (RecLLong) ink_atoi64(RecordsConfig[r].value);
-        RecRegisterStatLLong(type, RecordsConfig[r].name, tempLLong, RECP_NON_PERSISTENT);
         break;
 
       case INK_FLOAT:

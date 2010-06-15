@@ -2596,8 +2596,8 @@ ink_cache_init(ModuleVersion v)
   IOCORE_RegisterConfigInteger(RECT_CONFIG,
                                "proxy.config.cache.min_average_object_size", 8000, RECU_DYNAMIC, RECC_NULL, NULL);
 
-  IOCORE_RegisterConfigLLong(RECT_CONFIG, "proxy.config.cache.ram_cache.size", -1, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_EstablishStaticConfigLLong(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.ram_cache.size", -1, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_EstablishStaticConfigInteger(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
   Debug("cache_init", "proxy.config.cache.ram_cache.size = %lld = %lldMb",
         cache_config_ram_cache_size, cache_config_ram_cache_size / (1024 * 1024));
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.ram_cache.algorithm", 0, RECU_DYNAMIC, RECC_NULL, NULL);
@@ -2612,9 +2612,9 @@ ink_cache_init(ModuleVersion v)
   IOCORE_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
   Debug("cache_init", "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
 
-  IOCORE_RegisterConfigLLong(RECT_CONFIG,
+  IOCORE_RegisterConfigInteger(RECT_CONFIG,
                              "proxy.config.cache.ram_cache_cutoff", 1048576, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_EstablishStaticConfigLLong(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
+  IOCORE_EstablishStaticConfigInteger(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
   Debug("cache_init", "cache_config_ram_cache_cutoff = %lld = %lldMb",
         cache_config_ram_cache_cutoff, cache_config_ram_cache_cutoff / (1024 * 1024));
 

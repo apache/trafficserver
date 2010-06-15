@@ -102,7 +102,6 @@ typedef struct _base_record
   {
     MgmtIntCounter counter_data;        /* Data */
     MgmtInt int_data;
-    MgmtLLong llong_data;
     MgmtFloat float_data;
     MgmtString string_data;
   } data;
@@ -137,26 +136,22 @@ public:
   MgmtIntCounter incrementCounter(int id, RecordType type);
   MgmtIntCounter setCounter(int id, RecordType type, MgmtIntCounter value);
   MgmtInt setInteger(int id, RecordType type, MgmtInt value, bool dirty = true);
-  MgmtLLong setLLong(int id, RecordType type, MgmtLLong value, bool dirty = true);
   MgmtFloat setFloat(int id, RecordType type, MgmtFloat value, bool dirty = true);
   bool setString(int id, RecordType type, MgmtString value, bool dirty = true);
 
   MgmtIntCounter incrementCounter(const char *name);
   MgmtIntCounter setCounter(const char *name, MgmtIntCounter value);
   MgmtInt setInteger(const char *name, MgmtInt value, bool dirty = true);
-  MgmtLLong setLLong(const char *name, MgmtLLong value, bool dirty = true);
   MgmtFloat setFloat(const char *name, MgmtFloat value, bool dirty = true);
   bool setString(const char *name, MgmtString value, bool dirty = true);
 
   MgmtIntCounter readCounter(int id, RecordType type, bool * found = NULL);
   MgmtInt readInteger(int id, RecordType type, bool * found = NULL);
-  MgmtLLong readLLong(int id, RecordType type, bool * found = NULL);
   MgmtFloat readFloat(int id, RecordType type, bool * found = NULL);
   MgmtString readString(int id, RecordType type, bool * found = NULL);
 
   MgmtIntCounter readCounter(const char *name, bool * found = NULL);
   MgmtInt readInteger(const char *name, bool * found = NULL);
-  MgmtLLong readLLong(const char *name, bool * found = NULL);
   MgmtFloat readFloat(const char *name, bool * found = NULL);
   MgmtString readString(const char *name, bool * found = NULL);
 
@@ -167,19 +162,16 @@ public:
    */
   MgmtIntCounter rl_readCounter(int id, RecordType type, bool * found = NULL);
   MgmtInt rl_readInteger(int id, RecordType type, bool * found = NULL);
-  MgmtLLong rl_readLLong(int id, RecordType type, bool * found = NULL);
   MgmtFloat rl_readFloat(int id, RecordType type, bool * found = NULL);
   MgmtString rl_readString(int id, RecordType type, bool * found = NULL);
 
   MgmtIntCounter rl_readCounter(const char *name, bool * found = NULL);
   MgmtInt rl_readInteger(const char *name, bool * found = NULL);
-  MgmtLLong rl_readLLong(const char *name, bool * found = NULL);
   MgmtFloat rl_readFloat(const char *name, bool * found = NULL);
   MgmtString rl_readString(const char *name, bool * found = NULL);
 
   MgmtIntCounter readCounter(const char *name, Records * recs, bool * found = NULL);
   MgmtInt readInteger(const char *name, Records * recs, bool * found = NULL);
-  MgmtLLong readLLong(const char *name, Records * recs, bool * found = NULL);
   MgmtFloat readFloat(const char *name, Records * recs, bool * found = NULL);
   MgmtString readString(const char *name, Records * recs, bool * found = NULL);
 
@@ -223,7 +215,6 @@ public:
    */
   bool addPluginCounter(const char *name, MgmtIntCounter value);
   bool addPluginInteger(const char *name, MgmtInt value);
-  bool addPluginLLong(const char *name, MgmtLLong value);
   bool addPluginFloat(const char *name, MgmtFloat value);
   bool addPluginString(const char *name, MgmtString value);
 

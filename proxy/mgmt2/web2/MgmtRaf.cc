@@ -159,13 +159,6 @@ RafProcessQueryStat(textBuffer * resp, const char *id, int argc, int start_index
           snprintf(val_output, 256, "%lld", i);
           break;
         }
-      case RECD_LLONG:
-        {
-          RecLLong ll = 0;
-          RecGetRecordLLong(var, &ll);
-          snprintf(val_output, 256, "%lld", ll);
-          break;
-        }
       case RECD_FLOAT:
         {
           RecFloat f = 0;

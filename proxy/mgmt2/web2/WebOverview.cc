@@ -317,31 +317,6 @@ overviewRecord::readInteger(const char *name, bool * found)
   return rec;
 }
 
-RecLLong
-overviewRecord::readLLong(const char *name, bool * found)
-{
-  RecLLong rec = 0;
-  int rec_status = REC_ERR_OKAY;
-  int order = -1;
-  if (localNode == false) {
-    rec_status = RecGetRecordRelativeOrder(name, &order);
-    if (rec_status == REC_ERR_OKAY) {
-      ink_release_assert(order < node_rec_data.num_recs);
-      ink_debug_assert(order < node_rec_data.num_recs);
-      rec = node_rec_data.recs[order].data.rec_llong;
-    }
-  } else {
-    rec_status = RecGetRecordLLong(name, &rec);
-  }
-
-  if (found) {
-    *found = (rec_status == REC_ERR_OKAY);
-  } else {
-    mgmt_log(stderr, "node variables '%s' not found!\n");
-  }
-  return rec;
-}
-
 RecFloat
 overviewRecord::readFloat(const char *name, bool * found)
 {
@@ -420,7 +395,6 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
   {
     MgmtIntCounter counter_data;        /* Data */
     MgmtInt int_data;
-    MgmtLLong llong_data;
     MgmtFloat float_data;
     MgmtString string_data;
   } data;
@@ -457,18 +431,6 @@ overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLe
     data.int_data = this->readInteger(varName, &found);
     if (formatOption == 'b') {
       bytesFromInt(data.int_data, bufVal);
-    } else if (formatOption == 'm') {
-      MbytesFromInt(data.int_data, bufVal);
-    } else if (formatOption == 'c') {
-      commaStrFromInt(data.int_data, bufVal);
-    } else {
-      sprintf(bufVal, "%lld", data.int_data);
-    }
-    break;
-  case RECD_LLONG:
-    data.llong_data = this->readLLong(varName, &found);
-    if (formatOption == 'b') {
-      bytesFromInt(data.llong_data, bufVal);
     } else if (formatOption == 'm') {
       MbytesFromInt(data.int_data, bufVal);
     } else if (formatOption == 'c') {

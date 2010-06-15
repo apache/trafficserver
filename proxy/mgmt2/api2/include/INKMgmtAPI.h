@@ -153,7 +153,6 @@ extern "C"
 #endif
 
   typedef INK64 INKInt;
-  typedef INK64 INKLLong;
   typedef INK64 INKCounter;
   typedef float INKFloat;
   typedef char *INKString;
@@ -247,7 +246,6 @@ typedef enum
     INK_REC_COUNTER,
     INK_REC_FLOAT,
     INK_REC_STRING,
-    INK_REC_LLONG,
     INK_REC_UNDEFINED
   } INKRecordT;
 
@@ -509,7 +507,6 @@ typedef enum
     union
     {                           /* record value */
       INKInt int_val;
-      INKLLong llong_val;
       INKCounter counter_val;
       INKFloat float_val;
       INKString string_val;

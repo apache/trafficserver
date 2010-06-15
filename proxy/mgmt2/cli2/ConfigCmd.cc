@@ -2858,9 +2858,6 @@ ConfigGet(const char *rec_name)
   case INK_REC_STRING:         // char*
     Cli_Printf("%s = \"%s\"\n", rec_name, rec_val.string_val);
     break;
-  case INK_REC_LLONG:          // INK64 aka "long long"
-    Cli_Printf("%s = %lld\n", rec_name, rec_val.llong_val);
-    break;
   case INK_REC_UNDEFINED:      // what's this???
     Cli_Printf("%s = UNDEFINED\n", rec_name);
     break;

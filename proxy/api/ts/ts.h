@@ -458,7 +458,6 @@ extern "C"
      for storing the values retrieved by those functions. For example,
      INKMgmtCounterGet() retrieves an INKMgmtCounter. */
   typedef INK64 INKMgmtInt;
-  typedef INK64 INKMgmtLLong;
   typedef INK64 INKMgmtCounter;
   typedef float INKMgmtFloat;
   typedef char *INKMgmtString;

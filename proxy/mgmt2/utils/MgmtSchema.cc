@@ -97,7 +97,6 @@ validateType(XMLNode * record)
     goto Lerror;
   }
   if (!((strcmp(attrName, "INT") == 0 && rec_type == RECD_INT)) &&
-      !((strcmp(attrName, "LLONG") == 0 && rec_type == RECD_LLONG)) &&
       !((strcmp(attrName, "STRING") == 0 && rec_type == RECD_STRING)) &&
       !((strcmp(attrName, "FLOAT") == 0 && rec_type == RECD_FLOAT))) {
     fprintf(stderr, "invalid <record> - unknown type: %s\n", attrName);

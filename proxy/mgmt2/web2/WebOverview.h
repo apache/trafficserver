@@ -104,7 +104,6 @@ public:
   bool varStrFromName(const char *varName, char *bufVal, int bufLen);
   RecCounter readCounter(const char *name, bool * found);
   RecInt readInteger(const char *name, bool * found);
-  RecLLong readLLong(const char *name, bool * found);
   RecFloat readFloat(const char *name, bool * found);
   RecString readString(const char *name, bool * found);
   bool varIntFromName(const char *varName, RecInt * value);

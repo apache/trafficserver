@@ -59,15 +59,12 @@ public:
 
 // Convert to byte units (GB, MB, KB)
 void bytesFromInt(RecInt bytes, char *bufVal);
-void bytesFromLLong(RecLLong bytes, char *bufVal);
 
 // Convert to MB
 void MbytesFromInt(RecInt bytes, char *bufVal);
-void MbytesFromLLong(RecLLong bytes, char *bufVal);
 
 // Create comma string from int
 void commaStrFromInt(RecInt bytes, char *bufVal);
-void commaStrFromLLong(RecLLong bytes, char *bufVal);
 
 // Create percent string from float
 void percentStrFromFloat(RecFloat val, char *bufVal);
@@ -78,7 +75,6 @@ bool varSetFromStr(const char *varName, const char *value);
 
 // Converts where applicable to specified type
 bool varIntFromName(const char *varName, RecInt * value);
-bool varLLongFromName(const char *varName, RecLLong * value);
 bool varFloatFromName(const char *varName, RecFloat * value);
 bool varCounterFromName(const char *varName, RecCounter * value);
 
@@ -86,7 +82,6 @@ bool varCounterFromName(const char *varName, RecCounter * value);
 //  type
 // Default arguement "convert" added to allow great flexiblity in type checking
 bool varSetInt(const char *varName, RecInt value, bool convert = false);
-bool varSetLLong(const char *varName, RecLLong value, bool convert = false);
 bool varSetCounter(const char *varName, RecCounter value, bool convert = false);
 bool varSetFloat(const char *varName, RecFloat value, bool convert = false);
 

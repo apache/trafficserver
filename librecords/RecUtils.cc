@@ -105,12 +105,6 @@ RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src)
       rec_set = true;
     }
     break;
-  case RECD_LLONG:
-    if (data_dst->rec_llong != data_src->rec_llong) {
-      data_dst->rec_llong = data_src->rec_llong;
-      rec_set = true;
-    }
-    break;
   case RECD_FLOAT:
     if (data_dst->rec_float != data_src->rec_float) {
       data_dst->rec_float = data_src->rec_float;
@@ -141,9 +135,6 @@ RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64 data_int64)
   switch (data_type) {
   case RECD_INT:
     data_dst->rec_int = data_int64;
-    break;
-  case RECD_LLONG:
-    data_dst->rec_llong = data_int64;
     break;
   case RECD_FLOAT:
     data_dst->rec_float = (float) (data_int64);
@@ -181,9 +172,6 @@ RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float)
   switch (data_type) {
   case RECD_INT:
     data_dst->rec_int = (RecInt) data_float;
-    break;
-  case RECD_LLONG:
-    data_dst->rec_llong = (RecLLong) data_float;
     break;
   case RECD_FLOAT:
     data_dst->rec_float = (float) (data_float);
@@ -224,9 +212,6 @@ RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
   switch (data_type) {
   case RECD_INT:
     data_src.rec_int = ink_atoi64(data_string);
-    break;
-  case RECD_LLONG:
-    data_src.rec_llong = ink_atoi64(data_string);
     break;
   case RECD_FLOAT:
     data_src.rec_float = atof(data_string);

@@ -1185,12 +1185,6 @@ handleOverseer(int fd, int mode)
                 snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
                 break;
               }
-            case RECD_LLONG:{
-                RecLLong val;
-                RecGetRecordLLong(cur, &val);
-                snprintf(reply, sizeof(reply), "%s = \"%lld\"", cur, val);
-                break;
-              }
             case RECD_FLOAT:{
                 RecFloat val;
                 RecGetRecordFloat(cur, &val);
@@ -1306,11 +1300,6 @@ handleOverseer(int fd, int mode)
       case RECD_INT:{
           RecInt val = (RecInt) ink_atoi64(config_value);
           RecSetRecordInt(var, val);
-          break;
-        }
-      case RECD_LLONG:{
-          RecLLong val = (RecLLong) ink_atoi64(config_value);
-          RecSetRecordLLong(var, val);
           break;
         }
       case RECD_FLOAT:{

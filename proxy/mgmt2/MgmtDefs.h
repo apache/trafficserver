@@ -42,7 +42,6 @@
 
 typedef int64 MgmtIntCounter;
 typedef int64 MgmtInt;
-typedef int64 MgmtLLong;
 typedef float MgmtFloat;
 typedef char *MgmtString;
 
@@ -55,8 +54,7 @@ typedef enum
   INK_COUNTER = 3,
   INK_STAT_CONST = 4,           // Added for the StatProcessor
   INK_STAT_FX = 5,              // Added for the StatProcessor
-  INK_LLONG = 6,                // Added for Long Long config options
-  MAX_MGMT_TYPE = 7,
+  MAX_MGMT_TYPE = 6,
 } MgmtType;
 
 /*

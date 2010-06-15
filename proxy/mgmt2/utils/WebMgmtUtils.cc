@@ -82,13 +82,6 @@ varSetFromStr(const char *varName, const char *value)
       found = false;
     }
     break;
-  case RECD_LLONG:
-    if (sscanf(value, "%lld", &data.rec_llong) == 1) {
-      RecSetRecordLLong((char *) varName, data.rec_llong);
-    } else {
-      found = false;
-    }
-    break;
   case RECD_COUNTER:
     if (sscanf(value, "%lld", &data.rec_counter) == 1) {
       RecSetRecordCounter((char *) varName, data.rec_counter);
@@ -151,12 +144,6 @@ varSetFloat(const char *varName, RecFloat value, bool convert)
       RecSetRecordInt((char *) varName, (RecInt) value);
       break;
     }
-  case RECD_LLONG:
-    if (convert) {
-      value += 0.5;             // rounding up
-      RecSetRecordLLong((char *) varName, (RecLLong) value);
-      break;
-    }
   case RECD_COUNTER:
     if (convert) {
       RecSetRecordCounter((char *) varName, (RecCounter) value);
@@ -202,11 +189,6 @@ varSetCounter(const char *varName, RecCounter value, bool convert)
       RecSetRecordInt((char *) varName, (RecInt) value);
       break;
     }
-  case RECD_LLONG:
-    if (convert) {
-      RecSetRecordLLong((char *) varName, (RecLLong) value);
-      break;
-    }
   case RECD_FLOAT:
     if (convert) {
       RecSetRecordFloat((char *) varName, (RecFloat) value);
@@ -247,11 +229,6 @@ varSetInt(const char *varName, RecInt value, bool convert)
   case RECD_INT:
     RecSetRecordInt((char *) varName, (RecInt) value);
     break;
-  case RECD_LLONG:
-    if (convert) {
-      RecSetRecordLLong((char *) varName, (RecLLong) value);
-      break;
-    }
   case RECD_COUNTER:
     if (convert) {
       RecSetRecordCounter((char *) varName, (RecCounter) value);
@@ -272,57 +249,6 @@ varSetInt(const char *varName, RecInt value, bool convert)
   return found;
 }
 
-// bool varSetLLong(const char* varName, RecLLong value)
-//
-//  Sets the variable specifed by varName to value.  varName
-//   must be an RecLLong variable.  No conversion is done for
-//   other types unless convert is set to ture. In the case
-//   of convert is ture, type conversion is perform if applicable.
-//   By default, convert is set to be false and can be overrided
-//   when the function is called.
-//
-bool
-varSetLLong(const char *varName, RecLLong value, bool convert)
-{
-  RecDataT varDataType = RECD_NULL;
-  bool found = true;
-  int err = REC_ERR_FAIL;
-
-  err = RecGetRecordDataType((char *) varName, &varDataType);
-  if (err != REC_ERR_OKAY) {
-    return found;
-  }
-
-  switch (varDataType) {
-  case RECD_LLONG:
-    {
-      RecSetRecordLLong((char *) varName, (RecLLong) value);
-      break;
-    }
-  case RECD_INT:
-    if (convert) {
-      RecSetRecordInt((char *) varName, (RecInt) value);
-    }
-    break;
-  case RECD_COUNTER:
-    if (convert) {
-      RecSetRecordCounter((char *) varName, (RecCounter) value);
-      break;
-    }
-  case RECD_FLOAT:
-    if (convert) {
-      RecSetRecordFloat((char *) varName, (RecFloat) value);
-      break;
-    }
-  case RECD_STRING:
-  case RECD_NULL:
-  default:
-    found = false;
-    break;
-  }
-
-  return found;
-}
 
 // bool varCounterFromName (const char*, RecFloat* )
 //
@@ -349,12 +275,6 @@ varCounterFromName(const char *varName, RecCounter * value)
       RecInt tempInt = 0;
       RecGetRecordInt((char *) varName, &tempInt);
       *value = (RecCounter) tempInt;
-      break;
-    }
-  case RECD_LLONG:{
-      RecLLong tempLLong = 0;
-      RecGetRecordLLong((char *) varName, &tempLLong);
-      *value = (RecCounter) tempLLong;
       break;
     }
   case RECD_COUNTER:{
@@ -400,12 +320,6 @@ varFloatFromName(const char *varName, RecFloat * value)
       RecInt tempInt = 0;
       RecGetRecordInt((char *) varName, &tempInt);
       *value = (RecFloat) tempInt;
-      break;
-    }
-  case RECD_LLONG:{
-      RecLLong tempLLong = 0;
-      RecGetRecordLLong((char *) varName, &tempLLong);
-      *value = (RecFloat) tempLLong;
       break;
     }
   case RECD_COUNTER:{
@@ -456,12 +370,6 @@ varIntFromName(const char *varName, RecInt * value)
       RecGetRecordInt((char *) varName, value);
       break;
     }
-  case RECD_LLONG:{
-      RecLLong tempLLong = 0;
-      RecGetRecordLLong((char *) varName, &tempLLong);
-      *value = (RecInt) tempLLong;
-      break;
-    }
   case RECD_COUNTER:{
       RecCounter tempCounter = 0;
       RecGetRecordCounter((char *) varName, &tempCounter);
@@ -485,60 +393,6 @@ varIntFromName(const char *varName, RecInt * value)
   return found;
 }
 
-// bool varLLongFromName (const char*, RecLLong* )
-//
-//   Sets the *value to value of the varName.
-//
-//  return true if bufVal was succefully set
-//    and false otherwise
-//
-bool
-varLLongFromName(const char *varName, RecLLong * value)
-{
-  RecDataT varDataType = RECD_NULL;
-  bool found = true;
-  int err = REC_ERR_FAIL;
-
-  err = RecGetRecordDataType((char *) varName, &varDataType);
-
-  if (err != REC_ERR_OKAY) {
-    return false;
-  }
-
-  switch (varDataType) {
-  case RECD_LLONG:{
-      *value = 0;
-      RecGetRecordLLong((char *) varName, value);
-      break;
-    }
-  case RECD_INT:{
-      RecInt tempInt = 0;
-      RecGetRecordInt((char *) varName, &tempInt);
-      *value = (RecLLong) tempInt;
-      break;
-    }
-  case RECD_COUNTER:{
-      RecCounter tempCounter = 0;
-      RecGetRecordCounter((char *) varName, &tempCounter);
-      *value = (RecLLong) tempCounter;
-      break;
-    }
-  case RECD_FLOAT:{
-      RecFloat tempFloat = 0.0;
-      RecGetRecordFloat((char *) varName, &tempFloat);
-      *value = (RecLLong) tempFloat;
-      break;
-    }
-  case RECD_STRING:
-  case RECD_NULL:
-  default:
-    *value = -1;
-    found = false;
-    break;
-  }
-
-  return found;
-}
 
 // void percentStrFromFloat(MgmtFloat, char* bufVal)
 //
@@ -593,44 +447,6 @@ commaStrFromInt(RecInt bytes, char *bufVal)
   ink_assert(curPtr + 1 == bufVal);
 }
 
-// void commaStrFromLLong(RecLLong bytes, char* bufVal)
-//   Converts an LLong to string with commas in it
-//
-//     bufVal must point to adequate space a la sprintf
-//
-void
-commaStrFromLLong(RecLLong bytes, char *bufVal)
-{
-  int len;
-  int numCommas;
-  char *curPtr;
-
-  sprintf(bufVal, "%lld", bytes);
-  len = strlen(bufVal);
-
-  // The string is too short to need commas
-  if (len < 4) {
-    return;
-  }
-
-  numCommas = (len - 1) / 3;
-  curPtr = bufVal + (len + numCommas);
-  *curPtr = '\0';
-  curPtr--;
-
-  for (int i = 0; i < len; i++) {
-    *curPtr = bufVal[len - 1 - i];
-
-    if ((i + 1) % 3 == 0 && curPtr != bufVal) {
-      curPtr--;
-      *curPtr = ',';
-    }
-    curPtr--;
-  }
-
-  ink_assert(curPtr + 1 == bufVal);
-}
-
 // void MbytesFromInt(RecInt bytes, char* bufVal)
 //     Converts into a string in units of megabytes
 //      No unit specification is added
@@ -641,20 +457,6 @@ void
 MbytesFromInt(RecInt bytes, char *bufVal)
 {
   RecInt mBytes = bytes / 1048576;
-
-  sprintf(bufVal, "%lld", mBytes);
-}
-
-// void MbytesFromLLong(RecLLong bytes, char* bufVal)
-//     Converts into a string in units of megabytes
-//      No unit specification is added
-//
-//     bufVal must point to adequate space a la sprintf
-//
-void
-MbytesFromLLong(RecLLong bytes, char *bufVal)
-{
-  RecLLong mBytes = bytes / 1048576;
 
   sprintf(bufVal, "%lld", mBytes);
 }
@@ -692,36 +494,6 @@ bytesFromInt(RecInt bytes, char *bufVal)
       snprintf(bufVal, 15, "%.1f KB", unitBytes);
     } else {
       snprintf(bufVal, 15, "%d", bytesP);
-    }
-  }
-}
-
-// void bytesFromLLong(RecLLong bytes, char* bufVal)
-//
-//    Converts mgmt into a string with one of
-//       GB, MB, KB, B units
-//
-//     bufVal must point to adequate space a la sprintf
-void
-bytesFromLLong(RecLLong bytes, char *bufVal)
-{
-  const int64 gb = 1073741824;
-  const long int mb = 1048576;
-  const long int kb = 1024;
-  double unitBytes;
-
-  if (bytes >= gb) {
-    unitBytes = bytes / (double) gb;
-    snprintf(bufVal, 15, "%.1f GB", unitBytes);
-  } else {
-    if (bytes >= mb) {
-      unitBytes = bytes / (double) mb;
-      snprintf(bufVal, 15, "%.1f MB", unitBytes);
-    } else if (bytes >= kb) {
-      unitBytes = bytes / (double) kb;
-      snprintf(bufVal, 15, "%.1f KB", unitBytes);
-    } else {
-      snprintf(bufVal, 15, "%lld", bytes);
     }
   }
 }
@@ -796,19 +568,6 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     }
     break;
 
-  case RECD_LLONG:
-    RecGetRecordLLong(varName, &data.rec_llong);
-    if (formatOption == 'b') {
-      bytesFromLLong(data.rec_llong, bufVal);
-    } else if (formatOption == 'm') {
-      MbytesFromLLong(data.rec_llong, bufVal);
-    } else if (formatOption == 'c') {
-      commaStrFromLLong(data.rec_llong, bufVal);
-    } else {
-      sprintf(bufVal, "%lld", data.rec_llong);
-    }
-    break;
-
   case RECD_COUNTER:
     RecGetRecordCounter(varName, &data.rec_counter);
     if (formatOption == 'b') {
@@ -873,9 +632,6 @@ MgmtData::setFromName(const char *varName)
   case RECD_INT:
     RecGetRecordInt((char *) varName, &this->data.rec_int);
     break;
-  case RECD_LLONG:
-    RecGetRecordLLong((char *) varName, &this->data.rec_llong);
-    break;
   case RECD_COUNTER:
     RecGetRecordCounter((char *) varName, &this->data.rec_counter);
     break;
@@ -926,14 +682,6 @@ MgmtData::compareFromString(const char *str)
     if (str && recordRegexCheck("^[0-9]+$", str)) {
       compData.rec_int = ink_atoi64(str);
       if (data.rec_int == compData.rec_int) {
-        compare = true;
-      }
-    }
-    break;
-  case RECD_LLONG:
-    if (str && recordRegexCheck("^[0-9]+$", str)) {
-      compData.rec_llong = ink_atoi64(str);
-      if (data.rec_llong == compData.rec_llong) {
         compare = true;
       }
     }

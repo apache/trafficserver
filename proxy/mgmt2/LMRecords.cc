@@ -80,21 +80,6 @@ LMRecords::setInteger(int id, RecordType type, MgmtInt value)
   return (BaseRecords::setInteger(id, type, value));
 }                               /* End LMRecords::setInteger */
 
-MgmtLLong
-LMRecords::setLLong(int id, RecordType type, MgmtLLong value)
-{
-  if (type == CONFIG) {
-    time_t t;
-    ink_mutex_acquire(&mutex[CONFIG]);
-    if ((t = time(NULL)) > 0) {
-      time_last_config_change = t;
-    }
-    ink_mutex_release(&mutex[CONFIG]);
-  }
-  update_user_defined_records(id, type);
-  return (BaseRecords::setLLong(id, type, value));
-}                               /* End LMRecords::setLLong */
-
 MgmtFloat
 LMRecords::setFloat(int id, RecordType type, MgmtFloat value)
 {
@@ -164,19 +149,6 @@ LMRecords::setInteger(const char *name, MgmtInt value)
 }                               /* End LMRecords::setInteger */
 
 
-MgmtLLong
-LMRecords::setLLong(const char *name, MgmtLLong value)
-{
-  int id;
-  RecordType type;
-
-  if (idofRecord(name, &id, &type)) {
-    return setLLong(id, type, value);
-  }
-  return INVALID;
-}                               /* End LMRecords::setLLong */
-
-
 MgmtFloat
 LMRecords::setFloat(const char *name, MgmtFloat value)
 {
@@ -235,23 +207,6 @@ LMRecords::readPProcessInteger(int id, RecordType type, char *p)
 
   return ret;
 }                               /* End LMRecords::readPProcessInteger */
-
-
-MgmtLLong
-LMRecords::readPProcessLLong(int id, RecordType type, char *p)
-{
-  MgmtLLong ret = INVALID;
-  Record *rec;
-
-  ink_mutex_acquire(&mutex[type]);
-  rec = getRecord(id, type);
-  if ((getExternalRecordValue(rec, p)) && rec->stype == INK_LLONG) {
-    ret = (rec->data.llong_data);
-  }
-  ink_mutex_release(&mutex[type]);
-
-  return ret;
-}                               /* End LMRecords::readPProcessLLong */
 
 
 MgmtFloat

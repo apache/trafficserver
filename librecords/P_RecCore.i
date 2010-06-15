@@ -336,12 +336,6 @@ RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPers
 }
 
 int
-RecRegisterStatLLong(RecT rec_type, const char *name, RecLLong data_default, RecPersistT persist_type)
-{
-  REC_REGISTER_STAT_XXX(rec_llong, RECD_LLONG);
-}
-
-int
 RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_float, RECD_FLOAT);
@@ -387,15 +381,6 @@ RecRegisterConfigInt(RecT rec_type, const char *name,
 {
   ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_int, RECD_INT);
-}
-
-int
-RecRegisterConfigLLong(RecT rec_type, const char *name,
-                       RecLLong data_default, RecUpdateT update_type,
-                       RecCheckT check_type, const char *check_regex, RecAccessT access_type)
-{
-  ink_debug_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
-  REC_REGISTER_CONFIG_XXX(rec_llong, RECD_LLONG);
 }
 
 int
@@ -459,10 +444,6 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
           case RECD_INT:
             r1->data.rec_int = ink_atoi64(data->rec_string);
             data_type = RECD_INT;
-            break;
-          case RECD_LLONG:
-            r1->data.rec_llong = ink_atoi64(data->rec_string);
-            data_type = RECD_LLONG;
             break;
           case RECD_FLOAT:
             r1->data.rec_float = atof(data->rec_string);
@@ -561,14 +542,6 @@ RecSetRecordInt(const char *name, RecInt rec_int, bool lock)
   RecData data;
   data.rec_int = rec_int;
   return RecSetRecord(RECT_NULL, name, RECD_INT, &data, NULL, lock);
-}
-
-int
-RecSetRecordLLong(const char *name, RecLLong rec_llong, bool lock)
-{
-  RecData data;
-  data.rec_llong = rec_llong;
-  return RecSetRecord(RECT_NULL, name, RECD_LLONG, &data, NULL, lock);
 }
 
 int
@@ -845,8 +818,6 @@ RecReadConfigFile()
     data_type = RECD_NULL;
     if (strcmp(data_type_str, "INT") == 0) {
       data_type = RECD_INT;
-    } else if (strcmp(data_type_str, "LLONG") == 0) {
-      data_type = RECD_LLONG;
     } else if (strcmp(data_type_str, "FLOAT") == 0) {
       data_type = RECD_FLOAT;
     } else if (strcmp(data_type_str, "STRING") == 0) {
@@ -988,11 +959,6 @@ RecSyncConfigToTB(textBuffer * tb)
             case RECD_INT:
               tb->copyFrom("INT ", 4);
               snprintf(b, 1023, "%lld", r->data.rec_int);
-              tb->copyFrom(b, strlen(b));
-              break;
-            case RECD_LLONG:
-              tb->copyFrom("LLONG ", 6);
-              snprintf(b, 1023, "%lld", r->data.rec_llong);
               tb->copyFrom(b, strlen(b));
               break;
             case RECD_FLOAT:

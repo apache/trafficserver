@@ -614,10 +614,6 @@ checkBackDoorP(int req_fd, char *message)
           sprintf(reply, "\nRecord: '%s' Val: '%lld'\n", the_records->recs[id].name,
                       the_records->recs[id].data.int_data);
           break;
-        case INK_LLONG:
-          sprintf(reply, "\nRecord: '%s' Val: '%lld'\n", the_records->recs[id].name,
-                      the_records->recs[id].data.llong_data);
-          break;
         case INK_FLOAT:
           sprintf(reply, "\nRecord: '%s' Val: '%f'\n", the_records->recs[id].name,
                   the_records->recs[id].data.float_data);
@@ -656,9 +652,6 @@ checkBackDoorP(int req_fd, char *message)
         break;
       case INK_INT:
         pmgmt->record_data->setInteger(id, type, ink_atoi64(value));
-        break;
-      case INK_LLONG:
-        pmgmt->record_data->setLLong(id, type, ink_atoi64(value));
         break;
       case INK_FLOAT:
         pmgmt->record_data->setFloat(id, type, atof(value));

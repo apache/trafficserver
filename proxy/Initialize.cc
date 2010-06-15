@@ -205,12 +205,12 @@ init_system_core_size(void)
 void
 init_system_memalign_heap(void)
 {
-  long long ram_cache_max = -1;
+  int64 ram_cache_max = -1;
   int enable_preallocation = 1;
 
   REC_ReadConfigInteger(enable_preallocation, "proxy.config.system.memalign_heap");
   if (enable_preallocation) {
-    REC_ReadConfigLLong(ram_cache_max, "proxy.config.cache.ram_cache.size");
+    REC_ReadConfigInteger(ram_cache_max, "proxy.config.cache.ram_cache.size");
     if (ram_cache_max > 0) {
       if (!ink_memalign_heap_init(ram_cache_max))
         Warning("Unable to init memalign heap");

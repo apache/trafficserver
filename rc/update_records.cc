@@ -110,7 +110,6 @@ const char *config_str = "CONFIG";
 const char *local_str = "LOCAL";
 const char *plugin_str = "PLUGIN";
 const char *int_str = "INT";
-const char *llong_str = "LLONG";
 const char *string_str = "STRING";
 const char *float_str = "FLOAT";
 const char *counter_str = "COUNTER";
@@ -307,9 +306,6 @@ generate_rec_ht_from_RecordsConfig()
     switch (re->value_type) {
     case INK_INT:
       ce->value_type = int_str;
-      break;
-    case INK_LLONG:
-      ce->value_type = llong_str;
       break;
     case INK_FLOAT:
       ce->value_type = float_str;

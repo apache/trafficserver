@@ -297,7 +297,6 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
   char *str_val;
   MgmtIntCounter counter_val;
   MgmtInt int_val;
-  MgmtLLong llong_val;
 
   Debug("RecOp", "[MgmtRecordGet] Start\n");
 
@@ -324,15 +323,6 @@ MgmtRecordGet(const char *rec_name, INKRecordEle * rec_ele)
     rec_ele->int_val = (INKInt) int_val;
 
     Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %d\n", rec_ele->rec_name, rec_ele->int_val);
-    break;
-
-  case RECD_LLONG:
-    rec_ele->rec_type = INK_REC_LLONG;
-    if (!varLLongFromName(rec_name, &(llong_val)))
-      return INK_ERR_FAIL;
-    rec_ele->llong_val = (INKLLong) llong_val;
-
-    Debug("RecOp", "[MgmtRecordGet] Get LLong Var %s = %lld\n", rec_ele->rec_name, rec_ele->llong_val);
     break;
 
   case RECD_FLOAT:

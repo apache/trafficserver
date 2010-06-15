@@ -48,7 +48,6 @@ enum RecErrT
 #define RecStringNull NULL
 
 typedef int64 RecInt;
-typedef int64 RecLLong;
 typedef float RecFloat;
 typedef char *RecString;
 typedef const char *RecStringConst;
@@ -78,7 +77,6 @@ enum RecDataT
   RECD_STAT_CONST,              // Added for the StatProcessor
   RECD_STAT_FX,                 // Added for the StatProcessor
 #endif
-  RECD_LLONG,
   RECD_MAX
 };
 
@@ -128,7 +126,6 @@ enum RecAccessT
 union RecData
 {
   RecInt rec_int;
-  RecLLong rec_llong;
   RecFloat rec_float;
   RecString rec_string;
   RecCounter rec_counter;

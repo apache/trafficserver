@@ -56,20 +56,17 @@ public:
   MgmtIntCounter incrementCounter(int id, RecordType type);
   MgmtIntCounter setCounter(int id, RecordType type, MgmtIntCounter value);
   MgmtInt setInteger(int id, RecordType type, MgmtInt value);
-  MgmtLLong setLLong(int id, RecordType type, MgmtLLong value);
   MgmtFloat setFloat(int id, RecordType type, MgmtFloat value);
   bool setString(int id, RecordType type, MgmtString value);
 
   MgmtIntCounter incrementCounter(const char *name);
   MgmtIntCounter setCounter(const char *name, MgmtIntCounter value);
   MgmtInt setInteger(const char *name, MgmtInt value);
-  MgmtLLong setLLong(const char *name, MgmtLLong value);
   MgmtFloat setFloat(const char *name, MgmtFloat value);
   bool setString(const char *name, MgmtString value);
 
   MgmtIntCounter readPProcessCounter(int id, RecordType type, char *p);
   MgmtInt readPProcessInteger(int id, RecordType type, char *p);
-  MgmtLLong readPProcessLLong(int id, RecordType type, char *p);
   MgmtFloat readPProcessFloat(int id, RecordType type, char *p);
   MgmtString readPProcessString(int id, RecordType type, char *p);
 

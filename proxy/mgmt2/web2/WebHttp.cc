@@ -805,7 +805,6 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
     rec_type_a[RECT_LOCAL] = "LOCAL";
     rec_type_a[RECT_PLUGIN] = "PLUGIN";
     data_type_a[RECD_INT] = "INT";
-    data_type_a[RECD_LLONG] = "LLONG";
     data_type_a[RECD_FLOAT] = "FLOAT";
     data_type_a[RECD_STRING] = "STRING";
     data_type_a[RECD_COUNTER] = "COUNTER";
@@ -869,15 +868,6 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
           {
             RecInt data = g_records[r].data.rec_int;
             RecInt data_default = g_records[r].data_default.rec_int;
-            snprintf(cur_value, BUF_SIZE, "%lld", data);
-            snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
-            same = (data == data_default);
-          }
-          break;
-        case RECD_LLONG:
-          {
-            RecLLong data = g_records[r].data.rec_llong;
-            RecLLong data_default = g_records[r].data_default.rec_llong;
             snprintf(cur_value, BUF_SIZE, "%lld", data);
             snprintf(def_value_rec, BUF_SIZE, "%lld", data_default);
             same = (data == data_default);
@@ -970,7 +960,6 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
     type_a[LOCAL] = "LOCAL";
     type_a[PLUGIN] = "PLUGIN";
     value_type_a[INK_INT] = "INT";
-    value_type_a[INK_LLONG] = "LLONG";
     value_type_a[INK_FLOAT] = "FLOAT";
     value_type_a[INK_STRING] = "STRING";
     value_type_a[INK_COUNTER] = "COUNTER";
@@ -1048,17 +1037,6 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
         case INK_INT:
           {
             MgmtInt i = lmgmt->record_data->readInteger(RecordsConfig[r].name, &found);
-            if (found) {
-              snprintf(cur_value, BUF_SIZE, "%lld", i);
-              if (i == ink_atoi64(RecordsConfig[r].value)) {
-                same = true;
-              }
-            }
-          }
-          break;
-        case INK_LLONG:
-          {
-            MgmtLLong i = lmgmt->record_data->readLLong(RecordsConfig[r].name, &found);
             if (found) {
               snprintf(cur_value, BUF_SIZE, "%lld", i);
               if (i == ink_atoi64(RecordsConfig[r].value)) {

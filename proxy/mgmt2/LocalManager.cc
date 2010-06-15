@@ -746,9 +746,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
       case RECD_INT:
         RecRegisterStatInt(RECT_PLUGIN, var_name, ink_atoi64(var_value), RECP_NULL);
         break;
-      case RECD_LLONG:
-        RecRegisterStatLLong(RECT_PLUGIN, var_name, ink_atoi64(var_value), RECP_NULL);
-        break;
       case RECD_FLOAT:
         RecRegisterStatFloat(RECT_PLUGIN, var_name, atof(var_value), RECP_NULL);
         break;
@@ -773,9 +770,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
       switch (stype) {
       case INK_INT:
         REC_setInteger(var_name, ink_atoi64(var_value));
-        break;
-      case INK_LLONG:
-        REC_setLLong(var_name, ink_atoi64(var_value));
         break;
       case INK_COUNTER:
       case INK_FLOAT:

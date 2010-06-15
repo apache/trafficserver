@@ -453,13 +453,6 @@ RafCont::process_query_stat(const char *id, char *var)
         snprintf(val_output, 256, "%lld", i);
         break;
       }
-    case RECD_LLONG:
-      {
-        bool tmp = false;
-        RecLLong i = REC_readLLong(var, &tmp);
-        snprintf(val_output, 256, "%lld", i);
-        break;
-      }
     case RECD_FLOAT:
       {
         bool tmp = false;

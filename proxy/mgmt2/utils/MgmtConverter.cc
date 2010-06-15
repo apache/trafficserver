@@ -2415,9 +2415,6 @@ getXmlRecType(struct RecordElement rec, char *buf, int buf_size)
       break;
     case INK_INT:
     case INK_COUNTER:
-    case INK_LLONG:
-      sprintf(buf, "<xs:attribute name=\"%s\" type=\"xs:integer\" default=\"%s\"/>", rec.name, rec.value);
-      break;
     default:
       // Handled here:
       // INVALID, INK_STAT_CONST,INK_STAT_FX, MAX_MGMT_TYPE

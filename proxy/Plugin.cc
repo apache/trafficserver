@@ -224,17 +224,6 @@ plugin_expand(char *arg)
       return str;
       break;
     }
-  case RECD_LLONG:
-    {
-      RecLLong llong_val;
-      if (RecGetRecordLLong(arg, &llong_val) != REC_ERR_OKAY) {
-        goto not_found;
-      }
-      str = (char *) xmalloc(128);
-      snprintf(str, 128, "%lld", (long long) llong_val);
-      return str;
-      break;
-    }
   case RECD_COUNTER:
     {
       RecCounter count_val;

@@ -44,8 +44,6 @@ int RecSetDiags(Diags * diags);
 
 int RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type);
 
-int RecRegisterStatLLong(RecT rec_type, const char *name, RecLLong data_default, RecPersistT persist_type);
-
 int RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type);
 
 int RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type);
@@ -59,10 +57,6 @@ int RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_defa
 int RecRegisterConfigInt(RecT rec_type, const char *name,
                          RecInt data_default, RecUpdateT update_type,
                          RecCheckT check_type, const char *ccheck_regex, RecAccessT access_type = RECA_NULL);
-
-int RecRegisterConfigLLong(RecT rec_type, const char *name,
-                           RecLLong data_default, RecUpdateT update_type,
-                           RecCheckT check_type, const char *check_regex, RecAccessT access_type = RECA_NULL);
 
 int RecRegisterConfigFloat(RecT rec_type, const char *name,
                            RecFloat data_default, RecUpdateT update_type,
@@ -81,7 +75,6 @@ int RecRegisterConfigCounter(RecT rec_type, const char *name,
 //-------------------------------------------------------------------------
 
 int RecLinkConfigInt(const char *name, RecInt * rec_int);
-int RecLinkConfigLLong(const char *name, RecLLong * rec_llong);
 int RecLinkConfigInk32(const char *name, int32 * p_int32);
 int RecLinkConfigInkU32(const char *name, uint32 * p_uint32);
 int RecLinkConfigFloat(const char *name, RecFloat * rec_float);
@@ -106,13 +99,11 @@ int RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock * rsb,
 // RecSetRecordConvert -> WebMgmtUtils.cc::varSetFromStr()
 int RecSetRecordConvert(const char *name, const RecString rec_string, bool lock = true);
 int RecSetRecordInt(const char *name, RecInt rec_int, bool lock = true);
-int RecSetRecordLLong(const char *name, RecLLong rec_llong, bool lock = true);
 int RecSetRecordFloat(const char *name, RecFloat rec_float, bool lock = true);
 int RecSetRecordString(const char *name, const RecString rec_string, bool lock = true);
 int RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock = true);
 
 int RecGetRecordInt(const char *name, RecInt * rec_int, bool lock = true);
-int RecGetRecordLLong(const char *name, RecLLong * rec_llong, bool lock = true);
 int RecGetRecordFloat(const char *name, RecFloat * rec_float, bool lock = true);
 int RecGetRecordString(const char *name, char *buf, int buf_len, bool lock = true);
 int RecGetRecordString_Xmalloc(const char *name, RecString * rec_string, bool lock = true);
@@ -150,7 +141,6 @@ void RecSignalAlarm(int, const char *);
 //-------------------------------------------------------------------------
 
 #define REC_RegisterConfigInteger RecRegisterConfigInt
-#define REC_RegisterConfigLLong   RecRegisterConfigLLong
 #define REC_RegisterConfigString  RecRegisterConfigString
 
 #define REC_ReadConfigInt32(_var,_config_var_name) do { \
@@ -162,12 +152,6 @@ void RecSignalAlarm(int, const char *);
 #define REC_ReadConfigInteger(_var,_config_var_name) do { \
   RecInt tmp = 0; \
   RecGetRecordInt(_config_var_name, &tmp); \
-  _var = tmp; \
-} while (0)
-
-#define REC_ReadConfigLLong(_var,_config_var_name) do { \
-  RecLLong tmp = 0; \
-  RecGetRecordLLong(_config_var_name, &tmp); \
   _var = tmp; \
 } while (0)
 
@@ -188,12 +172,7 @@ void RecSignalAlarm(int, const char *);
 
 #define REC_EstablishStaticConfigInteger(_var, _config_var_name) do{ \
   RecLinkConfigInt(_config_var_name, &_var); \
-  _var = (int)REC_ConfigReadInteger(_config_var_name); \
-} while (0)
-
-#define REC_EstablishStaticConfigLLong(_var, _config_var_name) do{ \
-  RecLinkConfigLLong(_config_var_name, &_var); \
-  _var = (RecLLong)REC_ConfigReadLLong(_config_var_name); \
+  _var = (int64)REC_ConfigReadInteger(_config_var_name); \
 } while (0)
 
 #define REC_EstablishStaticConfigInt32(_var, _config_var_name) do { \
@@ -222,20 +201,17 @@ void RecSignalAlarm(int, const char *);
 } while (0)
 
 RecInt REC_ConfigReadInteger(const char *name);
-RecLLong REC_ConfigReadLLong(const char *name);
 char *REC_ConfigReadString(const char *name);
 RecFloat REC_ConfigReadFloat(const char *name);
 RecCounter REC_ConfigReadCounter(const char *name);
 
 // MGMT2 Marco's -- converting lmgmt->record_data->readXXX
 RecInt REC_readInteger(const char *name, bool * found, bool lock = true);
-RecLLong REC_readLLong(char *name, bool * found, bool lock = true);
 RecFloat REC_readFloat(char *name, bool * found, bool lock = true);
 RecCounter REC_readCounter(char *name, bool * found, bool lock = true);
 RecString REC_readString(const char *name, bool * found, bool lock = true);
 
-bool REC_setInteger(const char *name, int value, bool dirty = true);
-bool REC_setLLong(const char *name, RecLLong value, bool dirty = true);
+bool REC_setInteger(const char *name, RecInt value, bool dirty = true);
 bool REC_setFloat(const char *name, float value, bool dirty = true);
 bool REC_setCounter(const char *name, int64 value, bool dirty = true);
 bool REC_setString(const char *name, char *value, bool dirty = true);
