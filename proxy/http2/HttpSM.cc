@@ -4270,12 +4270,15 @@ HttpSM::do_http_server_open(bool raw)
   opt.set_sock_param(t_state.http_config_param->sock_recv_buffer_size_out,
                      t_state.http_config_param->sock_send_buffer_size_out,
                      t_state.http_config_param->sock_option_flag_out);
+  // TBD: Check for transparency here and set opt accordingly.
+  if (t_state.http_config_param->outgoing_ip_to_bind_saddr) {
+    opt.addr_binding = NetVCOptions::INTF_ADDR;
+    opt.local_addr = t_state.http_config_param->outgoing_ip_to_bind_saddr;
+  }
+
 
   Debug("http", "[%lld] open connection to %s: %u.%u.%u.%u",
-        sm_id, t_state.current.server->name,
-        ((unsigned char *) &t_state.current.server->ip)[0],
-        ((unsigned char *) &t_state.current.server->ip)[1],
-        ((unsigned char *) &t_state.current.server->ip)[2], ((unsigned char *) &t_state.current.server->ip)[3]);
+        sm_id, t_state.current.server->name, PRINT_IP(t_state.current.server->ip));
 
   if (plugin_tunnel) {
     PluginVCCore *t = plugin_tunnel;
@@ -4423,14 +4426,14 @@ HttpSM::do_http_server_open(bool raw)
     connect_action_handle = sslNetProcessor.connect_re(this,    // state machine
                                                        srv_ip,  // host_op
                                                        srv_port,        // host_port
-                                                       t_state.http_config_param->outgoing_ip_to_bind_saddr, &opt);
+                                                       &opt);
   } else {
     if (t_state.method != HTTP_WKSIDX_CONNECT) {
       Debug("http", "calling netProcessor.connect_re");
       connect_action_handle = netProcessor.connect_re(this,     // state machine
                                                       srv_ip,   // host_op
                                                       srv_port, // host_port
-                                                      t_state.http_config_param->outgoing_ip_to_bind_saddr, &opt);
+                                                      &opt);
     } else {
       // Setup the timeouts
       // Set the inactivity timeout to the connect timeout so that we
@@ -4453,7 +4456,6 @@ HttpSM::do_http_server_open(bool raw)
       connect_action_handle = netProcessor.connect_s(this,      // state machine
                                                      srv_ip,    // host_op
                                                      srv_port,  // host_port
-                                                     t_state.http_config_param->outgoing_ip_to_bind_saddr,
                                                      connect_timeout, &opt);
     }
   }
@@ -4465,7 +4467,6 @@ HttpSM::do_http_server_open(bool raw)
     connect_action_handle = netProcessor.connect_re(this,       // state machine
                                                     srv_ip,     // host_op
                                                     srv_port,   // host_port
-                                                    t_state.http_config_param->outgoing_ip_to_bind_saddr, &opt);
   } else {
     // Setup the timeouts
     // Set the inactivity timeout to the connect timeout so that we

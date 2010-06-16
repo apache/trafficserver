@@ -44,13 +44,21 @@ class PollDescriptor;
 TS_INLINE void
 NetVCOptions::reset()
 {
+  ip_proto = USE_TCP;
   local_port = 0;
-  spoof_ip = 0;
-  spoof_port = 0;
+  port_binding = ANY_PORT;
+  local_addr = 0;
+  addr_binding = ANY_ADDR;
+  f_blocking = false;
+  f_blocking_connect = true;
   socks_support = NORMAL_SOCKS;
   socks_version = SOCKS_DEFAULT_VERSION;
-  //_interface = 0;
-  socket_recv_bufsize = 0;
+  socket_recv_bufsize = 
+#if defined(RECV_BUF_SIZE)
+    RECV_BUF_SIZE;
+#else
+    0;
+#endif
   socket_send_bufsize = 0;
   sockopt_flags = 0;
   etype = ET_NET;
@@ -205,7 +213,7 @@ public:
   NetHandler *nh;
   unsigned int id;
   unsigned int ip;
-  unsigned int _interface; // 'interface' conflicts with the C++ keyword
+  //  unsigned int _interface; // 'interface' conflicts with the C++ keyword
   int accept_port;
   int port;
 

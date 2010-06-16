@@ -788,7 +788,7 @@ closed(0), inactivity_timeout_in(0), active_timeout_in(0),
   next_inactivity_timeout_at(0),
 #endif
   active_timeout(NULL), nh(NULL),
-  id(0), ip(0), _interface(0), accept_port(0), port(0), flags(0), recursion(0), submit_time(0), oob_ptr(0)
+  id(0), ip(0), accept_port(0), port(0), flags(0), recursion(0), submit_time(0), oob_ptr(0)
 {
   memset(&local_sa, 0, sizeof local_sa);
   SET_HANDLER((NetVConnHandler) & UnixNetVConnection::startEvent);
@@ -1070,37 +1070,28 @@ UnixNetVConnection::connectUp(EThread *t)
   // Initialize this UnixNetVConnection
   //
   int res = 0;
-  NetDebug("arm_spoofing", "connectUp:: interface=%x and options.spoofip=%x\n", _interface, options.spoof_ip);
+  NetDebug("iocore_net", "connectUp:: local_addr=%u.%u.%u.%u [%s]\n",
+	   PRINT_IP(options.local_addr),
+	   NetVCOptions::toString(options.addr_binding)
+	   );
+
+
   nh = get_NetHandler(t);
-#ifndef USE_EDGE_TRIGGER
-  if (_interface || options.local_port || options.spoof_ip)
-    res = con.bind_connect(ip, port, _interface, &options);
-  else
-    res = con.fast_connect(ip, port, &options);
-#else
-  int sock = -1;
-  if ((sock = socketManager.socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    goto Lfailure;
-  con.fd = sock;
-#endif
-  if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
-    lerrno = errno;
-    NetDebug("iocore_net", "connectUp : Failed to add to epoll list\n");
-    action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) res);
-    free(t);
-    return CONNECT_FAILURE;
+  res = con.open(options);
+  if (0 == res) {
+    // Must connect after EventIO::Start() to avoid a race condition
+    // when edge triggering is used.
+    if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
+      lerrno = errno;
+      NetDebug("iocore_net", "connectUp : Failed to add to epoll list\n");
+      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) res);
+      free(t);
+      return CONNECT_FAILURE;
+    }
+    res = con.connect(ip, port, options);
   }
-#ifdef USE_EDGE_TRIGGER
-  // must be called after EventIO::start() to avoid race with edge triggering
-  if (_interface || options.local_port || options.spoof_ip)
-    res = con.bind_connect(ip, port, _interface, &options, sock);
-  else
-    res = con.fast_connect(ip, port, &options, sock);
-#endif
+
   if (res) {
-#ifdef USE_EDGE_TRIGGER
-  Lfailure:
-#endif
     lerrno = errno;
     action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)res);
     free(t);
@@ -1115,18 +1106,6 @@ UnixNetVConnection::connectUp(EThread *t)
   // in it for the inherited SSLUnixNetVConnection.  Allows the connectUp
   // function code not to be duplicated in the inherited SSL class.
   //  sslStartHandShake (SSL_EVENT_CLIENT, err);
-
-  if (_interface || options.local_port || options.spoof_ip) {
-    nh = get_NetHandler(t);
-    PollDescriptor *pd = get_PollDescriptor(t);
-    if (ep.start(pd, this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
-      NetDebug("iocore_net", "connectUp : Failed to add to epoll list\n");
-      lerrno = errno;
-      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)res);
-      free(t);
-      return CONNECT_FAILURE;
-    }
-  }
 
   nh->open_list.enqueue(this);
 

@@ -56,10 +56,20 @@ get_listen_backlog(void)
 //
 // Functions
 //
+char const*
+NetVCOptions::toString(addr_bind_style s) {
+  return ANY_ADDR == s ? "any"
+    : INTF_ADDR == s ? "interface"
+    : "foreign"
+    ;
+}
+
 Connection::Connection()
+  : fd(NO_FD)
+  , is_bound(false)
+  , is_connected(false)
 {
   memset(&sa, 0, sizeof(struct sockaddr_storage));
-  fd = NO_FD;
 }
 
 
@@ -105,6 +115,8 @@ Lerror:
 int
 Connection::close()
 {
+  is_connected = false;
+  is_bound = false;
   // don't close any of the standards
   if (fd >= 2) {
     int fd_save = fd;
@@ -115,178 +127,6 @@ Connection::close()
     return -EBADF;
   }
 }
-
-
-int
-Connection::fast_connect(const unsigned int ip, const int port, NetVCOptions * opt, const int sock)
-{
-  uint32 *z;
-  int res = 0;
-
-  if (sock < 0) {
-    ink_assert(fd == NO_FD);
-    if ((res = socketManager.socket(AF_INET, SOCK_STREAM, 0)) < 0)
-      goto Lerror;
-  } else
-    res = sock;
-
-  fd = res;
-
-  sa.ss_family = AF_INET;
-  ((struct sockaddr_in *)(&sa))->sin_port = htons(port);
-  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = ip;
-  z = (uint32 *)(&(((struct sockaddr_in *)(&sa))->sin_zero));
-  z[0] = 0;
-  z[1] = 0;
-
-  do {
-    res = safe_nonblocking(fd);
-  } while (res < 0 && (errno == EAGAIN || errno == EINTR));
-
-  // cannot do this after connection on non-blocking connect
-#ifdef SET_TCP_NO_DELAY
-  NetDebug("socket", "setting TCP_NODELAY in fast_connect");
-  if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int))) < 0)
-    goto Lerror;
-#endif
-#ifdef RECV_BUF_SIZE
-  socketManager.set_rcvbuf_size(fd, RECV_BUF_SIZE);
-#endif
-#ifdef SET_SO_KEEPALIVE
-  // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int))) < 0)
-    goto Lerror;
-#endif
-
-  if (opt) {
-    if (opt->socket_recv_bufsize > 0) {
-      if (socketManager.set_rcvbuf_size(fd, opt->socket_recv_bufsize)) {
-        int rbufsz = ROUNDUP(opt->socket_recv_bufsize, 1024);   // Round down until success
-        while (rbufsz) {
-          if (!socketManager.set_rcvbuf_size(fd, rbufsz))
-            break;
-          rbufsz -= 1024;
-        }
-      }
-    }
-    if (opt->socket_send_bufsize > 0) {
-      if (socketManager.set_sndbuf_size(fd, opt->socket_send_bufsize)) {
-        int sbufsz = ROUNDUP(opt->socket_send_bufsize, 1024);   // Round down until success
-        while (sbufsz) {
-          if (!socketManager.set_sndbuf_size(fd, sbufsz))
-            break;
-          sbufsz -= 1024;
-        }
-      }
-    }
-    if (opt->sockopt_flags & 1) {
-      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
-      NetDebug("socket", "::fast_connect: setsockopt() TCP_NODELAY on socket");
-    }
-    if (opt->sockopt_flags & 2) {
-      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
-      NetDebug("socket", "::fast_connect: setsockopt() SO_KEEPALIVE on socket");
-    }
-  }
-  res = ::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-
-  if (res < 0 && errno != EINPROGRESS)
-    goto Lerror;
-
-  return 0;
-
-Lerror:
-  if (fd != NO_FD)
-    close();
-  return res;
-}
-
-
-int
-Connection::connect(unsigned int ip, int port,
-                    bool non_blocking_connect, bool use_tcp, bool non_blocking, bool bind_random_port)
-{
-  ink_assert(fd == NO_FD);
-  int res = 0;
-  ink_hrtime t;
-  short Proto;
-
-  if (use_tcp) {
-    Proto = IPPROTO_TCP;
-    if ((res = socketManager.socket(AF_INET, SOCK_STREAM, 0)) < 0)
-      goto Lerror;
-  } else {
-    Proto = IPPROTO_UDP;
-    if ((res = socketManager.socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-      goto Lerror;
-  }
-
-  fd = res;
-
-  if (bind_random_port) {
-    int retries = 0;
-    int offset = 0;
-    while (retries++ < 10000) {
-      struct sockaddr_storage bind_sa;
-      memset(&sa, 0, sizeof(bind_sa));
-      bind_sa.ss_family = AF_INET;
-      ((struct sockaddr_in *)(&bind_sa))->sin_addr.s_addr = INADDR_ANY;
-      int p = time(NULL) + offset;
-      p = (p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT;
-      ((struct sockaddr_in *)(&bind_sa))->sin_port = htons(p);
-      NetDebug("dns", "random port = %d\n", p);
-      if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa), Proto)) < 0) {
-        offset += 101;
-        continue;
-      }
-      goto Lok;
-    }
-    Warning("unable to bind random DNS port");
-  Lok:;
-  }
-
-  sa.ss_family = AF_INET;
-  ((struct sockaddr_in *)(&sa))->sin_port = htons(port);
-  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = ip;
-  memset(&(((struct sockaddr_in *)(&sa))->sin_zero), 0, 8);
-
-  if (non_blocking_connect)
-    if ((res = safe_nonblocking(fd)) < 0)
-      goto Lerror;
-
-  // cannot do this after connection on non-blocking connect
-#ifdef SET_TCP_NO_DELAY
-  if (use_tcp)
-    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int))) < 0)
-      goto Lerror;
-#endif
-#ifdef RECV_BUF_SIZE
-  socketManager.set_rcvbuf_size(fd, RECV_BUF_SIZE);
-#endif
-#ifdef SET_SO_KEEPALIVE
-  // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int))) < 0)
-    goto Lerror;
-#endif
-
-  t = ink_get_hrtime();
-  res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-
-  if (!res || ((res < 0) && (errno == EINPROGRESS || errno == EWOULDBLOCK))) {
-    if (!non_blocking_connect && non_blocking)
-      if ((res = safe_nonblocking(fd)) < 0)
-        goto Lerror;
-  } else
-    goto Lerror;
-
-  return 0;
-
-Lerror:
-  if (fd != NO_FD)
-    close();
-  return res;
-}
-
 
 int
 Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsize)

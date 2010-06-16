@@ -852,10 +852,14 @@ ClusterHandler::connectClusterEvent(int event, Event * e)
     opt.socket_recv_bufsize = cluster_receive_buffer_size;
     opt.sockopt_flags = cluster_sockopt_flags;
     opt.etype = ET_CLUSTER;
+    opt.addr_binding = NetVCOptions::INTF_ADDR;
+    opt.local_addr = this_cluster_machine()->ip;
 
     Action *act = netProcessor.connect_re(this, machine->ip,
-                                          machine->cluster_port ? machine->cluster_port : cluster_port,
-                                          this_cluster_machine()->ip, &opt);
+                                          machine->cluster_port
+					      ? machine->cluster_port
+					      : cluster_port,
+					  &opt);
 
     NOWARN_UNUSED(act);
 

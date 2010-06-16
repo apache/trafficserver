@@ -321,8 +321,7 @@ SocksProxy::mainEvent(int event, void *data)
             vc_options.socks_support = p[1];
             vc_options.socks_version = version;
 
-            Action *action = netProcessor.connect_re(this, ip, port, 0,
-                                                     &vc_options);
+            Action *action = netProcessor.connect_re(this, ip, port, &vc_options);
             if (action != ACTION_RESULT_DONE) {
               ink_assert(pending_action == NULL);
               pending_action = action;

@@ -213,7 +213,7 @@ SocksEntry::startEvent(int event, void *data)
 
     NetVCOptions options;
     options.socks_support = NO_SOCKS;
-    netProcessor.connect_re(this, server_ip, server_port, 0, &options);
+    netProcessor.connect_re(this, server_ip, server_port, &options);
   }
 
   return EVENT_CONT;

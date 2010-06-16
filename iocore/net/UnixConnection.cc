@@ -28,7 +28,6 @@
 #include "ink_unused.h"       /* MAGIC_EDITING_TAG */
 #include "P_Net.h"
 
-#define SET_TCP_NO_DELAY
 #define SET_NO_LINGER
 // set in the OS
 // #define RECV_BUF_SIZE            (1024*64)
@@ -37,6 +36,10 @@
 #define LAST_RANDOM_PORT         32000
 
 #define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
+
+#if !defined(IP_TRANSPARENT)
+unsigned int const IP_TRANSPARENT = 19;
+#endif
 
 //
 // Functions
@@ -154,122 +157,187 @@ Lerror:
   return res;
 }
 
+namespace {
+  /** Struct to make cleaning up resources easier.
+
+      By default, the @a method is invoked on the @a object when
+      this object is destructed. This can be prevented by calling
+      the @c reset method.
+
+      This is not overly useful in the allocate, check, return case
+      but very handy if there are
+      - multiple resources (each can have its own cleaner)
+      - multiple checks against the resource
+      In such cases, rather than trying to track all the resources
+      that might need cleaned up, you can set up a cleaner at allocation
+      and only have to deal with them on success, which is generally
+      singular.
+
+      @code
+      self::some_method (...) {
+        /// allocate resource
+        cleaner<self> clean_up(this, &self::cleanup);
+	// modify or check the resource
+        if (fail) return FAILURE; // cleanup() is called
+        /// success!
+        clean_up.reset(); // cleanup() not called after this
+        return SUCCESS;
+      @endcode
+   */
+  template <typename T> struct cleaner {
+    T* obj; ///< Object instance.
+    typedef void (T::*method)(); ///< Method signature.
+    method m;
+
+    cleaner(T* _obj, method  _method) : obj(_obj), m(_method) {}
+    ~cleaner() { if (obj) (obj->*m)(); }
+    void reset() { obj = 0; }
+  };
+}
+
+/** Default options.
+
+    @internal This structure is used to reduce the number of places in
+    which the defaults are set. Originally the argument defaulted to
+    @c NULL which meant that the defaults had to be encoded in any
+    methods that used it as well as the @c NetVCOptions
+    constructor. Now they are controlled only in the latter and not in
+    any of the methods. This makes handling global default values
+    (such as @c RECV_BUF_SIZE) more robust. It doesn't have to be
+    checked in the method, only in the @c NetVCOptions constructor.
+
+    The methods are simpler because they never have to check for the
+    presence of the options, yet the clients aren't inconvenienced
+    because a default value for the argument is provided. Further,
+    clients can pass temporaries and not have to declare a variable in
+    order to tweak options.
+ */
+NetVCOptions const Connection::DEFAULT_OPTIONS;
 
 int
-Connection::bind_connect(unsigned int target_ip, int target_port, unsigned int my_ip,
-                         NetVCOptions *opt, int sock, bool non_blocking_connect, bool use_tcp,
-                         bool non_blocking, bool bc_no_connect, bool bc_no_bind)
+Connection::open(NetVCOptions const& opt)
 {
   ink_assert(fd == NO_FD);
-  int res = 0;
-  ink_hrtime t;
-  int enable_reuseaddr = 1;
-  int my_port = (opt) ? opt->local_port : 0;
+  int enable_reuseaddr = 1; // used for sockopt setting
+  int res = 0; // temp result
+  uint32 local_addr = NetVCOptions::ANY_ADDR == opt.addr_binding
+    ? INADDR_ANY
+    : opt.local_addr;
+  uint16 local_port = NetVCOptions::ANY_PORT == opt.port_binding
+    ? 0
+    : opt.local_port;
+  int sock_type = NetVCOptions::USE_UDP == opt.ip_proto
+    ? SOCK_DGRAM
+    : SOCK_STREAM;
 
-  if (!bc_no_bind) {
-    if (sock < 0) {
-      if (use_tcp) {
-        if ((res = socketManager.socket(AF_INET, SOCK_STREAM, 0)) < 0)
-          goto Lerror;
-      } else {
-        if ((res = socketManager.socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-          goto Lerror;
-      }
-    } else
-      res = sock;
+  res = socketManager.socket(AF_INET, sock_type, 0);
+  if (-1 == res) return -errno;
 
-    fd = res;
+  fd = res;
+  // mark fd for close until we succeed.
+  cleaner<Connection> cleanup(this, &Connection::_cleanup);
 
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0))
-      goto Lerror;
+  // Try setting the various socket options, if requested.
 
-    struct sockaddr_in bind_sa;
-    memset(&bind_sa, 0, sizeof(bind_sa));
-    bind_sa.sin_family = AF_INET;
-    bind_sa.sin_port = htons(my_port);
-    bind_sa.sin_addr.s_addr = my_ip;
-    if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa))) < 0)
-      goto Lerror;
+  if (-1 == safe_setsockopt(fd,
+			    SOL_SOCKET,
+			    SO_REUSEADDR,
+			    reinterpret_cast<char *>(&enable_reuseaddr),
+			    sizeof(enable_reuseaddr)))
+    return -errno;
 
-    NetDebug("arm_spoofing", "Passed in options opt=%x client_ip=%x and client_port=%d",
-          opt, opt ? opt->spoof_ip : 0, opt ? opt->spoof_port : 0);
+  if (!opt.f_blocking_connect && -1 == safe_nonblocking(fd))
+    return -errno;
+
+  if (opt.socket_recv_bufsize > 0) {
+    if (socketManager.set_rcvbuf_size(fd, opt.socket_recv_bufsize)) {
+      // Round down until success
+      int rbufsz = ROUNDUP(opt.socket_recv_bufsize, 1024);
+      while (rbufsz && !socketManager.set_rcvbuf_size(fd, rbufsz))
+	rbufsz -= 1024;
+      NetDebug("socket", "::open: recv_bufsize = %d of %d\n", rbufsz, opt.socket_recv_bufsize);
+    }
   }
-
-  sa.ss_family = AF_INET;
-  ((struct sockaddr_in *)(&sa))->sin_port = htons(target_port);
-  ((struct sockaddr_in *)(&sa))->sin_addr.s_addr = target_ip;
-  memset(&(((struct sockaddr_in *)(&sa))->sin_zero), 0, 8);
-
-  if (bc_no_bind)               // no socket
-    return 0;
-
-  if (non_blocking_connect)
-    if ((res = safe_nonblocking(fd)) < 0)
-      goto Lerror;
-
-  // cannot do this after connection on non-blocking connect
-#ifdef SET_TCP_NO_DELAY
-  if (use_tcp)
-    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int))) < 0)
-      goto Lerror;
-#endif
-#ifdef RECV_BUF_SIZE
-  socketManager.set_rcvbuf_size(fd, RECV_BUF_SIZE);
-#endif
-#ifdef SET_SO_KEEPALIVE
-  // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int))) < 0)
-    goto Lerror;
-#endif
-
-  if (opt) {
-    if (opt->socket_recv_bufsize > 0) {
-      if (socketManager.set_rcvbuf_size(fd, opt->socket_recv_bufsize)) {
-        int rbufsz = ROUNDUP(opt->socket_recv_bufsize, 1024);   // Round down until success
-        while (rbufsz) {
-          if (!socketManager.set_rcvbuf_size(fd, rbufsz))
-            break;
-          rbufsz -= 1024;
-        }
-      }
-    }
-    if (opt->socket_send_bufsize > 0) {
-      if (socketManager.set_sndbuf_size(fd, opt->socket_send_bufsize)) {
-        int sbufsz = ROUNDUP(opt->socket_send_bufsize, 1024);   // Round down until success
-        while (sbufsz) {
-          if (!socketManager.set_sndbuf_size(fd, sbufsz))
-            break;
-          sbufsz -= 1024;
-        }
-      }
-    }
-    if (use_tcp) {
-      if (opt->sockopt_flags & 1) {
-        safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
-        NetDebug("socket", "::bind_connect: setsockopt() TCP_NODELAY on socket");
-      }
-      if (opt->sockopt_flags & 2) {
-        safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
-        NetDebug("socket", "::bind_connect: setsockopt() SO_KEEPALIVE on socket");
-      }
+  if (opt.socket_send_bufsize > 0) {
+    if (socketManager.set_sndbuf_size(fd, opt.socket_send_bufsize)) {
+      // Round down until success
+      int sbufsz = ROUNDUP(opt.socket_send_bufsize, 1024);
+      while (sbufsz && !socketManager.set_sndbuf_size(fd, sbufsz))
+	sbufsz -= 1024;
+      NetDebug("socket", "::open: send_bufsize = %d of %d\n", sbufsz, opt.socket_send_bufsize);
     }
   }
 
-  if (!bc_no_connect) {
-    t = ink_get_hrtime();
-    res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
-    if (!res || ((res < 0) && errno == EINPROGRESS)) {
-      if (!non_blocking_connect && non_blocking)
-        if ((res = safe_nonblocking(fd)) < 0)
-          goto Lerror;
-    } else
-      goto Lerror;
+  if (SOCK_STREAM == sock_type) {
+    if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) {
+      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
+      NetDebug("socket", "::open: setsockopt() TCP_NODELAY on socket");
+    }
+    if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) {
+      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
+      NetDebug("socket", "::open: setsockopt() SO_KEEPALIVE on socket");
+    }
   }
 
+  if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding && local_addr) {
+    int value = 1;
+    res = safe_setsockopt(fd, SOL_SOCKET, IP_TRANSPARENT, reinterpret_cast<char*>(&value), sizeof(value));
+    if (-1 == res) return -errno;
+  }
+
+  // Local address/port.
+  struct sockaddr_in bind_sa;
+  memset(&bind_sa, 0, sizeof(bind_sa));
+  bind_sa.sin_family = AF_INET;
+  bind_sa.sin_port = htons(local_port);
+  bind_sa.sin_addr.s_addr = local_addr;
+  if (-1 == socketManager.ink_bind(fd,
+				   reinterpret_cast<struct sockaddr *>(&bind_sa),
+				   sizeof(bind_sa)))
+    return -errno;
+
+  cleanup.reset();
+  is_bound = true;
   return 0;
+}
 
-Lerror:
-  if (fd != NO_FD)
-    close();
-  return res;
+int
+Connection::connect(uint32 addr, uint16 port, NetVCOptions const& opt) {
+  ink_assert(fd != NO_FD);
+  ink_assert(is_bound);
+  ink_assert(!is_connected);
+
+  int res;
+
+  this->setRemote(addr, port);
+
+  cleaner<Connection> cleanup(this, &Connection::_cleanup); // mark for close until we succeed.
+
+  res = ::connect(fd,
+		  reinterpret_cast<struct sockaddr *>(&sa),
+		  sizeof(struct sockaddr_in));
+  // It's only really an error if either the connect was blocking
+  // or it wasn't blocking and the error was other than EINPROGRESS.
+  // (Is EWOULDBLOCK ok? Does that start the connect?)
+  // We also want to handle the cases where the connect blocking
+  // and IO blocking differ, by turning it on or off as needed.
+  if (-1 == res 
+      && (opt.f_blocking_connect
+	  || ! (EINPROGRESS == errno || EWOULDBLOCK == errno))) {
+    return -errno;
+  } else if (opt.f_blocking_connect && !opt.f_blocking) {
+    if (-1 == safe_nonblocking(fd)) return -errno;
+  } else if (!opt.f_blocking_connect && opt.f_blocking) {
+    if (-1 == safe_blocking(fd)) return -errno;
+  }
+
+  cleanup.reset();
+  is_connected = true;
+  return 0;
+}
+
+void
+Connection::_cleanup()
+{
+  this->close();
 }

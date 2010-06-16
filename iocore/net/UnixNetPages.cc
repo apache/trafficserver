@@ -70,7 +70,7 @@ struct ShowNet:ShowCont
       char ipbuf[80];
       snprintf(ipbuf, sizeof(ipbuf), "%u.%u.%u.%u", PRINT_IP(vc->ip));
       char interbuf[80];
-      snprintf(interbuf, sizeof(interbuf), "%u.%u.%u.%u", PRINT_IP(vc->_interface));
+      snprintf(interbuf, sizeof(interbuf), "[%s] %u.%u.%u.%u", vc->options.toString(vc->options.addr_binding), PRINT_IP(vc->options.local_addr));
       CHECK_SHOW(show("<tr>"
                       // "<td><a href=\"/connection/%d\">%d</a></td>"
                       "<td>%d</td>" "<td>%s</td>"       // ipbuf

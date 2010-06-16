@@ -49,68 +49,107 @@ enum NetDataType
   NET_DATA_ATTRIBUTES = VCONNECTION_NET_DATA_BASE
 };
 
-/**
-  Holds user options for NetVConnection. This class holds various
-  options a user can specify for NetVConnection. Right now this
-  passed when we invoke NetProcessor::connect_re().
+/** Holds client options for NetVConnection.
 
-  Currently defined fields:
+    This class holds various options a user can specify for
+    NetVConnection. Various clients need many slightly different
+    features. This is an attempt to prevent out of control growth of
+    the connection method signatures.
 
-  <table>
-    <tr><td><b>Field</b></td><td><b>Description</b></td></tr>
-    <tr>
-      <td><i>local_port</i></td>
-      <td>Specifies local port to bind to before connecting</td>
-    </tr>
-    <tr>
-      <td><i>spoof_ip</i></td>
-      <td>IP address to spoof instead of our local address If
-        <i>spoof_src_ip</i> is set, <i>spoof_src_port</i> should be
-        set as well. Spcified in network byte order</td>
-    </tr>
-    <tr>
-      <td><i>spoof_port</i></td>
-      <td>Same as <i>spoof_src_ip</i>. Specified in host byte order</td>
-    </tr>
-    <tr>
-      <td><i>socks_version</i></td>
-      <td>Set explicit version for Socks</td>
-    </tr>
-    <tr>
-      <td><i>socks_support</i></td>
-      <td>Explicitly set to NO_SOCKS to disable SOCKS for the
-        connection. Default is to use SOCKS if configiration enables
-        SOCKS.</td>
-    </tr>
-  </table>
-
-  User only needs to set only the option she is interested in--the
-  rest get sensible default values.
-
+    Only options of interest need to be explicitly set --
+    the rest get sensible default values.
 */
 struct NetVCOptions {
-  int local_port;
+  typedef NetVCOptions self; ///< Self reference type.
 
-  uint32 spoof_ip;
-  int spoof_port;
+  /// Values for valid IP protocols.
+  enum ip_protocol_t {
+    USE_TCP, ///< TCP protocol.
+    USE_UDP, ///< UDP protocol.
+  };
 
+  /// IP protocol to use on socket.
+  ip_protocol_t ip_proto;
+
+  /** The set of ways in which the local address should be bound.
+
+      @note The difference between @c INTF_ADDR and @c FOREIGN_ADDR is
+      whether transparency is enabled on the socket. It is the
+      client's responsibility to set this correct based on whether the
+      address in @a local_addr is associated with an interface on the
+      local system, or is owned by a foreign system.  A binding style
+      of @c ANY_ADDR causes the value in @a local_addr to be ignored.
+
+      @see local_addr
+   */
+  enum addr_bind_style {
+    ANY_ADDR, ///< Bind to any available local address (don't care, default).
+    INTF_ADDR, ///< Bind to the interface address in @a local_addr.
+    FOREIGN_ADDR, ///< Bind to foreign address in @a local_addr.
+  };
+
+  /// The set of ways in which the local port should be bound.
+  enum port_bind_style {
+    ANY_PORT, ///< Bind to any available local port (dont' care, default).
+    FIXED_PORT, ///< Bind to the port in @a local_port.
+  };
+
+  /// Port to use for local side of connection.
+  /// @note Ignored if @a port_binding is @c ANY_PORT.
+  /// @see port_binding
+  uint16 local_port;
+  /// How to bind local port.
+  /// @note Default is @c ANY_PORT.
+  port_bind_style port_binding;
+  /// Address to use for local side of connection.
+  /// @note Ignored if @a addr_binding is @c ANY_ADDR.
+  /// @see addr_binding
+  uint32 local_addr;
+  /// How to bind the local address.
+  /// @note Default is @c ANY_ADDR.
+  addr_bind_style addr_binding;
+
+  /// Make the socket blocking on I/O (default: @c false)
+  bool f_blocking;
+  /// Make socket block on connect (default: @c false)
+  bool f_blocking_connect;
+
+  /// Control use of SOCKS.
+  /// Set to @c NO_SOCKS to disable use of SOCKS. Otherwise SOCKS is
+  /// used if available.
   unsigned char socks_support;
+  /// Version of SOCKS to use.
   unsigned char socks_version;
 
   int socket_recv_bufsize;
   int socket_send_bufsize;
+
+  /// Configuration options for sockets.
+  /// @note These are not identical to internal socket options but
+  /// specifically defined for configuration. These are mask values
+  /// and so must be powers of 2.
   unsigned long sockopt_flags;
+  /// Value for TCP no delay for @c sockopt_flags.
+  static unsigned long const SOCK_OPT_NO_DELAY = 1;
+  /// Value for keep alive for @c sockopt_flags.
+  static unsigned long const SOCK_OPT_KEEP_ALIVE = 2;
 
   EventType etype;
 
+  /// Reset all values to defaults.
   void reset();
-  void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags);
 
+  void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags);
 
   NetVCOptions() {
     reset();
   }
-  /* Add more options here instead of adding them to connect_re() args etc */
+
+  /// @name Debugging
+  //@{
+  /// Convert @a s to its string equivalent.
+  static char const* toString(addr_bind_style s);
+  //@}
 };
 
 /**

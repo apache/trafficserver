@@ -54,11 +54,11 @@ public:
 
 
   Action *connect_re_internal(Continuation * cont,
-                              unsigned int ip, int port, unsigned int _interface = 0, NetVCOptions * options = NULL);
+                              unsigned int ip, int port, NetVCOptions * options = NULL);
 
   Action *connect(Continuation * cont,
                   UnixNetVConnection ** vc,
-                  unsigned int ip, int port, unsigned int _interface, NetVCOptions * opt = NULL);
+                  unsigned int ip, int port, NetVCOptions * opt = NULL);
 
   // Virtual function allows etype
   // to be set to ET_SSL for SSLNetProcessor.  Does
@@ -96,9 +96,9 @@ public:
 
 
 TS_INLINE Action *
-NetProcessor::connect_re(Continuation * cont, unsigned int ip, int port, unsigned int _interface, NetVCOptions * opts)
+NetProcessor::connect_re(Continuation * cont, unsigned int ip, int port, NetVCOptions * opts)
 {
-  return ((UnixNetProcessor *) this)->connect_re_internal(cont, ip, port, _interface, opts);
+  return static_cast<UnixNetProcessor *>(this)->connect_re_internal(cont, ip, port, opts);
 }
 
 

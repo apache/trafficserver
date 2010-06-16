@@ -160,7 +160,7 @@ UnixNetProcessor::accept_internal(Continuation * cont,
 
 Action *
 UnixNetProcessor::connect_re_internal(Continuation * cont,
-                                      unsigned int ip, int port, unsigned int _interface, NetVCOptions * opt)
+                                      unsigned int ip, int port,  NetVCOptions * opt)
 {
 
   ProxyMutex *mutex = cont->mutex;
@@ -171,7 +171,6 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
   else
     opt = &vc->options;
 
-  vc->_interface = _interface;
   // virtual function used to set etype to ET_SSL
   // for SSLNetProcessor.  Does nothing if not overwritten.
   setEtype(opt->etype);
@@ -249,9 +248,9 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
 Action *
 UnixNetProcessor::connect(Continuation * cont,
                           UnixNetVConnection ** avc,
-                          unsigned int ip, int port, unsigned int _interface, NetVCOptions * opt)
+                          unsigned int ip, int port, NetVCOptions * opt)
 {
-  return connect_re(cont, ip, port, _interface, opt);
+  return connect_re(cont, ip, port, opt);
 }
 
 struct CheckConnect:public Continuation
@@ -330,12 +329,12 @@ struct CheckConnect:public Continuation
   }
 
   Action *connect_s(Continuation * cont, unsigned int ip, int port,
-                    unsigned int _interface, int _timeout, NetVCOptions * opt)
+                    int _timeout, NetVCOptions * opt)
   {
     action_ = cont;
     timeout = HRTIME_MSECONDS(_timeout);
     recursion++;
-    netProcessor.connect_re(this, ip, port, _interface, opt);
+    netProcessor.connect_re(this, ip, port, opt);
     recursion--;
     if (connect_status != NET_EVENT_OPEN_FAILED)
       return &action_;
@@ -360,11 +359,11 @@ struct CheckConnect:public Continuation
 
 Action *
 NetProcessor::connect_s(Continuation * cont, unsigned int ip,
-                        int port, unsigned int _interface, int timeout, NetVCOptions * opt)
+                        int port, int timeout, NetVCOptions * opt)
 {
   NetDebug("iocore_net_connect", "NetProcessor::connect_s called");
   CheckConnect *c = NEW(new CheckConnect(cont->mutex));
-  return c->connect_s(cont, ip, port, _interface, timeout, opt);
+  return c->connect_s(cont, ip, port, timeout, opt);
 }
 
 

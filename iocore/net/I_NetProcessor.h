@@ -157,13 +157,12 @@ public:
     @param cont Continuation to be called back with events.
     @param ip machine to connect to.
     @param port port to connect to.
-    @param _interface network interface to use for connect.
     @param options @see NetVCOptions.
 
   */
 
   inkcoreapi Action *connect_re(Continuation * cont,
-                                unsigned int ip, int port, unsigned int _interface = 0, NetVCOptions * options = NULL);
+                                unsigned int ip, int port, NetVCOptions * options = NULL);
 
   /**
     Open a NetVConnection for connection oriented I/O. This call
@@ -177,7 +176,6 @@ public:
     @param cont Continuation to be called back with events.
     @param ip machine to connect to.
     @param port port to connect to.
-    @param _interface local interaface to bind to for the new connection.
     @param timeout for connect, the cont will get NET_EVENT_OPEN_FAILED
       if connection could not be established for timeout msecs. The
       default is 30 secs.
@@ -189,7 +187,7 @@ public:
   Action *connect_s(Continuation * cont,
                     unsigned int ip,
                     int port,
-                    unsigned int _interface = 0, int timeout = NET_CONNECT_TIMEOUT, NetVCOptions * opts = NULL);
+                    int timeout = NET_CONNECT_TIMEOUT, NetVCOptions * opts = NULL);
 
   /**
     Starts the Netprocessor. This has to be called before doing any

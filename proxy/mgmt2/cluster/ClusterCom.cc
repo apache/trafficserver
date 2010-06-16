@@ -1668,7 +1668,7 @@ ClusterCom::establishChannels()
   serv_addr.sin_port = htons(reliable_server_port);
 
   if ((bind(reliable_server_fd, (struct sockaddr *) &serv_addr, sizeof(serv_addr))) < 0) {
-    mgmt_fatal("[ClusterCom::establishChannels] Unable to bind socket\n");
+    mgmt_fatal("[ClusterCom::establishChannels] Unable to bind socket (port:%d)\n", reliable_server_port);
   }
 
   if ((listen(reliable_server_fd, 10)) < 0) {

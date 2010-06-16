@@ -80,22 +80,56 @@ struct NetVCOptions;
 ///////////////////////////////////////////////////////////////////////
 struct Connection
 {
-  SOCKET fd;
-  struct sockaddr_storage sa;
+  SOCKET fd; ///< Socket for connection.
+  struct sockaddr_storage sa; ///< Remote address.
+  bool is_bound; ///< Flag for already bound to a local address.
+  bool is_connected; ///< Flag for already connected.
 
-  int connect(unsigned int ip, int port,
-              bool non_blocking_connect = NON_BLOCKING_CONNECT,
-              bool use_tcp = CONNECT_WITH_TCP, bool non_blocking = NON_BLOCKING, bool bind_random_port = BIND_ANY_PORT);
+  /** Create and initialize the socket for this connection.
 
-  int fast_connect(const unsigned int ip, const int port, NetVCOptions * opt = NULL, const int sock = -1);
+      A socket is created and the options specified by @a opt are
+      set. The socket is @b not connected.
 
-  int bind_connect(unsigned int target_ip, int target_port,
-                   unsigned int my_ip,
-                   NetVCOptions * opt = NULL, int sock = -1,
-                   bool non_blocking_connect = NON_BLOCKING_CONNECT,
-                   bool use_tcp = CONNECT_WITH_TCP,
-                   bool non_blocking = NON_BLOCKING, bool bc_no_connect = BC_CONNECT, bool bc_no_bind = BC_BIND);
+      @note It is important to pass the same @a opt to this method and
+      @c connect.
 
+      @return 0 on success, -ERRNO on failure.
+      @see connect
+  */
+  int open(
+	   NetVCOptions const& opt = DEFAULT_OPTIONS ///< Socket options.
+	   );
+
+  /** Connect the socket.
+
+      The socket is connected to the remote @a addr and @a port. The
+      @a opt structure is used to control blocking on the socket. All
+      other options are set via @c open. It is important to pass the
+      same @a opt to this method as was passed to @c open.
+
+      @return 0 on success, -ERRNO on failure.
+      @see open
+  */
+  int connect(
+	   uint32 addr, ///< Remote address.
+	   uint16 port, ///< Remote port.
+	   NetVCOptions const& opt = DEFAULT_OPTIONS ///< Socket options
+	   );
+
+
+  /// Set the internal socket address struct.
+  /// @internal Used only by ICP.
+  void setRemote(
+		 uint32 addr, ///< Remote IP address.
+		 uint16 port ///< Remote port.
+	     ) {
+    sockaddr_in* sa_in = reinterpret_cast<sockaddr_in*>(&sa);
+    sa.ss_family = AF_INET;
+    sa_in->sin_port = htons(port);
+    sa_in->sin_addr.s_addr = addr;
+    memset(&(sa_in->sin_zero), 0, 8);
+  }
+    
   int setup_mc_send(unsigned int mc_ip, int mc_port,
                     unsigned int my_ip, int my_port,
                     bool non_blocking = NON_BLOCKING,
@@ -108,6 +142,12 @@ struct Connection
 
   virtual ~ Connection();
   Connection();
+
+  /// Default options.
+  static NetVCOptions const DEFAULT_OPTIONS;
+
+protected:
+  void _cleanup();
 };
 
 ///////////////////////////////////////////////////////////////////////

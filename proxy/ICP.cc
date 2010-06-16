@@ -730,24 +730,10 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
             status = _ICPpr->AddPeerToSendList(P);
             ink_assert(status);
 
-            NetVCOptions options;
-            options.local_port = P->GetPort();
-            status = P->GetChan()->bind_connect(P->GetIP()->s_addr,
-                                                P->GetPort(),
-                                                P->GetIP()->s_addr,
-                                                &options,
-                                                NON_BLOCKING_CONNECT,
-                                                CONNECT_WITH_UDP, NON_BLOCKING, BC_NO_CONNECT, BC_NO_BIND);
-            _ICPpr->GetConfig()->Unlock();
+	    P->GetChan()->setRemote(P->GetIP()->s_addr, P->GetPort());
 
-            unsigned char x[4];
-            *(uint32 *) & x = (uint32) P->GetIP()->s_addr;
-            if (status) {
-              Warning("ICP bind_connect(2) failed, res=%d, ip=%d.%d.%d.%d", status, x[0], x[1], x[2], x[3]);
-              REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP bind_connect(2) failed");
-            }
             // coverity[uninit_use_in_call]
-            Note("ICP Peer added ip=%d.%d.%d.%d port=%d", x[0], x[1], x[2], x[3], P->GetPort());
+            Note("ICP Peer added ip=%u.%u.%u.%u port=%d", PRINT_IP(P->GetIP()->s_addr), P->GetPort());
             from = s->_peer->fromaddr;
           } else {
           invalid_message:
@@ -2212,21 +2198,7 @@ ICPProcessor::SetupListenSockets()
           || (P->GetType() == PEER_SIBLING)) {
         ParentSiblingPeer *pPS = (ParentSiblingPeer *) P;
 
-        NetVCOptions options;
-        options.local_port = pPS->GetPort();
-        status = pPS->GetChan()->bind_connect(pPS->GetIP()->s_addr,
-                                              pPS->GetPort(),
-                                              pPS->GetIP()->s_addr,
-                                              &options,
-                                              NON_BLOCKING_CONNECT,
-                                              CONNECT_WITH_UDP, NON_BLOCKING, BC_NO_CONNECT, BC_NO_BIND);
-        if (status) {
-          unsigned char x[4];
-          *(uint32 *) & x = (uint32) pPS->GetIP()->s_addr;
-          Warning("ICP bind_connect failed, res=%d, ip=%d.%d.%d.%d", status, x[0], x[1], x[2], x[3]);
-          REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP bind_connect failed");
-          return 1;             // Failed
-        }
+	pPS->GetChan()->setRemote(pPS->GetIP()->s_addr, pPS->GetPort());
 
       } else if (P->GetType() == PEER_MULTICAST) {
         MultiCastPeer *pMC = (MultiCastPeer *) P;
@@ -2271,22 +2243,7 @@ ICPProcessor::SetupListenSockets()
   //
   ParentSiblingPeer *pPS = (ParentSiblingPeer *) ((Peer *) _LocalPeer);
 
-  NetVCOptions options;
-  options.local_port = pPS->GetPort();
-
-  status = pPS->GetChan()->bind_connect(pPS->GetIP()->s_addr,
-                                        pPS->GetPort(),
-                                        pPS->GetIP()->s_addr,
-                                        &options,
-                                        NON_BLOCKING_CONNECT, CONNECT_WITH_UDP, NON_BLOCKING, BC_NO_CONNECT, BC_BIND);
-  if (status) {
-    unsigned char x[4];
-    *(uint32 *) & x = (uint32) pPS->GetIP()->s_addr;
-    // coverity[uninit_use_in_call]
-    Warning("ICP bind_connect failed, res=%d, ip=%d.%d.%d.%d", status, x[0], x[1], x[2], x[3]);
-    REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "ICP bind_connect for localhost failed");
-    return 1;                   // Failed
-  }
+  pPS->GetChan()->setRemote(pPS->GetIP()->s_addr, pPS->GetPort());
   return 0;                     // Success
 }
 
