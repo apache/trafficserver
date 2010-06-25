@@ -5811,6 +5811,16 @@ INKHttpTxnTransformRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
   }
 }
 
+const struct sockaddr_storage *
+INKHttpTxnClientSockAddrGet (INKHttpTxn txnp)
+{
+  if (sdk_sanity_check_txn(txnp)!=INK_SUCCESS) {
+    return 0;
+  }
+  HttpSM *sm = (HttpSM*) txnp;
+  return &sm->t_state.client_info.addr;
+}
+
 unsigned int
 INKHttpTxnClientIPGet(INKHttpTxn txnp)
 {
