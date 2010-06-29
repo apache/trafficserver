@@ -56,4 +56,4 @@ inkapi int INKCacheHttpInfoVector(INKCacheHttpInfo infop, void *data, int length
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */
-#endif                          /* __INK_API_PRIVATE_H__ */
+#endif                          /* __INK_API_EXPERIMENTAL_H__ */
