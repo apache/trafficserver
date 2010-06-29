@@ -141,14 +141,13 @@ handle_dns(INKHttpTxn txnp, INKCont contp)
     goto done;
   }
 
-  ptr = val = INKMimeHdrFieldValueGet(bufp, hdr_loc, field_loc, 0, &authval_length);
-
-  if (!val) {
+  if (INKMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &val, &authval_length) != INK_SUCCESS) {
     INKError("no value in Proxy-Authorization field\n");
     INKHandleMLocRelease(bufp, hdr_loc, field_loc);
     INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
     goto done;
   }
+  ptr = val;
 
   if (strncmp(ptr, "Basic", 5) != 0) {
     INKError("no Basic auth type in Proxy-Authorization\n");
@@ -218,8 +217,8 @@ handle_response(INKHttpTxn txnp)
 
   field_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
   INKMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, INK_MIME_FIELD_PROXY_AUTHENTICATE, INK_MIME_LEN_PROXY_AUTHENTICATE);
-  INKMimeHdrFieldValueInsert(bufp, hdr_loc, field_loc, insert, len, -1);
-  INKMimeHdrFieldInsert(bufp, hdr_loc, field_loc, -1);
+  INKMimeHdrFieldValueStringInsert(bufp, hdr_loc, field_loc, -1,  insert, len);
+  INKMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
 
   INKHandleMLocRelease(bufp, hdr_loc, field_loc);
   INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);

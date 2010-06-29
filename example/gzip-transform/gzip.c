@@ -175,8 +175,8 @@ gzip_transform_init(INKCont contp, GzipData * data)
   INKHttpTxnTransformRespGet(data->txn, &bufp, &hdr_loc);
   ce_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
   INKMimeHdrFieldNameSet(bufp, hdr_loc, ce_loc, "Content-Encoding", -1);
-  INKMimeHdrFieldValueInsert(bufp, hdr_loc, ce_loc, "deflate", -1, -1);
-  INKMimeHdrFieldInsert(bufp, hdr_loc, ce_loc, -1);
+  INKMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "deflate", -1);
+  INKMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
   INKHandleMLocRelease(bufp, hdr_loc, ce_loc);
   INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
 
@@ -496,7 +496,7 @@ gzip_transformable(INKHttpTxn txnp, int server)
   cfield = INKMimeHdrFieldFind(cbuf, chdr, INK_MIME_FIELD_ACCEPT_ENCODING, -1);
   if (cfield) {
     nvalues = INKMimeHdrFieldValuesCount(cbuf, chdr, cfield);
-    value = INKMimeHdrFieldValueGet(cbuf, chdr, cfield, 0, NULL);
+    INKMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL);
     deflate_flag = 0;
     i = 0;
     while (nvalues > 0) {
@@ -505,7 +505,7 @@ gzip_transformable(INKHttpTxn txnp, int server)
         break;
       }
       i++;
-      value = INKMimeHdrFieldValueGet(cbuf, chdr, cfield, i, NULL);
+      INKMimeHdrFieldValueStringGet(cbuf, chdr, cfield, i, &value, NULL);
       nvalues--;
     }
     if (!deflate_flag) {
@@ -544,21 +544,24 @@ gzip_transformable(INKHttpTxn txnp, int server)
     return -4;
   }
 
-  value = INKMimeHdrFieldValueGet(bufp, hdr_loc, field_loc, 0, NULL);
+  if (INKMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value, NULL) == INK_ERROR) {
+    INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    return -5;
+  }
+
   if (value && (strncasecmp(value, "text/", sizeof("text/") - 1) == 0)) {
     INKHandleMLocRelease(bufp, hdr_loc, field_loc);
     INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
     return 0;
+  } else if (value && (strncasecmp(value, "application/x-javascript", (sizeof("application/x-javascript") - 1)) == 0)) {
+    INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    return 0;
   } else {
-    if (value && (strncasecmp(value, "application/x-javascript", (sizeof("application/x-javascript") - 1)) == 0)) {
-      INKHandleMLocRelease(bufp, hdr_loc, field_loc);
-      INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
-      return 0;
-    } else {
-      INKHandleMLocRelease(bufp, hdr_loc, field_loc);
-      INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
-      return -5;
-    }
+    INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    return -5;
   }
 }
 

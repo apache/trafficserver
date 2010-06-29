@@ -443,7 +443,12 @@ gzip_transformable(INKHttpTxn txnp, int server)
     return -4;
   }
 
-  value = INKMimeFieldValueGet(bufp, field_loc, 0, NULL);
+  if (INKMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value, NULL) == INK_ERROR) {
+    INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    return -5;
+  }
+
   if (value && (strncasecmp(value, "deflate", sizeof("deflate") - 1) == 0)) {
     INKHandleMLocRelease(bufp, hdr_loc, field_loc);
     INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
@@ -487,8 +492,8 @@ transform_plugin(INKCont contp, INKEvent event, void *edata)
       INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc);
       ae_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
       INKMimeHdrFieldNameSet(bufp, hdr_loc, ae_loc, "Accept-Encoding", -1);
-      INKMimeHdrFieldValueInsert(bufp, hdr_loc, ae_loc, "deflate", -1, -1);
-      INKMimeHdrFieldInsert(bufp, hdr_loc, ae_loc, -1);
+      INKMimeHdrFieldValueAppend(bufp, hdr_loc, ae_loc, -1, "deflate", -1);
+      INKMimeHdrFieldAppend(bufp, hdr_loc, ae_loc);
       INKHandleMLocRelease(bufp, hdr_loc, ae_loc);
       INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
 
@@ -505,7 +510,7 @@ transform_plugin(INKCont contp, INKEvent event, void *edata)
 
       INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
       field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, "Content-Encoding", -1);
-      INKMimeHdrFieldDelete(bufp, hdr_loc, field_loc);
+      INKMimeHdrFieldDestroy(bufp, hdr_loc, field_loc);
       INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
 
       INKDebug("gunzip-transform", "server content transformable");

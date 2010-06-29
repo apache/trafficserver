@@ -215,7 +215,7 @@ INKPluginInit(int argc, const char *argv[])
       while (isspace(*p)) {
         p += 1;
       }
-      retval = INKMimeHdrFieldValueInsert(hdr_bufp, hdr_loc, field_loc, p, strlen(p), -1);
+      retval = INKMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, p, strlen(p));
       if (retval == INK_ERROR) {
         INKError("[PluginInit] Error while inserting field value");
         goto error;

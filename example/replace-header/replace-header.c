@@ -56,16 +56,16 @@ replace_header(INKHttpTxn txnp, INKCont contp)
     /* set its name */
     INKMimeHdrFieldNameSet(resp_bufp, resp_loc, field_loc, INK_MIME_FIELD_ACCEPT_RANGES, INK_MIME_LEN_ACCEPT_RANGES);
     /* set its value */
-    INKMimeHdrFieldValueInsert(resp_bufp, resp_loc, field_loc, "none", 4, -1);
+    INKMimeHdrFieldValueAppend(resp_bufp, resp_loc, field_loc, -1, "none", 4);
     /* insert it into the header */
-    INKMimeHdrFieldInsert(resp_bufp, resp_loc, field_loc, -1);
+    INKMimeHdrFieldAppend(resp_bufp, resp_loc, field_loc);
     INKHandleMLocRelease(resp_bufp, resp_loc, field_loc);
     INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
   } else {
     /* clear the field */
     INKMimeHdrFieldValuesClear(resp_bufp, resp_loc, field_loc);
     /* set the value to "none" */
-    INKMimeHdrFieldValueInsert(resp_bufp, resp_loc, field_loc, "none", 4, -1);
+    INKMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, field_loc, -1, "none", 4);
     INKHandleMLocRelease(resp_bufp, resp_loc, field_loc);
     INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
   }

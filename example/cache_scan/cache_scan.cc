@@ -31,6 +31,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <ts/ts.h>
+#include <ts/experimental.h>
 
 static INKCont global_contp;
 

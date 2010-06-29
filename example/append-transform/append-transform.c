@@ -269,25 +269,25 @@ transformable(INKHttpTxn txnp)
       return 0;
     }
 
-    value = INKMimeHdrFieldValueGet(bufp, hdr_loc, field_loc, 0, &val_length);
+    if (INKMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value, &val_length) == INK_SUCCESS) {
 #ifndef _WIN32
-    if (value && (strncasecmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
+      if (value && (strncasecmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
 #else
-    if (value && (strnicmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
+      if (value && (strnicmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
 #endif
-      ASSERT_SUCCESS(INKHandleStringRelease(bufp, field_loc, value));
-      ASSERT_SUCCESS(INKHandleMLocRelease(bufp, hdr_loc, field_loc));
-      ASSERT_SUCCESS(INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc));
+        ASSERT_SUCCESS(INKHandleStringRelease(bufp, field_loc, value));
+        ASSERT_SUCCESS(INKHandleMLocRelease(bufp, hdr_loc, field_loc));
+        ASSERT_SUCCESS(INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc));
 
-      return 1;
-    } else {
-      ASSERT_SUCCESS(INKHandleStringRelease(bufp, field_loc, value));
-      ASSERT_SUCCESS(INKHandleMLocRelease(bufp, hdr_loc, field_loc));
-      ASSERT_SUCCESS(INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc));
+        return 1;
+      } else {
+        ASSERT_SUCCESS(INKHandleStringRelease(bufp, field_loc, value));
+        ASSERT_SUCCESS(INKHandleMLocRelease(bufp, hdr_loc, field_loc));
+        ASSERT_SUCCESS(INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc));
 
-      return 0;
+        return 0;
+      }
     }
-
   }
 
   return 0;                     /* not a 200 */

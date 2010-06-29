@@ -27,6 +27,8 @@
  *   None of the interfaces in this file are committed to be stable
  *   unless they are migrated to ts/ts.h  If you require stable APIs to
  *   Traffic Server, DO NOT USE anything in this file.
+ *
+ *   TODO: We should clean this up, and reorganize properly.
  */
 
 #ifndef __INK_API_PRIVATE_FROZEN_H__

@@ -232,8 +232,8 @@ handle_response(INKHttpTxn txnp)
 
   newfield_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
   INKMimeHdrFieldNameSet(bufp, hdr_loc, newfield_loc, INK_MIME_FIELD_LOCATION, INK_MIME_LEN_LOCATION);
-  INKMimeHdrFieldValueInsert(bufp, hdr_loc, newfield_loc, uri_redirect, strlen(uri_redirect), -1);
-  INKMimeHdrFieldInsert(bufp, hdr_loc, newfield_loc, -1);
+  INKMimeHdrFieldValueStringInsert(bufp, hdr_loc, newfield_loc, -1, uri_redirect, strlen(uri_redirect));
+  INKMimeHdrFieldAppend(bufp, hdr_loc, newfield_loc);
 
 
   /*
@@ -334,7 +334,7 @@ update_redirected_method_stats(INKMBuffer bufp, INKMLoc hdr_loc)
       INKStatFloatAddTo(method_count_redirected_icp_query, 1);
 
     else if (0 == strncmp(txn_method, INK_HTTP_METHOD_OPTIONS, length)) {
-      tempint = INKStatIntRead(method_count_redirected_options);
+      INKStatIntGet(method_count_redirected_options, &tempint);
       tempint++;
       INKStatIntSet(method_count_redirected_options, tempint);
     } else if (0 == strncmp(txn_method, INK_HTTP_METHOD_POST, length)) {

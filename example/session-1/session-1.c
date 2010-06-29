@@ -40,9 +40,10 @@ static INKStat av_transaction;
 static void
 txn_handler(INKHttpTxn txnp, INKCont contp)
 {
-  int num_txns;
+  INK64 num_txns = 0;
+
   INKStatIncrement(transaction_count);
-  num_txns = INKStatIntRead(transaction_count);
+  INKStatIntGet(transaction_count, &num_txns);
   INKDebug("tag_session", "The number of transactions is %d\n", num_txns);
 
 }
@@ -51,10 +52,10 @@ txn_handler(INKHttpTxn txnp, INKCont contp)
 static void
 handle_session(INKHttpSsn ssnp, INKCont contp)
 {
-  int num_ssn;
+  INK64 num_ssn = 0;
 
   INKStatIncrement(session_count);
-  num_ssn = INKStatIntRead(session_count);
+  INKStatIntGet(session_count, &num_ssn);
   INKDebug("tag_session", "The number of sessions is %d\n", num_ssn);
   INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_START_HOOK, contp);
 }

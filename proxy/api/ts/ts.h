@@ -2840,35 +2840,6 @@ extern "C"
   /** @deprecated Use INKMimeHdrFieldDestroy() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldDelete(INKMBuffer bufp, INKMLoc hdr, INKMLoc field);
 
-  /** @deprecated */
-  inkapi INK_DEPRECATED INKReturnCode INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 * length, INKU64 * offset);
-
-  /* --------------------------------------------------------------------------
-     cache http info APIs */
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED INKCacheHttpInfo INKCacheHttpInfoCreate();
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED void INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED void INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED void INKCacheHttpInfoReqSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED void INKCacheHttpInfoRespSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED void INKCacheHttpInfoKeySet(INKCacheHttpInfo infop, INKCacheKey key);
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED void INKCacheHttpInfoSizeSet(INKCacheHttpInfo infop, INKU64 size);
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED int INKCacheHttpInfoVector(INKCacheHttpInfo infop, void *data, int length);
 
 #ifdef __cplusplus
 }

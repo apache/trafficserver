@@ -904,7 +904,7 @@ transform_handler(INKCont contp, INKEvent event, void *edata)
   /* This section will be called by both TS internal
      and the thread. Protect it with a mutex to avoid
      concurrent calls. */
-  lock = INKMutexTryLock(INKContMutexGet(contp));
+  INKMutexLockTry(INKContMutexGet(contp), &lock);
 
   /* Handle TryLock result */
   if (!lock) {
@@ -1049,8 +1049,7 @@ transformable(INKHttpTxn txnp)
     return 0;
   }
 
-  value = INKMimeHdrFieldValueGet(bufp, hdr_loc, field_loc, 0, NULL);
-  if (value == INK_ERROR_PTR) {
+  if (INKMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value, NULL) == INK_ERROR) {
     INKError("[transformable] Error while getting Content-Type field value");
   }
   if ((value == INK_ERROR_PTR) || (value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {

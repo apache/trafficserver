@@ -330,13 +330,13 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
     const char *value;
     if ((cfield = INKMimeHdrFieldFind(cbuf, chdr, INK_MIME_FIELD_DATE, -1)) != NULL) {
       fprintf(stderr, "We have \"Date\" header in request\n");
-      if ((value = INKMimeHdrFieldValueGet(cbuf, chdr, cfield, 0, NULL)) != NULL) {
+      if (INKMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL) != INK_ERROR) {
         fprintf(stderr, "Header value: %s\n", value);
       }
     }
     if ((cfield = INKMimeHdrFieldFind(cbuf, chdr, "MyHeader", sizeof("MyHeader") - 1)) != NULL) {
       fprintf(stderr, "We have \"MyHeader\" header in request\n");
-      if ((value = INKMimeHdrFieldValueGet(cbuf, chdr, cfield, 0, NULL)) != NULL) {
+      if (INKMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL) != INK_ERROR) {
         fprintf(stderr, "Header value: %s\n", value);
       }
     }

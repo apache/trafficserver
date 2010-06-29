@@ -105,27 +105,27 @@ modify_header(INKHttpTxn txnp, INKCont contp)
     INKMimeHdrFieldCopy(resp_bufp, resp_loc, new_field_loc, hdr_bufp, hdr_loc, field_loc);
 
         /*********** Unclear why this is needed **************/
-    INKMimeHdrFieldInsert(resp_bufp, resp_loc, new_field_loc, -1);
+    INKMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
 
 
     /* Cache-Control: Public */
     new_field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
     INKDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
-    INKMimeHdrFieldInsert(resp_bufp, resp_loc, new_field_loc, -1);
+    INKMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     INKMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc,
                            INK_MIME_FIELD_CACHE_CONTROL, INK_MIME_LEN_CACHE_CONTROL);
-    INKMimeHdrFieldValueInsert(resp_bufp, resp_loc, new_field_loc,
-                               INK_HTTP_VALUE_PUBLIC, strlen(INK_HTTP_VALUE_PUBLIC), -1);
+    INKMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, new_field_loc,
+                                     -1, INK_HTTP_VALUE_PUBLIC, INK_HTTP_LEN_PUBLIC);
 
     /*
      * mimehdr2_name  = INKstrdup( "x-date-200-recvd" ) : CurrentDateTime
      */
     new_field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
     INKDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
-    INKMimeHdrFieldInsert(resp_bufp, resp_loc, new_field_loc, -1);
+    INKMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     INKMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr2_name, strlen(mimehdr2_name));
     recvd_time = time(NULL);
-    INKMimeHdrFieldValueInsertDate(resp_bufp, resp_loc, new_field_loc, recvd_time, -1);
+    INKMimeHdrFieldValueDateInsert(resp_bufp, resp_loc, new_field_loc, recvd_time);
 
     INKHandleMLocRelease(resp_bufp, resp_loc, new_field_loc);
     INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
@@ -155,9 +155,8 @@ modify_header(INKHttpTxn txnp, INKCont contp)
     }
 
     /* Get the cached MIME value for this name in this HTTP header */
-    chkptr = INKMimeHdrFieldValueGet(cached_bufp, cached_loc, cached_field_loc, 0, &chklength);
-
-    if (NULL == chkptr || !chklength) {
+    if (INKMimeHdrFieldValueStringGet(cached_bufp, cached_loc, cached_field_loc, 0, &chkptr, &chklength) == INK_ERROR ||
+        NULL == chkptr || !chklength) {
       INKError("Could not find value for cached MIME field name %s", mimehdr1_name);
       INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
       INKHandleMLocRelease(cached_bufp, INK_NULL_MLOC, cached_loc);
@@ -200,10 +199,10 @@ modify_header(INKHttpTxn txnp, INKCont contp)
 
     /* mimehdr1_name : INKstrdup( "x-num-served-from-cache" ) ; */
 
-    INKMimeHdrFieldInsert(resp_bufp, resp_loc, new_field_loc, -1);
+    INKMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     INKMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr1_name, strlen(mimehdr1_name));
 
-    INKMimeHdrFieldValueInsertUint(resp_bufp, resp_loc, new_field_loc, num_refreshes, -1);
+    INKMimeHdrFieldValueUintInsert(resp_bufp, resp_loc, new_field_loc, -1, num_refreshes);
 
     INKHandleStringRelease(cached_bufp, cached_loc, chkptr);
     INKHandleMLocRelease(resp_bufp, resp_loc, new_field_loc);
@@ -317,9 +316,9 @@ INKPluginInit(int argc, const char *argv[])
   INKDebug("resphdr", "Inserting header %s with value %s into init buffer", mimehdr1_name, mimehdr1_value);
 
   field_loc = INKMimeHdrFieldCreate(hdr_bufp, hdr_loc);
-  INKMimeHdrFieldInsert(hdr_bufp, hdr_loc, field_loc, -1);
+  INKMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
   INKMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, mimehdr1_name, strlen(mimehdr1_name));
-  INKMimeHdrFieldValueInsert(hdr_bufp, hdr_loc, field_loc, mimehdr1_value, strlen(mimehdr1_value), -1);
+  INKMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, mimehdr1_value, strlen(mimehdr1_value));
   INKDebug("resphdr", "init buffer hdr, field and value locs are %d, %d and %d", hdr_loc, field_loc, value_loc);
   init_buffer_status = 1;
 
