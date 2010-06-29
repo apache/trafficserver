@@ -23,6 +23,9 @@
 
 #ifndef INK_NO_API
 
+// Avoid complaining about the deprecated APIs.
+#define INK_DEPRECATED
+
 #include "inktomi++.h"
 #include "I_Layout.h"
 
@@ -61,6 +64,7 @@
 #include "StatSystemV2.h"
 #include "HttpDebugNames.h"
 #include "I_AIO.h"
+
 
 /****************************************************************
  *  IMPORTANT - READ ME

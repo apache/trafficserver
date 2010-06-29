@@ -1297,8 +1297,10 @@ REGRESSION_TEST(SDK_API_INKContCreate) (RegressionTest * test, int atype, int *p
 
   INKMutex mutexp = INKMutexCreate();
   INKCont contp = INKContCreate(cont_handler, mutexp);
+  int lock = 0;
 
-  if (INKMutexTryLock(mutexp) == 1)     //mutex is grabbed
+  INKMutexLockTry(mutexp, &lock);
+  if (lock)     //mutex is grabbed
   {
     INKContCall(contp, (INKEvent) 0, NULL);
     INKMutexUnlock(mutexp);
@@ -1482,18 +1484,20 @@ REGRESSION_TEST(SDK_API_INKMutexCreate) (RegressionTest * test, int atype, int *
   INKMutexLock(mutexp);
 
   /* This is normal because all locking is from the same thread */
-  int lock = INKMutexTryLock(mutexp);
-  lock = INKMutexTryLock(mutexp);
+  int lock = 0;
+
+  INKMutexLockTry(mutexp, &lock);
+  INKMutexLockTry(mutexp, &lock);
 
   if (lock) {
     SDK_RPRINT(test, "INKMutexCreate", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "INKMutexLock", "TestCase1", TC_PASS, "ok");
-    SDK_RPRINT(test, "INKMutexTryLock", "TestCase1", TC_PASS, "ok");
+    SDK_RPRINT(test, "INKMutexLockTry", "TestCase1", TC_PASS, "ok");
     test_passed = true;
   } else {
     SDK_RPRINT(test, "INKMutexCreate", "TestCase1", TC_FAIL, "mutex can't be grabbed twice from the same thread");
     SDK_RPRINT(test, "INKMutexLock", "TestCase1", TC_FAIL, "mutex can't be grabbed twice from the same thread");
-    SDK_RPRINT(test, "INKMutexTryLock", "TestCase1", TC_FAIL, "mutex can't be grabbed twice from the same thread");
+    SDK_RPRINT(test, "INKMutexLockTry", "TestCase1", TC_FAIL, "mutex can't be grabbed twice from the same thread");
 
   }
 
@@ -1740,13 +1744,13 @@ REGRESSION_TEST(SDK_API_INKIOBufferBlockReadAvail) (RegressionTest * test, int a
 
   int i = 10000;
   INKIOBuffer bufp = INKIOBufferCreate();
-  INKIOBufferData datap = INKIOBufferDataCreate(&i, sizeof(int), INK_DATA_CONSTANT);
-  INKIOBufferBlock blockp = INKIOBufferBlockCreate(datap, sizeof(int), 0);
-  INKIOBufferAppend(bufp, blockp);
-
+  INKIOBufferWrite(bufp, (char*)&i, sizeof(int));
   INKIOBufferReader readerp = INKIOBufferReaderAlloc(bufp);
 
   int avail_write, avail_read;
+
+  // TODO: This is probably not correct any more.
+  INKIOBufferBlock blockp = INKIOBufferStart(bufp);
 
   if ((INKIOBufferBlockWriteStart(blockp, &avail_write) - INKIOBufferBlockReadStart(blockp, readerp, &avail_read)) ==
       sizeof(int)) {
@@ -1758,7 +1762,7 @@ REGRESSION_TEST(SDK_API_INKIOBufferBlockReadAvail) (RegressionTest * test, int a
     SDK_RPRINT(test, "INKIOBufferBlockWriteStart", "TestCase1", TC_FAIL, "failed");
   }
 
-  if ((INKIOBufferBlockReadAvail(blockp, readerp) - INKIOBufferBlockWriteAvail(blockp)) == sizeof(int)) {
+  if ((INKIOBufferBlockReadAvail(blockp, readerp) + INKIOBufferBlockWriteAvail(blockp)) == 4096) {
     SDK_RPRINT(test, "INKIOBufferBlockReadAvail", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "INKIOBufferBlockWriteAvail", "TestCase1", TC_PASS, "ok");
     test_passed_2 = true;
@@ -1788,16 +1792,14 @@ REGRESSION_TEST(SDK_API_INKIOBufferBlockNext) (RegressionTest * test, int atype,
 
   int i = 10000;
   INKIOBuffer bufp = INKIOBufferCreate();
-  INKIOBufferData datap = INKIOBufferDataCreate(&i, sizeof(int), INK_DATA_CONSTANT);
-  INKIOBufferBlock blockp = INKIOBufferBlockCreate(datap, sizeof(int), 0);
-  INKIOBufferAppend(bufp, blockp);
+  INKIOBufferWrite(bufp, (char*)&i, sizeof(int));
 
-  // The first block (BUFFER_FOR_CONSTAN is "full", so that
-  // a new block is added to the full block and now the start pointer
-  // of the IOBuffer is this new block.
-  INKIOBufferBlock blockp_next = INKIOBufferStart(bufp);
+  INKIOBufferReader readerp = INKIOBufferReaderAlloc(bufp);
+  INKIOBufferBlock blockp = INKIOBufferReaderStart(readerp);
 
-  if (INKIOBufferBlockNext(blockp) == blockp_next) {
+  // TODO: This is probaby not the best of regression tests right now ...
+  // Note that this assumes block size is > sizeof(int) bytes.
+  if (INKIOBufferBlockNext(blockp) == NULL) {
     SDK_RPRINT(test, "INKIOBufferBlockNext", "TestCase1", TC_PASS, "ok");
     test_passed = true;
   } else {
@@ -1832,7 +1834,9 @@ REGRESSION_TEST(SDK_API_INKStatIntSet) (RegressionTest * test, int atype, int *p
   INKStat stat = INKStatCreate("stat_is", INKSTAT_TYPE_INT64);
 
   INKStatIntSet(stat, 100);
-  INK64 stat_val = INKStatIntRead(stat);
+  INK64 stat_val;
+
+  INKStatIntGet(stat, &stat_val);
 
   if (stat_val == 100) {
     SDK_RPRINT(test, "INKStatIntSet", "TestCase1", TC_PASS, "ok");
@@ -1859,7 +1863,9 @@ REGRESSION_TEST(SDK_API_INKStatIntAddTo) (RegressionTest * test, int atype, int 
   INKStat stat = INKStatCreate("stat_ia", INKSTAT_TYPE_INT64);
 
   INKStatIntAddTo(stat, 100);
-  INK64 stat_val = INKStatIntRead(stat);
+  INK64 stat_val;
+
+  INKStatIntGet(stat, &stat_val);
 
   if (stat_val == 100) {
     SDK_RPRINT(test, "INKStatIntAddTo", "TestCase1", TC_PASS, "ok");
@@ -1887,7 +1893,8 @@ REGRESSION_TEST(SDK_API_INKStatFloatAddTo) (RegressionTest * test, int atype, in
   INKStat stat = INKStatCreate("stat_fa", INKSTAT_TYPE_FLOAT);
 
   INKStatFloatAddTo(stat, 100.0);
-  float stat_val = INKStatFloatRead(stat);
+  float stat_val;
+  INKStatFloatGet(stat, &stat_val);
 
   if (stat_val == 100.0) {
     SDK_RPRINT(test, "INKStatFloatAddTo", "TestCase1", TC_PASS, "ok");
@@ -1914,7 +1921,8 @@ REGRESSION_TEST(SDK_API_INKStatFloatSet) (RegressionTest * test, int atype, int 
   INKStat stat = INKStatCreate("stat_fs", INKSTAT_TYPE_FLOAT);
 
   INKStatFloatSet(stat, 100.0);
-  float stat_val = INKStatFloatRead(stat);
+  float stat_val;
+  INKStatFloatGet(stat, &stat_val);
 
   if (stat_val == 100.0) {
     SDK_RPRINT(test, "INKStatFloatSet", "TestCase1", TC_PASS, "ok");
@@ -1946,7 +1954,8 @@ REGRESSION_TEST(SDK_API_INKStatIncrement) (RegressionTest * test, int atype, int
   INKStat stat_2 = INKStatCreate("stat_2", INKSTAT_TYPE_FLOAT);
 
   INKStatIncrement(stat_1);
-  INK64 stat1_val = INKStatIntRead(stat_1);
+  INK64 stat1_val;
+  INKStatIntGet(stat_1, &stat1_val);
 
   if (stat1_val == 1) {
     SDK_RPRINT(test, "INKStatIncrement", "TestCase1", TC_PASS, "ok for int stat");
@@ -1956,7 +1965,7 @@ REGRESSION_TEST(SDK_API_INKStatIncrement) (RegressionTest * test, int atype, int
   }
 
   INKStatDecrement(stat_1);
-  stat1_val = INKStatIntRead(stat_1);
+  INKStatIntGet(stat_1, &stat1_val);
 
   if (stat1_val == 0) {
     SDK_RPRINT(test, "INKStatDecrement", "TestCase1", TC_PASS, "ok for int stat");
@@ -1966,7 +1975,8 @@ REGRESSION_TEST(SDK_API_INKStatIncrement) (RegressionTest * test, int atype, int
   }
 
   INKStatIncrement(stat_2);
-  float stat2_val = INKStatFloatRead(stat_2);
+  float stat2_val;
+  INKStatFloatGet(stat_2, &stat2_val);
 
   if (stat2_val == 1.0) {
     SDK_RPRINT(test, "INKStatIncrement", "TestCase2", TC_PASS, "ok for float stat");
@@ -1978,7 +1988,7 @@ REGRESSION_TEST(SDK_API_INKStatIncrement) (RegressionTest * test, int atype, int
   }
 
   INKStatDecrement(stat_2);
-  stat2_val = INKStatFloatRead(stat_2);
+  INKStatFloatGet(stat_2, &stat2_val);
 
   if (stat2_val == 0.0) {
     SDK_RPRINT(test, "INKStatDecrement", "TestCase2", TC_PASS, "ok for float stat");
@@ -2043,19 +2053,25 @@ REGRESSION_TEST(SDK_API_INKStatCoupled) (RegressionTest * test, int atype, int *
   /* stat operation */
   INKStatIntSet(local_stat_1, 100);
   INKStatIntSet(local_stat_2, 100);
-  float local_val_1 = (float) INKStatIntRead(local_stat_1);
-  float local_val_2 = (float) INKStatIntRead(local_stat_2);
+  float local_val_1;
+  INKStatFloatGet(local_stat_1, &local_val_1);
+  float local_val_2;
+  INKStatFloatGet(local_stat_2, &local_val_2);
 
   INKStatFloatAddTo(local_stat_sum, local_val_1);
   INKStatFloatAddTo(local_stat_sum, local_val_2);
-  float local_val_sum = INKStatFloatRead(local_stat_sum);
+  float local_val_sum;
+  INKStatFloatGet(local_stat_sum, &local_val_sum);
 
   INKStatsCoupledUpdate(stat_local_copy);
   INKStatCoupledLocalCopyDestroy(stat_local_copy);
 
-  float global_val_sum = INKStatFloatRead(global_stat_sum);
-  INK64 global_val_1 = INKStatIntRead(global_stat_1);
-  INK64 global_val_2 = INKStatIntRead(global_stat_2);
+  float global_val_sum;
+  INKStatFloatGet(global_stat_sum, &global_val_sum);
+  INK64 global_val_1;
+  INKStatIntGet(global_stat_1, &global_val_1);
+  INK64 global_val_2;
+  INKStatIntGet(global_stat_2, &global_val_2);
 
   if (local_val_1 == global_val_1 && local_val_2 == global_val_2 && local_val_sum == global_val_sum) {
     SDK_RPRINT(test, "INKStatCoupledGlobalCategoryCreate", "TestCase1", TC_PASS, "ok");

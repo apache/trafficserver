@@ -52,6 +52,14 @@ extern "C"
 #define INK_RES_MEM_PATH    INK_RES_PATH ("memory/")
 #define INK_MAX_USER_NAME_LEN 256
 
+#if __GNUC__ >= 3
+#ifndef INK_DEPRECATED
+#define INK_DEPRECATED __attribute__ ((deprecated))
+#endif
+#else
+#define INK_DEPRECATED
+#endif
+
   /**
       The following struct is used by INKPluginRegister(). It stores
       registration information about the plugin.
@@ -1843,7 +1851,7 @@ extern "C"
   inkapi INKReturnCode INKMutexLockTry(INKMutex mutexp, int *lock);
 
   /** @deprecated */
-  inkapi int INKMutexTryLock(INKMutex mutexp);
+  inkapi INK_DEPRECATED int INKMutexTryLock(INKMutex mutexp);
 
   inkapi INKReturnCode INKMutexUnlock(INKMutex mutexp);
 
@@ -2415,10 +2423,10 @@ extern "C"
   inkapi INKReturnCode INKStatFloatGet(INKStat the_stat, float *value);
 
   /** @deprecated */
-  inkapi INK64 INKStatIntRead(INKStat the_stat);
+  inkapi INK_DEPRECATED INK64 INKStatIntRead(INKStat the_stat);
 
   /** @deprecated */
-  inkapi float INKStatFloatRead(INKStat the_stat);
+  inkapi INK_DEPRECATED float INKStatFloatRead(INKStat the_stat);
 
   inkapi INKReturnCode INKStatIntSet(INKStat the_stat, INK64 value);
   inkapi INKReturnCode INKStatFloatSet(INKStat the_stat, float value);
@@ -2676,191 +2684,191 @@ extern "C"
      Deprecated Buffer Functions */
 
   /** @deprecated */
-  inkapi INKReturnCode INKIOBufferAppend(INKIOBuffer bufp, INKIOBufferBlock blockp);
+  inkapi INK_DEPRECATED INKReturnCode INKIOBufferAppend(INKIOBuffer bufp, INKIOBufferBlock blockp);
 
   /** @deprecated */
-  inkapi INKIOBufferData INKIOBufferDataCreate(void *data, int size, INKIOBufferDataFlags flags);
+  inkapi INK_DEPRECATED INKIOBufferData INKIOBufferDataCreate(void *data, int size, INKIOBufferDataFlags flags);
 
   /** @deprecated */
-  inkapi INKIOBufferBlock INKIOBufferBlockCreate(INKIOBufferData datap, int size, int offset);
+  inkapi INK_DEPRECATED INKIOBufferBlock INKIOBufferBlockCreate(INKIOBufferData datap, int size, int offset);
 
   /* --------------------------------------------------------------------------
      Deprecated MBuffer functions */
 
   /** @deprecated */
-  inkapi int INKMBufferDataSet(INKMBuffer bufp, void *data);
+  inkapi INK_DEPRECATED int INKMBufferDataSet(INKMBuffer bufp, void *data);
 
   /** @deprecated */
-  inkapi void *INKMBufferDataGet(INKMBuffer bufp, int *length);
+  inkapi INK_DEPRECATED void *INKMBufferDataGet(INKMBuffer bufp, int *length);
 
   /** @deprecated */
-  inkapi int INKMBufferLengthGet(INKMBuffer bufp);
+  inkapi INK_DEPRECATED int INKMBufferLengthGet(INKMBuffer bufp);
 
   /** @deprecated */
-  inkapi void INKMBufferRef(INKMBuffer bufp);
+  inkapi INK_DEPRECATED void INKMBufferRef(INKMBuffer bufp);
 
   /** @deprecated */
-  inkapi void INKMBufferUnref(INKMBuffer bufp);
+  inkapi INK_DEPRECATED void INKMBufferUnref(INKMBuffer bufp);
 
   /** @deprecated */
-  inkapi void INKMBufferCompress(INKMBuffer bufp);
+  inkapi INK_DEPRECATED void INKMBufferCompress(INKMBuffer bufp);
 
   /* --------------------------------------------------------------------------
      YTS Team, yamsat Plugin */
 
   /** @deprecated */
-  inkapi int INKHttpTxnCreateRequest(INKHttpTxn txnp, const char *, const char *, int);
+  inkapi INK_DEPRECATED int INKHttpTxnCreateRequest(INKHttpTxn txnp, const char *, const char *, int);
 
   /* --------------------------------------------------------------------------
      Deprecated MIME field functions --- use INKMimeHdrFieldXXX instead */
 
   /** @deprecated */
-  inkapi INKMLoc INKMimeFieldCreate(INKMBuffer bufp);
+  inkapi INK_DEPRECATED INKMLoc INKMimeFieldCreate(INKMBuffer bufp);
 
   /** @deprecated */
-  inkapi void INKMimeFieldDestroy(INKMBuffer bufp, INKMLoc offset);
+  inkapi INK_DEPRECATED void INKMimeFieldDestroy(INKMBuffer bufp, INKMLoc offset);
 
   /** @deprecated */
-  inkapi void INKMimeFieldCopy(INKMBuffer dest_bufp, INKMLoc dest_offset, INKMBuffer src_bufp, INKMLoc src_offset);
+  inkapi INK_DEPRECATED void INKMimeFieldCopy(INKMBuffer dest_bufp, INKMLoc dest_offset, INKMBuffer src_bufp, INKMLoc src_offset);
 
   /** @deprecated */
-  inkapi void INKMimeFieldCopyValues(INKMBuffer dest_bufp, INKMLoc dest_offset, INKMBuffer src_bufp,
+  inkapi INK_DEPRECATED void INKMimeFieldCopyValues(INKMBuffer dest_bufp, INKMLoc dest_offset, INKMBuffer src_bufp,
                                      INKMLoc src_offset);
 
   /** @deprecated */
-  inkapi INKMLoc INKMimeFieldNext(INKMBuffer bufp, INKMLoc offset);
+  inkapi INK_DEPRECATED INKMLoc INKMimeFieldNext(INKMBuffer bufp, INKMLoc offset);
 
   /** @deprecated */
-  inkapi int INKMimeFieldLengthGet(INKMBuffer bufp, INKMLoc offset);
+  inkapi INK_DEPRECATED int INKMimeFieldLengthGet(INKMBuffer bufp, INKMLoc offset);
 
   /** @deprecated */
-  inkapi const char *INKMimeFieldNameGet(INKMBuffer bufp, INKMLoc offset, int *length);
+  inkapi INK_DEPRECATED const char *INKMimeFieldNameGet(INKMBuffer bufp, INKMLoc offset, int *length);
 
   /** @deprecated */
-  inkapi void INKMimeFieldNameSet(INKMBuffer bufp, INKMLoc offset, const char *name, int length);
+  inkapi INK_DEPRECATED void INKMimeFieldNameSet(INKMBuffer bufp, INKMLoc offset, const char *name, int length);
 
   /** @deprecated */
-  inkapi void INKMimeFieldValuesClear(INKMBuffer bufp, INKMLoc offset);
+  inkapi INK_DEPRECATED void INKMimeFieldValuesClear(INKMBuffer bufp, INKMLoc offset);
 
   /** @deprecated */
-  inkapi int INKMimeFieldValuesCount(INKMBuffer bufp, INKMLoc offset);
+  inkapi INK_DEPRECATED int INKMimeFieldValuesCount(INKMBuffer bufp, INKMLoc offset);
 
   /** @deprecated */
-  inkapi const char *INKMimeFieldValueGet(INKMBuffer bufp, INKMLoc offset, int idx, int *length);
+  inkapi INK_DEPRECATED const char *INKMimeFieldValueGet(INKMBuffer bufp, INKMLoc offset, int idx, int *length);
 
   /** @deprecated */
-  inkapi int INKMimeFieldValueGetInt(INKMBuffer bufp, INKMLoc offset, int idx);
+  inkapi INK_DEPRECATED int INKMimeFieldValueGetInt(INKMBuffer bufp, INKMLoc offset, int idx);
 
   /** @deprecated */
-  inkapi unsigned int INKMimeFieldValueGetUint(INKMBuffer bufp, INKMLoc offset, int idx);
+  inkapi INK_DEPRECATED unsigned int INKMimeFieldValueGetUint(INKMBuffer bufp, INKMLoc offset, int idx);
 
   /** @deprecated */
-  inkapi time_t INKMimeFieldValueGetDate(INKMBuffer bufp, INKMLoc offset, int idx);
+  inkapi INK_DEPRECATED time_t INKMimeFieldValueGetDate(INKMBuffer bufp, INKMLoc offset, int idx);
 
   /** @deprecated */
-  inkapi void INKMimeFieldValueSet(INKMBuffer bufp, INKMLoc offset, int idx, const char *value, int length);
+  inkapi INK_DEPRECATED void INKMimeFieldValueSet(INKMBuffer bufp, INKMLoc offset, int idx, const char *value, int length);
 
   /** @deprecated */
-  inkapi void INKMimeFieldValueSetInt(INKMBuffer bufp, INKMLoc offset, int idx, int value);
+  inkapi INK_DEPRECATED void INKMimeFieldValueSetInt(INKMBuffer bufp, INKMLoc offset, int idx, int value);
 
   /** @deprecated */
-  inkapi void INKMimeFieldValueSetUint(INKMBuffer bufp, INKMLoc offset, int idx, unsigned int value);
+  inkapi INK_DEPRECATED void INKMimeFieldValueSetUint(INKMBuffer bufp, INKMLoc offset, int idx, unsigned int value);
 
   /** @deprecated */
-  inkapi void INKMimeFieldValueSetDate(INKMBuffer bufp, INKMLoc offset, int idx, time_t value);
+  inkapi INK_DEPRECATED void INKMimeFieldValueSetDate(INKMBuffer bufp, INKMLoc offset, int idx, time_t value);
 
   /** @deprecated */
-  inkapi void INKMimeFieldValueAppend(INKMBuffer bufp, INKMLoc offset, int idx, const char *value, int length);
+  inkapi INK_DEPRECATED void INKMimeFieldValueAppend(INKMBuffer bufp, INKMLoc offset, int idx, const char *value, int length);
 
   /** @deprecated */
-  inkapi INKMLoc INKMimeFieldValueInsert(INKMBuffer bufp, INKMLoc offset, const char *value, int length, int idx);
+  inkapi INK_DEPRECATED INKMLoc INKMimeFieldValueInsert(INKMBuffer bufp, INKMLoc offset, const char *value, int length, int idx);
 
   /** @deprecated */
-  inkapi INKMLoc INKMimeFieldValueInsertInt(INKMBuffer bufp, INKMLoc offset, int value, int idx);
+  inkapi INK_DEPRECATED INKMLoc INKMimeFieldValueInsertInt(INKMBuffer bufp, INKMLoc offset, int value, int idx);
 
   /** @deprecated */
-  inkapi INKMLoc INKMimeFieldValueInsertUint(INKMBuffer bufp, INKMLoc offset, unsigned int value, int idx);
+  inkapi INK_DEPRECATED INKMLoc INKMimeFieldValueInsertUint(INKMBuffer bufp, INKMLoc offset, unsigned int value, int idx);
 
   /** @deprecated */
-  inkapi INKMLoc INKMimeFieldValueInsertDate(INKMBuffer bufp, INKMLoc offset, time_t value, int idx);
+  inkapi INK_DEPRECATED INKMLoc INKMimeFieldValueInsertDate(INKMBuffer bufp, INKMLoc offset, time_t value, int idx);
 
   /** @deprecated */
-  inkapi void INKMimeFieldValueDelete(INKMBuffer bufp, INKMLoc offset, int idx);
+  inkapi INK_DEPRECATED void INKMimeFieldValueDelete(INKMBuffer bufp, INKMLoc offset, int idx);
 
   /* --------------------------------------------------------------------------
      Deprecated MIME field functions in SDK3.0 */
 
   /** @deprecated Use INKMimeHdrFieldAppend() instead */
-  inkapi INKReturnCode INKMimeHdrFieldInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
 
   /** @deprecated Use INKMimeHdrFieldStringInsert() instead */
-  inkapi INKReturnCode INKMimeHdrFieldValueInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, const char *value, int length, int idx);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, const char *value, int length, int idx);
 
   /** @deprecated Use INKMimeHdrFieldIntInsert() instead */
-  inkapi INKReturnCode INKMimeHdrFieldValueInsertInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int value, int idx);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueInsertInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int value, int idx);
 
   /** @deprecated Use INKMimeHdrFieldUintInsert() instead */
-  inkapi INKReturnCode INKMimeHdrFieldValueInsertUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, unsigned int value, int idx);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueInsertUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, unsigned int value, int idx);
 
   /** @deprecated Use INKMimeHdrFieldDateInsert() instead */
-  inkapi INKReturnCode INKMimeHdrFieldValueInsertDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, time_t value, int idx);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueInsertDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, time_t value, int idx);
 
   /** @deprecated Use INKMimeHdrFieldStringGet() instead */
-  inkapi const char *INKMimeHdrFieldValueGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int *value_len_ptr);
+  inkapi INK_DEPRECATED const char *INKMimeHdrFieldValueGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int *value_len_ptr);
 
   /** @deprecated Use INKMimeHdrFieldIntGet() instead */
-  inkapi int INKMimeHdrFieldValueGetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
+  inkapi INK_DEPRECATED int INKMimeHdrFieldValueGetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
 
   /** @deprecated Use INKMimeHdrFieldUintGet() instead */
-  inkapi unsigned int INKMimeHdrFieldValueGetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
+  inkapi INK_DEPRECATED unsigned int INKMimeHdrFieldValueGetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
 
   /** @deprecated Use INKMimeHdrFieldDateGet() instead */
-  inkapi time_t INKMimeHdrFieldValueGetDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
+  inkapi INK_DEPRECATED time_t INKMimeHdrFieldValueGetDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
 
   /** @deprecated Use INKMimeHdrFieldStringSet() instead */
-  inkapi INKReturnCode INKMimeHdrFieldValueSet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, const char *value, int length);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueSet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, const char *value, int length);
 
   /** @deprecated Use INKMimeHdrFieldIntSet() instead */
-  inkapi INKReturnCode INKMimeHdrFieldValueSetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int value);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueSetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int value);
 
   /** @deprecated Use INKMimeHdrFieldUintSet() instead */
-  inkapi INKReturnCode INKMimeHdrFieldValueSetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, unsigned int value);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueSetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, unsigned int value);
 
   /** @deprecated Use INKMimeHdrFieldDateSet() instead */
-  inkapi INKReturnCode INKMimeHdrFieldValueSetDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, time_t value);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueSetDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, time_t value);
 
   /** @deprecated Use INKMimeHdrFieldDestroy() instead */
-  inkapi INKReturnCode INKMimeHdrFieldDelete(INKMBuffer bufp, INKMLoc hdr, INKMLoc field);
+  inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldDelete(INKMBuffer bufp, INKMLoc hdr, INKMLoc field);
 
   /** @deprecated */
-  inkapi INKReturnCode INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 * length, INKU64 * offset);
+  inkapi INK_DEPRECATED INKReturnCode INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 * length, INKU64 * offset);
 
   /* --------------------------------------------------------------------------
      cache http info APIs */
 
   /** @deprecated */
-  inkapi INKCacheHttpInfo INKCacheHttpInfoCreate();
+  inkapi INK_DEPRECATED INKCacheHttpInfo INKCacheHttpInfoCreate();
 
   /** @deprecated */
-  inkapi void INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
+  inkapi INK_DEPRECATED void INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
 
   /** @deprecated */
-  inkapi void INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
+  inkapi INK_DEPRECATED void INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
 
   /** @deprecated */
-  inkapi void INKCacheHttpInfoReqSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
+  inkapi INK_DEPRECATED void INKCacheHttpInfoReqSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
 
   /** @deprecated */
-  inkapi void INKCacheHttpInfoRespSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
+  inkapi INK_DEPRECATED void INKCacheHttpInfoRespSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
 
   /** @deprecated */
-  inkapi void INKCacheHttpInfoKeySet(INKCacheHttpInfo infop, INKCacheKey key);
+  inkapi INK_DEPRECATED void INKCacheHttpInfoKeySet(INKCacheHttpInfo infop, INKCacheKey key);
 
   /** @deprecated */
-  inkapi void INKCacheHttpInfoSizeSet(INKCacheHttpInfo infop, INKU64 size);
+  inkapi INK_DEPRECATED void INKCacheHttpInfoSizeSet(INKCacheHttpInfo infop, INKU64 size);
 
   /** @deprecated */
-  inkapi int INKCacheHttpInfoVector(INKCacheHttpInfo infop, void *data, int length);
+  inkapi INK_DEPRECATED int INKCacheHttpInfoVector(INKCacheHttpInfo infop, void *data, int length);
 
 #ifdef __cplusplus
 }
