@@ -33,6 +33,8 @@
 #ifndef __INK_MGMT_API_H__
 #define __INK_MGMT_API_H__
 
+#include "ink_port.h"
+
 /***************************************************************************
  * System Specific Items
  ***************************************************************************/
@@ -140,20 +142,8 @@ extern "C"
  * Types
  ***************************************************************************/
 
-#if defined (_WIN32)
-  typedef int INK32;
-  typedef unsigned int INKU32;
-  typedef __int64 INK64;
-  typedef unsigned __int64 INKU64;
-#else
-  typedef int INK32;
-  typedef unsigned int INKU32;
-  typedef long long INK64;
-  typedef unsigned long long INKU64;
-#endif
-
-  typedef INK64 INKInt;
-  typedef INK64 INKCounter;
+  typedef int64 INKInt;
+  typedef int64 INKCounter;
   typedef float INKFloat;
   typedef char *INKString;
   typedef char *INKIpAddr;
@@ -575,7 +565,7 @@ typedef enum
  */
   typedef struct
   {
-    INKU32 active;              /* valid field: INK_SSPEC_xxx */
+    uint32 active;              /* valid field: INK_SSPEC_xxx */
     struct
     {                           /* time range */
       int hour_a;

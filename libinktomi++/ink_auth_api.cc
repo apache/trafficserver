@@ -31,7 +31,7 @@ static int s_rand_seed = time(NULL) + s_rand_seed;
 static InkRand
 s_rand_gen(ink_rand_r((unsigned int *) &s_rand_seed) ^ (uintptr_t) &s_rand_seed);
 
-inline INKU32
+inline uint32
 ink_get_rand_intrn()
 {
   return s_rand_gen.random();
@@ -48,7 +48,7 @@ ink_make_token_intrn(INK_AUTH_TOKEN * tok, const INK_AUTH_SEED * const *seeds, i
   ink_code_incr_md5_final((char *) &(tok->u8[0]), &ctx);
 }
 
-INKU32
+uint32
 ink_get_rand()
 {
   return ink_get_rand_intrn();
@@ -62,8 +62,8 @@ ink_make_token(INK_AUTH_TOKEN * tok, const INK_AUTH_TOKEN & mask, const INK_AUTH
     tok->u32[i] ^= mask.u32[i] & ink_get_rand_intrn();
 }
 
-INKU32
-ink_make_token32(INKU32 mask, const INK_AUTH_SEED * const *seeds, int slen)
+uint32
+ink_make_token32(uint32 mask, const INK_AUTH_SEED * const *seeds, int slen)
 {
   INK_AUTH_TOKEN tok;
   ink_make_token_intrn(&tok, seeds, slen);
@@ -72,11 +72,11 @@ ink_make_token32(INKU32 mask, const INK_AUTH_SEED * const *seeds, int slen)
   return tok.u32[3] ^ (mask & ink_get_rand_intrn());
 }
 
-INKU64
-ink_make_token64(INKU64 mask, const INK_AUTH_SEED * const *seeds, int slen)
+uint64
+ink_make_token64(uint64 mask, const INK_AUTH_SEED * const *seeds, int slen)
 {
   INK_AUTH_TOKEN tok;
   ink_make_token_intrn(&tok, seeds, slen);
   tok.u64[1] ^= tok.u64[0];
-  return tok.u64[1] ^ (mask & ((INKU64) ink_get_rand_intrn() + (((INKU64) ink_get_rand_intrn()) << 32)));
+  return tok.u64[1] ^ (mask & ((uint64) ink_get_rand_intrn() + (((uint64) ink_get_rand_intrn()) << 32)));
 }

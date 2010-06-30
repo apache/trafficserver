@@ -466,7 +466,7 @@ NewCacheVC::completeCacheHttpInfo(const void *data, const uint64 size)
 
 //----------------------------------------------------------------------------
 bool
-NewCacheVC::setRangeAndSize(INKU64 size)
+NewCacheVC::setRangeAndSize(uint64 size)
 {
   bool retVal = false;
   if (!m_range_present || m_num_range_fields == 1) {
