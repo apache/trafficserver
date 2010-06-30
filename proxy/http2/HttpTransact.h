@@ -796,7 +796,6 @@ public:
     // components is a byte, so:
     // 0x25364758 = 0x25.0x36.0x47.0x58 = 37.54.71.88 in decimal.
     unsigned int ip;
-    struct sockaddr_storage addr;
 
     // port to connect to, except for client
     // connection where it is port on proxy
@@ -817,7 +816,6 @@ public:
       transfer_encoding(NO_TRANSFER_ENCODING),
       ip(0), port(0), state(STATE_UNDEFINED), abort(ABORT_UNDEFINED), port_attribute(SERVER_PORT_DEFAULT)
     {
-      memset(&addr, 0, sizeof(addr));
     };
   }
   ConnectionAttributes;

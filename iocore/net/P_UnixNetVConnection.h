@@ -256,7 +256,9 @@ typedef int (UnixNetVConnection::*NetVConnHandler) (int, void *);
 TS_INLINE void
 UnixNetVConnection::set_remote_addr()
 {
-  remote_addr = con.sa;
+  remote_addr.sin_family = con.sa.sin_family;
+  remote_addr.sin_port = htons(port);
+  remote_addr.sin_addr.s_addr = ip;
 }
 
 TS_INLINE void

@@ -373,8 +373,8 @@ public:
   /** @return current inactivity_timeout value in nanosecs */
   virtual ink_hrtime get_inactivity_timeout() = 0;
 
-  /** Returns local sockaddr storage. */
-  const struct sockaddr_storage &get_local_addr();
+  /** Returns local sockaddr in. */
+  const struct sockaddr_in &get_local_addr();
 
   /** Returns local ip. */
   unsigned int get_local_ip();
@@ -382,8 +382,8 @@ public:
   /** Returns local port. */
   int get_local_port();
 
-  /** Returns remote sockaddr storage. */
-  const struct sockaddr_storage &get_remote_addr();
+  /** Returns remote sockaddr in. */
+  const struct sockaddr_in &get_remote_addr();
 
   /** Returns remote ip. */
   unsigned int get_remote_ip();
@@ -497,8 +497,8 @@ private:
   NetVConnection & operator =(const NetVConnection &);
 
 protected:
-  struct sockaddr_storage local_addr;
-  struct sockaddr_storage remote_addr;
+  struct sockaddr_in local_addr;
+  struct sockaddr_in remote_addr;
 
   int got_local_addr;
   int got_remote_addr;

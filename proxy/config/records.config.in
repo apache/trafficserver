@@ -104,8 +104,6 @@ CONFIG proxy.config.alarm.abs_path STRING NULL
    # server_other_ports STRING 1234:X 12345:X
 CONFIG proxy.config.http.server_port INT 8080
 CONFIG proxy.config.http.server_port_attr STRING X
-# to enable IPv6 listening on port 8080:
-# CONFIG proxy.config.http.server_other_ports STRING 8080:X6
 CONFIG proxy.config.http.server_other_ports STRING NULL
 CONFIG proxy.config.http.ssl_ports STRING 443 563
 CONFIG proxy.config.http.insert_request_via_str INT 1

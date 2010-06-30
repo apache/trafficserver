@@ -104,7 +104,6 @@ ClusterAccept::ClusterAcceptEvent(int event, void *data)
           accept_action = 0;
         }
         accept_action = netProcessor.main_accept(this, NO_FD, cluster_port,
-                                                 AF_INET,
                                                  NULL, NULL,
                                                  false, socket_recv_bufsize, socket_send_bufsize, ET_CLUSTER);
         if (!accept_action) {
