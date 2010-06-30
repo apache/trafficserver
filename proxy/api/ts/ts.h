@@ -2801,43 +2801,43 @@ extern "C"
   /** @deprecated Use INKMimeHdrFieldAppend() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
 
-  /** @deprecated Use INKMimeHdrFieldStringInsert() instead */
+  /** @deprecated Use INKMimeHdrFieldValueStringInsert() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, const char *value, int length, int idx);
 
-  /** @deprecated Use INKMimeHdrFieldIntInsert() instead */
+  /** @deprecated Use INKMimeHdrFieldValueIntInsert() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueInsertInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int value, int idx);
 
-  /** @deprecated Use INKMimeHdrFieldUintInsert() instead */
+  /** @deprecated Use INKMimeHdrFieldValueUintInsert() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueInsertUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, unsigned int value, int idx);
 
-  /** @deprecated Use INKMimeHdrFieldDateInsert() instead */
+  /** @deprecated Use INKMimeHdrFieldValueDateInsert() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueInsertDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, time_t value, int idx);
 
-  /** @deprecated Use INKMimeHdrFieldStringGet() instead */
+  /** @deprecated Use INKMimeHdrFieldValueStringGet() instead */
   inkapi INK_DEPRECATED const char *INKMimeHdrFieldValueGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int *value_len_ptr);
 
-  /** @deprecated Use INKMimeHdrFieldIntGet() instead */
+  /** @deprecated Use INKMimeHdrFieldValueIntGet() instead */
   inkapi INK_DEPRECATED int INKMimeHdrFieldValueGetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
 
-  /** @deprecated Use INKMimeHdrFieldUintGet() instead */
+  /** @deprecated Use INKMimeHdrFieldValueUintGet() instead */
   inkapi INK_DEPRECATED unsigned int INKMimeHdrFieldValueGetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
 
-  /** @deprecated Use INKMimeHdrFieldDateGet() instead */
+  /** @deprecated Use INKMimeHdrFieldValueDateGet() instead */
   inkapi INK_DEPRECATED time_t INKMimeHdrFieldValueGetDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx);
 
-  /** @deprecated Use INKMimeHdrFieldStringSet() instead */
+  /** @deprecated Use INKMimeHdrFieldValueStringSet() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueSet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, const char *value, int length);
 
-  /** @deprecated Use INKMimeHdrFieldIntSet() instead */
+  /** @deprecated Use INKMimeHdrFieldValueIntSet() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueSetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int value);
 
-  /** @deprecated Use INKMimeHdrFieldUintSet() instead */
+  /** @deprecated Use INKMimeHdrFieldValueUintSet() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueSetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, unsigned int value);
 
-  /** @deprecated Use INKMimeHdrFieldDateSet() instead */
+  /** @deprecated Use INKMimeHdrFieldValueDateSet() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldValueSetDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, time_t value);
 
-  /** @deprecated Use INKMimeHdrFieldDestroy() instead */
+  /** @deprecated Use INKMimeHdrFieldValueDestroy() instead */
   inkapi INK_DEPRECATED INKReturnCode INKMimeHdrFieldDelete(INKMBuffer bufp, INKMLoc hdr, INKMLoc field);
 
 
