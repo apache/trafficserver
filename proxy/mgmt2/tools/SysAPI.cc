@@ -324,13 +324,15 @@ Net_GetNetworkIntCount()
   char buffer[200];
   int count = 0;
 
+  *buffer = '\0';
   // for each NIC
   net_device = fopen("/proc/net/dev", "r");
-
   while (!feof(net_device)) {
-    NOWARN_UNUSED_RETURN(fgets(buffer, 200, net_device));
-    if (strstr(buffer, "eth"))  // only counts eth interface
-      count++;
+    if (fgets(buffer, 200, net_device)) {
+      if (*buffer && strstr(buffer, "eth")) {  // only counts eth interface
+        count++;
+      }
+    }
   }
   fclose(net_device);
   return count;
@@ -345,22 +347,24 @@ Net_GetNetworkInt(int int_num, char *interface, size_t interface_len)
   char buffer[200];
   int space_len;
   char *pos, *tmp;
+  int i = -1;
 
+  *buffer = '\0';
   net_device = fopen("/proc/net/dev", "r");
 
-  int i = 0;
-  while (!feof(net_device) && i < int_num) {
-    NOWARN_UNUSED_RETURN(fgets(buffer, 200, net_device));
-    if (strstr(buffer, "eth"))  // only counts the eth interface
-      i++;
+  while (!feof(net_device) && (i != int_num)) {
+    if (fgets(buffer, 200, net_device)) {
+      if (strstr(buffer, "eth"))  // only counts the eth interface
+        i++;
+    }
   }
   fclose(net_device);
-
-  if (i < int_num - 1)
+  if (!*buffer || (i != int_num))
     return -1;
 
   pos = strchr(buffer, ':');
-  *pos = '\0';
+  if (pos)
+    *pos = '\0';
   space_len = strspn(buffer, " ");
   tmp = buffer + space_len;
 
