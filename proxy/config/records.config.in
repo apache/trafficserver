@@ -215,10 +215,12 @@ CONFIG proxy.config.http.push_method_enabled INT 0
 #       0x0400 - PUSH
 #  bits 18-16 - IP address type
 #       reserved
-#  bits 30-17 - reserved
-#  bit 31 - Action (allow=1, deny=0)
+#  bits 30-19 - reserved
+#  bit 31 - Action (allow=1, deny=0), leave at zero
 #  Note: if 'proxy.config.http.quick_filter.mask' is equal 0, there is no 'quick http filtering' at all
-CONFIG proxy.config.http.quick_filter.mask INT 0x80020082
+#
+# The default (0x482 or 1154) denies all PUSH, PURGE and DELETE requests (except from 127.0.0.1)
+CONFIG proxy.config.http.quick_filter.mask INT 0x482
 
    #################
    # cache control #

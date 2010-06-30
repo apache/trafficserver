@@ -1216,7 +1216,7 @@ public:
   static bool is_response_valid(State * s, HTTPHdr * incoming_response);
 
 //    static bool setup_reverse_proxy(State *s,HTTPHdr *incoming_request);
-  static bool process_quick_http_filter(State * s, int method);
+  static void process_quick_http_filter(State * s, int method);
 
   static bool setup_transparency(State * s);
   static bool perform_accept_encoding_filtering(State * s);

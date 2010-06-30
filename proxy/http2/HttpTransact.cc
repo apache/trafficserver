@@ -7007,26 +7007,37 @@ HttpTransact::setup_transparency(State * s)
   return set;
 }
 
-bool
+void
 HttpTransact::process_quick_http_filter(State * s, int method)
 {
   int quick_filter_mask;
-  bool address_ok = true;
 
-  // vl: Please refer to proxy/mgmt2/RecordsConfig.cc file,
+  // TODO: This code is really a bastard solution, leftovers from a totally
+  // different internal implementation. We ought to either rewrite this
+  // completely, or just remove it.
+
+  // Please refer to proxy/mgmt2/RecordsConfig.cc file,
   // "proxy.config.http.quick_filter.mask" variable for
   // detailed information about quick_filter_mask layout.
 
+  // connection already disabled by previous ACL filtering, don't modify it.
   if (!s->client_connection_enabled) {
-    return false;               // connection already disabled by previous ACL filtering
+    return;
   }
 
+  // TODO: This currently only deal with IPv4, we should support ::1 for IPv6 too.
+  // Exempt for "localhost", avoid denying for localhost.
+  if (((int)s->client_info.ip == 16777343)) {
+    return;
+  }
+
+  // See if there are any methods for the quick filter to apply to.
   if (((quick_filter_mask = s->http_config_param->quick_filter_mask) & 0x0FFF) != 0) {
     int method_mask = (method - HTTP_WKSIDX_CONNECT);   // fastest way to do it
+
     if (likely(method_mask >= 0 && method_mask < HTTP_WKSIDX_METHODS_CNT)) {
       method_mask = 1 << method_mask;
-    } else                      // impossible case, but we have to check it
-    {
+    } else {                      // impossible case, but we have to check it
       if (method == HTTP_WKSIDX_GET)
         method_mask = 0x0004;
       else if (method == HTTP_WKSIDX_HEAD)
@@ -7053,15 +7064,14 @@ HttpTransact::process_quick_http_filter(State * s, int method)
         method_mask = 0x0000;
     }
     if ((quick_filter_mask & method_mask) == 0) {
-      return true;              // enable request processing because method does not match
+      return;              // enable request processing because method does not match
     }
   }
 
-  if (address_ok) {
-    if ((quick_filter_mask & 0x80000000) == 0)
-      address_ok = false;
-  }
-  return (s->client_connection_enabled = address_ok);
+  if ((quick_filter_mask & 0x80000000) == 0)
+    s->client_connection_enabled = false;
+  else
+    s->client_connection_enabled = true;
 }
 
 
