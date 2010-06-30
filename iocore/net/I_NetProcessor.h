@@ -200,7 +200,7 @@ public:
   virtual int start(int number_of_net_threads = 0 /* uses event threads */ ) = 0;
 
   /** Private constructor. */
-    NetProcessor()
+  NetProcessor()
   {
   };
 
