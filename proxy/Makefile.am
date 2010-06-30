@@ -404,7 +404,6 @@ install-data-local:
 
 install-data-hook:
 	-chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgdatadir)
-	-echo $(DESTDIR)$(prefix) > $(DESTDIR)$(sysconfdir)/trafficserver-root
 	-echo "<TS_VERSION> $(PACKAGE_VERSION)" > $(DESTDIR)$(pkgsysconfdir)/trafficserver-release
 
 install-exec-local:
@@ -415,6 +414,5 @@ install-exec-hook:
 
 uninstall-hook:
 	-rm -rf $(DESTDIR)$(pkglocalstatedir) $(DESTDIR)$(pkglogdir) $(DESTDIR)$(pkgruntimedir) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkglibexecdir) $(DESTDIR)$(pkgcachedir)
-	-rm -f $(DESTDIR)$(sysconfdir)/trafficserver-root
 
 

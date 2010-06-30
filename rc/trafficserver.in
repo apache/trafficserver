@@ -67,12 +67,7 @@ test -x $ESED || ESED=sed
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 DESC="start/stop Traffic Server"
 NAME=trafficserver
-
-if [ -f @exp_sysconfdir@/trafficserver-root ]; then
-  TS_PREFIX=`${HEAD} -1 @exp_sysconfdir@/trafficserver-root`
-else
-  TS_PREFIX="@prefix@"
-fi
+TS_PREFIX="@prefix@"
 
 TS_ROOT=${TS_ROOT:-$TS_PREFIX}
 # TS_BASE is offset inside the file system from where the layout starts

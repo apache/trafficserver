@@ -24,8 +24,6 @@
 #include "inktomi++.h"
 #include "I_Layout.h"
 
-#define DEFAULT_TS_DIRECTORY_FILE SYSCONFIGDIR "/trafficserver-root"
-
 static Layout *layout = NULL;
 
 Layout *
@@ -146,7 +144,6 @@ Layout::Layout(const char *_prefix)
     prefix = xstrdup(_prefix);
   }
   else {
-    FILE *fp;
     char *env_path;
     char path[PATH_MAX];
     int  len;
@@ -164,29 +161,8 @@ Layout::Layout(const char *_prefix)
         --len;
       }
     } else {
-      if ((fp = fopen(DEFAULT_TS_DIRECTORY_FILE, "r")) != NULL) {
-        if (fgets(path, sizeof(path), fp) == NULL) {
-          fclose(fp);
-          ink_error("Invalid contents in %s. "
-                    "Please set correct path in env variable TS_ROOT\n",
-                    DEFAULT_TS_DIRECTORY_FILE);
-          return;
-        }
-        fclose(fp);
-        // strip newline if it exists
-        len = strlen(path);
-        while (len > 1 && isspace((unsigned int)(path[len - 1]))) {
-          path[len - 1] = '\0';
-          --len;
-        }
-        if (path[len - 1] == '/') {
-          path[len - 1] = '\0';
-        }
-
-      } else {
         // Use compile time --prefix
         ink_strncpy(path, PREFIX, sizeof(path));
-      }
     }
 
     if (access(path, R_OK) == -1) {

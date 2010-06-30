@@ -1798,14 +1798,6 @@ init_signals()
 static void
 init_config_dir()
 {
-  // Fix INKqa05946
-  //
-  // The traffic_cop binary should be run from either the TS root
-  // directory or the bin/ directory. In either case, there should
-  // always be a etc/trafficserver directory there.
-  //
-  // If there is no DEFAULT_TS_DIRECTORY_FILE file to be found, we will
-  // assume there is one in the current working directory.
 
   struct stat info;
 

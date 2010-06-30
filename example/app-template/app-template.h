@@ -30,7 +30,6 @@
 #define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
 #define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
 #define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
-#define DEFAULT_TS_DIRECTORY_FILE         PREFIX "/etc/traffic_server"
 
 #define DEFAULT_NUMBER_OF_THREADS         ink_number_of_processors()
 #define DEFAULT_NUMBER_OF_UDP_THREADS     1

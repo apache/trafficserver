@@ -298,8 +298,7 @@ cli_write_timeout(int fd, const char *data, int nbytes, ink_hrtime timeout)
 }                               /* End cli_write_timeout */
 
 /*
- This function is copied from cli2/CliMgmtUtils.cc. Gets the install directory from
-DEFAULT_TS_DIRECTORY_FILE
+ This function is copied from cli2/CliMgmtUtils.cc. Get layout directory.
 */
 int
 GetTSDirectory(char *ts_path, size_t ts_path_len)
