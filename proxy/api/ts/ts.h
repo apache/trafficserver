@@ -32,7 +32,6 @@
 
 #include <sys/types.h>
 #include <stdint.h>
-#include <sys/socket.h>
 
 #define inkapi
 #define inkexp
@@ -1969,24 +1968,6 @@ extern "C"
   inkapi INKReturnCode INKHttpTxnCacheLookupStatusGet(INKHttpTxn txnp, int *lookup_status);
 
   inkapi int INKHttpTxnTransformRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
-
-  /**
-      Retrieves the socket address of the remote client that has
-      connected to Traffic Server for the current transaction. The
-      return structure is the generic socket address storage in
-      order to be address-family agnostic. The user of this function
-      can then go on to do the approriate thing with the type
-      specified in the ss_family field of the structure whether
-      that be for IPv4, IPv6, or any other address family.
-
-      @sa socket.h for description of struct sockaddr_storage
-
-      @param txnp HTTP transaction of the connection.
-      @return generic socket address storage.
-
-   */
-  inkapi const struct sockaddr_storage * INKHttpTxnClientSockAddrGet(INKHttpTxn txnp);
-
   inkapi unsigned int INKHttpTxnClientIPGet(INKHttpTxn txnp);
   inkapi int INKHttpTxnClientFdGet(INKHttpTxn txnp);
   inkapi INKReturnCode INKHttpTxnClientRemotePortGet(INKHttpTxn txnp, int *port);
