@@ -207,24 +207,6 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   /* inbound requests stat should be incremented here, not after the
    * header has been read */
   HTTP_INCREMENT_DYN_STAT(http_total_incoming_connections_stat);
-
-  // check what type of socket address we just accepted
-  // by looking at the address family value of sockaddr_storage
-  // and logging to stat system
-  switch(new_vc->get_remote_addr().ss_family) {
-    case AF_INET:
-      HTTP_INCREMENT_DYN_STAT(http_total_client_connections_ipv4_stat);
-    break;
-    case AF_INET6:
-      HTTP_INCREMENT_DYN_STAT(http_total_client_connections_ipv6_stat);
-    break;
-    default:
-      // don't do anything if the address family is not ipv4 or ipv6
-      // (there are many other address families in <sys/socket.h>
-      // but we don't have a need to report on all the others today)
-    break;
-  }
-
   // Record api hook set state
   hooks_set = http_global_hooks->hooks_set;
 
