@@ -39,7 +39,7 @@ CONFIG proxy.config.snapshot_dir STRING snapshots
 CONFIG proxy.config.system.mmap_max INT 2097152
 CONFIG proxy.config.system.memalign_heap INT 0
 CONFIG proxy.config.exec_thread.autoconfig INT 1
-CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 3.0
+CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 2.0
 CONFIG proxy.config.exec_thread.limit INT 2
 CONFIG proxy.config.accept_threads INT 1
 ##############################################################################
