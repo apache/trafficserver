@@ -334,5 +334,6 @@ Server::listen(int port_number, bool non_blocking, int recv_bufsize, int send_bu
 Lerror:
   if (fd != NO_FD)
     close();
+  MachineFatal("Could not bind or listen to port %d (error: %d)", port_number, res);
   return res;
 }
