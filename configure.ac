@@ -157,6 +157,7 @@ AC_ARG_ENABLE([diags],
    use_diags=1
   ]
 )
+AC_MSG_RESULT([$enable_diags])
 AC_SUBST(use_diags)
 
 #

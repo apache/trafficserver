@@ -1104,7 +1104,7 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
           ent ? "SUCCESS" : "FAIL", e->qname, (ent != NULL ? ent->ent.h_name : "<not found>"), retry);
   }
 
-  if (ent == NULL) {
+  if (ent) {
     DNS_INCREMENT_DYN_STAT(dns_lookup_success_stat);
   } else {
     DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
