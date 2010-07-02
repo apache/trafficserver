@@ -46,10 +46,12 @@ struct ShowCont:Continuation
 
   int show(const char *s, ...)
   {
-    va_list aap;
-      va_start(aap, s);
+    va_list aap, va_scratch;
     int l = ebuf - buf;
+    va_start(aap, s);
+    va_copy(va_scratch, aap);
     int done = vsnprintf(buf, l, s, aap);
+    va_end(va_scratch);
     if (done > l - 256)
     {
       char *start2 = (char *) xrealloc(start, (ebuf - start) * 2);
