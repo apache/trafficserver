@@ -314,8 +314,8 @@ CONFIG proxy.config.cache.permit.pinning INT 0
    # default the ram cache size to AUTO_SIZE (-1) based on cache size
    #   (approximately 1 MB of RAM cache per GB of disk cache)
    # alternatively, set to a fixed value such as 20971520 (20MB)
-CONFIG proxy.config.cache.ram_cache.size LLONG -1
-CONFIG proxy.config.cache.ram_cache_cutoff LLONG 1048576
+CONFIG proxy.config.cache.ram_cache.size INT -1
+CONFIG proxy.config.cache.ram_cache_cutoff INT 1048576
    # Replacement algorithm
    #  0 : Clocked Least Frequently Used by Size (CLFUS) w/optional compression
    #  1 : LRU w/o optional compression - trivially simple
