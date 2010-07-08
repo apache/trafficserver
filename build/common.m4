@@ -312,7 +312,7 @@ AC_DEFUN([ATS_LAYOUT], [
     val=`echo $val | sed -e 's:\(.\)/*$:\1:'`
     val=`echo $val | sed -e 's:[\$]\([a-z_]*\):${\1}:g'`
     if test "$autosuffix" = "yes"; then
-      if echo $val | grep -i trafficserver >/dev/null; then
+      if echo $val | grep -i '/trafficserver$' >/dev/null; then
         addtarget=no
       else
         addtarget=yes
@@ -326,6 +326,16 @@ AC_DEFUN([ATS_LAYOUT], [
   for var in bindir sbindir libexecdir mandir infodir sysconfdir \
              datadir localstatedir runtimedir logdir libdir $3; do
     eval "val=\"\$$var\""
+    case $val in
+      *+)
+        val=`echo $val | sed -e 's;\+$;;'`
+        eval "$var=\"\$val\""
+        autosuffix=yes
+        ;;
+      *)
+        autosuffix=no
+        ;;
+    esac
     org_val=
     exp_val="$val"
     while test "x${exp_val}" != "x${org_val}";
@@ -333,12 +343,12 @@ AC_DEFUN([ATS_LAYOUT], [
       org_val="${exp_val}"
       exp_val="`eval \"echo ${exp_val}\"`"
     done
-    if echo $exp_val | grep -i trafficserver >/dev/null; then
+    if echo $exp_val | grep -i '/trafficserver$' >/dev/null; then
       addtarget=no
     else
       addtarget=yes
     fi
-    if test "$addtarget" = "yes"; then
+    if test "$addsuffix" = "yes" -a "$addtarget" = "yes"; then
       val="$val/trafficserver"
     fi
     var="pkg${var}"
@@ -393,13 +403,15 @@ do
   -bindir | --bindir | --bindi | --bind | --bin | --bi)
     ac_prev=bindir ;;
   -bindir=* | --bindir=* | --bindi=* | --bind=* | --bin=* | --bi=*)
-    bindir="$ac_optarg" ;;
+    bindir="$ac_optarg"
+    pkgbindir="$ac_optarg" ;;
 
   -datadir | --datadir | --datadi | --datad | --data | --dat | --da)
     ac_prev=datadir ;;
   -datadir=* | --datadir=* | --datadi=* | --datad=* | --data=* | --dat=* \
   | --da=*)
-    datadir="$ac_optarg" ;;
+    datadir="$ac_optarg"
+    pkgdatadir="$ac_optarg" ;;
 
   -exec-prefix | --exec_prefix | --exec-prefix | --exec-prefi \
   | --exec-pref | --exec-pre | --exec-pr | --exec-p | --exec- \
@@ -425,14 +437,16 @@ do
   -libdir | --libdir | --libdi | --libd)
     ac_prev=libdir ;;
   -libdir=* | --libdir=* | --libdi=* | --libd=*)
-    libdir="$ac_optarg" ;;
+    libdir="$ac_optarg"
+    pkglibdir="$ac_optarg" ;;
 
   -libexecdir | --libexecdir | --libexecdi | --libexecd | --libexec \
   | --libexe | --libex | --libe)
     ac_prev=libexecdir ;;
   -libexecdir=* | --libexecdir=* | --libexecdi=* | --libexecd=* | --libexec=* \
   | --libexe=* | --libex=* | --libe=*)
-    libexecdir="$ac_optarg" ;;
+    libexecdir="$ac_optarg"
+    pkglibexecdir="$ac_optarg" ;;
 
   -localstatedir | --localstatedir | --localstatedi | --localstated \
   | --localstate | --localstat | --localsta | --localst \
@@ -441,7 +455,8 @@ do
   -localstatedir=* | --localstatedir=* | --localstatedi=* | --localstated=* \
   | --localstate=* | --localstat=* | --localsta=* | --localst=* \
   | --locals=* | --local=* | --loca=* | --loc=* | --lo=*)
-    localstatedir="$ac_optarg" ;;
+    localstatedir="$ac_optarg"
+    pkglocalstatedir="$ac_optarg" ;;
 
   -mandir | --mandir | --mandi | --mand | --man | --ma | --m)
     ac_prev=mandir ;;
@@ -464,7 +479,8 @@ do
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
   | --sbi=* | --sb=*)
-    sbindir="$ac_optarg" ;;
+    sbindir="$ac_optarg"
+    pkgsbindir="$ac_optarg" ;;
 
   -sharedstatedir | --sharedstatedir | --sharedstatedi \
   | --sharedstated | --sharedstate | --sharedstat | --sharedsta \
@@ -482,7 +498,8 @@ do
     ac_prev=sysconfdir ;;
   -sysconfdir=* | --sysconfdir=* | --sysconfdi=* | --sysconfd=* | --sysconf=* \
   | --syscon=* | --sysco=* | --sysc=* | --sys=* | --sy=*)
-    sysconfdir="$ac_optarg" ;;
+    sysconfdir="$ac_optarg"
+    pkgsysconfdir="$ac_optarg" ;;
 
   esac
 done
