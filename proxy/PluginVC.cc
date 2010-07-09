@@ -415,18 +415,18 @@ PluginVC::do_io_shutdown(ShutdownHowTo_t howto)
 //
 // Returns number of bytes transfered
 //
-int
-PluginVC::transfer_bytes(MIOBuffer * transfer_to, IOBufferReader * transfer_from, int act_on)
+int64
+PluginVC::transfer_bytes(MIOBuffer * transfer_to, IOBufferReader * transfer_from, int64 act_on)
 {
 
-  int total_added = 0;
+  int64 total_added = 0;
 
   ink_debug_assert(act_on <= transfer_from->read_avail());
 
   while (act_on > 0) {
-    int block_read_avail = transfer_from->block_read_avail();
-    int to_move = MIN(act_on, block_read_avail);
-    int moved = 0;
+    int64 block_read_avail = transfer_from->block_read_avail();
+    int64 to_move = MIN(act_on, block_read_avail);
+    int64 moved = 0;
 
     if (to_move <= 0) {
       break;
@@ -495,14 +495,14 @@ PluginVC::process_write_side(bool other_side_call)
 
 
   // Check the state of our write buffer as well as ntodo
-  int ntodo = write_state.vio.ntodo();
+  int64 ntodo = write_state.vio.ntodo();
   if (ntodo == 0) {
     return;
   }
 
   IOBufferReader *reader = write_state.vio.get_reader();
-  int bytes_avail = reader->read_avail();
-  int act_on = MIN(bytes_avail, ntodo);
+  int64 bytes_avail = reader->read_avail();
+  int64 act_on = MIN(bytes_avail, ntodo);
 
   Debug("pvc", "[%u] %s: process_write_side; act_on %d", PVC_ID, PVC_TYPE, act_on);
 
@@ -522,14 +522,14 @@ PluginVC::process_write_side(bool other_side_call)
   // Bytes available, try to transfer to the PluginVCCore
   //   intermediate buffer
   //
-  int buf_space = PVC_DEFAULT_MAX_BYTES - core_buffer->max_read_avail();
+  int64 buf_space = PVC_DEFAULT_MAX_BYTES - core_buffer->max_read_avail();
   if (buf_space <= 0) {
     Debug("pvc", "[%u] %s: process_write_side no buffer space", PVC_ID, PVC_TYPE);
     return;
   }
   act_on = MIN(act_on, buf_space);
 
-  int added = transfer_bytes(core_buffer, reader, act_on);
+  int64 added = transfer_bytes(core_buffer, reader, act_on);
   if (added < 0) {
     // Couldn't actually get the buffer space.  This only
     //   happens on small transfers with the above
@@ -609,13 +609,13 @@ PluginVC::process_read_side(bool other_side_call)
   need_read_process = false;
 
   // Check the state of our read buffer as well as ntodo
-  int ntodo = read_state.vio.ntodo();
+  int64 ntodo = read_state.vio.ntodo();
   if (ntodo == 0) {
     return;
   }
 
-  int bytes_avail = core_reader->read_avail();
-  int act_on = MIN(bytes_avail, ntodo);
+  int64 bytes_avail = core_reader->read_avail();
+  int64 act_on = MIN(bytes_avail, ntodo);
 
   Debug("pvc", "[%u] %s: process_read_side; act_on %d", PVC_ID, PVC_TYPE, act_on);
 
@@ -630,16 +630,16 @@ PluginVC::process_read_side(bool other_side_call)
   //
   MIOBuffer *output_buffer = read_state.vio.get_writer();
 
-  int water_mark = output_buffer->water_mark;
+  int64 water_mark = output_buffer->water_mark;
   water_mark = MAX(water_mark, PVC_DEFAULT_MAX_BYTES);
-  int buf_space = water_mark - output_buffer->max_read_avail();
+  int64 buf_space = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {
     Debug("pvc", "[%u] %s: process_read_side no buffer space", PVC_ID, PVC_TYPE);
     return;
   }
   act_on = MIN(act_on, buf_space);
 
-  int added = transfer_bytes(output_buffer, core_reader, act_on);
+  int64 added = transfer_bytes(output_buffer, core_reader, act_on);
   if (added <= 0) {
     // Couldn't actually get the buffer space.  This only
     //   happens on small transfers with the above

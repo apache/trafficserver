@@ -128,7 +128,7 @@ private:
   void setup_event_cb(ink_hrtime in, Event ** e_ptr);
 
   void update_inactive_time();
-  int transfer_bytes(MIOBuffer * transfer_to, IOBufferReader * transfer_from, int act_on);
+  int64 transfer_bytes(MIOBuffer * transfer_to, IOBufferReader * transfer_from, int64 act_on);
 
   uint32 magic;
   PluginVC_t vc_type;

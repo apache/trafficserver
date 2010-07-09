@@ -7047,7 +7047,7 @@ INKCacheRemove(INKCont contp, INKCacheKey key)
 INKAction
 INKCacheScan(INKCont contp, INKCacheKey key, int KB_per_second)
 {
-  if ((sdk_sanity_check_iocore_structure(contp) != INK_SUCCESS) || (sdk_sanity_check_cachekey(key) != INK_SUCCESS))
+  if ((sdk_sanity_check_iocore_structure(contp) != INK_SUCCESS) || (key && sdk_sanity_check_cachekey(key) != INK_SUCCESS))
     return (INKAction) INK_ERROR_PTR;
 
   FORCE_PLUGIN_MUTEX(contp);
