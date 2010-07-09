@@ -52,6 +52,7 @@ struct cache_scan_state_t
 
   INK64 total_bytes;
   int total_items;
+  int done;
 
   bool write_pending;
 };
