@@ -110,6 +110,7 @@
 #define ATS_USE_KQUEUE                  @use_kqueue@
 #define ATS_USE_PORT                    @use_port@
 #define ATS_USE_POSIX_CAP               @use_posix_cap@
+#define ATS_USE_DETAILED_LOG            @has_detailed_log@
 
 /* OS API definitions */
 #define GETHOSTBYNAME_R_HOSTENT_DATA    @gethostbyname_r_hostent_data@

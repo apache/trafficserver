@@ -38,8 +38,6 @@ noinst_LIBRARIES = libinknet.a
 
 libinknet_a_SOURCES = \
   Connection.cc \
-  DetailedLog.cc \
-  DetailedLog.h \
   I_NetConfig.h \
   I_NetErrno.h \
   I_Net.h \
@@ -95,3 +93,9 @@ libinknet_a_SOURCES = \
   UnixUDPNet.cc \
   Inline.cc
 
+# TODO: These two should probably be moved to somewhere else (libintkomi++?)
+if BUILD_DETAILED_LOG
+  libinknet_a_SOURCES += \
+    DetailedLog.cc \
+    DetailedLog.h
+endif

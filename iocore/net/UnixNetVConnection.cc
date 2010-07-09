@@ -94,6 +94,7 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
 void
 close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
 {
+#if ATS_USE_DETAILED_LOG
   if (vc->loggingEnabled()) {
     vc->addLogMessage("close_UnixNetVConnection");
     // display the slow log for the http client session
@@ -101,6 +102,8 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
       vc->printLogs();
     vc->clearLogs();
   }
+#endif
+
   vc->cancel_OOB();
   vc->ep.stop();
   vc->con.close();

@@ -100,6 +100,9 @@ net_accept(NetAccept * na, void *ep, bool blockable)
       NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
       vc->id = net_next_connection_number();
       na->alloc_cache = vc;
+#if ATS_USE_DETAILED_LOG
+      vc->loggingInit();
+#endif
     }
     if ((res = na->server.accept(&vc->con)) < 0) {
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE)
@@ -297,6 +300,9 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
       vc = allocateThread(t);
       vc->id = net_next_connection_number();
       master_na->alloc_cache = vc;
+#if ATS_USE_DETAILED_LOG
+      vc->loggingInit();
+#endif
     }
     ink_hrtime now = ink_get_hrtime();
 
@@ -408,7 +414,9 @@ NetAccept::acceptFastEvent(int event, void *ep)
     socklen_t sz = sizeof(vc->con.sa);
     int fd = socketManager.accept(server.fd, (struct sockaddr *) &vc->con.sa, &sz);
 
-    vc->loggingInit(); // TODO add a configuration option for this
+#if ATS_USE_DETAILED_LOG
+    vc->loggingInit();
+#endif
 
     if (likely(fd >= 0)) {
       vc->addLogMessage("accepting the connection");

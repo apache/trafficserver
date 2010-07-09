@@ -32,9 +32,7 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 
-// #define WITH_DETAILED_VCONNECTION_LOGGING 1
-
-#if WITH_DETAILED_VCONNECTION_LOGGING
+#if ATS_USE_DETAILED_LOG
 #include "DetailedLog.h"
 #endif
 
@@ -440,7 +438,7 @@ public:
     is_internal_request = val;
   }
 
-#if WITH_DETAILED_VCONNECTION_LOGGING
+#if ATS_USE_DETAILED_LOG
   void loggingInit()
   {
     if (logging == NULL) {
@@ -483,13 +481,10 @@ public:
   }
   DetailedLog *logging;
 #else
+  // These are here to simplify the usage of these APIs, i.e. no need to
+  // add the #ifdef ATS_USE_DETAILED_LOG a million times.
   void addLogMessage(const char *message) {}
-  void loggingInit() {}
   bool loggingEnabled() const { return false; }
-
-  ink_hrtime getLogsTotalTime() const { return 0; }
-  void printLogs() const {}
-  void clearLogs() {}
 #endif
 
 private:
@@ -511,7 +506,7 @@ NetVConnection::NetVConnection():
   VConnection(NULL),
   attributes(0),
   thread(NULL),
-#if WITH_DETAILED_VCONNECTION_LOGGING
+#if ATS_USE_DETAILED_LOG
   logging(NULL),
 #endif
   got_local_addr(0),

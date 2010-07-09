@@ -228,7 +228,6 @@ AM_CONDITIONAL([STANDALONE_IOCORE], [test "x$enable_standalone_iocore" = "xyes"]
 #
 # Remote Coverity Prevent commit
 #
-
 AC_MSG_CHECKING([whether to commit cov defects to remote host])
 AC_ARG_ENABLE([remote-cov-commit],
   [AS_HELP_STRING([--enable-remote-cov-commit[=HOST]], [commit cov defects to remote host [HOST=localhost]])],
@@ -264,6 +263,20 @@ AC_ARG_ENABLE([api],
 )
 AC_MSG_RESULT([$enable_api])
 AC_SUBST(has_inkapi)
+
+#
+# Detailed Logging (for debugging purposes)
+#
+has_detailed_log=0
+AC_MSG_CHECKING([whether to enable detailed logging for debugging purposes])
+AC_ARG_ENABLE([detailed-log],
+  [AS_HELP_STRING([--enable-detailed-log],[enable detailed logging])],
+  [has_detailed_log=1],
+  [enable_detailed_log=no]
+)
+AC_MSG_RESULT([$enable_detailed_log])
+AC_SUBST(has_detailed_log)
+AM_CONDITIONAL([BUILD_DETAILED_LOG], [test "x$enable_detailed_log" = "xyes"])
 
 #
 # Cli2
