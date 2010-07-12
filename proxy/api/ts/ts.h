@@ -2626,6 +2626,13 @@ extern "C"
    */
   inkapi INKReturnCode INKAIOThreadNumSet(int thread_num);
 
+  /** 
+      Check if transaction was aborted (due client/server errors etc.)
+
+      @return 1 if transaction was aborted
+  */
+  inkapi int INKHttpTxnAborted(INKHttpTxn txnp);
+
   /* --------------------------------------------------------------------------
      Deprecated Functions
      Use of the following functions is strongly discouraged. These
