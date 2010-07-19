@@ -307,7 +307,7 @@ find_server_and_update_current_info(HttpTransact::State * s)
   URL *url = s->hdr_info.client_request.url_get();
 
   int host_len;
-  const char *host = url->host_get(&host_len);
+  const char *host = s->hdr_info.client_request.host_get(&host_len);
 
   if (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) {
     // Do not forward requests to local_host onto a parent.
@@ -675,31 +675,15 @@ HttpTransact::HandleBlindTunnel(State * s)
   HTTPVersion ver(0, 9);
   s->hdr_info.client_request.version_set(ver);
 
-  // Now we need to figure where the request is destined for
-  //   Two options.  First, we got the request for packets
-  //   sent through the arm layer.  If pick the address out that
-  //   way.  Otherwise, the client connected directly which means
-  //   we use our address and a remap rule is reuquired to send
-  //   request to it's proper destination
-  bool dest_found = false;
-  // ua_session is NULL for scheduled updates.
-  // Don't use req_flavor to do the test because if updated
-  // urls are remapped, the req_flavor is changed to REV_PROXY.
-  if (s->http_config_param->transparency_enabled && s->state_machine->ua_session != NULL) {
-    dest_found = setup_transparency(s);
-  }
+  struct in_addr dest_addr;
+  dest_addr.s_addr = s->state_machine->ua_session->get_netvc()->get_local_ip();
 
-  if (dest_found == false) {
+  char *new_host = inet_ntoa(dest_addr);
+  s->hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
+  // get_local_port() returns a port number in network order
+  // so it needs to be converted to host order (eg, in i386 machine)
+  s->hdr_info.client_request.url_get()->port_set(ntohs(s->state_machine->ua_session->get_netvc()->get_local_port()));
 
-    struct in_addr dest_addr;
-    dest_addr.s_addr = s->state_machine->ua_session->get_netvc()->get_local_ip();
-
-    char *new_host = inet_ntoa(dest_addr);
-    s->hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
-    // get_local_port() returns a port number in network order
-    // so it needs to be converted to host order (eg, in i386 machine)
-    s->hdr_info.client_request.url_get()->port_set(ntohs(s->state_machine->ua_session->get_netvc()->get_local_port()));
-  }
   // Intialize the state vars necessary to sending error responses
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
 
@@ -912,11 +896,10 @@ HttpTransact::EndRemapRequest(State * s)
   Debug("http_trans", "START HttpTransact::EndRemapRequest");
 
   HTTPHdr *incoming_request = &(s->hdr_info.client_request);
-  URL *url = incoming_request->url_get();
-  int host_len, method;
-  const char *host = url->host_get(&host_len);
-
-  method = incoming_request->method_get_wksidx();
+  //URL *url = incoming_request->url_get();
+  int method = incoming_request->method_get_wksidx();
+  int host_len;
+  const char *host = incoming_request->host_get(&host_len);
 
   ////////////////////////////////////////////////////////////////
   // if we got back a URL to redirect to, vector the user there //
@@ -970,45 +953,41 @@ HttpTransact::EndRemapRequest(State * s)
     /////////////////////////////////////////////////////////
     // check for: (1) reverse proxy is on, and no URL host //
     /////////////////////////////////////////////////////////
-    if (s->http_config_param->reverse_proxy_enabled && host == NULL) {
+    if (s->http_config_param->reverse_proxy_enabled
+	&& !s->client_info.is_transparent
+	&& !incoming_request->is_target_in_url()) {
       /////////////////////////////////////////////////////////
-      // the url mapping failed, reverse proxy was enabled,  //
-      // and the url contains no host:                       //
-      //                                                     //
-      // * if there is an explanatory redirect, send there   //
-      // * if there was no host header, send "no host" error //
-      // * if there was a host, say "not found"
+      // the url mapping failed, reverse proxy was enabled,
+      // and the request contains no host:
+      //
+      // * if there is an explanatory redirect, send there.
+      // * if there was no host, send "no host" error.
+      // * if there was a host, say "not found".
       /////////////////////////////////////////////////////////
 
       char *redirect_url = s->http_config_param->reverse_proxy_no_host_redirect;
       int redirect_url_len = s->http_config_param->reverse_proxy_no_host_redirect_len;
-      int host_len;
-      const char *host_hdr = incoming_request->value_get(MIME_FIELD_HOST, MIME_LEN_HOST,
-                                                         &host_len);
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       if (redirect_url) {       /* there is a redirect url */
         build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY,
                              "Redirect For Explanation", "request#no_host", "\"<em>%s</em>\".<p>", redirect_url);
         s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, redirect_url, redirect_url_len);
-      } else if (host_hdr == NULL) {    /* no host header */
+      // Pavlov - here is where to handle getting the origin server address
+      // socket when there is no host. Need to handle DNS failure elsewhere.
+      } else if (host == NULL) {    /* no host */
         build_error_response(s, HTTP_STATUS_BAD_REQUEST,
                              "Host Header Required", "request#no_host",
                              ("Your browser did not send a \"Host:\" HTTP header, "
                               "so the virtual host being requested could not be "
                               "determined.  To access this site you will need "
                               "to upgrade to a modern browser that supports the HTTP " "\"Host:\" header field."));
-      } else {                  /* there was a host header */
-
+      } else {
         build_error_response(s, HTTP_STATUS_NOT_FOUND,
                              "Not Found on Accelerator", "urlrouting#no_mapping", "Your requested URL was not found.");
       }
       s->reverse_proxy = false;
       goto done;
-    }
-    ///////////////////////////////////////////////////////
-    // check for: (2) no mappings, but mappings required //
-    ///////////////////////////////////////////////////////
-    if (s->http_config_param->url_remap_required && !s->cop_test_page && !s->traffic_net_req) {
+    } else if (s->http_config_param->url_remap_required && !s->cop_test_page && !s->traffic_net_req) {
       ///////////////////////////////////////////////////////
       // the url mapping failed, but mappings are strictly //
       // required (except for synthetic cop accesses), so  //
@@ -1028,12 +1007,15 @@ HttpTransact::EndRemapRequest(State * s)
     }
   }
   s->reverse_proxy = true;
+  s->server_info.is_transparent =
+    s->state_machine->ua_session->get_netvc()->get_is_other_side_transparent();
 
 done:
-        /**
-   * Since we don't want to return 404 Not Found error if there's redirect rule,
-   * the function to do redirect is moved before sending the 404 error.
-  **/
+  /**
+    * Since we don't want to return 404 Not Found error if there's
+    * redirect rule, the function to do redirect is moved before
+    * sending the 404 error.
+   **/
   if (handleIfRedirect(s)) {
     Debug("http_trans", "END HttpTransact::RemapRequest");
     TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
@@ -1070,18 +1052,20 @@ HttpTransact::ModifyRequest(State * s)
   const char *hostname;
   MIMEField *max_forwards_f;
   int max_forwards = -1;
+  HTTPHdr* request = &(s->hdr_info.client_request);
 
   Debug("http_trans", "START HttpTransact::ModifyRequest");
 
   // Intialize the state vars necessary to sending error responses
-  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  bootstrap_state_variables_from_request(s, request);
 
   ////////////////////////////////////////////////
   // If there is no scheme default to http      //
   ////////////////////////////////////////////////
-  URL *url = s->hdr_info.client_request.url_get();
+  URL *url = request->url_get();
 
-  if ((hostname = url->host_get(&hostname_len)) == NULL)
+  hostname = request->host_get(&hostname_len);
+  if (!request->is_target_in_url())
     s->hdr_info.client_req_is_server_style = true;
 
   s->orig_scheme = (scheme = url->scheme_get_wksidx());
@@ -1096,7 +1080,8 @@ HttpTransact::ModifyRequest(State * s)
       s->orig_scheme = URL_WKSIDX_HTTP;
     }
   }
-  if (s->method == HTTP_WKSIDX_CONNECT && url->port_get() == 0)
+
+  if (s->method == HTTP_WKSIDX_CONNECT && !request->is_port_in_header())
     url->port_set(80);
 
   // If the incoming request is proxy-style AND contains a Host header,
@@ -1140,6 +1125,8 @@ HttpTransact::ModifyRequest(State * s)
 
     if (buf)
       xfree(buf);
+
+    request->mark_target_dirty();
   }
 
   if (s->http_config_param->normalize_ae_gzip) {
@@ -1157,16 +1144,6 @@ HttpTransact::ModifyRequest(State * s)
     }
   }
 
-  ////////////////////////////////////////////////////////
-  // First check for the presence of a host header or   //
-  // the availability of the host name through the url. //
-  ////////////////////////////////////////////////////////
-  // ua_session is NULL for scheduled updates.
-  // Don't use req_flavor to do the test because if updated
-  // urls are remapped, the req_flavor is changed to REV_PROXY.
-  if (s->http_config_param->transparency_enabled && s->state_machine->ua_session != NULL) {
-    setup_transparency(s);
-  }
   /////////////////////////////////////////////////////////
   // Modify Accept-Encoding for several specific User-Agent
   /////////////////////////////////////////////////////////
@@ -1590,7 +1567,7 @@ HttpTransact::ReDNSRoundRobin(State * s)
                           "Click the <B>Tools</b> menu, and then click <b>Internet Options</b>.  On the Advanced tab, "
                           "scroll to the Security section and check settings for SSL 2.0, SSL 3.0, TLS 1.0, PCT 1.0.</li>"
                           "<li id=\"list3\">Click the Back button to try another link.</li></ul><p><br></p><h2 id=\"PEText\""
-                          " style=\"font:8pt/11pt verdana; color:black\">502 - Cannot find server or DNS Error</h2></font>"
+                          " style=\"font:8pt/11pt verdana; color:black\">502 - Cannot find server or DNS Error [reDNS]</h2></font>"
                           "</td></tr> </table></body></html>"), s->server_info.name);
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->next_action = PROXY_SEND_ERROR_CACHE_NOOP;
@@ -1710,8 +1687,8 @@ HttpTransact::OSDNSLookup(State * s)
                             "Click the <B>Tools</b> menu, and then click <b>Internet Options</b>.  On the Advanced tab, "
                             "scroll to the Security section and check settings for SSL 2.0, SSL 3.0, TLS 1.0, PCT 1.0.</li>"
                             "<li id=\"list3\">Click the Back button to try another link.</li></ul><p><br></p><h2 id=\"PEText\""
-                            " style=\"font:8pt/11pt verdana; color:black\">502 - Cannot find server or DNS Error</h2></font>"
-                            "</td></tr> </table></body></html>"), s->server_info.name);
+                            " style=\"font:8pt/11pt verdana; color:black\">502 - Cannot find server or DNS Error [%s:%d]</h2></font>"
+                            "</td></tr> </table></body></html>"), s->server_info.name, host_name_expansion);
       // s->cache_info.action = CACHE_DO_NO_ACTION;
       TRANSACT_RETURN(PROXY_SEND_ERROR_CACHE_NOOP, NULL);
       break;
@@ -1733,10 +1710,7 @@ HttpTransact::OSDNSLookup(State * s)
   get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info, s->http_config_param);
   s->server_info.dns_round_robin = s->dns_info.round_robin;
   Debug("http_trans", "[OSDNSLookup] DNS lookup for O.S. successful "
-        "IP: %u.%u.%u.%u",
-        ((unsigned char *) &s->server_info.ip)[0],
-        ((unsigned char *) &s->server_info.ip)[1],
-        ((unsigned char *) &s->server_info.ip)[2], ((unsigned char *) &s->server_info.ip)[3]);
+        "IP: %u.%u.%u.%u", PRINT_IP(s->server_info.ip));
 
 
   //Added By YTS Team, yamsat
@@ -1962,13 +1936,19 @@ HttpTransact::DecideCacheLookup(State * s)
     HTTP_DEBUG_ASSERT(s->current.mode != TUNNELLING_PROXY);
 
     if (s->cache_info.lookup_url == NULL) {
+      HTTPHdr* incoming_request = &(s->hdr_info.client_request);
 
       if (s->pristine_host_hdr > 0 || s->http_config_param->maintain_pristine_host_hdr) {
         s->cache_info.lookup_url_storage.create(NULL);
-        s->cache_info.lookup_url_storage.copy(s->hdr_info.client_request.url_get());
+        s->cache_info.lookup_url_storage.copy(incoming_request->url_get());
         s->cache_info.lookup_url = &(s->cache_info.lookup_url_storage);
+	// if the target isn't in the URL, put it in the copy for
+	// cache lookup.
+	incoming_request->set_url_target_from_host_field(s->cache_info.lookup_url);
       } else {
-        s->cache_info.lookup_url = s->hdr_info.client_request.url_get();
+	// make sure the target is in the URL.
+	incoming_request->set_url_target_from_host_field();
+        s->cache_info.lookup_url = incoming_request->url_get();
       }
 
       // *somebody* wants us to not hack the host header in a reverse proxy setup.
@@ -1980,7 +1960,7 @@ HttpTransact::DecideCacheLookup(State * s)
 
         // So, the host header will have the original host header.
         int host_len;
-        const char *host_hdr = s->hdr_info.client_request.value_get(MIME_FIELD_HOST,
+        const char *host_hdr = incoming_request->value_get(MIME_FIELD_HOST,
                                                                     MIME_LEN_HOST, &host_len);
         if (host_hdr) {
           char *tmp;
@@ -4019,10 +3999,7 @@ HttpTransact::retry_server_connection_not_open(State * s, ServerState_t conn_sta
   char *url_string = url->valid()? url->string_get(&s->arena) : NULL;
 
   Debug("http_trans", "[%d] failed to connect [%d] to %u.%u.%u.%u",
-        s->current.attempts, conn_state,
-        ((unsigned char *) &s->current.server->ip)[0],
-        ((unsigned char *) &s->current.server->ip)[1],
-        ((unsigned char *) &s->current.server->ip)[2], ((unsigned char *) &s->current.server->ip)[3]);
+        s->current.attempts, conn_state, PRINT_IP(s->current.server->ip));
 
   //////////////////////////////////////////
   // on the first connect attempt failure //
@@ -4031,11 +4008,7 @@ HttpTransact::retry_server_connection_not_open(State * s, ServerState_t conn_sta
 
   if (!s->traffic_net_req) {
     Log::error("CONNECT:[%d] could not connect [%s] to %u.%u.%u.%u "
-               "for '%s'", s->current.attempts, HttpDebugNames::get_server_state_name(conn_state),
-               ((unsigned char *) &s->current.server->ip)[0],
-               ((unsigned char *) &s->current.server->ip)[1],
-               ((unsigned char *) &s->current.server->ip)[2],
-               ((unsigned char *) &s->current.server->ip)[3], url_string ? url_string : "<none>");
+               "for '%s'", s->current.attempts, HttpDebugNames::get_server_state_name(conn_state), PRINT_IP(s->current.server->ip), url_string ? url_string : "<none>");
   }
 
   if (url_string) {
@@ -5628,13 +5601,13 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
     return FAILED_PROXY_AUTHORIZATION;
   }
 
+  URL *
+    incoming_url = incoming_hdr->url_get();
   int
     hostname_len;
-  URL *
-    incoming_url;
-  incoming_url = incoming_hdr->url_get();
   const char *
-    hostname = incoming_url->host_get(&hostname_len);
+    hostname = incoming_hdr->host_get(&hostname_len);
+
   if (hostname == NULL) {
     return MISSING_HOST_FIELD;
   }
@@ -5951,9 +5924,9 @@ HttpTransact::initialize_state_variables_for_origin_server(State * s, HTTPHdr * 
   }
 
   int host_len;
-  const char *host = incoming_request->url_get()->host_get(&host_len);
+  const char *host = incoming_request->host_get(&host_len);
   s->server_info.name = s->arena.str_store(host, host_len);
-  s->server_info.port = incoming_request->url_get()->port_get();
+  s->server_info.port = incoming_request->port_get();
 
   if (second_time) {
     s->dns_info.attempts = 0;
@@ -5969,8 +5942,16 @@ HttpTransact::bootstrap_state_variables_from_request(State * s, HTTPHdr * incomi
 }
 
 void
-HttpTransact::initialize_state_variables_from_request(State * s, HTTPHdr * incoming_request)
+HttpTransact::initialize_state_variables_from_request(State * s, HTTPHdr * obsolete_incoming_request)
 {
+  HTTPHdr* incoming_request = &(s->hdr_info.client_request);
+
+  // Temporary, until we're confident that the second argument is redundant.
+  ink_assert(incoming_request == obsolete_incoming_request);
+
+  int host_len;
+  const char *host_name = incoming_request->host_get(&host_len);
+
   // check if the request is conditional (IMS or INM)
   if (incoming_request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_NONE_MATCH)) {
     SET_VIA_STRING(VIA_CLIENT_REQUEST, VIA_CLIENT_IMS);
@@ -6032,10 +6013,8 @@ HttpTransact::initialize_state_variables_from_request(State * s, HTTPHdr * incom
   }
 
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
-    int host_len;
-    const char *host = incoming_request->url_get()->host_get(&host_len);
-    s->server_info.name = s->arena.str_store(host, host_len);
-    s->server_info.port = incoming_request->url_get()->port_get();
+    s->server_info.name = s->arena.str_store(host_name, host_len);
+    s->server_info.port = incoming_request->port_get();
   } else {
     HTTP_DEBUG_ASSERT(s->server_info.port != 0);
   }
@@ -6101,10 +6080,8 @@ HttpTransact::initialize_state_variables_from_request(State * s, HTTPHdr * incom
       enc_value = enc_val_iter.get_next(&enc_val_len);
     }
   }
-  int host_len;
-  const char *hostname = s->hdr_info.client_request.url_get()->host_get(&host_len);
   s->request_data.hdr = &s->hdr_info.client_request;
-  s->request_data.hostname_str = s->arena.str_store(hostname, host_len);
+  s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
   s->request_data.src_ip = s->client_info.ip;
   s->request_data.dest_ip = 0;
   if (s->state_machine->ua_session) {
@@ -6995,16 +6972,6 @@ bool
 HttpTransact::service_transaction_in_proxy_only_mode(State * s)
 {
   return false;
-}
-
-bool
-HttpTransact::setup_transparency(State * s)
-{
-  bool set = false;
-  /*
-   * NOTE: removed ARM code from here
-   */
-  return set;
 }
 
 void

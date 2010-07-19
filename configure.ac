@@ -328,6 +328,25 @@ AC_ARG_ENABLE([posix-cap],
 AC_MSG_RESULT([$enable_posix_cap])
 
 #
+# Use TPROXY for connection transparency.
+#
+AC_MSG_CHECKING([whether to enable TPROXY based transparency])
+AC_ARG_ENABLE([tproxy],
+  [AS_HELP_STRING([--enable-tproxy[[=ARG]]],
+                  [Use TPROXY to enable connection transparency.
+                   'auto' or omitted for local system default,
+		   'no' to disable,
+		   'force' to use built in default,
+		   number to use as IP_TRANSPARENT sockopt.
+		   [default=auto]
+		  ])
+  ],
+  [],
+  [enable_tproxy="auto"]
+)
+AC_MSG_RESULT([$enable_tproxy])
+
+#
 # Installation directories
 # For each var the following is evaluated
 # foo      Standard variable  eg. ${prefix}/foo
@@ -939,6 +958,90 @@ if test "x${enable_posix_cap}" = "xyes"; then
     []
   )
 fi
+
+#
+# Configure sockopt value for TPROXY. Look at the enable flag.
+# Value 'no' means user forced disable, don't check anything else.
+#       'auto' means user didn't say, so silently enable/disable
+#              based on success.
+#       A numeric value means enable, don't check, use that value.
+#       Anything else means user forced, fail if value not found
+#       in header file.
+# We can't just include linux/in.h because it's incompatible with
+# netinet/in.h.
+# Verify the file exists (is readable), scan for the value we need,
+# if found export the value and enable use of the value.
+#
+ip_transparent=0
+use_tproxy=0
+tproxy_header=/usr/include/linux/in.h
+tproxy_usage_enable="
+    --enable-tproxy Enable the feature and validate."
+tproxy_usage_default="
+    --enable-tproxy=force Enable using default sockopt value, no validation."
+tproxy_usage_numeric="
+    --enable-tproxy=X where X is numeric
+                      Enable, use X for sockopt value, no validation."
+tproxy_usage_disable="
+    --disable-tproxy Disable feature, no validation."
+proxy_usage="$tproxy_usage_enable$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable"
+
+AS_IF([test "x$enable_tproxy" != "xno"], [
+  AS_IF([test "x${enable_posix_cap}" != "xyes"], [
+    AC_MSG_FAILURE([TPROXY feature requires POSIX capabilities.])
+  ],[
+    AC_MSG_CHECKING([for TPROXY sockopt IP_TRANSPARENT])
+    AS_CASE("$enable_tproxy",
+      [[[0-9]][[0-9]]*], [
+	ip_transparent=$enable_tproxy
+	use_tproxy=1
+	AC_MSG_RESULT([forced to $ip_transparent])
+      ],
+      [force], [
+	ip_transparent=19
+	use_tproxy=1
+	AC_MSG_RESULT([forced to $ip_transparent])
+      ],
+      [yes], [
+        AS_IF([test -r $tproxy_header], [
+	  ip_transparent=`$AWK "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
+	  AS_IF([test "x$ip_transparent" != "x"], [
+	    use_tproxy=1
+	    AC_MSG_RESULT([set to $ip_transparent])
+	  ],[
+	    ip_transparent=0
+	    AC_MSG_RESULT([failed])
+	    AC_MSG_FAILURE([tproxy feature enabled but the sockopt value was not found in $tproxy_header. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+	  ])
+	],[
+	  AC_MSG_RESULT([failed])
+	  AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+	])
+      ],
+      # same as 'yes' but silent fail.
+      [auto], [
+        AS_IF([test -r $tproxy_header], [
+	  ip_transparent=`gawk "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
+	  AS_IF([test "x$ip_transparent" != "x"], [
+	    use_tproxy=1
+	    AC_MSG_RESULT([set to $ip_transparent])
+	  ],[
+	    AC_MSG_RESULT([no])
+	  ])
+	],[
+	  AC_MSG_RESULT([no])
+	])
+      ],
+      [
+	AC_MSG_RESULT([failed])
+	AC_MSG_FAILURE([Invalid argument to feature tproxy.$tproxy_usage])
+      ]
+    )
+  ])
+])
+
+AC_SUBST(use_tproxy)
+AC_SUBST(ip_transparent)
 
 ATS_CHECK_DEFAULT_IFACE
 ATS_CHECK_GETHOSTBYNAME_R_STYLE

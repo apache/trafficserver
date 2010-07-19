@@ -805,7 +805,10 @@ public:
     AbortState_t abort;
     HttpPortTypes port_attribute;
 
-      _ConnectionAttributes():http_version(),
+    /// @c true if the connection is transparent.
+    bool is_transparent;
+
+  _ConnectionAttributes():http_version(),
       keep_alive(HTTP_KEEPALIVE_UNDEFINED),
       receive_chunked_response(false),
       pipeline_possible(false),
@@ -814,7 +817,11 @@ public:
       dns_round_robin(false),
       connect_failure(false),
       transfer_encoding(NO_TRANSFER_ENCODING),
-      ip(0), port(0), state(STATE_UNDEFINED), abort(ABORT_UNDEFINED), port_attribute(SERVER_PORT_DEFAULT)
+      ip(0), port(0),
+      state(STATE_UNDEFINED),
+      abort(ABORT_UNDEFINED),
+      port_attribute(SERVER_PORT_DEFAULT),
+      is_transparent(false)
     {
     };
   }
@@ -1202,7 +1209,7 @@ public:
   static bool handle_trace_and_options_requests(State * s, HTTPHdr * incoming_hdr);
   static void bootstrap_state_variables_from_request(State * s, HTTPHdr * incoming_request);
   static void initialize_state_variables_for_origin_server(State * s, HTTPHdr * incoming_request, bool second_time);
-  static void initialize_state_variables_from_request(State * s, HTTPHdr * incoming_request);
+  static void initialize_state_variables_from_request(State * s, HTTPHdr * obsolete_incoming_request);
   static void initialize_state_variables_from_response(State * s, HTTPHdr * incoming_response);
   static bool is_server_negative_cached(State * s);
   static bool is_cache_response_returnable(State * s);
@@ -1218,7 +1225,6 @@ public:
 //    static bool setup_reverse_proxy(State *s,HTTPHdr *incoming_request);
   static void process_quick_http_filter(State * s, int method);
 
-  static bool setup_transparency(State * s);
   static bool perform_accept_encoding_filtering(State * s);
 
   static HostNameExpansionError_t try_to_expand_host_name(State * s);

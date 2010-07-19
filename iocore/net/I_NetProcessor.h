@@ -41,6 +41,50 @@ class NetVCOptions;
 class NetProcessor:public Processor
 {
 public:
+  /** Options for @c accept.
+   */
+  struct AcceptOptions {
+    typedef AcceptOptions self; ///< Self reference type.
+
+    /// Port on which to listen.
+    /// 0 => don't care, which is useful if the socket is already bound.
+    int port;
+    /// Communication domain (default: AF_INET)
+    int domain;
+    /// Event type to generate on accept.
+    EventType etype;
+    /** If @c true, the continuation is called back with
+	@c NET_EVENT_ACCEPT_SUCCEED,
+	or @c NET_EVENT_ACCEPT_FAILED on success and failure resp.
+    */
+    bool f_callback_on_open;
+
+    /// Socket receive buffer size.
+    /// 0 => OS default.
+    int recv_bufsize;
+    /// Socket transmit buffer size.
+    /// 0 => OS default.
+    int send_bufsize;
+    /// Socket options for @c sockopt.
+    /// 0 => do not set options.
+    unsigned long sockopt_flags;
+    /// Transparency on related connection to origin server.
+    bool f_outbound_transparent;
+    /** Transparency on client (user agent) connection.
+	@internal This is irrelevant at a socket level (since inbound
+	transparency must be set up when the listen socket is created)
+	but it's critical that the connection handling logic knows
+	whether the inbound (client / user agent) connection is
+	transparent.
+    */
+    bool f_inbound_transparent;
+
+    /// Default constructor.
+    /// Instance is constructed with default values.
+    AcceptOptions() { this->reset(); }
+    /// Reset all values to defaults.
+    self& reset();
+  };
 
   /**
     Accept connections on a port.
@@ -133,7 +177,7 @@ public:
       port becomes free immediately.
 
   */
-  virtual Action *main_accept(Continuation * cont, SOCKET listen_socket_in, int port, sockaddr * bound_sockaddr = NULL, int *bound_sockaddr_size = NULL, bool accept_only = false, int recv_bufsize = 0, int send_bufsize = 0, unsigned long sockopt_flag = 0, EventType etype = ET_NET, bool callback_on_open = false  // TBD for NT
+  virtual Action *main_accept(Continuation * cont, SOCKET listen_socket_in, sockaddr * bound_sockaddr = NULL, int *bound_sockaddr_size = NULL, bool accept_only = false, AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
     );
 
   /**
@@ -224,6 +268,9 @@ public:
   /* shared by regular netprocessor and ssl netprocessor */
   static socks_conf_struct *socks_conf_stuff;
 
+  /// Default options instance.
+  static AcceptOptions const DEFAULT_ACCEPT_OPTIONS;
+
 private:
 
   /** @note Not implemented. */
@@ -235,6 +282,7 @@ private:
 
   NetProcessor(const NetProcessor &);
   NetProcessor & operator =(const NetProcessor &);
+
 };
 
 

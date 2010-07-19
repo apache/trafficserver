@@ -125,6 +125,10 @@ struct HttpOtherPortEntry
 {
   int port;
   HttpPortTypes type;
+  /// Set if outbound connections (to origin servers) are transparent.
+  bool f_outbound_transparent;
+  /// Set if inbound connects (from client) are/were transparent.
+  bool f_inbound_transparent;
 };
 extern HttpOtherPortEntry *http_other_port_array;
 

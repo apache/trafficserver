@@ -614,7 +614,11 @@ public:
   //////////////////
   // Transparency //
   //////////////////
-  MgmtInt transparency_enabled;
+  MgmtInt transparency_enabled; ///< @b OBSOLETE
+  /// Accept connections on foreign addresses.
+  bool client_transparency_enabled;
+  /// Use client address to connect to origin server.
+  bool server_transparency_enabled;
 
   ///////////////////
   // reverse proxy //

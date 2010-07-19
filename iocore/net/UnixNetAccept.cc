@@ -127,6 +127,12 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     vc->accept_port = ntohs(na->server.sa.sin_port);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *na->action_;
+    vc->set_is_transparent(na->server.f_inbound_transparent);
+    vc->set_is_other_side_transparent(na->server.f_outbound_transparent);
+    Debug("http_tproxy", "Marking accepted %sconnection on %x as%s outbound transparent.\n",
+	  na->server.f_inbound_transparent ? "transparent " : "",
+	  na, na->server.f_outbound_transparent ? "" : " not"
+	  );
     vc->closed  = 0;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
 
@@ -341,6 +347,12 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
     vc->ip = vc->con.sa.sin_addr.s_addr;
     vc->port = ntohs(vc->con.sa.sin_port);
     vc->accept_port = ntohs(server.sa.sin_port);
+    vc->set_is_transparent(master_na->server.f_inbound_transparent);
+    vc->set_is_other_side_transparent(master_na->server.f_outbound_transparent);
+    Debug("http_tproxy", "Marking accepted %sconnect on %x as%s outbound transparent.\n",
+	  master_na->server.f_inbound_transparent ? "transparent " : "",
+	  master_na, master_na->server.f_outbound_transparent ? "" : " not"
+	  );
     vc->mutex = new_ProxyMutex();
     vc->action_ = *action_;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
@@ -485,6 +497,12 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->ip = vc->con.sa.sin_addr.s_addr;
     vc->port = ntohs(vc->con.sa.sin_port);
     vc->accept_port = ntohs(server.sa.sin_port);
+    vc->set_is_transparent(server.f_inbound_transparent);
+    vc->set_is_other_side_transparent(server.f_outbound_transparent);
+    Debug("http_tproxy", "Marking fast accepted %sconnection on as%s outbound transparent.\n",
+	  server.f_inbound_transparent ? "transparent " : "",
+	  server.f_outbound_transparent ? "" : " not"
+	  );
     vc->mutex = new_ProxyMutex();
     vc->thread = e->ethread;
 

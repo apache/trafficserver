@@ -50,8 +50,9 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
   char **redirect_url = &s->remap_redirect;
   char **orig_url = &s->unmapped_request_url;
   char *tag = NULL;
-  const char *request_url_host;
-  int request_url_host_len;
+  const char *request_host;
+  int request_host_len;
+  int request_port;
   bool proxy_request = false;
 
   s->reverse_proxy = rewrite_table->reverse_proxy;
@@ -72,79 +73,44 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
     return false;
   }
 
-  request_url_host = request_url->host_get(&request_url_host_len);
-  if (request_url_host_len > 0 || s->reverse_proxy == false) {
-    Debug("url_rewrite", "[lookup] attempting proxy lookup");
-    // Proxy request.  Use the information from the URL on the
-    //  request line.  (Note: we prefer the information in
-    //  the request URL since some user-agents send broken
-    //  host headers.)
-    proxy_request = true;
-    mapping_found =
-      rewrite_table->forwardMappingLookup(request_url, request_url->port_get(), request_url_host,
-                                          request_url_host_len, s->url_map, tag);
-  } else {
-    // Server request.  Use the host header to figure out where
-    // it goes
-    int host_len, host_hdr_len;
-    const char *host_hdr = request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_hdr_len);
-    if (!host_hdr) {
-      host_hdr = "";
-      host_hdr_len = 0;
-    }
-    char *tmp = (char *) memchr(host_hdr, ':', host_hdr_len);
-    int request_port;
+  request_host = request_header->host_get(&request_host_len);
+  request_port = request_header->port_get();
+  proxy_request = request_header->is_target_in_url() || ! s->reverse_proxy;
 
-    if (tmp == NULL) {
-      host_len = host_hdr_len;
-      // Get the default port from URL structure
-      request_port = request_url->port_get();
-    } else {
-      host_len = tmp - host_hdr;
-      request_port = ink_atoi(tmp + 1, host_hdr_len - host_len);
+  // Default to empty host.
+  if (!request_host) {
+    request_host = "";
+    request_host_len = 0;
+  }
 
-      // If atoi fails, try the default for the
-      //   protocol
-      if (request_port == 0) {
-        request_port = request_url->port_get();
-      }
-    }
+  Debug("url_rewrite", "[lookup] attempting %s lookup", proxy_request ? "proxy" : "normal");
 
-    Debug("url_rewrite", "[lookup] attempting normal lookup");
-    mapping_found = rewrite_table->forwardMappingLookup(request_url, request_port, host_hdr, host_len,
-                                                        s->url_map, tag);
+  mapping_found = rewrite_table->forwardMappingLookup(request_url, request_port, request_host, request_host_len, s->url_map, tag);
+
+  if (!proxy_request) { // do extra checks on a server request
 
     // Save this information for later
-    s->hh_info.host_len = host_len;
-    s->hh_info.request_host = host_hdr;
+    // @amc: why is this done only for requests without a host in the URL?
+    s->hh_info.host_len = request_host_len;
+    s->hh_info.request_host = request_host;
     s->hh_info.request_port = request_port;
 
-    // If no rules match, check empty host rules since
-    //   they function as default rules for server requests
-    if (!mapping_found && rewrite_table->nohost_rules && *host_hdr != '\0') {
+    // If no rules match and we have a host, check empty host rules since
+    // they function as default rules for server requests.
+    // If there's no host, we've already done this.
+    if (!mapping_found && rewrite_table->nohost_rules && request_host_len) {
       Debug("url_rewrite", "[lookup] nothing matched");
       mapping_found = rewrite_table->forwardMappingLookup(request_url, 0, "", 0, s->url_map, tag);
     }
 
     if (mapping_found && orig_url) {
-      // We need to insert the host so that we have an accurate URL
-      if (proxy_request == false) {
-        request_url->host_set(s->hh_info.request_host, s->hh_info.host_len);
-        // Only set the port if we need to so default ports
-        //  do show up in URLs
-        if (request_url->port_get() != s->hh_info.request_port) {
-          request_url->port_set(s->hh_info.request_port);
-        }
-      }
+      // Downstream mapping logic (e.g., self::finish_remap())
+      // apparently assumes the presence of the target in the URL, so
+      // we need to copy it. Perhaps it's because it's simpler to just
+      // do the remap on the URL and then fix the field at the end.
+      request_header->set_url_target_from_host_field();
       *orig_url = request_url->string_get_ref(NULL);
     }
-    // if (!map) {
-    //   char * u = request_url->string_get( NULL );
-    //   Debug("url_rewrite","RemapProcessor::setup_for_remap had map as NULL ==> ru:%s rp:%d h:%.*s t:%s", u , request_port, host_len,
-    //        host_hdr, tag);
-    //      if (u)
-    //     xfree(u);
-    // }
   }
 
   if (!mapping_found) {

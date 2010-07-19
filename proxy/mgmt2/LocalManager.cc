@@ -44,7 +44,7 @@
 #include <sys/capability.h>
 #endif
 
-int bindProxyPort(int, in_addr_t, int);
+int bindProxyPort(int, in_addr_t, bool, int);
 
 bool
 LocalManager::SetForDup(void *hIOCPort, long lTProcId, void *hTh)
@@ -1280,13 +1280,19 @@ LocalManager::listenForProxy()
     if (proxy_server_port[i] != -1) {
 
       if (proxy_server_fd[i] < 0) {
+	bool transparent = false;
+
         switch (*proxy_server_port_attributes[i]) {
         case 'D':
           // D is for DNS proxy, udp only
-          proxy_server_fd[i] = bindProxyPort(proxy_server_port[i], proxy_server_incoming_ip_to_bind, SOCK_DGRAM);
+          proxy_server_fd[i] = bindProxyPort(proxy_server_port[i], proxy_server_incoming_ip_to_bind, transparent, SOCK_DGRAM);
           break;
+	case '>': // in-bound (client side) transparent
+	case '=': // fully transparent
+	  transparent = true;
+	  // *FALLTHROUGH*
         default:
-          proxy_server_fd[i] = bindProxyPort(proxy_server_port[i], proxy_server_incoming_ip_to_bind, SOCK_STREAM);
+          proxy_server_fd[i] = bindProxyPort(proxy_server_port[i], proxy_server_incoming_ip_to_bind, transparent, SOCK_STREAM);
         }
       }
 
@@ -1376,7 +1382,7 @@ restoreRootPriv(uid_t *old_euid)
  *  Also, type specifies udp or tcp
  */
 int
-bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
+bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, bool transparent,  int type)
 {
   int one = 1;
   struct sockaddr_in proxy_addr;
@@ -1406,6 +1412,15 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, int type)
   if (setsockopt(proxy_port_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
     mgmt_elog(stderr, "[bindProxyPort] Unable to set socket options: %d : %s\n", proxy_port, strerror(errno));
     _exit(1);
+  }
+
+  if (transparent) {
+    int transparent_value = 1;
+    Debug("http_tproxy", "Listen port %d inbound transparency enabled.\n", proxy_port);
+    if (setsockopt(proxy_port_fd, SOL_IP, ATS_IP_TRANSPARENT, &transparent_value, sizeof(transparent_value)) == -1) {
+      mgmt_elog(stderr, "[bindProxyPort] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
+      _exit(1);
+    }
   }
 
   memset(&proxy_addr, 0, sizeof(proxy_addr));

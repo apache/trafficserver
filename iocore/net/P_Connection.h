@@ -162,6 +162,11 @@ struct Server:Connection
   //
   unsigned int accept_ip;
 
+  /// If set, transparently connect to origin server for requests.
+  bool f_outbound_transparent;
+  /// If set, the related incoming connect was transparent.
+  bool f_inbound_transparent;
+
   //
   // Use this call for the main proxy accept
   //
@@ -178,7 +183,11 @@ struct Server:Connection
   int listen(int port, bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
   int setup_fd_for_listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0);
 
-  Server():Connection(), accept_ip(INADDR_ANY) { }
+  Server()
+    : Connection()
+    , accept_ip(INADDR_ANY)
+    , f_outbound_transparent(false)
+  { }
 };
 
 #endif /*_Connection_h*/
