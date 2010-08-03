@@ -430,7 +430,7 @@ hdrtoken_hash_init()
 
     unsigned int slot = hdrtoken_hash(wks, hdrtoken_str_lengths[wks_idx]);
     if (hdrtoken_hash_table[slot].wks) {
-      printf("ERROR: hdrtoken_hash_table[%d] collision: '%s' replacing '%s'\n",
+      printf("ERROR: hdrtoken_hash_table[%u] collision: '%s' replacing '%s'\n",
              slot, wks, hdrtoken_hash_table[slot].wks);
       ++num_collisions;
     }

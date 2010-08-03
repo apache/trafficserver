@@ -60,7 +60,10 @@ static const char *cache_control_names[] = {
   "need-revalidate-once",
 };
 
+// TODO: We should enable the creation and use of these WKS. XXXX
+#if 0
 static const char *cache_control_values[SIZEOF(cache_control_names)];
+#endif
 
 static DFA *cache_control_names_dfa = NULL;
 
@@ -171,12 +174,6 @@ is_digit(char c)
   return ((c <= '9') && (c >= '0'));
 }
 
-inline static int
-is_ws(char c)
-{
-  return ((c == ParseRules::CHAR_SP) || (c == ParseRules::CHAR_HT));
-}
-
 /***********************************************************************
  *                                                                     *
  *                         M A I N    C O D E                          *
@@ -186,6 +183,10 @@ is_ws(char c)
 void
 http_hdr_adjust(HTTPHdrImpl * hdrp, int32 offset, int32 length, int32 delta)
 {
+  NOWARN_UNUSED(hdrp);
+  NOWARN_UNUSED(offset);
+  NOWARN_UNUSED(length);
+  NOWARN_UNUSED(delta);
   ink_release_assert(!"http_hdr_adjust not implemented");
 }
 
@@ -199,7 +200,6 @@ http_init(const char *path)
 
   if (init) {
     char buf[4096] = "";
-    int i;
 
     init = 0;
 
@@ -306,9 +306,12 @@ http_init(const char *path)
     HTTP_LEN_S_MAXAGE = hdrtoken_wks_to_length(HTTP_VALUE_S_MAXAGE);
     HTTP_LEN_NEED_REVALIDATE_ONCE = hdrtoken_wks_to_length(HTTP_VALUE_NEED_REVALIDATE_ONCE);
 
-    for (i = 0; i < (int) SIZEOF(cache_control_values); i++) {
+    // TODO: We need to look into enable these CC values as WKS XXX
+#if 0
+    for (int i = 0; i < (int) SIZEOF(cache_control_values); i++) {
       cache_control_values[i] = hdrtoken_string_to_wks(cache_control_names[i]);
     }
+#endif
   }
 }
 

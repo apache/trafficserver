@@ -26,7 +26,7 @@
 
 #include "P_EventSystem.h"
 #include "P_Net.h"
-struct LogCollationAccept:Continuation
+struct LogCollationAccept: public Continuation
 {
 
 public:

@@ -228,6 +228,7 @@ LogHost::disconnect()
 int
 LogHost::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pipe)
 {
+  NOWARN_UNUSED(to_pipe);
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogHost %s; LogBuffer is NULL", name());
     return -1;

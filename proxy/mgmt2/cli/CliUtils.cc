@@ -232,7 +232,6 @@ cli_write_timeout(int fd, const char *data, int nbytes, ink_hrtime timeout)
 {
   int sys_r;
   const char *requestCur;
-  int requestLen;
   int bytesToSend;
   const char *nullBuf = "\0";
   fd_set selectFDs;
@@ -248,11 +247,9 @@ cli_write_timeout(int fd, const char *data, int nbytes, ink_hrtime timeout)
   for (int i = 0; i < 2; i++) {
     if (i == 0) {
       requestCur = data;
-      requestLen = nbytes;
       bytesToSend = nbytes;
     } else {
       requestCur = nullBuf;
-      requestLen = 1;
       bytesToSend = 1;
     }
 

@@ -515,7 +515,6 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField * accept_field, M
   bool wildcard_subtype_present = FALSE;
   float wildcard_type_q = 1.0;
   float wildcard_subtype_q = 1.0;
-  int count;
 
   ink_debug_assert((accept_field != NULL) && (content_field != NULL));
 
@@ -537,7 +536,7 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField * accept_field, M
   HttpCompat::parse_mime_type(c_param->str, c_type, c_subtype, sizeof(c_type), sizeof(c_subtype));
 
   // Now loop over Accept field values.
-  count = accept_field->value_get_comma_list(&a_values_list);
+  accept_field->value_get_comma_list(&a_values_list);
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
     // Get the raw string to the current comma-sep Accept field value
     a_raw = a_value->str;
@@ -633,7 +632,6 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField * accept_
   const char *default_charset = "iso-8859-1";
   bool wildcard_present = FALSE;
   float wildcard_q = 1.0;
-  int count;
 
   // prefer exact matches
   if (accept_field && cached_accept_field) {
@@ -661,7 +659,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField * accept_
   //////////////////////////////////////////////////////////
 
   // Now loop over Accept-Charset field values.
-  count = accept_field->value_get_comma_list(&a_values_list);
+  accept_field->value_get_comma_list(&a_values_list);
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
     // Get the raw string to the current comma-sep Accept-Charset field value
     a_raw = a_value->str;
@@ -768,20 +766,17 @@ does_encoding_match(char *enc1, const char *enc2)
 ContentEncoding
 HttpTransactCache::match_gzip(MIMEField * accept_field)
 {
-  int count;
   Str *a_value;
   const char *a_raw;
-  int a_raw_len;
   StrList a_values_list;
   if (!accept_field) {
     return NO_GZIP;
   }
-  count = accept_field->value_get_comma_list(&a_values_list);
+  accept_field->value_get_comma_list(&a_values_list);
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
     char *a_encoding = NULL;
     StrList a_param_list;
     a_raw = a_value->str;
-    a_raw_len = a_value->len;
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw);
     if (a_param_list.head)
       a_encoding = (char *) a_param_list.head->str;
@@ -798,13 +793,10 @@ HttpTransactCache::match_gzip(MIMEField * accept_field)
 
 static inline bool
 match_accept_content_encoding(const char *c_raw,
-                              int c_raw_len,
                               MIMEField * accept_field, bool * wildcard_present, float *wildcard_q, float *q)
 {
-  int count;
   Str *a_value;
   const char *a_raw;
-  int a_raw_len;
   StrList a_values_list;
 
   if (!accept_field) {
@@ -813,14 +805,13 @@ match_accept_content_encoding(const char *c_raw,
   ///////////////////////////////////////////////////////////
   // loop over Accept-Encoding elements, looking for match //
   ///////////////////////////////////////////////////////////
-  count = accept_field->value_get_comma_list(&a_values_list);
+  accept_field->value_get_comma_list(&a_values_list);
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
     char *a_encoding = NULL;
     StrList a_param_list;
 
     // Get the raw string to the current comma-sep Accept-Charset field value
     a_raw = a_value->str;
-    a_raw_len = a_value->len;
 
     /////////////////////////////////////////////////////////////////
     // break Accept-Encoding piece into semi-colon separated parts //
@@ -863,7 +854,6 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField * accept
   int c_encoding_len;
   bool wildcard_present = FALSE;
   float wildcard_q = 1.0;
-  int count;
   StrList c_values_list;
   Str *c_value;
   const char *a_raw, *ca_raw;
@@ -891,7 +881,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField * accept
     Debug("http_match", "[calculate_quality_accept_encoding_match]: " "response hdr does not have content-encoding.");
     is_identity_encoding = TRUE;
   } else {
-    count = content_field->value_get_comma_list(&c_values_list);
+    content_field->value_get_comma_list(&c_values_list);
     c_encoding = content_field->value_get(&c_encoding_len);
     if (c_encoding_len == 0) {
       is_identity_encoding = TRUE;
@@ -937,7 +927,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField * accept
   // field, with a q value;
   if (!content_field) {
 
-    if (!match_accept_content_encoding("identity", 8,   // size of "identity"
+    if (!match_accept_content_encoding("identity",
                                        accept_field, &wildcard_present, &wildcard_q, &q)) {
 
       // CE was not returned, and AE does not have identity
@@ -962,7 +952,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField * accept
     for (c_value = c_values_list.head; c_value; c_value = c_value->next) {
       float this_q = -1.0;
       if (!match_accept_content_encoding(c_value->str,
-                                         c_value->len, accept_field, &wildcard_present, &wildcard_q, &this_q)) {
+                                         accept_field, &wildcard_present, &wildcard_q, &this_q)) {
         goto encoding_wildcard;
       }
       combined_q *= this_q;
@@ -1033,12 +1023,10 @@ does_language_range_match(const char *range1, const char *range2)
 
 static inline bool
 match_accept_content_language(const char *c_raw,
-                              int c_raw_len,
                               MIMEField * accept_field,
                               bool * wildcard_present,
-                              float *wildcard_q, float *q, int *a_range_length, int *max_a_range_length)
+                              float *wildcard_q, float *q, int *a_range_length)
 {
-  int count;
   const char *a_raw;
   int a_raw_len;
   StrList a_values_list;
@@ -1049,7 +1037,7 @@ match_accept_content_language(const char *c_raw,
   ///////////////////////////////////////////
   // loop over each language-range pattern //
   ///////////////////////////////////////////
-  count = accept_field->value_get_comma_list(&a_values_list);
+  accept_field->value_get_comma_list(&a_values_list);
   for (a_value = a_values_list.head; a_value; a_value = a_value->next) {
     a_raw = a_value->str;
     a_raw_len = a_value->len;
@@ -1080,6 +1068,7 @@ match_accept_content_language(const char *c_raw,
       return true;
     } else if (does_language_range_match(a_range, c_raw)) {
       *q = tq;
+// This is disabled, so removed max_a_range_length from prototype
 //          if (*a_range_length > *max_a_range_length) {
 //              *q = tq;
 //              *max_a_range_length = *a_range_length;
@@ -1105,17 +1094,14 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField * accept
 {
   float q = -1.0;
   int a_range_length;
-  int max_a_range_length = -1;
   bool wildcard_present = FALSE;
   float wildcard_q = 1.0;
   float min_q = 1.0;
   bool match_found = false;
-  int count;
   StrList c_values_list;
   Str *c_value;
   const char *c_raw, *a_raw, *ca_raw;
-  int c_raw_len, a_raw_len, ca_raw_len;
-
+  int a_raw_len, ca_raw_len;
 
   // Bug 2393700 prefer exact matches
   if (accept_field && cached_accept_field) {
@@ -1135,9 +1121,9 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField * accept
   // field, with a q value;
 
   if (!content_field) {
-    if (match_accept_content_language("identity", 8,    // strlen of "identity"
+    if (match_accept_content_language("identity",
                                       accept_field,
-                                      &wildcard_present, &wildcard_q, &q, &a_range_length, &max_a_range_length)) {
+                                      &wildcard_present, &wildcard_q, &q, &a_range_length)) {
       goto language_wildcard;
     }
     Debug("http_match", "[calculate_quality_accept_language_match]: " "response hdr does not have content-language.");
@@ -1146,19 +1132,17 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField * accept
   /////////////////////////////////
   // loop over content languages //
   /////////////////////////////////
-  count = content_field->value_get_comma_list(&c_values_list);
+  content_field->value_get_comma_list(&c_values_list);
   for (c_value = c_values_list.head; c_value; c_value = c_value->next) {
     c_raw = c_value->str;
-    c_raw_len = c_value->len;
 
     ////////////////////////////////
     // get Content-Language value //
     ////////////////////////////////
 
     if (match_accept_content_language(c_raw,
-                                      c_raw_len,
                                       accept_field,
-                                      &wildcard_present, &wildcard_q, &q, &a_range_length, &max_a_range_length)) {
+                                      &wildcard_present, &wildcard_q, &q, &a_range_length)) {
       min_q = (min_q < q ? min_q : q);
       match_found = true;
 //          goto language_wildcard;

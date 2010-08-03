@@ -957,8 +957,8 @@ HttpTunnel::producer_handler_dechunked(int event, HttpTunnelProducer * p)
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
   case VC_EVENT_EOS:
     p->chunked_handler.last_server_event = event;
-    bool done = p->chunked_handler.generate_chunked_content();
-    NOWARN_UNUSED(done);
+    // TODO: Should we check the return code?
+    p->chunked_handler.generate_chunked_content();
     break;
   };
   // Since we will consume all the data if the server is actually finished

@@ -76,22 +76,6 @@ extern int cache_config_vary_on_user_agent;
 static const char local_host_ip_str[] = "127.0.0.1";
 
 
-/////////////////////////////
-// Inline Utility Routines //
-/////////////////////////////
-inline static bool
-is_empty(char *s)
-{
-  return (s[0] == NUL);
-}
-
-inline static bool
-is_asterisk(char *s)
-{
-  return ((s[0] == '*') && (s[1] == NUL));
-}
-
-
 // someday, reduce the amount of duplicate code between this
 // function and _process_xxx_connection_field_in_outgoing_header
 inline static HTTPKeepAlive
@@ -253,6 +237,7 @@ update_current_info(HttpTransact::CurrentInfo * into,
 inline static void
 update_dns_info(HttpTransact::DNSLookupInfo * dns, HttpTransact::CurrentInfo * from, int attempts, Arena * arena)
 {
+  NOWARN_UNUSED(arena);
   dns->looking_up = from->request_to;
   dns->lookup_name = from->server->name;
   dns->attempts = attempts;
@@ -852,7 +837,7 @@ HttpTransact::StartRemapRequest(State * s)
 
   HTTPHdr *incoming_request = &(s->hdr_info.client_request);
   URL *url = incoming_request->url_get();
-  int host_len, path_len, method;
+  int host_len, path_len;
   const char *host = url->host_get(&host_len);
   int port = url->port_get();
   const char *path = url->path_get(&path_len);
@@ -866,11 +851,10 @@ HttpTransact::StartRemapRequest(State * s)
                  sizeof(local_host_ip_str) - 1) == 0) && (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0);
 
   // Determine whether the incoming request is a Traffic Net request.
-  s->traffic_net_req = ((method = incoming_request->method_get_wksidx()) == HTTP_WKSIDX_POST)
-    &&
-    (ptr_len_cmp
-     (host, host_len, s->http_config_param->tn_server,
-      s->http_config_param->tn_server_len) == 0) && (port == s->http_config_param->tn_port);
+  s->traffic_net_req = (incoming_request->method_get_wksidx() == HTTP_WKSIDX_POST)
+    && (ptr_len_cmp(host, host_len, s->http_config_param->tn_server,
+                    s->http_config_param->tn_server_len) == 0)
+    && (port == s->http_config_param->tn_port);
 
   //////////////////////////////////////////////////////////////////
   // FIX: this logic seems awfully convoluted and hard to follow; //
@@ -982,7 +966,7 @@ HttpTransact::EndRemapRequest(State * s)
 
       char *redirect_url = s->http_config_param->reverse_proxy_no_host_redirect;
       int redirect_url_len = s->http_config_param->reverse_proxy_no_host_redirect_len;
-      int host_len;
+
       const char *host_hdr = incoming_request->value_get(MIME_FIELD_HOST, MIME_LEN_HOST,
                                                          &host_len);
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
@@ -1120,7 +1104,7 @@ HttpTransact::ModifyRequest(State * s)
     if (port > 0) {
       buf = (char *) xmalloc(host_val_len + 15);
       strncpy(buf, hostname, host_val_len);
-      host_val_len += snprintf(buf + host_val_len, host_val_len + 15, ":%u", port);
+      host_val_len += snprintf(buf + host_val_len, host_val_len + 15, ":%d", port);
       host_val = (const char**)(&buf);
     }
 
@@ -5359,6 +5343,7 @@ HttpTransact::get_ka_info_from_host_db(State * s,
                                        ConnectionAttributes *
                                        client_info, HostDBInfo * host_db_info, HttpConfigParams * config_params)
 {
+  NOWARN_UNUSED(client_info);
   ////////////////////////////////////////////////////////
   // Set the keep-alive and version flags for later use //
   // in request construction                            //
@@ -5819,6 +5804,7 @@ HttpTransact::did_forward_server_send_0_9_response(State * s)
 bool
 HttpTransact::handle_internal_request(State * s, HTTPHdr * incoming_hdr)
 {
+  NOWARN_UNUSED(s);
 #ifdef INK_NO_STAT_PAGES
   return false;
 #else
@@ -6425,6 +6411,7 @@ HttpTransact::url_looks_dynamic(URL * url)
 bool
 HttpTransact::is_request_cache_lookupable(State * s, HTTPHdr * incoming)
 {
+  NOWARN_UNUSED(incoming);
   // ummm, someone has already decided that proxy should tunnel
   if (s->current.mode == TUNNELLING_PROXY) {
     return false;
@@ -6994,12 +6981,14 @@ HttpTransact::is_response_valid(State * s, HTTPHdr * incoming_response)
 bool
 HttpTransact::service_transaction_in_proxy_only_mode(State * s)
 {
+  NOWARN_UNUSED(s);
   return false;
 }
 
 bool
 HttpTransact::setup_transparency(State * s)
 {
+  NOWARN_UNUSED(s);
   bool set = false;
   /*
    * NOTE: removed ARM code from here
@@ -7712,6 +7701,7 @@ HttpTransact::calculate_document_freshness_limit(Arena * arena,
                                                  int cache_guaranteed_max_lifetime,
                                                  time_t plugin_set_expire_time, State * s)
 {
+  NOWARN_UNUSED(arena);
   bool expires_set, date_set, last_modified_set;
   time_t date_value, expires_value, last_modified_value;
   int min_freshness_bounds, max_freshness_bounds, freshness_limit = 0;
@@ -7878,37 +7868,23 @@ HttpTransact::calculate_freshness_fuzz(State * s, int fresh_limit)
 //          FRESHNESS_STALE             Too stale, don't use
 //
 //////////////////////////////////////////////////////////////////////////////
-HttpTransact::Freshness_t HttpTransact::what_is_document_freshness(State *
-                                                                   s,
-                                                                   const
-                                                                   HttpConfigParams
-                                                                   *
-                                                                   config,
-                                                                   HTTPHdr
-                                                                   *
-                                                                   client_request,
-                                                                   HTTPHdr
-                                                                   * cached_obj_request, HTTPHdr * cached_obj_response)
+HttpTransact::Freshness_t
+HttpTransact::what_is_document_freshness(State *s,
+                                         const HttpConfigParams *config,
+                                         HTTPHdr* client_request,
+                                         HTTPHdr* cached_obj_request,
+                                         HTTPHdr * cached_obj_response)
 {
-  bool
-    heuristic,
-    do_revalidate = false;
-  int
-    age_limit;
+  NOWARN_UNUSED(cached_obj_request);
+  bool heuristic, do_revalidate = false;
+  int age_limit;
   // These aren't used.
   //HTTPValCacheControl *cc;
   //const char *cc_val;
-  int
-    fresh_limit,
-    current_age;
-  ink_time_t
-    response_date;
-  uint32
-    cc_mask,
-    cooked_cc_mask;
-  uint32
-    os_specifies_revalidate;
-
+  int fresh_limit, current_age;
+  ink_time_t response_date;
+  uint32 cc_mask, cooked_cc_mask;
+  uint32 os_specifies_revalidate;
 
   //////////////////////////////////////////////////////
   // If config file has a ttl-in-cache field set,     //
@@ -9302,31 +9278,21 @@ HttpTransact::update_aol_stats(State * s, ink_hrtime cache_lookup_time)
 void
 HttpTransact::update_size_and_time_stats(State * s,
                                          ink_hrtime total_time,
-                                         ink_hrtime
-                                         user_agent_write_time,
-                                         ink_hrtime
-                                         origin_server_read_time,
+                                         ink_hrtime user_agent_write_time,
+                                         ink_hrtime origin_server_read_time,
                                          ink_hrtime cache_lookup_time,
-                                         int
-                                         user_agent_request_header_size,
-                                         int64
-                                         user_agent_request_body_size,
-                                         int
-                                         user_agent_response_header_size,
-                                         int64
-                                         user_agent_response_body_size,
-                                         int
-                                         origin_server_request_header_size,
-                                         int64
-                                         origin_server_request_body_size,
-                                         int
-                                         origin_server_response_header_size,
-                                         int64
-                                         origin_server_response_body_size,
+                                         int user_agent_request_header_size,
+                                         int64 user_agent_request_body_size,
+                                         int user_agent_response_header_size,
+                                         int64 user_agent_response_body_size,
+                                         int origin_server_request_header_size,
+                                         int64 origin_server_request_body_size,
+                                         int origin_server_response_header_size,
+                                         int64 origin_server_response_body_size,
                                          int pushed_response_header_size,
                                          int64 pushed_response_body_size, CacheAction_t cache_action)
 {
-
+  NOWARN_UNUSED(cache_action);
   int64 user_agent_request_size = user_agent_request_header_size + user_agent_request_body_size;
   int64 user_agent_response_size = user_agent_response_header_size + user_agent_response_body_size;
   int64 user_agent_bytes = user_agent_request_size + user_agent_response_size;
@@ -9473,7 +9439,7 @@ HttpTransact::update_size_and_time_stats(State * s,
 void
 HttpTransact::initialize_bypass_variables(State * s)
 {
-
+  NOWARN_UNUSED(s);
   //////////////////////////////////////////
   // Handle potential transparency errors //
   //////////////////////////////////////////

@@ -761,7 +761,7 @@ LogFormat::display(FILE * fd)
   };
 
   fprintf(fd, "--------------------------------------------------------\n");
-  fprintf(fd, "Format : %s (%s) (%p), %d fields.\n", m_name_str, types[m_format_type], this, m_field_count);
+  fprintf(fd, "Format : %s (%s) (%p), %u fields.\n", m_name_str, types[m_format_type], this, m_field_count);
   if (m_fieldlist_str) {
     fprintf(fd, "Symbols: %s\n", m_fieldlist_str);
     fprintf(fd, "Fields :\n");

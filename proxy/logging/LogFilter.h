@@ -328,6 +328,6 @@ LogFilterString::_checkCondition(OperatorFunction f,
     }
   }
   return retVal;
-};
+}
 
 #endif

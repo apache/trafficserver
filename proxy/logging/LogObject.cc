@@ -1036,6 +1036,7 @@ bool
   LogObjectManager::_has_internal_filename_conflict(char *filename,
                                                     uint64 signature, LogObject ** objects, int numObjects)
 {
+  NOWARN_UNUSED(signature);
   for (int i = 0; i < numObjects; i++) {
     LogObject *obj = objects[i];
     if (!obj->is_collation_client()) {
@@ -1109,7 +1110,7 @@ LogObjectManager::_roll_files(long time_now, bool roll_only_if_needed)
     RELEASE_API_MUTEX("R LogObjectManager::roll_files");
   }
   return num_rolled;
-};
+}
 
 LogObject *
 LogObjectManager::get_object_with_signature(uint64 signature)
@@ -1198,7 +1199,7 @@ LogObjectManager::unmanage_api_object(LogObject * logObject)
   }
   RELEASE_API_MUTEX("R LogObjectManager::unmanage_api_object");
   return 0;
-};
+}
 
 void
 LogObjectManager::add_filter_to_all(LogFilter * filter)

@@ -481,13 +481,8 @@ LogBuffer::LB_ResultCode LogBuffer::checkin_write(size_t write_offset)
   ink_assert(sign == CLASS_SIGN_LOGBUFFER);
   ink_assert(m_unaligned_buffer != NULL);
 
-  LB_ResultCode
-    ret_val = LB_OK;
-  size_t
-    writers_left;
-  LB_State
-    old_s,
-    new_s;
+  LB_ResultCode ret_val = LB_OK;
+  LB_State old_s, new_s;
 
   do {
     old_s = m_state;
@@ -499,7 +494,6 @@ LogBuffer::LB_ResultCode LogBuffer::checkin_write(size_t write_offset)
     if (--new_s.s.num_writers == 0) {
       ret_val = (old_s.s.full ? LB_ALL_WRITERS_DONE : LB_OK);
     }
-    writers_left = new_s.s.num_writers;
 
   } while (!switch_state(old_s, new_s));
 
@@ -633,7 +627,6 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
   if (fieldlist == NULL || printf_str == NULL)
     return 0;
 
-  bool use_alt_fieldlist = false;
   int *readfrom_map = NULL;
 
   if (alt_fieldlist && alt_printf_str) {
@@ -661,7 +654,6 @@ LogBuffer::resolve_custom_entry(LogFieldList * fieldlist,
         break;
       }
     }
-    use_alt_fieldlist = true;
   }
   //
   // Loop over the printf_str, copying everything to the write_to buffer

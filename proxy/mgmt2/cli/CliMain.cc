@@ -81,8 +81,6 @@ static int ShutdownMgmtCluster;
 static int ShutdownMgmtLocal;
 static int ClearCluster;
 static int ClearNode;
-static int repeatCount;
-static int repeatInterval;
 static int timeout_arg;
 
 static void
@@ -312,8 +310,6 @@ main(int argc, char **argv)
   ShutdownMgmtLocal = 0;
   ClearCluster = 0;
   ClearNode = 0;
-  repeatCount = 1;
-  repeatInterval = 5;
   timeout_arg = -1;
 
   // build the application information structure

@@ -483,8 +483,8 @@ CLI_monitor::doMonitorProtocolStats(CLI_DATA * c_data /* IN: client data */ )
   const char *line3 = "                             Client \n";
   const char *line4 = "                             Server \n";
   const char *line6 = "                              ICP \n";
-  const char *line10 = "              Transaction Frequency and Speeds \n";
-  const char *line11 = "Transaction Type              Frequency        Speed(ms)\n";
+  // const char *line10 = "              Transaction Frequency and Speeds \n";
+  // const char *line11 = "Transaction Type              Frequency        Speed(ms)\n";
   const char *line12 = "                 Queries Originating From This Node \n";
   const char *line13 = "                 Queries Originating From ICP Peers\n";
   // const char *line14 = "                           Operations\n";
@@ -494,8 +494,6 @@ CLI_monitor::doMonitorProtocolStats(CLI_DATA * c_data /* IN: client data */ )
   int highmark = 0;
   int i;
 
-  NOWARN_UNUSED(line10);
-  NOWARN_UNUSED(line11);
   Debug("cli_monitor", "Entering doMonitorProtocolStats, c_data->cevent=%d\n", c_data->cevent);
 
   //  set response header

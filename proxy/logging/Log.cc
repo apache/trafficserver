@@ -274,10 +274,12 @@ Log::periodic_tasks(long time_now)
   MAIN INTERFACE
   -------------------------------------------------------------------------*/
 
-struct LoggingFlushContinuation:Continuation
+struct LoggingFlushContinuation: public Continuation
 {
   int mainEvent(int event, void *data)
   {
+    NOWARN_UNUSED(event);
+    NOWARN_UNUSED(data);
     Log::flush_thread_main(NULL);
     return 0;
   }
@@ -287,10 +289,12 @@ struct LoggingFlushContinuation:Continuation
   }
 };
 
-struct LoggingCollateContinuation:Continuation
+struct LoggingCollateContinuation: public Continuation
 {
   int mainEvent(int event, void *data)
   {
+    NOWARN_UNUSED(event);
+    NOWARN_UNUSED(data);
     Log::collate_thread_main(NULL);
     return 0;
   }
@@ -995,6 +999,10 @@ Log::init_fields()
 int
 Log::handle_logging_mode_change(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
   Debug("log2-config", "Enabled status changed");
   logging_mode_changed = true;
   return 0;

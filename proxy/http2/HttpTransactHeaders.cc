@@ -40,18 +40,6 @@
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-static inline int
-nstrcpy(char *d, char *as)
-{
-  char *s = as;
-  while (*s)
-    *d++ = *s++;
-  return s - as;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 #define H(_x) (((_x)>9)?((_x)-10+'A'):((_x)+'0'))
 int
 nstrhex(char *d, unsigned int i)
@@ -399,6 +387,7 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr * outgoing_request)
 void
 HttpTransactHeaders::convert_to_0_9_response_header(HTTPHdr * outgoing_response)
 {
+  NOWARN_UNUSED(outgoing_response);
   // Http 0.9 does not require a response header.
 
   // There used to be clear header here, but the state machine
@@ -1202,6 +1191,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams * http_config
                                                   HttpTransact::CacheLookupInfo * cache_info,
                                                   HTTPHdr * header, char *incoming_via, int proxy_ip_address)
 {
+  NOWARN_UNUSED(cache_info);
   char new_via_string[8192];
   char *via_string = new_via_string;
 
@@ -1298,6 +1288,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams * http_confi
                                                    HttpTransact::CacheLookupInfo * cache_info,
                                                    HTTPHdr * header, char *incoming_via)
 {
+  NOWARN_UNUSED(cache_info);
   char new_via_string[8192];
   char *via_string = new_via_string;
 
@@ -1496,6 +1487,7 @@ HttpTransactHeaders::_process_xxx_connection_field_in_outgoing_header(const char
 void
 HttpTransactHeaders::remove_conditional_headers(HTTPHdr * base, HTTPHdr * outgoing)
 {
+  NOWARN_UNUSED(base);
   if (outgoing->presence(MIME_PRESENCE_IF_MODIFIED_SINCE |
                          MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH)) {
 

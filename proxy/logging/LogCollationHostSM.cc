@@ -155,7 +155,7 @@ LogCollationHostSM::read_handler(int event, void *data)
 int
 LogCollationHostSM::host_auth(int event, void *data)
 {
-
+  NOWARN_UNUSED(data);
   Debug("log2-coll", "[%d]host::host_auth", m_id);
 
   switch (event) {
@@ -208,7 +208,8 @@ LogCollationHostSM::host_auth(int event, void *data)
 int
 LogCollationHostSM::host_done(int event, void *data)
 {
-
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   Debug("log2-coll", "[%d]host::host_done", m_id);
 
   // close connections
@@ -242,7 +243,7 @@ LogCollationHostSM::host_done(int event, void *data)
 int
 LogCollationHostSM::host_init(int event, void *data)
 {
-
+  NOWARN_UNUSED(data);
   Debug("log2-coll", "[%d]host::host_init", m_id);
 
   switch (event) {
@@ -276,7 +277,7 @@ LogCollationHostSM::host_init(int event, void *data)
 int
 LogCollationHostSM::host_recv(int event, void *data)
 {
-
+  NOWARN_UNUSED(data);
   Debug("log2-coll", "[%d]host::host_recv", m_id);
 
   switch (event) {
@@ -498,7 +499,7 @@ LogCollationHostSM::read_body(int event, VIO * vio)
 int
 LogCollationHostSM::read_done(int event, void *data)
 {
-
+  NOWARN_UNUSED(data);
   SET_HANDLER((LogCollationHostSMHandler) & LogCollationHostSM::host_handler);
   return host_handler(event, NULL);
 

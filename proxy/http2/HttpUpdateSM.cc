@@ -213,7 +213,7 @@ HttpUpdateSM::set_next_state()
 int
 HttpUpdateSM::kill_this_async_hook(int event, void *data)
 {
-
+  NOWARN_UNUSED(data);
   STATE_ENTER(&HttpUpdateSM::user_cb_handler, event, data);
 
   MUTEX_TRY_LOCK(lock, cb_action.mutex, this_ethread());

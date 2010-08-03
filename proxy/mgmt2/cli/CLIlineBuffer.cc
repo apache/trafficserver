@@ -84,7 +84,7 @@ int
 CLIlineBuffer::numFields()
 {
   return c_fields;
-};
+}
 
 // returns the size of a line i.e. sum of all the field widths
 int

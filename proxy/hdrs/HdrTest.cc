@@ -51,6 +51,7 @@
 int
 HdrTest::go(RegressionTest * t, int atype)
 {
+  NOWARN_UNUSED(atype);
   HdrTest::rtest = t;
 
   int status = 1;
@@ -546,9 +547,10 @@ HdrTest::test_mime()
 
   MIMEField *cc_field;
   StrList slist;
-  int slist_count;
+
   cc_field = hdr.field_find("Cache-Control", 13);
-  slist_count = cc_field->value_get_comma_list(&slist); // FIX: correct usage?
+  // TODO: Do we need to check the "count" returned?
+  cc_field->value_get_comma_list(&slist); // FIX: correct usage?
 
   mime_parser_clear(&parser);
 
@@ -740,7 +742,6 @@ HdrTest::test_http_aux(const char *request, const char *response)
     char buf[NNN];
     int bufindex, last_bufindex;
     int tmp;
-    int err;
     int i;
 
     bufindex = 0;
@@ -1492,7 +1493,7 @@ HdrTest::test_arena_aux(Arena * arena, int len)
   int verify_len = (int) arena->str_length(str);
 
   if (len != verify_len) {
-    printf("FAILED: requested %d, got %u bytes\n", len, verify_len);
+    printf("FAILED: requested %d, got %d bytes\n", len, verify_len);
     return (1);                 // 1 error (different return convention)
   } else {
     return (0);                 // no errors (different return convention)

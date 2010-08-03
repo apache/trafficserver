@@ -473,6 +473,7 @@ LogFile::roll(long interval_start, long interval_end)
 int
 LogFile::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pipe)
 {
+  NOWARN_UNUSED(to_net);
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogFile %s; LogBuffer is NULL", m_name);
     return -1;

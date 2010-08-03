@@ -499,6 +499,7 @@ CLI_globals::QueryDeadhosts(char *largs,        /*     IN: arguments */
                             textBuffer * output,        /* IN/OUT: output buffer */
                             cmdline_states plevel /*     IN: command level */ )
 {
+  NOWARN_UNUSED(largs);
   int fd = send_cli_congest_request("list");
   if (fd < 0) {                 // error
     CLI_globals::set_response(output, CLI_globals::failStr, "query for congested servers failed", plevel);
@@ -1108,7 +1109,7 @@ handleOverseer(int fd, int mode)
 {
   const char *ok = "Ok";
   char buf[8192], reply[2048];
-  RecDataT mtype = RECD_NULL;
+  RecDataT mtype;
 
   bool command_allowed;
 
@@ -1170,7 +1171,7 @@ handleOverseer(int fd, int mode)
             continue;
           }
 
-          RecDataT mtype = RECD_NULL;
+          mtype = RECD_NULL;
           if (RecGetRecordDataType(cur, &mtype) == REC_ERR_OKAY) {
             switch (mtype) {
             case RECD_COUNTER:{
@@ -1289,7 +1290,7 @@ handleOverseer(int fd, int mode)
 
       Debug("cli", "handleOverSeer: set config=%s, value=%s \n", var, config_value);
 
-      RecDataT mtype = RECD_NULL;
+      mtype = RECD_NULL;
       RecGetRecordDataType(var, &mtype);
       switch (mtype) {
       case RECD_COUNTER:{

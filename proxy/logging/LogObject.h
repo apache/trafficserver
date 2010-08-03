@@ -448,7 +448,7 @@ LogObjectManager::log(LogAccess * lad)
     ret |= _objects[i]->log(lad);
   }
   return ret;
-};
+}
 
 inline void
 LogObjectManager::display(FILE * str)
@@ -456,7 +456,7 @@ LogObjectManager::display(FILE * str)
   for (size_t i = 0; i < _numObjects; i++) {
     _objects[i]->display(str);
   }
-};
+}
 
 inline LogObject *
 LogObjectManager::find_by_format_name(const char *name)
@@ -467,7 +467,7 @@ LogObjectManager::find_by_format_name(const char *name)
     }
   }
   return NULL;
-};
+}
 
 inline size_t
 LogObjectManager::get_num_collation_clients()
@@ -479,7 +479,7 @@ LogObjectManager::get_num_collation_clients()
     }
   }
   return coll_clients;
-};
+}
 
 inline bool
 LogObject::operator==(LogObject & old)
@@ -495,7 +495,7 @@ LogObject::operator==(LogObject & old)
              m_rolling_offset_hr == old.m_rolling_offset_hr && m_rolling_size_mb == old.m_rolling_size_mb));
   }
   return false;
-};
+}
 
 inline off_t
 LogObject::get_file_size_bytes()
@@ -515,6 +515,6 @@ LogObject::get_file_size_bytes()
     }
     return max_size;
   }
-};
+}
 
 #endif

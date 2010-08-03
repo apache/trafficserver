@@ -1577,6 +1577,7 @@ url_print(URLImpl * url, char *buf_start, int buf_length, int *buf_index_inout, 
 void
 url_describe(HdrHeapObjImpl * raw, bool recurse)
 {
+  NOWARN_UNUSED(recurse);
   URLImpl *obj = (URLImpl *) raw;
 
   Debug("http", "[URLTYPE: %d, SWKSIDX: %d,\n", obj->m_url_type, obj->m_scheme_wks_idx);
@@ -1598,7 +1599,7 @@ url_describe(HdrHeapObjImpl * raw, bool recurse)
         obj->m_len_query, (obj->m_ptr_query ? obj->m_ptr_query : "NULL"), obj->m_len_query);
   Debug("http", "\tFRAGMENT: \"%.*s\", FRAGMENT_LEN: %d]\n",
         obj->m_len_fragment, (obj->m_ptr_fragment ? obj->m_ptr_fragment : "NULL"), obj->m_len_fragment);
-};
+}
 
 
 /*-------------------------------------------------------------------------

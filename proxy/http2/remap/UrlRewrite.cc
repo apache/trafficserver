@@ -205,7 +205,6 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
   acl_filter_rule *rule;
   unsigned long ul;
   char *argptr, tmpbuf[1024];
-  const char *c;
   SRC_IP_INFO *ipi;
   int i, j, m;
   bool new_rule_flg = false;
@@ -337,7 +336,7 @@ validate_filter_args(acl_filter_rule ** rule_pp, char **argv, int argc, char *er
         ipi->invert = true;
       strncpy(tmpbuf, argptr, sizeof(tmpbuf) - 1);
       tmpbuf[sizeof(tmpbuf) - 1] = 0; // important! use copy of argument
-      if ((c = ExtractIpRange(tmpbuf, (unsigned long*) &ipi->start, &ipi->end)) != NULL) {
+      if (ExtractIpRange(tmpbuf, (unsigned long*) &ipi->start, &ipi->end) != NULL) {
         Debug("url_rewrite", "[validate_filter_args] Unable to parse IP value in %s", argv[i]);
         snprintf(errStrBuf, errStrBufSize, "Unable to parse IP value in %s", argv[i]);
         errStrBuf[errStrBufSize - 1] = 0;
@@ -610,8 +609,6 @@ UrlRewrite::SetupPacMapping()
   const char *local_url = "http://127.0.0.1/";
 
   url_mapping *mapping;
-  int state = 0;
-  int error = 0;
   int pac_generator_port;
 
   mapping = new url_mapping;
@@ -619,7 +616,6 @@ UrlRewrite::SetupPacMapping()
   mapping->fromURL.create(NULL);
   mapping->fromURL.parse(from_url, strlen(from_url));
 
-  state = error = 0;
   mapping->_default_to_url.create(NULL);
   mapping->_default_to_url.parse(local_url, strlen(local_url));
 
@@ -730,7 +726,7 @@ UrlRewrite::PrintTable(InkHashTable * h_table)
       um = *mapping_iter;
       um->fromURL.string_get_buf(from_url_buf, (int) sizeof(from_url_buf));
       um->_default_to_url.string_get_buf(to_url_buf, (int) sizeof(to_url_buf));
-      printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %d plugins]\n", from_url_buf,
+      printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %u plugins]\n", from_url_buf,
              um->unique ? "(unique)" : "", to_url_buf,
              um->homePageRedirect ? "(R)" : "", um->tag ? um->tag : "",
              um->_plugin_count > 0 ? "are" : "not", um->_plugin_count);
@@ -749,6 +745,7 @@ url_mapping *
 UrlRewrite::_tableLookup(InkHashTable * h_table, URL * request_url,
                         int request_port, char *request_host, int request_host_len, char *tag)
 {
+  NOWARN_UNUSED(tag);
   UrlMappingPathIndex *ht_entry;
   url_mapping *um = NULL;
   int ht_result;
@@ -1121,16 +1118,16 @@ bool
       host_hdr = "";
       host_hdr_len = 0;
     }
-    char *tmp = (char *) memchr(host_hdr, ':', host_hdr_len);
+    char *tmpc = (char *) memchr(host_hdr, ':', host_hdr_len);
     int request_port;
 
-    if (tmp == NULL) {
+    if (tmpc == NULL) {
       host_len = host_hdr_len;
       // Get the default port from URL structure
       request_port = request_url->port_get();
     } else {
-      host_len = tmp - host_hdr;
-      request_port = ink_atoi(tmp + 1, host_hdr_len - host_len);
+      host_len = tmpc - host_hdr;
+      request_port = ink_atoi(tmpc + 1, host_hdr_len - host_len);
 
       // If atoi fails, try the default for the
       //   protocol
@@ -1550,7 +1547,7 @@ UrlRewrite::BuildTable()
 
   // Vars to parse line in file
   char *tok_state, *cur_line, *cur_line_tmp;
-  int rparse, cur_line_size, j, cln = 0;        // Our current line number
+  int rparse, cur_line_size, cln = 0;        // Our current line number
 
   // Vars to build the mapping
   const char *fromScheme, *toScheme;
@@ -1568,7 +1565,6 @@ UrlRewrite::BuildTable()
   referer_info *ri;
   int origLength;
   int length;
-  int state, error;
   int tok_count;
 
   RegexMapping reg_map;
@@ -1635,7 +1631,7 @@ UrlRewrite::BuildTable()
 
     tok_count = whiteTok.Initialize(cur_line, SHARE_TOKS);
 
-    for (j = 0; j < tok_count; j++) {
+    for (int j = 0; j < tok_count; j++) {
       if (((char *) whiteTok[j])[0] == '@') {
         if (((char *) whiteTok[j])[1])
           bti.argv[bti.argc++] = xstrdup(&(((char *) whiteTok[j])[1]));
@@ -1728,7 +1724,6 @@ UrlRewrite::BuildTable()
     }
 
     map_from = bti.paramv[1];
-    state = (error = 0);
     length = UrlWhack(map_from, &origLength);
 
     // FIX --- what does this comment mean?
@@ -1751,7 +1746,6 @@ UrlRewrite::BuildTable()
     }
 
     map_to = bti.paramv[2];
-    state = error = 0;
     length = UrlWhack(map_to, &origLength);
     map_to_start = map_to;
     tmp = map_to;
@@ -1951,12 +1945,12 @@ UrlRewrite::BuildTable()
         url_mapping *u_mapping;
         for (int i = 0; h->h_addr_list[i] != NULL; i++) {
           ipv4_name[0] = '\0';
-          int tmp = snprintf(ipv4_name, sizeof(ipv4_name), "%d.%d.%d.%d",
-                                 (unsigned char) h->h_addr_list[i][0],
-                                 (unsigned char) h->h_addr_list[i][1],
-                                 (unsigned char) h->h_addr_list[i][2],
-                                 (unsigned char) h->h_addr_list[i][3]);
-          if (tmp > 0 && tmp < (int) sizeof(ipv4_name)) {       // Create a new url mapping with the IPv4 address.
+          int ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%hu.%hu.%hu.%hu",
+                                (unsigned char) h->h_addr_list[i][0],
+                                (unsigned char) h->h_addr_list[i][1],
+                                (unsigned char) h->h_addr_list[i][2],
+                                (unsigned char) h->h_addr_list[i][3]);
+          if (ip_len > 0 && ip_len < (int) sizeof(ipv4_name)) {       // Create a new url mapping with the IPv4 address.
             u_mapping = NEW(new url_mapping);
             u_mapping->fromURL.create(NULL);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
@@ -1992,12 +1986,12 @@ UrlRewrite::BuildTable()
         url_mapping *u_mapping;
         for (int i = 0; h->h_addr_list[i] != NULL; i++) {
           ipv4_name[0] = '\0';
-          int tmp;
-          tmp = snprintf(ipv4_name, sizeof(ipv4_name), "%d.%d.%d.%d",
-                             (unsigned char) h->h_addr_list[i][0],
-                             (unsigned char) h->h_addr_list[i][1],
-                             (unsigned char) h->h_addr_list[i][2], (unsigned char) h->h_addr_list[i][3]);
-          if (tmp > 0 && tmp < (int) sizeof(ipv4_name)) {
+          int ip_len;
+          ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%hu.%hu.%hu.%hu",
+                            (unsigned char) h->h_addr_list[i][0],
+                            (unsigned char) h->h_addr_list[i][1],
+                            (unsigned char) h->h_addr_list[i][2], (unsigned char) h->h_addr_list[i][3]);
+          if (ip_len > 0 && ip_len < (int) sizeof(ipv4_name)) {
             // Create a new url mapping with the IPv4 address.
             u_mapping = NEW(new url_mapping);
             u_mapping->fromURL.create(NULL);
@@ -2028,12 +2022,12 @@ UrlRewrite::BuildTable()
         url_mapping *u_mapping;
         for (int i = 0; h->h_addr_list[i] != NULL; i++) {
           ipv4_name[0] = '\0';
-          int tmp;
-          tmp = snprintf(ipv4_name, sizeof(ipv4_name), "%d.%d.%d.%d",
-                             (unsigned char) h->h_addr_list[i][0],
-                             (unsigned char) h->h_addr_list[i][1],
-                             (unsigned char) h->h_addr_list[i][2], (unsigned char) h->h_addr_list[i][3]);
-          if (tmp > 0 && tmp < (int) sizeof(ipv4_name)) {       // Create a new url mapping with the IPv4 address.
+          int ip_len;
+          ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%hu.%hu.%hu.%hu",
+                            (unsigned char) h->h_addr_list[i][0],
+                            (unsigned char) h->h_addr_list[i][1],
+                            (unsigned char) h->h_addr_list[i][2], (unsigned char) h->h_addr_list[i][3]);
+          if (ip_len > 0 && ip_len < (int) sizeof(ipv4_name)) {       // Create a new url mapping with the IPv4 address.
             u_mapping = NEW(new url_mapping);
             u_mapping->fromURL.create(NULL);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
@@ -2493,6 +2487,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
                                 const char *request_host, int request_host_len, char *tag, int rank_ceiling,
                                 UrlMappingContainer &mapping_container)
 {
+  NOWARN_UNUSED(tag);
   bool retval = false;
   RegexMappingList::iterator list_iter;
 

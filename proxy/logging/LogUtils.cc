@@ -74,6 +74,7 @@
 
 LogUtils::LogUtils(DoNotConstruct object)
 {
+  NOWARN_UNUSED(object);
   ink_release_assert(!"you can't construct a LogUtils object");
 }
 
@@ -471,7 +472,7 @@ LogUtils::ip_to_hex_str(unsigned ip, char *buf, size_t bufLen, size_t * numChars
     retVal = (retVal == 8) ? 0 : 1;
   }
   return retVal;
-};
+}
 
 /*-------------------------------------------------------------------------
   LogUtils::timestamp_to_hex_str
@@ -506,7 +507,7 @@ LogUtils::timestamp_to_hex_str(unsigned ip, char *buf, size_t bufLen, size_t * n
     retVal = (retVal == 8) ? 0 : 1;
   }
   return retVal;
-};
+}
 
 /*
 int
@@ -606,7 +607,7 @@ LogUtils::ip_to_str(unsigned ip, char *buf, size_t bufLen, size_t * numCharsPtr)
     *numCharsPtr = numChars - 1;
   }
   return retVal;
-};
+}
 
 /*-------------------------------------------------------------------------
   LogUtils::str_to_ip

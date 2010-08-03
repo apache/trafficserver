@@ -1055,6 +1055,7 @@ mime_hdr_init(MIMEHdrImpl * mh)
 MIMEFieldBlockImpl *
 _mime_field_block_copy(MIMEFieldBlockImpl * s_fblock, HdrHeap * s_heap, HdrHeap * d_heap)
 {
+  NOWARN_UNUSED(s_heap);
   MIMEFieldBlockImpl *d_fblock;
 
   d_fblock = (MIMEFieldBlockImpl *)
@@ -1810,6 +1811,7 @@ mime_hdr_prepare_for_value_set(HdrHeap * heap, MIMEHdrImpl * mh, const char *nam
 void
 mime_field_destroy(MIMEHdrImpl * mh, MIMEField * field)
 {
+  NOWARN_UNUSED(mh);
   ink_debug_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
   field->m_readiness = MIME_FIELD_SLOT_READINESS_DELETED;
 }
@@ -1835,6 +1837,7 @@ mime_field_name_set(HdrHeap * heap,
                     MIMEHdrImpl * mh,
                     MIMEField * field, int16 name_wks_idx_or_neg1, const char *name, int length, bool must_copy_string)
 {
+  NOWARN_UNUSED(mh);
   ink_debug_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
   field->m_wks_idx = name_wks_idx_or_neg1;
@@ -1902,10 +1905,8 @@ mime_field_value_get_comma_val(MIMEField * field, int *length, int idx)
   } else {
     Str *str;
     StrList list(false);
-    int count = mime_field_value_get_comma_list(field, &list);
 
-    NOWARN_UNUSED(count);
-
+    mime_field_value_get_comma_list(field, &list);
     str = list.get_idx(idx);
     if (str != NULL) {
       *length = (int) (str->len);
@@ -2014,6 +2015,10 @@ _mime_field_value_str_replace_slice(char *new_str, int new_str_len,
                                     const char *old_slice, int old_slice_len,
                                     const char *new_slice, int new_slice_len, int l1, int l2, int l3)
 {
+  // TODO: These prototypes ought to be fixed...
+  NOWARN_UNUSED(new_str_len);
+  NOWARN_UNUSED(old_str_len);
+  NOWARN_UNUSED(old_slice);
   // compute from & to pointers for the copy
   char *f1 = (char *) old_str;
   char *t1 = new_str;
@@ -2945,6 +2950,7 @@ mime_hdr_describe(HdrHeapObjImpl * raw, bool recurse)
 void
 mime_field_block_describe(HdrHeapObjImpl * raw, bool recurse)
 {
+  NOWARN_UNUSED(recurse); // TODO: This is here only to be compatible with http_hdr_...
   unsigned int i;
   static const char *readiness_names[] = { "EMPTY", "DETACHED", "LIVE", "DELETED" };
 
@@ -2982,6 +2988,7 @@ int
 mime_hdr_print(HdrHeap * heap,
                MIMEHdrImpl * mh, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
 {
+  NOWARN_UNUSED(heap);
   MIMEFieldBlockImpl *fblock;
   MIMEField *field;
   uint32 index;

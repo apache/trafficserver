@@ -93,7 +93,7 @@ UpTest::make_requests()
 int
 UpTest::main_handler(int event, void *data)
 {
-
+  NOWARN_UNUSED(data);
   Debug("http_sch", "Received Event %s", HttpDebugNames::get_event_name(event));
 
   if (event != EVENT_NONE && event != VC_EVENT_IMMEDIATE) {
