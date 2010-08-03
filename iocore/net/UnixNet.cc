@@ -192,6 +192,7 @@ net_signal_hook_function(EThread *thread) {
 void
 initialize_thread_for_net(EThread *thread, int thread_index)
 {
+  NOWARN_UNUSED(thread_index);
   static bool poll_delay_read = false;
   int max_poll_delay;           // max poll delay in milliseconds
   if (!poll_delay_read) {
@@ -258,6 +259,7 @@ NetHandler::startNetEvent(int event, Event *e)
 void
 NetHandler::process_enabled_list(NetHandler *nh, EThread *t)
 {
+  NOWARN_UNUSED(t);
   UnixNetVConnection *vc = NULL;
 
   SListM(UnixNetVConnection, NetState, read, enable_link) rq(nh->read_enable_list.popall());

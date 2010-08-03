@@ -37,7 +37,7 @@
 
 struct ShowCont;
 typedef int (ShowCont::*ShowContEventHandler) (int event, Event * data);
-struct ShowCont:Continuation
+struct ShowCont: public Continuation
 {
   Action action;
   char *buf, *start, *ebuf;
@@ -111,6 +111,9 @@ struct ShowCont:Continuation
 
   virtual int done(int e, int event, void *data)
   {
+    NOWARN_UNUSED(e);
+    NOWARN_UNUSED(event);
+    NOWARN_UNUSED(data);
     if (sarg) {
       xfree(sarg);
       sarg = NULL;

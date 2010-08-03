@@ -360,6 +360,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 void
 write_to_net(NetHandler *nh, UnixNetVConnection *vc, PollDescriptor *pd, EThread *thread)
 {
+  NOWARN_UNUSED(pd);
   ProxyMutex *mutex = thread->mutex;
 
   NET_DEBUG_COUNT_DYN_STAT(net_calls_to_writetonet_stat, 1);

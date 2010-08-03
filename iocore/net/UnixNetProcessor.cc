@@ -244,6 +244,7 @@ UnixNetProcessor::connect(Continuation * cont,
                           UnixNetVConnection ** avc,
                           unsigned int ip, int port, NetVCOptions * opt)
 {
+  NOWARN_UNUSED(avc);
   return connect_re(cont, ip, port, opt);
 }
 

@@ -168,6 +168,7 @@ SSLNetProcessor::reconfigure(void)
 void
 sslLockingCallback(int mode, int type, const char *file, int line)
 {
+  NOWARN_UNUSED(file);
   (void) line;
   if (mode & CRYPTO_LOCK) {
     MUTEX_TAKE_LOCK(ssl_NetProcessor.sslMutexArray[type], this_ethread());

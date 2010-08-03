@@ -30,7 +30,7 @@
 
 struct ShowNet;
 typedef int (ShowNet::*ShowNetEventHandler) (int event, Event * data);
-struct ShowNet:ShowCont
+struct ShowNet: public ShowCont
 {
   int ithread;
   int port;

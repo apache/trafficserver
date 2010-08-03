@@ -48,7 +48,7 @@
 						    PRIVATE_MODULE_HEADER)
 struct AIO_Reqs;
 
-struct AIOCallbackInternal:AIOCallback
+struct AIOCallbackInternal: public AIOCallback
 {
   AIOCallback *first;
   AIO_Reqs *aio_req;
@@ -69,7 +69,7 @@ TS_INLINE int
 AIOCallback::ok()
 {
   return (off_t) aiocb.aio_nbytes == (off_t) aio_result;
-};
+}
 
 TS_INLINE int
 AIOCallbackInternal::io_complete(int event, void *data)
@@ -79,7 +79,7 @@ AIOCallbackInternal::io_complete(int event, void *data)
   if (!action.cancelled)
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
   return EVENT_DONE;
-};
+}
 
 struct AIO_Reqs
 {

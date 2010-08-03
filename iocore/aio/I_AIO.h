@@ -59,7 +59,7 @@
 #define AIO_LOWEST_PRIORITY      0
 #define AIO_DEFAULT_PRIORITY     AIO_LOWEST_PRIORITY
 
-struct AIOCallback:Continuation
+struct AIOCallback: public Continuation
 {
   // set before calling aio_read/aio_write
   ink_aiocb_t aiocb;

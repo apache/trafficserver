@@ -123,6 +123,7 @@ void
 UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler * nh,
                                            UDPConnection * xuc, PollDescriptor * pd, EThread * thread)
 {
+  NOWARN_UNUSED(pd);
   (void) thread;
   UnixUDPConnection *uc = (UnixUDPConnection *) xuc;
 
@@ -920,12 +921,9 @@ UDPQueue::service(UDPNetHandler * nh)
     // if (bytesSent > 0)
     // timespent is in milli-seconds
     char temp[2048], *p1;
-    char bwMessage[2048];
     double bw, totalBw;
-    unsigned char *ip;
 
     temp[0] = '\0';
-    bwMessage[0] = '\0';
     p1 = temp;
 
     if (bytesSent > 0)
@@ -941,7 +939,6 @@ UDPQueue::service(UDPNetHandler * nh)
                G_inkPipeInfo.perPipeInfo[i].wt, bw / totalBw);
       p1 += strlen(p1);
 
-      ip = (unsigned char *) &(G_inkPipeInfo.perPipeInfo[i].destIP);
       // use a weighted estimator of current usage
       G_inkPipeInfo.perPipeInfo[i].bwUsed = (4.0 * G_inkPipeInfo.perPipeInfo[i].bwUsed / 5.0) + (bw / 5.0);
       G_inkPipeInfo.perPipeInfo[i].bytesSent = 0;
@@ -1280,6 +1277,8 @@ UDPWorkContinuation::init(Continuation * c, int numPairs,
 int
 UDPWorkContinuation::StateCreatePortPairs(int event, void *data)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
 //  int res = 0;
   int numUdpPorts = 2 * numPairs;
   int fd1 = -1, fd2 = -1;
@@ -1388,6 +1387,8 @@ out:
 int
 UDPWorkContinuation::StateDoCallback(int event, void *data)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   MUTEX_TRY_LOCK(lock, action.mutex, this_ethread());
   if (!lock) {
     this_ethread()->schedule_in(this, MUTEX_RETRY_DELAY);
