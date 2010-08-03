@@ -148,7 +148,7 @@ extern RecRawStatBlock *dns_rsb;
   information about the request and its status.
 
 */
-struct DNSEntry:Continuation
+struct DNSEntry: public Continuation
 {
   int id[MAX_DNS_RETRIES];
   int qtype;
@@ -223,7 +223,7 @@ struct DNSEntry;
   UDP port.
 
 */
-struct DNSHandler:Continuation
+struct DNSHandler: public Continuation
 {
   unsigned int ip;
   int port;

@@ -413,7 +413,7 @@ typedef void (Continuation::*process_srv_info_pfn) (HostDBInfo * r);
 
 
 /** The Host Databse access interface. */
-struct HostDBProcessor:Processor
+struct HostDBProcessor: public Processor
 {
   // Public Interface
 

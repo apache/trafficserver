@@ -71,7 +71,7 @@ const EventType ET_DNS = ET_CALL;
 
 struct DNSHandler;
 
-struct DNSProcessor:Processor
+struct DNSProcessor: public Processor
 {
   //
   // Public Interface

@@ -381,6 +381,7 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
 int
 DNSHandler::startEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
   //
   // If this is for the default server, get it
   //
@@ -439,6 +440,7 @@ DNSHandler::startEvent(int event, Event * e)
 int
 DNSHandler::startEvent_sdns(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
   //
   // If this is for the default server, get it
   //
@@ -654,6 +656,7 @@ good_rcode(char *buf)
 void
 DNSHandler::recv_dns(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
   NetHandler *nh = get_NetHandler(e->ethread);  //added by YTS Team, yamsat
   DNSConnection *dnsc = NULL;   //added by YTS Team, yamsat
 
@@ -1131,6 +1134,7 @@ Lretry:
 int
 DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
 {
+  NOWARN_UNUSED(freeable);
   if (timeout) {
     timeout->cancel(this);
     timeout = NULL;
@@ -1168,6 +1172,8 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
 int
 DNSEntry::postEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   if (!action.cancelled) {
     Debug("dns", "called back continuation for %s", qname);
     action.continuation->handleEvent(DNS_EVENT_LOOKUP, result_ent);
@@ -1563,7 +1569,7 @@ ink_dns_init(ModuleVersion v)
 struct DNSRegressionContinuation;
 typedef int (DNSRegressionContinuation::*DNSRegContHandler) (int, void *);
 
-struct DNSRegressionContinuation:Continuation
+struct DNSRegressionContinuation: public Continuation
 {
   int hosts;
   const char **hostnames;

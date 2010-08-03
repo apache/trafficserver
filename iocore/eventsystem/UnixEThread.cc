@@ -29,7 +29,9 @@
 #include "ink_unused.h"      /* MAGIC_EDITING_TAG */
 #include "P_EventSystem.h"
 
-extern "C" int eventfd(unsigned int initval, int flags);
+#if ATS_HAS_EVENTFD
+#include <sys/eventfd.h>
+#endif
 
 struct AIOCallback;
 

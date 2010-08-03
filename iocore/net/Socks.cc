@@ -231,7 +231,6 @@ SocksEntry::mainEvent(int event, void *data)
   case NET_EVENT_OPEN:
     buf->reset();
     unsigned short ts;
-    unsigned long tl;
     p = (unsigned char *) buf->start();
     ink_debug_assert(netVConnection);
 
@@ -244,7 +243,6 @@ SocksEntry::mainEvent(int event, void *data)
       p[n_bytes++] = version;
       p[n_bytes++] = (socks_cmd == NORMAL_SOCKS) ? SOCKS_CONNECT : socks_cmd;
       ts = (unsigned short) htons(port);
-      tl = (unsigned long) ip;
 
       if (version == SOCKS5_VERSION) {
         p[n_bytes++] = 0;       //Reserved

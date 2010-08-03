@@ -62,22 +62,6 @@ struct _transition_t
 };
 
 
-// TODO: Are these forward declarations really necessary?
-state_t *mkstate(void);
-transition_t *mktransition(void);
-void prstate(state_t * state);
-void add_states(state_t * state, info_t * info, int pos);
-void prtable(const char *type, const char *name, int *table, int size);
-int mkmap(state_t * state);
-void mkaccept(state_t * state, const char *defvalue);
-void mkprefix(state_t * state, char *prefix, int length);
-int checkbase(state_t * state, int base);
-void mktranstables(state_t * state);
-void mktables(state_t * state, const char *defvalue, int useprefix);
-const char *rundfa(const char *buf, int length);
-void mkdfa(info_t * infos, int ninfos, int useprefix, int debug);
-
-
 info_t fields[] = {
   {"Accept", "MIME_FIELD_ACCEPT", 0},
   {"Accept-Charset", "MIME_FIELD_ACCEPT_CHARSET", 0},

@@ -325,7 +325,6 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
 {
   (void) event_;
   (void) e;
-  int res;
 
   //PollCont *pc = get_PollCont(e->ethread);
   Continuation *c;
@@ -341,7 +340,8 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
     elapsed_time += -period;
     if (elapsed_time >= timeout_interval) {
       c = completionUtil::getContinuation(event);
-      res = c->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
+      // TODO: Should we deal with the return code?
+      c->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
       e->cancel();
       free();
       //      delete this;
@@ -364,7 +364,8 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
       *fromaddrlen = tmp_fromlen;
       completionUtil::setInfo(event, fd, readbuf, rlen, errno);
       readbuf->fill(rlen);
-      res = c->handleEvent(NET_EVENT_DATAGRAM_READ_COMPLETE, event);
+      // TODO: Should we deal with the return code?
+      c->handleEvent(NET_EVENT_DATAGRAM_READ_COMPLETE, event);
       e->cancel();
       free();
       // delete this;
@@ -374,7 +375,8 @@ UDPReadContinuation::readPollEvent(int event_, Event * e)
       *fromaddrlen = tmp_fromlen;
       completionUtil::setInfo(event, fd, (IOBufferBlock *) readbuf, rlen, errno);
       c = completionUtil::getContinuation(event);
-      res = c->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
+      // TODO: Should we deal with the return code?
+      c->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
       e->cancel();
       free();
       //delete this;
