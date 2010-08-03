@@ -1475,6 +1475,15 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
    */
   ink_mutex_acquire(&lmgmt->record_data->mutex[packet_type]);
 
+  // TODO: This makes no sense, since the_records is never used. Disabled.
+#if 0
+  if (packet_type == CONFIG) {
+    the_records = &(lmgmt->record_data->config_data);
+  } else {
+    the_records = &(lmgmt->record_data->node_data);
+  }
+#endif
+
   snprintf(tmp, sizeof(tmp), "ctime: %lld\n", (int64)lmgmt->record_data->time_last_config_change);
   ink_strncpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
@@ -2543,7 +2552,8 @@ checkBackDoor(int req_fd, char *message)
 
 #if !defined(_WIN32)
     // XXX: Again multiple code caused by misssing PID_T_FMT
-#if defined(solaris) && (!defined(_FILE_OFFSET_BITS) || _FILE_OFFSET_BITS != 64)
+// TODO: Was #if defined(solaris) && (!defined(_FILE_OFFSET_BITS) || _FILE_OFFSET_BITS != 64)
+#if defined(solaris)
     snprintf(reply, sizeof(reply), "\twatched_process_fd: %d  watched_process_pid: %ld\n",
              lmgmt->watched_process_fd, lmgmt->watched_process_pid);
 #else

@@ -337,7 +337,8 @@ StateMachine::fill()
   int n;
   int hdr_bytes_left, body_bytes_left, copy_size;
 
-  obuf->write_avail();        // used to grow blocks
+  // TODO: I don't know if this call to obuf->write_avail() is necessary...
+  n = obuf->write_avail();        // used to grow blocks
   n = obuf->block_write_avail();
   ptr = obuf->end();
 

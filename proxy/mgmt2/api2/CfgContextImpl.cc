@@ -2183,7 +2183,9 @@ RemapObj::RemapObj(TokenList * tokens)
     goto FORMAT_ERR;
   }
 
+  // TODO: Should we check the return value (count) here?
   fromTok.Initialize(token->name, ALLOW_EMPTY_TOKS);       // allow empty token for parse sanity check
+
   if (strcmp(fromTok[0], "http") == 0) {
     m_ele->from_scheme = INK_SCHEME_HTTP;
   } else if (strcmp(fromTok[0], "https") == 0) {
@@ -2241,7 +2243,9 @@ RemapObj::RemapObj(TokenList * tokens)
     goto FORMAT_ERR;
   }
 
+  // TODO: Should we check the return value (count) here?
   toTok.Initialize(token->value, ALLOW_EMPTY_TOKS);  // allow empty token for parse sanity check
+
   if (strcmp(toTok[0], "http") == 0) {
     m_ele->to_scheme = INK_SCHEME_HTTP;
   } else if (strcmp(toTok[0], "https") == 0) {

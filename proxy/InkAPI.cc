@@ -2912,7 +2912,8 @@ INKMimeFieldCopy(INKMBuffer dest_bufp, INKMLoc dest_obj, INKMBuffer src_bufp, IN
   // FIX: This tortuous detach/change/attach algorithm is due to the
   //      fact that we can't change the name of an attached header (assertion)
 
-  // TODO: This is never used ...
+  // TODO: This is never used ... is_live() has no side effects, so this should be ok
+  // to not call, so commented out
   // src_attached = (s_handle->mh && s_handle->field_ptr->is_live());
   dest_attached = (d_handle->mh && d_handle->field_ptr->is_live());
 

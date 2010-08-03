@@ -1044,6 +1044,7 @@ HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64
 
   LogAccessHttp la(context->state_machine);
 
+  // TODO: Should we check the return code from Log::access() ?
   Log::access(&la);
   buffer = resolve_logfield_string((LogAccess *) & la, template_buffer);
 
