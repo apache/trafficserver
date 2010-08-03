@@ -236,6 +236,7 @@ ink_res_getservers(ink_res_state statp, union ink_res_sockaddr_union *set, int c
 static void
 ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
 {
+  NOWARN_UNUSED(source);
   const char *cp = options;
   int i;
   struct __ink_res_state_ext *ext = statp->_u._ext.ext;
@@ -576,16 +577,12 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
      conf file
      ---------------------------------------------- */
 
-  int havedef_domain = 0, havedomain_srchlst = 0;
   if (pDefDomain && '\0' != *pDefDomain && '\n' != *pDefDomain) {
 
     cp = pDefDomain;
     strncpy(statp->defdname, cp, sizeof(statp->defdname) - 1);
     if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL)
       *cp = '\0';
-
-    havedef_domain = 1;
-
   }
   if (pSearchList && '\0' != *pSearchList && '\n' != *pSearchList) {
 
@@ -615,7 +612,6 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
     *cp = '\0';
     *pp++ = 0;
     havesearch = 1;
-    havedomain_srchlst = 1;
   }
 
   /* -------------------------------------------
@@ -710,7 +706,7 @@ ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pD
           hints.ai_family = PF_UNSPEC;
           hints.ai_socktype = SOCK_DGRAM;	/*dummy*/
           hints.ai_flags = AI_NUMERICHOST;
-          sprintf(sbuf, "%u", NAMESERVER_PORT);
+          sprintf(sbuf, "%d", NAMESERVER_PORT);
           if (getaddrinfo(cp, sbuf, &hints, &ai) == 0 &&
               ai->ai_addrlen <= minsiz) {
             if (statp->_u._ext.ext != NULL) {

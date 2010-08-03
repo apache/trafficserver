@@ -236,7 +236,7 @@ struct ForceVFPTToTop
 // prototypical class for reference counting
 //
 ////////////////////////////////////////////////////////////////////////
-class RefCountObj:ForceVFPTToTop
+class RefCountObj: public ForceVFPTToTop
 {
 public:
   RefCountObj():m_refcount(0)

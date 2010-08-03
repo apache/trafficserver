@@ -80,7 +80,7 @@ template <class C> class SLink {
 //
 //      Link cell for doubly-linked list of objects of type C.
 //
-template <class C> struct Link : SLink<C> {
+template <class C> struct Link : public SLink<C> {
   C *prev;
   Link() : prev(NULL) {}
 };

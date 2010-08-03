@@ -74,7 +74,7 @@ SrcLoc::str(char *buf, int buflen)
   }
   buf[buflen - 1] = NUL;
   return (buf);
-};
+}
 
 
 
@@ -284,7 +284,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
     if (diags_log_fp) {
       va_list ap_scratch;
       va_copy(ap_scratch, ap);
-      char *buffer;
       buffer = format_buf_w_ts;
       vfprintf(diags_log_fp, buffer, ap_scratch);
       {
@@ -299,7 +298,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
   if (config.outputs[diags_level].to_stdout) {
     va_list ap_scratch;
     va_copy(ap_scratch, ap);
-    char *buffer;
     buffer = format_buf_w_ts;
     vfprintf(stdout, buffer, ap_scratch);
     {
@@ -313,7 +311,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level,
   if (config.outputs[diags_level].to_stderr) {
     va_list ap_scratch;
     va_copy(ap_scratch, ap);
-    char *buffer;
     buffer = format_buf_w_ts;
     vfprintf(stderr, buffer, ap_scratch);
     {

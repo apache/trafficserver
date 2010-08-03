@@ -62,7 +62,7 @@ typedef enum
 
 typedef enum
   {
-    SimpleDBM_Flags_READONLY = 1,
+    SimpleDBM_Flags_READONLY = 1
   } SimpleDBM_Flags;
 
 extern "C"

@@ -54,7 +54,7 @@ typedef enum
   INK_COUNTER = 3,
   INK_STAT_CONST = 4,           // Added for the StatProcessor
   INK_STAT_FX = 5,              // Added for the StatProcessor
-  MAX_MGMT_TYPE = 6,
+  MAX_MGMT_TYPE = 6
 } MgmtType;
 
 /*

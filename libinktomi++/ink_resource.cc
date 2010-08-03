@@ -722,18 +722,21 @@ _xfree_null(void *mem)
 void *
 _xmalloc(unsigned int size, const char *path)
 {
+  NOWARN_UNUSED(path);
   return ink_malloc(size);
 }
 
 void *
 _xrealloc(void *ptr, unsigned int size, const char *path)
 {
+  NOWARN_UNUSED(path);
   return ink_realloc(ptr, size);
 }
 
 char *
 _xstrdup(const char *str, int length, const char *path)
 {
+  NOWARN_UNUSED(path);
   char *newstr;
 
   if (likely(str)) {
@@ -758,6 +761,7 @@ typedef struct Resource Resource;
 Resource *
 res_lookup(const char *path)
 {
+  NOWARN_UNUSED(path);
   return NULL;
 }
 

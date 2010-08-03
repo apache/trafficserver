@@ -32,6 +32,7 @@ x_pthread_mutexattr_t _g_mattr;
 void
 ink_ProcessMutex_init(ProcessMutex * m, const char *name)
 {
+  NOWARN_UNUSED(name);
   if (pthread_mutex_init(m, &_g_mattr.attr) != 0) {
     abort();
   }

@@ -62,6 +62,7 @@ struct _transition_t
 };
 
 
+// TODO: Are these forward declarations really necessary?
 state_t *mkstate(void);
 transition_t *mktransition(void);
 void prstate(state_t * state);

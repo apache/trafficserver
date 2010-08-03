@@ -482,7 +482,7 @@ ink_freelists_dump_baselinerel(FILE * f)
   while (fll) {
     int a = fll->fl->allocated - fll->fl->allocated_base;
     if (a != 0) {
-      fprintf(f, " % 10d | % 10d | % 7d | % 10d | memory/%s\n",
+      fprintf(f, " % 10u | % 10u | % 7u | % 10u | memory/%s\n",
               (fll->fl->allocated - fll->fl->allocated_base) * fll->fl->type_size,
               (fll->fl->count - fll->fl->count_base) * fll->fl->type_size,
               fll->fl->count - fll->fl->count_base, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
@@ -503,7 +503,7 @@ ink_freelists_dump(FILE * f)
 
   fll = freelists;
   while (fll) {
-    fprintf(f, " % 10d | % 10d | % 10d | memory/%s\n",
+    fprintf(f, " % 10u | % 10u | % 10u | memory/%s\n",
             fll->fl->allocated * fll->fl->type_size,
             fll->fl->count * fll->fl->type_size, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
     fll = fll->next;
