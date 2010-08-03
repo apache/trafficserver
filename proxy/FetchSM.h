@@ -36,7 +36,8 @@
 #include "P_Net.h"
 #include "ts.h"
 #include "HttpSM.h"
-class FetchSM:Continuation
+
+class FetchSM: public Continuation
 {
 public:
   FetchSM()

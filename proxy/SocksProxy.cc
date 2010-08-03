@@ -45,7 +45,7 @@ static RecRawStatBlock *socksproxy_stat_block;
 #define SOCKSPROXY_INC_STAT(x) \
 	RecIncrRawStat(socksproxy_stat_block, mutex->thread_holding, x)
 
-struct SocksProxy:Continuation
+struct SocksProxy: public Continuation
 {
   typedef int (SocksProxy::*EventHandler) (int event, void *data);
 
@@ -494,7 +494,7 @@ new_SocksProxy(NetVConnection * netVC)
   proxy->init(netVC);
 }
 
-struct SocksAccepter:Continuation
+struct SocksAccepter: public Continuation
 {
 
   typedef int (SocksAccepter::*SocksAccepterHandler) (int, void *);

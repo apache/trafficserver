@@ -124,7 +124,7 @@ response_url_remap(HTTPHdr * response_header, char *tag)
 /** Used to read the remap.config file after the manager signals a change. */
 struct UR_UpdateContinuation;
 typedef int (UR_UpdateContinuation::*UR_UpdContHandler) (int, void *);
-struct UR_UpdateContinuation:Continuation
+struct UR_UpdateContinuation: public Continuation
 {
   int file_update_handler(int etype, void *data)
   {
@@ -144,7 +144,7 @@ struct UR_FreerContinuation;
 typedef int (UR_FreerContinuation::*UR_FreerContHandler) (int, void *);
 
 /** Used to free url rewrite class. */
-struct UR_FreerContinuation:Continuation
+struct UR_FreerContinuation: public Continuation
 {
   UrlRewrite *p;
   int freeEvent(int event, Event * e)
@@ -182,6 +182,8 @@ reloadUrlRewrite()
 int
 url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
   int my_token = (int) (long) cookie;
 
   switch (my_token) {

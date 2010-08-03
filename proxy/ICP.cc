@@ -185,6 +185,8 @@ ICPHandlerCont::ICPHandlerCont(ICPProcessor * icpP):PeriodicCont(icpP)
 int
 ICPHandlerCont::TossEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   return EVENT_DONE;
 }
 
@@ -192,6 +194,7 @@ int
 ICPHandlerCont::PeriodicEvent(int event, Event * e)
 {
   NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   int n_peer, valid_peers;
   Peer *P;
 
@@ -726,9 +729,9 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData * s, Event * e)
                                                           icp_reply_port));
             ParentSiblingPeer *P = NEW(new ParentSiblingPeer(PEER_SIBLING, Pcfg, _ICPpr, true));
             status = _ICPpr->AddPeer(P);
-            ink_assert(status);
+            ink_release_assert(status);
             status = _ICPpr->AddPeerToSendList(P);
-            ink_assert(status);
+            ink_release_assert(status);
 
 	    P->GetChan()->setRemote(P->GetIP()->s_addr, P->GetPort());
 
@@ -1199,6 +1202,8 @@ ICPRequestCont::ICPRequestEvent(int event, Event * e)
 int
 ICPRequestCont::NopICPRequestEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   delete this;
   return EVENT_DONE;
 }
@@ -2047,9 +2052,9 @@ ICPProcessor::BuildPeerList()
   //***************************************************
   P = NEW(new ParentSiblingPeer(PEER_LOCAL, Pcfg, this));
   status = AddPeer(P);
-  ink_assert(status);
+  ink_release_assert(status);
   status = AddPeerToRecvList(P);
-  ink_assert(status);
+  ink_release_assert(status);
   _LocalPeer = P;
 
   for (index = 1; index < MAX_DEFINED_PEERS; ++index) {
@@ -2386,8 +2391,6 @@ _exit_while:                   // fix DEC warnings
 void
 ICPProcessor::CancelPendingReads()
 {
-  int status;
-
   // Cancel pending ICP read by sending a bogus message to
   //  the local ICP port.
 
@@ -2396,7 +2399,8 @@ ICPProcessor::CancelPendingReads()
   SET_CONTINUATION_HANDLER(r, (ICPRequestContHandler) & ICPRequestCont::NopICPRequestEvent);
   r->mutex = new_ProxyMutex();
 
-  status = ICPRequestCont::BuildICPMsg(ICP_OP_HIT, 0, 0 /* optflags */ , 0 /* optdata */ , 0 /* shostid */ ,
+  // TODO: Check return value?
+  ICPRequestCont::BuildICPMsg(ICP_OP_HIT, 0, 0 /* optflags */ , 0 /* optdata */ , 0 /* shostid */ ,
                                        (void *) 0, 0, &r->_sendMsgHdr, r->_sendMsgIOV, &r->_ICPmsg);
   r->_sendMsgHdr.msg_iovlen = 1;
   r->_ICPmsg.h.version = ~r->_ICPmsg.h.version; // bogus message

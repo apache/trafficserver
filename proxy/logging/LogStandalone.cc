@@ -204,6 +204,8 @@ shutdown_system()
 static void
 check_lockfile(const char *config_dir, const char *pgm_name)
 {
+  NOWARN_UNUSED(config_dir);
+  NOWARN_UNUSED(pgm_name);
   int err;
   pid_t holding_pid;
   char *lockfile = NULL;

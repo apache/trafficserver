@@ -259,10 +259,10 @@ Ag_cacheHits()
     // calculate new values //
     //////////////////////////
     for (i = 0; hit_count_table[i].lm_record_name; i++) {
-      int status;
       hit_count_table[i].current_value = -10000;
       hit_count_table[i].current_time = ink_get_hrtime();
-      status = varIntFromName(hit_count_table[i].lm_record_name, &(hit_count_table[i].current_value));
+      // TODO: Check return value?
+      varIntFromName(hit_count_table[i].lm_record_name, &(hit_count_table[i].current_value));
     }
 
     for (i = 0; miss_count_table[i].lm_record_name; i++) {

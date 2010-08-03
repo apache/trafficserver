@@ -82,7 +82,8 @@ struct PrefetchConfiguration
   void readHtmlTags(int fd, html_tag ** ptags, html_tag ** pattrs);
 };
 
-class PrefetchUrlEntry:RefCountObj
+// TODO: This used to be private, which seems wrong.
+class PrefetchUrlEntry: public RefCountObj
 {
 public:
   PrefetchUrlEntry()
@@ -144,7 +145,7 @@ PrefetchUrlEntry::free()
   }
 }
 
-class PrefetchTransform:public INKVConnInternal, RefCountObj
+class PrefetchTransform:public INKVConnInternal, public RefCountObj
 {
   enum
   { HASH_TABLE_LENGTH = 61 /*127, 511 */  };
@@ -353,7 +354,7 @@ extern ClassAllocator<PrefetchBlaster> prefetchBlasterAllocator;
 #define PRELOAD_UDP_LAST_PKT_FLAG (0x80000000)
 #define PRELOAD_UDP_PKT_NUM_MASK (0x7fffffff)
 
-class KeepAliveConn:Continuation
+class KeepAliveConn: public Continuation
 {
 public:
 
@@ -406,7 +407,7 @@ public:
 };
 extern KeepAliveConnTable *g_conn_table;
 
-class KeepAliveLockHandler:Continuation
+class KeepAliveLockHandler: public Continuation
 {
   /* Used when we miss the lock for the connection */
 

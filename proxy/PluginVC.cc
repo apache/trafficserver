@@ -350,7 +350,7 @@ PluginVC::reenable_re(VIO * vio)
 void
 PluginVC::do_io_close(int flag)
 {
-
+  NOWARN_UNUSED(flag);
   ink_assert(closed == false);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
@@ -576,15 +576,17 @@ PluginVC::process_read_side(bool other_side_call)
   ink_assert(!deletable);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
-  MIOBuffer *core_buffer;
+  // TODO: Never used??
+  //MIOBuffer *core_buffer;
+
   IOBufferReader *core_reader;
 
   if (vc_type == PLUGIN_VC_ACTIVE) {
-    core_buffer = core_obj->p_to_a_buffer;
+    //core_buffer = core_obj->p_to_a_buffer;
     core_reader = core_obj->p_to_a_reader;
   } else {
     ink_assert(vc_type == PLUGIN_VC_PASSIVE);
-    core_buffer = core_obj->a_to_p_buffer;
+    //core_buffer = core_obj->a_to_p_buffer;
     core_reader = core_obj->a_to_p_reader;
   }
 
@@ -1057,7 +1059,8 @@ PluginVCCore::connect_re(Continuation * c)
 int
 PluginVCCore::state_send_accept_failed(int event, void *data)
 {
-
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
 
   if (lock) {
@@ -1075,7 +1078,8 @@ PluginVCCore::state_send_accept_failed(int event, void *data)
 int
 PluginVCCore::state_send_accept(int event, void *data)
 {
-
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
 
   if (lock) {
@@ -1227,7 +1231,8 @@ PVCTestDriver::run_next_test()
 int
 PVCTestDriver::main_handler(int event, void *data)
 {
-
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   completions_received++;
 
   if (completions_received == 2) {
@@ -1237,7 +1242,9 @@ PVCTestDriver::main_handler(int event, void *data)
   return 0;
 }
 
-EXCLUSIVE_REGRESSION_TEST(PVC) (RegressionTest * t, int atype, int *pstatus) {
+EXCLUSIVE_REGRESSION_TEST(PVC) (RegressionTest * t, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   PVCTestDriver *driver = NEW(new PVCTestDriver);
   driver->start_tests(t, pstatus);
 }

@@ -880,7 +880,7 @@ ParentRecord::Print()
 //   Used to handle parent.conf or default parent updates after the
 //      manager signals a change
 //
-struct PA_UpdateContinuation:Continuation
+struct PA_UpdateContinuation: public Continuation
 {
 
   int handle_event(int event, void *data)
@@ -934,6 +934,9 @@ createDefaultParent(char *val)
 int
 parentSelection_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
   ParentCB_t type = (ParentCB_t) (long) cookie;
 
   switch (type) {
@@ -1008,7 +1011,7 @@ setup_socks_servers(ParentRecord * rec_arr, int len)
         Warning("Could not resolve socks server name \"%s\". " "Please correct it", pr[i].hostname);
         ip = (uint8 *) & bad_ip;
       }
-      snprintf(pr[i].hostname, DOMAIN_NAME_MAX + 1, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+      snprintf(pr[i].hostname, DOMAIN_NAME_MAX + 1, "%hu.%hu.%hu.%hu", ip[0], ip[1], ip[2], ip[3]);
     }
   }
 
@@ -1231,8 +1234,10 @@ static int passes;
 static int fails;
 
 // Parenting Tests
-EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_level, int *pstatus) {
-
+EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION) (RegressionTest * t, int intensity_level, int *pstatus)
+{
+  NOWARN_UNUSED(t);
+  NOWARN_UNUSED(intensity_level);
   // first, set everything up
   *pstatus = REGRESSION_TEST_INPROGRESS;
   ParentConfig config;

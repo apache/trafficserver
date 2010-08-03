@@ -219,11 +219,11 @@ void StatSystemV2::collect()
 
         // Lock thread stats to prevent resizing on increment
         INKMutexLock(t->thread_stats_mutex);
-        int i = 0;
+        int j = 0;
         for(std::vector<INK64>::iterator it = t->thread_stats.begin();
-            it != t->thread_stats.end(); it++, i++) {
+            it != t->thread_stats.end(); it++, j++) {
             if(*it != 0) {
-                incrementGlobal(i, *it);
+                incrementGlobal(j, *it);
             }
         }
         
@@ -256,6 +256,8 @@ static INKThread statsCommandThread;
 static int MAX_STAT_NAME_LENGTH = 512;
 int StatCollectorContinuation::mainEvent(int event, Event * e)
 {
+    NOWARN_UNUSED(event);
+    NOWARN_UNUSED(e);
     StatSystemV2::collect();
     return EVENT_CONT;
 }
@@ -396,13 +398,13 @@ void* StatCollectorContinuation::commandLoop(void *data) {
         "  help - Prints this message.\r\n"
         "  quit - Close this connection.\r\n"
         ;
-    int client_sock, readbytes;
+    int client_sock;
     char readbuf[1024];
     
     if (!data) return 0;
     client_sock = *(static_cast<int*>(data));
     while(1){
-        if((readbytes = getCommand(client_sock, readbuf, sizeof(readbuf))) <= 0) {
+        if(getCommand(client_sock, readbuf, sizeof(readbuf)) <= 0) {
             break;
         }
 

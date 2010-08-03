@@ -383,10 +383,11 @@ Lerror:
   socketManager.close(fd);
 }
 
-struct SnapStatsContinuation:Continuation
+struct SnapStatsContinuation: public Continuation
 {
   int mainEvent(int event, Event * e)
   {
+    NOWARN_UNUSED(event);
     write_stats_snap();
     e->schedule_every(HRTIME_SECONDS(snap_stats_every));
     return EVENT_CONT;
@@ -417,10 +418,12 @@ take_rusage_snap()
 
 struct SnapCont;
 typedef int (SnapCont::*SnapContHandler) (int, void *);
-struct SnapCont:Continuation
+
+struct SnapCont: public Continuation
 {
   int mainEvent(int event, Event * e)
   {
+    NOWARN_UNUSED(event);
     take_rusage_snap();
     e->schedule_every(SNAP_USAGE_PERIOD);
     return EVENT_CONT;

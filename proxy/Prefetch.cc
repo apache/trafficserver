@@ -677,6 +677,7 @@ check_n_attach_prefetch_transform(HttpSM * sm, HTTPHdr * resp, bool from_cache)
 static int
 PrefetchPlugin(INKCont contp, INKEvent event, void *edata)
 {
+  NOWARN_UNUSED(contp);
   HttpSM *sm = (HttpSM *) edata;
   HTTPHdr *resp = 0;
   bool from_cache = false;
@@ -1331,8 +1332,6 @@ PrefetchBlaster::handleCookieHeaders(HTTPHdr * req_hdr,
     if (add_cookies && existing_req_cookies) {
       MIMEField *o_cookie = req_hdr->field_find(MIME_FIELD_COOKIE,
                                                 MIME_LEN_COOKIE);
-      const char *a_raw;
-      int a_raw_len;
       const char *iter_cookie;
       int iter_cookie_len;
 
@@ -1560,6 +1559,7 @@ PrefetchBlaster::httpClient(int event, void *data)
 int
 PrefetchBlaster::bufferObject(int event, void *data)
 {
+  NOWARN_UNUSED(data);
   switch (event) {
 
   case EVENT_INTERVAL:
@@ -1802,7 +1802,7 @@ config_read_proto(unsigned int &proto, const char *str)
     if (strncasecmp("multicast:", str, 10) == 0) {
       unsigned int ip[4];
       // coverity[secure_coding]
-      if (sscanf(str + 10, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]) < 4) {
+      if (sscanf(str + 10, "%u.%u.%u.%u", &ip[0], &ip[1], &ip[2], &ip[3]) < 4) {
         Error("PrefetchProcessor: Address specified for multicast does not seem to "
               "be of the form multicast:ip_addr (eg: multicast:224.0.0.1)");
         return 1;
@@ -2008,7 +2008,7 @@ KeepAliveConnTable::free()
 
   delete arr;
   delete this;
-};
+}
 
 ClassAllocator<KeepAliveLockHandler> prefetchLockHandlerAllocator("prefetchLockHandlerAllocator");
 
@@ -2164,6 +2164,7 @@ KeepAliveConn::handleEvent(int event, void *data)
 int
 KeepAliveLockHandler::handleEvent(int event, void *data)
 {
+  NOWARN_UNUSED(data);
   if (event == EVENT_INTERVAL)
     g_conn_table->append(ip, buf, reader);
 

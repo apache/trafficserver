@@ -415,7 +415,12 @@ _INKAssert(const char *text, const char *file, int line)
 {
 #ifdef DEBUG
   _ink_assert(text, file, line);
+#else
+  NOWARN_UNUSED(text);
+  NOWARN_UNUSED(file);
+  NOWARN_UNUSED(line);
 #endif
+
   return (0);
 }
 
@@ -512,6 +517,8 @@ sdk_sanity_check_field_handle(INKMLoc field, INKMLoc parent_hdr = NULL)
   }
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(field);
+  NOWARN_UNUSED(parent_hdr);
   return INK_SUCCESS;
 #endif
 }
@@ -528,6 +535,7 @@ sdk_sanity_check_mbuffer(INKMBuffer bufp)
   }
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(bufp);
   return INK_SUCCESS;
 #endif
 }
@@ -545,6 +553,7 @@ sdk_sanity_check_mime_hdr_handle(INKMLoc field)
   }
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(field);
   return INK_SUCCESS;
 #endif
 }
@@ -562,6 +571,7 @@ sdk_sanity_check_url_handle(INKMLoc field)
   }
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(field);
   return INK_SUCCESS;
 #endif
 }
@@ -579,6 +589,7 @@ sdk_sanity_check_http_hdr_handle(INKMLoc field)
   }
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(field);
   return INK_SUCCESS;
 #endif
 }
@@ -594,6 +605,7 @@ sdk_sanity_check_continuation(INKCont cont)
     return INK_ERROR;
   }
 #else
+  NOWARN_UNUSED(cont);
   return INK_SUCCESS;
 #endif
 }
@@ -608,6 +620,7 @@ sdk_sanity_check_http_ssn(INKHttpSsn ssnp)
     return INK_ERROR;
   }
 #else
+  NOWARN_UNUSED(ssnp);
   return INK_SUCCESS;
 #endif
 }
@@ -623,6 +636,7 @@ sdk_sanity_check_txn(INKHttpTxn txnp)
     return INK_ERROR;
   }
 #else
+  NOWARN_UNUSED(txnp);
   return INK_SUCCESS;
 #endif
 }
@@ -637,6 +651,7 @@ sdk_sanity_check_mime_parser(INKMimeParser parser)
     return INK_ERROR;
   }
 #endif
+  NOWARN_UNUSED(parser);
   return INK_SUCCESS;
 }
 
@@ -650,6 +665,7 @@ sdk_sanity_check_http_parser(INKHttpParser parser)
     return INK_ERROR;
   }
 #endif
+  NOWARN_UNUSED(parser);
   return INK_SUCCESS;
 }
 
@@ -663,6 +679,7 @@ sdk_sanity_check_alt_info(INKHttpAltInfo info)
     return INK_ERROR;
   }
 #endif
+  NOWARN_UNUSED(info);
   return INK_SUCCESS;
 }
 
@@ -674,6 +691,7 @@ sdk_sanity_check_hook_id(INKHttpHookID id)
     return INK_ERROR;
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(id);
   return INK_SUCCESS;
 #endif
 }
@@ -687,6 +705,7 @@ sdk_sanity_check_null_ptr(void *ptr)
     return INK_ERROR;
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(ptr);
   return INK_SUCCESS;
 #endif
 }
@@ -1245,6 +1264,7 @@ INKVConnInternal::do_io_shutdown(ShutdownHowTo_t howto)
 void
 INKVConnInternal::reenable(VIO * vio)
 {
+  NOWARN_UNUSED(vio);
   if (ink_atomic_increment((int *) &m_event_count, 1) < 0) {
     ink_assert(!"not reached");
   }
@@ -2061,6 +2081,7 @@ INKHandleMLocRelease(INKMBuffer bufp, INKMLoc parent, INKMLoc mloc)
 INKReturnCode
 INKHandleStringRelease(INKMBuffer bufp, INKMLoc parent, const char *str)
 {
+  NOWARN_UNUSED(parent);
   if (str == NULL)
     return (INK_SUCCESS);
   if (bufp == NULL)
@@ -2119,6 +2140,7 @@ INKMBufferDestroy(INKMBuffer bufp)
 int
 INKMBufferDataSet(INKMBuffer bufp, void *data)
 {
+  NOWARN_UNUSED(data);
   sdk_sanity_check_mbuffer(bufp);
   return 0;
 }
@@ -2840,8 +2862,8 @@ INKMimeFieldCreate(INKMBuffer bufp)
   sdk_sanity_check_mbuffer(bufp);
 
   MIMEField *sa_field;
-  HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
-  NOWARN_UNUSED(heap);
+  // TODO: Why is the heap here, it's never used.
+  // HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
 
   // (1) create a standalone field object in the heap
   sa_field = sdk_alloc_standalone_field(bufp);
@@ -2876,7 +2898,7 @@ INKMimeFieldDestroy(INKMBuffer bufp, INKMLoc field_or_sa)
 void
 INKMimeFieldCopy(INKMBuffer dest_bufp, INKMLoc dest_obj, INKMBuffer src_bufp, INKMLoc src_obj)
 {
-  int src_attached, dest_attached;
+  bool dest_attached;
 
   sdk_sanity_check_mbuffer(src_bufp);
   sdk_sanity_check_mbuffer(dest_bufp);
@@ -2890,7 +2912,8 @@ INKMimeFieldCopy(INKMBuffer dest_bufp, INKMLoc dest_obj, INKMBuffer src_bufp, IN
   // FIX: This tortuous detach/change/attach algorithm is due to the
   //      fact that we can't change the name of an attached header (assertion)
 
-  src_attached = (s_handle->mh && s_handle->field_ptr->is_live());
+  // TODO: This is never used ...
+  // src_attached = (s_handle->mh && s_handle->field_ptr->is_live());
   dest_attached = (d_handle->mh && d_handle->field_ptr->is_live());
 
   if (dest_attached)
@@ -3095,6 +3118,7 @@ INKMimeFieldValueGetUint(INKMBuffer bufp, INKMLoc field_obj, int idx)
 time_t
 INKMimeFieldValueGetDate(INKMBuffer bufp, INKMLoc field_obj, int idx)
 {
+  NOWARN_UNUSED(idx);
   time_t value;
   sdk_sanity_check_mbuffer(bufp);
   sdk_sanity_check_field_handle(field_obj);
@@ -3157,6 +3181,7 @@ INKMimeFieldValueSetUint(INKMBuffer bufp, INKMLoc field_obj, int idx, unsigned i
 void
 INKMimeFieldValueSetDate(INKMBuffer bufp, INKMLoc field_obj, int idx, time_t value)
 {
+  NOWARN_UNUSED(idx);
   sdk_sanity_check_mbuffer(bufp);
   sdk_sanity_check_field_handle(field_obj);
 
@@ -3223,6 +3248,7 @@ INKMimeFieldValueInsertUint(INKMBuffer bufp, INKMLoc field_obj, unsigned int val
 INKMLoc
 INKMimeFieldValueInsertDate(INKMBuffer bufp, INKMLoc field_obj, time_t value, int idx)
 {
+  NOWARN_UNUSED(idx);
   sdk_sanity_check_mbuffer(bufp);
   sdk_sanity_check_field_handle(field_obj);
 
@@ -3347,6 +3373,7 @@ INKMimeHdrFieldAppend(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc)
 INKReturnCode
 INKMimeHdrFieldInsert(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc, int idx)
 {
+  NOWARN_UNUSED(idx);
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
@@ -3767,6 +3794,7 @@ INKMimeHdrFieldValueUintGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx
 const char *
 INKMimeHdrFieldValueGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int *value_len_ptr)
 {
+  NOWARN_UNUSED(hdr);
   return (INKMimeFieldValueGet(bufp, field, idx, value_len_ptr));
 }
 
@@ -3781,6 +3809,7 @@ INKMimeHdrFieldValueGetRaw(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int *val
 int
 INKMimeHdrFieldValueGetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx)
 {
+  NOWARN_UNUSED(hdr);
   return (INKMimeFieldValueGetInt(bufp, field, idx));
 }
 
@@ -3788,6 +3817,7 @@ INKMimeHdrFieldValueGetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx)
 unsigned int
 INKMimeHdrFieldValueGetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx)
 {
+  NOWARN_UNUSED(hdr);
   return (INKMimeFieldValueGetUint(bufp, field, idx));
 }
 
@@ -3795,6 +3825,7 @@ INKMimeHdrFieldValueGetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx
 time_t
 INKMimeHdrFieldValueGetDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx)
 {
+  NOWARN_UNUSED(hdr);
   return (INKMimeFieldValueGetDate(bufp, field, idx));
 }
 
@@ -4144,7 +4175,6 @@ INKHttpHdrClone(INKMBuffer dest_bufp, INKMBuffer src_bufp, INKMLoc src_hdr)
       (sdk_sanity_check_mbuffer(src_bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_http_hdr_handle(src_hdr) == INK_SUCCESS) && isWriteable(dest_bufp)
     ) {
-    bool inherit_strs;
     HdrHeap *s_heap, *d_heap;
     HTTPHdrImpl *s_hh, *d_hh;
 
@@ -4154,7 +4184,8 @@ INKHttpHdrClone(INKMBuffer dest_bufp, INKMBuffer src_bufp, INKMLoc src_hdr)
 
     ink_assert(s_hh->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
 
-    inherit_strs = (s_heap != d_heap ? true : false);
+    // TODO: This is never used
+    // inherit_strs = (s_heap != d_heap ? true : false);
 
     d_hh = http_hdr_clone(s_hh, s_heap, d_heap);
     return ((INKMLoc) d_hh);
@@ -4593,6 +4624,7 @@ sdk_sanity_check_cachekey(INKCacheKey key)
 
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(key);
   return INK_SUCCESS;
 #endif
 }
@@ -8340,6 +8372,7 @@ HashTableModify(INKU32 ip, char *name, status_t s, void *policy, int len)
 static int
 remove_cache_handler(INKCont cache_contp, INKEvent event, void *edata)
 {
+  NOWARN_UNUSED(edata);
   INKCacheKey key;
 
   key = (INKCacheKey) INKContDataGet(cache_contp);
@@ -8455,6 +8488,8 @@ typedef struct
 static int
 handle_write_fail(INKCont cont, INKEvent event, void *edata)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(edata);
   passdata_s *pd;
 
   pd = (passdata_s *) INKContDataGet(cont);

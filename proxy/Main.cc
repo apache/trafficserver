@@ -78,7 +78,7 @@ extern "C" int plock(int);
 #include "CacheInspectorAllow.h"
 #include "ParentSelection.h"
 //#include "rni/Rni.h"
-#if RNI_STATIC_LINK
+#ifdef RNI_STATIC_LINK
 #include "RniProcessor.h"
 #endif
 //#include "simple/Simple.h"
@@ -318,6 +318,7 @@ int n_argument_descriptions = SIZE(argument_descriptions);
 static rlim_t
 max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = true)
 {
+  NOWARN_UNUSED(name);
   struct rlimit rl;
 
 #if defined(linux)
@@ -638,7 +639,7 @@ clear_rn_cache()
   return CMD_OK;
 }
 
-struct CmdCacheCont:Continuation
+struct CmdCacheCont: public Continuation
 {
 
   int cache_fix;
@@ -701,6 +702,7 @@ CmdCacheCont(bool check, bool fix = false):Continuation(new_ProxyMutex()) {
 static int
 cmd_check_internal(char *cmd, bool fix = false)
 {
+  NOWARN_UNUSED(cmd);
   const char *n = fix ? "REPAIR" : "CHECK";
 
   printf("%s\n\n", n);
@@ -1100,7 +1102,8 @@ parse_accept_fd_list()
 static int
 set_core_size(const char *name, RecDataT data_type, RecData data, void *opaque_token)
 {
-
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
   RecInt size = data.rec_int;
   struct rlimit lim;
   bool failed = false;
@@ -1226,7 +1229,7 @@ adjust_sys_settings(void)
 #endif
 }
 
-struct ShowStats:Continuation
+struct ShowStats: public Continuation
 {
 #ifdef ENABLE_TIME_TRACE
   FILE *fp;
@@ -1361,7 +1364,7 @@ ShowStats():Continuation(NULL),
 };
 
 
-
+// TODO: How come this is never used ??
 static int syslog_facility = LOG_DAEMON;
 
 // static void syslog_log_configure()
@@ -1463,7 +1466,7 @@ init_http_aeua_filter(void)
   Debug("http_aeua", "[init_http_aeua_filter] - Total loaded %d REGEXP for Accept-Enconding/User-Agent filtering", i);
 }
 
-struct AutoStopCont:Continuation
+struct AutoStopCont: public Continuation
 {
   int mainEvent(int event, Event * e)
   {
@@ -1486,7 +1489,7 @@ run_AutoStop()
 }
 
 #ifndef INK_NO_TESTS
-struct RegressionCont:Continuation
+struct RegressionCont: public Continuation
 {
   int initialized;
   int waits;
@@ -1709,13 +1712,13 @@ void init_stat_collector()
     static int max_stats_allowed = 0;
     static int num_stats_estimate = 0;
 
-    static int temp = 0;
     // Read config variables
     TS_ReadConfigInteger(stat_collection_interval, "proxy.config.stat_collector.interval");
     TS_ReadConfigInteger(stat_collector_port, "proxy.config.stat_collector.port");
     TS_ReadConfigInteger(max_stats_allowed, "proxy.config.stat_systemV2.max_stats_allowed");
     TS_ReadConfigInteger(num_stats_estimate, "proxy.config.stat_systemV2.num_stats_estimate");
-    TS_ReadConfigInteger(temp, "proxy.config.cache.threads_per_disk");
+    // TODO: This seems unused
+    // TS_ReadConfigInteger(temp, "proxy.config.cache.threads_per_disk");
 
     // Set to default if not defined in config file
     if(!stat_collector_port) {
@@ -2056,7 +2059,7 @@ main(int argc, char **argv)
     // Initialize the system for RNI support
     // All this is handled by plugin support code
     //Rni::init ();
-#if RNI_STATIC_LINK
+#ifdef RNI_STATIC_LINK
     rniProcessor.start();
 #endif
 
@@ -2291,6 +2294,7 @@ REGRESSION_TEST(Hdrs) (RegressionTest * t, int atype, int *pstatus) {
 void *
 mgmt_restart_shutdown_callback(void *, char *, int data_len)
 {
+  NOWARN_UNUSED(data_len);
   sync_cache_dir_on_shutdown();
   return NULL;
 }

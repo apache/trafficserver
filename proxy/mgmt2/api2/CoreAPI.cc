@@ -816,8 +816,7 @@ SnapshotTake(char *snapshot_name)
 
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
   found = (rec_err == REC_ERR_OKAY);
-
-  ink_assert(found);
+  ink_release_assert(found);
   // XXX: Why was that offset to config dir?
   //      Any path should be prefix relative thought
   //
@@ -844,7 +843,7 @@ SnapshotRestore(char *snapshot_name)
 
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
   found = (rec_err == REC_ERR_OKAY);
-  ink_assert(found);
+  ink_release_assert(found);
   // XXX: Why was that offset to config dir?
   //      Any path should be prefix relative thought
   //
@@ -872,7 +871,7 @@ SnapshotRemove(char *snapshot_name)
 
   int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
   found = (rec_err == REC_ERR_OKAY);
-  ink_assert(found);
+  ink_release_assert(found);
   // XXX: Why was that offset to config dir?
   //      Any path should be prefix relative thought
   //

@@ -491,6 +491,8 @@ ICPConfiguration::UpdatePeerConfig()
 int
 ICPConfiguration::mgr_icp_config_change_callback(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
   //*****************************************************************
   // Callout invoked by Configuration management when changes occur
   // to icp.config
@@ -572,7 +574,6 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
 
   int error = 0;
   int ln = 0;
-  int rlen;
   int n_colons;
   char line[256];
   char *cur;
@@ -586,7 +587,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //
   // Note: ink_file_fd_readline() null terminates returned buffer
   //////////////////////////////////////////////////////////////////////
-  while ((rlen = ink_file_fd_readline(fd, sizeof(line) - 1, line)) > 0) {
+  while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
     ln++;
     if (*line == '#')
       continue;
@@ -779,7 +780,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
 
   if (!error) {
     for (int i = 0; i <= MAX_DEFINED_PEERS; i++) {
-#if defined (alpha) || (__alpha)
+#if defined (alpha) || defined(__alpha)
       PeerConfigData *p_cur;
       p_cur = ICPconfig->_peer_cdata_current[i];
       *p_cur = P[i];
@@ -1046,6 +1047,7 @@ Action *
 MultiCastPeer::RecvFrom_re(Continuation * cont, void *token,
                            IOBufferBlock * bufblock, int len, struct sockaddr * from, socklen_t *fromlen)
 {
+  NOWARN_UNUSED(bufblock);
   Action *a = udpNet.recvfrom_re(cont, token,
                                  _recv_chan.fd, from, fromlen,
                                  buf, len, true, 0);

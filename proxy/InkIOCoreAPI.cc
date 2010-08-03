@@ -51,8 +51,10 @@ sdk_sanity_check_mutex(INKMutex mutex)
   if (mutexp->nthread_holding < 0)
     return INK_ERROR;
   return INK_SUCCESS;
-#endif
+#else
+  NOWARN_UNUSED(mutex);
   return INK_SUCCESS;
+#endif
 }
 
 
@@ -64,6 +66,7 @@ sdk_sanity_check_hostlookup_structure(INKHostLookupResult data)
     return INK_ERROR;
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(data);
   return INK_SUCCESS;
 #endif
 }
@@ -76,6 +79,7 @@ sdk_sanity_check_iocore_structure(void *data)
     return INK_ERROR;
   return INK_SUCCESS;
 #else
+  NOWARN_UNUSED(data);
   return INK_SUCCESS;
 #endif
 }

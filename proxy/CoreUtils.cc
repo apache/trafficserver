@@ -1110,7 +1110,7 @@ CoreUtils::process_NetVC(UnixNetVConnection * nvc_test)
 
     // Probably not 64-bit safe. /leif
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
-    printf("     ip: %u.%u.%u.%u    port: %d\n",
+    printf("     ip: %hu.%hu.%hu.%hu    port: %d\n",
            ((unsigned char *) &loaded_nvc->ip)[0],
            ((unsigned char *) &loaded_nvc->ip)[1],
            ((unsigned char *) &loaded_nvc->ip)[2], ((unsigned char *) &loaded_nvc->ip)[3], loaded_nvc->port);
@@ -1467,7 +1467,7 @@ process_core(char *fname)
 {
   Elf32_Ehdr ehdr;
   Elf32_Phdr phdr;
-  int phoff, phnum, phentsize, phsize;
+  int phoff, phnum, phentsize;
   int framep = 0, pc = 0;
 
   /* Open the input file */
@@ -1487,10 +1487,9 @@ process_core(char *fname)
   phnum = ehdr.e_phnum;
   // size of each program header
   phentsize = ehdr.e_phentsize;
-  phsize = phnum * phentsize;
-  for (int i = 0; i < phnum; i++) {
 
-    if (fseek(fp, ehdr.e_phoff + i * ehdr.e_phentsize, SEEK_SET) == -1) {
+  for (int i = 0; i < phnum; i++) {
+    if (fseek(fp, phoff + i * phentsize, SEEK_SET) == -1) {
       fprintf(stderr, "Unable to seek to Phdr %d\n", i);
       _exit(1);
     }
@@ -1517,15 +1516,15 @@ process_core(char *fname)
 
     if (is_debug_tag_set("phdr")) {
       printf("\n******* PHDR %d *******\n", i);
-      printf("p_type = %d  ", phdr.p_type);
-      printf("p_offset = %d  ", phdr.p_offset);
+      printf("p_type = %u  ", phdr.p_type);
+      printf("p_offset = %u  ", phdr.p_offset);
       printf("p_vaddr = %#x  ", pvaddr);
 
       printf("p_paddr = %#x\n", phdr.p_paddr);
-      printf("p_filesz = %d  ", phdr.p_filesz);
-      printf("p_memsz = %d  ", phdr.p_memsz);
-      printf("p_flags = %d  ", phdr.p_flags);
-      printf("p_align = %d\n", phdr.p_align);
+      printf("p_filesz = %u  ", phdr.p_filesz);
+      printf("p_memsz = %u  ", phdr.p_memsz);
+      printf("p_flags = %u  ", phdr.p_flags);
+      printf("p_align = %u\n", phdr.p_align);
     }
 
     if (phdr.p_type == PT_NOTE) {
@@ -1547,8 +1546,6 @@ process_core(char *fname)
               if (len<0 || len> size) {
                 _exit(1);
               }
-              char *name;
-              name = (char *) (thdr + 1);
               printf("size=%d, len=%d\n", size, len);
 
               prstatus_t pstat;

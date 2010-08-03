@@ -294,6 +294,7 @@ UpdateEntry::ValidURL(char *s, char *e)
 int
 UpdateEntry::ValidHeaders(char *s, char *e)
 {
+  NOWARN_UNUSED(e);
   // Note: string 's' is null terminated.
 
   enum
@@ -471,6 +472,7 @@ UpdateEntry::ValidSeparatorChar(char c)
 int
 UpdateEntry::ValidHour(char *s, char *e)
 {
+  NOWARN_UNUSED(e);
   // Note: string 's' is null terminated.
 
   _offset_hour = atoi(s);
@@ -484,6 +486,7 @@ UpdateEntry::ValidHour(char *s, char *e)
 int
 UpdateEntry::ValidInterval(char *s, char *e)
 {
+  NOWARN_UNUSED(e);
   // Note: string 's' is null terminated.
 
   _interval = atoi(s);
@@ -498,6 +501,7 @@ UpdateEntry::ValidInterval(char *s, char *e)
 int
 UpdateEntry::ValidDepth(char *s, char *e)
 {
+  NOWARN_UNUSED(e);
   // Note: string 's' is null terminated.
 
   _max_depth = atoi(s);
@@ -822,6 +826,8 @@ UpdateConfigManager::GetConfigList(Ptr<UpdateConfigList> *L)
 int
 UpdateConfigManager::URL_list_update_callout(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
   UpdateConfigManager *cm = (UpdateConfigManager *) cookie;
   cm->SetFileName((char *) data.rec_string);
 
@@ -843,11 +849,9 @@ UpdateConfigManager::ProcessUpdate(int event, Event * e)
     ////////////////////////////////////////////////////////////////////
 
     UpdateConfigList *l = NULL;
-    UpdateConfigList *l_tmp = NULL;
 
     l = BuildUpdateList();
     if (l) {
-      Debug("update", "Config list updated, new 0x%x old 0x%x", l, l_tmp = _CL);
       _CL = l;
     }
     return EVENT_DONE;
@@ -859,13 +863,10 @@ UpdateConfigManager::ProcessUpdate(int event, Event * e)
     ////////////////////////////////////////////////////////////////////
 
     UpdateConfigParams *p = NEW(new UpdateConfigParams(*_CP_actual));
-    UpdateConfigParams *p_tmp;
 
     if (!(*_CP == *p)) {
       _CP = p;
-      Debug("update", "Global config updated, new 0x%x old 0x%x", p, p_tmp = _CP);
-      Debug("update",
-            "enable %d force %d rcnt %d rint %d updates %d mem %d",
+      Debug("update", "enable %d force %d rcnt %d rint %d updates %d mem %d",
             p->_enabled, p->_immediate_update, p->_retry_count,
             p->_retry_interval, p->_concurrent_updates, p->_max_update_state_machines, p->_memory_use_in_mb);
     } else {
@@ -977,12 +978,12 @@ UpdateConfigManager::ParseConfigFile(int f)
   char *p;
 
   int ln = 0;
-  int i, rlen;
+  int i;
 
   UpdateEntry *e = NULL;
   UpdateConfigList *ul = NEW(new UpdateConfigList);
 
-  while ((rlen = GetDataLine(f, sizeof(line) - 1, line, F_ITEMS, '\\')) > 0) {
+  while (GetDataLine(f, sizeof(line) - 1, line, F_ITEMS, '\\') > 0) {
     ++ln;
     if (*line == '#') {
       continue;
@@ -1328,6 +1329,7 @@ UpdateScheduler::ScheduleEvent(int event, void *e)
 int
 UpdateScheduler::ChildExitEventHandler(int event, Event * e)
 {
+  NOWARN_UNUSED(e);
   switch (event) {
   case EVENT_IMMEDIATE:
   case EVENT_INTERVAL:
@@ -1425,6 +1427,7 @@ UpdateSM::Start()
 int
 UpdateSM::HandleSMEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(e);
   while (1) {
     switch (_state) {
     case USM_INIT:
@@ -1556,11 +1559,11 @@ UpdateSM::http_scheme(UpdateSM * sm)
     ////////////////////////////////////
     Debug("update", "Start HTTP GET id: %d [%s]", sm->_EN->_id, sm->_EN->_url);
     HttpUpdateSM *current_reader;
-    Action *a;
 
     current_reader = HttpUpdateSM::allocate();
     current_reader->init();
-    a = current_reader->start_scheduled_update(sm, sm->_EN->_http_hdr);
+    // TODO: Do anything with the returned Action* ?
+    current_reader->start_scheduled_update(sm, sm->_EN->_http_hdr);
   }
   return 0;
 }
@@ -1609,6 +1612,8 @@ UpdateSM::rtsp_scheme(UpdateSM * sm)
     Debug("update", "Start RTSP GET id: %d", sm->_EN->_id);
   }
   return ret;
+#else
+  NOWARN_UNUSED(sm);
 #endif
   return 0;
 }
@@ -1818,6 +1823,7 @@ RecursiveHttpGet::RecursiveHttpGetEvent(int event, Event * d)
 int
 RecursiveHttpGet::ExitEventHandler(int event, Event * e)
 {
+  NOWARN_UNUSED(e);
   switch (event) {
   case EVENT_IMMEDIATE:
   case EVENT_INTERVAL:
@@ -2262,7 +2268,6 @@ HtmlParser::ExtractURL(char **url, char **url_end)
     if (_html_doc_base) {
       _html_doc_base.clear();
     }
-    intptr_t n;
     for (n = 0; n < _attr_value.length(); ++n) {
       _html_doc_base(_html_doc_base.length()) = _attr_value[n];
     }
@@ -2275,23 +2280,20 @@ HtmlParser::ExtractURL(char **url, char **url_end)
     //      <META HTTP-EQUIV=Refresh CONTENT="0; URL=index.html">
     /////////////////////////////////////////////////////////////////
     if (_attr_value.length()) {
-
       // Locate start of URL
       for (n = 0; n < _attr_value.length(); ++n) {
         if (!ParseRules::is_digit((unsigned char) _attr_value[n])) {
           break;
         }
       }
-      if ((n < _attr_value.length())
-          && (((unsigned char) _attr_value[n]) == ';')) {
+      if ((n < _attr_value.length()) && (((unsigned char) _attr_value[n]) == ';')) {
 
         for (; n < _attr_value.length(); ++n) {
           if (!isspace((unsigned char) _attr_value[n])) {
             break;
           }
         }
-        if ((n < _attr_value.length())
-            && (!strncasecmp(&_attr_value[n], "URL=", 4))) {
+        if ((n < _attr_value.length()) && (!strncasecmp(&_attr_value[n], "URL=", 4))) {
           n += 4;
           if ((n < _attr_value.length())
               && ((_attr_value.length() - n) > 1)) {

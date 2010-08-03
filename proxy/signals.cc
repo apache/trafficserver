@@ -80,6 +80,8 @@ public:
 
   int periodic(int event, Event * e)
   {
+    NOWARN_UNUSED(event);
+    NOWARN_UNUSED(e);
     if (sigusr1_received) {
       sigusr1_received = 0;
 
@@ -94,7 +96,7 @@ public:
       //       This is not error condition at the first place
       //       so why stderr?
       //
-      fprintf(stderr, "sbrk 0x%llx from first %lld from last %lld\n",
+      fprintf(stderr, "sbrk 0x%llux from first %llu from last %llu\n",
               (uint64) ((ptrdiff_t) now), (uint64) ((ptrdiff_t) (now - end)),
               (uint64) ((ptrdiff_t) (now - snap)));
 #ifdef DEBUG
@@ -132,6 +134,8 @@ public:
 
   int periodic(int event, Event * e)
   {
+    NOWARN_UNUSED(event);
+    NOWARN_UNUSED(e);
     if (use_baseline) {
       xdump_to_file_baseline_rel(stderr);
       ink_freelists_dump_baselinerel(stderr);
@@ -530,6 +534,8 @@ init_signals(bool do_stackdump)
 int
 init_tracker(const char *config_var, RecDataT type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(type);
+  NOWARN_UNUSED(cookie);
   static Event *tracker_event = NULL;
   int dump_mem_info_frequency = 0;
   if (config_var)

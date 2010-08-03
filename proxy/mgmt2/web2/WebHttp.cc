@@ -1735,7 +1735,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
           INKMgmtFtp("put", ftp_server_name, ftp_login, ftp_password, newStr, ftp_remote_dir_name, NULL);
         } else {
           RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-          ink_assert(found);
+          ink_release_assert(found);
 
           if (snapDirFromRecordsConf[0] != '/') {
             char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
@@ -1802,7 +1802,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
       if (ink_hash_table_lookup(whc->post_data_ht, "snap_name", (void **) &snap_name)) {
         if (strcmp(snap_name, "- select a snapshot -")) {
           RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-          ink_assert(found);
+          ink_release_assert(found);
           if (snapDirFromRecordsConf[0] != '/') {
             char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
             ink_assert(snap_dir_cpy);
@@ -1823,7 +1823,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
       if (ink_hash_table_lookup(whc->post_data_ht, "snap_name", (void **) &snap_name)) {
         if (strcmp(snap_name, "- select a snapshot -")) {
           RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-          ink_assert(found);
+          ink_release_assert(found);
           if (snapDirFromRecordsConf[0] != '/') {
             char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
             ink_assert(snap_dir_cpy);
@@ -1940,7 +1940,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
       }
 
       RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-      ink_assert(found);
+      ink_release_assert(found);
       if (snapDirFromRecordsConf == NULL) {
         snapDirFromRecordsConf = new char[strlen("snapshots")];
         snprintf(snapDirFromRecordsConf, strlen("snapshots"), "%s", "snapshots");
@@ -2108,7 +2108,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
       }
 
       RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snap_directory);
-      ink_assert(found);
+      ink_release_assert(found);
 
       if (snap_directory[0] != '/') {
         char *snap_dir_cpy = strdup(snap_directory);
@@ -2139,7 +2139,7 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
     if (ink_hash_table_lookup(whc->post_data_ht, "restore_delete_name", (void **) &snap_name)) {
       if (strcmp(snap_name, "- select a snapshot -")) {
         RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-        ink_assert(found);
+        ink_release_assert(found);
         if (snapDirFromRecordsConf[0] != '/') {
           char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
           ink_assert(snap_dir_cpy);
@@ -2164,7 +2164,7 @@ Ldelete:
     if (ink_hash_table_lookup(whc->post_data_ht, "restore_delete_name", (void **) &snap_name)) {
       if (strcmp(snap_name, "- select a snapshot -")) {
         RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-        ink_assert(found);
+        ink_release_assert(found);
         if (snapDirFromRecordsConf[0] != '/') {
           char *snap_dir_cpy = strdup(snapDirFromRecordsConf);
           ink_assert(snap_dir_cpy);
@@ -2341,7 +2341,7 @@ handle_submit_snapshot_to_ftpserver(WebHttpContext * whc, const char *file)
       found = (RecGetRecordString_Xmalloc("proxy.config.temp_dir", &tempDirFromRecordsConf)
                == REC_ERR_OKAY);
 
-      ink_assert(found);
+      ink_release_assert(found);
 
       int newLen;
       char *newStr;

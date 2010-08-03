@@ -26,7 +26,8 @@
 
 #define REGRESSION_SM_RETRY (100*HRTIME_MSECOND)
 
-void RegressionSM::set_status(int astatus) {
+void RegressionSM::set_status(int astatus)
+{
   ink_assert(astatus != REGRESSION_TEST_INPROGRESS);
   // INPROGRESS < NOT_RUN < PASSED < FAILED
   if (status != REGRESSION_TEST_FAILED) {
@@ -40,7 +41,8 @@ void RegressionSM::set_status(int astatus) {
   } // else FAILED is FAILED
 }
 
-void RegressionSM::done(int astatus) {
+void RegressionSM::done(int astatus)
+{
   if (pending_action) {
     pending_action->cancel();
     pending_action = 0;
@@ -50,31 +52,37 @@ void RegressionSM::done(int astatus) {
   if (parent) parent->child_done(status);
 }
 
-void RegressionSM::run(int *apstatus) {
+void RegressionSM::run(int *apstatus)
+{
   pstatus = apstatus;
   run();
 }
 
-void RegressionSM::xrun(RegressionSM *aparent) {
+void RegressionSM::xrun(RegressionSM *aparent)
+{
   parent = aparent;
   parent->nwaiting++;
   run();
 }
 
-void RegressionSM::run_in(int *apstatus, ink_hrtime t) {
+void RegressionSM::run_in(int *apstatus, ink_hrtime t)
+{
   pstatus = apstatus;
   SET_HANDLER(&RegressionSM::regression_sm_start);
   eventProcessor.schedule_in(this, t);
 }
 
-void RegressionSM::child_done(int astatus) {
+void RegressionSM::child_done(int astatus)
+{
   MUTEX_LOCK(l, mutex, this_ethread());
   ink_assert(nwaiting > 0);
   --nwaiting;
   set_status(astatus);
 }
 
-int RegressionSM::regression_sm_waiting(int event, void *data) {
+int RegressionSM::regression_sm_waiting(int event, void *data)
+{
+  NOWARN_UNUSED(event);
   if (!nwaiting) {
     done(REGRESSION_TEST_NOT_RUN);
     delete this;
@@ -88,12 +96,16 @@ int RegressionSM::regression_sm_waiting(int event, void *data) {
   return EVENT_DONE;
 }
 
-int RegressionSM::regression_sm_start(int event, void *data) {
+int RegressionSM::regression_sm_start(int event, void *data)
+{
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   run();
   return EVENT_CONT;
 }
 
-RegressionSM *r_sequential(RegressionTest *t, RegressionSM* sm, ...) {
+RegressionSM *r_sequential(RegressionTest *t, RegressionSM* sm, ...)
+{
   RegressionSM *new_sm = new RegressionSM(t);
   va_list ap;
   va_start(ap, sm);
@@ -111,7 +123,8 @@ RegressionSM *r_sequential(RegressionTest *t, RegressionSM* sm, ...) {
   return new_sm;
 }
 
-RegressionSM *r_sequential(RegressionTest *t, int an, RegressionSM *sm) {
+RegressionSM *r_sequential(RegressionTest *t, int an, RegressionSM *sm)
+{
   RegressionSM *new_sm = new RegressionSM(t);
   new_sm->par = false;
   new_sm->rep = true;
@@ -123,7 +136,8 @@ RegressionSM *r_sequential(RegressionTest *t, int an, RegressionSM *sm) {
   return new_sm;
 }
 
-RegressionSM *r_parallel(RegressionTest *t, RegressionSM *sm, ...) {
+RegressionSM *r_parallel(RegressionTest *t, RegressionSM *sm, ...)
+{
   RegressionSM *new_sm = new RegressionSM(t);
   va_list ap;
   va_start(ap, sm);
@@ -141,7 +155,8 @@ RegressionSM *r_parallel(RegressionTest *t, RegressionSM *sm, ...) {
   return new_sm;
 }
 
-RegressionSM *r_parallel(RegressionTest *t, int an, RegressionSM *sm) {
+RegressionSM *r_parallel(RegressionTest *t, int an, RegressionSM *sm)
+{
   RegressionSM *new_sm = new RegressionSM(t);
   new_sm->par = true;
   new_sm->rep = true;
@@ -153,7 +168,9 @@ RegressionSM *r_parallel(RegressionTest *t, int an, RegressionSM *sm) {
   return new_sm;
 }
 
-void RegressionSM::run() {
+void RegressionSM::run()
+{
+  // TODO: Why introduce another scope here?
   {
     MUTEX_TRY_LOCK(l, mutex, this_ethread());
     if (!l || nwaiting > 1)
@@ -186,7 +203,8 @@ Lretry:
   pending_action = eventProcessor.schedule_in(this, REGRESSION_SM_RETRY);
 }
 
-RegressionSM::RegressionSM(const RegressionSM &ao) {
+RegressionSM::RegressionSM(const RegressionSM &ao)
+{
   RegressionSM &o = *(RegressionSM*)&ao;
   t = o.t;
   status = o.status;
@@ -207,7 +225,8 @@ RegressionSM::RegressionSM(const RegressionSM &ao) {
   mutex = new_ProxyMutex();
 }
 
-struct ReRegressionSM : RegressionSM {
+struct ReRegressionSM: public RegressionSM
+{
   virtual void run() {
     if (time(NULL) < 1) { // example test
       rprintf(t,"impossible");
@@ -222,7 +241,9 @@ struct ReRegressionSM : RegressionSM {
   }
 };
 
-REGRESSION_TEST(RegressionSM)(RegressionTest *t, int atype, int *pstatus) {
+REGRESSION_TEST(RegressionSM)(RegressionTest *t, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   r_sequential(
     t,
     r_parallel(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL_PTR),

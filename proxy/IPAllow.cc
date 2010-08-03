@@ -49,7 +49,7 @@ Ptr<ProxyMutex> ip_reconfig_mutex;
 //
 struct IPAllow_FreerContinuation;
 typedef int (IPAllow_FreerContinuation::*IPAllow_FrContHandler) (int, void *);
-struct IPAllow_FreerContinuation:Continuation
+struct IPAllow_FreerContinuation: public Continuation
 {
   IpAllow *p;
   int freeEvent(int event, Event * e)
@@ -72,7 +72,7 @@ struct IPAllow_FreerContinuation:Continuation
 //   Used to read the ip_allow.conf file after the manager signals
 //      a change
 //
-struct IPAllow_UpdateContinuation:Continuation
+struct IPAllow_UpdateContinuation: public Continuation
 {
   int file_update_handler(int etype, void *data)
   {

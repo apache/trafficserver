@@ -191,6 +191,7 @@ dump_buffer(IOBufferReader *reader)
 int
 TransformTerminus::handle_event(int event, void *edata)
 {
+  NOWARN_UNUSED(edata);
   int val;
 
   m_deletable = ((m_closed != 0) && (m_tvc->m_closed != 0));
@@ -488,6 +489,8 @@ TransformVConnection::~TransformVConnection()
 int
 TransformVConnection::handle_event(int event, void *edata)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(edata);
   ink_assert(!"not reached");
   return 0;
 }
@@ -509,6 +512,7 @@ TransformVConnection::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
 VIO *
 TransformVConnection::do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner)
 {
+  NOWARN_UNUSED(owner);
   Debug("transform", "TransformVConnection do_io_write: 0x%lx [0x%lx]", (long) c, (long) this);
 
   return m_transform->do_io_write(c, nbytes, buf);
@@ -550,6 +554,7 @@ TransformVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 void
 TransformVConnection::reenable(VIO *vio)
 {
+  NOWARN_UNUSED(vio);
   ink_assert(!"not reached");
 }
 
@@ -580,6 +585,7 @@ TransformControl::TransformControl()
 int
 TransformControl::handle_event(int event, void *edata)
 {
+  NOWARN_UNUSED(edata);
   switch (event) {
   case EVENT_IMMEDIATE:{
       char *s, *e;
@@ -1016,12 +1022,10 @@ void
 RangeTransform::transform_to_range()
 {
   IOBufferReader *reader = m_write_vio.get_reader();
-  int done, toskip, tosend, avail;
+  int toskip, tosend, avail;
   const int64 *end, *start;
   int64 prev_end = 0;
   int64 *done_byte;
-
-  done = m_done;
 
   end = &m_ranges[m_current_range]._end;
   done_byte = &m_ranges[m_current_range]._done_byte;
