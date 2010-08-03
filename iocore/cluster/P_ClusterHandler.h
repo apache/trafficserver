@@ -328,7 +328,7 @@ ClusterMsg():descriptor(NULL), iob_descriptor_block(NULL), count(0),
 // State for a particular (read/write) direction of a cluster link
 //
 struct ClusterHandler;
-struct ClusterState:Continuation
+struct ClusterState: public Continuation
 {
   ClusterHandler *ch;
   bool read_channel;

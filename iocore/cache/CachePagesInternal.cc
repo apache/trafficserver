@@ -26,7 +26,7 @@
 #ifdef NON_MODULAR
 #include "Show.h"
 
-struct ShowCacheInternal:ShowCont
+struct ShowCacheInternal: public ShowCont
 {
   int part_index;
   int seg_index;
@@ -216,7 +216,7 @@ ShowCacheInternal::showPartEvacuations(int event, Event * e)
   for (int i = 0; i < last; i++) {
     for (b = p->evacuate[i].head; b; b = b->link.next) {
       char offset[60];
-      sprintf(offset, "%lld", (uint64) part_offset(p, &b->dir));
+      sprintf(offset, "%llu", (uint64) part_offset(p, &b->dir));
       CHECK_SHOW(show("<tr>" "<td>%s</td>"      // offset
                       "<td>%d</td>"     // estimated size
                       "<td>%d</td>"     // reader count

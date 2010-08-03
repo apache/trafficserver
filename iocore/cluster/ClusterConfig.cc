@@ -32,15 +32,14 @@
 int cluster_port = DEFAULT_CLUSTER_PORT_NUMBER;
 
 ClusterAccept::ClusterAccept(int *port, int send_bufsize, int recv_bufsize)
-  :
-Continuation(0),
-p_cluster_port(port),
-socket_send_bufsize(send_bufsize),
-socket_recv_bufsize(recv_bufsize),
-socket_opt_flags(0),
-current_cluster_port(-1),
-accept_action(0),
-periodic_event(0)
+  : Continuation(0),
+    p_cluster_port(port),
+    socket_send_bufsize(send_bufsize),
+    socket_recv_bufsize(recv_bufsize),
+    socket_opt_flags(0),
+    current_cluster_port(-1),
+    accept_action(0),
+    periodic_event(0)
 {
   mutex = new_ProxyMutex();
   SET_HANDLER(&ClusterAccept::ClusterAcceptEvent);
@@ -152,10 +151,12 @@ ClusterAccept::ClusterAcceptMachine(NetVConnection * NetVC)
 static void
 make_cluster_connections(MachineList * l, MachineList * old)
 {
+  NOWARN_UNUSED(old);
   //
   // Connect to all new machines.
   //
   uint32 ip = this_cluster_machine()->ip;
+
   if (l) {
     for (int i = 0; i < l->n; i++)
 #ifdef LOCAL_CLUSTER_TEST_MODE
@@ -170,6 +171,9 @@ make_cluster_connections(MachineList * l, MachineList * old)
 int
 machine_config_change(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(data_type);
   // Handle changes to the cluster.config or machines.config
   // file.  cluster.config is the list of machines in the
   // cluster proper ( in the cluster hash table ).  machines.config
@@ -228,36 +232,33 @@ ClusterConfiguration::ClusterConfiguration():n_machines(0), changed(0)
 /*************************************************************************/
 struct ConfigurationContinuation;
 typedef int (ConfigurationContinuation::*CfgContHandler) (int, void *);
-struct ConfigurationContinuation:
-  Continuation
+struct ConfigurationContinuation: public Continuation
 {
-  ClusterConfiguration *
-    c;
-  ClusterConfiguration *
-    prev;
+  ClusterConfiguration *c;
+  ClusterConfiguration *prev;
+
   int
   zombieEvent(int event, Event * e)
   {
+    NOWARN_UNUSED(event);
     prev->link.next = NULL;     // remove that next pointer
     SET_HANDLER((CfgContHandler) & ConfigurationContinuation::dieEvent);
-    e->
-    schedule_in(CLUSTER_CONFIGURATION_ZOMBIE);
-    return
-      EVENT_CONT;
+    e->schedule_in(CLUSTER_CONFIGURATION_ZOMBIE);
+    return EVENT_CONT;
   }
+
   int
   dieEvent(int event, Event * e)
   {
     (void) event;
     (void) e;
-    delete
-      c;
-    delete
-      this;
+    delete c;
+    delete this;
     return EVENT_DONE;
   }
+
   ConfigurationContinuation(ClusterConfiguration * cc, ClusterConfiguration * aprev)
-:  Continuation(NULL), c(cc), prev(aprev) {
+    : Continuation(NULL), c(cc), prev(aprev) {
     mutex = new_ProxyMutex();
     SET_HANDLER((CfgContHandler) & ConfigurationContinuation::zombieEvent);
   }
@@ -283,14 +284,10 @@ configuration_add_machine(ClusterConfiguration * c, ClusterMachine * m)
   // Build a new cluster configuration with the new machine.
   // Machines are stored in ip sorted order.
   //
-  EThread *
-    thread = this_ethread();
-  ProxyMutex *
-    mutex = thread->mutex;
-  int
-    i = 0;
-  ClusterConfiguration *
-    cc = NEW(new ClusterConfiguration(*c));
+  EThread *thread = this_ethread();
+  ProxyMutex *mutex = thread->mutex;
+  int i = 0;
+  ClusterConfiguration *cc = NEW(new ClusterConfiguration(*c));
 
   // Find the place to insert this new machine
   //
@@ -324,15 +321,13 @@ configuration_add_machine(ClusterConfiguration * c, ClusterMachine * m)
 ClusterConfiguration *
 configuration_remove_machine(ClusterConfiguration * c, ClusterMachine * m)
 {
-  EThread *
-    thread = this_ethread();
-  ProxyMutex *
-    mutex = thread->mutex;
+  EThread *thread = this_ethread();
+  ProxyMutex *mutex = thread->mutex;
+
   //
   // Build a new cluster configuration without a machine
   //
-  ClusterConfiguration *
-    cc = NEW(new ClusterConfiguration(*c));
+  ClusterConfiguration *cc = NEW(new ClusterConfiguration(*c));
   //
   // remove m and move others down
   //
@@ -369,12 +364,11 @@ configuration_remove_machine(ClusterConfiguration * c, ClusterMachine * m)
 int
 cluster_machine_depth_list(unsigned int hash, ClusterMachine ** depth_list, int depth_list_size)
 {
-  int
-    n = 0;
-  ClusterConfiguration *
-    cc = this_cluster()->current_configuration();
-  ClusterMachine *
-    m = cc->machine_hash(hash);
+  NOWARN_UNUSED(depth_list_size);
+  int n = 0;
+  ClusterConfiguration *cc = this_cluster()->current_configuration();
+  ClusterMachine *m = cc->machine_hash(hash);
+
   depth_list[n++] = m;
   cc = cc->link.next;
 
@@ -410,14 +404,10 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
     cc = this_cluster()->current_configuration();
   ClusterConfiguration *
     next_cc = cc;
-  ink_hrtime
-    now = ink_get_hrtime();
-  int
-    fake_probe_depth = 0;
-  int &
-    probe_depth = pprobe_depth ? (*pprobe_depth) : fake_probe_depth;
-  int
-    tprobe_depth = probe_depth;
+  ink_hrtime now = ink_get_hrtime();
+  int fake_probe_depth = 0;
+  int &probe_depth = pprobe_depth ? (*pprobe_depth) : fake_probe_depth;
+  int tprobe_depth = probe_depth;
 
 #ifdef CLUSTER_TEST
   if (cc->n_machines > 1) {

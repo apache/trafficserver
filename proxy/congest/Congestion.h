@@ -201,7 +201,7 @@ struct FailHistory
 };
 
 
-struct CongestionEntry:RequestData
+struct CongestionEntry: public RequestData
 {
   // key in the hash table;
   uint64 m_key;

@@ -32,7 +32,7 @@ struct RamCacheLRUEntry {
   Ptr<IOBufferData> data;
 };
 
-struct RamCacheLRU : RamCache {
+struct RamCacheLRU: public RamCache {
   int64 max_bytes;
   int64 bytes;
   int64 objects;
@@ -60,7 +60,7 @@ struct RamCacheLRU : RamCache {
 
 ClassAllocator<RamCacheLRUEntry> ramCacheLRUEntryAllocator("RamCacheLRUEntry");
 
-const static int bucket_sizes[] = {
+static const int bucket_sizes[] = {
   127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749, 65521, 131071, 262139,
   524287, 1048573, 2097143, 4194301, 8388593, 16777213, 33554393, 67108859,
   134217689, 268435399, 536870909

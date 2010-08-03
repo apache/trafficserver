@@ -53,7 +53,7 @@
   @see OneWayTunnel
 
 */
-struct OneWayMultiTunnel:OneWayTunnel
+struct OneWayMultiTunnel: public OneWayTunnel
 {
   //
   // Public Interface

@@ -164,6 +164,7 @@ NewCacheVC::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
 int
 NewCacheVC::handleRead(int event, Event * e)
 {
+  NOWARN_UNUSED(e);
   Debug("cache_plugin", "[NewCacheVC::handleRead] this=%lX event=%d", (long) this, event);
   cancel_trigger();
 
@@ -230,6 +231,7 @@ NewCacheVC::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bo
 int
 NewCacheVC::handleWrite(int event, Event * e)
 {
+  NOWARN_UNUSED(e);
   Debug("cache_plugin", "[NewCacheVC::handleWrite] event=%d", event);
   cancel_trigger();
 
@@ -268,6 +270,7 @@ NewCacheVC::alloc(Continuation * cont, URL * url, HttpCacheSM * sm)
 void
 NewCacheVC::setWriteVC(CacheHTTPInfo * old_info)
 {
+  NOWARN_UNUSED(old_info);
   cancel_trigger();
   _vio.op = VIO::WRITE;
   closed = false;
@@ -309,6 +312,7 @@ NewCacheVC::do_io_close(int lerrno)
 void
 NewCacheVC::reenable_re(VIO * vio)
 {
+  NOWARN_UNUSED(vio);
   Debug("cache_plugin", "[NewCacheVC::reenable_re]");
 }
 
@@ -395,6 +399,7 @@ NewCacheVC::_append_unmarshal_buf(const void *data, const uint64 size)
 int
 NewCacheVC::handleLookup(int event, Event * e)
 {
+  NOWARN_UNUSED(e);
   Debug("cache_plugin", "[NewCacheVC::handleLookup] event=%d", event);
   cancel_trigger();
 

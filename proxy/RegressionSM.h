@@ -32,7 +32,7 @@
   See RegressionSM.cc at the end for an example
 */
 
-struct RegressionSM : Continuation {
+struct RegressionSM :  public Continuation {
 
   RegressionTest *t; // for use with rprint
 

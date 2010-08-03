@@ -38,7 +38,7 @@ struct PinnedDocEntry
   LINK(PinnedDocEntry, link);
 };
 
-struct PinnedDocTable:Continuation
+struct PinnedDocTable: public Continuation
 {
   Queue<PinnedDocEntry> bucket[PINNED_DOC_TABLE_SIZE];
 
@@ -66,7 +66,7 @@ struct CacheTestHeader {
   uint64 serial;
 };
 
-struct CacheTestSM : RegressionSM {
+struct CacheTestSM : public RegressionSM {
   int start_memcpy_on_clone; // place all variables to be copied between these markers
   Action *timeout;
   Action *cache_action;
@@ -119,7 +119,7 @@ struct CacheTestSM : RegressionSM {
 
 // It is 2010 and C++ STILL doesn't have closures, a technology of the 1950s, unbelievable
 #define CACHE_SM(_t, _sm, _f)                \
-  struct CacheTestSM__##_sm : CacheTestSM { \
+  struct CacheTestSM__##_sm : public CacheTestSM { \
     void make_request_internal() _f \
     CacheTestSM__##_sm(RegressionTest *t) : CacheTestSM(t) {} \
     CacheTestSM__##_sm(const CacheTestSM__##_sm &xsm) : CacheTestSM(xsm) {} \

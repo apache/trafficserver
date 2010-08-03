@@ -216,7 +216,7 @@ get_int64(int fd, int64 & data)
   // the above line will guarantee buf to be no longer than PATH_NAME_MAX
   // so the next statement should be a safe use of sscanf
   // coverity[secure_coding]
-  if (sscanf(buf, "%llu", &data) != 1) {
+  if (sscanf(buf, "%lld", &data) != 1) {
     return (-1);
   }
   return 0;
@@ -866,7 +866,7 @@ Span::write(int fd)
   if (ink_file_fd_writestring(fd, "\n") == -1)
     return (-1);
 
-  snprintf(buf, sizeof(buf), "%llu\n", blocks);
+  snprintf(buf, sizeof(buf), "%lld\n", blocks);
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 
@@ -874,11 +874,11 @@ Span::write(int fd)
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 
-  snprintf(buf, sizeof(buf), "%llu\n", offset);
+  snprintf(buf, sizeof(buf), "%lld\n", offset);
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 
-  snprintf(buf, sizeof(buf), "%u\n", (int) is_mmapable());
+  snprintf(buf, sizeof(buf), "%d\n", (int) is_mmapable());
   if (ink_file_fd_writestring(fd, buf) == -1)
     return (-1);
 
@@ -955,7 +955,7 @@ Span::read(int fd)
   // the above line will guarantee buf to be no longer than PATH_NAME_MAX
   // so the next statement should be a safe use of sscanf
   // coverity[secure_coding]
-  if (sscanf(buf, "%u", &tmp) != 1)
+  if (sscanf(buf, "%d", &tmp) != 1)
     return (-1);
   set_mmapable(tmp != 0);
 

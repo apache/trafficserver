@@ -169,6 +169,10 @@ int
 cache_stats_bytes_used_cb(const char *name,
                           RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
     RecSetGlobalRawStatSum(rsb, id, cache_bytes_used());
   }
@@ -226,6 +230,7 @@ CacheVC::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *abuf)
 VIO *
 CacheVC::do_io_pread(Continuation *c, int64 nbytes, MIOBuffer *abuf, int64 offset)
 {
+  NOWARN_UNUSED(nbytes);
   ink_assert(vio.op == VIO::READ);
   vio.buffer.writer_for(abuf);
   vio.set_continuation(c);
@@ -870,8 +875,8 @@ Part::db_check(bool fix)
   ink_ctime_r(&header->create_time, tt);
   tt[strlen(tt) - 1] = 0;
   printf("        Create Time:     %s\n", tt);
-  printf("        Sync Serial:     %u\n", (int) header->sync_serial);
-  printf("        Write Serial:    %u\n", (int) header->write_serial);
+  printf("        Sync Serial:     %d\n", (int) header->sync_serial);
+  printf("        Write Serial:    %d\n", (int) header->write_serial);
   printf("\n");
 
   return 0;
@@ -1207,7 +1212,6 @@ Part::handle_recover_from_data(int event, void *data)
   if (got_len) {
 
     Doc *doc = NULL;
-    Doc *last_doc = NULL;
 
     if (recover_wrapped && start == io.aiocb.aio_offset) {
       doc = (Doc *) s;
@@ -1290,7 +1294,6 @@ Part::handle_recover_from_data(int event, void *data)
       }
       // doc->magic == DOC_MAGIC && doc->sync_serial == last_sync_serial
       last_write_serial = doc->write_serial;
-      last_doc = doc;
       s += round_to_approx_size(doc->len);
     }
 
@@ -1885,6 +1888,7 @@ Ldone:
 int
 CacheVC::handleRead(int event, Event *e)
 {
+  NOWARN_UNUSED(event);
   NOWARN_UNUSED(e);
   cancel_trigger();
 

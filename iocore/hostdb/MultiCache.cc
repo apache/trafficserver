@@ -822,7 +822,7 @@ void
 MultiCacheBase::print_info(FILE * fp)
 {                               // STDIO OK
   fprintf(fp, "    Elements:       %-10d\n", totalelements);
-  fprintf(fp, "    Size (bytes):   %-10d\n", totalsize);
+  fprintf(fp, "    Size (bytes):   %-10u\n", totalsize);
 }
 
 
@@ -1045,7 +1045,7 @@ MultiCacheBase::sync_all()
 //
 struct MultiCacheSync;
 typedef int (MultiCacheSync::*MCacheSyncHandler) (int, void *);
-struct MultiCacheSync:Continuation
+struct MultiCacheSync: public Continuation
 {
   int partition;
   MultiCacheBase *mc;
@@ -1169,7 +1169,7 @@ struct OffsetTable
 
 struct MultiCacheHeapGC;
 typedef int (MultiCacheHeapGC::*MCacheHeapGCHandler) (int, void *);
-struct MultiCacheHeapGC:Continuation
+struct MultiCacheHeapGC: public Continuation
 {
   Continuation *cont;
   MultiCacheBase *mc;
@@ -1351,9 +1351,9 @@ MultiCacheBase::alloc(int *poffset, int asize)
     int part = ptr_to_partition((char *) poffset);
     if (part < 0)
       return NULL;
-    UnsunkPtr *p = unsunk[part].alloc(poffset);
-    p->offset = offset;
-    p->poffset = poffset;
+    UnsunkPtr *up = unsunk[part].alloc(poffset);
+    up->offset = offset;
+    up->poffset = poffset;
     Debug("multicache", "alloc unsunk %d at %d part %d offset %d", *poffset, (char *) poffset - data, part, offset);
   }
   return (void *) p;

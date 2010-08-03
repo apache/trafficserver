@@ -157,10 +157,14 @@ MTClient::handleAttaching(int event, void *data)
 int
 MTClient::handleAttached(int event, void *data)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   return EVENT_CONT;
-};
+}
 int
 MTClient::handleDetached(int event, void *data)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   return EVENT_CONT;
-};
+}

@@ -50,7 +50,6 @@ typedef struct node_callout_entry
 
 static ProxyMutex *ClusterAPI_mutex;
 static ClusterAPIPeriodicSM *periodicSM;
-static Action *periodicSM_action;
 
 static node_callout_entry_t status_callouts[MAX_CLUSTERSTATUS_CALLOUTS];
 static INKClusterRPCFunction RPC_Functions[API_END_CLUSTER_FUNCTION];
@@ -121,6 +120,8 @@ private:
 int
 MachineStatusSM::MachineStatusSMEvent(Event * e, void *d)
 {
+  NOWARN_UNUSED(e);
+  NOWARN_UNUSED(d);
   int n;
   EThread *et = this_ethread();
 
@@ -291,7 +292,8 @@ clusterAPI_init()
   ink_release_assert(lock);     // Should never fail
   periodicSM = NEW(new ClusterAPIPeriodicSM(ClusterAPI_mutex));
 
-  periodicSM_action = eventProcessor.schedule_every(periodicSM, HRTIME_SECONDS(1), ET_CALL);
+  // TODO: Should we do something with this return value?
+  eventProcessor.schedule_every(periodicSM, HRTIME_SECONDS(1), ET_CALL);
 }
 
 /*
@@ -375,10 +377,6 @@ INKEnableClusterStatusCallout(INKClusterStatusHandle_t * h)
   int ci = CLUSTER_STATUS_HANDLE_TO_INDEX(*h);
   // This isn't used.
   // int my_ipaddr = (this_cluster_machine())->ip;
-  EThread *e = this_ethread();
-
-  NOWARN_UNUSED(e);
-
   ink_release_assert((ci >= 0) && (ci < MAX_CLUSTERSTATUS_CALLOUTS));
 
   if (status_callouts[ci].state == NE_STATE_INITIALIZED) {

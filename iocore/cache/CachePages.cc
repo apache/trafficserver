@@ -27,7 +27,7 @@
 #include "api/ts/ts.h"
 #include "Show.h"
 
-struct ShowCache:ShowCont
+struct ShowCache: public ShowCont
 {
   int part_index;
   int seg_index;

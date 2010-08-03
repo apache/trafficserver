@@ -1134,8 +1134,8 @@ Part::dir_check(bool fix)
   int total = buckets * segments * DIR_DEPTH;
   printf("    Directory for [%s]\n", hash_id);
   printf("        Bytes:     %d\n", total * SIZEOF_DIR);
-  printf("        Segments:  %lld\n", (uint64)segments);
-  printf("        Buckets:   %lld\n", (uint64)buckets);
+  printf("        Segments:  %llu\n", (uint64)segments);
+  printf("        Buckets:   %llu\n", (uint64)buckets);
   printf("        Entries:   %d\n", total);
   printf("        Full:      %d\n", full);
   printf("        Empty:     %d\n", empty);

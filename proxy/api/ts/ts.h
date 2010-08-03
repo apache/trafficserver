@@ -440,7 +440,7 @@ extern "C"
    */
   typedef enum
   {
-    INK_SDK_VERSION_2_0 = 0,
+    INK_SDK_VERSION_2_0 = 0
   } INKSDKVersion;
 
   typedef enum
