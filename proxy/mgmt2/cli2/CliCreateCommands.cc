@@ -85,12 +85,6 @@ CliCreateCommands()
 
   createCommand("show:snmp", Cmd_ShowSnmp, NULL, CLI_COMMAND_EXTERNAL, "show:snmp", "SNMP configuration");
 
-  createCommand("show:ldap", Cmd_ShowLdap, CmdArgs_ShowLdap, CLI_COMMAND_EXTERNAL, "show:ldap", "LDAP configuration");
-
-  createCommand("show:ldap-stats", Cmd_ShowLdapStats, NULL, CLI_COMMAND_EXTERNAL,
-                "show:ldap-stats", "LDAP statistics configuration");
-
-
   createCommand("show:socks", Cmd_ShowSocks, CmdArgs_ShowSocks, CLI_COMMAND_EXTERNAL,
                 "show:socks", "SOCKS configuration");
 

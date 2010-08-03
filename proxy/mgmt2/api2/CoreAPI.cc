@@ -69,6 +69,7 @@ INKActionNeedT determine_action_need(const char *rec_name);
 INKError
 Init(const char *socket_path)
 {
+  NOWARN_UNUSED(socket_path);
   // socket_path should be null; only applies to remote clients
   local_event_callbacks = create_callback_table("local_callbacks");
   if (!local_event_callbacks)
@@ -670,6 +671,8 @@ WriteFile(INKFileNameT file, char *text, int size, int version)
 INKError
 EventSignal(char *event_name, va_list ap)
 {
+  NOWARN_UNUSED(event_name);
+  NOWARN_UNUSED(ap);
   //char *text;
   //int id;
 
@@ -948,6 +951,8 @@ StatsReset()
 INKError
 EncryptToFile(const char *passwd, const char *filepath)
 {
+  NOWARN_UNUSED(passwd);
+  NOWARN_UNUSED(filepath);
   //AuthString fileAuthStr(filepath);
   //AuthString passwdAuthStr(passwd);
   /*if (!AccCrypto::encryptToFile(fileAuthStr, passwdAuthStr)) {

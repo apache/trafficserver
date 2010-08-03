@@ -114,6 +114,8 @@
 #define TEST_REC_GET    0
 #define TEST_REC_GET_2  0
 
+#define SET_INT         0
+
 // set to 1 if running as part of installation package
 // set to 0 if being tested in developer environment
 #define INSTALL_TEST    0
@@ -2251,6 +2253,8 @@ try_resolve(char *event_name)
 void
 eventCallbackFn(char *name, char *msg, int pri, void *data)
 {
+  NOWARN_UNUSED(pri);
+  NOWARN_UNUSED(data);
   printf("[eventCallbackFn] EVENT: %s, %s\n", name, msg);
   return;
 }

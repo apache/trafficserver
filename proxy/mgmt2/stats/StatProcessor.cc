@@ -48,6 +48,8 @@ bool sumClusterVar;
 void
 startElement(void *userData, const char *name, const char **atts)
 {
+  NOWARN_UNUSED(userData);
+  NOWARN_UNUSED(name);
   int i = 0;
 
   if (!strcmp(name, "ink:statistics"))
@@ -62,32 +64,21 @@ startElement(void *userData, const char *name, const char **atts)
     currentTag = INVALID_TAG;
 
   switch (currentTag) {
-
   case STAT_TAG:
-
     statObject = NEW(new StatObject(++statCount));
     Debug(MODULE_INIT, "\nStat #: ----------------------- %d -----------------------\n", statCount);
 
     for (i = 0; atts[i]; i += 2) {
-
       ink_debug_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
 
       if (!strcmp(atts[i], "minimum")) {
-
         statObject->m_stats_min = (MgmtFloat) atof(atts[i + 1]);
-
       } else if (!strcmp(atts[i], "maximum")) {
-
         statObject->m_stats_max = (MgmtFloat) atof(atts[i + 1]);
-
       } else if (!strcmp(atts[i], "interval")) {
-
         statObject->m_update_interval = (ink_hrtime) atoi(atts[i + 1]);
-
       } else if (!strcmp(atts[i], "debug")) {
-
         statObject->m_debug = (atts[i + 1] && atts[i + 1][0] == '1');
-
       }
 
       Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s\n", atts[i], atts[i + 1]);
@@ -95,28 +86,20 @@ startElement(void *userData, const char *name, const char **atts)
     break;
 
   case EXPR_TAG:
-
     exprContent = NEW(new char[BUFSIZ * 10]);   // Will free up at endElement
     memset(exprContent, 0, BUFSIZ * 10);
     break;
 
   case DST_TAG:
-
     nodeVar = true;
     sumClusterVar = true;       // Should only be used with cluster variable
 
     for (i = 0; atts[i]; i += 2) {
-
       ink_debug_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
-
       if (!strcmp(atts[i], "scope")) {
-
         nodeVar = (!strcmp(atts[i + 1], "node") ? true : false);
-
       } else if (!strcmp(atts[i], "operation")) {
-
         sumClusterVar = (!strcmp(atts[i + 1], "sum") ? true : false);
-
       }
 
       Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s\n", atts[i], atts[i + 1]);
@@ -131,23 +114,21 @@ startElement(void *userData, const char *name, const char **atts)
   default:
     break;
   }
-
 }
 
 
 void
 endElement(void *userData, const char *name)
 {
-
+  NOWARN_UNUSED(userData);
+  NOWARN_UNUSED(name);
   switch (currentTag) {
   case STAT_TAG:
-
     statObjectList.enqueue(statObject);
     currentTag = ROOT_TAG;
     break;
 
   case EXPR_TAG:
-
     statObject->assignExpr(exprContent);
     delete(exprContent);
     // fall through
@@ -156,14 +137,14 @@ endElement(void *userData, const char *name)
     currentTag = STAT_TAG;
     break;
   }
-
 }
-
 
 
 void
 charDataHandler(void *userData, const XML_Char * name, int len)
 {
+  NOWARN_UNUSED(userData);
+  NOWARN_UNUSED(len);
   if (currentTag != EXPR_TAG && currentTag != DST_TAG) {
     return;
   }
@@ -188,16 +169,13 @@ charDataHandler(void *userData, const XML_Char * name, int len)
 
 StatProcessor::StatProcessor():m_lmgmt(NULL), m_overviewGenerator(NULL)
 {
-
   rereadConfig();
-
 }
 
 
 void
 StatProcessor::rereadConfig()
 {
-
   textBuffer *fileContent = NULL;
   Rollback *fileRB = NULL;
   char *fileBuffer = NULL;
@@ -249,7 +227,6 @@ StatProcessor::rereadConfig()
   delete fileContent;
 
   Debug(MODULE_INIT, "\n\n---------- END OF PARSING & INITIALIZING ---------\n\n");
-
 }
 
 
@@ -264,8 +241,8 @@ StatProcessor::~StatProcessor()
 void
 setTest()
 {
-
   char var_name[64];
+
   for (int i = 1; i <= 5; i++) {
     memset(var_name, 0, 64);
     snprintf(var_name, sizeof(var_name), "proxy.node.stats.test%d", i);
@@ -277,14 +254,12 @@ setTest()
       varSetFloat(var_name, i, true);
     }
   }
-
 }
 
 
 void
 verifyTest()
 {
-
   MgmtFloat tmp1, tmp2;
 
   // 1. simple copy
@@ -311,7 +286,6 @@ verifyTest()
   } else {
     Debug(MODULE_INIT, "FAIL -- delta %f", tmp2);
   }
-
 }
 
 
@@ -330,7 +304,6 @@ StatProcessor::processStat()
 //    verifyTest();
 
   return (result);
-
 }
 
 
@@ -342,7 +315,6 @@ StatProcessor::processStat()
 MgmtFloat
 ExpressionEval(char *exprString)
 {
-
   StatObject statObject;
 
   char content[BUFSIZ * 10];
@@ -350,5 +322,4 @@ ExpressionEval(char *exprString)
 
   statObject.assignExpr(content);
   return statObject.NodeStatEval(false);
-
 }

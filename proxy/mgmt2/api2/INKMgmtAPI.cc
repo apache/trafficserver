@@ -2004,22 +2004,30 @@ INKTerminate()
 inkexp extern void
 INKPluginInit(int argc, const char *argv[])
 {
+  NOWARN_UNUSED(argc);
+  NOWARN_UNUSED(argv);
 }
 
 /*--- network operations --------------------------------------------------*/
 inkapi INKError
 INKConnect(INKIpAddr ip_addr, int port)
 {
+  NOWARN_UNUSED(ip_addr);
+  NOWARN_UNUSED(port);
   return INK_ERR_OKAY;
 }
 inkapi INKError
 INKDisconnectCbRegister(INKDisconnectFunc * func, void *data)
 {
+  NOWARN_UNUSED(func);
+  NOWARN_UNUSED(data);
   return INK_ERR_OKAY;
 }
 inkapi INKError
 INKDisconnectRetrySet(int retries, int retry_sleep_msec)
 {
+  NOWARN_UNUSED(retries);
+  NOWARN_UNUSED(retry_sleep_msec);
   return INK_ERR_OKAY;
 }
 inkapi INKError
@@ -2624,6 +2632,7 @@ INKCfgContextDestroy(INKCfgContext ctx)
 inkapi INKError
 INKCfgContextCommit(INKCfgContext ctx, INKActionNeedT * action_need, INKIntList errRules)
 {
+  NOWARN_UNUSED(action_need);
   return (CfgContextCommit((CfgContext *) ctx, (LLQ *) errRules));
 }
 
@@ -3372,6 +3381,7 @@ INKSetHostname(INKString hostname)
 inkapi INKError
 INKSetGateway(INKString gateway_ip)
 {
+  NOWARN_UNUSED(gateway_ip);
   //Nothing to be done for now
   return INK_ERR_OKAY;
 
@@ -3380,6 +3390,7 @@ INKSetGateway(INKString gateway_ip)
 inkapi INKError
 INKSetDNSServers(INKString dns_ips)
 {
+  NOWARN_UNUSED(dns_ips);
   //Nothing to be done for now
   return INK_ERR_OKAY;
 
@@ -3389,6 +3400,13 @@ inkapi INKError
 INKSetNICUp(INKString nic_name, bool static_ip, INKString ip, INKString old_ip, INKString netmask, bool onboot,
             INKString gateway_ip)
 {
+  NOWARN_UNUSED(nic_name);
+  NOWARN_UNUSED(static_ip);
+  NOWARN_UNUSED(ip);
+  NOWARN_UNUSED(old_ip);
+  NOWARN_UNUSED(netmask);
+  NOWARN_UNUSED(onboot);
+  NOWARN_UNUSED(gateway_ip);
   /* there is no ipnat conf file anymore,
      commenting out the rest of this function */
   return INK_ERR_READ_FILE;
@@ -3482,6 +3500,7 @@ INKSetNICUp(INKString nic_name, bool static_ip, INKString ip, INKString old_ip, 
 inkapi INKError
 INKSetProxyPort(INKString proxy_port)
 {
+  NOWARN_UNUSED(proxy_port);
   /* there is no ipnat.conf file anymore,
      commenting out the rest of this function */
   return INK_ERR_READ_FILE;
@@ -3537,6 +3556,8 @@ INKSetProxyPort(INKString proxy_port)
 inkapi INKError
 INKSetNICDown(INKString nic_name, INKString ip_addrr)
 {
+  NOWARN_UNUSED(nic_name);
+  NOWARN_UNUSED(ip_addrr);
   /* there is no ipnat.conf file anymore,
      commenting out the rest of this function */
   return INK_ERR_READ_FILE;
@@ -3603,6 +3624,7 @@ INKSetNICDown(INKString nic_name, INKString ip_addrr)
 inkapi INKError
 INKSetSearchDomain(const char *search_name)
 {
+  NOWARN_UNUSED(search_name);
   //Nothing to be done for now
   return INK_ERR_OKAY;
 }
@@ -3712,6 +3734,7 @@ Lerror:
 inkapi INKError
 INKSetPNA_RDT_Port(const int port)
 {
+  NOWARN_UNUSED(port);
   /* there is no ipnat conf file anymore,
      commenting out the rest of this function */
   return INK_ERR_READ_FILE;

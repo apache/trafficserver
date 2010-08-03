@@ -420,11 +420,10 @@ Cmd_ConfigWrite(ClientData clientData, Tcl_Interp * interp, int argc, const char
      } */
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
   Cli_Debug("Cmd_ConfigWrite argc %d\n", argc);
 
   if (CIFCWriteEntry::ConfigWriteCheckIFCEnv() == INK_ERR_READ_FILE) {

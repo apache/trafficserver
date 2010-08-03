@@ -40,13 +40,13 @@ bool StatDebug = false;         // global debug flag
  * StatExprToken()
  * ---------------
  */
-StatExprToken::StatExprToken():
-m_arith_symbol('\0'),
-m_token_name(NULL),
-m_token_type((StatDataT)RECD_NULL),
-m_token_value(0.0),
-m_token_value_max(FLT_MAX),
-m_token_value_min(-1 * FLT_MAX), m_token_value_delta(NULL), m_sum_var(false), m_node_var(true)
+StatExprToken::StatExprToken()
+  : m_arith_symbol('\0'),
+    m_token_name(NULL),
+    m_token_type((StatDataT)RECD_NULL),
+    m_token_value(0.0),
+    m_token_value_max(FLT_MAX),
+    m_token_value_min(-1 * FLT_MAX), m_token_value_delta(NULL), m_sum_var(false), m_node_var(true)
 {
 }
 
@@ -58,7 +58,6 @@ m_token_value_min(-1 * FLT_MAX), m_token_value_delta(NULL), m_sum_var(false), m_
 void
 StatExprToken::copy(const StatExprToken & source)
 {
-
   m_arith_symbol = source.m_arith_symbol;
 
   if (source.m_token_name != NULL) {
@@ -80,7 +79,6 @@ StatExprToken::copy(const StatExprToken & source)
 
   m_node_var = source.m_node_var;
   m_sum_var = source.m_sum_var;
-
 }
 
 
@@ -107,9 +105,7 @@ StatExprToken::assignTokenName(const char *name)
   }
 
   switch (m_token_type) {
-
   case STAT_INT:
-
     if (StatDebug) {
       StatInt tempInt;
       if (!varIntFromName(m_token_name, &tempInt)) {
@@ -120,7 +116,6 @@ StatExprToken::assignTokenName(const char *name)
     break;
 
   case STAT_FLOAT:
-
     if (StatDebug) {
       StatFloat tempFloat;
       if (!varFloatFromName(m_token_name, &tempFloat)) {
@@ -131,36 +126,21 @@ StatExprToken::assignTokenName(const char *name)
     break;
 
   case STAT_CONST:
-
     // assign pre-defined constant in here
     if (!strcmp(m_token_name, "CONSTANT")) {
-
       m_token_value = (StatFloat) atof(name);
-
     } else if (!strcmp(m_token_name, "$BYTES_TO_MB_SCALE")) {
-
       m_token_value = (StatFloat) BYTES_TO_MB_SCALE;
-
     } else if (!strcmp(m_token_name, "$MBIT_TO_KBIT_SCALE")) {
-
       m_token_value = (StatFloat) MBIT_TO_KBIT_SCALE;
-
     } else if (!strcmp(m_token_name, "$SECOND_TO_MILLISECOND_SCALE")) {
-
       m_token_value = (StatFloat) SECOND_TO_MILLISECOND_SCALE;
-
     } else if (!strcmp(m_token_name, "$PCT_TO_INTPCT_SCALE")) {
-
       m_token_value = (StatFloat) PCT_TO_INTPCT_SCALE;
-
     } else if (!strcmp(m_token_name, "$HRTIME_SECOND")) {
-
       m_token_value = (StatFloat) HRTIME_SECOND;
-
     } else if (!strcmp(m_token_name, "$BYTES_TO_MBIT_SCALE")) {
-
       m_token_value = (StatFloat) BYTES_TO_MBIT_SCALE;
-
     } else {
       mgmt_log(stderr, "[StatPro] ERROR: Undefined constant: %s\n", m_token_name);
       StatError = true;
@@ -172,7 +152,6 @@ StatExprToken::assignTokenName(const char *name)
     break;
 
   case STAT_FX:
-
     if (StatDebug) {
       Debug(MODULE_INIT, "\tfunction: %s, type: %d\n", m_token_name, m_token_type);
     }
@@ -186,7 +165,6 @@ StatExprToken::assignTokenName(const char *name)
      */
     break;
   }
-
 }
 
 
@@ -199,7 +177,6 @@ StatExprToken::assignTokenName(const char *name)
  */
 bool StatExprToken::assignTokenType()
 {
-
   ink_debug_assert(m_token_name != NULL);
   m_token_type = (StatDataT)varType(m_token_name);
 
@@ -221,7 +198,6 @@ bool StatExprToken::assignTokenType()
 void
 StatExprToken::clean()
 {
-
   if (m_token_name != NULL) {
     xfree(m_token_name);
   }
@@ -229,7 +205,6 @@ StatExprToken::clean()
   if (m_token_value_delta != NULL) {
     delete(m_token_value_delta);
   }
-
 }
 
 
@@ -240,13 +215,11 @@ StatExprToken::clean()
 void
 StatExprToken::print(const char *prefix)
 {
-
   if (m_token_name != NULL) {
     printf("%s\t%s\n", prefix, m_token_name);
   } else {
     printf("%s\t%c\n", prefix, m_arith_symbol);
   }
-
 }
 
 
@@ -259,7 +232,6 @@ StatExprToken::print(const char *prefix)
 short
 StatExprToken::precedence()
 {
-
   switch (m_arith_symbol) {
   case '(':
     return 4;
@@ -275,7 +247,6 @@ StatExprToken::precedence()
   default:
     return -1;
   }
-
 }
 
 
@@ -289,7 +260,6 @@ StatExprToken::precedence()
  */
 bool StatExprToken::statVarSet(StatFloat value)
 {
-
   if (StatError) {
     /* fix this after librecords is done
        mgmt_log(stderr,
@@ -313,7 +283,6 @@ bool StatExprToken::statVarSet(StatFloat value)
   }
 
   return varSetFloat(m_token_name, value, true);
-
 }
 
 
@@ -325,7 +294,8 @@ bool StatExprToken::statVarSet(StatFloat value)
  * StatExprList::StatExprList()
  * ----------------------------
  */
-StatExprList::StatExprList():m_size(0)
+StatExprList::StatExprList()
+ : m_size(0)
 {
 }
 
@@ -337,98 +307,83 @@ StatExprList::StatExprList():m_size(0)
 void
 StatExprList::clean()
 {
-
   StatExprToken *temp = NULL;
+
   while ((temp = m_tokenList.dequeue())) {
     delete(temp);
     m_size -= 1;
   }
   ink_assert(m_size == 0);
-
 }
 
 
 void
 StatExprList::enqueue(StatExprToken * entry)
 {
-
   ink_assert(entry);
   m_tokenList.enqueue(entry);
   m_size += 1;
-
 }
 
 
 void
 StatExprList::push(StatExprToken * entry)
 {
-
   ink_assert(entry);
   m_tokenList.push(entry);
   m_size += 1;
-
 }
 
 
 StatExprToken *
 StatExprList::dequeue()
 {
-
   if (m_size == 0) {
     return NULL;
   }
   m_size -= 1;
   return (StatExprToken *) m_tokenList.dequeue();
-
 }
 
 
 StatExprToken *
 StatExprList::pop()
 {
-
   if (m_size == 0) {
     return NULL;
   }
   m_size -= 1;
   return m_tokenList.pop();
-
 }
 
 
 StatExprToken *
 StatExprList::top()
 {
-
   if (m_size == 0) {
     return NULL;
   }
   return m_tokenList.head;
-
 }
 
 
 StatExprToken *
 StatExprList::first()
 {
-
   if (m_size == 0) {
     return NULL;
   }
   return m_tokenList.head;
-
 }
 
 
 StatExprToken *
 StatExprList::next(StatExprToken * current)
 {
-
   if (!current) {
     return NULL;
   }
   return (current->link).next;
-
 }
 
 
@@ -440,11 +395,9 @@ StatExprList::next(StatExprToken * current)
 void
 StatExprList::print(const char *prefix)
 {
-
   for (StatExprToken * token = first(); token; token = next(token)) {
     token->print(prefix);
   }
-
 }
 
 
@@ -456,9 +409,7 @@ StatExprList::print(const char *prefix)
 unsigned
 StatExprList::count()
 {
-
   return m_size;
-
 }
 
 
@@ -472,30 +423,30 @@ StatExprList::count()
  * ------------------------
  */
 
-StatObject::StatObject():
-m_id(1),
-m_debug(false),
-m_expr_string(NULL),
-m_node_dest(NULL),
-m_cluster_dest(NULL),
-m_expression(NULL),
-m_postfix(NULL),
-m_last_update(-1),
-m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(-1 * FLT_MAX), m_has_delta(false)
+StatObject::StatObject()
+ : m_id(1),
+   m_debug(false),
+   m_expr_string(NULL),
+   m_node_dest(NULL),
+   m_cluster_dest(NULL),
+   m_expression(NULL),
+   m_postfix(NULL),
+   m_last_update(-1),
+   m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(-1 * FLT_MAX), m_has_delta(false)
 {
 }
 
 
-StatObject::StatObject(unsigned identifier):
-m_id(identifier),
-m_debug(false),
-m_expr_string(NULL),
-m_node_dest(NULL),
-m_cluster_dest(NULL),
-m_expression(NULL),
-m_postfix(NULL),
-m_last_update(-1),
-m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(-1 * FLT_MAX), m_has_delta(false)
+StatObject::StatObject(unsigned identifier)
+  : m_id(identifier),
+    m_debug(false),
+    m_expr_string(NULL),
+    m_node_dest(NULL),
+    m_cluster_dest(NULL),
+    m_expression(NULL),
+    m_postfix(NULL),
+    m_last_update(-1),
+    m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(-1 * FLT_MAX), m_has_delta(false)
 {
 }
 
@@ -507,7 +458,6 @@ m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(-1 
 void
 StatObject::clean()
 {
-
   if (m_expr_string) {
     xfree(m_expr_string);
   }
@@ -520,7 +470,6 @@ StatObject::clean()
   if (m_postfix) {
     delete m_postfix;
   }
-
 }
 
 
@@ -531,7 +480,6 @@ StatObject::clean()
 void
 StatObject::assignDst(const char *str, bool m_node_var, bool m_sum_var)
 {
-
   if (StatDebug) {
     Debug(MODULE_INIT, "DESTINTATION: %s\n", str);
   }
@@ -549,7 +497,6 @@ StatObject::assignDst(const char *str, bool m_node_var, bool m_sum_var)
     ink_assert(m_cluster_dest == NULL);
     m_cluster_dest = statToken;
   }
-
 }
 
 
@@ -634,31 +581,24 @@ StatObject::assignExpr(const char *str)
 void
 StatObject::infix2postfix()
 {
-
   StatExprList stack;
   StatExprToken *tempToken = NULL;
   StatExprToken *curToken = NULL;
   m_postfix = NEW(new StatExprList());
 
   while (m_expression->top()) {
-
     curToken = m_expression->dequeue();
 
     if (!isOperator(curToken->m_arith_symbol)) {
-
       //printf("I2P~: enqueue %s\n", curToken->m_token_name);
       m_postfix->enqueue(curToken);
 
     } else {
-
       ink_debug_assert(curToken->m_arith_symbol != '\0');
 
       if (curToken->m_arith_symbol == '(') {
-
         stack.push(curToken);
-
       } else if (curToken->m_arith_symbol == ')') {
-
         tempToken = (StatExprToken *) stack.pop();
 
         while (tempToken->m_arith_symbol != '(') {
@@ -672,13 +612,9 @@ StatObject::infix2postfix()
         delete(tempToken);
 
       } else {
-
         if (stack.count() == 0) {
-
           stack.push(curToken);
-
         } else {
-
           tempToken = (StatExprToken *) stack.top();
 
           while ((tempToken->m_arith_symbol != '(') && (tempToken->precedence() >= curToken->precedence())) {
@@ -688,24 +624,19 @@ StatObject::infix2postfix()
             if (stack.count() == 0) {
               break;
             }
-
             tempToken = (StatExprToken *) stack.top();
-
           }                     // while
 
           stack.push(curToken);
-
         }
       }
     }
   }
 
   while (stack.count() > 0) {
-
     tempToken = (StatExprToken *) stack.pop();
     //printf("I2P?: enqueue %c\n", tempToken->m_arith_symbol);
     m_postfix->enqueue(tempToken);
-
   }
 
   // dump infix expression
@@ -722,27 +653,15 @@ StatObject::infix2postfix()
  */
 StatFloat StatObject::NodeStatEval(bool cluster)
 {
-
-  StatExprList
-    stack;
-  StatExprToken *
-    left = NULL;
-  StatExprToken *
-    right = NULL;
-  StatExprToken *
-    result = NULL;
-  StatExprToken *
-    curToken = NULL;
-  StatExprToken *
-    dest = NULL;
-  StatFloat
-    tempValue = ERROR_VALUE;
-
-  dest = (cluster ? m_cluster_dest : m_node_dest);
+  StatExprList stack;
+  StatExprToken *left = NULL;
+  StatExprToken *right = NULL;
+  StatExprToken *result = NULL;
+  StatExprToken *curToken = NULL;
+  StatFloat tempValue = ERROR_VALUE;
 
   /* Express checkout lane -- Stat. object with on 1 source variable */
   if (m_postfix->count() == 1) {
-
     StatExprToken *
       src = m_postfix->top();
 
@@ -753,21 +672,14 @@ StatFloat StatObject::NodeStatEval(bool cluster)
     }
 
     if (src->m_token_type == STAT_CONST) {
-
       tempValue = src->m_token_value;
-
     } else if (src->m_token_value_delta) {
-
       tempValue = src->m_token_value_delta->diff_value();;
-
     } else if (!cluster) {
-
       if (!varFloatFromName(src->m_token_name, &tempValue)) {
         tempValue = (RecFloat) ERROR_VALUE;
       }
-
     } else {
-
       if (!overviewGenerator->varClusterFloatFromName(src->m_token_name, &tempValue)) {
         tempValue = (RecFloat) ERROR_VALUE;
       }
@@ -776,22 +688,17 @@ StatFloat StatObject::NodeStatEval(bool cluster)
     if (StatDebug) {
       Debug(MODULE, "\tExpress checkout : %s:%f\n", src->m_token_name, tempValue);
     }
-
   } else {
 
     /* standard postfix evaluation */
     for (StatExprToken * token = m_postfix->first(); token; token = m_postfix->next(token)) {
-
       /* carbon-copy the token. */
       curToken = NEW(new StatExprToken());
       curToken->copy(*token);
 
       if (!isOperator(curToken->m_arith_symbol)) {
-
         stack.push(curToken);
-
       } else {
-
         ink_debug_assert(isOperator(curToken->m_arith_symbol));
         right = stack.pop();
         left = stack.pop();
@@ -809,9 +716,7 @@ StatFloat StatObject::NodeStatEval(bool cluster)
         delete(curToken);
         delete(left);
         delete(right);
-
       }
-
     }
 
     /* should only be 1 value left on stack -- the resulting value */
@@ -821,7 +726,6 @@ StatFloat StatObject::NodeStatEval(bool cluster)
     }
 
     tempValue = stack.top()->m_token_value;
-
   }
 
   return (tempValue);
@@ -837,20 +741,15 @@ StatFloat StatObject::NodeStatEval(bool cluster)
  */
 StatFloat StatObject::ClusterStatEval()
 {
-
-  StatFloat
-    tempValue = ERROR_VALUE;
+  StatFloat tempValue = ERROR_VALUE;
 
   /* Sanity check */
   ink_debug_assert(m_cluster_dest && !m_cluster_dest->m_node_var);
 
   // what is this?
   if ((m_node_dest == NULL) || (m_cluster_dest->m_sum_var == false)) {
-
     return NodeStatEval(true);
-
   } else {
-
     if (!overviewGenerator->varClusterFloatFromName(m_node_dest->m_token_name, &tempValue)) {
       tempValue = (RecFloat) ERROR_VALUE;
     }
@@ -858,9 +757,7 @@ StatFloat StatObject::ClusterStatEval()
       Debug(MODULE, "Exp. chkout write: %s:%f\n", m_node_dest->m_token_name, tempValue);
     }
     return (tempValue);
-
   }
-
 }
 
 
@@ -885,18 +782,14 @@ StatFloat StatObject::ClusterStatEval()
 void
 StatObject::setTokenValue(StatExprToken * token, bool cluster)
 {
-
   if (token->m_token_name) {
-
     // it is NOT an intermediate value
 
     switch (token->m_token_type) {
-
     case STAT_CONST:
       break;
 
     case STAT_FX:
-
       // only support time function
       token->m_token_value = (StatFloat) (m_current_time - m_last_update);
       if (StatDebug) {
@@ -907,17 +800,12 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
 
     case STAT_INT:             // fallthought
     case STAT_FLOAT:
-
       if (cluster) {
-
         if (!overviewGenerator->varClusterFloatFromName(token->m_token_name, &(token->m_token_value))) {
           token->m_token_value = (RecFloat) ERROR_VALUE;
         }
-
       } else {
-
         if (token->m_token_value_delta) {
-
           token->m_token_value = token->m_token_value_delta->diff_value();
 
           if (StatDebug) {
@@ -925,28 +813,20 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
                   token->m_token_value_delta->previous_value,
                   token->m_token_value_delta->current_value, token->m_token_value);
           }
-
         } else {
-
           if (!varFloatFromName(token->m_token_name, &(token->m_token_value))) {
             token->m_token_value = (RecFloat) ERROR_VALUE;
           }
-
         }                       // delta?
-
       }                         // cluster?
       break;
 
     default:
-
       if (StatDebug) {
         Debug(MODULE, "Unrecognized token \"%s\" of type %d.\n", token->m_token_name, token->m_token_type);
       }
-
     }                           // switch
-
   }                             // m_token_name?
-
 }
 
 
@@ -962,10 +842,8 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
  * - (4) an immediate value
  */
 
-StatExprToken *
-StatObject::StatBinaryEval(StatExprToken * left, char op, StatExprToken * right, bool cluster)
+StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op, StatExprToken * right, bool cluster)
 {
-
   StatExprToken *result = NEW(new StatExprToken());
   result->m_token_type = STAT_FLOAT;
 
@@ -974,33 +852,26 @@ StatObject::StatBinaryEval(StatExprToken * left, char op, StatExprToken * right,
 
   switch (op) {
   case '+':
-
     result->m_token_value = (StatFloat) (left->m_token_value + right->m_token_value);
     break;
 
   case '-':
-
     result->m_token_value = (StatFloat) (left->m_token_value - right->m_token_value);
     break;
 
   case '*':
-
     result->m_token_value = (StatFloat) (left->m_token_value * right->m_token_value);
     break;
 
   case '/':
-
     result->m_token_value = (StatFloat) ((right->m_token_value == 0) ?
                                          0.0 : (left->m_token_value / right->m_token_value));
     break;
 
   default:
-
     // should never reach here
     StatError = true;
-
   }
-
 
   if (StatDebug) {
     Debug(MODULE, "%s(%f) %c %s(%f) = %f\n",
@@ -1010,7 +881,6 @@ StatObject::StatBinaryEval(StatExprToken * left, char op, StatExprToken * right,
   }
 
   return (result);
-
 }
 
 
@@ -1018,7 +888,8 @@ StatObject::StatBinaryEval(StatExprToken * left, char op, StatExprToken * right,
  					    	   StatObjectList
  **********************************************************************/
 
-StatObjectList::StatObjectList():m_size(0)
+StatObjectList::StatObjectList()
+ : m_size(0)
 {
 }
 
@@ -1026,7 +897,6 @@ StatObjectList::StatObjectList():m_size(0)
 void
 StatObjectList::clean()
 {
-
   StatObject *temp = NULL;
 
   while ((temp = m_statList.dequeue())) {
@@ -1035,21 +905,17 @@ StatObjectList::clean()
   }
 
   ink_assert(m_size == 0);
-
 }
 
 
 void
 StatObjectList::enqueue(StatObject * object)
 {
-
   for (StatExprToken * token = object->m_postfix->first(); token; token = object->m_postfix->next(token)) {
-
     if (token->m_token_value_delta) {
       object->m_has_delta = true;
       break;
     }
-
   }
 
   if (object->m_node_dest) {
@@ -1064,25 +930,20 @@ StatObjectList::enqueue(StatObject * object)
 
   m_statList.enqueue(object);
   m_size += 1;
-
 }
 
 
 StatObject *
 StatObjectList::first()
 {
-
   return m_statList.head;
-
 }
 
 
 StatObject *
 StatObjectList::next(StatObject * current)
 {
-
   return (current->link).next;
-
 }
 
 
@@ -1094,7 +955,6 @@ StatObjectList::next(StatObject * current)
 short
 StatObjectList::Eval()
 {
-
   StatFloat tempValue = ERROR_VALUE;
   StatFloat result = ERROR_VALUE;
   ink_hrtime threshold = 0;
@@ -1102,7 +962,6 @@ StatObjectList::Eval()
   short count = 0;
 
   for (StatObject * object = first(); object; object = next(object)) {
-
     StatError = false;
     StatDebug = object->m_debug;
 
@@ -1111,9 +970,7 @@ StatObjectList::Eval()
     }
 
     if (object->m_update_interval <= 0) {
-
       // non-time statistics
-
       object->m_current_time = ink_get_hrtime();
 
       result = ERROR_VALUE;
@@ -1135,11 +992,8 @@ StatObjectList::Eval()
       }
 
       object->m_last_update = object->m_current_time;
-
     } else {
-
       // timed statisitics
-
       object->m_current_time = ink_get_hrtime();
 
       threshold = object->m_update_interval * HRTIME_SECOND;
@@ -1191,19 +1045,14 @@ StatObjectList::Eval()
           }
 
           object->m_last_update = object->m_current_time;
-
         } else {
-
           /* has delta */
-
           if (StatDebug) {
             Debug(MODULE, "\tEVAL: Complicated time-condition.\n");
           }
           // scroll old values
           for (StatExprToken * token = object->m_postfix->first(); token; token = object->m_expression->next(token)) {
-
             if (token->m_token_value_delta) {
-
               if (!varFloatFromName(token->m_token_name, &tempValue)) {
                 tempValue = (RecFloat) ERROR_VALUE;
               }
@@ -1216,7 +1065,6 @@ StatObjectList::Eval()
           }
 
           if (delta > threshold) {
-
             result = ERROR_VALUE;
             if (object->m_node_dest) {
               result = object->NodeStatEval(false);
@@ -1236,33 +1084,22 @@ StatObjectList::Eval()
             }
 
             object->m_last_update = object->m_current_time;
-
           } else {
-
             if (StatDebug) {
               Debug(MODULE, "\tEVAL: Timer not expired, do nothing\n");
             }
-
           }
-
         }                       /* delta? */
-
       } else {
-
         if (StatDebug) {
           Debug(MODULE, "\tEVAL: Timer not expired, nor 1st time, nor wrapped, SORRY!\n");
         }
-
       }                         /* timed event */
-
     }
-
     count += 1;
-
   }                             /* for */
 
   return count;
-
 }                               /* Eval() */
 
 
@@ -1274,9 +1111,7 @@ StatObjectList::Eval()
 void
 StatObjectList::print(const char *prefix)
 {
-
   for (StatObject * object = first(); object; object = next(object)) {
-
     if (StatDebug) {
       Debug(MODULE, "\n%sSTAT OBJECT#: %d\n", prefix, object->m_id);
     }
@@ -1288,7 +1123,5 @@ StatObjectList::print(const char *prefix)
     if (object->m_postfix) {
       object->m_postfix->print("\t");
     }
-
   }
-
 }

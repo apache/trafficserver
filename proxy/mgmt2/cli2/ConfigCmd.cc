@@ -218,6 +218,7 @@ CmdArgs_Enable()
 int
 Cmd_Disable(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
+  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -253,6 +254,7 @@ Cmd_Disable(ClientData clientData, Tcl_Interp * interp, int argc, const char *ar
 int
 Cmd_Config(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
+  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
@@ -340,11 +342,8 @@ Cmd_ConfigGet(ClientData clientData, Tcl_Interp * interp, int argc, const char *
     return CMD_ERROR;
   }
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   Cli_Debug("Cmd_ConfigGet argc %d\n", argc);
 
@@ -383,11 +382,8 @@ Cmd_ConfigSet(ClientData clientData, Tcl_Interp * interp, int argc, const char *
     return CMD_ERROR;
   }
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   Cli_Debug("Cmd_ConfigSet argc %d\n", argc);
 
@@ -426,11 +422,8 @@ Cmd_ConfigName(ClientData clientData, Tcl_Interp * interp, int argc, const char 
     return CMD_ERROR;
   }
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   Cli_Debug("Cmd_ConfigName argc %d\n", argc);
 
@@ -470,11 +463,8 @@ Cmd_ConfigStart(ClientData clientData, Tcl_Interp * interp, int argc, const char
   }
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   Cli_Debug("Cmd_ConfigStart argc %d\n", argc);
 
@@ -513,11 +503,8 @@ Cmd_ConfigStop(ClientData clientData, Tcl_Interp * interp, int argc, const char 
   }
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
   Cli_Debug("Cmd_ConfigStop argc %d\n", argc);
 
   if (argc == 1) {
@@ -555,11 +542,8 @@ Cmd_ConfigHardRestart(ClientData clientData, Tcl_Interp * interp, int argc, cons
   }
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
   Cli_Debug("Cmd_ConfigHardRestart argc %d\n", argc);
 
   if (argc == 1) {
@@ -597,11 +581,10 @@ Cmd_ConfigRestart(ClientData clientData, Tcl_Interp * interp, int argc, const ch
   }
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
   Cli_Debug("Cmd_ConfigRestart argc %d\n", argc);
 
   if (argc == 1) {
@@ -657,11 +640,8 @@ Cmd_ConfigFilter(ClientData clientData, Tcl_Interp * interp, int argc, const cha
     return CMD_ERROR;
   }
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   Cli_Debug("Cmd_ConfigFilter argc %d\n", argc);
 
@@ -777,12 +757,8 @@ Cmd_ConfigRemap(ClientData clientData, Tcl_Interp * interp, int argc, const char
     return CMD_ERROR;
   }
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
-
   Cli_Debug("Cmd_ConfigRemap argc %d\n", argc);
 
   if (argc == 2) {
@@ -824,12 +800,10 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
   Cli_Debug("Cmd_ConfigPorts argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
-
 
   Cli_Debug("Cmd_ConfigPorts argc %d\n", argc);
 
@@ -920,11 +894,10 @@ Cmd_ConfigSnmp(ClientData clientData, Tcl_Interp * interp, int argc, const char 
   Cli_Debug("Cmd_ConfigSnmp argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   if (argtable->parsed_args != CLI_PARSED_ARGV_END) {
     if (argtable->parsed_args == CMD_CONFIG_SNMP_STATUS) {
@@ -978,11 +951,10 @@ Cmd_ConfigLdap(ClientData clientData, Tcl_Interp * interp, int argc, const char 
   Cli_Debug("Cmd_ConfigLdap argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   int action = (argc == 3) ? RECORD_SET : RECORD_GET;
 
@@ -1081,11 +1053,10 @@ Cmd_ConfigClock(ClientData clientData, Tcl_Interp * interp, int argc, const char
   Cli_Debug("Cmd_ConfigClock argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   Cli_PrintArg(0, argtable);
   Cli_PrintArg(1, argtable);
@@ -1166,11 +1137,10 @@ Cmd_ConfigSecurity(ClientData clientData, Tcl_Interp * interp, int argc, const c
 
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   if (argtable[0].parsed_args != CLI_PARSED_ARGV_END) {
     switch (argtable[0].parsed_args) {
@@ -1243,11 +1213,10 @@ Cmd_ConfigHttp(ClientData clientData, Tcl_Interp * interp, int argc, const char 
   Cli_Debug("Cmd_ConfigHttp argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   if (argc == 3) {
     setvar = 1;
@@ -1408,11 +1377,10 @@ Cmd_ConfigIcp(ClientData clientData, Tcl_Interp * interp, int argc, const char *
   Cli_Debug("Cmd_ConfigIcp argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   int action = (argc == 3) ? RECORD_SET : RECORD_GET;
 
@@ -1657,11 +1625,10 @@ Cmd_ConfigSocks(ClientData clientData, Tcl_Interp * interp, int argc, const char
   }
   Cli_Debug("Cmd_ConfigSocks argc %d\n", argc);
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   int action = (argc == 3) ? RECORD_SET : RECORD_GET;
 
@@ -1744,12 +1711,10 @@ Cmd_ConfigCache(ClientData clientData, Tcl_Interp * interp, int argc, const char
   Cli_Debug("Cmd_ConfigCache argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
-
 
   int action = 0;
 
@@ -1964,11 +1929,10 @@ Cmd_ConfigHostdb(ClientData clientData, Tcl_Interp * interp, int argc, const cha
   Cli_Debug("Cmd_ConfigHostdb argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   int action = (argc == 3) ? RECORD_SET : RECORD_GET;
 
@@ -2050,11 +2014,10 @@ Cmd_ConfigDns(ClientData clientData, Tcl_Interp * interp, int argc, const char *
   Cli_Debug("Cmd_ConfigDns argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   int action = (argc == 3) ? RECORD_SET : RECORD_GET;
 
@@ -2127,11 +2090,10 @@ Cmd_ConfigVirtualip(ClientData clientData, Tcl_Interp * interp, int argc, const 
   Cli_Debug("Cmd_ConfigCache argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   int setvar = 0;
 
@@ -2231,11 +2193,10 @@ Cmd_ConfigLogging(ClientData clientData, Tcl_Interp * interp, int argc, const ch
   Cli_Debug("Cmd_ConfigCache argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   int setvar = 0;
 
@@ -2479,11 +2440,10 @@ Cmd_ConfigSsl(ClientData clientData, Tcl_Interp * interp, int argc, const char *
   Cli_Debug("Cmd_ConfigSsl argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   int action = (argc == 3) ? RECORD_SET : RECORD_GET;
 
@@ -2549,11 +2509,10 @@ Cmd_ConfigAlarm(ClientData clientData, Tcl_Interp * interp, int argc, const char
   Cli_Debug("Cmd_ConfigAlarm argc %d\n", argc);
 
   cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable, *infoPtr;
+  cli_parsedArgInfo *argtable;
 
   cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
   argtable = cmdCallbackInfo->parsedArgTable;
-  infoPtr = argtable;
 
   if (argtable->parsed_args != CLI_PARSED_ARGV_END) {
     switch (argtable->parsed_args) {
@@ -4561,6 +4520,7 @@ setnameserver(char *nameserver)
 int
 setrouter(char *router, int len)
 {
+  NOWARN_UNUSED(len);
   FILE *fstr;
   if ((fstr = fopen(DEFAULTROUTER_PATH, "wb")) == NULL) {
     return -1;

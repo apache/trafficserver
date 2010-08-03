@@ -471,7 +471,6 @@ httpResponse::writeHdr(SocketInfo socketD)
   const char authStr[] = "WWW-Authenticate: Basic realm=\"";
   const char dateStr[] = "Date: ";
   const char lastModStr[] = "Last-modified: ";
-  const char expiresStr[] = "Expires: ";
   const char locationStr[] = "Location: ";
   const char refreshURLStr[] = "; URL=";
   time_t currentTime;
@@ -479,9 +478,6 @@ httpResponse::writeHdr(SocketInfo socketD)
   char buffer[bufSize];
   char *reply;
   int bytesWritten;
-
-  NOWARN_UNUSED(expiresStr);
-
   textBuffer hdr(4096);
 
   hdr.copyFrom(versionStr, strlen(versionStr));

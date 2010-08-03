@@ -220,6 +220,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
 int
 connectDirect(const char *host, int port, uint64 timeout)
 {
+  NOWARN_UNUSED(timeout);
 #ifdef _WIN32
   TimedIOStatus ret;
 #endif

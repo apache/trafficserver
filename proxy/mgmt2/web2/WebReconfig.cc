@@ -67,6 +67,9 @@ static int updateArray[UPDATE_ARRAY_SIZE];
 static int
 WebConfigCB(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
   long index = (long) cookie;
   updateArray[index] = 1;
   webConfigChanged = 1;
@@ -383,10 +386,10 @@ configAuthOtherUsers()
     }
     // check for duplicates
     if (ht->mgmt_hash_table_isbound(au->user)) {
-      WebHttpAuthUser *p = 0;
-      ht->mgmt_hash_table_lookup(au->user, (void **) &p);
-      if (p) {
-        xfree(p);
+      WebHttpAuthUser *ptr = 0;
+      ht->mgmt_hash_table_lookup(au->user, (void **) &ptr);
+      if (ptr) {
+        xfree(ptr);
       }
       ht->mgmt_hash_table_delete(au->user);
       snprintf(error_msg, sizeof(error_msg), "Duplicate users defined, disabling user '%s'", au->user);
@@ -425,7 +428,6 @@ configLangDict()
   char fpath[FILE_NAME_MAX];
   char *fbuf;
   char *file_buf;
-  int fsize;
   int file_size;
   WebHttpContext whc;
   MgmtHashTable *ht;
@@ -462,7 +464,6 @@ configLangDict()
     return;
   }
   fbuf = whc.response_bdy->bufPtr();
-  fsize = whc.response_bdy->spaceUsed();
 
   // FIXME: by empting the current hash-table element at a time, and
   // then re-populating it later, we create a small window where
@@ -520,8 +521,6 @@ configRefreshRate()
 void
 configSSLenable()
 {
-  char *sslCertFile = NULL;
-  char *configDir = NULL;
   char *sslCertPath = NULL;
 
   RecInt sslEnabled;
@@ -580,9 +579,7 @@ SSL_FAILED:
   mgmt_elog(stderr, "[configSSLenable] %s\n", errMsg);
   lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, errMsg);
   adminContext.SSLenabled = -1;
-  xfree(sslCertFile);
   xfree(sslCertPath);
-  xfree(configDir);
 
   return;
 }

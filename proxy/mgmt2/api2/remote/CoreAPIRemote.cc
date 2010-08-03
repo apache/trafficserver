@@ -236,6 +236,7 @@ start_binary(const char *abs_bin_path)
 void
 terminate_signal(int sig)
 {
+  NOWARN_UNUSED(sig);
   //fprintf(stderr, "[terminate_signal] received SIGUSR1 signal\n");
   return;
 }
@@ -628,6 +629,8 @@ WriteFile(INKFileNameT file, char *text, int size, int version)
 INKError
 EventSignal(char *event_name, va_list ap)
 {
+  NOWARN_UNUSED(event_name);
+  NOWARN_UNUSED(ap);
   return INK_ERR_FAIL;
 }
 

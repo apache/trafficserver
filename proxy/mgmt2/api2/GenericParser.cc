@@ -78,6 +78,7 @@ Token::appendValue(const char *str)
 {
   char *str_copy = (char *) strtrim(str);
   static bool firstTime = true;
+
   if (value == NULL) {
     setValue(str_copy);
   } else {
@@ -116,6 +117,7 @@ TokenList::TokenList():length(0)
 TokenList::~TokenList()
 {
   Token *token = NULL;
+
   while ((token = dequeue())) {
     delete(token);
   }
@@ -140,9 +142,9 @@ TokenList::Print()
  *   driectly, the get/set member functions are used for data encapsulation.
  ***************************************************************************/
 
-Rule::Rule():
-tokenList(NULL),
-m_filetype(INK_FNAME_UNDEFINED), m_filename(NULL), m_ruleStr(NULL), m_comment(NULL), m_errorHint(NULL), m_lineNum(0)
+Rule::Rule()
+  : tokenList(NULL),
+    m_filetype(INK_FNAME_UNDEFINED), m_filename(NULL), m_ruleStr(NULL), m_comment(NULL), m_errorHint(NULL), m_lineNum(0)
 {
 }
 
@@ -306,6 +308,7 @@ Rule::arm_securityParse(char *rule)
 Token *
 Rule::bypassSubParse(char *rule, unsigned short minNumToken, unsigned short maxNumToken)
 {
+  NOWARN_UNUSED(maxNumToken);
   Tokenizer ruleTok(" \t");
   int numRuleTok = ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
@@ -339,6 +342,7 @@ Rule::bypassSubParse(char *rule, unsigned short minNumToken, unsigned short maxN
 TokenList *
 Rule::bypassParse(char *rule, unsigned short minNumToken, unsigned short maxNumToken)
 {
+  NOWARN_UNUSED(maxNumToken);
   Tokenizer ruleTok(" \t");
   int numRuleTok = ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
@@ -595,6 +599,7 @@ Rule::ipnatParse(char *rule)
 TokenList *
 Rule::logsParse(char *rule)
 {
+  NOWARN_UNUSED(rule);
   return NULL;
 }
 
@@ -624,6 +629,7 @@ Rule::log_hostsParse(char *rule)
 TokenList *
 Rule::logs_xmlParse(char *rule)
 {
+  NOWARN_UNUSED(rule);
   return NULL;
 }
 
@@ -1044,7 +1050,8 @@ bool Rule::inQuote(const char *str)
  *   continue parsing each rule.
  *   NOTE: a rule that spans more than one line would be a problem in here.
  ***************************************************************************/
-RuleList::RuleList():length(0), m_filename(NULL)
+RuleList::RuleList()
+ : length(0), m_filename(NULL)
 {
   m_filetype = INK_FNAME_UNDEFINED;
 }
@@ -1067,7 +1074,7 @@ RuleList::Print()
   for (Rule * rule = first(); rule; rule = next(rule)) {
     rule->Print();
   }
-  printf("length: %d\n", length);
+  printf("length: %u\n", length);
 }
 
 /*
@@ -1188,7 +1195,7 @@ RuleList::parse(char *fileBuf, INKFileNameT filetype)
     line = lineTok.iterNext(&lineTok_state);
   }
   //this->Print();
-};
+}
 
 
 /***************************************************************************

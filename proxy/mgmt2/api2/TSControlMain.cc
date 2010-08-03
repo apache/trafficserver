@@ -956,6 +956,8 @@ handle_snapshot_get_mlt(struct SocketInfo sock_info)
 void
 handle_diags(struct SocketInfo sock_info, char *req)
 {
+  NOWARN_UNUSED(sock_info);
+  NOWARN_UNUSED(req);
   INKError ret;
   INKDiagsT mode;
   char *diag_msg = NULL;

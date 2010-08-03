@@ -173,6 +173,7 @@ DestroyOptionHashTable(ClientData clientData, Tcl_Interp * interp)
     /* The hash table we are destroying */
     /* The interpreter we are destroying */
 {
+  NOWARN_UNUSED(interp);
   Tcl_HashTable *hashTablePtr = (Tcl_HashTable *) clientData;
   Tcl_HashSearch search;
   Tcl_HashEntry *hashEntryPtr;

@@ -448,6 +448,7 @@ socket_write_conn(int fd, const char *msg_buf, int bytes)
 void *
 socket_test_thread(void *arg)
 {
+  NOWARN_UNUSED(arg);
   // loop until client process dies
   while (1) {
     if (socket_test(main_socket_fd) <= 0) {

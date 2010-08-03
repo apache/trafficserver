@@ -65,7 +65,6 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
   int length, i;
   char curArg[256], buf[256];
   char *endPtr;
-  int command_done = 0;
   int got_required;
   cli_ArgvInfo *argTable = commandInfo->argtable;
   char **reqd_args = commandInfo->reqd_args;
@@ -80,7 +79,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
   /* I assume that the first thing will always start with - */
 
   if (argc == 1) {
-    int length = strlen(argv[1]);
+    length = strlen(argv[1]);
     if ((length >= 2) && ((strncmp(argv[1], "-help", length) == 0) || (strncmp(argv[1], "-h", length) == 0))) {
       PrintUsage(interp, commandInfo);
       return TCL_OK;
@@ -197,7 +196,6 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
             Tcl_AppendResult(interp, buf, (char *) NULL);
             return TCL_ERROR;
           }
-          command_done = 1;
           break;
         case CLI_ARGV_INT:
           if (argc <= 0) {
@@ -404,6 +402,7 @@ cliParseArgument(int argc, const char **argv, cli_CommandInfo * commandInfo)
 static void
 PrintUsage(Tcl_Interp * interp, cli_CommandInfo * commandInfo)
 {
+  NOWARN_UNUSED(interp);
   register cli_ArgvInfo *infoPtr;
   cli_ArgvInfo *argTable = commandInfo->argtable;
   int width, numSpaces;
