@@ -405,8 +405,13 @@ ink_ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
  *\li	The root is returned as "."
  *\li	All other domains are returned in non absolute form
  */
+#ifdef linux
 int
 ns_name_ntop(const u_char *src, char *dst, size_t dstsiz) __THROW
+#else
+int
+ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
+#endif
 {
 	const u_char *cp;
 	char *dn, *eom;

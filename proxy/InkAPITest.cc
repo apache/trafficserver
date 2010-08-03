@@ -96,7 +96,9 @@ SDK_RPRINT(RegressionTest * t, const char *api_name, const char *testcase_name, 
 //
 // Unit Test for API: INKTrafficServerVersionGet
 ////////////////////////////////////////////////
-REGRESSION_TEST(SDK_API_INKTrafficServerVersionGet) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKTrafficServerVersionGet) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   /* Assume the UT runs on TS5.0 and higher */
@@ -135,7 +137,9 @@ REGRESSION_TEST(SDK_API_INKTrafficServerVersionGet) (RegressionTest * test, int 
 // Unit Test for API: INKPluginDirGet
 //                    INKInstallDirGet
 ////////////////////////////////////////////////
-REGRESSION_TEST(SDK_API_INKPluginDirGet) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKPluginDirGet) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   const char *plugin_dir = INKPluginDirGet();
@@ -199,7 +203,9 @@ config_destroy_func(void *data)
   return;
 }
 
-REGRESSION_TEST(SDK_API_INKConfig) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKConfig) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
   ConfigData *config = (ConfigData *) INKmalloc(sizeof(ConfigData));
   config->a = "unit";
@@ -251,6 +257,7 @@ int *SDK_NetVConn_pstatus;
 int
 server_handler(INKCont contp, INKEvent event, void *data)
 {
+  NOWARN_UNUSED(data);
   if (event == INK_EVENT_VCONN_EOS)
     INKContDestroy(contp);
 
@@ -308,7 +315,9 @@ client_handler(INKCont contp, INKEvent event, void *data)
   return 1;
 }
 
-REGRESSION_TEST(SDK_API_INKNetVConn) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKNetVConn) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
   SDK_NetVConn_test = test;
   SDK_NetVConn_pstatus = pstatus;
@@ -721,7 +730,9 @@ cache_handler(INKCont contp, INKEvent event, void *data)
   return 1;
 }
 
-REGRESSION_TEST(SDK_API_INKCache) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKCache) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
   SDK_Cache_test = test;
   SDK_Cache_pstatus = pstatus;
@@ -806,6 +817,7 @@ REGRESSION_TEST(SDK_API_INKCache) (RegressionTest * test, int atype, int *pstatu
 
 REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatus)
 {
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   char write_file_name[PATH_NAME_MAX + 1];
@@ -820,7 +832,6 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
   char *ret_val;
   int error_counter = 0, read = 0, wrote = 0;
   off_t read_amount = 0;
-  const char *install_dir;
   char INPUT_TEXT_FILE[] = "plugin.config";
   char input_file_full_path[BUFSIZ];
 
@@ -831,7 +842,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
   //       returning the char[]
   //       Better check the dir itself.
   //
-  if ((install_dir = INKInstallDirGet()) == NULL) {
+  if (INKInstallDirGet() == NULL) {
     error_counter++;
     *pstatus = REGRESSION_TEST_FAILED;
     return;
@@ -1082,6 +1093,7 @@ static void *thread_create_handler(void *arg);
 static void *
 thread_create_handler(void *arg)
 {
+  NOWARN_UNUSED(arg);
   INKThread INKthread;
   //Fix me: do more useful work
   sleep(10);
@@ -1107,8 +1119,9 @@ thread_create_handler(void *arg)
 // Argument data passed to thread init functions
 //  cannot be allocated on the stack.
 
-REGRESSION_TEST(SDK_API_INKThread) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKThread) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
   SDK_Thread_test = test;
   SDK_Thread_pstatus = pstatus;
@@ -1153,6 +1166,7 @@ static void *pthread_start_func(void *arg);
 static void *
 pthread_start_func(void *arg)
 {
+  NOWARN_UNUSED(arg);
   INKThread temp_thread = 0;
 
   // INKThreadInit
@@ -1176,7 +1190,9 @@ pthread_start_func(void *arg)
   return NULL;
 }
 
-REGRESSION_TEST(SDK_API_INKThreadInit) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKThreadInit) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
   SDK_ThreadInit_test = test;
   SDK_ThreadInit_pstatus = pstatus;
@@ -1210,6 +1226,7 @@ static int *SDK_ActionCancel_pstatus;
 int
 action_cancel_handler(INKCont contp, INKEvent event, void *edata)
 {
+  NOWARN_UNUSED(edata);
   if (event == INK_EVENT_IMMEDIATE)     // called from schedule_imm OK
   {
     SDK_RPRINT(SDK_ActionCancel_test, "INKActionCancel", "TestCase1", TC_PASS, "ok");
@@ -1228,7 +1245,9 @@ action_cancel_handler(INKCont contp, INKEvent event, void *edata)
   return 0;
 }
 
-REGRESSION_TEST(SDK_API_INKActionCancel) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKActionCancel) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   SDK_ActionCancel_test = test;
@@ -1279,6 +1298,9 @@ static int *SDK_ContCreate_pstatus;
 int
 cont_handler(INKCont contp, INKEvent event, void *edata)
 {
+  NOWARN_UNUSED(contp);
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(edata);
   SDK_RPRINT(SDK_ContCreate_test, "INKContCreate", "TestCase1", TC_PASS, "ok");
   SDK_RPRINT(SDK_ContCreate_test, "INKContCall", "TestCase1", TC_PASS, "ok");
 
@@ -1288,7 +1310,9 @@ cont_handler(INKCont contp, INKEvent event, void *edata)
 }
 
 
-REGRESSION_TEST(SDK_API_INKContCreate) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKContCreate) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   // For asynchronous APIs, use static vars to store test and pstatus
@@ -1338,6 +1362,8 @@ typedef struct
 int
 cont_data_handler(INKCont contp, INKEvent event, void *edata)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(edata);
   MyData *my_data = (MyData *) INKContDataGet(contp);
 
   if (my_data->data1 == 1 && my_data->data2 == 2) {
@@ -1359,7 +1385,9 @@ cont_data_handler(INKCont contp, INKEvent event, void *edata)
 }
 
 
-REGRESSION_TEST(SDK_API_INKContDataGet) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKContDataGet) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   // For asynchronous APIs, use static vars to store test and pstatus
@@ -1385,8 +1413,9 @@ REGRESSION_TEST(SDK_API_INKContDataGet) (RegressionTest * test, int atype, int *
 // Unit Test for API: INKContMutexGet
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKContMutexGet) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKContMutexGet) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1429,7 +1458,7 @@ static int tc2_count = 0;
 int
 cont_schedule_handler(INKCont contp, INKEvent event, void *edata)
 {
-
+  NOWARN_UNUSED(edata);
   if (event == INK_EVENT_IMMEDIATE) {
     // Test Case 1
     SDK_RPRINT(SDK_ContSchedule_test, "INKContSchedule", "TestCase1", TC_PASS, "ok");
@@ -1475,7 +1504,9 @@ cont_schedule_handler(INKCont contp, INKEvent event, void *edata)
 //                    INKMutexUnLock
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKMutexCreate) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKMutexCreate) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1522,8 +1553,9 @@ REGRESSION_TEST(SDK_API_INKMutexCreate) (RegressionTest * test, int atype, int *
 //                    INKIOBufferWaterMarkSet
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKIOBufferCreate) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKIOBufferCreate) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1565,8 +1597,9 @@ REGRESSION_TEST(SDK_API_INKIOBufferCreate) (RegressionTest * test, int atype, in
 //                    INKIOBufferReaderAvail
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKIOBufferProduce) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKIOBufferProduce) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1600,8 +1633,9 @@ REGRESSION_TEST(SDK_API_INKIOBufferProduce) (RegressionTest * test, int atype, i
 // Unit Test for API: INKIOBufferReaderConsume
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKIOBufferReaderConsume) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKIOBufferReaderConsume) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1631,8 +1665,9 @@ REGRESSION_TEST(SDK_API_INKIOBufferReaderConsume) (RegressionTest * test, int at
 // Unit Test for API: INKIOBufferReaderClone
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKIOBufferReaderClone) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKIOBufferReaderClone) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1665,8 +1700,9 @@ REGRESSION_TEST(SDK_API_INKIOBufferReaderClone) (RegressionTest * test, int atyp
 //                    INKIOBufferReaderStart
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKIOBufferStart) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKIOBufferStart) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1697,8 +1733,9 @@ REGRESSION_TEST(SDK_API_INKIOBufferStart) (RegressionTest * test, int atype, int
 //                    INKIOBufferReaderCopy
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKIOBufferCopy) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKIOBufferCopy) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1736,8 +1773,9 @@ REGRESSION_TEST(SDK_API_INKIOBufferCopy) (RegressionTest * test, int atype, int 
 //                    INKIOBufferReaderCopy
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKIOBufferBlockReadAvail) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKIOBufferBlockReadAvail) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed_1 = false;
   bool test_passed_2 = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -1786,7 +1824,9 @@ REGRESSION_TEST(SDK_API_INKIOBufferBlockReadAvail) (RegressionTest * test, int a
 // Unit Test for API: INKIOBufferBlockNext
 //////////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKIOBufferBlockNext) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKIOBufferBlockNext) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1827,7 +1867,9 @@ REGRESSION_TEST(SDK_API_INKIOBufferBlockNext) (RegressionTest * test, int atype,
 //                    INKStatIntRead
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKStatIntSet) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKStatIntSet) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1856,7 +1898,9 @@ REGRESSION_TEST(SDK_API_INKStatIntSet) (RegressionTest * test, int atype, int *p
 // Unit Test for API: INKStatIntAddTo
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKStatIntAddTo) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKStatIntAddTo) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1886,7 +1930,9 @@ REGRESSION_TEST(SDK_API_INKStatIntAddTo) (RegressionTest * test, int atype, int 
 //                    INKStatFloatRead
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKStatFloatAddTo) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKStatFloatAddTo) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1914,7 +1960,9 @@ REGRESSION_TEST(SDK_API_INKStatFloatAddTo) (RegressionTest * test, int atype, in
 // Unit Test for API: INKStatFloatSet
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKStatFloatSet) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKStatFloatSet) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
@@ -1943,7 +1991,9 @@ REGRESSION_TEST(SDK_API_INKStatFloatSet) (RegressionTest * test, int atype, int 
 //                    INKStatDecrement
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKStatIncrement) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKStatIncrement) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   bool test_passed_int_increase = false;
   bool test_passed_int_decrease = false;
   bool test_passed_float_increase = false;
@@ -2016,7 +2066,9 @@ REGRESSION_TEST(SDK_API_INKStatIncrement) (RegressionTest * test, int atype, int
 //                    INKStatsCoupledUpdate
 ////////////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKStatCoupled) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKStatCoupled) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   /* Create global category and its stats */
@@ -2097,8 +2149,9 @@ REGRESSION_TEST(SDK_API_INKStatCoupled) (RegressionTest * test, int atype, int *
 }
 
 
-REGRESSION_TEST(SDK_API_INKContSchedule) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKContSchedule) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   // For asynchronous APIs, use static vars to store test and pstatus
@@ -2617,7 +2670,9 @@ mytest_handler(INKCont contp, INKEvent event, void *data)
 
 
 
-EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd) (RegressionTest * test, int atype, int *pstatus) {
+EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   INKCont cont = INKContCreate(mytest_handler, INKMutexCreate());
@@ -2777,7 +2832,9 @@ test_url_print(INKMBuffer bufp, INKMLoc hdr_loc)
   return output_string;
 }
 
-REGRESSION_TEST(SDK_API_INKUrl) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKUrl) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   INKMBuffer bufp1 = (INKMBuffer) INK_ERROR_PTR;
   INKMBuffer bufp2 = (INKMBuffer) INK_ERROR_PTR;
   INKMBuffer bufp3 = (INKMBuffer) INK_ERROR_PTR;
@@ -3292,8 +3349,9 @@ print_results:
 /**
  * If you change value of any constant in this function then reflect that change in variable expected_iobuf.
  */
-REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   INKMBuffer bufp1 = (INKMBuffer) INK_ERROR_PTR;
   INKMBuffer bufp2 = (INKMBuffer) INK_ERROR_PTR;
   INKMBuffer bufp3 = (INKMBuffer) INK_ERROR_PTR;
@@ -4234,8 +4292,9 @@ compare_field_names(RegressionTest * test, INKMBuffer bufp1, INKMLoc mime_loc1, 
   }
 }
 
-REGRESSION_TEST(SDK_API_INKMimeHdrField) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKMimeHdrField) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   INKMBuffer bufp1 = (INKMBuffer) INK_ERROR_PTR;
 
   INKMLoc mime_loc1 = (INKMLoc) INK_ERROR_PTR;
@@ -5272,8 +5331,9 @@ convert_http_hdr_to_string(INKMBuffer bufp, INKMLoc hdr_loc)
   return output_string;
 }
 
-REGRESSION_TEST(SDK_API_INKHttpHdrParse) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKHttpHdrParse) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   const char *req =
     "GET http://www.example.com/ HTTP/1.1\r\nmimefield1:field1value1,field1value2\r\nmimefield2:field2value1,field2value2\r\n\r\n";
   const char *resp =
@@ -5600,8 +5660,9 @@ compare_field_values(RegressionTest * test, INKMBuffer bufp1, INKMLoc hdr_loc1, 
 }
 
 
-REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   const char *parse_string =
     "field1:field1Value1,field1Value2\r\nfield2:10,-34,45\r\nfield3:field3Value1,23\r\nfield2: 2345, field2Value2\r\n\r\n";
   const char *DUPLICATE_FIELD_NAME = "field2";
@@ -5638,7 +5699,6 @@ REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int 
   bool test_passed_mime_hdr_clone = false;
   bool test_passed_mime_hdr_field_remove = false;
   bool test_passed_mime_hdr_field_copy = false;
-  bool test_passed_mime_hdr_field_clone = false;
   bool test_passed_mime_hdr_field_copy_values = false;
   bool test_passed_handle_mloc_release = false;
   bool test_passed_handle_string_release = false;
@@ -5960,7 +6020,6 @@ REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int 
           SDK_RPRINT(test, "INKMimeHdrFieldClone", "TestCase1", TC_FAIL, "Value's Mismatch");
         } else {
           SDK_RPRINT(test, "INKMimeHdrFieldClone", "TestCase1", TC_PASS, "ok");
-          test_passed_mime_hdr_field_clone = true;
         }
       }
     }
@@ -6082,8 +6141,9 @@ REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int 
 // Unit Test for API: INKUrlParse
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKUrlParse) (RegressionTest * test, int atype, int *pstatus) {
-
+REGRESSION_TEST(SDK_API_INKUrlParse) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   const char *url = "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc";
   const char *start;
   const char *end;
@@ -6172,6 +6232,7 @@ typedef struct
 static int
 log_test_handler(INKCont contp, INKEvent event, void *edata)
 {
+  NOWARN_UNUSED(edata);
   INKFile filep;
   char buf[1024];
   bool str_found;
@@ -6215,7 +6276,9 @@ log_test_handler(INKCont contp, INKEvent event, void *edata)
   return -1;
 }
 
-REGRESSION_TEST(SDK_API_INKTextLog) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKTextLog) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   INKTextLogObject log;
@@ -6290,7 +6353,9 @@ REGRESSION_TEST(SDK_API_INKTextLog) (RegressionTest * test, int atype, int *psta
 //                     INKMgmtStringGet
 //////////////////////////////////////////////
 
-REGRESSION_TEST(SDK_API_INKMgmtGet) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKMgmtGet) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   const char *CONFIG_PARAM_COUNTER_NAME = "proxy.process.http.total_parent_proxy_connections";
   int CONFIG_PARAM_COUNTER_VALUE = 0;
 
@@ -6380,11 +6445,16 @@ REGRESSION_TEST(SDK_API_INKMgmtGet) (RegressionTest * test, int atype, int *psta
 int
 gui_update_handler(INKCont contp, INKEvent event, void *edata)
 {
+  NOWARN_UNUSED(contp);
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(edata);
   INKReleaseAssert(!"gui_update_handler should not be called");
   return 0;
 }
 
-REGRESSION_TEST(SDK_API_INKMgmtUpdateRegister) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKMgmtUpdateRegister) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   INKCont mycont = INKContCreate(gui_update_handler, INKMutexCreate());
@@ -6601,7 +6671,7 @@ typedef enum
 
 typedef enum
 {
-  ORIG_INK_SDK_VERSION_2_0 = 0,
+  ORIG_INK_SDK_VERSION_2_0 = 0
 } ORIG_INKSDKVersion;
 
 typedef enum
@@ -6611,7 +6681,9 @@ typedef enum
 } ORIG_INKReturnCode;
 
 
-REGRESSION_TEST(SDK_API_INKConstant) (RegressionTest * test, int atype, int *pstatus) {
+REGRESSION_TEST(SDK_API_INKConstant) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
   bool test_passed = true;
 
@@ -6993,7 +7065,9 @@ ssn_handler(INKCont contp, INKEvent event, void *edata)
 }
 
 
-EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpSsn) (RegressionTest * test, int atype, int *pstatus) {
+EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpSsn) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   INKCont cont = INKContCreate(ssn_handler, INKMutexCreate());
@@ -7223,7 +7297,9 @@ cache_hook_handler(INKCont contp, INKEvent event, void *edata)
 }
 
 
-EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnCache) (RegressionTest * test, int atype, int *pstatus) {
+EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnCache) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   INKCont cont = INKContCreate(cache_hook_handler, INKMutexCreate());
@@ -7452,6 +7528,7 @@ handle_transform(INKCont contp)
 static int
 transformtest_transform(INKCont contp, INKEvent event, void *edata)
 {
+  NOWARN_UNUSED(edata);
   TransformTestData *contData = (TransformTestData *) INKContDataGet(contp);
   if (contData->test_passed_transform_create == false) {
     contData->test_passed_transform_create = true;
@@ -7505,7 +7582,6 @@ transformable(INKHttpTxn txnp, TransformTestData * data)
 {
   INKMBuffer bufp;
   INKMLoc hdr_loc;
-  INKHttpStatus resp_status;
 
   if (INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) == 0) {
     SDK_RPRINT(data->test, "INKHttpTxnTransform", "", TC_FAIL, "[transformable]: INKHttpTxnServerRespGet return 0");
@@ -7515,7 +7591,7 @@ transformable(INKHttpTxn txnp, TransformTestData * data)
    *  We are only interested in "200 OK" responses.
    */
 
-  if (INK_HTTP_STATUS_OK == (resp_status = INKHttpHdrStatusGet(bufp, hdr_loc))) {
+  if (INK_HTTP_STATUS_OK == INKHttpHdrStatusGet(bufp, hdr_loc)) {
     return 1;
   }
 // XXX - Can't return INK_ERROR because that is a different type
@@ -7819,7 +7895,9 @@ transform_hook_handler(INKCont contp, INKEvent event, void *edata)
 }
 
 
-EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform) (RegressionTest * test, int atype, int *pstatus) {
+EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   Debug(UTDBG_TAG "_transform", "Starting test");
@@ -8064,7 +8142,9 @@ altinfo_hook_handler(INKCont contp, INKEvent event, void *edata)
 
 
 
-EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo) (RegressionTest * test, int atype, int *pstatus) {
+EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   INKCont cont = INKContCreate(altinfo_hook_handler, INKMutexCreate());
@@ -8251,7 +8331,9 @@ done:
 }
 
 
-EXCLUSIVE_REGRESSION_TEST(SDK_API_INKHttpConnectIntercept) (RegressionTest * test, int atype, int *pstatus) {
+EXCLUSIVE_REGRESSION_TEST(SDK_API_INKHttpConnectIntercept) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   INKDebug(UTDBG_TAG, "Starting test INKHttpConnectIntercept");
@@ -8289,7 +8371,9 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_INKHttpConnectIntercept) (RegressionTest * tes
 }
 
 
-EXCLUSIVE_REGRESSION_TEST(SDK_API_INKHttpConnectServerIntercept) (RegressionTest * test, int atype, int *pstatus) {
+EXCLUSIVE_REGRESSION_TEST(SDK_API_INKHttpConnectServerIntercept) (RegressionTest * test, int atype, int *pstatus)
+{
+  NOWARN_UNUSED(atype);
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   INKDebug(UTDBG_TAG, "Starting test INKHttpConnectServerintercept");

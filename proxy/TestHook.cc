@@ -334,13 +334,12 @@ int
 StateMachine::fill()
 {
   char *ptr;
-  int n, n_total, orig_n;
+  int n;
   int hdr_bytes_left, body_bytes_left, copy_size;
 
-  n_total = obuf->write_avail();        // used to grow blocks
+  obuf->write_avail();        // used to grow blocks
   n = obuf->block_write_avail();
   ptr = obuf->end();
-  orig_n = n;
 
   hdr_bytes_left = header_size - header_size_written;
   body_bytes_left = body_size - body_size_written;

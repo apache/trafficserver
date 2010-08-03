@@ -548,6 +548,7 @@ synclient_txn_read_response(INKCont contp)
 static int
 synclient_txn_read_response_handler(INKCont contp, INKEvent event, void *data)
 {
+  NOWARN_UNUSED(data);
   ClientTxn *txn = (ClientTxn *) INKContDataGet(contp);
   INKAssert(txn->magic == MAGIC_ALIVE);
 
@@ -628,6 +629,7 @@ synclient_txn_write_request(INKCont contp)
 static int
 synclient_txn_write_request_handler(INKCont contp, INKEvent event, void *data)
 {
+  NOWARN_UNUSED(data);
   ClientTxn *txn = (ClientTxn *) INKContDataGet(contp);
   INKAssert(txn->magic == MAGIC_ALIVE);
 
@@ -884,6 +886,7 @@ synserver_txn_write_response(INKCont contp)
 static int
 synserver_txn_write_response_handler(INKCont contp, INKEvent event, void *data)
 {
+  NOWARN_UNUSED(data);
   ServerTxn *txn = (ServerTxn *) INKContDataGet(contp);
   INKAssert(txn->magic == MAGIC_ALIVE);
 
@@ -952,6 +955,7 @@ synserver_txn_read_request(INKCont contp)
 static int
 synserver_txn_read_request_handler(INKCont contp, INKEvent event, void *data)
 {
+  NOWARN_UNUSED(data);
   ServerTxn *txn = (ServerTxn *) INKContDataGet(contp);
   INKAssert(txn->magic == MAGIC_ALIVE);
 
