@@ -1188,7 +1188,6 @@ HdrStrHeap::expand(char *ptr, int old_size, int new_size)
 
   ink_assert(ptr >= ((char *) this) + STR_HEAP_HDR_SIZE);
   ink_assert(ptr < ((char *) this) + m_heap_size);
-  ink_assert(expand_size >= 0);
 
   if (ptr + old_size == m_free_start && expand_size <= m_free_size) {
     m_free_start += expand_size;

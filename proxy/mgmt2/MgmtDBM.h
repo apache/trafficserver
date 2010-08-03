@@ -222,6 +222,7 @@ public:
   {
     unlink(db_file);
     union semun semun_dummy;
+    memset(&semun_dummy, 0, sizeof(semun_dummy));
     if (initialized && semctl(mgmt_sem_id, 0, IPC_RMID, semun_dummy) < 0) {
       // INKqa02679 - do not call mgmt_fatal here since mgmt_fatal
       //   will end up calling this function and creating a loop

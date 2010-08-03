@@ -2360,7 +2360,7 @@ URLPartGet(INKMBuffer bufp, INKMLoc obj, int *length, URLPartGetF url_f)
   return ((HdrHeapSDKHandle *) bufp)->make_sdk_string(str_ptr, str_len);
 }
 
-static const INKReturnCode
+static INKReturnCode
 URLPartSet(INKMBuffer bufp, INKMLoc obj, const char *value, int length, URLPartSetF url_f)
 {
 

@@ -406,7 +406,7 @@ ink_ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
  *\li	All other domains are returned in non absolute form
  */
 int
-ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
+ns_name_ntop(const u_char *src, char *dst, size_t dstsiz) __THROW
 {
 	const u_char *cp;
 	char *dn, *eom;

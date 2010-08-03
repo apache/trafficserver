@@ -328,6 +328,17 @@ AC_ARG_ENABLE([posix-cap],
 AC_MSG_RESULT([$enable_posix_cap])
 
 #
+# Disable ccache explicitly (it's enabled by default, if it exists)
+#
+AC_MSG_CHECKING([whether to explicitly disable ccache])
+AC_ARG_ENABLE([ccache],
+  [AS_HELP_STRING([--disable-ccache],[Disable ccache from being used])],
+  [],
+  [enable_ccache="yes"]
+)
+AC_MSG_RESULT([$enable_ccache])
+
+#
 # Installation directories
 # For each var the following is evaluated
 # foo      Standard variable  eg. ${prefix}/foo
@@ -384,13 +395,18 @@ REAL_CFLAGS="${CFLAGS}"
 REAL_CXXFLAGS="${CXXFLAGS}"
 REAL_CCASFLAGS="${CCASFLAGS}"
 
-AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
 AC_PROG_CC
 AC_PROG_CXX
-if test "x${CCACHE}" = "xccache" ;then
- CC="$CCACHE $CC"
- CXX="$CCACHE $CXX"
+
+# Check for ccache (unless disabled explicitly)
+if test "x$enable_ccache" = "xyes"; then
+    AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
+    if test "x${CCACHE}" = "xccache"; then
+	CC="$CCACHE $CC"
+	CXX="$CCACHE $CXX"
+    fi
 fi
+
 dnl AC_PROG_SED is only avaliable in recent autoconf versions.
 dnl Use AC_CHECK_PROG instead if AC_PROG_SED is not present.
 ifdef([AC_PROG_SED],
@@ -425,10 +441,17 @@ base_cc=`basename $CC`
 # These are shortcuts used in combination for the compiler options below
 case $host_os in
   linux*)
-    common_opt="-pipe -Wall -Werror"
-    debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
-    cxx_opt="-Wno-invalid-offsetof"
+    if test "x${base_cc}" = "xicc"; then
+      common_opt="-pipe -Wall -wd279 -wd873" # 279 is "controlling expression is constant", triggered by our asserts
+      debug_opt="-ggdb3 $common_opt"   # 873 is "has no corresponding operator delete". ToDo: we should fix.
+      release_opt="-g $common_opt -O2 -axsse4.2 -fno-strict-aliasing"
+      cxx_opt="-Wno-invalid-offsetof"
+    else # gcc
+      common_opt="-pipe -Wall -Werror"
+      debug_opt="-ggdb3 $common_opt"
+      release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      cxx_opt="-Wno-invalid-offsetof"
+    fi
     ;;
   darwin*)
     common_opt="-pipe -Wall -Werror"
@@ -446,7 +469,7 @@ case $host_os in
     ATS_ADDTO(LDFLAGS, [-L/usr/local/lib])
     ;;
   solaris*)
-    if test "x${base_cc}" = "xcc" ;then
+    if test "x${base_cc}" = "xcc"; then
       common_opt="-mt -m64 -D__WORDSIZE=64" # FIXME: arch should be detected
       CCASFLAGS="-Wa,-32" # TODO: add 64bit support to atomic ops
       debug_opt="-g $common_opt"
@@ -592,7 +615,7 @@ ATS_ADDTO(CPPFLAGS, [-D$host_os_def])
 # _Here_ is where we go ahead and add the _optimizations_ to already
 #  existing CFLAGS/CXXFLAGS if some special values had been set.
 #
-if test "x${enable_debug}" = "xyes" ;then
+if test "x${enable_debug}" = "xyes"; then
   ATS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
   ATS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
   ATS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])

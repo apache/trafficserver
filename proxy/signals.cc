@@ -552,6 +552,7 @@ init_signals2()
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   REC_RegisterConfigUpdateFunc("proxy.config.dump_mem_info_frequency", init_tracker, NULL);
   RecData data;
+  data.rec_int = 0; // Shouldn't be used now anyways
   init_tracker(NULL, RECD_INT, data, NULL);
 }
 

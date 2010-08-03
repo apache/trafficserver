@@ -1846,12 +1846,8 @@ PrefetchConfiguration::readConfiguration()
   TS_ReadConfigInteger(max_object_size, "proxy.config.prefetch.max_object_size");
 
   TS_ReadConfigInteger(max_recursion, "proxy.config.prefetch.max_recursion");
-  if (max_recursion < 0)
-    max_recursion = 0;
 
   TS_ReadConfigInteger(redirection, "proxy.config.prefetch.redirection");
-  if (redirection < 0)
-    redirection = 0;
 
   char *tstr = TS_ConfigReadString("proxy.config.prefetch.default_url_proto");
   if (config_read_proto(default_url_proto, tstr))

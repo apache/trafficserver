@@ -55,7 +55,7 @@ url_mapping::get_plugin(unsigned int index)
   Debug("url_rewrite", "get_plugin says we have %d plugins and asking for plugin %d", _plugin_count, index);
   remap_plugin_info *plugin = NULL;
 
-  if (unlikely((index > _plugin_count) || index < 0)) {
+  if (unlikely(index > _plugin_count)) {
     return NULL;
   }
 

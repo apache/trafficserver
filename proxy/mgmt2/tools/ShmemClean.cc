@@ -40,6 +40,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <string.h>
 
 #if defined(linux)
 #include <sys/types.h>
@@ -82,6 +83,7 @@ main(int argc, char **argv)
     for (;;) {
 #if defined(linux)
       union semun semun_dummy;
+      memset(&semun_dummy, 0, sizeof(semun_dummy));
       if ((tmp = semget(start, 1, 0666)) < 0 || semctl(tmp, 1, IPC_RMID, semun_dummy) < 0) {
 #else
       if ((tmp = semget(start, 1, 0666)) < 0 || semctl(tmp, 1, IPC_RMID) < 0) {
@@ -96,6 +98,7 @@ main(int argc, char **argv)
   for (int i = start; i < end; i++) {
 #if defined(linux)
     union semun semun_dummy;
+    memset(&semun_dummy, 0, sizeof(semun_dummy));
     if ((tmp = semget(i, 1, 0666)) < 0 || semctl(tmp, 1, IPC_RMID, semun_dummy) < 0) {
 #else
     if ((tmp = semget(i, 1, 0666)) < 0 || semctl(tmp, 1, IPC_RMID) < 0) {

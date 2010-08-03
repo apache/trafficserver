@@ -1536,7 +1536,7 @@ setSNMP(char *sys_location, char *sys_contact, char *sys_name, char *authtrapena
       chmod(snmp_path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
       // cast type in order to get rid of compiling error. disable coverity check here
       // coverity[cast_to_qualified_type]
-      if (chown(snmp_path, (const int) -1, wheel_gid) == -1) {
+      if (chown(snmp_path, (uid_t) -1, wheel_gid) == -1) {
         DPRINTF(("[SysAPI] can not chown new ts_snmp cfg file\n"));
       }
     }

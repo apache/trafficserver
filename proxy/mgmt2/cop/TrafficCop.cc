@@ -731,6 +731,7 @@ spawn_manager()
     err = semctl(err, 1, IPC_RMID);
 #else
     union semun dummy_semun;
+    memset(&dummy_semun, 0, sizeof(dummy_semun));
     err = semctl(err, 1, IPC_RMID, dummy_semun);
 #endif
     if (err < 0) {

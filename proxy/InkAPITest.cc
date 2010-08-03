@@ -25,7 +25,7 @@
 #include <sys/types.h>
 
 #include <errno.h>
-extern int errno;
+//extern int errno;
 
 #include <pthread.h>
 #include <unistd.h>
@@ -5863,7 +5863,7 @@ REGRESSION_TEST(SDK_API_INKMimeHdrParse) (RegressionTest * test, int atype, int 
             SDK_RPRINT(test, "INKMimeHdrFieldRemove", "TestCase1", TC_FAIL, "Field Not Removed");
           }
 
-          if ((test_passed_mime_hdr_field_remove = true)) {
+          if ((test_passed_mime_hdr_field_remove == true)) {
             if (INKMimeHdrFieldAppend(bufp2, mime_hdr_loc2, field_loc1) == INK_ERROR) {
               SDK_RPRINT(test, "INKMimeHdrFieldRemove", "TestCase1", TC_FAIL,
                          "Unable to readd the field to mime header. Probably destroyed");

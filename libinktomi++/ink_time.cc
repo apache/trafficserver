@@ -22,12 +22,9 @@
  */
 
 /****************************************************************************
-
   ink_time.c
 
   Timing routines for libinktomi.a.
-
-
 
  ****************************************************************************/
 
@@ -37,9 +34,9 @@
 #include "ink_assert.h"
 #include "ink_string.h"
 #include "ink_unused.h"
-#include <locale.h>
 
-int getrusage(int who, struct rusage *rusage);
+#include <locale.h>
+#include <sys/resource.h>
 
 /*===========================================================================*
 
@@ -48,11 +45,9 @@ int getrusage(int who, struct rusage *rusage);
  *===========================================================================*/
 
 /*---------------------------------------------------------------------------*
-
   uint64 microseconds(which)
 
   returns microsecond-resolution clock info
-
  *---------------------------------------------------------------------------*/
 
 uint64
@@ -120,7 +115,6 @@ ink_time_wall_seconds()
   over a string), otherwise 0 is returned.
 
  *---------------------------------------------------------------------------*/
-
 int
 ink_time_gmt_string_to_tm(char *string, struct tm *bdt)
 {
@@ -170,7 +164,6 @@ ink_time_gmt_string_to_tm(char *string, struct tm *bdt)
   returned on success, else 0.
 
  *---------------------------------------------------------------------------*/
-
 int
 ink_time_gmt_tm_to_rfc1123_string(struct tm *t, char *string, int maxsize)
 {
@@ -194,7 +187,6 @@ ink_time_gmt_tm_to_rfc1123_string(struct tm *t, char *string, int maxsize)
   InkTimeDayID <dayid>, representing an integer number of days since a base.
 
  *---------------------------------------------------------------------------*/
-
 InkTimeDayID
 ink_time_tm_to_dayid(struct tm * t)
 {
@@ -215,7 +207,6 @@ ink_time_tm_to_dayid(struct tm * t)
   pointer <fp>.
 
  *---------------------------------------------------------------------------*/
-
 void
 ink_time_dump_dayid(FILE * fp, InkTimeDayID dayid)
 {
@@ -234,7 +225,6 @@ ink_time_dump_dayid(FILE * fp, InkTimeDayID dayid)
   of days since a base, and computes a broken-down time <t>.
 
  *---------------------------------------------------------------------------*/
-
 void
 ink_time_dayid_to_tm(InkTimeDayID dayid, struct tm *t)
 {
@@ -253,7 +243,6 @@ ink_time_dayid_to_tm(InkTimeDayID dayid, struct tm *t)
   an InkTimeDayRange object of width <width> that spans the day in question.
 
  *---------------------------------------------------------------------------*/
-
 InkTimeDayRange
 ink_time_dayid_to_dayrange(InkTimeDayID dayid, unsigned int width)
 {
@@ -290,7 +279,6 @@ ink_time_dayid_to_dayrange(InkTimeDayID dayid, unsigned int width)
   original space of days.
 
  *---------------------------------------------------------------------------*/
-
 InkTimeDayRange
 ink_time_chomp_off_mouthful_of_dayrange(InkTimeDayRange * dayrange_ptr, unsigned int biggest_width)
 {
@@ -330,7 +318,6 @@ ink_time_chomp_off_mouthful_of_dayrange(InkTimeDayRange * dayrange_ptr, unsigned
   The pointer <buf> is returned.
 
  *---------------------------------------------------------------------------*/
-
 char *
 ink_time_dayrange_to_string(InkTimeDayRange * dayrange_ptr, char *buf, const size_t bufSize)
 {
@@ -372,7 +359,6 @@ static const char *_month_names[12] = {
   and year in GMT.
 
  *---------------------------------------------------------------------------*/
-
 void
 ink_time_current_mdy(int *m, int *dom, int *y)
 {
@@ -392,7 +378,6 @@ ink_time_current_mdy(int *m, int *dom, int *y)
   and year.
 
  *---------------------------------------------------------------------------*/
-
 void
 ink_time_tm_to_mdy(struct tm *t, int *m, int *dom, int *y)
 {
@@ -410,7 +395,6 @@ ink_time_tm_to_mdy(struct tm *t, int *m, int *dom, int *y)
   broken-down time in the structure pointed to by <t>.
 
  *---------------------------------------------------------------------------*/
-
 void
 ink_time_mdy_to_tm(int m, int dom, int y, struct tm *t)
 {
@@ -431,7 +415,6 @@ ink_time_mdy_to_tm(int m, int dom, int y, struct tm *t)
   The encoding is performed with respect to the base day.
 
  *---------------------------------------------------------------------------*/
-
 InkTimeDayID
 ink_time_mdy_to_dayid(int m, int dom, int y)
 {
@@ -456,7 +439,6 @@ ink_time_mdy_to_dayid(int m, int dom, int y)
   The encoding is performed with respect to the base day.
 
  *---------------------------------------------------------------------------*/
-
 InkTimeDayID
 ink_time_current_dayid()
 {
@@ -478,7 +460,6 @@ ink_time_current_dayid()
   month <m>, day of month <dom>, and year <y>.
 
  *---------------------------------------------------------------------------*/
-
 void
 ink_time_dayid_to_mdy(InkTimeDayID dayid, int *mp, int *dp, int *yp)
 {
@@ -498,7 +479,6 @@ ink_time_dayid_to_mdy(InkTimeDayID dayid, int *mp, int *dp, int *yp)
   Takes a date <m> <dom> <y>, and returns the number of days into year <y>.
 
  *---------------------------------------------------------------------------*/
-
 int
 ink_time_mdy_to_doy(int m, int dom, int y)
 {
@@ -518,7 +498,6 @@ ink_time_mdy_to_doy(int m, int dom, int y)
   and determines the corresponding month, day of month, and day of week.
 
  *---------------------------------------------------------------------------*/
-
 void
 ink_time_doy_to_mdy(int doy, int year, int *mon, int *dom, int *dow)
 {
@@ -546,7 +525,6 @@ ink_time_doy_to_mdy(int doy, int year, int *mon, int *dom, int *dow)
   What day of the week does <month> <dom>, <year> fall on?
 
  *---------------------------------------------------------------------------*/
-
 int
 ink_time_mdy_to_dow(int month, int dom, int year)
 {
@@ -567,7 +545,6 @@ ink_time_mdy_to_dow(int month, int dom, int year)
   This routine returns the number of days in a particular <month> and <year>.
 
  *---------------------------------------------------------------------------*/
-
 int
 ink_time_days_in_month(int month, int year)
 {
@@ -583,7 +560,6 @@ ink_time_days_in_month(int month, int year)
   for leap years.
 
  *---------------------------------------------------------------------------*/
-
 int
 ink_time_days_in_year(int year)
 {
@@ -598,7 +574,6 @@ ink_time_days_in_year(int year)
   What day is January 1 on in this year?
 
  *---------------------------------------------------------------------------*/
-
 int
 ink_time_first_day_of_year(int year)
 {
@@ -624,7 +599,6 @@ ink_time_first_day_of_year(int year)
   string representing this day in the buffer pointed to by <buffer>.
 
  *---------------------------------------------------------------------------*/
-
 void
 ink_time_day_to_string(int day, char *buffer, const size_t bufferSize)
 {
@@ -640,7 +614,6 @@ ink_time_day_to_string(int day, char *buffer, const size_t bufferSize)
   string representing this day in the buffer pointed to by <buffer>.
 
  *---------------------------------------------------------------------------*/
-
 void
 ink_time_month_to_string(int month, char *buffer, const size_t bufferSize)
 {
@@ -656,7 +629,6 @@ ink_time_month_to_string(int month, char *buffer, const size_t bufferSize)
   month number, else -1.
 
  *---------------------------------------------------------------------------*/
-
 int
 ink_time_string_to_month(char *str)
 {
@@ -677,7 +649,6 @@ ink_time_string_to_month(char *str)
   Return 1 if <year> is a leap year, 0 if not, and -1 if negative leap year.
 
  *---------------------------------------------------------------------------*/
-
 int
 ink_time_leap_year_correction(int year)
 {
@@ -792,7 +763,7 @@ ink_gmtime_r(const ink_time_t * clock, struct tm *res)
 
   /* convert the days */
   d = yday - d;
-  if ((d<0) || (d> 366))
+  if (d> 366)
     return -1;
 
   size_t month = months[d];

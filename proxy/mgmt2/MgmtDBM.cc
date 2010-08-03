@@ -79,6 +79,7 @@ MgmtDBM::mgmt_batch_open()
 
 #if defined(linux)
       union semun dummy_semun;
+      memset(&dummy_semun, 0, sizeof(dummy_semun));
       holding_pid = semctl(mgmt_sem_id, 0, GETPID, dummy_semun);
       current_val = semctl(mgmt_sem_id, 0, GETVAL, dummy_semun);
 #else
