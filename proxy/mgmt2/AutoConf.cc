@@ -59,7 +59,6 @@ static const char checkDomain[] = "dnsDomainIs(host, \"";
 static const char checkHost[] = "localHostOrDomainIs(host, \"";
 static const char directResponse[] = "\t\treturn \"DIRECT\";\n\t}\n\n";
 static const char returnStr[] = "\n\treturn ";
-static const char proxyName[] = "ink-proxy.inktomi.com";
 static const char proxyStr[] = "\"PROXY ";
 static const char directStr[] = "\"DIRECT\";";
 
@@ -254,7 +253,6 @@ AutoConf::handleView(textBuffer * output, int flag      // 0-> displaying in fra
   RollBackCodes r;
   Rollback *pacRoll = NULL;
   // following used to get modified times of 'proxy.pac'
-  bool pacFile = false;
   struct stat fileInfo;
   char dateBuf[64];
 
@@ -273,7 +271,7 @@ AutoConf::handleView(textBuffer * output, int flag      // 0-> displaying in fra
       // get modified time of 'proxy.pac' file
       if (pacRoll->statVersion(ACTIVE_VERSION, &fileInfo) == 0) {
         if (fileInfo.st_size > 0) {
-          pacFile = true;
+          // TODO: Huh, no-op?
         }
       }
 

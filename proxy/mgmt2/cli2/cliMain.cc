@@ -98,6 +98,9 @@ main(int argc, char *argv[])
 void
 eventCallbackFn(char *name, char *msg, int pri, void *data)
 {
+  NOWARN_UNUSED(msg);
+  NOWARN_UNUSED(pri);
+  NOWARN_UNUSED(data);
   if (AlarmCallbackPrint == 1) {
     printf("\n**********\n" "ALARM SIGNALLED: %s\n" "**********\n", name);
   }
@@ -109,8 +112,6 @@ eventCallbackFn(char *name, char *msg, int pri, void *data)
 void
 register_event_callback(void)
 {
-  INKError err;
-
-//  printf("\n[register_event_callback] \n");
-  err = INKEventSignalCbRegister(NULL, eventCallbackFn, NULL);
+  // TODO: Check return code?
+  INKEventSignalCbRegister(NULL, eventCallbackFn, NULL);
 }

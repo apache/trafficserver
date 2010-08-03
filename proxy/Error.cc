@@ -55,6 +55,7 @@ ErrorClass::operator() (const char *aformat_string, ...)
 void
 ErrorClass::raise(va_list ap, const char *prefix)
 {
+  NOWARN_UNUSED(prefix);
   SrcLoc loc;
   loc.set(filename, function_name, line_number);
   diags->print_va(NULL, DL_Fatal, NULL, &loc, format_string, ap);

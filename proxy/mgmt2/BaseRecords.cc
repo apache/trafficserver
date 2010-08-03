@@ -83,6 +83,7 @@ destroyRecords(Records * to_destroy)
 
 BaseRecords::BaseRecords(char *mpath, const char *cfile, char *efile)
 {
+  NOWARN_UNUSED(mpath);
   char fpath[PATH_NAME_MAX];
   InkHashTableEntry *hash_entry;
   InkHashTableIteratorState hash_iterator_state;
@@ -220,7 +221,6 @@ validate_line(char *buf, int cur_line, const char *cur_file)
 {
   char *s;
   char *e;
-  int rectype;
   int type;
 
   s = buf;
@@ -238,15 +238,15 @@ validate_line(char *buf, int cur_line, const char *cur_file)
   }
 
   if (mystrcmp(s, e, "CONFIG")) {
-    rectype = 1;
+    // TODO: no-op?
   } else if (mystrcmp(s, e, "PROCESS")) {
-    rectype = 2;
+    // TODO: no-op?
   } else if (mystrcmp(s, e, "NODE")) {
-    rectype = 3;
+    // TODO: no-op?
   } else if (mystrcmp(s, e, "CLUSTER")) {
-    rectype = 4;
+    // TODO: no-op?
   } else if (mystrcmp(s, e, "LOCAL")) {
-    rectype = 5;
+    // TODO: no-op?
   } else {
     goto error;
   }
@@ -476,7 +476,6 @@ BaseRecords::defineRecords()
 int
 BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
 {
-  int r;
   int cur_line = 0;
   char *param, line[1024], fname[1024];
   bool valid = true, found = false;
@@ -519,7 +518,7 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
 
   // find all of the required user-override records
   required_records_ht = new MgmtHashTable("required_records_ht", false, InkHashTableKeyType_String);
-  for (r = 0; RecordsConfig[r].value_type != INVALID; r++) {
+  for (int r = 0; RecordsConfig[r].value_type != INVALID; r++) {
     if (RecordsConfig[r].required == RR_REQUIRED) {
       const char *name = RecordsConfig[r].name;
       required_records_ht->mgmt_hash_table_insert(name, (void*)name);
@@ -527,7 +526,6 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
   }
 
   while (fgets(line, 1024, fin)) {
-
     cur_line++;
 
     if (!validate_line(line, cur_line, fname)) {
@@ -543,24 +541,22 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
       continue;
     } else {
       char var_name[1024];
-      RecordType rtype;
       RecDataT mtype = RECD_INT;        /* Safe since valid will fall out, c. warning fix */
 
       param = strtok(ltrimmed_line, " ");
       for (int i = 0; param != NULL && valid; i++) {
-
         switch (i) {
         case 0:                /* RECORD TYPE */
           if (strcmp("CONFIG", param) == 0) {
-            rtype = CONFIG;
+            // TODO: Should it really be no-op here?
           } else if (strcmp("PROCESS", param) == 0) {
-            rtype = PROCESS;
+            // TODO: Should it really be no-op here?
           } else if (strcmp("NODE", param) == 0) {
-            rtype = NODE;
+            // TODO: Should it really be no-op here?
           } else if (strcmp("CLUSTER", param) == 0) {
-            rtype = CLUSTER;
+            // TODO: Should it really be no-op here?
           } else if (strcmp("LOCAL", param) == 0) {
-            rtype = LOCAL;
+            // TODO: Should it really be no-op here?
           } else {
             valid = false;
           }
@@ -644,14 +640,11 @@ BaseRecords::rereadRecordFile(char *path, char *f, bool dirty)
               break;
             }
           case RECD_STRING:{
-              // INKqa07904: Trailing blanks break records.config
-              int i;
-              for (i = strlen(param) - 1; i >= 0; i--)
-                if (isspace(param[i]))
-                  param[i] = '\0';
+              for (int j = strlen(param) - 1; j >= 0; j--)
+                if (isspace(param[j]))
+                  param[j] = '\0';
                 else
                   break;
-              // end of INKqa07904
               RecString tmp;
               int rec_err = RecGetRecordString_Xmalloc(var_name, &tmp);
               found = (rec_err == REC_ERR_OKAY);

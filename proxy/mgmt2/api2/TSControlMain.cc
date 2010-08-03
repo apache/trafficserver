@@ -1027,6 +1027,7 @@ Lerror:
 INKError
 handle_stats_reset(struct SocketInfo sock_info, char *req)
 {
+  NOWARN_UNUSED(req);
   INKError ret;
 
   // call CoreAPI call on Traffic Manager side

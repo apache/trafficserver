@@ -84,6 +84,7 @@ startProcessManager(void *arg)
 ProcessManager::ProcessManager(bool rlm, char *mpath, ProcessRecords * rd):
 BaseManager(), require_lm(rlm), mgmt_sync_key(0), record_data(rd), local_manager_sockfd(0)
 {
+  NOWARN_UNUSED(mpath);
   ink_strncpy(pserver_path, Layout::get()->runtimedir, sizeof(pserver_path));
   mgmt_signal_queue = create_queue();
 
@@ -105,17 +106,12 @@ void
 ProcessManager::reconfigure()
 {
   bool found;
-  int enable_mgmt_port = 0;
-  timeout = (int)
-    REC_readInteger("proxy.config.process_manager.timeout", &found);
-  timeout = 5;
-  ink_assert(found);
-
-  enable_mgmt_port = (int)
-    REC_readInteger("proxy.config.process_manager.enable_mgmt_port", &found);
+  timeout = REC_readInteger("proxy.config.process_manager.timeout", &found);
   ink_assert(found);
 
 #ifdef DEBUG_MGMT
+  int enable_mgmt_port = REC_readInteger("proxy.config.process_manager.enable_mgmt_port", &found);
+  ink_assert(found);
   if (enable_mgmt_port) {
     ink_thread_create(drainBackDoor, 0);
   }

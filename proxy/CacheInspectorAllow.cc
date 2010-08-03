@@ -47,7 +47,7 @@ Ptr<ProxyMutex> cache_inspector_reconfig_mutex;
 //
 struct CacheInspectorAllow_FreerContinuation;
 typedef int (CacheInspectorAllow_FreerContinuation::*CacheInspectorAllow_FrContHandler) (int, void *);
-struct CacheInspectorAllow_FreerContinuation:Continuation
+struct CacheInspectorAllow_FreerContinuation: public Continuation
 {
   CacheInspectorAllow *p;
   int freeEvent(int event, Event * e)
@@ -70,7 +70,7 @@ struct CacheInspectorAllow_FreerContinuation:Continuation
 //   Used to read the ip_allow.conf file after the manager signals
 //      a change
 //
-struct CacheInspectorAllow_UpdateContinuation:Continuation
+struct CacheInspectorAllow_UpdateContinuation: public Continuation
 {
   int file_update_handler(int etype, void *data)
   {
@@ -92,9 +92,10 @@ struct CacheInspectorAllow_UpdateContinuation:Continuation
 int
 CacheInspectorAllowFile_CB(const char *config_name, RecDataT type, RecData data, void *cookie)
 {
-  NOWARN_UNUSED(cookie);
-  NOWARN_UNUSED(type);
   NOWARN_UNUSED(config_name);
+  NOWARN_UNUSED(type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
 
   eventProcessor.schedule_imm(NEW(new CacheInspectorAllow_UpdateContinuation(cache_inspector_reconfig_mutex)),
                               ET_CACHE);

@@ -214,10 +214,13 @@ CoreUtils::find_vaddr(intptr_t vaddr, intptr_t upper, intptr_t lower)
 void
 CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
 {
+  // TODO: What was this intended for??
+#if 0
   memTable m;
   m.vaddr = vaddr1;
   m.offset = offset1;
   m.fsize = fsize1;
+#endif
 
   if (arrayMem.length() == 0) {
     arrayMem(0);

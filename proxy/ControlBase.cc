@@ -58,8 +58,6 @@ static const char *ModTypeStrings[] = {
   "Tag"
 };
 
-const int secondsInDay = 24 * 60 * 60;
-
 struct timeMod
 {
   time_t start_time;
@@ -371,7 +369,7 @@ ControlBase::ProcessModifiers(matcher_line * line_info)
       }
     } else if (strcasecmp(label, "iport") == 0) {
       // coverity[secure_coding]
-      if (sscanf(val, "%d", &tmp) == 1) {
+      if (sscanf(val, "%u", &tmp) == 1) {
         cur_el.type = MOD_IPORT;
         cur_el.opaque_data = (void *)(uintptr_t)tmp;
       } else {

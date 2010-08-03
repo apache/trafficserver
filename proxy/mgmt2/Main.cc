@@ -378,6 +378,7 @@ chdir_root()
 static rlim_t
 max_out_limit(const char *name, int which, bool max_it = true, bool unlim_it = true)
 {
+  NOWARN_UNUSED(name);
   struct rlimit rl;
 
 #if defined(linux)
@@ -469,8 +470,9 @@ main(int argc, char **argv)
   bool found = false;
   int just_started = 0;
   int cluster_port = -1, cluster_server_port = -1;
-  int dump_config = 0, dump_process = 0, dump_node = 0, proxy_port = -1;
-  int dump_cluster = 0, dump_local = 0, proxy_backdoor = -1;
+  // TODO: This seems completely incomplete, disabled for now
+  //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_cluster = 0, dump_local = 0;
+  int proxy_port = -1, proxy_backdoor = -1;
   char *envVar = NULL, *group_addr = NULL, *tsArgs = NULL;
   bool log_to_syslog = true;
   char userToRunAs[80];
@@ -567,6 +569,8 @@ main(int argc, char **argv)
           } else if (strcmp(argv[i], "-recordsConf") == 0) {
             ++i;
             recs_conf = argv[i];
+            // TODO: This seems completely incomplete, disabled for now
+#if 0
           } else if (strcmp(argv[i], "-printRecords") == 0) {
             ++i;
             while (i < argc && argv[i][0] != '-') {
@@ -586,6 +590,7 @@ main(int argc, char **argv)
               ++i;
             }
             --i;
+#endif
           } else if (strcmp(argv[i], "-tsArgs") == 0) {
             int size_of_args = 0, j = (++i);
             while (j < argc) {
@@ -836,9 +841,7 @@ main(int argc, char **argv)
     XMLDom schema;
     schema.LoadFile(schema_path);
     bool validate = validateRecordsConfig(&schema);
-    NOWARN_UNUSED(validate);
-    // Why is this assert disabled? /leif
-    //ink_assert(validate);
+    ink_release_assert(validate);
   }
 
 
@@ -1087,6 +1090,7 @@ void
 SignalAlrmHandler(int sig)
 #endif
 {
+  NOWARN_UNUSED(sig);
   /*
      fprintf(stderr,"[TrafficManager] ==> SIGALRM received\n");
      mgmt_elog(stderr,"[TrafficManager] ==> SIGALRM received\n");
@@ -1212,6 +1216,7 @@ SignalHandler(int sig)
 void
 SigChldHandler(int sig)
 {
+  NOWARN_UNUSED(sig);
 }
 
 // void SigHupHandler(int sig,...)
@@ -1259,7 +1264,8 @@ printUsage()
      "     -lmConf        <fname> Local Management config file.\n");
    */
   fprintf(stderr, "     -recordsConf   <fname> General config file.\n");
-  fprintf(stderr, "     -printRecords  [...]   Print flags, default all are off.\n");
+  // TODO: This seems completely incomplete, disabled for now
+  // fprintf(stderr, "     -printRecords  [...]   Print flags, default all are off.\n");
   fprintf(stderr, "     -debug         <tags>  Enable the given debug tags\n");
   fprintf(stderr, "     -action        <tags>  Enable the given action tags.\n");
   fprintf(stderr, "     -version or -V         Print version id and exit.\n");

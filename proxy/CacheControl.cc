@@ -84,7 +84,7 @@ CC_delete_table()
 //
 struct CC_FreerContinuation;
 typedef int (CC_FreerContinuation::*CC_FreerContHandler) (int, void *);
-struct CC_FreerContinuation:Continuation
+struct CC_FreerContinuation: public Continuation
 {
   CC_table *p;
   int freeEvent(int event, Event * e)
@@ -108,7 +108,7 @@ struct CC_FreerContinuation:Continuation
 //   Used to read the cache.conf file after the manager signals
 //      a change
 //
-struct CC_UpdateContinuation:Continuation
+struct CC_UpdateContinuation: public Continuation
 {
   int file_update_handler(int etype, void *data)
   {
@@ -127,6 +127,10 @@ struct CC_UpdateContinuation:Continuation
 int
 cacheControlFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
   eventProcessor.schedule_imm(NEW(new CC_UpdateContinuation(reconfig_mutex)), ET_CACHE);
   return 0;
 }

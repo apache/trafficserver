@@ -49,6 +49,9 @@ int bindProxyPort(int, in_addr_t, int);
 bool
 LocalManager::SetForDup(void *hIOCPort, long lTProcId, void *hTh)
 {
+  NOWARN_UNUSED(hIOCPort);
+  NOWARN_UNUSED(lTProcId);
+  NOWARN_UNUSED(hTh);
   return true;
 }
 
@@ -237,6 +240,7 @@ LocalManager::processRunning()
 LocalManager::LocalManager(char *mpath, LMRecords * rd, bool proxy_on):
 BaseManager(), run_proxy(proxy_on), record_data(rd)
 {
+  NOWARN_UNUSED(mpath);
   bool found;
 #ifdef MGMT_USE_SYSLOG
   syslog_facility = 0;

@@ -107,6 +107,7 @@ dll_findsym(void *dlp, const char *name)
 static char *
 dll_error(void *dlp)
 {
+  NOWARN_UNUSED(dlp);
   return (char *) dlerror();
 }
 

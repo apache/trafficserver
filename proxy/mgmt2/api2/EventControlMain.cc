@@ -212,6 +212,7 @@ delete_event_queue(LLQ * q)
 void
 apiEventCallback(alarm_t newAlarm, char *ip, char *desc)
 {
+  NOWARN_UNUSED(ip);
   // create an INKEvent
   // addEvent(new_alarm, ip, desc) // adds event to mgmt_events
   INKEvent *newEvent;

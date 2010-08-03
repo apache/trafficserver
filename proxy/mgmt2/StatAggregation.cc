@@ -266,10 +266,10 @@ Ag_cacheHits()
     }
 
     for (i = 0; miss_count_table[i].lm_record_name; i++) {
-      int status;
       miss_count_table[i].current_value = -10000;
       miss_count_table[i].current_time = ink_get_hrtime();
-      status = varIntFromName(miss_count_table[i].lm_record_name, &(miss_count_table[i].current_value));
+      // TODO: Check return value?
+      varIntFromName(miss_count_table[i].lm_record_name, &(miss_count_table[i].current_value));
     }
 
     ////////////////////////////////////////////////
@@ -366,7 +366,6 @@ Ag_HostdbHitRate()
   static StatTwoIntSamples node_hostdb_hits = { "proxy.process.hostdb.total_hits", 0, 0, 0, 0 };
   static const char *node_hostdb_total_lookups_name = "proxy.node.hostdb.total_lookups_avg_10s";
   static const char *node_hostdb_hits_name = "proxy.node.hostdb.total_hits_avg_10s";
-  int status;
   MgmtInt hostdbHits;
   MgmtInt hostdbLookups;
   MgmtFloat floatSum = -20;
@@ -399,11 +398,13 @@ Ag_HostdbHitRate()
     //////////////////////////
     node_hostdb_total_lookups.current_value = -10000;
     node_hostdb_total_lookups.current_time = ink_get_hrtime();
-    status = varIntFromName(node_hostdb_total_lookups.lm_record_name, &(node_hostdb_total_lookups.current_value));
+    // TODO: Check return value?
+    varIntFromName(node_hostdb_total_lookups.lm_record_name, &(node_hostdb_total_lookups.current_value));
 
     node_hostdb_hits.current_value = -10000;
     node_hostdb_hits.current_time = ink_get_hrtime();
-    status = varIntFromName(node_hostdb_hits.lm_record_name, &(node_hostdb_hits.current_value));
+    // TODO: Check return value?
+    varIntFromName(node_hostdb_hits.lm_record_name, &(node_hostdb_hits.current_value));
 
     ////////////////////////////////////////////////
     // if not initial or wrap, set derived values //
@@ -620,16 +621,16 @@ Ag_TransactionPercentsAndMeanTimes()
     //////////////////////////
 
     for (i = 0; count_table[i].lm_record_name; i++) {
-      int status;
       count_table[i].current_value = -10000;
       count_table[i].current_time = ink_get_hrtime();
-      status = varIntFromName(count_table[i].lm_record_name, &(count_table[i].current_value));
+      // TODO: Check return value
+      varIntFromName(count_table[i].lm_record_name, &(count_table[i].current_value));
     }
     for (i = 0; times_table[i].lm_record_name; i++) {
-      int status;
       times_table[i].current_value = -10000;
       times_table[i].current_time = ink_get_hrtime();
-      status = varFloatFromName(times_table[i].lm_record_name, &(times_table[i].current_value));
+      // TODO: Check return value
+      varFloatFromName(times_table[i].lm_record_name, &(times_table[i].current_value));
     }
 
     ////////////////////////////////////////////////
@@ -675,17 +676,8 @@ void
 Ag_Throughput()
 {
   const ink_hrtime window = 10 * HRTIME_SECOND; // update every 10 seconds
-  static StatTwoIntSamples node_http_user_agent_total_response_bytes =
-    { "proxy.node.http.user_agent_total_response_bytes", 0, 0, 0, 0 };
-  static StatTwoIntSamples node_rni_downstream_total_bytes = { "proxy.node.rni.downstream_total_bytes", 0, 0, 0, 0 };
-  static const char *node_http_ua_total_response_bytes_name = "proxy.node.http.user_agent_total_response_bytesavg_10s";
-  static const char *node_rni_downstream_total_bytes_name = "proxy.node.rni.downstream_total_bytes_avg_10s";
   static ink_hrtime lastThroughputTime = 0;
   static MgmtInt lastBytesThrough = 0;
-  // These aren't used.
-  //static MgmtInt lastBytesHttpUAThrough;
-  //static MgmtInt lastBytesHttpOSThrough;
-  //static MgmtInt lastBytesRNIUAThrough;
   MgmtInt bytesThrough;
   MgmtInt bytesHttpUAThrough;
   MgmtInt bytesHttpOSThrough;
@@ -697,12 +689,6 @@ Ag_Throughput()
   double tmp;
   MgmtInt intSum;
   MgmtFloat floatSum = -20.0;
-
-  // Avoid warnings, we might want to clear out some of these variables ... /leif.
-  NOWARN_UNUSED(node_http_user_agent_total_response_bytes);
-  NOWARN_UNUSED(node_rni_downstream_total_bytes);
-  NOWARN_UNUSED(node_http_ua_total_response_bytes_name);
-  NOWARN_UNUSED(node_rni_downstream_total_bytes_name);
 
   if (diffTime > window) {
     if (varIntFromName("proxy.node.http.user_agent_total_response_bytes", &bytesHttpUAThrough)
@@ -941,7 +927,6 @@ Ag_Bytes()
   static StatTwoIntSamples node_os_total_bytes = { "proxy.node.origin_server_total_bytes", 0, 0, 0, 0 };
   static const char *node_ua_total_bytes_name = "proxy.node.user_agent_total_bytes_avg_10s";
   static const char *node_os_total_bytes_name = "proxy.node.origin_server_total_bytes_avg_10s";
-  int status;
   MgmtFloat hitRate;
 
   MgmtInt h, b;
@@ -1133,11 +1118,13 @@ Ag_Bytes()
     //////////////////////////
     node_ua_total_bytes.current_value = -10000;
     node_ua_total_bytes.current_time = ink_get_hrtime();
-    status = varIntFromName(node_ua_total_bytes.lm_record_name, &(node_ua_total_bytes.current_value));
+    // TODO: Check return value?
+    varIntFromName(node_ua_total_bytes.lm_record_name, &(node_ua_total_bytes.current_value));
 
     node_os_total_bytes.current_value = -10000;
     node_os_total_bytes.current_time = ink_get_hrtime();
-    status = varIntFromName(node_os_total_bytes.lm_record_name, &(node_os_total_bytes.current_value));
+    // TODO: Check return value?
+    varIntFromName(node_os_total_bytes.lm_record_name, &(node_os_total_bytes.current_value));
 
     ////////////////////////////////////////////////
     // if not initial or wrap, set derived values //

@@ -562,7 +562,6 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
   InkHashTableIteratorState iterator_state;
   char *snapPath;
   SnapResult callResult = SNAP_OK;
-  int ret_val = 0;
   struct stat snapDirStat;
 
 
@@ -589,7 +588,7 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
     }
   }
 #ifndef _WIN32
-  if ((ret_val = mkdir(snapPath, DIR_MODE)) < 0) {
+  if (mkdir(snapPath, DIR_MODE) < 0) {
 #else
   if (mkdir(snapPath) < 0) {
 #endif

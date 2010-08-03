@@ -32,6 +32,7 @@
 #include "createArgument.h"
 #include "CliMgmtUtils.h"
 #include "CliDisplay.h"
+#include "ink_defs.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -148,6 +149,7 @@ DebugOff()
 int
 Cmd_ConfigRoot(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
 {
+  NOWARN_UNUSED(clientData);
   /* call to processArgForCommand must appear at the beginning
    * of each command's callback function
    */
