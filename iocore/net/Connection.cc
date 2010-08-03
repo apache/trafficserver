@@ -50,7 +50,7 @@ get_listen_backlog(void)
 
   IOCORE_ReadConfigInteger(listen_backlog, "proxy.config.net.listen_backlog");
   return listen_backlog;
-};
+}
 
 
 //

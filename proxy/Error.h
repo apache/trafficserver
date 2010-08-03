@@ -72,7 +72,7 @@ struct ErrorClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct FatalClass:ErrorClass
+struct FatalClass: public ErrorClass
 {
   FatalClass(const char *afile, int aline, const char *afunction)
   : ErrorClass(afile, aline, afunction)
@@ -87,7 +87,7 @@ struct FatalClass:ErrorClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct RequestFatalClass:FatalClass
+struct RequestFatalClass: public FatalClass
 {
   virtual void raise(va_list ap, const char *prefix = NULL);
     RequestFatalClass(const char *afile, int aline, const char *afunction)
@@ -104,7 +104,7 @@ struct RequestFatalClass:FatalClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct ThreadFatalClass:FatalClass
+struct ThreadFatalClass: public FatalClass
 {
   virtual void raise(va_list ap, const char *prefix = NULL);
     ThreadFatalClass(const char *afile, int aline, const char *afunction)
@@ -121,7 +121,7 @@ struct ThreadFatalClass:FatalClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct ProcessorFatalClass:FatalClass
+struct ProcessorFatalClass: public FatalClass
 {
   virtual void raise(va_list ap, const char *prefix = NULL);
     ProcessorFatalClass(const char *afile, int aline, const char *afunction)
@@ -139,7 +139,7 @@ struct ProcessorFatalClass:FatalClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct ProcessFatalClass:FatalClass
+struct ProcessFatalClass: public FatalClass
 {
   virtual void raise(va_list ap, const char *prefix = NULL);
     ProcessFatalClass(const char *afile, int aline, const char *afunction)
@@ -158,7 +158,7 @@ struct ProcessFatalClass:FatalClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct MachineFatalClass:FatalClass
+struct MachineFatalClass: public FatalClass
 {
   virtual void raise(va_list ap, const char *prefix = NULL);
     MachineFatalClass(const char *afile, int aline, const char *afunction)

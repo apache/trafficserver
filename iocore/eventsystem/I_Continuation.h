@@ -63,7 +63,7 @@ typedef int (Continuation::*ContinuationHandler) (int event, void *data);
 class force_VFPT_to_top
 {
 public:
-  virtual ~ force_VFPT_to_top()
+  virtual ~force_VFPT_to_top()
   {
   }
 };
@@ -92,7 +92,9 @@ public:
   the Continuation's class constructor.
 
 */
-class Continuation:force_VFPT_to_top
+
+// TODO: The ICCcompiler defaults this to "private", is that really correct?
+class Continuation: public force_VFPT_to_top
 {
 public:
 

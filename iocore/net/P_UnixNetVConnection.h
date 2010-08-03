@@ -100,9 +100,9 @@ public:
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
   virtual void cancel_OOB();
 
-  virtual void setSSLHandshakeWantsRead(bool flag) { return; }
+  virtual void setSSLHandshakeWantsRead(bool flag) { NOWARN_UNUSED(flag); return; }
   virtual bool getSSLHandshakeWantsRead() { return false; }
-  virtual void setSSLHandshakeWantsWrite(bool flag) { return; }
+  virtual void setSSLHandshakeWantsWrite(bool flag) { NOWARN_UNUSED(flag); return; }
 
   virtual bool getSSLHandshakeWantsWrite() { return false; }
 
@@ -196,10 +196,10 @@ public:
   NetState read;
   NetState write;
 
-  LINKM(UnixNetVConnection, read, ready_link);
-  SLINKM(UnixNetVConnection, read, enable_link);
-  LINKM(UnixNetVConnection, write, ready_link);
-  SLINKM(UnixNetVConnection, write, enable_link);
+  LINKM(UnixNetVConnection, read, ready_link)
+  SLINKM(UnixNetVConnection, read, enable_link)
+  LINKM(UnixNetVConnection, write, ready_link)
+  SLINKM(UnixNetVConnection, write, enable_link)
 
   ink_hrtime inactivity_timeout_in;
   ink_hrtime active_timeout_in;

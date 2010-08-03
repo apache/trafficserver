@@ -50,7 +50,7 @@ struct UnixNetVConnection;
 // NetAccept
 // Handles accepting connections.
 //
-struct SSLNetAccept:NetAccept
+struct SSLNetAccept: public NetAccept
 {
 
 #ifndef _IOCORE_WIN32_WINNT

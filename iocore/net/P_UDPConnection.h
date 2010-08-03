@@ -188,13 +188,13 @@ UDPConnection::cancel(void)
   p->sendGenerationNum++;
   p->lastPktStartTime = p->lastSentPktStartTime;
   return p->lastSentPktTSSeqNum;
-};
+}
 
 TS_INLINE void
 UDPConnection::SetLastSentPktTSSeqNum(int64 sentSeqNum)
 {
   ((UDPConnectionInternal *) this)->lastSentPktTSSeqNum = sentSeqNum;
-};
+}
 
 TS_INLINE void
 UDPConnection::setContinuation(Continuation * c)

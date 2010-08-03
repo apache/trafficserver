@@ -320,7 +320,7 @@ private:
 
 void initialize_thread_for_udp_net(EThread * thread);
 
-struct UDPNetHandler:Continuation
+struct UDPNetHandler: public Continuation
 {
 public:
   // to be polled for read

@@ -802,6 +802,7 @@ HostLookup::~HostLookup()
 static void
 empty_print_fn(void *opaque_data)
 {
+  NOWARN_UNUSED(opaque_data);
 }
 
 void

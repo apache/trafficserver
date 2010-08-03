@@ -325,7 +325,7 @@ ink_time_dayrange_to_string(InkTimeDayRange * dayrange_ptr, char *buf, const siz
     buf[0] = '\0';
   }
 
-  snprintf(buf, bufSize, "range_start_%u_width_%u", dayrange_ptr->base, dayrange_ptr->width);
+  snprintf(buf, bufSize, "range_start_%d_width_%u", dayrange_ptr->base, dayrange_ptr->width);
   return (buf);
 }                               /* End ink_time_dayrange_to_string */
 

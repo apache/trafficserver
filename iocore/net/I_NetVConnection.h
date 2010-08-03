@@ -63,7 +63,7 @@ struct NetVCOptions {
   /// Values for valid IP protocols.
   enum ip_protocol_t {
     USE_TCP, ///< TCP protocol.
-    USE_UDP, ///< UDP protocol.
+    USE_UDP ///< UDP protocol.
   };
 
   /// IP protocol to use on socket.
@@ -83,13 +83,13 @@ struct NetVCOptions {
   enum addr_bind_style {
     ANY_ADDR, ///< Bind to any available local address (don't care, default).
     INTF_ADDR, ///< Bind to the interface address in @a local_addr.
-    FOREIGN_ADDR, ///< Bind to foreign address in @a local_addr.
+    FOREIGN_ADDR ///< Bind to foreign address in @a local_addr.
   };
 
   /// The set of ways in which the local port should be bound.
   enum port_bind_style {
     ANY_PORT, ///< Bind to any available local port (dont' care, default).
-    FIXED_PORT, ///< Bind to the port in @a local_port.
+    FIXED_PORT ///< Bind to the port in @a local_port.
   };
 
   /// Port to use for local side of connection.
@@ -483,7 +483,7 @@ public:
 #else
   // These are here to simplify the usage of these APIs, i.e. no need to
   // add the #ifdef ATS_USE_DETAILED_LOG a million times.
-  void addLogMessage(const char *message) {}
+  void addLogMessage(const char *message) { NOWARN_UNUSED(message); }
   bool loggingEnabled() const { return false; }
 #endif
 

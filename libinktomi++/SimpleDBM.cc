@@ -113,6 +113,7 @@ SimpleDBM::~SimpleDBM()
 int
 SimpleDBM::open(char *db_name, int flags, void* info)
 {
+  NOWARN_UNUSED(info);
   int return_code = 0;
 #ifdef SIMPLEDBM_USE_SQLITE3
   int sqlite3_flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
@@ -751,6 +752,7 @@ SimpleDBM::iterate(SimpleDBMIteratorFunction f, void *client_data)
 int
 SimpleDBM::lock(bool shared_lock)
 {
+  NOWARN_UNUSED(shared_lock);
   int return_code = 0;
 
   switch (_dbm_type) {

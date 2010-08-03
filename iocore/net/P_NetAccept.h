@@ -57,7 +57,7 @@ AcceptFunction net_accept;
 class UnixNetVConnection;
 
 // TODO fix race between cancel accept and call back
-struct NetAcceptAction:public Action, RefCountObj
+struct NetAcceptAction:public Action, public RefCountObj
 {
   Server *server;
 
@@ -81,7 +81,7 @@ struct NetAcceptAction:public Action, RefCountObj
 // NetAccept
 // Handles accepting connections.
 //
-struct NetAccept:Continuation
+struct NetAccept:public Continuation
 {
   int port;
   ink_hrtime period;

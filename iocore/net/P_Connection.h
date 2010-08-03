@@ -155,7 +155,7 @@ protected:
 // Server
 //
 ///////////////////////////////////////////////////////////////////////
-struct Server:Connection
+struct Server: public Connection
 {
   //
   // IP address in network byte order

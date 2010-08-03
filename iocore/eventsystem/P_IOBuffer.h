@@ -145,10 +145,12 @@ iobuffer_mem_inc(const char *_loc, int64 _size_index)
     _loc = "memory/IOBuffer/UNKNOWN-LOCATION";
   Resource *res = res_lookup(_loc);
   ink_debug_assert(strcmp(_loc, res->path) == 0);
-  int64 r = ink_atomic_increment64(&res->value,
-                                   index_to_buffer_size(_size_index));
-  NOWARN_UNUSED(r);
+#ifdef DEBUG  
+  int64 r = ink_atomic_increment64(&res->value, index_to_buffer_size(_size_index));
   ink_debug_assert(r >= 0);
+#else
+  ink_atomic_increment64(&res->value, index_to_buffer_size(_size_index));
+#endif
 }
 
 TS_INLINE void
@@ -163,10 +165,12 @@ iobuffer_mem_dec(const char *_loc, int64 _size_index)
     _loc = "memory/IOBuffer/UNKNOWN-LOCATION";
   Resource *res = res_lookup(_loc);
   ink_debug_assert(strcmp(_loc, res->path) == 0);
-  int64 r = ink_atomic_increment64(&res->value,
-                                   -index_to_buffer_size(_size_index));
-  NOWARN_UNUSED(r);
+#ifdef DEBUG  
+  int64 r = ink_atomic_increment64(&res->value, -index_to_buffer_size(_size_index));
   ink_debug_assert(r >= index_to_buffer_size(_size_index));
+#else
+  ink_atomic_increment64(&res->value, -index_to_buffer_size(_size_index));
+#endif
 }
 #endif
 

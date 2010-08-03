@@ -27,7 +27,7 @@
 
 #include "inktomi++.h"
 
-template<class C> struct DeleterContinuation:Continuation
+template<class C> struct DeleterContinuation: public Continuation
 {
 public:                        // Needed by WinNT compiler (compiler bug)
   C * p;
@@ -52,7 +52,7 @@ new_Deleter(C * ap, ink_hrtime t)
   eventProcessor.schedule_in(NEW(new DeleterContinuation<C> (ap)), t, ET_CALL);
 }
 
-template<class C> struct FreeCallContinuation:Continuation
+template<class C> struct FreeCallContinuation: public Continuation
 {
 public:                        // Needed by WinNT compiler (compiler bug)
   C * p;
@@ -79,7 +79,7 @@ new_FreeCaller(C * ap, ink_hrtime t)
 struct FreerContinuation;
 typedef int (FreerContinuation::*FreerContHandler) (int, void *);
 
-struct FreerContinuation:Continuation
+struct FreerContinuation: public Continuation
 {
   void *p;
   int dieEvent(int event, Event * e)
@@ -102,7 +102,7 @@ new_Freer(void *ap, ink_hrtime t)
   eventProcessor.schedule_in(NEW(new FreerContinuation(ap)), t, ET_CALL);
 }
 
-template<class C> struct DereferContinuation:Continuation
+template<class C> struct DereferContinuation: public Continuation
 {
   C *p;
   int dieEvent(int event, Event * e)

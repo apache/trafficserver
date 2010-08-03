@@ -186,7 +186,6 @@ int
 textBuffer::readFromFD(int fd)
 {
   int readSize;
-  char *begin;
 
   // Check to see if we have got a resonable amount of space left in our
   //   buffer, if not try to get somemore
@@ -196,7 +195,6 @@ textBuffer::readFromFD(int fd)
     }
   }
 
-  begin = nextAdd;
   readSize = read(fd, nextAdd, spaceLeft - 1);
 
   if (readSize == 0) {

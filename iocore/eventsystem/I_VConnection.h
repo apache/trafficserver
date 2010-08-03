@@ -378,7 +378,7 @@ public:
   int lerrno;
 };
 
-struct DummyVConnection:VConnection
+struct DummyVConnection: public VConnection
 {
   virtual VIO *do_io_write(Continuation *c = NULL, int64 nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) {
     (void) c;

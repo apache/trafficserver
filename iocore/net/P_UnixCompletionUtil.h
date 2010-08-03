@@ -37,14 +37,14 @@ completionUtil::create()
 {
   UDPIOEvent *u = UDPIOEventAllocator.alloc();
   return u;
-};
+}
 TS_INLINE void
 completionUtil::destroy(Event * e)
 {
   ink_assert(e != NULL);
   UDPIOEvent *u = (UDPIOEvent *) e;
   UDPIOEvent::free(u);
-};
+}
 TS_INLINE void
 completionUtil::setThread(Event * e, EThread * t)
 {
