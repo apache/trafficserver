@@ -179,7 +179,7 @@ HostDBProcessor::cache()
 }
 
 
-struct HostDBTestRR:Continuation
+struct HostDBTestRR: public Continuation
 {
   int fd;
   char b[512];
@@ -244,7 +244,7 @@ HostDBTestRR():Continuation(new_ProxyMutex()), nb(0), outstanding(0), success(0)
 };
 
 
-struct HostDBSyncer:Continuation
+struct HostDBSyncer: public Continuation
 {
   int frequency;
   ink_hrtime start_time;
@@ -721,14 +721,15 @@ HostDBProcessor::getby(Continuation * cont,
   if (!aforce_dns) {
     // find the partition lock
     //
-    ProxyMutex *mutex = hostDB.lock_for_bucket((int) (fold_md5(md5) % hostDB.buckets));
-    MUTEX_TRY_LOCK(lock, mutex, thread);
+    // TODO: Could we reuse the "mutex" above safely? I think so, but not sure.
+    ProxyMutex *bmutex = hostDB.lock_for_bucket((int) (fold_md5(md5) % hostDB.buckets));
+    MUTEX_TRY_LOCK(lock, bmutex, thread);
     MUTEX_TRY_LOCK(lock2, cont->mutex, thread);
 
     // If we can get the lock and a level 1 probe succeeds, return
     //
     if (lock && lock2) {
-      HostDBInfo *r = probe(mutex, md5, hostname, len, ip, port, pDS);
+      HostDBInfo *r = probe(bmutex, md5, hostname, len, ip, port, pDS);
       if (r) {
         Debug("hostdb", "immediate answer for %s", hostname ? hostname : "<addr>");
         HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
@@ -742,7 +743,7 @@ HostDBProcessor::getby(Continuation * cont,
 Lretry:
   // Otherwise, create a continuation to do a deeper probe in the background
   //
-  HostDBContinuation * c = hostDBContAllocator.alloc();
+  HostDBContinuation *c = hostDBContAllocator.alloc();
   c->init(hostname, len, ip, port, md5, cont, pDS, false, dns_lookup_timeout);
   c->action = cont;
   c->force_dns = aforce_dns;
@@ -1040,6 +1041,8 @@ HostDBProcessor::setby(char *hostname, int len, int port, unsigned int ip, HostD
 int
 HostDBContinuation::setbyEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   HostDBInfo *r = probe(mutex, md5, name, namelen, ip, port, 0);
 
   if (r)
@@ -1148,6 +1151,7 @@ HostDBProcessor::failed_connect_on_ip_for_name(Continuation * cont, unsigned int
 int
 HostDBContinuation::removeEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
   Continuation *cont = action.continuation;
 
   MUTEX_TRY_LOCK(lock, cont ? (ProxyMutex *) cont->mutex : (ProxyMutex *) NULL, e->ethread);
@@ -1545,6 +1549,7 @@ HostDBContinuation::make_get_message(char *buf, int size)
 //
 bool HostDBContinuation::do_get_response(Event * e)
 {
+  NOWARN_UNUSED(e);
   if (!hostdb_cluster)
     return false;
 
@@ -1682,6 +1687,7 @@ HostDBContinuation::do_put_response(ClusterMachine * m, HostDBInfo * r, Continua
 int
 HostDBContinuation::probeEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
   ink_assert(!link.prev && !link.next);
   EThread *t = e ? e->ethread : this_ethread();
 
@@ -1841,6 +1847,7 @@ HostDBContinuation::do_dns()
 int
 HostDBContinuation::clusterResponseEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
   if (from_cont) {
     HostDBContinuation *c;
     for (c = (HostDBContinuation *) remoteHostDBQueue[key_partition()].head; c; c = (HostDBContinuation *) c->link.next)
@@ -1956,6 +1963,7 @@ HostDBContinuation::failed_cluster_request(Event * e)
 void
 get_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
 {
+  NOWARN_UNUSED(len);
   void *pDS = 0;
   HostDB_get_message *msg = (HostDB_get_message *) data;
 
@@ -1996,6 +2004,7 @@ get_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
 void
 put_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
 {
+  NOWARN_UNUSED(len);
   HostDB_put_message *msg = (HostDB_put_message *) data;
   HostDBContinuation *c = hostDBContAllocator.alloc();
 
@@ -2021,6 +2030,8 @@ put_hostinfo_ClusterFunction(ClusterMachine * from, void *data, int len)
 int
 HostDBContinuation::backgroundEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   hostdb_current_interval++;
 
   return EVENT_CONT;
@@ -2028,6 +2039,7 @@ HostDBContinuation::backgroundEvent(int event, Event * e)
 
 bool HostDBInfo::match(INK_MD5 & md5, int bucket, int buckets)
 {
+  NOWARN_UNUSED(buckets);
   if (md5[1] != md5_high)
     return false;
 
@@ -2122,7 +2134,7 @@ HostDBContinuation::master_machine(ClusterConfiguration * cc)
 #ifdef NON_MODULAR
 struct ShowHostDB;
 typedef int (ShowHostDB::*ShowHostDBEventHandler) (int event, Event * data);
-struct ShowHostDB:ShowCont
+struct ShowHostDB: public ShowCont
 {
   char *name;
   unsigned int ip;
@@ -2148,6 +2160,8 @@ struct ShowHostDB:ShowCont
 
   int showLookup(int event, Event * e)
   {
+    NOWARN_UNUSED(event);
+    NOWARN_UNUSED(e);
     SET_HANDLER(&ShowHostDB::showLookupDone);
     if (name)
       hostDBProcessor.getbyname_re(this, name, 0, force ? HostDBProcessor::HOSTDB_FORCE_DNS_ALWAYS : 0);
@@ -2266,7 +2280,7 @@ register_ShowHostDB(Continuation * c, HTTPHdr * h)
 
 struct HostDBTestReverse;
 typedef int (HostDBTestReverse::*HostDBTestReverseHandler) (int, void *);
-struct HostDBTestReverse:Continuation
+struct HostDBTestReverse: public Continuation
 {
   int outstanding;
   int total;

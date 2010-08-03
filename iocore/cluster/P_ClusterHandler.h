@@ -45,7 +45,7 @@ struct ClusterCalloutContinuation:public Continuation
    ~ClusterCalloutContinuation();
 };
 
-struct ClusterControl:Continuation
+struct ClusterControl: public Continuation
 {
   int len;
   char size_index;
@@ -81,7 +81,7 @@ struct ClusterControl:Continuation
   virtual void freeall() = 0;
 };
 
-struct OutgoingControl:ClusterControl
+struct OutgoingControl: public ClusterControl
 {
   ClusterMachine *m;
   ink_hrtime submit_time;
@@ -124,7 +124,7 @@ struct OutgoingControl:ClusterControl
 //
 // incoming control messsage are received by this machine
 //
-struct IncomingControl:ClusterControl
+struct IncomingControl: public ClusterControl
 {
   ink_hrtime recognized_time;
 
@@ -402,7 +402,7 @@ struct ClusterState:Continuation
 // ClusterHandlerBase superclass for processors with
 // bi-directional VConnections.
 //
-struct ClusterHandlerBase:Continuation
+struct ClusterHandlerBase: public Continuation
 {
   //
   // Private

@@ -78,7 +78,6 @@ DNSConnection::connect(unsigned int ip, int port,
   ink_assert(fd == NO_FD);
 
   int res = 0;
-  ink_hrtime t;
   short Proto;
 
   if (use_tcp) {
@@ -139,7 +138,6 @@ DNSConnection::connect(unsigned int ip, int port,
     goto Lerror;
 #endif
 
-  t = ink_get_hrtime();
   res =::connect(fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
 
   if (!res || ((res < 0) && (errno == EINPROGRESS || errno == EWOULDBLOCK))) {

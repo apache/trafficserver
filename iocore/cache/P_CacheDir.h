@@ -192,7 +192,7 @@ struct FreeDir
 // alternates from this vector is done under the Part::lock. The alternate
 // is deleted/inserted into the vector just before writing the vector disk
 // (CacheVC::updateVector).
-LINK_FORWARD_DECLARATION(CacheVC, opendir_link); // forward declaration
+LINK_FORWARD_DECLARATION(CacheVC, opendir_link) // forward declaration
 struct OpenDirEntry
 {
   DLL<CacheVC, Link_CacheVC_opendir_link> writers;       // list of all the current writers
@@ -221,7 +221,7 @@ struct OpenDirEntry
   }
 };
 
-struct OpenDir:Continuation
+struct OpenDir: public Continuation
 {
   Queue<CacheVC, Link_CacheVC_opendir_link> delayed_readers;
   DLL<OpenDirEntry> bucket[OPEN_DIR_BUCKETS];
@@ -234,7 +234,7 @@ struct OpenDir:Continuation
   OpenDir();
 };
 
-struct CacheSync:Continuation
+struct CacheSync: public Continuation
 {
   int part;
   char *buf;

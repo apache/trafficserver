@@ -62,7 +62,7 @@ typedef void (*Transform_fn) (MIOBufferAccessor & in_buf, MIOBufferAccessor & ou
   connection which it may manipulate in any manner it sees fit.
 
 */
-struct OneWayTunnel:Continuation
+struct OneWayTunnel: public Continuation
 {
   //
   //  Public Interface

@@ -153,7 +153,7 @@ private:
 
 struct CacheHostTableConfig;
 typedef int (CacheHostTableConfig::*CacheHostTabHandler) (int, void *);
-struct CacheHostTableConfig:Continuation
+struct CacheHostTableConfig: public Continuation
 {
   CacheHostTable **ppt;
     CacheHostTableConfig(CacheHostTable ** appt)

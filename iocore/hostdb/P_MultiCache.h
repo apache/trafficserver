@@ -197,7 +197,7 @@ typedef int two_ints[2];
 
 struct MultiCacheHeapGC;
 
-struct MultiCacheBase:MultiCacheHeader
+struct MultiCacheBase: public MultiCacheHeader
 {
   Store *store;
   char filename[PATH_NAME_MAX + 1];
@@ -427,7 +427,7 @@ struct MultiCacheBase:MultiCacheHeader
   PtrMutex locks[MULTI_CACHE_PARTITIONS];       // 1 lock per (buckets/partitions)
 };
 
-template<class C> struct MultiCache:MultiCacheBase
+template<class C> struct MultiCache: public MultiCacheBase
 {
   int get_elementsize()
   {

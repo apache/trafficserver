@@ -226,7 +226,7 @@ extern int cache_config_hit_evacuate_size_limit;
 #endif
 
 // CacheVC
-struct CacheVC:CacheVConnection
+struct CacheVC: public CacheVConnection
 {
   CacheVC();
 
@@ -492,7 +492,7 @@ struct CacheVC:CacheVConnection
     ink_assert(handler != (ContinuationHandler)(&CacheVC::dead)); \
   } while (0)
 
-struct CacheRemoveCont:Continuation
+struct CacheRemoveCont: public Continuation
 {
   int event_handler(int event, void *data);
 
@@ -1011,6 +1011,7 @@ Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
 TS_INLINE void
 Cache::generate_key(INK_MD5 *md5, URL *url, CacheHTTPHdr *request)
 {
+  NOWARN_UNUSED(request);
 #ifdef BROKEN_HACK_FOR_VARY_ON_UA
   // We probably should make this configurable, both enabling it and what
   // MIME types we want to treat differently. // Leif
@@ -1156,6 +1157,7 @@ CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *
                                   CacheFragType frag_type, int options, time_t pin_in_cache,
                                   char *hostname, int host_len)
 {
+  NOWARN_UNUSED(pin_in_cache);
   (void)cont;
   (void)buf;
   (void)key;
@@ -1320,6 +1322,6 @@ local_cache()
   return theCache;
 }
 
-LINK_DEFINITION(CacheVC, opendir_link);
+LINK_DEFINITION(CacheVC, opendir_link)
 
 #endif /* _P_CACHE_INTERNAL_H__ */

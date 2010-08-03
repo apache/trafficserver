@@ -42,8 +42,6 @@
 /* ---------------------------
    forward declarations ...
    --------------------------- */
-
-
 void ink_split_dns_init(ModuleVersion version);
 
 #define MAX_CONFIGS  100
@@ -67,21 +65,16 @@ enum DNSResultType
 typedef ControlMatcher<SplitDNSRecord, SplitDNSResult> DNS_table;
 
 
-
-
 /* --------------------------------------------------------------
    **                struct SplitDNSResult
    -------------------------------------------------------------- */
-
 struct SplitDNSResult
 {
-
   SplitDNSResult();
 
   /* ------------
      public
      ------------ */
-
   DNSResultType r;
 
   DNSServer *get_dns_record();
@@ -97,15 +90,12 @@ struct SplitDNSResult
 };
 
 
-/* --------------------------------------------------------------
-   -------------------------------------------------------------- */
 struct SplitDNSConfigInfo
 {
   volatile int m_refcount;
 
-    virtual ~ SplitDNSConfigInfo()
-  {
-  }
+  virtual ~SplitDNSConfigInfo()
+  { }
 };
 
 
@@ -129,12 +119,10 @@ extern SplitDNSConfigProcessor SplitDNSconfigProcessor;
 /* --------------------------------------------------------------
    **                struct SplitDNS
    -------------------------------------------------------------- */
-
 struct SplitDNS:public SplitDNSConfigInfo
 {
   SplitDNS();
   ~SplitDNS();
-
 
   void *getDNSRecord(char *hostname);
   void findServer(RD * rdata, SplitDNSResult * result);
@@ -156,9 +144,6 @@ struct SplitDNS:public SplitDNSConfigInfo
   void *m_pxLeafArray;
   int m_numEle;
 };
-/* --------------------------------------------------------------
-   -------------------------------------------------------------- */
-
 
 
 /* --------------------------------------------------------------
@@ -170,13 +155,9 @@ TS_INLINE bool SplitDNSConfig::isSplitDNSEnabled()
 }
 
 
-/* --------------------------------------------------------------
-   -------------------------------------------------------------- */
-
 //
 // End API to outside world
 //
-
 
 
 /* --------------------------------------------------------------
@@ -184,27 +165,19 @@ TS_INLINE bool SplitDNSConfig::isSplitDNSEnabled()
 
    A record for an single server
    -------------------------------------------------------------- */
-
-
 struct DNSServer
 {
-  unsigned long
-    x_server_ip[MAXNS];
-  char
-    x_dns_ip_line[MAXDNAME * 2];
+  unsigned long x_server_ip[MAXNS];
+  char x_dns_ip_line[MAXDNAME * 2];
 
-  char
-    x_def_domain[MAXDNAME];
-  char
-    x_domain_srch_list[MAXDNAME];
-  int
-    x_dns_server_port[MAXNS];
+  char x_def_domain[MAXDNAME];
+  char x_domain_srch_list[MAXDNAME];
+  int  x_dns_server_port[MAXNS];
 
-  DNSHandler *
-    x_dnsH;
+  DNSHandler *x_dnsH;
 
-  DNSServer():
-  x_dnsH(NULL)
+  DNSServer()
+  : x_dnsH(NULL)
   {
     memset(x_server_ip, 0, sizeof(x_server_ip));
     memset(x_dns_server_port, 0, sizeof(x_dns_server_port));
@@ -221,32 +194,20 @@ struct DNSServer
 
    A record for an single server
    -------------------------------------------------------------- */
-
-
-class
-  DNSRequestData:
-  public
-  RequestData
+class DNSRequestData: public RequestData
 {
 public:
 
   DNSRequestData();
 
-  char *
-  get_string();
+  char *get_string();
 
-  const char *
-  get_host();
+  const char *get_host();
 
-  ip_addr_t
-  get_ip();
+  ip_addr_t get_ip();
+  ip_addr_t get_client_ip();
 
-  ip_addr_t
-  get_client_ip();
-
-
-  const char *
-    m_pHost;
+  const char *m_pHost;
 };
 
 
@@ -254,7 +215,7 @@ public:
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
 TS_INLINE DNSRequestData::DNSRequestData()
-:m_pHost(0)
+: m_pHost(0)
 {
 }
 
@@ -262,7 +223,6 @@ TS_INLINE DNSRequestData::DNSRequestData()
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
-
 TS_INLINE char *
 DNSRequestData::get_string()
 {
@@ -273,7 +233,6 @@ DNSRequestData::get_string()
 /* --------------------------------------------------------------
    DNSRequestData::get_host()
    -------------------------------------------------------------- */
-
 TS_INLINE const char *
 DNSRequestData::get_host()
 {
@@ -284,7 +243,6 @@ DNSRequestData::get_host()
 /* --------------------------------------------------------------
    DNSRequestData::get_ip()
    -------------------------------------------------------------- */
-
 TS_INLINE ip_addr_t DNSRequestData::get_ip()
 {
   return (ip_addr_t) 0;
@@ -294,83 +252,51 @@ TS_INLINE ip_addr_t DNSRequestData::get_ip()
 /* --------------------------------------------------------------
    DNSRequestData::get_client_ip()
    -------------------------------------------------------------- */
-
 TS_INLINE ip_addr_t DNSRequestData::get_client_ip()
 {
   return (ip_addr_t) 0;
 }
-
-
-
-/* --------------------------------------------------------------
-   -------------------------------------------------------------- */
-
-
 
 /* --------------------------------------------------------------
    *                 class SplitDNSRecord
 
    A record for a configuration line in the splitdns.config file
    -------------------------------------------------------------- */
-
-class
-  SplitDNSRecord:
-  public
-  ControlBase
+class SplitDNSRecord: public ControlBase
 {
 public:
 
   SplitDNSRecord();
-  ~
-  SplitDNSRecord();
+  ~SplitDNSRecord();
 
-  char *
-  Init(matcher_line * line_info);
+  char *Init(matcher_line * line_info);
 
-  const char *
-  ProcessDNSHosts(char *val);
-  const char *
-  ProcessDomainSrchList(char *val);
-  const char *
-  ProcessDefDomain(char *val);
+  const char *ProcessDNSHosts(char *val);
+  const char *ProcessDomainSrchList(char *val);
+  const char *ProcessDefDomain(char *val);
 
-  void
-  UpdateMatch(SplitDNSResult * result, RD * rdata);
-  void
-  Print();
+  void UpdateMatch(SplitDNSResult * result, RD * rdata);
+  void Print();
 
-
-  DNSServer
-    m_servers;
-  int
-    m_dnsSrvr_cnt;
-  int
-    m_domain_srch_list;
+  DNSServer m_servers;
+  int m_dnsSrvr_cnt;
+  int m_domain_srch_list;
 };
 
 
 /* --------------------------------------------------------------
    SplitDNSRecord::SplitDNSRecord()
    -------------------------------------------------------------- */
-
 TS_INLINE SplitDNSRecord::SplitDNSRecord()
-:m_dnsSrvr_cnt(0), m_domain_srch_list(0)
-{
-}
+: m_dnsSrvr_cnt(0), m_domain_srch_list(0)
+{ }
 
 
 /* --------------------------------------------------------------
    SplitDNSRecord::~SplitDNSRecord()
    -------------------------------------------------------------- */
-
 TS_INLINE SplitDNSRecord::~SplitDNSRecord()
-{
-}
-
-
-
-/* --------------------------------------------------------------
-   -------------------------------------------------------------- */
+{ }
 
 
 /* --------------------------------------------------------------
@@ -378,13 +304,9 @@ TS_INLINE SplitDNSRecord::~SplitDNSRecord()
    Used to handle parent.conf or default parent updates after the
    manager signals a change
    -------------------------------------------------------------- */
-
-struct SDNS_UpdateContinuation:
-  Continuation
+struct SDNS_UpdateContinuation: public Continuation
 {
-
-  int
-  handle_event(int event, void *data);
+  int handle_event(int event, void *data);
   SDNS_UpdateContinuation(ProxyMutex * m);
 
 };
@@ -393,9 +315,8 @@ struct SDNS_UpdateContinuation:
 /* --------------------------------------------------------------
    SDNS_UpdateContinuation::SDNS_UpdateContinuation()
    -------------------------------------------------------------- */
-
 TS_INLINE SDNS_UpdateContinuation::SDNS_UpdateContinuation(ProxyMutex * m)
-:Continuation(m)
+: Continuation(m)
 {
   SET_HANDLER(&SDNS_UpdateContinuation::handle_event);
 }
@@ -404,7 +325,6 @@ TS_INLINE SDNS_UpdateContinuation::SDNS_UpdateContinuation(ProxyMutex * m)
 /* --------------------------------------------------------------
    SDNS_UpdateContinuation::handle_event()
    -------------------------------------------------------------- */
-
 TS_INLINE int
 SDNS_UpdateContinuation::handle_event(int event, void *data)
 {
@@ -416,14 +336,6 @@ SDNS_UpdateContinuation::handle_event(int event, void *data)
 
   return EVENT_DONE;
 }
-
-
-/* --------------------------------------------------------------
-   -------------------------------------------------------------- */
-
-
-
-
 
 /* ------------------
    Helper Functions

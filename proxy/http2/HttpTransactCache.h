@@ -94,7 +94,7 @@ enum Variability_t
 enum ContentEncoding
 {
   NO_GZIP = 0,
-  GZIP,
+  GZIP
 };
 
 

@@ -140,14 +140,14 @@
 /*************************************************************************/
 // Testing Defines
 /*************************************************************************/
-// #define MISS_TEST                1
-// #define TEST_PARTIAL_WRITES      1
-// #define TEST_PARTIAL_READS       1
-// #define TEST_TIMING              1
-// #define TEST_READ_LOCKS_MISSED   1
-// #define TEST_WRITE_LOCKS_MISSED  1
-// #define TEST_ENTER_EXIT          1
-// #define TEST_ENTER_EXIT          1
+#define MISS_TEST                0
+#define TEST_PARTIAL_WRITES      0
+#define TEST_PARTIAL_READS       0
+#define TEST_TIMING              0
+#define TEST_READ_LOCKS_MISSED   0
+#define TEST_WRITE_LOCKS_MISSED  0
+#define TEST_ENTER_EXIT          0
+#define TEST_ENTER_EXIT          0
 
 //
 // Timing testing
@@ -193,7 +193,7 @@ test_cluster_lock_might_fail()
 #define TEST_WRITE_LOCK_MIGHT_FAIL false
 #endif
 
-#ifdef TEST_ENTER_EXIT
+#if TEST_ENTER_EXIT
 struct enter_exit_class
 {
   int *outv;

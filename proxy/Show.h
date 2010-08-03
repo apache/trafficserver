@@ -124,6 +124,7 @@ struct ShowCont: public Continuation
 
 ShowCont(Continuation * c, HTTPHdr * h):
   Continuation(NULL), iarg(0), sarg(0) {
+    NOWARN_UNUSED(h);
     mutex = c->mutex;
     action = c;
     buf = (char *) xmalloc(32000);

@@ -339,7 +339,7 @@ struct ClusterVConnState
   ClusterVConnState();
 };
 
-struct ClusterVConnectionBase:CacheVConnection
+struct ClusterVConnectionBase: public CacheVConnection
 {
   //
   // Initiate an IO operation.
@@ -385,8 +385,8 @@ struct ClusterVConnectionBase:CacheVConnection
   volatile int closed;
   ClusterVConnState read;
   ClusterVConnState write;
-  LINKM(ClusterVConnectionBase, read, link);
-  LINKM(ClusterVConnectionBase, write, link);
+  LINKM(ClusterVConnectionBase, read, link)
+  LINKM(ClusterVConnectionBase, write, link)
   ink_hrtime inactivity_timeout_in;
   ink_hrtime active_timeout_in;
   Event *inactivity_timeout;
@@ -483,7 +483,7 @@ private:
 //
 // ClusterVConnection
 //
-struct ClusterVConnection:ClusterVConnectionBase
+struct ClusterVConnection: public ClusterVConnectionBase
 {
   //
   // Public Interface (included from ClusterVConnectionBase)

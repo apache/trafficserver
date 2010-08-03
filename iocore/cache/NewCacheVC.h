@@ -93,11 +93,13 @@ public:
   }
   bool set_pin_in_cache(time_t time_pin)
   {
+    NOWARN_UNUSED(time_pin);
     ink_assert(!"implemented");
     return false;
   }
   bool set_disk_io_priority(int priority)
   {
+    NOWARN_UNUSED(priority);
     ink_assert(!"implemented");
     return false;
   }
@@ -114,16 +116,22 @@ public:
   }
   int get_header(void **ptr, int *len)
   {
+    NOWARN_UNUSED(ptr);
+    NOWARN_UNUSED(len);
     ink_assert(!"implemented");
     return -1;
   }
   int set_header(void *ptr, int len)
   {
+    NOWARN_UNUSED(ptr);
+    NOWARN_UNUSED(len);
     ink_assert(!"implemented");
     return -1;
   }
   int get_single_data(void **ptr, int *len)
   {
+    NOWARN_UNUSED(ptr);
+    NOWARN_UNUSED(len);
     ink_assert(!"implemented");
     return -1;
   }
@@ -133,6 +141,10 @@ public:
     return -1;
   }
   VIO *do_io_pread(Continuation *c, int64 nbytes, MIOBuffer *buf, int64 offset) {
+    NOWARN_UNUSED(c);
+    NOWARN_UNUSED(nbytes);
+    NOWARN_UNUSED(buf);
+    NOWARN_UNUSED(offset);
     ink_assert(!"implemented");
     return 0;
   }

@@ -55,7 +55,7 @@
 
 class ClusterHandler;           // Leave this a class - VC++ gets very anal  ~SR
 
-struct ClusterMachine:Server
+struct ClusterMachine: public Server
 {
   bool dead;
   char *hostname;

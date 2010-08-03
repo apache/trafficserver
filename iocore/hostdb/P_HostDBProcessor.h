@@ -133,7 +133,7 @@ RecSetRawStatCount(hostdb_rsb, _x, _count);
 //
 // HostDBCache (Private)
 //
-struct HostDBCache:MultiCache<HostDBInfo>
+struct HostDBCache: public MultiCache<HostDBInfo>
 {
   int rebuild_callout(HostDBInfo * e, RebuildMC & r);
   int start(int flags = 0);
@@ -271,7 +271,7 @@ HostDBRoundRobin::select_best_http(unsigned int client_ip, time_t now, int32 fai
 struct HostDBContinuation;
 typedef int (HostDBContinuation::*HostDBContHandler) (int, void *);
 
-struct HostDBContinuation:Continuation
+struct HostDBContinuation: public Continuation
 {
 
   Action action;
