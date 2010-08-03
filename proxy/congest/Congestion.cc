@@ -334,7 +334,7 @@ CongestionControlRecord::Print()
 #undef PrintSTR
 }
 
-struct CongestionControl_UpdateContinuation:Continuation
+struct CongestionControl_UpdateContinuation: public Continuation
 {
   int congestion_update_handler(int etype, void *data)
   {
@@ -356,6 +356,10 @@ extern void initCongestionDB();
 static int
 CongestionControlEnabledChanged(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
   if (congestionControlEnabled == 1 || congestionControlEnabled == 2) {
     revalidateCongestionDB();
   }
@@ -365,7 +369,10 @@ CongestionControlEnabledChanged(const char *name, RecDataT data_type, RecData da
 static int
 CongestionControlFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
   NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
   eventProcessor.schedule_imm(new CongestionControl_UpdateContinuation(reconfig_mutex), ET_NET);
   return 0;
 }
@@ -373,6 +380,10 @@ CongestionControlFile_CB(const char *name, RecDataT data_type, RecData data, voi
 static int
 CongestionControlDefaultSchemeChanged(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
   if (strcasecmp(DEFAULT_congestion_scheme_str, "per_host") == 0) {
     DEFAULT_congestion_scheme = PER_HOST;
   } else {
@@ -384,6 +395,10 @@ CongestionControlDefaultSchemeChanged(const char *name, RecDataT data_type, RecD
 static int
 CongestionControlDefaultSNMPChanged(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
   if (strcasecmp(DEFAULT_snmp_str, "on") == 0) {
     DEFAULT_snmp = 1;
   } else {

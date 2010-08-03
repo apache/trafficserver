@@ -200,6 +200,7 @@ ClusterProcessor::invoke_remote_data(ClusterMachine * m, int cluster_fn,
 void
 ClusterProcessor::free_remote_data(char *p, int l)
 {
+  NOWARN_UNUSED(l);
   char *d = p - sizeof(int32);  // reset to ptr to function code
   int data_hdr = ClusterControl::DATA_HDR;
 
@@ -234,7 +235,6 @@ ClusterProcessor::open_local(Continuation * cont, ClusterMachine * m, ClusterVCT
   //
   bool immediate = ((options & CLUSTER_OPT_IMMEDIATE) ? true : false);
   bool allow_immediate = ((options & CLUSTER_OPT_ALLOW_IMMEDIATE) ? true : false);
-  int result;
 
   ClusterHandler *ch = m->clusterHandler;
   if (!ch)
@@ -270,7 +270,7 @@ ClusterProcessor::open_local(Continuation * cont, ClusterMachine * m, ClusterVCT
   } else {
     if (!(immediate || allow_immediate))
       vc->action_ = cont;
-    if ((result = vc->start(thread)) < 0) {
+    if (vc->start(thread) < 0) {
       return NULL;
     }
     if (immediate || allow_immediate) {
@@ -291,7 +291,6 @@ ClusterProcessor::connect_local(Continuation * cont, ClusterVCToken * token, int
   //
   bool immediate = ((options & CLUSTER_OPT_IMMEDIATE) ? true : false);
   bool allow_immediate = ((options & CLUSTER_OPT_ALLOW_IMMEDIATE) ? true : false);
-  int result;
 
 #ifdef LOCAL_CLUSTER_TEST_MODE
   int ip = inet_addr("127.0.0.1");
@@ -336,7 +335,7 @@ ClusterProcessor::connect_local(Continuation * cont, ClusterVCToken * token, int
   } else {
     if (!(immediate || allow_immediate))
       vc->action_ = cont;
-    if ((result = vc->start(thread)) < 0) {
+    if (vc->start(thread) < 0) {
       return NULL;
     }
     if (immediate || allow_immediate) {

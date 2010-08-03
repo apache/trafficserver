@@ -472,6 +472,8 @@ GlobalClusterPeriodicEvent::init()
 int
 GlobalClusterPeriodicEvent::calloutEvent(Event * e, void *data)
 {
+  NOWARN_UNUSED(e);
+  NOWARN_UNUSED(data);
   if (time_trace) {
     dump_time_buckets();
   }

@@ -144,6 +144,7 @@ DNS_Cache::send_dns_response()
 int
 DNS_Cache::req_query(HEADER * hp, unsigned char **cpp, unsigned char *eom)
 {
+  NOWARN_UNUSED(hp);
   int n;
   unsigned char *tmp_cpp;
   short type;

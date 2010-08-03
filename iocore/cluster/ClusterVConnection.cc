@@ -89,6 +89,10 @@ ClusterVConnectionBase::do_io_read(Continuation * acont, int64 anbytes, MIOBuffe
 VIO *
 ClusterVConnectionBase::do_io_pread(Continuation * acont, int64 anbytes, MIOBuffer * abuffer, int64 off)
 {
+  NOWARN_UNUSED(acont);
+  NOWARN_UNUSED(anbytes);
+  NOWARN_UNUSED(abuffer);
+  NOWARN_UNUSED(off);
   ink_assert(!"implemented");
   return 0;
 }
@@ -96,6 +100,8 @@ ClusterVConnectionBase::do_io_pread(Continuation * acont, int64 anbytes, MIOBuff
 int
 ClusterVConnection::get_header(void **ptr, int *len)
 {
+  NOWARN_UNUSED(ptr);
+  NOWARN_UNUSED(len);
   ink_assert(!"implemented");
   return -1;
 }
@@ -103,6 +109,8 @@ ClusterVConnection::get_header(void **ptr, int *len)
 int
 ClusterVConnection::set_header(void *ptr, int len)
 {
+  NOWARN_UNUSED(ptr);
+  NOWARN_UNUSED(len);
   ink_assert(!"implemented");
   return -1;
 }
@@ -110,6 +118,8 @@ ClusterVConnection::set_header(void *ptr, int len)
 int
 ClusterVConnection::get_single_data(void **ptr, int *len)
 {
+  NOWARN_UNUSED(ptr);
+  NOWARN_UNUSED(len);
   ink_assert(!"implemented");
   return -1;
 }
@@ -176,31 +186,30 @@ ClusterVConnectionBase::reenable_re(VIO * vio)
 }
 
 ClusterVConnection::ClusterVConnection(int is_new_connect_read)
-  :
-machine(NULL),
-new_connect_read(is_new_connect_read),
-remote_free(0),
-last_local_free(0),
-channel(0),
-close_disabled(0),
-remote_closed(0),
-remote_close_disabled(1),
-remote_lerrno(0),
-start_time(0),
-last_activity_time(0),
-n_set_data_msgs(0),
-n_recv_set_data_msgs(0),
-pending_remote_fill(0),
-have_all_data(0),
-initial_data_bytes(0),
-current_cont(0),
-iov_map(CLUSTER_IOV_NOT_OPEN),
-write_list_tail(0),
-write_list_bytes(0),
-write_bytes_in_transit(0),
-alternate(),
-time_pin(0),
-disk_io_priority(0)
+  :  machine(NULL),
+     new_connect_read(is_new_connect_read),
+     remote_free(0),
+     last_local_free(0),
+     channel(0),
+     close_disabled(0),
+     remote_closed(0),
+     remote_close_disabled(1),
+     remote_lerrno(0),
+     start_time(0),
+     last_activity_time(0),
+     n_set_data_msgs(0),
+     n_recv_set_data_msgs(0),
+     pending_remote_fill(0),
+     have_all_data(0),
+     initial_data_bytes(0),
+     current_cont(0),
+     iov_map(CLUSTER_IOV_NOT_OPEN),
+     write_list_tail(0),
+     write_list_bytes(0),
+     write_bytes_in_transit(0),
+     alternate(),
+     time_pin(0),
+     disk_io_priority(0)
 {
 #ifdef DEBUG
   read.vio.buffer.name = "ClusterVConnection.read";
@@ -538,10 +547,7 @@ ClusterVConnection::set_http_info(CacheHTTPInfo * d)
 
 bool ClusterVConnection::set_pin_in_cache(time_t t)
 {
-  int
-    flen;
-  SetChanPinMessage
-    msg;
+  SetChanPinMessage msg;
 
   //
   // set_pin_in_cache() is a mechanism to set an attribute on a
@@ -553,10 +559,10 @@ bool ClusterVConnection::set_pin_in_cache(time_t t)
   ink_release_assert(this->read.vio.op == VIO::NONE);   // should always be true
   time_pin = t;
 
-  int
-    vers = SetChanPinMessage::protoToVersion(machine->msg_proto_major);
+  int vers = SetChanPinMessage::protoToVersion(machine->msg_proto_major);
+
   if (vers == SetChanPinMessage::SET_CHANNEL_PIN_MESSAGE_VERSION) {
-    flen = SetChanPinMessage::sizeof_fixedlen_msg();
+    SetChanPinMessage::sizeof_fixedlen_msg();
   } else {
     //////////////////////////////////////////////////////////////
     // Create the specified down rev version of this message
@@ -581,10 +587,7 @@ time_t ClusterVConnection::get_pin_in_cache()
 
 bool ClusterVConnection::set_disk_io_priority(int priority)
 {
-  int
-    flen;
-  SetChanPriorityMessage
-    msg;
+  SetChanPriorityMessage msg;
 
   //
   // set_disk_io_priority() is a mechanism to set an attribute on a
@@ -596,10 +599,10 @@ bool ClusterVConnection::set_disk_io_priority(int priority)
   ink_release_assert(this->read.vio.op == VIO::NONE);   // should always be true
   disk_io_priority = priority;
 
-  int
-    vers = SetChanPriorityMessage::protoToVersion(machine->msg_proto_major);
+  int vers = SetChanPriorityMessage::protoToVersion(machine->msg_proto_major);
+
   if (vers == SetChanPriorityMessage::SET_CHANNEL_PRIORITY_MESSAGE_VERSION) {
-    flen = SetChanPriorityMessage::sizeof_fixedlen_msg();
+    SetChanPriorityMessage::sizeof_fixedlen_msg();
   } else {
     //////////////////////////////////////////////////////////////
     // Create the specified down rev version of this message

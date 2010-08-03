@@ -118,7 +118,6 @@ HashTable::find_request(int index, char *url)
 HeaderAlternate *
 HashTable::lookup(int index, char *url, HTTPHdr * hdr)
 {
-  int match_found = 0;
   RequestNode *request = NULL;
   HeaderAlternate *iterator = NULL;
 
@@ -131,7 +130,6 @@ HashTable::lookup(int index, char *url, HTTPHdr * hdr)
 
   for (iterator = request->Alternates; iterator != NULL; iterator = iterator->next) {
     if (match_Headers(iterator->hdr, hdr)) {
-      match_found = 1;
       break;
     }
   }

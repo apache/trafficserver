@@ -263,6 +263,9 @@ HttpBodyFactory::dump_template_tables(FILE * fp)
 static int
 config_callback(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
   HttpBodyFactory *body_factory = (HttpBodyFactory *) cookie;
   body_factory->reconfigure();
   return (0);
@@ -1040,8 +1043,8 @@ HttpBodyTemplate::build_instantiated_buffer(HttpTransact::State * context, int64
   Debug("body_factory_instantiation", "    before instantiation: [%s]", template_buffer);
 
   LogAccessHttp la(context->state_machine);
-  int ret = Log::access(&la);
-  NOWARN_UNUSED(ret);
+
+  Log::access(&la);
   buffer = resolve_logfield_string((LogAccess *) & la, template_buffer);
 
   *buflen_return = ((buffer == NULL) ? 0 : strlen(buffer));

@@ -22,6 +22,7 @@
  */
 
 //
+#include "ink_defs.h"
 
 #ifndef _HTTP_CONNECTION_COUNT_H_
 
@@ -104,6 +105,7 @@ private:
   }
   ConnectionCount(const ConnectionCount & x)
   {
+    NOWARN_UNUSED(x);
   }
 
   static ConnectionCount *_connectionCount;

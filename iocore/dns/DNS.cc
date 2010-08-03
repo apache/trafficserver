@@ -1335,7 +1335,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
       cp += n;
       short int type, cls;
       GETSHORT(type, cp);
-      GETSHORT(cls, cp);
+      GETSHORT(cls, cp); // NOTE: Don't eliminate this, it'll break badly.
       GETLONG(temp_ttl, cp);
       if ((temp_ttl < buf->ttl) || (buf->ttl == 0))
         buf->ttl = temp_ttl;

@@ -230,6 +230,7 @@ set_channel_data_ClusterFunction(ClusterMachine * from, void *tdata, int tlen)
 void
 post_setchan_send_ClusterFunction(ClusterMachine * to, void *data, int len)
 {
+  NOWARN_UNUSED(len);
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   // We are called on the ET_CLUSTER thread.
@@ -257,6 +258,7 @@ post_setchan_send_ClusterFunction(ClusterMachine * to, void *data, int len)
 void
 set_channel_pin_ClusterFunction(ClusterMachine * from, void *data, int len)
 {
+  NOWARN_UNUSED(len);
   // This isn't used. /leif
   //EThread *thread = this_ethread();
   //ProxyMutex *mutex = thread->mutex;
@@ -319,6 +321,7 @@ post_setchan_pin_ClusterFunction(ClusterMachine * to, void *data, int len)
 void
 set_channel_priority_ClusterFunction(ClusterMachine * from, void *data, int len)
 {
+  NOWARN_UNUSED(len);
   // This isn't used.
   //EThread *thread = this_ethread();
   //ProxyMutex *mutex = thread->mutex;
@@ -353,6 +356,7 @@ set_channel_priority_ClusterFunction(ClusterMachine * from, void *data, int len)
 void
 post_setchan_priority_ClusterFunction(ClusterMachine * to, void *data, int len)
 {
+  NOWARN_UNUSED(len);
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
 

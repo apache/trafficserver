@@ -108,6 +108,8 @@ HttpConfigCont::HttpConfigCont()
 int
 HttpConfigCont::handle_event(int event, void *edata)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(edata);
   if (ink_atomic_increment((int *) &http_config_changes, -1) == 1) {
     HttpConfig::reconfigure();
   }
@@ -118,6 +120,10 @@ HttpConfigCont::handle_event(int event, void *edata)
 static int
 http_config_cb(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
+  NOWARN_UNUSED(cookie);
   ink_atomic_increment((int *) &http_config_changes, 1);
 
   INK_MEMORY_BARRIER;
@@ -1977,7 +1983,8 @@ HttpConfig::parse_url_expansions(char *url_expansions_str, int *num_expansions)
 void *
 HttpConfig::cluster_delta_cb(void *opaque_token, char *data_raw, int data_len)
 {
-
+  NOWARN_UNUSED(opaque_token);
+  NOWARN_UNUSED(data_len);
   int32 delta32 = (int32) atoi(data_raw);
   int32 old;
 

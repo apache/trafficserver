@@ -133,69 +133,69 @@ verify_peters_data(char *ap, int l)
 //
 /*************************************************************************/
 
-ClusterHandler::ClusterHandler():
-net_vc(0),
-thread(0),
-ip(0),
-port(0),
-hostname(NULL),
-machine(NULL),
-ifd(-1),
-active(false),
-on_stolen_thread(false),
-n_channels(0),
-channels(NULL),
-channel_data(NULL),
-connector(false),
-cluster_connect_state(ClusterHandler::CLCON_INITIAL),
-needByteSwap(false),
-configLookupFails(0),
-cluster_periodic_event(0),
-read(this, true),
-write(this, false),
-current_time(0),
-last(0),
-last_report(0),
-n_since_last_report(0),
-last_cluster_op_enable(0),
-last_trace_dump(0),
-clm(0),
-disable_remote_cluster_ops(0),
-pw_write_descriptors_built(0),
-pw_freespace_descriptors_built(0),
-pw_controldata_descriptors_built(0), pw_time_expired(0), started_on_stolen_thread(false), control_message_write(false)
+ClusterHandler::ClusterHandler()
+  : net_vc(0),
+    thread(0),
+    ip(0),
+    port(0),
+    hostname(NULL),
+    machine(NULL),
+    ifd(-1),
+    active(false),
+    on_stolen_thread(false),
+    n_channels(0),
+    channels(NULL),
+    channel_data(NULL),
+    connector(false),
+    cluster_connect_state(ClusterHandler::CLCON_INITIAL),
+    needByteSwap(false),
+    configLookupFails(0),
+    cluster_periodic_event(0),
+    read(this, true),
+    write(this, false),
+    current_time(0),
+    last(0),
+    last_report(0),
+    n_since_last_report(0),
+    last_cluster_op_enable(0),
+    last_trace_dump(0),
+    clm(0),
+    disable_remote_cluster_ops(0),
+    pw_write_descriptors_built(0),
+    pw_freespace_descriptors_built(0),
+    pw_controldata_descriptors_built(0), pw_time_expired(0), started_on_stolen_thread(false), control_message_write(false)
 #ifdef CLUSTER_STATS
   ,
-_vc_writes(0),
-_vc_write_bytes(0),
-_control_write_bytes(0),
-_dw_missed_lock(0),
-_dw_not_enabled(0),
-_dw_wait_remote_fill(0),
-_dw_no_active_vio(0),
-_dw_not_enabled_or_no_write(0),
-_dw_set_data_pending(0),
-_dw_no_free_space(0),
-_fw_missed_lock(0),
-_fw_not_enabled(0),
-_fw_wait_remote_fill(0),
-_fw_no_active_vio(0),
-_fw_not_enabled_or_no_read(0),
-_process_read_calls(0),
-_n_read_start(0),
-_n_read_header(0),
-_n_read_await_header(0),
-_n_read_setup_descriptor(0),
-_n_read_descriptor(0),
-_n_read_await_descriptor(0),
-_n_read_setup_data(0),
-_n_read_data(0),
-_n_read_await_data(0),
-_n_read_post_complete(0),
-_n_read_complete(0),
-_process_write_calls(0),
-_n_write_start(0),
-_n_write_setup(0), _n_write_initiate(0), _n_write_await_completion(0), _n_write_post_complete(0), _n_write_complete(0)
+    _vc_writes(0),
+    _vc_write_bytes(0),
+    _control_write_bytes(0),
+    _dw_missed_lock(0),
+    _dw_not_enabled(0),
+    _dw_wait_remote_fill(0),
+    _dw_no_active_vio(0),
+    _dw_not_enabled_or_no_write(0),
+    _dw_set_data_pending(0),
+    _dw_no_free_space(0),
+    _fw_missed_lock(0),
+    _fw_not_enabled(0),
+    _fw_wait_remote_fill(0),
+    _fw_no_active_vio(0),
+    _fw_not_enabled_or_no_read(0),
+    _process_read_calls(0),
+    _n_read_start(0),
+    _n_read_header(0),
+    _n_read_await_header(0),
+    _n_read_setup_descriptor(0),
+    _n_read_descriptor(0),
+    _n_read_await_descriptor(0),
+    _n_read_setup_data(0),
+    _n_read_data(0),
+    _n_read_await_data(0),
+    _n_read_post_complete(0),
+    _n_read_complete(0),
+    _process_write_calls(0),
+    _n_write_start(0),
+    _n_write_setup(0), _n_write_initiate(0), _n_write_await_completion(0), _n_write_post_complete(0), _n_write_complete(0)
 #endif
 {
 #ifdef MSG_TRACE
@@ -430,25 +430,17 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
   //    ......
   //    iov[count-1] ----> struct descriptor data (element #count)
   ///////////////////////////////////////////////////////////////////
-  int
-    i,
-    n;
+  int i, n;
   // This isn't used.
   // MIOBuffer      *w;
 
-  ink_hrtime
-    now = ink_get_hrtime();
+  ink_hrtime now = ink_get_hrtime();
   ClusterState & s = (read_flag ? read : write);
-  OutgoingControl *
-    oc = s.msg.outgoing_control.head;
-  IncomingControl *
-    ic = incoming_control.head;
-  int
-    new_n_iov = 0;
-  int
-    to_do = 0;
-  int
-    len;
+  OutgoingControl *oc = s.msg.outgoing_control.head;
+  IncomingControl *ic = incoming_control.head;
+  int new_n_iov = 0;
+  int to_do = 0;
+  int len;
 
   ink_assert(s.iov);
 
@@ -677,6 +669,9 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
   s.n_iov = new_n_iov;
   return true;
 
+  // TODO: This is apparently dead code, I added the #if 0 to avoid compiler
+  // warnings, but is this really intentional??
+#if 0
   // Release all IOBufferBlock references.
   for (n = 0; n < MAX_TCOUNT; ++n) {
     s.block[n] = 0;
@@ -685,6 +680,7 @@ bool ClusterHandler::build_initial_vector(bool read_flag)
   Debug(CL_WARN, "%s delayed for locks", read_flag ? "read" : "write");
   free_locks(read_flag, i);
   return false;
+#endif
 }
 
 bool ClusterHandler::get_read_locks()
@@ -694,20 +690,14 @@ bool ClusterHandler::get_read_locks()
   // We are called after each read completion prior to posting completion
   ///////////////////////////////////////////////////////////////////////
   ClusterState & s = read;
-  int
-    i,
-    n;
-  int
-    bytes_processed;
-  int
-    vec_bytes_remainder;
-  int
-    iov_done[MAX_TCOUNT];
+  int i, n;
+  int bytes_processed;
+  int vec_bytes_remainder;
+  int iov_done[MAX_TCOUNT];
 
   memset((char *) iov_done, 0, sizeof(int) * MAX_TCOUNT);
 
   // Compute bytes transferred on a per vector basis
-
   bytes_processed = s.did - s.bytes_xfered;     // not including bytes in this xfer
 
   i = -1;
@@ -802,8 +792,7 @@ bool ClusterHandler::get_write_locks()
   // posting completion.
   ///////////////////////////////////////////////////////////////////////
   ClusterState & s = write;
-  int
-    i;
+  int i;
 
   for (i = 0; i < s.msg.count; ++i) {
     if ((s.msg.descriptor[i].type == CLUSTER_SEND_DATA)
@@ -2531,6 +2520,7 @@ ClusterHandler::mainClusterEvent(int event, Event * e)
 int
 ClusterHandler::process_read(ink_hrtime now)
 {
+  NOWARN_UNUSED(now);
 #ifdef CLUSTER_STATS
   _process_read_calls++;
 #endif

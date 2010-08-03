@@ -152,7 +152,7 @@ ClusterMachine::~ClusterMachine()
 #ifndef INK_NO_CLUSTER
 struct MachineTimeoutContinuation;
 typedef int (MachineTimeoutContinuation::*McTimeoutContHandler) (int, void *);
-struct MachineTimeoutContinuation:Continuation
+struct MachineTimeoutContinuation: public Continuation
 {
   ClusterMachine *m;
   int dieEvent(int event, Event * e)
@@ -190,7 +190,7 @@ MachineList *
 read_MachineList(char *filename, int afd)
 {
   char line[256];
-  int n = -1, i = 0, ln = 0, rlen;
+  int n = -1, i = 0, ln = 0;
   MachineList *l = NULL;
   ink_assert(filename || (afd != -1));
   char p[PATH_NAME_MAX];
@@ -204,9 +204,8 @@ read_MachineList(char *filename, int afd)
   }
   int fd = ((afd != -1) ? afd : open(p, O_RDONLY));
   if (fd >= 0) {
-    while ((rlen = ink_file_fd_readline(fd, sizeof(line) - 1, line)) > 0) {
+    while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
       ln++;
-//      fprintf(stderr,"line #%d, rlen %d: %s\n",ln,rlen,line);
       if (*line == '#')
         continue;
       if (n == -1 && ParseRules::is_digit(*line)) {

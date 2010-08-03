@@ -54,6 +54,8 @@ ClusterCalloutContinuation::~ClusterCalloutContinuation()
 int
 ClusterCalloutContinuation::CalloutHandler(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   return _ch->process_incoming_callouts(this->mutex);
 }
 
@@ -767,7 +769,7 @@ ClusterHandler::machine_down()
 #ifdef NON_MODULAR
   machine_offline_APIcallout(ip);
 #endif
-  snprintf(textbuf, sizeof(textbuf), "%u.%u.%u.%u:%d", DOT_SEPARATED(ip), port);
+  snprintf(textbuf, sizeof(textbuf), "%hu.%hu.%hu.%hu:%d", DOT_SEPARATED(ip), port);
   REC_SignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
   if (net_vc) {
     net_vc->do_io(VIO::CLOSE);
@@ -796,6 +798,7 @@ ClusterHandler::machine_down()
 int
 ClusterHandler::zombify(Event * e)
 {
+  NOWARN_UNUSED(e);
   //
   // Node associated with *this is declared down, setup the event to cleanup
   // and defer deletion of *this
@@ -855,16 +858,13 @@ ClusterHandler::connectClusterEvent(int event, Event * e)
     opt.addr_binding = NetVCOptions::INTF_ADDR;
     opt.local_addr = this_cluster_machine()->ip;
 
-    Action *act = netProcessor.connect_re(this, machine->ip,
-                                          machine->cluster_port
-					      ? machine->cluster_port
-					      : cluster_port,
-					  &opt);
-
-    NOWARN_UNUSED(act);
-
+    // TODO: Should we check the Action* returned here?
+    netProcessor.connect_re(this, machine->ip,
+                            machine->cluster_port
+                            ? machine->cluster_port
+                            : cluster_port,
+                            &opt);
     return EVENT_DONE;
-
   } else {
     if (event == NET_EVENT_OPEN) {
       net_vc = (NetVConnection *) e;
@@ -1036,9 +1036,9 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         if (cc && cc->find(ip, port)) {
           ClusterConfiguration *c = this_cluster()->current_configuration();
           if (!c->find(ip, port)) {
-            ClusterConfiguration *cc = configuration_add_machine(c, machine);
+            ClusterConfiguration *cconf = configuration_add_machine(c, machine);
             CLUSTER_INCREMENT_DYN_STAT(CLUSTER_NODES_STAT);
-            this_cluster()->configurations.push(cc);
+            this_cluster()->configurations.push(cconf);
           } else {
             // duplicate cluster connect, ignore
             failed = -2;
@@ -1069,7 +1069,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         machine_online_APIcallout(ip);
 #endif
         // Signal the manager
-        snprintf(textbuf, sizeof(textbuf), "%u.%u.%u.%u:%d", DOT_SEPARATED(ip), port);
+        snprintf(textbuf, sizeof(textbuf), "%hu.%hu.%hu.%hu:%d", DOT_SEPARATED(ip), port);
         REC_SignalManager(REC_SIGNAL_MACHINE_UP, textbuf);
 #ifdef LOCAL_CLUSTER_TEST_MODE
         Note("machine up %u.%u.%u.%u:%d, protocol version=%d.%d",
@@ -1158,6 +1158,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
 int
 ClusterHandler::beginClusterEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
   // Establish the main periodic Cluster event
 #ifdef CLUSTER_IMMEDIATE_NETIO
   build_poll(false);
@@ -1183,6 +1184,7 @@ ClusterHandler::zombieClusterEvent(int event, Event * e)
 int
 ClusterHandler::protoZombieEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
   //
   // Node associated with *this is declared down.
   // After cleanup is complete, setup handler to delete *this
@@ -1335,7 +1337,7 @@ ClusterHandler::dump_internal_data()
   char *b = message_blk->data->data();
   unsigned int b_size = message_blk->data->block_size();
 
-  r = snprintf(&b[n], b_size - n, "Host: %u.%u.%u.%u\n", DOT_SEPARATED(ip));
+  r = snprintf(&b[n], b_size - n, "Host: %hu.%hu.%hu.%hu\n", DOT_SEPARATED(ip));
   n += r;
 
   r = snprintf(&b[n], b_size - n,
@@ -1389,10 +1391,10 @@ ClusterHandler::dump_write_msg(int res)
   *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
 
   fprintf(stderr,
-          "[W] %u.%u.%u.%u SeqNo=%d, Cnt=%d, CntlCnt=%d Todo=%d, Res=%d\n",
+          "[W] %hu.%hu.%hu.%hu SeqNo=%u, Cnt=%d, CntlCnt=%d Todo=%d, Res=%d\n",
           x[0], x[1], x[2], x[3], write.sequence_number, write.msg.count, write.msg.control_bytes, write.to_do, res);
   for (int i = 0; i < write.msg.count; ++i) {
-    fprintf(stderr, "   d[%i] Type=%d, Chan=%d, SeqNo=%d, Len=%d\n",
+    fprintf(stderr, "   d[%i] Type=%d, Chan=%d, SeqNo=%d, Len=%u\n",
             i, (write.msg.descriptor[i].type ? 1 : 0),
             (int) write.msg.descriptor[i].channel,
             (int) write.msg.descriptor[i].sequence_number, write.msg.descriptor[i].length);
@@ -1407,10 +1409,10 @@ ClusterHandler::dump_read_msg()
   memset(x, 0, sizeof(x));
   *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
 
-  fprintf(stderr, "[R] %u.%u.%u.%u  SeqNo=%d, Cnt=%d, CntlCnt=%d\n",
+  fprintf(stderr, "[R] %hu.%hu.%hu.%hu  SeqNo=%u, Cnt=%d, CntlCnt=%d\n",
           x[0], x[1], x[2], x[3], read.sequence_number, read.msg.count, read.msg.control_bytes);
   for (int i = 0; i < read.msg.count; ++i) {
-    fprintf(stderr, "   d[%i] Type=%d, Chan=%d, SeqNo=%d, Len=%d\n",
+    fprintf(stderr, "   d[%i] Type=%d, Chan=%d, SeqNo=%d, Len=%u\n",
             i, (read.msg.descriptor[i].type ? 1 : 0),
             (int) read.msg.descriptor[i].channel,
             (int) read.msg.descriptor[i].sequence_number, read.msg.descriptor[i].length);

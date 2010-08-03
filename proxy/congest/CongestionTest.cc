@@ -42,6 +42,7 @@
  * also exercise the resizing of the table
  */
 EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable) (RegressionTest * t, int atype, int *pstatus) {
+  NOWARN_UNUSED(atype);
   MTHashTable<long, long>*htable = new MTHashTable<long, long>(4);
   // add elements to the table;
   long i, count = 1 * 1024 * 1024;
@@ -169,7 +170,7 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable) (RegressionTest * t, int atype, 
 /* regesiter events into the FailHistory and the number of events
  * should be correct
  */
-struct CCFailHistoryTestCont:Continuation
+struct CCFailHistoryTestCont: public Continuation
 {
   enum
   { FAIL_WINDOW = 300 };
@@ -282,6 +283,8 @@ CCFailHistoryTestCont::init_events()
 int
 CCFailHistoryTestCont::schedule_event(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   if (failEvents == NULL)
     return EVENT_DONE;
   CCFailHistoryTestCont::FailEvents * f = (CCFailHistoryTestCont::FailEvents *) ink_atomiclist_pop(failEvents);
@@ -320,6 +323,8 @@ CCFailHistoryTestCont::check_history(bool print)
 int
 CCFailHistoryTestCont::mainEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   test_mode = CCFailHistoryTestCont::SIMPLE_TEST;
   init_events();
   entry->init(rule->pRecord);
@@ -353,6 +358,7 @@ Ldone:
 }
 
 EXCLUSIVE_REGRESSION_TEST(Congestion_FailHistory) (RegressionTest * t, int atype, int *pstatus) {
+  NOWARN_UNUSED(atype);
   CCFailHistoryTestCont *test = new CCFailHistoryTestCont(new_ProxyMutex(), t);
   eventProcessor.schedule_in(test, HRTIME_SECONDS(1));
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -365,7 +371,7 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_FailHistory) (RegressionTest * t, int atype
  * exercise the GC of the DB, remove entries from DB
  */
 
-struct CCCongestionDBTestCont:Continuation
+struct CCCongestionDBTestCont: public Continuation
 {
   int final_status;
   bool complete;
@@ -442,12 +448,12 @@ CCCongestionDBTestCont::get_congest_list()
     db->RunTodoList(i);
     char buf[1024];
     Iter it;
-    int len;
+
     CongestionEntry *pEntry = db->first_entry(i, &it);
     while (pEntry) {
       cnt++;
       if (cnt % 100 == 0) {
-        len = pEntry->sprint(buf, 1024, 100);
+        pEntry->sprint(buf, 1024, 100);
         fprintf(stderr, "%s", buf);
       }
       pEntry = db->next_entry(i, &it);
@@ -459,6 +465,8 @@ CCCongestionDBTestCont::get_congest_list()
 int
 CCCongestionDBTestCont::mainEvent(int event, Event * e)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(e);
   int to_add = 1 * 1024 * 1024;
   int i;
   int items[10] = { 0 };
@@ -521,6 +529,7 @@ CCCongestionDBTestCont::mainEvent(int event, Event * e)
 }
 
 EXCLUSIVE_REGRESSION_TEST(Congestion_CongestionDB) (RegressionTest * t, int atype, int *pstatus) {
+  NOWARN_UNUSED(atype);
   CCCongestionDBTestCont *test = new CCCongestionDBTestCont(new_ProxyMutex(), t);
   eventProcessor.schedule_in(test, HRTIME_SECONDS(1));
   *pstatus = REGRESSION_TEST_INPROGRESS;
