@@ -44,6 +44,8 @@
 int
 vmapEnableHandler(const char *tok, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(cookie);
   bool before = true;
   ink_assert(!tok);
   if (!lmgmt->virt_map->enabled)

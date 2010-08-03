@@ -136,6 +136,7 @@ static int g_link_id = 0;
 void
 start_element_handler(void *userData, const char *name, const char **atts)
 {
+  NOWARN_UNUSED(userData);
   char **attrs = (char **) atts;
   if (strcmp(name, "MENU_TREE") == 0) {
     // Main entity tag - do nothing
@@ -273,6 +274,7 @@ generate_link_node(char **atts)
 void
 end_element_handler(void *userData, const char *name)
 {
+  NOWARN_UNUSED(userData);
   if (strcmp(name, "MENU_TREE") == 0) {
     // Main entity tag - do nothing
   } else if (strcmp(name, "MODE") == 0) {

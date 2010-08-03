@@ -62,6 +62,7 @@ struct session_ele
 static void *
 deleter_main(void *unused)
 {
+  NOWARN_UNUSED(unused);
   time_t now;
   InkHashTableIteratorState htis;
   InkHashTableEntry *hte;

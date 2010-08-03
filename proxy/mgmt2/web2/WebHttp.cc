@@ -446,7 +446,6 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
   if (whc->request_state & WEB_HTTP_STATE_PLUGIN) {
     // notify server plugin to update its config
     if (success == true && query_string != NULL) {
-      int i;
       char *plugin_name = new char[qlen];
       const char *tmp = strstr(query_string, "INK_PLUGIN_NAME=");
       if (tmp != NULL) {
@@ -478,6 +477,7 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
 char *
 encryptToFileAuth_malloc(const char *password)
 {
+  NOWARN_UNUSED(password);
   RecString dir_path;
   RecGetRecordString_Xmalloc("proxy.config.auth.password_file_path", &dir_path);
 
@@ -510,6 +510,7 @@ encryptToFileAuth_malloc(const char *password)
 static int
 handle_cgi_extn(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   int err;
   char *cgi_path;
   whc->response_hdr->setCachable(0);
@@ -544,7 +545,7 @@ handle_ink_extn(WebHttpContext * whc, const char *file)
 static int
 handle_chart(WebHttpContext * whc, const char *file)
 {
-
+  NOWARN_UNUSED(file);
   //-----------------------------------------------------------------------
   // FIXME: HARD-CODED HTML HELL!!!
   //-----------------------------------------------------------------------
@@ -1155,36 +1156,42 @@ handle_record_info(WebHttpContext * whc, bool statistic_type, bool rec)
 static int
 handle_record_stats(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   return handle_record_info(whc, true, false);
 }
 
 static int
 handle_record_configs(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   return handle_record_info(whc, false, false);
 }
 
 static int
 handle_record_stats_rec(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   return handle_record_info(whc, true, true);
 }
 
 static int
 handle_record_configs_rec(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   return handle_record_info(whc, false, true);
 }
 
 static int
 handle_config_files(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   return WebHttpRender(whc, HTML_FILE_ALL_CONFIG);
 }
 
 static int
 handle_debug_logs(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   return WebHttpRender(whc, HTML_VIEW_DEBUG_LOGS_FILE);
 }
 
@@ -1195,6 +1202,7 @@ handle_debug_logs(WebHttpContext * whc, const char *file)
 static int
 handle_synthetic(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   char buffer[28];
   char cur = 'a';
   whc->response_hdr->setContentType(TEXT_PLAIN);
@@ -1218,6 +1226,7 @@ handle_synthetic(WebHttpContext * whc, const char *file)
 static int
 handle_submit_alarm(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   resolveAlarm(whc->post_data_ht);
   whc->top_level_render_file = xstrdup(HTML_ALARM_FILE);
   return handle_ink_extn(whc, HTML_ALARM_FILE);
@@ -1302,7 +1311,7 @@ set_admin_passwd(WebHttpContext * whc)
 static int
 handle_submit_mgmt_auth(WebHttpContext * whc, const char *file)
 {
-
+  NOWARN_UNUSED(file);
   bool recs_out_of_date;
   char *value;
   char *cancel;
@@ -1514,6 +1523,7 @@ Ldone:
 static int INK_UNUSED
 handle_submit_snapshot(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   int err = 0;
   SnapResult snap_result = SNAP_OK;
   char *submit_from_page;
@@ -1527,7 +1537,6 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
   char *ftp_password;
   char *snapDirFromRecordsConf;
   bool found = false;
-  int ret_val;
   struct stat snapDirStat;
   char config_dir[PATH_NAME_MAX];
   struct stat s;
@@ -1613,7 +1622,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
                   ink_assert(absoluteDir != NULL);
                   snprintf(absoluteDir, newLen, "/%s", tok);
 
-                  if ((ret_val = mkdir(absoluteDir, DIR_MODE)) < 0) {
+                  if (mkdir(absoluteDir, DIR_MODE) < 0) {
                     perror("Absolute snapPath Directory creation:");
                   }
                   delete[]absoluteDir;
@@ -1633,7 +1642,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
                   //perror("Absolute snapPath Directory creation:");
                   //}
                   //delete [] absoluteDir;
-                  if ((ret_val = mkdir(tok, DIR_MODE)) < 0) {
+                  if (mkdir(tok, DIR_MODE) < 0) {
                     perror("Relative snapPath Directory creation:");
                   }
                 }
@@ -1760,7 +1769,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
           ink_assert(newStr != NULL);
           snprintf(newStr, newLen, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
 
-          if ((ret_val = mkdir(snapDirFromRecordsConf, DIR_MODE)) < 0) {
+          if (mkdir(snapDirFromRecordsConf, DIR_MODE) < 0) {
             mgmt_log(stderr, "Cannot create %s\n", snapDirFromRecordsConf);
           }
           INKMgmtFtp("get", ftp_server_name, ftp_login, ftp_password, snapDirFromRecordsConf, newStr, NULL);
@@ -1861,6 +1870,7 @@ handle_submit_snapshot(WebHttpContext * whc, const char *file)
 static int
 handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   int err = 0;
   SnapResult snap_result = SNAP_OK;
   char *submit_from_page;
@@ -1870,10 +1880,8 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
   char *snapDirFromRecordsConf;
   char *cancel;
   bool found = false;
-  int ret_val;
   struct stat snapDirStat;
   char config_dir[256];
-  bool recs_out_of_date;
   char *record_version;
   ExpandingArray snap_list(25, true);
   int num_snaps;
@@ -1896,9 +1904,9 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
     goto Ldone;
   }
   // check for record_version
-  recs_out_of_date = true;
   if (ink_hash_table_lookup(whc->post_data_ht, "record_version", (void **) &record_version)) {
-    recs_out_of_date = !record_version_valid(record_version);
+    // TODO: Check return value?
+    record_version_valid(record_version);
     ink_hash_table_delete(whc->post_data_ht, "record_version");
     xfree(record_version);
   }
@@ -2029,9 +2037,9 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
               snprintf(absoluteDir, newLen, "/%s", tok);
 
 #ifndef _WIN32
-              if ((ret_val = mkdir(absoluteDir, DIR_MODE)) < 0) {
+              if (mkdir(absoluteDir, DIR_MODE) < 0) {
 #else
-              if ((ret_val = mkdir(absoluteDir)) < 0) {
+              if (mkdir(absoluteDir) < 0) {
 #endif
                 perror("[WebHttp::handle_submit_snapshot_to_filesystem] Absolute snapPath Directory creation:");
               }
@@ -2039,9 +2047,9 @@ handle_submit_snapshot_to_filesystem(WebHttpContext * whc, const char *file)
             } else {
               const char *tok = snapDirPathTok.getNext(i);
 #ifndef _WIN32
-              if ((ret_val = mkdir(tok, DIR_MODE)) < 0) {
+              if (mkdir(tok, DIR_MODE) < 0) {
 #else
-              if ((ret_val = mkdir(tok)) < 0) {
+              if (mkdir(tok) < 0) {
 #endif
                 perror("[WebHttp::handle_submit_snapshot_to_filesystem] Relative snapPath Directory creation:");
               }
@@ -2201,8 +2209,8 @@ Ldone:
 static int
 handle_submit_snapshot_to_ftpserver(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   int err = 0;
-  SnapResult snap_result = SNAP_OK;
   char *submit_from_page;
   char *snap_name;
   char *ftp_server_name;
@@ -2213,11 +2221,9 @@ handle_submit_snapshot_to_ftpserver(WebHttpContext * whc, const char *file)
   char *tempDirFromRecordsConf;
   char *cancel;
   bool found;
-  int ret_val;
   // Doesn't seem to be used.
   //struct stat snapDirStat;
   char config_dir[256];
-  bool recs_out_of_date;
   char *record_version;
   ExpandingArray snap_list(25, true);
 
@@ -2239,9 +2245,9 @@ handle_submit_snapshot_to_ftpserver(WebHttpContext * whc, const char *file)
     goto Ldone;
   }
   // check for record_version
-  recs_out_of_date = true;
   if (ink_hash_table_lookup(whc->post_data_ht, "record_version", (void **) &record_version)) {
-    recs_out_of_date = !record_version_valid(record_version);
+    // TODO: Check return value?
+    record_version_valid(record_version);
     ink_hash_table_delete(whc->post_data_ht, "record_version");
     xfree(record_version);
   }
@@ -2350,7 +2356,7 @@ handle_submit_snapshot_to_ftpserver(WebHttpContext * whc, const char *file)
       ink_assert(newStr != NULL);
       snprintf(newStr, newLen, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
 
-      if ((ret_val = mkdir(tmp_ftp_snap, DIR_MODE)) < 0) {
+      if (mkdir(tmp_ftp_snap, DIR_MODE) < 0) {
         mgmt_log(stderr, "[WebHttp::handle_submit_snapshot_to_ftpsystem] Cannot create %s\n", tmp_ftp_snap);
       }
       char ftpOutput[4096];
@@ -2359,11 +2365,9 @@ handle_submit_snapshot_to_ftpserver(WebHttpContext * whc, const char *file)
         mgmt_log(stderr, "[WebHttp::handle_submit_snapshot_to_ftpsystem] FTP get failed : %s", ftpOutput);
         goto Ldone;
       }
-      snap_result = configFiles->restoreSnap(snap_name, tempDirFromRecordsConf);
-      snap_result = configFiles->removeSnap(snap_name, tempDirFromRecordsConf);
-
-
-
+      // TODO: Check return values?
+      configFiles->restoreSnap(snap_name, tempDirFromRecordsConf);
+      configFiles->removeSnap(snap_name, tempDirFromRecordsConf);
     }
   }
 
@@ -2383,7 +2387,7 @@ handle_submit_snapshot_to_ftpserver(WebHttpContext * whc, const char *file)
       ink_assert(ftp_remote_dir_name != NULL);
       snprintf(newStr, localDirLength, "/tmp%s%s", DIR_SEP, snap_name);
       snprintf(ftp_remote_dir_name, remoteDirLength, "%s%s%s", ftp_remote_dir, DIR_SEP, snap_name);
-      snap_result = configFiles->takeSnap(snap_name, "/tmp");
+      configFiles->takeSnap(snap_name, "/tmp");
       char ftpOutput[4096];
       INKMgmtFtp("put", ftp_server_name, ftp_login, ftp_password, newStr, ftp_remote_dir_name, ftpOutput);
       if (!strncmp(ftpOutput, "ERROR:", 6)) {
@@ -2423,6 +2427,7 @@ Ldone:
 static int
 handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   int err = 0;
   SnapResult snap_result = SNAP_OK;
   char *submit_from_page;
@@ -2434,7 +2439,6 @@ handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
   // Not used here.
   //struct stat snapDirStat;
   char config_dir[256];
-  bool recs_out_of_date;
   char *record_version;
   char *UnmountFloppy;
   int old_euid;
@@ -2459,9 +2463,9 @@ handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
     goto Ldone;
   }
   // check for record_version
-  recs_out_of_date = true;
   if (ink_hash_table_lookup(whc->post_data_ht, "record_version", (void **) &record_version)) {
-    recs_out_of_date = !record_version_valid(record_version);
+    // TODO: Check return value?
+    record_version_valid(record_version);
     ink_hash_table_delete(whc->post_data_ht, "record_version");
     xfree(record_version);
   }
@@ -2652,6 +2656,7 @@ Ldone:
 static int
 handle_submit_inspector(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   int err = 0;
   char *submit_from_page;
   char *regex;
@@ -2721,6 +2726,7 @@ handle_submit_inspector(WebHttpContext * whc, const char *file)
 static int
 handle_submit_inspector_display(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   int err = 0;
   char *url;
   char *url_action;
@@ -2768,7 +2774,7 @@ handle_submit_inspector_display(WebHttpContext * whc, const char *file)
 static int
 handle_submit_view_logs(WebHttpContext * whc, const char *file)
 {
-
+  NOWARN_UNUSED(file);
   int err;
   char *submit_from_page;
   char *nlines;
@@ -2887,7 +2893,7 @@ Ldone:
 static int
 handle_submit_update(WebHttpContext * whc, const char *file)
 {
-
+  NOWARN_UNUSED(file);
   int err;
   char *submit_from_page;
   bool recs_out_of_date;
@@ -2950,6 +2956,7 @@ handle_submit_update(WebHttpContext * whc, const char *file)
   // check for record_version
   recs_out_of_date = true;
   if (ink_hash_table_lookup(whc->post_data_ht, "record_version", (void **) &record_version)) {
+    // TODO: Check return value?
     recs_out_of_date = !record_version_valid(record_version);
     ink_hash_table_delete(whc->post_data_ht, "record_version");
     xfree(record_version);
@@ -3083,6 +3090,7 @@ Ldone:
 static int
 handle_submit_update_config(WebHttpContext * whc, const char *file)
 {
+  NOWARN_UNUSED(file);
   char **rules = NULL;
   char name[10];                // "rule#"
   char *close;
@@ -3254,7 +3262,7 @@ Lerror:
 static int
 handle_submit_config_display(WebHttpContext * whc, const char *file)
 {
-
+  NOWARN_UNUSED(file);
   // same HTML_CONFIG_DISPLAY_FILE for all config files
   return WebHttpRender(whc, HTML_CONFIG_DISPLAY_FILE);
 }
@@ -3303,7 +3311,7 @@ SetWarning(WebHttpContext * whc, char *arg)
 static int
 handle_submit_net_config(WebHttpContext * whc, const char *file)
 {
-  bool recs_out_of_date;
+  NOWARN_UNUSED(file);
   char *cancel;
   char *record_version;
   char *submit_from_page;
@@ -3323,9 +3331,9 @@ handle_submit_net_config(WebHttpContext * whc, const char *file)
     return WebHttpRender(whc, submit_from_page);
 
   // check for record_version
-  recs_out_of_date = true;
   if (ink_hash_table_lookup(whc->post_data_ht, "record_version", (void **) &record_version)) {
-    recs_out_of_date = !record_version_valid(record_version);
+    // TODO: Check return value?
+    record_version_valid(record_version);
     ink_hash_table_delete(whc->post_data_ht, "record_version");
     xfree(record_version);
   }
@@ -3342,19 +3350,19 @@ handle_submit_net_config(WebHttpContext * whc, const char *file)
   int nic_change[5];
   //  int nic_up[5];
   char *dns_ip[3], old_value[265], old_hostname[80], old_gw_ip[80];
-  char nic_name[5][10], *nic[5][6], interface[80], *param, *old_ip[5];
+  char nic_name[5][10], *nic[5][6], interface[80], *param;
   char *hostname = 0, *gw_ip = 0;
   const char *dn = 0;
   int i, j, no;
   char dns_ips[80];
-  bool warning, fail, rni;
+  bool warning, fail;
 
   //This will be used as flags to verify whether anything changed by the user
   hn_change = 0;
   gw_change = 0;
   dn_change = 0;
   dns_change = 0;
-  warning = (fail = (rni = false));
+  warning = (fail = false);
   //FIXNOW - we need to use SysAPI to find the numver of NICs instead of just constant 5
   for (i = 0; i < 5; i++) {
     nic_change[i] = 0;
@@ -3510,7 +3518,6 @@ handle_submit_net_config(WebHttpContext * whc, const char *file)
         if (!Config_GetNIC_IP(interface, old_value, sizeof(old_value))) {
           if (nic[no][3] != NULL && strcmp(nic[no][3], old_value) != 0) {
             nic_change[no] = 1;
-            old_ip[no] = old_value;
           }
           //For dhcp start, the static IP maybe same with the dhcp value
           else {
@@ -3679,7 +3686,7 @@ handle_submit_net_config(WebHttpContext * whc, const char *file)
 static int
 handle_submit_otw_upgrade(WebHttpContext * whc, const char *file)
 {
-
+  NOWARN_UNUSED(file);
   int err = WEB_HTTP_ERR_OKAY;
   char *action;
   char *working_dir;

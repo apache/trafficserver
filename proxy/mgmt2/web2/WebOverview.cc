@@ -1599,7 +1599,6 @@ overviewPage::agCacheHitRate()
   MgmtIntCounter totalMisses = 0;
   MgmtIntCounter totalAccess = 0;
   MgmtFloat hitRate = 0.00;
-  int status;
 
   // get current time and delta to work with
   ink_hrtime current_time = ink_get_hrtime();
@@ -1629,11 +1628,13 @@ overviewPage::agCacheHitRate()
     //////////////////////////
     cluster_hit_count.current_value = -10000;
     cluster_hit_count.current_time = ink_get_hrtime();
-    status = clusterSumInt(cluster_hit_count.lm_record_name, &(cluster_hit_count.current_value));
+    // TODO: Should we check return value?
+    clusterSumInt(cluster_hit_count.lm_record_name, &(cluster_hit_count.current_value));
 
     cluster_miss_count.current_value = -10000;
     cluster_miss_count.current_time = ink_get_hrtime();
-    status = clusterSumInt(cluster_miss_count.lm_record_name, &(cluster_miss_count.current_value));
+    // TODO: Should we check return value?
+    clusterSumInt(cluster_miss_count.lm_record_name, &(cluster_miss_count.current_value));
 
     ////////////////////////////////////////////////
     // if not initial or wrap, set derived values //
@@ -1711,7 +1712,6 @@ overviewPage::agHostdbHitRate()
   //  RecInt hostDBmisses = 0;
   RecInt dnsTotal = 0;
   RecFloat hitRate = 0.00;
-  int status;
 
   // get current time and delta to work with
   ink_hrtime current_time = ink_get_hrtime();
@@ -1741,11 +1741,13 @@ overviewPage::agHostdbHitRate()
     //////////////////////////
     cluster_hostdb_total_lookups.current_value = -10000;
     cluster_hostdb_total_lookups.current_time = ink_get_hrtime();
-    status = clusterSumInt(cluster_hostdb_total_lookups.lm_record_name, &(cluster_hostdb_total_lookups.current_value));
+    // TODO: Should we check return value?
+    clusterSumInt(cluster_hostdb_total_lookups.lm_record_name, &(cluster_hostdb_total_lookups.current_value));
 
     cluster_hostdb_hits.current_value = -10000;
     cluster_hostdb_hits.current_time = ink_get_hrtime();
-    status = clusterSumInt(cluster_hostdb_hits.lm_record_name, &(cluster_hostdb_hits.current_value));
+    // TODO: Should we check return value?
+    clusterSumInt(cluster_hostdb_hits.lm_record_name, &(cluster_hostdb_hits.current_value));
 
     ////////////////////////////////////////////////
     // if not initial or wrap, set derived values //
@@ -1825,7 +1827,6 @@ overviewPage::agBandwidthHitRate()
   MgmtInt totalHits = 0;
   MgmtInt cacheOn = 1;          // on by default
   MgmtInt httpCacheOn;
-  int status;
 
   // See if cache is on
   ink_assert(varIntFromName("proxy.config.http.cache.http", &httpCacheOn));
@@ -1898,11 +1899,13 @@ overviewPage::agBandwidthHitRate()
     //////////////////////////
     cluster_ua_total_bytes.current_value = -10000;
     cluster_ua_total_bytes.current_time = ink_get_hrtime();
-    status = clusterSumInt(cluster_ua_total_bytes.lm_record_name, &(cluster_ua_total_bytes.current_value));
+    // TODO: Should we check return value?
+    clusterSumInt(cluster_ua_total_bytes.lm_record_name, &(cluster_ua_total_bytes.current_value));
 
     cluster_os_total_bytes.current_value = -10000;
     cluster_os_total_bytes.current_time = ink_get_hrtime();
-    status = clusterSumInt(cluster_os_total_bytes.lm_record_name, &(cluster_os_total_bytes.current_value));
+    // TODO: Should we check return value?
+    clusterSumInt(cluster_os_total_bytes.lm_record_name, &(cluster_os_total_bytes.current_value));
 
     ////////////////////////////////////////////////
     // if not initial or wrap, set derived values //
@@ -2386,6 +2389,7 @@ resolveAlarm(InkHashTable * post_data_ht)
 void
 resolveAlarmCLI(textBuffer * output, const char *request)
 {
+  NOWARN_UNUSED(output);
   Tokenizer colonTok(":");
   const char *ipAddr = NULL;
   alarm_t alarmType;

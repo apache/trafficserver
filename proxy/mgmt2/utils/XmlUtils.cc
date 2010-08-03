@@ -27,7 +27,9 @@
 #include "ink_platform.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #include "XmlUtils.h"
+#include "ink_defs.h"
 
 /****************************************************************************
  *
@@ -417,6 +419,7 @@ elementStart(void *pObj, const char *el, const char **attr)
 void /*XMLDom:: */
 elementEnd(void *pObj, const char *el)
 {
+  NOWARN_UNUSED(el);
   /*ASSERT(strcmp(el, pCur->pNodeName) == 0); */
   XMLDom *pDom = (XMLDom *) pObj;
   pDom->m_pCur = pDom->m_pCur->m_pParentNode;

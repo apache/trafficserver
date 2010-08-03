@@ -122,6 +122,8 @@ static ink_mutex ssl_locks[CRYPTO_NUM_LOCKS];
 void
 SSLeay_mutex_cb(int mode, int type, const char *file, int line)
 {
+  NOWARN_UNUSED(file);
+  NOWARN_UNUSED(line);
   ink_release_assert(type < CRYPTO_NUM_LOCKS);
   ink_release_assert(type >= 0);
   if (mode & CRYPTO_LOCK) {
@@ -509,6 +511,7 @@ printServiceThr(int sig)
 void *
 serviceThrReaper(void *arg)
 {
+  NOWARN_UNUSED(arg);
   time_t currentTime;
   int numJoined;
 
@@ -602,7 +605,6 @@ webIntr_main(void *x)
   UIthr_t serviceThr = NO_THR;  // type for new service thread
 
   struct sockaddr_in *clientInfo;       // Info about client connection
-  int fdsReady;                 // Numbers of FDs ready, returned from select()
   ink_thread thrId;             // ID of service thread we just spawned
   fd_set selectFDs;             // FD set passed to select
   int webPort = -1;             // Port for incoming HTTP connections
@@ -987,7 +989,8 @@ webIntr_main(void *x)
       FD_SET(rafFD, &selectFDs);
     }
 
-    fdsReady = mgmt_select(32, &selectFDs, (fd_set *) NULL, (fd_set *) NULL, NULL);
+    // TODO: Should we check return value?
+    mgmt_select(32, &selectFDs, (fd_set *) NULL, (fd_set *) NULL, NULL);
 
     if (socketFD >= 0 && FD_ISSET(socketFD, &selectFDs)) {
       // new HTTP Connection

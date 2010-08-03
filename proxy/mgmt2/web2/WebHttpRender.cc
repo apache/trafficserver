@@ -129,6 +129,8 @@ WebHttpGetIntFromQuery(WebHttpContext * whc, const char *tag, int *active_id)
 static int
 handle_alarm_object(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   overviewGenerator->generateAlarmsTable(whc);
   return WEB_HTTP_ERR_OKAY;
 }
@@ -140,6 +142,8 @@ handle_alarm_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_alarm_summary_object(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   overviewGenerator->generateAlarmsSummary(whc);
   return WEB_HTTP_ERR_OKAY;
 }
@@ -156,6 +160,7 @@ handle_alarm_summary_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_config_table_object(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
   INKFileNameT type;
   int err = WEB_HTTP_ERR_OKAY;
 
@@ -218,6 +223,8 @@ handle_config_table_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_help_config_link(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   INKFileNameT type;
   char *ink_file = NULL;
 
@@ -291,6 +298,8 @@ handle_help_config_link(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_dynamic_javascript(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   int err = WEB_HTTP_ERR_OKAY;
   INKFileNameT type;
   char *ink_file;
@@ -391,6 +400,8 @@ Ldone:
 static int
 handle_config_input_form(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   char *ink_file;
   char *frecord;
   INKFileNameT type;
@@ -500,6 +511,7 @@ HtmlRndrSelectList(textBuffer * html, const char *listName, const char *options[
 static int
 handle_file_edit(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
   Rollback *rb;
   char target_file[FILE_NAME_MAX + 1];
   char *formatText;
@@ -595,6 +607,8 @@ handle_include_cgi(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_overview_object(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   overviewGenerator->generateTable(whc);
   return WEB_HTTP_ERR_OKAY;
 }
@@ -606,6 +620,8 @@ handle_overview_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_overview_details_object(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   int err;
   if (whc->request_state & WEB_HTTP_STATE_MORE_DETAIL)
     // if currently showing more detail, render link to show less
@@ -622,6 +638,7 @@ handle_overview_details_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_post_data(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
   char *value;
   if (arg && whc->post_data_ht) {
     if (ink_hash_table_lookup(whc->post_data_ht, arg, (void **) &value)) {
@@ -698,6 +715,8 @@ handle_record(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_record_version(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   int id;
   char id_str[256];
   id = RecGetRecordUpdateCount(RECT_CONFIG);
@@ -718,7 +737,8 @@ handle_record_version(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_summary_object(WebHttpContext * whc, char *tag, char *arg)
 {
-
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   char dateBuf[40];
   char tmpBuf[256];
   time_t uptime_secs, d, h, m, s;
@@ -784,6 +804,8 @@ handle_summary_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_tab_object(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   int err = WEB_HTTP_ERR_OKAY;
   int active_mode;
 
@@ -802,6 +824,8 @@ handle_tab_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_html_tab_object(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   char *file = NULL;
   int err = WEB_HTTP_ERR_OKAY;
   int active_tab;
@@ -827,7 +851,8 @@ handle_html_tab_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_mgmt_auth_object(WebHttpContext * whc, char *tag, char *arg)
 {
-
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   int user_count;
   INKCfgContext ctx;
   INKCfgIterState ctx_state;
@@ -912,6 +937,8 @@ handle_mgmt_auth_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_tree_object(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   int err = WEB_HTTP_ERR_OKAY;
   char *file = NULL;
 
@@ -940,7 +967,8 @@ Ldone:
 static int
 handle_vip_object(WebHttpContext * whc, char *tag, char *arg)
 {
-
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   // Hash table iteration variables
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
@@ -1407,6 +1435,7 @@ handle_floppy_select(WebHttpContext * whc)
 static int
 handle_select(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
   if (strcmp(arg, "snapshot") == 0) {
     configFiles->displaySnapOption(whc->response_bdy);
   } else if (strcmp(arg, "ftp_snapshot") == 0) {
@@ -1424,7 +1453,7 @@ handle_select(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_password_object(WebHttpContext * whc, char *tag, char *arg)
 {
-
+  NOWARN_UNUSED(tag);
   RecString pwd_file;
   RecGetRecordString_Xmalloc(arg, &pwd_file);
 
@@ -1482,6 +1511,8 @@ render_option(textBuffer * output, const char *value, char *display, bool select
 static int
 handle_select_system_logs(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   const char *syslog_path = NULL;
   const char *syslog = NULL;
   char tmp[MAX_TMP_BUF_LEN + 1];
@@ -1528,6 +1559,8 @@ handle_select_system_logs(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_select_access_logs(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   char *logdir;
   char *logfile;
   char tmp[MAX_TMP_BUF_LEN + 1];
@@ -1603,6 +1636,8 @@ handle_select_access_logs(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   char tmp[MAX_TMP_BUF_LEN + 1];
   char tmp2[MAX_TMP_BUF_LEN + 1];
   char tmp3[MAX_TMP_BUF_LEN + 1];
@@ -1680,6 +1715,7 @@ handle_select_debug_logs(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_log_action(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
   textBuffer *output = whc->response_bdy;
   InkHashTable *ht = whc->post_data_ht;
   char *logfile;
@@ -1777,6 +1813,8 @@ Ldone:
 static int
 handle_version(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   whc->response_bdy->copyFrom(PACKAGE_VERSION, strlen(PACKAGE_VERSION));
   return WEB_HTTP_ERR_OKAY;
 }
@@ -1787,6 +1825,8 @@ handle_version(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_clear_cluster_stats(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   textBuffer *output = whc->response_bdy;
 
   RecInt cluster_type = 0;      // current SSL value, enabled/disabled
@@ -1824,6 +1864,8 @@ handle_clear_cluster_stats(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_submit_error_msg(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   if (whc->request_state & WEB_HTTP_STATE_SUBMIT_WARN || whc->request_state & WEB_HTTP_STATE_SUBMIT_NOTE) {
     textBuffer *output = whc->response_bdy;
     HtmlRndrTableOpen(output, "100%", 0, 0, 10);
@@ -1854,6 +1896,8 @@ handle_submit_error_msg(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_help_link(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   char *file = NULL;
   char *link;
 
@@ -1880,6 +1924,7 @@ handle_help_link(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_submit_error_flg(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
   if (whc->request_state & WEB_HTTP_STATE_SUBMIT_WARN) {
     char *dummy;
     if (arg && ink_hash_table_lookup(whc->submit_warn_ht, arg, (void **) &dummy)) {
@@ -1910,6 +1955,7 @@ handle_submit_error_flg(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_link(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
   char *link;
 
   if (arg) {
@@ -1929,6 +1975,8 @@ handle_link(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_link_file(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   char *file = NULL;
 
   if ((file = WebHttpGetTopLevelRndrFile_Xmalloc(whc))) {
@@ -1948,6 +1996,8 @@ handle_link_file(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_link_query(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   char *file = NULL;
   char *query;
 
@@ -1970,6 +2020,8 @@ handle_link_query(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_cache_query(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   textBuffer *output = whc->response_bdy;
   char *cache_op;
   char *url;
@@ -2216,6 +2268,8 @@ handle_cache_query(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_cache_regex_query(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   textBuffer *output = whc->response_bdy;
   char *cache_op;
   char *regex;
@@ -2369,6 +2423,8 @@ handle_cache_regex_query(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_time(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   time_t my_time_t;
   char my_ctime_str[32];
   time(&my_time_t);
@@ -2389,6 +2445,8 @@ handle_time(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_user(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   MgmtInt basic_auth_enabled;
   if (!varIntFromName("proxy.config.admin.basic_auth", &basic_auth_enabled)) {
     return WEB_HTTP_ERR_FAIL;
@@ -2409,7 +2467,8 @@ handle_user(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_plugin_object(WebHttpContext * whc, char *tag, char *arg)
 {
-
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   textBuffer *output = whc->response_bdy;
   WebPluginConfig *wpc = lmgmt->plugin_list.getFirst();
   char *config_link;
@@ -2450,7 +2509,8 @@ handle_plugin_object(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_ssl_redirect_url(WebHttpContext * whc, char *tag, char *arg)
 {
-
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   RecInt ssl_value = 0;         // current SSL value, enabled/disabled
   char *hostname_FQ = NULL;
   char ssl_redirect_url[256] = "";
@@ -2486,7 +2546,8 @@ handle_ssl_redirect_url(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_host_redirect_url(WebHttpContext * whc, char *tag, char *arg)
 {
-
+  NOWARN_UNUSED(tag);
+  NOWARN_UNUSED(arg);
   RecInt ssl_value = 0;         // current SSL value, enabled/disabled
   char hostname[1024];
   char host_redirect_url[256] = "";
@@ -2516,6 +2577,7 @@ handle_host_redirect_url(WebHttpContext * whc, char *tag, char *arg)
 static int
 handle_network(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
   int err = WEB_HTTP_ERR_OKAY;
 #if defined(linux) || defined(solaris)
   char value[1024];
@@ -2667,6 +2729,7 @@ Ldone:
 static int
 handle_network_object(WebHttpContext * whc, char *tag, char *arg)
 {
+  NOWARN_UNUSED(tag);
 #if defined(linux)
   char *device_ink_path, *template_ink_path;
   char command[200], tmpname[80], interface[80];

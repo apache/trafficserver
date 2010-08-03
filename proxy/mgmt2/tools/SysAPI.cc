@@ -1349,12 +1349,14 @@ Net_SetEncryptedRootPassword(char *password)
 int
 Net_SetSMTP_Server(char *server)
 {
+  NOWARN_UNUSED(server);
   return 0;
 }
 
 int
 Net_GetSMTP_Server(char *server)
 {
+  NOWARN_UNUSED(server);
   return 0;
 }
 

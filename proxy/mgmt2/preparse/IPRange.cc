@@ -87,6 +87,7 @@ read_an_ip(char *line, unsigned int *ip, int *i, int n)
 char *
 IPRange::read_table_from_file(int fd, const char *identifier_str, bool localip)
 {
+  NOWARN_UNUSED(localip);
   int i, j, n, rc, s, line_no;
   char c, line[MAXLINESIZE];
   bool end_of_file;

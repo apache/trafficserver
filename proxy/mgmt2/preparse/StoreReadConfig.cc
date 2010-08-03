@@ -53,8 +53,6 @@ parseStorageFile(int fd)
     // parse
 
     char *e = strpbrk(n, " \t\n");
-    int len = e ? e - n : strlen(n);
-    (void) len;
     int64 size = -1;
     while (*e && !isdigit(*e))
       e++;

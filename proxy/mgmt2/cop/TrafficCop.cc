@@ -201,6 +201,7 @@ chown_file_to_user(const char *file, const char *user)
 static void
 sig_child(int signum)
 {
+  NOWARN_UNUSED(signum);
   int pid = 0;
   int status = 0;
 
@@ -266,6 +267,7 @@ sig_alarm_warn(int signum, siginfo_t * t, void *c)
 sig_alarm_warn(int signum)
 #endif
 {
+  NOWARN_UNUSED(signum);
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering sig_alarm_warn(%d)\n", signum);
 #endif
@@ -281,6 +283,7 @@ sig_alarm_warn(int signum)
 static void
 sig_ignore(int signum)
 {
+  NOWARN_UNUSED(signum);
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering sig_ignore(%d)\n", signum);
 #endif
@@ -1231,16 +1234,12 @@ test_manager_http_port()
 static int
 heartbeat_manager()
 {
-  uint64 start;
   int err;
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering heartbeat_manager()\n");
 #endif
-  start = milliseconds();
   err = test_rs_port();
-//     fprintf (stderr, "heartbeat_manager[variable]() [%d ms]\n",
-//              (int) (milliseconds () - start));
 
   if (err < 0) {
     manager_failures += 1;
@@ -1257,10 +1256,7 @@ heartbeat_manager()
     return err;
   }
 #ifndef NO_WEBUI
-  start = milliseconds();
   err = test_manager_http_port();
-//     fprintf (stderr, "heartbeat_manager[http]() [%d ms]\n",
-//              (int) (milliseconds () - start));
 
   if (err < 0) {
     manager_failures += 1;
@@ -1295,17 +1291,12 @@ heartbeat_server()
 // Don't heartbeat the server if we
 // are running in rni only mode
 #ifndef RNI_ONLY
-
-  uint64 start;
   int err;
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering heartbeat_server()\n");
 #endif
-  start = milliseconds();
   err = test_server_http_port();
-//     fprintf (stderr, "heartbeat_server() [%d ms]\n",
-//              (int) (milliseconds () - start));
 
   if (err < 0) {
     // If the test failed, increment the count of the number of

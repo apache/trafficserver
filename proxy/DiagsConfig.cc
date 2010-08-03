@@ -190,6 +190,9 @@ DiagsConfig::reconfigure_diags()
 static int
 diags_config_callback(const char *name, RecDataT data_type, RecData data, void *opaque_token)
 {
+  NOWARN_UNUSED(name);
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(data);
   DiagsConfig *diagsConfig;
 
   diagsConfig = (DiagsConfig *) opaque_token;

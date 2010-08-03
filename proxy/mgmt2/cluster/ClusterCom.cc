@@ -56,7 +56,6 @@ long LastHighestDelta = -1L;
 void *
 drainIncomingChannel(void *arg)
 {
-  int nbytes;
   char message[61440];
   fd_set fdlist;
   void *ret = arg;
@@ -147,7 +146,7 @@ drainIncomingChannel(void *arg)
     if (lmgmt->ccom->cluster_type != NO_CLUSTER &&
         lmgmt->ccom->receive_fd > 0 &&
         FD_ISSET(lmgmt->ccom->receive_fd, &fdlist) &&
-        (nbytes = lmgmt->ccom->receiveIncomingMessage(message, 61440)) > 0) {
+        (lmgmt->ccom->receiveIncomingMessage(message, 61440) > 0)) {
       lmgmt->ccom->handleMultiCastMessage(message);
     } else if (FD_ISSET(lmgmt->ccom->reliable_server_fd, &fdlist)) {
 
@@ -344,6 +343,9 @@ drainIncomingChannel(void *arg)
 int
 cluster_com_port_watcher(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
+  NOWARN_UNUSED(data_type);
+  NOWARN_UNUSED(cookie);
+
   ink_assert(!name);
 
   ink_mutex_acquire(&(lmgmt->ccom->mutex));     /* Grab cluster lock */
@@ -709,13 +711,12 @@ void
 ClusterCom::handleMultiCastMessage(char *message)
 {
   int peer_cluster_port, ccom_port;
-  long delta = 0;
   char *last, *line, ip[1024], hostname[1024];
   char tsver[128] = "Before 2.X";
   char cluster_name[1024] = "UNKNOWN";
   RecordType type;
   ClusterPeerInfo *p;
-  time_t peer_wall_clock, peer_update_time, t;
+  time_t peer_wall_clock,t;
   InkHashTableValue hash_value;
 
   ++MultiCastMessages;
@@ -846,7 +847,6 @@ ClusterCom::handleMultiCastMessage(char *message)
     mgmt_elog("[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
-  peer_update_time = (time_t)tt;
 
   /* Have we see this guy before? */
   ink_mutex_acquire(&(mutex));  /* Grab cluster lock to access hash table */
@@ -885,7 +885,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   p->ccom_port = ccom_port;
   p->idle_ticks = p->manager_idle_ticks = our_wall_clock;
   p->last_time_recorded = peer_wall_clock;
-  p->delta = delta = peer_wall_clock - our_wall_clock;
+  p->delta = peer_wall_clock - our_wall_clock;
   p->manager_alive = 1;
 
   ink_assert(type == CLUSTER);
@@ -975,12 +975,12 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
         break;
       }
     case RECD_STRING:{         /* String stats not supported for cluster passing */
-        int ccons, test;
+        int ccons;
         char *tmp_msg_val = NULL;
 
         // the types specified are all have a defined constant size
         // coverity[secure_coding]
-        if ((test = sscanf(line, "%d:%d: %n", &tmp_id, (int *) &tmp_type, &ccons)) != 2) {
+        if (sscanf(line, "%d:%d: %n", &tmp_id, (int *) &tmp_type, &ccons) != 2) {
           mgmt_elog("[ClusterCom::handleMultiCastStatPacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
           return;
         }
@@ -1142,7 +1142,6 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
 {
   char *line, file[1024];
   version_t ver, our_ver;
-  time_t mod;
   int64 tt;
   InkHashTableValue hash_value;
   bool file_update_failure;
@@ -1156,7 +1155,7 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
       mgmt_elog("[ClusterCom::handleMultiCastFilePacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
       return;
     }
-    mod = (time_t)tt;
+
     if (configFiles->getRollbackObj(file, &rb)) {
 
       our_ver = rb->getCurrentVersion();
@@ -1409,8 +1408,6 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
   int running_sum = 0;          /* Make sure we never go over max */
   char tmp[1024];
   struct in_addr resolved_addr;
-  time_t t;
-  Records *the_records;
 
   /* Insert the standard packet header */
   resolved_addr.s_addr = our_ip;
@@ -1460,7 +1457,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
   ink_release_assert(running_sum < max);
 
   /* Current time stamp, for xntp like synching */
-  if ((t = time(NULL)) > 0) {
+  if (time(NULL) > 0) {
     snprintf(tmp, sizeof(tmp), "time: %lld\n", (int64)time(NULL));
     ink_strncpy(&message[running_sum], tmp, (max - running_sum));
     running_sum += strlen(tmp);
@@ -1477,12 +1474,6 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
    *  Big lock technology(tm)
    */
   ink_mutex_acquire(&lmgmt->record_data->mutex[packet_type]);
-
-  if (packet_type == CONFIG) {
-    the_records = &(lmgmt->record_data->config_data);
-  } else {
-    the_records = &(lmgmt->record_data->node_data);
-  }
 
   snprintf(tmp, sizeof(tmp), "ctime: %lld\n", (int64)lmgmt->record_data->time_last_config_change);
   ink_strncpy(&message[running_sum], tmp, (max - running_sum));

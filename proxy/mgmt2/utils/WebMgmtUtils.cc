@@ -311,9 +311,9 @@ varFloatFromName(const char *varName, RecFloat * value)
 {
   RecDataT varDataType = RECD_NULL;
   bool found = true;
-  int err = REC_ERR_FAIL;
 
-  err = RecGetRecordDataType((char *) varName, &varDataType);
+  // TODO: should we check for return code / error here?
+  RecGetRecordDataType((char *) varName, &varDataType);
 
   switch (varDataType) {
   case RECD_INT:{
@@ -1255,6 +1255,7 @@ processSpawn(const char *args[],
              EnvBlock * env,
              textBuffer * input_buf, textBuffer * output_buf, bool nowait, bool run_as_root, bool * truncated)
 {
+  NOWARN_UNUSED(run_as_root);
   int status = 0;
 
 #ifndef _WIN32
