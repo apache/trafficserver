@@ -39,7 +39,7 @@
 
 class url_mapping;
 
-class RemapProcessor:Processor
+class RemapProcessor: public Processor
 {
 public:
 

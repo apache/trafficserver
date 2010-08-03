@@ -294,6 +294,7 @@ set_channel_pin_ClusterFunction(ClusterMachine * from, void *data, int len)
 void
 post_setchan_pin_ClusterFunction(ClusterMachine * to, void *data, int len)
 {
+  NOWARN_UNUSED(len);
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   // We are called on the ET_CLUSTER thread.

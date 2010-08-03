@@ -463,6 +463,8 @@ HttpSM::init()
 int
 HttpSM::connection_collapsing_piggyback_handler(int event, void *data)
 {
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   Debug("http_track", "HttpSM:connection_collapsing_piggyback_handler[%d]\n", sm_id);
   call_transact_and_set_next_state(&HttpTransact::DecideCacheLookup);
   return 0;
@@ -539,7 +541,7 @@ HttpSM::do_api_callout()
 int
 HttpSM::state_add_to_list(int event, void *data)
 {
-
+  NOWARN_UNUSED(data);
   // The list if for stat pages and general debugging
   //   The config variable exists mostly to allow us to
   //   measure an performance drop during benchmark runs
@@ -567,7 +569,7 @@ HttpSM::state_add_to_list(int event, void *data)
 int
 HttpSM::state_remove_from_list(int event, void *data)
 {
-
+  NOWARN_UNUSED(data);
   // The config parameters are guranteed not change
   //   across the life of a transaction so it safe to
   //   check the config here and use it detrmine
@@ -595,7 +597,8 @@ HttpSM::state_remove_from_list(int event, void *data)
 int
 HttpSM::kill_this_async_hook(int event, void *data)
 {
-
+  NOWARN_UNUSED(event);
+  NOWARN_UNUSED(data);
   // In the base HttpSM, we don't have anything to
   //   do here.  subclasses can overide this function
   //   to do their own asyncronous cleanup
@@ -730,7 +733,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
   ink_assert(server_session == NULL);
 
   int bytes_used = 0;
-  int return_val = EVENT_CONT;
   ink_assert(ua_entry->eos == false);
 
 
@@ -789,12 +791,10 @@ HttpSM::state_read_client_request_header(int event, void *data)
     http_parser_clear(&http_parser);
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
     milestones.ua_read_header_done = ink_get_hrtime();
-    return_val = EVENT_DONE;
   }
 
   switch (state) {
   case PARSE_ERROR:
-
     Debug("http", "[%lld] error parsing client request header", sm_id);
 
     // Disable further I/O on the client
@@ -2403,8 +2403,6 @@ HttpSM::state_icp_lookup(int event, void *data)
 int
 HttpSM::state_cache_open_write(int event, void *data)
 {
-
-  VConnection *write_vc;
 STATE_ENTER(&HttpSM:state_cache_open_write, event);
   // milestones.cache_open_write_end = ink_get_hrtime();
   pending_action = NULL;
@@ -2415,7 +2413,6 @@ STATE_ENTER(&HttpSM:state_cache_open_write, event);
     //////////////////////////////
     // OPEN WRITE is successful //
     //////////////////////////////
-    write_vc = (VConnection *) data;
     t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_SUCCESS;
     break;
 
@@ -3412,6 +3409,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
 int
 HttpSM::tunnel_handler_for_partial_post(int event, void *data)
 {
+  NOWARN_UNUSED(data);
   STATE_ENTER(&HttpSM::tunnel_handler_for_partial_post, event);
   tunnel.deallocate_buffers();
   tunnel.reset();
@@ -3793,6 +3791,7 @@ HttpSM::state_srv_lookup(int event, void *data)
 int
 HttpSM::state_remap_request(int event, void *data)
 {
+  NOWARN_UNUSED(data);
   STATE_ENTER(&HttpSM::state_remap_request, event);
 
   switch (event) {
@@ -6248,17 +6247,10 @@ HttpSM::setup_push_transfer_to_cache()
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_push);
 
-  HttpTunnelProducer *p = tunnel.add_producer(ua_entry->vc,
-                                              nbytes,
-                                              buf_start,
-                                              &HttpSM::tunnel_handler_ua_push,
-                                              HT_HTTP_CLIENT,
-                                              "user_agent");
-
-  NOWARN_UNUSED(p);
-
+  // TODO: Should we do something with the HttpTunnelProducer* returned?
+  tunnel.add_producer(ua_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_ua_push,
+                      HT_HTTP_CLIENT, "user_agent");
   setup_cache_write_transfer(&cache_sm, ua_entry->vc, &t_state.cache_info.object_store, 0, "cache write");
-
 
   ua_entry->in_tunnel = true;
 }
@@ -7410,6 +7402,7 @@ void HttpSM::set_http_schedule(Continuation *contp)
 
 int HttpSM::get_http_schedule(int event, void * data)
 {
+  NOWARN_UNUSED(data);
   bool plugin_lock;
   Ptr <ProxyMutex> plugin_mutex;
   if (schedule_cont->mutex) {

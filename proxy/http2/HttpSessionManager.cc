@@ -168,7 +168,7 @@ HSMresult_t
 HttpSessionManager::acquire_session(Continuation * cont, unsigned int ip, int port,
                                     const char *hostname, HttpClientSession * ua_session, HttpSM * sm)
 {
-
+  NOWARN_UNUSED(cont);
   HttpServerSession *to_return = NULL;
 
   // We compute the mmh for matching the hostname as the last

@@ -446,18 +446,20 @@ case $host_os in
       #
       #  111 is "statement is unrecahable"
       #  279 is "controlling expression is constant", triggered by our asserts
+      #  383 is "value copied to temporary, reference to temporary used"
       #  444 is "destructor for base class is not virtual"
       #  522 is "function "xyz" redeclared "inline" after being called
       #  873 is "has no corresponding operator delete". ToDo: we should fix.
       #  981 is "operands are evaluated in unspecified order"
       # 1418 is "external function definition with no prior declaration"
       # 1419 is "external declaration in primary source file"
+      # 1572 is "floating-point equality and inequality comparisons are unreliable"
       # 1720 is "operator new" has no corresponding member operator delete"
       # 2256 is "non-pointer conversion from "int" to "unsigned char" "
       # 2259 is "non-pointer conversion from "int" to "unsigned char" "
       # 
       # TODO: We should try to eliminate more of these -wd exclusions.
-      common_opt="-pipe -Wall -wd111 -wd279 -wd522 -wd444 -wd873 -wd981 -wd1418 -wd1419 -wd1720 -wd2256 -wd2259"
+      common_opt="-pipe -Wall -wd111 -wd279 -wd383 -wd522 -wd444 -wd873 -wd981 -wd1418 -wd1419 -wd1572 -wd1720 -wd2256 -wd2259"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt -O2 -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"

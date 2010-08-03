@@ -1225,14 +1225,15 @@ typedef int (*PluginFreshnessCalcFunc) (void *contp);
 extern PluginFreshnessCalcFunc pluginFreshnessCalcFunc;
 
 inline void *
-  ICPRequestCont::operator
+ICPRequestCont::operator
 new(size_t size, void *mem)
 {
+  NOWARN_UNUSED(size);
   return mem;
 }
 
 inline void
-  ICPRequestCont::operator
+ICPRequestCont::operator
 delete(void *mem)
 {
   ICPRequestCont_allocator.free((ICPRequestCont *) mem);

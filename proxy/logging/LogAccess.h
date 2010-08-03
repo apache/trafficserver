@@ -320,9 +320,9 @@ public:
   static int strlen(char *str);
 
 public:
-  inkcoreapi void static marshal_int(char *dest, int64 source);
-  inkcoreapi void static marshal_str(char *dest, const char *source, int padded_len);
-  inkcoreapi void static marshal_mem(char *dest, const char *source, int actual_len, int padded_len);
+  inkcoreapi static void marshal_int(char *dest, int64 source);
+  inkcoreapi static void marshal_str(char *dest, const char *source, int padded_len);
+  inkcoreapi static void marshal_mem(char *dest, const char *source, int actual_len, int padded_len);
 
   bool initialized;
 

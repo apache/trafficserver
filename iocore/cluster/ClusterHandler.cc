@@ -3057,7 +3057,6 @@ ClusterHandler::do_open_local_requests()
   // It is here where we process the open_local requests within the
   // ET_CLUSTER thread.
   //
-  int res;
   int pending_request = 0;
   ClusterVConnection *cvc;
   ClusterVConnection *cvc_ext;
@@ -3087,7 +3086,7 @@ ClusterHandler::do_open_local_requests()
     while ((cvc = local_incoming_open_local.pop())) {
       MUTEX_TRY_LOCK(lock, cvc->action_.mutex, tt);
       if (lock) {
-        if ((res = cvc->start(tt)) < 0) {
+        if (cvc->start(tt) < 0) {
           cvc->token.clear();
           if (cvc->action_.continuation) {
             cvc->action_.continuation->handleEvent(CLUSTER_EVENT_OPEN_FAILED, 0);

@@ -65,7 +65,7 @@ http_dump()
   return;
 }
 #endif
-struct DumpStats:Continuation
+struct DumpStats: public Continuation
 {
   int mainEvent(int event, void *e)
   {

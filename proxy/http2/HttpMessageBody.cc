@@ -54,6 +54,7 @@ HttpMessageBody::MakeErrorBodyVA(int64 max_buffer_length,
                                  const HttpConfigParams * config,
                                  HTTPStatus status_code, const char *reason, const char *format, va_list va)
 {
+  NOWARN_UNUSED(config);
   char *p, *outbuf = NULL;
   char error_title[128];
   int pass;

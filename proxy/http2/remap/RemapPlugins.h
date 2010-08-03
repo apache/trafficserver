@@ -39,7 +39,7 @@
 /**
  * A class that represents a queue of plugins to run
 **/
-struct RemapPlugins:Continuation
+struct RemapPlugins: public Continuation
 {
   unsigned int _cur;
   UrlMappingContainer *_map_container;
