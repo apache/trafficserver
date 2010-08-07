@@ -357,23 +357,26 @@ extern int hostdb_lookup_timeout;
 extern int hostdb_insert_timeout;
 extern int hostdb_re_dns_on_reload;
 extern HostDBProcessor hostDBProcessor;
+
 // 0 = obey, 1 = ignore, 2 = min(X,ttl), 3 = max(X,ttl)
 enum
 { TTL_OBEY, TTL_IGNORE, TTL_MIN, TTL_MAX };
 extern int hostdb_ttl_mode;
+
 extern unsigned int hostdb_current_interval;
 extern unsigned int hostdb_ip_stale_interval;
 extern unsigned int hostdb_ip_timeout_interval;
 extern unsigned int hostdb_ip_fail_timeout_interval;
 extern int hostdb_size;
 extern char hostdb_filename[PATH_NAME_MAX + 1];
+
 //extern int hostdb_timestamp;
 extern int hostdb_sync_frequency;
 extern int hostdb_disable_reverse_lookup;
 
 // Static configuration information
-
 extern HostDBCache hostDB;
+
 //extern Queue<HostDBContinuation>  remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 
 inline unsigned int
@@ -381,6 +384,7 @@ master_hash(INK_MD5 & md5)
 {
   return (int) (md5[1] >> 32);
 }
+
 inline bool
 is_dotted_form_hostname(char *c)
 {
@@ -398,8 +402,5 @@ HostDBContinuation::key_partition()
 {
   return hostDB.partition_of_bucket(fold_md5(md5) % hostDB.buckets);
 }
-
-
-
 
 #endif /* _P_HostDBProcessor_h_ */

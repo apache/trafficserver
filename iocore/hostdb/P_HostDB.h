@@ -48,8 +48,6 @@
 #include "I_HostDB.h"
 
 // HostDB files
-#include "I_HostDBProcessor.h"
-
 #include "P_DNS.h"
 #include "P_MultiCache.h"
 #include "P_HostDBProcessor.h"

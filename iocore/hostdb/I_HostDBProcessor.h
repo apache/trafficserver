@@ -52,9 +52,8 @@ struct HostDBContinuation;
 // a reasonable size memory cache, and use a (relatively) sparce
 // disk representation to decrease # of seeks.
 //
-
-extern unsigned int hostdb_current_interval;
 extern int hostdb_enable;
+extern unsigned int hostdb_current_interval;
 extern unsigned int hostdb_ip_stale_interval;
 extern unsigned int hostdb_ip_timeout_interval;
 extern unsigned int hostdb_ip_fail_timeout_interval;
@@ -391,6 +390,7 @@ struct HostDBRoundRobin
   HostDBInfo *increment_round_robin()
   {
     bool bad = (n <= 0 || n > HOST_DB_MAX_ROUND_ROBIN_INFO || good <= 0 || good > HOST_DB_MAX_ROUND_ROBIN_INFO);
+
     if (bad) {
       ink_assert(!"bad round robin size");
       return NULL;
@@ -399,8 +399,9 @@ struct HostDBRoundRobin
     return NULL;
   }
 
-HostDBRoundRobin():n(0), good(0), current(0) {
-  }
+  HostDBRoundRobin()
+  : n(0), good(0), current(0)
+  { }
 
 };
 
@@ -494,8 +495,6 @@ struct HostDBProcessor: public Processor
 
 void run_HostDBTest();
 
-extern char hostdb_filename[PATH_NAME_MAX + 1];
-extern int hostdb_size;
 extern inkcoreapi HostDBProcessor hostDBProcessor;
 
 void ink_hostdb_init(ModuleVersion version);
