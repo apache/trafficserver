@@ -171,7 +171,6 @@ public:
   {
     m_space_used += bytes;
     m_partition_space_left -= bytes;
-    LOG_SET_DYN_STAT(log2_stat_log_files_space_used_stat, 1, m_space_used);
   };
   void update_space_used();
   void read_configuration_variables();
