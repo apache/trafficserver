@@ -77,14 +77,16 @@ int cache_config_enable_checksum = 0;
 int cache_config_alt_rewrite_max_size = 4096;
 int cache_config_read_while_writer = 0;
 char cache_system_config_directory[PATH_NAME_MAX + 1];
+
 // Globals
+
 RecRawStatBlock *cache_rsb = NULL;
 Cache *theStreamCache = 0;
 Cache *theCache = 0;
 CacheDisk **gdisks = NULL;
 int gndisks = 0;
 static volatile int initialize_disk = 0;
-Cache *caches[1 << NumCacheFragTypes] = { 0 };
+Cache *caches[NUM_CACHE_FRAG_TYPES] = { 0 };
 CacheSync *cacheDirSync = 0;
 Store theCacheStore;
 volatile int CacheProcessor::initialized = CACHE_INITIALIZING;
@@ -699,8 +701,8 @@ CacheProcessor::cacheInitialized()
       Debug("cache_init", "CacheProcessor::cacheInitialized - failed to initialize the cache for http: cache disabled");
       Warning("failed to initialize the cache for http: cache disabled\n");
     } else {
-      caches_ready = caches_ready | CACHE_FRAG_TYPE_HTTP;
-      caches_ready = caches_ready | CACHE_FRAG_TYPE_NONE;
+      caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
+      caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
       caches[CACHE_FRAG_TYPE_HTTP] = theCache;
       caches[CACHE_FRAG_TYPE_NONE] = theCache;
     }
@@ -711,7 +713,7 @@ CacheProcessor::cacheInitialized()
             "CacheProcessor::cacheInitialized - failed to initialize the cache for streaming: cache disabled");
       Warning("failed to initialize the cache for streaming: cache disabled\n");
     } else {
-      caches_ready = caches_ready | CACHE_FRAG_TYPE_RTSP;
+      caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_RTSP);
       caches[CACHE_FRAG_TYPE_RTSP] = theStreamCache;
     }
   }
@@ -1652,15 +1654,15 @@ AIO_Callback_handler::handle_disk_failure(int event, void *data)
 
   if (theCache && !theCache->hosttable->gen_host_rec.part_hash_table) {
     unsigned int caches_ready = 0;
-    caches_ready = caches_ready | CACHE_FRAG_TYPE_HTTP;
-    caches_ready = caches_ready | CACHE_FRAG_TYPE_NONE;
+    caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
+    caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
     caches_ready = ~caches_ready;
     CacheProcessor::cache_ready &= caches_ready;
     Warning("all partitions for http cache are corrupt, http cache disabled");
   }
   if (theStreamCache && !theStreamCache->hosttable->gen_host_rec.part_hash_table) {
     unsigned int caches_ready = 0;
-    caches_ready = caches_ready | CACHE_FRAG_TYPE_RTSP;
+    caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_RTSP);
     caches_ready = ~caches_ready;
     CacheProcessor::cache_ready &= caches_ready;
     Warning("all partitions for mixt cache are corrupt, mixt cache disabled");

@@ -992,7 +992,7 @@ struct Cache
 
 extern Cache *theCache;
 extern Cache *theStreamCache;
-inkcoreapi extern Cache *caches[1 << NumCacheFragTypes];
+inkcoreapi extern Cache *caches[NUM_CACHE_FRAG_TYPES];
 extern int cache_config_vary_on_user_agent;
 
 

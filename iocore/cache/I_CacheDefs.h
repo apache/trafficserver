@@ -110,12 +110,12 @@ enum CacheDataType
   CACHE_DATA_RAM_CACHE_HIT_FLAG
 };
 
-#define NumCacheFragTypes 5
 enum CacheFragType
 {
-  CACHE_FRAG_TYPE_NONE = 1 << 0,
-  CACHE_FRAG_TYPE_HTTP = 1 << 1,
-  CACHE_FRAG_TYPE_RTSP = 1 << 2
+  CACHE_FRAG_TYPE_NONE,
+  CACHE_FRAG_TYPE_HTTP,
+  CACHE_FRAG_TYPE_RTSP,
+  NUM_CACHE_FRAG_TYPES
 };
 
 #define CacheKey INK_MD5
