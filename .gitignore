@@ -30,6 +30,9 @@ config.status
 config.nice
 config.h
 doc/Doxyfile
+doc/html/
+doc/warn.log
+
 libinktomi++/ink_autoconf.h
 libinktomi++/ink_config.h
 libinktomi++/stamp-h1
@@ -78,3 +81,10 @@ proxy/api/include/ts
 example/*/.libs
 example/app-template/tsapp
 example/app-template/records.config
+
+GPATH
+GRTAGS
+GSYMS
+GTAGS
+ETAGS
+CTAGS
