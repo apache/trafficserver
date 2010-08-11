@@ -45,7 +45,7 @@
   -------------------------------------------------------------------------*/
 
 const char *
-event_int_to_string(int event, char buffer[32])
+event_int_to_string(int event, int blen, char *buffer)
 {
   switch (event) {
     case -1: return "<no event>";
@@ -105,7 +105,7 @@ event_int_to_string(int event, char buffer[32])
 
   default:
     if (buffer != NULL) {
-      snprintf(buffer, sizeof(buffer), "%d", event);
+      snprintf(buffer, blen, "%d", event);
       return buffer;
     } else {
       return "UNKNOWN_EVENT";

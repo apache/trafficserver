@@ -140,6 +140,7 @@ int program_counter = 0;
 #include <math.h>
 #include "inktomi++.h"
 #include "CoreUtils.h"
+#include "EventName.h"
 #endif /* darwin || freebsd || solaris */
 
 #ifdef READ_CORE_WMT
@@ -157,8 +158,6 @@ bool inTable;
 FILE *fp;
 memTable default_memTable = { 0, 0, 0 };
 DynArray<struct memTable>arrayMem(&default_memTable, 0);
-
-char *event_int_to_string(int event, char buffer[32]);
 
 const int HDR_HEAP_HDR_SIZE = ROUND(sizeof(HdrHeap), HDR_PTR_SIZE);
 HTTPHdrImpl *global_http;
@@ -1038,7 +1037,7 @@ CoreUtils::dump_history(HttpSM * hsm)
     printf("%d   %d   %s", e, r, fileline);
 #endif
     char buffer[32];
-    char *msg = event_int_to_string(e, buffer);
+    const char *msg = event_int_to_string(e, sizeof(buffer), buffer);
     printf("   event string: \"%s\"\n", msg);
 
     xfree(fileline);

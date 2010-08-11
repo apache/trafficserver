@@ -31,9 +31,9 @@
 #include <limits.h>
 #include "P_Net.h"
 #include "ParseRules.h"
+#include "EventName.h"
 
 volatile int state_machine_count = 0;
-extern const char *event_int_to_string(int event, char buffer[32] = NULL);
 
 struct Globals
 {
