@@ -140,8 +140,9 @@ int program_counter = 0;
 #include <math.h>
 #include "inktomi++.h"
 #include "CoreUtils.h"
-#include "EventName.h"
 #endif /* darwin || freebsd || solaris */
+
+#include "EventName.h"
 
 #ifdef READ_CORE_WMT
 #include "WMT-Debug.h"
