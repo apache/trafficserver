@@ -57,7 +57,7 @@ struct RamCacheCLFUSEntry {
       uint32 incompressible:1;
       uint32 lru:1;
       uint32 copy:1; // copy-in-copy-out
-    };
+    } flag_bits;
     uint32 flags;
   };
   LINK(RamCacheCLFUSEntry, lru_link);
@@ -161,13 +161,13 @@ int RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32 auxkey1
   while (e) {
     if (e->key == *key && e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2) {
       move_compressed(e);
-      lru[e->lru].remove(e);
-      lru[e->lru].enqueue(e);
-      if (!e->lru) { // in memory
+      lru[e->flag_bits.lru].remove(e);
+      lru[e->flag_bits.lru].enqueue(e);
+      if (!e->flag_bits.lru) { // in memory
         e->hits++;
-        if (e->compressed) {
+        if (e->flag_bits.compressed) {
           b = (char*)xmalloc(e->len);
-          switch (e->compressed) {
+          switch (e->flag_bits.compressed) {
             default: goto Lfailed;
             case CACHE_COMPRESSION_FASTLZ: {
               int l = (int)e->len;
@@ -196,19 +196,19 @@ int RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32 auxkey1
           }
           IOBufferData *data = new_xmalloc_IOBufferData(b, e->len);
           data->_mem_type = DEFAULT_ALLOC;
-          if (!e->copy) { // don't bother if we have to copy anyway
+          if (!e->flag_bits.copy) { // don't bother if we have to copy anyway
             int64 delta = ((int64)e->compressed_len) - (int64)e->size;
             bytes += delta;
             CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
             e->size = e->compressed_len;
             check_accounting(this);
-            e->compressed = 0;
+            e->flag_bits.compressed = 0;
             e->data = data;
           }
           (*ret_data) = data;
         } else {
           IOBufferData *data = e->data;
-          if (e->copy) {
+          if (e->flag_bits.copy) {
             data = new_IOBufferData(iobuffer_size_to_index(e->len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
             memcpy(data->data(), e->data->data(), e->len);
           }
@@ -251,7 +251,7 @@ void RamCacheCLFUS::tick() {
     return;
   e = lru[1].dequeue();
 Lfree:
-  e->lru = 0;
+  e->flag_bits.lru = 0;
   history--;
   uint32 b = e->key.word(3) % nbuckets;
   bucket[b].remove(e);
@@ -263,7 +263,7 @@ void RamCacheCLFUS::victimize(RamCacheCLFUSEntry *e) {
   objects--;
   DDebug("ram_cache", "put %X %d %d size %d VICTIMIZED", e->key.word(3), e->auxkey1, e->auxkey2, e->size);
   e->data = NULL;
-  e->lru = 1;
+  e->flag_bits.lru = 1;
   lru[1].enqueue(e);
   history++;
 }
@@ -283,8 +283,8 @@ void RamCacheCLFUS::move_compressed(RamCacheCLFUSEntry *e) {
 RamCacheCLFUSEntry *RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e) {
   RamCacheCLFUSEntry *ret = e->hash_link.next;
   move_compressed(e);
-  lru[e->lru].remove(e);
-  if (!e->lru) {
+  lru[e->flag_bits.lru].remove(e);
+  if (!e->flag_bits.lru) {
     objects--;
     bytes -= e->size + ENTRY_OVERHEAD;
     CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -e->size);
@@ -310,7 +310,7 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
   char *b = 0, *bb = 0;
   while (compressed && target > ncompressed) {
     RamCacheCLFUSEntry *e = compressed;
-    if (e->incompressible || e->compressed)
+    if (e->flag_bits.incompressible || e->flag_bits.compressed)
       goto Lcontinue;
     n++;
     if (do_at_most < n)
@@ -358,11 +358,11 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
 #endif
       }
       if (l > REQUIRED_COMPRESSION * e->len)
-        e->incompressible = ctype;
+        e->flag_bits.incompressible = ctype;
       if (l > REQUIRED_SHRINK * e->size)
         goto Lfailed;
       if (l < e->len) {
-        e->compressed = cache_config_ram_cache_compress;
+        e->flag_bits.compressed = cache_config_ram_cache_compress;
         bb = (char*)xmalloc(l);
         memcpy(bb, b, l);
         xfree(b);
@@ -373,7 +373,7 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
         e->size = l;
       } else {
         xfree(b);
-        e->compressed = 0;
+        e->flag_bits.compressed = 0;
         bb = (char*)xmalloc(e->len);
         memcpy(bb, e->data->data(), e->len);
         int64 delta = ((int64)e->len) - (int64)e->size;
@@ -389,10 +389,11 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
     goto Lcontinue;
   Lfailed:
     xfree(b);
-    e->incompressible = 1;
+    e->flag_bits.incompressible = 1;
   Lcontinue:;
     DDebug("ram_cache", "compress %X %d %d %d %d %d %d",
-           e->key.word(3), e->auxkey1, e->auxkey2, e->incompressible, e->compressed,
+           e->key.word(3), e->auxkey1, e->auxkey2,
+           e->flag_bits.incompressible, e->flag_bits.compressed,
            e->len, e->compressed_len);
     if (!e->lru_link.next)
       break;
@@ -430,10 +431,10 @@ int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32 len, bool copy, 
   }
   if (e) {
     e->hits++;
-    if (!e->lru) { // already in cache
+    if (!e->flag_bits.lru) { // already in cache
       move_compressed(e);
-      lru[e->lru].remove(e);
-      lru[e->lru].enqueue(e);
+      lru[e->flag_bits.lru].remove(e);
+      lru[e->flag_bits.lru].enqueue(e);
       int64 delta = ((int64)size) - (int64)e->size;
       bytes += delta;
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
@@ -448,8 +449,8 @@ int RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32 len, bool copy, 
         e->size = size;
       }
       check_accounting(this);
-      e->copy = copy;
-      e->compressed = 0;
+      e->flag_bits.copy = copy;
+      e->flag_bits.compressed = 0;
       DDebug("ram_cache", "put %X %d %d size %d HIT", key->word(3), auxkey1, auxkey2, e->size);
       return 1;
     } else
@@ -539,7 +540,7 @@ Linsert:
     e->data = new_xmalloc_IOBufferData(b, len);
     e->data->_mem_type = DEFAULT_ALLOC;
   }
-  e->copy = copy;
+  e->flag_bits.copy = copy;
   bytes += size + ENTRY_OVERHEAD;
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, size);
   e->size = size;
@@ -562,7 +563,7 @@ Lhistory:
   e->size = data->block_size();
   e->flags = 0;
   bucket[i].push(e);
-  e->lru = 1;
+  e->flag_bits.lru = 1;
   lru[1].enqueue(e);
   history++;
   DDebug("ram_cache", "put %X %d %d HISTORY", key->word(3), auxkey1, auxkey2);
