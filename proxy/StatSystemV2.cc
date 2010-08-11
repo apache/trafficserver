@@ -253,7 +253,7 @@ bool StatSystemV2::getStatNum(const char *stat_name, uint32_t &stat_num)
 }
 
 static INKThread statsCommandThread;
-static int MAX_STAT_NAME_LENGTH = 512;
+static const int MAX_STAT_NAME_LENGTH = 512;
 int StatCollectorContinuation::mainEvent(int event, Event * e)
 {
     NOWARN_UNUSED(event);
