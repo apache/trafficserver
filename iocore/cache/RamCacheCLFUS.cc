@@ -317,13 +317,13 @@ void RamCacheCLFUS::compress_entries(int do_at_most) {
       break;
     {
       e->compressed_len = e->size;
-      uLongf l = 0;
+      uint32 l = 0;
       int ctype = cache_config_ram_cache_compress;
       switch (ctype) {
         default: goto Lcontinue;
-        case CACHE_COMPRESSION_FASTLZ: l = (uLongf)((double)e->len * 1.05 + 66); break;
+        case CACHE_COMPRESSION_FASTLZ: l = (uint32)((double)e->len * 1.05 + 66); break;
 #if ATS_HAS_LIBZ
-        case CACHE_COMPRESSION_LIBZ: l = compressBound(e->len); break;
+        case CACHE_COMPRESSION_LIBZ: l = (uint32)compressBound(e->len); break;
 #endif
 #if ATS_HAS_LZMA
         case CACHE_COMPRESSION_LIBLZMA: l = e->len; break;

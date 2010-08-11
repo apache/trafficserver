@@ -88,7 +88,7 @@ if test "$enable_zlib" != "no"; then
         ;;
     esac
   fi
-  AC_CHECK_LIB(z, zlibVersion, [zlib_have_libs=1])
+  AC_CHECK_LIB(z, compressBound, [zlib_have_libs=1])
   if test "$zlib_have_libs" != "0"; then
     ATS_FLAG_HEADERS(zlib.h, [zlib_have_headers=1])
   fi
