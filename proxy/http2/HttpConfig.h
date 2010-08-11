@@ -336,9 +336,6 @@ do { \
 #define HTTP_ConfigReadString          REC_ConfigReadString
 #define HTTP_RegisterConfigUpdateFunc  REC_RegisterConfigUpdateFunc
 
-
-class ostream;
-
 /////////////////////////////////////////////////////////////
 //
 // struct HttpConfigPortRange
