@@ -168,3 +168,24 @@
     logdir:        ${datadir}/logs
     cachedir:      ${datadir}/cache
 </Layout>
+
+
+# Debian layout
+<Layout Debian>
+    prefix:        
+    exec_prefix:   ${prefix}/usr
+    bindir:        ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/sbin
+    libdir:        ${exec_prefix}/lib
+    libexecdir:    ${exec_prefix}/lib/trafficserver/modules
+    mandir:        ${exec_prefix}/share/man
+    sysconfdir:    ${prefix}/etc/trafficserver
+    datadir:       ${exec_prefix}/share/trafficserver
+    includedir:    ${exec_prefix}/include/trafficserver
+    localstatedir: ${prefix}/var/lock/trafficserver
+    runtimedir:    ${prefix}/var/run/trafficserver
+    logfiledir:    ${prefix}/var/log/trafficserver
+    infodir:       ${exec_prefix}/share/info
+    installbuilddir: ${prefix}/usr/share/trafficserver/build
+    cachedir: ${prefix}/var/cache/trafficserver
+</Layout>
