@@ -192,11 +192,15 @@ CacheVC::handleWrite(int event, Event *e)
     frag_len = 0;
   set_agg_write_in_progress();
   POP_HANDLER;
-  agg_len = round_to_approx_size(write_len + header_len + frag_len + sizeofDoc);
+  uint32 to_write = write_len + header_len + sizeofDoc;
+  if (to_write > MAX_FRAG_SIZE) {
+    write_len = MAX_FRAG_SIZE - header_len - sizeofDoc;
+    to_write = MAX_FRAG_SIZE;
+  }
+  agg_len = round_to_approx_size(to_write);
   part->agg_todo_size += agg_len;
-  ink_assert(agg_len <= AGG_SIZE);
   bool agg_error =
-    (agg_len > AGG_SIZE ||
+    (agg_len > AGG_SIZE || header_len + sizeofDoc > MAX_FRAG_SIZE ||
      (!f.readers && (part->agg_todo_size > cache_config_agg_write_backlog + AGG_SIZE) && write_len));
 #ifdef CACHE_AGG_FAIL_RATE
   agg_error = agg_error || ((uint32) mutex->thread_holding->generator.random() <
@@ -215,6 +219,7 @@ CacheVC::handleWrite(int event, Event *e)
       return EVENT_RETURN;
     return handleEvent(AIO_EVENT_DONE, 0);
   }
+  ink_assert(agg_len <= AGG_SIZE);
   if (f.evac_vector)
     part->agg.push(this);
   else
@@ -1592,7 +1597,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type,
                   int options, time_t apin_in_cache, char *hostname, int host_len)
 {
 
-  if (!(CacheProcessor::cache_ready & frag_type)) {
+  if (!CACHE_READY(frag_type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }
@@ -1662,7 +1667,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t
 {
   NOWARN_UNUSED(key1);
 
-  if (!(CacheProcessor::cache_ready & type)) {
+  if (!CACHE_READY(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }

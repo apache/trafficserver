@@ -32,7 +32,7 @@
 Action *
 Cache::open_read(Continuation * cont, CacheKey * key, CacheFragType type, char *hostname, int host_len)
 {
-  if (!(CacheProcessor::cache_ready & type)) {
+  if (!CACHE_READY(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }
@@ -93,7 +93,7 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheHTTPHdr * request,
                  CacheLookupHttpConfig * params, CacheFragType type, char *hostname, int host_len)
 {
 
-  if (!(CacheProcessor::cache_ready & type)) {
+  if (!CACHE_READY(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }

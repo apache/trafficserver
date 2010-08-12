@@ -1953,7 +1953,7 @@ LmemHit:
 Action *
 Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
 {
-  if (!(CacheProcessor::cache_ready & type)) {
+  if (!CACHE_READY(type)) {
     cont->handleEvent(CACHE_EVENT_LOOKUP_FAILED, 0);
     return ACTION_RESULT_DONE;
   }
@@ -2075,7 +2075,7 @@ Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type,
   NOWARN_UNUSED(user_agents);
   NOWARN_UNUSED(link);
 
-  if (!(CacheProcessor::cache_ready & type)) {
+  if (!CACHE_READY(type)) {
     if (cont)
       cont->handleEvent(CACHE_EVENT_REMOVE_FAILED, 0);
     return ACTION_RESULT_DONE;
