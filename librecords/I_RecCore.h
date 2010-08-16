@@ -82,7 +82,6 @@ int RecLinkConfigCounter(const char *name, RecCounter * rec_counter);
 int RecLinkConfigString(const char *name, RecString * rec_string);
 
 int RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *cookie);
-int RecRegisterStatUpdateFunc(const char *name, RecStatUpdateFunc update_func, void *cookie);
 int RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock * rsb,
                                  int id, RecStatUpdateFunc update_func, void *cookie);
 
@@ -139,9 +138,6 @@ void RecSignalAlarm(int, const char *);
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-
-#define REC_RegisterConfigInteger RecRegisterConfigInt
-#define REC_RegisterConfigString  RecRegisterConfigString
 
 #define REC_ReadConfigInt32(_var,_config_var_name) do { \
   RecInt tmp = 0; \

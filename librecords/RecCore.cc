@@ -363,62 +363,6 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
 
 }
 
-//-------------------------------------------------------------------------
-// RecRegisterStatUpdateFunc
-//-------------------------------------------------------------------------
-
-int
-RecRegisterStatUpdateFunc(char *name, RecStatUpdateFunc update_func, void *cookie)
-{
-
-  return RecRegisterRawStatUpdateFunc(name, NULL, 0, update_func, cookie);
-
-}
-
-int
-RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock * rsb, int id, RecStatUpdateFunc update_func, void *cookie)
-{
-
-  int err = REC_ERR_FAIL;
-  RecRecord *r;
-
-  ink_rwlock_rdlock(&g_records_rwlock);
-
-  if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
-    rec_mutex_acquire(&(r->lock));
-    if (REC_TYPE_IS_STAT(r->rec_type)) {
-      RecStatUpdateFuncList *new_function = (RecStatUpdateFuncList *) xmalloc(sizeof(RecStatUpdateFuncList));
-      memset(new_function, 0, sizeof(RecStatUpdateFuncList));
-      new_function->rsb = rsb;
-      new_function->id = id;
-      new_function->update_func = update_func;
-      new_function->update_cookie = cookie;
-      new_function->next = NULL;
-
-      ink_debug_assert(new_function);
-      if (!r->stat_meta.update_func_list) {
-        r->stat_meta.update_func_list = new_function;
-      } else {
-        RecStatUpdateFuncList *cur_function = NULL;
-        RecStatUpdateFuncList *prev_function = NULL;
-        for (cur_function = r->stat_meta.update_func_list; cur_function; cur_function = cur_function->next) {
-          prev_function = cur_function;
-        }
-        ink_debug_assert(prev_function);
-        ink_debug_assert(!prev_function->next);
-        prev_function->next = new_function;
-      }
-      err = REC_ERR_OKAY;
-    }
-
-    rec_mutex_release(&(r->lock));
-  }
-
-  ink_rwlock_unlock(&g_records_rwlock);
-
-  return err;
-
-}
 
 //-------------------------------------------------------------------------
 // RecGetRecordXXX

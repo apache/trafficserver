@@ -91,7 +91,6 @@ struct RecStatMeta
   RecRawStatBlock *sync_rsb;
   int sync_id;
   RecPersistT persist_type;
-  RecStatUpdateFuncList *update_func_list;
 };
 
 struct RecConfigMeta

@@ -643,59 +643,6 @@ RecSyncStatsFile()
 }
 
 //-------------------------------------------------------------------------
-// RecExecStatUpdateFuncs()
-//
-//   Wrapper for RecExecRawStatUpdateFuncs(). Used for non-raw statistics.
-//
-//-------------------------------------------------------------------------
-
-int
-RecExecStatUpdateFuncs()
-{
-
-  return RecExecRawStatUpdateFuncs();
-
-}
-
-//-------------------------------------------------------------------------
-// RecExecRawStatUpdateFuncs()
-//
-//   Parameters 'rsb' and 'id' only applicabel to raw stats.
-//
-//   Note: 1. Although we support a list of update functions, currently,
-//            only the first function is invovled.
-//         2. The update function is responsible to set the value. For
-//            example: RecSetGlobalRawStatSum(rsb, id, ???);
-//
-//-------------------------------------------------------------------------
-
-int
-RecExecRawStatUpdateFuncs()
-{
-
-  RecRecord *r;
-  int i, num_records;
-  RecStatUpdateFuncList *cur_function = NULL;
-
-  num_records = g_num_records;
-  for (i = 0; i < num_records; i++) {
-    r = &(g_records[i]);
-    rec_mutex_acquire(&(r->lock));
-    if (REC_TYPE_IS_STAT(r->rec_type)) {
-      if (r->stat_meta.update_func_list) {
-        cur_function = r->stat_meta.update_func_list;
-        (*(cur_function->update_func)) (r->name, r->data_type, &(r->data),
-                                        cur_function->rsb, cur_function->id, cur_function->update_cookie);
-      }
-    }
-    rec_mutex_release(&(r->lock));
-  }
-
-  return REC_ERR_OKAY;
-
-}
-
-//-------------------------------------------------------------------------
 // RecReadConfigFile
 //-------------------------------------------------------------------------
 

@@ -75,7 +75,7 @@ int
 init_reverse_proxy()
 {
   // Do this before we create the table, which reads the value.
-  REC_RegisterConfigInteger(RECT_CONFIG, backdoor_var, 0, RECU_RESTART_TS, RECC_NULL, NULL);
+  RecRegisterConfigInt(RECT_CONFIG, backdoor_var, 0, RECU_RESTART_TS, RECC_NULL, NULL);
 
   ink_assert(rewrite_table == NULL);
   reconfig_mutex = new_ProxyMutex();

@@ -264,28 +264,6 @@ struct sync_cont:public Continuation
 };
 
 //-------------------------------------------------------------------------
-// stat_sync_cont
-//-------------------------------------------------------------------------
-
-struct stat_sync_cont:public Continuation
-{
-  stat_sync_cont(ProxyMutex * m):Continuation(m)
-  {
-    SET_HANDLER(&stat_sync_cont::sync);
-  }
-  int sync(int event, Event * e)
-  {
-    REC_NOWARN_UNUSED(event);
-    REC_NOWARN_UNUSED(e);
-    while (true) {
-      RecExecRawStatUpdateFuncs();
-      sleep(REC_STAT_UPDATE_INTERVAL_SEC);
-    }
-    return EVENT_DONE;
-  }
-};
-
-//-------------------------------------------------------------------------
 // RecProcessInit
 //-------------------------------------------------------------------------
 
@@ -384,9 +362,6 @@ RecProcessStart()
 
   sync_cont *sc = NEW(new sync_cont(new_ProxyMutex()));
   eventProcessor.spawn_thread(sc);
-
-  stat_sync_cont *ssc = NEW(new stat_sync_cont(new_ProxyMutex()));
-  eventProcessor.spawn_thread(ssc);
 
   g_started = true;
 
@@ -734,6 +709,8 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
         r->stat_meta.sync_id = id;
         r->stat_meta.sync_cb = sync_cb;
         err = REC_ERR_OKAY;
+      } else {
+        ink_release_assert(false); // We shouldn't register CBs twice...
       }
     }
     rec_mutex_release(&(r->lock));

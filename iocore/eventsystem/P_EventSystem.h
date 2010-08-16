@@ -70,15 +70,14 @@
 #define IOCORE_SignalManager               REC_SignalManager
 
 // configuration macros
-#define IOCORE_RegisterConfigInteger        REC_RegisterConfigInteger
-#define IOCORE_RegisterConfigString         REC_RegisterConfigString
+#define IOCORE_RegisterConfigInteger        RecRegisterConfigInt
+#define IOCORE_RegisterConfigString         RecRegisterConfigString
 #define IOCORE_ReadConfigInt32              REC_ReadConfigInt32
 #define IOCORE_ReadConfigInteger            REC_ReadConfigInteger
 #define IOCORE_ReadConfigFloat              REC_ReadConfigFloat
 #define IOCORE_ReadConfigStringAlloc        REC_ReadConfigStringAlloc
 #define IOCORE_ReadConfigString             REC_ReadConfigString
 #define IOCORE_RegisterConfigUpdateFunc     REC_RegisterConfigUpdateFunc
-#define IOCORE_RegisterStatUpdateFunc       RecRegisterRawStatUpdateFunc
 #define IOCORE_EstablishStaticConfigInteger REC_EstablishStaticConfigInteger
 #define IOCORE_EstablishStaticConfigInt32   REC_EstablishStaticConfigInt32
 #define IOCORE_EstablishStaticConfigInt32U  REC_EstablishStaticConfigInt32U

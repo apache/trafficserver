@@ -136,7 +136,7 @@ static void cplist_update();
 int cplist_reconfigure();
 static int create_partition(int partition_number, int size_in_blocks, int scheme, CachePart *cp);
 static void rebuild_host_table(Cache *cache);
-void register_cache_stats(RecRawStatBlock *rsb, const char *prefix);
+void register_cache_stats(RecRawStatBlock *rsb, const char *prefix, bool reg_bytes_used=true);
 
 Queue<CachePart> cp_list;
 int cp_list_len = 0;
@@ -168,16 +168,16 @@ cache_bytes_total(void)
 }
 
 int
-cache_stats_bytes_used_cb(const char *name,
-                          RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id, void *cookie)
+cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
   NOWARN_UNUSED(name);
   NOWARN_UNUSED(data_type);
   NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
     RecSetGlobalRawStatSum(rsb, id, cache_bytes_used());
   }
+  RecRawStatSyncSum(name, data_type, data, rsb, id);
+
   return 1;
 }
 
@@ -614,10 +614,8 @@ CacheProcessor::diskInitialized()
       for (; cp; cp = cp->link.next) {
         cp->part_rsb = RecAllocateRawStatBlock((int) cache_stat_count);
         char part_stat_str_prefix[256];
-        snprintf(part_stat_str_prefix, sizeof(part_stat_str_prefix), "proxy.process.cache.partition_%d",
-                 cp->part_number);
+        snprintf(part_stat_str_prefix, sizeof(part_stat_str_prefix), "proxy.process.cache.partition_%d", cp->part_number);
         register_cache_stats(cp->part_rsb, part_stat_str_prefix);
-
       }
     }
 
@@ -627,7 +625,6 @@ CacheProcessor::diskInitialized()
     for (i = 0; i < gndisks; i++) {
       CacheDisk *d = gdisks[i];
       if (is_debug_tag_set("cache_hosting")) {
-
         int j;
         Debug("cache_hosting", "Disk: %d: Part Blocks: %ld: Free space: %ld",
               i, d->header->num_diskpart_blks, d->free_space);
@@ -2528,26 +2525,29 @@ Cache::key_to_part(CacheKey *key, char *hostname, int host_len)
     return host_rec->parts[0];
 }
 
-static void reg_int(const char *str, int stat, RecRawStatBlock *rsb, const char *prefix) {
+static void reg_int(const char *str, int stat, RecRawStatBlock *rsb, const char *prefix, RecRawStatSyncCb sync_cb=RecRawStatSyncSum) {
   char stat_str[256];
   snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, str);
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NON_PERSISTENT, stat, RecRawStatSyncSum);
+  RecRegisterRawStat(rsb, RECT_PROCESS, stat_str, RECD_INT, RECP_NON_PERSISTENT, stat, sync_cb);
   DOCACHE_CLEAR_DYN_STAT(stat)
 }
 #define REG_INT(_str, _stat) reg_int(_str, (int)_stat, rsb, prefix)
 
 // Register Stats
 void
-register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
+register_cache_stats(RecRawStatBlock *rsb, const char *prefix, bool reg_bytes_used)
 {
   char stat_str[256];
 
-  REG_INT("bytes_used", cache_bytes_used_stat);
+  // TODO: At some point we should figure out how to calculate bytes_used for the per partition stats. Right now they will be zero.
+  if (reg_bytes_used) {
+    REG_INT("bytes_used", cache_bytes_used_stat);
+  }
+ 
+
   REG_INT("bytes_total", cache_bytes_total_stat);
   snprintf(stat_str, sizeof(stat_str), "%s.%s", prefix, "ram_cache.total_bytes");
-  RecRegisterRawStat(rsb, RECT_PROCESS,
-                     stat_str, RECD_INT, RECP_NULL, (int) cache_ram_cache_bytes_total_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(rsb, RECT_PROCESS, stat_str, RECD_INT, RECP_NULL, (int) cache_ram_cache_bytes_total_stat, RecRawStatSyncSum);
   REG_INT("ram_cache.bytes_used", cache_ram_cache_bytes_stat);
   REG_INT("ram_cache.hits", cache_ram_cache_hits_stat);
   REG_INT("pread_count", cache_pread_count_stat);
@@ -2599,8 +2599,7 @@ ink_cache_init(ModuleVersion v)
   cache_rsb = RecAllocateRawStatBlock((int) cache_stat_count);
 
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.cache.min_average_object_size", 8000, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.min_average_object_size", 8000, RECU_DYNAMIC, RECC_NULL, NULL);
 
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.ram_cache.size", -1, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInteger(cache_config_ram_cache_size, "proxy.config.cache.ram_cache.size");
@@ -2613,13 +2612,11 @@ ink_cache_init(ModuleVersion v)
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.ram_cache.compress_percent", 90, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.cache.limits.http.max_alts", 3, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.limits.http.max_alts", 3, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(cache_config_http_max_alts, "proxy.config.cache.limits.http.max_alts");
   Debug("cache_init", "proxy.config.cache.limits.http.max_alts = %d", cache_config_http_max_alts);
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                             "proxy.config.cache.ram_cache_cutoff", 1048576, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.ram_cache_cutoff", 1048576, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInteger(cache_config_ram_cache_cutoff, "proxy.config.cache.ram_cache_cutoff");
   Debug("cache_init", "cache_config_ram_cache_cutoff = %lld = %lldMb",
         cache_config_ram_cache_cutoff, cache_config_ram_cache_cutoff / (1024 * 1024));
@@ -2719,14 +2716,13 @@ ink_cache_init(ModuleVersion v)
                               "proxy.config.cache.partition_filename",
                               "partition.config", RECU_RESTART_TS, RECC_NULL, NULL);
 
-
   IOCORE_RegisterConfigString(RECT_CONFIG,
                               "proxy.config.cache.hosting_filename", "hosting.config", RECU_DYNAMIC, RECC_NULL, NULL);
 
-
-  register_cache_stats(cache_rsb, "proxy.process.cache");
-  IOCORE_RegisterStatUpdateFunc("proxy.process.cache.bytes_used",
-                                cache_rsb, (int) cache_bytes_used_stat, cache_stats_bytes_used_cb, NULL);
+  // Special case here for cache.bytes_used, since it uses a different CB than the "normal" SUM. This
+  // is a little ugly, but it's for one single stat, and saves an entire thread (and unecessary callbacks).
+  reg_int("bytes_used", cache_bytes_used_stat, cache_rsb, "proxy.process.cache", cache_stats_bytes_used_cb);
+  register_cache_stats(cache_rsb, "proxy.process.cache", false);
 
   const char *err = NULL;
   if ((err = theCacheStore.read_config())) {
