@@ -2,9 +2,72 @@
 
 Changes with Apache Traffic Server 2.1.2
 
-  *) Client side support for IPv6 [TS-18].
+  *) Segmentation fault in INKError when error output is made both in error
+   log and as debug messages (author: Yakov Markovitch) [TS-419].
 
-  *) Deprecated InkAPIs are now marked as such [TS-266].
+  *) Debian layout for config.layout (author: Igor Galic) [TS-415].
+
+  *) Eliminate extraneous stats thread [TS-411].
+
+  *) CACHE_FRAG_TYPE is now not a power of 2 [TS-76].
+
+  *) Remove unnecessary stats update [TS-390].
+
+  *) Get basic features to compile with Intel CC [TS-400].
+
+  *) More 64 bit issues, this time in the PluginVC code [TS-380].
+
+  *) Add configure option to enable detailed logging [TS-392].
+
+  *) Make sure to honor user settings for "dirs" (author: Theo Schlossnagle)
+   [TS-399].
+
+  *) Errors on failing to bind / listen on a specified port [TS-247].
+
+  *) Exempt quick filter for 127.0.0.1 [TS-397].
+
+  *) Cleanup after "layout changes" (author: Zhao Yongming) [TS-389].
+
+  *) Fix remaining (non-API) INK64 etc. [TS-365].
+
+  *) Segfault when using show:network [TS-109].
+
+  *) Update all examples to use non-deprecated APIs [TS-266].
+
+  *) Do some cleanup on Connection::fast_connect and
+   Connection::bind_connect (author: Alan M. Carrol) [TS-320].
+
+  *) Remove LLONG config option [Ts-364].
+
+  *) Cleanup some proxy/mgmt2/tools [TS-16].
+
+  *) Cleanup a little more of webui [TS-91].
+
+  *) TCL missing [TS-326].
+
+  *) logstats does not work with layout changes (author: Zhao Yongming)
+   [TS-385].
+
+  *) Convert bogus IOCORE_MachineFatal and IOCORE_ProcessFatal to Warning
+    and MachineFatal respectively based on review of the code and related
+    uses [TS-144].
+
+  *) INKIOBufferReaderCopy, INKIOBufferWrite should take void * instead of
+   char * [TS-67].
+
+  *) Adds APIs for aio disk read and writes using the internal aio
+    support in iocore (author: Wendy Huang) [TS-387].
+
+  *) Solaris 10 (x86) 64-bit patch (author: Igor Brezac) [TS-388].
+
+  *) Fix for 64-bit conversion [TS-385].
+
+  *) Creating transaction specific 'to URL' in case of regex remap match
+   [TS-384].
+
+  *) Backing out m_capacity_host changes [TS-383]
+
+  *) Solaris 10 port work.
 
 
 Changes with Apache Traffic Server 2.1.1
