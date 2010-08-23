@@ -223,7 +223,7 @@ ink_base64_decode(const char *inBuffer, int outBufSize, unsigned char *outBuffer
   int inputBytesDecoded = 0;
 
   // Figure out much encoded string is really there
-  while (printableToSixBit[inBuffer[inBytes]] <= MAX_PRINT_VAL) {
+  while (printableToSixBit[(inku8)inBuffer[inBytes]] <= MAX_PRINT_VAL) {
     inBytes++;
   }
 

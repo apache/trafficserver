@@ -490,7 +490,7 @@ ParseRules::is_pchar(const char *seq)
 {
 #ifndef COMPILE_PARSE_RULES
   if (*seq != '%')
-    return (parseRulesCType[*seq] & is_pchar_BIT);
+    return (parseRulesCType[(inku8)*seq] & is_pchar_BIT);
   else
     return is_hex(seq[1]) && is_hex(seq[2]);
 #else
