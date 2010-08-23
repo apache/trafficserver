@@ -90,7 +90,7 @@ static char server_binary[PATH_MAX] = "traffic_server";
 static char manager_options[OPTIONS_LEN_MAX] = "";
 
 static char log_file[PATH_MAX] = "logs/traffic.out";
-static char bin_path[PATH_MAX] = "bin";
+static char bin_path[PATH_MAX] = BINDIR;
 
 static int autoconf_port = 8083;
 static int rs_port = 8088;
@@ -880,6 +880,16 @@ spawn_manager()
   }
 
   snprintf(prog, sizeof(prog), "%s%s%s", bin_path, DIR_SEP, manager_binary);
+  if (stat(prog, &info) < 0) {
+    // Try 'root_dir/bin_path' directory
+    snprintf(prog, sizeof(prog), "%s%s%s%s", root_dir,bin_path, DIR_SEP, manager_binary);
+    // coverity[fs_check_call]
+    if (stat(prog, &info) < 0) {
+      cop_log(COP_FATAL, "unable to find manager binary \"%s\" [%d '%s']\n", prog, errno, strerror(errno));
+      exit(1);
+    }
+  }
+
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "spawn_manager: Launching %s with options '%s'\n",
           prog, manager_options);
@@ -896,11 +906,6 @@ spawn_manager()
     options[i++] = tok;
   }
 
-  // coverity[fs_check_call]
-  if (stat(prog, &info) < 0) {
-    cop_log(COP_FATAL, "unable to find manager binary \"%s\" [%d '%s']\n", prog, errno, strerror(errno));
-    exit(1);
-  }
   // Move any traffic.out that we can not write to, out
   //  of the way (INKqa2232)
   // coverity[fs_check_call]

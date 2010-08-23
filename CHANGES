@@ -5,6 +5,8 @@ Changes with Apache Traffic Server 2.0.1
   *) Backport part of TS-322 that deals with indexing arrays with char
    (author: Marcus Ruckert) [TS-334].
 
+  *) Backport TS-336 to 2.0.x. Problems with make install DESTDIR=...
+
 
 Changes with Apache Traffic Server 2.0.0
 

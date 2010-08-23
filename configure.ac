@@ -27,7 +27,7 @@
 # -----------------------------------------------------------------------------
 # 1. INITIALIZATION
 
-AC_INIT([Apache Traffic Server], [2.0.0], [dev@trafficserver.apache.org], [trafficserver], [http://trafficserver.apache.org/])
+AC_INIT([Apache Traffic Server], [2.0.1], [dev@trafficserver.apache.org], [trafficserver], [http://trafficserver.apache.org/])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([tar-ustar -Wall -Werror foreign no-installinfo no-installman 1.9.2])
@@ -312,6 +312,17 @@ AC_SUBST([pkglibexecdir],["$libexecdir/trafficserver"])
 
 # default: /usr/local/share/trafficserver
 AC_SUBST([pkgdatadir],["$datadir/trafficserver"])
+
+# default: /usr/local/bin
+if test "$exec_prefix" = NONE ; then
+  if test "$prefix" = NONE ; then
+   AC_SUBST([pkgbindir],["$ac_default_prefix/bin"])
+  else
+   AC_SUBST([pkgbindir],["$prefix/bin"])
+  fi
+else
+ AC_SUBST([pkgbindir],["$exec_prefix/bin"])
+fi
 
 # -----------------------------------------------------------------------------
 # 3. CHECK FOR PROGRAMS

@@ -103,6 +103,12 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
     Jira: https://issues.apache.org/jira/browse/TS-334
     +1: bcall, zwoop, georgep
 
+  * build: Problems with make install DESTDIR=...
+    Trunk patch: http://svn.apache.org/viewvc?rev=941910&view=rev
+    Trunk Patch: http://svn.apache.org/viewvc?rev=942639&view=rev
+    Jira: http://issues.apache.org/jira/browse/TS-336
+    +1: zwoop, georgep, mturk
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -115,12 +121,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     Trunk patch: http://svn.apache.org/viewvc?view=revision&revision=930004
     Jira: https://issues.apache.org/jira/browse/TS-162
     +1: bcall, zwoop
-
-  * build: Problems with make install DESTDIR=...
-    Trunk patch: http://svn.apache.org/viewvc?rev=941910&view=rev
-    Trunk Patch: http://svn.apache.org/viewvc?rev=942639&view=rev
-    Jira: http://issues.apache.org/jira/browse/TS-336
-    +1: zwoop, georgep, mturk
 
 RELEASE PROCESS
 

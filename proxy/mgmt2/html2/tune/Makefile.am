@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-webuidir = $(DESTDIR)$(pkgdatadir)/tune
+webuidir = $(pkgdatadir)/tune
 dist_webui_DATA = \
 	navigation_tree.xmlcpp
 
