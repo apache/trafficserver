@@ -48,12 +48,15 @@ typedef long long int64;
 typedef unsigned long long uint64;
 
 #ifndef INT64_MIN
-#define INTU64_MAX (18446744073709551615ULL)
 #define INT64_MAX (9223372036854775807LL)
 #define INT64_MIN (-INT64_MAX -1LL)
 #define INTU32_MAX (4294967295U)
 #define INT32_MAX (2147483647)
 #define INT32_MIN (-2147483647-1)
+#endif
+// Hack for MacOSX, have to take this out of the group above.
+#ifndef INTU64_MAX
+#define INTU64_MAX (18446744073709551615ULL)
 #endif
 
 #define POSIX_THREAD
