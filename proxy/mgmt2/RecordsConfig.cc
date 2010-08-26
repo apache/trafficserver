@@ -2587,6 +2587,8 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.dns.max_dns_in_flight", "", INK_INT, "60", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
+  {CONFIG, "proxy.config.dns.validate_query_name", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, "[0-1]", RA_NULL}
+  ,
   {CONFIG, "proxy.config.dns.splitDNS.enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
   {CONFIG, "proxy.config.dns.splitdns.filename", "", INK_STRING, "splitdns.config", RU_NULL, RR_NULL, RC_NULL, NULL,

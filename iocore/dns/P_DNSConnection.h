@@ -61,7 +61,7 @@ struct DNSConnection
 {
   int fd;
   struct sockaddr_in sa;
-
+  InkRand generator;
   int num;                      //added by YTS Team, yamsat
 
     Link<DNSConnection> link;        //added by YTS Team, yamsat

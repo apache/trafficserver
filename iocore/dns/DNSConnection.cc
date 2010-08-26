@@ -39,8 +39,8 @@
 // set in the OS
 // #define RECV_BUF_SIZE            (1024*64)
 // #define SEND_BUF_SIZE            (1024*64)
-#define FIRST_RANDOM_PORT        16000
-#define LAST_RANDOM_PORT         32000
+#define FIRST_RANDOM_PORT        (16000)
+#define LAST_RANDOM_PORT         (60000)
 
 #define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
 
@@ -49,7 +49,7 @@
 //
 
 DNSConnection::DNSConnection():
-fd(NO_FD), num(0), epoll_ptr(NULL)
+  fd(NO_FD), generator(time(NULL) ^ (long) this), num(0), epoll_ptr(NULL)
 {
   memset(&sa, 0, sizeof(struct sockaddr_in));
 }
@@ -97,18 +97,16 @@ DNSConnection::connect(unsigned int ip, int port,
 
   if (bind_random_port) {
     int retries = 0;
-    int offset = 0;
     while (retries++ < 10000) {
       struct sockaddr_in bind_sa;
       memset(&sa, 0, sizeof(bind_sa));
       bind_sa.sin_family = AF_INET;
       bind_sa.sin_addr.s_addr = INADDR_ANY;
-      int p = time(NULL) + offset;
-      p = (p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT;
+      uint32 p = generator.random();
+      p = (uint16)((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
       bind_sa.sin_port = htons(p);
-      Debug("dns", "random port = %d\n", p);
+      Debug("dns", "random port = %u\n", p);
       if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &bind_sa, sizeof(bind_sa), Proto)) < 0) {
-        offset += 101;
         continue;
       }
       goto Lok;

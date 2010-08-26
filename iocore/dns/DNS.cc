@@ -44,7 +44,7 @@ int dns_failover_number = DEFAULT_FAILOVER_NUMBER;
 int dns_failover_period = DEFAULT_FAILOVER_PERIOD;
 int dns_failover_try_period = DEFAULT_FAILOVER_TRY_PERIOD;
 int dns_max_dns_in_flight = MAX_DNS_IN_FLIGHT;
-unsigned int dns_sequence_number = 0;
+int dns_validate_qname = 0;
 unsigned int dns_handler_initialized = 0;
 int dns_ns_rr = 0;
 int dns_ns_rr_init_down = 1;
@@ -61,7 +61,7 @@ ClassAllocator<HostEnt> dnsBufAllocator("dnsBufAllocator", 2);
 // Function Prototypes
 //
 static bool dns_process(DNSHandler * h, HostEnt * ent, int len);
-static DNSEntry *get_dns(DNSHandler * h, u_short id);
+static DNSEntry *get_dns(DNSHandler * h, uint16 id);
 // returns true when e is done
 static void dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry);
 static void write_dns(DNSHandler * h);
@@ -117,6 +117,7 @@ DNSProcessor::start(int)
   IOCORE_EstablishStaticConfigInt32(dns_failover_number, "proxy.config.dns.failover_number");
   IOCORE_EstablishStaticConfigInt32(dns_failover_period, "proxy.config.dns.failover_period");
   IOCORE_EstablishStaticConfigInt32(dns_max_dns_in_flight, "proxy.config.dns.max_dns_in_flight");
+  IOCORE_EstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
   IOCORE_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
   IOCORE_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
 
@@ -152,17 +153,6 @@ DNSProcessor::open(unsigned int aip, int aport, int aoptions)
 void
 DNSProcessor::dns_init()
 {
-  ink64 sval, cval = 0;
-
-  DNS_READ_DYN_STAT(dns_sequence_number_stat, sval, cval);
-
-  if (cval > 0) {
-    dns_sequence_number = (unsigned int)
-      (cval + DNS_SEQUENCE_NUMBER_RESTART_OFFSET);
-  } else {                      // select a sequence number at random
-    dns_sequence_number = (unsigned int) (ink_get_hrtime() / HRTIME_MSECOND);
-  }
-  Debug("dns", "initial dns_sequence_number = %d\n", (u_short) dns_sequence_number);
   gethostname(try_server_names[0], 255);
   Debug("dns", "localhost=%s\n", try_server_names[0]);
   Debug("dns", "Round-robin nameservers = %d\n", dns_ns_rr);
@@ -385,7 +375,7 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
 #error port me
 #endif
     if (r < 0) {        // Add the FD to epoll fd
-      Error("iocore_dns", "open_con: Failed to add %d server to epoll list\n", icon);
+      Error("[iocore_dns] open_con: Failed to add %d server to epoll list\n", icon);
     } else {
       con[icon].num = icon;
       Debug("dns", "opening connection %d.%d.%d.%d:%d SUCCEEDED for %d", DOT_SEPARATED(aip), aport, icon);
@@ -784,7 +774,7 @@ DNSHandler::mainEvent(int event, Event * e)
 
 /** Find a DNSEntry by id. */
 inline static DNSEntry *
-get_dns(DNSHandler * h, u_short id)
+get_dns(DNSHandler * h, uint16 id)
 {
   for (DNSEntry * e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
     if (e->once_written_flag)
@@ -798,6 +788,7 @@ get_dns(DNSHandler * h, u_short id)
   return NULL;
 }
 
+/** Find a DNSEntry by query name and type. */
 inline static DNSEntry *
 get_entry(DNSHandler * h, char *qname, int qtype)
 {
@@ -849,6 +840,39 @@ write_dns(DNSHandler * h)
   h->in_write_dns = false;
 }
 
+uint16
+DNSHandler::get_query_id()
+{
+  uint16 q1, q2;
+  q2 = q1 = (uint16)(generator.random() & 0xFFFF);
+  if (query_id_in_use(q2)) {
+    uint16 i = q2>>6;
+    while (qid_in_flight[i] == INTU64_MAX) {
+      if (++i ==  sizeof(qid_in_flight)/sizeof(uint64)) {
+        i = 0;
+      }
+      if (i == q1>>6) {
+        Error("[iocore_dns] get_query_id: Exhausted all DNS query ids");
+        return q1;
+      }
+    }
+    i <<= 6;
+    q2 &= 0x3F;
+    while (query_id_in_use(i+q2)) {
+      ++q2;
+      q2 &= 0x3F;
+      if (q2 == (q1 & 0x3F)) {
+        Error("[iocore_dns] get_query_id: Exhausted all DNS query ids");
+        return q1;
+      }
+    }
+    q2 += i;
+  }
+
+  set_query_id_in_use(q2);
+  return q2;
+}
+
 /**
   Construct and Write the request for a single entry (using send(3N)).
 
@@ -874,19 +898,15 @@ write_dns_event(DNSHandler * h, DNSEntry * e)
   }
 #endif
 
-  int id = dns_retries - e->retries;
-  if (id >= MAX_DNS_RETRIES)
-    id = MAX_DNS_RETRIES - 1;   // limit id history
-
-  ++dns_sequence_number;
-
-  DNS_SET_DYN_COUNT(dns_sequence_number_stat, dns_sequence_number);
-
 #ifdef DNS_PROXY
   if (!e->proxy) {
 #endif
-    u_short i = (u_short) dns_sequence_number;
+    uint16 i = h->get_query_id();
     ((HEADER *) (buffer))->id = htons(i);
+    if(e->id[dns_retries - e->retries] >= 0) {
+      //clear previous id in case named was switched or domain was expanded
+      h->release_query_id(e->id[dns_retries - e->retries]);
+    }
     e->id[dns_retries - e->retries] = i;
 #ifdef DNS_PROXY
   } else {
@@ -1186,8 +1206,20 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
   //
   if (timeout)
     timeout->cancel(this);
-  mutex = NULL;
+
+#ifdef DNS_PROXY
+  if (!proxy) {
+#endif
+    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
+      if (id[i] < 0)
+        break;
+      h->release_query_id(id[i]);      
+    }
+#ifdef DNS_PROXY
+  }
+#endif
   action.mutex = NULL;
+  mutex = NULL;
   dnsEntryAllocator.free(this);
   return 0;
 }
@@ -1202,6 +1234,20 @@ DNSEntry::postEvent(int event, Event * e)
   if (result_ent)
     if (ink_atomic_increment(&result_ent->ref_count, -1) == 1)
       dnsProcessor.free_hostent(result_ent);
+
+#ifdef DNS_PROXY
+  if (!proxy) {
+#endif
+    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
+      if (id[i] < 0)
+        break;
+      dnsH->release_query_id(id[i]);      
+    }
+#ifdef DNS_PROXY
+  }
+#endif
+  action.mutex = NULL;
+  mutex = NULL;
   dnsEntryAllocator.free(this);
   return EVENT_DONE;
 }
@@ -1212,7 +1258,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
 {
   ProxyMutex *mutex = handler->mutex;
   HEADER *h = (HEADER *) (buf->buf);
-  DNSEntry *e = get_dns(handler, (u_short) ntohs(h->id));
+  DNSEntry *e = get_dns(handler, (uint16) ntohs(h->id));
   bool retry = false;
   bool server_ok = true;
   inku32 temp_ttl = 0;
@@ -1221,7 +1267,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
   // Do we have an entry for this id?
   //
   if (!e || !e->written_flag) {
-    Debug("dns", "unknown DNS id = %u", (u_short) ntohs(h->id));
+    Debug("dns", "unknown DNS id = %u", (uint16) ntohs(h->id));
     if (!handler->hostent_cache)
       handler->hostent_cache = buf;
     else
@@ -1286,15 +1332,42 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
     int n;
     unsigned char *srv[50];
     int num_srv = 0;
+    int rname_len = -1;
 
     //
     // Expand name
     //
     if ((n = ink_dn_expand((u_char *) h, eom, cp, bp, buflen)) < 0)
       goto Lerror;
+
+    // Should we validate the query name?
+    if (dns_validate_qname) {
+      int qlen = e->qname_len;
+      int rlen = strlen((char *)bp);
+
+      rname_len = rlen; // Save for later use
+      if ((qlen > 0) && ('.' == e->qname[qlen-1]))
+        --qlen;
+      if ((rlen > 0) && ('.' == bp[rlen-1]))
+        --rlen;
+      // TODO: At some point, we might want to care about the case here, and use an algorithm
+      // to randomly pick upper case characters in the query, and validate the response with
+      // case sensitivity.
+      if ((qlen != rlen) || (strncasecmp(e->qname, (const char*)bp, qlen) != 0)) {
+        // Bad mojo, forged?
+        Warning("received DNS response with query name of %s, but response query name is %s", e->qname, bp);
+        goto Lerror;
+      } else {
+        Debug("dns", "query name validated properly for %s", e->qname);
+      }
+    }
+
     cp += n + QFIXEDSZ;
     if (e->qtype == T_A) {
-      n = strlen((char *) bp) + 1;
+      if (-1 == rname_len)
+        n = strlen((char *)bp) + 1;
+      else
+        n = rname_len + 1;
       buf->ent.h_name = (char *) bp;
       bp += n;
       buflen -= n;
@@ -1315,6 +1388,8 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
     // Once it's full, a new entry get inputted into try_server_names round-
     // robin style every 50 success dns response.
 
+    // TODO: Why do we do strlen(e->qname) ? That should be available in 
+    // e->qname_len, no ?
     if (local_num_entries >= DEFAULT_NUM_TRY_SERVER) {
       if ((attempt_num_entries % 50) == 0) {
         try_servers = (try_servers + 1) % SIZE(try_server_names);
@@ -1522,24 +1597,6 @@ ink_dns_init(ModuleVersion v)
   // create a stat block for HostDBStats
   dns_rsb = RecAllocateRawStatBlock((int) DNS_Stat_Count);
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.retries", 3, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.lookup_timeout", 30, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.dns.search_default_domains", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.failover_number", 4, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.failover_period", 60, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.max_dns_in_flight", 60, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.dns.round_robin_nameservers", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.dns.nameservers", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
   //
   // Register statistics callbacks
   //
@@ -1578,9 +1635,6 @@ ink_dns_init(ModuleVersion v)
                      "proxy.process.dns.in_flight",
                      RECD_INT, RECP_NON_PERSISTENT, (int) dns_in_flight_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.sequence_number",
-                     RECD_INT, RECP_NULL, (int) dns_sequence_number_stat, RecRawStatSyncCount);
 }
 
 
