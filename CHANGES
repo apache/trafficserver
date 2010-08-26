@@ -2,6 +2,9 @@
 
 Changes with Apache Traffic Server 2.1.2
 
+  *) Improvements in resilience against DNS poisoning and forging of
+   response packets [TS-425].
+
   *) Segmentation fault in INKError when error output is made both in error
    log and as debug messages (author: Yakov Markovitch) [TS-419].
 
