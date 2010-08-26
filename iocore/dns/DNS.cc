@@ -45,7 +45,6 @@ int dns_failover_period = DEFAULT_FAILOVER_PERIOD;
 int dns_failover_try_period = DEFAULT_FAILOVER_TRY_PERIOD;
 int dns_max_dns_in_flight = MAX_DNS_IN_FLIGHT;
 int dns_validate_qname = 0;
-unsigned int dns_sequence_number = 0;
 unsigned int dns_handler_initialized = 0;
 int dns_ns_rr = 0;
 int dns_ns_rr_init_down = 1;
@@ -62,7 +61,7 @@ ClassAllocator<HostEnt> dnsBufAllocator("dnsBufAllocator", 2);
 // Function Prototypes
 //
 static bool dns_process(DNSHandler * h, HostEnt * ent, int len);
-static DNSEntry *get_dns(DNSHandler * h, u_short id);
+static DNSEntry *get_dns(DNSHandler * h, uint16 id);
 // returns true when e is done
 static void dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry);
 static void write_dns(DNSHandler * h);
@@ -154,17 +153,6 @@ DNSProcessor::open(unsigned int aip, int aport, int aoptions)
 void
 DNSProcessor::dns_init()
 {
-  int64 sval, cval = 0;
-
-  DNS_READ_DYN_STAT(dns_sequence_number_stat, sval, cval);
-
-  if (cval > 0) {
-    dns_sequence_number = (unsigned int)
-      (cval + DNS_SEQUENCE_NUMBER_RESTART_OFFSET);
-  } else {                      // select a sequence number at random
-    dns_sequence_number = (unsigned int) (ink_get_hrtime() / HRTIME_MSECOND);
-  }
-  Debug("dns", "initial dns_sequence_number = %d\n", (u_short) dns_sequence_number);
   gethostname(try_server_names[0], 255);
   Debug("dns", "localhost=%s\n", try_server_names[0]);
   Debug("dns", "Round-robin nameservers = %d\n", dns_ns_rr);
@@ -367,7 +355,7 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
   } else {
     ns_down[icon] = 0;
     if (con[icon].eio.start(pd, &con[icon], EVENTIO_READ) < 0) {
-      Error("iocore_dns", "open_con: Failed to add %d server to epoll list\n", icon);
+      Error("[iocore_dns] open_con: Failed to add %d server to epoll list\n", icon);
     } else {
       con[icon].num = icon;
       Debug("dns", "opening connection %d.%d.%d.%d:%d SUCCEEDED for %d", DOT_SEPARATED(aip), aport, icon);
@@ -769,7 +757,7 @@ DNSHandler::mainEvent(int event, Event * e)
 
 /** Find a DNSEntry by id. */
 inline static DNSEntry *
-get_dns(DNSHandler * h, u_short id)
+get_dns(DNSHandler * h, uint16 id)
 {
   for (DNSEntry * e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
     if (e->once_written_flag)
@@ -783,6 +771,7 @@ get_dns(DNSHandler * h, u_short id)
   return NULL;
 }
 
+/** Find a DNSEntry by query name and type. */
 inline static DNSEntry *
 get_entry(DNSHandler * h, char *qname, int qtype)
 {
@@ -834,6 +823,39 @@ write_dns(DNSHandler * h)
   h->in_write_dns = false;
 }
 
+uint16
+DNSHandler::get_query_id()
+{
+  uint16 q1, q2;
+  q2 = q1 = (uint16)(generator.random() & 0xFFFF);
+  if (query_id_in_use(q2)) {
+    uint16 i = q2>>6;
+    while (qid_in_flight[i] == INTU64_MAX) {
+      if (++i ==  sizeof(qid_in_flight)/sizeof(uint64)) {
+        i = 0;
+      }
+      if (i == q1>>6) {
+        Error("[iocore_dns] get_query_id: Exhausted all DNS query ids");
+        return q1;
+      }
+    }
+    i <<= 6;
+    q2 &= 0x3F;
+    while (query_id_in_use(i+q2)) {
+      ++q2;
+      q2 &= 0x3F;
+      if (q2 == (q1 & 0x3F)) {
+        Error("[iocore_dns] get_query_id: Exhausted all DNS query ids");
+        return q1;
+      }
+    }
+    q2 += i;
+  }
+
+  set_query_id_in_use(q2);
+  return q2;
+}
+
 /**
   Construct and Write the request for a single entry (using send(3N)).
 
@@ -859,19 +881,15 @@ write_dns_event(DNSHandler * h, DNSEntry * e)
   }
 #endif
 
-  int id = dns_retries - e->retries;
-  if (id >= MAX_DNS_RETRIES)
-    id = MAX_DNS_RETRIES - 1;   // limit id history
-
-  ++dns_sequence_number;
-
-  DNS_SET_DYN_COUNT(dns_sequence_number_stat, dns_sequence_number);
-
 #ifdef DNS_PROXY
   if (!e->proxy) {
 #endif
-    u_short i = (u_short) dns_sequence_number;
+    uint16 i = h->get_query_id();
     ((HEADER *) (buffer))->id = htons(i);
+    if(e->id[dns_retries - e->retries] >= 0) {
+      //clear previous id in case named was switched or domain was expanded
+      h->release_query_id(e->id[dns_retries - e->retries]);
+    }
     e->id[dns_retries - e->retries] = i;
 #ifdef DNS_PROXY
   } else {
@@ -1165,6 +1183,17 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
     }
     return 0;
   }
+#ifdef DNS_PROXY
+  if (!proxy) {
+#endif
+    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
+      if (id[i] < 0)
+        break;
+      h->release_query_id(id[i]);      
+    }
+#ifdef DNS_PROXY
+  }
+#endif
   action.mutex = NULL;
   mutex = NULL;
   dnsEntryAllocator.free(this);
@@ -1183,6 +1212,18 @@ DNSEntry::postEvent(int event, Event * e)
   if (result_ent)
     if (ink_atomic_increment(&result_ent->ref_count, -1) == 1)
       dnsProcessor.free_hostent(result_ent);
+
+#ifdef DNS_PROXY
+  if (!proxy) {
+#endif
+    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
+      if (id[i] < 0)
+        break;
+      dnsH->release_query_id(id[i]);      
+    }
+#ifdef DNS_PROXY
+  }
+#endif
   action.mutex = NULL;
   mutex = NULL;
   dnsEntryAllocator.free(this);
@@ -1195,7 +1236,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
 {
   ProxyMutex *mutex = handler->mutex;
   HEADER *h = (HEADER *) (buf->buf);
-  DNSEntry *e = get_dns(handler, (u_short) ntohs(h->id));
+  DNSEntry *e = get_dns(handler, (uint16) ntohs(h->id));
   bool retry = false;
   bool server_ok = true;
   uint32 temp_ttl = 0;
@@ -1204,7 +1245,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
   // Do we have an entry for this id?
   //
   if (!e || !e->written_flag) {
-    Debug("dns", "unknown DNS id = %u", (u_short) ntohs(h->id));
+    Debug("dns", "unknown DNS id = %u", (uint16) ntohs(h->id));
     if (!handler->hostent_cache)
       handler->hostent_cache = buf;
     else
@@ -1572,9 +1613,6 @@ ink_dns_init(ModuleVersion v)
                      "proxy.process.dns.in_flight",
                      RECD_INT, RECP_NON_PERSISTENT, (int) dns_in_flight_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.sequence_number",
-                     RECD_INT, RECP_NULL, (int) dns_sequence_number_stat, RecRawStatSyncCount);
 }
 
 

@@ -247,6 +247,11 @@ struct DNSHandler: public Continuation
   ink_res_state m_res;
   int txn_lookup_timeout;
 
+  InkRand generator;
+  // bitmap of query ids in use
+  uint64 qid_in_flight[(USHRT_MAX+1)/64];
+
+
   void received_one(int i)
   {
     failover_number[i] = failover_soon_number[i] = crossed_failover_number[i] = 0;
@@ -289,6 +294,19 @@ struct DNSHandler: public Continuation
   void retry_named(int ndx, ink_hrtime t, bool reopen = true);
   void try_primary_named(bool reopen = true);
   void switch_named(int ndx);
+  uint16 get_query_id();
+
+  void release_query_id(uint16 qid) {
+    qid_in_flight[qid >> 6] &= (uint64)~(0x1ULL << (qid & 0x3F));
+  };
+
+  void set_query_id_in_use(uint16 qid) {
+    qid_in_flight[qid >> 6] |= (uint64)(0x1ULL << (qid & 0x3F));
+  };
+
+  bool query_id_in_use(uint16 qid) {
+    return (qid_in_flight[(uint16)(qid) >> 6] & (uint64)(0x1ULL << ((uint16)(qid) & 0x3F))) != 0;
+  };
 
   DNSHandler();
 };
@@ -301,7 +319,7 @@ TS_INLINE DNSHandler::DNSHandler()
   n_con(0),
   options(0),
   in_flight(0), name_server(0), in_write_dns(0), hostent_cache(0), last_primary_retry(0), last_primary_reopen(0),
-  m_res(0), txn_lookup_timeout(0)
+  m_res(0), txn_lookup_timeout(0), generator(time(NULL) ^ (long) this)
 {
   for (int i = 0; i < MAX_NAMED; i++) {
     ifd[i] = -1;
@@ -310,6 +328,7 @@ TS_INLINE DNSHandler::DNSHandler()
     crossed_failover_number[i] = 0;
     ns_down[i] = 1;
   }
+  memset(&qid_in_flight, 0, sizeof(qid_in_flight));  
   SET_HANDLER(&DNSHandler::startEvent);
   Debug("net_epoll", "inline DNSHandler::DNSHandler()");
 }

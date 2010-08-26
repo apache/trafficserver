@@ -63,6 +63,7 @@ struct DNSConnection
   int num;
   LINK(DNSConnection, link);
   EventIO eio;
+  InkRand generator;
 
   int connect(unsigned int ip, int port,
               bool non_blocking_connect = NON_BLOCKING_CONNECT,
