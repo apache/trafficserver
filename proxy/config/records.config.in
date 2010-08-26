@@ -338,6 +338,10 @@ CONFIG proxy.config.dns.splitdns.def_domain STRING NULL
 CONFIG proxy.config.dns.url_expansions STRING NULL
 CONFIG proxy.config.dns.round_robin_nameservers INT 0
 CONFIG proxy.config.dns.nameservers STRING NULL
+   # This provides additional resilience against DNS forgery, particularly in
+   # forward or transparent proxies, but requires that the resolver populates
+   # the queries section of the response properly.
+CONFIG proxy.config.dns.validate_query_name INT 0
 ##############################################################################
 #
 # DNS Proxy

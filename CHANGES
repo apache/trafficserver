@@ -2,6 +2,8 @@
 
 Changes with Apache Traffic Server 2.0.1
 
+  *) Port of CVE-2010-2952 for 2.0.x [TS-TS-425].
+
   *) Backport part of TS-322 that deals with indexing arrays with char
    (author: Marcus Ruckert) [TS-334].
 

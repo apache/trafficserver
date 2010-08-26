@@ -27,12 +27,17 @@
 #define DNS_PROXY 1
 /*
   #include "I_DNS.h"
-  #include "inktomi++.h"
   #include <arpa/nameser.h>
   #include "I_Cache.h"
   #include "P_Net.h"
 */
 #include "I_EventSystem.h"
+
+// From new ink_port.h on trunk
+typedef unsigned short uint16;
+typedef unsigned int uint32;
+typedef unsigned long long uint64;
+#define INTU64_MAX (18446744073709551615ULL)
 
 #define MAX_NAMED                           32
 #define DEFAULT_DNS_RETRIES                 3
@@ -243,6 +248,11 @@ struct DNSHandler:Continuation
   ink_res_state m_res;
   int txn_lookup_timeout;
 
+  InkRand generator;
+  // bitmap of query ids in use
+  uint64 qid_in_flight[(USHRT_MAX+1)/64];
+
+
   void received_one(int i)
   {
     failover_number[i] = failover_soon_number[i] = crossed_failover_number[i] = 0;
@@ -285,6 +295,19 @@ struct DNSHandler:Continuation
   void retry_named(int ndx, ink_hrtime t, bool reopen = true);
   void try_primary_named(bool reopen = true);
   void switch_named(int ndx);
+  uint16 get_query_id();
+
+  void release_query_id(uint16 qid) {
+    qid_in_flight[qid >> 6] &= (uint64)~(0x1ULL << (qid & 0x3F));
+  };
+
+  void set_query_id_in_use(uint16 qid) {
+    qid_in_flight[qid >> 6] |= (uint64)(0x1ULL << (qid & 0x3F));
+  };
+
+  bool query_id_in_use(uint16 qid) {
+    return (qid_in_flight[qid >> 6] & (uint64)(0x1ULL << (qid & 0x3F))) != 0;
+  };
 
   DNSHandler();
 };
@@ -297,7 +320,7 @@ inline DNSHandler::DNSHandler()
   n_con(0),
   options(0),
   in_flight(0), name_server(0), in_write_dns(0), hostent_cache(0), last_primary_retry(0), last_primary_reopen(0),
-  m_res(0), txn_lookup_timeout(0)
+  m_res(0), txn_lookup_timeout(0), generator(time(NULL) ^ (long) this)
 {
   for (int i = 0; i < MAX_NAMED; i++) {
     ifd[i] = -1;
@@ -306,6 +329,7 @@ inline DNSHandler::DNSHandler()
     crossed_failover_number[i] = 0;
     ns_down[i] = 1;
   }
+  memset(&qid_in_flight, 0, sizeof(qid_in_flight));  
   SET_HANDLER(&DNSHandler::startEvent);
   Debug("net_epoll", "inline DNSHandler::DNSHandler()");
 }
