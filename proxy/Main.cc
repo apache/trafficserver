@@ -2188,7 +2188,9 @@ main(int argc, char **argv)
   }
 
   // change the user of the process
-  char user[_POSIX_LOGIN_NAME_MAX] = "\0";
+  const long MAX_LOGIN = sysconf(_SC_LOGIN_NAME_MAX);
+  char user[MAX_LOGIN <= 0 ? _POSIX_LOGIN_NAME_MAX : MAX_LOGIN];
+  *user = '\0';
   if ((TS_ReadConfigString(user, "proxy.config.admin.user_id",
                            sizeof(user)) == REC_ERR_OKAY) &&
                            user[0] != '\0' &&
