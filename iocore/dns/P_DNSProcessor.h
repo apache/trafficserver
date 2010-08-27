@@ -38,7 +38,7 @@
 #define DEFAULT_DNS_RETRIES                 3
 #define MAX_DNS_RETRIES                     5
 #define DEFAULT_DNS_TIMEOUT                 30
-#define MAX_DNS_IN_FLIGHT                   60
+#define MAX_DNS_IN_FLIGHT                   2048
 #define DEFAULT_FAILOVER_NUMBER             (DEFAULT_DNS_RETRIES + 1)
 #define DEFAULT_FAILOVER_PERIOD             (DEFAULT_DNS_TIMEOUT + 30)
 // how many seconds before FAILOVER_PERIOD to try the primary with

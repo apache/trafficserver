@@ -345,6 +345,7 @@ CONFIG proxy.config.cache.enable_read_while_writer INT 0
 CONFIG proxy.config.dns.search_default_domains INT 1
 CONFIG proxy.config.dns.splitDNS.enabled INT 0
 CONFIG proxy.config.dns.splitdns.def_domain STRING NULL
+CONFIG proxy.config.dns.max_dns_in_flight INT 2048
    # Additional URL expansions for http DNS lookup
 CONFIG proxy.config.dns.url_expansions STRING NULL
 CONFIG proxy.config.dns.round_robin_nameservers INT 0
