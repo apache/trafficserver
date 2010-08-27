@@ -41,6 +41,7 @@ example/README.internal
 example/blacklist-1/blacklist.txt
 example/thread-pool/TESTPLAN.txt
 example/thread-pool/test/SynTest/
+example/thread-pool/test/SDKTest/SDKtest_server.config
 example/app-template/records.config
 test/SDKtest/client/SDKtest_client.config
 test/SDKtest/client/api/host.allow
