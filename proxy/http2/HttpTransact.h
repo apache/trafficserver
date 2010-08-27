@@ -1519,7 +1519,7 @@ HttpTransact::State::destroy()
 
   url_map.clear();
   arena.reset();
-
+  pristine_url.clear();
   return;
 }
 
