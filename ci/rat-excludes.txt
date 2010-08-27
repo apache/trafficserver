@@ -40,10 +40,7 @@ proxy/mgmt2/cli2/cli_feature_spec.txt
 example/README.internal
 example/blacklist-1/blacklist.txt
 example/thread-pool/TESTPLAN.txt
-example/thread-pool/test/SDKTest/SDKtest_server.config
-example/thread-pool/test/SynTest/system.cfg
-example/thread-pool/test/SynTest/tests_psi.cfg
-example/thread-pool/test/SynTest/Tests/PsiPlugin/
+example/thread-pool/test/SynTest/
 example/app-template/records.config
 test/SDKtest/client/SDKtest_client.config
 test/SDKtest/client/api/host.allow
