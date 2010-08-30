@@ -170,7 +170,7 @@ do_start()
   #   0 if daemon has been started
   #   1 if daemon was already running
   #   2 if daemon could not be started
-  start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON --test > /dev/null \
+  start-stop-daemon --start --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON --test > /dev/null \
     || return 1
   start-stop-daemon --start --background --quiet --pidfile $TC_PIDFILE --exec $TC_DAEMON -- \
     $TC_DAEMON_ARGS \
@@ -178,6 +178,8 @@ do_start()
   # Add code here, if necessary, that waits for the process to be ready
   # to handle requests from services started subsequently which depend
   # on this one.  As a last resort, sleep for some time.
+  sleep 1
+  test -f "$TC_PIDFILE" || return 2
 }
 
 #
@@ -192,7 +194,7 @@ do_stop()
   #   other if a failure occurred
   start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TC_PIDFILE --name $TC_NAME
   RETVAL="$?"
-  test "$RETVAL" = 2 && return 2
+  test "$RETVAL" != 0 && return 2
   # Wait for children to finish too if this is a daemon that forks
   # and if the daemon is only ever run from this initscript.
   # If the above conditions are not satisfied then add some other code
@@ -200,12 +202,12 @@ do_stop()
   # needed by services started subsequently.  A last resort is to
   # sleep for some time.
   start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TC_DAEMON
-  test "$?" = 2 && return 2
+  test "$?" != 0 && return 2
         # Need to stop the TM and TS also
   start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
-  test "$?" = 2 && return 2
+  test "$?" != 0 && return 2
   start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
-  test "$?" = 2 && return 2
+  test "$?" != 0 && return 2
   # Many daemons don't delete their pidfiles when they exit.
   rm -f $TC_PIDFILE
   rm -f $TM_PIDFILE
@@ -234,15 +236,11 @@ case "$1" in
   start)
     if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
       test "x$VERBOSE" != "xno" && log_daemon_msg "Starting $DESC" "$NAME"
+      retval=0
       do_start
-      case "$?" in
-        0|1)
-          test "$VERBOSE" != no && log_end_msg 0
-        ;;
-        2)
-          test "$VERBOSE" != no && log_end_msg 1
-        ;;
-      esac
+      test "$?" -ne 0 -a "$?" -ne 1 && retval=1
+      test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
+      exit "$retval"
     elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
       action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
     elif [ "$DISTRIB_ID" = "suse" ]; then
@@ -257,15 +255,11 @@ case "$1" in
   stop)
     if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
       test "x$VERBOSE" != "xno" && log_daemon_msg "Stopping $DESC" "$NAME"
+      retval=0
       do_stop
-      case "$?" in
-        0|1)
-          test "x$VERBOSE" != "xno" && log_end_msg 0
-        ;;
-        2)
-          test "x$VERBOSE" != "xno" && log_end_msg 1
-        ;;
-      esac
+      test "$?" -ne 0 -a "$?" -ne 1 && retval=1
+      test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
+      exit "$retval"
     elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
       action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE $TC_DAEMON
       action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE $TM_DAEMON
