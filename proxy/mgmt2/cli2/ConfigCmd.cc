@@ -2023,12 +2023,6 @@ Cmd_ConfigDns(ClientData clientData, Tcl_Interp * interp, int argc, const char *
 
   if (argtable->parsed_args != CLI_PARSED_ARGV_END) {
     switch (argtable->parsed_args) {
-    case CMD_CONFIG_DNS_PROXY:
-      return (Cli_RecordOnOff_Action(action, "proxy.config.dns.proxy.enabled", argtable->arg_string));
-
-    case CMD_CONFIG_DNS_PROXY_PORT:
-      return (Cli_RecordInt_Action(action, "proxy.config.dns.proxy_port", argtable->arg_int));
-
     case CMD_CONFIG_DNS_RESOLVE_TIMEOUT:
       return (Cli_RecordInt_Action(action, "proxy.config.dns.lookup_timeout", argtable->arg_int));
 
@@ -2048,10 +2042,6 @@ Cmd_ConfigDns(ClientData clientData, Tcl_Interp * interp, int argc, const char *
 int
 CmdArgs_ConfigDns()
 {
-  createArgument("proxy", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_DNS_PROXY, "Enable/disable DNS proxy feature <on | off>", (char *) NULL);
-  createArgument("proxy-port", 1, CLI_ARGV_OPTION_INT_VALUE,
-                 (char *) NULL, CMD_CONFIG_DNS_PROXY_PORT, "Specify DNS proxy port <int>", (char *) NULL);
   createArgument("resolve-timeout", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_DNS_RESOLVE_TIMEOUT, "Resolve timeout <int>", (char *) NULL);
   createArgument("retries", 1, CLI_ARGV_OPTION_INT_VALUE,

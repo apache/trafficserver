@@ -312,19 +312,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
       pnum++;
     }
   }
-  // Check to see if we are running DNS proxy
-  RecInt dns_proxy_enabled = REC_readInteger("proxy.config.dns.proxy.enabled", &found);
-  ink_assert(found);
-  if (found && dns_proxy_enabled) {
-    // Get the DNS cache port
-    RecInt dns_proxy_port = REC_readInteger("proxy.config.dns.proxy_port", &found);
-    ink_assert(found);
-    if (found) {
-      proxy_server_port[pnum] = (int) dns_proxy_port;
-      ink_strncpy((char *) proxy_server_port_attributes[pnum], "D", sizeof(proxy_server_port_attributes[pnum]));
-      pnum++;
-    }
-  }
+
   // Read other ports to be listened on
   char *proxy_server_other_ports = REC_readString("proxy.config.http.server_other_ports", &found);
   if (proxy_server_other_ports) {

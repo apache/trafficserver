@@ -97,7 +97,6 @@ extern "C" int plock(int);
 // Including the new Auth Work Include File.
 //#include "I_ACC.h"
 
-#include "dns_cache/DNS_cache.h"
 #include "Update.h"
 #include "congest/Congestion.h"
 
@@ -156,7 +155,6 @@ int http_accept_port_number = DEFAULT_HTTP_ACCEPT_PORT_NUMBER;
 int http_accept_file_descriptor = NO_FD;
 int ssl_accept_file_descriptor = NO_FD;
 int qt_accept_file_descriptor = NO_FD;
-int dns_proxy_file_descriptor = NO_FD;
 char accept_fd_list[1024] = "";
 char core_file[255] = "";
 int command_flag = DEFAULT_COMMAND_FLAG;
@@ -1060,11 +1058,6 @@ parse_accept_fd_list()
           // Q is the special case of QT port
           ink_assert(qt_accept_file_descriptor == NO_FD);
           qt_accept_file_descriptor = fd;
-          continue;
-        case 'D':
-          // D is the special case of DNS proxy port
-          ink_assert(dns_proxy_file_descriptor == NO_FD);
-          dns_proxy_file_descriptor = fd;
           continue;
         case 'C':
           attr = SERVER_PORT_COMPRESSED;
@@ -2151,17 +2144,6 @@ main(int argc, char **argv)
     // Initialize Scheduled Update subsystem
     ///////////////////////////////////////////
     updateManager.start();
-
-
-    int dns_proxy_enabled = 0;
-
-    TS_ReadConfigInteger(dns_proxy_enabled, "proxy.config.dns.proxy.enabled");
-    if (dns_proxy_enabled) {
-      ink_dns_cache_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
-      start_dns_Proxy(dns_proxy_file_descriptor);
-    }
-
-    TS_ReadConfigInteger(dns_proxy_enabled, "proxy.config.dns.proxy.enabled");
 
     void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
     pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, NULL);

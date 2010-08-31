@@ -252,8 +252,6 @@ CliCreateCommands()
 
 
   createCommand("config:dns", Cmd_ConfigDns, CmdArgs_ConfigDns, CLI_COMMAND_EXTERNAL,
-                "config:dns proxy <on | off>\n"
-                "config:dns proxy-port <int>\n"
                 "config:dns resolve-timeout <seconds>\n" "config:dns retries <int>", "Configure DNS");
 
   createCommand("config:virtual-ip", Cmd_ConfigVirtualip, CmdArgs_ConfigVirtualip, CLI_COMMAND_EXTERNAL,

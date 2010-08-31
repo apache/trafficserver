@@ -22,7 +22,7 @@ noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
 noinst_PROGRAMS =
 else
-SUBDIRS = congest dns_cache http2 hdrs logging mgmt2 config stats
+SUBDIRS = congest http2 hdrs logging mgmt2 config stats
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
@@ -153,7 +153,6 @@ traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_server_LDADD = \
   http2/libhttp.a \
   congest/libCongestionControl.a \
-  dns_cache/libdnscache.a \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a  \
@@ -218,7 +217,6 @@ traffic_logcat_LDADD = \
   stats/libstats.a \
   hdrs/libhdrs.a \
   congest/libCongestionControl.a \
-  dns_cache/libdnscache.a \
   mgmt2/preparse/libpreparse.a \
   mgmt2/utils/libutils_p.a \
   mgmt2/libmgmt_p.a \
@@ -281,7 +279,6 @@ traffic_logstats_LDADD = \
   stats/libstats.a \
   hdrs/libhdrs.a \
   congest/libCongestionControl.a \
-  dns_cache/libdnscache.a \
   mgmt2/preparse/libpreparse.a \
   mgmt2/utils/libutils_p.a \
   mgmt2/libmgmt_p.a \
@@ -342,7 +339,6 @@ traffic_sac_LDADD = \
   InkXml.o \
   http2/libhttp.a \
   congest/libCongestionControl.a \
-  dns_cache/libdnscache.a \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a \

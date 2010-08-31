@@ -295,7 +295,6 @@ struct HostDBContinuation: public Continuation
   unsigned int missing:1;
   unsigned int force_dns:1;
   unsigned int round_robin:1;
-  unsigned int dns_proxy:1;
 
   int probeEvent(int event, Event * e);
   int clusterEvent(int event, Event * e);
@@ -337,7 +336,7 @@ HostDBContinuation():
   Continuation(NULL), ip(0), ttl(0), port(0),
     is_srv_lookup(false), dns_lookup_timeout(0),
     timeout(0), from(0),
-    from_cont(0), probe_depth(0), namelen(0), missing(false), force_dns(false), round_robin(false), dns_proxy(false) {
+    from_cont(0), probe_depth(0), namelen(0), missing(false), force_dns(false), round_robin(false) {
     memset(name, 0, MAXDNAME);
     md5.b[0] = 0;
     md5.b[1] = 0;

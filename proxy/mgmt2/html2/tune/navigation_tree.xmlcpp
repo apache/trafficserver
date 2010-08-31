@@ -181,11 +181,6 @@ This text will be stripped from the build 'navigation_tree.xml'.
               help_link="/help/ts.ink?help=s_system.htm"/>
       </ITEM>
 #endif
-      <ITEM name="DNS Proxy" enable_record="proxy.config.dns.proxy.enabled">
-        <LINK refresh="true"
-              file_link="/monitor/m_dns_proxy.ink"
-              help_link="/help/ts.ink?help=s_dnsp.htm"/>
-      </ITEM>
       <ITEM name="DNS Resolver">
         <LINK refresh="true"
               file_link="/monitor/m_dns.ink"
@@ -501,11 +496,6 @@ This text will be stripped from the build 'navigation_tree.xml'.
         <LINK name="Congestion Control" refresh="false"
               file_link="/configure/c_congestion.ink"
               help_link="/help/ts.ink?help=c_cmng.htm"/>
-      </ITEM>
-      <ITEM name="DNS Proxy" enable_record="proxy.config.dns.proxy.enabled">
-        <LINK name="General" refresh="false"
-              file_link="/configure/c_dns_proxy.ink"
-              help_link="/help/ts.ink?help=c_dnsp.htm"/>
       </ITEM>
       <ITEM name="DNS Resolver">
         <LINK name="Resolver" refresh="false"

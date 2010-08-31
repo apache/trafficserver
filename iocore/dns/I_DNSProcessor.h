@@ -39,8 +39,6 @@
 #define  DOMAIN_SERVICE_PORT          53
 #define  DEFAULT_DOMAIN_NAME_SERVER    0        // use the default server
 
-#define DNS_PROXY 1
-
 
 /**
   All buffering required to handle a DNS receipt. For asynchronous DNS,
@@ -83,11 +81,10 @@ struct DNSProcessor: public Processor
   // NOTE: the HostEnt * block is freed when the function returns
   //
 
-  Action *gethostbyname(Continuation * cont, const char *name, DNSHandler * adnsH = 0, bool dns_proxy = 0, int timeout = 0);
-  Action *getSRVbyname(Continuation * cont, const char *name, DNSHandler * adnsH = 0, bool dns_proxy = 0, int timeout = 0);
+  Action *gethostbyname(Continuation * cont, const char *name, DNSHandler * adnsH = 0, int timeout = 0);
+  Action *getSRVbyname(Continuation * cont, const char *name, DNSHandler * adnsH = 0, int timeout = 0);
   Action *gethostbyname(Continuation * cont, const char *name, int len, int timeout = 0);
   Action *gethostbyaddr(Continuation * cont, unsigned int ip, int timeout = 0);
-  Action *getproxyresult(Continuation * cont, char *request, DNSHandler * adnsH = 0);
 
   // Blocking DNS lookup, user must free the return HostEnt *
   // NOTE: this HostEnt is big, please free these ASAP
@@ -118,8 +115,7 @@ struct DNSProcessor: public Processor
   DNSHandler *handler;
   __ink_res_state l_res;
   Action *getby(const char *x, int len, int type, Continuation * cont,
-                HostEnt ** wait, DNSHandler * adnsH = NULL, bool proxy = false, bool proxy_cache = false, int timeout =
-                0);
+                HostEnt ** wait, DNSHandler * adnsH = NULL, int timeout = 0);
   void dns_init();
 };
 
@@ -145,30 +141,30 @@ DNSProcessor::getSRVbyname(const char *name)
 
 
 inline Action *
-DNSProcessor::getSRVbyname(Continuation * cont, const char *name, DNSHandler * adnsH, bool proxy, int timeout)
+DNSProcessor::getSRVbyname(Continuation * cont, const char *name, DNSHandler * adnsH, int timeout)
 {
-  return getby(name, 0, T_SRV, cont, 0, adnsH, 0, proxy, timeout);
+  return getby(name, 0, T_SRV, cont, 0, adnsH, timeout);
 }
 
 
 inline Action *
-DNSProcessor::gethostbyname(Continuation * cont, const char *name, DNSHandler * adnsH, bool proxy, int timeout)
+DNSProcessor::gethostbyname(Continuation * cont, const char *name, DNSHandler * adnsH, int timeout)
 {
-  return getby(name, 0, T_A, cont, 0, adnsH, 0, proxy, timeout);
+  return getby(name, 0, T_A, cont, 0, adnsH, timeout);
 }
 
 
 inline Action *
 DNSProcessor::gethostbyname(Continuation * cont, const char *name, int len, int timeout)
 {
-  return getby(name, len, T_A, cont, 0, NULL, 0, false, timeout);
+  return getby(name, len, T_A, cont, 0, NULL, timeout);
 }
 
 
 inline Action *
 DNSProcessor::gethostbyaddr(Continuation * cont, unsigned int addr, int timeout)
 {
-  return getby((char *) &addr, sizeof(addr), T_PTR, cont, 0, NULL, 0, false, timeout);
+  return getby((char *) &addr, sizeof(addr), T_PTR, cont, 0, NULL, timeout);
 }
 
 
@@ -188,15 +184,6 @@ DNSProcessor::gethostbyaddr(unsigned int addr)
   getby((char *) &addr, sizeof(addr), T_PTR, NULL, &ent);
   return ent;
 }
-
-
-#if DNS_PROXY
-inline Action *
-DNSProcessor::getproxyresult(Continuation * cont, char *request, DNSHandler * adnsH)
-{
-  return getby((char *) request, 0, 0, cont, 0, adnsH, true, 0);
-}
-#endif
 
 void ink_dns_init(ModuleVersion version);
 

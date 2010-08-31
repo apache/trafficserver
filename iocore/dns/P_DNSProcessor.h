@@ -24,7 +24,6 @@
 #if !defined (_P_DNSProcessor_h_)
 #define _P_DNSProcessor_h_
 
-#define DNS_PROXY 1
 /*
   #include "I_DNS.h"
   #include "inktomi++.h"
@@ -46,7 +45,6 @@
 #define DEFAULT_FAILOVER_TRY_PERIOD         (DEFAULT_DNS_TIMEOUT + 1)
 #define DEFAULT_DNS_SEARCH           1
 #define FAILOVER_SOON_RETRY          5
-#define MAX_DNS_PROXY_PACKET_LEN     1024
 #define NO_NAMESERVER_SELECTED       -1
 
 //
@@ -88,7 +86,6 @@ extern unsigned int dns_sequence_number;
 
 extern int dns_fd;
 
-void dns_cache_Init(void);
 void *dns_udp_receiver(void *arg);
 
 
@@ -159,13 +156,7 @@ struct DNSEntry: public Continuation
   char qname[MAXDNAME];
   int qname_len;
   char **domains;
-  bool proxy_cache;
   EThread *submit_thread;
-
-#ifdef DNS_PROXY
-  bool proxy;
-  unsigned char request[MAX_DNS_PROXY_PACKET_LEN];
-#endif
 
   Action action;
 
@@ -198,17 +189,13 @@ struct DNSEntry: public Continuation
   : Continuation(NULL),
     qtype(0),
     retries(DEFAULT_DNS_RETRIES),
-    which_ns(NO_NAMESERVER_SELECTED), submit_time(0), send_time(0), qname_len(0), domains(0), proxy_cache(0),
-#ifdef DNS_PROXY
-    proxy(0),
-#endif
+    which_ns(NO_NAMESERVER_SELECTED), submit_time(0), send_time(0), qname_len(0), domains(0),
     timeout(0), result_ent(0), sem_ent(0), dnsH(0), written_flag(false), once_written_flag(false), last(false)
   {
     for (int i = 0; i < MAX_DNS_RETRIES; i++)
       id[i] = -1;
 
     memset(qname, 0, MAXDNAME);
-    memset(request, 0, MAX_DNS_PROXY_PACKET_LEN);
     memset(&sem, 0, sizeof sem);
   }
 };

@@ -4157,12 +4157,6 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.remap.num_remap_threads", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-
-  //#DNS_cache configuration
-  {CONFIG, "proxy.config.dns.proxy.enabled", "", INK_INT, "0", RU_RESTART_TM, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.dns.proxy_port", "", INK_INT, "53", RU_RESTART_TM, RR_NULL, RC_INT, "[0-65535]", RA_NULL}
-  ,
   //##############################################################################
   //#
   //# The End

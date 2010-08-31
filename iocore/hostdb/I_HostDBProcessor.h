@@ -432,7 +432,6 @@ struct HostDBProcessor: public Processor
     HOSTDB_FORCE_DNS_RELOAD = 1,
     HOSTDB_FORCE_DNS_ALWAYS = 2,
     HOSTDB_DO_NOT_ROUND_ROBIN = 4,
-    HOSTDB_DNS_PROXY = 8
   };
 
   inkcoreapi Action *getbyname_re(Continuation * cont, char *hostname, int len = 0,

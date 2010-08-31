@@ -1319,20 +1319,6 @@ hostdb			Host Database Configuration
    ts#
 
 dns			DNS Configuration
-  syntax:  config:dns proxy <on | off>
-  records: proxy.config.dns.proxy.enabled
-
-    ts# config:dns proxy on
-    +OK
-    ts#
-
-  syntax:  config:dns proxy-port <int>
-  records: proxy.config.dns.proxy_port
-
-    ts# config:dns proxy-port 5353
-    +OK
-    ts#
-
   syntax:  config:dns resolve-timeout <seconds>
   records: proxy.config.dns.lookup_timeout
 

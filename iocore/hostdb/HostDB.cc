@@ -843,8 +843,6 @@ HostDBProcessor::getSRVbyname_imm(Continuation * cont, process_srv_info_pfn proc
   // Otherwise, create a continuation to do a deeper probe in the background
   HostDBContinuation *c = hostDBContAllocator.alloc();
   c->init(hostname, len, 0, port, md5, cont, pDS, true, dns_lookup_timeout);
-  if (flags & HOSTDB_DNS_PROXY)
-    c->dns_proxy = true;
   c->force_dns = force_dns;
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler) & HostDBContinuation::probeEvent);
 
@@ -935,8 +933,6 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
   // Otherwise, create a continuation to do a deeper probe in the background
   HostDBContinuation *c = hostDBContAllocator.alloc();
   c->init(hostname, len, 0, port, md5, cont, pDS, false, dns_lookup_timeout);
-  if (flags & HOSTDB_DNS_PROXY)
-    c->dns_proxy = true;
   c->force_dns = force_dns;
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler) & HostDBContinuation::probeEvent);
 
@@ -1822,11 +1818,11 @@ HostDBContinuation::do_dns()
       if (m_pDS)
         dnsH = (DNSHandler *) (((DNSServer *) (m_pDS))->x_dnsH);
 #endif
-      pending_action = dnsProcessor.gethostbyname(this, name, dnsH, dns_proxy, dns_lookup_timeout);
+      pending_action = dnsProcessor.gethostbyname(this, name, dnsH, dns_lookup_timeout);
     } else if (is_srv()) {
       DNSHandler *dnsH = 0;
       Debug("dns_srv", "SRV lookup of %s", name);
-      pending_action = dnsProcessor.getSRVbyname(this, name, dnsH, dns_proxy, dns_lookup_timeout);
+      pending_action = dnsProcessor.getSRVbyname(this, name, dnsH, dns_lookup_timeout);
     } else {
       Debug("hostdb", "DNS IP %u.%u.%u.%u",
             ((unsigned char *) &ip)[0], ((unsigned char *) &ip)[1],
@@ -2357,52 +2353,6 @@ ink_hostdb_init(ModuleVersion v)
   // do one time stuff
   // create a stat block for HostDBStats
   hostdb_rsb = RecAllocateRawStatBlock((int) HostDB_Stat_Count);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb", 1, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.hostdb.filename", "host.db", RECU_DYNAMIC, RECC_NULL, NULL);
-
-
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.size", 200000, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.hostdb.storage_path", "var/trafficserver", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.hostdb.storage_size", 33554432, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  //       # in minutes (all three)
-  //       #  0 = obey, 1 = ignore, 2 = min(X,ttl), 3 = max(X,ttl)
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.ttl_mode", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.hostdb.lookup_timeout", 120, RECU_DYNAMIC, RECC_STR, "^[0-9]+$");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.verify_after", 720, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.fail.timeout", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.re_dns_on_reload", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.migrate_on_demand", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  // find DNS results on another node in the cluster?
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.cluster", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  // find DNS results for round-robin hosts on another node in the cluster?
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.hostdb.cluster.round_robin", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  //       # round-robin addresses for single clients
-  //       # (can cause authentication problems)
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.strict_round_robin", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.hostdb.sync_frequency", 60, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.hostdb.disable_reverse_lookup", 0, RECU_DYNAMIC, RECC_NULL, NULL);
 
   //
   // Register stats

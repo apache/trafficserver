@@ -356,13 +356,6 @@ CONFIG proxy.config.dns.nameservers STRING NULL
 CONFIG proxy.config.dns.validate_query_name INT 0
 ##############################################################################
 #
-# DNS Proxy
-#
-##############################################################################
-CONFIG proxy.config.dns.proxy.enabled INT 0
-CONFIG proxy.config.dns.proxy_port INT 53
-##############################################################################
-#
 # HostDB
 #
 ##############################################################################

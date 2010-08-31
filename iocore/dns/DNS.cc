@@ -252,59 +252,49 @@ DNSEntry::init(const char *x, int len, int qtype_arg,
   dnsH->txn_lookup_timeout = dns_lookup_timeout;
 
   mutex = dnsH->mutex;
-#ifdef DNS_PROXY
-  if (!proxy) {
-#endif
-    if (qtype == T_A || qtype == T_SRV) {
-      if (len) {
-        len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
-        memcpy(qname, x, len);
-        qname_len = len;
-        qname[len] = 0;
-      } else {
-        strncpy(qname, x, MAXDNAME);
-        qname[MAXDNAME - 1] = '\0';
-        qname_len = strlen(qname);
-      }
-    } else {                    //T_PTR
-      char *p = qname;
-      unsigned char *u = (unsigned char *) x;
-      if (u[3] > 99)
-        *p++ = (u[3] / 100) + '0';
-      if (u[3] > 9)
-        *p++ = ((u[3] / 10) % 10) + '0';
-      *p++ = u[3] % 10 + '0';
-      *p++ = '.';
-      if (u[2] > 99)
-        *p++ = (u[2] / 100) + '0';
-      if (u[2] > 9)
-        *p++ = ((u[2] / 10) % 10) + '0';
-      *p++ = u[2] % 10 + '0';
-      *p++ = '.';
-      if (u[1] > 99)
-        *p++ = (u[1] / 100) + '0';
-      if (u[1] > 9)
-        *p++ = ((u[1] / 10) % 10) + '0';
-      *p++ = u[1] % 10 + '0';
-      *p++ = '.';
-      if (u[0] > 99)
-        *p++ = (u[0] / 100) + '0';
-      if (u[0] > 9)
-        *p++ = ((u[0] / 10) % 10) + '0';
-      *p++ = u[0] % 10 + '0';
-      *p++ = '.';
-      ink_strncpy(p, "in-addr.arpa", MAXDNAME - (p - qname + 1));
-    }
-#ifdef DNS_PROXY
-  } else {
+
+  if (qtype == T_A || qtype == T_SRV) {
     if (len) {
-      len = len > (MAX_DNS_PROXY_PACKET_LEN - 1) ? (MAX_DNS_PROXY_PACKET_LEN - 1) : len;
+      len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
+      memcpy(qname, x, len);
+      qname_len = len;
+      qname[len] = 0;
     } else {
-      len = MAX_DNS_PROXY_PACKET_LEN;
+      strncpy(qname, x, MAXDNAME);
+      qname[MAXDNAME - 1] = '\0';
+      qname_len = strlen(qname);
     }
-    memcpy(request, x, len);
+  } else {                    //T_PTR
+    char *p = qname;
+    unsigned char *u = (unsigned char *) x;
+
+    if (u[3] > 99)
+      *p++ = (u[3] / 100) + '0';
+    if (u[3] > 9)
+      *p++ = ((u[3] / 10) % 10) + '0';
+    *p++ = u[3] % 10 + '0';
+    *p++ = '.';
+    if (u[2] > 99)
+      *p++ = (u[2] / 100) + '0';
+    if (u[2] > 9)
+      *p++ = ((u[2] / 10) % 10) + '0';
+    *p++ = u[2] % 10 + '0';
+    *p++ = '.';
+    if (u[1] > 99)
+      *p++ = (u[1] / 100) + '0';
+    if (u[1] > 9)
+      *p++ = ((u[1] / 10) % 10) + '0';
+    *p++ = u[1] % 10 + '0';
+    *p++ = '.';
+    if (u[0] > 99)
+      *p++ = (u[0] / 100) + '0';
+    if (u[0] > 9)
+      *p++ = ((u[0] / 10) % 10) + '0';
+    *p++ = u[0] % 10 + '0';
+    *p++ = '.';
+    ink_strncpy(p, "in-addr.arpa", MAXDNAME - (p - qname + 1));
   }
-#endif
+
   if (sem_ent) {
 #if defined(darwin)
     static int qnum = 0;
@@ -869,35 +859,19 @@ write_dns_event(DNSHandler * h, DNSEntry * e)
   char buffer[MAX_DNS_PACKET_LEN];
   int r = 0;
 
-#ifdef DNS_PROXY
-  if (!e->proxy) {
-#endif
-    if ((r = _ink_res_mkquery(h->m_res, e->qname, e->qtype, buffer)) <= 0) {
-      Debug("dns", "cannot build query: %s", e->qname);
-      dns_result(h, e, NULL, false);
-      return true;
-    }
-#ifdef DNS_PROXY
+  if ((r = _ink_res_mkquery(h->m_res, e->qname, e->qtype, buffer)) <= 0) {
+    Debug("dns", "cannot build query: %s", e->qname);
+    dns_result(h, e, NULL, false);
+    return true;
   }
-#endif
 
-#ifdef DNS_PROXY
-  if (!e->proxy) {
-#endif
-    uint16 i = h->get_query_id();
-    ((HEADER *) (buffer))->id = htons(i);
-    if(e->id[dns_retries - e->retries] >= 0) {
-      //clear previous id in case named was switched or domain was expanded
-      h->release_query_id(e->id[dns_retries - e->retries]);
-    }
-    e->id[dns_retries - e->retries] = i;
-#ifdef DNS_PROXY
-  } else {
-    e->id[dns_retries - e->retries] = ntohs(((HEADER *) (e->request))->id);
-    memcpy(buffer, e->request, MAX_DNS_PROXY_PACKET_LEN);
-    r = MAX_DNS_PROXY_PACKET_LEN;
+  uint16 i = h->get_query_id();
+  ((HEADER *) (buffer))->id = htons(i);
+  if(e->id[dns_retries - e->retries] >= 0) {
+    //clear previous id in case named was switched or domain was expanded
+    h->release_query_id(e->id[dns_retries - e->retries]);
   }
-#endif
+  e->id[dns_retries - e->retries] = i;
   Debug("dns", "send query for %s to fd %d", e->qname, h->con[h->name_server].fd);
 
   int s = socketManager.send(h->con[h->name_server].fd, buffer, r, 0);
@@ -964,33 +938,24 @@ DNSEntry::mainEvent(int event, Event * e)
         SET_HANDLER((DNSEntryHandler) & DNSEntry::delayEvent);
         return handleEvent(event, e);
       }
-#ifdef DNS_PROXY
-      if (!proxy) {
-#endif
-        //if (dns_search && !strnchr(qname,'.',MAXDNAME)){
-        if (dns_search)
-          domains = dnsH->m_res->dnsrch;
-        if (domains && !strnchr(qname, '.', MAXDNAME)) {
-          qname[qname_len] = '.';
-          ink_strncpy(qname + qname_len + 1, *domains, MAXDNAME - (qname_len + 1));
-          ++domains;
-        }
-        Debug("dns", "enqueing query %s", qname);
-        DNSEntry *dup = get_entry(dnsH, qname, qtype);
-        if (dup) {
-          Debug("dns", "collapsing NS request");
-          dup->dups.enqueue(this);
-        } else {
-          Debug("dns", "adding first to collapsing queue");
-          dnsH->entries.enqueue(this);
-          write_dns(dnsH);
-        }
-#ifdef DNS_PROXY
+      //if (dns_search && !strnchr(qname,'.',MAXDNAME)){
+      if (dns_search)
+        domains = dnsH->m_res->dnsrch;
+      if (domains && !strnchr(qname, '.', MAXDNAME)) {
+        qname[qname_len] = '.';
+        ink_strncpy(qname + qname_len + 1, *domains, MAXDNAME - (qname_len + 1));
+        ++domains;
+      }
+      Debug("dns", "enqueing query %s", qname);
+      DNSEntry *dup = get_entry(dnsH, qname, qtype);
+      if (dup) {
+        Debug("dns", "collapsing NS request");
+        dup->dups.enqueue(this);
       } else {
+        Debug("dns", "adding first to collapsing queue");
         dnsH->entries.enqueue(this);
         write_dns(dnsH);
       }
-#endif
       return EVENT_DONE;
     }
   case EVENT_INTERVAL:
@@ -1015,7 +980,7 @@ DNSEntry::mainEvent(int event, Event * e)
 
 Action *
 DNSProcessor::getby(const char *x, int len, int type,
-                    Continuation * cont, HostEnt ** wait, DNSHandler * adnsH, bool proxy, bool proxy_cache, int timeout)
+                    Continuation * cont, HostEnt ** wait, DNSHandler * adnsH, int timeout)
 {
   Debug("dns", "received query %s type = %d, timeout = %d", x, type, timeout);
   if (type == T_SRV) {
@@ -1023,10 +988,6 @@ DNSProcessor::getby(const char *x, int len, int type,
   }
   DNSEntry *e = dnsEntryAllocator.alloc();
   e->retries = dns_retries;
-  if (proxy)
-    e->proxy = true;
-  if (proxy_cache)
-    e->proxy_cache = true;
   e->init(x, len, type, cont, wait, adnsH, timeout);
   MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
   if (!lock)
@@ -1055,7 +1016,7 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
 
   if (!ent && !cancelled) {
     // try to retry operation
-    if (retry && e->retries && !e->proxy && !e->proxy_cache) {
+    if (retry && e->retries) {
       Debug("dns", "doing retry for %s", e->qname);
 
       DNS_INCREMENT_DYN_STAT(dns_retries_stat);
@@ -1063,7 +1024,7 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
       --(e->retries);
       write_dns(h);
       return;
-    } else if (e->domains && *e->domains && !e->proxy && !e->proxy_cache) {
+    } else if (e->domains && *e->domains) {
       do {
         Debug("dns", "domain extending %s", e->qname);
         //int l = _strlen(e->qname);
@@ -1095,7 +1056,7 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
       LnextDomain:
         ++(e->domains);
       } while (*e->domains);
-    } else if (!e->proxy && !e->proxy_cache) {
+    } else {
       e->qname[e->qname_len] = 0;
       if (!strchr(e->qname, '.') && !e->last) {
         e->last = true;
@@ -1183,17 +1144,11 @@ DNSEntry::post(DNSHandler * h, HostEnt * ent, bool freeable)
     }
     return 0;
   }
-#ifdef DNS_PROXY
-  if (!proxy) {
-#endif
-    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
-      if (id[i] < 0)
-        break;
-      h->release_query_id(id[i]);      
-    }
-#ifdef DNS_PROXY
+  for (int i = 0; i < MAX_DNS_RETRIES; i++) {
+    if (id[i] < 0)
+      break;
+    h->release_query_id(id[i]);      
   }
-#endif
   action.mutex = NULL;
   mutex = NULL;
   dnsEntryAllocator.free(this);
@@ -1213,17 +1168,11 @@ DNSEntry::postEvent(int event, Event * e)
     if (ink_atomic_increment(&result_ent->ref_count, -1) == 1)
       dnsProcessor.free_hostent(result_ent);
 
-#ifdef DNS_PROXY
-  if (!proxy) {
-#endif
-    for (int i = 0; i < MAX_DNS_RETRIES; i++) {
-      if (id[i] < 0)
-        break;
-      dnsH->release_query_id(id[i]);      
-    }
-#ifdef DNS_PROXY
+  for (int i = 0; i < MAX_DNS_RETRIES; i++) {
+    if (id[i] < 0)
+      break;
+    dnsH->release_query_id(id[i]);      
   }
-#endif
   action.mutex = NULL;
   mutex = NULL;
   dnsEntryAllocator.free(this);
@@ -1258,12 +1207,6 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
   e->written_flag = false;
   --(handler->in_flight);
   DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
-
-  if (e->proxy) {
-    Debug("dns", "using proxy");
-    dns_result(handler, e, buf, retry);
-    return server_ok;
-  }
 
   DNS_SUM_DYN_STAT(dns_response_time_stat, ink_get_hrtime() - e->send_time);
 
