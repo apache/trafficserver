@@ -2257,7 +2257,7 @@ RecordElement RecordsConfig[] = {
   //##############################################################################
   {CONFIG, "proxy.config.dns.lookup_timeout", "", INK_INT, "20", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.dns.retries", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.dns.retries", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_NULL, "[0-9]", RA_NULL}
   ,
   {CONFIG, "proxy.config.dns.search_default_domains", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,

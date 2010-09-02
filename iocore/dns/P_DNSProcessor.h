@@ -34,8 +34,8 @@
 #include "I_EventSystem.h"
 
 #define MAX_NAMED                           32
-#define DEFAULT_DNS_RETRIES                 3
-#define MAX_DNS_RETRIES                     5
+#define DEFAULT_DNS_RETRIES                 5
+#define MAX_DNS_RETRIES                     9
 #define DEFAULT_DNS_TIMEOUT                 30
 #define MAX_DNS_IN_FLIGHT                   2048
 #define DEFAULT_FAILOVER_NUMBER             (DEFAULT_DNS_RETRIES + 1)
