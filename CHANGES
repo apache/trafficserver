@@ -2,6 +2,9 @@
 
 Changes with Apache Traffic Server 2.1.3
 
+  *) Problems with specifying separate config files for SSL certificates and
+   keys [TS-405].
+
   *) TS fails to use user ID with user name longer than 8 characters
    [TS-420].
 
@@ -121,7 +124,7 @@ Changes with Apache Traffic Server 2.1.0
 
 Changes with Apache Traffic Server 2.0.1
 
-  *) Port of CVE-2010-2952 for 2.0.x [TS-TS-425].
+  *) Port of CVE-2010-2952 for 2.0.x [TS-425].
 
   *) Backport part of TS-322 that deals with indexing arrays with char
    (author: Marcus Ruckert) [TS-334].

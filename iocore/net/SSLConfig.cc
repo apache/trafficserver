@@ -332,7 +332,7 @@ SslConfigParams::initialize()
     serverKeyPathOnly = xstrdup(Layout::get()->prefix);
   }
   if (ssl_server_private_key_filename != NULL) {
-    serverKeyPath = Layout::relative_to(serverKeyPathOnly, ssl_server_private_key_path);
+    serverKeyPath = Layout::relative_to(serverKeyPathOnly, ssl_server_private_key_filename);
 
 #ifdef _WIN32
     i = 0;
