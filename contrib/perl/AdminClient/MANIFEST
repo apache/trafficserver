@@ -1,0 +1,6 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+t/Apache-TS-AdminClient.t
+lib/Apache/TS/AdminClient.pm

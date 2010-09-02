@@ -1,0 +1,12 @@
+Revision history for Perl extension Apache::TS::AdminClient.
+
+0.01  Thu Aug 12 21:25:52 2010
+        - version 0.01; created by h2xs 1.23 with options '-AX Apache::TS::AdminClient'
+        Jira ticket: https://issues.apache.org/jira/browse/TS-418
+        Changes: This includes some minor code refactoring.  Major changes are the addition of pod 
+        and package files, like Makefile.pl, so this module will go to the proper location upon install.
+        
+
+0.00 Feb 23 2007
+       - original version 
+
