@@ -172,7 +172,7 @@ state_start(INKCont contp, INKEvent event, void *data)
   txn_sm->q_client_read_vio = INKVConnRead(txn_sm->q_client_vc, (INKCont) contp,
                                            txn_sm->q_client_request_buffer, INT_MAX);
 
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* This function is to call proper functions according to the
@@ -237,7 +237,7 @@ state_read_request_from_client(INKCont contp, INKEvent event, INKVIO vio)
         set_handler(txn_sm->q_current_handler, &state_handle_cache_lookup);
         txn_sm->q_pending_action = INKCacheRead(contp, txn_sm->q_key);
 
-        return INK_EVENT_IMMEDIATE;
+        return INK_SUCCESS;
       }
     }
 
@@ -249,7 +249,7 @@ state_read_request_from_client(INKCont contp, INKEvent event, INKVIO vio)
     return prepare_to_die(contp);
 
   }
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* This function handle the cache lookup result. If MISS, try to
@@ -316,7 +316,7 @@ state_handle_cache_lookup(INKCont contp, INKEvent event, INKVConn vc)
     return prepare_to_die(contp);
   }
 
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 static void
@@ -389,7 +389,7 @@ state_handle_cache_read_response(INKCont contp, INKEvent event, INKVIO vio)
     break;
 
   }
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* The cache processor call us back with the vc to use for writing
@@ -451,7 +451,7 @@ state_build_and_send_request(INKCont contp, INKEvent event, void *data)
   INKAssert(txn_sm->q_pending_action);
   INKDebug("protocol", "initiating host lookup");
 
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* If Host lookup is successfully, connect to that IP. */
@@ -476,7 +476,7 @@ state_dns_lookup(INKCont contp, INKEvent event, INKHostLookupResult host_info)
   INKAssert(txn_sm->q_pending_action == NULL);
   txn_sm->q_pending_action = INKNetConnect(contp, txn_sm->q_server_ip, txn_sm->q_server_port);
 
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* Net Processor calls back, if succeeded, the net_vc is returned.
@@ -505,7 +505,7 @@ state_connect_to_server(INKCont contp, INKEvent event, INKVConn vc)
   /* Actively write the request to the net_vc. */
   txn_sm->q_server_write_vio = INKVConnWrite(txn_sm->q_server_vc, contp,
                                              txn_sm->q_server_request_buffer_reader, strlen(txn_sm->q_client_request));
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* Net Processor calls back, if write complete, wait for the response
@@ -533,7 +533,7 @@ state_send_request_to_server(INKCont contp, INKEvent event, INKVIO vio)
   default:
     return prepare_to_die(contp);
   }
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* Call correct handler according to the vio type. */
@@ -609,7 +609,7 @@ state_interface_with_server(INKCont contp, INKEvent event, INKVIO vio)
     break;
   }
 
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* The response comes in. If the origin server finishes writing, it
@@ -650,7 +650,7 @@ state_read_response_from_server(INKCont contp, INKEvent event, INKVIO vio)
   txn_sm->q_server_response_length += bytes_read;
   INKDebug("protocol", "bytes read is %d, total response length is %d", bytes_read, txn_sm->q_server_response_length);
 
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* If the whole doc has been written into the cache, send the response
@@ -665,7 +665,7 @@ state_write_to_cache(INKCont contp, INKEvent event, INKVIO vio)
   switch (event) {
   case INK_EVENT_VCONN_WRITE_READY:
     INKVIOReenable(txn_sm->q_cache_write_vio);
-    return INK_EVENT_IMMEDIATE;
+    return INK_SUCCESS;
 
   case INK_EVENT_VCONN_WRITE_COMPLETE:
     INKDebug("protocol", "nbytes %d, ndone %d", INKVIONBytesGet(vio), INKVIONDoneGet(vio));
@@ -680,7 +680,7 @@ state_write_to_cache(INKCont contp, INKEvent event, INKVIO vio)
     if (txn_sm->q_server_vc != NULL) {
       INKDebug("protocol", "reenable server_read_vio");
       INKVIOReenable(txn_sm->q_server_read_vio);
-      return INK_EVENT_IMMEDIATE;
+      return INK_SUCCESS;
     }
 
     if (txn_sm->q_cache_response_length >= txn_sm->q_server_response_length) {
@@ -700,7 +700,7 @@ state_write_to_cache(INKCont contp, INKEvent event, INKVIO vio)
       INKDebug("protocol", "reenable cache_write_vio");
       INKVIOReenable(txn_sm->q_cache_write_vio);
     }
-    return INK_EVENT_IMMEDIATE;
+    return INK_SUCCESS;
   default:
     break;
   }
@@ -747,7 +747,7 @@ state_send_response_to_client(INKCont contp, INKEvent event, INKVIO vio)
 
   INKDebug("protocol", "leaving send_response_to_client");
 
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 
@@ -886,7 +886,7 @@ send_response_to_client(INKCont contp)
   set_handler(txn_sm->q_current_handler, &state_interface_with_client);
   txn_sm->q_client_write_vio = INKVConnWrite(txn_sm->q_client_vc, (INKCont) contp,
                                              txn_sm->q_client_response_buffer_reader, response_len);
-  return INK_EVENT_IMMEDIATE;
+  return INK_SUCCESS;
 }
 
 /* Read data out through the_reader and save it in a char buffer. */
