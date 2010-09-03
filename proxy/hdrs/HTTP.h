@@ -511,7 +511,7 @@ public:
   void set(HTTPVersion ver);
   void set(int ver_major, int ver_minor);
 
-    HTTPVersion & operator =(const HTTPVersion & hv);
+  HTTPVersion & operator =(const HTTPVersion & hv);
   int operator ==(const HTTPVersion & hv);
   int operator !=(const HTTPVersion & hv);
   int operator >(const HTTPVersion & hv);
@@ -529,10 +529,21 @@ class HTTPHdr:public MIMEHdr
 {
 public:
   HTTPHdrImpl * m_http;
-  URL m_url_cached;
+  // This is all cached data and so is mutable.
+  mutable URL m_url_cached;
+  mutable int m_host_length; ///< Length of hostname.
+  mutable char const* m_host; ///< Hostname.
+  mutable int m_port; ///< Target port.
+  mutable bool m_target_cached; ///< Whether host name and port are cached.
+  mutable bool m_target_in_url; ///< Whether host name and port are in the URL.
+  /// Set if the port was effectively specified in the header.
+  /// @c true if the target (in the URL or the HOST field) also specified
+  /// a port. That is, @c true if whatever source had the target host
+  /// also had a port, @c false otherwise.
+  mutable bool m_port_in_header;
 
-    HTTPHdr();
-   ~HTTPHdr();
+  HTTPHdr();
+  ~HTTPHdr();
 
   int valid() const;
 
@@ -559,12 +570,47 @@ public:
 
   URL *url_create(URL * url);
 
-  URL *url_get();
+  URL *url_get() const;
   URL *url_get(URL * url);
 
   void url_set(URL * url);
   void url_set_as_server_url(URL * url);
   void url_set(const char *str, int length);
+
+  /** Get the target host name.
+      The length is returned in @a length if non-NULL.
+      @note The results are cached so this is fast after the first call.
+      @return A pointer to the host name.
+  */
+  char const* host_get(int* length = 0);
+
+  /** Get the target port.
+      If the target port is not found then it is adjusted to the
+      default port for the URL type.
+      @note The results are cached so this is fast after the first call.
+      @return The canonicalized target port.
+  */
+  int port_get();
+
+  /// Check location of target host.
+  /// @return @c true if the host was in the URL, @c false otherwise.
+  /// @note This returns @c false if the host is missing.
+  bool is_target_in_url() const;
+
+  /// Check if a port was specified in the target.
+  /// @return @c true if the port was part of the target.
+  bool is_port_in_header() const;
+
+  /// If the target is in the fields and not the URL, copy it to the @a url.
+  /// If @a url is @c NULL the cached URL in this header is used.
+  /// @note In the default case the copy is avoided if the cached URL already
+  /// has the target. If @a url is non @c NULL the copy is always performed.
+  void set_url_target_from_host_field(URL* url = 0);
+
+  /// Mark the target cache as invalid.
+  /// @internal Ugly but too many places currently that touch the
+  /// header internals, they must be able to do this.
+  void mark_target_dirty();
 
   HTTPStatus status_get();
   void status_set(HTTPStatus status);
@@ -580,13 +626,25 @@ public:
 
 public:
   // Utility routines
-    bool is_cache_control_set(const char *cc_directive_wks);
+  bool is_cache_control_set(const char *cc_directive_wks);
   bool is_pragma_no_cache_set();
+
+protected:
+  /** Load the target cache.
+      @see m_host, m_port, m_target_in_url
+  */
+  void _fill_target_cache() const;
+  /** Test the cache and fill it if necessary.
+      @internal In contrast to @c _fill_target_cache, this method
+      is inline and checks whether the cache is already filled.
+      @ _fill_target_cache @b always does a cache fill.
+  */
+  void _test_and_fill_target_cache() const;
 
 private:
   // No gratuitous copies!
-    HTTPHdr(const HTTPHdr & m);
-    HTTPHdr & operator =(const HTTPHdr & m);
+  HTTPHdr(const HTTPHdr & m);
+  HTTPHdr & operator =(const HTTPHdr & m);
 };
 
 
@@ -703,7 +761,10 @@ HTTPVersion::operator <=(const HTTPVersion & hv)
   -------------------------------------------------------------------------*/
 
 inline HTTPHdr::HTTPHdr()
-:MIMEHdr(), m_http(NULL), m_url_cached()
+  : MIMEHdr()
+  , m_http(NULL)
+  , m_url_cached()
+  , m_target_cached(false)
 {
 }
 
@@ -821,6 +882,63 @@ HTTPHdr::length_get()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+inline void
+HTTPHdr::_test_and_fill_target_cache() const {
+  if (!m_target_cached) this->_fill_target_cache();
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline char const*
+HTTPHdr::host_get(int* length)
+{
+  this->_test_and_fill_target_cache();
+  if (length) *length = m_host_length;
+  return m_host;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline int
+HTTPHdr::port_get()
+{
+  this->_test_and_fill_target_cache();
+  return m_port;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline bool
+HTTPHdr::is_target_in_url() const
+{
+  this->_test_and_fill_target_cache();
+  return m_target_in_url;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline bool
+HTTPHdr::is_port_in_header() const
+{
+  this->_test_and_fill_target_cache();
+  return m_port_in_header;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline void
+HTTPHdr::mark_target_dirty()
+{
+  m_target_cached = false;
+}
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 inline HTTPType
 http_hdr_type_get(HTTPHdrImpl * hh)
 {
@@ -920,7 +1038,7 @@ HTTPHdr::url_create(URL * u)
   -------------------------------------------------------------------------*/
 
 inline URL *
-HTTPHdr::url_get()
+HTTPHdr::url_get() const
 {
   ink_debug_assert(valid());
   ink_debug_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);

@@ -31,6 +31,23 @@
 // Globals
 int use_accept_thread = 0;
 
+NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
+
+NetProcessor::AcceptOptions&
+NetProcessor::AcceptOptions::reset()
+{
+  port = 0;
+  domain = AF_INET;
+  etype = ET_NET;
+  f_callback_on_open = false;
+  recv_bufsize = 0;
+  send_bufsize = 0;
+  sockopt_flags = 0;
+  f_outbound_transparent = false;
+  f_inbound_transparent = false;
+  return *this;
+}
+
 
 int net_connection_number = 1;
 unsigned int
@@ -62,37 +79,46 @@ NetProcessor::accept(Continuation * cont,
   (void) accept_only;           // NT only
   (void) bound_sockaddr;        // NT only
   (void) bound_sockaddr_size;   // NT only
-  NetDebug("iocore_net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-        port, recv_bufsize, send_bufsize, sockopt_flags);
-  return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, port,
+  NetDebug("iocore_net_processor",
+	   "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
+	   port, recv_bufsize, send_bufsize, sockopt_flags
+	   );
+
+  AcceptOptions opt;
+  opt.port = port;
+  opt.etype = etype;
+  opt.f_callback_on_open = callback_on_open;
+  opt.recv_bufsize = recv_bufsize;
+  opt.send_bufsize = send_bufsize;
+  opt.sockopt_flags = opt.sockopt_flags;
+  return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD,
                                                       bound_sockaddr,
                                                       bound_sockaddr_size,
                                                       frequent_accept,
                                                       net_accept,
-                                                      recv_bufsize, send_bufsize, sockopt_flags,
-                                                      accept_ip, callback_on_open, etype);
+                                                      accept_ip,
+						      opt
+						      );
 }
 
 Action *
-NetProcessor::main_accept(Continuation * cont, SOCKET fd, int port,
+NetProcessor::main_accept(Continuation * cont, SOCKET fd,
                           sockaddr * bound_sockaddr, int *bound_sockaddr_size,
                           bool accept_only,
-                          int recv_bufsize, int send_bufsize, unsigned long sockopt_flags,
-                          EventType etype, bool callback_on_open)
+			  AcceptOptions const& opt
+			  )
 {
   (void) accept_only;           // NT only
   NetDebug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-        port, recv_bufsize, send_bufsize, sockopt_flags);
-  return ((UnixNetProcessor *) this)->accept_internal(cont, fd, port,
+        opt.port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+  return ((UnixNetProcessor *) this)->accept_internal(cont, fd,
                                                       bound_sockaddr,
                                                       bound_sockaddr_size,
                                                       true,
                                                       net_accept,
-                                                      recv_bufsize,
-                                                      send_bufsize,
-                                                      sockopt_flags,
                                                       ((UnixNetProcessor *) this)->incoming_ip_to_bind_saddr,
-                                                      callback_on_open, etype);
+						      opt
+						      );
 }
 
 
@@ -100,34 +126,36 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd, int port,
 Action *
 UnixNetProcessor::accept_internal(Continuation * cont,
                                   int fd,
-                                  int port,
                                   struct sockaddr * bound_sockaddr,
                                   int *bound_sockaddr_size,
                                   bool frequent_accept,
                                   AcceptFunction fn,
-                                  int recv_bufsize,
-                                  int send_bufsize,
-                                  unsigned long sockopt_flags,
-                                  unsigned int accept_ip, bool callback_on_open, EventType etype)
+                                  unsigned int accept_ip,
+				  AcceptOptions const& opt
+				  )
 {
-  setEtype(etype);
+  EventType et = opt.etype; // setEtype requires non-const ref.
+  setEtype(et);
   NetAccept *na = createNetAccept();
 
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
-  na->port = port;
+  na->port = opt.port;
   na->accept_fn = fn;
   na->server.fd = fd;
   na->server.accept_ip = accept_ip;
+  na->server.f_outbound_transparent = opt.f_outbound_transparent;
+  na->server.f_inbound_transparent = opt.f_inbound_transparent;
+  if (opt.f_outbound_transparent) Debug("http_tproxy", "Marking accept server %x on port %d as outbound transparent.\n", na, opt.port);
   na->action_ = NEW(new NetAcceptAction());
   *na->action_ = cont;
   na->action_->server = &na->server;
-  na->callback_on_open = callback_on_open;
-  na->recv_bufsize = recv_bufsize;
-  na->send_bufsize = send_bufsize;
-  na->sockopt_flags = sockopt_flags;
-  na->etype = etype;
+  na->callback_on_open = opt.f_callback_on_open;
+  na->recv_bufsize = opt.recv_bufsize;
+  na->send_bufsize = opt.send_bufsize;
+  na->sockopt_flags = opt.sockopt_flags;
+  na->etype = opt.etype;
   if (na->callback_on_open)
     na->mutex = cont->mutex;
   if (frequent_accept) { // true

@@ -81,31 +81,64 @@ struct DumpStats: public Continuation
   }
 };
 
-HttpPortTypes
-get_connection_attributes(char *attr)
-{
-  HttpPortTypes attributes = SERVER_PORT_DEFAULT;
-  if (attr) {
-    if (strlen(attr) > 1) {
-      Warning("too many port attributes: '%s'", attr);
-    } else {
-      switch (*attr) {
-      case 'C':
-        attributes = SERVER_PORT_COMPRESSED;
-        break;
-      case 'X':
-        attributes = SERVER_PORT_DEFAULT;
-        break;
-      case 'T':
-        attributes = SERVER_PORT_BLIND_TUNNEL;
-        break;
-      default:
-        Warning("unknown port attribute '%s'", attr);
-        break;
-      }
+
+struct Attributes {
+  HttpPortTypes type;
+  int domain;
+  bool f_outbound_transparent;
+  bool f_inbound_transparent;
+
+  Attributes()
+    : type(SERVER_PORT_DEFAULT)
+    , domain(AF_INET)
+    , f_outbound_transparent(false)
+    , f_inbound_transparent(false)
+  {}
+};
+
+void get_connection_attributes(const char *attr, Attributes *result) {
+  int attr_len;
+
+  result->type = SERVER_PORT_DEFAULT;
+  result->domain = AF_INET;
+
+  if (!attr ) return;
+
+  attr_len = strlen(attr);
+
+  if (attr_len > 2) {
+    Warning("too many port attributes: '%s'", attr);
+    return;
+  } else if (attr_len <= 0) {
+    return;
+  }
+
+  switch (*attr) {
+  case 'C': result->type = SERVER_PORT_COMPRESSED; break;
+  case '<':
+    result->f_outbound_transparent = true;
+    result->type = SERVER_PORT_DEFAULT;
+    break;
+  case '=':
+    result->f_outbound_transparent = true;
+    result->f_inbound_transparent = true;
+    result->type = SERVER_PORT_DEFAULT;
+    break;
+  case '>':
+    result->f_inbound_transparent = true;
+    result->type = SERVER_PORT_DEFAULT;
+    break;
+  case 'X': result->type = SERVER_PORT_DEFAULT; break;
+  case 'T': result->type = SERVER_PORT_BLIND_TUNNEL; break;
+  default: Warning("unknown port attribute '%s'", attr); break;
+  }
+
+  if (attr_len >= 2) {
+    switch (*(attr + 1)) {
+    case '6': result->domain = AF_INET6; break;
+    default: result->domain = AF_INET;
     }
   }
-  return attributes;
 }
 
 
@@ -154,7 +187,12 @@ parse_http_server_other_ports()
     }
 
     additional_ports_array[accept_index].port = port;
-    additional_ports_array[accept_index].type = get_connection_attributes(attr_str);
+
+    Attributes attr;
+    get_connection_attributes(attr_str, &attr);
+    additional_ports_array[accept_index].type = attr.type;
+    additional_ports_array[accept_index].f_outbound_transparent = attr.f_outbound_transparent;
+    additional_ports_array[accept_index].f_inbound_transparent = attr.f_inbound_transparent;
 
     accept_index++;
   }
@@ -238,30 +276,40 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   ///////////////////////////////////
   // start accepting connections   //
   ///////////////////////////////////
-  int sock_recv_buffer_size_in = 0;
-  int sock_send_buffer_size_in = 0;
-  unsigned long sock_option_flag_in = 0;
   char *attr_string = 0;
-  static HttpPortTypes attr = SERVER_PORT_DEFAULT;
+  static HttpPortTypes type = SERVER_PORT_DEFAULT;
+  NetProcessor::AcceptOptions opt;
+  opt.port = port;
 
   if (!called_once) {
     // function can be called several times : do memory allocation once
     REC_ReadConfigStringAlloc(attr_string, "proxy.config.http.server_port_attr");
-    REC_ReadConfigInteger(sock_recv_buffer_size_in, "proxy.config.net.sock_recv_buffer_size_in");
-    REC_ReadConfigInteger(sock_send_buffer_size_in, "proxy.config.net.sock_send_buffer_size_in");
-    REC_ReadConfigInteger(sock_option_flag_in, "proxy.config.net.sock_option_flag_in");
+    REC_ReadConfigInteger(opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
+    REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
+    REC_ReadConfigInteger(opt.sockopt_flags, "proxy.config.net.sock_option_flag_in");
 
     // deprecated configuration options - bcall 4/25/07
     // these should be removed in the future
-    if (sock_recv_buffer_size_in == 0 && sock_send_buffer_size_in == 0 && sock_option_flag_in == 0) {
-      REC_ReadConfigInteger(sock_recv_buffer_size_in, "proxy.config.net.sock_recv_buffer_size");
-      REC_ReadConfigInteger(sock_send_buffer_size_in, "proxy.config.net.sock_send_buffer_size");
-      REC_ReadConfigInteger(sock_option_flag_in, "proxy.config.net.sock_option_flag");
+    if (opt.recv_bufsize == 0 && opt.send_bufsize == 0 && opt.sockopt_flags == 0) {
+      REC_ReadConfigInteger(opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size");
+      REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size");
+      REC_ReadConfigInteger(opt.sockopt_flags, "proxy.config.net.sock_option_flag");
     }
     // end of deprecated config options
 
     if (attr_string) {
-      attr = get_connection_attributes(attr_string);
+      Attributes attr;
+      get_connection_attributes(attr_string, &attr);
+      type = attr.type;
+      opt.domain = attr.domain;
+      Debug("http_tproxy", "Primary listen socket transparency is %s\n",
+	    attr.f_inbound_transparent &&  attr.f_outbound_transparent ? "bidirectional"
+	      : attr.f_inbound_transparent ? "inbound"
+	        : attr.f_outbound_transparent ? "outbound"
+                  : "off"
+	    );
+      opt.f_outbound_transparent = attr.f_outbound_transparent;
+      opt.f_inbound_transparent = attr.f_inbound_transparent;
       xfree(attr_string);
     }
     called_once = true;
@@ -269,8 +317,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
       for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
         HttpPortEntry & e = http_port_attr_array[i];
         if (e.fd)
-          netProcessor.main_accept(NEW(new HttpAccept(e.type)), e.fd, 0, NULL, NULL, false,
-                                   sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
+          netProcessor.main_accept(NEW(new HttpAccept(e.type)), e.fd, NULL, NULL, false, opt);
       }
     } else {
       // If traffic_server wasn't started with -A, get the list
@@ -279,33 +326,42 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
     }
   }
   if (!http_port_attr_array) {
-    netProcessor.main_accept(NEW(new HttpAccept(attr)), fd, port, NULL, NULL, false,
-                             sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
+    netProcessor.main_accept(NEW(new HttpAccept(type)), fd,  NULL, NULL, false,
+                             opt);
 
     if (http_other_port_array) {
       for (int i = 0; http_other_port_array[i].port != -1; i++) {
         HttpOtherPortEntry & e = http_other_port_array[i];
         if ((e.port<1) || (e.port> 65535))
           Warning("additional port out of range ignored: %d", e.port);
-        else
-          netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, e.port, NULL, NULL, false,
-                                   sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
+        else {
+	  opt.port = e.port;
+	  opt.f_outbound_transparent = e.f_outbound_transparent;
+          netProcessor.main_accept(NEW(new HttpAccept(e.type)),
+				   fd, NULL, NULL, false, opt
+				   );
+	}
       }
     }
   } else {
     for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
       HttpPortEntry & e = http_port_attr_array[i];
       if (!e.fd) {
-        netProcessor.main_accept(NEW(new HttpAccept(attr)), fd, port, NULL, NULL, false,
-                                 sock_recv_buffer_size_in, sock_send_buffer_size_in, sock_option_flag_in);
+        netProcessor.main_accept(NEW(new HttpAccept(type)),
+				 fd, NULL, NULL, false, opt
+				 );
       }
     }
   }
 #ifdef HAVE_LIBSSL
   SslConfigParams *sslParam = sslTerminationConfig.acquire();
 
-  if (sslParam->getTerminationMode() & sslParam->SSL_TERM_MODE_CLIENT)
-    sslNetProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_SSL)), ssl_fd, sslParam->getAcceptPort());
+  if (sslParam->getTerminationMode() & sslParam->SSL_TERM_MODE_CLIENT) {
+    opt.reset();
+    opt.port = sslParam->getAcceptPort();
+    sslNetProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_SSL)), ssl_fd, 
+				0, 0, false, opt);
+  }
 
   sslTerminationConfig.release(sslParam);
 #endif
@@ -329,5 +385,8 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
 void
 start_HttpProxyServerBackDoor(int port)
 {
-  netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)), NO_FD, port);
+  NetProcessor::AcceptOptions opt;
+  opt.port = port;
+  netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)),
+			   NO_FD, 0, 0, false, opt);
 }

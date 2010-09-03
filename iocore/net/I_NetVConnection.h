@@ -73,12 +73,13 @@ struct NetVCOptions {
 
       @note The difference between @c INTF_ADDR and @c FOREIGN_ADDR is
       whether transparency is enabled on the socket. It is the
-      client's responsibility to set this correct based on whether the
+      client's responsibility to set this correctly based on whether the
       address in @a local_addr is associated with an interface on the
       local system, or is owned by a foreign system.  A binding style
       of @c ANY_ADDR causes the value in @a local_addr to be ignored.
 
       @see local_addr
+      @see addr_binding
    */
   enum addr_bind_style {
     ANY_ADDR, ///< Bind to any available local address (don't care, default).
@@ -88,7 +89,7 @@ struct NetVCOptions {
 
   /// The set of ways in which the local port should be bound.
   enum port_bind_style {
-    ANY_PORT, ///< Bind to any available local port (dont' care, default).
+    ANY_PORT, ///< Bind to any available local port (don't care, default).
     FIXED_PORT ///< Bind to the port in @a local_port.
   };
 
@@ -438,6 +439,24 @@ public:
     is_internal_request = val;
   }
 
+  /// Get the transparency state.
+  bool get_is_transparent() const {
+    return is_transparent;
+  }
+  /// Set the transparency state.
+  void set_is_transparent(bool state = true) {
+    is_transparent = state;
+  }
+
+  /// Get the current flag state.
+  bool get_is_other_side_transparent() const {
+    return is_other_side_transparent;
+  }
+  /// Set the flag to @a value.
+  void set_is_other_side_transparent(bool value = true) {
+    is_other_side_transparent = value;
+  }
+
 #if ATS_USE_DETAILED_LOG
   void loggingInit()
   {
@@ -499,6 +518,13 @@ protected:
   int got_remote_addr;
 
   bool is_internal_request;
+  /// Set if this connection is transparent.
+  bool is_transparent;
+  /// Set if the paired connection is (should be) transparent.
+  /// @internal Currently only used on client side connections
+  /// to track whether the origin server connection should
+  /// be transparent.
+  bool is_other_side_transparent;
 };
 
 inline
@@ -511,7 +537,8 @@ NetVConnection::NetVConnection():
 #endif
   got_local_addr(0),
   got_remote_addr(0),
-  is_internal_request(false)
+  is_internal_request(false),
+  is_other_side_transparent(false)
 {
   memset(&local_addr, 0, sizeof(local_addr));
   memset(&remote_addr, 0, sizeof(remote_addr));

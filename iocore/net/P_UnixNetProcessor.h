@@ -39,16 +39,13 @@ public:
 
   virtual Action * accept_internal(Continuation * cont,
                                    int fd,
-                                   int port,
                                    sockaddr * bound_sockaddr = NULL,
                                    int *bound_sockaddr_size = NULL,
                                    bool frequent_accept = true,
                                    AcceptFunctionPtr fn = net_accept,
-                                   int recv_bufsize = 0,
-                                   int send_bufsize = 0,
-                                   unsigned long sockopt_flags = 0,
                                    unsigned int accept_ip = INADDR_ANY,
-                                   bool callback_on_open = false, EventType etype = ET_NET);
+				   AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
+				   );
 
 
   Action *connect_re_internal(Continuation * cont,

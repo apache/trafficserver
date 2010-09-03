@@ -1303,6 +1303,26 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
 
+  // Transparency flag.
+  char buffer[10];
+  if (REC_ERR_OKAY ==  RecGetRecordString("proxy.config.http.transparent",
+					  buffer, sizeof(buffer))) {
+    if (0 == strcasecmp("both", buffer) ||
+	0 == strcasecmp("on", buffer) ||
+	0 == strcasecmp("enable", buffer)) {
+      c.client_transparency_enabled = true;
+      c.server_transparency_enabled = true;
+    } else if (0 == strcasecmp("server", buffer)) {
+      c.server_transparency_enabled = true;
+      c.client_transparency_enabled = false;
+    } else if (0 == strcasecmp("client", buffer)) {
+      c.server_transparency_enabled = false;
+      c.client_transparency_enabled = true;
+    } else {
+      c.server_transparency_enabled = false;
+      c.client_transparency_enabled = false;
+    }
+  }
 
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap

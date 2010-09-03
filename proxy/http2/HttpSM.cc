@@ -638,12 +638,14 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   ua_entry->vc = client_vc;
   ua_entry->vc_type = HTTP_UA_VC;
 
-  t_state.client_info.ip = client_vc->get_netvc()->get_remote_ip();
-  t_state.client_info.port = client_vc->get_netvc()->get_local_port();
+  NetVConnection* netvc = client_vc->get_netvc();
+
+  t_state.client_info.ip = netvc->get_remote_ip();
+  t_state.client_info.port = netvc->get_local_port();
+  t_state.client_info.is_transparent = netvc->get_is_transparent();
   t_state.backdoor_request = client_vc->backdoor_connect;
 
-
-  t_state.client_info.port_attribute = (HttpPortTypes) client_vc->get_netvc()->attributes;
+  t_state.client_info.port_attribute = (HttpPortTypes) netvc->attributes;
 
   HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
   client_vc->client_trans_stat++;
@@ -653,8 +655,8 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
 
 #ifdef USE_NCA
   if (t_state.client_info.port_attribute == SERVER_PORT_NCA) {
-    bool data_found = client_vc->get_netvc()->get_data(NCA_DATA_CACHE_UPCALL,
-                                                       &t_state.nca_info.request_info);
+    bool data_found = netvc->get_data(NCA_DATA_CACHE_UPCALL,
+				      &t_state.nca_info.request_info);
     ink_assert(data_found);
   } else {
 #else
@@ -4067,7 +4069,6 @@ HttpSM::do_cache_lookup_and_read()
 
   HTTP_INCREMENT_TRANS_STAT(http_cache_lookups_stat);
 
-  Debug("http_seq", "[HttpSM::do_cache_lookup_and_read] Issuing cache lookup");
   milestones.cache_open_read_begin = ink_get_hrtime();
   t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_NONE;
   t_state.cache_info.lookup_count++;
@@ -4080,6 +4081,7 @@ HttpSM::do_cache_lookup_and_read()
   else
     c_url = t_state.cache_info.lookup_url;
 
+  Debug("http_seq", "[HttpSM::do_cache_lookup_and_read] [%lld] Issuing cache lookup for URL %s",  sm_id, c_url->string_get(&t_state.arena));
   Action *cache_action_handle = cache_sm.open_read(c_url,
                                                    &t_state.hdr_info.client_request,
                                                    &(t_state.cache_info.config),
@@ -4258,7 +4260,8 @@ HttpSM::do_http_server_open(bool raw)
   // to be based on ua_session != NULL instead of req_flavor value.
   ink_assert(ua_entry != NULL ||
              t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
-             t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
+             t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY
+	     );
 
   ink_assert(pending_action == NULL);
   ink_assert(t_state.current.server->port > 0);
@@ -4268,12 +4271,14 @@ HttpSM::do_http_server_open(bool raw)
   opt.set_sock_param(t_state.http_config_param->sock_recv_buffer_size_out,
                      t_state.http_config_param->sock_send_buffer_size_out,
                      t_state.http_config_param->sock_option_flag_out);
-  // TBD: Check for transparency here and set opt accordingly.
+
   if (t_state.http_config_param->outgoing_ip_to_bind_saddr) {
     opt.addr_binding = NetVCOptions::INTF_ADDR;
     opt.local_addr = t_state.http_config_param->outgoing_ip_to_bind_saddr;
+  } else if (t_state.server_info.is_transparent) {
+    opt.addr_binding = NetVCOptions::FOREIGN_ADDR;
+    opt.local_addr = t_state.client_info.ip;
   }
-
 
   Debug("http", "[%lld] open connection to %s: %u.%u.%u.%u",
         sm_id, t_state.current.server->name, PRINT_IP(t_state.current.server->ip));

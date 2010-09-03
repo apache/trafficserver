@@ -1469,6 +1469,53 @@ http_parse_te(const char *buf, int len, Arena * arena)
   return val;
 }
 
+void
+HTTPHdr::_fill_target_cache() const
+{
+  URL* url = this->url_get();
+  m_target_in_url = false;
+  m_port_in_header = false;
+  // Check in the URL first, then the HOST field.
+  if (0 != (m_host = url->host_get(&m_host_length))) {
+    m_target_in_url = true;
+    m_port = url->port_get();
+    m_port_in_header = 0 != url->port_get_raw();
+  } else if (0 != (m_host = const_cast<HTTPHdr*>(this)->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &m_host_length))) {
+    // Check for port in the host.
+    char const* colon = static_cast<char const*>(memchr(m_host, ':', m_host_length));
+    
+    if (colon) {
+      m_host_length = colon - m_host; // Length of just the host in the value.
+      m_port = 0;
+      for ( ++colon ; is_digit(*colon) ; ++colon )
+	m_port = m_port * 10 + *colon - '0';
+      m_port_in_header = 0 != m_port;
+    }
+    m_port = url_canonicalize_port(this->type_get(), m_port);
+  } else {
+    m_host_length = 0; // reset in case any earlier check corrupted it
+  }
+  m_target_cached = true;
+}
+
+void
+HTTPHdr::set_url_target_from_host_field(URL* url) {
+  this->_test_and_fill_target_cache();
+
+  if (!url) {
+    // Use local cached URL and don't copy if the target
+    // is already there.
+    if (!m_target_in_url && m_host_length) {
+      m_url_cached.host_set(m_host, m_host_length);
+      if (m_port_in_header) m_url_cached.port_set(m_port);
+      m_target_in_url = true; // it's there now.
+    }
+  } else {
+    url->host_set(m_host, m_host_length);
+    if (m_port_in_header) url->port_set(m_port);
+  }
+}
+
 /***********************************************************************
  *                                                                     *
  *                        M A R S H A L I N G                          *
