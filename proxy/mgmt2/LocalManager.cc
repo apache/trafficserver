@@ -1407,12 +1407,16 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, bool transparent,  
   }
 
   if (transparent) {
+#if ATS_USE_TPROXY
     int transparent_value = 1;
     Debug("http_tproxy", "Listen port %d inbound transparency enabled.\n", proxy_port);
     if (setsockopt(proxy_port_fd, SOL_IP, ATS_IP_TRANSPARENT, &transparent_value, sizeof(transparent_value)) == -1) {
       mgmt_elog(stderr, "[bindProxyPort] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
       _exit(1);
     }
+#else
+    Debug("lm", "[bindProxyPort] Transparency requested but TPROXY not configured\n");
+#endif
   }
 
   memset(&proxy_addr, 0, sizeof(proxy_addr));
