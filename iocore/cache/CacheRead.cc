@@ -815,6 +815,7 @@ Lread:
           buf = NULL;
           last_collision = NULL;
           write_len = 0;
+          header_len = write_vector->marshal_length();
           f.evac_vector = 1;
           f.use_first_key = 1;
           key = first_key;

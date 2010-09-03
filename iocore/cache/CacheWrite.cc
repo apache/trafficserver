@@ -125,6 +125,7 @@ CacheVC::updateVector(int event, Event *e)
               "rewriting resident alt size: %d key: %X, first_key: %X", write_len, doc->key.word(0), first_key.word(0));
       }
     }
+    header_len = write_vector->marshal_length();
     od->writing_vec = 1;
     f.use_first_key = 1;
     SET_HANDLER(&CacheVC::openWriteCloseHeadDone);
@@ -178,26 +179,13 @@ CacheVC::handleWrite(int event, Event *e)
 
   // plain write case
   ink_assert(!trigger);
-#ifdef HTTP_CACHE
-  if (frag_type == CACHE_FRAG_TYPE_HTTP && (f.use_first_key || f.evac_vector)) {
-    ink_assert(od->writing_vec);
-    header_len = write_vector->marshal_length();
-    ink_assert(header_len > 0);
-  } else if (f.use_first_key)
-#endif
-    header_len = header_to_write_len;
   if (f.use_first_key && fragment) {
     frag_len = (fragment-1) * sizeof(Frag);
   } else
     frag_len = 0;
   set_agg_write_in_progress();
   POP_HANDLER;
-  uint32 to_write = write_len + header_len + sizeofDoc;
-  if (to_write > MAX_FRAG_SIZE) {
-    write_len = MAX_FRAG_SIZE - header_len - sizeofDoc;
-    to_write = MAX_FRAG_SIZE;
-  }
-  agg_len = round_to_approx_size(to_write);
+  agg_len = round_to_approx_size(write_len + header_len + frag_len + sizeofDoc);
   part->agg_todo_size += agg_len;
   bool agg_error =
     (agg_len > AGG_SIZE || header_len + sizeofDoc > MAX_FRAG_SIZE ||
@@ -759,9 +747,9 @@ agg_copy(char *p, CacheVC *vc)
 
     uint32 len = vc->write_len + vc->header_len + vc->frag_len + sizeofDoc;
     ink_assert(vc->frag_type != CACHE_FRAG_TYPE_HTTP || len != sizeofDoc);
-    int writelen = round_to_approx_size(len);
+    ink_debug_assert(round_to_approx_size(len) == vc->agg_len);
     // update copy of directory entry for this document
-    dir_set_approx_size(&vc->dir, writelen);
+    dir_set_approx_size(&vc->dir, vc->agg_len);
     dir_set_offset(&vc->dir, offset_to_part_offset(part, o));
     ink_assert(part_offset(part, &vc->dir) < (part->skip + part->len));
     dir_set_phase(&vc->dir, part->header->phase);
@@ -870,7 +858,7 @@ agg_copy(char *p, CacheVC *vc)
     if (res_alt_blk)
       res_alt_blk->free();
 
-    return writelen;
+    return vc->agg_len;
   } else {
     // for evacuated documents, copy the data, and update directory
     Doc *doc = (Doc *) vc->buf->data();
@@ -1219,6 +1207,7 @@ int
 CacheVC::openWriteCloseDataDone(int event, Event *e)
 {
   NOWARN_UNUSED(e);
+  int ret = 0;
 
   if (event == AIO_EVENT_DONE)
     set_io_not_in_progress();
@@ -1230,13 +1219,28 @@ CacheVC::openWriteCloseDataDone(int event, Event *e)
     CACHE_TRY_LOCK(lock, part->mutex, this_ethread());
     if (!lock)
       VC_LOCK_RETRY_EVENT();
+    if (!fragment) {
+      ink_assert(key == earliest_key);
+      earliest_dir = dir;
+    }
     fragment++;
     write_pos += write_len;
     dir_insert(&key, part, &dir);
+    blocks = iobufferblock_skip(blocks, &offset, &length, write_len);
+    next_CacheKey(&key, &key);
+    if (length) {
+      write_len = length;
+      if (write_len > MAX_FRAG_SIZE)
+        write_len = MAX_FRAG_SIZE;
+      if ((ret = do_write_call()) == EVENT_RETURN)
+        goto Lcallreturn;
+      return ret;
+    }
     f.data_done = 1;
-    ink_assert(fragment);
     return openWriteCloseHead(event, e); // must be called under part lock from here
   }
+Lcallreturn:
+  return handleEvent(AIO_EVENT_DONE, 0);
 }
 
 int
@@ -1266,9 +1270,11 @@ CacheVC::openWriteClose(int event, Event *e)
       return openWriteCloseDir(event, e);
 #endif
     }
-    if (length && fragment) {
+    if (length && (fragment || length > MAX_FRAG_SIZE)) {
       SET_HANDLER(&CacheVC::openWriteCloseDataDone);
       write_len = length;
+      if (write_len > MAX_FRAG_SIZE)
+        write_len = MAX_FRAG_SIZE;
       return do_write_lock_call();
     } else
       return openWriteCloseHead(event, e);

@@ -364,6 +364,8 @@ CacheVC::scanOpenWrite(int event, Event * e)
     // the document was not modified
     // we are safe from now on as we hold the
     // writer lock on the doc
+    if (f.evac_vector)
+      header_len = write_vector->marshal_length();
     SET_HANDLER(&CacheVC::scanUpdateDone);
     ret = do_write_call();
   }
