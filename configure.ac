@@ -1028,7 +1028,11 @@ proxy_usage="$tproxy_usage_enable$tproxy_usage_default$tproxy_usage_numeric$tpro
 
 AS_IF([test "x$enable_tproxy" != "xno"], [
   AS_IF([test "x${enable_posix_cap}" != "xyes"], [
-    AC_MSG_FAILURE([TPROXY feature requires POSIX capabilities.])
+    AS_IF([test "x$enable_tproxy" = xauto], [
+      AC_MSG_RESULT([no])
+    ],[
+      AC_MSG_FAILURE([TPROXY feature requires POSIX capabilities.])
+    ])
   ],[
     AC_MSG_CHECKING([for TPROXY sockopt IP_TRANSPARENT])
     AS_CASE("$enable_tproxy",
@@ -1042,7 +1046,7 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
 	use_tproxy=1
 	AC_MSG_RESULT([forced to $ip_transparent])
       ],
-      [yes], [
+      [yes|auto], [
         AS_IF([test -r $tproxy_header], [
 	  ip_transparent=`$AWK "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
 	  AS_IF([test "x$ip_transparent" != "x"], [
@@ -1050,26 +1054,20 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
 	    AC_MSG_RESULT([set to $ip_transparent])
 	  ],[
 	    ip_transparent=0
-	    AC_MSG_RESULT([failed])
-	    AC_MSG_FAILURE([tproxy feature enabled but the sockopt value was not found in $tproxy_header. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+	    AS_IF([test "x$enable_tproxy" = xauto], [
+	     AC_MSG_RESULT([no])
+	    ],[
+	      AC_MSG_RESULT([failed])
+	      AC_MSG_FAILURE([tproxy feature enabled but the sockopt value was not found in $tproxy_header. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+	    ])
 	  ])
 	],[
-	  AC_MSG_RESULT([failed])
-	  AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
-	])
-      ],
-      # same as 'yes' but silent fail.
-      [auto], [
-        AS_IF([test -r $tproxy_header], [
-	  ip_transparent=`gawk "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
-	  AS_IF([test "x$ip_transparent" != "x"], [
-	    use_tproxy=1
-	    AC_MSG_RESULT([set to $ip_transparent])
-	  ],[
+	  AS_IF([test "x$enable_tproxy" = xauto], [
 	    AC_MSG_RESULT([no])
+	  ],[
+	    AC_MSG_RESULT([failed])
+	    AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
 	  ])
-	],[
-	  AC_MSG_RESULT([no])
 	])
       ],
       [
