@@ -113,7 +113,9 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
     }
   }
 
-  if (!mapping_found) {
+  if (mapping_found) {
+    request_header->mark_target_dirty();
+  } else {
     Debug("url_rewrite", "RemapProcessor::setup_for_remap did not find a mapping");
   }
 

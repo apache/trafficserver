@@ -5931,8 +5931,6 @@ void
 HttpTransact::initialize_state_variables_from_request(State * s, HTTPHdr * obsolete_incoming_request)
 {
   HTTPHdr* incoming_request = &(s->hdr_info.client_request);
-  // TEMP FIX: see TS-433
-  incoming_request->mark_target_dirty();
 
   // Temporary, until we're confident that the second argument is redundant.
   ink_assert(incoming_request == obsolete_incoming_request);

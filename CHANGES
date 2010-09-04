@@ -8,6 +8,8 @@ Changes with Apache Traffic Server 2.1.3
   *) TS fails to use user ID with user name longer than 8 characters
    [TS-420].
 
+  *) Forward transparency is available on Linux kernels with TPROXY. [TS-291]
+
 
 Changes with Apache Traffic Server 2.1.2
 
