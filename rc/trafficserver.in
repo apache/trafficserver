@@ -52,6 +52,8 @@ elif [ -e /etc/debian_version ]; then
   DISTRIB_ID="debian" # also exists on Ubuntu
 elif [ -e /etc/slackware-version ]; then
   DISTRIB_ID="slackware"
+elif [ $(uname -s) = "Darwin" ]; then
+  DISTRIB_ID="Darwin"
 fi
 
 # /usr/bin/lsb_release -rd # Ubuntu release & description info
@@ -96,6 +98,8 @@ if [ -d /etc/rc.d/init.d ]; then
   SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
 elif [ -d /etc/init.d ]; then
   SCRIPTNAME=/etc/init.d/$NAME # Ubuntu
+elif [ $DISTRIB_ID = "Darwin" ]; then
+  SCRIPTNAME=$0 # Darwin
 else
   echo "This script needs to be ported to this OS"
   exit 1
@@ -247,6 +251,10 @@ case "$1" in
       echo -n "Starting ${TS_PACKAGE_NAME}"
       startproc -p $TC_PIDFILE $TC_DAEMON $TC_DAEMON_ARGS
       rc_status -v
+    elif [ "$DISTRIB_ID" = "Darwin" ]; then
+      echo "Starting ${TS_PACKAGE_NAME}"
+      launchctl list $TC_NAME > /dev/null 2>&1 && exit 0
+      launchctl submit -l $TC_NAME -p $TC_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TC_DAEMON_ARGS
     else
         echo "This script needs to be ported to this OS"
         exit 1
@@ -274,6 +282,18 @@ case "$1" in
       echo -n "Stopping ${TS_NAME}"
       killproc -p $TS_PIDFILE $TS_DAEMON
       rc_status -v
+    elif [ "$DISTRIB_ID" = "Darwin" ]; then
+      echo "Stopping ${TS_PACKAGE_NAME}"
+      launchctl list $TC_NAME > /dev/null 2>&1 || exit 0
+      echo "Stopping ${TC_NAME}"
+      launchctl remove ${TC_NAME}
+      rm -f ${TC_PIDFILE}
+      echo "Stopping ${TM_NAME}"
+      kill $(cat $TM_PIDFILE)
+      rm -f ${TM_PIDFILE}
+      echo "Stopping ${TS_NAME}"
+      kill $(cat $TS_PIDFILE)
+      rm -f ${TS_PIDFILE}
     else
       echo "This script needs to be ported to this OS"
       exit 1
@@ -323,6 +343,13 @@ case "$1" in
       echo -n "Checking for service ${DM}: "
       checkproc -p $TC_PIDFILE $TC_NAME
       rc_status -v
+    elif [ "$DISTRIB_ID" = "Darwin" ]; then
+      /bin/echo -n "${TS_PACKAGE_NAME} is "
+      launchctl list $TC_NAME > /dev/null 2>&1
+      status=$?
+      [ $status -eq 0 ] || /bin/echo -n "not "
+      echo "running."
+      exit $status
     else
       echo "This script needs to be ported to this OS"
       exit 1
@@ -346,6 +373,8 @@ case "$1" in
     elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
       echo "Usage: $0 {start|stop|status|restart|condrestart}"
     elif [ "$DISTRIB_ID" = "suse" ]; then
+      echo "Usage: $0 {start|stop|restart|status}"
+    elif [ "$DISTRIB_ID" = "Darwin" ]; then
       echo "Usage: $0 {start|stop|restart|status}"
     else
       echo "This script needs to be ported to this OS"
