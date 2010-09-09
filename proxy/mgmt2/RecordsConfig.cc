@@ -263,17 +263,17 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.diags.output.debug", "", INK_STRING, "E", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.diags.output.status", "", INK_STRING, "S", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.diags.output.status", "", INK_STRING, "E", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.diags.output.note", "", INK_STRING, "S", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.diags.output.note", "", INK_STRING, "E", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.diags.output.warning", "", INK_STRING, "S", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.diags.output.warning", "", INK_STRING, "E", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.diags.output.error", "", INK_STRING, "SE", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.diags.output.fatal", "", INK_STRING, "SE", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.diags.output.alert", "", INK_STRING, "SE", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.diags.output.alert", "", INK_STRING, "E", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.diags.output.emergency", "", INK_STRING, "SE", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
