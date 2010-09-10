@@ -1963,8 +1963,10 @@ extern "C"
   inkapi int INKHttpTxnServerRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnCachedReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnCachedRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
-  inkapi int               INKFetchPageRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *offset);
-  inkapi char*               INKFetchRespGet (INKHttpTxn txnp, int *length);
+  inkapi void INKHttpTxnSetRespCacheableSet(INKHttpTxn txnp);
+  inkapi void INKHttpTxnSetReqCacheableSet(INKHttpTxn txnp);
+  inkapi int INKFetchPageRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *offset);
+  inkapi char* INKFetchRespGet (INKHttpTxn txnp, int *length);
   inkapi INKReturnCode INKHttpTxnCacheLookupStatusGet(INKHttpTxn txnp, int *lookup_status);
 
   inkapi int INKHttpTxnTransformRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);

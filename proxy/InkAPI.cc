@@ -5795,6 +5795,20 @@ INKHttpTxnAborted(INKHttpTxn txnp)
   return 0;
 }
 
+void
+INKHttpTxnSetReqCacheableSet(INKHttpTxn txnp)
+{
+  HttpSM* sm = (HttpSM*)txnp;
+  sm->t_state.api_req_cacheable = true;
+}
+
+void
+INKHttpTxnSetRespCacheableSet(INKHttpTxn txnp)
+{
+  HttpSM* sm = (HttpSM*)txnp;
+  sm->t_state.api_resp_cacheable = true;
+}
+
 int
 INKHttpTxnClientReqIsServerStyle(INKHttpTxn txnp)
 {

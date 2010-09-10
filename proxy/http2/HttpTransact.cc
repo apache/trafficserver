@@ -2930,7 +2930,7 @@ HttpTransact::build_response_from_cache(State * s, HTTPWarningCode warning_code)
     // fall through
   default:
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_HIT_SERVED);
-    if (s->method == HTTP_WKSIDX_GET) {
+    if (s->method == HTTP_WKSIDX_GET || s->api_resp_cacheable == true) {
 
       // send back the full document to the client.
       Debug("http_trans", "[build_response_from_cache] Match! Serving full document.");
@@ -3145,7 +3145,7 @@ HttpTransact::HandleCacheOpenReadMiss(State * s)
   }
   // We do a cache lookup for DELETE and PUT requests as well.
   // We must, however, not cache the responses to these requests.
-  if (does_method_require_cache_copy_deletion(s->method)) {
+  if (does_method_require_cache_copy_deletion(s->method) && s->api_req_cacheable == false) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
   } else if (s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
@@ -6238,7 +6238,7 @@ HttpTransact::is_cache_response_returnable(State * s)
     return false;
   }
 
-  if (!HttpTransactHeaders::is_method_cacheable(s->method)) {
+  if (!HttpTransactHeaders::is_method_cacheable(s->method) && s->api_resp_cacheable == false) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
     return false;
@@ -6403,7 +6403,7 @@ HttpTransact::is_request_cache_lookupable(State * s, HTTPHdr * incoming)
     return false;
   }
   // GET, HEAD, POST, DELETE, and PUT are all cache lookupable
-  if (!HttpTransactHeaders::is_method_cache_lookupable(s->method)) {
+  if (!HttpTransactHeaders::is_method_cache_lookupable(s->method) && s->api_req_cacheable == false) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_METHOD);
     return false;
   }
@@ -6510,7 +6510,7 @@ HttpTransact::is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * resp
   // Basically, the problem is the resp for POST url1 req should not
   // be served to a GET url1 request, but we just match URL not method.
   int req_method = request->method_get_wksidx();
-  if (!(HttpTransactHeaders::is_method_cacheable(req_method))) {
+  if (!(HttpTransactHeaders::is_method_cacheable(req_method)) && s->api_req_cacheable == false) {
     Debug("http_trans", "[is_response_cacheable] " "only GET, and some HEAD and POST are cachable");
     return (false);
   }
@@ -8257,7 +8257,7 @@ HttpTransact::handle_server_died(State * s)
 bool
 HttpTransact::is_request_likely_cacheable(State * s, HTTPHdr * request)
 {
-  if ((s->method == HTTP_WKSIDX_GET) && !request->presence(MIME_PRESENCE_AUTHORIZATION)) {
+  if ((s->method == HTTP_WKSIDX_GET || s->api_req_cacheable == true) && !request->presence(MIME_PRESENCE_AUTHORIZATION)) {
     return true;
   }
   return false;
