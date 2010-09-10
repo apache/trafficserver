@@ -73,6 +73,7 @@ int cache_config_agg_write_backlog = 5242880;
 int cache_config_hit_evacuate_percent = 10;
 int cache_config_hit_evacuate_size_limit = 0;
 #endif
+int cache_config_force_sector_size = 0;
 int cache_config_enable_checksum = 0;
 int cache_config_alt_rewrite_max_size = 4096;
 int cache_config_read_while_writer = 0;
@@ -118,8 +119,8 @@ struct PartInitInfo
   PartInitInfo()
   {
     recover_pos = 0;
-    if ((part_h_f = (char *) valloc(4 * INK_BLOCK_SIZE)) != NULL)
-      memset(part_h_f, 0, 4 * INK_BLOCK_SIZE);
+    if ((part_h_f = (char *) valloc(4 * STORE_BLOCK_SIZE)) != NULL)
+      memset(part_h_f, 0, 4 * STORE_BLOCK_SIZE);
   }
   ~PartInitInfo()
   {
@@ -538,7 +539,12 @@ CacheProcessor::start_internal(int flags)
       if (diskok) {
         gdisks[gndisks] = NEW(new CacheDisk());
         Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
-        gdisks[gndisks]->open(path, blocks, offset, fd, clear);
+        int sector_size = sd->hw_sector_size;
+        if (sector_size < cache_config_force_sector_size)
+          sector_size = cache_config_force_sector_size;
+        if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE)
+          Error("bad hardware sector size");
+        gdisks[gndisks]->open(path, blocks, offset, sector_size, fd, clear);
         gndisks++;
       }
     } else
@@ -868,14 +874,14 @@ Part::db_check(bool fix)
   (void) fix;
   char tt[256];
   printf("    Data for [%s]\n", hash_id);
-  printf("        Blocks:          %d\n", (int) (len / INK_BLOCK_SIZE));
-  printf("        Write Position:  %d\n", (int) ((header->write_pos - skip) / INK_BLOCK_SIZE));
-  printf("        Phase:           %d\n", (int) !!header->phase);
+  printf("        Length:          %lld\n", (uint64)len);
+  printf("        Write Position:  %lld\n", (uint64) (header->write_pos - skip));
+  printf("        Phase:           %d\n", (int)!!header->phase);
   ink_ctime_r(&header->create_time, tt);
   tt[strlen(tt) - 1] = 0;
   printf("        Create Time:     %s\n", tt);
-  printf("        Sync Serial:     %d\n", (int) header->sync_serial);
-  printf("        Write Serial:    %d\n", (int) header->write_serial);
+  printf("        Sync Serial:     %u\n", (unsigned int)header->sync_serial);
+  printf("        Write Serial:    %u\n", (unsigned int)header->write_serial);
   printf("\n");
 
   return 0;
@@ -930,6 +936,7 @@ part_clear_init(Part *d)
   d->header->cycle = 0;
   d->header->create_time = time(NULL);
   d->header->dirty = 0;
+  d->sector_size = d->header->sector_size = d->disk->hw_sector_size;
   *d->footer = *d->header;
 }
 
@@ -968,13 +975,14 @@ Part::clear_dir()
 int
 Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
-  dir_skip = ROUND_TO_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
+  dir_skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
   path = strdup(s);
   const size_t hash_id_size = strlen(s) + 32;
   hash_id = (char *) malloc(hash_id_size);
   ink_strncpy(hash_id, s, hash_id_size);
   const size_t s_size = strlen(s);
-  snprintf(hash_id + s_size, (hash_id_size - s_size), " %d:%d", (int) (dir_skip / INK_BLOCK_SIZE), (int) blocks);
+  snprintf(hash_id + s_size, (hash_id_size - s_size), " %lld:%lld", 
+           (uint64)dir_skip, (uint64)blocks);
   hash_id_md5.encodeBuffer(hash_id, strlen(hash_id));
   len = blocks * STORE_BLOCK_SIZE;
   ink_assert(len <= MAX_PART_SIZE);
@@ -985,7 +993,7 @@ Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   // successive approximation, directory/meta data eats up some storage
   start = dir_skip;
   part_init_data(this);
-  data_blocks = (len - (start - skip)) / INK_BLOCK_SIZE;
+  data_blocks = (len - (start - skip)) / STORE_BLOCK_SIZE;
 #ifdef HIT_EVACUATE
   hit_evacuate_window = (data_blocks * cache_config_hit_evacuate_percent) / 100;
 #endif
@@ -1013,7 +1021,7 @@ Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 
   dir = (Dir *) (raw_dir + part_headerlen(this));
   header = (PartHeaderFooter *) raw_dir;
-  footer = (PartHeaderFooter *) (raw_dir + part_dirlen(this) - ROUND_TO_BLOCK(sizeof(PartHeaderFooter)));
+  footer = (PartHeaderFooter *) (raw_dir + part_dirlen(this) - ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter)));
 
   if (clear) {
     Note("clearing cache directory '%s'", hash_id);
@@ -1021,7 +1029,7 @@ Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   }
 
   init_info = new PartInitInfo();
-  int footerlen = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
+  int footerlen = ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter));
   off_t footer_offset = part_dirlen(this) - footerlen;
   // try A
   off_t as = skip;
@@ -1037,7 +1045,7 @@ Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   for (i = 0; i < 4; i++) {
     AIOCallback *aio = &(init_info->part_aio[i]);
     aio->aiocb.aio_fildes = fd;
-    aio->aiocb.aio_buf = &(init_info->part_h_f[i * INK_BLOCK_SIZE]);
+    aio->aiocb.aio_buf = &(init_info->part_h_f[i * STORE_BLOCK_SIZE]);
     aio->aiocb.aio_nbytes = footerlen;
     aio->action = this;
     aio->thread = this_ethread();
@@ -1065,7 +1073,7 @@ Part::handle_dir_clear(int event, void *data)
       /* clear the header for directory B. We don't need to clear the
          whole of directory B. The header for directory B starts at
          skip + len */
-      op->aiocb.aio_nbytes = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
+      op->aiocb.aio_nbytes = ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter));
       op->aiocb.aio_offset = skip + dir_len;
       ink_assert(ink_aio_write(op));
       return EVENT_DONE;
@@ -1097,7 +1105,7 @@ Part::handle_dir_read(int event, void *data)
     return EVENT_DONE;
   }
   CHECK_DIR(this);
-
+  sector_size = header->sector_size;
   SET_HANDLER(&Part::handle_recover_from_data);
   return handle_recover_from_data(EVENT_IMMEDIATE, 0);
 }
@@ -1142,7 +1150,7 @@ int
 Part::handle_recover_from_data(int event, void *data)
 {
   (void) data;
-  int got_len = 0;
+  uint32 got_len = 0;
   uint32 max_sync_serial = header->sync_serial;
   char *s, *e;
   if (event == EVENT_IMMEDIATE) {
@@ -1180,9 +1188,9 @@ Part::handle_recover_from_data(int event, void *data)
          were written to just before syncing the directory) and make sure
          that all documents have write_serial <= header->write_serial.
        */
-      int to_check = header->write_pos - header->last_write_pos;
-      ink_assert(to_check && to_check < (int) io.aiocb.aio_nbytes);
-      int done = 0;
+      uint32 to_check = header->write_pos - header->last_write_pos;
+      ink_assert(to_check && to_check < (uint32)io.aiocb.aio_nbytes);
+      uint32 done = 0;
       s = (char *) io.aiocb.aio_buf;
       while (done < to_check) {
         Doc *doc = (Doc *) (s + done);
@@ -1362,7 +1370,7 @@ Ldone:{
       aio->thread = AIO_CALLBACK_THREAD_ANY;
       aio->then = (i < 2) ? &(init_info->part_aio[i + 1]) : 0;
     }
-    int footerlen = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
+    int footerlen = ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter));
     int dirlen = part_dirlen(this);
     int B = header->sync_serial & 1;
     off_t ss = skip + (B ? dirlen : 0);
@@ -1507,7 +1515,7 @@ build_part_hash_table(CacheHostRecord *cp)
     }
     mapping[map] = i;
     p[map++] = cp->parts[i];
-    total += (cp->parts[i]->len >> INK_BLOCK_SHIFT);
+    total += (cp->parts[i]->len >> STORE_BLOCK_SHIFT);
   }
 
   num_parts -= bad_parts;
@@ -1529,7 +1537,7 @@ build_part_hash_table(CacheHostRecord *cp)
   unsigned short *ttable = (unsigned short *) xmalloc(sizeof(unsigned short) * PART_HASH_TABLE_SIZE);
 
   for (i = 0; i < num_parts; i++) {
-    forpart[i] = (PART_HASH_TABLE_SIZE * (p[i]->len >> INK_BLOCK_SHIFT)) / total;
+    forpart[i] = (PART_HASH_TABLE_SIZE * (p[i]->len >> STORE_BLOCK_SHIFT)) / total;
     used += forpart[i];
   }
   // spread around the excess
@@ -2680,6 +2688,8 @@ ink_cache_init(ModuleVersion v)
   IOCORE_EstablishStaticConfigInt32(cache_config_hit_evacuate_size_limit, "proxy.config.cache.hit_evacuate_size_limit");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
 #endif
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.force_sector_size", 0, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
 #ifdef HTTP_CACHE
   extern int url_hash_method;
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.url_hash_method", 1, RECU_RESTART_TS, RECC_NULL, NULL);

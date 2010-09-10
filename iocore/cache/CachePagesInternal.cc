@@ -271,9 +271,9 @@ ShowCacheInternal::showPartPartitions(int event, Event * e)
   for (c = p->agg.head; c; c = (CacheVC *) c->link.next)
     agg_todo++;
   CHECK_SHOW(show("<tr>" "<td>%s</td>"  // ID
-                  "<td>%d</td>" // blocks
+                  "<td>%lld</td>" // blocks
                   "<td>%lld</td>" // directory entries
-                  "<td>%d</td>" // write position
+                  "<td>%lld</td>" // write position
                   "<td>%d</td>" // write agg to do
                   "<td>%d</td>" // write agg to do size
                   "<td>%d</td>" // write agg done
@@ -283,9 +283,9 @@ ShowCacheInternal::showPartPartitions(int event, Event * e)
                   "<td>%u</td>" // write serial
                   "</tr>\n",
                   p->hash_id,
-                  (int) ((p->len - (p->start - p->skip)) / INK_BLOCK_SIZE),
+                  (uint64)((p->len - (p->start - p->skip)) / CACHE_BLOCK_SIZE),
                   (uint64)(p->buckets * DIR_DEPTH * p->segments),
-                  (int) ((p->header->write_pos - p->start) / INK_BLOCK_SIZE),
+                  (uint64)((p->header->write_pos - p->start) / CACHE_BLOCK_SIZE),
                   agg_todo,
                   p->agg_todo_size,
                   agg_done, p->header->phase, ctime, p->header->sync_serial, p->header->write_serial));

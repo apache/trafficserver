@@ -185,7 +185,7 @@ CacheVC::handleWrite(int event, Event *e)
     frag_len = 0;
   set_agg_write_in_progress();
   POP_HANDLER;
-  agg_len = round_to_approx_size(write_len + header_len + frag_len + sizeofDoc);
+  agg_len = part->round_to_approx_size(write_len + header_len + frag_len + sizeofDoc);
   part->agg_todo_size += agg_len;
   bool agg_error =
     (agg_len > AGG_SIZE || header_len + sizeofDoc > MAX_FRAG_SIZE ||
@@ -335,8 +335,8 @@ Part::aggWriteDone(int event, Event *e)
     Debug("cache_disk_error", "Write error on disk %s\n \
               write range : [%llu - %llu bytes]  [%llu - %llu blocks] \n",
           hash_id, io.aiocb.aio_offset, io.aiocb.aio_offset + io.aiocb.aio_nbytes,
-          io.aiocb.aio_offset / INK_BLOCK_SIZE,
-          (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / INK_BLOCK_SIZE);
+          io.aiocb.aio_offset / CACHE_BLOCK_SIZE,
+          (io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
     Dir del_dir;
     dir_clear(&del_dir);
     for (int done = 0; done < agg_buf_pos;) {
@@ -591,7 +591,7 @@ Part::evacuateWrite(CacheVC *evacuator, int event, Event *e)
 
   // push to front of aggregation write list, so it is written first
 
-  evacuator->agg_len = round_to_approx_size(((Doc *) evacuator->buf->data())->len);
+  evacuator->agg_len = round_to_approx_size(((Doc *)evacuator->buf->data())->len);
   agg_todo_size += evacuator->agg_len;
   /* insert the evacuator after all the other evacuators */
   CacheVC *cur = (CacheVC *) agg.head;
@@ -747,7 +747,7 @@ agg_copy(char *p, CacheVC *vc)
 
     uint32 len = vc->write_len + vc->header_len + vc->frag_len + sizeofDoc;
     ink_assert(vc->frag_type != CACHE_FRAG_TYPE_HTTP || len != sizeofDoc);
-    ink_debug_assert(round_to_approx_size(len) == vc->agg_len);
+    ink_debug_assert(part->round_to_approx_size(len) == vc->agg_len);
     // update copy of directory entry for this document
     dir_set_approx_size(&vc->dir, vc->agg_len);
     dir_set_offset(&vc->dir, offset_to_part_offset(part, o));
@@ -862,7 +862,7 @@ agg_copy(char *p, CacheVC *vc)
   } else {
     // for evacuated documents, copy the data, and update directory
     Doc *doc = (Doc *) vc->buf->data();
-    int l = round_to_approx_size(doc->len);
+    int l = vc->part->round_to_approx_size(doc->len);
     {
       ProxyMutex RELEASE_UNUSED *mutex = vc->part->mutex;
       ink_debug_assert(mutex->thread_holding == this_ethread());
@@ -906,7 +906,7 @@ Part::evacuate_cleanup_blocks(int i)
 void
 Part::evacuate_cleanup()
 {
-  int64 eo = ((header->write_pos - start) / INK_BLOCK_SIZE) + 1;
+  int64 eo = ((header->write_pos - start) / CACHE_BLOCK_SIZE) + 1;
   int64 e = dir_offset_evac_bucket(eo);
   int64 sx = e - (evacuate_size / PIN_SCAN_EVERY) - 1;
   int64 s = sx;

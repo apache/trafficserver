@@ -46,7 +46,7 @@ struct CacheVC;
 #define DIR_SIZE_WIDTH                  6
 #define DIR_BLOCK_SIZES                 4
 #define DIR_BLOCK_SHIFT(_i)             (3*(_i))
-#define DIR_BLOCK_SIZE(_i)              (INK_BLOCK_SIZE << DIR_BLOCK_SHIFT(_i))
+#define DIR_BLOCK_SIZE(_i)              (CACHE_BLOCK_SIZE << DIR_BLOCK_SHIFT(_i))
 #define DIR_SIZE_WITH_BLOCK(_i)         ((1<<DIR_SIZE_WIDTH) * DIR_BLOCK_SIZE(_i))
 #define DIR_OFFSET_BITS                 40
 #define DIR_OFFSET_MAX                  ((((off_t)1) << DIR_OFFSET_BITS) - 1)
@@ -167,10 +167,10 @@ struct FreeDir
   }                                                              \
 } while (0)
 #define dir_approx_size(_e) ((dir_size(_e) + 1) * DIR_BLOCK_SIZE(dir_big(_e)))
-#define round_to_approx_size(_s) (_s <= DIR_SIZE_WITH_BLOCK(0) ? ROUND_TO(_s, DIR_BLOCK_SIZE(0)) : \
-                                  (_s <= DIR_SIZE_WITH_BLOCK(1) ? ROUND_TO(_s, DIR_BLOCK_SIZE(1)) : \
-                                   (_s <= DIR_SIZE_WITH_BLOCK(2) ? ROUND_TO(_s, DIR_BLOCK_SIZE(2)) : \
-                                    ROUND_TO(_s, DIR_BLOCK_SIZE(3)))))
+#define round_to_approx_dir_size(_s) (_s <= DIR_SIZE_WITH_BLOCK(0) ? ROUND_TO(_s, DIR_BLOCK_SIZE(0)) : \
+                                      (_s <= DIR_SIZE_WITH_BLOCK(1) ? ROUND_TO(_s, DIR_BLOCK_SIZE(1)) : \
+                                       (_s <= DIR_SIZE_WITH_BLOCK(2) ? ROUND_TO(_s, DIR_BLOCK_SIZE(2)) : \
+                                        ROUND_TO(_s, DIR_BLOCK_SIZE(3)))))
 #define dir_tag(_e) ((uint32)((_e)->w[2]&((1<<DIR_TAG_WIDTH)-1)))
 #define dir_set_tag(_e,_t) (_e)->w[2] = (uint16)(((_e)->w[2]&~((1<<DIR_TAG_WIDTH)-1)) | ((_t)&((1<<DIR_TAG_WIDTH)-1)))
 #define dir_phase(_e) dir_bit(_e,2,12)

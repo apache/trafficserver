@@ -461,7 +461,7 @@ Span::init(char *an, int64 size)
   }
 #endif
 
-  disk_block_size = fs.f_bsize;
+  hw_sector_size = fs.f_bsize;
   int64 fsize = (int64) fs.f_blocks * (int64) fs.f_bsize;
 
   switch ((s.st_mode & S_IFMT)) {
@@ -616,11 +616,16 @@ Span::init(char *filename, int64 size)
   }
   Debug("cache_init", "Span::init - socketManager.open(\"%s\", O_RDONLY) = %d", filename, fd);
 
-  if (ioctl(fd, BLKSSZGET, &arg) == 0) {
-    disk_block_size = arg;
+#ifdef BLKPBSZGET
+  if (ioctl(fd, BLKPBSZGET, &arg) == 0)
+#else
+  if (ioctl(fd, BLKSSZGET, &arg) == 0)
+#endif
+  {
+    hw_sector_size = arg;
     is_disk = 1;
-    adjusted_sec = disk_block_size / 512;
-    Debug("cache_init", "Span::init - disk_block_size = %d,is_disk = %d,adjusted_sec = %d", filename, fd, adjusted_sec);
+    adjusted_sec = hw_sector_size / 512;
+    Debug("cache_init", "Span::init - %s hw_sector_size = %d,is_disk = %d,adjusted_sec = %d", filename, hw_sector_size, is_disk,adjusted_sec);
   }
 
   if (is_disk) {
@@ -649,13 +654,13 @@ Span::init(char *filename, int64 size)
 
     blocks = heads * sectors * cylinders;
 
-    if (size > 0 && blocks * disk_block_size != size) {
+    if (size > 0 && blocks * hw_sector_size != size) {
       Warning("Warning: you specified a size of %lld for %s,\n", size, filename);
-      Warning("but the device size is %lld. Using minimum of the two.\n", blocks * disk_block_size);
-      if (blocks * disk_block_size < size)
-        size = blocks * disk_block_size;
+      Warning("but the device size is %lld. Using minimum of the two.\n", blocks * hw_sector_size);
+      if (blocks * hw_sector_size < size)
+        size = blocks * hw_sector_size;
     } else {
-      size = blocks * disk_block_size;
+      size = blocks * hw_sector_size;
     }
 
     /* I don't know why I'm redefining blocks to be something that is quite

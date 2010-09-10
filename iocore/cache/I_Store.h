@@ -33,22 +33,19 @@
 
 #include "inktomi++.h"
 
-// ideally to match the system
-// should be the element of disk write atomicity
-// Many structures the cache will have to be changed if this constant changes
-# define STORE_BLOCK_SIZE       8192
-# define STORE_BLOCK_SHIFT      13
+#define STORE_BLOCK_SIZE       8192
+#define STORE_BLOCK_SHIFT      13
+#define DEFAULT_HW_SECTOR_SIZE 512
 
 //
 // A Store is a place to store data.
 // Those on the same disk should be in a linked list.
 //
-
 struct Span
 {
   char *pathname;
   int64 blocks;
-  int64 disk_block_size;
+  int64 hw_sector_size;
   bool file_pathname;           // the pathname is a file
   bool isRaw;
   int64 offset;                 // used only if (file == true)
@@ -58,37 +55,26 @@ struct Span
 private:
     bool is_mmapable_internal;
 public:
-    bool is_mmapable()
-  {
-    return is_mmapable_internal;
-  }
-  void set_mmapable(bool s)
-  {
-    is_mmapable_internal = s;
-  }
-  int64 size()
-  {
-    return blocks * STORE_BLOCK_SIZE;
-  }
+  bool is_mmapable() { return is_mmapable_internal; }
+  void set_mmapable(bool s) { is_mmapable_internal = s; }
+  int64 size() { return blocks * STORE_BLOCK_SIZE; }
 
-  int64 total_blocks()
-  {
+  int64 total_blocks() {
     if (link.next) {
       return blocks + link.next->total_blocks();
     } else {
       return blocks;
     }
   }
-  Span *nth(int i)
-  {
+
+  Span *nth(int i) {
     Span *x = this;
     while (x && i--)
       x = x->link.next;
     return x;
   }
 
-  int paths()
-  {
+  int paths() {
     int i = 0;
     for (Span * x = this; x; i++, x = x->link.next);
     return i;
@@ -97,22 +83,16 @@ public:
   int read(int fd);
 
   Span *dup();
-  int64 end()
-  {
-    return offset + blocks;
-  }
+  int64 end() { return offset + blocks; }
 
   const char *init(char *n, int64 size);
 
+  // 0 on success -1 on failure
   int path(char *filename,      // for non-file, the filename in the director
            int64 * offset,      // for file, start offset (unsupported)
            char *buf, int buflen);      // where to store the path
 
-  // 0 on success -1 on failure
-  // these operations are NOT thread-safe
-  //
-
-Span():pathname(NULL), blocks(0), disk_block_size(512), file_pathname(false),
+Span():pathname(NULL), blocks(0), hw_sector_size(DEFAULT_HW_SECTOR_SIZE), file_pathname(false),
     isRaw(true), offset(0), disk_id(0), is_mmapable_internal(false) {
   }
   ~Span();
@@ -122,16 +102,14 @@ struct Store
 {
   //
   // Public Interface
-  //
-
   // Thread-safe operations
+  //
 
   // spread evenly on all disks
   void spread_alloc(Store & s, unsigned int blocks, bool mmapable = true);
   void alloc(Store & s, unsigned int blocks, bool only_one = false, bool mmapable = true);
 
-  Span *alloc_one(unsigned int blocks, bool mmapable)
-  {
+  Span *alloc_one(unsigned int blocks, bool mmapable) {
     Store s;
       alloc(s, blocks, true, mmapable);
     if (s.n_disks)
@@ -185,8 +163,6 @@ struct Store
   int n_disks;
   Span **disk;
 
-  // 0 on success -1 on failure
-  // these operations are NOT thread-safe
   //
   // returns NULL on success
   // if fd >= 0 then on failure it returns an error string
@@ -205,12 +181,10 @@ void stealStore(Store & s, int blocks);
 
 int initialize_store();
 
-struct storageConfigFile
-{
-  const char *parseFile(int fd)
-  {
+struct storageConfigFile {
+  const char *parseFile(int fd) {
     Store tStore;
-      return tStore.read_config(fd);
+    return tStore.read_config(fd);
   }
 };
 

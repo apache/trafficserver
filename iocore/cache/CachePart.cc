@@ -140,7 +140,12 @@ CacheVC::scanObject(int event, Event * e)
     int i;
     bool changed;
 
-    if (doc->magic != DOC_MAGIC || doc->ftype != CACHE_FRAG_TYPE_HTTP || !doc->hlen)
+    if (doc->magic != DOC_MAGIC) {
+      doc = (Doc *)((char *) doc + CACHE_BLOCK_SIZE);
+      continue;
+    }
+      
+    if (doc->ftype != CACHE_FRAG_TYPE_HTTP || !doc->hlen)
       goto Lskip;
 
     last_collision = NULL;
@@ -238,11 +243,11 @@ CacheVC::scanObject(int event, Event * e)
         return scanOpenWrite(EVENT_NONE, 0);
       }
     }
-    doc = (Doc *) ((char *) doc + round_to_approx_size(doc->len));
+    doc = (Doc *) ((char *) doc + part->round_to_approx_size(doc->len));
     continue;
   Lskip:
 #endif
-    doc = (Doc *) ((char *) doc + INK_BLOCK_SIZE);
+    doc = (Doc *) ((char *) doc + part->round_to_approx_size(doc->len));
   }
 #ifdef HTTP_CACHE
   vector.clear();
@@ -335,7 +340,7 @@ CacheVC::scanOpenWrite(int event, Event * e)
     Dir *l = NULL;
     Dir d;
     Doc *doc = (Doc *) (buf->data() + offset);
-    offset = (char *) doc - buf->data() + round_to_approx_size(doc->len);
+    offset = (char *) doc - buf->data() + part->round_to_approx_size(doc->len);
     // if the doc contains some data, then we need to create
     // a new directory entry for this fragment. Remember the
     // offset and the key in earliest_key

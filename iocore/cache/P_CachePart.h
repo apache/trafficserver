@@ -25,23 +25,24 @@
 #ifndef _P_CACHE_PART_H__
 #define _P_CACHE_PART_H__
 
-#define INK_BLOCK_SHIFT                 9
-#define INK_BLOCK_SIZE                  (1<<INK_BLOCK_SHIFT)
-#define ROUND_TO_BLOCK(_x)              INK_ALIGN((_x), INK_BLOCK_SIZE)
+#define CACHE_BLOCK_SHIFT               9
+#define CACHE_BLOCK_SIZE                (1<<CACHE_BLOCK_SHIFT) // 512, smallest sector size
+#define ROUND_TO_STORE_BLOCK(_x)        INK_ALIGN((_x), STORE_BLOCK_SIZE)
+#define ROUND_TO_CACHE_BLOCK(_x)        INK_ALIGN((_x), CACHE_BLOCK_SIZE)
+#define ROUND_TO_SECTOR(_p, _x)         INK_ALIGN((_x), _p->sector_size)
 #define ROUND_TO(_x, _y)                INK_ALIGN((_x), (_y))
 
 // Part
 
 #define PART_MAGIC                      0xF1D0F00D
 #define START_BLOCKS                    32      // 8k
-#define START_POS                       ((off_t)START_BLOCKS * INK_BLOCK_SIZE)
-#define AGG_HEADER_SIZE                 INK_BLOCK_SIZE
+#define START_POS                       ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
 #define AGG_SIZE                        (4 * 1024 * 1024) // 4MB
 #define AGG_HIGH_WATER                  (AGG_SIZE / 2) // 2MB
 #define EVACUATION_SIZE                 (2 * AGG_SIZE)  // 8MB
 #define MAX_PART_SIZE                   ((off_t)512 * 1024 * 1024 * 1024 * 1024)
-#define STORE_BLOCKS_PER_DISK_BLOCK     (STORE_BLOCK_SIZE / INK_BLOCK_SIZE)
-#define MAX_PART_BLOCKS                 (MAX_PART_SIZE / INK_BLOCK_SIZE)
+#define STORE_BLOCKS_PER_CACHE_BLOCK    (STORE_BLOCK_SIZE / CACHE_BLOCK_SIZE)
+#define MAX_PART_BLOCKS                 (MAX_PART_SIZE / CACHE_BLOCK_SIZE)
 #define TARGET_FRAG_SIZE                (DEFAULT_MAX_BUFFER_SIZE - sizeofDoc)
 #define SHRINK_TARGET_FRAG_SIZE         (DEFAULT_MAX_BUFFER_SIZE + (DEFAULT_MAX_BUFFER_SIZE/4))
 #define MAX_FRAG_SIZE                   ((256 * 1024) - sizeofDoc)
@@ -58,7 +59,7 @@
 
 
 #define dir_offset_evac_bucket(_o) \
-  (_o / (EVACUATION_BUCKET_SIZE / INK_BLOCK_SIZE))
+  (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
 #define dir_evac_bucket(_e) dir_offset_evac_bucket(dir_offset(_e))
 #define offset_evac_bucket(_d, _o) \
   dir_offset_evac_bucket((offset_to_part_offset(_d, _o)
@@ -92,6 +93,8 @@ struct PartHeaderFooter
   uint32 sync_serial;
   uint32 write_serial;
   uint32 dirty;
+  uint32 sector_size;
+  uint32 unused;                // pad out to 8 byte boundary
   uint16 freelist[1];
 };
 
@@ -171,6 +174,7 @@ struct Part:public Continuation
   CachePart *cache_part;
   uint32 last_sync_serial;
   uint32 last_write_serial;
+  uint32 sector_size;
   bool recover_wrapped;
   bool dir_sync_waiting;
   bool dir_sync_in_progress;
@@ -227,7 +231,7 @@ struct Part:public Continuation
   {
     io.aiocb.aio_fildes = AIO_NOT_IN_PROGRESS;
   }
-
+  
   int aggWriteDone(int event, Event *e);
   int aggWrite(int event, void *e);
   void agg_wrap();
@@ -243,6 +247,7 @@ struct Part:public Continuation
   void evacuate_cleanup();
   EvacuationBlock *force_evacuate_head(Dir *dir, int pinned);
   int within_hit_evacuate_window(Dir *dir);
+  uint32 round_to_approx_size(uint32 l);
 
   Part():Continuation(new_ProxyMutex()), path(NULL), fd(-1),
          dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0), skip(0), start(0),
@@ -297,17 +302,17 @@ struct Frag {
 // If you change this, change sizeofDoc above
 struct Doc
 {
-  uint32 magic;                 // DOC_MAGIC
-  uint32 len;                   // length of this segment
-  uint64 total_len;             // total length of document
-  INK_MD5 first_key;            // first key in document (http: vector)
+  uint32 magic;         // DOC_MAGIC
+  uint32 len;           // length of this segment (including hlen, flen & sizeof(Doc), unrounded)
+  uint64 total_len;     // total length of document
+  INK_MD5 first_key;    // first key in document (http: vector)
   INK_MD5 key;
-  uint32 hlen;                  // header length
-  uint32 ftype:8;               // fragment type CACHE_FRAG_TYPE_XX
-  uint32 flen:24;               // fragment table length
+  uint32 hlen;          // header length
+  uint32 ftype:8;       // fragment type CACHE_FRAG_TYPE_XX
+  uint32 flen:24;       // fragment table length
   uint32 sync_serial;
   uint32 write_serial;
-  uint32 pinned;                // pinned until
+  uint32 pinned;        // pinned until
   uint32 checksum;
 
   uint32 data_len();
@@ -333,13 +338,14 @@ extern unsigned short *part_hash_table;
 
 TS_INLINE int
 part_headerlen(Part *d) {
-  return ROUND_TO_BLOCK(sizeof(PartHeaderFooter) + sizeof(uint16) * (d->segments-1));
+  return ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter) + sizeof(uint16) * (d->segments-1));
 }
 TS_INLINE int
 part_dirlen(Part * d)
 {
-  return ROUND_TO_BLOCK(d->buckets * DIR_DEPTH * d->segments * SIZEOF_DIR) +
-    part_headerlen(d) + ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
+  return part_headerlen(d) + 
+    ROUND_TO_STORE_BLOCK(d->buckets * DIR_DEPTH * d->segments * SIZEOF_DIR) +
+    ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter));
 }
 TS_INLINE int
 part_direntries(Part * d)
@@ -349,37 +355,37 @@ part_direntries(Part * d)
 TS_INLINE int
 part_out_of_phase_valid(Part * d, Dir * e)
 {
-  return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start) / INK_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start) / CACHE_BLOCK_SIZE));
 }
 TS_INLINE int
 part_out_of_phase_agg_valid(Part * d, Dir * e)
 {
-  return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start + AGG_SIZE) / INK_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((d->header->agg_pos - d->start + AGG_SIZE) / CACHE_BLOCK_SIZE));
 }
 TS_INLINE int
 part_out_of_phase_write_valid(Part * d, Dir * e)
 {
-  return (dir_offset(e) - 1 >= ((d->header->write_pos - d->start) / INK_BLOCK_SIZE));
+  return (dir_offset(e) - 1 >= ((d->header->write_pos - d->start) / CACHE_BLOCK_SIZE));
 }
 TS_INLINE int
 part_in_phase_valid(Part * d, Dir * e)
 {
-  return (dir_offset(e) - 1 < ((d->header->write_pos + d->agg_buf_pos - d->start) / INK_BLOCK_SIZE));
+  return (dir_offset(e) - 1 < ((d->header->write_pos + d->agg_buf_pos - d->start) / CACHE_BLOCK_SIZE));
 }
 TS_INLINE off_t
 part_offset(Part * d, Dir * e)
 {
-  return d->start + (off_t) dir_offset(e) * INK_BLOCK_SIZE - INK_BLOCK_SIZE;
+  return d->start + (off_t) dir_offset(e) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 TS_INLINE off_t
 offset_to_part_offset(Part * d, off_t pos)
 {
-  return ((pos - d->start + INK_BLOCK_SIZE) / INK_BLOCK_SIZE);
+  return ((pos - d->start + CACHE_BLOCK_SIZE) / CACHE_BLOCK_SIZE);
 }
 TS_INLINE off_t
 part_offset_to_offset(Part * d, off_t pos)
 {
-  return d->start + pos * INK_BLOCK_SIZE - INK_BLOCK_SIZE;
+  return d->start + pos * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 TS_INLINE Dir *
 part_dir_segment(Part * d, int s)
@@ -483,12 +489,18 @@ TS_INLINE int
 Part::within_hit_evacuate_window(Dir * xdir)
 {
   off_t oft = dir_offset(xdir) - 1;
-  off_t write_off = (header->write_pos + AGG_SIZE - start) / INK_BLOCK_SIZE;
+  off_t write_off = (header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
   off_t delta = oft - write_off;
   if (delta >= 0)
     return delta < hit_evacuate_window;
   else
     return -delta > (data_blocks - hit_evacuate_window) && -delta < data_blocks;
+}
+
+TS_INLINE uint32
+Part::round_to_approx_size(uint32 l) {
+  uint32 ll = round_to_approx_dir_size(l);
+  return ROUND_TO_SECTOR(this, ll);
 }
 
 #endif /* _P_CACHE_PART_H__ */

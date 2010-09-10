@@ -98,6 +98,7 @@ struct CacheDisk:public Continuation
   off_t skip;
   off_t start_offset;
   int num_usable_blocks;
+  int hw_sector_size;
   int fd;
   off_t free_space;
   off_t wasted_space;
@@ -115,28 +116,17 @@ struct CacheDisk:public Continuation
   }
 
    ~CacheDisk();
-  int open(char *s, off_t blocks, off_t dir_skip, int fildes, bool clear);
-
+  int open(char *s, off_t blocks, off_t dir_skip, int hw_sector_size, int fildes, bool clear);
   int clearDisk();
-
   int clearDone(int event, void *data);
-
   int openStart(int event, void *data);
-
   int openDone(int event, void *data);
-
   int sync();
-
   int syncDone(int event, void *data);
-
   DiskPartBlock *create_partition(int number, off_t size, int scheme);
-
   int delete_partition(int number);
-
   int delete_all_partitions();
-
   void update_header();
-
   DiskPart *get_diskpart(int part_number);
 
 };

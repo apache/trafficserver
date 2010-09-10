@@ -538,7 +538,7 @@ Lagain:
           DDebug("dir_probe_hit", "found %X %X part %d bucket %d  boffset %d", key->word(0), key->word(1), d->fd, b, (int) dir_offset(e));
           dir_assign(result, e);
           *last_collision = e;
-          ink_assert(dir_offset(e) * INK_BLOCK_SIZE < d->len);
+          ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < d->len);
           return 1;
         } else {                // delete the invalid entry
           CACHE_DEC_DIR_USED(d->mutex);
@@ -905,8 +905,6 @@ sync_cache_dir_on_shutdown(void)
       Debug("cache_dir_sync", "Dir %s: ignoring -- bad disk", d->hash_id);
       continue;
     }
-    // Unused variable.
-    // int headerlen = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
     int dirlen = part_dirlen(d);
     if (!d->header->dirty && !d->dir_sync_in_progress) {
       Debug("cache_dir_sync", "Dir %s: ignoring -- not dirty", d->hash_id);
@@ -1020,7 +1018,7 @@ Lrestart:
     if (DISK_BAD(d->disk))
       goto Ldone;
 
-    int headerlen = ROUND_TO_BLOCK(sizeof(PartHeaderFooter));
+    int headerlen = ROUND_TO_STORE_BLOCK(sizeof(PartHeaderFooter));
     int dirlen = part_dirlen(d);
     if (!writepos) {
       // start

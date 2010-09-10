@@ -226,6 +226,7 @@ extern int cache_config_ram_cache_compress_percent;
 extern int cache_config_hit_evacuate_percent;
 extern int cache_config_hit_evacuate_size_limit;
 #endif
+extern int cache_config_force_sector_size;
 
 // CacheVC
 struct CacheVC: public CacheVConnection
@@ -995,8 +996,6 @@ struct Cache
 extern Cache *theCache;
 extern Cache *theStreamCache;
 inkcoreapi extern Cache *caches[NUM_CACHE_FRAG_TYPES];
-extern int cache_config_vary_on_user_agent;
-
 
 #ifdef HTTP_CACHE
 TS_INLINE Action *
