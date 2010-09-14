@@ -361,7 +361,6 @@ Lfail:;
   return err;
 }
 
-
 int
 Store::write_config_data(int fd)
 {
@@ -375,12 +374,8 @@ Store::write_config_data(int fd)
   return 0;
 }
 
-
-
-
-
 #if defined(freebsd) || defined(darwin) || defined(solaris)
-// TODO: Those are probaply already included from the ink_platform.h
+// TODO: Those are probably already included from the ink_platform.h
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/param.h>
@@ -627,6 +622,14 @@ Span::init(char *filename, int64 size)
     adjusted_sec = hw_sector_size / 512;
     Debug("cache_init", "Span::init - %s hw_sector_size = %d,is_disk = %d,adjusted_sec = %d", filename, hw_sector_size, is_disk,adjusted_sec);
   }
+
+  alignment = 0;
+#ifdef BLKALIGNOFF
+  if (ioctl(fd, BLKALIGNOFF, &arg) == 0) {
+    alignment = arg;
+    Debug("cache_init", "Span::init - %s alignment = %d", filename, alignment);
+  }
+#endif
 
   if (is_disk) {
     long physsectors = 0;

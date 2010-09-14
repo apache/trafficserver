@@ -49,6 +49,7 @@ struct Span
   bool file_pathname;           // the pathname is a file
   bool isRaw;
   int64 offset;                 // used only if (file == true)
+  int alignment;
   int disk_id;
   LINK(Span, link);
 
@@ -93,7 +94,7 @@ public:
            char *buf, int buflen);      // where to store the path
 
 Span():pathname(NULL), blocks(0), hw_sector_size(DEFAULT_HW_SECTOR_SIZE), file_pathname(false),
-    isRaw(true), offset(0), disk_id(0), is_mmapable_internal(false) {
+       isRaw(true), offset(0), alignment(0), disk_id(0), is_mmapable_internal(false) {
   }
   ~Span();
 };
@@ -176,9 +177,6 @@ extern Store theStore;
 
 // store either free or in the cache, can be stolen for reconfiguration
 void stealStore(Store & s, int blocks);
-// store either free or in the cache, can be stolen for reconfiguration
-void stealStore(Store & s, int blocks);
-
 int initialize_store();
 
 struct storageConfigFile {

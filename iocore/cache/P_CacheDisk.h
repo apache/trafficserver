@@ -96,7 +96,6 @@ struct CacheDisk:public Continuation
   off_t len;                // in blocks (STORE_BLOCK)
   off_t start;
   off_t skip;
-  off_t start_offset;
   int num_usable_blocks;
   int hw_sector_size;
   int fd;
@@ -109,14 +108,14 @@ struct CacheDisk:public Continuation
 
   int open(bool clear);
     CacheDisk():Continuation(new_ProxyMutex()), header(NULL),
-    path(NULL), header_len(0), len(0), start(0), skip(0), start_offset(0),
+    path(NULL), header_len(0), len(0), start(0), skip(0),
     num_usable_blocks(0), fd(-1), free_space(0), wasted_space(0),
     disk_parts(NULL), free_blocks(NULL), num_errors(0), cleared(0)
   {
   }
 
    ~CacheDisk();
-  int open(char *s, off_t blocks, off_t dir_skip, int hw_sector_size, int fildes, bool clear);
+  int open(char *s, off_t blocks, off_t skip, int hw_sector_size, int fildes, bool clear);
   int clearDisk();
   int clearDone(int event, void *data);
   int openStart(int event, void *data);

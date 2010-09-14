@@ -35,7 +35,7 @@
 // Part
 
 #define PART_MAGIC                      0xF1D0F00D
-#define START_BLOCKS                    32      // 8k
+#define START_BLOCKS                    16      // 8k, STORE_BLOCK_SIZE
 #define START_POS                       ((off_t)START_BLOCKS * CACHE_BLOCK_SIZE)
 #define AGG_SIZE                        (4 * 1024 * 1024) // 4MB
 #define AGG_HIGH_WATER                  (AGG_SIZE / 2) // 2MB

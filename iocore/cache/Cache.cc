@@ -517,7 +517,6 @@ CacheProcessor::start_internal(int flags)
 
     int fd = open(path, opts, 0644);
     int blocks = sd->blocks;
-    off_t offset = sd->offset;
     if (fd > 0) {
 #if defined (_WIN32)
       aio_completion_port.register_handle((void *) fd, 0);
@@ -544,7 +543,9 @@ CacheProcessor::start_internal(int flags)
           sector_size = cache_config_force_sector_size;
         if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE)
           Error("bad hardware sector size");
-        gdisks[gndisks]->open(path, blocks, offset, sector_size, fd, clear);
+        off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
+        blocks = blocks - ROUND_TO_STORE_BLOCK(sd->offset - skip);
+        gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
         gndisks++;
       }
     } else

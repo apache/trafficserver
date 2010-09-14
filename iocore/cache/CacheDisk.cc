@@ -25,13 +25,12 @@
 
 
 int
-CacheDisk::open(char *s, off_t blocks, off_t dir_skip, int ahw_sector_size, int fildes, bool clear)
+CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fildes, bool clear)
 {
   path = xstrdup(s);
   hw_sector_size = ahw_sector_size;
   fd = fildes;
-  skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
-  start_offset = dir_skip;
+  skip = askip;
   start = skip;
   /* we can't use fractions of store blocks. */
   len = blocks;
@@ -50,11 +49,10 @@ CacheDisk::open(char *s, off_t blocks, off_t dir_skip, int ahw_sector_size, int 
   }
 
   disk_parts = (DiskPart **) xmalloc((l / MIN_PART_SIZE + 1) * sizeof(DiskPart **));
-
   memset(disk_parts, 0, (l / MIN_PART_SIZE + 1) * sizeof(DiskPart **));
   header_len = ROUND_TO_STORE_BLOCK(header_len);
   start = skip + header_len;
-  num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - start_offset)) >> STORE_BLOCK_SHIFT;
+  num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - askip)) >> STORE_BLOCK_SHIFT;
 
 #if defined(_WIN32)
   header = (DiskHeader *) malloc(header_len);
