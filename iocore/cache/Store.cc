@@ -611,6 +611,7 @@ Span::init(char *filename, int64 size)
   }
   Debug("cache_init", "Span::init - socketManager.open(\"%s\", O_RDONLY) = %d", filename, fd);
 
+  adjusted_sec = 1;
 #ifdef BLKPBSZGET
   if (ioctl(fd, BLKPBSZGET, &arg) == 0)
 #else
