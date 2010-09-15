@@ -1196,6 +1196,7 @@ CacheVC::openWriteCloseHead(int event, Event *e)
     return updateVector(EVENT_IMMEDIATE, 0);
   } else {
 #endif
+    header_len = header_to_write_len;
     SET_HANDLER(&CacheVC::openWriteCloseHeadDone);
     return do_write_lock();
 #ifdef HTTP_CACHE
