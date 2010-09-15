@@ -432,8 +432,7 @@ LocalManager::initCCom(int port, char *addr, int sport)
 
   found = mgmt_getAddrForIntr(intrName, &cluster_addr);
   if (found == false) {
-    mgmt_log(stderr, "[LocalManager::initCCom] Unable to find network interface %s.  Exiting...\n", intrName);
-    _exit(1);
+    mgmt_fatal(stderr, "[LocalManager::initCCom] Unable to find network interface %s.  Exiting...\n", intrName);
   }
 
   clusterAddrStr = inet_ntoa(cluster_addr);
