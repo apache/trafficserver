@@ -39,6 +39,7 @@
 TS_PACKAGE_NAME="@PACKAGE_NAME@"
 TS_PACKAGE_VERSION="@PACKAGE_VERSION@"
 TS_PACKAGE_BUGREPORT="@PACKAGE_BUGREPORT@"
+UNAME_S=$(uname -s)
 
 if [ -e /etc/SuSE-release ]; then
   DISTRIB_ID="suse"
@@ -52,8 +53,10 @@ elif [ -e /etc/debian_version ]; then
   DISTRIB_ID="debian" # also exists on Ubuntu
 elif [ -e /etc/slackware-version ]; then
   DISTRIB_ID="slackware"
-elif [ $(uname -s) = "Darwin" ]; then
+elif [ "$UNAME_S" = "Darwin" ]; then
   DISTRIB_ID="Darwin"
+elif [ "$UNAME_S" = "FreeBSD" ]; then
+  DISTRIB_ID="FreeBSD"
 fi
 
 # /usr/bin/lsb_release -rd # Ubuntu release & description info
@@ -94,12 +97,15 @@ PIDFILE_CHECK_RETRIES=${PIDFILE_CHECK_RETRIES:-30}
 STDOUTLOG=${STDOUTLOG:-$TS_BASE@exp_logdir@/traffic_server.stdout}
 # stderr file of executable
 STDERRLOG=${STDERRLOG:-$TS_BASE@exp_logdir@/traffic_server.stderr}
+
 if [ -d /etc/rc.d/init.d ]; then
   SCRIPTNAME=/etc/rc.d/init.d/$NAME # Fedora
 elif [ -d /etc/init.d ]; then
   SCRIPTNAME=/etc/init.d/$NAME # Ubuntu
-elif [ $DISTRIB_ID = "Darwin" ]; then
+elif [ "$DISTRIB_ID" = "Darwin" ]; then
   SCRIPTNAME=$0 # Darwin
+elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+  SCRIPTNAME=/etc/rc.d/$NAME # FreeBSD
 else
   echo "This script needs to be ported to this OS"
   exit 1
@@ -128,6 +134,9 @@ test -f /etc/rc.d/init.d/functions && . /etc/rc.d/init.d/functions
 # Ubuntu: Define LSB log_* functions.
 #         Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
 test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
+
+# FreeBSD
+test -f /etc/rc.subr && . /etc/rc.subr
 
 
 #
@@ -255,6 +264,13 @@ case "$1" in
       echo "Starting ${TS_PACKAGE_NAME}"
       launchctl list $TC_NAME > /dev/null 2>&1 && exit 0
       launchctl submit -l $TC_NAME -p $TC_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TC_DAEMON_ARGS
+    elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+      echo "Starting ${TS_PACKAGE_NAME}"
+      name="$TC_NAME"
+      command="/usr/sbin/daemon"
+      command_args="$TC_DAEMON $TC_DAEMON_ARGS"
+      pidfile="$TC_PIDFILE"
+      run_rc_command "$1"
     else
         echo "This script needs to be ported to this OS"
         exit 1
@@ -293,6 +309,20 @@ case "$1" in
       rm -f ${TM_PIDFILE}
       echo "Stopping ${TS_NAME}"
       kill $(cat $TS_PIDFILE)
+      rm -f ${TS_PIDFILE}
+    elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
+      echo "Stopping ${TS_PACKAGE_NAME}"
+      if [ -e "$TC_PIDFILE" ]; then 
+	  kill $(cat $TC_PIDFILE)
+	  rm -f ${TC_PIDFILE}
+      fi
+      if [ -e "$TM_PIDFILE" ]; then 
+	  kill $(cat $TM_PIDFILE)
+	  rm -f ${TM_PIDFILE}
+      fi
+      name="$TC_NAME"
+      pidfile="$TC_PIDFILE"
+      run_rc_command "$1"
       rm -f ${TS_PIDFILE}
     else
       echo "This script needs to be ported to this OS"
