@@ -19,7 +19,6 @@
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/api2 \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \

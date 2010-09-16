@@ -20,13 +20,10 @@ AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/proxy/http2 \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/preparse \
   -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
-  -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/proxy/logging
+  -I$(top_srcdir)/proxy/hdrs
 
 noinst_LIBRARIES = libCongestionControl.a
 

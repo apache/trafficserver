@@ -21,7 +21,6 @@ dist_webui_DATA = \
 	m_cache.ink \
 	m_cluster.ink \
 	m_dns.ink \
-	m_dns_proxy.ink \
 	m_footer.ink \
 	m_graphs.ink \
 	m_header.ink \

@@ -35,7 +35,7 @@ endif
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/proxy/dns_cache \
+  -I$(top_srcdir)/librecords \
   -I$(srcdir)/http2 \
   -I$(srcdir)/logging \
   -I$(srcdir)/http2/remap  \
@@ -43,7 +43,6 @@ AM_CPPFLAGS = \
   -I$(srcdir)/mgmt2 \
   -I$(srcdir)/mgmt2/preparse \
   -I$(srcdir)/mgmt2/utils \
-  -I$(srcdir)/mgmt2/web2 \
   -I$(srcdir)/api/ts \
   -DPKGSYSUSER=\"$(pkgsysuser)\"
 

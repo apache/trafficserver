@@ -18,8 +18,7 @@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/eventsystem \
-  -I$(top_srcdir)/librecords \
-  -I$(top_srcdir)/libinktomi++
+  -I$(top_srcdir)/librecords
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
 

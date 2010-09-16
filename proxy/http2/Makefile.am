@@ -25,7 +25,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/preparse \
   -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/http2/remap \
   -I$(top_srcdir)/proxy/logging

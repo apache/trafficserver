@@ -21,8 +21,6 @@ SUFFIXES = .java .class .jar .my .def .stb .html
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
   -I$(top_srcdir)/proxy/mgmt2/tools
 

@@ -19,7 +19,6 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/iocore/eventsystem \
-  -I$(top_srcdir)/libinktomi++ \
   -DPREFIX=\"$(prefix)\" \
   -DEXEC_PREFIX=\"$(rel_exec_prefix)\" \
   -DBINDIR=\"$(rel_bindir)\" \

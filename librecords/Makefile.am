@@ -19,25 +19,13 @@
 DEFS += @ink_with_modules_def@
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/iocore/eventsystem \
-  -I$(top_srcdir)/iocore/net \
-  -I$(top_srcdir)/iocore/cache \
-  -I$(top_srcdir)/iocore/aio \
   -I$(top_srcdir)/iocore/utils \
-  -I$(top_srcdir)/iocore/cluster \
-  -I$(top_srcdir)/iocore/dns \
-  -I$(top_srcdir)/iocore/hostdb \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2/snmp \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/proxy/http2 \
-  -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/libinktomi++
+  -I$(top_srcdir)/proxy/mgmt2/utils
 
 noinst_LIBRARIES = libreclocal.a librecprocess.a
 

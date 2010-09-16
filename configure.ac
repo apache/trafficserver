@@ -733,7 +733,10 @@ case $host_os in
     ATS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     ;;
 esac
-ATS_ADDTO(CPPFLAGS, [$TCL_INCLUDE_SPEC])
+
+if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
+   ATS_ADDTO(CPPFLAGS, [$TCL_INCLUDE_SPEC])
+fi
 
 #
 # Check for XML parser
@@ -1087,18 +1090,18 @@ ATS_CHECK_GETHOSTBYNAME_R_STYLE
 #
 # use modular IOCORE
 #
-iocore_include_dirs="-I\$(top_srcdir)/librecords \
- -I\$(top_srcdir)/libinktomi++ \
- -I\$(top_srcdir)/iocore/eventsystem \
- -I\$(top_srcdir)/iocore/net \
- -I\$(top_srcdir)/iocore/aio \
- -I\$(top_srcdir)/iocore/hostdb \
- -I\$(top_srcdir)/iocore/cache \
- -I\$(top_srcdir)/iocore/cluster \
- -I\$(top_srcdir)/iocore/utils \
- -I\$(top_srcdir)/iocore/dns \
- -I\$(top_srcdir)/libev"
+iocore_include_dirs="-I\$(top_srcdir)/iocore/eventsystem \
+-I\$(top_srcdir)/iocore/net \
+-I\$(top_srcdir)/iocore/aio \
+-I\$(top_srcdir)/iocore/hostdb \
+-I\$(top_srcdir)/iocore/cache \
+-I\$(top_srcdir)/iocore/cluster \
+-I\$(top_srcdir)/iocore/utils \
+-I\$(top_srcdir)/iocore/dns"
 
+if test "x$enable_libev" = "xyes"; then
+   iocore_include_dirs="${iocore_include_dirs} -I\$(top_srcdir)/libev"
+fi
 
 # Testing Framework suffix generation hack
 TFW_PACKAGE_SUFFIX=$os_type

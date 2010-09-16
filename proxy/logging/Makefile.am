@@ -20,13 +20,13 @@ DEFS += -DIOCORE_LOG_COLLATION
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
+  -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/http2 \
   -I$(top_srcdir)/proxy/http2/remap \
   -I$(top_srcdir)/proxy/mgmt2 \
   -I$(top_srcdir)/proxy/mgmt2/preparse \
   -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
   -I$(top_srcdir)/proxy/hdrs
 
 EXTRA_DIST = LogStandalone.cc

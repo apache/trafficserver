@@ -31,7 +31,6 @@ dist_webui_DATA = \
 	c_config_display.ink \
 	c_congestion.ink \
 	c_dns_host_database.ink \
-	c_dns_proxy.ink \
 	c_dns_resolver.ink \
 	c_dns_split.ink \
 	c_footer.ink \

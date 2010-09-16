@@ -15,7 +15,6 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/libinktomi++ \
   -I$(top_srcdir)/proxy/hdrs
 
 MGMT_DEFS = @MGMT_DEFS@

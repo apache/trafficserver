@@ -17,7 +17,6 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/libinktomi++ \
   -I$(top_srcdir)/librecords \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/mgmt2 \
