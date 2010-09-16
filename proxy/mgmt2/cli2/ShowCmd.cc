@@ -2694,8 +2694,8 @@ ShowCacheStats()
   Cli_Printf("Bytes Used --- %d GB\n", bytes_used / (1024 * 1024 * 1024));
   Cli_Printf("Cache Size --- %d GB\n", bytes_total / (1024 * 1024 * 1024));
   Cli_Printf("--RAM Cache--\n");
-  Cli_Printf("Total Bytes -- %d\n", ram_cache_total_bytes);
-  Cli_Printf("Bytes Used --- %d\n", ram_cache_bytes_used);
+  Cli_Printf("Total Bytes -- %lld\n", ram_cache_total_bytes);
+  Cli_Printf("Bytes Used --- %lld\n", ram_cache_bytes_used);
   Cli_Printf("Hits --------- %d\n", ram_cache_hits);
   Cli_Printf("Misses ------- %d\n", ram_cache_misses);
   Cli_Printf("--Lookups--\n");
