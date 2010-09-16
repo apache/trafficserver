@@ -353,7 +353,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
       }
     }
   }
-#ifdef HAVE_LIBSSL
+
   SslConfigParams *sslParam = sslTerminationConfig.acquire();
 
   if (sslParam->getTerminationMode() & sslParam->SSL_TERM_MODE_CLIENT) {
@@ -364,7 +364,6 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   }
 
   sslTerminationConfig.release(sslParam);
-#endif
 
 #ifdef USE_NCA
   start_NcaServer();

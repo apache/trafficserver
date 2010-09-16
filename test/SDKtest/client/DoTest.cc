@@ -184,7 +184,6 @@ DoTest::create_new_connection_and_send_request(int user, struct timeval current_
     printf("Connection opened sec: %ld ms: %ld\n", tv.tv_sec, tv.tv_usec);
     fflush(stdout);
   }
-#ifdef HAVE_LIBSSL
   if (ssl) {
     RAND_seed((void *) randBuff, sizeof(randBuff));
     user_info[user].m_ssl = SSL_new(ctx);
@@ -226,7 +225,6 @@ DoTest::create_new_connection_and_send_request(int user, struct timeval current_
 
     X509_free(server_cert);
   }
-#endif
 
   len_to_write = strlen(user_info[user].request_sent);
   len_written = 0;
@@ -237,7 +235,6 @@ DoTest::create_new_connection_and_send_request(int user, struct timeval current_
 
   while (len_to_write > len_written) {
 
-#ifdef HAVE_LIBSSL
     if (ssl) {
       s = SSL_write(user_info[user].m_ssl, user_info[user].request_sent + len_written, len_to_write - len_written);
       flag_write = SSL_get_error(user_info[user].m_ssl, s);
@@ -253,12 +250,7 @@ DoTest::create_new_connection_and_send_request(int user, struct timeval current_
           printf("OTHER\n");
         }
       }
-    }
-#else
-    if (0) {
-    }
-#endif /* WITH_OEPNSSL */
-    else {
+    } else {
       while ((s = write(fd, (user_info[user].request_sent + len_written), (len_to_write -
                                                                            len_written))) < 0 && errno == EINTR);
     }
@@ -558,7 +550,6 @@ DoTest::actual_test(int rr_flag)
   struct timeval last_time;
   double warmup_status;
 
-#ifdef HAVE_LIBSSL
   if (ssl) {
     if (debug) {
       printf("Initializing SSL algorithms and methods ...\n");
@@ -570,7 +561,6 @@ DoTest::actual_test(int rr_flag)
     ctx = SSL_CTX_new(meth);
     CHK_NULL(ctx);
   }
-#endif
 
   int more_request = TRUE;
 
@@ -730,7 +720,6 @@ DoTest::actual_test(int rr_flag)
         if (bytes_to_read > MAX_READBUF_SIZE)
           bytes_to_read = MAX_READBUF_SIZE;
 
-#ifdef HAVE_LIBSSL
         if (ssl) {
           tempint = 0;
           do {
@@ -760,12 +749,7 @@ DoTest::actual_test(int rr_flag)
             }
           } while (flag_read == SSL_ERROR_NONE);
           s = tempint;
-        }
-#else
-        if (0) {
-        }
-#endif  // HAVE_LIBSSL
-        else {
+        } else {
           while ((s = read(poll_vector[i].fd, read_buf, bytes_to_read)) < 0 && errno == EINTR);
         }
 
@@ -877,11 +861,10 @@ DoTest::actual_test(int rr_flag)
           user_info[i].read_count = 0;
           strcpy(user_info[i].request_sent, "");
           user_info[i].think_time = generate_think_time();
-#ifdef HAVE_LIBSSL
+
           if (ssl) {
             SSL_free(user_info[i].m_ssl);
           }
-#endif
 
 #ifdef _PLUG_IN
           user_info[i].target_addr = &(user_info[i].dynamic_target_addr);

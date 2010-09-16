@@ -21,8 +21,6 @@
   limitations under the License.
  */
 #include "ink_config.h"
-
-#ifdef HAVE_LIBSSL
 #include "P_Net.h"
 
 #define SSL_READ_ERROR_NONE	  0
@@ -619,5 +617,3 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   return EVENT_CONT;
 
 }
-
-#endif

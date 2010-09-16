@@ -79,12 +79,7 @@ test_main()
     EThread *t = this_ethread();
     MUTEX_TRY_LOCK(lock, nct->mutex, t);
     ink_debug_assert(lock);
-    Action *a =
-#ifdef HAVE_LIBSSL
-      sslNetProcessor.connect_s(nct, srv_ip[i], srv_port[i], 0, 10 * 1000);
-#else
-      netProcessor.connect_s(nct, srv_ip[i], srv_port[i], 0, 1000 * 1000);
-#endif
+    Action *a = sslNetProcessor.connect_s(nct, srv_ip[i], srv_port[i], 0, 10 * 1000);
   }
   return 0;
 }

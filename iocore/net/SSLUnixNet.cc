@@ -32,7 +32,6 @@
  ****************************************************************************/
 #include "ink_config.h"
 
-#ifdef HAVE_LIBSSL
 #include "P_Net.h"
 //
 // Global Data
@@ -157,6 +156,3 @@ SSLNetProcessor::~SSLNetProcessor()
 {
   cleanup();
 }
-
-
-#endif

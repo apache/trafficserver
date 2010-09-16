@@ -103,27 +103,8 @@ if test "$enable_openssl" != "no"; then
   if test "$openssl_have_headers" != "0"; then
     AC_CHECK_DECLS([EVP_PKEY_CTX_new], [], [],
                    [#include <openssl/evp.h>])
-
     enable_crypto=yes
-
-    AC_MSG_CHECKING([for const input buffers in OpenSSL])
-    AC_TRY_COMPILE([#include <openssl/rsa.h>],
-        [ const unsigned char * buf;
-          unsigned char * outbuf;
-          RSA rsa;
-          RSA_private_decrypt(1,
-                              buf,
-                              outbuf,
-                              &rsa,
-                              RSA_PKCS1_PADDING);
-
-        ],
-        [AC_MSG_RESULT([yes])]
-        [AC_DEFINE([CRYPTO_OPENSSL_CONST_BUFFERS], 1, [Define that OpenSSL uses const buffers])],
-        [AC_MSG_RESULT([no])])
-
     AC_SUBST([LIBSSL],["-lssl -lcrypto"])
-    AC_DEFINE([HAVE_LIBSSL],[1],[Define to 1 if you have OpenSSL library])
   else
     enable_openssl=no
     CPPFLAGS=$saved_cppflags

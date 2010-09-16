@@ -54,7 +54,7 @@
 #include "HTTP.h"
 #include "RecordsConfig.h"
 
-#if defined(HAVE_LIBSSL) && defined(TRAFFIC_NET)
+#if defined(TRAFFIC_NET)
 #include "traffic_net/tn_Thread.h"
 #endif
 
@@ -872,7 +872,7 @@ main(int argc, char **argv)
   lmgmt->listenForProxy();
 
 
-#if defined(HAVE_LIBSSL) && defined(TRAFFIC_NET)
+#if defined(TRAFFIC_NET)
   // Traffic Net Thread
   ink_thread tnThrId;
   tnThrId = ink_thread_create(tn_mgmt_main, NULL);      /* Spin Traffic Net thread */

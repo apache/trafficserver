@@ -297,9 +297,8 @@ private:
   @endcode
 
 */
-extern inkcoreapi NetProcessor & netProcessor;
+extern inkcoreapi NetProcessor& netProcessor;
 
-#ifdef HAVE_LIBSSL
 /**
   Global netProcessor singleton object for making ssl enabled net
   calls. As far as the SM is concerned this behaves excatly like
@@ -307,7 +306,6 @@ extern inkcoreapi NetProcessor & netProcessor;
   over ssl.
 
 */
-extern inkcoreapi NetProcessor & sslNetProcessor;
-#endif
+extern inkcoreapi NetProcessor& sslNetProcessor;
 
 #endif

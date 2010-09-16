@@ -189,14 +189,8 @@ test_main()
   memset(b + strlen(response_hdr), 'x', 8000);
   resp_blk->fill(doc_len = strlen(response_hdr) + 8000);
 
-#ifdef HAVE_LIBSSL
   Action *a = sslNetProcessor.accept(NEW(new NetTesterAccept(new_ProxyMutex())),
                                      8080, true);
-#else
-  Action *a = netProcessor.accept(NEW(new NetTesterAccept(new_ProxyMutex())),
-                                  8080, true);
-
-#endif
 
   return 0;
 }

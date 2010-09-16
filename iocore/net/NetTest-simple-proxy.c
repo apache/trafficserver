@@ -115,11 +115,7 @@ struct NetTesterSM:public Continuation
         client_vc->cancel_inactivity_timeout();
         // connect to the origin server
         SET_HANDLER(&NetTesterSM::handle_server_connect);
-#ifdef HAVE_LIBSSL
         sslNetProcessor.connect_re(this, origin_server_ip, origin_server_port);
-#else
-        netProcessor.connect_s(this, origin_server_ip, origin_server_port);
-#endif
       }
       break;
     case VC_EVENT_READ_COMPLETE:
@@ -304,11 +300,8 @@ test_main()
   Action *a;
   origin_server_ip = get_addr(origin_server);
 
-#ifdef HAVE_LIBSSL
   a = sslNetProcessor.accept(NEW(new NetTesterAccept(new_ProxyMutex())), 45080, true);
-#else
-  a = netProcessor.accept(NEW(new NetTesterAccept(new_ProxyMutex())), 45080, true);
-#endif
+
 #ifdef TEST_ACCEPT_CANCEL
   Stop *s = NEW(new Stop(new_ProxyMutex()));
   eventProcessor.schedule_in(s, HRTIME_SECONDS(10));

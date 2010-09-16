@@ -115,14 +115,11 @@ do { \
 #include "P_NetVCTest.h"
 #include "P_LibBulkIO.h"
 
-#ifdef HAVE_LIBSSL
 #include "P_SSLConfig.h"
 #include "P_SSLNetVConnection.h"
 #include "P_SSLNetProcessor.h"
 #include "P_SSLNetAccept.h"
 #include "P_SSLCertLookup.h"
-#endif
-
 
 #undef  NET_SYSTEM_MODULE_VERSION
 #define NET_SYSTEM_MODULE_VERSION makeModuleVersion(                    \

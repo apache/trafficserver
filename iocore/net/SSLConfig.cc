@@ -32,22 +32,17 @@
 #include "inktomi++.h"
 #include "I_Layout.h"
 
-#ifdef HAVE_LIBSSL
 #include <string.h>
 #include "P_Net.h"
 #include <openssl/ssl.h>
 
-int
-  SslConfig::id = 0;
-bool
-  SslConfig::serverSSLTermination = 0;
+int SslConfig::id = 0;
+bool SslConfig::serverSSLTermination = 0;
 
-SslConfig
-  sslTerminationConfig;
+SslConfig sslTerminationConfig;
 
 #ifndef USE_CONFIG_PROCESSOR
-SslConfigParams *
-  SslConfig::ssl_config_params;
+SslConfigParams *SslConfig::ssl_config_params;
 #endif
 
 SslConfigParams::SslConfigParams()
@@ -583,5 +578,3 @@ SslConfig::release(SslConfigParams * params)
   configProcessor.release(id, params);
 #endif
 }
-
-#endif

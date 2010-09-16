@@ -44,7 +44,6 @@
 #include <fcntl.h>
 #include <sys/time.h>
 
-#ifdef HAVE_LIBSSL
 #include <openssl/rsa.h>        /* SSLeay stuff */
 #include <openssl/crypto.h>
 #include <openssl/x509.h>
@@ -55,7 +54,6 @@
 #define CHK_NULL(x) if ((x)==NULL) exit (1)
 #define CHK_ERR(err,s) if ((err)==-1) { perror(s); exit(1); }
 #define CHK_SSL(err) if ((err)==-1) { ERR_print_errors_fp(errFp); exit(2); }
-#endif
 
 #define DIFF_TIME(start_time,end_time) \
 	     (long) (((double) (end_time).tv_sec*1000.0 + \
@@ -103,9 +101,7 @@ struct UserInfo
   /* for differentiate a completed/non-completed connection */
   int internal_rid;
   void *request_id;
-#ifdef HAVE_LIBSSL
   SSL *m_ssl;
-#endif
 
   /////////////////////
 #ifdef _PLUG_IN
@@ -225,11 +221,9 @@ struct DoTest
   struct pollfd *poll_vector;
   char read_buf[MAX_READBUF_SIZE];
 
-#ifdef HAVE_LIBSSL
   X509 *server_cert;
   SSL_CTX *ctx;
   SSL_METHOD *meth;
-#endif
 
   FILE *errFp;
   char *str;

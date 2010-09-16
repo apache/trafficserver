@@ -30,7 +30,6 @@
 
 #include "ink_config.h"
 
-#ifdef HAVE_LIBSSL
 #include "P_Net.h"
 #if !defined (_IOCORE_WIN32)    // remove when NT openssl lib is upgraded to eng-0.9.6
 #include "openssl/engine.h"
@@ -40,8 +39,7 @@
 void sslLockingCallback(int mode, int type, const char *file, int line);
 unsigned long SSL_pthreads_thread_id();
 
-bool
-  SSLNetProcessor::open_ssl_initialized = false;
+bool SSLNetProcessor::open_ssl_initialized = false;
 
 
 int
@@ -582,4 +580,3 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
   }
   return (0);
 }
-#endif

@@ -38,8 +38,6 @@
  *
  ****************************************************************************/
 
-#ifdef HAVE_LIBSSL
-
 #include "openssl/ssl.h"
 
 #ifndef _WIN32
@@ -52,8 +50,6 @@
 #define STACK_H
 
 #endif // !_WIN32
-
-#endif // HAVE_LIBSSL
 
 /* Converts a printable character to it's six bit representation */
 const unsigned char printableToSixBit[256] = {
@@ -126,12 +122,7 @@ ssize_t
 socket_write(SocketInfo socketD, const char *buf, size_t nbyte)
 {
   if (socketD.SSLcon != NULL) {
-#ifdef HAVE_LIBSSL
     return SSL_write((SSL *) socketD.SSLcon, (char *) buf, nbyte);
-#else
-    mgmt_fatal(stderr, "[socket_write] Attempt to use disabled SSL\n");
-#endif
-
   } else {
     return write_socket(socketD.fd, buf, nbyte);
   }
@@ -142,11 +133,7 @@ ssize_t
 socket_read(SocketInfo socketD, char *buf, size_t nbyte)
 {
   if (socketD.SSLcon != NULL) {
-#ifdef HAVE_LIBSSL
     return SSL_read((SSL *) socketD.SSLcon, (char *) buf, nbyte);
-#else
-    mgmt_fatal(stderr, "[socket_read] Attempt to use disabled SSL\n");
-#endif
   } else {
     return read_socket(socketD.fd, buf, nbyte);
   }

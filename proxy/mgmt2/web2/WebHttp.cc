@@ -59,7 +59,6 @@
 #include "ConfigAPI.h"
 #include "SysAPI.h"
 
-#ifdef HAVE_LIBSSL
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #include "openssl/crypto.h"
@@ -70,7 +69,6 @@
 #define HEAP_H
 #define STACK_H
 #endif // !defined(_WIN32)
-#endif // HAVE_LIBSSL
 
 
 //-------------------------------------------------------------------------
@@ -4108,7 +4106,6 @@ signal_handler_init()
 int
 ssl_init(WebHttpContext * whc)
 {
-#ifdef HAVE_LIBSSL
   SSL *SSL_con = NULL;
   unsigned int sslErrno;
   char ssl_Error[256];
@@ -4121,9 +4118,7 @@ ssl_init(WebHttpContext * whc)
     return WEB_HTTP_ERR_FAIL;
   }
   whc->si.SSLcon = SSL_con;
-#else
-  mgmt_fatal(stderr, "[ssl_init] attempt to use SSL in non-SSL enabled build");
-#endif
+
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -4134,13 +4129,10 @@ ssl_init(WebHttpContext * whc)
 int
 ssl_free(WebHttpContext * whc)
 {
-#ifdef HAVE_LIBSSL
   if (whc->si.SSLcon != NULL) {
     SSL_free((SSL *) whc->si.SSLcon);
   }
-#else
-  ink_debug_assert(!"[ssl_free] attempt to free SSL context in non-SSL build");
-#endif
+
   return WEB_HTTP_ERR_OKAY;
 }
 

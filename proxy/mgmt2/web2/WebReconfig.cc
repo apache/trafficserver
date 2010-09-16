@@ -89,10 +89,8 @@ setUpWebCB()
   ink_assert(RecRegisterConfigUpdateCb("proxy.config.admin.admin_password", WebConfigCB, (void *) AUTH_ADMIN_PASSWD_CB)
              == REC_ERR_OKAY);
 
-#ifdef HAVE_LIBSSL
   ink_assert(RecRegisterConfigUpdateCb("proxy.config.admin.use_ssl", WebConfigCB, (void *) SSL_ENABLED_CB)
              == REC_ERR_OKAY);
-#endif
 
   ink_assert(RecRegisterConfigUpdateCb("proxy.config.admin.ui_refresh_rate", WebConfigCB, (void *) REFRESH_RATE_CB)
              == REC_ERR_OKAY);
@@ -183,12 +181,12 @@ updateWebConfig()
     updateArray[REFRESH_RATE_CB] = 0;
     configRefreshRate();
   }
-#ifdef HAVE_LIBSSL
+
   if (updateArray[SSL_ENABLED_CB] != 0) {
     updateArray[SSL_ENABLED_CB] = 0;
     configSSLenable();
   }
-#endif
+
 
   if (updateArray[ADV_UI_ENABLED] != 0) {
     updateArray[ADV_UI_ENABLED] = 0;
@@ -517,7 +515,6 @@ configRefreshRate()
   wGlobals.refreshRate = (int) refresh;
 }
 
-#ifdef HAVE_LIBSSL
 void
 configSSLenable()
 {
@@ -583,7 +580,6 @@ SSL_FAILED:
 
   return;
 }
-#endif
 
 void
 configLoadFactor()

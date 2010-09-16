@@ -23,8 +23,6 @@
 
 #include "ink_config.h"
 
-#ifdef HAVE_LIBSSL
-
 #include "P_SSLCertLookup.h"
 #include "P_UnixNet.h"
 
@@ -234,5 +232,3 @@ SSLCertLookup::~SSLCertLookup()
 {
   ink_hash_table_destroy_and_xfree_values(SSLCertLookupHashTable);
 }
-
-#endif

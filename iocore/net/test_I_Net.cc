@@ -173,10 +173,7 @@ main()
 #endif
 
   netProcessor.start();
-
-#ifdef HAVE_LIBSSL
   sslNetProcessor.start(1);
-#endif
 
   /*
    * Call the tests main function

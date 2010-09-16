@@ -58,8 +58,6 @@ extern "C"
 }
 #endif
 
-#ifdef HAVE_LIBSSL
-
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #include "openssl/crypto.h"
@@ -77,13 +75,6 @@ extern "C"
 //#define HEADER_MD5_H
 #define HEAP_H
 #define STACK_H
-
-#if SSLEAY_VERSION_NUMBER >= 0x0800
-#define SSLEAY8
-#endif
-
-#endif  // HAVE_LIBSSL
-
 
 typedef int fd;
 
@@ -113,8 +104,6 @@ int aconf_port_arg = -1;
 
 // INKqa10098: UBSWarburg: Overseer port enabled by default
 static int overseerMode = 0;
-
-#ifdef HAVE_LIBSSL
 
 // Locks that SSleay uses
 static ink_mutex ssl_locks[CRYPTO_NUM_LOCKS];
@@ -169,12 +158,8 @@ init_SSL(char *sslCertFile, WebContext * wContext)
 
   SSL_load_error_strings();
 
-#ifdef SSLEAY8
   SSLeay_add_ssl_algorithms();
   wContext->SSL_Context = (SSL_CTX *) SSL_CTX_new(SSLv23_server_method());
-#else
-  wContext->SSL_Context = (SSL_CTX *) SSL_CTX_new();
-#endif
 
   if (SSL_CTX_use_PrivateKey_file(wContext->SSL_Context, sslCertFile, SSL_FILETYPE_PEM) <= 0) {
     sslErrno = ERR_get_error();
@@ -227,7 +212,6 @@ SSL_FAILED:
   }
   return -1;
 }
-#endif
 
 // void tmpFileDestructor(void* ptr)
 //
@@ -753,11 +737,7 @@ webIntr_main(void *x)
   configUI();
 #endif /* NO_WEBUI */
 
-#ifdef HAVE_LIBSSL
   configSSLenable();
-#else
-  adminContext.SSLenabled = 0;
-#endif
   Debug("ui", "SSL enabled is %d\n", adminContext.SSLenabled);
 
   // Set up the ip based access control

@@ -2021,9 +2021,7 @@ main(int argc, char **argv)
 
     udpNet.start(num_of_udp_threads);   // XXX : broken for __WIN32
 
-#ifdef HAVE_LIBSSL
     sslNetProcessor.start(getNumSSLThreads());
-#endif
 
 #ifdef USE_NCA
     ncaProcessor.start();

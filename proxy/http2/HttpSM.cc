@@ -4422,8 +4422,6 @@ HttpSM::do_http_server_open(bool raw)
 
   Action *connect_action_handle;
 
-#ifdef HAVE_LIBSSL
-
   if (t_state.scheme == URL_WKSIDX_HTTPS) {
     Debug("http", "calling sslNetProcessor.connect_re");
     connect_action_handle = sslNetProcessor.connect_re(this,    // state machine
@@ -4462,40 +4460,6 @@ HttpSM::do_http_server_open(bool raw)
                                                      connect_timeout, &opt);
     }
   }
-
-#else
-
-  if (t_state.method != HTTP_WKSIDX_CONNECT) {
-    Debug("http", "calling netProcessor.connect_re");
-    connect_action_handle = netProcessor.connect_re(this,       // state machine
-                                                    srv_ip,     // host_op
-                                                    srv_port,   // host_port
-  } else {
-    // Setup the timeouts
-    // Set the inactivity timeout to the connect timeout so that we
-    //   we fail this server if it doesn't start sending the response
-    //   header
-    MgmtInt connect_timeout;
-    if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-      connect_timeout = t_state.http_config_param->post_connect_attempts_timeout;
-    } else if (is_request_from_streaming_client(&t_state.hdr_info.client_request)) {
-      connect_timeout = t_state.http_config_param->streaming_connect_attempts_timeout;
-    } else if (t_state.current.server == &t_state.parent_info) {
-      connect_timeout = t_state.http_config_param->parent_connect_timeout;
-    } else {
-      if (t_state.pCongestionEntry != NULL)
-        connect_timeout = t_state.pCongestionEntry->connect_timeout();
-      else
-        connect_timeout = t_state.http_config_param->connect_attempts_timeout;
-    }
-    Debug("http", "calling netProcessor.connect_s");
-    connect_action_handle = netProcessor.connect_s(this,        // state machine
-                                                   srv_ip,      // host_op
-                                                   srv_port,    // host_port
-                                                   t_state.http_config_param->outgoing_ip_to_bind_saddr,
-                                                   connect_timeout, &opt);
-  }
-#endif
 
   if (connect_action_handle != ACTION_RESULT_DONE) {
     ink_assert(!pending_action);
