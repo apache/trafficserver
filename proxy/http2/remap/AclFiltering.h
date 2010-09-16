@@ -39,6 +39,7 @@ typedef struct src_ip_info_t
   unsigned long start;          // IPv4 address value stores start of a range (host byte order)
   unsigned long end;            // IPv4 address value stores end of a range (host byte order)
   bool invert;                  // Should we "invert" the meaning of this IP range ("not in range")
+
   void reset(void)
   {
     start = (end = 0);
@@ -54,17 +55,20 @@ class acl_filter_rule
 {
 private:
   void reset(void);
+
 public:
-    acl_filter_rule * next;
+  acl_filter_rule * next;
   int filter_name_size;         // size of optional filter name
   char *filter_name;            // optional filter name
   unsigned int allow_flag:1,    // action allow deny
     method_valid:1,             // method valid for verification
     src_ip_valid:1,             // src_ip range valid
     active_queue_flag:1;        // filter is in active state (used by .useflt directive)
+
   // we need arguments as string array for directive processing
   int argc;                     // argument counter (only for filter defs)
   char *argv[ACL_FILTER_MAX_ARGV];      // argument strings (only for filter defs)
+
   // method
   int method_cnt;               // how many valid methods we have
   int method_array[ACL_FILTER_MAX_METHODS];     // any HTTP method (actually only WKSIDX from HTTP.cc)

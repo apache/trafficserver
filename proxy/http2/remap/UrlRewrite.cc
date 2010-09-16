@@ -498,10 +498,10 @@ process_filter_opt(url_mapping * mp, BUILD_TABLE_INFO * bti, char *errStrBuf, in
 
 
 UrlRewrite::UrlRewrite(const char *file_var_in)
-:nohost_rules(0), reverse_proxy(0), pristine_host_hdr(0), backdoor_enabled(0),
-mgmt_autoconf_port(0), default_to_pac(0), default_to_pac_port(0), file_var(NULL), ts_name(NULL),
-http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num_rules_redirect_permanent(0),
-num_rules_redirect_temporary(0), remap_pi_list(NULL)
+ : nohost_rules(0), reverse_proxy(0), pristine_host_hdr(0), backdoor_enabled(0),
+   mgmt_autoconf_port(0), default_to_pac(0), default_to_pac_port(0), file_var(NULL), ts_name(NULL),
+   http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num_rules_redirect_permanent(0),
+   num_rules_redirect_temporary(0), remap_pi_list(NULL)
 {
 
   forward_mappings.hash_lookup = reverse_mappings.hash_lookup =
@@ -1064,8 +1064,8 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State * s, url_mapping * map)
 
 
 bool
-  UrlRewrite::Remap(HttpTransact::State * s, HTTPHdr * request_header,
-                    char **redirect_url, char **orig_url, char *tag, unsigned int filter_mask)
+UrlRewrite::Remap(HttpTransact::State * s, HTTPHdr * request_header,
+                  char **redirect_url, char **orig_url, char *tag, unsigned int filter_mask)
 {
   URL *request_url = NULL;
   bool mapping_found;
@@ -1094,6 +1094,9 @@ bool
     ink_assert(forward_mappings.empty());
     return false;
   }
+
+  Debug("url_rewrite", "Starting ::Remap()");
+
   // Since are called before request validity checking
   //  occurs, make sure that we have both a valid request
   //  header and a valid URL

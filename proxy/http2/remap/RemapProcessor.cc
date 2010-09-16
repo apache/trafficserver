@@ -241,7 +241,7 @@ RemapProcessor::finish_remap(HttpTransact::State * s)
                                                               &old_host_hdr_len);
       if (old_host_hdr) {
         old_host_hdr = xstrndup(old_host_hdr, old_host_hdr_len);
-        Debug("url_rewrite", "Host Header before rewrite %s", old_host_hdr);
+        Debug("url_rewrite", "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
         xfree(old_host_hdr);
       }
     }
@@ -265,9 +265,9 @@ RemapProcessor::finish_remap(HttpTransact::State * s)
     //   through
     if (tmp >= host_buf_len) {
       request_header->field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
-      Debug("url_rewrite", "Host Header too long after rewrite");
+      Debug("url_rewrite", "Host: Header too long after rewrite");
     } else {
-      Debug("url_rewrite", "Host Header after rewrite %s", host_hdr_buf);
+      Debug("url_rewrite", "Host: Header after rewrite %.*s", tmp, host_hdr_buf);
       request_header->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host_hdr_buf, tmp);
     }
   }
@@ -314,19 +314,9 @@ RemapProcessor::perform_remap(Continuation * cont, HttpTransact::State * s)
   } else {
     ink_debug_assert(cont->mutex->thread_holding == this_ethread());
     plugins->mutex = cont->mutex;
-    plugins->action = cont;     //make sure the HTTP SM gets the callback
+    plugins->action = cont;
     SET_CONTINUATION_HANDLER(plugins, &RemapPlugins::run_remap);
     eventProcessor.schedule_imm(plugins, _ET_REMAP);
     return &plugins->action;
   }
-}
-
-RemapProcessor::RemapProcessor():_ET_REMAP(0), _use_separate_remap_thread(false)
-{
-
-}
-
-RemapProcessor::~RemapProcessor()
-{
-
 }

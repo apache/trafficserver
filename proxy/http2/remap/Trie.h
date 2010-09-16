@@ -41,14 +41,12 @@ public:
 
   // will return false if not found; else value_ptr will point to found value
   bool Search(const char *key, T *&value_ptr, int key_len = -1);
-
   void Clear();
 
   typedef std::list<T*> ValuePointerList;
   const ValuePointerList &GetValues() const { return m_value_list; }
 
-  virtual ~Trie() { Clear(); };
-
+  virtual ~Trie() { Clear(); }
 
 private:
   static const int N_NODE_CHILDREN = 256;
@@ -59,14 +57,17 @@ private:
     T value;
     bool occupied;
     int rank;
+
     void Clear() {
       occupied = false;
       rank = 0;
       bzero(children, sizeof(Node *) * N_NODE_CHILDREN);
-    };
+    }
+
     void Print(const char *debug_tag) const;
-    inline Node* GetChild(char index) const { return children[static_cast<unsigned char>(index)]; };
-    inline void SetChild(char index, Node *child) { children[static_cast<unsigned char>(index)] = child; };
+    inline Node* GetChild(char index) const { return children[static_cast<unsigned char>(index)]; }
+    inline void SetChild(char index, Node *child) { children[static_cast<unsigned char>(index)] = child; }
+
   private:
     Node *children[N_NODE_CHILDREN];
   };
@@ -180,14 +181,17 @@ Trie<T>::Search(const char *key, T *&value_ptr, int key_len /* = -1 */)
     value_ptr = &(found_node->value);
     return true;
   }
+
   return false;
 }
+
 
 template<typename T>
 void
 Trie<T>::_Clear(Node *node)
 {
   Node *child;
+
   for (int i = 0; i < N_NODE_CHILDREN; ++i) {
     child = node->GetChild(i);
     if (child) {
@@ -216,6 +220,7 @@ Trie<T>::Node::Print(const char *debug_tag) const
   } else {
     Debug(debug_tag, "Node is not occupied");
   }
+
   for (int i = 0; i < N_NODE_CHILDREN; ++i) {
     if (GetChild(i)) {
       Debug(debug_tag, "Node has child for char %c", static_cast<char>(i));

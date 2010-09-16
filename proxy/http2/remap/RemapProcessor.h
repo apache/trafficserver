@@ -43,23 +43,20 @@ class RemapProcessor: public Processor
 {
 public:
 
+ RemapProcessor()
+   :_ET_REMAP(0), _use_separate_remap_thread(false)
+    { }
+
+  ~RemapProcessor() { }
+
   bool setup_for_remap(HttpTransact::State * s);
   bool finish_remap(HttpTransact::State * s);
 
   Action *perform_remap(Continuation * cont, HttpTransact::State * s);
   int start(int num_threads);
-    RemapProcessor();
-   ~RemapProcessor();
   bool LessThan(HttpTransact::State *, HttpTransact::State *);
-  void setUseSeparateThread()
-  {
-    _use_separate_remap_thread = true;
-  }
-
-  bool using_separate_thread()
-  {
-    return (_use_separate_remap_thread == true);
-  }
+  void setUseSeparateThread() { _use_separate_remap_thread = true; }
+  bool using_separate_thread() { return _use_separate_remap_thread == true; }
 
 private:
   EventType _ET_REMAP;

@@ -61,11 +61,11 @@ public:
 class redirect_tag_str
 {
 public:
-  redirect_tag_str():next(0), chunk_str(NULL), type(0)
-  {
-  }
+   redirect_tag_str()
+     : next(0), chunk_str(NULL), type(0)
+    { }
 
-   ~redirect_tag_str()
+  ~redirect_tag_str()
   {
     type = 0;
     if (chunk_str) {
@@ -118,9 +118,9 @@ public:
   int getRank() const { return _rank; };
 
 private:
-    bool set_instance(remap_plugin_info *, ihandle *);
-    std::deque<remap_plugin_info *>_plugin_list;
-    std::map<remap_plugin_info *, ihandle *>_instance_map;
+  bool set_instance(remap_plugin_info *, ihandle *);
+  std::deque<remap_plugin_info *>_plugin_list;
+  std::map<remap_plugin_info *, ihandle *>_instance_map;
   int _cur_instance_count;
   int _rank;
   URL _default_to_url;
@@ -131,17 +131,23 @@ private:
 
 
 class UrlMappingContainer {
-
 public:
+  UrlMappingContainer()
+    : _mapping(NULL), _toURLPtr(NULL), _heap(NULL)
+    { }
 
-  UrlMappingContainer() : _mapping(NULL), _toURLPtr(NULL), _heap(NULL) { };
+  UrlMappingContainer(url_mapping *m)
+    : _heap(NULL)
+    { set(m); }
 
-  UrlMappingContainer(url_mapping *m) : _heap(NULL) { set(m); };
+  UrlMappingContainer(HdrHeap *heap)
+    : _mapping(NULL), _toURLPtr(NULL), _heap(heap)
+  { }
 
-  UrlMappingContainer(HdrHeap *heap) : _mapping(NULL), _toURLPtr(NULL), _heap(heap) { };
+
+  ~UrlMappingContainer() { deleteToURL(); }
   
   URL *getToURL() const { return _toURLPtr; };
-
   url_mapping *getMapping() const { return _mapping; };
 
   void set(url_mapping *m) { 
@@ -175,10 +181,7 @@ public:
     _heap = NULL;
   }
 
-  ~UrlMappingContainer() { deleteToURL(); };
-
 private:
-
   url_mapping *_mapping;
   URL *_toURLPtr;
   URL _toURL;
@@ -187,7 +190,6 @@ private:
   // non-copyable, non-assignable
   UrlMappingContainer(const UrlMappingContainer &orig);
   UrlMappingContainer &operator =(const UrlMappingContainer &rhs);
-
 };
 
 #endif

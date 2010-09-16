@@ -31,7 +31,7 @@ url_mapping::url_mapping(int rank /* = 0 */)
     optional_referer(false), negative_referer(false), no_negative_cache(false), wildcard_from_scheme(false),
     pristine_host_hdr(-1), chunking_enabled(-1), tag(NULL), filter_redirect_url(NULL), referer_list(0),
     redir_chunk_list(0), filter(NULL), _plugin_count(0), _cur_instance_count(0), _rank(rank), _default_to_url()
-{ /* nop */ ;
+{
 }
 
 
@@ -53,6 +53,9 @@ remap_plugin_info *
 url_mapping::get_plugin(unsigned int index)
 {
   Debug("url_rewrite", "get_plugin says we have %d plugins and asking for plugin %d", _plugin_count, index);
+  if (_plugin_count == 0)
+    return NULL;
+
   remap_plugin_info *plugin = NULL;
 
   if (unlikely(index > _plugin_count)) {
@@ -69,6 +72,7 @@ url_mapping::get_plugin(unsigned int index)
     }
     j++;
   }
+
   Debug("url_rewrite", "url_mapping::get_plugin could not find requested plugin");
   return NULL;
 }
@@ -79,8 +83,7 @@ url_mapping::get_plugin(unsigned int index)
 **/
 bool url_mapping::set_instance(remap_plugin_info * p, ihandle * h)
 {
-  Debug("url_rewrite", "Adding handle: %x to instance map for plugin: %x (%s) [cur:%d]", h, p, p->path,
-        _cur_instance_count);
+  Debug("url_rewrite", "Adding handle: %x to instance map for plugin: %x (%s) [cur:%d]", h, p, p->path, _cur_instance_count);
   _instance_map[p] = h;
   return true;
 }

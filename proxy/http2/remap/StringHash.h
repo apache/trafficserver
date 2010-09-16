@@ -24,6 +24,8 @@
 #ifndef _STRING_HASH_H_
 #define _STRING_HASH_H_
 
+#include "ink_port.h"
+
 #define STRINGHASH_MIN_TBL_SIZE 0x10
 #define STRINGHASH_MAX_TBL_SIZE 0x1000000
 
@@ -40,9 +42,14 @@ public:
   char *str;
   void *ptr;
 
-    StringHashEntry();
-   ~StringHashEntry();
-    StringHashEntry & clean();
+  StringHashEntry()
+    : next(NULL), hashid(0), hash_table_index(0), strsize(0), str(NULL), ptr(NULL)
+    { }
+
+  ~StringHashEntry() { clean();  }
+
+  StringHashEntry& clean();
+
   const char *setstr(const char *_str, int _strsize = (-1));
 };
 
@@ -59,12 +66,14 @@ public:
   bool ignore_case;
   StringHashEntry **hash;
 
-    StringHash(int _hash_size = 0x1000, bool _ignore_case = false);
-   ~StringHash();
+  StringHash(int _hash_size = 0x1000, bool _ignore_case = false);
+  ~StringHash();
+
 private:
   unsigned long csum_calc(void *_buf, int size);
+
 public:
-    StringHashEntry * find_or_add(void *_ptr, const char *str, int strsize = (-1));
+  StringHashEntry * find_or_add(void *_ptr, const char *str, int strsize = (-1));
 };
 
 #endif

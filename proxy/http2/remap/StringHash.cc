@@ -22,7 +22,6 @@
  */
 
 #include "StringHash.h"
-#include "Main.h"
 #include "Error.h"
 
 
@@ -36,8 +35,6 @@ StringHash::StringHash(int _hash_size, bool _ignore_case)
   hash_mask = 0;
   hash_mask_size = 0;
   max_hit_level = 0;
-
-  //printf("StringHash::StringHash(0x%0X,%s)\n",_hash_size,_ignore_case ? "ignore case" : "count case");
 
   if ((hash_size = _hash_size) < STRINGHASH_MIN_TBL_SIZE)
     _hash_size = (hash_size = STRINGHASH_MIN_TBL_SIZE);
@@ -186,20 +183,6 @@ StringHashEntry & StringHashEntry::clean()
   hash_table_index = (strsize = 0);
   hashid = 0;
   return *this;
-}
-
-StringHashEntry::StringHashEntry()
-{
-  next = NULL;
-  hashid = 0;
-  hash_table_index = (strsize = 0);
-  str = NULL;
-  ptr = NULL;
-}
-
-StringHashEntry::~StringHashEntry()
-{
-  clean();
 }
 
 const char *

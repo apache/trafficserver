@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Class to execute one (or more) remap plugin(s).
 
   @section license License
 
@@ -25,119 +25,51 @@
 
 ClassAllocator<RemapPlugins> pluginAllocator("RemapPluginsAlloc");
 
-RemapPlugins::RemapPlugins():_cur(0)
-{
-
-}
-
-RemapPlugins::~RemapPlugins()
-{
-  _cur = 0;
-}
-
-void
-RemapPlugins::setMap(UrlMappingContainer * m)
-{
-  _map_container = m;
-}
-
-void
-RemapPlugins::setRequestUrl(URL * u)
-{
-  _request_url = u;
-}
-
-void
-RemapPlugins::setState(HttpTransact::State * state)
-{
-  _s = state;
-}
-
-void
-RemapPlugins::setRequestHeader(HTTPHdr * h)
-{
-  _request_header = h;
-}
-
-void
-RemapPlugins::setHostHeaderInfo(host_hdr_info * h)
-{
-  _hh_ptr = h;
-}
-
 int
-RemapPlugins::run_plugin(remap_plugin_info * plugin, char *origURLBuf, int origURLBufSize,
-                         bool * plugin_modified_host, bool * plugin_modified_port, bool * plugin_modified_path)
+RemapPlugins::run_plugin(remap_plugin_info* plugin, char *origURLBuf, int origURLBufSize,
+                         bool* plugin_modified_host, bool* plugin_modified_port, bool* plugin_modified_path)
 {
   int plugin_retcode;
   bool do_x_proto_check = true;
   TSRemapRequestInfo rri;
-  const char *requestPath;
-  int requestPathLen;
   int requestPort = 0;
   url_mapping *map = _map_container->getMapping();
   URL *map_from = &(map->fromURL);
-  const char *fromPath;
-  int fromPathLen;
   URL *map_to = _map_container->getToURL();
 
-  const char *toHost;
-  const char *toPath;
-  int toPathLen;
-  int toHostLen;
+  // The "to" part of the RRI struct always stays the same.
+  rri.remap_to_host = map_to->host_get(&rri.remap_to_host_size);
+  rri.remap_to_port = map_to->port_get();
+  rri.remap_to_path = map_to->path_get(&rri.remap_to_path_size);
+  rri.to_scheme = map_to->scheme_get(&rri.to_scheme_len);
 
-  const char *fromHost;
-  int fromHostLen;
-
-  requestPath = _request_url->path_get(&requestPathLen);
-  requestPort = _request_url->port_get();
-
+  // These are made to reflect the "defaults" that will be used in
+  // the case where the plugins don't modify them. It's semi-weird
+  // that the "from" and "to" URLs changes when chaining happens, but
+  // it is necessary to get predictable behavior.
   if (_cur == 0) {
-    fromPath = map_from->path_get(&fromPathLen);
-    fromHost = map_from->host_get(&fromHostLen);
-    toHost = map_to->host_get(&toHostLen);
-    toPath = map_to->path_get(&toPathLen);
-    rri.remap_from_port = map_from->port_get();
-    rri.remap_to_port = map_to->port_get();
-    rri.from_scheme = map_from->scheme_get(&rri.from_scheme_len);
-    rri.to_scheme = map_to->scheme_get(&rri.to_scheme_len);
     rri.remap_from_host = map_from->host_get(&rri.remap_from_host_size);
-  } else {                      //after the first plugin has run, we need to use these in order to "chain" them
-    fromPath = _request_url->path_get(&fromPathLen);
-    fromHost = _request_url->host_get(&fromHostLen);
-    toHost = _request_url->host_get(&toHostLen);
-    toPath = _request_url->path_get(&toPathLen);
-    rri.remap_from_port = _request_url->port_get();
-    rri.remap_to_port = _request_url->port_get();
-    rri.from_scheme = _request_url->scheme_get(&rri.from_scheme_len);
-    rri.to_scheme = _request_url->scheme_get(&rri.to_scheme_len);
+    rri.remap_from_port = map_from->port_get();
+    rri.remap_from_path = map_from->path_get(&rri.remap_from_path_size);
+    rri.from_scheme = map_from->scheme_get(&rri.from_scheme_len);
+  } else {
     rri.remap_from_host = _request_url->host_get(&rri.remap_from_host_size);
+    rri.remap_from_port = _request_url->port_get();
+    rri.remap_from_path = _request_url->path_get(&rri.remap_from_path_size);
+    rri.from_scheme = _request_url->scheme_get(&rri.from_scheme_len);
   }
 
   // Get request port
-  rri.request_port = requestPort;
+  rri.request_port = _request_url->port_get();
 
   // Set request path
-  rri.request_path = requestPath;
-  rri.request_path_size = requestPathLen;
+  rri.request_path = _request_url->path_get(&rri.request_path_size);
 
   // Get request query
   rri.request_query = _request_url->query_get(&rri.request_query_size);
 
   // Get request matrix parameters
   rri.request_matrix = _request_url->params_get(&rri.request_matrix_size);
-
-  // Get toURL host
-  rri.remap_to_host = toHost;
-  rri.remap_to_host_size = toHostLen;
-
-  // Set "remap from" path
-  rri.remap_from_path = fromPath;
-  rri.remap_from_path_size = fromPathLen;
-
-  // Set "remap to" path
-  rri.remap_to_path = toPath;
-  rri.remap_to_path_size = toPathLen;
 
   rri.size = sizeof(rri);
   rri.orig_url = origURLBuf;
@@ -155,6 +87,7 @@ RemapPlugins::run_plugin(remap_plugin_info * plugin, char *origURLBuf, int origU
 
   // Get request Host
   rri.request_host = _request_url->host_get(&rri.request_host_size);
+
   // Copy client IP address
   rri.client_ip = _s ? _s->client_info.ip : 0;
 
@@ -277,8 +210,9 @@ RemapPlugins::run_plugin(remap_plugin_info * plugin, char *origURLBuf, int origU
 int
 RemapPlugins::run_single_remap()
 {
-  Debug("url_rewrite", "Running single remap rule for the %d%s time", _cur, _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th"       //i should patent this
-    );
+  // I should patent this
+  Debug("url_rewrite", "Running single remap rule for the %d%s time", _cur, _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th");
+
   remap_plugin_info *plugin = NULL;
 
   bool plugin_modified_host = false;
@@ -291,15 +225,11 @@ RemapPlugins::run_single_remap()
   int origURLBufSize;
   const char *requestPath;
   int requestPathLen;
-  int requestPort;
   url_mapping *map = _map_container->getMapping();
   URL *map_from = &(map->fromURL);
   const char *fromPath;
   int fromPathLen;
   URL *map_to = _map_container->getToURL();
-
-  const char *fromHost;
-  int fromHostLen;
 
   const char *toHost;
   const char *toPath;
@@ -312,39 +242,27 @@ RemapPlugins::run_single_remap()
   bool debug_on = false;
   int retcode = 0;              // 0 - no redirect, !=0 - redirected
 
-  if (_cur == 0 && _s) {        // it is important - we must copy "no_negative_cache" flag before possible plugin call [only do this on our first iteration of this function]
+  // it is important - we must copy "no_negative_cache" flag before possible plugin call [only do this on our first iteration of this function]
+  if (_cur == 0 && _s) {
     _s->no_negative_cache = map->no_negative_cache;
     _s->pristine_host_hdr = map->pristine_host_hdr;
     _s->remap_chunking_enabled = map->chunking_enabled;
   }
 
   requestPath = _request_url->path_get(&requestPathLen);
-  requestPort = _request_url->port_get();
 
-  int fromPort = 0;
-  int toPort = 0;
+  toHost = map_to->host_get(&toHostLen);
+  toPath = map_to->path_get(&toPathLen);
 
+  // after the first plugin has run, we need to use these in order to "chain" them and previous changes are all in _request_url,
+  // in case we need to copy values from previous plugin or from the remap rule.
   if (_cur == 0) {
     fromPath = map_from->path_get(&fromPathLen);
-    fromHost = map_from->host_get(&fromHostLen);
-    toHost = map_to->host_get(&toHostLen);
-    toPath = map_to->path_get(&toPathLen);
-    fromPort = map_from->port_get();
-    toPort = map_to->port_get();
-  } else {                      //after the first plugin has run, we need to use these in order to "chain" them and previous changes are all in _request_url
-    fromHost = _request_url->host_get(&fromHostLen);
+  } else {
     fromPath = _request_url->path_get(&fromPathLen);
-    toHost = _request_url->host_get(&toHostLen);
-    toPath = _request_url->path_get(&toPathLen);
-    toPort = _request_url->port_get();
-    fromPort = _request_url->port_get();
   }
 
-  Debug("url_rewrite", "before remap plugin: from: scheme://%.*s:%d/%.*s  *to* scheme://%.*s:%d/%.*s",
-        fromHostLen, fromHost, fromPort, fromPathLen, fromPath, toHostLen, toHost, toPort, toPathLen, toPath);
-
-  if (is_debug_tag_set("url_rewrite"))
-    debug_on = true;
+  debug_on = is_debug_tag_set("url_rewrite");
 
   if (_request_header)
     plugin = map->get_plugin(_cur);    //get the nth plugin in our list of plugins
@@ -352,7 +270,7 @@ RemapPlugins::run_single_remap()
   if (plugin || debug_on) {
     origURLBuf = _request_url->string_get(NULL);
     origURLBufSize = strlen(origURLBuf);
-    Debug("url_rewrite", "string is: %s", origURLBuf);
+    Debug("url_rewrite", "Original request URL is : %s", origURLBuf);
   }
 
   if (plugin) {
@@ -522,26 +440,16 @@ RemapPlugins::run_single_remap()
   }
 
 done:
-  int requestHostLen = 0;
-  const char *requestHost = _request_url->host_get(&requestHostLen);
-  requestPort = _request_url->port_get();
-  requestPath = _request_url->path_get(&requestPathLen);
-
-  Debug("url_rewrite", "after remap plugin: request url now: scheme://%.*s:%d/%.*s",
-        requestHostLen, requestHost, requestPort, requestPathLen, requestPath);
-
-  if (_cur > 10) {
+  if (_cur > MAX_REMAP_PLUGIN_CHAIN) {
     Error("Are you serious?! Called run_single_remap more than 10 times. Stopping this remapping insanity now");
     Debug("url_rewrite",
           "Are you serious?! Called run_single_remap more than 10 times. Stopping this remapping insanity now");
     return 1;
   }
 
-  _cur++;                       //important
-
-  if (_cur >= map->_plugin_count) {
+  if (++_cur >= map->_plugin_count) {
     //normally, we would callback into this function but we dont have anything more to do!
-    Debug("url_rewrite", "we exhausted all available plugins");
+    Debug("url_rewrite", "We completed all remap plugins for this rule");
     return 1;
   } else {
     Debug("url_rewrite", "Completed single remap. Attempting another via immediate callback");
@@ -552,7 +460,7 @@ done:
 }
 
 int
-RemapPlugins::run_remap(int event, Event * e)
+RemapPlugins::run_remap(int event, Event* e)
 {
   Debug("url_rewrite", "Inside RemapPlugins::run_remap with cur = %d", _cur);
 
@@ -561,7 +469,7 @@ RemapPlugins::run_remap(int event, Event * e)
 
   int ret = 0;
 
-  //EThread * t = mutex->thread_holding;
+  //EThread* t = mutex->thread_holding;
 
   /* make sure we weren't cancelled */
   if (action.cancelled) {

@@ -23,35 +23,21 @@
 
 #include "RemapPluginInfo.h"
 
-pthread_mutex_t
-  remap_plugin_info::global_list_mutex;
-remap_plugin_info_init
-  instance_of_remap_plugin_info_init;
+// Globals
+pthread_mutex_t remap_plugin_info::global_list_mutex;
+remap_plugin_info_init instance_of_remap_plugin_info_init;
 
-/**
- *
-**/
+
+// Initialization
 remap_plugin_info_init::remap_plugin_info_init()
 {
   pthread_mutex_init(&remap_plugin_info::global_list_mutex, 0);
 }
 
 
-/**
- *
-**/
 remap_plugin_info::remap_plugin_info(char *_path)
-  :
-next(0),
-path(NULL),
-path_size(0),
-dlh(NULL),
-fp_tsremap_init(NULL),
-fp_tsremap_done(NULL),
-fptsremap_new_instance(NULL),
-fp_tsremap_delete_instance(NULL),
-fp_tsremap_remap(NULL),
-fp_tsremap_os_response(NULL)
+  :  next(0), path(NULL), path_size(0), dlh(NULL), fp_tsremap_init(NULL), fp_tsremap_done(NULL), fptsremap_new_instance(NULL),
+     fp_tsremap_delete_instance(NULL), fp_tsremap_remap(NULL), fp_tsremap_os_response(NULL) 
 {
   // coverity did not see xfree
   // coverity[ctor_dtor_leak]
@@ -60,10 +46,6 @@ fp_tsremap_os_response(NULL)
   }
 }
 
-
-/**
- *
-**/
 remap_plugin_info::~remap_plugin_info()
 {
   xfree(path);

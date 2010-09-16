@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Declarations for the RemapPlugins class.
 
   @section license License
 
@@ -36,30 +36,39 @@
 #include "HttpTransact.h"
 #include "ReverseProxy.h"
 
+static const unsigned int MAX_REMAP_PLUGIN_CHAIN = 10;
+
 /**
  * A class that represents a queue of plugins to run
 **/
 struct RemapPlugins: public Continuation
 {
+  RemapPlugins()
+    : _cur(0)
+    { }
+
+  ~RemapPlugins() { _cur = 0; }
+
+  // Some basic setters
+  void setMap(UrlMappingContainer* m) { _map_container = m; }
+  void setRequestUrl(URL* u) { _request_url = u; }
+  void setState(HttpTransact::State* state) { _s = state; }
+  void setRequestHeader(HTTPHdr* h) {  _request_header = h; }
+  void setHostHeaderInfo(host_hdr_info* h) { _hh_ptr = h; }
+
+  int run_remap(int, Event *);
+  int run_single_remap();
+  int run_plugin(remap_plugin_info *, char *, int, bool *, bool *, bool *);
+
+  Action action;
+
+ private:
   unsigned int _cur;
   UrlMappingContainer *_map_container;
   URL *_request_url;
   HTTPHdr *_request_header;
-    HttpTransact::State * _s;
+  HttpTransact::State * _s;
   host_hdr_info *_hh_ptr;
-
-    RemapPlugins();
-   ~RemapPlugins();
-
-  int run_remap(int, Event *);
-  int run_single_remap();
-  void setMap(UrlMappingContainer *);
-  void setRequestUrl(URL *);
-  void setRequestHeader(HTTPHdr *);
-  int run_plugin(remap_plugin_info *, char *, int, bool *, bool *, bool *);
-  void setState(HttpTransact::State *);
-  void setHostHeaderInfo(host_hdr_info *);
-  Action action;
 };
 
 #endif

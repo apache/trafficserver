@@ -34,7 +34,8 @@
 class UrlMappingPathIndex
 {
 public:
-  UrlMappingPathIndex() { };
+  UrlMappingPathIndex()
+    { }
 
   bool Insert(url_mapping *mapping);
 
@@ -46,26 +47,22 @@ public:
 
   void Clear();
 
-  virtual ~UrlMappingPathIndex()
-  {
-    Clear();
-  }
+  virtual ~UrlMappingPathIndex() { Clear(); }
 
 
 private:
   typedef Trie<url_mapping *> UrlMappingTrie;
-  struct UrlMappingTrieKey
-  {
+  struct UrlMappingTrieKey {
     int scheme_wks_idx;
     int port;
+
     UrlMappingTrieKey(int idx, int p) : scheme_wks_idx(idx), port(p) { };
-    bool operator <(const UrlMappingTrieKey &rhs) const
-    {
+    bool operator <(const UrlMappingTrieKey &rhs) const {
       if (scheme_wks_idx == rhs.scheme_wks_idx) {
         return (port < rhs.port);
       }
       return (scheme_wks_idx < rhs.scheme_wks_idx);
-    };
+    }
   };
 
   typedef std::map<UrlMappingTrieKey, UrlMappingTrie *> UrlMappingGroup;
@@ -76,8 +73,7 @@ private:
   UrlMappingPathIndex(const UrlMappingPathIndex &rhs) { NOWARN_UNUSED(rhs); };
   UrlMappingPathIndex &operator =(const UrlMappingPathIndex &rhs) { NOWARN_UNUSED(rhs); return *this; }
 
-  inline UrlMappingTrie *_GetTrie(URL *url, int &idx, int port, bool search = true) const
-  {
+  inline UrlMappingTrie *_GetTrie(URL *url, int &idx, int port, bool search = true) const {
     idx = url->scheme_get_wksidx();
     UrlMappingGroup::const_iterator group_iter;
     if (search) { // normal search
@@ -90,7 +86,7 @@ private:
       return group_iter->second;
     }
     return 0;
-  };
+  }
 
 };
 

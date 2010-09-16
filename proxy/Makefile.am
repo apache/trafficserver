@@ -152,6 +152,7 @@ traffic_server_SOURCES = \
 traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_server_LDADD = \
   http2/libhttp.a \
+  http2/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
   stats/libstats.a \

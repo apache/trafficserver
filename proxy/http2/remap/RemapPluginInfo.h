@@ -52,7 +52,7 @@ class remap_plugin_info
 public:
   static pthread_mutex_t global_list_mutex;
 
-    Link<remap_plugin_info *>link;   //so i can queue these up
+  Link<remap_plugin_info *>link;   //so i can queue these up
 
   remap_plugin_info *next;
   char *path;
@@ -65,8 +65,8 @@ public:
   _tsremap_remap *fp_tsremap_remap;
   _tsremap_os_response *fp_tsremap_os_response;
 
-    remap_plugin_info(char *_path);
-   ~remap_plugin_info();
+  remap_plugin_info(char *_path);
+  ~remap_plugin_info();
 
   remap_plugin_info *find_by_path(char *_path);
   void add_to_list(remap_plugin_info * pi);
