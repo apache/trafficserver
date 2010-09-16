@@ -2,15 +2,51 @@
 
 Changes with Apache Traffic Server 2.1.3
 
+  *) traffic_shell shows wrong RAM cache size > 2GB [TS-439].
+
+  *) Better warnings / errors when bad NIC is configured [TS-327].
+
+  *) Add support for hardware sector sizes 512 - 8192 bytes (e.g. 4096, the
+   new standard). Autodetected for raw devices on Linux (no support for
+   other OSes yet), and added a new configuration
+
+   	 CONFIG proxy.config.cache.force_sector_size INT 4096
+
+   This change invalidates the entire cache as well, since it's no longer
+   compatible [TS-43].
+
+  *) Added APIs to override the cacheablity of the response [TS-395].
+
+  *) Add OSX support to 'trafficserver' script (author: Dan Mercer) [TS-210].
+
+  *) Fix for (very) large buffers fed to the cache [TS-413].
+
+  *) Forward transparency is available on Linux kernels with TPROXY [TS-291].
+
+  *) Fix defaults / max for DNS retries [TS-424].
+
+  *) Improvements for Perl admin module (author: Adam Faris) [TS-418].
+
   *) Problems with specifying separate config files for SSL certificates and
    keys [TS-405].
 
-  *) TS fails to use user ID with user name longer than 8 characters
-   [TS-420].
+  *) Logging: Default settings for diagnostic logging [TS-55].
 
-  *) Forward transparency is available on Linux kernels with TPROXY. [TS-291]
+  *) Fixes to Debian layout (author: Igor Galić) [TS-415].
 
-  *) Logging: Default settings for diagnostic logging. [TS-55]
+  *) Remove DNS proxy support [TS-422].
+
+  *) rc/trafficserver start/stop quits with bogus status on success (author:
+   Igor Galić) [TS-429].
+
+  *) Increase default max in-flight DNS queries [TS-423].
+
+  *) Update so the pristine URL will work for reverse and forward
+    proxy.  Also, clearing the url on transaction close (author: Wendy
+    Huang) [TS-410].
+
+  *) TS fails to use user ID with user name > 8 characters (author: Yakov
+   Markovitch) [TS-420].
 
 
 Changes with Apache Traffic Server 2.1.2
