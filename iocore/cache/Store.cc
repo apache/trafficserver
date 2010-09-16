@@ -633,7 +633,7 @@ Span::init(char *filename, int64 size)
 #endif
 
   if (is_disk) {
-    long physsectors = 0;
+    uint32 physsectors = 0;
 
     /* Disks cannot be mmapped */
     is_mmapable_internal = false;
@@ -671,6 +671,9 @@ Span::init(char *filename, int64 size)
      * possibly something other than the actual number of blocks, but the
      * code for other arches seems to.  Revisit this, perhaps. */
     blocks = size / STORE_BLOCK_SIZE;
+    
+    Debug("cache_init", "Span::init physical sectors %u total size %lld geometry size %lld store blocks %lld", 
+          physsectors, hw_sector_size * (int64)physsectors, size, blocks);
 
     pathname = xstrdup(filename);
     file_pathname = 1;

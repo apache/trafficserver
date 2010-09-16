@@ -544,7 +544,7 @@ CacheProcessor::start_internal(int flags)
         if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE)
           Error("bad hardware sector size");
         off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
-        blocks = blocks - ROUND_TO_STORE_BLOCK(sd->offset - skip);
+        blocks = blocks - ROUND_TO_STORE_BLOCK(sd->offset + skip);
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
         gndisks++;
       }
@@ -691,13 +691,13 @@ CacheProcessor::cacheInitialized()
 
   if (theCache) {
     total_size += theCache->cache_size;
-    Debug("cache_init", "CacheProcessor::cacheInitialized - theCache, total_size = %lld = %lld",
-          total_size, total_size / (1024 * 1024));
+    Debug("cache_init", "CacheProcessor::cacheInitialized - theCache, total_size = %lld = %lld MB",
+          total_size, total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
   }
   if (theStreamCache) {
     total_size += theStreamCache->cache_size;
-    Debug("cache_init", "CacheProcessor::cacheInitialized - theStreamCache, total_size = %lld = %lld",
-          total_size, total_size / (1024 * 1024));
+    Debug("cache_init", "CacheProcessor::cacheInitialized - theStreamCache, total_size = %lld = %lld MB",
+          total_size, total_size / ((1024 * 1024) / STORE_BLOCK_SIZE));
   }
 
   if (theCache) {
