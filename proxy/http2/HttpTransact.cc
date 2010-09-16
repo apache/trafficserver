@@ -1048,10 +1048,6 @@ HttpTransact::ModifyRequest(State * s)
   ////////////////////////////////////////////////
   URL *url = request->url_get();
 
-  hostname = request->host_get(&hostname_len);
-  if (!request->is_target_in_url())
-    s->hdr_info.client_req_is_server_style = true;
-
   s->orig_scheme = (scheme = url->scheme_get_wksidx());
 
   s->method = s->hdr_info.client_request.method_get_wksidx();
@@ -1067,6 +1063,15 @@ HttpTransact::ModifyRequest(State * s)
 
   if (s->method == HTTP_WKSIDX_CONNECT && !request->is_port_in_header())
     url->port_set(80);
+
+  // Ugly - this must come after the call to url->scheme_set or
+  // it can't get the scheme properly and the wrong data is cached.
+  // The solution should be to move the scheme detecting logic in to
+  // the header class, rather than doing it in a random bit of
+  // external code.
+  hostname = request->host_get(&hostname_len);
+  if (!request->is_target_in_url())
+    s->hdr_info.client_req_is_server_style = true;
 
   // If the incoming request is proxy-style AND contains a Host header,
   // then remove the Host header to prevent content spoofing.

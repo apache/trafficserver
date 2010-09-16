@@ -1491,7 +1491,7 @@ HTTPHdr::_fill_target_cache() const
 	m_port = m_port * 10 + *colon - '0';
       m_port_in_header = 0 != m_port;
     }
-    m_port = url_canonicalize_port(this->type_get(), m_port);
+    m_port = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
   } else {
     m_host_length = 0; // reset in case any earlier check corrupted it
   }
