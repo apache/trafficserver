@@ -2,6 +2,10 @@
 
 Changes with Apache Traffic Server 2.1.3
 
+  *) Cleanup / fixes for remap plugin chaining [TS-224].
+
+  *) Support the rc/trafficserver script for FreeBSD [TS-211].
+
   *) traffic_shell shows wrong RAM cache size > 2GB [TS-439].
 
   *) Better warnings / errors when bad NIC is configured [TS-327].
