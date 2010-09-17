@@ -2301,23 +2301,6 @@ RemapObj::RemapObj(TokenList * tokens)
     }
   }
 
-  // Optional MIXT tag
-  token = tokens->next(token);
-  if (token) {
-    if (!token->name) {
-      goto FORMAT_ERR;
-    }
-    if (!strcmp(token->name, "RNI")) {
-      m_ele->mixt = INK_MIXT_RNI;
-    } else if (!strcmp(token->name, "QT")) {
-      m_ele->mixt = INK_MIXT_QT;
-    } else if (!strcmp(token->name, "WMT")) {
-      m_ele->mixt = INK_MIXT_WMT;
-    } else {
-      goto FORMAT_ERR;
-    }
-  }
-
   return;
 
 FORMAT_ERR:
@@ -2434,22 +2417,6 @@ RemapObj::formatEleToRule()
     strncat(buf, m_ele->to_path_prefix, sizeof(buf) - strlen(buf) - 1);
   }
 
-  switch (m_ele->mixt) {
-  case INK_MIXT_RNI:
-    strncat(buf, " RNI", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case INK_MIXT_QT:
-    strncat(buf, " QT", sizeof(buf) - strlen(buf) - 1);
-    break;
-  case INK_MIXT_WMT:
-    strncat(buf, " WMT", sizeof(buf) - strlen(buf) - 1);
-    break;
-  default:
-    // Handled here:
-    // INK_MIXT_UNDEFINED
-    break;
-  }
-
   return xstrdup(buf);
 }
 
@@ -2490,10 +2457,6 @@ bool RemapObj::isValid()
     m_valid = false;
   }
 
-  // if the mixt tag is specified, the only possible scheme is "rtsp"
-  if (m_ele->mixt != INK_MIXT_UNDEFINED && m_ele->from_scheme != INK_SCHEME_RTSP && m_ele->to_scheme != INK_SCHEME_RTSP) {
-    m_valid = false;
-  }
   // mandatory field
   if (!m_ele->from_host || strstr(m_ele->from_host, ":/")) {
     m_valid = false;

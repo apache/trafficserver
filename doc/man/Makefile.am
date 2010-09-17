@@ -28,19 +28,14 @@ man_MANS = \
   config_hostdb.1 \
   config_http.1 \
   config_icp.1 \
-  config_ldap.1 \
   config_logging.1 \
   config_name.1 \
   config_network.1 \
-  config_ntlm.1 \
   config_parent.1 \
   config_port-tunnels.1 \
-  config_qt.1 \
-  config_radius.1 \
   config_remap.1 \
   config_reset-stats.1 \
   config_restart.1 \
-  config_rni.1 \
   config_root.1 \
   config_scheduled-update.1 \
   config_security.1 \
@@ -52,7 +47,6 @@ man_MANS = \
   config_stop.1 \
   config_upgrade.1 \
   config_virtual-ip.1 \
-  config_wmt.1 \
   disable.1 \
   enable.1 \
   exit.1 \
@@ -70,23 +64,14 @@ man_MANS = \
   show_http-trans-stats.1 \
   show_icp.1 \
   show_icp-stats.1 \
-  show_ldap.1 \
-  show_ldap-stats.1 \
   show_logging.1 \
   show_logging-stats.1 \
   show_network.1 \
-  show_ntlm.1 \
-  show_ntlm-stats.1 \
   show_parent.1 \
   show_port-tunnels.1 \
   show_proxy.1 \
   show_proxy-stats.1 \
-  show_qt.1 \
-  show_qt-stats.1 \
-  show_radius.1 \
   show_remap.1 \
-  show_rni.1 \
-  show_rni-stats.1 \
   show_scheduled-update.1 \
   show_security.1 \
   show_snmp.1 \
@@ -95,6 +80,4 @@ man_MANS = \
   show_status.1 \
   show_version.1 \
   show_virtual-ip.1 \
-  show_wmt.1 \
-  show_wmt-stats.1 \
   traffic_shell.1

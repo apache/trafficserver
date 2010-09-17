@@ -470,7 +470,6 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
 // and print the key to a unique file (name assembled from timestamp and
 // stored in the path specified by an auth record)
 // Returns the filename of this file or NULL if the encryption failed.
-// Used for bind_pwd_file in filter.config and for radius shared keys.
 //-------------------------------------------------------------------------
 char *
 encryptToFileAuth_malloc(const char *password)
@@ -3008,34 +3007,6 @@ handle_submit_update(WebHttpContext * whc, const char *file)
           use_ssl_updated = true;
         }
       }
-      // check if entering radius password
-      RecString old_pwd_file;
-      char *new_pwd_file;
-      if (strcasecmp(record, "proxy.config.radius.proc.radius.primary_server.shared_key_file") == 0 ||
-          strcasecmp(record, "proxy.config.radius.proc.radius.secondary_server.shared_key_file") == 0) {
-        if (value && strcmp(value, FAKE_PASSWORD) == 0)
-          continue;             // no new password entered
-
-        // delete the old password file and create a new one
-        RecGetRecordString_Xmalloc(record, &old_pwd_file);
-        if (old_pwd_file) {     // remove the old_pwd_file
-          if (remove(old_pwd_file) != 0)
-            Debug("web2", "[handle_submit_update] Failed to remove password file %s", old_pwd_file);
-          xfree(old_pwd_file);
-        }
-        if (value) {
-          new_pwd_file = encryptToFileAuth_malloc(value);       // encrypt new pwd if specified
-          if (new_pwd_file) {
-            set_record_value(whc, record, new_pwd_file);
-            xfree(new_pwd_file);
-          }
-        } else {
-          set_record_value(whc, record, NULL);  // no pwd specified by user
-        }
-      }
-      if (strcasecmp(record, "proxy.config.radius.proc.radius.primary_server.shared_key_file") != 0 &&
-          strcasecmp(record, "proxy.config.radius.proc.radius.secondary_server.shared_key_file") != 0)
-        set_record_value(whc, record, value);
     }
   }
   // warn if out of date submission

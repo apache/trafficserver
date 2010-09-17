@@ -119,15 +119,6 @@ class HdrHeap;
 class EThread;
 class UnixNetVConnection;
 
-#ifdef READ_CORE_WMT
-class WMT_ServerFileSM;
-class WMT_ClientServer;
-class WMT_Top;
-class TunnelSM;
-class WMT_Datapump;
-class evHistory;
-#endif
-
 class CoreUtils
 {
 public:
@@ -228,14 +219,6 @@ public:
   static void test_HttpSM(void *);
   static void test_HttpSM_from_tunnel(void *);
 
-#ifdef READ_CORE_WMT
-  static void test_wmtServerFile(void *);
-  static void test_wmtTunnel(void *);
-  static void test_wmtTop(void *);
-  static void test_wmtClientServer(void *arg);
-  static void test_wmtDatapump(void *arg);
-#endif
-
   /**********************************************************************
   * purpose: prints out info about a give HttpSM
   * inputs: HttpSM* core_ptr (ptr to http_sm in core)
@@ -245,24 +228,12 @@ public:
   static void process_EThread(EThread * eth_test);
   static void process_NetVC(UnixNetVConnection * eth_test);
 
-#ifdef READ_CORE_WMT
-  static void process_WmtServerFileSM(WMT_ServerFileSM * wsfm_test);
-  static void process_WmtTunnel(TunnelSM * tunnel_test);
-  static void process_WmtTop(WMT_Top * top_test);
-  static void process_WmtClientServer(WMT_ClientServer * wcs_test);
-  static void process_WmtDatapump(WMT_Datapump * wdp_test);
-#endif
-
   /**********************************************************************
   * purpose: dumps the given state machine's history
   * inputs: HttpSM* hsm
   * outputs: none
   **********************************************************************/
   static void dump_history(HttpSM * hsm);
-
-#ifdef READ_CORE_WMT
-  static void wmt_dump_history(evHistory * hist);
-#endif
 
   /**********************************************************************
   * purpose: fills in the given HTTPHdr * live_hdr with live information

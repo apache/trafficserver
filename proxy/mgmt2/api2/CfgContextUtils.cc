@@ -971,29 +971,7 @@ pdest_sspec_to_string(INKPrimeDestT pd, char *pd_val, INKSspec * sspec)
         }
         if (psize > 0)
           buf_pos += psize;
-      } else
-        break;
-
-
-      if (buf_pos < sizeof(buf)) {
-        switch (sspec->mixt) {
-        case INK_MIXT_RNI:
-          psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "tag=RNI ");
-          break;
-        case INK_MIXT_QT:
-          psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "tag=QT ");
-          break;
-        case INK_MIXT_WMT:
-          psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "tag=WMT ");
-          break;
-        default:
-          psize = 0;
-          break;
-        }
-        if (psize > 0)
-          buf_pos += psize;
-      } else
-        break;
+      }
     }
   } while (0);
 
@@ -1072,11 +1050,6 @@ string_to_pdss_format(const char *str, INKPdSsFormat * pdss)
   if (strlen(tokens[9]) > 0) {
     pdss->sec_spec.scheme = string_to_scheme_type(tokens[9]);
   }
-  // mixt tag
-  if (strlen(tokens[10]) > 0) {
-    pdss->sec_spec.mixt = string_to_mixt_type(tokens[10]);
-  }
-
   return INK_ERR_OKAY;
 
 Lerror:
@@ -1375,44 +1348,6 @@ method_type_to_string(INKMethodT method)
   return NULL;
 }
 
-
-/*----------------------------------------------------------------------------
- * string_to_mixt_type
- *----------------------------------------------------------------------------
- * converts mixt tag string into a INKMixtTagT type
- */
-INKMixtTagT
-string_to_mixt_type(const char *mixt)
-{
-  if (strcasecmp(mixt, "WMT") == 0) {
-    return INK_MIXT_WMT;
-  } else if (strcasecmp(mixt, "QT") == 0) {
-    return INK_MIXT_QT;
-  } else if (strcasecmp(mixt, "RNI") == 0) {
-    return INK_MIXT_RNI;
-  }
-
-  return INK_MIXT_UNDEFINED;
-}
-
-char *
-mixt_type_to_string(INKMixtTagT mixt)
-{
-  switch (mixt) {
-  case INK_MIXT_RNI:
-    return xstrdup("rni");
-  case INK_MIXT_QT:
-    return xstrdup("qt");
-  case INK_MIXT_WMT:
-    return xstrdup("wmt");
-  default:
-    break;
-  }
-
-  return NULL;
-}
-
-
 /*----------------------------------------------------------------------------
  * connect_type_to_string
  *----------------------------------------------------------------------------
@@ -1698,9 +1633,6 @@ tokens_to_pdss_format(TokenList * tokens, Token * first_tok, INKPdSsFormat * pds
         case 6:                // scheme
           pdss->sec_spec.scheme = string_to_scheme_type(tok->value);
           goto next_token;
-        case 7:                // mixt tag
-          pdss->sec_spec.mixt = string_to_mixt_type(tok->value);
-          goto next_token;
         default:
           // This should never happen
           break;
@@ -1884,12 +1816,6 @@ ccu_checkPdSspec(INKPdSsFormat pdss)
     if (!ccu_checkIpAddr(pdss.sec_spec.src_ip))
       goto Lerror;
   }
-  // if the mixt tag is specified, the only possible scheme is "rtsp"
-  if (pdss.sec_spec.mixt != INK_MIXT_UNDEFINED) {
-    if (pdss.sec_spec.scheme != INK_SCHEME_RTSP)
-      goto Lerror;
-  }
-
 
   if (!ccu_checkTimePeriod(&(pdss.sec_spec)))
     goto Lerror;
@@ -2430,7 +2356,6 @@ copy_sspec(INKSspec * src, INKSspec * dst)
   dst->port = copy_port_ele(src->port);
   dst->method = src->method;
   dst->scheme = src->scheme;
-  dst->mixt = src->mixt;
 }
 
 void
@@ -2968,7 +2893,6 @@ copy_remap_ele(INKRemapEle * ele)
   nele->to_port = ele->to_port;
   if (ele->to_path_prefix)
     nele->to_path_prefix = xstrdup(ele->to_path_prefix);
-  nele->mixt = ele->mixt;
 
   return nele;
 }

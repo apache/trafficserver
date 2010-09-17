@@ -706,7 +706,6 @@ init_pdss_format(INKPdSsFormat * info)
   info->sec_spec.port = INK_INVALID_PORT;
   info->sec_spec.method = INK_METHOD_UNDEFINED;
   info->sec_spec.scheme = INK_SCHEME_UNDEFINED;
-  info->sec_spec.mixt = INK_MIXT_UNDEFINED;
 }
 
 /*--- allocate/deallocate operations --------------------------------------*/
@@ -875,7 +874,6 @@ INKSspecCreate(void)
   sec_spec->port = NULL;
   sec_spec->method = INK_METHOD_UNDEFINED;
   sec_spec->scheme = INK_SCHEME_UNDEFINED;
-  sec_spec->mixt = INK_MIXT_UNDEFINED;
   return sec_spec;
 }
 
@@ -1539,7 +1537,6 @@ INKRemapEleCreate(INKRuleTypeT type)
   ele->to_host = NULL;
   ele->to_port = INK_INVALID_PORT;
   ele->to_path_prefix = NULL;
-  ele->mixt = INK_MIXT_UNDEFINED;
 
   return ele;
 }

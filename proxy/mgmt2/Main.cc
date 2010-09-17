@@ -1371,9 +1371,6 @@ fileUpdated(char *fname)
 
 
 // INKqa10113
-  } else if (strcmp(fname, "ldapsrvr.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] ldapsrvr.config file has been modified\n");
-
   } else if (strcmp(fname, "splitdns.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] splitdns.config file has been modified\n");
 

@@ -369,22 +369,6 @@ print_pd_sspec(INKPdSsFormat info)
     break;
   }
 
-  printf("\tmixt: ");
-  switch (info.sec_spec.mixt) {
-  case INK_MIXT_RNI:
-    printf("RNI\n");
-    break;
-  case INK_MIXT_QT:
-    printf("QT\n");
-    break;
-  case INK_MIXT_WMT:
-    printf("WMT\n");
-    break;
-  case INK_MIXT_UNDEFINED:
-    printf("UNDEFINED\n");
-    break;
-  }
-
   return;
 }
 
@@ -1157,11 +1141,6 @@ test_action_need(void)
   printf("[INKRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n",
          INK_ACTION_UNDEFINED, action);
 
-  // RU_REREAD record
-  INKRecordSetInt("proxy.config.ldap.cache.size", 1000, &action);
-  printf("[INKRecordSetInt] proxy.config.ldap.cache.size\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         INK_ACTION_RECONFIGURE, action);
-
   // RU_RESTART_TS record
   INKRecordSetInt("proxy.config.cluster.cluster_port", 6666, &action);
   printf("[INKRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
@@ -1202,10 +1181,6 @@ test_error_records()
   ret = INKRecordSetInt("proy.config.cop.core_signal", new_port, &action);
   print_err("INKRecordSetInt", ret);
 
-
-  printf("[INKRecordSetString] proxy.config.ldap.proc.ldap.server.name = invalid name\n");
-  ret = INKRecordSetString("proxy.config.ldap.proc.ldap.server.name", "invalid name", &action);
-  print_err("INKRecordSetString", ret);
 
   printf("\n");
   if (INKRecordGetCounter("proxy.press.socks.connections_successful", &ctr1) != INK_ERR_OKAY)
@@ -2544,10 +2519,6 @@ sync_test()
   INKRecordSetString("proxy.config.proxy_name", "dorkface", &action);
   printf("[INKRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n",
          INK_ACTION_UNDEFINED, action);
-
-  INKRecordSetInt("proxy.config.ldap.cache.size", 3333, &action);
-  printf("[INKRecordSetInt] proxy.config.ldap.cache.size\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         INK_ACTION_RECONFIGURE, action);
 
   INKRecordSetInt("proxy.config.cluster.cluster_port", 3333, &action);
   printf("[INKRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",

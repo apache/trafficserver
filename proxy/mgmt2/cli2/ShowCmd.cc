@@ -1139,130 +1139,6 @@ Cmd_ShowAlarms(ClientData clientData, Tcl_Interp * interp, int argc, const char 
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ShowNtlmStats
-//
-int
-Cmd_ShowRadius(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  NOWARN_UNUSED(clientData);
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  INKInt radius_status = -1;
-  INKString pri_host = NULL;
-  INKInt pri_port = -1;
-  INKString sec_host = NULL;
-  INKInt sec_port = -1;
-
-  Cli_RecordGetInt("proxy.config.radius.auth.enabled", &radius_status);
-  Cli_RecordGetString("proxy.config.radius.proc.radius.primary_server.name", &pri_host);
-  Cli_RecordGetInt("proxy.config.radius.proc.radius.primary_server.auth_port", &pri_port);
-  Cli_RecordGetString("proxy.config.radius.proc.radius.secondary_server.name", &sec_host);
-  Cli_RecordGetInt("proxy.config.radius.proc.radius.secondary_server.auth_port", &sec_port);
-
-  Cli_Printf("\n");
-  Cli_Printf("Radius Authentication -------- %s\n", radius_status == 1 ? "on" : "off");
-  Cli_Printf("Primary Hostname ------------- %s\n", pri_host);
-  Cli_Printf("Primary Port ----------------- %d\n", pri_port);
-  Cli_Printf("Secondary Hostname ----------- %s\n", sec_host);
-  Cli_Printf("Secondary Port --------------- %d\n", sec_port);
-  Cli_Printf("\n");
-
-  return CLI_OK;
-}
-
-////////////////////////////////////////////////////////////////
-// Cmd_ShowNtlm
-int
-Cmd_ShowNtlm(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  NOWARN_UNUSED(clientData);
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  INKInt ntlm_status = -1;
-  INKString domain_controller = NULL;
-  INKString nt_domain = NULL;
-  INKInt load_balancing = -1;
-
-  Cli_RecordGetInt("proxy.config.ntlm.auth.enabled", &ntlm_status);
-  Cli_RecordGetString("proxy.config.ntlm.dc.list", &domain_controller);
-  Cli_RecordGetString("proxy.config.ntlm.nt_domain", &nt_domain);
-  Cli_RecordGetInt("proxy.config.ntlm.dc.load_balance", &load_balancing);
-
-  Cli_Printf("\n");
-  Cli_Printf("NTLM Authentication ------ %s\n", ntlm_status == 1 ? "on" : "off");
-  Cli_Printf("Domain Controller(s) ----- %s\n", domain_controller);
-  Cli_Printf("NT Domain ---------------- %s\n", nt_domain);
-  Cli_Printf("Load Balancing ----------- %s\n", load_balancing == 1 ? "on" : "off");
-  Cli_Printf("\n");
-
-  return CLI_OK;
-}
-
-////////////////////////////////////////////////////////////////
-// Cmd_ShowNtlmStats
-//
-// This is the callback function for the "show:ntlm-stats" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowNtlmStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  NOWARN_UNUSED(clientData);
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  INKInt cache_hits = -1;
-  INKInt cache_misses = -1;
-  INKInt server_errors = -1;
-  INKInt auth_denied = -1;
-  INKInt auth_cancelled = -1;
-
-  Cli_RecordGetInt("proxy.process.ntlm.cache.hits", &cache_hits);
-  Cli_RecordGetInt("proxy.process.ntlm.cache.misses", &cache_misses);
-  Cli_RecordGetInt("proxy.process.ntlm.server.errors", &server_errors);
-  Cli_RecordGetInt("proxy.process.ntlm.denied.authorizations", &auth_denied);
-  Cli_RecordGetInt("proxy.process.ntlm.cancelled.authentications", &auth_cancelled);
-
-  Cli_Printf("\n");
-  Cli_Printf("Cache Hits ----------------- %d\n", cache_hits);
-  Cli_Printf("Cache Misses --------------- %d\n", cache_misses);
-  Cli_Printf("Server Errors -------------- %d\n", server_errors);
-  Cli_Printf("Authorization Denied ------- %d\n", auth_denied);
-  Cli_Printf("Authentication Cancelled --- %d\n", auth_cancelled);
-  Cli_Printf("\n");
-
-  return CLI_OK;
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ShowNetwork
 //
 // This is the callback function for the "show:network" command.
@@ -2172,99 +2048,6 @@ ShowSnmp()
   return CLI_OK;
 }
 
-// show ldap sub-command
-int
-ShowLdap()
-{
-  // declare and initialize variables
-
-  INKInt ldap_enable = 0;
-  INKInt cache_size = -1;
-  INKInt ttl_value = -1;
-  INKInt auth_fail = 0;
-  INKString ServerName = NULL;
-  INKInt ServerPort = 0;
-  INKString BaseDN = NULL;
-
-  // retrieve values
-
-  Cli_RecordGetInt("proxy.config.ldap.auth.enabled", &ldap_enable);
-  Cli_RecordGetInt("proxy.config.ldap.cache.size", &cache_size);
-  Cli_RecordGetInt("proxy.config.ldap.auth.ttl_value", &ttl_value);
-  Cli_RecordGetInt("proxy.config.ldap.auth.purge_cache_on_auth_fail", &auth_fail);
-  Cli_RecordGetString("proxy.config.ldap.proc.ldap.server.name", &ServerName);
-  Cli_RecordGetInt("proxy.config.ldap.proc.ldap.server.port", &ServerPort);
-  Cli_RecordGetString("proxy.config.ldap.proc.ldap.base.dn", &BaseDN);
-
-
-  // display results
-  Cli_Printf("\n");
-
-  Cli_PrintEnable("LDAP ---------------------- ", ldap_enable);
-  Cli_Printf("Cache Size ---------------- %d\n", cache_size);
-  Cli_Printf("TTL Value ----------------- %d ms\n", ttl_value);
-  Cli_PrintEnable("Purge Cache On Auth Fail -- ", auth_fail);
-  Cli_Printf("Server Name --------------- %s\n", ServerName);
-  Cli_Printf("Server Port --------------- %d\n", ServerPort);
-  Cli_Printf("Base DN ------------------- %s\n", BaseDN);
-  Cli_Printf("\n");
-
-  return CLI_OK;
-}
-
-// show:ldap rules sub-command
-int
-ShowLdapRules()
-{
-  // display rules from filter.config
-  //   since filter.config is now used for ldap configuration
-  Cli_Printf("\n");
-
-  Cli_Printf("filter.config rules\n" "-------------------\n");
-  INKError status = Cli_DisplayRules(INK_FNAME_FILTER);
-  Cli_Printf("\n");
-
-  return status;
-}
-
-// show ldap sub-command
-int
-ShowLdapStats()
-{
-  // declare and initialize variables
-
-
-  INKInt Cache_Hits = 0;
-  INKInt Cache_Misses = 0;
-  INKInt Server_Errors = 0;
-  INKInt Authorization_Denied = 0;
-  INKInt Authorization_Timeouts = 0;
-  INKInt Authorization_Cancelled = 0;
-
-  // retrieve values
-
-  Cli_RecordGetInt("proxy.process.ldap.cache.hits", &Cache_Hits);
-  Cli_RecordGetInt("proxy.process.ldap.cache.misses", &Cache_Misses);
-  Cli_RecordGetInt("proxy.process.ldap.server.errors", &Server_Errors);
-  Cli_RecordGetInt("proxy.process.ldap.denied.authorizations", &Authorization_Denied);
-  Cli_RecordGetInt("proxy.process.ldap.auth.timed_out", &Authorization_Timeouts);
-  Cli_RecordGetInt("proxy.process.ldap.cancelled.authentications", &Authorization_Cancelled);
-
-
-  // display results
-  Cli_Printf("\n");
-  Cli_Printf("Cache Hits---------------- %d\n", Cache_Hits);
-  Cli_Printf("Cache Misses-------------- %d\n", Cache_Misses);
-  Cli_Printf("Server Errors------------- %d\n", Server_Errors);
-  Cli_Printf("Authorization Denied------ %d\n", Authorization_Denied);
-  Cli_Printf("Authorization Timeouts---- %d\n", Authorization_Timeouts);
-  Cli_Printf("Authorization Cancelled--- %d\n", Authorization_Cancelled);
-  Cli_Printf("\n");
-
-  return CLI_OK;
-}
-
-
 // show socks sub-command
 int
 ShowSocks()
@@ -2278,7 +2061,6 @@ ShowSocks()
   INKInt accept_port = -1;
 
   // retrieve values
-
   Cli_RecordGetInt("proxy.config.socks.socks_needed", &socks_enabled);
   Cli_RecordGetInt("proxy.config.socks.socks_version", &version);
   Cli_RecordGetString("proxy.config.socks.default_servers", &default_servers);
@@ -2351,6 +2133,7 @@ ShowScheduledUpdate()
   Cli_RecordGetInt("proxy.config.update.force", &force);
   //display values
 
+  // display rules from socks.config
   Cli_Printf("\n");
 
   if (Cli_PrintEnable("Scheduled Update ------------- ", enabled) == CLI_ERROR) {
@@ -2373,7 +2156,6 @@ ShowScheduledUpdate()
 int
 ShowScheduledUpdateRules()
 {
-  // display rules from socks.config
   Cli_Printf("\n");
 
   Cli_Printf("update.config rules\n" "-------------------\n");

@@ -649,11 +649,6 @@ convertRemapRule_xml(XMLNode * rule_node)
     return NULL;
   }
 
-  // process attributes, if any
-  val = rule_node->getAttributeValueByName("mixt");
-  if (val)
-    ele->mixt = string_to_mixt_type(val);
-
   // iterate through each subelement of a rule node
   for (int i = 0; i < rule_node->getChildCount(); i++) {
     child = rule_node->getChildNode(i);
@@ -999,10 +994,6 @@ convertSecSpecs_xml(XMLNode * sspec_node, INKSspec * sspecs)
   sspec_val = sspec_node->getAttributeValueByName("scheme");
   if (sspec_val)
     sspecs->scheme = string_to_scheme_type(sspec_val);
-
-  sspec_val = sspec_node->getAttributeValueByName("mixt");
-  if (sspec_val)
-    sspecs->mixt = string_to_mixt_type(sspec_val);
 
   // could have a time_range or port element
   for (int i = 0; i < sspec_node->getChildCount(); i++) {
@@ -1678,14 +1669,6 @@ convertRemapRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
     goto Lerror;
   }
 
-  // check attributes
-  strPtr = mixt_type_to_string(ele->mixt);
-  if (strPtr) {
-    writeXmlAttribute(xml_file, "mixt", strPtr);
-    xfree(strPtr);
-  }
-  xml_file->copyFrom(">", 1);
-
   // write Url's
   writeXmlAttrStartTag(xml_file, "src_url");
   strPtr = scheme_type_to_string(ele->from_scheme);
@@ -1982,7 +1965,6 @@ convertPdssFormat_ts(INKPdSsFormat * pdss, textBuffer * xml_file)
   if (sspec.src_ip || sspec.prefix || sspec.suffix || sspec.port > 0 ||
       sspec.method != INK_METHOD_UNDEFINED ||
       sspec.scheme != INK_SCHEME_UNDEFINED ||
-      sspec.mixt != INK_MIXT_UNDEFINED ||
       sspec.time.hour_a != 0 || sspec.time.hour_b != 0 || sspec.time.min_a != 0 || sspec.time.min_b != 0) {
 
     writeXmlAttrStartTag(xml_file, "sec_specs");
@@ -2011,15 +1993,6 @@ convertPdssFormat_ts(INKPdSsFormat * pdss, textBuffer * xml_file)
         xfree(strPtr);
       }
     }
-    if (sspec.mixt != INK_MIXT_UNDEFINED) {
-      strPtr = mixt_type_to_string(sspec.mixt);
-      if (strPtr) {
-        writeXmlAttribute(xml_file, "mixt", strPtr);
-        xfree(strPtr);
-      }
-    }
-
-
 
     if (sspec.time.hour_a != 0 || sspec.time.hour_b != 0 ||
         sspec.time.min_a != 0 || sspec.time.min_b != 0 || sspec.port) {

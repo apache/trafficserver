@@ -926,10 +926,6 @@ updateCacheConfig(char *rules[], int numRules, char **errBuff)
         Debug("config", "[updateCacheConfig] invalid hms time - SKIP");
       }
     }
-    // mixt tag
-    if (strlen(tokens[11]) > 0) {
-      pdss->sec_spec.mixt = string_to_mixt_type(tokens[11]);
-    }
 
     INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
 
@@ -1105,11 +1101,6 @@ updateFilterConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[20]) > 0) {
       ele->bind_pwd_file = xstrdup(tokens[20]);
     }
-    // mixt tag
-    if (strlen(tokens[21]) > 0) {
-      pdss->sec_spec.mixt = string_to_mixt_type(tokens[21]);
-    }
-
     INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list
 
   }
@@ -1381,10 +1372,6 @@ updateFilterConfigPassword(WebHttpContext * whc, char **errBuff)
   // scheme
   if (scheme) {
     pdss->sec_spec.scheme = string_to_scheme_type(scheme);
-  }
-  // mixt tag
-  if (mixt) {
-    pdss->sec_spec.mixt = string_to_mixt_type(mixt);
   }
   // header type
   if (hdr_type) {
@@ -1911,10 +1898,6 @@ updateParentConfig(char *rules[], int numRules, char **errBuff)
     if (strlen(tokens[8]) > 0) {
       pdss->sec_spec.scheme = string_to_scheme_type(tokens[8]);
     }
-    // mixt tag
-    if (strlen(tokens[9]) > 0) {
-      pdss->sec_spec.mixt = string_to_mixt_type(tokens[9]);
-    }
     // parents
     if (strlen(tokens[10]) > 0) {
       ele->proxy_list = string_to_domain_list(tokens[10], ";");
@@ -2180,10 +2163,6 @@ updateRemapConfig(char *rules[], int numRules, char **errBuff)
     // to path prefix
     if (strlen(tokens[8]) > 0) {
       ele->to_path_prefix = xstrdup(tokens[8]);
-    }
-    // mixt tag
-    if (strlen(tokens[9]) > 0) {
-      ele->mixt = string_to_mixt_type(tokens[9]);
     }
 
     INKCfgContextAppendEle(ctx, (INKCfgEle *) ele);     // add new ele to end of list

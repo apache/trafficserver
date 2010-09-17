@@ -76,9 +76,6 @@ struct RecordRenameMapElement
 
 RecordRenameMapElement RecordRenameMap[] = {
 
-  // 3.x to 4.x variable renamings
-  {"proxy.config.log2.separate_rni_logs", "proxy.config.log2.separate_mixt_logs"},
-
   // 4.x to 5.x variable renamings
   {"proxy.config.cluster.type", "proxy.local.cluster.type"},
 

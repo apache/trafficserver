@@ -64,394 +64,6 @@
         </expression>
     </statistics>
 
-    <!-- RNI -->
-    <statistics
-	minimum="0">
-        <destination>proxy.node.rni.user_agents_total_documents_served</destination>
-        <destination scope="cluster">proxy.cluster.rni.user_agents_total_documents_served</destination>
-        <expression>
-            proxy.process.rni.downstream_requests
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.rni.current_client_connections</destination>
-        <destination scope="cluster">proxy.cluster.rni.current_client_connections</destination>
-        <expression>
-            proxy.process.rni.current_client_connections
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.rni.current_server_connections</destination>
-        <destination scope="cluster">proxy.cluster.rni.current_server_connections</destination>
-        <expression>
-            proxy.process.rni.current_server_connections
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.rni.current_cache_connections</destination>
-        <destination scope="cluster">proxy.cluster.rni.current_cache_connections</destination>
-        <expression>
-            proxy.process.rni.current_cache_connections
-        </expression>
-    </statistics>
-
-
-    <!-- WMT -->
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.user_agents_total_documents_served</destination>
-        <destination scope="cluster">proxy.cluster.wmt.user_agents_total_documents_served</destination>
-        <expression>
-            proxy.process.wmt.unique_streams_mmst_ondemand  +
-            proxy.process.wmt.unique_streams_mmsu_ondemand  +
-            proxy.process.wmt.unique_streams_http_ondemand  +
-            proxy.process.wmt.unique_streams_mcast_ondemand +
-            proxy.process.wmt.unique_streams_mmst_live      +
-            proxy.process.wmt.unique_streams_mmsu_live      +
-            proxy.process.wmt.unique_streams_http_live      +
-            proxy.process.wmt.unique_streams_mcast_live
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.current_client_connections</destination>
-        <destination scope="cluster">proxy.cluster.wmt.current_client_connections</destination>
-        <expression>
-            proxy.process.wmt.current_unique_streams_mmst_ondemand  +
-            proxy.process.wmt.current_unique_streams_mmsu_ondemand  +
-            proxy.process.wmt.current_unique_streams_http_ondemand  +
-            proxy.process.wmt.current_unique_streams_mcast_ondemand +
-            proxy.process.wmt.current_unique_streams_mmst_live      +
-            proxy.process.wmt.current_unique_streams_mmsu_live      +
-            proxy.process.wmt.current_unique_streams_http_live      +
-            proxy.process.wmt.current_unique_streams_mcast_live
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.current_server_connections</destination>
-        <destination scope="cluster">proxy.cluster.wmt.current_server_connections</destination>
-        <expression>
-            proxy.process.wmt.current_server_connections_mmst_ondemand +
-	    proxy.process.wmt.current_server_connections_mmst_live
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.current_cache_connections</destination>
-        <destination scope="cluster">proxy.cluster.wmt.current_cache_connections</destination>
-        <expression>
-            proxy.process.wmt.current_cache_connections
-        </expression>
-    </statistics>
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.total_current_unique_streams_ondemand</destination>
-        <destination scope="cluster">proxy.cluster.wmt.total_current_unique_streams_ondemand</destination>
-        <expression>
-            proxy.process.wmt.current_unique_streams_mmst_ondemand +
-	    proxy.process.wmt.current_unique_streams_mmsu_ondemand +
-            proxy.process.wmt.current_unique_streams_http_ondemand +
-            proxy.process.wmt.current_unique_streams_mcast_ondemand
-        </expression>
-    </statistics>        
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.total_unique_streams_ondemand</destination>
-        <destination scope="cluster">proxy.cluster.wmt.total_unique_streams_ondemand</destination>
-        <expression>
-            proxy.process.wmt.unique_streams_mmst_ondemand +
-	    proxy.process.wmt.unique_streams_mmsu_ondemand +
-            proxy.process.wmt.unique_streams_http_ondemand +
-            proxy.process.wmt.unique_streams_mcast_ondemand
-        </expression>
-    </statistics>  
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.total_unique_streams_ondemand</destination>
-        <destination scope="cluster">proxy.cluster.wmt.total_unique_streams_ondemand</destination>
-        <expression>
-            proxy.process.wmt.unique_streams_mmst_ondemand +
-	    proxy.process.wmt.unique_streams_mmsu_ondemand +
-            proxy.process.wmt.unique_streams_http_ondemand +
-            proxy.process.wmt.unique_streams_mcast_ondemand
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.downstream.total_request_bytes_ondemand</destination>
-        <destination scope="cluster">proxy.cluster.wmt.downstream.total_request_bytes_ondemand</destination>
-        <expression>
-            proxy.process.wmt.downstream.request_bytes_mmsu_ondemand  +
-	    proxy.process.wmt.downstream.request_bytes_mmst_ondemand  +
-	    proxy.process.wmt.downstream.request_bytes_http_ondemand
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.downstream.total_response_bytes_ondemand</destination>
-        <destination scope="cluster">proxy.cluster.wmt.downstream.total_response_bytes_ondemand</destination>
-        <expression>
-            proxy.process.wmt.downstream.response_bytes_mmsu_ondemand  +
-            proxy.process.wmt.downstream.response_bytes_mmst_ondemand  +
-            proxy.process.wmt.downstream.response_bytes_http_ondemand
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.total_current_unique_streams_live</destination>
-        <destination scope="cluster">proxy.cluster.wmt.total_current_unique_streams_live</destination>
-        <expression>
-            proxy.process.wmt.current_unique_streams_mmst_live  +
-            proxy.process.wmt.current_unique_streams_mmsu_live  +
-            proxy.process.wmt.current_unique_streams_http_live  +
-            proxy.process.wmt.current_unique_streams_mcast_live
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.total_unique_streams_live</destination>
-        <destination scope="cluster">proxy.cluster.wmt.total_unique_streams_live</destination>
-        <expression>
-            proxy.process.wmt.unique_streams_mmst_live  +
-	    proxy.process.wmt.unique_streams_mmsu_live  +
-	    proxy.process.wmt.unique_streams_http_live  +
-	    proxy.process.wmt.unique_streams_mcast_live
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.downstream.total_request_bytes_live</destination>
-        <destination scope="cluster">proxy.cluster.wmt.downstream.total_request_bytes_live</destination>
-        <expression>
-	    proxy.process.wmt.downstream.request_bytes_mmsu_live  +
-	    proxy.process.wmt.downstream.request_bytes_mmst_live  +
-	    proxy.process.wmt.downstream.request_bytes_http_live
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.downstream.total_response_bytes_live</destination>
-        <destination scope="cluster">proxy.cluster.wmt.downstream.total_response_bytes_live</destination>
-        <expression>
-            proxy.process.wmt.downstream.response_bytes_mmsu_live  +
-	    proxy.process.wmt.downstream.response_bytes_mmst_live  +
-	    proxy.process.wmt.downstream.response_bytes_http_live
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.current_server_connections_mmst</destination>
-        <destination scope="cluster">proxy.cluster.wmt.current_server_connections_mmst</destination>
-        <expression>
-            proxy.process.wmt.current_server_connections_mmst_ondemand +
-	    proxy.process.wmt.current_server_connections_mmst_live
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0">
-        <destination>proxy.node.wmt.server_connections_mmst</destination>
-        <destination scope="cluster">proxy.cluster.wmt.server_connections_mmst</destination>
-        <expression>
-            proxy.process.wmt.server_connections_mmst_ondemand +
-	    proxy.process.wmt.server_connections_mmst_live
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0"
-        maximum="1">
-        <destination>proxy.node.wmt.ondemand.byte_hit_ratio</destination>
-        <destination scope="cluster">proxy.cluster.wmt.ondemand.byte_hit_ratio</destination>
-        <expression>
-            proxy.process.wmt.byte_hit_count / 
-            proxy.node.wmt.downstream.total_response_bytes_ondemand
-        </expression>
-    </statistics> 
-
-
-    <statistics 
-        minimum="0"
-        maximum="1">
-        <destination>proxy.node.wmt.total.byte_hit_ratio</destination>
-        <destination scope="cluster">proxy.cluster.wmt.total.byte_hit_ratio</destination>
-        <expression>
-            proxy.process.wmt.byte_hit_count / 
-	    ( proxy.node.wmt.downstream.total_response_bytes_ondemand +
-              proxy.node.wmt.downstream.total_response_bytes_live ) 
-        </expression>
-    </statistics> 
-
-
-    <statistics
-	minimum="0"
-	maximum="1"
-        interval="10">
-        <destination>proxy.node.wmt.ondemand.byte_hit_ratio_avg_10s</destination>
-        <destination scope="cluster">proxy.cluster.wmt.ondemand.byte_hit_ratio_avg_10s</destination>
-        <expression>
-            #proxy.process.wmt.byte_hit_count / 
-            #proxy.node.wmt.downstream.total_response_bytes_ondemand
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-	maximum="1"
-        interval="10">
-        <destination>proxy.node.wmt.total.byte_hit_ratio_avg_10s</destination>
-        <destination scope="cluster">proxy.cluster.wmt.total.byte_hit_ratio_avg_10s></destination>
-        <expression>
-             #proxy.process.wmt.byte_hit_count /
-             ( #proxy.node.wmt.downstream.total_response_bytes_ondemand +
-               #proxy.node.wmt.downstream.total_response_bytes_live )
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.upstream.response_bytes_mmst</destination>
-        <destination scope="cluster">proxy.cluster.wmt.upstream.response_bytes_mmst</destination>
-        <expression>
-	    proxy.process.wmt.upstream.response_bytes_mmst_ondemand +
-	    proxy.process.wmt.upstream.response_bytes_mmst_live
-       </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.upstream.request_bytes_mmst</destination>
-        <destination scope="cluster">proxy.cluster.wmt.upstream.request_bytes_mmst</destination>
-        <expression>
-	    proxy.process.wmt.upstream.request_bytes_mmst_ondemand +
-	    proxy.process.wmt.upstream.request_bytes_mmst_live
-       </expression>
-    </statistics>
-
-
-    <!-- QT -->
-    <statistics
-	minimum="0">
-        <destination>proxy.node.qt.user_agents_total_documents_served</destination>
-        <destination scope="cluster">proxy.cluster.qt.user_agents_total_documents_served</destination>
-        <expression>
-            proxy.process.qt.downstream_requests
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.qt.current_client_connections</destination>
-        <destination scope="cluster">proxy.cluster.qt.current_client_connections</destination>
-        <expression>
-            proxy.process.qt.current_client_connections
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.qt.current_server_connections</destination>
-        <destination scope="cluster">proxy.cluster.qt.current_server_connections</destination>
-        <expression>
-            proxy.process.qt.current_server_connections
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.qt.current_cache_connections</destination>
-        <destination scope="cluster">proxy.cluster.qt.current_cache_connections</destination>
-        <expression>
-            proxy.process.qt.current_cache_connections
-        </expression>
-    </statistics>
-
-
-    <!-- MPEG4 -->
-    <statistics
-	minimum="0">
-        <destination>proxy.node.mpeg4.user_agents_total_documents_served</destination>
-        <destination scope="cluster">proxy.cluster.mpeg4.user_agents_total_documents_served</destination>
-        <expression>
-            proxy.process.mpeg4.downstream_requests
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.mpeg4.current_client_connections</destination>
-        <destination scope="cluster">proxy.cluster.mpeg4.current_client_connections</destination>
-        <expression>
-            proxy.process.mpeg4.current_client_connections
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.mpeg4.current_server_connections</destination>
-        <destination scope="cluster">proxy.cluster.mpeg4.current_server_connections</destination>
-        <expression>
-            proxy.process.mpeg4.current_server_connections
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.mpeg4.current_cache_connections</destination>
-        <destination scope="cluster">proxy.cluster.mpeg4.current_cache_connections</destination>
-        <expression>
-            proxy.process.mpeg4.current_cache_connections
-        </expression>
-    </statistics>
-
-
     <!-- Cache -->
     <statistics
 	minimum="0">
@@ -504,7 +116,6 @@
 
 	<!-- ########################################################################### -->
     <!-- StatAggregation::Ag_XactsPerSecond() -->
-    <!-- QT adn WMT Transaction? -->
     <statistics
         interval="10"
 	minimum="0">
@@ -517,57 +128,6 @@
         </expression>
     </statistics>
 
-    <statistics
-        interval="10"
-	minimum="0">
-        <destination>proxy.node.rni.user_agent_xacts_per_second</destination>
-        <destination scope="cluster">proxy.cluster.rni.user_agent_xacts_per_second</destination>
-        <expression>
-            #proxy.process.rni.downstream_requests *
-            $HRTIME_SECOND /
-            _DIFFTIME
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.wmt.user_agent_xacts_per_second</destination>
-        <destination scope="cluster">proxy.cluster.wmt.user_agent_xacts_per_second</destination>
-        <expression>
-            #proxy.node.wmt.user_agents_total_documents_served *
-            $HRTIME_SECOND /
-            _DIFFTIME
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.qt.user_agent_xacts_per_second</destination>
-        <destination scope="cluster">proxy.cluster.qt.user_agent_xacts_per_second</destination>
-        <expression>
-            #proxy.process.qt.downstream_requests *
-            $HRTIME_SECOND /
-            _DIFFTIME
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.mpeg4.user_agent_xacts_per_second</destination>
-        <destination scope="cluster">proxy.cluster.mpeg4.user_agent_xacts_per_second</destination>
-        <expression>
-            #proxy.process.mpeg4.downstream_requests *
-            $HRTIME_SECOND /
-            _DIFFTIME
-        </expression>
-    </statistics>
-
 
     <statistics
 	minimum="0"
@@ -575,27 +135,18 @@
         <destination>proxy.node.user_agent_xacts_per_second</destination>
         <destination scope="cluster">proxy.cluster.user_agent_xacts_per_second</destination>
         <expression>
-            proxy.node.http.user_agent_xacts_per_second  +
-            proxy.node.rni.user_agent_xacts_per_second   +
-            proxy.node.wmt.user_agent_xacts_per_second   +
-            proxy.node.qt.user_agent_xacts_per_second    +
-            proxy.node.mpeg4.user_agent_xacts_per_second
+            proxy.node.http.user_agent_xacts_per_second 
         </expression>
     </statistics>
 
   
 	<!-- ########################################################################### -->
     <!-- StatAggregation::Ag_TotalDocumentsServed() -->
-    <!-- QT adn WMT Total Documents Served -->
     <statistics
 	minimum="0">
         <destination>proxy.node.user_agents_total_documents_served</destination>
         <expression>
-            proxy.node.http.user_agents_total_documents_served +
-            proxy.node.rni.user_agents_total_documents_served  +
-            proxy.node.wmt.user_agents_total_documents_served  +
-            proxy.node.qt.user_agents_total_documents_served   +
-            proxy.node.mpeg4.user_agents_total_documents_served
+            proxy.node.http.user_agents_total_documents_served
         </expression>
     </statistics>
 
@@ -688,72 +239,6 @@
 
     <statistics
 	minimum="0">
-        <destination>proxy.node.rni.downstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.rni.downstream_total_bytes</destination>
-        <expression>
-            proxy.process.rni.downstream.request_bytes +
-            proxy.process.rni.downstream.response_bytes
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.downstream_request_bytes</destination>
-        <destination scope="cluster">proxy.cluster.wmt.downstream_request_bytes</destination>
-        <expression>
-            proxy.node.wmt.downstream.total_request_bytes_ondemand  +
-            proxy.node.wmt.downstream.total_request_bytes_live
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.downstream_response_bytes</destination>
-        <destination scope="cluster">proxy.cluster.wmt.downstream_response_bytes</destination>
-        <expression>
-            proxy.node.wmt.downstream.total_response_bytes_ondemand +
-            proxy.node.wmt.downstream.total_response_bytes_live
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.downstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.wmt.downstream_total_bytes</destination>
-        <expression>
-            proxy.node.wmt.downstream_request_bytes  +
-            proxy.node.wmt.downstream_response_bytes
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.qt.downstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.qt.downstream_total_bytes</destination>
-        <expression>
-            proxy.process.qt.downstream.request_bytes +
-            proxy.process.qt.downstream.response_bytes
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.mpeg4.downstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.mpeg4.downstream_total_bytes</destination>
-        <expression>
-            proxy.process.mpeg4.downstream.request_bytes +
-            proxy.process.mpeg4.downstream.response_bytes
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
         <destination>proxy.node.http.origin_server_total_request_bytes</destination>
         <destination scope="cluster">proxy.cluster.http.origin_server_total_request_bytes</destination>
         <expression>
@@ -774,62 +259,13 @@
     </statistics>
 
 
-    <statistics
-	minimum="0">
-        <destination>proxy.node.rni.upstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.rni.upstream_total_bytes</destination>
-       <expression>
-            proxy.process.rni.upstream.request_bytes +
-            proxy.process.rni.upstream.response_bytes
-        </expression>
-    </statistics>
-
-    
-    <statistics
-	minimum="0">
-        <destination>proxy.node.wmt.upstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.wmt.upstream_total_bytes</destination>
-        <expression>
-            proxy.node.wmt.upstream.request_bytes_mmst  +
-            proxy.node.wmt.upstream.response_bytes_mmst
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.qt.upstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.qt.upstream_total_bytes</destination>
-        <expression>
-            proxy.process.qt.upstream.request_bytes +
-            proxy.process.qt.upstream.response_bytes
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0">
-        <destination>proxy.node.mpeg4.upstream_total_bytes</destination>
-        <destination scope="cluster">proxy.cluster.mpeg4.upstream_total_bytes</destination>
-        <expression>
-            proxy.process.mpeg4.upstream.request_bytes +
-            proxy.process.mpeg4.upstream.response_bytes
-        </expression>
-    </statistics>
-
-
-
         <!-- add up the downstream (client<=>proxy) traffic volume -->
     <statistics
 	minimum="0">
         <destination>proxy.node.user_agent_total_bytes</destination>
         <expression>
             proxy.node.http.user_agent_total_request_bytes  +
-            proxy.node.http.user_agent_total_response_bytes +
-            proxy.node.rni.downstream_total_bytes           +
-            proxy.node.wmt.downstream_total_bytes           +
-            proxy.node.qt.downstream_total_bytes            +
-            proxy.node.mpeg4.downstream_total_bytes
+            proxy.node.http.user_agent_total_response_bytes
         </expression>
     </statistics>
 
@@ -842,11 +278,7 @@
             proxy.node.http.origin_server_total_request_bytes  +
             proxy.node.http.origin_server_total_response_bytes +
             proxy.node.http.parent_proxy_total_request_bytes   +
-            proxy.node.http.parent_proxy_total_response_bytes  +
-            proxy.node.rni.upstream_total_bytes                +
-            proxy.node.wmt.upstream_total_bytes                +
-            proxy.node.qt.upstream_total_bytes                 +
-            proxy.node.mpeg4.upstream_total_bytes
+            proxy.node.http.parent_proxy_total_response_bytes
         </expression>
     </statistics>
 
@@ -935,11 +367,7 @@
         <destination scope="cluster">proxy.cluster.http.throughput</destination> 
         <expression>
             (
-            #proxy.node.http.user_agent_total_response_bytes +
-            #proxy.node.rni.downstream_total_bytes           +
-            #proxy.node.wmt.downstream_total_bytes           +
-            #proxy.node.qt.downstream_total_bytes            +
-            #proxy.node.mpeg4.downstream_total_bytes
+            #proxy.node.http.user_agent_total_response_bytes
             )                                                *
             $HRTIME_SECOND                                   /
             _DIFFTIME
@@ -996,46 +424,6 @@
         <destination>proxy.node.http.cache_hit_stale_served_avg_10s</destination>
         <expression>
             #proxy.process.http.cache_hit_stale_served
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.rni.block_hit_count_avg_10s</destination>
-        <expression>
-            #proxy.process.rni.block_hit_count
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.wmt.block_hit_count_avg_10s</destination>
-        <expression>
-            #proxy.process.wmt.block_hit_count
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.qt.block_hit_count_avg_10s</destination>
-        <expression>
-            #proxy.process.qt.block_hit_count
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.mpeg4.block_hit_count_avg_10s</destination>
-        <expression>
-            #proxy.process.mpeg4.block_hit_count
         </expression>
     </statistics>
 
@@ -1103,57 +491,13 @@
     <statistics
 	minimum="0"
         interval="10">
-        <destination>proxy.node.rni.block_miss_count_avg_10s</destination>
-        <expression>
-            #proxy.process.rni.block_miss_count
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.wmt.block_miss_count_avg_10s</destination>
-        <expression>
-            #proxy.process.wmt.block_miss_count
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.qt.block_miss_count_avg_10s</destination>
-        <expression>
-            #proxy.process.qt.block_miss_count
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
-        <destination>proxy.node.mpeg4.block_miss_count_avg_10s</destination>
-        <expression>
-            #proxy.process.mpeg4.block_miss_count
-        </expression>
-    </statistics>
-
-
-    <statistics
-	minimum="0"
-        interval="10">
         <destination>proxy.node.cache_total_hits_avg_10s</destination>
         <destination scope="cluster">proxy.cluster.cache_total_hits_avg_10s</destination>
         <expression>
             proxy.node.http.cache_hit_fresh_avg_10s        +
             proxy.node.http.cache_hit_revalidated_avg_10s  +
             proxy.node.http.cache_hit_ims_avg_10s          +
-            proxy.node.http.cache_hit_stale_served_avg_10s +
-            proxy.node.rni.block_hit_count_avg_10s         +
-            proxy.node.wmt.block_hit_count_avg_10s         +
-            proxy.node.qt.block_hit_count_avg_10s          +
-            proxy.node.mpeg4.block_hit_count_avg_10s
+            proxy.node.http.cache_hit_stale_served_avg_10s
         </expression>
     </statistics>
 
@@ -1169,11 +513,7 @@
             proxy.node.http.cache_miss_not_cacheable_avg_10s   +
             proxy.node.http.cache_miss_client_no_cache_avg_10s +
             proxy.node.http.cache_miss_ims_avg_10s             +
-            proxy.node.http.cache_read_error_avg_10s           +
-            proxy.node.rni.block_miss_count_avg_10s            +
-            proxy.node.wmt.block_miss_count_avg_10s            +
-            proxy.node.qt.block_miss_count_avg_10s             +
-            proxy.node.mpeg4.block_miss_count_avg_10s
+            proxy.node.http.cache_read_error_avg_10s
         </expression>
     </statistics>
 
@@ -1214,11 +554,7 @@
             proxy.process.http.cache_hit_fresh        +
             proxy.process.http.cache_hit_revalidated  +
             proxy.process.http.cache_hit_ims          +
-            proxy.process.http.cache_hit_stale_served +
-            proxy.process.rni.block_hit_count         +
-            proxy.process.wmt.block_hit_count         +
-            proxy.process.qt.block_hit_count          +
-            proxy.process.mpeg4.block_hit_count
+            proxy.process.http.cache_hit_stale_served
         </expression>
     </statistics>
 
@@ -1233,11 +569,7 @@
             proxy.process.http.cache_miss_not_cacheable   +
             proxy.process.http.cache_miss_client_no_cache +
             proxy.process.http.cache_miss_ims             +
-            proxy.process.http.cache_read_error           +
-            proxy.process.rni.block_miss_count            +
-            proxy.process.wmt.block_miss_count            +
-            proxy.process.qt.block_miss_count             +
-            proxy.process.mpeg4.block_miss_count
+            proxy.process.http.cache_read_error
         </expression>
     </statistics>
 
@@ -2243,11 +1575,7 @@
         <destination>proxy.node.current_client_connections</destination>
         <destination scope="cluster">proxy.cluster.current_client_connections</destination>
         <expression>
-            proxy.node.http.user_agent_current_connections_count +
-            proxy.node.rni.current_client_connections            +
-            proxy.node.wmt.current_client_connections            +
-            proxy.node.qt.current_client_connections             +
-            proxy.node.mpeg4.current_client_connections
+            proxy.node.http.user_agent_current_connections_count
         </expression>
     </statistics>
 
@@ -2258,11 +1586,7 @@
         <destination scope="cluster">proxy.cluster.current_server_connections</destination>
         <expression>
             proxy.node.http.origin_server_current_connections_count +
-            proxy.node.http.current_parent_proxy_connections        +
-            proxy.node.rni.current_server_connections               +
-            proxy.node.wmt.current_server_connections               +
-            proxy.node.qt.current_server_connections                +
-            proxy.node.mpeg4.current_server_connections
+            proxy.node.http.current_parent_proxy_connections
         </expression>
     </statistics>
 
@@ -2272,11 +1596,7 @@
         <destination>proxy.node.current_cache_connections</destination>
         <destination scope="cluster">proxy.cluster.current_cache_connections</destination>
         <expression>
-            proxy.node.http.cache_current_connections_count +
-            proxy.node.rni.current_cache_connections	    +
-            proxy.node.wmt.current_cache_connections        +
-            proxy.node.qt.current_cache_connections         +
-            proxy.node.mpeg4.current_cache_connections
+            proxy.node.http.cache_current_connections_count
         </expression>
     </statistics>
 
@@ -2435,106 +1755,6 @@
             proxy.node.cache_total_misses
         </expression>
     </statistics>
-
-
-<!--
-
-  Remap WMT variables
-
-  -->
-   <statistics
-	minimum="0">
-        <destination>proxy.process.wmt.current_client_connections</destination>
-        <expression>
-	    proxy.node.wmt.total_current_unique_streams_ondemand
-        </expression>
-    </statistics>
-
-   <statistics
-	minimum="0">
-        <destination>proxy.process.wmt.downstream_requests</destination>
-        <expression>
-	    proxy.node.wmt.total_unique_streams_ondemand
-        </expression>
-    </statistics>
-
-   <statistics
-	minimum="0">
-        <destination>proxy.process.wmt.downstream.request_bytes</destination>
-        <expression>
-	    proxy.node.wmt.downstream.total_request_bytes_ondemand
-        </expression>
-    </statistics>
-
-   <statistics
-	minimum="0">
-        <destination>proxy.process.wmt.downstream.response_bytes</destination>
-        <expression>
-	    proxy.node.wmt.downstream.total_response_bytes_ondemand
-        </expression>
-    </statistics>
-
-   <statistics
-	minimum="0">
-        <destination>proxy.process.wmt.current_server_connections</destination>
-        <expression>
-	    proxy.process.wmt.current_server_connections_mmst_ondemand
-        </expression>
-    </statistics>
-
-   <statistics
-	minimum="0">
-        <destination>proxy.process.wmt.upstream_requests</destination>
-        <expression>
-	    proxy.process.wmt.server_connections_mmst_ondemand
-        </expression>
-    </statistics>
-
-   <statistics
-	minimum="0">
-        <destination>proxy.process.wmt.upstream.request_bytes</destination>
-        <expression>
-	     proxy.process.wmt.upstream.request_bytes_mmst_ondemand
-        </expression>
-    </statistics>
-
-   <statistics
-	minimum="0">
-        <destination>proxy.process.wmt.upstream.response_bytes</destination>
-        <expression>
-   	     proxy.process.wmt.upstream.response_bytes_mmst_ondemand
-        </expression>
-    </statistics>
-
-<!-- UNIT TESTING
-    <statistics
-        debug="1">
-        <destination>proxy.node.stats.test1</destination>
-        <expression>
-                proxy.node.stats.test2
-        </expression>
-    </statistics>
-
-
-    <statistics
-        interval="10"
-        debug="1">
-        <destination>proxy.node.stats.test3</destination>
-        <expression>
-            _DIFFTIME / $HRTIME_SECOND
-        </expression>
-    </statistics>
-
-
-    <statistics
-        interval="10"
-        debug="1">
-        <destination>proxy.node.stats.test4</destination>
-        <expression>
-            #proxy.node.stats.test4 * 10
-        </expression>
-    </statistics>
--->
 
 </ink:statistics>
 

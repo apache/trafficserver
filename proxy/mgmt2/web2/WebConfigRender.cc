@@ -3781,22 +3781,6 @@ writeRemapConfigForm(WebHttpContext * whc)
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
 
-  // mixt tag
-  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_MIXT_SCHEME);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  writeMixtSelect(output, "mixt");
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_TOP, NULL, NULL, 0);
-  HtmlRndrUlOpen(output);
-  HtmlRndrLi(output);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_MIXT_SCHEME_HELP_2);
-  HtmlRndrUlClose(output);
-  HtmlRndrTdClose(output);
-  HtmlRndrTrClose(output);
-
   return WEB_HTTP_ERR_OKAY;
 }
 
@@ -4335,21 +4319,6 @@ writeSecondarySpecsForm(WebHttpContext * whc, INKFileNameT file)
   HtmlRndrUlOpen(output);
   HtmlRndrLi(output);
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_SCHEME_HELP);
-  HtmlRndrUlClose(output);
-  HtmlRndrTdClose(output);
-  HtmlRndrTrClose(output);
-
-  HtmlRndrTrOpen(output, HTML_CSS_NONE, HTML_ALIGN_NONE);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_RIGHT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_MIXT_SCHEME);
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_BODY_TEXT, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  writeMixtSelect(output, "mixt");
-  HtmlRndrTdClose(output);
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_HELP, HTML_ALIGN_LEFT, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrUlOpen(output);
-  HtmlRndrLi(output);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_MIXT_SCHEME_HELP);
   HtmlRndrUlClose(output);
   HtmlRndrTdClose(output);
   HtmlRndrTrClose(output);
@@ -4983,21 +4952,6 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
   if (ele->to_path_prefix) {
     snprintf(to_path, MAX_RULE_PART_SIZE, "%s", ele->to_path_prefix);
   }
-  // mixt
-  switch (ele->mixt) {
-  case INK_MIXT_RNI:
-    snprintf(mixt, MAX_RULE_PART_SIZE, "RNI");
-    break;
-  case INK_MIXT_QT:
-    snprintf(mixt, MAX_RULE_PART_SIZE, "QT");
-    break;
-  case INK_MIXT_WMT:
-    snprintf(mixt, MAX_RULE_PART_SIZE, "WMT");
-    break;
-  default:
-    break;
-  }
-
 
   return WEB_HTTP_ERR_OKAY;
 
@@ -5347,21 +5301,6 @@ convert_pdss_to_html_format(INKPdSsFormat info,
     break;
   }
 
-  // mixt tag
-  switch (info.sec_spec.mixt) {
-  case INK_MIXT_RNI:
-    snprintf(mixt, MAX_RULE_PART_SIZE, "RNI");
-    break;
-  case INK_MIXT_QT:
-    snprintf(mixt, MAX_RULE_PART_SIZE, "QT");
-    break;
-  case INK_MIXT_WMT:
-    snprintf(mixt, MAX_RULE_PART_SIZE, "WMT");
-    break;
-  default:
-    break;
-  }
-
   return WEB_HTTP_ERR_OKAY;
 
 Lerror:
@@ -5586,20 +5525,6 @@ writeSchemeSelect_remap(textBuffer * html, const char *listName)
   options[3] = "mms";
 
   HtmlRndrSelectList(html, listName, options, 5);
-}
-
-//-------------------------------------------------------------------------
-// writeMixtSelect
-//-------------------------------------------------------------------------
-void
-writeMixtSelect(textBuffer * html, const char *listName)
-{
-  const char *options[3];
-  options[0] = "";
-  options[1] = "RNI";
-  options[2] = "QT";
-
-  HtmlRndrSelectList(html, listName, options, 3);
 }
 
 //-------------------------------------------------------------------------

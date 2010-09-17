@@ -117,25 +117,6 @@ _D(cpu_metric_fds_ready_per_loop_stat)
     // Dynamic QT stats
     //
 #define QT_STATS_1
-    //
-    // Dynamic LDAP stats
-    //
-//_D(ldap_cache_hits_stat)
-//_D(ldap_cache_misses_stat)
-//_D(ldap_server_errors_count_stat)
-//_D(ldap_denied_authorizations_count_stat)
-//_D(ldap_cancelled_auth_count_stat)
-//_D(ldap_auth_timed_out_count_stat)
-//_D(ldap_server_connections_count_stat)
-    //
-    // Dynamic NTLM stats
-    //
-//_D(ntlm_cache_hits_stat)
-//_D(ntlm_cache_misses_stat)
-//_D(ntlm_server_errors_count_stat)
-//_D(ntlm_denied_authorizations_count_stat)
-//_D(ntlm_cancelled_auth_count_stat)
-//_D(ntlm_server_connections_count_stat)
 #ifdef TS_MICRO
     //
     // Prefetch Stuffer Stats

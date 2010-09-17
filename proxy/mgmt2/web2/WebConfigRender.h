@@ -183,7 +183,6 @@ void writeMethodSelect_push(textBuffer * html, const char *listName);
 void writeSchemeSelect(textBuffer * html, const char *listName);
 void writeSchemeSelect_partition(textBuffer * html, const char *listName);
 void writeSchemeSelect_remap(textBuffer * html, const char *listName);
-void writeMixtSelect(textBuffer * html, const char *listName);
 void writeHeaderTypeSelect(textBuffer * html, const char *listName);
 void writeCacheTypeSelect(textBuffer * html, const char *listName);
 void writeMcTtlSelect(textBuffer * html, const char *listName);

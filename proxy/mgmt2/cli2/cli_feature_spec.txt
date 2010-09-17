@@ -100,7 +100,6 @@ show:filter                  Filter configuration
 show:parent                  Parent configuration
 show:remap                   Remap configuration
 show:snmp                    SNMP configuration
-show:ldap                    LDAP configuration
 show:socks                   SOCKS configuration
 show:port-tunnels            Port tunnels configuration
 show:scheduled-update        Scheduled update configuration

@@ -133,49 +133,6 @@ const
   {"proxy.process.icp.query_response_write\\c", NULL,
    "Sucessful Response Messges Sent to Peers", "%-*s %*s\n",
    10, 10, 50, 3},
-// RNI Statitics - 13
-  // RNI General - 5
-  {"proxy.process.rni.object_count\\c", NULL,
-   "Total Objects Served", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.block_hit_count\\c", NULL,
-   "Total Block Hits", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.block_miss_count\\c", NULL,
-   "Total Block Misses", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.byte_hit_sum\\b", NULL,
-   "Total Bytes Hit", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.byte_miss_sum\\b", NULL,
-   "Total Bytes Missed", "%-*s %*s\n",
-   10, 10, 50, 3},
-  // RNI client - 4
-  {"proxy.process.rni.current_client_connections\\c", NULL,
-   "Open Connections", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.downstream_requests\\c", NULL,
-   "Number of Requests", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.downstream.request_bytes\\b", NULL,
-   "Request Bytes", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.downstream.response_bytes\\b", NULL,
-   "Response Bytes", "%-*s %*s\n",
-   10, 10, 50, 3},
-  // RNI server - 4
-  {"proxy.process.rni.current_server_connections\\c", NULL,
-   "Open Connections", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.upstream_requests\\c", NULL,
-   "Number of Requests", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.upstream.request_bytes\\b", NULL,
-   "Request Bytes", "%-*s %*s\n",
-   10, 10, 50, 3},
-  {"proxy.process.rni.upstream.response_bytes\\b", NULL,
-   "Response Bytes", "%-*s %*s\n",
-   10, 10, 50, 3},
 };
 
 //
@@ -488,9 +445,9 @@ CLI_monitor::doMonitorProtocolStats(CLI_DATA * c_data /* IN: client data */ )
   const char *line12 = "                 Queries Originating From This Node \n";
   const char *line13 = "                 Queries Originating From ICP Peers\n";
   // const char *line14 = "                           Operations\n";
-  const char *line19 = "                              RTSP\n";
-  const char *line20 = "                      Client Statistics\n";
-  const char *line21 = "                      Server Statistics\n";
+  // const char *line19 = "                              RTSP\n";
+  // const char *line20 = "                      Client Statistics\n";
+  // const char *line21 = "                      Server Statistics\n";
   int highmark = 0;
   int i;
 
@@ -568,30 +525,7 @@ CLI_monitor::doMonitorProtocolStats(CLI_DATA * c_data /* IN: client data */ )
     }
     c_data->output->copyFrom("\n", strlen("\n"));
   }
-  // Check if RNI enabled
-  if (3 == c_data->advui || 2 == c_data->advui) {       // yes, so show stats
-    highmark += NUM_PROT_RNI_DESCS;
-    if (CL_EV_ONE == c_data->cevent || CL_EV_SEVEN == c_data->cevent) {
-      c_data->output->copyFrom(CLI_globals::sep1, strlen(CLI_globals::sep1));
-      c_data->output->copyFrom(line19, strlen(line19));
 
-      // output RNI stats
-      for (i = highmark - NUM_PROT_RNI_DESCS; i < highmark; i++) {
-        if (varStrFromName(mon_prot_desctable[i].name, buf, sizeof(buf)) == true) {
-          snprintf(tmpbuf, sizeof(tmpbuf), mon_prot_desctable[i].format,
-                   mon_prot_desctable[i].desc_width, mon_prot_desctable[i].desc,
-                   mon_prot_desctable[i].name_value_width, buf);
-          c_data->output->copyFrom(tmpbuf, strlen(tmpbuf));
-        }
-        if ((highmark - NUM_PROT_RNI_DESCS + 4) == i) {
-          c_data->output->copyFrom(line20, strlen(line20));
-        } else if ((highmark - NUM_PROT_RNI_DESCS + 8) == i) {
-          c_data->output->copyFrom(line21, strlen(line21));
-        }
-      }
-    }
-
-  }
   // output trailing header
   c_data->output->copyFrom("\n", strlen("\n"));
   c_data->output->copyFrom(CLI_globals::sep2, strlen(CLI_globals::sep2));

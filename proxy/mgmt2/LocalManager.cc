@@ -283,21 +283,6 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
       pnum++;
     }
   }
-  // Check to see if we are running QT
-  RecInt qt_enabled = REC_readInteger("proxy.config.qt.enabled", &found);
-  ink_assert(found);
-  RecInt rni_enabled = REC_readInteger("proxy.config.rni.enabled", &found);
-  ink_assert(found);
-  if (qt_enabled || rni_enabled) {
-    // Get the QT port
-    RecInt qt_port = REC_readInteger("proxy.config.mixt.rtsp_proxy_port", &found);
-    ink_assert(found);
-    if (found) {
-      proxy_server_port[pnum] = qt_port;
-      ink_strncpy((char *) proxy_server_port_attributes[pnum], "Q", sizeof(proxy_server_port_attributes[pnum]));
-      pnum++;
-    }
-  }
 
   // Check to see if we are running SSL term
   RecInt ssl_term_enabled = REC_readInteger("proxy.config.ssl.enabled", &found);
@@ -798,9 +783,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
     break;
   case INK_MGMT_SIGNAL_WDA_XF_ENGINE_DOWN:
     alarm_keeper->signalAlarm(MGMT_ALARM_WDA_XF_ENGINE_DOWN, data_raw);
-    break;
-  case INK_MGMT_SIGNAL_WDA_RADIUS_CORRUPTED_PACKETS:
-    alarm_keeper->signalAlarm(MGMT_ALARM_WDA_RADIUS_CORRUPTED_PACKETS, data_raw);
     break;
     // Wireless plugin signal - end
   case INK_MGMT_SIGNAL_SAC_SERVER_DOWN:

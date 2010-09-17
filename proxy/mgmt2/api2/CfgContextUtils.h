@@ -107,10 +107,6 @@ char *scheme_type_to_string(INKSchemeT scheme);
 INKMethodT string_to_method_type(const char *method);
 char *method_type_to_string(INKMethodT method);
 
-/* INKMixtTagT <==> string */
-INKMixtTagT string_to_mixt_type(const char *mixt);
-char *mixt_type_to_string(INKMixtTagT mixt);
-
 /* INKConnectT <==> string */
 char *connect_type_to_string(INKConnectT conn);
 INKConnectT string_to_connect_type(const char *conn);

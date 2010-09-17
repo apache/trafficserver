@@ -220,7 +220,6 @@ public:
   int extended2_log_enabled;
   int extended2_log_is_ascii;
   int separate_icp_logs;
-  int separate_mixt_logs;
   int separate_host_logs;
   int collation_mode;
   int collation_port;

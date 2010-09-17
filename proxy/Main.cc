@@ -77,7 +77,6 @@ extern "C" int plock(int);
 #include "IPAllow.h"
 #include "CacheInspectorAllow.h"
 #include "ParentSelection.h"
-//#include "rni/Rni.h"
 #ifdef RNI_STATIC_LINK
 #include "RniProcessor.h"
 #endif
@@ -154,7 +153,6 @@ int run_test_hook = 0;
 int http_accept_port_number = DEFAULT_HTTP_ACCEPT_PORT_NUMBER;
 int http_accept_file_descriptor = NO_FD;
 int ssl_accept_file_descriptor = NO_FD;
-int qt_accept_file_descriptor = NO_FD;
 char accept_fd_list[1024] = "";
 char core_file[255] = "";
 int command_flag = DEFAULT_COMMAND_FLAG;
@@ -186,9 +184,6 @@ char action_tags[1024] = "";
 int show_statistics = 0;
 int gsplitDNS_enabled = 0;
 int history_info_enabled = 1;
-//int gldap_auth_enable         = 0;
-//int gsplit_ldap_enabled       = 0;
-//int gauth_bypass_enabled        = 0;
 inkcoreapi Diags *diags = NULL;
 inkcoreapi DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
@@ -601,42 +596,6 @@ skip(char *cmd, int null_ok = 0)
   return cmd;
 }
 
-/* Clears the Real Network cache. If the proxy.config.rni.proxy_cache_dir
-   variable is set to a valid directory, removes all the files in that dir.
-   returns CMD_OK on success, CMD_FAILURE on failure
-   */
-static int
-clear_rn_cache()
-{
-  char *rn_cache_path = NULL;;
-  int result = 0;
-  TS_ReadConfigStringAlloc(rn_cache_path, "proxy.config.rni.proxy_cache_dir");
-  if (rn_cache_path) {
-    if (*rn_cache_path != '\0') {
-      // first check if the directory exists.
-      if (access(rn_cache_path, F_OK) == -1) {
-        result = errno;
-        Warning("unable to access() '%s': %d, %s", rn_cache_path, errno, strerror(errno));
-        Note("unable to clear RN Cache, CLEAR failed [%d]", result);
-        return CMD_FAILED;
-      }
-      char remove_cmd[PATH_NAME_MAX + 6];
-      snprintf(remove_cmd, sizeof(remove_cmd), "%s %s/*", "rm -f", rn_cache_path);
-      do {
-        result = system(remove_cmd);
-      }
-      while (result == -1 && errno == EINTR);
-      Note("clear rn cache");
-    }
-    xfree(rn_cache_path);
-  }
-  if (result != 0) {
-    Note("unable to clear RN Cache, CLEAR failed [%d]", result);
-    return CMD_FAILED;
-  }
-  return CMD_OK;
-}
-
 struct CmdCacheCont: public Continuation
 {
 
@@ -808,8 +767,6 @@ cmd_clear(char *cmd)
   if (c_all || c_cache) {
     Note("Clearing Cache");
 
-    /* clear the real network cache also */
-    clear_rn_cache();
     if (cacheProcessor.start_internal(PROCESSOR_RECONFIGURE) < 0) {
       Note("unable to open Cache, CLEAR failed");
       return CMD_FAILED;
@@ -1053,11 +1010,6 @@ parse_accept_fd_list()
           // S is the special case of SSL term
           ink_assert(ssl_accept_file_descriptor == NO_FD);
           ssl_accept_file_descriptor = fd;
-          continue;
-        case 'Q':
-          // Q is the special case of QT port
-          ink_assert(qt_accept_file_descriptor == NO_FD);
-          qt_accept_file_descriptor = fd;
           continue;
         case 'C':
           attr = SERVER_PORT_COMPRESSED;
@@ -2013,9 +1965,6 @@ main(int argc, char **argv)
 #ifndef INK_NO_CLUSTER
     clusterProcessor.init();
 #endif
-    if (cacheProcessor.auto_clear_flag)
-      /* clear the real network cache also */
-      clear_rn_cache();
 
     cacheProcessor.start();
 

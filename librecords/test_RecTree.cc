@@ -54,10 +54,6 @@ main(int argc, char **argv)
   printf("\n");
   new_rec_tree->rec_tree_insert("proxy.node.http.hitrate");
   printf("\n");
-  new_rec_tree->rec_tree_insert("proxy.node.rni.client.connections");
-  printf("\n");
-  new_rec_tree->rec_tree_insert("proxy.node.rni.server.connections");
-  printf("\n");
   new_rec_tree->print();
 
   /* Test getting subtree */

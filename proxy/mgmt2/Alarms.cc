@@ -230,7 +230,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   case MGMT_ALARM_WDA_BILLING_CONNECTION_DIED:
   case MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA:
   case MGMT_ALARM_WDA_XF_ENGINE_DOWN:
-  case MGMT_ALARM_WDA_RADIUS_CORRUPTED_PACKETS:
     priority = 2;
     break;
   default:
@@ -246,7 +245,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
       /* INKqa11884: repeated wireless alarms always signalled */
       if (a != MGMT_ALARM_WDA_BILLING_CONNECTION_DIED &&
           a != MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA &&
-          a != MGMT_ALARM_WDA_XF_ENGINE_DOWN && a != MGMT_ALARM_WDA_RADIUS_CORRUPTED_PACKETS) {
+          a != MGMT_ALARM_WDA_XF_ENGINE_DOWN) {
 
         time_t time_delta = time(0) - last_sent;
         if (time_delta < 900) {
@@ -292,7 +291,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
       // update desc with new timestamp and skip to actions part
       if (a == MGMT_ALARM_WDA_BILLING_CONNECTION_DIED ||
           a == MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA ||
-          a == MGMT_ALARM_WDA_XF_ENGINE_DOWN || a == MGMT_ALARM_WDA_RADIUS_CORRUPTED_PACKETS) {
+          a == MGMT_ALARM_WDA_XF_ENGINE_DOWN) {
         Debug("alarm", "[signalAlarm] wireless alarm already active");
         atmp = (Alarm *) hash_value;
         goto ALARM_REPEAT;
@@ -313,7 +312,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
       // update desc with new timstamp and skip to actions part
       if (a == MGMT_ALARM_WDA_BILLING_CONNECTION_DIED ||
           a == MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA ||
-          a == MGMT_ALARM_WDA_XF_ENGINE_DOWN || a == MGMT_ALARM_WDA_RADIUS_CORRUPTED_PACKETS) {
+          a == MGMT_ALARM_WDA_XF_ENGINE_DOWN) {
         Debug("alarm", "[Alarms::signalAlarm] wireless alarm already active");
         goto ALARM_REPEAT;
       } else {
@@ -705,8 +704,6 @@ Alarms::getAlarmText(alarm_t id)
   const char *wda_corr_data =
     "Could not read user profile or URL list from the billing system. The data received doesn't have the expected format.";
   const char *wda_xf_down = "The XF engine heartbeat could not be properly detected. It appears dead.";
-  const char *wda_corr_packets =
-    "Could not find the expected data in the radius packet. Happened multi-times (configurable) consecutively.";
 
   switch (id) {
   case MGMT_ALARM_WDA_BILLING_CONNECTION_DIED:
@@ -715,8 +712,6 @@ Alarms::getAlarmText(alarm_t id)
     return wda_corr_data;
   case MGMT_ALARM_WDA_XF_ENGINE_DOWN:
     return wda_xf_down;
-  case MGMT_ALARM_WDA_RADIUS_CORRUPTED_PACKETS:
-    return wda_corr_packets;
   default:
     if (id < alarmTextNum)
       return alarmText[id];

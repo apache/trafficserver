@@ -606,24 +606,6 @@ snmp			SNMP Configuration
   SNMP Agent -- on    (proxy.config.snmp.master_agent_enabled)
   ts>
 
-ldap			LDAP Configuration
-  syntax: show:ldap [ rules ]
-  args:   optional "rules" to show ldapsrvr.config rules
-  behavior:  Display LDAP Configuration.
-
-  ts> show:ldap                        (proxy.config.ldap.*)
-  LDAP ---------------------- on       (auth.enabled)
-  Cache Size ---------------- 5000     (cache.size)
-  TTL Value ----------------- 3000 ms  (auth.ttl_value)
-  Purge Cache On Auth Fail -- off      (auth.purge_cache_on_auth_fail)
-  ts>
-
-  ts> show:ldap rules
-  ldapsrvr.config rules
-  ---------------------
-  (Display rules from ldapsrvr.config)
-  ts>
-
 socks			SOCKS Configuration
 			(on/off, stats)
   syntax: show:socks [ rules ]
@@ -674,31 +656,6 @@ scheduled-update        Scheduled Update Configuration
   ------------------- 
   (Display list of rules from update.config)
   ts>
-
-radius			Radius Authentication Configuration
-
-  traffic_shell> show:radius     
-
-  Radius Authentication -------- on    (proxy.config.radius.auth.enabled)
-  Primary Hostname ------------- NULL  (proxy.config.radius.proc.radius.primary_server.name)
-  Primary Port ----------------- 1812  (proxy.config.radius.proc.radius.primary_server.auth_port)
-  Primary Key ------------------ NULL  (proxy.config.radius.proc.radius.primary_server.shared_key)
-  Secondary Hostname ----------- NULL  (proxy.config.radius.proc.radius.secondary_server.name)
-  Secondary Port --------------- 1812  (proxy.config.radius.proc.radius.secondary_server.auth_port)
-  Secondary Key ---------------- NULL  (proxy.config.radius.proc.radius.secondary_server.shared_key)
-
-  traffic_shell> 
-
-ntlm			NTLM Configuration
-
-  traffic_shell> show:ntlm
-
-  NTLM Authentication ------ on        (proxy.config.ntlm.auth.enabled)
-  Domain Controller(s) ----- NULL      (proxy.config.ntlm.dc.list)
-  NT Domain ---------------- NULL      (proxy.config.ntlm.nt_domain)
-  Load Balancing ----------- off       (proxy.config.ntlm.dc.load_balance)
-
-  traffic_shell> 
 
 
 Status subcommands
@@ -880,35 +837,6 @@ logging-stats		Logging Statistics
   Number of Access Events Skipped -- 0       (proxy.process.log2.event_log_access_skip)
   Number of Error Events Logged ---- 0       (proxy.process.log2.event_log_error)
   ts>
-
-ldap-stats		LDAP Statistics
-  syntax: show:ldap-stats
-  args: none
-  behavior:  Display LDAP statistics.
-
-  ts> show:ldap-stats
-
-  Cache Hits----------------0 (proxy.process.ldap.cache.hits)
-  Cache Misses--------------0 (proxy.process.ldap.cache.misses)
-  Server Errors-------------0 (proxy.process.ldap.server.errors)
-  Authorization Denied------0 (proxy.process.ldap.denied.authorizations)
-  Authorization Timeouts----0 (proxy.process.ldap.auth.timed_out)
-  Authorization Cancelled---0 (proxy.process.ldap.cancelled.authentications)
-
-  ts>  
-
-ntlm-stats		NTLM Statistics
-
-   traffic_shell> show:ntlm-stats 
-
-   Cache Hits ----------------- 0   (proxy.process.ntlm.cache.hits)
-   Cache Misses --------------- 0   (proxy.process.ntlm.cache.misses)
-   Server Errors -------------- 0   (proxy.process.ntlm.server.errors)
-   Authorization Denied ------- 0   (proxy.process.ntlm.denied.authorizations)
-   Authentication Cancelled --- 0   (proxy.process.ntlm.cancelled.authentications)
-
-   traffic_shell> 
-
 
 network                Network Settings
    syntax:  show:network
@@ -1524,42 +1452,6 @@ snmp			SNMP Configuration
   syntax: config:snmp status <on | off>
   args:   <on | off>  (proxy.config.snmp.master_agent_enabled)
 
-ldap			LDAP Configuration
-  syntax: config:ldap status <on | off> 
-  syntax: config:ldap cache-size <cache> 
-  syntax: config:ldap ttl <ttl> 
-  syntax: config:ldap purge-fail <on | off>
-  syntax: config:ldap server-name <name>
-  syntax: config:ldap server-port <port_number>
-  syntax: config:ldap dn <distinguished name>
-
-  args:                    (proxy.config.ldap.*)
-          ldap             (auth.enabled)
-          cache-size       (cache.size)
-          ttl              (auth.ttl_value)
-          purge-fail       (auth.purge_cache_on_auth_fail)
-          server-name      (proc.ldap.server.name)
-          server-port      (proc.ldap.server.port)
-          dn               (proc.ldap.base.dn)
-
-  ts# config:ldap status on 
-  ts# 
-  ts# config:ldap cache-size 5000
-  ts# 
-  ts# config:ldap ttl 3000 
-  ts#
-  ts# config:ldap purge-fail off 
-  ts#
-  ts# config:ldap server-name blah
-  ts# config:ldap server-port 5150
-  ts# config:ldap dn blahblah
-
-  syntax: config:ldap file <url>
-  args    <url> retrieve ldapsrvr.config file from URL.
-
-  ts# config:ldap file http://example.com/ldapsrvr.config
-  ts#
-
 virtual-ip		Virtual IP Address Configuration
 
   syntax: config:virtual-ip status <on | off>
@@ -1638,25 +1530,6 @@ scheduled-update        Scheduled Update Configuration
   ------------------- 
   (Display list of rules from update.config)
   ts>
-
-
-ntlm	NTLM Configuration
-
-   config:ntlm status <on | off>               (proxy.config.ntlm.auth.enabled)
-   config:ntlm domain-controller <hostnames>   (proxy.config.ntlm.dc.list)
-   config:ntlm nt-domain <domain>              (proxy.config.ntlm.nt_domain)
-   config:ntlm load-balancing <on | off>       (proxy.config.ntlm.dc.load_balance)
-
-
-radius   Radius Configuration
-
-   config:radius status <on | off>             (proxy.config.radius.auth.enabled)
-   config:radius primary-hostname <hostname>   (proxy.config.radius.proc.radius.primary_server.name)
-   config:radius primary-port <port>           (proxy.config.radius.proc.radius.primary_server.auth_port)
-   config:radius primary-key <key>             (proxy.config.radius.proc.radius.primary_server.shared_key)
-   config:radius secondary-hostname <hostname> (proxy.config.radius.proc.radius.secondary_server.name)
-   config:radius secondary-port <port>         (proxy.config.radius.proc.radius.secondary_server.auth_port)
-   config:radius secondary-key <key>           (proxy.config.radius.proc.radius.secondary_server.shared_key)
 
 
 Appliance-Specific commands (Linux only)
@@ -1823,171 +1696,3 @@ config:network	Make System Network configuration changes
     syntax: reboot
 
     ts# reboot
-
-Other
-=====
-Customizable Respose Pages
-------------------------------------------------------------------------------
-PART - II
-~~~~~~~~~
-MIXT specific commands.
-------------------------
-
-Windows media configuration
-----------------------------
-
-wmt			Windows Media Technologies
-config:wmt status <on | off>                 (proxy.config.wmt.enabled)
-config:wmt port <portno>                     (proxy.config.wmt.port)
-config:wmt proxy-only <on | off>             (proxy.config.wmt.proxyonly)
-config:wmt prebuffering <milli seconds>      (proxy.config.wmt.prebuffering_ms)
-config:wmt prebuffering-tcp <milli seconds>  (proxy.config.wmt.prebuffering_ms_tcp",)
-config:wmt loadhost <string>                 (proxy.config.wmt.loadhost)
-config:wmt loadpath <string>                 (proxy.config.wmt.loadpath)
-config:wmt chunksize <seconds>               (proxy.config.wmt.chunksize_sec)
-config:wmt old-asx-behavior <seconds>        (proxy.config.reverse_proxy.oldasxbehavior)
-config:wmt debug <on | off>                  (proxy.config.wmt.debug_tags.enabled)
-config:wmt asx-rewrite <on | off>            (proxy.config.wmt.asx_rewrite.enabled)
-config:wmt redirect <on | off>               (proxy.config.wmt.redirect.enabled)
-config:wmt rexmit-window <integer>           (proxy.config.wmt.rexmit.window)
-config:wmt monitor-version <version number>  (proxy.config.wmt.media_bridge.monitor.version)
-config:wmt monitor-livehosts <string>        (proxy.config.wmt.media_bridge.monitor.livehosts)
-config:wmt monitor-name <string>             (proxy.config.wmt.media_bridge.monitor.name)
-config:wmt monitor-port <portno>             (proxy.config.wmt.media_bridge.monitor.port)
-config:wmt media-bridge-name <string>        (proxy.config.wmt.media_bridge.name)
-config:wmt media-bridge-port <portno>        (proxy.config.wmt.media_bridge.port)
-config:wmt media-bridge-mount <string>       (proxy.config.wmt.media_bridge.mount_point)
-
-Quick time commands
----------------------
-config:qt status <on | off>		     (proxy.config.qt.enabled)
-config:qt proxy-port <portno>                (proxy.config.mixt.rtsp_proxy_port)
-config:qt monitor-name <string>              (proxy.config.qt.media_bridge.monitor.name)
-config:qt monitor-port <portno>              (proxy.config.qt.media_bridge.monitor.port)
-config:qt name <string>                      (proxy.config.qt.media_bridge.name)
-config:qt port <portno>                      (proxy.config.qt.media_bridge.port)
-config:qt mount-point <string>               (proxy.config.qt.media_bridge.mount_point)
-
-
-Real config variables
-----------------------
-config:rni status <on | off>                 (proxy.config.rni.enabled)
-config:rni verbosity <on | off>              (proxy.config.rni.verbosity)
-config:rni cache-port  <portno>              (proxy.config.rni.cache_port)
-config:rni watcher-enabled <on | off>        (proxy.config.rni.watcher_enabled)
-config:rni control-port <portno>             (proxy.config.rni.control_port)
-config:rni proxy-port <portno>               (proxy.config.rni.proxy_port)
-config:rni pid-path <string>                 (proxy.config.rni.proxy_pid_path)
-config:rni restart-cmd <need info>           (proxy.config.rni.proxy_restart_cmd)
-config:rni restart-interval <integer>        (proxy.config.rni.proxy_restart_interval)
-config:rni service-name <string>             (proxy.config.rni.proxy_service_name)
-
-Status commands for Real proxy
--------------------------------
-
-traffic_shell> show:rni-stats
-
-RNI:
-Object Count ---------------------- 0   (proxy.process.rni.object_count)
-Block Hit Count ------------------- 0   (proxy.process.rni.block_hit_count)
-Block Miss Count ------------------ 0   (proxy.process.rni.block_miss_count)
-Total Hits ------------------------ 0   (proxy.process.rni.byte_hit_sum)
-Total Miss ------------------------ 0   (proxy.process.rni.byte_miss_sum)
-Total Hit Time -------------------- 0   (proxy.process.rni.time_hit_sum)
-Total Miss Time ------------------- 0   (proxy.process.rni.time_miss_sum)
-Downstream Request Status --------- 0   (proxy.process.rni.downstream_requests)
-Downstream Request Bytes ---------- 0   (proxy.process.rni.downstream.request_bytes)
-Downstream Receive Bytes ---------- 0   (proxy.process.rni.downstream.response_bytes)
-Upstream Request Status ----------- 0   (proxy.process.rni.upstream_requests)
-Upstream Request Bytes ------------ 0   (proxy.process.rni.upstream.request_bytes)
-Upstream Receive Bytes ------------ 0   (proxy.process.rni.upstream.response_bytes)
-Client Connections ---------------- 0   (proxy.process.rni.current_client_connections)
-Cache Connections ----------------- 0   (proxy.process.rni.current_cache_connections)
-Server Connections ---------------- 0   (proxy.process.rni.current_server_connections)
-Total Aborts ---------------------- 0   (proxy.process.rni.errors.aborts)
-Failed Server Connections --------- 0   (proxy.process.rni.server.errors.connect_failed)
-Other Server Errors --------------- 0   (proxy.process.rni.server.errors.other)
-
-traffic_shell> show:rni
-
-RNI protocol ------- on       (proxy.config.rni.enabled)
-Verbosity ---------- on       (proxy.config.rni.verbosity)
-Cache port --------- 7802     (proxy.config.rni.cache_port)
-Watcher ------------ on       (proxy.config.rni.watcher_enabled)
-Control Port ------- 7803     (proxy.config.rni.control_port)
-Proxy Port --------- 9231     (proxy.config.rni.proxy_port)
-PID Path ----------- /usr/local/var/log/trafficserver/rmserver.pid   (proxy.config.rni.proxy_pid_path)
-Restart Command ---- /usr/local/bin/rmserver -m 94 --skip-cpu-test   (proxy.config.rni.proxy_restart_cmd)
-                     /usr/local/etc/rmproxy/rmserver.cfg
-Restart Interval --- 10       (proxy.config.rni.proxy_restart_interval)
-Service Name ------- RMProxy  (proxy.config.rni.proxy_service_name)
-
-traffic_shell> 
-
-
-Status command for WMT
-----------------------
-
-traffic_shell> show:wmt-stats
-
-WMT:
-Downstream Request Bytes ------------- 0   (proxy.process.wmt.downstream.request_bytes)
-Downstream Response Bytes ------------ 0   (proxy.process.wmt.downstream.response_bytes)
-Upstream Request Bytes --------------- 0   (proxy.process.wmt.upstream.request_bytes)
-Upstream Response Bytes -------------- 0   (proxy.process.wmt.upstream.response_bytes)
-Client Connections ------------------- 0   (proxy.process.wmt.current_client_connections)
-Server Connections ------------------- 0   (proxy.process.wmt.current_server_connections)
-
-traffic_shell> show:wmt
-
-WMT Caching ------------- on         (proxy.config.wmt.enabled)
-WMT Port ---------------- 1755       (proxy.config.wmt.port)
-Proxy only -------------- off        (proxy.config.wmt.proxyonly)
-Prebuffering ------------ 5000 ms    (proxy.config.wmt.prebuffering_ms)
-TCP Prebuffering -------- 200 ms     (proxy.config.wmt.prebuffering_ms_tcp)
-Loadpath ---------------- no-file    (proxy.config.wmt.loadpath)
-Loadhost ---------------- no-load-host-set.no-domain   (proxy.config.wmt.loadhost)
-Chunksize --------------- 10 s       (proxy.config.wmt.chunksize_sec)
-Old ASX behavior -------- 0 s        (proxy.config.reverse_proxy.oldasxbehavior)
-ASX Rewrite ------------- on         (proxy.config.wmt.debug_tags.enabled)
-Redirect ---------------- off        (proxy.config.wmt.redirect.enabled)
-Retransmit window ------- 65         (proxy.config.wmt.rexmit.window)
-Monitor Version --------- 0          (proxy.config.wmt.media_bridge.monitor.version")
-Monitor Livehosts ------- NULL       (proxy.config.wmt.media_bridge.monitor.livehosts)
-Monitor Name ------------ NULL       (proxy.config.wmt.media_bridge.monitor.name)
-Monitor Port ------------ 10088      (proxy.config.wmt.media_bridge.monitor.port)
-Media Bridge Name ------- NULL       (proxy.config.wmt.media_bridge.name)
-Media Bridge Port ------- 10022      (proxy.config.wmt.media_bridge.port)
-Media Bridge Mount ------ ffnet      (proxy.config.wmt.media_bridge.mount_point)
-
-traffic_shell> 
-
-
-Status commands for Quick time 
----------------------------------
-
-traffic_shell> show:qt-stats
-
-Quicktime:
-Downstream Request Bytes ------------- 0       (proxy.process.qt.downstream.request_bytes)
-Downstream Response Bytes ------------ 0       (proxy.process.qt.downstream.response_bytes)
-Upstream Request Bytes --------------- 0       (proxy.process.qt.upstream.request_bytes)
-Upstream Response Bytes -------------- 0       (proxy.process.qt.upstream.response_bytes)
-Client Connections ------------------- 0       (proxy.process.qt.current_client_connections)
-Server Connections ------------------- 0       (proxy.process.qt.current_server_connections)
-Unique Live Streams ------------------ 0       (proxy.process.qt.unique_live_streams)
-Cache Bytes Read --------------------- 0       (proxy.process.qt.client.cache_bytes_read)
-Cache Cutoff ------------------------- 1048576 (proxy.config.cache.ram_cache_mixt_cutoffproxy.config.cache.ram_cache_mixt_cutoff)
-
-traffic_shell> show:qt
-
-Quicktime ------------ on         (proxy.config.qt.enabled)
-Proxy port ----------- 554        (proxy.config.mixt.rtsp_proxy_port)
-Monitor Name --------- NULL       (proxy.config.qt.media_bridge.monitor.name)
-Monitor Port --------- 10088      (proxy.config.qt.media_bridge.monitor.port)
-Media Bridge Name ---- NULL       (proxy.config.qt.media_bridge.name)
-Media Bridge Port ---- 10036      (proxy.config.qt.media_bridge.port)
-Media Bridge Mount --- ffnet      (proxy.config.qt.media_bridge.mount_point)
-
-traffic_shell> 
-

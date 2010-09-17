@@ -56,11 +56,6 @@
 extern int CacheClusteringEnabled;
 int auto_clear_cache_flag = 0;
 
-// ldap required externals ...
-//int  gldap_auth_enable    = 0;
-//int  gsplit_ldap_enabled  = 0;
-//int  gauth_bypass_enabled  = 0;
-
 // sac-specific command-line flags
 //
 int version_flag = 0;

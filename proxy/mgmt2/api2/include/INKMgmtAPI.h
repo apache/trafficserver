@@ -368,14 +368,6 @@ typedef enum
     INK_PARTITION_UNDEFINED
   } INKPartitionSchemeT;
 
-  typedef enum                  /* possible MIXT tags */
-  {
-    INK_MIXT_RNI,
-    INK_MIXT_QT,
-    INK_MIXT_WMT,
-    INK_MIXT_UNDEFINED
-  } INKMixtTagT;
-
   typedef enum                  /* specifies how size is specified */
   {
     INK_SIZE_FMT_PERCENT,       /* as a percentage */
@@ -579,7 +571,6 @@ typedef enum
     INKPortEle *port;           /* requested URL port */
     INKMethodT method;          /* get, post, put, trace */
     INKSchemeT scheme;          /* HTTP */
-    INKMixtTagT mixt;           /* optional MIXT tag: RNI, QT, or WMT */
   } INKSspec;                   /* Sspec = Secondary Specifier */
 
   typedef struct
@@ -821,7 +812,6 @@ typedef enum
     char *to_host;              /* to host */
     int to_port;                /* to port (can be 0) */
     char *to_path_prefix;       /* to path_prefix (can be NULL) */
-    INKMixtTagT mixt;           /* optional MIXT tag: RNI, QT, or WMT */
   } INKRemapEle;
 
 /* socks.config */

@@ -60,9 +60,6 @@ typedef enum
   CMD_SHOW_PARENT_RULES,
   CMD_SHOW_REMAP,
   CMD_SHOW_SNMP,
-  CMD_SHOW_LDAP,
-  CMD_SHOW_LDAP_RULES,
-  CMD_SHOW_LDAP_STATS,
   CMD_SHOW_SOCKS,
   CMD_SHOW_SOCKS_RULES,
   CMD_SHOW_PORT_TUNNELS,
@@ -120,10 +117,6 @@ int Cmd_ShowParents(ClientData clientData, Tcl_Interp * interp, int argc, const 
 int CmdArgs_ShowParents();
 int Cmd_ShowRemap(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowSnmp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int Cmd_ShowLdap(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int Cmd_ShowLdapStats(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int CmdArgs_ShowLdap();
-int CmdArgs_ShowLdapStats();
 int Cmd_ShowSocks(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_ShowSocks();
 int Cmd_ShowPortTunnels(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
@@ -219,15 +212,6 @@ int ShowRemap();
 
 // show snmp sub-command
 int ShowSnmp();
-
-// show ldap sub-command
-int ShowLdap();
-
-// show ldap-stats sub-command
-int ShowLdapStats();
-
-// show:ldap rules sub-command
-int ShowLdapRules();
 
 // show socks sub-command
 int ShowSocks();

@@ -53,9 +53,6 @@
 #define _FOOTER
 #include "DynamicStats.h"
 
-#define WMT_STATS_1
-#define QT_STATS_1
-
 const ink_hrtime hrThreshold = 10 * HRTIME_SECOND;
 
 void
@@ -145,18 +142,15 @@ Ag_cachePercent()
 
 
 // HTTP hit stats
-// NOTE: no cache hit info. for WMT, QT
 static const char *hitCounters[] = {
   "proxy.process.http.cache_hit_fresh", // 0
   "proxy.process.http.cache_hit_revalidated",   // 1
   "proxy.process.http.cache_hit_ims",   // 2
   "proxy.process.http.cache_hit_stale_served",  // 3
-  "proxy.process.rni.block_hit_count",  // 4
   NULL
 };
 
 // HTTP miss stats
-// NOTE: no cache miss info. for WMT, QT
 static const char *missCounters[] = {
   "proxy.process.http.cache_miss_cold", // 0
   "proxy.process.http.cache_miss_changed",      // 1
@@ -164,13 +158,12 @@ static const char *missCounters[] = {
   "proxy.process.http.cache_miss_client_no_cache",      // 3
   "proxy.process.http.cache_miss_ims",  // 4
   "proxy.process.http.cache_read_error",        // 5
-  "proxy.process.rni.block_miss_count", // 6
   NULL
 };
 
 //
 // Calculate Node cache hits/misses i.e. hit ratio
-// Should include HTTP and maybe RNI(?)
+// Should include HTTP
 //
 void
 Ag_cacheHits()
@@ -191,7 +184,6 @@ Ag_cacheHits()
     {"proxy.process.http.cache_hit_revalidated", 0, 0, 0, 0},   // 1
     {"proxy.process.http.cache_hit_ims", 0, 0, 0, 0},   // 2
     {"proxy.process.http.cache_hit_stale_served", 0, 0, 0, 0},  // 3
-    {"proxy.process.rni.block_hit_count", 0, 0, 0, 0},  // 6
     {NULL, -1, -1, -1, -1}
   };
 
@@ -203,7 +195,6 @@ Ag_cacheHits()
     {"proxy.process.http.cache_miss_client_no_cache", 0, 0, 0, 0},      // 3
     {"proxy.process.http.cache_miss_ims", 0, 0, 0, 0},  // 4
     {"proxy.process.http.cache_read_error", 0, 0, 0, 0},        // 5
-    {"proxy.process.rni.block_miss_count", 0, 0, 0, 0}, // 6
     {NULL, -1, -1, -1, -1}
   };
 
@@ -213,7 +204,6 @@ Ag_cacheHits()
     "proxy.node.http.cache_hit_revalidated_avg_10s",    // 1
     "proxy.node.http.cache_hit_ims_avg_10s",    // 2
     "proxy.node.http.cache_hit_stale_served_avg_10s",   // 3
-    "proxy.node.rni.block_hit_count_avg_10s",   // 4
     NULL
   };
 
@@ -225,7 +215,6 @@ Ag_cacheHits()
     "proxy.node.http.cache_miss_client_no_cache_avg_10s",       // 3
     "proxy.node.http.cache_miss_ims_avg_10s",   // 4
     "proxy.node.http.cache_read_error_avg_10s", // 5
-    "proxy.node.rni.block_miss_count_avg_10s",  // 6
     NULL
   };
 
@@ -681,9 +670,6 @@ Ag_Throughput()
   MgmtInt bytesThrough;
   MgmtInt bytesHttpUAThrough;
   MgmtInt bytesHttpOSThrough;
-  MgmtInt bytesRNIUAThrough;
-  MgmtInt bytesWMTUAThrough = 0;
-  MgmtInt bytesQTUAThrough = 0;
   ink_hrtime nowTime = ink_get_hrtime();
   ink_hrtime diffTime = nowTime - lastThroughputTime;
   double tmp;
@@ -693,19 +679,10 @@ Ag_Throughput()
   if (diffTime > window) {
     if (varIntFromName("proxy.node.http.user_agent_total_response_bytes", &bytesHttpUAThrough)
         && varIntFromName("proxy.node.http.origin_server_total_response_bytes", &bytesHttpOSThrough)
-        && varIntFromName("proxy.node.rni.downstream_total_bytes", &bytesRNIUAThrough)
-#ifdef WMT_STATS_1
-        && varIntFromName("proxy.node.wmt.downstream_total_bytes", &bytesWMTUAThrough)
-#endif
-#ifdef QT_STATS_1
-        && varIntFromName("proxy.node.qt.downstream_total_bytes", &bytesQTUAThrough)
-#endif
       ) {
-      bytesThrough = bytesHttpUAThrough +
-        bytesRNIUAThrough + bytesWMTUAThrough + bytesQTUAThrough;
+      bytesThrough = bytesHttpUAThrough;
       if (lastThroughputTime != 0 && bytesThrough != 0) {
-        if (lastBytesThrough > (bytesHttpUAThrough +
-                                bytesRNIUAThrough + bytesWMTUAThrough + bytesQTUAThrough)) {
+        if (lastBytesThrough > (bytesHttpUAThrough)) {
           // The proxy must have died so just set the value to zero
           intSum = 0;
         } else {
@@ -766,82 +743,49 @@ Ag_XactsPerSecond()
   static ink_hrtime lastXactLookupTime = 0;
   static MgmtInt lastTotalXactLookup = 0;
   static MgmtInt lastHttpXactLookup = 0;
-  static MgmtInt lastRniXactLookup = 0;
-  static MgmtInt lastWmtXactLookup = 0;
-  static MgmtInt lastQtXactLookup = 0;
   ink_hrtime nowTime = ink_get_hrtime();
   ink_hrtime diffTime = nowTime - lastXactLookupTime;
   MgmtInt totalXacts = 0;
   MgmtInt httpXacts = 0;
-  MgmtInt rniXacts = 0;
-  MgmtInt wmtXacts = 0;
-  MgmtInt qtXacts = 0;
   double tmp;
   MgmtFloat totalfloatSum = 0.0;
   MgmtFloat httpSum = 0.0;
-  MgmtFloat rniSum = 0.0;
-  MgmtFloat wmtSum = 0.0;
-  MgmtFloat qtSum = 0.0;
 
   if (diffTime > hrThreshold) {
-    if (varIntFromName("proxy.process.http.incoming_requests", &httpXacts)
-        && varIntFromName("proxy.process.rni.downstream_requests", &rniXacts)
-        && varIntFromName("proxy.process.wmt.downstream_requests", &wmtXacts)
-        && varIntFromName("proxy.process.qt.downstream_requests", &qtXacts)) {
-      totalXacts = httpXacts + rniXacts + wmtXacts + qtXacts;
+    if (varIntFromName("proxy.process.http.incoming_requests", &httpXacts)) {
+      totalXacts = httpXacts;
       if (lastXactLookupTime != 0 && lastTotalXactLookup != 0) {
         if (lastTotalXactLookup > totalXacts) {
           // The proxy must have died so just set the value to zero
           totalfloatSum = 0.0;
           httpSum = 0.0;
-          rniSum = 0.0;
-          wmtSum = 0.0;
-          qtSum = 0.0;
         } else {
           tmp = (MgmtFloat) ((double) (totalXacts - lastTotalXactLookup) / diffTime);
           totalfloatSum = (MgmtFloat) (tmp * HRTIME_SECOND);
           tmp = (MgmtFloat) ((double) (httpXacts - lastHttpXactLookup) / diffTime);
           httpSum = (MgmtFloat) (tmp * HRTIME_SECOND);
-          tmp = (MgmtFloat) ((double) (rniXacts - lastRniXactLookup) / diffTime);
-          rniSum = (MgmtFloat) (tmp * HRTIME_SECOND);
-          tmp = (MgmtFloat) ((double) (wmtXacts - lastWmtXactLookup) / diffTime);
-          wmtSum = (MgmtFloat) (tmp * HRTIME_SECOND);
-          tmp = (MgmtFloat) ((double) (qtXacts - lastQtXactLookup) / diffTime);
-          qtSum = (MgmtFloat) (tmp * HRTIME_SECOND);
         }
         varSetFloat("proxy.node.user_agent_xacts_per_second", totalfloatSum);
         varSetFloat("proxy.node.http.user_agent_xacts_per_second", httpSum);
-        varSetFloat("proxy.node.rni.user_agent_xacts_per_second", rniSum);
-        varSetFloat("proxy.node.wmt.user_agent_xacts_per_second", wmtSum);
-        varSetFloat("proxy.node.qt.user_agent_xacts_per_second", qtSum);
       }
       lastXactLookupTime = nowTime;
       lastTotalXactLookup = totalXacts;
       lastHttpXactLookup = httpXacts;
-      lastRniXactLookup = rniXacts;
-      lastWmtXactLookup = wmtXacts;
-      lastQtXactLookup = qtXacts;
     }
   }
 }
 
 //
-// Aggregate total documents served for HTTP and RNI(?)
+// Aggregate total documents served for HTTP
 //
 void
 Ag_TotalDocumentsServed()
 {
   MgmtInt http_docs = 0;
-  MgmtInt rni_docs = 0;
-  MgmtInt wmt_docs = 0;
-  MgmtInt qt_docs = 0;
   MgmtInt total_docs = 0;
 
-  if (varIntFromName("proxy.node.http.user_agents_total_documents_served", &http_docs)
-      && varIntFromName("proxy.node.rni.user_agents_total_documents_served", &rni_docs)
-      && varIntFromName("proxy.node.wmt.user_agents_total_documents_served", &wmt_docs)
-      && varIntFromName("proxy.node.qt.user_agents_total_documents_served", &qt_docs)) {
-    total_docs = http_docs + rni_docs + wmt_docs + qt_docs;
+  if (varIntFromName("proxy.node.http.user_agents_total_documents_served", &http_docs)) {
+    total_docs = http_docs;
     varSetInt("proxy.node.user_agents_total_documents_served", total_docs);
   } else {
     varSetInt("proxy.node.user_agents_total_documents_served", -20);
@@ -851,7 +795,7 @@ Ag_TotalDocumentsServed()
 
 
 //
-// Aggregate client/server connections for HTTP and RNI(?)
+// Aggregate client/server connections for HTTP
 //
 void
 Ag_Connections()
@@ -860,15 +804,6 @@ Ag_Connections()
   MgmtInt http_os_server_conn = 0;
   MgmtInt http_pp_server_conn = 0;
   MgmtInt http_cache_conn = 0;
-  MgmtInt rni_client_conn = 0;
-  MgmtInt rni_server_conn = 0;
-  MgmtInt rni_cache_conn = 0;
-  MgmtInt wmt_client_conn = 0;
-  MgmtInt wmt_server_conn = 0;
-  MgmtInt wmt_cache_conn = 0;
-  MgmtInt qt_client_conn = 0;
-  MgmtInt qt_server_conn = 0;
-  MgmtInt qt_cache_conn = 0;
   MgmtInt cache_conn = 0;
   MgmtInt client_conn = 0;
   MgmtInt server_conn = 0;
@@ -877,22 +812,10 @@ Ag_Connections()
       && varIntFromName("proxy.node.http.origin_server_current_connections_count", &http_os_server_conn)
       && varIntFromName("proxy.node.http.current_parent_proxy_connections", &http_pp_server_conn)
       && varIntFromName("proxy.node.http.cache_current_connections_count", &http_cache_conn)
-      && varIntFromName("proxy.node.rni.current_cache_connections", &rni_cache_conn)
-      && varIntFromName("proxy.node.rni.current_client_connections", &rni_client_conn)
-      && varIntFromName("proxy.node.rni.current_server_connections", &rni_server_conn)
-      && varIntFromName("proxy.node.wmt.current_client_connections", &wmt_client_conn)
-      && varIntFromName("proxy.node.wmt.current_server_connections", &wmt_server_conn)
-      && varIntFromName("proxy.node.wmt.current_cache_connections", &wmt_cache_conn)
-      && varIntFromName("proxy.node.qt.current_client_connections", &qt_client_conn)
-      && varIntFromName("proxy.node.qt.current_server_connections", &qt_server_conn)
-      && varIntFromName("proxy.node.qt.current_cache_connections", &qt_cache_conn)
-
     ) {
-    client_conn = http_ua_client_conn +
-      rni_client_conn + wmt_client_conn + qt_client_conn;
-    server_conn = http_os_server_conn + http_pp_server_conn +
-      rni_server_conn + wmt_server_conn + qt_server_conn;
-    cache_conn = http_cache_conn + rni_cache_conn + wmt_cache_conn + qt_cache_conn;
+    client_conn = http_ua_client_conn;
+    server_conn = http_os_server_conn + http_pp_server_conn;
+    cache_conn = http_cache_conn;
     varSetInt("proxy.node.current_client_connections", client_conn);
     varSetInt("proxy.node.current_server_connections", server_conn);
     varSetInt("proxy.node.current_cache_connections", cache_conn);
@@ -907,7 +830,7 @@ Ag_Connections()
 //
 // Calculate Node Bandwidth ratio i.e. bandwidth savings
 //
-// FIXME: Should reflext HTTP and maybe RNI(?)
+// FIXME: Should reflext HTTP
 //        Currently only reflects HTTP
 //
 // NOTE: 8/21/98 (Bug INKqa03094)
@@ -965,39 +888,6 @@ Ag_Bytes()
     varSetInt("proxy.node.http.user_agent_total_response_bytes", -20);
   }
 
-  // Add RNI User Agent request/response bytes
-  if (varIntFromName("proxy.process.rni.downstream.request_bytes", &b) &&
-      varIntFromName("proxy.process.rni.downstream.response_bytes", &h)) {
-    UA_bytes += h + b;
-    varSetInt("proxy.node.rni.downstream_total_bytes", h + b);
-  } else {
-    ok = false;
-    varSetInt("proxy.node.rni.downstream_total_bytes", -20);
-  }
-
-#ifdef WMT_STATS_1
-  // Add WMT User Agent request/response bytes (proxy<->origin server)
-  if (varIntFromName("proxy.process.wmt.downstream.request_bytes", &b) &&
-      varIntFromName("proxy.process.wmt.downstream.response_bytes", &h)) {
-    UA_bytes += h + b;
-    varSetInt("proxy.node.wmt.downstream_total_bytes", h + b);
-  } else {
-    ok = false;
-    varSetInt("proxy.node.wmt.downstream_total_bytes", -20);
-  }
-#endif
-
-#ifdef QT_STATS_1
-  // Add QT User Agent request/response bytes (proxy<->origin server)
-  if (varIntFromName("proxy.process.qt.downstream.request_bytes", &b) &&
-      varIntFromName("proxy.process.qt.downstream.response_bytes", &h)) {
-    UA_bytes += h + b;
-    varSetInt("proxy.node.qt.downstream_total_bytes", h + b);
-  } else {
-    ok = false;
-    varSetInt("proxy.node.qt.downstream_total_bytes", -20);
-  }
-#endif
 
   //////////////////////////////////////////////////////////////////
   // add up the upstream (proxy <-> server/parent) traffic volume //
@@ -1021,40 +911,6 @@ Ag_Bytes()
     ok = false;
     varSetInt("proxy.node.http.origin_server_total_response_bytes", -20);
   }
-
-  // Add RNI origin server request/response bytes
-  if (varIntFromName("proxy.process.rni.upstream.request_bytes", &b) &&
-      varIntFromName("proxy.process.rni.upstream.response_bytes", &h)) {
-    OS_bytes += h + b;
-    varSetInt("proxy.node.rni.upstream_total_bytes", h + b);
-  } else {
-    ok = false;
-    varSetInt("proxy.node.rni.upstream_total_bytes", -20);
-  }
-
-#ifdef WMT_STATS_1
-  // Add WMT origin server request/response bytes
-  if (varIntFromName("proxy.process.wmt.upstream.request_bytes", &b) &&
-      varIntFromName("proxy.process.wmt.upstream.response_bytes", &h)) {
-    OS_bytes += h + b;
-    varSetInt("proxy.node.wmt.upstream_total_bytes", h + b);
-  } else {
-    ok = false;
-    varSetInt("proxy.node.wmt.upstream_total_bytes", -20);
-  }
-#endif
-
-#ifdef QT_STATS_1
-  // Add QT origin server request/response bytes
-  if (varIntFromName("proxy.process.qt.upstream.request_bytes", &b) &&
-      varIntFromName("proxy.process.qt.upstream.response_bytes", &h)) {
-    OS_bytes += h + b;
-    varSetInt("proxy.node.qt.upstream_total_bytes", h + b);
-  } else {
-    ok = false;
-    varSetInt("proxy.node.qt.upstream_total_bytes", -20);
-  }
-#endif
 
   // Parent Proxy bytes?
   PP_bytes = 0;
@@ -1190,24 +1046,6 @@ aggregateNodeRecords()
   }
   AgInt_generic("proxy.process.http.current_parent_proxy_connections",
                 "proxy.node.http.current_parent_proxy_connections");
-
-  // RNI
-  AgInt_generic("proxy.process.rni.downstream_requests", "proxy.node.rni.user_agents_total_documents_served");
-  AgInt_generic("proxy.process.rni.current_client_connections", "proxy.node.rni.current_client_connections");
-  AgInt_generic("proxy.process.rni.current_server_connections", "proxy.node.rni.current_server_connections");
-  AgInt_generic("proxy.process.rni.current_cache_connections", "proxy.node.rni.current_cache_connections");
-
-  // WMT
-  AgInt_generic("proxy.process.wmt.downstream_requests", "proxy.node.wmt.user_agents_total_documents_served");
-  AgInt_generic("proxy.process.wmt.current_client_connections", "proxy.node.wmt.current_client_connections");
-  AgInt_generic("proxy.process.wmt.current_server_connections", "proxy.node.wmt.current_server_connections");
-  AgInt_generic("proxy.process.wmt.current_cache_connections", "proxy.node.wmt.current_cache_connections");
-
-  // QT
-  AgInt_generic("proxy.process.qt.downstream_requests", "proxy.node.qt.user_agents_total_documents_served");
-  AgInt_generic("proxy.process.qt.current_client_connections", "proxy.node.qt.current_client_connections");
-  AgInt_generic("proxy.process.qt.current_server_connections", "proxy.node.qt.current_server_connections");
-  AgInt_generic("proxy.process.qt.current_cache_connections", "proxy.node.qt.current_cache_connections");
 
   // Cache
   AgInt_generic("proxy.process.cache.bytes_total", "proxy.node.cache.bytes_total");

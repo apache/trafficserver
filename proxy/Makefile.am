@@ -58,7 +58,6 @@ include_HEADERS = \
 
 noinst_HEADERS = \
   api/ts/InkAPIHughes.h \
-  api/ts/InkAPIaaa.h \
   api/ts/InkAPIPrivateIOCore.h \
   ConfigParse.h \
   NTDefs.h \

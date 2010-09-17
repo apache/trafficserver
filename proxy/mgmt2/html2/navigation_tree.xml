@@ -83,47 +83,11 @@
       </ITEM>
     </MENU>
 
-    <MENU name="Streaming Media" enable_record="proxy.config.qt.enabled|proxy.config.rni.enabled|proxy.config.wmt.enabled">
-      <ITEM name="QuickTime" enable_record="proxy.config.qt.enabled">
-        <LINK refresh="true"
-              file_link="/monitor/m_quicktime.ink"
-              help_link="/help/ts.ink?help=s_quickt.htm"/>
-      </ITEM>
-      <ITEM name="Real Networks" enable_record="proxy.config.rni.enabled">
-        <LINK refresh="true"
-              file_link="/monitor/m_real_networks.ink"
-              help_link="/help/ts.ink?help=s_real.htm"/>
-      </ITEM>
-      <ITEM name="Windows Media" enable_record="proxy.config.wmt.enabled">
-        <LINK refresh="true"
-              file_link="/monitor/m_windows_media.ink"
-              help_link="/help/ts.ink?help=s_winm.htm"/>
-      </ITEM>
-    </MENU>
-
     <MENU name="Content Routing">
       <ITEM name="ICP Peering">
         <LINK name="ICP Peering" refresh="true"
               file_link="/monitor/m_icp.ink"
               help_link="/help/ts.ink?help=s_rout.htm"/>
-      </ITEM>
-    </MENU>
-
-    <MENU name="Security">
-      <ITEM name="LDAP" enable_record="proxy.config.ldap.auth.enabled">
-        <LINK refresh="true"
-              file_link="/monitor/m_ldap.ink"
-              help_link="/help/ts.ink?help=s_ldap.htm"/>
-      </ITEM>
-      <ITEM name="NTLM" enable_record="proxy.config.ntlm.auth.enabled">
-        <LINK refresh="true"
-              file_link="/monitor/m_ntlm.ink"
-              help_link="/help/ts.ink?help=s_ntlm.htm"/>
-      </ITEM>
-      <ITEM name="SOCKS" enable_record="proxy.config.socks.socks_needed">
-        <LINK refresh="true"
-              file_link="/monitor/m_socks.ink" 
-              help_link="/help/ts.ink?help=s_soks.htm"/>
       </ITEM>
     </MENU>
 
@@ -273,37 +237,6 @@
               help_link="/help/ts.ink?help=c_httpsc.htm"/>
       </ITEM>
     </MENU>
-    <MENU name="Streaming Media" enable_record="proxy.config.qt.enabled|proxy.config.rni.enabled|proxy.config.wmt.enabled">
-      <ITEM name="Shared Settings">
-        <LINK name="Common" refresh="false"
-              file_link="/configure/c_media_common.ink"
-              help_link="/help/ts.ink?help=c_medias.htm"/>
-      </ITEM>
-      <ITEM name="QuickTime" enable_record="proxy.config.qt.enabled">
-        <LINK name="Media Bridge" refresh="false"
-              file_link="/configure/c_quicktime_mbridge.ink"
-              help_link="/help/ts.ink?help=c_quickt.htm"/>
-      </ITEM>
-      <ITEM name="Real Networks" enable_record="proxy.config.rni.enabled">
-        <LINK  name="General" refresh="false"
-              file_link="/configure/c_real_networks_general.ink"
-              help_link="/help/ts.ink?help=c_real.htm"/>
-      </ITEM>
-      <ITEM name="Windows Media" enable_record="proxy.config.wmt.enabled">
-        <LINK name="General" refresh="false"
-              file_link="/configure/c_windows_media_general.ink"
-              help_link="/help/ts.ink?help=c_winm.htm"/>
-        <LINK name="Multicast" refresh="false"
-              file_link="/configure/c_windows_media_mcast.ink"
-              help_link="/help/ts.ink?help=c_winm.htm"/>
-        <LINK name="Media Push" refresh="false"
-              file_link="/configure/c_media_push.ink"
-              help_link="/help/ts.ink?help=c_winm.htm"/>
-        <LINK name="Media Bridge" refresh="false"
-              file_link="/configure/c_windows_media_mbridge.ink"
-              help_link="/help/ts.ink?help=c_winm.htm"/>
-      </ITEM>
-    </MENU>
     <MENU name="Content Routing">
       <ITEM name="Hierarchies">
 	<LINK name="Parenting" refresh="false"
@@ -338,20 +271,6 @@
         <LINK name="Proxy Access" refresh="false"
               file_link="/configure/c_proxy_access.ink"
               help_link="/help/ts.ink?help=c_cnct.htm"/>
-      </ITEM>
-      <ITEM name="Access Control">
-        <LINK name="Filtering" refresh="false"
-              file_link="/configure/c_http_filtering.ink"
-              help_link="/help/ts.ink?help=c_auth.htm"/>
-        <LINK name="LDAP" refresh="false" enable_record="proxy.config.ldap.auth.enabled"
-              file_link="/configure/c_ldap_general.ink"
-              help_link="/help/ts.ink?help=c_auth.htm"/>
-        <LINK name="Radius" refresh="false" enable_record="proxy.config.radius.auth.enabled"
-              file_link="/configure/c_radius_general.ink"
-              help_link="/help/ts.ink?help=c_auth.htm"/>
-        <LINK name="NTLM" refresh="false" enable_record="proxy.config.ntlm.auth.enabled"
-              file_link="/configure/c_ntlm_general.ink"
-              help_link="/help/ts.ink?help=c_auth.htm"/>
       </ITEM>
       <ITEM name="SSL Termination" enable_record="proxy.config.ssl.enabled">
         <LINK name="General" refresh="false"

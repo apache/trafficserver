@@ -119,7 +119,6 @@ LogConfig::setup_default_values()
   logfile_dir = xstrdup(".");
 
   separate_icp_logs = 1;
-  separate_mixt_logs = -1;
   separate_host_logs = FALSE;
 
   squid_log_enabled = TRUE;
@@ -421,16 +420,11 @@ LogConfig::read_configuration_variables()
   // SPLITTING
   // 0 means no splitting
   // 1 means splitting
-  // for icp and mixt
+  // for icp
   //   -1 means filter out (do not log and do not create split file)
   val = (int) LOG_ConfigReadInteger("proxy.config.log2.separate_icp_logs");
   if (val == 0 || val == 1 || val == -1) {
     separate_icp_logs = val;
-  };
-
-  val = (int) LOG_ConfigReadInteger("proxy.config.log2.separate_mixt_logs");
-  if (val == 0 || val == 1 || val == -1) {
-    separate_mixt_logs = val;
   };
 
   val = (int) LOG_ConfigReadInteger("proxy.config.log2.separate_host_logs");
@@ -861,7 +855,6 @@ LogConfig::display(FILE * fd)
   fprintf(fd, "   extended2_log_name = %s\n", extended2_log_name);
   fprintf(fd, "   extended2_log_header = %s\n", extended2_log_header ? extended2_log_header : "<no header defined>");
   fprintf(fd, "   separate_icp_logs = %d\n", separate_icp_logs);
-  fprintf(fd, "   separate_mixt_logs = %d\n", separate_mixt_logs);
   fprintf(fd, "   separate_host_logs = %d\n", separate_host_logs);
   fprintf(fd, "   collation_mode = %d\n", collation_mode);
   fprintf(fd, "   collation_host = %s\n", collation_host);
@@ -1052,20 +1045,19 @@ LogConfig::create_pre_defined_objects_with_filter(const PreDefinedFormatInfoList
 LogFilter *
 LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
 {
-  if (!(separate_icp_logs || separate_mixt_logs)) {
+  if (!separate_icp_logs) {
     return NULL;
   }
   // http MUST be last entry
   enum { icp=0,
-         mixt,
          http
   };
 
   int64 value[] = { LOG_ENTRY_ICP,
-                    LOG_ENTRY_MIXT, LOG_ENTRY_HTTP
+                    LOG_ENTRY_HTTP
   };
-  const char *name[] = { "icp", "mixt", "http" };
-  const char *filter_name[] = { "__icp__", "__mixt__", "__http__" };
+  const char *name[] = { "icp", "http" };
+  const char *filter_name[] = { "__icp__", "__http__" };
   int64 filter_val[http];    // protocols to reject
   size_t n = 0;
 
@@ -1082,15 +1074,6 @@ LogConfig::split_by_protocol(const PreDefinedFormatInfoList & pre_def_info_list)
     filter_val[n++] = value[icp];
   }
 
-  if (separate_mixt_logs) {
-    if (separate_mixt_logs == 1) {
-      filter[0] = NEW(new LogFilterInt(filter_name[mixt],
-                                       etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[mixt]));
-      create_pre_defined_objects_with_filter(pre_def_info_list, 1, filter, name[mixt]);
-      delete filter[0];
-    }
-    filter_val[n++] = value[mixt];
-  }
   // At this point, separate objects for all protocols except http
   // have been created if requested. We now add to the argument list
   // the filters needed to reject the protocols that have already
@@ -1378,8 +1361,6 @@ LogConfig::register_configs()
 
   RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.separate_icp_logs", 0, RECU_DYNAMIC, RECC_NULL, NULL);
 
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.separate_mixt_logs", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
   RecRegisterConfigInt(RECT_CONFIG, "proxy.config.log2.separate_host_logs", 0, RECU_DYNAMIC, RECC_NULL, NULL);
 
   RecRegisterConfigString(RECT_CONFIG,
@@ -1492,8 +1473,6 @@ LogConfig::register_config_callbacks()
 
   // SPLITTING
   LOG_RegisterConfigUpdateFunc("proxy.config.log2.separate_icp_logs", &LogConfig::reconfigure, NULL);
-//    LOG_RegisterConfigUpdateFunc ("proxy.config.log2.separate_mixt_logs",
-//                                  &LogConfig::reconfigure, NULL);
   LOG_RegisterConfigUpdateFunc("proxy.config.log2.separate_host_logs", &LogConfig::reconfigure, NULL);
 
   // COLLATION
@@ -2586,8 +2565,6 @@ LogConfig::read_xml_log_config(int from_memory)
           while (t = tok.getNext(), t != NULL) {
             if (strcasecmp(t, "icp") == 0) {
               val_array[numValid++] = LOG_ENTRY_ICP;
-            } else if (strcasecmp(t, "mixt") == 0) {
-              val_array[numValid++] = LOG_ENTRY_MIXT;
             } else if (strcasecmp(t, "http") == 0) {
               val_array[numValid++] = LOG_ENTRY_HTTP;
             }

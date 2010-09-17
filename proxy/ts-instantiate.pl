@@ -176,10 +176,8 @@ our %defaults =
  "proxy.config.cluster.ethernet_interface" => $eth_if,
  "proxy.config.icp.icp_interface" => $eth_if,
  "proxy.config.hostdb.size" => 200000,
- "proxy.config.rni.server_port" => 7802,
  "proxy.config.reverse_proxy.enabled" => 0,
  "proxy.config.loadshedding.max_connections" => 0,
- "proxy.config.rni.proxy_rtsp_port" => 6060,
  "proxy.config.raf.enabled" => 1
  );
 
@@ -187,9 +185,6 @@ our %export_ports =
 (
  "proxy.config.http.server_port" => "tsHttpPort",
  "proxy.config.raf.port" => "rafPort",
- "proxy.config.mixt.rtsp_proxy_port" => "tsRtspPort",
- "proxy.config.wmt.port" => "tsWmtPort",
- "proxy.config.rni.proxy_port" => "tsRniPort"
 );
 
 our %base_port_hash  =
@@ -203,12 +198,8 @@ our %base_port_hash  =
  "proxy.config.cluster.cluster_port" => 8,
  "proxy.config.cluster.rsport" => 10,
  "proxy.config.cluster.mcport" => 11,
- "proxy.config.rni.client_port" => 12,
- "proxy.config.mixt.rtsp_proxy_port" => 13,
- "proxy.config.rni.proxy_port" => 14,
  "proxy.config.raf.port" => 15,
  "proxy.config.raf.manager.port" => 16,
- "proxy.config.wmt.port" => 17,
  );
 
 our %config_meta = ();
@@ -550,13 +541,6 @@ sub build_port_bindings {
     return $output_line;
 }
 
-our @lib_ldap_locations =
-(
- "bin",
- "lib",
- "f_pkg/lib"
- );
- 
 our @populate_dirs = ( "bin", "etc/trafficserver", "etc/trafficserver/internal", "logs");
 
 our %populate_symlinks =
@@ -579,28 +563,6 @@ our %populate_exclude_config =
  "records.config.shadow" => 1,
  "storage.config.shadow" => 1
 );
-
-# not really needed, the ldap lib is now always in $rundir/lib/
-sub find_ldap_lib() {
-    my $ldap_lib = "libldapssl40.so";
-
-    my @tmp = @lib_ldap_locations;
-
-    my $look_here;
-    while ($look_here = shift(@tmp)) {
-	my $check_path = $bin_dir . "/" . $look_here . "/" . $ldap_lib;
-
-	if ( -r $check_path ) {
-	    my $from_key = $look_here . "/" . $ldap_lib;
-	    my $to_value = "bin/" . $ldap_lib;
-	    # Found the library
-	    $populate_symlinks{$from_key} = $to_value;
-	    return;
-	}
-    }
-
-    warn("Could not find $ldap_lib\n");
-}
 
 sub populate_run_dir() {
     my ($dir, $from_file_key);
@@ -678,7 +640,6 @@ if (!$run_dir) {
 }
 
 if (! $no_run_dir) {
-    # find_ldap_lib();
     populate_run_dir();
 }
 
@@ -737,9 +698,6 @@ print OUTPUT $bindings . "\n";
 
 print OUTPUT $cmd_line . "\n";
 
-#
-# We need to set the LD_LIBRARY_PATH for dealing with
-#   the ldap.so shared object
 #
 my $ld_lib_path = $ENV{"LD_LIBRARY_PATH"};
 

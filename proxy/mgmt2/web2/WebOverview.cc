@@ -1330,7 +1330,6 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
 
   clients = servers = 0;
 
-  // TODO add RNI here
   host->varIntFromName("proxy.node.current_client_connections", &clients);
   host->varIntFromName("proxy.node.current_server_connections", &servers);
 
@@ -1373,7 +1372,7 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
   HtmlRndrTrClose(output);
 
   //-----------------------------------------------------------------------
-  // SET 4: TS Lite / RNI
+  // SET 4: TS Lite
   //-----------------------------------------------------------------------
 
   if (host->varStrFromName("proxy.node.cache.bytes_free\\b", tmp, 256) == false) {
@@ -2217,40 +2216,6 @@ overviewPage::doClusterAg()
                "proxy.node.http.user_agents_total_documents_served");
   clusterAgInt("proxy.cluster.http.origin_server_total_transactions_count",
                "proxy.node.http.origin_server_total_transactions_count");
-
-  // RNI
-  clusterAgInt("proxy.cluster.rni.upstream_total_bytes", "proxy.node.rni.upstream_total_bytes");
-  clusterAgInt("proxy.cluster.rni.downstream_total_bytes", "proxy.node.rni.downstream_total_bytes");
-  clusterAgInt("proxy.cluster.rni.current_server_connections", "proxy.node.rni.current_server_connections");
-  clusterAgInt("proxy.cluster.rni.current_client_connections", "proxy.node.rni.current_client_connections");
-  clusterAgInt("proxy.cluster.rni.current_cache_connections", "proxy.node.rni.current_cache_connections");
-  clusterAgInt("proxy.cluster.rni.user_agents_total_documents_served",
-               "proxy.node.rni.user_agents_total_documents_served");
-
-  clusterAgFloat("proxy.cluster.rni.user_agent_xacts_per_second", "proxy.node.rni.user_agent_xacts_per_second");
-
-  // WMT
-  clusterAgInt("proxy.cluster.wmt.upstream_total_bytes", "proxy.node.wmt.upstream_total_bytes");
-  clusterAgInt("proxy.cluster.wmt.downstream_total_bytes", "proxy.node.wmt.downstream_total_bytes");
-  clusterAgInt("proxy.cluster.wmt.current_server_connections", "proxy.node.wmt.current_server_connections");
-  clusterAgInt("proxy.cluster.wmt.current_client_connections", "proxy.node.wmt.current_client_connections");
-  clusterAgInt("proxy.cluster.wmt.current_cache_connections", "proxy.node.wmt.current_cache_connections");
-  clusterAgInt("proxy.cluster.wmt.user_agents_total_documents_served",
-               "proxy.node.wmt.user_agents_total_documents_served");
-
-  clusterAgFloat("proxy.cluster.wmt.user_agent_xacts_per_second", "proxy.node.wmt.user_agent_xacts_per_second");
-
-  // QT
-  clusterAgInt("proxy.cluster.qt.upstream_total_bytes", "proxy.node.qt.upstream_total_bytes");
-  clusterAgInt("proxy.cluster.qt.downstream_total_bytes", "proxy.node.qt.downstream_total_bytes");
-  clusterAgInt("proxy.cluster.qt.current_server_connections", "proxy.node.qt.current_server_connections");
-  clusterAgInt("proxy.cluster.qt.current_client_connections", "proxy.node.qt.current_client_connections");
-  clusterAgInt("proxy.cluster.qt.current_cache_connections", "proxy.node.qt.current_cache_connections");
-  clusterAgInt("proxy.cluster.qt.user_agents_total_documents_served",
-               "proxy.node.qt.user_agents_total_documents_served");
-
-  clusterAgFloat("proxy.cluster.qt.user_agent_xacts_per_second", "proxy.node.qt.user_agent_xacts_per_second");
-
 
   // Cache
   clusterAgInt("proxy.cluster.cache.bytes_free", "proxy.node.cache.bytes_free");

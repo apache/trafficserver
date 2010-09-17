@@ -60,14 +60,6 @@ typedef enum
   CMD_CONFIG_SNMP,
   CMD_CONFIG_SNMP_STATUS,
   CMD_CONFIG_SNMP_VALUE,
-  CMD_CONFIG_LDAP_STATUS,
-  CMD_CONFIG_LDAP_CACHE_SIZE,
-  CMD_CONFIG_LDAP_TTL,
-  CMD_CONFIG_LDAP_PURGE_FAIL,
-  CMD_CONFIG_LDAP_SERVER_NAME,
-  CMD_CONFIG_LDAP_SERVER_PORT,
-  CMD_CONFIG_LDAP_DN,
-  CMD_CONFIG_LDAP_FILE,
   CMD_CONFIG_DATE,
   CMD_CONFIG_TIME,
   CMD_CONFIG_TIMEZONE,
@@ -270,59 +262,10 @@ typedef enum
   CMD_CONFIG_NETWORK_START,
   CMD_CONFIG_NETWORK_PROTOCOL,
   CMD_CONFIG_GATEWAY,
-  CMD_CONFIG_NTLM_STATUS,
-  CMD_CONFIG_NTLM_DOMAIN_CTRL,
-  CMD_CONFIG_NTLM_NTDOMAIN,
-  CMD_CONFIG_NTLM_LOADBAL,
-  CMD_CONFIG_RADIUS_STATUS,
-  CMD_CONFIG_RADIUS_PRI_HOST,
-  CMD_CONFIG_RADIUS_PRI_PORT,
-  CMD_CONFIG_RADIUS_PRI_KEY,
-  CMD_CONFIG_RADIUS_SEC_HOST,
-  CMD_CONFIG_RADIUS_SEC_PORT,
-  CMD_CONFIG_RADIUS_SEC_KEY,
   CMD_CONFIG_ALARM_RESOLVE_NAME,
   CMD_CONFIG_ALARM_RESOLVE_NUMBER,
   CMD_CONFIG_ALARM_RESOLVE_ALL,
   CMD_CONFIG_ALARM_NOTIFY,
-  CMD_CONFIG_WMT_STATUS,
-  CMD_CONFIG_WMT_PORT,
-  CMD_CONFIG_WMT_PREBUFFERING,
-  CMD_CONFIG_WMT_PREBUFFERING_TCP,
-  CMD_CONFIG_WMT_LOADPATH,
-  CMD_CONFIG_WMT_LOADHOST,
-  CMD_CONFIG_WMT_CHUNKSIZE,
-  CMD_CONFIG_WMT_OLD_ASX_BEHAV,
-  CMD_CONFIG_WMT_DEBUG,
-  CMD_CONFIG_WMT_ASX_WRITE,
-  CMD_CONFIG_WMT_REXMIT_WIN,
-  CMD_CONFIG_WMT_ORIGIN_URL,
-  CMD_CONFIG_WMT_MONITOR_VERSION,
-  CMD_CONFIG_WMT_MONITOR_LIVEHOSTS,
-  CMD_CONFIG_WMT_MONITOR_NAME,
-  CMD_CONFIG_WMT_MONITOR_PORT,
-  CMD_CONFIG_WMT_REDIRECT,
-  CMD_CONFIG_WMT_MEDIA_BRIDGE_NAME,
-  CMD_CONFIG_WMT_MEDIA_BRIDGE_PORT,
-  CMD_CONFIG_WMT_MEDIA_BRIDGE_MOUNT,
-  CMD_CONFIG_WMT_PROXY_ONLY,
-  CMD_CONFIG_RNI_STATUS,
-  CMD_CONFIG_RNI_VERBOSITY,
-  CMD_CONFIG_RNI_CACHE_PORT,
-  CMD_CONFIG_RNI_WATCHER_ENABLED,
-  CMD_CONFIG_RNI_CONTROL_PORT,
-  CMD_CONFIG_RNI_PROXY_PORT,
-  CMD_CONFIG_RNI_PID_PATH,
-  CMD_CONFIG_RNI_RESTART_CMD,
-  CMD_CONFIG_RNI_RESTART_INTERVAL,
-  CMD_CONFIG_RNI_SERVICE_NAME,
-  CMD_CONFIG_QT_STATUS,
-  CMD_CONFIG_QT_PROXY_PORT,
-  CMD_CONFIG_QT_MONITOR_NAME,
-  CMD_CONFIG_QT_MONITOR_PORT,
-  CMD_CONFIG_QT_NAME,
-  CMD_CONFIG_QT_PORT,
-  CMD_CONFIG_QT_MOUNT_POINT
 } cliConfigCommand;
 
 typedef struct DateTime
@@ -512,27 +455,6 @@ int CmdArgs_ConfigSnmp();
 
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ConfigLdap
-//
-// This is the callback function for the "config:ldap" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int Cmd_ConfigLdap(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-
-////////////////////////////////////////////////////////////////
-// CmdArgs_ConfigLdap
-//
-// Register "config:ldap" arguments with the Tcl interpreter.
-//
-int CmdArgs_ConfigLdap();
-
-
-////////////////////////////////////////////////////////////////
 // Cmd_ConfigPortTunnles
 //
 // This is the callback function for the "config:port-tunnels" command.
@@ -572,6 +494,7 @@ int Cmd_ConfigScheduledUpdate(ClientData clientData, Tcl_Interp * interp, int ar
 // Register "config:Scheduled-Update" arguments with the Tcl interpreter.
 //
 int CmdArgs_ConfigScheduledUpdate();
+
 ////////////////////////////////////////////////////////////////
 // Cmd_ConfigSocks
 //
@@ -849,11 +772,6 @@ int Cmd_ConfigAlarm(ClientData clientData, Tcl_Interp * interp, int argc, const 
 //
 int CmdArgs_ConfigAlarm();
 
-int Cmd_ConfigNtlm(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int CmdArgs_ConfigNtlm();
-int Cmd_ConfigRadius(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int CmdArgs_ConfigRadius();
-
 ////////////////////////////////////////////////////////////////
 // Cmd_Enable
 //
@@ -1011,6 +929,4 @@ int ConfigAlarmResolveAll();
 // config:alarm notify
 int ConfigAlarmNotify(char *stringval);
 
-// config:radius keys
-int ConfigRadiusKeys(const char *record);
 #endif // __CONFIG_CMD_H__

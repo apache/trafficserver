@@ -122,13 +122,6 @@ CliCreateCommands()
   createCommand("show:cluster", Cmd_ShowCluster, NULL, CLI_COMMAND_EXTERNAL,
                 "show:cluster", "Show Cluster Ports Settings");
 
-  createCommand("show:radius", Cmd_ShowRadius, NULL, CLI_COMMAND_EXTERNAL, "show:radius", "Show Radius Configuration");
-
-  createCommand("show:ntlm", Cmd_ShowNtlm, NULL, CLI_COMMAND_EXTERNAL, "show:ntlm", "Show NTLM Configuration");
-
-  createCommand("show:ntlm-stats", Cmd_ShowNtlmStats, NULL, CLI_COMMAND_EXTERNAL,
-                "show:ntlm-stats", "Show NTLM Statistics");
-
   createCommand("config:get", Cmd_ConfigGet, NULL, CLI_COMMAND_EXTERNAL,
                 "config:get <variable>", "Display a variable value");
 
@@ -165,14 +158,6 @@ CliCreateCommands()
 
   createCommand("config:snmp", Cmd_ConfigSnmp, CmdArgs_ConfigSnmp, CLI_COMMAND_EXTERNAL,
                 "config:snmp status <on|off>", "Configure SNMP <on|off>");
-
-  createCommand("config:ldap", Cmd_ConfigLdap, CmdArgs_ConfigLdap, CLI_COMMAND_EXTERNAL,
-                "config:ldap status <on|off>\n"
-                "config:ldap cache-size <cache>\n"
-                "config:ldap ttl <ttl>\n"
-                "config:ldap purge-fail <on | off>\n"
-                "config:ldap multiple <on | off>\n"
-                "config:ldap bypass <on | off>\n" "config:ldap file <url>", "Configure LDAP configuration");
 
   createCommand("config:clock", Cmd_ConfigClock, CmdArgs_ConfigClock, CLI_COMMAND_EXTERNAL,
                 "config:clock date <mm/dd/yyyy>\n"
@@ -215,7 +200,6 @@ CliCreateCommands()
                 "config:socks version <version>\n"
                 "config:socks default-servers <string>\n"
                 "config:socks accept <on | off>\n" "config:socks accept-port <int>", "Configure Socks");
-
 
   createCommand("config:cache", Cmd_ConfigCache, CmdArgs_ConfigCache, CLI_COMMAND_EXTERNAL,
                 "config:cache <http> <on | off>\n"
@@ -280,19 +264,6 @@ CliCreateCommands()
                 "config:alarms resolve-number <int>\n"
                 "config:alarms resolve-all\n"
                 "config:alarms notify <on | off>", "Resolve Alarms, Turn notification on/off");
-
-  createCommand("config:ntlm", Cmd_ConfigNtlm, CmdArgs_ConfigNtlm, CLI_COMMAND_EXTERNAL,
-                "config:ntlm status <on | off>\n"
-                "config:ntlm domain-controller <hostnames>\n"
-                "config:ntlm nt-domain <domain>\n" "config:ntlm load-balancing <on | off>", "NTLM Configuration");
-
-  createCommand("config:radius", Cmd_ConfigRadius, CmdArgs_ConfigRadius, CLI_COMMAND_EXTERNAL,
-                "config:radius status <on | off>\n"
-                "config:radius primary-hostname <hostname>\n"
-                "config:radius primary-port <port>\n"
-                "config:radius primary-key\n"
-                "config:radius secondary-hostname <hostname>\n"
-                "config:radius secondary-port <port>\n" "config:radius secondary-key\n", "Radius Configuration");
 
   createCommand("enable", Cmd_Enable, CmdArgs_Enable, CLI_COMMAND_EXTERNAL,
                 "enable \n" "enable status ", "Enable Restricted Commands");
