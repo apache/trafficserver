@@ -1358,7 +1358,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int atype, int *status)
     rprintf(t, "probe rate = %d / second\n", (int) ((newfree * (uint64) 1000000) / us));
 
 
-  for (int c = 0; c < part_dirlen(d) * 0.1; c++) {
+  for (int c = 0; c < part_direntries(d) * 0.75; c++) {
     regress_rand_CacheKey(&key);
     dir_insert(&key, d, &dir);
   }
