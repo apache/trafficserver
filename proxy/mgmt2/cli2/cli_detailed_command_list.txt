@@ -596,16 +596,6 @@ remap			Remap Rules
   (Display rules from remap.config)
   ts>
 
-snmp			SNMP Configuration
-			(on/off)
-  syntax: show:snmp
-  args:   none
-  behavior:  Display SNMP Configuration.
-
-  ts> show:snmp
-  SNMP Agent -- on    (proxy.config.snmp.master_agent_enabled)
-  ts>
-
 socks			SOCKS Configuration
 			(on/off, stats)
   syntax: show:socks [ rules ]
@@ -1446,27 +1436,6 @@ ports			Ports used by Traffic Server
           <ssl>             (proxy.config.http.ssl_ports) list
           <socks-server>    (proxy.config.socks.socks_server_port) single
           <icp>             (proxy.config.icp.icp_port) single
-
-snmp			SNMP Configuration
-			(on/off)
-  syntax: config:snmp status <on | off>
-  args:   <on | off>  (proxy.config.snmp.master_agent_enabled)
-
-virtual-ip		Virtual IP Address Configuration
-
-  syntax: config:virtual-ip status <on | off>
-			    add ip <ip-address> device <device> sub-intf <sub-interface>
-	                    delete <ip number>
-
-
-  args:
-	<on | off>	(proxy.config.vmap.enabled)
-        add             (add entry to vmap.config)
-
-  ts# config:virtual-ip status on
-  ts#
-  ts# config:virtual-ip add ip 192.168.1.12 device eth2 sub-intf 28
-  ts$
 
 socks			SOCKS Configuration
   syntax: config:socks status <on | off> version <int> default-servers <string> 

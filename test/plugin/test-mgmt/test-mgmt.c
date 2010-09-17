@@ -267,7 +267,6 @@ const char *intVariables[] = {
   "proxy.config.update.retry_count",
   "proxy.config.update.retry_interval",
   "proxy.config.update.concurrent_updates",
-  "proxy.config.snmp.master_agent_enabled",
   "proxy.config.diags.debug.enabled",
   "proxy.config.diags.action.enabled",
   "proxy.config.diags.show_location",

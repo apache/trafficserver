@@ -200,7 +200,6 @@ struct CCFailHistoryTestCont: public Continuation
     rule = new CongestionControlRecord;
     rule->fail_window = FAIL_WINDOW;
     rule->max_connection_failures = 10;
-    rule->snmp_enabled = 1;
     rule->pRecord = new CongestionControlRecord(*rule);
     entry = new CongestionEntry("dummy_host", 0, rule->pRecord, 0);
   }
@@ -432,7 +431,6 @@ CCCongestionDBTestCont::init()
     rule = new CongestionControlRecord;
     rule->fail_window = 300;
     rule->max_connection_failures = 10;
-    rule->snmp_enabled = 1;
     rule->pRecord = new CongestionControlRecord(*rule);
   }
 

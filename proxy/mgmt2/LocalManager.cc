@@ -78,13 +78,6 @@ void
 LocalManager::mgmtShutdown(int status, bool mainThread)
 {
   if (mainThread) {
-#ifdef USE_SNMP
-    if (snmp) {
-      snmp->shutdown();
-      snmp = NULL;
-    }
-#endif
-
     mgmt_log("[LocalManager::mgmtShutdown] Executing shutdown request.\n");
     processShutdown(mainThread);
 
@@ -1001,17 +994,6 @@ LocalManager::processEventQueue()
         if (RecReadConfigFile() != REC_ERR_OKAY) {
           mgmt_elog(stderr, "[fileUpdated] Config update failed for records.config\n");
         }
-        handled_by_mgmt = true;
-      }
-      // snmpd.config
-      if (!(strcmp(data_raw, "snmpd.cnf"))) {
-#ifdef USE_SNMP
-        // need to restart SNMP agent
-        Debug("lm", "[TrafficManager] ==> flagging restart of Emanate agent\n");
-        if (snmp) {
-          snmp->signalRereadConfig();
-        }
-#endif
         handled_by_mgmt = true;
       }
       // admin_access.config

@@ -82,7 +82,6 @@ initializeRegistry()
   configFiles->addFile("parent.config", false);
   configFiles->addFile("filter.config", false);
   configFiles->addFile("remap.config", false);
-  configFiles->addFile("snmpinfo.dat", false);  // SNMP daemon agent configuration
   configFiles->addFile("update.config", false);
   configFiles->addFile("admin_access.config", false);
   configFiles->addFile("partition.config", false);

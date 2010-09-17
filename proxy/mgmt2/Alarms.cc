@@ -214,18 +214,12 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   case MGMT_ALARM_PROXY_PROCESS_BORN:
     mgmt_log(stderr, "[Alarms::signalAlarm] Server Process born\n");
     priority = 2;
-#ifdef USE_SNMP
-    snmpAlarmCallback(a, NULL, desc);
-#endif
     return;
   case MGMT_ALARM_ADD_ALARM:
     priority = 2;
     break;
   case MGMT_ALARM_PROXY_HTTP_CONGESTED_SERVER:
   case MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER:
-#ifdef USE_SNMP
-    snmpAlarmCallback(a, NULL, desc);
-#endif // USE_SNMP
     return;
   case MGMT_ALARM_WDA_BILLING_CONNECTION_DIED:
   case MGMT_ALARM_WDA_BILLING_CORRUPTED_DATA:

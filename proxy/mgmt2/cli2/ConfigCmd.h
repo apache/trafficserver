@@ -57,9 +57,6 @@ typedef enum
   CMD_CONFIG_PORTS_SSL,
   CMD_CONFIG_PORTS_SOCKS_SERVER,
   CMD_CONFIG_PORTS_ICP,
-  CMD_CONFIG_SNMP,
-  CMD_CONFIG_SNMP_STATUS,
-  CMD_CONFIG_SNMP_VALUE,
   CMD_CONFIG_DATE,
   CMD_CONFIG_TIME,
   CMD_CONFIG_TIMEZONE,
@@ -432,27 +429,6 @@ int Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const 
 // Register "config:ports" arguments with the Tcl interpreter.
 //
 int CmdArgs_ConfigPorts();
-
-////////////////////////////////////////////////////////////////
-// Cmd_ConfigSnmp
-//
-// This is the callback function for the "config:snmp" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int Cmd_ConfigSnmp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-
-////////////////////////////////////////////////////////////////
-// CmdArgs_ConfigSnmp
-//
-// Register "config:snmp" arguments with the Tcl interpreter.
-//
-int CmdArgs_ConfigSnmp();
-
 
 ////////////////////////////////////////////////////////////////
 // Cmd_ConfigPortTunnles

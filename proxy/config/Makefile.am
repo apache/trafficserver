@@ -46,7 +46,6 @@ dist_sysconf_DATA =	\
   plugin.config \
   plugin.db \
   remap.config \
-  snmpd.cnf \
   socks.config \
   splitdns.config \
   ssl_multicert.config \

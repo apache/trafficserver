@@ -83,8 +83,6 @@ CliCreateCommands()
 
   createCommand("show:remap", Cmd_ShowRemap, NULL, CLI_COMMAND_EXTERNAL, "show:remap", "Remap configuration");
 
-  createCommand("show:snmp", Cmd_ShowSnmp, NULL, CLI_COMMAND_EXTERNAL, "show:snmp", "SNMP configuration");
-
   createCommand("show:socks", Cmd_ShowSocks, CmdArgs_ShowSocks, CLI_COMMAND_EXTERNAL,
                 "show:socks", "SOCKS configuration");
 
@@ -154,10 +152,6 @@ CliCreateCommands()
 
   createCommand("config:remap", Cmd_ConfigRemap, NULL, CLI_COMMAND_EXTERNAL,
                 "config:remap <url>", "Update remap configuration file <url>");
-
-
-  createCommand("config:snmp", Cmd_ConfigSnmp, CmdArgs_ConfigSnmp, CLI_COMMAND_EXTERNAL,
-                "config:snmp status <on|off>", "Configure SNMP <on|off>");
 
   createCommand("config:clock", Cmd_ConfigClock, CmdArgs_ConfigClock, CLI_COMMAND_EXTERNAL,
                 "config:clock date <mm/dd/yyyy>\n"

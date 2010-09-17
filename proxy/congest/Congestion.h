@@ -99,7 +99,6 @@ public:
   int dead_os_conn_timeout;
   int dead_os_conn_retries;
   int max_connection;
-  int snmp_enabled;
 
   CongestionControlRecord *pRecord;
   int32 ref_count;
@@ -148,7 +147,6 @@ live_os_conn_retries(2),
 dead_os_conn_timeout(15),
 dead_os_conn_retries(1),
 max_connection(-1),
-snmp_enabled(0),
 pRecord(NULL),
 ref_count(0)
 {
@@ -299,9 +297,6 @@ struct CongestionEntry: public RequestData
   void applyNewRule(CongestionControlRecord * rule);
   void init(CongestionControlRecord * rule);
 
-  // SNMP functions
-  void snmp_sig_congested();
-  void snmp_sig_alive();
 };
 
 inline bool CongestionEntry::usefulInfo(ink_hrtime t)
@@ -338,7 +333,7 @@ inline bool CongestionEntry::M_congested(ink_hrtime t)
   if (pRecord->max_connection >= 0 && m_num_connections >= pRecord->max_connection) {
     if (ink_atomic_swap(&m_M_congested, 1) == 0) {
       m_last_M_congested = t;
-      snmp_sig_congested();
+      // TODO: Used to signal congestions
     }
     return true;
   }
@@ -405,7 +400,7 @@ CongestionEntry::connection_closed()
 {
   ink_atomic_increment(&m_num_connections, -1);
   if (ink_atomic_swap(&m_M_congested, 0) == 1) {
-    snmp_sig_alive();
+    // TODO: Used to signal not congested
   }
 }
 

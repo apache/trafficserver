@@ -1090,8 +1090,6 @@ aggregateNodeRecords()
   // Overall
   Ag_Connections();
 
-  // These are for the benefit of SNMP so that we don't have to use
-  // 64 bit integers or floating point encodings.
   AgFloat_generic_scale_to_int("proxy.node.client_throughput_out",
                                "proxy.node.client_throughput_out_kbit", MBIT_TO_KBIT_SCALE);
   AgFloat_generic_scale_to_int("proxy.node.http.cache_hit_ratio",

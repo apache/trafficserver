@@ -169,7 +169,7 @@ static const char *ConfigureHelpStrings[numCmdConfigure] = {
 };
 
 // Help usage at cli->configure->server level
-const int numCmdConfServer = 13;
+const int numCmdConfServer = 12;
 static const char *ConfigureServerHelpStrings[numCmdConfServer] = {
   "1. display            # displays all configuration variables \n",
   "2. server             # server configuration variables \n",
@@ -177,8 +177,7 @@ static const char *ConfigureServerHelpStrings[numCmdConfServer] = {
   "4. virtual-ip         # virtual ip configuration variables \n",
   "5. auto-configuration # auto configuration variables \n",
   "6. throttling         # server throttling configuration variables \n",
-  "7. SNMP               # SNMP configuration variables \n",
-  "8. Customizable Response Pages # \n",
+  "7. Customizable Response Pages # \n",
   "     Select above options by number \n",
   "change <no> <value>   # sets variable shown by <no> to <value>\n",
   ".                     # Move back to previous level \n",

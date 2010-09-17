@@ -91,7 +91,6 @@ extern "C"
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
 #endif
 
-//SNMP *snmp;                     // global binding with SNMP.cc
 LocalManager *lmgmt = NULL;
 MgmtPing *icmp_ping;
 FileManager *configFiles;
@@ -107,7 +106,6 @@ inkcoreapi DiagsConfig *diagsConfig;
 char debug_tags[1024] = "";
 char action_tags[1024] = "";
 int diags_init = 0;
-int snmpLogLevel = 0;
 bool proxy_on = true;
 bool forceProcessRecordsSnap = false;
 
@@ -520,9 +518,6 @@ main(int argc, char **argv)
         proxy_on = false;
       } else if (strcmp(argv[i], "-nosyslog") == 0) {
         log_to_syslog = false;
-      } else if (strcmp(argv[i], "-snmplog") == 0) {
-        i++;
-        snmpLogLevel = atoi(argv[i]);
       } else {
         // The rest of the options require an argument in the form of -<Flag> <val>
         if ((i + 1) < argc) {
@@ -753,24 +748,10 @@ main(int argc, char **argv)
   }
 #endif /* MGMT_USE_SYSLOG */
 
-#ifdef USE_SNMP
-  ink_thread snmpThrId;
-  SNMPStateInit();
-  snmp = new SNMP();
-  if (snmpLogLevel > 0) {
-    snmp->enableLogging(snmpLogLevel);
-  }
-#endif
-
     /****************************
      * Register Alarm Callbacks *
      ****************************/
   lmgmt->alarm_keeper->registerCallback(overviewAlarmCallback);
-
-#ifdef USE_SNMP
-  lmgmt->alarm_keeper->registerCallback(snmpAlarmCallback);
-#endif
-
 
   // Find out our hostname so we can use it as part of the initialization
   setHostnameVar();
@@ -864,11 +845,6 @@ main(int argc, char **argv)
   overviewGenerator->addSelfRecord();
 
   webThrId = ink_thread_create(webIntr_main, NULL);     /* Spin web agent thread */
-#ifdef USE_SNMP
-  snmpThrId = ink_thread_create(snmpThread, (void *) snmp);     /* Spin snmp agent thread */
-#endif
-
-
   lmgmt->listenForProxy();
 
 
@@ -991,7 +967,6 @@ main(int argc, char **argv)
 //          lmgmt->record_data->syncRecords(false);
 //      }
 
-//      snmp->poll();
     lmgmt->ccom->generateClusterDelta();
 
     if (lmgmt->run_proxy && lmgmt->processRunning()) {
@@ -1025,12 +1000,6 @@ main(int argc, char **argv)
       lmgmt->mgmtShutdown(0, true);
     }
 
-#ifdef USE_SNMP
-    // deal with the SNMP agent daemon, fork/exec/etc.
-    if (snmp) {
-      snmp->processMgmt(lmgmt);
-    }
-#endif
     if (lmgmt->run_proxy && !lmgmt->processRunning()) { /* Make sure we still have a proxy up */
       if (lmgmt->startProxy())
         just_started = 0;
@@ -1165,16 +1134,6 @@ SignalHandler(int sig)
       if (sig == SIGTERM || sig == SIGINT) {
         kill(lmgmt->watched_process_pid, sig);
         waitpid(lmgmt->watched_process_pid, &status, 0);
-#if defined(linux) && defined (USE_SNMP)
-        // INKqa08918: band-aid: for some reasons if snmpd.cnf is modified
-        // the snmp processes are killed and restarted successfully. But
-        // when traffic server is shut down, the snmp processes are not killed.
-        // NOTE: race condition with the shutdown() call in LocalManager.cc
-        if (snmp) {
-          snmp->shutdown();
-          snmp = NULL;
-        }
-#endif
       }
     }
     lmgmt->mgmtCleanup();
@@ -1269,7 +1228,6 @@ printUsage()
   fprintf(stderr, "     -debug         <tags>  Enable the given debug tags\n");
   fprintf(stderr, "     -action        <tags>  Enable the given action tags.\n");
   fprintf(stderr, "     -version or -V         Print version id and exit.\n");
-  fprintf(stderr, "     -snmplog       <int>   Turn on SNMP SDK diagnostics. (2147450879 is good...)\n");
   fprintf(stderr, "     -vingid        <id>    Vingid Flag\n");
   fprintf(stderr, "\n");
   fprintf(stderr, "   [...] can be one+ of: [config process node cluster local all]\n");
@@ -1338,9 +1296,6 @@ fileUpdated(char *fname)
   } else if (strcmp(fname, "wpad.dat") == 0) {
     mgmt_log(stderr, "[fileUpdated] wpad.dat file has been modified\n");
 
-  } else if (strcmp(fname, "snmpd.cnf") == 0) {
-    lmgmt->signalFileChange("snmpd.cnf");
-
   } else if (strcmp(fname, "icp.config") == 0) {
     lmgmt->signalFileChange("proxy.config.icp.icp_configuration");
 
@@ -1355,10 +1310,6 @@ fileUpdated(char *fname)
 
   } else if (strcmp(fname, "hosting.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.hosting_filename");
-
-    // INKqa07930: recently added SNMP config files need to be caught here to
-  } else if (strcmp(fname, "snmpinfo.dat") == 0) {
-    mgmt_log(stderr, "[fileUpdated] snmpinfo.dat file has been modified\n");
 
   } else if (strcmp(fname, "mgr.cnf") == 0) {
     mgmt_log(stderr, "[fileUpdated] mgr.cnf file has been modified\n");

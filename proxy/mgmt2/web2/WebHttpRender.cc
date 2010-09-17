@@ -2771,16 +2771,9 @@ handle_network_object(WebHttpContext * whc, char *tag, char *arg)
   return WEB_HTTP_ERR_OKAY;
 }
 
-
-
-
-//handle_snmp
-
-
 //-------------------------------------------------------------------------
 // WebHttpRenderInit
 //-------------------------------------------------------------------------
-
 void
 WebHttpRenderInit()
 {

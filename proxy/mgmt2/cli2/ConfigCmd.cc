@@ -865,63 +865,6 @@ CmdArgs_ConfigPorts()
 }
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ConfigSnmp
-//
-// This is the callback function for the "config:snmp" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ConfigSnmp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  if (cliCheckIfEnabled("config:snmp") == CLI_ERROR) {
-    return CMD_ERROR;
-  }
-  Cli_Debug("Cmd_ConfigSnmp argc %d\n", argc);
-
-  cli_cmdCallbackInfo *cmdCallbackInfo;
-  cli_parsedArgInfo *argtable;
-
-  cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-  argtable = cmdCallbackInfo->parsedArgTable;
-
-  if (argtable->parsed_args != CLI_PARSED_ARGV_END) {
-    if (argtable->parsed_args == CMD_CONFIG_SNMP_STATUS) {
-      return (Cli_RecordOnOff_Action((argc == 3), "proxy.config.snmp.master_agent_enabled", argtable->arg_string));
-    }
-  }
-  Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-  return CMD_ERROR;
-}
-
-////////////////////////////////////////////////////////////////
-// CmdArgs_ConfigSnmp
-//
-// Register "config:snmp" arguments with the Tcl interpreter.
-//
-int
-CmdArgs_ConfigSnmp()
-{
-  createArgument("status", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_SNMP_STATUS, "SNMP <on | off>", (char *) NULL);
-  return 0;
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ConfigClock
 //
 // This is the callback function for the "config:clock" command.

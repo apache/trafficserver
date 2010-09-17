@@ -695,36 +695,6 @@ Cmd_ShowRemap(ClientData clientData, Tcl_Interp * interp, int argc, const char *
 
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ShowSnmp
-//
-// This is the callback function for the "show:snmp" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowSnmp(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  NOWARN_UNUSED(clientData);
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  Cli_Debug("Cmd_ShowSnmp\n");
-
-  return (ShowSnmp());
-}
-
-////////////////////////////////////////////////////////////////
 // Cmd_ShowSocks
 //
 // This is the callback function for the "show:socks" command.
@@ -2021,31 +1991,6 @@ ShowRemap()
   Cli_Printf("\n");
 
   return status;
-}
-
-
-// show snmp sub-command
-int
-ShowSnmp()
-{
-
-  // declare and initialize variables
-
-  INKInt snmp_master_agent_enabled = 0;
-
-  // retrieve value
-
-  Cli_RecordGetInt("proxy.config.snmp.master_agent_enabled", &snmp_master_agent_enabled);
-
-  // display results
-  Cli_Printf("\n");
-
-  if (Cli_PrintEnable("SNMP Agent -- ", snmp_master_agent_enabled) == CLI_ERROR) {
-    return CLI_ERROR;
-  }
-  Cli_Printf("\n");
-
-  return CLI_OK;
 }
 
 // show socks sub-command

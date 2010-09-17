@@ -85,11 +85,6 @@ extern int Config_GetXmlTagValue(char *XmlTagName, char **XmlTagValue, char *Xml
 extern int Config_SetSMTP_Server(char *server);
 extern int Config_GetSMTP_Server(char *server);
 extern int Config_FloppyNetRestore();
-extern int Config_SNMPSetUp(char *sys_location, char *sys_contact, char *sys_name, char *authtrapenable,
-                            char *trap_community, char *trap_host);
-extern int Config_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, size_t sys_contact_len,
-                              char *sys_name, size_t sys_name_len, char *authtrapenable, size_t authtrapenable_len,
-                              char *trap_community, size_t trap_community_len, char *trap_host, size_t trap_host_len);
 extern int Config_User_Root(int *old_euid);
 extern int Config_User_Inktomi(int euid);
 extern int Config_Grp_Root(int *old_egid);

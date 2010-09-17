@@ -27,7 +27,6 @@
 #include "LocalManager.h"
 #include "FileManager.h"
 #include "MgmtPing.h"
-//#include "SNMP.h"
 #include "WebOverview.h"
 #include "I_Version.h"
 
@@ -47,7 +46,6 @@ void extractConfigInfo(char *mgmt_path, const char *recs_conf, char *userName, i
 void printUsage(void);
 
 extern MgmtPing *icmp_ping;
-//extern SNMP *snmp;
 extern FileManager *configFiles;
 extern overviewPage *overviewGenerator;
 extern AppVersionInfo appVersionInfo;

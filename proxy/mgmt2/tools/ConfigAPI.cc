@@ -689,36 +689,6 @@ Config_SaveVersion(char *file)
   return 0;
 }
 
-
-#if defined(linux)
-int
-Config_SNMPSetUp(char *sys_location, char *sys_contact, char *sys_name, char *authtrapenable, char *trap_community,
-                 char *trap_host)
-{
-  if ((sys_location == NULL) || (sys_contact == NULL) || (sys_name == NULL) || (authtrapenable == NULL) ||
-      (trap_community == NULL) || (trap_host == NULL)) {
-    DPRINTF(("Config_SNMPSetUp: %s %s %s %s %s %s\n", sys_location, sys_contact, sys_name, authtrapenable,
-             trap_community, trap_host));
-    return -1;
-  }
-  return Net_SNMPSetUp(sys_location, sys_contact, sys_name, authtrapenable, trap_community, trap_host);
-}
-
-int
-Config_SNMPGetInfo(char *sys_location, size_t sys_location_len, char *sys_contact, size_t sys_contact_len,
-                   char *sys_name, size_t sys_name_len, char *authtrapenable, size_t authtrapenable_len,
-                   char *trap_community, size_t trap_community_len, char *trap_host, size_t trap_host_len)
-{
-  int status;
-  status =
-    Net_SNMPGetInfo(sys_location, sys_location_len, sys_contact, sys_contact_len, sys_name, sys_name_len,
-                    authtrapenable, authtrapenable_len, trap_community, trap_community_len, trap_host, trap_host_len);
-  DPRINTF(("Config_SNMPGetInfo: %s %s %s %s %s %s\n", sys_location, sys_contact, sys_name, authtrapenable,
-           trap_community, trap_host));
-  return status;
-}
-#endif /* linux */
-
 int
 Config_GetNTP_Status(char *status, size_t status_len)
 {
@@ -911,28 +881,6 @@ Config_RestoreNetConfig(char *file)
       Config_SetNTP_Servers(0, TagValue);
       xfree(TagValue);
     }
-
-#if defined(linux)
-    char *sys_location = netXml.getXmlTagValue("SNMPSysLocation");
-    char *sys_contact = netXml.getXmlTagValue("SNMPSysContact");
-    char *sys_name = netXml.getXmlTagValue("SNMPSysName");
-    char *authtrapenable = netXml.getXmlTagValue("SNMPauthtrapenable");
-    char *trap_community = netXml.getXmlTagValue("SNMPTrapCommunity");
-    char *trap_host = netXml.getXmlTagValue("SNMPTrapHost");
-    Net_SNMPSetUp(sys_location, sys_contact, sys_name, authtrapenable, trap_community, trap_host);
-    if (sys_location != NULL)
-      xfree(sys_location);
-    if (sys_contact != NULL)
-      xfree(sys_contact);
-    if (sys_name != NULL)
-      xfree(sys_name);
-    if (authtrapenable != NULL)
-      xfree(authtrapenable);
-    if (trap_community != NULL)
-      xfree(trap_community);
-    if (trap_host != NULL)
-      xfree(trap_host);
-#endif /* linux */
 
     // Get Admin GUI encrypted password.
     char *e_gui_passwd;
@@ -1178,54 +1126,6 @@ Config_SaveNetConfig(char *file)
     NTPServers->setNodeValue(NTPServerName);
     child->AppendChild(NTPServers);
   }
-
-#if defined(linux)
-  char sys_location[256];
-  char sys_contact[256];
-  char sys_name[256];
-  char authtrapenable[256];
-  char trap_community[256];
-  char trap_host[256];
-  Net_SNMPGetInfo(sys_location, sizeof(sys_location), sys_contact, sizeof(sys_contact), sys_name, sizeof(sys_name),
-                  authtrapenable, sizeof(authtrapenable), trap_community, sizeof(trap_community), trap_host,
-                  sizeof(trap_host));
-  if (sys_location != NULL) {
-    XMLNode *SNMPinfo = new XMLNode;
-    SNMPinfo->setNodeName("SNMPSysLocation");
-    SNMPinfo->setNodeValue(sys_location);
-    child->AppendChild(SNMPinfo);
-  }
-  if (sys_contact != NULL) {
-    XMLNode *SNMPinfo = new XMLNode;
-    SNMPinfo->setNodeName("SNMPSysContact");
-    SNMPinfo->setNodeValue(sys_contact);
-    child->AppendChild(SNMPinfo);
-  }
-  if (sys_location != NULL) {
-    XMLNode *SNMPinfo = new XMLNode;
-    SNMPinfo->setNodeName("SNMPSysName");
-    SNMPinfo->setNodeValue(sys_name);
-    child->AppendChild(SNMPinfo);
-  }
-  if (sys_location != NULL) {
-    XMLNode *SNMPinfo = new XMLNode;
-    SNMPinfo->setNodeName("SNMPauthtrapenable");
-    SNMPinfo->setNodeValue(authtrapenable);
-    child->AppendChild(SNMPinfo);
-  }
-  if (sys_location != NULL) {
-    XMLNode *SNMPinfo = new XMLNode;
-    SNMPinfo->setNodeName("SNMPTrapCommunity");
-    SNMPinfo->setNodeValue(trap_community);
-    child->AppendChild(SNMPinfo);
-  }
-  if (sys_location != NULL) {
-    XMLNode *SNMPinfo = new XMLNode;
-    SNMPinfo->setNodeName("SNMPTrapHost");
-    SNMPinfo->setNodeValue(trap_host);
-    child->AppendChild(SNMPinfo);
-  }
-#endif /* linux */
 
   XMLNode *child1 = new XMLNode;
   char *parentAttributes1[3];

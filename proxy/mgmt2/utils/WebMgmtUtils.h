@@ -110,11 +110,12 @@ int processSpawn(const char *args[],
 void computeXactMax();
 void appendDefaultDomain(char *hostname, int bufLength);
 
-// Some scaling constants for SNMP
+// Some scaling constants
 #define BYTES_TO_MB_SCALE (1/(1024*1024.0))
 #define MBIT_TO_KBIT_SCALE (1000.0)
 #define SECOND_TO_MILLISECOND_SCALE (1000.0)
 #define PCT_TO_INTPCT_SCALE (100.0)
+
 void AgInt_generic_scale(char *processVar, char *nodeVar, double factor);
 void AgFloat_generic_scale_to_int(const char *processVar, const char *nodeVar, double factor);
 

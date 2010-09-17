@@ -541,9 +541,6 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.http.congestion_control.default.congestion_scheme", "", INK_STRING, "per_ip", RU_NULL, RR_NULL,
    RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.http.congestion_control.default.snmp", "", INK_STRING, "on", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
-  ,
 
   //        ###########
   //        # Parsing #
@@ -2619,17 +2616,6 @@ RecordElement RecordsConfig[] = {
   {PROCESS, "proxy.process.update.unknown_status", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {PROCESS, "proxy.process.update.state_machines", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  //##############################################################################
-  //# SNMP Configuration
-  //##############################################################################
-  //# Start MIB-II Host MIB (TCP/UDP stats, etc.) and traffic server MIB
-  {CONFIG, "proxy.config.snmp.master_agent_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.snmp.snmp_encap_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
-  ,
-  {CONFIG, "proxy.config.snmp.trap_message", "", INK_STRING, "Traffic server trap", RU_NULL, RR_NULL, RC_NULL, NULL,
-   RA_NULL}
   ,
 
   //##############################################################################

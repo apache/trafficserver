@@ -409,7 +409,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.congestion_control.default.max_connection
  proxy.config.http.congestion_control.default.max_connection_failures
  proxy.config.http.congestion_control.default.proxy_retry_interval
- proxy.config.http.congestion_control.default.snmp
  proxy.config.http.congestion_control.default.wait_interval_alpha
  proxy.config.http.congestion_control.enabled
  proxy.config.http.congestion_control.filename
@@ -643,9 +642,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.reverse_proxy.oldasxbehavior
  proxy.config.server_name
  proxy.config.snapshot_dir
- proxy.config.snmp.master_agent_enabled
- proxy.config.snmp.snmp_encap_enabled
- proxy.config.snmp.trap_message
  proxy.config.socks.accept_enabled
  proxy.config.socks.accept_port
  proxy.config.socks.connection_attempts

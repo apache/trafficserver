@@ -2234,7 +2234,6 @@ overviewPage::doClusterAg()
   // FIXME
   clusterAgFloat("proxy.cluster.user_agent_xacts_per_second", "proxy.node.user_agent_xacts_per_second");
 
-  // This is here for benefit of SNMP.
   AgFloat_generic_scale_to_int("proxy.cluster.client_throughput_out",
                                "proxy.cluster.client_throughput_out_kbit", MBIT_TO_KBIT_SCALE);
   AgFloat_generic_scale_to_int("proxy.cluster.http.cache_hit_ratio",

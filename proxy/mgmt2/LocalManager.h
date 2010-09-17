@@ -39,7 +39,6 @@
 #include "LMRecords.h"
 #include "BaseManager.h"
 #include "ClusterCom.h"
-//#include "SNMP.h"
 #include "VMap.h"
 #include "WebPluginList.h"
 
@@ -181,7 +180,6 @@ public:
   volatile pid_t watched_process_pid;
 
   LMRecords *record_data;
-  //SNMP *m_snmp;
 
 #ifdef MGMT_USE_SYSLOG
   int syslog_facility;

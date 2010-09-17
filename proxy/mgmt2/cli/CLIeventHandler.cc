@@ -833,12 +833,12 @@ CmdLine_EventHandler::ConfigureServerLevel(void *cdata)
     /* Fall through */
   case CL_EV_SIX:              // show throttling of connections
     /* Fall through */
-  case CL_EV_SEVEN:            // show SNMP configuration
-    /* Fall through */
-  case CL_EV_EIGHT:            // Show Customizable Pages
+  case CL_EV_SEVEN:            // Show Customizable Pages
     Debug("cli_event", "ConfigureServerrLevel: entered %d case \n", cli_data->cevent);
     CLI_configure::doConfigureServer(cli_data);
     break;
+  case CL_EV_EIGHT:
+    /* Fall through */
   case CL_EV_NINE:
     /* Fall through */
   case CL_EV_TEN:

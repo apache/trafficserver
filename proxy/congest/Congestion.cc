@@ -67,7 +67,6 @@ static const char *default_dead_os_conn_retries_var = "proxy.config.http.congest
 static const char *default_max_connection_var = "proxy.config.http.congestion_control.default.max_connection";
 static const char *default_error_page_var = "proxy.config.http.congestion_control.default.error_page";
 static const char *default_congestion_scheme_var = "proxy.config.http.congestion_control.default.congestion_scheme";
-static const char *default_snmp_var = "proxy.config.http.congestion_control.default.snmp";
 
 char *DEFAULT_error_page = xstrdup("congestion#retryAfter");
 int DEFAULT_max_connection_failures = 5;
@@ -82,8 +81,6 @@ int DEFAULT_dead_os_conn_retries = 1;
 int DEFAULT_max_connection = -1;
 char *DEFAULT_congestion_scheme_str = xstrdup("per_ip");
 int DEFAULT_congestion_scheme = PER_IP;
-char *DEFAULT_snmp_str = xstrdup("on");
-int DEFAULT_snmp = 1;
 
 /* congestion control limits */
 #define CONG_RULE_MAX_max_connection_failures \
@@ -114,7 +111,6 @@ CongestionControlRecord::CongestionControlRecord(const CongestionControlRecord &
   dead_os_conn_timeout = rec.dead_os_conn_timeout;
   dead_os_conn_retries = rec.dead_os_conn_retries;
   max_connection = rec.max_connection;
-  snmp_enabled = rec.snmp_enabled;
   pRecord = NULL;
   ref_count = 1;
   line_num = rec.line_num;
@@ -139,7 +135,6 @@ CongestionControlRecord::setdefault()
   dead_os_conn_timeout = DEFAULT_dead_os_conn_timeout;
   dead_os_conn_retries = DEFAULT_dead_os_conn_retries;
   max_connection = DEFAULT_max_connection;
-  snmp_enabled = DEFAULT_snmp;
 }
 
 char *
@@ -235,12 +230,6 @@ CongestionControlRecord::Init(matcher_line * line_info)
       }
     } else if (strcasecmp(label, "error_page") == 0) {
       error_page = xstrdup(val);
-    } else if (strcasecmp(label, "snmp") == 0) {
-      if (!strcasecmp(val, "on")) {
-        snmp_enabled = 1;
-      } else {
-        snmp_enabled = 0;
-      }
     } else if (strcasecmp(label, "prefix") == 0) {
       prefix = xstrdup(val);
       prefix_len = strlen(prefix);
@@ -329,7 +318,6 @@ CongestionControlRecord::Print()
   PrintNUM(dead_os_conn_timeout);
   PrintNUM(dead_os_conn_retries);
   PrintNUM(max_connection);
-  PrintNUM(snmp_enabled);
 #undef PrintNUM
 #undef PrintSTR
 }
@@ -392,21 +380,6 @@ CongestionControlDefaultSchemeChanged(const char *name, RecDataT data_type, RecD
   return 0;
 }
 
-static int
-CongestionControlDefaultSNMPChanged(const char *name, RecDataT data_type, RecData data, void *cookie)
-{
-  NOWARN_UNUSED(name);
-  NOWARN_UNUSED(data_type);
-  NOWARN_UNUSED(data);
-  NOWARN_UNUSED(cookie);
-  if (strcasecmp(DEFAULT_snmp_str, "on") == 0) {
-    DEFAULT_snmp = 1;
-  } else {
-    DEFAULT_snmp = 0;
-  }
-  return 0;
-}
-
 //-----------------------------------------------
 // hack for link the RegressionTest into the
 //  TS binary
@@ -442,14 +415,12 @@ initCongestionControl()
   CC_EstablishStaticConfigInteger(DEFAULT_max_connection, default_max_connection_var);
   CC_EstablishStaticConfigStringAlloc(DEFAULT_congestion_scheme_str, default_congestion_scheme_var);
   CC_EstablishStaticConfigStringAlloc(DEFAULT_error_page, default_error_page_var);
-  CC_EstablishStaticConfigStringAlloc(DEFAULT_snmp_str, default_snmp_var);
   CC_EstablishStaticConfigInteger(congestionControlEnabled, congestEnabledVar);
   CC_EstablishStaticConfigInteger(congestionControlLocalTime, congestTimeVar);
   {
     RecData recdata;
     recdata.rec_int = 0;
     CongestionControlDefaultSchemeChanged(NULL, RECD_NULL, recdata, NULL);
-    CongestionControlDefaultSNMPChanged(NULL, RECD_NULL, recdata, NULL);
   }
 
   CongestionMatcher = NEW(new CongestionMatcherTable(congestVar, congestPrefix, &congest_dest_tags));
@@ -464,7 +435,6 @@ initCongestionControl()
     Debug("congestion_config", "congestion control disabled");
   }
   RecRegisterConfigUpdateCb(default_congestion_scheme_var, &CongestionControlDefaultSchemeChanged, NULL);
-  RecRegisterConfigUpdateCb(default_snmp_var, &CongestionControlDefaultSNMPChanged, NULL);
   RecRegisterConfigUpdateCb(congestEnabledVar, &CongestionControlEnabledChanged, NULL);
   RecRegisterConfigUpdateCb(congestVar, &CongestionControlFile_CB, NULL);
 }
@@ -678,9 +648,11 @@ CongestionEntry::init(CongestionControlRecord * rule)
   rule->get();
   pRecord = rule;
   clearFailHistory();
+
+  // TODO: This used to signal via SNMP
   if ((pRecord->max_connection > m_num_connections)
       && ink_atomic_swap(&m_M_congested, 0)) {
-    snmp_sig_alive();
+    // action not congested?
   }
 }
 
@@ -713,24 +685,28 @@ CongestionEntry::applyNewRule(CongestionControlRecord * rule)
   pRecord->put();
   rule->get();
   pRecord = rule;
+  // TODO: This used to signal via SNMP
   if (((pRecord->max_connection < 0)
        || (pRecord->max_connection > m_num_connections))
       && ink_atomic_swap(&m_M_congested, 0)) {
-    snmp_sig_alive();
+    // action not congested ?
   }
+  // TODO: This used to signal via SNMP
   if (pRecord->max_connection_failures < 0) {
     if (ink_atomic_swap(&m_congested, 0)) {
-      snmp_sig_alive();
+      // action not congested ?
     }
     return;
   }
+  // TODO: This used to signal via SNMP
   if (mcf < pRecord->max_connection_failures) {
     if (ink_atomic_swap(&m_congested, 0)) {
-      snmp_sig_alive();
+      // action not congested?
     }
   } else if (mcf > pRecord->max_connection_failures && m_history.events >= pRecord->max_connection_failures) {
-    if (!ink_atomic_swap(&m_congested, 1))
-      snmp_sig_congested();
+    if (!ink_atomic_swap(&m_congested, 1)) {
+      // action congested?
+    }
   }
 }
 
@@ -808,9 +784,10 @@ CongestionEntry::failed_at(ink_hrtime t)
     m_history.regist_event(time);
     if (!m_congested) {
       int32 new_congested = compCongested();
+      // TODO: This used to signal via SNMP
       if (new_congested && !ink_atomic_swap(&m_congested, 1)) {
         m_last_congested = m_history.last_event;
-        snmp_sig_congested();
+        // action congested ?
       }
     }
   } else {
@@ -821,8 +798,9 @@ CongestionEntry::failed_at(ink_hrtime t)
 void
 CongestionEntry::go_alive()
 {
+  // TODO: This used to signal via SNMP
   if (ink_atomic_swap(&m_congested, 0)) {
-    snmp_sig_alive();
+    // Action not congested ?
   }
 }
 
@@ -830,31 +808,3 @@ CongestionEntry::go_alive()
 #define SERVER_ALLEVIATED_SIG REC_SIGNAL_HTTP_ALLEVIATED_SERVER
 #define CC_SignalWarning(sig, msg) \
      REC_SignalWarning(sig, msg)
-
-void
-CongestionEntry::snmp_sig_congested()
-{
-  if (pRecord->snmp_enabled) {
-    char msg[1024];
-    struct in_addr addr;
-    snprintf(msg, sizeof(msg), "[%d] server %s/%s congested",
-             pRecord->line_num,
-             (m_hostname ? m_hostname : (addr.s_addr = htonl(m_ip), inet_ntoa(addr))),
-             (pRecord->prefix ? pRecord->prefix : ""));
-    CC_SignalWarning(SERVER_CONGESTED_SIG, msg);
-  }
-}
-
-void
-CongestionEntry::snmp_sig_alive()
-{
-  if (pRecord->snmp_enabled) {
-    char msg[1024];
-    struct in_addr addr;
-    snprintf(msg, sizeof(msg), "[%d] congested server %s/%s alleviated",
-             pRecord->line_num,
-             (m_hostname ? m_hostname : (addr.s_addr = htonl(m_ip), inet_ntoa(addr))),
-             (pRecord->prefix ? pRecord->prefix : ""));
-    CC_SignalWarning(SERVER_ALLEVIATED_SIG, msg);
-  }
-}
