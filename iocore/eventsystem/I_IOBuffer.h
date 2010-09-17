@@ -93,7 +93,12 @@ enum AllocType
 #define BUFFER_SIZE_INDEX_16K           7
 #define BUFFER_SIZE_INDEX_32K           8
 #define BUFFER_SIZE_INDEX_64K           9
-#define MAX_BUFFER_SIZE_INDEX           9
+#define BUFFER_SIZE_INDEX_128K          10
+#define BUFFER_SIZE_INDEX_256K          11
+#define BUFFER_SIZE_INDEX_512K          12
+#define BUFFER_SIZE_INDEX_1M            13
+#define BUFFER_SIZE_INDEX_2M            14
+#define MAX_BUFFER_SIZE_INDEX           14
 #define DEFAULT_BUFFER_SIZES            (MAX_BUFFER_SIZE_INDEX+1)
 
 #define BUFFER_SIZE_FOR_INDEX(_i)    (DEFAULT_BUFFER_BASE_SIZE * (1 << (_i)))

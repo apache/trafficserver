@@ -227,6 +227,7 @@ extern int cache_config_hit_evacuate_percent;
 extern int cache_config_hit_evacuate_size_limit;
 #endif
 extern int cache_config_force_sector_size;
+extern int cache_config_target_fragment_size;
 
 // CacheVC
 struct CacheVC: public CacheVConnection
@@ -690,7 +691,7 @@ CacheVC::handleWriteLock(int event, Event *e)
       trigger = mutex->thread_holding->schedule_in_local(this, MUTEX_RETRY_DELAY);
       return EVENT_CONT;
     }
-    ret = handleWrite(event, e);
+    ret = handleWrite(EVENT_CALL, e);
   }
   if (ret == EVENT_RETURN)
     return handleEvent(AIO_EVENT_DONE, 0);

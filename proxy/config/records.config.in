@@ -315,7 +315,7 @@ CONFIG proxy.config.cache.permit.pinning INT 0
    #   (approximately 1 MB of RAM cache per GB of disk cache)
    # alternatively, set to a fixed value such as 20971520 (20MB)
 CONFIG proxy.config.cache.ram_cache.size INT -1
-CONFIG proxy.config.cache.ram_cache_cutoff INT 1048576
+CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
    # Replacement algorithm
    #  0 : Clocked Least Frequently Used by Size (CLFUS) w/optional compression
    #  1 : LRU w/o optional compression - trivially simple
@@ -332,6 +332,10 @@ CONFIG proxy.config.cache.ram_cache.compress INT 0
    # The default value for 'proxy.config.cache.vary_on_user_agent' is 0.
    # (0 disables the maximum number of alts check)
 CONFIG proxy.config.cache.limits.http.max_alts INT 5
+   # The target size of a contiguous fragment on disk.
+   # Acceptable values are powers of 2, e.g. 65536, 131072, 262144, 524288, 1048576, 2097152.
+   # Larger could waste memory on slow connections, smaller could waste seeks.
+CONFIG proxy.config.cache.target_fragment_size INT 1048576
    # The maximum size of a document that will be stored in the cache.
    # (0 disables the maximum document size check)
 CONFIG proxy.config.cache.max_doc_size INT 0

@@ -1339,6 +1339,10 @@ CacheVC::openWriteWriteDone(int event, Event *e)
   return openWriteMain(event, e);
 }
 
+static inline int target_fragment_size() {
+  return cache_config_target_fragment_size - sizeofDoc;
+}
+
 int
 CacheVC::openWriteMain(int event, Event *e)
 {
@@ -1384,11 +1388,12 @@ Lagain:
     total_len += avail;
   }
   length = (uint64)towrite;
-  if (length > TARGET_FRAG_SIZE && length < SHRINK_TARGET_FRAG_SIZE)
-    write_len = TARGET_FRAG_SIZE;
+  if (length > target_fragment_size() && 
+      (length < target_fragment_size() + target_fragment_size() / 4))
+    write_len = target_fragment_size();
   else
     write_len = length;
-  bool not_writing = towrite != ntodo && towrite < TARGET_FRAG_SIZE;
+  bool not_writing = towrite != ntodo && towrite < target_fragment_size();
   if (!called_user) {
     if (not_writing) {
       called_user = 1;

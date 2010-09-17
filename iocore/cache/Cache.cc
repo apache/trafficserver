@@ -65,15 +65,15 @@ int cache_config_vary_on_user_agent = 0;
 int cache_config_select_alternate = 1;
 int cache_config_max_doc_size = 0;
 int cache_config_min_average_object_size = ESTIMATED_OBJECT_SIZE;
-int64 cache_config_ram_cache_cutoff = 1048576;  // 1 MB
-//int64 cache_config_ram_cache_mixt_cutoff = 1048576;     // 1 MB
+int64 cache_config_ram_cache_cutoff = AGG_SIZE;
 int cache_config_max_disk_errors = 5;
-int cache_config_agg_write_backlog = 5242880;
 #ifdef HIT_EVACUATE
 int cache_config_hit_evacuate_percent = 10;
 int cache_config_hit_evacuate_size_limit = 0;
 #endif
 int cache_config_force_sector_size = 0;
+int cache_config_target_fragment_size = 1048576;
+int cache_config_agg_write_backlog = AGG_SIZE * 2;
 int cache_config_enable_checksum = 0;
 int cache_config_alt_rewrite_max_size = 4096;
 int cache_config_read_while_writer = 0;
@@ -2630,14 +2630,6 @@ ink_cache_init(ModuleVersion v)
   Debug("cache_init", "cache_config_ram_cache_cutoff = %lld = %lldMb",
         cache_config_ram_cache_cutoff, cache_config_ram_cache_cutoff / (1024 * 1024));
 
-#if 0
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.cache.ram_cache_mixt_cutoff", 1048576, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_EstablishStaticConfigInteger(cache_config_ram_cache_mixt_cutoff, "proxy.config.cache.ram_cache_mixt_cutoff");
-  Debug("cache_init", "proxy.config.cache.ram_cache_mixt_cutoff = %lld = %lldMb",
-        cache_config_ram_cache_mixt_cutoff, cache_config_ram_cache_mixt_cutoff / (1024 * 1024));
-#endif
-
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.permit.pinning", 0, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(cache_config_permit_pinning, "proxy.config.cache.permit.pinning");
   Debug("cache_init", "proxy.config.cache.permit.pinning = %d", cache_config_permit_pinning);
@@ -2691,6 +2683,8 @@ ink_cache_init(ModuleVersion v)
 #endif
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.force_sector_size", 0, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.target_fragment_size", DEFAULT_TARGET_FRAGMENT_SIZE, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_EstablishStaticConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
 #ifdef HTTP_CACHE
   extern int url_hash_method;
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.url_hash_method", 1, RECU_RESTART_TS, RECC_NULL, NULL);

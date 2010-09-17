@@ -43,9 +43,7 @@
 #define MAX_PART_SIZE                   ((off_t)512 * 1024 * 1024 * 1024 * 1024)
 #define STORE_BLOCKS_PER_CACHE_BLOCK    (STORE_BLOCK_SIZE / CACHE_BLOCK_SIZE)
 #define MAX_PART_BLOCKS                 (MAX_PART_SIZE / CACHE_BLOCK_SIZE)
-#define TARGET_FRAG_SIZE                (DEFAULT_MAX_BUFFER_SIZE - sizeofDoc)
-#define SHRINK_TARGET_FRAG_SIZE         (DEFAULT_MAX_BUFFER_SIZE + (DEFAULT_MAX_BUFFER_SIZE/4))
-#define MAX_FRAG_SIZE                   ((256 * 1024) - sizeofDoc)
+#define MAX_FRAG_SIZE                   (AGG_SIZE - sizeofDoc) // true max
 #define LEAVE_FREE                      DEFAULT_MAX_BUFFER_SIZE
 #define PIN_SCAN_EVERY                  16      // scan every 1/16 of disk
 #define PART_HASH_TABLE_SIZE            32707
@@ -56,6 +54,7 @@
 #define AIO_NOT_IN_PROGRESS             0
 #define AIO_AGG_WRITE_IN_PROGRESS       -1
 #define AUTO_SIZE_RAM_CACHE             -1      // 1-1 with directory size
+#define DEFAULT_TARGET_FRAGMENT_SIZE    (65536 - sizeofDoc) // 64k
 
 
 #define dir_offset_evac_bucket(_o) \
