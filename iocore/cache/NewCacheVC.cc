@@ -101,7 +101,7 @@ NewCacheVC::getCacheHeaderKey(void **key, int *length)
 void
 NewCacheVC::reenable(VIO * vio)
 {
-  Debug("cache_plugin", "[NewCacheVC::reenable] this=%lX vio=%lX", (long) this, (long) vio);
+  Debug("cache_plugin", "[NewCacheVC::reenable] this=%p vio=%p", this, vio);
   if (_vio.op == VIO::WRITE) {
     if (!_vio.buffer.reader()->read_avail()) {
       ink_assert(!"useless reenable of cache write");
@@ -124,7 +124,7 @@ NewCacheVC::reenable(VIO * vio)
 VIO *
 NewCacheVC::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
 {
-  Debug("cache_plugin", "[NewCacheVC::do_io_read] this=%lX c=%lX nbytes=%d", (long) this, (long) c, nbytes);
+  Debug("cache_plugin", "[NewCacheVC::do_io_read] this=%p c=%p nbytes=%d", this, c, nbytes);
   switch (_state) {
 
     //case NEW_CACHE_LOOKUP:
@@ -165,7 +165,7 @@ int
 NewCacheVC::handleRead(int event, Event * e)
 {
   NOWARN_UNUSED(e);
-  Debug("cache_plugin", "[NewCacheVC::handleRead] this=%lX event=%d", (long) this, event);
+  Debug("cache_plugin", "[NewCacheVC::handleRead] this=%p event=%d", this, event);
   cancel_trigger();
 
   if (!closed)
@@ -179,7 +179,7 @@ NewCacheVC::handleRead(int event, Event * e)
 VIO *
 NewCacheVC::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner)
 {
-  Debug("cache_plugin", "[NewCacheVC::do_io_write] this=%lX c=%lX", (long) this, (long) c);
+  Debug("cache_plugin", "[NewCacheVC::do_io_write] this=%p c=%p", this, c);
 
   // change the state based on the prior state
   switch (_state) {
@@ -255,7 +255,7 @@ NewCacheVC::alloc(Continuation * cont, URL * url, HttpCacheSM * sm)
   c->mutex = cont->mutex;
   //c->start_time = ink_get_hrtime();
   //ink_assert(c->trigger == NULL);
-  Debug("cache_plugin", "[NewCacheVC::alloc] new %lX", (long) c);
+  Debug("cache_plugin", "[NewCacheVC::alloc] new %p", c);
   c->_vio.op = VIO::READ;
   c->_lookupUrl = url;
   c->_url = url->string_get_ref(&c->_url_length);
@@ -280,7 +280,7 @@ NewCacheVC::setWriteVC(CacheHTTPInfo * old_info)
 void
 NewCacheVC::do_io_close(int lerrno)
 {
-  Debug("cache_plugin", "[NewCacheVC::do_io_close] %lX lerrno: %d state: %d", (long) this, lerrno, _state);
+  Debug("cache_plugin", "[NewCacheVC::do_io_close] %p lerrno: %d state: %d", this, lerrno, _state);
 
   if (!closed) {
     closed = true;
@@ -323,7 +323,7 @@ NewCacheVC::set_http_info(CacheHTTPInfo * ainfo)
 {
   _state = NEW_CACHE_WRITE_HEADER;
 
-  Debug("cache_plugin", "[NewCacheVC::set_http_info] this=%lX ainfo=%lX", (long) this, (long) ainfo);
+  Debug("cache_plugin", "[NewCacheVC::set_http_info] this=%p ainfo=%p", this, ainfo);
   _writeCacheHttpInfo.copy_shallow((HTTPInfo *) ainfo);
   //set the key and size from the previously chosen alternate in case it is a header-only update
   //we assume that no reads happen between this and do_io_close
@@ -862,7 +862,7 @@ NewCacheVC::_writeHttpInfo()
 void
 NewCacheVC::_free()
 {
-  Debug("cache_plugin", "[NewCacheVC::_free] %lX", (long) this);
+  Debug("cache_plugin", "[NewCacheVC::_free] %p", this);
   if (this->freeCalled)
     return;
 

@@ -39,7 +39,7 @@
 #define CLUSTER_STATS			1
 
 
-#define ALIGN_DOUBLE(_p)   ((((unsigned long) (_p)) + 7) & ~7)
+#define ALIGN_DOUBLE(_p)   ((((uintptr_t) (_p)) + 7) & ~7)
 #define ALLOCA_DOUBLE(_sz) ALIGN_DOUBLE(alloca((_sz) + 8))
 
 /*************************************************************************/
@@ -135,7 +135,7 @@
  ^ ~(uint32)_x.msg.unused \
  ^ ~((uint32)_x.msg.control_bytes << 16) ^_x.sequence_number)
 
-#define DOUBLE_ALIGN(_x)    ((((unsigned long)_x)+7)&~7)
+#define DOUBLE_ALIGN(_x)    ((((uintptr_t)_x)+7)&~7)
 
 /*************************************************************************/
 // Testing Defines
@@ -154,10 +154,10 @@
 //
 #if TEST_TIMING
 #define TTTEST(_x) \
-fprintf(stderr, _x " at: %d\n", \
+fprintf(stderr, _x " at: %u\n", \
 	((unsigned int)(ink_get_hrtime()/HRTIME_MSECOND)) % 1000)
 #define TTEST(_x) \
-fprintf(stderr, _x " for: %d at: %d\n", vc->channel, \
+fprintf(stderr, _x " for: %d at: %u\n", vc->channel, \
 	((unsigned int)(ink_get_hrtime()/HRTIME_MSECOND)) % 1000)
 #define TIMEOUT_TESTS(_s,_d) \
     if (*(int*)_d == 8)  \

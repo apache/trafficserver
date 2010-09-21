@@ -94,7 +94,7 @@ struct NetAccept:public Continuation
   Ptr<NetAcceptAction> action_;
   int recv_bufsize;
   int send_bufsize;
-  unsigned long sockopt_flags;
+  uint32 sockopt_flags;
   EventType etype;
   UnixNetVConnection *epoll_vc; // only storage for epoll events
   EventIO ep;

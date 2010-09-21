@@ -79,7 +79,7 @@ struct SocketManager
   int unlink(char *buf);
   int fsync(int fildes);
   int ftruncate(int fildes, off_t length);
-  int lockf(int fildes, int function, long size);
+  int lockf(int fildes, int function, off_t size);
   int poll(struct pollfd *fds, unsigned long nfds, int timeout);
 #if ATS_USE_EPOLL
   int epoll_create(int size);

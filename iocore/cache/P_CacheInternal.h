@@ -532,7 +532,7 @@ new_CacheVC(Continuation *cont)
   c->mutex = cont->mutex;
   c->start_time = ink_get_hrtime();
   ink_assert(c->trigger == NULL);
-  Debug("cache_new", "new %lX", (long) c);
+  Debug("cache_new", "new %p", c);
 #ifdef CACHE_STAT_PAGES
   ink_assert(!c->stat_link.next);
   ink_assert(!c->stat_link.prev);
@@ -544,7 +544,7 @@ new_CacheVC(Continuation *cont)
 TS_INLINE int
 free_CacheVC(CacheVC *cont)
 {
-  Debug("cache_free", "free %lX", (long) cont);
+  Debug("cache_free", "free %p", cont);
   ProxyMutex *mutex = cont->mutex;
   Part *part = cont->part;
   CACHE_DECREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_ACTIVE);

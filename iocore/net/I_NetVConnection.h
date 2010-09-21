@@ -127,11 +127,11 @@ struct NetVCOptions {
   /// @note These are not identical to internal socket options but
   /// specifically defined for configuration. These are mask values
   /// and so must be powers of 2.
-  unsigned long sockopt_flags;
+  uint32 sockopt_flags;
   /// Value for TCP no delay for @c sockopt_flags.
-  static unsigned long const SOCK_OPT_NO_DELAY = 1;
+  static uint32 const SOCK_OPT_NO_DELAY = 1;
   /// Value for keep alive for @c sockopt_flags.
-  static unsigned long const SOCK_OPT_KEEP_ALIVE = 2;
+  static uint32 const SOCK_OPT_KEEP_ALIVE = 2;
 
   EventType etype;
 

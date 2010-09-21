@@ -30,7 +30,7 @@
 
 extern int cluster_receive_buffer_size;
 extern int cluster_send_buffer_size;
-extern unsigned long cluster_sockopt_flags;
+extern uint32 cluster_sockopt_flags;
 
 ///////////////////////////////////////////////////////////////
 // Incoming message continuation for periodic callout threads

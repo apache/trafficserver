@@ -67,7 +67,7 @@ public:
     int send_bufsize;
     /// Socket options for @c sockopt.
     /// 0 => do not set options.
-    unsigned long sockopt_flags;
+    uint32 sockopt_flags;
     /// Transparency on related connection to origin server.
     bool f_outbound_transparent;
     /** Transparency on client (user agent) connection.
@@ -137,7 +137,7 @@ public:
                                      sockaddr * bound_sockaddr = 0,
                                      int *bound_sockaddr_size = 0,
                                      int recv_bufsize = 0,
-                                     int send_bufsize = 0, unsigned long sockopt_flag = 0, EventType etype = ET_NET);
+                                     int send_bufsize = 0, uint32 sockopt_flag = 0, EventType etype = ET_NET);
 
   /**
     Accepts incoming connections on port. Accept connections on port.

@@ -812,7 +812,7 @@ agg_copy(char *p, CacheVC *vc)
           CacheHTTPInfo *http_info = vc->write_vector->get(vc->alternate_index);
           http_info->object_size_set(vc->total_len);
         }
-        ink_assert(!(((unsigned long) &doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK));
+        ink_assert(!(((uintptr_t) &doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK));
         ink_assert(vc->header_len == vc->write_vector->marshal(doc->hdr(), vc->header_len));
       } else
 #endif
@@ -1504,7 +1504,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
       err = ECACHE_BAD_META_DATA;
       goto Lfailure;
     }
-    ink_assert((((unsigned long) &doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK) == 0);
+    ink_assert((((uintptr_t) &doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK) == 0);
 
     if (write_vector->get_handles(doc->hdr(), doc->hlen, buf) != doc->hlen) {
       err = ECACHE_BAD_META_DATA;

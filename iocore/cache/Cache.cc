@@ -269,7 +269,7 @@ CacheVC::do_io_close(int alerrno)
   ink_debug_assert(mutex->thread_holding == this_ethread());
   int previous_closed = closed;
   closed = (alerrno == -1) ? 1 : -1;    // Stupid default arguments
-  DDebug("cache_close", "do_io_close %lX %d %d", (long) this, alerrno, closed);
+  DDebug("cache_close", "do_io_close %p %d %d", this, alerrno, closed);
   if (!previous_closed && !recursive)
     die();
 }
@@ -277,7 +277,7 @@ CacheVC::do_io_close(int alerrno)
 void
 CacheVC::reenable(VIO *avio)
 {
-  DDebug("cache_reenable", "reenable %lX", (long) this);
+  DDebug("cache_reenable", "reenable %p", this);
   (void) avio;
   ink_assert(avio->mutex->thread_holding);
   if (!trigger) {
@@ -295,7 +295,7 @@ CacheVC::reenable(VIO *avio)
 void
 CacheVC::reenable_re(VIO *avio)
 {
-  DDebug("cache_reenable", "reenable_re %lX", (long) this);
+  DDebug("cache_reenable", "reenable_re %p", this);
   (void) avio;
   ink_assert(avio->mutex->thread_holding);
   if (!trigger) {
@@ -723,8 +723,8 @@ CacheProcessor::cacheInitialized()
   }
 
   if (caches_ready) {
-    Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0lX, gnpart=%d",
-          (unsigned long) caches_ready, gnpart);
+    Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnpart=%d",
+          (unsigned int) caches_ready, gnpart);
     int64 ram_cache_bytes = 0;
     if (gnpart) {
       for (i = 0; i < gnpart; i++) {
@@ -999,7 +999,6 @@ Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   hit_evacuate_window = (data_blocks * cache_config_hit_evacuate_percent) / 100;
 #endif
 
-  ink_assert(sizeof(DLL<EvacuationBlock>) <= sizeof(long));
   evacuate_size = (int) (len / EVACUATION_BUCKET_SIZE) + 2;
   int evac_len = (int) evacuate_size * sizeof(DLL<EvacuationBlock>);
   evacuate = (DLL<EvacuationBlock> *)malloc(evac_len);
@@ -1717,8 +1716,8 @@ Cache::open(bool clear, bool fix)
 
 
   IOCORE_EstablishStaticConfigInt32(cache_config_min_average_object_size, "proxy.config.cache.min_average_object_size");
-  Debug("cache_init", "Cache::open - proxy.config.cache.min_average_object_size = %ld",
-        (long) cache_config_min_average_object_size);
+  Debug("cache_init", "Cache::open - proxy.config.cache.min_average_object_size = %d",
+        (int)cache_config_min_average_object_size);
 
   CachePart *cp = cp_list.head;
   for (; cp; cp = cp->link.next) {
@@ -2825,7 +2824,7 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url,
 #endif
   // cache plugin
   if (cache_global_hooks != NULL && cache_global_hooks->hooks_set > 0) {
-    Debug("cache_plugin", "[CacheProcessor::open_write] Cache hooks are set, old_info=%lX", (long) old_info);
+    Debug("cache_plugin", "[CacheProcessor::open_write] Cache hooks are set, old_info=%p", old_info);
 
     HttpCacheSM *sm = (HttpCacheSM *) cont;
     if (sm->master_sm && sm->master_sm->t_state.cache_vc) {

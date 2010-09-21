@@ -532,7 +532,7 @@ SocketManager::shutdown(int s, int how)
 }
 
 TS_INLINE int
-SocketManager::lockf(int s, int f, long size)
+SocketManager::lockf(int s, int f, off_t size)
 {
   int res;
   do {

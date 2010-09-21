@@ -344,8 +344,8 @@ dir_clean_bucket(Dir *b, int s, Part *part)
 #endif
     if (!dir_valid(part, e) || !dir_offset(e)) {
       if (is_debug_tag_set("dir_clean"))
-        Debug("dir_clean", "cleaning %X tag %X boffset %d b %X p %X l %d",
-              (long) e, dir_tag(e), (int) dir_offset(e), (long) b, (long) p, dir_bucket_length(b, s, part));
+        Debug("dir_clean", "cleaning %p tag %X boffset %lld b %p p %p l %d",
+              e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, part));
       if (dir_offset(e))
         CACHE_DEC_DIR_USED(part->mutex);
       e = dir_delete_entry(e, p, s, part);
@@ -379,7 +379,7 @@ dir_clear_range(off_t start, off_t end, Part *part)
 {
   for (int i = 0; i < part->buckets * DIR_DEPTH * part->segments; i++) {
     Dir *e = dir_index(part, i);
-    if (!dir_token(e) && (int) dir_offset(e) >= start && (int) dir_offset(e) < end) {
+    if (!dir_token(e) && dir_offset(e) >= (int64)start && dir_offset(e) < (int64)end) {
       CACHE_DEC_DIR_USED(part->mutex);
       dir_set_offset(e, 0);     // delete
     }
@@ -535,7 +535,7 @@ Lagain:
           goto Lcont;
         }
         if (dir_valid(d, e)) {
-          DDebug("dir_probe_hit", "found %X %X part %d bucket %d  boffset %d", key->word(0), key->word(1), d->fd, b, (int) dir_offset(e));
+          DDebug("dir_probe_hit", "found %X %X part %d bucket %d boffset %lld", key->word(0), key->word(1), d->fd, b, dir_offset(e));
           dir_assign(result, e);
           *last_collision = e;
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < d->len);
@@ -557,7 +557,7 @@ Lagain:
     collision = NULL;
     goto Lagain;
   }
-  DDebug("dir_probe_miss", "missed %X %X on part %d bucket %d at %X", key->word(0), key->word(1), d->fd, b, (long) seg);
+  DDebug("dir_probe_miss", "missed %X %X on part %d bucket %d at %p", key->word(0), key->word(1), d->fd, b, seg);
   CHECK_DIR(d);
   return 0;
 }
@@ -607,8 +607,8 @@ Lfill:
   dir_set_tag(e, key->word(2));
   ink_assert(part_offset(d, e) < (d->skip + d->len));
   DDebug("dir_insert",
-        "insert %X %X into part %d bucket %d at %X tag %X %X boffset %d",
-        (long) e, key->word(0), d->fd, bi, (long) e, key->word(1), dir_tag(e), (int) dir_offset(e));
+        "insert %p %X into part %d bucket %d at %p tag %X %X boffset %lld",
+         e, key->word(0), d->fd, bi, e, key->word(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   d->header->dirty = 1;
   CACHE_INC_DIR_USED(d->mutex);
@@ -681,8 +681,8 @@ Lfill:
   dir_set_tag(e, t);
   ink_assert(part_offset(d, e) < d->skip + d->len);
   DDebug("dir_overwrite",
-        "overwrite %X %X into part %d bucket %d at %X tag %X %X boffset %d",
-        (long) e, key->word(0), d->fd, bi, (long) e, t, dir_tag(e), (int) dir_offset(e));
+        "overwrite %p %X into part %d bucket %d at %p tag %X %X boffset %lld",
+         e, key->word(0), d->fd, bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   d->header->dirty = 1;
   return res;

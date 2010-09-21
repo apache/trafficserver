@@ -40,32 +40,7 @@ extern "C" int madvise(caddr_t, size_t, int); // FIXME: why is this not being fo
 
 #include "P_EventSystem.h"
 
-
 SocketManager socketManager;
-int monitor_read_activity = !!getenv("MONITOR_READS");
-int monitor_write_activity = !!getenv("MONITOR_WRITES");
-
-#define MONITOR_STRING "%lX %lX %d %s\n"
-
-
-void
-monitor_disk_read(int fd, void *buf, int size, off_t offset, char *tag)
-{
-  (void) fd;
-  (void) buf;
-  fprintf(stderr, "READ: " MONITOR_STRING, (unsigned long) offset,
-          (unsigned long) offset + size, size, (tag ? tag : ""));
-}
-
-
-void
-monitor_disk_write(int fd, void *buf, int size, off_t offset, char *tag)
-{
-  (void) fd;
-  (void) buf;
-  fprintf(stderr, "WRITE: " MONITOR_STRING, (unsigned long) offset,
-          (unsigned long) offset + size, size, (tag ? tag : ""));
-}
 
 SocketManager::SocketManager()
 {
@@ -114,7 +89,7 @@ safe_madvise(caddr_t addr, size_t len, caddr_t end, int flags)
   (void) flags;
   return 0;
 #else
-  caddr_t a = (caddr_t) (((unsigned long) addr) & ~(socketManager.pagesize - 1));
+  caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(socketManager.pagesize - 1));
   size_t l = (len + (addr - a) + socketManager.pagesize - 1)
     & ~(socketManager.pagesize - 1);
   int res = 0;
@@ -127,7 +102,7 @@ int
 safe_mlock(caddr_t addr, size_t len, caddr_t end)
 {
 
-  caddr_t a = (caddr_t) (((unsigned long) addr) & ~(socketManager.pagesize - 1));
+  caddr_t a = (caddr_t) (((uintptr_t) addr) & ~(socketManager.pagesize - 1));
   size_t l = (len + (addr - a) + socketManager.pagesize - 1)
     & ~(socketManager.pagesize - 1);
   if ((a + l) > end)
@@ -135,12 +110,6 @@ safe_mlock(caddr_t addr, size_t len, caddr_t end)
   int res = mlock(a, l);
   return res;
 }
-
-typedef struct _DIP_ele
-{
-  struct _DIP_ele *next;
-  u_long val;
-} DIP_ele;
 
 int
 SocketManager::ink_bind(int s, struct sockaddr *name, int namelen, short Proto)

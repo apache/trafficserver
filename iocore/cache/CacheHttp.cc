@@ -186,7 +186,7 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
   char *start = buf;
   int count = 0;
 
-  ink_assert(!(((long) buf) & 3));      // buf must be aligned
+  ink_assert(!(((intptr_t) buf) & 3));      // buf must be aligned
 
   for (int i = 0; i < xcount; i++) {
     int tmp = data[i].alternate.marshal(buf, length);
@@ -204,7 +204,7 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
 int
 CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj * block_ptr)
 {
-  ink_assert(!(((long) buf) & 3));      // buf must be aligned
+  ink_assert(!(((intptr_t) buf) & 3));      // buf must be aligned
 
   const char *start = buf;
   CacheHTTPInfo info;
@@ -232,7 +232,7 @@ CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj * block_
 uint32
 CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * block_ptr)
 {
-  ink_assert(!(((long) buf) & 3));      // buf must be aligned
+  ink_assert(!(((intptr_t) buf) & 3));      // buf must be aligned
 
   const char *start = buf;
   CacheHTTPInfo info;

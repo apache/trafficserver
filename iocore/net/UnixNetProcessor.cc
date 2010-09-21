@@ -72,7 +72,7 @@ NetProcessor::accept(Continuation * cont,
                      bool accept_only,
                      sockaddr * bound_sockaddr,
                      int *bound_sockaddr_size,
-                     int recv_bufsize, int send_bufsize, unsigned long sockopt_flags, EventType etype)
+                     int recv_bufsize, int send_bufsize, uint32 sockopt_flags, EventType etype)
 {
   (void) listen_socket_in;      // NT only
   (void) accept_pool_size;      // NT only

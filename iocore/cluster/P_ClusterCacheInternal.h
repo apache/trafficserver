@@ -49,7 +49,7 @@
 // Macros
 //
 #define FOLDHASH(_ip,_seq) (_seq % REMOTE_CONNECT_HASH)
-#define ALIGN_DOUBLE(_p)   ((((unsigned long) (_p)) + 7) & ~7)
+#define ALIGN_DOUBLE(_p)   ((((uintptr_t) (_p)) + 7) & ~7)
 #define ALLOCA_DOUBLE(_sz) ALIGN_DOUBLE(alloca((_sz) + 8))
 
 

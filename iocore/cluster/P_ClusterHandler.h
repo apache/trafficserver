@@ -655,7 +655,7 @@ struct ClusterHandler:public ClusterHandlerBase
 };
 
 // Valid (ClusterVConnection *) in ClusterHandler.channels[]
-#define VALID_CHANNEL(vc) (vc && !(((long) vc) & 1))
+#define VALID_CHANNEL(vc) (vc && !(((uintptr_t) vc) & 1))
 
 // outgoing control continuations
 extern ClassAllocator<OutgoingControl> outControlAllocator;
