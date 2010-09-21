@@ -212,6 +212,7 @@ traffic_logcat_LDADD = \
   InkIOCoreAPI.o \
   InkXml.o \
   http2/libhttp.a \
+  http2/remap/libhttp_remap.a \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a \
@@ -274,6 +275,7 @@ traffic_logstats_LDADD = \
   InkIOCoreAPI.o \
   InkXml.o \
   http2/libhttp.a \
+  http2/remap/libhttp_remap.a \
   logging/liblogging.a \
   stats/libstats.a \
   hdrs/libhdrs.a \
@@ -337,6 +339,7 @@ traffic_sac_LDADD = \
   InkIOCoreAPI.o \
   InkXml.o \
   http2/libhttp.a \
+  http2/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
   stats/libstats.a \

@@ -71,22 +71,4 @@ libhttp_a_SOURCES = \
   HttpTunnel.h \
   HttpUpdateSM.cc \
   HttpUpdateSM.h \
-  HttpUpdateTester.cc \
-  remap/AclFiltering.cc \
-  remap/AclFiltering.h \
-  remap/RemapPluginInfo.cc \
-  remap/RemapPluginInfo.h \
-  remap/RemapPlugins.cc \
-  remap/RemapPlugins.h \
-  remap/RemapProcessor.cc \
-  remap/RemapProcessor.h \
-  remap/StringHash.cc \
-  remap/StringHash.h \
-  remap/UrlMapping.cc \
-  remap/UrlMapping.h \
-  remap/UrlRewrite.cc \
-  remap/UrlRewrite.h \
-  remap/Trie.h \
-  remap/UrlMappingPathIndex.h \
-  remap/UrlMappingPathIndex.cc
-
+  HttpUpdateTester.cc

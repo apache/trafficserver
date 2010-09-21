@@ -875,8 +875,8 @@ Part::db_check(bool fix)
   (void) fix;
   char tt[256];
   printf("    Data for [%s]\n", hash_id);
-  printf("        Length:          %lld\n", (uint64)len);
-  printf("        Write Position:  %lld\n", (uint64) (header->write_pos - skip));
+  printf("        Length:          %llu\n", (uint64)len);
+  printf("        Write Position:  %llu\n", (uint64) (header->write_pos - skip));
   printf("        Phase:           %d\n", (int)!!header->phase);
   ink_ctime_r(&header->create_time, tt);
   tt[strlen(tt) - 1] = 0;
@@ -982,7 +982,7 @@ Part::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   hash_id = (char *) malloc(hash_id_size);
   ink_strncpy(hash_id, s, hash_id_size);
   const size_t s_size = strlen(s);
-  snprintf(hash_id + s_size, (hash_id_size - s_size), " %lld:%lld", 
+  snprintf(hash_id + s_size, (hash_id_size - s_size), " %llu:%llu",
            (uint64)dir_skip, (uint64)blocks);
   hash_id_md5.encodeBuffer(hash_id, strlen(hash_id));
   len = blocks * STORE_BLOCK_SIZE;

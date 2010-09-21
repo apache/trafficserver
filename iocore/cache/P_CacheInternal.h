@@ -682,6 +682,7 @@ CacheVC::die()
 TS_INLINE int
 CacheVC::handleWriteLock(int event, Event *e)
 {
+  NOWARN_UNUSED(event);
   cancel_trigger();
   int ret = 0;
   {

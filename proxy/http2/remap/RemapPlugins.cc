@@ -227,7 +227,6 @@ RemapPlugins::run_single_remap()
   int requestPathLen;
   url_mapping *map = _map_container->getMapping();
   URL *map_from = &(map->fromURL);
-  const char *fromPath;
   int fromPathLen;
   URL *map_to = _map_container->getToURL();
 
@@ -236,7 +235,6 @@ RemapPlugins::run_single_remap()
   int toPathLen;
   int toHostLen;
   int redirect_host_len;
-  const char *redirect_host;
 
   // Debugging vars
   bool debug_on = false;
@@ -257,9 +255,9 @@ RemapPlugins::run_single_remap()
   // after the first plugin has run, we need to use these in order to "chain" them and previous changes are all in _request_url,
   // in case we need to copy values from previous plugin or from the remap rule.
   if (_cur == 0) {
-    fromPath = map_from->path_get(&fromPathLen);
+    map_from->path_get(&fromPathLen);
   } else {
-    fromPath = _request_url->path_get(&fromPathLen);
+    _request_url->path_get(&fromPathLen);
   }
 
   debug_on = is_debug_tag_set("url_rewrite");
@@ -426,7 +424,7 @@ RemapPlugins::run_single_remap()
       }
       // If request came in without a host, send back
       //  the redirect with the name the proxy is known by
-      if ((redirect_host = redirect_url.host_get(&redirect_host_len)) == NULL)
+      if (redirect_url.host_get(&redirect_host_len) == NULL)
         redirect_url.host_set(rewrite_table->ts_name, strlen(rewrite_table->ts_name));
 
       if ((_s->remap_redirect = redirect_url.string_get(NULL)) != NULL)

@@ -4876,6 +4876,7 @@ convert_remap_ele_to_html_format(INKRemapEle * ele,
                                  char *from_scheme, char *from_port, char *from_path,
                                  char *to_scheme, char *to_port, char *to_path, char *mixt)
 {
+  NOWARN_UNUSED(mixt);
   // rule type
   switch (ele->cfg_ele.type) {
   case INK_REMAP_MAP:
@@ -5189,6 +5190,7 @@ convert_pdss_to_html_format(INKPdSsFormat info,
                             char *src_ip,
                             char *prefix, char *suffix, char *port, char *method, char *scheme, char *mixt)
 {
+  NOWARN_UNUSED(mixt);
   char minA[3];
   char minB[3];
 

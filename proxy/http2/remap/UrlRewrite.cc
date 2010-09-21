@@ -780,11 +780,9 @@ UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, UrlMappin
 
   const char *requestPath;
   int requestPathLen;
-  int requestPort;
 
   url_mapping *mapPtr = mapping_container.getMapping();
   URL *map_from = &mapPtr->fromURL;
-  const char *fromPath;
   int fromPathLen;
 
   URL *map_to = mapping_container.getToURL();
@@ -794,7 +792,6 @@ UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, UrlMappin
   int toHostLen;
 
   int redirect_host_len;
-  const char *redirect_host;
 
   // Debugging vars
   bool debug_on = false;
@@ -808,9 +805,7 @@ UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, UrlMappin
   }
 
   requestPath = request_url->path_get(&requestPathLen);
-  requestPort = request_url->port_get();
-
-  fromPath = map_from->path_get(&fromPathLen);
+  map_from->path_get(&fromPathLen);
 
   toHost = map_to->host_get(&toHostLen);
   toPath = map_to->path_get(&toPathLen);
@@ -926,7 +921,7 @@ UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, UrlMappin
       }
       // If request came in without a host, send back
       //  the redirect with the name the proxy is known by
-      if ((redirect_host = redirect_url.host_get(&redirect_host_len)) == NULL)
+      if (redirect_url.host_get(&redirect_host_len) == NULL)
         redirect_url.host_set(ts_name, strlen(ts_name));
 
       if ((*redirect = redirect_url.string_get(NULL)) != NULL)

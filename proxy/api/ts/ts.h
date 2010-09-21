@@ -322,7 +322,7 @@ extern "C"
     /* EVENTS 60200 - 60202 for internal use */
     INK_EVENT_INTERNAL_60200 = 60200,
     INK_EVENT_INTERNAL_60201 = 60201,
-    INK_EVENT_INTERNAL_60202 = 60202,
+    INK_EVENT_INTERNAL_60202 = 60202
   } INKEvent;
 
   typedef enum
