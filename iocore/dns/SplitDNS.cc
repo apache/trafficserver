@@ -63,15 +63,6 @@ static Ptr<ProxyMutex> reconfig_mutex = NULL;
 
 static ClassAllocator<DNSRequestData> DNSReqAllocator("DNSRequestDataAllocator");
 
-
-/* --------------------------------------------------------------
-   config var names
-   -------------------------------------------------------------- */
-static const char *sdns_file_var = "proxy.config.dns.splitdns.filename";
-static const char *sdns_enable_var = "proxy.config.dns.splitDNS.enabled";
-static const char *sdns_def_domain = "proxy.config.dns.splitdns.def_domain";
-
-
 /* --------------------------------------------------------------
    used by a lot of protocols. We do not have dest ip in most
    cases.
@@ -183,14 +174,14 @@ SplitDNSConfig::reconfigure()
   SplitDNS *params;
   params = NEW(new SplitDNS);
 
-  IOCORE_ReadConfigInt32(gsplit_dns_enabled, sdns_enable_var);
+  IOCORE_ReadConfigInt32(gsplit_dns_enabled, "proxy.config.dns.splitDNS.enabled");
 
   params->m_SplitDNSlEnable = gsplit_dns_enabled;
 
   if (0 == gsplit_dns_enabled)
     return;
 
-  params->m_DNSSrvrTable = NEW(new DNS_table(sdns_file_var, modulePrefix, &sdns_dest_tags));
+  params->m_DNSSrvrTable = NEW(new DNS_table("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags));
 
   params->m_numEle = params->m_DNSSrvrTable->getEntryCount();
   if (0 == params->m_DNSSrvrTable || (0 == params->m_numEle)) {
@@ -209,7 +200,7 @@ SplitDNSConfig::reconfigure()
     params->m_bEnableFastPath = true;
   }
 
-  char *def_domain = IOCORE_ConfigReadString(sdns_def_domain);
+  char *def_domain = IOCORE_ConfigReadString("proxy.config.dns.splitdns.def_domain");
 
   if (def_domain) {
     ink_strncpy(params->m_def_domain, def_domain, MAXDNAME);
@@ -923,11 +914,9 @@ ink_split_dns_init(ModuleVersion v)
 
   init_called = 1;
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, sdns_enable_var, 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG, sdns_def_domain, 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG, sdns_file_var, "proxy.config.dns.splitdns.filename", RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.splitDNS.enabled", 0, RECU_DYNAMIC, RECC_INT, "[0-1]");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.dns.splitdns.def_domain", 0, RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.dns.splitdns.filename", "splitdns.config", RECU_RESTART_TS, RECC_NULL, NULL);
 }
 
 #endif // SPLIT_DNS

@@ -454,88 +454,34 @@ SslConfigParams::initialize()
 static inline void
 register_ssl_net_configs(void)
 {
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.enabled", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.SSLv2", 1, RECU_RESTART_TS, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.SSLv3", 1, RECU_RESTART_TS, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.TLSv1", 1, RECU_RESTART_TS, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.accelerator.type", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.number.threads", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.atalla.lib.path", "/opt/atalla/lib", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.ncipher.lib.path",
-                              "/opt/nfast/toolkits/hwcrhk", RECU_DYNAMIC, RECC_NULL, NULL);
-
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.cswift.lib.path", "/usr/lib", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.broadcom.lib.path", "/usr/lib", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.server_port", 4443, RECU_DYNAMIC, RECC_INT, "[0-65535]");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.ssl.client.certification_level", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.server.cert.filename",
-                              "server.pem", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]+$");
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.server.cert.path",
-                              "etc/trafficserver", RECU_DYNAMIC, RECC_STR, "^[^[:space:]]+$");
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.server.cert_chain.filename", NULL, RECU_DYNAMIC, RECC_STR, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.server.multicert.filename",
-                              "ssl_multicert.config", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.server.private_key.filename",
-                              NULL, RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.server.private_key.path", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.CA.cert.filename", NULL, RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.CA.cert.path", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.ssl.client.verify.server", 0, RECU_DYNAMIC, RECC_INT, "[0-1]");
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.client.cert.filename", NULL, RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.client.cert.path", "etc/trafficserver", RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.client.private_key.filename",
-                              NULL, RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.client.private_key.path", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-  IOCORE_RegisterConfigString(RECT_CONFIG,
-                              "proxy.config.ssl.client.CA.cert.filename",
-                              NULL, RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-
-  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.client.CA.cert.path", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.enabled", 0, RECU_RESTART_TS, RECC_INT, "[0-1]");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.SSLv2", 1, RECU_RESTART_TS, RECC_INT, "[0-1]");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.SSLv3", 1, RECU_RESTART_TS, RECC_INT, "[0-1]");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.TLSv1", 1, RECU_RESTART_TS, RECC_INT, "[0-1]");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.accelerator.type", 0, RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.accelerator_required", 0, RECU_RESTART_TS, RECC_INT, "[0-1]");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.number.threads", 0, RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.atalla.lib.path", "/opt/atalla/lib", RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.ncipher.lib.path", "/opt/nfast/toolkits/hwcrhk", RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.cswift.lib.path", "/usr/lib", RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.broadcom.lib.path", "/usr/lib", RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.server_port", 443, RECU_RESTART_TS, RECC_INT, "[0-65535]");
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.client.certification_level", 0, RECU_RESTART_TS, RECC_INT, "[0-2]");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.server.cert.filename", "server.pem", RECU_RESTART_TS, RECC_STR, "^[^[:space:]]+$");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.server.cert.path", "etc/trafficserver", RECU_RESTART_TS, RECC_STR, "^[^[:space:]]+$");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.server.cert_chain.filename", NULL, RECU_RESTART_TS, RECC_STR, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.server.multicert.filename", "ssl_multicert.config", RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.server.private_key.filename", NULL, RECU_RESTART_TS, RECC_STR, "^[^[:space:]]*$");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.server.private_key.path", NULL, RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.CA.cert.filename", NULL, RECU_RESTART_TS, RECC_STR, "^[^[:space:]]*$");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.CA.cert.path", NULL, RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.ssl.client.verify.server", 0, RECU_RESTART_TS, RECC_INT, "[0-1]");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.client.cert.filename", NULL, RECU_RESTART_TS, RECC_STR, "^[^[:space:]]*$");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.client.cert.path", "etc/trafficserver", RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.client.private_key.filename", NULL, RECU_RESTART_TS, RECC_STR, "^[^[:space:]]*$");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.client.private_key.path", NULL, RECU_RESTART_TS, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.client.CA.cert.filename", NULL, RECU_RESTART_TS, RECC_STR, "^[^[:space:]]*$");
+  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.ssl.client.CA.cert.path", NULL, RECU_RESTART_TS, RECC_NULL, NULL);
 }
 
 void

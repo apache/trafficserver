@@ -158,7 +158,8 @@ ink_aio_init(ModuleVersion v)
                      RECD_FLOAT, RECP_NULL, (int) AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex, NULL);
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.threads_per_disk", 4, RECU_NULL, RECC_NULL, NULL);
+
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cache.threads_per_disk", 4, RECU_RESTART_TS, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 }
 

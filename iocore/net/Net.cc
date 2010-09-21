@@ -37,20 +37,16 @@ static inline void
 configure_net(void)
 {
 
-  IOCORE_RegisterConfigString(RECT_LOCAL, "proxy.local.incoming_ip_to_bind", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
+  IOCORE_RegisterConfigString(RECT_LOCAL, "proxy.local.incoming_ip_to_bind", NULL, RECU_RESTART_TS, RECC_NULL, NULL);
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,
-                               "proxy.config.net.connections_throttle", 8000, RECU_DYNAMIC, RECC_NULL, NULL);
-
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.net.connections_throttle", 8000, RECU_RESTART_TS, RECC_STR, "^[0-9]+$");
   IOCORE_RegisterConfigUpdateFunc("proxy.config.net.connections_throttle", change_net_connections_throttle, NULL);
   IOCORE_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
+
   IOCORE_ReadConfigInteger(throttle_enabled,"proxy.config.net.throttle_enabled");
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.net.listen_backlog", 1024, RECU_DYNAMIC, RECC_NULL, NULL);
-
+  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.net.listen_backlog", 1024, RECU_RESTART_TS, RECC_NULL, NULL);
   IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.net.max_poll_delay", 128, RECU_DYNAMIC, RECC_NULL, NULL);
-
-
 }
 
 
