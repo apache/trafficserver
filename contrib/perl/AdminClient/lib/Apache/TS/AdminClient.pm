@@ -580,18 +580,12 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.net.max_kqueue_len
  proxy.config.net.max_poll_delay
  proxy.config.net.nt.main_accept_pool_size
- proxy.config.net.os_sock_option_flag
- proxy.config.net.os_sock_recv_buffer_size
- proxy.config.net.os_sock_send_buffer_size
  proxy.config.net_snapshot_filename
  proxy.config.net.sock_mss_in
- proxy.config.net.sock_option_flag
  proxy.config.net.sock_option_flag_in
  proxy.config.net.sock_option_flag_out
- proxy.config.net.sock_recv_buffer_size
  proxy.config.net.sock_recv_buffer_size_in
  proxy.config.net.sock_recv_buffer_size_out
- proxy.config.net.sock_send_buffer_size
  proxy.config.net.sock_send_buffer_size_in
  proxy.config.net.sock_send_buffer_size_out
  proxy.config.net.tcp_accept_defer_timeout

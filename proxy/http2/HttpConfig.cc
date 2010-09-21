@@ -1073,15 +1073,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.sock_send_buffer_size_out, "proxy.config.net.sock_send_buffer_size_out");
   HttpEstablishStaticConfigLongLong(c.sock_option_flag_out, "proxy.config.net.sock_option_flag_out");
 
-  // deprecated configuration options
-  // these should be removed in the future
-  if (c.sock_recv_buffer_size_out == 0 && c.sock_send_buffer_size_out == 0 && c.sock_option_flag_out == 0) {
-    HttpEstablishStaticConfigLongLong(c.sock_recv_buffer_size_out, "proxy.config.net.os_sock_recv_buffer_size");
-    HttpEstablishStaticConfigLongLong(c.sock_send_buffer_size_out, "proxy.config.net.os_sock_send_buffer_size");
-    HttpEstablishStaticConfigLongLong(c.sock_option_flag_out, "proxy.config.net.os_sock_option_flag");
-  }
-  // end of deprecated config options
-
   c.fwd_proxy_auth_to_parent = 0;
 
   HttpEstablishStaticConfigLongLong(c.anonymize_remove_from, "proxy.config.http.anonymize_remove_from");

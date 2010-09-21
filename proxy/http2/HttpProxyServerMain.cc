@@ -288,15 +288,6 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
     REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
     REC_ReadConfigInteger(opt.sockopt_flags, "proxy.config.net.sock_option_flag_in");
 
-    // deprecated configuration options - bcall 4/25/07
-    // these should be removed in the future
-    if (opt.recv_bufsize == 0 && opt.send_bufsize == 0 && opt.sockopt_flags == 0) {
-      REC_ReadConfigInteger(opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size");
-      REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size");
-      REC_ReadConfigInteger(opt.sockopt_flags, "proxy.config.net.sock_option_flag");
-    }
-    // end of deprecated config options
-
     if (attr_string) {
       Attributes attr;
       get_connection_attributes(attr_string, &attr);

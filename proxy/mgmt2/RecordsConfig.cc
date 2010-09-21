@@ -1591,23 +1591,6 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.net.tcp_accept_defer_timeout", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$",
    RA_NULL}
   ,
-
-  // deprecated configuration options - bcall 4/25/07
-  // these should be removed in the future
-  {CONFIG, "proxy.config.net.sock_recv_buffer_size", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.net.sock_send_buffer_size", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.net.sock_option_flag", "", INK_INT, "0x0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.net.os_sock_recv_buffer_size", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.net.os_sock_send_buffer_size", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.net.os_sock_option_flag", "", INK_INT, "0x0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  // end of deprecated config options
-
   {CONFIG, "proxy.config.net.sock_recv_buffer_size_in", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.net.sock_send_buffer_size_in", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
