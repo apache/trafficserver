@@ -47,7 +47,7 @@
 //
 
 DNSConnection::DNSConnection():
-  fd(NO_FD), num(0), generator(time(NULL) ^ (long) this)
+  fd(NO_FD), num(0), generator((uint32)((uintptr_t)time(NULL) ^ (uintptr_t) this))
 {
   memset(&sa, 0, sizeof(struct sockaddr_in));
 }

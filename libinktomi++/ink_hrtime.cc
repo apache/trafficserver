@@ -138,7 +138,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64 val,
 
 
 int
-squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec)
+squid_timestamp_to_buf(char *buf, uint32 buf_size, uint64 timestamp_sec, uint64 timestamp_usec)
 {
   int res;
   const int tmp_buf_size = 32;

@@ -117,7 +117,6 @@ libinktomi___a_SOURCES = \
   I_Version.h \
   List.h \
   llqueue.cc \
-  llqueue.h \
   lockfile.cc \
   MatcherUtils.cc \
   MatcherUtils.h \

@@ -50,7 +50,7 @@ test(void *d)
     m3 = ink_freelist_new(flist);
 
     if ((m1 == m2) || (m1 == m3) || (m2 == m3)) {
-      printf("0x%08lx   0x%08lx   0x%08lx\n", (long) m1, (long) m2, (long) m3);
+      printf("0x%08llx   0x%08llx   0x%08llx\n", (uint64)(uintptr_t) m1, (uint64)(uintptr_t) m2, (uint64)(uintptr_t) m3);
       exit(1);
     }
 

@@ -159,7 +159,7 @@ DNSProcessor::dns_init()
 
   if (dns_ns_rr && dns_ns_list) {
     Debug("dns", "Nameserver list specified \"%s\"\n", dns_ns_list);
-    unsigned long nameserver_ip[MAX_NAMED];
+    uint32 nameserver_ip[MAX_NAMED];
     int nameserver_port[MAX_NAMED];
     int i, j;
     char *last, *ndx;
@@ -1351,7 +1351,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
       short int type, cls;
       GETSHORT(type, cp);
       GETSHORT(cls, cp); // NOTE: Don't eliminate this, it'll break badly.
-      GETLONG(temp_ttl, cp);
+      GETLONG(temp_ttl, cp); // NOTE: this is not a "long" but 32-bits (from nameser_compat.h)
       if ((temp_ttl < buf->ttl) || (buf->ttl == 0))
         buf->ttl = temp_ttl;
       GETSHORT(n, cp);
@@ -1454,8 +1454,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
           buflen -= nn;
         }
         // attempt to use the original buffer (if it is word aligned)
-        // FIXME: is this alignment check correct?
-        if (!(((unsigned long) cp) % sizeof(unsigned int))) {
+        if (!(((uintptr_t) cp) % sizeof(unsigned int))) {
           *hap++ = cp;
           cp += n;
         } else {

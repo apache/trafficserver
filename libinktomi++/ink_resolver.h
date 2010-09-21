@@ -255,7 +255,7 @@ struct __ink_res_state_ext {
 };
 
 
-int ink_res_init(ink_res_state, unsigned long *pHostList,
+int ink_res_init(ink_res_state, unsigned int *pHostList,
                  int *pPort = 0, char *pDefDomain = 0, char *pSearchList = 0);
 int ink_res_mkquery(ink_res_state, int, const char *, int, int,
                     const unsigned char *, int, const unsigned char *, unsigned char *, int);

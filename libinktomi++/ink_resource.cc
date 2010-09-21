@@ -143,7 +143,7 @@ res_hash(const char *s)
   unsigned int h;
   unsigned int ibp;
 
-  ink_assert(!((long) s & 3));
+  ink_assert(!((uintptr_t) s & 3));
 
   for (h = 0;;) {
     ibp = *(unsigned int *) s;

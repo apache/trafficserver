@@ -424,7 +424,7 @@ ink_res_get_nibblesuffix2(ink_res_state statp) {
  */
 /*% This function has to be reachable by res_data.c but not publically. */
 int
-ink_res_init(ink_res_state statp, unsigned long *pHostList, int *pPort, char *pDefDomain, char *pSearchList) {
+ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDefDomain, char *pSearchList) {
   register FILE *fp;
   register char *cp, **pp;
   register int n;

@@ -662,7 +662,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
                           &m_servers.x_def_domain[0], &m_servers.x_domain_srch_list[0]))) {
 
     snprintf(errBuf, errBufLen,
-                 "Failed to build res record for the servers %lu ... on port %d",
+                 "Failed to build res record for the servers %u ... on port %d",
                  m_servers.x_server_ip[0], m_servers.x_dns_server_port[0]);
 
     return errBuf;

@@ -338,7 +338,7 @@ ink_code_incr_MMH_update(MMH_CTX * ctx, const char *ainput, int input_length)
   }
   {
     // check alignment
-    int alignment = (long) in & 0x3;
+    int alignment = (int)((intptr_t) in & 0x3);
     if (alignment) {
 #if defined(_BIG_ENDIAN)
 #define big_endian 1

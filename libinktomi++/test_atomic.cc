@@ -63,7 +63,7 @@ volatile int al_done = 0;
 void *
 testalist(void *ame)
 {
-  int me = (int) (long) ame;
+  int me = (int) (uintptr_t) ame;
   int j, k;
   for (k = 0; k < MAX_ALIST_ARRAY; k++)
     ink_atomiclist_push(&al[k % MAX_ALIST_TEST], &al_test[me][k]);

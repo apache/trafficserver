@@ -44,7 +44,7 @@ ink_memchr(const void *as, int ac, size_t an)
 
   // initial segment
 
-  int i_len = ((unsigned long) 8 - (unsigned long) as) & 7;
+  int i_len = (int)(((uintptr_t) 8 - (uintptr_t) as) & 7);
 
   // too short to concern us
 

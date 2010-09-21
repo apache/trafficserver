@@ -35,9 +35,9 @@
 #include "ink_assert.h"
 #include "Compatability.h"
 
-int squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);
-char *int64_to_str(char *buf, unsigned int buf_size, int64 val,
-                   unsigned int *total_chars, unsigned int req_width, char pad_char);
+int squid_timestamp_to_buf(char *buf, uint32 buf_size, uint64 timestamp_sec, uint64 timestamp_usec);
+char *int64_to_str(char *buf, int32 buf_size, int64 val,
+                   uint32 *total_chars, uint32 req_width, char pad_char);
 
 #ifdef NEED_HRTIME
 #include <time.h>
@@ -66,11 +66,11 @@ hrtime_rdtsc()
   asm volatile (".byte 0x0f, 0x31":"=A" (rv));
   return (rv);
 }
-static inline unsigned long long
+static inline uint64
 get_hrtime_rdtsc()
 {
   // do it fixed point if you have better hardware support
-  return (unsigned long long) (hrtime_freq_float * hrtime_rdtsc());
+  return (uint64) (hrtime_freq_float * hrtime_rdtsc());
 }
 #endif
 
@@ -219,8 +219,8 @@ ink_hrtime_to_timeval(ink_hrtime t)
   struct timeval tv;
 
   usecs = ink_hrtime_to_usec(t);
-  tv.tv_sec = (long) (usecs / 1000000);
-  tv.tv_usec = (long) (usecs % 1000000);
+  tv.tv_sec = usecs / 1000000;
+  tv.tv_usec = usecs % 1000000;
   return (tv);
 }
 
@@ -228,8 +228,8 @@ static inline int
 ink_hrtime_to_timeval2(ink_hrtime t, struct timeval *tv)
 {
   int64 usecs = ink_hrtime_to_usec(t);
-  tv->tv_sec = (long) (usecs / 1000000);
-  tv->tv_usec = (long) (usecs % 1000000);
+  tv->tv_sec = usecs / 1000000;
+  tv->tv_usec = usecs % 1000000;
   return 0;
 }
 
@@ -319,7 +319,7 @@ ink_based_hrtime_to_timespec(ink_hrtime t)
 {
   timespec ts;
   ts.tv_sec = (time_t) (t / HRTIME_SECOND);
-  ts.tv_nsec = (long) (t % HRTIME_SECOND);
+  ts.tv_nsec = (t % HRTIME_SECOND);
   return ts;
 }
 

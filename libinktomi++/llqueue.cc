@@ -32,7 +32,7 @@
 #include <limits.h>
 
 #include "ink_unused.h" /* MAGIC_EDITING_TAG */
-#include "llqueue.h"
+#include "ink_llqueue.h"
 #include "errno.h"
 
 #define RECORD_CHUNK 1024
@@ -158,10 +158,10 @@ enqueue(LLQ * Q, void *data)
   return 1;
 }
 
-unsigned long
+uint64
 queue_len(LLQ * Q)
 {
-  unsigned long len;
+  uint64 len;
 
   /* Do I really need to grab the lock here? */
   /* ink_mutex_acquire(&(Q->mux)); */
@@ -170,10 +170,10 @@ queue_len(LLQ * Q)
   return len;
 }
 
-unsigned long
+uint64
 queue_highwater(LLQ * Q)
 {
-  unsigned long highwater;
+  uint64 highwater;
 
   /* Do I really need to grab the lock here? */
   /* ink_mutex_acquire(&(Q->mux)); */
@@ -206,7 +206,7 @@ queue_highwater(LLQ * Q)
 int
 queue_is_empty(LLQ * Q)
 {
-  unsigned long len;
+  uint64 len;
 
   len = queue_len(Q);
 
