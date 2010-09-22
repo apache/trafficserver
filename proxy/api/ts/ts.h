@@ -2387,8 +2387,6 @@ extern "C"
       TS_STAT_SYNC_COUNT,
       TS_STAT_SYNC_AVG,
       TS_STAT_SYNC_TIMEAVG,
-      TS_STAT_SYNC_MSECS_TO_SECONDS,
-      TS_STAT_SYNC_MHR_TIMEAVG
     } TSStatSync;
 
   inkapi int TSRegisterStat(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync);
@@ -2402,9 +2400,6 @@ extern "C"
   inkapi INKReturnCode TSStatIntSet(int the_stat, INK64 value);
   inkapi INKReturnCode TSStatFloatGet(int the_stat, float* value);
   inkapi INKReturnCode TSStatFloatSet(int the_stat, float value);
-
-  inkapi INKReturnCode TSStatCountGet(int the_stat, INK64* count);
-  inkapi INKReturnCode TSStatCountSet(int the_stat, INK64 count);
 
 
   /* --------------------------------------------------------------------------
