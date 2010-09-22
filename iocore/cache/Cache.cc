@@ -1900,19 +1900,17 @@ CacheVC::handleRead(int event, Event *e)
   cancel_trigger();
 
   f.doc_from_ram_cache = false;
+
   // check ram cache
   ink_debug_assert(part->mutex->thread_holding == this_ethread());
-  if (part->ram_cache->get(read_key, &buf, 0, dir_offset(&dir))) {
-    CACHE_INCREMENT_DYN_STAT(cache_ram_cache_hits_stat);
+  if (part->ram_cache->get(read_key, &buf, 0, dir_offset(&dir)))
     goto LramHit;
-  }
+
   // check if it was read in the last open_read call
   if (*read_key == part->first_fragment_key && dir_offset(&dir) == part->first_fragment_offset) {
     buf = part->first_fragment_data;
     goto LmemHit;
   }
-
-  CACHE_INCREMENT_DYN_STAT(cache_ram_cache_misses_stat);
 
   // see if its in the aggregation buffer
   if (dir_agg_buf_valid(part, &dir)) {
