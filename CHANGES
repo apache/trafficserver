@@ -11,6 +11,7 @@ Changes with Apache Traffic Server 2.1.3
 
   *) Make the target fragment size configurable for the disk cache. This
    adds a new option, proxy.config.cache.target_fragment_size [TS-445].
+   This should dramatically improve large file disk performance.
 
   *) Improve build include dependencies [TS-442].
 
@@ -64,6 +65,8 @@ Changes with Apache Traffic Server 2.1.3
   *) TS fails to use user ID with user name > 8 characters (author: Yakov
    Markovitch) [TS-420].
 
+  *) Duplication of RAM cache hits and miss statistics (reading 2x) (author: John
+   Plevyak) [TS-453].
 
 Changes with Apache Traffic Server 2.1.2
 
