@@ -31,20 +31,20 @@
 
 #define STAT_PROCESSOR
 
+
 //-------------------------------------------------------------------------
 // Error Values
 //-------------------------------------------------------------------------
-
 enum RecErrT
 {
   REC_ERR_FAIL = -1,
   REC_ERR_OKAY = 0
 };
 
+
 //-------------------------------------------------------------------------
 // Types
 //-------------------------------------------------------------------------
-
 #define RecStringNull NULL
 
 typedef int64 RecInt;
@@ -119,10 +119,10 @@ enum RecAccessT
   RECA_READ_ONLY
 };
 
+
 //-------------------------------------------------------------------------
 // Data Union
 //-------------------------------------------------------------------------
-
 union RecData
 {
   RecInt rec_int;
@@ -131,10 +131,10 @@ union RecData
   RecCounter rec_counter;
 };
 
+
 //-------------------------------------------------------------------------
 // RawStat Structures
 //-------------------------------------------------------------------------
-
 struct RecRawStat
 {
   int64 sum;
@@ -146,9 +146,9 @@ struct RecRawStat
   int64 last_count; // value from the last global sync
 };
 
+
 // WARNING!  It's advised that developers do not modify the contents of
 // the RecRawStatBlock.  ^_^
-
 struct RecRawStatBlock
 {
   off_t ethr_stat_offset;   // thread local raw-stat storage
@@ -158,23 +158,22 @@ struct RecRawStatBlock
   ink_mutex mutex;
 };
 
+
 //-------------------------------------------------------------------------
 // RecCore Callback Types
 //-------------------------------------------------------------------------
-
 typedef int (*RecConfigUpdateCb) (const char *name, RecDataT data_type, RecData data, void *cookie);
-
 typedef int (*RecStatUpdateFunc) (const char *name, RecDataT data_type,
                                   RecData * data, RecRawStatBlock * rsb, int id, void *cookie);
-
 typedef int (*RecRawStatSyncCb) (const char *name, RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id);
+
 
 //-------------------------------------------------------------------------
 // RecTree Defines
 //-------------------------------------------------------------------------
-
 #define REC_VAR_NAME_DELIMITOR '.'
 #define REC_VAR_NAME_WILDCARD  '*'
+
 
 // System Defaults
 extern char system_root_dir[PATH_NAME_MAX + 1];

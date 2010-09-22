@@ -53,38 +53,37 @@ RecTree *g_records_tree = NULL;
 int g_type_records[RECT_MAX][REC_MAX_RECORDS];
 int g_type_num_records[RECT_MAX];
 
+
 //-------------------------------------------------------------------------
 // register_record
 //-------------------------------------------------------------------------
-
 static RecRecord *
 register_record(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, bool release_record_lock)
 {
-
   RecRecord *r = NULL;
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
-
-    rec_mutex_acquire(&(r->lock));
+    if (release_record_lock) {
+      rec_mutex_acquire(&(r->lock));
+    }
     ink_release_assert(r->rec_type == rec_type);
     ink_release_assert(r->data_type == data_type);
     // Note: do not set r->data as we want to keep the previous value
     RecDataSet(r->data_type, &(r->data_default), &(data_default));
-
   } else {
-
     if ((r = RecAlloc(rec_type, name, data_type)) == NULL) {
       return NULL;
     }
-    rec_mutex_acquire(&(r->lock));
+    if (release_record_lock) {
+      rec_mutex_acquire(&(r->lock));
+    }
     // Set the r->data to its default value as this is a new record
     RecDataSet(r->data_type, &(r->data), &(data_default));
     RecDataSet(r->data_type, &(r->data_default), &(data_default));
     ink_hash_table_insert(g_records_ht, name, (void *) r);
-
   }
 
-  // we're not registered
+  // we're now registered
   r->registered = true;
 
   if (release_record_lock) {
@@ -92,13 +91,12 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
   }
 
   return r;
-
 }
+
 
 //-------------------------------------------------------------------------
 // link_XXX
 //-------------------------------------------------------------------------
-
 static int
 link_int(const char *name, RecDataT data_type, RecData data, void *cookie)
 {
@@ -173,14 +171,13 @@ link_string_alloc(const char *name, RecDataT data_type, RecData data, void *cook
   return REC_ERR_OKAY;
 }
 
+
 //-------------------------------------------------------------------------
 // RecCoreInit
 //-------------------------------------------------------------------------
-
 int
 RecCoreInit(RecModeT mode_type, Diags *_diags)
 {
-
   if (g_initialized) {
     return REC_ERR_OKAY;
   }
@@ -242,13 +239,12 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   g_initialized = true;
 
   return REC_ERR_OKAY;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecSetDiags
 //-------------------------------------------------------------------------
-
 int
 RecSetDiags(Diags * _diags)
 {
@@ -258,10 +254,10 @@ RecSetDiags(Diags * _diags)
   return REC_ERR_OKAY;
 }
 
+
 //-------------------------------------------------------------------------
 // RecLinkCnfigXXX
 //-------------------------------------------------------------------------
-
 int
 RecLinkConfigInt(const char *name, RecInt * rec_int)
 {
@@ -310,14 +306,13 @@ RecLinkConfigString(const char *name, RecString * rec_string)
   return RecRegisterConfigUpdateCb(name, link_string_alloc, (void *) rec_string);
 }
 
+
 //-------------------------------------------------------------------------
 // RecRegisterConfigUpdateCb
 //-------------------------------------------------------------------------
-
 int
 RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *cookie)
 {
-
   int err = REC_ERR_FAIL;
   RecRecord *r;
 
@@ -362,14 +357,12 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
   ink_rwlock_unlock(&g_records_rwlock);
 
   return err;
-
 }
 
 
 //-------------------------------------------------------------------------
 // RecGetRecordXXX
 //-------------------------------------------------------------------------
-
 int
 RecGetRecordInt(const char *name, RecInt *rec_int, bool lock)
 {
@@ -480,10 +473,10 @@ RecGetRecordGeneric_Xmalloc(const char *name, RecString * rec_string, bool lock)
   return err;
 }
 
+
 //-------------------------------------------------------------------------
 // RecGetRec Attributes
 //-------------------------------------------------------------------------
-
 int
 RecGetRecordType(const char *name, RecT * rec_type, bool lock)
 {
@@ -657,13 +650,11 @@ RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
 int
 RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
 {
-
   REC_NOWARN_UNUSED(lock);
   int err;
   RecRecord *r = NULL;
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
-
     *buf = (char *) xmalloc(sizeof(char) * 1024);
     memset(*buf, 0, 1024);
     err = REC_ERR_OKAY;
@@ -698,7 +689,6 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
   }
 
   return err;
-
 }
 
 
@@ -752,15 +742,12 @@ RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
 }
 
 
-
 //-------------------------------------------------------------------------
 // RecRegisterStat
 //-------------------------------------------------------------------------
-
 RecRecord *
 RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type)
 {
-
   RecRecord *r = NULL;
   ink_rwlock_wrlock(&g_records_rwlock);
   if ((r = register_record(rec_type, name, data_type, data_default, false)) != NULL) {
@@ -772,19 +759,17 @@ RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData dat
   ink_rwlock_unlock(&g_records_rwlock);
 
   return r;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecRegisterConfig
 //-------------------------------------------------------------------------
-
 RecRecord *
 RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type,
                   RecData data_default, RecUpdateT update_type,
                   RecCheckT check_type, const char *check_expr, RecAccessT access_type)
 {
-
   RecRecord *r;
   ink_rwlock_wrlock(&g_records_rwlock);
   if ((r = register_record(rec_type, name, data_type, data_default, false)) != NULL) {
@@ -802,17 +787,15 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type,
   ink_rwlock_unlock(&g_records_rwlock);
 
   return r;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecGetRecord_Xmalloc
 //-------------------------------------------------------------------------
-
 int
 RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool lock)
 {
-
   int err = REC_ERR_OKAY;
   RecRecord *r;
 
@@ -842,14 +825,13 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
   return err;
 }
 
+
 //-------------------------------------------------------------------------
 // RecForceInsert
 //-------------------------------------------------------------------------
-
 RecRecord *
 RecForceInsert(RecRecord * record)
 {
-
   RecRecord *r = NULL;
   bool r_is_a_new_record;
 
@@ -895,17 +877,15 @@ RecForceInsert(RecRecord * record)
   ink_rwlock_unlock(&g_records_rwlock);
 
   return r;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecDumpRecordsHt
 //-------------------------------------------------------------------------
-
 void
 RecDumpRecordsHt(RecT rec_type)
 {
-
   int i, num_records;
 
   RecDebug(DL_Note, "Dumping Records:");
@@ -936,7 +916,6 @@ RecDumpRecordsHt(RecT rec_type)
       rec_mutex_release(&(r->lock));
     }
   }
-
 }
 
 void
@@ -962,11 +941,9 @@ RecGetRecordList(char *var, char ***buffer, int *count)
 //     mimics/replaces proxy/StatSystem.cc::stat_callback().
 //     returns the number of variables name match the prefix.
 //-------------------------------------------------------------------------
-
 int
 RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
 {
-
   int num_records = g_num_records;
   int result_size = num_records * 128;  /* estimate buffer size */
   int num_matched = 0;
@@ -1004,19 +981,16 @@ RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
     }
   }
 
-
   *buf = result;
   *buf_len = strlen(result);
 
   return num_matched;
-
 }
 
 
 //-------------------------------------------------------------------------
 // REC_ConfigReadInteger (backwards compatibility)
 //-------------------------------------------------------------------------
-
 RecInt
 REC_ConfigReadInteger(const char *name)
 {
@@ -1025,10 +999,10 @@ REC_ConfigReadInteger(const char *name)
   return t;
 }
 
+
 //-------------------------------------------------------------------------
 // REC_ConfigReadString (backwards compatibility)
 //-------------------------------------------------------------------------
-
 char *
 REC_ConfigReadString(const char *name)
 {
@@ -1037,10 +1011,10 @@ REC_ConfigReadString(const char *name)
   return t;
 }
 
+
 //-------------------------------------------------------------------------
 // REC_ConfigReadFloat (backwards compatibility)
 //-------------------------------------------------------------------------
-
 RecFloat
 REC_ConfigReadFloat(const char *name)
 {
@@ -1049,10 +1023,10 @@ REC_ConfigReadFloat(const char *name)
   return t;
 }
 
+
 //-------------------------------------------------------------------------
 // REC_ConfigReadCounter (backwards compatibility)
 //-------------------------------------------------------------------------
-
 RecCounter
 REC_ConfigReadCounter(const char *name)
 {
@@ -1065,7 +1039,6 @@ REC_ConfigReadCounter(const char *name)
 //-------------------------------------------------------------------------
 // MGMT2 Marco (backwards compatibility)
 //-------------------------------------------------------------------------
-
 RecInt
 REC_readInteger(const char *name, bool * found, bool lock)
 {
@@ -1115,7 +1088,6 @@ REC_readString(const char *name, bool * found, bool lock)
 }
 
 // MGMT2 Marco's -- converting lmgmt->record_data->setXXX
-
 bool
 REC_setInteger(const char *name, RecInt value, bool dirty)
 {

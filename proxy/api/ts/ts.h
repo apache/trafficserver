@@ -2389,16 +2389,17 @@ extern "C"
 
   inkapi int TSRegisterStat(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync);
 
-  inkapi INKReturnCode TSStatIntIncrement(int the_stat, INK64 amount);
-  inkapi INKReturnCode TSStatIntDecrement(int the_stat, INK64 amount);
+  inkapi INKReturnCode TSStatIntIncrement(int the_stat, INKMgmtInt amount);
+  inkapi INKReturnCode TSStatIntDecrement(int the_stat, INKMgmtInt amount);
   inkapi INKReturnCode TSStatFloatIncrement(int the_stat, float amount);
   inkapi INKReturnCode TSStatFloatDecrement(int the_stat, float amount);
 
-  inkapi INKReturnCode TSStatIntGet(int the_stat, INK64* value);
-  inkapi INKReturnCode TSStatIntSet(int the_stat, INK64 value);
+  inkapi INKReturnCode TSStatIntGet(int the_stat, INKMgmtInt* value);
+  inkapi INKReturnCode TSStatIntSet(int the_stat, INKMgmtInt value);
   inkapi INKReturnCode TSStatFloatGet(int the_stat, float* value);
   inkapi INKReturnCode TSStatFloatSet(int the_stat, float value);
 
+  inkapi int TSStatsFindName(const char* name);
 
   /* --------------------------------------------------------------------------
      This is the old stats system, it's completely deprecated, and should not

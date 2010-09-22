@@ -28,14 +28,13 @@
 #include "P_RecCompatibility.h"
 #include "P_RecUtils.h"
 
+
 //-------------------------------------------------------------------------
 // i_am_the_record_owner
 //-------------------------------------------------------------------------
-
 static bool
 i_am_the_record_owner(RecT rec_type)
 {
-
 #if defined (REC_LOCAL)
 
   switch (rec_type) {
@@ -91,17 +90,15 @@ i_am_the_record_owner(RecT rec_type)
 #endif
 
   return false;
-
 }
+
 
 //-------------------------------------------------------------------------
 // send_set_message
 //-------------------------------------------------------------------------
-
 static int
 send_set_message(RecRecord * record)
 {
-
   RecMessage *m;
 
   rec_mutex_acquire(&(record->lock));
@@ -113,17 +110,15 @@ send_set_message(RecRecord * record)
   rec_mutex_release(&(record->lock));
 
   return REC_ERR_OKAY;
-
 }
+
 
 //-------------------------------------------------------------------------
 // send_register_message
 //-------------------------------------------------------------------------
-
 static int
 send_register_message(RecRecord * record)
 {
-
   RecMessage *m;
 
   rec_mutex_acquire(&(record->lock));
@@ -135,17 +130,15 @@ send_register_message(RecRecord * record)
   rec_mutex_release(&(record->lock));
 
   return REC_ERR_OKAY;
-
 }
+
 
 //-------------------------------------------------------------------------
 // send_push_message
 //-------------------------------------------------------------------------
-
 static int
 send_push_message()
 {
-
   RecRecord *r;
   RecMessage *m;
   int i, num_records;
@@ -172,17 +165,15 @@ send_push_message()
   RecMessageFree(m);
 
   return REC_ERR_OKAY;
-
 }
+
 
 //-------------------------------------------------------------------------
 // send_pull_message
 //-------------------------------------------------------------------------
-
 static int
 send_pull_message(RecMessageT msg_type)
 {
-
   RecRecord *r;
   RecMessage *m;
   int i, num_records;
@@ -225,13 +216,12 @@ send_pull_message(RecMessageT msg_type)
   RecMessageFree(m);
 
   return REC_ERR_OKAY;
-
 }
+
 
 //-------------------------------------------------------------------------
 // recv_message_cb
 //-------------------------------------------------------------------------
-
 static int
 recv_message_cb(RecMessage * msg, RecMessageT msg_type, void *cookie)
 {
@@ -301,13 +291,12 @@ recv_message_cb(RecMessage * msg, RecMessageT msg_type, void *cookie)
   }
 
   return REC_ERR_OKAY;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecRegisterStatXXX
 //-------------------------------------------------------------------------
-
 #define REC_REGISTER_STAT_XXX(A, B) \
   ink_debug_assert((rec_type == RECT_NODE)    || \
 		   (rec_type == RECT_CLUSTER) || \
@@ -353,10 +342,10 @@ RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default,
   REC_REGISTER_STAT_XXX(rec_counter, RECD_COUNTER);
 }
 
+
 //-------------------------------------------------------------------------
 // RecRegisterConfigXXX
 //-------------------------------------------------------------------------
-
 #define REC_REGISTER_CONFIG_XXX(A, B) \
   RecRecord *r; \
   RecData my_data_default; \
@@ -412,14 +401,13 @@ RecRegisterConfigCounter(RecT rec_type, const char *name,
   REC_REGISTER_CONFIG_XXX(rec_counter, RECD_COUNTER);
 }
 
+
 //-------------------------------------------------------------------------
 // RecSetRecordXXX
 //-------------------------------------------------------------------------
-
 int
 RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, bool lock)
 {
-
   int err = REC_ERR_OKAY;
   RecRecord *r1;
 
@@ -430,9 +418,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
   }
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **) &r1)) {
-
     if (i_am_the_record_owner(r1->rec_type)) {
-
       rec_mutex_acquire(&(r1->lock));
       if ((data_type != RECD_NULL) && (r1->data_type != data_type)) {
         err = REC_ERR_FAIL;
@@ -525,7 +511,6 @@ Ldone:
   }
 
   return err;
-
 }
 
 int
@@ -568,14 +553,13 @@ RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock)
   return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, NULL, lock);
 }
 
+
 //-------------------------------------------------------------------------
 // RecReadStatsFile
 //-------------------------------------------------------------------------
-
 int
 RecReadStatsFile()
 {
-
   RecRecord *r;
   RecMessage *m;
   RecMessageItr itr;
@@ -596,17 +580,15 @@ RecReadStatsFile()
   ink_rwlock_unlock(&g_records_rwlock);
 
   return REC_ERR_OKAY;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecSyncStatsFile
 //-------------------------------------------------------------------------
-
 int
 RecSyncStatsFile()
 {
-
   RecRecord *r;
   RecMessage *m;
   int i, num_records;
@@ -615,7 +597,6 @@ RecSyncStatsFile()
   // g_mode_type is defined in either RecLocal.cc or RecProcess.cc.
   // We can access it since we're inlined by on of these two files.
   if (g_mode_type == RECM_SERVER || g_mode_type == RECM_STAND_ALONE) {
-
     m = RecMessageAlloc(RECG_NULL);
     num_records = g_num_records;
     sync_to_disk = false;
@@ -635,21 +616,18 @@ RecSyncStatsFile()
       RecMessageWriteToDisk(m, g_stats_snap_fpath);
     }
     RecMessageFree(m);
-
   }
 
   return REC_ERR_OKAY;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecReadConfigFile
 //-------------------------------------------------------------------------
-
 int
 RecReadConfigFile()
 {
-
   char *fbuf;
   int fsize;
 
@@ -695,7 +673,6 @@ RecReadConfigFile()
   line = line_tok.iterFirst(&line_tok_state);
   line_num = 1;
   while (line) {
-
     char *lc = xstrdup(line);
     char *lt = lc;
     char *ln;
@@ -756,8 +733,7 @@ RecReadConfigFile()
     } else if (strcmp(rec_type_str, "LOCAL") == 0) {
       rec_type = RECT_LOCAL;
     } else {
-      RecLog(DL_Warning, "Unknown record type '%s' at '%s:%d' -- skipping line",
-             rec_type_str, g_rec_config_fpath, line_num);
+      RecLog(DL_Warning, "Unknown record type '%s' at '%s:%d' -- skipping line", rec_type_str, g_rec_config_fpath, line_num);
       goto L_next_line;
     }
 
@@ -772,8 +748,7 @@ RecReadConfigFile()
     } else if (strcmp(data_type_str, "COUNTER") == 0) {
       data_type = RECD_COUNTER;
     } else {
-      RecLog(DL_Warning, "Unknown data type '%s' at '%s:%d' -- skipping line",
-             data_type_str, g_rec_config_fpath, line_num);
+      RecLog(DL_Warning, "Unknown data type '%s' at '%s:%d' -- skipping line", data_type_str, g_rec_config_fpath, line_num);
       goto L_next_line;
     }
 
@@ -788,7 +763,6 @@ RecReadConfigFile()
     cfe->entry = xstrdup(name_str);
     enqueue(g_rec_config_contents_llq, (void *) cfe);
     ink_hash_table_insert(g_rec_config_contents_ht, name_str, NULL);
-
     goto L_done;
 
   L_next_line:
@@ -803,34 +777,28 @@ RecReadConfigFile()
     line = line_tok.iterNext(&line_tok_state);
     line_num++;
     xfree(lc);
-
   }
 
   // release our hash table
   ink_rwlock_unlock(&g_records_rwlock);
-
   ink_mutex_release(&g_rec_config_lock);
-
   xfree(fbuf);
 
   return REC_ERR_OKAY;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecSyncConfigFile
 //-------------------------------------------------------------------------
-
 int
 RecSyncConfigToTB(textBuffer * tb)
 {
-
   int err = REC_ERR_FAIL;
 
   // g_mode_type is defined in either RecLocal.cc or RecProcess.cc.
   // We can access it since we're inlined by on of these two files.
   if (g_mode_type == RECM_SERVER || g_mode_type == RECM_STAND_ALONE) {
-
     RecRecord *r;
     int i, num_records;
     RecConfigFileEntry *cfe;
@@ -936,27 +904,21 @@ RecSyncConfigToTB(textBuffer * tb)
         }
         llq_rec = llq_rec->next;
       }
-
       ink_rwlock_unlock(&g_records_rwlock);
-
     }
-
     ink_mutex_release(&g_rec_config_lock);
-
   }
 
   return err;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecExecConifgUpdateCbs
 //-------------------------------------------------------------------------
-
 int
 RecExecConfigUpdateCbs()
 {
-
   RecRecord *r;
   int i, num_records;
   unsigned int update_required_type;
@@ -991,20 +953,17 @@ RecExecConfigUpdateCbs()
         }
         r->config_meta.update_required = r->config_meta.update_required & ~update_required_type;
       }
-
     }
     rec_mutex_release(&(r->lock));
   }
 
   return REC_ERR_OKAY;
-
 }
 
 
 //------------------------------------------------------------------------
 // RecResetStatRecord
 //------------------------------------------------------------------------
-
 int
 RecResetStatRecord(char *name)
 {
@@ -1012,16 +971,12 @@ RecResetStatRecord(char *name)
   int err = REC_ERR_OKAY;
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **) &r1)) {
-
     if (i_am_the_record_owner(r1->rec_type)) {
-
       rec_mutex_acquire(&(r1->lock));
       RecDataSet(r1->data_type, &(r1->data), &(r1->data_default));
       rec_mutex_release(&(r1->lock));
       err = REC_ERR_OKAY;
-
     } else {
-
       RecRecord r2;
       memset(&r2, 0, sizeof(RecRecord));
       r2.rec_type = r1->rec_type;
@@ -1030,11 +985,8 @@ RecResetStatRecord(char *name)
       r2.data = r1->data_default;
 
       err = send_set_message(&r2);
-
     }
-
   } else {
-
     err = REC_ERR_FAIL;
   }
 
@@ -1045,7 +997,6 @@ RecResetStatRecord(char *name)
 //------------------------------------------------------------------------
 // RecResetStatRecord
 //------------------------------------------------------------------------
-
 int
 RecResetStatRecord(RecT type)
 {
@@ -1061,17 +1012,13 @@ RecResetStatRecord(RecT type)
     if (REC_TYPE_IS_STAT(r1->rec_type) &&
         ((type == RECT_NULL) || (r1->rec_type == type)) &&
         (r1->stat_meta.persist_type != RECP_NON_PERSISTENT) && (r1->data_type != RECD_STRING)) {
-
       if (i_am_the_record_owner(r1->rec_type)) {
-
         rec_mutex_acquire(&(r1->lock));
         if (!RecDataSet(r1->data_type, &(r1->data), &(r1->data_default))) {
           err = REC_ERR_FAIL;
         }
         rec_mutex_release(&(r1->lock));
-
       } else {
-
         RecRecord r2;
         memset(&r2, 0, sizeof(RecRecord));
         r2.rec_type = r1->rec_type;
@@ -1080,11 +1027,8 @@ RecResetStatRecord(RecT type)
         r2.data = r1->data_default;
 
         err = send_set_message(&r2);
-
       }
-
     }
-
   }
   return err;
 }
@@ -1093,7 +1037,6 @@ RecResetStatRecord(RecT type)
 int
 RecSetSyncRequired(char *name, bool lock)
 {
-
   int err = REC_ERR_FAIL;
   RecRecord *r1;
 
@@ -1105,7 +1048,6 @@ RecSetSyncRequired(char *name, bool lock)
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **) &r1)) {
     if (i_am_the_record_owner(r1->rec_type)) {
-
       rec_mutex_acquire(&(r1->lock));
       r1->sync_required = REC_SYNC_REQUIRED;
       if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
@@ -1113,9 +1055,7 @@ RecSetSyncRequired(char *name, bool lock)
       }
       rec_mutex_release(&(r1->lock));
       err = REC_ERR_OKAY;
-
     } else {
-
       // No point of doing the following because our peer will
       // set the value with RecDataSet. However, since
       // r2.name == r1->name, the sync_required bit will not be
@@ -1131,9 +1071,7 @@ RecSetSyncRequired(char *name, bool lock)
 
          err = send_set_message(&r2);
        */
-
     }
-
   }
 
   if (lock) {
@@ -1141,5 +1079,4 @@ RecSetSyncRequired(char *name, bool lock)
   }
 
   return err;
-
 }

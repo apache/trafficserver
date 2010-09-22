@@ -27,21 +27,21 @@
 #include "I_RecCore.h"
 #include "I_EventSystem.h"
 
+
 //-------------------------------------------------------------------------
 // Initialization/Starting
 //-------------------------------------------------------------------------
-
 int RecProcessInit(RecModeT mode_type, Diags * diags = NULL);
 int RecProcessInitMessage(RecModeT mode_type);
 int RecProcessStart();
 
+
 //-------------------------------------------------------------------------
 // RawStat Registration
 //-------------------------------------------------------------------------
-
 RecRawStatBlock *RecAllocateRawStatBlock(int num_stats);
-
 int RecRegisterRawStat(RecRawStatBlock * rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id, RecRawStatSyncCb sync_cb);
+
 
 // RecRawStatRange* RecAllocateRawStatRange (int num_buckets);
 
@@ -53,10 +53,10 @@ int RecRegisterRawStat(RecRawStatBlock * rsb, RecT rec_type, const char *name, R
 //                           RecInt min,
 //                           RecInt max);
 
+
 //-------------------------------------------------------------------------
 // Predefined RawStat Callbacks
 //-------------------------------------------------------------------------
-
 int RecRawStatSyncSum(const char *name, RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id);
 int RecRawStatSyncCount(const char *name, RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id);
 int RecRawStatSyncAvg(const char *name, RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id);
@@ -64,6 +64,7 @@ int RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData * data
 int RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type,
                                          RecData * data, RecRawStatBlock * rsb, int id);
 int RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id);
+
 
 //-------------------------------------------------------------------------
 // RawStat Setting/Getting
@@ -84,10 +85,10 @@ int RecSetRawStatBlock(RecRawStatBlock * rsb, RecRawStat * stat_array);
 int RecGetRawStatSum(RecRawStatBlock * rsb, int id, int64 * data);
 int RecGetRawStatCount(RecRawStatBlock * rsb, int id, int64 * data);
 
+
 //-------------------------------------------------------------------------
 // Global RawStat Items (e.g. same as above, but no thread-local behavior)
 //-------------------------------------------------------------------------
-
 int RecIncrGlobalRawStat(RecRawStatBlock * rsb, int id, int64 incr = 1);
 int RecIncrGlobalRawStatSum(RecRawStatBlock * rsb, int id, int64 incr = 1);
 int RecIncrGlobalRawStatCount(RecRawStatBlock * rsb, int id, int64 incr = 1);
@@ -102,12 +103,12 @@ RecRawStat *RecGetGlobalRawStatPtr(RecRawStatBlock * rsb, int id);
 int64 *RecGetGlobalRawStatSumPtr(RecRawStatBlock * rsb, int id);
 int64 *RecGetGlobalRawStatCountPtr(RecRawStatBlock * rsb, int id);
 
+
 //-------------------------------------------------------------------------
 // RecIncrRawStatXXX
 //-------------------------------------------------------------------------
 // inlined functions that are used very frequently.
 // FIXME: move it to Inline.cc
-
 inline RecRawStat *
 raw_stat_get_tlp(RecRawStatBlock * rsb, int id, EThread * ethread)
 {

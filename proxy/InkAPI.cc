@@ -739,7 +739,7 @@ isWriteable(INKMBuffer bufp)
 /******************************************************/
 
 static MIMEFieldSDKHandle *
-sdk_alloc_field_handle(INKMBuffer bufp, MIMEHdrImpl * mh)
+sdk_alloc_field_handle(INKMBuffer bufp, MIMEHdrImpl *mh)
 {
   sdk_sanity_check_mbuffer(bufp);
   HdrHeapSDKHandle *sdk_heap = (HdrHeapSDKHandle *) bufp;
@@ -751,7 +751,7 @@ sdk_alloc_field_handle(INKMBuffer bufp, MIMEHdrImpl * mh)
 }
 
 static void
-sdk_free_field_handle(INKMBuffer bufp, MIMEFieldSDKHandle * field_handle)
+sdk_free_field_handle(INKMBuffer bufp, MIMEFieldSDKHandle *field_handle)
 {
   sdk_sanity_check_mbuffer(bufp);
   HdrHeapSDKHandle *sdk_heap = (HdrHeapSDKHandle *) bufp;
@@ -773,7 +773,7 @@ sdk_alloc_standalone_field(INKMBuffer bufp)
 }
 
 static void
-sdk_free_standalone_field(INKMBuffer bufp, MIMEField * sa_field)
+sdk_free_standalone_field(INKMBuffer bufp, MIMEField *sa_field)
 {
   sdk_sanity_check_mbuffer(bufp);
   HdrHeapSDKHandle *sdk_heap = (HdrHeapSDKHandle *) bufp;
@@ -1182,7 +1182,7 @@ INKVConnInternal::handle_event(int event, void *edata)
 }
 
 VIO *
-INKVConnInternal::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
+INKVConnInternal::do_io_read(Continuation *c, int64 nbytes, MIOBuffer *buf)
 {
   m_read_vio.buffer.writer_for(buf);
   m_read_vio.op = VIO::READ;
@@ -1200,7 +1200,7 @@ INKVConnInternal::do_io_read(Continuation * c, int64 nbytes, MIOBuffer * buf)
 }
 
 VIO *
-INKVConnInternal::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bool owner)
+INKVConnInternal::do_io_write(Continuation *c, int64 nbytes, IOBufferReader *buf, bool owner)
 {
   ink_assert(!owner);
   m_write_vio.buffer.reader_for(buf);
@@ -1221,7 +1221,7 @@ INKVConnInternal::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * b
 }
 
 void
-INKVConnInternal::do_io_transform(VConnection * vc)
+INKVConnInternal::do_io_transform(VConnection *vc)
 {
   m_output_vc = vc;
 }
@@ -1275,7 +1275,7 @@ INKVConnInternal::do_io_shutdown(ShutdownHowTo_t howto)
 }
 
 void
-INKVConnInternal::reenable(VIO * vio)
+INKVConnInternal::reenable(VIO *vio)
 {
   NOWARN_UNUSED(vio);
   if (ink_atomic_increment((int *) &m_event_count, 1) < 0) {
@@ -1349,7 +1349,7 @@ APIHook::next() const
 
 
 void
-APIHooks::prepend(INKContInternal * cont)
+APIHooks::prepend(INKContInternal *cont)
 {
   APIHook *api_hook;
 
@@ -1360,7 +1360,7 @@ APIHooks::prepend(INKContInternal * cont)
 }
 
 void
-APIHooks::append(INKContInternal * cont)
+APIHooks::append(INKContInternal *cont)
 {
   APIHook *api_hook;
 
@@ -1408,14 +1408,14 @@ HttpAPIHooks::clear()
 }
 
 void
-HttpAPIHooks::prepend(INKHttpHookID id, INKContInternal * cont)
+HttpAPIHooks::prepend(INKHttpHookID id, INKContInternal *cont)
 {
   hooks_set = 1;
   m_hooks[id].prepend(cont);
 }
 
 void
-HttpAPIHooks::append(INKHttpHookID id, INKContInternal * cont)
+HttpAPIHooks::append(INKHttpHookID id, INKContInternal *cont)
 {
   hooks_set = 1;
   m_hooks[id].append(cont);
@@ -1459,7 +1459,7 @@ CacheAPIHooks::clear()
 }
 
 void
-CacheAPIHooks::append(INKCacheHookID id, INKContInternal * cont)
+CacheAPIHooks::append(INKCacheHookID id, INKContInternal *cont)
 {
   hooks_set = 1;
   m_hooks[id].append(cont);
@@ -1472,7 +1472,7 @@ CacheAPIHooks::get(INKCacheHookID id)
 }
 
 void
-CacheAPIHooks::prepend(INKCacheHookID id, INKContInternal * cont)
+CacheAPIHooks::prepend(INKCacheHookID id, INKContInternal *cont)
 {
   hooks_set = 1;
   m_hooks[id].prepend(cont);
@@ -1498,7 +1498,7 @@ ConfigUpdateCbTable::~ConfigUpdateCbTable()
 }
 
 void
-ConfigUpdateCbTable::insert(INKContInternal * contp, const char *name, const char *config_path)
+ConfigUpdateCbTable::insert(INKContInternal *contp, const char *name, const char *config_path)
 {
   ink_assert(cb_table != NULL);
 
@@ -1544,7 +1544,7 @@ ConfigUpdateCbTable::invoke(const char *name)
 }
 
 void
-ConfigUpdateCbTable::invoke(INKContInternal * contp)
+ConfigUpdateCbTable::invoke(INKContInternal *contp)
 {
   eventProcessor.schedule_imm(NEW(new ConfigUpdateCallback(contp)), ET_NET);
 }
@@ -1933,7 +1933,7 @@ INKPluginDirGet(void)
 ////////////////////////////////////////////////////////////////////
 
 int
-INKPluginRegister(INKSDKVersion sdk_version, INKPluginRegistrationInfo * plugin_info)
+INKPluginRegister(INKSDKVersion sdk_version, INKPluginRegistrationInfo *plugin_info)
 {
 
   ink_assert(plugin_reg_current != NULL);
@@ -1974,7 +1974,7 @@ INKPluginRegister(INKSDKVersion sdk_version, INKPluginRegistrationInfo * plugin_
 ////////////////////////////////////////////////////////////////////
 
 INKReturnCode
-INKPluginInfoRegister(INKPluginRegistrationInfo * plugin_info)
+INKPluginInfoRegister(INKPluginRegistrationInfo *plugin_info)
 {
   if (sdk_sanity_check_null_ptr((void *) plugin_info) == INK_ERROR) {
     return INK_ERROR;
@@ -3771,7 +3771,7 @@ INKMimeHdrFieldValueStringGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int i
 }
 
 INKReturnCode
-INKMimeHdrFieldValueDateGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, time_t * value_ptr)
+INKMimeHdrFieldValueDateGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, time_t *value_ptr)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
       ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
@@ -4675,7 +4675,7 @@ INKCacheHeaderKeyGet(INKCacheTxn txnp, void **key, int *length)
 }
 
 INKReturnCode
-INKCacheKeyCreate(INKCacheKey * new_key)
+INKCacheKeyCreate(INKCacheKey *new_key)
 {
 #ifdef DEBUG
   if (new_key == NULL)
@@ -4781,7 +4781,7 @@ INKCacheHttpInfoCopy(INKCacheHttpInfo infop)
 }
 
 void
-INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj)
+INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer *bufp, INKMLoc *obj)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *) infop;
   *bufp = info->request_get();
@@ -4791,7 +4791,7 @@ INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj)
 
 
 void
-INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj)
+INKCacheHttpInfoRespGet(INKCacheHttpInfo infop, INKMBuffer *bufp, INKMLoc *obj)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *) infop;
   *bufp = info->response_get();
@@ -4843,7 +4843,7 @@ INKCacheHttpInfoVector(INKCacheHttpInfo infop, void *data, int length)
 
 
 void
-INKCacheHttpInfoDestroy(INKCacheHttpInfo * infop)
+INKCacheHttpInfoDestroy(INKCacheHttpInfo *infop)
 {
 
   ((CacheHTTPInfo *) infop)->destroy();
@@ -4913,26 +4913,25 @@ INKMgmtUpdateRegister(INKCont contp, const char *plugin_name, const char *path)
 }
 
 int
-INKMgmtIntGet(const char *var_name, INKMgmtInt * result)
+INKMgmtIntGet(const char *var_name, INKMgmtInt *result)
 {
   return RecGetRecordInt((char *) var_name, (RecInt *) result) == REC_ERR_OKAY ? 1 : 0;
-
 }
 
 int
-INKMgmtCounterGet(const char *var_name, INKMgmtCounter * result)
+INKMgmtCounterGet(const char *var_name, INKMgmtCounter *result)
 {
   return RecGetRecordCounter((char *) var_name, (RecCounter *) result) == REC_ERR_OKAY ? 1 : 0;
 }
 
 int
-INKMgmtFloatGet(const char *var_name, INKMgmtFloat * result)
+INKMgmtFloatGet(const char *var_name, INKMgmtFloat *result)
 {
   return RecGetRecordFloat((char *) var_name, (RecFloat *) result) == REC_ERR_OKAY ? 1 : 0;
 }
 
 int
-INKMgmtStringGet(const char *var_name, INKMgmtString * result)
+INKMgmtStringGet(const char *var_name, INKMgmtString *result)
 {
   RecString tmp = 0;
   (void) RecGetRecordString_Xmalloc((char *) var_name, &tmp);
@@ -5120,7 +5119,7 @@ INKHttpSsnHookAdd(INKHttpSsn ssnp, INKHttpHookID id, INKCont contp)
 class INKHttpSsnCallback:public Continuation
 {
 public:
-  INKHttpSsnCallback(HttpClientSession * cs, INKEvent event)
+  INKHttpSsnCallback(HttpClientSession *cs, INKEvent event)
   :Continuation(cs->mutex), m_cs(cs), m_event(event)
   {
     SET_HANDLER(&INKHttpSsnCallback::event_handler);
@@ -5134,7 +5133,7 @@ public:
   }
 
 private:
-  HttpClientSession * m_cs;
+  HttpClientSession *m_cs;
   INKEvent m_event;
 };
 
@@ -5213,7 +5212,7 @@ int
 INKHttpTxnClientKeepaliveSet(INKHttpTxn txnp)
 {
   HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State * s = &(sm->t_state);
+  HttpTransact::State *s = &(sm->t_state);
   s->hdr_info.trust_response_cl = true;
 
   return 1;
@@ -5221,7 +5220,7 @@ INKHttpTxnClientKeepaliveSet(INKHttpTxn txnp)
 
 
 int
-INKHttpTxnClientReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpTxnClientReqGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 {
   if (sdk_sanity_check_txn(txnp) != INK_SUCCESS ||
       sdk_sanity_check_null_ptr((void *) bufp) != INK_SUCCESS ||
@@ -5269,7 +5268,7 @@ INKHttpTxnPristineUrlGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *url_loc)
 
 
 int
-INKHttpTxnClientRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpTxnClientRespGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 {
   if (sdk_sanity_check_txn(txnp) != INK_SUCCESS ||
       sdk_sanity_check_null_ptr((void *) bufp) != INK_SUCCESS ||
@@ -5292,7 +5291,7 @@ INKHttpTxnClientRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
 
 
 int
-INKHttpTxnServerReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpTxnServerReqGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 {
   if (sdk_sanity_check_txn(txnp) != INK_SUCCESS ||
       sdk_sanity_check_null_ptr((void *) bufp) != INK_SUCCESS ||
@@ -5314,7 +5313,7 @@ INKHttpTxnServerReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
 }
 
 int
-INKHttpTxnServerRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpTxnServerRespGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 {
   if (sdk_sanity_check_txn(txnp) != INK_SUCCESS ||
       sdk_sanity_check_null_ptr((void *) bufp) != INK_SUCCESS ||
@@ -5336,7 +5335,7 @@ INKHttpTxnServerRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
 }
 
 int
-INKHttpTxnCachedReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpTxnCachedReqGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 {
   if (sdk_sanity_check_txn(txnp) != INK_SUCCESS ||
       sdk_sanity_check_null_ptr((void *) bufp) != INK_SUCCESS ||
@@ -5374,7 +5373,7 @@ INKHttpTxnCachedReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
 }
 
 int
-INKHttpTxnCachedRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpTxnCachedRespGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 {
   if (sdk_sanity_check_txn(txnp) != INK_SUCCESS ||
       sdk_sanity_check_null_ptr((void *) bufp) != INK_SUCCESS ||
@@ -5413,10 +5412,10 @@ INKHttpTxnCachedRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
 
 
 int
-INKHttpTxnCachedRespModifiableGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpTxnCachedRespModifiableGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 {
   HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State * s = &(sm->t_state);
+  HttpTransact::State *s = &(sm->t_state);
   HTTPHdr *c_resp = NULL;
   HTTPInfo *cached_obj = sm->t_state.cache_info.object_read;
   HTTPInfo *cached_obj_store = &(sm->t_state.cache_info.object_store);
@@ -5494,7 +5493,7 @@ int
 INKHttpTxnCacheLookupStatusSet(INKHttpTxn txnp, int cachelookup)
 {
   HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::CacheLookupResult_t * sm_status = &(sm->t_state.cache_lookup_result);
+  HttpTransact::CacheLookupResult_t *sm_status = &(sm->t_state.cache_lookup_result);
 
   // converting from a miss to a hit is not allowed
   if (*sm_status == HttpTransact::CACHE_LOOKUP_MISS && cachelookup != INK_CACHE_LOOKUP_MISS)
@@ -5584,7 +5583,7 @@ INKHttpTxnNewCacheLookupDo(INKHttpTxn txnp, INKMBuffer bufp, INKMLoc url_loc)
     return 0;
 
   HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State * s = &(sm->t_state);
+  HttpTransact::State *s = &(sm->t_state);
 
   client_url = s->hdr_info.client_request.url_get();
   if (!(client_url->valid()))
@@ -5625,7 +5624,7 @@ int
 INKHttpTxnSecondUrlTryLock(INKHttpTxn txnp)
 {
   HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State * s = &(sm->t_state);
+  HttpTransact::State *s = &(sm->t_state);
   // INKHttpTxnNewCacheLookupDo didn't continue
   if (!s->cache_info.original_url.valid())
     return 0;
@@ -5651,7 +5650,7 @@ INKHttpTxnRedirectRequest(INKHttpTxn txnp, INKMBuffer bufp, INKMLoc url_loc)
 {
   URL u, *o_url, *r_url, *client_url;
   HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State * s = &(sm->t_state);
+  HttpTransact::State *s = &(sm->t_state);
 
   u.m_heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
   u.m_url_impl = (URLImpl *) url_loc;
@@ -5697,7 +5696,7 @@ int
 INKHttpTxnActiveTimeoutSet(INKHttpTxn txnp, int timeout)
 {
   Debug("http_timeout", "setting active timeout to %d msec via API", timeout);
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   s->api_txn_active_timeout_value = timeout;
   return 1;
 }
@@ -5710,7 +5709,7 @@ int
 INKHttpTxnConnectTimeoutSet(INKHttpTxn txnp, int timeout)
 {
   Debug("http_timeout", "setting inactive timeout to %d msec via API", timeout);
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   s->api_txn_connect_timeout_value = timeout;
   return 1;
 }
@@ -5723,7 +5722,7 @@ int
 INKHttpTxnDNSTimeoutSet(INKHttpTxn txnp, int timeout)
 {
   Debug("http_timeout", "setting DNS timeout to %d msec via API", timeout);
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   s->api_txn_dns_timeout_value = timeout;
   return 1;
 }
@@ -5737,7 +5736,7 @@ int
 INKHttpTxnNoActivityTimeoutSet(INKHttpTxn txnp, int timeout)
 {
   Debug("http_timeout", "setting DNS timeout to %d msec via API", timeout);
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   s->api_txn_no_activity_timeout_value = timeout;
   return 1;
 }
@@ -5745,7 +5744,7 @@ INKHttpTxnNoActivityTimeoutSet(INKHttpTxn txnp, int timeout)
 int
 INKHttpTxnCacheLookupSkip(INKHttpTxn txnp)
 {
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   s->api_skip_cache_lookup = true;
   return 1;
 }
@@ -5753,7 +5752,7 @@ INKHttpTxnCacheLookupSkip(INKHttpTxn txnp)
 int
 INKHttpTxnServerRespNoStore(INKHttpTxn txnp)
 {
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   s->api_server_response_no_store = true;
   return 1;
 }
@@ -5761,7 +5760,7 @@ INKHttpTxnServerRespNoStore(INKHttpTxn txnp)
 int
 INKHttpTxnServerRespIgnore(INKHttpTxn txnp)
 {
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   HTTPInfo *cached_obj = s->cache_info.object_read;
   HTTPHdr *cached_resp;
 
@@ -5782,7 +5781,7 @@ INKHttpTxnShutDown(INKHttpTxn txnp, INKEvent event)
   if (event == INK_EVENT_HTTP_TXN_CLOSE)
     return 0;
 
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   s->api_http_sm_shutdown = true;
   return 1;
 }
@@ -5832,7 +5831,7 @@ INKHttpTxnClientReqIsServerStyle(INKHttpTxn txnp)
 int
 INKHttpTxnOverwriteExpireTime(INKHttpTxn txnp, time_t expire_time)
 {
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   s->plugin_set_expire_time = expire_time;
   return 1;
 }
@@ -5841,7 +5840,7 @@ int
 INKHttpTxnUpdateCachedObject(INKHttpTxn txnp)
 {
   HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State * s = &(sm->t_state);
+  HttpTransact::State *s = &(sm->t_state);
   HTTPInfo *cached_obj_store = &(sm->t_state.cache_info.object_store);
   HTTPHdr *client_request = &(sm->t_state.hdr_info.client_request);
 
@@ -5859,7 +5858,7 @@ INKHttpTxnUpdateCachedObject(INKHttpTxn txnp)
 }
 
 int
-INKHttpTxnTransformRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpTxnTransformRespGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 {
   if (sdk_sanity_check_txn(txnp) != INK_SUCCESS) {
     return 0;
@@ -5968,7 +5967,7 @@ void
 INKHttpTxnServerRequestBodySet(INKHttpTxn txnp, char *buf, int buflength)
 {
   HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State * s = &(sm->t_state);
+  HttpTransact::State *s = &(sm->t_state);
 
   if (buf == NULL || buflength <= 0 || s->method != HTTP_WKSIDX_GET)
     return;
@@ -6038,7 +6037,7 @@ INKHttpTxnTransformedRespCache(INKHttpTxn txnp, int on)
 class INKHttpSMCallback:public Continuation
 {
 public:
-  INKHttpSMCallback(HttpSM * sm, INKEvent event)
+  INKHttpSMCallback(HttpSM *sm, INKEvent event)
   :Continuation(sm->mutex), m_sm(sm), m_event(event)
   {
     SET_HANDLER(&INKHttpSMCallback::event_handler);
@@ -6052,7 +6051,7 @@ public:
   }
 
 private:
-  HttpSM * m_sm;
+  HttpSM *m_sm;
   INKEvent m_event;
 };
 
@@ -6071,7 +6070,7 @@ INKCacheBufferReaderGet(INKCacheTxn txnp)
 //INKReturnCode
 //INKCacheBufferInfoGet(INKHttpTxn txnp, void **buffer, INKU64 *length, INKU64 *offset)
 INKReturnCode
-INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 * length, INKU64 * offset)
+INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 *length, INKU64 *offset)
 {
   NewCacheVC *vc = (NewCacheVC *) txnp;
 
@@ -6270,7 +6269,7 @@ INKHttpTxnSetHttpRetBody(INKHttpTxn txnp, const char *body_msg, int plain_msg_fl
 {
   if (sdk_sanity_check_txn(txnp) == INK_SUCCESS) {
     HttpSM *sm = (HttpSM *) txnp;
-    HttpTransact::State * s = &(sm->t_state);
+    HttpTransact::State *s = &(sm->t_state);
     s->return_xbuf_size = 0;
     s->return_xbuf[0] = 0;
     s->return_xbuf_plain = false;
@@ -6359,7 +6358,7 @@ INKHttpTxnServerStateGet(INKHttpTxn txnp)
   if (sdk_sanity_check_txn(txnp) != INK_SUCCESS)
     return INK_SRVSTATE_STATE_UNDEFINED;
 
-  HttpTransact::State * s = &(((HttpSM *) txnp)->t_state);
+  HttpTransact::State *s = &(((HttpSM *) txnp)->t_state);
   return (INKServerState) s->current.state;
 }
 
@@ -6445,7 +6444,7 @@ INKHttpTxnPushedRespBodyBytesGet(INKHttpTxn txnp, int *bytes)
 }
 
 int
-INKHttpTxnStartTimeGet(INKHttpTxn txnp, INK64 * start_time)
+INKHttpTxnStartTimeGet(INKHttpTxn txnp, INK64 *start_time)
 {
   HttpSM *sm = (HttpSM *) txnp;
   if (sm->milestones.ua_begin == 0)
@@ -6457,7 +6456,7 @@ INKHttpTxnStartTimeGet(INKHttpTxn txnp, INK64 * start_time)
 }
 
 int
-INKHttpTxnEndTimeGet(INKHttpTxn txnp, INK64 * end_time)
+INKHttpTxnEndTimeGet(INKHttpTxn txnp, INK64 *end_time)
 {
   HttpSM *sm = (HttpSM *) txnp;
   if (sm->milestones.ua_close == 0)
@@ -6511,7 +6510,7 @@ int
 INKHttpTxnLookingUpTypeGet(INKHttpTxn txnp)
 {
   HttpSM *sm = (HttpSM *) txnp;
-  HttpTransact::State * s = &(sm->t_state);
+  HttpTransact::State *s = &(sm->t_state);
 
   return (int) (s->current.request_to);
 }
@@ -6575,7 +6574,7 @@ INKHttpCurrentServerConnectionsGet(int *num_connections)
 /* HTTP alternate selection */
 
 INKReturnCode
-INKHttpAltInfoClientReqGet(INKHttpAltInfo infop, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpAltInfoClientReqGet(INKHttpAltInfo infop, INKMBuffer *bufp, INKMLoc *obj)
 {
   HttpAltInfo *info = (HttpAltInfo *) infop;
 
@@ -6591,7 +6590,7 @@ INKHttpAltInfoClientReqGet(INKHttpAltInfo infop, INKMBuffer * bufp, INKMLoc * ob
 }
 
 INKReturnCode
-INKHttpAltInfoCachedReqGet(INKHttpAltInfo infop, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpAltInfoCachedReqGet(INKHttpAltInfo infop, INKMBuffer *bufp, INKMLoc *obj)
 {
   HttpAltInfo *info = (HttpAltInfo *) infop;
   if (sdk_sanity_check_alt_info(infop) != INK_SUCCESS) {
@@ -6606,7 +6605,7 @@ INKHttpAltInfoCachedReqGet(INKHttpAltInfo infop, INKMBuffer * bufp, INKMLoc * ob
 }
 
 INKReturnCode
-INKHttpAltInfoCachedRespGet(INKHttpAltInfo infop, INKMBuffer * bufp, INKMLoc * obj)
+INKHttpAltInfoCachedRespGet(INKHttpAltInfo infop, INKMBuffer *bufp, INKMLoc *obj)
 {
   HttpAltInfo *info = (HttpAltInfo *) infop;
   if (sdk_sanity_check_alt_info(infop) != INK_SUCCESS) {
@@ -6634,7 +6633,7 @@ INKHttpAltInfoQualitySet(INKHttpAltInfo infop, float quality)
 extern HttpAccept *plugin_http_accept;
 
 INKReturnCode
-INKHttpConnect(unsigned int log_ip, int log_port, INKVConn * vc)
+INKHttpConnect(unsigned int log_ip, int log_port, INKVConn *vc)
 {
 #ifdef DEBUG
   if (vc == NULL) {
@@ -7199,6 +7198,9 @@ TSRegisterStat(const char *the_name, TSStatDataType the_type, TSStatPersistence 
   int volatile ix = ink_atomic_increment(&top_stat, 1);
   RecRawStatSyncCb syncer = RecRawStatSyncCount;
 
+  if (sdk_sanity_check_null_ptr((void *)the_name) != INK_SUCCESS)
+    return INK_ERROR;
+
   switch (sync) {
   case TS_STAT_SYNC_SUM:
     syncer = RecRawStatSyncSum;
@@ -7209,61 +7211,56 @@ TSRegisterStat(const char *the_name, TSStatDataType the_type, TSStatPersistence 
   case TS_STAT_SYNC_TIMEAVG:
     syncer = RecRawStatSyncHrTimeAvg;
     break;
-  case TS_STAT_SYNC_MSECS_TO_SECONDS:
-    syncer = RecRawStatSyncIntMsecsToFloatSeconds;
-    break;
-  case TS_STAT_SYNC_MHR_TIMEAVG:
-    syncer = RecRawStatSyncMHrTimeAvg;
-    break;
   default:
     syncer = RecRawStatSyncCount;
     break;
   }
-  RecRegisterRawStat(api_rsb, RECT_PROCESS, the_name, (RecDataT)the_type, RecPersistT(persist), ix, syncer);
+  RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, RecPersistT(persist), ix, syncer);
 
   return ix;
 }
 
 INKReturnCode
-TSStatIntIncrement(int the_stat, INK64 amount)
+TSStatIntIncrement(int the_stat, INKMgmtInt amount)
 {
   RecIncrRawStat(api_rsb, NULL, the_stat, amount);
   return INK_SUCCESS;
 }
 
 INKReturnCode
-TSStatIntDecrement(int the_stat, INK64 amount)
+TSStatIntDecrement(int the_stat, INKMgmtInt amount)
 {
   RecDecrRawStat(api_rsb, NULL, the_stat, amount);
   return INK_SUCCESS;
 }
 
 INKReturnCode
-TSStatIntGet(int the_stat, INK64* value)
+TSStatIntGet(int the_stat, INKMgmtInt* value)
 {
   RecGetGlobalRawStatSum(api_rsb, the_stat, value);
   return INK_SUCCESS;
 }
 
 INKReturnCode
-TSStatIntSet(int the_stat, INK64 value)
+TSStatIntSet(int the_stat, INKMgmtInt value)
 {
   RecSetGlobalRawStatSum(api_rsb, the_stat, value);
   return INK_SUCCESS;
 }
 
-INKReturnCode
-TSStatCountGet(int the_stat, INK64* value)
+int
+TSStatsFindName(const char* name)
 {
-    RecGetGlobalRawStatCount(api_rsb, the_stat, value);
-    return INK_SUCCESS;
-}
+  int order;
 
-INKReturnCode
-TSStatCountSet(int the_stat, INK64 value)
-{
-  RecSetGlobalRawStatCount(api_rsb, the_stat, value);
-  return INK_SUCCESS;
+  if (sdk_sanity_check_null_ptr((void *)name) != INK_SUCCESS ||
+      sdk_sanity_check_null_ptr((void *)order) != INK_SUCCESS)
+    return INK_ERROR;
+
+  if (RecGetRecordRelativeOrder(name, &order) == REC_ERR_OKAY)
+    return order;
+
+  return -1;
 }
 
 
@@ -7442,7 +7439,7 @@ INKStatGetByNameV2(
 #endif
 
 INKReturnCode
-INKStatIntGet(INKStat the_stat, INK64 * value)
+INKStatIntGet(INKStat the_stat, INK64 *value)
 {
   if (ink_sanity_check_stat_structure(the_stat) != INK_SUCCESS)
     return INK_ERROR;
@@ -7627,7 +7624,7 @@ INKDebug(const char *tag, const char *format_str, ...)
 /**************************   Logging API   ****************************/
 
 INKReturnCode
-INKTextLogObjectCreate(const char *filename, int mode, INKTextLogObject * new_object)
+INKTextLogObjectCreate(const char *filename, int mode, INKTextLogObject *new_object)
 {
 #ifdef DEBUG
   if (filename == NULL) {
@@ -7864,7 +7861,7 @@ INKMatcherTokLine(char *buffer, char **last)
 }
 
 char *
-INKMatcherExtractIPRange(char *match_str, INKU32 * addr1, INKU32 * addr2)
+INKMatcherExtractIPRange(char *match_str, INKU32 *addr1, INKU32 *addr2)
 {
   return (char*)ExtractIpRange(match_str, (ip_addr_t *) addr1, (ip_addr_t *) addr2);
 }
@@ -7944,7 +7941,7 @@ INKICPFreshnessFuncSet(INKPluginFreshnessCalcFunc funcp)
 }
 
 int
-INKICPCachedReqGet(INKCont contp, INKMBuffer * bufp, INKMLoc * obj)
+INKICPCachedReqGet(INKCont contp, INKMBuffer *bufp, INKMLoc *obj)
 {
   ICPPeerReadCont *sm = (ICPPeerReadCont *) contp;
   HTTPInfo *cached_obj;
@@ -7977,7 +7974,7 @@ INKICPCachedReqGet(INKCont contp, INKMBuffer * bufp, INKMLoc * obj)
 }
 
 int
-INKICPCachedRespGet(INKCont contp, INKMBuffer * bufp, INKMLoc * obj)
+INKICPCachedRespGet(INKCont contp, INKMBuffer *bufp, INKMLoc *obj)
 {
   ICPPeerReadCont *sm = (ICPPeerReadCont *) contp;
   HTTPInfo *cached_obj;
@@ -8126,7 +8123,7 @@ INKFetchPageRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
 }
 
 extern ClassAllocator<FetchSM> FetchSMAllocator;
-INKReturnCode INKFetchPages(INKFetchUrlParams_t * params)
+INKReturnCode INKFetchPages(INKFetchUrlParams_t *params)
 {
    INKFetchUrlParams_t *myparams = params;
    while(myparams!=NULL) {

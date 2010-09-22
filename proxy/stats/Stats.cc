@@ -20,9 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-
-
 #define _s_impl
 #include "ink_config.h"
 #include "Stats.h"
@@ -51,7 +48,8 @@ StatDescriptor::initialize()
   // ink_release_assert (g_stat_block);
 }
 
-RecData StatDescriptor::update_value()
+RecData
+StatDescriptor::update_value()
 {
   RecData retv;
 
@@ -148,16 +146,12 @@ StatDescriptor::CreateDescriptor(const char *name, int64 init_value)
     Warning("Plugin stat space exhausted");
     // return &G_NULL_STAT;
     return NULL;
-  }
-
-  else if (RecGetRecordDataType((char *) name, &dt) == REC_ERR_OKAY) {
+  } else if (RecGetRecordDataType((char *) name, &dt) == REC_ERR_OKAY) {
     Debug("sdk_stats", "Attempt to re-register statistic '%s'", name);
     // return &G_NULL_STAT;
     return NULL;
-  }
-
-  else {
-    StatDescriptor & ref = all_stats[n_stat];
+  } else {
+    StatDescriptor &ref = all_stats[n_stat];
     ref.m_id = n_stat;
     ink_assert(ref.m_name == NULL);
     size_t len = strlen(name) + 1;
@@ -167,17 +161,14 @@ StatDescriptor::CreateDescriptor(const char *name, int64 init_value)
     ref.m_value.rec_int = init_value;
     ref.m_magic = ALIVE;
 
-    int rc = RecRegisterStatInt(RECT_PLUGIN, ref.m_name,
-                                init_value, RECP_NON_PERSISTENT);
-
-    if (rc == REC_ERR_FAIL) {
+    if (RecRegisterStatInt(RECT_PLUGIN, ref.m_name, init_value, RECP_NON_PERSISTENT) == REC_ERR_FAIL) {
       ref.m_magic = IN_ERROR;
     }
     return &all_stats[n_stat];
   }
 }
 
-StatDescriptor *
+StatDescriptor*
 StatDescriptor::CreateDescriptor(const char *name, float init_value)
 {
   int n_stat = ink_atomic_increment(&top_stat, 1);
@@ -185,17 +176,12 @@ StatDescriptor::CreateDescriptor(const char *name, float init_value)
 
   if (n_stat >= StatDescriptor::MAX_NUM_STATS) {
     Warning("Plugin stat space exhausted");
-    // return &G_NULL_STAT;
     return NULL;
-  }
-
-  else if (RecGetRecordDataType((char *) name, &dt) == REC_ERR_OKAY) {
+  } else if (RecGetRecordDataType((char *) name, &dt) == REC_ERR_OKAY) {
     Debug("sdk_stats", "Attempt to re-register statistic '%s'", name);
     // return &G_NULL_STAT;
     return NULL;
-  }
-
-  else {
+  } else {
     StatDescriptor & ref = all_stats[n_stat];
     ref.m_id = n_stat;
     ink_assert(ref.m_name == NULL);
@@ -206,10 +192,7 @@ StatDescriptor::CreateDescriptor(const char *name, float init_value)
     ref.m_value.rec_float = init_value;
     ref.m_magic = ALIVE;
 
-    int rc = RecRegisterStatFloat(RECT_PLUGIN, ref.m_name,
-                                  init_value, RECP_NON_PERSISTENT);
-
-    if (rc == REC_ERR_FAIL) {
+    if (RecRegisterStatFloat(RECT_PLUGIN, ref.m_name, init_value, RECP_NON_PERSISTENT) == REC_ERR_FAIL) {
       ref.m_magic = IN_ERROR;
     }
     return &all_stats[n_stat];
@@ -224,8 +207,7 @@ StatDescriptor::set(int64 val)
   } else if (m_magic == NULL_VALUE || m_magic == IN_ERROR) {
     m_magic = IN_ERROR;
   } else {
-    int rc = RecSetRecordInt(m_name, val);
-    if (rc == REC_ERR_FAIL) {
+    if (RecSetRecordInt(m_name, val) == REC_ERR_FAIL) {
       m_magic = IN_ERROR;
     }
   }
@@ -241,8 +223,7 @@ StatDescriptor::set(float val)
   } else if (m_magic == NULL_VALUE || m_magic == IN_ERROR) {
     m_magic = IN_ERROR;
   } else {
-    int rc = RecSetRecordFloat(m_name, val);
-    if (rc == REC_ERR_FAIL) {
+    if (RecSetRecordFloat(m_name, val) == REC_ERR_FAIL) {
       m_magic = IN_ERROR;
     }
   }
@@ -258,6 +239,7 @@ StatDescriptor::add(int64 val)
   } else {
     RecInt v;
     ink_mutex_acquire(&g_flt_mux);
+
     int rc = RecGetRecordInt(m_name, &v);
     if (rc == REC_ERR_OKAY) {
       rc = RecSetRecordInt(m_name, v + val);
@@ -281,6 +263,7 @@ StatDescriptor::add(float val)
   } else {
     RecFloat v;
     ink_mutex_acquire(&g_flt_mux);
+
     int rc = RecGetRecordFloat(m_name, &v);
     if (rc == REC_ERR_OKAY) {
       rc = RecSetRecordFloat(m_name, v + val);
@@ -297,13 +280,11 @@ StatDescriptor::commit()
 {
   if (m_magic == SHALLOW_COPY) {
     if (m_type == RECD_INT) {
-      int rc = RecSetRecordInt(m_name, m_value.rec_int);
-      if (rc == REC_ERR_FAIL) {
+      if (RecSetRecordInt(m_name, m_value.rec_int) == REC_ERR_FAIL) {
         m_magic = IN_ERROR;
       }
     } else {
-      int rc = RecSetRecordFloat(m_name, m_value.rec_float);
-      if (rc == REC_ERR_FAIL) {
+      if (RecSetRecordFloat(m_name, m_value.rec_float) == REC_ERR_FAIL) {
         m_magic = IN_ERROR;
       }
     }

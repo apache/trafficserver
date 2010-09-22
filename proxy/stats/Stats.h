@@ -64,40 +64,20 @@ private:
   static volatile int top_stat;
 
 public:
-
   static StatDescriptor *CreateDescriptor(const char *category, char *name, size_t name_len, int64 init_value);
-
   static StatDescriptor *CreateDescriptor(const char *category, char *name, size_t name_len, float init_value);
-
   static StatDescriptor *CreateDescriptor(const char *name, int64 init_value);
-
   static StatDescriptor *CreateDescriptor(const char *name, float init_value);
-
   static void initialize();
+  const char *name() const { return m_name; }
 
-  const char *name() const
-  {
-    return m_name;
-  }
   int64 int_value() const;
   float flt_value() const;
-  bool int_type() const
-  {
-    return m_type == RECD_INT;
-  }
 
-  bool copy() const
-  {
-    return m_magic == SHALLOW_COPY;
-  }
-  bool dead() const
-  {
-    return (m_magic == NULL_VALUE || m_magic == IN_ERROR);
-  }
-  bool live() const
-  {
-    return (m_magic == ALIVE && m_id >= 0);
-  }
+  bool int_type() const { return m_type == RECD_INT; }
+  bool copy() const { return m_magic == SHALLOW_COPY; }
+  bool dead() const { return (m_magic == NULL_VALUE || m_magic == IN_ERROR); }
+  bool live() const { return (m_magic == ALIVE && m_id >= 0); }
 
   void increment()
   {
@@ -130,15 +110,15 @@ public:
   void commit();
 
   // to support coupled-stat local copies
-StatDescriptor():m_magic(NULL_VALUE), m_id(0), m_name(NULL) {
-    m_type = RECD_NULL;
-  }
+ StatDescriptor()
+   : m_magic(NULL_VALUE), m_id(0), m_name(NULL), m_type(RECD_NULL)
+  { }
   ~StatDescriptor() {
   }                             // [footnote]
+
   StatDescriptor & operator=(const StatDescriptor & rhs);
 
 private:
-
   RecData update_value();
 
   int m_id;
@@ -202,8 +182,7 @@ StatDescriptor::int_value() const
     return 0;
   }
 
-  RecData tmp = (m_magic == SHALLOW_COPY)
-    ? m_value : const_cast<StatDescriptor *>(this)->update_value();
+  RecData tmp = (m_magic == SHALLOW_COPY) ? m_value : const_cast<StatDescriptor *>(this)->update_value();
 
   return m_type == RECD_INT ? tmp.rec_int : (int64) tmp.rec_float;
 }
@@ -218,8 +197,7 @@ StatDescriptor::flt_value() const
     return 0.0;
   }
 
-  RecData tmp = (m_magic == SHALLOW_COPY)
-    ? m_value : const_cast<StatDescriptor *>(this)->update_value();
+  RecData tmp = (m_magic == SHALLOW_COPY) ? m_value : const_cast<StatDescriptor *>(this)->update_value();
 
   return m_type == RECD_INT ? (float) tmp.rec_int : tmp.rec_float;
 }

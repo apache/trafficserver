@@ -38,14 +38,14 @@
 // TODO: We really need to try to make this setting dynamic, based
 // on proxy.config.stat_api.max_stats_allowed (since it's the only
 // variable piece). XXX
-// This allocates 10k for InkAPI stats, 3k for "core" (2x what we use)
-#define REC_MAX_RECORDS                 13000
+// This allocates 5k for InkAPI stats, 3k for "core" (2x what we use)
+#define REC_MAX_RECORDS                 8000
 
 #define REC_CONFIG_UPDATE_INTERVAL_SEC  3
 #define REC_REMOTE_SYNC_INTERVAL_SEC    5
 
-#define REC_RAW_STAT_SYNC_INTERVAL_SEC  3
-#define REC_STAT_UPDATE_INTERVAL_SEC    3
+#define REC_RAW_STAT_SYNC_INTERVAL_SEC  5
+#define REC_STAT_UPDATE_INTERVAL_SEC    10
 
 //-------------------------------------------------------------------------
 // Record Items
