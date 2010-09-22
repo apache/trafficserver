@@ -107,7 +107,9 @@ extern "C" int plock(int);
 
 #include "XmlUtils.h"
 
+#if ATS_HAS_V2STATS
 #include "StatSystemV2.h"
+#endif
 
 #if ATS_HAS_PROFILER
 #include <google/profiler.h>
@@ -1650,6 +1652,7 @@ change_uid_gid(const char *user)
 #endif
 }
 
+#if ATS_HAS_V2STATS
 void init_stat_collector()
 {
     static int stat_collection_interval;
@@ -1686,7 +1689,7 @@ void init_stat_collector()
     eventProcessor.schedule_every(NEW (new StatCollectorContinuation()),
                                   HRTIME_SECONDS(stat_collection_interval), ET_CALL);
 }
-
+#endif
 
 //
 // Main
@@ -1899,8 +1902,10 @@ main(int argc, char **argv)
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   eventProcessor.start(num_of_net_threads);
 
+#if ATS_HAS_V2STATS
   // Must be called after starting event processor
   init_stat_collector();
+#endif
 
   int use_separate_thread = 0;
   int num_remap_threads = 1;

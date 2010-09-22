@@ -30,7 +30,10 @@
 #include "I_PriorityEventQueue.h"
 #include "I_ProxyAllocator.h"
 #include "I_ProtectedQueue.h"
-#include <vector>
+
+#if ATS_HAS_V2STATS
+#include <vector> // TODO: Do we really need to use STL vectors here?
+#endif
 
 // TODO: This would be much nicer to have "run-time" configurable (or something),
 // perhaps based on proxy.config.stat_api.max_stats_allowed or other configs. XXX
@@ -351,8 +354,10 @@ public:
   Event *oneevent;              // For dedicated event thread
   ink_sem *eventsem;            // For dedicated event thread
 
-  std::vector<long long> thread_stats;
+#if ATS_HAS_V2STATS
+  std::vector<long long> thread_stats; // TODO: Do we need vectors?
   ProxyMutex *thread_stats_mutex;
+#endif
 };
 
 /**

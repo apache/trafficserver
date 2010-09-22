@@ -31,7 +31,6 @@
 
 #include "InkAPIInternal.h"
 #include <stdio.h>
-#include <string>
 #include "Log.h"
 #include "URL.h"
 #include "MIME.h"
@@ -59,7 +58,10 @@
 #include "HttpAccept.h"
 #include "PluginVC.h"
 #include "FetchSM.h"
+#if ATS_HAS_V2STATS
+#include <string> // TODO: Do we really need STL strings?
 #include "StatSystemV2.h"
+#endif
 #include "HttpDebugNames.h"
 #include "I_AIO.h"
 
@@ -1074,30 +1076,35 @@ INKContInternal::handle_event_count(int event)
   }
 }
 
+#if ATS_HAS_V2STATS
 void INKContInternal::setName(const char *name) {
-    cont_name = name;
+  cont_name = name;
 
-    cont_time_stats.resize((int)(INK_HTTP_LAST_HOOK + 1));
-    cont_calls.resize((int)(INK_HTTP_LAST_HOOK + 1));
+  cont_time_stats.resize((int)(INK_HTTP_LAST_HOOK + 1));
+  cont_calls.resize((int)(INK_HTTP_LAST_HOOK + 1));
 
-    for(INKHttpHookID cur_hook_id = INK_HTTP_READ_REQUEST_HDR_HOOK; cur_hook_id <= INK_HTTP_LAST_HOOK; cur_hook_id = INKHttpHookID(cur_hook_id+1)) {
-        std::string stat_base = "cont." + cont_name + "." + HttpDebugNames::get_api_hook_name(cur_hook_id);
-        cont_time_stats[cur_hook_id].init(stat_base + ".time_spent", 64000);
+  for(INKHttpHookID cur_hook_id = INK_HTTP_READ_REQUEST_HDR_HOOK; cur_hook_id <= INK_HTTP_LAST_HOOK; cur_hook_id = INKHttpHookID(cur_hook_id+1)) {
+    // TODO: Fix the name of these stats to be something appropriate, e.g. proxy.x.y.z or some such (for now at least)
+    // TODO: Get rid of std::string (snprintf anyone?)
+    std::string stat_base = "cont." + cont_name + "." + HttpDebugNames::get_api_hook_name(cur_hook_id);
+    // TODO: This needs to be supported with non-V2 APIs as well.
+    cont_time_stats[cur_hook_id].init(stat_base + ".time_spent", 64000);
 
-        StatSystemV2::registerStat((stat_base + ".calls").c_str(), &cont_calls[cur_hook_id]);
-    }
-    stats_enabled = true;
+    StatSystemV2::registerStat((stat_base + ".calls").c_str(), &cont_calls[cur_hook_id]);
+  }
+  stats_enabled = true;
 }
 
 const char *INKContInternal::getName() {
-    return cont_name.c_str();
+  return cont_name.c_str();
 }
 
 void INKContInternal::statCallsMade(INKHttpHookID hook_id) {
-    if(cont_name == "")
-        return;
-    StatSystemV2::increment(cont_calls[hook_id]);
+  if(cont_name == "")
+    return;
+  StatSystemV2::increment(cont_calls[hook_id]);
 }
+#endif
 
 int
 INKContInternal::handle_event(int event, void *edata)
@@ -7347,6 +7354,7 @@ INKStatIncrement(INKStat the_stat)
   return INK_SUCCESS;
 }
 
+#if ATS_HAS_V2STATS
 INKReturnCode
 INKStatCreateV2(
     const char *the_name,
@@ -7431,6 +7439,7 @@ INKStatGetByNameV2(
         return INK_SUCCESS;
     return INK_ERROR;
 }
+#endif
 
 INKReturnCode
 INKStatIntGet(INKStat the_stat, INK64 * value)

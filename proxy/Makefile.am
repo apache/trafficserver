@@ -138,7 +138,6 @@ traffic_server_SOURCES = \
   StatPages.h \
   StatSystem.cc \
   StatSystem.h \
-  StatSystemV2.cc \
   StatAPITypes.cc \
   TestHook.cc \
   Transform.cc \
@@ -146,6 +145,11 @@ traffic_server_SOURCES = \
   TransformInternal.h \
   Update.cc \
   Update.h
+
+if BUILD_V2STATS
+  traffic_server_SOURCES += StatSystemV2.cc
+endif
+
 
 traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_server_LDADD = \
@@ -188,7 +192,6 @@ traffic_logcat_LDADD = \
   ControlBase.o \
   ControlMatcher.o CacheControl.o  \
   StatSystem.o \
-  StatSystemV2.o \
   StatAPITypes.o \
   CacheInspectorAllow.o \
   ReverseProxy.o \
@@ -237,6 +240,10 @@ traffic_logcat_LDADD = \
   @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
   @LIBEXECINFO@
+
+if BUILD_V2STATS
+  traffic_logcat_LDADD += StatSystemV2.o
+endif
 
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@
@@ -251,7 +258,6 @@ traffic_logstats_LDADD = \
   ControlMatcher.o \
   CacheControl.o  \
   StatSystem.o \
-  StatSystemV2.o \
   StatAPITypes.o \
   CacheInspectorAllow.o \
   ReverseProxy.o \
@@ -302,6 +308,10 @@ traffic_logstats_LDADD = \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
   @LIBEXECINFO@
 
+if BUILD_V2STATS
+  traffic_logstats_LDADD += StatSystemV2.o
+endif
+
 traffic_sac_SOURCES = sac.cc
 traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@
 traffic_sac_LDADD = \
@@ -315,7 +325,6 @@ traffic_sac_LDADD = \
   ControlMatcher.o \
   CacheControl.o \
   StatSystem.o \
-  StatSystemV2.o \
   StatAPITypes.o \
   CacheInspectorAllow.o \
   ReverseProxy.o \
@@ -363,6 +372,10 @@ traffic_sac_LDADD = \
   @LIBPCRE@ @LIBDB@ @LIBSQLITE3@ @LIBSSL@ @LIBTCL@ @LIBDL@ @LIBEV@ \
   @LIBEXPAT@ @LIBDEMANGLE@ @LIBMLD@ @LIBEXC@ @LIBICONV@ @LIBM@ @LIBPROFILER@ \
   @LIBEXECINFO@
+
+if BUILD_V2STATS
+  traffic_sac_LDADD += StatSystemV2.o
+endif
 
 traffic_cust_log_fmt_cnvrt_SOURCES = cust_log_fmt_cnvrt.cc
 traffic_cust_log_fmt_cnvrt_LDADD = \
@@ -383,10 +396,14 @@ libTrafficServerStandalone_a_SOURCES = \
   DiagsConfig.cc \
   StatPages.cc \
   StatSystem.cc \
-  StatSystemV2.cc \
   StatAPITypes.cc \
   AbstractBuffer.cc \
   Initialize.cc
+
+if BUILD_V2STATS
+  libTrafficServerStandalone_a_SOURCES += StatSystemV2.cc
+endif
+
 
 test_StateEventLogger_SOURCES =	StateEventLogger.cc
 

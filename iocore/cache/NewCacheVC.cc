@@ -27,7 +27,6 @@
 #include "HttpMessageBody.h"
 #include "HttpTunnel.h"
 #include <iostream>
-#include <string>
 
 using namespace std;
 

@@ -37,7 +37,10 @@
 #include "PluginVC.h"
 #include "ReverseProxy.h"
 #include "RemapProcessor.h"
+
+#if ATS_HAS_V2STATS
 #include "StatSystemV2.h"
+#endif
 
 #ifdef USE_NCA
 #include "NcaProcessor.h"
@@ -344,7 +347,11 @@ server_response_hdr_bytes(0), server_response_body_bytes(0),
 client_response_hdr_bytes(0), client_response_body_bytes(0),
 pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
 hooks_set(0), cur_hook_id(INK_HTTP_LAST_HOOK), cur_hook(NULL),
-prev_hook_start_time(0), prev_hook_stats_enabled(false),
+// TODO: This needs to be supported with non-V2 APIs as well.
+#if ATS_HAS_V2STATS
+prev_hook_start_time(0),
+prev_hook_stats_enabled(false),
+#endif
 cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false)
 {
   static int scatter_init = 0;
@@ -1452,12 +1459,14 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
+#if ATS_HAS_V2STATS
         // Do per plugin stats
         // Increment calls made to plugin
         hook->m_cont->statCallsMade(cur_hook_id);
 
         // Stat time spent in previous plugin
         int64 curr_time = INKhrtime();
+        // TODO: This needs to be supported with non-V2 APIs as well.
         if(prev_hook_stats_enabled && prev_hook_start_time) {
           int64 time_in_plugin_ms = (curr_time - prev_hook_start_time)/1000000;
           prev_hook_stats.inc(time_in_plugin_ms);
@@ -1467,9 +1476,12 @@ HttpSM::state_api_callout(int event, void *data)
 
         // store time and plugin info before invoking it
         prev_hook_start_time = curr_time;
+
+        // TODO: This needs to be supported with non-V2 APIs as well.
         prev_hook_stats_enabled = hook->m_cont->isStatsEnabled();
         if(prev_hook_stats_enabled)
           prev_hook_stats = hook->m_cont->cont_time_stats[cur_hook_id];
+#endif
 
         hook->invoke(INK_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
 
@@ -1548,6 +1560,8 @@ HttpSM::state_api_callout(int event, void *data)
 
     // Do per plugin stats
     // Handle last plugin on current state
+    // TODO: This needs to be supported with non-V2 APIs as well.
+#if ATS_HAS_V2STATS
     if(prev_hook_stats_enabled && prev_hook_start_time) {
       int64 time_in_plugin_ms = (INKhrtime() - prev_hook_start_time)/1000000;
       Debug("http", "[%lld] Last plugin : Time spent : %s %lld", 
@@ -1556,8 +1570,10 @@ HttpSM::state_api_callout(int event, void *data)
     }
 
     // Get ready for next state
+    // TODO: This needs to be supported with non-V2 APIs as well.
     prev_hook_stats_enabled = false;
     prev_hook_start_time = 0;
+#endif
 
     handle_api_return();
     break;
@@ -3877,6 +3893,7 @@ HttpSM::do_hostdb_lookup()
   bool use_srv_records = HttpConfig::m_master.srv_enabled;
 
   if (use_srv_records) {
+    // TODO: Get rid of string?
     string s = "_http._tcp.";
     s += t_state.server_info.name;
 

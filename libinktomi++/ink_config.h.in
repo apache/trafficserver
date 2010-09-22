@@ -126,6 +126,7 @@
 #define ATS_HAS_INKAPI                  @has_inkapi@
 #define ATS_HAS_CLI2                    @has_cli2@
 #define ATS_HAS_WEBUI                   @has_webui@
+#define ATS_HAS_V2STATS                 @has_v2stats@
 #define ATS_HAS_PURIFY                  @has_purify@
 #define ATS_HAS_DEMANGLE                @has_demangle@
 

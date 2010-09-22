@@ -50,7 +50,9 @@ EThread::EThread()
    tt(REGULAR), eventsem(NULL)
 {
   memset(thread_private, 0, PER_THREAD_DATA);
+#if ATS_HAS_V2STATS
   thread_stats_mutex = new_ProxyMutex();
+#endif
 }
 
 EThread::EThread(ThreadType att, int anid)
@@ -67,7 +69,9 @@ EThread::EThread(ThreadType att, int anid)
   ethreads_to_be_signalled = (EThread **) xmalloc(MAX_EVENT_THREADS * sizeof(EThread *));
   memset((char *) ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
   memset(thread_private, 0, PER_THREAD_DATA);
+#if ATS_HAS_V2STATS
   thread_stats_mutex = new_ProxyMutex();
+#endif
 #if ATS_HAS_EVENTFD
   evfd = eventfd(0, O_NONBLOCK | FD_CLOEXEC);
   if (evfd < 0) {
@@ -100,7 +104,9 @@ EThread::EThread(ThreadType att, Event * e, ink_sem * sem)
 {
   ink_assert(att == DEDICATED);
   memset(thread_private, 0, PER_THREAD_DATA);
+#if ATS_HAS_V2STATS
   thread_stats_mutex = new_ProxyMutex();
+#endif
 }
 
 

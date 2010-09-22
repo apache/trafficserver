@@ -40,7 +40,9 @@
 #include "HttpTunnel.h"
 #include "InkAPIInternal.h"
 #include "StatSystem.h"
+#if ATS_HAS_V2STATS
 #include "StatAPITypes.h"
+#endif
 #include "HttpClientSession.h"
 //#include "AuthHttpAdapter.h"
 
@@ -501,8 +503,11 @@ protected:
   // Continuation time keeper
   int64 prev_hook_start_time;
 
+  // TODO: This needs to be supported with non-V2 APIs as well.
+#if ATS_HAS_V2STATS
   bool prev_hook_stats_enabled;
   HistogramStats prev_hook_stats;
+#endif
   
   int cur_hooks;
   HttpApiState_t callout_state;

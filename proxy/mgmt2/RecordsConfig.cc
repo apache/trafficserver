@@ -2990,6 +2990,7 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.stat_api.max_stats_allowed", "", INK_INT, "512", RU_RESTART_TS, RR_NULL, RC_NULL, "[256-10000]", RA_NULL}
   ,
 
+#if ATS_HAS_V2STATS
   // StatSystemV2 config
   {CONFIG, "proxy.config.stat_collector.interval", "", INK_INT, "600", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -2999,6 +3000,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.stat_systemV2.num_stats_estimate", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
+#endif
 
   //############
   //#

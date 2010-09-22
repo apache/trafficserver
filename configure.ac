@@ -294,6 +294,20 @@ AS_IF([test "x$enable_cli2" = "xyes"],
 )
 AC_SUBST(has_cli2)
 
+#
+# Experimental V2 stats APIs (for plugins)
+#
+has_v2stats=0
+AC_MSG_CHECKING([whether to enable the experimental V2 stats subsystem for plugin APIs])
+AC_ARG_ENABLE([v2stats],
+  [AS_HELP_STRING([--enable-v2stats],[enable experimental V2 stats API])],
+  [has_v2stats=1],
+  [enable_v2stats=no]
+)
+AC_MSG_RESULT([$enable_v2stats])
+AC_SUBST(has_v2stats)
+AM_CONDITIONAL([BUILD_V2STATS], [test "x$enable_v2stats" = "xyes"])
+
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
 AC_ARG_WITH([profiler],

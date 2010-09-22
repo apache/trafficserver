@@ -26,7 +26,10 @@
 
  ***************************************************************************/
 
+// TODO: This needs to be supported with non-V2 APIs as well.
 #include "ink_config.h"
+#if ATS_HAS_V2STATS
+
 #include "api/ts/ts.h"
 #include "StatAPITypes.h"
 #include "StatSystemV2.h"
@@ -88,3 +91,5 @@ void HistogramStats::inc(long long stat_val)
         StatSystemV2::increment(buckets[bucket]);
     }
 }
+
+#endif

@@ -26,24 +26,28 @@
 
  ***************************************************************************/
 
-#ifndef STAT_TYPES_V2_H
-#define STAT_TYPES_V2_H
+#ifndef STAT_API_TYPES_H
+#define STAT_API_TYPES_H
 
-#include <string>
-#include <vector>
+// TODO: This needs to be supported with non-V2 APIs as well.
+#if ATS_HAS_V2STATS
+#include <string> // TODO: Get rid of string here, why do we need it ?
+#include <vector> // TODO: Is the vector really necessary ? 
 #include "inktomi++.h"
 
 class HistogramStats
 {
 public:
+  // TODO: Eliminate STL strings ?
     HistogramStats() { }
     HistogramStats(const std::string &stat_prefix, long long max_stat) { init(stat_prefix, max_stat); }
     void init(const std::string &stat_prefix, long long max_stat);
     void inc(long long stat_val);
     long long get_bucket(long long theNumber);
 private:
-    std::vector<uint32_t> buckets;
+    std::vector<uint32_t> buckets; // TODO: Do we need a vector here?
 };
+#endif
 
-#endif // STAT_TYPES
+#endif // STAT_API_TYPES_H
 
