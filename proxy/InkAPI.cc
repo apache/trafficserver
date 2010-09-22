@@ -1818,9 +1818,14 @@ api_init()
     global_config_cbs = NEW(new ConfigUpdateCbTable);
 
     TS_ReadConfigInteger(api_stats_size, "proxy.config.stat_api.max_stats_allowed");
-    api_rsb = RecAllocateRawStatBlock(api_stats_size);
-    if (NULL == api_rsb) {
-      Warning("Can't allocate API stats block");
+    if (api_stats_size > 0) {
+      // RecResizeAdditional(api_stats_size);
+      api_rsb = RecAllocateRawStatBlock(api_stats_size);
+      if (NULL == api_rsb) {
+        Warning("Can't allocate API stats block");
+      }
+    } else {
+      api_rsb = NULL;
     }
 
     // Setup the version string for returning to plugins
@@ -7195,10 +7200,14 @@ INKMCOPreload(void *context,    // opaque ptr
 int
 TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
-  int volatile ix = ink_atomic_increment(&top_stat, 1);
+  int volatile id = ink_atomic_increment(&top_stat, 1);
   RecRawStatSyncCb syncer = RecRawStatSyncCount;
 
-  if (sdk_sanity_check_null_ptr((void *)the_name) != INK_SUCCESS)
+  // TODO: This only supports "int" data types at this point, since the "Raw" stats
+  // interfaces only supports integers. Going forward, we could extend either the "Raw"
+  // stats APIs, or make non-int use the direct (synchronous) stats APIs (slower).
+  if ((sdk_sanity_check_null_ptr((void *)the_name) != INK_SUCCESS) ||
+      (sdk_sanity_check_null_ptr((void *)api_rsb) != INK_SUCCESS))
     return INK_ERROR;
 
   switch (sync) {
@@ -7215,50 +7224,62 @@ TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence pe
     syncer = RecRawStatSyncCount;
     break;
   }
-  RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, RecPersistT(persist), ix, syncer);
+  RecRegisterRawStat(api_rsb, RECT_PLUGIN, the_name, (RecDataT)the_type, RecPersistT(persist), id, syncer);
 
-  return ix;
+  return id;
 }
 
-INKReturnCode
+TSReturnCode
 TSStatIntIncrement(int the_stat, INKMgmtInt amount)
 {
+  if (sdk_sanity_check_null_ptr((void *)api_rsb) != INK_SUCCESS)
+    return TS_ERROR;
+
   RecIncrRawStat(api_rsb, NULL, the_stat, amount);
-  return INK_SUCCESS;
+  return TS_SUCCESS;
 }
 
-INKReturnCode
+TSReturnCode
 TSStatIntDecrement(int the_stat, INKMgmtInt amount)
 {
+  if (sdk_sanity_check_null_ptr((void *)api_rsb) != INK_SUCCESS)
+    return TS_ERROR;
+
   RecDecrRawStat(api_rsb, NULL, the_stat, amount);
-  return INK_SUCCESS;
+  return TS_SUCCESS;
 }
 
-INKReturnCode
+TSReturnCode
 TSStatIntGet(int the_stat, INKMgmtInt* value)
 {
+  if (sdk_sanity_check_null_ptr((void *)api_rsb) != INK_SUCCESS)
+    return TS_ERROR;
+
   RecGetGlobalRawStatSum(api_rsb, the_stat, value);
-  return INK_SUCCESS;
+  return TS_SUCCESS;
 }
 
-INKReturnCode
+TSReturnCode
 TSStatIntSet(int the_stat, INKMgmtInt value)
 {
+  if (sdk_sanity_check_null_ptr((void *)api_rsb) != INK_SUCCESS)
+    return TS_ERROR;
+
   RecSetGlobalRawStatSum(api_rsb, the_stat, value);
-  return INK_SUCCESS;
+  return TS_SUCCESS;
 }
 
 int
 TSStatFindName(const char* name)
 {
-  int order;
+  int id;
 
-  if (sdk_sanity_check_null_ptr((void *)name) != INK_SUCCESS ||
-      sdk_sanity_check_null_ptr((void *)order) != INK_SUCCESS)
+  if ((sdk_sanity_check_null_ptr((void *)name) != INK_SUCCESS) ||
+      (sdk_sanity_check_null_ptr((void *)api_rsb) != INK_SUCCESS))
     return INK_ERROR;
 
-  if (RecGetRecordRelativeOrder(name, &order) == REC_ERR_OKAY)
-    return order;
+  if (RecGetRecordOrderAndId(name, NULL, &id) == REC_ERR_OKAY)
+    return id;
 
   return -1;
 }

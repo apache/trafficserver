@@ -43,10 +43,10 @@ static RecModeT g_mode_type = RECM_NULL;
 //-------------------------------------------------------------------------
 #if defined (REC_BUILD_STAND_ALONE)
 
+
 //-------------------------------------------------------------------------
 // sync_thr
 //-------------------------------------------------------------------------
-
 static void *
 sync_thr(void *data)
 {
@@ -67,6 +67,7 @@ sync_thr(void *data)
   return NULL;
 }
 
+
 //-------------------------------------------------------------------------
 //
 // REC_BUILD_MGMT2 IMPLEMENTATION
@@ -76,16 +77,17 @@ sync_thr(void *data)
 
 #include "Main.h"
 
+
 //-------------------------------------------------------------------------
 // sync_thr
 //-------------------------------------------------------------------------
-
 static void *
 sync_thr(void *data)
 {
   REC_NOWARN_UNUSED(data);
   textBuffer *tb = NEW(new textBuffer(65536));
   Rollback *rb;
+
   while (1) {
     send_push_message();
     RecSyncStatsFile();
@@ -111,10 +113,10 @@ sync_thr(void *data)
 
 #endif
 
+
 //-------------------------------------------------------------------------
 // config_update_thr
 //-------------------------------------------------------------------------
-
 static void *
 config_update_thr(void *data)
 {
@@ -126,20 +128,18 @@ config_update_thr(void *data)
   return NULL;
 }
 
+
 //-------------------------------------------------------------------------
 // RecLocalInit
 //-------------------------------------------------------------------------
-
 int
 RecLocalInit(Diags * _diags)
 {
-
   if (g_initialized) {
     return REC_ERR_OKAY;
   }
 
   g_records_tree = new RecTree(NULL);
-
   g_mode_type = RECM_SERVER;
 
   if (RecCoreInit(RECM_SERVER, _diags) == REC_ERR_FAIL) {
@@ -155,22 +155,18 @@ RecLocalInit(Diags * _diags)
      return REC_ERR_FAIL;
      }
    */
-
   g_initialized = true;
 
   return REC_ERR_OKAY;
-
 }
 
 
 //-------------------------------------------------------------------------
 // RecLocalInitMessage
 //-------------------------------------------------------------------------
-
 int
 RecLocalInitMessage()
 {
-
   if (g_message_initialized) {
     return REC_ERR_OKAY;
   }
@@ -191,11 +187,11 @@ RecLocalInitMessage()
 //-------------------------------------------------------------------------
 // RecLocalStart
 //-------------------------------------------------------------------------
-
 int
 RecLocalStart()
 {
   ink_thread_create(sync_thr, NULL);
   ink_thread_create(config_update_thr, NULL);
+
   return REC_ERR_OKAY;
 }

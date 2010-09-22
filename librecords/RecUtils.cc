@@ -32,56 +32,50 @@ extern Diags *g_diags;
 //-------------------------------------------------------------------------
 // RecAlloc
 //-------------------------------------------------------------------------
-
-RecRecord *
+RecRecord*
 RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 {
-
-  if (g_num_records >= REC_MAX_RECORDS) {
+  if (g_num_records >= g_max_records) {
+    Warning("too many stats/configs, please increase REC_MAX_RECORDS or proxy.config.stat_api.max_stats_allowed");
     return NULL;
   }
+
   int i = ink_atomic_increment(&g_num_records, 1);
   RecRecord *r = &(g_records[i]);
   // Note: record should already be memset to 0 from RecCoreInit()
   r->rec_type = rec_type;
   r->name = xstrdup(name);
+  r->order = i;
   r->data_type = data_type;
   rec_mutex_init(&(r->lock), NULL);
 
   g_records_tree->rec_tree_insert(r->name);
 
-  g_type_records[rec_type][g_type_num_records[rec_type]] = i;
-  r->relative_order = g_type_num_records[rec_type];
-  g_type_num_records[rec_type]++;
-
   return r;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecDataClear
 //-------------------------------------------------------------------------
-
 void
 RecDataClear(RecDataT data_type, RecData * data)
 {
-
   if ((data_type == RECD_STRING) && (data->rec_string)) {
     xfree(data->rec_string);
   }
   memset(data, 0, sizeof(RecData));
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecDataSet
 //-------------------------------------------------------------------------
-
 bool
 RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src)
 {
-
   bool rec_set = false;
+
   switch (data_type) {
   case RECD_STRING:
     if (data_src->rec_string == NULL) {
@@ -124,14 +118,13 @@ RecDataSet(RecDataT data_type, RecData * data_dst, RecData * data_src)
 
 }
 
+
 //-------------------------------------------------------------------------
 // RecDataSetFromInk64
 //-------------------------------------------------------------------------
-
 bool
 RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64 data_int64)
 {
-
   switch (data_type) {
   case RECD_INT:
     data_dst->rec_int = data_int64;
@@ -158,17 +151,15 @@ RecDataSetFromInk64(RecDataT data_type, RecData * data_dst, int64 data_int64)
   }
 
   return true;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecDataSetFromFloat
 //-------------------------------------------------------------------------
-
 bool
 RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float)
 {
-
   switch (data_type) {
   case RECD_INT:
     data_dst->rec_int = (RecInt) data_float;
@@ -195,17 +186,15 @@ RecDataSetFromFloat(RecDataT data_type, RecData * data_dst, float data_float)
   }
 
   return true;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecDataSetFromString
 //-------------------------------------------------------------------------
-
 bool
 RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
 {
-
   bool rec_set;
   RecData data_src;
 
@@ -232,17 +221,17 @@ RecDataSetFromString(RecDataT data_type, RecData * data_dst, char *data_string)
   rec_set = RecDataSet(data_type, data_dst, &data_src);
 
   return rec_set;
-
 }
+
 
 //-------------------------------------------------------------------------
 // RecLog
 //-------------------------------------------------------------------------
-
 void
 RecLog(DiagsLevel dl, const char *format_string, ...)
 {
   va_list ap;
+
   va_start(ap, format_string);
   if (g_diags) {
     g_diags->log_va(NULL, dl, NULL, NULL, format_string, ap);
@@ -250,14 +239,15 @@ RecLog(DiagsLevel dl, const char *format_string, ...)
   va_end(ap);
 }
 
+
 //-------------------------------------------------------------------------
 // RecDebug
 //-------------------------------------------------------------------------
-
 void
 RecDebug(DiagsLevel dl, const char *format_string, ...)
 {
   va_list ap;
+
   va_start(ap, format_string);
   if (g_diags) {
     g_diags->log_va("rec", dl, NULL, NULL, format_string, ap);
@@ -265,10 +255,10 @@ RecDebug(DiagsLevel dl, const char *format_string, ...)
   va_end(ap);
 }
 
+
 //-------------------------------------------------------------------------
 // RecDebugOff
 //-------------------------------------------------------------------------
-
 void
 RecDebugOff()
 {

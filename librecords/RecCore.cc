@@ -37,6 +37,7 @@ RecRecord *g_records = NULL;
 InkHashTable *g_records_ht = NULL;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
+int g_max_records = 0;
 
 const char *g_rec_config_fpath = NULL;
 LLQ *g_rec_config_contents_llq = NULL;
@@ -47,12 +48,6 @@ const char *g_stats_snap_fpath = NULL;
 int g_num_update[RECT_MAX];
 
 RecTree *g_records_tree = NULL;
-
-// TODO: This is hugely wasteful, since we most likely don't need all
-// REC_MAX_RECORDS_SLOT for every RECT_MAX "type". XXX
-int g_type_records[RECT_MAX][REC_MAX_RECORDS];
-int g_type_num_records[RECT_MAX];
-
 
 //-------------------------------------------------------------------------
 // register_record
@@ -181,15 +176,17 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   if (g_initialized) {
     return REC_ERR_OKAY;
   }
+
   // set our diags
   ink_atomic_swap_ptr(&g_diags, _diags);
 
   g_records_tree = new RecTree(NULL);
-
-  // initialize record array
-  g_records = (RecRecord *) xmalloc(REC_MAX_RECORDS * sizeof(RecRecord));
-  memset(g_records, 0, REC_MAX_RECORDS * sizeof(RecRecord));
+  g_max_records = REC_MAX_RECORDS;
   g_num_records = 0;
+
+  // initialize record array for our internal stats (this can be reallocated later)
+  g_records = (RecRecord *) xmalloc(g_max_records * sizeof(RecRecord));
+  memset(g_records, 0, g_max_records * sizeof(RecRecord));
 
   // initialize record hash index
   g_records_ht = ink_hash_table_create(InkHashTableKeyType_String);
@@ -230,16 +227,35 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
   for (int i = 0; i < RECT_MAX; i++) {
     g_num_update[i] = 0;
-    g_type_num_records[i] = 0;
-    for (int j = 0; j < REC_MAX_RECORDS; j++) {
-      g_type_records[i][j] = -1;
-    }
   }
 
   g_initialized = true;
 
   return REC_ERR_OKAY;
 }
+
+
+//-------------------------------------------------------------------------
+// RecResizeAdditional: Add more storage space
+//-------------------------------------------------------------------------
+#if 0
+void
+RecResizeAdditional(int add)
+{
+  // TODO: Hmmm, why couldn't I get xrealloc() to work here?
+  // TODO: This doesn't seem to work well at all ... *sigh*
+  void *tmp = xmalloc((g_max_records + add) * sizeof(RecRecord));
+
+  if (NULL != tmp) {
+    memset(tmp, 0, (g_max_records + add) * sizeof(RecRecord)); // Little unoptimal, ENOCARE
+    memcpy(tmp, g_records, g_max_records * sizeof(RecRecord));
+    g_records = (RecRecord *)tmp;
+    g_max_records += add;
+  } else {
+    ink_fatal(1, "can't reallocate for librecords API stats (adding %d records)", add);
+  }
+}
+#endif
 
 
 //-------------------------------------------------------------------------
@@ -537,7 +553,7 @@ RecGetRecordUpdateCount(RecT data_type)
 }
 
 int
-RecGetRecordRelativeOrder(const char *name, int *order, bool lock)
+RecGetRecordOrderAndId(const char *name, int* order, int* id, bool lock)
 {
   int err = REC_ERR_FAIL;
   RecRecord *r = NULL;
@@ -548,7 +564,10 @@ RecGetRecordRelativeOrder(const char *name, int *order, bool lock)
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
     rec_mutex_acquire(&(r->lock));
-    *order = r->relative_order;
+    if (order)
+      *order = r->order;
+    if (id)
+      *id = r->rsb_id;
     err = REC_ERR_OKAY;
     rec_mutex_release(&(r->lock));
   }
@@ -749,6 +768,7 @@ RecRecord *
 RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type)
 {
   RecRecord *r = NULL;
+
   ink_rwlock_wrlock(&g_records_rwlock);
   if ((r = register_record(rec_type, name, data_type, data_default, false)) != NULL) {
     r->stat_meta.persist_type = persist_type;

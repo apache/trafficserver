@@ -152,9 +152,9 @@ struct RecRawStat
 struct RecRawStatBlock
 {
   off_t ethr_stat_offset;   // thread local raw-stat storage
-  RecRawStat **global;          // global raw-stat storage (ptr to RecRecord)
-  int num_stats;                // number of stats in this block
-  int max_stats;                // maximum number of stats for this block
+  RecRawStat **global;      // global raw-stat storage (ptr to RecRecord)
+  int num_stats;            // number of stats in this block
+  int max_stats;            // maximum number of stats for this block
   ink_mutex mutex;
 };
 

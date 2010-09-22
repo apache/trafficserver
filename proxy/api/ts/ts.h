@@ -418,10 +418,16 @@ extern "C"
   } INKSDKVersion;
 
   typedef enum
-  {
-    INK_ERROR = -1,
-    INK_SUCCESS = 0
-  } INKReturnCode;
+    {
+      INK_ERROR = -1,
+      INK_SUCCESS = 0
+    } INKReturnCode;
+
+  typedef enum
+    {
+      TS_ERROR = -1,
+      TS_SUCCESS = 0
+    } TSReturnCode;
 
   typedef enum
   {
@@ -2360,14 +2366,15 @@ extern "C"
 
 
   /* --------------------------------------------------------------------------
-     Stats based on librecords (this is prefered API until we rewrite stats).
-     This system has a limitation of up to 10,000 stats max, controlled via
+     Stats based on librecords raw stats (this is prefered API until we rewrite
+     stats). This system has a limitation of up to 1,500 stats max, controlled via
      proxy.config.stat_api.max_stats_allowed (default is 512).
 
      This is available as of Apache TS v2.2.*/
   typedef enum
     {
       TS_STAT_TYPE_INT = 1,
+      //  The following are not supported yet.
       TS_STAT_TYPE_FLOAT,
       TS_STAT_TYPE_STRING,
       TS_STAT_TYPE_COUNTER,
@@ -2387,17 +2394,20 @@ extern "C"
       TS_STAT_SYNC_TIMEAVG,
     } TSStatSync;
 
+  // Note that only TS_STAT_TYPE_INT is supported at this point.
   inkapi int TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync);
 
-  inkapi INKReturnCode TSStatIntIncrement(int the_stat, INKMgmtInt amount);
-  inkapi INKReturnCode TSStatIntDecrement(int the_stat, INKMgmtInt amount);
-  inkapi INKReturnCode TSStatFloatIncrement(int the_stat, float amount);
-  inkapi INKReturnCode TSStatFloatDecrement(int the_stat, float amount);
+  inkapi TSReturnCode TSStatIntIncrement(int the_stat, INKMgmtInt amount);
+  inkapi TSReturnCode TSStatIntDecrement(int the_stat, INKMgmtInt amount);
+  // Currently not supported.
+  // inkapi TSReturnCode TSStatFloatIncrement(int the_stat, float amount);
+  // inkapi TSReturnCode TSStatFloatDecrement(int the_stat, float amount);
 
-  inkapi INKReturnCode TSStatIntGet(int the_stat, INKMgmtInt* value);
-  inkapi INKReturnCode TSStatIntSet(int the_stat, INKMgmtInt value);
-  inkapi INKReturnCode TSStatFloatGet(int the_stat, float* value);
-  inkapi INKReturnCode TSStatFloatSet(int the_stat, float value);
+  inkapi TSReturnCode TSStatIntGet(int the_stat, INKMgmtInt* value);
+  inkapi TSReturnCode TSStatIntSet(int the_stat, INKMgmtInt value);
+  // Currently not supported.
+  // inkapi TSeturnCode TSStatFloatGet(int the_stat, float* value);
+  // inkapi TSReturnCode TSStatFloatSet(int the_stat, float value);
 
   inkapi int TSStatFindName(const char* name);
 

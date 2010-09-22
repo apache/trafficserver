@@ -49,6 +49,7 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
 {
   int i;
   RecRawStat *tlp;
+
   total->sum = 0;
   total->count = 0;
 
@@ -76,6 +77,7 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
   int i;
   RecRawStat *tlp;
   RecRawStat total;
+
   total.sum = 0;
   total.count = 0;
 
@@ -169,6 +171,7 @@ static int
 recv_message_cb__process(RecMessage *msg, RecMessageT msg_type, void *cookie)
 {
   int err;
+
   if ((err = recv_message_cb(msg, msg_type, cookie)) == REC_ERR_OKAY) {
     if (msg_type == RECG_PULL_ACK) {
       ink_mutex_acquire(&g_force_req_mutex);
@@ -183,12 +186,14 @@ recv_message_cb__process(RecMessage *msg, RecMessageT msg_type, void *cookie)
 //-------------------------------------------------------------------------
 // raw_stat_sync_cont
 //-------------------------------------------------------------------------
-struct raw_stat_sync_cont:public Continuation
+struct raw_stat_sync_cont: public Continuation
 {
-  raw_stat_sync_cont(ProxyMutex *m):Continuation(m)
+  raw_stat_sync_cont(ProxyMutex *m)
+    : Continuation(m)
   {
     SET_HANDLER(&raw_stat_sync_cont::exec_callbacks);
   }
+
   int exec_callbacks(int event, Event *e)
   {
     REC_NOWARN_UNUSED(event);
@@ -206,12 +211,14 @@ struct raw_stat_sync_cont:public Continuation
 //-------------------------------------------------------------------------
 // config_update_cont
 //-------------------------------------------------------------------------
-struct config_update_cont:public Continuation
+struct config_update_cont: public Continuation
 {
-  config_update_cont(ProxyMutex *m):Continuation(m)
+  config_update_cont(ProxyMutex *m)
+    : Continuation(m)
   {
     SET_HANDLER(&config_update_cont::exec_callbacks);
   }
+
   int exec_callbacks(int event, Event *e)
   {
     REC_NOWARN_UNUSED(event);
@@ -229,14 +236,17 @@ struct config_update_cont:public Continuation
 //-------------------------------------------------------------------------
 // sync_cont
 //-------------------------------------------------------------------------
-struct sync_cont:public Continuation
+struct sync_cont: public Continuation
 {
   textBuffer *m_tb;
-    sync_cont(ProxyMutex *m):Continuation(m)
+
+  sync_cont(ProxyMutex *m)
+    : Continuation(m)
   {
     SET_HANDLER(&sync_cont::sync);
     m_tb = NEW(new textBuffer(65536));
   }
+
    ~sync_cont()
   {
     if (m_tb != NULL) {
@@ -244,6 +254,7 @@ struct sync_cont:public Continuation
       m_tb = NULL;
     }
   }
+
   int sync(int event, Event *e)
   {
     REC_NOWARN_UNUSED(event);
@@ -277,7 +288,6 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
   }
 
   g_records_tree = new RecTree(NULL);
-
   g_mode_type = mode_type;
 
   if (RecCoreInit(mode_type, _diags) == REC_ERR_FAIL) {
@@ -420,6 +430,7 @@ RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDat
     err = REC_ERR_FAIL;
     goto Ldone;
   }
+  r->rsb_id = id; // This is the index within the RSB raw block for this stat, used for lookups by name.
   if (i_am_the_record_owner(r->rec_type)) {
     r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;
   } else {
@@ -604,6 +615,7 @@ int
 RecGetRawStatSum(RecRawStatBlock *rsb, int id, int64 *data)
 {
   RecRawStat total;
+
   raw_stat_get_total(rsb, id, &total);
   *data = total.sum;
   return REC_ERR_OKAY;
@@ -613,6 +625,7 @@ int
 RecGetRawStatCount(RecRawStatBlock *rsb, int id, int64 *data)
 {
   RecRawStat total;
+
   raw_stat_get_total(rsb, id, &total);
   *data = total.count;
   return REC_ERR_OKAY;

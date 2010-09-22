@@ -112,15 +112,12 @@ int64 *RecGetGlobalRawStatCountPtr(RecRawStatBlock * rsb, int id);
 inline RecRawStat *
 raw_stat_get_tlp(RecRawStatBlock * rsb, int id, EThread * ethread)
 {
-
   ink_debug_assert((id >= 0) && (id < rsb->max_stats));
   if (ethread == NULL) {
     ethread = this_ethread();
   }
   return (((RecRawStat *) ((char *) (ethread) + rsb->ethr_stat_offset)) + id);
-
 }
-
 
 inline int
 RecIncrRawStat(RecRawStatBlock * rsb, EThread * ethread, int id, int64 incr)
@@ -159,4 +156,4 @@ RecIncrRawStatCount(RecRawStatBlock * rsb, EThread * ethread, int id, int64 incr
   return REC_ERR_OKAY;
 }
 
-#endif
+#endif /* !_I_REC_PROCESS_H_ */

@@ -2,6 +2,11 @@
 
 Changes with Apache Traffic Server 2.1.3
 
+  *) New plugin APIs for stats, and making the "v2" (incomplete) stats
+  experimental (no longer built by default) [TS-390]. See
+  https://cwiki.apache.org/confluence/display/TS/NewStatsAPI  for more
+  details.
+
   *) Cleanup in duplicated configs, and obsoleted configs [TS-447] and
    [TS-451].
 

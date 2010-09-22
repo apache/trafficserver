@@ -35,11 +35,10 @@
 
 #define REC_MESSAGE_ELE_MAGIC           0xF00DF00D
 
-// TODO: We really need to try to make this setting dynamic, based
-// on proxy.config.stat_api.max_stats_allowed (since it's the only
-// variable piece). XXX
-// This allocates 5k for InkAPI stats, 3k for "core" (2x what we use)
-#define REC_MAX_RECORDS                 8000
+// This is for the internal stats and configs, API stats are additional (records.config)
+// TODO: For now, also allow for 1500 plugin stats, later this needs to be dynamically
+// resized, but not working right now.
+#define REC_MAX_RECORDS                 3000
 
 #define REC_CONFIG_UPDATE_INTERVAL_SEC  3
 #define REC_REMOTE_SYNC_INTERVAL_SEC    5
@@ -123,7 +122,8 @@ struct RecRecord
     RecStatMeta stat_meta;
     RecConfigMeta config_meta;
   };
-  int relative_order;
+  int order;
+  int rsb_id;
 };
 
 // Used for cluster

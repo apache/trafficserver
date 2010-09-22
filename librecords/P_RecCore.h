@@ -39,6 +39,7 @@ extern RecRecord *g_records;
 extern InkHashTable *g_records_ht;
 extern ink_rwlock g_records_rwlock;
 extern int g_num_records;
+extern int g_max_records;
 extern int g_num_update[];
 extern RecTree *g_records_tree;
 
@@ -50,9 +51,6 @@ extern ink_mutex g_rec_config_lock;
 
 // stats.snap items
 extern const char *g_stats_snap_fpath;
-
-extern int g_type_records[][REC_MAX_RECORDS];
-extern int g_type_num_records[];
 
 //-------------------------------------------------------------------------
 // Initialization

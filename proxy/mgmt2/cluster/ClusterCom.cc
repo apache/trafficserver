@@ -88,7 +88,6 @@ drainIncomingChannel(void *arg)
   // to reopen the channel (e.g. opening the socket would fail if the
   // interface was down).  In this case, the ccom->receive_fd is set
   // to '-1' and the open is retried until it succeeds.
-
   time_t t;
   time_t last_multicast_receive_time = time(NULL);
   struct timeval tv;
@@ -662,6 +661,7 @@ ClusterCom::checkPeers(time_t * ticker)
   return;
 }                               /* End ClusterCom::checkPeers */
 
+
 void
 ClusterCom::generateClusterDelta(void)
 {
@@ -846,19 +846,28 @@ ClusterCom::handleMultiCastMessage(char *message)
     p->inet_address = inet_addr(ip);
     p->num_virt_addrs = 0;
 
-    /* Safe since these are completely static */
-    p->node_rec_data.num_recs = g_type_num_records[RECT_NODE];
-    p->node_rec_data.recs = (RecRecord *) xmalloc(sizeof(RecRecord) * p->node_rec_data.num_recs);
-    for (int j = 0; j < p->node_rec_data.num_recs; j++) {
-      RecRecord *rec = &(g_records[g_type_records[RECT_NODE][j]]);
-      p->node_rec_data.recs[j].rec_type = rec->rec_type;
-      p->node_rec_data.recs[j].name = rec->name;
-      p->node_rec_data.recs[j].data_type = rec->data_type;
-      memset(&p->node_rec_data.recs[j].data, 0, sizeof(rec->data));
-      memset(&p->node_rec_data.recs[j].data_default, 0, sizeof(rec->data_default));
-      p->node_rec_data.recs[j].lock = rec->lock;
-      p->node_rec_data.recs[j].sync_required = rec->sync_required;
+    // Safe since these are completely static
+    // TODO: This might no longer be completely optimal, since we don't keep track of
+    // how many RECT_NODE stats there are. I'm hoping it's negligible though, but worst
+    // case we can reoptimize this later (and more efficiently).
+    int cnt = 0;
+    p->node_rec_data.recs = (RecRecord *) xmalloc(sizeof(RecRecord) * g_num_records);
+    for (int j = 0; j < g_num_records; j++) {
+      RecRecord *rec = &(g_records[j]);
+
+      if (rec->rec_type == RECT_NODE) {
+        p->node_rec_data.recs[cnt].rec_type = rec->rec_type;
+        p->node_rec_data.recs[cnt].name = rec->name;
+        p->node_rec_data.recs[cnt].data_type = rec->data_type;
+        memset(&p->node_rec_data.recs[cnt].data, 0, sizeof(rec->data));
+        memset(&p->node_rec_data.recs[cnt].data_default, 0, sizeof(rec->data_default));
+        p->node_rec_data.recs[cnt].lock = rec->lock;
+        p->node_rec_data.recs[cnt].sync_required = rec->sync_required;
+        ++cnt;
+      }
     }
+    p->node_rec_data.num_recs = cnt;
+
     ink_hash_table_insert(peers, (InkHashTableKey) ip, (p));
     ink_hash_table_delete(mismatchLog, ip);
 
@@ -1009,7 +1018,6 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
 // sync records.config CONFIG values (not LOCAL values) across a
 // records.config cluster syncronize operation.
 //-------------------------------------------------------------------------
-
 bool
 scan_and_terminate(char *&p, char a, char b)
 {
@@ -1480,37 +1488,40 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, int packet_type
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
 
-  for (int j = 0; j < g_type_num_records[RECT_NODE]; j++) {
-    RecRecord *rec = &(g_records[g_type_records[RECT_NODE][j]]);
-    ink_debug_assert(rec->rec_type == RECT_NODE);
+  int cnt = 0;
+  for (int j = 0; j < g_num_records; j++) {
+    RecRecord *rec = &(g_records[j]);
 
-    switch (rec->data_type) {
-    case RECD_COUNTER:
-      sprintf(tmp, "%d:%d: %lld\n", j, rec->data_type, rec->data.rec_counter);
-      ink_strncpy(&message[running_sum], tmp, (max - running_sum));
-      running_sum += strlen(tmp);
-      break;
-    case RECD_INT:
-      sprintf(tmp, "%d:%d: %lld\n", j, rec->data_type, rec->data.rec_int);
-      ink_strncpy(&message[running_sum], tmp, (max - running_sum));
-      running_sum += strlen(tmp);
-      break;
-    case RECD_FLOAT:
-      snprintf(tmp, sizeof(tmp), "%d:%d: %f\n", j, rec->data_type, rec->data.rec_float);
-      ink_strncpy(&message[running_sum], tmp, (max - running_sum));
-      running_sum += strlen(tmp);
-      break;
-    case RECD_STRING:
-      if (rec->data.rec_string) {
-        snprintf(tmp, sizeof(tmp), "%d:%d: %s\n", j, rec->data_type, rec->data.rec_string);
-      } else {
-        snprintf(tmp, sizeof(tmp), "%d:%d: NULL\n", j, rec->data_type);
+    if (rec->rec_type == RECT_NODE) {
+      switch (rec->data_type) {
+      case RECD_COUNTER:
+        sprintf(tmp, "%d:%d: %lld\n", cnt, rec->data_type, rec->data.rec_counter);
+        ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+        running_sum += strlen(tmp);
+        break;
+      case RECD_INT:
+        sprintf(tmp, "%d:%d: %lld\n", cnt, rec->data_type, rec->data.rec_int);
+        ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+        running_sum += strlen(tmp);
+        break;
+      case RECD_FLOAT:
+        snprintf(tmp, sizeof(tmp), "%d:%d: %f\n", cnt, rec->data_type, rec->data.rec_float);
+        ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+        running_sum += strlen(tmp);
+        break;
+      case RECD_STRING:
+        if (rec->data.rec_string) {
+          snprintf(tmp, sizeof(tmp), "%d:%d: %s\n", cnt, rec->data_type, rec->data.rec_string);
+        } else {
+          snprintf(tmp, sizeof(tmp), "%d:%d: NULL\n", cnt, rec->data_type);
+        }
+        ink_strncpy(&message[running_sum], tmp, (max - running_sum));
+        running_sum += strlen(tmp);
+        break;
+      default:
+        break;
       }
-      ink_strncpy(&message[running_sum], tmp, (max - running_sum));
-      running_sum += strlen(tmp);
-      break;
-    default:
-      break;
+      ++cnt;
     }
     ink_release_assert(running_sum < max);
   }
@@ -1547,6 +1558,7 @@ ClusterCom::constructSharedPacketHeader(char *message, char *ip, int max)
 
   return running_sum;
 }                               /* End ClusterCom::constructSharedPacketHeader */
+
 
 /*
  * constructSharedFilePacket(...)
@@ -1862,7 +1874,6 @@ ClusterCom::establishReceiveChannel(int fatal_on_error)
 #endif
 
   return 0;
-
 }                               /* End ClusterCom::establishReceiveChannel */
 
 
@@ -2270,7 +2281,6 @@ ClusterCom::lowestPeer(int *no)
 void
 ClusterCom::logClusterMismatch(const char *ip, ClusterMismatch type, char *data)
 {
-
   void *value;
   ClusterMismatch stored_type;
 
@@ -2303,6 +2313,7 @@ ClusterCom::logClusterMismatch(const char *ip, ClusterMismatch type, char *data)
 
   ink_hash_table_insert(mismatchLog, ip, (void *) type);
 }
+
 
 /*
  * highestPeer()

@@ -32,23 +32,21 @@
 #include "I_RecSignals.h"
 #include "I_RecEvents.h"
 
+
 //-------------------------------------------------------------------------
 // Diagnostic Output
 //-------------------------------------------------------------------------
-
 int RecSetDiags(Diags * diags);
+
 
 //-------------------------------------------------------------------------
 // Stat Registration
 //-------------------------------------------------------------------------
-
 int RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type);
-
 int RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type);
-
 int RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type);
-
 int RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type);
+
 
 //-------------------------------------------------------------------------
 // Config Registration
@@ -82,8 +80,8 @@ int RecLinkConfigCounter(const char *name, RecCounter * rec_counter);
 int RecLinkConfigString(const char *name, RecString * rec_string);
 
 int RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *cookie);
-int RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock * rsb,
-                                 int id, RecStatUpdateFunc update_func, void *cookie);
+int RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock * rsb, int id, RecStatUpdateFunc update_func, void *cookie);
+
 
 //-------------------------------------------------------------------------
 // Record Reading/Writing
@@ -109,13 +107,14 @@ int RecGetRecordString_Xmalloc(const char *name, RecString * rec_string, bool lo
 int RecGetRecordCounter(const char *name, RecCounter * rec_counter, bool lock = true);
 int RecGetRecordGeneric_Xmalloc(const char *name, RecString * rec_string, bool lock = true);
 
+
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
 int RecGetRecordType(const char *name, RecT * rec_type, bool lock = true);
 int RecGetRecordDataType(const char *name, RecDataT * data_type, bool lock = true);
 int RecGetRecordUpdateCount(RecT data_type);
-int RecGetRecordRelativeOrder(const char *name, int *order, bool lock = true);
+int RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock = true);
 
 int RecGetRecordUpdateType(const char *name, RecUpdateT * update_type, bool lock = true);
 int RecGetRecordCheckType(const char *name, RecCheckT * check_type, bool lock = true);
@@ -129,16 +128,17 @@ void RecGetRecordTree(char *subtree = NULL);
 void RecGetRecordList(char *, char ***, int *);
 int RecGetRecordPrefix_Xmalloc(char *prefix, char **result, int *result_len);
 
+
 //------------------------------------------------------------------------
 // Signal and Alarms
 //------------------------------------------------------------------------
 void RecSignalManager(int, const char *);
 void RecSignalAlarm(int, const char *);
 
+
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)
 //-------------------------------------------------------------------------
-
 #define REC_ReadConfigInt32(_var,_config_var_name) do { \
   RecInt tmp = 0; \
   RecGetRecordInt(_config_var_name, (RecInt*) &tmp); \
@@ -212,16 +212,19 @@ bool REC_setFloat(const char *name, float value, bool dirty = true);
 bool REC_setCounter(const char *name, int64 value, bool dirty = true);
 bool REC_setString(const char *name, char *value, bool dirty = true);
 
+
 //------------------------------------------------------------------------
 // Clear Statistics
 //------------------------------------------------------------------------
 int RecResetStatRecord(char *name);
 int RecResetStatRecord(RecT type = RECT_NULL);
 
+
 //------------------------------------------------------------------------
 // Set RecRecord attributes
 //------------------------------------------------------------------------
 int RecSetSyncRequired(char *name, bool lock = true);
+
 
 //------------------------------------------------------------------------
 // Signal Alarm/Warning
@@ -230,10 +233,13 @@ int RecSetSyncRequired(char *name, bool lock = true);
 #define REC_SignalAlarm          RecSignalAlarm
 #define REC_SignalWarning(_n,_d) { Warning(_d); RecSignalManager(_n,_d); }
 
+
 //------------------------------------------------------------------------
 // Manager Callback
 //------------------------------------------------------------------------
 typedef void *(*RecManagerCb) (void *opaque_cb_data, char *data_raw, int data_len);
 int RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data = NULL);
+
+void RecResizeAdditional(int add);
 
 #endif

@@ -274,7 +274,8 @@ overviewRecord::readCounter(const char *name, bool * found)
   int rec_status = REC_ERR_OKAY;
   int order = -1;
   if (localNode == false) {
-    rec_status = RecGetRecordRelativeOrder(name, &order);
+    // TODO: Not sure if this is correct now after we eliminated the relative order. Do we care?
+    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
@@ -299,7 +300,8 @@ overviewRecord::readInteger(const char *name, bool * found)
   int rec_status = REC_ERR_OKAY;
   int order = -1;
   if (localNode == false) {
-    rec_status = RecGetRecordRelativeOrder(name, &order);
+    // TODO: Not sure if this is correct now after we eliminated the relative order. Do we care?
+    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
@@ -324,7 +326,8 @@ overviewRecord::readFloat(const char *name, bool * found)
   int rec_status = REC_ERR_OKAY;
   int order = -1;
   if (localNode == false) {
-    rec_status = RecGetRecordRelativeOrder(name, &order);
+    // TODO: Not sure if this is correct now after we eliminated the relative order. Do we care?
+    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
@@ -349,7 +352,8 @@ overviewRecord::readString(const char *name, bool * found)
   int rec_status = REC_ERR_OKAY;
   int order = -1;
   if (localNode == false) {
-    rec_status = RecGetRecordRelativeOrder(name, &order);
+    // TODO: Not sure if this is correct now after we eliminated the relative order. Do we care?
+    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
       ink_release_assert(order < node_rec_data.num_recs);
       ink_debug_assert(order < node_rec_data.num_recs);
