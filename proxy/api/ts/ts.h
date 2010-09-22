@@ -2367,8 +2367,7 @@ extern "C"
      This is available as of Apache TS v2.2.*/
   typedef enum
     {
-      TS_STAT_TYPE_NULL = 0,
-      TS_STAT_TYPE_INT,
+      TS_STAT_TYPE_INT = 1,
       TS_STAT_TYPE_FLOAT,
       TS_STAT_TYPE_STRING,
       TS_STAT_TYPE_COUNTER,
@@ -2376,8 +2375,7 @@ extern "C"
 
   typedef enum
     {
-      TS_STAT_PERSISTENT_NULL = 0,
-      TS_STAT_PERSISTENT,
+      TS_STAT_PERSISTENT = 1,
       TS_STAT_NON_PERSISTENT
     } TSStatPersistence;
 
