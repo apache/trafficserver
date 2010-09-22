@@ -359,10 +359,8 @@ cluster_com_port_watcher(const char *name, RecDataT data_type, RecData data, voi
 ClusterCom::ClusterCom(unsigned long oip, char *host, int port, char *group, int sport, char *p):our_wall_clock(0), alive_peers_count(0), reliable_server_fd(0), broadcast_fd(0),
 receive_fd(0)
 {
-  int
-    rec_err;
-  bool
-    found = false;
+  int rec_err;
+  bool found = false;
 
   init = false;
   if (strlen(host) >= 1024) {
@@ -378,8 +376,8 @@ receive_fd(0)
 
   /* Get the cluster type */
   cluster_type = CLUSTER_INVALID;
-  RecInt
-    rec_int;
+  RecInt rec_int;
+
   rec_err = RecGetRecordInt("proxy.local.cluster.type", &rec_int);
   cluster_type = (MgmtClusterType) rec_int;
   found = (rec_err == REC_ERR_OKAY);
@@ -397,12 +395,16 @@ receive_fd(0)
     break;
   }
   /* Get the cluster config file name + path */
-  RecString
-    cluster_file;
+  RecString cluster_file;
+
   rec_err = RecGetRecordString_Xmalloc("proxy.config.cluster.cluster_configuration", &cluster_file);
   found = (rec_err == REC_ERR_OKAY);
 
-  if (!found || strlen(p) + strlen(cluster_file) >= 1024) {
+  if (!found) {
+    mgmt_fatal(stderr, "[ClusterCom::ClusterCom] no cluster_configuration filename configured\n");
+  }
+
+  if (strlen(p) + strlen(cluster_file) >= 1024) {
     mgmt_fatal(stderr, "[ClusterCom::ClusterCom] path + filename too large\n");
   }
   // XXX: This allows to have absolute config cluster_configuration directive.
@@ -473,17 +475,6 @@ receive_fd(0)
   return;
 }                               /* End ClusterCom::ClusterCom */
 
-
-// this function created to get around a bug in the Linux version
-// of gcc
-// This doesn't seem to be used.
-#ifdef NOT_USED_HERE
-static void
-sum_agg_data(Records * paggregated_node_data, ClusterPeerInfo * cpi, int j)
-{
-  // fix me -- what does aggregated_node_data do?
-}
-#endif
 
 /*
  * checkPeers(...)
@@ -2198,9 +2189,7 @@ ClusterCom::receiveIncomingMessage(char *buf, int max)
 {
   int nbytes = 0, addr_len = sizeof(receive_addr);
 
-  if ((nbytes = recvfrom(receive_fd, buf, max, 0, (struct sockaddr *) &receive_addr,
-                         (socklen_t *) & addr_len
-       )) < 0) {
+  if ((nbytes = recvfrom(receive_fd, buf, max, 0, (struct sockaddr *) &receive_addr, (socklen_t *) & addr_len)) < 0) {
     mgmt_elog(stderr, "[ClusterCom::receiveIncomingMessage] Receive failed\n");
   }
   return nbytes;

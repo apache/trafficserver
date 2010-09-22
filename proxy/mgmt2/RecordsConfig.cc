@@ -1639,6 +1639,9 @@ RecordElement RecordsConfig[] = {
   //# Cluster Subsystem
   //#
   //##############################################################################
+  {CONFIG, "proxy.config.cluster.cluster_configuration", "", INK_STRING, "cluster.config", RU_NULL, RR_NULL, RC_NULL,
+   NULL, RA_NULL}
+  ,
   {CONFIG, "proxy.config.cluster.ethernet_interface", "", INK_STRING, NULL, RU_RESTART_TS, RR_REQUIRED, RC_STR,
    "^[^[:space:]]*$", RA_NULL}
   ,

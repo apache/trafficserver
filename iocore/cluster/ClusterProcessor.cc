@@ -766,7 +766,9 @@ ClusterProcessor::start()
       initialize_thread_for_net(eventProcessor.eventthread[ET_CLUSTER][i], i);
     }
 
-    IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.cluster.cluster_configuration", "cluster.config", RECU_NULL, RECC_NULL, NULL);
+    // TODO: This had to be moved back to RecordsConfig.cc, because of "order" mattering ...
+    // IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.cluster.cluster_configuration", "cluster.config", RECU_NULL, RECC_NULL, NULL);
+
     IOCORE_RegisterConfigUpdateFunc("proxy.config.cluster.cluster_configuration", machine_config_change, (void *) CLUSTER_CONFIG);
     do_machine_config_change((void *) CLUSTER_CONFIG, "proxy.config.cluster.cluster_configuration");
 #ifdef USE_SEPARATE_MACHINE_CONFIG
