@@ -35,7 +35,11 @@
 
 #define REC_MESSAGE_ELE_MAGIC           0xF00DF00D
 
-#define REC_MAX_RECORDS                 3000
+// TODO: We really need to try to make this setting dynamic, based
+// on proxy.config.stat_api.max_stats_allowed (since it's the only
+// variable piece). XXX
+// This allocates 10k for InkAPI stats, 3k for "core" (2x what we use)
+#define REC_MAX_RECORDS                 13000
 
 #define REC_CONFIG_UPDATE_INTERVAL_SEC  3
 #define REC_REMOTE_SYNC_INTERVAL_SEC    5

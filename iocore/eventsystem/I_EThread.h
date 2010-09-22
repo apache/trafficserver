@@ -32,6 +32,8 @@
 #include "I_ProtectedQueue.h"
 #include <vector>
 
+// TODO: This would be much nicer to have "run-time" configurable (or something),
+// perhaps based on proxy.config.stat_api.max_stats_allowed or other configs. XXX
 #define PER_THREAD_DATA (1024*1024)
 
 #define MUTEX_RETRY_DELAY HRTIME_MSECONDS(20)

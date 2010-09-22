@@ -48,6 +48,8 @@ int g_num_update[RECT_MAX];
 
 RecTree *g_records_tree = NULL;
 
+// TODO: This is hugely wasteful, since we most likely don't need all
+// REC_MAX_RECORDS_SLOT for every RECT_MAX "type". XXX
 int g_type_records[RECT_MAX][REC_MAX_RECORDS];
 int g_type_num_records[RECT_MAX];
 

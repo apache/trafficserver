@@ -118,6 +118,11 @@ static ink_mutex big_mux;
     _HDR.m_http = (HTTPHdrImpl*) _OBJ_PTR; \
     _HDR.m_mime = _HDR.m_http->m_fields_impl;
 
+// Globals for new librecords stats
+volatile int top_stat = 0;
+RecRawStatBlock *api_rsb;
+
+
 /* URL schemes */
 inkapi const char *INK_URL_SCHEME_FILE;
 inkapi const char *INK_URL_SCHEME_FTP;
@@ -1551,6 +1556,8 @@ api_init()
   static int init = 1;
 
   if (init) {
+    int api_stats_size = 0;
+
     init = 0;
 
 #ifndef UNSAFE_FORCE_MUTEX
@@ -1802,6 +1809,12 @@ api_init()
     http_global_hooks = NEW(new HttpAPIHooks);
     cache_global_hooks = NEW(new CacheAPIHooks);
     global_config_cbs = NEW(new ConfigUpdateCbTable);
+
+    TS_ReadConfigInteger(api_stats_size, "proxy.config.stat_api.max_stats_allowed");
+    api_rsb = RecAllocateRawStatBlock(api_stats_size);
+    if (NULL == api_rsb) {
+      Warning("Can't allocate API stats block");
+    }
 
     // Setup the version string for returning to plugins
     ink_strncpy(traffic_server_version, appVersionInfo.VersionStr, sizeof(traffic_server_version));
@@ -7172,7 +7185,83 @@ INKMCOPreload(void *context,    // opaque ptr
 }MCOPreload_fp
 */
 
+/************************   REC Stats API    **************************/
+int
+TSRegisterStat(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync)
+{
+  int volatile ix = ink_atomic_increment(&top_stat, 1);
+  RecRawStatSyncCb syncer = RecRawStatSyncCount;
+
+  switch (sync) {
+  case TS_STAT_SYNC_SUM:
+    syncer = RecRawStatSyncSum;
+    break;
+  case TS_STAT_SYNC_AVG:
+    syncer = RecRawStatSyncAvg;
+    break;
+  case TS_STAT_SYNC_TIMEAVG:
+    syncer = RecRawStatSyncHrTimeAvg;
+    break;
+  case TS_STAT_SYNC_MSECS_TO_SECONDS:
+    syncer = RecRawStatSyncIntMsecsToFloatSeconds;
+    break;
+  case TS_STAT_SYNC_MHR_TIMEAVG:
+    syncer = RecRawStatSyncMHrTimeAvg;
+    break;
+  default:
+    syncer = RecRawStatSyncCount;
+    break;
+  }
+  RecRegisterRawStat(api_rsb, RECT_PROCESS, the_name, (RecDataT)the_type, RecPersistT(persist), ix, syncer);
+
+  return ix;
+}
+
+INKReturnCode
+TSStatIntIncrement(int the_stat, INK64 amount)
+{
+  RecIncrRawStat(api_rsb, NULL, the_stat, amount);
+  return INK_SUCCESS;
+}
+
+INKReturnCode
+TSStatIntDecrement(int the_stat, INK64 amount)
+{
+  RecDecrRawStat(api_rsb, NULL, the_stat, amount);
+  return INK_SUCCESS;
+}
+
+INKReturnCode
+TSStatIntGet(int the_stat, INK64* value)
+{
+  RecGetGlobalRawStatSum(api_rsb, the_stat, value);
+  return INK_SUCCESS;
+}
+
+INKReturnCode
+TSStatIntSet(int the_stat, INK64 value)
+{
+  RecSetGlobalRawStatSum(api_rsb, the_stat, value);
+  return INK_SUCCESS;
+}
+
+INKReturnCode
+TSStatCountGet(int the_stat, INK64* value)
+{
+    RecGetGlobalRawStatCount(api_rsb, the_stat, value);
+    return INK_SUCCESS;
+}
+
+INKReturnCode
+TSStatCountSet(int the_stat, INK64 value)
+{
+  RecSetGlobalRawStatCount(api_rsb, the_stat, value);
+  return INK_SUCCESS;
+}
+
+
 /**************************    Stats API    ****************************/
+// THESE APIS ARE ALL DEPRECATED, USE THE REC APIs INSTEAD
 // #define ink_sanity_check_stat_structure(_x) INK_SUCCESS
 
 inline INKReturnCode

@@ -2358,46 +2358,59 @@ extern "C"
   inkapi INKReturnCode INKIOBufferReaderConsume(INKIOBufferReader readerp, int nbytes);
   inkapi int INKIOBufferReaderAvail(INKIOBufferReader readerp);
 
+
   /* --------------------------------------------------------------------------
-     stats */
+     Stats based on librecords (this is prefered API until we rewrite stats).
+     This system has a limitation of up to 10,000 stats max, controlled via
+     proxy.config.stat_api.max_stats_allowed (default is 512).
+
+     This is available as of Apache TS v2.2.*/
   typedef enum
-  {
-    INKSTAT_TYPE_INT64,
-    INKSTAT_TYPE_FLOAT
-  } INKStatTypes;
+    {
+      TS_STAT_TYPE_NULL = 0,
+      TS_STAT_TYPE_INT,
+      TS_STAT_TYPE_FLOAT,
+      TS_STAT_TYPE_STRING,
+      TS_STAT_TYPE_COUNTER,
+    } TSStatDataType;
 
-  typedef void *INKStat;
-  typedef void *INKCoupledStat;
+  typedef enum
+    {
+      TS_STAT_PERSISTENT_NULL = 0,
+      TS_STAT_PERSISTENT,
+      TS_STAT_NON_PERSISTENT
+    } TSStatPersistence;
+
+  typedef enum
+    {
+      TS_STAT_SYNC_SUM = 0,
+      TS_STAT_SYNC_COUNT,
+      TS_STAT_SYNC_AVG,
+      TS_STAT_SYNC_TIMEAVG,
+      TS_STAT_SYNC_MSECS_TO_SECONDS,
+      TS_STAT_SYNC_MHR_TIMEAVG
+    } TSStatSync;
+
+  inkapi int TSRegisterStat(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync);
+
+  inkapi INKReturnCode TSStatIntIncrement(int the_stat, INK64 amount);
+  inkapi INKReturnCode TSStatIntDecrement(int the_stat, INK64 amount);
+  inkapi INKReturnCode TSStatFloatIncrement(int the_stat, float amount);
+  inkapi INKReturnCode TSStatFloatDecrement(int the_stat, float amount);
+
+  inkapi INKReturnCode TSStatIntGet(int the_stat, INK64* value);
+  inkapi INKReturnCode TSStatIntSet(int the_stat, INK64 value);
+  inkapi INKReturnCode TSStatFloatGet(int the_stat, float* value);
+  inkapi INKReturnCode TSStatFloatSet(int the_stat, float value);
+
+  inkapi INKReturnCode TSStatCountGet(int the_stat, INK64* count);
+  inkapi INKReturnCode TSStatCountSet(int the_stat, INK64 count);
+
 
   /* --------------------------------------------------------------------------
-     uncoupled stats */
-  inkapi INKStat INKStatCreate(const char *the_name, INKStatTypes the_type);
-  inkapi INKReturnCode INKStatIntAddTo(INKStat the_stat, INK64 amount);
-  inkapi INKReturnCode INKStatFloatAddTo(INKStat the_stat, float amount);
-  inkapi INKReturnCode INKStatDecrement(INKStat the_stat);
-  inkapi INKReturnCode INKStatIncrement(INKStat the_stat);
-  inkapi INKReturnCode INKStatIntGet(INKStat the_stat, INK64 * value);
-  inkapi INKReturnCode INKStatFloatGet(INKStat the_stat, float *value);
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED INK64 INKStatIntRead(INKStat the_stat);
-
-  /** @deprecated */
-  inkapi INK_DEPRECATED float INKStatFloatRead(INKStat the_stat);
-
-  inkapi INKReturnCode INKStatIntSet(INKStat the_stat, INK64 value);
-  inkapi INKReturnCode INKStatFloatSet(INKStat the_stat, float value);
-
-  /* --------------------------------------------------------------------------
-     coupled stats */
-  inkapi INKCoupledStat INKStatCoupledGlobalCategoryCreate(const char *the_name);
-  inkapi INKCoupledStat INKStatCoupledLocalCopyCreate(const char *the_name, INKCoupledStat global_copy);
-  inkapi INKReturnCode INKStatCoupledLocalCopyDestroy(INKCoupledStat local_copy);
-  inkapi INKStat INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char *the_name, INKStatTypes the_type);
-  inkapi INKStat INKStatCoupledLocalAdd(INKCoupledStat local_copy, const char *the_name, INKStatTypes the_type);
-  inkapi INKReturnCode INKStatsCoupledUpdate(INKCoupledStat local_copy);
-
-  /* new stat system */
+     This is an experimental stat system, which is not compatible with standard
+     TS stats. It is disabled by default, enable it with --with_v2_stats at
+     configure time. */
   inkapi INKReturnCode     INKStatCreateV2(const char *name, uint32_t *stat_num);
   inkapi INKReturnCode     INKStatIncrementV2(uint32_t stat_num, INK64 inc_by);
   inkapi INKReturnCode     INKStatIncrementByNameV2(const char *stat_name, INK64 inc_by);
@@ -2407,6 +2420,63 @@ extern "C"
   inkapi INKReturnCode     INKStatGetCurrentByNameV2(const char *stat_name, INK64 *stat_val);
   inkapi INKReturnCode     INKStatGetV2(uint32_t stat_num, INK64 *stat_val);
   inkapi INKReturnCode     INKStatGetByNameV2(const char *stat_name, INK64 *stat_val);
+
+
+  /* --------------------------------------------------------------------------
+     This is the old stats system, it's completely deprecated, and should not
+     be used. It has serious limitations both in scalability and performance. */
+  typedef enum
+    {
+      INKSTAT_TYPE_INT64,
+      INKSTAT_TYPE_FLOAT
+    } INKStatTypes;
+
+  typedef void *INKStat;
+  typedef void *INKCoupledStat;
+
+  /* --------------------------------------------------------------------------
+     uncoupled stats */
+  /** @deprecated */
+  inkapi INKStat INKStatCreate(const char *the_name, INKStatTypes the_type);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatIntAddTo(INKStat the_stat, INK64 amount);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatFloatAddTo(INKStat the_stat, float amount);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatDecrement(INKStat the_stat);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatIncrement(INKStat the_stat);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatIntGet(INKStat the_stat, INK64 * value);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatFloatGet(INKStat the_stat, float *value);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatIntSet(INKStat the_stat, INK64 value);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatFloatSet(INKStat the_stat, float value);
+
+  /** These were removed with the old version of TS */
+  /** @deprecated */
+  inkapi INK_DEPRECATED INK64 INKStatIntRead(INKStat the_stat);
+
+  /** @deprecated */
+  inkapi INK_DEPRECATED float INKStatFloatRead(INKStat the_stat);
+
+  /* --------------------------------------------------------------------------
+     coupled stats */
+  /** @deprecated */
+  inkapi INKCoupledStat INKStatCoupledGlobalCategoryCreate(const char *the_name);
+  /** @deprecated */
+  inkapi INKCoupledStat INKStatCoupledLocalCopyCreate(const char *the_name, INKCoupledStat global_copy);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatCoupledLocalCopyDestroy(INKCoupledStat local_copy);
+  /** @deprecated */
+  inkapi INKStat INKStatCoupledGlobalAdd(INKCoupledStat global_copy, const char *the_name, INKStatTypes the_type);
+  /** @deprecated */
+  inkapi INKStat INKStatCoupledLocalAdd(INKCoupledStat local_copy, const char *the_name, INKStatTypes the_type);
+  /** @deprecated */
+  inkapi INKReturnCode INKStatsCoupledUpdate(INKCoupledStat local_copy);
+
 
   /* --------------------------------------------------------------------------
      tracing api */

@@ -2986,11 +2986,19 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.prefetch.redirection", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
 
+  // librecords based stats system
+  {CONFIG, "proxy.config.stat_api.max_stats_allowed", "", INK_INT, "512", RU_RESTART_TS, RR_NULL, RC_NULL, "[256-10000]", RA_NULL}
+  ,
+
   // StatSystemV2 config
-  {CONFIG, "proxy.config.stat_collector.interval", "", INK_INT, "600", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL},
-  {CONFIG, "proxy.config.stat_collector.port", "", INK_INT, "8091", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL},
-  {CONFIG, "proxy.config.stat_systemV2.max_stats_allowed", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL},
-  {CONFIG, "proxy.config.stat_systemV2.num_stats_estimate", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL},
+  {CONFIG, "proxy.config.stat_collector.interval", "", INK_INT, "600", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.stat_collector.port", "", INK_INT, "8091", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.stat_systemV2.max_stats_allowed", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.stat_systemV2.num_stats_estimate", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
 
   //############
   //#
