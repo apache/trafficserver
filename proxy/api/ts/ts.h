@@ -2387,7 +2387,7 @@ extern "C"
       TS_STAT_SYNC_TIMEAVG,
     } TSStatSync;
 
-  inkapi int TSRegisterStat(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync);
+  inkapi int TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync);
 
   inkapi INKReturnCode TSStatIntIncrement(int the_stat, INKMgmtInt amount);
   inkapi INKReturnCode TSStatIntDecrement(int the_stat, INKMgmtInt amount);
@@ -2399,7 +2399,7 @@ extern "C"
   inkapi INKReturnCode TSStatFloatGet(int the_stat, float* value);
   inkapi INKReturnCode TSStatFloatSet(int the_stat, float value);
 
-  inkapi int TSStatsFindName(const char* name);
+  inkapi int TSStatFindName(const char* name);
 
   /* --------------------------------------------------------------------------
      This is the old stats system, it's completely deprecated, and should not

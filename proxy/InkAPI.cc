@@ -7193,7 +7193,7 @@ INKMCOPreload(void *context,    // opaque ptr
 
 /************************   REC Stats API    **************************/
 int
-TSRegisterStat(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync)
+TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
   int volatile ix = ink_atomic_increment(&top_stat, 1);
   RecRawStatSyncCb syncer = RecRawStatSyncCount;
@@ -7249,7 +7249,7 @@ TSStatIntSet(int the_stat, INKMgmtInt value)
 }
 
 int
-TSStatsFindName(const char* name)
+TSStatFindName(const char* name)
 {
   int order;
 
