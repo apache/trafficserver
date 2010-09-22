@@ -1785,19 +1785,6 @@ RecordElement RecordsConfig[] = {
   ,
   //##############################################################################
   //#
-  //# Nca Subsystem
-  //#
-  //##############################################################################
-#ifdef USE_NCA
-  {PROCESS, "proxy.process.nca.upcalls", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.nca.downcalls", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {PROCESS, "proxy.process.nca.defered_downcalls", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-#endif
-  //##############################################################################
-  //#
   //# Cache
   //#
   //##############################################################################

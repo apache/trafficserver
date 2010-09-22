@@ -38,7 +38,6 @@
 #define VCONNECTION_CACHE_DATA_BASE     0
 #define VCONNECTION_NET_DATA_BASE       100
 #define VCONNECTION_API_DATA_BASE       200
-#define VCONNECTION_NCA_DATA_BASE       300
 
 //
 // Event signals

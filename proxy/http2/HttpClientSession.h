@@ -82,9 +82,6 @@ public:
     return bound_ss;
   };
 
-  // Used to retreive a request from NCA
-  virtual HTTPHdr *get_request();
-
   // Used for the cache authenticated HTTP content feature
   HttpServerSession *get_bound_ss();
 

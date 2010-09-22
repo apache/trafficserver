@@ -99,10 +99,6 @@ extern "C" int plock(int);
 #include "Update.h"
 #include "congest/Congestion.h"
 
-#ifdef USE_NCA
-#include "NcaProcessor.h"
-#endif
-
 #include "RemapProcessor.h"
 
 #include "XmlUtils.h"
@@ -286,18 +282,6 @@ ArgumentDescription argument_descriptions[] = {
 #if defined(linux)
   {"read_core", 'c', "Read Core file", "S255",
    &core_file, NULL, NULL},
-#endif
-
-#ifdef USE_NCA
-  {"NCA_Handlers", 'N', "NCA Handlers", "I", &NCA_handlers, NULL, NULL},
-  {"NCA_pwait", 'q', "Nca Preempt Wait", "I", &NCA_preempt_wait, NULL, NULL},
-  {"NCA_nocache", 'm', "Set Nca no cache", "T", &NCA_nocache, NULL, NULL},
-  {"NCA_advise", 'w', "Set Nca advise", "T", &NCA_advise, NULL, NULL},
-  {"NCA_use_ctag", 'x', "Set Nca use ctag", "T", &NCA_use_ctag, NULL, NULL},
-  {"NCA_data_return", 'y', "Set Nca data return", "T", &NCA_data_return,
-   NULL, NULL},
-  {"NCA_internal_stats", 's', "Nca internal stats", "T", &NCA_internal_stats,
-   NULL, NULL},
 #endif
 
   {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss,
@@ -1711,10 +1695,6 @@ main(int argc, char **argv)
   mcheck_pedantic(NULL);
 #endif
 
-#ifdef USE_NCA
-  NCA_handlers = ink_number_of_processors();
-#endif
-
   // Verify system dependent 'constants'
   check_system_constants();
 
@@ -1976,10 +1956,6 @@ main(int argc, char **argv)
     udpNet.start(num_of_udp_threads);   // XXX : broken for __WIN32
 
     sslNetProcessor.start(getNumSSLThreads());
-
-#ifdef USE_NCA
-    ncaProcessor.start();
-#endif
 
 #ifndef INK_NO_LOG
     // initialize logging (after event and net processor)

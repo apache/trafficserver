@@ -42,10 +42,6 @@
 #include "StatSystemV2.h"
 #endif
 
-#ifdef USE_NCA
-#include "NcaProcessor.h"
-#endif
-
 #include "HttpPages.h"
 
 //#include "I_Auth.h"
@@ -660,47 +656,23 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   // Record api hook set state
   hooks_set = http_global_hooks->hooks_set | client_vc->hooks_set;
 
-#ifdef USE_NCA
-  if (t_state.client_info.port_attribute == SERVER_PORT_NCA) {
-    bool data_found = netvc->get_data(NCA_DATA_CACHE_UPCALL,
-				      &t_state.nca_info.request_info);
-    ink_assert(data_found);
-  } else {
-#else
-  {
-#endif
-    // Setup for parsing the header
-    ua_buffer_reader = buffer_reader;
-    ua_entry->vc_handler = &HttpSM::state_read_client_request_header;
-    t_state.hdr_info.client_request.destroy();
-    t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
-    http_parser_init(&http_parser);
+  // Setup for parsing the header
+  ua_buffer_reader = buffer_reader;
+  ua_entry->vc_handler = &HttpSM::state_read_client_request_header;
+  t_state.hdr_info.client_request.destroy();
+  t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
+  http_parser_init(&http_parser);
 
-
-    // We first need to run the transaction start hook.  Since
-    //  this hook maybe asyncronous, we need to disable IO on
-    //  client but set the continuation to be the state machine
-    //  so if we get an timeout events the sm handles them
-    ua_entry->read_vio = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
-  }
-
+  // We first need to run the transaction start hook.  Since
+  //  this hook maybe asyncronous, we need to disable IO on
+  //  client but set the continuation to be the state machine
+  //  so if we get an timeout events the sm handles them
+  ua_entry->read_vio = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
 
   // Add our state sm to the sm list
   state_add_to_list(EVENT_NONE, NULL);
 }
 
-void
-HttpSM::setup_client_header_nca()
-{
-#ifdef USE_NCA
-
-  t_state.hdr_info.client_request.copy(ua_session->get_request());
-
-  Debug("http", "[%lld] retreived nca client request header", sm_id);
-
-  call_transact_and_set_next_state(HttpTransact::ModifyRequest);
-#endif
-}
 
 void
 HttpSM::setup_client_read_request_header()
@@ -1619,10 +1591,6 @@ HttpSM::handle_api_return()
   case HttpTransact::HTTP_API_SM_START:
     if (t_state.client_info.port_attribute == SERVER_PORT_BLIND_TUNNEL) {
       setup_blind_tunnel_port();
-#ifdef USE_NCA
-    } else if (t_state.client_info.port_attribute == SERVER_PORT_NCA) {
-      setup_client_header_nca();
-#endif
     } else {
       setup_client_read_request_header();
     }
@@ -1654,11 +1622,6 @@ HttpSM::handle_api_return()
     setup_server_send_request();
     return;
   case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
-#ifdef USE_NCA
-    if (t_state.client_info.port_attribute == SERVER_PORT_NCA) {
-      perform_nca_cache_action();
-    }
-#endif
     // Set back the inactivity timeout
     if (ua_session) {
       ua_session->get_netvc()->
@@ -3205,7 +3168,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
     ua_session->do_io_close();
     ua_session = NULL;
   } else {
-    ink_assert(ua_buffer_reader != NULL || t_state.client_info.port_attribute == SERVER_PORT_NCA);
+    ink_assert(ua_buffer_reader != NULL);
     ua_session->release(ua_buffer_reader);
     ua_buffer_reader = NULL;
     ua_session = NULL;
@@ -3397,15 +3360,10 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
         tunnel.local_finish_all(p);
       }
     }
-#ifdef USE_NCA
-    if (t_state.client_info.port_attribute != SERVER_PORT_NCA)
-#endif
-    {
-      // Initiate another read to watch catch aborts and
-      //   timeouts
-      ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
-      ua_entry->read_vio = p->vc->do_io_read(this, INT_MAX, ua_buffer_reader->mbuf);
-    }
+    // Initiate another read to watch catch aborts and
+    //   timeouts
+    ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
+    ua_entry->read_vio = p->vc->do_io_read(this, INT_MAX, ua_buffer_reader->mbuf);
     break;
   default:
     ink_release_assert(0);
@@ -5073,14 +5031,9 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     //  header buffer into new buffer
     //
 
-#ifdef USE_NCA
-    if (t_state.client_info.port_attribute != SERVER_PORT_NCA)
-#endif
-    {
-      client_request_body_bytes =
-        post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
-      ua_buffer_reader->consume(client_request_body_bytes);
-    }
+    client_request_body_bytes =
+      post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
+    ua_buffer_reader->consume(client_request_body_bytes);
     p = tunnel.add_producer(ua_entry->vc,
                             post_bytes - transfered_bytes,
                             buf_start, &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT, "user agent post");
@@ -5243,97 +5196,6 @@ HttpSM::perform_cache_write_action()
   }
 }
 
-
-// void HttpSM::perform_nca_cache_action()
-//
-//   Called to set the NCA cache info
-//     (ctag, nca, advise, etc)
-//
-//
-void
-HttpSM::perform_nca_cache_action()
-{
-
-#ifdef USE_NCA
-  // Use the cache action to figure out how to handle
-  //  NCA
-  switch (t_state.cache_info.action) {
-  case HttpTransact::CACHE_DO_DELETE:
-  case HttpTransact::CACHE_DO_SERVE_AND_DELETE:
-    // We need to get rid of any exisitng content in
-    //  nca's cache
-    if (t_state.nca_info.request_info->advisory & NCA_IO_ADVISE) {
-      t_state.nca_info.response_info.advisory |= NCA_IO_ADVISE | NCA_IO_ADVISE_FLUSH;
-    }
-    t_state.nca_info.response_info.nocache = 1;
-    break;
-
-  case HttpTransact::CACHE_DO_NO_ACTION:
-    // We are not cacheing content so no cache shouldn't
-    //   either
-    t_state.nca_info.response_info.nocache = 1;
-
-    if (t_state.nca_info.request_info->advisory & NCA_IO_ADVISE) {
-      t_state.nca_info.response_info.advisory |= NCA_IO_ADVISE | NCA_IO_ADVISE_FLUSH;
-    }
-    break;
-
-  case HttpTransact::CACHE_DO_SERVE_AND_UPDATE:
-  case HttpTransact::CACHE_DO_UPDATE:
-    // Because we can't update NCA's headers, handle this case
-    //  same as replace
-    //
-    // FALLTHROUGH
-  case HttpTransact::CACHE_DO_REPLACE:
-    // If there is an existing copy in nca's cache get rid of it
-    //  to prevent problems when alternates change on the
-    //  origin server
-    if (t_state.nca_info.request_info->advisory & NCA_IO_ADVISE) {
-      t_state.nca_info.response_info.advisory |= NCA_IO_ADVISE | NCA_IO_ADVISE_REPLACE | NCA_IO_ADVISE_FLUSH;
-    }
-    break;
-  case HttpTransact::CACHE_DO_WRITE:
-    // If nca has a document we don't flush it's copy
-    if (t_state.nca_info.request_info->advisory & NCA_IO_ADVISE) {
-      t_state.nca_info.response_info.advisory |= NCA_IO_ADVISE | NCA_IO_ADVISE_REPLACE | NCA_IO_ADVISE_FLUSH;
-    }
-    break;
-  case HttpTransact::CACHE_DO_SERVE:
-    // If nca has a different copy than us, (otherwise we would
-    //  we returning nca immediate and not be here
-    if (t_state.nca_info.request_info->advisory & NCA_IO_ADVISE) {
-      t_state.nca_info.response_info.advisory |= NCA_IO_ADVISE | NCA_IO_ADVISE_REPLACE | NCA_IO_ADVISE_FLUSH;
-    }
-    break;
-  default:
-    if (t_state.next_action == HttpTransact::PROXY_SEND_ERROR_CACHE_NOOP) {
-      if (t_state.nca_info.request_info->advisory & NCA_IO_ADVISE) {
-        t_state.nca_info.response_info.advisory |= NCA_IO_ADVISE | NCA_IO_ADVISE_TEMP;
-      } else {
-        t_state.nca_info.response_info.nocache = 1;
-      }
-      break;
-    }
-    ink_release_assert(0);
-    break;
-  }
-
-/*
-    if (is_action_tag_set("nca_always_advise")) {
-	t_state.nca_info.response_info.advisory |= NCA_IO_ADVISE;
-    }
-
-    if (is_action_tag_set("nca_always_nocache")) {
-	t_state.nca_info.response_info.nocache = 1;
-    }
-    */
-
-  bool r = ua_session->get_netvc()->set_data(NCA_DATA_CACHE_DOWNCALL,
-                                             &t_state.nca_info.response_info);
-  ink_assert(r);
-#endif
-
-}
 
 void
 HttpSM::issue_cache_update()
@@ -5646,9 +5508,6 @@ HttpSM::setup_cache_read_transfer()
   buf->append_block(HTTP_HEADER_BUFFER_SIZE_INDEX);
 #endif
 
-#ifdef USE_NCA
-  buf->water_mark = write_push_bytes;
-#endif
   buf->water_mark = (int) t_state.http_config_param->default_buffer_water_mark;
 
   IOBufferReader *buf_start = buf->alloc_reader();
@@ -7137,19 +6996,6 @@ HttpSM::set_next_state()
     {
       setup_push_transfer_to_cache();
       tunnel.tunnel_run();
-      break;
-    }
-
-
-  case HttpTransact::NCA_IMMEDIATE:
-    {
-#ifdef USE_NCA
-      // FIX ME: What do about api hooks here?
-      ua_session->get_netvc()->set_data(NCA_DATA_CACHE_DOWNCALL, &t_state.nca_info);
-      terminate_sm = true;
-#else
-      ink_release_assert(0);
-#endif
       break;
     }
 

@@ -749,10 +749,6 @@ Lretry:
   c->force_dns = aforce_dns;
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler) & HostDBContinuation::probeEvent);
 
-  // If we're doing transaction on a thread, schedule ourselves
-  //   on the same thread.  Otherwise, use the dns thread since
-  //   we could be on an NCA thread which isn't schedulable
-  //
   // Since ProxyMutexPtr has a cast operator, gcc-3.x get upset
   // about ambiguity when doing this comparison, so by reversing
   // the operands, I force it to pick the cast operation /leif.
@@ -936,22 +932,7 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
   c->force_dns = force_dns;
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler) & HostDBContinuation::probeEvent);
 
-  // If we're doing transaction on a thread, schedule ourselves
-  //   on the same thread.  Otherwise, use the dns thread since
-  //   we could be on an NCA thread which isn't schedulable
-  //
-  // Since ProxyMutexPtr has a cast operator, gcc-3.x get upset
-  // about ambiguity when doing this comparison, so by reversing
-  // the operands, I force it to pick the cast operation /leif.
-#ifdef USE_NCA
-  if (thread->mutex == cont->mutex) {
-    thread->schedule_in(c, MUTEX_RETRY_DELAY);
-  } else {
-    dnsProcessor.thread->schedule_imm(c);
-  }
-#else
   thread->schedule_in(c, MUTEX_RETRY_DELAY);
-#endif
 
   return &c->action;
 }

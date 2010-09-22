@@ -372,9 +372,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
   case HttpTransact::TRANSFORM_READ:
     return ("TRANSFORM_READ");
 
-  case HttpTransact::NCA_IMMEDIATE:
-    return ("NCA_IMMEDIATE");
-
 #ifdef PROXY_DRAIN
   case HttpTransact::PROXY_DRAIN_REQUEST_BODY:
     return ("PROXY_DRAIN_REQUEST_BODY");

@@ -35,13 +35,8 @@
 #include "HttpTunnel.h"
 #include "Tokenizer.h"
 
-#ifdef USE_NCA
-#include "HttpNcaClient.h"
-#endif
-
 HttpPortEntry *http_port_attr_array = NULL;
 HttpOtherPortEntry *http_other_port_array = NULL;
-
 
 #ifdef DEBUG
 extern "C"
@@ -355,10 +350,6 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   }
 
   sslTerminationConfig.release(sslParam);
-
-#ifdef USE_NCA
-  start_NcaServer();
-#endif
 
 #ifdef DEBUG
   if (diags->on("http_dump")) {

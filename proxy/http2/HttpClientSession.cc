@@ -604,15 +604,6 @@ HttpClientSession::release(IOBufferReader * r)
   }
 }
 
-HTTPHdr *
-HttpClientSession::get_request()
-{
-
-  // Call should only be executed on an NCA type session
-  ink_release_assert(0);
-  return NULL;
-}
-
 HttpServerSession *
 HttpClientSession::get_bound_ss()
 {

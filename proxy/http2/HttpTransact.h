@@ -43,11 +43,6 @@
 #include "RemapPluginInfo.h"
 #include "UrlMapping.h"
 
-
-#ifdef USE_NCA
-#include "NcaVConnection.h"
-#endif
-
 #include "congest/Congestion.h"
 
 #define MAX_DNS_LOOKUPS 2
@@ -589,8 +584,6 @@ public:
     SSL_TUNNEL,
     EXTENSION_METHOD_TUNNEL,
 
-    NCA_IMMEDIATE,
-
     CONTINUE,
 
     HTTP_API_SM_START,
@@ -911,19 +904,6 @@ public:
   SquidLogInfo;
 
 
-#ifdef USE_NCA
-  typedef struct _NcaInfo
-  {
-    NcaCacheUp_t *request_info;
-    NcaCacheDown_t response_info;
-
-      _NcaInfo():request_info(NULL), response_info()
-    {
-    };
-  }
-  NcaInfo;
-#endif
-
 #define HTTP_TRANSACT_STATE_MAX_USER_ARG         16     /* max number of user arguments inside HttpTransact::State structure */
 #define HTTP_TRANSACT_STATE_MAX_XBUF_SIZE  (1024*2)     /* max size of plugin exchange buffer */
 
@@ -960,9 +940,6 @@ public:
     HeaderInfo hdr_info;
     SquidLogInfo squid_codes;
     HttpApiInfo api_info;
-#ifdef USE_NCA
-    NcaInfo nca_info;
-#endif
     // To handle parent proxy case, we need to be
     //  able to defer some work in building the request
     TransactFunc_t pending_work;

@@ -93,13 +93,6 @@ _D(cluster_vc_cache_purges_stat)
 _D(cluster_write_lock_misses_stat)
 
 
-
-  //
-  // Dynamic NCA Stats
-  //
-_D(nca_upcall_count_stat)
-_D(nca_downcall_count_stat)
-_D(nca_defer_downcall_count_stat)
   //
   // Dynamic Load Shedding Stats
   //

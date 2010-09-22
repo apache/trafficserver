@@ -51,9 +51,6 @@
 //#include "YAddr.h"
 #define REVALIDATE_CONV_FACTOR 1000000  //Revalidation Conversion Factor to msec - YTS Team, yamsat
 #include "I_Machine.h"
-#ifdef USE_NCA
-#include "NcaProcessor.h"
-#endif
 
 static const char *URL_MSG = "Unable to process requested URL.\n";
 
@@ -583,36 +580,6 @@ how_to_open_connection(HttpTransact::State * s)
   return s->cdn_saved_next_action;
 }
 
-#ifdef USE_NCA
-static uint64
-extract_ctag_from_response(HTTPHdr * h)
-{
-
-  HTTP_DEBUG_ASSERT(h->type_get() == HTTP_TYPE_RESPONSE);
-  MIMEField *ctag_field = h->field_find("@Ctag", 5);
-
-  uint64 ctag;
-  if (ctag_field != NULL) {
-    int tmp;
-    const char *ctag_str = ctag_field->value_get(&tmp);
-    // strtoull requires NULL terminated string so
-    //  create one
-    if (tmp < 64) {
-      char tmp_str[64];
-      memcpy(tmp_str, ctag_str, tmp);
-      tmp_str[tmp] = '\0';
-      ctag = strtoull(tmp_str, NULL, 10);
-    } else {
-      // Obviously bogus, ignore
-      ctag = 0;
-    }
-  } else {
-    ctag = 0;
-  }
-
-  return ctag;
-}
-#endif
 
 /*****************************************************************************
  *****************************************************************************
@@ -625,19 +592,14 @@ extract_ctag_from_response(HTTPHdr * h)
  **** take as input just the state and set the next_action variable.      ****
  *****************************************************************************
  *****************************************************************************/
-
 void
 HttpTransact::BadRequest(State * s)
 {
-
   Debug("http_trans", "[BadRequest]" "parser marked request bad");
-
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-
   build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request",
                        "request#syntax_error", "Bad request syntax", "");
   TRANSACT_RETURN(PROXY_SEND_ERROR_CACHE_NOOP, NULL);
-
 }
 
 void
@@ -2810,44 +2772,6 @@ HttpTransact::HandleCacheOpenReadHit(State * s)
   } else {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_FRESH);
   }
-
-#ifdef USE_NCA
-  if (s->client_info.port_attribute == SERVER_PORT_NCA) {
-
-    uint64 ctag = extract_ctag_from_response(obj->response_get());
-    NcaCacheUp_t *nc = s->nca_info.request_info;
-
-    if (nc->advisory) {
-      if (nc->advise_ctag != 0 && nc->advise_ctag == ctag) {
-
-        // Since the ctags match and the object is
-        //  still fresh in our cache, the advise wasn't
-        //  needed and nca should return the document
-        //  it has
-        s->nca_info.response_info.advisory = NCA_IO_ADVISE_NONE;
-        s->squid_codes.log_code = SQUID_LOG_TCP_HIT;
-        TRANSACT_RETURN(NCA_IMMEDIATE, NULL);
-      }
-    } else if (nc->nocache == 0 && ctag != 0) {
-      // No advise, so see if NCA already has the document
-      //   for a different alternate but matching the
-      //   cached copy's ctag against the set nca has
-
-      for (int i = 0; i < nc->num_ctags; i++) {
-        if (nc->ctag_array[i] == ctag) {
-          s->nca_info.response_info.iodirect_ctag = ctag;
-          s->squid_codes.log_code = SQUID_LOG_TCP_HIT;
-          TRANSACT_RETURN(NCA_IMMEDIATE, NULL);
-        }
-      }
-    }
-    // No immediate NCA response so we will be
-    //  returning the cached cop and thus we
-    //  need to set the ctag on the way down
-    s->nca_info.response_info.ctag = ctag;
-  }
-#endif
-
 
   if (s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING) {
     build_response_from_cache(s, HTTP_WARNING_CODE_HERUISTIC_EXPIRATION);
@@ -5114,21 +5038,6 @@ HttpTransact::set_headers_for_cache_write(State * s, HTTPInfo * cache_info, HTTP
 
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", cache_info->request_get(), s->state_machine_id, "Cached Request Hdr");
-
-#ifdef USE_NCA
-  // With NCA set get a new ctag here since this is a new document
-  if (s->client_info.port_attribute == SERVER_PORT_NCA) {
-    uint64 new_ctag = ncaProcessor.allocate_ctag();
-
-    char ctag_str[21];
-    snprintf(ctag_str, sizeof(ctag_str), "%llu", new_ctag);
-
-    HTTPHdr *ch = cache_info->response_get();
-    ch->value_set("@Ctag", 5, ctag_str, strlen(ctag_str));
-
-    s->nca_info.response_info.ctag = new_ctag;
-  }
-#endif
 }
 
 void
@@ -7415,15 +7324,6 @@ HttpTransact::handle_response_keep_alive_headers(State * s, HTTPVersion ver, HTT
   heads->field_delete(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
   heads->field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
 
-#ifdef USE_NCA
-  // Since NCA does all the client side keep alive,
-  //   simply want to delete all the connection headers
-  //   and return so as not interfere with NCA keep-alive
-  if (s->client_info.port_attribute == SERVER_PORT_NCA) {
-    return;
-  }
-#endif
-
   int c_hdr_field_len;
   const char *c_hdr_field_str;
   if (s->client_info.proxy_connect_hdr) {
@@ -7544,21 +7444,6 @@ HttpTransact::delete_all_document_alternates_and_return(State * s, bool cache_hi
   } else {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
   }
-
-#ifdef USE_NCA
-  /*  FIX ME: DELETE and NCA
-     if (s->client_info.port_attribute == SERVER_PORT_NCA) {
-     if (s->nca_info.request_info->advisory) {
-     HTTPHdr cached_response = s->cache_info.object_read->response_get();
-     ink_assert(cached_response.valid());
-     uint64 ctag = extract_ctag_from_response(cached_response);
-     s->nca_info.response_info.ctag = ctag;
-     s->nca_info.response_info.advisory |= NCA_IO_ADVISE_FLUSH;
-     s->nca_info.response_info.nocache = 1;
-     }
-     }
-   */
-#endif
 
   if ((s->method != HTTP_WKSIDX_GET) && (s->method == HTTP_WKSIDX_DELETE || s->method == HTTP_WKSIDX_PURGE)) {
     bool valid_max_forwards;
