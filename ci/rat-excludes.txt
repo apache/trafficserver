@@ -87,3 +87,5 @@ libinktomi++/ink_rand.cc
 README.libev
 README-EC2
 REVIEWERS
+contrib/perl/AdminClient/Changes
+contrib/perl/AdminClient/MANIFEST
