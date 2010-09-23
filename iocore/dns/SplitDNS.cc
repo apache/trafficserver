@@ -913,10 +913,6 @@ ink_split_dns_init(ModuleVersion v)
     return;
 
   init_called = 1;
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.splitDNS.enabled", 0, RECU_DYNAMIC, RECC_INT, "[0-1]");
-  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.dns.splitdns.def_domain", 0, RECU_DYNAMIC, RECC_STR, "^[^[:space:]]*$");
-  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.dns.splitdns.filename", "splitdns.config", RECU_RESTART_TS, RECC_NULL, NULL);
 }
 
 #endif // SPLIT_DNS

@@ -648,35 +648,15 @@ ClusterProcessor::init()
   // Used to call CLUSTER_INCREMENT_DYN_STAT here; switch to SUM_GLOBAL_DYN_STAT
   CLUSTER_SUM_GLOBAL_DYN_STAT(CLUSTER_NODES_STAT, 1);   // one node in cluster, ME
 
-  //# load monitor_enabled: -1 = compute only, 0 = disable, 1 = compute and act
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.load_monitor_enabled", 1, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_monitor_enabled, "proxy.config.cluster.load_monitor_enabled");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.ping_send_interval_msecs", 100, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_ping_message_send_msec_interval, "proxy.config.cluster.ping_send_interval_msecs");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.ping_response_buckets", 100, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_num_ping_response_buckets, "proxy.config.cluster.ping_response_buckets");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.msecs_per_ping_response_buckets", 50, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_msecs_per_ping_response_bucket, "proxy.config.cluster.msecs_per_ping_response_bucket");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.ping_latency_threshold_msecs", 500, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_ping_latency_threshold_msecs, "proxy.config.cluster.ping_latency_threshold_msecs");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.load_compute_interval_msecs", 5000, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_load_compute_msec_interval, "proxy.config.cluster.load_compute_interval_msecs");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.periodic_timer_interval_msecs", 100, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_periodic_msec_interval, "proxy.config.cluster.periodic_timer_interval_msecs");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.ping_history_buf_length", 120, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_ping_history_buf_length, "proxy.config.cluster.ping_history_buf_length");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.cluster_load_clear_duration", 24, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_load_clear_duration, "proxy.config.cluster.cluster_load_clear_duration");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG,    "proxy.config.cluster.cluster_load_exceed_duration", 4, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(ClusterLoadMonitor::cf_cluster_load_exceed_duration, "proxy.config.cluster.cluster_load_exceed_duration");
 
   //
@@ -685,35 +665,17 @@ ClusterProcessor::init()
   if (cluster_port_number != DEFAULT_CLUSTER_PORT_NUMBER)
     cluster_port = cluster_port_number;
   else {
-    IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.cluster_port", 8086, RECU_RESTART_TS, RECC_NULL, NULL);
     IOCORE_ReadConfigInteger(cluster_port, "proxy.config.cluster.cluster_port");
   }
 
-  // Cluster monitor configuration
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.enable_monitor", 0, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(CacheClusterMonitorEnabled, "proxy.config.cluster.enable_monitor");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.monitor_interval_secs", 1, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(CacheClusterMonitorIntervalSecs, "proxy.config.cluster.monitor_interval_secs");
-
-  // Cluster internal parameters
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.receive_buffer_size", 10485760, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(cluster_receive_buffer_size, "proxy.config.cluster.receive_buffer_size");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.send_buffer_size", 10485760, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(cluster_send_buffer_size, "proxy.config.cluster.send_buffer_size");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.sock_option_flag", 0, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(cluster_sockopt_flags, "proxy.config.cluster.sock_option_flag");
-
-  // RPC Cache Cluster option
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.cluster.rpc_cache_cluster", 0, RECU_DYNAMIC, RECC_NULL, NULL);
   IOCORE_EstablishStaticConfigInt32(RPC_only_CacheCluster, "proxy.config.cluster.rpc_cache_cluster");
 
   int cluster_type = 0;
-  //# cluster type requires restart to change
-  //# 1 is full clustering, 2 is mgmt only, 3 is no clustering
-  IOCORE_RegisterConfigInteger(RECT_LOCAL, "proxy.local.cluster.type", 3, RECU_NULL, RECC_NULL, NULL);
   IOCORE_ReadConfigInteger(cluster_type, "proxy.local.cluster.type");
 
   create_this_cluster_machine();
@@ -765,12 +727,9 @@ ClusterProcessor::start()
     for (int i = 0; i < eventProcessor.n_threads_for_type[ET_CLUSTER]; i++) {
       initialize_thread_for_net(eventProcessor.eventthread[ET_CLUSTER][i], i);
     }
-
-    // TODO: This had to be moved back to RecordsConfig.cc, because of "order" mattering ...
-    // IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.cluster.cluster_configuration", "cluster.config", RECU_NULL, RECC_NULL, NULL);
-
     IOCORE_RegisterConfigUpdateFunc("proxy.config.cluster.cluster_configuration", machine_config_change, (void *) CLUSTER_CONFIG);
     do_machine_config_change((void *) CLUSTER_CONFIG, "proxy.config.cluster.cluster_configuration");
+    // TODO: Remove this?
 #ifdef USE_SEPARATE_MACHINE_CONFIG
     IOCORE_RegisterConfigUpdateFunc("proxy.config.cluster.machine_configuration", machine_config_change, (void *) MACHINE_CONFIG);
     do_machine_config_change((void *) MACHINE_CONFIG, "proxy.config.cluster.machine_configuration");
