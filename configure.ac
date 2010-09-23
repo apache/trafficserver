@@ -1052,18 +1052,18 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
     ])
   ],[
     AC_MSG_CHECKING([for TPROXY sockopt IP_TRANSPARENT])
-    AS_CASE("$enable_tproxy",
-      [[[0-9]][[0-9]]*], [
+    case "$enable_tproxy" in
+      [[0-9][0-9]*])
 	ip_transparent=$enable_tproxy
 	use_tproxy=1
 	AC_MSG_RESULT([forced to $ip_transparent])
-      ],
-      [force], [
+	;;
+      force)
 	ip_transparent=19
 	use_tproxy=1
 	AC_MSG_RESULT([forced to $ip_transparent])
-      ],
-      [yes|auto], [
+	;;
+      yes|auto)
         AS_IF([test -r $tproxy_header], [
 	  ip_transparent=`$AWK "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
 	  AS_IF([test "x$ip_transparent" != "x"], [
@@ -1086,12 +1086,12 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
 	    AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
 	  ])
 	])
-      ],
-      [
+	;;
+      *)
 	AC_MSG_RESULT([failed])
 	AC_MSG_FAILURE([Invalid argument to feature tproxy.$tproxy_usage])
-      ]
-    )
+	;;
+      esac
   ])
 ])
 
