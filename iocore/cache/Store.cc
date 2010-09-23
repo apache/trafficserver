@@ -265,7 +265,6 @@ Store::read_config(int fd)
     //      initialize_store().
     //
     // ink_strncpy(p, cache_system_config_directory, sizeof(p));
-    IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.cache.storage_filename", "storage.config", RECU_RESTART_TS, RECC_NULL, NULL);
     IOCORE_ReadConfigString(storage_file, "proxy.config.cache.storage_filename", PATH_NAME_MAX);
     Layout::relative_to(storage_path, PATH_NAME_MAX, Layout::get()->sysconfdir, storage_file);
     Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", storage_path);

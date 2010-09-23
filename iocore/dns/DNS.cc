@@ -1517,17 +1517,6 @@ ink_dns_init(ModuleVersion v)
   // create a stat block for HostDBStats
   dns_rsb = RecAllocateRawStatBlock((int) DNS_Stat_Count);
 
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.retries", 5, RECU_DYNAMIC, RECC_INT, "[0-9]");
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.lookup_timeout", 20, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.search_default_domains", 1, RECU_DYNAMIC, RECC_INT, "[0-1]");
-
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.failover_number", 5, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.failover_period", 60, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.max_dns_in_flight", 2048, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_RegisterConfigInteger(RECT_CONFIG, "proxy.config.dns.round_robin_nameservers", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-  IOCORE_RegisterConfigString(RECT_CONFIG, "proxy.config.dns.nameservers", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
-
-
   //
   // Register statistics callbacks
   //

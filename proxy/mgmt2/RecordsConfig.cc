@@ -104,6 +104,8 @@ RecordElement RecordsConfig[] = {
   //# 0 = disable
   {CONFIG, "proxy.config.http_ui_enabled", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
+  {CONFIG, "proxy.config.cache.max_disk_errors", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
   //# 0 = disable
   {CONFIG, "proxy.config.history_info_enabled", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -291,6 +293,10 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.cluster.peer_timeout", "", INK_INT, "30", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cluster.startup_timeout", "", INK_INT, "10", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  //# cluster type requires restart to change
+  //# 1 is full clustering, 2 is mgmt only, 3 is no clustering
+  {LOCAL, "proxy.local.cluster.type", "", INK_INT, "3", RU_RESTART_TM, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cluster.rsport", "", INK_INT, "8088", RU_NULL, RR_REQUIRED, RC_NULL, NULL,
    RA_NULL}
@@ -1581,16 +1587,47 @@ RecordElement RecordsConfig[] = {
   ,
   //##############################################################################
   //#
+  //# I/O Subsystem
+  //#
+  //##############################################################################
+  {CONFIG, "proxy.config.io.max_buffer_size", "", INK_INT, "32768", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  //##############################################################################
+  //#
   //# Net Subsystem
   //#
   //##############################################################################
+  {CONFIG, "proxy.config.net.connections_throttle", "", INK_INT, "8000", RU_RESTART_TS, RR_REQUIRED,
+   RC_STR, "^[0-9]+$", RA_NULL}
+  ,
   {CONFIG, "proxy.config.net.throttle_enabled", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.net.max_poll_delay", "", INK_INT, "128", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.net.listen_backlog", "", INK_INT, "1024", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.net.accept_throttle", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.net.tcp_accept_defer_timeout", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "^[0-9]+$",
    RA_NULL}
   ,
+
+  // deprecated configuration options - bcall 4/25/07
+  // these should be removed in the future
+  {CONFIG, "proxy.config.net.sock_recv_buffer_size", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.net.sock_send_buffer_size", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.net.sock_option_flag", "", INK_INT, "0x0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.net.os_sock_recv_buffer_size", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.net.os_sock_send_buffer_size", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.net.os_sock_option_flag", "", INK_INT, "0x0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  // end of deprecated config options
+
   {CONFIG, "proxy.config.net.sock_recv_buffer_size_in", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.net.sock_send_buffer_size_in", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -1639,10 +1676,8 @@ RecordElement RecordsConfig[] = {
   //# Cluster Subsystem
   //#
   //##############################################################################
-  //# cluster type requires restart to change
-  //# 1 is full clustering, 2 is mgmt only, 3 is no clustering
-  //# TODO: cluster.type is duplicated, because of weird dependencies.
-  {LOCAL, "proxy.local.cluster.type", "", INK_INT, "3", RU_RESTART_TM, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.cluster.cluster_port", "", INK_INT, "8086", RU_RESTART_TS, RR_REQUIRED, RC_NULL,
+   NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cluster.cluster_configuration", "", INK_STRING, "cluster.config", RU_NULL, RR_NULL, RC_NULL,
    NULL, RA_NULL}
@@ -1650,6 +1685,50 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.cluster.ethernet_interface", "", INK_STRING, NULL, RU_RESTART_TS, RR_REQUIRED, RC_STR,
    "^[^[:space:]]*$", RA_NULL}
   ,
+  {CONFIG, "proxy.config.cluster.enable_monitor", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.monitor_interval_secs", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.send_buffer_size", "", INK_INT, "10485760", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.receive_buffer_size", "", INK_INT, "10485760", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.sock_option_flag", "", INK_INT, "0x0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.rpc_cache_cluster", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  //##################################################################
+  //# Cluster interconnect load monitoring configuration options.
+  //# Internal use only
+  //##################################################################
+  //# load monitor_enabled: -1 = compute only, 0 = disable, 1 = compute and act
+  {CONFIG, "proxy.config.cluster.load_monitor_enabled", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.ping_send_interval_msecs", "", INK_INT, "100", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.ping_response_buckets", "", INK_INT, "100", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.msecs_per_ping_response_bucket", "", INK_INT, "50", RU_NULL, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.ping_latency_threshold_msecs", "", INK_INT, "500", RU_NULL, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.load_compute_interval_msecs", "", INK_INT, "5000", RU_NULL, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.periodic_timer_interval_msecs", "", INK_INT, "100", RU_NULL, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.ping_history_buf_length", "", INK_INT, "120", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.cluster_load_clear_duration", "", INK_INT, "24", RU_NULL, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cluster.cluster_load_exceed_duration", "", INK_INT, "4", RU_NULL, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  //##################################################################
   {PROCESS, "proxy.process.cluster.connections_open", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {PROCESS, "proxy.process.cluster.connections_opened", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -1790,17 +1869,77 @@ RecordElement RecordsConfig[] = {
   ,
   //##############################################################################
   //#
+  //# Nca Subsystem
+  //#
+  //##############################################################################
+#ifdef USE_NCA
+  {PROCESS, "proxy.process.nca.upcalls", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {PROCESS, "proxy.process.nca.downcalls", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {PROCESS, "proxy.process.nca.defered_downcalls", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+#endif
+  //##############################################################################
+  //#
   //# Cache
   //#
   //##############################################################################
+  {CONFIG, "proxy.config.cache.storage_filename", "", INK_STRING, "storage.config", RU_RESTART_TS, RR_NULL, RC_NULL,
+   NULL, RA_NULL}
+  ,
   {CONFIG, "proxy.config.cache.control.filename", "", INK_STRING, "cache.config", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
   {CONFIG, "proxy.config.cache.ip_allow.filename", "", INK_STRING, "ip_allow.config", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,
-  {CONFIG, "proxy.config.cache.hostdb.disable_reverse_lookup", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.cache.hosting_filename", "", INK_STRING, "hosting.config", RU_REREAD, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
   ,
+  {CONFIG, "proxy.config.cache.partition_filename", "", INK_STRING, "partition.config", RU_RESTART_TS, RR_NULL, RC_NULL,
+   NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.permit.pinning", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.vary_on_user_agent", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  //  # 0 - MD5 hash
+  //  # 1 - MMH hash
+  {CONFIG, "proxy.config.cache.url_hash_method", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  //  # default the ram cache size to AUTO_SIZE (-1)
+  //  # alternatively: 20971520 (20MB)
+  {CONFIG, "proxy.config.cache.ram_cache.size", "", INK_INT, "-1", RU_RESTART_TS, RR_NULL, RC_STR, "^-?[0-9]+$", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.ram_cache.algorithm", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.ram_cache.compress", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.ram_cache.compress_percent", "", INK_INT, "90", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  //  # how often should the directory be synced (seconds)
+  {CONFIG, "proxy.config.cache.dir.sync_frequency", "", INK_INT, "60", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.hostdb.disable_reverse_lookup", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.select_alternate", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.ram_cache_cutoff", "", INK_INT, "1048576", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  //  # The maximum number of alternates that are allowed for any given URL.
+  //  # It is not possible to strictly enforce this if the variable
+  //  #   'proxy.config.cache.vary_on_user_agent' is set to 1.
+  //  # (0 disables the maximum number of alts check)
+  {CONFIG, "proxy.config.cache.limits.http.max_alts", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.force_sector_size", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.target_fragment_size", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  //  # The maximum size of a document that will be stored in the cache.
+  //  # (0 disables the maximum document size check)
   {CONFIG, "proxy.config.net.enable_ink_disk_io", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.net.ink_disk_io_watermark", "", INK_INT, "400", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -1809,11 +1948,25 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.net.max_kqueue_len", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
+  {CONFIG, "proxy.config.cache.max_doc_size", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_STR, "^[0-9]+$", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.min_average_object_size", "", INK_INT, "8000", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
   {CONFIG, "proxy.config.cache.max_agg_delay", "", INK_INT, "1000", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.threads_per_disk", "", INK_INT, "4", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cache.aio_sleep_time", "", INK_INT, "100", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cache.check_disk_idle", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.agg_write_backlog", "", INK_INT, "5242880", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.enable_checksum", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.alt_rewrite_max_size", "", INK_INT, "4096", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.cache.enable_read_while_writer", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //
   //  #
@@ -1909,9 +2062,33 @@ RecordElement RecordsConfig[] = {
   //# DNS
   //#
   //##############################################################################
+  {CONFIG, "proxy.config.dns.lookup_timeout", "", INK_INT, "20", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.dns.retries", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_NULL, "[0-9]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.dns.search_default_domains", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.dns.failover_number", "", INK_INT, "5", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.dns.failover_period", "", INK_INT, "60", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.dns.max_dns_in_flight", "", INK_INT, "2048", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
   {CONFIG, "proxy.config.dns.validate_query_name", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, "[0-1]", RA_NULL}
   ,
+  {CONFIG, "proxy.config.dns.splitDNS.enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.dns.splitdns.filename", "", INK_STRING, "splitdns.config", RU_NULL, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.dns.splitdns.def_domain", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_STR, "^[^[:space:]]*$",
+   RA_NULL}
+  ,
   {CONFIG, "proxy.config.dns.url_expansions", "", INK_STRING, NULL, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.dns.nameservers", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.dns.round_robin_nameservers", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {PROCESS, "proxy.process.dns.total_dns_lookups", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -2257,9 +2434,82 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.url_remap.url_remap_mode", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-2]", RA_NULL}
   ,
   //##############################################################################
-  //# SSL: This is modularized, but doesn't work unless it's defined here.
+  //#
+  //# SSL Termination
+  //#
   //##############################################################################
   {CONFIG, "proxy.config.ssl.enabled", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.SSLv2", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.SSLv3", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.TLSv1", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.accelerator_required", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.accelerator.type", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.number.threads", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.atalla.lib.path", "", INK_STRING, "/opt/atalla/lib", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.ncipher.lib.path", "", INK_STRING, "/opt/nfast/toolkits/hwcrhk", RU_RESTART_TS, RR_NULL,
+   RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.cswift.lib.path", "", INK_STRING, "/usr/lib", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.broadcom.lib.path", "", INK_STRING, "/usr/lib", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.server_port", "", INK_INT, "443", RU_RESTART_TS, RR_NULL, RC_INT, "[0-65535]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.client.certification_level", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-2]",
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.server.cert.filename", "", INK_STRING, "server.pem", RU_RESTART_TS, RR_NULL, RC_STR,
+   "^[^[:space:]]+$", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.server.cert.path", "", INK_STRING, "etc/trafficserver", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.server.cert_chain.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.server.multicert.filename", "", INK_STRING, "ssl_multicert.config", RU_RESTART_TS, RR_NULL,
+   RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.server.private_key.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR,
+   "^[^[:space:]]*$", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.server.private_key.path", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.CA.cert.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR, "^[^[:space:]]*$",
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.CA.cert.path", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.client.verify.server", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.client.cert.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR,
+   "^[^[:space:]]*$", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.client.cert.path", "", INK_STRING, "etc/trafficserver", RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.client.private_key.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR,
+   "^[^[:space:]]*$", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.client.private_key.path", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_NULL, NULL,
+   RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.client.CA.cert.filename", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_STR,
+   "^[^[:space:]]*$", RA_NULL}
+  ,
+  {CONFIG, "proxy.config.ssl.client.CA.cert.path", "", INK_STRING, NULL, RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //##############################################################################
   //# ICP Configuration
@@ -2951,6 +3201,8 @@ RecordElement RecordsConfig[] = {
   {CLUSTER, "proxy.cluster.current_server_connections", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //# Add LOCAL Records Here
+  {LOCAL, "proxy.local.incoming_ip_to_bind", "", INK_STRING, NULL, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
   {LOCAL, "proxy.local.outgoing_ip_to_bind", "", INK_STRING, NULL, RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {LOCAL, "proxy.local.log2.collation_mode", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-4]", RA_NULL}
@@ -2982,11 +3234,9 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.prefetch.redirection", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-
-  // librecords based stats system
-  {CONFIG, "proxy.config.stat_api.max_stats_allowed", "", INK_INT, "512", RU_RESTART_TS, RR_NULL, RC_NULL, "[256-10000]", RA_NULL}
+  //# Librecords based stats system (new as of v2.1.3)
+  {CONFIG, "proxy.config.stat_api.max_stats_allowed", "", INK_INT, "256", RU_RESTART_TS, RR_NULL, RC_INT, "[256-1000]", RA_NULL}
   ,
-
 #if ATS_HAS_V2STATS
   // StatSystemV2 config
   {CONFIG, "proxy.config.stat_collector.interval", "", INK_INT, "600", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
@@ -2998,7 +3248,6 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.stat_systemV2.num_stats_estimate", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
 #endif
-
   //############
   //#
   //# Eric's super cool remap processor
