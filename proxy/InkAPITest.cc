@@ -863,10 +863,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
     SDK_RPRINT(test, "INKfopen", "TestCase1", TC_PASS, "ok");
 
   // Create unique tmp _file_name_, do not use any TS file_name
-  // XXX: Where is this file created?
-  //      It should be temporary file I presume so it should be
-  //      created either in /tmp or runtimedir
-  snprintf(write_file_name, PATH_NAME_MAX, "%sXXXXXX", PFX);
+  snprintf(write_file_name, PATH_NAME_MAX, "/tmp/%sXXXXXX", PFX);
   int write_file_fd;            // this file will be reopened below
   if ((write_file_fd = mkstemp(write_file_name)) <= 0) {
     SDK_RPRINT(test, "mkstemp", "std func", TC_FAIL, "can't create file for writing");
