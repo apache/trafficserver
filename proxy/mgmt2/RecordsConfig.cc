@@ -1639,6 +1639,11 @@ RecordElement RecordsConfig[] = {
   //# Cluster Subsystem
   //#
   //##############################################################################
+  //# cluster type requires restart to change
+  //# 1 is full clustering, 2 is mgmt only, 3 is no clustering
+  //# TODO: cluster.type is duplicated, because of weird dependencies.
+  {LOCAL, "proxy.local.cluster.type", "", INK_INT, "3", RU_RESTART_TM, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
   {CONFIG, "proxy.config.cluster.cluster_configuration", "", INK_STRING, "cluster.config", RU_NULL, RR_NULL, RC_NULL,
    NULL, RA_NULL}
   ,
@@ -2250,6 +2255,11 @@ RecordElement RecordsConfig[] = {
   // # 1 - URL_REMAP_ALL remap url's of all requests
   // # 2 - URL_REMAP_FOR_OS remap url's for requests to OS's only
   {CONFIG, "proxy.config.url_remap.url_remap_mode", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-2]", RA_NULL}
+  ,
+  //##############################################################################
+  //# SSL: This is modularized, but doesn't work unless it's defined here.
+  //##############################################################################
+  {CONFIG, "proxy.config.ssl.enabled", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
   //##############################################################################
   //# ICP Configuration
