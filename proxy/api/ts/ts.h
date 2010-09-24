@@ -2374,7 +2374,7 @@ extern "C"
   typedef enum
     {
       TS_STAT_TYPE_INT = 1,
-      //  The following are not supported yet.
+      /*  The following are not supported yet. */
       TS_STAT_TYPE_FLOAT,
       TS_STAT_TYPE_STRING,
       TS_STAT_TYPE_COUNTER,
@@ -2394,20 +2394,20 @@ extern "C"
       TS_STAT_SYNC_TIMEAVG,
     } TSStatSync;
 
-  // Note that only TS_STAT_TYPE_INT is supported at this point.
+  /*  Note that only TS_STAT_TYPE_INT is supported at this point. */
   inkapi int TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync);
 
   inkapi TSReturnCode TSStatIntIncrement(int the_stat, INKMgmtInt amount);
   inkapi TSReturnCode TSStatIntDecrement(int the_stat, INKMgmtInt amount);
-  // Currently not supported.
-  // inkapi TSReturnCode TSStatFloatIncrement(int the_stat, float amount);
-  // inkapi TSReturnCode TSStatFloatDecrement(int the_stat, float amount);
+  /* Currently not supported. */
+  /* inkapi TSReturnCode TSStatFloatIncrement(int the_stat, float amount); */
+  /* inkapi TSReturnCode TSStatFloatDecrement(int the_stat, float amount); */
 
   inkapi TSReturnCode TSStatIntGet(int the_stat, INKMgmtInt* value);
   inkapi TSReturnCode TSStatIntSet(int the_stat, INKMgmtInt value);
-  // Currently not supported.
-  // inkapi TSeturnCode TSStatFloatGet(int the_stat, float* value);
-  // inkapi TSReturnCode TSStatFloatSet(int the_stat, float value);
+  /* Currently not supported. */
+  /* inkapi TSeturnCode TSStatFloatGet(int the_stat, float* value); */
+  /* inkapi TSReturnCode TSStatFloatSet(int the_stat, float value); */
 
   inkapi int TSStatFindName(const char* name);
 
