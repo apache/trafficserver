@@ -2515,17 +2515,21 @@ Cache::key_to_part(CacheKey *key, char *hostname, int host_len)
     if (res.record) {
       unsigned short *host_hash_table = res.record->part_hash_table;
       if (host_hash_table) {
-        char format_str[50];
-        snprintf(format_str, sizeof(format_str), "Partition: %%xd for host: %%.%ds", host_len);
-        Debug("cache_hosting", format_str, res.record, hostname);
+        if (is_debug_tag_set("cache_hosting")) {
+          char format_str[50];
+          snprintf(format_str, sizeof(format_str), "Partition: %%xd for host: %%.%ds", host_len);
+          Debug("cache_hosting", format_str, res.record, hostname);
+        }
         return res.record->parts[host_hash_table[h]];
       }
     }
   }
   if (hash_table) {
-    char format_str[50];
-    snprintf(format_str, sizeof(format_str), "Generic partition: %%xd for host: %%.%ds", host_len);
-    Debug("cache_hosting", format_str, host_rec, hostname);
+    if (is_debug_tag_set("cache_hosting")) {
+      char format_str[50];
+      snprintf(format_str, sizeof(format_str), "Generic partition: %%xd for host: %%.%ds", host_len);
+      Debug("cache_hosting", format_str, host_rec, hostname);
+    }
     return host_rec->parts[hash_table[h]];
   } else
     return host_rec->parts[0];
