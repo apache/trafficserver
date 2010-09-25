@@ -20,14 +20,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-
-/****************************************************************************
-
-   HttpTransactHeaders.cc --
-   Created On      : Fri Mar 27 12:15:55 1998
-
-
- ****************************************************************************/
 #include "inktomi++.h"
 
 #include "HttpTransact.h"
@@ -37,8 +29,6 @@
 #include "HttpCompat.h"
 #include "HttpMessageBody.h"
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 #define H(_x) (((_x)>9)?((_x)-10+'A'):((_x)+'0'))
 int
@@ -56,8 +46,6 @@ nstrhex(char *d, unsigned int i)
   return 8;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 bool
 HttpTransactHeaders::is_method_cacheable(int method)
@@ -65,8 +53,6 @@ HttpTransactHeaders::is_method_cacheable(int method)
   return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 bool
 HttpTransactHeaders::is_method_cache_lookupable(int method)
@@ -81,9 +67,6 @@ HttpTransactHeaders::is_method_cache_lookupable(int method)
 }
 
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 bool
 HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
 {
@@ -96,8 +79,6 @@ HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 bool
 HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
@@ -110,8 +91,6 @@ HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
     return false;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr * response, int scheme)
@@ -199,8 +178,6 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr * response, in
     xfree(alloced_buffer);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::build_base_response(HTTPHdr * outgoing_response,
@@ -219,13 +196,11 @@ HttpTransactHeaders::build_base_response(HTTPHdr * outgoing_response,
   outgoing_response->set_date(date);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
+////////////////////////////////////////////////////////////////////////
 // Copy all non hop-by-hop header fields from src_hdr to new_hdr.
 // If header Date: is not present or invalid in src_hdr,
 // then the given date will be used.
-
 void
 HttpTransactHeaders::copy_header_fields(HTTPHdr * src_hdr,
                                         HTTPHdr * new_hdr, bool retain_proxy_auth_hdrs, ink_time_t date)
@@ -276,9 +251,8 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr * src_hdr,
     new_hdr->set_date(date);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
+////////////////////////////////////////////////////////////////////////
 // Just convert the outgoing request to the appropriate version
 void
 HttpTransactHeaders::convert_request(HTTPVersion outgoing_ver, HTTPHdr * outgoing_request)
@@ -296,9 +270,7 @@ HttpTransactHeaders::convert_request(HTTPVersion outgoing_ver, HTTPHdr * outgoin
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
+////////////////////////////////////////////////////////////////////////
 // Just convert the outgoing response to the appropriate version
 void
 HttpTransactHeaders::convert_response(HTTPVersion outgoing_ver, HTTPHdr * outgoing_response)
@@ -316,9 +288,8 @@ HttpTransactHeaders::convert_response(HTTPVersion outgoing_ver, HTTPHdr * outgoi
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
+////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing request header and make it HTTP/0.9
 void
 HttpTransactHeaders::convert_to_0_9_request_header(HTTPHdr * outgoing_request)
@@ -333,9 +304,8 @@ HttpTransactHeaders::convert_to_0_9_request_header(HTTPHdr * outgoing_request)
   outgoing_request->fields_clear();
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
+////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing request header and make it HTTP/1.0
 void
 HttpTransactHeaders::convert_to_1_0_request_header(HTTPHdr * outgoing_request)
@@ -358,9 +328,8 @@ HttpTransactHeaders::convert_to_1_0_request_header(HTTPHdr * outgoing_request)
   //outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
+////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing request header and make it HTTP/1.1
 void
 HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr * outgoing_request)
@@ -380,9 +349,8 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr * outgoing_request)
   //outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
+////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing response header and make it HTTP/0.9
 void
 HttpTransactHeaders::convert_to_0_9_response_header(HTTPHdr * outgoing_response)
@@ -397,9 +365,8 @@ HttpTransactHeaders::convert_to_0_9_response_header(HTTPHdr * outgoing_response)
   // There is therefore no need to clear the header.
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
+////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing response header and make it HTTP/1.0
 void
 HttpTransactHeaders::convert_to_1_0_response_header(HTTPHdr * outgoing_response)
@@ -416,9 +383,8 @@ HttpTransactHeaders::convert_to_1_0_response_header(HTTPHdr * outgoing_response)
   // Cache-Control?
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
+////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing response header and make it HTTP/1.1
 void
 HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr * outgoing_response)
@@ -431,8 +397,6 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr * outgoing_response)
   outgoing_response->version_set(HTTPVersion(1, 1));
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : calculate_document_age()
@@ -445,7 +409,6 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr * outgoing_response)
 //   Algorithm is straight out of March 1998 1.1 specs, Section 13.2.3
 //
 ///////////////////////////////////////////////////////////////////////////////
-
 ink_time_t
 HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
                                             ink_time_t response_time,
@@ -507,8 +470,6 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
   return current_age;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 bool
 HttpTransactHeaders::does_server_allow_response_to_be_stored(HTTPHdr * resp)
@@ -521,8 +482,6 @@ HttpTransactHeaders::does_server_allow_response_to_be_stored(HTTPHdr * resp)
     return true;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 bool
 HttpTransactHeaders::downgrade_request(bool * origin_server_keep_alive, HTTPHdr * outgoing_request)
@@ -553,8 +512,6 @@ HttpTransactHeaders::downgrade_request(bool * origin_server_keep_alive, HTTPHdr 
   return true;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 bool
 HttpTransactHeaders::generate_basic_authorization_from_request(Arena *arena, HTTPHdr *h, char **username, char **password)
@@ -611,8 +568,6 @@ HttpTransactHeaders::generate_basic_authorization_from_request(Arena *arena, HTT
   return (true);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 bool
 HttpTransactHeaders::get_wuts_code(HTTPHdr * hdr, WUTSCode * w)
@@ -667,8 +622,6 @@ HttpTransactHeaders::get_wuts_code(HTTPHdr * hdr, WUTSCode * w)
 #undef is_digit
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::set_wuts_codes(HTTPHdr * hdr, WUTSCode * code)
@@ -740,8 +693,6 @@ HttpTransactHeaders::set_wuts_codes(HTTPHdr * hdr, WUTSCode * code)
 #undef is_digit
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::set_wuts_codes(HTTPHdr * hdr,
@@ -777,8 +728,6 @@ HttpTransactHeaders::set_wuts_codes(HTTPHdr * hdr,
   set_wuts_codes(hdr, &code);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::generate_and_set_wuts_codes(HTTPHdr * header,
@@ -907,7 +856,7 @@ HttpTransactHeaders::generate_and_set_wuts_codes(HTTPHdr * header,
   case VIA_ERROR_AUTHORIZATION:
     status_code = WUTS_PROXY_STATUS_PROXY_AUTHORIZATION_FAILURE;
     // TODO decide which one?
-//          log_code = SQUID_LOG_TCP_DENIED;
+    // log_code = SQUID_LOG_TCP_DENIED;
     log_code = SQUID_LOG_ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_CONNECTION:
@@ -992,9 +941,7 @@ HttpTransactHeaders::generate_and_set_wuts_codes(HTTPHdr * header,
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-//INKqa09773
+
 void
 HttpTransactHeaders::convert_wuts_code_to_normal_reason(HTTPHdr * hdr)
 {
@@ -1012,9 +959,6 @@ HttpTransactHeaders::convert_wuts_code_to_normal_reason(HTTPHdr * hdr)
   hdr->reason_set(phrase, strlen(phrase));
 }
 
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header)
@@ -1073,8 +1017,6 @@ HttpTransactHeaders::handle_conditional_headers(HttpTransact::CacheLookupInfo * 
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, HTTPHdr *header, HTTPWarningCode code,
@@ -1107,8 +1049,6 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
   xfree(warning_text);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_sent_time,
@@ -1126,8 +1066,6 @@ HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_
     outgoing->set_date(now);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr * h)
@@ -1137,8 +1075,6 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : insert_via_header_in_request
@@ -1184,7 +1120,6 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
 //
 //
 ///////////////////////////////////////////////////////////////////////////////
-
 void
 HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams * http_config_param,
                                                   int scheme,
@@ -1198,60 +1133,29 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams * http_config
   if (!http_config_param->insert_request_via_string)
     return;
 
-  int length = http_config_param->proxy_hostname_len;
-  length += http_config_param->proxy_request_via_string_len;
-
-  if (length > 200) {
+  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 200) {
     header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 18, true);
     return;
   }
 
   ink_assert(scheme >= 0);
-  const char *prot = "?";
-  if (scheme == URL_WKSIDX_HTTP)
-    prot = "HTTP";
-  else if (scheme == URL_WKSIDX_HTTPS)
-    prot = "HTTPS";
-  else if (scheme == URL_WKSIDX_FTP)
-    prot = "FTP";
-  else if (scheme == URL_WKSIDX_NNTP)
-    prot = "NNTP";
-  else if (scheme == URL_WKSIDX_FILE)
-    prot = "FILE";
-  else if (scheme == URL_WKSIDX_GOPHER)
-    prot = "GOPHER";
-  else if (scheme == URL_WKSIDX_MAILTO)
-    prot = "MAILTO";
-  else if (scheme == URL_WKSIDX_NEWS)
-    prot = "NEWS";
-  else if (scheme == URL_WKSIDX_PROSPERO)
-    prot = "PROSPERO";
-  else if (scheme == URL_WKSIDX_TELNET)
-    prot = "TELNET";
-  else if (scheme == URL_WKSIDX_TUNNEL)
-    prot = "TUNNEL";
-  else if (scheme == URL_WKSIDX_WAIS)
-    prot = "WAIS";
-  else if (scheme == URL_WKSIDX_PNM)
-    prot = "PNM";
-  else if (scheme == URL_WKSIDX_RTSP)
-    prot = "RTSP";
-  else if (scheme == URL_WKSIDX_RTSPU)
-    prot = "RTSPU";
-  else if (scheme == URL_WKSIDX_MMS)
-    prot = "MMS";
-  else if (scheme == URL_WKSIDX_MMSU)
-    prot = "MMSU";
-  else if (scheme == URL_WKSIDX_MMST)
-    prot = "MMST";
-
+  int scheme_len = hdrtoken_index_to_length(scheme);
   int32 hversion = header->version_get().m_version;
-  via_string += nstrcpy(via_string, prot);
-  *via_string++ = '/';
-  *via_string++ = '0' + HTTP_MAJOR(hversion);
-  *via_string++ = '.';
-  *via_string++ = '0' + HTTP_MINOR(hversion);
-  *via_string++ = ' ';
+
+  memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
+  via_string += scheme_len;
+
+  // Common case (I hope?)
+  if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
+    memcpy(via_string, "/1.1 ", 5);
+    via_string += 5;
+  } else {
+    *via_string++ = '/';
+    *via_string++ = '0' + HTTP_MAJOR(hversion);
+    *via_string++ = '.';
+    *via_string++ = '0' + HTTP_MINOR(hversion);
+    *via_string++ = ' ';
+  }
   via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
   *via_string++ = '[';
   via_string += nstrhex(via_string, proxy_ip_address);
@@ -1279,8 +1183,6 @@ HttpTransactHeaders::insert_via_header_in_request(HttpConfigParams * http_config
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams * http_config_param,
@@ -1295,63 +1197,34 @@ HttpTransactHeaders::insert_via_header_in_response(HttpConfigParams * http_confi
   if (!http_config_param->insert_response_via_string)
     return;
 
-  int length = http_config_param->proxy_hostname_len;
-  length += http_config_param->proxy_response_via_string_len;
-
-  if (length > 200) {
+  if ((http_config_param->proxy_hostname_len + http_config_param->proxy_response_via_string_len) > 200) {
     header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, "TrafficServer", 18, true);
     return;
   }
 
-  const char *prot = "?";
-  if (scheme == URL_WKSIDX_HTTP)
-    prot = "HTTP";
-  else if (scheme == URL_WKSIDX_HTTPS)
-    prot = "HTTPS";
-  else if (scheme == URL_WKSIDX_FTP)
-    prot = "FTP";
-  else if (scheme == URL_WKSIDX_NNTP)
-    prot = "NNTP";
-  else if (scheme == URL_WKSIDX_FILE)
-    prot = "FILE";
-  else if (scheme == URL_WKSIDX_GOPHER)
-    prot = "GOPHER";
-  else if (scheme == URL_WKSIDX_MAILTO)
-    prot = "MAILTO";
-  else if (scheme == URL_WKSIDX_NEWS)
-    prot = "NEWS";
-  else if (scheme == URL_WKSIDX_PROSPERO)
-    prot = "PROSPERO";
-  else if (scheme == URL_WKSIDX_TELNET)
-    prot = "TELNET";
-  else if (scheme == URL_WKSIDX_TUNNEL)
-    prot = "TUNNEL";
-  else if (scheme == URL_WKSIDX_WAIS)
-    prot = "WAIS";
-  else if (scheme == URL_WKSIDX_PNM)
-    prot = "PNM";
-  else if (scheme == URL_WKSIDX_RTSP)
-    prot = "RTSP";
-  else if (scheme == URL_WKSIDX_RTSPU)
-    prot = "RTSPU";
-  else if (scheme == URL_WKSIDX_MMS)
-    prot = "MMS";
-  else if (scheme == URL_WKSIDX_MMSU)
-    prot = "MMSU";
-  else if (scheme == URL_WKSIDX_MMST)
-    prot = "MMST";
-
+  ink_assert(scheme >= 0);
+  int scheme_len = hdrtoken_index_to_length(scheme);
   int32 hversion = header->version_get().m_version;
-  via_string += nstrcpy(via_string, prot);
-  *via_string++ = '/';
-  *via_string++ = '0' + HTTP_MAJOR(hversion);
-  *via_string++ = '.';
-  *via_string++ = '0' + HTTP_MINOR(hversion);
-  *via_string++ = ' ';
+
+  memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
+  via_string += scheme_len;
+
+  // Common case (I hope?)
+  if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
+    memcpy(via_string, "/1.1 ", 5);
+    via_string += 5;
+  } else {
+    *via_string++ = '/';
+    *via_string++ = '0' + HTTP_MAJOR(hversion);
+    *via_string++ = '.';
+    *via_string++ = '0' + HTTP_MINOR(hversion);
+    *via_string++ = ' ';
+  }
   via_string += nstrcpy(via_string, http_config_param->proxy_hostname);
   *via_string++ = ' ';
   *via_string++ = '(';
-  via_string += nstrcpy(via_string, http_config_param->proxy_response_via_string);
+  memcpy(via_string, http_config_param->proxy_response_via_string, http_config_param->proxy_response_via_string_len);
+  via_string += http_config_param->proxy_response_via_string_len;
 
   if (http_config_param->verbose_via_string != 0) {
     *via_string++ = ' ';
@@ -1401,8 +1274,6 @@ HttpTransactHeaders::insert_basic_realm_in_proxy_authenticate(const char *realm,
   header->field_attach(auth);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 inline void
 HttpTransactHeaders::process_connection_field_in_outgoing_header(HTTPHdr * base, HTTPHdr * header)
@@ -1410,16 +1281,12 @@ HttpTransactHeaders::process_connection_field_in_outgoing_header(HTTPHdr * base,
   _process_xxx_connection_field_in_outgoing_header(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, base, header);
 }
 
-
 inline void
 HttpTransactHeaders::process_proxy_connection_field_in_outgoing_header(HTTPHdr * base, HTTPHdr * header)
 {
-  _process_xxx_connection_field_in_outgoing_header(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, base,
-                                                   header);
+  _process_xxx_connection_field_in_outgoing_header(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, base, header);
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::process_connection_headers(HTTPHdr * base, HTTPHdr * outgoing)
@@ -1427,9 +1294,6 @@ HttpTransactHeaders::process_connection_headers(HTTPHdr * base, HTTPHdr * outgoi
   process_connection_field_in_outgoing_header(base, outgoing);
   process_proxy_connection_field_in_outgoing_header(base, outgoing);
 }
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 
 void
@@ -1481,9 +1345,6 @@ HttpTransactHeaders::_process_xxx_connection_field_in_outgoing_header(const char
 }
 
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 void
 HttpTransactHeaders::remove_conditional_headers(HTTPHdr * base, HTTPHdr * outgoing)
 {
@@ -1492,19 +1353,15 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr * base, HTTPHdr * outgoi
                          MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH)) {
 
     outgoing->field_delete(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
-
     outgoing->field_delete(MIME_FIELD_IF_UNMODIFIED_SINCE, MIME_LEN_IF_UNMODIFIED_SINCE);
-
     outgoing->field_delete(MIME_FIELD_IF_MATCH, MIME_LEN_IF_MATCH);
-
     outgoing->field_delete(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH);
   }
-  // FIXME: how about RANGE and IF_RANGE?
+  // TODO: how about RANGE and IF_RANGE?
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
+////////////////////////////////////////////////////////////////////////
 // Deal with lame-o servers by removing the host name from the url.
 void
 HttpTransactHeaders::remove_host_name_from_url(HTTPHdr * outgoing_request)
@@ -1513,8 +1370,6 @@ HttpTransactHeaders::remove_host_name_from_url(HTTPHdr * outgoing_request)
   outgoing_url->nuke_proxy_stuff();
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::add_global_user_agent_header_to_request(HttpConfigParams * http_config_param, HTTPHdr * header)
@@ -1534,8 +1389,6 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(HttpConfigParams * 
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::add_server_header_to_response(HttpConfigParams * http_config_param, HTTPHdr * header)
@@ -1555,8 +1408,6 @@ HttpTransactHeaders::add_server_header_to_response(HttpConfigParams * http_confi
   }
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 void
 HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams * http_config_param, HTTPHdr * header)

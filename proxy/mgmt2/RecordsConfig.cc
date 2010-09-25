@@ -643,7 +643,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.http.insert_request_via_str", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.http.insert_response_via_str", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.http.insert_response_via_str", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   //        # verbose via string
   //        #

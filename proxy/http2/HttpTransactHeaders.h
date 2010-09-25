@@ -21,13 +21,6 @@
   limitations under the License.
  */
 
-/****************************************************************************
-
-   HttpTransactHeaders.h --
-   Created On      : Fri Mar 27 12:13:52 1998
-
-
- ****************************************************************************/
 #if !defined (_HttpTransactHeaders_h_)
 #define _HttpTransactHeaders_h_
 
@@ -84,7 +77,7 @@ public:
   static void generate_and_set_wuts_codes(HTTPHdr * header, char *via_string,
                                           HttpTransact::SquidLogInfo * squid_codes,
                                           int wuts_id, bool set_codes_in_hdr, bool log_spider_codes = false);
-  //INKqa09773
+
   static void convert_wuts_code_to_normal_reason(HTTPHdr * header);
   static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
   static void insert_warning_header(HttpConfigParams *http_config_param,
@@ -103,7 +96,6 @@ public:
 
   static bool is_request_proxy_authorized(HTTPHdr * incoming_hdr);
 
-  // to fix INKqa09089
   static void insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr * header, bool bRevPrxy);
 
   static void process_connection_headers(HTTPHdr * base, HTTPHdr * outgoing);
@@ -121,6 +113,7 @@ public:
   static int nstrcpy(char *d, const char *as);
 };
 
+
 /*****************************************************************************
  *****************************************************************************
  ****                                                                     ****
@@ -128,7 +121,6 @@ public:
  ****                                                                     ****
  *****************************************************************************
  *****************************************************************************/
-
 inline bool
 HttpTransactHeaders::is_this_http_method_supported(int method)
 {
@@ -152,9 +144,6 @@ HttpTransactHeaders::nstrcpy(char *d, const char *as)
 }
 
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : is_request_proxy_authorized
 // Description: does request authorization meet our authentication requirement
@@ -164,63 +153,13 @@ HttpTransactHeaders::nstrcpy(char *d, const char *as)
 //
 // Details    :
 //   Currently a place holder.
-//
-//-----------------------------------------------------------------------------
-//     For future reference, courtesy of bri:
-//
-// Date: Fri, 30 Jan 1998 17:24:02 +1000 (EST)
-// From: David Richards <dj.richards@qut.edu.au>
-// Subject: MSIE 3.0 and Squid
-// To: Squid Discussion List <squid-users@nlanr.net>
-// MIME-version: 1.0
-// Resent-From: squid-users@nlanr.net
-// X-Mailing-List: <squid-users@nlanr.net> archive/latest/628
-// X-Loop: squid-users@nlanr.net
-// Precedence: list
-// Resent-Sender: squid-users-request@nlanr.net
-// Content-Type: TEXT/PLAIN; charset=US-ASCII
-//
-// Just to let you all know, I have found a bug, whether it be in squid or in
-// MSIE or a combination of both.
-//
-// When authentication is turned on, sometime MSIE provides the Proxy
-// Authorization header incorrectly.
-//
-// The header usually has the following information:
-//
-// Proxy Authorization: /y^M
-//
-// Which some of you may realise, is incorrect.  The correct version is:
-//
-// Proxy Authorization: Basic WERFV@$#F@$#RWERFSDF@243=ewa^M
-//
-// or something similar.  The problem is that squid assumes that there is a
-// "Basic" after the header, you may recall the code:
-//
-//     s += strlen(" Basic");
-//     sent_userandpw = xstrdup(s);
-//
-// Well this is a memory violation and hence squid core dumps.  I fixed it
-// putting before this code:
-//
-//      if( strlen( s ) <= 6 ) {     /* 6 => strlen( " Basic" ) */
-//              return( dash_str );
-//      }
-//
-// I have also made some modifications so that it returns a different error
-// message, rather than Access Denied.
-//-----------------------------------------------------------------------------
-//
-///////////////////////////////////////////////////////////////////////////////
-
 inline bool
 HttpTransactHeaders::is_request_proxy_authorized(HTTPHdr * incoming_hdr)
 {
   NOWARN_UNUSED(incoming_hdr);
   HTTP_DEBUG_ASSERT(incoming_hdr);
+  // TODO: What do we need to do here?
   return true;
 }
-
-
 
 #endif

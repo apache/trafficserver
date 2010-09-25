@@ -1,5 +1,13 @@
                                                          -*- coding: utf-8 -*-
 
+Changes with Apache Traffic Server 2.1.4
+
+  *) In Cache.cc, make snprintf() around Debug statements conditional for
+   performance [TS-459].
+
+  *) Cleanup / optimize Via: string generation [TS-460]. Also make the
+   default for Via: on responses to be disabled (it can leak info).
+
 Changes with Apache Traffic Server 2.1.3
 
   *) Removed the remnants of NCA from the source [TS-455].
