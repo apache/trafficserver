@@ -1055,7 +1055,7 @@ HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_
                                                              ink_time_t now, HTTPHdr * base, HTTPHdr * outgoing)
 {
   ink_time_t date = base->get_date();
-  ink_time_t current_age = calculate_document_age(request_sent_time, response_received_time, base, date, now);
+  uint32 current_age = calculate_document_age(request_sent_time, response_received_time, base, date, now);
 
   outgoing->set_age(current_age);
 

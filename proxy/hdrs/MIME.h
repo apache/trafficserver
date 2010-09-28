@@ -1496,7 +1496,10 @@ MIMEHdr::unset_cooked_cc_need_revalidate_once()
 inline void
 MIMEHdr::set_age(uint32 value)
 {
-  value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
+  if (value > INT_MAX)
+    value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, (uint32)INT_MAX + 1);
+  else
+    value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
 }
 
 /*-------------------------------------------------------------------------
