@@ -191,7 +191,7 @@ private:
 
 };                              /* End class LocalManager */
 
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
 bool elevateFileAccess(bool);
 #else
 bool restoreRootPriv(uid_t *old_euid = NULL);

@@ -374,7 +374,7 @@ dummy_debug(const char *dummy_arg ...)
   (void) dummy_arg;
 }
 
-#if ATS_USE_DIAGS
+#if TS_USE_DIAGS
 #define Diag      if (diags->on()) DiagsDClosure(DTA(DL_Diag))  /*args */
 #define Debug     if (diags->on()) DiagsDClosure(DTA(DL_Debug)) /*args */
 #define DebugOn   DiagsDClosure(DTA(DL_Debug))  /*args */
@@ -392,7 +392,7 @@ dummy_debug(const char *dummy_arg ...)
 #define	Alert     DiagsEClosure(DTA(DL_Alert))  /*(args...) */
 #define	Emergency DiagsEClosure(DTA(DL_Emergency))      /*(args...) */
 
-#if ATS_USE_DIAGS
+#if TS_USE_DIAGS
 #define is_debug_tag_set(_t)     diags->on(_t,DiagsTagType_Debug)
 #define is_action_tag_set(_t)    diags->on(_t,DiagsTagType_Action)
 #define debug_tag_assert(_t,_a)  (is_debug_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)

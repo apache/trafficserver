@@ -38,7 +38,7 @@
 #include "ReverseProxy.h"
 #include "RemapProcessor.h"
 
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 #include "StatSystemV2.h"
 #endif
 
@@ -344,7 +344,7 @@ client_response_hdr_bytes(0), client_response_body_bytes(0),
 pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
 hooks_set(0), cur_hook_id(INK_HTTP_LAST_HOOK), cur_hook(NULL),
 // TODO: This needs to be supported with non-V2 APIs as well.
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 prev_hook_start_time(0),
 prev_hook_stats_enabled(false),
 #endif
@@ -1431,7 +1431,7 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
         // Do per plugin stats
         // Increment calls made to plugin
         hook->m_cont->statCallsMade(cur_hook_id);
@@ -1533,7 +1533,7 @@ HttpSM::state_api_callout(int event, void *data)
     // Do per plugin stats
     // Handle last plugin on current state
     // TODO: This needs to be supported with non-V2 APIs as well.
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
     if(prev_hook_stats_enabled && prev_hook_start_time) {
       int64 time_in_plugin_ms = (INKhrtime() - prev_hook_start_time)/1000000;
       Debug("http", "[%lld] Last plugin : Time spent : %s %lld", 

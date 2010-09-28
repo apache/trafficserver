@@ -48,7 +48,7 @@
 struct obj_list *ObjList;
 #endif
 
-#if ATS_HAS_PROFILER
+#if TS_HAS_PROFILER
 #include <google/profiler.h>
 #endif
 
@@ -331,7 +331,7 @@ signal_handler(int sig, siginfo_t * t, void *c)
   //syslog(LOG_ERR, sig_msg);
 #endif
 
-#if ATS_HAS_PROFILER
+#if TS_HAS_PROFILER
   ProfilerStop();
 #endif
   shutdown_system();

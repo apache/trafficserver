@@ -30,7 +30,7 @@
 #define STAT_API_TYPES_H
 
 // TODO: This needs to be supported with non-V2 APIs as well.
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 #include <string> // TODO: Get rid of string here, why do we need it ?
 #include <vector> // TODO: Is the vector really necessary ? 
 #include "inktomi++.h"

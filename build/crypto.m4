@@ -19,18 +19,18 @@ dnl crypto.m4 Trafficserver's Crypto autoconf macros
 dnl
 
 dnl
-dnl ATS_CHECK_CRYPTO: look for crypto libraries and headers
+dnl TS_CHECK_CRYPTO: look for crypto libraries and headers
 dnl
-AC_DEFUN([ATS_CHECK_CRYPTO], [
+AC_DEFUN([TS_CHECK_CRYPTO], [
   enable_crypto=no
   AC_CHECK_LIB([crypt],[crypt],[AC_SUBST([LIBCRYPT],["-lcrypt"])])
 
-  ATS_CHECK_CRYPTO_OPENSSL
+  TS_CHECK_CRYPTO_OPENSSL
   dnl add checks for other varieties of ssl here
 ])
 dnl
 
-AC_DEFUN([ATS_CHECK_CRYPTO_OPENSSL], [
+AC_DEFUN([TS_CHECK_CRYPTO_OPENSSL], [
 enable_openssl=no
 AC_ARG_WITH(openssl, [AC_HELP_STRING([--with-openssl=DIR],[use a specific OpenSSL library])],
 [
@@ -88,11 +88,11 @@ if test "$enable_openssl" != "no"; then
   openssl_have_headers=0
   openssl_have_libs=0
   if test "$openssl_base_dir" != "/usr"; then
-    ATS_ADDTO(CPPFLAGS, [-I${openssl_include}])
-    ATS_ADDTO(LDFLAGS, [-L${openssl_ldflags}])
+    TS_ADDTO(CPPFLAGS, [-I${openssl_include}])
+    TS_ADDTO(LDFLAGS, [-L${openssl_ldflags}])
     case $host_os in
       solaris*)
-        ATS_ADDTO(LDFLAGS, [-R${openssl_ldflags}])
+        TS_ADDTO(LDFLAGS, [-R${openssl_ldflags}])
         ;;
     esac
   fi

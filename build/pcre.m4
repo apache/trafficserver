@@ -19,9 +19,9 @@ dnl pcre.m4: Trafficserver's pcre autoconf macros
 dnl
 
 dnl
-dnl ATS_CHECK_PCRE: look for pcre libraries and headers
+dnl TS_CHECK_PCRE: look for pcre libraries and headers
 dnl
-AC_DEFUN([ATS_CHECK_PCRE], [
+AC_DEFUN([TS_CHECK_PCRE], [
 enable_pcre=no
 AC_ARG_WITH(pcre, [AC_HELP_STRING([--with-pcre=DIR],[use a specific pcre library])],
 [
@@ -81,18 +81,18 @@ if test "$enable_pcre" != "no"; then
   pcre_have_headers=0
   pcre_have_libs=0
   if test "$pcre_base_dir" != "/usr"; then
-    ATS_ADDTO(CPPFLAGS, [-I${pcre_include}])
-    ATS_ADDTO(LDFLAGS, [-L${pcre_ldflags}])
+    TS_ADDTO(CPPFLAGS, [-I${pcre_include}])
+    TS_ADDTO(LDFLAGS, [-L${pcre_ldflags}])
     case $host_os in
       solaris*)
-        ATS_ADDTO(LDFLAGS, [-R${pcre_ldflags}])
+        TS_ADDTO(LDFLAGS, [-R${pcre_ldflags}])
         ;;
     esac
   fi
   AC_CHECK_LIB(pcre, pcre_exec, [pcre_have_libs=1])
   if test "$pcre_have_libs" != "0"; then
-    ATS_FLAG_HEADERS(pcre.h, [pcre_have_headers=1])
-    ATS_FLAG_HEADERS(pcre/pcre.h, [pcre_have_headers=1])
+    TS_FLAG_HEADERS(pcre.h, [pcre_have_headers=1])
+    TS_FLAG_HEADERS(pcre/pcre.h, [pcre_have_headers=1])
   fi
   if test "$pcre_have_headers" != "0"; then
     AC_DEFINE(HAVE_LIBPCRE,1,[Compiling with pcre support])

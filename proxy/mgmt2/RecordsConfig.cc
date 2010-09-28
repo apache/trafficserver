@@ -3237,7 +3237,7 @@ RecordElement RecordsConfig[] = {
   //# Librecords based stats system (new as of v2.1.3)
   {CONFIG, "proxy.config.stat_api.max_stats_allowed", "", INK_INT, "256", RU_RESTART_TS, RR_NULL, RC_INT, "[256-1000]", RA_NULL}
   ,
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
   // StatSystemV2 config
   {CONFIG, "proxy.config.stat_collector.interval", "", INK_INT, "600", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,

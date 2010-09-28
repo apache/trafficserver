@@ -287,7 +287,7 @@ Rollback::statFile(version_t version, struct stat *buf)
 {
   char *filePath;
   int statResult;
-#if !ATS_USE_POSIX_CAP
+#if !TS_USE_POSIX_CAP
   uid_t saved_euid = 0;
 #endif
 
@@ -298,7 +298,7 @@ Rollback::statFile(version_t version, struct stat *buf)
 
   if (root_access_needed) {
     if (
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
       elevateFileAccess(true)
 #else
       restoreRootPriv(&saved_euid)
@@ -312,7 +312,7 @@ Rollback::statFile(version_t version, struct stat *buf)
 
   if (root_access_needed) {
     if (
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
       elevateFileAccess(false)
 #else
       removeRootPriv(saved_euid)
@@ -336,7 +336,7 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
 {
   char *filePath;
   int fd;
-#if !ATS_USE_POSIX_CAP
+#if !TS_USE_POSIX_CAP
   uid_t saved_euid = 0;
 #endif
 
@@ -344,7 +344,7 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
 
   if (root_access_needed) {
     if (
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
       elevateFileAccess(true)
 #else
       restoreRootPriv(&saved_euid)
@@ -360,7 +360,7 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
   fd = mgmt_open_mode(filePath, oflags, 0644);
   if (root_access_needed) {
     if (
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
       elevateFileAccess(false)
 #else
       removeRootPriv(saved_euid)

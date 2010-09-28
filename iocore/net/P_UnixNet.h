@@ -37,13 +37,13 @@
 #define EVENTIO_UDP_CONNECTION  4
 #define EVENTIO_ASYNC_SIGNAL    5
 
-#if ATS_USE_LIBEV
+#if TS_USE_LIBEV
 #define EVENTIO_READ EV_READ
 #define EVENTIO_WRITE EV_WRITE
 #define EVENTIO_ERROR EV_ERROR
 #endif
 
-#if ATS_USE_EPOLL
+#if TS_USE_EPOLL
 #ifdef USE_EDGE_TRIGGER_EPOLL
 #define USE_EDGE_TRIGGER 1
 #define EVENTIO_READ (EPOLLIN|EPOLLET)
@@ -55,7 +55,7 @@
 #define EVENTIO_ERROR (EPOLLERR|EPOLLPRI|EPOLLHUP)
 #endif
 
-#if ATS_USE_KQUEUE
+#if TS_USE_KQUEUE
 #ifdef USE_EDGE_TRIGGER_KQUEUE
 #define USE_EDGE_TRIGGER 1
 #define INK_EV_EDGE_TRIGGER EV_CLEAR
@@ -66,7 +66,7 @@
 #define EVENTIO_WRITE INK_EVP_OUT
 #define EVENTIO_ERROR (0x010|0x002|0x020) // ERR PRI HUP
 #endif
-#if ATS_USE_PORT
+#if TS_USE_PORT
 #ifdef USE_EDGE_TRIGGER_PORT
 #define USE_EDGE_TRIGGER 1
 #endif
@@ -75,7 +75,7 @@
 #define EVENTIO_ERROR (POLLERR|POLLPRI|POLLHUP)
 #endif
 
-#if ATS_USE_LIBEV
+#if TS_USE_LIBEV
 #define EV_MINPRI 0
 #define EV_MAXPRI 0
 #include "ev.h"
@@ -109,14 +109,14 @@ class NetAccept;
 class UnixUDPConnection;
 struct EventIO
 {
-#if ATS_USE_LIBEV
+#if TS_USE_LIBEV
   ev_io eio;
 #define evio_get_port(e) ((e)->eio.fd)
 #else
   int fd;
 #define evio_get_port(e) ((e)->fd)
 #endif
-#if ATS_USE_KQUEUE || ATS_USE_EPOLL && !defined(USE_EDGE_TRIGGER) || ATS_USE_PORT
+#if TS_USE_KQUEUE || TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER) || TS_USE_PORT
   int events;
 #endif
   EventLoop event_loop;
@@ -142,7 +142,7 @@ struct EventIO
   int stop();
   int close();
   EventIO() {
-#if !ATS_USE_LIBEV
+#if !TS_USE_LIBEV
     fd = 0;
 #endif
     type = 0;
@@ -523,7 +523,7 @@ TS_INLINE int EventIO::close() {
   return -1;
 }
 
-#if ATS_USE_LIBEV
+#if TS_USE_LIBEV
 
 TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
   event_loop = l;
@@ -560,13 +560,13 @@ TS_INLINE int EventIO::stop() {
   return 0;
 }
 
-#else /* !ATS_USE_LIBEV */
+#else /* !TS_USE_LIBEV */
 
 TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
   data.c = c;
   fd = afd;
   event_loop = l;
-#if ATS_USE_EPOLL
+#if TS_USE_EPOLL
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
   ev.events = e;
@@ -576,7 +576,7 @@ TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
 #endif
   return epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_ADD, fd, &ev);
 #endif
-#if ATS_USE_KQUEUE
+#if TS_USE_KQUEUE
   events = e;
   struct kevent ev[2];
   int n = 0;
@@ -586,7 +586,7 @@ TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
     EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD|INK_EV_EDGE_TRIGGER, 0, 0, this);
   return kevent(l->kqueue_fd, &ev[0], n, NULL, 0, NULL);
 #endif
-#if ATS_USE_PORT
+#if TS_USE_PORT
   events = e;
   int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
   NetDebug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
@@ -595,7 +595,7 @@ TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
 }
 
 TS_INLINE int EventIO::modify(int e) {
-#if ATS_USE_EPOLL && !defined(USE_EDGE_TRIGGER)
+#if TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER)
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
   int new_events = events, old_events = events;
@@ -613,7 +613,7 @@ TS_INLINE int EventIO::modify(int e) {
   else
     return epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_MOD, fd, &ev);
 #endif
-#if ATS_USE_KQUEUE && !defined(USE_EDGE_TRIGGER)
+#if TS_USE_KQUEUE && !defined(USE_EDGE_TRIGGER)
   int n = 0;
   struct kevent ev[2];
   int ee = events;
@@ -636,7 +636,7 @@ TS_INLINE int EventIO::modify(int e) {
   else
     return 0;
 #endif
-#if ATS_USE_PORT
+#if TS_USE_PORT
   int n = 0;
   int ne = e;
   if (e < 0) {
@@ -670,7 +670,7 @@ TS_INLINE int EventIO::modify(int e) {
 }
 
 TS_INLINE int EventIO::refresh(int e) {
-#if ATS_USE_KQUEUE && defined(USE_EDGE_TRIGGER)
+#if TS_USE_KQUEUE && defined(USE_EDGE_TRIGGER)
   e = e & events;
   struct kevent ev[2];
   int n = 0;
@@ -683,7 +683,7 @@ TS_INLINE int EventIO::refresh(int e) {
   else
     return 0;
 #endif
-#if ATS_USE_PORT
+#if TS_USE_PORT
   int n = 0;
   int ne = e;
   if ((e & events)) {
@@ -709,13 +709,13 @@ TS_INLINE int EventIO::refresh(int e) {
 
 TS_INLINE int EventIO::stop() {
   if (event_loop) {
-#if ATS_USE_EPOLL
+#if TS_USE_EPOLL
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
     return epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
 #endif
-#if ATS_USE_PORT
+#if TS_USE_PORT
     int retval = port_dissociate(event_loop->port_fd, PORT_SOURCE_FD, fd);
     NetDebug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd);
     return retval;
@@ -725,6 +725,6 @@ TS_INLINE int EventIO::stop() {
   return 0;
 }
 
-#endif /* !ATS_USE_LIBEV */
+#endif /* !TS_USE_LIBEV */
 
 #endif

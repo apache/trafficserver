@@ -344,7 +344,7 @@ SocketManager::poll(struct pollfd *fds, unsigned long nfds, int timeout)
   return r;
 }
 
-#if ATS_USE_EPOLL
+#if TS_USE_EPOLL
 TS_INLINE int
 SocketManager::epoll_create(int size)
 {
@@ -397,9 +397,9 @@ SocketManager::epoll_wait(int epfd, struct epoll_event *events, int maxevents, i
   return r;
 }
 
-#endif /* ATS_USE_EPOLL */
+#endif /* TS_USE_EPOLL */
 
-#if ATS_USE_KQUEUE
+#if TS_USE_KQUEUE
 TS_INLINE int
 SocketManager::kqueue()
 {
@@ -422,9 +422,9 @@ SocketManager::kevent(int kq, const struct kevent *changelist, int nchanges,
   } while (errno == -EINTR);
   return r;
 }
-#endif /* ATS_USE_KQUEUE */
+#endif /* TS_USE_KQUEUE */
 
-#if ATS_USE_PORT
+#if TS_USE_PORT
 TS_INLINE int
 SocketManager::port_create()
 {
@@ -464,7 +464,7 @@ SocketManager::port_getn(int port, port_event_t *list, uint_t max,
   } while (errno == -EINTR); //TODO: possible EAGAIN(undocumented)
   return r;
 }
-#endif /* ATS_USE_PORT */
+#endif /* TS_USE_PORT */
 
 
 TS_INLINE int

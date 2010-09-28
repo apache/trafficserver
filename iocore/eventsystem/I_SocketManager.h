@@ -81,19 +81,19 @@ struct SocketManager
   int ftruncate(int fildes, off_t length);
   int lockf(int fildes, int function, off_t size);
   int poll(struct pollfd *fds, unsigned long nfds, int timeout);
-#if ATS_USE_EPOLL
+#if TS_USE_EPOLL
   int epoll_create(int size);
   int epoll_close(int eps);
   int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
   int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
 #endif
-#if ATS_USE_KQUEUE
+#if TS_USE_KQUEUE
   int kqueue();
   int kevent(int kq, const struct kevent *changelist, int nchanges,
              struct kevent *eventlist, int nevents,
              const struct timespec *timeout);
 #endif
-#if ATS_USE_PORT
+#if TS_USE_PORT
   int port_create();
   int port_associate(int port, int fd, uintptr_t obj,
                      int events, void *user);

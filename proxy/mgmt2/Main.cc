@@ -73,7 +73,7 @@
 #include "P_RecLocal.h"
 #include "P_RecCore.h"
 
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
 #include <sys/capability.h>
 #endif
 
@@ -537,7 +537,7 @@ main(int argc, char **argv)
           } else if (strcmp(argv[i], "-clusterRSPort") == 0) {
             ++i;
             cluster_server_port = atoi(argv[i]);
-#if ATS_USE_DIAGS
+#if TS_USE_DIAGS
           } else if (strcmp(argv[i], "-debug") == 0) {
             ++i;
             strncpy(debug_tags, argv[i], 1023);
@@ -1354,7 +1354,7 @@ fileUpdated(char *fname)
   return;
 }                               /* End fileUpdate */
 
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
 /** Restore capabilities after user id change.
     This manipulates LINUX capabilities so that this process
     can perform certain privileged operations even if it is
@@ -1460,7 +1460,7 @@ runAsUser(char *userName)
       _exit(1);
     }
 
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
     if (restoreCapabilities()) {
       mgmt_elog(stderr, "[runAsUser] Error: Failed to restore capabilities after switch to user %s.\n", userName);
     }

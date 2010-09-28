@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = add-header.la
 add_header_la_SOURCES = add-header.c
-add_header_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
+add_header_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/add-header.so

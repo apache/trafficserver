@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = thread-1.la
 thread_1_la_SOURCES = thread-1.c
-thread_1_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
+thread_1_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/thread-1.so

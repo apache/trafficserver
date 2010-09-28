@@ -32,7 +32,7 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 
-#if ATS_USE_DETAILED_LOG
+#if TS_USE_DETAILED_LOG
 #include "DetailedLog.h"
 #endif
 
@@ -457,7 +457,7 @@ public:
     is_other_side_transparent = value;
   }
 
-#if ATS_USE_DETAILED_LOG
+#if TS_USE_DETAILED_LOG
   void loggingInit()
   {
     if (logging == NULL) {
@@ -501,7 +501,7 @@ public:
   DetailedLog *logging;
 #else
   // These are here to simplify the usage of these APIs, i.e. no need to
-  // add the #ifdef ATS_USE_DETAILED_LOG a million times.
+  // add the #ifdef TS_USE_DETAILED_LOG a million times.
   void addLogMessage(const char *message) { NOWARN_UNUSED(message); }
   bool loggingEnabled() const { return false; }
 #endif
@@ -532,7 +532,7 @@ NetVConnection::NetVConnection():
   VConnection(NULL),
   attributes(0),
   thread(NULL),
-#if ATS_USE_DETAILED_LOG
+#if TS_USE_DETAILED_LOG
   logging(NULL),
 #endif
   got_local_addr(0),

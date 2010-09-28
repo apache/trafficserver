@@ -281,9 +281,9 @@ Connection::open(NetVCOptions const& opt)
 
   if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding && local_addr) {
     static char const * const DEBUG_TEXT = "::open setsockopt() IP_TRANSPARENT";
-#if ATS_USE_TPROXY
+#if TS_USE_TPROXY
     int value = 1;
-    if (-1 == safe_setsockopt(fd, SOL_IP, ATS_IP_TRANSPARENT,
+    if (-1 == safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT,
 			      reinterpret_cast<char*>(&value), sizeof(value)
 			      )) {
       NetDebug("socket", "%s - fail %d:%s", DEBUG_TEXT, errno, strerror(errno));

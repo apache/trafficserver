@@ -31,7 +31,7 @@
 #include "I_ProxyAllocator.h"
 #include "I_ProtectedQueue.h"
 
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 #include <vector> // TODO: Do we really need to use STL vectors here?
 #endif
 
@@ -343,7 +343,7 @@ public:
   void free_event(Event * e);
   void (*signal_hook)(EThread *);
 
-#if ATS_HAS_EVENTFD
+#if TS_HAS_EVENTFD
   int evfd;
 #else
   int evpipe[2];
@@ -354,7 +354,7 @@ public:
   Event *oneevent;              // For dedicated event thread
   ink_sem *eventsem;            // For dedicated event thread
 
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
   std::vector<long long> thread_stats; // TODO: Do we need vectors?
   ProxyMutex *thread_stats_mutex;
 #endif

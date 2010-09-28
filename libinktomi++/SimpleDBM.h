@@ -67,7 +67,7 @@ typedef enum
 
 extern "C"
 {
-#if ATS_USE_SQLITE3
+#if TS_USE_SQLITE3
 # define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_SQLITE3
 # define SIMPLEDBM_USE_SQLITE3
 # ifdef HAVE_SQLITE3_H
@@ -77,7 +77,7 @@ extern "C"
 # endif
 #endif
 
-#if ATS_USE_LIBDB
+#if TS_USE_LIBDB
 # define DEFAULT_DB_IMPLEMENTATION SimpleDBM_Type_LIBDB_Hash
 # define SIMPLEDBM_USE_LIBDB
 # ifdef HAVE_DB_185_H

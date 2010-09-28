@@ -25,12 +25,12 @@ dnl systems
 dnl
 dnl Note that this test is executed too early to see if we have all of
 dnl the headers.
-AC_DEFUN([ATS_CHECK_GETHOSTBYNAME_R_STYLE], [
+AC_DEFUN([TS_CHECK_GETHOSTBYNAME_R_STYLE], [
 
 dnl Try and compile a glibc2 gethostbyname_r piece of code, and set the
 dnl style of the routines to glibc2 on success
 AC_CACHE_CHECK([style of gethostbyname_r routine], ac_cv_gethostbyname_r_style,
-ATS_TRY_COMPILE_NO_WARNING([
+TS_TRY_COMPILE_NO_WARNING([
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -61,7 +61,7 @@ else
 fi
 
 AC_CACHE_CHECK([3rd argument to the gethostbyname_r routines], ac_cv_gethostbyname_r_arg,
-ATS_TRY_COMPILE_NO_WARNING([
+TS_TRY_COMPILE_NO_WARNING([
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -95,9 +95,9 @@ AC_SUBST(gethostbyname_r_hostent_data)
 ])
 
 dnl
-dnl ATS_CHECK_DEFAULT_IFACE: try to figure out default network interface
+dnl TS_CHECK_DEFAULT_IFACE: try to figure out default network interface
 dnl
-AC_DEFUN([ATS_CHECK_DEFAULT_IFACE], [
+AC_DEFUN([TS_CHECK_DEFAULT_IFACE], [
 default_net_iface=""
 AC_MSG_CHECKING([for default network interface])
 case $host_os in

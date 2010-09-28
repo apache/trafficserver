@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = session-1.la
 session_1_la_SOURCES = session-1.c
-session_1_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
+session_1_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/session-1.so

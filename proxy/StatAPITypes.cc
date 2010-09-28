@@ -28,7 +28,7 @@
 
 // TODO: This needs to be supported with non-V2 APIs as well.
 #include "ink_config.h"
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 
 #include "api/ts/ts.h"
 #include "StatAPITypes.h"

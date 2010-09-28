@@ -47,7 +47,7 @@ extern "C" int plock(int);
 #include <mcheck.h>
 #endif
 
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
 #include <sys/capability.h>
 #endif
 
@@ -103,11 +103,11 @@ extern "C" int plock(int);
 
 #include "XmlUtils.h"
 
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 #include "StatSystemV2.h"
 #endif
 
-#if ATS_HAS_PROFILER
+#if TS_HAS_PROFILER
 #include <google/profiler.h>
 #endif
 
@@ -258,7 +258,7 @@ ArgumentDescription argument_descriptions[] = {
    "T",
    &run_test_hook, "PROXY_RUN_TEST_HOOK", NULL},
 #endif //INK_NO_TESTS
-#if ATS_USE_DIAGS
+#if TS_USE_DIAGS
   {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
    "PROXY_DEBUG_TAGS", NULL},
   {"action_tags", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags,
@@ -1106,7 +1106,7 @@ init_ink_memalign_heap(void)
   }
 }
 
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
 // Restore the effective capabilities that we need.
 int
 restoreCapabilities() {
@@ -1155,7 +1155,7 @@ adjust_sys_settings(void)
 #endif
 
 #endif  // linux check
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
   restoreCapabilities();
 #endif
 }
@@ -1636,7 +1636,7 @@ change_uid_gid(const char *user)
 #endif
 }
 
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 void init_stat_collector()
 {
     static int stat_collection_interval;
@@ -1682,7 +1682,7 @@ void init_stat_collector()
 int
 main(int argc, char **argv)
 {
-#if ATS_HAS_PROFILER
+#if TS_HAS_PROFILER
   ProfilerStart("/tmp/ts.prof");
 #endif
   int mem_throttling;
@@ -1882,7 +1882,7 @@ main(int argc, char **argv)
   ink_split_dns_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
   eventProcessor.start(num_of_net_threads);
 
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
   // Must be called after starting event processor
   init_stat_collector();
 #endif

@@ -21,7 +21,7 @@ gzip_la_SOURCES = gzip.c
 gzip_la_LDFLAGS = -module
 
 gunzip_la_SOURCES = gunzip.c
-gunzip_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
+gunzip_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/gzip.so

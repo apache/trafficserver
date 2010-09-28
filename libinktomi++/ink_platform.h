@@ -110,13 +110,13 @@
 #include <pwd.h>
 #include <poll.h>
 
-#if ATS_USE_EPOLL
+#if TS_USE_EPOLL
 #include <sys/epoll.h>
 #endif
-#if ATS_USE_KQUEUE
+#if TS_USE_KQUEUE
 #include <sys/event.h>
 #endif
-#if ATS_USE_PORT
+#if TS_USE_PORT
 #include <port.h>
 #endif
 

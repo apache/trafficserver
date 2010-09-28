@@ -19,9 +19,9 @@ dnl lzma.m4: Trafficserver's lzma autoconf macros
 dnl
 
 dnl
-dnl ATS_CHECK_LZMA: look for lzma libraries and headers
+dnl TS_CHECK_LZMA: look for lzma libraries and headers
 dnl
-AC_DEFUN([ATS_CHECK_LZMA], [
+AC_DEFUN([TS_CHECK_LZMA], [
 enable_lzma=no
 AC_ARG_WITH(lzma, [AC_HELP_STRING([--with-lzma=DIR],[use a specific lzma library])],
 [
@@ -80,20 +80,20 @@ if test "$enable_lzma" != "no"; then
   lzma_have_headers=0
   lzma_have_libs=0
   if test "$lzma_base_dir" != "/usr"; then
-    ATS_ADDTO(CPPFLAGS, [-I${lzma_include}])
-    ATS_ADDTO(LDFLAGS, [-L${lzma_ldflags}])
+    TS_ADDTO(CPPFLAGS, [-I${lzma_include}])
+    TS_ADDTO(LDFLAGS, [-L${lzma_ldflags}])
     case $host_os in
       solaris*)
-        ATS_ADDTO(LDFLAGS, [-R${lzma_ldflags}])
+        TS_ADDTO(LDFLAGS, [-R${lzma_ldflags}])
         ;;
     esac
   fi
   AC_CHECK_LIB(lzma, lzma_code, [lzma_have_libs=1])
   if test "$lzma_have_libs" != "0"; then
-    ATS_FLAG_HEADERS(lzma.h, [lzma_have_headers=1])
+    TS_FLAG_HEADERS(lzma.h, [lzma_have_headers=1])
   fi
   if test "$lzma_have_headers" != "0"; then
-    ATS_ADDTO(LIBS, [-llzma])
+    TS_ADDTO(LIBS, [-llzma])
   else
     enable_lzma=no
     CPPFLAGS=$saved_cppflags

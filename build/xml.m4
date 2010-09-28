@@ -19,17 +19,17 @@ dnl xml.m4 Trafficserver's Xml autoconf macros
 dnl
 
 dnl
-dnl ATS_CHECK_XML: look for xml libraries and headers
+dnl TS_CHECK_XML: look for xml libraries and headers
 dnl
-AC_DEFUN([ATS_CHECK_XML], [
+AC_DEFUN([TS_CHECK_XML], [
   enable_xml=no
 
-  ATS_CHECK_XML_EXPAT
+  TS_CHECK_XML_EXPAT
   dnl add checks for other varieties of xml here
 ])
 dnl
 
-AC_DEFUN([ATS_CHECK_XML_EXPAT], [
+AC_DEFUN([TS_CHECK_XML_EXPAT], [
 enable_expat=no
 AC_ARG_WITH(expat, [AC_HELP_STRING([--with-expat=DIR],[use a specific Expat library])],
 [
@@ -88,17 +88,17 @@ if test "$enable_expat" != "no"; then
   expat_have_headers=0
   expat_have_libs=0
   if test "$expat_base_dir" != "/usr"; then
-    ATS_ADDTO(CPPFLAGS, [-I${expat_include}])
-    ATS_ADDTO(LDFLAGS, [-L${expat_ldflags}])
+    TS_ADDTO(CPPFLAGS, [-I${expat_include}])
+    TS_ADDTO(LDFLAGS, [-L${expat_ldflags}])
     case $host_os in
       solaris*)
-        ATS_ADDTO(LDFLAGS, [-R${expat_ldflags}])
+        TS_ADDTO(LDFLAGS, [-R${expat_ldflags}])
         ;;
     esac
   fi
   AC_CHECK_LIB(expat, XML_SetUserData, [expat_have_libs=1])
   if test "$expat_have_libs" != "0"; then
-      ATS_FLAG_HEADERS(expat.h, [expat_have_headers=1])
+      TS_FLAG_HEADERS(expat.h, [expat_have_headers=1])
   fi
   if test "$expat_have_headers" != "0"; then
     enable_xml=yes

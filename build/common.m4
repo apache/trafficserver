@@ -19,11 +19,11 @@ dnl common.m4: Trafficserver's general-purpose autoconf macros
 dnl
 
 dnl
-dnl ATS_CONFIG_NICE(filename)
+dnl TS_CONFIG_NICE(filename)
 dnl
 dnl Saves a snapshot of the configure command-line for later reuse
 dnl
-AC_DEFUN([ATS_CONFIG_NICE], [
+AC_DEFUN([TS_CONFIG_NICE], [
   rm -f $1
   cat >$1<<EOF
 #! /bin/sh
@@ -80,7 +80,7 @@ EOF
 
   for arg
   do
-    ATS_EXPAND_VAR(arg, $arg)
+    TS_EXPAND_VAR(arg, $arg)
     echo "\"[$]arg\" \\" >> $1
   done
   echo '"[$]@"' >> $1
@@ -88,11 +88,11 @@ EOF
 ])dnl
 
 dnl
-dnl ATS_SETIFNULL(variable, value)
+dnl TS_SETIFNULL(variable, value)
 dnl
 dnl  Set variable iff it's currently null
 dnl
-AC_DEFUN([ATS_SETIFNULL], [
+AC_DEFUN([TS_SETIFNULL], [
   if test -z "$$1"; then
     test "x$verbose" = "xyes" && echo "  setting $1 to \"$2\""
     $1="$2"
@@ -100,21 +100,21 @@ AC_DEFUN([ATS_SETIFNULL], [
 ])dnl
 
 dnl
-dnl ATS_SETVAR(variable, value)
+dnl TS_SETVAR(variable, value)
 dnl
 dnl  Set variable no matter what
 dnl
-AC_DEFUN([ATS_SETVAR], [
+AC_DEFUN([TS_SETVAR], [
   test "x$verbose" = "xyes" && echo "  forcing $1 to \"$2\""
   $1="$2"
 ])dnl
 
 dnl
-dnl ATS_ADDTO(variable, value)
+dnl TS_ADDTO(variable, value)
 dnl
 dnl  Add value to variable
 dnl
-AC_DEFUN([ATS_ADDTO], [
+AC_DEFUN([TS_ADDTO], [
   if test "x$$1" = "x"; then
     test "x$verbose" = "xyes" && echo "  setting $1 to \"$2\""
     $1="$2"
@@ -137,11 +137,11 @@ AC_DEFUN([ATS_ADDTO], [
 ])dnl
 
 dnl
-dnl ATS_REMOVEFROM(variable, value)
+dnl TS_REMOVEFROM(variable, value)
 dnl
 dnl Remove a value from a variable
 dnl
-AC_DEFUN([ATS_REMOVEFROM], [
+AC_DEFUN([TS_REMOVEFROM], [
   if test "x$$1" = "x$2"; then
     test "x$verbose" = "xyes" && echo "  nulling $1"
     $1=""
@@ -163,7 +163,7 @@ AC_DEFUN([ATS_REMOVEFROM], [
 ]) dnl
 
 dnl
-dnl ATS_TRY_COMPILE_NO_WARNING(INCLUDES, FUNCTION-BODY,
+dnl TS_TRY_COMPILE_NO_WARNING(INCLUDES, FUNCTION-BODY,
 dnl             [ACTIONS-IF-NO-WARNINGS], [ACTIONS-IF-WARNINGS])
 dnl
 dnl Tries a compile test with warnings activated so that the result
@@ -171,7 +171,7 @@ dnl is false if the code doesn't compile cleanly.  For compilers
 dnl where it is not known how to activate a "fail-on-error" mode,
 dnl it is undefined which of the sets of actions will be run.
 dnl
-AC_DEFUN([ATS_TRY_COMPILE_NO_WARNING],
+AC_DEFUN([TS_TRY_COMPILE_NO_WARNING],
 [ats_save_CFLAGS=$CFLAGS
  CFLAGS="$CFLAGS $CFLAGS_WARN"
  if test "$ac_cv_prog_gcc" = "yes"; then
@@ -198,10 +198,10 @@ dnl
 dnl foo=1
 dnl bar='${foo}/2'
 dnl baz='${bar}/3'
-dnl ATS_EXPAND_VAR(fraz, $baz)
+dnl TS_EXPAND_VAR(fraz, $baz)
 dnl   $fraz is now "1/2/3"
 dnl
-AC_DEFUN([ATS_EXPAND_VAR], [
+AC_DEFUN([TS_EXPAND_VAR], [
 ats_last=
 ats_cur="$2"
 while test "x${ats_cur}" != "x${ats_last}";
@@ -219,9 +219,9 @@ dnl slashes, and returns the value in $1.
 dnl
 dnl Example:
 dnl orig_path="${prefix}/bar"
-dnl ATS_PATH_RELATIVE(final_path, $orig_path, $prefix)
+dnl TS_PATH_RELATIVE(final_path, $orig_path, $prefix)
 dnl    $final_path now contains "bar"
-AC_DEFUN([ATS_PATH_RELATIVE], [
+AC_DEFUN([TS_PATH_RELATIVE], [
 ats_stripped=`echo $2 | sed -e "s#^$3##"`
 # check if the stripping was successful
 if test "x$2" != "x${ats_stripped}"; then
@@ -234,39 +234,39 @@ fi
 ])
 
 
-dnl ATS_SUBST(VARIABLE)
+dnl TS_SUBST(VARIABLE)
 dnl Makes VARIABLE available in generated files
 dnl (do not use @variable@ in Makefiles, but $(variable))
-AC_DEFUN([ATS_SUBST], [
-  ATS_VAR_SUBST="$ATS_VAR_SUBST $1"
+AC_DEFUN([TS_SUBST], [
+  TS_VAR_SUBST="$TS_VAR_SUBST $1"
   AC_SUBST($1)
 ])
 
 dnl
-dnl ATS_SUBST_LAYOUT_PATH
-dnl Export (via ATS_SUBST) the various path-related variables that
+dnl TS_SUBST_LAYOUT_PATH
+dnl Export (via TS_SUBST) the various path-related variables that
 dnl trafficserver will use while generating scripts and
 dnl the default config file.
-AC_DEFUN([ATS_SUBST_LAYOUT_PATH], [
-  ATS_EXPAND_VAR(exp_$1, [$]$1)
-  ATS_PATH_RELATIVE(rel_$1, [$]exp_$1, ${prefix})
-  ATS_SUBST(exp_$1)
-  ATS_SUBST(rel_$1)
-  ATS_SUBST($1)
+AC_DEFUN([TS_SUBST_LAYOUT_PATH], [
+  TS_EXPAND_VAR(exp_$1, [$]$1)
+  TS_PATH_RELATIVE(rel_$1, [$]exp_$1, ${prefix})
+  TS_SUBST(exp_$1)
+  TS_SUBST(rel_$1)
+  TS_SUBST($1)
 ])
 
-dnl ATS_HELP_STRING(LHS, RHS)
+dnl TS_HELP_STRING(LHS, RHS)
 dnl Autoconf 2.50 can not handle substr correctly.  It does have
 dnl AC_HELP_STRING, so let's try to call it if we can.
 dnl Note: this define must be on one line so that it can be properly returned
 dnl as the help string.  When using this macro with a multi-line RHS, ensure
 dnl that you surround the macro invocation with []s
-AC_DEFUN([ATS_HELP_STRING], [ifelse(regexp(AC_ACVERSION, 2\.1), -1, AC_HELP_STRING([$1],[$2]),[  ][$1] substr([                       ],len($1))[$2])])
+AC_DEFUN([TS_HELP_STRING], [ifelse(regexp(AC_ACVERSION, 2\.1), -1, AC_HELP_STRING([$1],[$2]),[  ][$1] substr([                       ],len($1))[$2])])
 
 dnl
-dnl ATS_LAYOUT(configlayout, layoutname [, extravars])
+dnl TS_LAYOUT(configlayout, layoutname [, extravars])
 dnl
-AC_DEFUN([ATS_LAYOUT], [
+AC_DEFUN([TS_LAYOUT], [
   if test ! -f $srcdir/config.layout; then
     echo "** Error: Layout file $srcdir/config.layout not found"
     echo "** Error: Cannot use undefined layout '$LAYOUT'"
@@ -358,18 +358,18 @@ AC_DEFUN([ATS_LAYOUT], [
 ])dnl
 
 dnl
-dnl ATS_ENABLE_LAYOUT(default layout name [, extra vars])
+dnl TS_ENABLE_LAYOUT(default layout name [, extra vars])
 dnl
-AC_DEFUN([ATS_ENABLE_LAYOUT], [
+AC_DEFUN([TS_ENABLE_LAYOUT], [
 AC_ARG_ENABLE(layout,
-  [ATS_HELP_STRING([--enable-layout=LAYOUT],[Enable LAYOUT specified inside config.layout file (defaults to Trafficserver)])],[
+  [TS_HELP_STRING([--enable-layout=LAYOUT],[Enable LAYOUT specified inside config.layout file (defaults to Trafficserver)])],[
   LAYOUT=$enableval
 ])
 
 if test -z "$LAYOUT"; then
   LAYOUT="$1"
 fi
-ATS_LAYOUT($srcdir/config.layout, $LAYOUT, $2)
+TS_LAYOUT($srcdir/config.layout, $LAYOUT, $2)
 
 AC_MSG_CHECKING(for chosen layout)
 AC_MSG_RESULT($layout_name)
@@ -377,11 +377,11 @@ AC_MSG_RESULT($layout_name)
 
 
 dnl
-dnl ATS_PARSE_ARGUMENTS
+dnl TS_PARSE_ARGUMENTS
 dnl a reimplementation of autoconf's argument parser,
 dnl used here to allow us to co-exist layouts and argument based
 dnl set ups.
-AC_DEFUN([ATS_PARSE_ARGUMENTS], [
+AC_DEFUN([TS_PARSE_ARGUMENTS], [
 ac_prev=
 # Retrieve the command-line arguments.  The eval is needed because
 # the arguments are quoted to preserve accuracy.
@@ -516,9 +516,9 @@ done
 
 ])dnl
 
-dnl ATS_FLAG_HEADERS(HEADER-FILE ... )
+dnl TS_FLAG_HEADERS(HEADER-FILE ... )
 dnl
-AC_DEFUN([ATS_FLAG_HEADERS], [
+AC_DEFUN([TS_FLAG_HEADERS], [
 AC_CHECK_HEADERS([$1], [$2], [$3], [$4])
 for tsc_i in $1
 do
@@ -532,9 +532,9 @@ do
 done
 ])
 
-dnl ATS_FLAG_FUNCS(FUNC ... )
+dnl TS_FLAG_FUNCS(FUNC ... )
 dnl
-AC_DEFUN([ATS_FLAG_FUNCS], [
+AC_DEFUN([TS_FLAG_FUNCS], [
 AC_CHECK_FUNCS($1)
 for tsc_j in $1
 do

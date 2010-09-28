@@ -58,7 +58,7 @@
 #include "HttpAccept.h"
 #include "PluginVC.h"
 #include "FetchSM.h"
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 #include <string> // TODO: Do we really need STL strings?
 #include "StatSystemV2.h"
 #endif
@@ -1076,7 +1076,7 @@ INKContInternal::handle_event_count(int event)
   }
 }
 
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 void INKContInternal::setName(const char *name) {
   cont_name = name;
 
@@ -7370,7 +7370,7 @@ INKStatIncrement(INKStat the_stat)
   return INK_SUCCESS;
 }
 
-#if ATS_HAS_V2STATS
+#if TS_HAS_V2STATS
 INKReturnCode
 INKStatCreateV2(
     const char *the_name,

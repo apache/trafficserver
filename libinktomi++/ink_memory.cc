@@ -264,7 +264,7 @@ ink_memalign(size_t alignment, size_t size)
 
   void *ptr;
 
-#if ATS_HAS_POSIX_MEMALIGN
+#if TS_HAS_POSIX_MEMALIGN
   if (alignment <= 8)
     return ink_malloc(size);
 

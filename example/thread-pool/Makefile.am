@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = psi.la
 psi_la_SOURCES = psi.c thread.c
-psi_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
+psi_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/psi.so

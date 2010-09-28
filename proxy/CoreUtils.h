@@ -62,7 +62,7 @@ struct core_stack_state
 #include <assert.h>
 #include <asm/ptrace.h>         // for structure pt_regs
 #include <elf.h>
-#if ATS_USE_LIBEV
+#if TS_USE_LIBEV
 #undef EV_NONE
 #endif
 #include "DynArray.h"

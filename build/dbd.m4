@@ -19,9 +19,9 @@ dnl dbd.m4: Trafficserver's DBD autoconf macros
 dnl
 
 dnl
-dnl ATS_CHECK_SQLITE3: look for sqlite3 libraries and headers
+dnl TS_CHECK_SQLITE3: look for sqlite3 libraries and headers
 dnl
-AC_DEFUN([ATS_CHECK_SQLITE3], [
+AC_DEFUN([TS_CHECK_SQLITE3], [
 enable_sqlite3=no
 AC_ARG_WITH(sqlite3, [AC_HELP_STRING([--with-sqlite3=DIR],[use a specific sqlite3 library])],
 [
@@ -79,17 +79,17 @@ if test "$enable_sqlite3" != "no"; then
   sqlite3_have_headers=0
   sqlite3_have_libs=0
   if test "$sqlite3_base_dir" != "/usr"; then
-    ATS_ADDTO(CPPFLAGS, [-I${sqlite3_include}])
-    ATS_ADDTO(LDFLAGS, [-L${sqlite3_ldflags}])
+    TS_ADDTO(CPPFLAGS, [-I${sqlite3_include}])
+    TS_ADDTO(LDFLAGS, [-L${sqlite3_ldflags}])
     case $host_os in
       solaris*)
-        ATS_ADDTO(LDFLAGS, [-R${sqlite3_ldflags}])
+        TS_ADDTO(LDFLAGS, [-R${sqlite3_ldflags}])
         ;;
     esac
   fi
   AC_CHECK_LIB(sqlite3, sqlite3_open_v2, [sqlite3_have_libs=1])
   if test "$sqlite3_have_libs" != "0"; then
-    ATS_FLAG_HEADERS(sqlite3.h, [sqlite3_have_headers=1])
+    TS_FLAG_HEADERS(sqlite3.h, [sqlite3_have_headers=1])
   fi
   if test "$sqlite3_have_headers" != "0"; then
     AC_DEFINE(HAVE_SQLITE3,1,[Compiling with Sqlite3 support])
@@ -103,9 +103,9 @@ fi
 ])
 
 dnl
-dnl ATS_CHECK_BDB: look for Berkeley-DB libraries and headers
+dnl TS_CHECK_BDB: look for Berkeley-DB libraries and headers
 dnl
-AC_DEFUN([ATS_CHECK_BDB], [
+AC_DEFUN([TS_CHECK_BDB], [
 enable_libdb=no
 AC_ARG_WITH(bdb, [AC_HELP_STRING([--with-libdb=DIR],[use a specific Berkeley-DB library])],
 [
@@ -163,18 +163,18 @@ if test "$enable_libdb" != "no"; then
   libdb_have_headers=0
   libdb_have_libs=0
   if test "$libdb_base_dir" != "/usr"; then
-    ATS_ADDTO(CPPFLAGS, [-I${libdb_include}])
-    ATS_ADDTO(LDFLAGS, [-L${libdb_ldflags}])
+    TS_ADDTO(CPPFLAGS, [-I${libdb_include}])
+    TS_ADDTO(LDFLAGS, [-L${libdb_ldflags}])
     case $host_os in
       solaris*)
-        ATS_ADDTO(LDFLAGS, [-R${libdb_ldflags}])
+        TS_ADDTO(LDFLAGS, [-R${libdb_ldflags}])
         ;;
     esac
   fi
   AC_CHECK_LIB(db, __db_open, [libdb_have_libs=1])
   AC_CHECK_LIB(db, __db185_open, [libdb_have_libs=1])
   if test "$libdb_have_libs" != "0"; then
-    ATS_FLAG_HEADERS(db_185.h db.h, [libdb_have_headers=1])
+    TS_FLAG_HEADERS(db_185.h db.h, [libdb_have_headers=1])
   fi
   if test "$libdb_have_headers" != "0"; then
     AC_SUBST([LIBDB], ["-ldb"])

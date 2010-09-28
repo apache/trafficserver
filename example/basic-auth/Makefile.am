@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = basic-auth.la
 basic_auth_la_SOURCES = basic-auth.c
-basic_auth_la_LDFLAGS = -module  -version-info $(ATS_LIBTOOL_VERSION)
+basic_auth_la_LDFLAGS = -module  -version-info $(TS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/basic-auth.so

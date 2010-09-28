@@ -1,6 +1,7 @@
 /** @file
 
-  Some small general interest definitions
+  Some small general interest definitions. The general standard is to
+  prefix these defines with TS_.
 
   @section license License
 
@@ -24,6 +25,9 @@
 #ifndef _ink_config_h
 #define	_ink_config_h
 
+// Note: All "defines" should be prefixed with TS_ when appropriate, please
+// don't use ATS_ any more.
+
 /* GENERATED FILE WARNING!  DO NOT EDIT ink_config.h
  *
  * You must modify ink_config.h.in instead.
@@ -36,103 +40,103 @@
 
 /* Version info
  */
-#define ATS_VERSION_STRING             "@ATS_VERSION_STRING@"
-#define ATS_VERSION_NUMBER              @ATS_VERSION_NUMBER@
-#define ATS_VERSION_MAJOR               @ATS_VERSION_MAJOR@
-#define ATS_VERSION_MINOR               @ATS_VERSION_MINOR@
-#define ATS_VERSION_MICRO               @ATS_VERSION_MICRO@
+#define TS_VERSION_STRING             "@TS_VERSION_STRING@"
+#define TS_VERSION_NUMBER              @TS_VERSION_NUMBER@
+#define TS_VERSION_MAJOR               @TS_VERSION_MAJOR@
+#define TS_VERSION_MINOR               @TS_VERSION_MINOR@
+#define TS_VERSION_MICRO               @TS_VERSION_MICRO@
 
 #define BUILD_MACHINE                  "@build_machine@"
 #define BUILD_PERSON                   "@build_person@"
 #define BUILD_GROUP                    "@build_group@"
 
 /* Includes */
-#define ATS_HAVE_SYS_EPOLL_H            @sys_epollh@
-#define ATS_HAVE_SYS_EVENT_H            @sys_eventh@
-#define ATS_HAVE_MACHINE_ENDIAN_H       @machine_endianh@
-#define ATS_HAVE_ENDIAN_H               @endianh@
-#define ATS_HAVE_NETINET_IN_H           @netinet_inh@
-#define ATS_HAVE_NETINET_IN_SYSTM_H     @netinet_in_systmh@
-#define ATS_HAVE_NETINET_TCP_H          @netinet_tcph@
-#define ATS_HAVE_SYS_IOCTL_H            @sys_ioctlh@
-#define ATS_HAVE_SYS_BYTEORDER_H        @sys_byteorderh@
-#define ATS_HAVE_SYS_SOCKIO_H           @sys_sockioh@
-#define ATS_HAVE_SYS_SYSCTL_H           @sys_sysctlh@
-#define ATS_HAVE_SYS_SYSINFO_H          @sys_sysinfoh@
-#define ATS_HAVE_SYS_SYSTEMINFO_H       @sys_systeminfoh@
-#define ATS_HAVE_ARPA_INET_H            @arpa_ineth@
-#define ATS_HAVE_ARPA_NAMESER_H         @arpa_nameserh@
-#define ATS_HAVE_ARPA_NAMESER_COMPAT_H  @arpa_nameser_compath@
-#define ATS_HAVE_EXECINFO_H             @execinfoh@
-#define ATS_HAVE_NETDB_H                @netdbh@
-#define ATS_HAVE_CTYPE_H                @ctypeh@
-#define ATS_HAVE_SIGINFO_H              @siginfoh@
-#define ATS_HAVE_MALLOC_H               @malloch@
-#define ATS_HAVE_WAIT_H                 @waith@
-#define ATS_HAVE_FLOAT_H                @floath@
-#define ATS_HAVE_LIBGEN_H               @libgenh@
-#define ATS_HAVE_VALUES_H               @valuesh@
-#define ATS_HAVE_ALLOCA_H               @allocah@
-#define ATS_HAVE_CPIO_H                 @cpioh@
-#define ATS_HAVE_STROPTS_H              @stroptsh@
-#define ATS_HAVE_SYS_MOUNT_H            @sys_mounth@
-#define ATS_HAVE_SYS_PARAM_H            @sys_paramh@
-#define ATS_HAVE_SYS_SYSMACROS_H        @sys_sysmacrosh@
-#define ATS_HAVE_MATH_H                 @mathh@
-#define ATS_HAVE_NET_PPP_DEFS_H         @net_ppp_defsh@
-#define ATS_HAVE_NETINET_IP_H           @netinet_iph@
-#define ATS_HAVE_NETINET_IP_ICMP_H      @netinet_ip_icmph@
-#define ATS_HAVE_EXECINFO_H             @execinfoh@
+#define TS_HAVE_SYS_EPOLL_H            @sys_epollh@
+#define TS_HAVE_SYS_EVENT_H            @sys_eventh@
+#define TS_HAVE_MACHINE_ENDIAN_H       @machine_endianh@
+#define TS_HAVE_ENDIAN_H               @endianh@
+#define TS_HAVE_NETINET_IN_H           @netinet_inh@
+#define TS_HAVE_NETINET_IN_SYSTM_H     @netinet_in_systmh@
+#define TS_HAVE_NETINET_TCP_H          @netinet_tcph@
+#define TS_HAVE_SYS_IOCTL_H            @sys_ioctlh@
+#define TS_HAVE_SYS_BYTEORDER_H        @sys_byteorderh@
+#define TS_HAVE_SYS_SOCKIO_H           @sys_sockioh@
+#define TS_HAVE_SYS_SYSCTL_H           @sys_sysctlh@
+#define TS_HAVE_SYS_SYSINFO_H          @sys_sysinfoh@
+#define TS_HAVE_SYS_SYSTEMINFO_H       @sys_systeminfoh@
+#define TS_HAVE_ARPA_INET_H            @arpa_ineth@
+#define TS_HAVE_ARPA_NAMESER_H         @arpa_nameserh@
+#define TS_HAVE_ARPA_NAMESER_COMPAT_H  @arpa_nameser_compath@
+#define TS_HAVE_EXECINFO_H             @execinfoh@
+#define TS_HAVE_NETDB_H                @netdbh@
+#define TS_HAVE_CTYPE_H                @ctypeh@
+#define TS_HAVE_SIGINFO_H              @siginfoh@
+#define TS_HAVE_MALLOC_H               @malloch@
+#define TS_HAVE_WAIT_H                 @waith@
+#define TS_HAVE_FLOAT_H                @floath@
+#define TS_HAVE_LIBGEN_H               @libgenh@
+#define TS_HAVE_VALUES_H               @valuesh@
+#define TS_HAVE_ALLOCA_H               @allocah@
+#define TS_HAVE_CPIO_H                 @cpioh@
+#define TS_HAVE_STROPTS_H              @stroptsh@
+#define TS_HAVE_SYS_MOUNT_H            @sys_mounth@
+#define TS_HAVE_SYS_PARAM_H            @sys_paramh@
+#define TS_HAVE_SYS_SYSMACROS_H        @sys_sysmacrosh@
+#define TS_HAVE_MATH_H                 @mathh@
+#define TS_HAVE_NET_PPP_DEFS_H         @net_ppp_defsh@
+#define TS_HAVE_NETINET_IP_H           @netinet_iph@
+#define TS_HAVE_NETINET_IP_ICMP_H      @netinet_ip_icmph@
+#define TS_HAVE_EXECINFO_H             @execinfoh@
 
 /* Libraries */
-#define ATS_HAS_LIBZ                    @zlibh@
-#define ATS_HAS_LZMA                    @lzmah@
-#define ATS_HAS_EXPAT                   @expath@
+#define TS_HAS_LIBZ                    @zlibh@
+#define TS_HAS_LZMA                    @lzmah@
+#define TS_HAS_EXPAT                   @expath@
 
 /* Features */
-#define ATS_HAS_EVENTFD                 @has_eventfd@
-#define ATS_HAS_CLOCK_GETTIME           @has_clock_gettime@
-#define ATS_HAS_POSIX_MEMALIGN          @has_posix_memalign@
-#define ATS_HAS_POSIX_FADVISE           @has_posix_fadvise@
-#define ATS_HAS_LRAND48_R               @has_lrand48_r@
-#define ATS_HAS_SRAND48_R               @has_srand48_r@
-#define ATS_HAS_STRNDUP                 @has_strndup@
-#define ATS_HAS_STRLCPY                 @has_strlcpy@
-#define ATS_HAS_STRLCAT                 @has_strlcat@
+#define TS_HAS_EVENTFD                 @has_eventfd@
+#define TS_HAS_CLOCK_GETTIME           @has_clock_gettime@
+#define TS_HAS_POSIX_MEMALIGN          @has_posix_memalign@
+#define TS_HAS_POSIX_FADVISE           @has_posix_fadvise@
+#define TS_HAS_LRAND48_R               @has_lrand48_r@
+#define TS_HAS_SRAND48_R               @has_srand48_r@
+#define TS_HAS_STRNDUP                 @has_strndup@
+#define TS_HAS_STRLCPY                 @has_strlcpy@
+#define TS_HAS_STRLCAT                 @has_strlcat@
 
-#define ATS_USE_SQLITE3                 @use_sqlite3@
-#define ATS_USE_LIBDB                   @use_libdb@
-#define ATS_HAS_BACKTRACE               @has_backtrace@
-#define ATS_HAS_PROFILER                @has_profiler@
-#define ATS_USE_DIAGS                   @use_diags@
-#define ATS_USE_LIBEV                   @use_libev@
-#define ATS_USE_EPOLL                   @use_epoll@
-#define ATS_USE_KQUEUE                  @use_kqueue@
-#define ATS_USE_PORT                    @use_port@
-#define ATS_USE_POSIX_CAP               @use_posix_cap@
-#define ATS_USE_DETAILED_LOG            @has_detailed_log@
-#define ATS_USE_TPROXY                  @use_tproxy@
+#define TS_USE_SQLITE3                 @use_sqlite3@
+#define TS_USE_LIBDB                   @use_libdb@
+#define TS_HAS_BACKTRACE               @has_backtrace@
+#define TS_HAS_PROFILER                @has_profiler@
+#define TS_USE_DIAGS                   @use_diags@
+#define TS_USE_LIBEV                   @use_libev@
+#define TS_USE_EPOLL                   @use_epoll@
+#define TS_USE_KQUEUE                  @use_kqueue@
+#define TS_USE_PORT                    @use_port@
+#define TS_USE_POSIX_CAP               @use_posix_cap@
+#define TS_USE_DETAILED_LOG            @has_detailed_log@
+#define TS_USE_TPROXY                  @use_tproxy@
 
 /* OS API definitions */
 #define GETHOSTBYNAME_R_HOSTENT_DATA    @gethostbyname_r_hostent_data@
 #define GETHOSTBYNAME_R_GLIBC2          @gethostbyname_r_glibc2@
 #define NEED_UNION_SEMUN                @need_union_semun@
 #define SIZEOF_VOID_POINTER             @ac_cv_sizeof_voidp@
-#define ATS_IP_TRANSPARENT              @ip_transparent@
+#define TS_IP_TRANSPARENT              @ip_transparent@
 
 /* API */
-#define ATS_IS_MICRO_BUILD              @is_micro_build@
-#define ATS_HAS_STANDALONE_IOCORE       @has_standalone_iocore@
-#define ATS_HAS_INKAPI                  @has_inkapi@
-#define ATS_HAS_CLI2                    @has_cli2@
-#define ATS_HAS_WEBUI                   @has_webui@
-#define ATS_HAS_V2STATS                 @has_v2stats@
-#define ATS_HAS_PURIFY                  @has_purify@
-#define ATS_HAS_DEMANGLE                @has_demangle@
+#define TS_IS_MICRO_BUILD              @is_micro_build@
+#define TS_HAS_STANDALONE_IOCORE       @has_standalone_iocore@
+#define TS_HAS_INKAPI                  @has_inkapi@
+#define TS_HAS_CLI2                    @has_cli2@
+#define TS_HAS_WEBUI                   @has_webui@
+#define TS_HAS_V2STATS                 @has_v2stats@
+#define TS_HAS_PURIFY                  @has_purify@
+#define TS_HAS_DEMANGLE                @has_demangle@
 
 /* XXX: Should make those individually selectable ? */
 /* TODO: Use ATS prefix instead no prefix or INK    */
-#if ATS_IS_MICRO_BUILD
+#if TS_IS_MICRO_BUILD
 # define TS_MICRO                       1
 # define INK_NO_ACL                     1
 # define INK_NO_CLUSTER                 1
@@ -151,7 +155,7 @@
 # define _NO_FREELIST                   1
 #endif
 
-#if ATS_HAS_INKAPI
+#if TS_HAS_INKAPI
 #define TS_MAX_API_STATS               @max_api_stats@
 /* XXX: Should make those individually selectable ? */
 #else
@@ -160,7 +164,7 @@
 # define INK_SINGLE_THREADED            1
 #endif
 
-#if ATS_HAS_STANDALONE_IOCORE
+#if TS_HAS_STANDALONE_IOCORE
 # define STANDALONE_IOCORE              1
 #else
 # define FIXME_NONMODULAR               1
@@ -169,11 +173,11 @@
 # define HTTP_CACHE                     1
 #endif
 
-#if !ATS_HAS_WEBUI
+#if !TS_HAS_WEBUI
 # define NO_WEBUI                       1
 #endif
 
-#if ATS_HAS_PURIFY
+#if TS_HAS_PURIFY
 # define PURIFY                         1
 #endif
 

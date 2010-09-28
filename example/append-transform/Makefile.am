@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = append-transform.la
 append_transform_la_SOURCES = append-transform.c
-append_transform_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
+append_transform_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/append-transform.so

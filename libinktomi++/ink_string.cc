@@ -391,7 +391,7 @@ ink_string_mjoin(int nstrings, ...)
   return ns;
 }
 
-#if !ATS_HAS_STRNDUP
+#if !TS_HAS_STRNDUP
 char *
 ink_strndup(const char *str, size_t n)
 {
@@ -409,7 +409,7 @@ ink_strndup(const char *str, size_t n)
 }
 #endif
 
-#if !ATS_HAS_STRLCPY
+#if !TS_HAS_STRLCPY
 size_t
 ink_strlcpy(char *dst, const char *src, size_t siz)
 {
@@ -437,7 +437,7 @@ ink_strlcpy(char *dst, const char *src, size_t siz)
 }
 #endif
 
-#if !ATS_HAS_STRLCAT
+#if !TS_HAS_STRLCAT
 size_t
 ink_strlcat(char *dst, const char *src, size_t siz)
 {

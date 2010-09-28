@@ -76,7 +76,7 @@ char *ink_string_mcopy(char *source);
 char *ink_string_mjoin(int nstrings, ...);
 
 /* Missing fcns */
-#if ATS_HAS_STRNDUP
+#if TS_HAS_STRNDUP
 #define  ink_strndup strndup
 #else
 char *ink_strndup(const char *str, size_t n);
@@ -86,7 +86,7 @@ char *ink_strndup(const char *str, size_t n);
  * will be copied.  Always NUL terminates (unless siz == 0).
  * Returns strlen(src); if retval >= siz, truncation occurred.
  */
-#if ATS_HAS_STRLCPY
+#if TS_HAS_STRLCPY
 #define  ink_strlcpy strlcpy
 #else
 size_t ink_strlcpy(char *dst, const char *str, size_t siz);
@@ -98,7 +98,7 @@ size_t ink_strlcpy(char *dst, const char *str, size_t siz);
  * Returns strlen(src) + MIN(siz, strlen(initial dst)).
  * If retval >= siz, truncation occurred.
  */
-#if ATS_HAS_STRLCAT
+#if TS_HAS_STRLCAT
 #define  ink_strlcat strlcat
 #else
 size_t ink_strlcat(char *dst, const char *str, size_t siz);

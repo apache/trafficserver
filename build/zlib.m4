@@ -19,9 +19,9 @@ dnl zlib.m4: Trafficserver's zlib autoconf macros
 dnl
 
 dnl
-dnl ATS_CHECK_ZLIB: look for zlib libraries and headers
+dnl TS_CHECK_ZLIB: look for zlib libraries and headers
 dnl
-AC_DEFUN([ATS_CHECK_ZLIB], [
+AC_DEFUN([TS_CHECK_ZLIB], [
 enable_zlib=no
 AC_ARG_WITH(zlib, [AC_HELP_STRING([--with-zlib=DIR],[use a specific zlib library])],
 [
@@ -80,20 +80,20 @@ if test "$enable_zlib" != "no"; then
   zlib_have_headers=0
   zlib_have_libs=0
   if test "$zlib_base_dir" != "/usr"; then
-    ATS_ADDTO(CPPFLAGS, [-I${zlib_include}])
-    ATS_ADDTO(LDFLAGS, [-L${zlib_ldflags}])
+    TS_ADDTO(CPPFLAGS, [-I${zlib_include}])
+    TS_ADDTO(LDFLAGS, [-L${zlib_ldflags}])
     case $host_os in
       solaris*)
-        ATS_ADDTO(LDFLAGS, [-R${zlib_ldflags}])
+        TS_ADDTO(LDFLAGS, [-R${zlib_ldflags}])
         ;;
     esac
   fi
   AC_CHECK_LIB(z, compressBound, [zlib_have_libs=1])
   if test "$zlib_have_libs" != "0"; then
-    ATS_FLAG_HEADERS(zlib.h, [zlib_have_headers=1])
+    TS_FLAG_HEADERS(zlib.h, [zlib_have_headers=1])
   fi
   if test "$zlib_have_headers" != "0"; then
-    ATS_ADDTO(LIBS, [-lz])
+    TS_ADDTO(LIBS, [-lz])
   else
     enable_zlib=no
     CPPFLAGS=$saved_cppflags

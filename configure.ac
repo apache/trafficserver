@@ -32,10 +32,10 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([ATS_VERSION_S],[2.1.4-unstable])
-m4_define([ATS_VERSION_N],[2001004])
+m4_define([TS_VERSION_S],[2.1.4-unstable])
+m4_define([TS_VERSION_N],[2001004])
 
-AC_INIT([Apache Traffic Server], ATS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
+AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
@@ -48,23 +48,23 @@ AM_CONFIG_HEADER([libinktomi++/ink_autoconf.h])
 # convention that attempts to solve problems that most people just
 # don't have and which just causes confusion for most end users.
 #
-ATS_VERSION_MAJOR=$((ATS_VERSION_N() / 1000000 ))
-ATS_VERSION_MINOR=$(((ATS_VERSION_N() / 1000) % 1000 ))
-ATS_VERSION_MICRO=$((ATS_VERSION_N() % 1000 ))
-ATS_LIBTOOL_MAJOR=`echo $((${ATS_VERSION_MAJOR} + ${ATS_VERSION_MINOR}))`
-ATS_LIBTOOL_VERSION=$ATS_LIBTOOL_MAJOR:$ATS_VERSION_MICRO:$ATS_VERSION_MINOR
-ATS_VERSION_STRING=ATS_VERSION_S()
-ATS_VERSION_NUMBER=ATS_VERSION_N()
+TS_VERSION_MAJOR=$((TS_VERSION_N() / 1000000 ))
+TS_VERSION_MINOR=$(((TS_VERSION_N() / 1000) % 1000 ))
+TS_VERSION_MICRO=$((TS_VERSION_N() % 1000 ))
+TS_LIBTOOL_MAJOR=`echo $((${TS_VERSION_MAJOR} + ${TS_VERSION_MINOR}))`
+TS_LIBTOOL_VERSION=$TS_LIBTOOL_MAJOR:$TS_VERSION_MICRO:$TS_VERSION_MINOR
+TS_VERSION_STRING=TS_VERSION_S()
+TS_VERSION_NUMBER=TS_VERSION_N()
 
 #
 # Substitute the above version numbers into the various files below.
 #
-AC_SUBST(ATS_LIBTOOL_VERSION)
-AC_SUBST(ATS_VERSION_STRING)
-AC_SUBST(ATS_VERSION_NUMBER)
-AC_SUBST(ATS_VERSION_MAJOR)
-AC_SUBST(ATS_VERSION_MINOR)
-AC_SUBST(ATS_VERSION_MICRO)
+AC_SUBST(TS_LIBTOOL_VERSION)
+AC_SUBST(TS_VERSION_STRING)
+AC_SUBST(TS_VERSION_NUMBER)
+AC_SUBST(TS_VERSION_MAJOR)
+AC_SUBST(TS_VERSION_MINOR)
+AC_SUBST(TS_VERSION_MICRO)
 
 dnl Hard-coded top of ink_autoconf.h:
 AH_TOP([
@@ -81,7 +81,7 @@ AH_BOTTOM([
 #
 # Generate ./config.nice for reproducing runs of configure
 #
-ATS_CONFIG_NICE([config.nice])
+TS_CONFIG_NICE([config.nice])
 
 # XXX we can't just use AC_PREFIX_DEFAULT because that isn't subbed in
 # by configure until it is too late.  Is that how it should be or not?
@@ -89,10 +89,10 @@ ATS_CONFIG_NICE([config.nice])
 AC_PREFIX_DEFAULT([/usr/local/trafficserver])
 
 # Get the layout here, so we can pass the required variables to Trafficserver
-ATS_ENABLE_LAYOUT(TrafficServer, [cachedir])
+TS_ENABLE_LAYOUT(TrafficServer, [cachedir])
 
 # Reparse the configure arguments so we can override the layout.
-ATS_PARSE_ARGUMENTS
+TS_PARSE_ARGUMENTS
 
 #
 # Host detection
@@ -387,33 +387,33 @@ AC_SUBST(max_api_stats)
 # foo      Standard variable  eg. ${prefix}/foo
 # rel_foo  Relative to prefix eg. foo
 #
-ATS_SUBST_LAYOUT_PATH([prefix])
-ATS_SUBST_LAYOUT_PATH([exec_prefix])
-ATS_SUBST_LAYOUT_PATH([bindir])
-ATS_SUBST_LAYOUT_PATH([sbindir])
-ATS_SUBST_LAYOUT_PATH([libdir])
-ATS_SUBST_LAYOUT_PATH([libexecdir])
-ATS_SUBST_LAYOUT_PATH([infodir])
-ATS_SUBST_LAYOUT_PATH([mandir])
-ATS_SUBST_LAYOUT_PATH([sysconfdir])
-ATS_SUBST_LAYOUT_PATH([datadir])
-ATS_SUBST_LAYOUT_PATH([installbuilddir])
-ATS_SUBST_LAYOUT_PATH([includedir])
-ATS_SUBST_LAYOUT_PATH([localstatedir])
-ATS_SUBST_LAYOUT_PATH([runtimedir])
-ATS_SUBST_LAYOUT_PATH([logdir])
-ATS_SUBST_LAYOUT_PATH([cachedir])
+TS_SUBST_LAYOUT_PATH([prefix])
+TS_SUBST_LAYOUT_PATH([exec_prefix])
+TS_SUBST_LAYOUT_PATH([bindir])
+TS_SUBST_LAYOUT_PATH([sbindir])
+TS_SUBST_LAYOUT_PATH([libdir])
+TS_SUBST_LAYOUT_PATH([libexecdir])
+TS_SUBST_LAYOUT_PATH([infodir])
+TS_SUBST_LAYOUT_PATH([mandir])
+TS_SUBST_LAYOUT_PATH([sysconfdir])
+TS_SUBST_LAYOUT_PATH([datadir])
+TS_SUBST_LAYOUT_PATH([installbuilddir])
+TS_SUBST_LAYOUT_PATH([includedir])
+TS_SUBST_LAYOUT_PATH([localstatedir])
+TS_SUBST_LAYOUT_PATH([runtimedir])
+TS_SUBST_LAYOUT_PATH([logdir])
+TS_SUBST_LAYOUT_PATH([cachedir])
 
-ATS_SUBST([pkgbindir])
-ATS_SUBST([pkgsbindir])
-ATS_SUBST([pkglibdir])
-ATS_SUBST([pkglibexecdir])
-ATS_SUBST([pkgsysconfdir])
-ATS_SUBST([pkgdatadir])
-ATS_SUBST([pkglocalstatedir])
-ATS_SUBST([pkgruntimedir])
-ATS_SUBST([pkglogdir])
-ATS_SUBST([pkgcachedir])
+TS_SUBST([pkgbindir])
+TS_SUBST([pkgsbindir])
+TS_SUBST([pkglibdir])
+TS_SUBST([pkglibexecdir])
+TS_SUBST([pkgsysconfdir])
+TS_SUBST([pkgdatadir])
+TS_SUBST([pkglocalstatedir])
+TS_SUBST([pkgruntimedir])
+TS_SUBST([pkglogdir])
+TS_SUBST([pkgcachedir])
 
 
 # -----------------------------------------------------------------------------
@@ -518,15 +518,15 @@ case $host_os in
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
-    ATS_ADDTO(CPPFLAGS, [-I/opt/local/include])
-    ATS_ADDTO(LDFLAGS, [-L/opt/local/lib])
+    TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
+    TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
     ;;
   freebsd*)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
     release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
-    ATS_ADDTO(LDFLAGS, [-L/usr/local/lib])
+    TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
     ;;
   solaris*)
     if test "x${base_cc}" = "xcc"; then
@@ -544,8 +544,8 @@ case $host_os in
       release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     fi
-    ATS_ADDTO(LDFLAGS, [-L/lib])
-    ATS_ADDTO(LDFLAGS, [-L/usr/local/lib])
+    TS_ADDTO(LDFLAGS, [-L/lib])
+    TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
     ;;
   *)
     common_opt="-pipe -Wall -Werror"
@@ -625,8 +625,8 @@ AC_ARG_WITH(architecture, [AC_HELP_STRING([--with-architecture=ARCH],[use a spec
 ])
 
 if test "x$cpu_architecture" != "x"; then
-  ATS_ADDTO(CFLAGS, [$cpu_architecture])
-  ATS_ADDTO(CXXFLAGS, [$cpu_architecture])
+  TS_ADDTO(CFLAGS, [$cpu_architecture])
+  TS_ADDTO(CXXFLAGS, [$cpu_architecture])
 fi
 
 # GCC atomics
@@ -640,14 +640,14 @@ AM_CONDITIONAL([SUPPORT_ATOMICS],[test x$support_cv_atomic = xyes])
 
 # 64-bit LFS support
 #
-ATS_ADDTO(CPPFLAGS, [-D_LARGEFILE64_SOURCE=1])
+TS_ADDTO(CPPFLAGS, [-D_LARGEFILE64_SOURCE=1])
 if test "${ac_cv_sizeof_voidp}" = "8"; then
-  ATS_ADDTO(CPPFLAGS, [-D_COMPILE64BIT_SOURCE=1])
+  TS_ADDTO(CPPFLAGS, [-D_COMPILE64BIT_SOURCE=1])
 else
-  ATS_ADDTO(CPPFLAGS, [-D_FILE_OFFSET_BITS=64])
+  TS_ADDTO(CPPFLAGS, [-D_FILE_OFFSET_BITS=64])
 fi
-ATS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
-ATS_ADDTO(CPPFLAGS, [-D_REENTRANT])
+TS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
+TS_ADDTO(CPPFLAGS, [-D_REENTRANT])
 
 case $host_os in
   linux*)
@@ -669,19 +669,19 @@ case $host_os in
     host_os_def=unknown
    ;;
 esac
-ATS_ADDTO(CPPFLAGS, [-D$host_os_def])
+TS_ADDTO(CPPFLAGS, [-D$host_os_def])
 
 #
 # _Here_ is where we go ahead and add the _optimizations_ to already
 #  existing CFLAGS/CXXFLAGS if some special values had been set.
 #
 if test "x${enable_debug}" = "xyes"; then
-  ATS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
-  ATS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
-  ATS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
+  TS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
+  TS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
+  TS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
 else
-  ATS_ADDTO(CFLAGS, [${cc_oflag_opt}])
-  ATS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
+  TS_ADDTO(CFLAGS, [${cc_oflag_opt}])
+  TS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
 fi
 
 #
@@ -717,18 +717,18 @@ AC_CHECK_LIB([ev],[ev_sleep],[AC_SUBST([LIBEV],["-lev"])])
 
 #
 # Check for SSL presence and usability
-ATS_CHECK_CRYPTO
+TS_CHECK_CRYPTO
 if test "x${enable_crypto}" != "xyes"; then
   AC_MSG_ERROR([Need at least one SSL library, --with-openssl is supported])
 fi
 
 #
 # Check for zlib presence and usability
-ATS_CHECK_ZLIB
+TS_CHECK_ZLIB
 
 #
 # Check for lzma presence and usability
-ATS_CHECK_LZMA
+TS_CHECK_LZMA
 
 #
 # Tcl macros provided by m4/tcl.m4
@@ -751,21 +751,21 @@ AC_SUBST([LIBTCL],[$TCL_LIB_FLAG])
 
 case $host_os in
   freebsd*)
-    ATS_ADDTO(CPPFLAGS, [-I/usr/local/include])
+    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     ;;
   solaris*)
-    ATS_ADDTO(CPPFLAGS, [-I/usr/local/include])
+    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
     ;;
 esac
 
 if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
-   ATS_ADDTO(CPPFLAGS, [$TCL_INCLUDE_SPEC])
+   TS_ADDTO(CPPFLAGS, [$TCL_INCLUDE_SPEC])
 fi
 
 #
 # Check for XML parser
 #
-ATS_CHECK_XML
+TS_CHECK_XML
 if test "x${enable_xml}" != "xyes"; then
   AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
 fi
@@ -775,9 +775,9 @@ fi
 #
 use_sqlite3=1
 use_libdb=0
-ATS_CHECK_SQLITE3
+TS_CHECK_SQLITE3
 if test "x${enable_sqlite3}" != "xyes"; then
-  ATS_CHECK_BDB
+  TS_CHECK_BDB
   if test "x${enable_libdb}" != "xyes"; then
     AC_MSG_ERROR([Need at least one DB backend, --with-sqlite3 and --with-libdb are supported])
   fi
@@ -787,8 +787,8 @@ fi
 AC_SUBST(use_sqlite3)
 AC_SUBST(use_libdb)
 
-ATS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise lrand48_r srand48_r port_create])
-ATS_FLAG_FUNCS([strndup strlcpy strlcat])
+TS_FLAG_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise lrand48_r srand48_r port_create])
+TS_FLAG_FUNCS([strndup strlcpy strlcat])
 
 AC_SUBST(has_clock_gettime)
 AC_SUBST(has_posix_memalign)
@@ -801,21 +801,21 @@ AC_SUBST(has_strlcat)
 
 has_eventfd=0
 AS_IF([test "x$enable_eventfd" = "xyes"],
-  [ATS_FLAG_FUNCS([eventfd])]
+  [TS_FLAG_FUNCS([eventfd])]
 )
 AC_SUBST(has_eventfd)
 
 #
 # Check for pcre library
 #
-ATS_CHECK_PCRE
+TS_CHECK_PCRE
 if test "x${enable_pcre}" != "xyes"; then
   AC_MSG_ERROR([Cannot find pcre library. Configure --with-pcre=DIR])
 fi
 
 has_backtrace=0
 # Check for backtrace() support
-ATS_FLAG_HEADERS([execinfo.h], [has_backtrace=1],[])
+TS_FLAG_HEADERS([execinfo.h], [has_backtrace=1],[])
 if test "${has_backtrace}" = "1"; then
   # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
   AC_CHECK_LIB([execinfo], [backtrace], [have_backtrace_lib=yes
@@ -916,7 +916,7 @@ AC_SUBST(use_posix_cap)
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
-ATS_FLAG_HEADERS([sys/epoll.h \
+TS_FLAG_HEADERS([sys/epoll.h \
                   sys/event.h \
                   machine/endian.h \
                   endian.h \
@@ -986,7 +986,7 @@ AC_SUBST(sys_sysmacrosh)
 AC_SUBST(mathh)
 AC_SUBST(net_ppp_defsh)
 
-ATS_FLAG_HEADERS([netinet/ip.h], [], [],
+TS_FLAG_HEADERS([netinet/ip.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -995,7 +995,7 @@ ATS_FLAG_HEADERS([netinet/ip.h], [], [],
                    #endif
                  ]])
 
-ATS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
+TS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -1014,7 +1014,7 @@ AC_SUBST(netinet_iph)
 AC_SUBST(netinet_ip_icmph)
 
 if test "x${with_profiler}" = "xyes"; then
-ATS_FLAG_HEADERS([google/profiler.h \
+TS_FLAG_HEADERS([google/profiler.h \
                   ], [], [])
 fi
 
@@ -1108,8 +1108,8 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
 AC_SUBST(use_tproxy)
 AC_SUBST(ip_transparent)
 
-ATS_CHECK_DEFAULT_IFACE
-ATS_CHECK_GETHOSTBYNAME_R_STYLE
+TS_CHECK_DEFAULT_IFACE
+TS_CHECK_GETHOSTBYNAME_R_STYLE
 
 #
 # use modular IOCORE

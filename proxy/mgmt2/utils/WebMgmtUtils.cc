@@ -1267,7 +1267,7 @@ processSpawn(const char *args[],
   long total;
   bool cutoff;
   const char *too_large_msg = "\nfile too large, truncated here...";
-#if !ATS_USE_POSIX_CAP
+#if !TS_USE_POSIX_CAP
   uid_t saved_euid = 0;
 #endif
 
@@ -1289,7 +1289,7 @@ processSpawn(const char *args[],
     for (int i = 0; i < MAX_PROXY_SERVER_PORTS && lmgmt->proxy_server_fd[i] >= 0; i++) {
       close_socket(lmgmt->proxy_server_fd[i]);
     }
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
     /* There is no point in saving the current euid in order to
        restore it because at this point the process will either exec
        or exit. The thread of execution will neither linger nor return
@@ -1403,7 +1403,7 @@ processSpawn(const char *args[],
     }
   }
 
-#if !ATS_USE_POSIX_CAP
+#if !TS_USE_POSIX_CAP
   if (run_as_root) {
     removeRootPriv(saved_euid);
   }

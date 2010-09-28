@@ -40,7 +40,7 @@
 #include "WebReconfig.h"
 #include "MgmtSocket.h"
 
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
 #include <sys/capability.h>
 #endif
 
@@ -1264,7 +1264,7 @@ LocalManager::listenForProxy()
   return;
 }                               /* End LocalManager::listenForProxy */
 
-#if ATS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
 /** Control file access privileges to bypass DAC.
     @parm state Use @c true to enable elevated privileges,
     @c false to disable.
@@ -1343,7 +1343,7 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, bool transparent,  
   struct sockaddr_in proxy_addr;
   int proxy_port_fd = -1;
 
-#if !ATS_USE_POSIX_CAP
+#if !TS_USE_POSIX_CAP
   bool privBoost = false;
   uid_t euid = geteuid();
   uid_t saved_euid = 0;
@@ -1370,10 +1370,10 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, bool transparent,  
   }
 
   if (transparent) {
-#if ATS_USE_TPROXY
+#if TS_USE_TPROXY
     int transparent_value = 1;
     Debug("http_tproxy", "Listen port %d inbound transparency enabled.\n", proxy_port);
-    if (setsockopt(proxy_port_fd, SOL_IP, ATS_IP_TRANSPARENT, &transparent_value, sizeof(transparent_value)) == -1) {
+    if (setsockopt(proxy_port_fd, SOL_IP, TS_IP_TRANSPARENT, &transparent_value, sizeof(transparent_value)) == -1) {
       mgmt_elog(stderr, "[bindProxyPort] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
       _exit(1);
     }
@@ -1394,7 +1394,7 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, bool transparent,  
 
   Debug("lm", "[bindProxyPort] Successfully bound proxy port %d\n", proxy_port);
 
-#if !ATS_USE_POSIX_CAP
+#if !TS_USE_POSIX_CAP
   if (proxy_port < 1024 && euid != 0) {
     if (privBoost == true) {
       if (removeRootPriv(saved_euid) == false) {

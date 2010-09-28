@@ -74,7 +74,7 @@ initialize_thread_for_udp_net(EThread * thread)
   new((ink_dummy_for_new *) get_UDPPollCont(thread)) PollCont(thread->mutex);
   new((ink_dummy_for_new *) get_UDPNetHandler(thread)) UDPNetHandler;
 
-#if ATS_USE_LIBEV
+#if TS_USE_LIBEV
   PollCont *pc = get_UDPPollCont(thread);
   PollDescriptor *pd = pc->pollDescriptor;
   pd->eio = ev_loop_new(LIBEV_BACKEND_LIST);
@@ -307,7 +307,7 @@ UDPReadContinuation::cancel()
 void
 UDPReadContinuation::setupPollDescriptor()
 {
-#if ATS_USE_EPOLL
+#if TS_USE_EPOLL
   Pollfd *pfd;
   EThread *et = (EThread *) this_thread();
   PollCont *pc = get_PollCont(et);

@@ -18,7 +18,7 @@ CFLAGS+=-I$(top_srcdir)/proxy/api
 
 pkglib_LTLIBRARIES = response-header-1.la
 response_header_1_la_SOURCES = response-header-1.c
-response_header_1_la_LDFLAGS = -module -version-info $(ATS_LIBTOOL_VERSION)
+response_header_1_la_LDFLAGS = -module -version-info $(TS_LIBTOOL_VERSION)
 
 all:
 	ln -sf .libs/response-header-1.so
