@@ -37,7 +37,6 @@ RecRecord *g_records = NULL;
 InkHashTable *g_records_ht = NULL;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
-int g_max_records = 0;
 
 const char *g_rec_config_fpath = NULL;
 LLQ *g_rec_config_contents_llq = NULL;
@@ -181,12 +180,11 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   ink_atomic_swap_ptr(&g_diags, _diags);
 
   g_records_tree = new RecTree(NULL);
-  g_max_records = REC_MAX_RECORDS;
   g_num_records = 0;
 
   // initialize record array for our internal stats (this can be reallocated later)
-  g_records = (RecRecord *) xmalloc(g_max_records * sizeof(RecRecord));
-  memset(g_records, 0, g_max_records * sizeof(RecRecord));
+  g_records = (RecRecord *) xmalloc(REC_MAX_RECORDS * sizeof(RecRecord));
+  memset(g_records, 0, REC_MAX_RECORDS * sizeof(RecRecord));
 
   // initialize record hash index
   g_records_ht = ink_hash_table_create(InkHashTableKeyType_String);
@@ -233,29 +231,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
   return REC_ERR_OKAY;
 }
-
-
-//-------------------------------------------------------------------------
-// RecResizeAdditional: Add more storage space
-//-------------------------------------------------------------------------
-#if 0
-void
-RecResizeAdditional(int add)
-{
-  // TODO: Hmmm, why couldn't I get xrealloc() to work here?
-  // TODO: This doesn't seem to work well at all ... *sigh*
-  void *tmp = xmalloc((g_max_records + add) * sizeof(RecRecord));
-
-  if (NULL != tmp) {
-    memset(tmp, 0, (g_max_records + add) * sizeof(RecRecord)); // Little unoptimal, ENOCARE
-    memcpy(tmp, g_records, g_max_records * sizeof(RecRecord));
-    g_records = (RecRecord *)tmp;
-    g_max_records += add;
-  } else {
-    ink_fatal(1, "can't reallocate for librecords API stats (adding %d records)", add);
-  }
-}
-#endif
 
 
 //-------------------------------------------------------------------------

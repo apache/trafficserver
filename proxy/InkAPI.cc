@@ -1563,8 +1563,6 @@ api_init()
   static int init = 1;
 
   if (init) {
-    int api_stats_size = 0;
-
     init = 0;
 
 #ifndef UNSAFE_FORCE_MUTEX
@@ -1817,12 +1815,12 @@ api_init()
     cache_global_hooks = NEW(new CacheAPIHooks);
     global_config_cbs = NEW(new ConfigUpdateCbTable);
 
-    TS_ReadConfigInteger(api_stats_size, "proxy.config.stat_api.max_stats_allowed");
-    if (api_stats_size > 0) {
-      // RecResizeAdditional(api_stats_size);
-      api_rsb = RecAllocateRawStatBlock(api_stats_size);
+    if (TS_MAX_API_STATS > 0) {
+      api_rsb = RecAllocateRawStatBlock(TS_MAX_API_STATS);
       if (NULL == api_rsb) {
         Warning("Can't allocate API stats block");
+      } else {
+        Debug("sdk", "initialized SDK stats APIs with %d slots", TS_MAX_API_STATS);
       }
     } else {
       api_rsb = NULL;

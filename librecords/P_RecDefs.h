@@ -35,10 +35,10 @@
 
 #define REC_MESSAGE_ELE_MAGIC           0xF00DF00D
 
-// This is for the internal stats and configs, API stats are additional (records.config)
-// TODO: For now, also allow for 1500 plugin stats, later this needs to be dynamically
-// resized, but not working right now.
-#define REC_MAX_RECORDS                 3000
+// This is for the internal stats and configs, as well as API stats. We currently use
+// about 1600 stats + configs for the core, but we're allocating 2000 for some growth.
+// TODO: if/when we switch to a new config system, we should make this run-time dynamic.
+#define REC_MAX_RECORDS                 (2000 + TS_MAX_API_STATS)
 
 #define REC_CONFIG_UPDATE_INTERVAL_SEC  3
 #define REC_REMOTE_SYNC_INTERVAL_SEC    5

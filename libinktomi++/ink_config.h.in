@@ -152,6 +152,7 @@
 #endif
 
 #if ATS_HAS_INKAPI
+#define TS_MAX_API_STATS               @max_api_stats@
 /* XXX: Should make those individually selectable ? */
 #else
 # define INK_NO_TRANSFORM               1

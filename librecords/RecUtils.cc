@@ -35,8 +35,8 @@ extern Diags *g_diags;
 RecRecord*
 RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 {
-  if (g_num_records >= g_max_records) {
-    Warning("too many stats/configs, please increase REC_MAX_RECORDS or proxy.config.stat_api.max_stats_allowed");
+  if (g_num_records >= REC_MAX_RECORDS) {
+    Warning("too many stats/configs, please increase REC_MAX_RECORDS or rebuild with --with_max_api_stats=<n>");
     return NULL;
   }
 
