@@ -4852,29 +4852,27 @@ HttpTransact::merge_and_update_headers_for_cache_update(State * s)
   // Some special processing for 304
   //
   if (s->hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED) {
-
     // Hack fix. If the server sends back
     // a 304 without a Date Header, use the current time
     // as the new Date value in the header to be cached.
     time_t date_value = s->hdr_info.server_response.get_date();
     HTTPHdr *cached_hdr = s->cache_info.object_store.response_get();
+
     if (date_value <= 0) {
       cached_hdr->set_date(s->request_sent_time);
+      date_value = s->request_sent_time;
     }
     // If the cached response has an Age: we should update it
     // We could use calculate_document_age but my guess is it's overkill
     // Just use 'now' - 304's Date: + Age: (response's Age: if there)
     //
-    date_value = s->hdr_info.server_response.get_date();
-    if (date_value <= 0) {
-      date_value = s->request_sent_time;
-    }
     date_value = max(s->current.now - date_value, (time_t) 0);
+
     if (s->hdr_info.server_response.presence(MIME_PRESENCE_AGE)) {
       int64 new_age = s->hdr_info.server_response.get_age() + date_value;
       
       // Check for overflow
-      date_value = new_age > INT_MAX ? (uint32)INT_MAX + 1 : new_age;
+      date_value = new_age > INT_MAX ? (time_t)INT_MAX + 1 : new_age;
     }
     cached_hdr->set_age(date_value);
 
