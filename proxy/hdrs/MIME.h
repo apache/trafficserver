@@ -1331,7 +1331,7 @@ MIMEHdr::get_age()
   if (age < 0)
     return 0;
 
-  return (age > INT_MAX ? (time_t)INT_MAX + 1 : age);
+  return (age > INT_MAX ? (uint32)INT_MAX + 1 : age);
 }
 
 /*-------------------------------------------------------------------------
