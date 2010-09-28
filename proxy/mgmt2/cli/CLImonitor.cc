@@ -730,8 +730,10 @@ CLI_monitor::doMonitorDashboard(CLI_DATA * c_data /* IN: client data */ )
     c_data->output->copyFrom(line2, strlen(line2));
     c_data->output->copyFrom(CLI_globals::sep1, strlen(CLI_globals::sep1));
 
+#ifndef NO_WEBUI
     // show dashboard
     overviewGenerator->generateTableCLI(c_data->output);
+#endif
 
     c_data->output->copyFrom("\n", strlen("\n"));
     c_data->output->copyFrom(CLI_globals::sep2, strlen(CLI_globals::sep2));

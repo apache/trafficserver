@@ -2526,13 +2526,15 @@ handle_submit_snapshot_to_floppy(WebHttpContext * whc, const char *file)
         linkFile = "/configure/c_basic.ink";
       }
 
+#ifndef NO_WEBUI
       char *link = WebHttpGetLink_Xmalloc(linkFile);
-      whc->response_hdr->setRefresh(0);
       whc->response_hdr->setRefreshURL(link);
+      xfree(link);
+#endif
+      whc->response_hdr->setRefresh(0);
       if (submit_from_page)
         xfree(submit_from_page);
       submit_from_page = xstrdup(linkFile);
-      xfree(link);
       goto Ldone;
     }
   }
@@ -2919,14 +2921,16 @@ handle_submit_update(WebHttpContext * whc, const char *file)
   }
   // check for restart
   if (ink_hash_table_lookup(whc->post_data_ht, "restart", (void **) &cancel)) {
+#ifndef NO_WEBUI
     char *link = WebHttpGetLink_Xmalloc(HTML_DEFAULT_CONFIGURE_FILE);
+    whc->response_hdr->setRefreshURL(link);
+    xfree(link);
+#endif
     lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_SHUTDOWN_MANAGER);
     whc->response_hdr->setRefresh(15);
-    whc->response_hdr->setRefreshURL(link);
     if (submit_from_page)
       xfree(submit_from_page);
     submit_from_page = xstrdup("/restart.ink");
-    xfree(link);
     goto Ldone;
   }
   // check for clear statistics
@@ -3023,9 +3027,11 @@ handle_submit_update(WebHttpContext * whc, const char *file)
     submit_from_page = xstrdup("/ssl_redirect.ink");
   }
 
+#ifndef NO_WEBUI
   if (submit_from_page && strcmp(submit_from_page, HTML_FEATURE_ON_OFF_FILE) == 0) {
     WebHttpTreeRebuildJsTree();
   }
+#endif
 
 Ldone:
   if (submit_from_page) {
@@ -3661,7 +3667,9 @@ handle_submit_otw_upgrade(WebHttpContext * whc, const char *file)
   char *working_dir;
   char *submit_from_page;
   char tmp[MAX_TMP_BUF_LEN];
+#ifndef NO_WEBUI
   char *link;
+#endif
   const char *cgi_path;
 
   if (ink_hash_table_lookup(whc->post_data_ht, "submit_from_page", (void **) &submit_from_page)) {
@@ -3690,7 +3698,10 @@ handle_submit_otw_upgrade(WebHttpContext * whc, const char *file)
 
     } else {
       // start upgrade = render upgrade page + spawn traffic_shell.cgi script
+#ifndef NO_WEBUI
       link = WebHttpGetLink_Xmalloc(HTML_DEFAULT_MONITOR_FILE);
+      xfree(link);
+#endif
       cgi_path = WebHttpAddDocRoot_Xmalloc(whc, HTML_OTW_UPGRADE_CGI_FILE);
       int old_euid, old_egid;
       Config_User_Root(&old_euid);
@@ -3701,7 +3712,6 @@ handle_submit_otw_upgrade(WebHttpContext * whc, const char *file)
       if (submit_from_page)
         xfree(submit_from_page);
       submit_from_page = xstrdup("/upgrade.ink");
-      xfree(link);
       xfree((char *) cgi_path);
     }
   }
@@ -4184,12 +4194,13 @@ WebHttpInit()
   // initialize other modules
   WebHttpAuthInit();
   WebHttpLogInit();
-  WebHttpRenderInit();
   WebHttpSessionInit();
+#ifndef NO_WEBUI
+  WebHttpRenderInit();
   WebHttpTreeInit();
+#endif
 
   return;
-
 }
 
 //-------------------------------------------------------------------------
@@ -4249,9 +4260,8 @@ WebHttpHandleConnection(WebHttpConInfo * whci)
       WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);
       goto Ltransaction_send;
     }
-
   } else {
-
+#ifndef NO_WEBUI
     if (WebHttpTreeReturnRefresh(file)) {
       // if we are handling a monitor/mrtg page, configure it to refresh
       if (strncmp(file, "/monitor/", 9) == 0) {
@@ -4262,6 +4272,7 @@ WebHttpHandleConnection(WebHttpConInfo * whci)
         whc->response_hdr->setRefresh(wGlobals.refreshRate);
       }
     }
+#endif
     // Make a note if we are a plugin.  Being a plugin will affect our
     // doc_root and how request files and doc_roots are joined to
     // generate an absolute path.  See WebHttpAddDocRoot_Xmalloc()

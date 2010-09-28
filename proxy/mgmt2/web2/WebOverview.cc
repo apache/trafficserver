@@ -896,6 +896,7 @@ overviewPage::generateAlarmsTableCLI(textBuffer * output)
   ink_mutex_release(&accessLock);
 }                               // end generateAlarmsTableCLI()
 
+#ifndef NO_WEBUI
 // void overviewPage::generateAlarmsSummary(textBuffer* output)
 //
 //  alarm summary information (Alarm! [X pending])
@@ -957,7 +958,6 @@ overviewPage::generateAlarmsSummary(WebHttpContext * whc)
     HtmlRndrTableClose(output);
 
   }
-
 }
 
 // generates the table for the overview page
@@ -1411,8 +1411,8 @@ overviewPage::addHostPanel(WebHttpContext * whc, overviewRecord * host)
   HtmlRndrTrClose(output);
 
 #undef SEPARATOR
-
 }
+#endif
 
 // int overviewPage::getClusterHosts(Expanding Array* hosts)
 //

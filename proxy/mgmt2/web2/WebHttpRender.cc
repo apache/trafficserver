@@ -122,6 +122,7 @@ WebHttpGetIntFromQuery(WebHttpContext * whc, const char *tag, int *active_id)
   }
 }
 
+#ifndef NO_WEBUI
 //-------------------------------------------------------------------------
 // handle_alarm_object
 //-------------------------------------------------------------------------
@@ -1956,10 +1957,9 @@ static int
 handle_link(WebHttpContext * whc, char *tag, char *arg)
 {
   NOWARN_UNUSED(tag);
-  char *link;
 
   if (arg) {
-    link = WebHttpGetLink_Xmalloc(arg);
+    char* link = WebHttpGetLink_Xmalloc(arg);
     whc->response_bdy->copyFrom(link, strlen(link));
     xfree(link);
   } else {
@@ -2513,8 +2513,6 @@ handle_ssl_redirect_url(WebHttpContext * whc, char *tag, char *arg)
   NOWARN_UNUSED(arg);
   RecInt ssl_value = 0;         // current SSL value, enabled/disabled
   char *hostname_FQ = NULL;
-  char ssl_redirect_url[256] = "";
-  char *link = NULL;
 
   // get current SSL value and fully qualified local hostname
   if (RecGetRecordInt("proxy.config.admin.use_ssl", &ssl_value) != REC_ERR_OKAY)
@@ -2522,7 +2520,8 @@ handle_ssl_redirect_url(WebHttpContext * whc, char *tag, char *arg)
   if (RecGetRecordString_Xmalloc("proxy.node.hostname_FQ", &hostname_FQ) != REC_ERR_OKAY)
     mgmt_log(stderr, "[handle_ssl_redirect_url] Error: Unable to get local hostname \n");
 
-  link = WebHttpGetLink_Xmalloc(HTML_MGMT_GENERAL_FILE);
+  char ssl_redirect_url[256] = "";
+  char* link = WebHttpGetLink_Xmalloc(HTML_MGMT_GENERAL_FILE);
 
   // construct proper redirect url
   snprintf(ssl_redirect_url, sizeof(ssl_redirect_url), "%s://%s:%d%s",
@@ -2550,14 +2549,13 @@ handle_host_redirect_url(WebHttpContext * whc, char *tag, char *arg)
   NOWARN_UNUSED(arg);
   RecInt ssl_value = 0;         // current SSL value, enabled/disabled
   char hostname[1024];
-  char host_redirect_url[256] = "";
-  char *link = NULL;
 
   // get current SSL value and fully qualified local hostname
   if (RecGetRecordInt("proxy.config.admin.use_ssl", &ssl_value) != REC_ERR_OKAY)
     mgmt_log(stderr, "[handle_ssl_redirect_url] Error: Unable to get SSL enabled config variable\n");
   gethostname(hostname, 1024);
-  link = WebHttpGetLink_Xmalloc("/configure/c_net_config.ink");
+  char host_redirect_url[256] = "";
+  char* link = WebHttpGetLink_Xmalloc("/configure/c_net_config.ink");
 
   // construct proper redirect url
   snprintf(host_redirect_url, sizeof(host_redirect_url), "%s://%s:%d%s",
@@ -2568,7 +2566,6 @@ handle_host_redirect_url(WebHttpContext * whc, char *tag, char *arg)
   // free allocated space
   xfree(link);
   return WEB_HTTP_ERR_OKAY;
-
 }
 
 //-------------------------------------------------------------------------
@@ -2777,7 +2774,6 @@ handle_network_object(WebHttpContext * whc, char *tag, char *arg)
 void
 WebHttpRenderInit()
 {
-
   // bind display tags to their display handlers (e.g. <@tag ...> maps
   // to handle_tag())
   g_display_bindings_ht = ink_hash_table_create(InkHashTableKeyType_String);
@@ -2832,6 +2828,7 @@ WebHttpRenderInit()
   ink_hash_table_insert(g_display_bindings_ht, "clear_cluster_stats", (void *) handle_clear_cluster_stats);
   return;
 }
+#endif
 
 //-------------------------------------------------------------------------
 // WebHttpRender
