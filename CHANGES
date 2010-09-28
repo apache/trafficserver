@@ -2,6 +2,11 @@
 
 Changes with Apache Traffic Server 2.1.4
 
+  *) Better support for Age: headers, and avoiding overflows [TS-470].
+
+  *) Added a configure option to size the API stats "slots". The new
+  option is --with-max-api-stats=<n> [TS-454].
+
   *) In Cache.cc, make snprintf() around Debug statements conditional for
    performance [TS-459].
 

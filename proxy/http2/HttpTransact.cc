@@ -4870,8 +4870,12 @@ HttpTransact::merge_and_update_headers_for_cache_update(State * s)
       date_value = s->request_sent_time;
     }
     date_value = max(s->current.now - date_value, (time_t) 0);
-    if (s->hdr_info.server_response.presence(MIME_PRESENCE_AGE))
-      date_value += s->hdr_info.server_response.get_age();
+    if (s->hdr_info.server_response.presence(MIME_PRESENCE_AGE)) {
+      int64 new_age = s->hdr_info.server_response.get_age() + date_value;
+      
+      // Check for overflow
+      date_value = new_age > INT_MAX ? (uint32)INT_MAX + 1 : new_age;
+    }
     cached_hdr->set_age(date_value);
 
     delete_warning_value(cached_hdr, HTTP_WARNING_CODE_REVALIDATION_FAILED);

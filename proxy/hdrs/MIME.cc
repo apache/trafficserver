@@ -3545,7 +3545,7 @@ mime_format_date(char *buffer, time_t value)
 int32
 mime_parse_int(const char *buf, const char *end)
 {
-  int num;
+  int32 num;
   bool negative;
 
   if (!buf || (buf == end))
@@ -3586,7 +3586,7 @@ mime_parse_int(const char *buf, const char *end)
 uint32
 mime_parse_uint(const char *buf, const char *end)
 {
-  unsigned int num;
+  uint32 num;
 
   if (!buf || (buf == end))
     return 0;

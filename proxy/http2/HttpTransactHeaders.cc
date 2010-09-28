@@ -425,8 +425,7 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
   ink_time_t now_value = 0;
 
   ink_time_t tmp_value = 0;
-  tmp_value = base_response->get_age();
-  age_value = (tmp_value > 0) ? tmp_value : 0;
+  age_value = base_response->get_age();
 
   tmp_value = base_response_date;
   date_value = (tmp_value > 0) ? tmp_value : 0;

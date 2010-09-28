@@ -912,7 +912,7 @@ public:
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void field_value_append(MIMEField * field,
                           const char *value, int value_length, bool prepend_comma = false, const char separator = ',');
-  int32 get_age();
+  uint32 get_age();
   int64 get_content_length();
   time_t get_date();
   time_t get_expires();
@@ -933,7 +933,7 @@ public:
   void set_cooked_cc_need_revalidate_once();
   void unset_cooked_cc_need_revalidate_once();
 
-  void set_age(int32 value);
+  void set_age(uint32 value);
   void set_content_length(int64 value);
   void set_date(time_t value);
   void set_expires(time_t value);
@@ -1323,10 +1323,15 @@ MIMEHdr::value_append(const char *name, int name_length,
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int32
+inline uint32
 MIMEHdr::get_age()
 {
-  return (value_get_int(MIME_FIELD_AGE, MIME_LEN_AGE));
+  int64 age = value_get_int64(MIME_FIELD_AGE, MIME_LEN_AGE);
+
+  if (age < 0)
+    return 0;
+
+  return (age > INT_MAX ? (uint32)INT_MAX + 1 : age);
 }
 
 /*-------------------------------------------------------------------------
@@ -1489,9 +1494,9 @@ MIMEHdr::unset_cooked_cc_need_revalidate_once()
   -------------------------------------------------------------------------*/
 
 inline void
-MIMEHdr::set_age(int32 value)
+MIMEHdr::set_age(uint32 value)
 {
-  value_set_int(MIME_FIELD_AGE, MIME_LEN_AGE, value);
+  value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
 }
 
 /*-------------------------------------------------------------------------
