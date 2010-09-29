@@ -144,6 +144,7 @@ struct MIMEField
   void value_set(HdrHeap * heap, MIMEHdrImpl * mh, const char *value, int length);
   void value_set_int(HdrHeap * heap, MIMEHdrImpl * mh, int32 value);
   void value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, uint32 value);
+  void value_set_int64(HdrHeap * heap, MIMEHdrImpl * mh, int64 value);
   void value_set_date(HdrHeap * heap, MIMEHdrImpl * mh, time_t value);
   void value_clear(HdrHeap * heap, MIMEHdrImpl * mh);
   // MIME standard separator ',' is used as the default value
@@ -653,6 +654,7 @@ inkcoreapi void mime_field_value_set(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField
                                      const char *value, int length, bool must_copy_string);
 void mime_field_value_set_int(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, int32 value);
 void mime_field_value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, uint32 value);
+void mime_field_value_set_int64(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, int64 value);
 void mime_field_value_set_date(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, time_t value);
 void mime_field_name_value_set(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field,
                                int16 name_wks_idx_or_neg1, const char *name,
@@ -690,6 +692,7 @@ const char *mime_str_u16_set(HdrHeap * heap, const char *s_str, uint16 s_len,
 int mime_field_length_get(MIMEField * field);
 int mime_format_int(char *buf, int32 val, size_t buf_len);
 int mime_format_uint(char *buf, uint32 val, size_t buf_len);
+int mime_format_int64(char *buf, int64 val, size_t buf_len);
 
 void mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970,
                                            int *m_return, int *d_return, int *y_return);
@@ -802,6 +805,12 @@ MIMEField::value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, uint32 value)
 }
 
 inline void
+MIMEField::value_set_int64(HdrHeap * heap, MIMEHdrImpl * mh, int64 value)
+{
+  mime_field_value_set_int64(heap, mh, this, value);
+}
+
+inline void
 MIMEField::value_set_date(HdrHeap * heap, MIMEHdrImpl * mh, time_t value)
 {
   mime_field_value_set_date(heap, mh, this, value);
@@ -898,6 +907,7 @@ public:
   void value_set(const char *name, int name_length, const char *value, int value_length);
   void value_set_int(const char *name, int name_length, int32 value);
   void value_set_uint(const char *name, int name_length, uint32 value);
+  void value_set_int64(const char *name, int name_length, int64 value);
   void value_set_date(const char *name, int name_length, time_t value);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
@@ -907,6 +917,7 @@ public:
   void field_value_set(MIMEField * field, const char *value, int value_length);
   void field_value_set_int(MIMEField * field, int32 value);
   void field_value_set_uint(MIMEField * field, uint32 value);
+  void field_value_set_int64(MIMEField * field, int64 value);
   void field_value_set_date(MIMEField * field, time_t value);
   // MIME standard separator ',' is used as the default value
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
@@ -1249,6 +1260,12 @@ MIMEHdr::field_value_set_uint(MIMEField * field, uint32 value)
 }
 
 inline void
+MIMEHdr::field_value_set_int64(MIMEField * field, int64 value)
+{
+  field->value_set_uint(m_heap, m_mime, value);
+}
+
+inline void
 MIMEHdr::field_value_set_date(MIMEField * field, time_t value)
 {
   field->value_set_date(m_heap, m_mime, value);
@@ -1289,6 +1306,14 @@ MIMEHdr::value_set_uint(const char *name, int name_length, uint32 value)
   MIMEField *field;
   field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
   field->value_set_uint(m_heap, m_mime, value);
+}
+
+inline void
+MIMEHdr::value_set_int64(const char *name, int name_length, int64 value)
+{
+  MIMEField *field;
+  field = mime_hdr_prepare_for_value_set(m_heap, m_mime, name, name_length);
+  field->value_set_int64(m_heap, m_mime, value);
 }
 
 inline void
@@ -1500,8 +1525,13 @@ MIMEHdr::set_age(time_t value)
 {
   if (value < 0)
     value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, (uint32)INT_MAX + 1);
-  else
-    value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value); // SHOULD BE int64
+  else {
+    if (sizeof(time_t) > 4) {
+      value_set_int64(MIME_FIELD_AGE, MIME_LEN_AGE, value);
+    } else {
+      value_set_uint(MIME_FIELD_AGE, MIME_LEN_AGE, value);
+    }
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -1510,7 +1540,7 @@ MIMEHdr::set_age(time_t value)
 inline void
 MIMEHdr::set_content_length(int64 value)
 {
-  value_set_int(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, value);
+  value_set_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH, value);
 }
 
 /*-------------------------------------------------------------------------

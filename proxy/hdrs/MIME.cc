@@ -2338,6 +2338,17 @@ mime_field_value_set_uint(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, u
   -------------------------------------------------------------------------*/
 
 void
+mime_field_value_set_int64(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, int64 value)
+{
+  char buf[20];
+  int len = mime_format_int64(buf, value, sizeof(buf));
+  mime_field_value_set(heap, mh, field, buf, len, 1);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+void
 mime_field_value_set_date(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, time_t value)
 {
   char buf[33];
@@ -3188,37 +3199,28 @@ mime_field_length_get(MIMEField * field)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-mime_format_int(char *buf, int32 val, size_t buf_len)
+// This is a little helper for the INT formatting, don't use directly!
+inline
+int format_small_int(char* buf, int32 val, size_t buf_len)
 {
-  if ((val<0) || (val>= 100000)) {
-    int ret = snprintf(buf, buf_len, "%d", val);
-    return (ret >= 0 ? ret : 0);
-  }
+  ink_assert(val > 0 && val < 100000);
 
-  if (val < 100) {
-    if (val < 10)               // 0 - 9
-    {
-      buf[0] = '0' + val;
-      return (1);
-    } else                      // 10 - 99
-    {
+  if (val < 10) {              // 0 - 9
+    buf[0] = '0' + val;
+    return 1;
+  } else if (val < 100) {              // 10 - 99
       buf[1] = '0' + (val % 10);
       val = val / 10;
       buf[0] = '0' + (val % 10);
-      return (2);
-    }
-  } else {
-    if (val < 1000)             // 100 - 999
-    {
+      return 2;
+  } else if (val < 1000) {             // 100 - 999
       buf[2] = '0' + (val % 10);
       val = val / 10;
       buf[1] = '0' + (val % 10);
       val = val / 10;
       buf[0] = '0' + (val % 10);
-      return (3);
-    } else if (val < 10000)     // 1000 - 9999
-    {
+      return 3;
+  } else if (val < 10000) {    // 1000 - 9999
       buf[3] = '0' + (val % 10);
       val = val / 10;
       buf[2] = '0' + (val % 10);
@@ -3226,9 +3228,8 @@ mime_format_int(char *buf, int32 val, size_t buf_len)
       buf[1] = '0' + (val % 10);
       val = val / 10;
       buf[0] = '0' + (val % 10);
-      return (4);
-    } else                      // 10000 - 99999
-    {
+      return 4;
+  } else {                     // 10000 - 99999
       buf[4] = '0' + (val % 10);
       val = val / 10;
       buf[3] = '0' + (val % 10);
@@ -3238,9 +3239,23 @@ mime_format_int(char *buf, int32 val, size_t buf_len)
       buf[1] = '0' + (val % 10);
       val = val / 10;
       buf[0] = '0' + (val % 10);
-      return (5);
-    }
+      return 5;
   }
+
+  return 0;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+mime_format_int(char *buf, int32 val, size_t buf_len)
+{
+  if ((val<0) || (val>= 100000)) {
+    int ret = snprintf(buf, buf_len, "%d", val);
+    return (ret >= 0 ? ret : 0);
+  }
+
+  return format_small_int(buf, val, buf_len);
 }
 
 /*-------------------------------------------------------------------------
@@ -3254,51 +3269,21 @@ mime_format_uint(char *buf, uint32 val, size_t buf_len)
     return (ret >= 0 ? ret : 0);
   }
 
-  if (val < 100) {
-    if (val < 10)               // 0 - 9
-    {
-      buf[0] = '0' + val;
-      return (1);
-    } else                      // 10 - 99
-    {
-      buf[1] = '0' + (val % 10);
-      val = val / 10;
-      buf[0] = '0' + (val % 10);
-      return (2);
-    }
-  } else {
-    if (val < 1000)             // 100 - 999
-    {
-      buf[2] = '0' + (val % 10);
-      val = val / 10;
-      buf[1] = '0' + (val % 10);
-      val = val / 10;
-      buf[0] = '0' + (val % 10);
-      return (3);
-    } else if (val < 10000)     // 1000 - 9999
-    {
-      buf[3] = '0' + (val % 10);
-      val = val / 10;
-      buf[2] = '0' + (val % 10);
-      val = val / 10;
-      buf[1] = '0' + (val % 10);
-      val = val / 10;
-      buf[0] = '0' + (val % 10);
-      return (4);
-    } else                      // 10000 - 99999
-    {
-      buf[4] = '0' + (val % 10);
-      val = val / 10;
-      buf[3] = '0' + (val % 10);
-      val = val / 10;
-      buf[2] = '0' + (val % 10);
-      val = val / 10;
-      buf[1] = '0' + (val % 10);
-      val = val / 10;
-      buf[0] = '0' + (val % 10);
-      return (5);
-    }
+  return format_small_int(buf, val, buf_len);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+mime_format_int64(char *buf, int64 val, size_t buf_len)
+{
+  if ((val<0) || (val>= 100000)) {
+    int ret = snprintf(buf, buf_len, "%lld", val);
+    return (ret >= 0 ? ret : 0);
   }
+
+  return format_small_int(buf, val, buf_len);
 }
 
 /*-------------------------------------------------------------------------
