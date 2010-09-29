@@ -4855,7 +4855,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State * s)
     // Hack fix. If the server sends back
     // a 304 without a Date Header, use the current time
     // as the new Date value in the header to be cached.
-    int64 date_value = s->hdr_info.server_response.get_date(); // was time_t but it's signed int on some OSes
+    time_t date_value = s->hdr_info.server_response.get_date();
     HTTPHdr *cached_hdr = s->cache_info.object_store.response_get();
 
     if (date_value <= 0) {
@@ -4865,10 +4865,15 @@ HttpTransact::merge_and_update_headers_for_cache_update(State * s)
     // If the cached response has an Age: we should update it
     // We could use calculate_document_age but my guess is it's overkill
     // Just use 'now' - 304's Date: + Age: (response's Age: if there)
-    date_value = max(s->current.now - date_value, (int64)0);
-    if (s->hdr_info.server_response.presence(MIME_PRESENCE_AGE))
-      date_value += s->hdr_info.server_response.get_age();
-    cached_hdr->set_age(date_value);
+    date_value = max(s->current.now - date_value, (ink_time_t)0);
+    if (s->hdr_info.server_response.presence(MIME_PRESENCE_AGE)) {
+      time_t new_age = s->hdr_info.server_response.get_age();
+
+      if (new_age >= 0)
+        cached_hdr->set_age(date_value + new_age);
+      else
+        cached_hdr->set_age(-1); // Overflow
+    }
     delete_warning_value(cached_hdr, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   }
 
@@ -6200,18 +6205,19 @@ HttpTransact::is_stale_cache_response_returnable(State * s)
   }
   // See how old the document really is.  We don't want create a
   //   stale content museum of doucments that are no longer available
-  int current_age = HttpTransactHeaders::calculate_document_age(s->cache_info.object_read->request_sent_time_get(),
-                                                                s->cache_info.object_read->response_received_time_get(),
-                                                                cached_response,
-                                                                cached_response->get_date(),
-                                                                s->current.now);
-  if (current_age > s->http_config_param->cache_max_stale_age) {
+  time_t current_age = HttpTransactHeaders::calculate_document_age(s->cache_info.object_read->request_sent_time_get(),
+                                                                   s->cache_info.object_read->response_received_time_get(),
+                                                                   cached_response,
+                                                                   cached_response->get_date(),
+                                                                   s->current.now);
+  // Negative age is overflow
+  if ((current_age < 0) || (current_age > s->http_config_param->cache_max_stale_age)) {
     Debug("http_trans", "[is_stale_cache_response_returnable] " "document age is too large %d", current_age);
     return false;
   }
   // If the stale document requires authorization, we can't return it either.
-  Authentication_t
-    auth_needed = AuthenticationNeeded(s->http_config_param, &s->hdr_info.client_request, cached_response);
+  Authentication_t auth_needed = AuthenticationNeeded(s->http_config_param, &s->hdr_info.client_request, cached_response);
+
   if (auth_needed != AUTHENTICATION_SUCCESS) {
     Debug("http_trans", "[is_stale_cache_response_returnable] " "authorization prevent serving stale");
     return false;
@@ -7730,8 +7736,8 @@ HttpTransact::what_is_document_freshness(State *s,
   // These aren't used.
   //HTTPValCacheControl *cc;
   //const char *cc_val;
-  int fresh_limit, current_age;
-  ink_time_t response_date;
+  int fresh_limit;
+  ink_time_t current_age, response_date;;
   uint32 cc_mask, cooked_cc_mask;
   uint32 os_specifies_revalidate;
 
@@ -7790,13 +7796,15 @@ HttpTransact::what_is_document_freshness(State *s,
     fresh_limit = min(NUM_SECONDS_IN_ONE_YEAR, fresh_limit);
   }
 
-  current_age =
-    HttpTransactHeaders::calculate_document_age(s->request_sent_time,
-                                                s->response_received_time,
-                                                cached_obj_response, response_date, s->current.now);
+  current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time,
+                                                            s->response_received_time,
+                                                            cached_obj_response, response_date, s->current.now);
 
-  HTTP_DEBUG_ASSERT(current_age >= 0);
-  current_age = min(NUM_SECONDS_IN_ONE_YEAR, current_age);
+  // Overflow ?
+  if (current_age < 0)
+    current_age = NUM_SECONDS_IN_ONE_YEAR;  // TODO: Should we make a new "max age" define?
+  else
+    current_age = min((time_t)NUM_SECONDS_IN_ONE_YEAR, current_age);
   Debug("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %d", fresh_limit, current_age);
 
   /////////////////////////////////////////////////////////

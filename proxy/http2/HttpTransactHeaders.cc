@@ -414,7 +414,7 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
                                             ink_time_t response_time,
                                             HTTPHdr * base_response, ink_time_t base_response_date, ink_time_t now)
 {
-  ink_time_t age_value = 0;
+  ink_time_t age_value = base_response->get_age();
   ink_time_t date_value = 0;
   ink_time_t apparent_age = 0;
   ink_time_t corrected_received_age = 0;
@@ -425,11 +425,9 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
   ink_time_t now_value = 0;
 
   ink_time_t tmp_value = 0;
-  age_value = base_response->get_age();
 
   tmp_value = base_response_date;
   date_value = (tmp_value > 0) ? tmp_value : 0;
-
 
   // Deal with clock skew. Sigh.
   //
@@ -442,15 +440,17 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
   HTTP_DEBUG_ASSERT(now_value >= response_time);
 
   if (date_value > 0) {
-    apparent_age = max((ink_time_t) 0, (response_time - date_value));
+    apparent_age = max((time_t) 0, (response_time - date_value));
   }
-  corrected_received_age = max(apparent_age, age_value);
-  response_delay = response_time - request_time;
-  corrected_initial_age = corrected_received_age + response_delay;
-  resident_time = now_value - response_time;
-  current_age = corrected_initial_age + resident_time;
-
-  HTTP_DEBUG_ASSERT(current_age >= 0);
+  if (age_value < 0) {
+    current_age = -1; // Overflow from Age: header
+  } else {
+    corrected_received_age = max(apparent_age, age_value);
+    response_delay = response_time - request_time;
+    corrected_initial_age = corrected_received_age + response_delay;
+    resident_time = now_value - response_time;
+    current_age = corrected_initial_age + resident_time;
+  }
 
   if (diags->on()) {
     DebugOn("http_age", "[calculate_document_age] age_value:              %ld", age_value);
@@ -1055,9 +1055,9 @@ HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_
                                                              ink_time_t now, HTTPHdr * base, HTTPHdr * outgoing)
 {
   ink_time_t date = base->get_date();
-  uint32 current_age = calculate_document_age(request_sent_time, response_received_time, base, date, now);
+  ink_time_t current_age = calculate_document_age(request_sent_time, response_received_time, base, date, now);
 
-  outgoing->set_age(current_age);
+  outgoing->set_age(current_age); // set_age() deals with overflow properly, so pass it along
 
   // FIX: should handle missing date when response is received, not here.
   //      See INKqa09852.

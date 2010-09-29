@@ -222,6 +222,9 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector * cache_vector,
         current_age = HttpTransactHeaders::calculate_document_age(obj->request_sent_time_get(),
                                                                   obj->response_received_time_get(),
                                                                   cached_response, cached_response->get_date(), t_now);
+        // Overflow?
+        if (current_age < 0)
+          current_age = NUM_SECONDS_IN_ONE_YEAR; // TODO: Should we make a different define for "max cache age" ?
       } else {
         current_age = (time_t) 0;
       }
