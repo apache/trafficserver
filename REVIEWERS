@@ -19,7 +19,8 @@ all/general interest
         jplevyak@apache.org
         bcall@apache.org
         mturk@apache.org
-	zwoop@apache.org
+        zwoop@apache.org
+        jim@apache.org
 libinktomi++
         jplevyak@apache.org
         zwoop@apache.org
@@ -33,18 +34,21 @@ Network I/O
         jplevyak@apache.org - not including SSL or UDP except where it intersects the other code
         bcall@apache.org
         georgep@apache.org
+        jim@apache.org
 Raw Cache and AIO
         jplevyak@apache.org
         bcall@apache.org
         georgep@apache.org
 HTTP Caching
         bcall@apache.org
+        jim@apache.org
 Pluggable Cache/NewCacheVC
         bcall@apache.org
 Block-Cache
 Clustering
         jplevyak@apache.org
         georgep@apache.org
+        jim@apache.org
 DNS/HostDB
         jplevyak@apache.org
         zwoop@apache.org
@@ -63,10 +67,12 @@ HDRs
         bcall@apache.org
 HTTP
         bcall@apache.org
-	zwoop@apache.org
+        zwoop@apache.org
+        jim@apache.org
 Remap
         zwoop@apache.org
         bcall@apache.org
+        jim@apache.org
 API
         zwoop@apache.org
         bcall@apache.org
@@ -88,3 +94,4 @@ Build System
         bcall@apache.org
         georgep@apache.org
         mturk@apache.org
+        jim@apache.org
