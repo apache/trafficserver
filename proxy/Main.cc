@@ -1004,6 +1004,9 @@ parse_accept_fd_list()
           attr = SERVER_PORT_BLIND_TUNNEL;
           break;
         case 'X':
+        case '=':
+        case '<':
+        case '>':
         case '\0':
           attr = SERVER_PORT_DEFAULT;
           break;
