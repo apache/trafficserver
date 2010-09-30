@@ -182,6 +182,19 @@
 } while (0)
 #endif
 
+union ink_res_sockaddr_union {
+        struct sockaddr_in      sin;
+#ifdef IN6ADDR_ANY_INIT
+        struct sockaddr_in6     sin6;
+#endif
+#ifdef ISC_ALIGN64
+        int64_t                 __align64;      /*%< 64bit alignment */
+#else
+        int32_t                 __align32;      /*%< 32bit alignment */
+#endif
+        char                    __space[128];   /*%< max size */
+};
+
 struct __ink_res_state {
   int     retrans;                /*%< retransmission time interval */
   int     retry;                  /*%< number of times to retransmit */
@@ -191,8 +204,7 @@ struct __ink_res_state {
   u_long  options;                /*%< option flags - see below. */
 #endif
   int     nscount;                /*%< number of name servers */
-  struct sockaddr_in
-  nsaddr_list[INK_MAXNS];     /*%< address of name server */
+  union ink_res_sockaddr_union nsaddr_list[INK_MAXNS];     /*%< address of name server */
 #define nsaddr  nsaddr_list[0]          /*%< for backward compatibility */
   u_short id;                     /*%< current message id */
   char    *dnsrch[MAXDNSRCH+1];   /*%< components of domain to search */
@@ -228,18 +240,6 @@ struct __ink_res_state {
 };
 typedef __ink_res_state *ink_res_state;
 
-union ink_res_sockaddr_union {
-        struct sockaddr_in      sin;
-#ifdef IN6ADDR_ANY_INIT
-        struct sockaddr_in6     sin6;
-#endif
-#ifdef ISC_ALIGN64
-        int64_t                 __align64;      /*%< 64bit alignment */
-#else
-        int32_t                 __align32;      /*%< 32bit alignment */
-#endif
-        char                    __space[128];   /*%< max size */
-};
 
 struct __ink_res_state_ext {
         union ink_res_sockaddr_union nsaddrs[INK_MAXNS];
@@ -255,8 +255,8 @@ struct __ink_res_state_ext {
 };
 
 
-int ink_res_init(ink_res_state, unsigned int *pHostList,
-                 int *pPort = 0, char *pDefDomain = 0, char *pSearchList = 0);
+int ink_res_init(ink_res_state, unsigned int *pHostList, int *pPort = NULL, char *pDefDomain = NULL,
+                 char *pSearchList = NULL, char *pResolvConf = NULL);
 int ink_res_mkquery(ink_res_state, int, const char *, int, int,
                     const unsigned char *, int, const unsigned char *, unsigned char *, int);
 

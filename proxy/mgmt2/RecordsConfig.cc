@@ -2088,6 +2088,8 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.dns.nameservers", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
+  {CONFIG, "proxy.config.dns.resolv_conf", "", INK_STRING, "/etc/resolv.conf", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
+  ,
   {CONFIG, "proxy.config.dns.round_robin_nameservers", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {PROCESS, "proxy.process.dns.total_dns_lookups", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}

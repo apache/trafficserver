@@ -49,6 +49,7 @@ unsigned int dns_handler_initialized = 0;
 int dns_ns_rr = 0;
 int dns_ns_rr_init_down = 1;
 char *dns_ns_list = NULL;
+char *dns_resolv_conf = NULL;
 
 DNSProcessor dnsProcessor;
 ClassAllocator<DNSEntry> dnsEntryAllocator("dnsEntryAllocator");
@@ -120,6 +121,7 @@ DNSProcessor::start(int)
   IOCORE_EstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
   IOCORE_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
   IOCORE_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
+  IOCORE_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
 
   dns_failover_try_period = dns_timeout + 1;    // Modify the "default" accordingly
 
@@ -157,7 +159,7 @@ DNSProcessor::dns_init()
   Debug("dns", "localhost=%s\n", try_server_names[0]);
   Debug("dns", "Round-robin nameservers = %d\n", dns_ns_rr);
 
-  if (dns_ns_rr && dns_ns_list) {
+  if (dns_ns_list) {
     Debug("dns", "Nameserver list specified \"%s\"\n", dns_ns_list);
     uint32 nameserver_ip[MAX_NAMED];
     int nameserver_port[MAX_NAMED];
@@ -197,18 +199,16 @@ DNSProcessor::dns_init()
       ns = (char *) ink_strtok_r(NULL, " ,;\t\r", &last);
     }
     xfree(ns_list);
-
     // Terminate the list for ink_res_init
     nameserver_ip[j] = 0;
 
     // The default domain (4th param) and search list (5th param) will
     // come from /etc/resolv.conf.
-    if (ink_res_init(&l_res, &nameserver_ip[0], &nameserver_port[0], NULL, NULL) < 0)
+    if (ink_res_init(&l_res, &nameserver_ip[0], &nameserver_port[0], NULL, NULL, dns_resolv_conf) < 0)
       Warning("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
   } else {
-    if (ink_res_init(&l_res, 0, 0, 0, 0) < 0)
+    if (ink_res_init(&l_res, NULL, NULL, NULL, NULL, dns_resolv_conf) < 0)
       Warning("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
-    dns_ns_rr = 0;
   }
 }
 
@@ -369,8 +369,8 @@ DNSHandler::startEvent(int event, Event * e)
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
     // seems that res_init always sets m_res.nscount to at least 1!
     if (!m_res->nscount)
-      Warning("bad '/etc/resolv.conf': no nameservers given");
-    struct sockaddr_in *sa = &m_res->nsaddr_list[0];
+      Warning("bad configurations: no nameservers given");
+    struct sockaddr_in *sa = &m_res->nsaddr_list[0].sin;
     ip = sa->sin_addr.s_addr;
     if (!ip)
       ip = ink_inet_addr("127.0.0.1");
@@ -390,7 +390,7 @@ DNSHandler::startEvent(int event, Event * e)
         max_nscount = MAX_NAMED;
       n_con = 0;
       for (int i = 0; i < max_nscount; i++) {
-        struct sockaddr_in *sa = &m_res->nsaddr_list[i];
+        struct sockaddr_in *sa = &m_res->nsaddr_list[i].sin;
         ip = sa->sin_addr.s_addr;
         if (ip) {
           port = ntohs(sa->sin_port);
@@ -432,7 +432,7 @@ DNSHandler::startEvent_sdns(int event, Event * e)
     // seems that res_init always sets m_res.nscount to at least 1!
     if (!m_res->nscount)
       Warning("bad '/etc/resolv.conf': no nameservers given");
-    struct sockaddr_in *sa = &m_res->nsaddr_list[0];
+    struct sockaddr_in *sa = &m_res->nsaddr_list[0].sin;
     ip = sa->sin_addr.s_addr;
     if (!ip)
       ip = ink_inet_addr("127.0.0.1");
@@ -472,7 +472,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
     last_primary_reopen = t;
     con[ndx].close();
     struct sockaddr_in *sa;
-    sa = &m_res->nsaddr_list[ndx];
+    sa = &m_res->nsaddr_list[ndx].sin;
     ip = sa->sin_addr.s_addr;
     port = ntohs(sa->sin_port);
 
@@ -543,11 +543,11 @@ DNSHandler::failover()
 
     if (max_nscount > MAX_NAMED)
       max_nscount = MAX_NAMED;
-    unsigned int old_ip = m_res->nsaddr_list[name_server].sin_addr.s_addr;
+    unsigned int old_ip = m_res->nsaddr_list[name_server].sin.sin_addr.s_addr;
     name_server = (name_server + 1) % max_nscount;
     Debug("dns", "failover: failing over to name_server=%d", name_server);
 
-    struct sockaddr_in *sa = &m_res->nsaddr_list[name_server];
+    struct sockaddr_in *sa = &m_res->nsaddr_list[name_server].sin;
 
     Warning("failover: connection to DNS server %d.%d.%d.%d lost, move to %d.%d.%d.%d",
             DOT_SEPARATED(old_ip), DOT_SEPARATED(sa->sin_addr.s_addr));
@@ -574,7 +574,7 @@ DNSHandler::rr_failure(int ndx)
     Debug("dns", "rr_failure: Marking nameserver %d as down", ndx);
     ns_down[ndx] = 1;
 
-    struct sockaddr_in *sa = &m_res->nsaddr_list[ndx];
+    struct sockaddr_in *sa = &m_res->nsaddr_list[ndx].sin;
     unsigned int tip = sa->sin_addr.s_addr;
     Warning("connection to DNS server %d.%d.%d.%d lost, marking as down", DOT_SEPARATED(tip));
   }
@@ -673,7 +673,7 @@ DNSHandler::recv_dns(int event, Event * e)
         if (good_rcode(buf->buf)) {
           received_one(dnsc->num);
           if (ns_down[dnsc->num]) {
-            struct sockaddr_in *sa = &m_res->nsaddr_list[dnsc->num];
+            struct sockaddr_in *sa = &m_res->nsaddr_list[dnsc->num].sin;
             Warning("connection to DNS server %d.%d.%d.%d restored", DOT_SEPARATED(sa->sin_addr.s_addr));
             ns_down[dnsc->num] = 0;
           }

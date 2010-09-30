@@ -355,6 +355,7 @@ CONFIG proxy.config.dns.max_dns_in_flight INT 2048
 CONFIG proxy.config.dns.url_expansions STRING NULL
 CONFIG proxy.config.dns.round_robin_nameservers INT 0
 CONFIG proxy.config.dns.nameservers STRING NULL
+CONFIG proxy.config.dns.resolv_conf STRING /etc/resolv.conf
    # This provides additional resilience against DNS forgery, particularly in
    # forward or transparent proxies, but requires that the resolver populates
    # the queries section of the response properly.

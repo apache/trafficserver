@@ -314,8 +314,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.dns.lookup_timeout
  proxy.config.dns.max_dns_in_flight
  proxy.config.dns.nameservers
- proxy.config.dns.proxy.enabled
- proxy.config.dns.proxy_port
+ proxy.config.dns.resolv_conf
  proxy.config.dns.retries
  proxy.config.dns.round_robin_nameservers
  proxy.config.dns.search_default_domains

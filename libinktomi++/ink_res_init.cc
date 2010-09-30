@@ -103,6 +103,10 @@ static u_int32_t net_mask __P((struct in_addr));
 # define isascii(c) (!(c & 0200))
 #endif
 
+#define DOT_SEPARATED(_x)                                   \
+  ((unsigned char*)&(_x))[0], ((unsigned char*)&(_x))[1],   \
+    ((unsigned char*)&(_x))[2], ((unsigned char*)&(_x))[3]
+
 /*%
  * This routine is for closing the socket if a virtual circuit is used and
  * the program wants to close it.  This provides support for endhostent()
@@ -153,13 +157,11 @@ ink_res_setservers(ink_res_state statp, const union ink_res_sockaddr_union *set,
       case AF_INET:
         size = sizeof(set->sin);
         if (statp->_u._ext.ext)
-          memcpy(&statp->_u._ext.ext->nsaddrs[nserv],
-                 &set->sin, size);
-        if (size <= sizeof(statp->nsaddr_list[nserv]))
-          memcpy(&statp->nsaddr_list[nserv],
-                 &set->sin, size);
+          memcpy(&statp->_u._ext.ext->nsaddrs[nserv], &set->sin, size);
+        if (size <= sizeof(statp->nsaddr_list[nserv].sin))
+          memcpy(&statp->nsaddr_list[nserv].sin, &set->sin, size);
         else
-          statp->nsaddr_list[nserv].sin_family = 0;
+          statp->nsaddr_list[nserv].sin.sin_family = 0;
         nserv++;
         break;
 
@@ -167,13 +169,11 @@ ink_res_setservers(ink_res_state statp, const union ink_res_sockaddr_union *set,
       case AF_INET6:
         size = sizeof(set->sin6);
         if (statp->_u._ext.ext)
-          memcpy(&statp->_u._ext.ext->nsaddrs[nserv],
-                 &set->sin6, size);
-        if (size <= sizeof(statp->nsaddr_list[nserv]))
-          memcpy(&statp->nsaddr_list[nserv],
-                 &set->sin6, size);
+          memcpy(&statp->_u._ext.ext->nsaddrs[nserv], &set->sin6, size);
+        if (size <= sizeof(statp->nsaddr_list[nserv].sin6))
+          memcpy(&statp->nsaddr_list[nserv].sin6, &set->sin6, size);
         else
-          statp->nsaddr_list[nserv].sin_family = 0;
+          statp->nsaddr_list[nserv].sin6.sin6_family = 0;
         nserv++;
         break;
 #endif
@@ -184,7 +184,6 @@ ink_res_setservers(ink_res_state statp, const union ink_res_sockaddr_union *set,
     set++;
   }
   statp->nscount = nserv;
-
 }
 
 int
@@ -197,30 +196,24 @@ ink_res_getservers(ink_res_state statp, union ink_res_sockaddr_union *set, int c
     if (statp->_u._ext.ext)
       family = statp->_u._ext.ext->nsaddrs[i].sin.sin_family;
     else
-      family = statp->nsaddr_list[i].sin_family;
+      family = statp->nsaddr_list[i].sin.sin_family;
 
     switch (family) {
       case AF_INET:
         size = sizeof(set->sin);
         if (statp->_u._ext.ext)
-          memcpy(&set->sin,
-                 &statp->_u._ext.ext->nsaddrs[i],
-                 size);
+          memcpy(&set->sin, &statp->_u._ext.ext->nsaddrs[i], size);
         else
-          memcpy(&set->sin, &statp->nsaddr_list[i],
-                 size);
+          memcpy(&set->sin, &statp->nsaddr_list[i].sin, size);
         break;
 
 #ifdef HAS_INET6_STRUCTS
       case AF_INET6:
         size = sizeof(set->sin6);
         if (statp->_u._ext.ext)
-          memcpy(&set->sin6,
-                 &statp->_u._ext.ext->nsaddrs[i],
-                 size);
+          memcpy(&set->sin6, &statp->_u._ext.ext->nsaddrs[i], size);
         else
-          memcpy(&set->sin6, &statp->nsaddr_list[i],
-                 size);
+          memcpy(&set->sin6, &statp->nsaddr_list[i].sin6, size);
         break;
 #endif
 
@@ -243,8 +236,7 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
 
 #ifdef DEBUG
   if (statp->options & INK_RES_DEBUG)
-    printf(";; res_setoptions(\"%s\", \"%s\")...\n",
-           options, source);
+    printf(";; res_setoptions(\"%s\", \"%s\")...\n", options, source);
 #endif
   while (*cp) {
     /* skip leading and inner runs of spaces */
@@ -300,23 +292,19 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
     } else if (!strncmp(cp, "debug", sizeof("debug") - 1)) {
 #ifdef DEBUG
       if (!(statp->options & INK_RES_DEBUG)) {
-        printf(";; res_setoptions(\"%s\", \"%s\")..\n",
-               options, source);
+        printf(";; res_setoptions(\"%s\", \"%s\")..\n", options, source);
         statp->options |= INK_RES_DEBUG;
       }
       printf(";;\tdebug\n");
 #endif
-    } else if (!strncmp(cp, "no_tld_query",
-                        sizeof("no_tld_query") - 1) ||
-               !strncmp(cp, "no-tld-query",
-                        sizeof("no-tld-query") - 1)) {
+    } else if (!strncmp(cp, "no_tld_query", sizeof("no_tld_query") - 1) ||
+               !strncmp(cp, "no-tld-query", sizeof("no-tld-query") - 1)) {
       statp->options |= INK_RES_NOTLDQUERY;
     } else if (!strncmp(cp, "inet6", sizeof("inet6") - 1)) {
       statp->options |= INK_RES_USE_INET6;
     } else if (!strncmp(cp, "rotate", sizeof("rotate") - 1)) {
       statp->options |= INK_RES_ROTATE;
-    } else if (!strncmp(cp, "no-check-names",
-                        sizeof("no-check-names") - 1)) {
+    } else if (!strncmp(cp, "no-check-names", sizeof("no-check-names") - 1)) {
       statp->options |= INK_RES_NOCHECKNAME;
     }
 #ifdef INK_RES_USE_EDNS0
@@ -349,8 +337,7 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source)
       if (!strncmp(cp, "single", sizeof("single") - 1)) {
         statp->options |= INK_RES_NO_NIBBLE2;
       } else if (!strncmp(cp, "both", sizeof("both") - 1)) {
-        statp->options &=
-          ~INK_RES_NO_NIBBLE2;
+        statp->options &= ~INK_RES_NO_NIBBLE2;
       }
     }
     else {
@@ -424,12 +411,12 @@ ink_res_get_nibblesuffix2(ink_res_state statp) {
  */
 /*% This function has to be reachable by res_data.c but not publically. */
 int
-ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDefDomain, char *pSearchList) {
+ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDefDomain, char *pSearchList, char *pResolvConf) {
   register FILE *fp;
   register char *cp, **pp;
   register int n;
   char buf[BUFSIZ];
-  int nserv = 0;    /*%< number of nameserver records read from file */
+  int nserv = 0;
   int haveenv = 0;
   int havesearch = 0;
 #ifdef RESOLVSORT
@@ -437,7 +424,6 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
   char *net;
 #endif
   int dots;
-  union ink_res_sockaddr_union u[2];
   int maxns = INK_MAXNS;
 
   // INK_RES_SET_H_ERRNO(statp, 0);
@@ -450,31 +436,6 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
   statp->options = INK_RES_DEFAULT;
   statp->id = ink_res_randomid();
 
-  memset(u, 0, sizeof(u));
-#ifdef USELOOPBACK
-  u[nserv].sin.sin_addr = inet_makeaddr(IN_LOOPBACKNET, 1);
-#else
-  u[nserv].sin.sin_addr.s_addr = INADDR_ANY;
-#endif
-  u[nserv].sin.sin_family = AF_INET;
-  u[nserv].sin.sin_port = htons(NAMESERVER_PORT);
-#ifdef HAVE_SA_LEN
-  u[nserv].sin.sin_len = sizeof(struct sockaddr_in);
-#endif
-  nserv++;
-#ifdef HAS_INET6_STRUCTS
-#ifdef USELOOPBACK
-  u[nserv].sin6.sin6_addr = in6addr_loopback;
-#else
-  u[nserv].sin6.sin6_addr = in6addr_any;
-#endif
-  u[nserv].sin6.sin6_family = AF_INET6;
-  u[nserv].sin6.sin6_port = htons(NAMESERVER_PORT);
-#ifdef HAVE_SA_LEN
-  u[nserv].sin6.sin6_len = sizeof(struct sockaddr_in6);
-#endif
-  nserv++;
-#endif
   statp->nscount = 0;
   statp->ndots = 1;
   statp->pfcode = 0;
@@ -486,7 +447,7 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
   statp->_u._ext.ext = (struct __ink_res_state_ext*)malloc(sizeof(*statp->_u._ext.ext));
   if (statp->_u._ext.ext != NULL) {
     memset(statp->_u._ext.ext, 0, sizeof(*statp->_u._ext.ext));
-    statp->_u._ext.ext->nsaddrs[0].sin = statp->nsaddr;
+    statp->_u._ext.ext->nsaddrs[0].sin = statp->nsaddr_list[0].sin;
     strcpy(statp->_u._ext.ext->nsuffix, "ip6.arpa");
     strcpy(statp->_u._ext.ext->nsuffix2, "ip6.int");
   } else {
@@ -509,7 +470,7 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
 #ifdef RESOLVSORT
   statp->nsort = 0;
 #endif
-  ink_res_setservers(statp, u, nserv);
+
 
 #ifdef	SOLARIS2
   /*
@@ -617,11 +578,11 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
   /* -------------------------------------------
      we must be provided with atleast a named!
      ------------------------------------------- */
-
+  /* TODO we should figure out the IPV6 resolvers here. */
   while (pHostList && pHostList[nserv] != 0 && nserv < INK_MAXNS) {
-    statp->nsaddr_list[nserv].sin_addr.s_addr = pHostList[nserv];
-    statp->nsaddr_list[nserv].sin_family = AF_INET;
-    statp->nsaddr_list[nserv].sin_port = htons(pPort[nserv]);
+    statp->nsaddr_list[nserv].sin.sin_addr.s_addr = pHostList[nserv];
+    statp->nsaddr_list[nserv].sin.sin_family = AF_INET;
+    statp->nsaddr_list[nserv].sin.sin_port = htons(pPort[nserv]);
     nserv++;
   }
 
@@ -630,8 +591,7 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
    (line[sizeof(name) - 1] == ' ' ||            \
     line[sizeof(name) - 1] == '\t'))
 
-  nserv = 0;
-  if ((fp = fopen(_PATH_RESCONF, "r")) != NULL) {
+  if ((fp = fopen(pResolvConf, "r")) != NULL) {
     /* read the config file */
     while (fgets(buf, sizeof(buf), fp) != NULL) {
       /* skip comments */
@@ -710,15 +670,12 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
           if (getaddrinfo(cp, sbuf, &hints, &ai) == 0 &&
               ai->ai_addrlen <= minsiz) {
             if (statp->_u._ext.ext != NULL) {
-              memcpy(&statp->_u._ext.ext->nsaddrs[nserv],
-                     ai->ai_addr, ai->ai_addrlen);
+              memcpy(&statp->_u._ext.ext->nsaddrs[nserv], ai->ai_addr, ai->ai_addrlen);
             }
-            if (ai->ai_addrlen <=
-                sizeof(statp->nsaddr_list[nserv])) {
-              memcpy(&statp->nsaddr_list[nserv],
-                     ai->ai_addr, ai->ai_addrlen);
+            if (ai->ai_addrlen <= sizeof(statp->nsaddr_list[nserv].sin)) {
+              memcpy(&statp->nsaddr_list[nserv].sin, ai->ai_addr, ai->ai_addrlen);
             } else
-              statp->nsaddr_list[nserv].sin_family = 0;
+              statp->nsaddr_list[nserv].sin.sin_family = 0;
             freeaddrinfo(ai);
             nserv++;
           }
@@ -781,6 +738,7 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
 #endif
     (void) fclose(fp);
   }
+
 /*
  * Last chance to get a nameserver.  This should not normally
  * be necessary
@@ -794,6 +752,7 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
       gethostname(buf, sizeof(statp->defdname) - 1) == 0 &&
       (cp = strchr(buf, '.')) != NULL)
     strcpy(statp->defdname, cp + 1);
+
 
   /* find components of local domain that might be searched */
   if (havesearch == 0) {
@@ -823,6 +782,9 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
     }
 #endif
   }
+
+  /* export all ns servers to DNSprocessor. */
+  ink_res_setservers(statp, &statp->nsaddr_list[0], statp->nscount);
 
   if ((cp = getenv("RES_OPTIONS")) != NULL)
     ink_res_setoptions(statp, cp, "env");
