@@ -3203,7 +3203,7 @@ mime_field_length_get(MIMEField * field)
 inline
 int format_small_int(char* buf, int32 val, size_t buf_len)
 {
-  ink_assert(val > 0 && val < 100000);
+  ink_assert(val >= 0 && val < 100000);
 
   if (val < 10) {              // 0 - 9
     buf[0] = '0' + val;
