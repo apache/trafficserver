@@ -56,7 +56,7 @@
 #define ALLOCATE_AND_WRITE_TO_BUF 1
 #define WRITE_TO_BUF 2
 
-class HttpTunnelProducer;
+struct HttpTunnelProducer;
 class HttpSM;
 class HttpPagesHandler;
 typedef int (HttpSM::*HttpSMHandler) (int event, void *data);

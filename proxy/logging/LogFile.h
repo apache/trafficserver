@@ -35,7 +35,7 @@
 
 class LogSock;
 class LogBuffer;
-class LogBufferHeader;
+struct LogBufferHeader;
 class LogObject;
 
 #define LOGFILE_ROLLED_EXTENSION ".old"

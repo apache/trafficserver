@@ -30,7 +30,7 @@
 struct socks_conf_struct;
 #define NET_CONNECT_TIMEOUT (30*1000)
 
-class NetVCOptions;
+struct NetVCOptions;
 
 /**
   This is the heart of the Net system. Provides common network APIs,

@@ -43,8 +43,8 @@
 #include "List.h"
 #include "I_VIO.h"
 
-struct Event;
-struct UnixNetVConnection;
+class Event;
+class UnixNetVConnection;
 
 struct NetState
 {

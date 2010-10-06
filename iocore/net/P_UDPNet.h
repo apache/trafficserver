@@ -42,7 +42,7 @@ static inline PollCont *get_UDPPollCont(EThread *);
 #include "P_UnixUDPConnection.h"
 #include "P_UDPIOEvent.h"
 
-class UDPNetHandler;
+struct UDPNetHandler;
 
 struct UDPNetProcessorInternal : public UDPNetProcessor
 {

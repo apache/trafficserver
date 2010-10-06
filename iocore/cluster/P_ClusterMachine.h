@@ -53,7 +53,7 @@
 //
 #define NO_RACE_DELAY                  HRTIME_HOUR      // a long long time
 
-class ClusterHandler;           // Leave this a class - VC++ gets very anal  ~SR
+struct ClusterHandler;           // Leave this a class - VC++ gets very anal  ~SR -- which version of VC++? ~igalic
 
 struct ClusterMachine: public Server
 {

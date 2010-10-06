@@ -39,7 +39,7 @@
 
 class UnixNetVConnection;
 class NetHandler;
-class PollDescriptor;
+struct PollDescriptor;
 
 TS_INLINE void
 NetVCOptions::reset()

@@ -27,8 +27,8 @@
 
 #define CACHE_MEM_FREE_TIMEOUT     HRTIME_SECONDS(1)
 
-class Part;
-class CachePart;
+struct Part;
+struct CachePart;
 
 struct CacheHostResult;
 //struct CacheHostRequestData;

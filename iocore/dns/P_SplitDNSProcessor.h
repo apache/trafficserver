@@ -51,7 +51,7 @@ typedef RequestData RD;
 struct matcher_line;
 
 class SplitDNSRecord;
-class SplitDNSResult;
+struct SplitDNSResult;
 
 struct DNSServer;
 

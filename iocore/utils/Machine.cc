@@ -96,7 +96,7 @@ ip(aip)
     *(uint32 *) & x = (uint32) ip;
     const size_t ip_string_size = sizeof(char) * 16;
     ip_string = (char *) xmalloc(ip_string_size);
-    snprintf(ip_string, ip_string_size, "%hu.%hu.%hu.%hu", x[0], x[1], x[2], x[3]);
+    snprintf(ip_string, ip_string_size, "%u.%u.%u.%u", x[0], x[1], x[2], x[3]);
   }
 }
 

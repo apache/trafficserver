@@ -133,7 +133,7 @@ private:
 
   long ssl_ctx_options;
 
-  friend class SSLNetProcessor;
+  friend struct SSLNetProcessor;
   friend class SslConfig;
 };
 
@@ -167,7 +167,7 @@ private:
 #ifndef USE_CONFIG_PROCESSOR
   static SslConfigParams *ssl_config_params;
 #endif
-  friend class SSLNetProcessor;
+  friend struct SSLNetProcessor;
 };
 
 extern SslConfig sslTerminationConfig;

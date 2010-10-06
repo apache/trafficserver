@@ -1011,7 +1011,7 @@ CoreUtils::process_NetVC(UnixNetVConnection * nvc_test)
 
     // Probably not 64-bit safe. /leif
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
-    printf("     ip: %hu.%hu.%hu.%hu    port: %d\n",
+    printf("     ip: %u.%u.%u.%u    port: %d\n",
            ((unsigned char *) &loaded_nvc->ip)[0],
            ((unsigned char *) &loaded_nvc->ip)[1],
            ((unsigned char *) &loaded_nvc->ip)[2], ((unsigned char *) &loaded_nvc->ip)[3], loaded_nvc->port);

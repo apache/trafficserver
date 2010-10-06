@@ -32,7 +32,7 @@
 #include "P_CacheHttp.h"
 #endif
 
-class EvacuationBlock;
+struct EvacuationBlock;
 
 // Compilation Options
 
@@ -934,7 +934,7 @@ int64 cache_bytes_total(void);
 #endif
 
 struct CacheHostRecord;
-class Part;
+struct Part;
 class CacheHostTable;
 
 struct Cache

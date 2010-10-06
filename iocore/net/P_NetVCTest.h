@@ -39,9 +39,9 @@
 
 #include "inktomi++.h"
 
-struct VIO;
-struct MIOBuffer;
-struct IOBufferReader;
+class VIO;
+class MIOBuffer;
+class IOBufferReader;
 
 
 

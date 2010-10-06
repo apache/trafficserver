@@ -43,8 +43,8 @@
 #include "P_Connection.h"
 #include "P_NetAccept.h"
 
-struct Event;
-struct UnixNetVConnection;
+class Event;
+class UnixNetVConnection;
 
 //
 // NetAccept

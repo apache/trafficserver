@@ -39,7 +39,7 @@
 
 #define DEFAULT_OPEN_MODE                         0644
 
-struct Thread;
+class Thread;
 
 #define SOCKET int
 

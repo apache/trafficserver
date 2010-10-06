@@ -242,7 +242,7 @@ Queue<C,L>::insert(C *e, C *after) {
 template <class C, class L> inline void
 Queue<C,L>::remove(C *e) {
   if (tail == e)
-    tail = (C*)prev(e);
+    tail = (C*)this->prev(e);
   DLL<C,L>::remove(e);
 }
 
@@ -250,15 +250,15 @@ template <class C, class L> inline void
 Queue<C,L>::append(DLL<C,L> q) {
   C *qtail = q.head;
   if (qtail)
-    while (next(qtail))
-      qtail = next(qtail);
+    while (this->next(qtail))
+      qtail = this->next(qtail);
   if (!head) {
     head = q.head;
     tail = qtail;
   } else {
     if (q.head) {
-      next(tail) = q.head;
-      prev(q.head) = tail;
+      this->next(tail) = q.head;
+      this->prev(q.head) = tail;
       tail = qtail;
     }
   }
@@ -271,8 +271,8 @@ Queue<C,L>::append(Queue<C,L> q) {
     tail = q.tail;
   } else {
     if (q.head) {
-      next(tail) = q.head;
-      prev(q.head) = tail;
+      this->next(tail) = q.head;
+      this->prev(q.head) = tail;
       tail = q.tail;
     }
   }
@@ -288,7 +288,7 @@ Queue<C,L>::enqueue(C *e) {
 
 template <class C, class L> inline void
 Queue<C,L>::in_or_enqueue(C *e) {
-  if (!in(e)) enqueue(e);
+  if (!this->in(e)) enqueue(e);
 }
 
 template <class C, class L> inline C *
@@ -310,9 +310,9 @@ template<class C, class L = typename C::Link_link> struct SortableQueue: public 
     while (!clean) {
       clean = true;
       C *v = head;
-      C *n = next(head);
+      C *n = this->next(head);
       while (n) {
-        C *f = next(n);
+        C *f = this->next(n);
         if (*n < *v) {
           clean = false;
           // swap 'em
@@ -321,21 +321,21 @@ template<class C, class L = typename C::Link_link> struct SortableQueue: public 
           if (tail == n)
             tail = v;
           // fix prev (p)
-          C *p = prev(v);
+          C *p = this->prev(v);
           if (p) {
-            next(p) = n;
-            prev(n) = p;
+            this->next(p) = n;
+            this->prev(n) = p;
           } else
-            prev(n) = NULL;
+            this->prev(n) = NULL;
           // fix follow (f)
           if (f) {
-            prev(f) = v;
-            next(v) = f;
+            this->prev(f) = v;
+            this->next(v) = f;
           } else
-            next(v) = NULL;
+            this->next(v) = NULL;
           // fix interior
-          prev(v) = n;
-          next(n) = v;
+          this->prev(v) = n;
+          this->next(n) = v;
         } else
           v = n;
         n = f;

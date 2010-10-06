@@ -84,7 +84,7 @@ do { \
 struct dirent;
 
 #if defined(IOCORE_LOG_COLLATION)
-class LogCollationAccept;
+struct LogCollationAccept;
 #endif
 
 /*-------------------------------------------------------------------------

@@ -44,7 +44,7 @@
 
 #define EMPTY_PORT_MAPPING (int32)~0
 
-struct url_mapping;
+class url_mapping;
 struct host_hdr_info;
 
 // Variables for the CDN URL Remapping Feature

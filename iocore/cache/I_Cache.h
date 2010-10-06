@@ -59,7 +59,7 @@
 #define CACHE_COMPRESSION_LIBZ           2
 #define CACHE_COMPRESSION_LIBLZMA        3
 
-class CacheVC;
+struct CacheVC;
 #ifdef HTTP_CACHE
 class CacheLookupHttpConfig;
 class URL;

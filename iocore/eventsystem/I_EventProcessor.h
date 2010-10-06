@@ -310,6 +310,6 @@ public:
   volatile int thread_data_used;
 };
 
-extern inkcoreapi struct EventProcessor eventProcessor;
+extern inkcoreapi class EventProcessor eventProcessor;
 
 #endif /*_EventProcessor_h_*/

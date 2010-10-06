@@ -516,7 +516,7 @@ public:
   Event *_start_event;
   state_t _state;
   Action *_cur_action;
-  struct NetVConnection *_netvc;
+  class NetVConnection *_netvc;
   VIO *_write_vio;
   VIO *_read_vio;
   int _read_event_callback;

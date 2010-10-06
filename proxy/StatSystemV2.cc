@@ -27,7 +27,7 @@
 #include "Log.h"
 #include <iostream>
 
-extern struct EventProcessor eventProcessor;
+extern class EventProcessor eventProcessor;
 
 std::map<std::string, uint32_t> StatSystemV2::stat_name_to_num;
 std::vector< std::pair<std::string, INK64> > StatSystemV2::global_stats;

@@ -71,8 +71,8 @@
 #define MULTI_CACHE_OFFSET_INDEX(_x)     ((_x)/MULTI_CACHE_PARTITIONS)
 #define MULTI_CACHE_OFFSET(_p,_o)        ((_p) + (_o) * MULTI_CACHE_PARTITIONS)
 
-struct ProxyMutex;
-struct Continuation;
+class ProxyMutex;
+class Continuation;
 
 //
 // Types

@@ -359,7 +359,7 @@ struct ClusterState: public Continuation
   ink_hrtime start_time;
 
   Ptr<IOBufferBlock> block[MAX_TCOUNT];
-  struct MIOBuffer *mbuf;
+  class MIOBuffer *mbuf;
   int state;                    // See enum defs below
 
 

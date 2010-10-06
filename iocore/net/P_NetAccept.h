@@ -44,7 +44,7 @@
 
 
 struct NetAccept;
-struct Event;
+class Event;
 //
 // Default accept function
 //   Accepts as many connections as possible, returning the number accepted

@@ -302,7 +302,7 @@ class LogFieldList;
 class LogFilterList;
 class LogFormatList;
 //class LogBufferList; vl: we don't need it here
-class LogBufferHeader;
+struct LogBufferHeader;
 class LogBuffer;
 class LogFormat;
 class LogObject;

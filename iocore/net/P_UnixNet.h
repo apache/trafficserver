@@ -100,13 +100,13 @@ struct ev_loop
 extern "C" void fd_change(struct ev_loop *, int fd, int flags);
 #endif /* USE_LIBEV */
 
-class PollDescriptor;
+struct PollDescriptor;
 typedef PollDescriptor *EventLoop;
 
 class UnixNetVConnection;
-class DNSConnection;
-class NetAccept;
 class UnixUDPConnection;
+struct DNSConnection;
+struct NetAccept;
 struct EventIO
 {
 #if TS_USE_LIBEV
@@ -159,8 +159,8 @@ struct EventIO
 
 #define EVENTFD   5
 
-struct UnixNetVConnection;
-struct NetHandler;
+class UnixNetVConnection;
+class NetHandler;
 typedef int (NetHandler::*NetContHandler) (int, void *);
 typedef unsigned int uint32;
 

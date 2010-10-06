@@ -41,7 +41,7 @@
 
 #include "P_SSLConfig.h"
 
-struct UnixNetVConnection;
+class UnixNetVConnection;
 struct NetAccept;
 
 //////////////////////////////////////////////////////////////////

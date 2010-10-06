@@ -1913,7 +1913,7 @@ ClusterHandler::valid_for_data_write(ClusterVConnection * vc)
   DestructorLock lock(thread);
 
 retry:
-  if (lock.m = s->vio.mutex) {
+  if ((lock.m = s->vio.mutex)) {
     lock.have_lock = MUTEX_TAKE_TRY_LOCK_FOR_SPIN(lock.m, thread, s->vio._cont, WRITE_LOCK_SPIN_COUNT);
     if (!lock.have_lock) {
       CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_LOCKED_STAT);
@@ -2119,7 +2119,7 @@ ClusterHandler::valid_for_freespace_write(ClusterVConnection * vc)
   DestructorLock lock(thread);
 
 retry:
-  if (lock.m = s->vio.mutex) {
+  if ((lock.m = s->vio.mutex)) {
     lock.have_lock = MUTEX_TAKE_TRY_LOCK_FOR_SPIN(lock.m, thread, s->vio._cont, READ_LOCK_SPIN_COUNT);
 
     if (!lock.have_lock) {

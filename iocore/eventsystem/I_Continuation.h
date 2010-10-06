@@ -56,8 +56,6 @@ class EThread;
 #define CONTINUATION_DONE            0
 #define CONTINUATION_CONT            1
 
-struct Continuation;
-
 typedef int (Continuation::*ContinuationHandler) (int event, void *data);
 
 class force_VFPT_to_top

@@ -2622,7 +2622,7 @@ ObjectReloadCont::ObjectReloadEvent(int event, void *d)
         ObjectReloadContAllocator.free(this);
         return EVENT_DONE;
       }
-      _netvc = (struct NetVConnection *) d;
+      _netvc = (class NetVConnection *) d;
 
       // Start URL write
       Debug("update-reload", "Write start id=%d [%s]", _request_id, _send_data->start());

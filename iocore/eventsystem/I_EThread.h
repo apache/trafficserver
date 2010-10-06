@@ -43,16 +43,16 @@
 /** Maximum number of accept events per thread. */
 #define MAX_ACCEPT_EVENTS 20
 
-struct Continuation;
-struct NetHandler;
 struct UDPNetHandler;
 struct DiskHandler;
 struct LogConfiguration;
 struct LogEventForwarder;
-struct Event;
-struct SessionBucket;
 struct EventIO;
 
+class SessionBucket;
+class NetHandler;
+class Event;
+class Continuation;
 class IOBufferData;
 class IOBufferBlock;
 

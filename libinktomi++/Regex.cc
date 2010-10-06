@@ -141,12 +141,12 @@ static RENode **re_first_nodes(RENode * n);
 static RENode **re_last_nodes(RENode * n);
 static RENode **re_union_nodes(RENode ** a, RENode ** b);
 static bool re_equal_nodes(RENode ** a, RENode ** b);
-static void re_print_node(RENode * n);
-static void re_print_state(REState * s);
-static void re_print_char(unsigned char c);
-static void re_print_cclass(unsigned char *cclass);
-static void re_print_nodes(RENode ** nodes);
-static void re_debug(RENode * n);
+//static void re_print_node(RENode * n); // unused
+//static void re_print_state(REState * s); // unused
+//static void re_print_char(unsigned char c); // unused
+//static void re_print_cclass(unsigned char *cclass); // unused
+//static void re_print_nodes(RENode ** nodes); // unused
+//static void re_debug(RENode * n); // unused
 
 static REState **re_construct(RENode * n, int *count);
 static REState *state_alloc(RENode ** nodes);
@@ -1195,6 +1195,7 @@ re_equal_nodes(RENode ** a, RENode ** b)
   return true;
 }
 
+/** unused
 static void
 re_print_node(RENode * n)
 {
@@ -1241,8 +1242,10 @@ re_print_node(RENode * n)
     printf("\n");
   }
 }
+*/
 
 
+/** unused
 static void
 re_print_state(REState * state)
 {
@@ -1273,7 +1276,9 @@ re_print_state(REState * state)
     t = t->next;
   }
 }
+*/
 
+/** unused
 static void
 re_print_char(unsigned char c)
 {
@@ -1306,7 +1311,9 @@ re_print_char(unsigned char c)
     break;
   }
 }
+*/
 
+/** unused
 static void
 re_print_cclass(unsigned char *cclass)
 {
@@ -1349,7 +1356,9 @@ re_print_cclass(unsigned char *cclass)
     printf("[]");
   }
 }
+*/
 
+/** unused
 static void
 re_print_nodes(RENode ** nodes)
 {
@@ -1365,7 +1374,9 @@ re_print_nodes(RENode ** nodes)
 
   printf(" }\n");
 }
+*/
 
+/** unused
 static void
 re_debug(RENode * n)
 {
@@ -1398,6 +1409,7 @@ re_debug(RENode * n)
     break;
   }
 }
+*/
 
 
 static REState *default_state = NULL;

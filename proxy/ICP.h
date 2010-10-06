@@ -1129,7 +1129,7 @@ public:
   {
     return _start_time;
   }
-  inline struct Action *GetActionPtr()
+  inline class Action *GetActionPtr()
   {
     return &_act;
   }
@@ -1196,7 +1196,7 @@ private:
   // Return data
   struct sockaddr_in _ret_sockaddr;
   ICPreturn_t _ret_status;
-  struct Action _act;
+  class Action _act;
 
   // Internal working data
   ink_hrtime _start_time;

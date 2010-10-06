@@ -26,7 +26,7 @@
 #include "I_Net.h"
 #include "P_NetAccept.h"
 
-struct UnixNetVConnection;
+class UnixNetVConnection;
 
 //////////////////////////////////////////////////////////////////
 //

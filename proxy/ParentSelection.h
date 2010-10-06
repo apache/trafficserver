@@ -44,8 +44,8 @@ struct RequestData;
 typedef RequestData RD;
 
 struct matcher_line;
+struct ParentResult;
 class ParentRecord;
-class ParentResult;
 
 #define PARENT_SELECTION_TIMEOUT            (HRTIME_HOUR*4)
 
