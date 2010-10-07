@@ -2,6 +2,13 @@
 
 Changes with Apache Traffic Server 2.1.4
 
+  *) Build TS with clang (author: Igor Galic) [TS-427].
+
+  *) Better support and handling of DNS round-robin options (author: Zhao
+   Yongming) [TS-313].
+
+  *) Make it possible to "write" Content-Length headers > 2GB [TS-471].
+
   *) Better support for Age: headers, and avoiding overflows [TS-470].
 
   *) Added a configure option to size the API stats "slots". The new

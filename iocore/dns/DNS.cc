@@ -944,6 +944,7 @@ DNSEntry::mainEvent(int event, Event * e)
       if (domains && !strnchr(qname, '.', MAXDNAME)) {
         qname[qname_len] = '.';
         ink_strncpy(qname + qname_len + 1, *domains, MAXDNAME - (qname_len + 1));
+        qname_len = strlen(qname);
         ++domains;
       }
       Debug("dns", "enqueing query %s", qname);
@@ -1037,8 +1038,10 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
           if (e->qname[e->qname_len - 1] != '.') {
             e->qname[e->qname_len] = '.';
             ink_strncpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
+            e->qname_len = strlen(e->qname);
           } else {
             ink_strncpy(e->qname + e->qname_len, *e->domains, MAXDNAME - e->qname_len);
+            e->qname_len = strlen(e->qname);
           }
         } else {
           if (e->qname_len + strlen(*e->domains) + 2 > MAXDNAME) {
@@ -1047,6 +1050,7 @@ dns_result(DNSHandler * h, DNSEntry * e, HostEnt * ent, bool retry)
           }
           e->qname[e->qname_len] = '.';
           ink_strncpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
+          e->qname_len = strlen(e->qname);
         }
         ++(e->domains);
         e->retries = dns_retries;
@@ -1276,7 +1280,7 @@ dns_process(DNSHandler * handler, HostEnt * buf, int len)
       // case sensitivity.
       if ((qlen != rlen) || (strncasecmp(e->qname, (const char*)bp, qlen) != 0)) {
         // Bad mojo, forged?
-        Warning("received DNS response with query name of %s, but response query name is %s", e->qname, bp);
+        Warning("received DNS response with query name of '%s', but response query name is '%s'", e->qname, bp);
         goto Lerror;
       } else {
         Debug("dns", "query name validated properly for %s", e->qname);
