@@ -2377,7 +2377,7 @@ extern "C"
       /*  The following are not supported yet. */
       TS_STAT_TYPE_FLOAT,
       TS_STAT_TYPE_STRING,
-      TS_STAT_TYPE_COUNTER,
+      TS_STAT_TYPE_COUNTER
     } TSStatDataType;
 
   typedef enum
@@ -2391,7 +2391,7 @@ extern "C"
       TS_STAT_SYNC_SUM = 0,
       TS_STAT_SYNC_COUNT,
       TS_STAT_SYNC_AVG,
-      TS_STAT_SYNC_TIMEAVG,
+      TS_STAT_SYNC_TIMEAVG
     } TSStatSync;
 
   /*  Note that only TS_STAT_TYPE_INT is supported at this point. */
