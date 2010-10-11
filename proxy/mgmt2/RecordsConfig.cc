@@ -1597,7 +1597,7 @@ RecordElement RecordsConfig[] = {
   //# Net Subsystem
   //#
   //##############################################################################
-  {CONFIG, "proxy.config.net.connections_throttle", "", INK_INT, "8000", RU_RESTART_TS, RR_REQUIRED,
+  {CONFIG, "proxy.config.net.connections_throttle", "", INK_INT, "10000", RU_RESTART_TS, RR_REQUIRED,
    RC_STR, "^[0-9]+$", RA_NULL}
   ,
   {CONFIG, "proxy.config.net.throttle_enabled", "", INK_INT, "1", RU_NULL, RR_NULL, RC_NULL, "[0-1]", RA_NULL}
