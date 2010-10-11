@@ -1184,11 +1184,11 @@ LocalManager::startProxy()
       // Fill in the rest of the fd's
       if (proxy_server_fd[0] != -1) {
         snprintf(&real_proxy_options[n], sizeof(real_proxy_options) - n,
-                 "%d:%s", proxy_server_fd[0], proxy_server_port_attributes[0]);
+                 "%d:%s", proxy_server_fd[0], (char*)proxy_server_port_attributes[0]);
         n = strlen(real_proxy_options);
         for (i = 1; i<MAX_PROXY_SERVER_PORTS && proxy_server_fd[i]> 0; i++) {
           snprintf(&real_proxy_options[n], sizeof(real_proxy_options) - n,
-                   ",%d:%s", proxy_server_fd[i], proxy_server_port_attributes[i]);
+                   ",%d:%s", proxy_server_fd[i], (char*)proxy_server_port_attributes[i]);
           n = strlen(real_proxy_options);
         }
       }

@@ -769,7 +769,7 @@ ClusterHandler::machine_down()
 #ifdef NON_MODULAR
   machine_offline_APIcallout(ip);
 #endif
-  snprintf(textbuf, sizeof(textbuf), "%u.%u.%u.%u:%d", DOT_SEPARATED(ip), port);
+  snprintf(textbuf, sizeof(textbuf), "%hhu.%hhu.%hhu.%hhu:%d", DOT_SEPARATED(ip), port);
   REC_SignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
   if (net_vc) {
     net_vc->do_io(VIO::CLOSE);
@@ -789,7 +789,7 @@ ClusterHandler::machine_down()
   MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
   MachineList *cc = the_cluster_config();
   if (cc && cc->find(ip, port) && connector) {
-    Debug(CL_NOTE, "cluster connect retry for %u.%u.%u.%u", DOT_SEPARATED(ip));
+    Debug(CL_NOTE, "cluster connect retry for %hhu.%hhu.%hhu.%hhu", DOT_SEPARATED(ip));
     clusterProcessor.connect(ip, port);
   }
   return zombify();             // defer deletion of *this
@@ -1069,13 +1069,13 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         machine_online_APIcallout(ip);
 #endif
         // Signal the manager
-        snprintf(textbuf, sizeof(textbuf), "%u.%u.%u.%u:%d", DOT_SEPARATED(ip), port);
+        snprintf(textbuf, sizeof(textbuf), "%hhu.%hhu.%hhu.%hhu:%d", DOT_SEPARATED(ip), port);
         REC_SignalManager(REC_SIGNAL_MACHINE_UP, textbuf);
 #ifdef LOCAL_CLUSTER_TEST_MODE
-        Note("machine up %u.%u.%u.%u:%d, protocol version=%d.%d",
+        Note("machine up %hhu.%hhu.%hhu.%hhu:%d, protocol version=%d.%d",
              DOT_SEPARATED(ip), port, clusteringVersion._major, clusteringVersion._minor);
 #else
-        Note("machine up %u.%u.%u.%u, protocol version=%d.%d",
+        Note("machine up %hhu.%hhu.%hhu.%hhu, protocol version=%d.%d",
              DOT_SEPARATED(ip), clusteringVersion._major, clusteringVersion._minor);
 #endif
         thread = e->ethread;
@@ -1337,7 +1337,7 @@ ClusterHandler::dump_internal_data()
   char *b = message_blk->data->data();
   unsigned int b_size = message_blk->data->block_size();
 
-  r = snprintf(&b[n], b_size - n, "Host: %u.%u.%u.%u\n", DOT_SEPARATED(ip));
+  r = snprintf(&b[n], b_size - n, "Host: %hhu.%hhu.%hhu.%hhu\n", DOT_SEPARATED(ip));
   n += r;
 
   r = snprintf(&b[n], b_size - n,
@@ -1391,7 +1391,7 @@ ClusterHandler::dump_write_msg(int res)
   *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
 
   fprintf(stderr,
-          "[W] %u.%u.%u.%u SeqNo=%u, Cnt=%d, CntlCnt=%d Todo=%d, Res=%d\n",
+          "[W] %hhu.%hhu.%hhu.%hhu SeqNo=%u, Cnt=%d, CntlCnt=%d Todo=%d, Res=%d\n",
           x[0], x[1], x[2], x[3], write.sequence_number, write.msg.count, write.msg.control_bytes, write.to_do, res);
   for (int i = 0; i < write.msg.count; ++i) {
     fprintf(stderr, "   d[%i] Type=%d, Chan=%d, SeqNo=%d, Len=%u\n",
@@ -1409,7 +1409,7 @@ ClusterHandler::dump_read_msg()
   memset(x, 0, sizeof(x));
   *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
 
-  fprintf(stderr, "[R] %u.%u.%u.%u  SeqNo=%u, Cnt=%d, CntlCnt=%d\n",
+  fprintf(stderr, "[R] %hhu.%hhu.%hhu.%hhu  SeqNo=%u, Cnt=%d, CntlCnt=%d\n",
           x[0], x[1], x[2], x[3], read.sequence_number, read.msg.count, read.msg.control_bytes);
   for (int i = 0; i < read.msg.count; ++i) {
     fprintf(stderr, "   d[%i] Type=%d, Chan=%d, SeqNo=%d, Len=%u\n",

@@ -1011,7 +1011,7 @@ setup_socks_servers(ParentRecord * rec_arr, int len)
         Warning("Could not resolve socks server name \"%s\". " "Please correct it", pr[i].hostname);
         ip = (uint8 *) & bad_ip;
       }
-      snprintf(pr[i].hostname, DOMAIN_NAME_MAX + 1, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+      snprintf(pr[i].hostname, DOMAIN_NAME_MAX + 1, "%hhu.%hhu.%hhu.%hhu", ip[0], ip[1], ip[2], ip[3]);
     }
   }
 

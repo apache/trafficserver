@@ -1943,7 +1943,7 @@ UrlRewrite::BuildTable()
         url_mapping *u_mapping;
         for (int i = 0; h->h_addr_list[i] != NULL; i++) {
           ipv4_name[0] = '\0';
-          int ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%u.%u.%u.%u",
+          int ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%hhu.%hhu.%hhu.%hhu",
                                 (unsigned char) h->h_addr_list[i][0],
                                 (unsigned char) h->h_addr_list[i][1],
                                 (unsigned char) h->h_addr_list[i][2],
@@ -1985,7 +1985,7 @@ UrlRewrite::BuildTable()
         for (int i = 0; h->h_addr_list[i] != NULL; i++) {
           ipv4_name[0] = '\0';
           int ip_len;
-          ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%u.%u.%u.%u",
+          ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%hhu.%hhu.%hhu.%hhu",
                             (unsigned char) h->h_addr_list[i][0],
                             (unsigned char) h->h_addr_list[i][1],
                             (unsigned char) h->h_addr_list[i][2], (unsigned char) h->h_addr_list[i][3]);
@@ -2021,7 +2021,7 @@ UrlRewrite::BuildTable()
         for (int i = 0; h->h_addr_list[i] != NULL; i++) {
           ipv4_name[0] = '\0';
           int ip_len;
-          ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%u.%u.%u.%u",
+          ip_len = snprintf(ipv4_name, sizeof(ipv4_name), "%hhu.%hhu.%hhu.%hhu",
                             (unsigned char) h->h_addr_list[i][0],
                             (unsigned char) h->h_addr_list[i][1],
                             (unsigned char) h->h_addr_list[i][2], (unsigned char) h->h_addr_list[i][3]);

@@ -1059,9 +1059,9 @@ remove_round_robin(HostDBInfo * r, char *hostname, unsigned int ip)
               unsigned int rr_ip = rr->info[n].ip();
               unsigned char *pip = (unsigned char *) &rr_ip;
 #ifdef __alpha
-              int nbytes = sprintf(p, "%hu.%hu.%hu.%hu ", pip[0], pip[1], pip[2], pip[3]);
+              int nbytes = sprintf(p, "%hhu.%hhu.%hhu.%hhu ", pip[0], pip[1], pip[2], pip[3]);
 #else
-              int nbytes = snprintf(p, bufsize, "%u.%u.%u.%u ", pip[0], pip[1], pip[2], pip[3]);
+              int nbytes = snprintf(p, bufsize, "%hhu.%hhu.%hhu.%hhu ", pip[0], pip[1], pip[2], pip[3]);
 #endif
               p += nbytes;
               bufsize -= nbytes;

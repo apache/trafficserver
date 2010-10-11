@@ -68,9 +68,9 @@ struct ShowNet: public ShowCont
       if (port && port != vc->port && port != vc->accept_port)
         continue;
       char ipbuf[80];
-      snprintf(ipbuf, sizeof(ipbuf), "%u.%u.%u.%u", PRINT_IP(vc->ip));
+      snprintf(ipbuf, sizeof(ipbuf), "%hhu.%hhu.%hhu.%hhu", PRINT_IP(vc->ip));
       char interbuf[80];
-      snprintf(interbuf, sizeof(interbuf), "[%s] %u.%u.%u.%u", vc->options.toString(vc->options.addr_binding), PRINT_IP(vc->options.local_addr));
+      snprintf(interbuf, sizeof(interbuf), "[%s] %hhu.%hhu.%hhu.%hhu", vc->options.toString(vc->options.addr_binding), PRINT_IP(vc->options.local_addr));
       CHECK_SHOW(show("<tr>"
                       // "<td><a href=\"/connection/%d\">%d</a></td>"
                       "<td>%d</td>" "<td>%s</td>"       // ipbuf
