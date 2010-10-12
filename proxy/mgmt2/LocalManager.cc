@@ -80,6 +80,7 @@ LocalManager::mgmtShutdown(int status, bool mainThread)
   if (mainThread) {
     mgmt_log("[LocalManager::mgmtShutdown] Executing shutdown request.\n");
     processShutdown(mainThread);
+    // WCCP TBD: Send a shutdown message to routers.
 
     if (processRunning()) {
       waitpid(watched_process_pid, &status, 0);
@@ -343,6 +344,29 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
     config_path = absolute_config_path;
   }
 
+  // Bind the WCCP address if present.
+  xptr<char> wccp_addr_str(REC_readString("proxy.config.wccp.addr", &found));
+  if (found && wccp_addr_str && *wccp_addr_str) {
+    wccp_cache.setAddr(inet_addr(wccp_addr_str));
+    mgmt_log("[LocalManager::LocalManager] WCCP identifying address set to %s.\n", static_cast<char*>(wccp_addr_str));
+  }
+
+  xptr<char> wccp_config_str(REC_readString("proxy.config.wccp.services", &found));
+  if (found && wccp_config_str && *wccp_config_str) {
+    bool located = true;
+    if (access(wccp_config_str, R_OK) == -1) {
+      wccp_config_str = Layout::relative_to(Layout::get()->sysconfdir, wccp_config_str);
+      if (access(wccp_config_str, R_OK) == -1 ) {
+        located = false;
+      }
+    }
+    if (located) {
+      wccp_cache.loadServicesFromFile(wccp_config_str);
+    } else { // not located
+      mgmt_log("[LocalManager::LocalManager] WCCP service configuration file '%s' was specified but could not be found in the file system.\n", static_cast<char*>(wccp_config_str));
+    }
+  }
+
   bin_path = REC_readString("proxy.config.bin_path", &found);
   process_server_timeout_secs = REC_readInteger("proxy.config.lm.pserver_timeout_secs", &found);
   process_server_timeout_msecs = REC_readInteger("proxy.config.lm.pserver_timeout_msecs", &found);
@@ -459,6 +483,10 @@ LocalManager::initMgmtProcessServer()
   int servlen, one = 1;
   struct sockaddr_un serv_addr;
 
+  if (wccp_cache.isConfigured()) {
+    if (0 > wccp_cache.open()) mgmt_log("Failed to open WCCP socket\n");
+  }
+
   snprintf(fpath, sizeof(fpath), "%s/%s", pserver_path, LM_CONNECTION_SERVER);
   unlink(fpath);
   if ((process_server_sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
@@ -504,17 +532,25 @@ LocalManager::pollMgmtProcessServer()
   struct timeval timeout;
   struct sockaddr_in clientAddr;
   fd_set fdlist;
+  int wccp_fd = wccp_cache.getSocket();
 
   while (1) {
+    // Only run WCCP housekeeping while we have a server process.
+    // Note: The WCCP socket is opened iff WCCP is configured.
+    bool wccp_active = wccp_fd != ats::NO_FD && watched_process_fd != ats::NO_FD;
 
     // poll only
     timeout.tv_sec = process_server_timeout_secs;
     timeout.tv_usec = process_server_timeout_msecs * 1000;
-
     FD_ZERO(&fdlist);
     FD_SET(process_server_sockfd, &fdlist);
-    if (watched_process_fd != -1) {
-      FD_SET(watched_process_fd, &fdlist);
+    if (watched_process_fd != -1) FD_SET(watched_process_fd, &fdlist);
+
+    if (wccp_active) {
+      wccp_cache.housekeeping();
+      time_t wccp_wait = wccp_cache.waitTime();
+      if (wccp_wait < process_server_timeout_secs) timeout.tv_sec = wccp_wait;
+      FD_SET(wccp_cache.getSocket(), &fdlist);
     }
 
     num = mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &timeout);
@@ -523,6 +559,11 @@ LocalManager::pollMgmtProcessServer()
       break;
 
     } else if (num > 0) {       /* Have something */
+
+      if (wccp_fd != ats::NO_FD && FD_ISSET(wccp_fd, &fdlist)) {
+        wccp_cache.handleMessage();
+        --num;
+      }
 
       if (FD_ISSET(process_server_sockfd, &fdlist)) {   /* New connection */
         int clientLen = sizeof(clientAddr);
@@ -554,7 +595,7 @@ LocalManager::pollMgmtProcessServer()
         --num;
       }
 
-      if (FD_ISSET(watched_process_fd, &fdlist)) {
+      if (ats::NO_FD != watched_process_fd && FD_ISSET(watched_process_fd, &fdlist)) {
         int res;
         MgmtMessageHdr mh_hdr;
         MgmtMessageHdr *mh_full;
@@ -1116,7 +1157,7 @@ LocalManager::startProxy()
   // Before we do anything lets check for the existence of
   // the traffic server binary along with it's execute permmissions
   if (access(absolute_proxy_binary, F_OK) < 0) {
-    // Error can't find trafic_server
+    // Error can't find traffic_server
     mgmt_elog(stderr, "[LocalManager::startProxy] Unable to find traffic server at %s\n", absolute_proxy_binary);
     return false;
   }

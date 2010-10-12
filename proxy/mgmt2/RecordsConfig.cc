@@ -2605,6 +2605,15 @@ RecordElement RecordsConfig[] = {
   ,
   {PROCESS, "proxy.process.icp.total_icp_request_time", "", INK_FLOAT, "0.00", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
+  //############################################################################
+  //#
+  //# WCCP
+  //#
+  //############################################################################
+  {CONFIG, "proxy.config.wccp.addr", "Identifying IP address", INK_STRING, "", RU_RESTART_TM, RR_NULL, RC_STR, NULL, RA_NULL}
+  ,
+  {CONFIG, "proxy.config.wccp.services", "File with service configuration", INK_STRING, "", RU_RESTART_TM, RR_NULL, RC_STR, NULL, RA_NULL }
+  ,
   //##############################################################################
   //# Scheduled Update Configuration
   //##############################################################################

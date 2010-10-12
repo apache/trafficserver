@@ -1,0 +1,283 @@
+/** @file
+    Errata implementation.
+ */
+/*
+ * Copyright 2005-2010 Network Geographics, Inc.
+ * http://www.network-geographics.com
+ * All rights reserved.
+ * Licensed to Apache Software Foundation.
+ */
+
+# include "Errata.h"
+# include <iostream>
+# include <sstream>
+# include <iomanip>
+# include <algorithm>
+# include <memory.h>
+
+namespace ats {
+
+/** List of sinks for abandoned erratum.
+ */
+namespace {
+  std::deque<Errata::Sink::Handle> Sink_List;
+}
+
+std::string const Errata::DEFAULT_GLUE("\n");
+Errata::Message const Errata::NIL_MESSAGE;
+Errata::Code Errata::Message::Default_Code = 0;
+Errata::Message::SuccessTest const Errata::Message::DEFAULT_SUCCESS_TEST =
+  &Errata::Message::isCodeZero;
+Errata::Message::SuccessTest Errata::Message::Success_Test =
+  Errata::Message::DEFAULT_SUCCESS_TEST;
+
+bool
+Errata::Message::isCodeZero(Message const& msg) {
+  return msg.m_code == 0;
+}
+
+void
+Errata::Data::push(Message const& msg) {
+  m_items.push_back(msg);
+}
+
+Errata::Message const&
+Errata::Data::top() const {
+  return m_items.size() ? m_items.back() : NIL_MESSAGE ;
+}
+
+inline Errata::Errata(ImpPtr const& ptr) 
+  : m_data(ptr) {
+}
+
+Errata::Data::~Data() {
+  if (m_log_on_delete) {
+    Errata tmp(this); // because client API requires a wrapper.
+    std::deque<Errata::Sink::Handle>::iterator spot, limit;
+    for ( spot = Sink_List.begin(), limit = Sink_List.end();
+          spot != limit;
+          ++spot
+    ) {
+      (**spot)(tmp);
+    }
+    tmp.m_data.release(); // don't delete this again.
+  }
+}
+
+Errata::Errata() {
+}
+
+Errata::Errata(self const& that)
+  : m_data(that.m_data) {
+}
+
+Errata::Errata(std::string const& text) {
+  this->push(text);
+}
+
+Errata::Errata(Id id, std::string const& text) {
+  this->push(id, text);
+}
+
+Errata::~Errata() {
+}
+
+/*  This forces the errata to have a data object that only it references.
+    If we're sharing the data, clone. If there's no data, allocate.
+    This is used just before a write operation to have copy on write semantics.
+ */
+Errata::Data*
+Errata::pre_write() {
+  if (m_data) {
+    if (m_data.useCount() > 1) {
+      m_data = new Data(*m_data); // clone current data
+    }
+  } else { // create new data
+    m_data = new Data;
+  }
+  return m_data.get();
+}
+
+// Just create an instance if needed.
+Errata::Data*
+Errata::instance() {
+  if (!m_data) m_data = new Data;
+  return m_data.get();
+}
+
+Errata&
+Errata::push(Message const& msg) {
+  this->pre_write()->push(msg);
+  return *this;
+}
+
+Errata&
+Errata::operator=(self const& that) {
+  m_data = that.m_data;
+  return *this;
+}
+
+Errata&
+Errata::operator = (Message const& msg) {
+  // Avoid copy on write in the case where we discard.
+  if (!m_data || m_data.useCount() > 1) {
+    this->clear();
+    this->push(msg);
+  } else {
+    m_data->m_items.clear();
+    m_data->push(msg);
+  }
+  return *this;
+}
+
+Errata&
+Errata::join(self const& that) {
+  if (that.m_data) {
+    this->pre_write();
+    m_data->m_items.insert(
+      m_data->m_items.end(),
+      that.m_data->m_items.begin(),
+      that.m_data->m_items.end()
+    );
+  }
+  return *this;
+}
+
+void
+Errata::pop() {
+  if (m_data && m_data->size()) {
+    this->pre_write()->m_items.pop_front();
+  }
+  return;
+}
+
+void
+Errata::clear() {
+  m_data.reset(0);
+}
+
+/*  We want to allow iteration on empty / nil containers because that's very
+    convenient for clients. We need only return the same value for begin()
+    and end() and everything works as expected.
+
+    However we need to be a bit more clever for VC 8.  It checks for
+    iterator compatibility, i.e. that the iterators are not
+    invalidated and that they are for the same container.  It appears
+    that default iterators are not compatible with anything.  So we
+    use static container for the nil data case.
+ */
+static Errata::Container NIL_CONTAINER;
+
+Errata::iterator
+Errata::begin() {
+  return m_data ? m_data->m_items.rbegin() : NIL_CONTAINER.rbegin();
+}
+
+Errata::const_iterator
+Errata::begin() const {
+  return m_data ? static_cast<Data const&>(*m_data).m_items.rbegin()
+    : static_cast<Container const&>(NIL_CONTAINER).rbegin();
+}
+
+Errata::iterator
+Errata::end() {
+  return m_data ? m_data->m_items.rend() : NIL_CONTAINER.rend();
+}
+
+Errata::const_iterator
+Errata::end() const {
+  return m_data ? static_cast<Data const&>(*m_data).m_items.rend()
+    : static_cast<Container const&>(NIL_CONTAINER).rend();
+}
+
+void
+Errata::registerSink(Sink::Handle const& s) {
+  Sink_List.push_back(s);
+}
+
+std::ostream&
+Errata::write(
+  std::ostream& out,
+  int offset,
+  int indent,
+  int shift,
+  char const* lead
+) const {
+  for ( const_iterator spot = this->begin(), limit = this->end();
+        spot != limit;
+        ++spot
+  ) {
+    if ((offset + indent) > 0)
+      out << std::setw(indent + offset) << std::setfill(' ')
+          << ((indent > 0 && lead) ? lead : " ");
+
+    out << spot->m_id << " [" << spot->m_code << "]: " << spot->m_text
+        << std::endl
+      ;
+    if (spot->getErrata().size())
+      spot->getErrata().write(out, offset, indent+shift, shift, lead);
+
+  }
+  return out;
+}
+
+size_t
+Errata::write(
+  char *buff,
+  size_t n,
+  int offset,
+  int indent,
+  int shift,
+  char const* lead
+) const {
+  std::ostringstream out;
+  std::string text;
+  this->write(out, offset, indent, shift, lead);
+  text = out.str();
+  memcpy(buff, text.data(), std::min(n, text.size()));
+  return text.size();
+}
+
+std::ostream& operator<< (std::ostream& os, Errata const& err) {
+  return err.write(os, 0, 0, 2, "> ");
+}
+
+# if USING_BOOST
+
+std::ostream&
+errata::format(std::ostream& s, std::string const& fmt, std::string const& glue) const {
+  return this->format(s, boost::format(fmt), glue);
+}
+
+std::ostream&
+errata::format(std::ostream& s, boost::format const& fmt, std::string const& glue) const {
+  if (_data) {
+    bool inside = false;
+    boost::format f(fmt);
+    f.exceptions(boost::io::all_error_bits ^ boost::io::too_many_args_bit);
+    const_iterator spot(this->begin()), limit(this->end());
+    while (spot != limit) {
+      if (inside) s << glue;
+      s << ( f % spot->_id % spot->_text );
+      inside = true;
+      ++spot;
+    }
+  }
+  return s;
+}
+
+std::string
+errata::format(std::string const& fmt, std::string const& glue) const {
+  return this->format(boost::format(fmt), glue);
+}
+
+std::string
+errata::format(boost::format const& fmt, std::string const& glue) const {
+  std::ostringstream s;
+  this->format(s, fmt, glue);
+  return s.str();
+}
+
+# endif
+
+} // namespace ngeo

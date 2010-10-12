@@ -41,6 +41,7 @@
 #include "ClusterCom.h"
 #include "VMap.h"
 #include "WebPluginList.h"
+#include "../wccp/Wccp.h"
 
 #if !defined(WIN32)
 #define ink_get_hrtime ink_get_hrtime_internal
@@ -186,6 +187,7 @@ public:
 #endif
 
   WebPluginList plugin_list;
+  Wccp::Cache wccp_cache;
 
 private:
 
