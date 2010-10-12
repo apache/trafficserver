@@ -50,7 +50,7 @@ NetVCOptions::reset()
   local_addr = 0;
   addr_binding = ANY_ADDR;
   f_blocking = false;
-  f_blocking_connect = true;
+  f_blocking_connect = false;
   socks_support = NORMAL_SOCKS;
   socks_version = SOCKS_DEFAULT_VERSION;
   socket_recv_bufsize = 

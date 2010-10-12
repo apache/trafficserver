@@ -4243,6 +4243,7 @@ HttpSM::do_http_server_open(bool raw)
 
   HSMresult_t shared_result;
   NetVCOptions opt;
+  opt.f_blocking_connect = false;
   opt.set_sock_param(t_state.http_config_param->sock_recv_buffer_size_out,
                      t_state.http_config_param->sock_send_buffer_size_out,
                      t_state.http_config_param->sock_option_flag_out);
