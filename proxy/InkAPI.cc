@@ -26,11 +26,13 @@
 // Avoid complaining about the deprecated APIs.
 #define INK_DEPRECATED
 
+#include <stdio.h>
+
 #include "inktomi++.h"
 #include "I_Layout.h"
 
+#include "ts.h"
 #include "InkAPIInternal.h"
-#include <stdio.h>
 #include "Log.h"
 #include "URL.h"
 #include "MIME.h"
@@ -47,7 +49,6 @@
 #include "ProxyConfig.h"
 #include "stats/CoupledStats.h"
 #include "stats/Stats.h"
-#include "InkAPIInternal.h"
 #include "Plugin.h"
 #include "LogObject.h"
 #include "LogConfig.h"

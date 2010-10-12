@@ -4838,9 +4838,6 @@ convert_partition_ele_to_html_format(INKPartitionEle * ele, char *part_num, char
   case INK_PARTITION_HTTP:
     snprintf(scheme, MAX_RULE_PART_SIZE, "http");
     break;
-  case INK_PARTITION_MIXT:
-    snprintf(scheme, MAX_RULE_PART_SIZE, "mixt");
-    break;
   default:
     goto Lerror;
   }

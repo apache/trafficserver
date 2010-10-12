@@ -34,7 +34,7 @@
 #ifndef __INK_API_PRIVATE_H__
 #define __INK_API_PRIVATE_H__
 
-#include "ts_private_frozen.h"
+#include <ts/ts_private_frozen.h>
 
 #ifdef __cplusplus
 extern "C"

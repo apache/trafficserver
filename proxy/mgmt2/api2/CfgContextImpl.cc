@@ -1933,8 +1933,6 @@ PartitionObj::PartitionObj(TokenList * tokens)
   }
   if (!strcmp(token->value, "http")) {
     m_ele->scheme = INK_PARTITION_HTTP;
-  } else if (!strcmp(token->value, "mixt")) {
-    m_ele->scheme = INK_PARTITION_MIXT;
   } else {
     m_ele->scheme = INK_PARTITION_UNDEFINED;
   }
@@ -1980,9 +1978,6 @@ PartitionObj::formatEleToRule()
   case INK_PARTITION_HTTP:
     strncat(buf, "http", sizeof(buf) - strlen(buf) - 1);
     break;
-  case INK_PARTITION_MIXT:
-    strncat(buf, "mixt", sizeof(buf) - strlen(buf) - 1);
-    break;
   default:
     // Handled here:
     // INK_PARTITION_UNDEFINED, INK_SIZE_FMT_ABSOLUTE, INK_SIZE_FMT_UNDEFINED
@@ -2016,7 +2011,6 @@ bool PartitionObj::isValid()
 
   switch (m_ele->scheme) {
   case INK_PARTITION_HTTP:
-  case INK_PARTITION_MIXT:
     break;
   default:
     m_valid = false;

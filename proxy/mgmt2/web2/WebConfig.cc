@@ -2004,8 +2004,6 @@ updatePartitionConfig(char *rules[], int numRules, char **errBuff)
     // scheme
     if (strcmp(tokens[1], "http") == 0) {
       ele->scheme = INK_PARTITION_HTTP;
-    } else if (strcmp(tokens[1], "mixt") == 0) {
-      ele->scheme = INK_PARTITION_MIXT;
     } else {
       ele->cfg_ele.error = INK_ERR_INVALID_CONFIG_RULE;
       Debug("config", "[updatePartitionConfig] invalid scheme - SKIP");

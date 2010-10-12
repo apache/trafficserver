@@ -364,7 +364,6 @@ typedef enum
   typedef enum                  /* possible schemes to divide partition by */
   {
     INK_PARTITION_HTTP,
-    INK_PARTITION_MIXT,
     INK_PARTITION_UNDEFINED
   } INKPartitionSchemeT;
 
