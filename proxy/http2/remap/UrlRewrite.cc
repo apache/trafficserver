@@ -522,7 +522,7 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   }
 
   this->ts_name = NULL;
-  REVERSE_ReadConfigStringAlloc(this->ts_name, tsname_var);
+  REVERSE_ReadConfigStringAlloc(this->ts_name, "proxy.config.proxy_name");
   if (this->ts_name == NULL) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.proxy_name");
     Warning("%s Unable to determine proxy name.  Incorrect redirects could be generated", modulePrefix);
@@ -530,20 +530,20 @@ UrlRewrite::UrlRewrite(const char *file_var_in)
   }
 
   this->http_default_redirect_url = NULL;
-  REVERSE_ReadConfigStringAlloc(this->http_default_redirect_url, http_default_redirect_var);
+  REVERSE_ReadConfigStringAlloc(this->http_default_redirect_url, "proxy.config.http.referer_default_redirect");
   if (this->http_default_redirect_url == NULL) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to read proxy.config.http.referer_default_redirect");
     Warning("%s Unable to determine default redirect url for \"referer\" filter.", modulePrefix);
     this->http_default_redirect_url = xstrdup("http://www.apache.org");
   }
 
-  REVERSE_ReadConfigInteger(reverse_proxy, reverse_var);
-  REVERSE_ReadConfigInteger(mgmt_autoconf_port, ac_port_var);
-  REVERSE_ReadConfigInteger(default_to_pac, default_to_pac_var);
-  REVERSE_ReadConfigInteger(default_to_pac_port, default_to_pac_port_var);
-  REVERSE_ReadConfigInteger(pristine_host_hdr, pristine_hdr_var);
-  REVERSE_ReadConfigInteger(url_remap_mode, url_remap_mode_var);
-  REVERSE_ReadConfigInteger(backdoor_enabled, backdoor_var);
+  REVERSE_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
+  REVERSE_ReadConfigInteger(mgmt_autoconf_port, "proxy.config.admin.autoconf_port");
+  REVERSE_ReadConfigInteger(default_to_pac, "proxy.config.url_remap.default_to_server_pac");
+  REVERSE_ReadConfigInteger(default_to_pac_port, "proxy.config.url_remap.default_to_server_pac_port");
+  REVERSE_ReadConfigInteger(pristine_host_hdr, "proxy.config.url_remap.pristine_host_hdr");
+  REVERSE_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
+  REVERSE_ReadConfigInteger(backdoor_enabled, "proxy.config.url_remap.handle_backdoor_urls");
 
   ink_strncpy(config_file_path, system_config_directory, sizeof(config_file_path));
   strncat(config_file_path, "/", sizeof(config_file_path) - strlen(config_file_path) - 1);
@@ -944,66 +944,6 @@ UrlRewrite::DoRemap(HttpTransact::State * s, HTTPHdr * request_header, UrlMappin
   return retcode;
 }
 
-/** Used to do the backwards lookups. */
-bool UrlRewrite::ReverseMap(HTTPHdr * response_header, char *tag)
-{
-  const char *
-    location_hdr;
-  URL
-    location_url;
-  int
-    loc_length;
-  bool
-    remap_found = false;
-  const char *
-    host;
-  int
-    host_len;
-
-  char *
-    new_loc_hdr;
-  int
-    new_loc_length;
-
-  if (unlikely(num_rules_reverse == 0)) {
-    ink_assert(reverse_mappings.empty());
-    return false;
-  }
-
-  location_hdr = response_header->value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &loc_length);
-
-  if (location_hdr == NULL) {
-    Debug("url_rewrite", "Reverse Remap called with empty location header");
-    return false;
-  }
-
-  location_url.create(NULL);
-  location_url.parse(location_hdr, loc_length);
-
-  host = location_url.host_get(&host_len);
-  UrlMappingContainer reverse_mapping(response_header->m_heap);
-  if (reverseMappingLookup(&location_url, location_url.port_get(), host, host_len, reverse_mapping, tag)) {
-                                /* HDR FIX ME
-                                   Debug("url_rewrite", "Location header before rewrite: %s",
-                                   response_header->value_get(MIME_FIELD_LOCATION));
-                                 */
-
-    remap_found = true;
-    DoRemap(NULL, NULL, reverse_mapping, &location_url);
-
-    new_loc_hdr = location_url.string_get(NULL, &new_loc_length);
-    response_header->value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, new_loc_hdr, new_loc_length);
-    xfree(new_loc_hdr);
-
-    /* HDR FIX ME
-       Debug("url_rewrite", "Location header after rewrite: %s",
-       response_header->value_get(MIME_FIELD_LOCATION));
-     */
-  }
-
-  location_url.destroy();
-  return remap_found;
-}
 
 /** Perform fast ACL filtering. */
 void

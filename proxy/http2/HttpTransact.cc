@@ -465,7 +465,7 @@ does_method_require_cache_copy_deletion(int method)
 
 
 inline static
-  HttpTransact::StateMachineAction_t
+HttpTransact::StateMachineAction_t
 how_to_open_connection(HttpTransact::State * s)
 {
   HTTP_DEBUG_ASSERT(s->pending_work == NULL);
@@ -957,16 +957,6 @@ HttpTransact::EndRemapRequest(State * s)
     s->state_machine->ua_session->get_netvc()->get_is_other_side_transparent();
 
 done:
-  /**
-    * Since we don't want to return 404 Not Found error if there's
-    * redirect rule, the function to do redirect is moved before
-    * sending the 404 error.
-   **/
-  if (handleIfRedirect(s)) {
-    Debug("http_trans", "END HttpTransact::RemapRequest");
-    TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
-  }
-
   if (s->reverse_proxy) {
     Debug("url_rewrite", "s->reverse_proxy is true");
   } else {
@@ -1105,55 +1095,6 @@ HttpTransact::ModifyRequest(State * s)
   Debug("http_trans", "END HttpTransact::ModifyRequest");
 
   TRANSACT_RETURN(HTTP_API_READ_REQUEST_PRE_REMAP, HttpTransact::StartRemapRequest);
-}
-
-// This function is supposed to figure out if this transaction is
-// susceptible to a redirection as specified by remap.config
-bool
-HttpTransact::handleIfRedirect(State * s)
-{
-#ifndef INK_NO_REMAP
-  int answer;
-  char *remap_redirect = NULL;
-  if ((answer =
-       request_url_remap_redirect(&s->hdr_info.client_request, &remap_redirect, &s->unmapped_request_url)) == NONE)
-    return false;
-
-  if ((answer == PERMANENT_REDIRECT) || (answer == TEMPORARY_REDIRECT)) {
-    if (answer == TEMPORARY_REDIRECT) {
-      if ((s->client_info).http_version.m_version == HTTP_VERSION(1, 1)) {
-        build_error_response(s, (HTTPStatus) 307
-                             /* which is HTTP/1.1 for HTTP_STATUS_MOVED_TEMPORARILY */
-                             ,
-                             "Redirect", "redirect#moved_temporarily",
-                             "%s <a href=\"%s\">%s</a>. %s",
-                             "The document you requested is now",
-                             remap_redirect, remap_redirect, "Please update your documents and bookmarks accordingly");
-      } else {
-        build_error_response(s,
-                             HTTP_STATUS_MOVED_TEMPORARILY,
-                             "Redirect",
-                             "redirect#moved_temporarily",
-                             "%s <a href=\"%s\">%s</a>. %s",
-                             "The document you requested is now",
-                             remap_redirect, remap_redirect, "Please update your documents and bookmarks accordingly");
-      }
-    } else {
-      build_error_response(s,
-                           HTTP_STATUS_MOVED_PERMANENTLY,
-                           "Redirect",
-                           "redirect#moved_permanently",
-                           "%s <a href=\"%s\">%s</a>. %s",
-                           "The document you requested is now",
-                           remap_redirect, remap_redirect, "Please update your documents and bookmarks accordingly");
-    }
-    s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION,
-                                          MIME_LEN_LOCATION, remap_redirect, strlen(remap_redirect));
-    xfree(remap_redirect);
-    return true;
-  }
-#endif /* INK_NO_REMAP */
-  return false;
 }
 
 void
@@ -8396,14 +8337,6 @@ HttpTransact::build_response(State * s,
                                                      &s->cache_info, outgoing_response, s->via_string);
 
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);
-
-#ifndef INK_NO_REMAP
-  // process reverse mappings on the location header
-  HTTPStatus outgoing_status = outgoing_response->status_get();
-  if ((outgoing_status != 200) && (((outgoing_status >= 300) && (outgoing_status < 400)) || (outgoing_status == 201))) {
-    response_url_remap(outgoing_response);
-  }
-#endif //INK_NO_REMAP
 
   if (s->http_config_param->enable_http_stats) {
     if (s->hdr_info.server_response.valid() && s->http_config_param->wuts_enabled) {

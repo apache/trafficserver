@@ -74,21 +74,19 @@ int url_remap_mode;
 int
 init_reverse_proxy()
 {
-  // Do this before we create the table, which reads the value.
-  RecRegisterConfigInt(RECT_CONFIG, backdoor_var, 0, RECU_RESTART_TS, RECC_NULL, NULL);
-
   ink_assert(rewrite_table == NULL);
   reconfig_mutex = new_ProxyMutex();
-  rewrite_table = NEW(new UrlRewrite(rewrite_var));
-  REVERSE_RegisterConfigUpdateFunc(rewrite_var, url_rewrite_CB, (void *) FILE_CHANGED);
-  REVERSE_RegisterConfigUpdateFunc(tsname_var, url_rewrite_CB, (void *) TSNAME_CHANGED);
-  REVERSE_RegisterConfigUpdateFunc(reverse_var, url_rewrite_CB, (void *) REVERSE_CHANGED);
-  REVERSE_RegisterConfigUpdateFunc(ac_port_var, url_rewrite_CB, (void *) AC_PORT_CHANGED);
-  REVERSE_RegisterConfigUpdateFunc(default_to_pac_var, url_rewrite_CB, (void *) DEFAULT_TO_PAC_CHANGED);
-  REVERSE_RegisterConfigUpdateFunc(default_to_pac_port_var, url_rewrite_CB, (void *) DEFAULT_TO_PAC_PORT_CHANGED);
-  REVERSE_RegisterConfigUpdateFunc(pristine_hdr_var, url_rewrite_CB, (void *) PRISTINE_HOST_HDR_CHANGED);
-  REVERSE_RegisterConfigUpdateFunc(url_remap_mode_var, url_rewrite_CB, (void *) URL_REMAP_MODE_CHANGED);
-  REVERSE_RegisterConfigUpdateFunc(http_default_redirect_var, url_rewrite_CB, (void *) HTTP_DEFAULT_REDIRECT_CHANGED);
+  rewrite_table = NEW(new UrlRewrite("proxy.config.url_remap.filename"));
+
+  REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *) FILE_CHANGED);
+  REVERSE_RegisterConfigUpdateFunc("proxy.config.proxy_name", url_rewrite_CB, (void *) TSNAME_CHANGED);
+  REVERSE_RegisterConfigUpdateFunc("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *) REVERSE_CHANGED);
+  REVERSE_RegisterConfigUpdateFunc("proxy.config.admin.autoconf_port", url_rewrite_CB, (void *) AC_PORT_CHANGED);
+  REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac", url_rewrite_CB, (void *) DEFAULT_TO_PAC_CHANGED);
+  REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac_port", url_rewrite_CB, (void *) DEFAULT_TO_PAC_PORT_CHANGED);
+  REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.pristine_host_hdr", url_rewrite_CB, (void *) PRISTINE_HOST_HDR_CHANGED);
+  REVERSE_RegisterConfigUpdateFunc("proxy.config.url_remap.url_remap_mode", url_rewrite_CB, (void *) URL_REMAP_MODE_CHANGED);
+  REVERSE_RegisterConfigUpdateFunc("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *) HTTP_DEFAULT_REDIRECT_CHANGED);
   return 0;
 }
 
@@ -99,22 +97,6 @@ request_url_remap(HttpTransact::State * s, HTTPHdr * request_header, char **redi
   return rewrite_table ? rewrite_table->Remap(s, request_header, redirect_url, orig_url, tag, filter_mask) : false;
 }
 
-/**
-  This function is used to figure out if a URL needs to be remapped
-  according to the rules in remap.config.
-
-*/
-mapping_type
-request_url_remap_redirect(HTTPHdr * request_header, char **redirect_url, char **orig_url, char *tag)
-{
-  return rewrite_table ? rewrite_table->Remap_redirect(request_header, redirect_url, orig_url, tag) : NONE;
-}
-
-bool
-response_url_remap(HTTPHdr * response_header, char *tag)
-{
-  return rewrite_table ? rewrite_table->ReverseMap(response_header, tag) : false;
-}
 
 //
 //

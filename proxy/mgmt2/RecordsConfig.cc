@@ -2435,6 +2435,8 @@ RecordElement RecordsConfig[] = {
   // # 2 - URL_REMAP_FOR_OS remap url's for requests to OS's only
   {CONFIG, "proxy.config.url_remap.url_remap_mode", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-2]", RA_NULL}
   ,
+  {CONFIG, "proxy.config.url_remap.handle_backdoor_urls", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, NULL, RA_NULL}
+  ,
   //##############################################################################
   //#
   //# SSL Termination

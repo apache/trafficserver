@@ -43,16 +43,6 @@
 #define REVERSE_ReadConfigStringAlloc REC_ReadConfigStringAlloc
 
 #define modulePrefix "[ReverseProxy]"
-#define tsname_var "proxy.config.proxy_name"
-#define rewrite_var "proxy.config.url_remap.filename"
-#define reverse_var "proxy.config.reverse_proxy.enabled"
-#define ac_port_var "proxy.config.admin.autoconf_port"
-#define default_to_pac_var  "proxy.config.url_remap.default_to_server_pac"
-#define default_to_pac_port_var  "proxy.config.url_remap.default_to_server_pac_port"
-#define pristine_hdr_var  "proxy.config.url_remap.pristine_host_hdr"
-#define url_remap_mode_var  "proxy.config.url_remap.url_remap_mode"
-#define backdoor_var  "proxy.config.url_remap.handle_backdoor_urls"
-#define http_default_redirect_var "proxy.config.http.referer_default_redirect"
 #define BUILD_TABLE_MAX_ARGS 2048
 
 /**
@@ -86,7 +76,6 @@ public:
   bool Remap(HttpTransact::State * s, HTTPHdr * request_header, char **redirect_url, char **orig_url,
              char *tag = NULL, unsigned int filter_mask = URL_REMAP_FILTER_NONE);
   mapping_type Remap_redirect(HTTPHdr * request_header, char **redirect_url, char **orig_url, char *tag = NULL);
-  bool ReverseMap(HTTPHdr * response_header, char *tag = NULL);
   void SetReverseFlag(int flag);
   void SetPristineFlag(int flag);
   void Print();

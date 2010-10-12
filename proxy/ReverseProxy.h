@@ -62,11 +62,6 @@ bool request_url_remap(HttpTransact::State * s,
                        char **redirect_url,
                        char **orig_url, char *tag = NULL, unsigned int filter_mask = URL_REMAP_FILTER_NONE);
 
-mapping_type request_url_remap_redirect(HTTPHdr * request_header,
-                                        char **redirect_url, char **orig_url, char *tag = NULL);
-
-bool response_url_remap(HTTPHdr * response_header, char *tag = NULL);
-
 // Reload Functions
 void reloadUrlRewrite();
 

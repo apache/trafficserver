@@ -144,7 +144,6 @@
 # define INK_NO_HOSTDB                  1
 # define INK_NO_ICP                     1
 # define INK_NO_LOG                     1
-# define INK_NO_REMAP                   1
 # define INK_NO_REVERSE                 1
 # define INK_NO_SOCKS                   1
 # define INK_NO_STAT_PAGES              1
