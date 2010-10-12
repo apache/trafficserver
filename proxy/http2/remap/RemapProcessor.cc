@@ -56,7 +56,6 @@ RemapProcessor::setup_for_remap(HttpTransact::State * s)
   bool proxy_request = false;
 
   s->reverse_proxy = rewrite_table->reverse_proxy;
-
   s->url_map.set(s->hdr_info.client_request.m_heap);
 
   ink_assert(redirect_url != NULL);

@@ -90,11 +90,16 @@ init_reverse_proxy()
   return 0;
 }
 
+// TODO: This function needs to be rewritten (or replaced) with something that uses the new
+// Remap Processor properly. Right now, we effectively don't support "remap" rules on a few
+// odd ball configs, for example if you use the "CONNECT" method, or if you set
+// set proxy.config.url_remap.url_remap_mode to "2" (which is a completely undocumented "feature").
 bool
 request_url_remap(HttpTransact::State * s, HTTPHdr * request_header, char **redirect_url, char **orig_url, char *tag,
                   unsigned int filter_mask)
 {
-  return rewrite_table ? rewrite_table->Remap(s, request_header, redirect_url, orig_url, tag, filter_mask) : false;
+  return false;
+  // return rewrite_table ? rewrite_table->Remap(s, request_header, redirect_url, orig_url, tag, filter_mask) : false;
 }
 
 

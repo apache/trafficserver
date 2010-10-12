@@ -73,9 +73,6 @@ public:
   UrlRewrite(const char *file_var_in);
    ~UrlRewrite();
   int BuildTable();
-  bool Remap(HttpTransact::State * s, HTTPHdr * request_header, char **redirect_url, char **orig_url,
-             char *tag = NULL, unsigned int filter_mask = URL_REMAP_FILTER_NONE);
-  mapping_type Remap_redirect(HTTPHdr * request_header, char **redirect_url, char **orig_url, char *tag = NULL);
   void SetReverseFlag(int flag);
   void SetPristineFlag(int flag);
   void Print();
@@ -111,10 +108,7 @@ public:
   {
     InkHashTable *hash_lookup;
     RegexMappingList regex_list;
-    bool empty()
-    {
-      return ((hash_lookup == NULL) && (regex_list.size() == 0));
-    }
+    bool empty() { return ((hash_lookup == NULL) && (regex_list.size() == 0)); }
   };
 
   void PerformACLFiltering(HttpTransact::State * s, url_mapping * mapping);
@@ -157,12 +151,9 @@ public:
     return _mappingLookup(temporary_redirects, request_url, request_port, request_host, request_host_len,
                           mapping_container, tag);
   }
-  int DoRemap(HttpTransact::State * s, HTTPHdr * request_header, UrlMappingContainer &mapping_container,
-              URL * request_url, char **redirect = NULL, host_hdr_info * hh_ptr = NULL);
-  int UrlWhack(char *toWhack, int *origLength);
-  void RemoveTrailingSlash(URL * url);
 
-  // Moved this from util, since we need to associate the remap_plugin_info list with the url rewrite map.
+  int UrlWhack(char *toWhack, int *origLength);
+
   int load_remap_plugin(char *argv[], int argc, url_mapping * mp, char *errbuf, int errbufsize, int jump_to_argc,
                         int *plugin_found_at);
 
@@ -188,24 +179,20 @@ public:
   remap_plugin_info *remap_pi_list;
 
 private:
-  bool _mappingLookup(MappingsStore &mappings, URL *request_url,
-                      int request_port, const char *request_host, int request_host_len,
-                      UrlMappingContainer &mapping_container, char *tag);
-  url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url,
-                            int request_port, char *request_host, int request_host_len, char *tag);
-  bool _regexMappingLookup(RegexMappingList &regex_mappings,
-                           URL * request_url, int request_port, const char *request_host,
+  bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host,
+                      int request_host_len, UrlMappingContainer &mapping_container, char *tag);
+  url_mapping *_tableLookup(InkHashTable * h_table, URL * request_url, int request_port, char *request_host,
+                            int request_host_len, char *tag);
+  bool _regexMappingLookup(RegexMappingList &regex_mappings, URL * request_url, int request_port, const char *request_host,
                            int request_host_len, char *tag, int rank_ceiling,
                            UrlMappingContainer &mapping_container);
-  int _expandSubstitutions(int *matches_info, const RegexMapping &reg_map,
-                           const char *matched_string, char *dest_buf, int dest_buf_size);
+  int _expandSubstitutions(int *matches_info, const RegexMapping &reg_map, const char *matched_string, char *dest_buf,
+                           int dest_buf_size);
   bool _processRegexMappingConfig(const char *from_host_lower, url_mapping *new_mapping, RegexMapping &reg_map);
   void _destroyTable(InkHashTable *h_table);
   void _destroyList(RegexMappingList &regexes);
-  inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping &reg_map,
-                          char *src_host, bool is_cur_mapping_regex, int &count);
-
-  static const int MAX_URL_STR_SIZE = 1024;
+  inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping &reg_map, char *src_host,
+                          bool is_cur_mapping_regex, int &count);
 };
 
 #endif
