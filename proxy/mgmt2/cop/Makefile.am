@@ -17,9 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
-  -DPKGSYSUSER=\"$(pkgsysuser)\"
+AM_CPPFLAGS = $(iocore_include_dirs)
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)

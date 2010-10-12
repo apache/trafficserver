@@ -83,7 +83,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.temp_dir", "", INK_STRING, "/tmp", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.alarm_email", "", INK_STRING, PKGSYSUSER, RU_REREAD, RR_NULL, RC_STR, ".*", RA_NULL}
+  {CONFIG, "proxy.config.alarm_email", "", INK_STRING, TS_PKGSYSUSER, RU_REREAD, RR_NULL, RC_STR, ".*", RA_NULL}
   ,
   {CONFIG, "proxy.config.syslog_facility", "", INK_STRING, "LOG_DAEMON", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
@@ -355,7 +355,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.admin.number_config_bak", "", INK_INT, "3", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.admin.user_id", "", INK_STRING, PKGSYSUSER, RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.admin.user_id", "", INK_STRING, TS_PKGSYSUSER, RU_NULL, RR_REQUIRED, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.admin.ui_refresh_rate", "", INK_INT, "30", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,

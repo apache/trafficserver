@@ -26,12 +26,12 @@
 #include "I_Version.h"
 
 #if defined(linux)
-// XXX: Nuke multiple includes
 #include "sys/utsname.h"
 #include "ink_killall.h"
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+
 union semun
 {
   int val;                      /* value for SETVAL */
@@ -78,8 +78,7 @@ static char syslog_fac_str[PATH_MAX];
 static int killsig = SIGKILL;
 static int coresig = 0;
 
-static char sys_user[80] = PKGSYSUSER;
-static char admin_user[80] = PKGSYSUSER;
+static char admin_user[80] = TS_PKGSYSUSER;
 static char manager_binary[PATH_MAX] = "traffic_manager";
 static char server_binary[PATH_MAX] = "traffic_server";
 static char manager_options[OPTIONS_LEN_MAX] = "";
@@ -642,16 +641,9 @@ read_config()
   }
 
   build_config_table(fp);
-
   fclose(fp);
 
-  // Get the admin user
   read_config_string("proxy.config.admin.user_id", admin_user, sizeof(admin_user));
-  // just warn if the admin user is not the configured system user
-  if (strncmp(sys_user, admin_user, sizeof(admin_user)) != 0) {
-    cop_log(COP_WARNING, "proxy.config.admin.user_id should be \"%s\"",sys_user);
-  }
-
   read_config_string("proxy.config.manager_binary", manager_binary, sizeof(manager_binary));
   read_config_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary));
   read_config_string("proxy.config.bin_path", bin_path, sizeof(bin_path));

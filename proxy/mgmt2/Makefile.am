@@ -36,8 +36,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/preparse \
   -I$(top_srcdir)/proxy/mgmt2/stats \
   -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
-  -DPKGSYSUSER=\"$(pkgsysuser)\"
+  -I$(top_srcdir)/proxy/mgmt2/web2
 
 MGMT_DEFS = @MGMT_DEFS@
 DEFS += $(MGMT_DEFS)
