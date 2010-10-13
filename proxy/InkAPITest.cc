@@ -33,6 +33,8 @@
 #include <string.h>
 
 #include "Regression.h"
+#include "api/ts/ts.h"
+#include "api/ts/ts_private_frozen.h"
 #include "api/ts/ts_private.h"
 #include "I_RecCore.h"
 #include "I_Layout.h"

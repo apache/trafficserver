@@ -34,8 +34,6 @@
 #ifndef __INK_API_PRIVATE_FROZEN_H__
 #define __INK_API_PRIVATE_FROZEN_H__
 
-#include <ts/ts.h>
-
 #ifdef __cplusplus
 extern "C"
 {
