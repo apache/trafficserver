@@ -458,9 +458,7 @@
 
 #define HTML_CONFIG_FILE_TAG            "filename"
 #define HTML_FILE_ALL_CONFIG            "/configure/f_configs.ink"
-#define HTML_FILE_BYPASS_CONFIG         "/configure/f_bypass_config.ink"
 #define HTML_FILE_CACHE_CONFIG          "/configure/f_cache_config.ink"
-#define HTML_FILE_FILTER_CONFIG         "/configure/f_filter_config.ink"
 #define HTML_FILE_HOSTING_CONFIG        "/configure/f_hosting_config.ink"
 #define HTML_FILE_ICP_CONFIG            "/configure/f_icp_config.ink"
 #define HTML_FILE_IP_ALLOW_CONFIG       "/configure/f_ip_allow_config.ink"
@@ -473,7 +471,6 @@
 #define HTML_FILE_UPDATE_CONFIG         "/configure/f_update_config.ink"
 #define HTML_FILE_VADDRS_CONFIG         "/configure/f_vaddrs_config.ink"
 
-#define HTML_HELP_LINK_BYPASS           "/help/ts.ink?help=c_bypass.htm"
 #define HTML_HELP_LINK_CACHE            "/help/ts.ink?help=ccache.htm"
 #define HTML_HELP_LINK_HOSTING          "/help/ts.ink?help=c_host.htm"
 #define HTML_HELP_LINK_ICP              "/help/ts.ink?help=c_icp.htm"

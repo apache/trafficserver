@@ -411,54 +411,6 @@ print_admin_access_ele(INKAdminAccessEle * ele)
 }
 
 void
-print_arm_security_ele(INKArmSecurityEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-  printf("Connection type: %d\n", ele->type_con);
-  print_ip_addr_ele(ele->src_ip_addr);
-  print_ip_addr_ele(ele->dest_ip_addr);
-  print_ports(ele->open_ports);
-  print_ports(ele->src_ports);
-  print_ports(ele->dest_ports);
-}
-
-void
-print_bypass_ele(INKBypassEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-  char buf[MAX_BUF_SIZE];
-  bzero(buf, MAX_BUF_SIZE);
-  strncat(buf, "bypass ", sizeof(buf) - strlen(buf) - 1);
-  char *str_list;
-
-  if (ele->src_ip_addr) {
-    snprintf(buf, sizeof(buf), "src ");
-    str_list = ip_addr_list_to_string((IpAddrList *) ele->src_ip_addr, ",");
-    strncat(buf, str_list, sizeof(buf) - strlen(buf) - 1);
-    xfree(str_list);
-  }
-
-  if (ele->dest_ip_addr) {
-    if (ele->src_ip_addr) {
-      strncat(buf, " AND ", sizeof(buf) - strlen(buf) - 1);
-    }
-    strncat(buf, "dst ", sizeof(buf) - strlen(buf) - 1);
-    str_list = ip_addr_list_to_string((IpAddrList *) ele->dest_ip_addr, ",");
-    strncat(buf, str_list, sizeof(buf) - strlen(buf) - 1);
-    xfree(str_list);
-  }
-
-  printf("%s\n", buf);
-  return;
-}
-
-void
 print_cache_ele(INKCacheEle * ele)
 {
   if (!ele) {

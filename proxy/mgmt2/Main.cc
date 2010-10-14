@@ -1316,8 +1316,6 @@ fileUpdated(char *fname)
   } else if (strcmp(fname, "logs_xml.config") == 0) {
     lmgmt->signalFileChange("proxy.config.log2.xml_config_file");
 
-
-// INKqa10113
   } else if (strcmp(fname, "splitdns.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] splitdns.config file has been modified\n");
 
@@ -1327,10 +1325,6 @@ fileUpdated(char *fname)
   } else if (strcmp(fname, "ssl_multicert.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] ssl_multicert.config file has been modified\n");
 
-  } else if (strcmp(fname, "ipnat.conf") == 0) {
-    mgmt_log(stderr, "[fileUpdated] ipnat.conf file has been modified\n");
-
-// INKqa11910
   } else if (strcmp(fname, "proxy.config.body_factory.template_sets_dir") == 0) {
     lmgmt->signalFileChange("proxy.config.body_factory.template_sets_dir");
 

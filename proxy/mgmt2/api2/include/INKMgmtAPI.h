@@ -593,36 +593,6 @@ typedef enum
     INKAccessT access;          /* type of access allowed for user */
   } INKAdminAccessEle;
 
-/* arm_security.config */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    INKConnectT type_con;       /* determines if ports will be opened for TCP or UDP */
-    INKIpAddrEle *src_ip_addr;  /* arm-deny rule: the ip address or range of ip addresses that
-                                   will be denied access to ports (can be NULL);
-                                   arm-allow rule: the ip address or range of ip addressess
-                                   specifying the source of communication (can be NULL) */
-    INKIpAddrEle *dest_ip_addr; /* destination ip address (can be NULL) */
-    INKPortEle *open_ports;     /* open source ports (can be INVALID) */
-    INKPortEle *src_ports;      /* source ports (can be INVALID) */
-    /* arm-open rule: list of ports/port-ranges to open by default */
-    INKPortEle *dest_ports;     /* the destination port(s) that TCP traffic will be
-                                   allowed/denied access to (can be INVALID)  */
-    INKIntList src_port_list;   /* alternative for src_ports */
-    INKIntList dest_port_list;  /* alternative for dest_ports */
-  } INKArmSecurityEle;          /* + at least of src_ip_addr, dest_ip_addr, dest_ports,
-                                   src_ports is specified for arm allow rules;
-                                   + at least of dest_ports or src_ip_addr is specified for arm
-                                   deny rules */
-
-/* bypass.config */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    INKIpAddrList src_ip_addr;  /* source ip address (single or range) */
-    INKIpAddrList dest_ip_addr; /* destination ip address */
-  } INKBypassEle;
-
 /* cache.config */
   typedef struct
   {
@@ -686,20 +656,6 @@ typedef enum
     INKIpAddrEle *src_ip_addr;  /* source ip address (single or range) */
     INKIpAllowT action;
   } INKIpAllowEle;
-
-/* ipnat.conf */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    char *intr;                 /* ethernet interface name that user traffic will enter through */
-    INKIpAddr src_ip_addr;      /* the ip address user traffic is heading for */
-    int src_cidr;               /* the cidr of the source IP (optional) */
-    int src_port;               /* the port user traffic is heading to */
-    INKIpAddr dest_ip_addr;     /* the ip address to redirect traffic to */
-    int dest_port;              /* the port to redirect traffic to */
-    INKConnectT type_con;       /* udp or tcp */
-    INKProtocolT protocol;      /* (optional) user protocol, eg. dns */
-  } INKIpFilterEle;
 
 /* logs_xml.config */
   typedef struct
@@ -994,13 +950,8 @@ typedef enum
   inkapi void INKSspecDestroy(INKSspec * ele);
   inkapi INKPdSsFormat *INKPdSsFormatCreate();
   inkapi void INKPdSsFormatDestroy(INKPdSsFormat * ele);
-
   inkapi INKAdminAccessEle *INKAdminAccessEleCreate();
   inkapi void INKAdminAccessEleDestroy(INKAdminAccessEle * ele);
-  inkapi INKArmSecurityEle *INKArmSecurityEleCreate(INKRuleTypeT type);
-  inkapi void INKArmSecurityEleDestroy(INKArmSecurityEle * ele);
-  inkapi INKBypassEle *INKBypassEleCreate(INKRuleTypeT type);
-  inkapi void INKBypassEleDestroy(INKBypassEle * ele);
   inkapi INKCacheEle *INKCacheEleCreate(INKRuleTypeT type);
   inkapi void INKCacheEleDestroy(INKCacheEle * ele);
   inkapi INKCongestionEle *INKCongestionEleCreate();
@@ -1009,8 +960,6 @@ typedef enum
   inkapi void INKHostingEleDestroy(INKHostingEle * ele);
   inkapi INKIcpEle *INKIcpEleCreate();
   inkapi void INKIcpEleDestroy(INKIcpEle * ele);
-  inkapi INKIpFilterEle *INKIpFilterEleCreate();
-  inkapi void INKIpFilterEleDestroy(INKIpFilterEle * ele);
   inkapi INKIpAllowEle *INKIpAllowEleCreate();
   inkapi void INKIpAllowEleDestroy(INKIpAllowEle * ele);
   inkapi INKLogFilterEle *INKLogFilterEleCreate();
