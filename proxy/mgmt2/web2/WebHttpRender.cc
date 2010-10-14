@@ -171,9 +171,6 @@ handle_config_table_object(WebHttpContext * whc, char *tag, char *arg)
     case INK_FNAME_CACHE_OBJ:
       err = writeCacheConfigTable(whc);
       break;
-    case INK_FNAME_FILTER:
-      err = writeFilterConfigTable(whc);
-      break;
     case INK_FNAME_HOSTING:
       err = writeHostingConfigTable(whc);
       break;
@@ -237,9 +234,6 @@ handle_help_config_link(WebHttpContext * whc, char *tag, char *arg)
       switch (type) {
       case INK_FNAME_CACHE_OBJ:
         whc->response_bdy->copyFrom(HTML_HELP_LINK_CACHE, strlen(HTML_HELP_LINK_CACHE));
-        break;
-      case INK_FNAME_FILTER:
-        whc->response_bdy->copyFrom(HTML_HELP_LINK_FILTER, strlen(HTML_HELP_LINK_FILTER));
         break;
       case INK_FNAME_HOSTING:
         whc->response_bdy->copyFrom(HTML_HELP_LINK_HOSTING, strlen(HTML_HELP_LINK_HOSTING));
@@ -328,9 +322,6 @@ handle_dynamic_javascript(WebHttpContext * whc, char *tag, char *arg)
       switch (type) {
       case INK_FNAME_CACHE_OBJ:
         err = writeCacheRuleList(whc->response_bdy);
-        break;
-      case INK_FNAME_FILTER:
-        err = writeFilterRuleList(whc->response_bdy);
         break;
       case INK_FNAME_HOSTING:
         err = writeHostingRuleList(whc->response_bdy);
@@ -428,9 +419,6 @@ handle_config_input_form(WebHttpContext * whc, char *tag, char *arg)
       switch (type) {
       case INK_FNAME_CACHE_OBJ:
         err = writeCacheConfigForm(whc);
-        break;
-      case INK_FNAME_FILTER:
-        err = writeFilterConfigForm(whc);
         break;
       case INK_FNAME_HOSTING:
         err = writeHostingConfigForm(whc);

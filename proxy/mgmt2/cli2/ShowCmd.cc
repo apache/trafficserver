@@ -576,35 +576,6 @@ Cmd_ShowSsl(ClientData clientData, Tcl_Interp * interp, int argc, const char *ar
   return (ShowSsl());
 }
 
-////////////////////////////////////////////////////////////////
-// Cmd_ShowFilter
-//
-// This is the callback function for the "show:filter" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ShowFilter(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  NOWARN_UNUSED(clientData);
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  Cli_Debug("Cmd_ShowFilter\n");
-
-  return (ShowFilter());
-}
 
 ////////////////////////////////////////////////////////////////
 // Cmd_ShowParents
@@ -1933,19 +1904,6 @@ ShowSsl()
   return CLI_OK;
 }
 
-// show filter sub-command
-int
-ShowFilter()
-{
-  // display rules from filter.config
-  Cli_Printf("\n");
-
-  Cli_Printf("filter.config rules\n" "-------------------\n");
-  INKError status = Cli_DisplayRules(INK_FNAME_FILTER);
-  Cli_Printf("\n");
-
-  return status;
-}
 
 // show parents sub-command
 int

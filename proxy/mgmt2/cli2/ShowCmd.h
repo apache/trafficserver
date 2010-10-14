@@ -111,7 +111,6 @@ int Cmd_ShowHostDb(ClientData clientData, Tcl_Interp * interp, int argc, const c
 int Cmd_ShowDnsResolver(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowLogging(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowSsl(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-int Cmd_ShowFilter(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int Cmd_ShowParents(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
 int CmdArgs_ShowParents();
 int Cmd_ShowRemap(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
@@ -195,9 +194,6 @@ int ShowLogging();
 
 // show ssl sub-command
 int ShowSsl();
-
-// show filter sub-command
-int ShowFilter();
 
 // show parents sub-command
 int ShowParents();

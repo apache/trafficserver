@@ -216,15 +216,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.alarm.bin
  proxy.config.alarm_email
  proxy.config.alarm.script_runtime
- proxy.config.auth.cache.filename
- proxy.config.auth.cache.path
- proxy.config.auth.cache.size
- proxy.config.auth.cache.storage_size
- proxy.config.auth.convert_bin
- proxy.config.auth.convert_filter_to_policy
- proxy.config.auth.enabled
- proxy.config.auth.password_file_path
- proxy.config.auth.threads
  proxy.config.bandwidth_mgmt.filename
  proxy.config.bin_path
  proxy.config.body_factory.enable_customizations
@@ -289,7 +280,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.connection_collapsing.hashtable_enabled
  proxy.config.connection_collapsing.revalidate_window_period
  proxy.config.connection_collapsing.rww_wait_time
- proxy.config.content_filter.filename
  proxy.config.cop.core_signal
  proxy.config.cop.linux_min_memfree_kb
  proxy.config.cop.linux_min_swapfree_kb
@@ -357,9 +347,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.anonymize_remove_referer
  proxy.config.http.anonymize_remove_user_agent
  proxy.config.http.append_xforwards_header
- proxy.config.http.auth.authenticate_session
- proxy.config.http.auth.flags
- proxy.config.http.auth.scope
  proxy.config.http.avoid_content_spoofing
  proxy.config.http.background_fill_active_timeout
  proxy.config.http.background_fill_completed_threshold

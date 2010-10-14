@@ -212,8 +212,6 @@ Rule::parse(const char *const_rule, INKFileNameT filetype)
     return cacheParse(rule);
   case INK_FNAME_CONGESTION:   /* congestion.config */
     return congestionParse(rule, 1, 15);
-  case INK_FNAME_FILTER:       /* filter.config */
-    return filterParse(rule);
   case INK_FNAME_HOSTING:      /* hosting.config */
     return hostingParse(rule);
   case INK_FNAME_ICP_PEER:     /* icp.config */
@@ -1094,8 +1092,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = INK_FNAME_CACHE_OBJ;   /* cache.config */
   } else if (strstr(filename, "congestion.config")) {
     m_filetype = INK_FNAME_CONGESTION;  /* congestion.config */
-  } else if (strstr(filename, "filter.config")) {
-    m_filetype = INK_FNAME_FILTER;      /* filter.config */
   } else if (strstr(filename, "hosting.config")) {
     m_filetype = INK_FNAME_HOSTING;     /* hosting.config */
   } else if (strstr(filename, "icp.config")) {

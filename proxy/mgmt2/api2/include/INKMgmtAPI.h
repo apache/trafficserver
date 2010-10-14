@@ -392,7 +392,6 @@ typedef enum
     INK_FNAME_ADMIN_ACCESS,     /* admin_access.config */
     INK_FNAME_CACHE_OBJ,        /* cache.config */
     INK_FNAME_CONGESTION,       /* congestion.config */
-    INK_FNAME_FILTER,           /* filter.config */
     INK_FNAME_HOSTING,          /* hosting.config */
     INK_FNAME_ICP_PEER,         /* icp.config */
     INK_FNAME_IP_ALLOW,         /* ip_allow.config */
@@ -431,13 +430,6 @@ typedef enum
     INK_CACHE_TTL_IN_CACHE,
     INK_CACHE_AUTH_CONTENT,
     INK_CONGESTION,             /* congestion.config */
-    INK_FILTER_ALLOW,           /* filter.config */
-    INK_FILTER_DENY,
-    INK_FILTER_LDAP,
-    INK_FILTER_NTLM,
-    INK_FILTER_RADIUS,
-    INK_FILTER_KEEP_HDR,
-    INK_FILTER_STRIP_HDR,
     INK_HOSTING,                /* hosting.config */
     INK_ICP,                    /* icp.config */
     INK_IP_ALLOW,               /* ip_allow.config */
@@ -660,23 +652,6 @@ typedef enum
     int max_connection;
     char *error_page_uri;
   } INKCongestionEle;
-
-/* filter.config */
-  typedef struct
-  {
-    INKCfgEle cfg_ele;
-    INKPdSsFormat filter_info;  /* general PdSs information */
-    INKHdrT hdr;                /* only valid if filter_act == INK_FILTER_xxx_HDR */
-    char *server;               /* 'auth_bypass': bypass pd_val || '<hostname>': authenticate pd_val against host */
-    char *dn;                   /* dn to use for authentication (not necessary if 'auth_bypass') */
-    char *realm;
-    char *uid_filter;           /* uid_filter to use for authentication (optional if server != 'auth_bypass'); defaults to "uid" */
-    char *attr;                 /* (optional) additional LDAP Attribute Name */
-    char *attr_val;             /* (optional) additional LDAP Attribute Value */
-    char *redirect_url;         /* (optional) */
-    char *bind_dn;              /* (optional) */
-    char *bind_pwd_file;        /* (optional) */
-  } INKFilterEle;
 
 /* hosting.config */
   typedef struct
@@ -1030,8 +1005,6 @@ typedef enum
   inkapi void INKCacheEleDestroy(INKCacheEle * ele);
   inkapi INKCongestionEle *INKCongestionEleCreate();
   inkapi void INKCongestionEleDestroy(INKCongestionEle * ele);
-  inkapi INKFilterEle *INKFilterEleCreate(INKRuleTypeT type);
-  inkapi void INKFilterEleDestroy(INKFilterEle * ele);
   inkapi INKHostingEle *INKHostingEleCreate();
   inkapi void INKHostingEleDestroy(INKHostingEle * ele);
   inkapi INKIcpEle *INKIcpEleCreate();

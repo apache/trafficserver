@@ -71,7 +71,6 @@ const char *config_files[] = {
   "hosting.config",
   "icp.config",
   "ip_allow.config",
-  "ipnat.conf",
   "mgmt_allow.config",
   "parent.config",
   "partition.config",

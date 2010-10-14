@@ -343,9 +343,6 @@
         <LINK name="Throttling" refresh="false"
               file_link="/configure/c_throttling.ink"
               help_link="/help/ts.ink?help=c_cmng.htm"/>
-        <LINK name="Load Shedding" refresh="false"
-              file_link="/configure/c_arm_load_shedding.ink"
-              help_link="/help/ts.ink?help=c_cmng.htm"/>
         <LINK name="Congestion Control" refresh="false"
               file_link="/configure/c_congestion.ink"
               help_link="/help/ts.ink?help=c_cmng.htm"/>

@@ -37,7 +37,6 @@
 char *convertRules(INKFileNameT file, INKIntList errRules, char *rules[]);
 
 char *formatCacheRule(char *rule);
-char *formatFilterRule(char *rule);
 char *formatHostingRule(char *rule);
 char *formatIcpRule(char *rule);
 char *formatIpAllowRule(char *rule);
@@ -51,8 +50,6 @@ char *formatUpdateRule(char *rule);
 char *formatVaddrsRule(char *rule);
 
 int updateCacheConfig(char *rules[], int numRules, char **errBuff);
-int updateFilterConfig(char *rules[], int numRules, char **errBuff);
-int updateFilterConfigPassword(WebHttpContext * whc, char **errBuff);
 int updateHostingConfig(char *rules[], int numRules, char **errBuff);
 int updateIcpConfig(char *rules[], int numRules, char **errBuff);
 int updateIpAllowConfig(char *rules[], int numRules, char **errBuff);

@@ -1257,10 +1257,6 @@ fileUpdated(char *fname)
   } else if (strcmp(fname, "cache.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.control.filename");
 
-  } else if (strcmp(fname, "filter.config") == 0) {
-    lmgmt->convert_filters();
-    lmgmt->signalFileChange("proxy.config.content_filter.filename");
-
   } else if (strcmp(fname, "parent.config") == 0) {
     lmgmt->signalFileChange("proxy.config.http.parent_proxy.file");
 

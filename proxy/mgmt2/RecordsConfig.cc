@@ -548,47 +548,6 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.header.parse.no_host_url_redirect", "", INK_STRING, NULL, RU_REREAD, RR_NULL, RC_STR, ".*",
    RA_NULL}
   ,
-  //##############################################################################
-  //#
-  //# Authentication Basic Realm
-  //##############################################################################
-  {CONFIG, "proxy.config.auth.enabled", "", INK_INT, "0",
-   RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.auth.cache.filename", "", INK_STRING,
-   "authcache.db", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.auth.cache.path", "", INK_STRING,
-   "/var/trafficserver", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.auth.cache.size", "", INK_INT, "5000",
-   RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.auth.cache.storage_size", "", INK_INT, "15728640",
-   RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.http.auth.flags", "", INK_INT, "0",
-   RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.http.auth.scope", "", INK_STRING,
-   "TE", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.http.auth.authenticate_session", "", INK_INT,
-   "0", RU_RESTART_TS, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.proxy.authenticate.basic.realm", "",
-   INK_STRING, NULL, RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.auth.convert_filter_to_policy", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-1]",
-   RA_NULL}
-  ,
-  // assumes executable is stored in bin_path directory
-  {CONFIG, "proxy.config.auth.convert_bin", "", INK_STRING, "filter_to_policy", RU_REREAD, RR_NULL, RC_STR, ".*",
-   RA_NULL}
-  ,
-  {CONFIG, "proxy.config.auth.password_file_path", "", INK_STRING, "var/trafficserver", RU_REREAD, RR_NULL, RC_NULL,
-   ".*", RA_NULL}
-  ,
 
 //
 // congestion control
@@ -2401,14 +2360,6 @@ RecordElement RecordsConfig[] = {
   {CONFIG, "proxy.config.raft.proxy_version_min", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.raft.proxy_version_max", "", INK_INT, "268435456", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  //##############################################################################
-  //#
-  //# Content Filtering
-  //#
-  //##############################################################################
-  {CONFIG, "proxy.config.content_filter.filename", "", INK_STRING, "filter.config", RU_RESTART_TS, RR_NULL, RC_NULL,
-   NULL, RA_NULL}
   ,
   //##############################################################################
   //#
