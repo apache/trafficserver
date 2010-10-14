@@ -1580,11 +1580,7 @@ change_uid_gid(const char *user)
     ink_fatal_die("sysconf() failed for _SC_GETPW_R_SIZE_MAX");
   }
 
-#if defined(__GNUC__)
-  char buf[buflen];
-#else
   char *buf = (char *)xmalloc(buflen);
-#endif
 
   if (geteuid()) {
     // Not running as root
@@ -1634,9 +1630,7 @@ change_uid_gid(const char *user)
       }
     }
   }
-#if !defined(__GNUC__)
   xfree(buf);
-#endif
 }
 
 #if TS_HAS_V2STATS
@@ -2101,14 +2095,15 @@ main(int argc, char **argv)
   }
 
   // change the user of the process
-  const long MAX_LOGIN = sysconf(_SC_LOGIN_NAME_MAX);
-  char user[MAX_LOGIN <= 0 ? _POSIX_LOGIN_NAME_MAX : MAX_LOGIN];
+  const long max_login =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
+  char *user = (char *)xmalloc(max_login);
   *user = '\0';
   if ((TS_ReadConfigString(user, "proxy.config.admin.user_id",
-                           sizeof(user)) == REC_ERR_OKAY) &&
+                           max_login) == REC_ERR_OKAY) &&
                            user[0] != '\0' &&
                            strcmp(user, "#-1")) {
     change_uid_gid(user);
+    xfree(user);
   }
   Debug("server",
         "running as uid=%u, gid=%u, effective uid=%u, gid=%u",
