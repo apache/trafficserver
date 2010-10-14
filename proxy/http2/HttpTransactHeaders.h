@@ -89,7 +89,7 @@ public:
   static void insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr * header);
   static void insert_via_header_in_request(HttpConfigParams * http_config_param, int scheme,
                                            HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header,
-                                           char *incoming_via, int proxy_ip_address);
+                                           char *incoming_via);
   static void insert_via_header_in_response(HttpConfigParams * http_config_param, int scheme,
                                             HttpTransact::CacheLookupInfo * cache_info,
                                             HTTPHdr * header, char *incoming_via);

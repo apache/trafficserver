@@ -282,12 +282,10 @@ is_negative_caching_appropriate(HttpTransact::State * s)
   return false;
 }
 
-inline static
-  HttpTransact::LookingUp_t
+inline static HttpTransact::LookingUp_t
 find_server_and_update_current_info(HttpTransact::State * s)
 {
   URL *url = s->hdr_info.client_request.url_get();
-
   int host_len;
   const char *host = s->hdr_info.client_request.host_get(&host_len);
 
@@ -5441,12 +5439,9 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
     return FAILED_PROXY_AUTHORIZATION;
   }
 
-  URL *
-    incoming_url = incoming_hdr->url_get();
-  int
-    hostname_len;
-  const char *
-    hostname = incoming_hdr->host_get(&hostname_len);
+  URL *incoming_url = incoming_hdr->url_get();
+  int hostname_len;
+  const char *hostname = incoming_hdr->host_get(&hostname_len);
 
   if (hostname == NULL) {
     return MISSING_HOST_FIELD;
@@ -5456,10 +5451,8 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
     return BAD_HTTP_HEADER_SYNTAX;
   }
 
-  int
-    scheme = incoming_url->scheme_get_wksidx();
-  int
-    method = incoming_hdr->method_get_wksidx();
+  int scheme = incoming_url->scheme_get_wksidx();
+  int method = incoming_hdr->method_get_wksidx();
 
   if (!((scheme == URL_WKSIDX_HTTP) && (method == HTTP_WKSIDX_GET))) {
 
@@ -5483,23 +5476,17 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT)) {
       if (scheme == URL_WKSIDX_HTTP && !incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-        bool
-          chunked_encoding = false;
-        if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
-          MIMEField *
-            field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING,
-                                             MIME_LEN_TRANSFER_ENCODING);
+        bool chunked_encoding = false;
 
-          HdrCsvIter
-            enc_val_iter;
-          int
-            enc_val_len;
-          const char *
-            enc_value = enc_val_iter.get_first(field, &enc_val_len);
+        if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
+          MIMEField *field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+          HdrCsvIter enc_val_iter;
+          int enc_val_len;
+          const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
 
           while (enc_value) {
-            const char *
-              wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
+            const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
+
             if (wks_value == HTTP_VALUE_CHUNKED) {
               chunked_encoding = true;
               break;
@@ -5526,19 +5513,14 @@ HttpTransact::RequestError_t HttpTransact::check_request_validity(State * s, HTT
   // Transfer Encoding.
 
   if (incoming_hdr->presence(MIME_PRESENCE_TE)) {
-    MIMEField *
-      te_field = incoming_hdr->field_find(MIME_FIELD_TE, MIME_LEN_TE);
-    HTTPValTE *
-      te_val;
+    MIMEField *te_field = incoming_hdr->field_find(MIME_FIELD_TE, MIME_LEN_TE);
+    HTTPValTE *te_val;
 
     if (te_field) {
-      HdrCsvIter
-        csv_iter;
+      HdrCsvIter csv_iter;
+      int te_raw_len;
+      const char *te_raw = csv_iter.get_first(te_field, &te_raw_len);
 
-      int
-        te_raw_len;
-      const char *
-        te_raw = csv_iter.get_first(te_field, &te_raw_len);
       while (te_raw) {
         te_val = http_parse_te(te_raw, te_raw_len, &s->arena);
         if (te_val->encoding == HTTP_VALUE_IDENTITY) {
@@ -6890,10 +6872,8 @@ HttpTransact::process_quick_http_filter(State * s, int method)
 
 HttpTransact::HostNameExpansionError_t HttpTransact::try_to_expand_host_name(State * s)
 {
-  static int
-    max_dns_lookups = 2 + s->http_config_param->num_url_expansions;
-  static int
-    last_expansion = max_dns_lookups - 2;
+  static int max_dns_lookups = 2 + s->http_config_param->num_url_expansions;
+  static int last_expansion = max_dns_lookups - 2;
 
   HTTP_RELEASE_ASSERT(!s->dns_info.lookup_success);
 
@@ -6903,16 +6883,15 @@ HttpTransact::HostNameExpansionError_t HttpTransact::try_to_expand_host_name(Sta
     // we try to expand hostname.                    //
     ///////////////////////////////////////////////////
     if (s->http_config_param->enable_url_expandomatic) {
-      int
-        attempts = s->dns_info.attempts;
+      int attempts = s->dns_info.attempts;
       HTTP_DEBUG_ASSERT(attempts >= 1 && attempts <= max_dns_lookups);
+
       if (attempts < max_dns_lookups) {
         // Try a URL expansion
         if (attempts <= last_expansion) {
-          char *
-            expansion = s->http_config_param->url_expansions[attempts - 1];
-          int
-            length = strlen(s->server_info.name) + strlen(expansion) + 1;
+          char *expansion = s->http_config_param->url_expansions[attempts - 1];
+          int length = strlen(s->server_info.name) + strlen(expansion) + 1;
+
           s->dns_info.lookup_name = s->arena.str_alloc(length);
           ink_string_concatenate_strings_n(s->dns_info.lookup_name,
                                            length + 1, s->server_info.name, ".", expansion, NULL);
@@ -6922,11 +6901,10 @@ HttpTransact::HostNameExpansionError_t HttpTransact::try_to_expand_host_name(Sta
             return (EXPANSION_FAILED);
           }
           // Try www.<server_name>.com
-          int
-            length = strlen(s->server_info.name) + 8;
+          int length = strlen(s->server_info.name) + 8;
+
           s->dns_info.lookup_name = s->arena.str_alloc(length);
-          ink_string_concatenate_strings_n(s->dns_info.lookup_name,
-                                           length + 1, "www.", s->server_info.name, ".com", NULL);
+          ink_string_concatenate_strings_n(s->dns_info.lookup_name, length + 1, "www.", s->server_info.name, ".com", NULL);
         }
         return (RETRY_EXPANDED_NAME);
       } else {
@@ -6985,35 +6963,23 @@ HttpTransact::will_this_request_self_loop(State * s)
         return TRUE;
       }
     }
-    // Now check for a loop using the Via string.
 
+    // Now check for a loop using the Via string.
     // Since we insert our ip_address (in hex) into outgoing Via strings,
     // look for our_ip address in the request's via string.
-    //
-    MIMEField *via_field;
-    via_field = s->hdr_info.client_request.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
-    if (via_field) {
-      // look for hex-based ip_string in Via string (which we would have inserted)
-      char proxy_ip_string[9];
-
-      int bits = nstrhex(proxy_ip_string, this_machine()->ip);
-      proxy_ip_string[bits] = '\0';
+    if (local_ip > 0) {
+      MIMEField *via_field = s->hdr_info.client_request.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
 
       while (via_field) {
-        // No need to waste cycles comma separating the via
-        //  values since we want to do a match anywhere in the
-        //  in the string.  We can just loop over the dup hdr
-        //  fields
+        // No need to waste cycles comma separating the via values since we want to do a match anywhere in the
+        // in the string.  We can just loop over the dup hdr fields
         int via_len;
         const char *via_string = via_field->value_get(&via_len);
-        if (via_string && ptr_len_str(via_string, via_len, proxy_ip_string)) {
 
-          Debug("http_transact", "[will_this_request_self_loop] "
-                "Incoming via: %.*s has (%s[%s] (%s))",
-                via_len, via_string,
-                s->http_config_param->proxy_hostname, proxy_ip_string, s->http_config_param->proxy_request_via_string);
-          build_error_response(s, HTTP_STATUS_BAD_REQUEST,
-                               "Multi-Hop Cycle Detected",
+        if (via_string && ptr_len_str(via_string, via_len, this_machine()->ip_hex_string)) {
+          Debug("http_transact", "[will_this_request_self_loop] Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string,
+                s->http_config_param->proxy_hostname, this_machine()->ip_hex_string, s->http_config_param->proxy_request_via_string);
+          build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected",
                                "request#cycle_detected", "Your request is prohibited because it would cause a cycle.");
           return TRUE;
         }
@@ -7480,21 +7446,10 @@ HttpTransact::does_client_request_permit_storing(CacheControlResult * c, HTTPHdr
 
 
 int
-HttpTransact::calculate_document_freshness_limit(Arena * arena,
-                                                 HTTPHdr * response,
-                                                 time_t response_date,
-                                                 bool * heuristic,
-                                                 time_t
-                                                 request_sent_time,
-                                                 int
-                                                 cache_heuristic_min_lifetime,
-                                                 int
-                                                 cache_heuristic_max_lifetime,
-                                                 double
-                                                 cache_heuristic_lm_factor,
-                                                 int
-                                                 cache_guaranteed_min_lifetime,
-                                                 int cache_guaranteed_max_lifetime,
+HttpTransact::calculate_document_freshness_limit(Arena * arena, HTTPHdr * response, time_t response_date, bool * heuristic,
+                                                 time_t request_sent_time, int cache_heuristic_min_lifetime,
+                                                 int cache_heuristic_max_lifetime, double cache_heuristic_lm_factor,
+                                                 int cache_guaranteed_min_lifetime, int cache_guaranteed_max_lifetime,
                                                  time_t plugin_set_expire_time, State * s)
 {
   NOWARN_UNUSED(arena);
@@ -7690,8 +7645,8 @@ HttpTransact::what_is_document_freshness(State *s,
   if (s->cache_control.ttl_in_cache > 0) {
     // what matters if ttl is set is not the age of the document
     // but for how long it has been stored in the cache (resident time)
-    int
-      resident_time = s->current.now - s->response_received_time;
+    int resident_time = s->current.now - s->response_received_time;
+
     Debug("http_match",
           "[..._document_freshness] ttl-in-cache = %d, resident time = %d",
           s->cache_control.ttl_in_cache, resident_time);
@@ -8133,10 +8088,9 @@ HttpTransact::build_request(State * s, HTTPHdr * base_request, HTTPHdr * outgoin
     s->next_hop_scheme = URL_WKSIDX_HTTP;
   if (s->orig_scheme < 0)
     s->orig_scheme = URL_WKSIDX_HTTP;
-  HttpTransactHeaders::insert_via_header_in_request(s->http_config_param,
-                                                    s->orig_scheme,
-                                                    &s->cache_info,
-                                                    outgoing_request, s->via_string, this_machine()->ip);
+
+  HttpTransactHeaders::insert_via_header_in_request(s->http_config_param, s->orig_scheme, &s->cache_info,
+                                                    outgoing_request, s->via_string);
 
   // We build 1.1 request header and then convert as necessary to
   //  the appropriate version in HttpTransact::build_request
@@ -8151,8 +8105,6 @@ HttpTransact::build_request(State * s, HTTPHdr * base_request, HTTPHdr * outgoin
   // Check whether a Host header field is missing from a 1.0 or 1.1 request.
   if (outgoing_version != HTTPVersion(0, 9) && !outgoing_request->presence(MIME_PRESENCE_HOST)) {
     URL *url = outgoing_request->url_get();
-
-
     int host_len;
     const char *host = url->host_get(&host_len);
 
@@ -9066,21 +9018,13 @@ HttpTransact::update_aol_stats(State * s, ink_hrtime cache_lookup_time)
 
 
 void
-HttpTransact::update_size_and_time_stats(State * s,
-                                         ink_hrtime total_time,
-                                         ink_hrtime user_agent_write_time,
-                                         ink_hrtime origin_server_read_time,
-                                         ink_hrtime cache_lookup_time,
-                                         int user_agent_request_header_size,
-                                         int64 user_agent_request_body_size,
-                                         int user_agent_response_header_size,
-                                         int64 user_agent_response_body_size,
-                                         int origin_server_request_header_size,
-                                         int64 origin_server_request_body_size,
-                                         int origin_server_response_header_size,
-                                         int64 origin_server_response_body_size,
-                                         int pushed_response_header_size,
-                                         int64 pushed_response_body_size, CacheAction_t cache_action)
+HttpTransact::update_size_and_time_stats(State * s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
+                                         ink_hrtime origin_server_read_time, ink_hrtime cache_lookup_time,
+                                         int user_agent_request_header_size, int64 user_agent_request_body_size,
+                                         int user_agent_response_header_size, int64 user_agent_response_body_size,
+                                         int origin_server_request_header_size, int64 origin_server_request_body_size,
+                                         int origin_server_response_header_size, int64 origin_server_response_body_size,
+                                         int pushed_response_header_size, int64 pushed_response_body_size, CacheAction_t cache_action)
 {
   NOWARN_UNUSED(cache_action);
   int64 user_agent_request_size = user_agent_request_header_size + user_agent_request_body_size;
@@ -9261,8 +9205,6 @@ HttpTransact::add_new_stat_block(State * s)
 void
 HttpTransact::delete_warning_value(HTTPHdr * to_warn, HTTPWarningCode warning_code)
 {
-
-
   int w_code = (int) warning_code;
   MIMEField *field = to_warn->field_find(MIME_FIELD_WARNING, MIME_LEN_WARNING);;
 
