@@ -326,14 +326,12 @@ typedef struct _HttpApiInfo
   bool logging_enabled;
   bool retry_intercept_failures;
 
-    _HttpApiInfo():parent_proxy_name(NULL),
+  _HttpApiInfo()
+  : parent_proxy_name(NULL),
     parent_proxy_port(-1),
     cache_untransformed(false), cache_transformed(true), logging_enabled(true), retry_intercept_failures(false)
-  {
-  };
-}
-
-HttpApiInfo;
+  { }
+} HttpApiInfo;
 
 enum
 {
@@ -678,6 +676,7 @@ public:
       init();
       memset(&stats, 0, sizeof(stats));
     };
+
     void init()
     {
       next = NULL;
@@ -702,15 +701,14 @@ public:
     bool does_server_permit_lookup;
     bool does_server_permit_storing;
 
-      _CacheDirectives():does_client_permit_lookup(true),
-      does_client_permit_storing(true),
-      does_client_permit_dns_storing(true),
-      does_config_permit_lookup(true),
-      does_config_permit_storing(true), does_server_permit_lookup(true), does_server_permit_storing(true)
-    {
-    };
-  }
-  CacheDirectives;
+    _CacheDirectives()
+      : does_client_permit_lookup(true),
+        does_client_permit_storing(true),
+        does_client_permit_dns_storing(true),
+        does_config_permit_lookup(true),
+        does_config_permit_storing(true), does_server_permit_lookup(true), does_server_permit_storing(true)
+    { }
+  } CacheDirectives;
 
   typedef struct _CacheLookupInfo
   {
@@ -736,26 +734,25 @@ public:
     int lookup_count;
     bool is_ram_cache_hit;
 
-      _CacheLookupInfo():action(CACHE_DO_UNDEFINED),
-      transform_action(CACHE_DO_UNDEFINED),
-      write_status(NO_CACHE_WRITE),
-      transform_write_status(NO_CACHE_WRITE),
-      lookup_url(NULL),
-      lookup_url_storage(),
-      original_url(),
-      store_url(),
-      object_read(NULL),
-      second_object_read(NULL),
-      object_store(),
-      transform_store(),
-      config(),
-      directives(),
-      open_read_retries(0),
-      open_write_retries(0), write_lock_state(CACHE_WL_INIT), lookup_count(0), is_ram_cache_hit(false)
-    {
-    };
-  }
-  CacheLookupInfo;
+    _CacheLookupInfo()
+      : action(CACHE_DO_UNDEFINED),
+        transform_action(CACHE_DO_UNDEFINED),
+        write_status(NO_CACHE_WRITE),
+        transform_write_status(NO_CACHE_WRITE),
+        lookup_url(NULL),
+        lookup_url_storage(),
+        original_url(),
+        store_url(),
+        object_read(NULL),
+        second_object_read(NULL),
+        object_store(),
+        transform_store(),
+        config(),
+        directives(),
+        open_read_retries(0),
+        open_write_retries(0), write_lock_state(CACHE_WL_INIT), lookup_count(0), is_ram_cache_hit(false)
+    { }
+  } CacheLookupInfo;
 
   typedef struct _RedirectInfo
   {
@@ -763,11 +760,10 @@ public:
     URL original_url;
     URL redirect_url;
 
-      _RedirectInfo():redirect_in_process(false), original_url(), redirect_url()
-    {
-    };
-  }
-  RedirectInfo;
+    _RedirectInfo()
+      : redirect_in_process(false), original_url(), redirect_url()
+    { }
+  } RedirectInfo;
 
   typedef struct _ConnectionAttributes
   {
@@ -801,24 +797,23 @@ public:
     /// @c true if the connection is transparent.
     bool is_transparent;
 
-  _ConnectionAttributes():http_version(),
-      keep_alive(HTTP_KEEPALIVE_UNDEFINED),
-      receive_chunked_response(false),
-      pipeline_possible(false),
-      proxy_connect_hdr(false),
-      name(NULL),
-      dns_round_robin(false),
-      connect_failure(false),
-      transfer_encoding(NO_TRANSFER_ENCODING),
-      ip(0), port(0),
-      state(STATE_UNDEFINED),
-      abort(ABORT_UNDEFINED),
-      port_attribute(SERVER_PORT_DEFAULT),
-      is_transparent(false)
-    {
-    };
-  }
-  ConnectionAttributes;
+    _ConnectionAttributes()
+      : http_version(),
+        keep_alive(HTTP_KEEPALIVE_UNDEFINED),
+        receive_chunked_response(false),
+        pipeline_possible(false),
+        proxy_connect_hdr(false),
+        name(NULL),
+        dns_round_robin(false),
+        connect_failure(false),
+        transfer_encoding(NO_TRANSFER_ENCODING),
+        ip(0), port(0),
+        state(STATE_UNDEFINED),
+        abort(ABORT_UNDEFINED),
+        port_attribute(SERVER_PORT_DEFAULT),
+        is_transparent(false)
+    { }
+  } ConnectionAttributes;
 
   typedef struct _CurrentInfo
   {
@@ -829,12 +824,11 @@ public:
     ServerState_t state;
     int attempts;
 
-      _CurrentInfo():mode(UNDEFINED_MODE),
-      request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1)
-    {
-    };
-  }
-  CurrentInfo;
+    _CurrentInfo()
+      : mode(UNDEFINED_MODE),
+        request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1)
+    { };
+  } CurrentInfo;
 
   typedef struct _DNSLookupInfo
   {
@@ -845,13 +839,13 @@ public:
     LookingUp_t looking_up;
     bool round_robin;
 
-      _DNSLookupInfo():attempts(0),
-      lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP), round_robin(false)
+    _DNSLookupInfo()
+      : attempts(0),
+        lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP), round_robin(false)
     {
       memset(&srv_hostname, 0, sizeof(srv_hostname));
-    };
-  }
-  DNSLookupInfo;
+    }
+  } DNSLookupInfo;
 
   typedef struct _HeaderInfo
   {
@@ -871,23 +865,22 @@ public:
     bool extension_method;
     bool request_body_start;
 
-      _HeaderInfo():client_request(),
-      client_response(),
-      server_request(),
-      server_response(),
-      transform_response(),
-      transform_cached_request(),
-      request_content_length(HTTP_UNDEFINED_CL),
-      response_content_length(HTTP_UNDEFINED_CL),
-      transform_request_cl(HTTP_UNDEFINED_CL),
-      transform_response_cl(HTTP_UNDEFINED_CL),
-      client_req_is_server_style(false),
-      trust_response_cl(false),
-      response_error(NO_RESPONSE_HEADER_ERROR), extension_method(false), request_body_start(false)
-    {
-    };
-  }
-  HeaderInfo;
+    _HeaderInfo()
+      : client_request(),
+        client_response(),
+        server_request(),
+        server_response(),
+        transform_response(),
+        transform_cached_request(),
+        request_content_length(HTTP_UNDEFINED_CL),
+        response_content_length(HTTP_UNDEFINED_CL),
+        transform_request_cl(HTTP_UNDEFINED_CL),
+        transform_response_cl(HTTP_UNDEFINED_CL),
+        client_req_is_server_style(false),
+        trust_response_cl(false),
+        response_error(NO_RESPONSE_HEADER_ERROR), extension_method(false), request_body_start(false)
+    { }
+  } HeaderInfo;
 
   typedef struct _SquidLogInfo
   {
@@ -896,12 +889,11 @@ public:
     SquidHitMissCode hit_miss_code;
     WUTSProxyStatusCode wuts_proxy_status_code;
 
-      _SquidLogInfo():log_code(SQUID_LOG_ERR_UNKNOWN),
+    _SquidLogInfo()
+      : log_code(SQUID_LOG_ERR_UNKNOWN),
       hier_code(SQUID_HIER_EMPTY), hit_miss_code(SQUID_MISS_NONE), wuts_proxy_status_code(WUTS_PROXY_STATUS_UNKNOWN)
-    {
-    };
-  }
-  SquidLogInfo;
+    { }
+  } SquidLogInfo;
 
 
 #define HTTP_TRANSACT_STATE_MAX_USER_ARG         16     /* max number of user arguments inside HttpTransact::State structure */
@@ -925,7 +917,6 @@ public:
     bool is_revalidation_necessary;     //Added to check if revalidation is necessary - YTS Team, yamsat
     int HashTable_Tries;        // To limit hash tries - YTS Team, yamsat
     bool request_will_not_selfloop;     // To determine if process done - YTS Team, yamsat
-    HttpTransactMagic_t _separator1;
     ConnectionAttributes client_info;
     ConnectionAttributes icp_info;
     ConnectionAttributes parent_info;
@@ -935,7 +926,6 @@ public:
     Source_t source;
     HttpRequestFlavor_t req_flavor;
 
-    HttpTransactMagic_t _separator2;
     CurrentInfo current;
     HeaderInfo hdr_info;
     SquidLogInfo squid_codes;
@@ -950,7 +940,6 @@ public:
     bool cdn_remap_complete;
     bool first_dns_lookup;
 
-    HttpTransactMagic_t _separator3;
     ParentConfigParams *parent_params;
     ParentResult parent_result;
     HttpRequestData request_data;
@@ -961,8 +950,6 @@ public:
     bool cop_test_page;         // internal
     bool traffic_net_req;       // internal
     char *unmapped_request_url; // in
-
-    HttpTransactMagic_t _separator4;
 
     StateMachineAction_t next_action;   // out
     StateMachineAction_t api_next_action;       // out
@@ -976,7 +963,6 @@ public:
     bool icp_lookup_success;    // in
     struct sockaddr_in icp_ip_result;   // in
 
-    HttpTransactMagic_t _separator5;
     int scheme;                 // out
     int next_hop_scheme;        // out
     int orig_scheme;            // pre-mapped scheme
@@ -984,7 +970,6 @@ public:
     HostDBInfo host_db_info;    // in
     int cause_of_death_errno;   // in
 
-    HttpTransactMagic_t _separator6;
     ink_time_t client_request_time;     // internal
     ink_time_t request_sent_time;       // internal
     ink_time_t response_received_time;  // internal
@@ -994,7 +979,6 @@ public:
 
     int64 state_machine_id;
 
-    HttpTransactMagic_t _separator7;
     //HttpAuthParams auth_params;
 
     StatBlock first_stats;
@@ -1026,11 +1010,8 @@ public:
     void *user_args[HTTP_TRANSACT_STATE_MAX_USER_ARG];
 
     int api_txn_active_timeout_value;
-
     int api_txn_connect_timeout_value;
-
     int api_txn_dns_timeout_value;
-
     int api_txn_no_activity_timeout_value;
 
     // Used by INKHttpTxnCachedReqGet and INKHttpTxnCachedRespGet SDK functions
@@ -1055,37 +1036,16 @@ public:
     CacheAction_t saved_update_cache_action;
     bool stale_icp_lookup;
 
-
-                                /**
-				 * Remap plugin processor support
-				**/
+    // Remap plugin processor support
     UrlMappingContainer url_map;
     host_hdr_info hh_info;
 
-    //
     // congestion control
-    //
     CongestionEntry *pCongestionEntry;
     StateMachineAction_t congest_saved_next_action;
     int congestion_control_crat;        // 'client retry after'
     int congestion_congested_or_failed;
     int congestion_connection_opened;
-
-    /////////////////
-    // constructor //
-    /////////////////
-      State();
-    void init();
-
-    ////////////////
-    // destructor //
-    ////////////////
-    void destroy();
-
-    ////////////////
-    // stats      //
-    ////////////////
-    void record_transaction_stats();
 
     bool reverse_proxy;
     bool url_remap_success;
@@ -1095,8 +1055,202 @@ public:
     bool already_downgraded;
     URL pristine_url;  // pristine url is the url before remap
 
-  };
 
+    // Methods
+    void
+    init()
+    {
+      parent_params = ParentConfig::acquire();
+      current_stats = &first_stats;
+    }
+
+    // Constructor
+    State()
+      : m_magic(HTTP_TRANSACT_MAGIC_ALIVE), state_machine(NULL), cache_vc(NULL), http_config_param(NULL), force_dns(false),
+        updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), is_revalidation_necessary(false),
+        HashTable_Tries(0),             //YTS Team, yamsat
+        request_will_not_selfloop(false),       //YTS Team, yamsat
+        source(SOURCE_NONE),
+        req_flavor(REQ_FLAVOR_FWDPROXY),
+        pending_work(NULL),
+        cdn_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
+        cdn_saved_transact_return_point(NULL),
+        cdn_remap_complete(false),
+        first_dns_lookup(true),
+        parent_params(NULL),
+        cache_lookup_result(CACHE_LOOKUP_NONE),
+        backdoor_request(false),
+        cop_test_page(false),
+        traffic_net_req(false),
+        unmapped_request_url(0),
+        next_action(STATE_MACHINE_ACTION_UNDEFINED),
+        api_next_action(STATE_MACHINE_ACTION_UNDEFINED),
+        transact_return_point(NULL),
+        internal_msg_buffer(0),
+        internal_msg_buffer_type(0),
+        internal_msg_buffer_size(0),
+        internal_msg_buffer_fast_allocator_size(-1),
+        internal_msg_buffer_index(0),
+        icp_lookup_success(false),
+        scheme(-1),
+        next_hop_scheme(scheme),
+        orig_scheme(scheme),
+        method(0),
+        host_db_info(),
+        cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
+        client_request_time(UNDEFINED_TIME),
+        request_sent_time(UNDEFINED_TIME),
+        response_received_time(UNDEFINED_TIME),
+        plugin_set_expire_time(UNDEFINED_TIME),
+        state_machine_id(0),
+        first_stats(),
+        current_stats(NULL),
+        range_setup(RANGE_NONE),
+        negative_caching(false),
+        no_negative_cache(false),
+        pristine_host_hdr(-1),
+        remap_chunking_enabled(-1),
+        www_auth_content(CACHE_AUTH_NONE),
+        client_connection_enabled(true),
+        acl_filtering_performed(false),
+        fp_tsremap_os_response(NULL),
+        remap_plugin_instance(0),
+        http_return_code(HTTP_STATUS_NONE),
+        return_xbuf_size(0),
+        return_xbuf_plain(false),
+        api_txn_active_timeout_value(-1),
+        api_txn_connect_timeout_value(-1),
+        api_txn_dns_timeout_value(-1),
+        api_txn_no_activity_timeout_value(-1),
+        cache_req_hdr_heap_handle(NULL),
+        cache_resp_hdr_heap_handle(NULL),
+        api_release_server_session(false),
+        api_cleanup_cache_read(false),
+        api_skip_cache_lookup(false),
+        api_server_response_no_store(false),
+        api_server_response_ignore(false),
+        api_http_sm_shutdown(false),
+        api_modifiable_cached_resp(false),
+        api_server_request_body_set(false),
+        api_req_cacheable(false),
+        api_resp_cacheable(false),
+        api_update_cached_object(UPDATE_CACHED_OBJECT_NONE),
+        api_lock_url(LOCK_URL_FIRST),
+        saved_update_next_action(STATE_MACHINE_ACTION_UNDEFINED),
+        saved_update_cache_action(CACHE_DO_UNDEFINED),
+        stale_icp_lookup(false),
+        url_map(),
+        pCongestionEntry(NULL),
+        congest_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
+        congestion_control_crat(0),
+        congestion_congested_or_failed(0),
+        congestion_connection_opened(0),
+        reverse_proxy(false), url_remap_success(false), remap_redirect(NULL), filter_mask(0), already_downgraded(false),
+        pristine_url()
+    {
+      int i;
+      char *via_ptr = via_string;
+
+      for (i = 0; i < MAX_VIA_INDICES; i++) {
+        *via_ptr++ = ' ';
+      }
+
+      via_string[VIA_CLIENT] = VIA_CLIENT_STRING;
+      via_string[VIA_CACHE] = VIA_CACHE_STRING;
+      via_string[VIA_SERVER] = VIA_SERVER_STRING;
+      via_string[VIA_CACHE_FILL] = VIA_CACHE_FILL_STRING;
+      via_string[VIA_PROXY] = VIA_PROXY_STRING;
+      via_string[VIA_ERROR] = VIA_ERROR_STRING;
+      via_string[VIA_ERROR_TYPE] = VIA_ERROR_NO_ERROR;
+      via_string[VIA_DETAIL_SEPARATOR] = VIA_DETAIL_SEPARATOR_STRING;
+      via_string[VIA_DETAIL_TUNNEL_DESCRIPTOR] = VIA_DETAIL_TUNNEL_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_CACHE_DESCRIPTOR] = VIA_DETAIL_CACHE_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_ICP_DESCRIPTOR] = VIA_DETAIL_ICP_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_PP_DESCRIPTOR] = VIA_DETAIL_PP_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_SERVER_DESCRIPTOR] = VIA_DETAIL_SERVER_DESCRIPTOR_STRING;
+      via_string[MAX_VIA_INDICES] = '\0';
+
+      memset(return_xbuf, 0, sizeof(return_xbuf));
+      memset(user_args, 0, sizeof(user_args));
+    }
+
+    void
+    record_transaction_stats()
+    {
+      if (http_config_param->enable_http_stats) {
+        // Loop over our transaction stat blocks and record the stats
+        //  in the global arrays
+        STAT_LOCK_ACQUIRE(&(global_http_trans_stat_lock));
+        StatBlock *
+          b = &first_stats;
+        while (b != NULL) {
+          for (int i = 0; i < b->next_insert && i < StatBlockEntries; i++) {
+            RecIncrRawStat(http_rsb, this_ethread(), b->stats[i].index, b->stats[i].increment);
+
+          }
+          b = b->next;
+        }
+        STAT_LOCK_RELEASE(&(global_http_trans_stat_lock));
+      }
+    }
+
+    void
+    destroy()
+    {
+      record_transaction_stats();
+      m_magic = HTTP_TRANSACT_MAGIC_DEAD;
+
+      if (cache_vc) {
+        cache_vc->free();
+        cache_vc = NULL;
+      }
+
+      if (internal_msg_buffer) {
+        free_internal_msg_buffer(internal_msg_buffer, internal_msg_buffer_fast_allocator_size);
+      }
+      //if (unmapped_request_url) xfree(unmapped_request_url);
+      if (internal_msg_buffer_type)
+        xfree(internal_msg_buffer_type);
+
+      ParentConfig::release(parent_params);
+      parent_params = NULL;
+
+      hdr_info.client_request.destroy();
+      hdr_info.client_response.destroy();
+      hdr_info.server_request.destroy();
+      hdr_info.server_response.destroy();
+      hdr_info.transform_response.destroy();
+      hdr_info.transform_cached_request.destroy();
+      cache_info.lookup_url_storage.destroy();
+      cache_info.original_url.destroy();
+      cache_info.store_url.destroy();
+      cache_info.object_store.destroy();
+      cache_info.transform_store.destroy();
+      redirect_info.original_url.destroy();
+      redirect_info.redirect_url.destroy();
+
+      if (pCongestionEntry) {
+        if (congestion_connection_opened == 1) {
+          pCongestionEntry->connection_closed();
+          congestion_connection_opened = 0;
+        }
+        pCongestionEntry->put(), pCongestionEntry = NULL;
+      }
+      // if cache_*_hdr_heap_handles have been allocated by the SDK functions
+      // INKHttpTxnCachedReqGet and INKHttpTxnCachedRespGet, let's free their data.
+      if (cache_req_hdr_heap_handle) {
+        cache_req_hdr_heap_handle->m_sdk_alloc.free_all();
+      }
+      if (cache_resp_hdr_heap_handle) {
+        cache_resp_hdr_heap_handle->m_sdk_alloc.free_all();
+      }
+
+      url_map.clear();
+      arena.reset();
+      pristine_url.clear();
+      return;
+    }
+  }; // End of State struct.
 
 
   static void free_internal_msg_buffer(char *buffer, int64 size);
@@ -1168,9 +1322,7 @@ public:
 
   // Utility Methods
   static void issue_revalidate(State * s);
-  static void get_ka_info_from_host_db(State * s,
-                                       ConnectionAttributes * server_info,
-                                       ConnectionAttributes * client_info,
+  static void get_ka_info_from_host_db(State * s, ConnectionAttributes * server_info, ConnectionAttributes * client_info,
                                        HostDBInfo * host_db_info, HttpConfigParams * config_params);
   static bool service_transaction_in_proxy_only_mode(State * s);
   static void setup_plugin_request_intercept(State * s);
@@ -1180,8 +1332,8 @@ public:
   static ResponseError_t check_response_validity(State * s, HTTPHdr * incoming_hdr);
   static bool delete_all_document_alternates_and_return(State * s, bool cache_hit);
   static bool did_forward_server_send_0_9_response(State * s);
-  static bool does_client_request_permit_cached_response(const HttpConfigParams * p,
-                                                         CacheControlResult * c, HTTPHdr * h, char *via_string);
+  static bool does_client_request_permit_cached_response(const HttpConfigParams * p, CacheControlResult * c, HTTPHdr * h,
+                                                         char *via_string);
   static bool does_client_request_permit_dns_caching(CacheControlResult * c, HTTPHdr * h);
   static bool does_client_request_permit_storing(CacheControlResult * c, HTTPHdr * h);
   static bool handle_internal_request(State * s, HTTPHdr * incoming_hdr);
@@ -1201,9 +1353,7 @@ public:
   static bool is_response_cacheable(State * s, HTTPHdr * request, HTTPHdr * response);
   static bool is_response_valid(State * s, HTTPHdr * incoming_response);
 
-//    static bool setup_reverse_proxy(State *s,HTTPHdr *incoming_request);
   static void process_quick_http_filter(State * s, int method);
-
   static bool perform_accept_encoding_filtering(State * s);
 
   static HostNameExpansionError_t try_to_expand_host_name(State * s);
@@ -1212,69 +1362,45 @@ public:
   static bool setup_auth_lookup(State * s);
   static bool will_this_request_self_loop(State * s);
   static bool is_request_likely_cacheable(State * s, HTTPHdr * request);
-  static void build_request(State * s,
-                            HTTPHdr * base_request, HTTPHdr * outgoing_request, HTTPVersion outgoing_version);
+  static void build_request(State * s, HTTPHdr * base_request, HTTPHdr * outgoing_request,
+                            HTTPVersion outgoing_version);
 
-  static void build_response(State * s,
-                             HTTPHdr * base_response,
-                             HTTPHdr * outgoing_response,
-                             HTTPVersion outgoing_version, HTTPStatus status_code, const char *reason_phrase = NULL);
+  static void build_response(State * s, HTTPHdr * base_response, HTTPHdr * outgoing_response, HTTPVersion outgoing_version,
+                             HTTPStatus status_code, const char *reason_phrase = NULL);
+  static void build_response(State * s, HTTPHdr * base_response, HTTPHdr * outgoing_response, HTTPVersion outgoing_version);
+  static void build_response(State * s, HTTPHdr * outgoing_response, HTTPVersion outgoing_version, HTTPStatus status_code,
+                             const char *reason_phrase = NULL);
 
-  static void build_response(State * s,
-                             HTTPHdr * base_response, HTTPHdr * outgoing_response, HTTPVersion outgoing_version);
-
-  static void build_response(State * s,
-                             HTTPHdr * outgoing_response,
-                             HTTPVersion outgoing_version, HTTPStatus status_code, const char *reason_phrase = NULL);
-
-  static void build_response_copy(State * s,
-                                  HTTPHdr * base_response, HTTPHdr * outgoing_response, HTTPVersion outgoing_version);
+  static void build_response_copy(State * s, HTTPHdr * base_response, HTTPHdr * outgoing_response, HTTPVersion outgoing_version);
   static void handle_content_length_header(State * s, HTTPHdr * header, HTTPHdr * base);
 
   static void handle_request_keep_alive_headers(State * s, HTTPVersion ver, HTTPHdr * heads);
   static void handle_response_keep_alive_headers(State * s, HTTPVersion ver, HTTPHdr * heads);
-  static int calculate_document_freshness_limit(Arena * arena,
-                                                HTTPHdr * response,
-                                                time_t response_date,
-                                                bool * heuristic,
-                                                time_t request_sent_time,
-                                                int cache_heuristic_min_lifetime,
-                                                int cache_heuristic_max_lifetime,
-                                                double cache_heuristic_lm_factor,
-                                                int cache_guaranteed_min_lifetime,
-                                                int cache_guaranteed_max_lifetime,
+  static int calculate_document_freshness_limit(Arena * arena, HTTPHdr * response, time_t response_date, bool * heuristic,
+                                                time_t request_sent_time, int cache_heuristic_min_lifetime,
+                                                int cache_heuristic_max_lifetime, double cache_heuristic_lm_factor,
+                                                int cache_guaranteed_min_lifetime, int cache_guaranteed_max_lifetime,
                                                 time_t plugin_set_expire_time, State * s);
   static int calculate_freshness_fuzz(State * s, int fresh_limit);
-  static Freshness_t what_is_document_freshness(State * s,
-                                                const HttpConfigParams * config,
-                                                HTTPHdr * client_request,
+  static Freshness_t what_is_document_freshness(State * s, const HttpConfigParams * config, HTTPHdr * client_request,
                                                 HTTPHdr * cached_obj_request, HTTPHdr * cached_obj_response);
-  static Authentication_t AuthenticationNeeded(const HttpConfigParams * p,
-                                               HTTPHdr * client_request, HTTPHdr * obj_response);
+  static Authentication_t AuthenticationNeeded(const HttpConfigParams * p, HTTPHdr * client_request, HTTPHdr * obj_response);
   static void handle_parent_died(State * s);
   static void handle_server_died(State * s);
-  static void build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null,
-                                   const char *error_body_type, const char *format, ...);
+  static void build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null, const char *error_body_type,
+                                   const char *format, ...);
   static void build_redirect_response(State * s);
   static const char *get_error_string(int erno);
 
   // the stat functions
   static void update_stat(State * s, int stat, ink_statval_t increment);
-  static void update_size_and_time_stats(State * s,
-                                         ink_hrtime total_time,
-                                         ink_hrtime user_agent_write_time,
-                                         ink_hrtime origin_server_read_time,
-                                         ink_hrtime cache_lookup_time,
-                                         int user_agent_request_header_size,
-                                         int64 user_agent_request_body_size,
-                                         int user_agent_response_header_size,
-                                         int64 user_agent_response_body_size,
-                                         int origin_server_request_header_size,
-                                         int64 origin_server_request_body_size,
-                                         int origin_server_response_header_size,
-                                         int64 origin_server_response_body_size,
-                                         int pushed_response_header_size,
-                                         int64 pushed_response_body_size, CacheAction_t cache_action);
+  static void update_size_and_time_stats(State * s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
+                                         ink_hrtime origin_server_read_time, ink_hrtime cache_lookup_time,
+                                         int user_agent_request_header_size, int64 user_agent_request_body_size,
+                                         int user_agent_response_header_size, int64 user_agent_response_body_size,
+                                         int origin_server_request_header_size, int64 origin_server_request_body_size,
+                                         int origin_server_response_header_size, int64 origin_server_response_body_size,
+                                         int pushed_response_header_size, int64 pushed_response_body_size, CacheAction_t cache_action);
   static void update_aol_stats(State * s, ink_hrtime cache_lookup_time);
   static void histogram_request_document_size(State * s, int64 size);
   static void histogram_response_document_size(State * s, int64 size);
@@ -1289,131 +1415,6 @@ public:
 
 typedef void (*TransactEntryFunc_t) (HttpTransact::State * s);
 
-//////////////////////////////////////////////////////////////////////////////
-//
-//  HttpTransact::HttpTransact::State()
-//
-//////////////////////////////////////////////////////////////////////////////
-
-inline HttpTransact::State::State()
-:
-m_magic(HTTP_TRANSACT_MAGIC_ALIVE), state_machine(NULL), cache_vc(NULL), http_config_param(NULL), force_dns(false), updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), is_revalidation_necessary(false),    //setting the default value - YTS Team, yamsat
-HashTable_Tries(0),             //YTS Team, yamsat
-request_will_not_selfloop(false),       //YTS Team, yamsat
-  _separator1(HTTP_TRANSACT_MAGIC_SEPARATOR),
-source(SOURCE_NONE),
-req_flavor(REQ_FLAVOR_FWDPROXY),
-_separator2(HTTP_TRANSACT_MAGIC_SEPARATOR),
-pending_work(NULL),
-cdn_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
-cdn_saved_transact_return_point(NULL),
-cdn_remap_complete(false),
-first_dns_lookup(true),
-_separator3(HTTP_TRANSACT_MAGIC_SEPARATOR),
-parent_params(NULL),
-cache_lookup_result(CACHE_LOOKUP_NONE),
-backdoor_request(false),
-cop_test_page(false),
-traffic_net_req(false),
-unmapped_request_url(0),
-_separator4(HTTP_TRANSACT_MAGIC_SEPARATOR),
-next_action(STATE_MACHINE_ACTION_UNDEFINED),
-api_next_action(STATE_MACHINE_ACTION_UNDEFINED),
-transact_return_point(NULL),
-internal_msg_buffer(0),
-internal_msg_buffer_type(0),
-internal_msg_buffer_size(0),
-internal_msg_buffer_fast_allocator_size(-1),
-internal_msg_buffer_index(0),
-icp_lookup_success(false),
-_separator5(HTTP_TRANSACT_MAGIC_SEPARATOR),
-scheme(-1),
-next_hop_scheme(scheme),
-orig_scheme(scheme),
-method(0),
-host_db_info(),
-cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
-_separator6(HTTP_TRANSACT_MAGIC_SEPARATOR),
-client_request_time(UNDEFINED_TIME),
-request_sent_time(UNDEFINED_TIME),
-response_received_time(UNDEFINED_TIME),
-plugin_set_expire_time(UNDEFINED_TIME),
-state_machine_id(0),
-_separator7(HTTP_TRANSACT_MAGIC_SEPARATOR),
-//auth_params(),
-first_stats(),
-current_stats(NULL),
-range_setup(RANGE_NONE),
-negative_caching(false),
-no_negative_cache(false),
-pristine_host_hdr(-1),
-remap_chunking_enabled(-1),
-www_auth_content(CACHE_AUTH_NONE),
-client_connection_enabled(true),
-acl_filtering_performed(false),
-fp_tsremap_os_response(NULL),
-remap_plugin_instance(0),
-http_return_code(HTTP_STATUS_NONE),
-return_xbuf_size(0),
-return_xbuf_plain(false),
-api_txn_active_timeout_value(-1),
-api_txn_connect_timeout_value(-1),
-api_txn_dns_timeout_value(-1),
-api_txn_no_activity_timeout_value(-1),
-cache_req_hdr_heap_handle(NULL),
-cache_resp_hdr_heap_handle(NULL),
-api_release_server_session(false),
-api_cleanup_cache_read(false),
-api_skip_cache_lookup(false),
-api_server_response_no_store(false),
-api_server_response_ignore(false),
-api_http_sm_shutdown(false),
-api_modifiable_cached_resp(false),
-api_server_request_body_set(false),
-api_req_cacheable(false),
-api_resp_cacheable(false),
-api_update_cached_object(UPDATE_CACHED_OBJECT_NONE),
-api_lock_url(LOCK_URL_FIRST),
-saved_update_next_action(STATE_MACHINE_ACTION_UNDEFINED),
-saved_update_cache_action(CACHE_DO_UNDEFINED),
-stale_icp_lookup(false),
-url_map(),
-pCongestionEntry(NULL),
-congest_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
-congestion_control_crat(0),
-congestion_congested_or_failed(0),
-congestion_connection_opened(0),
-reverse_proxy(false), url_remap_success(false), remap_redirect(NULL), filter_mask(0), already_downgraded(false),
-pristine_url()
-{
-  int
-    i;
-
-  char *
-    via_ptr = via_string;
-  for (i = 0; i < MAX_VIA_INDICES; i++) {
-    *via_ptr++ = ' ';
-  }
-
-  via_string[VIA_CLIENT] = VIA_CLIENT_STRING;
-  via_string[VIA_CACHE] = VIA_CACHE_STRING;
-  via_string[VIA_SERVER] = VIA_SERVER_STRING;
-  via_string[VIA_CACHE_FILL] = VIA_CACHE_FILL_STRING;
-  via_string[VIA_PROXY] = VIA_PROXY_STRING;
-  via_string[VIA_ERROR] = VIA_ERROR_STRING;
-  via_string[VIA_ERROR_TYPE] = VIA_ERROR_NO_ERROR;
-  via_string[VIA_DETAIL_SEPARATOR] = VIA_DETAIL_SEPARATOR_STRING;
-  via_string[VIA_DETAIL_TUNNEL_DESCRIPTOR] = VIA_DETAIL_TUNNEL_DESCRIPTOR_STRING;
-  via_string[VIA_DETAIL_CACHE_DESCRIPTOR] = VIA_DETAIL_CACHE_DESCRIPTOR_STRING;
-  via_string[VIA_DETAIL_ICP_DESCRIPTOR] = VIA_DETAIL_ICP_DESCRIPTOR_STRING;
-  via_string[VIA_DETAIL_PP_DESCRIPTOR] = VIA_DETAIL_PP_DESCRIPTOR_STRING;
-  via_string[VIA_DETAIL_SERVER_DESCRIPTOR] = VIA_DETAIL_SERVER_DESCRIPTOR_STRING;
-  via_string[MAX_VIA_INDICES] = '\0';
-
-  memset(return_xbuf, 0, sizeof(return_xbuf));
-  memset(user_args, 0, sizeof(user_args));
-}
-
 inline void
 HttpTransact::free_internal_msg_buffer(char *buffer, int64 size)
 {
@@ -1423,91 +1424,6 @@ HttpTransact::free_internal_msg_buffer(char *buffer, int64 size)
   } else {
     xfree(buffer);
   }
-}
-
-inline void
-HttpTransact::State::init()
-{
-  parent_params = ParentConfig::acquire();
-  current_stats = &first_stats;
-}
-
-inline void
-HttpTransact::State::record_transaction_stats()
-{
-  if (http_config_param->enable_http_stats) {
-    // Loop over our transaction stat blocks and record the stats
-    //  in the global arrays
-    STAT_LOCK_ACQUIRE(&(global_http_trans_stat_lock));
-    StatBlock *
-      b = &first_stats;
-    while (b != NULL) {
-      for (int i = 0; i < b->next_insert && i < StatBlockEntries; i++) {
-        RecIncrRawStat(http_rsb, this_ethread(), b->stats[i].index, b->stats[i].increment);
-
-      }
-      b = b->next;
-    }
-    STAT_LOCK_RELEASE(&(global_http_trans_stat_lock));
-  }
-}
-
-inline void
-HttpTransact::State::destroy()
-{
-  record_transaction_stats();
-
-  m_magic = HTTP_TRANSACT_MAGIC_DEAD;
-
-  if (cache_vc) {
-    cache_vc->free();
-    cache_vc = NULL;
-  }
-
-  if (internal_msg_buffer) {
-    free_internal_msg_buffer(internal_msg_buffer, internal_msg_buffer_fast_allocator_size);
-  }
-  //if (unmapped_request_url) xfree(unmapped_request_url);
-  if (internal_msg_buffer_type)
-    xfree(internal_msg_buffer_type);
-
-  ParentConfig::release(parent_params);
-  parent_params = NULL;
-
-  hdr_info.client_request.destroy();
-  hdr_info.client_response.destroy();
-  hdr_info.server_request.destroy();
-  hdr_info.server_response.destroy();
-  hdr_info.transform_response.destroy();
-  hdr_info.transform_cached_request.destroy();
-  cache_info.lookup_url_storage.destroy();
-  cache_info.original_url.destroy();
-  cache_info.store_url.destroy();
-  cache_info.object_store.destroy();
-  cache_info.transform_store.destroy();
-  redirect_info.original_url.destroy();
-  redirect_info.redirect_url.destroy();
-
-  if (pCongestionEntry) {
-    if (congestion_connection_opened == 1) {
-      pCongestionEntry->connection_closed();
-      congestion_connection_opened = 0;
-    }
-    pCongestionEntry->put(), pCongestionEntry = NULL;
-  }
-  // if cache_*_hdr_heap_handles have been allocated by the SDK functions
-  // INKHttpTxnCachedReqGet and INKHttpTxnCachedRespGet, let's free their data.
-  if (cache_req_hdr_heap_handle) {
-    cache_req_hdr_heap_handle->m_sdk_alloc.free_all();
-  }
-  if (cache_resp_hdr_heap_handle) {
-    cache_resp_hdr_heap_handle->m_sdk_alloc.free_all();
-  }
-
-  url_map.clear();
-  arena.reset();
-  pristine_url.clear();
-  return;
 }
 
 inline const char *

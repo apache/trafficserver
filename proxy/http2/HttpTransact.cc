@@ -6866,10 +6866,6 @@ HttpTransact::process_quick_http_filter(State * s, int method)
 }
 
 
-// bool HttpTransact::setup_reverse_proxy(State * s, HTTPHdr * incoming_request)
-// {
-// }
-
 HttpTransact::HostNameExpansionError_t HttpTransact::try_to_expand_host_name(State * s)
 {
   static int max_dns_lookups = 2 + s->http_config_param->num_url_expansions;
