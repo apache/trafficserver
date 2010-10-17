@@ -219,8 +219,7 @@ Allocator::free_void(void *ptr)
 #endif
 }
 #else
-// no freelist
-// no freelist, non WIN32 platform, vxworks platform
+// no freelist, non WIN32 platform
 inline void *
 Allocator::alloc_void()
 {

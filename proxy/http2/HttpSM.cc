@@ -2139,11 +2139,12 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
 
   milestones.dns_lookup_end = ink_get_hrtime();
 
-  if (t_state.api_txn_dns_timeout_value != -1) {
-    int foo = (int) (milestone_difference_msec(milestones.dns_lookup_begin, milestones.dns_lookup_end));
-    Debug("http_timeout", "DNS took: %d msec", foo);
+  if (is_debug_tag_set("http_timeout")) {
+    if (t_state.api_txn_dns_timeout_value != -1) {
+      int foo = (int) (milestone_difference_msec(milestones.dns_lookup_begin, milestones.dns_lookup_end));
+      Debug("http_timeout", "DNS took: %d msec", foo);
+    }
   }
-
 }
 
 //////////////////////////////////////////////////////////////////////////////

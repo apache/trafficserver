@@ -945,13 +945,7 @@ mime_init_date_format_table()
   int i, now_days, first_days, last_days, num_days;
   int m=0, d=0, y=0;
 
-#if defined (VxWorks)
-  struct timeval tv;
-  gettimeofday(&tv);
-  now_secs = tv.tv_sec;
-#else /* !VxWorks */
   time(&now_secs);
-#endif /* !VxWorks */
   now_days = (int) (now_secs / (60 * 60 * 24));
   first_days = now_days - 366;
   last_days = now_days + 366;

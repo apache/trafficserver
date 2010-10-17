@@ -114,23 +114,23 @@ public:
 
   // PRIVATE
   void set_specific();
-    Thread();
-    virtual ~ Thread();
+  Thread();
+  virtual ~ Thread();
 
   static ink_hrtime cur_time;
   inkcoreapi static ink_thread_key thread_data_key;
-    Ptr<ProxyMutex> mutex_ptr;
+  Ptr<ProxyMutex> mutex_ptr;
 
 private:
   // prevent unauthorized copies (Not implemented)
-    Thread(const Thread &);
-    Thread & operator =(const Thread &);
+  Thread(const Thread &);
+  Thread & operator =(const Thread &);
 
 public:
   void start(ThreadFunction f = NULL, void *a = NULL, size_t stacksize = 0);
+
   virtual void execute()
-  {
-  }
+  {  }
 };
 
 TS_INLINE ink_hrtime ink_get_hrtime();
