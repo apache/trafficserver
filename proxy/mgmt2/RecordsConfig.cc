@@ -673,6 +673,8 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.http.no_origin_server_dns", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
   ,
+  {CONFIG, "proxy.config.http.use_client_target_addr", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_INT, "[0-1]", RA_NULL}
+  ,
   {CONFIG, "proxy.config.http.keep_alive_enabled", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.http.keep_alive_post_out", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}

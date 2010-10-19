@@ -1178,11 +1178,26 @@ HttpTransact::HandleRequest(State * s)
   if (handle_trace_and_options_requests(s, &s->hdr_info.client_request)) {
     TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
   }
-  // for HTTPS requests, we must go directly to the
-  // origin server. Ignore the no_dns_just_forward_to_parent setting.
-
-  if (s->http_config_param->no_dns_forward_to_parent &&
-      s->scheme != URL_WKSIDX_HTTPS && strcmp(s->server_info.name, "127.0.0.1") != 0) {
+  /* If the connection is client side transparent and the URL was not
+     remapped, we can use the client destination IP address instead of
+     doing a DNS lookup. This is controlled by the 'use_client_target_addr'
+     configuration parameter.
+  */
+  if (s->http_config_param->use_client_target_addr
+    && !s->url_remap_success
+    && s->client_info.is_transparent
+  ) {
+    uint32 addr = s->state_machine->ua_session->get_netvc()->get_local_ip();
+    Debug("http_trans", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %u.%u.%u.%u.\n", PRINT_IP(addr));
+    s->request_data.dest_ip = addr;
+    s->server_info.ip = addr;
+    s->force_dns = 0;
+  } else if (s->http_config_param->no_dns_forward_to_parent
+    && s->scheme != URL_WKSIDX_HTTPS
+    && strcmp(s->server_info.name, "127.0.0.1") != 0
+  ) {
+    // for HTTPS requests, we must go directly to the
+    // origin server. Ignore the no_dns_just_forward_to_parent setting.
     // we need to see if the hostname is an
     //   ip address since the parent selection code result
     //   could change as a result of this ip address
