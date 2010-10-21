@@ -3843,11 +3843,10 @@ HttpSM::do_hostdb_lookup()
     }
     */
 
-  milestones.dns_lookup_begin = ink_get_hrtime();
-
   ink_assert(t_state.dns_info.lookup_name != NULL);
   ink_assert(pending_action == NULL);
 
+  milestones.dns_lookup_begin = ink_get_hrtime();
   bool use_srv_records = HttpConfig::m_master.srv_enabled;
 
   if (use_srv_records) {
@@ -6690,6 +6689,7 @@ HttpSM::set_next_state()
 
   case HttpTransact::DNS_LOOKUP:
     {
+      uint32 addr;
 
       if (url_remap_mode == 2 && t_state.first_dns_lookup) {
         Debug("cdn", "Skipping DNS Lookup");
@@ -6697,6 +6697,21 @@ HttpSM::set_next_state()
         // Debug("cdn","If HandleFiltering has already been called.");
         t_state.first_dns_lookup = false;
         call_transact_and_set_next_state(HttpTransact::HandleFiltering);
+        break;
+      } else  if (t_state.http_config_param->use_client_target_addr
+        && !t_state.url_remap_success
+        && t_state.client_info.is_transparent
+        && 0 != (addr = t_state.state_machine->ua_session->get_netvc()->get_local_ip())
+      ) {
+        /* If the connection is client side transparent and the URL
+           was not remapped, we can use the client destination IP
+           address instead of doing a DNS lookup. This is controlled
+           by the 'use_client_target_addr' configuration parameter.
+        */
+        Debug("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %u.%u.%u.%u.\n", PRINT_IP(addr));
+        t_state.host_db_info.ip() = addr;
+        t_state.dns_info.lookup_success = true;
+        call_transact_and_set_next_state(NULL);
         break;
       }
 

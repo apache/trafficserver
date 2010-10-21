@@ -1516,6 +1516,53 @@ HTTPHdr::set_url_target_from_host_field(URL* url) {
   }
 }
 
+// Very ugly, but a proper implementation will require
+// rewriting the URL class and all of its clients so that
+// clients access the URL through the HTTP header instance
+// unless they really need low level access. The header would
+// need to either keep two versions of the URL (pristine
+// and effective) or URl would have to provide access to
+// the URL printer.
+char*
+HTTPHdr::url_string_get(Arena* arena, int* length) {
+  char *zret = 0;
+
+  if (m_url_cached.valid()) {
+    URLImpl* ui = m_url_cached.m_url_impl;
+    bool should_reset_host = false;
+    bool should_reset_port = false;
+    char port_buff[10];
+
+    this->_test_and_fill_target_cache();
+
+    /* Get dirty. We reach in to the URL implementation to
+       set the host and port if
+       1) They are not already set and
+       2) The values were in a HTTP header field.
+    */
+
+    if (!m_target_in_url && m_host_length) {
+      assert(0 == ui->m_ptr_host); // shouldn't be non-zero if not in URL.
+      ui->m_ptr_host = m_host;
+      ui->m_len_host = m_host_length;
+      should_reset_host = true;
+    }
+
+    if (0 == m_url_cached.port_get_raw() && m_port_in_header) {
+      assert(0 == ui->m_ptr_port); // shouldn't be set if not in URL.
+      ui->m_ptr_port = port_buff;
+      ui->m_len_port = sprintf(port_buff, "%.5d", m_port);
+      should_reset_port = true;
+    }
+
+    zret = m_url_cached.string_get(arena, length);
+    if (should_reset_host) { ui->m_ptr_host = 0; ui->m_len_host = 0; }
+    if (should_reset_port) { ui->m_ptr_port = 0; ui->m_len_port = 0; }
+ }
+
+  return zret;
+}
+
 /***********************************************************************
  *                                                                     *
  *                        M A R S H A L I N G                          *
