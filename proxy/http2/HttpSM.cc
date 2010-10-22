@@ -2139,11 +2139,12 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
 
   milestones.dns_lookup_end = ink_get_hrtime();
 
-  if (t_state.api_txn_dns_timeout_value != -1) {
-    int foo = (int) (milestone_difference_msec(milestones.dns_lookup_begin, milestones.dns_lookup_end));
-    Debug("http_timeout", "DNS took: %d msec", foo);
+  if (is_debug_tag_set("http_timeout")) {
+    if (t_state.api_txn_dns_timeout_value != -1) {
+      int foo = (int) (milestone_difference_msec(milestones.dns_lookup_begin, milestones.dns_lookup_end));
+      Debug("http_timeout", "DNS took: %d msec", foo);
+    }
   }
-
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4029,17 +4030,6 @@ HttpSM::do_cache_lookup_and_read()
   // TODO decide whether to uncomment after finish testing redirect
   //ink_assert(server_session == NULL);
   ink_assert(pending_action == 0);
-
-
-#ifdef DEBUG
-  INK_MD5 md5a;
-  INK_MD5 md5b;
-  t_state.hdr_info.client_request.url_get()->MD5_get(&md5a);
-  t_state.cache_info.lookup_url->MD5_get(&md5b);
-  ink_assert(md5a == md5b ||
-             t_state.http_config_param->maintain_pristine_host_hdr ||
-             t_state.pristine_host_hdr > 0);
-#endif
 
   HTTP_INCREMENT_TRANS_STAT(http_cache_lookups_stat);
 

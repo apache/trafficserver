@@ -43,8 +43,8 @@
  *
  * File operations:
  * ---------------
- * read_file:  reads filter.config file
- * write_file: write some made-up text to filter.config file
+ * read_file:  reads hosting.config file
+ * write_file: write some made-up text to hosting.config file
  * proxy.config.xxx (a records.config variable): returns value of that record
  * records: tests get/set/get a record of each different type
  *          (int, float, counter, string)
@@ -411,54 +411,6 @@ print_admin_access_ele(INKAdminAccessEle * ele)
 }
 
 void
-print_arm_security_ele(INKArmSecurityEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-  printf("Connection type: %d\n", ele->type_con);
-  print_ip_addr_ele(ele->src_ip_addr);
-  print_ip_addr_ele(ele->dest_ip_addr);
-  print_ports(ele->open_ports);
-  print_ports(ele->src_ports);
-  print_ports(ele->dest_ports);
-}
-
-void
-print_bypass_ele(INKBypassEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-  char buf[MAX_BUF_SIZE];
-  bzero(buf, MAX_BUF_SIZE);
-  strncat(buf, "bypass ", sizeof(buf) - strlen(buf) - 1);
-  char *str_list;
-
-  if (ele->src_ip_addr) {
-    snprintf(buf, sizeof(buf), "src ");
-    str_list = ip_addr_list_to_string((IpAddrList *) ele->src_ip_addr, ",");
-    strncat(buf, str_list, sizeof(buf) - strlen(buf) - 1);
-    xfree(str_list);
-  }
-
-  if (ele->dest_ip_addr) {
-    if (ele->src_ip_addr) {
-      strncat(buf, " AND ", sizeof(buf) - strlen(buf) - 1);
-    }
-    strncat(buf, "dst ", sizeof(buf) - strlen(buf) - 1);
-    str_list = ip_addr_list_to_string((IpAddrList *) ele->dest_ip_addr, ",");
-    strncat(buf, str_list, sizeof(buf) - strlen(buf) - 1);
-    xfree(str_list);
-  }
-
-  printf("%s\n", buf);
-  return;
-}
-
-void
 print_cache_ele(INKCacheEle * ele)
 {
   if (!ele) {
@@ -525,59 +477,6 @@ print_cache_ele(INKCacheEle * ele)
   return;
 }
 
-void
-print_filter_ele(INKFilterEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-  // now format the message
-  switch (ele->cfg_ele.type) {
-  case INK_FILTER_ALLOW:
-    printf("action=allow\t");
-    break;
-  case INK_FILTER_DENY:
-    printf("action=deny\t");
-    break;
-  case INK_FILTER_KEEP_HDR:
-    printf("keep_hdr=\t");
-    break;
-  case INK_FILTER_STRIP_HDR:
-    printf("strip_hdr=\t");
-    break;
-  default:                     /* invalid action directive */
-    return;
-  }
-
-  // Just for keep_hdr or strip_hdr
-  switch (ele->cfg_ele.type) {
-  case INK_FILTER_KEEP_HDR:
-  case INK_FILTER_STRIP_HDR:
-    switch (ele->hdr) {
-    case INK_HDR_DATE:
-      printf("date\n");
-      break;
-    case INK_HDR_HOST:
-      printf("host\n");
-      break;
-    case INK_HDR_COOKIE:
-      printf("cookie\n");
-      break;
-    case INK_HDR_CLIENT_IP:
-      printf("client_ip\n");
-      break;
-    default:
-      return;
-    }
-  default:
-    break;
-  }
-
-  print_pd_sspec(ele->filter_info);
-
-  return;
-}
 
 void
 print_hosting_ele(INKHostingEle * ele)
@@ -646,17 +545,6 @@ print_ip_allow_ele(INKIpAllowEle * ele)
   }
 
   print_ip_addr_ele(ele->src_ip_addr);
-}
-
-void
-print_ipnat_ele(INKIpFilterEle * ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-  }
-
-
-  printf("%s; %s:%d; %s:%d\n", ele->intr, ele->src_ip_addr, ele->src_port, ele->dest_ip_addr, ele->dest_port);
 }
 
 void
@@ -975,9 +863,6 @@ print_ele_list(INKFileNameT file, INKCfgContext ctx)
       break;
     case INK_FNAME_CACHE_OBJ:
       print_cache_ele((INKCacheEle *) ele);
-      break;
-    case INK_FNAME_FILTER:
-      print_filter_ele((INKFilterEle *) ele);
       break;
     case INK_FNAME_HOSTING:
       print_hosting_ele((INKHostingEle *) ele);
@@ -1658,7 +1543,7 @@ test_read_file()
   int f_ver = -1;
 
   printf("\n");
-  if (INKConfigFileRead(INK_FNAME_FILTER, &f_text, &f_size, &f_ver) != INK_ERR_OKAY)
+  if (INKConfigFileRead(INK_FNAME_HOSTING, &f_text, &f_size, &f_ver) != INK_ERR_OKAY)
     printf("[INKConfigFileRead] FAILED!\n");
   else {
     printf("[INKConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
@@ -1683,14 +1568,14 @@ test_write_file()
   int new_f_size = strlen(new_f_text);
 
   printf("\n");
-  if (INKConfigFileWrite(INK_FNAME_FILTER, new_f_text, new_f_size, -1) != INK_ERR_OKAY)
+  if (INKConfigFileWrite(INK_FNAME_HOSTING, new_f_text, new_f_size, -1) != INK_ERR_OKAY)
     printf("[INKConfigFileWrite] FAILED!\n");
   else
     printf("[INKConfigFileWrite] SUCCESS!\n");
   printf("\n");
 
   // should free f_text???
-  if (INKConfigFileRead(INK_FNAME_FILTER, &f_text, &f_size, &f_ver) != INK_ERR_OKAY)
+  if (INKConfigFileRead(INK_FNAME_HOSTING, &f_text, &f_size, &f_ver) != INK_ERR_OKAY)
     printf("[INKConfigFileRead] FAILED!\n");
   else {
     printf("[INKConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
@@ -1725,8 +1610,6 @@ test_cfg_context_get(char *args)
     file = INK_FNAME_CACHE_OBJ;
   } else if (strcmp(name, "congestion.config") == 0) {
     file = INK_FNAME_CONGESTION;
-  } else if (strcmp(name, "filter.config") == 0) {
-    file = INK_FNAME_FILTER;
   } else if (strcmp(name, "hosting.config") == 0) {
     file = INK_FNAME_HOSTING;
   } else if (strcmp(name, "icp.config") == 0) {
@@ -1803,8 +1686,6 @@ test_cfg_context_move(char *args)
     file = INK_FNAME_CACHE_OBJ;
   } else if (strcmp(name, "congestion.config") == 0) {
     file = INK_FNAME_CONGESTION;
-  } else if (strcmp(name, "filter.config") == 0) {
-    file = INK_FNAME_FILTER;
   } else if (strcmp(name, "hosting.config") == 0) {
     file = INK_FNAME_HOSTING;
   } else if (strcmp(name, "icp.config") == 0) {

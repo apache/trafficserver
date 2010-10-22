@@ -612,45 +612,6 @@ CmdArgs_ConfigRestart()
   return 0;
 }
 
-////////////////////////////////////////////////////////////////
-// Cmd_ConfigFilter
-//
-// This is the callback function for the "config:filter" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int
-Cmd_ConfigFilter(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[])
-{
-  /* call to processArgForCommand must appear at the beginning
-   * of each command's callback function
-   */
-  if (processArgForCommand(interp, argc, argv) != CLI_OK) {
-    return CMD_ERROR;
-  }
-
-  if (processHelpCommand(argc, argv) == CLI_OK)
-    return CMD_OK;
-
-  if (cliCheckIfEnabled("config:filter") == CLI_ERROR) {
-    return CMD_ERROR;
-  }
-  cli_cmdCallbackInfo *cmdCallbackInfo;
-
-  cmdCallbackInfo = (cli_cmdCallbackInfo *) clientData;
-
-  Cli_Debug("Cmd_ConfigFilter argc %d\n", argc);
-
-  if (argc == 2) {
-    return (ConfigFilter(argv[1]));
-  }
-  Cli_Error(ERR_COMMAND_SYNTAX, cmdCallbackInfo->command_usage);
-  return CMD_ERROR;
-}
 
 ////////////////////////////////////////////////////////////////
 // Cmd_ConfigParents
@@ -2705,16 +2666,6 @@ ConfigPortsGet(int arg_ref)
     return CLI_ERROR;
   }
   return CLI_OK;
-}
-
-// config filter sub-command
-int
-ConfigFilter(const char *url)
-{
-  Cli_Debug("ConfigFilter: url %s\n", url);
-
-  return (Cli_ConfigFileURL_Action(INK_FNAME_MGMT_ALLOW, "filter.config", url));
-  //   return (Cli_SetConfigFileFromUrl(INK_FNAME_FILTER, url));
 }
 
 int
@@ -5364,89 +5315,4 @@ find_value(const char *pathname, const char *key, char *value, int value_len, co
   }
 #endif
   return find;
-}
-
-int
-ConfigRadiusKeys(const char *record)
-{
-
-  char new_passwd1[256], new_passwd2[256], ch = ' ';
-  int i = 0;
-  INKError status = INK_ERR_OKAY;
-  INKActionNeedT action_need = INK_ACTION_UNDEFINED;
-  INKString old_pwd_file = NULL;
-  INKString dir_path = NULL;
-
-  // TODO: Use some proper getpass function here
-  //       depending on the system use either
-  //       getpass_r, getpassphrase or getpass
-  //       For platforms not having those
-  //       see apr_password_get
-  Cli_Debug("ConfigRadiusKeys\n");
-  Cli_Printf("\nEnter New Key:");
-  fflush(stdout);
-  i = 0;
-  ch = u_getch();
-  while (ch != '\n' && ch != '\r') {
-    new_passwd1[i] = ch;
-    i++;
-    ch = u_getch();
-
-  }
-  new_passwd1[i] = 0;
-
-  Cli_Printf("\nReEnter New Key:");
-  fflush(stdout);
-  i = 0;
-  ch = u_getch();
-  while (ch != '\n' && ch != '\r') {
-    new_passwd2[i] = ch;
-    i++;
-    ch = u_getch();
-
-  }
-  new_passwd2[i] = 0;
-
-  if (strcmp(new_passwd1, new_passwd2)) {
-    Cli_Printf("\nTwo New Keys Aren't the Same\n\n");
-    return CMD_ERROR;
-  }
-  Cli_Printf("\n");
-  status = Cli_RecordGetString(record, &old_pwd_file);
-  if (status != INK_ERR_OKAY) {
-    return CLI_ERROR;
-  }
-  if (old_pwd_file && strcasecmp(old_pwd_file, "NULL")) {
-    // remove the old_pwd_file
-    if (remove(old_pwd_file) != 0)
-      Cli_Debug("[ConfigRadiusKeys] Failed to remove password file %s", old_pwd_file);
-    xfree(old_pwd_file);
-  }
-  // XXX: Is this an absolute or config relative path
-  //      Usage here smells like absolute.
-  Cli_RecordGetString("proxy.config.auth.password_file_path", &dir_path);
-  if (!dir_path) {
-    Cli_Debug("[ConfigRadiusKeys] Failed to find the password file path.");
-    return CLI_ERROR;
-  }
-
-  char file_name[64];
-  char file_path[PATH_NAME_MAX + 1];
-  snprintf(file_name, 64, "pwd_%llu.enc", ink_microseconds(MICRO_REAL));
-  ink_filepath_make(file_path, sizeof(file_path), dir_path, file_name);
-  if (dir_path)
-    xfree(dir_path);
-
-  if (INKEncryptToFile(new_passwd1, file_path) != INK_ERR_OKAY) {
-    Cli_Debug("[ConfigRadiusKeys] Failed to encrypt and save the password.");
-  } else {
-    status = Cli_RecordSetString(record, (INKString) file_path, &action_need);
-    if (status) {
-      return status;
-    }
-    return (Cli_ConfigEnactChanges(action_need));
-  }
-
-  // Guessing that this will normally not happen, so return an error. /leif
-  return CLI_ERROR;
 }

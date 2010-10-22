@@ -50,10 +50,12 @@ struct Machine
 
   unsigned int ip;              // IP address of the host (network order)
   char *ip_string;              // IP address of the host as a string.
+  int ip_string_len;
+  char *ip_hex_string;          // IP address of the host as a hex string
+  int ip_hex_string_len;
 
-    Machine(char *hostname = 0, unsigned int ip = 0);
-   ~Machine();
-
+  Machine(char *hostname = 0, unsigned int ip = 0);
+  ~Machine();
 };
 
 /**

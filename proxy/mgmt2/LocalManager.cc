@@ -1063,76 +1063,6 @@ LocalManager::processEventQueue()
 
 }                               /* End LocalManager::processEventQueue */
 
-void
-LocalManager::convert_filters()
-{
-  // do filter_to_policy conversion before TS is launched
-  int status;
-  pid_t convert_pid;
-  bool found;
-  RecInt convert_on = REC_readInteger("proxy.config.auth.convert_filter_to_policy", &found);
-  ink_debug_assert(found);
-
-  if (convert_on) {
-    RecString convert_bin = REC_readString("proxy.config.auth.convert_bin", &found);
-    ink_debug_assert(found);
-
-    const size_t absolute_convert_binary_size = (sizeof(char) * (strlen(bin_path) + strlen(convert_bin)) + 2);
-    char *absolute_convert_binary = (char *) alloca(absolute_convert_binary_size);
-    snprintf(absolute_convert_binary, absolute_convert_binary_size, "%s/%s", bin_path, convert_bin);
-
-    // check that the binary exists
-    if (access(absolute_convert_binary, R_OK | X_OK) == -1) {
-      mgmt_elog(stderr,
-                "[LocalManager::startProxy] "
-                "%s cannot be executed because it does not exist", absolute_convert_binary);
-    } else {
-#ifdef POSIX_THREAD
-      if ((convert_pid = fork()) < 0)
-#else
-      if ((convert_pid = fork1()) < 0)
-#endif
-      {
-        mgmt_elog(stderr, "[LocalManager::startProxy] " "Unable to fork1 process for %s", absolute_convert_binary);
-
-      } else if (convert_pid > 0) {     /* Parent */
-        bool script_done = false;
-        time_t timeout = 10;
-        time_t time_delta = 0;
-        time_t first_time = time(0);
-
-        while (time_delta <= timeout) {
-          if (waitpid(convert_pid, &status, WNOHANG) != 0) {
-            Debug("lm-filter", "[LocalManager::startProxy] " "child pid %d has status", convert_pid);
-            script_done = true;
-            break;
-          }
-          time_delta = time(0) - first_time;
-        }
-
-        // need to kill the child script process if it's not complete
-        if (!script_done) {
-          Debug("lm-filter", "[LocalManager::startProxy] " "kill filter_to_policy (child pid %d)", convert_pid);
-          mgmt_elog(stderr, "[LocalManager::startProxy] "
-                    "%s failed to complete successfully.", absolute_convert_binary);
-          kill(convert_pid, SIGKILL);
-          waitpid(convert_pid, &status, 0);     // to reap the thread
-        } else {
-          Debug("lm-filter", "[LocalManager::startProxy] " "%s execution completed\n", absolute_convert_binary);
-        }
-      } else {                  // invoke the converter script - no args
-        int res = execl(absolute_convert_binary, convert_bin, NULL, (char*)NULL);
-        if (res < 0) {
-          mgmt_elog(stderr, "[LocalManager::startProxy] "
-                    "%s failed to execute successfully.", absolute_convert_binary);
-        }
-        _exit(res);
-      }
-      if (convert_bin)
-        xfree(convert_bin);
-    }
-  }
-}
 
 /*
  * startProxy()
@@ -1147,7 +1077,6 @@ LocalManager::startProxy()
   }
   mgmt_log(stderr, "[LocalManager::startProxy] Launching ts process\n");
 
-  convert_filters();
 
   // INKqa10742
   plugin_list.clear();

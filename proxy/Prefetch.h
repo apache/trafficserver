@@ -31,6 +31,7 @@
 
 #include "Update.h"
 #include "api/ts/ts_private_frozen.h"
+#include "api/ts/InkAPIHughes.h"
 
 #define IPSTRARGS(ip) (unsigned int) ((unsigned char *) &(ip))[0],	\
 		      (unsigned int) ((unsigned char *) &(ip))[1],	\

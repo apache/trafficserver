@@ -43,8 +43,7 @@ AM_CPPFLAGS = \
   -I$(srcdir)/mgmt2 \
   -I$(srcdir)/mgmt2/preparse \
   -I$(srcdir)/mgmt2/utils \
-  -I$(srcdir)/api/ts \
-  -DPKGSYSUSER=\"$(pkgsysuser)\"
+  -I$(srcdir)/api/ts
 
 
 includedir=$(prefix)/include/ts

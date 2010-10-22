@@ -111,11 +111,6 @@
     </MENU>
 
     <MENU name="Networking">
-      <ITEM name="ARM" enable_record="proxy.config.arm.enabled">
-        <LINK refresh="true"
-              file_link="/monitor/m_arm.ink"
-              help_link="/help/ts.ink?help=s_arm.htm"/>
-      </ITEM>
       <ITEM name="DNS Resolver">
         <LINK refresh="true"
               file_link="/monitor/m_dns.ink"
@@ -261,9 +256,6 @@
         <LINK name="Proxy Access" refresh="false"
               file_link="/configure/c_proxy_access.ink"
               help_link="/help/ts.ink?help=c_cnct.htm"/>
-        <LINK name="ARM Security" refresh="false"
-              file_link="/configure/c_arm_security.ink"
-              help_link="/help/ts.ink?help=c_cnct.htm"/>
       </ITEM>
       <ITEM name="SSL Termination" enable_record="proxy.config.ssl.enabled">
         <LINK name="General" refresh="false"
@@ -321,17 +313,6 @@
     </MENU>
 
     <MENU name="Networking">
-      <ITEM name="ARM" enable_record="proxy.config.arm.enabled">
-        <LINK name="General" refresh="false"
-              file_link="/configure/c_arm_general.ink"
-              help_link="/help/ts.ink?help=c_armo.htm"/>
-        <LINK name="Static Bypass" refresh="false"
-              file_link="/configure/c_arm_static_bypass.ink"
-              help_link="/help/ts.ink?help=c_armo.htm"/>
-        <LINK name="Dynamic Bypass" refresh="false"
-              file_link="/configure/c_arm_dynamic_bypass.ink"
-              help_link="/help/ts.ink?help=c_armo.htm"/>
-      </ITEM>
       <ITEM name="DNS Resolver">
         <LINK name="Resolver" refresh="false"
               file_link="/configure/c_dns_resolver.ink"

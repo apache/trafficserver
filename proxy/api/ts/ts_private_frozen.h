@@ -34,8 +34,6 @@
 #ifndef __INK_API_PRIVATE_FROZEN_H__
 #define __INK_API_PRIVATE_FROZEN_H__
 
-#include "ts.h"
-#include "InkAPIPrivateIOCore.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -43,14 +41,12 @@ extern "C"
 
 /****************************************************************************
  *  Create a new field and assign it a name
- *  contact: MIXT
  ****************************************************************************/
   inkapi INKMLoc INKMimeHdrFieldCreateNamed(INKMBuffer bufp, INKMLoc mh_mloc, const char *name, int name_len);
 
 
 /****************************************************************************
  *  Test if cache ready to accept request for a specific type of data
- *  contact: MIXT
  ****************************************************************************/
   inkapi INKReturnCode INKCacheDataTypeReady(INKCacheDataType type, int *is_ready);
 
@@ -582,19 +578,6 @@ extern "C"
  *  contact: AAA
  ****************************************************************************/
   inkapi INKReturnCode INKUserPolicyFetch(INKU32 ip, char *name);
-
-/* ----------------------------------------------------------------------
- *
- * Aerocast, MIXT SDK
- * contact: MIXT
- *
- * ----------------------------------------------------------------------  */
-#define INK_EVENT_MIXT_READ_REQUEST_HDR INK_EVENT_INTERNAL_60201
-/* ----------------------------------------------------------------------
- * Prefetch APIs
- * ----------------------------------------------------------------------  */
-
-#include "InkAPIHughes.h"
 
 #ifdef __cplusplus
 }

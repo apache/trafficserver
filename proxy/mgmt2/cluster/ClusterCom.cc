@@ -1597,7 +1597,7 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
     Rollback *rb;
 
     /* Some files are local only */
-    if (strcmp(line, "ipnat.conf") == 0 || strcmp(line, "storage.config") == 0 ||
+    if (strcmp(line, "storage.config") == 0 ||
         strcmp(line, "lm.config") == 0 ||       // legacy: should remove
         strcmp(line, "internal.config") == 0) { // legacy: should remove
       continue;

@@ -180,6 +180,10 @@
 # define PURIFY                         1
 #endif
 
+/* Defaults for user / group */
+#define TS_PKGSYSUSER                   "@pkgsysuser@"
+#define TS_PKGSYSGROUP                  "@pkgsysgroup@"
+
 /* TODO: Fix those always defined features */
 #define MODULARIZED
 

@@ -1448,9 +1448,6 @@ filename_to_string(INKFileNameT file)
   case INK_FNAME_CONGESTION:
     return xstrdup("congestion.config");
 
-  case INK_FNAME_FILTER:
-    return xstrdup("filter.config");
-
   case INK_FNAME_HOSTING:
     return xstrdup("hosting.config");
 
@@ -1970,15 +1967,6 @@ create_ele_obj_from_rule_node(Rule * rule)
   case INK_CONGESTION:
     ele = (CfgEleObj *) new CongestionObj(token_list);
     break;
-  case INK_FILTER_ALLOW:       /* filter.config */
-  case INK_FILTER_DENY:
-  case INK_FILTER_LDAP:
-  case INK_FILTER_NTLM:
-  case INK_FILTER_RADIUS:
-  case INK_FILTER_KEEP_HDR:
-  case INK_FILTER_STRIP_HDR:
-    ele = (CfgEleObj *) new FilterObj(token_list);
-    break;
   case INK_HOSTING:            /* hosting.config */
     ele = (CfgEleObj *) new HostingObj(token_list);
     break;
@@ -2073,16 +2061,6 @@ create_ele_obj_from_ele(INKCfgEle * ele)
 
   case INK_CONGESTION:
     ele_obj = (CfgEleObj *) new CongestionObj((INKCongestionEle *) ele);
-    break;
-
-  case INK_FILTER_ALLOW:       /* filter.config */
-  case INK_FILTER_DENY:        // fall-through
-  case INK_FILTER_LDAP:        // fall-through
-  case INK_FILTER_NTLM:        // fall-through
-  case INK_FILTER_RADIUS:      // fall-through
-  case INK_FILTER_KEEP_HDR:    // fall-through
-  case INK_FILTER_STRIP_HDR:   // fall-through
-    ele_obj = (CfgEleObj *) new FilterObj((INKFilterEle *) ele);
     break;
 
   case INK_HOSTING:            /* hosting.config */
@@ -2209,32 +2187,6 @@ get_rule_type(TokenList * token_list, INKFileNameT file)
 
   case INK_FNAME_CONGESTION:   /* congestion.config */
     return INK_CONGESTION;
-
-  case INK_FNAME_FILTER:       /* filter.config */
-    /* action tag should be last token-value pair in TokenList */
-    //tok = token_list->last();
-    for (tok = token_list->first(); tok; tok = token_list->next(tok)) {
-      if (strcmp(tok->name, "action") == 0) {
-        if (strcmp(tok->value, "allow") == 0) {
-          return INK_FILTER_ALLOW;
-        } else if (strcmp(tok->value, "deny") == 0) {
-          return INK_FILTER_DENY;
-        } else if (strcmp(tok->value, "ldap") == 0) {
-          return INK_FILTER_LDAP;
-        } else if (strcmp(tok->value, "ntlm") == 0) {
-          return INK_FILTER_NTLM;
-        } else if (strcmp(tok->value, "radius") == 0) {
-          return INK_FILTER_RADIUS;
-        } else {
-          return INK_TYPE_UNDEFINED;
-        }
-      } else if (strcmp(tok->name, "keep_hdr") == 0) {
-        return INK_FILTER_KEEP_HDR;
-      } else if (strcmp(tok->name, "strip_hdr") == 0) {
-        return INK_FILTER_STRIP_HDR;
-      }
-    }
-    return INK_FILTER_ALLOW;
 
   case INK_FNAME_HOSTING:      /* hosting.config */
     return INK_HOSTING;
@@ -2622,42 +2574,6 @@ copy_congestion_ele(INKCongestionEle * ele)
   return nele;
 }
 
-INKFilterEle *
-copy_filter_ele(INKFilterEle * ele)
-{
-  if (!ele) {
-    return NULL;
-  }
-
-  INKFilterEle *nele = INKFilterEleCreate(INK_TYPE_UNDEFINED);
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  copy_pdss_format(&(ele->filter_info), &(nele->filter_info));
-  nele->hdr = ele->hdr;
-  /* LDAP */
-  if (ele->server)
-    nele->server = xstrdup(ele->server);
-  if (ele->dn)
-    nele->dn = xstrdup(ele->dn);
-  if (ele->realm)
-    nele->realm = xstrdup(ele->realm);
-  if (ele->uid_filter)
-    nele->uid_filter = xstrdup(ele->uid_filter);
-  if (ele->attr)
-    nele->attr = xstrdup(ele->attr);
-  if (ele->attr_val)
-    nele->attr_val = xstrdup(ele->attr_val);
-  if (ele->redirect_url)
-    nele->redirect_url = xstrdup(ele->redirect_url);
-  if (ele->bind_dn)
-    nele->bind_dn = xstrdup(ele->bind_dn);
-  if (ele->bind_pwd_file)
-    nele->bind_pwd_file = xstrdup(ele->bind_pwd_file);
-
-  return nele;
-}
 
 INKHostingEle *
 copy_hosting_ele(INKHostingEle * ele)

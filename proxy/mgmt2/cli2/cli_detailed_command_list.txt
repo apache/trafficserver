@@ -554,17 +554,6 @@ ssl			SSL Ports
   Restrict SSL Connections to Ports -- 443 563   (proxy.config.http.ssl_ports)
   ts>
 
-filter			Filter Rules
-  syntax: show:filter
-  args:   none
-  behavior:  Display filtering configuration.
-
-  ts> show:filter
-  filter.config rules
-  -------------------
-  (Display rules from filter.config)
-  ts> 
-
 parent			Parent Configuration
 			(on/off, parents, rules)
   syntax: show:parent
@@ -1371,11 +1360,6 @@ logging			Logging Configuration
     ts#
 
 ssl			SSL Ports
-filter			Filter Rules
-  syntax: config:filter <url>
-
-    ts# config:filter http://example.com/filter.config
-    ts#
 
 security		Security Configuration
 			(TS IP allow, MGMT allow, Admin Access)

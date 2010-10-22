@@ -76,8 +76,6 @@ CliCreateCommands()
 
   createCommand("show:ssl", Cmd_ShowSsl, NULL, CLI_COMMAND_EXTERNAL, "show:ssl", "SSL configuration");
 
-  createCommand("show:filter", Cmd_ShowFilter, NULL, CLI_COMMAND_EXTERNAL, "show:filter", "Filter configuration");
-
   createCommand("show:parent", Cmd_ShowParents, CmdArgs_ShowParents, CLI_COMMAND_EXTERNAL,
                 "show:parent", "Parent configuration");
 
@@ -141,9 +139,6 @@ CliCreateCommands()
 
   createCommand("config:ssl", Cmd_ConfigSsl, CmdArgs_ConfigSsl, CLI_COMMAND_EXTERNAL,
                 "config:ssl status <on | off>\n" "config:ssl ports <int>", "Configure ssl");
-
-  createCommand("config:filter", Cmd_ConfigFilter, NULL, CLI_COMMAND_EXTERNAL,
-                "config:filter <url>", "Update filter.config rules <url>");
 
   createCommand("config:parent", Cmd_ConfigParents, CmdArgs_ConfigParents, CLI_COMMAND_EXTERNAL,
                 "config:parent status <on | off>\n"

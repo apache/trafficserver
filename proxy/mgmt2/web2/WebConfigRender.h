@@ -41,10 +41,6 @@ int writeCacheConfigTable(WebHttpContext * whc);
 int writeCacheRuleList(textBuffer * output);
 int writeCacheConfigForm(WebHttpContext * whc);
 
-int writeFilterConfigTable(WebHttpContext * whc);
-int writeFilterRuleList(textBuffer * output);
-int writeFilterConfigForm(WebHttpContext * whc);
-
 int writeHostingConfigTable(WebHttpContext * whc);
 int writeHostingRuleList(textBuffer * output);
 int writeHostingConfigForm(WebHttpContext * whc);
@@ -105,20 +101,6 @@ int convert_cache_ele_to_html_format(INKCacheEle * ele,
                                      char *suffix,
                                      char *port, char *method, char *scheme, char *time_period, char *mixt);
 
-int convert_filter_ele_to_html_format(INKFilterEle * ele,
-                                      char *ruleType,
-                                      char *pdType,
-                                      char *time,
-                                      char *src_ip,
-                                      char *prefix,
-                                      char *suffix,
-                                      char *port,
-                                      char *method,
-                                      char *scheme,
-                                      char *hdr_type, char *server, char *dn, char *realm, char *uid_filter,
-                                      char *attr_name, char *attr_val, char *redirect_url, char *bind_dn,
-                                      char *bind_pwd_file, char *mixt);
-
 int convert_hosting_ele_to_html_format(INKHostingEle * ele, char *pdType, char *partitions);
 
 int convert_icp_ele_to_html_format(INKIcpEle * ele,
@@ -167,9 +149,7 @@ int convert_pdss_to_html_format(INKPdSsFormat info,
 
 //------------------------- SELECT FUNCTIONS ------------------------------
 
-void writeRuleTypeSelect_arm(textBuffer * html, const char *listName);
 void writeRuleTypeSelect_cache(textBuffer * html, const char *listName);
-void writeRuleTypeSelect_filter(textBuffer * html, const char *listName);
 void writeRuleTypeSelect_remap(textBuffer * html, const char *listName);
 void writeRuleTypeSelect_socks(textBuffer * html, const char *listName);
 void writeRuleTypeSelect_bypass(textBuffer * html, const char *listName);

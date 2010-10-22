@@ -96,7 +96,6 @@ show:hostdb                  Host database configuration
 show:dns-resolver            DNS resolver configuration
 show:logging                 Logging configuration
 show:ssl                     SSL configuration
-show:filter                  Filter configuration
 show:parent                  Parent configuration
 show:remap                   Remap configuration
 show:socks                   SOCKS configuration
@@ -124,8 +123,6 @@ config:stop                    Stop proxy software
 
 config:ssl <on | off>
 config:ssl ports <int>      
-
-config:filter <url>            Update filter.config rules <url>
 
 config:parent <on | off>    
 config:parent name <parent>

@@ -534,7 +534,9 @@ case $host_os in
       CCASFLAGS="-Wa,-32" # TODO: add 64bit support to atomic ops
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt -xO3"
-      cxx_opt="-library=stlport4 -erroff"
+      cxx_opt="-library=stlport4"
+      cxx_dbg="+w2"
+      cxx_rel="-erroff"
       AC_DEFINE([_POSIX_PTHREAD_SEMANTICS],1,
        [posix thread semantics]
       )
@@ -557,8 +559,8 @@ esac
 
 cc_oflag_opt=$release_opt
 cc_oflag_dbg=$debug_opt
-cxx_oflag_opt="$release_opt $cxx_opt"
-cxx_oflag_dbg="$debug_opt $cxx_opt"
+cxx_oflag_opt="$release_opt $cxx_opt $cxx_rel"
+cxx_oflag_dbg="$debug_opt $cxx_opt $cxx_dbg"
 
 SHARED_CFLAGS=-fPIC
 SHARED_LDFLAGS=-shared

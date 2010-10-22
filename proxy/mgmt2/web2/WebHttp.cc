@@ -462,44 +462,6 @@ spawn_cgi(WebHttpContext * whc, const char *cgi_path, char **args, bool nowait, 
   return WEB_HTTP_ERR_OKAY;
 
 }
-
-//-------------------------------------------------------------------------
-// encryptToFileAuth_malloc
-//
-// Given the clear-case password, this function will encrypt the password
-// and print the key to a unique file (name assembled from timestamp and
-// stored in the path specified by an auth record)
-// Returns the filename of this file or NULL if the encryption failed.
-//-------------------------------------------------------------------------
-char *
-encryptToFileAuth_malloc(const char *password)
-{
-  NOWARN_UNUSED(password);
-  RecString dir_path;
-  RecGetRecordString_Xmalloc("proxy.config.auth.password_file_path", &dir_path);
-
-  if (!dir_path)
-    return NULL;
-
-  char file_path[MAX_TMP_BUF_LEN + 1];
-  time_t my_time_t;
-  time(&my_time_t);
-  memset(file_path, 0, MAX_TMP_BUF_LEN);
-  snprintf(file_path, MAX_TMP_BUF_LEN, "%s%spwd_%lld.enc", dir_path, DIR_SEP, (int64)my_time_t);
-  if (dir_path)
-    xfree(dir_path);
-
-//  AuthString fileAuthStr(file_path);
-//  AuthString passwdAuthStr(password);
-/*  if (!AccCrypto::encryptToFile(fileAuthStr, passwdAuthStr)) {
-    Debug("config", "[encryptToFileAuth_malloc] Failed to encrypt password");
-
-  }*/
-
-  return xstrdup(file_path);
-}
-
-
 //-------------------------------------------------------------------------
 // handle_cgi_extn
 //-------------------------------------------------------------------------
@@ -3070,7 +3032,6 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
   char name[10];                // "rule#"
   char *close;
   char *apply;
-  char *apply_pwd;
   char *filename;
   char *frecord;
   INKFileNameT type;
@@ -3131,16 +3092,6 @@ handle_submit_update_config(WebHttpContext * whc, const char *file)
     switch (type) {
     case INK_FNAME_CACHE_OBJ:
       err = updateCacheConfig(rules, numRules, &errBuff);
-      break;
-    case INK_FNAME_FILTER:
-      // check if regular Apply or special Apply Password
-      if (ink_hash_table_lookup(whc->post_data_ht, "apply_pwd", (void **) &apply_pwd)) {
-        ink_hash_table_delete(whc->post_data_ht, "apply_pwd");
-        xfree(apply_pwd);
-        err = updateFilterConfigPassword(whc, &errBuff);
-      } else {
-        err = updateFilterConfig(rules, numRules, &errBuff);
-      }
       break;
     case INK_FNAME_HOSTING:
       err = updateHostingConfig(rules, numRules, &errBuff);
@@ -4178,7 +4129,6 @@ WebHttpInit()
   // its mgmt API config file type (INKFileNameT)
   g_display_config_ht = ink_hash_table_create(InkHashTableKeyType_String);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_CACHE_CONFIG, (void *) INK_FNAME_CACHE_OBJ);
-  ink_hash_table_insert(g_display_config_ht, HTML_FILE_FILTER_CONFIG, (void *) INK_FNAME_FILTER);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_HOSTING_CONFIG, (void *) INK_FNAME_HOSTING);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_ICP_CONFIG, (void *) INK_FNAME_ICP_PEER);
   ink_hash_table_insert(g_display_config_ht, HTML_FILE_IP_ALLOW_CONFIG, (void *) INK_FNAME_IP_ALLOW);

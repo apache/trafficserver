@@ -192,19 +192,9 @@ private:
   char *m_errorHint;
   unsigned m_lineNum;
 
-  Token *bypassSubParse(char *rule,
-                        unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
-  TokenList *bypassParse(char *rule,
-                         unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
-  TokenList *cacheParse(char *rule,
-                        unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
-  TokenList *congestionParse(char *rule,
-                             unsigned short minNumToken = MIN_CONFIG_TOKEN,
-                             unsigned short maxNumToken = MAX_CONFIG_TOKEN);
-  TokenList *filterParse(char *rule);
-  TokenList *icpParse(char *rule,
-                      unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
-  TokenList *ipnatParse(char *rule);
+  TokenList *cacheParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
+  TokenList *congestionParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
+  TokenList *icpParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
   TokenList *parentParse(char *rule);
   TokenList *remapParse(char *rule);
   TokenList *socksParse(char *rule);

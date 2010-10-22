@@ -212,8 +212,6 @@ Rule::parse(const char *const_rule, INKFileNameT filetype)
     return cacheParse(rule);
   case INK_FNAME_CONGESTION:   /* congestion.config */
     return congestionParse(rule, 1, 15);
-  case INK_FNAME_FILTER:       /* filter.config */
-    return filterParse(rule);
   case INK_FNAME_HOSTING:      /* hosting.config */
     return hostingParse(rule);
   case INK_FNAME_ICP_PEER:     /* icp.config */
@@ -296,84 +294,6 @@ Rule::arm_securityParse(char *rule)
 
   if (token != (Token *) NULL) {        // Enqueue the last token -- we haven't done it yet.
     m_tokenList->enqueue(token);
-  }
-
-  return m_tokenList;
-}
-
-
-/**
- * bypassSubParse
- **/
-Token *
-Rule::bypassSubParse(char *rule, unsigned short minNumToken, unsigned short maxNumToken)
-{
-  NOWARN_UNUSED(maxNumToken);
-  Tokenizer ruleTok(" \t");
-  int numRuleTok = ruleTok.Initialize(rule);
-  tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-
-  // Sanity Check -- must have more than 2 tokens, otherwise bail out
-  if (numRuleTok < minNumToken) {
-    this->setErrorHint("Extra token(s) expected!");
-    return NULL;
-  }
-
-  Token *token = NEW(new Token());
-  // First token -- either "src" or "dst"
-  token->setName(tokenStr);
-
-  // The rest is an IP address or a list of IP address
-  while ((tokenStr = ruleTok.iterNext(&ruleTok_state))) {
-    token->appendValue(tokenStr);
-  }
-
-  return (token);
-}
-
-
-/**
- * bypassParse
- *   ASSUMPTIONS:
- *     + each token is separated by either "\s", "\t" or ","
- *     + each rule has at least 2 tokens
- **/
-TokenList *
-Rule::bypassParse(char *rule, unsigned short minNumToken, unsigned short maxNumToken)
-{
-  NOWARN_UNUSED(maxNumToken);
-  Tokenizer ruleTok(" \t");
-  int numRuleTok = ruleTok.Initialize(rule);
-  tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-
-  // Sanity Check -- must have more than 3 tokens, otherwise bail out
-  if (numRuleTok < minNumToken) {
-    this->setErrorHint("Expecting more tokens");
-    return NULL;
-  }
-  TokenList *m_tokenList = NEW(new TokenList());
-  Token *token = NEW(new Token());
-
-  // First token -- "bypass", no "VALUE"
-  token->setName(tokenStr);
-  m_tokenList->enqueue(token);
-
-  // Skip first token
-  rule += strlen(tokenStr);
-
-  char *andToken = NULL;
-  if (!(andToken = strstr(rule, "AND")) && !(andToken = strstr(rule, "and"))) {
-    // Not an AND rule
-    m_tokenList->enqueue(bypassSubParse(rule));
-  } else {
-
-    // Chop rule into two parts: rule & and
-    rule[strlen(rule) - strlen(andToken)] = '\0';
-
-    m_tokenList->enqueue(bypassSubParse(rule));
-    m_tokenList->enqueue(bypassSubParse(andToken + strlen("AND")));
   }
 
   return m_tokenList;
@@ -490,16 +410,6 @@ Rule::congestionParse(char *rule, unsigned short minNumToken, unsigned short max
 }
 
 /**
- * filterParse
- **/
-TokenList *
-Rule::filterParse(char *rule)
-{
-  return cacheParse(rule, 2);
-}
-
-
-/**
  * hostingParse
  **/
 TokenList *
@@ -559,38 +469,6 @@ Rule::ip_allowParse(char *rule)
   //   NO SPACE around "-"
   return cacheParse(rule, 2, 2);
 }
-
-TokenList *
-Rule::ipnatParse(char *rule)
-{
-  Tokenizer ruleTok(" \t");
-  int numRuleTok = ruleTok.Initialize(rule);
-  tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token;
-
-  if (numRuleTok < 10) {
-    setErrorHint("Expecting at least 10 tokens!");
-    return NULL;
-  }
-
-  TokenList *m_tokenList = NEW(new TokenList());
-
-  while (tokenStr) {
-    token = NEW(new Token());
-    token->setName(tokenStr);
-    tokenStr = ruleTok.iterNext(&ruleTok_state);
-    m_tokenList->enqueue(token);
-  }
-
-  // Just to make sure that there are no left overs
-  // coverity[returned_pointer]
-  tokenStr = ruleTok.iterNext(&ruleTok_state);
-  ink_debug_assert(tokenStr == NULL);
-
-  return m_tokenList;
-}
-
 
 
 /**
@@ -1094,8 +972,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = INK_FNAME_CACHE_OBJ;   /* cache.config */
   } else if (strstr(filename, "congestion.config")) {
     m_filetype = INK_FNAME_CONGESTION;  /* congestion.config */
-  } else if (strstr(filename, "filter.config")) {
-    m_filetype = INK_FNAME_FILTER;      /* filter.config */
   } else if (strstr(filename, "hosting.config")) {
     m_filetype = INK_FNAME_HOSTING;     /* hosting.config */
   } else if (strstr(filename, "icp.config")) {

@@ -177,7 +177,6 @@ INKIntList copy_int_list(INKIntList list);
 INKAdminAccessEle *copy_admin_access_ele(INKAdminAccessEle * ele);
 INKCacheEle *copy_cache_ele(INKCacheEle * ele);
 INKCongestionEle *copy_congestion_ele(INKCongestionEle * ele);
-INKFilterEle *copy_filter_ele(INKFilterEle * ele);
 INKHostingEle *copy_hosting_ele(INKHostingEle * ele);
 INKIcpEle *copy_icp_ele(INKIcpEle * ele);
 INKIpAllowEle *copy_ip_allow_ele(INKIpAllowEle * ele);

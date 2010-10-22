@@ -366,18 +366,6 @@ int Cmd_ConfigRestart(ClientData clientData, Tcl_Interp * interp, int argc, cons
 int CmdArgs_ConfigRestart();
 
 ////////////////////////////////////////////////////////////////
-// Cmd_ConfigFilter
-//
-// This is the callback function for the "config:filter" command.
-//
-// Parameters:
-//    clientData -- information about parsed arguments
-//    interp -- the Tcl interpreter
-//    argc -- number of command arguments
-//    argv -- the command arguments
-//
-int Cmd_ConfigFilter(ClientData clientData, Tcl_Interp * interp, int argc, const char *argv[]);
-////////////////////////////////////////////////////////////////
 // Cmd_ConfigParents
 //
 // This is the callback function for the "config:parents" command.
@@ -821,9 +809,6 @@ int ConfigTimezone(int, int);
 
 //config Timezone List
 int ConfigTimezoneList();
-
-// config filter sub-command
-int ConfigFilter(const char *url);
 
 // config security password sub-command
 int ConfigSecurityPasswd();

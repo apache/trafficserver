@@ -174,30 +174,6 @@ private:
   INKCongestionEle * m_ele;
 };
 
-/* filter.config    *********************************************/
-class FilterObj:public CfgEleObj
-{
-public:
-  FilterObj(INKFilterEle * ele);
-  FilterObj(TokenList * tokens);        //creates the ele
-  ~FilterObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual INKCfgEle *getCfgEleCopy();
-  virtual INKCfgEle *getCfgEle()
-  {
-    return (INKCfgEle *) m_ele;
-  }
-  virtual INKRuleTypeT getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  INKFilterEle * m_ele;
-};
-
 /* hosting.config ************************************************/
 class HostingObj:public CfgEleObj
 {

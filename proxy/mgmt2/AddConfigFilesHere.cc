@@ -80,18 +80,13 @@ initializeRegistry()
   configFiles->addFile("mgmt_allow.config", false);
   configFiles->addFile("ip_allow.config", false);
   configFiles->addFile("parent.config", false);
-  configFiles->addFile("filter.config", false);
   configFiles->addFile("remap.config", false);
   configFiles->addFile("update.config", false);
   configFiles->addFile("admin_access.config", false);
   configFiles->addFile("partition.config", false);
   configFiles->addFile("hosting.config", false);
-  configFiles->addFile("bypass.config", false);
   configFiles->addFile("congestion.config", false);
   configFiles->addFile("plugin.config", false);
-  configFiles->addFile("ipnat.conf", false);
-  configFiles->addFile("bypass.config", false);
-
   configFiles->addFile("splitdns.config", false);
   configFiles->addFile("ssl_multicert.config", false);
   configFiles->addFile("stats.config.xml", false);

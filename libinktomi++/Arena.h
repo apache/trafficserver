@@ -26,9 +26,7 @@
 
 
 #include <sys/types.h>
-#if !defined (VxWorks)
 #include <memory.h>
-#endif
 #include "ink_assert.h"
 
 

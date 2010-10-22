@@ -71,7 +71,6 @@ const char *config_files[] = {
   "hosting.config",
   "icp.config",
   "ip_allow.config",
-  "ipnat.conf",
   "mgmt_allow.config",
   "parent.config",
   "partition.config",
@@ -597,8 +596,6 @@ convertPartitionRule_xml(XMLNode * rule_node)
 
   if (strcmp(rule_node->getNodeName(), "http") == 0) {
     ele->scheme = INK_PARTITION_HTTP;
-  } else if (strcmp(rule_node->getNodeName(), "mixt") == 0) {
-    ele->scheme = INK_PARTITION_MIXT;
   } else {
     INKPartitionEleDestroy(ele);
     return NULL;
@@ -1605,9 +1602,6 @@ convertPartitionRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
   case INK_PARTITION_HTTP:
     writeXmlAttrStartTag(xml_file, "http");
     break;
-  case INK_PARTITION_MIXT:
-    writeXmlAttrStartTag(xml_file, "mixt");
-    break;
   default:
     goto Lerror;
   }
@@ -1629,9 +1623,6 @@ convertPartitionRule_ts(INKCfgEle * cfg_ele, textBuffer * xml_file)
   switch (ele->scheme) {
   case INK_PARTITION_HTTP:
     writeXmlEndTag(xml_file, "http");
-    break;
-  case INK_PARTITION_MIXT:
-    writeXmlEndTag(xml_file, "mixt");
     break;
   default:
     break;

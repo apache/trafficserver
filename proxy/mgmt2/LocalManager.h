@@ -112,7 +112,6 @@ public:
   void processBounce();
   void rollLogFiles();
   void clearStats();
-  void convert_filters();
 
   bool processRunning();
   bool clusterOk();

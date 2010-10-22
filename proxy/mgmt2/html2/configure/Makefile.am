@@ -37,7 +37,6 @@ dist_webui_DATA = \
 	c_header.ink \
 	c_http_cachability.ink \
 	c_http_dyn_cache.ink \
-	c_http_filtering.ink \
 	c_http_general.ink \
 	c_http_parent_proxy.ink \
 	c_http_privacy.ink \
@@ -94,14 +93,11 @@ dist_webui_DATA = \
 	c_windows_media_general.ink \
 	c_windows_media_mbridge.ink \
 	c_windows_media_mcast.ink \
-	f_bypass_config.ink \
 	f_cache_config.ink \
 	f_configs.ink \
-	f_filter_config.ink \
 	f_hosting_config.ink \
 	f_icp_config.ink \
 	f_ip_allow_config.ink \
-	f_ipnat_config.ink \
 	f_mgmt_allow_config.ink \
 	f_parent_config.ink \
 	f_partition_config.ink \

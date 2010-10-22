@@ -32,7 +32,6 @@ dist_sysconf_DATA =	\
   cache.config \
   cluster.config \
   congestion.config \
-  filter.config \
   hosting.config \
   icp.config \
   ip_allow.config \

@@ -355,18 +355,6 @@ INKCongestionEleDestroy(INKCongestionEle * ele)
   return;
 }
 
-inkapi INKFilterEle *
-INKFilterEleCreate()
-{
-  return NULL;
-}
-
-inkapi void
-INKFilterEleDestroy(INKFilterEle * ele)
-{
-  return;
-}
-
 inkapi INKHostingEle *
 INKHostingEleCreate()
 {
@@ -387,18 +375,6 @@ INKIcpEleCreate()
 
 inkapi void
 INKIcpEleDestory(INKIcpEle * ele)
-{
-  return;
-}
-
-inkapi INKIpFilterEle *
-INKIpFilterEleCreate()
-{
-  return NULL;
-}
-
-inkapi void
-INKIpFilterEleDestroy(INKIpFilterEle * ele)
 {
   return;
 }
