@@ -38,9 +38,6 @@ RecRawStatBlock *congest_rsb;
 InkRand CongestionRand(123);
 
 static const char *congestPrefix = "[CongestionControl]";
-static const char *congestVar = "proxy.config.http.congestion_control.filename";
-static const char *congestEnabledVar = "proxy.config.http.congestion_control.enabled";
-static const char *congestTimeVar = "proxy.config.http.congestion_control.localtime";
 
 static const matcher_tags congest_dest_tags = {
   "dest_host",
@@ -54,21 +51,7 @@ static const matcher_tags congest_dest_tags = {
 #define CONGESTION_CONTROL_CONFIG_TIMEOUT 120
 /* default congestion control values */
 
-static const char *default_max_connection_failures_var =
-  "proxy.config.http.congestion_control.default.max_connection_failures";
-static const char *default_fail_window_var = "proxy.config.http.congestion_control.default.fail_window";
-static const char *default_proxy_retry_interval_var = "proxy.config.http.congestion_control.default.proxy_retry_interval";
-static const char *default_client_wait_interval_var = "proxy.config.http.congestion_control.default.client_wait_interval";
-static const char *default_wait_interval_alpha_var = "proxy.config.http.congestion_control.default.wait_interval_alpha";
-static const char *default_live_os_conn_timeout_var = "proxy.config.http.congestion_control.default.live_os_conn_timeout";
-static const char *default_live_os_conn_retries_var = "proxy.config.http.congestion_control.default.live_os_conn_retries";
-static const char *default_dead_os_conn_timeout_var = "proxy.config.http.congestion_control.default.dead_os_conn_timeout";
-static const char *default_dead_os_conn_retries_var = "proxy.config.http.congestion_control.default.dead_os_conn_retries";
-static const char *default_max_connection_var = "proxy.config.http.congestion_control.default.max_connection";
-static const char *default_error_page_var = "proxy.config.http.congestion_control.default.error_page";
-static const char *default_congestion_scheme_var = "proxy.config.http.congestion_control.default.congestion_scheme";
-
-char *DEFAULT_error_page = xstrdup("congestion#retryAfter");
+char *DEFAULT_error_page = NULL;
 int DEFAULT_max_connection_failures = 5;
 int DEFAULT_fail_window = 120;
 int DEFAULT_proxy_retry_interval = 10;
@@ -79,7 +62,7 @@ int DEFAULT_live_os_conn_retries = 2;
 int DEFAULT_dead_os_conn_timeout = 15;
 int DEFAULT_dead_os_conn_retries = 1;
 int DEFAULT_max_connection = -1;
-char *DEFAULT_congestion_scheme_str = xstrdup("per_ip");
+char *DEFAULT_congestion_scheme_str = NULL;
 int DEFAULT_congestion_scheme = PER_IP;
 
 /* congestion control limits */
@@ -402,28 +385,27 @@ initCongestionControl()
   reconfig_mutex = new_ProxyMutex();
 
 // register config variables
-  CC_EstablishStaticConfigInteger(congestionControlEnabled, congestEnabledVar);
-  CC_EstablishStaticConfigInteger(DEFAULT_max_connection_failures, default_max_connection_failures_var);
-  CC_EstablishStaticConfigInteger(DEFAULT_fail_window, default_fail_window_var);
-  CC_EstablishStaticConfigInteger(DEFAULT_proxy_retry_interval, default_proxy_retry_interval_var);
-  CC_EstablishStaticConfigInteger(DEFAULT_client_wait_interval, default_client_wait_interval_var);
-  CC_EstablishStaticConfigInteger(DEFAULT_wait_interval_alpha, default_wait_interval_alpha_var);
-  CC_EstablishStaticConfigInteger(DEFAULT_live_os_conn_timeout, default_live_os_conn_timeout_var);
-  CC_EstablishStaticConfigInteger(DEFAULT_live_os_conn_retries, default_live_os_conn_retries_var);
-  CC_EstablishStaticConfigInteger(DEFAULT_dead_os_conn_timeout, default_dead_os_conn_timeout_var);
-  CC_EstablishStaticConfigInteger(DEFAULT_dead_os_conn_retries, default_dead_os_conn_retries_var);
-  CC_EstablishStaticConfigInteger(DEFAULT_max_connection, default_max_connection_var);
-  CC_EstablishStaticConfigStringAlloc(DEFAULT_congestion_scheme_str, default_congestion_scheme_var);
-  CC_EstablishStaticConfigStringAlloc(DEFAULT_error_page, default_error_page_var);
-  CC_EstablishStaticConfigInteger(congestionControlEnabled, congestEnabledVar);
-  CC_EstablishStaticConfigInteger(congestionControlLocalTime, congestTimeVar);
+  CC_EstablishStaticConfigInteger(congestionControlEnabled, "proxy.config.http.congestion_control.enabled");
+  CC_EstablishStaticConfigInteger(DEFAULT_max_connection_failures, "proxy.config.http.congestion_control.default.max_connection_failures");
+  CC_EstablishStaticConfigInteger(DEFAULT_fail_window, "proxy.config.http.congestion_control.default.fail_window");
+  CC_EstablishStaticConfigInteger(DEFAULT_proxy_retry_interval, "proxy.config.http.congestion_control.default.proxy_retry_interval");
+  CC_EstablishStaticConfigInteger(DEFAULT_client_wait_interval, "proxy.config.http.congestion_control.default.client_wait_interval");
+  CC_EstablishStaticConfigInteger(DEFAULT_wait_interval_alpha, "proxy.config.http.congestion_control.default.wait_interval_alpha");
+  CC_EstablishStaticConfigInteger(DEFAULT_live_os_conn_timeout, "proxy.config.http.congestion_control.default.live_os_conn_timeout");
+  CC_EstablishStaticConfigInteger(DEFAULT_live_os_conn_retries, "proxy.config.http.congestion_control.default.live_os_conn_retries");
+  CC_EstablishStaticConfigInteger(DEFAULT_dead_os_conn_timeout, "proxy.config.http.congestion_control.default.dead_os_conn_timeout");
+  CC_EstablishStaticConfigInteger(DEFAULT_dead_os_conn_retries, "proxy.config.http.congestion_control.default.dead_os_conn_retries");
+  CC_EstablishStaticConfigInteger(DEFAULT_max_connection, "proxy.config.http.congestion_control.default.max_connection");
+  CC_EstablishStaticConfigStringAlloc(DEFAULT_congestion_scheme_str, "proxy.config.http.congestion_control.default.congestion_scheme");
+  CC_EstablishStaticConfigStringAlloc(DEFAULT_error_page, "proxy.config.http.congestion_control.default.error_page");
+  CC_EstablishStaticConfigInteger(congestionControlLocalTime, "proxy.config.http.congestion_control.localtime");
   {
     RecData recdata;
     recdata.rec_int = 0;
     CongestionControlDefaultSchemeChanged(NULL, RECD_NULL, recdata, NULL);
   }
 
-  CongestionMatcher = NEW(new CongestionMatcherTable(congestVar, congestPrefix, &congest_dest_tags));
+  CongestionMatcher = NEW(new CongestionMatcherTable("proxy.config.http.congestion_control.filename", congestPrefix, &congest_dest_tags));
 #ifdef DEBUG_CONGESTION_MACTHER
   CongestionMatcher->Print();
 #endif
@@ -434,9 +416,9 @@ initCongestionControl()
   } else {
     Debug("congestion_config", "congestion control disabled");
   }
-  RecRegisterConfigUpdateCb(default_congestion_scheme_var, &CongestionControlDefaultSchemeChanged, NULL);
-  RecRegisterConfigUpdateCb(congestEnabledVar, &CongestionControlEnabledChanged, NULL);
-  RecRegisterConfigUpdateCb(congestVar, &CongestionControlFile_CB, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.http.congestion_control.default.congestion_scheme", &CongestionControlDefaultSchemeChanged, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.http.congestion_control.enabled", &CongestionControlEnabledChanged, NULL);
+  RecRegisterConfigUpdateCb("proxy.config.http.congestion_control.filename", &CongestionControlFile_CB, NULL);
 }
 
 void
@@ -445,7 +427,7 @@ reloadCongestionControl()
   CongestionMatcherTable *newTable;
   Debug("congestion_config", "congestion control config changed, reloading");
   ink_hrtime t = CONGESTION_CONTROL_CONFIG_TIMEOUT;
-  newTable = NEW(new CongestionMatcherTable(congestVar, congestPrefix, &congest_dest_tags));
+  newTable = NEW(new CongestionMatcherTable("proxy.config.http.congestion_control.filename", congestPrefix, &congest_dest_tags));
 #ifdef DEBUG_CONGESTION_MACTHER
   newTable->Print();
 #endif
