@@ -369,13 +369,13 @@ template<class Data, class Result> void RegexMatcher<Data, Result>::Match(RD * r
   for (int i = 0; i < num_el; i++) {
 
     r = pcre_exec(re_array[i], NULL, url_str, strlen(url_str), 0, 0, NULL, 0);
-    if (r != -1) {
+    if (r > -1) {
       Debug("matcher", "%s Matched %s with regex at line %d", matcher_name, url_str, data_array[i].line_num);
       data_array[i].UpdateMatch(result, rdata);
-    } else {
+    } else if (r < -1) {
       // An error has occured
-      Warning("error matching regex at line %d", data_array[i].line_num);
-    }
+      Warning("Error [%d] matching regex at line %d.", r, data_array[i].line_num);
+    } // else it's -1 which means no match was found.
 
   }
   xfree(url_str);
