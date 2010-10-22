@@ -167,18 +167,16 @@ net_accept_main_blocking(NetAccept * na, Event * e, bool blockable)
 }
 
 
-// Functions all THREAD_FREE and THREAD_ALLOC to be performed
-// for both SSL and regular UnixNetVConnection transparent to
-// accept functions.
 UnixNetVConnection *
 NetAccept::allocateThread(EThread * t)
 {
-  return ((UnixNetVConnection *) THREAD_ALLOC(netVCAllocator, t));
+  return ((UnixNetVConnection *)THREAD_ALLOC(netVCAllocator, t));
 }
 
 void
 NetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
 {
+  ink_assert(!vc->from_accept_thread);
   THREAD_FREE(vc, netVCAllocator, t);
 }
 
@@ -203,8 +201,6 @@ NetAccept::init_accept_loop()
     action_->continuation->mutex = new_ProxyMutex();
     action_->mutex = action_->continuation->mutex;
   }
-  do_listen(BLOCKING);
-  unix_netProcessor.accepts_on_thread.push(this);
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
   eventProcessor.spawn_thread(this);
 }
@@ -247,7 +243,8 @@ NetAccept::init_accept_per_thread()
   else
     SET_HANDLER((NetAcceptHandler) & NetAccept::acceptEvent);
   period = ACCEPT_PERIOD;
-  NetAccept *a = this;
+
+  NetAccept *a;
   n = eventProcessor.n_threads_for_type[ET_NET];
   for (i = 0; i < n; i++) {
     if (i < n - 1) {
@@ -302,8 +299,9 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
   //added by YTS Team, yamsat
   do {
     vc = (UnixNetVConnection *) master_na->alloc_cache;
-    if (!vc) {
-      vc = allocateThread(t);
+    if (likely(!vc)) {
+      vc = (UnixNetVConnection *)netVCAllocator.alloc(); // Don't use thread / proxy allocation
+      vc->from_accept_thread = true;
       vc->id = net_next_connection_number();
       master_na->alloc_cache = vc;
 #if TS_USE_DETAILED_LOG

@@ -75,7 +75,6 @@ public:
 
   char *throttle_error_message;
   Event *accept_thread_event;
-  AtomicSLL<NetAccept, NetAccept::Link_link> accepts_on_thread;
 
   // offsets for per thread data structures
   off_t netHandler_offset;

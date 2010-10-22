@@ -2,6 +2,28 @@
 
 Changes with Apache Traffic Server 2.1.4
 
+  *) Accept threads can leak some amount of memory. This patch also
+   supports multiple accept threads (very experimental!) [TS-496].
+
+  *) HttpSM has an assertion that checks the client URL against the
+   cache URL, which breaks INKSetCacheUrl [TS-495].
+
+  *) Return value from pcre_exec tested incorrectly [TS-493].
+
+  *) Improved loop detection using the Via header [TS-490].
+
+  *) Fixes for Solaris build (yay, it builds!).
+
+  *) Remove filter.config remnants [TS-486].
+
+  *) Cleanup in InkAPI [TS-485].
+
+  *) Move PKGSYSUSER to ink_config.h.in [TS-482].
+
+  *) Unresponsive server can stall ATS [TS-480].
+
+  *) UrlRewrite cleanup [TS-434].
+
   *) Build TS with clang (author: Igor Galic) [TS-427].
 
   *) Better support and handling of DNS round-robin options (author: Zhao

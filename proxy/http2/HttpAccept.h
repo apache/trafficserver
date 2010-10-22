@@ -30,11 +30,29 @@
 #include "HTTP.h"
 #include "IPRange.h"
 
-class HttpAccept:public Continuation
+
+/**
+   The continuation mutex is NULL to allow parellel accepts in NT. The
+   only state used by the handler is attr and backdoor which is setup
+   at the beginning of time and never changed. No state is recorded by
+   the handler. So a NULL mutex is safe.
+
+*/
+
+class HttpAccept: public Continuation
 {
 public:
-  HttpAccept(int aattr, bool abackdoor = false);
-   ~HttpAccept();
+ HttpAccept(int aattr, bool abackdoor = false)
+   : Continuation(NULL), backdoor(abackdoor), attr(aattr)
+  {
+    SET_HANDLER(&HttpAccept::mainEvent);
+    return;
+  }
+
+  ~HttpAccept()
+  {
+    return;
+  }
 
   int mainEvent(int event, void *netvc);
 
@@ -45,28 +63,5 @@ private:
     HttpAccept & operator =(const HttpAccept &);
 };
 
-/**
-  The continuation mutex is NULL to allow parellel accepts in NT. The
-  only state used by the handler is attr and backdoor which is setup
-  at the beginning of time and never changed. No state is recorded by
-  the handler. So a NULL mutex is safe.
 
-*/
-inline
-HttpAccept::HttpAccept(int aattr, bool abackdoor)
-  :
-Continuation(NULL),
-backdoor(abackdoor),
-attr(aattr)
-{
-  SET_HANDLER(&HttpAccept::mainEvent);
-  return;
-}
-
-inline
-HttpAccept::~
-HttpAccept()
-{
-  return;
-}
 #endif

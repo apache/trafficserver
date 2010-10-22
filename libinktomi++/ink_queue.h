@@ -165,10 +165,11 @@ extern "C"
   static inline void *ink_freelist_new(InkFreeList * f)
   {
     void *retval = NULL;
-      ink_mutex_acquire(&(f->inkfreelist_mutex));
-      retval = ink_freelist_new_wrap(f);
-      ink_mutex_release(&(f->inkfreelist_mutex));
-      return retval;
+
+    ink_mutex_acquire(&(f->inkfreelist_mutex));
+    retval = ink_freelist_new_wrap(f);
+    ink_mutex_release(&(f->inkfreelist_mutex));
+    return retval;
   }
 
   inkcoreapi void ink_freelist_free_wrap(InkFreeList * f, void *item);

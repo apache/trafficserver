@@ -80,9 +80,9 @@ NetProcessor::accept(Continuation * cont,
   (void) bound_sockaddr;        // NT only
   (void) bound_sockaddr_size;   // NT only
   NetDebug("iocore_net_processor",
-	   "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-	   port, recv_bufsize, send_bufsize, sockopt_flags
-	   );
+           "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
+           port, recv_bufsize, send_bufsize, sockopt_flags
+           );
 
   AcceptOptions opt;
   opt.port = port;
@@ -97,28 +97,28 @@ NetProcessor::accept(Continuation * cont,
                                                       frequent_accept,
                                                       net_accept,
                                                       accept_ip,
-						      opt
-						      );
+                                                      opt
+                                                      );
 }
 
 Action *
 NetProcessor::main_accept(Continuation * cont, SOCKET fd,
                           sockaddr * bound_sockaddr, int *bound_sockaddr_size,
                           bool accept_only,
-			  AcceptOptions const& opt
-			  )
+                          AcceptOptions const& opt
+                          )
 {
   (void) accept_only;           // NT only
   NetDebug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-        opt.port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+           opt.port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
   return ((UnixNetProcessor *) this)->accept_internal(cont, fd,
                                                       bound_sockaddr,
                                                       bound_sockaddr_size,
                                                       true,
                                                       net_accept,
                                                       ((UnixNetProcessor *) this)->incoming_ip_to_bind_saddr,
-						      opt
-						      );
+                                                      opt
+                                                      );
 }
 
 
@@ -131,8 +131,8 @@ UnixNetProcessor::accept_internal(Continuation * cont,
                                   bool frequent_accept,
                                   AcceptFunction fn,
                                   unsigned int accept_ip,
-				  AcceptOptions const& opt
-				  )
+                                  AcceptOptions const& opt
+                                  )
 {
   EventType et = opt.etype; // setEtype requires non-const ref.
   setEtype(et);
@@ -159,10 +159,20 @@ UnixNetProcessor::accept_internal(Continuation * cont,
   if (na->callback_on_open)
     na->mutex = cont->mutex;
   if (frequent_accept) { // true
-    if (use_accept_thread) // 0
-      na->init_accept_loop();
-    else
+    if (use_accept_thread)  {
+      if (0 == na->do_listen(BLOCKING)) {
+        NetAccept *a;
+        
+        while (--use_accept_thread > 0) {
+          a = NEW(new NetAccept);
+          *a = *na;
+          a->init_accept_loop();
+        }
+        na->init_accept_loop();
+      }
+    } else {
       na->init_accept_per_thread();
+    }
   } else
     na->init_accept();
   if (bound_sockaddr && bound_sockaddr_size)
@@ -301,7 +311,7 @@ struct CheckConnect:public Continuation
       break;
 
       case NET_EVENT_OPEN_FAILED:
-	NetDebug("iocore_net_connect", "connect Net open failed");
+        NetDebug("iocore_net_connect", "connect Net open failed");
       if (!action_.cancelled)
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) e);
       break;

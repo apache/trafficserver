@@ -234,6 +234,7 @@ public:
   int recursion;
   ink_hrtime submit_time;
   OOB_callback *oob_ptr;
+  bool from_accept_thread;
 
   int startEvent(int event, Event *e);
   int acceptEvent(int event, Event *e);

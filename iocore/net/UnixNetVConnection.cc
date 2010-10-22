@@ -784,15 +784,16 @@ UnixNetVConnection::reenable_re(VIO *vio)
 }
 
 
-UnixNetVConnection::UnixNetVConnection():
-closed(0), inactivity_timeout_in(0), active_timeout_in(0),
+UnixNetVConnection::UnixNetVConnection()
+  : closed(0), inactivity_timeout_in(0), active_timeout_in(0),
 #ifdef INACTIVITY_TIMEOUT
-  inactivity_timeout(NULL),
+    inactivity_timeout(NULL),
 #else
-  next_inactivity_timeout_at(0),
+    next_inactivity_timeout_at(0),
 #endif
-  active_timeout(NULL), nh(NULL),
-  id(0), ip(0), accept_port(0), port(0), flags(0), recursion(0), submit_time(0), oob_ptr(0)
+    active_timeout(NULL), nh(NULL),
+    id(0), ip(0), accept_port(0), port(0), flags(0), recursion(0), submit_time(0), oob_ptr(0),
+    from_accept_thread(false)
 {
   memset(&local_sa, 0, sizeof local_sa);
   SET_HANDLER((NetVConnHandler) & UnixNetVConnection::startEvent);
@@ -1147,5 +1148,10 @@ UnixNetVConnection::free(EThread *t)
   ink_debug_assert(!active_timeout);
   ink_debug_assert(con.fd == NO_FD);
   ink_debug_assert(t == this_ethread());
-  THREAD_FREE(this, netVCAllocator, t);
+
+  if (from_accept_thread) {
+    netVCAllocator.free(this);  
+  } else {
+    THREAD_FREE(this, netVCAllocator, t);
+  }
 }

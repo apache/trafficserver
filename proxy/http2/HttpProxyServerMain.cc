@@ -289,11 +289,11 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
       type = attr.type;
       opt.domain = attr.domain;
       Debug("http_tproxy", "Primary listen socket transparency is %s\n",
-	    attr.f_inbound_transparent &&  attr.f_outbound_transparent ? "bidirectional"
-	      : attr.f_inbound_transparent ? "inbound"
-	        : attr.f_outbound_transparent ? "outbound"
-                  : "off"
-	    );
+            attr.f_inbound_transparent &&  attr.f_outbound_transparent ? "bidirectional"
+            : attr.f_inbound_transparent ? "inbound"
+            : attr.f_outbound_transparent ? "outbound"
+            : "off"
+            );
       opt.f_outbound_transparent = attr.f_outbound_transparent;
       opt.f_inbound_transparent = attr.f_inbound_transparent;
       xfree(attr_string);
@@ -312,8 +312,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
     }
   }
   if (!http_port_attr_array) {
-    netProcessor.main_accept(NEW(new HttpAccept(type)), fd,  NULL, NULL, false,
-                             opt);
+    netProcessor.main_accept(NEW(new HttpAccept(type)), fd,  NULL, NULL, false, opt);
 
     if (http_other_port_array) {
       for (int i = 0; http_other_port_array[i].port != -1; i++) {
@@ -321,21 +320,17 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
         if ((e.port<1) || (e.port> 65535))
           Warning("additional port out of range ignored: %d", e.port);
         else {
-	  opt.port = e.port;
-	  opt.f_outbound_transparent = e.f_outbound_transparent;
-          netProcessor.main_accept(NEW(new HttpAccept(e.type)),
-				   fd, NULL, NULL, false, opt
-				   );
-	}
+          opt.port = e.port;
+          opt.f_outbound_transparent = e.f_outbound_transparent;
+          netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, NULL, NULL, false, opt);
+        }
       }
     }
   } else {
     for (int i = 0; http_port_attr_array[i].fd != NO_FD; i++) {
       HttpPortEntry & e = http_port_attr_array[i];
       if (!e.fd) {
-        netProcessor.main_accept(NEW(new HttpAccept(type)),
-				 fd, NULL, NULL, false, opt
-				 );
+        netProcessor.main_accept(NEW(new HttpAccept(type)), fd, NULL, NULL, false, opt);
       }
     }
   }
@@ -345,8 +340,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   if (sslParam->getTerminationMode() & sslParam->SSL_TERM_MODE_CLIENT) {
     opt.reset();
     opt.port = sslParam->getAcceptPort();
-    sslNetProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_SSL)), ssl_fd, 
-				0, 0, false, opt);
+    sslNetProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_SSL)), ssl_fd, 0, 0, false, opt);
   }
 
   sslTerminationConfig.release(sslParam);
@@ -368,6 +362,5 @@ start_HttpProxyServerBackDoor(int port)
 {
   NetProcessor::AcceptOptions opt;
   opt.port = port;
-  netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)),
-			   NO_FD, 0, 0, false, opt);
+  netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)), NO_FD, 0, 0, false, opt);
 }
