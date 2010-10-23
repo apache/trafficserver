@@ -119,7 +119,7 @@ extern "C" int plock(int);
 #define DEFAULT_NUMBER_OF_CLUSTER_THREADS 1
 //#define DEFAULT_NUMBER_OF_AUTH_THREADS    (ink_number_of_processors() + 1)
 #define DEFAULT_NUMBER_OF_SSL_THREADS     0
-#define DEFAULT_USE_ACCEPT_THREAD         0
+#define DEFAULT_NUM_ACCEPT_THREADS        0
 #define DEFAULT_HTTP_ACCEPT_PORT_NUMBER   0
 #define DEFAULT_COMMAND_FLAG              0
 #define DEFAULT_LOCK_PROCESS              0
@@ -145,8 +145,7 @@ int num_of_net_threads = DEFAULT_NUMBER_OF_THREADS;
 int num_of_cluster_threads = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
 int num_of_udp_threads = DEFAULT_NUMBER_OF_UDP_THREADS;
 int num_of_ssl_threads = DEFAULT_NUMBER_OF_SSL_THREADS;
-extern int use_accept_thread;
-//           = DEFAULT_USE_ACCEPT_THREAD;
+int num_accept_threads  = DEFAULT_NUM_ACCEPT_THREADS;
 int run_test_hook = 0;
 int http_accept_port_number = DEFAULT_HTTP_ACCEPT_PORT_NUMBER;
 int http_accept_file_descriptor = NO_FD;
@@ -220,7 +219,7 @@ ArgumentDescription argument_descriptions[] = {
    &num_of_cluster_threads, "PROXY_CLUSTER_THREADS", NULL},
   {"udp_threads", 'U', "Number of UDP Threads", "I",
    &num_of_udp_threads, "PROXY_UDP_THREADS", NULL},
-  {"accept_thread", 'a', "Use an Accept Thread", "T", &use_accept_thread,
+  {"accept_thread", 'a', "Use an Accept Thread", "T", &num_accept_threads,
    "PROXY_ACCEPT_THREAD", NULL},
   {"accept_till_done", 'b', "Accept Till Done", "T", &accept_till_done,
    "PROXY_ACCEPT_TILL_DONE", NULL},
@@ -1761,8 +1760,8 @@ main(int argc, char **argv)
   // Restart syslog now that we have configuration info
   syslog_log_configure();
 
-  if (!use_accept_thread)
-    TS_ReadConfigInteger(use_accept_thread, "proxy.config.accept_threads");
+  if (!num_accept_threads)
+    TS_ReadConfigInteger(num_accept_threads, "proxy.config.accept_threads");
 
   // This call is required for win_9xMe
   //without this this_ethread() is failing when
@@ -2040,7 +2039,7 @@ main(int argc, char **argv)
     TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
     if (http_enabled) {
-      start_HttpProxyServer(http_accept_file_descriptor, http_accept_port_number, ssl_accept_file_descriptor);
+      start_HttpProxyServer(http_accept_file_descriptor, http_accept_port_number, ssl_accept_file_descriptor, num_accept_threads);
       int hashtable_enabled = 0;
       TS_ReadConfigInteger(hashtable_enabled, "proxy.config.connection_collapsing.hashtable_enabled");
       if (hashtable_enabled) {
@@ -2055,7 +2054,7 @@ main(int argc, char **argv)
     int back_door_port = NO_FD;
     TS_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
     if (back_door_port != NO_FD)
-      start_HttpProxyServerBackDoor(back_door_port);
+      start_HttpProxyServerBackDoor(back_door_port, num_accept_threads > 0 ? 1 : 0); // One accept thread is enough
 
 #ifndef INK_NO_SOCKS
     if (netProcessor.socks_conf_stuff->accept_enabled) {

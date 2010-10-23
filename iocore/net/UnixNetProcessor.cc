@@ -28,15 +28,13 @@
 #include "StatPages.h"
 #endif
 
-// Globals
-int use_accept_thread = 0;
-
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
 NetProcessor::AcceptOptions&
 NetProcessor::AcceptOptions::reset()
 {
   port = 0;
+  accept_threads = 0;
   domain = AF_INET;
   etype = ET_NET;
   f_callback_on_open = false;
@@ -159,15 +157,18 @@ UnixNetProcessor::accept_internal(Continuation * cont,
   if (na->callback_on_open)
     na->mutex = cont->mutex;
   if (frequent_accept) { // true
-    if (use_accept_thread)  {
+    if (opt.accept_threads > 0)  {
       if (0 == na->do_listen(BLOCKING)) {
         NetAccept *a;
-        
-        while (--use_accept_thread > 0) {
+
+        for (int i=1; i < opt.accept_threads; ++i) {
           a = NEW(new NetAccept);
           *a = *na;
           a->init_accept_loop();
+          Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, opt.port);
         }
+        // Start the "template" accept thread last.
+        Debug("iocore_net_accept", "Created accept thread #%d for port %d", opt.accept_threads, opt.port);
         na->init_accept_loop();
       }
     } else {

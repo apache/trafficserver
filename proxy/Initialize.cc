@@ -399,7 +399,6 @@ char action_tags[1024] = "";
 int  diags_init = 0;
 
 //int command_flag = 0;
-extern int use_accept_thread;
 int num_of_net_threads = ink_number_of_processors();
 //int num_of_cache_threads = 1;
 

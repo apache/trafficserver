@@ -46,7 +46,7 @@
 
 #define PROGRAM_NAME		"tsapp"
 
-extern int use_accept_thread; // TODO: rename and move to I_UnixNetProcessor.h
+int use_accept_thread = 0; // TODO: rename and move to I_UnixNetProcessor.h
 extern void RecDumpRecordsHt(RecT rec_type); // TODO: move from P_RecCore.h -> I_RecCore.h
 
 int system_num_of_processors  = ink_number_of_processors();

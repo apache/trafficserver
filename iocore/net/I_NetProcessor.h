@@ -49,6 +49,8 @@ public:
     /// Port on which to listen.
     /// 0 => don't care, which is useful if the socket is already bound.
     int port;
+    /// Should we use accept threads? If so, how many?
+    int accept_threads;
     /// Communication domain (default: AF_INET)
     int domain;
     /// Event type to generate on accept.

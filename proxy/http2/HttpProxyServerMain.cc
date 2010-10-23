@@ -236,7 +236,7 @@ init_HttpProxyServer(void)
 
 
 void
-start_HttpProxyServer(int fd, int port, int ssl_fd)
+start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
 {
   char *dump_every_str = 0;
   static bool called_once = false;
@@ -275,6 +275,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   static HttpPortTypes type = SERVER_PORT_DEFAULT;
   NetProcessor::AcceptOptions opt;
   opt.port = port;
+  opt.accept_threads = accept_threads;
 
   if (!called_once) {
     // function can be called several times : do memory allocation once
@@ -340,6 +341,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
   if (sslParam->getTerminationMode() & sslParam->SSL_TERM_MODE_CLIENT) {
     opt.reset();
     opt.port = sslParam->getAcceptPort();
+    opt.accept_threads = accept_threads;
     sslNetProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_SSL)), ssl_fd, 0, 0, false, opt);
   }
 
@@ -358,9 +360,11 @@ start_HttpProxyServer(int fd, int port, int ssl_fd)
 }
 
 void
-start_HttpProxyServerBackDoor(int port)
+start_HttpProxyServerBackDoor(int port, int accept_threads)
 {
   NetProcessor::AcceptOptions opt;
+
   opt.port = port;
+  opt.accept_threads = accept_threads;
   netProcessor.main_accept(NEW(new HttpAccept(SERVER_PORT_DEFAULT, true)), NO_FD, 0, 0, false, opt);
 }

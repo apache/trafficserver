@@ -56,7 +56,6 @@
 // Global Data
 //
 // Global Configuration
-extern int use_accept_thread;
 extern int accept_till_done;
 //extern int ssl_accept_port_number;
 //extern int ssl_enabled;
