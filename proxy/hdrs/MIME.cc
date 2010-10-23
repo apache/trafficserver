@@ -3192,64 +3192,10 @@ mime_field_length_get(MIMEField * field)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
-// This is a little helper for the INT formatting, don't use directly!
-inline
-int format_small_int(char* buf, int32 val, size_t buf_len)
-{
-  ink_assert(val >= 0 && val < 100000);
-
-  if (val < 10) {              // 0 - 9
-    buf[0] = '0' + val;
-    return 1;
-  } else if (val < 100) {              // 10 - 99
-      buf[1] = '0' + (val % 10);
-      val = val / 10;
-      buf[0] = '0' + (val % 10);
-      return 2;
-  } else if (val < 1000) {             // 100 - 999
-      buf[2] = '0' + (val % 10);
-      val = val / 10;
-      buf[1] = '0' + (val % 10);
-      val = val / 10;
-      buf[0] = '0' + (val % 10);
-      return 3;
-  } else if (val < 10000) {    // 1000 - 9999
-      buf[3] = '0' + (val % 10);
-      val = val / 10;
-      buf[2] = '0' + (val % 10);
-      val = val / 10;
-      buf[1] = '0' + (val % 10);
-      val = val / 10;
-      buf[0] = '0' + (val % 10);
-      return 4;
-  } else {                     // 10000 - 99999
-      buf[4] = '0' + (val % 10);
-      val = val / 10;
-      buf[3] = '0' + (val % 10);
-      val = val / 10;
-      buf[2] = '0' + (val % 10);
-      val = val / 10;
-      buf[1] = '0' + (val % 10);
-      val = val / 10;
-      buf[0] = '0' + (val % 10);
-      return 5;
-  }
-
-  return 0;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 int
 mime_format_int(char *buf, int32 val, size_t buf_len)
 {
-  if ((val<0) || (val>= 100000)) {
-    int ret = snprintf(buf, buf_len, "%d", val);
-    return (ret >= 0 ? ret : 0);
-  }
-
-  return format_small_int(buf, val, buf_len);
+  return ink_fast_itoa(val, buf, buf_len);
 }
 
 /*-------------------------------------------------------------------------
@@ -3258,12 +3204,7 @@ mime_format_int(char *buf, int32 val, size_t buf_len)
 int
 mime_format_uint(char *buf, uint32 val, size_t buf_len)
 {
-  if (val >= 100000) {
-    int ret = snprintf(buf, buf_len, "%u", val);
-    return (ret >= 0 ? ret : 0);
-  }
-
-  return format_small_int(buf, val, buf_len);
+  return ink_fast_uitoa(val, buf, buf_len);
 }
 
 /*-------------------------------------------------------------------------
@@ -3272,12 +3213,7 @@ mime_format_uint(char *buf, uint32 val, size_t buf_len)
 int
 mime_format_int64(char *buf, int64 val, size_t buf_len)
 {
-  if ((val<0) || (val>= 100000)) {
-    int ret = snprintf(buf, buf_len, "%lld", val);
-    return (ret >= 0 ? ret : 0);
-  }
-
-  return format_small_int(buf, val, buf_len);
+  return ink_fast_ltoa(val, buf, buf_len);
 }
 
 /*-------------------------------------------------------------------------

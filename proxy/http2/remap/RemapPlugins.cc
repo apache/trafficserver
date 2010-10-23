@@ -328,8 +328,12 @@ RemapPlugins::run_single_remap()
     _request_url->host_set(toHost, toHostLen);
   }
 
-  if (!plugin_modified_port)
-    _request_url->port_set(map_to->port_get_raw());
+  if (!plugin_modified_port) { // Only explicitly set the port if it's not the canonicalized port
+    int to_port = map_to->port_get_raw();
+
+    if (to_port != _request_url->port_get_raw())
+      _request_url->port_set(to_port);
+  }
 
   // Extra byte is potentially needed for prefix path '/'.
   // Added an extra 3 so that TS wouldn't crash in the field.
@@ -362,7 +366,6 @@ RemapPlugins::run_single_remap()
     // requestPathLen,fromPathLen,toPathLen are all 0; in this case, we never
     // initialize newPath, but still de-ref it in *newPath == '/' comparison.
     // The memset fixes that problem.
-
     if (toPath) {
       memcpy(newPath, toPath, toPathLen);
       newPathLen += toPathLen;

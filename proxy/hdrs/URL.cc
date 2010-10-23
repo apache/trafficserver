@@ -87,6 +87,7 @@ int URL_LEN_MMST;
 
 int url_hash_method = 0;
 
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -363,14 +364,6 @@ url_scheme_set(HdrHeap * heap, URLImpl * url, const char *scheme_str, int scheme
 
   if (scheme_wks == URL_SCHEME_HTTP)
     url->m_url_type = URL_TYPE_HTTP;
-  else if (scheme_wks == URL_SCHEME_MMS)
-    url->m_url_type = URL_TYPE_MMS;
-  else if (scheme_wks == URL_SCHEME_MMSU)
-    url->m_url_type = URL_TYPE_MMSU;
-  else if (scheme_wks == URL_SCHEME_MMST)
-    url->m_url_type = URL_TYPE_MMST;
-  else if (scheme_wks == URL_SCHEME_RTSP)
-    url->m_url_type = URL_TYPE_RTSP;
   else if (scheme_wks == URL_SCHEME_HTTPS)
     url->m_url_type = URL_TYPE_HTTPS;
   else
@@ -439,10 +432,11 @@ url_port_set(HdrHeap * heap, URLImpl * url, const char *value, int length, bool 
 void
 url_port_set(HdrHeap * heap, URLImpl * url, unsigned int port)
 {
-  char value[32];
+  char value[6];
   int length;
+
   url_called_set(url);
-  length = snprintf(value, sizeof(value), "%u", port);
+  length = ink_fast_itoa(port, value, sizeof(value));
   mime_str_u16_set(heap, value, length, &(url->m_ptr_port), &(url->m_len_port), true);
   url->m_port = port;
 }
