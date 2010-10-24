@@ -94,12 +94,6 @@ do { \
 #define NET_DECREMENT_THREAD_DYN_STAT(_s, _t) \
   RecIncrRawStatSum(net_rsb, _t, (int) _s, -1);
 
-#ifndef DEBUG
-#define NetDebug if (0) dummy_debug
-#else
-#define NetDebug Debug
-#endif
-
 #include "inktomi++.h"
 #include "P_EventSystem.h"
 #include "I_Net.h"

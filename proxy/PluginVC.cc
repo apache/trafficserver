@@ -1155,7 +1155,7 @@ PluginVCCore::set_active_data(void *data)
  *
  **************************************************************/
 
-
+#if TS_HAS_TESTS
 class PVCTestDriver:public NetTestDriver
 {
 public:
@@ -1248,3 +1248,4 @@ EXCLUSIVE_REGRESSION_TEST(PVC) (RegressionTest * t, int atype, int *pstatus)
   PVCTestDriver *driver = NEW(new PVCTestDriver);
   driver->start_tests(t, pstatus);
 }
+#endif

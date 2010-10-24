@@ -589,7 +589,7 @@ TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
 #if TS_USE_PORT
   events = e;
   int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-  NetDebug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+  Debug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
   return retval;
 #endif
 }
@@ -659,7 +659,7 @@ TS_INLINE int EventIO::modify(int e) {
   if (n && ne && event_loop) {
     events = ne;
     int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-    NetDebug("iocore_eventio", "[EventIO::modify] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+    Debug("iocore_eventio", "[EventIO::modify] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
     return retval;
   }
   return 0;
@@ -695,7 +695,7 @@ TS_INLINE int EventIO::refresh(int e) {
     if (n && ne && event_loop) {
       events = ne;
       int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-      NetDebug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+      Debug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
       return retval;
     }
   }
@@ -717,7 +717,7 @@ TS_INLINE int EventIO::stop() {
 #endif
 #if TS_USE_PORT
     int retval = port_dissociate(event_loop->port_fd, PORT_SOURCE_FD, fd);
-    NetDebug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd);
+    Debug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd);
     return retval;
 #endif
     event_loop = 0;

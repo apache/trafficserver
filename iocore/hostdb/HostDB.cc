@@ -2305,7 +2305,7 @@ HostDBTestReverse():Continuation(new_ProxyMutex()), outstanding(0), total(0) {
 };
 
 
-#ifdef NON_MODULAR
+#if TS_HAS_TESTS
 void
 run_HostDBTest()
 {
@@ -2319,7 +2319,6 @@ run_HostDBTest()
 
 
 RecRawStatBlock *hostdb_rsb;
-
 
 void
 ink_hostdb_init(ModuleVersion v)

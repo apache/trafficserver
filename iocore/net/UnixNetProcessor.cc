@@ -77,7 +77,7 @@ NetProcessor::accept(Continuation * cont,
   (void) accept_only;           // NT only
   (void) bound_sockaddr;        // NT only
   (void) bound_sockaddr_size;   // NT only
-  NetDebug("iocore_net_processor",
+  Debug("iocore_net_processor",
            "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
            port, recv_bufsize, send_bufsize, sockopt_flags
            );
@@ -107,7 +107,7 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd,
                           )
 {
   (void) accept_only;           // NT only
-  NetDebug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
+  Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
            opt.port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
   return ((UnixNetProcessor *) this)->accept_internal(cont, fd,
                                                       bound_sockaddr,
@@ -231,7 +231,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
   Action *result = &vc->action_;
 #ifndef INK_NO_SOCKS
   if (using_socks) {
-    NetDebug("Socks", "Using Socks ip: %u.%u.%u.%u:%d\n", PRINT_IP(ip), port);
+    Debug("Socks", "Using Socks ip: %u.%u.%u.%u:%d\n", PRINT_IP(ip), port);
     socksEntry = socksAllocator.alloc();
     socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
     socksEntry->action_ = cont;
@@ -246,7 +246,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
     result = &socksEntry->action_;
     vc->action_ = socksEntry;
   } else {
-    NetDebug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
+    Debug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
     vc->action_ = cont;
   }
 #else
@@ -303,7 +303,7 @@ struct CheckConnect:public Continuation
     switch (event) {
     case NET_EVENT_OPEN:
       vc = (UnixNetVConnection *) e;
-      NetDebug("iocore_net_connect", "connect Net open");
+      Debug("iocore_net_connect", "connect Net open");
       vc->do_io_write(this, 10, /* some non-zero number just to get the poll going */
                       reader);
       /* dont wait for more than timeout secs */
@@ -312,7 +312,7 @@ struct CheckConnect:public Continuation
       break;
 
       case NET_EVENT_OPEN_FAILED:
-        NetDebug("iocore_net_connect", "connect Net open failed");
+        Debug("iocore_net_connect", "connect Net open failed");
       if (!action_.cancelled)
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) e);
       break;
@@ -325,7 +325,7 @@ struct CheckConnect:public Continuation
           ret = getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, (char *) &sl, &sz);
         if (!ret && sl == 0)
         {
-          NetDebug("iocore_net_connect", "connection established");
+          Debug("iocore_net_connect", "connection established");
           /* disable write on vc */
           vc->write.enabled = 0;
           vc->cancel_inactivity_timeout();
@@ -346,7 +346,7 @@ struct CheckConnect:public Continuation
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_FAILED);
       break;
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      NetDebug("iocore_net_connect", "connect timed out");
+      Debug("iocore_net_connect", "connect timed out");
       vc->do_io_close();
       if (!action_.cancelled)
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_TIMEOUT);
@@ -395,7 +395,7 @@ Action *
 NetProcessor::connect_s(Continuation * cont, unsigned int ip,
                         int port, int timeout, NetVCOptions * opt)
 {
-  NetDebug("iocore_net_connect", "NetProcessor::connect_s called");
+  Debug("iocore_net_connect", "NetProcessor::connect_s called");
   CheckConnect *c = NEW(new CheckConnect(cont->mutex));
   return c->connect_s(cont, ip, port, timeout, opt);
 }

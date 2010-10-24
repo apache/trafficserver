@@ -24,7 +24,9 @@ AM_CPPFLAGS = \
 MGMT_DEFS = @MGMT_DEFS@
 DEFS  += $(MGMT_DEFS)
 
-noinst_PROGRAMS = traffic_api_cli_remote
+if BUILD_TESTS
+  noinst_PROGRAMS = traffic_api_cli_remote
+endif
 
 noinst_LIBRARIES = libmgmtapiremote.a
 libmgmtapiremote_a_SOURCES = \
@@ -41,7 +43,10 @@ libmgmtapiremote_a_SOURCES = \
   NetworkUtilsRemote.cc \
   NetworkUtilsRemote.h
 
-traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
+if BUILD_TESTS
+  traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
+endif
+
 traffic_api_cli_remote_LDADD = \
   libmgmtapiremote.a \
   $(top_builddir)/iocore/utils/libinkutils.a \

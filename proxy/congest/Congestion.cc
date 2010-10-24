@@ -369,15 +369,16 @@ CongestionControlDefaultSchemeChanged(const char *name, RecDataT data_type, RecD
 //-----------------------------------------------
 extern void init_CongestionRegressionTest();
 
-#define CC_EstablishStaticConfigInteger(v, n) \
-  REC_EstablishStaticConfigInt32(v, n)
-#define CC_EstablishStaticConfigStringAlloc(v, n) \
-  REC_EstablishStaticConfigStringAlloc(v, n)
+#define CC_EstablishStaticConfigInteger(v, n) REC_EstablishStaticConfigInt32(v, n)
+#define CC_EstablishStaticConfigStringAlloc(v, n) REC_EstablishStaticConfigStringAlloc(v, n)
 
 void
 initCongestionControl()
 {
+  // TODO: This is very, very strange, we run the regression tests even on a normal startup??
+#if TS_HAS_TESTS
   init_CongestionRegressionTest();
+#endif
   ink_assert(CongestionMatcher == NULL);
 // register the stats variables
   register_congest_stats();

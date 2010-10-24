@@ -318,7 +318,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     buf.writer()->fill(r);
 #ifdef DEBUG
     if (buf.writer()->write_avail() <= 0)
-      NetDebug("iocore_net", "read_from_net, read buffer full");
+      Debug("iocore_net", "read_from_net, read buffer full");
 #endif
     s->vio.ndone += r;
     net_activity(vc, thread);
@@ -331,7 +331,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     ink_assert(ntodo >= 0);
     if (s->vio.ntodo() <= 0) {
       read_signal_done(VC_EVENT_READ_COMPLETE, nh, vc);
-      NetDebug("iocore_net", "read_from_net, read finished - signal done");
+      Debug("iocore_net", "read_from_net, read finished - signal done");
       return;
     } else {
       if (read_signal_and_update(VC_EVENT_READ_READY, vc) != EVENT_CONT)
@@ -962,7 +962,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   nh = get_NetHandler(thread);
   PollDescriptor *pd = get_PollDescriptor(thread);
   if (ep.start(pd, this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
-    NetDebug("iocore_net", "acceptEvent : failed EventIO::start\n");
+    Debug("iocore_net", "acceptEvent : failed EventIO::start\n");
     close_UnixNetVConnection(this, e->ethread);
     return EVENT_DONE;
   }
@@ -1075,7 +1075,7 @@ UnixNetVConnection::connectUp(EThread *t)
   // Initialize this UnixNetVConnection
   //
   int res = 0;
-  NetDebug("iocore_net", "connectUp:: local_addr=%u.%u.%u.%u [%s]\n",
+  Debug("iocore_net", "connectUp:: local_addr=%u.%u.%u.%u [%s]\n",
 	   PRINT_IP(options.local_addr),
 	   NetVCOptions::toString(options.addr_binding)
 	   );
@@ -1088,7 +1088,7 @@ UnixNetVConnection::connectUp(EThread *t)
     // when edge triggering is used.
     if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
       lerrno = errno;
-      NetDebug("iocore_net", "connectUp : Failed to add to epoll list\n");
+      Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
       action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) res);
       free(t);
       return CONNECT_FAILURE;

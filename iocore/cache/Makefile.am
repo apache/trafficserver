@@ -36,7 +36,12 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -DSYSCONFDIR=\"$(sysconfdir)\"
 
-ADD_SRC = CacheTest.cc P_CacheTest.h NewCacheVC.cc NewCacheVC.h
+ADD_SRC = NewCacheVC.cc NewCacheVC.h
+
+if BUILD_TESTS
+  ADD_SRC += CacheTest.cc P_CacheTest.h 
+endif
+
 endif
 
 DEFS += @IOCORE_MODULARIZED_DEFS@
@@ -71,5 +76,3 @@ libinkcache_a_SOURCES = \
   RamCacheCLFUS.cc \
   Store.cc \
   Inline.cc $(ADD_SRC)
-
-

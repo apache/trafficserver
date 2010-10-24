@@ -568,15 +568,6 @@ TransformControl::TransformControl()
   SET_HANDLER(&TransformControl::handle_event);
 
   m_hooks.append(transformProcessor.null_transform(new_ProxyMutex()));
-//     m_hooks.append (transformProcessor.null_transform (new_ProxyMutex ()));
-//     m_hooks.append (transformProcessor.null_transform (new_ProxyMutex ()));
-//     m_hooks.append (transformProcessor.null_transform (new_ProxyMutex ()));
-//     m_hooks.append (transformProcessor.null_transform (new_ProxyMutex ()));
-//     m_hooks.append (transformProcessor.null_transform (new_ProxyMutex ()));
-//     m_hooks.append (transformProcessor.null_transform (new_ProxyMutex ()));
-//     m_hooks.append (transformProcessor.null_transform (new_ProxyMutex ()));
-//     m_hooks.append (transformProcessor.null_transform (new_ProxyMutex ()));
-//     m_hooks.append (transformProcessor.null_transform (new_ProxyMutex ()));
 }
 
 /*-------------------------------------------------------------------------
@@ -642,7 +633,7 @@ TransformControl::handle_event(int event, void *edata)
   -------------------------------------------------------------------------*/
 
 NullTransform::NullTransform(ProxyMutex *_mutex)
-:INKVConnInternal(NULL, _mutex), m_output_buf(NULL), m_output_reader(NULL), m_output_vio(NULL)
+ : INKVConnInternal(NULL, _mutex), m_output_buf(NULL), m_output_reader(NULL), m_output_vio(NULL)
 {
   SET_HANDLER(&NullTransform::handle_event);
 
@@ -770,6 +761,7 @@ NullTransform::handle_event(int event, void *edata)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+#ifdef TS_HAS_TESTS
 void
 TransformTest::run()
 {
@@ -777,6 +769,7 @@ TransformTest::run()
     eventProcessor.schedule_imm(NEW(new TransformControl()), ET_NET);
   }
 }
+#endif
 
 
 
@@ -791,15 +784,13 @@ TransformTest::run()
 inline static int
 num_chars_for_int(int i)
 {
-  int k;
+  int k = 1;
 
   if (i < 0)
     return 0;
 
-  k = 1;
-
   while ((i /= 10) != 0)
-    k++;
+    ++k;
 
   return k;
 }
@@ -808,18 +799,17 @@ num_chars_for_int(int i)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-RangeTransform::RangeTransform(ProxyMutex *mut, MIMEField *range_field,
-                               HTTPInfo *cache_obj, HTTPHdr *transform_resp)
-:INKVConnInternal(NULL, mut),
-m_output_buf(NULL),
-m_output_reader(NULL),
-m_range_field(range_field),
-m_transform_resp(transform_resp),
-m_output_vio(NULL),
-m_unsatisfiable_range(true),
-m_not_handle_range(false),
-m_num_range_fields(0),
-m_current_range(0), m_content_type(NULL), m_content_type_len(0), m_ranges(NULL), m_output_cl(0), m_done(0)
+RangeTransform::RangeTransform(ProxyMutex *mut, MIMEField *range_field, HTTPInfo *cache_obj, HTTPHdr *transform_resp)
+ :INKVConnInternal(NULL, mut),
+  m_output_buf(NULL),
+  m_output_reader(NULL),
+  m_range_field(range_field),
+  m_transform_resp(transform_resp),
+  m_output_vio(NULL),
+  m_unsatisfiable_range(true),
+  m_not_handle_range(false),
+  m_num_range_fields(0),
+  m_current_range(0), m_content_type(NULL), m_content_type_len(0), m_ranges(NULL), m_output_cl(0), m_done(0)
 {
   SET_HANDLER(&RangeTransform::handle_event);
 

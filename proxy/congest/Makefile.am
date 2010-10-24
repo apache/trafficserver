@@ -35,5 +35,8 @@ libCongestionControl_a_SOURCES = \
   CongestionDB.h \
   CongestionStats.cc \
   CongestionStats.h \
-  CongestionTest.cc \
   MT_hashtable.h
+
+if BUILD_TESTS
+  libCongestionControl_a_SOURCES +=   CongestionTest.cc
+endif

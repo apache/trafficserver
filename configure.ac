@@ -161,6 +161,23 @@ AC_MSG_RESULT([$enable_diags])
 AC_SUBST(use_diags)
 
 #
+# Build regression tests?
+#
+
+has_tests=0
+AC_MSG_CHECKING([whether to enable regression tests])
+AC_ARG_ENABLE([tests],
+  [AS_HELP_STRING([--disable-tests],[turn off regression tests])],
+  [],
+  [enable_tests="yes"
+   has_tests=1
+  ]
+)
+AC_MSG_RESULT([$enable_tests])
+AC_SUBST(has_tests)
+AM_CONDITIONAL([BUILD_TESTS], [test "x$enable_tests" = "xyes"])
+
+#
 # Purify
 #
 has_purify=0

@@ -36,7 +36,7 @@ enum URLType
 {
   URL_TYPE_NONE,
   URL_TYPE_HTTP,
-  URL_TYPE_HTTPS,
+  URL_TYPE_HTTPS
 };
 
 struct URLImpl:public HdrHeapObjImpl

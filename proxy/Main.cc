@@ -153,7 +153,7 @@ int ssl_accept_file_descriptor = NO_FD;
 char accept_fd_list[1024] = "";
 char core_file[255] = "";
 int command_flag = DEFAULT_COMMAND_FLAG;
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
 char regression_test[1024] = "";
 #endif
 int auto_clear_hostdb_flag = 0;
@@ -195,10 +195,10 @@ static int cmd_line_dprintf_level = 0;  // default debug output level fro ink_dp
 AppVersionInfo appVersionInfo;  // Build info for this application
 
 
-#ifndef INK_NO_TESTS
-extern int test_net_processor();
-
+#if TS_HAS_TESTS
 extern int run_TestHook();
+// TODO: Maybe review and "fix" this test at some point?
+//
 //extern void run_SimpleHttp();
 #endif
 void deinitSubAgent();
@@ -233,7 +233,7 @@ ArgumentDescription argument_descriptions[] = {
    "PROXY_DPRINTF_LEVEL", NULL},
   {"version", 'V', "Print Version String", "T", &version_flag,
    NULL, NULL},
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
   {"regression", 'R',
 #ifdef DEBUG
    "Regression Level (quick:1..long:3)",
@@ -256,7 +256,7 @@ ArgumentDescription argument_descriptions[] = {
 #endif
    "T",
    &run_test_hook, "PROXY_RUN_TEST_HOOK", NULL},
-#endif //INK_NO_TESTS
+#endif //TS_HAS_TESTS
 #if TS_USE_DIAGS
   {"debug_tags", 'T', "Vertical-bar-separated Debug Tags", "S1023", error_tags,
    "PROXY_DEBUG_TAGS", NULL},
@@ -1421,7 +1421,7 @@ run_AutoStop()
     eventProcessor.schedule_in(NEW(new AutoStopCont), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
 }
 
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
 struct RegressionCont: public Continuation
 {
   int initialized;
@@ -1459,7 +1459,7 @@ run_RegressionTest()
   if (regression_level)
     eventProcessor.schedule_every(NEW(new RegressionCont), HRTIME_SECONDS(1));
 }
-#endif //INK_NO_TESTS
+#endif //TS_HAS_TESTS
 
 
 static void
@@ -1917,11 +1917,6 @@ main(int argc, char **argv)
     initCacheControl();
 #endif
     initCongestionControl();
-
-    //initMixtAPIInternal();
-    // #ifndef INK_NO_ACL
-    //     initContentControl();
-    // #endif
     initIPAllow();
     initCacheInspectorAllow();
     ParentConfig::startup();
@@ -2001,7 +1996,7 @@ main(int argc, char **argv)
     // if in test hook mode, run the test hook //
     /////////////////////////////////////////////
 
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
     if (run_test_hook) {
       Note("Running TestHook Instead of Main Server");
       run_TestHook();
@@ -2078,17 +2073,15 @@ main(int argc, char **argv)
 
     Note("traffic server running");
 
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
     TransformTest::run();
-#endif
-
 #ifndef INK_NO_HOSTDB
     run_HostDBTest();
 #endif
     //  run_SimpleHttp();
-#ifndef INK_NO_TESTS
     run_RegressionTest();
 #endif
+
     run_AutoStop();
 
   }
@@ -2186,7 +2179,7 @@ xmlBandwidthSchemaRead(XMLNode * node)
 }
 
 
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
 //////////////////////////////
 // Unit Regresion Test Hook //
 //////////////////////////////

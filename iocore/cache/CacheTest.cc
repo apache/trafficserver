@@ -26,22 +26,6 @@
 #include "P_CacheTest.h"
 #include "api/ts/ts.h"
 
-
-void verify_cache_api() {
-  ink_assert((int)INK_EVENT_CACHE_OPEN_READ == (int)CACHE_EVENT_OPEN_READ);
-  ink_assert((int)INK_EVENT_CACHE_OPEN_READ_FAILED == (int)CACHE_EVENT_OPEN_READ_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_OPEN_WRITE == (int)CACHE_EVENT_OPEN_WRITE);
-  ink_assert((int)INK_EVENT_CACHE_OPEN_WRITE_FAILED == (int)CACHE_EVENT_OPEN_WRITE_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_REMOVE == (int)CACHE_EVENT_REMOVE);
-  ink_assert((int)INK_EVENT_CACHE_REMOVE_FAILED == (int)CACHE_EVENT_REMOVE_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_SCAN == (int)CACHE_EVENT_SCAN);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_FAILED == (int)CACHE_EVENT_SCAN_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_OBJECT == (int)CACHE_EVENT_SCAN_OBJECT);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
-}
-
 CacheTestSM::CacheTestSM(RegressionTest *t) :
   RegressionSM(t),
   timeout(0),

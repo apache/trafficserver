@@ -79,7 +79,7 @@ typedef enum
 
 #define DiagsLevel_IsTerminal(_l) (((_l) >= DL_Fatal) && ((_l) < DL_Undefined))
 
-#ifndef INK_NO_DIAGS
+#ifdef TS_USE_DIAGS
 // Cleanup Function Prototype - Called before ink_fatal to
 //   cleanup process state
 typedef void (*DiagsCleanupFunc) ();
@@ -405,7 +405,7 @@ dummy_debug(const char *dummy_arg ...)
 #define action_tag_assert(_t,_a) /**/
 #endif
 #define	stat_debug_assert(_tst) (void)((_tst) || (Warning(#_tst), debug_tag_assert("stat_check",! #_tst), 0))
-#else // INK_NO_DIAGS
+#else // TS_USE_DIAGS
 
 class Diags
 {
@@ -446,5 +446,5 @@ dummy_debug(char *dummy_arg ...)
 #define debug_tag_assert(_t,_a) /**/
 #define action_tag_assert(_t,_a)
 #define is_diags_on(_t)          0
-#endif // INK_NO_DIAGS
+#endif // TS_USE_DIAGS
 #endif  /*_Diags_h_*/

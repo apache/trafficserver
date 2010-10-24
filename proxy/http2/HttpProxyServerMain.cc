@@ -352,7 +352,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
 //      HttpStateMachine::dump_state_machines();
   }
 #endif
-#ifndef INK_NO_TESTS
+#if TS_HAS_TESTS
   if (is_action_tag_set("http_update_test")) {
     init_http_update_test();
   }

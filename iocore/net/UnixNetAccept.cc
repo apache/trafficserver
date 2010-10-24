@@ -431,7 +431,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     if (likely(fd >= 0)) {
       vc->addLogMessage("accepting the connection");
 
-      NetDebug("iocore_net", "accepted a new socket: %d", fd);
+      Debug("iocore_net", "accepted a new socket: %d", fd);
       if (send_bufsize > 0) {
         if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize))) {
           bufsz = ROUNDUP(send_bufsize, 1024);
@@ -454,11 +454,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
       }
       if (sockopt_flags & 1) {  // we have to disable Nagle
         safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, ON, sizeof(int));
-        NetDebug("socket", "::acceptFastEvent: setsockopt() TCP_NODELAY on socket");
+        Debug("socket", "::acceptFastEvent: setsockopt() TCP_NODELAY on socket");
       }
       if (sockopt_flags & 2) {
         safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, ON, sizeof(int));
-        NetDebug("socket", "::acceptFastEvent: setsockopt() SO_KEEPALIVE on socket");
+        Debug("socket", "::acceptFastEvent: setsockopt() SO_KEEPALIVE on socket");
       }
       do {
         res = safe_nonblocking(fd);
@@ -518,7 +518,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
 #ifdef USE_EDGE_TRIGGER
     // Set the vc as triggered and place it in the read ready queue in case there is already data on the socket.
-    NetDebug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
+    Debug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
     vc->read.triggered = 1;
     vc->nh->read_ready_list.enqueue(vc);
 #endif

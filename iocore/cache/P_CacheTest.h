@@ -126,6 +126,4 @@ struct CacheTestSM : public RegressionSM {
     RegressionSM *clone() { return new CacheTestSM__##_sm(*this); } \
 } _sm(_t);
 
-void verify_cache_api();
-
 #endif /* __P_CACHE_TEST_H__ */
