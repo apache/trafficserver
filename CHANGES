@@ -2,6 +2,14 @@
 
 Changes with Apache Traffic Server 2.1.4
 
+  *) Experimental supoprt for a dedicated DNS thread. This can be
+   enabled with the records.config option
+
+   	   CONFIG proxy.config.dns.dedicated_thread INT 1
+
+  This feature is possibly useful for very busy forward or transparent
+  proxies [TS-307].
+
   *) Accept threads can leak some amount of memory. This patch also
    supports multiple accept threads (very experimental!) [TS-496].
 

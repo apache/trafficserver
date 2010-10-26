@@ -33,6 +33,7 @@
 #define SRV_SERVER  (RRFIXEDSZ+6)
 #define SRV_FIXEDSZ (RRFIXEDSZ+6)
 
+EventType ET_DNS = ET_CALL;
 
 //
 // Config
@@ -50,6 +51,7 @@ int dns_ns_rr = 0;
 int dns_ns_rr_init_down = 1;
 char *dns_ns_list = NULL;
 char *dns_resolv_conf = NULL;
+int dns_threads = 0;
 
 DNSProcessor dnsProcessor;
 ClassAllocator<DNSEntry> dnsEntryAllocator("dnsEntryAllocator");
@@ -106,9 +108,6 @@ DNSProcessor::free_hostent(HostEnt * ent)
 int
 DNSProcessor::start(int)
 {
-  // Initialize the first event thread for DNS.
-  dnsProcessor.thread = eventProcessor.eventthread[ET_DNS][0];
-
   //
   // Read configuration
   //
@@ -122,9 +121,18 @@ DNSProcessor::start(int)
   IOCORE_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
   IOCORE_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
   IOCORE_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
+  IOCORE_EstablishStaticConfigInt32(dns_threads, "proxy.config.dns.dedicated_thread");
+
+  if (dns_threads > 0) {
+    ET_DNS = eventProcessor.spawn_event_threads(dns_threads);
+    initialize_thread_for_net(eventProcessor.eventthread[ET_DNS][0], -1);
+  } else {
+    // Initialize the first event thread for DNS.
+    ET_DNS = ET_CALL;
+  }
+  dnsProcessor.thread = eventProcessor.eventthread[ET_DNS][0];
 
   dns_failover_try_period = dns_timeout + 1;    // Modify the "default" accordingly
-
   dns_init();
   open();
 
@@ -355,7 +363,7 @@ DNSHandler::open_con(unsigned int aip, int aport, bool failed, int icon)
 
 /**
   Initial state of the DNSHandler. Can reinitialize the running DNS
-  hander to a new nameserver.
+  handler to a new nameserver.
 
 */
 int
@@ -365,7 +373,7 @@ DNSHandler::startEvent(int event, Event * e)
   //
   // If this is for the default server, get it
   //
-  Debug("dns", "DNSHandler::startEvent: on thread%d\n", e->ethread->id);
+  Debug("dns", "DNSHandler::startEvent: on thread %d\n", e->ethread->id);
   if (ip == DEFAULT_DOMAIN_NAME_SERVER) {
     // seems that res_init always sets m_res.nscount to at least 1!
     if (!m_res->nscount)

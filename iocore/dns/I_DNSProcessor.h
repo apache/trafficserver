@@ -65,7 +65,7 @@ struct HostEnt
   }
 };
 
-const EventType ET_DNS = ET_CALL;
+extern EventType ET_DNS;
 
 struct DNSHandler;
 

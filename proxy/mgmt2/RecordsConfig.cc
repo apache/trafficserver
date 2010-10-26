@@ -2051,6 +2051,8 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.dns.round_robin_nameservers", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
+  {CONFIG, "proxy.config.dns.dedicated_thread", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_NULL, "[0-1]", RA_NULL}
+  ,
   {PROCESS, "proxy.process.dns.total_dns_lookups", "", INK_INT, "0", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {PROCESS, "proxy.process.dns.lookup_avg_time", "", INK_FLOAT, "0.00", RU_NULL, RR_NULL, RC_NULL, NULL, RA_NULL}
