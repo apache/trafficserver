@@ -195,10 +195,10 @@ Action *
 UnixNetProcessor::connect_re_internal(Continuation * cont,
                                       unsigned int ip, int port,  NetVCOptions * opt)
 {
-
   ProxyMutex *mutex = cont->mutex;
   EThread *t = mutex->thread_holding;
   UnixNetVConnection *vc = allocateThread(t);
+
   if (opt)
     vc->options = *opt;
   else
@@ -477,9 +477,9 @@ UnixNetProcessor::allocateThread(EThread * t)
 void
 UnixNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
 {
+  ink_assert(!vc->from_accept_thread);
   THREAD_FREE(vc, netVCAllocator, t);
 }
-
 
 // Virtual function allows creation of an
 // SSLNetAccept or NetAccept transparent to NetProcessor.

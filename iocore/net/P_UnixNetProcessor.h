@@ -65,9 +65,7 @@ public:
   // Functions all THREAD_FREE and THREAD_ALLOC to be performed
   // for both SSL and regular NetVConnection transparent to
   // netProcessor connect functions.
-
   virtual UnixNetVConnection *allocateThread(EThread * t);
-
   virtual void freeThread(UnixNetVConnection * vc, EThread * t);
   virtual NetAccept *createNetAccept();
 

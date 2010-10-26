@@ -104,7 +104,7 @@ SSLNetProcessor():UnixNetProcessor(), verify_depth(0), ctx(NULL), client_ctx(NUL
   // netProcessor connect functions.
   virtual UnixNetVConnection *allocateThread(EThread * t);
   virtual void freeThread(UnixNetVConnection * vc, EThread * t);
-  virtual NetAccept *createNetAccept();
+virtual NetAccept *createNetAccept();
 #else // #if defined (_IOCORE_WIN32)
 
 public:

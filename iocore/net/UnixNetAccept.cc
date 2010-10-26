@@ -180,6 +180,12 @@ NetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
   THREAD_FREE(vc, netVCAllocator, t);
 }
 
+// This allocates directly on the class allocator, used for accept threads.
+UnixNetVConnection *
+NetAccept::allocateGlobal()
+{
+  return (UnixNetVConnection *)netVCAllocator.alloc();
+}
 
 // Virtual function allows the correct
 // etype to be used in NetAccept functions (ET_SSL
@@ -300,7 +306,8 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
   do {
     vc = (UnixNetVConnection *) master_na->alloc_cache;
     if (likely(!vc)) {
-      vc = (UnixNetVConnection *)netVCAllocator.alloc(); // Don't use thread / proxy allocation
+      //vc = allocateThread(t);
+      vc = allocateGlobal(); // Bypass proxy / thread allocator
       vc->from_accept_thread = true;
       vc->id = net_next_connection_number();
       master_na->alloc_cache = vc;

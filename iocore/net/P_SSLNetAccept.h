@@ -56,16 +56,16 @@ struct SSLNetAccept: public NetAccept
 #ifndef _IOCORE_WIN32_WINNT
   virtual UnixNetVConnection *allocateThread(EThread * t);
   virtual void freeThread(UnixNetVConnection * vc, EThread * t);
+  virtual UnixNetVConnection *allocateGlobal();
   virtual EventType getEtype();
 #endif
   virtual void init_accept_per_thread();
 
-    SSLNetAccept()
-  {
-  };
+  SSLNetAccept()
+    { };
 
-  virtual ~ SSLNetAccept() {
-  };
+  virtual ~SSLNetAccept()
+    { };
 
 };
 #endif

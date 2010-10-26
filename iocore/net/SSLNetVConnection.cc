@@ -431,7 +431,12 @@ SSLNetVConnection::free(EThread * t) {
   }
   sslHandShakeComplete = 0;
   sslClientConnection = 0;
-  THREAD_FREE(this, sslNetVCAllocator, t);
+
+  if (from_accept_thread) {
+    sslNetVCAllocator.free(this);  
+  } else {
+    THREAD_FREE(this, sslNetVCAllocator, t);
+  }
 }
 
 int

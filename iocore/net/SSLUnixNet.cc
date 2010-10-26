@@ -103,7 +103,15 @@ SSLNetAccept::allocateThread(EThread * t)
 void
 SSLNetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
 {
+  ink_assert(!vc->from_accept_thread);
   THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
+}
+
+// This allocates directly on the class allocator, used for accept threads.
+UnixNetVConnection *
+SSLNetAccept::allocateGlobal()
+{
+  return (UnixNetVConnection *)sslNetVCAllocator.alloc();
 }
 
 // Functions all THREAD_FREE and THREAD_ALLOC to be performed
@@ -120,6 +128,7 @@ SSLNetProcessor::allocateThread(EThread * t)
 void
 SSLNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
 {
+  ink_assert(!vc->from_accept_thread);
   THREAD_FREE((SSLNetVConnection *) vc, sslNetVCAllocator, t);
 }
 
