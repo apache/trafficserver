@@ -127,4 +127,12 @@ do { \
   #define LIBEV_BACKEND_LIST 0 /* auto */
 #endif
 
+// For very verbose iocore debugging.
+#ifndef DEBUG
+#define NetDebug if (0) dummy_debug
+#else
+#define NetDebug Debug
+#endif
+
+
 #endif

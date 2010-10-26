@@ -108,7 +108,7 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd,
 {
   (void) accept_only;           // NT only
   Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0lX",
-           opt.port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+        opt.port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
   return ((UnixNetProcessor *) this)->accept_internal(cont, fd,
                                                       bound_sockaddr,
                                                       bound_sockaddr_size,

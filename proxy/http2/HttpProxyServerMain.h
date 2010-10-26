@@ -29,6 +29,6 @@ void init_HttpProxyServer(void);
   descriptor should be opened.
 
 */
-void start_HttpProxyServer(int fd, int port, int ssl_fd = NO_FD, int accept_threads = 0);
+void start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads = 0);
 
 void start_HttpProxyServerBackDoor(int port, int accept_threads = 0);

@@ -101,9 +101,9 @@ PollCont::pollEvent(int event, Event *e)
     if (likely
         (!net_handler->read_ready_list.empty() || !net_handler->read_ready_list.empty() ||
          !net_handler->read_enable_list.empty() || !net_handler->write_enable_list.empty())) {
-      Debug("iocore_net_poll", "rrq: %d, wrq: %d, rel: %d, wel: %d", net_handler->read_ready_list.empty(),
-            net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(),
-            net_handler->write_enable_list.empty());
+      NetDebug("iocore_net_poll", "rrq: %d, wrq: %d, rel: %d, wel: %d", net_handler->read_ready_list.empty(),
+               net_handler->write_ready_list.empty(), net_handler->read_enable_list.empty(),
+               net_handler->write_enable_list.empty());
       poll_timeout = 0;         //poll immediately returns -- we have triggered stuff to process right now
     } else {
       poll_timeout = net_config_poll_timeout;
@@ -116,12 +116,12 @@ PollCont::pollEvent(int event, Event *e)
   fd_reify(eio);
   eio->backend_poll(eio, pt);
   pollDescriptor->result = eio->pendingcnt[0];
-  Debug("iocore_net_poll", "[PollCont::pollEvent] backend_poll(%d,%f), result=%d", eio->backend_fd,pt,pollDescriptor->result);
+  NetDebug("iocore_net_poll", "[PollCont::pollEvent] backend_poll(%d,%f), result=%d", eio->backend_fd,pt,pollDescriptor->result);
 #elif TS_USE_EPOLL
   pollDescriptor->result = epoll_wait(pollDescriptor->epoll_fd,
                                       pollDescriptor->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
-  Debug("iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd, poll_timeout,
-        pollDescriptor->result);
+  NetDebug("iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd, poll_timeout,
+           pollDescriptor->result);
 #elif TS_USE_KQUEUE
   struct timespec tv;
   tv.tv_sec = poll_timeout / 1000;
@@ -130,8 +130,8 @@ PollCont::pollEvent(int event, Event *e)
                                   pollDescriptor->kq_Triggered_Events,
                                   POLL_DESCRIPTOR_SIZE,
                                   &tv);
-  Debug("iocore_net_poll", "[PollCont::pollEvent] kueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd, poll_timeout,
-        pollDescriptor->result);
+  NetDebug("iocore_net_poll", "[PollCont::pollEvent] kueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd, poll_timeout,
+           pollDescriptor->result);
 #elif TS_USE_PORT
   int retval;
   timespec_t ptimeout;
@@ -157,7 +157,7 @@ PollCont::pollEvent(int event, Event *e)
   } else {
     pollDescriptor->result = (int)nget;
   }
-  Debug("iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)",
+  NetDebug("iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)",
 	   retval,retval < 0 ? strerror(errno) : "ok",
 	   pollDescriptor->port_fd, pollDescriptor->Port_Triggered_Events,
 	   POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pollDescriptor->result);
@@ -313,10 +313,10 @@ NetHandler::mainNetEvent(int event, Event *e)
   fd_reify(eio);
   eio->backend_poll(eio, pt);
   pd->result = eio->pendingcnt[0];
-  Debug("iocore_net_main_poll", "[NetHandler::mainNetEvent] backend_poll(%d,%f), result=%d", eio->backend_fd,pt,pd->result);
+  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] backend_poll(%d,%f), result=%d", eio->backend_fd,pt,pd->result);
 #elif TS_USE_EPOLL
   pd->result = epoll_wait(pd->epoll_fd, pd->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
-  Debug("iocore_net_main_poll", "[NetHandler::mainNetEvent] epoll_wait(%d,%f), result=%d", pd->epoll_fd,poll_timeout,pd->result);
+  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] epoll_wait(%d,%f), result=%d", pd->epoll_fd,poll_timeout,pd->result);
 #elif TS_USE_KQUEUE
   struct timespec tv;
   tv.tv_sec = poll_timeout / 1000;
@@ -324,7 +324,7 @@ NetHandler::mainNetEvent(int event, Event *e)
   pd->result = kevent(pd->kqueue_fd, NULL, 0,
                       pd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE,
                       &tv);
-  Debug("iocore_net_main_poll", "[NetHandler::mainNetEvent] kevent(%d,%f), result=%d", pd->kqueue_fd,poll_timeout,pd->result);
+  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] kevent(%d,%f), result=%d", pd->kqueue_fd,poll_timeout,pd->result);
 #elif TS_USE_PORT
   int retval;
   timespec_t ptimeout;
@@ -349,7 +349,7 @@ NetHandler::mainNetEvent(int event, Event *e)
   } else {
     pd->result = (int)nget;
   }
-  Debug("iocore_net_main_poll", "[NetHandler::mainNetEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)",
+  NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)",
 	   retval,retval < 0 ? strerror(errno) : "ok",
 	   pd->port_fd, pd->Port_Triggered_Events,
 	   POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pd->result);
