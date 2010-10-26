@@ -117,13 +117,11 @@ extern "C" int plock(int);
 #define DEFAULT_NUMBER_OF_THREADS         ink_number_of_processors()
 #define DEFAULT_NUMBER_OF_UDP_THREADS     1
 #define DEFAULT_NUMBER_OF_CLUSTER_THREADS 1
-//#define DEFAULT_NUMBER_OF_AUTH_THREADS    (ink_number_of_processors() + 1)
 #define DEFAULT_NUMBER_OF_SSL_THREADS     0
 #define DEFAULT_NUM_ACCEPT_THREADS        0
 #define DEFAULT_HTTP_ACCEPT_PORT_NUMBER   0
 #define DEFAULT_COMMAND_FLAG              0
 #define DEFAULT_LOCK_PROCESS              0
-#define MAX_NUMBER_OF_THREADS             1024
 
 #define DEFAULT_VERBOSE_FLAG              0
 #define DEFAULT_VERSION_FLAG              0
@@ -1529,8 +1527,8 @@ adjust_num_of_net_threads(void)
     TS_ReadConfigInteger(num_of_threads_tmp, "proxy.config.exec_thread.limit");
     if (num_of_threads_tmp <= 0)
       num_of_threads_tmp = 1;
-    else if (num_of_threads_tmp > MAX_NUMBER_OF_THREADS)
-      num_of_threads_tmp = MAX_NUMBER_OF_THREADS;
+    else if (num_of_threads_tmp > MAX_EVENT_THREADS)
+      num_of_threads_tmp = MAX_EVENT_THREADS;
     num_of_net_threads = num_of_threads_tmp;
     if (is_debug_tag_set("threads")) {
       fprintf(stderr, "# net threads Auto config - disabled - use config file settings\n");
@@ -1542,8 +1540,8 @@ adjust_num_of_net_threads(void)
     if (num_of_threads_tmp) {
       num_of_net_threads = num_of_threads_tmp;
     }
-    if (unlikely(num_of_threads_tmp > MAX_NUMBER_OF_THREADS)) {
-      num_of_threads_tmp = MAX_NUMBER_OF_THREADS;
+    if (unlikely(num_of_threads_tmp > MAX_EVENT_THREADS)) {
+      num_of_threads_tmp = MAX_EVENT_THREADS;
     }
     if (is_debug_tag_set("threads")) {
       fprintf(stderr, "# net threads Auto config - enabled\n");

@@ -31,15 +31,9 @@ EventProcessor::spawn_event_threads(int n_threads)
   EventType new_thread_group_id;
   int i;
 
-  ink_assert(n_threads > 0);
-  if (n_threads <= 0)
-    return -1;
-
-  if ((n_ethreads + n_threads) > MAX_EVENT_THREADS)
-    return -1;
-
-  if (n_thread_groups >= MAX_EVENT_TYPES)
-    return -1;
+  ink_release_assert(n_threads > 0);
+  ink_release_assert((n_ethreads + n_threads) <= MAX_EVENT_THREADS);
+  ink_release_assert(n_thread_groups < MAX_EVENT_TYPES);
 
   new_thread_group_id = (EventType) n_thread_groups;
 
@@ -56,6 +50,8 @@ EventProcessor::spawn_event_threads(int n_threads)
 
   n_thread_groups++;
   n_ethreads += n_threads;
+  Debug("iocore_thread", "Created thread group id %d", new_thread_group_id);
+
   return new_thread_group_id;
 }
 

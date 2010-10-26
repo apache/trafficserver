@@ -29,8 +29,8 @@
 #include "I_Processor.h"
 #include "I_Event.h"
 
-const int MAX_THREADS_IN_EACH_TYPE = 200;
-const int MAX_EVENT_THREADS = 200;
+const int MAX_THREADS_IN_EACH_TYPE = 512;
+const int MAX_EVENT_THREADS = 512;
 
 class EThread;
 

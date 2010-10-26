@@ -62,6 +62,8 @@ TS_INLINE EThread *
 EventProcessor::assign_thread(EventType etype)
 {
   int next;
+
+  ink_assert(etype < MAX_EVENT_TYPES);
   if (n_threads_for_type[etype] > 1)
     next = next_thread_for_type[etype]++ % n_threads_for_type[etype];
   else
@@ -72,6 +74,7 @@ EventProcessor::assign_thread(EventType etype)
 TS_INLINE Event *
 EventProcessor::schedule(Event * e, EventType etype, bool fast_signal)
 {
+  ink_assert(etype < MAX_EVENT_TYPES);
   e->ethread = assign_thread(etype);
   if (e->continuation->mutex)
     e->mutex = e->continuation->mutex;
@@ -86,6 +89,8 @@ TS_INLINE Event *
 EventProcessor::schedule_imm_signal(Continuation * cont, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
+
+  ink_assert(et < MAX_EVENT_TYPES);
 #ifdef ENABLE_TIME_TRACE
   e->start_time = ink_get_hrtime();
 #endif
@@ -98,6 +103,8 @@ TS_INLINE Event *
 EventProcessor::schedule_imm(Continuation * cont, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
+
+  ink_assert(et < MAX_EVENT_TYPES);
 #ifdef ENABLE_TIME_TRACE
   e->start_time = ink_get_hrtime();
 #endif
@@ -109,8 +116,10 @@ EventProcessor::schedule_imm(Continuation * cont, EventType et, int callback_eve
 TS_INLINE Event *
 EventProcessor::schedule_at(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
-  ink_assert(t > 0);
   Event *e = eventAllocator.alloc();
+
+  ink_assert(t > 0);
+  ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
   e->cookie = cookie;
   return schedule(e->init(cont, t, 0), et);
@@ -120,6 +129,8 @@ TS_INLINE Event *
 EventProcessor::schedule_in(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
+
+  ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
   e->cookie = cookie;
   return schedule(e->init(cont, ink_get_based_hrtime() + t, 0), et);
@@ -128,8 +139,10 @@ EventProcessor::schedule_in(Continuation * cont, ink_hrtime t, EventType et, int
 TS_INLINE Event *
 EventProcessor::schedule_every(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
-  ink_assert(t != 0);
   Event *e = eventAllocator.alloc();
+
+  ink_assert(t != 0);
+  ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
   e->cookie = cookie;
   if (t < 0)

@@ -109,7 +109,7 @@ const int N_EVENT_TYPES = ET_LAST;
 
 typedef int EventType;
 const int ET_CALL = 0;
-const int MAX_EVENT_TYPES = 17;
+const int MAX_EVENT_TYPES = 8; // TODO: How is this sized? Where does 8 come from? Or 17 ?
 
 class EThread;
 
