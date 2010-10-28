@@ -104,6 +104,7 @@ handle_transform(INKCont contp)
     data = my_data_alloc();
     data->output_buffer = INKIOBufferCreate();
     data->output_reader = INKIOBufferReaderAlloc(data->output_buffer);
+    INKDebug("null-transform", "\tWriting %d bytes on VConn", INKVIONBytesGet(input_vio));
     data->output_vio = INKVConnWrite(output_conn, contp, data->output_reader, INKVIONBytesGet(input_vio));
     if (INKContDataSet(contp, data) == INK_ERROR) {
       INKError("[null-transform] unable to set continuation " "data!\n");
