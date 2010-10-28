@@ -77,6 +77,7 @@ handle_transform(INKCont contp)
   int towrite;
   int avail;
 
+  INKDebug("null-transform", "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */
 
   output_conn = INKTransformOutputVConnGet(contp);
@@ -144,12 +145,14 @@ handle_transform(INKCont contp)
    * to write to the output connection.
    */
   towrite = INKVIONTodoGet(input_vio);
+  INKDebug("null-transform", "\ttoWrite is %d", towrite);
 
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
      * the amount of data actually in the read buffer.
      */
     avail = INKIOBufferReaderAvail(INKVIOReaderGet(input_vio));
+    INKDebug("null-transform", "\tavail is %d", avail);
     if (towrite > avail) {
       towrite = avail;
     }
@@ -164,8 +167,7 @@ handle_transform(INKCont contp)
       /* Tell the read buffer that we have read the data and are no
        * longer interested in it.
        */
-      if (INKIOBufferReaderConsume(INKVIOReaderGet(input_vio), towrite)
-          == INK_ERROR) {
+      if (INKIOBufferReaderConsume(INKVIOReaderGet(input_vio), towrite) == INK_ERROR) {
         INKError("[null-plugin] unable to update VIO reader\n");
         goto Lerror;
       }
@@ -232,7 +234,10 @@ null_transform(INKCont contp, INKEvent event, void *edata)
   /* Check to see if the transformation has been closed by a call to
    * INKVConnClose.
    */
+  INKDebug("null-transform", "Entering null_transform()");
+
   if (INKVConnClosedGet(contp)) {
+    INKDebug("null-transform", "\tVConn is closed");
     my_data_destroy(INKContDataGet(contp));
     INKAssert(INKContDestroy(contp) == INK_SUCCESS);
     return 0;
@@ -242,6 +247,7 @@ null_transform(INKCont contp, INKEvent event, void *edata)
       {
         INKVIO input_vio;
 
+        INKDebug("null-transform", "\tEvent is INK_EVENT_ERROR");
         /* Get the write VIO for the write operation that was
          * performed on ourself. This VIO contains the continuation of
          * our parent transformation. This is the input VIO.
@@ -255,6 +261,7 @@ null_transform(INKCont contp, INKEvent event, void *edata)
       }
       break;
     case INK_EVENT_VCONN_WRITE_COMPLETE:
+      INKDebug("null-transform", "\tEvent is INK_EVENT_VCONN_WRITE_COMPLETE");
       /* When our output connection says that it has finished
        * reading all the data we've written to it then we should
        * shutdown the write portion of its connection to
@@ -263,7 +270,9 @@ null_transform(INKCont contp, INKEvent event, void *edata)
       INKAssert(INKVConnShutdown(INKTransformOutputVConnGet(contp), 0, 1) != INK_ERROR);
       break;
     case INK_EVENT_VCONN_WRITE_READY:
+      INKDebug("null-transform", "\tEvent is INK_EVENT_VCONN_WRITE_READY");
     default:
+      INKDebug("null-transform", "\t(event is %d)", event);
       /* If we get a WRITE_READY event or any other type of
        * event (sent, perhaps, because we were reenabled) then
        * we'll attempt to transform more data.
@@ -288,6 +297,8 @@ transformable(INKHttpTxn txnp)
   INKHttpStatus resp_status;
   int retv;
 
+  INKDebug("null-transform", "Entering transformable()");
+
   INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
   resp_status = INKHttpHdrStatusGet(bufp, hdr_loc);
   retv = (resp_status == INK_HTTP_STATUS_OK);
@@ -296,6 +307,7 @@ transformable(INKHttpTxn txnp)
     INKError("[null-transform] Error releasing MLOC while checking " "header status\n");
   }
 
+  INKDebug("null-transform", "Exiting transformable with return %d", retv);
   return retv;
 }
 
@@ -304,10 +316,9 @@ transform_add(INKHttpTxn txnp)
 {
   INKVConn connp;
 
+  INKDebug("null-transform", "Entering transform_add()");
   connp = INKTransformCreate(null_transform, txnp);
-
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, connp)
-      == INK_ERROR) {
+  if (INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, connp) == INK_ERROR) {
     INKError("[null-plugin] Unable to attach plugin to transaction\n");
   }
 }
@@ -317,8 +328,10 @@ transform_plugin(INKCont contp, INKEvent event, void *edata)
 {
   INKHttpTxn txnp = (INKHttpTxn) edata;
 
+  INKDebug("null-transform", "Entering transform_plugin()");
   switch (event) {
   case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+    INKDebug("null-transform", "\tEvent is INK_EVENT_HTTP_READ_RESPONSE_HDR");
     if (transformable(txnp)) {
       transform_add(txnp);
     }
