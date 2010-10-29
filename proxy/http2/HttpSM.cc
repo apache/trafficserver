@@ -2882,8 +2882,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
 
     ink_assert(p->vc_type == HT_HTTP_SERVER);
     if (is_http_server_eos_truncation(p)) {
-      Debug("http", "[%lld] [HttpSM::tunnel_handler_server] "
-            "aborting cache writes due to server truncation", sm_id);
+      Debug("http", "[%lld] [HttpSM::tunnel_handler_server] aborting cache writes due to server truncation", sm_id);
       tunnel.abort_cache_write_finish_others(p);
       t_state.current.server->abort = HttpTransact::ABORTED;
       if (t_state.http_config_param->log_spider_codes) {
@@ -4356,13 +4355,14 @@ HttpSM::do_http_server_open(bool raw)
   // Atomically read the current number of connections and check to see
   // if we have gone above the max allowed.
   if (t_state.http_config_param->server_max_connections > 0) {
-    int64 Count, Sum;
-    HTTP_READ_DYN_STAT(http_current_server_connections_stat, Count, Sum);
+    int64 sum;
+
+    HTTP_READ_GLOBAL_DYN_SUM(http_current_server_connections_stat, sum);
     // Note that there is a potential race condition here where
     // the value of the http_current_server_connections_stat gets changed
     // between the statement above and the check below.
     // If this happens, we might go over the max by 1 but this is ok.
-    if (Sum >= t_state.http_config_param->server_max_connections) {
+    if (sum >= t_state.http_config_param->server_max_connections) {
       ink_debug_assert(pending_action == NULL);
       pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));
       httpSessionManager.purge_keepalives();

@@ -98,7 +98,7 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
   con_id = ink_atomic_increment64((int64 *) (&next_ss_id), 1);
 
   magic = HTTP_SS_MAGIC_ALIVE;
-  HTTP_INCREMENT_DYN_STAT(http_current_server_connections_stat);
+  HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
   HTTP_INCREMENT_DYN_STAT(http_total_server_connections_stat);
   // Check to see if we are limiting the number of connections
   // per host
@@ -148,13 +148,8 @@ HttpServerSession::do_io_close(int alerrno)
   Debug("http_ss", "[%lld] session closed", con_id);
   server_vc = NULL;
 
-//  Have to a taken mutex to use normal stat stuff now, we don't
-//    so use funny macros here....
-//    HTTP_DECREMENT_DYN_STAT(http_current_server_connections_stat);
-//    HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
-
-  HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1);
-  HTTP_SUM_GLOBAL_DYN_STAT(http_transactions_per_server_con, transact_count);
+  HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
+  HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
 
   // Check to see if we are limiting the number of connections
   // per host
@@ -171,7 +166,7 @@ HttpServerSession::do_io_close(int alerrno)
   }
 
   if (to_parent_proxy) {
-    HTTP_SUM_GLOBAL_DYN_STAT(http_current_parent_proxy_connections_stat, -1);
+    HTTP_DECREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);
   }
   destroy();
 }

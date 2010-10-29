@@ -5974,6 +5974,8 @@ HttpTransact::initialize_state_variables_from_response(State * s, HTTPHdr * inco
     // content length to the browser, and we will correct //
     // the cache if it turnrd out that the servers lied.  //
     ////////////////////////////////////////////////////////
+    //TODO: We should quite possibly disable this check, it will cause us to violate the
+    // protocol in some cases (returning too much data). /leif XXX
     if (incoming_response->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
       if (s->current.server->keep_alive == HTTP_NO_KEEPALIVE) {
         s->hdr_info.trust_response_cl = false;
@@ -7379,8 +7381,7 @@ HttpTransact::delete_all_document_alternates_and_return(State * s, bool cache_hi
     } else {
       if (valid_max_forwards) {
         --max_forwards;
-        Debug("http_trans",
-              "[delete_all_document_alternates_and_return] " "Decrementing max_forwards to %d", max_forwards);
+        Debug("http_trans", "[delete_all_document_alternates_and_return] " "Decrementing max_forwards to %d", max_forwards);
         s->hdr_info.client_request.value_set_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS, max_forwards);
       }
     }

@@ -24,7 +24,5 @@
 #include "HttpConnectionCount.h"
 
 
-ConnectionCount *
-  ConnectionCount::_connectionCount = NULL;
-ink_mutex
-  ConnectionCount::_mutex;
+ConnectionCount *ConnectionCount::_connectionCount = NULL;
+ink_mutex ConnectionCount::_mutex;

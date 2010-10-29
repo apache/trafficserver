@@ -306,31 +306,19 @@ enum
 extern RecRawStatBlock *http_rsb;
 
 /* Stats should only be accessed using these macros */
+#define HTTP_INCREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, 1);
+#define HTTP_DECREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, -1);
+#define HTTP_SUM_DYN_STAT(x, y) RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, (int) y);
+#define HTTP_SUM_GLOBAL_DYN_STAT(x, y) RecIncrGlobalRawStatSum(http_rsb,x,y)
 
-#define HTTP_SET_DYN_STAT(x,C, S) \
-do { \
-        RecSetRawStatSum(http_rsb, x, S); \
-        RecSetRawStatCount(http_rsb, x, C); \
-} while (0);
-#define HTTP_INCREMENT_DYN_STAT(x) \
-        RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, 1);
-#define HTTP_DECREMENT_DYN_STAT(x) \
-        RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, -1);
-#define HTTP_SUM_DYN_STAT(x, y) \
-        RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, (int) y);
-#define HTTP_SUM_GLOBAL_DYN_STAT(x, y) \
-        RecIncrGlobalRawStatSum(http_rsb,x,y)
 #define HTTP_CLEAR_DYN_STAT(x) \
 do { \
         RecSetRawStatSum(http_rsb, x, 0); \
         RecSetRawStatCount(http_rsb, x, 0); \
 } while (0);
-#define HTTP_READ_DYN_STAT(x, C, S)             \
-  RecGetRawStatCount(http_rsb, (int) x, &C);    \
-  RecGetRawStatSum(http_rsb, (int) x, &S);
 
-#define HTTP_READ_DYN_SUM(x, S)             \
-  RecGetRawStatSum(http_rsb, (int) x, &S);
+#define HTTP_READ_DYN_SUM(x, S) RecGetRawStatSum(http_rsb, (int)x, &S); // This aggregates threads too
+#define HTTP_READ_GLOBAL_DYN_SUM(x, S) RecGetGlobalRawStatSum(http_rsb, int(x), &S)
 
 #define HTTP_ConfigReadInteger         REC_ConfigReadInteger
 #define HTTP_ConfigReadString          REC_ConfigReadString

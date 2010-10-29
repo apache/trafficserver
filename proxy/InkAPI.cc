@@ -6544,6 +6544,7 @@ INKHttpCurrentIdleClientConnectionsGet(int *num_connections)
 {
   int64 total = 0;
   int64 active = 0;
+
   HTTP_READ_DYN_SUM(http_current_client_connections_stat, total);
   HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, active);
 
@@ -6559,6 +6560,7 @@ int
 INKHttpCurrentCacheConnectionsGet(int *num_connections)
 {
   int64 S;
+
   HTTP_READ_DYN_SUM(http_current_cache_connections_stat, S);
   *num_connections = (int) S;
   return 1;
@@ -6569,7 +6571,7 @@ INKHttpCurrentServerConnectionsGet(int *num_connections)
 {
   int64 S;
 
-  HTTP_READ_DYN_SUM(http_current_server_connections_stat, S);
+  HTTP_READ_GLOBAL_DYN_SUM(http_current_server_connections_stat, S);
   *num_connections = (int) S;
   return 1;
 }
