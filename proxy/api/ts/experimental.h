@@ -39,7 +39,7 @@ extern "C"
 
 
   /* Cache APIs that are not yet fully supported and/or frozen nor complete. */
-  inkapi INKReturnCode INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 * length, INKU64 * offset);
+  inkapi INKReturnCode INKCacheBufferInfoGet(INKCacheTxn txnp, uint64 * length, uint64 * offset);
 
   inkapi INKCacheHttpInfo INKCacheHttpInfoCreate();
   inkapi void INKCacheHttpInfoReqGet(INKCacheHttpInfo infop, INKMBuffer * bufp, INKMLoc * obj);
@@ -47,7 +47,7 @@ extern "C"
   inkapi void INKCacheHttpInfoReqSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
   inkapi void INKCacheHttpInfoRespSet(INKCacheHttpInfo infop, INKMBuffer bufp, INKMLoc obj);
   inkapi void INKCacheHttpInfoKeySet(INKCacheHttpInfo infop, INKCacheKey key);
-  inkapi void INKCacheHttpInfoSizeSet(INKCacheHttpInfo infop, INKU64 size);
+  inkapi void INKCacheHttpInfoSizeSet(INKCacheHttpInfo infop, int64 size);
   inkapi int INKCacheHttpInfoVector(INKCacheHttpInfo infop, void *data, int length);
 
   /* --------------------------------------------------------------------------
@@ -55,14 +55,14 @@ extern "C"
      TS stats. It is disabled by default, enable it with --with_v2_stats at
      configure time. */
   inkapi INKReturnCode     INKStatCreateV2(const char *name, uint32_t *stat_num);
-  inkapi INKReturnCode     INKStatIncrementV2(uint32_t stat_num, INK64 inc_by);
-  inkapi INKReturnCode     INKStatIncrementByNameV2(const char *stat_name, INK64 inc_by);
-  inkapi INKReturnCode     INKStatDecrementV2(uint32_t stat_num, INK64 dec_by);
-  inkapi INKReturnCode     INKStatDecrementByNameV2(const char *stat_name, INK64 dec_by);
-  inkapi INKReturnCode     INKStatGetCurrentV2(uint32_t stat_num, INK64 *stat_val);
-  inkapi INKReturnCode     INKStatGetCurrentByNameV2(const char *stat_name, INK64 *stat_val);
-  inkapi INKReturnCode     INKStatGetV2(uint32_t stat_num, INK64 *stat_val);
-  inkapi INKReturnCode     INKStatGetByNameV2(const char *stat_name, INK64 *stat_val);
+  inkapi INKReturnCode     INKStatIncrementV2(uint32_t stat_num, int64 inc_by);
+  inkapi INKReturnCode     INKStatIncrementByNameV2(const char *stat_name, int64 inc_by);
+  inkapi INKReturnCode     INKStatDecrementV2(uint32_t stat_num, int64 dec_by);
+  inkapi INKReturnCode     INKStatDecrementByNameV2(const char *stat_name, int64 dec_by);
+  inkapi INKReturnCode     INKStatGetCurrentV2(uint32_t stat_num, int64 *stat_val);
+  inkapi INKReturnCode     INKStatGetCurrentByNameV2(const char *stat_name, int64 *stat_val);
+  inkapi INKReturnCode     INKStatGetV2(uint32_t stat_num, int64 *stat_val);
+  inkapi INKReturnCode     INKStatGetByNameV2(const char *stat_name, int64 *stat_val);
 
 #ifdef __cplusplus
 }

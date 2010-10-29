@@ -259,7 +259,7 @@ int
 state_handle_cache_lookup(INKCont contp, INKEvent event, INKVConn vc)
 {
   TxnSM *txn_sm = (TxnSM *) INKContDataGet(contp);
-  int response_size;
+  int64 response_size;
   int ret_val;
 
   INKDebug("protocol", "enter state_handle_cache_lookup");
@@ -896,7 +896,7 @@ get_info_from_buffer(INKIOBufferReader the_reader)
   char *info;
   char *info_start;
 
-  int read_avail, read_done;
+  int64 read_avail, read_done;
   INKIOBufferBlock blk;
   char *buf;
 

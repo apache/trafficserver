@@ -135,7 +135,7 @@ public:
     ink_assert(!"implemented");
     return -1;
   }
-  int get_object_size()
+  int64 get_object_size()
   {
     ink_assert(!"implemented");
     return -1;

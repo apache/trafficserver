@@ -59,10 +59,10 @@ handle_dns(INKHttpTxn txnp, INKCont contp)
 
   INKIOBufferBlock block;
   const char *block_start;
-  int block_avail;
+  int64 block_avail;
 
   char *output_string;
-  int output_len;
+  int64 output_len;
 
   if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     INKDebug(DEBUG_TAG, "couldn't retrieve client request header");

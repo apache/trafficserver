@@ -58,11 +58,11 @@ extern "C"
 /* api functions to access stats */
 /* ClientResp APIs exist as well and are exposed in PrivateFrozen  */
   inkapi int INKHttpTxnClientReqHdrBytesGet(INKHttpTxn txnp, int *bytes);
-  inkapi int INKHttpTxnClientReqBodyBytesGet(INKHttpTxn txnp, int *bytes);
+  inkapi int INKHttpTxnClientReqBodyBytesGet(INKHttpTxn txnp, int64 *bytes);
   inkapi int INKHttpTxnServerReqHdrBytesGet(INKHttpTxn txnp, int *bytes);
-  inkapi int INKHttpTxnServerReqBodyBytesGet(INKHttpTxn txnp, int *bytes);
+  inkapi int INKHttpTxnServerReqBodyBytesGet(INKHttpTxn txnp, int64 *bytes);
   inkapi int INKHttpTxnPushedRespHdrBytesGet(INKHttpTxn txnp, int *bytes);
-  inkapi int INKHttpTxnPushedRespBodyBytesGet(INKHttpTxn txnp, int *bytes);
+  inkapi int INKHttpTxnPushedRespBodyBytesGet(INKHttpTxn txnp, int64 *bytes);
 
 /* used in internal sample plugin_as_origin */
   inkapi int INKHttpTxnNextHopPortGet(INKHttpTxn txnp);
@@ -89,7 +89,7 @@ extern "C"
   inkapi void INKVConnCacheHttpInfoSet(INKVConn connp, INKCacheHttpInfo infop);
 
 /* NetVC API. Experimental, developed for RAFT. No longer used. */
-  inkapi void INKVConnInactivityTimeoutSet(INKVConn connp, int timeout);
+  inkapi void INKVConnInactivityTimeoutSet(INKVConn connp, TSHRTime timeout);
   inkapi void INKVConnInactivityTimeoutCancel(INKVConn connp);
 
 /* ICP freshness functions */

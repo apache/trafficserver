@@ -352,7 +352,7 @@ struct CacheVC: public CacheVConnection
   int evacuateReadHead(int event, Event *e);
 
   void cancel_trigger();
-  virtual int get_object_size();
+  virtual int64 get_object_size();
 #ifdef HTTP_CACHE
   virtual void set_http_info(CacheHTTPInfo *info);
   virtual void get_http_info(CacheHTTPInfo ** info);

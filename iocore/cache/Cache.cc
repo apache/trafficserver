@@ -341,7 +341,7 @@ bool CacheVC::get_data(int i, void *data)
   return false;
 }
 
-int
+int64
 CacheVC::get_object_size()
 {
   return ((CacheVC *) this)->doc_len;

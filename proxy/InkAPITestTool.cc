@@ -120,7 +120,7 @@ typedef struct
 
   int connect_port;
   int local_port;
-  INKU64 connect_ip;
+  uint64 connect_ip;
   INKAction connect_action;
 
   TxnHandler current_handler;
@@ -526,7 +526,7 @@ synclient_txn_read_response(INKCont contp)
 
   INKIOBufferBlock block = INKIOBufferReaderStart(txn->resp_reader);
   while (block != NULL) {
-    int blocklen;
+    int64 blocklen;
     const char *blockptr = INKIOBufferBlockReadStart(block, txn->resp_reader, &blocklen);
 
     if (txn->response_len+blocklen <= RESPONSE_MAX_SIZE) {
@@ -603,7 +603,7 @@ synclient_txn_write_request(INKCont contp)
 
   INKIOBufferBlock block;
   char *ptr_block;
-  int len, ndone, ntodo, towrite, avail;
+  int64 len, ndone, ntodo, towrite, avail;
 
   len = strlen(txn->request);
 
@@ -854,7 +854,7 @@ synserver_txn_write_response(INKCont contp)
 
   INKIOBufferBlock block;
   char *ptr_block;
-  int len, ndone, ntodo, towrite, avail;
+  int64 len, ndone, ntodo, towrite, avail;
   char *response;
 
   response = generate_response(txn->request);
@@ -930,7 +930,7 @@ synserver_txn_read_request(INKCont contp)
   INKIOBufferBlock block = INKIOBufferReaderStart(txn->req_reader);
 
   while (block != NULL) {
-    int blocklen;
+    int64 blocklen;
     const char *blockptr = INKIOBufferBlockReadStart(block, txn->req_reader, &blocklen);
 
     if (txn->request_len+blocklen <= REQUEST_MAX_SIZE) {

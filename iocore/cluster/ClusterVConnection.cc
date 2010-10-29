@@ -458,7 +458,7 @@ bool ClusterVConnection::get_data(int id, void *data)
   switch (id) {
   case CACHE_DATA_SIZE:
     {
-      *((int *) data) = get_object_size();
+      *((int64 *) data) = get_object_size();
       return true;
     }
   case CACHE_DATA_HTTP_INFO:
@@ -483,7 +483,7 @@ ClusterVConnection::get_http_info(CacheHTTPInfo ** info)
   *info = &alternate;
 }
 
-int
+int64
 ClusterVConnection::get_object_size()
 {
   return alternate.object_size_get();

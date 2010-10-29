@@ -59,7 +59,7 @@ extern "C"
 /****************************************************************************
  *  Allow to set the body of a POST request.
  ****************************************************************************/
-  inkapi void INKHttpTxnServerRequestBodySet(INKHttpTxn txnp, char *buf, int buflength);
+  inkapi void INKHttpTxnServerRequestBodySet(INKHttpTxn txnp, char *buf, int64 buflength);
 
 /* ===== High Resolution Time ===== */
 #define INK_HRTIME_FOREVER  HRTIME_FOREVER
@@ -95,30 +95,19 @@ extern "C"
 #define INK_HRTIME_NSECONDS(_x) HRTIME_NSECONDS(_x)
 
   /* ===== Time ===== */
-  inkapi unsigned int INKBasedTimeGet();
-  inkapi double INKBasedTimeGetD();
+  inkapi TSHRTime INKBasedTimeGet();
 
 /****************************************************************************
  *  Get time when Http TXN started
  ****************************************************************************/
-  inkapi int INKHttpTxnStartTimeGet(INKHttpTxn txnp, INK64 * start_time);
+  inkapi int INKHttpTxnStartTimeGet(INKHttpTxn txnp, TSHRTime * start_time);
 
 /****************************************************************************
  *  Get time when Http TXN ended
  ****************************************************************************/
-  inkapi int INKHttpTxnEndTimeGet(INKHttpTxn txnp, INK64 * end_time);
+  inkapi int INKHttpTxnEndTimeGet(INKHttpTxn txnp, TSHRTime * end_time);
 
-/****************************************************************************
- *  Get time when Http TXN started
- ****************************************************************************/
-  inkapi int INKHttpTxnStartTimeGetD(INKHttpTxn txnp, double *start_time);
-
-/****************************************************************************
- *  Get time when Http TXN ended
- ****************************************************************************/
-  inkapi int INKHttpTxnEndTimeGetD(INKHttpTxn txnp, double *end_time);
-
-  inkapi int INKHttpTxnCachedRespTimeGet(INKHttpTxn txnp, long *resp_time);
+  inkapi int INKHttpTxnCachedRespTimeGet(INKHttpTxn txnp, time_t *resp_time);
 
 /* ===== Cache ===== */
   inkapi INKReturnCode INKCacheKeyDataTypeSet(INKCacheKey key, INKCacheDataType type);
@@ -140,7 +129,7 @@ extern "C"
 /****************************************************************************
  *  Return Hi-resolution current time. (int64)
  ****************************************************************************/
-  inkapi INK64 INKhrtime(void);
+  inkapi TSHRTime INKhrtime(void);
 
 /* ===== global http stats ===== */
 /****************************************************************************
@@ -177,7 +166,7 @@ extern "C"
 /****************************************************************************
  *  Get size of response body
  ****************************************************************************/
-  inkapi int INKHttpTxnServerRespBodyBytesGet(INKHttpTxn txnp, int *bytes);
+  inkapi int INKHttpTxnServerRespBodyBytesGet(INKHttpTxn txnp, int64 *bytes);
 
 /* =====  CacheHttpInfo =====  */
 
@@ -255,7 +244,7 @@ extern "C"
  *  ??
  *  Return ??
  ****************************************************************************/
-  inkapi int INKHttpTxnClientRespBodyBytesGet(INKHttpTxn txnp, int *bytes);
+  inkapi int INKHttpTxnClientRespBodyBytesGet(INKHttpTxn txnp, int64 *bytes);
 
 
 /* =====  Matcher Utils =====  */
@@ -278,7 +267,7 @@ extern "C"
  *  ??
  *  Return
  ****************************************************************************/
-  inkapi char *INKMatcherExtractIPRange(char *match_str, INKU32 * addr1, INKU32 * addr2);
+  inkapi char *INKMatcherExtractIPRange(char *match_str, uint32 * addr1, uint32 * addr2);
 
 /****************************************************************************
  *  ??
@@ -335,8 +324,8 @@ extern "C"
  *  Return
  ****************************************************************************/
 
-  inkapi void INKIPLookupNewEntry(INKIPLookup iplu, INKU32 addr1, INKU32 addr2, void *data);
-  inkapi int INKIPLookupMatchFirst(INKIPLookup iplu, INKU32 addr, INKIPLookupState iplus, void **data);
+  inkapi void INKIPLookupNewEntry(INKIPLookup iplu, uint32 addr1, uint32 addr2, void *data);
+  inkapi int INKIPLookupMatchFirst(INKIPLookup iplu, uint32 addr, INKIPLookupState iplus, void **data);
   inkapi int INKIPLookupMatchNext(INKIPLookup iplu, INKIPLookupState iplus, void **data);
 
 /* ===== Configuration Setting ===== */
@@ -450,8 +439,7 @@ extern "C"
  *	Return != 0 Failure						    *
  * contact: OXY, DY
  ****************************************************************************/
-  inkapi int
-    INKAddClusterStatusFunction(INKClusterStatusFunction Status_Function, INKMutex m, INKClusterStatusHandle_t * h);
+  inkapi int INKAddClusterStatusFunction(INKClusterStatusFunction Status_Function, INKMutex m, INKClusterStatusHandle_t * h);
 /****************************************************************************
  *  Cancel subscription to node up/down status notification. 		    *
  *	Return == 0 Success						    *
@@ -487,8 +475,7 @@ extern "C"
  *	Return != 0 Failure						    *
  *  contact: OXY, DY
  ****************************************************************************/
-  inkapi int
-    INKAddClusterRPCFunction(INKClusterRPCKey_t k, INKClusterRPCFunction RPC_Function, INKClusterRPCHandle_t * h);
+  inkapi int INKAddClusterRPCFunction(INKClusterRPCKey_t k, INKClusterRPCFunction RPC_Function, INKClusterRPCHandle_t * h);
 
 /****************************************************************************
  *  Delete the key to function association created via 			    *
@@ -548,36 +535,6 @@ extern "C"
  *  contact: AAA, CPOINT
  ****************************************************************************/
   inkapi int INKUserNameCacheDelete(INKCont contp, unsigned long ip);
-
-#define INK_EVENT_POLICY_LOOKUP INK_EVENT_INTERNAL_1200
-
-/****************************************************************************
- *  ??
- *  Return
- *  contact: AAA
- ****************************************************************************/
-  inkapi INKReturnCode INKUserPolicyLookup(INKHttpTxn txnp, void **user_info);
-
-/****************************************************************************
- *  ??
- *  Return ??
- *  contact: AAA
- ****************************************************************************/
-  inkapi INKReturnCode INKHttpTxnBillable(INKHttpTxn txnp, int bill, const char *eventName);
-
-/****************************************************************************
- *  ??
- *  Return ??
- *  contact: AAA
- ****************************************************************************/
-  inkapi void INKPolicyContSet(INKCont p);
-
-/****************************************************************************
- *  ??
- *  Return ??
- *  contact: AAA
- ****************************************************************************/
-  inkapi INKReturnCode INKUserPolicyFetch(INKU32 ip, char *name);
 
 #ifdef __cplusplus
 }

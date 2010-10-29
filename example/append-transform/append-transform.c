@@ -330,7 +330,7 @@ load(const char *filename)
   INKFile fp;
   INKIOBufferBlock blk;
   char *p;
-  int avail;
+  int64 avail;
   int err;
 
   fp = INKfopen(filename, "r");

@@ -538,9 +538,9 @@ transform_read_status_event(INKCont contp, TransformData * data, INKEvent event,
       INKIOBufferBlock blk;
       char *buf;
       void *buf_ptr;
-      int avail;
-      int read_nbytes = sizeof(int);
-      int read_ndone = 0;
+      int64 avail;
+      int64 read_nbytes = sizeof(int);
+      int64 read_ndone = 0;
 
       buf_ptr = &data->content_length;
       while (read_nbytes > 0) {

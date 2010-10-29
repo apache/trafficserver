@@ -46,7 +46,6 @@ int
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char *file)
 {
   BIO *in;
-  int j;
   int ret = 0;
   X509 *x = NULL;
 
@@ -61,7 +60,7 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char *file)
     goto end;
   }
 
-  j = ERR_R_PEM_LIB;
+  // j = ERR_R_PEM_LIB;
   while ((x = PEM_read_bio_X509(in, NULL, ctx->default_passwd_callback, ctx->default_passwd_callback_userdata)) != NULL) {
     ret = SSL_CTX_add_extra_chain_cert(ctx, x);
     if (!ret) {

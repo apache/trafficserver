@@ -76,7 +76,7 @@ FetchSM::get_info_from_buffer(INKIOBufferReader the_reader)
   char *info;
 //  char *info_start;
 
-  int read_avail, read_done;
+  int64 read_avail, read_done;
   INKIOBufferBlock blk;
   char *buf;
 

@@ -409,7 +409,7 @@ cache_handler(INKCont contp, INKEvent event, void *data)
 
   INKIOBufferBlock blockp;
   char *ptr_block;
-  int ntodo, ndone, nbytes, towrite, avail, content_length;
+  int64 ntodo, ndone, nbytes, towrite, avail, content_length;
 
   switch (event) {
   case INK_EVENT_CACHE_OPEN_WRITE:
@@ -833,7 +833,7 @@ REGRESSION_TEST(SDK_API_INKfopen) (RegressionTest * test, int atype, int *pstatu
   struct stat stat_buffer_pre, stat_buffer_post, stat_buffer_input;
   char *ret_val;
   int error_counter = 0, read = 0, wrote = 0;
-  off_t read_amount = 0;
+  int64 read_amount = 0;
   char INPUT_TEXT_FILE[] = "plugin.config";
   char input_file_full_path[BUFSIZ];
 
@@ -1558,7 +1558,7 @@ REGRESSION_TEST(SDK_API_INKIOBufferCreate) (RegressionTest * test, int atype, in
   bool test_passed = false;
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  int watermark = 1000;
+  int64 watermark = 1000;
 
   INKIOBuffer bufp = INKIOBufferCreate();
 
@@ -1784,7 +1784,7 @@ REGRESSION_TEST(SDK_API_INKIOBufferBlockReadAvail) (RegressionTest * test, int a
   INKIOBufferWrite(bufp, (char*)&i, sizeof(int));
   INKIOBufferReader readerp = INKIOBufferReaderAlloc(bufp);
 
-  int avail_write, avail_read;
+  int64 avail_write, avail_read;
 
   // TODO: This is probably not correct any more.
   INKIOBufferBlock blockp = INKIOBufferStart(bufp);
@@ -1875,7 +1875,7 @@ REGRESSION_TEST(SDK_API_INKStatIntSet) (RegressionTest * test, int atype, int *p
   INKStat stat = INKStatCreate("stat_is", INKSTAT_TYPE_INT64);
 
   INKStatIntSet(stat, 100);
-  INK64 stat_val;
+  int64 stat_val;
 
   INKStatIntGet(stat, &stat_val);
 
@@ -1906,7 +1906,7 @@ REGRESSION_TEST(SDK_API_INKStatIntAddTo) (RegressionTest * test, int atype, int 
   INKStat stat = INKStatCreate("stat_ia", INKSTAT_TYPE_INT64);
 
   INKStatIntAddTo(stat, 100);
-  INK64 stat_val;
+  int64 stat_val;
 
   INKStatIntGet(stat, &stat_val);
 
@@ -2003,7 +2003,7 @@ REGRESSION_TEST(SDK_API_INKStatIncrement) (RegressionTest * test, int atype, int
   INKStat stat_2 = INKStatCreate("stat_2", INKSTAT_TYPE_FLOAT);
 
   INKStatIncrement(stat_1);
-  INK64 stat1_val;
+  int64 stat1_val;
   INKStatIntGet(stat_1, &stat1_val);
 
   if (stat1_val == 1) {
@@ -2119,9 +2119,9 @@ REGRESSION_TEST(SDK_API_INKStatCoupled) (RegressionTest * test, int atype, int *
 
   float global_val_sum;
   INKStatFloatGet(global_stat_sum, &global_val_sum);
-  INK64 global_val_1;
+  int64 global_val_1;
   INKStatIntGet(global_stat_1, &global_val_1);
-  INK64 global_val_2;
+  int64 global_val_2;
   INKStatIntGet(global_stat_2, &global_val_2);
 
   if (local_val_1 == global_val_1 && local_val_2 == global_val_2 && local_val_sum == global_val_sum) {
@@ -2762,7 +2762,7 @@ test_url_print(INKMBuffer bufp, INKMLoc hdr_loc)
 
   INKIOBufferBlock block;
   const char *block_start;
-  int block_avail;
+  int64 block_avail;
 
   char *output_string;
   int output_len;
@@ -4098,7 +4098,7 @@ REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *psta
 
               while ((iobufblock != NULL) && (iobufblock != INK_ERROR_PTR)) {
                 const char *block_start;
-                int block_size;
+                int64 block_size;
                 block_start = INKIOBufferBlockReadStart(iobufblock, iobufreader, &block_size);
 
                 if ((block_start == INK_ERROR_PTR) || (block_size == 0) || (block_size == INK_ERROR)) {
@@ -5263,7 +5263,7 @@ convert_http_hdr_to_string(INKMBuffer bufp, INKMLoc hdr_loc)
 
   INKIOBufferBlock block;
   const char *block_start;
-  int block_avail;
+  int64 block_avail;
 
   char *output_string;
   int output_len;
@@ -5522,7 +5522,7 @@ convert_mime_hdr_to_string(INKMBuffer bufp, INKMLoc hdr_loc)
 
   INKIOBufferBlock block;
   const char *block_start;
-  int block_avail;
+  int64 block_avail;
 
   char *output_string;
   int output_len;
@@ -7619,7 +7619,7 @@ load(const char *append_string)
 {
   INKIOBufferBlock blk;
   char *p;
-  int avail;
+  int64 avail;
 
   append_buffer = INKIOBufferCreate();
   append_buffer_reader = INKIOBufferReaderAlloc(append_buffer);

@@ -74,8 +74,8 @@ handle_transform(INKCont contp)
   INKIOBuffer buf_test;
   INKVIO input_vio;
   MyData *data;
-  int towrite;
-  int avail;
+  int64 towrite;
+  int64 avail;
 
   INKDebug("null-transform", "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */
@@ -146,14 +146,14 @@ handle_transform(INKCont contp)
    * to write to the output connection.
    */
   towrite = INKVIONTodoGet(input_vio);
-  INKDebug("null-transform", "\ttoWrite is %d", towrite);
+  INKDebug("null-transform", "\ttoWrite is %lld", towrite);
 
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
      * the amount of data actually in the read buffer.
      */
     avail = INKIOBufferReaderAvail(INKVIOReaderGet(input_vio));
-    INKDebug("null-transform", "\tavail is %d", avail);
+    INKDebug("null-transform", "\tavail is %lld", avail);
     if (towrite > avail) {
       towrite = avail;
     }

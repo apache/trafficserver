@@ -200,8 +200,8 @@ extern "C"
 
 
 /* IOBuffer */
-  inkapi void INKIOBufferReaderCopy(INKIOBufferReader, const void *, int);
-  inkapi int INKIOBufferBlockDataSizeGet(INKIOBufferBlock blockp);
+  inkapi void INKIOBufferReaderCopy(INKIOBufferReader readerp, const void *buf, int64 length);
+  inkapi int64 INKIOBufferBlockDataSizeGet(INKIOBufferBlock blockp);
   inkapi INKReturnCode INKIOBufferBlockDestroy(INKIOBufferBlock blockp);
 
 

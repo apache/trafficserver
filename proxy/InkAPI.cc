@@ -1839,19 +1839,20 @@ api_init()
 ////////////////////////////////////////////////////////////////////
 
 void *
-_INKmalloc(unsigned int size, const char *path)
+_INKmalloc(size_t size, const char *path)
 {
   return _xmalloc(size, path);
 }
 
 void *
-_INKrealloc(void *ptr, unsigned int size, const char *path)
+_INKrealloc(void *ptr, size_t size, const char *path)
 {
   return _xrealloc(ptr, size, path);
 }
 
+// length has to be int64 and not size_t, since -1 means to call strlen() to get length
 char *
-_INKstrdup(const char *str, int length, const char *path)
+_INKstrdup(const char *str, int64 length, const char *path)
 {
   return _xstrdup(str, length, path);
 }
@@ -1880,7 +1881,7 @@ INKdrandom()
   return this_ethread()->generator.drandom();
 }
 
-INK64
+ink_hrtime
 INKhrtime()
 {
   return ink_get_based_hrtime();
@@ -2036,15 +2037,15 @@ INKfclose(INKFile filep)
   delete file;
 }
 
-int
-INKfread(INKFile filep, void *buf, int length)
+size_t
+INKfread(INKFile filep, void *buf, size_t length)
 {
   FileImpl *file = (FileImpl *) filep;
   return file->fread(buf, length);
 }
 
-int
-INKfwrite(INKFile filep, const void *buf, int length)
+size_t
+INKfwrite(INKFile filep, const void *buf, size_t length)
 {
   FileImpl *file = (FileImpl *) filep;
   return file->fwrite(buf, length);
@@ -2058,7 +2059,7 @@ INKfflush(INKFile filep)
 }
 
 char *
-INKfgets(INKFile filep, char *buf, int length)
+INKfgets(INKFile filep, char *buf, size_t length)
 {
   FileImpl *file = (FileImpl *) filep;
   return file->fgets(buf, length);
@@ -4998,7 +4999,7 @@ INKContDataGet(INKCont contp)
 }
 
 INKAction
-INKContSchedule(INKCont contp, unsigned int timeout)
+INKContSchedule(INKCont contp, ink_hrtime timeout)
 {
   if (sdk_sanity_check_iocore_structure(contp) != INK_SUCCESS)
     return (INKAction) INK_ERROR_PTR;
@@ -5024,7 +5025,7 @@ INKContSchedule(INKCont contp, unsigned int timeout)
   return action;
 }
 
-INKAction INKHttpSchedule(INKCont contp ,INKHttpTxn txnp, unsigned int timeout)
+INKAction INKHttpSchedule(INKCont contp ,INKHttpTxn txnp, ink_hrtime timeout)
 {
   if (sdk_sanity_check_iocore_structure (contp) != INK_SUCCESS)
     return (INKAction) INK_ERROR_PTR;
@@ -5968,7 +5969,7 @@ INKHttpTxnErrorBodySet(INKHttpTxn txnp, char *buf, int buflength, char *mimetype
 }
 
 void
-INKHttpTxnServerRequestBodySet(INKHttpTxn txnp, char *buf, int buflength)
+INKHttpTxnServerRequestBodySet(INKHttpTxn txnp, char *buf, int64 buflength)
 {
   HttpSM *sm = (HttpSM *) txnp;
   HttpTransact::State *s = &(sm->t_state);
@@ -6072,9 +6073,9 @@ INKCacheBufferReaderGet(INKCacheTxn txnp)
 
 //----------------------------------------------------------------------------
 //INKReturnCode
-//INKCacheBufferInfoGet(INKHttpTxn txnp, void **buffer, INKU64 *length, INKU64 *offset)
+//INKCacheBufferInfoGet(INKHttpTxn txnp, void **buffer, uint64 *length, uint64 *offset)
 INKReturnCode
-INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 *length, INKU64 *offset)
+INKCacheBufferInfoGet(INKCacheTxn txnp, uint64 *length, uint64 *offset)
 {
   NewCacheVC *vc = (NewCacheVC *) txnp;
 
@@ -6087,7 +6088,7 @@ INKCacheBufferInfoGet(INKCacheTxn txnp, INKU64 *length, INKU64 *offset)
 
 //----------------------------------------------------------------------------
 INKReturnCode
-INKHttpCacheReenable(INKCacheTxn txnp, const INKEvent event, const void *data, const INKU64 size)
+INKHttpCacheReenable(INKCacheTxn txnp, const INKEvent event, const void *data, const uint64 size)
 {
   Debug("cache_plugin", "[INKHttpCacheReenable] event id: %d data: %lX size: %llu", event, (unsigned long) data, size);
   //bool calledUser = 0;
@@ -6376,7 +6377,7 @@ INKHttpTxnClientReqHdrBytesGet(INKHttpTxn txnp, int *bytes)
 }
 
 int
-INKHttpTxnClientReqBodyBytesGet(INKHttpTxn txnp, int *bytes)
+INKHttpTxnClientReqBodyBytesGet(INKHttpTxn txnp, int64 *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
   *bytes = sm->client_request_body_bytes;
@@ -6392,7 +6393,7 @@ INKHttpTxnServerReqHdrBytesGet(INKHttpTxn txnp, int *bytes)
 }
 
 int
-INKHttpTxnServerReqBodyBytesGet(INKHttpTxn txnp, int *bytes)
+INKHttpTxnServerReqBodyBytesGet(INKHttpTxn txnp, int64 *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
   *bytes = sm->server_request_body_bytes;
@@ -6408,7 +6409,7 @@ INKHttpTxnServerRespHdrBytesGet(INKHttpTxn txnp, int *bytes)
 }
 
 int
-INKHttpTxnServerRespBodyBytesGet(INKHttpTxn txnp, int *bytes)
+INKHttpTxnServerRespBodyBytesGet(INKHttpTxn txnp, int64 *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
   *bytes = sm->server_response_body_bytes;
@@ -6424,7 +6425,7 @@ INKHttpTxnClientRespHdrBytesGet(INKHttpTxn txnp, int *bytes)
 }
 
 int
-INKHttpTxnClientRespBodyBytesGet(INKHttpTxn txnp, int *bytes)
+INKHttpTxnClientRespBodyBytesGet(INKHttpTxn txnp, int64 *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
   *bytes = sm->client_response_body_bytes;
@@ -6448,57 +6449,33 @@ INKHttpTxnPushedRespBodyBytesGet(INKHttpTxn txnp, int *bytes)
 }
 
 int
-INKHttpTxnStartTimeGet(INKHttpTxn txnp, INK64 *start_time)
+INKHttpTxnStartTimeGet(INKHttpTxn txnp, ink_hrtime *start_time)
 {
   HttpSM *sm = (HttpSM *) txnp;
+
   if (sm->milestones.ua_begin == 0)
     return 0;
   else {
-    *start_time = (int64) (sm->milestones.ua_begin);
+    *start_time = sm->milestones.ua_begin;
     return 1;
   }
 }
 
 int
-INKHttpTxnEndTimeGet(INKHttpTxn txnp, INK64 *end_time)
+INKHttpTxnEndTimeGet(INKHttpTxn txnp, ink_hrtime *end_time)
 {
   HttpSM *sm = (HttpSM *) txnp;
+
   if (sm->milestones.ua_close == 0)
     return 0;
   else {
-    *end_time = (int64) (sm->milestones.ua_close);
+    *end_time = sm->milestones.ua_close;
     return 1;
   }
 }
 
 int
-INKHttpTxnStartTimeGetD(INKHttpTxn txnp, double *start_time)
-{
-  HttpSM *sm = (HttpSM *) txnp;
-  if (sm->milestones.ua_begin == 0)
-    return 0;
-  else {
-    //*start_time = (long long)(ink_hrtime_to_msec(sm->milestones.ua_begin));
-    *start_time = (double) (sm->milestones.ua_begin);
-    return 1;
-  }
-}
-
-int
-INKHttpTxnEndTimeGetD(INKHttpTxn txnp, double *end_time)
-{
-  HttpSM *sm = (HttpSM *) txnp;
-  if (sm->milestones.ua_close == 0)
-    return 0;
-  else {
-    //*end_time = (long long)(ink_hrtime_to_msec(sm->milestones.ua_close));
-    *end_time = (double) (sm->milestones.ua_close);
-    return 1;
-  }
-}
-
-int
-INKHttpTxnCachedRespTimeGet(INKHttpTxn txnp, long *resp_time)
+INKHttpTxnCachedRespTimeGet(INKHttpTxn txnp, time_t *resp_time)
 {
   HttpSM *sm = (HttpSM *) txnp;
   HTTPInfo *cached_obj = sm->t_state.cache_info.object_read;
@@ -6506,7 +6483,7 @@ INKHttpTxnCachedRespTimeGet(INKHttpTxn txnp, long *resp_time)
   if (cached_obj == NULL || !cached_obj->valid())
     return 0;
 
-  *resp_time = (long) (cached_obj->response_received_time_get());
+  *resp_time = cached_obj->response_received_time_get();
   return 1;
 }
 
@@ -6795,7 +6772,7 @@ INKVConnClosedGet(INKVConn connp)
 }
 
 INKVIO
-INKVConnRead(INKVConn connp, INKCont contp, INKIOBuffer bufp, int nbytes)
+INKVConnRead(INKVConn connp, INKCont contp, INKIOBuffer bufp, int64 nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(connp) != INK_SUCCESS) ||
       (sdk_sanity_check_iocore_structure(contp) != INK_SUCCESS) ||
@@ -6808,7 +6785,7 @@ INKVConnRead(INKVConn connp, INKCont contp, INKIOBuffer bufp, int nbytes)
 }
 
 INKVIO
-INKVConnWrite(INKVConn connp, INKCont contp, INKIOBufferReader readerp, int nbytes)
+INKVConnWrite(INKVConn connp, INKCont contp, INKIOBufferReader readerp, int64 nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(connp) != INK_SUCCESS) ||
       (sdk_sanity_check_iocore_structure(contp) != INK_SUCCESS) ||
@@ -6861,7 +6838,7 @@ INKVConnShutdown(INKVConn connp, int read, int write)
 }
 
 INKReturnCode
-INKVConnCacheObjectSizeGet(INKVConn connp, int *obj_size)
+INKVConnCacheObjectSizeGet(INKVConn connp, int64 *obj_size)
 {
   if ((sdk_sanity_check_iocore_structure(connp) != INK_SUCCESS) || (obj_size == NULL))
     return INK_ERROR;
@@ -7330,7 +7307,7 @@ INKStatCreate(const char *the_name, INKStatTypes the_type)
 }
 
 INKReturnCode
-INKStatIntAddTo(INKStat the_stat, INK64 amount)
+INKStatIntAddTo(INKStat the_stat, int64 amount)
 {
   if (ink_sanity_check_stat_structure(the_stat) != INK_SUCCESS)
     return INK_ERROR;
@@ -7375,93 +7352,79 @@ INKStatIncrement(INKStat the_stat)
 
 #if TS_HAS_V2STATS
 INKReturnCode
-INKStatCreateV2(
-    const char *the_name,
-    uint32_t *stat_num)
+INKStatCreateV2(const char *the_name, uint32_t *stat_num)
 {
-    if(StatSystemV2::registerStat(the_name, stat_num)) {
-        return INK_SUCCESS;
-    }
-    return INK_ERROR;
+  if(StatSystemV2::registerStat(the_name, stat_num)) {
+    return INK_SUCCESS;
+  }
+  return INK_ERROR;
 }
 
 INKReturnCode
-INKStatIncrementV2(
-    uint32_t stat_num,
-    INK64 inc_by)
+INKStatIncrementV2(uint32_t stat_num, int64 inc_by)
 {
-    if(StatSystemV2::increment(stat_num, inc_by)) {
-        return INK_SUCCESS;
-    }
-    return INK_ERROR;
+  if(StatSystemV2::increment(stat_num, inc_by)) {
+    return INK_SUCCESS;
+  }
+  return INK_ERROR;
 }
 
 INKReturnCode
-INKStatIncrementByNameV2(
-    const char *stat_name,
-    INK64 inc_by)
+INKStatIncrementByNameV2(const char *stat_name, int64 inc_by)
 {
-    if(StatSystemV2::increment(stat_name, inc_by)) {
-        return INK_SUCCESS;
-    }
-    return INK_ERROR;
+  if(StatSystemV2::increment(stat_name, inc_by)) {
+    return INK_SUCCESS;
+  }
+  return INK_ERROR;
 }
 
 INKReturnCode
-INKStatDecrementV2(
-    uint32_t stat_num,
-    INK64 dec_by)
+INKStatDecrementV2(uint32_t stat_num, int64 dec_by)
 {
-    return INKStatIncrementV2(stat_num, (-1)*dec_by);
+  return INKStatIncrementV2(stat_num, (-1)*dec_by);
 }
 
 INKReturnCode
-INKStatDecrementByNameV2(
-    const char *stat_name,
-    INK64 dec_by)
+INKStatDecrementByNameV2(const char *stat_name, int64 dec_by)
 {
-    return INKStatIncrementByNameV2(stat_name, (-1)*dec_by);
+  return INKStatIncrementByNameV2(stat_name, (-1)*dec_by);
 }
 
 INKReturnCode
-INKStatGetCurrentV2(
-    uint32_t stat_num, INK64 *stat_val)
+INKStatGetCurrentV2(uint32_t stat_num, int64 *stat_val)
 {
-    if(StatSystemV2::get_current(stat_num, stat_val))
-        return INK_SUCCESS;
-    return INK_ERROR;
+  if(StatSystemV2::get_current(stat_num, stat_val))
+    return INK_SUCCESS;
+  return INK_ERROR;
 }
 
 INKReturnCode
-INKStatGetCurrentByNameV2(
-    const char *stat_name, INK64 *stat_val)
+INKStatGetCurrentByNameV2(const char *stat_name, int64 *stat_val)
 {
-    if(StatSystemV2::get_current(stat_name, stat_val))
-        return INK_SUCCESS;
-    return INK_ERROR;
+  if(StatSystemV2::get_current(stat_name, stat_val))
+    return INK_SUCCESS;
+  return INK_ERROR;
 }
 
 INKReturnCode
-INKStatGetV2(
-    uint32_t stat_num, INK64 *stat_val)
+INKStatGetV2(uint32_t stat_num, int64 *stat_val)
 {
-    if(StatSystemV2::get(stat_num, stat_val))
-        return INK_SUCCESS;
-    return INK_ERROR;
+  if(StatSystemV2::get(stat_num, stat_val))
+    return INK_SUCCESS;
+  return INK_ERROR;
 }
 
 INKReturnCode
-INKStatGetByNameV2(
-    const char *stat_name, INK64 *stat_val)
+INKStatGetByNameV2(const char *stat_name, int64 *stat_val)
 {
-    if(StatSystemV2::get(stat_name, stat_val))
-        return INK_SUCCESS;
-    return INK_ERROR;
+  if(StatSystemV2::get(stat_name, stat_val))
+    return INK_SUCCESS;
+  return INK_ERROR;
 }
 #endif
 
 INKReturnCode
-INKStatIntGet(INKStat the_stat, INK64 *value)
+INKStatIntGet(INKStat the_stat, int64 *value)
 {
   if (ink_sanity_check_stat_structure(the_stat) != INK_SUCCESS)
     return INK_ERROR;
@@ -7483,13 +7446,13 @@ INKStatFloatGet(INKStat the_stat, float *value)
 }
 
 //deprecated in SDK3.0
-INK64
+int64
 INKStatIntRead(INKStat the_stat)
 {
   if (ink_sanity_check_stat_structure(the_stat) != INK_SUCCESS)
     return 0;
 
-  INK64 stat_val;
+  int64 stat_val;
   StatDescriptor *statp = (StatDescriptor *) the_stat;
   stat_val = statp->int_value();
   return stat_val;
@@ -7509,7 +7472,7 @@ INKStatFloatRead(INKStat the_stat)
 }
 
 INKReturnCode
-INKStatIntSet(INKStat the_stat, INK64 value)
+INKStatIntSet(INKStat the_stat, int64 value)
 {
   if (ink_sanity_check_stat_structure(the_stat) != INK_SUCCESS)
     return INK_ERROR;
@@ -7819,7 +7782,7 @@ INKHttpTxnClientRemotePortGet(INKHttpTxn txnp, int *port)
 
 
 void
-INKIPLookupNewEntry(INKIPLookup iplu, INKU32 addr1, INKU32 addr2, void *data)
+INKIPLookupNewEntry(INKIPLookup iplu, uint32 addr1, uint32 addr2, void *data)
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
   if (my_iplu) {
@@ -7828,7 +7791,7 @@ INKIPLookupNewEntry(INKIPLookup iplu, INKU32 addr1, INKU32 addr2, void *data)
 }
 
 int
-INKIPLookupMatch(INKIPLookup iplu, INKU32 addr, void **data)
+INKIPLookupMatch(INKIPLookup iplu, uint32 addr, void **data)
 {
   void *dummy;
   IpLookup *my_iplu = (IpLookup *) iplu;
@@ -7839,7 +7802,7 @@ INKIPLookupMatch(INKIPLookup iplu, INKU32 addr, void **data)
 }
 
 int
-INKIPLookupMatchFirst(INKIPLookup iplu, INKU32 addr, INKIPLookupState iplus, void **data)
+INKIPLookupMatchFirst(INKIPLookup iplu, uint32 addr, INKIPLookupState iplus, void **data)
 {
   IpLookup *my_iplu = (IpLookup *) iplu;
   IpLookupState *my_iplus = (IpLookupState *) iplus;
@@ -7883,7 +7846,7 @@ INKMatcherTokLine(char *buffer, char **last)
 }
 
 char *
-INKMatcherExtractIPRange(char *match_str, INKU32 *addr1, INKU32 *addr2)
+INKMatcherExtractIPRange(char *match_str, uint32 *addr1, uint32 *addr2)
 {
   return (char*)ExtractIpRange(match_str, (ip_addr_t *) addr1, (ip_addr_t *) addr2);
 }
@@ -8067,7 +8030,7 @@ INKCacheHttpInfoKeySet(INKCacheHttpInfo infop, INKCacheKey keyp)
 }
 
 void
-INKCacheHttpInfoSizeSet(INKCacheHttpInfo infop, INKU64 size)
+INKCacheHttpInfoSizeSet(INKCacheHttpInfo infop, int64 size)
 {
   CacheHTTPInfo *info = (CacheHTTPInfo *) infop;
   info->object_size_set(size);
@@ -8183,7 +8146,7 @@ INKHttpIsInternalRequest(INKHttpTxn txnp)
 
 
 INKReturnCode
-INKAIORead(int fd, INKU64 offset, char* buf, INKU64 buffSize, INKCont contp)
+INKAIORead(int fd, off_t offset, char* buf, size_t buffSize, INKCont contp)
 {
 
   if (sdk_sanity_check_iocore_structure (contp) != INK_SUCCESS) {
@@ -8227,7 +8190,7 @@ INKAIONBytesGet(void *data)
 }
 
 INKReturnCode
-INKAIOWrite(int fd, INKU64 offset, char* buf, const INKU64 bufSize, INKCont contp)
+INKAIOWrite(int fd, off_t offset, char* buf, const size_t bufSize, INKCont contp)
 {
 
   if (sdk_sanity_check_iocore_structure (contp) != INK_SUCCESS) {

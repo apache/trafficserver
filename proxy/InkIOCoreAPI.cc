@@ -297,7 +297,7 @@ INKVIOReaderGet(INKVIO viop)
   return vio->get_reader();
 }
 
-int
+int64
 INKVIONBytesGet(INKVIO viop)
 {
   if (sdk_sanity_check_iocore_structure(viop) != INK_SUCCESS)
@@ -308,7 +308,7 @@ INKVIONBytesGet(INKVIO viop)
 }
 
 INKReturnCode
-INKVIONBytesSet(INKVIO viop, int nbytes)
+INKVIONBytesSet(INKVIO viop, int64 nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(viop) != INK_SUCCESS) || nbytes < 0)
     return INK_ERROR;
@@ -318,7 +318,7 @@ INKVIONBytesSet(INKVIO viop, int nbytes)
   return INK_SUCCESS;
 }
 
-int
+int64
 INKVIONDoneGet(INKVIO viop)
 {
   if (sdk_sanity_check_iocore_structure(viop) != INK_SUCCESS)
@@ -329,7 +329,7 @@ INKVIONDoneGet(INKVIO viop)
 }
 
 INKReturnCode
-INKVIONDoneSet(INKVIO viop, int ndone)
+INKVIONDoneSet(INKVIO viop, int64 ndone)
 {
   if ((sdk_sanity_check_iocore_structure(viop) != INK_SUCCESS) || ndone < 0)
     return INK_ERROR;
@@ -339,7 +339,7 @@ INKVIONDoneSet(INKVIO viop, int ndone)
   return INK_SUCCESS;
 }
 
-int
+int64
 INKVIONTodoGet(INKVIO viop)
 {
   if (sdk_sanity_check_iocore_structure(viop) != INK_SUCCESS)
@@ -381,16 +381,10 @@ INKVIOMutexGet(INKVIO viop)
 
 /* High Resolution Time */
 
-unsigned int
+ink_hrtime
 INKBasedTimeGet()
 {
   return ink_get_based_hrtime();
-}
-
-double
-INKBasedTimeGetD()
-{
-  return (double) ink_get_based_hrtime();
 }
 
 /* UDP Connection Interface */
@@ -403,7 +397,7 @@ INKUDPBind(INKCont contp, unsigned int ip, int port)
 }
 
 INKAction
-INKUDPSendTo(INKCont contp, INKUDPConn udp, unsigned int ip, int port, char *data, int len)
+INKUDPSendTo(INKCont contp, INKUDPConn udp, unsigned int ip, int port, char *data, int64 len)
 {
   FORCE_PLUGIN_MUTEX(contp);
   UDPPacket *packet = new_UDPPacket();
@@ -583,8 +577,8 @@ INKIOBufferAppend(INKIOBuffer bufp, INKIOBufferBlock blockp)
   return INK_SUCCESS;
 }
 
-int
-INKIOBufferCopy(INKIOBuffer bufp, INKIOBufferReader readerp, int length, int offset)
+int64
+INKIOBufferCopy(INKIOBuffer bufp, INKIOBufferReader readerp, int64 length, int64 offset)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != INK_SUCCESS) ||
       (sdk_sanity_check_iocore_structure(readerp) != INK_SUCCESS) || length < 0 || offset < 0)
@@ -596,8 +590,8 @@ INKIOBufferCopy(INKIOBuffer bufp, INKIOBufferReader readerp, int length, int off
   return b->write(r, length, offset);
 }
 
-int
-INKIOBufferWrite(INKIOBuffer bufp, const void *buf, int length)
+int64
+INKIOBufferWrite(INKIOBuffer bufp, const void *buf, int64 length)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != INK_SUCCESS) || (buf == NULL) || (length < 0)) {
     return INK_ERROR;
@@ -609,14 +603,14 @@ INKIOBufferWrite(INKIOBuffer bufp, const void *buf, int length)
 
 // not in SDK3.0
 void
-INKIOBufferReaderCopy(INKIOBufferReader readerp, const void *buf, int length)
+INKIOBufferReaderCopy(INKIOBufferReader readerp, const void *buf, int64 length)
 {
   IOBufferReader *r = (IOBufferReader *) readerp;
   r->memcpy(buf, length);
 }
 
 INKReturnCode
-INKIOBufferProduce(INKIOBuffer bufp, int nbytes)
+INKIOBufferProduce(INKIOBuffer bufp, int64 nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != INK_SUCCESS) || nbytes < 0)
     return INK_ERROR;
@@ -627,7 +621,7 @@ INKIOBufferProduce(INKIOBuffer bufp, int nbytes)
 }
 
 INKIOBufferData
-INKIOBufferDataCreate(void *data, int size, INKIOBufferDataFlags flags)
+INKIOBufferDataCreate(void *data, int64 size, INKIOBufferDataFlags flags)
 {
 #ifdef DEBUG
   if (data == NULL || data == INK_ERROR_PTR || size <= 0 ||
@@ -656,7 +650,7 @@ INKIOBufferDataCreate(void *data, int size, INKIOBufferDataFlags flags)
 }
 
 INKIOBufferBlock
-INKIOBufferBlockCreate(INKIOBufferData datap, int size, int offset)
+INKIOBufferBlockCreate(INKIOBufferData datap, int64 size, int64 offset)
 {
   if ((sdk_sanity_check_iocore_structure(datap) != INK_SUCCESS) || size < 0 || offset < 0)
     return (INKIOBufferBlock) INK_ERROR;
@@ -686,7 +680,7 @@ INKIOBufferBlockNext(INKIOBufferBlock blockp)
 }
 
 // dev API, not exposed
-int
+int64
 INKIOBufferBlockDataSizeGet(INKIOBufferBlock blockp)
 {
   IOBufferBlock *blk = (IOBufferBlock *) blockp;
@@ -694,7 +688,7 @@ INKIOBufferBlockDataSizeGet(INKIOBufferBlock blockp)
 }
 
 const char *
-INKIOBufferBlockReadStart(INKIOBufferBlock blockp, INKIOBufferReader readerp, int *avail)
+INKIOBufferBlockReadStart(INKIOBufferBlock blockp, INKIOBufferReader readerp, int64 *avail)
 {
   if ((sdk_sanity_check_iocore_structure(blockp) != INK_SUCCESS) ||
       (sdk_sanity_check_iocore_structure(readerp) != INK_SUCCESS))
@@ -722,7 +716,7 @@ INKIOBufferBlockReadStart(INKIOBufferBlock blockp, INKIOBufferReader readerp, in
   return (const char *) p;
 }
 
-int
+int64
 INKIOBufferBlockReadAvail(INKIOBufferBlock blockp, INKIOBufferReader readerp)
 {
   if ((sdk_sanity_check_iocore_structure(blockp) != INK_SUCCESS) ||
@@ -731,7 +725,7 @@ INKIOBufferBlockReadAvail(INKIOBufferBlock blockp, INKIOBufferReader readerp)
 
   IOBufferBlock *blk = (IOBufferBlock *) blockp;
   IOBufferReader *reader = (IOBufferReader *) readerp;
-  int avail;
+  int64 avail;
 
   avail = blk->read_avail();
 
@@ -746,7 +740,7 @@ INKIOBufferBlockReadAvail(INKIOBufferBlock blockp, INKIOBufferReader readerp)
 }
 
 char *
-INKIOBufferBlockWriteStart(INKIOBufferBlock blockp, int *avail)
+INKIOBufferBlockWriteStart(INKIOBufferBlock blockp, int64 *avail)
 {
   if (sdk_sanity_check_iocore_structure(blockp) != INK_SUCCESS)
     return (char *) INK_ERROR_PTR;
@@ -758,7 +752,7 @@ INKIOBufferBlockWriteStart(INKIOBufferBlock blockp, int *avail)
   return blk->end();
 }
 
-int
+int64
 INKIOBufferBlockWriteAvail(INKIOBufferBlock blockp)
 {
   if (sdk_sanity_check_iocore_structure(blockp) != INK_SUCCESS) {
@@ -770,7 +764,7 @@ INKIOBufferBlockWriteAvail(INKIOBufferBlock blockp)
 }
 
 INKReturnCode
-INKIOBufferWaterMarkGet(INKIOBuffer bufp, int *water_mark)
+INKIOBufferWaterMarkGet(INKIOBuffer bufp, int64 *water_mark)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != INK_SUCCESS) || (water_mark == NULL)) {
     return INK_ERROR;
@@ -782,7 +776,7 @@ INKIOBufferWaterMarkGet(INKIOBuffer bufp, int *water_mark)
 }
 
 INKReturnCode
-INKIOBufferWaterMarkSet(INKIOBuffer bufp, int water_mark)
+INKIOBufferWaterMarkSet(INKIOBuffer bufp, int64 water_mark)
 {
   if ((sdk_sanity_check_iocore_structure(bufp) != INK_SUCCESS) || water_mark < 0)
     return INK_ERROR;
@@ -843,7 +837,7 @@ INKIOBufferReaderStart(INKIOBufferReader readerp)
 }
 
 INKReturnCode
-INKIOBufferReaderConsume(INKIOBufferReader readerp, int nbytes)
+INKIOBufferReaderConsume(INKIOBufferReader readerp, int64 nbytes)
 {
   if ((sdk_sanity_check_iocore_structure(readerp) != INK_SUCCESS) || nbytes < 0)
     return INK_ERROR;
@@ -853,7 +847,7 @@ INKIOBufferReaderConsume(INKIOBufferReader readerp, int nbytes)
   return INK_SUCCESS;
 }
 
-int
+int64
 INKIOBufferReaderAvail(INKIOBufferReader readerp)
 {
   if (sdk_sanity_check_iocore_structure(readerp) != INK_SUCCESS)

@@ -316,7 +316,7 @@ update_redirected_method_stats(INKMBuffer bufp, INKMLoc hdr_loc)
 {
   const char *txn_method;
   int length;
-  INK64 tempint;
+  int64 tempint;
 
   txn_method = INKHttpHdrMethodGet(bufp, hdr_loc, &length);
 

@@ -77,7 +77,7 @@ cache_read(INKCont contp, INKEvent event, void *edata)
   INKHttpTxn txnp = (INKHttpTxn) edata;
   void *key = 0;
   int keySize = 0;
-  INKU64 size, offset;
+  uint64 size, offset;
 
   // get the key for the lookup
   INKCacheKeyGet(txnp, &key, &keySize);
@@ -153,7 +153,7 @@ cache_write(INKCont contp, INKEvent event, void *edata)
   // get the buffer to write into cache and get the start of the buffer
   INKIOBufferReader buffer = INKCacheBufferReaderGet(txnp);
   INKIOBufferBlock block = INKIOBufferReaderStart(buffer);
-  int available = INKIOBufferReaderAvail(buffer);
+  int64 available = INKIOBufferReaderAvail(buffer);
 
   string keyString((char *) key, keySize);
 
@@ -173,7 +173,7 @@ cache_write(INKCont contp, INKEvent event, void *edata)
     }
 
     if (available > 0) {
-      int ndone = 0;
+      int64 ndone = 0;
       do {
         const char *data = INKIOBufferBlockReadStart(block, buffer, &available);
 

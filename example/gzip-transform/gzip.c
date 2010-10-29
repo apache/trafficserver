@@ -196,7 +196,7 @@ gzip_transform_one(GzipData * data, INKIOBufferReader input_reader, int amount)
   INKIOBufferBlock blkp;
   const char *ibuf;
   char *obuf;
-  int ilength, olength;
+  int64 ilength, olength;
   int err;
 
   while (amount > 0) {
@@ -248,7 +248,7 @@ gzip_transform_finish(GzipData * data)
   if (data->state == 1) {
     INKIOBufferBlock blkp;
     char *obuf;
-    int olength;
+    int64 olength;
     int err;
 
     data->state = 2;

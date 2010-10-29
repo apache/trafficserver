@@ -50,7 +50,7 @@ struct cache_scan_state_t
   INKAction pending_action;
   INKCacheKey key_to_delete;
 
-  INK64 total_bytes;
+  int64 total_bytes;
   int total_items;
   int done;
 

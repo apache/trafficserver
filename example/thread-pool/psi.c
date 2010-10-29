@@ -239,7 +239,7 @@ strsearch_ioreader(INKIOBufferReader reader, const char *pattern, int *nparse)
 
   /* Loop thru each block while we've not yet found the pattern */
   while ((block != NULL) && (index < slen)) {
-    int blocklen;
+    int64 blocklen;
     const char *blockptr = INKIOBufferBlockReadStart(block, reader, &blocklen);
     const char *ptr;
 
@@ -320,7 +320,7 @@ strextract_ioreader(INKIOBufferReader reader, int offset, const char *end_patter
 
   /* Now start extraction */
   while ((block != NULL) && (p_idx < plen) && (buf_idx < PSI_FILENAME_MAX_SIZE)) {
-    int blocklen;
+    int64 blocklen;
     const char *blockptr = INKIOBufferBlockReadStart(block, reader, &blocklen);
 
     if (blockptr == INK_ERROR_PTR) {
@@ -547,7 +547,7 @@ psi_include(INKCont contp, void *edata)
 
     while (INKfgets(filep, buf, BUFFER_SIZE) != NULL) {
       INKIOBufferBlock block;
-      int len, avail, ndone, ntodo, towrite;
+      int64 len, avail, ndone, ntodo, towrite;
       char *ptr_block;
 
       len = strlen(buf);

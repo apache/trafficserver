@@ -437,16 +437,18 @@ extern "C"
   } INKFetchWakeUpOptions;
   extern inkapi const void *INK_ERROR_PTR;
 
-  typedef int INK32;
-  typedef unsigned int INKU32;
-  typedef long long INK64;
-  typedef unsigned long long INKU64;
+  typedef int int32;
+  typedef unsigned int uint32;
+  typedef long long int64;
+  typedef unsigned long long uint64;
+
+  typedef int64 TSHRTime;
 
   /* These typedefs are used with the corresponding INKMgmt*Get functions
      for storing the values retrieved by those functions. For example,
      INKMgmtCounterGet() retrieves an INKMgmtCounter. */
-  typedef INK64 INKMgmtInt;
-  typedef INK64 INKMgmtCounter;
+  typedef int64 INKMgmtInt;
+  typedef int64 INKMgmtCounter;
   typedef float INKMgmtFloat;
   typedef char *INKMgmtString;
 
@@ -800,9 +802,9 @@ extern "C"
 #define INKstrndup(p,n)   _INKstrdup ((p), (n), INK_RES_MEM_PATH)
 #define INKfree(p)        _INKfree (p)
 
-  inkapi void *_INKmalloc(unsigned int size, const char *path);
-  inkapi void *_INKrealloc(void *ptr, unsigned int size, const char *path);
-  inkapi char *_INKstrdup(const char *str, int length, const char *path);
+  inkapi void *_INKmalloc(size_t size, const char *path);
+  inkapi void *_INKrealloc(void *ptr, size_t size, const char *path);
+  inkapi char *_INKstrdup(const char *str, int64 length, const char *path);
   inkapi void _INKfree(void *ptr);
 
   /* --------------------------------------------------------------------------
@@ -940,7 +942,7 @@ extern "C"
         while reading the file, it returns -1.
 
    */
-  inkapi int INKfread(INKFile filep, void *buf, int length);
+  inkapi size_t INKfread(INKFile filep, void *buf, size_t length);
 
   /**
       Attempts to write length bytes of data from the buffer buf
@@ -957,7 +959,7 @@ extern "C"
         writing, it returns the number of bytes successfully written.
 
    */
-  inkapi int INKfwrite(INKFile filep, const void *buf, int length);
+  inkapi size_t INKfwrite(INKFile filep, const void *buf, size_t length);
 
   /**
       Flushes pending data that has been buffered up in memory from
@@ -981,7 +983,7 @@ extern "C"
       @return pointer to the string read into the buffer buf.
 
    */
-  inkapi char *INKfgets(INKFile filep, char *buf, int length);
+  inkapi char *INKfgets(INKFile filep, char *buf, size_t length);
 
   /* --------------------------------------------------------------------------
      Error logging */
@@ -1914,8 +1916,8 @@ extern "C"
   inkapi INKReturnCode INKContDestroy(INKCont contp);
   inkapi INKReturnCode INKContDataSet(INKCont contp, void *data);
   inkapi void *INKContDataGet(INKCont contp);
-  inkapi INKAction INKContSchedule(INKCont contp, unsigned int timeout);
-  inkapi INKAction INKHttpSchedule(INKCont contp, INKHttpTxn txnp, unsigned int timeout);
+  inkapi INKAction INKContSchedule(INKCont contp, TSHRTime timeout);
+  inkapi INKAction INKHttpSchedule(INKCont contp, INKHttpTxn txnp, TSHRTime timeout);
   inkapi int INKContCall(INKCont contp, INKEvent event, void *edata);
   inkapi INKMutex INKContMutexGet(INKCont contp);
 
@@ -2005,8 +2007,7 @@ extern "C"
 
    */
   inkapi INKReturnCode INKHttpTxnReenable(INKHttpTxn txnp, INKEvent event);
-  inkapi INKReturnCode INKHttpCacheReenable(INKCacheTxn txnp, const INKEvent event, const void *data,
-                                            const INKU64 size);
+  inkapi INKReturnCode INKHttpCacheReenable(INKCacheTxn txnp, const INKEvent event, const void *data, const uint64 size);
   inkapi INKReturnCode INKHttpTxnFollowRedirect(INKHttpTxn txnp, int on);
   inkapi int INKHttpTxnGetMaxArgCnt(void);
   inkapi INKReturnCode INKHttpTxnSetArg(INKHttpTxn txnp, int arg_idx, void *arg);
@@ -2128,15 +2129,15 @@ extern "C"
   inkapi INKVIO INKVConnWriteVIOGet(INKVConn connp);
   inkapi int INKVConnClosedGet(INKVConn connp);
 
-  inkapi INKVIO INKVConnRead(INKVConn connp, INKCont contp, INKIOBuffer bufp, int nbytes);
-  inkapi INKVIO INKVConnWrite(INKVConn connp, INKCont contp, INKIOBufferReader readerp, int nbytes);
+  inkapi INKVIO INKVConnRead(INKVConn connp, INKCont contp, INKIOBuffer bufp, int64 nbytes);
+  inkapi INKVIO INKVConnWrite(INKVConn connp, INKCont contp, INKIOBufferReader readerp, int64 nbytes);
   inkapi INKReturnCode INKVConnClose(INKVConn connp);
   inkapi INKReturnCode INKVConnAbort(INKVConn connp, int error);
   inkapi INKReturnCode INKVConnShutdown(INKVConn connp, int read, int write);
 
   /* --------------------------------------------------------------------------
      Cache VConnections */
-  inkapi INKReturnCode INKVConnCacheObjectSizeGet(INKVConn connp, int *obj_size);
+  inkapi INKReturnCode INKVConnCacheObjectSizeGet(INKVConn connp, int64 *obj_size);
 
   /* --------------------------------------------------------------------------
      Transformations */
@@ -2277,11 +2278,11 @@ extern "C"
   inkapi INKReturnCode INKVIOReenable(INKVIO viop);
   inkapi INKIOBuffer INKVIOBufferGet(INKVIO viop);
   inkapi INKIOBufferReader INKVIOReaderGet(INKVIO viop);
-  inkapi int INKVIONBytesGet(INKVIO viop);
-  inkapi INKReturnCode INKVIONBytesSet(INKVIO viop, int nbytes);
-  inkapi int INKVIONDoneGet(INKVIO viop);
-  inkapi INKReturnCode INKVIONDoneSet(INKVIO viop, int ndone);
-  inkapi int INKVIONTodoGet(INKVIO viop);
+  inkapi int64 INKVIONBytesGet(INKVIO viop);
+  inkapi INKReturnCode INKVIONBytesSet(INKVIO viop, int64 nbytes);
+  inkapi int64 INKVIONDoneGet(INKVIO viop);
+  inkapi INKReturnCode INKVIONDoneSet(INKVIO viop, int64 ndone);
+  inkapi int64 INKVIONTodoGet(INKVIO viop);
   inkapi INKMutex INKVIOMutexGet(INKVIO viop);
   inkapi INKCont INKVIOContGet(INKVIO viop);
   inkapi INKVConn INKVIOVConnGet(INKVIO viop);
@@ -2314,7 +2315,7 @@ extern "C"
         provided INKIOBuffer.
 
    */
-  inkapi INKReturnCode INKIOBufferWaterMarkGet(INKIOBuffer bufp, int *water_mark);
+  inkapi INKReturnCode INKIOBufferWaterMarkGet(INKIOBuffer bufp, int64 *water_mark);
 
   /**
       The watermark of an INKIOBuffer is the minimum number of bytes
@@ -2330,11 +2331,11 @@ extern "C"
       @param water_mark watermark setting, as a number of bytes.
 
    */
-  inkapi INKReturnCode INKIOBufferWaterMarkSet(INKIOBuffer bufp, int water_mark);
+  inkapi INKReturnCode INKIOBufferWaterMarkSet(INKIOBuffer bufp, int64 water_mark);
 
   inkapi INKReturnCode INKIOBufferDestroy(INKIOBuffer bufp);
   inkapi INKIOBufferBlock INKIOBufferStart(INKIOBuffer bufp);
-  inkapi int INKIOBufferCopy(INKIOBuffer bufp, INKIOBufferReader readerp, int length, int offset);
+  inkapi int64 INKIOBufferCopy(INKIOBuffer bufp, INKIOBufferReader readerp, int64 length, int64 offset);
 
   /**
       Writes length bytes of data contained in the string buf to the
@@ -2348,21 +2349,21 @@ extern "C"
         in bytes.
 
    */
-  inkapi int INKIOBufferWrite(INKIOBuffer bufp, const void *buf, int length);
-  inkapi INKReturnCode INKIOBufferProduce(INKIOBuffer bufp, int nbytes);
+  inkapi int64 INKIOBufferWrite(INKIOBuffer bufp, const void *buf, int64 length);
+  inkapi INKReturnCode INKIOBufferProduce(INKIOBuffer bufp, int64 nbytes);
 
   inkapi INKIOBufferBlock INKIOBufferBlockNext(INKIOBufferBlock blockp);
-  inkapi const char *INKIOBufferBlockReadStart(INKIOBufferBlock blockp, INKIOBufferReader readerp, int *avail);
-  inkapi int INKIOBufferBlockReadAvail(INKIOBufferBlock blockp, INKIOBufferReader readerp);
-  inkapi char *INKIOBufferBlockWriteStart(INKIOBufferBlock blockp, int *avail);
-  inkapi int INKIOBufferBlockWriteAvail(INKIOBufferBlock blockp);
+  inkapi const char *INKIOBufferBlockReadStart(INKIOBufferBlock blockp, INKIOBufferReader readerp, int64 *avail);
+  inkapi int64 INKIOBufferBlockReadAvail(INKIOBufferBlock blockp, INKIOBufferReader readerp);
+  inkapi char *INKIOBufferBlockWriteStart(INKIOBufferBlock blockp, int64 *avail);
+  inkapi int64 INKIOBufferBlockWriteAvail(INKIOBufferBlock blockp);
 
   inkapi INKIOBufferReader INKIOBufferReaderAlloc(INKIOBuffer bufp);
   inkapi INKIOBufferReader INKIOBufferReaderClone(INKIOBufferReader readerp);
   inkapi INKReturnCode INKIOBufferReaderFree(INKIOBufferReader readerp);
   inkapi INKIOBufferBlock INKIOBufferReaderStart(INKIOBufferReader readerp);
-  inkapi INKReturnCode INKIOBufferReaderConsume(INKIOBufferReader readerp, int nbytes);
-  inkapi int INKIOBufferReaderAvail(INKIOBufferReader readerp);
+  inkapi INKReturnCode INKIOBufferReaderConsume(INKIOBufferReader readerp, int64 nbytes);
+  inkapi int64 INKIOBufferReaderAvail(INKIOBufferReader readerp);
 
 
   /* --------------------------------------------------------------------------
@@ -2428,7 +2429,7 @@ extern "C"
   /** @deprecated */
   inkapi INKStat INKStatCreate(const char *the_name, INKStatTypes the_type);
   /** @deprecated */
-  inkapi INKReturnCode INKStatIntAddTo(INKStat the_stat, INK64 amount);
+  inkapi INKReturnCode INKStatIntAddTo(INKStat the_stat, int64 amount);
   /** @deprecated */
   inkapi INKReturnCode INKStatFloatAddTo(INKStat the_stat, float amount);
   /** @deprecated */
@@ -2436,17 +2437,17 @@ extern "C"
   /** @deprecated */
   inkapi INKReturnCode INKStatIncrement(INKStat the_stat);
   /** @deprecated */
-  inkapi INKReturnCode INKStatIntGet(INKStat the_stat, INK64 * value);
+  inkapi INKReturnCode INKStatIntGet(INKStat the_stat, int64 * value);
   /** @deprecated */
   inkapi INKReturnCode INKStatFloatGet(INKStat the_stat, float *value);
   /** @deprecated */
-  inkapi INKReturnCode INKStatIntSet(INKStat the_stat, INK64 value);
+  inkapi INKReturnCode INKStatIntSet(INKStat the_stat, int64 value);
   /** @deprecated */
   inkapi INKReturnCode INKStatFloatSet(INKStat the_stat, float value);
 
   /** These were removed with the old version of TS */
   /** @deprecated */
-  inkapi INK_DEPRECATED INK64 INKStatIntRead(INKStat the_stat);
+  inkapi INK_DEPRECATED int64 INKStatIntRead(INKStat the_stat);
 
   /** @deprecated */
   inkapi INK_DEPRECATED float INKStatFloatRead(INKStat the_stat);
@@ -2631,7 +2632,7 @@ extern "C"
 
       @return INK_SUCCESS or INK_ERROR.
    */
-  inkapi INKReturnCode INKAIORead(int fd, INKU64 offset, char* buf, INKU64 buffSize, INKCont contp);
+  inkapi INKReturnCode INKAIORead(int fd, off_t offset, char* buf, size_t buffSize, INKCont contp);
 
   /**
       Async disk IO buffer get
@@ -2652,7 +2653,7 @@ extern "C"
 
       @return INK_SUCCESS or INK_ERROR.
    */
-  inkapi INKReturnCode INKAIOWrite(int fd, INKU64 offset, char* buf, const INKU64 bufSize, INKCont contp);
+  inkapi INKReturnCode INKAIOWrite(int fd, off_t offset, char* buf, size_t bufSize, INKCont contp);
 
   /**
       Async disk IO set number of threads
