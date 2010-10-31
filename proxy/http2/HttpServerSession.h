@@ -52,24 +52,34 @@ class HttpSM;
 class MIOBuffer;
 class IOBufferReader;
 
-enum HSS_State
-{
+enum HSS_State {
   HSS_INIT,
   HSS_ACTIVE,
   HSS_KA_CLIENT_SLAVE,
-  HSS_KA_SHARED
+    HSS_KA_SHARED
 };
 
-class HttpServerSession:public VConnection
+enum {
+  HTTP_SS_MAGIC_ALIVE = 0x0123FEED,
+  HTTP_SS_MAGIC_DEAD = 0xDEADFEED
+};
+
+class HttpServerSession : public VConnection
 {
 public:
-  HttpServerSession();
+  HttpServerSession()
+    : VConnection(NULL),
+      server_ip(0), server_port(0), hostname_hash(),
+      host_hash_computed(false), con_id(0), transact_count(0),
+      state(HSS_INIT), to_parent_proxy(false), server_trans_stat(0),
+      private_session(false),
+      enable_origin_connection_limiting(false),
+      connection_count(NULL),
+      read_buffer(NULL), server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
+    { }
+
   void destroy();
-
-public:
   static HttpServerSession *allocate();
-
-public:
   void new_connection(NetVConnection * new_vc);
 
   void reset_read_buffer(void)

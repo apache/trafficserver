@@ -39,24 +39,6 @@
 static int64 next_ss_id = (int64) 0;
 ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
 
-enum
-{
-  HTTP_SS_MAGIC_ALIVE = 0x0123FEED,
-  HTTP_SS_MAGIC_DEAD = 0xDEADFEED
-};
-
-HttpServerSession::HttpServerSession():
-VConnection(NULL),
-server_ip(0), server_port(0), hostname_hash(),
-host_hash_computed(false), con_id(0), transact_count(0),
-state(HSS_INIT), to_parent_proxy(false), server_trans_stat(0),
-private_session(false),
-enable_origin_connection_limiting(false),
-connection_count(NULL),
-read_buffer(NULL), server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
-{
-}
-
 void
 HttpServerSession::destroy()
 {
@@ -84,7 +66,6 @@ HttpServerSession::allocate()
 void
 HttpServerSession::new_connection(NetVConnection * new_vc)
 {
-
   ink_assert(new_vc != NULL);
   server_vc = new_vc;
 
@@ -106,8 +87,7 @@ HttpServerSession::new_connection(NetVConnection * new_vc)
     if(connection_count == NULL)
       connection_count = ConnectionCount::getInstance();
     connection_count->incrementCount(server_ip);
-    Debug("http_ss", "[%lld] new connection, ip: %u, count: %u",
-          con_id, server_ip, connection_count->getCount(server_ip));
+    Debug("http_ss", "[%lld] new connection, ip: %u, count: %u", con_id, server_ip, connection_count->getCount(server_ip));
   }
 #ifdef LAZY_BUF_ALLOC
   read_buffer = new_empty_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -144,6 +124,7 @@ HttpServerSession::do_io_close(int alerrno)
     HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
     this->server_trans_stat--;
   }
+
   server_vc->do_io_close(alerrno);
   Debug("http_ss", "[%lld] session closed", con_id);
   server_vc = NULL;
