@@ -2,6 +2,12 @@
 
 Changes with Apache Traffic Server 2.1.4
 
+  *) Fix plugin APIs to be compatible with the 64-bit changes in the
+   core. This is an incompatible change with previous releases [TS-14].
+
+  *) Fixes for stats around origin connection counters, used when
+   allowing for origin connections to be reused between clients [TS-501].
+
   *) Experimental supoprt for a dedicated DNS thread. This can be
    enabled with the records.config option
 
