@@ -8229,4 +8229,10 @@ INKAIOThreadNumSet(int thread_num)
   }
 }
 
+void
+INKRecordDump(INKRecordType rec_type, INKRecordDumpCb callback, void *edata)
+{
+  RecDumpRecords((RecT)rec_type, (RecDumpEntryCb)callback, edata);
+}
+
 #endif //INK_NO_API

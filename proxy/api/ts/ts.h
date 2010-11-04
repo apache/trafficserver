@@ -2506,6 +2506,43 @@ extern "C"
   typedef void *INKTextLogObject;
 
   /**
+      This type represents a context for data records.
+   */
+  typedef enum 
+  {
+    INK_RECORDTYPE_NULL = 0,
+    INK_RECORDTYPE_CONFIG,
+    INK_RECORDTYPE_PROCESS,
+    INK_RECORDTYPE_NODE,
+    INK_RECORDTYPE_CLUSTER,
+    INK_RECORDTYPE_LOCAL,
+    INK_RECORDTYPE_PLUGIN,
+    INK_RECORDTYPE_MAX
+  } INKRecordType;
+
+  typedef enum
+  {
+    INK_RECORDDATATYPE_NULL = 0,
+    INK_RECORDDATATYPE_INT,
+    INK_RECORDDATATYPE_FLOAT,
+    INK_RECORDDATATYPE_STRING,
+    INK_RECORDDATATYPE_COUNTER,
+    INK_RECORDDATATYPE_MAX
+  } INKRecordDataType;
+
+  typedef union 
+  {
+    int64 rec_int;
+    float rec_float;
+    char *rec_string;
+    int64 rec_counter;
+  } INKRecordData;
+
+  typedef void (*INKRecordDumpCb) (INKRecordType rec_type, void *edata, int registered, const char *name, INKRecordDataType data_type, INKRecordData *datum);
+
+  inkapi void INKRecordDump(INKRecordType rec_type, INKRecordDumpCb callback, void *edata);
+
+  /**
 
       Creates a new custom log file that your plugin can write to. You
       can design the fields and inputs to the log file using the

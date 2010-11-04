@@ -98,4 +98,7 @@ int RecExecRawStatUpdateFuncs();
 
 void RecDumpRecordsHt(RecT rec_type = RECT_NULL);
 
+void
+RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata);
+
 #endif
