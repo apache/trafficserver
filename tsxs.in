@@ -1,0 +1,143 @@
+#!/bin/sh
+
+host="@HOST_GUESS@"
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+INSTALLDIR=`eval echo "@libexecdir@"`
+INCLUDEDIR=`eval echo "@includedir@"`
+CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
+BUILD=
+
+if [ -z "$CC" ]; then
+	CC="@CC@"
+fi
+if [ -z "$CXX" ]; then
+	CXX="@CXX@"
+fi
+
+case $host in
+*-*-darwin*)
+        PICFLAGS="-fPIC"
+        MODULELD="$CC -bundle -flat_namespace -undefined suppress"
+        MODULELDXX="$CXX -bundle -flat_namespace -undefined suppress"
+        MODULEEXT=bundle
+        RLDFLAG="-Wl,--rpath="
+        ;;
+*-*-solaris*)
+        if test "x$CC" != "xgcc" ; then
+                CFLAGS="$CFLAGS -mt"
+        fi
+        PICFLAGS="-Kpic"
+        MODULELD="$CC -G"
+        MODULELDXX="$CXX -G"
+        MODULEEXT=so
+        RLDFLAG="-R"
+        WHOLE_ARCHIVE="-Wl,-z -Wl,allextract"
+        NOWHOLE_ARCHIVE="-Wl,-z -Wl,defaultextract"
+        ;;
+*-*-linux*)
+        LDFLAGS="$LDFLAGS -Wl,-E"
+        CPPFLAGS="$CPPFLAGS"
+        PICFLAGS="-fpic"
+        MODULELD="$CC -shared"
+        MODULELDXX="$CXX -shared"
+        MODULEEXT=so
+        RLDFLAG="-Wl,--rpath="
+        WHOLE_ARCHIVE="-Wl,--whole-archive"
+        NOWHOLE_ARCHIVE="-Wl,--no-whole-archive"
+        ;;
+*-*-freebsd*)
+        PICFLAGS="-fpic"
+        MODULELD="$CC -shared"
+        MODULELDXX="$CXX -shared"
+        MODULEEXT=so
+        RLDFLAG="-Wl,--rpath="
+        ;;
+*)
+        PICFLAGS="-fpic"
+        MODULELD="$CC -shared"
+        MODULEEXT=so
+        RLDFLAG="-Wl,--rpath="
+        ;;
+esac
+
+LD=$MODULELD
+for v in $* 
+do
+	case $v in 
+	-h)
+		cat <<EOF
+$0 : a tool to compile, link and install trafficserver plugins.
+
+ compiling/linking:
+	-c [ file1.c [ file2.c [ ... ] ] ]      ## compiles C files
+	-C [ file1.cc [ file2.C [ ... ] ] ]     ## compiles C++ files
+	-o modulename.so                        ## the name of the module
+	-l lib                                  ## add -llib to the link
+
+ installing:
+	-o modulename.so                        ## the name of the module
+	-i                                      ## install the object
+
+EOF
+		exit
+		;;
+	-l)
+		LIBS="$LIBS -l$2"
+		shift 2
+		;;
+	-c)
+		shift
+		while [ -r $1 ]; do
+			SRC=$1
+			obj=`echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;'`
+			echo " compiling $SRC -> $obj"
+			echo "$CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj"
+			$CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj
+			OBJS="$OBJS $obj"
+			BUILD=1
+			shift
+		done
+		;;
+	-C)
+		shift
+		while [ -r $1 ]; do
+			SRC=$1
+			obj=`echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;'`
+			echo " compiling $SRC -> $obj"
+			echo "$CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj"
+			$CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj	
+			OBJS="$OBJS $obj"
+			LD=$MODULELDXX
+			BUILD=1
+			shift
+		done
+		;;
+	-o)
+		OBJ=$2
+		shift 2
+		;;
+	-i)
+		INSTALL=1
+		shift
+		;;
+	esac
+done
+
+if [ "$BUILD" = "1" -a -n "$OBJ" ]; then
+	echo " linking -> $OBJ"
+	echo "$LD $LDFLAGS -o $OBJ $OBJS $LIBS"
+	$LD $LDFLAGS -o $OBJ $OBJS $LIBS
+fi
+
+if [ -n "$OBJ" ]; then
+	if [ -r "$OBJ" ]; then
+		if [ "$INSTALL" = "1" ]; then
+			echo "installing $OBJ -> $INSTALLDIR/$OBJ"
+			cp $OBJ $INSTALLDIR/$OBJ
+			chmod 0755 $INSTALLDIR/$OBJ
+		fi
+	else
+		echo "No $OBJ"
+	fi
+fi

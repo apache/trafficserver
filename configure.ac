@@ -98,6 +98,8 @@ TS_PARSE_ARGUMENTS
 # Host detection
 #
 AC_CANONICAL_HOST
+HOST_GUESS="$host"
+AC_SUBST(HOST_GUESS)
 
 #
 # Build environment
@@ -1189,6 +1191,7 @@ AC_SUBST([TFW_PACKAGE_SUFFIX])
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES
 
+AC_CONFIG_FILES([tsxs])
 AC_CONFIG_FILES([doc/Doxyfile])
 AC_CONFIG_FILES([doc/Makefile])
 AC_CONFIG_FILES([rc/Makefile])
