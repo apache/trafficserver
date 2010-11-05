@@ -82,6 +82,8 @@ example/*/.libs
 example/app-template/tsapp
 example/app-template/records.config
 
+tsxs
+
 GPATH
 GRTAGS
 GSYMS
