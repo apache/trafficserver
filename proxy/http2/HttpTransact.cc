@@ -8892,7 +8892,8 @@ HttpTransact::client_result_stat(State * s, ink_hrtime total_time, ink_hrtime re
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_POSSIBLE_ABORT;
   }
   // Count the status codes
-  int status_code = s->hdr_info.client_response.status_get();
+  int status_code = (s->source == SOURCE_NONE) ?
+                      0 : s->hdr_info.client_response.status_get();
   switch(status_code) {
   case 100: HTTP_SUM_TRANS_STAT(http_response_status_100_count_stat, 1); break;
   case 101: HTTP_SUM_TRANS_STAT(http_response_status_101_count_stat, 1); break;
