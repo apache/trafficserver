@@ -387,8 +387,7 @@ protected:
   // API
   int state_request_wait_for_transform_read(int event, void *data);
   int state_response_wait_for_transform_read(int event, void *data);
-  int state_common_wait_for_transform_read(HttpTransformInfo * t_info,
-                                           HttpSMHandler tunnel_handler, int event, void *data);
+  int state_common_wait_for_transform_read(HttpTransformInfo * t_info, HttpSMHandler tunnel_handler, int event, void *data);
 
   // Tunnel event handlers
   int tunnel_handler_server(int event, HttpTunnelProducer * p);
