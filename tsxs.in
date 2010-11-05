@@ -23,6 +23,7 @@ INSTALLDIR=`eval echo "@libexecdir@"`
 INCLUDEDIR=`eval echo "@includedir@"`
 CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
 BUILD=
+DEBUGECHO=
 
 if [ -z "$CC" ]; then
 	CC="@CC@"
@@ -30,6 +31,16 @@ fi
 if [ -z "$CXX" ]; then
 	CXX="@CXX@"
 fi
+
+function debug {
+	if [ -n "$DEBUGECHO" ]; then
+		echo $*
+	fi
+}
+function bail {
+	echo $*
+	exit
+}
 
 case $host in
 *-*-darwin*)
@@ -40,10 +51,11 @@ case $host in
         RLDFLAG="-Wl,--rpath="
         ;;
 *-*-solaris*)
+        PICFLAGS="-fpic"
         if test "x$CC" != "xgcc" ; then
                 CFLAGS="$CFLAGS -mt"
+        	PICFLAGS="-Kpic"
         fi
-        PICFLAGS="-Kpic"
         MODULELD="$CC -G"
         MODULELDXX="$CXX -G"
         MODULEEXT=so
@@ -81,6 +93,8 @@ LD=$MODULELD
 for v in $* 
 do
 	case $v in 
+	-v)	DEBUGECHO=1
+		;;
 	-h)
 		cat <<EOF
 $0 : a tool to compile, link and install trafficserver plugins.
@@ -107,9 +121,10 @@ EOF
 		while [ -r $1 ]; do
 			SRC=$1
 			obj=`echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;'`
-			echo " compiling $SRC -> $obj"
-			echo "$CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj"
-			$CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj
+			echo "  compiling $SRC -> $obj"
+			debug "$CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj"
+			$CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj ||
+				bail "Compile failed: $CC $CPPFLAGS $CFLAGS $PICFLAGS -c $SRC -o $obj"
 			OBJS="$OBJS $obj"
 			BUILD=1
 			shift
@@ -120,9 +135,10 @@ EOF
 		while [ -r $1 ]; do
 			SRC=$1
 			obj=`echo $SRC | sed -e 's/\.[a-z]*$/\.lo/g;'`
-			echo " compiling $SRC -> $obj"
-			echo "$CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj"
-			$CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj	
+			echo "  compiling $SRC -> $obj"
+			debug "$CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj"
+			$CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj ||
+				bail "Compile failed: $CXX $CPPFLAGS $CXXFLAGS $PICFLAGS -c $SRC -o $obj"
 			OBJS="$OBJS $obj"
 			LD=$MODULELDXX
 			BUILD=1
@@ -141,15 +157,16 @@ EOF
 done
 
 if [ "$BUILD" = "1" -a -n "$OBJ" ]; then
-	echo " linking -> $OBJ"
-	echo "$LD $LDFLAGS -o $OBJ $OBJS $LIBS"
-	$LD $LDFLAGS -o $OBJ $OBJS $LIBS
+	echo "  linking -> $OBJ"
+	debug "$LD $LDFLAGS -o $OBJ $OBJS $LIBS"
+	$LD $LDFLAGS -o $OBJ $OBJS $LIBS ||
+		bail "Link failed: $LD $LDFLAGS -o $OBJ $OBJS $LIBS"
 fi
 
 if [ -n "$OBJ" ]; then
 	if [ -r "$OBJ" ]; then
 		if [ "$INSTALL" = "1" ]; then
-			echo "installing $OBJ -> $INSTALLDIR/$OBJ"
+			echo "  installing $OBJ -> $INSTALLDIR/$OBJ"
 			cp $OBJ $INSTALLDIR/$OBJ
 			chmod 0755 $INSTALLDIR/$OBJ
 		fi
