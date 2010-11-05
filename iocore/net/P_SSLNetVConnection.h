@@ -137,8 +137,7 @@ extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
 static inline SSLNetVConnection *
 new_SSLNetVConnection(EThread * thread)
 {
-  ProxyMutex *mutex = thread->mutex;
-  NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
   SSLNetVConnection *vc = sslNetVCAllocator.alloc();
   vc->connect_calls = 0;
   vc->write_calls = 0;

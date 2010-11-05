@@ -287,18 +287,9 @@ net_connections_to_throttle(ThrottleType t)
 {
 
   double headroom = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
-  int64 sval = 0, cval = 0;
+  int64 sval = 0;
 
-#ifdef HTTP_NET_THROTTLE
-  NET_READ_DYN_STAT(http_current_client_connections_stat, cval, sval);
-  int http_user_agents = sval;
-  // one origin server connection for each user agent
-  int http_use_estimate = http_user_agents * 2;
-  // be conservative, bound by number currently open
-  if (http_use_estimate > currently_open)
-    return (int) (http_use_estimate * headroom);
-#endif
-  NET_READ_DYN_STAT(net_connections_currently_open_stat, cval, sval);
+  NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
   int currently_open = (int) sval;
   // deal with race if we got to multiple net threads
   if (currently_open < 0)

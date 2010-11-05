@@ -1185,43 +1185,43 @@ struct ShowStats: public Continuation
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
     ink_statval_t sval, cval;
 
-      NET_READ_DYN_STAT(net_calls_to_readfromnet_stat, sval, cval);
+    NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
     int64 d_rb = sval - last_rb;
-      last_rb += d_rb;
-      NET_READ_DYN_STAT(net_calls_to_readfromnet_afterpoll_stat, sval, cval);
+    last_rb += d_rb;
+    NET_READ_DYN_SUM(net_calls_to_readfromnet_afterpoll_stat, sval);
     int64 d_r = sval - last_r;
-      last_r += d_r;
+    last_r += d_r;
 
-      NET_READ_DYN_STAT(net_calls_to_writetonet_stat, sval, cval);
+    NET_READ_DYN_SUM(net_calls_to_writetonet_stat, sval);
     int64 d_wb = sval - last_wb;
-      last_wb += d_wb;
-      NET_READ_DYN_STAT(net_calls_to_writetonet_afterpoll_stat, sval, cval);
+    last_wb += d_wb;
+    NET_READ_DYN_SUM(net_calls_to_writetonet_afterpoll_stat, sval);
     int64 d_w = sval - last_w;
-      last_w += d_w;
+    last_w += d_w;
 
-      NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
+    NET_READ_DYN_STAT(net_read_bytes_stat, sval, cval);
     int64 d_nrb = sval - last_nrb;
-      last_nrb += d_nrb;
+    last_nrb += d_nrb;
     int64 d_nr = cval - last_nr;
-      last_nr += d_nr;
+    last_nr += d_nr;
 
-      NET_READ_DYN_STAT(net_write_bytes_stat, sval, cval);
+    NET_READ_DYN_STAT(net_write_bytes_stat, sval, cval);
     int64 d_nwb = sval - last_nwb;
-      last_nwb += d_nwb;
+    last_nwb += d_nwb;
     int64 d_nw = cval - last_nw;
-      last_nw += d_nw;
+    last_nw += d_nw;
 
-      NET_READ_DYN_STAT(net_connections_currently_open_stat, sval, cval);
-    int64 d_o = cval;
+    NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
+    int64 d_o = sval;
 
-      NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
+    NET_READ_DYN_STAT(net_handler_run_stat, sval, cval);
     int64 d_p = cval - last_p;
-      last_p += d_p;
-      printf("%lld:%lld %lld:%lld %lld:%lld %lld:%lld %lld %lld\n",
-                 d_rb, d_r, d_wb, d_w, d_nrb, d_nr, d_nwb, d_nw, d_o, d_p);
+    last_p += d_p;
+    printf("%lld:%lld %lld:%lld %lld:%lld %lld:%lld %lld %lld\n",
+           d_rb, d_r, d_wb, d_w, d_nrb, d_nr, d_nwb, d_nw, d_o, d_p);
 #ifdef ENABLE_TIME_TRACE
     int i;
-      fprintf(fp, "immediate_events_time_dist\n");
+    fprintf(fp, "immediate_events_time_dist\n");
     for (i = 0; i < TIME_DIST_BUCKETS_SIZE; i++)
     {
       if ((i % 10) == 0)

@@ -221,7 +221,7 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
     );
   SocksEntry *socksEntry = NULL;
 #endif
-  NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
   vc->id = net_next_connection_number();
   vc->submit_time = ink_get_hrtime();
   vc->setSSLClientConnection(true);

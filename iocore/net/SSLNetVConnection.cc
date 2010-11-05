@@ -387,8 +387,7 @@ SSLNetVConnection::SSLNetVConnection():
 
 void
 SSLNetVConnection::free(EThread * t) {
-  ProxyMutex *mutex = t->mutex;
-  NET_DECREMENT_DYN_STAT(net_connections_currently_open_stat);
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
   got_remote_addr = 0;
   got_local_addr = 0;
   read.vio.mutex.clear();

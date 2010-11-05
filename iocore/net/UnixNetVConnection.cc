@@ -1124,7 +1124,7 @@ UnixNetVConnection::connectUp(EThread *t)
 void
 UnixNetVConnection::free(EThread *t)
 {
-  NET_DECREMENT_THREAD_DYN_STAT(net_connections_currently_open_stat, t);
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
   // clear variables for reuse
   got_remote_addr = 0;
   got_local_addr = 0;

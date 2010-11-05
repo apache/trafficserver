@@ -96,8 +96,7 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     vc = (UnixNetVConnection *) na->alloc_cache;
     if (!vc) {
       vc = na->allocateThread(e->ethread);
-      ProxyMutex *mutex = e->ethread->mutex;
-      NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
+      NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
       vc->id = net_next_connection_number();
       na->alloc_cache = vc;
 #if TS_USE_DETAILED_LOG
@@ -347,7 +346,7 @@ NetAccept::do_blocking_accept(NetAccept * master_na, EThread * t)
     check_emergency_throttle(vc->con);
     master_na->alloc_cache = NULL;
 
-    RecIncrGlobalRawStatSum(net_rsb, net_connections_currently_open_stat, 1);
+    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->submit_time = now;
     vc->ip = vc->con.sa.sin_addr.s_addr;
     vc->port = ntohs(vc->con.sa.sin_port);
@@ -495,7 +494,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
     vc->con.fd = fd;
 
-    NET_INCREMENT_DYN_STAT(net_connections_currently_open_stat);
+    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
 
     vc->submit_time = ink_get_hrtime();
