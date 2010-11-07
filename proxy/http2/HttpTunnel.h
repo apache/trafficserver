@@ -122,7 +122,12 @@ struct ChunkedHandler
   int running_sum;
   int num_digits;
 
-    ChunkedHandler();
+  ChunkedHandler()
+  : chunked_reader(NULL), dechunked_buffer(NULL), dechunked_size(0), dechunked_reader(NULL), chunked_buffer(NULL),
+    chunked_size(0), truncation(false), skip_bytes(0), state(CHUNK_READ_CHUNK), cur_chunk_size(0),
+    bytes_left(0), last_server_event(VC_EVENT_NONE), running_sum(0), num_digits(0)
+  { }
+
   void init(IOBufferReader * buffer_in, HttpTunnelProducer * p);
 
   // Returns true if complete, false otherwise
@@ -138,7 +143,11 @@ private:
 
 struct HttpTunnelConsumer
 {
-  HttpTunnelConsumer();
+  HttpTunnelConsumer()
+  : link(), producer(NULL), self_producer(NULL), vc_type(HT_HTTP_CLIENT), vc(NULL), buffer_reader(NULL),
+    vc_handler(NULL), write_vio(NULL), skip_bytes(0), bytes_written(0), handler_state(0), alive(false),
+    write_success(false), name(NULL)
+  { }
 
   LINK(HttpTunnelConsumer, link);
   HttpTunnelProducer *producer;
@@ -161,7 +170,15 @@ struct HttpTunnelConsumer
 
 struct HttpTunnelProducer
 {
-  HttpTunnelProducer();
+  HttpTunnelProducer()
+  : consumer_list(), self_consumer(NULL),
+    vc(NULL), vc_handler(NULL), read_vio(NULL), read_buffer(NULL),
+    buffer_start(NULL), vc_type(HT_HTTP_SERVER), chunking_action(TCA_PASSTHRU_DECHUNKED_CONTENT),
+    do_chunking(false), do_dechunking(false), do_chunked_passthru(false),
+    init_bytes_done(0), nbytes(0), ntodo(0), bytes_read(0), handler_state(0), num_consumers(0), alive(false),
+    read_success(false), name(NULL)
+  { }
+
 
   DLL<HttpTunnelConsumer> consumer_list;
   HttpTunnelConsumer *self_consumer;
@@ -214,15 +231,14 @@ class HttpTunnel:public Continuation
   friend class HttpPagesHandler;
   friend class CoreUtils;
 public:
-    HttpTunnel();
+  HttpTunnel()
+    : Continuation(NULL), num_producers(0), num_consumers(0), sm(NULL), active(false)
+    { }
 
   void init(HttpSM * sm_arg, ProxyMutex * amutex);
   void reset();
   void kill_tunnel();
-  bool is_tunnel_active()
-  {
-    return active;
-  };
+  bool is_tunnel_active() { return active; }
   bool is_tunnel_alive();
   bool is_there_cache_write();
 
