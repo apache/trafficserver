@@ -775,7 +775,7 @@ Cmd_ConfigPorts(ClientData clientData, Tcl_Interp * interp, int argc, const char
     } else {                    // set
       switch (argtable->parsed_args) {
       case CMD_CONFIG_PORTS_HTTP_OTHER:
-      case CMD_CONFIG_PORTS_SSL:
+      case CMD_CONFIG_PORTS_CONNECT:
         return (ConfigPortsSet(argtable[0].parsed_args, argtable[0].data));
         break;
       case CMD_CONFIG_PORTS_HTTP_SERVER:
@@ -818,8 +818,8 @@ CmdArgs_ConfigPorts()
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER_RS, "Set Ports for cluster-rs", (char *) NULL);
   createArgument("cluster-mc", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_CLUSTER_MC, "Set Ports for cluster-mc", (char *) NULL);
-  createArgument("ssl", 1, CLI_ARGV_OPTION_NAME_VALUE,
-                 (char *) NULL, CMD_CONFIG_PORTS_SSL, "Set Ports for ssl", (char *) NULL);
+  createArgument("connect", 1, CLI_ARGV_OPTION_NAME_VALUE,
+                 (char *) NULL, CMD_CONFIG_PORTS_CONNECT, "Set Ports for allowed CONNECT", (char *) NULL);
   createArgument("socks-server", 1, CLI_ARGV_OPTION_INT_VALUE,
                  (char *) NULL, CMD_CONFIG_PORTS_SOCKS_SERVER, "Set Ports for socks-server", (char *) NULL);
   return 0;
@@ -2516,7 +2516,7 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
 
   switch (arg_ref) {
   case CMD_CONFIG_PORTS_HTTP_OTHER:
-  case CMD_CONFIG_PORTS_SSL:
+  case CMD_CONFIG_PORTS_CONNECT:
     Cli_Debug("ConfigPortsSet: arg_ref %d value %s\n", arg_ref, (char *) valuePtr);
     break;
   default:
@@ -2549,8 +2549,8 @@ ConfigPortsSet(int arg_ref, void *valuePtr)
   case CMD_CONFIG_PORTS_CLUSTER_MC:
     status = Cli_RecordSetInt("proxy.config.cluster.mcport", *(INKInt *) valuePtr, &action_need);
     break;
-  case CMD_CONFIG_PORTS_SSL:
-    status = Cli_RecordSetString("proxy.config.http.ssl_ports", (INKString) valuePtr, &action_need);
+  case CMD_CONFIG_PORTS_CONNECT:
+    status = Cli_RecordSetString("proxy.config.http.connect_ports", (INKString) valuePtr, &action_need);
     break;
   case CMD_CONFIG_PORTS_SOCKS_SERVER:
     status = Cli_RecordSetInt("proxy.config.socks.socks_server_port", *(INKInt *) valuePtr, &action_need);
@@ -2634,8 +2634,8 @@ ConfigPortsGet(int arg_ref)
     }
     Cli_Printf("%d\n", int_val);
     break;
-  case CMD_CONFIG_PORTS_SSL:
-    status = Cli_RecordGetString("proxy.config.http.ssl_ports", &str_val);
+  case CMD_CONFIG_PORTS_CONNECT:
+    status = Cli_RecordGetString("proxy.config.http.connect_ports", &str_val);
     if (status) {
       return status;
     }

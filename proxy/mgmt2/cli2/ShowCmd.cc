@@ -1231,7 +1231,7 @@ ShowPorts()
   INKInt cluster_mc = -1;
   INKInt socks_server = -1;
   INKInt icp = -1;
-  INKString ssl = NULL;
+  INKString connect = NULL;
 
   // retrieve values
 
@@ -1242,7 +1242,7 @@ ShowPorts()
   Cli_RecordGetInt("proxy.config.cluster.cluster_port", &cluster);
   Cli_RecordGetInt("proxy.config.cluster.rsport", &cluster_rs);
   Cli_RecordGetInt("proxy.config.cluster.mcport", &cluster_mc);
-  Cli_RecordGetString("proxy.config.http.ssl_ports", &ssl);
+  Cli_RecordGetString("proxy.config.http.connect_ports", &connect);
   Cli_RecordGetInt("proxy.config.socks.socks_server_port", &socks_server);
   Cli_RecordGetInt("proxy.config.icp.icp_port", &icp);
 
@@ -1255,7 +1255,7 @@ ShowPorts()
   Cli_Printf("Cluster Port ----------- %d\n", cluster);
   Cli_Printf("Cluster RS Port -------- %d\n", cluster_rs);
   Cli_Printf("Cluster MC Port -------- %d\n", cluster_mc);
-  Cli_Printf("SSL Ports -------------- %s\n", (ssl != NULL) ? ssl : "none");
+  Cli_Printf("Allowed CONNECT Ports -- %s\n", (connect != NULL) ? connect : "none");
   Cli_Printf("SOCKS Server Port ------ %d\n", socks_server);
   Cli_Printf("ICP Port --------------- %d\n", icp);
   Cli_Printf("\n");
@@ -1890,15 +1890,15 @@ ShowSsl()
 {
   // declare and initialize variables
 
-  INKString ssl_ports = NULL;
+  INKString connect_ports = NULL;
 
   // retrieve value
 
-  Cli_RecordGetString("proxy.config.http.ssl_ports", &ssl_ports);
+  Cli_RecordGetString("proxy.config.http.connect_ports", &connect_ports);
 
   // display results
   Cli_Printf("\n");
-  Cli_Printf("Restrict SSL Connections to Ports -- %s\n", ssl_ports);
+  Cli_Printf("Restrict CONNECT connections to Ports -- %s\n", connect_ports);
   Cli_Printf("\n");
 
   return CLI_OK;

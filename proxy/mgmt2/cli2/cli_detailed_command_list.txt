@@ -551,7 +551,7 @@ ssl			SSL Ports
   behavior:  Display SSL Port related configuration.
 
   ts> show:ssl
-  Restrict SSL Connections to Ports -- 443 563   (proxy.config.http.ssl_ports)
+  Restrict CONNECT connections to Ports -- 443 563   (proxy.config.http.connect_ports)
   ts>
 
 parent			Parent Configuration
@@ -1417,7 +1417,7 @@ ports			Ports used by Traffic Server
           <cluster>         (proxy.config.cluster_port) single
           <cluster-rs>      (proxy.config.cluster.rsport) single
           <cluster-mc>      (proxy.config.cluster.mcport) single
-          <ssl>             (proxy.config.http.ssl_ports) list
+          <connect>         (proxy.config.http.connect_ports) list
           <socks-server>    (proxy.config.socks.socks_server_port) single
           <icp>             (proxy.config.icp.icp_port) single
 

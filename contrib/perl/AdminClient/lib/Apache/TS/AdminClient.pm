@@ -472,7 +472,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.share_server_sessions
  proxy.config.http.slow.log.threshold
  proxy.config.http.snarf_username_from_authorization
- proxy.config.http.ssl_ports
+ proxy.config.http.connect_ports
  proxy.config.http.streaming_connect_attempts_timeout
  proxy.config.http.transaction_active_timeout_in
  proxy.config.http.transaction_active_timeout_out

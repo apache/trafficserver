@@ -299,7 +299,7 @@ const char *stringVariables[] = {
   "proxy.config.header.parse.no_host_url_redirect",
   "proxy.config.http.server_port_attr",
   "proxy.config.http.server_other_ports",
-  "proxy.config.http.ssl_ports",
+  "proxy.config.http.connect_ports",
   "proxy.config.http.parent_proxies",
   "proxy.config.http.anonymize_other_header_list",
   "proxy.config.http.cache.vary_default_text",

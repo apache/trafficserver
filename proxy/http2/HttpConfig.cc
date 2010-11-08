@@ -1341,8 +1341,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.cache_required_headers, "proxy.config.http.cache.required_headers");
   HttpEstablishStaticConfigLongLong(c.cache_range_lookup, "proxy.config.http.cache.range.lookup");
 
-  HttpEstablishStaticConfigStringAlloc(c.ssl_ports_string, "proxy.config.http.ssl_ports");
-
   HttpEstablishStaticConfigStringAlloc(c.connect_ports_string, "proxy.config.http.connect_ports");
 
   HttpEstablishStaticConfigLongLong(c.request_hdr_max_size, "proxy.config.http.request_header_max_size");
@@ -1683,9 +1681,6 @@ HttpConfig::reconfigure()
 
   params->cache_required_headers = m_master.cache_required_headers;
   params->cache_range_lookup = INT_TO_BOOL(m_master.cache_range_lookup);
-
-  params->ssl_ports_string = xstrdup(m_master.ssl_ports_string);
-  params->ssl_ports = parse_ports_list(params->ssl_ports_string);
 
   params->connect_ports_string = xstrdup(m_master.connect_ports_string);
   params->connect_ports = parse_ports_list(params->connect_ports_string);

@@ -601,12 +601,6 @@ public:
   MgmtInt cache_required_headers;
   MgmtInt cache_range_lookup;
 
-  /////////
-  // SSL //
-  /////////
-  char *ssl_ports_string;
-  HttpConfigPortRange *ssl_ports;
-
   ////////////////////////////////////////////
   // CONNECT ports (used to be == ssl_ports //
   ////////////////////////////////////////////
@@ -846,7 +840,7 @@ public:
   static void dump_config();
 
   // parse ssl ports configuration string
-  static HttpConfigPortRange *parse_ports_list(char *ssl_ports_str);
+  static HttpConfigPortRange *parse_ports_list(char *ports_str);
 
   // parse DNS URL expansions string
   static char **parse_url_expansions(char *url_expansions_str, int *num_expansions);
@@ -979,8 +973,6 @@ cache_enable_default_vary_headers(false),
 cache_when_to_revalidate(0),
 cache_when_to_add_no_cache_to_msie_requests(0),
 cache_required_headers(CACHE_REQUIRED_HEADERS_NONE),
-ssl_ports_string(0),
-ssl_ports(0),
 connect_ports_string(0),
 connect_ports(0),
 request_hdr_max_size(0),
@@ -1049,13 +1041,8 @@ HttpConfigParams()
   xfree(cache_vary_default_text);
   xfree(cache_vary_default_images);
   xfree(cache_vary_default_other);
-  xfree(ssl_ports_string);
   xfree(connect_ports_string);
   xfree(reverse_proxy_no_host_redirect);
-
-  if (ssl_ports) {
-    delete ssl_ports;
-  }
 
   if (connect_ports) {
     delete connect_ports;
