@@ -1130,7 +1130,7 @@ HTTPHdr::status_get()
   ink_debug_assert(valid());
   ink_debug_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  return http_hdr_status_get(m_http);
+  return (NULL == m_http) ? HTTP_STATUS_NONE : http_hdr_status_get(m_http);
 }
 
 /*-------------------------------------------------------------------------

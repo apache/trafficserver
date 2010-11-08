@@ -1526,6 +1526,8 @@ HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader * ua_reader)
 
   Debug("http_redirect", "[HttpTunnel::allocate_postdata_buffers]");
 
+  // TODO: This is uncool, shouldn't this use the class allocator or proxy allocator ?
+  // If fixed, obviously also fix the deallocator.
   if (postbuf == NULL) {
     postbuf = new PostDataBuffers();
   }
