@@ -2,6 +2,9 @@
 
 Changes with Apache Traffic Server 2.1.4
 
+  *) Fixes to clustering, that caused an assert to trigger after the
+   stats changes [TS-519].
+
   *) Make the checks when to honor the Content-Length: header less
    strict, against origins without Keep-Alive [TS-507].
 

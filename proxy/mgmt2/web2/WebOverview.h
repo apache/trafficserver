@@ -111,9 +111,10 @@ public:
   bool varCounterFromName(const char *varName, RecCounter * value);
 
 private:
-    RecRecords node_rec_data;   // a copy from ClusterPeerInfo
+  RecRecords node_rec_data;   // a copy from ClusterPeerInfo
   int recordArraySize;          // the size of node_data.recs
-    overviewRecord(const overviewRecord &);
+  int node_rec_first_ix; // Kludge, but store the first order ix for later use
+  overviewRecord(const overviewRecord &);
 };
 
 // information about the entire cluster
