@@ -5963,28 +5963,12 @@ HttpTransact::initialize_state_variables_from_response(State * s, HTTPHdr * inco
     s->hdr_info.response_content_length = 0;
     s->hdr_info.trust_response_cl = true;
   } else {
-    ////////////////////////////////////////////////////////
-    // this is the case that the origin server sent       //
-    // us content length. Experience says that many       //
-    // origin servers that do not support keep-alive      //
-    // lie about the content length. to avoid truncation  //
-    // of docuemnts from such server, if the server is    //
-    // not keep-alive, we set to read until the server    //
-    // closes the connection. We sent the maybe bogus     //
-    // content length to the browser, and we will correct //
-    // the cache if it turnrd out that the servers lied.  //
-    ////////////////////////////////////////////////////////
-    //TODO: We should quite possibly disable this check, it will cause us to violate the
-    // protocol in some cases (returning too much data). /leif XXX
+    // This code used to discriminate CL: headers when the origin disabled keep-alive.
     if (incoming_response->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-      if (s->current.server->keep_alive == HTTP_NO_KEEPALIVE) {
-        s->hdr_info.trust_response_cl = false;
-        s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
-      } else {
-        int64 cl = incoming_response->get_content_length();
-        s->hdr_info.response_content_length = (cl >= 0) ? cl : HTTP_UNDEFINED_CL;
-        s->hdr_info.trust_response_cl = true;
-      }
+      int64 cl = incoming_response->get_content_length();
+
+      s->hdr_info.response_content_length = (cl >= 0) ? cl : HTTP_UNDEFINED_CL;
+      s->hdr_info.trust_response_cl = true;
     } else {
       s->hdr_info.response_content_length = HTTP_UNDEFINED_CL;
       s->hdr_info.trust_response_cl = false;

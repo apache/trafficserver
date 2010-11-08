@@ -2,6 +2,20 @@
 
 Changes with Apache Traffic Server 2.1.4
 
+  *) Make the checks when to honor the Content-Length: header less
+   strict, against origins without Keep-Alive [TS-507].
+
+  *) Eliminate old ssl_ports feature, it's completely replaced with the
+   connect_ports configuration [TS-517].
+
+  *) New script available to help build plugins, tsxs [TS-512].
+
+  *) Simple, brute force (and efficient) status code stats counters
+   [TS-509].
+
+  *) Generalize RecDumpRecordsHt to use RecDumpRecords which is a
+   callback/map pattern [TS-508].
+
   *) Fix plugin APIs to be compatible with the 64-bit changes in the
    core. This is an incompatible change with previous releases [TS-14].
 
