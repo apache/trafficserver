@@ -130,7 +130,7 @@ CONFIG proxy.config.http.user_agent_pipeline INT 8
    ##########################
 CONFIG proxy.config.http.referer_filter INT 0
 CONFIG proxy.config.http.referer_format_redirect INT 1
-CONFIG proxy.config.http.referer_default_redirect STRING http://www.apache.org/
+CONFIG proxy.config.http.referer_default_redirect STRING http://www.example.com/
    ##############################
    # parent proxy configuration #
    ##############################
@@ -147,12 +147,12 @@ CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
    ###################################
    # HTTP connection timeouts (secs) #
    ###################################
-   # out: proxy -> os connection
+   # out: proxy -> origin server connection
    # in : ua -> proxy connection
-CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 15
-CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 30
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
 CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
-CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 60
+CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30
 CONFIG proxy.config.http.transaction_active_timeout_in INT 900
 CONFIG proxy.config.http.transaction_active_timeout_out INT 0
 CONFIG proxy.config.http.accept_no_activity_timeout INT 120
@@ -299,6 +299,7 @@ CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 ##############################################################################
 CONFIG proxy.config.net.connections_throttle INT 10000
    # timeout in seconds for defering the accept, 0 is disabled
+   # (this enables/disables TCP_DEFER_ACCEPT)
 CONFIG proxy.config.net.tcp_accept_defer_timeout INT 0
 ##############################################################################
 #
@@ -452,7 +453,7 @@ CONFIG proxy.config.header.parse.no_host_url_redirect STRING NULL
 CONFIG proxy.config.url_remap.default_to_server_pac INT 0
 CONFIG proxy.config.url_remap.default_to_server_pac_port INT -1
 CONFIG proxy.config.url_remap.remap_required INT 1
-CONFIG proxy.config.url_remap.pristine_host_hdr INT 0
+CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
 ##############################################################################
 #
 # SSL Termination
