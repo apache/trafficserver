@@ -1913,7 +1913,7 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.cache.max_agg_delay", "", INK_INT, "1000", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.cache.threads_per_disk", "", INK_INT, "4", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
+  {CONFIG, "proxy.config.cache.threads_per_disk", "", INK_INT, "8", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
   {CONFIG, "proxy.config.cache.aio_sleep_time", "", INK_INT, "100", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,

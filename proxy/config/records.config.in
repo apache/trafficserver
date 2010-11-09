@@ -347,6 +347,9 @@ CONFIG proxy.config.cache.enable_read_while_writer INT 0
    # This controls how many objects (average) the disk caches can hold, and
    # how much memory it'll consume for the directory structure.
 CONFIG proxy.config.cache.min_average_object_size INT 8000
+   # How many I/O threads to allocate per disk (spindle). Be aware that RAID
+   # disks would show up to TS as a single spindle.
+CONFIG proxy.config.cache.threads_per_disk INT 8
 ##############################################################################
 #
 # DNS
