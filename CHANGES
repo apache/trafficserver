@@ -11,7 +11,7 @@ Changes with Apache Traffic Server 2.1.4
    stats changes [TS-519].
 
   *) Make the checks when to honor the Content-Length: header less
-   strict, against origins without Keep-Alive [TS-507].
+   strict, against origins without Keep-Alive [TS-500].
 
   *) Eliminate old ssl_ports feature, it's completely replaced with the
    connect_ports configuration [TS-517].
