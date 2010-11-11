@@ -572,6 +572,18 @@ public:
 
   URL *url_get() const;
   URL *url_get(URL * url);
+  /** Get a string with the effective URL in it.
+      If @a length is not @c NULL then the length of the string
+      is stored in the int pointed to by @a length.
+
+      Note that this can be different from getting the @c URL
+      and invoking @c URL::string_get if the host is in a header
+      field and not explicitly in the URL.
+   */
+  char* url_string_get(
+    Arena* arena = 0, ///< Arena to use, or @c malloc if NULL.
+    int* length = 0 ///< Store string length here.
+  );
 
   void url_set(URL * url);
   void url_set_as_server_url(URL * url);

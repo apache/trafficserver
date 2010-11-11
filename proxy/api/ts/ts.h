@@ -1940,6 +1940,19 @@ extern "C"
   inkapi INKHttpSsn INKHttpTxnSsnGet(INKHttpTxn txnp);
   inkapi int INKHttpTxnClientReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi INKReturnCode INKHttpTxnPristineUrlGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *url_loc);
+  /** Get the effective URL for the transaction.
+      The effective URL is the URL taking in to account both the explicit
+      URL in the request and the HOST field.
+
+      A possibly non-null terminated string is returned.
+
+      @note The returned string is allocated and must be freed by the caller
+      after use with @c INKfree.
+  */
+  inkapi char* INKHttpTxnEffectiveUrlStringGet(
+    INKHttpTxn txnp, ///< Transaction.
+    int* length ///< String length return, may be @c NULL.
+  );
   inkapi int INKHttpTxnClientRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnServerReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnServerRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);

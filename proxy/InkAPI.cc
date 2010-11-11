@@ -5272,6 +5272,16 @@ INKHttpTxnPristineUrlGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *url_loc)
     return INK_ERROR;
 }
 
+// Shortcut to just get the URL.
+char*
+INKHttpTxnEffectiveUrlStringGet (INKHttpTxn txnp, int* length) {
+  char* zret = 0;
+  if (INK_SUCCESS == sdk_sanity_check_txn(txnp)) {
+    HttpSM *sm = reinterpret_cast<HttpSM*>(txnp);
+    zret = sm->t_state.hdr_info.client_request.url_string_get(0, length);
+  }
+  return zret;
+}
 
 int
 INKHttpTxnClientRespGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)

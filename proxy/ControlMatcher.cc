@@ -57,7 +57,7 @@
 char *
 HttpRequestData::get_string()
 {
-  char *str = hdr->url_get()->string_get(NULL);
+  char *str = hdr->url_string_get(NULL);
   unescapifyStr(str);
   return str;
 }
