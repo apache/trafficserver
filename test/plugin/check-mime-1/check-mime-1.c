@@ -239,9 +239,9 @@ mimeHdrHandler()
 
 
   /* clone the Via field */
-  if ((srcViaFieldLoc = INKMimeHdrFieldRetrieve(parseBuffer, parseHdrLoc, INK_MIME_FIELD_VIA)) == INK_ERROR_PTR ||
+  if ((srcViaFieldLoc = INKMimeHdrFieldFind(parseBuffer, parseHdrLoc, INK_MIME_FIELD_VIA, INK_MIME_LEN_VIA)) == INK_ERROR_PTR ||
       srcViaFieldLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldRetrieve");
+    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldFind");
 
   if (INKMimeHdrFieldLengthGet(parseBuffer, parseHdrLoc, srcViaFieldLoc) == INK_ERROR) {
     LOG_ERROR("INKMimeHdrFieldLengthGet");
@@ -257,14 +257,14 @@ mimeHdrHandler()
 
   /* copy the Content-Length field */
   if ((srcCLFieldLoc =
-       INKMimeHdrFieldRetrieve(parseBuffer, parseHdrLoc, INK_MIME_FIELD_CONTENT_LENGTH)) == INK_ERROR_PTR ||
+       INKMimeHdrFieldFind(parseBuffer, parseHdrLoc, INK_MIME_FIELD_CONTENT_LENGTH, INK_MIME_LEN_CONTENT_LENGTH)) == INK_ERROR_PTR ||
       srcCLFieldLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldRetrieve");
+    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldFind");
   if (INKMimeHdrFieldValueIntSet(parseBuffer, parseHdrLoc, srcCLFieldLoc, 0, content_len) == INK_ERROR)
     LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldValueIntSet");
-  if ((destCLFieldLoc = INKMimeHdrFieldRetrieve(destBuffer, destHdrLoc, INK_MIME_FIELD_CONTENT_LENGTH)) == INK_ERROR_PTR
+  if ((destCLFieldLoc = INKMimeHdrFieldFind(destBuffer, destHdrLoc, INK_MIME_FIELD_CONTENT_LENGTH, INK_MIME_LEN_CONTENT_LENGTH)) == INK_ERROR_PTR
       || destCLFieldLoc == NULL)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldRetrieve");
+    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldFind");
   if (INKMimeHdrFieldCopy(destBuffer, destHdrLoc, destCLFieldLoc, parseBuffer, parseHdrLoc, srcCLFieldLoc) == INK_ERROR)
     LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldCopy(");
 

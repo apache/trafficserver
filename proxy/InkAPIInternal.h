@@ -29,7 +29,7 @@
 #include "StatSystem.h"
 #include "P_Net.h"
 #include "api/ts/ts.h"
-#include "api/ts/ts_private_frozen.h"
+#include "api/ts/experimental.h"
 #include "api/ts/InkAPIPrivateIOCore.h"
 #include "HTTP.h"
 #include "List.h"

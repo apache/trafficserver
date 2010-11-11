@@ -2506,8 +2506,8 @@ asm_main(INKCont contp, INKEvent event, void *edata)
     /* Create new X-Template field */
     x_field_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
     INKMimeHdrFieldNameSet(bufp, hdr_loc, x_field_loc, HEADER_X_TEMPLATE, -1);
-    INKMimeHdrFieldValueInsert(bufp, hdr_loc, x_field_loc, "true", -1, -1);
-    INKMimeHdrFieldInsert(bufp, hdr_loc, x_field_loc, -1);
+    INKMimeHdrFieldValueStringInsert(bufp, hdr_loc, x_field_loc, "true", -1, -1);
+    INKMimeHdrFieldAppend(bufp, hdr_loc, x_field_loc);
     INKHandleMLocRelease(bufp, hdr_loc, x_field_loc);
     INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
 

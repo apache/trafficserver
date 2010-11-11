@@ -112,9 +112,9 @@ handle_select_alt(INKHttpAltInfo infop)
    * if these two values are equivalent, set the quality of this alternate to 1
    * otherwise set it to 0
    */
-  if ((accept_language_field = INKMimeHdrFieldRetrieve(client_req_buf, client_req_hdr,
-                                                       INK_MIME_FIELD_ACCEPT_LANGUAGE)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldRetrieve");
+  if ((accept_language_field = INKMimeHdrFieldFind(client_req_buf, client_req_hdr, INK_MIME_FIELD_ACCEPT_LANGUAGE,
+                                                   INK_MIME_LEN_ACCEPT_LANGUAGE)) == INK_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldFind");
   if (accept_language_field) {
     if (INKMimeHdrFieldValueStringGet(client_req_buf, client_req_hdr, accept_language_field,
                                       0, &accept_value, &len) == INK_ERROR)
@@ -124,13 +124,13 @@ handle_select_alt(INKHttpAltInfo infop)
     quality = 0;
   }
 
-  if ((content_language_field = INKMimeHdrFieldRetrieve(cache_resp_buf, cache_resp_hdr,
-                                                        INK_MIME_FIELD_CONTENT_LANGUAGE)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldRetrieve");
+  if ((content_language_field = INKMimeHdrFieldFind(cache_resp_buf, cache_resp_hdr, INK_MIME_FIELD_CONTENT_LANGUAGE,
+                                                    INK_MIME_LEN_CONTENT_LANGUAGE)) == INK_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldFind");
   if (content_language_field) {
     if (INKMimeHdrFieldValueStringGet(cache_resp_buf, cache_resp_hdr, content_language_field,
                                       0, &content_value, &len) == INK_ERROR)
-      LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldRetrieve");
+      LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldFind");
   } else {
     /* If field content_language_field not found, set quality to 0 */
     quality = 0;

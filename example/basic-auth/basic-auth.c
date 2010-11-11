@@ -134,7 +134,7 @@ handle_dns(INKHttpTxn txnp, INKCont contp)
     goto done;
   }
 
-  field_loc = INKMimeHdrFieldRetrieve(bufp, hdr_loc, INK_MIME_FIELD_PROXY_AUTHORIZATION);
+  field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, INK_MIME_FIELD_PROXY_AUTHORIZATION, INK_MIME_LEN_PROXY_AUTHORIZATION);
   if (!field_loc) {
     INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
     INKError("no Proxy-Authorization field\n");

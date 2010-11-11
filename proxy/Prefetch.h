@@ -30,7 +30,7 @@
 #ifdef PREFETCH
 
 #include "Update.h"
-#include "api/ts/ts_private_frozen.h"
+#include "api/ts/experimental.h"
 #include "api/ts/InkAPIHughes.h"
 
 #define IPSTRARGS(ip) (unsigned int) ((unsigned char *) &(ip))[0],	\

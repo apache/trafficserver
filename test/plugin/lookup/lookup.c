@@ -883,7 +883,7 @@ handle_txn_start(INKHttpTxn txnp)
   if (INKMutexLockTry(NULL, NULL) != INK_ERROR) {
     LOG_ERROR_NEG("INKMutexLockTry");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKMutexTryLock passed\n");
+    INKDebug(NEG_DEBUG_TAG, "Neg Test INKMutexLockTry passed\n");
   if (INKMutexUnlock(NULL) != INK_ERROR) {
     LOG_ERROR_NEG("INKMutexUnlock");
   } else

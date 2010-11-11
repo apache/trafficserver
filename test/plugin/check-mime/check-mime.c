@@ -89,7 +89,7 @@ printMimeFields(INKMBuffer hdrBuf, INKMLoc httpHdrLoc, char *comment)
     }
 
     do {
-      sFieldValue = INKMimeHdrFieldValueGet(hdrBuf, httpHdrLoc, fieldLoc, iFieldIndex, &iFieldValueLength);
+      INKMimeHdrFieldValueStringGet(hdrBuf, httpHdrLoc, fieldLoc, iFieldIndex, &sFieldValue, &iFieldValueLength);
       if (iFieldValueLength) {
         strncpy(outputString, sFieldValue, iFieldValueLength);
         outputString[iFieldValueLength] = '\0';
@@ -128,24 +128,24 @@ addDupFields(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
   /* Create a MIME field */
   newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpHttpHdrLoc);
   INKMimeHdrFieldNameSet(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "Dummy-Field-1", strlen("Dummy-Field-1"));
-  INKMimeHdrFieldValueInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dummy-value-1", strlen("dummy-value-1"), -1);
-  INKMimeHdrFieldInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, -1);
+  INKMimeHdrFieldValueStringInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dummy-value-1", strlen("dummy-value-1"), -1);
+  INKMimeHdrFieldAppend(tmpBuf, tmpHttpHdrLoc, newFieldLoc);
 
   newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpHttpHdrLoc);
-  INKMimeHdrFieldInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, -1);
+  INKMimeHdrFieldAppend(tmpBuf, tmpHttpHdrLoc, newFieldLoc);
   INKMimeHdrFieldNameSet(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "Dummy-Field-2", strlen("Dummy-Field-2"));
-  INKMimeHdrFieldValueInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dummy-value-2", strlen("dummy-value-2"), -1);
+  INKMimeHdrFieldValueStringInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dummy-value-2", strlen("dummy-value-2"), -1);
 
   /* Insert a some duplicate fields (duplicate name) */
   newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpHttpHdrLoc);
-  INKMimeHdrFieldInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, 1);
+  INKMimeHdrFieldAppend(tmpBuf, tmpHttpHdrLoc, newFieldLoc);
   INKMimeHdrFieldNameSet(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "Dummy-Field-2", strlen("Dummy-Field-2"));
-  INKMimeHdrFieldValueInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dup_dummy-value-1", strlen("dup_dummy-value-1"), -1);
+  INKMimeHdrFieldValueStringInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dup_dummy-value-1", strlen("dup_dummy-value-1"), -1);
 
   newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpHttpHdrLoc);
-  INKMimeHdrFieldInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, 1);
+  INKMimeHdrFieldAppend(tmpBuf, tmpHttpHdrLoc, newFieldLoc);
   INKMimeHdrFieldNameSet(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "Dummy-Field-2", strlen("Dummy-Field-2"));
-  INKMimeHdrFieldValueInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dup_dummy-value-2", strlen("dup_dummy-value-2"), -1);
+  INKMimeHdrFieldValueStringInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dup_dummy-value-2", strlen("dup_dummy-value-2"), -1);
 
   printMimeFields(tmpBuf, tmpHttpHdrLoc, "addDupFields:");
 
@@ -211,12 +211,12 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     printMimeFields(tmpBuf, tmpHttpHdrLoc, "RESP: 2: after remove");
 
     /* Re-attach the "removed" field */
-    INKMimeHdrFieldInsert(tmpBuf, tmpHttpHdrLoc, tmpFieldLoc, -1);
+    INKMimeHdrFieldAppend(tmpBuf, tmpHttpHdrLoc, tmpFieldLoc);
     printMimeFields(tmpBuf, tmpHttpHdrLoc, "RESP: 2: after remove/reattach");
 
     /* Delete the "Via" field */
     tmpFieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpHttpHdrLoc, "Via", strlen("Via"));
-    INKMimeHdrFieldDelete(tmpBuf, tmpHttpHdrLoc, tmpFieldLoc);
+    INKMimeHdrFieldDestroy(tmpBuf, tmpHttpHdrLoc, tmpFieldLoc);
 
     /*INKqa08815: to be consistant, release the handle must be done for MIME hdr
        delete or destroy operations */
@@ -235,8 +235,8 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     /* --------------------------------------------------------------------
      * Now, insert some fields into the MIME buffer
      * Note:
-     *      1. Field name can be set before/after INKMimeHdrFieldInsert
-     *      2. Field value could be set *only* after INKMimeHdrFieldValueInsert
+     *      1. Field name can be set before/after INKMimeHdrFieldAppend
+     *      2. Field value could be set *only* after INKMimeHdrFieldValueStringInsert
      *
      * (Point 1. and 2. implies that its possible to insert fields with empty
      * name and values)
@@ -245,10 +245,10 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
     /* Create a MIME field */
     newFieldLoc = INKMimeHdrFieldCreate(tmpBuf, tmpHttpHdrLoc);
     INKMimeHdrFieldNameSet(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "Dummy-Field-1", strlen("Dummy-Field-1"));
-    INKMimeHdrFieldValueInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dummy-value-1", strlen("dummy-value-1"), -1);
+    INKMimeHdrFieldValueStringInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, "dummy-value-1", strlen("dummy-value-1"), -1);
 
-    /* Now, do the insert : prepend it to the list of fields */
-    INKMimeHdrFieldInsert(tmpBuf, tmpHttpHdrLoc, newFieldLoc, 0);
+    /* Now, do the insert : prepend it to the list of fields. TODO: This no longer works, append only? */
+    INKMimeHdrFieldAppend(tmpBuf, tmpHttpHdrLoc, newFieldLoc);
 
     printMimeFields(tmpBuf, tmpHttpHdrLoc, "RESP: 3");
 
@@ -266,15 +266,15 @@ sectionMimeHdr(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
 
                 /***** 5: clear values for few fields ******/
     /* fieldLoc = INKMimeHdrFieldFind (tmpBuf, tmpHttpHdrLoc, "Date", strlen("Date")); */
-    fieldLoc = INKMimeHdrFieldRetrieve(tmpBuf, tmpHttpHdrLoc, INK_MIME_FIELD_DATE);
+    fieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpHttpHdrLoc, INK_MIME_FIELD_DATE, INK_MIME_LEN_DATE);
     INKMimeHdrFieldValuesClear(tmpBuf, tmpHttpHdrLoc, fieldLoc);
 
     /*fieldLoc = INKMimeHdrFieldFind (tmpBuf, tmpHttpHdrLoc, "Age", strlen("Age")); */
-    fieldLoc = INKMimeHdrFieldRetrieve(tmpBuf, tmpHttpHdrLoc, INK_MIME_FIELD_AGE);
+    fieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpHttpHdrLoc, INK_MIME_FIELD_AGE, INK_MIME_LEN_AGE);
     INKMimeHdrFieldValuesClear(tmpBuf, tmpHttpHdrLoc, fieldLoc);
 
     /*fieldLoc = INKMimeHdrFieldFind (tmpBuf, tmpHttpHdrLoc, "Content-Type", strlen("Content-Type")); */
-    fieldLoc = INKMimeHdrFieldRetrieve(tmpBuf, tmpHttpHdrLoc, INK_MIME_FIELD_CONTENT_TYPE);
+    fieldLoc = INKMimeHdrFieldFind(tmpBuf, tmpHttpHdrLoc, INK_MIME_FIELD_CONTENT_TYPE, INK_MIME_LEN_CONTENT_TYPE);
     INKMimeHdrFieldValuesClear(tmpBuf, tmpHttpHdrLoc, fieldLoc);
 
     printMimeFields(tmpBuf, tmpHttpHdrLoc, "RESP: 5");

@@ -168,16 +168,14 @@ modify_header(INKHttpTxn txnp, INKCont contp)
 
     /* TODO check these comments for correctness */
     /*
-     * Since INKMimeHdrFieldValueGet returned with valid values
-     * are we also guaranteed that INKMimeHdrFieldValueGetUint returns
-     * valid values? There is no erro code for INKMimeHdrFieldValueGetUint
+     * Since INKMimeHdrFieldValueStringGet returned with valid values
+     * are we also guaranteed that INKMimeHdrFieldValueUintGet returns
+     * valid values? There is no erro code for INKMimeHdrFieldValueUintGet
      * and 0 is a valid value.
      */
     /* Get the cached MIME value for this name in this HTTP header */
     /*
-       num_refreshes =
-       INKMimeHdrFieldValueGetUint(cached_bufp, cached_loc,
-       cached_field_loc, 0);
+       INKMimeHdrFieldValueUintGet(cached_bufp, cached_loc, cached_field_loc, 0, &num_refreshes);
        INKDebug("resphdr",
        "Cached header shows %d refreshes so far", num_refreshes );
 

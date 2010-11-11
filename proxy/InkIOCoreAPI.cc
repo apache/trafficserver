@@ -247,13 +247,6 @@ INKMutexLockTry(INKMutex mutexp, int *lock)
   return INK_SUCCESS;
 }
 
-/* deprecated in SDK3.0 */
-int
-INKMutexTryLock(INKMutex mutexp)
-{
-  return MUTEX_TAKE_TRY_LOCK((ProxyMutex *) mutexp, this_ethread());
-}
-
 INKReturnCode
 INKMutexUnlock(INKMutex mutexp)
 {

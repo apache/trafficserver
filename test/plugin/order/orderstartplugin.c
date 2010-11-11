@@ -51,10 +51,6 @@ startplugin(INKCont contp, INKEvent event, void *edata)
   INKMBuffer bufp;
   INKMLoc hdr_loc;
   INKMLoc field_loc;
-
-  int count;
-
-
   INKHttpTxn txnp = (INKHttpTxn) edata;
 
   if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
@@ -64,13 +60,15 @@ startplugin(INKCont contp, INKEvent event, void *edata)
   }
 
   if ((field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, FIELD_NAME, -1)) != 0) {
-    count = INKMimeFieldValueGetInt(bufp, field_loc, 0);
-    INKMimeFieldValueSetInt(bufp, field_loc, 0, value);
+    int count;
+
+    INKMimeHdrFieldValueIntGet(bufp, hdr_loc, field_loc, 0, &count);
+    INKMimehdrFieldValueIntSet(bufp, hdr_loc, field_loc, 0, value);
   } else {
-    field_loc = INKMimeFieldCreate(bufp);
-    INKMimeFieldNameSet(bufp, field_loc, FIELD_NAME, -1);
-    INKMimeFieldValueInsertInt(bufp, field_loc, value, -1);
-    INKMimeHdrFieldInsert(bufp, hdr_loc, field_loc, -1);
+    field_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
+    INKMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, FIELD_NAME, -1);
+    INKMimeHdrFieldValueIntInsert(bufp, hdr_loc, field_loc, -1, value);
+    INKMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
   }
 
   INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);

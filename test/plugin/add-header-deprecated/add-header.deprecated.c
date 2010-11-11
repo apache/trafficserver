@@ -56,10 +56,10 @@ add_header(INKHttpTxn txnp, INKCont contp)
 
   field_loc = INKMimeHdrFieldGet(hdr_bufp, hdr_loc, 0);
   while (field_loc) {
-    new_field_loc = INKMimeFieldCreate(req_bufp);
-    INKMimeFieldCopy(req_bufp, new_field_loc, hdr_bufp, field_loc);
-    INKMimeHdrFieldInsert(req_bufp, req_loc, new_field_loc, -1);
-    field_loc = INKMimeFieldNext(hdr_bufp, field_loc);
+    new_field_loc = INKMimeHdrFieldCreate(req_bufp, hdr_loc);
+    INKMimeHdrFieldCopy(req_bufp, req_loc, new_field_loc, req_buf, hdr_loc, field_loc);
+    INKMimeHdrFieldAppend(req_bufp, req_loc, new_field_loc);
+    field_loc = INKMimeHdrFieldNext(hdr_bufp, hdr_loc, field_loc);
   }
 
 done:
@@ -97,19 +97,19 @@ INKPluginInit(int argc, const char *argv[])
   hdr_loc = INKMimeHdrCreate(hdr_bufp);
 
   for (i = 1; i < argc; i++) {
-    field_loc = INKMimeFieldCreate(hdr_bufp);
-    INKMimeHdrFieldInsert(hdr_bufp, hdr_loc, field_loc, -1);
+    field_loc = INKMimeHdrFieldCreate(hdr_bufp, hdr_loc);
+    INKMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
 
     p = strchr(argv[i], ':');
     if (p) {
-      INKMimeFieldNameSet(hdr_bufp, field_loc, argv[i], p - argv[i]);
+      INKMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, argv[i], p - argv[i]);
       p += 1;
       while (isspace(*p)) {
         p += 1;
       }
       INKMimeFieldValueInsert(hdr_bufp, field_loc, p, -1, -1);
     } else {
-      INKMimeFieldNameSet(hdr_bufp, field_loc, argv[i], -1);
+      INKMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, argv[i], -1);
     }
   }
 

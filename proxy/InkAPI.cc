@@ -1,6 +1,6 @@
 /** @file
 
-  Implements callin functions for plugins
+  Implements callin functions for TSAPI plugins.
 
   @section license License
 
@@ -24,7 +24,7 @@
 #ifndef INK_NO_API
 
 // Avoid complaining about the deprecated APIs.
-#define INK_DEPRECATED
+// #define INK_DEPRECATED
 
 #include <stdio.h>
 
@@ -54,7 +54,7 @@
 #include "LogConfig.h"
 //#include "UserNameCache.h"
 #include "PluginVC.h"
-#include "api/ts/ts_private.h"
+#include "api/ts/experimental.h"
 #include "ICP.h"
 #include "HttpAccept.h"
 #include "PluginVC.h"
@@ -322,7 +322,6 @@ inkapi const char *INK_HTTP_VALUE_ONLY_IF_CACHED;
 inkapi const char *INK_HTTP_VALUE_PRIVATE;
 inkapi const char *INK_HTTP_VALUE_PROXY_REVALIDATE;
 inkapi const char *INK_HTTP_VALUE_PUBLIC;
-inkapi const char *INK_HTTP_VALUE_SMAX_AGE;
 inkapi const char *INK_HTTP_VALUE_S_MAXAGE;
 
 /* HTTP miscellaneous values string lengths */
@@ -346,7 +345,6 @@ inkapi int INK_HTTP_LEN_ONLY_IF_CACHED;
 inkapi int INK_HTTP_LEN_PRIVATE;
 inkapi int INK_HTTP_LEN_PROXY_REVALIDATE;
 inkapi int INK_HTTP_LEN_PUBLIC;
-inkapi int INK_HTTP_LEN_SMAX_AGE;
 inkapi int INK_HTTP_LEN_S_MAXAGE;
 
 /* HTTP methods */
@@ -394,7 +392,6 @@ inkapi const void *INK_ERROR_PTR = (const void *) 0x00000bad;
 // API error logging
 //
 ////////////////////////////////////////////////////////////////////
-
 void
 INKError(const char *fmt, ...)
 {
@@ -538,8 +535,7 @@ sdk_sanity_check_mbuffer(INKMBuffer bufp)
 #ifdef DEBUG
   HdrHeapSDKHandle *handle = (HdrHeapSDKHandle *) bufp;
   if ((handle == NULL) ||
-      (handle == INK_ERROR_PTR) || (handle->m_heap == NULL) || (handle->m_heap->m_magic != HDR_BUF_MAGIC_ALIVE)
-    ) {
+      (handle == INK_ERROR_PTR) || (handle->m_heap == NULL) || (handle->m_heap->m_magic != HDR_BUF_MAGIC_ALIVE)) {
     return INK_ERROR;
   }
   return INK_SUCCESS;
@@ -638,8 +634,7 @@ inline INKReturnCode
 sdk_sanity_check_txn(INKHttpTxn txnp)
 {
 #ifdef DEBUG
-  if ((txnp != NULL) && (txnp != INK_ERROR_PTR) && (((HttpSM *) txnp)->magic == HTTP_SM_MAGIC_ALIVE)
-    ) {
+  if ((txnp != NULL) && (txnp != INK_ERROR_PTR) && (((HttpSM *) txnp)->magic == HTTP_SM_MAGIC_ALIVE)) {
     return INK_SUCCESS;
   } else {
     return INK_ERROR;
@@ -761,16 +756,6 @@ sdk_free_field_handle(INKMBuffer bufp, MIMEFieldSDKHandle *field_handle)
   field_handle->field_ptr = NULL;
 
   sdk_heap->m_sdk_alloc.free_mhandle(field_handle);
-}
-
-static MIMEField *
-sdk_alloc_standalone_field(INKMBuffer bufp)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  HdrHeapSDKHandle *sdk_heap = (HdrHeapSDKHandle *) bufp;
-
-  MIMEField *sa_field = sdk_heap->m_sdk_alloc.allocate_mfield();
-  return (sa_field);
 }
 
 static void
@@ -1787,7 +1772,6 @@ api_init()
     INK_HTTP_VALUE_PROXY_REVALIDATE = HTTP_VALUE_PROXY_REVALIDATE;
     INK_HTTP_VALUE_PUBLIC = HTTP_VALUE_PUBLIC;
     INK_HTTP_VALUE_S_MAXAGE = HTTP_VALUE_S_MAXAGE;
-    INK_HTTP_VALUE_SMAX_AGE = HTTP_VALUE_S_MAXAGE;      // deprecated
 
     INK_HTTP_LEN_BYTES = HTTP_LEN_BYTES;
     INK_HTTP_LEN_CHUNKED = HTTP_LEN_CHUNKED;
@@ -1810,7 +1794,6 @@ api_init()
     INK_HTTP_LEN_PROXY_REVALIDATE = HTTP_LEN_PROXY_REVALIDATE;
     INK_HTTP_LEN_PUBLIC = HTTP_LEN_PUBLIC;
     INK_HTTP_LEN_S_MAXAGE = HTTP_LEN_S_MAXAGE;
-    INK_HTTP_LEN_SMAX_AGE = HTTP_LEN_S_MAXAGE;
 
     http_global_hooks = NEW(new HttpAPIHooks);
     cache_global_hooks = NEW(new CacheAPIHooks);
@@ -2162,54 +2145,6 @@ INKMBufferDestroy(INKMBuffer bufp)
   }
 }
 
-// DEPRECATED
-int
-INKMBufferDataSet(INKMBuffer bufp, void *data)
-{
-  NOWARN_UNUSED(data);
-  sdk_sanity_check_mbuffer(bufp);
-  return 0;
-}
-
-// DEPRECATED
-void *
-INKMBufferDataGet(INKMBuffer bufp, int *length)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  if (length)
-    *length = 0;
-  return NULL;
-}
-
-// DEPRECATED
-int
-INKMBufferLengthGet(INKMBuffer bufp)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  return 0;
-}
-
-// DEPRECATED
-void
-INKMBufferRef(INKMBuffer bufp)
-{
-  sdk_sanity_check_mbuffer(bufp);
-}
-
-// DEPRECATED
-void
-INKMBufferUnref(INKMBuffer bufp)
-{
-  sdk_sanity_check_mbuffer(bufp);
-}
-
-// DEPRECATED
-void
-INKMBufferCompress(INKMBuffer bufp)
-{
-  sdk_sanity_check_mbuffer(bufp);
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // URLs
@@ -2311,8 +2246,7 @@ INKUrlPrint(INKMBuffer bufp, INKMLoc obj, INKIOBuffer iobufp)
   int done;
 
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
-      (sdk_sanity_check_url_handle(obj) != INK_SUCCESS) || (sdk_sanity_check_iocore_structure(iobufp) != INK_SUCCESS)
-    ) {
+      (sdk_sanity_check_url_handle(obj) != INK_SUCCESS) || (sdk_sanity_check_iocore_structure(iobufp) != INK_SUCCESS)) {
     return INK_ERROR;
   }
 
@@ -2346,8 +2280,7 @@ INKUrlParse(INKMBuffer bufp, INKMLoc obj, const char **start, const char *end)
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
       (sdk_sanity_check_url_handle(obj) != INK_SUCCESS) ||
       (start == NULL) || (*start == NULL) ||
-      sdk_sanity_check_null_ptr((void *) end) != INK_SUCCESS || (!isWriteable(bufp))
-    ) {
+      sdk_sanity_check_null_ptr((void *) end) != INK_SUCCESS || (!isWriteable(bufp))) {
     return INK_PARSE_ERROR;
   }
 
@@ -2361,8 +2294,7 @@ INKUrlParse(INKMBuffer bufp, INKMLoc obj, const char **start, const char *end)
 int
 INKUrlLengthGet(INKMBuffer bufp, INKMLoc obj)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_url_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_url_handle(obj) != INK_SUCCESS)) {
     return INK_ERROR;
   }
   URLImpl *url_impl = (URLImpl *) obj;
@@ -2388,8 +2320,7 @@ URLPartGet(INKMBuffer bufp, INKMLoc obj, int *length, URLPartGetF url_f)
 {
 
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
-      (sdk_sanity_check_url_handle(obj) != INK_SUCCESS) || (length == NULL)
-    ) {
+      (sdk_sanity_check_url_handle(obj) != INK_SUCCESS) || (length == NULL)) {
     return (const char *) INK_ERROR_PTR;
   }
 
@@ -2414,8 +2345,7 @@ URLPartSet(INKMBuffer bufp, INKMLoc obj, const char *value, int length, URLPartS
 
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
       (sdk_sanity_check_url_handle(obj) != INK_SUCCESS) ||
-      (sdk_sanity_check_null_ptr((void *) value) != INK_SUCCESS) || (!isWriteable(bufp))
-    ) {
+      (sdk_sanity_check_null_ptr((void *) value) != INK_SUCCESS) || (!isWriteable(bufp))) {
     return INK_ERROR;
   }
 
@@ -2497,8 +2427,7 @@ INKUrlHostSet(INKMBuffer bufp, INKMLoc obj, const char *value, int length)
 int
 INKUrlPortGet(INKMBuffer bufp, INKMLoc obj)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_url_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_url_handle(obj) != INK_SUCCESS)) {
     return INK_ERROR;
   }
   URL u;
@@ -2516,8 +2445,7 @@ INKUrlPortSet(INKMBuffer bufp, INKMLoc obj, int port)
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      (sdk_sanity_check_url_handle(obj) == INK_SUCCESS) && isWriteable(bufp) && (port > 0)
-    ) {
+      (sdk_sanity_check_url_handle(obj) == INK_SUCCESS) && isWriteable(bufp) && (port > 0)) {
     URL u;
     u.m_heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
     u.m_url_impl = (URLImpl *) obj;
@@ -2551,8 +2479,7 @@ INKUrlPathSet(INKMBuffer bufp, INKMLoc obj, const char *value, int length)
 int
 INKUrlFtpTypeGet(INKMBuffer bufp, INKMLoc obj)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_url_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_url_handle(obj) != INK_SUCCESS)) {
     return INK_ERROR;
   }
   URL u;
@@ -2575,9 +2502,8 @@ INKUrlFtpTypeSet(INKMBuffer bufp, INKMLoc obj, int type)
 
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_url_handle(obj) == INK_SUCCESS) &&
-      (type == 0 || type == 'A' || type == 'E' || type == 'I' ||
-       type == 'a' || type == 'i' || type == 'e') && isWriteable(bufp)
-    ) {
+      (type == 0 || type == 'A' || type == 'E' || type == 'I' || type == 'a' || type == 'i' || type == 'e') &&
+      isWriteable(bufp)) {
     URL u;
     u.m_heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
     u.m_url_impl = (URLImpl *) obj;
@@ -2733,9 +2659,8 @@ INKMimeHdrClone(INKMBuffer dest_bufp, INKMBuffer src_bufp, INKMLoc src_hdr)
   // INK_ERROR. If not allowed, return NULL.
   if ((sdk_sanity_check_mbuffer(dest_bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_mbuffer(src_bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(src_hdr) == INK_SUCCESS) ||
-       (sdk_sanity_check_http_hdr_handle(src_hdr) == INK_SUCCESS)) && isWriteable(dest_bufp)
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(src_hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(src_hdr) == INK_SUCCESS)) &&
+      isWriteable(dest_bufp)) {
     HdrHeap *s_heap, *d_heap;
     MIMEHdrImpl *s_mh, *d_mh;
 
@@ -2783,9 +2708,8 @@ INKReturnCode
 INKMimeHdrPrint(INKMBuffer bufp, INKMLoc obj, INKIOBuffer iobufp)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(obj) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS))
-      && (sdk_sanity_check_iocore_structure(iobufp) == INK_SUCCESS)
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(obj) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS)) &&
+      (sdk_sanity_check_iocore_structure(iobufp) == INK_SUCCESS)) {
     HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
     MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
     MIOBuffer *b = (MIOBuffer *) iobufp;
@@ -2821,8 +2745,7 @@ INKMimeHdrParse(INKMimeParser parser, INKMBuffer bufp, INKMLoc obj, const char *
 {
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
       ((sdk_sanity_check_mime_hdr_handle(obj) != INK_SUCCESS) && (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS))
-      || (start == NULL) || (*start == NULL) || (!isWriteable(bufp))
-    ) {
+      || (start == NULL) || (*start == NULL) || (!isWriteable(bufp))) {
     return INK_PARSE_ERROR;
   }
   MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
@@ -2833,8 +2756,7 @@ int
 INKMimeHdrLengthGet(INKMBuffer bufp, INKMLoc obj)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(obj) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS))
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(obj) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS))) {
     MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
     return (mime_hdr_length_get(mh));
   } else {
@@ -2864,8 +2786,7 @@ int
 INKMimeHdrFieldsCount(INKMBuffer bufp, INKMLoc obj)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(obj) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS))
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(obj) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS))) {
     MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
     return (mime_hdr_fields_count(mh));
   } else {
@@ -2873,216 +2794,11 @@ INKMimeHdrFieldsCount(INKMBuffer bufp, INKMLoc obj)
   }
 }
 
+/* TODO: These are supposedly obsoleted, but yet used all over the place in here ... */
+
 /*************/
 /* MimeField */
 /*************/
-
-// NOTE: The INKMimeFieldCreate interface is being replaced by
-// INKMimeHdrFieldCreate.  The implementation below is tortuous, to
-// mimic the behavior of an SDK with stand-alone fields.  The new
-// header system does not support standalone fields, thus mimicry.
-
-INKMLoc
-INKMimeFieldCreate(INKMBuffer bufp)
-{
-  sdk_sanity_check_mbuffer(bufp);
-
-  MIMEField *sa_field;
-  // TODO: Why is the heap here, it's never used.
-  // HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
-
-  // (1) create a standalone field object in the heap
-  sa_field = sdk_alloc_standalone_field(bufp);
-  mime_field_init(sa_field);
-
-  // (2) create a field handle
-  MIMEFieldSDKHandle *field_handle = sdk_alloc_field_handle(bufp, NULL);
-  field_handle->field_ptr = sa_field;
-
-  return (field_handle);
-}
-
-void
-INKMimeFieldDestroy(INKMBuffer bufp, INKMLoc field_or_sa)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_or_sa);
-
-  MIMEFieldSDKHandle *field_handle = (MIMEFieldSDKHandle *) field_or_sa;
-
-  if (field_handle->mh == NULL) // standalone field
-    sdk_free_standalone_field(bufp, field_handle->field_ptr);
-  else
-    mime_field_destroy(field_handle->mh, field_handle->field_ptr);
-
-  // for consistence, the handle will not be released here.
-  // users will be required to do it.
-
-  //sdk_free_field_handle(bufp, field_handle);
-}
-
-void
-INKMimeFieldCopy(INKMBuffer dest_bufp, INKMLoc dest_obj, INKMBuffer src_bufp, INKMLoc src_obj)
-{
-  bool dest_attached;
-
-  sdk_sanity_check_mbuffer(src_bufp);
-  sdk_sanity_check_mbuffer(dest_bufp);
-  sdk_sanity_check_field_handle(src_obj);
-  sdk_sanity_check_field_handle(dest_obj);
-
-  MIMEFieldSDKHandle *s_handle = (MIMEFieldSDKHandle *) src_obj;
-  MIMEFieldSDKHandle *d_handle = (MIMEFieldSDKHandle *) dest_obj;
-  HdrHeap *d_heap = ((HdrHeapSDKHandle *) dest_bufp)->m_heap;
-
-  // FIX: This tortuous detach/change/attach algorithm is due to the
-  //      fact that we can't change the name of an attached header (assertion)
-
-  // TODO: This is never used ... is_live() has no side effects, so this should be ok
-  // to not call, so commented out
-  // src_attached = (s_handle->mh && s_handle->field_ptr->is_live());
-  dest_attached = (d_handle->mh && d_handle->field_ptr->is_live());
-
-  if (dest_attached)
-    mime_hdr_field_detach(d_handle->mh, d_handle->field_ptr, false);
-
-  mime_field_name_value_set(d_heap, d_handle->mh, d_handle->field_ptr,
-                            s_handle->field_ptr->m_wks_idx,
-                            s_handle->field_ptr->m_ptr_name,
-                            s_handle->field_ptr->m_len_name,
-                            s_handle->field_ptr->m_ptr_value, s_handle->field_ptr->m_len_value, 0, 0, true);
-
-  if (dest_attached)
-    mime_hdr_field_attach(d_handle->mh, d_handle->field_ptr, 1, NULL);
-}
-
-void
-INKMimeFieldCopyValues(INKMBuffer dest_bufp, INKMLoc dest_obj, INKMBuffer src_bufp, INKMLoc src_obj)
-{
-  int dest_attached;
-  NOWARN_UNUSED(dest_attached);
-
-  sdk_sanity_check_mbuffer(src_bufp);
-  sdk_sanity_check_mbuffer(dest_bufp);
-  sdk_sanity_check_field_handle(src_obj);
-  sdk_sanity_check_field_handle(dest_obj);
-
-  MIMEFieldSDKHandle *s_handle = (MIMEFieldSDKHandle *) src_obj;
-  MIMEFieldSDKHandle *d_handle = (MIMEFieldSDKHandle *) dest_obj;
-  HdrHeap *d_heap = ((HdrHeapSDKHandle *) dest_bufp)->m_heap;
-  MIMEField *s_field, *d_field;
-
-  s_field = s_handle->field_ptr;
-  d_field = d_handle->field_ptr;
-  mime_field_value_set(d_heap, d_handle->mh, d_field, s_field->m_ptr_value, s_field->m_len_value, true);
-}
-
-// FIX: This is implemented horribly slowly, but who's using it anyway?
-//      If we threaded all the MIMEFields, this function could be easier,
-//      but we'd have to print dups in order and we'd need a flag saying
-//      end of dup list or dup follows.
-
-INKMLoc
-INKMimeFieldNext(INKMBuffer bufp, INKMLoc field_obj)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-  if (handle->mh == NULL)
-    return (NULL);
-
-  int slotnum = mime_hdr_field_slotnum(handle->mh, handle->field_ptr);
-  if (slotnum == -1)
-    return (NULL);
-
-  while (1) {
-    ++slotnum;
-    MIMEField *f = mime_hdr_field_get_slotnum(handle->mh, slotnum);
-
-    if (f == NULL)
-      return (NULL);
-    if (f->is_live()) {
-      MIMEFieldSDKHandle *h = sdk_alloc_field_handle(bufp, handle->mh);
-      h->field_ptr = f;
-      return (h);
-    }
-  }
-}
-
-int
-INKMimeFieldLengthGet(INKMBuffer bufp, INKMLoc field_obj)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-  return mime_field_length_get(handle->field_ptr);
-}
-
-const char *
-INKMimeFieldNameGet(INKMBuffer bufp, INKMLoc field_obj, int *length)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  int name_len;
-  const char *name_ptr;
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-
-  name_ptr = mime_field_name_get(handle->field_ptr, &name_len);
-  if (length)
-    *length = name_len;
-  return (((HdrHeapSDKHandle *) bufp)->make_sdk_string(name_ptr, name_len));
-}
-
-void
-INKMimeFieldNameSet(INKMBuffer bufp, INKMLoc field_obj, const char *name, int length)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  if (length == -1)
-    length = strlen(name);
-
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-  HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
-
-  int attached = (handle->mh && handle->field_ptr->is_live());
-  if (attached)
-    mime_hdr_field_detach(handle->mh, handle->field_ptr, false);
-
-  handle->field_ptr->name_set(heap, handle->mh, name, length);
-
-  if (attached)
-    mime_hdr_field_attach(handle->mh, handle->field_ptr, 1, NULL);
-}
-
-void
-INKMimeFieldValuesClear(INKMBuffer bufp, INKMLoc field_obj)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-  HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
-    /**
-     * Modified the string value passed from an empty string ("") to NULL.
-     * An empty string is also considered to be a token. The correct value of
-     * the field after this function should be NULL.
-     */
-  mime_field_value_set(heap, handle->mh, handle->field_ptr, NULL, 0, 1);
-}
-
-int
-INKMimeFieldValuesCount(INKMBuffer bufp, INKMLoc field_obj)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-  return (mime_field_value_get_comma_val_count(handle->field_ptr));
-}
 
 const char *
 INKMimeFieldValueGet(INKMBuffer bufp, INKMLoc field_obj, int idx, int *value_len_ptr)
@@ -3110,57 +2826,6 @@ INKMimeFieldValueGet(INKMBuffer bufp, INKMLoc field_obj, int idx, int *value_len
   return (((HdrHeapSDKHandle *) bufp)->make_sdk_string(value_str, *value_len_ptr));
 }
 
-int
-INKMimeFieldValueGetInt(INKMBuffer bufp, INKMLoc field_obj, int idx)
-{
-  int value;
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  int value_len;
-  const char *value_str = INKMimeFieldValueGet(bufp, field_obj, idx, &value_len);
-  if (value_str == NULL)
-    return (0);
-  value = mime_parse_int(value_str, value_str + value_len);
-  ((HdrHeapSDKHandle *) bufp)->destroy_sdk_string((char *) value_str);
-  return value;
-}
-
-unsigned int
-INKMimeFieldValueGetUint(INKMBuffer bufp, INKMLoc field_obj, int idx)
-{
-  unsigned int value;
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  int value_len;
-  const char *value_str = INKMimeFieldValueGet(bufp, field_obj, idx, &value_len);
-  if (value_str == NULL)
-    return (0);
-  value = mime_parse_uint(value_str, value_str + value_len);
-  ((HdrHeapSDKHandle *) bufp)->destroy_sdk_string((char *) value_str);
-  return value;
-}
-
-time_t
-INKMimeFieldValueGetDate(INKMBuffer bufp, INKMLoc field_obj, int idx)
-{
-  NOWARN_UNUSED(idx);
-  time_t value;
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  int value_len;
-  // idx is ignored for GetDate
-  //const char *value_str = INKMimeFieldValueGet(bufp, field_obj, idx, &value_len);
-  const char *value_str = INKMimeFieldValueGet(bufp, field_obj, -1, &value_len);
-  if (value_str == NULL)
-    return ((time_t) 0);
-  value = mime_parse_date(value_str, value_str + value_len);
-  ((HdrHeapSDKHandle *) bufp)->destroy_sdk_string((char *) value_str);
-  return value;
-}
-
 void
 INKMimeFieldValueSet(INKMBuffer bufp, INKMLoc field_obj, int idx, const char *value, int length)
 {
@@ -3183,56 +2848,6 @@ INKMimeFieldValueSet(INKMBuffer bufp, INKMLoc field_obj, int idx, const char *va
     mime_field_value_set(heap, handle->mh, handle->field_ptr, value, length, true);
 }
 
-void
-INKMimeFieldValueSetInt(INKMBuffer bufp, INKMLoc field_obj, int idx, int value)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  char tmp[16];
-  int len = mime_format_int(tmp, value, sizeof(tmp));
-  INKMimeFieldValueSet(bufp, field_obj, idx, tmp, len);
-}
-
-void
-INKMimeFieldValueSetUint(INKMBuffer bufp, INKMLoc field_obj, int idx, unsigned int value)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  char tmp[16];
-  int len = mime_format_uint(tmp, value, sizeof(tmp));
-  INKMimeFieldValueSet(bufp, field_obj, idx, tmp, len);
-}
-
-void
-INKMimeFieldValueSetDate(INKMBuffer bufp, INKMLoc field_obj, int idx, time_t value)
-{
-  NOWARN_UNUSED(idx);
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  char tmp[33];
-  int len = mime_format_date(tmp, value);
-  // idx is ignored and we overwrite all existing values
-  // INKMimeFieldValueSet(bufp, field_obj, idx, tmp, len);
-  INKMimeFieldValueSet(bufp, field_obj, -1, tmp, len);
-}
-
-void
-INKMimeFieldValueAppend(INKMBuffer bufp, INKMLoc field_obj, int idx, const char *value, int length)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  if (length == -1)
-    length = strlen(value);
-
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-  HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
-  mime_field_value_extend_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
-}
-
 INKMLoc
 INKMimeFieldValueInsert(INKMBuffer bufp, INKMLoc field_obj, const char *value, int length, int idx)
 {
@@ -3248,56 +2863,6 @@ INKMimeFieldValueInsert(INKMBuffer bufp, INKMLoc field_obj, const char *value, i
   return (INK_NULL_MLOC);
 }
 
-INKMLoc
-INKMimeFieldValueInsertInt(INKMBuffer bufp, INKMLoc field_obj, int value, int idx)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  char tmp[16];
-  int len = mime_format_int(tmp, value, sizeof(tmp));
-  (void) INKMimeFieldValueInsert(bufp, field_obj, tmp, len, idx);
-  return (INK_NULL_MLOC);
-}
-
-INKMLoc
-INKMimeFieldValueInsertUint(INKMBuffer bufp, INKMLoc field_obj, unsigned int value, int idx)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  char tmp[16];
-  int len = mime_format_uint(tmp, value, sizeof(tmp));
-  (void) INKMimeFieldValueInsert(bufp, field_obj, tmp, len, idx);
-  return (INK_NULL_MLOC);
-}
-
-INKMLoc
-INKMimeFieldValueInsertDate(INKMBuffer bufp, INKMLoc field_obj, time_t value, int idx)
-{
-  NOWARN_UNUSED(idx);
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  char tmp[33];
-  int len = mime_format_date(tmp, value);
-  // idx ignored, overwrite all exisiting values
-  // (void)INKMimeFieldValueInsert(bufp, field_obj, tmp, len, idx);
-  (void) INKMimeFieldValueSet(bufp, field_obj, -1, tmp, len);
-
-  return (INK_NULL_MLOC);
-}
-
-void
-INKMimeFieldValueDelete(INKMBuffer bufp, INKMLoc field_obj, int idx)
-{
-  sdk_sanity_check_mbuffer(bufp);
-  sdk_sanity_check_field_handle(field_obj);
-
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field_obj;
-  HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
-  mime_field_value_delete_comma_val(heap, handle->mh, handle->field_ptr, idx);
-}
 
 /****************/
 /* MimeHdrField */
@@ -3327,9 +2892,8 @@ INKMimeHdrFieldGet(INKMBuffer bufp, INKMLoc hdr_obj, int idx)
 {
 
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr_obj) == INK_SUCCESS) ||
-       (sdk_sanity_check_http_hdr_handle(hdr_obj) == INK_SUCCESS)) && (idx >= 0)
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(hdr_obj) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr_obj) == INK_SUCCESS)) &&
+      (idx >= 0)) {
     MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(hdr_obj);
     MIMEField *f = mime_hdr_field_get(mh, idx);
     if (f == NULL)
@@ -3347,9 +2911,8 @@ INKMLoc
 INKMimeHdrFieldFind(INKMBuffer bufp, INKMLoc hdr_obj, const char *name, int length)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr_obj) == INK_SUCCESS) ||
-       (sdk_sanity_check_http_hdr_handle(hdr_obj) == INK_SUCCESS)) && (name != NULL)
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(hdr_obj) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr_obj) == INK_SUCCESS)) &&
+      (name != NULL)) {
 
     if (length == -1)
       length = strlen(name);
@@ -3367,54 +2930,19 @@ INKMimeHdrFieldFind(INKMBuffer bufp, INKMLoc hdr_obj, const char *name, int leng
   }
 }
 
-// DEPRECATED
-INKMLoc
-INKMimeHdrFieldRetrieve(INKMBuffer bufp, INKMLoc hdr_obj, const char *name)
-{
-  int length;
-
-  sdk_sanity_check_mbuffer(bufp);
-  MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(hdr_obj);
-
-  if (hdrtoken_is_wks(name))
-    length = hdrtoken_wks_to_length(name);
-  else
-    length = strlen(name);
-
-  MIMEField *f = mime_hdr_field_find(mh, name, length);
-  if (f == NULL)
-    return ((INKMLoc) NULL);
-
-  MIMEFieldSDKHandle *h = sdk_alloc_field_handle(bufp, mh);
-  h->field_ptr = mime_hdr_field_find(mh, name, length);
-  return (h);
-}
-
 INKReturnCode
 INKMimeHdrFieldAppend(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc)
 {
-  return INKMimeHdrFieldInsert(bufp, mh_mloc, field_mloc, -1);
-}
-
-// DEPRECATED
-INKReturnCode
-INKMimeHdrFieldInsert(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc, int idx)
-{
-  NOWARN_UNUSED(idx);
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(mh_mloc) == INK_SUCCESS) ||
-       (sdk_sanity_check_http_hdr_handle(mh_mloc) == INK_SUCCESS)) &&
-      (sdk_sanity_check_field_handle(field_mloc) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-
+      ((sdk_sanity_check_mime_hdr_handle(mh_mloc) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(mh_mloc) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field_mloc) == INK_SUCCESS) && isWriteable(bufp)) {
     MIMEField *mh_field;
     MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(mh_mloc);
     MIMEFieldSDKHandle *field_handle = (MIMEFieldSDKHandle *) field_mloc;
-
 
     //////////////////////////////////////////////////////////////////////
     // The field passed in field_mloc might have been allocated from    //
@@ -3442,25 +2970,13 @@ INKMimeHdrFieldInsert(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc, int 
     }
 
     INKAssert(field_handle->mh == mh);
-
-    /////////////////////////////////////////////////////////////////////
-    // The underlying header system doesn't let you insert unnamed     //
-    // headers, but the SDK examples show you doing exactly that.  So, //
-    // we need to mimic this case by creating a fake field name.       //
-    /////////////////////////////////////////////////////////////////////
-
-    if (field_handle->field_ptr->m_ptr_name == NULL) {
-      char noname[20];
-      intptr_t addr = (intptr_t) (field_handle->field_ptr);
-      snprintf(noname, sizeof(noname), "@X-Noname-%016llX", (int64)addr);
-      INKMimeFieldNameSet(bufp, field_mloc, noname, 26);
-    }
+    INKAssert(field_handle->field_ptr->m_ptr_name);
 
     mime_hdr_field_attach(mh, field_handle->field_ptr, 1, NULL);
     return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
   }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
@@ -3489,28 +3005,25 @@ INKMimeHdrFieldRemove(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc)
   }
 }
 
-// DEPRECATED
-
 INKReturnCode
-INKMimeHdrFieldDelete(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc)
+INKMimeHdrFieldDestroy(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc)
 {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(mh_mloc) == INK_SUCCESS) ||
-       (sdk_sanity_check_http_hdr_handle(mh_mloc) == INK_SUCCESS)) &&
+      ((sdk_sanity_check_mime_hdr_handle(mh_mloc) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(mh_mloc) == INK_SUCCESS)) &&
       (sdk_sanity_check_field_handle(field_mloc, mh_mloc) == INK_SUCCESS) && isWriteable(bufp)) {
 
     MIMEFieldSDKHandle *field_handle = (MIMEFieldSDKHandle *) field_mloc;
 
     if (field_handle->mh == NULL)       // standalone field
-    {
-      MIMEField *field_ptr = field_handle->field_ptr;
-      ink_assert(field_ptr->m_readiness != MIME_FIELD_SLOT_READINESS_DELETED);
-      sdk_free_standalone_field(bufp, field_ptr);
-    } else if (field_handle->mh != NULL) {
+      {
+        MIMEField *field_ptr = field_handle->field_ptr;
+        ink_assert(field_ptr->m_readiness != MIME_FIELD_SLOT_READINESS_DELETED);
+        sdk_free_standalone_field(bufp, field_ptr);
+      } else if (field_handle->mh != NULL) {
       MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(mh_mloc);
       HdrHeap *heap = (HdrHeap *) (((HdrHeapSDKHandle *) bufp)->m_heap);
       INKAssert(mh == field_handle->mh);
@@ -3524,20 +3037,9 @@ INKMimeHdrFieldDelete(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc)
 
     //sdk_free_field_handle(bufp, field_handle);
     return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
   }
-}
 
-INKReturnCode
-INKMimeHdrFieldDestroy(INKMBuffer bufp, INKMLoc mh_mloc, INKMLoc field_mloc)
-{
-  // Allow to modify the buffer only
-  // if bufp is modifiable. If bufp is not modifiable return
-  // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
-  // return value of function from void to INKReturnCode.
-  // Since INKMimeHdrFieldDelete does this check, it is not done here.
-  return (INKMimeHdrFieldDelete(bufp, mh_mloc, field_mloc));
+  return INK_ERROR;
 }
 
 INKMLoc
@@ -3595,7 +3097,31 @@ INKMimeHdrFieldCopy(INKMBuffer dest_bufp, INKMLoc dest_hdr, INKMLoc dest_field,
       (sdk_sanity_check_field_handle(src_field, src_hdr) == INK_SUCCESS) &&
       (sdk_sanity_check_field_handle(dest_field, dest_hdr) == INK_SUCCESS) && isWriteable(dest_bufp)) {
 
-    INKMimeFieldCopy(dest_bufp, dest_field, src_bufp, src_field);
+    bool dest_attached;
+
+    MIMEFieldSDKHandle *s_handle = (MIMEFieldSDKHandle *) src_field;
+    MIMEFieldSDKHandle *d_handle = (MIMEFieldSDKHandle *) dest_field;
+    HdrHeap *d_heap = ((HdrHeapSDKHandle *) dest_bufp)->m_heap;
+
+    // FIX: This tortuous detach/change/attach algorithm is due to the
+    //      fact that we can't change the name of an attached header (assertion)
+
+    // TODO: This is never used ... is_live() has no side effects, so this should be ok
+    // to not call, so commented out
+    // src_attached = (s_handle->mh && s_handle->field_ptr->is_live());
+    dest_attached = (d_handle->mh && d_handle->field_ptr->is_live());
+
+    if (dest_attached)
+      mime_hdr_field_detach(d_handle->mh, d_handle->field_ptr, false);
+
+    mime_field_name_value_set(d_heap, d_handle->mh, d_handle->field_ptr,
+                              s_handle->field_ptr->m_wks_idx,
+                              s_handle->field_ptr->m_ptr_name,
+                              s_handle->field_ptr->m_len_name,
+                              s_handle->field_ptr->m_ptr_value, s_handle->field_ptr->m_len_value, 0, 0, true);
+
+    if (dest_attached)
+      mime_hdr_field_attach(d_handle->mh, d_handle->field_ptr, 1, NULL);
     return INK_SUCCESS;
   } else {
     return INK_ERROR;
@@ -3610,12 +3136,9 @@ INKMimeHdrFieldClone(INKMBuffer dest_bufp, INKMLoc dest_hdr, INKMBuffer src_bufp
   // INK_ERROR. If not allowed, return NULL.
   if ((sdk_sanity_check_mbuffer(dest_bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_mbuffer(src_bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(dest_hdr) == INK_SUCCESS) ||
-       (sdk_sanity_check_http_hdr_handle(dest_hdr) == INK_SUCCESS)) &&
-      ((sdk_sanity_check_mime_hdr_handle(src_hdr) == INK_SUCCESS) ||
-       (sdk_sanity_check_http_hdr_handle(src_hdr) == INK_SUCCESS)) &&
-      (sdk_sanity_check_field_handle(src_field, src_hdr) == INK_SUCCESS) && isWriteable(dest_bufp)
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(dest_hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(dest_hdr) == INK_SUCCESS)) &&
+      ((sdk_sanity_check_mime_hdr_handle(src_hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(src_hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(src_field, src_hdr) == INK_SUCCESS) && isWriteable(dest_bufp)) {
     INKMLoc dest_field = INKMimeHdrFieldCreate(dest_bufp, dest_hdr);
     sdk_sanity_check_field_handle(dest_field, dest_hdr);
 
@@ -3643,21 +3166,51 @@ INKMimeHdrFieldCopyValues(INKMBuffer dest_bufp, INKMLoc dest_hdr, INKMLoc dest_f
       (sdk_sanity_check_field_handle(src_field, src_hdr) == INK_SUCCESS) &&
       (sdk_sanity_check_field_handle(dest_field, dest_hdr) == INK_SUCCESS) && isWriteable(dest_bufp)) {
 
-    INKMimeFieldCopyValues(dest_bufp, dest_field, src_bufp, src_field);
+    MIMEFieldSDKHandle *s_handle = (MIMEFieldSDKHandle *) src_field;
+    MIMEFieldSDKHandle *d_handle = (MIMEFieldSDKHandle *) dest_field;
+    HdrHeap *d_heap = ((HdrHeapSDKHandle *) dest_bufp)->m_heap;
+    MIMEField *s_field, *d_field;
+
+    s_field = s_handle->field_ptr;
+    d_field = d_handle->field_ptr;
+    mime_field_value_set(d_heap, d_handle->mh, d_field, s_field->m_ptr_value, s_field->m_len_value, true);
+
     return INK_SUCCESS;
   } else {
     return INK_ERROR;
   }
 }
 
+// TODO: This is implemented horribly slowly, but who's using it anyway?
+//       If we threaded all the MIMEFields, this function could be easier,
+//       but we'd have to print dups in order and we'd need a flag saying
+//       end of dup list or dup follows.
 INKMLoc
 INKMimeHdrFieldNext(INKMBuffer bufp, INKMLoc hdr, INKMLoc field)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS)
-    ) {
-    return (INKMimeFieldNext(bufp, field));
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS)) {
+    MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field;
+    if (handle->mh == NULL)
+      return (NULL);
+
+    int slotnum = mime_hdr_field_slotnum(handle->mh, handle->field_ptr);
+    if (slotnum == -1)
+      return (NULL);
+
+    while (1) {
+      ++slotnum;
+      MIMEField *f = mime_hdr_field_get_slotnum(handle->mh, slotnum);
+
+      if (f == NULL)
+        return (NULL);
+      if (f->is_live()) {
+        MIMEFieldSDKHandle *h = sdk_alloc_field_handle(bufp, handle->mh);
+        h->field_ptr = f;
+        return (h);
+      }
+    }
   } else {
     return (INKMLoc) INK_ERROR_PTR;
   }
@@ -3668,8 +3221,7 @@ INKMimeHdrFieldNextDup(INKMBuffer bufp, INKMLoc hdr, INKMLoc field)
 {
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
       ((sdk_sanity_check_mime_hdr_handle(hdr) != INK_SUCCESS) && (sdk_sanity_check_http_hdr_handle(hdr) != INK_SUCCESS))
-      || (sdk_sanity_check_field_handle(field, hdr) != INK_SUCCESS)
-    ) {
+      || (sdk_sanity_check_field_handle(field, hdr) != INK_SUCCESS)) {
     return (INKMLoc) INK_ERROR_PTR;
   }
 
@@ -3688,25 +3240,32 @@ int
 INKMimeHdrFieldLengthGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field)
 {
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
-      ((sdk_sanity_check_mime_hdr_handle(hdr) != INK_SUCCESS) &&
-       (sdk_sanity_check_http_hdr_handle(hdr) != INK_SUCCESS)) ||
-      (sdk_sanity_check_field_handle(field, hdr) != INK_SUCCESS)
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(hdr) != INK_SUCCESS) && (sdk_sanity_check_http_hdr_handle(hdr) != INK_SUCCESS)) ||
+      (sdk_sanity_check_field_handle(field, hdr) != INK_SUCCESS)) {
     return INK_ERROR;
   }
-  return (INKMimeFieldLengthGet(bufp, field));
+
+  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field;
+  return mime_field_length_get(handle->field_ptr);
 }
 
 const char *
 INKMimeHdrFieldNameGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int *length)
 {
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
-      ((sdk_sanity_check_mime_hdr_handle(hdr) != INK_SUCCESS) && (sdk_sanity_check_http_hdr_handle(hdr) != INK_SUCCESS))
-      || (sdk_sanity_check_field_handle(field, hdr) != INK_SUCCESS)
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(hdr) != INK_SUCCESS) && (sdk_sanity_check_http_hdr_handle(hdr) != INK_SUCCESS)) ||
+      (sdk_sanity_check_field_handle(field, hdr) != INK_SUCCESS)) {
     return (const char *) INK_ERROR_PTR;
   }
-  return (INKMimeFieldNameGet(bufp, field, length));
+
+  int name_len;
+  const char *name_ptr;
+  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field;
+
+  name_ptr = mime_field_name_get(handle->field_ptr, &name_len);
+  if (length)
+    *length = name_len;
+  return (((HdrHeapSDKHandle *) bufp)->make_sdk_string(name_ptr, name_len));
 }
 
 INKReturnCode
@@ -3722,7 +3281,18 @@ INKMimeHdrFieldNameSet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, const char *
       (sdk_sanity_check_null_ptr((void *) name) == INK_SUCCESS) && isWriteable(bufp)) {
     if (length == -1)
       length = strlen(name);
-    INKMimeFieldNameSet(bufp, field, name, length);
+
+    MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field;
+    HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
+
+    int attached = (handle->mh && handle->field_ptr->is_live());
+    if (attached)
+      mime_hdr_field_detach(handle->mh, handle->field_ptr, false);
+
+    handle->field_ptr->name_set(heap, handle->mh, name, length);
+
+    if (attached)
+      mime_hdr_field_attach(handle->mh, handle->field_ptr, 1, NULL);
     return INK_SUCCESS;
   } else {
     return INK_ERROR;
@@ -3737,10 +3307,16 @@ INKMimeHdrFieldValuesClear(INKMBuffer bufp, INKMLoc hdr, INKMLoc field)
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-    INKMimeFieldValuesClear(bufp, field);
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)) {
+    MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field;
+    HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
+    /**
+     * Modified the string value passed from an empty string ("") to NULL.
+     * An empty string is also considered to be a token. The correct value of
+     * the field after this function should be NULL.
+     */
+    mime_field_value_set(heap, handle->mh, handle->field_ptr, NULL, 0, 1);
     return INK_SUCCESS;
   } else {
     return INK_ERROR;
@@ -3752,9 +3328,9 @@ INKMimeHdrFieldValuesCount(INKMBuffer bufp, INKMLoc hdr, INKMLoc field)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
       ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS)
-    ) {
-    return (INKMimeFieldValuesCount(bufp, field));
+      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS)) {
+    MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field;
+    return (mime_field_value_get_comma_val_count(handle->field_ptr));
   } else {
     return INK_ERROR;
   }
@@ -3768,7 +3344,7 @@ INKMimeHdrFieldValueStringGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int i
       ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
       && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (value_ptr != NULL) &&
       sdk_sanity_check_null_ptr((void *) value_len_ptr) == INK_SUCCESS) {
-    *value_ptr = INKMimeHdrFieldValueGet(bufp, hdr, field, idx, value_len_ptr);
+    *value_ptr = INKMimeFieldValueGet(bufp, field, idx, value_len_ptr);
     return INK_SUCCESS;
   } else {
     return INK_ERROR;
@@ -3779,205 +3355,147 @@ INKReturnCode
 INKMimeHdrFieldValueDateGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, time_t *value_ptr)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (value_ptr != NULL)
-    ) {
-    *value_ptr = INKMimeHdrFieldValueGetDate(bufp, hdr, field, 0);
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (value_ptr != NULL)) {
+    int value_len;
+    const char *value_str = INKMimeFieldValueGet(bufp, field, -1, &value_len);
+
+    if (value_str == NULL) {
+      *value_ptr = (time_t) 0;
+    } else {
+      *value_ptr = mime_parse_date(value_str, value_str + value_len);
+      ((HdrHeapSDKHandle *) bufp)->destroy_sdk_string((char *) value_str);
+    }
     return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
   }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueIntGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int *value_ptr)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (value_ptr != NULL)
-    ) {
-    *value_ptr = INKMimeHdrFieldValueGetInt(bufp, hdr, field, idx);
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (value_ptr != NULL)) {
+
+    int value_len;
+    const char *value_str = INKMimeFieldValueGet(bufp, field, idx, &value_len);
+
+    if (value_str == NULL) {
+      *value_ptr = 0;  // TODO: Hmmm, this is weird, but it's the way it worked before ...
+    } else{
+      *value_ptr = mime_parse_int(value_str, value_str + value_len);
+      ((HdrHeapSDKHandle *) bufp)->destroy_sdk_string((char *) value_str);
+    }
     return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
   }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueUintGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, unsigned int *value_ptr)
 {
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (value_ptr != NULL)
-    ) {
-    *value_ptr = INKMimeHdrFieldValueGetUint(bufp, hdr, field, idx);
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (value_ptr != NULL)) {
+
+    int value_len;
+    const char *value_str = INKMimeFieldValueGet(bufp, field, idx, &value_len);
+
+    if (value_str == NULL) {
+      *value_ptr = 0;
+    } else {
+      *value_ptr = mime_parse_uint(value_str, value_str + value_len);
+      ((HdrHeapSDKHandle *) bufp)->destroy_sdk_string((char *) value_str);
+    }
     return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
   }
-}
 
-// DEPRECATED
-const char *
-INKMimeHdrFieldValueGet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int *value_len_ptr)
-{
-  NOWARN_UNUSED(hdr);
-  return (INKMimeFieldValueGet(bufp, field, idx, value_len_ptr));
-}
-
-const char *
-INKMimeHdrFieldValueGetRaw(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int *value_len_ptr)
-{
-  sdk_sanity_check_field_handle(field, hdr);
-  return (INKMimeFieldValueGet(bufp, field, -1, value_len_ptr));
-}
-
-// DEPRECATED
-int
-INKMimeHdrFieldValueGetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx)
-{
-  NOWARN_UNUSED(hdr);
-  return (INKMimeFieldValueGetInt(bufp, field, idx));
-}
-
-// DEPRECATED
-unsigned int
-INKMimeHdrFieldValueGetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx)
-{
-  NOWARN_UNUSED(hdr);
-  return (INKMimeFieldValueGetUint(bufp, field, idx));
-}
-
-// DEPRECATED
-time_t
-INKMimeHdrFieldValueGetDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx)
-{
-  NOWARN_UNUSED(hdr);
-  return (INKMimeFieldValueGetDate(bufp, field, idx));
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueStringSet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, const char *value, int length)
 {
-  return INKMimeHdrFieldValueSet(bufp, hdr, field, idx, value, length);
+  // Allow to modify the buffer only
+  // if bufp is modifiable. If bufp is not modifiable return
+  // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
+  // return value of function from void to INKReturnCode.
+  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) &&
+      (sdk_sanity_check_null_ptr((void *) value) == INK_SUCCESS) && isWriteable(bufp)) {
+    if (length == -1)
+      length = strlen(value);
+    INKMimeFieldValueSet(bufp, field, idx, value, length);
+    return INK_SUCCESS;
+  }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueDateSet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, time_t value)
 {
-  return INKMimeHdrFieldValueSetDate(bufp, hdr, field, 0, value);
+  // Allow to modify the buffer only
+  // if bufp is modifiable. If bufp is not modifiable return
+  // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
+  // return value of function from void to INKReturnCode.
+  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)) {
+    char tmp[33];
+    int len = mime_format_date(tmp, value);
+
+    // idx is ignored and we overwrite all existing values
+    // INKMimeFieldValueSet(bufp, field_obj, idx, tmp, len);
+    INKMimeFieldValueSet(bufp, field, -1, tmp, len);
+    return INK_SUCCESS;
+  }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueIntSet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int value)
 {
-  return INKMimeHdrFieldValueSetInt(bufp, hdr, field, idx, value);
+  // Allow to modify the buffer only
+  // if bufp is modifiable. If bufp is not modifiable return
+  // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
+  // return value of function from void to INKReturnCode.
+  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)) {
+    char tmp[16];
+    int len = mime_format_int(tmp, value, sizeof(tmp));
+
+    INKMimeFieldValueSet(bufp, field, idx, tmp, len);
+    return INK_SUCCESS;
+  }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueUintSet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, unsigned int value)
 {
-  return INKMimeHdrFieldValueSetUint(bufp, hdr, field, idx, value);
-}
-
-// DEPRECATED
-INKReturnCode
-INKMimeHdrFieldValueSet(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, const char *value, int length)
-{
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) &&
-      (sdk_sanity_check_null_ptr((void *) value) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-    if (length == -1)
-      length = strlen(value);
-    INKMimeFieldValueSet(bufp, field, idx, value, length);
-    return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
-  }
-}
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)) {
+    char tmp[16];
+    int len = mime_format_uint(tmp, value, sizeof(tmp));
 
-
-INKReturnCode
-INKMimeHdrFieldValueSetRaw(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, const char *value, int length)
-{
-  // Allow to modify the buffer only
-  // if bufp is modifiable. If bufp is not modifiable return
-  // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
-  // return value of function from void to INKReturnCode.
-  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-    if (length == -1)
-      length = strlen(value);
-    INKMimeFieldValueSet(bufp, field, -1, value, length);
+    INKMimeFieldValueSet(bufp, field, idx, tmp, len);
     return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
   }
-}
 
-// DEPRECATED
-INKReturnCode
-INKMimeHdrFieldValueSetInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int value)
-{
-  // Allow to modify the buffer only
-  // if bufp is modifiable. If bufp is not modifiable return
-  // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
-  // return value of function from void to INKReturnCode.
-  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-    INKMimeFieldValueSetInt(bufp, field, idx, value);
-    return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
-  }
-}
-
-// DEPRECATED
-INKReturnCode
-INKMimeHdrFieldValueSetUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, unsigned int value)
-{
-  // Allow to modify the buffer only
-  // if bufp is modifiable. If bufp is not modifiable return
-  // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
-  // return value of function from void to INKReturnCode.
-  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-    INKMimeFieldValueSetUint(bufp, field, idx, value);
-    return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
-  }
-}
-
-// DEPRECATED
-INKReturnCode
-INKMimeHdrFieldValueSetDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, time_t value)
-{
-  // Allow to modify the buffer only
-  // if bufp is modifiable. If bufp is not modifiable return
-  // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
-  // return value of function from void to INKReturnCode.
-  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-    INKMimeFieldValueSetDate(bufp, field, idx, value);
-    return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
-  }
+  return INK_ERROR;
 }
 
 INKReturnCode
@@ -3988,115 +3506,98 @@ INKMimeHdrFieldValueAppend(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx,
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (idx >= 0) && (value != NULL) &&
-      isWriteable(bufp)
-    ) {
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (idx >= 0) && (value != NULL) &&
+      isWriteable(bufp)) {
+    MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field;
+    HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
+
     if (length == -1)
       length = strlen(value);
-    INKMimeFieldValueAppend(bufp, field, idx, value, length);
+    mime_field_value_extend_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
     return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
   }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueStringInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, const char *value, int length)
 {
-  return INKMimeHdrFieldValueInsert(bufp, hdr, field, value, length, idx);
+  // Allow to modify the buffer only
+  // if bufp is modifiable. If bufp is not modifiable return
+  // INK_ERROR, else return INK_SUCCESS.
+  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) &&
+      (sdk_sanity_check_null_ptr((void *) value) == INK_SUCCESS) && isWriteable(bufp)) {
+    if (length == -1)
+      length = strlen(value);
+    INKMimeFieldValueInsert(bufp, field, value, length, idx);
+    return INK_SUCCESS;
+  }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueIntInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, int value)
 {
-  return INKMimeHdrFieldValueInsertInt(bufp, hdr, field, value, idx);
+  // Allow to modify the buffer only
+  // if bufp is modifiable. If bufp is not modifiable return
+  // INK_ERROR, else return INK_SUCCESS.
+  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)) {
+    char tmp[16];
+    int len = mime_format_int(tmp, value, sizeof(tmp));
+
+    (void)INKMimeFieldValueInsert(bufp, field, tmp, len, idx);
+    return INK_SUCCESS;
+  }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueUintInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx, unsigned int value)
 {
-  return INKMimeHdrFieldValueInsertUint(bufp, hdr, field, value, idx);
+  // Allow to modify the buffer only
+  // if bufp is modifiable. If bufp is not modifiable return
+  // INK_ERROR, else return INK_SUCCESS.
+  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)) {
+    char tmp[16];
+    int len = mime_format_uint(tmp, value, sizeof(tmp));
+
+    (void)INKMimeFieldValueInsert(bufp, field, tmp, len, idx);
+    return INK_SUCCESS;
+  }
+
+  return INK_ERROR;
 }
 
 INKReturnCode
 INKMimeHdrFieldValueDateInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, time_t value)
 {
-  if (INKMimeHdrFieldValuesClear(bufp, hdr, field) == INK_ERROR) {
-    return INK_ERROR;
-  }
-  return INKMimeHdrFieldValueInsertDate(bufp, hdr, field, value, -1);
-}
-
-// DEPRECATED
-INKReturnCode
-INKMimeHdrFieldValueInsert(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, const char *value, int length, int idx)
-{
-  // Allow to modify the buffer only
-  // if bufp is modifiable. If bufp is not modifiable return
-  // INK_ERROR, else return INK_SUCCESS.
-  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) &&
-      (sdk_sanity_check_null_ptr((void *) value) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-    if (length == -1)
-      length = strlen(value);
-    INKMimeFieldValueInsert(bufp, field, value, length, idx);
-    return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
-  }
-}
-
-
-// DEPRECATED
-INKReturnCode
-INKMimeHdrFieldValueInsertInt(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int value, int idx)
-{
-  // Allow to modify the buffer only
-  // if bufp is modifiable. If bufp is not modifiable return
-  // INK_ERROR, else return INK_SUCCESS.
-  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-    INKMimeFieldValueInsertInt(bufp, field, value, idx);
-    return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
-  }
-}
-
-// DEPRECATED
-INKReturnCode
-INKMimeHdrFieldValueInsertUint(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, unsigned int value, int idx)
-{
-  // Allow to modify the buffer only
-  // if bufp is modifiable. If bufp is not modifiable return
-  // INK_ERROR, else return INK_SUCCESS.
-  if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)) {
-    INKMimeFieldValueInsertUint(bufp, field, value, idx);
-    return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
-  }
-}
-
-// DEPRECATED
-INKReturnCode
-INKMimeHdrFieldValueInsertDate(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, time_t value, int idx)
-{
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // INK_ERROR, else return INK_SUCCESS
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
-    INKMimeFieldValueInsertDate(bufp, field, value, idx);
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && isWriteable(bufp)) {
+
+    if (INKMimeHdrFieldValuesClear(bufp, hdr, field) == INK_ERROR) {
+      return INK_ERROR;
+    }
+
+    char tmp[33];
+    int len = mime_format_date(tmp, value);
+    // idx ignored, overwrite all exisiting values
+    // (void)INKMimeFieldValueInsert(bufp, field_obj, tmp, len, idx);
+    (void) INKMimeFieldValueSet(bufp, field, -1, tmp, len);
+
     return INK_SUCCESS;
   } else {
     return INK_ERROR;
@@ -4111,14 +3612,15 @@ INKMimeHdrFieldValueDelete(INKMBuffer bufp, INKMLoc hdr, INKMLoc field, int idx)
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS))
-      && (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (idx >= 0) && isWriteable(bufp)
-    ) {
-    INKMimeFieldValueDelete(bufp, field, idx);
+      ((sdk_sanity_check_mime_hdr_handle(hdr) == INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == INK_SUCCESS)) &&
+      (sdk_sanity_check_field_handle(field, hdr) == INK_SUCCESS) && (idx >= 0) && isWriteable(bufp)) {
+    MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *) field;
+    HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
+
+    mime_field_value_delete_comma_val(heap, handle->mh, handle->field_ptr, idx);
     return INK_SUCCESS;
-  } else {
-    return INK_ERROR;
   }
+  return INK_ERROR;
 }
 
 /**************/
@@ -4181,8 +3683,7 @@ INKHttpHdrCreate(INKMBuffer bufp)
 INKReturnCode
 INKHttpHdrDestroy(INKMBuffer bufp, INKMLoc obj)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)) {
     return INK_ERROR;
   }
   // No more objects counts in heap or deallocation
@@ -4200,8 +3701,7 @@ INKHttpHdrClone(INKMBuffer dest_bufp, INKMBuffer src_bufp, INKMLoc src_hdr)
   // INK_ERROR. If not allowed, return NULL.
   if ((sdk_sanity_check_mbuffer(dest_bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_mbuffer(src_bufp) == INK_SUCCESS) &&
-      (sdk_sanity_check_http_hdr_handle(src_hdr) == INK_SUCCESS) && isWriteable(dest_bufp)
-    ) {
+      (sdk_sanity_check_http_hdr_handle(src_hdr) == INK_SUCCESS) && isWriteable(dest_bufp)) {
     HdrHeap *s_heap, *d_heap;
     HTTPHdrImpl *s_hh, *d_hh;
 
@@ -4231,8 +3731,7 @@ INKHttpHdrCopy(INKMBuffer dest_bufp, INKMLoc dest_obj, INKMBuffer src_bufp, INKM
   if ((sdk_sanity_check_mbuffer(src_bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_mbuffer(dest_bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_http_hdr_handle(dest_obj) == INK_SUCCESS) &&
-      (sdk_sanity_check_http_hdr_handle(src_obj) == INK_SUCCESS) && isWriteable(dest_bufp)
-    ) {
+      (sdk_sanity_check_http_hdr_handle(src_obj) == INK_SUCCESS) && isWriteable(dest_bufp)) {
     bool inherit_strs;
     HdrHeap *s_heap, *d_heap;
     HTTPHdrImpl *s_hh, *d_hh;
@@ -4266,8 +3765,7 @@ INKHttpHdrPrint(INKMBuffer bufp, INKMLoc obj, INKIOBuffer iobufp)
 
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
       (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS) ||
-      (sdk_sanity_check_iocore_structure(iobufp) != INK_SUCCESS)
-    ) {
+      (sdk_sanity_check_iocore_structure(iobufp) != INK_SUCCESS)) {
     return INK_ERROR;
   }
 
@@ -4301,8 +3799,7 @@ INKHttpHdrParseReq(INKHttpParser parser, INKMBuffer bufp, INKMLoc obj, const cha
 {
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
       (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS) ||
-      (start == NULL) || (*start == NULL) || (!isWriteable(bufp))
-    ) {
+      (start == NULL) || (*start == NULL) || (!isWriteable(bufp))) {
     return INK_PARSE_ERROR;
   }
 
@@ -4318,8 +3815,7 @@ INKHttpHdrParseResp(INKHttpParser parser, INKMBuffer bufp, INKMLoc obj, const ch
 {
   if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) ||
       (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS) ||
-      (start == NULL) || (*start == NULL) || (!isWriteable(bufp))
-    ) {
+      (start == NULL) || (*start == NULL) || (!isWriteable(bufp))) {
     return INK_PARSE_ERROR;
   }
   HTTPHdr h;
@@ -4332,8 +3828,7 @@ INKHttpHdrParseResp(INKHttpParser parser, INKMBuffer bufp, INKMLoc obj, const ch
 int
 INKHttpHdrLengthGet(INKMBuffer bufp, INKMLoc obj)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)) {
     return INK_ERROR;
   }
 
@@ -4346,8 +3841,7 @@ INKHttpHdrLengthGet(INKMBuffer bufp, INKMLoc obj)
 INKHttpType
 INKHttpHdrTypeGet(INKMBuffer bufp, INKMLoc obj)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)) {
     return (INKHttpType) INK_ERROR;
   }
   HTTPHdr h;
@@ -4371,8 +3865,7 @@ INKHttpHdrTypeSet(INKMBuffer bufp, INKMLoc obj, INKHttpType type)
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
+      (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS) && isWriteable(bufp)) {
 
     HTTPHdr h;
     SET_HTTP_HDR(h, bufp, obj);
@@ -4404,8 +3897,7 @@ INKHttpHdrTypeSet(INKMBuffer bufp, INKMLoc obj, INKHttpType type)
 int
 INKHttpHdrVersionGet(INKMBuffer bufp, INKMLoc obj)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)) {
     return INK_ERROR;
   }
 
@@ -4428,8 +3920,7 @@ INKHttpHdrVersionSet(INKMBuffer bufp, INKMLoc obj, int ver)
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
+      (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS) && isWriteable(bufp)) {
     HTTPHdr h;
     SET_HTTP_HDR(h, bufp, obj);
     ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
@@ -4446,8 +3937,7 @@ INKHttpHdrVersionSet(INKMBuffer bufp, INKMLoc obj, int ver)
 const char *
 INKHttpHdrMethodGet(INKMBuffer bufp, INKMLoc obj, int *length)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)) {
     return (const char *) INK_ERROR_PTR;
   }
   HTTPHdr h;
@@ -4483,8 +3973,7 @@ INKHttpHdrMethodSet(INKMBuffer bufp, INKMLoc obj, const char *value, int length)
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS) &&
-      isWriteable(bufp) && (sdk_sanity_check_null_ptr((void *) value) == INK_SUCCESS)
-    ) {
+      isWriteable(bufp) && (sdk_sanity_check_null_ptr((void *) value) == INK_SUCCESS)) {
     HTTPHdr h;
     SET_HTTP_HDR(h, bufp, obj);
     /* Don't need the assert as the check is done in sdk_sanity_check_http_hdr_handle
@@ -4504,8 +3993,7 @@ INKHttpHdrMethodSet(INKMBuffer bufp, INKMLoc obj, const char *value, int length)
 INKMLoc
 INKHttpHdrUrlGet(INKMBuffer bufp, INKMLoc obj)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)) {
     return (INKMLoc) INK_ERROR_PTR;
   }
   HTTPHdrImpl *hh = (HTTPHdrImpl *) obj;
@@ -4528,8 +4016,7 @@ INKHttpHdrUrlSet(INKMBuffer bufp, INKMLoc obj, INKMLoc url)
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS) &&
-      (sdk_sanity_check_url_handle(url) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
+      (sdk_sanity_check_url_handle(url) == INK_SUCCESS) && isWriteable(bufp)) {
     HdrHeap *heap = ((HdrHeapSDKHandle *) bufp)->m_heap;
     HTTPHdrImpl *hh = (HTTPHdrImpl *) obj;
     ink_assert(hh->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
@@ -4545,8 +4032,7 @@ INKHttpHdrUrlSet(INKMBuffer bufp, INKMLoc obj, INKMLoc url)
 INKHttpStatus
 INKHttpHdrStatusGet(INKMBuffer bufp, INKMLoc obj)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)) {
     return (INKHttpStatus) INK_ERROR;
   }
   HTTPHdr h;
@@ -4565,8 +4051,7 @@ INKHttpHdrStatusSet(INKMBuffer bufp, INKMLoc obj, INKHttpStatus status)
   // INK_ERROR. If allowed, return INK_SUCCESS. Changed the
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
-      (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS) && isWriteable(bufp)
-    ) {
+      (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS) && isWriteable(bufp)) {
     HTTPHdr h;
     SET_HTTP_HDR(h, bufp, obj);
     ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
@@ -4580,8 +4065,7 @@ INKHttpHdrStatusSet(INKMBuffer bufp, INKMLoc obj, INKHttpStatus status)
 const char *
 INKHttpHdrReasonGet(INKMBuffer bufp, INKMLoc obj, int *length)
 {
-  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)
-    ) {
+  if ((sdk_sanity_check_mbuffer(bufp) != INK_SUCCESS) || (sdk_sanity_check_http_hdr_handle(obj) != INK_SUCCESS)) {
     return (const char *) INK_ERROR_PTR;
   }
   HTTPHdr h;
@@ -4610,8 +4094,7 @@ INKHttpHdrReasonSet(INKMBuffer bufp, INKMLoc obj, const char *value, int length)
   // return value of function from void to INKReturnCode.
   if ((sdk_sanity_check_mbuffer(bufp) == INK_SUCCESS) &&
       (sdk_sanity_check_http_hdr_handle(obj) == INK_SUCCESS) &&
-      isWriteable(bufp) && (sdk_sanity_check_null_ptr((void *) value) == INK_SUCCESS)
-    ) {
+      isWriteable(bufp) && (sdk_sanity_check_null_ptr((void *) value) == INK_SUCCESS)) {
     HTTPHdr h;
     SET_HTTP_HDR(h, bufp, obj);
     /* Don't need the assert as the check is done in sdk_sanity_check_http_hdr_handle
@@ -5966,8 +5449,7 @@ INKHttpTxnNextHopPortGet(INKHttpTxn txnp)
 INKReturnCode
 INKHttpTxnErrorBodySet(INKHttpTxn txnp, char *buf, int buflength, char *mimetype)
 {
-  if ((sdk_sanity_check_txn(txnp) != INK_SUCCESS) || (buf == NULL)
-    ) {
+  if ((sdk_sanity_check_txn(txnp) != INK_SUCCESS) || (buf == NULL)) {
     return INK_ERROR;
   }
   HttpSM *sm = (HttpSM *) txnp;
@@ -6013,8 +5495,7 @@ INKHttpTxnParentProxyGet(INKHttpTxn txnp, char **hostname, int *port)
 INKReturnCode
 INKHttpTxnParentProxySet(INKHttpTxn txnp, char *hostname, int port)
 {
-  if ((sdk_sanity_check_txn(txnp) != INK_SUCCESS) || (hostname == NULL) || (port <= 0)
-    ) {
+  if ((sdk_sanity_check_txn(txnp) != INK_SUCCESS) || (hostname == NULL) || (port <= 0)) {
     return INK_ERROR;
   }
 
@@ -6120,7 +5601,7 @@ INKHttpCacheReenable(INKCacheTxn txnp, const INKEvent event, const void *data, c
 
       //vc->getTunnel()->append_message_to_producer_buffer(vc->getTunnel()->get_producer(vc),(const char*)data,size);
       //           HTTPInfo *cacheInfo;
-//            vc->get_http_info(&cacheInfo);
+      //            vc->get_http_info(&cacheInfo);
       //unsigned int doc_size = cacheInfo->object_size_get();
       bool retVal = vc->setRangeAndSize(size);
       //INKMutexLock(vc->getTunnel()->mutex);
@@ -6309,7 +5790,6 @@ INKHttpTxnCntl(INKHttpTxn txnp, INKHttpCntlType cntl, void *data)
   switch (cntl) {
   case INK_HTTP_CNTL_GET_LOGGING_MODE:
     {
-
       if (data == NULL) {
         return 0;
       }
@@ -6945,6 +6425,20 @@ INKVConnInactivityTimeoutCancel(INKVConn connp)
   vc->cancel_inactivity_timeout();
 }
 
+void
+INKVConnActiveTimeoutSet(INKVConn connp, int timeout)
+{
+  NetVConnection *vc = (NetVConnection *) connp;
+  vc->set_active_timeout(timeout);
+}
+
+void
+INKVConnActiveTimeoutCancel(INKVConn connp)
+{
+  NetVConnection *vc = (NetVConnection *) connp;
+  vc->cancel_active_timeout();
+}
+
 INKReturnCode
 INKNetVConnRemoteIPGet(INKVConn connp, unsigned int *ip)
 {
@@ -7275,7 +6769,7 @@ TSStatFindName(const char* name)
 
 
 /**************************    Stats API    ****************************/
-// THESE APIS ARE ALL DEPRECATED, USE THE REC APIs INSTEAD
+// THESE APIS ARE DEPRECATED, USE THE REC APIs INSTEAD
 // #define ink_sanity_check_stat_structure(_x) INK_SUCCESS
 
 inline INKReturnCode
@@ -7454,32 +6948,6 @@ INKStatFloatGet(INKStat the_stat, float *value)
   StatDescriptor *statp = (StatDescriptor *) the_stat;
   *value = statp->flt_value();
   return INK_SUCCESS;
-}
-
-//deprecated in SDK3.0
-int64
-INKStatIntRead(INKStat the_stat)
-{
-  if (ink_sanity_check_stat_structure(the_stat) != INK_SUCCESS)
-    return 0;
-
-  int64 stat_val;
-  StatDescriptor *statp = (StatDescriptor *) the_stat;
-  stat_val = statp->int_value();
-  return stat_val;
-}
-
-//deprecated in SDK3.0
-float
-INKStatFloatRead(INKStat the_stat)
-{
-  if (ink_sanity_check_stat_structure(the_stat) != INK_SUCCESS)
-    return 0.0;
-
-  float stat_val;
-  StatDescriptor *statp = (StatDescriptor *) the_stat;
-  stat_val = statp->flt_value();
-  return stat_val;
 }
 
 INKReturnCode

@@ -34,8 +34,7 @@
 
 #include "Regression.h"
 #include "api/ts/ts.h"
-#include "api/ts/ts_private_frozen.h"
-#include "api/ts/ts_private.h"
+#include "api/ts/experimental.h"
 #include "I_RecCore.h"
 #include "I_Layout.h"
 
@@ -1499,7 +1498,6 @@ cont_schedule_handler(INKCont contp, INKEvent event, void *edata)
 //
 // Unit Test for API: INKMutexCreate
 //                    INKMutexLock
-//                    INKMutexTryLock
 //                    INKMutexUnLock
 //////////////////////////////////////////////
 
@@ -1863,7 +1861,6 @@ REGRESSION_TEST(SDK_API_INKIOBufferBlockNext) (RegressionTest * test, int atype,
 //
 // Unit Test for API: INKStatCreate
 //                    INKStatIntSet
-//                    INKStatIntRead
 //////////////////////////////////////////////
 
 REGRESSION_TEST(SDK_API_INKStatIntSet) (RegressionTest * test, int atype, int *pstatus)
@@ -1926,7 +1923,7 @@ REGRESSION_TEST(SDK_API_INKStatIntAddTo) (RegressionTest * test, int atype, int 
 //       SDK_API_INKStat
 //
 // Unit Test for API: INKStatFloatAddTo
-//                    INKStatFloatRead
+//                    INKStatFloatGet
 //////////////////////////////////////////////
 
 REGRESSION_TEST(SDK_API_INKStatFloatAddTo) (RegressionTest * test, int atype, int *pstatus)
@@ -4230,7 +4227,6 @@ REGRESSION_TEST(SDK_API_INKHttpHdr) (RegressionTest * test, int atype, int *psta
 //                    INKMimeHdrFieldNameGet
 //                    INKMimeHdrFieldNameSet
 //                    INKMimeHdrFieldNext
-//                    INKMimeHdrFieldRetrieve
 //                    INKMimeHdrFieldsClear
 //                    INKMimeHdrFieldsCount
 //                    INKMimeHdrFieldValueAppend

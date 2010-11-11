@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "api/include/ts_private.h"
+#include "api/include/experimental.h"
 
 void UDPTestInit();
 int handle_callbacks(INKCont cont, INKEvent event, void *e);

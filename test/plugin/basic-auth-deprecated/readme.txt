@@ -8,7 +8,7 @@ The basic-auth.c plugin performs basic HTTP proxy authentication.
      handler, auth-plugin, calls handle_dns to check the 
      Proxy-Authorization field. 
 
-     handle_dns uses INKHttpTxnClientReqGet and INKMimeHdrFieldRetrieve
+     handle_dns uses INKHttpTxnClientReqGet and INKMimeHdrFieldFind
      to obtain the Proxy-Authorization field. 
 
 -- If the request does not have the Proxy-Authorization field,

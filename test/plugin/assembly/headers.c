@@ -169,13 +169,13 @@ query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query,
 
 
   /* Extract cookies */
-  cookies_loc = INKMimeHdrFieldRetrieve(bufp, hdr_loc, INK_MIME_FIELD_COOKIE);
+  cookies_loc = INKMimeHdrFieldFind(bufp, hdr_loc, INK_MIME_FIELD_COOKIE, INK_MIME_LEN_COOKIE);
   if (cookies_loc == NULL) {
     INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
     return 0;
   }
 
-  cookies_string = INKMimeHdrFieldValueGet(bufp, hdr_loc, cookies_loc, -1, &len);
+  INKMimeHdrFieldValueStringGet(bufp, hdr_loc, cookies_loc, -1, &cookies_string, &len);
   INKDebug(LOW, "Cookies = %s", cookies_string);
 
   if ((len != 0) && (cookies_string != NULL)) {
@@ -264,12 +264,12 @@ is_template_header(INKMBuffer bufp, INKMLoc hdr_loc)
   }
 
   /* Check out that content type is text/html */
-  field_loc = INKMimeHdrFieldRetrieve(bufp, hdr_loc, INK_MIME_FIELD_CONTENT_TYPE);
+  field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, INK_MIME_FIELD_CONTENT_TYPE, INK_MIME_LEN_CONTENT_TYPE);
   if (field_loc == INK_NULL_MLOC) {
     INKDebug(LOW, "Not a template: could not find header %s", INK_MIME_FIELD_CONTENT_TYPE);
     return 0;
   }
-  str = INKMimeHdrFieldValueGet(bufp, hdr_loc, field_loc, 0, &len);
+  INKMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &str, &len);
   if (str == NULL) {
     INKDebug(LOW, "Not a template: could not get value of header %s", INK_MIME_FIELD_CONTENT_TYPE);
     INKHandleMLocRelease(bufp, hdr_loc, field_loc);
@@ -370,7 +370,7 @@ request_looks_dynamic(INKMBuffer bufp, INKMLoc hdr_loc)
     return 1;
   }
 
-  cookie_loc = INKMimeHdrFieldRetrieve(bufp, hdr_loc, INK_MIME_FIELD_COOKIE);
+  cookie_loc = INKMimeHdrFieldFind(bufp, hdr_loc, INK_MIME_FIELD_COOKIE, INK_MIME_LEN_COOKIE);
   if (cookie_loc != NULL) {
     INKHandleMLocRelease(bufp, hdr_loc, cookie_loc);
     INKHandleMLocRelease(bufp, hdr_loc, url_loc);

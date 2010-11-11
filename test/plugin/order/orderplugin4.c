@@ -57,8 +57,6 @@ plugin4(INKCont contp, INKEvent event, void *edata)
   INKMLoc hdr_loc;
   INKMLoc field_loc;
 
-  int count;
-
   INKHttpTxn txnp = (INKHttpTxn) edata;
 
   if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
@@ -68,11 +66,13 @@ plugin4(INKCont contp, INKEvent event, void *edata)
   }
 
   if ((field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, FIELD_NAME, -1)) != 0) {
-    count = INKMimeFieldValueGetInt(bufp, field_loc, 0);
+    int count;
+    
+    INKMimeHdrFieldValueIntGet(bufp, hdr_loc, field_loc, 0, &count);
     if (value != ++count) {
       INKError("Incorrect sequence of calling...orderplugin4\n");
     }
-    INKMimeFieldValueSetInt(bufp, field_loc, 0, value);
+    INKMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, 0, value);
 
   }
 

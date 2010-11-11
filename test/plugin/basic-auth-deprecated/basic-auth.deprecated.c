@@ -131,7 +131,7 @@ handle_dns(INKHttpTxn txnp, INKCont contp)
     goto done;
   }
 
-  field_loc = INKMimeHdrFieldRetrieve(bufp, hdr_loc, INK_MIME_FIELD_PROXY_AUTHORIZATION);
+  field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, INK_MIME_FIELD_PROXY_AUTHORIZATION, INK_MIME_LEN_AUTHORIZATION);
   if (!field_loc) {
     INKError("no Proxy-Authorization field\n");
     goto done;
@@ -193,10 +193,10 @@ handle_response(INKHttpTxn txnp)
   INKHttpHdrStatusSet(bufp, hdr_loc, INK_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED);
   INKHttpHdrReasonSet(bufp, hdr_loc, INKHttpHdrReasonLookup(INK_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED), -1);
 
-  field_loc = INKMimeFieldCreate(bufp);
-  INKMimeFieldNameSet(bufp, field_loc, INK_MIME_FIELD_PROXY_AUTHENTICATE, -1);
+  field_loc = INKMimeFieldHdrCreate(bufp, hdr_loc);
+  INKMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, INK_MIME_FIELD_PROXY_AUTHENTICATE, INK_MIME_LEN_PROXY_AUTHENTICATE);
   INKMimeFieldValueInsert(bufp, field_loc, "Basic realm=\"proxy\"", -1, -1);
-  INKMimeHdrFieldInsert(bufp, hdr_loc, field_loc, -1);
+  INKMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
 
 done:
   INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);

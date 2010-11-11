@@ -51,9 +51,7 @@ includedir=$(prefix)/include/ts
 include_HEADERS = \
   api/ts/ts.h \
   api/ts/remap.h \
-  api/ts/experimental.h \
-  api/ts/ts_private.h \
-  api/ts/ts_private_frozen.h
+  api/ts/experimental.h
 
 noinst_HEADERS = \
   api/ts/InkAPIHughes.h \

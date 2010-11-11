@@ -61,7 +61,7 @@ correctness of the parse/prefetch module. It has the following options:
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ts/ts.h>
-#include <ts/ts_private.h>
+#include <ts/experimental.h>
 
 /* We will register the following two hooks */
 

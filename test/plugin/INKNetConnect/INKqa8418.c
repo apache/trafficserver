@@ -263,10 +263,10 @@ require_auth(INKHttpTxn txnp)
   INKHttpHdrStatusSet(bufp, hdr_loc, INK_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED);
   INKHttpHdrReasonSet(bufp, hdr_loc, INKHttpHdrReasonLookup(INK_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED), -1);
 
-  newfld_loc = INKMimeFieldCreate(bufp);
-  INKMimeFieldNameSet(bufp, newfld_loc, INK_MIME_FIELD_PROXY_AUTHENTICATE, -1);
+  newfld_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
+  INKMimeHdrFieldNameSet(bufp, hdr_loc, newfld_loc, INK_MIME_FIELD_PROXY_AUTHENTICATE, INK_MIME_LEN_PROXY_AUTHENTICATE);
   INKMimeFieldValueInsert(bufp, newfld_loc, "Basic realm=\"Armageddon\"", -1, -1);
-  INKMimeHdrFieldInsert(bufp, hdr_loc, newfld_loc, -1);
+  INKMimeHdrFieldAppend(bufp, hdr_loc, newfld_loc);
 
 done:
   INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);

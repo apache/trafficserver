@@ -37,7 +37,7 @@
 
 #include <stdio.h>
 #include "ts.h"
-#include "ts_private.h"
+#include "experimental.h"
 
 /****************************************************************************
  *  Declarations.
@@ -398,6 +398,7 @@ static void
 clusterRPC_init()
 {
   int ret;
+  int lock;
 
     /***********************************************************************
      *  Create plugin mutex
@@ -407,9 +408,10 @@ clusterRPC_init()
     INKDebug(PLUGIN_DEBUG_ERR_TAG, "INKMutexCreate for node_status failed\n");
     return;
   }
-  if (!INKMutexTryLock(node_status_mutex)) {
+  INKMutexLockTry(node_status_mutex, &lock);
+  if (!lock) {
     /* Should never fail */
-    INKDebug(PLUGIN_DEBUG_ERR_TAG, "INKMutexTryLock failed\n");
+    INKDebug(PLUGIN_DEBUG_ERR_TAG, "INKMutexLockTry failed\n");
   }
     /***********************************************************************
      *  Register our RPC handler.

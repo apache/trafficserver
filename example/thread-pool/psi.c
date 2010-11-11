@@ -988,7 +988,7 @@ transform_handler(INKCont contp, INKEvent event, void *edata)
 
 /*-------------------------------------------------------------------------
   trylock_handler
-  Small handler to handle INKMutexTryLock failures
+  Small handler to handle INKMutexLockTry failures
 
   Input:
     contp      continuation for the current transaction

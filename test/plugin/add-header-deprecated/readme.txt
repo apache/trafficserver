@@ -15,9 +15,9 @@ The INKPluginInit function does the following:
 	using the following functions:
 	INKMBufferCreate
 	INKMimeHdrCreate
-	INKMimeFieldCreate
+	INKMimeHdrFieldCreate
 	INKMimeFieldInsert
-	INKMimeFieldNameSet
+	INKMimeHdrFieldNameSet
 	INKMimeFieldValueInsert
 	
 
@@ -39,10 +39,10 @@ header from the current transaction, using
 HTTP request, using the following functions:
 
 	INKMimeHdrFieldGet
-	INKMimeFieldCreate
-	INKMimeFieldCopy
-	INKMimeHdrFieldInsert
-	INKMimeFieldNext
+	INKMimeHdrFieldCreate
+	INKMimeHdrFieldCopy
+	INKMimeHdrFieldAppend
+	INKMimeHdrFieldNext
 
 When add_header is done, it uses
 	INKHttpTxnReenable 

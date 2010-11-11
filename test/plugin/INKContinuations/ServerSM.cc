@@ -631,7 +631,9 @@ state_call_back_sub_sm(INKCont contp, int event, INKVIO vio)
   assert(Server->q_server_calling_back_status == CONNECTED_CALLING_BACK);
   INKDebug("serversm", "[%u][state_call_back_sub_sm] try to grab subsm's mutex", Server->q_sm_id);
 
-  int lock3 = INKMutexTryLock(SubSM->q_mutex);
+  int lock3;
+
+  INKMutexLockTry(SubSM->q_mutex, &lock3);
   if (!lock3) {
     set_handler(Server->q_server_current_handler, &state_main_event);
     Server->q_pending_action = INKContSchedule(contp, RAFT_SERVER_LOCK_RETRY_TIME);
@@ -778,7 +780,8 @@ state_prepare_to_die(INKCont contp, int event, INKVIO vio)
   // update the global table entry
   INKDebug("servers,", "[%u][state_prepare_to_die] trying to grab global_table's entry_mutex", Server->q_sm_id);
 
-  int lock = INKMutexTryLock(global_table->entry[Server->q_global_table_index].entry_mutex);
+  int lock;
+  INKMutexLockTry(global_table->entry[Server->q_global_table_index].entry_mutex, &lock);
   if (!lock) {
     Server->q_pending_action = INKContSchedule(contp, RAFT_GLOBAL_TABLE_LOCK_RETRY_TIME);
     return INK_EVENT_NONE;

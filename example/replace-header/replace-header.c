@@ -47,7 +47,7 @@ replace_header(INKHttpTxn txnp, INKCont contp)
     goto done;
   }
 
-  field_loc = INKMimeHdrFieldRetrieve(resp_bufp, resp_loc, INK_MIME_FIELD_ACCEPT_RANGES);
+  field_loc = INKMimeHdrFieldFind(resp_bufp, resp_loc, INK_MIME_FIELD_ACCEPT_RANGES, INK_MIME_LEN_ACCEPT_RANGES);
   if (field_loc == 0) {
     /* field was not found */
 

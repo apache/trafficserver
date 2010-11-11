@@ -214,10 +214,10 @@ handle_response(INKHttpTxn txnp)
   INKHttpHdrStatusSet(bufp, hdr_loc, INK_HTTP_STATUS_MOVED_PERMANENTLY);
   INKHttpHdrReasonSet(bufp, hdr_loc, INKHttpHdrReasonLookup(INK_HTTP_STATUS_MOVED_PERMANENTLY), -1);
 
-  newfield_loc = INKMimeFieldCreate(bufp);
-  INKMimeFieldNameSet(bufp, newfield_loc, INK_MIME_FIELD_LOCATION, -1);
+  newfield_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
+  INKMimeHdrFieldNameSet(bufp, hdr_loc, newfield_loc, INK_MIME_FIELD_LOCATION, INK_MIME_LEN_CONTENT_LOCATION);
   INKMimeFieldValueInsert(bufp, newfield_loc, uri_redirect, -1, -1);
-  INKMimeHdrFieldInsert(bufp, hdr_loc, newfield_loc, -1);
+  INKMimeHdrFieldAppend(bufp, hdr_loc, newfield_loc);
 
 
   /*
@@ -316,7 +316,7 @@ update_redirected_method_stats(INKMBuffer bufp, INKMLoc hdr_loc)
       INKStatFloatAddTo(method_count_redirected_icp_query, 1);
 
     else if (0 == strcmp(txn_method, INK_HTTP_METHOD_OPTIONS)) {
-      tempint = INKStatIntRead(method_count_redirected_options);
+      INKStatIntGet(method_count_redirected_options, &tempint);
       tempint++;
       INKStatIntSet(method_count_redirected_options, tempint);
     } else if (0 == strcmp(txn_method, INK_HTTP_METHOD_POST)) {

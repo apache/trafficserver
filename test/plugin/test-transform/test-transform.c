@@ -29,7 +29,6 @@
  * -- INKIOBufferBlockNext
  * -- INKIOBufferBlockReadAvail
  * -- INKIOBufferBlockWriteAvail
- * -- INKVConnCreate
  * -- INKVConnReadVIOGet
  * -- INKVIOMutexGet
  * -- INKVIOVConnGet

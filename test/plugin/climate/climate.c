@@ -53,7 +53,7 @@
 #include <sys/time.h>
 
 #include "ts.h"
-#include "ts_private.h"
+#include "experimental.h"
 
 #include "events.h"
 

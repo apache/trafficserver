@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ts/ts.h>
-#include <ts/ts_private.h>
+#include <ts/experimental.h>
 
 /* We will register the following two hooks */
 
