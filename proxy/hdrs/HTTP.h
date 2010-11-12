@@ -622,7 +622,7 @@ public:
   /// Mark the target cache as invalid.
   /// @internal Ugly but too many places currently that touch the
   /// header internals, they must be able to do this.
-  void mark_target_dirty();
+  void mark_target_dirty() const;
 
   HTTPStatus status_get();
   void status_set(HTTPStatus status);
@@ -944,7 +944,7 @@ HTTPHdr::is_port_in_header() const
   -------------------------------------------------------------------------*/
 
 inline void
-HTTPHdr::mark_target_dirty()
+HTTPHdr::mark_target_dirty() const
 {
   m_target_cached = false;
 }
@@ -1063,6 +1063,7 @@ HTTPHdr::url_get() const
   if (m_url_cached.m_url_impl != real_impl) {
     m_url_cached.set(this);
     m_url_cached.m_url_impl = real_impl;
+    this->mark_target_dirty();
   }
   return (&m_url_cached);
 }
