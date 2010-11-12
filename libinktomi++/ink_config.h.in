@@ -148,7 +148,6 @@
 # define INK_NO_REVERSE                 1
 # define INK_NO_SOCKS                   1
 # define INK_NO_STAT_PAGES              1
-# define TS_USE_TESTS                   0
 # define INK_USE_MUTEX_FOR_ATOMICLISTS  1
 # define INK_USE_MUTEX_FOR_FREELISTS    1
 # define USE_MD5_FOR_MMH                1

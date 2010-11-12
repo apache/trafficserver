@@ -798,7 +798,7 @@ write_dns(DNSHandler * h)
   if (h->in_write_dns)
     return;
   h->in_write_dns = true;
-  Debug("dns", "in_flight: %d, dns_max_dns_in_flight: %d", h->in_flight, dns_max_dns_in_flight);
+  // Debug("dns", "in_flight: %d, dns_max_dns_in_flight: %d", h->in_flight, dns_max_dns_in_flight);
   if (h->in_flight < dns_max_dns_in_flight) {
     DNSEntry *e = h->entries.head;
     while (e) {
@@ -995,7 +995,9 @@ DNSProcessor::getby(const char *x, int len, int type,
   if (type == T_SRV) {
     Debug("dns_srv", "DNSProcessor::getby attempting an SRV lookup for %s, timeout = %d", x, timeout);
   }
+
   DNSEntry *e = dnsEntryAllocator.alloc();
+
   e->retries = dns_retries;
   e->init(x, len, type, cont, wait, adnsH, timeout);
   MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
@@ -1570,7 +1572,7 @@ ink_dns_init(ModuleVersion v)
 }
 
 
-
+#ifdef TS_HAS_TESTS
 struct DNSRegressionContinuation;
 typedef int (DNSRegressionContinuation::*DNSRegContHandler) (int, void *);
 
@@ -1630,3 +1632,5 @@ REGRESSION_TEST(DNS) (RegressionTest * t, int atype, int *pstatus) {
   eventProcessor.schedule_in(NEW(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus)),
                              HRTIME_SECONDS(1));
 }
+
+#endif

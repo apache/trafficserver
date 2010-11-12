@@ -411,7 +411,8 @@ ink_res_get_nibblesuffix2(ink_res_state statp) {
  */
 /*% This function has to be reachable by res_data.c but not publically. */
 int
-ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDefDomain, char *pSearchList, char *pResolvConf) {
+ink_res_init(ink_res_state statp, const unsigned int *pHostList, const int *pPort, const char *pDefDomain, const char *pSearchList,
+             const char *pResolvConf) {
   register FILE *fp;
   register char *cp, **pp;
   register int n;
@@ -539,16 +540,12 @@ ink_res_init(ink_res_state statp, unsigned int *pHostList, int *pPort, char *pDe
      ---------------------------------------------- */
 
   if (pDefDomain && '\0' != *pDefDomain && '\n' != *pDefDomain) {
-
-    cp = pDefDomain;
-    strncpy(statp->defdname, cp, sizeof(statp->defdname) - 1);
+    strncpy(statp->defdname, pDefDomain, sizeof(statp->defdname) - 1);
     if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL)
       *cp = '\0';
   }
   if (pSearchList && '\0' != *pSearchList && '\n' != *pSearchList) {
-
-    cp = pSearchList;
-    strncpy(statp->defdname, cp, sizeof(statp->defdname) - 1);
+    strncpy(statp->defdname, pSearchList, sizeof(statp->defdname) - 1);
     if ((cp = strchr(statp->defdname, '\n')) != NULL)
       *cp = '\0';
     /*

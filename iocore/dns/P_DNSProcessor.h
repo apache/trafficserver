@@ -185,12 +185,12 @@ struct DNSEntry: public Continuation
 
   void init(const char *x, int len, int qtype_arg, Continuation * acont, HostEnt ** wait, DNSHandler * adnsH, int timeout);
 
-    DNSEntry()
-  : Continuation(NULL),
-    qtype(0),
-    retries(DEFAULT_DNS_RETRIES),
-    which_ns(NO_NAMESERVER_SELECTED), submit_time(0), send_time(0), qname_len(0), domains(0),
-    timeout(0), result_ent(0), sem_ent(0), dnsH(0), written_flag(false), once_written_flag(false), last(false)
+   DNSEntry()
+     : Continuation(NULL),
+       qtype(0),
+       retries(DEFAULT_DNS_RETRIES),
+       which_ns(NO_NAMESERVER_SELECTED), submit_time(0), send_time(0), qname_len(0), domains(0),
+       timeout(0), result_ent(0), sem_ent(0), dnsH(0), written_flag(false), once_written_flag(false), last(false)
   {
     for (int i = 0; i < MAX_DNS_RETRIES; i++)
       id[i] = -1;
