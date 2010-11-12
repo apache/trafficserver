@@ -219,7 +219,8 @@ extern "C"
     INK_HTTP_SSN_START_HOOK,
     INK_HTTP_SSN_CLOSE_HOOK,
     INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK,
-    INK_HTTP_READ_REQUEST_PRE_REMAP_HOOK,
+    INK_HTTP_PRE_REMAP_HOOK,
+    INK_HTTP_POST_REMAP_HOOK,
     INK_HTTP_LAST_HOOK
   } INKHttpHookID;
 
@@ -316,7 +317,8 @@ extern "C"
     INK_EVENT_HTTP_SSN_START = 60013,
     INK_EVENT_HTTP_SSN_CLOSE = 60014,
     INK_EVENT_HTTP_CACHE_LOOKUP_COMPLETE = 60015,
-    INK_EVENT_HTTP_READ_REQUEST_PRE_REMAP = 60016,
+    INK_EVENT_HTTP_PRE_REMAP = 60016,
+    INK_EVENT_HTTP_POST_REMAP = 60017,
     INK_EVENT_MGMT_UPDATE = 60100,
 
     /* EVENTS 60200 - 60202 for internal use */
@@ -2749,6 +2751,12 @@ extern "C"
   inkapi void INKVConnInactivityTimeoutCancel(INKVConn connp);
   inkapi void INKVConnActiveTimeoutSet(INKVConn connp, TSHRTime timeout);
   inkapi void INKVConnActiveTimeoutCancel(INKVConn connp);
+  
+  /* 
+    ability to skip the remap phase of the State Machine 
+    this only really makes sense in INK_HTTP_READ_REQUEST_HDR_HOOK
+  */
+  inkapi INKReturnCode INKSkipRemappingSet(INKHttpTxn txnp, int flag);
 
 #ifdef __cplusplus
 }

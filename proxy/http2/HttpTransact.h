@@ -585,10 +585,12 @@ public:
     CONTINUE,
 
     HTTP_API_SM_START,
-    HTTP_API_READ_REQUEST_PRE_REMAP,
-    HTTP_REMAP_REQUEST,
-    HTTP_END_REMAP_REQUEST,
+    
     HTTP_API_READ_REQUEST_HDR,
+    HTTP_API_PRE_REMAP,
+    HTTP_REMAP_REQUEST,
+    HTTP_API_POST_REMAP,
+    
     HTTP_API_OS_DNS,
     HTTP_API_SEND_REQUEST_HDR,
     HTTP_API_READ_CACHE_HDR,
@@ -1054,7 +1056,8 @@ public:
 
     bool already_downgraded;
     URL pristine_url;  // pristine url is the url before remap
-
+    
+    bool skip_all_remapping;
 
     // Methods
     void
@@ -1146,7 +1149,8 @@ public:
         congestion_congested_or_failed(0),
         congestion_connection_opened(0),
         reverse_proxy(false), url_remap_success(false), remap_redirect(NULL), filter_mask(0), already_downgraded(false),
-        pristine_url()
+        pristine_url(),
+        skip_all_remapping(false)
     {
       int i;
       char *via_ptr = via_string;
@@ -1259,6 +1263,7 @@ public:
   static void StartRemapRequest(State * s);
   static void RemapRequest(State * s);
   static void EndRemapRequest(State * s);
+  static void PerformRemap(State * s);
   static void ModifyRequest(State * s);
   static void HandleRequest(State * s);
   static bool handleIfRedirect(State * s);

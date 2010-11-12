@@ -391,10 +391,10 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
     return ("HTTP_API_SM_SHUTDOWN");
   case HttpTransact::HTTP_REMAP_REQUEST:
     return ("HTTP_REMAP_REQUEST");
-  case HttpTransact::HTTP_API_READ_REQUEST_PRE_REMAP:
-    return ("HTTP_API_READ_REQUEST_PRE_REMAP");
-  case HttpTransact::HTTP_END_REMAP_REQUEST:
-    return ("HTTP_END_REMAP_REQUEST");
+  case HttpTransact::HTTP_API_PRE_REMAP:
+    return ("HTTP_API_PRE_REMAP");
+  case HttpTransact::HTTP_API_POST_REMAP:
+    return ("HTTP_API_POST_REMAP");
 
   }
 
@@ -482,8 +482,10 @@ HttpDebugNames::get_api_hook_name(INKHttpHookID t)
     return "INK_HTTP_SSN_START_HOOK";
   case INK_HTTP_SSN_CLOSE_HOOK:
     return "INK_HTTP_SSN_CLOSE_HOOK";
-  case INK_HTTP_READ_REQUEST_PRE_REMAP_HOOK:
-    return "INK_HTTP_READ_REQUEST_PRE_REMAP_HOOK";
+  case INK_HTTP_PRE_REMAP_HOOK:
+    return "INK_HTTP_PRE_REMAP_HOOK";
+  case INK_HTTP_POST_REMAP_HOOK:
+    return "INK_HTTP_POST_REMAP_HOOK";
   case INK_HTTP_LAST_HOOK:
     return "INK_HTTP_LAST_HOOK";
   }
