@@ -1191,6 +1191,7 @@ AC_SUBST([TFW_PACKAGE_SUFFIX])
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES
 
+AC_CONFIG_FILES([libinktomi++/ink_config.h proxy/api/ts/ts.h])
 AC_CONFIG_FILES([tsxs])
 AC_CONFIG_FILES([doc/Doxyfile])
 AC_CONFIG_FILES([doc/Makefile])
@@ -1205,14 +1206,12 @@ AC_CONFIG_FILES([iocore/hostdb/Makefile])
 AC_CONFIG_FILES([iocore/Makefile])
 AC_CONFIG_FILES([iocore/net/Makefile])
 AC_CONFIG_FILES([iocore/utils/Makefile])
-AC_CONFIG_FILES([libinktomi++/ink_config.h])
 AC_CONFIG_FILES([libinktomi++/Makefile])
 AC_CONFIG_FILES([librecords/Makefile])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([proxy/config/body_factory/default/Makefile])
 AC_CONFIG_FILES([proxy/config/body_factory/Makefile])
-AC_CONFIG_FILES([proxy/config/records.config])
-AC_CONFIG_FILES([proxy/config/storage.config])
+AC_CONFIG_FILES([proxy/config/records.config proxy/config/storage.config])
 AC_CONFIG_FILES([proxy/config/Makefile])
 AC_CONFIG_FILES([proxy/congest/Makefile])
 AC_CONFIG_FILES([proxy/hdrs/Makefile])
@@ -1273,8 +1272,7 @@ AC_CONFIG_FILES([example/session-1/Makefile])
 AC_CONFIG_FILES([example/thread-1/Makefile])
 AC_CONFIG_FILES([example/thread-pool/Makefile])
 # example app w/ standalone iocore
-AC_CONFIG_FILES([example/app-template/Makefile])
-AC_CONFIG_FILES([example/app-template/records.config])
+AC_CONFIG_FILES([example/app-template/Makefile example/app-template/records.config])
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
