@@ -38,14 +38,6 @@
  */
 #include "ink_autoconf.h"
 
-/* Version info
- */
-#define TS_VERSION_STRING             "@TS_VERSION_STRING@"
-#define TS_VERSION_NUMBER              @TS_VERSION_NUMBER@
-#define TS_VERSION_MAJOR               @TS_VERSION_MAJOR@
-#define TS_VERSION_MINOR               @TS_VERSION_MINOR@
-#define TS_VERSION_MICRO               @TS_VERSION_MICRO@
-
 #define BUILD_MACHINE                  "@build_machine@"
 #define BUILD_PERSON                   "@build_person@"
 #define BUILD_GROUP                    "@build_group@"

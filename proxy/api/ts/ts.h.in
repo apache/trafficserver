@@ -30,6 +30,12 @@
 #ifndef __INK_API_H__
 #define __INK_API_H__
 
+/* GENERATED FILE WARNING!  DO NOT EDIT ts.h
+ *
+ * You must modify ts.h.in instead.
+ *
+ */
+
 #include <sys/types.h>
 #include <stdint.h>
 
@@ -42,11 +48,13 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-/* BIG TODO: This should be generated at configure / build time. I'll fix it in TS-521 */
-/* This define lets you do checks for Traffic Server build version, such as
-       #if (TS_VERSION_NUMBER >= 0x2001000) */
-#undef TS_VERSION_NUMBER
-#define TS_VERSION_NUMBER 0x2001005L
+  /* Version info
+   */
+#define TS_VERSION_STRING             "@TS_VERSION_STRING@"
+#define TS_VERSION_NUMBER              @TS_VERSION_NUMBER@
+#define TS_VERSION_MAJOR               @TS_VERSION_MAJOR@
+#define TS_VERSION_MINOR               @TS_VERSION_MINOR@
+#define TS_VERSION_MICRO               @TS_VERSION_MICRO@
 
 #define INK_HTTP_VERSION(a,b)  ((((a) & 0xFFFF) << 16) | ((b) & 0xFFFF))
 #define INK_HTTP_MINOR(v)      ((v) & 0xFFFF)
