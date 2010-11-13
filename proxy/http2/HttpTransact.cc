@@ -770,15 +770,9 @@ HttpTransact::perform_accept_encoding_filtering(State * s)
 void
 HttpTransact::StartRemapRequest(State * s)
 {
-  
-  if (s->skip_all_remapping) {
-    Debug ("http_trans", "API request to skip remapping");
-    TRANSACT_RETURN(HTTP_API_POST_REMAP, HttpTransact::HandleRequest);
-  }
-  
   Debug("http_trans", "START HttpTransact::StartRemapRequest");
 
-  /**
+        /**
 	 * Check for URL remappings before checking request
 	 * validity or initializing state variables since
 	 * the remappings can insert or change the destination
@@ -837,12 +831,6 @@ HttpTransact::StartRemapRequest(State * s)
   }
 
   Debug("http_trans", "END HttpTransact::StartRemapRequest");
-  TRANSACT_RETURN(HTTP_API_PRE_REMAP, HttpTransact::PerformRemap);
-}
-
-void HttpTransact::PerformRemap(State *s)
-{
-  Debug("http_trans","Inside PerformRemap");
   TRANSACT_RETURN(HTTP_REMAP_REQUEST, HttpTransact::EndRemapRequest);
 }
 
@@ -984,7 +972,7 @@ done:
     TRANSACT_RETURN(PROXY_SEND_ERROR_CACHE_NOOP, NULL);
   } else {
     Debug("http_trans", "END HttpTransact::EndRemapRequest");
-    TRANSACT_RETURN(HTTP_API_POST_REMAP, HttpTransact::HandleRequest);
+    TRANSACT_RETURN(HTTP_API_READ_REQUEST_HDR, HttpTransact::HandleRequest);
   }
 
   ink_debug_assert(!"not reached");
@@ -1104,13 +1092,13 @@ HttpTransact::ModifyRequest(State * s)
 
   Debug("http_trans", "END HttpTransact::ModifyRequest");
 
-  TRANSACT_RETURN(HTTP_API_READ_REQUEST_HDR, HttpTransact::StartRemapRequest);
+  TRANSACT_RETURN(HTTP_API_READ_REQUEST_PRE_REMAP, HttpTransact::StartRemapRequest);
 }
 
 void
 HttpTransact::HandleRequest(State * s)
 {
-  Debug("http_trans", "START HttpTransact::HandleRequest");
+  Debug("http_trans", "START HttpTransact/HandleRequest");
 
   HTTP_DEBUG_ASSERT(!s->hdr_info.server_request.valid());
 

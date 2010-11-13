@@ -7714,22 +7714,4 @@ INKRecordDump(INKRecordType rec_type, INKRecordDumpCb callback, void *edata)
   RecDumpRecords((RecT)rec_type, (RecDumpEntryCb)callback, edata);
 }
 
-/* ability to skip the remap phase of the State Machine 
-   this only really makes sense in INK_HTTP_READ_REQUEST_HDR_HOOK
-*/
-INKReturnCode INKSkipRemappingSet(INKHttpTxn txnp, int flag)
-{
-  if (sdk_sanity_check_txn(txnp) != INK_SUCCESS) {
-    return INK_ERROR;
-  }
-  HttpSM *sm = (HttpSM*) txnp;
-  if (flag) {
-    sm->t_state.skip_all_remapping = true;
-  }
-  else {
-    sm->t_state.skip_all_remapping = false;
-  }
-  return INK_SUCCESS;
-}
-
 #endif //INK_NO_API
