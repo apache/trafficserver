@@ -2340,7 +2340,7 @@ checkHttpTxnClientRemotePortGet(SocketTest * test, void *data)
 
   INKDebug(UTDBG_TAG, "Browser port = %x, Txn remote port = %x", browser_port, port);
 
-  if (ntohs(port) == browser_port) {
+  if ((int)ntohs(port) == browser_port) {
     SDK_RPRINT(test->regtest, "INKHttpTxnClientRemotePortGet", "TestCase1", TC_PASS, "ok");
     test->test_client_remote_port_get = true;
   } else {

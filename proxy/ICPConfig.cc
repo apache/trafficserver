@@ -955,7 +955,7 @@ ParentSiblingPeer::ValidSender(struct sockaddr_in *fr)
   } else {
     // Make sure the sockaddr_in corresponds to this peer
     if ((GetIP()->s_addr == fr->sin_addr.s_addr)
-        && (GetPort() == ntohs(fr->sin_port))) {
+        && (GetPort() == (int)ntohs(fr->sin_port))) {
       return 1;                 // Sender is this peer
     } else {
       return 0;                 // Sender is not this peer
@@ -1090,7 +1090,7 @@ MultiCastPeer::ValidSender(struct sockaddr_in *sa)
   Peer *P = _next;
   while (P) {
     if ((P->GetIP()->s_addr == sa->sin_addr.s_addr)
-        && (P->GetPort() == ntohs(sa->sin_port))) {
+        && (P->GetPort() == (int)ntohs(sa->sin_port))) {
       return 1;
     } else {
       P = P->GetNext();
