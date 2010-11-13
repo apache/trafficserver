@@ -2533,11 +2533,11 @@ HttpSM::main_handler(int event, void *data)
     } else {
       jump_point = vc_entry->vc_handler;
     }
-    ink_assert(jump_point != NULL);
-    ink_assert(vc_entry->vc != NULL);
+    ink_assert(jump_point != (HttpSMHandler)NULL);
+    ink_assert(vc_entry->vc != (VConnection *)NULL);
     (this->*jump_point) (event, data);
   } else {
-    ink_assert(default_handler != NULL);
+    ink_assert(default_handler != (HttpSMHandler)NULL);
     (this->*default_handler) (event, data);
   }
 
