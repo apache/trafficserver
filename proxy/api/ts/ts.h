@@ -42,6 +42,12 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+/* BIG TODO: This should be generated at configure / build time. I'll fix it in TS-521 */
+/* This define lets you do checks for Traffic Server build version, such as
+       #if (TS_VERSION_NUMBER >= 0x2001000) */
+#undef TS_VERSION_NUMBER
+#define TS_VERSION_NUMBER 0x2001005L
+
 #define INK_HTTP_VERSION(a,b)  ((((a) & 0xFFFF) << 16) | ((b) & 0xFFFF))
 #define INK_HTTP_MINOR(v)      ((v) & 0xFFFF)
 #define INK_HTTP_MAJOR(v)      (((v) >> 16) & 0xFFFF)
@@ -410,7 +416,6 @@ extern "C"
 
   /**
       Starting 2.0, SDK now follows same versioning as Traffic Server.
-
    */
   typedef enum
   {
