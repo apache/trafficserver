@@ -1300,8 +1300,18 @@ HttpTransact::HandleApiErrorJump(State * s)
     s->source = SOURCE_INTERNAL;
   }
 
-  build_response(s, &s->hdr_info.client_response,
-                 s->client_info.http_version, HTTP_STATUS_INTERNAL_SERVER_ERROR, "INKApi Error");
+  /** 
+    The API indicated an error. Lets use a >=400 error from the state (if one's set) or fallback to a 
+    generic HTTP/1.X 500 INKApi Error
+  **/
+  if ( s->http_return_code && s->http_return_code >= HTTP_STATUS_BAD_REQUEST ) {
+    build_response(s, &s->hdr_info.client_response,
+                   s->client_info.http_version, s->http_return_code, http_hdr_reason_lookup(s->http_return_code)?:"Error" );
+  }
+  else {
+    build_response(s, &s->hdr_info.client_response,
+                   s->client_info.http_version, HTTP_STATUS_INTERNAL_SERVER_ERROR, "INKApi Error");
+  }  
 
   TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
   return;
