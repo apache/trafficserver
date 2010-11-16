@@ -770,9 +770,15 @@ HttpTransact::perform_accept_encoding_filtering(State * s)
 void
 HttpTransact::StartRemapRequest(State * s)
 {
+  
+  if (s->api_skip_all_remapping) {
+    Debug ("http_trans", "API request to skip remapping");
+    TRANSACT_RETURN(HTTP_POST_REMAP_SKIP, HttpTransact::HandleRequest);
+  }
+  
   Debug("http_trans", "START HttpTransact::StartRemapRequest");
 
-        /**
+  /**
 	 * Check for URL remappings before checking request
 	 * validity or initializing state variables since
 	 * the remappings can insert or change the destination
@@ -831,6 +837,12 @@ HttpTransact::StartRemapRequest(State * s)
   }
 
   Debug("http_trans", "END HttpTransact::StartRemapRequest");
+  TRANSACT_RETURN(HTTP_API_PRE_REMAP, HttpTransact::PerformRemap);
+}
+
+void HttpTransact::PerformRemap(State *s)
+{
+  Debug("http_trans","Inside PerformRemap");
   TRANSACT_RETURN(HTTP_REMAP_REQUEST, HttpTransact::EndRemapRequest);
 }
 
@@ -844,7 +856,8 @@ HttpTransact::EndRemapRequest(State * s)
   int method = incoming_request->method_get_wksidx();
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
-
+  Debug("http_trans","EndRemapRequest host is %.*s", host_len,host);
+  
   ////////////////////////////////////////////////////////////////
   // if we got back a URL to redirect to, vector the user there //
   ////////////////////////////////////////////////////////////////
@@ -966,13 +979,21 @@ done:
     obj_describe(s->hdr_info.client_request.m_http, 1);
   }
 
-  if (!s->reverse_proxy) {
+  /*
+    if s->reverse_proxy == false, we can assume remapping failed in some way
+      -however-
+    If an API setup a tunnel to fake the origin or proxy's response we will 
+    continue to handle the request (as this was likely the plugin author's intent)
+    
+    otherwise, 502/404 the request right now. /eric
+  */
+  if (!s->reverse_proxy && s->state_machine->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
     Debug("http_trans", "END HttpTransact::EndRemapRequest");
     HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
     TRANSACT_RETURN(PROXY_SEND_ERROR_CACHE_NOOP, NULL);
   } else {
     Debug("http_trans", "END HttpTransact::EndRemapRequest");
-    TRANSACT_RETURN(HTTP_API_READ_REQUEST_HDR, HttpTransact::HandleRequest);
+    TRANSACT_RETURN(HTTP_API_POST_REMAP, HttpTransact::HandleRequest);
   }
 
   ink_debug_assert(!"not reached");
@@ -1092,13 +1113,13 @@ HttpTransact::ModifyRequest(State * s)
 
   Debug("http_trans", "END HttpTransact::ModifyRequest");
 
-  TRANSACT_RETURN(HTTP_API_READ_REQUEST_PRE_REMAP, HttpTransact::StartRemapRequest);
+  TRANSACT_RETURN(HTTP_API_READ_REQUEST_HDR, HttpTransact::StartRemapRequest);
 }
 
 void
 HttpTransact::HandleRequest(State * s)
 {
-  Debug("http_trans", "START HttpTransact/HandleRequest");
+  Debug("http_trans", "START HttpTransact::HandleRequest");
 
   HTTP_DEBUG_ASSERT(!s->hdr_info.server_request.valid());
 
@@ -1299,7 +1320,7 @@ HttpTransact::HandleApiErrorJump(State * s)
     s->hdr_info.client_response.fields_clear();
     s->source = SOURCE_INTERNAL;
   }
-
+  
   /** 
     The API indicated an error. Lets use a >=400 error from the state (if one's set) or fallback to a 
     generic HTTP/1.X 500 INKApi Error

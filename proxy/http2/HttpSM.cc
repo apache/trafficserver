@@ -1573,7 +1573,8 @@ HttpSM::handle_api_return()
       setup_client_read_request_header();
     }
     return;
-  case HttpTransact::HTTP_API_READ_REQUEST_PRE_REMAP:
+  case HttpTransact::HTTP_API_PRE_REMAP:
+  case HttpTransact::HTTP_API_POST_REMAP:
   case HttpTransact::HTTP_API_READ_REQUEST_HDR:
   case HttpTransact::HTTP_API_OS_DNS:
   case HttpTransact::HTTP_API_READ_CACHE_HDR:
@@ -4416,8 +4417,11 @@ HttpSM::do_api_callout_internal()
   case HttpTransact::HTTP_API_SM_START:
     cur_hook_id = INK_HTTP_TXN_START_HOOK;
     break;
-  case HttpTransact::HTTP_API_READ_REQUEST_PRE_REMAP:
-    cur_hook_id = INK_HTTP_READ_REQUEST_PRE_REMAP_HOOK;
+  case HttpTransact::HTTP_API_PRE_REMAP:
+    cur_hook_id = INK_HTTP_PRE_REMAP_HOOK;
+    break;
+  case HttpTransact::HTTP_API_POST_REMAP:
+    cur_hook_id = INK_HTTP_POST_REMAP_HOOK;
     break;
   case HttpTransact::HTTP_API_READ_REQUEST_HDR:
     cur_hook_id = INK_HTTP_READ_REQUEST_HDR_HOOK;
@@ -6532,8 +6536,9 @@ HttpSM::set_next_state()
   // Use the returned "next action" code to set the next state handler //
   ///////////////////////////////////////////////////////////////////////
   switch (t_state.next_action) {
-  case HttpTransact::HTTP_API_READ_REQUEST_PRE_REMAP:
   case HttpTransact::HTTP_API_READ_REQUEST_HDR:
+  case HttpTransact::HTTP_API_PRE_REMAP:
+  case HttpTransact::HTTP_API_POST_REMAP:
   case HttpTransact::HTTP_API_OS_DNS:
   case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
   case HttpTransact::HTTP_API_READ_CACHE_HDR:
@@ -6545,7 +6550,13 @@ HttpSM::set_next_state()
       do_api_callout();
       break;
     }
-
+  
+  case HttpTransact::HTTP_POST_REMAP_SKIP:
+    {
+      call_transact_and_set_next_state(NULL);
+      break;
+    }
+  
   case HttpTransact::HTTP_REMAP_REQUEST:
     {
       if (!remapProcessor.using_separate_thread()) {
@@ -6558,15 +6569,8 @@ HttpSM::set_next_state()
         do_remap_request(false);        /* dont run inline (iow on another thread) */
       }
       break;
-    }
-
-  case HttpTransact::HTTP_END_REMAP_REQUEST:
-    {
-      /* nop for now */
-      call_transact_and_set_next_state(NULL);
-      break;
-    }
-
+    }  
+  
   case HttpTransact::DNS_LOOKUP:
     {
       if (url_remap_mode == 2 && t_state.first_dns_lookup) {
