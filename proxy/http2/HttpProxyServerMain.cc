@@ -222,7 +222,7 @@ init_HttpProxyServer(void)
   // INKqa11918
   init_max_chunk_buf();
 
-#ifndef INK_NO_API
+#ifndef TS_NO_API
   // Used to give plugins the ability to create http requests
   //   The equivalent of the connecting to localhost on the  proxy
   //   port but without going through the operating system

@@ -1090,9 +1090,9 @@ mime_hdr_destroy(HdrHeap * heap, MIMEHdrImpl * mh)
 {
   mime_hdr_destroy_field_block_list(heap, mh->m_first_fblock.m_next);
 
-  // INKqa11458: if we deallocate mh here and call INKMLocRelease
+  // INKqa11458: if we deallocate mh here and call TSMLocRelease
   // again, the plugin fails in assert. We leave deallocating to
-  // the plugin using INKMLocRelease
+  // the plugin using TSMLocRelease
 
   //heap->deallocate_obj(mh);
 }

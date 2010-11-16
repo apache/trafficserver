@@ -39,22 +39,22 @@
 static void *
 reenable_txn(void *data)
 {
-  INKHttpTxn txnp = (INKHttpTxn) data;
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxn txnp = (TSHttpTxn) data;
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return NULL;
 }
 
 static int
-thread_plugin(INKCont contp, INKEvent event, void *edata)
+thread_plugin(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
-  case INK_EVENT_HTTP_OS_DNS:
+  case TS_EVENT_HTTP_OS_DNS:
       /**
        * Check if the thread has been created successfully or not.
        * If the thread has not been created successfully, assert.
        */
-    if (!INKThreadCreate(reenable_txn, edata)) {
-      INKReleaseAssert(!"Failure in thread creation");
+    if (!TSThreadCreate(reenable_txn, edata)) {
+      TSReleaseAssert(!"Failure in thread creation");
     }
     return 0;
   default:
@@ -67,7 +67,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -90,22 +90,22 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "thread-1";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
-  INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, INKContCreate(thread_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(thread_plugin, NULL));
 }

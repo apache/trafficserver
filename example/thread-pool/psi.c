@@ -93,12 +93,12 @@ typedef enum
 typedef struct
 {
   unsigned int magic;
-  INKVIO output_vio;
-  INKIOBuffer output_buffer;
-  INKIOBufferReader output_reader;
+  TSVIO output_vio;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader output_reader;
 
-  INKIOBuffer psi_buffer;
-  INKIOBufferReader psi_reader;
+  TSIOBuffer psi_buffer;
+  TSIOBufferReader psi_reader;
   char psi_filename[PSI_FILENAME_MAX_SIZE + 128];
   int psi_filename_len;
   int psi_success;
@@ -112,8 +112,8 @@ typedef struct
 
 typedef struct
 {
-  INKCont contp;
-  INKEvent event;
+  TSCont contp;
+  TSEvent event;
 } TryLockData;
 
 
@@ -127,11 +127,11 @@ typedef enum
 
 extern Queue job_queue;
 
-static INKTextLogObject log;
+static TSTextLogObject log;
 static char psi_directory[PSI_PATH_MAX_SIZE];
 
 
-static int trylock_handler(INKCont contp, INKEvent event, void *edata);
+static int trylock_handler(TSCont contp, TSEvent event, void *edata);
 
 /*-------------------------------------------------------------------------
   cont_data_alloc
@@ -147,7 +147,7 @@ cont_data_alloc()
 {
   ContData *data;
 
-  data = (ContData *) INKmalloc(sizeof(ContData));
+  data = (ContData *) TSmalloc(sizeof(ContData));
   data->magic = MAGIC_ALIVE;
   data->output_vio = NULL;
   data->output_buffer = NULL;
@@ -181,27 +181,27 @@ cont_data_alloc()
 static void
 cont_data_destroy(ContData * data)
 {
-  INKDebug(DBG_TAG, "Destroying continuation data");
+  TSDebug(DBG_TAG, "Destroying continuation data");
   if (data) {
-    INKAssert(data->magic == MAGIC_ALIVE);
+    TSAssert(data->magic == MAGIC_ALIVE);
     if (data->output_reader) {
-      INKIOBufferReaderFree(data->output_reader);
+      TSIOBufferReaderFree(data->output_reader);
       data->output_reader = NULL;
     }
     if (data->output_buffer) {
-      INKIOBufferDestroy(data->output_buffer);
+      TSIOBufferDestroy(data->output_buffer);
       data->output_buffer = NULL;
     }
     if (data->psi_reader) {
-      INKIOBufferReaderFree(data->psi_reader);
+      TSIOBufferReaderFree(data->psi_reader);
       data->psi_reader = NULL;
     }
     if (data->psi_buffer) {
-      INKIOBufferDestroy(data->psi_buffer);
+      TSIOBufferDestroy(data->psi_buffer);
       data->psi_buffer = NULL;
     }
     data->magic = MAGIC_DEAD;
-    INKfree(data);
+    TSfree(data);
   }
 }
 
@@ -221,17 +221,17 @@ cont_data_destroy(ContData * data)
     STR_FAIL    if pattern not found
   -------------------------------------------------------------------------*/
 static StrOperationResult
-strsearch_ioreader(INKIOBufferReader reader, const char *pattern, int *nparse)
+strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
 {
   int index = 0;
-  INKIOBufferBlock block = INKIOBufferReaderStart(reader);
+  TSIOBufferBlock block = TSIOBufferReaderStart(reader);
   int slen = strlen(pattern);
 
   if (slen <= 0) {
     return STR_FAIL;
   }
-  if (block == INK_ERROR_PTR) {
-    INKError("[strsearch_ioreader] Error while getting block from ioreader");
+  if (block == TS_ERROR_PTR) {
+    TSError("[strsearch_ioreader] Error while getting block from ioreader");
     return STR_FAIL;
   }
 
@@ -240,11 +240,11 @@ strsearch_ioreader(INKIOBufferReader reader, const char *pattern, int *nparse)
   /* Loop thru each block while we've not yet found the pattern */
   while ((block != NULL) && (index < slen)) {
     int64 blocklen;
-    const char *blockptr = INKIOBufferBlockReadStart(block, reader, &blocklen);
+    const char *blockptr = TSIOBufferBlockReadStart(block, reader, &blocklen);
     const char *ptr;
 
-    if (blockptr == INK_ERROR_PTR) {
-      INKError("[strsearch_ioreader] Error while getting block pointer");
+    if (blockptr == TS_ERROR_PTR) {
+      TSError("[strsearch_ioreader] Error while getting block pointer");
       break;
     }
 
@@ -261,22 +261,22 @@ strsearch_ioreader(INKIOBufferReader reader, const char *pattern, int *nparse)
     }
 
     /* Parse next block */
-    block = INKIOBufferBlockNext(block);
-    if (block == INK_ERROR_PTR) {
-      INKError("[strsearch_ioreader] Error while getting block from ioreader");
+    block = TSIOBufferBlockNext(block);
+    if (block == TS_ERROR_PTR) {
+      TSError("[strsearch_ioreader] Error while getting block from ioreader");
       return STR_FAIL;
     }
   }
 
   *nparse -= index;             /* Adjust nparse so it doesn't include matching chars */
   if (index == slen) {
-    INKDebug(DBG_TAG, "strfind: match for %s at position %d", pattern, *nparse);
+    TSDebug(DBG_TAG, "strfind: match for %s at position %d", pattern, *nparse);
     return STR_SUCCESS;
   } else if (index > 0) {
-    INKDebug(DBG_TAG, "strfind: partial match for %s at position %d", pattern, *nparse);
+    TSDebug(DBG_TAG, "strfind: partial match for %s at position %d", pattern, *nparse);
     return STR_PARTIAL;
   } else {
-    INKDebug(DBG_TAG, "strfind no match for %s", pattern);
+    TSDebug(DBG_TAG, "strfind no match for %s", pattern);
     return STR_FAIL;
   }
 }
@@ -301,30 +301,30 @@ strsearch_ioreader(INKIOBufferReader reader, const char *pattern, int *nparse)
     STR_FAIL    if extraction failed
   -------------------------------------------------------------------------*/
 static int
-strextract_ioreader(INKIOBufferReader reader, int offset, const char *end_pattern, char *buffer, int *buflen)
+strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern, char *buffer, int *buflen)
 {
   int buf_idx = 0;
   int p_idx = 0;
   int nbytes_so_far = 0;
   int plen = strlen(end_pattern);
   const char *ptr;
-  INKIOBufferBlock block = INKIOBufferReaderStart(reader);
+  TSIOBufferBlock block = TSIOBufferReaderStart(reader);
 
   if (plen <= 0) {
     return STR_FAIL;
   }
-  if (block == INK_ERROR_PTR) {
-    INKError("[strextract_ioreader] Error while getting block from ioreader");
+  if (block == TS_ERROR_PTR) {
+    TSError("[strextract_ioreader] Error while getting block from ioreader");
     return STR_FAIL;
   }
 
   /* Now start extraction */
   while ((block != NULL) && (p_idx < plen) && (buf_idx < PSI_FILENAME_MAX_SIZE)) {
     int64 blocklen;
-    const char *blockptr = INKIOBufferBlockReadStart(block, reader, &blocklen);
+    const char *blockptr = TSIOBufferBlockReadStart(block, reader, &blocklen);
 
-    if (blockptr == INK_ERROR_PTR) {
-      INKError("[strsearch_ioreader] Error while getting block pointer");
+    if (blockptr == TS_ERROR_PTR) {
+      TSError("[strsearch_ioreader] Error while getting block pointer");
       break;
     }
 
@@ -351,16 +351,16 @@ strextract_ioreader(INKIOBufferReader reader, int offset, const char *end_patter
       }
     }
 
-    block = INKIOBufferBlockNext(block);
-    if (block == INK_ERROR_PTR) {
-      INKError("[strextract_ioreader] Error while getting block from ioreader");
+    block = TSIOBufferBlockNext(block);
+    if (block == TS_ERROR_PTR) {
+      TSError("[strextract_ioreader] Error while getting block from ioreader");
       return STR_FAIL;
     }
   }
 
   /* Error, could not read end of filename */
   if (buf_idx >= PSI_FILENAME_MAX_SIZE) {
-    INKDebug(DBG_TAG, "strextract: filename too long");
+    TSDebug(DBG_TAG, "strextract: filename too long");
     *buflen = 0;
     return STR_FAIL;
   }
@@ -370,12 +370,12 @@ strextract_ioreader(INKIOBufferReader reader, int offset, const char *end_patter
     /* Nul terminate the filename, remove the end_pattern copied into the buffer */
     *buflen = buf_idx - plen;
     buffer[*buflen] = '\0';
-    INKDebug(DBG_TAG, "strextract: filename = |%s|", buffer);
+    TSDebug(DBG_TAG, "strextract: filename = |%s|", buffer);
     return STR_SUCCESS;
   }
   /* End of filename not yet reached we need to read some more data */
   else {
-    INKDebug(DBG_TAG, "strextract: partially extracted filename");
+    TSDebug(DBG_TAG, "strextract: partially extracted filename");
     *buflen = buf_idx - p_idx;
     return STR_PARTIAL;
   }
@@ -399,14 +399,14 @@ strextract_ioreader(INKIOBufferReader reader, int offset, const char *end_patter
     1  if a psi filename was found
   -------------------------------------------------------------------------*/
 static int
-parse_data(INKCont contp, INKIOBufferReader input_reader, int avail, int *toconsume, int *towrite)
+parse_data(TSCont contp, TSIOBufferReader input_reader, int avail, int *toconsume, int *towrite)
 {
   ContData *data;
   int nparse = 0;
   int status;
 
-  data = INKContDataGet(contp);
-  INKAssert(data->magic == MAGIC_ALIVE);
+  data = TSContDataGet(contp);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
   if (data->parse_state == PARSE_SEARCH) {
 
@@ -432,7 +432,7 @@ parse_data(INKCont contp, INKIOBufferReader input_reader, int avail, int *tocons
       data->parse_state = PARSE_EXTRACT;
       break;
     default:
-      INKAssert(!"strsearch_ioreader returned unexpected status");
+      TSAssert(!"strsearch_ioreader returned unexpected status");
     }
   }
 
@@ -460,7 +460,7 @@ parse_data(INKCont contp, INKIOBufferReader input_reader, int avail, int *tocons
     data->parse_state = PARSE_SEARCH;
     return 1;
   default:
-    INKAssert(!"strextract_ioreader returned bad status");
+    TSAssert(!"strextract_ioreader returned bad status");
   }
 
   return 0;
@@ -506,32 +506,32 @@ _basename(const char *filename)
     1  if success
   -------------------------------------------------------------------------*/
 static int
-psi_include(INKCont contp, void *edata)
+psi_include(TSCont contp, void *edata)
 {
 #define BUFFER_SIZE 1024
   ContData *data;
-  INKFile filep;
+  TSFile filep;
   char buf[BUFFER_SIZE];
   char inc_file[PSI_PATH_MAX_SIZE + PSI_FILENAME_MAX_SIZE];
-  INKReturnCode retval;
+  TSReturnCode retval;
 
   /* We manipulate plugin continuation data from a separate thread.
      Grab mutex to avoid concurrent access */
-  retval = INKMutexLock(INKContMutexGet(contp));
-  if (retval != INK_SUCCESS) {
-    INKError("[psi_include] Could not lock mutex");
+  retval = TSMutexLock(TSContMutexGet(contp));
+  if (retval != TS_SUCCESS) {
+    TSError("[psi_include] Could not lock mutex");
     return 0;
   }
 
-  data = INKContDataGet(contp);
-  INKAssert(data->magic == MAGIC_ALIVE);
+  data = TSContDataGet(contp);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
   if (!data->psi_buffer) {
-    data->psi_buffer = INKIOBufferCreate();
-    data->psi_reader = INKIOBufferReaderAlloc(data->psi_buffer);
+    data->psi_buffer = TSIOBufferCreate();
+    data->psi_reader = TSIOBufferReaderAlloc(data->psi_buffer);
 
-    if ((data->psi_buffer == INK_ERROR_PTR) || (data->psi_reader == INK_ERROR_PTR)) {
-      INKError("[psi_include] Could not create iobuffer to store include content");
+    if ((data->psi_buffer == TS_ERROR_PTR) || (data->psi_reader == TS_ERROR_PTR)) {
+      TSError("[psi_include] Could not create iobuffer to store include content");
       goto error;
     }
   }
@@ -542,11 +542,11 @@ psi_include(INKCont contp, void *edata)
   sprintf(inc_file, "%s/%s", psi_directory, _basename(data->psi_filename));
 
   /* Read the include file and copy content into iobuffer */
-  if ((filep = INKfopen(inc_file, "r")) != NULL) {
-    INKDebug(DBG_TAG, "Reading include file %s", inc_file);
+  if ((filep = TSfopen(inc_file, "r")) != NULL) {
+    TSDebug(DBG_TAG, "Reading include file %s", inc_file);
 
-    while (INKfgets(filep, buf, BUFFER_SIZE) != NULL) {
-      INKIOBufferBlock block;
+    while (TSfgets(filep, buf, BUFFER_SIZE) != NULL) {
+      TSIOBufferBlock block;
       int64 len, avail, ndone, ntodo, towrite;
       char *ptr_block;
 
@@ -554,38 +554,38 @@ psi_include(INKCont contp, void *edata)
       ndone = 0;
       ntodo = len;
       while (ntodo > 0) {
-        /* INKIOBufferStart allocates more blocks if required */
-        block = INKIOBufferStart(data->psi_buffer);
-        if (block == INK_ERROR_PTR) {
-          INKError("[psi_include] Could not get buffer block");
+        /* TSIOBufferStart allocates more blocks if required */
+        block = TSIOBufferStart(data->psi_buffer);
+        if (block == TS_ERROR_PTR) {
+          TSError("[psi_include] Could not get buffer block");
           goto error;
         }
-        ptr_block = INKIOBufferBlockWriteStart(block, &avail);
-        if (ptr_block == INK_ERROR_PTR) {
-          INKError("[psi_include] Could not get buffer block");
+        ptr_block = TSIOBufferBlockWriteStart(block, &avail);
+        if (ptr_block == TS_ERROR_PTR) {
+          TSError("[psi_include] Could not get buffer block");
           goto error;
         }
         towrite = MIN(ntodo, avail);
 
         memcpy(ptr_block, buf + ndone, towrite);
-        retval = INKIOBufferProduce(data->psi_buffer, towrite);
-        if (retval == INK_ERROR) {
-          INKError("[psi_include] Could not produce data");
+        retval = TSIOBufferProduce(data->psi_buffer, towrite);
+        if (retval == TS_ERROR) {
+          TSError("[psi_include] Could not produce data");
           goto error;
         }
         ntodo -= towrite;
         ndone += towrite;
       }
     }
-    INKfclose(filep);
+    TSfclose(filep);
     data->psi_success = 1;
     if (log) {
-      INKTextLogObjectWrite(log, "Successfully included file: %s", inc_file);
+      TSTextLogObjectWrite(log, "Successfully included file: %s", inc_file);
     }
   } else {
     data->psi_success = 0;
     if (log) {
-      INKTextLogObjectWrite(log, "Failed to include file: %s", inc_file);
+      TSTextLogObjectWrite(log, "Failed to include file: %s", inc_file);
     }
   }
 
@@ -593,14 +593,14 @@ psi_include(INKCont contp, void *edata)
      to let it know we're done. */
 
   /* Note: if the blocking call was not in the transformation state (i.e. in
-     INK_HTTP_READ_REQUEST_HDR, INK_HTTP_OS_DNS and so on...) we could
-     use INKHttpTxnReenable to wake up the transaction instead of sending an event. */
+     TS_HTTP_READ_REQUEST_HDR, TS_HTTP_OS_DNS and so on...) we could
+     use TSHttpTxnReenable to wake up the transaction instead of sending an event. */
 
 error:
-  INKContSchedule(contp, 0);
+  TSContSchedule(contp, 0);
   data->psi_success = 0;
   data->state = STATE_READ_DATA;
-  INKMutexUnlock(INKContMutexGet(contp));
+  TSMutexUnlock(TSContMutexGet(contp));
   return 0;
 }
 
@@ -618,48 +618,48 @@ error:
    1 if success
   -------------------------------------------------------------------------*/
 static int
-wake_up_streams(INKCont contp)
+wake_up_streams(TSCont contp)
 {
-  INKVIO input_vio;
+  TSVIO input_vio;
   ContData *data;
   int ntodo;
-  INKReturnCode retval;
+  TSReturnCode retval;
 
-  data = INKContDataGet(contp);
-  INKAssert(data->magic == MAGIC_ALIVE);
+  data = TSContDataGet(contp);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
-  input_vio = INKVConnWriteVIOGet(contp);
-  if (input_vio == INK_ERROR_PTR) {
-    INKError("[wake_up_streams] Error while getting input_vio");
+  input_vio = TSVConnWriteVIOGet(contp);
+  if (input_vio == TS_ERROR_PTR) {
+    TSError("[wake_up_streams] Error while getting input_vio");
     return 0;
   }
 
-  ntodo = INKVIONTodoGet(input_vio);
-  if (ntodo == INK_ERROR) {
-    INKError("[wake_up_streams] Error while getting bytes left to read");
+  ntodo = TSVIONTodoGet(input_vio);
+  if (ntodo == TS_ERROR) {
+    TSError("[wake_up_streams] Error while getting bytes left to read");
     return 0;
   }
 
   if (ntodo > 0) {
-    retval = INKVIOReenable(data->output_vio);
-    if (retval == INK_ERROR) {
-      INKError("[wake_up_streams] Error while reenabling downstream vio");
+    retval = TSVIOReenable(data->output_vio);
+    if (retval == TS_ERROR) {
+      TSError("[wake_up_streams] Error while reenabling downstream vio");
       return 0;
     }
-    INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_READY, input_vio);
+    TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
   } else {
-    INKDebug(DBG_TAG, "Total bytes produced by transform = %d", data->transform_bytes);
-    retval = INKVIONBytesSet(data->output_vio, data->transform_bytes);
-    if (retval == INK_ERROR) {
-      INKError("[wake_up_streams] Error while setting nbytes to downstream vio");
+    TSDebug(DBG_TAG, "Total bytes produced by transform = %d", data->transform_bytes);
+    retval = TSVIONBytesSet(data->output_vio, data->transform_bytes);
+    if (retval == TS_ERROR) {
+      TSError("[wake_up_streams] Error while setting nbytes to downstream vio");
       return 0;
     }
-    retval = INKVIOReenable(data->output_vio);
-    if (retval == INK_ERROR) {
-      INKError("[wake_up_streams] Error while reenabling downstream vio");
+    retval = TSVIOReenable(data->output_vio);
+    if (retval == TS_ERROR) {
+      TSError("[wake_up_streams] Error while reenabling downstream vio");
       return 0;
     }
-    INKContCall(INKVIOContGet(input_vio), INK_EVENT_VCONN_WRITE_COMPLETE, input_vio);
+    TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
   }
 
   return 1;
@@ -682,61 +682,61 @@ wake_up_streams(INKCont contp)
    1 if success
   -------------------------------------------------------------------------*/
 static int
-handle_transform(INKCont contp)
+handle_transform(TSCont contp)
 {
-  INKVConn output_conn;
-  INKVIO input_vio;
+  TSVConn output_conn;
+  TSVIO input_vio;
   ContData *data;
-  INKIOBufferReader input_reader;
+  TSIOBufferReader input_reader;
   int toread, avail, psi, toconsume, towrite;
-  INKReturnCode retval;
+  TSReturnCode retval;
 
   /* Get the output (downstream) vconnection where we'll write data to. */
-  output_conn = INKTransformOutputVConnGet(contp);
-  if (output_conn == INK_ERROR_PTR) {
-    INKError("[handle_transform] Error while getting transform VC");
+  output_conn = TSTransformOutputVConnGet(contp);
+  if (output_conn == TS_ERROR_PTR) {
+    TSError("[handle_transform] Error while getting transform VC");
     return 1;
   }
 
   /* Get upstream vio */
-  input_vio = INKVConnWriteVIOGet(contp);
-  if (input_vio == INK_ERROR_PTR) {
-    INKError("[handle_transform] Error while getting input vio");
+  input_vio = TSVConnWriteVIOGet(contp);
+  if (input_vio == TS_ERROR_PTR) {
+    TSError("[handle_transform] Error while getting input vio");
     return 1;
   }
 
-  data = INKContDataGet(contp);
-  INKAssert(data->magic == MAGIC_ALIVE);
+  data = TSContDataGet(contp);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
   if (!data->output_buffer) {
-    data->output_buffer = INKIOBufferCreate();
-    data->output_reader = INKIOBufferReaderAlloc(data->output_buffer);
+    data->output_buffer = TSIOBufferCreate();
+    data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
 
     /* INT_MAX because we don't know yet how much bytes we'll produce */
-    data->output_vio = INKVConnWrite(output_conn, contp, data->output_reader, INT_MAX);
+    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT_MAX);
 
-    if (data->output_vio == INK_ERROR_PTR) {
-      INKError("[handle_transform] Error while writing to downstream VC");
+    if (data->output_vio == TS_ERROR_PTR) {
+      TSError("[handle_transform] Error while writing to downstream VC");
       return 0;
     }
   }
 
   /* If the input VIO's buffer is NULL, the transformation is over */
-  if (!INKVIOBufferGet(input_vio)) {
-    INKDebug(DBG_TAG, "input_vio NULL, terminating transformation");
-    INKVIONBytesSet(data->output_vio, data->transform_bytes);
-    INKVIOReenable(data->output_vio);
+  if (!TSVIOBufferGet(input_vio)) {
+    TSDebug(DBG_TAG, "input_vio NULL, terminating transformation");
+    TSVIONBytesSet(data->output_vio, data->transform_bytes);
+    TSVIOReenable(data->output_vio);
     return 1;
   }
 
   /* Determine how much data we have left to read. */
-  toread = INKVIONTodoGet(input_vio);
+  toread = TSVIONTodoGet(input_vio);
 
   if (toread > 0) {
-    input_reader = INKVIOReaderGet(input_vio);
-    avail = INKIOBufferReaderAvail(input_reader);
-    if (avail == INK_ERROR) {
-      INKError("[handle_transform] Error while getting number of bytes available");
+    input_reader = TSVIOReaderGet(input_vio);
+    avail = TSIOBufferReaderAvail(input_reader);
+    if (avail == TS_ERROR) {
+      TSError("[handle_transform] Error while getting number of bytes available");
       return 0;
     }
 
@@ -758,32 +758,32 @@ handle_transform(INKCont contp)
         data->transform_bytes += towrite;
 
         /* Copy the data from the read buffer to the output buffer. */
-        retval = INKIOBufferCopy(INKVIOBufferGet(data->output_vio), INKVIOReaderGet(input_vio), towrite, 0);
-        if (retval == INK_ERROR) {
-          INKError("[handle_transform] Error while copying bytes to output VC");
+        retval = TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(input_vio), towrite, 0);
+        if (retval == TS_ERROR) {
+          TSError("[handle_transform] Error while copying bytes to output VC");
           return 0;
         }
 
         /* Reenable the output connection so it can read the data we've produced. */
-        retval = INKVIOReenable(data->output_vio);
-        if (retval == INK_ERROR) {
-          INKError("[handle_transform] Error while reenabling output VC");
+        retval = TSVIOReenable(data->output_vio);
+        if (retval == TS_ERROR) {
+          TSError("[handle_transform] Error while reenabling output VC");
           return 0;
         }
       }
 
       if (toconsume > 0) {
         /* Consume data we've processed an we are no longer interested in */
-        retval = INKIOBufferReaderConsume(input_reader, toconsume);
-        if (retval == INK_ERROR) {
-          INKError("[handle_transform] Error while consuming data from upstream VC");
+        retval = TSIOBufferReaderConsume(input_reader, toconsume);
+        if (retval == TS_ERROR) {
+          TSError("[handle_transform] Error while consuming data from upstream VC");
           return 0;
         }
 
         /* Modify the input VIO to reflect how much data we've completed. */
-        retval = INKVIONDoneSet(input_vio, INKVIONDoneGet(input_vio) + toconsume);
-        if (retval == INK_ERROR) {
-          INKError("[handle_transform] Error while setting ndone on upstream VC");
+        retval = TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + toconsume);
+        if (retval == TS_ERROR) {
+          TSError("[handle_transform] Error while setting ndone on upstream VC");
           return 0;
         }
       }
@@ -793,7 +793,7 @@ handle_transform(INKCont contp)
         Job *new_job;
         /* Add a request to include a file into the jobs queue.. */
         /* We'll be called back once it's done with an EVENT_IMMEDIATE */
-        INKDebug(DBG_TAG, "Psi filename extracted. Adding an include job to thread queue.");
+        TSDebug(DBG_TAG, "Psi filename extracted. Adding an include job to thread queue.");
         data->state = STATE_READ_PSI;
 
         /* Create a new job request and add it to the queue */
@@ -827,51 +827,51 @@ handle_transform(INKCont contp)
    1 if success
   -------------------------------------------------------------------------*/
 static int
-dump_psi(INKCont contp)
+dump_psi(TSCont contp)
 {
   ContData *data;
   int psi_output_len;
-  INKVIO input_vio;
-  INKReturnCode retval;
+  TSVIO input_vio;
+  TSReturnCode retval;
 
-  input_vio = INKVConnWriteVIOGet(contp);
-  if (input_vio == INK_ERROR_PTR) {
-    INKError("[dump_psi] Error while getting input vio");
+  input_vio = TSVConnWriteVIOGet(contp);
+  if (input_vio == TS_ERROR_PTR) {
+    TSError("[dump_psi] Error while getting input vio");
     return 1;
   }
 
-  data = INKContDataGet(contp);
-  INKAssert(data->magic == MAGIC_ALIVE);
+  data = TSContDataGet(contp);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
   /* If script exec succeded, copy its output to the downstream vconn */
   if (data->psi_success == 1) {
-    psi_output_len = INKIOBufferReaderAvail(data->psi_reader);
-    if (psi_output_len == INK_ERROR) {
-      INKError("[dump_psi] Error while getting available bytes from reader");
+    psi_output_len = TSIOBufferReaderAvail(data->psi_reader);
+    if (psi_output_len == TS_ERROR) {
+      TSError("[dump_psi] Error while getting available bytes from reader");
       return 1;
     }
 
     if (psi_output_len > 0) {
       data->transform_bytes += psi_output_len;
 
-      INKDebug(DBG_TAG, "Inserting %d bytes from include file", psi_output_len);
-      retval = INKIOBufferCopy(INKVIOBufferGet(data->output_vio), data->psi_reader, psi_output_len, 0);
-      if (retval == INK_ERROR) {
-        INKError("[dump_psi] Error while copying include bytes to downstream VC");
+      TSDebug(DBG_TAG, "Inserting %d bytes from include file", psi_output_len);
+      retval = TSIOBufferCopy(TSVIOBufferGet(data->output_vio), data->psi_reader, psi_output_len, 0);
+      if (retval == TS_ERROR) {
+        TSError("[dump_psi] Error while copying include bytes to downstream VC");
         return 1;
       }
 
       /* Consume all the output data */
-      retval = INKIOBufferReaderConsume(data->psi_reader, psi_output_len);
-      if (retval == INK_ERROR) {
-        INKError("[dump_psi] Error while consuming data from buffer");
+      retval = TSIOBufferReaderConsume(data->psi_reader, psi_output_len);
+      if (retval == TS_ERROR) {
+        TSError("[dump_psi] Error while consuming data from buffer");
         return 1;
       }
 
       /* Reenable the output connection so it can read the data we've produced. */
-      retval = INKVIOReenable(data->output_vio);
-      if (retval == INK_ERROR) {
-        INKError("[dump_psi] Error while reenabling output VIO");
+      retval = TSVIOReenable(data->output_vio);
+      if (retval == TS_ERROR) {
+        TSError("[dump_psi] Error while reenabling output VIO");
         return 1;
       }
     }
@@ -895,66 +895,66 @@ dump_psi(INKCont contp)
   Return Value:
   -------------------------------------------------------------------------*/
 static int
-transform_handler(INKCont contp, INKEvent event, void *edata)
+transform_handler(TSCont contp, TSEvent event, void *edata)
 {
-  INKVIO input_vio;
+  TSVIO input_vio;
   ContData *data;
   int state, lock, retval;
 
   /* This section will be called by both TS internal
      and the thread. Protect it with a mutex to avoid
      concurrent calls. */
-  INKMutexLockTry(INKContMutexGet(contp), &lock);
+  TSMutexLockTry(TSContMutexGet(contp), &lock);
 
   /* Handle TryLock result */
   if (!lock) {
-    INKCont c = INKContCreate(trylock_handler, NULL);
-    TryLockData *d = INKmalloc(sizeof(TryLockData));
+    TSCont c = TSContCreate(trylock_handler, NULL);
+    TryLockData *d = TSmalloc(sizeof(TryLockData));
     d->contp = contp;
     d->event = event;
-    INKContDataSet(c, d);
-    INKContSchedule(c, 10);
+    TSContDataSet(c, d);
+    TSContSchedule(c, 10);
     return 1;
   }
 
-  data = INKContDataGet(contp);
-  INKAssert(data->magic == MAGIC_ALIVE);
+  data = TSContDataGet(contp);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
   state = data->state;
 
   /* Check to see if the transformation has been closed */
-  retval = INKVConnClosedGet(contp);
-  if (retval == INK_ERROR) {
-    INKError("[transform_handler] Error while getting close status of transformation");
+  retval = TSVConnClosedGet(contp);
+  if (retval == TS_ERROR) {
+    TSError("[transform_handler] Error while getting close status of transformation");
   }
   if (retval) {
     /* If the thread is still executing its job, we don't want to destroy
        the continuation right away as the thread will call us back
        on this continuation. */
     if (state == STATE_READ_PSI) {
-      INKContSchedule(contp, 10);
+      TSContSchedule(contp, 10);
     } else {
-      INKMutexUnlock(INKContMutexGet(contp));
-      cont_data_destroy(INKContDataGet(contp));
-      INKContDestroy(contp);
+      TSMutexUnlock(TSContMutexGet(contp));
+      cont_data_destroy(TSContDataGet(contp));
+      TSContDestroy(contp);
       return 1;
     }
   } else {
     switch (event) {
-    case INK_EVENT_ERROR:
-      input_vio = INKVConnWriteVIOGet(contp);
-      if (input_vio == INK_ERROR_PTR) {
-        INKError("[transform_handler] Error while getting upstream vio");
+    case TS_EVENT_ERROR:
+      input_vio = TSVConnWriteVIOGet(contp);
+      if (input_vio == TS_ERROR_PTR) {
+        TSError("[transform_handler] Error while getting upstream vio");
       } else {
-        INKContCall(INKVIOContGet(input_vio), INK_EVENT_ERROR, input_vio);
+        TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
       }
       break;
 
-    case INK_EVENT_VCONN_WRITE_COMPLETE:
-      INKVConnShutdown(INKTransformOutputVConnGet(contp), 0, 1);
+    case TS_EVENT_VCONN_WRITE_COMPLETE:
+      TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
       break;
 
-    case INK_EVENT_VCONN_WRITE_READY:
+    case TS_EVENT_VCONN_WRITE_READY:
       /* downstream vconnection is done reading data we've write into it.
          let's read some more data from upstream if we're in read state. */
       if (state == STATE_READ_DATA) {
@@ -962,7 +962,7 @@ transform_handler(INKCont contp, INKEvent event, void *edata)
       }
       break;
 
-    case INK_EVENT_IMMEDIATE:
+    case TS_EVENT_IMMEDIATE:
       if (state == STATE_READ_DATA) {
         /* upstream vconnection signals some more data ready to be read
            let's try to transform some more data */
@@ -977,18 +977,18 @@ transform_handler(INKCont contp, INKEvent event, void *edata)
       break;
 
     default:
-      INKAssert(!"Unexpected event");
+      TSAssert(!"Unexpected event");
       break;
     }
   }
 
-  INKMutexUnlock(INKContMutexGet(contp));
+  TSMutexUnlock(TSContMutexGet(contp));
   return 1;
 }
 
 /*-------------------------------------------------------------------------
   trylock_handler
-  Small handler to handle INKMutexLockTry failures
+  Small handler to handle TSMutexLockTry failures
 
   Input:
     contp      continuation for the current transaction
@@ -998,12 +998,12 @@ transform_handler(INKCont contp, INKEvent event, void *edata)
   Return Value:
   -------------------------------------------------------------------------*/
 static int
-trylock_handler(INKCont contp, INKEvent event, void *edata)
+trylock_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TryLockData *data = INKContDataGet(contp);
+  TryLockData *data = TSContDataGet(contp);
   transform_handler(data->contp, data->event, NULL);
-  INKfree(data);
-  INKContDestroy(contp);
+  TSfree(data);
+  TSContDestroy(contp);
   return 0;
 }
 
@@ -1020,57 +1020,57 @@ trylock_handler(INKCont contp, INKEvent event, void *edata)
     0  if not
   -------------------------------------------------------------------------*/
 static int
-transformable(INKHttpTxn txnp)
+transformable(TSHttpTxn txnp)
 {
   /*  We are only interested in transforming "200 OK" responses
      with a Content-Type: text/ header and with X-Psi header */
-  INKMBuffer bufp;
-  INKMLoc hdr_loc, field_loc;
-  INKHttpStatus resp_status;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc, field_loc;
+  TSHttpStatus resp_status;
   const char *value;
 
-  INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
+  TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
 
-  resp_status = INKHttpHdrStatusGet(bufp, hdr_loc);
-  if (resp_status == (INKHttpStatus)INK_ERROR) {
-    INKError("[transformable] Error while getting http status");
+  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+  if (resp_status == (TSHttpStatus)TS_ERROR) {
+    TSError("[transformable] Error while getting http status");
   }
-  if ((resp_status == (INKHttpStatus)INK_ERROR) || (resp_status != INK_HTTP_STATUS_OK)) {
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  if ((resp_status == (TSHttpStatus)TS_ERROR) || (resp_status != TS_HTTP_STATUS_OK)) {
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
 
-  field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, INK_MIME_FIELD_CONTENT_TYPE, -1);
-  if (field_loc == INK_ERROR_PTR) {
-    INKError("[transformable] Error while searching Content-Type field");
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
+  if (field_loc == TS_ERROR_PTR) {
+    TSError("[transformable] Error while searching Content-Type field");
   }
-  if ((field_loc == INK_ERROR_PTR) || (field_loc == NULL)) {
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  if ((field_loc == TS_ERROR_PTR) || (field_loc == NULL)) {
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
 
-  if (INKMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value, NULL) == INK_ERROR) {
-    INKError("[transformable] Error while getting Content-Type field value");
+  if (TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &value, NULL) == TS_ERROR) {
+    TSError("[transformable] Error while getting Content-Type field value");
   }
-  if ((value == INK_ERROR_PTR) || (value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
-    INKHandleMLocRelease(bufp, hdr_loc, field_loc);
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  if ((value == TS_ERROR_PTR) || (value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
 
-  INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 
-  field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1);
-  if (value == INK_ERROR_PTR) {
-    INKError("[transformable] Error while searching XPSI field");
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1);
+  if (value == TS_ERROR_PTR) {
+    TSError("[transformable] Error while searching XPSI field");
   }
-  if ((value == INK_ERROR_PTR) || (field_loc == NULL)) {
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  if ((value == TS_ERROR_PTR) || (field_loc == NULL)) {
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
 
-  INKHandleMLocRelease(bufp, hdr_loc, field_loc);
-  INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
   return 1;
 }
@@ -1087,24 +1087,24 @@ transformable(INKHttpTxn txnp)
     0  if not
   -------------------------------------------------------------------------*/
 static int
-transform_add(INKHttpTxn txnp)
+transform_add(TSHttpTxn txnp)
 {
-  INKCont contp;
+  TSCont contp;
   ContData *data;
-  INKReturnCode retval;
+  TSReturnCode retval;
 
-  contp = INKTransformCreate(transform_handler, txnp);
-  if (contp == INK_ERROR_PTR) {
-    INKError("[transform_add] Error while creating a new transformation");
+  contp = TSTransformCreate(transform_handler, txnp);
+  if (contp == TS_ERROR_PTR) {
+    TSError("[transform_add] Error while creating a new transformation");
     return 0;
   }
 
   data = cont_data_alloc();
-  INKContDataSet(contp, data);
+  TSContDataSet(contp, data);
 
-  retval = INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
-  if (retval == INK_ERROR) {
-    INKError("[transform_add] Error registering to transform hook");
+  retval = TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
+  if (retval == TS_ERROR) {
+    TSError("[transform_add] Error registering to transform hook");
     return 0;
   }
   return 1;
@@ -1122,17 +1122,17 @@ transform_add(INKHttpTxn txnp)
   Return Value:
   -------------------------------------------------------------------------*/
 static int
-read_response_handler(INKCont contp, INKEvent event, void *edata)
+read_response_handler(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     if (transformable(txnp)) {
-      INKDebug(DBG_TAG, "Add a transformation");
+      TSDebug(DBG_TAG, "Add a transformation");
       transform_add(txnp);
     }
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
   default:
     break;
@@ -1156,7 +1156,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -1179,7 +1179,7 @@ check_ts_version()
 
 
 /*-------------------------------------------------------------------------
-  INKPluginInit
+  TSPluginInit
   Function called at plugin init time
 
   Input:
@@ -1189,32 +1189,32 @@ check_ts_version()
   Return Value:
   -------------------------------------------------------------------------*/
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
   int i;
-  INKReturnCode retval;
+  TSReturnCode retval;
 
   info.plugin_name = "psi";
   info.vendor_name = "Apache";
   info.support_email = "";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
   /* Initialize the psi directory = <plugin_path>/include */
-  sprintf(psi_directory, "%s/%s", INKPluginDirGet(), PSI_PATH);
+  sprintf(psi_directory, "%s/%s", TSPluginDirGet(), PSI_PATH);
 
-  /* create an INKTextLogObject to log any psi include */
-  retval = INKTextLogObjectCreate("psi", INK_LOG_MODE_ADD_TIMESTAMP, &log);
-  if (retval == INK_ERROR) {
-    INKError("Failed creating log for psi plugin");
+  /* create an TSTextLogObject to log any psi include */
+  retval = TSTextLogObjectCreate("psi", TS_LOG_MODE_ADD_TIMESTAMP, &log);
+  if (retval == TS_ERROR) {
+    TSError("Failed creating log for psi plugin");
     log = NULL;
   }
 
@@ -1223,19 +1223,19 @@ INKPluginInit(int argc, const char *argv[])
   init_queue(&job_queue);
 
   for (i = 0; i < NB_THREADS; i++) {
-    char *thread_name = (char *) INKmalloc(64);
+    char *thread_name = (char *) TSmalloc(64);
     sprintf(thread_name, "Thread[%d]", i);
-    if (!INKThreadCreate((INKThreadFunc) thread_loop, thread_name)) {
-      INKError("[INKPluginInit] Error while creating threads");
+    if (!TSThreadCreate((TSThreadFunc) thread_loop, thread_name)) {
+      TSError("[TSPluginInit] Error while creating threads");
       return;
     }
   }
 
-  retval = INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, INKContCreate(read_response_handler, INKMutexCreate()));
-  if (retval == INK_ERROR) {
-    INKError("[INKPluginInit] Error while registering to read response hook");
+  retval = TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_response_handler, TSMutexCreate()));
+  if (retval == TS_ERROR) {
+    TSError("[TSPluginInit] Error while registering to read response hook");
     return;
   }
 
-  INKDebug(DBG_TAG, "Plugin started");
+  TSDebug(DBG_TAG, "Plugin started");
 }

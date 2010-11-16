@@ -1951,7 +1951,7 @@ main(int argc, char **argv)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
 #endif
 
-#if !defined(RNI_ONLY) && !defined(INK_NO_API)
+#if !defined(RNI_ONLY) && !defined(TS_NO_API)
     plugin_init(system_config_directory, true); // extensions.config
 #endif
 
@@ -2006,7 +2006,7 @@ main(int argc, char **argv)
     //////////////////////////////////////
 
 #ifndef RNI_ONLY
-#ifndef INK_NO_API
+#ifndef TS_NO_API
     plugin_init(system_config_directory, false);        // plugin.config
 #else
     api_init();                 // we still need to initialize some of the data structure other module needs.
@@ -2014,7 +2014,7 @@ main(int argc, char **argv)
     init_inkapi_stat_system();
     // i.e. http_global_hooks
 #endif
-#ifndef INK_NO_TRANSFORM
+#ifndef TS_NO_TRANSFORM
     transformProcessor.start();
 #endif
 

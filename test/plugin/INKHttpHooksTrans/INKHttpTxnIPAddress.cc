@@ -38,7 +38,7 @@
 char *
 uint2ddip(unsigned int addr)
 {
-  char *ptr = (char *) INKmalloc(64);
+  char *ptr = (char *) TSmalloc(64);
   if (!ptr)
     return NULL;
 
@@ -51,7 +51,7 @@ uint2ddip(unsigned int addr)
 }
 
 
-/* Set in INKPluginInit */
+/* Set in TSPluginInit */
 typedef struct parentProxyInfo
 {
   char parentProxyp[BUFSIZ];
@@ -59,9 +59,9 @@ typedef struct parentProxyInfo
 } parentProxyInfo_t;
 
 static int
-handle_SEND_REQUEST(INKCont contp, INKEvent event, void *eData)
+handle_SEND_REQUEST(TSCont contp, TSEvent event, void *eData)
 {
-  INKHttpTxn txnp = (INKHttpTxn *) eData;
+  TSHttpTxn txnp = (TSHttpTxn *) eData;
   unsigned int nextHopIP = 0;
   int err = 0;
   char *ipAddrp = NULL;
@@ -70,14 +70,14 @@ handle_SEND_REQUEST(INKCont contp, INKEvent event, void *eData)
    * TODO use return addr with an actual network library routine (gethostbyaddr) to validate addr
    * TODO tests with an actual parent proxy
    */
-  nextHopIP = INKHttpTxnNextHopIPGet(txnp);
+  nextHopIP = TSHttpTxnNextHopIPGet(txnp);
   if (!nextHopIP) {
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnNextHopIPGet failed");
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnNextHopIPGet failed");
     return ++err;
   }
   ipAddrp = uint2ddip(nextHopIP);
-  INKDebug("INKHttpTxnIPAddress", "INKHttpTxnNextHopIPGet passed for %s", ipAddrp ? ipAddrp : "NULL ptr!");
-  INKfree(ipAddrp);
+  TSDebug("TSHttpTxnIPAddress", "TSHttpTxnNextHopIPGet passed for %s", ipAddrp ? ipAddrp : "NULL ptr!");
+  TSfree(ipAddrp);
   /* TODO validate this IP address, not just an integer value
    * see below
    */
@@ -86,19 +86,19 @@ handle_SEND_REQUEST(INKCont contp, INKEvent event, void *eData)
 
 
 /* Test:
-* INKHttpTxnClientReqGet
-* INKHttpTxnServerIPGet (specific)
-* INKHttpHdrUrlGet
-* INKUrlHostGet
-* Test is to use the address returend by INKHttpTxnServerIPGet
+* TSHttpTxnClientReqGet
+* TSHttpTxnServerIPGet (specific)
+* TSHttpHdrUrlGet
+* TSUrlHostGet
+* Test is to use the address returend by TSHttpTxnServerIPGet
 * with a standard network interface api and compare that
 * host with the hostname found in the request URL.
 */
 static int
-handle_OS_DNS(INKCont contp, INKEvent event, void *eData)
+handle_OS_DNS(TSCont contp, TSEvent event, void *eData)
 {
   unsigned int os_ip;
-  INKHttpTxn txnp = (INKHttpTxn *) eData;
+  TSHttpTxn txnp = (TSHttpTxn *) eData;
   struct in_addr inAddr;
   struct hostent *hostEntp = NULL;
   int err = 0;
@@ -106,52 +106,52 @@ handle_OS_DNS(INKCont contp, INKEvent event, void *eData)
   int hostLen = 0;
   char strTokenp = '.';         /* URLs separated by this token */
   char *domain_os_ip = NULL, *domain_url = NULL;
-  INKMBuffer buf;
+  TSMBuffer buf;
   unsigned int nextHopIP;
-  INKMLoc loc, hdrLoc;
+  TSMLoc loc, hdrLoc;
   char *ptr = NULL;
 
-  /* See: handle_SEND_REQUEST(): nextHopIP = INKHttpTxnNextHopIPGet(txnp);
+  /* See: handle_SEND_REQUEST(): nextHopIP = TSHttpTxnNextHopIPGet(txnp);
    */
-  os_ip = INKHttpTxnServerIPGet(txnp);
+  os_ip = TSHttpTxnServerIPGet(txnp);
   if (os_ip) {
     inAddr.s_addr = os_ip;
     hostEntp = gethostbyaddr((const char *) &inAddr, sizeof(struct in_addr), AF_INET);
     if (!hostEntp) {
       ptr = uint2ddip(os_ip);
       /* failure */
-      INKDebug("INKHttpTxnIPAddress", "INKHttpTxnServerIPGet: gethostbyaddr failed for %s", ptr ? ptr : "NULL ptr!");
-      INKfree(ptr);
+      TSDebug("TSHttpTxnIPAddress", "TSHttpTxnServerIPGet: gethostbyaddr failed for %s", ptr ? ptr : "NULL ptr!");
+      TSfree(ptr);
       return ++err;
     }
   } else {
     /* failure */
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnServerIPGet: gethostbyaddr no hostname");
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnServerIPGet: gethostbyaddr no hostname");
     ++err;
   }
-  if (!INKHttpTxnClientReqGet(txnp, &buf, &loc)) {
+  if (!TSHttpTxnClientReqGet(txnp, &buf, &loc)) {
     /* failure */
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnServerIPGet: INKHttpTxnClientReqGet failed");
-    return ++err;               /* ret here, else INKMHandleRelease */
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnServerIPGet: TSHttpTxnClientReqGet failed");
+    return ++err;               /* ret here, else TSMHandleRelease */
   }
 
-  if ((hdrLoc = INKHttpHdrUrlGet(buf, loc)) == NULL) {
+  if ((hdrLoc = TSHttpHdrUrlGet(buf, loc)) == NULL) {
     /* failure */
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnServerIPGet: INKHttpHdrURLGet failed");
-    INKHandleMLocRelease(buf, INK_NULL_MLOC, loc);
-    return ++err;               /* ret here, else INKMHandleRelease */
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnServerIPGet: TSHttpHdrURLGet failed");
+    TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
+    return ++err;               /* ret here, else TSMHandleRelease */
   }
 
   /* no memory del on reqURLHost */
-  reqURLHost = INKUrlHostGet(buf, hdrLoc, &hostLen);
+  reqURLHost = TSUrlHostGet(buf, hdrLoc, &hostLen);
   if (!reqURLHost || !hostLen) {
     /* FAILURE */
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnServerIPGet: gethostbyaddr no hostname");
-    INKHandleMLocRelease(buf, INK_NULL_MLOC, loc);
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnServerIPGet: gethostbyaddr no hostname");
+    TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
     return ++err;
   }
   /* compare the domains of the hostname
-   * from gethostbyaddr and INKURLHostGet: e.g.:
+   * from gethostbyaddr and TSURLHostGet: e.g.:
    * w1.someGiantSite.com with a request of: www.someGiantSite.com
    */
   else {
@@ -162,33 +162,33 @@ handle_OS_DNS(INKCont contp, INKEvent event, void *eData)
     domain_os_ip = strchr(hostEntp->h_name, (int) strTokenp);
 
     if (!domain_os_ip || !domain_url) {
-      INKDebug("INKHttpTxnIPAddress", "INKHttpTxnServerIPGet: fail: strtok");
+      TSDebug("TSHttpTxnIPAddress", "TSHttpTxnServerIPGet: fail: strtok");
       ++err;
     }
     if (strncmp(++domain_os_ip, ++domain_url, BUFSIZ)) {
-      INKDebug("INKHttpTxnIPAddress", "INKHttpTxnServerIPGet: fail: domain names %s != %s", domain_os_ip, domain_url);
+      TSDebug("TSHttpTxnIPAddress", "TSHttpTxnServerIPGet: fail: domain names %s != %s", domain_os_ip, domain_url);
       ++err;
     }
   }
-  INKHandleMLocRelease(buf, INK_NULL_MLOC, loc);
+  TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
   return err;
 }
 
-/* Currently not used.  Interfaces like INKHttpTxnNextHopIPGet
+/* Currently not used.  Interfaces like TSHttpTxnNextHopIPGet
  * should only be called from SEND_REQUEST, inclusive, forward
 */
 static int
-handle_TXN_START(INKCont contp, INKEvent event, void *eData)
+handle_TXN_START(TSCont contp, TSEvent event, void *eData)
 {
   return 0;
 }
 
 static int
-handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
+handle_TXN_CLOSE(TSCont contp, TSEvent event, void *eData)
 {
-  INKMBuffer respBuf;
-  INKMLoc respBufLoc;
-  INKHttpTxn txnp = (INKHttpTxn) eData;
+  TSMBuffer respBuf;
+  TSMLoc respBufLoc;
+  TSHttpTxn txnp = (TSHttpTxn) eData;
   char *hostNamep = NULL;
   void *dataPtr = NULL;
   int err = 0, re = 0;
@@ -199,9 +199,9 @@ handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
   int incomingPort;
   char *ipAddrp = NULL;
 
-  incomingPort = INKHttpTxnClientIncomingPortGet(txnp);
+  incomingPort = TSHttpTxnClientIncomingPortGet(txnp);
   if (!incomingPort) {
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnClientIncomingPortGet failed");
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnClientIncomingPortGet failed");
     ++err;                      /* failure */
   }
   /* TODO validate this port, not just an integer value
@@ -209,16 +209,16 @@ handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
    */
 
   /* Client IP for a transaction (not incoming) */
-  clientIP = INKHttpTxnClientIPGet(txnp);
+  clientIP = TSHttpTxnClientIPGet(txnp);
   if (!clientIP) {
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnClientIPGet failed");
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnClientIPGet failed");
     err++;
   }
   /* TODO validate this IP address, not just an integer value
    * see below
    */
 
-  /* See: handle_SEND_REQUEST(): nextHopIP = INKHttpTxnNextHopIPGet(txnp);
+  /* See: handle_SEND_REQUEST(): nextHopIP = TSHttpTxnNextHopIPGet(txnp);
    *
    * If origin server was contacted, its adress
    * will be returned. Need a cach hit true/false interface ?
@@ -226,13 +226,13 @@ handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
    * Origin Server (destination) or Parent IP
    * TODO tests with an actual parent proxy
    */
-  nextHopIP = INKHttpTxnNextHopIPGet(txnp);
+  nextHopIP = TSHttpTxnNextHopIPGet(txnp);
   if (!nextHopIP) {
     /* It is the responsibility of the plug-in to store hit/miss
-     * details and resolve this as INKHttpTxnNextHopIPGet failure
+     * details and resolve this as TSHttpTxnNextHopIPGet failure
      * or cache miss (no o.s. contected).
      */
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnNextHopIPGet failed for or cache miss");
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnNextHopIPGet failed for or cache miss");
     err++;
   }
   /* TODO validate this IP address, not just an integer value
@@ -243,19 +243,19 @@ handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
 	 * Failure in the following tests will cause remaining tests
 	 * to not execute.
 	*/
-  os_addr = INKHttpTxnServerIPGet(txnp);
+  os_addr = TSHttpTxnServerIPGet(txnp);
   if (!os_addr) {
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnServerIPGet failed");
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnServerIPGet failed");
     return ++err;               /* failure */
   }
 
-  hostname = (char **) INKmalloc(BUFSIZ);
+  hostname = (char **) TSmalloc(BUFSIZ);
   /* if parent proxy is not set: re is -1
    */
-  INKHttpTxnParentProxyGet(txnp, hostname, &hostPort);
+  TSHttpTxnParentProxyGet(txnp, hostname, &hostPort);
   /* TODO value of hostname when parent not set?  */
   if (hostPort == (-1) || *hostname == NULL) {
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnParentProxyGet failed");
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnParentProxyGet failed");
     /* return ++err;    failure */
     /* Allow other test to continue */
   }
@@ -263,25 +263,25 @@ handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
   /*
    * Get the parent/port that were set at plug-in init
    */
-  dataPtr = INKContDataGet(contp);
+  dataPtr = TSContDataGet(contp);
   if (!dataPtr) {
-    INKDebug("INKHttpTxnIPAddress", "INKContDataGet returned NULL pointer, cannot test INKHttpTxnParentProxySet");
+    TSDebug("TSHttpTxnIPAddress", "TSContDataGet returned NULL pointer, cannot test TSHttpTxnParentProxySet");
     return ++err;
   }
 
-  INKDebug("INKHttpTxnIPAddress",
+  TSDebug("TSHttpTxnIPAddress",
            "Setting parent proxy to %s:%d",
            ((parentProxyInfo_t *) dataPtr)->parentProxyp, ((parentProxyInfo_t *) dataPtr)->parentPort);
 
   /* TODO how do we check return value? */
-  INKHttpTxnParentProxySet(txnp,
+  TSHttpTxnParentProxySet(txnp,
                            ((parentProxyInfo_t *) dataPtr)->parentProxyp, ((parentProxyInfo_t *) dataPtr)->parentPort);
 
   /* parent proxy was set
    */
-  INKHttpTxnParentProxyGet(txnp, hostname, &hostPort);
+  TSHttpTxnParentProxyGet(txnp, hostname, &hostPort);
   if (hostPort == (-1) || *hostname == NULL) {
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnParentProxyGet failed");
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnParentProxyGet failed");
     /* return ++err;    failure */
     /* Allow other test to continue */
   }
@@ -290,52 +290,52 @@ handle_TXN_CLOSE(INKCont contp, INKEvent event, void *eData)
   if ((strncmp(*hostname,
                ((parentProxyInfo_t *) dataPtr)->parentProxyp, BUFSIZ)) ||
       ((parentProxyInfo_t *) dataPtr)->parentPort != hostPort) {
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnParentProxySet/Get failed");
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnParentProxySet/Get failed");
     ++err;
   }
 
-  INKfree(hostname);
-  INKfree(hostname);
+  TSfree(hostname);
+  TSfree(hostname);
   return err;
 }
 
 static int
-INKHttpTransaction(INKCont contp, INKEvent event, void *eData)
+TSHttpTransaction(TSCont contp, TSEvent event, void *eData)
 {
-  INKHttpSsn ssnp = (INKHttpSsn) eData;
-  INKHttpTxn txnp = (INKHttpTxn) eData;
+  TSHttpSsn ssnp = (TSHttpSsn) eData;
+  TSHttpTxn txnp = (TSHttpTxn) eData;
   int err = 0;
   unsigned int nextHopIP = 0;
 
   switch (event) {
 
-  case INK_EVENT_HTTP_SSN_START:
-    INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_START_HOOK, contp);
-    INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_CLOSE_HOOK, contp);
-    INKHttpSsnHookAdd(ssnp, INK_HTTP_SEND_REQUEST_HDR_HOOK, contp);
-    INKHttpSsnHookAdd(ssnp, INK_HTTP_OS_DNS_HOOK, contp);
+  case TS_EVENT_HTTP_SSN_START:
+    TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, contp);
+    TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
+    TSHttpSsnHookAdd(ssnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
+    TSHttpSsnHookAdd(ssnp, TS_HTTP_OS_DNS_HOOK, contp);
 
-    INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_OS_DNS:
+  case TS_EVENT_HTTP_OS_DNS:
     handle_OS_DNS(contp, event, eData);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_TXN_START:
+  case TS_EVENT_HTTP_TXN_START:
     handle_TXN_START(contp, event, eData);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_TXN_CLOSE:
+  case TS_EVENT_HTTP_TXN_CLOSE:
     handle_TXN_CLOSE(contp, event, eData);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_SEND_REQUEST_HDR:
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
     handle_SEND_REQUEST(contp, event, eData);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
   default:
@@ -345,7 +345,7 @@ INKHttpTransaction(INKCont contp, INKEvent event, void *eData)
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
   int err = 0;
   int length = 0, argCnt = 0;
@@ -353,36 +353,36 @@ INKPluginInit(int argc, const char *argv[])
 
   /* Passed in as args to the plug-in  and  does not get deleted
    */
-  parentProxyInfo_t *parentInfop = (parentProxyInfo_t *) INKmalloc(sizeof(parentProxyInfo_t));
+  parentProxyInfo_t *parentInfop = (parentProxyInfo_t *) TSmalloc(sizeof(parentProxyInfo_t));
 
   if (!parentInfop) {
-    INKDebug("INKHttpTxnIPAddress", "INKmalloc(parentProxyInfo_t = [%d]) failed", sizeof(parentProxyInfo_t));
-    INKDebug("INKHttpTxnIPAddress", "INKHttpTxnIPAddress failed and did not run");
+    TSDebug("TSHttpTxnIPAddress", "TSmalloc(parentProxyInfo_t = [%d]) failed", sizeof(parentProxyInfo_t));
+    TSDebug("TSHttpTxnIPAddress", "TSHttpTxnIPAddress failed and did not run");
     return;
   }
   strncpy(parentInfop->parentProxyp, argv[++argCnt], strlen(argv[argCnt]));
   parentInfop->parentPort = atoi(argv[++argCnt]);
 
-  INKCont contp = INKContCreate(INKHttpTransaction, NULL);
-  INKContDataSet(contp, (void *) parentInfop);  /* Used in txn */
+  TSCont contp = TSContCreate(TSHttpTransaction, NULL);
+  TSContDataSet(contp, (void *) parentInfop);  /* Used in txn */
 
-  /* Never: INKfree(parentInfop);
-   * if you expect to use INKContDataGet
+  /* Never: TSfree(parentInfop);
+   * if you expect to use TSContDataGet
    * not a leak since TS keeps a reference to this heap
    * space
    * Here's a leak (bad stuff man!):
    *
-   *       ptr = INKmalloc() ;
+   *       ptr = TSmalloc() ;
    *       Init(ptr);
-   *       INKConDataSet(contp, ptr);
+   *       TSConDataSet(contp, ptr);
    *
    * at some other event at a later time
    *
-   *        retreivePtr = INKContDataGet(contp);
+   *        retreivePtr = TSContDataGet(contp);
    *        newPtr = Modify(retrievePtr);
-   *        INKConDataSet(contp, newPtr);
-   *        INKfree(retrievedPtr);                if not freed, leak
+   *        TSConDataSet(contp, newPtr);
+   *        TSfree(retrievedPtr);                if not freed, leak
    */
 
-  INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
 }

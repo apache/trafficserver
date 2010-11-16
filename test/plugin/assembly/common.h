@@ -142,52 +142,52 @@ typedef struct
   AsmStateType state;
 
   /* Store current transaction */
-  INKHttpTxn txn;
+  TSHttpTxn txn;
 
   /* The input is the Http response coming from the OS */
-  INKIOBuffer input_buffer;
-  INKIOBufferReader input_parse_reader;
+  TSIOBuffer input_buffer;
+  TSIOBufferReader input_parse_reader;
 
   /* The ouput is the transformed Http response sent to the client */
-  INKIOBuffer output_buffer;
-  INKIOBufferReader output_reader;
-  INKVConn output_vc;
-  INKVIO output_vio;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader output_reader;
+  TSVConn output_vc;
+  TSVIO output_vio;
 
   /* used to cancel any pending action when we exit */
-  INKAction pending_action;
+  TSAction pending_action;
 
   /* Connection via socket back to TS  */
-  INKVConn ts_vc;
-  INKVIO ts_vio;
+  TSVConn ts_vc;
+  TSVIO ts_vio;
 
   /* cache input = Http request sent to TS on socket back */
-  INKIOBuffer ts_input_buffer;
-  INKIOBufferReader ts_input_reader;
+  TSIOBuffer ts_input_buffer;
+  TSIOBufferReader ts_input_reader;
 
   /* cache output = result sent by TS on socket back */
-  INKIOBuffer ts_output_buffer;
-  INKIOBufferReader ts_output_reader;
+  TSIOBuffer ts_output_buffer;
+  TSIOBufferReader ts_output_reader;
 
   /* The block is bufferized in this iobuffer */
-  INKIOBuffer block_buffer;
-  INKIOBufferReader block_reader;
+  TSIOBuffer block_buffer;
+  TSIOBufferReader block_reader;
 
   /* Connection to the cache */
-  INKVConn cache_vc;
-  INKVIO cache_read_vio;
-  INKVIO cache_write_vio;
+  TSVConn cache_vc;
+  TSVIO cache_read_vio;
+  TSVIO cache_write_vio;
 
   /* Buffer/Reader to read/write block to the cache */
-  INKIOBuffer cache_read_buffer;
-  INKIOBuffer cache_write_buffer;
-  INKIOBufferReader cache_read_reader;
-  INKIOBufferReader cache_write_reader;
+  TSIOBuffer cache_read_buffer;
+  TSIOBuffer cache_write_buffer;
+  TSIOBufferReader cache_read_reader;
+  TSIOBufferReader cache_write_reader;
 
   int cache_read_retry_counter;
 
   /* key used to store/fetch block from the cache */
-  INKCacheKey block_key;
+  TSCacheKey block_key;
 
   /* TTL for the block in the cache */
   int block_ttl;
@@ -219,11 +219,11 @@ typedef struct
 typedef struct
 {
   /* To store requested Url and Url actually used for cache lookup */
-  INKMBuffer request_url_buf;
-  INKMLoc request_url_loc;
+  TSMBuffer request_url_buf;
+  TSMLoc request_url_loc;
 
-  INKMBuffer template_url_buf;
-  INKMLoc template_url_loc;
+  TSMBuffer template_url_buf;
+  TSMLoc template_url_loc;
 
   /* flag used to know whether or not transformation has been already set up */
   int transform_created;

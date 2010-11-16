@@ -9,42 +9,42 @@ enter the following line in plugin.config
 	On NT:	AddHeader.dll "name1: value1" "name2: value2"
 	On Solaris: add-header.so "name1: value1" "name2: value2"
 
-The INKPluginInit function does the following:
+The TSPluginInit function does the following:
 
 - creates a MIME field buffer that contains the header to be added, 
 	using the following functions:
-	INKMBufferCreate
-	INKMimeHdrCreate
-	INKMimeHdrFieldCreate
-	INKMimeFieldInsert
-	INKMimeHdrFieldNameSet
-	INKMimeFieldValueInsert
+	TSMBufferCreate
+	TSMimeHdrCreate
+	TSMimeHdrFieldCreate
+	TSMimeFieldInsert
+	TSMimeHdrFieldNameSet
+	TSMimeFieldValueInsert
 	
 
 - sets up the callback for the add-header-plugin function, which 
 	is the main callback function, using 
-	INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK,
-	INKContCreate(add_header_plugin, NULL);
+	TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK,
+	TSContCreate(add_header_plugin, NULL);
 
 add_header_plugin is the main function in the plugin. In the 
-event of INK_EVENT_HTTP_READ_REQUEST_HDR (when the HTTP
+event of TS_EVENT_HTTP_READ_REQUEST_HDR (when the HTTP
 state machine reads a request header), it calls the function
 add_header. 
 
 add_header first makes sure that it can retrieve the client request
 header from the current transaction, using 
-	INKHttpTxnClientReqGet
+	TSHttpTxnClientReqGet
 
  copies the header into the MIME headers of the 
 HTTP request, using the following functions:
 
-	INKMimeHdrFieldGet
-	INKMimeHdrFieldCreate
-	INKMimeHdrFieldCopy
-	INKMimeHdrFieldAPpend
-	INKMimeHdrFieldNext
+	TSMimeHdrFieldGet
+	TSMimeHdrFieldCreate
+	TSMimeHdrFieldCopy
+	TSMimeHdrFieldAPpend
+	TSMimeHdrFieldNext
 
 When add_header is done, it uses
-	INKHttpTxnReenable 
+	TSHttpTxnReenable 
 to continue. 
 

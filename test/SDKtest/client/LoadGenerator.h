@@ -75,7 +75,7 @@ struct LoadGenerator
   int num_sizes;                /* Number of sizes in the docsize distribution */
   long *sizes;                  /* actual sizes */
   int direct;
-  INKPlugin *plug_in;
+  TSPlugin *plug_in;
   double *cumulative_size_prob;
   /* Cumulative probability of selecting different sizes
      cumulative_size_prob[num_sizes-1] must be 1.0 */
@@ -104,7 +104,7 @@ struct LoadGenerator
 
     LoadGenerator(FILE * aurl_file,     /* only valid for if synthetic = 0 */
                   int akeepalive,       /* how many requests per connection */
-                  INKPlugin * aplug_in)
+                  TSPlugin * aplug_in)
   {
     warmup = 0;
     synthetic = 0;
@@ -129,7 +129,7 @@ struct LoadGenerator
                 double *acumulative_size_prob,
                 /* Cumulative probability of selecting different sizes
                    cumulative_size_prob[num_sizes-1] must be 1.0 */
-                int adirect, INKPlugin * aplug_in)
+                int adirect, TSPlugin * aplug_in)
   {
     plug_in = aplug_in;
     synthetic = 1;

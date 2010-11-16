@@ -25,36 +25,36 @@
 #include "UserNameCacheTest.h"
 #include <stdio.h>
 
-INKMutex testMutexp;
+TSMutex testMutexp;
 
 char USER_NAME[] = "Lou Sheward.";
-char userName[INK_MAX_USER_NAME_LEN];
+char userName[TS_MAX_USER_NAME_LEN];
 
 FILE *fp;
 
 void
 userNameCacheTestInit()
 {
-  INKCont cont;
+  TSCont cont;
 
 
-  testMutexp = INKMutexCreate();
-  cont = INKContCreate(&UserNameHandleCallbacks, testMutexp);
+  testMutexp = TSMutexCreate();
+  cont = TSContCreate(&UserNameHandleCallbacks, testMutexp);
 
   for (int i = 1; i < 1000; i++) {
-    if (INKUserNameCacheInsert(cont, i, USER_NAME) == INK_EVENT_IMMEDIATE) {
+    if (TSUserNameCacheInsert(cont, i, USER_NAME) == TS_EVENT_IMMEDIATE) {
       fp = fopen("cacheTest.txt", "a+");
       fprintf(fp, "Insertion immedaite");
       fprintf(fp, " %d,%s\n", i, USER_NAME);
       fclose(fp);
     }
-    if (INKUserNameCacheLookup(cont, i, userName) == INK_EVENT_IMMEDIATE) {
+    if (TSUserNameCacheLookup(cont, i, userName) == TS_EVENT_IMMEDIATE) {
       fp = fopen("cacheTest.txt", "a+");
       fprintf(fp, "lookup immedaite");
       fprintf(fp, " %d,%s\n", i, userName);
       fclose(fp);
     }
-    if (INKUserNameCacheDelete(cont, i) == INK_EVENT_IMMEDIATE) {
+    if (TSUserNameCacheDelete(cont, i) == TS_EVENT_IMMEDIATE) {
       fp = fopen("cacheTest.txt", "a+");
       fprintf(fp, "delete immediate\n");
       fclose(fp);
@@ -63,20 +63,20 @@ userNameCacheTestInit()
 }
 
 int
-UserNameHandleCallbacks(INKCont cont, INKEvent event, void *e)
+UserNameHandleCallbacks(TSCont cont, TSEvent event, void *e)
 {
   fp = fopen("cacheTest.txt", "a+");
   switch (event) {
 
-  case INK_CACHE_COULD_NOT_FIND:
+  case TS_CACHE_COULD_NOT_FIND:
     fprintf(fp, "Lookup callback, could not find\n");
     break;
 
-  case INK_CACHE_LOOKUP_COMPLETE:
+  case TS_CACHE_LOOKUP_COMPLETE:
     fprintf(fp, "Lookup callback, success\n");
     break;
 
   }
   fclose(fp);
-  return INK_EVENT_NONE;
+  return TS_EVENT_NONE;
 }

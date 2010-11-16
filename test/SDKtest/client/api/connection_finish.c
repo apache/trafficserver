@@ -25,29 +25,29 @@
 #include <stdio.h>
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
   fprintf(stderr, "connection finish!!!\n");
-  INKFuncRegister(INK_FID_CONNECTION_FINISH);
+  TSFuncRegister(TS_FID_CONNECTION_FINISH);
 }
 
 void
-INKConnectionFinish(void *rid, INKConnectionStatus status)
+TSConnectionFinish(void *rid, TSConnectionStatus status)
 {
   switch (status) {
-  case INK_CONN_COMPLETE:
+  case TS_CONN_COMPLETE:
     fprintf(stderr, "c");
     break;
-  case INK_TIME_EXPIRE:
+  case TS_TIME_EXPIRE:
     fprintf(stderr, "x");
     break;
-  case INK_CONN_ERR:
+  case TS_CONN_ERR:
     fprintf(stderr, "e");
     break;
-  case INK_READ_ERR:
+  case TS_READ_ERR:
     fprintf(stderr, "r");
     break;
-  case INK_WRITE_ERR:
+  case TS_WRITE_ERR:
     fprintf(stderr, "w");
     break;
   default:

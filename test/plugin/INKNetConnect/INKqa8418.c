@@ -29,50 +29,50 @@
 
 typedef struct
 {
-  INKHttpTxn txn;
-  INKCont cont;
-  INKAction act;
-  INKIOBuffer abuf;
-  INKIOBufferReader areader;
-  INKIOBuffer rbuf;
-  INKIOBufferReader rreader;
-  INKVConn avc;
-  INKVIO avio;
+  TSHttpTxn txn;
+  TSCont cont;
+  TSAction act;
+  TSIOBuffer abuf;
+  TSIOBufferReader areader;
+  TSIOBuffer rbuf;
+  TSIOBufferReader rreader;
+  TSVConn avc;
+  TSVIO avio;
 } AuthData;
 
-static int auth_plugin(INKCont, INKEvent, void *);
-static void check_auth(INKHttpTxn, INKCont);
-static void require_auth(INKHttpTxn);
-static int verify_auth(INKCont, INKEvent, void *);
-static void destroy_auth(INKCont);
+static int auth_plugin(TSCont, TSEvent, void *);
+static void check_auth(TSHttpTxn, TSCont);
+static void require_auth(TSHttpTxn);
+static int verify_auth(TSCont, TSEvent, void *);
+static void destroy_auth(TSCont);
 
 static in_addr_t svrip;
 static int svrport;
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
 
   svrip = (127 << 24) | (0 << 16) | (0 << 8) | (1);
   svrip = htonl(svrip);
   svrport = 7;
 
-  INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, INKContCreate(auth_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(auth_plugin, NULL));
 }
 
 static int
-auth_plugin(INKCont contp, INKEvent event, void *edata)
+auth_plugin(TSCont contp, TSEvent event, void *edata)
 {
 
-  INKHttpTxn txnp = (INKHttpTxn *) edata;
+  TSHttpTxn txnp = (TSHttpTxn *) edata;
 
-  INKDebug("extauth", "auth_plugin: entered");
+  TSDebug("extauth", "auth_plugin: entered");
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
     check_auth(txnp, contp);
     return 0;
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     require_auth(txnp);
     return 0;
   default:
@@ -83,16 +83,16 @@ auth_plugin(INKCont contp, INKEvent event, void *edata)
 }
 
 static void
-check_auth(INKHttpTxn txnp, INKCont contp)
+check_auth(TSHttpTxn txnp, TSCont contp)
 {
 
   AuthData *adata;
-  INKCont acontp;
-  INKAction action;
+  TSCont acontp;
+  TSAction action;
 
-  INKDebug("extauth", "check_auth: entered");
+  TSDebug("extauth", "check_auth: entered");
 
-  adata = (AuthData *) INKmalloc(sizeof(AuthData));
+  adata = (AuthData *) TSmalloc(sizeof(AuthData));
   adata->txn = txnp;
   adata->cont = contp;
   adata->act = NULL;
@@ -102,172 +102,172 @@ check_auth(INKHttpTxn txnp, INKCont contp)
   adata->rreader = NULL;
   adata->avc = NULL;
   adata->avio = NULL;
-  acontp = INKContCreate(verify_auth, INKMutexCreate());
-  INKContDataSet(acontp, adata);
+  acontp = TSContCreate(verify_auth, TSMutexCreate());
+  TSContDataSet(acontp, adata);
 
-  action = INKNetConnect(acontp, svrip, svrport);
-  if (!INKActionDone(action)) {
+  action = TSNetConnect(acontp, svrip, svrport);
+  if (!TSActionDone(action)) {
     adata->act = action;
   }
 
-  INKDebug("extauth", "check_auth: INKNetConnect called");
-  INKDebug("extauth", "check_auth: returning");
+  TSDebug("extauth", "check_auth: TSNetConnect called");
+  TSDebug("extauth", "check_auth: returning");
 
   return;
 }
 
 static int
-verify_auth(INKCont acontp, INKEvent event, void *edata)
+verify_auth(TSCont acontp, TSEvent event, void *edata)
 {
 
   AuthData *adata;
-  INKIOBufferData d;
-  INKIOBufferBlock b;
+  TSIOBufferData d;
+  TSIOBufferBlock b;
   char *userinfo = "good:evil";
   int uil = strlen(userinfo);
 
-  INKDebug("extauth", "verify_auth: entered");
+  TSDebug("extauth", "verify_auth: entered");
 
-  adata = (AuthData *) INKContDataGet(acontp);
+  adata = (AuthData *) TSContDataGet(acontp);
 
   switch (event) {
-  case INK_EVENT_NET_CONNECT:
+  case TS_EVENT_NET_CONNECT:
 
-    INKDebug("extauth", "verify_auth: NET_CONNECT");
+    TSDebug("extauth", "verify_auth: NET_CONNECT");
 
     adata->act = NULL;
-    adata->abuf = INKIOBufferCreate();
-    adata->areader = INKIOBufferReaderAlloc(adata->abuf);
-    d = INKIOBufferDataCreate(userinfo, uil, INK_DATA_CONSTANT);
-    b = INKIOBufferBlockCreate(d, uil, 0);
-    INKIOBufferAppend(adata->abuf, b);
+    adata->abuf = TSIOBufferCreate();
+    adata->areader = TSIOBufferReaderAlloc(adata->abuf);
+    d = TSIOBufferDataCreate(userinfo, uil, TS_DATA_CONSTANT);
+    b = TSIOBufferBlockCreate(d, uil, 0);
+    TSIOBufferAppend(adata->abuf, b);
 
-    adata->avc = (INKVConn) edata;
-    adata->avio = INKVConnWrite(adata->avc, acontp, adata->areader, INKIOBufferReaderAvail(adata->areader));
+    adata->avc = (TSVConn) edata;
+    adata->avio = TSVConnWrite(adata->avc, acontp, adata->areader, TSIOBufferReaderAvail(adata->areader));
     return 0;
-  case INK_EVENT_VCONN_WRITE_READY:
+  case TS_EVENT_VCONN_WRITE_READY:
 
-    INKDebug("extauth", "verify_auth: VCONN_WRITE_READY");
+    TSDebug("extauth", "verify_auth: VCONN_WRITE_READY");
 
-    INKVIOReenable(adata->avio);
+    TSVIOReenable(adata->avio);
     return 0;
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
 
-    INKDebug("extauth", "verify_auth: VCONN_WRITE_COMPLETE");
+    TSDebug("extauth", "verify_auth: VCONN_WRITE_COMPLETE");
 
-    INKVConnShutdown(adata->avc, 0, 1);
-    adata->rbuf = INKIOBufferCreate();
-    adata->rreader = INKIOBufferReaderAlloc(adata->rbuf);
-    adata->avio = INKVConnRead(adata->avc, acontp, adata->rbuf, uil);
+    TSVConnShutdown(adata->avc, 0, 1);
+    adata->rbuf = TSIOBufferCreate();
+    adata->rreader = TSIOBufferReaderAlloc(adata->rbuf);
+    adata->avio = TSVConnRead(adata->avc, acontp, adata->rbuf, uil);
     return 0;
-  case INK_EVENT_VCONN_READ_READY:
+  case TS_EVENT_VCONN_READ_READY:
 
-    INKDebug("extauth", "verify_auth: VCONN_READ_READY");
+    TSDebug("extauth", "verify_auth: VCONN_READ_READY");
 
-    INKVIOReenable(adata->avio);
+    TSVIOReenable(adata->avio);
     return 0;
-  case INK_EVENT_VCONN_READ_COMPLETE:
+  case TS_EVENT_VCONN_READ_COMPLETE:
 
-    INKDebug("extauth", "verify_auth: VCONN_READ_COMPLETE");
+    TSDebug("extauth", "verify_auth: VCONN_READ_COMPLETE");
 
-    if (INKIOBufferReaderAvail(adata->rreader) == uil) {
-      INKIOBufferBlock rb;
+    if (TSIOBufferReaderAvail(adata->rreader) == uil) {
+      TSIOBufferBlock rb;
       const char *resp;
       char *respstr;
       int avail, i;
 
-      rb = INKIOBufferReaderStart(adata->rreader);
-      resp = INKIOBufferBlockReadStart(rb, adata->rreader, &avail);
+      rb = TSIOBufferReaderStart(adata->rreader);
+      resp = TSIOBufferBlockReadStart(rb, adata->rreader, &avail);
       if (avail == uil) {
-        respstr = (char *) INKmalloc(sizeof(char) * (uil + 1));
+        respstr = (char *) TSmalloc(sizeof(char) * (uil + 1));
         for (i = 0; i < uil; i++) {
           respstr[i] = resp[i];
         }
         respstr[i] = '\0';
-        INKIOBufferReaderConsume(adata->rreader, uil);
-        INKDebug("extauth", "AuthServer Response - %s", respstr);
-        INKfree(respstr);
+        TSIOBufferReaderConsume(adata->rreader, uil);
+        TSDebug("extauth", "AuthServer Response - %s", respstr);
+        TSfree(respstr);
       }
-      INKIOBufferDestroy(adata->rbuf);
+      TSIOBufferDestroy(adata->rbuf);
       adata->rbuf = NULL;
       adata->rreader = NULL;
-      INKVConnClose(adata->avc);
+      TSVConnClose(adata->avc);
       adata->avc = NULL;
       adata->avio = NULL;
 
-      INKHttpTxnReenable(adata->txn, INK_EVENT_HTTP_CONTINUE);
+      TSHttpTxnReenable(adata->txn, TS_EVENT_HTTP_CONTINUE);
       destroy_auth(acontp);
       return 0;
     }
     break;
-  case INK_EVENT_NET_CONNECT_FAILED:
+  case TS_EVENT_NET_CONNECT_FAILED:
 
-    INKDebug("extauth", "verify_auth: NET_CONNECT_FAILED");
+    TSDebug("extauth", "verify_auth: NET_CONNECT_FAILED");
 
     adata->act = NULL;
     break;
-  case INK_EVENT_ERROR:
+  case TS_EVENT_ERROR:
 
-    INKDebug("extauth", "verify_auth: ERROR");
+    TSDebug("extauth", "verify_auth: ERROR");
 
     break;
   default:
     break;
   }
 
-  INKHttpTxnHookAdd(adata->txn, INK_HTTP_SEND_RESPONSE_HDR_HOOK, adata->cont);
-  INKHttpTxnReenable(adata->txn, INK_EVENT_HTTP_ERROR);
+  TSHttpTxnHookAdd(adata->txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, adata->cont);
+  TSHttpTxnReenable(adata->txn, TS_EVENT_HTTP_ERROR);
 
   destroy_auth(acontp);
   return 0;
 }
 
 static void
-destroy_auth(INKCont acontp)
+destroy_auth(TSCont acontp)
 {
 
   AuthData *adata;
 
-  adata = INKContDataGet(acontp);
+  adata = TSContDataGet(acontp);
 
   if (adata->abuf) {
-    INKIOBufferDestroy(adata->abuf);
+    TSIOBufferDestroy(adata->abuf);
   }
   if (adata->rbuf) {
-    INKIOBufferDestroy(adata->rbuf);
+    TSIOBufferDestroy(adata->rbuf);
   }
   if (adata->act) {
-    INKActionCancel(adata->act);
+    TSActionCancel(adata->act);
   }
   if (adata->avc) {
-    INKVConnAbort(adata->avc, 1);
+    TSVConnAbort(adata->avc, 1);
   }
 
-  INKfree(adata);
-  INKContDestroy(acontp);
+  TSfree(adata);
+  TSContDestroy(acontp);
   return;
 }
 
 static void
-require_auth(INKHttpTxn txnp)
+require_auth(TSHttpTxn txnp)
 {
 
-  INKMBuffer bufp;
-  INKMLoc hdr_loc, newfld_loc;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc, newfld_loc;
 
-  if (!INKHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
-    INKError("require_auth: failed to retrieve client response");
+  if (!TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
+    TSError("require_auth: failed to retrieve client response");
     goto done;
   }
 
-  INKHttpHdrStatusSet(bufp, hdr_loc, INK_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED);
-  INKHttpHdrReasonSet(bufp, hdr_loc, INKHttpHdrReasonLookup(INK_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED), -1);
+  TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED);
+  TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED), -1);
 
-  newfld_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
-  INKMimeHdrFieldNameSet(bufp, hdr_loc, newfld_loc, INK_MIME_FIELD_PROXY_AUTHENTICATE, INK_MIME_LEN_PROXY_AUTHENTICATE);
-  INKMimeFieldValueInsert(bufp, newfld_loc, "Basic realm=\"Armageddon\"", -1, -1);
-  INKMimeHdrFieldAppend(bufp, hdr_loc, newfld_loc);
+  newfld_loc = TSMimeHdrFieldCreate(bufp, hdr_loc);
+  TSMimeHdrFieldNameSet(bufp, hdr_loc, newfld_loc, TS_MIME_FIELD_PROXY_AUTHENTICATE, TS_MIME_LEN_PROXY_AUTHENTICATE);
+  TSMimeFieldValueInsert(bufp, newfld_loc, "Basic realm=\"Armageddon\"", -1, -1);
+  TSMimeHdrFieldAppend(bufp, hdr_loc, newfld_loc);
 
 done:
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }

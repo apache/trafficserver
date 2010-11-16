@@ -214,7 +214,7 @@ Config::read_target_byterate_dist()
   }
   printf("\n");
 }
-Config::Config(long warmup, char *config_file, INKPlugin * aplug_in, int aread_timeout)
+Config::Config(long warmup, char *config_file, TSPlugin * aplug_in, int aread_timeout)
 {
   char line[MAX_LINE_SIZE], lhs[MAX_LINE_SIZE], rhs[MAX_LINE_SIZE];
   int c;
@@ -286,7 +286,7 @@ Config::Config(long warmup, char *config_file, INKPlugin * aplug_in, int aread_t
 
 #ifdef _PLUG_IN
       // target_host, target_port, and document_base
-      // will be passed to the INKOptionProcess() later, and
+      // will be passed to the TSOptionProcess() later, and
       // comments are skipped.
       if ((strcmp(lhs, "target_host") || strcmp(lhs, "target_port") || strcmp(lhs, "document_base")) && strcmp(lhs, "")) {
         if (plug_in->options_process_fcn) {

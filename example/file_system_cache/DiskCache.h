@@ -187,8 +187,8 @@ public:
   {
     if (mkdir(_topDirectory.c_str(), 0755) != 0) {
       if (errno != EEXIST) {
-        INKDebug("cache_plugin", "Couldn't create the top cache directory: %s", _topDirectory.c_str());
-        INKError("cache_plugin", "Couldn't create the top cache directory: %s", _topDirectory.c_str());
+        TSDebug("cache_plugin", "Couldn't create the top cache directory: %s", _topDirectory.c_str());
+        TSError("cache_plugin", "Couldn't create the top cache directory: %s", _topDirectory.c_str());
         return 1;
       }
     }

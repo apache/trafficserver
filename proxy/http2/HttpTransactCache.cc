@@ -415,7 +415,7 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
     HttpAltInfo info;
     float qvalue;
 
-    hook = http_global_hooks->get(INK_HTTP_SELECT_ALT_HOOK);
+    hook = http_global_hooks->get(TS_HTTP_SELECT_ALT_HOOK);
     if (hook) {
       info.m_client_req.copy_shallow(client_request);
       info.m_cached_req.copy_shallow(obj_client_request);
@@ -424,7 +424,7 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig * http_confi
 
       while (hook) {
         info.m_qvalue = 1.0;
-        hook->invoke(INK_EVENT_HTTP_SELECT_ALT, &info);
+        hook->invoke(TS_EVENT_HTTP_SELECT_ALT, &info);
         hook = hook->m_link.next;
         if (info.m_qvalue < 0.0) {
           info.m_qvalue = 0.0;

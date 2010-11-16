@@ -28,10 +28,10 @@
 #include "common.h"
 
 int query_string_extract(TxnData * txn_data, char **query_store);
-void query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query, PairList * cookies);
-int is_template_header(INKMBuffer bufp, INKMLoc hdr_loc);
-int has_nocache_header(INKMLoc bufp, INKMLoc hdr_loc);
-int request_looks_dynamic(INKMBuffer bufp, INKMLoc hdr_loc);
-void modify_request_url(INKMBuffer bufp, INKMLoc url_loc, TxnData * txn_data);
+void query_and_cookies_extract(TSHttpTxn txnp, TxnData * txn_data, PairList * query, PairList * cookies);
+int is_template_header(TSMBuffer bufp, TSMLoc hdr_loc);
+int has_nocache_header(TSMLoc bufp, TSMLoc hdr_loc);
+int request_looks_dynamic(TSMBuffer bufp, TSMLoc hdr_loc);
+void modify_request_url(TSMBuffer bufp, TSMLoc url_loc, TxnData * txn_data);
 
 #endif

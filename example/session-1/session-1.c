@@ -38,50 +38,50 @@ static INKStat av_transaction;
 
 
 static void
-txn_handler(INKHttpTxn txnp, INKCont contp)
+txn_handler(TSHttpTxn txnp, TSCont contp)
 {
   int64 num_txns = 0;
 
   INKStatIncrement(transaction_count);
   INKStatIntGet(transaction_count, &num_txns);
-  INKDebug("tag_session", "The number of transactions is %d\n", num_txns);
+  TSDebug("tag_session", "The number of transactions is %d\n", num_txns);
 
 }
 
 
 static void
-handle_session(INKHttpSsn ssnp, INKCont contp)
+handle_session(TSHttpSsn ssnp, TSCont contp)
 {
   int64 num_ssn = 0;
 
   INKStatIncrement(session_count);
   INKStatIntGet(session_count, &num_ssn);
-  INKDebug("tag_session", "The number of sessions is %d\n", num_ssn);
-  INKHttpSsnHookAdd(ssnp, INK_HTTP_TXN_START_HOOK, contp);
+  TSDebug("tag_session", "The number of sessions is %d\n", num_ssn);
+  TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, contp);
 }
 
 static int
-ssn_handler(INKCont contp, INKEvent event, void *edata)
+ssn_handler(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpSsn ssnp;
-  INKHttpTxn txnp;
+  TSHttpSsn ssnp;
+  TSHttpTxn txnp;
 
   switch (event) {
-  case INK_EVENT_HTTP_SSN_START:
+  case TS_EVENT_HTTP_SSN_START:
 
-    ssnp = (INKHttpSsn) edata;
+    ssnp = (TSHttpSsn) edata;
     handle_session(ssnp, contp);
-    INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
 
-  case INK_EVENT_HTTP_TXN_START:
-    txnp = (INKHttpTxn) edata;
+  case TS_EVENT_HTTP_TXN_START:
+    txnp = (TSHttpTxn) edata;
     txn_handler(txnp, contp);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
 
   default:
-    INKDebug("tag_session", "In the default case: event = %d\n", event);
+    TSDebug("tag_session", "In the default case: event = %d\n", event);
     break;
   }
   return 0;
@@ -91,7 +91,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -114,22 +114,22 @@ check_ts_version()
 
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKCont contp;
-  INKPluginRegistrationInfo info;
+  TSCont contp;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "session-1";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("[PluginInit] Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("[PluginInit] Plugin registration failed.\n");
     goto error;
   }
 
   if (!check_ts_version()) {
-    INKError("[PluginInit] Plugin requires Traffic Server 2.0 or later\n");
+    TSError("[PluginInit] Plugin requires Traffic Server 2.0 or later\n");
     goto error;
   }
 
@@ -137,9 +137,9 @@ INKPluginInit(int argc, const char *argv[])
   session_count = INKStatCreate("session.count", INKSTAT_TYPE_INT64);
   av_transaction = INKStatCreate("avg.transactions", INKSTAT_TYPE_FLOAT);
 
-  contp = INKContCreate(ssn_handler, NULL);
-  INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, contp);
+  contp = TSContCreate(ssn_handler, NULL);
+  TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
 
 error:
-  INKError("[PluginInit] Plugin not initialized");
+  TSError("[PluginInit] Plugin not initialized");
 }

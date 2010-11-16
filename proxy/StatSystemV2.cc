@@ -33,7 +33,7 @@ std::map<std::string, uint32_t> StatSystemV2::stat_name_to_num;
 std::vector< std::pair<std::string, INK64> > StatSystemV2::global_stats;
 uint32_t StatSystemV2::MAX_STATS_ALLOWED = 500000;
 uint32_t StatSystemV2::NUM_STATS_ESTIMATE = 5000;
-static INKMutex statsMutex = NULL;
+static TSMutex statsMutex = NULL;
 
 void StatSystemV2::incrementGlobal(uint32_t stat_num, INK64 stat_val)
 {
@@ -54,11 +54,11 @@ bool StatSystemV2::increment(uint32_t stat_num, INK64 stat_val)
     EThread *t = this_ethread(); 
     // stat_num starts at 0
     if(t->thread_stats.size() < (unsigned int)stat_num+1) {
-        if (INKMutexLock(t->thread_stats_mutex) != INK_SUCCESS) {
+        if (TSMutexLock(t->thread_stats_mutex) != INK_SUCCESS) {
             return false;
         }
         t->thread_stats.resize(stat_num+1, 0);
-        INKMutexUnlock(t->thread_stats_mutex);
+        TSMutexUnlock(t->thread_stats_mutex);
     }
     t->thread_stats[stat_num] += stat_val;
     return true;
@@ -76,17 +76,17 @@ bool StatSystemV2::increment(const char *stat_name, INK64 stat_val)
 bool StatSystemV2::get(uint32_t stat_num, INK64 *stat_val)
 {
     // Get stat lock
-    if (INKMutexLock(statsMutex) != INK_SUCCESS) {
+    if (TSMutexLock(statsMutex) != INK_SUCCESS) {
         return false;
     }
 
     if(stat_num >= global_stats.size()) {
-        INKMutexUnlock(statsMutex);
+        TSMutexUnlock(statsMutex);
         return false;
     }
     
     *stat_val = global_stats[stat_num].second;
-    INKMutexUnlock(statsMutex);
+    TSMutexUnlock(statsMutex);
     
     return true;
 }
@@ -110,14 +110,14 @@ bool StatSystemV2::get_current(uint32_t stat_num, INK64 *stat_val)
     // Collect stat from all threads
     for(int i =0; i < eventProcessor.n_ethreads; i++) {
         EThread *t = eventProcessor.all_ethreads[i];
-        if (INKMutexLock(t->thread_stats_mutex) != INK_SUCCESS) {
+        if (TSMutexLock(t->thread_stats_mutex) != INK_SUCCESS) {
             return false;
         }
 
         if(t->thread_stats.size() > stat_num) { 
             *stat_val += t->thread_stats[stat_num];
         }
-        INKMutexUnlock(t->thread_stats_mutex);
+        TSMutexUnlock(t->thread_stats_mutex);
     }
     return true;
 }
@@ -138,7 +138,7 @@ bool StatSystemV2::registerStat(const char *stat_name, uint32_t *stat_num)
     }
     
     // Get stat lock
-    if (INKMutexLock(statsMutex) != INK_SUCCESS) {
+    if (TSMutexLock(statsMutex) != INK_SUCCESS) {
         *stat_num = MAX_STATS_ALLOWED;
         return false;
     }
@@ -147,13 +147,13 @@ bool StatSystemV2::registerStat(const char *stat_name, uint32_t *stat_num)
     std::map<std::string, uint32_t>::const_iterator stat_name_it = stat_name_to_num.find(stat_name);
     if(stat_name_it != stat_name_to_num.end()) {
         *stat_num = stat_name_it->second;
-        INKMutexUnlock(statsMutex);
+        TSMutexUnlock(statsMutex);
         return true;
     }
 
     // Check to see if limit for max allowed stats was hit
     if(global_stats.size() == MAX_STATS_ALLOWED) {
-        INKMutexUnlock(statsMutex);
+        TSMutexUnlock(statsMutex);
         *stat_num = MAX_STATS_ALLOWED;
         return false;
     }
@@ -162,7 +162,7 @@ bool StatSystemV2::registerStat(const char *stat_name, uint32_t *stat_num)
     *stat_num = global_stats.size() - 1;
     stat_name_to_num[stat_name] = *stat_num;
     Debug("http", "Registered stat : %s %u", global_stats[*stat_num].first.c_str(), *stat_num); 
-    INKMutexUnlock(statsMutex);
+    TSMutexUnlock(statsMutex);
     return true;
 }
 
@@ -182,21 +182,21 @@ void StatSystemV2::setNumStatsEstimate(uint32_t num_stats_estimate)
 void StatSystemV2::init()
 {
   if (statsMutex == NULL)
-    statsMutex = INKMutexCreate();
+    statsMutex = TSMutexCreate();
 
-    if (INKMutexLock(statsMutex) != INK_SUCCESS) {
+    if (TSMutexLock(statsMutex) != INK_SUCCESS) {
         return;
     }
 
     // Resize thread_stats vector in each thread to NUM_STATS_ESTIMATE
     for(int i =0; i < eventProcessor.n_ethreads; i++) {
         EThread *t = eventProcessor.all_ethreads[i];
-        INKMutexLock(t->thread_stats_mutex);
+        TSMutexLock(t->thread_stats_mutex);
         t->thread_stats.resize(NUM_STATS_ESTIMATE);
-        INKMutexUnlock(t->thread_stats_mutex);
+        TSMutexUnlock(t->thread_stats_mutex);
     }
     
-    INKMutexUnlock(statsMutex);    
+    TSMutexUnlock(statsMutex);    
 }
 
 void StatSystemV2::clear()
@@ -209,7 +209,7 @@ void StatSystemV2::clear()
 
 void StatSystemV2::collect()
 {
-    if (INKMutexLock(statsMutex) != INK_SUCCESS) {
+    if (TSMutexLock(statsMutex) != INK_SUCCESS) {
         return;
     }
 
@@ -218,7 +218,7 @@ void StatSystemV2::collect()
         EThread *t = eventProcessor.all_ethreads[i];
 
         // Lock thread stats to prevent resizing on increment
-        INKMutexLock(t->thread_stats_mutex);
+        TSMutexLock(t->thread_stats_mutex);
         int j = 0;
         for(std::vector<INK64>::iterator it = t->thread_stats.begin();
             it != t->thread_stats.end(); it++, j++) {
@@ -228,31 +228,31 @@ void StatSystemV2::collect()
         }
         
         // Release thread stats
-        INKMutexUnlock(t->thread_stats_mutex);
+        TSMutexUnlock(t->thread_stats_mutex);
     }
-    INKMutexUnlock(statsMutex);
+    TSMutexUnlock(statsMutex);
 }
 
 bool StatSystemV2::getStatNum(const char *stat_name, uint32_t &stat_num)
 {
     // Get stat lock
-    if (INKMutexLock(statsMutex) != INK_SUCCESS) {
+    if (TSMutexLock(statsMutex) != INK_SUCCESS) {
         return false;
     }
 
     // Get stat num and release lock
     std::map<std::string, uint32_t>::const_iterator stat_name_it = stat_name_to_num.find(stat_name);
     if(stat_name_it == stat_name_to_num.end()) {
-        INKMutexUnlock(statsMutex);
+        TSMutexUnlock(statsMutex);
         return false;
     }
 
     stat_num = stat_name_it->second;
-    INKMutexUnlock(statsMutex);
+    TSMutexUnlock(statsMutex);
     return true;
 }
 
-static INKThread statsCommandThread;
+static TSThread statsCommandThread;
 static const int MAX_STAT_NAME_LENGTH = 512;
 int StatCollectorContinuation::mainEvent(int event, Event * e)
 {
@@ -288,14 +288,14 @@ void StatCollectorContinuation::print_stats(std::stringstream &printbuf) {
                 "-----------------------------------------------------------------------------\n";
 
   printbuf << "TIME " << _startTime <<"\n";
-  if (INKMutexLock(statsMutex) == INK_SUCCESS) {
+  if (TSMutexLock(statsMutex) == INK_SUCCESS) {
       for(std::vector< std::pair<std::string, INK64> >::const_iterator it = StatSystemV2::global_stats.begin();
           it != StatSystemV2::global_stats.end(); it++) {
           if(it->second != 0 ) {
               printbuf << "STAT " << it->first << " " << it->second << "\n";
           }
       }
-      INKMutexUnlock(statsMutex);
+      TSMutexUnlock(statsMutex);
   }
   printbuf << "END\n";
 }
@@ -329,7 +329,7 @@ void StatCollectorContinuation::print_stats(const std::vector<std::string> &stat
 void
 StatCollectorContinuation::get_stats_with_prefix(const std::string &stat_prefix, std::vector<std::string> &stat_names)
 {
-    if (INKMutexLock(statsMutex) != INK_SUCCESS) {
+    if (TSMutexLock(statsMutex) != INK_SUCCESS) {
         return;
     }
 
@@ -341,7 +341,7 @@ StatCollectorContinuation::get_stats_with_prefix(const std::string &stat_prefix,
             stat_names.push_back(it->first);
         }
     }    
-    INKMutexUnlock(statsMutex);
+    TSMutexUnlock(statsMutex);
 }
 
 int
@@ -542,7 +542,7 @@ void* StatCollectorContinuation::commandListen(void *data) {
                 return 0;
         }
         
-        INKThreadCreate(commandLoop, &client_sock);
+        TSThreadCreate(commandLoop, &client_sock);
     }
 }
 
@@ -566,5 +566,5 @@ StatCollectorContinuation::StatCollectorContinuation() : Continuation(NULL)
 {
     Debug("http", "YTS start time : %lld", (long long) StatCollectorContinuation::_startTime);
     SET_HANDLER(&StatCollectorContinuation::mainEvent);
-    statsCommandThread = INKThreadCreate(commandListen, &_statCommandPort);
+    statsCommandThread = TSThreadCreate(commandListen, &_statCommandPort);
 }

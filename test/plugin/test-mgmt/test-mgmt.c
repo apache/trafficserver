@@ -25,12 +25,12 @@
  * test-mgmt:
  * This sample plugins calls the Plugin Management APIs
  * The API covered in this plugin are -
- * 		- INKMgmtCounterGet
- *		- INKMgmtFloatGet
- * 		- INKMgmtIntGet
- * 		- INKMgmtSringGet
- * 		- INKInstallDirGet
- *		- INKPluginDirGet
+ * 		- TSMgmtCounterGet
+ *		- TSMgmtFloatGet
+ * 		- TSMgmtIntGet
+ * 		- TSMgmtSringGet
+ * 		- TSInstallDirGet
+ *		- TSPluginDirGet
  **************************************************************/
 
 #include <stdio.h>
@@ -355,10 +355,10 @@ static void
 handleTxnStart()
 {
   const char **p;
-  INKMgmtCounter counterValue = 0;
-  INKMgmtFloat floatValue = 0.0;
-  INKMgmtInt intValue = 0;
-  INKMgmtString stringValue = '\0';
+  TSMgmtCounter counterValue = 0;
+  TSMgmtFloat floatValue = 0.0;
+  TSMgmtInt intValue = 0;
+  TSMgmtString stringValue = '\0';
 
   char errorLine[STRING_SIZE];
 
@@ -367,16 +367,16 @@ handleTxnStart()
 
   /* Print each of the COUNTER variables */
 
-  INKDebug(PLUGIN_NAME, "\n============= COUNTER =============");
+  TSDebug(PLUGIN_NAME, "\n============= COUNTER =============");
 
   p = counterVariables;
 
   while (*p) {
-    if (!INKMgmtCounterGet(*p, &counterValue)) {
+    if (!TSMgmtCounterGet(*p, &counterValue)) {
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
-      LOG_AUTO_ERROR("INKMgmtCounterGet", errorLine);
+      LOG_AUTO_ERROR("TSMgmtCounterGet", errorLine);
     } else {
-      INKDebug(PLUGIN_NAME, "%s = %lld", *p, counterValue);
+      TSDebug(PLUGIN_NAME, "%s = %lld", *p, counterValue);
     }
 
     *p++;
@@ -384,16 +384,16 @@ handleTxnStart()
 
   /* Print each of the FLOAT variables */
 
-  INKDebug(PLUGIN_NAME, "\n============= FLOAT =============");
+  TSDebug(PLUGIN_NAME, "\n============= FLOAT =============");
 
   p = floatVariables;
 
   while (*p) {
-    if (!INKMgmtFloatGet(*p, &floatValue)) {
+    if (!TSMgmtFloatGet(*p, &floatValue)) {
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
-      LOG_AUTO_ERROR("INKMgmtFloatGet", errorLine);
+      LOG_AUTO_ERROR("TSMgmtFloatGet", errorLine);
     } else {
-      INKDebug(PLUGIN_NAME, "%s = %f", *p, floatValue);
+      TSDebug(PLUGIN_NAME, "%s = %f", *p, floatValue);
     }
 
     *p++;
@@ -401,16 +401,16 @@ handleTxnStart()
 
   /* Print each of the FLOAT variables */
 
-  INKDebug(PLUGIN_NAME, "\n============= INT =============");
+  TSDebug(PLUGIN_NAME, "\n============= INT =============");
 
   p = intVariables;
 
   while (*p) {
-    if (!INKMgmtIntGet(*p, &intValue)) {
+    if (!TSMgmtIntGet(*p, &intValue)) {
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
-      LOG_AUTO_ERROR("INKMgmtIntGet", errorLine);
+      LOG_AUTO_ERROR("TSMgmtIntGet", errorLine);
     } else {
-      INKDebug(PLUGIN_NAME, "%s = %lld", *p, intValue);
+      TSDebug(PLUGIN_NAME, "%s = %lld", *p, intValue);
     }
 
     *p++;
@@ -418,16 +418,16 @@ handleTxnStart()
 
   /* Print each of the FLOAT variables */
 
-  INKDebug(PLUGIN_NAME, "\n============= STRING =============");
+  TSDebug(PLUGIN_NAME, "\n============= STRING =============");
 
   p = stringVariables;
 
   while (*p) {
-    if (INKMgmtStringGet(*p, &stringValue)) {
+    if (TSMgmtStringGet(*p, &stringValue)) {
       sprintf(errorLine, "ERROR: couldn't retrieve [%s] ", *p);
-      LOG_AUTO_ERROR("INKMgmtStringGet", errorLine);
+      LOG_AUTO_ERROR("TSMgmtStringGet", errorLine);
     } else {
-      INKDebug(PLUGIN_NAME, "%s = %s", *p, stringValue);
+      TSDebug(PLUGIN_NAME, "%s = %s", *p, stringValue);
     }
 
     *p++;
@@ -437,10 +437,10 @@ handleTxnStart()
 
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  const char *ts_install_dir = INKInstallDirGet();
-  const char *plugin_dir = INKPluginDirGet();
+  const char *ts_install_dir = TSInstallDirGet();
+  const char *plugin_dir = TSPluginDirGet();
 
   /* Print the Traffic Server install and the plugin directory */
   printf("TS install dir: %s\n", ts_install_dir);

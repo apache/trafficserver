@@ -29,15 +29,15 @@
 #include <stdio.h>
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
-  fprintf(stderr, "*** INKPartialBodyProcess Test for Client ***\n");
-  INKFuncRegister(INK_FID_PARTIAL_BODY_PROCESS);
+  fprintf(stderr, "*** TSPartialBodyProcess Test for Client ***\n");
+  TSFuncRegister(TS_FID_PARTIAL_BODY_PROCESS);
 }
 
 
-INKRequestAction
-INKPartialBodyProcess(void *req_id, void *partial_content, int partial_length, int accum_length)
+TSRequestAction
+TSPartialBodyProcess(void *req_id, void *partial_content, int partial_length, int accum_length)
 {
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 }

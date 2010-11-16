@@ -69,7 +69,7 @@ DoTest::initialize_stats()
   above_connect_time_cutoff = 0;        /* Reqs above connect cutoff */
   generated_thinktime = 0;      /* Total number of reqs generated */
 
-  for (i = 0; i < MAX_THINKTIMES; i++) {
+  for (i = 0; i < MAX_THTSTIMES; i++) {
     thinktime_generated[i] = 0; /* Number of reqs with each thinktime */
   }
 
@@ -139,7 +139,7 @@ DoTest::create_new_connection_and_send_request(int user, struct timeval current_
     perror(err);
 
 #ifdef _PLUG_IN
-    user_info[user].conn_status = INK_CONN_ERR;
+    user_info[user].conn_status = TS_CONN_ERR;
 #endif
 
     return 0;
@@ -158,7 +158,7 @@ DoTest::create_new_connection_and_send_request(int user, struct timeval current_
     perror("Error: connect");
 
 #ifdef _PLUG_IN
-    user_info[user].conn_status = INK_CONN_ERR;
+    user_info[user].conn_status = TS_CONN_ERR;
 #endif
 
     return 0;
@@ -258,7 +258,7 @@ DoTest::create_new_connection_and_send_request(int user, struct timeval current_
       perror("Error: write");
 
 #ifdef _PLUG_IN
-      user_info[user].conn_status = INK_WRITE_ERR;
+      user_info[user].conn_status = TS_WRITE_ERR;
 #endif
 
       return 0;
@@ -372,7 +372,7 @@ DoTest::compute_bytes_to_read(int user, struct timeval current_time)
   long should_have_read, to_read;
   long user_elapsed_time;
 
-  // INKqa04029 tripped this
+  // TSqa04029 tripped this
   assert(user_info[user].target_byterate != -2);        // Illegal value
 
   if (user_info[user].target_byterate == -1) {
@@ -489,7 +489,7 @@ DoTest::DoTest(int adebug,
                double ahistogram_resolution,
                long around_trip_time_cutoff,
                long afirst_byte_latency_cutoff,
-               long aconnect_time_cutoff, int aQOS_docsize, INKPlugin * aplug_in, int arequest_rate)
+               long aconnect_time_cutoff, int aQOS_docsize, TSPlugin * aplug_in, int arequest_rate)
 {
 
   debug = adebug;
@@ -595,8 +595,8 @@ DoTest::actual_test(int rr_flag)
     user_info[i].request_id = NULL;
     user_info[i].target_addr = &(user_info[i].dynamic_target_addr);
     user_info[i].content_count = 0;
-    user_info[i].action = INK_KEEP_GOING;
-    user_info[i].conn_status = INK_CONN_COMPLETE;
+    user_info[i].action = TS_KEEP_GOING;
+    user_info[i].conn_status = TS_CONN_COMPLETE;
 #endif
   }
 
@@ -757,7 +757,7 @@ DoTest::actual_test(int rr_flag)
           perror("Error: read");
 
 #ifdef _PLUG_IN
-          user_info[i].conn_status = INK_READ_ERR;
+          user_info[i].conn_status = TS_READ_ERR;
 #endif
 
           // Equivalent to closing the connection, as far as we r concerned
@@ -787,7 +787,7 @@ DoTest::actual_test(int rr_flag)
 #ifdef _PLUG_IN
           // for indicating to plugin that no more content is returned
           if ((user_info[i].status_line_info.status_code == 200 ||
-               user_info[i].status_line_info.status_code == 0) && user_info[i].action == INK_KEEP_GOING) {
+               user_info[i].status_line_info.status_code == 0) && user_info[i].action == TS_KEEP_GOING) {
             if (plug_in->partial_body_process_fcn) {
               (plug_in->partial_body_process_fcn) (user_info[i].request_id, (void *) "", 0, user_info[i].content_count);
             }
@@ -795,7 +795,7 @@ DoTest::actual_test(int rr_flag)
           if (plug_in->connection_finish_fcn) {
             (plug_in->connection_finish_fcn) (user_info[i].request_id, user_info[i].conn_status);
           }
-          user_info[i].conn_status = INK_CONN_COMPLETE;
+          user_info[i].conn_status = TS_CONN_COMPLETE;
           user_info[i].request_id = NULL;
           user_info[i].internal_rid = 0;
 #endif
@@ -815,12 +815,12 @@ DoTest::actual_test(int rr_flag)
 #endif
 
 #ifdef _PLUG_IN
-          if (user_info[i].action == INK_STOP_SUCCESS) {
+          if (user_info[i].action == TS_STOP_SUCCESS) {
             finished_requests += keepalive;
             update_completion_stats(i);
             // doesn't support keepalive yet... => keepalive == 1
             // 200 response but not an error: close connection requested from plugins
-          } else if (user_info[i].action == INK_STOP_FAIL) {
+          } else if (user_info[i].action == TS_STOP_FAIL) {
             failed_requests += keepalive;
           } else if (user_info[i].status_line_info.status_code != 200 && user_info[i].status_line_info.status_code != 0) {
             failed_requests += keepalive;
@@ -869,7 +869,7 @@ DoTest::actual_test(int rr_flag)
 #ifdef _PLUG_IN
           user_info[i].target_addr = &(user_info[i].dynamic_target_addr);
           user_info[i].content_count = 0;
-          user_info[i].action = INK_KEEP_GOING;
+          user_info[i].action = TS_KEEP_GOING;
 #endif
 
           if (user_info[i].think_time > 0) {
@@ -987,7 +987,7 @@ DoTest::actual_test(int rr_flag)
                     }
 
                     sli->status_line_complete = DONE_READING_HEADERS;
-                    if (user_info[i].action == INK_STOP_SUCCESS || user_info[i].action == INK_STOP_FAIL) {
+                    if (user_info[i].action == TS_STOP_SUCCESS || user_info[i].action == TS_STOP_FAIL) {
                       goto CONN_FINISH;
                     }
                     break;
@@ -1011,7 +1011,7 @@ DoTest::actual_test(int rr_flag)
             partial_length = s;
           }
 
-          if (sli->status_line_complete == DONE_READING_HEADERS && user_info[i].action == INK_KEEP_GOING) {
+          if (sli->status_line_complete == DONE_READING_HEADERS && user_info[i].action == TS_KEEP_GOING) {
             if ((sli->status_code == 200 || sli->status_code == 0)
                 && partial_length > 0) {
               user_info[i].content_count += partial_length;
@@ -1021,7 +1021,7 @@ DoTest::actual_test(int rr_flag)
                                                        (void *) partial_body,
                                                        partial_length, user_info[i].content_count);
               }
-              if (user_info[i].action == INK_STOP_SUCCESS || user_info[i].action == INK_STOP_FAIL) {
+              if (user_info[i].action == TS_STOP_SUCCESS || user_info[i].action == TS_STOP_FAIL) {
                 goto CONN_FINISH;
               }
             }
@@ -1131,7 +1131,7 @@ DoTest::actual_test(int rr_flag)
   for (i = 0; i < do_test->users; i++) {
     if (do_test->user_info[i].internal_rid) {
       if (plug_in->connection_finish_fcn) {
-        (plug_in->connection_finish_fcn) (do_test->user_info[i].request_id, INK_TIME_EXPIRE);
+        (plug_in->connection_finish_fcn) (do_test->user_info[i].request_id, TS_TIME_EXPIRE);
       }
     }
   }
@@ -1285,17 +1285,17 @@ DoTest::print_stats(int all)
 
 extern "C"
 {
-  void INKReportSingleData(char *metric, char *unit, INKReportCombiner combiner, double value)
+  void TSReportSingleData(char *metric, char *unit, TSReportCombiner combiner, double value)
   {
     switch (combiner) {
-    case INK_SUM:
+    case TS_SUM:
       do_test->report(metric, unit, "sum", value);
       break;
-      case INK_MAX:do_test->report(metric, unit, "max", value);
+      case TS_MAX:do_test->report(metric, unit, "max", value);
       break;
-      case INK_MIN:do_test->report(metric, unit, "min", value);
+      case TS_MIN:do_test->report(metric, unit, "min", value);
       break;
-      case INK_AVE:do_test->report(metric, unit, "ave Requests", value);
+      case TS_AVE:do_test->report(metric, unit, "ave Requests", value);
       break;
       default:fprintf(stderr, "Error: Illegal combiner in report");
     };

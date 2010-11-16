@@ -29,14 +29,14 @@
 #include <stdio.h>
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
-  fprintf(stderr, "*** INKOptionsProcessFinish Test for Client ***\n");
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS_FINISH);
+  fprintf(stderr, "*** TSOptionsProcessFinish Test for Client ***\n");
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS_FINISH);
 }
 
 void
-INKOptionsProcessFinish()
+TSOptionsProcessFinish()
 {
-  fprintf(stderr, "\nINKOptionsProcessFinish\n\n");
+  fprintf(stderr, "\nTSOptionsProcessFinish\n\n");
 }

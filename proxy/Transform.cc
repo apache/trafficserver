@@ -59,7 +59,7 @@
 
 */
 
-#ifndef INK_NO_TRANSFORM
+#ifndef TS_NO_TRANSFORM
 
 #include "ProxyConfig.h"
 #include "P_Net.h"
@@ -115,8 +115,7 @@ TransformProcessor::null_transform(ProxyMutex *mutex)
   -------------------------------------------------------------------------*/
 
 INKVConnInternal *
-TransformProcessor::range_transform(ProxyMutex *mut,
-                                    MIMEField *range_field, HTTPInfo *cache_obj, HTTPHdr *transform_resp, bool & b)
+TransformProcessor::range_transform(ProxyMutex *mut, MIMEField *range_field, HTTPInfo *cache_obj, HTTPHdr *transform_resp, bool & b)
 {
   RangeTransform *range_transform = NEW(new RangeTransform(mut, range_field, cache_obj, transform_resp));
 
@@ -305,7 +304,7 @@ TransformTerminus::handle_event(int event, void *edata)
       // the user back instead of the read_vio cont (which won't
       // exist).
       if (m_tvc->m_closed == 0) {
-        if (m_closed == INK_VC_CLOSE_ABORT) {
+        if (m_closed == TS_VC_CLOSE_ABORT) {
           if (m_read_vio.op == VIO::NONE) {
             if (!m_called_user) {
               m_called_user = 1;
@@ -394,9 +393,9 @@ TransformTerminus::do_io_close(int error)
 
   if (error != -1) {
     lerrno = error;
-    m_closed = INK_VC_CLOSE_ABORT;
+    m_closed = TS_VC_CLOSE_ABORT;
   } else {
-    m_closed = INK_VC_CLOSE_NORMAL;
+    m_closed = TS_VC_CLOSE_NORMAL;
   }
 
   m_read_vio.op = VIO::NONE;
@@ -527,9 +526,9 @@ TransformVConnection::do_io_close(int error)
   Debug("transform", "TransformVConnection do_io_close: %d [0x%lx]", error, (long) this);
 
   if (error != -1) {
-    m_closed = INK_VC_CLOSE_ABORT;
+    m_closed = TS_VC_CLOSE_ABORT;
   } else {
-    m_closed = INK_VC_CLOSE_NORMAL;
+    m_closed = TS_VC_CLOSE_NORMAL;
   }
 
   m_transform->do_io_close(error);
@@ -582,8 +581,8 @@ TransformControl::handle_event(int event, void *edata)
       char *s, *e;
 
       ink_assert(m_tvc == NULL);
-      if (http_global_hooks && http_global_hooks->get(INK_HTTP_RESPONSE_TRANSFORM_HOOK)) {
-        m_tvc = transformProcessor.open(this, http_global_hooks->get(INK_HTTP_RESPONSE_TRANSFORM_HOOK));
+      if (http_global_hooks && http_global_hooks->get(TS_HTTP_RESPONSE_TRANSFORM_HOOK)) {
+        m_tvc = transformProcessor.open(this, http_global_hooks->get(TS_HTTP_RESPONSE_TRANSFORM_HOOK));
       } else {
         m_tvc = transformProcessor.open(this, m_hooks.get());
       }
@@ -800,16 +799,16 @@ num_chars_for_int(int i)
   -------------------------------------------------------------------------*/
 
 RangeTransform::RangeTransform(ProxyMutex *mut, MIMEField *range_field, HTTPInfo *cache_obj, HTTPHdr *transform_resp)
- :INKVConnInternal(NULL, mut),
-  m_output_buf(NULL),
-  m_output_reader(NULL),
-  m_range_field(range_field),
-  m_transform_resp(transform_resp),
-  m_output_vio(NULL),
-  m_unsatisfiable_range(true),
-  m_not_handle_range(false),
-  m_num_range_fields(0),
-  m_current_range(0), m_content_type(NULL), m_content_type_len(0), m_ranges(NULL), m_output_cl(0), m_done(0)
+  : INKVConnInternal(NULL, mut),
+    m_output_buf(NULL),
+    m_output_reader(NULL),
+    m_range_field(range_field),
+    m_transform_resp(transform_resp),
+    m_output_vio(NULL),
+    m_unsatisfiable_range(true),
+    m_not_handle_range(false),
+    m_num_range_fields(0),
+    m_current_range(0), m_content_type(NULL), m_content_type_len(0), m_ranges(NULL), m_output_cl(0), m_done(0)
 {
   SET_HANDLER(&RangeTransform::handle_event);
 
@@ -1243,5 +1242,4 @@ RangeTransform::calculate_output_cl()
   Debug("transform_range", "Pre-calculated Content-Length for Range response is %d", m_output_cl);
 }
 
-#endif //INK_NO_TRANSFORM
-
+#endif // TS_NO_TRANSFORM

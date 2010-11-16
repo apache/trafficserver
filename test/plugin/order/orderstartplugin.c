@@ -45,51 +45,51 @@
 int value;
 
 static int
-startplugin(INKCont contp, INKEvent event, void *edata)
+startplugin(TSCont contp, TSEvent event, void *edata)
 {
 
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKMLoc field_loc;
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSMLoc field_loc;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
-  if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     printf("Couldn't retrieve Client Request Header\n");
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
   }
 
-  if ((field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, FIELD_NAME, -1)) != 0) {
+  if ((field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, FIELD_NAME, -1)) != 0) {
     int count;
 
-    INKMimeHdrFieldValueIntGet(bufp, hdr_loc, field_loc, 0, &count);
-    INKMimehdrFieldValueIntSet(bufp, hdr_loc, field_loc, 0, value);
+    TSMimeHdrFieldValueIntGet(bufp, hdr_loc, field_loc, 0, &count);
+    TSMimehdrFieldValueIntSet(bufp, hdr_loc, field_loc, 0, value);
   } else {
-    field_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
-    INKMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, FIELD_NAME, -1);
-    INKMimeHdrFieldValueIntInsert(bufp, hdr_loc, field_loc, -1, value);
-    INKMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+    field_loc = TSMimeHdrFieldCreate(bufp, hdr_loc);
+    TSMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, FIELD_NAME, -1);
+    TSMimeHdrFieldValueIntInsert(bufp, hdr_loc, field_loc, -1, value);
+    TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
   }
 
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
 
 
-  INKMutex lock1 = INKMutexCreate();
+  TSMutex lock1 = TSMutexCreate();
 
-  INKCont contp = INKContCreate(startplugin, lock1);
+  TSCont contp = TSContCreate(startplugin, lock1);
 
   value = 0;
 
-  INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_SEND_REQUEST_HDR_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_READ_CACHE_HDR_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
 }

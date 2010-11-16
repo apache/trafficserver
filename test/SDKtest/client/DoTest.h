@@ -107,8 +107,8 @@ struct UserInfo
 #ifdef _PLUG_IN
   struct sockaddr_in dynamic_target_addr;
   long content_count;
-  INKRequestAction action;
-  INKConnectionStatus conn_status;
+  TSRequestAction action;
+  TSConnectionStatus conn_status;
 #endif
   /////////////////////
 
@@ -166,7 +166,7 @@ struct DoTest
   histogram connect_histogram;
 
   long generated_thinktime;     /* Total number of reqs generated */
-  long thinktime_generated[MAX_THINKTIMES];     /* Number of reqs with
+  long thinktime_generated[MAX_THTSTIMES];     /* Number of reqs with
                                                    each thinktime */
   double total_actual_thinktime;
 
@@ -206,7 +206,7 @@ struct DoTest
   int client_id;                /* Among all the client processes running what
                                    is my Id */
   LoadGenerator *load_generator;
-  INKPlugin *plug_in;
+  TSPlugin *plug_in;
   long warmup;
   // =0: real test, > 0 : warmup; create only warmup number of
   // requests
@@ -265,7 +265,7 @@ struct DoTest
            double ahistogram_resolution,
            long around_trip_time_cutoff,
            long afirst_byte_latency_cutoff,
-           long aconnect_time_cutoff, int aQOS_docsize, INKPlugin * aplug_in, int arequest_rate);
+           long aconnect_time_cutoff, int aQOS_docsize, TSPlugin * aplug_in, int arequest_rate);
   void report(char *metric, char *units, char *combiner, double value);
 
    ~DoTest()

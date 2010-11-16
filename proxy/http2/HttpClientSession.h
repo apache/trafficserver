@@ -86,9 +86,9 @@ public:
   HttpServerSession *get_bound_ss();
 
   // Functions for manipulating api hooks
-  void ssn_hook_append(INKHttpHookID id, INKContInternal * cont);
-  void ssn_hook_prepend(INKHttpHookID id, INKContInternal * cont);
-  APIHook *ssn_hook_get(INKHttpHookID id);
+  void ssn_hook_append(TSHttpHookID id, INKContInternal * cont);
+  void ssn_hook_prepend(TSHttpHookID id, INKContInternal * cont);
+  APIHook *ssn_hook_get(TSHttpHookID id);
 
   // Used to verify we are recording the current
   //   client transaction stat properly
@@ -108,7 +108,7 @@ private:
 
   void handle_api_return(int event);
   int state_api_callout(int event, void *data);
-  void do_api_callout(INKHttpHookID id);
+  void do_api_callout(TSHttpHookID id);
 
   virtual void new_transaction();
 
@@ -139,7 +139,7 @@ private:
 
   Link<HttpClientSession> debug_link;
 
-  INKHttpHookID cur_hook_id;
+  TSHttpHookID cur_hook_id;
   APIHook *cur_hook;
   int cur_hooks;
 
@@ -165,7 +165,7 @@ public:
 };
 
 inline APIHook *
-HttpClientSession::ssn_hook_get(INKHttpHookID id)
+HttpClientSession::ssn_hook_get(TSHttpHookID id)
 {
   return api_hooks.get(id);
 }

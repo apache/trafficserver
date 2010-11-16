@@ -150,8 +150,8 @@
 #define TS_MAX_API_STATS               @max_api_stats@
 /* XXX: Should make those individually selectable ? */
 #else
-# define INK_NO_TRANSFORM               1
-# define INK_NO_API                     1
+# define TS_NO_TRANSFORM                1
+# define TS_NO_API                      1
 # define INK_SINGLE_THREADED            1
 #endif
 

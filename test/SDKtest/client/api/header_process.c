@@ -29,15 +29,15 @@
 #include <stdio.h>
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
-  fprintf(stderr, "*** INKHeaderProcess Test for Client ***\n");
-  INKFuncRegister(INK_FID_HEADER_PROCESS);
+  fprintf(stderr, "*** TSHeaderProcess Test for Client ***\n");
+  TSFuncRegister(TS_FID_HEADER_PROCESS);
 }
 
 
-INKRequestAction
-INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
+TSRequestAction
+TSHeaderProcess(void *req_id, char *header, int length, char *request_str)
 {
-  return INK_KEEP_GOING;
+  return TS_KEEP_GOING;
 }

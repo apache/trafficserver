@@ -217,9 +217,9 @@ typedef struct
   PluginFinish plugin_finish_fcn;
   ResponsePrepare response_prepare_fcn;
   ResponsePut response_put_fcn;
-} INKPlugin;
+} TSPlugin;
 
-INKPlugin plug_in;
+TSPlugin plug_in;
 
 void
 plugin_initialize(char *api)
@@ -243,10 +243,10 @@ plugin_initialize(char *api)
       perror("server plugin");
       exit(1);
     }
-    plug_in.plugin_init_fcn = (PluginInit) dlsym(plug_in.handle, "INKPluginInit");
+    plug_in.plugin_init_fcn = (PluginInit) dlsym(plug_in.handle, "TSPluginInit");
 
     if (!plug_in.plugin_init_fcn) {
-      fprintf(stderr, "unable to find INKPluginInit function: %s", dlerror());
+      fprintf(stderr, "unable to find TSPluginInit function: %s", dlerror());
       dlclose(plug_in.handle);
       exit(1);
     }
@@ -254,26 +254,26 @@ plugin_initialize(char *api)
 }
 
 void
-INKFuncRegister(INKPluginFuncId fid)
+TSFuncRegister(TSPluginFuncId fid)
 {
   switch (fid) {
-  case INK_FID_OPTIONS_PROCESS:
-    plug_in.options_process_fcn = (OptionsProcess) dlsym(plug_in.handle, "INKOptionsProcess");
+  case TS_FID_OPTIONS_PROCESS:
+    plug_in.options_process_fcn = (OptionsProcess) dlsym(plug_in.handle, "TSOptionsProcess");
     break;
-  case INK_FID_OPTIONS_PROCESS_FINISH:
-    plug_in.options_process_finish_fcn = (OptionsProcessFinish) dlsym(plug_in.handle, "INKOptionsProcessFinish");
+  case TS_FID_OPTIONS_PROCESS_FINISH:
+    plug_in.options_process_finish_fcn = (OptionsProcessFinish) dlsym(plug_in.handle, "TSOptionsProcessFinish");
     break;
-  case INK_FID_PLUGIN_FINISH:
-    plug_in.plugin_finish_fcn = (PluginFinish) dlsym(plug_in.handle, "INKPluginFinish");
+  case TS_FID_PLUGIN_FINISH:
+    plug_in.plugin_finish_fcn = (PluginFinish) dlsym(plug_in.handle, "TSPluginFinish");
     break;
-  case INK_FID_RESPONSE_PREPARE:
-    plug_in.response_prepare_fcn = (ResponsePrepare) dlsym(plug_in.handle, "INKResponsePrepare");
+  case TS_FID_RESPONSE_PREPARE:
+    plug_in.response_prepare_fcn = (ResponsePrepare) dlsym(plug_in.handle, "TSResponsePrepare");
     break;
-  case INK_FID_RESPONSE_PUT:
-    plug_in.response_put_fcn = (ResponsePut) dlsym(plug_in.handle, "INKResponsePut");
+  case TS_FID_RESPONSE_PUT:
+    plug_in.response_put_fcn = (ResponsePut) dlsym(plug_in.handle, "TSResponsePut");
     break;
   default:
-    fprintf(stderr, "Can't register function: unknown type of INKPluginFuncId");
+    fprintf(stderr, "Can't register function: unknown type of TSPluginFuncId");
     break;
   }
 }

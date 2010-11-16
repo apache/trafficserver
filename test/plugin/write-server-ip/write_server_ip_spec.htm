@@ -29,20 +29,20 @@
   the cache when the client sends the same request again and prints the MY_HDR 
   field values to a text file.</p>
 <p><b><font size="+1">Plugin Description</font></b></p>
-<p>In INKPluginInit(), the plugin registers a handler function on HTTP global 
-  hook INK_HTTP_TXN_START_HOOK. On this hook, it registers handler functions on 
+<p>In TSPluginInit(), the plugin registers a handler function on HTTP global 
+  hook TS_HTTP_TXN_START_HOOK. On this hook, it registers handler functions on 
   two transaction hooks:</p>
 <ul>
-  <li>INK_HTTP_READ_RESPONSE_HDR_HOOK</li>
-  <li>INK_HTTP_READ_CACHE_HDR_HOOK</li>
+  <li>TS_HTTP_READ_RESPONSE_HDR_HOOK</li>
+  <li>TS_HTTP_READ_CACHE_HDR_HOOK</li>
 </ul>
-<p>The handler function on INK_HTTP_READ_RESPONSE_HDR_HOOK gets server ip, request 
+<p>The handler function on TS_HTTP_READ_RESPONSE_HDR_HOOK gets server ip, request 
   method, next hop ip, client incoming port and parent proxy from the transaction. 
   It then creates a new http header field MY_HDR in the server response and inserts 
   all the above information into the field as field values.</p>
 <p>The server response should be in the cache after the client sends the request 
   for the first time. When the client sends the same request the second time, 
-  the handler function on the INK_HTTP_READ_CACHE_HDR_HOOK gets the header field 
+  the handler function on the TS_HTTP_READ_CACHE_HDR_HOOK gets the header field 
   MY_HDR from the caches response header, prints it out to a text file plugin_dir/write_server_ip.txt.</p>
 </body>
 </html>

@@ -39,14 +39,14 @@
 typedef void (*PluginInit) (int);
 typedef void (*OptionsProcess) (char *, char *);
 typedef void (*OptionsProcessFinish) ();
-typedef void (*ConnectionFinish) (void *, INKConnectionStatus);
+typedef void (*ConnectionFinish) (void *, TSConnectionStatus);
 typedef void (*PluginFinish) ();
 typedef int (*RequestCreate) (char *, int, char *, int, char *, int, void **);
-typedef INKRequestAction(*HeaderProcess) (void *, char *, int, char *);
-typedef INKRequestAction(*PartialBodyProcess) (void *, void *, int, int);
+typedef TSRequestAction(*HeaderProcess) (void *, char *, int, char *);
+typedef TSRequestAction(*PartialBodyProcess) (void *, void *, int, int);
 typedef void (*Report) ();
 
-class INKPlugin
+class TSPlugin
 {
 public:
   int client_id;
@@ -63,11 +63,11 @@ public:
   PartialBodyProcess partial_body_process_fcn;
   Report report_fcn;
 
-    INKPlugin(int cid, char *api);
+    TSPlugin(int cid, char *api);
   void load_plugin();
-  void register_funct(INKPluginFuncId fid);
+  void register_funct(TSPluginFuncId fid);
 };
 
-extern INKPlugin *plug_in;
+extern TSPlugin *plug_in;
 
 #endif // _Plugin_h_

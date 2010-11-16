@@ -30,49 +30,49 @@
 
 typedef enum
 {
-  INK_FID_OPTIONS_PROCESS,
-  INK_FID_OPTIONS_PROCESS_FINISH,
-  INK_FID_CONNECTION_FINISH,
-  INK_FID_PLUGIN_FINISH,
-  INK_FID_REQUEST_CREATE,
-  INK_FID_HEADER_PROCESS,
-  INK_FID_PARTIAL_BODY_PROCESS,
-  INK_FID_REPORT
-} INKPluginFuncId;
+  TS_FID_OPTIONS_PROCESS,
+  TS_FID_OPTIONS_PROCESS_FINISH,
+  TS_FID_CONNECTION_FINISH,
+  TS_FID_PLUGIN_FINISH,
+  TS_FID_REQUEST_CREATE,
+  TS_FID_HEADER_PROCESS,
+  TS_FID_PARTIAL_BODY_PROCESS,
+  TS_FID_REPORT
+} TSPluginFuncId;
 
 typedef enum
 {
-  INK_CONN_COMPLETE,
-  INK_CONN_ERR,
-  INK_READ_ERR,
-  INK_WRITE_ERR,
-  INK_TIME_EXPIRE
-} INKConnectionStatus;
+  TS_CONN_COMPLETE,
+  TS_CONN_ERR,
+  TS_READ_ERR,
+  TS_WRITE_ERR,
+  TS_TIME_EXPIRE
+} TSConnectionStatus;
 
 typedef enum
 {
-  INK_STOP_SUCCESS,
-  INK_STOP_FAIL,
-  INK_KEEP_GOING
-} INKRequestAction;
+  TS_STOP_SUCCESS,
+  TS_STOP_FAIL,
+  TS_KEEP_GOING
+} TSRequestAction;
 
 typedef enum
 {
-  INK_SUM,
-  INK_MAX,
-  INK_MIN,
-  INK_AVE
-} INKReportCombiner;
+  TS_SUM,
+  TS_MAX,
+  TS_MIN,
+  TS_AVE
+} TSReportCombiner;
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-  extern void INKPluginInit(int clientID);
+  extern void TSPluginInit(int clientID);
 
-  extern void INKReportSingleData(char *metric, char *unit, INKReportCombiner combiner, double value);
+  extern void TSReportSingleData(char *metric, char *unit, TSReportCombiner combiner, double value);
 
-  extern void INKFuncRegister(INKPluginFuncId fid);
+  extern void TSFuncRegister(TSPluginFuncId fid);
 
 #ifdef __cplusplus
 }

@@ -23,104 +23,104 @@
 
 #include "test-protocol.h"
 
-static INKAction actionp;
+static TSAction actionp;
 
 /*
  * Cleanup continuation data and destroy the continuation
  */
 static void
-clean_and_exit(INKCont contp)
+clean_and_exit(TSCont contp)
 {
-  INKDebug(DEBUG_TAG, "Entered clean_and_exit");
+  TSDebug(DEBUG_TAG, "Entered clean_and_exit");
   LOG_SET_FUNCTION_NAME("clean_and_exit");
 
-  ConnData *conn_data = (ConnData *) INKContDataGet(contp);
+  ConnData *conn_data = (ConnData *) TSContDataGet(contp);
 
-  if (conn_data->pending_action && !INKActionDone(conn_data->pending_action)) {
-    INKActionCancel(conn_data->pending_action);
+  if (conn_data->pending_action && !TSActionDone(conn_data->pending_action)) {
+    TSActionCancel(conn_data->pending_action);
   }
 
   if (conn_data->client_vconn) {
-    INKVConnClose(conn_data->client_vconn);
+    TSVConnClose(conn_data->client_vconn);
   }
 
   if (conn_data->client_request) {
-    INKfree(conn_data->client_request);
+    TSfree(conn_data->client_request);
   }
 
   if (conn_data->client_response) {
-    INKfree(conn_data->client_response);
+    TSfree(conn_data->client_response);
   }
 
   if (conn_data->pattern) {
-    INKfree(conn_data->pattern);
+    TSfree(conn_data->pattern);
   }
 
   if (conn_data->client_request_buffer) {
     if (conn_data->client_request_buffer_reader) {
-      INKIOBufferReaderFree(conn_data->client_request_buffer_reader);
+      TSIOBufferReaderFree(conn_data->client_request_buffer_reader);
     }
-    INKIOBufferDestroy(conn_data->client_request_buffer);
+    TSIOBufferDestroy(conn_data->client_request_buffer);
   }
 
   if (conn_data->client_response_buffer) {
     if (conn_data->client_response_buffer_reader) {
-      INKIOBufferReaderFree(conn_data->client_response_buffer_reader);
+      TSIOBufferReaderFree(conn_data->client_response_buffer_reader);
     }
-    INKIOBufferDestroy(conn_data->client_response_buffer);
+    TSIOBufferDestroy(conn_data->client_response_buffer);
   }
 
-  INKfree(conn_data);
-  INKContDestroy(contp);
+  TSfree(conn_data);
+  TSContDestroy(contp);
 }
 
 /*
  * Get the remote ip and port of the net vconnection
  */
 static void
-get_remote_ip(INKVConn client_vconn)
+get_remote_ip(TSVConn client_vconn)
 {
-  INKDebug(DEBUG_TAG, "Entered get_remote_ip");
+  TSDebug(DEBUG_TAG, "Entered get_remote_ip");
   LOG_SET_FUNCTION_NAME("get_remote_ip");
 
   unsigned int ip;
   int port;
 
   /* get the remote ip */
-  if (INKNetVConnRemoteIPGet(client_vconn, &ip) == INK_SUCCESS) {
-    if (INKTextLogObjectWrite(log, "The remote IP of the net vconnection is %d \n", ip) != INK_SUCCESS) {
-      LOG_ERROR("INKTextLogObjectWrite");
+  if (TSNetVConnRemoteIPGet(client_vconn, &ip) == TS_SUCCESS) {
+    if (TSTextLogObjectWrite(log, "The remote IP of the net vconnection is %d \n", ip) != TS_SUCCESS) {
+      LOG_ERROR("TSTextLogObjectWrite");
     }
   } else {
-    LOG_ERROR("INKNetVConnRemoteIPGet");
+    LOG_ERROR("TSNetVConnRemoteIPGet");
   }
 
-  /* negative test for INKNetVConnRemoteIPGet */
+  /* negative test for TSNetVConnRemoteIPGet */
 #ifdef DEBUG
-  if (INKNetVConnRemoteIPGet(NULL, &ip) != INK_ERROR) {
-    LOG_ERROR_NEG("INKNetVConnRemoteIPGet(NULL,...)");
+  if (TSNetVConnRemoteIPGet(NULL, &ip) != TS_ERROR) {
+    LOG_ERROR_NEG("TSNetVConnRemoteIPGet(NULL,...)");
   }
 #endif
 
   /* get the remote port */
-  if (INKNetVConnRemotePortGet(client_vconn, &port) == INK_SUCCESS) {
-    if (INKTextLogObjectWrite(log, "The remote port of the net vconnection is %d \n", port) != INK_SUCCESS) {
-      LOG_ERROR("INKTextLogObjectWrite");
+  if (TSNetVConnRemotePortGet(client_vconn, &port) == TS_SUCCESS) {
+    if (TSTextLogObjectWrite(log, "The remote port of the net vconnection is %d \n", port) != TS_SUCCESS) {
+      LOG_ERROR("TSTextLogObjectWrite");
     }
   } else {
-    LOG_ERROR("INKNetVConnRemotePortGet");
+    LOG_ERROR("TSNetVConnRemotePortGet");
   }
 
-  /* negative test for INKNetVConnRemotePortGet */
+  /* negative test for TSNetVConnRemotePortGet */
 #ifdef DEBUG
-  if (INKNetVConnRemotePortGet(NULL, &port) != INK_ERROR) {
-    LOG_ERROR_NEG("INKNetVConnRemotePortGet(NULL,...)");
+  if (TSNetVConnRemotePortGet(NULL, &port) != TS_ERROR) {
+    LOG_ERROR_NEG("TSNetVConnRemotePortGet(NULL,...)");
   }
 #endif
 
   /* flush the log */
-  if (INKTextLogObjectFlush(log) != INK_SUCCESS) {
-    LOG_ERROR("INKTextLogObjectFlush");
+  if (TSTextLogObjectFlush(log) != TS_SUCCESS) {
+    LOG_ERROR("TSTextLogObjectFlush");
   }
 }
 
@@ -128,8 +128,8 @@ get_remote_ip(INKVConn client_vconn)
 static int
 parse_request(ConnData * conn_data)
 {
-  INKDebug(DEBUG_TAG, "Entered parse_request");
-  INKDebug(DEBUG_TAG, "client request: \n%s", conn_data->client_request);
+  TSDebug(DEBUG_TAG, "Entered parse_request");
+  TSDebug(DEBUG_TAG, "client request: \n%s", conn_data->client_request);
   LOG_SET_FUNCTION_NAME("parse_request");
 
   char *temp = strtok(conn_data->client_request, " ");
@@ -154,29 +154,29 @@ parse_request(ConnData * conn_data)
 static void
 log_request(ConnData * conn_data)
 {
-  INKDebug(DEBUG_TAG, "Entered log_request");
+  TSDebug(DEBUG_TAG, "Entered log_request");
   LOG_SET_FUNCTION_NAME("log_request");
 
   /* write to the log object */
-  if (INKTextLogObjectWrite(log, "The client requests a pattern of %s repeated in %d of times\n",
-                            conn_data->pattern, conn_data->number) != INK_SUCCESS) {
-    LOG_ERROR("INKTextLogObjectWrite");
+  if (TSTextLogObjectWrite(log, "The client requests a pattern of %s repeated in %d of times\n",
+                            conn_data->pattern, conn_data->number) != TS_SUCCESS) {
+    LOG_ERROR("TSTextLogObjectWrite");
   }
 
-  /* negative test for INKTextLogObjectWrite */
+  /* negative test for TSTextLogObjectWrite */
 #ifdef DEBUG
-  if (INKTextLogObjectWrite(NULL, "negative test") != INK_ERROR) {
-    LOG_ERROR_NEG("INKTextLogObjectWrite(NULL,...)");
+  if (TSTextLogObjectWrite(NULL, "negative test") != TS_ERROR) {
+    LOG_ERROR_NEG("TSTextLogObjectWrite(NULL,...)");
   }
 #endif
 
   /* flush the log object */
-  if (INKTextLogObjectFlush(log) != INK_SUCCESS) {
-    LOG_ERROR("INKTextLogObjectFlush");
+  if (TSTextLogObjectFlush(log) != TS_SUCCESS) {
+    LOG_ERROR("TSTextLogObjectFlush");
   }
 #ifdef DEBUG
-  if (INKTextLogObjectFlush(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKTextLogObjectFlush(NULL)");
+  if (TSTextLogObjectFlush(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSTextLogObjectFlush(NULL)");
   }
 #endif
 
@@ -188,45 +188,45 @@ log_request(ConnData * conn_data)
 static void
 generate_response(ConnData * conn_data)
 {
-  INKDebug(DEBUG_TAG, "Entered generate_response");
+  TSDebug(DEBUG_TAG, "Entered generate_response");
   LOG_SET_FUNCTION_NAME("generate_response");
 
   int response_length, i;
 
   /* repeat the pattern in number of times and save it to conn_data->client_response */
   response_length = conn_data->number * strlen(conn_data->pattern) + 1;
-  conn_data->client_response = (char *) INKmalloc(response_length * sizeof(char));
+  conn_data->client_response = (char *) TSmalloc(response_length * sizeof(char));
   conn_data->client_response[0] = '\0';
 
   for (i = 0; i < conn_data->number; i++) {
     strcat(conn_data->client_response, conn_data->pattern);
   }
 
-  INKDebug(DEBUG_TAG, "client response is:\n%s\n", conn_data->client_response);
+  TSDebug(DEBUG_TAG, "client response is:\n%s\n", conn_data->client_response);
 }
 
 /*
- * callback function for INKVConnWrite
+ * callback function for TSVConnWrite
  */
 int
-send_response_handler(INKCont contp, INKEvent event, void *data)
+send_response_handler(TSCont contp, TSEvent event, void *data)
 {
-  INKDebug(DEBUG_TAG, "Entered send_response_handler");
+  TSDebug(DEBUG_TAG, "Entered send_response_handler");
   LOG_SET_FUNCTION_NAME("send_response_handler");
 
   ConnData *conn_data;
 
-  conn_data = (ConnData *) INKContDataGet(contp);
+  conn_data = (ConnData *) TSContDataGet(contp);
 
   switch (event) {
-  case INK_EVENT_VCONN_WRITE_READY:
-    if (INKVIOReenable(conn_data->client_write_vio) != INK_SUCCESS) {
-      LOG_ERROR("INKVIOReenable");
+  case TS_EVENT_VCONN_WRITE_READY:
+    if (TSVIOReenable(conn_data->client_write_vio) != TS_SUCCESS) {
+      LOG_ERROR("TSVIOReenable");
       clean_and_exit(contp);
       return -1;
     }
     break;
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
     clean_and_exit(contp);
     break;
   default:
@@ -242,107 +242,107 @@ send_response_handler(INKCont contp, INKEvent event, void *data)
  * Send response to teh client
  */
 static void
-send_response(ConnData * conn_data, INKCont contp)
+send_response(ConnData * conn_data, TSCont contp)
 {
-  INKDebug(DEBUG_TAG, "Entered send_response");
+  TSDebug(DEBUG_TAG, "Entered send_response");
   LOG_SET_FUNCTION_NAME("send_response");
 
   int copied_length;
 
-  /* negative test for INKIOBufferSizedCreate */
+  /* negative test for TSIOBufferSizedCreate */
 #ifdef DEBUG
-  if (INKIOBufferSizedCreate(-1) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKIOBufferSizedCreate(-1)");
+  if (TSIOBufferSizedCreate(-1) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSIOBufferSizedCreate(-1)");
   }
 #endif
 
   /* create the response IOBuffer */
-  conn_data->client_response_buffer = INKIOBufferSizedCreate(INK_IOBUFFER_SIZE_INDEX_1K);
+  conn_data->client_response_buffer = TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_1K);
 
-  if (conn_data->client_response_buffer == INK_ERROR_PTR || conn_data->client_response_buffer == NULL) {
-    LOG_ERROR("INKIOBufferSizedCreate");
+  if (conn_data->client_response_buffer == TS_ERROR_PTR || conn_data->client_response_buffer == NULL) {
+    LOG_ERROR("TSIOBufferSizedCreate");
     clean_and_exit(contp);
     return;
   }
 
   /* get the IOBuffer reader */
   if ((conn_data->client_response_buffer_reader =
-       INKIOBufferReaderAlloc(conn_data->client_response_buffer)) == INK_ERROR_PTR) {
-    LOG_ERROR("INKIOBufferReaderAlloc");
+       TSIOBufferReaderAlloc(conn_data->client_response_buffer)) == TS_ERROR_PTR) {
+    LOG_ERROR("TSIOBufferReaderAlloc");
     clean_and_exit(contp);
     return;
   }
 
-  /* negative test for INKIOBufferWrite */
+  /* negative test for TSIOBufferWrite */
 #ifdef DEBUG
-  if (INKIOBufferWrite(NULL, conn_data->client_response, strlen(conn_data->client_response)) != INK_ERROR) {
-    LOG_ERROR_NEG("INKIOBufferWrite(NULL,...)");
+  if (TSIOBufferWrite(NULL, conn_data->client_response, strlen(conn_data->client_response)) != TS_ERROR) {
+    LOG_ERROR_NEG("TSIOBufferWrite(NULL,...)");
   }
-  if (INKIOBufferWrite(conn_data->client_response_buffer, NULL, strlen(conn_data->client_response)) != INK_ERROR) {
-    LOG_ERROR_NEG("INKIOBufferWrite(conn_data->client_response_buffer,NULL,...)");
+  if (TSIOBufferWrite(conn_data->client_response_buffer, NULL, strlen(conn_data->client_response)) != TS_ERROR) {
+    LOG_ERROR_NEG("TSIOBufferWrite(conn_data->client_response_buffer,NULL,...)");
   }
 #endif
 
   /* copy the response to the IOBuffer */
   copied_length =
-    INKIOBufferWrite(conn_data->client_response_buffer, conn_data->client_response, strlen(conn_data->client_response));
+    TSIOBufferWrite(conn_data->client_response_buffer, conn_data->client_response, strlen(conn_data->client_response));
 
-  if (copied_length == INK_ERROR) {
-    LOG_ERROR("INKIOBufferWrite");
+  if (copied_length == TS_ERROR) {
+    LOG_ERROR("TSIOBufferWrite");
     clean_and_exit(contp);
     return;
   }
 
   /* send the response to the client */
   conn_data->current_handler = &send_response_handler;
-  if ((conn_data->client_write_vio = INKVConnWrite(conn_data->client_vconn, contp,
+  if ((conn_data->client_write_vio = TSVConnWrite(conn_data->client_vconn, contp,
                                                    conn_data->client_response_buffer_reader,
-                                                   copied_length)) == INK_ERROR_PTR) {
-    LOG_ERROR("INKVConnWrite");
+                                                   copied_length)) == TS_ERROR_PTR) {
+    LOG_ERROR("TSVConnWrite");
     clean_and_exit(contp);
     return;
   }
 }
 
 /*
- * callback function for INKVConnRead
+ * callback function for TSVConnRead
  */
 int
-read_request_handler(INKCont contp, INKEvent event, void *data)
+read_request_handler(TSCont contp, TSEvent event, void *data)
 {
-  INKDebug(DEBUG_TAG, "Entered read_request_handler");
+  TSDebug(DEBUG_TAG, "Entered read_request_handler");
   LOG_SET_FUNCTION_NAME("read_request_handler");
 
   ConnData *conn_data;
   int read_avail, output_len, block_avail;
-  INKIOBufferBlock block;
+  TSIOBufferBlock block;
   char *buf = NULL;
   const char *block_start;
 
-  conn_data = (ConnData *) INKContDataGet(contp);
+  conn_data = (ConnData *) TSContDataGet(contp);
 
   switch (event) {
-  case INK_EVENT_VCONN_READ_READY:
+  case TS_EVENT_VCONN_READ_READY:
 
-    if ((read_avail = INKIOBufferReaderAvail(conn_data->client_request_buffer_reader)) == INK_ERROR) {
-      LOG_ERROR("INKIOBufferReaderAvail");
+    if ((read_avail = TSIOBufferReaderAvail(conn_data->client_request_buffer_reader)) == TS_ERROR) {
+      LOG_ERROR("TSIOBufferReaderAvail");
       clean_and_exit(contp);
       return -1;
     }
 
-    INKDebug(DEBUG_TAG, "read_avail = %d \n", read_avail);
+    TSDebug(DEBUG_TAG, "read_avail = %d \n", read_avail);
 
     if (read_avail < WATER_MARK) {
-      LOG_ERROR("INKIOBufferWaterMarkSet");
+      LOG_ERROR("TSIOBufferWaterMarkSet");
     }
 
     if (read_avail > 0) {
       /* copy the partly read client request from IOBuffer to conn_data->client_request */
-      buf = (char *) INKmalloc(read_avail + 1);
+      buf = (char *) TSmalloc(read_avail + 1);
 
-      INKIOBufferReaderCopy(conn_data->client_request_buffer_reader, buf, read_avail);
-      if (INKIOBufferReaderConsume(conn_data->client_request_buffer_reader, read_avail) != INK_SUCCESS) {
-        LOG_ERROR("INKIOBufferReaderConsume");
+      TSIOBufferReaderCopy(conn_data->client_request_buffer_reader, buf, read_avail);
+      if (TSIOBufferReaderConsume(conn_data->client_request_buffer_reader, read_avail) != TS_SUCCESS) {
+        LOG_ERROR("TSIOBufferReaderConsume");
         clean_and_exit(contp);
         return -1;
       }
@@ -351,7 +351,7 @@ read_request_handler(INKCont contp, INKEvent event, void *data)
 
       strcat(conn_data->client_request, buf);
 
-      INKfree(buf);
+      TSfree(buf);
 
       /* check if the end of the client request has been reached */
       if (strstr(conn_data->client_request, "\r\n\r\n") != NULL) {
@@ -368,8 +368,8 @@ read_request_handler(INKCont contp, INKEvent event, void *data)
     }
 
     /* continue reading data from the client */
-    if (INKVIOReenable(conn_data->client_read_vio) == INK_ERROR) {
-      LOG_ERROR("INKVIOReenable");
+    if (TSVIOReenable(conn_data->client_read_vio) == TS_ERROR) {
+      LOG_ERROR("TSVIOReenable");
       clean_and_exit(contp);
       return -1;
     }
@@ -383,61 +383,61 @@ read_request_handler(INKCont contp, INKEvent event, void *data)
 }
 
 int
-start_handler(INKCont contp, INKEvent event, void *data)
+start_handler(TSCont contp, TSEvent event, void *data)
 {
-  INKDebug(DEBUG_TAG, "Entered start_handler");
+  TSDebug(DEBUG_TAG, "Entered start_handler");
   LOG_SET_FUNCTION_NAME("start_handler");
 
   ConnData *conn_data;
   int watermark;
 
-  conn_data = (ConnData *) INKContDataGet(contp);
+  conn_data = (ConnData *) TSContDataGet(contp);
 
   /* create client request IOBuffer and buffer reader */
-  if ((conn_data->client_request_buffer = INKIOBufferCreate()) == INK_ERROR_PTR) {
-    LOG_ERROR("INKIOBufferCreate");
+  if ((conn_data->client_request_buffer = TSIOBufferCreate()) == TS_ERROR_PTR) {
+    LOG_ERROR("TSIOBufferCreate");
     clean_and_exit(contp);
     return -1;
   }
   if ((conn_data->client_request_buffer_reader =
-       INKIOBufferReaderAlloc(conn_data->client_request_buffer)) == INK_ERROR_PTR) {
-    LOG_ERROR("INKIOBufferReaderAlloc");
+       TSIOBufferReaderAlloc(conn_data->client_request_buffer)) == TS_ERROR_PTR) {
+    LOG_ERROR("TSIOBufferReaderAlloc");
     clean_and_exit(contp);
     return -1;
   }
 
-  /* negative test cases for INKIOBufferWaterMarkSet */
+  /* negative test cases for TSIOBufferWaterMarkSet */
 #ifdef DEBUG
-  if (INKIOBufferWaterMarkSet(NULL, WATER_MARK) != INK_ERROR) {
-    LOG_ERROR_NEG("INKIOBufferWaterMarkSet(NULL,...)");
+  if (TSIOBufferWaterMarkSet(NULL, WATER_MARK) != TS_ERROR) {
+    LOG_ERROR_NEG("TSIOBufferWaterMarkSet(NULL,...)");
   }
-  if (INKIOBufferWaterMarkSet(conn_data->client_request_buffer, -1) != INK_ERROR) {
-    LOG_ERROR_NEG("INKIOBufferWaterMarkSet(conn_data->client_request_buffer,-1)");
+  if (TSIOBufferWaterMarkSet(conn_data->client_request_buffer, -1) != TS_ERROR) {
+    LOG_ERROR_NEG("TSIOBufferWaterMarkSet(conn_data->client_request_buffer,-1)");
   }
 #endif
-  /* negative test cases for INKIOBufferWaterMarkGet */
+  /* negative test cases for TSIOBufferWaterMarkGet */
 #ifdef DEBUG
-  if (INKIOBufferWaterMarkGet(NULL, &watermark) != INK_ERROR) {
-    LOG_ERROR_NEG("INKIOBufferWaterMarkGet(NULL,...)");
+  if (TSIOBufferWaterMarkGet(NULL, &watermark) != TS_ERROR) {
+    LOG_ERROR_NEG("TSIOBufferWaterMarkGet(NULL,...)");
   }
 #endif
 
   /* set the watermark of the client request iobuffer */
-  if (INKIOBufferWaterMarkSet(conn_data->client_request_buffer, WATER_MARK) != INK_SUCCESS) {
-    LOG_ERROR("INKIOBufferWaterMarkSet");
+  if (TSIOBufferWaterMarkSet(conn_data->client_request_buffer, WATER_MARK) != TS_SUCCESS) {
+    LOG_ERROR("TSIOBufferWaterMarkSet");
   }
-  if (INKIOBufferWaterMarkGet(conn_data->client_request_buffer, &watermark) != INK_SUCCESS) {
-    LOG_ERROR("INKIOBufferWaterMarkGet");
+  if (TSIOBufferWaterMarkGet(conn_data->client_request_buffer, &watermark) != TS_SUCCESS) {
+    LOG_ERROR("TSIOBufferWaterMarkGet");
   } else if (watermark != WATER_MARK) {
-    LOG_ERROR("INKIOBufferWaterMarkSet");
+    LOG_ERROR("TSIOBufferWaterMarkSet");
   }
 
   conn_data->current_handler = &read_request_handler;
 
   /* start reading request from the client */
-  if ((conn_data->client_read_vio = INKVConnRead(conn_data->client_vconn, (INKCont) contp,
-                                                 conn_data->client_request_buffer, INT_MAX)) == INK_ERROR_PTR) {
-    LOG_ERROR("INKVConnRead");
+  if ((conn_data->client_read_vio = TSVConnRead(conn_data->client_vconn, (TSCont) contp,
+                                                 conn_data->client_request_buffer, INT_MAX)) == TS_ERROR_PTR) {
+    LOG_ERROR("TSVConnRead");
     clean_and_exit(contp);
     return -1;
   }
@@ -445,13 +445,13 @@ start_handler(INKCont contp, INKEvent event, void *data)
 }
 
 static int
-main_handler(INKCont contp, INKEvent event, void *data)
+main_handler(TSCont contp, TSEvent event, void *data)
 {
   LOG_SET_FUNCTION_NAME("main_handler");
 
   ConnData *conn_data;
 
-  conn_data = (ConnData *) INKContDataGet(contp);
+  conn_data = (ConnData *) TSContDataGet(contp);
   ConnHandler current_handler = conn_data->current_handler;
   return (*current_handler) (contp, event, data);
 }
@@ -459,23 +459,23 @@ main_handler(INKCont contp, INKEvent event, void *data)
 /*
  * Create the state machine that handles the connection between the client and proxy
  */
-static INKCont
-conn_sm_create(INKMutex conn_mutex, INKVConn client_vconn)
+static TSCont
+conn_sm_create(TSMutex conn_mutex, TSVConn client_vconn)
 {
   LOG_SET_FUNCTION_NAME("conn_sm_create");
 
-  INKCont contp;
+  TSCont contp;
   ConnData *conn_data;
 
-  conn_data = (ConnData *) INKmalloc(sizeof(ConnData));
+  conn_data = (ConnData *) TSmalloc(sizeof(ConnData));
 
   conn_data->mutex = conn_mutex;
   conn_data->pending_action = NULL;
   conn_data->client_vconn = client_vconn;
-  conn_data->client_request = (char *) INKmalloc((MAX_REQUEST_LENGTH + 1) * sizeof(char));
+  conn_data->client_request = (char *) TSmalloc((MAX_REQUEST_LENGTH + 1) * sizeof(char));
   conn_data->client_request[0] = '\0';
   conn_data->client_response = NULL;
-  conn_data->pattern = (char *) INKmalloc((MAX_PATTERN_LENGTH + 1) * sizeof(char));
+  conn_data->pattern = (char *) TSmalloc((MAX_PATTERN_LENGTH + 1) * sizeof(char));
   conn_data->number = 0;
   conn_data->client_read_vio = NULL;
   conn_data->client_write_vio = NULL;
@@ -486,67 +486,67 @@ conn_sm_create(INKMutex conn_mutex, INKVConn client_vconn)
 
   conn_data->current_handler = &start_handler;
 
-  if ((contp = INKContCreate(main_handler, conn_data->mutex)) == INK_ERROR_PTR) {
-    LOG_ERROR("INKContCreate");
+  if ((contp = TSContCreate(main_handler, conn_data->mutex)) == TS_ERROR_PTR) {
+    LOG_ERROR("TSContCreate");
   }
-  if (INKContDataSet(contp, conn_data) != INK_SUCCESS) {
-    return (void *) INK_ERROR_PTR;
+  if (TSContDataSet(contp, conn_data) != TS_SUCCESS) {
+    return (void *) TS_ERROR_PTR;
   }
   return contp;
 }
 
 /*
- * callback function for INKNetAccept
+ * callback function for TSNetAccept
  */
 static int
-accept_handler(INKCont contp, INKEvent event, void *edata)
+accept_handler(TSCont contp, TSEvent event, void *edata)
 {
   LOG_SET_FUNCTION_NAME("accept_handler");
 
-  INKMutex conn_mutex;
-  INKCont conn_sm;
-  INKVConn client_vconn;
+  TSMutex conn_mutex;
+  TSCont conn_sm;
+  TSVConn client_vconn;
 
-  client_vconn = (INKVConn) edata;
+  client_vconn = (TSVConn) edata;
 
   switch (event) {
-  case INK_EVENT_NET_ACCEPT:
+  case TS_EVENT_NET_ACCEPT:
 
-    INKDebug(DEBUG_TAG, "accepted the client request");
+    TSDebug(DEBUG_TAG, "accepted the client request");
 
     /* get the remote(client) IP and port of the net vconnection */
     get_remote_ip(client_vconn);
 
-    if ((conn_mutex = INKMutexCreate()) == INK_ERROR_PTR) {
-      LOG_ERROR_AND_RETURN("INKMutexCreate");
+    if ((conn_mutex = TSMutexCreate()) == TS_ERROR_PTR) {
+      LOG_ERROR_AND_RETURN("TSMutexCreate");
     }
 
     /* create the state machine that handles the connection */
-    conn_sm = (INKCont) conn_sm_create(conn_mutex, client_vconn);
-    if (conn_sm == INK_ERROR_PTR) {
+    conn_sm = (TSCont) conn_sm_create(conn_mutex, client_vconn);
+    if (conn_sm == TS_ERROR_PTR) {
       LOG_ERROR_AND_RETURN("conn_sm_create");
     }
 
-    INKDebug(DEBUG_TAG, "connection state machine created");
+    TSDebug(DEBUG_TAG, "connection state machine created");
 
     /* call the state machine */
-    if (INKMutexLock(conn_mutex) != INK_SUCCESS) {
-      LOG_ERROR_AND_RETURN("INKMutexLock");
+    if (TSMutexLock(conn_mutex) != TS_SUCCESS) {
+      LOG_ERROR_AND_RETURN("TSMutexLock");
     }
-    INKContCall(conn_sm, INK_EVENT_NONE, NULL);
-    if (INKMutexUnlock(conn_mutex) != INK_SUCCESS) {
-      LOG_ERROR_AND_RETURN("INKMutexUnlock");
+    TSContCall(conn_sm, TS_EVENT_NONE, NULL);
+    if (TSMutexUnlock(conn_mutex) != TS_SUCCESS) {
+      LOG_ERROR_AND_RETURN("TSMutexUnlock");
     }
     break;
 
   default:
     /* Something wrong with the network, if there are any
        pending NetAccept, cancel them. */
-    if (actionp && !INKActionDone(actionp)) {
-      INKActionCancel(actionp);
+    if (actionp && !TSActionDone(actionp)) {
+      TSActionCancel(actionp);
     }
 
-    INKContDestroy(contp);
+    TSContDestroy(contp);
     break;
   }
 
@@ -561,61 +561,61 @@ static int
 create_log()
 {
   LOG_SET_FUNCTION_NAME("create_log");
-  INKDebug(DEBUG_TAG, "Entered create_log");
+  TSDebug(DEBUG_TAG, "Entered create_log");
 
-  /* negative test for INKTextLogObjectCreate */
+  /* negative test for TSTextLogObjectCreate */
 #ifdef DEBUG
   /* log name is NULL */
-  if (INKTextLogObjectCreate(NULL, INK_LOG_MODE_ADD_TIMESTAMP, &log) != INK_ERROR) {
-    LOG_ERROR_NEG("INKTextLogObjectCreate(NULL,...)");
+  if (TSTextLogObjectCreate(NULL, TS_LOG_MODE_ADD_TIMESTAMP, &log) != TS_ERROR) {
+    LOG_ERROR_NEG("TSTextLogObjectCreate(NULL,...)");
   }
   /* sub-directory doesn't exist */
-  if (INKTextLogObjectCreate("aaa/bbb", INK_LOG_MODE_ADD_TIMESTAMP, &log) != INK_ERROR) {
-    LOG_ERROR_NEG("INKTextLogObjectCreate(aaa/bbb,...)");
+  if (TSTextLogObjectCreate("aaa/bbb", TS_LOG_MODE_ADD_TIMESTAMP, &log) != TS_ERROR) {
+    LOG_ERROR_NEG("TSTextLogObjectCreate(aaa/bbb,...)");
   }
   /* undefined mode value */
-  if (INKTextLogObjectCreate("ccc", -1, &log) != INK_ERROR) {
-    LOG_ERROR_NEG("INKTextLogObjectCreate(ccc,-1,...)");
+  if (TSTextLogObjectCreate("ccc", -1, &log) != TS_ERROR) {
+    LOG_ERROR_NEG("TSTextLogObjectCreate(ccc,-1,...)");
   }
 #endif
 
   /* create a text log object and set its parameters */
-  if (INKTextLogObjectCreate("test-protocol", INK_LOG_MODE_ADD_TIMESTAMP, &log) != INK_SUCCESS) {
-    LOG_ERROR_AND_RETURN("INKTextLogObjectCreate");
+  if (TSTextLogObjectCreate("test-protocol", TS_LOG_MODE_ADD_TIMESTAMP, &log) != TS_SUCCESS) {
+    LOG_ERROR_AND_RETURN("TSTextLogObjectCreate");
   }
 
-  if (INKTextLogObjectHeaderSet(log, "Text log for test-protocol plugin") != INK_SUCCESS) {
-    LOG_ERROR_AND_RETURN("INKTextLogObjectHeaderSet");
+  if (TSTextLogObjectHeaderSet(log, "Text log for test-protocol plugin") != TS_SUCCESS) {
+    LOG_ERROR_AND_RETURN("TSTextLogObjectHeaderSet");
   }
 
-  if (INKTextLogObjectRollingEnabledSet(log, 1) != INK_SUCCESS) {
-    LOG_ERROR_AND_RETURN("INKTextLogObjectRollingEnabledSet");
+  if (TSTextLogObjectRollingEnabledSet(log, 1) != TS_SUCCESS) {
+    LOG_ERROR_AND_RETURN("TSTextLogObjectRollingEnabledSet");
   }
 
-  if (INKTextLogObjectRollingIntervalSecSet(log, 3600) != INK_SUCCESS) {
-    LOG_ERROR_AND_RETURN("INKTextLogObjectRollingIntervalSecSet");
+  if (TSTextLogObjectRollingIntervalSecSet(log, 3600) != TS_SUCCESS) {
+    LOG_ERROR_AND_RETURN("TSTextLogObjectRollingIntervalSecSet");
   }
 
-  if (INKTextLogObjectRollingOffsetHrSet(log, 0) != INK_SUCCESS) {
-    LOG_ERROR_AND_RETURN("INKTextLogObjectRollingOffsetHrSet");
+  if (TSTextLogObjectRollingOffsetHrSet(log, 0) != TS_SUCCESS) {
+    LOG_ERROR_AND_RETURN("TSTextLogObjectRollingOffsetHrSet");
   }
 
-  /* negative test for INKTextLogObject*Set functions */
+  /* negative test for TSTextLogObject*Set functions */
 #ifdef DEBUG
-  if (INKTextLogObjectHeaderSet(NULL, "Text log for test-protocol plugin") != INK_ERROR) {
-    LOG_ERROR_NEG("INKTextLogObjectHeaderSet(NULL,)");
+  if (TSTextLogObjectHeaderSet(NULL, "Text log for test-protocol plugin") != TS_ERROR) {
+    LOG_ERROR_NEG("TSTextLogObjectHeaderSet(NULL,)");
   }
 
-  if (INKTextLogObjectRollingEnabledSet(NULL, 1) != INK_ERROR) {
-    LOG_ERROR_NEG("INKTextLogObjectRollingEnabledSet(NULL,)");
+  if (TSTextLogObjectRollingEnabledSet(NULL, 1) != TS_ERROR) {
+    LOG_ERROR_NEG("TSTextLogObjectRollingEnabledSet(NULL,)");
   }
 
-  if (INKTextLogObjectRollingIntervalSecSet(NULL, 3600) != INK_ERROR) {
-    LOG_ERROR_NEG("INKTextLogObjectRollingIntervalSecSet(NULL,)");
+  if (TSTextLogObjectRollingIntervalSecSet(NULL, 3600) != TS_ERROR) {
+    LOG_ERROR_NEG("TSTextLogObjectRollingIntervalSecSet(NULL,)");
   }
 
-  if (INKTextLogObjectRollingOffsetHrSet(NULL, 0) != INK_ERROR) {
-    LOG_ERROR_NEG("INKTextLogObjectRollingOffsetHrSet(NULL,)");
+  if (TSTextLogObjectRollingOffsetHrSet(NULL, 0) != TS_ERROR) {
+    LOG_ERROR_NEG("TSTextLogObjectRollingOffsetHrSet(NULL,)");
   }
 #endif
 
@@ -623,27 +623,27 @@ create_log()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  LOG_SET_FUNCTION_NAME("INKPluginInit");
+  LOG_SET_FUNCTION_NAME("TSPluginInit");
 
   int accept_port;
-  INKCont contp;
+  TSCont contp;
 
   /* default value of accept port */
   accept_port = 7493;
 
   if (argc != 2) {
-    INKDebug(DEBUG_TAG, "Usage: protocol.so accept_port\n");
+    TSDebug(DEBUG_TAG, "Usage: protocol.so accept_port\n");
   } else {
     accept_port = atoi(argv[1]);
   }
 
-  if ((contp = INKContCreate(accept_handler, INKMutexCreate())) == INK_ERROR_PTR) {
-    LOG_ERROR("INKContCreate");
+  if ((contp = TSContCreate(accept_handler, TSMutexCreate())) == TS_ERROR_PTR) {
+    LOG_ERROR("TSContCreate");
 
-    if (INKTextLogObjectDestroy(log) != INK_SUCCESS) {
-      LOG_ERROR("INKTextLogObjectDestroy");
+    if (TSTextLogObjectDestroy(log) != TS_SUCCESS) {
+      LOG_ERROR("TSTextLogObjectDestroy");
     }
 
     exit(-1);
@@ -654,15 +654,15 @@ INKPluginInit(int argc, const char *argv[])
     exit(-1);
   }
 
-  /* negative test for INKNetAccept */
+  /* negative test for TSNetAccept */
 #ifdef DEBUG
-  if (INKNetAccept(NULL, accept_port) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKNetAccept(NULL,...)");
+  if (TSNetAccept(NULL, accept_port) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSNetAccept(NULL,...)");
   }
 #endif
 
-  if ((actionp = INKNetAccept(contp, accept_port)) == INK_ERROR_PTR) {
-    LOG_ERROR("INKNetAccept");
+  if ((actionp = TSNetAccept(contp, accept_port)) == TS_ERROR_PTR) {
+    LOG_ERROR("TSNetAccept");
   }
-  // TODO any other place to call INKTextLogObjectDestroy()?
+  // TODO any other place to call TSTextLogObjectDestroy()?
 }

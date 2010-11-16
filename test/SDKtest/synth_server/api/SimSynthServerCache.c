@@ -73,7 +73,7 @@ generate_cachability()
 
 
 void
-INKOptionProcess(char *option, char *value)
+TSOptionProcess(char *option, char *value)
 {
   if (strcmp(option, "cachability") == 0) {
     my_plugin.cachability_ratio = (double) (atoi(value)) / 100.0;
@@ -82,17 +82,17 @@ INKOptionProcess(char *option, char *value)
 
 
 void
-INKPluginInit()
+TSPluginInit()
 {
   fprintf(stderr, "*** SimSynthServerCache for Synthetic Server ***\n");
-  INKFuncRegister(INK_FID_OPTIONS_PROCESS);
-  INKFuncRegister(INK_FID_RESPONSE_PREPARE);
-  INKFuncRegister(INK_FID_RESPONSE_PUT);
+  TSFuncRegister(TS_FID_OPTIONS_PROCESS);
+  TSFuncRegister(TS_FID_RESPONSE_PREPARE);
+  TSFuncRegister(TS_FID_RESPONSE_PUT);
 }
 
 /* prepare response header for a request */
 int
-INKResponsePrepare(char *req_hdr, int req_len, void **response_id)
+TSResponsePrepare(char *req_hdr, int req_len, void **response_id)
 {
   char *len_string;
   RequestInfo *resp_id = (RequestInfo *) malloc(sizeof(RequestInfo));
@@ -125,7 +125,7 @@ INKResponsePrepare(char *req_hdr, int req_len, void **response_id)
 
 /* put response (response header + response document) into buffer */
 void
-INKResponsePut(void **resp_id /* return */ ,
+TSResponsePut(void **resp_id /* return */ ,
                void *resp_buffer /* return */ ,
                int *resp_bytes /* return */ ,
                int resp_buffer_size, int bytes_last_response)
@@ -156,7 +156,7 @@ INKResponsePut(void **resp_id /* return */ ,
     }
   }
   /* return NULL as the resp_id to indicate
-   * if it is the last INKResponsePut call */
+   * if it is the last TSResponsePut call */
   if (rid->bytes_not_sent <= 0 || rid->status_code != 200) {
     free(rid);
     *((RequestInfo **) resp_id) = NULL;

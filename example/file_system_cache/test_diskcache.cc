@@ -30,12 +30,12 @@
 #define LOOP 1000
 
 void
-INKDebug(const char *tag, const char *format_str, ...)
+TSDebug(const char *tag, const char *format_str, ...)
 {
 }
 
 void
-INKError(const char *format_str, ...)
+TSError(const char *format_str, ...)
 {
 }
 

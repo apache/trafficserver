@@ -336,7 +336,7 @@ HttpSM::HttpSM()
     server_response_hdr_bytes(0), server_response_body_bytes(0),
     client_response_hdr_bytes(0), client_response_body_bytes(0),
     pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
-    hooks_set(0), cur_hook_id(INK_HTTP_LAST_HOOK), cur_hook(NULL),
+    hooks_set(0), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
     // TODO: This needs to be supported with non-V2 APIs as well.
 #if TS_HAS_V2STATS
     prev_hook_start_time(0),
@@ -1352,7 +1352,7 @@ HttpSM::state_api_callout(int event, void *data)
     // FALLTHROUGH
   case EVENT_NONE:
   case HTTP_API_CONTINUE:
-    if ((cur_hook_id >= 0) && (cur_hook_id < INK_HTTP_LAST_HOOK)) {
+    if ((cur_hook_id >= 0) && (cur_hook_id < TS_HTTP_LAST_HOOK)) {
       if (!cur_hook) {
         if (cur_hooks == 0) {
           cur_hook = http_global_hooks->get(cur_hook_id);
@@ -1416,7 +1416,7 @@ HttpSM::state_api_callout(int event, void *data)
         hook->m_cont->statCallsMade(cur_hook_id);
 
         // Stat time spent in previous plugin
-        int64 curr_time = INKhrtime();
+        int64 curr_time = ink_get_based_hrtime();
         // TODO: This needs to be supported with non-V2 APIs as well.
         if(prev_hook_stats_enabled && prev_hook_start_time) {
           int64 time_in_plugin_ms = (curr_time - prev_hook_start_time)/1000000;
@@ -1434,7 +1434,7 @@ HttpSM::state_api_callout(int event, void *data)
           prev_hook_stats = hook->m_cont->cont_time_stats[cur_hook_id];
 #endif
 
-        hook->invoke(INK_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
+        hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
 
         if (plugin_lock) {
           Mutex_unlock(plugin_mutex, mutex->thread_holding);
@@ -1467,7 +1467,7 @@ HttpSM::state_api_callout(int event, void *data)
   case HTTP_API_ERROR:
     if (callout_state == HTTP_API_DEFERED_CLOSE) {
       api_next = API_RETURN_DEFERED_CLOSE;
-    } else if (cur_hook_id == INK_HTTP_TXN_CLOSE_HOOK) {
+    } else if (cur_hook_id == TS_HTTP_TXN_CLOSE_HOOK) {
       // If we are closing the state machine, we can't
       //   jump to an error state so just continue
       api_next = API_RETURN_CONTINUE;
@@ -1514,7 +1514,7 @@ HttpSM::state_api_callout(int event, void *data)
     // TODO: This needs to be supported with non-V2 APIs as well.
 #if TS_HAS_V2STATS
     if(prev_hook_stats_enabled && prev_hook_start_time) {
-      int64 time_in_plugin_ms = (INKhrtime() - prev_hook_start_time)/1000000;
+      int64 time_in_plugin_ms = (ink_get_based_hrtime() - prev_hook_start_time)/1000000;
       Debug("http", "[%lld] Last plugin : Time spent : %s %lld", 
             sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id), time_in_plugin_ms);
       prev_hook_stats.inc(time_in_plugin_ms);
@@ -3940,7 +3940,7 @@ HttpSM::do_hostdb_update_if_necessary()
 
 // this function first checks if cached response has Accept-Ranges and
 // Content-Length header and is HTTP/1.1. && There is no other plugins
-// hooked to INK_HTTP_RESPONSE_TRANSFORM_HOOK.
+// hooked to TS_HTTP_RESPONSE_TRANSFORM_HOOK.
 // Then setup Range transformation if necessary
 void
 HttpSM::do_range_setup_if_necessary()
@@ -3956,13 +3956,13 @@ HttpSM::do_range_setup_if_necessary()
 
   t_state.range_setup = HttpTransact::RANGE_NONE;
   if (t_state.method == HTTP_WKSIDX_GET && t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
-    if (api_hooks.get(INK_HTTP_RESPONSE_TRANSFORM_HOOK) == NULL) {
+    if (api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK) == NULL) {
       // We may still not do Range if it is out of order Range.
       range_trans = transformProcessor.range_transform(mutex, field,
                                                        t_state.cache_info.object_read,
                                                        &t_state.hdr_info.transform_response, res);
       if (range_trans != NULL) {
-        api_hooks.append(INK_HTTP_RESPONSE_TRANSFORM_HOOK, range_trans);
+        api_hooks.append(TS_HTTP_RESPONSE_TRANSFORM_HOOK, range_trans);
         t_state.range_setup = HttpTransact::RANGE_TRANSFORM;
       } else if (res)
         t_state.range_setup = HttpTransact::RANGE_NOT_SATISFIABLE;
@@ -4037,7 +4037,7 @@ HttpSM::do_cache_delete_all_alts(Continuation * cont)
 
   Action *cache_action_handle = NULL;
 
-  if (!cont && cache_global_hooks->get(INK_CACHE_PLUGIN_HOOK)) {
+  if (!cont && cache_global_hooks->get(TS_CACHE_PLUGIN_HOOK)) {
     // cache plugin, must pass a continuation
     cacheProcessor.remove(&cache_sm, t_state.cache_info.lookup_url);
   } else {
@@ -4415,46 +4415,46 @@ HttpSM::do_api_callout_internal()
 
   switch (t_state.api_next_action) {
   case HttpTransact::HTTP_API_SM_START:
-    cur_hook_id = INK_HTTP_TXN_START_HOOK;
+    cur_hook_id = TS_HTTP_TXN_START_HOOK;
     break;
   case HttpTransact::HTTP_API_PRE_REMAP:
-    cur_hook_id = INK_HTTP_PRE_REMAP_HOOK;
+    cur_hook_id = TS_HTTP_PRE_REMAP_HOOK;
     break;
   case HttpTransact::HTTP_API_POST_REMAP:
-    cur_hook_id = INK_HTTP_POST_REMAP_HOOK;
+    cur_hook_id = TS_HTTP_POST_REMAP_HOOK;
     break;
   case HttpTransact::HTTP_API_READ_REQUEST_HDR:
-    cur_hook_id = INK_HTTP_READ_REQUEST_HDR_HOOK;
+    cur_hook_id = TS_HTTP_READ_REQUEST_HDR_HOOK;
     break;
   case HttpTransact::HTTP_API_OS_DNS:
-    cur_hook_id = INK_HTTP_OS_DNS_HOOK;
+    cur_hook_id = TS_HTTP_OS_DNS_HOOK;
     break;
   case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
-    cur_hook_id = INK_HTTP_SEND_REQUEST_HDR_HOOK;
+    cur_hook_id = TS_HTTP_SEND_REQUEST_HDR_HOOK;
     break;
   case HttpTransact::HTTP_API_READ_CACHE_HDR:
-    cur_hook_id = INK_HTTP_READ_CACHE_HDR_HOOK;
+    cur_hook_id = TS_HTTP_READ_CACHE_HDR_HOOK;
     break;
   case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
-    cur_hook_id = INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
+    cur_hook_id = TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
     break;
   case HttpTransact::HTTP_API_READ_REPONSE_HDR:
-    cur_hook_id = INK_HTTP_READ_RESPONSE_HDR_HOOK;
+    cur_hook_id = TS_HTTP_READ_RESPONSE_HDR_HOOK;
     break;
   case HttpTransact::HTTP_API_SEND_REPONSE_HDR:
-    cur_hook_id = INK_HTTP_SEND_RESPONSE_HDR_HOOK;
+    cur_hook_id = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
     break;
   case HttpTransact::HTTP_API_SM_SHUTDOWN:
     if (callout_state == HTTP_API_IN_CALLOUT || callout_state == HTTP_API_DEFERED_SERVER_ERROR) {
       callout_state = HTTP_API_DEFERED_CLOSE;
       return;
     } else {
-      cur_hook_id = INK_HTTP_TXN_CLOSE_HOOK;
+      cur_hook_id = TS_HTTP_TXN_CLOSE_HOOK;
     }
 
     break;
   default:
-    cur_hook_id = (INKHttpHookID) - 1;
+    cur_hook_id = (TSHttpHookID) - 1;
     ink_assert(!"not reached");
   }
 
@@ -4469,10 +4469,10 @@ HttpSM::do_post_transform_open()
   ink_assert(post_transform_info.vc == NULL);
 
   if (is_action_tag_set("http_post_nullt")) {
-    txn_hook_prepend(INK_HTTP_REQUEST_TRANSFORM_HOOK, transformProcessor.null_transform(mutex));
+    txn_hook_prepend(TS_HTTP_REQUEST_TRANSFORM_HOOK, transformProcessor.null_transform(mutex));
   }
 
-  post_transform_info.vc = transformProcessor.open(this, api_hooks.get(INK_HTTP_REQUEST_TRANSFORM_HOOK));
+  post_transform_info.vc = transformProcessor.open(this, api_hooks.get(TS_HTTP_REQUEST_TRANSFORM_HOOK));
   if (post_transform_info.vc) {
     // Record the transform VC in our table
     post_transform_info.entry = vc_table.new_entry();
@@ -4490,10 +4490,10 @@ HttpSM::do_transform_open()
   APIHook *hooks;
 
   if (is_action_tag_set("http_nullt")) {
-    txn_hook_prepend(INK_HTTP_RESPONSE_TRANSFORM_HOOK, transformProcessor.null_transform(mutex));
+    txn_hook_prepend(TS_HTTP_RESPONSE_TRANSFORM_HOOK, transformProcessor.null_transform(mutex));
   }
 
-  hooks = api_hooks.get(INK_HTTP_RESPONSE_TRANSFORM_HOOK);
+  hooks = api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK);
   if (hooks) {
     transform_info.vc = transformProcessor.open(this, hooks);
 
@@ -6053,7 +6053,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
 }
 
 inline void
-HttpSM::transform_cleanup(INKHttpHookID hook, HttpTransformInfo * info)
+HttpSM::transform_cleanup(TSHttpHookID hook, HttpTransformInfo * info)
 {
   APIHook *t_hook = api_hooks.get(hook);
   if (t_hook && info->vc == NULL) {
@@ -6127,8 +6127,8 @@ HttpSM::kill_this()
     //   In that case, we need to manually close all the
     //   transforms to prevent memory leaks (INKqa06147)
     if (hooks_set) {
-      transform_cleanup(INK_HTTP_RESPONSE_TRANSFORM_HOOK, &transform_info);
-      transform_cleanup(INK_HTTP_REQUEST_TRANSFORM_HOOK, &post_transform_info);
+      transform_cleanup(TS_HTTP_RESPONSE_TRANSFORM_HOOK, &transform_info);
+      transform_cleanup(TS_HTTP_REQUEST_TRANSFORM_HOOK, &post_transform_info);
     }
     // It's also possible that the plugin_tunnel vc was never
     //   executed due to not contacting the server

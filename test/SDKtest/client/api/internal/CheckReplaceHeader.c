@@ -47,15 +47,15 @@
 
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
   fprintf(stderr, "*** CheckReplaceHeader Test for replace-header-plugin ***\n");
-  INKFuncRegister(INK_FID_HEADER_PROCESS);
+  TSFuncRegister(TS_FID_HEADER_PROCESS);
 }
 
 
-INKRequestAction
-INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
+TSRequestAction
+TSHeaderProcess(void *req_id, char *header, int length, char *request_str)
 {
 
   char *accept_ranges_loc;
@@ -64,7 +64,7 @@ INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
   if (accept_ranges_loc == NULL) {
     fprintf(stderr, "SDKtest: replace-header-Test Failed: Accept-Ranges field error\n");
     fprintf(stderr, "Response header is:\n%s\n", header);
-    return INK_STOP_FAIL;
+    return TS_STOP_FAIL;
   }
 
   while (*accept_ranges_loc != ':')
@@ -78,8 +78,8 @@ INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
   if (strncasecmp(accept_ranges_loc, "Accept-Ranges", 13)) {
     fprintf(stderr, "SDKtest: replace-header-Test Failed: Accept-Ranges field error\n");
     fprintf(stderr, "Response header is:\n%s\n", header);
-    return INK_STOP_FAIL;
+    return TS_STOP_FAIL;
   }
 
-  return INK_STOP_SUCCESS;
+  return TS_STOP_SUCCESS;
 }

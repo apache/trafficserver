@@ -29,14 +29,14 @@
 #include <stdio.h>
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
-  fprintf(stderr, "*** INKPluginFinish Test for Client ***\n");
-  INKFuncRegister(INK_FID_REPORT);
+  fprintf(stderr, "*** TSPluginFinish Test for Client ***\n");
+  TSFuncRegister(TS_FID_REPORT);
 }
 
 void
-INKReport()
+TSReport()
 {
-  INKReportSingleData("Report Test", "count", INK_SUM, 0);
+  TSReportSingleData("Report Test", "count", TS_SUM, 0);
 }

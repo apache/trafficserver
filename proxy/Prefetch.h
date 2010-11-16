@@ -41,9 +41,9 @@
 typedef enum
 {
   ILL_BLAST = 0,
-  UDP_BLAST = INK_PREFETCH_PROTO_UDP,
-  TCP_BLAST = INK_PREFETCH_PROTO_TCP
-    //MULTICAST_BLAST = INK_PREFETCH_PROTO_UDP_MULTICAST
+  UDP_BLAST = TS_PREFETCH_PROTO_UDP,
+  TCP_BLAST = TS_PREFETCH_PROTO_TCP
+    //MULTICAST_BLAST = TS_PREFETCH_PROTO_UDP_MULTICAST
 } PrefetchBlastType;
 
 class BlasterUrlList;
@@ -75,9 +75,9 @@ struct PrefetchConfiguration
   unsigned int max_recursion;   //limit on depth of recursive prefetch
   unsigned int redirection;     //limit on depth of redirect prefetch
 
-  INKPrefetchHook pre_parse_hook;
-  INKPrefetchHook embedded_url_hook;
-  INKPrefetchHook embedded_obj_hook;
+  TSPrefetchHook pre_parse_hook;
+  TSPrefetchHook embedded_url_hook;
+  TSPrefetchHook embedded_obj_hook;
 
   int readConfiguration();
   void readHtmlTags(int fd, html_tag ** ptags, html_tag ** pattrs);
@@ -89,7 +89,7 @@ class PrefetchUrlEntry: public RefCountObj
 public:
   PrefetchUrlEntry()
   :url(0), len(INT_MAX), resp_blaster(0),
-    object_buf_status(INK_PREFETCH_OBJ_BUF_NOT_NEEDED),
+    object_buf_status(TS_PREFETCH_OBJ_BUF_NOT_NEEDED),
     req_ip(0), child_ip(0), url_multicast_ip(0), data_multicast_ip(0), blaster_link(0), hash_link(0)
   {
     refcount_inc();

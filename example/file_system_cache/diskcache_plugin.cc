@@ -32,32 +32,32 @@ static DiskCache cache;
 
 //----------------------------------------------------------------------------
 char *
-get_info_from_buffer(INKIOBufferReader the_reader)
+get_info_from_buffer(TSIOBufferReader the_reader)
 {
   char *info;
   char *info_start;
 
   int read_avail, read_done;
-  INKIOBufferBlock blk;
+  TSIOBufferBlock blk;
   char *buf;
 
   if (!the_reader)
     return NULL;
 
-  read_avail = INKIOBufferReaderAvail(the_reader);
+  read_avail = TSIOBufferReaderAvail(the_reader);
 
-  info = (char *) INKmalloc(sizeof(char) * read_avail);
+  info = (char *) TSmalloc(sizeof(char) * read_avail);
   if (info == NULL)
     return NULL;
   info_start = info;
 
   /* Read the data out of the reader */
   while (read_avail > 0) {
-    blk = INKIOBufferReaderStart(the_reader);
-    buf = (char *) INKIOBufferBlockReadStart(blk, the_reader, &read_done);
+    blk = TSIOBufferReaderStart(the_reader);
+    buf = (char *) TSIOBufferBlockReadStart(blk, the_reader, &read_done);
     memcpy(info, buf, read_done);
     if (read_done > 0) {
-      INKIOBufferReaderConsume(the_reader, read_done);
+      TSIOBufferReaderConsume(the_reader, read_done);
       read_avail -= read_done;
       info += read_done;
     }
@@ -69,24 +69,24 @@ get_info_from_buffer(INKIOBufferReader the_reader)
 
 
 static int
-cache_read(INKCont contp, INKEvent event, void *edata)
+cache_read(TSCont contp, TSEvent event, void *edata)
 {
-  INKDebug("cache_plugin", "[cache_read] event id: %d", event);
+  TSDebug("cache_plugin", "[cache_read] event id: %d", event);
 
 
-  INKDebug("cache_plugin", "[cache_read] disk cache plugin ");
+  TSDebug("cache_plugin", "[cache_read] disk cache plugin ");
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
   datum key, value;
   int keySize = 0;
-  INKU64 size, offset;
-  //INKIOBuffer buff;
+  TSU64 size, offset;
+  //TSIOBuffer buff;
 
   // get the key for the lookup
-  INKCacheKeyGet(txnp, (void **) &key.dptr, &keySize);
+  TSCacheKeyGet(txnp, (void **) &key.dptr, &keySize);
   key.dsize = keySize;
-  //INKCacheBufferInfoGet(txnp, &buff,&size, &offset);
-  INKCacheBufferInfoGet(txnp, &size, &offset);
+  //TSCacheBufferInfoGet(txnp, &buff,&size, &offset);
+  TSCacheBufferInfoGet(txnp, &size, &offset);
   //cout <<"size of the object is" <<size << endl;
   // cout <<"offset of the object is" <<offset << endl;
 
@@ -101,25 +101,25 @@ cache_read(INKCont contp, INKEvent event, void *edata)
   value.dptr = buffer;
   value.dsize = 0;
 
-  INKDebug("cache_plugin", "[cache_read] lock");
+  TSDebug("cache_plugin", "[cache_read] lock");
   cache.lock(key, false /* shared lock */ );
-  INKDebug("cache_plugin", "[cache_read] read");
+  TSDebug("cache_plugin", "[cache_read] read");
   if (cache.read(key, value, size, offset) == -1) {
-    INKDebug("cache_plugin", "[cache_read] didn't find in cache");
+    TSDebug("cache_plugin", "[cache_read] didn't find in cache");
     value.dptr = 0;
   }
-  INKDebug("cache_plugin", "[cache_read] unlock");
+  TSDebug("cache_plugin", "[cache_read] unlock");
   cache.unlock(key);
   // TODO write into IO buffer directly as described in steps above
-  /*if(event != INK_EVENT_CACHE_LOOKUP)
+  /*if(event != TS_EVENT_CACHE_LOOKUP)
      {
-     INKIOBufferWrite(buff,value.dptr,value.dsize);
-     INKDebug("cache_plugin", "[cache_read] return");
-     return INKHttpCacheReenable(txnp, event, 0, value.dsize);
+     TSIOBufferWrite(buff,value.dptr,value.dsize);
+     TSDebug("cache_plugin", "[cache_read] return");
+     return TSHttpCacheReenable(txnp, event, 0, value.dsize);
      }
      else
      { */
-  return INKHttpCacheReenable(txnp, event, value.dptr, value.dsize);
+  return TSHttpCacheReenable(txnp, event, value.dptr, value.dsize);
   //}
 
 }
@@ -127,16 +127,16 @@ cache_read(INKCont contp, INKEvent event, void *edata)
 
 //----------------------------------------------------------------------------
 static int
-cache_write(INKCont contp, INKEvent event, void *edata)
+cache_write(TSCont contp, TSEvent event, void *edata)
 {
-  INKDebug("cache_plugin", "[cache_write] disk cache plugin");
+  TSDebug("cache_plugin", "[cache_write] disk cache plugin");
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   // get the key for the data
   datum key, value;
   int keySize = 0;
-  INKCacheKeyGet(txnp, (void **) &key.dptr, &keySize);
+  TSCacheKeyGet(txnp, (void **) &key.dptr, &keySize);
   key.dsize = keySize;
 
   // 1. get IO buffer from the NewCacheVC
@@ -144,9 +144,9 @@ cache_write(INKCont contp, INKEvent event, void *edata)
   // 3. use the existing InkAPI to read the io buffer and write into cache
 
   // get the buffer to write into cache and get the start of the buffer
-  INKIOBufferReader buffer = INKCacheBufferReaderGet(txnp);
-  INKIOBufferBlock block = INKIOBufferReaderStart(buffer);
-  int available = INKIOBufferReaderAvail(buffer);
+  TSIOBufferReader buffer = TSCacheBufferReaderGet(txnp);
+  TSIOBufferBlock block = TSIOBufferReaderStart(buffer);
+  int available = TSIOBufferReaderAvail(buffer);
   char *temp_buf;
   uint64_t totalSize;
   // write to cache
@@ -155,69 +155,69 @@ cache_write(INKCont contp, INKEvent event, void *edata)
   cache.lock(key, true /* exclusive lock */ );
 //    do {
 //     int valueSize;
-//      value.dptr = (char*)INKIOBufferBlockReadStart(block, buffer, &valueSize);
+//      value.dptr = (char*)TSIOBufferBlockReadStart(block, buffer, &valueSize);
   value.dptr = (char *) get_info_from_buffer(buffer);
   value.dsize = available;
-//      INKDebug("cache_plugin", "[cache_write] **** value size %d", valueSize);
+//      TSDebug("cache_plugin", "[cache_write] **** value size %d", valueSize);
 
 
   // write the first buffer block to the string
   if (value.dptr != NULL) {
-    INKDebug("cache_plugin", "[cache_write] writing to the cache, bytes: %llu", value.dsize);
+    TSDebug("cache_plugin", "[cache_write] writing to the cache, bytes: %llu", value.dsize);
     if (cache.write(key, value) == -1) {
-      INKDebug("cache_plugin", "[cache_write] ERROR: writing to cache");
+      TSDebug("cache_plugin", "[cache_write] ERROR: writing to cache");
     }
-    //INKfree (value.dptr);
-//        INKIOBufferReaderConsume(buffer, valueSize);
+    //TSfree (value.dptr);
+//        TSIOBufferReaderConsume(buffer, valueSize);
   }
-//    } while ((block = INKIOBufferBlockNext(block)) != NULL);
+//    } while ((block = TSIOBufferBlockNext(block)) != NULL);
   totalSize = cache.getSize(key);
   cache.unlock(key);
 //  }
 
-  return INKHttpCacheReenable(txnp, event, 0, totalSize);
+  return TSHttpCacheReenable(txnp, event, 0, totalSize);
 }
 
 
 //----------------------------------------------------------------------------
 static int
-cache_remove(INKCont contp, INKEvent event, void *edata)
+cache_remove(TSCont contp, TSEvent event, void *edata)
 {
-  INKDebug("cache_plugin", "[cache_remove] disk cache plugin");
+  TSDebug("cache_plugin", "[cache_remove] disk cache plugin");
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
-  return INKHttpCacheReenable(txnp, event, 0, 0);
+  return TSHttpCacheReenable(txnp, event, 0, 0);
 }
 
 
 //----------------------------------------------------------------------------
 static int
-cache_main(INKCont contp, INKEvent event, void *edata)
+cache_main(TSCont contp, TSEvent event, void *edata)
 {
-  INKDebug("cache_plugin", "[cache_main] event id: %d", event);
+  TSDebug("cache_plugin", "[cache_main] event id: %d", event);
 
   switch (event) {
-  case INK_EVENT_CACHE_LOOKUP:
-  case INK_EVENT_CACHE_READ:
+  case TS_EVENT_CACHE_LOOKUP:
+  case TS_EVENT_CACHE_READ:
     return cache_read(contp, event, edata);
     break;
 
-  case INK_EVENT_CACHE_WRITE:
-  case INK_EVENT_CACHE_WRITE_HEADER:
+  case TS_EVENT_CACHE_WRITE:
+  case TS_EVENT_CACHE_WRITE_HEADER:
     return cache_write(contp, event, edata);
     break;
 
-  case INK_EVENT_CACHE_DELETE:
+  case TS_EVENT_CACHE_DELETE:
     return cache_remove(contp, event, edata);
     break;
 
-  case INK_EVENT_CACHE_CLOSE:
+  case TS_EVENT_CACHE_CLOSE:
     //do nothing
     break;
 
   default:
-    INKDebug("cache_plugin", "ERROR: unknown event");
+    TSDebug("cache_plugin", "ERROR: unknown event");
     return 0;
   }
 }
@@ -225,27 +225,27 @@ cache_main(INKCont contp, INKEvent event, void *edata)
 
 //----------------------------------------------------------------------------
 void
-INKPluginInit(const int argc, const char **argv)
+TSPluginInit(const int argc, const char **argv)
 {
-  INKPluginRegistrationInfo info;
-  INKCont contp;
+  TSPluginRegistrationInfo info;
+  TSCont contp;
 
-  INKDebug("cache_plugin", "Starting plugin");
+  TSDebug("cache_plugin", "Starting plugin");
 
 
   info.plugin_name = "cache_plugin";
   info.vendor_name = "ASF";
   info.support_email = "";
 
-  INKCont continuation_main = INKContCreate(cache_main, INKMutexCreate());
+  TSCont continuation_main = TSContCreate(cache_main, TSMutexCreate());
 
-  INKCacheHookAdd(INK_CACHE_PLUGIN_HOOK, continuation_main);
+  TSCacheHookAdd(TS_CACHE_PLUGIN_HOOK, continuation_main);
 
   cache.setTopDirectory("/home/trafficserver/share/yts");
   cache.setNumberDirectories(65536);
   if (cache.makeDirectories() != 0) {
-    INKDebug("cache_plugin", "Couldn't create the cache directories");
-    INKError("cache_plugin", "Couldn't create the cache directories");
+    TSDebug("cache_plugin", "Couldn't create the cache directories");
+    TSError("cache_plugin", "Couldn't create the cache directories");
     abort();
   }
 }

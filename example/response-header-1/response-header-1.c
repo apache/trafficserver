@@ -59,22 +59,22 @@ static char *mimehdr1_name;
 static char *mimehdr2_name;
 static char *mimehdr1_value;
 
-static INKMBuffer hdr_bufp;
-static INKMLoc hdr_loc;
+static TSMBuffer hdr_bufp;
+static TSMLoc hdr_loc;
 
-static INKMLoc field_loc;
-static INKMLoc value_loc;
+static TSMLoc field_loc;
+static TSMLoc value_loc;
 
 static void
-modify_header(INKHttpTxn txnp, INKCont contp)
+modify_header(TSHttpTxn txnp, TSCont contp)
 {
-  INKMBuffer resp_bufp;
-  INKMBuffer cached_bufp;
-  INKMLoc resp_loc;
-  INKMLoc cached_loc;
-  INKHttpStatus resp_status;
-  INKMLoc new_field_loc;
-  INKMLoc cached_field_loc;
+  TSMBuffer resp_bufp;
+  TSMBuffer cached_bufp;
+  TSMLoc resp_loc;
+  TSMLoc cached_loc;
+  TSHttpStatus resp_status;
+  TSMLoc new_field_loc;
+  TSMLoc cached_field_loc;
   time_t recvd_time;
 
   const char *chkptr;
@@ -85,98 +85,98 @@ modify_header(INKHttpTxn txnp, INKCont contp)
   if (!init_buffer_status)
     return;                     /* caller reenables */
 
-  if (!INKHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc)) {
-    INKError("couldn't retrieve server response header\n");
+  if (!TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc)) {
+    TSError("couldn't retrieve server response header\n");
     return;                     /* caller reenables */
   }
 
-  /* INKqa06246/INKqa06144 */
-  resp_status = INKHttpHdrStatusGet(resp_bufp, resp_loc);
+  /* TSqa06246/TSqa06144 */
+  resp_status = TSHttpHdrStatusGet(resp_bufp, resp_loc);
 
-  if (INK_HTTP_STATUS_OK == resp_status) {
+  if (TS_HTTP_STATUS_OK == resp_status) {
 
-    INKDebug("resphdr", "Processing 200 OK");
-    new_field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
-    INKDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
+    TSDebug("resphdr", "Processing 200 OK");
+    new_field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
+    TSDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
 
     /* copy name/values created at init
      * ( "x-num-served-from-cache" ) : ( "0"  )
      */
-    INKMimeHdrFieldCopy(resp_bufp, resp_loc, new_field_loc, hdr_bufp, hdr_loc, field_loc);
+    TSMimeHdrFieldCopy(resp_bufp, resp_loc, new_field_loc, hdr_bufp, hdr_loc, field_loc);
 
         /*********** Unclear why this is needed **************/
-    INKMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
+    TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
 
 
     /* Cache-Control: Public */
-    new_field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
-    INKDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
-    INKMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
-    INKMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc,
-                           INK_MIME_FIELD_CACHE_CONTROL, INK_MIME_LEN_CACHE_CONTROL);
-    INKMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, new_field_loc,
-                                     -1, INK_HTTP_VALUE_PUBLIC, INK_HTTP_LEN_PUBLIC);
+    new_field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
+    TSDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
+    TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
+    TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc,
+                           TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL);
+    TSMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, new_field_loc,
+                                     -1, TS_HTTP_VALUE_PUBLIC, TS_HTTP_LEN_PUBLIC);
 
     /*
-     * mimehdr2_name  = INKstrdup( "x-date-200-recvd" ) : CurrentDateTime
+     * mimehdr2_name  = TSstrdup( "x-date-200-recvd" ) : CurrentDateTime
      */
-    new_field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
-    INKDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
-    INKMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
-    INKMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr2_name, strlen(mimehdr2_name));
+    new_field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
+    TSDebug("resphdr", "Created new resp field with loc %d", new_field_loc);
+    TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
+    TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr2_name, strlen(mimehdr2_name));
     recvd_time = time(NULL);
-    INKMimeHdrFieldValueDateInsert(resp_bufp, resp_loc, new_field_loc, recvd_time);
+    TSMimeHdrFieldValueDateInsert(resp_bufp, resp_loc, new_field_loc, recvd_time);
 
-    INKHandleMLocRelease(resp_bufp, resp_loc, new_field_loc);
-    INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
+    TSHandleMLocRelease(resp_bufp, resp_loc, new_field_loc);
+    TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
 
-  } else if (INK_HTTP_STATUS_NOT_MODIFIED == resp_status) {
+  } else if (TS_HTTP_STATUS_NOT_MODIFIED == resp_status) {
 
-    INKDebug("resphdr", "Processing 304 Not Modified");
+    TSDebug("resphdr", "Processing 304 Not Modified");
 
     /* N.B.: Protect writes to data (hash on URL + mutex: (ies)) */
 
     /* Get the cached HTTP header */
-    if (!INKHttpTxnCachedRespGet(txnp, &cached_bufp, &cached_loc)) {
-      INKError("STATUS 304, INKHttpTxnCachedRespGet():");
-      INKError("couldn't retrieve cached response header\n");
-      INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
+    if (!TSHttpTxnCachedRespGet(txnp, &cached_bufp, &cached_loc)) {
+      TSError("STATUS 304, TSHttpTxnCachedRespGet():");
+      TSError("couldn't retrieve cached response header\n");
+      TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
       return;                   /* Caller reenables */
     }
 
     /* Get the cached MIME field name for this HTTP header */
-    cached_field_loc = INKMimeHdrFieldFind(cached_bufp, cached_loc,
+    cached_field_loc = TSMimeHdrFieldFind(cached_bufp, cached_loc,
                                            (const char *) mimehdr1_name, strlen(mimehdr1_name));
     if (0 == cached_field_loc) {
-      INKError("Can't find header %s in cached document", mimehdr1_name);
-      INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
-      INKHandleMLocRelease(cached_bufp, INK_NULL_MLOC, cached_loc);
+      TSError("Can't find header %s in cached document", mimehdr1_name);
+      TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
+      TSHandleMLocRelease(cached_bufp, TS_NULL_MLOC, cached_loc);
       return;                   /* Caller reenables */
     }
 
     /* Get the cached MIME value for this name in this HTTP header */
-    if (INKMimeHdrFieldValueStringGet(cached_bufp, cached_loc, cached_field_loc, 0, &chkptr, &chklength) == INK_ERROR ||
+    if (TSMimeHdrFieldValueStringGet(cached_bufp, cached_loc, cached_field_loc, 0, &chkptr, &chklength) == TS_ERROR ||
         NULL == chkptr || !chklength) {
-      INKError("Could not find value for cached MIME field name %s", mimehdr1_name);
-      INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
-      INKHandleMLocRelease(cached_bufp, INK_NULL_MLOC, cached_loc);
-      INKHandleMLocRelease(cached_bufp, cached_loc, cached_field_loc);
+      TSError("Could not find value for cached MIME field name %s", mimehdr1_name);
+      TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
+      TSHandleMLocRelease(cached_bufp, TS_NULL_MLOC, cached_loc);
+      TSHandleMLocRelease(cached_bufp, cached_loc, cached_field_loc);
       return;                   /* Caller reenables */
     }
-    INKDebug("resphdr", "Header field value is %s, with length %d", chkptr, chklength);
+    TSDebug("resphdr", "Header field value is %s, with length %d", chkptr, chklength);
 
 
     /* TODO check these comments for correctness */
     /*
-     * Since INKMimeHdrFieldValueStringGet returned with valid values
-     * are we also guaranteed that INKMimeHdrFieldValueUintGet returns
-     * valid values? There is no erro code for INKMimeHdrFieldValueUintGet
+     * Since TSMimeHdrFieldValueStringGet returned with valid values
+     * are we also guaranteed that TSMimeHdrFieldValueUintGet returns
+     * valid values? There is no erro code for TSMimeHdrFieldValueUintGet
      * and 0 is a valid value.
      */
     /* Get the cached MIME value for this name in this HTTP header */
     /*
-       INKMimeHdrFieldValueUintGet(cached_bufp, cached_loc, cached_field_loc, 0, &num_refreshes);
-       INKDebug("resphdr",
+       TSMimeHdrFieldValueUintGet(cached_bufp, cached_loc, cached_field_loc, 0, &num_refreshes);
+       TSDebug("resphdr",
        "Cached header shows %d refreshes so far", num_refreshes );
 
        num_refreshes++ ;
@@ -193,23 +193,23 @@ modify_header(INKHttpTxn txnp, INKCont contp)
        * in the in-process response in order to have the cached response
        * become invalid.
      */
-    new_field_loc = INKMimeHdrFieldCreate(resp_bufp, resp_loc);
+    new_field_loc = TSMimeHdrFieldCreate(resp_bufp, resp_loc);
 
-    /* mimehdr1_name : INKstrdup( "x-num-served-from-cache" ) ; */
+    /* mimehdr1_name : TSstrdup( "x-num-served-from-cache" ) ; */
 
-    INKMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
-    INKMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr1_name, strlen(mimehdr1_name));
+    TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
+    TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr1_name, strlen(mimehdr1_name));
 
-    INKMimeHdrFieldValueUintInsert(resp_bufp, resp_loc, new_field_loc, -1, num_refreshes);
+    TSMimeHdrFieldValueUintInsert(resp_bufp, resp_loc, new_field_loc, -1, num_refreshes);
 
-    INKHandleStringRelease(cached_bufp, cached_loc, chkptr);
-    INKHandleMLocRelease(resp_bufp, resp_loc, new_field_loc);
-    INKHandleMLocRelease(cached_bufp, cached_loc, cached_field_loc);
-    INKHandleMLocRelease(cached_bufp, INK_NULL_MLOC, cached_loc);
-    INKHandleMLocRelease(resp_bufp, INK_NULL_MLOC, resp_loc);
+    TSHandleStringRelease(cached_bufp, cached_loc, chkptr);
+    TSHandleMLocRelease(resp_bufp, resp_loc, new_field_loc);
+    TSHandleMLocRelease(cached_bufp, cached_loc, cached_field_loc);
+    TSHandleMLocRelease(cached_bufp, TS_NULL_MLOC, cached_loc);
+    TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
 
   } else {
-    INKDebug("resphdr", "other response code %d", resp_status);
+    TSDebug("resphdr", "other response code %d", resp_status);
   }
 
   /*
@@ -221,16 +221,16 @@ modify_header(INKHttpTxn txnp, INKCont contp)
 
 
 static int
-modify_response_header_plugin(INKCont contp, INKEvent event, void *edata)
+modify_response_header_plugin(TSCont contp, TSEvent event, void *edata)
 {
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
-    INKDebug("resphdr", "Called back with INK_EVENT_HTTP_READ_RESPONSE_HDR");
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    TSDebug("resphdr", "Called back with TS_EVENT_HTTP_READ_RESPONSE_HDR");
     modify_header(txnp, contp);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     /*  fall through  */
 
   default:
@@ -243,7 +243,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -266,30 +266,30 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKMLoc chk_field_loc;
+  TSMLoc chk_field_loc;
 
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "response-header-1";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
   init_buffer_status = 0;
   if (argc > 1) {
-    INKError("usage: %s \n", argv[0]);
-    INKError("warning: too many args %d\n", argc);
-    INKError("warning: ignoring unused arguments beginning with %s\n", argv[1]);
+    TSError("usage: %s \n", argv[0]);
+    TSError("warning: too many args %d\n", argc);
+    TSError("warning: ignoring unused arguments beginning with %s\n", argv[1]);
   }
 
   /*
@@ -300,28 +300,28 @@ INKPluginInit(int argc, const char *argv[])
    */
 
 
-  hdr_bufp = INKMBufferCreate();
-  hdr_loc = INKMimeHdrCreate(hdr_bufp);
+  hdr_bufp = TSMBufferCreate();
+  hdr_loc = TSMimeHdrCreate(hdr_bufp);
 
-  mimehdr1_name = INKstrdup("x-num-served-from-cache");
-  mimehdr1_value = INKstrdup("0");
+  mimehdr1_name = TSstrdup("x-num-served-from-cache");
+  mimehdr1_value = TSstrdup("0");
 
   /* Create name here and set DateTime value when o.s.
    * response 200 is received
    */
-  mimehdr2_name = INKstrdup("x-date-200-recvd");
+  mimehdr2_name = TSstrdup("x-date-200-recvd");
 
-  INKDebug("resphdr", "Inserting header %s with value %s into init buffer", mimehdr1_name, mimehdr1_value);
+  TSDebug("resphdr", "Inserting header %s with value %s into init buffer", mimehdr1_name, mimehdr1_value);
 
-  field_loc = INKMimeHdrFieldCreate(hdr_bufp, hdr_loc);
-  INKMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
-  INKMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, mimehdr1_name, strlen(mimehdr1_name));
-  INKMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, mimehdr1_value, strlen(mimehdr1_value));
-  INKDebug("resphdr", "init buffer hdr, field and value locs are %d, %d and %d", hdr_loc, field_loc, value_loc);
+  field_loc = TSMimeHdrFieldCreate(hdr_bufp, hdr_loc);
+  TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
+  TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, mimehdr1_name, strlen(mimehdr1_name));
+  TSMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, mimehdr1_value, strlen(mimehdr1_value));
+  TSDebug("resphdr", "init buffer hdr, field and value locs are %d, %d and %d", hdr_loc, field_loc, value_loc);
   init_buffer_status = 1;
 
 
-  INKHttpHookAdd(INK_HTTP_READ_RESPONSE_HDR_HOOK, INKContCreate(modify_response_header_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(modify_response_header_plugin, NULL));
 
   /*
    *  The following code demonstrates how to extract the field_loc from the header.
@@ -329,13 +329,13 @@ INKPluginInit(int argc, const char *argv[])
    *  similar to this may be used to extract header fields from any buffer.
    */
 
-  if (0 == (chk_field_loc = INKMimeHdrFieldGet(hdr_bufp, hdr_loc, 0))) {
-    INKError("couldn't retrieve header field from init buffer");
-    INKError("marking init buffer as corrupt; no more plugin processing");
+  if (0 == (chk_field_loc = TSMimeHdrFieldGet(hdr_bufp, hdr_loc, 0))) {
+    TSError("couldn't retrieve header field from init buffer");
+    TSError("marking init buffer as corrupt; no more plugin processing");
     init_buffer_status = 0;
     /* bail out here and reenable transaction */
   } else {
     if (field_loc != chk_field_loc)
-      INKError("retrieved buffer field loc is %d when it should be %d", chk_field_loc, field_loc);
+      TSError("retrieved buffer field loc is %d when it should be %d", chk_field_loc, field_loc);
   }
 }

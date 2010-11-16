@@ -43,7 +43,7 @@ typedef struct _query_remap_info {
 int tsremap_init(TSRemapInterface *api_info,char *errbuf,int errbuf_size)
 {
   /* Called at TS startup. Nothing needed for this plugin */
-  INKDebug(PLUGIN_NAME , "remap plugin initialized");
+  TSDebug(PLUGIN_NAME , "remap plugin initialized");
   return 0;
 }
 
@@ -52,10 +52,10 @@ int tsremap_new_instance(int argc,char *argv[],ihandle *ih,char *errbuf,int errb
 {
   /* Called for each remap rule using this plugin. The parameters are parsed here */
   int i;
-  INKDebug(PLUGIN_NAME, "new instance fromURL: %s toURL: %s", argv[0], argv[1]);
+  TSDebug(PLUGIN_NAME, "new instance fromURL: %s toURL: %s", argv[0], argv[1]);
 
   if (argc < 4) {
-    INKError("Missing parameters for " PLUGIN_NAME);
+    TSError("Missing parameters for " PLUGIN_NAME);
     return -1;
   }
 
@@ -66,23 +66,23 @@ int tsremap_new_instance(int argc,char *argv[],ihandle *ih,char *errbuf,int errb
        2: query param to hash
        3,4,... : server hostnames
   */
-  query_remap_info *qri = (query_remap_info*) INKmalloc(sizeof(query_remap_info));
+  query_remap_info *qri = (query_remap_info*) TSmalloc(sizeof(query_remap_info));
 
-  qri->param_name = INKstrdup(argv[2]);
+  qri->param_name = TSstrdup(argv[2]);
   qri->param_len = strlen(qri->param_name);
   qri->num_hosts = argc - 3;
-  qri->hosts = (char**) INKmalloc(qri->num_hosts*sizeof(char*));
+  qri->hosts = (char**) TSmalloc(qri->num_hosts*sizeof(char*));
 
-  INKDebug(PLUGIN_NAME, " - Hash using query parameter [%s] with %d hosts",
+  TSDebug(PLUGIN_NAME, " - Hash using query parameter [%s] with %d hosts",
            qri->param_name, qri->num_hosts);
 
   for (i=0; i < qri->num_hosts; ++i) {
-    qri->hosts[i] = INKstrdup(argv[i+3]);
-    INKDebug(PLUGIN_NAME, " - Host %d: %s", i, qri->hosts[i]);
+    qri->hosts[i] = TSstrdup(argv[i+3]);
+    TSDebug(PLUGIN_NAME, " - Host %d: %s", i, qri->hosts[i]);
   }
 
   *ih = (ihandle)qri;
-  INKDebug(PLUGIN_NAME, "created instance %p", *ih);
+  TSDebug(PLUGIN_NAME, "created instance %p", *ih);
   return 0;
 }
 
@@ -90,19 +90,19 @@ void tsremap_delete_instance(ihandle ih)
 {
   /* Release instance memory allocated in tsremap_new_instance */
   int i;
-  INKDebug(PLUGIN_NAME, "deleting instance %p", ih);
+  TSDebug(PLUGIN_NAME, "deleting instance %p", ih);
 
   if (ih) {
     query_remap_info *qri = (query_remap_info*)ih;
     if (qri->param_name)
-      INKfree(qri->param_name);
+      TSfree(qri->param_name);
     if (qri->hosts) {
       for (i=0; i < qri->num_hosts; ++i) {
-        INKfree(qri->hosts[i]);
+        TSfree(qri->hosts[i]);
       }
-      INKfree(qri->hosts);
+      TSfree(qri->hosts);
     }
-    INKfree(qri);
+    TSfree(qri);
   }
 }
 
@@ -113,18 +113,18 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
   query_remap_info *qri = (query_remap_info*)ih;
 
   if (!qri) {
-    INKError(PLUGIN_NAME "NULL ihandle");
+    TSError(PLUGIN_NAME "NULL ihandle");
     return 0;
   }
 
-  INKDebug(PLUGIN_NAME, "tsremap_remap request: %.*s", rri->orig_url_size, rri->orig_url);
+  TSDebug(PLUGIN_NAME, "tsremap_remap request: %.*s", rri->orig_url_size, rri->orig_url);
 
   if (rri && rri->request_query && rri->request_query_size > 0) {
     char *q, *key;
     char *s = NULL;
 
     /* make a copy of the query, as it is read only */
-    q = (char*) INKmalloc(rri->request_query_size+1);
+    q = (char*) TSmalloc(rri->request_query_size+1);
     strncpy(q, rri->request_query, rri->request_query_size);
     q[rri->request_query_size] = '\0';
 
@@ -137,13 +137,13 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
         /* the param key matched the configured param_name
            hash the param value to pick a host */
         hostidx = hash_fnv32(val, strlen(val)) % (uint32_t)qri->num_hosts;
-        INKDebug(PLUGIN_NAME, "modifying host based on %s", key);
+        TSDebug(PLUGIN_NAME, "modifying host based on %s", key);
         break;
       }
       key = strtok_r(NULL, "&", &s);
     }
 
-    INKfree(q);
+    TSfree(q);
 
     if (hostidx >= 0) {
       rri->new_host_size = strlen(qri->hosts[hostidx]);
@@ -151,7 +151,7 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
         /* copy the chosen host into rri */
         memcpy(rri->new_host, qri->hosts[hostidx], rri->new_host_size);
 
-        INKDebug(PLUGIN_NAME, "host changed from [%.*s] to [%.*s]",
+        TSDebug(PLUGIN_NAME, "host changed from [%.*s] to [%.*s]",
                  rri->request_host_size, rri->request_host,
                  rri->new_host_size, rri->new_host);
         return 1; /* host has been modified */
@@ -160,7 +160,7 @@ int tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo *rri)
   }
 
   /* the request was not modified, TS will use the toURL from the remap rule */
-  INKDebug(PLUGIN_NAME, "request not modified");
+  TSDebug(PLUGIN_NAME, "request not modified");
   return 0;
 }
 

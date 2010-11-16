@@ -26,24 +26,24 @@
 
 
 static int
-handle_HTTP_SEND_RESPONSE_HDR(INKCont contp, INKEvent event, void *eData)
+handle_HTTP_SEND_RESPONSE_HDR(TSCont contp, TSEvent event, void *eData)
 {
-  INKMBuffer buffer;
-  INKMLoc buffOffset;
-  INKHttpTxn txnp = (INKHttpTxn) contp;
+  TSMBuffer buffer;
+  TSMLoc buffOffset;
+  TSHttpTxn txnp = (TSHttpTxn) contp;
   int re = 0, err = 0;
-  re = INKHttpTxnCachedReqGet(txnp, &buffer, &buffOffset);
+  re = TSHttpTxnCachedReqGet(txnp, &buffer, &buffOffset);
   if (re) {
-    INKDebug("INKHttpTransaction", "INKHttpTxnCachedReqGet(): INK_EVENT_HTTP_SEND_RESPONSE_HDR, and txnp set\n");
+    TSDebug("TSHttpTransaction", "TSHttpTxnCachedReqGet(): TS_EVENT_HTTP_SEND_RESPONSE_HDR, and txnp set\n");
     /* Display all buffer contents */
 
   } else {
-    INKDebug("INKHttpTransaction", "INKHttpTxnCachedReqGet(): Failed.");
+    TSDebug("TSHttpTransaction", "TSHttpTxnCachedReqGet(): Failed.");
     err++;
   }
 
 /*
-INKHttpTxnCachedRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *offset);
+TSHttpTxnCachedRespGet (TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 */
 /* Display buffer contents */
 
@@ -54,40 +54,40 @@ INKHttpTxnCachedRespGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *offset);
 }
 
 static int
-handle_READ_REQUEST_HDR(INKCont cont, INKEvent event, void *eData)
+handle_READ_REQUEST_HDR(TSCont cont, TSEvent event, void *eData)
 {
   int err = 0;
   return err;
 }
 
 static int
-handle_READ_RESPONSE_HDR(INKCont contp, INKEvent event, void *eData)
+handle_READ_RESPONSE_HDR(TSCont contp, TSEvent event, void *eData)
 {
   int err = 0;
   return err;
 }
 
 static int
-INKHttpTransaction(INKCont contp, INKEvent event, void *eData)
+TSHttpTransaction(TSCont contp, TSEvent event, void *eData)
 {
-  INKHttpSsn ssnp = (INKHttpSsn) eData;
-  INKHttpTxn txnp = (INKHttpTxn) eData;
+  TSHttpSsn ssnp = (TSHttpSsn) eData;
+  TSHttpTxn txnp = (TSHttpTxn) eData;
 
   switch (event) {
 
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     handle_HTTP_SEND_RESPONSE_HDR(contp, event, eData);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
     handle_READ_REQUEST_HDR(contp, event, eData);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     handle_READ_RESPONSE_HDR(contp, event, eData);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   default:
     break;
@@ -95,8 +95,8 @@ INKHttpTransaction(INKCont contp, INKEvent event, void *eData)
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKCont contp = INKContCreate(INKHttpTransaction, NULL);
-  INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, contp);
+  TSCont contp = TSContCreate(TSHttpTransaction, NULL);
+  TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
 }

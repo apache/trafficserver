@@ -36,14 +36,14 @@ using namespace std;
 
 
 static map<string, string> cache;
-static INKMutex cacheMutex;
+static TSMutex cacheMutex;
 
 //----------------------------------------------------------------------------
 void *
 eventLoop(void *data)
 {
   while (1) {
-    INKDebug("cache_plugin", "[eventLoop]");
+    TSDebug("cache_plugin", "[eventLoop]");
     sleep(5);
 
     for (int i = 78; i > 0; --i)
@@ -51,13 +51,13 @@ eventLoop(void *data)
     cout << endl;               // print a line
     cout << "entries in cache: " << cache.size() << endl;
 
-    if (INKMutexLock(cacheMutex) == INK_SUCCESS) {
+    if (TSMutexLock(cacheMutex) == TS_SUCCESS) {
       for (map<string, string>::const_iterator it = cache.begin(); it != cache.end(); ++it) {
         //cout << "key: " << it->first << endl;
         //<< "value:" << it->second << endl;
         cout << "key size: " << it->first.size() << endl << "value size:" << it->second.size() << endl;
       }
-      INKMutexUnlock(cacheMutex);
+      TSMutexUnlock(cacheMutex);
     }
     for (int i = 78; i > 0; --i)
       cout << "-";
@@ -70,18 +70,18 @@ eventLoop(void *data)
 
 //----------------------------------------------------------------------------
 static int
-cache_read(INKCont contp, INKEvent event, void *edata)
+cache_read(TSCont contp, TSEvent event, void *edata)
 {
-  INKDebug("cache_plugin", "[cache_read]");
+  TSDebug("cache_plugin", "[cache_read]");
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
   void *key = 0;
   int keySize = 0;
   uint64 size, offset;
 
   // get the key for the lookup
-  INKCacheKeyGet(txnp, &key, &keySize);
-  INKCacheBufferInfoGet(txnp, &size, &offset);
+  TSCacheKeyGet(txnp, &key, &keySize);
+  TSCacheBufferInfoGet(txnp, &size, &offset);
 
   // 1. get IO buffer from the NewCacehVC
   // 2. get the offset and size to read from cache, size will be less then 32KB
@@ -92,17 +92,17 @@ cache_read(INKCont contp, INKEvent event, void *edata)
   const void *cacheData = 0;
   uint64_t cacheSize = 0;
 
-  if (event == INK_EVENT_CACHE_LOOKUP) {
-    event = INK_EVENT_CACHE_LOOKUP_COMPLETE;
+  if (event == TS_EVENT_CACHE_LOOKUP) {
+    event = TS_EVENT_CACHE_LOOKUP_COMPLETE;
   } else {
-    event = INK_EVENT_CACHE_READ_COMPLETE;
+    event = TS_EVENT_CACHE_READ_COMPLETE;
   }
 
   if (key != 0 && keySize > 0) {
     string keyString((char *) key, keySize);
 
-    if (INKMutexLock(cacheMutex) != INK_SUCCESS) {
-      INKDebug("cache_plugin", "[cache_read] failed to acquire cache mutex");
+    if (TSMutexLock(cacheMutex) != TS_SUCCESS) {
+      TSDebug("cache_plugin", "[cache_read] failed to acquire cache mutex");
     } else {
       map<string, string>::iterator it = cache.find(keyString);
       if (it != cache.end() && size > 0 && offset < it->second.size()) {
@@ -114,35 +114,35 @@ cache_read(INKCont contp, INKEvent event, void *edata)
         cacheData = it->second.substr(offset, cacheSize).c_str();
 
         if (cacheSize + offset < it->second.size()) {
-          if (event == INK_EVENT_CACHE_LOOKUP_COMPLETE) {
-            event = INK_EVENT_CACHE_LOOKUP_READY;
+          if (event == TS_EVENT_CACHE_LOOKUP_COMPLETE) {
+            event = TS_EVENT_CACHE_LOOKUP_READY;
           } else {
-            event = INK_EVENT_CACHE_READ_READY;
+            event = TS_EVENT_CACHE_READ_READY;
           }
         }
       }
-      INKReturnCode rval = INKHttpCacheReenable(txnp, event, cacheData, cacheSize);
-      INKMutexUnlock(cacheMutex);
+      TSReturnCode rval = TSHttpCacheReenable(txnp, event, cacheData, cacheSize);
+      TSMutexUnlock(cacheMutex);
       return rval;
     }
   }
 
-  return INKHttpCacheReenable(txnp, event, cacheData, cacheSize);
+  return TSHttpCacheReenable(txnp, event, cacheData, cacheSize);
 }
 
 
 //----------------------------------------------------------------------------
 static int
-cache_write(INKCont contp, INKEvent event, void *edata)
+cache_write(TSCont contp, TSEvent event, void *edata)
 {
-  INKDebug("cache_plugin", "[cache_write]");
+  TSDebug("cache_plugin", "[cache_write]");
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   // get the key for the data
   void *key;
   int keySize;
-  INKCacheKeyGet(txnp, &key, &keySize);
+  TSCacheKeyGet(txnp, &key, &keySize);
 
   uint64_t cacheSize = 0;
 
@@ -151,23 +151,23 @@ cache_write(INKCont contp, INKEvent event, void *edata)
   // 3. use the existing InkAPI to read the io buffer and write into cache
 
   // get the buffer to write into cache and get the start of the buffer
-  INKIOBufferReader buffer = INKCacheBufferReaderGet(txnp);
-  INKIOBufferBlock block = INKIOBufferReaderStart(buffer);
-  int64 available = INKIOBufferReaderAvail(buffer);
+  TSIOBufferReader buffer = TSCacheBufferReaderGet(txnp);
+  TSIOBufferBlock block = TSIOBufferReaderStart(buffer);
+  int64 available = TSIOBufferReaderAvail(buffer);
 
   string keyString((char *) key, keySize);
 
   // read from cache
 
-  if (INKMutexLock(cacheMutex) != INK_SUCCESS) {
-    INKDebug("cache_plugin", "[cache_write] failed to acquire cache mutex");
+  if (TSMutexLock(cacheMutex) != TS_SUCCESS) {
+    TSDebug("cache_plugin", "[cache_write] failed to acquire cache mutex");
   } else {
-    INKDebug("cache_plugin", "[cache_write] writting to cache");
+    TSDebug("cache_plugin", "[cache_write] writting to cache");
     map<string, string>::iterator it = cache.find(keyString);
     if (it == cache.end()) {
       cache.insert(make_pair(keyString, string("")));
       it = cache.find(keyString);
-    } else if (event == INK_EVENT_CACHE_WRITE_HEADER) {
+    } else if (event == TS_EVENT_CACHE_WRITE_HEADER) {
       //don't append headers
       it->second.erase();
     }
@@ -175,39 +175,39 @@ cache_write(INKCont contp, INKEvent event, void *edata)
     if (available > 0) {
       int64 ndone = 0;
       do {
-        const char *data = INKIOBufferBlockReadStart(block, buffer, &available);
+        const char *data = TSIOBufferBlockReadStart(block, buffer, &available);
 
         // append the buffer block to the string
         if (data != NULL) {
           it->second.append(data, available);
         }
         ndone += available;
-      } while ((block = INKIOBufferBlockNext(block)) != NULL);
+      } while ((block = TSIOBufferBlockNext(block)) != NULL);
 
-      INKIOBufferReaderConsume(buffer, ndone);
+      TSIOBufferReaderConsume(buffer, ndone);
     }
     cacheSize = it->second.size();
-    INKMutexUnlock(cacheMutex);
+    TSMutexUnlock(cacheMutex);
   }
 
-  return INKHttpCacheReenable(txnp, event, 0, cacheSize);
+  return TSHttpCacheReenable(txnp, event, 0, cacheSize);
 }
 
 
 //----------------------------------------------------------------------------
 static int
-cache_remove(INKCont contp, INKEvent event, void *edata)
+cache_remove(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-  INKDebug("cache_plugin", "[cache_remove]");
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSDebug("cache_plugin", "[cache_remove]");
 
   // get the key for the data
   void *key;
   int keySize;
-  INKCacheKeyGet(txnp, &key, &keySize);
+  TSCacheKeyGet(txnp, &key, &keySize);
 
-  if (INKMutexLock(cacheMutex) != INK_SUCCESS) {
-    INKDebug("cache_plugin", "[cache_remove] failed to acquire cache mutex");
+  if (TSMutexLock(cacheMutex) != TS_SUCCESS) {
+    TSDebug("cache_plugin", "[cache_remove] failed to acquire cache mutex");
   } else {
     // find the entry in cache
     string keyString((char *) key, keySize);
@@ -217,46 +217,46 @@ cache_remove(INKCont contp, INKEvent event, void *edata)
     if (it != cache.end()) {
       cache.erase(it);
     } else {
-      INKDebug("cache_plugin", "trying to remove a entry from cache that doesn't exist");
+      TSDebug("cache_plugin", "trying to remove a entry from cache that doesn't exist");
     }
-    INKMutexUnlock(cacheMutex);
+    TSMutexUnlock(cacheMutex);
   }
 
-  return INKHttpCacheReenable(txnp, event, 0, 0);
+  return TSHttpCacheReenable(txnp, event, 0, 0);
 }
 
 
 //----------------------------------------------------------------------------
 static int
-cache_plugin(INKCont contp, INKEvent event, void *edata)
+cache_plugin(TSCont contp, TSEvent event, void *edata)
 {
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
     // read events
-  case INK_EVENT_CACHE_LOOKUP:
-  case INK_EVENT_CACHE_READ:
+  case TS_EVENT_CACHE_LOOKUP:
+  case TS_EVENT_CACHE_READ:
     return cache_read(contp, event, edata);
     break;
 
     // write events
-  case INK_EVENT_CACHE_WRITE:
-  case INK_EVENT_CACHE_WRITE_HEADER:
+  case TS_EVENT_CACHE_WRITE:
+  case TS_EVENT_CACHE_WRITE_HEADER:
     return cache_write(contp, event, edata);
     break;
 
     // delete events
-  case INK_EVENT_CACHE_DELETE:
+  case TS_EVENT_CACHE_DELETE:
     return cache_remove(contp, event, edata);
     break;
 
-  case INK_EVENT_CACHE_CLOSE:
-    return INKHttpCacheReenable(txnp, event, 0, 0);
+  case TS_EVENT_CACHE_CLOSE:
+    return TSHttpCacheReenable(txnp, event, 0, 0);
     break;
 
   default:
-    INKDebug("cache_plugin", "ERROR: unknown event");
+    TSDebug("cache_plugin", "ERROR: unknown event");
     return 0;
   }
 }
@@ -264,21 +264,21 @@ cache_plugin(INKCont contp, INKEvent event, void *edata)
 
 //----------------------------------------------------------------------------
 void
-INKPluginInit(const int argc, const char **argv)
+TSPluginInit(const int argc, const char **argv)
 {
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
-  INKDebug("cache_plugin", "[INKPluginInit] Starting cache plugin");
+  TSDebug("cache_plugin", "[TSPluginInit] Starting cache plugin");
 
   info.plugin_name = (char *) "cache_plugin";
   info.vendor_name = (char *) "ASF";
   info.support_email = (char *) "";
 
-  cacheMutex = INKMutexCreate();
+  cacheMutex = TSMutexCreate();
 
-  INKCont continuation_plugin = INKContCreate(cache_plugin, INKMutexCreate());
+  TSCont continuation_plugin = TSContCreate(cache_plugin, TSMutexCreate());
 
-  INKCacheHookAdd(INK_CACHE_PLUGIN_HOOK, continuation_plugin);
+  TSCacheHookAdd(TS_CACHE_PLUGIN_HOOK, continuation_plugin);
 
-  //cacheThread = INKThreadCreate(eventLoop, 0);
+  //cacheThread = TSThreadCreate(eventLoop, 0);
 }

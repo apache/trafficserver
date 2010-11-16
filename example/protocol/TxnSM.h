@@ -26,9 +26,9 @@
 
 #include "Protocol.h"
 
-typedef int (*TxnSMHandler) (INKCont contp, INKEvent event, void *data);
+typedef int (*TxnSMHandler) (TSCont contp, TSEvent event, void *data);
 
-INKCont TxnSMCreate(INKMutex pmutex, INKVConn client_vc, int server_port);
+TSCont TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port);
 
 #define TXN_SM_ALIVE 0xAAAA0123
 #define TXN_SM_DEAD  0xFEE1DEAD
@@ -39,12 +39,12 @@ typedef struct _TxnSM
 {
   unsigned int q_magic;
 
-  INKMutex q_mutex;
-  INKAction q_pending_action;
+  TSMutex q_mutex;
+  TSAction q_pending_action;
   TxnSMHandler q_current_handler;
 
-  INKVConn q_client_vc;
-  INKVConn q_server_vc;
+  TSVConn q_client_vc;
+  TSVConn q_server_vc;
 
   char *q_client_request;
   char *q_server_response;
@@ -56,29 +56,29 @@ typedef struct _TxnSM
   uint32 q_server_ip;
   int q_server_port;
 
-  INKVIO q_client_read_vio;
-  INKVIO q_client_write_vio;
-  INKIOBuffer q_client_request_buffer;
-  INKIOBuffer q_client_response_buffer;
-  INKIOBufferReader q_client_request_buffer_reader;
-  INKIOBufferReader q_client_response_buffer_reader;
+  TSVIO q_client_read_vio;
+  TSVIO q_client_write_vio;
+  TSIOBuffer q_client_request_buffer;
+  TSIOBuffer q_client_response_buffer;
+  TSIOBufferReader q_client_request_buffer_reader;
+  TSIOBufferReader q_client_response_buffer_reader;
 
-  INKVIO q_server_read_vio;
-  INKVIO q_server_write_vio;
-  INKIOBuffer q_server_request_buffer;
-  INKIOBuffer q_server_response_buffer;
-  INKIOBufferReader q_server_request_buffer_reader;
+  TSVIO q_server_read_vio;
+  TSVIO q_server_write_vio;
+  TSIOBuffer q_server_request_buffer;
+  TSIOBuffer q_server_response_buffer;
+  TSIOBufferReader q_server_request_buffer_reader;
   int q_server_response_length;
   int q_block_bytes_read;
   int q_cache_response_length;
 
   /* Cache related */
-  INKVConn q_cache_vc;
-  INKIOBufferReader q_cache_response_buffer_reader;
-  INKVIO q_cache_read_vio;
-  INKVIO q_cache_write_vio;
-  INKIOBuffer q_cache_read_buffer;
-  INKIOBufferReader q_cache_read_buffer_reader;
+  TSVConn q_cache_vc;
+  TSIOBufferReader q_cache_response_buffer_reader;
+  TSVIO q_cache_read_vio;
+  TSVIO q_cache_write_vio;
+  TSIOBuffer q_cache_read_buffer;
+  TSIOBufferReader q_cache_read_buffer_reader;
 
 } TxnSM;
 

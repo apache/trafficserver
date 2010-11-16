@@ -22,8 +22,8 @@
  */
 
 /**********************************************************************************************
- * The plugins uses the functions in the INKHttpAltInfo* group. They are called back on the
- * INK_HTTP_SELECT_ALT_HOOK. It also calls some other functions in the INK_HTTP_OS_DNS_HOOK.
+ * The plugins uses the functions in the TSHttpAltInfo* group. They are called back on the
+ * TS_HTTP_SELECT_ALT_HOOK. It also calls some other functions in the TS_HTTP_OS_DNS_HOOK.
  **********************************************************************************************/
 
 #include <stdio.h>
@@ -33,10 +33,10 @@
 #define DEBUG_TAG "alt-info-dbg"
 
 #define PLUGIN_NAME "alt-info"
-#define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))
+#define VALID_POINTER(X) ((X != NULL) && (X != TS_ERROR_PTR))
 #define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 #define LOG_ERROR(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 #define LOG_ERROR_AND_RETURN(API_NAME) { \
@@ -49,62 +49,62 @@
 }
 #define LOG_ERROR_AND_REENABLE(API_NAME) { \
   LOG_ERROR(API_NAME); \
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE); \
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE); \
 }
 #define LOG_ERROR_NEG(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
              FUNCTION_NAME, __FILE__, __LINE__); \
 }
 
 
 /***********************************************************************
- * play with the functions in the INKHttpAltInfo* group
+ * play with the functions in the TSHttpAltInfo* group
  ***********************************************************************/
 static void
-handle_select_alt(INKHttpAltInfo infop)
+handle_select_alt(TSHttpAltInfo infop)
 {
   LOG_SET_FUNCTION_NAME("handle_select_alt");
 
-  INKMBuffer client_req_buf = NULL;
-  INKMBuffer cache_req_buf = NULL;
-  INKMBuffer cache_resp_buf = NULL;
+  TSMBuffer client_req_buf = NULL;
+  TSMBuffer cache_req_buf = NULL;
+  TSMBuffer cache_resp_buf = NULL;
 
-  INKMLoc client_req_hdr = NULL;
-  INKMLoc cache_req_hdr = NULL;
-  INKMLoc cache_resp_hdr = NULL;
+  TSMLoc client_req_hdr = NULL;
+  TSMLoc cache_req_hdr = NULL;
+  TSMLoc cache_resp_hdr = NULL;
 
-  INKMLoc accept_language_field = NULL;
-  INKMLoc content_language_field = NULL;
+  TSMLoc accept_language_field = NULL;
+  TSMLoc content_language_field = NULL;
 
   int len;
   const char *accept_value = NULL;
   const char *content_value = NULL;
   int quality = 0;
 
-  /* negative test for INKHttpAltInfo* functions */
+  /* negative test for TSHttpAltInfo* functions */
 #ifdef DEBUG
-  if (INKHttpAltInfoClientReqGet(NULL, &client_req_buf, &client_req_hdr) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpAltInfoClientReqGet");
+  if (TSHttpAltInfoClientReqGet(NULL, &client_req_buf, &client_req_hdr) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpAltInfoClientReqGet");
 
-  if (INKHttpAltInfoCachedReqGet(NULL, &cache_req_buf, &cache_req_hdr) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpAltInfoCachedReqGet");
+  if (TSHttpAltInfoCachedReqGet(NULL, &cache_req_buf, &cache_req_hdr) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpAltInfoCachedReqGet");
 
-  if (INKHttpAltInfoCachedRespGet(NULL, &cache_resp_buf, &cache_resp_hdr) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpAltInfoCachedRespGet");
+  if (TSHttpAltInfoCachedRespGet(NULL, &cache_resp_buf, &cache_resp_hdr) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpAltInfoCachedRespGet");
 
-  if (INKHttpAltInfoQualitySet(NULL, quality) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpAltInfoQualitySet");
+  if (TSHttpAltInfoQualitySet(NULL, quality) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpAltInfoQualitySet");
 #endif
 
   /* get client request, cached request and cached response */
-  if (INKHttpAltInfoClientReqGet(infop, &client_req_buf, &client_req_hdr) != INK_SUCCESS)
-    LOG_ERROR_AND_CLEANUP("INKHttpAltInfoClientReqGet");
+  if (TSHttpAltInfoClientReqGet(infop, &client_req_buf, &client_req_hdr) != TS_SUCCESS)
+    LOG_ERROR_AND_CLEANUP("TSHttpAltInfoClientReqGet");
 
-  if (INKHttpAltInfoCachedReqGet(infop, &cache_req_buf, &cache_req_hdr) != INK_SUCCESS)
-    LOG_ERROR_AND_CLEANUP("INKHttpAltInfoCachedReqGet");
+  if (TSHttpAltInfoCachedReqGet(infop, &cache_req_buf, &cache_req_hdr) != TS_SUCCESS)
+    LOG_ERROR_AND_CLEANUP("TSHttpAltInfoCachedReqGet");
 
-  if (INKHttpAltInfoCachedRespGet(infop, &cache_resp_buf, &cache_resp_hdr) != INK_SUCCESS)
-    LOG_ERROR_AND_CLEANUP("INKHttpAltInfoCachedRespGet");
+  if (TSHttpAltInfoCachedRespGet(infop, &cache_resp_buf, &cache_resp_hdr) != TS_SUCCESS)
+    LOG_ERROR_AND_CLEANUP("TSHttpAltInfoCachedRespGet");
 
   /*
    * get the Accept-Language field value from the client request
@@ -112,25 +112,25 @@ handle_select_alt(INKHttpAltInfo infop)
    * if these two values are equivalent, set the quality of this alternate to 1
    * otherwise set it to 0
    */
-  if ((accept_language_field = INKMimeHdrFieldFind(client_req_buf, client_req_hdr, INK_MIME_FIELD_ACCEPT_LANGUAGE,
-                                                   INK_MIME_LEN_ACCEPT_LANGUAGE)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldFind");
+  if ((accept_language_field = TSMimeHdrFieldFind(client_req_buf, client_req_hdr, TS_MIME_FIELD_ACCEPT_LANGUAGE,
+                                                   TS_MIME_LEN_ACCEPT_LANGUAGE)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldFind");
   if (accept_language_field) {
-    if (INKMimeHdrFieldValueStringGet(client_req_buf, client_req_hdr, accept_language_field,
-                                      0, &accept_value, &len) == INK_ERROR)
-      LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringGet(client_req_buf, client_req_hdr, accept_language_field,
+                                      0, &accept_value, &len) == TS_ERROR)
+      LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldValueStringGet");
   } else {
     /* If field Accept-language not found, set quality to 0 */
     quality = 0;
   }
 
-  if ((content_language_field = INKMimeHdrFieldFind(cache_resp_buf, cache_resp_hdr, INK_MIME_FIELD_CONTENT_LANGUAGE,
-                                                    INK_MIME_LEN_CONTENT_LANGUAGE)) == INK_ERROR_PTR)
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldFind");
+  if ((content_language_field = TSMimeHdrFieldFind(cache_resp_buf, cache_resp_hdr, TS_MIME_FIELD_CONTENT_LANGUAGE,
+                                                    TS_MIME_LEN_CONTENT_LANGUAGE)) == TS_ERROR_PTR)
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldFind");
   if (content_language_field) {
-    if (INKMimeHdrFieldValueStringGet(cache_resp_buf, cache_resp_hdr, content_language_field,
-                                      0, &content_value, &len) == INK_ERROR)
-      LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldFind");
+    if (TSMimeHdrFieldValueStringGet(cache_resp_buf, cache_resp_hdr, content_language_field,
+                                      0, &content_value, &len) == TS_ERROR)
+      LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldFind");
   } else {
     /* If field content_language_field not found, set quality to 0 */
     quality = 0;
@@ -140,50 +140,50 @@ handle_select_alt(INKHttpAltInfo infop)
     quality = 1;
   }
 
-  if (INKHttpAltInfoQualitySet(infop, quality) == INK_ERROR)
-    LOG_ERROR_AND_CLEANUP("INKHttpAltInfoQualitySet");
+  if (TSHttpAltInfoQualitySet(infop, quality) == TS_ERROR)
+    LOG_ERROR_AND_CLEANUP("TSHttpAltInfoQualitySet");
 
-  INKDebug(DEBUG_TAG, "Accept-Language: %s, Content-Language: %s, alternate quality set to %d",
+  TSDebug(DEBUG_TAG, "Accept-Language: %s, Content-Language: %s, alternate quality set to %d",
            accept_value, content_value, quality);
 
 
   /* cleanup */
 Lcleanup:
   if (VALID_POINTER(accept_value))
-    INKHandleStringRelease(client_req_buf, accept_language_field, accept_value);
+    TSHandleStringRelease(client_req_buf, accept_language_field, accept_value);
   if (VALID_POINTER(accept_language_field))
-    INKHandleMLocRelease(client_req_buf, client_req_hdr, accept_language_field);
+    TSHandleMLocRelease(client_req_buf, client_req_hdr, accept_language_field);
   if (VALID_POINTER(client_req_hdr))
-    INKHandleMLocRelease(client_req_buf, INK_NULL_MLOC, client_req_hdr);
+    TSHandleMLocRelease(client_req_buf, TS_NULL_MLOC, client_req_hdr);
 
   if (VALID_POINTER(content_value))
-    INKHandleStringRelease(cache_resp_buf, content_language_field, content_value);
+    TSHandleStringRelease(cache_resp_buf, content_language_field, content_value);
   if (VALID_POINTER(content_language_field))
-    INKHandleMLocRelease(cache_resp_buf, cache_resp_hdr, content_language_field);
+    TSHandleMLocRelease(cache_resp_buf, cache_resp_hdr, content_language_field);
   if (VALID_POINTER(cache_resp_hdr))
-    INKHandleMLocRelease(cache_resp_buf, INK_NULL_MLOC, cache_resp_hdr);
+    TSHandleMLocRelease(cache_resp_buf, TS_NULL_MLOC, cache_resp_hdr);
 
   if (VALID_POINTER(cache_req_hdr))
-    INKHandleMLocRelease(cache_req_buf, INK_NULL_MLOC, cache_req_hdr);
+    TSHandleMLocRelease(cache_req_buf, TS_NULL_MLOC, cache_req_hdr);
 
 }
 
 /**********************************************************************
- * Call the following functions on the INK_HTTP_OS_DNS_HOOK:
- * -- INKHttpTxnCachedReqGet
- * -- INKHttpTxnSsnGet
- * -- INKHttpTxnParentProxySet
- * -- INKrealloc
+ * Call the following functions on the TS_HTTP_OS_DNS_HOOK:
+ * -- TSHttpTxnCachedReqGet
+ * -- TSHttpTxnSsnGet
+ * -- TSHttpTxnParentProxySet
+ * -- TSrealloc
  **********************************************************************/
 
 static void
-handle_os_dns(INKHttpTxn txnp)
+handle_os_dns(TSHttpTxn txnp)
 {
   LOG_SET_FUNCTION_NAME("handle_os_dns");
 
-  INKMBuffer bufp = NULL;
-  INKMLoc hdr_loc = NULL;
-  INKHttpSsn ssnp = NULL;
+  TSMBuffer bufp = NULL;
+  TSMLoc hdr_loc = NULL;
+  TSHttpSsn ssnp = NULL;
 
   void *m = NULL;
   void *r = NULL;
@@ -194,65 +194,65 @@ handle_os_dns(INKHttpTxn txnp)
   int port = 10180;
 
   /* get the cached request header */
-  if (INKHttpTxnCachedReqGet(txnp, &bufp, &hdr_loc) == 0) {
-    INKDebug(DEBUG_TAG, "Cannot get cached request header");
+  if (TSHttpTxnCachedReqGet(txnp, &bufp, &hdr_loc) == 0) {
+    TSDebug(DEBUG_TAG, "Cannot get cached request header");
   } else {
-    INKDebug(DEBUG_TAG, "Successfully get cached request header");
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSDebug(DEBUG_TAG, "Successfully get cached request header");
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   }
 
   /* get the session of this transaction */
-  if ((ssnp = INKHttpTxnSsnGet(txnp)) == INK_ERROR_PTR || ssnp == NULL)
-    LOG_ERROR_AND_REENABLE("INKHttpTxnSsnGet");
+  if ((ssnp = TSHttpTxnSsnGet(txnp)) == TS_ERROR_PTR || ssnp == NULL)
+    LOG_ERROR_AND_REENABLE("TSHttpTxnSsnGet");
 
-  /* negative test for INKHttpTxnSsnGet */
+  /* negative test for TSHttpTxnSsnGet */
 #ifdef DEBUG
-  if (INKHttpTxnSsnGet(NULL) != INK_ERROR_PTR)
-    LOG_ERROR_NEG("INKHttpTxnSsnGet");
+  if (TSHttpTxnSsnGet(NULL) != TS_ERROR_PTR)
+    LOG_ERROR_NEG("TSHttpTxnSsnGet");
 #endif
 
   /* set the parent proxy */
-  if (INKHttpTxnParentProxySet(txnp, hostname, port) == INK_ERROR)
-    LOG_ERROR_AND_REENABLE("INKHttpTxnParentProxySet");
+  if (TSHttpTxnParentProxySet(txnp, hostname, port) == TS_ERROR)
+    LOG_ERROR_AND_REENABLE("TSHttpTxnParentProxySet");
 
-  /* negative test for INKHttpTxnParentProxySet */
+  /* negative test for TSHttpTxnParentProxySet */
 #ifdef DEBUG
-  if (INKHttpTxnParentProxySet(NULL, hostname, port) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpTxnParentProxySet");
+  if (TSHttpTxnParentProxySet(NULL, hostname, port) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpTxnParentProxySet");
 
-  if (INKHttpTxnParentProxySet(txnp, NULL, port) != INK_ERROR)
-    LOG_ERROR_NEG("INKHttpTxnParentProxySet");
+  if (TSHttpTxnParentProxySet(txnp, NULL, port) != TS_ERROR)
+    LOG_ERROR_NEG("TSHttpTxnParentProxySet");
 #endif
 
-  /* try INKrealloc */
-  if ((m = INKmalloc(size1)) == NULL)
-    LOG_ERROR_AND_REENABLE("INKmalloc");
-  if ((r = INKrealloc(m, size2)) == NULL)
-    LOG_ERROR_AND_REENABLE("INKrealloc");
+  /* try TSrealloc */
+  if ((m = TSmalloc(size1)) == NULL)
+    LOG_ERROR_AND_REENABLE("TSmalloc");
+  if ((r = TSrealloc(m, size2)) == NULL)
+    LOG_ERROR_AND_REENABLE("TSrealloc");
 
-  INKfree(r);
+  TSfree(r);
 
   /* reenable the transaction */
-  if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) == INK_ERROR)
-    LOG_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR)
+    LOG_ERROR("TSHttpTxnReenable");
 
 }
 
 static int
-alt_plugin(INKCont contp, INKEvent event, void *edata)
+alt_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpAltInfo infop;
-  INKHttpTxn txnp;
+  TSHttpAltInfo infop;
+  TSHttpTxn txnp;
 
   switch (event) {
 
-  case INK_EVENT_HTTP_SELECT_ALT:
-    infop = (INKHttpAltInfo) edata;
+  case TS_EVENT_HTTP_SELECT_ALT:
+    infop = (TSHttpAltInfo) edata;
     handle_select_alt(infop);
     break;
 
-  case INK_EVENT_HTTP_OS_DNS:
-    txnp = (INKHttpTxn) edata;
+  case TS_EVENT_HTTP_OS_DNS:
+    txnp = (TSHttpTxn) edata;
     handle_os_dns(txnp);
     break;
 
@@ -264,17 +264,17 @@ alt_plugin(INKCont contp, INKEvent event, void *edata)
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  LOG_SET_FUNCTION_NAME("INKPluginInit");
-  INKCont contp;
+  LOG_SET_FUNCTION_NAME("TSPluginInit");
+  TSCont contp;
 
-  if ((contp = INKContCreate(alt_plugin, NULL)) == INK_ERROR_PTR)
-    LOG_ERROR("INKContCreate")
+  if ((contp = TSContCreate(alt_plugin, NULL)) == TS_ERROR_PTR)
+    LOG_ERROR("TSContCreate")
       else {
-    if (INKHttpHookAdd(INK_HTTP_SELECT_ALT_HOOK, contp) == INK_ERROR)
-      LOG_ERROR("INKHttpHookAdd");
-    if (INKHttpHookAdd(INK_HTTP_OS_DNS_HOOK, contp) == INK_ERROR)
-      LOG_ERROR("INKHttpHookAdd");
+    if (TSHttpHookAdd(TS_HTTP_SELECT_ALT_HOOK, contp) == TS_ERROR)
+      LOG_ERROR("TSHttpHookAdd");
+    if (TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, contp) == TS_ERROR)
+      LOG_ERROR("TSHttpHookAdd");
     }
 }

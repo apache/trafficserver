@@ -1304,7 +1304,7 @@ HttpTransact::HandleApiErrorJump(State * s)
   Debug("http_trans", "[HttpTransact::HandleApiErrorJump]");
 
   // since the READ_REQUEST_HDR_HOOK is processed before
-  //   we examine the request, returning INK_EVENT_ERROR will cause
+  //   we examine the request, returning TS_EVENT_ERROR will cause
   //   the protocol in the via string to be "?"  Set it here
   //   since we know it has to be http
   // For CONNECT method, next_hop_scheme is NULL
@@ -4927,7 +4927,7 @@ HttpTransact::handle_transform_ready(State * s)
 void
 HttpTransact::set_header_for_transform(State * s, HTTPHdr * base_header)
 {
-#ifndef INK_NO_TRANSFORM
+#ifndef TS_NO_TRANSFORM
   s->hdr_info.transform_response.create(HTTP_TYPE_RESPONSE);
   s->hdr_info.transform_response.copy(base_header);
 
@@ -4940,7 +4940,7 @@ HttpTransact::set_header_for_transform(State * s, HTTPHdr * base_header)
     DUMP_HEADER("http_hdrs", &s->hdr_info.transform_response, s->state_machine_id, "Header To Transform");
 #else
   ink_assert(!"transformation not supported\n");
-#endif //INK_NO_TRANSFORM
+#endif // TS_NO_TRANSFORM
 }
 
 void

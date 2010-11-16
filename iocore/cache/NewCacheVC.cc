@@ -168,7 +168,7 @@ NewCacheVC::handleRead(int event, Event * e)
   cancel_trigger();
 
   if (!closed)
-    _cacheReadHook->invoke(INK_EVENT_CACHE_READ, this);
+    _cacheReadHook->invoke(TS_EVENT_CACHE_READ, this);
 
   return 1;
 }
@@ -215,7 +215,7 @@ NewCacheVC::do_io_write(Continuation * c, int64 nbytes, IOBufferReader * buf, bo
   _vio.vc_server = this;
   ink_assert(c->mutex->thread_holding);
 
-  //_cacheWriteHook->invoke(INK_EVENT_CACHE_OPEN_WRITE, this);
+  //_cacheWriteHook->invoke(TS_EVENT_CACHE_OPEN_WRITE, this);
 
   SET_HANDLER(&NewCacheVC::handleWrite);
   if (!trigger) {
@@ -235,7 +235,7 @@ NewCacheVC::handleWrite(int event, Event * e)
   cancel_trigger();
 
   if (!closed)
-    _cacheWriteHook->invoke(INK_EVENT_CACHE_WRITE, this);
+    _cacheWriteHook->invoke(TS_EVENT_CACHE_WRITE, this);
   return 1;
 }
 
@@ -259,8 +259,8 @@ NewCacheVC::alloc(Continuation * cont, URL * url, HttpCacheSM * sm)
   c->_lookupUrl = url;
   c->_url = url->string_get_ref(&c->_url_length);
   c->_sm = sm;
-  c->_cacheWriteHook = cache_global_hooks->get(INK_CACHE_PLUGIN_HOOK);
-  c->_cacheReadHook = cache_global_hooks->get(INK_CACHE_PLUGIN_HOOK);
+  c->_cacheWriteHook = cache_global_hooks->get(TS_CACHE_PLUGIN_HOOK);
+  c->_cacheReadHook = cache_global_hooks->get(TS_CACHE_PLUGIN_HOOK);
 
   return c;
 }
@@ -296,7 +296,7 @@ NewCacheVC::do_io_close(int lerrno)
 
         if (_vio.op == VIO::WRITE) {
           // do_io_close without set_http_info is a delete
-          _cacheWriteHook->invoke(INK_EVENT_CACHE_DELETE, this);
+          _cacheWriteHook->invoke(TS_EVENT_CACHE_DELETE, this);
         }
 
         break;
@@ -403,7 +403,7 @@ NewCacheVC::handleLookup(int event, Event * e)
   cancel_trigger();
 
   if (!closed)
-    _cacheReadHook->invoke(INK_EVENT_CACHE_LOOKUP, this);
+    _cacheReadHook->invoke(TS_EVENT_CACHE_LOOKUP, this);
   return 1;
 }
 
@@ -850,7 +850,7 @@ NewCacheVC::_writeHttpInfo()
 #endif
     }
     //setCtrlInPlugin(true);
-    _cacheWriteHook->invoke(INK_EVENT_CACHE_WRITE_HEADER, this);
+    _cacheWriteHook->invoke(TS_EVENT_CACHE_WRITE_HEADER, this);
   } else {
     Debug("cache_plugin", "[NewCacheVC::_writeHttpInfo] httpinfo not valid");
   }
@@ -867,14 +867,14 @@ NewCacheVC::_free()
 
   //send close event to allow plugin to free buffers
   //setCtrlInPlugin(true);
-  _cacheReadHook->invoke(INK_EVENT_CACHE_CLOSE, this);
+  _cacheReadHook->invoke(TS_EVENT_CACHE_CLOSE, this);
 
 //  if(_vio.op == VIO::READ)
-//    _cacheWriteHook->invoke(INK_EVENT_CACHE_READ_UNLOCK, this);
+//    _cacheWriteHook->invoke(TS_EVENT_CACHE_READ_UNLOCK, this);
 //  else if(_vio.op == VIO::WRITE)
-//         _cacheWriteHook->invoke(INK_EVENT_CACHE_WRITE_UNLOCK,this);
+//         _cacheWriteHook->invoke(TS_EVENT_CACHE_WRITE_UNLOCK,this);
 //      else if(_vio.op == VIO::SHUTDOWN_READWRITE)
-  //             _cacheWriteHook->invoke(INK_EVENT_CACHE_DELETE_UNLOCK,this);
+  //             _cacheWriteHook->invoke(TS_EVENT_CACHE_DELETE_UNLOCK,this);
 
   //CACHE_DECREMENT_DYN_STAT(this->base_stat + CACHE_STAT_ACTIVE);
 //   if (this->closed > 0) {

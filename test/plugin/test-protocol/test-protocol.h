@@ -38,10 +38,10 @@
 #define DEBUG_TAG "test-protocol-dbg"
 
 #define PLUGIN_NAME "test-protocol"
-#define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))
+#define VALID_POINTER(X) ((X != NULL) && (X != TS_ERROR_PTR))
 #define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 #define LOG_ERROR(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 #define LOG_ERROR_AND_RETURN(API_NAME) { \
@@ -54,22 +54,22 @@
 }
 #define LOG_ERROR_AND_REENABLE(API_NAME) { \
   LOG_ERROR(API_NAME); \
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE); \
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE); \
 }
 #define LOG_ERROR_NEG(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d",PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
              FUNCTION_NAME, __FILE__, __LINE__); \
 }
 
-typedef int (*ConnHandler) (INKCont contp, INKEvent event, void *data);
+typedef int (*ConnHandler) (TSCont contp, TSEvent event, void *data);
 
 typedef struct _ConnData
 {
-  INKMutex mutex;
-  INKAction pending_action;
+  TSMutex mutex;
+  TSAction pending_action;
   ConnHandler current_handler;
 
-  INKVConn client_vconn;
+  TSVConn client_vconn;
 
   char *client_request;
   char *client_response;
@@ -77,16 +77,16 @@ typedef struct _ConnData
   char *pattern;
   int number;
 
-  INKVIO client_read_vio;
-  INKVIO client_write_vio;
-  INKIOBuffer client_request_buffer;
-  INKIOBuffer client_response_buffer;
-  INKIOBufferReader client_request_buffer_reader;
-  INKIOBufferReader client_response_buffer_reader;
+  TSVIO client_read_vio;
+  TSVIO client_write_vio;
+  TSIOBuffer client_request_buffer;
+  TSIOBuffer client_response_buffer;
+  TSIOBufferReader client_request_buffer_reader;
+  TSIOBufferReader client_response_buffer_reader;
 
 } ConnData;
 
 /* global variable */
-INKTextLogObject plugin_log = NULL;
+TSTextLogObject plugin_log = NULL;
 
 #endif /* TEST_PROTOCOL_H */

@@ -111,18 +111,18 @@ int CacheVC::size_to_init = -1;
 CacheKey zero_key(0, 0);
 
 void verify_cache_api() {
-  ink_assert((int)INK_EVENT_CACHE_OPEN_READ == (int)CACHE_EVENT_OPEN_READ);
-  ink_assert((int)INK_EVENT_CACHE_OPEN_READ_FAILED == (int)CACHE_EVENT_OPEN_READ_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_OPEN_WRITE == (int)CACHE_EVENT_OPEN_WRITE);
-  ink_assert((int)INK_EVENT_CACHE_OPEN_WRITE_FAILED == (int)CACHE_EVENT_OPEN_WRITE_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_REMOVE == (int)CACHE_EVENT_REMOVE);
-  ink_assert((int)INK_EVENT_CACHE_REMOVE_FAILED == (int)CACHE_EVENT_REMOVE_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_SCAN == (int)CACHE_EVENT_SCAN);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_FAILED == (int)CACHE_EVENT_SCAN_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_OBJECT == (int)CACHE_EVENT_SCAN_OBJECT);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
-  ink_assert((int)INK_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_READ == (int)CACHE_EVENT_OPEN_READ);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_READ_FAILED == (int)CACHE_EVENT_OPEN_READ_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_WRITE == (int)CACHE_EVENT_OPEN_WRITE);
+  ink_assert((int)TS_EVENT_CACHE_OPEN_WRITE_FAILED == (int)CACHE_EVENT_OPEN_WRITE_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_REMOVE == (int)CACHE_EVENT_REMOVE);
+  ink_assert((int)TS_EVENT_CACHE_REMOVE_FAILED == (int)CACHE_EVENT_REMOVE_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN == (int)CACHE_EVENT_SCAN);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_FAILED == (int)CACHE_EVENT_SCAN_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_OBJECT == (int)CACHE_EVENT_SCAN_OBJECT);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
+  ink_assert((int)TS_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
 }
 
 struct PartInitInfo
@@ -2753,7 +2753,7 @@ CacheProcessor::open_read(Continuation *cont, URL *url, CacheHTTPHdr *request,
 #endif
   if (cache_global_hooks != NULL && cache_global_hooks->hooks_set > 0) {
     Debug("cache_plugin", "[CacheProcessor::open_read] Cache hooks are set");
-    APIHook *cache_lookup = cache_global_hooks->get(INK_CACHE_PLUGIN_HOOK);
+    APIHook *cache_lookup = cache_global_hooks->get(TS_CACHE_PLUGIN_HOOK);
 
     if (cache_lookup != NULL) {
       HttpCacheSM *sm = (HttpCacheSM *) cont;
@@ -2770,8 +2770,8 @@ CacheProcessor::open_read(Continuation *cont, URL *url, CacheHTTPHdr *request,
           sm->master_sm->t_state.cache_vc = vc;
         }
         //vc->setCtrlInPlugin(true);
-        int rval = cache_lookup->invoke(INK_EVENT_CACHE_LOOKUP, (void *) vc);
-        if (rval == INK_SUCCESS) {
+        int rval = cache_lookup->invoke(TS_EVENT_CACHE_LOOKUP, (void *) vc);
+        if (rval == TS_SUCCESS) {
           return ACTION_RESULT_DONE;
         } else {
           abort();
@@ -2841,14 +2841,14 @@ CacheProcessor::remove(Continuation *cont, URL *url, CacheFragType frag_type)
 #endif
   if (cache_global_hooks != NULL && cache_global_hooks->hooks_set > 0) {
     DDebug("cache_plugin", "[CacheProcessor::remove] Cache hooks are set");
-    APIHook *cache_lookup = cache_global_hooks->get(INK_CACHE_PLUGIN_HOOK);
+    APIHook *cache_lookup = cache_global_hooks->get(TS_CACHE_PLUGIN_HOOK);
     if (cache_lookup != NULL) {
       NewCacheVC *vc = NewCacheVC::alloc(cont, url, NULL);
-      int rval = cache_lookup->invoke(INK_EVENT_CACHE_DELETE, (void *) vc);
+      int rval = cache_lookup->invoke(TS_EVENT_CACHE_DELETE, (void *) vc);
       if (vc) {
         vc->free();
       }
-      if (rval == INK_SUCCESS) {
+      if (rval == TS_SUCCESS) {
         return ACTION_RESULT_DONE;
       } else {
         abort();

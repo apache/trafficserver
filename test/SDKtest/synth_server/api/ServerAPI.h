@@ -30,14 +30,14 @@
 
 typedef enum
 {
-  INK_FID_OPTIONS_PROCESS,
-  INK_FID_OPTIONS_PROCESS_FINISH,
-  INK_FID_PLUGIN_FINISH,
-  INK_FID_RESPONSE_PREPARE,
-  INK_FID_RESPONSE_PUT
-} INKPluginFuncId;
+  TS_FID_OPTIONS_PROCESS,
+  TS_FID_OPTIONS_PROCESS_FINISH,
+  TS_FID_PLUGIN_FINISH,
+  TS_FID_RESPONSE_PREPARE,
+  TS_FID_RESPONSE_PUT
+} TSPluginFuncId;
 
-extern void INKPluginInit();
-extern void INKFuncRegister(INKPluginFuncId);
+extern void TSPluginInit();
+extern void TSFuncRegister(TSPluginFuncId);
 
 #endif /* _Api_h_ */

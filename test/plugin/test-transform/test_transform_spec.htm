@@ -26,13 +26,13 @@
 <p>&nbsp;</p>
 <p><font size="+1"><b>Overview</b></font></p>
 <p>This plugin is based on the null-transform sample plugin. It inserts several 
-  APIs in the INKIOBuffer*, INKVConn*, INKVIO* and other categories into the appropriate 
+  APIs in the TSIOBuffer*, TSVConn*, TSVIO* and other categories into the appropriate 
   places for testing.</p>
 <p><font size="+1"><b>Feature Description</b></font></p>
-<p>In the INKPluginInit(), the plugin calls a test_iobuffer() function, which 
+<p>In the TSPluginInit(), the plugin calls a test_iobuffer() function, which 
   tests the IOBuffer functions in the following way:</p>
 <p>It creates an an IOBuffer and a full IOBufferBlock. Then it appends the block 
-  to the IOBuffer. Since the block in the IOBuffer is full, when INKIOBufferStart 
+  to the IOBuffer. Since the block in the IOBuffer is full, when TSIOBufferStart 
   is called, it will add a new block to the IOBuffer and the its return value 
   points to the new block. The plugin checks if this is true and prints out the 
   pass/fail information to the log file. Then it gets the read avail of the first 

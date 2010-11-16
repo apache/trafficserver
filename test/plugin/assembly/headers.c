@@ -44,13 +44,13 @@
 int
 query_string_extract(TxnData * txn_data, char **query_store)
 {
-  INKMBuffer bufp;
-  INKMLoc url_loc;
+  TSMBuffer bufp;
+  TSMLoc url_loc;
   const char *query_string;
   int len;
 
-  INKAssert(txn_data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In query_string_extract");
+  TSAssert(txn_data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In query_string_extract");
 
   if (txn_data != NULL) {
     bufp = txn_data->request_url_buf;
@@ -59,17 +59,17 @@ query_string_extract(TxnData * txn_data, char **query_store)
     return -1;
   }
 
-  query_string = INKUrlHttpQueryGet(bufp, url_loc, &len);
+  query_string = TSUrlHttpQueryGet(bufp, url_loc, &len);
   if ((len != 0) && (query_string != NULL)) {
-    *query_store = INKmalloc(len + 1);
+    *query_store = TSmalloc(len + 1);
     strncpy(*query_store, query_string, len);
     (*query_store)[len] = '\0';
-    INKHandleStringRelease(bufp, url_loc, query_string);
+    TSHandleStringRelease(bufp, url_loc, query_string);
   } else {
     *query_store = NULL;
   }
 
-  INKDebug(LOW, "query string = |%s|", (*query_store != NULL) ? *query_store : "NULL");
+  TSDebug(LOW, "query string = |%s|", (*query_store != NULL) ? *query_store : "NULL");
 
   return 0;
 }
@@ -86,36 +86,36 @@ query_string_extract(TxnData * txn_data, char **query_store)
   Returns 0 or -1 if an error occured
   -------------------------------------------------------------------------*/
 int
-query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query, PairList * cookies)
+query_and_cookies_extract(TSHttpTxn txnp, TxnData * txn_data, PairList * query, PairList * cookies)
 {
-  INKMBuffer bufp;
-  INKMLoc hdr_loc, url_loc, cookies_loc;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc, url_loc, cookies_loc;
   const char *query_string;
   const char *cookies_string;
   int len;
 
-  INKAssert(txn_data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In query_and_cookies_extract");
+  TSAssert(txn_data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In query_and_cookies_extract");
 
-  if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
     return -1;
   }
 
   /* Deal with query string */
   /* OLD IMPLEMENTATION
-     if ((url_loc = INKHttpHdrUrlGet(bufp, hdr_loc)) == NULL) {
-     INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+     if ((url_loc = TSHttpHdrUrlGet(bufp, hdr_loc)) == NULL) {
+     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
      return -1;
      }
-     query_string = INKUrlHttpQueryGet(bufp, url_loc, &len); */
+     query_string = TSUrlHttpQueryGet(bufp, url_loc, &len); */
 
   if (txn_data != NULL) {
-    query_string = INKUrlHttpQueryGet(txn_data->request_url_buf, txn_data->request_url_loc, &len);
+    query_string = TSUrlHttpQueryGet(txn_data->request_url_buf, txn_data->request_url_loc, &len);
   } else {
     query_string = NULL;
   }
 
-  INKDebug(LOW, "query string = |%s|", query_string);
+  TSDebug(LOW, "query string = |%s|", query_string);
 
   if ((len != 0) && (query_string != NULL)) {
     char *str;
@@ -124,7 +124,7 @@ query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query,
     char *separator;
 
     /* life is easier with a null terminated string ... */
-    str = (char *) INKmalloc(len + 1);
+    str = (char *) TSmalloc(len + 1);
     memcpy(str, query_string, len);
     str[len] = '\0';
 
@@ -152,7 +152,7 @@ query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query,
       }
 
       if ((name != NULL) && (value != NULL)) {
-        INKDebug(LOW, "Adding query pair |%s| |%s|", name, value);
+        TSDebug(LOW, "Adding query pair |%s| |%s|", name, value);
         pairListAdd(query, name, value);
       }
 
@@ -160,23 +160,23 @@ query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query,
       free(value);
     } while (separator != NULL);
 
-    INKfree(str);
+    TSfree(str);
 
-    /* old implementation INKHandleStringRelease(bufp, url_loc, query_string); */
-    INKHandleStringRelease(txn_data->request_url_buf, txn_data->request_url_loc, query_string);
+    /* old implementation TSHandleStringRelease(bufp, url_loc, query_string); */
+    TSHandleStringRelease(txn_data->request_url_buf, txn_data->request_url_loc, query_string);
   }
-  /* old implementation INKHandleMLocRelease(bufp, hdr_loc, url_loc); */
+  /* old implementation TSHandleMLocRelease(bufp, hdr_loc, url_loc); */
 
 
   /* Extract cookies */
-  cookies_loc = INKMimeHdrFieldFind(bufp, hdr_loc, INK_MIME_FIELD_COOKIE, INK_MIME_LEN_COOKIE);
+  cookies_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
   if (cookies_loc == NULL) {
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
 
-  INKMimeHdrFieldValueStringGet(bufp, hdr_loc, cookies_loc, -1, &cookies_string, &len);
-  INKDebug(LOW, "Cookies = %s", cookies_string);
+  TSMimeHdrFieldValueStringGet(bufp, hdr_loc, cookies_loc, -1, &cookies_string, &len);
+  TSDebug(LOW, "Cookies = %s", cookies_string);
 
   if ((len != 0) && (cookies_string != NULL)) {
     char *str;
@@ -185,7 +185,7 @@ query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query,
     char *separator;
 
     /* life is easier with a null terminated string ... */
-    str = (char *) INKmalloc(len + 1);
+    str = (char *) TSmalloc(len + 1);
     memcpy(str, cookies_string, len);
     str[len] = '\0';
 
@@ -218,7 +218,7 @@ query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query,
       }
 
       if ((name != NULL) && (value != NULL)) {
-        INKDebug(LOW, "Adding cookie pair |%s| |%s|", name, value);
+        TSDebug(LOW, "Adding cookie pair |%s| |%s|", name, value);
         pairListAdd(cookies, name, value);
       }
 
@@ -226,11 +226,11 @@ query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query,
       free(value);
     } while (separator != NULL);
 
-    INKfree(str);
-    INKHandleMLocRelease(bufp, hdr_loc, cookies_loc);
+    TSfree(str);
+    TSHandleMLocRelease(bufp, hdr_loc, cookies_loc);
   }
 
-  INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
   return 0;
 }
@@ -247,55 +247,55 @@ query_and_cookies_extract(INKHttpTxn txnp, TxnData * txn_data, PairList * query,
   Returns 1 if it's a template header 0 otherwise
   -------------------------------------------------------------------------*/
 int
-is_template_header(INKMBuffer bufp, INKMLoc hdr_loc)
+is_template_header(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  INKHttpStatus resp_status;
-  INKMLoc field_loc;
+  TSHttpStatus resp_status;
+  TSMLoc field_loc;
   const char *str;
   int len;
 
-  INKDebug(MED, "In is_template_header");
+  TSDebug(MED, "In is_template_header");
 
   /* Check out that status is 200 */
-  resp_status = INKHttpHdrStatusGet(bufp, hdr_loc);
-  if ((resp_status != INK_HTTP_STATUS_OK) && (resp_status != INK_HTTP_STATUS_NOT_MODIFIED)) {
-    INKDebug(LOW, "Not a template: status is [%d], not 200 nor 304", resp_status);
+  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+  if ((resp_status != TS_HTTP_STATUS_OK) && (resp_status != TS_HTTP_STATUS_NOT_MODIFIED)) {
+    TSDebug(LOW, "Not a template: status is [%d], not 200 nor 304", resp_status);
     return 0;
   }
 
   /* Check out that content type is text/html */
-  field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, INK_MIME_FIELD_CONTENT_TYPE, INK_MIME_LEN_CONTENT_TYPE);
-  if (field_loc == INK_NULL_MLOC) {
-    INKDebug(LOW, "Not a template: could not find header %s", INK_MIME_FIELD_CONTENT_TYPE);
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
+  if (field_loc == TS_NULL_MLOC) {
+    TSDebug(LOW, "Not a template: could not find header %s", TS_MIME_FIELD_CONTENT_TYPE);
     return 0;
   }
-  INKMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &str, &len);
+  TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &str, &len);
   if (str == NULL) {
-    INKDebug(LOW, "Not a template: could not get value of header %s", INK_MIME_FIELD_CONTENT_TYPE);
-    INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+    TSDebug(LOW, "Not a template: could not get value of header %s", TS_MIME_FIELD_CONTENT_TYPE);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     return 0;
   }
 
   if (strncasecmp(str, CONTENT_TYPE_TEXT_HTML, CONTENT_TYPE_TEXT_HTML_LEN) != 0) {
-    INKDebug(LOW, "Not a template: could value of header %s is %s, not %s",
-             INK_MIME_FIELD_CONTENT_TYPE, str, CONTENT_TYPE_TEXT_HTML);
-    INKHandleStringRelease(bufp, hdr_loc, str);
-    INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+    TSDebug(LOW, "Not a template: could value of header %s is %s, not %s",
+             TS_MIME_FIELD_CONTENT_TYPE, str, CONTENT_TYPE_TEXT_HTML);
+    TSHandleStringRelease(bufp, hdr_loc, str);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     return 0;
   }
-  INKHandleStringRelease(bufp, hdr_loc, str);
-  INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+  TSHandleStringRelease(bufp, hdr_loc, str);
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 
   /* Check out that header X-Include is present */
-  field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, HEADER_X_TEMPLATE, -1);
-  if (field_loc == INK_NULL_MLOC) {
-    INKDebug(LOW, "Not a template: could not find header %s", HEADER_X_TEMPLATE);
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, HEADER_X_TEMPLATE, -1);
+  if (field_loc == TS_NULL_MLOC) {
+    TSDebug(LOW, "Not a template: could not find header %s", HEADER_X_TEMPLATE);
     return 0;
   }
-  INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 
   /* We're done with checks. This is a template page that has to be transformed */
-  INKDebug(LOW, "This is a template, transform it !");
+  TSDebug(LOW, "This is a template, transform it !");
   return 1;
 }
 
@@ -308,14 +308,14 @@ is_template_header(INKMBuffer bufp, INKMLoc hdr_loc)
   to let the TS know that the template should not be cached.
   -------------------------------------------------------------------------*/
 int
-has_nocache_header(INKMLoc bufp, INKMLoc hdr_loc)
+has_nocache_header(TSMLoc bufp, TSMLoc hdr_loc)
 {
-  INKMLoc field_loc;
-  INKDebug(MED, "In has_no_cacheheader");
+  TSMLoc field_loc;
+  TSDebug(MED, "In has_no_cacheheader");
 
-  field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, HEADER_X_NOCACHE, -1);
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, HEADER_X_NOCACHE, -1);
   if (field_loc != NULL) {
-    INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     return 1;
   }
 
@@ -334,50 +334,50 @@ has_nocache_header(INKMLoc bufp, INKMLoc hdr_loc)
   Returns 1 if dynamic, 0 if not dynamic, -1 in case of error
   -------------------------------------------------------------------------*/
 int
-request_looks_dynamic(INKMBuffer bufp, INKMLoc hdr_loc)
+request_looks_dynamic(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  INKMLoc url_loc, cookie_loc;
+  TSMLoc url_loc, cookie_loc;
   const char *path;
   const char *query;
   int len;
 
-  INKDebug(MED, "In request_looks_dynamic");
+  TSDebug(MED, "In request_looks_dynamic");
 
-  url_loc = INKHttpHdrUrlGet(bufp, hdr_loc);
+  url_loc = TSHttpHdrUrlGet(bufp, hdr_loc);
   if (url_loc == NULL) {
-    INKError("Could not retrieve Url");
+    TSError("Could not retrieve Url");
     return -1;
   }
 
-  path = INKUrlPathGet(bufp, url_loc, &len);
+  path = TSUrlPathGet(bufp, url_loc, &len);
   if ((path != NULL) && (len > 0)) {
-    char *str = INKmalloc(len + 1);
+    char *str = TSmalloc(len + 1);
     strncpy(str, path, len);
     str[len] = '\0';
 
     if ((strstr(str, ASP_EXTENSION) != NULL) || (strstr(str, JSP_EXTENSION) != NULL) || (strstr(str, CGI_BIN) != NULL)) {
-      INKHandleStringRelease(bufp, url_loc, path);
-      INKHandleMLocRelease(bufp, hdr_loc, url_loc);
+      TSHandleStringRelease(bufp, url_loc, path);
+      TSHandleMLocRelease(bufp, hdr_loc, url_loc);
       return 1;
     }
-    INKHandleStringRelease(bufp, url_loc, path);
+    TSHandleStringRelease(bufp, url_loc, path);
   }
 
-  query = INKUrlHttpQueryGet(bufp, url_loc, &len);
+  query = TSUrlHttpQueryGet(bufp, url_loc, &len);
   if ((query != NULL) && (len > 0)) {
-    INKHandleStringRelease(bufp, url_loc, query);
-    INKHandleMLocRelease(bufp, hdr_loc, url_loc);
+    TSHandleStringRelease(bufp, url_loc, query);
+    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     return 1;
   }
 
-  cookie_loc = INKMimeHdrFieldFind(bufp, hdr_loc, INK_MIME_FIELD_COOKIE, INK_MIME_LEN_COOKIE);
+  cookie_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
   if (cookie_loc != NULL) {
-    INKHandleMLocRelease(bufp, hdr_loc, cookie_loc);
-    INKHandleMLocRelease(bufp, hdr_loc, url_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, cookie_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     return 1;
   }
 
-  INKHandleMLocRelease(bufp, hdr_loc, url_loc);
+  TSHandleMLocRelease(bufp, hdr_loc, url_loc);
   return 0;
 }
 
@@ -389,15 +389,15 @@ request_looks_dynamic(INKMBuffer bufp, INKMLoc hdr_loc)
   Look for header X-Block in request.
   -------------------------------------------------------------------------*/
 int
-is_block_request(INKMBuffer bufp, INKMLoc hdr_loc)
+is_block_request(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  INKMLoc field_loc;
+  TSMLoc field_loc;
 
-  INKDebug(MED, "In is_block_request");
+  TSDebug(MED, "In is_block_request");
 
-  field_loc = INKMimeHdrFieldFind(bufp, hdr_loc, HEADER_X_BLOCK, -1);
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, HEADER_X_BLOCK, -1);
   if (field_loc != NULL) {
-    INKHandleMLocRelease(bufp, hdr_loc, field_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     return 1;
   }
 
@@ -414,10 +414,10 @@ is_block_request(INKMBuffer bufp, INKMLoc hdr_loc)
      - store the original url in the txn_data structure
   -------------------------------------------------------------------------*/
 void
-modify_request_url(INKMBuffer bufp, INKMLoc url_loc, TxnData * txn_data)
+modify_request_url(TSMBuffer bufp, TSMLoc url_loc, TxnData * txn_data)
 {
-  INKMBuffer template_url_buf = txn_data->template_url_buf;
-  INKMLoc template_url_loc = txn_data->template_url_loc;
+  TSMBuffer template_url_buf = txn_data->template_url_buf;
+  TSMLoc template_url_loc = txn_data->template_url_loc;
   const char *user;
   const char *password;
   const char *host;
@@ -427,54 +427,54 @@ modify_request_url(INKMBuffer bufp, INKMLoc url_loc, TxnData * txn_data)
   const char *params;
   int len;
 
-  INKAssert(txn_data->magic == MAGIC_ALIVE);
-  INKDebug(LOW, "In modify_request_url");
+  TSAssert(txn_data->magic == MAGIC_ALIVE);
+  TSDebug(LOW, "In modify_request_url");
 
   /* Note: We have to do all the copy manually due to a bug
-     in INKHttpUrlQuerySet: if used to set query to NULL,
+     in TSHttpUrlQuerySet: if used to set query to NULL,
      the "?" is not removed. */
 
-  INKUrlSchemeSet(template_url_buf, template_url_loc, INK_URL_SCHEME_HTTP, INK_URL_LEN_HTTP);
+  TSUrlSchemeSet(template_url_buf, template_url_loc, TS_URL_SCHEME_HTTP, TS_URL_LEN_HTTP);
 
-  user = INKUrlUserGet(bufp, url_loc, &len);
+  user = TSUrlUserGet(bufp, url_loc, &len);
   if ((user != NULL) && (len > 0)) {
-    INKUrlUserSet(template_url_buf, template_url_loc, user, len);
-    INKHandleStringRelease(bufp, url_loc, user);
+    TSUrlUserSet(template_url_buf, template_url_loc, user, len);
+    TSHandleStringRelease(bufp, url_loc, user);
   }
-  password = INKUrlPasswordGet(bufp, url_loc, &len);
+  password = TSUrlPasswordGet(bufp, url_loc, &len);
   if ((password != NULL) && (len > 0)) {
-    INKUrlPasswordSet(template_url_buf, template_url_loc, password, len);
-    INKHandleStringRelease(bufp, url_loc, password);
+    TSUrlPasswordSet(template_url_buf, template_url_loc, password, len);
+    TSHandleStringRelease(bufp, url_loc, password);
   }
-  host = INKUrlHostGet(bufp, url_loc, &len);
+  host = TSUrlHostGet(bufp, url_loc, &len);
   if ((host != NULL) && (len > 0)) {
-    INKUrlHostSet(template_url_buf, template_url_loc, host, len);
-    INKHandleStringRelease(bufp, url_loc, host);
+    TSUrlHostSet(template_url_buf, template_url_loc, host, len);
+    TSHandleStringRelease(bufp, url_loc, host);
   }
-  port = INKUrlPortGet(bufp, url_loc);
+  port = TSUrlPortGet(bufp, url_loc);
   if (port != HTTP_DEFAULT_PORT) {
-    INKUrlPortSet(template_url_buf, template_url_loc, port);
+    TSUrlPortSet(template_url_buf, template_url_loc, port);
   }
-  path = INKUrlPathGet(bufp, url_loc, &len);
+  path = TSUrlPathGet(bufp, url_loc, &len);
   if ((path != NULL) && (len > 0)) {
     int new_path_len = len + sizeof(TEMPLATE_CACHE_SUFFIX);
-    char *new_path = INKmalloc(new_path_len);
+    char *new_path = TSmalloc(new_path_len);
     sprintf(new_path, "%s%s", path, TEMPLATE_CACHE_SUFFIX);
-    INKUrlPathSet(template_url_buf, template_url_loc, new_path, -1);
-    INKfree(new_path);
-    INKHandleStringRelease(bufp, url_loc, path);
+    TSUrlPathSet(template_url_buf, template_url_loc, new_path, -1);
+    TSfree(new_path);
+    TSHandleStringRelease(bufp, url_loc, path);
   }
-  params = INKUrlHttpParamsGet(bufp, url_loc, &len);
+  params = TSUrlHttpParamsGet(bufp, url_loc, &len);
   if ((params != NULL) && (len > 0)) {
-    INKUrlHttpParamsSet(template_url_buf, template_url_loc, params, len);
-    INKHandleStringRelease(bufp, url_loc, params);
+    TSUrlHttpParamsSet(template_url_buf, template_url_loc, params, len);
+    TSHandleStringRelease(bufp, url_loc, params);
   }
-  fragment = INKUrlHttpFragmentGet(bufp, url_loc, &len);
+  fragment = TSUrlHttpFragmentGet(bufp, url_loc, &len);
   if ((fragment != NULL) && (len > 0)) {
-    INKUrlHttpFragmentSet(template_url_buf, template_url_loc, fragment, len);
-    INKHandleStringRelease(bufp, url_loc, fragment);
+    TSUrlHttpFragmentSet(template_url_buf, template_url_loc, fragment, len);
+    TSHandleStringRelease(bufp, url_loc, fragment);
   }
 
   /* Replace the original url by the template url */
-  INKUrlCopy(bufp, url_loc, template_url_buf, template_url_loc);
+  TSUrlCopy(bufp, url_loc, template_url_buf, template_url_loc);
 }

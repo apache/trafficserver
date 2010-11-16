@@ -150,21 +150,21 @@ mgmt_plugin_load(int argc, char *argv[])
   handles.regist(handle);
 
   // coverity[noescape]
-  init_func_w_handle_t inith = (init_func_w_handle_t) dll_findsym(handle, "INKPluginInitwDLLHandle");
+  init_func_w_handle_t inith = (init_func_w_handle_t) dll_findsym(handle, "TSPluginInitwDLLHandle");
   if (inith) {
     inith(handle, argc, argv);
     return;
   }
 
-  init = (init_func_t) dll_findsym(handle, "INKPluginInit");
+  init = (init_func_t) dll_findsym(handle, "TSPluginInit");
   if (!init) {
-    Warning("[mgmt_plugin_load] unable to find INKPluginInit function '%s': %s", path, dll_error(handle));
+    Warning("[mgmt_plugin_load] unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
     dll_close(handle);
     return;
   }
   // coverity[noescape]
   // coverity[leaked_storage]
-  init(argc, argv);             // call plug-in's INKPluginInit
+  init(argc, argv);             // call plug-in's TSPluginInit
 }
 
 //

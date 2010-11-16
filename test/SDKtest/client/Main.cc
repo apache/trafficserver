@@ -40,7 +40,7 @@
 Config *config;
 LoadGenerator *load_generator;
 DoTest *do_test;
-INKPlugin *plug_in;
+TSPlugin *plug_in;
 
 #if defined(__linux__) || defined(__FreeBSD__)
 static void
@@ -65,7 +65,7 @@ signal_handler(int sig, siginfo_t * sinf, void *ucon)
         if (plug_in->connection_finish_fcn) {
           for (int i = 0; i < do_test->users; i++) {
             if (do_test->user_info[i].internal_rid) {
-              (plug_in->connection_finish_fcn) (do_test->user_info[i].request_id, INK_TIME_EXPIRE);
+              (plug_in->connection_finish_fcn) (do_test->user_info[i].request_id, TS_TIME_EXPIRE);
 
             }
           }
@@ -85,7 +85,7 @@ signal_handler(int sig, siginfo_t * sinf, void *ucon)
       if (plug_in->connection_finish_fcn) {
         for (int i = 0; i < do_test->users; i++) {
           if (do_test->user_info[i].internal_rid) {
-            (plug_in->connection_finish_fcn) (do_test->user_info[i].request_id, INK_TIME_EXPIRE);
+            (plug_in->connection_finish_fcn) (do_test->user_info[i].request_id, TS_TIME_EXPIRE);
           }
         }
       }
@@ -186,7 +186,7 @@ main(int argc, char *argv[])
     }
   }
 
-  plug_in = new INKPlugin(client_id, api);
+  plug_in = new TSPlugin(client_id, api);
 #ifdef _PLUG_IN
   plug_in->load_plugin();
 #endif

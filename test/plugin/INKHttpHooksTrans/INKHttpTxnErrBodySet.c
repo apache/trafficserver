@@ -26,15 +26,15 @@
 
 /* This is a response to a client (req), which will be executed after reciept
  * of:
- *   INK_HTTP_SEND_RESPONSE_HDR_HOOK
+ *   TS_HTTP_SEND_RESPONSE_HDR_HOOK
  *
  * htmlBody: text
- * INKHttpTxnErrorBodySet(txnp, htmlBody, sizeof(htmlBody), NULL);
+ * TSHttpTxnErrorBodySet(txnp, htmlBody, sizeof(htmlBody), NULL);
  *
  * htmlBody: other fmt (?)
- * INKHttpTxnErrorBodySet(txnp, htmlBody, sizeof(htmlBody), "image/jpeg");
+ * TSHttpTxnErrorBodySet(txnp, htmlBody, sizeof(htmlBody), "image/jpeg");
  *
- * INKHttpTxnErrorBodySet(txnp, "inktomi.gif", 1308, "image/jpeg");
+ * TSHttpTxnErrorBodySet(txnp, "inktomi.gif", 1308, "image/jpeg");
  *
  * This api requires that a GET request of a site that does not exist or
  * of a site that is not answering requests. This API will not overwrite
@@ -46,7 +46,7 @@
  * GET http://www.bogusHTML.com HTTP/1.0
  * GET http://www.bogusOTHER.com HTTP/1.0
  *
- * retrieve the URL: INKHttpHdrURLGet()
+ * retrieve the URL: TSHttpHdrURLGet()
  * strstr to parse and find a substring in the URL string
  *        search for the above predefined sites and return the appropriate
  *        body type.
@@ -54,35 +54,35 @@
  * API in a single plug in.
  */
 
-const char *const INKEventStrId[] = {
-  "INK_EVENT_HTTP_CONTINUE",    /* 60000 */
-  "INK_EVENT_HTTP_ERROR",       /* 60001 */
-  "INK_EVENT_HTTP_READ_REQUEST_HDR",    /* 60002 */
-  "INK_EVENT_HTTP_OS_DNS",      /* 60003 */
-  "INK_EVENT_HTTP_SEND_REQUEST_HDR",    /* 60004 */
-  "INK_EVENT_HTTP_READ_CACHE_HDR",      /* 60005 */
-  "INK_EVENT_HTTP_READ_RESPONSE_HDR",   /* 60006 */
-  "INK_EVENT_HTTP_SEND_RESPONSE_HDR",   /* 60007 */
-  "INK_EVENT_HTTP_REQUEST_TRANSFORM",   /* 60008 */
-  "INK_EVENT_HTTP_RESPONSE_TRANSFORM",  /* 60009 */
-  "INK_EVENT_HTTP_SELECT_ALT",  /* 60010 */
-  "INK_EVENT_HTTP_TXN_START",   /* 60011 */
-  "INK_EVENT_HTTP_TXN_CLOSE",   /* 60012 */
-  "INK_EVENT_HTTP_SSN_START",   /* 60013 */
-  "INK_EVENT_HTTP_SSN_CLOSE",   /* 60014 */
+const char *const TSEventStrId[] = {
+  "TS_EVENT_HTTP_CONTINUE",    /* 60000 */
+  "TS_EVENT_HTTP_ERROR",       /* 60001 */
+  "TS_EVENT_HTTP_READ_REQUEST_HDR",    /* 60002 */
+  "TS_EVENT_HTTP_OS_DNS",      /* 60003 */
+  "TS_EVENT_HTTP_SEND_REQUEST_HDR",    /* 60004 */
+  "TS_EVENT_HTTP_READ_CACHE_HDR",      /* 60005 */
+  "TS_EVENT_HTTP_READ_RESPONSE_HDR",   /* 60006 */
+  "TS_EVENT_HTTP_SEND_RESPONSE_HDR",   /* 60007 */
+  "TS_EVENT_HTTP_REQUEST_TRANSFORM",   /* 60008 */
+  "TS_EVENT_HTTP_RESPONSE_TRANSFORM",  /* 60009 */
+  "TS_EVENT_HTTP_SELECT_ALT",  /* 60010 */
+  "TS_EVENT_HTTP_TXN_START",   /* 60011 */
+  "TS_EVENT_HTTP_TXN_CLOSE",   /* 60012 */
+  "TS_EVENT_HTTP_SSN_START",   /* 60013 */
+  "TS_EVENT_HTTP_SSN_CLOSE",   /* 60014 */
 
-  "INK_EVENT_MGMT_UPDATE"       /* 60100 */
+  "TS_EVENT_MGMT_UPDATE"       /* 60100 */
 };
 
 #define		index(x)	((x)%(1000))
 
-/* Used in INKHttpTxnErrrorBodySet */
+/* Used in TSHttpTxnErrrorBodySet */
 #define		FMT_TXT_HTML	("text/html")
 #define		FMT_IMAGE_JPEG	("image/jpeg")
 #define		FMT_TXT		(NULL)
 
 
-/* Body of HTML page sent by INKHttpErrorBodySet()
+/* Body of HTML page sent by TSHttpErrorBodySet()
 */
 const char htmlBody[] = " \
 <html> \
@@ -108,15 +108,15 @@ const char htmlBody[] = " \
 
 /* Type can be used to display/compare request/response differently */
 static void
-DisplayBufferContents(INKMBuffer bufp, INKMLoc hdr_loc, INKHttpType type)
+DisplayBufferContents(TSMBuffer bufp, TSMLoc hdr_loc, TSHttpType type)
 {
 
-  INKIOBuffer output_buffer;
-  INKIOBufferReader reader;
+  TSIOBuffer output_buffer;
+  TSIOBufferReader reader;
   int total_avail;
 
 
-  INKIOBufferBlock block;
+  TSIOBufferBlock block;
 
   const char *block_start;
   int block_avail;
@@ -124,36 +124,36 @@ DisplayBufferContents(INKMBuffer bufp, INKMLoc hdr_loc, INKHttpType type)
   char *output_string;
   int output_len;
 
-  output_buffer = INKIOBufferCreate();
+  output_buffer = TSIOBufferCreate();
   if (!output_buffer) {
-    INKError("couldn't allocate IOBuffer\n");
+    TSError("couldn't allocate IOBuffer\n");
   }
-  reader = INKIOBufferReaderAlloc(output_buffer);
+  reader = TSIOBufferReaderAlloc(output_buffer);
 
     /****** Print the HTTP header (for either a resp or req) first ********/
-  INKHttpHdrPrint(bufp, hdr_loc, output_buffer);
+  TSHttpHdrPrint(bufp, hdr_loc, output_buffer);
 
   /* This will print MIMEFields (for either a resp or req)  */
-  INKMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
 
   /* Find out how the big the complete header is by
      seeing the total bytes in the buffer.  We need to
      look at the buffer rather than the first block to
      see the size of the entire header */
-  total_avail = INKIOBufferReaderAvail(reader);
+  total_avail = TSIOBufferReaderAvail(reader);
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  output_string = (char *) INKmalloc(total_avail + 1);
+  output_string = (char *) TSmalloc(total_avail + 1);
   output_len = 0;
 
   /* We need to loop over all the buffer blocks to make
      sure we get the complete header since the header can
      be in multiple blocks */
-  block = INKIOBufferReaderStart(reader);
+  block = TSIOBufferReaderStart(reader);
   while (block) {
 
-    block_start = INKIOBufferBlockReadStart(block, reader, &block_avail);
+    block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
 
     /* We'll get a block pointer back even if there is no data
        left to read so check for this condition and break out of
@@ -168,26 +168,26 @@ DisplayBufferContents(INKMBuffer bufp, INKMLoc hdr_loc, INKHttpType type)
     output_len += block_avail;
 
     /* Consume the data so that we get to the next block */
-    INKIOBufferReaderConsume(reader, block_avail);
+    TSIOBufferReaderConsume(reader, block_avail);
 
     /* Get the next block now that we've consumed the
        data off the last block */
-    block = INKIOBufferReaderStart(reader);
+    block = TSIOBufferReaderStart(reader);
   }
 
   /* Terminate the string */
   output_string[output_len] = '\0';
   output_len++;
 
-  /* Free up the INKIOBuffer that we used to print out the header */
-  INKIOBufferReaderFree(reader);
-  INKIOBufferDestroy(output_buffer);
+  /* Free up the TSIOBuffer that we used to print out the header */
+  TSIOBufferReaderFree(reader);
+  TSIOBufferDestroy(output_buffer);
 
   /* Although I'd never do this a production plugin, printf
      the header so that we can see it's all there */
   printf("%s", output_string);
 
-  INKfree(output_string);
+  TSfree(output_string);
 }
 
 /* TODO this is probably not visible in a browser--get one that is */
@@ -200,68 +200,68 @@ static unsigned char marker_gif_data[] = {
   0x01, 0x00, 0x3b,
 };
 
-/* Test of INKHttpTxnErrorBodySet() with an image/jpeg from
- * INK_HTTP_SSN_START.  This code should be working. However,
+/* Test of TSHttpTxnErrorBodySet() with an image/jpeg from
+ * TS_HTTP_SSN_START.  This code should be working. However,
  * there is no such thing as the image is too small. The telnet
  * client should see "GIF" in the body of the response.
 */
 static int
-handle_HTTP_SSN_START(INKCont contp, INKEvent event, void *eData)
+handle_HTTP_SSN_START(TSCont contp, TSEvent event, void *eData)
 {
   /* Just send back the body */
-  INKHttpTxn txnp = (INKHttpTxn) eData;
+  TSHttpTxn txnp = (TSHttpTxn) eData;
   void *markerPtr = NULL, *fmtPtr = NULL;
 
   int err = 0;
 
-  INKDebug("INKHttpTxnErrorBodySet", "HTTP_SSN_START: ********* INKHttpTxnErrorBodySet\n");
+  TSDebug("TSHttpTxnErrorBodySet", "HTTP_SSN_START: ********* TSHttpTxnErrorBodySet\n");
 
-  markerPtr = INKmalloc(sizeof(marker_gif_data));
+  markerPtr = TSmalloc(sizeof(marker_gif_data));
   memcpy(markerPtr, marker_gif_data, sizeof(marker_gif_data));
-  fmtPtr = INKmalloc(sizeof(FMT_IMAGE_JPEG) + 1);
+  fmtPtr = TSmalloc(sizeof(FMT_IMAGE_JPEG) + 1);
   strncpy(fmtPtr, FMT_IMAGE_JPEG, sizeof(FMT_IMAGE_JPEG));
 
-  INKHttpTxnErrorBodySet(txnp, (char *) markerPtr, sizeof(marker_gif_data), fmtPtr);
+  TSHttpTxnErrorBodySet(txnp, (char *) markerPtr, sizeof(marker_gif_data), fmtPtr);
   /* TS managed space:
-   * INKfree(markerPtr);
-   * INKfree(fmtPtr);
+   * TSfree(markerPtr);
+   * TSfree(fmtPtr);
    */
 
   return err;
 }
 
 
-/* Test of INKHttpTxnErrorBodySet() by returning an HTML page from
- * INK_HTTP_SEND_RESPONSE hook.
+/* Test of TSHttpTxnErrorBodySet() by returning an HTML page from
+ * TS_HTTP_SEND_RESPONSE hook.
 */
 static int
-handle_HTTP_SEND_RESPONSE_HDR(INKCont contp, INKEvent event, void *eData)
+handle_HTTP_SEND_RESPONSE_HDR(TSCont contp, TSEvent event, void *eData)
 {
-  INKMBuffer reqBuf, respBuf;
-  INKMLoc reqBufLoc, respBufLoc;
-  INKHttpTxn txnp = (INKHttpTxn) eData;
+  TSMBuffer reqBuf, respBuf;
+  TSMLoc reqBufLoc, respBufLoc;
+  TSHttpTxn txnp = (TSHttpTxn) eData;
   void *bufPtr = NULL, *fmtPtr = NULL;
 
   int re = 0, err = 0;
 
   /* This is the response back to the client */
-  re = INKHttpTxnClientRespGet(txnp, &respBuf, &respBufLoc);
+  re = TSHttpTxnClientRespGet(txnp, &respBuf, &respBufLoc);
   if (re) {
-    INKDebug("INKHttpTxnErrorBodySet", "HTTP_SEND_RESPONSE_HDR: ********* INKHttpTxnClientRespGet\n");
+    TSDebug("TSHttpTxnErrorBodySet", "HTTP_SEND_RESPONSE_HDR: ********* TSHttpTxnClientRespGet\n");
 
-    DisplayBufferContents(respBuf, respBufLoc, INK_HTTP_TYPE_REQUEST);
+    DisplayBufferContents(respBuf, respBufLoc, TS_HTTP_TYPE_REQUEST);
 
-    INKHandleMLocRelease(respBuf, INK_NULL_MLOC, respBufLoc);
+    TSHandleMLocRelease(respBuf, TS_NULL_MLOC, respBufLoc);
 
-    bufPtr = INKmalloc(sizeof(htmlBody));
+    bufPtr = TSmalloc(sizeof(htmlBody));
     strncpy(bufPtr, htmlBody, sizeof(htmlBody));
-    fmtPtr = INKmalloc(sizeof(FMT_TXT_HTML) + 1);
+    fmtPtr = TSmalloc(sizeof(FMT_TXT_HTML) + 1);
     strncpy(fmtPtr, FMT_TXT_HTML, sizeof(FMT_TXT_HTML));
 
-    INKHttpTxnErrorBodySet(txnp, (char *) bufPtr, sizeof(htmlBody), fmtPtr);
+    TSHttpTxnErrorBodySet(txnp, (char *) bufPtr, sizeof(htmlBody), fmtPtr);
     /* TS frees when no longer needed:
-     * INKfree(bufPtr);
-     * INKfree(fmtPtr);
+     * TSfree(bufPtr);
+     * TSfree(fmtPtr);
      */
   }
   return err;
@@ -269,23 +269,23 @@ handle_HTTP_SEND_RESPONSE_HDR(INKCont contp, INKEvent event, void *eData)
 
 
 static int
-INKHttpTransaction(INKCont contp, INKEvent event, void *eData)
+TSHttpTransaction(TSCont contp, TSEvent event, void *eData)
 {
-  INKHttpSsn ssnp = (INKHttpSsn) eData;
-  INKHttpTxn txnp = (INKHttpTxn) eData;
+  TSHttpSsn ssnp = (TSHttpSsn) eData;
+  TSHttpTxn txnp = (TSHttpTxn) eData;
 
-  INKDebug("INKHttpTxnErrorBodySet", "INKHttpTxnCachedReqGet(): event: %s \n", INKEventStrId[index(event)]);
+  TSDebug("TSHttpTxnErrorBodySet", "TSHttpTxnCachedReqGet(): event: %s \n", TSEventStrId[index(event)]);
 
   switch (event) {
 
-  case INK_EVENT_HTTP_SSN_START:
+  case TS_EVENT_HTTP_SSN_START:
     handle_HTTP_SSN_START(contp, event, eData);
-    INKHttpSsnReenable(ssnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     handle_HTTP_SEND_RESPONSE_HDR(contp, event, eData);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
   default:
     break;
@@ -293,9 +293,9 @@ INKHttpTransaction(INKCont contp, INKEvent event, void *eData)
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKCont contp = INKContCreate(INKHttpTransaction, NULL);
-  INKHttpHookAdd(INK_HTTP_SSN_START_HOOK, contp);
-  INKHttpHookAdd(INK_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+  TSCont contp = TSContCreate(TSHttpTransaction, NULL);
+  TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
 }

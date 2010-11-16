@@ -174,17 +174,17 @@ my_print_ascii_string(const char *str, int str_size)
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
   info.plugin_name = (char*)"remap_plugin";
   info.vendor_name = (char*)"Apache";
   info.support_email = (char*)"";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed. \n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed. \n");
   }
-  INKDebug("debug-remap", "INKPluginInit: Remap plugin started\n");
+  TSDebug("debug-remap", "TSPluginInit: Remap plugin started\n");
 }
 
 // Plugin initialization code. Called immediately after dlopen() Only once!
@@ -288,9 +288,9 @@ int
 tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
 {
   char *p;
-  INKMBuffer cbuf;
-  INKMLoc chdr;
-  INKMLoc cfield;
+  TSMBuffer cbuf;
+  TSMLoc chdr;
+  TSMLoc cfield;
   int retcode = 0;              // TS must perform actual remapping
   unsigned long _processing_counter = ++processing_counter;     // one more function call (in real life use mutex to protect this counter)
 
@@ -326,29 +326,29 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
 
 
   // InkAPI usage case
-  if (INKHttpTxnClientReqGet((INKHttpTxn) rh, &cbuf, &chdr)) {
+  if (TSHttpTxnClientReqGet((TSHttpTxn) rh, &cbuf, &chdr)) {
     const char *value;
-    if ((cfield = INKMimeHdrFieldFind(cbuf, chdr, INK_MIME_FIELD_DATE, -1)) != NULL) {
+    if ((cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_DATE, -1)) != NULL) {
       fprintf(stderr, "We have \"Date\" header in request\n");
-      if (INKMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL) != INK_ERROR) {
+      if (TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL) != TS_ERROR) {
         fprintf(stderr, "Header value: %s\n", value);
       }
     }
-    if ((cfield = INKMimeHdrFieldFind(cbuf, chdr, "MyHeader", sizeof("MyHeader") - 1)) != NULL) {
+    if ((cfield = TSMimeHdrFieldFind(cbuf, chdr, "MyHeader", sizeof("MyHeader") - 1)) != NULL) {
       fprintf(stderr, "We have \"MyHeader\" header in request\n");
-      if (INKMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL) != INK_ERROR) {
+      if (TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, 0, &value, NULL) != TS_ERROR) {
         fprintf(stderr, "Header value: %s\n", value);
       }
     }
-    INKHandleMLocRelease(cbuf, chdr, cfield);
-    INKHandleMLocRelease(cbuf, INK_NULL_MLOC, chdr);
+    TSHandleMLocRelease(cbuf, chdr, cfield);
+    TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
   }
   // How to store plugin private arguments inside Traffic Server request processing block.
-  // note: You can store up to INKHttpTxnGetMaxArgCnt() variables.
-  if (INKHttpTxnGetMaxArgCnt() > 0) {
+  // note: You can store up to TSHttpTxnGetMaxArgCnt() variables.
+  if (TSHttpTxnGetMaxArgCnt() > 0) {
     fprintf(stderr,
             "[tsremap_remap] Save processing counter %lu inside request processing block\n", _processing_counter);
-    INKHttpTxnSetArg((INKHttpTxn) rh, 1, (void *) _processing_counter); // save counter
+    TSHttpTxnSetArg((TSHttpTxn) rh, 1, (void *) _processing_counter); // save counter
   }
   // How to cancel request processing and return error message to the client
   // We wiil do it each other request
@@ -356,10 +356,10 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
     char tmp[256];
     static int my_local_counter = 0;
     snprintf(tmp, sizeof(tmp) - 1,
-             "This is very small example of INK API usage!\nIteration %d!\nHTTP return code %d\n",
-             my_local_counter, INK_HTTP_STATUS_CONTINUE + my_local_counter);
-    INKHttpTxnSetHttpRetStatus((INKHttpTxn) rh, (INKHttpStatus) ((int) INK_HTTP_STATUS_CONTINUE + my_local_counter));   //INK_HTTP_STATUS_SERVICE_UNAVAILABLE); //INK_HTTP_STATUS_NOT_ACCEPTABLE);
-    INKHttpTxnSetHttpRetBody((INKHttpTxn) rh, (const char *) tmp, true);
+             "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n",
+             my_local_counter, TS_HTTP_STATUS_CONTINUE + my_local_counter);
+    TSHttpTxnSetHttpRetStatus((TSHttpTxn) rh, (TSHttpStatus) ((int) TS_HTTP_STATUS_CONTINUE + my_local_counter));   //TS_HTTP_STATUS_SERVICE_UNAVAILABLE); //TS_HTTP_STATUS_NOT_ACCEPTABLE);
+    TSHttpTxnSetHttpRetBody((TSHttpTxn) rh, (const char *) tmp, true);
     my_local_counter++;
   }
   // hardcoded case for remapping
@@ -388,7 +388,7 @@ void
 tsremap_os_response(ihandle ih, rhandle rh, int os_response_type)
 {
   int request_id;
-  INKHttpTxnGetArg((INKHttpTxn) rh, 1, (void **) &request_id);  // read counter (we store it in tsremap_remap function call)
+  TSHttpTxnGetArg((TSHttpTxn) rh, 1, (void **) &request_id);  // read counter (we store it in tsremap_remap function call)
   fprintf(stderr, "[tsremap_os_response] Read processing counter %d from request processing block\n", request_id);
   fprintf(stderr, "[tsremap_os_response] OS response status: %d\n", os_response_type);
 }

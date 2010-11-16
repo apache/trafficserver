@@ -33,13 +33,13 @@
    will log error messages. This should be tuned based on your application */
 #define MAX_JOBS_ALARM 1000
 
-typedef int (*ExecFunc) (INKCont, void *);
+typedef int (*ExecFunc) (TSCont, void *);
 
 /* Structure that contains all information for a job execution */
 typedef struct
 {
   unsigned int magic;
-  INKCont cont;                 /* Continuation to call once job is done */
+  TSCont cont;                 /* Continuation to call once job is done */
   ExecFunc func;                /* Job function */
   void *data;                   /* Any data to pass to the job function */
 } Job;
@@ -59,7 +59,7 @@ typedef struct
   Cell *head;
   Cell *tail;
   int nb_elem;
-  INKMutex mutex;
+  TSMutex mutex;
 } Queue;
 
 
@@ -74,7 +74,7 @@ int get_nbelem_queue(Queue * q);
 
 
 /* Job functions */
-Job *job_create(INKCont contp, ExecFunc func, void *data);
+Job *job_create(TSCont contp, ExecFunc func, void *data);
 
 void job_delete(Job * job);
 

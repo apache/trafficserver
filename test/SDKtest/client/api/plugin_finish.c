@@ -25,13 +25,13 @@
 #include <stdio.h>
 
 void
-INKPluginInit(int clientid)
+TSPluginInit(int clientid)
 {
-  INKFuncRegister(INK_FID_PLUGIN_FINISH);
+  TSFuncRegister(TS_FID_PLUGIN_FINISH);
 }
 
 void
-INKPluginFinish()
+TSPluginFinish()
 {
-  fprintf(stderr, "INKPluginFinish\n");
+  fprintf(stderr, "TSPluginFinish\n");
 }

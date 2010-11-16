@@ -5,7 +5,7 @@ hello_world.c
 - Demonstrate the most basic routine of writing the SDKtest_server plugin
 
   This example simply prints a statement to standard error within the 
-  INKPluginInit() to make sure that the plugin is successfully loaded
+  TSPluginInit() to make sure that the plugin is successfully loaded
   when SDKtest_server starts running.
 
 SimSynthServer.c

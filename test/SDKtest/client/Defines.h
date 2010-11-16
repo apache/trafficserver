@@ -31,7 +31,7 @@
 #define MAX_ORIGIN_SERVERS 10   /* Max Origin Servers */
 #define MAX_STATUS_LEN 1024     /* Max Status Line Len */
 #define MAX_SIZES 1000          /* Max number of synthetic doc sizes */
-#define MAX_THINKTIMES 1000     /* Max number of think times */
+#define MAX_THTSTIMES 1000     /* Max number of think times */
 #define MAX_TARGET_BYTERATES 1000       /* Max number of byterates */
 #define MAX_SIZESTR_SIZE 20     /* sizestr looks like "size120 */
 #define MAX_SERIALNUMBERSTR_SIZE 20
@@ -45,6 +45,6 @@
 #define MAX_PORTNAME_SIZE 64
 #define MAX_LINE_SIZE 1000
 #define MAX_FILENAME_SIZE 80
-#define MAX_WARMUP_USERS 120    // See INKqa04115: Warmup causes x86 linux to hang
+#define MAX_WARMUP_USERS 120    // See TSqa04115: Warmup causes x86 linux to hang
 
 #endif // #define _Defines_h_

@@ -27,17 +27,17 @@
  * Description: Covers HTTP section of Chap 7.
  *
  * APIs covered -
- * - INKHttpHdrLengthGet
- * - INKHttpHdrMethodGet/Set
- * - INKHttpHdrReasonGet/Set
- * - INKHttpHdrStatusGet/Set
- * - INKHttpHdrTypeGet/Set
- * - INKHttpHdrVersionGet/Set
+ * - TSHttpHdrLengthGet
+ * - TSHttpHdrMethodGet/Set
+ * - TSHttpHdrReasonGet/Set
+ * - TSHttpHdrStatusGet/Set
+ * - TSHttpHdrTypeGet/Set
+ * - TSHttpHdrVersionGet/Set
  *
  * APIs not covered -
- * - INKHttpHdrUrlGet/Set (covered in check-url-0)
- * - INKHttpHdrReasonLookup
- * - INKHttpHdrPrint (covered in output-hdr.c)
+ * - TSHttpHdrUrlGet/Set (covered in check-url-0)
+ * - TSHttpHdrReasonLookup
+ * - TSHttpHdrPrint (covered in output-hdr.c)
  ****************************************************************************************/
 
 #include <stdio.h>
@@ -66,7 +66,7 @@
 
 typedef struct
 {
-  INKHttpType httpType;
+  TSHttpType httpType;
   int hdrLength;
   int httpVersion;
 
@@ -75,7 +75,7 @@ typedef struct
   char *hostName;
 
   /* RESPONSE HDR */
-  INKHttpStatus httpStatus;
+  TSHttpStatus httpStatus;
   char *hdrReason;
 } HdrInfo_T;
 
@@ -85,9 +85,9 @@ initHdr()
 {
   HdrInfo_T *tmpHdr = NULL;
 
-  tmpHdr = (HdrInfo_T *) INKmalloc(sizeof(HdrInfo_T));
+  tmpHdr = (HdrInfo_T *) TSmalloc(sizeof(HdrInfo_T));
 
-  tmpHdr->httpType = INK_HTTP_TYPE_UNKNOWN;
+  tmpHdr->httpType = TS_HTTP_TYPE_UNKNOWN;
   tmpHdr->hdrLength = 0;
   tmpHdr->httpVersion = 0;
 
@@ -110,232 +110,232 @@ freeHdr(HdrInfo_T * hdrInfo)
 }
 
 void
-negTesting(INKMBuffer hdrBuf, INKMLoc httpHdrLoc)
+negTesting(TSMBuffer hdrBuf, TSMLoc httpHdrLoc)
 {
   LOG_SET_FUNCTION_NAME("negTesting");
 
-  INKMBuffer negHdrBuf = NULL;
-  INKMLoc negHttpHdrLoc = NULL;
+  TSMBuffer negHdrBuf = NULL;
+  TSMLoc negHttpHdrLoc = NULL;
 
-  INKHttpType negType, hdrHttpType;
-  INKHttpStatus httpStatus;
+  TSHttpType negType, hdrHttpType;
+  TSHttpStatus httpStatus;
 
   const char *sHttpReason = NULL;
   int iHttpMethodLength, iHttpHdrReasonLength;
 
-  /* INKMBufferCreate: Nothing to neg test */
+  /* TSMBufferCreate: Nothing to neg test */
 
-  /* INKMBufferDestroy */
-  if (INKMBufferDestroy(NULL) != INK_ERROR) {
-    LOG_NEG_ERROR("INKMBufferDestroy");
+  /* TSMBufferDestroy */
+  if (TSMBufferDestroy(NULL) != TS_ERROR) {
+    LOG_NEG_ERROR("TSMBufferDestroy");
   }
 
-  /* INKHttpHdrCreate */
-  if (INKHttpHdrCreate(NULL) != INK_ERROR_PTR) {
-    LOG_NEG_ERROR("INKHttpHdrCreate");
+  /* TSHttpHdrCreate */
+  if (TSHttpHdrCreate(NULL) != TS_ERROR_PTR) {
+    LOG_NEG_ERROR("TSHttpHdrCreate");
   }
 
-  /* INKHttpHdrCopy */
+  /* TSHttpHdrCopy */
   /* Copy w/o creating the hdrBuf and httpHdrLoc */
-  if (INKHttpHdrCopy(negHdrBuf, negHttpHdrLoc, hdrBuf, httpHdrLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrCopy");
+  if (TSHttpHdrCopy(negHdrBuf, negHttpHdrLoc, hdrBuf, httpHdrLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrCopy");
   }
 
   /* valid create */
-  if ((negHdrBuf = INKMBufferCreate()) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKHttpHdrCreate");
+  if ((negHdrBuf = TSMBufferCreate()) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSHttpHdrCreate");
   }
-  if ((negHttpHdrLoc = INKHttpHdrCreate(negHdrBuf)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKMHttpHdrCreate");
-  }
-
-  if (INKHttpHdrCopy(NULL, negHttpHdrLoc, hdrBuf, httpHdrLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrCopy");
-  }
-  if (INKHttpHdrCopy(negHdrBuf, NULL, hdrBuf, httpHdrLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrCopy");
-  }
-  if (INKHttpHdrCopy(negHdrBuf, negHttpHdrLoc, NULL, httpHdrLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrCopy");
-  }
-  if (INKHttpHdrCopy(negHdrBuf, negHttpHdrLoc, hdrBuf, NULL) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrCopy");
+  if ((negHttpHdrLoc = TSHttpHdrCreate(negHdrBuf)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSMHttpHdrCreate");
   }
 
-  /* INKHttpHdrTypeSet */
-  /* Docs - INKHttpHdrTypeSet should NOT be called after INKHttpHdrCopy */
+  if (TSHttpHdrCopy(NULL, negHttpHdrLoc, hdrBuf, httpHdrLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrCopy");
+  }
+  if (TSHttpHdrCopy(negHdrBuf, NULL, hdrBuf, httpHdrLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrCopy");
+  }
+  if (TSHttpHdrCopy(negHdrBuf, negHttpHdrLoc, NULL, httpHdrLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrCopy");
+  }
+  if (TSHttpHdrCopy(negHdrBuf, negHttpHdrLoc, hdrBuf, NULL) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrCopy");
+  }
+
+  /* TSHttpHdrTypeSet */
+  /* Docs - TSHttpHdrTypeSet should NOT be called after TSHttpHdrCopy */
   /* Try some incorrect (but valid int type) arguments */
-  if (INKHttpHdrTypeSet(negHdrBuf, negHttpHdrLoc, 10) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrTypeSet");
+  if (TSHttpHdrTypeSet(negHdrBuf, negHttpHdrLoc, 10) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrTypeSet");
   }
-  if (INKHttpHdrTypeSet(negHdrBuf, negHttpHdrLoc, -1) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrTypeSet");
-  }
-
-  if (INKHttpHdrTypeSet(NULL, negHttpHdrLoc, INK_HTTP_TYPE_RESPONSE) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrTypeSet");
-  }
-  if (INKHttpHdrTypeSet(negHdrBuf, NULL, INK_HTTP_TYPE_RESPONSE) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrTypeSet");
-  }
-  /* INKqa12708 */
-  if (INKHttpHdrTypeSet(negHdrBuf, negHttpHdrLoc, 100) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrTypeSet");
+  if (TSHttpHdrTypeSet(negHdrBuf, negHttpHdrLoc, -1) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrTypeSet");
   }
 
-
-  /* INKHtttpHdrTypeGet */
-  if ((negType = INKHttpHdrTypeGet(NULL, negHttpHdrLoc)) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrTypeGet");
+  if (TSHttpHdrTypeSet(NULL, negHttpHdrLoc, TS_HTTP_TYPE_RESPONSE) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrTypeSet");
   }
-  if ((negType = INKHttpHdrTypeGet(negHdrBuf, NULL)) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrTypeGet");
+  if (TSHttpHdrTypeSet(negHdrBuf, NULL, TS_HTTP_TYPE_RESPONSE) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrTypeSet");
   }
-
-  /* INKHttpHdrVersionGet */
-  if (INKHttpHdrVersionGet(NULL, negHttpHdrLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrVersionGet");
-  }
-  if (INKHttpHdrVersionGet(negHdrBuf, NULL) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrVersionGet");
+  /* TSqa12708 */
+  if (TSHttpHdrTypeSet(negHdrBuf, negHttpHdrLoc, 100) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrTypeSet");
   }
 
-  /* INKHttpHdrVersionSet */
-  if (INKHttpHdrVersionSet(NULL, negHttpHdrLoc, INK_HTTP_VERSION(1, 1)) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrVersionSet");
+
+  /* TSHtttpHdrTypeGet */
+  if ((negType = TSHttpHdrTypeGet(NULL, negHttpHdrLoc)) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrTypeGet");
   }
-  if (INKHttpHdrVersionSet(negHdrBuf, NULL, INK_HTTP_VERSION(1, 1)) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrVersionSet");
+  if ((negType = TSHttpHdrTypeGet(negHdrBuf, NULL)) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrTypeGet");
+  }
+
+  /* TSHttpHdrVersionGet */
+  if (TSHttpHdrVersionGet(NULL, negHttpHdrLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrVersionGet");
+  }
+  if (TSHttpHdrVersionGet(negHdrBuf, NULL) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrVersionGet");
+  }
+
+  /* TSHttpHdrVersionSet */
+  if (TSHttpHdrVersionSet(NULL, negHttpHdrLoc, TS_HTTP_VERSION(1, 1)) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrVersionSet");
+  }
+  if (TSHttpHdrVersionSet(negHdrBuf, NULL, TS_HTTP_VERSION(1, 1)) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrVersionSet");
   }
   /* Try some incorrect (but valid int type) arguments */
-  if (INKHttpHdrVersionSet(negHdrBuf, negHttpHdrLoc, 0) == INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrVersionSet");
+  if (TSHttpHdrVersionSet(negHdrBuf, negHttpHdrLoc, 0) == TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrVersionSet");
   }
-  if (INKHttpHdrVersionSet(negHdrBuf, negHttpHdrLoc, -1) == INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrVersionSet");
+  if (TSHttpHdrVersionSet(negHdrBuf, negHttpHdrLoc, -1) == TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrVersionSet");
   }
 
-  /* INKHttpHdrLengthGet */
-  if (INKHttpHdrLengthGet(NULL, negHttpHdrLoc) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrLengthGet");
+  /* TSHttpHdrLengthGet */
+  if (TSHttpHdrLengthGet(NULL, negHttpHdrLoc) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrLengthGet");
   }
-  if (INKHttpHdrLengthGet(negHdrBuf, NULL) != INK_ERROR) {
-    LOG_NEG_ERROR("INKHttpHdrLengthGet");
+  if (TSHttpHdrLengthGet(negHdrBuf, NULL) != TS_ERROR) {
+    LOG_NEG_ERROR("TSHttpHdrLengthGet");
   }
 
   /* valid copy */
-  if (INKHttpHdrCopy(negHdrBuf, negHttpHdrLoc, hdrBuf, httpHdrLoc) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrCopy");
+  if (TSHttpHdrCopy(negHdrBuf, negHttpHdrLoc, hdrBuf, httpHdrLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrCopy");
   }
 
-  if ((hdrHttpType = INKHttpHdrTypeGet(negHdrBuf, negHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrTypeGet");
+  if ((hdrHttpType = TSHttpHdrTypeGet(negHdrBuf, negHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrTypeGet");
   }
 
-  if (hdrHttpType == INK_HTTP_TYPE_REQUEST) {
-    /* INKHttpHdrUrlGet */
-    if (INKHttpHdrUrlGet(NULL, negHttpHdrLoc) != INK_ERROR_PTR) {
-      LOG_NEG_ERROR("INKHttpHdrUrlGet");
+  if (hdrHttpType == TS_HTTP_TYPE_REQUEST) {
+    /* TSHttpHdrUrlGet */
+    if (TSHttpHdrUrlGet(NULL, negHttpHdrLoc) != TS_ERROR_PTR) {
+      LOG_NEG_ERROR("TSHttpHdrUrlGet");
     }
-    if (INKHttpHdrUrlGet(negHdrBuf, NULL) != INK_ERROR_PTR) {
-      LOG_NEG_ERROR("INKHttpHdrUrlGet");
-    }
-
-    /* INKHttpHdrMethodGet */
-    if (INKHttpHdrMethodGet(NULL, negHttpHdrLoc, &iHttpMethodLength) != INK_ERROR_PTR) {
-      LOG_NEG_ERROR("INKHttpHdrMethodGet");
-    }
-    if (INKHttpHdrMethodGet(negHdrBuf, NULL, &iHttpMethodLength) != INK_ERROR_PTR) {
-      LOG_NEG_ERROR("INKHttpHdrMethodGet");
-    }
-    if (INKHttpHdrMethodGet(negHdrBuf, negHttpHdrLoc, NULL) == INK_ERROR_PTR) {
-      LOG_NEG_ERROR("INKHttpHdrMethodGet");
+    if (TSHttpHdrUrlGet(negHdrBuf, NULL) != TS_ERROR_PTR) {
+      LOG_NEG_ERROR("TSHttpHdrUrlGet");
     }
 
-    /* INKHttpHdrMethodSet */
-    if (INKHttpHdrMethodSet(NULL, negHttpHdrLoc, "FOOBAR", strlen("FOOBAR")) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrMethodSet");
+    /* TSHttpHdrMethodGet */
+    if (TSHttpHdrMethodGet(NULL, negHttpHdrLoc, &iHttpMethodLength) != TS_ERROR_PTR) {
+      LOG_NEG_ERROR("TSHttpHdrMethodGet");
     }
-    if (INKHttpHdrMethodSet(negHdrBuf, NULL, "FOOBAR", strlen("FOOBAR")) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrMethodSet");
+    if (TSHttpHdrMethodGet(negHdrBuf, NULL, &iHttpMethodLength) != TS_ERROR_PTR) {
+      LOG_NEG_ERROR("TSHttpHdrMethodGet");
     }
-    /* INKqa12722 */
-    if (INKHttpHdrMethodSet(negHdrBuf, negHttpHdrLoc, NULL, -1) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrMethodSet");
+    if (TSHttpHdrMethodGet(negHdrBuf, negHttpHdrLoc, NULL) == TS_ERROR_PTR) {
+      LOG_NEG_ERROR("TSHttpHdrMethodGet");
+    }
+
+    /* TSHttpHdrMethodSet */
+    if (TSHttpHdrMethodSet(NULL, negHttpHdrLoc, "FOOBAR", strlen("FOOBAR")) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrMethodSet");
+    }
+    if (TSHttpHdrMethodSet(negHdrBuf, NULL, "FOOBAR", strlen("FOOBAR")) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrMethodSet");
+    }
+    /* TSqa12722 */
+    if (TSHttpHdrMethodSet(negHdrBuf, negHttpHdrLoc, NULL, -1) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrMethodSet");
     }
     /* FIXME:  This neg test would crash TS */
     /* NOTE: This is a valid (corner) test case */
-    if (INKHttpHdrMethodSet(negHdrBuf, negHttpHdrLoc, "", -1) == INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrMethodSet");
+    if (TSHttpHdrMethodSet(negHdrBuf, negHttpHdrLoc, "", -1) == TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrMethodSet");
     }
 
-  } else if (hdrHttpType == INK_HTTP_TYPE_RESPONSE) {
+  } else if (hdrHttpType == TS_HTTP_TYPE_RESPONSE) {
 
-    /* INKHttpHdrStatusGet */
-    if (INKHttpHdrStatusGet(NULL, negHttpHdrLoc) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrStatusGet");
+    /* TSHttpHdrStatusGet */
+    if (TSHttpHdrStatusGet(NULL, negHttpHdrLoc) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrStatusGet");
     }
-    if (INKHttpHdrStatusGet(negHdrBuf, NULL) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrStatusGet");
+    if (TSHttpHdrStatusGet(negHdrBuf, NULL) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrStatusGet");
     }
 
-    /* INKHttpHdrStatusSet */
+    /* TSHttpHdrStatusSet */
     /* valid status get */
-    if ((httpStatus = INKHttpHdrStatusGet(negHdrBuf, negHttpHdrLoc)) == INK_ERROR) {
-      LOG_API_ERROR("INKHttpHdrStatusGet");
+    if ((httpStatus = TSHttpHdrStatusGet(negHdrBuf, negHttpHdrLoc)) == TS_ERROR) {
+      LOG_API_ERROR("TSHttpHdrStatusGet");
     }
 
-    if (INKHttpHdrStatusSet(NULL, negHttpHdrLoc, httpStatus) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrStatusSet");
+    if (TSHttpHdrStatusSet(NULL, negHttpHdrLoc, httpStatus) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrStatusSet");
     }
-    if (INKHttpHdrStatusSet(negHdrBuf, NULL, httpStatus) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrStatusSet");
+    if (TSHttpHdrStatusSet(negHdrBuf, NULL, httpStatus) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrStatusSet");
     }
     /* setting status = NULL is NOT an error */
-    if (INKHttpHdrStatusSet(negHdrBuf, negHttpHdrLoc, -1) == INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrStatusSet");
+    if (TSHttpHdrStatusSet(negHdrBuf, negHttpHdrLoc, -1) == TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrStatusSet");
     }
 
-    /* INKHttpHdrReasonGet */
+    /* TSHttpHdrReasonGet */
     /* valid reason get */
-    if ((sHttpReason = INKHttpHdrReasonGet(negHdrBuf, negHttpHdrLoc, &iHttpHdrReasonLength))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrReasonGet");
+    if ((sHttpReason = TSHttpHdrReasonGet(negHdrBuf, negHttpHdrLoc, &iHttpHdrReasonLength))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrReasonGet");
     }
 
-    if (INKHttpHdrReasonGet(NULL, negHttpHdrLoc, &iHttpHdrReasonLength) != INK_ERROR_PTR) {
-      LOG_NEG_ERROR("INKHttpHdrReasonGet");
+    if (TSHttpHdrReasonGet(NULL, negHttpHdrLoc, &iHttpHdrReasonLength) != TS_ERROR_PTR) {
+      LOG_NEG_ERROR("TSHttpHdrReasonGet");
     }
-    if (INKHttpHdrReasonGet(negHdrBuf, NULL, &iHttpHdrReasonLength) != INK_ERROR_PTR) {
-      LOG_NEG_ERROR("INKHttpHdrReasonGet");
+    if (TSHttpHdrReasonGet(negHdrBuf, NULL, &iHttpHdrReasonLength) != TS_ERROR_PTR) {
+      LOG_NEG_ERROR("TSHttpHdrReasonGet");
     }
     /* NULL is a valid length arg */
-    if (INKHttpHdrReasonGet(negHdrBuf, negHttpHdrLoc, NULL) == INK_ERROR_PTR) {
-      LOG_NEG_ERROR("INKHttpHdrReasonGet");
+    if (TSHttpHdrReasonGet(negHdrBuf, negHttpHdrLoc, NULL) == TS_ERROR_PTR) {
+      LOG_NEG_ERROR("TSHttpHdrReasonGet");
     }
 
-    /* INKHttpHdrReasonSet */
-    if (INKHttpHdrReasonSet(NULL, negHttpHdrLoc, sHttpReason, iHttpHdrReasonLength) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrReasonSet");
+    /* TSHttpHdrReasonSet */
+    if (TSHttpHdrReasonSet(NULL, negHttpHdrLoc, sHttpReason, iHttpHdrReasonLength) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrReasonSet");
     }
-    if (INKHttpHdrReasonSet(negHdrBuf, NULL, sHttpReason, iHttpHdrReasonLength) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrReasonSet");
+    if (TSHttpHdrReasonSet(negHdrBuf, NULL, sHttpReason, iHttpHdrReasonLength) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrReasonSet");
     }
 
-    /* NOTE: INKqa12722: NULL reason arg fixed now */
-    if (INKHttpHdrReasonSet(negHdrBuf, negHttpHdrLoc, NULL, iHttpHdrReasonLength) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrReasonSet");
+    /* NOTE: TSqa12722: NULL reason arg fixed now */
+    if (TSHttpHdrReasonSet(negHdrBuf, negHttpHdrLoc, NULL, iHttpHdrReasonLength) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrReasonSet");
     }
-    /* FIXME: INKqa12722 - This neg test would crash TS */
-    if (INKHttpHdrReasonSet(negHdrBuf, negHttpHdrLoc, NULL, -1) != INK_ERROR) {
-      LOG_NEG_ERROR("INKHttpHdrReasonSet");
+    /* FIXME: TSqa12722 - This neg test would crash TS */
+    if (TSHttpHdrReasonSet(negHdrBuf, negHttpHdrLoc, NULL, -1) != TS_ERROR) {
+      LOG_NEG_ERROR("TSHttpHdrReasonSet");
     }
 
     STR_RELEASE(negHdrBuf, negHttpHdrLoc, sHttpReason);
   }
 
   /* Clean-up */
-  HANDLE_RELEASE(negHdrBuf, INK_NULL_MLOC, negHttpHdrLoc);
+  HANDLE_RELEASE(negHdrBuf, TS_NULL_MLOC, negHttpHdrLoc);
   BUFFER_DESTROY(negHdrBuf);
 }
 
@@ -355,32 +355,32 @@ identical_hdr(HdrInfo_T * pHdrInfo1, HdrInfo_T * pHdrInfo2)
   LOG_SET_FUNCTION_NAME("identical_hdr");
 
   if (pHdrInfo1->httpType != pHdrInfo2->httpType) {
-    LOG_AUTO_ERROR("INKHttpHdrCopy", "httpType different");
+    LOG_AUTO_ERROR("TSHttpHdrCopy", "httpType different");
     return 0;
   } else if (pHdrInfo1->hdrLength != pHdrInfo2->hdrLength) {
-    LOG_AUTO_ERROR("INKHttpHdrCopy", "hdrLength different");
+    LOG_AUTO_ERROR("TSHttpHdrCopy", "hdrLength different");
     return 0;
   } else if (pHdrInfo1->httpVersion != pHdrInfo2->httpVersion) {
-    LOG_AUTO_ERROR("INKHttpHdrCopy", "httpVersion different");
+    LOG_AUTO_ERROR("TSHttpHdrCopy", "httpVersion different");
     return 0;
-  } else if (pHdrInfo1->httpType == INK_HTTP_TYPE_REQUEST) {
+  } else if (pHdrInfo1->httpType == TS_HTTP_TYPE_REQUEST) {
     if (strcmp(pHdrInfo1->httpMethod, pHdrInfo2->httpMethod)) {
-      LOG_AUTO_ERROR("INKHttpHdrCopy", "httpMethod different");
+      LOG_AUTO_ERROR("TSHttpHdrCopy", "httpMethod different");
       return 0;
     } else if (strcmp(pHdrInfo1->hostName, pHdrInfo2->hostName)) {
-      LOG_AUTO_ERROR("INKHttpHdrCopy", "hostName different");
+      LOG_AUTO_ERROR("TSHttpHdrCopy", "hostName different");
       return 0;
     }
-  } else if (pHdrInfo1->httpType == INK_HTTP_TYPE_RESPONSE) {
+  } else if (pHdrInfo1->httpType == TS_HTTP_TYPE_RESPONSE) {
     if (pHdrInfo1->httpStatus != pHdrInfo2->httpStatus) {
-      LOG_AUTO_ERROR("INKHttpHdrCopy", "httpStatus different");
+      LOG_AUTO_ERROR("TSHttpHdrCopy", "httpStatus different");
       return 0;
     } else if (pHdrInfo1->hdrReason && strcmp(pHdrInfo1->hdrReason, pHdrInfo2->hdrReason)) {
-      LOG_AUTO_ERROR("INKHttpHdrCopy", "hdrReason different");
+      LOG_AUTO_ERROR("TSHttpHdrCopy", "hdrReason different");
       return 0;
     }
   } else {
-    LOG_AUTO_ERROR("INKHttpHdrCopy", "httpType still INK_HTTP_TYPE_UNKNOWN");
+    LOG_AUTO_ERROR("TSHttpHdrCopy", "httpType still TS_HTTP_TYPE_UNKNOWN");
     return 0;
   }
 
@@ -398,37 +398,37 @@ identical_hdr(HdrInfo_T * pHdrInfo1, HdrInfo_T * pHdrInfo2)
  *  void
  ************************************************************************************/
 static void
-getHdrInfo(HdrInfo_T * pHdrInfo, INKMBuffer hdrBuf, INKMLoc hdrLoc)
+getHdrInfo(HdrInfo_T * pHdrInfo, TSMBuffer hdrBuf, TSMLoc hdrLoc)
 {
   LOG_SET_FUNCTION_NAME("getHdrInfo");
-  INKMLoc urlLoc = NULL;
+  TSMLoc urlLoc = NULL;
 
   const char *sHostName = NULL, *sHttpMethod = NULL, *sHttpHdrReason = NULL;
   int iHttpHdrReasonLength, iHttpMethodLength, iHostLength;
 
-  if ((pHdrInfo->httpType = INKHttpHdrTypeGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrTypeGet");
+  if ((pHdrInfo->httpType = TSHttpHdrTypeGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrTypeGet");
   }
-  if ((pHdrInfo->hdrLength = INKHttpHdrLengthGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrLengthGet");
+  if ((pHdrInfo->hdrLength = TSHttpHdrLengthGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrLengthGet");
   }
-  if ((pHdrInfo->httpVersion = INKHttpHdrVersionGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionGet");
+  if ((pHdrInfo->httpVersion = TSHttpHdrVersionGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionGet");
   }
 
-  if (pHdrInfo->httpType == INK_HTTP_TYPE_REQUEST) {
-    if ((sHttpMethod = INKHttpHdrMethodGet(hdrBuf, hdrLoc, &iHttpMethodLength)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrMethodGet");
+  if (pHdrInfo->httpType == TS_HTTP_TYPE_REQUEST) {
+    if ((sHttpMethod = TSHttpHdrMethodGet(hdrBuf, hdrLoc, &iHttpMethodLength)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrMethodGet");
     } else {
-      pHdrInfo->httpMethod = INKstrndup(sHttpMethod, iHttpMethodLength);
+      pHdrInfo->httpMethod = TSstrndup(sHttpMethod, iHttpMethodLength);
     }
 
-    if ((urlLoc = INKHttpHdrUrlGet(hdrBuf, hdrLoc)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrUrlGet");
-    } else if ((sHostName = INKUrlHostGet(hdrBuf, urlLoc, &iHostLength)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKUrlHostGet");
+    if ((urlLoc = TSHttpHdrUrlGet(hdrBuf, hdrLoc)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrUrlGet");
+    } else if ((sHostName = TSUrlHostGet(hdrBuf, urlLoc, &iHostLength)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSUrlHostGet");
     } else {
-      pHdrInfo->hostName = INKstrndup(sHostName, iHostLength);
+      pHdrInfo->hostName = TSstrndup(sHostName, iHostLength);
     }
 
     /* Clean-up */
@@ -436,15 +436,15 @@ getHdrInfo(HdrInfo_T * pHdrInfo, INKMBuffer hdrBuf, INKMLoc hdrLoc)
     STR_RELEASE(hdrBuf, urlLoc, sHttpMethod);
     HANDLE_RELEASE(hdrBuf, hdrLoc, urlLoc);
 
-  } else if (pHdrInfo->httpType == INK_HTTP_TYPE_RESPONSE) {
-    if ((pHdrInfo->httpStatus = INKHttpHdrStatusGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-      LOG_API_ERROR("INKHttpHdrStatusGet");
+  } else if (pHdrInfo->httpType == TS_HTTP_TYPE_RESPONSE) {
+    if ((pHdrInfo->httpStatus = TSHttpHdrStatusGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+      LOG_API_ERROR("TSHttpHdrStatusGet");
     }
 
-    if ((sHttpHdrReason = INKHttpHdrReasonGet(hdrBuf, hdrLoc, &iHttpHdrReasonLength)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrReasonGet");
+    if ((sHttpHdrReason = TSHttpHdrReasonGet(hdrBuf, hdrLoc, &iHttpHdrReasonLength)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrReasonGet");
     } else if (sHttpHdrReason) {
-      pHdrInfo->hdrReason = INKstrndup(sHttpHdrReason, iHttpHdrReasonLength);
+      pHdrInfo->hdrReason = TSstrndup(sHttpHdrReason, iHttpHdrReasonLength);
     }
 
     /* clean-up */
@@ -455,60 +455,60 @@ getHdrInfo(HdrInfo_T * pHdrInfo, INKMBuffer hdrBuf, INKMLoc hdrLoc)
 }
 
 static void
-printHttpHeader(INKMBuffer hdrBuf, INKMLoc hdrLoc, char *debugTag, float section)
+printHttpHeader(TSMBuffer hdrBuf, TSMLoc hdrLoc, char *debugTag, float section)
 {
   LOG_SET_FUNCTION_NAME("printHttpHeader");
 
-  INKMLoc urlLoc = NULL;
+  TSMLoc urlLoc = NULL;
 
-  INKHttpStatus httpStatus;
-  INKHttpType httpType;
+  TSHttpStatus httpStatus;
+  TSHttpType httpType;
 
   int iHostLength, iHttpHdrLength, iHttpMethodLength, iHttpHdrReasonLength, iHttpVersion;
   const char *sHostName = NULL, *sHttpMethod = NULL, *sHttpHdrReason = NULL;
   char *outputString = NULL;
 
 
-    /*** INKHttpHdrTypeGet ***/
-  if ((httpType = INKHttpHdrTypeGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrTypeGet");
+    /*** TSHttpHdrTypeGet ***/
+  if ((httpType = TSHttpHdrTypeGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrTypeGet");
   }
-  INKDebug(debugTag, "(%g) HTTP Header Type = %d", section, httpType);
+  TSDebug(debugTag, "(%g) HTTP Header Type = %d", section, httpType);
 
-    /*** INKHttpHdrLengthGet ***/
-  if ((iHttpHdrLength = INKHttpHdrLengthGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrLengthGet");
+    /*** TSHttpHdrLengthGet ***/
+  if ((iHttpHdrLength = TSHttpHdrLengthGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrLengthGet");
   }
-  INKDebug(debugTag, "(%g) HTTP Header Length = %d", section, iHttpHdrLength);
+  TSDebug(debugTag, "(%g) HTTP Header Length = %d", section, iHttpHdrLength);
 
-    /*** INKHttpVersionGet ***/
-  if ((iHttpVersion = INKHttpHdrVersionGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionGet");
+    /*** TSHttpVersionGet ***/
+  if ((iHttpVersion = TSHttpHdrVersionGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionGet");
   }
-  INKDebug(debugTag, "(%g) HTTP Header Version = %d", section, iHttpVersion);
-  INKDebug(debugTag, "(%g) Major Version = %d, Minor Version = %d", section,
-           INK_HTTP_MAJOR(iHttpVersion), INK_HTTP_MINOR(iHttpVersion));
+  TSDebug(debugTag, "(%g) HTTP Header Version = %d", section, iHttpVersion);
+  TSDebug(debugTag, "(%g) Major Version = %d, Minor Version = %d", section,
+           TS_HTTP_MAJOR(iHttpVersion), TS_HTTP_MINOR(iHttpVersion));
 
 
-  if (httpType == INK_HTTP_TYPE_REQUEST) {
-        /*** INKHttpHdrMethodGet ***/
-    if ((sHttpMethod = INKHttpHdrMethodGet(hdrBuf, hdrLoc, &iHttpMethodLength)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrMethodGet");
+  if (httpType == TS_HTTP_TYPE_REQUEST) {
+        /*** TSHttpHdrMethodGet ***/
+    if ((sHttpMethod = TSHttpHdrMethodGet(hdrBuf, hdrLoc, &iHttpMethodLength)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrMethodGet");
     } else {
-      outputString = INKstrndup(sHttpMethod, iHttpMethodLength);
-      INKDebug(debugTag, "(%g) HTTP Header Method = %s", section, outputString);
+      outputString = TSstrndup(sHttpMethod, iHttpMethodLength);
+      TSDebug(debugTag, "(%g) HTTP Header Method = %s", section, outputString);
       FREE(outputString);
       STR_RELEASE(hdrBuf, urlLoc, sHttpMethod);
     }
 
-        /*** INKHttpHdrUrlGet ***/
-    if ((urlLoc = INKHttpHdrUrlGet(hdrBuf, hdrLoc)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrUrlGet");
-    } else if ((sHostName = INKUrlHostGet(hdrBuf, urlLoc, &iHostLength)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKUrlHostGet");
+        /*** TSHttpHdrUrlGet ***/
+    if ((urlLoc = TSHttpHdrUrlGet(hdrBuf, hdrLoc)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrUrlGet");
+    } else if ((sHostName = TSUrlHostGet(hdrBuf, urlLoc, &iHostLength)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSUrlHostGet");
     } else if (sHostName) {
-      outputString = INKstrndup(sHostName, iHostLength);
-      INKDebug(debugTag, "(%g) HTTP Host = %s", section, outputString);
+      outputString = TSstrndup(sHostName, iHostLength);
+      TSDebug(debugTag, "(%g) HTTP Host = %s", section, outputString);
       FREE(outputString);
       STR_RELEASE(hdrBuf, urlLoc, sHostName);
     }
@@ -516,25 +516,25 @@ printHttpHeader(INKMBuffer hdrBuf, INKMLoc hdrLoc, char *debugTag, float section
     /* Clean-up */
     HANDLE_RELEASE(hdrBuf, hdrLoc, urlLoc);
 
-  } else if (httpType == INK_HTTP_TYPE_RESPONSE) {
+  } else if (httpType == TS_HTTP_TYPE_RESPONSE) {
 
-        /*** INKHttpHdrReasonGet ***/
+        /*** TSHttpHdrReasonGet ***/
     /* Try getting reason phrase from the request header - this is an error */
-    if ((sHttpHdrReason = INKHttpHdrReasonGet(hdrBuf, hdrLoc, &iHttpHdrReasonLength)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrReasonGet");
+    if ((sHttpHdrReason = TSHttpHdrReasonGet(hdrBuf, hdrLoc, &iHttpHdrReasonLength)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrReasonGet");
     } else {
-      outputString = INKstrndup(sHttpHdrReason, iHttpHdrReasonLength);
-      INKDebug(debugTag, "(%g) HTTP Header Reason = %s", section, outputString);
+      outputString = TSstrndup(sHttpHdrReason, iHttpHdrReasonLength);
+      TSDebug(debugTag, "(%g) HTTP Header Reason = %s", section, outputString);
       FREE(outputString);
       STR_RELEASE(hdrBuf, hdrLoc, sHttpHdrReason);
     }
 
-        /*** INKHttpHdrStatusGet ***/
+        /*** TSHttpHdrStatusGet ***/
     /* Try getting status phrase from the request header - this is an error */
-    if ((httpStatus = INKHttpHdrStatusGet(hdrBuf, hdrLoc)) == INK_ERROR) {
-      LOG_API_ERROR("INKHttpHdrStatusGet");
+    if ((httpStatus = TSHttpHdrStatusGet(hdrBuf, hdrLoc)) == TS_ERROR) {
+      LOG_API_ERROR("TSHttpHdrStatusGet");
     } else {
-      INKDebug(debugTag, "(%g) HTTP Header Status = %d", section, httpStatus);
+      TSDebug(debugTag, "(%g) HTTP Header Status = %d", section, httpStatus);
     }
   }
 }
@@ -544,20 +544,20 @@ printHttpHeader(INKMBuffer hdrBuf, INKMLoc hdrLoc, char *debugTag, float section
 /************************************************************************
  * handleSendResponse:
  *
- * Description:	handler for INK_HTTP_SEND_RESPONSE_HOOK
+ * Description:	handler for TS_HTTP_SEND_RESPONSE_HOOK
  ************************************************************************/
 
 static void
-handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
+handleSendResponse(TSCont pCont, TSHttpTxn pTxn)
 {
   LOG_SET_FUNCTION_NAME("handleSendResponse");
 
-  INKMBuffer respHdrBuf = NULL, newHttpHdrBuf = NULL, parseBuffer = NULL;
-  INKMLoc respHttpHdrLoc = NULL, newHttpHdrLoc = NULL, parseHttpHdrLoc = NULL;
+  TSMBuffer respHdrBuf = NULL, newHttpHdrBuf = NULL, parseBuffer = NULL;
+  TSMLoc respHttpHdrLoc = NULL, newHttpHdrLoc = NULL, parseHttpHdrLoc = NULL;
 
-  INKHttpStatus oldHttpStatus, tmpHttpStatus;
-  INKHttpType httpType;
-  INKHttpParser httpRespParser = NULL;
+  TSHttpStatus oldHttpStatus, tmpHttpStatus;
+  TSHttpType httpType;
+  TSHttpParser httpRespParser = NULL;
 
   HdrInfo_T *pRespHdrInfo = NULL, *pNewRespHdrInfo = NULL;
 
@@ -579,11 +579,11 @@ handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
   pRespHdrInfo = initHdr();
   pNewRespHdrInfo = initHdr();
 
-  INKDebug(RESP, ">>> handleSendResponse <<<<\n");
+  TSDebug(RESP, ">>> handleSendResponse <<<<\n");
 
   /* Get Response Marshall Buffer */
-  if (!INKHttpTxnClientRespGet(pTxn, &respHdrBuf, &respHttpHdrLoc)) {
-    LOG_API_ERROR_COMMENT("INKHttpTxnClientReqGet", "ERROR: Can't retrieve client req hdr");
+  if (!TSHttpTxnClientRespGet(pTxn, &respHdrBuf, &respHttpHdrLoc)) {
+    LOG_API_ERROR_COMMENT("TSHttpTxnClientReqGet", "ERROR: Can't retrieve client req hdr");
     goto done;
   }
 
@@ -591,120 +591,120 @@ handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
   negTesting(respHdrBuf, respHttpHdrLoc);
 #endif
 
-    /******* (1): Exercise all possible INK*GET and print the values **********/
+    /******* (1): Exercise all possible TS*GET and print the values **********/
 
-  INKDebug(RESP, "--------------------------------");
+  TSDebug(RESP, "--------------------------------");
   getHdrInfo(pRespHdrInfo, respHdrBuf, respHttpHdrLoc);
   printHttpHeader(respHdrBuf, respHttpHdrLoc, RESP, 1);
 
     /******* (2): Create a new header and check everything is copied correctly *********/
 
-  INKDebug(RESP, "--------------------------------");
+  TSDebug(RESP, "--------------------------------");
 
-  if ((newHttpHdrBuf = INKMBufferCreate()) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKMBufferCreate", "skipping to section(4)");
+  if ((newHttpHdrBuf = TSMBufferCreate()) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSMBufferCreate", "skipping to section(4)");
     goto resp_4;
   }
 
-    /*** INKHttpHdrCreate ***/
-  if ((newHttpHdrLoc = INKHttpHdrCreate(newHttpHdrBuf)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKMHTTPHdrCreate", "skipping to section(4)");
+    /*** TSHttpHdrCreate ***/
+  if ((newHttpHdrLoc = TSHttpHdrCreate(newHttpHdrBuf)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSMHTTPHdrCreate", "skipping to section(4)");
     goto resp_4;
   }
 
-  /* Make sure the newly created HTTP header has INKHttpType value of INK_HTTP_TYPE_UNKNOWN */
-  if ((httpType = INKHttpHdrTypeGet(newHttpHdrBuf, newHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR_COMMENT("INKMHTTPHdrCreate", "continuing");
-  } else if (httpType != INK_HTTP_TYPE_UNKNOWN) {
-    LOG_AUTO_ERROR("INKHttpHdrCreate", "Newly created hdr not of type INK_HTTP_TYPE_UNKNOWN");
+  /* Make sure the newly created HTTP header has TSHttpType value of TS_HTTP_TYPE_UNKNOWN */
+  if ((httpType = TSHttpHdrTypeGet(newHttpHdrBuf, newHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR_COMMENT("TSMHTTPHdrCreate", "continuing");
+  } else if (httpType != TS_HTTP_TYPE_UNKNOWN) {
+    LOG_AUTO_ERROR("TSHttpHdrCreate", "Newly created hdr not of type TS_HTTP_TYPE_UNKNOWN");
   }
 
 
-    /*** INKHttpHdrCopy ***/
-  if (INKHttpHdrCopy(newHttpHdrBuf, newHttpHdrLoc, respHdrBuf, respHttpHdrLoc) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrCopy");
+    /*** TSHttpHdrCopy ***/
+  if (TSHttpHdrCopy(newHttpHdrBuf, newHttpHdrLoc, respHdrBuf, respHttpHdrLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrCopy");
   }
 
   getHdrInfo(pNewRespHdrInfo, newHttpHdrBuf, newHttpHdrLoc);
   printHttpHeader(newHttpHdrBuf, newHttpHdrLoc, RESP, 2);
 
   if (!identical_hdr(pRespHdrInfo, pNewRespHdrInfo)) {
-    LOG_AUTO_ERROR("INKHttpHdrCopy", "copy of the resp header not identical to the original");
+    LOG_AUTO_ERROR("TSHttpHdrCopy", "copy of the resp header not identical to the original");
   }
 
   /* Reuse:
    * newHttpHdrBuf, newHttHdrLoc */
 
-    /******* (3): Now excercise some INK..SETs on the new header ********/
-  INKDebug(RESP, "--------------------------------");
+    /******* (3): Now excercise some TS..SETs on the new header ********/
+  TSDebug(RESP, "--------------------------------");
 
-    /*** INKHttpHdrTypeSet ***/
+    /*** TSHttpHdrTypeSet ***/
   /* ERROR:
-   * 1. Setting type other than INK_HTTP_TYPE_UNKNOWN, INK_HTTP_TYPE_REQUEST,
-   * INK_HTTP_TYPE_RESPONSE, and,
-   * 2. Setting the type twice.  The hdr type has been already set during INKHttpHdrCopy
+   * 1. Setting type other than TS_HTTP_TYPE_UNKNOWN, TS_HTTP_TYPE_REQUEST,
+   * TS_HTTP_TYPE_RESPONSE, and,
+   * 2. Setting the type twice.  The hdr type has been already set during TSHttpHdrCopy
    * above, so setting it again is incorrect */
-  if (INKHttpHdrTypeSet(newHttpHdrBuf, newHttpHdrLoc, INK_HTTP_TYPE_RESPONSE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrTypeSet");
+  if (TSHttpHdrTypeSet(newHttpHdrBuf, newHttpHdrLoc, TS_HTTP_TYPE_RESPONSE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrTypeSet");
   }
 
-    /*** INKHttpHdrReasonSet ***/
+    /*** TSHttpHdrReasonSet ***/
   /* save the original reason */
-  if ((sHttpHdrReason = INKHttpHdrReasonGet(newHttpHdrBuf, newHttpHdrLoc, &iHttpHdrReasonLength))
-      == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKHttpHdrReasonGet");
+  if ((sHttpHdrReason = TSHttpHdrReasonGet(newHttpHdrBuf, newHttpHdrLoc, &iHttpHdrReasonLength))
+      == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSHttpHdrReasonGet");
   } else {
-    sOldHttpReason = INKstrndup(sHttpHdrReason, iHttpHdrReasonLength);
+    sOldHttpReason = TSstrndup(sHttpHdrReason, iHttpHdrReasonLength);
   }
 
   /* Note:
-   * INKHttpHdrReasonGet may return a NULL reason string (for e.g. I tried www.eyesong.8m.com).
-   * Do NOT assume that INKstrndup always returns a null terminated string.  INKstrndup does
+   * TSHttpHdrReasonGet may return a NULL reason string (for e.g. I tried www.eyesong.8m.com).
+   * Do NOT assume that TSstrndup always returns a null terminated string.  TSstrndup does
    * not returns a NULL terminated string for a NULL ptr as i/p parameter.  It simply returns
    * it backs. So functions like strlen() on the return value might cause TS to crash */
 
 
-  if (INKHttpHdrReasonSet(newHttpHdrBuf, newHttpHdrLoc, "dummy reason", strlen("dummy reason")) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrReasonGet");
+  if (TSHttpHdrReasonSet(newHttpHdrBuf, newHttpHdrLoc, "dummy reason", strlen("dummy reason")) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrReasonGet");
   } else {
-    if ((sTmpHttpHdrReason = INKHttpHdrReasonGet(newHttpHdrBuf, newHttpHdrLoc, &iTmpHttpHdrReasonLength))
-        == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrReasonGet");
+    if ((sTmpHttpHdrReason = TSHttpHdrReasonGet(newHttpHdrBuf, newHttpHdrLoc, &iTmpHttpHdrReasonLength))
+        == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrReasonGet");
     } else if (sTmpHttpHdrReason && strncmp(sTmpHttpHdrReason, "dummy reason", iTmpHttpHdrReasonLength)) {
-      LOG_AUTO_ERROR("INKHttpHdrReasonSet/Get", "GET reason different from the SET reason");
+      LOG_AUTO_ERROR("TSHttpHdrReasonSet/Get", "GET reason different from the SET reason");
     }
     STR_RELEASE(newHttpHdrBuf, newHttpHdrLoc, sTmpHttpHdrReason);
   }
 
-    /*** INKHttpStatusSet ***/
+    /*** TSHttpStatusSet ***/
   /* save the original value */
-  if ((oldHttpStatus = INKHttpHdrStatusGet(newHttpHdrBuf, newHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrStatusGet");
+  if ((oldHttpStatus = TSHttpHdrStatusGet(newHttpHdrBuf, newHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrStatusGet");
   }
 
   /* change it to some unknown value */
-  if (INKHttpHdrStatusSet(newHttpHdrBuf, newHttpHdrLoc, INK_HTTP_STATUS_NONE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrStatusSet");
-  } else if ((tmpHttpStatus = INKHttpHdrStatusGet(newHttpHdrBuf, newHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrStatusGet");
-  } else if (tmpHttpStatus != INK_HTTP_STATUS_NONE) {
-    LOG_AUTO_ERROR("INKHttpHdrStatusGet/Set", "GET status different from the SET status");
+  if (TSHttpHdrStatusSet(newHttpHdrBuf, newHttpHdrLoc, TS_HTTP_STATUS_NONE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrStatusSet");
+  } else if ((tmpHttpStatus = TSHttpHdrStatusGet(newHttpHdrBuf, newHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrStatusGet");
+  } else if (tmpHttpStatus != TS_HTTP_STATUS_NONE) {
+    LOG_AUTO_ERROR("TSHttpHdrStatusGet/Set", "GET status different from the SET status");
   }
 
 
-    /*** INKHttpHdrVersionSet ***/
+    /*** TSHttpHdrVersionSet ***/
   /* get the original version */
-  if ((iOldHttpVersion = INKHttpHdrVersionGet(newHttpHdrBuf, newHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionGet");
+  if ((iOldHttpVersion = TSHttpHdrVersionGet(newHttpHdrBuf, newHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionGet");
   }
 
   /* change it to some unknown version */
-  if (INKHttpHdrVersionSet(newHttpHdrBuf, newHttpHdrLoc, INK_HTTP_VERSION(10, 10)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionSet");
-  } else if ((iTmpHttpVersion = INKHttpHdrVersionGet(newHttpHdrBuf, newHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionGet");
-  } else if (INK_HTTP_MAJOR(iTmpHttpVersion) != 10 && INK_HTTP_MINOR(iTmpHttpVersion) != 10) {
-    LOG_AUTO_ERROR("INKHttpHdrVersionSet", "GET version different from SET version");
+  if (TSHttpHdrVersionSet(newHttpHdrBuf, newHttpHdrLoc, TS_HTTP_VERSION(10, 10)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionSet");
+  } else if ((iTmpHttpVersion = TSHttpHdrVersionGet(newHttpHdrBuf, newHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionGet");
+  } else if (TS_HTTP_MAJOR(iTmpHttpVersion) != 10 && TS_HTTP_MINOR(iTmpHttpVersion) != 10) {
+    LOG_AUTO_ERROR("TSHttpHdrVersionSet", "GET version different from SET version");
   }
 
   printHttpHeader(newHttpHdrBuf, newHttpHdrLoc, RESP, 3);
@@ -713,19 +713,19 @@ handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
 
   /* Here we can't use strlen(sOldHttpReason) to set the length.  This would crash TS if
    * sOldHttpReason happens to be NULL */
-  if (INKHttpHdrReasonSet(newHttpHdrBuf, newHttpHdrLoc, sOldHttpReason, iHttpHdrReasonLength) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrReasonSet");
+  if (TSHttpHdrReasonSet(newHttpHdrBuf, newHttpHdrLoc, sOldHttpReason, iHttpHdrReasonLength) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrReasonSet");
   }
-  /*INKHttpHdrReasonSet (newHttpHdrBuf, newHttpHdrLoc, sOldHttpReason, strlen(sOldHttpReason)); */
-  if (INKHttpHdrStatusSet(newHttpHdrBuf, newHttpHdrLoc, oldHttpStatus) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrStatusSet");
+  /*TSHttpHdrReasonSet (newHttpHdrBuf, newHttpHdrLoc, sOldHttpReason, strlen(sOldHttpReason)); */
+  if (TSHttpHdrStatusSet(newHttpHdrBuf, newHttpHdrLoc, oldHttpStatus) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrStatusSet");
   }
-  if (INKHttpHdrVersionSet(newHttpHdrBuf, newHttpHdrLoc, iOldHttpVersion) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrStatusSet");
+  if (TSHttpHdrVersionSet(newHttpHdrBuf, newHttpHdrLoc, iOldHttpVersion) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrStatusSet");
   }
 
   if (!identical_hdr(pRespHdrInfo, pNewRespHdrInfo)) {
-    LOG_AUTO_ERROR("INK..SET", "Hdr values not properly restored");
+    LOG_AUTO_ERROR("TS..SET", "Hdr values not properly restored");
   }
 
   /* (3): clean-up */
@@ -734,94 +734,94 @@ handleSendResponse(INKCont pCont, INKHttpTxn pTxn)
 
 resp_4:
     /******* (4): Now excercise some SETs on the response header ********/
-  INKDebug(RESP, "--------------------------------");
+  TSDebug(RESP, "--------------------------------");
 
-    /*** INKHttpHdrReasonSet ***/
+    /*** TSHttpHdrReasonSet ***/
   /* save the original reason */
-  if ((sHttpHdrReason = INKHttpHdrReasonGet(respHdrBuf, respHttpHdrLoc, &iHttpHdrReasonLength))
-      == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKHttpHdrReasonGet");
+  if ((sHttpHdrReason = TSHttpHdrReasonGet(respHdrBuf, respHttpHdrLoc, &iHttpHdrReasonLength))
+      == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSHttpHdrReasonGet");
   } else {
-    sOldHttpReason = INKstrndup(sHttpHdrReason, iHttpHdrReasonLength);
+    sOldHttpReason = TSstrndup(sHttpHdrReason, iHttpHdrReasonLength);
   }
 
   /* change the reason phrase */
-  if (INKHttpHdrReasonSet(respHdrBuf, respHttpHdrLoc, "dummy reason", strlen("dummy reason")) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrReasonSet");
+  if (TSHttpHdrReasonSet(respHdrBuf, respHttpHdrLoc, "dummy reason", strlen("dummy reason")) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrReasonSet");
   }
 
-  if ((sTmpHttpHdrReason = INKHttpHdrReasonGet(respHdrBuf, respHttpHdrLoc, &iTmpHttpHdrReasonLength))
-      == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKHttpHdrReasonGet");
+  if ((sTmpHttpHdrReason = TSHttpHdrReasonGet(respHdrBuf, respHttpHdrLoc, &iTmpHttpHdrReasonLength))
+      == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSHttpHdrReasonGet");
   } else if (sTmpHttpHdrReason && strncmp(sTmpHttpHdrReason, "dummy reason", iTmpHttpHdrReasonLength)) {
-    LOG_AUTO_ERROR("INKHttpHdrReasonSet/Get", "GET reason string different from SET reason");
+    LOG_AUTO_ERROR("TSHttpHdrReasonSet/Get", "GET reason string different from SET reason");
   }
   STR_RELEASE(respHdrBuf, respHttpHdrLoc, sTmpHttpHdrReason);
 
-    /*** INKHttpStatusSet ***/
+    /*** TSHttpStatusSet ***/
   /* save the original value */
-  if ((oldHttpStatus = INKHttpHdrStatusGet(respHdrBuf, respHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrStatusGet");
+  if ((oldHttpStatus = TSHttpHdrStatusGet(respHdrBuf, respHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrStatusGet");
   }
 
   /* change it to some unknown value */
-  if (INKHttpHdrStatusSet(respHdrBuf, respHttpHdrLoc, INK_HTTP_STATUS_NONE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrStatusSet");
-  } else if (INKHttpHdrStatusGet(respHdrBuf, respHttpHdrLoc) != INK_HTTP_STATUS_NONE) {
-    LOG_AUTO_ERROR("INKHttpHdrStatusSet/GET", "GET status value different from SET status");
+  if (TSHttpHdrStatusSet(respHdrBuf, respHttpHdrLoc, TS_HTTP_STATUS_NONE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrStatusSet");
+  } else if (TSHttpHdrStatusGet(respHdrBuf, respHttpHdrLoc) != TS_HTTP_STATUS_NONE) {
+    LOG_AUTO_ERROR("TSHttpHdrStatusSet/GET", "GET status value different from SET status");
   }
 
 
-    /*** INKHttpHdrTypeSet ***/
+    /*** TSHttpHdrTypeSet ***/
   /* ERROR:
-   * 1. Setting type other than INK_HTTP_TYPE_UNKNOWN, INK_HTTP_TYPE_REQUEST,
-   * INK_HTTP_TYPE_RESPONSE and,
-   * 2. Setting the type twice.  The hdr type has been already set during INKHttpTxnClientRespGet
+   * 1. Setting type other than TS_HTTP_TYPE_UNKNOWN, TS_HTTP_TYPE_REQUEST,
+   * TS_HTTP_TYPE_RESPONSE and,
+   * 2. Setting the type twice.  The hdr type has been already set during TSHttpTxnClientRespGet
    * above, so setting it again should fail */
-  if (INKHttpHdrTypeSet(respHdrBuf, respHttpHdrLoc, INK_HTTP_TYPE_RESPONSE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrTypeSet");
+  if (TSHttpHdrTypeSet(respHdrBuf, respHttpHdrLoc, TS_HTTP_TYPE_RESPONSE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrTypeSet");
   }
-  if (INKHttpHdrTypeGet(respHdrBuf, respHttpHdrLoc) == INK_HTTP_TYPE_UNKNOWN) {
-    LOG_AUTO_ERROR("INKHttpHdrTypeSet/Get", "respHdrBuf CAN be set to INK_HTTP_TYPE_UNKNOWN");
+  if (TSHttpHdrTypeGet(respHdrBuf, respHttpHdrLoc) == TS_HTTP_TYPE_UNKNOWN) {
+    LOG_AUTO_ERROR("TSHttpHdrTypeSet/Get", "respHdrBuf CAN be set to TS_HTTP_TYPE_UNKNOWN");
   }
 
-    /*** INKHttpHdrVersionSet ***/
+    /*** TSHttpHdrVersionSet ***/
   /* get the original version */
-  if ((iOldHttpVersion = INKHttpHdrVersionGet(respHdrBuf, respHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionGet");
+  if ((iOldHttpVersion = TSHttpHdrVersionGet(respHdrBuf, respHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionGet");
   }
 
   /* change it to some unknown version */
-  if (INKHttpHdrVersionSet(respHdrBuf, respHttpHdrLoc, INK_HTTP_VERSION(10, 10)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionSet");
-  } else if ((iTmpHttpVersion = INKHttpHdrVersionGet(respHdrBuf, respHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionGet");
-  } else if (INK_HTTP_MAJOR(iTmpHttpVersion) != 10 && INK_HTTP_MINOR(iTmpHttpVersion) != 10) {
-    LOG_AUTO_ERROR("INKHttpHdrVersionGet/Set", "GET HTTP version different from SET version");
+  if (TSHttpHdrVersionSet(respHdrBuf, respHttpHdrLoc, TS_HTTP_VERSION(10, 10)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionSet");
+  } else if ((iTmpHttpVersion = TSHttpHdrVersionGet(respHdrBuf, respHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionGet");
+  } else if (TS_HTTP_MAJOR(iTmpHttpVersion) != 10 && TS_HTTP_MINOR(iTmpHttpVersion) != 10) {
+    LOG_AUTO_ERROR("TSHttpHdrVersionGet/Set", "GET HTTP version different from SET version");
   }
 
   printHttpHeader(respHdrBuf, respHttpHdrLoc, RESP, 4);
 
   /* restore the original values */
 
-  /* For INKHttpHdrReasonSet, do NOT use strlen(sOldHttpReason) to set the length.
+  /* For TSHttpHdrReasonSet, do NOT use strlen(sOldHttpReason) to set the length.
    * This would crash TS if sOldHttpReason happened to be NULL */
-  if (INKHttpHdrReasonSet(respHdrBuf, respHttpHdrLoc, sOldHttpReason, iHttpHdrReasonLength) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrReasonSet");
+  if (TSHttpHdrReasonSet(respHdrBuf, respHttpHdrLoc, sOldHttpReason, iHttpHdrReasonLength) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrReasonSet");
   }
-  /*INKHttpHdrReasonSet (respHdrBuf, respHttpHdrLoc, sOldHttpReason, strlen(sOldHttpReason)); */
-  if (INKHttpHdrStatusSet(respHdrBuf, respHttpHdrLoc, oldHttpStatus) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrStatusSet");
+  /*TSHttpHdrReasonSet (respHdrBuf, respHttpHdrLoc, sOldHttpReason, strlen(sOldHttpReason)); */
+  if (TSHttpHdrStatusSet(respHdrBuf, respHttpHdrLoc, oldHttpStatus) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrStatusSet");
   }
-  if (INKHttpHdrVersionSet(respHdrBuf, respHttpHdrLoc, iOldHttpVersion) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionSet");
+  if (TSHttpHdrVersionSet(respHdrBuf, respHttpHdrLoc, iOldHttpVersion) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionSet");
   }
 
   FREE(pNewRespHdrInfo->hdrReason);
   getHdrInfo(pNewRespHdrInfo, respHdrBuf, respHttpHdrLoc);
 
   if (!identical_hdr(pRespHdrInfo, pNewRespHdrInfo)) {
-    LOG_AUTO_ERROR("INK..SET", "Hdr values not properly restored");
+    LOG_AUTO_ERROR("TS..SET", "Hdr values not properly restored");
   }
 
   /* (4): clean-up */
@@ -829,64 +829,64 @@ resp_4:
   FREE(sOldHttpReason);
 
     /********************************/
-    /** (5): INKHttpHdrParseResp   **/
+    /** (5): TSHttpHdrParseResp   **/
     /********************************/
 
-  INKDebug(RESP, "--------------------------------");
+  TSDebug(RESP, "--------------------------------");
 
   /* Create a parser Buffer and header location */
-  if ((parseBuffer = INKMBufferCreate()) == INK_ERROR_PTR || parseBuffer == NULL) {
-    LOG_API_ERROR_COMMENT("INKMBufferCreate", "abnormal exit");
+  if ((parseBuffer = TSMBufferCreate()) == TS_ERROR_PTR || parseBuffer == NULL) {
+    LOG_API_ERROR_COMMENT("TSMBufferCreate", "abnormal exit");
     goto done;
-  } else if ((parseHttpHdrLoc = INKHttpHdrCreate(parseBuffer)) == INK_ERROR_PTR || parseHttpHdrLoc == NULL) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrCreate", "abnormal exit");
+  } else if ((parseHttpHdrLoc = TSHttpHdrCreate(parseBuffer)) == TS_ERROR_PTR || parseHttpHdrLoc == NULL) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrCreate", "abnormal exit");
     goto done;
   }
 
   pHttpParseStart = sRespHdrStr1;
   pHttpParseEnd = pHttpParseStart + strlen(pHttpParseStart);
 
-  httpRespParser = INKHttpParserCreate();
+  httpRespParser = TSHttpParserCreate();
 
-  if (INKHttpHdrParseResp(httpRespParser, parseBuffer, parseHttpHdrLoc, &pHttpParseStart, pHttpParseEnd)
-      == INK_PARSE_ERROR) {
-    LOG_API_ERROR("INKHttpHdrParseResp");
+  if (TSHttpHdrParseResp(httpRespParser, parseBuffer, parseHttpHdrLoc, &pHttpParseStart, pHttpParseEnd)
+      == TS_PARSE_ERROR) {
+    LOG_API_ERROR("TSHttpHdrParseResp");
   }
 
   printHttpHeader(parseBuffer, parseHttpHdrLoc, RESP, 5.1);
 
-  if (INKHttpParserClear(httpRespParser) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpParseClear");
+  if (TSHttpParserClear(httpRespParser) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpParseClear");
   }
 
-  INKDebug(RESP, "--------------------------------");
+  TSDebug(RESP, "--------------------------------");
 
   pHttpParseStart = sRespHdrStr2;
   pHttpParseEnd = pHttpParseStart + strlen(pHttpParseStart);
 
-  /* httpRespParser = INKHttpParserCreate(); */
+  /* httpRespParser = TSHttpParserCreate(); */
 
-  if (INKHttpHdrParseResp(httpRespParser, parseBuffer, parseHttpHdrLoc, &pHttpParseStart, pHttpParseEnd)
-      == INK_PARSE_ERROR) {
-    LOG_API_ERROR("INKHttpHdrParseResp");
+  if (TSHttpHdrParseResp(httpRespParser, parseBuffer, parseHttpHdrLoc, &pHttpParseStart, pHttpParseEnd)
+      == TS_PARSE_ERROR) {
+    LOG_API_ERROR("TSHttpHdrParseResp");
   }
 
   printHttpHeader(parseBuffer, parseHttpHdrLoc, RESP, 5.2);
 
-  if (INKHttpParserClear(httpRespParser) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpParseClear");
+  if (TSHttpParserClear(httpRespParser) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpParseClear");
   }
 
-  INKDebug(RESP, "--------------------------------");
+  TSDebug(RESP, "--------------------------------");
 
   pHttpParseStart = sRespHdrStr3;
   pHttpParseEnd = pHttpParseStart + strlen(pHttpParseStart);
 
-  /* httpRespParser = INKHttpParserCreate(); */
+  /* httpRespParser = TSHttpParserCreate(); */
 
-  if (INKHttpHdrParseResp(httpRespParser, parseBuffer, parseHttpHdrLoc, &pHttpParseStart, pHttpParseEnd)
-      == INK_PARSE_ERROR) {
-    LOG_API_ERROR("INKHttpHdrParseResp");
+  if (TSHttpHdrParseResp(httpRespParser, parseBuffer, parseHttpHdrLoc, &pHttpParseStart, pHttpParseEnd)
+      == TS_PARSE_ERROR) {
+    LOG_API_ERROR("TSHttpHdrParseResp");
   }
 
   printHttpHeader(parseBuffer, parseHttpHdrLoc, RESP, 5.3);
@@ -898,9 +898,9 @@ done:
   freeHdr(pNewRespHdrInfo);
 
   /* release hdrLoc */
-  HANDLE_RELEASE(respHdrBuf, INK_NULL_MLOC, respHttpHdrLoc);
-  HANDLE_RELEASE(newHttpHdrBuf, INK_NULL_MLOC, newHttpHdrLoc);
-  HANDLE_RELEASE(parseBuffer, INK_NULL_MLOC, parseHttpHdrLoc);
+  HANDLE_RELEASE(respHdrBuf, TS_NULL_MLOC, respHttpHdrLoc);
+  HANDLE_RELEASE(newHttpHdrBuf, TS_NULL_MLOC, newHttpHdrLoc);
+  HANDLE_RELEASE(parseBuffer, TS_NULL_MLOC, parseHttpHdrLoc);
 
   /* destroy hdrLoc */
   HDR_DESTROY(respHdrBuf, respHttpHdrLoc);
@@ -911,15 +911,15 @@ done:
   BUFFER_DESTROY(parseBuffer);
 
   /* destroy the parser */
-  if (INKHttpParserDestroy(httpRespParser) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpParserDestroy");
+  if (TSHttpParserDestroy(httpRespParser) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpParserDestroy");
   }
 
-  if (INKHttpTxnReenable(pTxn, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(pTxn, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpTxnReenable");
   }
 
-  INKDebug(RESP, "......... exiting handleRespResponse .............\n");
+  TSDebug(RESP, "......... exiting handleRespResponse .............\n");
 
 }                               /* handleSendResponse */
 
@@ -929,18 +929,18 @@ done:
 /****************************************************************************
  * handleReadRequest:
  *
- * Description: handler for INK_HTTP_READ_REQUEST_HDR_HOOK
+ * Description: handler for TS_HTTP_READ_REQUEST_HDR_HOOK
  ****************************************************************************/
 
 static void
-handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
+handleReadRequest(TSCont pCont, TSHttpTxn pTxn)
 {
   LOG_SET_FUNCTION_NAME("handleReadRequest");
 
-  INKMBuffer reqHdrBuf = NULL, newHttpHdrBuf = NULL;
-  INKMLoc reqHdrLoc = NULL, newHttpHdrLoc = NULL;
+  TSMBuffer reqHdrBuf = NULL, newHttpHdrBuf = NULL;
+  TSMLoc reqHdrLoc = NULL, newHttpHdrLoc = NULL;
 
-  INKHttpType httpType;
+  TSHttpType httpType;
 
   int iOldHttpVersion, iHttpMethodLength, iHttpVersion;
   const char *sHttpMethod = NULL;
@@ -953,18 +953,18 @@ handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
   pReqHdrInfo = initHdr();
   pNewReqHdrInfo = initHdr();
 
-  INKDebug(REQ, "\n>>>>>> handleReadRequest <<<<<<<\n");
+  TSDebug(REQ, "\n>>>>>> handleReadRequest <<<<<<<\n");
 
   /* Get Request Marshall Buffer */
-  if (!INKHttpTxnClientReqGet(pTxn, &reqHdrBuf, &reqHdrLoc)) {
-    LOG_API_ERROR_COMMENT("INKHttpTxnClientReqGet", "ERROR: Can't retrieve client req hdr");
+  if (!TSHttpTxnClientReqGet(pTxn, &reqHdrBuf, &reqHdrLoc)) {
+    LOG_API_ERROR_COMMENT("TSHttpTxnClientReqGet", "ERROR: Can't retrieve client req hdr");
     goto done;
   }
 
 
     /******* (1): Get every specifics from the HTTP header *********/
 
-  INKDebug(REQ, "--------------------------------");
+  TSDebug(REQ, "--------------------------------");
 
   getHdrInfo(pReqHdrInfo, reqHdrBuf, reqHdrLoc);
   printHttpHeader(reqHdrBuf, reqHdrLoc, REQ, 1);
@@ -977,42 +977,42 @@ handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
   /* For every request, create, copy and destroy a new HTTP header and
    * print the details */
 
-  INKDebug(REQ, "--------------------------------");
-  if ((newHttpHdrBuf = INKMBufferCreate()) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKMBufferCreate", "skipping to section 3");
+  TSDebug(REQ, "--------------------------------");
+  if ((newHttpHdrBuf = TSMBufferCreate()) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSMBufferCreate", "skipping to section 3");
     goto section_3;             /* Skip to section (3) down the line directly; I hate GOTOs */
   }
 
-    /*** INKHttpHdrCreate ***/
-  if ((newHttpHdrLoc = INKHttpHdrCreate(newHttpHdrBuf)) == INK_ERROR_PTR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrCreate", "skipping to section 3");
+    /*** TSHttpHdrCreate ***/
+  if ((newHttpHdrLoc = TSHttpHdrCreate(newHttpHdrBuf)) == TS_ERROR_PTR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrCreate", "skipping to section 3");
     goto section_3;             /* Skip to section (3) down the line directly; I hate GOTOs */
   }
 
-  /* Make sure the newly created HTTP header has INKHttpType value of INK_HTTP_TYPE_UNKNOWN */
-  if ((httpType = INKHttpHdrTypeGet(newHttpHdrBuf, newHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrTypeGet", "but still continuing...");
-  } else if (httpType != INK_HTTP_TYPE_UNKNOWN) {
-    LOG_AUTO_ERROR("INKHttpHdrCreate", "Newly created hdr not of type INK_HTTP_TYPE_UNKNOWN");
+  /* Make sure the newly created HTTP header has TSHttpType value of TS_HTTP_TYPE_UNKNOWN */
+  if ((httpType = TSHttpHdrTypeGet(newHttpHdrBuf, newHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrTypeGet", "but still continuing...");
+  } else if (httpType != TS_HTTP_TYPE_UNKNOWN) {
+    LOG_AUTO_ERROR("TSHttpHdrCreate", "Newly created hdr not of type TS_HTTP_TYPE_UNKNOWN");
   }
 
-  /* set the HTTP header type: a new buffer has a type INK_HTTP_TYPE_UNKNOWN by default */
-  if (INKHttpHdrTypeSet(newHttpHdrBuf, newHttpHdrLoc, INK_HTTP_TYPE_REQUEST) == INK_ERROR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrTypeSet", "unable to set it to INK_HTTP_TYPE_REQUEST");
-  } else if ((httpType = INKHttpHdrTypeGet(newHttpHdrBuf, newHttpHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR_COMMENT("INKHttpHdrTypeGet", "still continuing");
-  } else if (httpType != INK_HTTP_TYPE_REQUEST) {
-    LOG_AUTO_ERROR("INKHttpHdrTypeSet", "Type not set to INK_HTTP_TYPE_REQUEST");
+  /* set the HTTP header type: a new buffer has a type TS_HTTP_TYPE_UNKNOWN by default */
+  if (TSHttpHdrTypeSet(newHttpHdrBuf, newHttpHdrLoc, TS_HTTP_TYPE_REQUEST) == TS_ERROR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrTypeSet", "unable to set it to TS_HTTP_TYPE_REQUEST");
+  } else if ((httpType = TSHttpHdrTypeGet(newHttpHdrBuf, newHttpHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR_COMMENT("TSHttpHdrTypeGet", "still continuing");
+  } else if (httpType != TS_HTTP_TYPE_REQUEST) {
+    LOG_AUTO_ERROR("TSHttpHdrTypeSet", "Type not set to TS_HTTP_TYPE_REQUEST");
   }
 
-    /*** INKHttpHdrCopy ***/
-  if (INKHttpHdrCopy(newHttpHdrBuf, newHttpHdrLoc, reqHdrBuf, reqHdrLoc) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrCopy");
+    /*** TSHttpHdrCopy ***/
+  if (TSHttpHdrCopy(newHttpHdrBuf, newHttpHdrLoc, reqHdrBuf, reqHdrLoc) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrCopy");
   }
   getHdrInfo(pNewReqHdrInfo, newHttpHdrBuf, newHttpHdrLoc);
 
   if (!identical_hdr(pNewReqHdrInfo, pReqHdrInfo)) {
-    LOG_AUTO_ERROR("INKHttpHdrCopy", "New req buffer not identical to the original");
+    LOG_AUTO_ERROR("TSHttpHdrCopy", "New req buffer not identical to the original");
   }
 
   printHttpHeader(newHttpHdrBuf, newHttpHdrLoc, REQ, 2);
@@ -1021,80 +1021,80 @@ handleReadRequest(INKCont pCont, INKHttpTxn pTxn)
   FREE(pNewReqHdrInfo->hostName);
 
 section_3:
-    /********* (3): Excercise all the INK__Set on ReqBuf *********/
-  INKDebug(REQ, "--------------------------------");
+    /********* (3): Excercise all the TS__Set on ReqBuf *********/
+  TSDebug(REQ, "--------------------------------");
 
-    /*** INKHttpHdrMethodSet ***/
+    /*** TSHttpHdrMethodSet ***/
   /* save the original method */
-  if ((sHttpMethod = INKHttpHdrMethodGet(reqHdrBuf, reqHdrLoc, &iHttpMethodLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKHttpHdrMethodGet");
+  if ((sHttpMethod = TSHttpHdrMethodGet(reqHdrBuf, reqHdrLoc, &iHttpMethodLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSHttpHdrMethodGet");
   } else {
-    sOldHttpMethod = INKstrndup(sHttpMethod, iHttpMethodLength);
+    sOldHttpMethod = TSstrndup(sHttpMethod, iHttpMethodLength);
   }
   /* change it to some unknown method */
-  if (INKHttpHdrMethodSet(reqHdrBuf, reqHdrLoc, "FOOBAR", strlen("FOOBAR")) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrMethodSet");
+  if (TSHttpHdrMethodSet(reqHdrBuf, reqHdrLoc, "FOOBAR", strlen("FOOBAR")) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrMethodSet");
   } else {
-    if ((sHttpMethod = INKHttpHdrMethodGet(reqHdrBuf, reqHdrLoc, &iHttpMethodLength)) == INK_ERROR_PTR) {
-      LOG_API_ERROR("INKHttpHdrMethodGet");
+    if ((sHttpMethod = TSHttpHdrMethodGet(reqHdrBuf, reqHdrLoc, &iHttpMethodLength)) == TS_ERROR_PTR) {
+      LOG_API_ERROR("TSHttpHdrMethodGet");
     } else if (strncmp(sHttpMethod, "FOOBAR", iHttpMethodLength)) {
-      LOG_AUTO_ERROR("INKHttpHdrMethodSet/Get", "GET method different from SET method");
+      LOG_AUTO_ERROR("TSHttpHdrMethodSet/Get", "GET method different from SET method");
     }
   }
 
-  outputString = INKstrndup(sHttpMethod, iHttpMethodLength);
-  INKDebug(REQ, "(3): new HTTP Header Method = %s", outputString);
+  outputString = TSstrndup(sHttpMethod, iHttpMethodLength);
+  TSDebug(REQ, "(3): new HTTP Header Method = %s", outputString);
   FREE(outputString);
   STR_RELEASE(reqHdrBuf, reqHdrLoc, sHttpMethod);
 
   printHttpHeader(reqHdrBuf, reqHdrLoc, REQ, 3);
 
   /* set it back to the original method */
-  /*INKHttpHdrMethodSet (reqHdrBuf, reqHdrLoc, sOldHttpMethod, iHttpMethodLength); */
-  if (INKHttpHdrMethodSet(reqHdrBuf, reqHdrLoc, sOldHttpMethod, strlen(sOldHttpMethod)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrMethodSet");
-  } else if ((sHttpMethod = INKHttpHdrMethodGet(reqHdrBuf, reqHdrLoc, &iHttpMethodLength)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKHttpHdrMethodGet");
+  /*TSHttpHdrMethodSet (reqHdrBuf, reqHdrLoc, sOldHttpMethod, iHttpMethodLength); */
+  if (TSHttpHdrMethodSet(reqHdrBuf, reqHdrLoc, sOldHttpMethod, strlen(sOldHttpMethod)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrMethodSet");
+  } else if ((sHttpMethod = TSHttpHdrMethodGet(reqHdrBuf, reqHdrLoc, &iHttpMethodLength)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSHttpHdrMethodGet");
   } else if (strncmp(sHttpMethod, sOldHttpMethod, iHttpMethodLength)) {
-    LOG_AUTO_ERROR("INKHttpHdrMethodSet/Get", "GET method different from SET method");
+    LOG_AUTO_ERROR("TSHttpHdrMethodSet/Get", "GET method different from SET method");
   }
 
-  outputString = INKstrndup(sHttpMethod, iHttpMethodLength);
-  INKDebug(REQ, "(3): original HTTP Header Method = %s", outputString);
+  outputString = TSstrndup(sHttpMethod, iHttpMethodLength);
+  TSDebug(REQ, "(3): original HTTP Header Method = %s", outputString);
   FREE(outputString);
   STR_RELEASE(reqHdrBuf, reqHdrLoc, sHttpMethod);
 
 
-    /*** INKHttpHdrVersionSet ***/
+    /*** TSHttpHdrVersionSet ***/
   /* get the original version */
-  if ((iOldHttpVersion = INKHttpHdrVersionGet(reqHdrBuf, reqHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionGet");
+  if ((iOldHttpVersion = TSHttpHdrVersionGet(reqHdrBuf, reqHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionGet");
   }
 
   /* change it to some unknown version */
-  if (INKHttpHdrVersionSet(reqHdrBuf, reqHdrLoc, INK_HTTP_VERSION(10, 10)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionSet");
-  } else if ((iHttpVersion = INKHttpHdrVersionGet(reqHdrBuf, reqHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionGet");
-  } else if ((INK_HTTP_MAJOR(iHttpVersion) != 10) || (INK_HTTP_MINOR(iHttpVersion) != 10)) {
-    LOG_AUTO_ERROR("INKHttpHdrVersionSet/Get", "SET HTTP version different from GET version");
+  if (TSHttpHdrVersionSet(reqHdrBuf, reqHdrLoc, TS_HTTP_VERSION(10, 10)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionSet");
+  } else if ((iHttpVersion = TSHttpHdrVersionGet(reqHdrBuf, reqHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionGet");
+  } else if ((TS_HTTP_MAJOR(iHttpVersion) != 10) || (TS_HTTP_MINOR(iHttpVersion) != 10)) {
+    LOG_AUTO_ERROR("TSHttpHdrVersionSet/Get", "SET HTTP version different from GET version");
   }
 
-  INKDebug(REQ, "(3): new HTTP version; Major = %d   Minor = %d",
-           INK_HTTP_MAJOR(iHttpVersion), INK_HTTP_MINOR(iHttpVersion));
+  TSDebug(REQ, "(3): new HTTP version; Major = %d   Minor = %d",
+           TS_HTTP_MAJOR(iHttpVersion), TS_HTTP_MINOR(iHttpVersion));
 
   /* change it back to the original version */
-  if (INKHttpHdrVersionSet(reqHdrBuf, reqHdrLoc, iOldHttpVersion) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionSet");
-  } else if ((iHttpVersion = INKHttpHdrVersionGet(reqHdrBuf, reqHdrLoc)) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHdrVersionGet");
+  if (TSHttpHdrVersionSet(reqHdrBuf, reqHdrLoc, iOldHttpVersion) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionSet");
+  } else if ((iHttpVersion = TSHttpHdrVersionGet(reqHdrBuf, reqHdrLoc)) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHdrVersionGet");
   } else if (iHttpVersion != iOldHttpVersion) {
-    LOG_AUTO_ERROR("INKHttpHdrVersionSet/Get", "SET HTTP version different from GET version");
+    LOG_AUTO_ERROR("TSHttpHdrVersionSet/Get", "SET HTTP version different from GET version");
   }
 
   getHdrInfo(pNewReqHdrInfo, reqHdrBuf, reqHdrLoc);
   if (!identical_hdr(pNewReqHdrInfo, pReqHdrInfo)) {
-    LOG_AUTO_ERROR("INK..Set", "ReqBuf: Values not restored properly");
+    LOG_AUTO_ERROR("TS..Set", "ReqBuf: Values not restored properly");
   }
 
   /* (3): clean-up */
@@ -1116,8 +1116,8 @@ done:
   freeHdr(pNewReqHdrInfo);
 
   /* release hdrLoc */
-  HANDLE_RELEASE(reqHdrBuf, INK_NULL_MLOC, reqHdrLoc);
-  HANDLE_RELEASE(newHttpHdrBuf, INK_NULL_MLOC, newHttpHdrLoc);
+  HANDLE_RELEASE(reqHdrBuf, TS_NULL_MLOC, reqHdrLoc);
+  HANDLE_RELEASE(newHttpHdrBuf, TS_NULL_MLOC, newHttpHdrLoc);
 
   /* destroy hdr */
   HDR_DESTROY(newHttpHdrBuf, newHttpHdrLoc);
@@ -1126,47 +1126,47 @@ done:
   BUFFER_DESTROY(newHttpHdrBuf);
 
 
-  if (INKHttpTxnReenable(pTxn, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(pTxn, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpTxnReenable");
   }
-  INKDebug(REQ, "..... exiting handleReadRequest ......\n");
+  TSDebug(REQ, "..... exiting handleReadRequest ......\n");
 
 }                               /* handleReadReadRequest */
 
 
 
 static void
-handleTxnStart(INKCont pCont, INKHttpTxn pTxn)
+handleTxnStart(TSCont pCont, TSHttpTxn pTxn)
 {
   LOG_SET_FUNCTION_NAME("handleTxnStart");
 
-  if (INKHttpTxnHookAdd(pTxn, INK_HTTP_READ_REQUEST_HDR_HOOK, pCont) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHookAdd");
+  if (TSHttpTxnHookAdd(pTxn, TS_HTTP_READ_REQUEST_HDR_HOOK, pCont) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHookAdd");
   }
 
-  if (INKHttpTxnHookAdd(pTxn, INK_HTTP_SEND_RESPONSE_HDR_HOOK, pCont) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHookAdd");
+  if (TSHttpTxnHookAdd(pTxn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, pCont) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHookAdd");
   }
 
-  if (INKHttpTxnReenable(pTxn, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(pTxn, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpTxnReenable");
   }
 }
 
 
 static int
-contHandler(INKCont pCont, INKEvent event, void *edata)
+contHandler(TSCont pCont, TSEvent event, void *edata)
 {
-  INKHttpTxn pTxn = (INKHttpTxn) edata;
+  TSHttpTxn pTxn = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_TXN_START:
+  case TS_EVENT_HTTP_TXN_START:
     handleTxnStart(pCont, pTxn);
     return 0;
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
     handleReadRequest(pCont, pTxn);
     return 0;
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     handleSendResponse(pCont, pTxn);
     return 0;
   default:
@@ -1179,15 +1179,15 @@ contHandler(INKCont pCont, INKEvent event, void *edata)
 
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKCont pCont;
+  TSCont pCont;
 
-  LOG_SET_FUNCTION_NAME("INKPluginInit");
+  LOG_SET_FUNCTION_NAME("TSPluginInit");
 
-  if ((pCont = INKContCreate(contHandler, NULL)) == INK_ERROR_PTR) {
-    LOG_API_ERROR("INKContCreate")
-  } else if (INKHttpHookAdd(INK_HTTP_TXN_START_HOOK, pCont) == INK_ERROR) {
-    LOG_API_ERROR("INKHttpHookAdd");
+  if ((pCont = TSContCreate(contHandler, NULL)) == TS_ERROR_PTR) {
+    LOG_API_ERROR("TSContCreate")
+  } else if (TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, pCont) == TS_ERROR) {
+    LOG_API_ERROR("TSHttpHookAdd");
   }
 }

@@ -63,7 +63,7 @@ con_id(0), client_vc(NULL), magic(HTTP_CS_MAGIC_DEAD),
 transact_count(0), half_close(false), conn_decrease(false), bound_ss(NULL),
 read_buffer(NULL), current_reader(NULL), read_state(HCS_INIT),
 ka_vio(NULL), slave_ka_vio(NULL),
-cur_hook_id(INK_HTTP_LAST_HOOK), cur_hook(NULL),
+cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
 cur_hooks(0), backdoor_connect(false), hooks_set(0),
 //session_based_auth(false), m_bAuthComplete(false), secCtx(NULL), m_active(false)
 session_based_auth(false), m_bAuthComplete(false), m_active(false)
@@ -122,7 +122,7 @@ HttpClientSession::allocate()
 }
 
 void
-HttpClientSession::ssn_hook_append(INKHttpHookID id, INKContInternal * cont)
+HttpClientSession::ssn_hook_append(TSHttpHookID id, INKContInternal * cont)
 {
   api_hooks.append(id, cont);
   hooks_set = 1;
@@ -133,7 +133,7 @@ HttpClientSession::ssn_hook_append(INKHttpHookID id, INKContInternal * cont)
 }
 
 void
-HttpClientSession::ssn_hook_prepend(INKHttpHookID id, INKContInternal * cont)
+HttpClientSession::ssn_hook_prepend(TSHttpHookID id, INKContInternal * cont)
 {
   api_hooks.prepend(id, cont);
   hooks_set = 1;
@@ -169,11 +169,11 @@ HttpClientSession::new_transaction()
 }
 
 inline void
-HttpClientSession::do_api_callout(INKHttpHookID id)
+HttpClientSession::do_api_callout(TSHttpHookID id)
 {
 
   cur_hook_id = id;
-  ink_assert(cur_hook_id == INK_HTTP_SSN_START_HOOK || cur_hook_id == INK_HTTP_SSN_CLOSE_HOOK);
+  ink_assert(cur_hook_id == TS_HTTP_SSN_START_HOOK || cur_hook_id == TS_HTTP_SSN_CLOSE_HOOK);
 
   if (hooks_set && backdoor_connect == 0) {
     SET_HANDLER(&HttpClientSession::state_api_callout);
@@ -227,7 +227,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, bool backdoor)
   EThread *ethis = this_ethread();
   ProxyMutexPtr lmutex = this->mutex;
   MUTEX_TAKE_LOCK(lmutex, ethis);
-  do_api_callout(INK_HTTP_SSN_START_HOOK);
+  do_api_callout(TS_HTTP_SSN_START_HOOK);
   MUTEX_UNTAKE_LOCK(lmutex, ethis);
   lmutex.clear();
 }
@@ -306,7 +306,7 @@ HttpClientSession::do_io_close(int alerrno)
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
-    do_api_callout(INK_HTTP_SSN_CLOSE_HOOK);
+    do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
   }
 }
 
@@ -431,7 +431,7 @@ HttpClientSession::state_api_callout(int event, void *data)
   case EVENT_NONE:
   case EVENT_INTERVAL:
   case HTTP_API_CONTINUE:
-    if ((cur_hook_id >= 0) && (cur_hook_id < INK_HTTP_LAST_HOOK)) {
+    if ((cur_hook_id >= 0) && (cur_hook_id < TS_HTTP_LAST_HOOK)) {
       if (!cur_hook) {
         if (cur_hooks == 0) {
           cur_hook = http_global_hooks->get(cur_hook_id);
@@ -463,7 +463,7 @@ HttpClientSession::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
-        hook->invoke(INK_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
+        hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
 
         if (plugin_lock) {
           // BZ 51246
@@ -496,14 +496,14 @@ HttpClientSession::handle_api_return(int event)
   cur_hooks = 0;
 
   switch (cur_hook_id) {
-  case INK_HTTP_SSN_START_HOOK:
+  case TS_HTTP_SSN_START_HOOK:
     if (event != HTTP_API_ERROR) {
       new_transaction();
     } else {
       do_io_close();
     }
     break;
-  case INK_HTTP_SSN_CLOSE_HOOK:
+  case TS_HTTP_SSN_CLOSE_HOOK:
     destroy();
     break;
   default:

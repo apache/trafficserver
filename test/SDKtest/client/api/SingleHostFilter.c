@@ -71,7 +71,7 @@ URL_TYPE select_url_catagory();
 FilterPlugin my_plugin;
 
 void
-INKPluginInit(int client_id)
+TSPluginInit(int client_id)
 {
   my_plugin.requests = 0;
   my_plugin.allowed_requests = 0;
@@ -79,7 +79,7 @@ INKPluginInit(int client_id)
 }
 
 void
-INKOptionsProcess(char *option, char *value)
+TSOptionsProcess(char *option, char *value)
 {
   if (strcmp(option, "target_host") == 0) {
     my_plugin.target_host = strdup(value);
@@ -93,7 +93,7 @@ INKOptionsProcess(char *option, char *value)
 }
 
 void
-INKOptionsProcessFinish()
+TSOptionsProcessFinish()
 {
   if ((strlen(my_plugin.target_host) == 0) || (strlen(my_plugin.target_port) == 0)) {
     my_plugin.direct = 1;
@@ -104,7 +104,7 @@ INKOptionsProcessFinish()
 
 
 void
-INKPluginFinish()
+TSPluginFinish()
 {
   /* do clean up here */
   free(my_plugin.target_host);
@@ -114,7 +114,7 @@ INKPluginFinish()
 
 
 int
-INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
+TSRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
                  char *origin_server_port /* return */ , int max_portname_size,
                  char *request_buf /* return */ , int max_request_size,
                  void **req_id /* return */ )
@@ -151,32 +151,32 @@ INKRequestCreate(char *origin_server_host /* return */ , int max_hostname_size,
 }
 
 
-INKRequestAction
-INKHeaderProcess(void *req_id, char *header, int length, char *request_str)
+TSRequestAction
+TSHeaderProcess(void *req_id, char *header, int length, char *request_str)
 {
   if (strstr(header, "200 OK")) {
-    return INK_KEEP_GOING;
+    return TS_KEEP_GOING;
   }
   /* since SDKtest_client core will treat non 200 response as fail request,
    * we need to specify it as a successful request explicitly
    */
   else if (strstr(header, "403 Forbidden")) {
-    return INK_STOP_SUCCESS;
+    return TS_STOP_SUCCESS;
   } else if (strstr(header, "302 Moved Temporarily")) {
-    return INK_STOP_SUCCESS;
+    return TS_STOP_SUCCESS;
   } else {
-    return INK_STOP_FAIL;
+    return TS_STOP_FAIL;
   }
 }
 
 
 #define safediv(top,bottom) ((bottom) ? (((double)(top))/((double)(bottom))) : (bottom))
 void
-INKReport()
+TSReport()
 {
-  INKReportSingleData("Total Requests", "count", INK_SUM, (double) my_plugin.requests);
-  INKReportSingleData((char *) "Allowed Requests", (char *) "count", INK_SUM, (double) my_plugin.allowed_requests);
-  INKReportSingleData((char *) "Forbidden Requests", (char *) "count", INK_SUM, (double) my_plugin.forbidden_requests);
+  TSReportSingleData("Total Requests", "count", TS_SUM, (double) my_plugin.requests);
+  TSReportSingleData((char *) "Allowed Requests", (char *) "count", TS_SUM, (double) my_plugin.allowed_requests);
+  TSReportSingleData((char *) "Forbidden Requests", (char *) "count", TS_SUM, (double) my_plugin.forbidden_requests);
 }
 
 

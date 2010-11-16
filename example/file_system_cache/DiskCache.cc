@@ -73,7 +73,7 @@ DiskCache::lock(const datum & key, const bool exclusive)
   // add the open file to the openFiles map if it not already there
   // lock the map
   if (pthread_mutex_lock(&_mutex) != 0) {
-    INKDebug("cache_plugin", "[DiskCache::lock] can't get mutex");
+    TSDebug("cache_plugin", "[DiskCache::lock] can't get mutex");
     return -1;
   }
   // lookup
@@ -84,7 +84,7 @@ DiskCache::lock(const datum & key, const bool exclusive)
       if (pthread_mutex_unlock(&_mutex) != 0) {
         abort();
       }
-      INKDebug("cache_plugin", "[DiskCache::lock] file already opened with shared access");
+      TSDebug("cache_plugin", "[DiskCache::lock] file already opened with shared access");
       return -1;
     }
   } else {
@@ -94,7 +94,7 @@ DiskCache::lock(const datum & key, const bool exclusive)
         if (pthread_mutex_unlock(&_mutex) != 0) {
           abort();
         }
-        INKDebug("cache_plugin", "[DiskCache::lock] file already opend with exclusive access");
+        TSDebug("cache_plugin", "[DiskCache::lock] file already opend with exclusive access");
         return -1;
       } else {
         it->second.refcount++;
@@ -119,18 +119,18 @@ DiskCache::lock(const datum & key, const bool exclusive)
   }
 
   if (fd < 0) {
-    INKDebug("cache_plugin", "[DiskCache::lock] can't open the file: %s", path.c_str());
+    TSDebug("cache_plugin", "[DiskCache::lock] can't open the file: %s", path.c_str());
     return -1;
   }
   // try to obtain the lock
   if (exclusive) {
     if (flock(fd, LOCK_EX || LOCK_NB) != 0) {
-      INKDebug("cache_plugin", "[DiskCache::lock] can't get exclusive flock on file: %s", path.c_str());
+      TSDebug("cache_plugin", "[DiskCache::lock] can't get exclusive flock on file: %s", path.c_str());
       return -1;
     }
   } else {
     if (flock(fd, LOCK_EX || LOCK_NB) != 0) {
-      INKDebug("cache_plugin", "[DiskCache::lock] can't get shared flock on file: %s", path.c_str());
+      TSDebug("cache_plugin", "[DiskCache::lock] can't get shared flock on file: %s", path.c_str());
       return -1;
     }
   }
@@ -148,7 +148,7 @@ DiskCache::lock(const datum & key, const bool exclusive)
       if (pthread_mutex_unlock(&_mutex) != 0) {
         abort();
       }
-      INKDebug("cache_plugin", "[DiskCache::lock] file already opened with shared access");
+      TSDebug("cache_plugin", "[DiskCache::lock] file already opened with shared access");
       return -1;
     } else {
       _openFiles[key] = openFile(fd, true);
@@ -267,7 +267,7 @@ DiskCache::aioRead(const datum & key, datum & value, const uint64_t size, const 
   // get the file descriptor from the open file map
   int fd = -1;
   if ((fd = _getFileDescriptor(key, false /* non-exclusive */ )) < 0) {
-    INKDebug("cache_plugin", "[DiskCache::aioRead] can't find file descriptor");
+    TSDebug("cache_plugin", "[DiskCache::aioRead] can't find file descriptor");
     return -1;
   }
   // Set up the AIO request
@@ -296,7 +296,7 @@ DiskCache::aioWrite(const datum & key, const datum & value)
   // get the file descriptor from the open file map
   int fd = -1;
   if ((fd = _getFileDescriptor(key, true)) < 0) {
-    INKDebug("cache_plugin", "[DiskCache::aioWrite] can't find file descriptor");
+    TSDebug("cache_plugin", "[DiskCache::aioWrite] can't find file descriptor");
     return -1;
   }
   // Set up the AIO request
@@ -342,7 +342,7 @@ DiskCache::write(const datum & key, const datum & value)
   // get the file descriptor from the open file map
   int fd = -1;
   if ((fd = _getFileDescriptor(key, true)) < 0) {
-    INKDebug("cache_plugin", "[DiskCache::write] can't find file descriptor");
+    TSDebug("cache_plugin", "[DiskCache::write] can't find file descriptor");
     return -1;
   }
   //cout << "value size: " << value.dsize << endl;
@@ -356,7 +356,7 @@ DiskCache::write(const datum & key, const datum & value)
   }
   //cout << "bytesWritten: " << bytesWritten << endl;
   if (bytesWritten < 0) {
-    INKDebug("cache_plugin", "[DiskCache::write] 0 bytes written");
+    TSDebug("cache_plugin", "[DiskCache::write] 0 bytes written");
     return -1;
   }
 
@@ -371,7 +371,7 @@ DiskCache::read(const datum & key, datum & value, const uint64_t size, const uin
   // get the file descriptor from the open file map
   int fd = -1;
   if ((fd = _getFileDescriptor(key, false /* non-exclusive */ )) < 0) {
-    INKDebug("cache_plugin", "[DiskCache::read] can't find file descriptor");
+    TSDebug("cache_plugin", "[DiskCache::read] can't find file descriptor");
     return -1;
   }
 
@@ -385,7 +385,7 @@ DiskCache::read(const datum & key, datum & value, const uint64_t size, const uin
   }
   //cout << "bytesRead: " << bytesRead << endl;
   if (bytesRead < 0) {
-    INKDebug("cache_plugin", "[DiskCache::read] 0 bytes read, offset: %llu, size: %llu", offset, size);
+    TSDebug("cache_plugin", "[DiskCache::read] 0 bytes read, offset: %llu, size: %llu", offset, size);
     //perror("read error:");
     return -1;
   }
@@ -402,13 +402,13 @@ DiskCache::remove(const datum & key)
   int fd = -1;
 
   if ((fd = _getFileDescriptor(key, true, true)) < 0) {
-    INKDebug("cache_plugin", "[DiskCache::remove] can't find file descriptor");
+    TSDebug("cache_plugin", "[DiskCache::remove] can't find file descriptor");
     return -1;
   }
   // truncate the file
   int rval = ftruncate(fd, 0);
   if (rval != 0) {
-    INKDebug("cache_plugin", "[DiskCache::remove] error truncating file");
+    TSDebug("cache_plugin", "[DiskCache::remove] error truncating file");
   }
   return rval;
 }
@@ -470,8 +470,8 @@ DiskCache::_makeDirectoryRecursive(const string & path, uint32_t numberDirectori
       string fullPath = path + dirName;
       if (mkdir(fullPath.c_str(), 0755) == -1) {
         if (errno != EEXIST) {
-          INKDebug("cache_plugin", "Couldn't create the cache directory: %s", fullPath.c_str());
-          INKError("Couldn't create the  cache directory: %s", fullPath.c_str());
+          TSDebug("cache_plugin", "Couldn't create the cache directory: %s", fullPath.c_str());
+          TSError("Couldn't create the  cache directory: %s", fullPath.c_str());
 
           return 1;
         }

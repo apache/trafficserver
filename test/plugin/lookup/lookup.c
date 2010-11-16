@@ -35,14 +35,14 @@
    Log macros for error code return verification
 **************************************************/
 #define PLUGIN_NAME "lookup"
-#define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))
+#define VALID_POINTER(X) ((X != NULL) && (X != TS_ERROR_PTR))
 #define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 #define LOG_ERROR(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 #define LOG_ERROR_NEG(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 #define LOG_ERROR_AND_RETURN(API_NAME) { \
@@ -55,7 +55,7 @@
 }
 #define LOG_ERROR_AND_REENABLE(API_NAME) { \
   LOG_ERROR(API_NAME); \
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE); \
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE); \
 }
 
 /********************************************************
@@ -74,7 +74,7 @@ const char *HOSTNAME_HDR = "Hostname";
 const char *HOSTNAME_LENGTH_HDR = "Hostname-Length";
 static char *HOSTNAME;
 static int HOSTNAME_LENGTH;
-INKMutex HOSTNAME_LOCK;
+TSMutex HOSTNAME_LOCK;
 
 /*************************************************
    Structure to store the txn continuation data
@@ -85,17 +85,17 @@ typedef struct
   int cache_lookup_status;
   int client_port;
   unsigned int ip_address;
-  INKHttpTxn txnp;
+  TSHttpTxn txnp;
 } ContData;
 
 /*******************************************************/
 /* Convert cache lookup status from constant to string */
 /*******************************************************/
 char *cacheLookupResult[] = {
-  "INK_CACHE_LOOKUP_MISS",
-  "INK_CACHE_LOOKUP_HIT_STALE",
-  "INK_CACHE_LOOKUP_HIT_FRESH",
-  "INK_CACHE_LOOKUP_SKIPPED"
+  "TS_CACHE_LOOKUP_MISS",
+  "TS_CACHE_LOOKUP_HIT_STALE",
+  "TS_CACHE_LOOKUP_HIT_FRESH",
+  "TS_CACHE_LOOKUP_SKIPPED"
 };
 
 
@@ -103,20 +103,20 @@ char *cacheLookupResult[] = {
    Allocate and initialize the continuation data
 **************************************************/
 void
-initContData(INKCont txn_contp)
+initContData(TSCont txn_contp)
 {
   LOG_SET_FUNCTION_NAME("initContData");
 
   ContData *contData;
 
-  contData = (ContData *) INKmalloc(sizeof(ContData));
+  contData = (ContData *) TSmalloc(sizeof(ContData));
   contData->called_cache = 0;
   contData->cache_lookup_status = -1;
   contData->client_port = 0;
   contData->ip_address = 0;
   contData->txnp = NULL;
-  if (INKContDataSet(txn_contp, contData) == INK_ERROR) {
-    LOG_ERROR("INKContDataSet");
+  if (TSContDataSet(txn_contp, contData) == TS_ERROR) {
+    LOG_ERROR("TSContDataSet");
   }
 }
 
@@ -124,17 +124,17 @@ initContData(INKCont txn_contp)
    Cleanup the txn continuation data
 **************************************/
 void
-destroyContData(INKCont txn_contp)
+destroyContData(TSCont txn_contp)
 {
   LOG_SET_FUNCTION_NAME("destroyContData");
 
   ContData *contData;
-  contData = INKContDataGet(txn_contp);
-  if (contData == INK_ERROR_PTR) {
-    LOG_ERROR("INKContDataGet");
+  contData = TSContDataGet(txn_contp);
+  if (contData == TS_ERROR_PTR) {
+    LOG_ERROR("TSContDataGet");
   } else {
     /* txn_contp->txnp = NULL; */
-    INKfree(contData);
+    TSfree(contData);
   }
 }
 
@@ -145,14 +145,14 @@ destroyContData(INKCont txn_contp)
 **************************************/
 /* Comment out because it seems to be
    working at every hook after
-   INK_HTTP_TXN_CACHE_LOOKUP_COMPLETE */
-/* void neg_cache_lookup_bad_hook(INKHttpTxn txnp) { */
+   TS_HTTP_TXN_CACHE_LOOKUP_COMPLETE */
+/* void neg_cache_lookup_bad_hook(TSHttpTxn txnp) { */
 /*     LOG_SET_FUNCTION_NAME("neg_cache_lookup_bad_hook"); */
 
 /*     int cache_lookup = 0; */
-/*     if (INKHttpTxnCacheLookupStatusGet(txnp, &cache_lookup) != INK_ERROR) { */
-/* 	LOG_ERROR_NEG("INKHttpTxnCacheLookupStatusGet"); */
-/* 	INKDebug(DEBUG_TAG, */
+/*     if (TSHttpTxnCacheLookupStatusGet(txnp, &cache_lookup) != TS_ERROR) { */
+/* 	LOG_ERROR_NEG("TSHttpTxnCacheLookupStatusGet"); */
+/* 	TSDebug(DEBUG_TAG, */
 /* 		 "neg_cache_lookup_bad_hook, Got %s\n", cacheLookupResult[cache_lookup]); */
 /*     }  */
 /* } */
@@ -168,8 +168,8 @@ neg_cache_lookup_bad_arg()
   LOG_SET_FUNCTION_NAME("neg_cache_lookup_bad_arg");
 
   int cache_lookup = 0;
-  if (INKHttpTxnCacheLookupStatusGet(NULL, &cache_lookup) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpTxnCacheLookupStatusGet");
+  if (TSHttpTxnCacheLookupStatusGet(NULL, &cache_lookup) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpTxnCacheLookupStatusGet");
   }
 }
 
@@ -178,33 +178,33 @@ neg_cache_lookup_bad_arg()
     neg1_host_lookup
 **************************************/
 static int
-fake_handler1(INKCont fake_contp, INKEvent event, void *edata)
+fake_handler1(TSCont fake_contp, TSEvent event, void *edata)
 {
 
-  INKDebug(NEG_DEBUG_TAG, "Received event %d", event);
-  INKContDestroy(fake_contp);
+  TSDebug(NEG_DEBUG_TAG, "Received event %d", event);
+  TSContDestroy(fake_contp);
   return 0;
 }
 
 /**************************************
     Fake handler used for neg test
-    INKHttpHookAdd
+    TSHttpHookAdd
 **************************************/
 static int
-fake_handler2(INKCont fake_contp, INKEvent event, void *edata)
+fake_handler2(TSCont fake_contp, TSEvent event, void *edata)
 {
   LOG_SET_FUNCTION_NAME("fake_handler2");
 
-  INKDebug(NEG_DEBUG_TAG, "Received event %d", event);
-  INKContDestroy(fake_contp);
-  LOG_ERROR_NEG("INKHttpHookAdd");
-  INKHttpTxnReenable((INKHttpTxn) edata, INK_EVENT_HTTP_CONTINUE);
+  TSDebug(NEG_DEBUG_TAG, "Received event %d", event);
+  TSContDestroy(fake_contp);
+  LOG_ERROR_NEG("TSHttpHookAdd");
+  TSHttpTxnReenable((TSHttpTxn) edata, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
 
 /**************************************
     Negative testing 1 for host lookup:
-    Call the INKHostLookup with bad
+    Call the TSHostLookup with bad
     arguments and verify it returns an
     error
 **************************************/
@@ -213,35 +213,35 @@ neg1_host_lookup()
 {
   LOG_SET_FUNCTION_NAME("neg1_host_lookup");
 
-  INKCont fake_contp1, fake_contp2;
-  INKAction pending_action;
+  TSCont fake_contp1, fake_contp2;
+  TSAction pending_action;
 
   /* Create fake continuations */
-  fake_contp1 = INKContCreate(fake_handler1, INKMutexCreate());
-  fake_contp2 = INKContCreate(fake_handler1, INKMutexCreate());
+  fake_contp1 = TSContCreate(fake_handler1, TSMutexCreate());
+  fake_contp2 = TSContCreate(fake_handler1, TSMutexCreate());
 
   /* call with NULL continuation */
-  pending_action = INKHostLookup(NULL, HOSTNAME, HOSTNAME_LENGTH);
-  if (pending_action != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKHostLookup");
+  pending_action = TSHostLookup(NULL, HOSTNAME, HOSTNAME_LENGTH);
+  if (pending_action != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSHostLookup");
   } else {
     /* Call with NULL hostname */
-    pending_action = INKHostLookup(fake_contp1, NULL, HOSTNAME_LENGTH);
-    if (pending_action != INK_ERROR_PTR) {
-      LOG_ERROR_NEG("INKHostLookup");
+    pending_action = TSHostLookup(fake_contp1, NULL, HOSTNAME_LENGTH);
+    if (pending_action != TS_ERROR_PTR) {
+      LOG_ERROR_NEG("TSHostLookup");
     } else {
       /* Destroy fake_contp1 */
-      INKContDestroy(fake_contp1);
+      TSContDestroy(fake_contp1);
 
       /* Call with a 0 HOSTNAME_LENGTH */
       /* Use different continuation to call this API because it is reentrant,
          i.e. we might use fake_contp1 while it has already been destroyed */
-      pending_action = INKHostLookup(fake_contp2, HOSTNAME, 0);
-      if (pending_action != INK_ERROR_PTR) {
-        LOG_ERROR_NEG("INKHostLookup");
+      pending_action = TSHostLookup(fake_contp2, HOSTNAME, 0);
+      if (pending_action != TS_ERROR_PTR) {
+        LOG_ERROR_NEG("TSHostLookup");
       } else {
         /* Destroy fake_contp2 */
-        INKContDestroy(fake_contp2);
+        TSContDestroy(fake_contp2);
       }
     }
   }
@@ -249,7 +249,7 @@ neg1_host_lookup()
 
 /**************************************
     Negative testing 2 for host lookup:
-    Call the INKHostLookupResultIPGet
+    Call the TSHostLookupResultIPGet
     with NULL lookup result and verify
     it returns an error
 **************************************/
@@ -261,42 +261,42 @@ neg2_host_lookup()
   unsigned int ip;
 
   /* call with NULL lookup result */
-  if (INKHostLookupResultIPGet(NULL, &ip) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHostLookupResultIPGet");
+  if (TSHostLookupResultIPGet(NULL, &ip) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHostLookupResultIPGet");
   }
 }
 
 /**************************************************
     This function is called to verify that the
-    value returned by INKHttpTxnClientRemotePortGet
+    value returned by TSHttpTxnClientRemotePortGet
     remains consistent along the HTTP state machine
 ***************************************************/
 int
-check_client_port(INKHttpTxn txnp, ContData * contData)
+check_client_port(TSHttpTxn txnp, ContData * contData)
 {
   LOG_SET_FUNCTION_NAME("check_client_port");
 
   int clientPortGot = 0;
 
-  /* INKHttpTxnClientRemotePortGet  */
-  if (INKHttpTxnClientRemotePortGet(txnp, &clientPortGot) == INK_ERROR) {
-    LOG_ERROR_AND_RETURN("INKHttpTxnClientRemotePortGet");
+  /* TSHttpTxnClientRemotePortGet  */
+  if (TSHttpTxnClientRemotePortGet(txnp, &clientPortGot) == TS_ERROR) {
+    LOG_ERROR_AND_RETURN("TSHttpTxnClientRemotePortGet");
   } else {
-    INKDebug(DEBUG_TAG, "INKHttpTxnClientRemotePortGet returned %d", clientPortGot);
+    TSDebug(DEBUG_TAG, "TSHttpTxnClientRemotePortGet returned %d", clientPortGot);
     /* Make sure the client port was set at Read_request hook, to avoid
        firing the assert because the client aborted */
     if (contData->client_port != 0) {
       if (clientPortGot != contData->client_port) {
-        INKDebug(DEBUG_TAG, "Bad client port: Expected %d, Got %d", contData->client_port, clientPortGot);
-        INKReleaseAssert(!"INKHttpTxnClientRemotePortGet returned bad client port");
+        TSDebug(DEBUG_TAG, "Bad client port: Expected %d, Got %d", contData->client_port, clientPortGot);
+        TSReleaseAssert(!"TSHttpTxnClientRemotePortGet returned bad client port");
       }
     }
   }
 
 /* NEGATIVE TEST for client port */
 #ifdef DEBUG
-  if (INKHttpTxnClientRemotePortGet(NULL, &clientPortGot) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpTxnClientRemotePortGet");
+  if (TSHttpTxnClientRemotePortGet(NULL, &clientPortGot) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpTxnClientRemotePortGet");
   }
 #endif
 
@@ -307,21 +307,21 @@ check_client_port(INKHttpTxn txnp, ContData * contData)
    Release the txn_contp data and destroy it
 ***************************************************/
 int
-handle_txn_close(INKHttpTxn txnp, INKCont txn_contp)
+handle_txn_close(TSHttpTxn txnp, TSCont txn_contp)
 {
   LOG_SET_FUNCTION_NAME("handle_txn_close");
 
 /* NEGATIVE TEST for cache lookup */
 #ifdef DEBUG
 /*     neg_cache_lookup_bad_hook(txnp); */
-/*     INKDebug(DEBUG_TAG, */
+/*     TSDebug(DEBUG_TAG, */
 /* 	     "NEGATIVE test cache lookup bad hook in %s passed", FUNCTION_NAME); */
   neg_cache_lookup_bad_arg();
 #endif
 
   destroyContData(txn_contp);
-  if (INKContDestroy(txn_contp) == INK_ERROR) {
-    LOG_ERROR("INKContDestroy");
+  if (TSContDestroy(txn_contp) == TS_ERROR) {
+    LOG_ERROR("TSContDestroy");
   }
 
   return 0;
@@ -331,35 +331,35 @@ handle_txn_close(INKHttpTxn txnp, INKCont txn_contp)
    Insert the Host-IP header in the client response
 ***************************************************/
 int
-handle_send_response(INKHttpTxn txnp, ContData * contData)
+handle_send_response(TSHttpTxn txnp, ContData * contData)
 {
   LOG_SET_FUNCTION_NAME("handle_send_response");
 
   char ipGot[100];
   char temp[25];
-  INKMBuffer respBuf;
-  INKMLoc respLoc, hostIPLoc;
+  TSMBuffer respBuf;
+  TSMLoc respLoc, hostIPLoc;
 
   /* Check Client Port is consistent */
   check_client_port(txnp, contData);
 
   /*  Get client response */
-  if (!INKHttpTxnClientRespGet(txnp, &respBuf, &respLoc)) {
-    LOG_ERROR_AND_RETURN("INKHttpTxnClientRespGet");
+  if (!TSHttpTxnClientRespGet(txnp, &respBuf, &respLoc)) {
+    LOG_ERROR_AND_RETURN("TSHttpTxnClientRespGet");
   }
 
   /* Create Host-IP header */
-  hostIPLoc = INKMimeHdrFieldCreate(respBuf, respLoc);
-  if (hostIPLoc == INK_ERROR_PTR) {
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldCreate");
+  hostIPLoc = TSMimeHdrFieldCreate(respBuf, respLoc);
+  if (hostIPLoc == TS_ERROR_PTR) {
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldCreate");
   }
   /* Append Host-IP hdr to client response */
-  if (INKMimeHdrFieldAppend(respBuf, respLoc, hostIPLoc) == INK_ERROR) {
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldAppend");
+  if (TSMimeHdrFieldAppend(respBuf, respLoc, hostIPLoc) == TS_ERROR) {
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldAppend");
   }
   /* Set Host-IP hdr Name */
-  if (INKMimeHdrFieldNameSet(respBuf, respLoc, hostIPLoc, HOSTIP_HDR, strlen(HOSTIP_HDR))) {
-    LOG_ERROR_AND_CLEANUP("INKMimeHdrFieldNameSet");
+  if (TSMimeHdrFieldNameSet(respBuf, respLoc, hostIPLoc, HOSTIP_HDR, strlen(HOSTIP_HDR))) {
+    LOG_ERROR_AND_CLEANUP("TSMimeHdrFieldNameSet");
   }
   /* Get Host-IP hdr value from unsigned integer to a string */
   if (contData->ip_address != 0) {
@@ -373,31 +373,31 @@ handle_send_response(INKHttpTxn txnp, ContData * contData)
     strcat(ipGot, ".");
     sprintf(temp, "%u", IP_d(contData->ip_address));
     strcat(ipGot, temp);
-    INKDebug(DEBUG_TAG, "IP@ = %s", ipGot);
+    TSDebug(DEBUG_TAG, "IP@ = %s", ipGot);
   } else {
     sprintf(ipGot, "%d", 0);
   }
   /* Set Host-IP hdr value */
-  if (INKMimeHdrFieldValueStringSet(respBuf, respLoc, hostIPLoc, -1, ipGot, -1) == INK_ERROR) {
-    LOG_ERROR("INKMimeHdrFieldValueStringSet");
+  if (TSMimeHdrFieldValueStringSet(respBuf, respLoc, hostIPLoc, -1, ipGot, -1) == TS_ERROR) {
+    LOG_ERROR("TSMimeHdrFieldValueStringSet");
   }
 
 Lcleanup:
   if (VALID_POINTER(hostIPLoc)) {
-    if (INKHandleMLocRelease(respBuf, respLoc, hostIPLoc) == INK_ERROR) {
-      LOG_ERROR("INKHandleMLocRelease");
+    if (TSHandleMLocRelease(respBuf, respLoc, hostIPLoc) == TS_ERROR) {
+      LOG_ERROR("TSHandleMLocRelease");
     }
   }
   if (VALID_POINTER(respLoc)) {
-    if (INKHandleMLocRelease(respBuf, INK_NULL_MLOC, respLoc) == INK_ERROR) {
-      LOG_ERROR("INKHandleMLocRelease");
+    if (TSHandleMLocRelease(respBuf, TS_NULL_MLOC, respLoc) == TS_ERROR) {
+      LOG_ERROR("TSHandleMLocRelease");
     }
   }
 
 /* NEGATIVE TEST for cache lookup */
 #ifdef DEBUG
 /*     neg_cache_lookup_bad_hook(txnp); */
-/*     INKDebug(DEBUG_TAG, */
+/*     TSDebug(DEBUG_TAG, */
 /* 	     "NEGATIVE test cache lookup bad hook in %s passed", FUNCTION_NAME); */
   neg_cache_lookup_bad_arg();
 #endif
@@ -410,7 +410,7 @@ Lcleanup:
    Verify cache lookup is consistent
 ***************************************************/
 int
-handle_read_response(INKHttpTxn txnp, ContData * contData)
+handle_read_response(TSHttpTxn txnp, ContData * contData)
 {
   LOG_SET_FUNCTION_NAME("handle_read_response");
 
@@ -418,13 +418,13 @@ handle_read_response(INKHttpTxn txnp, ContData * contData)
   check_client_port(txnp, contData);
 
   /* Verify cache_lookup_status is consistent */
-  /* Should not be a INK_CACHE_LOOKUP_HIT_FRESH */
-  INKReleaseAssert(contData->cache_lookup_status != INK_CACHE_LOOKUP_HIT_FRESH);
+  /* Should not be a TS_CACHE_LOOKUP_HIT_FRESH */
+  TSReleaseAssert(contData->cache_lookup_status != TS_CACHE_LOOKUP_HIT_FRESH);
 
 /* NEGATIVE TEST for cache lookup */
 #ifdef DEBUG
 /*     neg_cache_lookup_bad_hook(txnp); */
-/*     INKDebug(DEBUG_TAG, */
+/*     TSDebug(DEBUG_TAG, */
 /* 	     "NEGATIVE test cache lookup bad hook in %s passed", FUNCTION_NAME); */
   neg_cache_lookup_bad_arg();
 #endif
@@ -437,7 +437,7 @@ handle_read_response(INKHttpTxn txnp, ContData * contData)
    Verify cache lookup is consistent
 ***************************************************/
 int
-handle_send_request(INKHttpTxn txnp, ContData * contData)
+handle_send_request(TSHttpTxn txnp, ContData * contData)
 {
   LOG_SET_FUNCTION_NAME("handle_send_request");
 
@@ -445,13 +445,13 @@ handle_send_request(INKHttpTxn txnp, ContData * contData)
   check_client_port(txnp, contData);
 
   /* Verify cache_lookup_status is consistent */
-  /* Should not be a INK_CACHE_LOOKUP_HIT_FRESH */
-  INKReleaseAssert(contData->cache_lookup_status != INK_CACHE_LOOKUP_HIT_FRESH);
+  /* Should not be a TS_CACHE_LOOKUP_HIT_FRESH */
+  TSReleaseAssert(contData->cache_lookup_status != TS_CACHE_LOOKUP_HIT_FRESH);
 
 /* NEGATIVE TEST for cache lookup */
 #ifdef DEBUG
 /*     neg_cache_lookup_bad_hook(txnp); */
-/*     INKDebug(DEBUG_TAG, */
+/*     TSDebug(DEBUG_TAG, */
 /* 	     "NEGATIVE test cache lookup bad hook in %s passed", FUNCTION_NAME); */
   neg_cache_lookup_bad_arg();
 #endif
@@ -464,7 +464,7 @@ handle_send_request(INKHttpTxn txnp, ContData * contData)
    Set cache_lookup_status
 ***************************************************/
 int
-handle_cache_lookup_complete(INKHttpTxn txnp, ContData * contData)
+handle_cache_lookup_complete(TSHttpTxn txnp, ContData * contData)
 {
   LOG_SET_FUNCTION_NAME("handle_cache_lookup_complete");
 
@@ -475,25 +475,25 @@ handle_cache_lookup_complete(INKHttpTxn txnp, ContData * contData)
   /* Cache Lookup */
     /****************/
   /* Get cache lookup status */
-  if (INKHttpTxnCacheLookupStatusGet(txnp, &contData->cache_lookup_status) == INK_ERROR) {
-    LOG_ERROR_AND_RETURN("INKHttpTxnCacheLookupStatusGet");
+  if (TSHttpTxnCacheLookupStatusGet(txnp, &contData->cache_lookup_status) == TS_ERROR) {
+    LOG_ERROR_AND_RETURN("TSHttpTxnCacheLookupStatusGet");
   }
-  INKDebug(DEBUG_TAG, "Got cache lookup status %s", cacheLookupResult[contData->cache_lookup_status]);
+  TSDebug(DEBUG_TAG, "Got cache lookup status %s", cacheLookupResult[contData->cache_lookup_status]);
   /* Verify cache_lookup_status and called_cache are consistent */
-  if (contData->cache_lookup_status == INK_CACHE_LOOKUP_MISS) {
+  if (contData->cache_lookup_status == TS_CACHE_LOOKUP_MISS) {
     /* called_cache should not be set */
-    INKReleaseAssert(!contData->called_cache);
-  } else if (contData->cache_lookup_status == INK_CACHE_LOOKUP_HIT_STALE) {
+    TSReleaseAssert(!contData->called_cache);
+  } else if (contData->cache_lookup_status == TS_CACHE_LOOKUP_HIT_STALE) {
     /* called_cache should be set */
-    INKReleaseAssert(contData->called_cache);
-  } else if (contData->cache_lookup_status == INK_CACHE_LOOKUP_HIT_FRESH) {
+    TSReleaseAssert(contData->called_cache);
+  } else if (contData->cache_lookup_status == TS_CACHE_LOOKUP_HIT_FRESH) {
     /* called_cache should be set */
-    INKReleaseAssert(contData->called_cache);
-  } else if (contData->cache_lookup_status == INK_CACHE_LOOKUP_SKIPPED) {
+    TSReleaseAssert(contData->called_cache);
+  } else if (contData->cache_lookup_status == TS_CACHE_LOOKUP_SKIPPED) {
     /* called_cache should not be set */
-    INKReleaseAssert(!contData->called_cache);
+    TSReleaseAssert(!contData->called_cache);
   } else
-    INKReleaseAssert(!"Bad Cache Lookup Status");
+    TSReleaseAssert(!"Bad Cache Lookup Status");
 
 /* NEGATIVE TEST for cache lookup */
 #ifdef DEBUG
@@ -508,7 +508,7 @@ handle_cache_lookup_complete(INKHttpTxn txnp, ContData * contData)
    Set called_cache
 ***************************************************/
 int
-handle_read_cache(INKHttpTxn txnp, ContData * contData)
+handle_read_cache(TSHttpTxn txnp, ContData * contData)
 {
   LOG_SET_FUNCTION_NAME("handle_read_cache");
 
@@ -521,7 +521,7 @@ handle_read_cache(INKHttpTxn txnp, ContData * contData)
 /* NEGATIVE TEST for cache lookup */
 #ifdef DEBUG
 /*     neg_cache_lookup_bad_hook(txnp); */
-/*     INKDebug(DEBUG_TAG, */
+/*     TSDebug(DEBUG_TAG, */
 /* 	     "NEGATIVE test cache lookup bad hook in %s passed", FUNCTION_NAME); */
   neg_cache_lookup_bad_arg();
 #endif
@@ -533,49 +533,49 @@ handle_read_cache(INKHttpTxn txnp, ContData * contData)
    Set client_port
    Parse HOSTNAME and HOSTNAME-LENGTH from client
    request
-   Call INKHostLookup
+   Call TSHostLookup
 ***************************************************/
 int
-handle_read_request(INKHttpTxn txnp, INKCont txn_contp)
+handle_read_request(TSHttpTxn txnp, TSCont txn_contp)
 {
   LOG_SET_FUNCTION_NAME("handle_read_request");
 
   int clientPortGot = 0;
   const char *hostnameString = NULL, *hostnameLengthString = NULL;
   int hostnameStringLength = 0, hostnameLengthStringLength = 0;
-  INKMBuffer clientReqBuf;
-  INKMLoc clientReqLoc, hostnameLoc, hostnameLengthLoc;
+  TSMBuffer clientReqBuf;
+  TSMLoc clientReqLoc, hostnameLoc, hostnameLengthLoc;
   ContData *contData;
 
   /* Get client request */
-  if (!INKHttpTxnClientReqGet(txnp, &clientReqBuf, &clientReqLoc)) {
-    LOG_ERROR_AND_RETURN("INKHttpTxnClientReqGet");
+  if (!TSHttpTxnClientReqGet(txnp, &clientReqBuf, &clientReqLoc)) {
+    LOG_ERROR_AND_RETURN("TSHttpTxnClientReqGet");
   }
 
     /***************/
   /* Client port */
     /***************/
   /* Get txn_contp data pointer */
-  contData = INKContDataGet(txn_contp);
-  if (contData == INK_ERROR_PTR) {
-    LOG_ERROR("INKContDataGet");
+  contData = TSContDataGet(txn_contp);
+  if (contData == TS_ERROR_PTR) {
+    LOG_ERROR("TSContDataGet");
   } else {
-    /* INKHttpTxnClientRemotePortGet  */
-    if (INKHttpTxnClientRemotePortGet(txnp, &contData->client_port) == INK_ERROR) {
-      LOG_ERROR_AND_CLEANUP("INKHttpTxnClientRemotePortGet");
+    /* TSHttpTxnClientRemotePortGet  */
+    if (TSHttpTxnClientRemotePortGet(txnp, &contData->client_port) == TS_ERROR) {
+      LOG_ERROR_AND_CLEANUP("TSHttpTxnClientRemotePortGet");
     } else {
-      INKDebug(DEBUG_TAG, "INKHttpTxnClientRemotePortGet returned %d", contData->client_port);
+      TSDebug(DEBUG_TAG, "TSHttpTxnClientRemotePortGet returned %d", contData->client_port);
     }
   }
 
 /* NEGATIVE TEST for client port, cache lookup and host lookup */
 #ifdef DEBUG
-  if (INKHttpTxnClientRemotePortGet(NULL, &clientPortGot) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpTxnClientRemotePortGet");
+  if (TSHttpTxnClientRemotePortGet(NULL, &clientPortGot) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpTxnClientRemotePortGet");
   }
 
 /*     neg_cache_lookup_bad_hook(txnp); */
-/*     INKDebug(DEBUG_TAG, */
+/*     TSDebug(DEBUG_TAG, */
 /* 	     "NEGATIVE test cache lookup bad hook in %s passed", FUNCTION_NAME); */
   neg_cache_lookup_bad_arg();
 
@@ -586,97 +586,97 @@ handle_read_request(INKHttpTxn txnp, INKCont txn_contp)
 #endif
 
     /*****************/
-  /* INKHostLookup */
+  /* TSHostLookup */
     /*****************/
   /* Get "Hostname" header */
-  hostnameLoc = INKMimeHdrFieldFind(clientReqBuf, clientReqLoc, HOSTNAME_HDR, strlen(HOSTNAME_HDR));
-  if (hostnameLoc == INK_ERROR_PTR) {
-    LOG_ERROR("INKMimeHdrFieldFind");
+  hostnameLoc = TSMimeHdrFieldFind(clientReqBuf, clientReqLoc, HOSTNAME_HDR, strlen(HOSTNAME_HDR));
+  if (hostnameLoc == TS_ERROR_PTR) {
+    LOG_ERROR("TSMimeHdrFieldFind");
   } else if (!hostnameLoc) {
     /* Client did not send header, use default */
-    INKDebug(DEBUG_TAG, "No Hostname header in client's request");
+    TSDebug(DEBUG_TAG, "No Hostname header in client's request");
   } else {
     /* Get the hostname value. If fails use default */
-    if (INKMimeHdrFieldValueStringGet
-        (clientReqBuf, clientReqLoc, hostnameLoc, 0, &hostnameString, &hostnameStringLength) == INK_ERROR) {
-      LOG_ERROR("INKMimeHdrFieldValueStringGet");
+    if (TSMimeHdrFieldValueStringGet
+        (clientReqBuf, clientReqLoc, hostnameLoc, 0, &hostnameString, &hostnameStringLength) == TS_ERROR) {
+      LOG_ERROR("TSMimeHdrFieldValueStringGet");
     } else if ((!hostnameString) || (hostnameStringLength == 0)) {
       /* Client sent header without value  */
-      INKDebug(DEBUG_TAG, "No Hostname header value in client's request");
+      TSDebug(DEBUG_TAG, "No Hostname header value in client's request");
     } else {
       /* Set HOSTNAME */
-      if (INKMutexLock(HOSTNAME_LOCK) == INK_ERROR) {
-        LOG_ERROR("INKMutexLock");
+      if (TSMutexLock(HOSTNAME_LOCK) == TS_ERROR) {
+        LOG_ERROR("TSMutexLock");
       }
-      /* 1rst free the previous INKstrdup */
-      INKfree(HOSTNAME);
-      HOSTNAME = INKstrdup(hostnameString);
-      INKMutexUnlock(HOSTNAME_LOCK);
+      /* 1rst free the previous TSstrdup */
+      TSfree(HOSTNAME);
+      HOSTNAME = TSstrdup(hostnameString);
+      TSMutexUnlock(HOSTNAME_LOCK);
     }
   }
   /* Get "Hostname-Length" header */
-  hostnameLengthLoc = INKMimeHdrFieldFind(clientReqBuf, clientReqLoc, HOSTNAME_LENGTH_HDR, strlen(HOSTNAME_LENGTH_HDR));
-  if (hostnameLengthLoc == INK_ERROR_PTR) {
-    LOG_ERROR("INKMimeHdrFieldFind");
+  hostnameLengthLoc = TSMimeHdrFieldFind(clientReqBuf, clientReqLoc, HOSTNAME_LENGTH_HDR, strlen(HOSTNAME_LENGTH_HDR));
+  if (hostnameLengthLoc == TS_ERROR_PTR) {
+    LOG_ERROR("TSMimeHdrFieldFind");
   } else if (!hostnameLengthLoc) {
     /* Client did not send header, use default */
-    INKDebug(DEBUG_TAG, "No Hostname-Length header in client's request");
+    TSDebug(DEBUG_TAG, "No Hostname-Length header in client's request");
   } else {
     /* Get the hostname length value. If fails use default */
-    if (INKMimeHdrFieldValueStringGet
+    if (TSMimeHdrFieldValueStringGet
         (clientReqBuf, clientReqLoc, hostnameLengthLoc, 0, &hostnameLengthString,
-         &hostnameLengthStringLength) == INK_ERROR) {
-      LOG_ERROR("INKMimeHdrFieldValueStringGet");
+         &hostnameLengthStringLength) == TS_ERROR) {
+      LOG_ERROR("TSMimeHdrFieldValueStringGet");
     } else if ((!hostnameLengthString) || (hostnameLengthStringLength == 0)) {
       /* Client sent header without value  */
-      INKDebug(DEBUG_TAG, "No Hostname-Length header value in client's request");
+      TSDebug(DEBUG_TAG, "No Hostname-Length header value in client's request");
     } else {
       if (!isnan(atoi(hostnameLengthString))) {
         /* Set HOSTNAME_LENGTH */
-        if (INKMutexLock(HOSTNAME_LOCK) == INK_ERROR) {
-          LOG_ERROR("INKMutexLock");
+        if (TSMutexLock(HOSTNAME_LOCK) == TS_ERROR) {
+          LOG_ERROR("TSMutexLock");
         }
         HOSTNAME_LENGTH = atoi(hostnameLengthString);
-        INKMutexUnlock(HOSTNAME_LOCK);
+        TSMutexUnlock(HOSTNAME_LOCK);
       }
     }
   }
 
 Lcleanup:
   if (VALID_POINTER(hostnameString)) {
-    if (INKHandleStringRelease(clientReqBuf, hostnameLoc, hostnameString) == INK_ERROR) {
-      LOG_ERROR("INKHandleStringRelease");
+    if (TSHandleStringRelease(clientReqBuf, hostnameLoc, hostnameString) == TS_ERROR) {
+      LOG_ERROR("TSHandleStringRelease");
     }
   }
   if (VALID_POINTER(hostnameLengthString)) {
-    if (INKHandleStringRelease(clientReqBuf, hostnameLengthLoc, hostnameLengthString) == INK_ERROR) {
-      LOG_ERROR("INKHandleStringRelease");
+    if (TSHandleStringRelease(clientReqBuf, hostnameLengthLoc, hostnameLengthString) == TS_ERROR) {
+      LOG_ERROR("TSHandleStringRelease");
     }
   }
   if (VALID_POINTER(hostnameLoc)) {
-    if (INKHandleMLocRelease(clientReqBuf, clientReqLoc, hostnameLoc) == INK_ERROR) {
-      LOG_ERROR("INKHandleMLocRelease");
+    if (TSHandleMLocRelease(clientReqBuf, clientReqLoc, hostnameLoc) == TS_ERROR) {
+      LOG_ERROR("TSHandleMLocRelease");
     }
   }
   if (VALID_POINTER(hostnameLengthLoc)) {
-    if (INKHandleMLocRelease(clientReqBuf, clientReqLoc, hostnameLengthLoc) == INK_ERROR) {
-      LOG_ERROR("INKHandleMLocRelease");
+    if (TSHandleMLocRelease(clientReqBuf, clientReqLoc, hostnameLengthLoc) == TS_ERROR) {
+      LOG_ERROR("TSHandleMLocRelease");
     }
   }
   if (VALID_POINTER(clientReqLoc)) {
-    if (INKHandleMLocRelease(clientReqBuf, INK_NULL_MLOC, clientReqLoc) == INK_ERROR) {
-      LOG_ERROR("INKHandleMLocRelease");
+    if (TSHandleMLocRelease(clientReqBuf, TS_NULL_MLOC, clientReqLoc) == TS_ERROR) {
+      LOG_ERROR("TSHandleMLocRelease");
     }
   }
 
-  /* Call INKHostLookup */
+  /* Call TSHostLookup */
   /* Called completly at the end because right after the call,
      the DNS processor might call back txn_contp wih the
-     INK_EVENT_HOST_LOOKUP, and txnp will be reenabled while
+     TS_EVENT_HOST_LOOKUP, and txnp will be reenabled while
      txnp is still being accessed in this handler, that would
      be bad!!! */
-  if (INKHostLookup(txn_contp, HOSTNAME, HOSTNAME_LENGTH) == INK_ERROR_PTR) {
-    LOG_ERROR("INKHostLookup");
+  if (TSHostLookup(txn_contp, HOSTNAME, HOSTNAME_LENGTH) == TS_ERROR_PTR) {
+    LOG_ERROR("TSHostLookup");
   }
   /* Do nothing after this call, return right away */
   return 0;
@@ -689,9 +689,9 @@ Lcleanup:
    - be called back by the DNS processor when the host lookup is done
    - store all the transaction specific data
    Tricks:
-   - when called back with INK_EVENT_HTTP_READ_REQUEST_HDR, do not
+   - when called back with TS_EVENT_HTTP_READ_REQUEST_HDR, do not
    reenable the transaction, instead return, and reenable the
-   transaction when called back with INK_EVENT_HOST_LOOKUP, so that
+   transaction when called back with TS_EVENT_HOST_LOOKUP, so that
    when we don't need to maintain a state in the continuation. And
    also when we need the host lookup result at the send response hook
    we are sure that the result will be available.
@@ -700,93 +700,93 @@ Lcleanup:
    asynchronous part (host lookup)
 **********************************************************************/
 static int
-txn_cont_handler(INKCont txn_contp, INKEvent event, void *edata)
+txn_cont_handler(TSCont txn_contp, TSEvent event, void *edata)
 {
   LOG_SET_FUNCTION_NAME("hostlookup");
 
-  INKHostLookupResult result;
-  INKHttpTxn txnp;
+  TSHostLookupResult result;
+  TSHttpTxn txnp;
   ContData *contData;
 
-  contData = INKContDataGet(txn_contp);
+  contData = TSContDataGet(txn_contp);
 
   switch (event) {
         /***************/
     /* HTTP events */
         /***************/
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
-    txnp = (INKHttpTxn) edata;
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    txnp = (TSHttpTxn) edata;
     handle_read_request(txnp, txn_contp);
     return 0;
-  case INK_EVENT_HTTP_READ_CACHE_HDR:
-    txnp = (INKHttpTxn) edata;
-    if (contData == INK_ERROR_PTR) {
-      LOG_ERROR("INKContDataGet");
+  case TS_EVENT_HTTP_READ_CACHE_HDR:
+    txnp = (TSHttpTxn) edata;
+    if (contData == TS_ERROR_PTR) {
+      LOG_ERROR("TSContDataGet");
     } else {
       handle_read_cache(txnp, contData);
     }
     break;
-  case INK_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    txnp = (INKHttpTxn) edata;
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+    txnp = (TSHttpTxn) edata;
     handle_cache_lookup_complete(txnp, contData);
     break;
-  case INK_EVENT_HTTP_SEND_REQUEST_HDR:
-    txnp = (INKHttpTxn) edata;
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
+    txnp = (TSHttpTxn) edata;
     handle_send_request(txnp, contData);
     break;
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
-    txnp = (INKHttpTxn) edata;
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    txnp = (TSHttpTxn) edata;
     handle_read_response(txnp, contData);
     break;
-  case INK_EVENT_HTTP_SEND_RESPONSE_HDR:
-    txnp = (INKHttpTxn) edata;
-    if (contData == INK_ERROR_PTR) {
-      LOG_ERROR("INKContDataGet");
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+    txnp = (TSHttpTxn) edata;
+    if (contData == TS_ERROR_PTR) {
+      LOG_ERROR("TSContDataGet");
     } else {
       handle_send_response(txnp, contData);
     }
     break;
-  case INK_EVENT_HTTP_TXN_CLOSE:
-    txnp = (INKHttpTxn) edata;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    txnp = (TSHttpTxn) edata;
     handle_txn_close(txnp, txn_contp);
     break;
 
         /*********************/
     /* Host Lookup event */
         /*********************/
-  case INK_EVENT_HOST_LOOKUP:
-    if (contData == INK_ERROR_PTR) {
+  case TS_EVENT_HOST_LOOKUP:
+    if (contData == TS_ERROR_PTR) {
       /* In this case we are stuck, we cannot get the continuation
          data which contains the HTTP txn pointer, i.e. we cannot
          reenable the transaction, so we might as well assert here */
-      LOG_ERROR("INKContDataGet");
-      INKReleaseAssert(!"Could not get contp data");
+      LOG_ERROR("TSContDataGet");
+      TSReleaseAssert(!"Could not get contp data");
     }
     txnp = contData->txnp;
-    result = (INKHostLookupResult) edata;
+    result = (TSHostLookupResult) edata;
     if (result != NULL) {
       /* Get the IP@ */
-      if (INKHostLookupResultIPGet(result, &contData->ip_address) == INK_ERROR) {
-        LOG_ERROR("INKHostLookupResultIPGet");
+      if (TSHostLookupResultIPGet(result, &contData->ip_address) == TS_ERROR) {
+        LOG_ERROR("TSHostLookupResultIPGet");
       }
     } else {
-      INKDebug(DEBUG_TAG, "Hostlookup continuation called back with NULL result");
+      TSDebug(DEBUG_TAG, "Hostlookup continuation called back with NULL result");
     }
 /* NEGATIVE TEST for host lookup */
 #ifdef DEBUG
-    /* Comment out because of INKqa12283 */
+    /* Comment out because of TSqa12283 */
     neg1_host_lookup(txn_contp);
     neg2_host_lookup();
 #endif
     break;
 
   default:
-    INKAssert(!"Unexpected Event");
+    TSAssert(!"Unexpected Event");
     break;
   }
 
-  if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_ERROR("TSHttpTxnReenable");
   }
 
   return 0;
@@ -802,105 +802,105 @@ txn_cont_handler(INKCont txn_contp, INKEvent event, void *edata)
     other HTTP hooks.
 ***************************************************************/
 int
-handle_txn_start(INKHttpTxn txnp)
+handle_txn_start(TSHttpTxn txnp)
 {
   LOG_SET_FUNCTION_NAME("handle_txn_start");
 
-  INKMBuffer fake_mbuffer;
-  INKCont txn_contp, fake_contp;
+  TSMBuffer fake_mbuffer;
+  TSCont txn_contp, fake_contp;
   ContData *contData, *fakeData;
-  INKMutex mutexp;
+  TSMutex mutexp;
 
   /* Create mutex for new txn_contp */
-  mutexp = INKMutexCreate();
-  if (mutexp == INK_ERROR_PTR) {
-    LOG_ERROR_AND_RETURN("INKMutexCreate");
+  mutexp = TSMutexCreate();
+  if (mutexp == TS_ERROR_PTR) {
+    LOG_ERROR_AND_RETURN("TSMutexCreate");
   }
   /* Create the HTTP txn continuation */
-  txn_contp = INKContCreate(txn_cont_handler, mutexp);
-  if (txn_contp == INK_ERROR_PTR) {
-    LOG_ERROR_AND_RETURN("INKContCreate");
+  txn_contp = TSContCreate(txn_cont_handler, mutexp);
+  if (txn_contp == TS_ERROR_PTR) {
+    LOG_ERROR_AND_RETURN("TSContCreate");
   }
   /* Init this continuation data  */
   initContData(txn_contp);
   /* Get this continuation data */
-  contData = INKContDataGet(txn_contp);
-  if (contData == INK_ERROR_PTR) {
-    LOG_ERROR_AND_RETURN("INKContDataGet");
+  contData = TSContDataGet(txn_contp);
+  if (contData == TS_ERROR_PTR) {
+    LOG_ERROR_AND_RETURN("TSContDataGet");
   }
   /* Set the transaction pointer */
   contData->txnp = txnp;
 
-  /* Add the INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK to this transaction  */
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_READ_REQUEST_HDR_HOOK, txn_contp) == INK_ERROR) {
-    LOG_ERROR("INKHttpTxnHookAdd");
+  /* Add the TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK to this transaction  */
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, txn_contp) == TS_ERROR) {
+    LOG_ERROR("TSHttpTxnHookAdd");
   }
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_READ_CACHE_HDR_HOOK, txn_contp) == INK_ERROR) {
-    LOG_ERROR("INKHttpTxnHookAdd");
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_READ_CACHE_HDR_HOOK, txn_contp) == TS_ERROR) {
+    LOG_ERROR("TSHttpTxnHookAdd");
   }
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_contp) == INK_ERROR) {
-    LOG_ERROR("INKHttpTxnHookAdd");
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_contp) == TS_ERROR) {
+    LOG_ERROR("TSHttpTxnHookAdd");
   }
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_SEND_REQUEST_HDR_HOOK, txn_contp) == INK_ERROR) {
-    LOG_ERROR("INKHttpTxnHookAdd");
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, txn_contp) == TS_ERROR) {
+    LOG_ERROR("TSHttpTxnHookAdd");
   }
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_READ_RESPONSE_HDR_HOOK, txn_contp) == INK_ERROR) {
-    LOG_ERROR("INKHttpTxnHookAdd");
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, txn_contp) == TS_ERROR) {
+    LOG_ERROR("TSHttpTxnHookAdd");
   }
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_SEND_RESPONSE_HDR_HOOK, txn_contp) == INK_ERROR) {
-    LOG_ERROR("INKHttpTxnHookAdd");
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, txn_contp) == TS_ERROR) {
+    LOG_ERROR("TSHttpTxnHookAdd");
   }
-  if (INKHttpTxnHookAdd(txnp, INK_HTTP_TXN_CLOSE_HOOK, txn_contp) == INK_ERROR) {
-    LOG_ERROR("INKHttpTxnHookAdd");
+  if (TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp) == TS_ERROR) {
+    LOG_ERROR("TSHttpTxnHookAdd");
   }
 
-/* NEGATIVE TEST for cache lookup, INKHttpTxnHookAdd,
-   INKMutexLock, INKMutexLockTry, INKMutexUnlock,
-   INKHandleMLocRelease and INKHttpTxnReenable */
+/* NEGATIVE TEST for cache lookup, TSHttpTxnHookAdd,
+   TSMutexLock, TSMutexLockTry, TSMutexUnlock,
+   TSHandleMLocRelease and TSHttpTxnReenable */
 #ifdef DEBUG
 /*     neg_cache_lookup_bad_hook(txnp); */
-/*     INKDebug(DEBUG_TAG, */
+/*     TSDebug(DEBUG_TAG, */
 /* 	     "NEGATIVE test cache lookup bad hook in %s passed", FUNCTION_NAME); */
   neg_cache_lookup_bad_arg();
 
-  if (INKHttpTxnHookAdd(NULL, -1, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpTxnHookAdd");
+  if (TSHttpTxnHookAdd(NULL, -1, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpTxnHookAdd");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKHttpTxnHookAdd 1 passed\n");
-  fake_contp = INKContCreate(fake_handler2, INKMutexCreate());
-  if (INKHttpTxnHookAdd(NULL, INK_HTTP_TXN_START_HOOK, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpTxnHookAdd");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSHttpTxnHookAdd 1 passed\n");
+  fake_contp = TSContCreate(fake_handler2, TSMutexCreate());
+  if (TSHttpTxnHookAdd(NULL, TS_HTTP_TXN_START_HOOK, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpTxnHookAdd");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKHttpTxnHookAdd 2  passed\n");
-  if (INKHttpTxnHookAdd(NULL, -1, fake_contp) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpTxnHookAdd");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSHttpTxnHookAdd 2  passed\n");
+  if (TSHttpTxnHookAdd(NULL, -1, fake_contp) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpTxnHookAdd");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKHttpTxnHookAdd 3  passed\n");
-  if (INKMutexLock(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMutexLock");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSHttpTxnHookAdd 3  passed\n");
+  if (TSMutexLock(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMutexLock");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKMutexLock passed\n");
-  if (INKMutexLockTry(NULL, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMutexLockTry");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSMutexLock passed\n");
+  if (TSMutexLockTry(NULL, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMutexLockTry");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKMutexLockTry passed\n");
-  if (INKMutexUnlock(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKMutexUnlock");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSMutexLockTry passed\n");
+  if (TSMutexUnlock(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSMutexUnlock");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKMutexUnlock passed\n");
-  if (INKHandleMLocRelease(NULL, INK_NULL_MLOC, NULL)) {
-    LOG_ERROR_NEG("INKHandleMLocRelease");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSMutexUnlock passed\n");
+  if (TSHandleMLocRelease(NULL, TS_NULL_MLOC, NULL)) {
+    LOG_ERROR_NEG("TSHandleMLocRelease");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKHandleMLocRelease 1 passed\n");
-  fake_mbuffer = INKMBufferCreate();
-  if (INKHandleMLocRelease(fake_mbuffer, INK_NULL_MLOC, NULL)) {
-    LOG_ERROR_NEG("INKHandleMLocRelease");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSHandleMLocRelease 1 passed\n");
+  fake_mbuffer = TSMBufferCreate();
+  if (TSHandleMLocRelease(fake_mbuffer, TS_NULL_MLOC, NULL)) {
+    LOG_ERROR_NEG("TSHandleMLocRelease");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKHandleMLocRelease 1 passed\n");
-  if (INKHttpTxnReenable(NULL, 0) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpTxnReenable");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSHandleMLocRelease 1 passed\n");
+  if (TSHttpTxnReenable(NULL, 0) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpTxnReenable");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKHttpTxnReenable passed\n");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSHttpTxnReenable passed\n");
 #endif
 
   return 0;
@@ -909,27 +909,27 @@ handle_txn_start(INKHttpTxn txnp)
 /********************************************************
    Plugin Continuation handler:
    The plugin continuation will be called back by every
-   HTTP transaction when it reach INK_HTTP_TXN_START_HOOK
+   HTTP transaction when it reach TS_HTTP_TXN_START_HOOK
 ********************************************************/
 static int
-plugin_cont_handler(INKCont contp, INKEvent event, void *edata)
+plugin_cont_handler(TSCont contp, TSEvent event, void *edata)
 {
   LOG_SET_FUNCTION_NAME("process_plugin");
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_TXN_START:
+  case TS_EVENT_HTTP_TXN_START:
     handle_txn_start(txnp);
     break;
 
   default:
-    INKAssert(!"Unexpected Event");
+    TSAssert(!"Unexpected Event");
     break;
   }
 
-  if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-    LOG_ERROR("INKHttpTxnReenable");
+  if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+    LOG_ERROR("TSHttpTxnReenable");
   }
 
   return 0;
@@ -941,38 +941,38 @@ plugin_cont_handler(INKCont contp, INKEvent event, void *edata)
    Here, there is no need to grab the HOSTNAME_LOCK, this
    code should be executes before any HTTP state machine
    is created.
-   Register globally INK_HTTP_TXN_START_HOOK
+   Register globally TS_HTTP_TXN_START_HOOK
 ********************************************************/
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  LOG_SET_FUNCTION_NAME("INKPluginInit");
+  LOG_SET_FUNCTION_NAME("TSPluginInit");
 
   /* Plugin continuation */
-  INKCont contp, fake_contp;
+  TSCont contp, fake_contp;
   ContData *fakeData;
 
   /* Create hostname lock */
-  HOSTNAME_LOCK = INKMutexCreate();
+  HOSTNAME_LOCK = TSMutexCreate();
 
   /* Initialize global variables hostname and hostname length  */
   /* No need to grab the lock here  */
-  HOSTNAME = INKstrdup("tsdev.inktomi.com");
+  HOSTNAME = TSstrdup("tsdev.inktomi.com");
   HOSTNAME_LENGTH = strlen(HOSTNAME) + 1;
 
   /* Parse the eventual 2 plugin arguments */
   if (argc < 3) {
-    INKDebug(DEBUG_TAG, "Usage: lookup.so hostname hostname_length");
+    TSDebug(DEBUG_TAG, "Usage: lookup.so hostname hostname_length");
     printf("[lookup_plugin] Usage: lookup.so hostname hostname_length\n");
     printf("[lookup_plugin] Wrong arguments. Using default\n");
   } else {
-    HOSTNAME = INKstrdup(argv[1]);
-    INKDebug(DEBUG_TAG, "using hostname %s", HOSTNAME);
+    HOSTNAME = TSstrdup(argv[1]);
+    TSDebug(DEBUG_TAG, "using hostname %s", HOSTNAME);
     printf("[lookup_plugin] using hostname %s\n", HOSTNAME);
 
     if (!isnan(atoi(argv[2]))) {
       HOSTNAME_LENGTH = atoi(argv[2]);
-      INKDebug(DEBUG_TAG, "using hostname length %d", HOSTNAME_LENGTH);
+      TSDebug(DEBUG_TAG, "using hostname length %d", HOSTNAME_LENGTH);
       printf("[lookup_plugin] using hostname length %d\n", HOSTNAME_LENGTH);
     } else {
       printf("[lookup_plugin] Wrong argument for hostname length");
@@ -980,50 +980,50 @@ INKPluginInit(int argc, const char *argv[])
     }
   }
 
-/* Negative test for INKContCreate, INKHttpHookAdd, INKContDataGet/Set, INKContDestroy */
+/* Negative test for TSContCreate, TSHttpHookAdd, TSContDataGet/Set, TSContDestroy */
 #ifdef DEBUG
-  if (INKHttpHookAdd(-1, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpHookAdd");
+  if (TSHttpHookAdd(-1, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpHookAdd");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKHttpHookAdd 1 passed\n");
-  if (INKHttpHookAdd(INK_HTTP_TXN_START_HOOK, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpHookAdd");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSHttpHookAdd 1 passed\n");
+  if (TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpHookAdd");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKHttpHookAdd 2 passed\n");
-  fake_contp = INKContCreate(fake_handler2, INKMutexCreate());
-  if (INKHttpHookAdd(-1, fake_contp) != INK_ERROR) {
-    LOG_ERROR_NEG("INKHttpHookAdd");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSHttpHookAdd 2 passed\n");
+  fake_contp = TSContCreate(fake_handler2, TSMutexCreate());
+  if (TSHttpHookAdd(-1, fake_contp) != TS_ERROR) {
+    LOG_ERROR_NEG("TSHttpHookAdd");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKHttpHookAdd 3 passed\n");
-  if (INKContDataGet(NULL) != INK_ERROR_PTR) {
-    LOG_ERROR_NEG("INKContDataGet");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSHttpHookAdd 3 passed\n");
+  if (TSContDataGet(NULL) != TS_ERROR_PTR) {
+    LOG_ERROR_NEG("TSContDataGet");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKContDataGet passed\n");
-  if (INKContDataSet(NULL, NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKContDataSet");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSContDataGet passed\n");
+  if (TSContDataSet(NULL, NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSContDataSet");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKContDataSet 1 passed\n");
-  fakeData = (ContData *) INKmalloc(sizeof(ContData));
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSContDataSet 1 passed\n");
+  fakeData = (ContData *) TSmalloc(sizeof(ContData));
   fakeData->called_cache = 0;
   fakeData->cache_lookup_status = -1;
   fakeData->client_port = 0;
   fakeData->ip_address = 0;
   fakeData->txnp = NULL;
-  if (INKContDataSet(NULL, fakeData) != INK_ERROR) {
-    LOG_ERROR_NEG("INKContDataSet");
+  if (TSContDataSet(NULL, fakeData) != TS_ERROR) {
+    LOG_ERROR_NEG("TSContDataSet");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKContDataSet 3 passed\n");
-  if (INKContDestroy(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKContDestroy");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSContDataSet 3 passed\n");
+  if (TSContDestroy(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSContDestroy");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Neg Test INKContDestroy passed\n");
+    TSDebug(NEG_DEBUG_TAG, "Neg Test TSContDestroy passed\n");
 #endif
 
-  if ((contp = INKContCreate(plugin_cont_handler, NULL)) == INK_ERROR_PTR) {
-    LOG_ERROR("INKContCreate");
+  if ((contp = TSContCreate(plugin_cont_handler, NULL)) == TS_ERROR_PTR) {
+    LOG_ERROR("TSContCreate");
   } else {
-    if (INKHttpHookAdd(INK_HTTP_TXN_START_HOOK, contp) == INK_ERROR) {
-      LOG_ERROR("INKHttpHookAdd");
+    if (TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp) == TS_ERROR) {
+      LOG_ERROR("TSHttpHookAdd");
     }
   }
 }

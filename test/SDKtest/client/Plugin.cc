@@ -58,7 +58,7 @@ dlerror(void)
 }
 #endif
 
-INKPlugin::INKPlugin(int cid, char *api)
+TSPlugin::TSPlugin(int cid, char *api)
 {
   client_id = cid;
   handle = NULL;
@@ -77,7 +77,7 @@ INKPlugin::INKPlugin(int cid, char *api)
 
 
 void
-INKPlugin::load_plugin()
+TSPlugin::load_plugin()
 {
   if (strcmp(path, "")) {
     char *plugin_path = (char *) malloc(strlen(path) + 3);
@@ -92,10 +92,10 @@ INKPlugin::load_plugin()
       perror("client plugin");
       exit(1);
     }
-    plugin_init_fcn = (PluginInit) dlsym(handle, "INKPluginInit");
+    plugin_init_fcn = (PluginInit) dlsym(handle, "TSPluginInit");
 
     if (!plugin_init_fcn) {
-      fprintf(stderr, "unable to find INKPluginInit function: %s", dlerror());
+      fprintf(stderr, "unable to find TSPluginInit function: %s", dlerror());
       dlclose(handle);
       exit(1);
     }
@@ -107,50 +107,50 @@ INKPlugin::load_plugin()
 
 extern "C"
 {
-  void INKFuncRegister(INKPluginFuncId fid)
+  void TSFuncRegister(TSPluginFuncId fid)
   {
     plug_in->register_funct(fid);
   }
 }
 
 void
-INKPlugin::register_funct(INKPluginFuncId fid)
+TSPlugin::register_funct(TSPluginFuncId fid)
 {
   switch (fid) {
-  case INK_FID_OPTIONS_PROCESS:
-    options_process_fcn = (OptionsProcess) dlsym(handle, "INKOptionsProcess");
+  case TS_FID_OPTIONS_PROCESS:
+    options_process_fcn = (OptionsProcess) dlsym(handle, "TSOptionsProcess");
     break;
 
-  case INK_FID_OPTIONS_PROCESS_FINISH:
-    options_process_finish_fcn = (OptionsProcessFinish) dlsym(handle, "INKOptionsProcessFinish");
+  case TS_FID_OPTIONS_PROCESS_FINISH:
+    options_process_finish_fcn = (OptionsProcessFinish) dlsym(handle, "TSOptionsProcessFinish");
     break;
 
-  case INK_FID_CONNECTION_FINISH:
-    connection_finish_fcn = (ConnectionFinish) dlsym(handle, "INKConnectionFinish");
+  case TS_FID_CONNECTION_FINISH:
+    connection_finish_fcn = (ConnectionFinish) dlsym(handle, "TSConnectionFinish");
     break;
 
-  case INK_FID_PLUGIN_FINISH:
-    plugin_finish_fcn = (PluginFinish) dlsym(handle, "INKPluginFinish");
+  case TS_FID_PLUGIN_FINISH:
+    plugin_finish_fcn = (PluginFinish) dlsym(handle, "TSPluginFinish");
     break;
 
-  case INK_FID_REQUEST_CREATE:
-    request_create_fcn = (RequestCreate) dlsym(handle, "INKRequestCreate");
+  case TS_FID_REQUEST_CREATE:
+    request_create_fcn = (RequestCreate) dlsym(handle, "TSRequestCreate");
     break;
 
-  case INK_FID_HEADER_PROCESS:
-    header_process_fcn = (HeaderProcess) dlsym(handle, "INKHeaderProcess");
+  case TS_FID_HEADER_PROCESS:
+    header_process_fcn = (HeaderProcess) dlsym(handle, "TSHeaderProcess");
     break;
 
-  case INK_FID_PARTIAL_BODY_PROCESS:
-    partial_body_process_fcn = (PartialBodyProcess) dlsym(handle, "INKPartialBodyProcess");
+  case TS_FID_PARTIAL_BODY_PROCESS:
+    partial_body_process_fcn = (PartialBodyProcess) dlsym(handle, "TSPartialBodyProcess");
     break;
 
-  case INK_FID_REPORT:
-    report_fcn = (Report) dlsym(handle, "INKReport");
+  case TS_FID_REPORT:
+    report_fcn = (Report) dlsym(handle, "TSReport");
     break;
 
   default:
-    fprintf(stderr, "Can't register function: unknown type of INKPluginFuncId");
+    fprintf(stderr, "Can't register function: unknown type of TSPluginFuncId");
     break;
   }
 }

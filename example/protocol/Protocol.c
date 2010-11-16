@@ -26,86 +26,86 @@
 #include <math.h>
 
 /* global variable */
-INKTextLogObject protocol_plugin_log;
+TSTextLogObject protocol_plugin_log;
 
 /* static variable */
-static INKAction pending_action;
+static TSAction pending_action;
 static int accept_port;
 static int server_port;
 
 /* Functions only seen in this file, should be static. */
 static void protocol_init(int accept_port, int server_port);
-static int accept_handler(INKCont contp, INKEvent event, void *edata);
+static int accept_handler(TSCont contp, TSEvent event, void *edata);
 
 
 /* When the handle is called, the net_vc is returned. */
 static int
-accept_handler(INKCont contp, INKEvent event, void *edata)
+accept_handler(TSCont contp, TSEvent event, void *edata)
 {
-  INKCont txn_sm;
-  INKMutex pmutex;
+  TSCont txn_sm;
+  TSMutex pmutex;
   int lock;
 
   switch (event) {
-  case INK_EVENT_NET_ACCEPT:
+  case TS_EVENT_NET_ACCEPT:
     /* Create a new mutex for the TxnSM, which is going
        to handle the incoming request. */
-    pmutex = (INKMutex) INKMutexCreate();
-    txn_sm = (INKCont) TxnSMCreate(pmutex, (INKVConn) edata, server_port);
+    pmutex = (TSMutex) TSMutexCreate();
+    txn_sm = (TSCont) TxnSMCreate(pmutex, (TSVConn) edata, server_port);
 
     /* This is no reason for not grabbing the lock.
        So skip the routine which handle LockTry failure case. */
-    if (INKMutexLockTry(pmutex, &lock) == INK_SUCCESS) {
-      INKContCall(txn_sm, 0, NULL);
-      INKMutexUnlock(pmutex);
+    if (TSMutexLockTry(pmutex, &lock) == TS_SUCCESS) {
+      TSContCall(txn_sm, 0, NULL);
+      TSMutexUnlock(pmutex);
     }
     break;
 
   default:
     /* Something wrong with the network, if there are any
        pending NetAccept, cancel them. */
-    if (pending_action && !INKActionDone(pending_action))
-      INKActionCancel(pending_action);
+    if (pending_action && !TSActionDone(pending_action))
+      TSActionCancel(pending_action);
 
-    INKContDestroy(contp);
+    TSContDestroy(contp);
     break;
   }
 
-  return INK_EVENT_NONE;
+  return TS_EVENT_NONE;
 }
 
 static void
 protocol_init(int accept_port, int server_port)
 {
-  INKCont contp;
+  TSCont contp;
   int ret_val;
 
   /* create customized log */
-  ret_val = INKTextLogObjectCreate("protocol", INK_LOG_MODE_ADD_TIMESTAMP, &protocol_plugin_log);
-  if (ret_val != INK_SUCCESS) {
-    INKError("failed to create log");
+  ret_val = TSTextLogObjectCreate("protocol", TS_LOG_MODE_ADD_TIMESTAMP, &protocol_plugin_log);
+  if (ret_val != TS_SUCCESS) {
+    TSError("failed to create log");
   }
 
   /* format of the log entries, for caching_status, 1 for HIT and 0 for MISS */
-  ret_val = INKTextLogObjectWrite(protocol_plugin_log, "timestamp filename servername caching_status\n\n");
-  if (ret_val != INK_SUCCESS) {
-    INKError("failed to write into log");
+  ret_val = TSTextLogObjectWrite(protocol_plugin_log, "timestamp filename servername caching_status\n\n");
+  if (ret_val != TS_SUCCESS) {
+    TSError("failed to write into log");
   }
 
-  contp = INKContCreate(accept_handler, INKMutexCreate());
+  contp = TSContCreate(accept_handler, TSMutexCreate());
 
   /* Accept network traffic from the accept_port.
      When there are requests coming in, contp's handler
      should be called, in this case, contp's handler
      is accept_event, see AcceptSM.c */
-  pending_action = INKNetAccept(contp, accept_port);
+  pending_action = TSNetAccept(contp, accept_port);
 }
 
 int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -128,21 +128,21 @@ check_ts_version()
 
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "output-header";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("[PluginInit] Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("[PluginInit] Plugin registration failed.\n");
     goto error;
   }
 
   if (!check_ts_version()) {
-    INKError("[PluginInit] Plugin requires Traffic Server 2.0 or later\n");
+    TSError("[PluginInit] Plugin requires Traffic Server 2.0 or later\n");
     goto error;
   }
 
@@ -152,13 +152,13 @@ INKPluginInit(int argc, const char *argv[])
   server_port = 4666;
 
   if (argc < 3) {
-    INKDebug("protocol", "Usage: protocol.so accept_port server_port");
+    TSDebug("protocol", "Usage: protocol.so accept_port server_port");
     printf("[protocol_plugin] Usage: protocol.so accept_port server_port\n");
     printf("[protocol_plugin] Wrong arguments. Using deafult ports.\n");
   } else {
     if (!isnan(atoi(argv[1]))) {
       accept_port = atoi(argv[1]);
-      INKDebug("protocol", "using accept_port %d", accept_port);
+      TSDebug("protocol", "using accept_port %d", accept_port);
       printf("[protocol_plugin] using accept_port %d\n", accept_port);
     } else {
       printf("[protocol_plugin] Wrong argument for accept_port.");
@@ -167,7 +167,7 @@ INKPluginInit(int argc, const char *argv[])
 
     if (!isnan(atoi(argv[2]))) {
       server_port = atoi(argv[2]);
-      INKDebug("protocol", "using server_port %d", server_port);
+      TSDebug("protocol", "using server_port %d", server_port);
       printf("[protocol_plugin] using server_port %d\n", server_port);
     } else {
       printf("[protocol_plugin] Wrong argument for server_port.");
@@ -178,5 +178,5 @@ INKPluginInit(int argc, const char *argv[])
   protocol_init(accept_port, server_port);
 
 error:
-  INKError("[PluginInit] Plugin not initialized");
+  TSError("[PluginInit] Plugin not initialized");
 }

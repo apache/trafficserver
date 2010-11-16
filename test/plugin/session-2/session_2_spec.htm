@@ -27,28 +27,28 @@
 <p><b><font size="+1">Overview</font></b></p>
 <p>This plugin covers the APIs in the following categories:</p>
 <ul>
-  <li> INKHttpSsn*</li>
-  <li> INKConfig*</li>
-  <li> INKStat*</li>
-  <li>INKThread*</li>
+  <li> TSHttpSsn*</li>
+  <li> TSConfig*</li>
+  <li> TSStat*</li>
+  <li>TSThread*</li>
 </ul>
 <p>It does the following things:</p>
 <ol>
   <li>Create a thread and destroy it.</li>
-  <li>Create three INKStat statistic variables transaction_count, session_count 
+  <li>Create three TSStat statistic variables transaction_count, session_count 
     and avg_transactions and update them at every new session or transaction.</li>
-  <li>Play with INKConfig family of functions to set and get config data.</li>
+  <li>Play with TSConfig family of functions to set and get config data.</li>
 </ol>
 <p><font size="+1"><b>Plugin Specification</b></font></p>
-<p>In INKPluginInit(), the plugin creates a thread, waits for 5 seconds and destroys 
-  it. It creates three INKStat statistic variables: transaction_count, session_count 
+<p>In TSPluginInit(), the plugin creates a thread, waits for 5 seconds and destroys 
+  it. It creates three TSStat statistic variables: transaction_count, session_count 
   and avg_transactions. It also creates a ConfigData with one element num_ssns 
-  and sets it to INKConfig. Then it registers a handler function for the global 
-  hook INK_HTTP_SSN_START_HOOK.</p>
-<p>On INK_HTTP_SSN_START_HOOK, it increments the INKStat statistic variable session_count 
-  and num_ssns in INKConfig. Then it prints out both values. It adds a session 
-  hook INK_HTTP_TXN_START_HOOK.</p>
-<p>The handler function on INK_HTTP_TXN_START_HOOK increments transaction_count 
+  and sets it to TSConfig. Then it registers a handler function for the global 
+  hook TS_HTTP_SSN_START_HOOK.</p>
+<p>On TS_HTTP_SSN_START_HOOK, it increments the TSStat statistic variable session_count 
+  and num_ssns in TSConfig. Then it prints out both values. It adds a session 
+  hook TS_HTTP_TXN_START_HOOK.</p>
+<p>The handler function on TS_HTTP_TXN_START_HOOK increments transaction_count 
   and recalculates avg_transactions, then prints out both values.</p>
 <p>&nbsp;</p>
 </body>

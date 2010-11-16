@@ -172,7 +172,7 @@ Example:
 
    - Mutex use for calls to cache API ?
 
-   - Is it possible to associate data to a transaction ? i.e. INKContDataSet(txnp)
+   - Is it possible to associate data to a transaction ? i.e. TSContDataSet(txnp)
 
    - Rather than the query ALL, specify which query param to send when requesting blocks ?
      i.e. QUERY=ParamName1,ParamName2
@@ -223,9 +223,9 @@ Example:
 #include "headers.h"
 
 
-#define LOCK_CONT_MUTEX(_c) INKMutexLock(INKContMutexGet(_c))
+#define LOCK_CONT_MUTEX(_c) TSMutexLock(TSContMutexGet(_c))
 
-#define UNLOCK_CONT_MUTEX(_c) INKMutexUnlock(INKContMutexGet(_c))
+#define UNLOCK_CONT_MUTEX(_c) TSMutexUnlock(TSContMutexGet(_c))
 
 
 
@@ -239,25 +239,25 @@ static int server_port;
 
 
 /* Function prototypes */
-static int asm_input_buffer(INKCont contp, AsmData * data);
+static int asm_input_buffer(TSCont contp, AsmData * data);
 
-static int asm_process_dynamic(INKCont contp, AsmData * data, const char *include_buffer);
+static int asm_process_dynamic(TSCont contp, AsmData * data, const char *include_buffer);
 
-static int asm_parse_input_buffer(INKCont contp, AsmData * data);
+static int asm_parse_input_buffer(TSCont contp, AsmData * data);
 
-static int asm_parse_input_buffer_init(INKCont contp, AsmData * data);
+static int asm_parse_input_buffer_init(TSCont contp, AsmData * data);
 
-static int asm_ts_connect(INKCont contp, AsmData * data);
+static int asm_ts_connect(TSCont contp, AsmData * data);
 
-static int asm_ts_write(INKCont contp, AsmData * data);
+static int asm_ts_write(TSCont contp, AsmData * data);
 
-static int asm_ts_read(INKCont contp, AsmData * data);
+static int asm_ts_read(TSCont contp, AsmData * data);
 
-static int asm_block_bypass(INKCont contp, AsmData * data);
+static int asm_block_bypass(TSCont contp, AsmData * data);
 
-static int asm_output_buffer(INKCont contp, AsmData * data);
+static int asm_output_buffer(TSCont contp, AsmData * data);
 
-static void asm_transform_destroy(INKCont contp);
+static void asm_transform_destroy(TSCont contp);
 
 
 /*-------------------------------------------------------------------------
@@ -291,23 +291,23 @@ strstr_block(const char *block, const char *str, int blocklen)
   Prints out an iobuffer on the standard output
   -------------------------------------------------------------------------*/
 static void
-print_iobuffer(INKIOBuffer buf)
+print_iobuffer(TSIOBuffer buf)
 {
-  INKIOBufferReader printreader = INKIOBufferReaderAlloc(buf);
-  INKIOBufferBlock blkp = INKIOBufferReaderStart(printreader);
+  TSIOBufferReader printreader = TSIOBufferReaderAlloc(buf);
+  TSIOBufferBlock blkp = TSIOBufferReaderStart(printreader);
 
-  printf("Buffer (%d chars)=\n", INKIOBufferReaderAvail(printreader));
+  printf("Buffer (%d chars)=\n", TSIOBufferReaderAvail(printreader));
   while (blkp != NULL) {
     int l;
-    const char *b = INKIOBufferBlockReadStart(blkp, printreader, &l);
+    const char *b = TSIOBufferBlockReadStart(blkp, printreader, &l);
     int i;
     for (i = 0; i < l; i++) {
       printf("%c", b[i]);
     }
-    blkp = INKIOBufferBlockNext(blkp);
+    blkp = TSIOBufferBlockNext(blkp);
   }
   printf("Buffer End\n");
-  INKIOBufferReaderFree(printreader);
+  TSIOBufferReaderFree(printreader);
 }
 
 
@@ -317,20 +317,20 @@ print_iobuffer(INKIOBuffer buf)
   Appends len bytes from buf to the IOBuffer output
   -------------------------------------------------------------------------*/
 static void
-write_iobuffer(char *buf, int len, INKIOBuffer output)
+write_iobuffer(char *buf, int len, TSIOBuffer output)
 {
-  INKIOBufferBlock block;
+  TSIOBufferBlock block;
   char *ptr_block;
   int ndone, ntodo, towrite, avail;
 
   ndone = 0;
   ntodo = len;
   while (ntodo > 0) {
-    block = INKIOBufferStart(output);
-    ptr_block = INKIOBufferBlockWriteStart(block, &avail);
+    block = TSIOBufferStart(output);
+    ptr_block = TSIOBufferBlockWriteStart(block, &avail);
     towrite = min(ntodo, avail);
     memcpy(ptr_block, buf + ndone, towrite);
-    INKIOBufferProduce(output, towrite);
+    TSIOBufferProduce(output, towrite);
     ntodo -= towrite;
     ndone += towrite;
   }
@@ -345,7 +345,7 @@ write_iobuffer(char *buf, int len, INKIOBuffer output)
   OPTIMIZATION: write a bufferized version of this routine
   -------------------------------------------------------------------------*/
 static void
-writec_iobuffer(char c, INKIOBuffer output)
+writec_iobuffer(char c, TSIOBuffer output)
 {
   char buf[1];
   buf[0] = c;
@@ -360,7 +360,7 @@ writec_iobuffer(char c, INKIOBuffer output)
   No data is consumed from the reader.
   -------------------------------------------------------------------------*/
 static int
-strfind_ioreader(INKIOBufferReader reader, const char *str)
+strfind_ioreader(TSIOBufferReader reader, const char *str)
 {
   char *ptr = NULL;
   int pos = 0;                  /* position in the buffer where we'll start looking for str */
@@ -369,7 +369,7 @@ strfind_ioreader(INKIOBufferReader reader, const char *str)
      contains end of previous block and beginning of the current */
   char window[CHARS_WINDOW_SIZE];
 
-  INKIOBufferBlock block = INKIOBufferReaderStart(reader);
+  TSIOBufferBlock block = TSIOBufferReaderStart(reader);
   int slen = strlen(str);
 
   if (slen <= 0) {
@@ -381,7 +381,7 @@ strfind_ioreader(INKIOBufferReader reader, const char *str)
   /* Loop thru each block */
   while (block != NULL) {
     int blocklen;
-    const char *blockstr = INKIOBufferBlockReadStart(block, reader, &blocklen);
+    const char *blockstr = TSIOBufferBlockReadStart(block, reader, &blocklen);
 
     if (window[0] != '\0') {
       /* copy the beginning of the block at the end of the window */
@@ -407,7 +407,7 @@ strfind_ioreader(INKIOBufferReader reader, const char *str)
 
     /* Parse next block */
     pos += blocklen;
-    block = INKIOBufferBlockNext(block);
+    block = TSIOBufferBlockNext(block);
   }
 
   return -1;
@@ -421,14 +421,14 @@ strfind_ioreader(INKIOBufferReader reader, const char *str)
   start specifies the offset in buffer where the search should begin.
   -------------------------------------------------------------------------*/
 static int
-strfind_iobuffer(INKIOBuffer buffer, const char *str, int start)
+strfind_iobuffer(TSIOBuffer buffer, const char *str, int start)
 {
-  INKIOBufferReader reader = INKIOBufferReaderAlloc(buffer);
+  TSIOBufferReader reader = TSIOBufferReaderAlloc(buffer);
   int val;
 
-  INKIOBufferReaderConsume(reader, start);
+  TSIOBufferReaderConsume(reader, start);
   val = strfind_ioreader(reader, str);
-  INKIOBufferReaderFree(reader);
+  TSIOBufferReaderFree(reader);
   return val;
 }
 
@@ -440,30 +440,30 @@ strfind_iobuffer(INKIOBuffer buffer, const char *str, int start)
   Returns 0 if ok, -1 if error
   -------------------------------------------------------------------------*/
 static int
-read_block_metadata(INKIOBuffer buffer, BlockMetaData * meta)
+read_block_metadata(TSIOBuffer buffer, BlockMetaData * meta)
 {
   int ndone = 0;
   int ntodo = sizeof(BlockMetaData);
-  INKIOBufferReader reader = INKIOBufferReaderAlloc(buffer);
-  INKIOBufferBlock blkp = INKIOBufferReaderStart(reader);
+  TSIOBufferReader reader = TSIOBufferReaderAlloc(buffer);
+  TSIOBufferBlock blkp = TSIOBufferReaderStart(reader);
 
-  INKAssert(blkp);
+  TSAssert(blkp);
 
   while ((ndone != ntodo) && (blkp != NULL)) {
     int len;
-    const char *ptr = INKIOBufferBlockReadStart(blkp, reader, &len);
+    const char *ptr = TSIOBufferBlockReadStart(blkp, reader, &len);
     int to_copy = min(ntodo, len);
     memcpy((char *) (meta + ndone), ptr, to_copy);
     ndone += to_copy;
-    blkp = INKIOBufferBlockNext(blkp);
+    blkp = TSIOBufferBlockNext(blkp);
   }
-  INKIOBufferReaderFree(reader);
+  TSIOBufferReaderFree(reader);
 
   /* FIXME: THIS ASSERT FIRES !!!! */
-  /* INKAssert(ndone != ntodo); */
+  /* TSAssert(ndone != ntodo); */
 
   if ((ndone != ntodo) || (meta->template_id != TEMPLATE_ID)) {
-    INKError("Error while reading meta data from cache");
+    TSError("Error while reading meta data from cache");
   }
 
   if (ndone != ntodo) {
@@ -472,13 +472,13 @@ read_block_metadata(INKIOBuffer buffer, BlockMetaData * meta)
   }
 
   /* FIX ME: WE READ CORRUPTED DATA !! */
-  /* INKAssert(meta->template_id == TEMPLATE_ID); */
+  /* TSAssert(meta->template_id == TEMPLATE_ID); */
   if (meta->template_id != TEMPLATE_ID) {
     /* This is a more serious error, block seems to be corrupted */
     return -1;
   }
 
-  INKDebug(LOW, "Meta Data: write_time=%ld template_id=%d", meta->write_time, meta->template_id);
+  TSDebug(LOW, "Meta Data: write_time=%ld template_id=%d", meta->write_time, meta->template_id);
   return 0;
 }
 
@@ -494,12 +494,12 @@ block_is_fresh(const AsmData * data)
 {
   time_t current_time, block_age;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
   time(&current_time);
   block_age = current_time - data->block_metadata.write_time;
 
-  INKDebug(HIGH, "Block age = %ld, TTL = %d, fresh = %d", block_age, data->block_ttl,
+  TSDebug(HIGH, "Block age = %ld, TTL = %d, fresh = %d", block_age, data->block_ttl,
            (block_age <= data->block_ttl) ? 1 : 0);
 
   return ((block_age <= data->block_ttl) ? 1 : 0);
@@ -512,7 +512,7 @@ block_is_fresh(const AsmData * data)
   Returns value of attribute from a null terminated buffer of characters.
   Attribute syntax: name=value.
   Attribute value ends with ' ' or '\n' or '\t'
-  The caller should deallocate string returned by calling INKfree
+  The caller should deallocate string returned by calling TSfree
   -------------------------------------------------------------------------*/
 static char *
 extract_attribute(const char *include_buffer, const char *attribute)
@@ -525,7 +525,7 @@ extract_attribute(const char *include_buffer, const char *attribute)
   /* Search for attribute name in buffer */
   ptr_start = strstr(include_buffer, attribute);
   if (ptr_start == NULL) {
-    INKDebug(LOW, "Could not extract attribute value");
+    TSDebug(LOW, "Could not extract attribute value");
     return NULL;
   }
 
@@ -539,11 +539,11 @@ extract_attribute(const char *include_buffer, const char *attribute)
   }
 
   len = ptr_stop - ptr_start;
-  value = (char *) INKmalloc(len + 1);
+  value = (char *) TSmalloc(len + 1);
   strncpy(value, ptr_start, len);
   value[len] = '\0';
 
-  INKDebug(LOW, "Extracted value |%s| for attribute |%s|", value, attribute);
+  TSDebug(LOW, "Extracted value |%s| for attribute |%s|", value, attribute);
 
   return value;
 }
@@ -559,17 +559,17 @@ extract_attribute(const char *include_buffer, const char *attribute)
 static void
 asm_destroy_data_block(AsmData * data)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
   data->cache_read_retry_counter = 0;
 
   if (data->block_url) {
-    INKfree(data->block_url);
+    TSfree(data->block_url);
     data->block_url = NULL;
   }
 
   if (data->block_key) {
-    INKCacheKeyDestroy(data->block_key);
+    TSCacheKeyDestroy(data->block_key);
     data->block_key = NULL;
   }
 }
@@ -586,14 +586,14 @@ asm_destroy_data_block(AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_input_buffer(INKCont contp, AsmData * data)
+asm_input_buffer(TSCont contp, AsmData * data)
 {
-  INKVIO write_vio;
+  TSVIO write_vio;
   int towrite;
   int avail;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_input_buffer");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_input_buffer");
 
   /* If it's the first time the function is called, we need to create
      the input buffer. */
@@ -601,8 +601,8 @@ asm_input_buffer(INKCont contp, AsmData * data)
     /* Create the buffer into which the upstream connection will
      * write data on it.
      */
-    data->input_buffer = INKIOBufferCreate();
-    data->input_parse_reader = INKIOBufferReaderAlloc(data->input_buffer);
+    data->input_buffer = TSIOBufferCreate();
+    data->input_parse_reader = TSIOBufferReaderAlloc(data->input_buffer);
   }
 
   /* Get our parent write io = our input source
@@ -610,53 +610,53 @@ asm_input_buffer(INKCont contp, AsmData * data)
      ourself. This VIO contains the buffer that we are to read from
      as well as the continuation we are to call when the buffer is
      empty. */
-  write_vio = INKVConnWriteVIOGet(contp);
+  write_vio = TSVConnWriteVIOGet(contp);
 
   /* We also check to see if the write VIO's buffer is non-NULL. A
      NULL buffer indicates that the write operation has been
      shutdown and that the continuation does not want us to send any
      more WRITE_READY or WRITE_COMPLETE events. For this buffered
      transformation that means we're done buffering data. */
-  if (!INKVIOBufferGet(write_vio)) {
+  if (!TSVIOBufferGet(write_vio)) {
     return asm_parse_input_buffer_init(contp, data);
   }
 
   /* Determine how much data we have left to read. For this server
      transform plugin this is also the amount of data we have left
      to write to the output connection. */
-  towrite = INKVIONTodoGet(write_vio);
+  towrite = TSVIONTodoGet(write_vio);
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
        the amount of data actually in the read buffer. */
-    avail = INKIOBufferReaderAvail(INKVIOReaderGet(write_vio));
+    avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
     if (towrite > avail) {
       towrite = avail;
     }
 
     if (towrite > 0) {
       /* Copy the data from the read buffer to the input buffer. */
-      INKIOBufferCopy(data->input_buffer, INKVIOReaderGet(write_vio), towrite, 0);
+      TSIOBufferCopy(data->input_buffer, TSVIOReaderGet(write_vio), towrite, 0);
 
       /* Tell the read buffer that we have read the data and are no
          longer interested in it. */
-      INKIOBufferReaderConsume(INKVIOReaderGet(write_vio), towrite);
+      TSIOBufferReaderConsume(TSVIOReaderGet(write_vio), towrite);
 
       /* Modify the write VIO to reflect how much data we've
          completed. */
-      INKVIONDoneSet(write_vio, INKVIONDoneGet(write_vio) + towrite);
+      TSVIONDoneSet(write_vio, TSVIONDoneGet(write_vio) + towrite);
     }
   }
 
   /* Now we check the write VIO to see if there is data left to
      read. */
-  if (INKVIONTodoGet(write_vio) > 0) {
+  if (TSVIONTodoGet(write_vio) > 0) {
     /* Call back the write VIO continuation to let it know that we
        are ready for more data. */
-    INKContCall(INKVIOContGet(write_vio), INK_EVENT_VCONN_WRITE_READY, write_vio);
+    TSContCall(TSVIOContGet(write_vio), TS_EVENT_VCONN_WRITE_READY, write_vio);
   } else {
     /* Call back the write VIO continuation to let it know that we
        have completed the write operation. */
-    INKContCall(INKVIOContGet(write_vio), INK_EVENT_VCONN_WRITE_COMPLETE, write_vio);
+    TSContCall(TSVIOContGet(write_vio), TS_EVENT_VCONN_WRITE_COMPLETE, write_vio);
 
     return asm_parse_input_buffer_init(contp, data);
   }
@@ -674,21 +674,21 @@ asm_input_buffer(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_parse_input_buffer_init(INKCont contp, AsmData * data)
+asm_parse_input_buffer_init(TSCont contp, AsmData * data)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_parse_input_buffer_init");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_parse_input_buffer_init");
 
   /* Create the output buffer that will be sent to user agent */
-  data->output_buffer = INKIOBufferCreate();
-  data->output_reader = INKIOBufferReaderAlloc(data->output_buffer);
+  data->output_buffer = TSIOBufferCreate();
+  data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
 
-  if (INKIsDebugTagSet(LOW)) {
+  if (TSIsDebugTagSet(LOW)) {
     print_iobuffer(data->input_buffer);
   }
 
   /* Create a reader to scan the input buffer */
-  data->input_parse_reader = INKIOBufferReaderAlloc(data->input_buffer);
+  data->input_parse_reader = TSIOBufferReaderAlloc(data->input_buffer);
 
   /* Start parsing the input buffer */
   return asm_parse_input_buffer(contp, data);
@@ -706,14 +706,14 @@ asm_parse_input_buffer_init(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_parse_input_buffer(INKCont contp, AsmData * data)
+asm_parse_input_buffer(TSCont contp, AsmData * data)
 {
   char include_buffer[DYN_TAG_MAX_SIZE];        /* To store the include statement */
   int include_len, nread, offset_start, offset_end, nbytes;
-  INKIOBufferBlock block;
+  TSIOBufferBlock block;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_parse_input_buffer");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_parse_input_buffer");
 
   data->state = STATE_PARSE_BUFFER;
 
@@ -725,41 +725,41 @@ asm_parse_input_buffer(INKCont contp, AsmData * data)
 
   if ((offset_start < 0) || (offset_end < 0)) {
     /* No DYNAMIC tags found */
-    INKDebug(LOW, "No DYNAMIC tags");
-    nbytes = INKIOBufferReaderAvail(data->input_parse_reader);
-    INKIOBufferCopy(data->output_buffer, data->input_parse_reader, nbytes, 0);
+    TSDebug(LOW, "No DYNAMIC tags");
+    nbytes = TSIOBufferReaderAvail(data->input_parse_reader);
+    TSIOBufferCopy(data->output_buffer, data->input_parse_reader, nbytes, 0);
   } else {
-    INKDebug(LOW, "DYNAMIC tag offsets: start=%d, end=%d", offset_start, offset_end);
+    TSDebug(LOW, "DYNAMIC tag offsets: start=%d, end=%d", offset_start, offset_end);
 
     /* Copy data that is before the DYNAMIC tag to the output buffer */
-    INKIOBufferCopy(data->output_buffer, data->input_parse_reader, offset_start, 0);
-    INKIOBufferReaderConsume(data->input_parse_reader, offset_start);
+    TSIOBufferCopy(data->output_buffer, data->input_parse_reader, offset_start, 0);
+    TSIOBufferReaderConsume(data->input_parse_reader, offset_start);
 
     /* Now extract the DYNAMIC statement */
-    block = INKIOBufferReaderStart(data->input_parse_reader);
+    block = TSIOBufferReaderStart(data->input_parse_reader);
     include_len = offset_end + strlen(DYNAMIC_END) - offset_start;
     nread = 0;
 
     while ((block != NULL) && (nread < include_len)) {
       int blocklen;
-      const char *blockstr = INKIOBufferBlockReadStart(block, data->input_parse_reader, &blocklen);
+      const char *blockstr = TSIOBufferBlockReadStart(block, data->input_parse_reader, &blocklen);
       int toread = min(include_len - nread, blocklen);
 
       memcpy((char *) (include_buffer + nread), blockstr, toread);
       nread += toread;
 
-      block = INKIOBufferBlockNext(block);
+      block = TSIOBufferBlockNext(block);
     }
 
     /* Process the DYNAMIC statement */
-    INKIOBufferReaderConsume(data->input_parse_reader, include_len);
+    TSIOBufferReaderConsume(data->input_parse_reader, include_len);
     include_buffer[include_len] = '\0';
-    INKDebug(LOW, "DYNAMIC statement |%s|", include_buffer);
+    TSDebug(LOW, "DYNAMIC statement |%s|", include_buffer);
 
     return asm_process_dynamic(contp, data, include_buffer);
   }
 
-  INKIOBufferReaderFree(data->input_parse_reader);
+  TSIOBufferReaderFree(data->input_parse_reader);
 
   /* We're done assembling the page. Now send the data to the user agent */
   return asm_output_buffer(contp, data);
@@ -782,7 +782,7 @@ asm_parse_input_buffer(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_compute_block_key(INKCont contp, AsmData * data, const char *block_name,
+asm_compute_block_key(TSCont contp, AsmData * data, const char *block_name,
                       const char *query_list, const char *cookies_list)
 {
 #define KEY_SIZE_INIT      1024
@@ -794,13 +794,13 @@ asm_compute_block_key(INKCont contp, AsmData * data, const char *block_name,
   char *offset;
   int size = KEY_SIZE_INIT;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_compute_block_key");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_compute_block_key");
 
   /* It's difficult to guess the key size.
      The cookie spec doesn't give a limit size for a cookie value.
      Hopefully, we shouldn't have huge cookies. */
-  key_value = INKmalloc(KEY_SIZE_INIT);
+  key_value = TSmalloc(KEY_SIZE_INIT);
 
   /* First prepend block name */
   sprintf(key_value, "%s", block_name);
@@ -808,45 +808,45 @@ asm_compute_block_key(INKCont contp, AsmData * data, const char *block_name,
   /* Then append query param pairs */
   offset = (char *) query_list;
   while ((name = getNextValue(query_list, &offset)) != NULL) {
-    INKDebug(LOW, "searching value for query param |%s|", name);
+    TSDebug(LOW, "searching value for query param |%s|", name);
 
     if ((value = pairListGetValue(&data->query, name)) != NULL) {
       while ((strlen(key_value) + 1 + strlen(name) + 1 + strlen(value) + 1) > size) {
         size += KEY_SIZE_INCR;
-        key_value = INKrealloc(key_value, size);
+        key_value = TSrealloc(key_value, size);
       }
       sprintf(key_value, "%s/%s=%s", key_value, name, value);
     }
-    INKfree(name);
+    TSfree(name);
   }
 
   /* Then append cookies pairs */
   offset = (char *) cookies_list;
   while ((name = getNextValue(cookies_list, &offset)) != NULL) {
-    INKDebug(LOW, "searching value for cookie |%s|", name);
+    TSDebug(LOW, "searching value for cookie |%s|", name);
 
     if ((value = pairListGetValue(&data->cookies, name)) != NULL) {
       while ((strlen(key_value) + 1 + strlen(name) + 1 + strlen(value) + 1) > size) {
         size += KEY_SIZE_INCR;
-        key_value = INKrealloc(key_value, size);
+        key_value = TSrealloc(key_value, size);
       }
       sprintf(key_value, "%s/%s=%s", key_value, name, value);
     }
-    INKfree(name);
+    TSfree(name);
   }
 
-  INKDebug(LOW, "Key value = |%s|", key_value);
+  TSDebug(LOW, "Key value = |%s|", key_value);
 
-  INKCacheKeyCreate(&(data->block_key));
+  TSCacheKeyCreate(&(data->block_key));
 
-  INKCacheKeyDigestSet(data->block_key, (const unsigned char *) key_value, strlen(key_value));
+  TSCacheKeyDigestSet(data->block_key, (const unsigned char *) key_value, strlen(key_value));
 
   /* Set the TTL */
   /* BUUUUUUUUUUUUUUUUUUUUUUUUGGGGGGGGGGGGGGGGGG !!!!!!!!!!!!!!!!! */
   /* DOOOOOOOO NOOOOOOOOOOOT UUUUUUUUUUUUUSSSSSSSSSSSEEEEEEEEEE */
-  /* INKCacheKeySetPinned(data->block_key, data->block_ttl); */
+  /* TSCacheKeySetPinned(data->block_key, data->block_ttl); */
 
-  INKfree(key_value);
+  TSfree(key_value);
 
   return 0;
 }
@@ -869,7 +869,7 @@ asm_compute_block_key(INKCont contp, AsmData * data, const char *block_name,
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_process_dynamic(INKCont contp, AsmData * data, const char *statement_buffer)
+asm_process_dynamic(TSCont contp, AsmData * data, const char *statement_buffer)
 {
   char *block_name;
   char *ttl;
@@ -877,8 +877,8 @@ asm_process_dynamic(INKCont contp, AsmData * data, const char *statement_buffer)
   char *query_list;
   char *cookies_list;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_process_dynamic");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_process_dynamic");
 
   /* if we're called more than once, need to do some housekeeping
      before processing a new statement */
@@ -893,15 +893,15 @@ asm_process_dynamic(INKCont contp, AsmData * data, const char *statement_buffer)
 
   /* If error skip this dynamic statement */
   if (data->block_url == NULL) {
-    INKError("Unable to extract attribute %s in statement %s. Skipping it.", DYNAMIC_ATTR_URL, statement_buffer);
+    TSError("Unable to extract attribute %s in statement %s. Skipping it.", DYNAMIC_ATTR_URL, statement_buffer);
     return asm_parse_input_buffer(contp, data);
   }
-  INKDebug(MED, "URL of block to fetch = |%s|", data->block_url);
+  TSDebug(MED, "URL of block to fetch = |%s|", data->block_url);
 
   /* Extract the cacheable boolean */
   cacheable = extract_attribute(statement_buffer, DYNAMIC_ATTR_CACHEABLE);
   if (cacheable == NULL) {
-    INKDebug(LOW, "block %s has no CACHEABLE tag. Using default value %d",
+    TSDebug(LOW, "block %s has no CACHEABLE tag. Using default value %d",
              data->block_url, DYNAMIC_ATTR_CACHEABLE_DEFAULT_VALUE);
     data->block_is_cacheable = DYNAMIC_ATTR_CACHEABLE_DEFAULT_VALUE;
   } else {
@@ -910,17 +910,17 @@ asm_process_dynamic(INKCont contp, AsmData * data, const char *statement_buffer)
     } else {
       data->block_is_cacheable = 0;
     }
-    INKDebug(LOW, "CACHEABLE = %d for block %s", data->block_is_cacheable, data->block_url);
+    TSDebug(LOW, "CACHEABLE = %d for block %s", data->block_is_cacheable, data->block_url);
   }
 
   /* If block is NOT cacheable, no need to extract the rest of parameters.
      Let's jump to the state where we fetch the block from the OS */
   if (!data->block_is_cacheable) {
     if (block_name != NULL) {
-      INKfree(block_name);
+      TSfree(block_name);
     }
     if (cacheable != NULL) {
-      INKfree(cacheable);
+      TSfree(cacheable);
     }
     return asm_ts_connect(contp, data);
   }
@@ -928,37 +928,37 @@ asm_process_dynamic(INKCont contp, AsmData * data, const char *statement_buffer)
   /* Extract ttl parameter */
   ttl = extract_attribute(statement_buffer, DYNAMIC_ATTR_TTL);
   if (ttl == NULL) {
-    INKDebug(LOW, "block %s has no TTL specified. Using default value %d",
+    TSDebug(LOW, "block %s has no TTL specified. Using default value %d",
              data->block_url, DYNAMIC_ATTR_TTL_DEFAULT_VALUE);
     data->block_ttl = DYNAMIC_ATTR_TTL_DEFAULT_VALUE;
   } else {
     data->block_ttl = atoi(ttl);
-    INKDebug(LOW, "TTL is %d for block %s", data->block_ttl, data->block_url);
+    TSDebug(LOW, "TTL is %d for block %s", data->block_ttl, data->block_url);
   }
 
   /* Extract vary query parameter names and cookie names */
   query_list = extract_attribute(statement_buffer, DYNAMIC_ATTR_QUERY);
   cookies_list = extract_attribute(statement_buffer, DYNAMIC_ATTR_COOKIES);
-  INKDebug(LOW, "Vary on query: |%s|", query_list);
-  INKDebug(LOW, "Vary on cookies: |%s|", cookies_list);
+  TSDebug(LOW, "Vary on query: |%s|", query_list);
+  TSDebug(LOW, "Vary on cookies: |%s|", cookies_list);
 
   /* Compute the key based on query and cookies values */
   asm_compute_block_key(contp, data, block_name, query_list, cookies_list);
 
   if (block_name) {
-    INKfree(block_name);
+    TSfree(block_name);
   }
   if (cacheable) {
-    INKfree(cacheable);
+    TSfree(cacheable);
   }
   if (ttl) {
-    INKfree(ttl);
+    TSfree(ttl);
   }
   if (query_list) {
-    INKfree(query_list);
+    TSfree(query_list);
   }
   if (cookies_list) {
-    INKfree(cookies_list);
+    TSfree(cookies_list);
   }
 
   /* Now do a cache lookup on the block */
@@ -974,21 +974,21 @@ asm_process_dynamic(INKCont contp, AsmData * data, const char *statement_buffer)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_prepare_read(INKCont contp, AsmData * data)
+asm_cache_prepare_read(TSCont contp, AsmData * data)
 {
-  INKAction action;
+  TSAction action;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_prepare_read");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_prepare_read");
 
   data->state = STATE_CACHE_PREPARE_READ;
 
-  action = INKCacheRead(contp, data->block_key);
-  if (!INKActionDone(action)) {
-    INKDebug(LOW, "CacheRead action not completed...");
+  action = TSCacheRead(contp, data->block_key);
+  if (!TSActionDone(action)) {
+    TSDebug(LOW, "CacheRead action not completed...");
     data->pending_action = action;
   } else {
-    INKDebug(LOW, "CacheRead action completed");
+    TSDebug(LOW, "CacheRead action completed");
   }
 
   return 0;
@@ -1003,22 +1003,22 @@ asm_cache_prepare_read(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_retry_read(INKCont contp, AsmData * data)
+asm_cache_retry_read(TSCont contp, AsmData * data)
 {
-  INKAction action;
+  TSAction action;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_retry_read");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_retry_read");
 
   data->state = STATE_CACHE_RETRY_READ;
 
-  action = INKContSchedule(contp, CACHE_READ_RETRY_DELAY);
-  if (!INKActionDone(action)) {
-    INKDebug(LOW, "ContSchedule action not completed...");
+  action = TSContSchedule(contp, CACHE_READ_RETRY_DELAY);
+  if (!TSActionDone(action)) {
+    TSDebug(LOW, "ContSchedule action not completed...");
     data->pending_action = action;
   } else {
-    INKDebug(LOW, "ContSchedule action completed");
-    INKAssert(!"Schedule should not call us right away");
+    TSDebug(LOW, "ContSchedule action completed");
+    TSAssert(!"Schedule should not call us right away");
   }
 
   return 0;
@@ -1033,28 +1033,28 @@ asm_cache_retry_read(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_read(INKCont contp, AsmData * data)
+asm_cache_read(TSCont contp, AsmData * data)
 {
   int cache_obj_size = 0;
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_read");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_read");
 
   data->state = STATE_CACHE_READ;
 
   /* Create the IOBuffer and Reader to read block from the cache */
-  data->cache_read_buffer = INKIOBufferCreate();
-  data->cache_read_reader = INKIOBufferReaderAlloc(data->cache_read_buffer);
+  data->cache_read_buffer = TSIOBufferCreate();
+  data->cache_read_reader = TSIOBufferReaderAlloc(data->cache_read_buffer);
 
   /* Create IOBUffer and Reader to bufferize the block */
-  data->block_buffer = INKIOBufferCreate();
-  data->block_reader = INKIOBufferReaderAlloc(data->block_buffer);
+  data->block_buffer = TSIOBufferCreate();
+  data->block_reader = TSIOBufferReaderAlloc(data->block_buffer);
 
   /* Get size of doc to read in cache */
-  INKVConnCacheObjectSizeGet(data->cache_vc, &cache_obj_size);
-  INKDebug(LOW, "Size of block in cache = %d", cache_obj_size);
+  TSVConnCacheObjectSizeGet(data->cache_vc, &cache_obj_size);
+  TSDebug(LOW, "Size of block in cache = %d", cache_obj_size);
 
   /* Start reading the block content */
-  data->cache_read_vio = INKVConnRead(data->cache_vc, contp, data->cache_read_buffer, cache_obj_size);
+  data->cache_read_vio = TSVConnRead(data->cache_vc, contp, data->cache_read_buffer, cache_obj_size);
   return 0;
 }
 
@@ -1067,31 +1067,31 @@ asm_cache_read(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_read_buffer(INKCont contp, AsmData * data)
+asm_cache_read_buffer(TSCont contp, AsmData * data)
 {
   int avail;
   int ndone;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_read_buffer");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_read_buffer");
 
-  INKDebug(LOW, "Reader avail = %d, TodoGet = %d, NDoneGet = %d",
-           INKIOBufferReaderAvail(data->cache_read_reader),
-           INKVIONTodoGet(data->cache_read_vio), INKVIONDoneGet(data->cache_read_vio));
+  TSDebug(LOW, "Reader avail = %d, TodoGet = %d, NDoneGet = %d",
+           TSIOBufferReaderAvail(data->cache_read_reader),
+           TSVIONTodoGet(data->cache_read_vio), TSVIONDoneGet(data->cache_read_vio));
 
-  avail = INKIOBufferReaderAvail(data->cache_read_reader);
-  ndone = INKVIONDoneGet(data->cache_read_vio);
+  avail = TSIOBufferReaderAvail(data->cache_read_reader);
+  ndone = TSVIONDoneGet(data->cache_read_vio);
 
   /* Bufferize available data in the block_buffer */
   if (avail > 0) {
-    INKIOBufferCopy(data->block_buffer, data->cache_read_reader, avail, 0);
-    INKIOBufferReaderConsume(data->cache_read_reader, avail);
-    INKVIONDoneSet(data->cache_read_vio, INKVIONDoneGet(data->cache_read_vio) + avail);
+    TSIOBufferCopy(data->block_buffer, data->cache_read_reader, avail, 0);
+    TSIOBufferReaderConsume(data->cache_read_reader, avail);
+    TSVIONDoneSet(data->cache_read_vio, TSVIONDoneGet(data->cache_read_vio) + avail);
   }
 
-  INKDebug(LOW, "Reader avail = %d, TodoGet = %d, NDoneGet = %d",
-           INKIOBufferReaderAvail(data->cache_read_reader),
-           INKVIONTodoGet(data->cache_read_vio), INKVIONDoneGet(data->cache_read_vio));
+  TSDebug(LOW, "Reader avail = %d, TodoGet = %d, NDoneGet = %d",
+           TSIOBufferReaderAvail(data->cache_read_reader),
+           TSVIONTodoGet(data->cache_read_vio), TSVIONDoneGet(data->cache_read_vio));
 
   return 0;
 }
@@ -1104,22 +1104,22 @@ asm_cache_read_buffer(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_write_prepare(INKCont contp, AsmData * data)
+asm_cache_write_prepare(TSCont contp, AsmData * data)
 {
-  INKAction action;
+  TSAction action;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_write_prepare");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_write_prepare");
 
   data->state = STATE_CACHE_PREPARE_WRITE;
 
-  INKAssert(data->block_key);
-  action = INKCacheWrite(contp, data->block_key);
-  if (!INKActionDone(action)) {
-    INKDebug(LOW, "CacheWrite action not completed...");
+  TSAssert(data->block_key);
+  action = TSCacheWrite(contp, data->block_key);
+  if (!TSActionDone(action)) {
+    TSDebug(LOW, "CacheWrite action not completed...");
     data->pending_action = action;
   } else {
-    INKDebug(LOW, "CacheWrite action completed");
+    TSDebug(LOW, "CacheWrite action completed");
   }
 
   return 0;
@@ -1134,42 +1134,42 @@ asm_cache_write_prepare(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_write(INKCont contp, AsmData * data)
+asm_cache_write(TSCont contp, AsmData * data)
 {
-  INKIOBufferData meta_data;
-  INKIOBufferBlock meta_block;
+  TSIOBufferData meta_data;
+  TSIOBufferBlock meta_block;
   int block_len;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_write");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_write");
 
   data->state = STATE_CACHE_WRITE;
 
   /* Create a new IOBuffer that contains the Meta Data info first
      and then data read from TS */
-  data->cache_write_buffer = INKIOBufferCreate();
-  data->cache_write_reader = INKIOBufferReaderAlloc(data->cache_write_buffer);
+  data->cache_write_buffer = TSIOBufferCreate();
+  data->cache_write_reader = TSIOBufferReaderAlloc(data->cache_write_buffer);
 
   /* Fill out meta data structure before writing it to cache */
   time(&(data->block_metadata.write_time));
   data->block_metadata.template_id = TEMPLATE_ID;
 
   /* Prepend block meta data */
-  INKDebug(LOW, "Appending metadata = %d bytes", sizeof(BlockMetaData));
-  meta_data = INKIOBufferDataCreate(&data->block_metadata, sizeof(BlockMetaData), INK_DATA_CONSTANT);
-  meta_block = INKIOBufferBlockCreate(meta_data, sizeof(BlockMetaData), 0);
-  INKIOBufferAppend(data->cache_write_buffer, meta_block);
+  TSDebug(LOW, "Appending metadata = %d bytes", sizeof(BlockMetaData));
+  meta_data = TSIOBufferDataCreate(&data->block_metadata, sizeof(BlockMetaData), TS_DATA_CONSTANT);
+  meta_block = TSIOBufferBlockCreate(meta_data, sizeof(BlockMetaData), 0);
+  TSIOBufferAppend(data->cache_write_buffer, meta_block);
 
   /* Then add block content */
-  block_len = INKIOBufferReaderAvail(data->block_reader);
-  INKDebug(LOW, "Appending block content = %d bytes", block_len);
+  block_len = TSIOBufferReaderAvail(data->block_reader);
+  TSDebug(LOW, "Appending block content = %d bytes", block_len);
 
-  INKIOBufferCopy(data->cache_write_buffer, data->block_reader, block_len, 0);
+  TSIOBufferCopy(data->cache_write_buffer, data->block_reader, block_len, 0);
 
-  INKDebug(LOW, "Writing %d bytes to cache", sizeof(BlockMetaData) + block_len);
+  TSDebug(LOW, "Writing %d bytes to cache", sizeof(BlockMetaData) + block_len);
 
   /* Finally write buffer to cache */
-  data->cache_write_vio = INKVConnWrite(data->cache_vc, contp,
+  data->cache_write_vio = TSVConnWrite(data->cache_vc, contp,
                                         data->cache_write_reader, sizeof(BlockMetaData) + block_len);
 
   return 0;
@@ -1184,23 +1184,23 @@ asm_cache_write(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_remove(INKCont contp, AsmData * data)
+asm_cache_remove(TSCont contp, AsmData * data)
 {
-  INKAction action;
+  TSAction action;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_remove");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_remove");
 
   data->state = STATE_CACHE_REMOVE;
 
-  INKDebug(LOW, "Removing block %s from cache", data->block_url);
-  action = INKCacheRemove(contp, data->block_key);
+  TSDebug(LOW, "Removing block %s from cache", data->block_url);
+  action = TSCacheRemove(contp, data->block_key);
 
-  if (!INKActionDone(action)) {
-    INKDebug(LOW, "Connection action not completed...");
+  if (!TSActionDone(action)) {
+    TSDebug(LOW, "Connection action not completed...");
     data->pending_action = action;
   } else {
-    INKDebug(LOW, "Connection action completed");
+    TSDebug(LOW, "Connection action completed");
   }
 
   return 0;
@@ -1215,23 +1215,23 @@ asm_cache_remove(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_ts_connect(INKCont contp, AsmData * data)
+asm_ts_connect(TSCont contp, AsmData * data)
 {
-  INKAction action;
+  TSAction action;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_ts_connect");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_ts_connect");
 
   data->state = STATE_TS_CONNECT;
 
-  INKDebug(LOW, "Connecting to localhost on port %d", server_port);
-  action = INKNetConnect(contp, server_ip, server_port);
+  TSDebug(LOW, "Connecting to localhost on port %d", server_port);
+  action = TSNetConnect(contp, server_ip, server_port);
 
-  if (!INKActionDone(action)) {
-    INKDebug(LOW, "Connection action not completed...");
+  if (!TSActionDone(action)) {
+    TSDebug(LOW, "Connection action not completed...");
     data->pending_action = action;
   } else {
-    INKDebug(LOW, "Connection action completed");
+    TSDebug(LOW, "Connection action completed");
   }
 
   return 0;
@@ -1258,26 +1258,26 @@ asm_create_block_http_request(const char *block_url, const char *query_string, i
   char *ptr;
   char *url;
 
-  INKDebug(MED, "In asm_create_block_http_request");
+  TSDebug(MED, "In asm_create_block_http_request");
 
   /* test for ${QUERYSTRING} and substitute with its value */
   if ((ptr = strstr(block_url, DYNAMIC_ATTR_URL_VAR_QUERYSTRING)) != NULL) {
     int len = (int) (ptr - block_url);
-    INKDebug(LOW, "Variable %s detected in block url, doing substitution", DYNAMIC_ATTR_URL_VAR_QUERYSTRING);
+    TSDebug(LOW, "Variable %s detected in block url, doing substitution", DYNAMIC_ATTR_URL_VAR_QUERYSTRING);
 
     if (query_string != NULL) {
-      url = INKmalloc(len + strlen(query_string) + 1);
+      url = TSmalloc(len + strlen(query_string) + 1);
       sprintf(url, "%.*s%s", len, block_url, query_string);
     } else {
       /* If no query value available remove the ? from url */
-      url = INKmalloc(len);
+      url = TSmalloc(len);
       sprintf(url, "%.*s", len - 1, block_url);
     }
   } else {
     url = (char *) block_url;
   }
 
-  http_request = INKmalloc(sizeof(BLOCK_HTTP_REQUEST_FORMAT) +
+  http_request = TSmalloc(sizeof(BLOCK_HTTP_REQUEST_FORMAT) +
                            strlen(url) + sizeof(HEADER_NO_CACHE) + sizeof(HEADER_X_BLOCK));
 
   sprintf(http_request, BLOCK_HTTP_REQUEST_FORMAT, url, HEADER_NO_CACHE, HEADER_X_BLOCK);
@@ -1295,34 +1295,34 @@ asm_create_block_http_request(const char *block_url, const char *query_string, i
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_ts_write(INKCont contp, AsmData * data)
+asm_ts_write(TSCont contp, AsmData * data)
 {
-  INKIOBufferData http_request_data;
-  INKIOBufferBlock http_request_block;
+  TSIOBufferData http_request_data;
+  TSIOBufferBlock http_request_block;
   char *http_request;
   int http_request_length;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_ts_write");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_ts_write");
 
   data->state = STATE_TS_WRITE;
 
   /* Create a IOBuffer that will contain the request to send to TS */
-  data->ts_input_buffer = INKIOBufferCreate();
-  data->ts_input_reader = INKIOBufferReaderAlloc(data->ts_input_buffer);
+  data->ts_input_buffer = TSIOBufferCreate();
+  data->ts_input_reader = TSIOBufferReaderAlloc(data->ts_input_buffer);
 
   /* Create the request */
   http_request = asm_create_block_http_request(data->block_url, data->query_string, &http_request_length);
 
   /* Create a Block that contains the request and add it to the IOBuffer */
-  http_request_data = INKIOBufferDataCreate(http_request, http_request_length, INK_DATA_CONSTANT);
-  http_request_block = INKIOBufferBlockCreate(http_request_data, http_request_length, 0);
+  http_request_data = TSIOBufferDataCreate(http_request, http_request_length, TS_DATA_CONSTANT);
+  http_request_block = TSIOBufferBlockCreate(http_request_data, http_request_length, 0);
 
-  INKIOBufferAppend(data->ts_input_buffer, http_request_block);
+  TSIOBufferAppend(data->ts_input_buffer, http_request_block);
 
-  INKDebug(LOW, "Writing request %s to socket back", http_request);
+  TSDebug(LOW, "Writing request %s to socket back", http_request);
 
-  data->ts_vio = INKVConnWrite(data->ts_vc, contp, data->ts_input_reader, http_request_length);
+  data->ts_vio = TSVConnWrite(data->ts_vc, contp, data->ts_input_reader, http_request_length);
 
   return 0;
 }
@@ -1336,24 +1336,24 @@ asm_ts_write(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_ts_read_init(INKCont contp, AsmData * data)
+asm_ts_read_init(TSCont contp, AsmData * data)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_ts_read_init");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_ts_read_init");
 
   data->state = STATE_TS_READ;
 
   /* Create the IOBuffer and Reader to read
      response from TS on the socket back */
-  data->ts_output_buffer = INKIOBufferCreate();
-  data->ts_output_reader = INKIOBufferReaderAlloc(data->ts_output_buffer);
+  data->ts_output_buffer = TSIOBufferCreate();
+  data->ts_output_reader = TSIOBufferReaderAlloc(data->ts_output_buffer);
 
   /* Create IOBUffer and Reader to bufferize the include doc */
-  data->block_buffer = INKIOBufferCreate();
-  data->block_reader = INKIOBufferReaderAlloc(data->block_buffer);
+  data->block_buffer = TSIOBufferCreate();
+  data->block_reader = TSIOBufferReaderAlloc(data->block_buffer);
 
   /* Read data on the socket back. Try to read the maximum */
-  data->ts_vio = INKVConnRead(data->ts_vc, contp, data->ts_output_buffer, INT_MAX);
+  data->ts_vio = TSVConnRead(data->ts_vc, contp, data->ts_output_buffer, INT_MAX);
 
   return 0;
 }
@@ -1367,30 +1367,30 @@ asm_ts_read_init(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_ts_read(INKCont contp, AsmData * data)
+asm_ts_read(TSCont contp, AsmData * data)
 {
   int avail;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_ts_read");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_ts_read");
 
-  INKDebug(LOW, "Reader avail = %d, TodoGet = %d, NDoneGet = %d",
-           INKIOBufferReaderAvail(data->ts_output_reader), INKVIONTodoGet(data->ts_vio), INKVIONDoneGet(data->ts_vio));
+  TSDebug(LOW, "Reader avail = %d, TodoGet = %d, NDoneGet = %d",
+           TSIOBufferReaderAvail(data->ts_output_reader), TSVIONTodoGet(data->ts_vio), TSVIONDoneGet(data->ts_vio));
 
-  avail = INKIOBufferReaderAvail(data->ts_output_reader);
+  avail = TSIOBufferReaderAvail(data->ts_output_reader);
 
   /* Bufferize available data in the block_buffer */
   if (avail > 0) {
-    INKIOBufferCopy(data->block_buffer, data->ts_output_reader, avail, 0);
-    INKIOBufferReaderConsume(data->ts_output_reader, avail);
-    INKVIONDoneSet(data->ts_vio, INKVIONDoneGet(data->ts_vio) + avail);
+    TSIOBufferCopy(data->block_buffer, data->ts_output_reader, avail, 0);
+    TSIOBufferReaderConsume(data->ts_output_reader, avail);
+    TSVIONDoneSet(data->ts_vio, TSVIONDoneGet(data->ts_vio) + avail);
   }
 
-  INKDebug(LOW, "Reader avail = %d, TodoGet = %d, NDoneGet = %d",
-           INKIOBufferReaderAvail(data->ts_output_reader), INKVIONTodoGet(data->ts_vio), INKVIONDoneGet(data->ts_vio));
+  TSDebug(LOW, "Reader avail = %d, TodoGet = %d, NDoneGet = %d",
+           TSIOBufferReaderAvail(data->ts_output_reader), TSVIONTodoGet(data->ts_vio), TSVIONDoneGet(data->ts_vio));
 
   /* Now reenable the vio to let it know it can produce some more data */
-  INKVIOReenable(data->ts_vio);
+  TSVIOReenable(data->ts_vio);
 
   return 0;
 }
@@ -1408,15 +1408,15 @@ asm_ts_read(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_append_block(INKCont contp, AsmData * data)
+asm_append_block(TSCont contp, AsmData * data)
 {
   int offset_start, offset_end, len, nbytes, avail;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_append_block");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_append_block");
 
-  avail = INKIOBufferReaderAvail(data->block_reader);
-  INKDebug(LOW, "%d bytes in the include doc", avail);
+  avail = TSIOBufferReaderAvail(data->block_reader);
+  TSDebug(LOW, "%d bytes in the include doc", avail);
 
   offset_start = strfind_ioreader(data->block_reader, BLOCK_START) + strlen(BLOCK_START);
   if (offset_start >= 0) {
@@ -1425,17 +1425,17 @@ asm_append_block(INKCont contp, AsmData * data)
 
   /* If no <block> tags found, append nothing. */
   if ((offset_start < 0) || (offset_end < 0)) {
-    INKError("Could not find block marker %s and %s in %s", BLOCK_START, BLOCK_END, data->block_url);
+    TSError("Could not find block marker %s and %s in %s", BLOCK_START, BLOCK_END, data->block_url);
   } else {
     len = offset_end - offset_start + 1;
-    INKDebug(LOW, "Include doc parsing. offset_start = %d, end = %d, len = %d", offset_start, offset_end, len);
+    TSDebug(LOW, "Include doc parsing. offset_start = %d, end = %d, len = %d", offset_start, offset_end, len);
 
-    nbytes = INKIOBufferCopy(data->output_buffer, data->block_reader, len, offset_start);
-    INKDebug(LOW, "%d bytes append from include to buffer output", nbytes);
+    nbytes = TSIOBufferCopy(data->output_buffer, data->block_reader, len, offset_start);
+    TSDebug(LOW, "%d bytes append from include to buffer output", nbytes);
   }
 
   /* We can now free the iobuffer used to bufferize this block */
-  INKIOBufferDestroy(data->block_buffer);
+  TSIOBufferDestroy(data->block_buffer);
   data->block_buffer = NULL;
 
   /* once that is done, let's continue parsing the input buffer */
@@ -1455,23 +1455,23 @@ asm_append_block(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_block_bypass(INKCont contp, AsmData * data)
+asm_block_bypass(TSCont contp, AsmData * data)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_block_bypass");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_block_bypass");
 
   data->state = STATE_ERROR;
 
   /* Close the socket back */
   if (data->ts_vc) {
-    INKVConnAbort(data->ts_vc, 1);
+    TSVConnAbort(data->ts_vc, 1);
     data->ts_vc = NULL;
     data->ts_vio = NULL;
   }
 
   /* Close the cache vc */
   if (data->cache_vc) {
-    INKVConnAbort(data->cache_vc, 1);
+    TSVConnAbort(data->cache_vc, 1);
     data->cache_vc = NULL;
     data->cache_read_vio = NULL;
     data->cache_write_vio = NULL;
@@ -1480,24 +1480,24 @@ asm_block_bypass(INKCont contp, AsmData * data)
   /* FIX ME: should we deallocate readers also ? */
   /* Free buffers. readers will be automatically freed */
   if (data->ts_input_buffer) {
-    INKIOBufferDestroy(data->ts_input_buffer);
+    TSIOBufferDestroy(data->ts_input_buffer);
     data->ts_input_buffer = NULL;
   }
   if (data->ts_output_buffer) {
-    INKIOBufferDestroy(data->ts_output_buffer);
+    TSIOBufferDestroy(data->ts_output_buffer);
     data->ts_output_buffer = NULL;
   }
   if (data->cache_read_buffer) {
-    INKIOBufferDestroy(data->cache_read_buffer);
+    TSIOBufferDestroy(data->cache_read_buffer);
     data->cache_read_buffer = NULL;
   }
   if (data->cache_write_buffer) {
-    INKIOBufferDestroy(data->cache_write_buffer);
+    TSIOBufferDestroy(data->cache_write_buffer);
     data->cache_write_buffer = NULL;
   }
 
   if (data->block_buffer) {
-    INKIOBufferDestroy(data->block_buffer);
+    TSIOBufferDestroy(data->block_buffer);
     data->block_buffer = NULL;
   }
 
@@ -1514,32 +1514,32 @@ asm_block_bypass(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_output_buffer(INKCont contp, AsmData * data)
+asm_output_buffer(TSCont contp, AsmData * data)
 {
   int towrite;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_output_buffer");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_output_buffer");
 
   /* Change the state */
   data->state = STATE_OUTPUT_WRITE;
 
   /* Check to see if we need to initiate the output operation. */
   if (!data->output_vio) {
-    INKVConn output_conn;
+    TSVConn output_conn;
 
     /* Get the output connection where we'll write data to. */
-    output_conn = INKTransformOutputVConnGet(contp);
+    output_conn = TSTransformOutputVConnGet(contp);
 
     /* Write all the data we have in the output buffer */
-    towrite = INKIOBufferReaderAvail(data->output_reader);
-    INKDebug(LOW, "Writing %d bytes to the downstream connection", towrite);
+    towrite = TSIOBufferReaderAvail(data->output_reader);
+    TSDebug(LOW, "Writing %d bytes to the downstream connection", towrite);
 
-    if (INKIsDebugTagSet(LOW)) {
+    if (TSIsDebugTagSet(LOW)) {
       print_iobuffer(data->output_buffer);
     }
 
-    data->output_vio = INKVConnWrite(output_conn, contp, data->output_reader, towrite);
+    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, towrite);
   }
 
   return 0;
@@ -1555,20 +1555,20 @@ asm_output_buffer(INKCont contp, AsmData * data)
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_input_buffer_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_input_buffer_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_input_buffer_events_handler");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_input_buffer_events_handler");
 
   switch (event) {
-  case INK_EVENT_IMMEDIATE:
-    INKDebug(LOW, "Getting INK_EVENT_IMMEDIATE in input_buffer handler");
+  case TS_EVENT_IMMEDIATE:
+    TSDebug(LOW, "Getting TS_EVENT_IMMEDIATE in input_buffer handler");
     asm_input_buffer(contp, data);
     break;
 
   default:
-    INKError("Getting unexpected event %d in input_buffer handler", event);
-    INKAssert(!"Unexpected event");
+    TSError("Getting unexpected event %d in input_buffer handler", event);
+    TSAssert(!"Unexpected event");
     break;
   }
 
@@ -1583,27 +1583,27 @@ asm_input_buffer_events_handler(INKCont contp, AsmData * data, INKEvent event, v
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_prepare_read_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_cache_prepare_read_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
   int cache_error = 0;
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_prepare_read_events_handler");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_prepare_read_events_handler");
 
   switch (event) {
 
-  case INK_EVENT_CACHE_OPEN_READ:
+  case TS_EVENT_CACHE_OPEN_READ:
     /* Cache HIT */
-    INKDebug(LOW, "Cache HIT: block %s is in the cache", data->block_url);
+    TSDebug(LOW, "Cache HIT: block %s is in the cache", data->block_url);
     data->pending_action = NULL;
-    data->cache_vc = (INKVConn) edata;
+    data->cache_vc = (TSVConn) edata;
     /* Read the block content from the cache */
     return asm_cache_read(contp, data);
     break;
 
-  case INK_EVENT_CACHE_OPEN_READ_FAILED:
+  case TS_EVENT_CACHE_OPEN_READ_FAILED:
     /* Cache MISS */
     cache_error = (int) edata;
-    INKDebug(LOW, "Cache MISS: block %s is not the cache", data->block_url);
+    TSDebug(LOW, "Cache MISS: block %s is not the cache", data->block_url);
     data->pending_action = NULL;
     data->cache_vc = NULL;
 
@@ -1611,20 +1611,20 @@ asm_cache_prepare_read_events_handler(INKCont contp, AsmData * data, INKEvent ev
     if ((cache_error == -20401) && (data->cache_read_retry_counter < CACHE_READ_MAX_RETRIES)) {
       /* If cache is busy, retry */
       data->cache_read_retry_counter++;
-      INKDebug(LOW, "Cache busy. Read failed. Retrying %d", data->cache_read_retry_counter);
+      TSDebug(LOW, "Cache busy. Read failed. Retrying %d", data->cache_read_retry_counter);
       return asm_cache_retry_read(contp, data);
 
     } else {
       /* Cache miss or cache read failed... */
       /* Fetch the block from the OS via TS socket back */
-      INKDebug(LOW, "Cache MISS or Cache read failed. Fetching block from OS");
+      TSDebug(LOW, "Cache MISS or Cache read failed. Fetching block from OS");
       return asm_ts_connect(contp, data);
     }
     break;
 
   default:
-    INKError("Got an unexpected event %d in cache_prepare_read_events_handler", event);
-    INKAssert(!"Unexpected event in cache_prepare_read_events_handler");
+    TSError("Got an unexpected event %d in cache_prepare_read_events_handler", event);
+    TSAssert(!"Unexpected event in cache_prepare_read_events_handler");
     break;
   }
 
@@ -1640,47 +1640,47 @@ asm_cache_prepare_read_events_handler(INKCont contp, AsmData * data, INKEvent ev
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_read_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_cache_read_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
   int read_meta = 0;
 
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_read_events_handler");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_read_events_handler");
 
   switch (event) {
-  case INK_EVENT_ERROR:
+  case TS_EVENT_ERROR:
     /* An error occurred while reading block from cache. */
     /* TEMP: bypass the block */
     /* TODO remove this cache entry + fetch block from OS */
-    INKError("Error while reading from the cache");
-    INKDebug(LOW, "Got an EVENT_ERROR event");
+    TSError("Error while reading from the cache");
+    TSDebug(LOW, "Got an EVENT_ERROR event");
 
     /* FIX ME: Do we need to abort the cache VC ? */
-    INKVConnAbort(data->cache_vc, 1);
+    TSVConnAbort(data->cache_vc, 1);
     data->cache_vc = NULL;
     data->cache_read_vio = NULL;
 
     return asm_block_bypass(contp, data);
     break;
 
-  case INK_EVENT_VCONN_READ_READY:
+  case TS_EVENT_VCONN_READ_READY:
     /* Some more data available to read */
-    INKDebug(LOW, "Got an EVENT_VCONN_READ_READY event");
+    TSDebug(LOW, "Got an EVENT_VCONN_READ_READY event");
     asm_cache_read_buffer(contp, data);
     /* Now reenable the vio to let it know it can produce some more data */
-    INKVIOReenable(data->cache_read_vio);
+    TSVIOReenable(data->cache_read_vio);
     return 0;
     break;
 
-  case INK_EVENT_VCONN_READ_COMPLETE:
+  case TS_EVENT_VCONN_READ_COMPLETE:
     /* Means we're done reading block from cache */
-    INKDebug(LOW, "Got an EVENT_VCONN_READ_COMPLETE event");
+    TSDebug(LOW, "Got an EVENT_VCONN_READ_COMPLETE event");
 
     /* finish reading any data available */
     asm_cache_read_buffer(contp, data);
 
     /* Close connection and go ahead in assembly */
-    INKVConnClose(data->cache_vc);
+    TSVConnClose(data->cache_vc);
     data->cache_vc = NULL;
     data->cache_read_vio = NULL;
 
@@ -1690,34 +1690,34 @@ asm_cache_read_events_handler(INKCont contp, AsmData * data, INKEvent event, voi
     /* FIXME: For these 2 error case, we should try fetching block from OS. */
     if (read_meta == -2) {
       /* couldn't read expected number of bytes from cache iobuffer */
-      INKDebug(HIGH, "Error: could not read enough data from cache");
-      INKError("Error: could not read enough data from cache");
+      TSDebug(HIGH, "Error: could not read enough data from cache");
+      TSError("Error: could not read enough data from cache");
       return asm_block_bypass(contp, data);
 
     } else if (read_meta == -1) {
       /* data is corrupted... */
-      INKDebug(HIGH, "Error: read corrupted block");
-      INKError("Read a corrupted block from cache");
+      TSDebug(HIGH, "Error: read corrupted block");
+      TSError("Read a corrupted block from cache");
       return asm_block_bypass(contp, data);
     }
 
-    INKAssert(read_meta == 0);
+    TSAssert(read_meta == 0);
 
     /* Make sure the block is fresh.
        If not, remove it from cache and fetch a fresh version from OS via TS */
     if (block_is_fresh(data)) {
-      INKDebug(HIGH, "Block %s is FRESH", data->block_url);
+      TSDebug(HIGH, "Block %s is FRESH", data->block_url);
       return asm_append_block(contp, data);
     } else {
-      INKDebug(HIGH, "Block %s is STALE", data->block_url);
+      TSDebug(HIGH, "Block %s is STALE", data->block_url);
       return asm_cache_remove(contp, data);
     }
 
     break;
 
   default:
-    INKError("Got an unexpected event %d in cache_read_events_handler", event);
-    INKAssert(!"Unexpected event in cache_read_events_handler");
+    TSError("Got an unexpected event %d in cache_read_events_handler", event);
+    TSAssert(!"Unexpected event in cache_read_events_handler");
     break;
   }
 
@@ -1733,27 +1733,27 @@ asm_cache_read_events_handler(INKCont contp, AsmData * data, INKEvent event, voi
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_prepare_write_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_cache_prepare_write_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_prepare_write_events_handler");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_prepare_write_events_handler");
 
   switch (event) {
-  case INK_EVENT_CACHE_OPEN_WRITE:
+  case TS_EVENT_CACHE_OPEN_WRITE:
     /* Succeeded in initializing write cache. Do the write */
-    INKDebug(LOW, "Got CACHE_OPEN_WRITE event");
+    TSDebug(LOW, "Got CACHE_OPEN_WRITE event");
 
     /* cache call us back with the cche vc as argument */
-    data->cache_vc = (INKVConn) edata;
+    data->cache_vc = (TSVConn) edata;
     data->pending_action = NULL;
 
     return asm_cache_write(contp, data);
     break;
 
-  case INK_EVENT_CACHE_OPEN_WRITE_FAILED:
+  case TS_EVENT_CACHE_OPEN_WRITE_FAILED:
     /* Cache write error. Let's continue w/o caching this block */
-    INKDebug(LOW, "Got CACHE_OPEN_WRITE_FAILED event");
-    INKError("Error while writing to the cache");
+    TSDebug(LOW, "Got CACHE_OPEN_WRITE_FAILED event");
+    TSError("Error while writing to the cache");
 
     data->pending_action = NULL;
     data->cache_vc = NULL;
@@ -1763,8 +1763,8 @@ asm_cache_prepare_write_events_handler(INKCont contp, AsmData * data, INKEvent e
     break;
 
   default:
-    INKError("Got an unexpected event %d in cache_prepare_write_events_handler", event);
-    INKAssert(!"Unexpected event");
+    TSError("Got an unexpected event %d in cache_prepare_write_events_handler", event);
+    TSAssert(!"Unexpected event");
     break;
   }
 
@@ -1779,34 +1779,34 @@ asm_cache_prepare_write_events_handler(INKCont contp, AsmData * data, INKEvent e
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_write_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_cache_write_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_write_events_handler");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_write_events_handler");
 
   switch (event) {
 
-  case INK_EVENT_VCONN_WRITE_READY:
+  case TS_EVENT_VCONN_WRITE_READY:
     /* Cache wants to read some more data */
-    INKDebug(LOW, "Got VCONN_WRITE_READY event");
-    INKVIOReenable(data->cache_write_vio);
+    TSDebug(LOW, "Got VCONN_WRITE_READY event");
+    TSVIOReenable(data->cache_write_vio);
     break;
 
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
     /* Block stored in cache */
-    INKDebug(LOW, "Got WRITE_COMPLETE event");
-    INKVConnClose(data->cache_vc);
+    TSDebug(LOW, "Got WRITE_COMPLETE event");
+    TSVConnClose(data->cache_vc);
     data->cache_vc = NULL;
     data->cache_write_vio = NULL;
-    INKIOBufferReaderFree(data->cache_write_reader);
+    TSIOBufferReaderFree(data->cache_write_reader);
     data->cache_write_reader = NULL;
 
     return asm_append_block(contp, data);
     break;
 
   default:
-    INKError("Got an unexpected event %d in cache_write_events_handler", event);
-    INKAssert(!"Unexpected event");
+    TSError("Got an unexpected event %d in cache_write_events_handler", event);
+    TSAssert(!"Unexpected event");
     break;
   }
 
@@ -1822,32 +1822,32 @@ asm_cache_write_events_handler(INKCont contp, AsmData * data, INKEvent event, vo
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_cache_remove_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_cache_remove_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_cache_remove_events_handler");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_cache_remove_events_handler");
 
   switch (event) {
-  case INK_EVENT_CACHE_REMOVE:
+  case TS_EVENT_CACHE_REMOVE:
     /* If we successfully removed block from cache,
        we now have to fetch a more recent version. */
-    INKDebug(LOW, "Got CACHE_REMOVE event");
+    TSDebug(LOW, "Got CACHE_REMOVE event");
     data->pending_action = NULL;
     return asm_ts_connect(contp, data);
     break;
 
-  case INK_EVENT_CACHE_REMOVE_FAILED:
+  case TS_EVENT_CACHE_REMOVE_FAILED:
     /* We failed removing the block from cache. Something is wrong.
        Log an error and bypass this block */
-    INKDebug(LOW, "Got REMOVE_FAILED event");
+    TSDebug(LOW, "Got REMOVE_FAILED event");
     data->pending_action = NULL;
-    INKError("Error while trying to remove block %s from cache", data->block_url);
+    TSError("Error while trying to remove block %s from cache", data->block_url);
     return asm_block_bypass(contp, data);
     break;
 
   default:
-    INKError("Got an unexpected event %d in cache_remove_events_handler", event);
-    INKAssert(!"Unexpected event in cache_remove_events_handler");
+    TSError("Got an unexpected event %d in cache_remove_events_handler", event);
+    TSAssert(!"Unexpected event in cache_remove_events_handler");
     break;
   }
 
@@ -1862,32 +1862,32 @@ asm_cache_remove_events_handler(INKCont contp, AsmData * data, INKEvent event, v
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_ts_connect_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_ts_connect_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_ts_connect_events_handler");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_ts_connect_events_handler");
 
   switch (event) {
-  case INK_EVENT_NET_CONNECT:
+  case TS_EVENT_NET_CONNECT:
     /* If creation of socket back succeeded, let's go ahead and
        send a request on this socket */
-    INKDebug(LOW, "Got NET_CONNECT event, Connection succeeded");
+    TSDebug(LOW, "Got NET_CONNECT event, Connection succeeded");
     data->pending_action = NULL;
-    data->ts_vc = (INKVConn) edata;
+    data->ts_vc = (TSVConn) edata;
     return asm_ts_write(contp, data);
     break;
 
-  case INK_EVENT_NET_CONNECT_FAILED:
+  case TS_EVENT_NET_CONNECT_FAILED:
     /* We failed creating this socket back. We won't include that document. */
-    INKDebug(LOW, "Got NET_CONNECT_FAILED, Connection failed");
-    INKError("Error while attempting to connect to TS");
+    TSDebug(LOW, "Got NET_CONNECT_FAILED, Connection failed");
+    TSError("Error while attempting to connect to TS");
     data->pending_action = NULL;
     return asm_block_bypass(contp, data);
     break;
 
   default:
-    INKError("Got an unexpected event %d in ts_connect_events_handler", event);
-    INKAssert(!"Unexpected event");
+    TSError("Got an unexpected event %d in ts_connect_events_handler", event);
+    TSAssert(!"Unexpected event");
     break;
   }
 
@@ -1903,44 +1903,44 @@ asm_ts_connect_events_handler(INKCont contp, AsmData * data, INKEvent event, voi
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_ts_write_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_ts_write_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_ts_write_events_handler");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_ts_write_events_handler");
 
   switch (event) {
     /* An error occurred while writing to the server. Close down
        the connection to the server and bypass the include. */
-  case INK_EVENT_VCONN_EOS:
+  case TS_EVENT_VCONN_EOS:
     /* FALLTHROUGH */
 
-  case INK_EVENT_ERROR:
-    INKDebug(LOW, "Got an ERROR or EOS event");
-    INKVConnAbort(data->ts_vc, 1);
+  case TS_EVENT_ERROR:
+    TSDebug(LOW, "Got an ERROR or EOS event");
+    TSVConnAbort(data->ts_vc, 1);
     data->ts_vc = NULL;
-    INKIOBufferDestroy(data->ts_input_buffer);
+    TSIOBufferDestroy(data->ts_input_buffer);
     data->ts_input_buffer = NULL;
 
     return asm_block_bypass(contp, data);
     break;
 
-  case INK_EVENT_VCONN_WRITE_READY:
-    INKDebug(LOW, "Got a WRITE_READY event");
-    INKVIOReenable(data->ts_vio);
+  case TS_EVENT_VCONN_WRITE_READY:
+    TSDebug(LOW, "Got a WRITE_READY event");
+    TSVIOReenable(data->ts_vio);
     break;
 
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
     /* TS is done reading our request */
-    INKDebug(LOW, "Got a WRITE_COMPLETE event");
-    INKIOBufferDestroy(data->ts_input_buffer);
+    TSDebug(LOW, "Got a WRITE_COMPLETE event");
+    TSIOBufferDestroy(data->ts_input_buffer);
     data->ts_input_buffer = NULL;
 
     return asm_ts_read_init(contp, data);
     break;
 
   default:
-    INKError("Got an unexpected event %d.", event);
-    INKAssert(!"Unexpected event in asm_ts_write_events_handler");
+    TSError("Got an unexpected event %d.", event);
+    TSAssert(!"Unexpected event in asm_ts_write_events_handler");
     break;
   }
 
@@ -1955,24 +1955,24 @@ asm_ts_write_events_handler(INKCont contp, AsmData * data, INKEvent event, void 
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_ts_read_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_ts_read_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKDebug(MED, "In asm_ts_read_events_handler");
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSDebug(MED, "In asm_ts_read_events_handler");
 
   switch (event) {
-  case INK_EVENT_ERROR:
+  case TS_EVENT_ERROR:
     /* An error occurred while writing to the server. Close down
        the connection to the server and bypass the include. */
-    INKDebug(LOW, "Got an EVENT_ERROR event");
+    TSDebug(LOW, "Got an EVENT_ERROR event");
     return asm_block_bypass(contp, data);
     break;
 
-  case INK_EVENT_VCONN_EOS:
+  case TS_EVENT_VCONN_EOS:
     /* Means we're done reading the include doc */
-    INKDebug(LOW, "Got an EVENT_VCONN_EOS event");
+    TSDebug(LOW, "Got an EVENT_VCONN_EOS event");
 
-    INKVConnAbort(data->ts_vc, 1);
+    TSVConnAbort(data->ts_vc, 1);
     data->ts_vc = NULL;
     data->ts_vio = NULL;
 
@@ -1983,11 +1983,11 @@ asm_ts_read_events_handler(INKCont contp, AsmData * data, INKEvent event, void *
     }
     break;
 
-  case INK_EVENT_VCONN_READ_COMPLETE:
+  case TS_EVENT_VCONN_READ_COMPLETE:
     /* Means we're done reading on TS socket back */
-    INKDebug(LOW, "Got an EVENT_VCONN_READ_COMPLETE event");
+    TSDebug(LOW, "Got an EVENT_VCONN_READ_COMPLETE event");
 
-    INKVConnClose(data->ts_vc);
+    TSVConnClose(data->ts_vc);
     data->ts_vc = NULL;
     data->ts_vio = NULL;
 
@@ -1998,16 +1998,16 @@ asm_ts_read_events_handler(INKCont contp, AsmData * data, INKEvent event, void *
     }
     break;
 
-  case INK_EVENT_VCONN_READ_READY:
+  case TS_EVENT_VCONN_READ_READY:
     /* Some more data available to read */
-    INKDebug(LOW, "Got an EVENT_VCONN_READ_READY event");
+    TSDebug(LOW, "Got an EVENT_VCONN_READ_READY event");
     return asm_ts_read(contp, data);
     break;
 
 
   default:
-    INKError("Got a %d event in asm_ts_read_events_handler", event);
-    INKAssert(!"Unexpected event in asm_ts_read_events_handler");
+    TSError("Got a %d event in asm_ts_read_events_handler", event);
+    TSAssert(!"Unexpected event in asm_ts_read_events_handler");
     break;
   }
 
@@ -2024,55 +2024,55 @@ asm_ts_read_events_handler(INKCont contp, AsmData * data, INKEvent event, void *
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_output_buffer_events_handler(INKCont contp, AsmData * data, INKEvent event, void *edata)
+asm_output_buffer_events_handler(TSCont contp, AsmData * data, TSEvent event, void *edata)
 {
-  INKDebug(MED, "In asm_output_buffer_events_handler");
+  TSDebug(MED, "In asm_output_buffer_events_handler");
 
-  INKAssert(data->magic == MAGIC_ALIVE);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
   switch (event) {
 
-    /* TODO checkout the INK_EVENT_ERROR statement */
-  case INK_EVENT_ERROR:
+    /* TODO checkout the TS_EVENT_ERROR statement */
+  case TS_EVENT_ERROR:
     {
-      INKVIO input_vio;
-      INKDebug(LOW, "Getting a INK_EVENT_ERROR in output_buffer_handler");
+      TSVIO input_vio;
+      TSDebug(LOW, "Getting a TS_EVENT_ERROR in output_buffer_handler");
 
       /* Get the write VIO for the write operation that was
          performed on ourself. This VIO contains the continuation of
          our parent transformation. This is the input VIO. */
-      input_vio = INKVConnWriteVIOGet(contp);
+      input_vio = TSVConnWriteVIOGet(contp);
 
       /* Call back our parent continuation to let it know that we
          have completed the write operation. */
-      INKContCall(INKVIOContGet(input_vio), INK_EVENT_ERROR, input_vio);
+      TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
     }
     break;
 
-  case INK_EVENT_VCONN_WRITE_COMPLETE:
-    INKDebug(LOW, "Getting a INK_EVENT_VCONN_WRITE_COMPLETE in output_buffer_handler");
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    TSDebug(LOW, "Getting a TS_EVENT_VCONN_WRITE_COMPLETE in output_buffer_handler");
     /* When our output connection says that it has finished
        reading all the data we've written to it then we should
        shutdown the write portion of its connection to
        indicate that we don't want to hear about it anymore. */
-    INKVConnShutdown(INKTransformOutputVConnGet(contp), 0, 1);
+    TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
     break;
 
-  case INK_EVENT_VCONN_WRITE_READY:
+  case TS_EVENT_VCONN_WRITE_READY:
     /* Our child continuation is ready to get more data.
        We've already written all what we had.
        So do nothing. */
-    INKDebug(LOW, "Getting a INK_EVENT_VCONN_WRITE_READY in output_buffer_handler");
+    TSDebug(LOW, "Getting a TS_EVENT_VCONN_WRITE_READY in output_buffer_handler");
     break;
 
-  case INK_EVENT_IMMEDIATE:
+  case TS_EVENT_IMMEDIATE:
     /* Probably we were reenable. Do nothing */
-    INKDebug(LOW, "Getting a INK_EVENT_IMMEDIATE in output_buffer_handler");
+    TSDebug(LOW, "Getting a TS_EVENT_IMMEDIATE in output_buffer_handler");
     break;
 
   default:
-    INKError("Getting unexpected event %d in output_buffer handler", event);
-    INKAssert(!"Unexpected event in asm_output_buffer_events_handler");
+    TSError("Getting unexpected event %d in output_buffer handler", event);
+    TSAssert(!"Unexpected event in asm_output_buffer_events_handler");
     break;
   }
 
@@ -2089,30 +2089,30 @@ asm_output_buffer_events_handler(INKCont contp, AsmData * data, INKEvent event, 
   Returns 0 if ok, -1 in case an error occured.
   -------------------------------------------------------------------------*/
 static int
-asm_main_events_handler(INKCont contp, INKEvent event, void *edata)
+asm_main_events_handler(TSCont contp, TSEvent event, void *edata)
 {
   AsmData *data;
   int val;
 
-  data = (AsmData *) INKContDataGet(contp);
-  INKAssert(data->magic == MAGIC_ALIVE);
-  INKAssert(data->state != STATE_DEAD);
+  data = (AsmData *) TSContDataGet(contp);
+  TSAssert(data->magic == MAGIC_ALIVE);
+  TSAssert(data->state != STATE_DEAD);
 
-  INKDebug(MED, "Got event %d in asm_main_events_handler", event);
+  TSDebug(MED, "Got event %d in asm_main_events_handler", event);
 
   /* VERY IMPORTANT: First thing to do is to check to see if the transformation */
-  /*   has been closed by a call to INKVConnClose. */
-  if (INKVConnClosedGet(contp)) {
+  /*   has been closed by a call to TSVConnClose. */
+  if (TSVConnClosedGet(contp)) {
     asm_transform_destroy(contp);
     return 0;
   }
 
 
-  if ((event == INK_EVENT_IMMEDIATE) && (data->state != STATE_INPUT_BUFFER) && (data->state != STATE_OUTPUT_WRITE)) {
+  if ((event == TS_EVENT_IMMEDIATE) && (data->state != STATE_INPUT_BUFFER) && (data->state != STATE_OUTPUT_WRITE)) {
     /* Probably our vconnection was reenabled. */
     /* But we've nothing to do as we're not in STATE_INPUT/WRITE_BUFFER */
 
-    /* INKError("Got EVENT_IMMEDIATE in main_handler. Ignore it"); */
+    /* TSError("Got EVENT_IMMEDIATE in main_handler. Ignore it"); */
     /* fprintf(stderr, "Got EVENT_IMMEDIATE in main_handler. Ignore it\n"); */
     return 0;
   }
@@ -2121,79 +2121,79 @@ asm_main_events_handler(INKCont contp, INKEvent event, void *edata)
 
   switch (data->state) {
   case STATE_INPUT_BUFFER:
-    INKDebug(LOW, "Redirecting event to input_buffer handler");
+    TSDebug(LOW, "Redirecting event to input_buffer handler");
     val = asm_input_buffer_events_handler(contp, data, event, edata);
     break;
   case STATE_PARSE_BUFFER:
     /* We do not expect any event in this state ... */
-    INKError("Got an unexpected event %d while in PARSE BUFFER STATE", event);
-    INKAssert(!"Unexpected event");
+    TSError("Got an unexpected event %d while in PARSE BUFFER STATE", event);
+    TSAssert(!"Unexpected event");
     break;
 
   case STATE_CACHE_PREPARE_READ:
-    INKDebug(LOW, "Redirecting event to cache_prepare_read handler");
+    TSDebug(LOW, "Redirecting event to cache_prepare_read handler");
     val = asm_cache_prepare_read_events_handler(contp, data, event, edata);
     break;
 
   case STATE_CACHE_RETRY_READ:
     /* No handler for this state. too basic */
-    INKAssert(event == INK_EVENT_TIMEOUT);
+    TSAssert(event == TS_EVENT_TIMEOUT);
     asm_cache_prepare_read(contp, data);
     break;
 
   case STATE_CACHE_READ:
-    INKDebug(LOW, "Redirecting event to cache_read handler");
+    TSDebug(LOW, "Redirecting event to cache_read handler");
     val = asm_cache_read_events_handler(contp, data, event, edata);
     break;
 
   case STATE_CACHE_PREPARE_WRITE:
-    INKDebug(LOW, "Redirecting event to cache_prepare_write handler");
+    TSDebug(LOW, "Redirecting event to cache_prepare_write handler");
     val = asm_cache_prepare_write_events_handler(contp, data, event, edata);
     break;
 
   case STATE_CACHE_WRITE:
-    INKDebug(LOW, "Redirecting event to cache_write handler");
+    TSDebug(LOW, "Redirecting event to cache_write handler");
     val = asm_cache_write_events_handler(contp, data, event, edata);
     break;
 
   case STATE_CACHE_REMOVE:
-    INKDebug(LOW, "Redirecting event to cache_remove handler");
+    TSDebug(LOW, "Redirecting event to cache_remove handler");
     val = asm_cache_remove_events_handler(contp, data, event, edata);
     break;
 
   case STATE_TS_CONNECT:
-    INKDebug(LOW, "Redirecting event to ts_connect handler");
+    TSDebug(LOW, "Redirecting event to ts_connect handler");
     val = asm_ts_connect_events_handler(contp, data, event, edata);
     break;
 
   case STATE_TS_WRITE:
-    INKDebug(LOW, "Redirecting event to ts_write_handler");
+    TSDebug(LOW, "Redirecting event to ts_write_handler");
     val = asm_ts_write_events_handler(contp, data, event, edata);
     break;
 
   case STATE_TS_READ:
-    INKDebug(LOW, "Redirecting event to ts_read_handler");
+    TSDebug(LOW, "Redirecting event to ts_read_handler");
     val = asm_ts_read_events_handler(contp, data, event, edata);
     break;
 
   case STATE_OUTPUT_WRITE:
-    INKDebug(LOW, "Redirecting event to output_write handler");
+    TSDebug(LOW, "Redirecting event to output_write handler");
     val = asm_output_buffer_events_handler(contp, data, event, edata);
     break;
 
   case STATE_ERROR:
     /* No event expected in this state */
-    INKError("Got an unexpected event %d while in STATE_ERROR state", event);
-    INKAssert(!"Unexpected event");
+    TSError("Got an unexpected event %d while in STATE_ERROR state", event);
+    TSAssert(!"Unexpected event");
     break;
 
   default:
-    INKError("Unexpexted state %d", data->state);
-    INKAssert(!"Unexpected state");
+    TSError("Unexpexted state %d", data->state);
+    TSAssert(!"Unexpected state");
   }
 
-  INKAssert(data->state != STATE_DEAD);
-  INKAssert(data->magic == MAGIC_ALIVE);
+  TSAssert(data->state != STATE_DEAD);
+  TSAssert(data->magic == MAGIC_ALIVE);
   UNLOCK_CONT_MUTEX(contp);
 
   return 0;
@@ -2206,78 +2206,78 @@ asm_main_events_handler(INKCont contp, INKEvent event, void *edata)
   Takes care of cleaning up all allocated buffer, data, etc...
   -------------------------------------------------------------------------*/
 static void
-asm_transform_destroy(INKCont contp)
+asm_transform_destroy(TSCont contp)
 {
   AsmData *data;
 
   LOCK_CONT_MUTEX(contp);
 
-  INKDebug(MED, "In asm_transform_destroy");
+  TSDebug(MED, "In asm_transform_destroy");
 
-  data = (AsmData *) INKContDataGet(contp);
-  INKAssert(data->magic == MAGIC_ALIVE);
+  data = (AsmData *) TSContDataGet(contp);
+  TSAssert(data->magic == MAGIC_ALIVE);
 
   data->magic = MAGIC_DEAD;
 
   data->state = STATE_DEAD;
 
-  if ((data->pending_action) && (!INKActionDone(data->pending_action))) {
-    INKActionCancel(data->pending_action);
+  if ((data->pending_action) && (!TSActionDone(data->pending_action))) {
+    TSActionCancel(data->pending_action);
     data->pending_action = NULL;
   }
 
   if (data->input_buffer) {
-    INKIOBufferDestroy(data->input_buffer);
+    TSIOBufferDestroy(data->input_buffer);
     data->input_buffer = NULL;
   }
 
   if (data->output_buffer) {
-    INKIOBufferDestroy(data->output_buffer);
+    TSIOBufferDestroy(data->output_buffer);
     data->output_buffer = NULL;
   }
 
   if (data->ts_vc) {
-    INKVConnAbort(data->ts_vc, 1);
+    TSVConnAbort(data->ts_vc, 1);
     data->ts_vc = NULL;
   }
 
   if (data->ts_input_buffer) {
-    INKIOBufferDestroy(data->ts_input_buffer);
+    TSIOBufferDestroy(data->ts_input_buffer);
     data->ts_input_buffer = NULL;
   }
 
   if (data->ts_output_buffer) {
-    INKIOBufferDestroy(data->ts_output_buffer);
+    TSIOBufferDestroy(data->ts_output_buffer);
     data->ts_output_buffer = NULL;
   }
 
   if (data->block_buffer) {
-    INKIOBufferDestroy(data->block_buffer);
+    TSIOBufferDestroy(data->block_buffer);
     data->block_buffer = NULL;
   }
 
   if (data->cache_vc) {
-    INKVConnAbort(data->cache_vc, 1);
+    TSVConnAbort(data->cache_vc, 1);
     data->cache_vc = NULL;
   }
 
   if (data->cache_read_buffer) {
-    INKIOBufferDestroy(data->cache_read_buffer);
+    TSIOBufferDestroy(data->cache_read_buffer);
     data->cache_read_buffer = NULL;
   }
 
   if (data->cache_write_buffer) {
-    INKIOBufferDestroy(data->cache_write_buffer);
+    TSIOBufferDestroy(data->cache_write_buffer);
     data->cache_write_buffer = NULL;
   }
 
   if (data->block_key) {
-    INKCacheKeyDestroy(data->block_key);
+    TSCacheKeyDestroy(data->block_key);
     data->block_key = NULL;
   }
 
   if (data->block_url) {
-    INKfree(data->block_url);
+    TSfree(data->block_url);
   }
 
   data->block_metadata.template_id = MAGIC_DEAD;
@@ -2286,16 +2286,16 @@ asm_transform_destroy(INKCont contp)
   pairListFree(&data->cookies);
 
   if (data->query_string) {
-    INKfree(data->query_string);
+    TSfree(data->query_string);
     data->query_string = NULL;
   }
 
-  INKfree(data);
+  TSfree(data);
   data = NULL;
 
   UNLOCK_CONT_MUTEX(contp);
 
-  INKContDestroy(contp);
+  TSContDestroy(contp);
 }
 
 
@@ -2306,23 +2306,23 @@ asm_transform_destroy(INKCont contp)
   the template page. Initializes structures required for the assembly process
   -------------------------------------------------------------------------*/
 static void
-asm_transform_create(INKHttpTxn txnp, TxnData * txn_data)
+asm_transform_create(TSHttpTxn txnp, TxnData * txn_data)
 {
-  INKVConn connp;
+  TSVConn connp;
   AsmData *data;
 
-  INKDebug(MED, "In asm_transform_create");
+  TSDebug(MED, "In asm_transform_create");
 
-  connp = INKTransformCreate(asm_main_events_handler, txnp);
+  connp = TSTransformCreate(asm_main_events_handler, txnp);
 
   /* By caching only the untransformed version, we reassemble each time
      there is a cache hit. Reassembling means fetching the blocks
      so by this way we make sure the blocks are also fresh. */
-  INKHttpTxnUntransformedRespCache(txnp, 1);
-  INKHttpTxnTransformedRespCache(txnp, 0);
+  TSHttpTxnUntransformedRespCache(txnp, 1);
+  TSHttpTxnTransformedRespCache(txnp, 0);
 
   /* Initialize all data structure we'll need to do the assembly job */
-  data = (AsmData *) INKmalloc(sizeof(AsmData));
+  data = (AsmData *) TSmalloc(sizeof(AsmData));
   data->state = STATE_INPUT_BUFFER;
   data->txn = txnp;
   data->input_buffer = NULL;
@@ -2369,9 +2369,9 @@ asm_transform_create(INKHttpTxn txnp, TxnData * txn_data)
   query_string_extract(txn_data, &data->query_string);
 
   /* Associate data with the transformation we've created */
-  INKContDataSet((INKCont) connp, data);
+  TSContDataSet((TSCont) connp, data);
 
-  INKHttpTxnHookAdd(txnp, INK_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 }
 
 
@@ -2379,12 +2379,12 @@ asm_transform_create(INKHttpTxn txnp, TxnData * txn_data)
   asm_txn_data_create
   -------------------------------------------------------------------------*/
 static TxnData *
-asm_txn_data_create(INKCont contp)
+asm_txn_data_create(TSCont contp)
 {
   TxnData *txn_data;
-  INKDebug(MED, "In asm_cont_data_init");
+  TSDebug(MED, "In asm_cont_data_init");
 
-  txn_data = (TxnData *) INKmalloc(sizeof(TxnData));
+  txn_data = (TxnData *) TSmalloc(sizeof(TxnData));
   txn_data->request_url_buf = NULL;
   txn_data->request_url_loc = NULL;
   txn_data->template_url_buf = NULL;
@@ -2393,7 +2393,7 @@ asm_txn_data_create(INKCont contp)
 
   txn_data->magic = MAGIC_ALIVE;
 
-  INKContDataSet(contp, (void *) txn_data);
+  TSContDataSet(contp, (void *) txn_data);
   return txn_data;
 }
 
@@ -2402,34 +2402,34 @@ asm_txn_data_create(INKCont contp)
   asm_txn_data_destroy
   -------------------------------------------------------------------------*/
 static void
-asm_txn_data_destroy(INKCont contp)
+asm_txn_data_destroy(TSCont contp)
 {
   TxnData *txn_data;
-  INKDebug(MED, "In asm_txn_data_destroy");
+  TSDebug(MED, "In asm_txn_data_destroy");
 
-  txn_data = INKContDataGet(contp);
-  INKAssert(txn_data->magic == MAGIC_ALIVE);
+  txn_data = TSContDataGet(contp);
+  TSAssert(txn_data->magic == MAGIC_ALIVE);
 
   txn_data->magic = MAGIC_DEAD;
 
   if (txn_data->request_url_loc != NULL) {
-    INKHandleMLocRelease(txn_data->request_url_buf, INK_NULL_MLOC, txn_data->request_url_loc);
+    TSHandleMLocRelease(txn_data->request_url_buf, TS_NULL_MLOC, txn_data->request_url_loc);
   }
 
   if (txn_data->request_url_buf != NULL) {
-    INKMBufferDestroy(txn_data->request_url_buf);
+    TSMBufferDestroy(txn_data->request_url_buf);
   }
 
   if (txn_data->template_url_loc != NULL) {
-    INKHandleMLocRelease(txn_data->template_url_buf, INK_NULL_MLOC, txn_data->template_url_loc);
+    TSHandleMLocRelease(txn_data->template_url_buf, TS_NULL_MLOC, txn_data->template_url_loc);
   }
 
   if (txn_data->template_url_buf != NULL) {
-    INKMBufferDestroy(txn_data->template_url_buf);
+    TSMBufferDestroy(txn_data->template_url_buf);
   }
 
   if (txn_data != NULL) {
-    INKfree(txn_data);
+    TSfree(txn_data);
   }
 }
 
@@ -2442,28 +2442,28 @@ asm_txn_data_destroy(INKCont contp)
   Callback function for the Http hooks
   -------------------------------------------------------------------------*/
 static int
-asm_main(INKCont contp, INKEvent event, void *edata)
+asm_main(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
   int lookup_status;
   TxnData *txn_data;
-  INKMBuffer bufp;
-  INKMLoc url_loc, hdr_loc, x_field_loc;
+  TSMBuffer bufp;
+  TSMLoc url_loc, hdr_loc, x_field_loc;
 
-  INKDebug(MED, "In asm_main");
+  TSDebug(MED, "In asm_main");
 
   switch (event) {
 
-  case INK_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     /* We're done with cachelookup on the template */
-    INKDebug(LOW, "Get an INK_EVENT_HTTP_CACHE_LOOKUP_COMPLETE event");
+    TSDebug(LOW, "Get an TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE event");
 
-    txn_data = INKContDataGet(contp);
-    INKAssert(txn_data->magic == MAGIC_ALIVE);
+    txn_data = TSContDataGet(contp);
+    TSAssert(txn_data->magic == MAGIC_ALIVE);
 
-    if (!INKHttpTxnCacheLookupStatusGet(txnp, &lookup_status)) {
-      INKError("Could not get cache lookup status");
-      INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    if (!TSHttpTxnCacheLookupStatusGet(txnp, &lookup_status)) {
+      TSError("Could not get cache lookup status");
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       return -1;
     }
 
@@ -2474,69 +2474,69 @@ asm_main(INKCont contp, INKEvent event, void *edata)
          actually on the OS the client request doc is no longer
          generated using a template and the OS response is a regular
          file with no X-Template header */
-    case INK_CACHE_LOOKUP_MISS:
-    case INK_CACHE_LOOKUP_HIT_STALE:
+    case TS_CACHE_LOOKUP_MISS:
+    case TS_CACHE_LOOKUP_HIT_STALE:
 
-      INKDebug(LOW, "Cache %s", ((lookup_status == INK_CACHE_LOOKUP_MISS) ? "MISS" : "HIT STALE"));
+      TSDebug(LOW, "Cache %s", ((lookup_status == TS_CACHE_LOOKUP_MISS) ? "MISS" : "HIT STALE"));
       break;
 
-    case INK_CACHE_LOOKUP_HIT_FRESH:
+    case TS_CACHE_LOOKUP_HIT_FRESH:
       /* Cache hit fresh on the template.
          Let's setup the transform for the assembly that will take place */
-      INKDebug(LOW, "Cache HIT FRESH");
+      TSDebug(LOW, "Cache HIT FRESH");
       asm_transform_create(txnp, txn_data);
       txn_data->transform_created = 1;
       break;
 
     default:
-      INKAssert(!"Unexpected event");
+      TSAssert(!"Unexpected event");
       break;
     }
 
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
     break;
 
 
-  case INK_EVENT_HTTP_SEND_REQUEST_HDR:
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
     /* Add header X-Template to each outgoing request to let the server
        know we're capable of doing assembly */
-    INKHttpTxnServerReqGet(txnp, &bufp, &hdr_loc);
+    TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc);
 
     /* Create new X-Template field */
-    x_field_loc = INKMimeHdrFieldCreate(bufp, hdr_loc);
-    INKMimeHdrFieldNameSet(bufp, hdr_loc, x_field_loc, HEADER_X_TEMPLATE, -1);
-    INKMimeHdrFieldValueStringInsert(bufp, hdr_loc, x_field_loc, "true", -1, -1);
-    INKMimeHdrFieldAppend(bufp, hdr_loc, x_field_loc);
-    INKHandleMLocRelease(bufp, hdr_loc, x_field_loc);
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    x_field_loc = TSMimeHdrFieldCreate(bufp, hdr_loc);
+    TSMimeHdrFieldNameSet(bufp, hdr_loc, x_field_loc, HEADER_X_TEMPLATE, -1);
+    TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, x_field_loc, "true", -1, -1);
+    TSMimeHdrFieldAppend(bufp, hdr_loc, x_field_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, x_field_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
     break;
 
 
-  case INK_EVENT_HTTP_READ_RESPONSE_HDR:
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     /* OK, we got a response from the OS.
        Determine if it's a template so we can assemble it */
-    INKDebug(LOW, "Get an INK_EVENT_HTTP_READ_RESPONSE_HDR event");
+    TSDebug(LOW, "Get an TS_EVENT_HTTP_READ_RESPONSE_HDR event");
 
-    txn_data = INKContDataGet(contp);
-    INKAssert(txn_data->magic == MAGIC_ALIVE);
+    txn_data = TSContDataGet(contp);
+    TSAssert(txn_data->magic == MAGIC_ALIVE);
 
-    if (!INKHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
-      INKError("Couldnt get server response Http header");
-      INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    if (!TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+      TSError("Couldnt get server response Http header");
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       return -1;
     }
 
     if (is_template_header(bufp, hdr_loc)) {
-      INKDebug(HIGH, "Detected a template page. Read from OS");
+      TSDebug(HIGH, "Detected a template page. Read from OS");
 
       /* Check the X-NoCache header */
       if (has_nocache_header(bufp, hdr_loc)) {
-        INKDebug(LOW, "NoCache header detected. The template will not be cached");
-        INKHttpTxnServerRespNoStore(txnp);
+        TSDebug(LOW, "NoCache header detected. The template will not be cached");
+        TSHttpTxnServerRespNoStore(txnp);
       }
 
       /* Create the assembly transformation */
@@ -2549,34 +2549,34 @@ asm_main(INKCont contp, INKEvent event, void *edata)
       }
     } else {
       /* If it's not a template, we do not want the document to be cached. */
-      INKDebug(HIGH, "Not a template page. Do not transform nor cache this request");
-      INKHttpTxnServerRespNoStore(txnp);
+      TSDebug(HIGH, "Not a template page. Do not transform nor cache this request");
+      TSHttpTxnServerRespNoStore(txnp);
     }
 
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
     break;
 
-  case INK_EVENT_HTTP_TXN_CLOSE:
-    INKDebug(LOW, "Get an INK_EVENT_HTTP_TXN_CLOSE event");
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    TSDebug(LOW, "Get an TS_EVENT_HTTP_TXN_CLOSE event");
 
-    txn_data = INKContDataGet(contp);
-    INKAssert(txn_data->magic == MAGIC_ALIVE);
+    txn_data = TSContDataGet(contp);
+    TSAssert(txn_data->magic == MAGIC_ALIVE);
 
     /* destroy this transaction and its data */
     asm_txn_data_destroy(contp);
-    INKContDestroy(contp);
-    INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    TSContDestroy(contp);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
     break;
 
   default:
-    INKAssert(!"Unexpected event");
+    TSAssert(!"Unexpected event");
     break;
   }
 
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
 
@@ -2590,32 +2590,32 @@ asm_main(INKCont contp, INKEvent event, void *edata)
   Else do not process further
   -------------------------------------------------------------------------*/
 static int
-asm_read_request(INKCont contp, INKEvent event, void *edata)
+asm_read_request(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-  INKCont txn_contp;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSCont txn_contp;
   TxnData *txn_data;
-  INKMBuffer bufp;
-  INKMLoc hdr_loc, url_loc;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc, url_loc;
   int len;
 
-  INKDebug(MED, "In asm_read_request");
+  TSDebug(MED, "In asm_read_request");
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
-    INKDebug(LOW, "Get an INK_EVENT_HTTP_READ_REQUEST_HDR event");
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    TSDebug(LOW, "Get an TS_EVENT_HTTP_READ_REQUEST_HDR event");
 
-    if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
-      INKError("Couldnt get client request Http header");
-      INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+    if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+      TSError("Couldnt get client request Http header");
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       return -1;
     }
 
     /* If request comes from socket back and is for a block, exit ! */
     if (is_block_request(bufp, hdr_loc)) {
-      INKDebug(HIGH, "Block request. Do not assemble !");
-      INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
-      INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+      TSDebug(HIGH, "Block request. Do not assemble !");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       return 0;
     }
 
@@ -2624,44 +2624,44 @@ asm_read_request(INKCont contp, INKEvent event, void *edata)
 
 
     /* Create a continuation and data for this specific transaction */
-    txn_contp = INKContCreate(asm_main, INKMutexCreate());
+    txn_contp = TSContCreate(asm_main, TSMutexCreate());
     txn_data = asm_txn_data_create(txn_contp);
-    INKAssert(txn_data);
+    TSAssert(txn_data);
 
 
     /* Store original request url into txn_data structure */
-    url_loc = INKHttpHdrUrlGet(bufp, hdr_loc);
+    url_loc = TSHttpHdrUrlGet(bufp, hdr_loc);
     if (url_loc == NULL) {
-      INKError("Could not get Url");
-      INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
-      INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+      TSError("Could not get Url");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       return -1;
     }
 
-    txn_data->request_url_buf = INKMBufferCreate();
-    txn_data->request_url_loc = INKUrlCreate(txn_data->request_url_buf);
-    INKUrlCopy(txn_data->request_url_buf, txn_data->request_url_loc, bufp, url_loc);
+    txn_data->request_url_buf = TSMBufferCreate();
+    txn_data->request_url_loc = TSUrlCreate(txn_data->request_url_buf);
+    TSUrlCopy(txn_data->request_url_buf, txn_data->request_url_loc, bufp, url_loc);
 
-    INKDebug(LOW, "Request url = |%s|", INKUrlStringGet(txn_data->request_url_buf, txn_data->request_url_loc, &len));
+    TSDebug(LOW, "Request url = |%s|", TSUrlStringGet(txn_data->request_url_buf, txn_data->request_url_loc, &len));
 
-    INKHandleMLocRelease(bufp, hdr_loc, url_loc);
-    INKHandleMLocRelease(bufp, INK_NULL_MLOC, hdr_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
 
     /* Register for hooks later in the transaction */
-    INKHttpTxnHookAdd(txnp, INK_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_contp);
-    INKHttpTxnHookAdd(txnp, INK_HTTP_SEND_REQUEST_HDR_HOOK, txn_contp);
-    INKHttpTxnHookAdd(txnp, INK_HTTP_READ_RESPONSE_HDR_HOOK, txn_contp);
-    INKHttpTxnHookAdd(txnp, INK_HTTP_TXN_CLOSE_HOOK, txn_contp);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_contp);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, txn_contp);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, txn_contp);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
 
     break;
 
   default:
-    INKAssert(!"Unexpected event");
+    TSAssert(!"Unexpected event");
     break;
   }
 
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
 
@@ -2669,7 +2669,7 @@ asm_read_request(INKCont contp, INKEvent event, void *edata)
 int
 check_ts_version()
 {
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -2693,28 +2693,28 @@ check_ts_version()
 
 
 /*-------------------------------------------------------------------------
-  INKPluginInit
+  TSPluginInit
 
 
   -------------------------------------------------------------------------*/
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKPluginRegistrationInfo info;
-  INKCont contp;
+  TSPluginRegistrationInfo info;
+  TSCont contp;
 
-  INKError("Assembly engine ...taking off !");
+  TSError("Assembly engine ...taking off !");
 
   info.plugin_name = "assembly";
   info.vendor_name = "Apache";
   info.support_email = "";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
@@ -2727,10 +2727,10 @@ INKPluginInit(int argc, const char *argv[])
   } else {
     server_port = TS_DEFAULT_PORT;
   }
-  INKDebug(HIGH, "Using TS port %d for internal requests", server_port);
+  TSDebug(HIGH, "Using TS port %d for internal requests", server_port);
 
-  contp = INKContCreate(asm_read_request, NULL);
-  INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, contp);
+  contp = TSContCreate(asm_read_request, NULL);
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
 
-  INKDebug(HIGH, "Assembly plugin processor started");
+  TSDebug(HIGH, "Assembly plugin processor started");
 }

@@ -38,27 +38,27 @@
 #include <string.h>
 #include <ts/ts.h>
 
-static INKMBuffer hdr_bufp;
-static INKMLoc hdr_loc;
+static TSMBuffer hdr_bufp;
+static TSMLoc hdr_loc;
 
 static void
-add_header(INKHttpTxn txnp, INKCont contp)
+add_header(TSHttpTxn txnp, TSCont contp)
 {
-  INKMBuffer req_bufp;
-  INKMLoc req_loc;
-  INKMLoc field_loc;
-  INKMLoc next_field_loc;
-  INKMLoc new_field_loc;
+  TSMBuffer req_bufp;
+  TSMLoc req_loc;
+  TSMLoc field_loc;
+  TSMLoc next_field_loc;
+  TSMLoc new_field_loc;
   int retval;
 
-  if (!INKHttpTxnClientReqGet(txnp, &req_bufp, &req_loc)) {
-    INKError("[add_header] Error while retrieving client request header\n");
+  if (!TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc)) {
+    TSError("[add_header] Error while retrieving client request header\n");
     goto done;
   }
 
-  field_loc = INKMimeHdrFieldGet(hdr_bufp, hdr_loc, 0);
-  if (field_loc == INK_ERROR_PTR) {
-    INKError("[add_header] Error while getting field");
+  field_loc = TSMimeHdrFieldGet(hdr_bufp, hdr_loc, 0);
+  if (field_loc == TS_ERROR_PTR) {
+    TSError("[add_header] Error while getting field");
     goto error;
   }
 
@@ -66,58 +66,58 @@ add_header(INKHttpTxn txnp, INKCont contp)
   while (field_loc) {
 
     /* First create a new field in the client request header */
-    new_field_loc = INKMimeHdrFieldCreate(req_bufp, req_loc);
-    if (new_field_loc == INK_ERROR_PTR) {
-      INKError("[add_header] Error while creating new field");
-      INKHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
+    new_field_loc = TSMimeHdrFieldCreate(req_bufp, req_loc);
+    if (new_field_loc == TS_ERROR_PTR) {
+      TSError("[add_header] Error while creating new field");
+      TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
       break;
     }
 
     /* Then copy our new field at this new location */
-    retval = INKMimeHdrFieldCopy(req_bufp, req_loc, new_field_loc, hdr_bufp, hdr_loc, field_loc);
-    if (retval == INK_ERROR) {
-      INKError("[add_header] Error while copying new field");
-      INKHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
+    retval = TSMimeHdrFieldCopy(req_bufp, req_loc, new_field_loc, hdr_bufp, hdr_loc, field_loc);
+    if (retval == TS_ERROR) {
+      TSError("[add_header] Error while copying new field");
+      TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
       break;
     }
 
     /* Add this field to the Http client request header */
-    retval = INKMimeHdrFieldAppend(req_bufp, req_loc, new_field_loc);
-    if (retval == INK_ERROR) {
-      INKError("[add_header] Error while appending new field");
-      INKHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
+    retval = TSMimeHdrFieldAppend(req_bufp, req_loc, new_field_loc);
+    if (retval == TS_ERROR) {
+      TSError("[add_header] Error while appending new field");
+      TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
       break;
     }
 
     /* We can now release this handle */
-    INKHandleMLocRelease(req_bufp, req_loc, new_field_loc);
+    TSHandleMLocRelease(req_bufp, req_loc, new_field_loc);
 
-    next_field_loc = INKMimeHdrFieldNext(hdr_bufp, hdr_loc, field_loc);
-    if (next_field_loc == INK_ERROR_PTR) {
-      INKError("[add_header] Error while getting next field to add");
-      INKHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
+    next_field_loc = TSMimeHdrFieldNext(hdr_bufp, hdr_loc, field_loc);
+    if (next_field_loc == TS_ERROR_PTR) {
+      TSError("[add_header] Error while getting next field to add");
+      TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
       goto error;
     }
 
-    INKHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
+    TSHandleMLocRelease(hdr_bufp, hdr_loc, field_loc);
     field_loc = next_field_loc;
   }
 
 
 error:
-  INKHandleMLocRelease(req_bufp, INK_NULL_MLOC, req_loc);
+  TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
 
 done:
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
 static int
-add_header_plugin(INKCont contp, INKEvent event, void *edata)
+add_header_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
     add_header(txnp, contp);
     return 0;
   default:
@@ -130,7 +130,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -152,62 +152,62 @@ check_ts_version()
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  INKMLoc field_loc;
+  TSMLoc field_loc;
   const char *p;
   int i, retval;
-  INKPluginRegistrationInfo info;
+  TSPluginRegistrationInfo info;
 
   info.plugin_name = "add-header";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("[PluginInit] Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("[PluginInit] Plugin registration failed.\n");
     goto error;
   }
 
   if (!check_ts_version()) {
-    INKError("[PluginInit] Plugin requires Traffic Server 2.0 or later\n");
+    TSError("[PluginInit] Plugin requires Traffic Server 2.0 or later\n");
     goto error;
   }
 
   if (argc < 2) {
-    INKError("[PluginInit] Usage: %s \"name1: value1\" \"name2: value2\" ...>\n", argv[0]);
+    TSError("[PluginInit] Usage: %s \"name1: value1\" \"name2: value2\" ...>\n", argv[0]);
     goto error;
   }
 
-  hdr_bufp = INKMBufferCreate();
-  if (hdr_bufp == INK_ERROR_PTR) {
-    INKError("[PluginInit] Can not create mbuffer");
+  hdr_bufp = TSMBufferCreate();
+  if (hdr_bufp == TS_ERROR_PTR) {
+    TSError("[PluginInit] Can not create mbuffer");
     goto error;
   }
 
-  hdr_loc = INKMimeHdrCreate(hdr_bufp);
-  if (hdr_loc == INK_ERROR_PTR) {
-    INKError("[PluginInit] Can not create mime header");
+  hdr_loc = TSMimeHdrCreate(hdr_bufp);
+  if (hdr_loc == TS_ERROR_PTR) {
+    TSError("[PluginInit] Can not create mime header");
     goto error;
   }
 
   for (i = 1; i < argc; i++) {
-    field_loc = INKMimeHdrFieldCreate(hdr_bufp, hdr_loc);
-    if (field_loc == INK_ERROR_PTR) {
-      INKError("[PluginInit] Error while creating field");
+    field_loc = TSMimeHdrFieldCreate(hdr_bufp, hdr_loc);
+    if (field_loc == TS_ERROR_PTR) {
+      TSError("[PluginInit] Error while creating field");
       goto error;
     }
 
-    retval = INKMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
-    if (retval == INK_ERROR) {
-      INKError("[PluginInit] Error while adding field");
+    retval = TSMimeHdrFieldAppend(hdr_bufp, hdr_loc, field_loc);
+    if (retval == TS_ERROR) {
+      TSError("[PluginInit] Error while adding field");
       goto error;
     }
 
     p = strchr(argv[i], ':');
     if (p) {
-      retval = INKMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, argv[i], p - argv[i]);
-      if (retval == INK_ERROR) {
-        INKError("[PluginInit] Error while naming field");
+      retval = TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, argv[i], p - argv[i]);
+      if (retval == TS_ERROR) {
+        TSError("[PluginInit] Error while naming field");
         goto error;
       }
 
@@ -215,15 +215,15 @@ INKPluginInit(int argc, const char *argv[])
       while (isspace(*p)) {
         p += 1;
       }
-      retval = INKMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, p, strlen(p));
-      if (retval == INK_ERROR) {
-        INKError("[PluginInit] Error while inserting field value");
+      retval = TSMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, p, strlen(p));
+      if (retval == TS_ERROR) {
+        TSError("[PluginInit] Error while inserting field value");
         goto error;
       }
     } else {
-      retval = INKMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, argv[i], strlen(argv[i]));
-      if (retval == INK_ERROR) {
-        INKError("[PluginInit] Error while inserting field value");
+      retval = TSMimeHdrFieldNameSet(hdr_bufp, hdr_loc, field_loc, argv[i], strlen(argv[i]));
+      if (retval == TS_ERROR) {
+        TSError("[PluginInit] Error while inserting field value");
         goto error;
       }
     }
@@ -231,16 +231,16 @@ INKPluginInit(int argc, const char *argv[])
 
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */
-  retval = INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, INKContCreate(add_header_plugin, INKMutexCreate()));
-  if (retval == INK_ERROR) {
-    INKError("[PluginInit] Error while registering to hook");
+  retval = TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(add_header_plugin, TSMutexCreate()));
+  if (retval == TS_ERROR) {
+    TSError("[PluginInit] Error while registering to hook");
     goto error;
   }
 
   goto done;
 
 error:
-  INKError("[PluginInit] Plugin not initialized");
+  TSError("[PluginInit] Plugin not initialized");
 
 done:
   return;

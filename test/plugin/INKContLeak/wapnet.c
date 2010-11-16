@@ -28,44 +28,44 @@
 
 
 static int
-handle_log_msisdn(INKCont contp, INKEvent event, void *edata)
+handle_log_msisdn(TSCont contp, TSEvent event, void *edata)
 {
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
 
   printf(" handle_log_msisdn \n");
-  INKContDestroy(contp);
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  TSContDestroy(contp);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
 
 
 static int
-handle_request(INKCont contp, INKEvent event, void *edata)
+handle_request(TSCont contp, TSEvent event, void *edata)
 {
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-  INKMBuffer bufp;
-  INKMLoc hdr_loc;
-  INKCont continuation;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  TSCont continuation;
 
-  if (!INKHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
-    INKError("Couldn't retrieve client request header !");
+  if (!TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+    TSError("Couldn't retrieve client request header !");
     return -1;
   }
   printf("In handle_request \n");
-  continuation = INKContCreate(handle_log_msisdn, NULL);
-  INKHttpTxnHookAdd(txnp, INK_HTTP_TXN_CLOSE_HOOK, continuation);
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE);
+  continuation = TSContCreate(handle_log_msisdn, NULL);
+  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, continuation);
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   printf(" handle_request: transaction conitnuing \n");
   return 0;
 }
 
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
 
-  printf(" INKPluginInit\n");
-  INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, INKContCreate(handle_request, NULL));
+  printf(" TSPluginInit\n");
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(handle_request, NULL));
 }

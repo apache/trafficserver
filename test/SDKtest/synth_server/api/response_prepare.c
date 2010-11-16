@@ -31,14 +31,14 @@
 #define FALSE 0
 
 void
-INKPluginInit()
+TSPluginInit()
 {
-  fprintf(stderr, "*** INKResponsePrepare Test for Synthetic Server ***\n");
-  INKFuncRegister(INK_FID_RESPONSE_PREPARE);
+  fprintf(stderr, "*** TSResponsePrepare Test for Synthetic Server ***\n");
+  TSFuncRegister(TS_FID_RESPONSE_PREPARE);
 }
 
 int
-INKResponsePrepare(char *request_header, int request_len, void **response_id)
+TSResponsePrepare(char *request_header, int request_len, void **response_id)
 {
 
   /* return FALSE implies that no response will be given from the plugin

@@ -45,14 +45,14 @@
    Log macros for error code return verification
 **************************************************/
 #define PLUGIN_NAME "serve_file"
-#define VALID_POINTER(X) ((X != NULL) && (X != INK_ERROR_PTR))
+#define VALID_POINTER(X) ((X != NULL) && (X != TS_ERROR_PTR))
 #define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 #define LOG_ERROR(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 #define LOG_ERROR_NEG(API_NAME) { \
-    INKDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
+    TSDebug(PLUGIN_NAME, "%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "NEGAPIFAIL", \
 	     FUNCTION_NAME, __FILE__, __LINE__); \
 }
 #define LOG_ERROR_AND_RETURN(API_NAME) { \
@@ -65,7 +65,7 @@
 }
 #define LOG_ERROR_AND_REENABLE(API_NAME) { \
   LOG_ERROR(API_NAME); \
-  INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE); \
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE); \
 }
 
 static char *doc_buf = NULL;
@@ -73,17 +73,17 @@ static int doc_size;
 
 struct pvc_state_t
 {
-  INKVConn net_vc;
-  INKVIO read_vio;
-  INKVIO write_vio;
+  TSVConn net_vc;
+  TSVIO read_vio;
+  TSVIO write_vio;
 
-  INKIOBuffer req_buffer;
-  INKIOBufferReader req_reader;
+  TSIOBuffer req_buffer;
+  TSIOBufferReader req_reader;
 
-  INKIOBuffer resp_buffer;
-  INKIOBufferReader resp_reader;
+  TSIOBuffer resp_buffer;
+  TSIOBufferReader resp_reader;
 
-  INKHttpTxn http_txnp;
+  TSHttpTxn http_txnp;
 
   int output_bytes;
   int body_written;
@@ -91,36 +91,36 @@ struct pvc_state_t
 typedef struct pvc_state_t pvc_state;
 
 static void
-pvc_cleanup(INKCont contp, pvc_state * my_state)
+pvc_cleanup(TSCont contp, pvc_state * my_state)
 {
   LOG_SET_FUNCTION_NAME("pvc_cleanup");
 
-  /* Fix for INKqa12401: need to destroy req_buffer */
+  /* Fix for TSqa12401: need to destroy req_buffer */
   if (my_state->req_buffer) {
-    if (INKIOBufferDestroy(my_state->req_buffer) == INK_ERROR) {
-      LOG_ERROR("INKIOBufferDestroy");
+    if (TSIOBufferDestroy(my_state->req_buffer) == TS_ERROR) {
+      LOG_ERROR("TSIOBufferDestroy");
     }
     my_state->req_buffer = NULL;
   }
 
-  /* Fix for INKqa12401: need to destroy resp_buffer */
+  /* Fix for TSqa12401: need to destroy resp_buffer */
   if (my_state->resp_buffer) {
-    if (INKIOBufferDestroy(my_state->resp_buffer) == INK_ERROR) {
-      LOG_ERROR("INKIOBufferDestroy");
+    if (TSIOBufferDestroy(my_state->resp_buffer) == TS_ERROR) {
+      LOG_ERROR("TSIOBufferDestroy");
     }
     my_state->resp_buffer = NULL;
   }
 
   /* Close net_vc */
-  if (INKVConnClose(my_state->net_vc) == INK_ERROR) {
-    LOG_ERROR("INKVConnClose");
+  if (TSVConnClose(my_state->net_vc) == TS_ERROR) {
+    LOG_ERROR("TSVConnClose");
   }
 
-  /* Fix for INKqa12401: need to free the continuation data */
-  INKfree(my_state);
+  /* Fix for TSqa12401: need to free the continuation data */
+  TSfree(my_state);
 
-  /* Fix for INKqa12401: need to destroy the continuation */
-  INKContDestroy(contp);
+  /* Fix for TSqa12401: need to destroy the continuation */
+  TSContDestroy(contp);
 }
 
 
@@ -130,12 +130,12 @@ pvc_add_data_to_resp_buffer(const char *s, pvc_state * my_state)
   LOG_SET_FUNCTION_NAME("pvc_add_data_to_resp_buffer");
 
   int s_len = strlen(s);
-  char *buf = (char *) INKmalloc(s_len);
+  char *buf = (char *) TSmalloc(s_len);
 
   memcpy(buf, s, s_len);
-  INKIOBufferWrite(my_state->resp_buffer, buf, s_len);
+  TSIOBufferWrite(my_state->resp_buffer, buf, s_len);
 
-  INKfree(buf);
+  TSfree(buf);
   buf = NULL;
   return s_len;
 }
@@ -150,185 +150,185 @@ pvc_add_resp_header(pvc_state * my_state)
 }
 
 static void
-pvc_process_accept(INKCont contp, pvc_state * my_state)
+pvc_process_accept(TSCont contp, pvc_state * my_state)
 {
   LOG_SET_FUNCTION_NAME("pvc_process_accept");
 
-  my_state->req_buffer = INKIOBufferCreate();
-  if (my_state->req_buffer == INK_ERROR_PTR) {
-    LOG_ERROR("INKIOBufferCreate");
+  my_state->req_buffer = TSIOBufferCreate();
+  if (my_state->req_buffer == TS_ERROR_PTR) {
+    LOG_ERROR("TSIOBufferCreate");
     return;
   }
-  my_state->req_reader = INKIOBufferReaderAlloc(my_state->req_buffer);
-  if (my_state->req_reader == INK_ERROR_PTR) {
-    LOG_ERROR("INKIOBufferReaderAlloc");
+  my_state->req_reader = TSIOBufferReaderAlloc(my_state->req_buffer);
+  if (my_state->req_reader == TS_ERROR_PTR) {
+    LOG_ERROR("TSIOBufferReaderAlloc");
     return;
   }
-  my_state->resp_buffer = INKIOBufferCreate();
-  if (my_state->resp_buffer == INK_ERROR_PTR) {
-    LOG_ERROR("INKIOBufferCreate");
+  my_state->resp_buffer = TSIOBufferCreate();
+  if (my_state->resp_buffer == TS_ERROR_PTR) {
+    LOG_ERROR("TSIOBufferCreate");
     return;
   }
-  my_state->resp_reader = INKIOBufferReaderAlloc(my_state->resp_buffer);
-  if (my_state->resp_reader == INK_ERROR_PTR) {
-    LOG_ERROR("INKIOBufferReaderAlloc");
+  my_state->resp_reader = TSIOBufferReaderAlloc(my_state->resp_buffer);
+  if (my_state->resp_reader == TS_ERROR_PTR) {
+    LOG_ERROR("TSIOBufferReaderAlloc");
     return;
   }
 
-  my_state->read_vio = INKVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT_MAX);
-  if (my_state->read_vio == INK_ERROR_PTR) {
-    LOG_ERROR("INKVConnRead");
+  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT_MAX);
+  if (my_state->read_vio == TS_ERROR_PTR) {
+    LOG_ERROR("TSVConnRead");
     return;
   }
 }
 
 static void
-pvc_process_read(INKCont contp, INKEvent event, pvc_state * my_state)
+pvc_process_read(TSCont contp, TSEvent event, pvc_state * my_state)
 {
   LOG_SET_FUNCTION_NAME("pvc_process_read");
 
 /*     int bytes; */
 
-  INKDebug(DEBUG_TAG, "plugin called: pvc_process_read with event %d", event);
+  TSDebug(DEBUG_TAG, "plugin called: pvc_process_read with event %d", event);
 
-  if (event == INK_EVENT_VCONN_READ_READY) {
-/* 	if (INKVIOReenable(my_state->read_vio) == INK_ERROR) { */
-/* 	    LOG_ERROR("INKVIOReenable"); */
+  if (event == TS_EVENT_VCONN_READ_READY) {
+/* 	if (TSVIOReenable(my_state->read_vio) == TS_ERROR) { */
+/* 	    LOG_ERROR("TSVIOReenable"); */
 /* 	    return; */
 /* 	} */
-/*     } else if (event == INK_EVENT_VCONN_READ_COMPLETE) { */
-    INKDebug(DEBUG_TAG, "writing response header and shutting down read side");
+/*     } else if (event == TS_EVENT_VCONN_READ_COMPLETE) { */
+    TSDebug(DEBUG_TAG, "writing response header and shutting down read side");
     my_state->output_bytes = pvc_add_resp_header(my_state);
-    if (INKVConnShutdown(my_state->net_vc, 1, 0) == INK_ERROR) {
-      LOG_ERROR("INKVConnShutdown");
+    if (TSVConnShutdown(my_state->net_vc, 1, 0) == TS_ERROR) {
+      LOG_ERROR("TSVConnShutdown");
       return;
     }
 #ifdef DEBUG
-    if (INKVConnShutdown(NULL, 0, 0) != INK_ERROR) {
-      LOG_ERROR_NEG("INKVConnShutdown");
+    if (TSVConnShutdown(NULL, 0, 0) != TS_ERROR) {
+      LOG_ERROR_NEG("TSVConnShutdown");
     } else
-      INKDebug(NEG_DEBUG_TAG, "Negative Test INKVConnShutdown 1 passed");
+      TSDebug(NEG_DEBUG_TAG, "Negative Test TSVConnShutdown 1 passed");
 #endif
 
-    my_state->write_vio = INKVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT_MAX);
-    if (my_state->write_vio == INK_ERROR_PTR) {
-      LOG_ERROR("INKVConnWrite");
+    my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT_MAX);
+    if (my_state->write_vio == TS_ERROR_PTR) {
+      LOG_ERROR("TSVConnWrite");
       return;
     }
-  } else if (event == INK_EVENT_ERROR) {
-    INKError("pvc_process_read: Received INK_EVENT_ERROR\n");
-  } else if (event == INK_EVENT_VCONN_EOS) {
+  } else if (event == TS_EVENT_ERROR) {
+    TSError("pvc_process_read: Received TS_EVENT_ERROR\n");
+  } else if (event == TS_EVENT_VCONN_EOS) {
     /* client may end the connection, simply return */
     return;
   } else {
     printf("Unexpected Event %d\n", event);
-    INKReleaseAssert(!"Unexpected Event");
+    TSReleaseAssert(!"Unexpected Event");
   }
 }
 
 static void
-pvc_process_write(INKCont contp, INKEvent event, pvc_state * my_state)
+pvc_process_write(TSCont contp, TSEvent event, pvc_state * my_state)
 {
   LOG_SET_FUNCTION_NAME("pvc_process_write");
 
   char body[] = "This is a test\n";
-  int nbytes = INKVIONBytesGet(my_state->write_vio);
-  int ndone = INKVIONDoneGet(my_state->write_vio);
+  int nbytes = TSVIONBytesGet(my_state->write_vio);
+  int ndone = TSVIONDoneGet(my_state->write_vio);
 
 #ifdef DEBUG
-  if (INKVIONBytesGet(NULL) != INK_ERROR) {
-    LOG_ERROR_NEG("INKVIONBytesGet");
+  if (TSVIONBytesGet(NULL) != TS_ERROR) {
+    LOG_ERROR_NEG("TSVIONBytesGet");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Negative Test INKVIONBytesGet 1 passed");
+    TSDebug(NEG_DEBUG_TAG, "Negative Test TSVIONBytesGet 1 passed");
 #endif
 
-  INKDebug(DEBUG_TAG, "plugin called: pvc_process_write with event %d", event);
+  TSDebug(DEBUG_TAG, "plugin called: pvc_process_write with event %d", event);
 
-  if (event == INK_EVENT_VCONN_WRITE_READY) {
+  if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (my_state->body_written == 0) {
-      INKDebug(DEBUG_TAG, "plugin adding response body");
+      TSDebug(DEBUG_TAG, "plugin adding response body");
       my_state->body_written = 1;
       my_state->output_bytes += pvc_add_data_to_resp_buffer(doc_buf, my_state);
-      if (INKVIONBytesSet(my_state->write_vio, my_state->output_bytes) == INK_ERROR) {
-        LOG_ERROR("INKVIONBytesSet");
+      if (TSVIONBytesSet(my_state->write_vio, my_state->output_bytes) == TS_ERROR) {
+        LOG_ERROR("TSVIONBytesSet");
         return;
       }
     }
-    if (INKVIOReenable(my_state->write_vio) == INK_ERROR) {
-      LOG_ERROR("INKVIOReenable");
+    if (TSVIOReenable(my_state->write_vio) == TS_ERROR) {
+      LOG_ERROR("TSVIOReenable");
       return;
     }
-  } else if (INK_EVENT_VCONN_WRITE_COMPLETE) {
+  } else if (TS_EVENT_VCONN_WRITE_COMPLETE) {
     pvc_cleanup(contp, my_state);
-  } else if (event == INK_EVENT_ERROR) {
-    INKError("pvc_process_write: Received INK_EVENT_ERROR\n");
+  } else if (event == TS_EVENT_ERROR) {
+    TSError("pvc_process_write: Received TS_EVENT_ERROR\n");
   } else {
-    INKReleaseAssert(!"Unexpected Event");
+    TSReleaseAssert(!"Unexpected Event");
   }
 }
 
 static int
-pvc_plugin(INKCont contp, INKEvent event, void *edata)
+pvc_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  pvc_state *my_state = INKContDataGet(contp);
+  pvc_state *my_state = TSContDataGet(contp);
 
-  if (event == INK_EVENT_NET_ACCEPT) {
-    my_state->net_vc = (INKVConn) edata;
+  if (event == TS_EVENT_NET_ACCEPT) {
+    my_state->net_vc = (TSVConn) edata;
     pvc_process_accept(contp, my_state);
   } else if (edata == my_state->read_vio) {
     pvc_process_read(contp, event, my_state);
   } else if (edata == my_state->write_vio) {
     pvc_process_write(contp, event, my_state);
   } else {
-    INKReleaseAssert(!"Unexpected Event");
+    TSReleaseAssert(!"Unexpected Event");
   }
 
   return 0;
 }
 
 static int
-attach_pvc_plugin(INKCont contp, INKEvent event, void *edata)
+attach_pvc_plugin(TSCont contp, TSEvent event, void *edata)
 {
   LOG_SET_FUNCTION_NAME("attach_pvc_plugin");
 
-  INKHttpTxn txnp = (INKHttpTxn) edata;
-  INKCont new_cont;
+  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSCont new_cont;
   pvc_state *my_state;
 
   switch (event) {
-  case INK_EVENT_HTTP_READ_REQUEST_HDR:
-    new_cont = INKContCreate(pvc_plugin, INKMutexCreate());
-    /* INKqa12409 */
-/* 	new_cont = INKContCreate (pvc_plugin, NULL); */
-    if (new_cont == INK_ERROR_PTR) {
-      LOG_ERROR_AND_REENABLE("INKContCreate");
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    new_cont = TSContCreate(pvc_plugin, TSMutexCreate());
+    /* TSqa12409 */
+/* 	new_cont = TSContCreate (pvc_plugin, NULL); */
+    if (new_cont == TS_ERROR_PTR) {
+      LOG_ERROR_AND_REENABLE("TSContCreate");
     }
 
-    my_state = (pvc_state *) INKmalloc(sizeof(pvc_state));
+    my_state = (pvc_state *) TSmalloc(sizeof(pvc_state));
     my_state->net_vc = NULL;
     my_state->read_vio = NULL;
     my_state->write_vio = NULL;
     my_state->http_txnp = txnp;
     my_state->body_written = 0;
-    if (INKContDataSet(new_cont, my_state) == INK_ERROR) {
-      LOG_ERROR_AND_REENABLE("INKContDataSet");
+    if (TSContDataSet(new_cont, my_state) == TS_ERROR) {
+      LOG_ERROR_AND_REENABLE("TSContDataSet");
       return -1;
     }
 
-    if (INKHttpTxnIntercept(new_cont, txnp) == INK_ERROR) {
-      LOG_ERROR_AND_REENABLE("INKHttpTxnIntercept");
+    if (TSHttpTxnIntercept(new_cont, txnp) == TS_ERROR) {
+      LOG_ERROR_AND_REENABLE("TSHttpTxnIntercept");
       return -1;
     }
 #ifdef DEBUG
-    if (INKHttpTxnIntercept(NULL, NULL) != INK_ERROR) {
-      LOG_ERROR_NEG("INKHttpTxnIntercept");
+    if (TSHttpTxnIntercept(NULL, NULL) != TS_ERROR) {
+      LOG_ERROR_NEG("TSHttpTxnIntercept");
     } else
-      INKDebug(NEG_DEBUG_TAG, "Negative Test INKHttpTxnIntercept 1 passed");
+      TSDebug(NEG_DEBUG_TAG, "Negative Test TSHttpTxnIntercept 1 passed");
 #endif
 
-/*	INKHttpTxnServerIntercept(new_cont, txnp); */
-    if (INKHttpTxnReenable(txnp, INK_EVENT_HTTP_CONTINUE) == INK_ERROR) {
-      LOG_ERROR("INKHttpTxnReenable");
+/*	TSHttpTxnServerIntercept(new_cont, txnp); */
+    if (TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE) == TS_ERROR) {
+      LOG_ERROR("TSHttpTxnReenable");
       return -1;
     }
     return 0;
@@ -342,7 +342,7 @@ int
 check_ts_version()
 {
 
-  const char *ts_version = INKTrafficServerVersionGet();
+  const char *ts_version = TSTrafficServerVersionGet();
   int result = 0;
 
   if (ts_version) {
@@ -375,7 +375,7 @@ load_file(char *file_name)
 
   fd = open(file_name, O_RDONLY);
   if (fd < 0) {
-    INKError("Failed to open file %s : (%d)", file_name, errno);
+    TSError("Failed to open file %s : (%d)", file_name, errno);
     return 0;
   }
 
@@ -384,7 +384,7 @@ load_file(char *file_name)
     return 0;
   }
 
-  buf = (char *) INKmalloc(finfo.st_size + 1);
+  buf = (char *) TSmalloc(finfo.st_size + 1);
 
   r = read(fd, buf, finfo.st_size);
   if (r < 0) {
@@ -400,58 +400,58 @@ load_file(char *file_name)
 }
 
 void
-INKPluginInit(int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  LOG_SET_FUNCTION_NAME("INKPluginInit");
+  LOG_SET_FUNCTION_NAME("TSPluginInit");
 
-  INKMLoc field_loc;
+  TSMLoc field_loc;
   const char *p;
   int i;
-  INKPluginRegistrationInfo info;
-  INKCont contp;
+  TSPluginRegistrationInfo info;
+  TSCont contp;
 
   info.plugin_name = "test-pos";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-/* NEGATIVE TEST for INKPluginRegister */
+/* NEGATIVE TEST for TSPluginRegister */
 #ifdef DEBUG
-  if (INKPluginRegister(INK_SDK_VERSION_2_0, NULL) != 0) {
-    LOG_ERROR_NEG("INKPluginRegister");
+  if (TSPluginRegister(TS_SDK_VERSION_2_0, NULL) != 0) {
+    LOG_ERROR_NEG("TSPluginRegister");
   } else
-    INKDebug(NEG_DEBUG_TAG, "Negative Test INKPluginRegister 1 passed");
+    TSDebug(NEG_DEBUG_TAG, "Negative Test TSPluginRegister 1 passed");
 #endif
-  if (!INKPluginRegister(INK_SDK_VERSION_2_0, &info)) {
-    INKError("Plugin registration failed.\n");
+  if (!TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+    TSError("Plugin registration failed.\n");
   }
 
   if (!check_ts_version()) {
-    INKError("Plugin requires Traffic Server 2.0 or later\n");
+    TSError("Plugin requires Traffic Server 2.0 or later\n");
     return;
   }
 
   if (argc != 2) {
-    INKError("Need file name arguement");
+    TSError("Need file name arguement");
   }
 
   if (load_file((char *) argv[1]) > 0) {
-    contp = INKContCreate(attach_pvc_plugin, NULL);
-    if (contp == INK_ERROR_PTR) {
-      LOG_ERROR("INKContCreate");
+    contp = TSContCreate(attach_pvc_plugin, NULL);
+    if (contp == TS_ERROR_PTR) {
+      LOG_ERROR("TSContCreate");
     } else {
-      if (INKHttpHookAdd(INK_HTTP_READ_REQUEST_HDR_HOOK, contp) == INK_ERROR) {
-        LOG_ERROR("INKHttpHookAdd");
+      if (TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp) == TS_ERROR) {
+        LOG_ERROR("TSHttpHookAdd");
       }
     }
   } else {
     fprintf(stderr, "Failed to load file %s\n", argv[1]);
-    INKError("Failed to load file %s", argv[1]);
+    TSError("Failed to load file %s", argv[1]);
   }
 }
 
 /* Plugin needs license in order to be loaded */
 int
-INKPluginLicenseRequired(void)
+TSPluginLicenseRequired(void)
 {
   return 1;
 }

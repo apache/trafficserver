@@ -5,7 +5,7 @@ hello_world.c
 - Example of the most basic routine of writing the SDKtest_client plugin.
 
   This example simply prints a statement to standard error within the 
-  INKPluginInit() to make sure that the plugin is successfully loaded
+  TSPluginInit() to make sure that the plugin is successfully loaded
   when SDKtest_client starts running.
 
 SimSDKtest.c
@@ -13,9 +13,9 @@ SimSDKtest.c
 
   The plugin reads in the origin_servers, hotset, docset, hitrate, and
   docsize_dist_file options specified in the SDKtest_client.config 
-  by registering INKOptionsProcess().  Then it fills in the request
+  by registering TSOptionsProcess().  Then it fills in the request
   headers into the buffer based on the above criteria in
-  INKRequestCreate().  The request headers generated are in the
+  TSRequestCreate().  The request headers generated are in the
   following format:
    
 	GET [www.hostname.com:port]/serial_number/lengthxxx HTTP/1.0
@@ -24,7 +24,7 @@ SimSDKtest.c
 
   Similar to SDKtest, it keeps track of the number of bytes received
   and the number of successful requests and finally report the
-  result through registering INKReport().
+  result through registering TSReport().
 
 SimSDKtestCache.c
 - Simulate the default way of generating requests by the 

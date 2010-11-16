@@ -59,7 +59,7 @@ struct Config
   char target_byterate_dist_file[MAX_FILENAME_SIZE];
   /* File that has target_byterate distribution */
   FILE *conf_file, *log_file_p, *docsize_dist_file_p, *thinktime_dist_file_p, *target_byterate_dist_file_p;
-  INKPlugin *plug_in;
+  TSPlugin *plug_in;
   int direct;
   int synthetic;
   int execution_interval;
@@ -86,14 +86,14 @@ struct Config
   double cumulative_size_prob[MAX_SIZES];
   void read_docsize_dist(long warmup);
   int num_thinktimes;
-  long thinktimes[MAX_THINKTIMES];
-  double cumulative_thinktime_prob[MAX_THINKTIMES];
+  long thinktimes[MAX_THTSTIMES];
+  double cumulative_thinktime_prob[MAX_THTSTIMES];
   int num_target_byterates;
   long target_byterates[MAX_TARGET_BYTERATES];
   double cumulative_target_byterate_prob[MAX_TARGET_BYTERATES];
   void read_thinktime_dist();
   void read_target_byterate_dist();
-    Config(long warmup, char *config_file, INKPlugin * aplug_in, int rd_tout);
+    Config(long warmup, char *config_file, TSPlugin * aplug_in, int rd_tout);
 };
 
 #endif // #ifndef _Config_h_

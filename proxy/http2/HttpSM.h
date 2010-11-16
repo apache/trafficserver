@@ -255,9 +255,9 @@ public:
   void dump_state_hdr(HTTPHdr *h, const char *s);
 
   // Functions for manipulating api hooks
-  void txn_hook_append(INKHttpHookID id, INKContInternal * cont);
-  void txn_hook_prepend(INKHttpHookID id, INKContInternal * cont);
-  APIHook *txn_hook_get(INKHttpHookID id);
+  void txn_hook_append(TSHttpHookID id, INKContInternal * cont);
+  void txn_hook_prepend(TSHttpHookID id, INKContInternal * cont);
+  APIHook *txn_hook_get(TSHttpHookID id);
 
   void add_history_entry(const char *fileline, int event, int reentrant);
   void add_cache_sm();
@@ -495,7 +495,7 @@ public:
   int hooks_set;
 
 protected:
-  INKHttpHookID cur_hook_id;
+  TSHttpHookID cur_hook_id;
   APIHook *cur_hook;
 
   //
@@ -524,7 +524,7 @@ protected:
   virtual int kill_this_async_hook(int event, void *data);
   void kill_this();
   void update_stats();
-  void transform_cleanup(INKHttpHookID hook, HttpTransformInfo * info);
+  void transform_cleanup(TSHttpHookID hook, HttpTransformInfo * info);
 
 public:
   LINK(HttpSM, debug_link);
@@ -593,21 +593,21 @@ HttpSM::find_server_buffer_size()
 }
 
 inline void
-HttpSM::txn_hook_append(INKHttpHookID id, INKContInternal * cont)
+HttpSM::txn_hook_append(TSHttpHookID id, INKContInternal * cont)
 {
   api_hooks.append(id, cont);
   hooks_set = 1;
 }
 
 inline void
-HttpSM::txn_hook_prepend(INKHttpHookID id, INKContInternal * cont)
+HttpSM::txn_hook_prepend(TSHttpHookID id, INKContInternal * cont)
 {
   api_hooks.prepend(id, cont);
   hooks_set = 1;
 }
 
 inline APIHook *
-HttpSM::txn_hook_get(INKHttpHookID id)
+HttpSM::txn_hook_get(TSHttpHookID id)
 {
   return api_hooks.get(id);
 }
