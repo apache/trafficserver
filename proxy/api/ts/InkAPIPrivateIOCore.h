@@ -63,7 +63,7 @@ public:
   // We should give these appropriate names, like contName and isContStatsEnabled() or some such.
   void setName(const char *name);
   const char *getName();
-  void statCallsMade(INKHttpHookID hook_id);
+  void statCallsMade(TSHttpHookID hook_id);
   bool isStatsEnabled() { return stats_enabled; }
 #endif
 
