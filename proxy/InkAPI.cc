@@ -4991,8 +4991,7 @@ int
 TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 {
   HttpSM *sm = (HttpSM *) txnp;
-  URL u, *l_url, *o_url;
-  NOWARN_UNUSED(o_url);
+  URL u, *l_url;
 
   if (sm == NULL)
     return 0;
@@ -6549,8 +6548,7 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
   FORCE_PLUGIN_MUTEX(contp);
   CacheInfo *info = (CacheInfo *) key;
   INKContInternal *i = (INKContInternal *) contp;
-  return (TSAction)
-    cacheProcessor.remove(i, &info->cache_key, info->frag_type, true, false, info->hostname, info->len);
+  return (TSAction)cacheProcessor.remove(i, &info->cache_key, info->frag_type, true, false, info->hostname, info->len);
 }
 
 TSAction
@@ -7435,18 +7433,20 @@ TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
 }
 
 TSReturnCode
-TSSetCacheUrl(TSHttpTxn txnp, const char *url)
+TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
 {
   HttpSM *sm = (HttpSM *) txnp;
-  Debug("cache_url", "[TSSetCacheUrl]");
+  Debug("cache_url", "[TSCacheUrlSet]");
 
   if (sm->t_state.cache_info.lookup_url == NULL) {
-    Debug("cache_url", "[TSSetCacheUrl] changing the cache url to: %s", url);
+    Debug("cache_url", "[TSCacheUrlSet] changing the cache url to: %s", url);
 
-    int size = strlen(url);
+    if (length == -1)
+      length = strlen(url);
+
     sm->t_state.cache_info.lookup_url_storage.create(NULL);
     sm->t_state.cache_info.lookup_url = &(sm->t_state.cache_info.lookup_url_storage);
-    sm->t_state.cache_info.lookup_url->parse(url, size);
+    sm->t_state.cache_info.lookup_url->parse(url, length);
   } else {
     return TS_ERROR;
   }

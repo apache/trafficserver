@@ -1886,7 +1886,7 @@ extern "C"
 
   /* --------------------------------------------------------------------------
      cache url */
-  tsapi TSReturnCode TSSetCacheUrl(TSHttpTxn txnp, const char *url);
+  tsapi TSReturnCode TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length);
 
   /* --------------------------------------------------------------------------
      cache plugin */
