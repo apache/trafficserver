@@ -528,27 +528,24 @@ case $host_os in
     else # gcc
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
-      release_opt="-g $common_opt -O3 -fno-strict-aliasing"
+      release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      TS_ADDTO(LDFLAGS, [-feliminate-unused-debug-symbols])
     fi
     ;;
   darwin*)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt -O3 -fno-strict-aliasing"
+    release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
     TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
     TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
-    TS_ADDTO(LDFLAGS, [-feliminate-unused-debug-symbols])
     ;;
   freebsd*)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt -O3 -fno-strict-aliasing"
+    release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
     TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
-    TS_ADDTO(LDFLAGS, [-feliminate-unused-debug-symbols])
     ;;
   solaris*)
     if test "x${base_cc}" = "xcc"; then
@@ -565,9 +562,8 @@ case $host_os in
     else # gcc
       common_opt="-pipe -Wall -Werror"
       debug_opt="-ggdb3 $common_opt"
-      release_opt="-g $common_opt -O3 -fno-strict-aliasing"
+      release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      TS_ADDTO(LDFLAGS, [-feliminate-unused-debug-symbols])
     fi
     TS_ADDTO(LDFLAGS, [-L/lib])
     TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
@@ -575,9 +571,8 @@ case $host_os in
   *)
     common_opt="-pipe -Wall -Werror"
     debug_opt="-ggdb3 $common_opt"
-    release_opt="-g $common_opt -O3 -fno-strict-aliasing"
+    release_opt="-g $common_opt -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing"
     cxx_opt="-Wno-invalid-offsetof"
-    TS_ADDTO(LDFLAGS, [-feliminate-unused-debug-symbols])
     ;;
 esac
 
