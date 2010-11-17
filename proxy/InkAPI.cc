@@ -4138,7 +4138,7 @@ TSCacheKeyCreate(TSCacheKey *new_key)
 }
 
 TSReturnCode
-TSCacheKeyDigestSet(TSCacheKey key, const unsigned char *input, int length)
+TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length)
 {
   if (sdk_sanity_check_cachekey(key) != TS_SUCCESS)
     return TS_ERROR;
@@ -4181,7 +4181,7 @@ TSCacheKeyDataTypeSet(TSCacheKey key, TSCacheDataType type)
 }
 
 TSReturnCode
-TSCacheKeyHostNameSet(TSCacheKey key, const unsigned char *hostname, int host_len)
+TSCacheKeyHostNameSet(TSCacheKey key, const char *hostname, int host_len)
 {
 #ifdef DEBUG
   if ((hostname == NULL) || (host_len <= 0))

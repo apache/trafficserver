@@ -767,8 +767,8 @@ REGRESSION_TEST(SDK_API_TSCache) (RegressionTest * test, int atype, int *pstatus
   } else {
     SDK_RPRINT(test, "TSCacheKeyCreate", "TestCase1", TC_PASS, "ok");
   }
-  TSCacheKeyDigestSet(key, (unsigned char *) key_name, strlen(key_name));
-  TSCacheKeyDigestSet(key_cmp, (unsigned char *) key_name, strlen(key_name));
+  TSCacheKeyDigestSet(key, key_name, strlen(key_name));
+  TSCacheKeyDigestSet(key_cmp, key_name, strlen(key_name));
 
   if (memcmp(key, key_cmp, sizeof(TSCacheKey)) != 0) {
     SDK_RPRINT(test, "TSCacheKeySetDigest", "TestCase1", TC_FAIL, "digest is wrong");

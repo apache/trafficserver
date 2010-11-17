@@ -970,6 +970,6 @@ CacheKeyCreate(char *file_name)
   }
 
   /* TSCacheKeyDigestSet is to compute TSCackeKey from the input string */
-  TSCacheKeyDigestSet(key, (unsigned char *) file_name, strlen(file_name));
+  TSCacheKeyDigestSet(key, file_name, strlen(file_name));
   return key;
 }
