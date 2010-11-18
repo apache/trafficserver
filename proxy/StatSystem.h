@@ -169,37 +169,9 @@ struct HttpTransactionStatsString_t
   char *name;
 };
 
-
-//
-// RNI Transaction Stats
-//
-#define _HEADER \
-typedef enum { \
-    NO_RNI_TRANS_STATS = 0,
-
-#define _FOOTER \
-    MAX_RNI_TRANS_STATS \
-} RniTransactionStat_t;
-
-#define _D(_x) _x,
-
-#include "RniTransStats.h"
-
-#undef _HEADER
-#undef _FOOTER
-#undef _D
-
-struct RniTransactionStatsString_t
-{
-  RniTransactionStat_t i;
-  const char *name;
-};
-
-
 //
 // Note: DYN_STAT_START needs to be at least the next
-// power of 2 bigger than the value of MAX_HTTP_TRANS_STATS,
-// MAX_NTTP_TRANS_STATS, MAX_RNI_TRANS_STATS
+// power of 2 bigger than the value of MAX_HTTP_TRANS_STATS
 //
 #define DYN_STAT_START 2048
 #define DYN_STAT_MASK (~(2047UL))
@@ -382,11 +354,6 @@ struct ink_unprot_global_stat_t
     ink_assert (!(X & DYN_STAT_MASK)); \
     READ_GLOBAL_HTTP_TRANS_STAT(X,C,S); \
 }
-#define READ_RNI_TRANS_STAT(X,C,S) \
-{ \
-    ink_assert (!(X & DYN_STAT_MASK)); \
-    READ_GLOBAL_RNI_TRANS_STAT(X,C,S); \
-}
 
 // set the stat.count to a specific value
 #define __SET_TRANS_COUNT(local_stat_struct_, X, V) \
@@ -421,17 +388,6 @@ struct ink_unprot_global_stat_t
 	global_http_trans_stats[i].sum += local_stat_struct_[i].value; \
     } \
     STAT_LOCK_RELEASE(&(global_http_trans_stat_lock)); \
-}
-
-#define UPDATE_RNI_TRANS_STATS(local_stat_struct_) \
-{ \
-    int i; \
-    STAT_LOCK_ACQUIRE(&(global_rni_trans_stat_lock)); \
-    for (i=NO_RNI_TRANS_STATS; i<MAX_RNI_TRANS_STATS; i++) { \
-	global_rni_trans_stats[i].count += (ink_statval_t)1; \
-	global_rni_trans_stats[i].sum += local_stat_struct_[i].value; \
-    } \
-    STAT_LOCK_RELEASE(&(global_rni_trans_stat_lock)); \
 }
 
 #define STAT_LOCK_ACQUIRE(X) (ink_mutex_acquire(X))

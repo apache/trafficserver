@@ -51,8 +51,6 @@ time_t last_http_local_time;
 #endif
 ink_stat_lock_t global_http_trans_stat_lock;
 ink_unprot_global_stat_t global_http_trans_stats[MAX_HTTP_TRANS_STATS];
-inkcoreapi ink_stat_lock_t global_rni_trans_stat_lock;
-inkcoreapi ink_unprot_global_stat_t global_rni_trans_stats[MAX_RNI_TRANS_STATS];
 #ifndef USE_LOCKS_FOR_DYN_STATS
 inkcoreapi ink_unprot_global_stat_t global_dyn_stats[MAX_DYN_STATS - DYN_STAT_START];
 #else
@@ -153,20 +151,6 @@ static int non_persistent_stats[] = {
 };
 #endif
 
-
-
-#define _HEADER \
-RniTransactionStatsString_t RniTransactionStatsStrings[] = {
-
-#define _FOOTER };
-#define _D(_x) { _x, #_x},
-
-#include "RniTransStats.h"
-#undef _HEADER
-#undef _FOOTER
-#undef _D
-
-
 #define _HEADER \
 DynamicStatsString_t DynamicStatsStrings[] = {
 
@@ -222,13 +206,6 @@ clear_stats()
       global_http_trans_stats[i].count = 0;
     }
   }
-  stats_size = MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS - 1;
-  for (i = 0; i < stats_size; i++) {
-    if (persistent_stat(i + NO_RNI_TRANS_STATS)) {
-      global_rni_trans_stats[i].sum = 0;
-      global_rni_trans_stats[i].count = 0;
-    }
-  }
   stats_size = MAX_DYN_STATS - NO_DYN_STATS - 1;
   for (i = 0; i < stats_size; i++) {
     if (persistent_stat(i + NO_DYN_STATS)) {
@@ -262,9 +239,7 @@ read_stats_snap()
     goto Lmissmatch;
   if (version != version_read)
     goto Lmissmatch;
-  stats_size =
-    MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS +
-    MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
+  stats_size = MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
   if (socketManager.read(fd, (char *) &count, sizeof(count)) != sizeof(count))
     goto Lmissmatch;
   if (count != stats_size)
@@ -277,15 +252,6 @@ read_stats_snap()
       goto Lmissmatch;
     if (socketManager.read(fd, (char *) &global_http_trans_stats[i].count, sizeof(global_http_trans_stats[i].count))
         != sizeof(global_http_trans_stats[i].count))
-      goto Lmissmatch;
-  }
-  stats_size = MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS;
-  for (i = 0; i < stats_size; i++) {
-    if (socketManager.read(fd, (char *) &global_rni_trans_stats[i].sum, sizeof(global_rni_trans_stats[i].sum))
-        != sizeof(global_rni_trans_stats[i].sum))
-      goto Lmissmatch;
-    if (socketManager.read(fd, (char *) &global_rni_trans_stats[i].count, sizeof(global_rni_trans_stats[i].count))
-        != sizeof(global_rni_trans_stats[i].count))
       goto Lmissmatch;
   }
   stats_size = MAX_DYN_STATS - NO_DYN_STATS;
@@ -321,11 +287,8 @@ write_stats_snap()
     goto Lerror;
 
   {
-    int stats_size =
-      MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS +
-      MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
-    int buf_size = sizeof(unsigned int) * 3 +
-      stats_size * (sizeof(global_dyn_stats[0].sum) + sizeof(global_dyn_stats[0].count));
+    int stats_size = MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
+    int buf_size = sizeof(unsigned int) * 3 + stats_size * (sizeof(global_dyn_stats[0].sum) + sizeof(global_dyn_stats[0].count));
     buf = (char *) xmalloc(buf_size);
     char *p = buf;
     int i = 0;
@@ -344,15 +307,6 @@ write_stats_snap()
       p += sizeof(global_http_trans_stats[i].count);
     }
     STAT_LOCK_RELEASE(&(global_http_trans_stat_lock));
-    stats_size = MAX_RNI_TRANS_STATS - NO_RNI_TRANS_STATS;
-    STAT_LOCK_ACQUIRE(&(global_rni_trans_stat_lock));
-    for (i = 0; i < stats_size; i++) {
-      memcpy(p, (char *) &global_rni_trans_stats[i].sum, sizeof(global_rni_trans_stats[i].sum));
-      p += sizeof(global_rni_trans_stats[i].sum);
-      memcpy(p, (char *) &global_rni_trans_stats[i].count, sizeof(global_rni_trans_stats[i].count));
-      p += sizeof(global_rni_trans_stats[i].count);
-    }
-    STAT_LOCK_RELEASE(&(global_rni_trans_stat_lock));
     stats_size = MAX_DYN_STATS - NO_DYN_STATS;
     for (i = 0; i < stats_size; i++) {
       // INKqa09981 (Clearing Host Database and DNS Statistics)
@@ -606,17 +560,10 @@ initialize_all_global_stats()
   take_rusage_snap();           // fill in _old as well
 
   STAT_LOCK_INIT(&(global_http_trans_stat_lock), "Global Http Stats Lock");
-  STAT_LOCK_INIT(&(global_rni_trans_stat_lock), "Global Rni Stats Lock");
 
   for (istat = NO_HTTP_TRANS_STATS; istat < MAX_HTTP_TRANS_STATS; istat++) {
     if (!persistent_stat(istat)) {
       INITIALIZE_GLOBAL_TRANS_STATS(global_http_trans_stats[istat]);
-    }
-  }
-
-  for (istat = NO_RNI_TRANS_STATS; istat < MAX_RNI_TRANS_STATS; istat++) {
-    if (!persistent_stat(istat)) {
-      INITIALIZE_GLOBAL_TRANS_STATS(global_rni_trans_stats[istat]);
     }
   }
 
@@ -899,132 +846,10 @@ http_trans_stats_time_useconds_cb(void *data, void *res)
   return res;
 }
 
-// rni trans stat functions
-// there is the implicit assumption that the lock has
-// been acquired.
-void *
-rni_trans_stats_int_msecs_to_float_seconds_cb(void *data, void *res)
-{
-  ink_statval_t count, sum;
-  READ_RNI_TRANS_STAT((long) data, count, sum);
-
-  float r;
-  if (count == 0) {
-    r = 0.0;
-  } else {
-    r = ((float) sum) / 1000.0;
-  }
-  *(float *) res = r;
-  return res;
-}
-
-void *
-rni_trans_stats_count_cb(void *data, void *res)
-{
-  ink_statval_t count, sum;
-  READ_RNI_TRANS_STAT((long) data, count, sum);
-  //*(ink_statval_t *)res = count;
-  ink_atomic_swap64((ink_statval_t *) res, count);
-  return res;
-}
-
-void *
-rni_trans_stats_sum_cb(void *data, void *res)
-{
-  ink_statval_t count, sum;
-  READ_RNI_TRANS_STAT((long) data, count, sum);
-  //*(ink_statval_t *)res = sum;
-  ink_atomic_swap64((ink_statval_t *) res, sum);
-  return res;
-}
-
-void *
-rni_trans_stats_avg_cb(void *data, void *res)
-{
-  ink_statval_t count, sum;
-  READ_RNI_TRANS_STAT((long) data, count, sum);
-  if (count == 0) {
-    *(float *) res = 0.0;
-  } else {
-    *(float *) res = (float) sum / (float) count;
-  }
-  return res;
-}
-
-void *
-rni_trans_stats_fsum_cb(void *data, void *res)
-{
-  ink_statval_t count, sum;
-  READ_RNI_TRANS_STAT((long) data, count, sum);
-  *(float *) res = *(double *) &sum;
-  return res;
-}
-
-void *
-rni_trans_stats_favg_cb(void *data, void *res)
-{
-  ink_statval_t count, sum;
-  READ_RNI_TRANS_STAT((long) data, count, sum);
-  if (count == 0) {
-    *(float *) res = 0.0;
-  } else {
-    *(float *) res = *(double *) &sum / *(double *) &count;
-  }
-  return res;
-}
-
-void *
-rni_trans_stats_time_seconds_cb(void *data, void *res)
-{
-  ink_statval_t count, sum;
-  float r;
-  READ_RNI_TRANS_STAT((long) data, count, sum);
-  if (count == 0) {
-    r = 0.0;
-  } else {
-    r = (float) sum / (float) count;
-    r = r / (float) HRTIME_SECOND;
-  }
-  *(float *) res = r;
-  return res;
-}
-
-void *
-rni_trans_stats_time_mseconds_cb(void *data, void *res)
-{
-  ink_statval_t count, sum;
-  float r;
-  READ_RNI_TRANS_STAT((long) data, count, sum);
-  if (count == 0) {
-    r = 0.0;
-  } else {
-    r = (float) sum / (float) count;
-    r = r / (float) HRTIME_MSECOND;
-  }
-  *(float *) res = r;
-  return res;
-}
-
-void *
-rni_trans_stats_time_useconds_cb(void *data, void *res)
-{
-  ink_statval_t count, sum;
-  float r;
-  READ_RNI_TRANS_STAT((long) data, count, sum);
-  if (count == 0) {
-    r = 0.0;
-  } else {
-    r = (float) sum / (float) count;
-    r = r / (float) HRTIME_USECOND;
-  }
-  *(float *) res = r;
-  return res;
-}
 
 void
 initialize_http_stats()
 {
-
   ///////////////////////
   // Transaction Stats //
   ///////////////////////
