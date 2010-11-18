@@ -219,6 +219,7 @@ struct DNSHandler: public Continuation
   DNSConnection con[MAX_NAMED];
   int options;
   Queue<DNSEntry> entries;
+  Queue<DNSConnection> triggered;
   int in_flight;
   int name_server;
   int in_write_dns;
@@ -300,12 +301,8 @@ struct DNSHandler: public Continuation
 
 
 TS_INLINE DNSHandler::DNSHandler()
- :Continuation(NULL),
-  ip(0),
-  port(0),
-  n_con(0),
-  options(0),
-  in_flight(0), name_server(0), in_write_dns(0), hostent_cache(0), last_primary_retry(0), last_primary_reopen(0),
+ : Continuation(NULL), ip(0), port(0), n_con(0), options(0), in_flight(0), name_server(0), in_write_dns(0),
+  hostent_cache(0), last_primary_retry(0), last_primary_reopen(0),
   m_res(0), txn_lookup_timeout(0), generator((uint32)((uintptr_t)time(NULL) ^ (uintptr_t)this))
 {
   for (int i = 0; i < MAX_NAMED; i++) {
@@ -314,6 +311,7 @@ TS_INLINE DNSHandler::DNSHandler()
     failover_soon_number[i] = 0;
     crossed_failover_number[i] = 0;
     ns_down[i] = 1;
+    con[i].handler = this;
   }
   memset(&qid_in_flight, 0, sizeof(qid_in_flight));  
   SET_HANDLER(&DNSHandler::startEvent);

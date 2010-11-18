@@ -728,28 +728,17 @@ ink_res_init(ink_res_state statp, const unsigned int *pHostList, const int *pPor
         continue;
       }
     }
-    if (nserv > 0)
-      statp->nscount = nserv;
 #ifdef RESOLVSORT
     statp->nsort = nsort;
 #endif
     (void) fclose(fp);
   }
 
-/*
- * Last chance to get a nameserver.  This should not normally
- * be necessary
- */
-#ifdef NO_RESOLV_CONF
-  if(nserv == 0)
-    nserv = get_nameservers(statp);
-#endif
+  if (nserv > 0)
+    statp->nscount = nserv;
 
-  if (statp->defdname[0] == 0 &&
-      gethostname(buf, sizeof(statp->defdname) - 1) == 0 &&
-      (cp = strchr(buf, '.')) != NULL)
+  if (statp->defdname[0] == 0 && gethostname(buf, sizeof(statp->defdname) - 1) == 0 && (cp = strchr(buf, '.')) != NULL)
     strcpy(statp->defdname, cp + 1);
-
 
   /* find components of local domain that might be searched */
   if (havesearch == 0) {

@@ -31,6 +31,7 @@
 #include "ink_unused.h" /* MAGIC_EDITING_TAG */
 #include "P_DNS.h"
 #include "P_DNSConnection.h"
+#include "P_DNSProcessor.h"
 
 #define SET_TCP_NO_DELAY
 #define SET_NO_LINGER
@@ -47,7 +48,7 @@
 //
 
 DNSConnection::DNSConnection():
-  fd(NO_FD), num(0), generator((uint32)((uintptr_t)time(NULL) ^ (uintptr_t) this))
+  fd(NO_FD), num(0), generator((uint32)((uintptr_t)time(NULL) ^ (uintptr_t) this)), handler(NULL)
 {
   memset(&sa, 0, sizeof(struct sockaddr_in));
 }
@@ -69,6 +70,12 @@ DNSConnection::close()
     fd = NO_FD;
     return -EBADF;
   }
+}
+
+void
+DNSConnection::trigger()
+{
+  handler->triggered.enqueue(this);
 }
 
 int

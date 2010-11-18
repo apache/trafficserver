@@ -238,6 +238,7 @@ SplitDNS::getDNSRecord(char *hostname)
   char *pInHost = hostname;
   size_t remaining_str_size = sizeof szHostName;
 
+  Debug("splitdns", "Called SplitDNS::getDNSRecord(%s)", hostname);
   if (0 < m_def_domain_len) {
     if (0 == strchr(hostname, '.')) {
       int hlen = strlen(hostname) + m_def_domain_len;
@@ -266,9 +267,8 @@ SplitDNS::getDNSRecord(char *hostname)
     Warning("Failed to match a valid DNS server!");
     ink_assert(!"Failed to match a valid DNS server");
   } else if (DNS_SRVR_DEFAULT == res.r) {
-    Warning("Failed to match a valid DNS server! Using defaults ...");
+    Debug("splitdns", "Failed to match a valid DNS server! Using defaults ...");
     return (void *) &(res.m_rec->m_servers);
-    //ink_assert(!"Failed to match a valid DNS server");
   } else if (DNS_SRVR_SPECIFIED == res.r) {
     return (void *) &(res.m_rec->m_servers);
   }
@@ -581,8 +581,8 @@ SplitDNSRecord::Init(matcher_line * line_info)
   ink_res_state res = new __ink_res_state;
 
   memset(res, 0, sizeof(__ink_res_state));
-  if ((-1 == ink_res_init(res, &m_servers.x_server_ip[0], &m_servers.x_dns_server_port[0],
-                          &m_servers.x_def_domain[0], &m_servers.x_domain_srch_list[0], NULL))) {
+  if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_servers.x_dns_server_port,
+                          m_servers.x_def_domain, m_servers.x_domain_srch_list, NULL))) {
     snprintf(errBuf, errBufLen, "Failed to build res record for the servers %u ... on port %d",
              m_servers.x_server_ip[0], m_servers.x_dns_server_port[0]);
     return errBuf;
@@ -597,7 +597,9 @@ SplitDNSRecord::Init(matcher_line * line_info)
   m_servers.x_dnsH = dnsH;
 
   SET_CONTINUATION_HANDLER(dnsH, &DNSHandler::startEvent_sdns);
-  eventProcessor.schedule_imm(dnsH, ET_DNS);
+  EThread *thread = eventProcessor.eventthread[ET_DNS][0];
+
+  thread->schedule_imm(dnsH, ET_DNS);
 
   /* -----------------------------------------------------
      Process any modifiers to the directive, if they exist
@@ -672,7 +674,6 @@ createDefaultServer()
   xfree(resolv_conf);
 
   newRec = NEW(new SplitDNSRecord);
-  printf(" Doing %d\n", res->nscount);
   for (int i = 0; i < res->nscount; i++) {
     // TODO: IPv6 ?
     newRec->m_servers.x_server_ip[i] = res->nsaddr_list[i].sin.sin_addr.s_addr;
@@ -688,7 +689,9 @@ createDefaultServer()
   newRec->m_servers.x_dnsH->port = DOMAIN_SERVICE_PORT;
 
   SET_CONTINUATION_HANDLER(newRec->m_servers.x_dnsH, &DNSHandler::startEvent_sdns);
-  eventProcessor.schedule_imm(newRec->m_servers.x_dnsH, ET_DNS);
+  EThread *thread = eventProcessor.eventthread[ET_DNS][0];
+
+  thread->schedule_imm(newRec->m_servers.x_dnsH, ET_DNS);
 
   newRec->m_dnsSrvr_cnt = res->nscount;
   ink_strncpy(newRec->m_servers.x_def_domain, res->defdname, MAXDNAME);

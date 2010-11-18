@@ -246,7 +246,6 @@ public:
   QueM(UnixNetVConnection, NetState, read, ready_link) read_ready_list;
   QueM(UnixNetVConnection, NetState, write, ready_link) write_ready_list;
   Que(UnixNetVConnection, link) open_list;
-  Que(DNSConnection, link) dnsqueue;
   ASLLM(UnixNetVConnection, NetState, read, enable_link) read_enable_list;
   ASLLM(UnixNetVConnection, NetState, write, enable_link) write_enable_list;
 
@@ -686,7 +685,8 @@ TS_INLINE int EventIO::refresh(int e) {
     if (n && ne && event_loop) {
       events = ne;
       int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-      Debug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+      Debug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)",
+            e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
       return retval;
     }
   }

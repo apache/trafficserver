@@ -1918,8 +1918,7 @@ main(int argc, char **argv)
     initIPAllow();
     initCacheInspectorAllow();
     ParentConfig::startup();
-#ifndef INK_NO_HOSTDB
-    // fixme
+#ifdef SPLIT_DNS
     SplitDNSConfig::startup();
 #endif
 #endif
