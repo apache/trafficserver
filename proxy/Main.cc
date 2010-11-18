@@ -77,9 +77,6 @@ extern "C" int plock(int);
 #include "IPAllow.h"
 #include "CacheInspectorAllow.h"
 #include "ParentSelection.h"
-#ifdef RNI_STATIC_LINK
-#include "RniProcessor.h"
-#endif
 //#include "simple/Simple.h"
 
 #include "MgmtUtils.h"
@@ -1910,7 +1907,6 @@ main(int argc, char **argv)
         _exit(1);               // in error
     }
   } else {
-#ifndef RNI_ONLY
 #ifndef INK_NO_ACL
     initCacheControl();
 #endif
@@ -1921,7 +1917,7 @@ main(int argc, char **argv)
 #ifdef SPLIT_DNS
     SplitDNSConfig::startup();
 #endif
-#endif
+
 
     if (!accept_mss)
       TS_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
@@ -1950,7 +1946,7 @@ main(int argc, char **argv)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
 #endif
 
-#if !defined(RNI_ONLY) && !defined(TS_NO_API)
+#if !defined(TS_NO_API)
     plugin_init(system_config_directory, true); // extensions.config
 #endif
 
@@ -1964,14 +1960,6 @@ main(int argc, char **argv)
 
     // Initialize Response Body Factory
     body_factory = NEW(new HttpBodyFactory);
-
-    // Initialize the system for RNI support
-    // All this is handled by plugin support code
-    //Rni::init ();
-#ifdef RNI_STATIC_LINK
-    rniProcessor.start();
-#endif
-
 
     // Start IP to userName cache processor used
     // by RADIUS and FW1 plug-ins.
@@ -2004,7 +1992,6 @@ main(int argc, char **argv)
     // main server logic initiated here //
     //////////////////////////////////////
 
-#ifndef RNI_ONLY
 #ifndef TS_NO_API
     plugin_init(system_config_directory, false);        // plugin.config
 #else
@@ -2040,7 +2027,6 @@ main(int argc, char **argv)
     }
 #ifndef INK_NO_ICP
     icpProcessor.start();
-#endif
 #endif
 
     int back_door_port = NO_FD;

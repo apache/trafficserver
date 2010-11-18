@@ -74,7 +74,6 @@ static int check_memory_min_memfree_kb = 10240;
 static int syslog_facility = LOG_DAEMON;
 static char syslog_fac_str[PATH_MAX];
 
-//static int rni_killsig = SIGTERM;
 static int killsig = SIGKILL;
 static int coresig = 0;
 
@@ -1280,9 +1279,6 @@ heartbeat_manager()
 static int
 heartbeat_server()
 {
-// Don't heartbeat the server if we
-// are running in rni only mode
-#ifndef RNI_ONLY
   int err;
 
 #ifdef TRACE_LOG_COP
@@ -1326,14 +1322,6 @@ heartbeat_server()
   cop_log(COP_DEBUG, "Leaving heartbeat_server() --> %d\n", err);
 #endif
   return err;
-
-#else
-#ifdef TRACE_LOG_COP
-  cop_log(COP_DEBUG, "Leaving heartbeat_server() --> 1\n");
-#endif
-  return 1;
-
-#endif // !RNI_ONLY
 }
 
 static int
