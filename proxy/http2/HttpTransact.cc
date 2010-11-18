@@ -186,10 +186,8 @@ update_cache_control_information_from_config(HttpTransact::State * s)
     HttpTransact::does_client_request_permit_storing(&(s->cache_control), &s->hdr_info.client_request);
 
   s->cache_info.directives.does_client_permit_lookup =
-    HttpTransact::does_client_request_permit_cached_response(s->
-                                                             http_config_param,
-                                                             &(s->
-                                                               cache_control),
+    HttpTransact::does_client_request_permit_cached_response(s->http_config_param,
+                                                             &(s->cache_control),
                                                              &s->hdr_info.client_request, s->via_string);
 
   s->cache_info.directives.does_client_permit_dns_storing =
@@ -794,16 +792,12 @@ HttpTransact::StartRemapRequest(State * s)
 
   const char syntxt[] = "synthetic.txt";
 
-  s->cop_test_page =
-    (ptr_len_cmp(host,
-                 host_len,
-                 local_host_ip_str,
-                 sizeof(local_host_ip_str) - 1) == 0) && (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0);
+  s->cop_test_page = (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) &&
+    (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0);
 
   // Determine whether the incoming request is a Traffic Net request.
   s->traffic_net_req = (incoming_request->method_get_wksidx() == HTTP_WKSIDX_POST)
-    && (ptr_len_cmp(host, host_len, s->http_config_param->tn_server,
-                    s->http_config_param->tn_server_len) == 0)
+    && (ptr_len_cmp(host, host_len, s->http_config_param->tn_server, s->http_config_param->tn_server_len) == 0)
     && (port == s->http_config_param->tn_port);
 
   //////////////////////////////////////////////////////////////////
@@ -4258,9 +4252,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
 
       if (is_request_conditional(&s->hdr_info.client_request)) {
         client_response_code =
-          HttpTransactCache::match_response_to_request_conditionals(&s->
-                                                                    hdr_info.
-                                                                    client_request,
+          HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
                                                                     s->cache_info.object_read->response_get());
       } else {
         client_response_code = HTTP_STATUS_OK;
@@ -4295,9 +4287,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
       if (is_request_conditional(&s->hdr_info.client_request)) {
         if (s->http_config_param->cache_when_to_revalidate != 4)
           client_response_code =
-            HttpTransactCache::match_response_to_request_conditionals(&s->
-                                                                      hdr_info.
-                                                                      client_request,
+            HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
                                                                       s->cache_info.object_read->response_get());
         else
           client_response_code = server_response_code;
@@ -4414,13 +4404,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
       base_response->unset_cooked_cc_need_revalidate_once();
 
       if (is_request_conditional(&s->hdr_info.client_request) &&
-          HttpTransactCache::match_response_to_request_conditionals(&s->
-                                                                    hdr_info.
-                                                                    client_request,
-                                                                    s->
-                                                                    cache_info.
-                                                                    object_read->
-                                                                    response_get()) == HTTP_STATUS_NOT_MODIFIED) {
+          HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
+                                                                    s->cache_info.object_read->response_get()) == HTTP_STATUS_NOT_MODIFIED) {
         s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_UPDATE_HEADERS;
         client_response_code = HTTP_STATUS_NOT_MODIFIED;
       } else {
@@ -4451,8 +4436,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
       if (s->next_action == HttpTransact::SERVE_FROM_CACHE && s->state_machine->do_transform_open()) {
         set_header_for_transform(s, base_response);
       } else {
-        build_response(s, base_response, &s->hdr_info.client_response,
-                       s->client_info.http_version, client_response_code);
+        build_response(s, base_response, &s->hdr_info.client_response, s->client_info.http_version, client_response_code);
       }
 
       return;
@@ -4538,9 +4522,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State * s)
         Debug("http_trans", "[hcoofsr] conditional request, 200 " "response, send back 304 if possible");
 
         client_response_code =
-          HttpTransactCache::match_response_to_request_conditionals(&s->
-                                                                    hdr_info.
-                                                                    client_request, &s->hdr_info.server_response);
+          HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
+                                                                    &s->hdr_info.server_response);
 
         if ((client_response_code == HTTP_STATUS_NOT_MODIFIED) ||
             (client_response_code == HTTP_STATUS_PRECONDITION_FAILED)) {
@@ -6097,8 +6080,7 @@ HttpTransact::is_cache_response_returnable(State * s)
   }
   // If cookies in response and no TTL set, we do not cache the doc
   if ((s->cache_control.ttl_in_cache <= 0) &&
-      do_cookies_prevent_caching((int) s->http_config_param->
-                                 cache_responses_to_cookies,
+      do_cookies_prevent_caching((int) s->http_config_param->cache_responses_to_cookies,
                                  &s->hdr_info.client_request,
                                  s->cache_info.object_read->response_get(), s->cache_info.object_read->request_get())) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
@@ -8214,10 +8196,8 @@ HttpTransact::build_response(State * s,
       HttpTransactHeaders::process_connection_headers(base_response, outgoing_response);
 
       if (s->http_config_param->insert_age_in_response)
-        HttpTransactHeaders::insert_time_and_age_headers_in_response(s->
-                                                                     request_sent_time,
-                                                                     s->
-                                                                     response_received_time,
+        HttpTransactHeaders::insert_time_and_age_headers_in_response(s->request_sent_time,
+                                                                     s->response_received_time,
                                                                      s->current.now, base_response, outgoing_response);
 
       // Note: We need to handle the "Content-Length" header first here
@@ -8641,16 +8621,15 @@ HttpTransact::build_redirect_response(State * s)
   s->internal_msg_buffer_fast_allocator_size = -1;
 
   s->internal_msg_buffer =
-    body_factory->
-    fabricate_with_old_api_build_va("redirect#moved_temporarily", s, 8192,
-                                    &(s->internal_msg_buffer_size),
-                                    body_language, sizeof(body_language),
-                                    body_type, sizeof(body_type), 
-                                    status_code,
-                                    reason_phrase,
-                                    "%s <a href=\"%s\">%s</a>.  %s.",
-                                    "The document you requested is now",
-                                    new_url, new_url, "Please update your documents and bookmarks accordingly", NULL);
+    body_factory->fabricate_with_old_api_build_va("redirect#moved_temporarily", s, 8192,
+                                                  &(s->internal_msg_buffer_size),
+                                                  body_language, sizeof(body_language),
+                                                  body_type, sizeof(body_type), 
+                                                  status_code,
+                                                  reason_phrase,
+                                                  "%s <a href=\"%s\">%s</a>.  %s.",
+                                                  "The document you requested is now",
+                                                  new_url, new_url, "Please update your documents and bookmarks accordingly", NULL);
 
 
   h->set_content_length(s->internal_msg_buffer_size);
@@ -8714,8 +8693,7 @@ ink_cluster_time(void)
 //      highest_delta = 0L;
 //     }
 
-  Debug("http_trans",
-        "[ink_cluster_time] local: %ld, highest_delta: %d, cluster: %ld",
+  Debug("http_trans", "[ink_cluster_time] local: %ld, highest_delta: %d, cluster: %ld",
         local_time, highest_delta, (local_time + (ink_time_t) highest_delta));
 
   HTTP_DEBUG_ASSERT(highest_delta >= 0);
@@ -9082,9 +9060,6 @@ HttpTransact::update_aol_stats(State * s, ink_hrtime cache_lookup_time)
 }
 
 
-
-
-
 void
 HttpTransact::update_size_and_time_stats(State * s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
                                          ink_hrtime origin_server_read_time, ink_hrtime cache_lookup_time,
@@ -9395,8 +9370,8 @@ HttpTransact::ConnectionCollapsing(State * s)
           s->state_machine->piggybacking_scheduled = true;
 
           //Scheduling the piggy backed clients to do Cache lookup
-          s->state_machine->event_scheduled = s->state_machine->mutex->
-            thread_holding->schedule_at(s->state_machine, HRTIME_MSECONDS(HttpConfig::m_master.rww_wait_time));
+          s->state_machine->event_scheduled =
+            s->state_machine->mutex->thread_holding->schedule_at(s->state_machine, HRTIME_MSECONDS(HttpConfig::m_master.rww_wait_time));
 
           return CONNECTION_COLLAPSING_SCHEDULED;
         }
