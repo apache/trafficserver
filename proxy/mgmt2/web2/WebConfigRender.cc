@@ -861,10 +861,6 @@ writeRemapConfigTable(WebHttpContext * whc)
   HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_TO_PATH);
   HtmlRndrTdClose(output);
 
-  HtmlRndrTdOpen(output, HTML_CSS_CONFIGURE_LABEL_SMALL, HTML_ALIGN_CENTER, HTML_VALIGN_NONE, NULL, NULL, 0);
-  HtmlRndrText(output, whc->lang_dict_ht, HTML_ID_CFG_EDIT_MIXT_SCHEME);
-  HtmlRndrTdClose(output);
-
   HtmlRndrTrClose(output);
 
   count = INKCfgContextGetCount(ctx);

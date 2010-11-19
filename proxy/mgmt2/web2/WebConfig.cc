@@ -243,9 +243,6 @@ formatCacheRule(char *rule)
   if (strlen(tokens[9]) > 0) {
     snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[9], HTML_DELIM);
   }
-  if (strlen(tokens[11]) > 0) {
-    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[11]);
-  }
 
   return xstrdup(buf);
 }
@@ -474,9 +471,6 @@ formatParentRule(char *rule)
   if (strlen(tokens[8]) > 0) {
     snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "Scheme=%s%s", tokens[8], HTML_DELIM);
   }
-  if (strlen(tokens[9]) > 0) {
-    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[9]);
-  }
 
   return xstrdup(buf);
 }
@@ -560,9 +554,6 @@ formatRemapRule(char *rule)
     snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "/%s", tokens[7]);
   }
 
-  if (strlen(tokens[8]) > 0) {
-    snprintf(buf + strlen(buf), MAX_RULE_LENGTH - strlen(buf), "MIXT Scheme=%s", tokens[8]);
-  }
 
   return xstrdup(buf);
 }

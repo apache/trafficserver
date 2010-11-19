@@ -171,8 +171,6 @@
 #define HTML_ID_CFG_EDIT_METHOD_HELP      "s_text_634"
 #define HTML_ID_CFG_EDIT_SCHEME           "s_text_635"
 #define HTML_ID_CFG_EDIT_SCHEME_HELP      "s_text_636"
-#define HTML_ID_CFG_EDIT_MIXT_SCHEME      "s_text_637"
-#define HTML_ID_CFG_EDIT_MIXT_SCHEME_HELP "s_text_638"
 #define HTML_ID_CFG_EDIT_TIME_PERIOD      "s_text_640"
 #define HTML_ID_CFG_EDIT_TIME_PERIOD_HELP "s_text_641"
 #define HTML_ID_CFG_EDIT_TIME_PERIOD_EG   "s_text_642"
@@ -234,7 +232,6 @@
 #define HTML_ID_CFG_EDIT_TO_PORT_HELP       "s_text_711"
 #define HTML_ID_CFG_EDIT_TO_PATH            "s_text_712"
 #define HTML_ID_CFG_EDIT_TO_PATH_HELP       "s_text_713"
-#define HTML_ID_CFG_EDIT_MIXT_SCHEME_HELP_2 "s_text_714"
 #define HTML_ID_CFG_EDIT_FROM_SCHEME        "s_text_715"
 #define HTML_ID_CFG_EDIT_TO_SCHEME          "s_text_716"
 

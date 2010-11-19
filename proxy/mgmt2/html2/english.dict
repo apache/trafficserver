@@ -151,8 +151,6 @@ s_text_633=Method
 s_text_634=Specifies the method of a requested URL
 s_text_635=Scheme
 s_text_636=Specifies the protocol of a requested URL.
-s_text_637=MIXT Scheme
-s_text_638=Specifies the media protocol type of a requested URL.
 s_text_640=Time Period
 s_text_641=Specifies the amount of time that applies to the selected rule type. (Only applies to 'revalidate', 'pin-in-cache', and 'ttl-in-cache' rule types.)
 s_text_642=Example: 2h or 5d10h15m30s (d:days, h:hours, m:minutes, s:secs)
@@ -211,7 +209,6 @@ s_text_710=To Port (Optional)
 s_text_711=Specifies the port number of the url to map to.
 s_text_712=To Path Prefix (Optional)
 s_text_713=Specifies the path prefix of the url to map to.
-s_text_714=Specifies the media protocol type of the mapping rule.
 s_text_715=From Scheme
 s_text_716=To Scheme 
 
