@@ -1214,8 +1214,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.connect_attempts_rr_retries, "proxy.config.http.connect_attempts_rr_retries");
   HttpEstablishStaticConfigLongLong(c.connect_attempts_timeout, "proxy.config.http.connect_attempts_timeout");
-  HttpEstablishStaticConfigLongLong(c.streaming_connect_attempts_timeout,
-                                    "proxy.config.http.streaming_connect_attempts_timeout");
   HttpEstablishStaticConfigLongLong(c.post_connect_attempts_timeout, "proxy.config.http.post_connect_attempts_timeout");
   HttpEstablishStaticConfigLongLong(c.parent_connect_attempts, "proxy.config.http.parent_proxy.total_connect_attempts");
   HttpEstablishStaticConfigLongLong(c.per_parent_connect_attempts,
@@ -1572,7 +1570,6 @@ HttpConfig::reconfigure()
   params->connect_attempts_max_retries_dead_server = m_master.connect_attempts_max_retries_dead_server;
   params->connect_attempts_rr_retries = m_master.connect_attempts_rr_retries;
   params->connect_attempts_timeout = m_master.connect_attempts_timeout;
-  params->streaming_connect_attempts_timeout = m_master.streaming_connect_attempts_timeout;
   params->post_connect_attempts_timeout = m_master.post_connect_attempts_timeout;
   params->parent_connect_attempts = m_master.parent_connect_attempts;
   params->per_parent_connect_attempts = m_master.per_parent_connect_attempts;

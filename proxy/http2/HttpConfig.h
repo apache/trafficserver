@@ -498,7 +498,6 @@ public:
   MgmtInt connect_attempts_max_retries_dead_server;
   MgmtInt connect_attempts_rr_retries;
   MgmtInt connect_attempts_timeout;
-  MgmtInt streaming_connect_attempts_timeout;
   MgmtInt post_connect_attempts_timeout;
   MgmtInt parent_connect_attempts;
   MgmtInt per_parent_connect_attempts;
@@ -916,7 +915,6 @@ connect_attempts_max_retries(0),
 connect_attempts_max_retries_dead_server(0),
 connect_attempts_rr_retries(0),
 connect_attempts_timeout(0),
-streaming_connect_attempts_timeout(0),
 post_connect_attempts_timeout(0),
 parent_connect_attempts(0),
 per_parent_connect_attempts(0),

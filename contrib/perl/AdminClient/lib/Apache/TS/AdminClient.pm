@@ -473,7 +473,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.slow.log.threshold
  proxy.config.http.snarf_username_from_authorization
  proxy.config.http.connect_ports
- proxy.config.http.streaming_connect_attempts_timeout
  proxy.config.http.transaction_active_timeout_in
  proxy.config.http.transaction_active_timeout_out
  proxy.config.http.transaction_no_activity_timeout_in

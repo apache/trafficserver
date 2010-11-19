@@ -60,15 +60,6 @@ public:
   bool isReliabilityPkt;
 
   int reqGenerationNum;
-  // Associate a TS seq. # with each packet...  We need this for WMT---WMT
-  // maintains its own sequence numbers that need to increment by 1 on each
-  // packet send.  Since packets can be cancelled during a seek, WMT needs to
-  // know the next "WMT seq. #" that it can tag to a packet.  To determine the
-  // "WMT seq. #", WMT code maintains a mapping betweeen WMT seq. # and TS
-  // seq. #.  If pktTSSeqNum is set to -1, then this value is ignored by the
-  // UDP code.
-  int64 pktTSSeqNum;
-
   ink_hrtime delivery_time;   // when to deliver packet
   ink_hrtime arrival_time;    // when packet arrived
 
@@ -93,7 +84,6 @@ UDPPacketInternal::UDPPacketInternal()
   , pktLength(0)
   , isReliabilityPkt(false)
   , reqGenerationNum(0)
-  , pktTSSeqNum(-1)
   , delivery_time(0)
   , arrival_time(0)
   , cont(NULL)
@@ -142,13 +132,6 @@ UDPPacket::setReliabilityPkt()
   UDPPacketInternal *p = (UDPPacketInternal *) this;
 
   p->isReliabilityPkt = true;
-}
-
-TS_INLINE void
-UDPPacket::setPktTSSeq(int64 seqno)
-{
-  UDPPacketInternal *p = (UDPPacketInternal *) this;
-  p->pktTSSeqNum = seqno;
 }
 
 TS_INLINE void

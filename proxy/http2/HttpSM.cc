@@ -4153,8 +4153,6 @@ HttpSM::do_cache_prepare_action(HttpCacheSM * c_sm, CacheHTTPInfo * object_read_
 }
 
 
-inline bool is_request_from_streaming_client(HTTPHdr * hdr);
-
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpStateMachineGet::do_http_server_open()
@@ -4357,8 +4355,6 @@ HttpSM::do_http_server_open(bool raw)
       MgmtInt connect_timeout;
       if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
         connect_timeout = t_state.http_config_param->post_connect_attempts_timeout;
-      } else if (is_request_from_streaming_client(&t_state.hdr_info.client_request)) {
-        connect_timeout = t_state.http_config_param->streaming_connect_attempts_timeout;
       } else if (t_state.current.server == &t_state.parent_info) {
         connect_timeout = t_state.http_config_param->parent_connect_timeout;
       } else {
@@ -5150,49 +5146,6 @@ HttpSM::write_header_into_buffer(HTTPHdr * h, MIOBuffer * b)
   return dumpoffset;
 }
 
-inline bool
-is_request_from_streaming_client(HTTPHdr * hdr)
-{
-  if (!hdr->valid())
-    return false;
-
-  if (hdr->presence(MIME_PRESENCE_USER_AGENT)) {
-    int length;
-    const char *user_agent = hdr->value_get(MIME_FIELD_USER_AGENT,
-                                            MIME_LEN_USER_AGENT, &length);
-
-    // be as efficient as possible - avoid unnecessary calls to memcmp
-    if (length <= 0)
-      return false;
-
-    switch (*user_agent) {
-    case 'Q':
-      // QTS - QuickTime
-      if (length > 2 && memcmp(user_agent + 1, "TS", 2) == 0)
-        return true;
-      break;
-    case 'R':
-      // RMA, RealPlayer or RealMediaPlayer - Real
-      if (length > 2 && memcmp(user_agent + 1, "MA", 2) == 0)
-        return true;
-      else if (length > 9 && memcmp(user_agent + 1, "ealPlayer", 9) == 0)
-        return true;
-      else if (length > 14 && memcmp(user_agent + 1, "ealMediaPlayer", 14) == 0)
-        return true;
-      break;
-    case 'N':
-      // NSPlayer - WMT
-      if (length > 7 && memcmp(user_agent + 1, "SPlayer", 7) == 0)
-        return true;
-      break;
-    default:
-      break;
-    }
-  }
-
-  return false;
-}
-
 void
 HttpSM::attach_server_session(HttpServerSession * s)
 {
@@ -5244,8 +5197,6 @@ HttpSM::attach_server_session(HttpServerSession * s)
   MgmtInt connect_timeout;
   if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
     connect_timeout = t_state.http_config_param->post_connect_attempts_timeout;
-  } else if (is_request_from_streaming_client(&t_state.hdr_info.client_request)) {
-    connect_timeout = t_state.http_config_param->streaming_connect_attempts_timeout;
   } else if (t_state.current.server == &t_state.parent_info) {
     connect_timeout = t_state.http_config_param->parent_connect_timeout;
   } else {

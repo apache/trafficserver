@@ -145,7 +145,6 @@ static int non_persistent_stats[] = {
   /////////////////////////////////////
   // Start of Scheduled Update stats
   /////////////////////////////////////
-  // WMT stats
   // DNS
   //dns_success_time_stat
 };

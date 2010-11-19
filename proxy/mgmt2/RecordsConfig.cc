@@ -814,9 +814,6 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.http.connect_attempts_timeout", "", INK_INT, "30", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.http.streaming_connect_attempts_timeout", "", INK_INT, "1800", RU_REREAD, RR_NULL, RC_NULL,
-   NULL, RA_NULL}
-  ,
   {CONFIG, "proxy.config.http.post_connect_attempts_timeout", "", INK_INT, "1800", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,

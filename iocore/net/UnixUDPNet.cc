@@ -1078,7 +1078,6 @@ UDPQueue::SendUDPPacket(UDPPacketInternal * p, int32 pktLen)
   int n, count, iov_len = 0;
 
   if (!p->isReliabilityPkt) {
-    p->conn->SetLastSentPktTSSeqNum(p->pktTSSeqNum);
     p->conn->lastSentPktStartTime = p->delivery_time;
   }
 

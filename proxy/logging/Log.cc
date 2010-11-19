@@ -829,79 +829,55 @@ Log::init_fields()
     ink_hash_table_insert(field_symbol_hash, symbol, field)
 
   // This field is for the client DNS name.
-  // For some protocols (such as WMT), the client itself sends the DNS
-  // name to the server in a logging message. This field logs that.
   // It's probably expensive to do DNS lookups, so this field should normally
   // be blank unless the protocol allows an inexpensive way to determine
   // the client DNS name.
-  //
-  // For WMT, this is equivalent to c-dns
   //
   ADD_LOG_FIELD("client_dns_name", "cdns", LogField::STRING,
                 &LogAccess::marshal_client_dns_name, &LogAccess::unmarshal_str);
 
   // This field is for the client operating system name.
   //
-  // For WMT, this is equivalent to c-os
-  //
   ADD_LOG_FIELD("client_dns_name", "cos", LogField::STRING, &LogAccess::marshal_client_os, &LogAccess::unmarshal_str);
 
   // This field is for the client operating system version.
-  //
-  // For WMT, this is equivalent to c-osversion
   //
   ADD_LOG_FIELD("client_os_version", "cosv", LogField::STRING,
                 &LogAccess::marshal_client_os_version, &LogAccess::unmarshal_str);
 
   // This field is for the client CPU type.
   //
-  // For WMT, this is equivalent to c-cpu
-  //
   ADD_LOG_FIELD("client_cpu", "ccpu", LogField::STRING, &LogAccess::marshal_client_cpu, &LogAccess::unmarshal_str);
 
   // This field is for the client player version.
-  //
-  // For WMT, this is equivalent to c-playerversion
   //
   ADD_LOG_FIELD("client_player_version", "cplyv", LogField::STRING,
                 &LogAccess::marshal_client_player_version, &LogAccess::unmarshal_str);
 
   // This field is for the client player lanaguage.
   //
-  // For WMT, this is equivalent to c-playerlanguage.
-  //
   ADD_LOG_FIELD("client_player_language", "clang", LogField::STRING,
                 &LogAccess::marshal_client_player_language, &LogAccess::unmarshal_str);
 
   // This field is for the client user agent.
-  //
-  // For WMT, this is equivalent to c(User-Agent)
   //
   ADD_LOG_FIELD("client_user_agent", "cua", LogField::STRING,
                 &LogAccess::marshal_client_user_agent, &LogAccess::unmarshal_str);
 
   // This field is for the URL of the referrer.
   //
-  // For WMT, this is equivalent to c(Referer)
-  //
   ADD_LOG_FIELD("referer_url", "rfurl", LogField::STRING, &LogAccess::marshal_referer_url, &LogAccess::unmarshal_str);
 
   // This field is for the audio codec used by the player.
-  //
-  // For WMT, this is equivalent to audiocodec
   //
   ADD_LOG_FIELD("audio_codec", "audcdc", LogField::STRING, &LogAccess::marshal_audio_codec, &LogAccess::unmarshal_str);
 
   // This field is for the video codec used by the player.
   //
-  // For WMT, this is equivalent to videocodec
-  //
   ADD_LOG_FIELD("video_codec", "vidcdc", LogField::STRING, &LogAccess::marshal_video_codec, &LogAccess::unmarshal_str);
 
   // This field is for the number of bytes received by the client
   // as reported by the client.
-  //
-  // For WMT, this is equivalent to c-bytes
   //
   ADD_LOG_FIELD("client_bytes_received", "cbytr", LogField::sINT,
                 &LogAccess::marshal_client_bytes_received, &LogAccess::unmarshal_int_to_str);
@@ -909,23 +885,17 @@ Log::init_fields()
   // This field is for the number of packets received by the client
   // as reported by the client.
   //
-  // For WMT, this is equivalent to c-pkts-received
-  //
   ADD_LOG_FIELD("client_pkts_received", "cpktr", LogField::sINT,
                 &LogAccess::marshal_client_pkts_received, &LogAccess::unmarshal_int_to_str);
 
   // This field is for the number of lost packets during transmission
   // from server to client as reported by the client.
   //
-  // For WMT, this is equivalent to c-pkts-lost-client
-  //
   ADD_LOG_FIELD("client_lost_pkts", "cpktl", LogField::sINT,
                 &LogAccess::marshal_client_lost_pkts, &LogAccess::unmarshal_int_to_str);
 
   // This field is for the number of lost packets in the network layer
   // as reported by the client.
-  //
-  // For WMT, this is equivalent to c-pkts-lost-net
   //
   ADD_LOG_FIELD("client_lost_net_pkts", "cpktln", LogField::sINT,
                 &LogAccess::marshal_client_lost_net_pkts, &LogAccess::unmarshal_int_to_str);
@@ -934,15 +904,11 @@ Log::init_fields()
   // transmission from the server to a client on the network layer as
   // reported by the client.
   //
-  // For WMT, this is equivalent to c-lost-cont-net
-  //
   ADD_LOG_FIELD("client_lost_continuous_pkts", "cpktlcn", LogField::sINT,
                 &LogAccess::marshal_client_lost_continuous_pkts, &LogAccess::unmarshal_int_to_str);
 
   // This field is for the number of packets recovered using ECC
   // as reported by the client.
-  //
-  // For WMT, this is equivalent to c-pkts-recovered-ECC
   //
   ADD_LOG_FIELD("client_pkts_ecc_recover", "cpktecc", LogField::sINT,
                 &LogAccess::marshal_client_pkts_ecc_recover, &LogAccess::unmarshal_int_to_str);
@@ -950,15 +916,11 @@ Log::init_fields()
   // This field is for the number of packets recovered from resent
   // requests as reported by the client.
   //
-  // For WMT, this is equivalent to c-pkts-recovered-resent
-  //
   ADD_LOG_FIELD("client_pkts_resent_recover", "crstrc", LogField::sINT,
                 &LogAccess::marshal_client_pkts_resent_recover, &LogAccess::unmarshal_int_to_str);
 
   // This field is for the number of resend requests sent by the client
   // as reported by the client.
-  //
-  // For WMT, this is equivalent to c-pkt-resendreqs
   //
   ADD_LOG_FIELD("client_resend_request", "crstrq", LogField::sINT,
                 &LogAccess::marshal_client_resend_request, &LogAccess::unmarshal_int_to_str);
@@ -966,21 +928,15 @@ Log::init_fields()
   // This field is for the number of rebuffers as reported by the
   // client.
   //
-  // For WMT, this is equivalent to c-buffercount
-  //
   ADD_LOG_FIELD("client_buffer_count", "cbufc", LogField::sINT,
                 &LogAccess::marshal_client_buffer_count, &LogAccess::unmarshal_int_to_str);
 
   // This field is the total buffer time of a client in seconds.
   //
-  // For WMT, this is equivalent to c-totalbuffertime
-  //
   ADD_LOG_FIELD("client_buffer_ts", "cbufs", LogField::sINT,
                 &LogAccess::marshal_client_buffer_ts, &LogAccess::unmarshal_int_to_str);
 
   // This field is the percent quality as reported by the client.
-  //
-  // For WMT, this is equivalent to c-quality
   //
   ADD_LOG_FIELD("client_quality_per", "cqalp", LogField::sINT,
                 &LogAccess::marshal_client_quality_per, &LogAccess::unmarshal_int_to_str);
