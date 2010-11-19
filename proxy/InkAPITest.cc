@@ -2500,7 +2500,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     if (test->hook_mask == 1) {
       test->hook_mask |= 2;
     }
-
+    TSSkipRemappingSet((TSHttpTxn) data,1);
     checkHttpTxnClientReqGet(test, data);
 
     if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
@@ -2513,8 +2513,8 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     break;
 
   case TS_EVENT_HTTP_OS_DNS:
-    if (test->hook_mask == 3) {
-      test->hook_mask |= 4;
+    if (test->hook_mask == 7) {
+      test->hook_mask |= 8;
     }
 
     checkHttpTxnClientIncomingPortGet(test, data);
@@ -2527,19 +2527,19 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL,
                  "TSHttpTxnReenable doesn't return TS_SUCCESS");
     } else {
-      test->reenable_mask |= 4;
+      test->reenable_mask |= 8;
     }
     break;
 
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    if (test->hook_mask == 7) {
-      test->hook_mask |= 8;
+    if (test->hook_mask == 3) {
+      test->hook_mask |= 4;
     }
     if (TSHttpTxnReenable((TSHttpTxn) data, TS_EVENT_HTTP_CONTINUE) != TS_SUCCESS) {
       SDK_RPRINT(test->regtest, "TSHttpTxnReenable", "TestCase1", TC_FAIL,
                  "TSHttpTxnReenable doesn't return TS_SUCCESS");
     } else {
-      test->reenable_mask |= 8;
+      test->reenable_mask |= 4;
     }
     break;
 
@@ -2621,7 +2621,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       } else {
         *(test->pstatus) = REGRESSION_TEST_FAILED;
         SDK_RPRINT(test->regtest, "TSHttpHookAdd", "TestCase1", TC_FAIL,
-                   "Hooks not called or request failure. Hook mask = %d", test->hook_mask);
+                   "Hooks not called or request failure. Hook mask = %d\n %s", test->hook_mask,test->browser->response);
       }
 
       if (test->reenable_mask == 255) {
@@ -6931,6 +6931,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_HTTP_TXN_START:
+    TSSkipRemappingSet((TSHttpTxn) edata,1);
     SDK_RPRINT(data->test, "TSHttpSsnReenable", "TestCase", TC_PASS, "ok");
     data->test_passed_ssn_reenable++;
     {
@@ -7137,6 +7138,13 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
   }
 
   switch (event) {
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    txnp = (TSHttpTxn) edata;
+    TSSkipRemappingSet(txnp,1);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    break;
+  
+  
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     {
       int lookup_status;
@@ -7304,7 +7312,8 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnCache) (RegressionTest * test, int atyp
   socktest->first_time = true;
   socktest->magic = MAGIC_ALIVE;
   TSContDataSet(cont, socktest);
-
+  
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
   /* Register to HTTP hooks that are called in case of a cache MISS */
   TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
@@ -7655,6 +7664,11 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
 
 
   switch (event) {
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    txnp = (TSHttpTxn) edata;
+    TSSkipRemappingSet(txnp,1);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    break;
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     txnp = (TSHttpTxn) edata;
     /* Setup hooks for Transformation */
@@ -7826,7 +7840,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
       } else {
         SDK_RPRINT(data->test, "TSHttpTxnTransformedResponseCache", "TestCase1", TC_FAIL, "Value's Mismatch");
       }
-
+      
       /* Note: response is available using test->browser->response pointer */
       *(data->pstatus) = REGRESSION_TEST_PASSED;
       if (data->browser1->status != REQUEST_SUCCESS) {
@@ -7910,7 +7924,9 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform) (RegressionTest * test, int 
 
   /* Prepare the buffer to be appended to responses */
   load(TRANSFORM_APPEND_STRING);
-
+  
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont); //so we can skip remapping
+  
   /* Register to HTTP hooks that are called in case of a cache MISS */
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
 

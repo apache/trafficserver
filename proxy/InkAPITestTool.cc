@@ -185,39 +185,39 @@ generate_request(int test_case)
 
 // We define request formats.
 // Each format has an X-Request-ID field that contains the id of the testcase
-#define HTTP_REQUEST_DEFAULT_FORMAT  "GET http://localhost:%d/default.html HTTP/1.0\r\n" \
+#define HTTP_REQUEST_DEFAULT_FORMAT  "GET http://127.0.0.1:%d/default.html HTTP/1.0\r\n" \
                                      "X-Request-ID: %d\r\n" \
 				     "\r\n"
 
-#define HTTP_REQUEST_FORMAT1 "GET http://localhost:%d/format1.html HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT1 "GET http://127.0.0.1:%d/format1.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
 			     "\r\n"
 
-#define HTTP_REQUEST_FORMAT2 "GET http://localhost:%d/format2.html HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT2 "GET http://127.0.0.1:%d/format2.html HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Content-Type: text/html\r\n" \
 			     "\r\n"
-#define HTTP_REQUEST_FORMAT3 "GET http://localhost:%d/format3.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT3 "GET http://127.0.0.1:%d/format3.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
 			     "Response: Error\r\n" \
 			     "\r\n"
-#define HTTP_REQUEST_FORMAT4 "GET http://localhost:%d/format4.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT4 "GET http://127.0.0.1:%d/format4.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Request:%d\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT5 "GET http://localhost:%d/format5.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT5 "GET http://127.0.0.1:%d/format5.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Request:%d\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT6 "GET http://localhost:%d/format.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT6 "GET http://127.0.0.1:%d/format.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Accept-Language:English\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT7 "GET http://localhost:%d/format.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT7 "GET http://127.0.0.1:%d/format.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Accept-Language:French\r\n" \
                              "\r\n"
-#define HTTP_REQUEST_FORMAT8 "GET http://localhost:%d/format.html/ HTTP/1.0\r\n" \
+#define HTTP_REQUEST_FORMAT8 "GET http://127.0.0.1:%d/format.html/ HTTP/1.0\r\n" \
 			     "X-Request-ID: %d\r\n" \
                              "Accept-Language:English,French\r\n" \
                              "\r\n"
@@ -445,7 +445,7 @@ synclient_txn_create(void)
   txn->magic = MAGIC_ALIVE;
   txn->connect_action = NULL;
 
-  TSDebug(CDBG_TAG, "Connecting to proxy localhost on port %d", (int) proxy_port);
+  TSDebug(CDBG_TAG, "Connecting to proxy 127.0.0.1 on port %d", (int) proxy_port);
   return txn;
 }
 
