@@ -2745,7 +2745,6 @@ TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc obj)
 /*************/
 /* MimeField */
 /*************/
-
 const char *
 TSMimeFieldValueGet(TSMBuffer bufp, TSMLoc field_obj, int idx, int *value_len_ptr)
 {
@@ -5652,7 +5651,7 @@ TSHttpTxnMaxArgCntGet(void)
 }
 
 TSReturnCode
-TSHttpArgIndexReserve(int* arg_idx, const char* name, const char* description)
+TSHttpArgIndexReserve(const char* name, const char* description, int* arg_idx)
 {
   if (sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS) {
     int volatile ix = ink_atomic_increment(&next_argv_index, 1);
@@ -5686,7 +5685,7 @@ TSHttpArgIndexLookup(int arg_idx, const char** name, const char** description)
 
 // Not particularly efficient, but good enough for now.
 TSReturnCode
-TSHttpArgIndexNameLookup(int* arg_idx, const char* name, const char** description)
+TSHttpArgIndexNameLookup(const char* name, int* arg_idx, const char** description)
 {
   if (sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS) {
     int len = strlen(name);
@@ -5704,7 +5703,7 @@ TSHttpArgIndexNameLookup(int* arg_idx, const char* name, const char** descriptio
 }
 
 TSReturnCode
-TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx, void *arg)
+TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg)
 {
   if (sdk_sanity_check_txn(txnp) == TS_SUCCESS && arg_idx >= 0 && arg_idx < HTTP_SSN_TXN_MAX_USER_ARG) {
     HttpSM *sm = (HttpSM *) txnp;
@@ -5715,7 +5714,7 @@ TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx, void *arg)
 }
 
 TSReturnCode
-TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void **argp)
+TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx, void **argp)
 {
   if (sdk_sanity_check_txn(txnp) == TS_SUCCESS && arg_idx >= 0 && arg_idx < HTTP_SSN_TXN_MAX_USER_ARG && argp) {
     HttpSM *sm = (HttpSM *) txnp;
@@ -5726,7 +5725,7 @@ TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void **argp)
 }
 
 TSReturnCode
-TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx, void *arg)
+TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg)
 {
   if (sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS && arg_idx >= 0 && arg_idx < HTTP_SSN_TXN_MAX_USER_ARG) {
     HttpClientSession *cs = (HttpClientSession *)ssnp;
@@ -5738,7 +5737,7 @@ TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx, void *arg)
 }
 
 TSReturnCode
-TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void **argp)
+TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx, void **argp)
 {
   if (sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS && arg_idx >= 0 && arg_idx < HTTP_SSN_TXN_MAX_USER_ARG && argp) {
     HttpClientSession *cs = (HttpClientSession *)ssnp;
@@ -6428,7 +6427,7 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
 
 /* Net VConnections */
 void
-TSVConnInactivityTimeoutSet(TSVConn connp, int timeout)
+TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout)
 {
   NetVConnection *vc = (NetVConnection *) connp;
 
@@ -6444,7 +6443,7 @@ TSVConnInactivityTimeoutCancel(TSVConn connp)
 }
 
 void
-TSVConnActiveTimeoutSet(TSVConn connp, int timeout)
+TSVConnActiveTimeoutSet(TSVConn connp, TSHRTime timeout)
 {
   NetVConnection *vc = (NetVConnection *) connp;
 
@@ -7466,7 +7465,8 @@ TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64 size)
 }
 
 // this function should be called at TS_EVENT_HTTP_READ_RESPONSE_HDR
-TSReturnCode TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
+TSReturnCode
+TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len)
 {
   if (url == NULL) {
     return TS_ERROR;
@@ -7499,7 +7499,8 @@ TSReturnCode TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len
   }
 }
 
-const char* TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr)
+const char*
+TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr)
 {
   if (sdk_sanity_check_txn(txnp)!=TS_SUCCESS) {
     return NULL;
@@ -7509,17 +7510,17 @@ const char* TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr)
   return (const char*)sm->redirect_url;
 }
 
-char* TSFetchRespGet(TSHttpTxn txnp, int *length)
+char*
+TSFetchRespGet(TSHttpTxn txnp, int *length)
 {
-
    FetchSM *fetch_sm = (FetchSM*)txnp;
    return  fetch_sm->resp_get(length);
 }
 
 int
-TSFetchPageRespGet (TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
+TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
-  if ( sdk_sanity_check_null_ptr((void*)bufp) != TS_SUCCESS || sdk_sanity_check_null_ptr((void*)obj) != TS_SUCCESS)
+  if (sdk_sanity_check_null_ptr((void*)bufp) != TS_SUCCESS || sdk_sanity_check_null_ptr((void*)obj) != TS_SUCCESS)
     return 0;
 
   HTTPHdr *hptr = (HTTPHdr*) txnp;
@@ -7527,9 +7528,8 @@ TSFetchPageRespGet (TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   if (hptr->valid()) {
     *bufp = hptr;
     *obj = hptr->m_http;
-    sdk_sanity_check_mbuffer(*bufp);
-
-    return 1;
+    if (sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS)
+      return 1;
   }
   return 0;
 }

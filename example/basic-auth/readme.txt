@@ -38,7 +38,7 @@ The basic-auth.c plugin performs basic HTTP proxy authentication.
 -- If the Proxy-Authorization MIME field is present, the plugin
    checks that the authentication scheme is "Basic".
 
-     handle_dns uses TSMimeFieldValueGet to get the value
+     handle_dns uses TSMimeFieldValueStringGet to get the value
      of the Proxy-Authorization field.
 
 -- The plugin then obtains the base64-encoded user name and password

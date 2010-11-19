@@ -16,9 +16,9 @@ The TSPluginInit function does the following:
 	TSMBufferCreate
 	TSMimeHdrCreate
 	TSMimeHdrFieldCreate
-	TSMimeFieldInsert
+	TSMimeHdrFieldAppend
 	TSMimeHdrFieldNameSet
-	TSMimeFieldValueInsert
+	TSMimeHdrFieldValueAppend
 	
 
 - sets up the callback for the add-header-plugin function, which 

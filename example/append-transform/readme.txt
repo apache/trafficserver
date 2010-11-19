@@ -61,7 +61,7 @@ The transform_plugin function does the following:
 	TSHttpTxnServerRespGet
 	TSHttpHdrStatusGet	
 	TSMimeHdrFieldFind
-	TSMimeFieldValueGet
+	TSMimeHdrFieldValueStringGet
 
 - if the response body is deemed transformable, transform_plugin calls
 	transform_add 

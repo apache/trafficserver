@@ -265,7 +265,7 @@ require_auth(TSHttpTxn txnp)
 
   newfld_loc = TSMimeHdrFieldCreate(bufp, hdr_loc);
   TSMimeHdrFieldNameSet(bufp, hdr_loc, newfld_loc, TS_MIME_FIELD_PROXY_AUTHENTICATE, TS_MIME_LEN_PROXY_AUTHENTICATE);
-  TSMimeFieldValueInsert(bufp, newfld_loc, "Basic realm=\"Armageddon\"", -1, -1);
+  TSMimeHdrFieldValueAppend(bufp, hdr_loc, newfld_loc, "Basic realm=\"Armageddon\"", -1);
   TSMimeHdrFieldAppend(bufp, hdr_loc, newfld_loc);
 
 done:

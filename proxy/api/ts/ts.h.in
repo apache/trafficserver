@@ -435,17 +435,18 @@ extern "C"
   } TSSDKVersion;
 
   typedef enum
-    {
-      TS_ERROR = -1,
-      TS_SUCCESS = 0
-    } TSReturnCode;
+  {
+    TS_ERROR = -1,
+    TS_SUCCESS = 0
+  } TSReturnCode;
 
   typedef enum
   {
-     NO_CALLBACK = 0,
-     AFTER_HEADER ,
-     AFTER_BODY
+    NO_CALLBACK = 0,
+    AFTER_HEADER ,
+    AFTER_BODY
   } TSFetchWakeUpOptions;
+
   extern tsapi const void *TS_ERROR_PTR;
 
   typedef int int32;
@@ -492,23 +493,25 @@ extern "C"
   typedef void *(*TSThreadFunc) (void *data);
   typedef int (*TSEventFunc) (TSCont contp, TSEvent event, void *edata);
   typedef void (*TSConfigDestroyFunc) (void *data);
+
   typedef struct
   {
-     int success_event_id;
-     int failure_event_id;
-     int timeout_event_id;
-  }TSFetchEvent;
+    int success_event_id;
+    int failure_event_id;
+    int timeout_event_id;
+  } TSFetchEvent;
+
   typedef struct TSFetchUrlParams
   {
-     const char *request;
-     int request_len;
-     unsigned int ip;
-     int port;
-     TSCont contp;
-     TSFetchEvent events;
-     TSFetchWakeUpOptions options;
-     struct TSFetchUrlParams *next;
-  }TSFetchUrlParams_t;
+    const char *request;
+    int request_len;
+    unsigned int ip;
+    int port;
+    TSCont contp;
+    TSFetchEvent events;
+    TSFetchWakeUpOptions options;
+    struct TSFetchUrlParams *next;
+  } TSFetchUrlParams_t;
 
   /* --------------------------------------------------------------------------
      Init */
@@ -2025,9 +2028,9 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
 
   tsapi TSReturnCode TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
-  tsapi TSReturnCode TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx, void **arg);
+  tsapi TSReturnCode TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx, void **argp);
   tsapi TSReturnCode TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
-  tsapi TSReturnCode TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx, void **arg);
+  tsapi TSReturnCode TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx, void **argp);
 
   /* The reserve API should only be use in TSAPI plugins, during plugin initialization! */
   /* The lookup methods can be used anytime, but are best used during initialization as well,
@@ -2399,27 +2402,27 @@ extern "C"
 
      This is available as of Apache TS v2.2.*/
   typedef enum
-    {
-      TS_STAT_TYPE_INT = 1,
-      /*  The following are not supported yet. */
-      TS_STAT_TYPE_FLOAT,
-      TS_STAT_TYPE_STRING,
-      TS_STAT_TYPE_COUNTER
-    } TSStatDataType;
+  {
+    TS_STAT_TYPE_INT = 1,
+    /*  The following are not supported yet. */
+    TS_STAT_TYPE_FLOAT,
+    TS_STAT_TYPE_STRING,
+    TS_STAT_TYPE_COUNTER
+  } TSStatDataType;
 
   typedef enum
-    {
-      TS_STAT_PERSISTENT = 1,
-      TS_STAT_NON_PERSISTENT
-    } TSStatPersistence;
+  {
+    TS_STAT_PERSISTENT = 1,
+    TS_STAT_NON_PERSISTENT
+  } TSStatPersistence;
 
   typedef enum
-    {
-      TS_STAT_SYNC_SUM = 0,
-      TS_STAT_SYNC_COUNT,
-      TS_STAT_SYNC_AVG,
-      TS_STAT_SYNC_TIMEAVG
-    } TSStatSync;
+  {
+    TS_STAT_SYNC_SUM = 0,
+    TS_STAT_SYNC_COUNT,
+    TS_STAT_SYNC_AVG,
+    TS_STAT_SYNC_TIMEAVG
+  } TSStatSync;
 
   /*  Note that only TS_STAT_TYPE_INT is supported at this point. */
   tsapi int TSStatCreate(const char *the_name, TSStatDataType the_type, TSStatPersistence persist, TSStatSync sync);
@@ -2442,10 +2445,10 @@ extern "C"
      This is the old stats system, it's deprecated, and should preferably not
      be used. It has serious limitations both in scalability and performance. */
   typedef enum
-    {
-      INKSTAT_TYPE_INT64,
-      INKSTAT_TYPE_FLOAT
-    } INKStatTypes;
+  {
+    INKSTAT_TYPE_INT64,
+    INKSTAT_TYPE_FLOAT
+  } INKStatTypes;
 
   typedef void *INKStat;
   typedef void *INKCoupledStat;
@@ -2753,7 +2756,6 @@ extern "C"
   */
   tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
 
-
   tsapi TS_DEPRECATED TSReturnCode TSIOBufferAppend(TSIOBuffer bufp, TSIOBufferBlock blockp);
   tsapi TS_DEPRECATED TSIOBufferData TSIOBufferDataCreate(void *data, int size, TSIOBufferDataFlags flags);
   tsapi TS_DEPRECATED TSIOBufferBlock TSIOBufferBlockCreate(TSIOBufferData datap, int size, int offset);
@@ -2774,13 +2776,18 @@ extern "C"
   tsapi void TSVConnActiveTimeoutSet(TSVConn connp, TSHRTime timeout);
   tsapi void TSVConnActiveTimeoutCancel(TSVConn connp);
 
-
   /* 
     ability to skip the remap phase of the State Machine 
     this only really makes sense in TS_HTTP_READ_REQUEST_HDR_HOOK
     
   */
   tsapi TSReturnCode TSSkipRemappingSet(TSHttpTxn txnp, int flag);
+
+  /*
+    It's unclear if these actually function properly still.
+  */
+  tsapi TSReturnCode TSRedirectUrlSet(TSHttpTxn txnp, const char* url, const int url_len);
+  tsapi const char*  TSRedirectUrlGet(TSHttpTxn txnp, int* url_len_ptr);
   
 #ifdef __cplusplus
 }
