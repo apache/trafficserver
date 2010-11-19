@@ -1933,6 +1933,7 @@ extern "C"
      HTTP sessions */
   tsapi TSReturnCode TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp);
   tsapi TSReturnCode TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event);
+  tsapi TSReturnCode TSHttpSsnTransactionCount(TSHttpSsn ssnp, int* count);
 
   /* --------------------------------------------------------------------------
      HTTP transactions */
@@ -2022,9 +2023,21 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event);
   tsapi TSReturnCode TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, const void *data, const uint64 size);
   tsapi TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
-  tsapi int TSHttpTxnGetMaxArgCnt(void);
-  tsapi TSReturnCode TSHttpTxnSetArg(TSHttpTxn txnp, int arg_idx, void *arg);
-  tsapi TSReturnCode TSHttpTxnGetArg(TSHttpTxn txnp, int arg_idx, void **arg);
+
+  tsapi TSReturnCode TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
+  tsapi TSReturnCode TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx, void **arg);
+  tsapi TSReturnCode TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
+  tsapi TSReturnCode TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx, void **arg);
+
+  /* The reserve API should only be use in TSAPI plugins, during plugin initialization! */
+  /* The lookup methods can be used anytime, but are best used during initialization as well,
+     or at least "cache" the results for best performance. */
+  tsapi TSReturnCode TSHttpArgIndexReserve(const char* name, const char* description, int* arg_idx);
+  tsapi TSReturnCode TSHttpArgIndexNameLookup(const char* name, int* arg_idx, const char** description);
+  tsapi TSReturnCode TSHttpArgIndexLookup(int arg_idx, const char** name, const char** description);
+
+  /** @deprecated */
+  tsapi TS_DEPRECATED int TSHttpTxnMaxArgCntGet(void);
 
   tsapi int TSHttpTxnGetMaxHttpRetBodySize(void);
   tsapi TSReturnCode TSHttpTxnSetHttpRetBody(TSHttpTxn txnp, const char *body_msg, int plain_msg);

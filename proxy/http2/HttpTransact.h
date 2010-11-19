@@ -899,7 +899,6 @@ public:
   } SquidLogInfo;
 
 
-#define HTTP_TRANSACT_STATE_MAX_USER_ARG         16     /* max number of user arguments inside HttpTransact::State structure */
 #define HTTP_TRANSACT_STATE_MAX_XBUF_SIZE  (1024*2)     /* max size of plugin exchange buffer */
 
   struct State
@@ -1010,7 +1009,7 @@ public:
     int return_xbuf_size;
     bool return_xbuf_plain;
     char return_xbuf[HTTP_TRANSACT_STATE_MAX_XBUF_SIZE];
-    void *user_args[HTTP_TRANSACT_STATE_MAX_USER_ARG];
+    void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
 
     int api_txn_active_timeout_value;
     int api_txn_connect_timeout_value;

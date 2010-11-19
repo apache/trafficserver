@@ -544,32 +544,6 @@ extern "C"
    ****************************************************************************/
   tsapi int TSSendClusterRPC(TSNodeHandle_t * nh, TSClusterRPCMsg_t * msg);
 
-  /* ----------------------------------------------------------------------
-   * Interfaces used for the AAA project
-   * ---------------------------------------------------------------------- */
-
-  /* ===== IP to User Name Cache ===== */
-  /****************************************************************************
-   *  Insert a name into the user-name cache
-   *  Return
-   *  contact: AAA, CPOINT
-   ****************************************************************************/
-  tsapi int TSUserNameCacheInsert(TSCont contp, unsigned long ip, const char *userName);
-
-  /****************************************************************************
-   *  Lookup a name in the user-name cache
-   *  Return
-   *  contact: AAA, CPOINT
-   ****************************************************************************/
-  tsapi int TSUserNameCacheLookup(TSCont contp, unsigned long ip, char *userName);
-
-  /****************************************************************************
-   *  Remove a name from the user-name cache
-   *  Return
-   *  contact: AAA, CPOINT
-   ****************************************************************************/
-  tsapi int TSUserNameCacheDelete(TSCont contp, unsigned long ip);
-
 #ifdef __cplusplus
 }
 #endif                          /* __cplusplus */

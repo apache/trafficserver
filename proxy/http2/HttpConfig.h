@@ -60,6 +60,12 @@
 
 #include "P_RecProcess.h"
 
+
+/* Some defines that might be candidates for configurable settings later.
+ */
+#define HTTP_SSN_TXN_MAX_USER_ARG         16   /* max number of user arguments for Transactions and Sessions */
+
+
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
    */

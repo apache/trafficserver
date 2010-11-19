@@ -56,18 +56,17 @@ ink_mutex debug_cs_list_mutex;
 static int64 next_cs_id = (int64) 0;
 ClassAllocator<HttpClientSession> httpClientSessionAllocator("httpClientSessionAllocator");
 
-HttpClientSession::HttpClientSession():
-VConnection(NULL),
-client_trans_stat(0),
-con_id(0), client_vc(NULL), magic(HTTP_CS_MAGIC_DEAD),
-transact_count(0), half_close(false), conn_decrease(false), bound_ss(NULL),
-read_buffer(NULL), current_reader(NULL), read_state(HCS_INIT),
-ka_vio(NULL), slave_ka_vio(NULL),
-cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
-cur_hooks(0), backdoor_connect(false), hooks_set(0),
-//session_based_auth(false), m_bAuthComplete(false), secCtx(NULL), m_active(false)
-session_based_auth(false), m_bAuthComplete(false), m_active(false)
+HttpClientSession::HttpClientSession()
+  : VConnection(NULL), con_id(0), client_vc(NULL), magic(HTTP_CS_MAGIC_DEAD),
+    transact_count(0), half_close(false), conn_decrease(false), bound_ss(NULL),
+    read_buffer(NULL), current_reader(NULL), read_state(HCS_INIT),
+    ka_vio(NULL), slave_ka_vio(NULL),
+    cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
+    cur_hooks(0), backdoor_connect(false), hooks_set(0),
+    //session_based_auth(false), m_bAuthComplete(false), secCtx(NULL), m_active(false)
+    session_based_auth(false), m_bAuthComplete(false), m_active(false)
 {
+  memset(user_args, 0, sizeof(user_args));
 }
 
 void
@@ -256,7 +255,6 @@ HttpClientSession::do_io_close(int alerrno)
 
   if (read_state == HCS_ACTIVE_READER) {
     HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
-    client_trans_stat--;
     if (m_active) {
       m_active = false;
       HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
@@ -584,7 +582,6 @@ HttpClientSession::release(IOBufferReader * r)
   }
 
   HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
-  client_trans_stat--;
 
   // Check to see there is remaining data in the
   //  buffer.  If there is, spin up a new state

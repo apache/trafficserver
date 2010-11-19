@@ -645,7 +645,6 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   t_state.client_info.port_attribute = (HttpPortTypes) netvc->attributes;
 
   HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
-  client_vc->client_trans_stat++;
 
   // Record api hook set state
   hooks_set = http_global_hooks->hooks_set | client_vc->hooks_set;

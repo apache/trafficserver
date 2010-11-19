@@ -282,6 +282,7 @@ tsremap_delete_instance(ihandle ih)
 }
 
 static volatile unsigned long processing_counter = 0;   // sequential counter
+static int arg_index = 0;
 
 /* -------------------------- tsremap_remap -------------------------------- */
 int
@@ -344,11 +345,9 @@ tsremap_remap(ihandle ih, rhandle rh, TSRemapRequestInfo * rri)
     TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
   }
   // How to store plugin private arguments inside Traffic Server request processing block.
-  // note: You can store up to TSHttpTxnGetMaxArgCnt() variables.
-  if (TSHttpTxnGetMaxArgCnt() > 0) {
-    fprintf(stderr,
-            "[tsremap_remap] Save processing counter %lu inside request processing block\n", _processing_counter);
-    TSHttpTxnSetArg((TSHttpTxn) rh, 1, (void *) _processing_counter); // save counter
+  if (TSHttpArgIndexReserve("remap_example", "Example remap plugin", &arg_index) == TS_SUCCESS) {
+    fprintf(stderr, "[tsremap_remap] Save processing counter %lu inside request processing block\n", _processing_counter);
+    TSHttpTxnArgSet((TSHttpTxn) rh, arg_index, (void *) _processing_counter); // save counter
   }
   // How to cancel request processing and return error message to the client
   // We wiil do it each other request
@@ -388,7 +387,7 @@ void
 tsremap_os_response(ihandle ih, rhandle rh, int os_response_type)
 {
   int request_id;
-  TSHttpTxnGetArg((TSHttpTxn) rh, 1, (void **) &request_id);  // read counter (we store it in tsremap_remap function call)
+  TSHttpTxnArgGet((TSHttpTxn) rh, arg_index, (void **) &request_id);  // read counter (we store it in tsremap_remap function call)
   fprintf(stderr, "[tsremap_os_response] Read processing counter %d from request processing block\n", request_id);
   fprintf(stderr, "[tsremap_os_response] OS response status: %d\n", os_response_type);
 }
