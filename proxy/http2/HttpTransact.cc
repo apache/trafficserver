@@ -9015,53 +9015,6 @@ HttpTransact::origin_server_connection_speed(State * s, ink_hrtime transfer_time
 }
 
 void
-HttpTransact::update_aol_stats(State * s, ink_hrtime cache_lookup_time)
-{
-#ifndef TS_MICRO
-  // Interested in stats about JG compressed images.  First
-  //   check the port attribute for a fast path when we are not
-  //   doing jg compression as the integer compare is much cheaper
-  //   than a header fetch & string compare
-  //
-  if (s->client_info.port_attribute == SERVER_PORT_COMPRESSED && s->hdr_info.client_response.valid()) {
-
-    int cont_type_len;
-    const char *cont_type_str = s->hdr_info.client_response.value_get(MIME_FIELD_CONTENT_TYPE,
-                                                                      MIME_LEN_CONTENT_TYPE,
-                                                                      &cont_type_len);
-
-    // This is how we will determine that this was a "JG" request.
-    if (cont_type_str && (ptr_len_casecmp(cont_type_str, cont_type_len, "image/x-jg") == 0)) {
-
-      if (s->squid_codes.wuts_proxy_status_code ==
-          WUTS_PROXY_STATUS_CLIENT_ABORT ||
-          s->squid_codes.log_code == SQUID_LOG_ERR_CLIENT_ABORT ||
-          s->squid_codes.wuts_proxy_status_code ==
-          WUTS_PROXY_STATUS_SPIDER_MEMBER_ABORTED || s->squid_codes.log_code == SQUID_LOG_ERR_SPIDER_MEMBER_ABORTED) {
-        HTTP_INCREMENT_TRANS_STAT(http_jg_client_aborts_stat);
-      }
-
-      if (s->squid_codes.log_code == SQUID_LOG_TCP_HIT ||
-          s->squid_codes.log_code == SQUID_LOG_TCP_MEM_HIT ||
-          s->squid_codes.log_code == SQUID_LOG_TCP_REFRESH_HIT || s->squid_codes.log_code == SQUID_LOG_TCP_IMS_HIT) {
-        HTTP_INCREMENT_TRANS_STAT(http_jg_cache_hits_stat);
-        if (cache_lookup_time > 0) {
-          HTTP_SUM_TRANS_STAT(http_jg_cache_hit_time_stat, cache_lookup_time);
-        }
-      } else {
-        HTTP_INCREMENT_TRANS_STAT(http_jg_cache_misses_stat);
-        if (cache_lookup_time > 0) {
-          HTTP_SUM_TRANS_STAT(http_jg_cache_miss_time_stat, cache_lookup_time);
-        }
-      }
-    }
-
-  }
-#endif
-}
-
-
-void
 HttpTransact::update_size_and_time_stats(State * s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
                                          ink_hrtime origin_server_read_time, ink_hrtime cache_lookup_time,
                                          int user_agent_request_header_size, int64 user_agent_request_body_size,
@@ -9208,8 +9161,6 @@ HttpTransact::update_size_and_time_stats(State * s, ink_hrtime total_time, ink_h
   if (origin_server_request_header_size > 0 && origin_server_read_time > 0) {
     origin_server_connection_speed(s, origin_server_read_time, origin_server_response_size);
   }
-
-  update_aol_stats(s, cache_lookup_time);
 
   return;
 }

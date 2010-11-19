@@ -817,28 +817,6 @@ register_stat_callbacks()
                      "proxy.process.http.cache_read_errors",
                      RECD_INT, RECP_NULL, (int) http_cache_read_errors, RecRawStatSyncSum);
 
-  ////////////////////////
-  //  JG Specific Stats //
-  ////////////////////////
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.jg_cache_hits_stat",
-                     RECD_INT, RECP_NULL, (int) http_jg_cache_hits_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.jg_cache_misses_stat",
-                     RECD_INT, RECP_NULL, (int) http_jg_cache_misses_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.jg_client_aborts_stat",
-                     RECD_INT, RECP_NULL, (int) http_jg_client_aborts_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.jg_cache_hit_time_stat",
-                     RECD_INT, RECP_NULL, (int) http_jg_cache_hit_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.jg_cache_miss_time_stat",
-                     RECD_INT, RECP_NULL, (int) http_jg_cache_miss_time_stat, RecRawStatSyncSum);
   ////////////////////////////////////////////////////////////////////////////////
   // status code counts
   ////////////////////////////////////////////////////////////////////////////////

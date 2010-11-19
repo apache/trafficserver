@@ -1407,7 +1407,6 @@ public:
                                          int origin_server_request_header_size, int64 origin_server_request_body_size,
                                          int origin_server_response_header_size, int64 origin_server_response_body_size,
                                          int pushed_response_header_size, int64 pushed_response_body_size, CacheAction_t cache_action);
-  static void update_aol_stats(State * s, ink_hrtime cache_lookup_time);
   static void histogram_request_document_size(State * s, int64 size);
   static void histogram_response_document_size(State * s, int64 size);
   static void user_agent_connection_speed(State * s, ink_hrtime transfer_time, int64 nbytes);

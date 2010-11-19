@@ -292,13 +292,6 @@ enum
   http_cache_write_errors,
   http_cache_read_errors,
 
-  // jg specific stats
-  http_jg_cache_hits_stat,
-  http_jg_cache_misses_stat,
-  http_jg_client_aborts_stat,
-  http_jg_cache_hit_time_stat,
-  http_jg_cache_miss_time_stat,
-
   // status code stats
   http_response_status_100_count_stat,
   http_response_status_101_count_stat,
