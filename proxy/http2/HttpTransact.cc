@@ -986,6 +986,7 @@ done:
     HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
     TRANSACT_RETURN(PROXY_SEND_ERROR_CACHE_NOOP, NULL);
   } else {
+    s->hdr_info.client_response.clear(); //anything previously set is invalid from this point forward
     Debug("http_trans", "END HttpTransact::EndRemapRequest");
     TRANSACT_RETURN(HTTP_API_POST_REMAP, HttpTransact::HandleRequest);
   }
