@@ -75,6 +75,7 @@ extern "C"
 
   tsapi void TSIPLookupPrint(TSIPLookup iplu, TSIPLookupPrintFunc pf);
   tsapi void TSIPLookupNewEntry(TSIPLookup iplu, uint32 addr1, uint32 addr2, void *data);
+  tsapi int TSIPLookupMatch(TSIPLookup iplu, uint32 addr, void **data);
   tsapi int TSIPLookupMatchFirst(TSIPLookup iplu, uint32 addr, TSIPLookupState iplus, void **data);
   tsapi int TSIPLookupMatchNext(TSIPLookup iplu, TSIPLookupState iplus, void **data);
 
@@ -241,10 +242,10 @@ extern "C"
 
   /* =====  CacheHttpInfo =====  */
 
-  tsapi TSCacheHttpInfo TSCacheHttpInfoCopy(TSCacheHttpInfo * infop);
+  tsapi TSCacheHttpInfo TSCacheHttpInfoCopy(TSCacheHttpInfo infop);
   tsapi void TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer * bufp, TSMLoc * offset);
   tsapi void TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer * bufp, TSMLoc * offset);
-  tsapi TSReturnCode TSCacheHttpInfoDestroy(TSCacheHttpInfo infop);
+  tsapi void TSCacheHttpInfoDestroy(TSCacheHttpInfo infop);
 
 
   /* =====  ICP =====  */

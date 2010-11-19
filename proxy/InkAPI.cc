@@ -4233,16 +4233,14 @@ TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length)
 
 
 void
-TSCacheHttpInfoDestroy(TSCacheHttpInfo *infop)
+TSCacheHttpInfoDestroy(TSCacheHttpInfo infop)
 {
-
   ((CacheHTTPInfo *) infop)->destroy();
 }
 
 TSCacheHttpInfo
 TSCacheHttpInfoCreate()
 {
-
   CacheHTTPInfo *info = new CacheHTTPInfo;
   info->create();
 
@@ -5947,7 +5945,7 @@ TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp, int *bytes)
 }
 
 int
-TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp, int *bytes)
+TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp, int64 *bytes)
 {
   HttpSM *sm = (HttpSM *) txnp;
 

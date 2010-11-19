@@ -1975,6 +1975,8 @@ extern "C"
   tsapi int TSHttpTxnClientIncomingPortGet(TSHttpTxn txnp);
   tsapi unsigned int TSHttpTxnServerIPGet(TSHttpTxn txnp);
   tsapi unsigned int TSHttpTxnNextHopIPGet(TSHttpTxn txnp);
+  tsapi int TSHttpTxnNextHopPortGet(TSHttpTxn txnp);
+
   tsapi TSReturnCode TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, int buflength, char *mimetype);
 
   /**
