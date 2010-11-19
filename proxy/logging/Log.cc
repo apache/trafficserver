@@ -784,7 +784,7 @@ Log::init_fields()
   Ptr<LogFieldAliasTable> entry_type_map = NEW(new LogFieldAliasTable);
   entry_type_map->init(N_LOG_ENTRY_TYPES,
                        LOG_ENTRY_HTTP, "LOG_ENTRY_HTTP",
-                       LOG_ENTRY_ICP, "LOG_ENTRY_ICP", LOG_ENTRY_MIXT, "LOG_ENTRY_MIXT");
+                       LOG_ENTRY_ICP, "LOG_ENTRY_ICP");
   field = NEW(new LogField("log_entry_type", "etype",
                            LogField::sINT,
                            &LogAccess::marshal_entry_type,

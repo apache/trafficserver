@@ -2330,14 +2330,6 @@ RecordElement RecordsConfig[] = {
   ,
   {PROCESS, "proxy.process.log2.event_log_access_skip", "", INK_COUNTER, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  //#
-  //# Some resource settings, currently only obeyed by MIXT
-  //#
-  //##############################################################################
-  {CONFIG, "proxy.config.resource.target_maxmem_mb", "", INK_INT, "0", RU_RESTART_TS, RR_NULL, RC_INT, "[0-65536]",
-   RA_NULL}
-  ,
-
 
   //##############################################################################
   //#

@@ -1676,7 +1676,6 @@ main(int argc, char **argv)
 #if TS_HAS_PROFILER
   ProfilerStart("/tmp/ts.prof");
 #endif
-  int mem_throttling;
 
   NOWARN_UNUSED(argc);
 
@@ -1786,13 +1785,7 @@ main(int argc, char **argv)
   // before calling RecProcessInit()
 
   TS_ReadConfigInteger(history_info_enabled, "proxy.config.history_info_enabled");
-  TS_ReadConfigInteger(mem_throttling, "proxy.config.resource.target_maxmem_mb");
   TS_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
-
-  if (!res_track_memory && mem_throttling > 0) {
-    Warning("Cannot disable proxy.config.res_track_memory when " "proxy.config.resource.target_maxmem_mb is enabled");
-    res_track_memory = 1;
-  }
 
   {
     XMLDom schema;
