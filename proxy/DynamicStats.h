@@ -102,14 +102,6 @@ _D(cpu_metric_fds_ready_per_loop_stat)
     //
     // Dynamic Scheduled Update Stats
     //
-    //
-    // Dynamic WMT stats
-    //
-#define WMT_STATS_1
-    //
-    // Dynamic QT stats
-    //
-#define QT_STATS_1
 #ifdef TS_MICRO
     //
     // Prefetch Stuffer Stats

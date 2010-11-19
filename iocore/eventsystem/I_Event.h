@@ -79,19 +79,13 @@
 #define NT_ASYNC_IO_EVENT_EVENTS_START            3100
 #define RAFT_EVENT_EVENTS_START                   3200
 #define SIMPLE_EVENT_EVENTS_START                 3300
-#define LDAP_EVENT_EVENTS_START                   3400
 #define UPDATE_EVENT_EVENTS_START                 3500
-#define NTLM_EVENT_EVENTS_START                   3700
 #define LOG_COLLATION_EVENT_EVENTS_START          3800
 #define AIO_EVENT_EVENTS_START                    3900
 #define BLOCK_CACHE_EVENT_EVENTS_START            4000
 #define UTILS_EVENT_EVENTS_START                  5000
 #define CONGESTION_EVENT_EVENTS_START             5100
-#define MIXT_API_EVENT_EVENTS_START               50000
-#define QT_EVENT_EVENTS_START                     58000
-#define WMT_EVENT_EVENTS_START                    59000
 #define INK_API_EVENT_EVENTS_START                60000
-#define RADIUS_EVENT_EVENTS_START                 61000
 #define SRV_EVENT_EVENTS_START	                  62000
 #define REMAP_EVENT_EVENTS_START                  63000
 
