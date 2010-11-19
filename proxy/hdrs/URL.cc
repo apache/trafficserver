@@ -1636,7 +1636,7 @@ url_MMH_get_fast(URLImpl * url, INK_MD5 * md5)
   ink_code_incr_MMH_init(&context.mmh_ctx);
 
   p = buffer;
-  memcpy(p, url->m_ptr_scheme, url->m_len_scheme);
+  memcpy_tolower(p, url->m_ptr_scheme, url->m_len_scheme);
   p += url->m_len_scheme;
   *p++ = ':';
   *p++ = '/';
@@ -1725,7 +1725,7 @@ url_MD5_get_general(URLImpl * url, INK_MD5 * md5)
       s = 0;
 
       while (t < ends[i]) {
-        if (i == 6) {           // host
+        if ((i == 0) || (i == 6)) {           // scheme and host
           unescape_str_tolower(p, e, t, ends[i], s);
         } else {
           unescape_str(p, e, t, ends[i], s);
