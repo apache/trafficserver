@@ -5990,7 +5990,6 @@ HttpTransact::initialize_state_variables_from_response(State * s, HTTPHdr * inco
       s->hdr_info.trust_response_cl = false;
     }
   }
-
   initialize_bypass_variables(s);
 
   if (incoming_response->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {

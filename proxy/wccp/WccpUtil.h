@@ -16,8 +16,8 @@ namespace Wccp {
 //@{
 extern ats::Errata::Code LVL_FATAL; ///< Fatal, cannot continue.
 extern ats::Errata::Code LVL_WARN; ///< Significant, function degraded.
-extern ats::Errata::Code LVL_INFO; /// Interesting, not necessarily a problem.
-extern ats::Errata::Code LVL_DEBUG; /// Debugging information.
+extern ats::Errata::Code LVL_INFO; ///< Interesting, not necessarily a problem.
+extern ats::Errata::Code LVL_DEBUG; ///< Debugging information.
 //@}
 
 /** Logging / reporting support.

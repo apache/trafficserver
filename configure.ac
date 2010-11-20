@@ -1225,6 +1225,7 @@ AC_CONFIG_FILES([proxy/mgmt2/tools/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/utils/Makefile])
 AC_CONFIG_FILES([proxy/mgmt2/web2/Makefile])
 AC_CONFIG_FILES([proxy/stats/Makefile])
+AC_CONFIG_FILES([proxy/tsconfig/Makefile])
 AC_CONFIG_FILES([proxy/wccp/Makefile])
 AC_CONFIG_FILES([example/Makefile])
 # example plugins

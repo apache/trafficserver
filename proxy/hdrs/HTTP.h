@@ -574,7 +574,7 @@ public:
   URL *url_get(URL * url);
   /** Get a string with the effective URL in it.
       If @a length is not @c NULL then the length of the string
-      is stored in pointed to @c int.
+      is stored in the int pointed to by @a length.
 
       Note that this can be different from getting the @c URL
       and invoking @c URL::string_get if the host is in a header

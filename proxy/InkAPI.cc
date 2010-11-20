@@ -5249,6 +5249,7 @@ INKHttpTxnClientReqGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
     *bufp = hptr;
     *obj = hptr->m_http;
     sdk_sanity_check_mbuffer(*bufp);
+    hptr->mark_target_dirty();
 
     return 1;
   } else {
