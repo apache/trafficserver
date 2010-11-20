@@ -4,11 +4,11 @@
 #include "TsConfig.tab.h"
 #include "TsConfigParseEvents.h"
 
-struct Location Lex_Location = { 0, 1 };
+struct Location TsConfig_Lex_Location = { 0, 1 };
 
-# define YY_USER_ACTION Lex_Location._col += yyleng;
+# define YY_USER_ACTION TsConfig_Lex_Location._col += yyleng;
 
-# define FILL yylval->_s = yytext; yylval->_n = yyleng; yylval->_loc = Lex_Location; yylval->_loc._col -= yyleng;
+# define FILL yylval->_s = yytext; yylval->_n = yyleng; yylval->_loc = TsConfig_Lex_Location; yylval->_loc._col -= yyleng;
 # define ZRET(t) FILL; yylval->_type = t; return t;
 # define HANDLE_EVENT(x) \
 	if (yyextra) { \
@@ -30,7 +30,7 @@ IDENT		[[:alpha:]_](?:-*[[:alnum:]_])*
 
 %x		bad
 %%
-\n		    ++(Lex_Location._line); Lex_Location._col = 0;
+\n		    ++(TsConfig_Lex_Location._line); TsConfig_Lex_Location._col = 0;
 (?:[[:space:]]{-}[\n])+
 ^[[:space:]]*#.*$
 \/\/.*$
@@ -50,7 +50,7 @@ IDENT		[[:alpha:]_](?:-*[[:alnum:]_])*
 .           BEGIN(bad); FILL;
 <bad>\n		{
 		        BEGIN(0); // Terminate bad token mode.
-		        ++(Lex_Location._line); // Must bump line count.
+		        ++(TsConfig_Lex_Location._line); // Must bump line count.
 		        HANDLE_EVENT(InvalidToken);
             }
 <bad>[[:space:]]  BEGIN(0); HANDLE_EVENT(InvalidToken);

@@ -182,11 +182,11 @@ public:
      */
     Message const& top() const;
 
-    /** Join @a that to @c this errata.
+    /** Move messages from @a that to @c this errata.
         Messages from @a that are put on the top of the
-        stack in @c this.
+        stack in @c this and removed from @a that.
     */
-    self& join(self const& that);
+    self& pull(self& that);
 
     /// Remove last message.
     void pop();

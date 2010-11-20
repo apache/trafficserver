@@ -25,6 +25,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
   -I$(top_srcdir)/proxy/mgmt2/cluster \
   -I$(top_srcdir)/proxy/mgmt2/web2 \
+  -I$(top_srcdir)/proxy/tsconfig \
   -I$(top_srcdir)/proxy
 
 MGMT_DEFS = @MGMT_DEFS@

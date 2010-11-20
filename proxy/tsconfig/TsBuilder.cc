@@ -5,6 +5,7 @@
 // Access to terminal token values.
 extern "C" {
 # include "TsConfig.tab.h"
+  extern ts::config::Location TsConfig_Lex_Location;
 };
 
 # define PRE "Configuration Parser: "
@@ -71,8 +72,8 @@ Builder::syntaxErrorDispatch(void* data, char const* text) {
 
 int
 Builder::syntaxError(char const* text) {
-    msg::logf(_errata, msg::WARN, "Syntax error '%s'.", text);
-    return 0;
+  msg::logf(_errata, msg::WARN, "Syntax error '%s' near line %d, column %d.", text, TsConfig_Lex_Location._line, TsConfig_Lex_Location._col);
+  return 0;
 }
 
 Rv<Configuration>
@@ -94,8 +95,9 @@ Builder::build(Buffer const& buffer) {
 }
 
 void
-Builder::groupOpen(Token const&) {
+Builder::groupOpen(Token const& token) {
     _v = _v.makeGroup(_name);
+    _v.setSource(token._loc._line, token._loc._col);
 }
 void Builder::groupClose(Token const&) {
     _v = _v.getParent();
@@ -103,8 +105,9 @@ void Builder::groupClose(Token const&) {
 void Builder::groupName(Token const& token) {
     _name.set(token._s, token._n);
 }
-void Builder::listOpen(Token const&) {
+void Builder::listOpen(Token const& token) {
     _v = _v.makeList(_name);
+    _v.setSource(token._loc._line, token._loc._col);
 }
 void Builder::listClose(Token const&) {
     _v = _v.getParent();
@@ -134,8 +137,12 @@ void Builder::pathIndex(Token const& token){
 
 void Builder::pathClose(Token const&) {
     Rv<Value> cv = _v.makePath(_path, _name);
-    if (cv.isOK())
+    if (cv.isOK()) {
       cv.result().setText(_extent).setSource(_loc._line, _loc._col);
+      // Terminate path. This will overwrite trailing whitespace or
+      // the closing angle bracket, both of which are expendable.
+      _extent._ptr[_extent._size] = 0;
+    }
     _name.reset();
     _extent.reset();
 }
@@ -145,10 +152,10 @@ void Builder::literalValue(Token const& token) {
     ConstBuffer text(token._s, token._n);
 
     // It's just too painful to use these strings with standard
-    // libraries without nul terminating these. For strings we convert
-    // the trailing quote. For integers we abuse the fact that the
-    // parser can't reduce using this token before the lexer has read
-    // at least one char ahead.
+    // libraries without nul terminating. For strings we convert the
+    // trailing quote. For integers we abuse the fact that the parser
+    // can't reduce using this token before the lexer has read at
+    // least one char ahead.
 
     // Note the nul is *not* included in the reported length.
 
@@ -163,7 +170,7 @@ void Builder::literalValue(Token const& token) {
     } else {
         msg::logf(_errata, msg::WARN, PRE "Unexpected literal type %d.", token._type);
     }
-    if (!cv.isOK()) _errata.join(cv.errata());
+    if (!cv.isOK()) _errata.pull(cv.errata());
     if (cv.result()) cv.result().setSource(token._loc._line, token._loc._col);
     _name.set(0,0); // used, so clear it.
 }

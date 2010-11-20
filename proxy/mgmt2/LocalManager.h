@@ -186,7 +186,7 @@ public:
 #endif
 
   WebPluginList plugin_list;
-  Wccp::Cache wccp_cache;
+  wccp::Cache wccp_cache;
 
 private:
 

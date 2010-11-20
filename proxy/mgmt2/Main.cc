@@ -446,27 +446,26 @@ set_process_limits(int fds_throttle)
 }
 
 void
-Errata_Logger(ats::Errata const& err) {
+Errata_Logger(ts::Errata const& err) {
   size_t n;
   static size_t const SIZE = 4096;
   char buff[SIZE];
   if (err.size()) {
-    ats::Errata::Code code = err.top().getCode();
-    if (code > 0) {
-      n = err.write(buff, SIZE, 1, 0, 2, "> ");
-      // strip trailing newlines.
-      while (n && (buff[n-1] == '\n' || buff[n-1] == '\r'))
-        buff[--n] = 0;
-      // log it.
-      if (code > 1) mgmt_elog("[WCCP]%s", buff);
-      else mgmt_log("[WCCP]%s", buff);
-    }
+    ts::Errata::Code code = err.top().getCode();
+    n = err.write(buff, SIZE, 1, 0, 2, "> ");
+    // strip trailing newlines.
+    while (n && (buff[n-1] == '\n' || buff[n-1] == '\r'))
+      buff[--n] = 0;
+    // log it.
+    if (code > 1) mgmt_elog("[WCCP]%s", buff);
+    else if (code > 0) mgmt_log("[WCCP]%s", buff);
+    else Debug("WCCP", "%s", buff);
   }
 }
 
 void
 Init_Errata_Logging() {
-  ats::Errata::registerSink(&Errata_Logger);
+  ts::Errata::registerSink(&Errata_Logger);
 }
 
 int

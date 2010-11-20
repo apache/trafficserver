@@ -131,7 +131,7 @@ Errata::operator = (Message const& msg) {
 }
 
 Errata&
-Errata::join(self const& that) {
+Errata::pull(self& that) {
   if (that.m_data) {
     this->pre_write();
     m_data->m_items.insert(
@@ -139,6 +139,7 @@ Errata::join(self const& that) {
       that.m_data->m_items.begin(),
       that.m_data->m_items.end()
     );
+    that.m_data->m_items.clear();
   }
   return *this;
 }

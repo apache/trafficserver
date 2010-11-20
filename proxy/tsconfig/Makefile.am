@@ -39,10 +39,10 @@ libtsconfig_a_SOURCES = \
   TsConfig.tab.c \
   TsConfig.lex.c
 
-TsConfig.tab.c: TsConfig.y
+TsConfig.tab.c TsConfig.tab.h: TsConfig.y
 	bison -d --name-prefix tsconfig TsConfig.y
 
-TsConfig.lex.c: TsConfig.flex
+TsConfig.lex.c TsConfig.lex.h: TsConfig.flex
 	flex --outfile TsConfig.lex.c TsConfig.flex
 
 #test_cache_SOURCES = \

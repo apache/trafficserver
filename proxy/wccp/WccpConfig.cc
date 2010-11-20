@@ -11,22 +11,7 @@ using ts::config::Value;
 
 // Support that must go in the standard namespace.
 namespace std {
-# if 0
-ostream& operator << ( ostream& s, ts::config::ValueType const& t ) {
-  switch (t) {
-  case ts::config::ValueTypeString: s << "string"; break;
-  case ts::config::ValueTypeInt: s << "integer"; break;
-  case ts::config::ValueTypeInt64: s << "integer (64 bit)"; break;
-  case ts::config::ValueTypeFloat: s << "floating point"; break;
-  case ts::config::ValueTypeBoolean: s << "boolean"; break;
-  case ts::config::ValueTypeArray: s << "array"; break;
-  case ts::config::ValueTypeList: s << "list"; break;
-  case ts::config::GroupValue: s << "group"; break;
-  default: s << "*unknown*"; break;
-  };
-  return s;
-}
-# endif
+
 inline ostream& operator << ( ostream& s, ts::ConstBuffer const& b ) {
   if (b._ptr) s.write(b._ptr, b._size);
   else s << b._size;
@@ -41,6 +26,7 @@ using namespace wccp;
 
 // Scratch global list of seed router addresses.
 // Yeah, not thread safe, but it's just during configuration load.
+// Logic somewhat changed - can we move in to the load method?
 std::vector<uint32> Seed_Router;
 
 // Names used for various elements and properties.
@@ -504,11 +490,11 @@ CacheImpl::loadServicesFromFile(char const* path) {
   if ((prop = cfg[SVC_PROP_SECURITY]).hasValue()) {
     ts::Rv<ts::ConstBuffer> rv = load_security(prop);
     if (rv.isOK()) this->useMD5Security(rv);
-    else zret.join(rv.errata());
+    else zret.pull(rv.errata());
   }
 
   if ((prop = cfg[SVC_PROP_ROUTERS]).hasValue()) {
-    zret.join(load_routers(prop, Seed_Router));
+    zret.pull(load_routers(prop, Seed_Router).doNotLog());
   }
 
   int idx, nsvc;
@@ -694,7 +680,7 @@ CacheImpl::loadServicesFromFile(char const* path) {
           security_style = SECURITY_NONE;
         }
       }
-      zret.join(security.errata());
+      zret.pull(security.errata());
     }
 
     // Get any group specific routers.

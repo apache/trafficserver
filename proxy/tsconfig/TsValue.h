@@ -633,7 +633,7 @@ inline Value::operator detail::PseudoBool::Type () const { return this->hasValue
 inline bool Value::operator ! () const { return ! this->hasValue(); }
 inline ValueType Value::getType() const { return this->hasValue() ? _config._table[_vidx]._type : VoidValue; }
 inline ConstBuffer const& Value::getText() const {
-  return this->hasValue() ? _config._table[_vidx]._name : detail::NULL_CONST_BUFFER;
+  return this->hasValue() ? _config._table[_vidx]._text : detail::NULL_CONST_BUFFER;
 }
 inline Value& Value::setText(ConstBuffer const& text) {
   detail::ValueItem* item = this->item();
@@ -657,6 +657,10 @@ inline Value& Value::reset() { _config = Configuration(); _vidx = detail::NULL_V
 inline detail::ValueItem* Value::item() { return this->hasValue() ? &(_config._table[_vidx]) : 0; }
 inline detail::ValueItem const* Value::item() const { return const_cast<self*>(this)->item(); }
 inline Value Value::operator [] (char const* name) const { return (*this)[ConstBuffer(name, strlen(name))]; }
+inline size_t Value::childCount() const {
+  detail::ValueItem const* item = this->item();
+  return item ? item->_children.size() : 0;
+}
 inline Value Value::find(char const* path) { return this->find(ConstBuffer(path, strlen(path))); }
 inline int Value::getSourceLine() const {
   detail::ValueItem const* item = this->item();

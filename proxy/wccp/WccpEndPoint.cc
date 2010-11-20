@@ -62,7 +62,7 @@ Impl::open(uint addr) {
     this->close();
     return -errno;
   }
-  logf(LVL_INFO, "WCCP socket bound to %s:%d", ip_addr_to_str(m_addr), DEFAULT_PORT);
+  logf(LVL_INFO, "Socket bound to %s:%d", ip_addr_to_str(m_addr), DEFAULT_PORT);
 
   // Now get the address. Usually the same but possibly different,
   // certainly if addr was INADDR_ANY.
@@ -108,7 +108,8 @@ Impl::useMD5Security(ts::ConstBuffer const& key) {
   m_security_opt = SECURITY_MD5;
   m_use_security_key = true;
   memset(m_security_key, 0, SecurityComp::KEY_SIZE);
-  strncpy(m_security_key, key._ptr, std::min(key._size, SecurityComp::KEY_SIZE));
+  // Great. Have to cast or we get a link error.
+  strncpy(m_security_key, key._ptr, std::min(key._size, static_cast<size_t>(SecurityComp::KEY_SIZE)));
 }
 
 SecurityOption
@@ -571,7 +572,7 @@ CacheImpl::housekeeping() {
       if (group.m_assign_info.fill(group, m_addr))
         ts::for_each(group.m_routers, ts::assign_member(&RouterData::m_assign, true));
 
-      // Always clear because no point in sending a assign we can't generate.
+      // Always clear because no point in sending an assign we can't generate.
       group.m_assignment_pending = false;
     }
 
@@ -637,6 +638,13 @@ CacheImpl::housekeeping() {
         sspot->m_xmit = now;
         sspot->m_count += 1;
       }
+      else logf(LVL_DEBUG,
+        "Error [%d:%s] sending HERE_I_AM for SG %d to seed router %s [#%d,%lu].",
+        zret, strerror(errno),
+        group.m_svc.getSvcId(),
+        ip_addr_to_str(sspot->m_addr),
+        group.m_generation, now
+      );
     }
   }
   return zret;

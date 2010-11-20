@@ -85,4 +85,10 @@ extern int on;
 int ink_sys_name_release(char *name, int namelen, char *release, int releaselen);
 int ink_number_of_processors();
 
+/** Constants.
+ */
+namespace ts {
+  static const int NO_FD = -1; ///< No or invalid file descriptor.
+}
+
 #endif /*__ink_defs_h*/

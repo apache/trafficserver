@@ -537,7 +537,7 @@ LocalManager::pollMgmtProcessServer()
   while (1) {
     // Only run WCCP housekeeping while we have a server process.
     // Note: The WCCP socket is opened iff WCCP is configured.
-    bool wccp_active = wccp_fd != ats::NO_FD && watched_process_fd != ats::NO_FD;
+    bool wccp_active = wccp_fd != ts::NO_FD && watched_process_fd != ts::NO_FD;
 
     // poll only
     timeout.tv_sec = process_server_timeout_secs;
@@ -560,7 +560,7 @@ LocalManager::pollMgmtProcessServer()
 
     } else if (num > 0) {       /* Have something */
 
-      if (wccp_fd != ats::NO_FD && FD_ISSET(wccp_fd, &fdlist)) {
+      if (wccp_fd != ts::NO_FD && FD_ISSET(wccp_fd, &fdlist)) {
         wccp_cache.handleMessage();
         --num;
       }
@@ -595,7 +595,7 @@ LocalManager::pollMgmtProcessServer()
         --num;
       }
 
-      if (ats::NO_FD != watched_process_fd && FD_ISSET(watched_process_fd, &fdlist)) {
+      if (ts::NO_FD != watched_process_fd && FD_ISSET(watched_process_fd, &fdlist)) {
         int res;
         MgmtMessageHdr mh_hdr;
         MgmtMessageHdr *mh_full;
