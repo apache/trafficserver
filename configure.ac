@@ -1227,8 +1227,6 @@ AC_CONFIG_FILES([proxy/mgmt2/web2/Makefile])
 AC_CONFIG_FILES([proxy/stats/Makefile])
 AC_CONFIG_FILES([proxy/wccp/Makefile])
 AC_CONFIG_FILES([example/Makefile])
-# Pavlov Plugins
-AC_CONFIG_FILES([example/pavlov-cache/Makefile])
 # example plugins
 AC_CONFIG_FILES([example/add-header/Makefile])
 AC_CONFIG_FILES([example/append-transform/Makefile])
