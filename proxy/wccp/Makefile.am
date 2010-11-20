@@ -18,14 +18,15 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/proxy/mgmt2/api2/include \
-  -DPKGSYSUSER=\"$(pkgsysuser)\"
+  -I$(top_srcdir)/proxy/tsconfig \
+  -I$(top_srcdir)/proxy/api/ts
+
 
 #WCCP_DEFS = @WCCP_DEFS@
 #DEFS += $(WCCP_DEFS)
 
 noinst_LIBRARIES = libwccp.a
-noinst_PROGRAMS = test-cache
+#noinst_PROGRAMS = test-cache
 
 libwccp_a_SOURCES = \
   Wccp.h \
@@ -34,15 +35,11 @@ libwccp_a_SOURCES = \
   WccpMsg.cc \
   WccpEndPoint.cc \
   WccpConfig.cc \
-  Errata.h \
-  Errata.cc \
   AtsBase.h \
   AtsBaseStatic.cc \
-  AtsMeta.h \
-  NumericType.h \
-  IntrusivePtr.h
+  AtsMeta.h
 
-test_cache_SOURCES = \
-  wccp-test-cache.cc
+#test_cache_SOURCES = \
+#  wccp-test-cache.cc
 
-test_cache_LDADD = ./libwccp.a -lconfig++ -lcrypto
+#test_cache_LDADD = ./libwccp.a -lconfig++ -lcrypto

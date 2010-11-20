@@ -2,13 +2,13 @@
 /// Statics and utilities.
 
 # include "WccpLocal.h"
-# include "AtsMeta.h"
+# include "WccpMeta.h"
 # include <sys/ioctl.h>
 # include <net/if.h>
 # include <stdarg.h>
 # include <errno.h>
 
-namespace Wccp {
+namespace wccp {
 // ------------------------------------------------------
 // Compile time checks for internal consistency.
 
@@ -17,13 +17,13 @@ struct CompileTimeChecks {
   static unsigned int const UINT8_SIZE = sizeof(uint8);
   // A compiler error for the following line means that the size of
   // an assignment bucket is incorrect. It must be exactly 1 byte.
-  ats::TEST_IF_TRUE< BUCKET_SIZE == UINT8_SIZE > m_check_bucket_size;
+  ts::TEST_IF_TRUE< BUCKET_SIZE == UINT8_SIZE > m_check_bucket_size;
 };
 
-ats::Errata::Code LVL_FATAL = 3; ///< Fatal, cannot continue.
-ats::Errata::Code LVL_WARN = 2; ///< Significant, should be fixed.
-ats::Errata::Code LVL_INFO = 1; /// Interesting, not necessarily a problem.
-ats::Errata::Code LVL_DEBUG = 0; /// Debugging information.
+ts::Errata::Code LVL_FATAL = 3; ///< Fatal, cannot continue.
+ts::Errata::Code LVL_WARN = 2; ///< Significant, should be fixed.
+ts::Errata::Code LVL_INFO = 1; /// Interesting, not necessarily a problem.
+ts::Errata::Code LVL_DEBUG = 0; /// Debugging information.
 
 // Find a valid local IP address given an open socket.
 uint32
@@ -58,30 +58,30 @@ char const* ip_addr_to_str(uint32 addr) {
 }
 
 // ------------------------------------------------------
-ats::Errata&
-log(ats::Errata& err, ats::Errata::Id id, ats::Errata::Code code, char const* text) {
+ts::Errata&
+log(ts::Errata& err, ts::Errata::Id id, ts::Errata::Code code, char const* text) {
   err.push(id, code, text);
   return err;
 }
 
-ats::Errata&
-log(ats::Errata& err, ats::Errata::Code code, char const* text) {
+ts::Errata&
+log(ts::Errata& err, ts::Errata::Code code, char const* text) {
   err.push(0, code, text);
   return err;
 }
 
-ats::Errata
-log(ats::Errata::Code code, char const* text) {
-  ats::Errata err;
+ts::Errata
+log(ts::Errata::Code code, char const* text) {
+  ts::Errata err;
   err.push(0, code, text);
   return err;
 }
 
-ats::Errata&
+ts::Errata&
 vlogf(
-  ats::Errata& err,
-  ats::Errata::Id id,
-  ats::Errata::Code code,
+  ts::Errata& err,
+  ts::Errata::Id id,
+  ts::Errata::Code code,
   char const* format,
   va_list& rest
 ) {
@@ -94,11 +94,11 @@ vlogf(
   return err;
 }
 
-ats::Errata&
+ts::Errata&
 logf(
-  ats::Errata& err,
-  ats::Errata::Id id,
-  ats::Errata::Code code,
+  ts::Errata& err,
+  ts::Errata::Id id,
+  ts::Errata::Code code,
   char const* format,
   ...
 ) {
@@ -107,32 +107,32 @@ logf(
   return vlogf(err, id, code, format, rest);
 }
 
-ats::Errata
-logf(ats::Errata::Code code, char const* format, ...) {
-  ats::Errata err;
+ts::Errata
+logf(ts::Errata::Code code, char const* format, ...) {
+  ts::Errata err;
   va_list rest;
   va_start(rest, format);
-  return vlogf(err, ats::Errata::Id(0), code, format, rest);
+  return vlogf(err, ts::Errata::Id(0), code, format, rest);
 }
 
-ats::Errata&
-logf(ats::Errata& err, ats::Errata::Code code, char const* format, ...) {
+ts::Errata&
+logf(ts::Errata& err, ts::Errata::Code code, char const* format, ...) {
   va_list rest;
   va_start(rest, format);
-  return vlogf(err, ats::Errata::Id(0), code, format, rest);
+  return vlogf(err, ts::Errata::Id(0), code, format, rest);
 }
 
-ats::Errata
-log_errno(ats::Errata::Code code, char const* text) {
+ts::Errata
+log_errno(ts::Errata::Code code, char const* text) {
   static size_t const SIZE = 1024;
   char buffer[SIZE];
   return logf(code, "%s [%d] %s", text, errno, strerror_r(errno, buffer, SIZE));
 }
 
-ats::Errata
-vlogf_errno(ats::Errata::Code code, char const* format, va_list& rest) {
+ts::Errata
+vlogf_errno(ts::Errata::Code code, char const* format, va_list& rest) {
   int e = errno; // Preserve value before making system calls.
-  ats::Errata err;
+  ts::Errata err;
   int n;
   static int const E_SIZE = 1024;
   char e_buffer[E_SIZE];
@@ -142,15 +142,15 @@ vlogf_errno(ats::Errata::Code code, char const* format, va_list& rest) {
   n = vsnprintf(t_buffer, T_SIZE, format, rest);
   if (0 <= n && n < T_SIZE) // still have room.
     n += snprintf(t_buffer + n, T_SIZE - n, "[%d] %s", e, strerror_r(e, e_buffer, E_SIZE));
-  err.push(ats::Errata::Id(0), code, t_buffer);
+  err.push(ts::Errata::Id(0), code, t_buffer);
   return err;
 }
 
-ats::Errata
-logf_errno(ats::Errata::Code code, char const* format, ...) {
+ts::Errata
+logf_errno(ts::Errata::Code code, char const* format, ...) {
   va_list rest;
   va_start(rest, format);
   return vlogf_errno(code, format, rest);
 }
 // ------------------------------------------------------
-} // namespace Wccp
+} // namespace wccp

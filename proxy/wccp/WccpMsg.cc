@@ -1,8 +1,9 @@
 # include "WccpLocal.h"
 # include <errno.h>
 # include <openssl/md5.h>
+# include <TsException.h>
 
-namespace Wccp {
+namespace wccp {
 // ------------------------------------------------------
 // ------------------------------------------------------
 ServiceGroup&
@@ -294,7 +295,7 @@ MsgHeaderComp&
 MsgHeaderComp::fill(MsgBuffer& buffer, message_type_t t) {
   size_t comp_size = this->calcSize();
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
   m_base = buffer.getTail();
   buffer.use(comp_size);
   this->setType(t).setVersion(VERSION).setLength(0);
@@ -355,7 +356,7 @@ SecurityComp::fill(MsgBuffer& buffer, Option opt) {
   size_t comp_size = this->calcSize(opt);
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
  
@@ -445,7 +446,7 @@ ServiceComp::setPort(int idx, uint16_t port) {
 
 ServiceComp&
 ServiceComp::addPort(uint16_t port) {
-  if (m_port_count < ServiceGroup::N_PORTS)
+  if (m_port_count < static_cast<int>(ServiceGroup::N_PORTS))
     this->access()->setPort(m_port_count++, port);
   return *this;
 }
@@ -462,7 +463,7 @@ ServiceComp::fill(MsgBuffer& buffer, ServiceGroup const& svc) {
   size_t comp_size = this->calcSize();
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
 
@@ -574,7 +575,7 @@ RouterIdComp&
 RouterIdComp::fill(MsgBuffer& buffer, size_t n_caches) {
   size_t comp_size = this->calcSize(n_caches);
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
 
@@ -597,7 +598,7 @@ RouterIdComp::fillSingleton(
   size_t comp_size = this->calcSize(1);
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
 
@@ -706,7 +707,7 @@ RouterViewComp::fill(
   size_t comp_size = this->calcSize(n_routers, n_caches);
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
 
@@ -759,7 +760,7 @@ CacheIdComp::fill(MsgBuffer& base, CacheIdElt const& src) {
   size_t comp_size = this->calcSize();
 
   if (base.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = base.getTail();
   this->setType(COMP_TYPE).setLength(comp_size - sizeof(super::raw_t));
@@ -859,7 +860,7 @@ CacheViewComp::fill(
   size_t comp_size = this->calcSize(n_routers, n_caches);
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
 
@@ -989,7 +990,7 @@ AssignInfoComp::fill(
   size_t comp_size = this->calcSize(n_routers, n_caches);
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
 
@@ -1017,7 +1018,7 @@ AssignInfoComp::fill(MsgBuffer& buffer, self const& that) {
   size_t comp_size = that.getLength() + sizeof(super::raw_t);
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
   memcpy(m_base, that.m_base, comp_size);
@@ -1086,7 +1087,7 @@ CmdComp::fill(MsgBuffer& buffer, cmd_t cmd, uint32 data) {
   size_t comp_size = this->calcSize();
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
 
@@ -1168,7 +1169,7 @@ CapComp::fill(MsgBuffer& buffer, int n) {
   m_cached = false;
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
   this->setType(COMP_TYPE).setLength(comp_size - sizeof(super::raw_t));
@@ -1216,7 +1217,7 @@ AssignMapComp::fill(MsgBuffer& buffer, int n) {
   size_t comp_size = this->calcSize(n);
 
   if (buffer.getSpace() < comp_size)
-    throw ats::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
+    throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
 
   m_base = buffer.getTail();
 
@@ -1426,7 +1427,7 @@ HereIAmMsg::fill_caps(
 }
 
 int
-HereIAmMsg::parse(ats::Buffer const& buffer) {
+HereIAmMsg::parse(ts::Buffer const& buffer) {
   int zret;
   this->setBuffer(buffer);
   if (!m_buffer.getBase()) return -EINVAL;
@@ -1487,7 +1488,7 @@ ISeeYouMsg::fill(
 }
 
 int
-ISeeYouMsg::parse(ats::Buffer const& buffer) {
+ISeeYouMsg::parse(ts::Buffer const& buffer) {
   int zret;
   this->setBuffer(buffer);
   if (!m_buffer.getBase()) return -EINVAL;
@@ -1523,4 +1524,4 @@ ISeeYouMsg::parse(ats::Buffer const& buffer) {
   return m_buffer.getSpace() ? PARSE_DATA_OVERRUN : PARSE_SUCCESS;
 }
 // ------------------------------------------------------
-} // namespace Wccp
+} // namespace wccp

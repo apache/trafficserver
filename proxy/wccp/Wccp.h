@@ -1,5 +1,5 @@
-# if ! defined(ATS_WCCP_API_H)
-# define ATS_WCCP_API_H
+# if ! defined(ATS_WCCP_API_HEADER)
+# define ATS_WCCP_API_HEADER
 
 /** @file
     WCCP (v2) support API.
@@ -7,18 +7,19 @@
     Sponsored by: Pavlov Media
  */
 
-# include "AtsBase.h"
-# include "IntrusivePtr.h"
-# include "Errata.h"
-
+# include <TsBuffer.h>
+# include <Errata.h>
 # include <memory.h>
+# include <ink_port.h>
+// Nasty, using this with no prefix. The value is still available
+// in TS_VERSION_STRING.
+# undef VERSION
 
 // INADDR_ANY
 # include <netinet/in.h>
 
 /// WCCP Support.
-namespace Wccp {
-using namespace ats::fixed_integers;
+namespace wccp {
 
 /// Forward declare implementation classes.
 class Impl;
@@ -97,7 +98,7 @@ public:
   static uint8 const RESERVED = 50;
   
   /// Number of ports in component (defined by protocol).
-  static int const N_PORTS = 8;
+  static size_t const N_PORTS = 8;
 
   /// @name Flag mask values.
   //@{
@@ -224,9 +225,13 @@ public:
   /// in @c select.
   int getSocket() const;
 
-  /// Use MD5 based security, specifying the @a key.
+  /// Use MD5 based security with @a key.
   void useMD5Security(
     char const* key ///< Shared hash key.
+  );
+  /// Use MD5 based security with @a key.
+  void useMD5Security(
+    ts::ConstBuffer const& key ///< Shared hash key.
   );
 
   /// Perform house keeping, including sending outbound messages.
@@ -234,7 +239,7 @@ public:
 
   /// Recieve and process a message on the socket.
   /// @return 0 for success, -ERRNO on system error.
-  ats::Rv<int> handleMessage();
+  ts::Rv<int> handleMessage();
 
 protected:
   /// Default constructor.
@@ -244,7 +249,7 @@ protected:
   /// Force virtual destructor
   virtual ~EndPoint();
 
-  ats::IntrusivePtr<ImplType> m_ptr; ///< Implementation instance.
+  ts::IntrusivePtr<ImplType> m_ptr; ///< Implementation instance.
 
   /** Get a pointer to the implementation instance, creating it if needed.
       @internal This is paired with @c make so that the implementation check
@@ -271,7 +276,7 @@ public:
   ~Cache();
 
   /// Define services from a configuration file.
-  ats::Errata loadServicesFromFile(
+  ts::Errata loadServicesFromFile(
     char const* path ///< Path to file.
   );
 
@@ -476,7 +481,11 @@ inline Cache::Service::Service(
   detail::cache::GroupData& group
 ) : m_cache(cache), m_group(&group) {
 }
+
+inline void EndPoint::useMD5Security(char const* key) {
+  this->useMD5Security(ts::ConstBuffer(key, strlen(key)));
+}
 // ------------------------------------------------------
 
 } // namespace Wccp
-# endif // Include guard
+# endif // include guard.

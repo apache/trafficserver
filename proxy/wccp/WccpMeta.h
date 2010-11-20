@@ -2,7 +2,7 @@
 
 // Various meta programming efforts. Experimental at present.
 
-namespace ats {
+namespace ts {
 
 // Some support templates so we can fail to compile if the
 // compile time check fails.

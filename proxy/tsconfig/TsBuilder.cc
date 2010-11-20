@@ -116,13 +116,17 @@ void Builder::pathOpen(Token const&) {
 }
 void Builder::pathTag(Token const& token) {
     _path.append(Buffer(token._s, token._n));
-    if (_extent._ptr) _extent._size = token._s - _extent._ptr + token._n;
-    else _extent.set(token._s, token._n);
+    if (_extent._ptr) {
+      _extent._size = token._s - _extent._ptr + token._n;
+    } else {
+      _extent.set(token._s, token._n);
+      _loc = token._loc;
+    }
 }
 void Builder::pathIndex(Token const& token){
-    // We take advantage of the lexer - token will always be a valid digit string
-    // that is followed by a non-digit or the FLEX required double null at the end
-    // of the input buffer.
+    // We take advantage of the lexer - token will always be a valid
+    // digit string that is followed by a non-digit or the FLEX
+    // required double null at the end of the input buffer.
     _path.append(Buffer(0, static_cast<size_t>(atol(token._s))));
     if (_extent._ptr) _extent._size = token._s - _extent._ptr + token._n;
     else _extent.set(token._s, token._n);
@@ -130,8 +134,8 @@ void Builder::pathIndex(Token const& token){
 
 void Builder::pathClose(Token const&) {
     Rv<Value> cv = _v.makePath(_path, _name);
-    if (cv.isOK()) cv.result().setText(_extent);
-
+    if (cv.isOK())
+      cv.result().setText(_extent).setSource(_loc._line, _loc._col);
     _name.reset();
     _extent.reset();
 }
@@ -139,17 +143,28 @@ void Builder::pathClose(Token const&) {
 void Builder::literalValue(Token const& token) {
     Rv<Value> cv;
     ConstBuffer text(token._s, token._n);
+
+    // It's just too painful to use these strings with standard
+    // libraries without nul terminating these. For strings we convert
+    // the trailing quote. For integers we abuse the fact that the
+    // parser can't reduce using this token before the lexer has read
+    // at least one char ahead.
+
+    // Note the nul is *not* included in the reported length.
+
     if (INTEGER == token._type) {
         cv = _v.makeInteger(text, _name);
-        if (!cv.isOK()) _errata.join(cv.errata());
+        token._s[token._n] = 0;
     } else if (STRING == token._type) {
+        // Don't include the quotes.
         ++text._ptr, text._size -= 2;
         cv = _v.makeString(text, _name);
-        // Strip enclosing quotes.
-        if (!cv.isOK()) _errata.join(cv.errata());
+        token._s[token._n-1] = 0;
     } else {
         msg::logf(_errata, msg::WARN, PRE "Unexpected literal type %d.", token._type);
     }
+    if (!cv.isOK()) _errata.join(cv.errata());
+    if (cv.result()) cv.result().setSource(token._loc._line, token._loc._col);
     _name.set(0,0); // used, so clear it.
 }
 void Builder::invalidToken(Token const&) { }

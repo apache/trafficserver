@@ -1,3 +1,6 @@
+# if ! defined TS_BUFFER_HEADER
+# define TS_BUFFER_HEADER
+
 /** @file
     Apach Traffic Server commons.
     Definitions that are standardized across ATS.
@@ -8,6 +11,8 @@
 # else
 # include <unistd.h>
 # endif
+
+// For memcmp()
 # include <memory.h>
 
 /// Apache Traffic Server commons.
@@ -154,3 +159,5 @@ namespace ts {
       return _size == that._size && 0 == memcmp(_ptr, that._ptr, _size);
   }
 }
+
+# endif // TS_BUFFER_HEADER

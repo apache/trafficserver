@@ -64,6 +64,7 @@ detail::ValueTable::make(ValueIndex pidx, ValueType type, ConstBuffer const& nam
         item = &(_ptr->_values[n]);
         item->_parent = pidx;
         parent->_children.push_back(n);
+        item->_local_index = parent->_children.size() - 1;
         // Only use the name if the parent is a group.
         if (GroupValue == parent->_type) item->_name = name;
         zret = n; // mark for return to caller.
@@ -94,9 +95,9 @@ detail::ValueTable::alloc(size_t n) {
 
 // ---------------------------------------------------------------------------
 Value
-Value::operator [] (size_t idx) {
+Value::operator [] (size_t idx) const {
     Value zret;
-    detail::ValueItem* item = this->item();
+    detail::ValueItem const* item = this->item();
     if (item && idx < item->_children.size()) {
         zret = Value(_config, item->_children[idx]);
         if (PathValue == zret.getType()) zret = _config.getRoot().find(_config._table[zret._vidx]._path);
@@ -105,11 +106,11 @@ Value::operator [] (size_t idx) {
 }
 
 Value
-Value::operator [] (ConstBuffer const& name) {
+Value::operator [] (ConstBuffer const& name) const {
     Value zret;
-    detail::ValueItem* item = this->item();
+    detail::ValueItem const* item = this->item();
     if (item) {
-        for ( detail::ValueItem::ChildGroup::iterator spot = item->_children.begin(), limit = item->_children.end(); spot != limit; ++spot ) {
+        for ( detail::ValueItem::ChildGroup::const_iterator spot = item->_children.begin(), limit = item->_children.end(); spot != limit; ++spot ) {
             if (_config._table[*spot]._name == name) {
                 zret = Value(_config, *spot);
                 if (PathValue == zret.getType()) zret = _config.getRoot().find(_config._table[zret._vidx]._path);
@@ -298,9 +299,9 @@ Path::Parser::parse(ConstBuffer *cbuff) {
 }
 // ---------------------------------------------------------------------------
 Value
-Configuration::getRoot() {
-    this->_table.forceRootItem();
-    return Value(*this, 0);
+Configuration::getRoot() const {
+  const_cast<self*>(this)->_table.forceRootItem();
+  return Value(*this, 0);
 }
 
 Rv<Configuration>

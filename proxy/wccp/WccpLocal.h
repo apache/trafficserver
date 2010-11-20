@@ -1,23 +1,27 @@
+# if !defined(ATS_WCCP_LOCAL_HEADER)
+# define ATS_WCCP_LOCAL_HEADER
+
 /** @file
     WCCP (v2) support for Apache Traffic Server.
     Original implementation: Alan M. Carroll
     Sponsored by: Pavlov Media
  */
 
-# if !defined(ATS_WCCP_LOCAL_HEADER)
-# define ATS_WCCP_LOCAL_HEADER
-
 # include "Wccp.h"
 # include "WccpUtil.h"
+# include <TsBuffer.h>
 // Needed for template use of byte ordering functions.
 # include <netinet/in.h>
 # include <memory.h>
 # include <malloc.h>
 # include <map>
 
-namespace Wccp {
+namespace ts {
+/// Null / invalid file descriptor.
+static const int NO_FD = -1;
+}
 
-using namespace ats::fixed_integers;
+namespace wccp {
 
 namespace detail { namespace cache { class RouterData; } }
 
@@ -65,10 +69,10 @@ static int const PARSE_DATA_OVERRUN = 10;
     Takes the basic ATS buffer and adds a count field to track
     the amount of buffer in use.
 */
-class MsgBuffer : protected ats::Buffer {
+class MsgBuffer : protected ts::Buffer {
 public:
   typedef MsgBuffer self; ///< Self reference type.
-  typedef ats::Buffer super; ///< Parent type.
+  typedef ts::Buffer super; ///< Parent type.
 
   MsgBuffer(); ///< Default construct empty buffer.
   /// Construct from ATS buffer.
@@ -110,7 +114,7 @@ public:
   /// Reset and zero the buffer.
   self& zero();
 
-  size_t m_count; ///< Number of bytes in use.
+  size_t _count; ///< Number of bytes in use.
 };
 
 /// Sect 4.4: Cache assignment method.
@@ -1579,7 +1583,7 @@ public:
   );
   /// Parse message data, presumed to be of this type.
   int parse(
-    ats::Buffer const& buffer ///< Raw message data.
+    ts::Buffer const& buffer ///< Raw message data.
   );
 
   CacheIdComp m_cache_id; ///< Web cache identity info.
@@ -1608,7 +1612,7 @@ public:
 
   /// Parse message data, presumed to be of this type.
   int parse(
-    ats::Buffer const& buffer ///< Raw message data.
+    ts::Buffer const& buffer ///< Raw message data.
   );
 
   RouterIdComp m_router_id; ///< Router ID.
@@ -1642,7 +1646,7 @@ public:
 
   /// Parse message data, presumed to be of this type.
   int parse(
-    ats::Buffer const& buffer ///< Raw message data.
+    ts::Buffer const& buffer ///< Raw message data.
   );
 
   // Only one of these should be present in an instance.
@@ -1677,7 +1681,7 @@ struct PacketStamp {
     put all the message structures on the side. This also means having
     to use accessor methods.
  */
-class Impl : public ats::IntrusivePtrCounter {
+class Impl : public ts::IntrusivePtrCounter {
   friend class EndPoint;
 public:
   typedef Impl self; ///< Self reference type.
@@ -1703,7 +1707,7 @@ public:
 
   /// Use MD5 security.
   void useMD5Security(
-    char const* key ///< Shared key.
+    ts::ConstBuffer const& key ///< Shared key.
   );
 
   /// Perform all scheduled housekeeping functions.
@@ -1712,7 +1716,7 @@ public:
 
   /// Recieve and process a message.
   /// @return 0 for success, -ERRNO on system error.
-  virtual ats::Rv<int> handleMessage();
+  virtual ts::Rv<int> handleMessage();
 
   /// Check if endpoint is configured.
   /// @return @c true if ready to operate, @c false otherwise.
@@ -1725,24 +1729,24 @@ public:
      to process relevant messages.
   */
   /// Process HERE_I_AM message.
-  virtual ats::Errata handleHereIAm(
+  virtual ts::Errata handleHereIAm(
     IpHeader const& header, ///< IP packet data.
-    ats::Buffer const& data ///< Buffer with message data.
+    ts::Buffer const& data ///< Buffer with message data.
   );
   /// Process I_SEE_YOU message.
-  virtual ats::Errata handleISeeYou(
+  virtual ts::Errata handleISeeYou(
     IpHeader const& header, ///< IP packet data.
-    ats::Buffer const& data ///< Buffer with message data.
+    ts::Buffer const& data ///< Buffer with message data.
   );
   /// Process REDIRECT_ASSIGN message.
-  virtual ats::Errata handleRedirectAssign(
+  virtual ts::Errata handleRedirectAssign(
     IpHeader const& header, ///< IP packet data.
-    ats::Buffer const& data ///< Buffer with message data.
+    ts::Buffer const& data ///< Buffer with message data.
   );
   /// Process REMOVAL_QUERY message.
-  virtual ats::Errata handleRemovalQuery(
+  virtual ts::Errata handleRemovalQuery(
     IpHeader const& header, ///< IP packet data.
-    ats::Buffer const& data ///< Buffer with message data.
+    ts::Buffer const& data ///< Buffer with message data.
   );
 
 protected:
@@ -1972,7 +1976,7 @@ public:
   );
 
   /// Define services from a configuration file.
-  ats::Errata loadServicesFromFile(
+  ts::Errata loadServicesFromFile(
     char const* path ///< Path to file.
   );
 
@@ -2007,9 +2011,9 @@ protected:
   );
 
   /// Process HERE_I_AM message.
-  virtual ats::Errata handleISeeYou(
+  virtual ts::Errata handleISeeYou(
     IpHeader const& header, ///< IP packet data.
-    ats::Buffer const& data ///< Buffer with message data.
+    ts::Buffer const& data ///< Buffer with message data.
   );
 
   /// Map Service Group ID to Service Group Data.
@@ -2110,9 +2114,9 @@ public:
   typedef detail::router::RouterBag RouterBag;
 
   /// Process HERE_I_AM message.
-  virtual ats::Errata handleHereIAm(
+  virtual ts::Errata handleHereIAm(
     IpHeader const& header, ///< IP packet data.
-    ats::Buffer const& data ///< Buffer with message data.
+    ts::Buffer const& data ///< Buffer with message data.
   );
   /// Perform all scheduled housekeeping functions.
   int housekeeping();
@@ -2439,25 +2443,25 @@ detail::Assignment::setActive(bool state) {
   return *this;
 }
 
-inline MsgBuffer::MsgBuffer() : super(0,0), m_count(0) { }
-inline MsgBuffer::MsgBuffer(super const& that) : super(that), m_count(0) { }
+inline MsgBuffer::MsgBuffer() : super(0,0), _count(0) { }
+inline MsgBuffer::MsgBuffer(super const& that) : super(that), _count(0) { }
 inline MsgBuffer::MsgBuffer(void* p, size_t n)
   : super(static_cast<char*>(p),n)
-  , m_count(0) {
+  , _count(0) {
 }
 
-inline size_t MsgBuffer::getSize() const { return m_size; }
-inline size_t MsgBuffer::getCount() const { return m_count; }
-inline char* MsgBuffer::getBase() { return m_ptr; }
-inline char const* MsgBuffer::getBase() const { return m_ptr; }
-inline char* MsgBuffer::getTail() { return m_ptr + m_count; }
-inline size_t MsgBuffer::getSpace() const { return m_size - m_count; }
-inline MsgBuffer& MsgBuffer::reset() { m_count = 0; return *this; }
+inline size_t MsgBuffer::getSize() const { return _size; }
+inline size_t MsgBuffer::getCount() const { return _count; }
+inline char* MsgBuffer::getBase() { return _ptr; }
+inline char const* MsgBuffer::getBase() const { return _ptr; }
+inline char* MsgBuffer::getTail() { return _ptr + _count; }
+inline size_t MsgBuffer::getSpace() const { return _size - _count; }
+inline MsgBuffer& MsgBuffer::reset() { _count = 0; return *this; }
 
 inline MsgBuffer& MsgBuffer::set(void *ptr, size_t n) {
-  m_ptr = static_cast<char*>(ptr);
-  m_size = n;
-  m_count = 0;
+  _ptr = static_cast<char*>(ptr);
+  _size = n;
+  _count = 0;
   return *this;
 }
 
@@ -2467,13 +2471,13 @@ inline MsgBuffer::operator MsgBuffer::super const& () const {
 
 inline MsgBuffer&
 MsgBuffer::use(size_t n) {
-  m_count += std::min(n, this->getSpace());
+  _count += std::min(n, this->getSpace());
   return *this;
 }
 
 inline MsgBuffer& MsgBuffer::zero() {
-  memset(m_ptr, 0, m_size);
-  m_count = 0;
+  memset(_ptr, 0, _size);
+  _count = 0;
   return *this;
 }
 

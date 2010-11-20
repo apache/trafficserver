@@ -1,5 +1,5 @@
-# include "AtsBase.h"
+# include <TsException.h>
 
-namespace ats {
+namespace ts {
   char const* const Exception::DEFAULT_TEXT = "An unexpected error occurred.";
 }

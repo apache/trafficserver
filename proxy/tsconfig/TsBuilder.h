@@ -60,6 +60,7 @@ protected:
     Value _v; ///< Current value.
     Buffer _name; ///< Pending group name, if any.
     Buffer _extent; ///< Accumulator for multi-token text.
+    Location _loc; ///< Cache for multi-token text.
     Path _path; ///< Path accumulator
 
     /// Initialization, called from constructors.

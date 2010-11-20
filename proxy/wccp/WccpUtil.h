@@ -10,14 +10,14 @@
 
 # include <vector>
 
-namespace Wccp {
+namespace wccp {
 
 /// @name Message severity levels.
 //@{
-extern ats::Errata::Code LVL_FATAL; ///< Fatal, cannot continue.
-extern ats::Errata::Code LVL_WARN; ///< Significant, function degraded.
-extern ats::Errata::Code LVL_INFO; ///< Interesting, not necessarily a problem.
-extern ats::Errata::Code LVL_DEBUG; ///< Debugging information.
+extern ts::Errata::Code LVL_FATAL; ///< Fatal, cannot continue.
+extern ts::Errata::Code LVL_WARN; ///< Significant, function degraded.
+extern ts::Errata::Code LVL_INFO; ///< Interesting, not necessarily a problem.
+extern ts::Errata::Code LVL_DEBUG; ///< Debugging information.
 //@}
 
 /** Logging / reporting support.
@@ -31,50 +31,50 @@ extern ats::Errata::Code LVL_DEBUG; ///< Debugging information.
 //@{
 /// Report literal string to an Errata.
 /// @return @a err.
-ats::Errata& log(
-  ats::Errata& err,///< Target errata.
-  ats::Errata::Id id, ///< Message ID.
-  ats::Errata::Code code, ///< Severity level.
+ts::Errata& log(
+  ts::Errata& err,///< Target errata.
+  ts::Errata::Id id, ///< Message ID.
+  ts::Errata::Code code, ///< Severity level.
   char const* text ///< Message text.
 );
 /// Report literal string to an Errata.
 /// Use message ID 0.
 /// @return @a err.
-ats::Errata& log(
-  ats::Errata& err,///< Target errata.
-  ats::Errata::Code code, ///< Severity level.
+ts::Errata& log(
+  ts::Errata& err,///< Target errata.
+  ts::Errata::Code code, ///< Severity level.
   char const* text ///< Message text.
 );
 /// printf style log to Errata.
 /// @return @a err.
-ats::Errata& logf(
-  ats::Errata& err,///< Target errata.
-  ats::Errata::Id id, ///< Message ID.
-  ats::Errata::Code code, ///< Severity level.
+ts::Errata& logf(
+  ts::Errata& err,///< Target errata.
+  ts::Errata::Id id, ///< Message ID.
+  ts::Errata::Code code, ///< Severity level.
   char const* format, ///< Format string.
   ... ///< Format string parameters.
 );
 /// printf style log to Errata.
 /// The message id is set to zero.
 /// @return @a err.
-ats::Errata& logf(
-  ats::Errata& err,///< Target errata.
-  ats::Errata::Code code, ///< Severity level.
+ts::Errata& logf(
+  ts::Errata& err,///< Target errata.
+  ts::Errata::Code code, ///< Severity level.
   char const* format, ///< Format string.
   ... ///< Format string parameters.
 );
 /// Return an Errata populated with a literal string.
 /// Use message ID 0.
 /// @return @a err.
-ats::Errata log(
-  ats::Errata::Code code, ///< Severity level.
+ts::Errata log(
+  ts::Errata::Code code, ///< Severity level.
   char const* text ///< Message text.
 );
 /// Return an Errata populated with a printf styleformatted string.
 /// Use message ID 0.
 /// @return @a err.
-ats::Errata logf(
-  ats::Errata::Code code, ///< Severity level.
+ts::Errata logf(
+  ts::Errata::Code code, ///< Severity level.
   char const* format, ///< Message text.
   ...
 );
@@ -83,17 +83,17 @@ ats::Errata logf(
     value of @c errno. This is modeled on @c perror. Message ID 0 is used.
     @return @a err.
  */
-ats::Errata log_errno(
-  ats::Errata::Code code, ///< Severity level.
+ts::Errata log_errno(
+  ts::Errata::Code code, ///< Severity level.
   char const* text ///< Message text.
 );
 /** Return an @c Errata based on @c errno.
     @c errno and the corresponding system error string are appended to
     the results from the @a format and following arguments.
  */
-ats::Errata
+ts::Errata
 logf_errno(
-  ats::Errata::Code code,  ///< Severity code.
+  ts::Errata::Code code,  ///< Severity code.
   char const* format, ///< Format string.
   ... ///< Arguments for @a format.
 );

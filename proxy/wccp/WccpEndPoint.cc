@@ -1,9 +1,9 @@
 # include "WccpLocal.h"
 # include "WccpUtil.h"
-# include "AtsMeta.h"
+# include "WccpMeta.h"
 # include <errno.h>
 // ------------------------------------------------------
-namespace Wccp {
+namespace wccp {
 // ------------------------------------------------------
 Impl::GroupData::GroupData()
   : m_generation(0)
@@ -28,7 +28,7 @@ Impl::GroupData::setSecurity(SecurityOption style) {
 
 Impl::Impl()
   : m_addr(INADDR_ANY)
-  , m_fd(ats::NO_FD) {
+  , m_fd(ts::NO_FD) {
 }
 
 Impl::~Impl() {
@@ -41,12 +41,12 @@ Impl::open(uint addr) {
   sockaddr_in& in_addr = reinterpret_cast<sockaddr_in&>(saddr);
   int fd;
 
-  if (ats::NO_FD != m_fd) {
+  if (ts::NO_FD != m_fd) {
     log(LVL_INFO, "Attempted to open already open WCCP Endpoint");
     return -EALREADY;
   }
 
-  if (ats::NO_FD == (fd = socket(PF_INET, SOCK_DGRAM, 0))) {
+  if (ts::NO_FD == (fd = socket(PF_INET, SOCK_DGRAM, 0))) {
     log_errno(LVL_FATAL, "Failed to create socket");
     return -errno;
   }
@@ -96,19 +96,19 @@ Impl::open(uint addr) {
 
 void
 Impl::close() {
-  if (ats::NO_FD != m_fd) {
+  if (ts::NO_FD != m_fd) {
     ::close(m_fd);
-    m_fd = ats::NO_FD;
+    m_fd = ts::NO_FD;
   }
 }
 
 void
-Impl::useMD5Security(char const* key) {
+Impl::useMD5Security(ts::ConstBuffer const& key) {
   m_use_security_opt = true;
   m_security_opt = SECURITY_MD5;
   m_use_security_key = true;
   memset(m_security_key, 0, SecurityComp::KEY_SIZE);
-  strncpy(m_security_key, key, SecurityComp::KEY_SIZE);
+  strncpy(m_security_key, key._ptr, std::min(key._size, SecurityComp::KEY_SIZE));
 }
 
 SecurityOption
@@ -137,9 +137,9 @@ Impl::validateSecurity(BaseMsg& msg, GroupData const& group) {
   return true;
 }
 
-ats::Rv<int>
+ts::Rv<int>
 Impl::handleMessage() {
-  ats::Rv<int> zret;
+  ts::Rv<int> zret;
   ssize_t n; // recv byte count.
   struct sockaddr src_addr; // sender's address.
   msghdr recv_hdr;
@@ -150,7 +150,7 @@ Impl::handleMessage() {
   static size_t const ANC_BUFFER_SIZE = CMSG_ALIGN(CMSG_SPACE(sizeof(in_pktinfo)));
   char anc_buffer[ANC_BUFFER_SIZE];
 
-  if (ats::NO_FD == m_fd) return -ENOTCONN;
+  if (ts::NO_FD == m_fd) return -ENOTCONN;
 
   recv_buffer.iov_base = buffer;
   recv_buffer.iov_len = BUFFER_SIZE;
@@ -183,7 +183,7 @@ Impl::handleMessage() {
   MsgBuffer msg_buffer(buffer,n);
   if (PARSE_SUCCESS == header.parse(msg_buffer)) {
     message_type_t msg_type = header.getType();
-    ats::Buffer chunk(buffer,n);
+    ts::Buffer chunk(buffer,n);
 
     switch (msg_type) {
     case HERE_I_AM: this->handleHereIAm(ip_header, chunk); break;
@@ -199,20 +199,20 @@ Impl::handleMessage() {
   return zret;
 }
 
-ats::Errata
-Impl::handleHereIAm(IpHeader const&, ats::Buffer const&) {
+ts::Errata
+Impl::handleHereIAm(IpHeader const&, ts::Buffer const&) {
   return log(LVL_INFO, "Unanticipated WCCP2_HERE_I_AM message ignored");
 }
-ats::Errata
-Impl::handleISeeYou(IpHeader const&, ats::Buffer const& data) {
+ts::Errata
+Impl::handleISeeYou(IpHeader const&, ts::Buffer const& data) {
   return log(LVL_INFO, "Unanticipated WCCP2_I_SEE_YOU message ignored.");
 }
-ats::Errata
-Impl::handleRedirectAssign(IpHeader const&, ats::Buffer const& data) {
+ts::Errata
+Impl::handleRedirectAssign(IpHeader const&, ts::Buffer const& data) {
   return log(LVL_INFO, "Unanticipated WCCP2_REDIRECT_ASSIGN message ignored.");
 }
-ats::Errata
-Impl::handleRemovalQuery(IpHeader const&, ats::Buffer const& data) {
+ts::Errata
+Impl::handleRemovalQuery(IpHeader const&, ts::Buffer const& data) {
   return log(LVL_INFO, "Unanticipated WCCP2_REMOVAL_QUERY message ignored.");
 }
 // ------------------------------------------------------
@@ -234,7 +234,7 @@ CacheImpl::GroupData::removeSeedRouter(uint32 addr) {
   std::vector<SeedRouter>::iterator begin = m_seed_routers.begin(); 
   std::vector<SeedRouter>::iterator end = m_seed_routers.end();
   std::vector<SeedRouter>::iterator spot = 
-    std::find_if(begin, end, ats::predicate(&SeedRouter::m_addr, addr));
+    std::find_if(begin, end, ts::predicate(&SeedRouter::m_addr, addr));
 
   if (end != spot) {
     zret = spot->m_xmit;
@@ -253,7 +253,7 @@ CacheImpl::GroupData::findCache(uint32 addr) {
   return std::find_if(
     m_caches.begin(),
     m_caches.end(),
-    ats::predicate(&CacheData::idAddr, addr)
+    ts::predicate(&CacheData::idAddr, addr)
   );
 }
 
@@ -399,7 +399,7 @@ CacheImpl::GroupData::viewChanged(time_t now) {
   m_assign_info.setActive(false); // invalidate current assignment.
   m_assignment_pending = m_routers.size() && m_caches.size();
   // Cancel any pending assignment transmissions.
-  ats::for_each(m_routers, ats::assign_member(&RouterData::m_assign, false));
+  ts::for_each(m_routers, ts::assign_member(&RouterData::m_assign, false));
   logf(LVL_DEBUG, "Service group %d view change (%d)", m_svc.getSvcId(), m_generation);
 
   return *this;
@@ -448,7 +448,7 @@ CacheImpl::open(uint32 addr) {
 time_t
 CacheImpl::waitTime() const {
   time_t now = time(0);
-  return ats::minima(m_groups, &GroupData::waitTime, now);
+  return ts::minima(m_groups, &GroupData::waitTime, now);
 }
 
 void
@@ -569,7 +569,7 @@ CacheImpl::housekeeping() {
     ) {
       // Is a valid assignment possible?
       if (group.m_assign_info.fill(group, m_addr))
-        ats::for_each(group.m_routers, ats::assign_member(&RouterData::m_assign, true));
+        ts::for_each(group.m_routers, ts::assign_member(&RouterData::m_assign, true));
 
       // Always clear because no point in sending a assign we can't generate.
       group.m_assignment_pending = false;
@@ -642,9 +642,9 @@ CacheImpl::housekeeping() {
   return zret;
 }
 
-ats::Errata
-CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ats::Buffer const& chunk) {
-  ats::Errata zret;
+ts::Errata
+CacheImpl::handleISeeYou(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
+  ts::Errata zret;
   ISeeYouMsg msg;
   // Set if our view of the group changes enough to bump the
   // generation number.
@@ -782,7 +782,7 @@ RouterImpl::GroupData::findCache(uint32 addr) {
   return std::find_if(
     m_caches.begin(),
     m_caches.end(),
-    ats::predicate(&CacheData::idAddr, addr)
+    ts::predicate(&CacheData::idAddr, addr)
   );
 }
 
@@ -809,12 +809,12 @@ RouterImpl::defineServiceGroup(
 
 void
 RouterImpl::GroupData::resizeRouterSources() {
-  ats::for_each(m_routers, &RouterData::resize, m_caches.size());
+  ts::for_each(m_routers, &RouterData::resize, m_caches.size());
 }
 
-ats::Errata
-RouterImpl::handleHereIAm(IpHeader const& ip_hdr, ats::Buffer const& chunk) {
-  ats::Errata zret;
+ts::Errata
+RouterImpl::handleHereIAm(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
+  ts::Errata zret;
   HereIAmMsg msg;
   static GroupData nil_group; // scratch until I clean up the security.
   // Set if our view of the group changes enough to bump the
@@ -1022,26 +1022,26 @@ EndPoint::open(uint32 addr) {
 }
 
 void
-EndPoint::useMD5Security(char const* key) {
+EndPoint::useMD5Security(ts::ConstBuffer const& key) {
   this->instance()->useMD5Security(key);
 }
 
 int EndPoint::getSocket() const {
-  return m_ptr ? m_ptr->m_fd : ats::NO_FD;
+  return m_ptr ? m_ptr->m_fd : ts::NO_FD;
 }
 
 int
 EndPoint::housekeeping() {
   // Don't force an instance because if there isn't one,
   // there's no socket either.
-  return m_ptr && ats::NO_FD != m_ptr->m_fd ? m_ptr->housekeeping() : -ENOTCONN;
+  return m_ptr && ts::NO_FD != m_ptr->m_fd ? m_ptr->housekeeping() : -ENOTCONN;
 }
 
-ats::Rv<int>
+ts::Rv<int>
 EndPoint::handleMessage() {
   return m_ptr
     ? m_ptr->handleMessage()
-    : ats::Rv<int>(-ENOTCONN, log(LVL_INFO, "EndPoint::handleMessage called on unconnected instance"));
+    : ts::Rv<int>(-ENOTCONN, log(LVL_INFO, "EndPoint::handleMessage called on unconnected instance"));
 }
 // ------------------------------------------------------
 Cache::Cache() {
@@ -1087,7 +1087,7 @@ Cache::addSeedRouter(uint8 id, uint32 addr) {
   return *this;
 }
 
-ats::Errata
+ts::Errata
 Cache::loadServicesFromFile(char const* path) {
   return this->instance()->loadServicesFromFile(path);
 }
@@ -1114,4 +1114,4 @@ Router::impl() {
   return static_cast<ImplType*>(m_ptr.get());
 }
 // ------------------------------------------------------
-} // namespace Wccp
+} // namespace wccp

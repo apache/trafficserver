@@ -192,14 +192,14 @@ namespace detail {
     /// Get item type.
     ValueType getType() const;
   protected:
-    /// Type of value.
-    ValueType _type;
-    /// Index of parent value.
-    ValueIndex _parent;
-    /// Text of value (if scalar).
-    ConstBuffer _text;
-    /// Local name of value, if available.
-    ConstBuffer _name;
+    ValueType _type;      ///< Type of value.
+    ValueIndex _parent;   ///< Table index of parent value.
+    ConstBuffer _text;    ///< Text of value (if scalar).
+    ConstBuffer _name;    ///< Local name of value, if available.
+    size_t _local_index;  ///< Index among siblings.
+    int _srcLine;         ///< Source line.
+    int _srcColumn;       ///< Source column.
+
     /// Container for children of this item.
     typedef std::vector<ValueIndex> ChildGroup;
     /// Child items of this item.
@@ -337,7 +337,28 @@ public:
       The root is always a group and has no name.
       @return The root value.
   */
-  Value getRoot();
+  Value getRoot() const;
+
+  /// Get the number of child values on the root value.
+  size_t childCount() const;
+  /** Root value child access by @a index
+      @return The child or a @c Void value if there is no child with @a name.
+  */
+  Value operator [] (
+    size_t idx ///< Index of child value.
+  ) const;
+  /** Root value child access by @a name.
+      @return The child or a @c Void value if there is no child with @a name.
+  */
+  Value operator [] (
+    ConstBuffer const& name
+  ) const;
+  /** Root value child access by @a name.
+      @return The child or a @c Void value if there is no child with @a name.
+  */
+  Value operator [] (
+    char const* name ///< Null terminated string.
+  ) const;
 
   /** Find a value.
       @return The value if found, an void valid if not.
@@ -409,11 +430,31 @@ public:
     ConstBuffer const& text
   );
 
+  /** Get local name.
+      This gets the local name of the value. That is the name by which it
+      is known to its parent container.
+
+      @internal Only works for groups now. It should be made to work
+      for lists. This would require allocating strings for each index,
+      which should be shared across values. For instance, all values
+      at index 1 should return the same string "1", not separately
+      allocated for each value.
+   */
+  ConstBuffer const& getName() const;
+  /** Get local index.
+      This gets the local index for the value. This is the index which,
+      if used on the parent, would yield this value.
+      @return The local index.
+   */
+  size_t getIndex() const;
+
   /// Test for a literal value.
-  /// @return @c true if the value is a literal, @c false if it is a container or invalid.
+  /// @return @c true if the value is a literal,
+  /// @c false if it is a container or invalid.
   bool isLiteral() const;
   /// Test for value container.
-  /// @return @c true if the value is a container (can have child values), @c false otherwise.
+  /// @return @c true if the value is a container (can have child values),
+  /// @c false otherwise.
   bool isContainer() const;
   /// Get the parent value.
   Value getParent() const;
@@ -427,39 +468,41 @@ public:
   */
   Value operator [] (
     size_t idx ///< Index of child value.
-  );
+  ) const;
   /** Child access by @a name.
       @return The child or a @c Void value if there is no child with @a name.
   */
   Value operator [] (
     ConstBuffer const& name
-  );
+  ) const;
   /** Child access by @a name.
       @return The child or a @c Void value if there is no child with @a name.
   */
   Value operator [] (
     char const* name ///< Null terminated string.
-  );
+  ) const;
 
-  /** Creating child values.
+  /** @name Creating child values.
 
-      These methods all take an optional @a name argument. This is required if @c this
-      is a @c Group and ignored if @c this is a @c List.
-
+      These methods all take an optional @a name argument. This is
+      required if @c this is a @c Group and ignored if @c this is a @c
+      List.
 
       These methods will fail if
       - @c this is not a container.
       - @c this is a @c Group and no @a name is provided.
 
-      @note Currently for groups, duplicate names are not detected. The duplicates
-      will be inaccessible by name but can still be found by index. This is a problem
-      but I am still pondering the appropriate solution.
+      @note Currently for groups, duplicate names are not
+      detected. The duplicates will be inaccessible by name but can
+      still be found by index. This is a problem but I am still
+      pondering the appropriate solution.
 
       @see isContainer
       @return The new value, or an invalid value plus errata on failure.
 
-      @internal I original had this as a single method, but changed to separate per type.
-      Overall less ugly because we can get the arguments more useful.
+      @internal I original had this as a single method, but changed to
+      separate per type.  Overall less ugly because we can get the
+      arguments more useful.
   */
   //@{
   /// Create a @c String value.
@@ -518,6 +561,28 @@ public:
   */
   self& reset();
 
+  /// Set source line.
+  /// @return @c this object.
+  self& setSourceLine(
+    int line ///< Line in source stream.
+  );
+  /// Set source column.
+  /// @return @c this object.
+  self& setSourceColumn(
+    int col ///< Column in source stream.
+  );
+  /// Set the source location.
+  self& setSource(
+    int line, ///< Line in source stream.
+    int col ///< Column in source stream.
+  );
+  /// Get source line.
+  /// @return The line in the source stream for this value.
+  int getSourceLine() const;
+  /// Get source column.
+  /// @return The column in the source stream for this value.
+  int getSourceColumn() const;
+
 protected:
   // Note: We store an index and not a pointer because a pointer will go stale
   // if any items are added or removed from the underlying table.
@@ -570,7 +635,20 @@ inline ValueType Value::getType() const { return this->hasValue() ? _config._tab
 inline ConstBuffer const& Value::getText() const {
   return this->hasValue() ? _config._table[_vidx]._name : detail::NULL_CONST_BUFFER;
 }
-inline Value& Value::setText(ConstBuffer const& text) { if (this->hasValue()) _config._table[_vidx]._text = text; return *this; }
+inline Value& Value::setText(ConstBuffer const& text) {
+  detail::ValueItem* item = this->item();
+  if (item) item->_text = text;
+  return *this;
+}
+inline ConstBuffer const& Value::getName() const {
+  detail::ValueItem const* item = this->item();
+  return item ? item->_name : detail::NULL_CONST_BUFFER;
+}
+inline size_t Value::getIndex() const {
+  detail::ValueItem const* item = this->item();
+  return item ? item->_local_index : 0;
+}
+  
 inline bool Value::isLiteral() const { return 0 != (detail::IS_LITERAL & detail::Type_Property[this->getType()]); }
 inline bool Value::isContainer() const { return 0 != (detail::IS_CONTAINER & detail::Type_Property[this->getType()]); }
 inline Value Value::getParent() const { return this->hasValue() ? Value(_config, _config._table[_vidx]._parent) : Value(); }
@@ -578,8 +656,34 @@ inline bool Value::isRoot() const { return this->hasValue() && _vidx == 0; }
 inline Value& Value::reset() { _config = Configuration(); _vidx = detail::NULL_VALUE_INDEX; return *this; }
 inline detail::ValueItem* Value::item() { return this->hasValue() ? &(_config._table[_vidx]) : 0; }
 inline detail::ValueItem const* Value::item() const { return const_cast<self*>(this)->item(); }
-inline Value Value::operator [] (char const* name) { return (*this)[ConstBuffer(name, strlen(name))]; }
+inline Value Value::operator [] (char const* name) const { return (*this)[ConstBuffer(name, strlen(name))]; }
 inline Value Value::find(char const* path) { return this->find(ConstBuffer(path, strlen(path))); }
+inline int Value::getSourceLine() const {
+  detail::ValueItem const* item = this->item();
+  return item ? item->_srcLine : 0;
+}
+inline int Value::getSourceColumn() const {
+  detail::ValueItem const* item = this->item();
+  return item ? item->_srcColumn : 0;
+}
+inline Value& Value::setSourceLine(int line) {
+  detail::ValueItem* item = this->item();
+  if (item) item->_srcLine = line;
+  return *this;
+}
+inline Value& Value::setSourceColumn(int col) {
+  detail::ValueItem* item = this->item();
+  if (item) item->_srcColumn = col;
+  return *this;
+}
+inline Value& Value::setSource(int line, int col) {
+  detail::ValueItem* item = this->item();
+  if (item) {
+    item->_srcLine = line;
+    item->_srcColumn = col;
+  }
+  return *this;
+}
 
 inline Path::ImplType::ImplType() { }
 
@@ -598,6 +702,10 @@ inline bool Configuration::operator ! () const { return ! _table; }
 inline Configuration::operator detail::PseudoBool::Type() const { return _table.operator detail::PseudoBool::Type(); }
 inline Value Configuration::find( char const* path ) { return this->getRoot().find(path); }
 inline Buffer Configuration::alloc(size_t n) { return _table.alloc(n);  }
+inline size_t Configuration::childCount() const { return this->getRoot().childCount(); }
+inline Value Configuration::operator [] (size_t idx) const { return (this->getRoot())[idx]; }
+inline Value Configuration::operator [] ( ConstBuffer const& name ) const { return (this->getRoot())[name]; }
+inline Value Configuration::operator [] ( char const* name ) const { return (this->getRoot())[name]; }
 
 }} // namespace ts::config
 
