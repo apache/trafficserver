@@ -880,6 +880,12 @@ extern "C"
    */
   inkapi const char *INKTrafficServerVersionGet(void);
 
+  /// Get the major version number for the current running instance.
+  inkapi int INKTrafficServerVersionGetMajor();
+  /// Get the minor version number for the current running instance.
+  inkapi int INKTrafficServerVersionGetMinor();
+  /// Get the patch version number for the current running instance.
+  inkapi int INKTrafficServerVersionGetPatch();
   /* --------------------------------------------------------------------------
      Plugin registration */
 
@@ -1938,6 +1944,7 @@ extern "C"
   inkapi INKHttpSsn INKHttpTxnSsnGet(INKHttpTxn txnp);
   inkapi int INKHttpTxnClientReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi INKReturnCode INKHttpTxnPristineUrlGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *url_loc);
+  inkapi char* INKHttpTxnUrlStringGet(INKHttpTxn txnp, int* length);
   inkapi int INKHttpTxnClientRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnServerReqGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);
   inkapi int INKHttpTxnServerRespGet(INKHttpTxn txnp, INKMBuffer * bufp, INKMLoc * offset);

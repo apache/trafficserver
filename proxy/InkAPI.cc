@@ -381,6 +381,9 @@ CacheAPIHooks *cache_global_hooks = NULL;
 ConfigUpdateCbTable *global_config_cbs = NULL;
 
 static char traffic_server_version[128] = "";
+static int ts_major_version = 0;
+static int ts_minor_version = 0;
+static int ts_patch_version = 0;
 
 static ClassAllocator<APIHook> apiHookAllocator("apiHookAllocator");
 static ClassAllocator<INKContInternal> INKContAllocator("INKContAllocator");
@@ -1829,6 +1832,11 @@ api_init()
 
     // Setup the version string for returning to plugins
     ink_strncpy(traffic_server_version, appVersionInfo.VersionStr, sizeof(traffic_server_version));
+    // Extract the elements.
+    if (sscanf(traffic_server_version, "%d.%d.%d", &ts_major_version, &ts_minor_version, &ts_patch_version) != 3) {
+      Warning("Unable to parse traffic server version string '%s'\n", traffic_server_version);
+    }
+
   }
 }
 
@@ -1909,6 +1917,9 @@ INKTrafficServerVersionGet(void)
 {
   return traffic_server_version;
 }
+int INKTrafficServerVersionGetMajor() { return ts_major_version; }
+int INKTrafficServerVersionGetMinor() { return ts_minor_version; }
+int INKTrafficServerVersionGetPatch() { return ts_patch_version; }
 
 const char *
 INKPluginDirGet(void)
@@ -5270,6 +5281,16 @@ INKHttpTxnPristineUrlGet (INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *url_loc)
     return INK_ERROR;
 }
 
+// Shortcut to just get the URL.
+char*
+INKHttpTxnUrlStringGet (INKHttpTxn txnp, int* length) {
+  char* zret = 0;
+  if (INK_SUCCESS == sdk_sanity_check_txn(txnp)) {
+    HttpSM *sm = reinterpret_cast<HttpSM*>(txnp);
+    zret = sm->t_state.hdr_info.client_request.url_string_get(0, length);
+  }
+  return zret;
+}
 
 int
 INKHttpTxnClientRespGet(INKHttpTxn txnp, INKMBuffer *bufp, INKMLoc *obj)
