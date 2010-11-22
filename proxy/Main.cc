@@ -75,7 +75,6 @@ extern "C" int plock(int);
 //#include "ClusterTest.h"
 #include "CacheControl.h"
 #include "IPAllow.h"
-#include "CacheInspectorAllow.h"
 #include "ParentSelection.h"
 //#include "simple/Simple.h"
 
@@ -1885,7 +1884,6 @@ main(int argc, char **argv)
 #endif
     initCongestionControl();
     initIPAllow();
-    initCacheInspectorAllow();
     ParentConfig::startup();
 #ifdef SPLIT_DNS
     SplitDNSConfig::startup();

@@ -76,8 +76,6 @@ traffic_server_SOURCES = \
   AbstractBuffer.h \
   CacheControl.cc \
   CacheControl.h \
-  CacheInspectorAllow.cc \
-  CacheInspectorAllow.h \
   ProxyConfig.cc \
   ProxyConfig.h \
   ControlBase.cc \
@@ -192,7 +190,6 @@ traffic_logcat_LDADD = \
   ControlMatcher.o CacheControl.o  \
   StatSystem.o \
   StatAPITypes.o \
-  CacheInspectorAllow.o \
   ReverseProxy.o \
   ProxyConfig.o \
   signals.o \
@@ -261,7 +258,6 @@ traffic_logstats_LDADD = \
   CacheControl.o  \
   StatSystem.o \
   StatAPITypes.o \
-  CacheInspectorAllow.o \
   ReverseProxy.o \
   ProxyConfig.o \
   signals.o \
@@ -331,7 +327,6 @@ traffic_sac_LDADD = \
   CacheControl.o \
   StatSystem.o \
   StatAPITypes.o \
-  CacheInspectorAllow.o \
   ReverseProxy.o \
   ProxyConfig.o \
   signals.o \

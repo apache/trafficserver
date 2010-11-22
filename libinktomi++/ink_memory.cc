@@ -58,6 +58,8 @@ ink_malloc(size_t size)
    * certain they die quickly & don't trash things.
    */
 
+  // Useful for tracing bad mallocs
+  //ink_stack_trace_dump();
   if (likely(size > 0)) {
     if (unlikely((ptr = malloc(size)) == NULL)) {
       xdump();
