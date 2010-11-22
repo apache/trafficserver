@@ -94,8 +94,6 @@ libinktomi___a_SOURCES = \
   ink_rwlock.h \
   ink_sock.cc \
   ink_sock.h \
-  ink_spill.cc \
-  ink_spill.h \
   ink_sprintf.cc \
   ink_sprintf.h \
   ink_stack_trace.cc \

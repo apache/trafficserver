@@ -269,7 +269,7 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
   char *addr = (char *) align_pointer_forward(iob_iov->data(), pagesize);
 
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
   if (mprotect(addr, pagesize, PROT_NONE))
     perror("ClusterState mprotect0 failed");
 #endif
@@ -285,7 +285,7 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
 
   addr = (char *) align_pointer_forward(msg.iob_descriptor_block->data->data(), pagesize);
 
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
   if (mprotect(addr, pagesize, PROT_NONE))
     perror("ClusterState mprotect failed");
 #endif
@@ -299,11 +299,11 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
 ClusterState::~ClusterState()
 {
   mutex = 0;
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
   int pagesize = getpagesize();
 #endif
   if (iov) {
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
     iov = (IOVec *) ((char *) iov - pagesize);
     if (mprotect((char *) iov, pagesize, (PROT_READ | PROT_WRITE)))
       perror("~ClusterState mprotect0 failed");
@@ -312,7 +312,7 @@ ClusterState::~ClusterState()
   }
 
   if (msg.descriptor) {
-#if (defined(__sparc) || defined(__alpha))
+#if defined(__sparc)
     char *a = (char *) msg.descriptor - (sizeof(ClusterMsgHeader) + pagesize);
     if (mprotect(a, pagesize, (PROT_READ | PROT_WRITE)))
       perror("~ClusterState mprotect failed");

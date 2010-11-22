@@ -417,7 +417,6 @@ Mutex_trylock(
 #endif //LOCK_CONTENTION_PROFILING
 #endif //DEBUG
   m->nthread_holding++;
-  SPILL_ALL_VOLATILES;
   return true;
 }
 
@@ -469,7 +468,6 @@ Mutex_trylock_spin(
 #endif //LOCK_CONTENTION_PROFILING
 #endif //DEBUG
   m->nthread_holding++;
-  SPILL_ALL_VOLATILES;
   return true;
 }
 
@@ -504,7 +502,6 @@ Mutex_lock(
 #endif // LOCK_CONTENTION_PROFILING
 #endif //DEBUG
   m->nthread_holding++;
-  SPILL_ALL_VOLATILES;
   return true;
 }
 
@@ -531,7 +528,6 @@ Mutex_unlock(ProxyMutex * m, EThread * t)
       ink_mutex_release(&m->the_mutex);
     }
   }
-  SPILL_ALL_VOLATILES;
 }
 
 struct MutexLock

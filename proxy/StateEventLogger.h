@@ -72,23 +72,6 @@
 #include "ink_platform.h"
 #include <time.h>
 
-#ifdef __alpha
-// these macros convert to sparc byte ordering from Alpha form.
-#define my_byteorder_int(to,from) \
-  to = (((unsigned int)from) >> 16) | (from << 16)
-#define my_byteorder_hrtime(to,from) \
-  to = ((from & 0xffff) << 48) | \
-       ((from & 0xffff0000) << 16) | \
-       ((from & 0xffff00000000) >> 16) | \
-       ((from & 0xffff000000000000) >> 48)
-
-#else
-#define my_byteorder_int(to,from) \
-  to=from
-#define my_byteorder_hrtime(to,from) \
-  to = from
-
-#endif
 //#define USE_RINGBUF
 
 // This code is too complex for the minimal I/O system call reduction
@@ -159,18 +142,18 @@ public:
   virtual void marshal(char *buf) const
   {
     ink_hrtime t;
-      my_byteorder_hrtime(t, d_ts);
-      memcpy(buf, &t, sizeof(t));
-      buf += sizeof(t);
+    t = d_ts;
+    memcpy(buf, &t, sizeof(t));
+    buf += sizeof(t);
 
     int x;
 
-      my_byteorder_int(x, d_param1);
-      memcpy(buf, &x, sizeof(x));
-      buf += sizeof(x);
+    x = d_param1;
+    memcpy(buf, &x, sizeof(x));
+    buf += sizeof(x);
 
-      my_byteorder_int(x, d_param2);
-      memcpy(buf, &x, sizeof(x));
+    x = d_param2;
+    memcpy(buf, &x, sizeof(x));
   };
 #endif
   virtual int size() const

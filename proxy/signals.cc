@@ -38,16 +38,6 @@
 // For backtraces on crash
 #include "ink_stack_trace.h"
 
-
-#ifdef __alpha
-#include <obj.h>
-#include <sym.h>
-#include <demangle.h>
-#include <ucontext.h>
-#include <excpt.h>
-struct obj_list *ObjList;
-#endif
-
 #if TS_HAS_PROFILER
 #include <google/profiler.h>
 #endif
@@ -152,87 +142,6 @@ public:
   }
 };
 
-#if defined (__alpha)
-
-void
-print_context(sigcontext & c, int frame)
-{
-  unsigned long pc = c.sc_pc;
-
-  //
-  // Get the object corresponding to this PC
-  //
-  struct obj *obj = address_to_obj(ObjList, pc);
-  char *procedure_name = "<unknown>";
-  char *filename = "<unknown>";
-  int line_number = -1;
-
-  if (obj) {
-    //
-    // Get the procedure in this object corresponding to this PC.
-    //
-    unsigned long mldproc = address_to_procedure(obj, pc);
-    if (mldproc != OBJ_FAIL) {
-      //
-      // Get the procedure name
-      //
-      unsigned long mldsym = procedure_symbol(obj, mldproc);
-      if (mldsym != OBJ_FAIL) {
-        char proc_name_buf[1024];
-
-        procedure_name = symbol_name(obj, mldsym);
-
-        //
-        // And try to demangle it..
-        //
-        int result = MLD_demangle_string(procedure_name,
-                                         proc_name_buf, sizeof(proc_name_buf),
-                                         MLD_SHOW_DEMANGLED_NAME | MLD_SHOW_INFO);
-
-        if (result == MLD_SOMETHING_RECOGNIZED) {
-          procedure_name = proc_name_buf;
-        }
-      }
-
-      long mldfile = procedure_to_file(obj, mldproc);
-      if (mldfile != OBJ_FAIL) {
-        filename = file_name(obj, mldfile);
-      }
-
-      long mldline = address_to_line(obj, pc);
-      if (mldline != OBJ_FAIL) {
-        line_number = mldline;
-      }
-    }
-  }
-
-  //
-  // See /usr/include/machine/context.h for structure
-  //
-  fprintf(stderr, "[%d]: '%s', line '%d', file '%s' (0x%x)\n", frame, procedure_name, line_number, filename, c.sc_pc);
-
-  fprintf(stderr, "");
-  for (int i = 0; i < 32; i++) {
-
-    if (((i + 1) % 4) == 0) {
-
-      fprintf(stderr, "\tReg[%d] = 0x%x\n", i, c.sc_regs[i]);
-
-    } else {
-
-      if (c.sc_regs[i] > 0xff || c.sc_regs[i] < 0) {
-        fprintf(stderr, "\tReg[%d] = 0x%x", i, c.sc_regs[i]);
-      } else {
-        fprintf(stderr, "\tReg[%d] = 0x%x\t", i, c.sc_regs[i]);
-      }
-    }
-  }
-  fprintf(stderr, "\n");
-}
-
-#endif
-
-
 
 static void
 interrupt_handler(int sig)
@@ -255,44 +164,6 @@ signal_handler(int sig, siginfo_t * t, void *c)
     sigusr1_received = 1;
     return;
   }
-#if defined (__alpha)
-  sigcontext starting_context;
-
-  //
-  // Establish the current context.  We ought to be
-  //  able to extract this from the signal handler arguments
-  //  but the expirements to do so failed for unknown
-  //  reasons
-  //
-  exc_capture_context(&starting_context);
-#endif
-
-#ifdef __alpha
-  if (sig == SIGUSR2) {
-    fprintf(stderr, "Entering pthreads debugger\n");
-    pthread_debug();
-    return;
-  }
-#endif
-
-#ifdef __alpha
-  // If stack trace of fatal errors is enabled, dump it out and
-  //  exit the process
-  if (stack_trace_flag) {
-    int cur_frame = 0;
-    print_context(starting_context, cur_frame++);
-
-    for (;;) {
-      exc_virtual_unwind(NULL, &starting_context);
-      print_context(starting_context, cur_frame++);
-      if (starting_context.sc_pc == NULL) {
-        fprintf(stderr, "Stack completely unwound\n");
-        break;
-      }
-    }
-    _exit(1);
-  }
-#endif
 
   char sig_msg[2048];
 #if !defined(linux) && !defined(freebsd)
@@ -437,21 +308,8 @@ check_signals()
   check_signal(SIGPIPE, (SigActionFunc_t) SIG_IGN);
   check_signal(SIGQUIT, (SigActionFunc_t) signal_handler);
   check_signal(SIGHUP, (SigActionFunc_t) interrupt_handler);
-
-#if defined (__alpha)
-  if (stack_trace_flag) {
-    set_signal(SIGABRT, (SigActionFunc_t) signal_handler);
-    set_signal(SIGILL, (SigActionFunc_t) signal_handler);
-    set_signal(SIGBUS, (SigActionFunc_t) signal_handler);
-    set_signal(SIGSEGV, (SigActionFunc_t) signal_handler);
-  }
-#endif
-
   check_signal(SIGTERM, (SigActionFunc_t) signal_handler);
   check_signal(SIGUSR1, (SigActionFunc_t) signal_handler);
-#ifdef __alpha
-  check_signal(SIGUSR2, (SigActionFunc_t) signal_handler);
-#endif
 }
 
 
@@ -501,21 +359,8 @@ init_signals(bool do_stackdump)
 //   //  SIGABRT loop on solaris assert() failures
 //  set_signal(SIGABRT,(SigActionFunc_t)signal_handler);
 //
-#if defined (__alpha)
-  if (stack_trace_flag) {
-    set_signal(SIGABRT, (SigActionFunc_t) signal_handler);
-    set_signal(SIGILL, (SigActionFunc_t) signal_handler);
-    set_signal(SIGBUS, (SigActionFunc_t) signal_handler);
-    set_signal(SIGSEGV, (SigActionFunc_t) signal_handler);
-  }
-#endif
-
 #if !defined(freebsd)
   set_signal(SIGUSR1, (SigActionFunc_t) signal_handler);
-#endif
-
-#ifdef __alpha
-  set_signal(SIGUSR2, (SigActionFunc_t) signal_handler);
 #endif
 
 #if defined(linux)

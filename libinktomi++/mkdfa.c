@@ -28,10 +28,8 @@
 #include <string.h>
 #include "ink_unused.h"
 
-#ifndef __alpha
 #define TRUE    1
 #define FALSE   0
-#endif
 
 #define SIZEOF(t) (sizeof (t) / (sizeof ((t)[0])))
 

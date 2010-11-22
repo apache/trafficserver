@@ -128,10 +128,6 @@ public:
   void syslogThrInit();
 
   volatile bool run_proxy;
-#ifdef __alpha
-  static bool clean_up;
-#endif
-
   volatile time_t manager_started_at;
   volatile time_t proxy_started_at;
   volatile int proxy_launch_count;

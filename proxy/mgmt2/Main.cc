@@ -1126,9 +1126,6 @@ SignalHandler(int sig)
 
   if (lmgmt && !clean) {
     clean = 1;
-#ifdef __alpha
-    lmgmt->clean_up = true;
-#endif
     if (lmgmt->watched_process_pid != -1) {
 
       if (sig == SIGTERM || sig == SIGINT) {

@@ -779,15 +779,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   close(fd);
 
   if (!error) {
-    for (int i = 0; i <= MAX_DEFINED_PEERS; i++) {
-#if defined (alpha) || defined(__alpha)
-      PeerConfigData *p_cur;
-      p_cur = ICPconfig->_peer_cdata_current[i];
-      *p_cur = P[i];
-#else
-      *ICPconfig->_peer_cdata_current[i] = P[i];        // Broken on DEC
-#endif
-    }
+    for (int i = 0; i <= MAX_DEFINED_PEERS; i++)
+      *ICPconfig->_peer_cdata_current[i] = P[i];
   }
   delete[]P;                    // free working buffer
   if (!startup)

@@ -320,12 +320,7 @@ LogObject::display(FILE * fd)
 {
   fprintf(fd, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
   fprintf(fd, "LogObject [%p]: format = %s (%p)\nbasename = %s\n" "flags = %u\n"
-#ifdef __alpha
-          // the DEC does not like %llu
-          "signature = %lu\n",
-#else
           "signature = %llu\n",
-#endif
           this, m_format->name(), m_format, m_basename, m_flags, m_signature);
 #ifndef TS_MICRO
   if (is_collation_client()) {
