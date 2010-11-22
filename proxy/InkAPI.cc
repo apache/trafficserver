@@ -348,7 +348,6 @@ tsapi int TS_HTTP_LEN_TRACE;
 tsapi const TSMLoc TS_NULL_MLOC = (TSMLoc)NULL;
 
 HttpAPIHooks *http_global_hooks = NULL;
-CacheAPIHooks *cache_global_hooks = NULL;
 ConfigUpdateCbTable *global_config_cbs = NULL;
 
 static char traffic_server_version[128] = "";
@@ -1390,57 +1389,6 @@ HttpAPIHooks::get(TSHttpHookID id)
 }
 
 
-//Cache API
-
-CacheAPIHooks::CacheAPIHooks():
-hooks_set(0)
-{
-}
-
-CacheAPIHooks::~CacheAPIHooks()
-{
-  clear();
-}
-
-void
-CacheAPIHooks::clear()
-{
-  APIHook *api_hook;
-  APIHook *next_hook;
-  int i;
-
-  for (i = 0; i < TS_CACHE_LAST_HOOK; i++) {
-    api_hook = m_hooks[i].get();
-    while (api_hook) {
-      next_hook = api_hook->m_link.next;
-      apiHookAllocator.free(api_hook);
-      api_hook = next_hook;
-    }
-  }
-  hooks_set = 0;
-}
-
-void
-CacheAPIHooks::append(TSCacheHookID id, INKContInternal *cont)
-{
-  hooks_set = 1;
-  m_hooks[id].append(cont);
-}
-
-APIHook *
-CacheAPIHooks::get(TSCacheHookID id)
-{
-  return m_hooks[id].get();
-}
-
-void
-CacheAPIHooks::prepend(TSCacheHookID id, INKContInternal *cont)
-{
-  hooks_set = 1;
-  m_hooks[id].prepend(cont);
-}
-
-
 ////////////////////////////////////////////////////////////////////
 //
 // ConfigUpdateCbTable
@@ -1772,7 +1720,6 @@ api_init()
     TS_HTTP_LEN_S_MAXAGE = HTTP_LEN_S_MAXAGE;
 
     http_global_hooks = NEW(new HttpAPIHooks);
-    cache_global_hooks = NEW(new CacheAPIHooks);
     global_config_cbs = NEW(new ConfigUpdateCbTable);
 
     if (TS_MAX_API_STATS > 0) {
@@ -4038,31 +3985,6 @@ sdk_sanity_check_cachekey(TSCacheKey key)
 }
 
 TSReturnCode
-TSCacheKeyGet(TSCacheTxn txnp, void **key, int *length)
-{
-  NewCacheVC *vc = (NewCacheVC *) txnp;
-
-  Debug("cache_plugin", "[TSCacheKeyGet] vc get cache key");
-  //    *key = (void*) NEW(new TS_MD5);
-
-  // just pass back the url and don't do the md5
-  vc->getCacheKey(key, length);
-
-  return TS_SUCCESS;
-}
-
-TSReturnCode
-TSCacheHeaderKeyGet(TSCacheTxn txnp, void **key, int *length)
-{
-  NewCacheVC *vc = (NewCacheVC *) txnp;
-
-  Debug("cache_plugin", "[TSCacheKeyGet] vc get cache header key");
-  vc->getCacheHeaderKey(key, length);
-
-  return TS_SUCCESS;
-}
-
-TSReturnCode
 TSCacheKeyCreate(TSCacheKey *new_key)
 {
 #ifdef DEBUG
@@ -4464,18 +4386,6 @@ TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 {
   if (sdk_sanity_check_continuation(contp) == TS_SUCCESS && sdk_sanity_check_hook_id(id) == TS_SUCCESS) {
     http_global_hooks->append(id, (INKContInternal *) contp);
-    return TS_SUCCESS;
-  }
-  return TS_ERROR;
-}
-
-/* Cache hooks */
-
-TSReturnCode
-TSCacheHookAdd(TSCacheHookID id, TSCont contp)
-{
-  if (sdk_sanity_check_continuation(contp) == TS_SUCCESS) {
-    cache_global_hooks->append(id, (INKContInternal *) contp);
     return TS_SUCCESS;
   }
   return TS_ERROR;
@@ -5477,142 +5387,6 @@ private:
   HttpSM *m_sm;
   TSEvent m_event;
 };
-
-
-//----------------------------------------------------------------------------
-TSIOBufferReader
-TSCacheBufferReaderGet(TSCacheTxn txnp)
-{
-  NewCacheVC *vc = (NewCacheVC *) txnp;
-
-  return vc->getBufferReader();
-}
-
-
-//----------------------------------------------------------------------------
-//TSReturnCode
-//TSCacheBufferInfoGet(TSHttpTxn txnp, void **buffer, uint64 *length, uint64 *offset)
-TSReturnCode
-TSCacheBufferInfoGet(TSCacheTxn txnp, uint64 *length, uint64 *offset)
-{
-  NewCacheVC *vc = (NewCacheVC *) txnp;
-
-  vc->getCacheBufferInfo(length, offset);
-  return TS_SUCCESS;
-}
-
-
-
-//----------------------------------------------------------------------------
-TSReturnCode
-TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, const void *data, const uint64 size)
-{
-  Debug("cache_plugin", "[TSHttpCacheReenable] event id: %d data: %lX size: %llu", event, (unsigned long) data, size);
-  //bool calledUser = 0;
-  NewCacheVC *vc = (NewCacheVC *) txnp;
-  if (vc->isClosed()) {
-    return TS_SUCCESS;
-  }
-  //vc->setCtrlInPlugin(false);
-  switch (event) {
-
-  case TS_EVENT_CACHE_READ_READY:
-  case TS_EVENT_CACHE_READ_COMPLETE:  // read
-    Debug("cache_plugin", "[TSHttpCacheReenable] cache_read");
-    if (data != 0) {
-
-      // set CacheHTTPInfo in the VC
-      //vc->setCacheHttpInfo(data, size);
-
-      //vc->getTunnel()->append_message_to_producer_buffer(vc->getTunnel()->get_producer(vc),(const char*)data,size);
-      //           HTTPInfo *cacheInfo;
-      //            vc->get_http_info(&cacheInfo);
-      //unsigned int doc_size = cacheInfo->object_size_get();
-      bool retVal = vc->setRangeAndSize(size);
-      //TSMutexLock(vc->getTunnel()->mutex);
-      vc->getTunnel()->get_producer(vc)->read_buffer->write((const char *) data, size);
-      if (retVal) {
-        vc->getTunnel()->get_producer(vc)->read_buffer->write("\r\n", 2);
-        vc->add_boundary(true);
-      }
-      Debug("cache_plugin", "[TSHttpCacheReenable] cache_read ntodo %d", vc->getVio()->ntodo());
-      if (vc->getVio()->ntodo() > 0)
-        vc->getTunnel()->handleEvent(VC_EVENT_READ_READY, vc->getVio());
-      else
-        vc->getTunnel()->handleEvent(VC_EVENT_READ_COMPLETE, vc->getVio());
-      //TSMutexUnlock(vc->getTunnel()->mutex);
-    } else {
-      // not in cache
-      //TSMutexLock(vc->getTunnel()->mutex);
-      vc->getTunnel()->handleEvent(VC_EVENT_ERROR, vc->getVio());
-      //TSMutexUnlock(vc->getTunnel()->mutex);
-    }
-
-    break;
-  case TS_EVENT_CACHE_LOOKUP_COMPLETE:
-    Debug("cache_plugin", "[TSHttpCacheReenable] cache_lookup_complete");
-    if (data == 0 || !vc->completeCacheHttpInfo(data, size)) {
-      Debug("cache_plugin", "[TSHttpCacheReenable] open read failed");
-      //TSMutexLock(vc->getCacheSm()->mutex);
-      vc->getCacheSm()->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_NO_DOC);
-      //TSMutexUnlock(vc->getCacheSm()->mutex);
-      break;
-    }
-    Debug("cache_plugin", "[TSHttpCacheReenable] we have data");
-    //TSMutexLock(vc->getCacheSm()->mutex);
-    vc->getCacheSm()->handleEvent(CACHE_EVENT_OPEN_READ, (void *) vc);
-    //TSMutexUnlock(vc->getCacheSm()->mutex);
-    break;
-  case TS_EVENT_CACHE_LOOKUP_READY:
-    Debug("cache_plugin", "[TSHttpCacheReenable] cache_lookup_ready");
-    if (data == 0 || !vc->appendCacheHttpInfo(data, size)) {
-      Debug("cache_plugin", "[TSHttpCacheReenable] open read failed");
-      // not in cache, free the vc
-      //TSMutexLock(vc->getCacheSm()->mutex);
-      vc->getCacheSm()->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_NO_DOC);
-      //TSMutexUnlock(vc->getCacheSm()->mutex);
-    }
-    break;
-  case TS_EVENT_CACHE_WRITE:  // write
-  case TS_EVENT_CACHE_WRITE_HEADER:
-    {
-      Debug("cache_plugin", "[TSHttpCacheReenable] cache_write");
-      if (vc->getState() == NewCacheVC::NEW_CACHE_WRITE_HEADER && vc->getVio()->ntodo() <= 0) {
-        //vc->getCacheSm()->handleEvent(VC_EVENT_WRITE_COMPLETE, vc->getVio());
-        Debug("cache_plugin", "[TSHttpCacheReenable] NewCacheVC::NEW_CACHE_WRITE_HEADER");
-        // writing header
-        // do nothing
-      } else {
-        vc->setTotalObjectSize(size);
-        vc->getVio()->ndone = size;
-        if (vc->getVio()->ntodo() <= 0) {
-          //TSMutexLock(vc->getCacheSm()->mutex);
-          vc->getTunnel()->handleEvent(VC_EVENT_WRITE_COMPLETE, vc->getVio());
-          //TSMutexUnlock(vc->getCacheSm()->mutex);
-        } else {
-          //TSMutexLock(vc->getCacheSm()->mutex);
-          vc->getTunnel()->handleEvent(VC_EVENT_WRITE_READY, vc->getVio());
-          //TSMutexUnlock(vc->getCacheSm()->mutex);
-        }
-      }
-    }
-    break;
-
-  case TS_EVENT_CACHE_DELETE:
-    break;
-
-    // handle read_ready, read_complete, write_ready, write_complete
-    // read_failure, write_failure
-  case TS_EVENT_CACHE_CLOSE:
-    //do nothing
-    break;
-
-  default:
-    break;
-  }
-
-  return TS_SUCCESS;
-}
 
 
 //----------------------------------------------------------------------------
@@ -7434,15 +7208,6 @@ TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
     return TS_ERROR;
   }
   return TS_SUCCESS;
-}
-
-TSHttpTxn
-TSCacheGetStateMachine(TSCacheTxn txnp)
-{
-  NewCacheVC *vc = (NewCacheVC *) txnp;
-  HttpCacheSM *cacheSm = (HttpCacheSM *) vc->getCacheSm();
-
-  return cacheSm->master_sm;
 }
 
 void

@@ -36,8 +36,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/utils \
   -DSYSCONFDIR=\"$(sysconfdir)\"
 
-ADD_SRC = NewCacheVC.cc NewCacheVC.h
-
+ADD_SRC =
 if BUILD_TESTS
   ADD_SRC += CacheTest.cc P_CacheTest.h 
 endif

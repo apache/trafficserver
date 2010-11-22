@@ -4028,13 +4028,8 @@ HttpSM::do_cache_delete_all_alts(Continuation * cont)
 
   Action *cache_action_handle = NULL;
 
-  if (!cont && cache_global_hooks->get(TS_CACHE_PLUGIN_HOOK)) {
-    // cache plugin, must pass a continuation
-    cacheProcessor.remove(&cache_sm, t_state.cache_info.lookup_url);
-  } else {
-    cache_action_handle = cacheProcessor.remove(cont,   // continuation
-                                                t_state.cache_info.lookup_url); // url
-  }
+  cache_action_handle = cacheProcessor.remove(cont,   // continuation
+                                              t_state.cache_info.lookup_url); // url
 
   if (cont != NULL) {
     if (cache_action_handle != ACTION_RESULT_DONE) {

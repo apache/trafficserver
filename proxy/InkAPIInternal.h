@@ -35,9 +35,6 @@
 #include "List.h"
 #include "ProxyConfig.h"
 #include "P_Cache.h"
-class CacheAPIHooks;
-extern CacheAPIHooks *cache_global_hooks;
-
 
 
 /* ****** Cache Structure ********* */
@@ -157,26 +154,6 @@ public:
 
 private:
   APIHooks m_hooks[TS_HTTP_LAST_HOOK];
-};
-
-
-class CacheAPIHooks
-{
-public:
-  CacheAPIHooks();
-  ~CacheAPIHooks();
-
-  void clear();
-  void prepend(TSCacheHookID id, INKContInternal * cont);
-  void append(TSCacheHookID id, INKContInternal * cont);
-  APIHook *get(TSCacheHookID id);
-
-  // A boolean value to quickly see if
-  //   any hooks are set
-  int hooks_set;
-
-private:
-    APIHooks m_hooks[TS_HTTP_LAST_HOOK];
 };
 
 

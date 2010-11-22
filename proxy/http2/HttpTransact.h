@@ -906,7 +906,6 @@ public:
     HttpTransactMagic_t m_magic;
 
     HttpSM *state_machine;
-    NewCacheVC *cache_vc;
 
     Arena arena;
 
@@ -1069,7 +1068,7 @@ public:
 
     // Constructor
     State()
-      : m_magic(HTTP_TRANSACT_MAGIC_ALIVE), state_machine(NULL), cache_vc(NULL), http_config_param(NULL), force_dns(false),
+      : m_magic(HTTP_TRANSACT_MAGIC_ALIVE), state_machine(NULL), http_config_param(NULL), force_dns(false),
         updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), is_revalidation_necessary(false),
         HashTable_Tries(0),             //YTS Team, yamsat
         request_will_not_selfloop(false),       //YTS Team, yamsat
@@ -1203,11 +1202,6 @@ public:
     {
       record_transaction_stats();
       m_magic = HTTP_TRANSACT_MAGIC_DEAD;
-
-      if (cache_vc) {
-        cache_vc->free();
-        cache_vc = NULL;
-      }
 
       if (internal_msg_buffer) {
         free_internal_msg_buffer(internal_msg_buffer, internal_msg_buffer_fast_allocator_size);

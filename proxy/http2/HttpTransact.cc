@@ -2833,8 +2833,7 @@ HttpTransact::build_response_from_cache(State * s, HTTPWarningCode warning_code)
       // Check if cached response supports Range. If it does, append
       // Range transformation plugin
       // only if the cached response is a 200 OK
-      if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE) &&
-          (cache_global_hooks == NULL || cache_global_hooks->hooks_set <= 0)) {
+      if (client_response_code == HTTP_STATUS_OK && client_request->presence(MIME_PRESENCE_RANGE)) {
         s->state_machine->do_range_setup_if_necessary();
         if (s->range_setup == RANGE_NOT_SATISFIABLE &&
             s->http_config_param->reverse_proxy_enabled) {
