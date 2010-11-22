@@ -244,9 +244,9 @@ SSLNetProcessor::initSSL(SslConfigParams * param)
     randBuff[irand] += rand();
   }
 
-  long *rbp = (long *) randBuff;
-  *rbp++ += (long) serverKeyPtr;
-  *rbp++ ^= *((long *) (&meth));
+  uintptr_t *rbp = (uintptr_t *) randBuff;
+  *rbp++ += (uintptr_t) serverKeyPtr;
+  *rbp++ ^= *((uintptr_t *) (&meth));
   srand((unsigned) time(NULL));
 
   for (irand = 32; irand < 64; irand++)
@@ -525,9 +525,9 @@ SSLNetProcessor::initSSLClient(SslConfigParams * param)
     randBuff[irand] += rand();
   }
 
-  long *rbp = (long *) randBuff;
-  *rbp++ += (long) clientKeyPtr;
-  *rbp++ ^= *((long *) (&meth));
+  uintptr_t *rbp = (uintptr_t *) randBuff;
+  *rbp++ += (uintptr_t) clientKeyPtr;
+  *rbp++ ^= *((uintptr_t *) (&meth));
   srand((unsigned) time(NULL));
 
   for (irand = 64; irand < 128; irand++)
