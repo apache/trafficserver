@@ -239,7 +239,6 @@ static void
 child_signal_handler(int sig)
 {
   (void) sig;
-/* No forked children in VxWorks */
   int pid;
   int saved_errno = errno;
   while ((pid = waitpid(-1, 0, WNOHANG)) > 0) {
