@@ -31,8 +31,6 @@
 #ifndef _FETCH_SM_H
 #define _FETCH_SM_H
 
-#include <string>
-
 #include "P_Net.h"
 #include "ts.h"
 #include "HttpSM.h"
@@ -110,7 +108,6 @@ private:
   bool resp_finished;
   unsigned int _ip;
   int _port;
-  //std::string _headers;
 };
 
 #endif

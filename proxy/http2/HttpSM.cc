@@ -48,10 +48,6 @@
 //#include "HttpAuthParams.h"
 #include "congest/Congestion.h"
 
-#if defined(solaris) && !defined(__GNUC__)
-#include <string>
-#endif
-
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX    6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX    6  // 8K
 #define MIN_CONFIG_BUFFER_SIZE_INDEX          5 // 4K
@@ -3800,22 +3796,18 @@ HttpSM::do_hostdb_lookup()
   bool use_srv_records = HttpConfig::m_master.srv_enabled;
 
   if (use_srv_records) {
-    // TODO: Get rid of string?
-    string s = "_http._tcp.";
-    s += t_state.server_info.name;
+    char* d = t_state.dns_info.srv_hostname;
 
-    ink_strncpy(&t_state.dns_info.srv_hostname[0], (char *) s.c_str(), MAXDNAME);
-    t_state.dns_info.srv_hostname[MAXDNAME - 1] = '\0';
+    memcpy(d, "_http._tcp.", 11);
+    ink_strncpy(d+11, t_state.server_info.name, MAXDNAME - 11);
+    d[MAXDNAME - 1] = '\0'; // Just to be sure it's NULL terminated in case of truncation
 
-    Debug("dns_srv", "Beginning lookup of SRV records for origin %s", (char *) s.c_str());
+    Debug("dns_srv", "Beginning lookup of SRV records for origin %s", d);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_srv_lookup);
 
-    Action *srv_lookup_action_handle = hostDBProcessor.getSRVbyname_imm(this,
-                                                                        (process_srv_info_pfn) & HttpSM::
-                                                                        process_srv_info,
-                                                                        (char *) s.c_str(),
-                                                                        (t_state.api_txn_dns_timeout_value != -1) ? t_state.
-                                                                        api_txn_dns_timeout_value : 0);
+    Action *srv_lookup_action_handle =
+      hostDBProcessor.getSRVbyname_imm(this, (process_srv_info_pfn) & HttpSM::process_srv_info, d,
+                                       (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0);
 
     if (srv_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
