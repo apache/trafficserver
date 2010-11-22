@@ -66,7 +66,7 @@ extern "C"
 	(cp)[2] = (l >>= 8); \
 	(cp)[1] = (l >>= 8); \
 	(cp)[0] = l >> 8; \
-	(cp) += sizeof (long long); \
+	(cp) += 8; \
 }
 
 

@@ -214,7 +214,7 @@ StrList::_new_cell(const char *s, int len_not_counting_nul)
     p = (char *) alloc(sizeof(Str) + 7);
     if (p == NULL)
       return (NULL);            // FIX: scale heap
-    p = (char *) (((long) (p + 7)) & ~7);       // round up to multiple of 8
+    p = (char *) ((((uintptr_t)p) + 7) & ~7);       // round up to multiple of 8
     cell = (Str *) p;
   }
   ++cells_allocated;

@@ -549,14 +549,14 @@ void* StatCollectorContinuation::commandListen(void *data) {
 int StatCollectorContinuation::_statCommandPort = 8091;
 time_t StatCollectorContinuation::_startTime = time(NULL);
 int StatCollectorContinuation::_readTimeout = 600;
-long StatCollectorContinuation::_readTimeoutUSecs = 0;
+int StatCollectorContinuation::_readTimeoutUSecs = 0;
 
 void StatCollectorContinuation::setStatCommandPort(int port)
 {
     _statCommandPort = port;
 }
 
-void StatCollectorContinuation::setReadTimeout(int secs, long usecs)
+void StatCollectorContinuation::setReadTimeout(int secs, int usecs)
 {
     _readTimeout = secs;
     _readTimeoutUSecs = usecs;

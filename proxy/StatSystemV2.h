@@ -76,7 +76,7 @@ class StatCollectorContinuation : public Continuation
 public:
     StatCollectorContinuation();
     static void setStatCommandPort(int port);
-    static void setReadTimeout(int secs = 1, long usecs = 0);
+    static void setReadTimeout(int secs = 1, int usecs = 0);
     
 private:
     int mainEvent(int event, Event *e);
@@ -93,7 +93,7 @@ private:
     static int _statCommandPort;
     static time_t _startTime;
     static int _readTimeout;
-    static long _readTimeoutUSecs;
+    static int _readTimeoutUSecs;
 };
 
 #endif // STAT_SYSTEM_V2
