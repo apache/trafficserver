@@ -27,7 +27,6 @@
 
 
  ****************************************************************************/
-#if !defined (_WIN_9xMe)
 
 #include "P_AIO.h"
 
@@ -167,7 +166,3 @@ AIOCallbackInternal::io_complete(int event, void *data)
 
   return 0;
 }
-
-
-
-#endif //_WIN_9xMe
