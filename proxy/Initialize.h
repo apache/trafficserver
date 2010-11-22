@@ -45,7 +45,6 @@ extern int system_syslog_facility;
 void init_system_settings(void);
 void init_system_dirs(void);
 void init_system_core_size(void);
-void init_system_memalign_heap(void);
 void init_system_syslog_log_configure(void);
 //void init_system_logging();
 void init_system_reconfigure_diags(void);

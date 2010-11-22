@@ -50,7 +50,6 @@ extern "C"
 #define ink_type_malloc_n(n,type)   (type *)ink_malloc((n) * sizeof(type));
 #define ink_type_calloc(n,type)     (type *)ink_calloc((n),sizeof(type));
 
-  bool ink_memalign_heap_init(long long ram_cache_size);
   void *ink_malloc(size_t size);
   void *ink_calloc(size_t nelem, size_t elsize);
   void *ink_realloc(void *ptr, size_t size);
@@ -58,7 +57,6 @@ extern "C"
   void ink_free(void *ptr);
   void ink_memalign_free(void *ptr);
   char *ink_duplicate_string(char *ptr);        /* obsoleted by ink_string_duplicate --- don't use */
-  void ink_memzero(void *src_arg, int nbytes);
   void *ink_memcpy(void *s1, const void *s2, int n);
   void ink_bcopy(void *s1, void *s2, size_t n);
 

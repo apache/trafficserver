@@ -37,7 +37,6 @@ CONFIG proxy.config.cop.linux_min_swapfree_kb INT 10240
 CONFIG proxy.config.cop.linux_min_memfree_kb INT 10240
 CONFIG proxy.config.snapshot_dir STRING snapshots
 CONFIG proxy.config.system.mmap_max INT 2097152
-CONFIG proxy.config.system.memalign_heap INT 0
 CONFIG proxy.config.exec_thread.autoconfig INT 1
 CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 2.0
 CONFIG proxy.config.exec_thread.limit INT 2

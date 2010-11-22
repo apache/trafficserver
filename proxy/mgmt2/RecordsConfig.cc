@@ -129,9 +129,6 @@ RecordElement RecordsConfig[] = {
   // The maximum number of chunks to allocate with mmap. Setting this to zero disables all use of mmap. (Unix only)
   {CONFIG, "proxy.config.system.mmap_max", "", INK_INT, "1073741823", RU_RESTART_TS, RR_NULL, RC_INT, NULL, RA_READ_ONLY}
   ,
-  // Enable/disable memalign preallocation memory
-  {CONFIG, "proxy.config.system.memalign_heap", "", INK_INT, "0", RU_NULL, RR_NULL, RC_INT, NULL, RA_READ_ONLY}
-  ,
   // Traffic Server Execution threads configuration
   // By default Traffic Server set number of execution threads equal to total CPUs
   {CONFIG, "proxy.config.exec_thread.autoconfig", "", INK_INT, "1", RU_RESTART_TS, RR_NULL, RC_INT, "[0-65535]",

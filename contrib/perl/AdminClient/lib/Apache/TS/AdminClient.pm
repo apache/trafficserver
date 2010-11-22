@@ -670,7 +670,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.stat_systemV2.max_stats_allowed
  proxy.config.stat_systemV2.num_stats_estimate
  proxy.config.syslog_facility
- proxy.config.system.memalign_heap
  proxy.config.system.mmap_max
  proxy.config.temp_dir
  proxy.config.thread.default.stacksize

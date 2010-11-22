@@ -1085,24 +1085,6 @@ init_core_size()
   }
 }
 
-static void
-init_ink_memalign_heap(void)
-{
-  int64 ram_cache_max = -1;
-  int enable_preallocation = 1;
-
-  TS_ReadConfigInteger(enable_preallocation, "proxy.config.system.memalign_heap");
-  if (enable_preallocation) {
-    TS_ReadConfigInteger(ram_cache_max, "proxy.config.cache.ram_cache.size");
-    if (ram_cache_max > 0) {
-      if (!ink_memalign_heap_init(ram_cache_max))
-        Warning("Unable to init memalign heap");
-    } else {
-      Warning("Unable to read proxy.config.cache.ram_cache.size var from config");
-    }
-  }
-}
-
 #if TS_USE_POSIX_CAP
 // Restore the effective capabilities that we need.
 int
@@ -1745,8 +1727,6 @@ main(int argc, char **argv)
   init_core_size();
 
   init_system();
-  // Init memalign heaps
-  init_ink_memalign_heap();
 
   // Adjust system and process settings
   adjust_sys_settings();

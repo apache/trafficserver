@@ -202,23 +202,6 @@ init_system_core_size(void)
   }
 }
 
-void
-init_system_memalign_heap(void)
-{
-  int64 ram_cache_max = -1;
-  int enable_preallocation = 1;
-
-  REC_ReadConfigInteger(enable_preallocation, "proxy.config.system.memalign_heap");
-  if (enable_preallocation) {
-    REC_ReadConfigInteger(ram_cache_max, "proxy.config.cache.ram_cache.size");
-    if (ram_cache_max > 0) {
-      if (!ink_memalign_heap_init(ram_cache_max))
-        Warning("Unable to init memalign heap");
-    } else {
-      Warning("Unable to read proxy.config.cache.ram_cache.size var from config");
-    }
-  }
-}
 
 int system_syslog_facility = LOG_DAEMON;
 

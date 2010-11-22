@@ -46,157 +46,6 @@
 #endif
 
 
-
-class MAMemChunk
-{
-public:
-  MAMemChunk * next;
-  void *ptr;
-};
-
-class MAHeap
-{
-private:
-  pthread_mutex_t mutex;
-  char *heap;
-  char *heap_end;
-  int size;
-  int chunk_size;
-  int total_chunks;
-  MAMemChunk *chunk_list_free;
-  MAMemChunk *chunk_list_used;
-public:
-    MAHeap(int chunk_size = 0, int total_chunks = 0);
-   ~MAHeap();
-  bool Init(int chunk_size = 0, int total_chunks = 0);
-  void *Get(void);
-  bool Free(void *ptr);
-};
-
-bool
-MAHeap::Init(int _chunk_size, int _total_chunks)
-{
-  bool retcode = true;
-  chunk_size = _chunk_size;
-  total_chunks = _total_chunks;
-  size = chunk_size * total_chunks;
-
-  if (size > 0) {
-    heap = (char *)ink_memalign(8192, size);
-    if (heap != NULL) {
-      for (int i = 0; i < total_chunks; i++) {
-        MAMemChunk *mc = new MAMemChunk();
-        mc->next = chunk_list_free;
-        chunk_list_free = mc;
-        mc->ptr = (void *) &heap[chunk_size * i];
-      }
-      heap_end = heap + size;
-    } else
-      retcode = false;
-  }
-  return retcode;
-}
-
-MAHeap::MAHeap(int _chunk_size, int _total_chunks)
-{
-  chunk_list_free = (chunk_list_used = 0);
-  heap_end = (heap = NULL);
-  pthread_mutex_init(&mutex, NULL);
-  Init(_chunk_size, _total_chunks);
-}
-
-MAHeap::~MAHeap()
-{
-  pthread_mutex_lock(&mutex);
-  // free the heap
-  if (heap != NULL) {
-    free(heap);
-  }
-  // delete the free list
-  MAMemChunk *head = chunk_list_free;
-  MAMemChunk *next = NULL;
-  while (head != NULL) {
-    next = head->next;
-    delete head;
-    head = next;
-  }
-  // delete the used list
-  head = chunk_list_used;
-  next = NULL;
-  while (head != NULL) {
-    next = head->next;
-    delete head;
-    head = next;
-  }
-  pthread_mutex_unlock(&mutex);
-}
-
-void *
-MAHeap::Get(void)
-{
-  MAMemChunk *mc;
-  void *ptr = 0;
-  if (heap) {
-    pthread_mutex_lock(&mutex);
-    if ((mc = chunk_list_free) != 0) {
-      chunk_list_free = mc->next;
-      mc->next = chunk_list_used;
-      chunk_list_used = mc;
-      ptr = mc->ptr;
-    }
-    pthread_mutex_unlock(&mutex);
-  }
-  return ptr;
-}
-
-// I know that it is not optimal but we are not going to free aligned memory at all
-// I wrote it - just in case ...
-bool
-MAHeap::Free(void *ptr)
-{
-  bool retcode = false;
-  if (ptr && heap && ptr >= heap && ptr < heap_end) {
-    MAMemChunk *mc, **mcc;
-    retcode = true;
-    pthread_mutex_lock(&mutex);
-    for (mcc = &chunk_list_used; (mc = *mcc) != 0; mcc = &(mc->next)) {
-      if (mc->ptr == ptr) {
-        *mcc = mc->next;
-        mc->next = chunk_list_free;
-        chunk_list_free = mc;
-        break;
-      }
-    }
-    pthread_mutex_unlock(&mutex);
-  }
-  return retcode;
-}
-
-static MAHeap *maheap_1m = new MAHeap();
-static MAHeap *maheap_512k = new MAHeap();
-static MAHeap *maheap_256k = new MAHeap();
-
-bool
-ink_memalign_heap_init(long long ram_cache_size)
-{
-  bool retcode = true;
-  int _total_chunks = (int) (ram_cache_size / (1024 * 1024));
-
-  if (_total_chunks > 1024)
-    _total_chunks = 1024;
-
-  if (likely(maheap_1m)) {
-    retcode = maheap_1m->Init(1024 * 1024, _total_chunks) ? retcode : false;
-  }
-  if (likely(maheap_512k)) {
-    retcode = maheap_512k->Init(512 * 1024, _total_chunks) ? retcode : false;
-  }
-  if (likely(maheap_256k)) {
-    retcode = maheap_256k->Init(256 * 1024, _total_chunks) ? retcode : false;
-  }
-  return retcode;
-}
-
 void *
 ink_malloc(size_t size)
 {
@@ -247,15 +96,10 @@ void
 ink_memalign_free(void *ptr)
 {
   if (likely(ptr)) {
-    if (maheap_1m && maheap_1m->Free(ptr))
-      return;
-    if (maheap_512k && maheap_512k->Free(ptr))
-      return;
-    if (maheap_256k && maheap_256k->Free(ptr))
-      return;
     ink_free(ptr);
   }
 }
+
 
 void *
 ink_memalign(size_t alignment, size_t size)
@@ -267,17 +111,6 @@ ink_memalign(size_t alignment, size_t size)
 #if TS_HAS_POSIX_MEMALIGN
   if (alignment <= 8)
     return ink_malloc(size);
-
-  if (size == (1024 * 1024)) {
-    if (maheap_1m && (ptr = maheap_1m->Get()) != 0)
-      return ptr;
-  } else if (size == (1024 * 512)) {
-    if (maheap_512k && (ptr = maheap_512k->Get()) != 0)
-      return ptr;
-  } else if (size == (1024 * 256)) {
-    if (maheap_256k && (ptr = maheap_256k->Get()) != 0)
-      return ptr;
-  }
 
   int retcode = posix_memalign(&ptr, alignment, size);
   if (unlikely(retcode)) {
@@ -333,8 +166,6 @@ ink_memalign(size_t alignment, size_t size)
   return NULL;
 }                               /* End ink_memalign */
 
-
-
 void
 ink_free(void *ptr)
 {
@@ -353,102 +184,6 @@ ink_duplicate_string(char *ptr)
   ink_assert(!"don't use this slow code!");
   return (ink_string_duplicate(ptr));
 }                               /* End ink_duplicate_string */
-
-
-void
-ink_memzero(void *src_arg, int nbytes)
-{
-  ink_assert(!"don't use this slow code!");
-
-  char *src = (char *) src_arg;
-
-  ink_assert(nbytes > 0);
-
-  if (nbytes <= 20) {
-    switch (nbytes) {
-    case 1:
-      src[0] = '\0';
-      break;
-    case 2:
-      src[0] = src[1] = '\0';
-      break;
-    case 3:
-      src[0] = src[1] = src[2] = '\0';
-      break;
-    case 4:
-      src[0] = src[1] = src[2] = src[3] = '\0';
-      break;
-    case 5:
-      src[0] = src[1] = src[2] = src[3] = src[4] = '\0';
-      break;
-    case 6:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = '\0';
-      break;
-    case 7:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = '\0';
-      break;
-    case 8:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = '\0';
-      break;
-    case 9:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = '\0';
-      break;
-    case 10:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] = '\0';
-      break;
-    case 11:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] = src[10] = '\0';
-      break;
-    case 12:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] =
-        src[10] = src[11] = '\0';
-      break;
-    case 13:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] =
-        src[10] = src[11] = src[12] = '\0';
-      break;
-    case 14:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] =
-        src[10] = src[11] = src[12] = src[13] = '\0';
-      break;
-    case 15:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] =
-        src[10] = src[11] = src[12] = src[13] = src[14] = '\0';
-      break;
-    case 16:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] =
-        src[10] = src[11] = src[12] = src[13] = src[14] = src[15] = '\0';
-      break;
-    case 17:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] =
-        src[10] = src[11] = src[12] = src[13] = src[14] = src[15] = src[16] = '\0';
-      break;
-    case 18:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] =
-        src[10] = src[11] = src[12] = src[13] = src[14] = src[15] = src[16] = src[17] = '\0';
-      break;
-    case 19:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] =
-        src[10] = src[11] = src[12] = src[13] = src[14] = src[15] = src[16] = src[17] = src[18] = '\0';
-      break;
-    case 20:
-      src[0] = src[1] = src[2] = src[3] = src[4] = src[5] = src[6] = src[7] = src[8] = src[9] =
-        src[10] = src[11] = src[12] = src[13] = src[14] = src[15] = src[16] = src[17] = src[18] = src[19] = '\0';
-      break;
-    default:
-      break;
-    }
-  } else if (nbytes <= 1000) {
-    int i;
-    for (i = 0; i < nbytes; i++) {
-      src[i] = '\0';
-    }
-  } else {
-    memset(src, '\0', nbytes);
-  }
-  return;
-}
-
 
 void *
 ink_memcpy(void *s1, const void *s2, int n)
