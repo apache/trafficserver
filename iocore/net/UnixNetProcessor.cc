@@ -133,11 +133,13 @@ UnixNetProcessor::accept_internal(Continuation * cont,
                                   )
 {
   EventType et = opt.etype; // setEtype requires non-const ref.
-  setEtype(et);
   NetAccept *na = createNetAccept();
-
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
+
+  // Potentially upgrade to SSL.
+  upgradeEtype(et);
+
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
   na->port = opt.port;
   na->accept_fn = fn;
@@ -204,9 +206,8 @@ UnixNetProcessor::connect_re_internal(Continuation * cont,
   else
     opt = &vc->options;
 
-  // virtual function used to set etype to ET_SSL
-  // for SSLNetProcessor.  Does nothing if not overwritten.
-  setEtype(opt->etype);
+  // virtual function used to upgrade etype to ET_SSL for SSLNetProcessor.
+  upgradeEtype(opt->etype);
 
 #ifndef INK_NO_SOCKS
   bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
@@ -408,13 +409,14 @@ int
 UnixNetProcessor::start(int)
 {
   EventType etype = ET_NET;
+
   netHandler_offset = eventProcessor.allocate(sizeof(NetHandler));
   pollCont_offset = eventProcessor.allocate(sizeof(PollCont));
 
-  // customize the threads for net
-  setEtype(etype);
   // etype is ET_NET for netProcessor
   // and      ET_SSL for sslNetProcessor
+  upgradeEtype(etype);
+
   n_netthreads = eventProcessor.n_threads_for_type[etype];
   netthreads = eventProcessor.eventthread[etype];
   for (int i = 0; i < n_netthreads; i++) {
@@ -458,7 +460,8 @@ UnixNetProcessor::start(int)
  */
 #ifdef NON_MODULAR
   extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
-  statPagesManager.register_http("net", register_ShowNet);
+  if (etype == ET_NET)
+    statPagesManager.register_http("net", register_ShowNet);
 #endif
   return 1;
 }

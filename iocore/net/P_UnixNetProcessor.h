@@ -36,7 +36,6 @@ class UnixNetVConnection;
 struct UnixNetProcessor:public NetProcessor
 {
 public:
-
   virtual Action * accept_internal(Continuation * cont,
                                    int fd,
                                    sockaddr * bound_sockaddr = NULL,
@@ -48,20 +47,13 @@ public:
 				   );
 
 
-  Action *connect_re_internal(Continuation * cont,
-                              unsigned int ip, int port, NetVCOptions * options = NULL);
+  Action *connect_re_internal(Continuation * cont, unsigned int ip, int port, NetVCOptions * options = NULL);
+  Action *connect(Continuation * cont, UnixNetVConnection ** vc, unsigned int ip, int port, NetVCOptions * opt = NULL);
 
-  Action *connect(Continuation * cont,
-                  UnixNetVConnection ** vc,
-                  unsigned int ip, int port, NetVCOptions * opt = NULL);
-
-  // Virtual function allows etype
-  // to be set to ET_SSL for SSLNetProcessor.  Does
+  // Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
   // nothing for NetProcessor
-  virtual void setEtype(EventType & etype)
-  {
-    (void) etype;
-  };
+  virtual void upgradeEtype(EventType & etype) { NOWARN_UNUSED(etype); };
+
   // Functions all THREAD_FREE and THREAD_ALLOC to be performed
   // for both SSL and regular NetVConnection transparent to
   // netProcessor connect functions.

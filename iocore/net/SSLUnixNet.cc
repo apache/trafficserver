@@ -71,11 +71,10 @@ SSLNetProcessor::createNetAccept()
   return ((NetAccept *) NEW(new SSLNetAccept));
 }
 
-// Virtual function allows etype
-// to be set to ET_SSL for SSLNetProcessor.  Does
+// Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
 // nothing for NetProcessor
 void
-SSLNetProcessor::setEtype(EventType & etype)
+SSLNetProcessor::upgradeEtype(EventType & etype)
 {
   if (etype == ET_NET) {
     etype = ET_SSL;

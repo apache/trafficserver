@@ -67,24 +67,15 @@ public:
   int initSSLServerCTX(SslConfigParams * param,
                        SSL_CTX * ctx, char *serverCertPtr, char *serverKeyPtr, bool defaultEnabled);
 
-  SSL_CTX *getSSL_CTX(void)
-  {
-    return (ctx);
-  }
-  SSL_CTX *getClientSSL_CTX(void)
-  {
-    return (client_ctx);
-  }
-  int getAcceptPort()
-  {
-    return (accept_port_number);
-  }
+  SSL_CTX *getSSL_CTX(void) const {return (ctx); }
+  SSL_CTX *getClientSSL_CTX(void) const { return (client_ctx); }
+  int getAcceptPort() { return (accept_port_number); }
   static void logSSLError(const char *errStr = "", int critical = 1);
 
-SSLNetProcessor():UnixNetProcessor(), verify_depth(0), ctx(NULL), client_ctx(NULL), sslMutexArray(NULL),
-    accept_port_number(-1) {
-  };
-  virtual ~ SSLNetProcessor();
+  SSLNetProcessor()
+    : verify_depth(0), ctx(NULL), client_ctx(NULL), sslMutexArray(NULL), accept_port_number(-1)
+    {  };
+  virtual ~SSLNetProcessor();
 
   int verify_depth;
   SSL_CTX *ctx;
@@ -97,8 +88,9 @@ SSLNetProcessor():UnixNetProcessor(), verify_depth(0), ctx(NULL), client_ctx(NUL
 #if !defined (_IOCORE_WIN32_WINNT)
 
   // Virtual function allows etype
-  // to be set to ET_SSL for SSLNetProcessor.
-  virtual void setEtype(EventType & etype);
+  // to be upgraded to ET_SSL for SSLNetProcessor.
+  virtual void upgradeEtype(EventType &etype);
+
   // Functions all THREAD_FREE and THREAD_ALLOC to be performed
   // for both SSL and regular NetVConnection transparent to
   // netProcessor connect functions.
