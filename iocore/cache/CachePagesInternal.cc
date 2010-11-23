@@ -108,12 +108,12 @@ ShowCacheInternal::showMain(int event, Event * e)
 {
   CHECK_SHOW(begin("Cache"));
 #ifdef CACHE_STAT_PAGES
-  CHECK_SHOW(show("<H3>Show <A HREF=\"/connections\">Connections</A></H3>\n"
-                  "<H3>Show <A HREF=\"/evacuations\">Evacuations</A></H3>\n"
-                  "<H3>Show <A HREF=\"/partitions\">Partitions</A></H3>\n"));
+  CHECK_SHOW(show("<H3>Show <A HREF=\"./connections\">Connections</A></H3>\n"
+                  "<H3>Show <A HREF=\"./evacuations\">Evacuations</A></H3>\n"
+                  "<H3>Show <A HREF=\"./partitions\">Partitions</A></H3>\n"));
 #else
-  CHECK_SHOW(show("<H3>Show <A HREF=\"/evacuations\">Evacuations</A></H3>\n"
-                  "<H3>Show <A HREF=\"/partitions\">Partitions</A></H3>\n"));
+  CHECK_SHOW(show("<H3>Show <A HREF=\"./evacuations\">Evacuations</A></H3>\n"
+                  "<H3>Show <A HREF=\"./partitions\">Partitions</A></H3>\n"));
 #endif
   return complete(event, e);
 }

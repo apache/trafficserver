@@ -39,13 +39,13 @@ struct ShowNet: public ShowCont
   int showMain(int event, Event * e)
   {
     CHECK_SHOW(begin("Net"));
-    CHECK_SHOW(show("<H3>Show <A HREF=\"/connections\">Connections</A></H3>\n"
-                    "<H3>Show <A HREF=\"/threads\">Net Threads</A></H3>\n"
-                    "<form method = GET action = \"/ips\">\n"
+    CHECK_SHOW(show("<H3>Show <A HREF=\"./connections\">Connections</A></H3>\n"
+                    "<H3>Show <A HREF=\"./threads\">Net Threads</A></H3>\n"
+                    "<form method = GET action = \"./ips\">\n"
                     "Show Connections to/from IP (e.g. 127.0.0.1):<br>\n"
                     "<input type=text name=ip size=64 maxlength=256>\n"
                     "</form>\n"
-                    "<form method = GET action = \"/ports\">\n"
+                    "<form method = GET action = \"./ports\">\n"
                     "Show Connections to/from Port (e.g. 80):<br>\n"
                     "<input type=text name=name size=64 maxlength=256>\n" "</form>\n"));
     return complete(event, e);

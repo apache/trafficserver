@@ -2116,15 +2116,15 @@ struct ShowHostDB: public ShowCont
   int showMain(int event, Event * e)
   {
     CHECK_SHOW(begin("HostDB"));
-    CHECK_SHOW(show("<form method = GET action = \"/name\">\n"
+    CHECK_SHOW(show("<form method = GET action = \"./name\">\n"
                     "Lookup by name (e.g. www.inktomi.com):<br>\n"
                     "<input type=text name=name size=64 maxlength=256>\n"
                     "</form>\n"
-                    "<form method = GET action = \"/ip\">\n"
+                    "<form method = GET action = \"./ip\">\n"
                     "Lookup by IP (e.g. 127.0.0.1):<br>\n"
                     "<input type=text name=ip size=64 maxlength=256>\n"
                     "</form>\n"
-                    "<form method = GET action = \"/nameforce\">\n"
+                    "<form method = GET action = \"./nameforce\">\n"
                     "Force DNS by name (e.g. www.inktomi.com):<br>\n"
                     "<input type=text name=name size=64 maxlength=256>\n" "</form>\n"));
     return complete(event, e);
