@@ -537,7 +537,6 @@ logging			Logging Configuration
     HTTP Host Log Splitting -- off  (proxy.config.log.separate_host_logs)
 
   Custom Logs -- off              (proxy.config.log.custom_logs_enabled)
-  Custom Log Definition Format -- Traditional (proxy.config.log.xml_logs_config)
 
   Rolling -------- on               (proxy.config.log.rolling_enabled)
     Roll Offset Hour --- 0          (proxy.config.log.rolling_offset_hr)
@@ -1344,7 +1343,6 @@ logging			Logging Configuration
 
   syntax:  config:logging custom <on | off> format <traditional | xml>
   records:  proxy.config.log.custom_logs_enabled
-            proxy.config.log.xml_logs_config <traditional=0, xml=1>
 
     ts# config:logging custom on format xml
     +OK

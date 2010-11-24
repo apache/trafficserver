@@ -1235,15 +1235,11 @@ printUsage()
 void
 fileUpdated(char *fname)
 {
-
   if (strcmp(fname, "cluster.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cluster.cluster_configuration");
 
   } else if (strcmp(fname, "remap.config") == 0) {
     lmgmt->signalFileChange("proxy.config.url_remap.filename");
-
-  } else if (strcmp(fname, "logs.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.log.config_file");
 
   } else if (strcmp(fname, "socks.config") == 0) {
     lmgmt->signalFileChange("proxy.config.socks.socks_config_file");

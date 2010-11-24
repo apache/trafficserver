@@ -1789,7 +1789,6 @@ ShowLogging()
   Cli_RecordGetInt("proxy.config.log.separate_icp_logs", &icp_log);
   Cli_RecordGetInt("proxy.config.log.separate_host_logs", &http_host_log);
   Cli_RecordGetInt("proxy.config.log.separate_host_logs", &custom_log);
-  Cli_RecordGetInt("proxy.config.log.xml_logs_config", &xml_log);
 
   Cli_RecordGetInt("proxy.config.log.rolling_enabled", &rolling);
   Cli_RecordGetInt("proxy.config.log.rolling_offset_hr", &roll_offset_hr);

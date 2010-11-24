@@ -2189,10 +2189,6 @@ RecordElement RecordsConfig[] = {
   ,
   {CONFIG, "proxy.config.log.custom_logs_enabled", "", INK_INT, "0", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
   ,
-  {CONFIG, "proxy.config.log.xml_logs_config", "", INK_INT, "1", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
-  {CONFIG, "proxy.config.log.config_file", "", INK_STRING, "logs.config", RU_REREAD, RR_NULL, RC_NULL, NULL, RA_NULL}
-  ,
   {CONFIG, "proxy.config.log.xml_config_file", "", INK_STRING, "logs_xml.config", RU_REREAD, RR_NULL, RC_NULL, NULL,
    RA_NULL}
   ,

@@ -229,7 +229,6 @@ const char *intVariables[] = {
   "proxy.config.log.max_space_mb_for_orphan_logs",
   "proxy.config.log.max_space_mb_headroom",
   "proxy.config.log.custom_logs_enabled",
-  "proxy.config.log.xml_logs_config",
   "proxy.config.log.squid_log_enabled",
   "proxy.config.log.squid_log_is_ascii",
   "proxy.config.log.common_log_enabled",

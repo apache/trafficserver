@@ -62,7 +62,7 @@ export TS_CONFIG_SECONDARY_MTPT="/mnt/ts_secondary"
 
 export SYSTEM_CONFIG_FILES="/etc/resolv.conf /etc/hosts ${NETWORK_P2FILE} ${NETWORK_PARMSFILE}"
 
-export TS_CONFIG_FILES="logs.config storage.config socks.config proxy.pac lm.config vaddrs.config cache.config icp.config mgmt_allow.config ip_allow.config parent.config remap.config mgr.cnf update.config ${MAIN_CONFIG_FILE}"
+export TS_CONFIG_FILES="storage.config socks.config proxy.pac lm.config vaddrs.config cache.config icp.config mgmt_allow.config ip_allow.config parent.config remap.config mgr.cnf update.config ${MAIN_CONFIG_FILE}"
 
 
 export FLOPPY_DEVICE="/dev/fd0"

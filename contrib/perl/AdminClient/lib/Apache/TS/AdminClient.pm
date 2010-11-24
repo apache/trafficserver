@@ -509,7 +509,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.common_log_header
  proxy.config.log.common_log_is_ascii
  proxy.config.log.common_log_name
- proxy.config.log.config_file
  proxy.config.log.custom_logs_enabled
  proxy.config.log.extended2_log_enabled
  proxy.config.log.extended2_log_header
@@ -553,7 +552,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.squid_log_is_ascii
  proxy.config.log.squid_log_name
  proxy.config.log.xml_config_file
- proxy.config.log.xml_logs_config
  proxy.config.manager_binary
  proxy.config.manager_name
  proxy.config.net.accept_throttle

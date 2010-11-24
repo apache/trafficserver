@@ -232,7 +232,6 @@ public:
   int rolling_size_mb;
   int auto_delete_rolled_files;
   int custom_logs_enabled;
-  int xml_logs_config;
 
   int search_log_enabled;
   int search_rolling_interval_sec;
@@ -264,7 +263,6 @@ public:
   char *extended2_log_header;
   char *collation_host;
   char *collation_secret;
-  char *config_file;
   char *xml_config_file;
   char *hosts_config_file;
 
@@ -289,7 +287,6 @@ private:
 
   typedef Queue<PreDefinedFormatInfo> PreDefinedFormatInfoList;
 
-  void read_old_log_config();
   void read_xml_log_config(int from_memory);
   char **read_log_hosts_file(size_t * nhosts);
 

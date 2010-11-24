@@ -66,7 +66,6 @@ initializeRegistry()
   // NOTE: Logic that controls which files are not sync'd around the
   // cluster is located in ClusterCom::constructSharedFilePacket
 
-  configFiles->addFile("logs.config", false);
   configFiles->addFile("log_hosts.config", false);
   configFiles->addFile("logs_xml.config", false);
   configFiles->addFile("storage.config", false);

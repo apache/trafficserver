@@ -978,8 +978,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = INK_FNAME_ICP_PEER;    /* icp.config */
   } else if (strstr(filename, "ip_allow.config")) {
     m_filetype = INK_FNAME_IP_ALLOW;    /* ip_allow.config */
-  } else if (strstr(filename, "logs.config")) {
-    m_filetype = INK_FNAME_UNDEFINED;   /* logs.config */
   } else if (strstr(filename, "logs_xml.config")) {
     m_filetype = INK_FNAME_LOGS_XML;    /* logs_xml.config */
   } else if (strstr(filename, "mgmt_allow.config")) {

@@ -29,8 +29,6 @@ bin_PROGRAMS = \
   traffic_logcat \
   traffic_logstats \
   traffic_sac
-
-noinst_PROGRAMS =  traffic_cust_log_fmt_cnvrt
 endif
 
 AM_CPPFLAGS = \
@@ -379,13 +377,6 @@ if BUILD_TESTS
   traffic_sac_LDADD += RegressionSM.o \
     TestHook.o
 endif
-
-traffic_cust_log_fmt_cnvrt_SOURCES = cust_log_fmt_cnvrt.cc
-traffic_cust_log_fmt_cnvrt_LDADD = \
-  $(top_builddir)/iocore/utils/libinkutils.a \
-  $(top_builddir)/libinktomi++/libinktomi++.a \
-  @LIBTHREAD@ \
-  @LIBTCL@ @LIBRT@ @LIBICONV@ @LIBDL@ @LIBEXECINFO@
 
 libClusterHashStandalone_a_SOURCES = \
   ClusterHashStandalone.cc \

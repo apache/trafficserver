@@ -2177,14 +2177,7 @@ CmdArgs_ConfigLogging()
 
   createArgument("custom", 1, CLI_ARGV_CONST_OPTION,
                  (char *) NULL, CMD_CONFIG_LOGGING_CUSTOM,
-                 "Custom Logging <on | off> format <traditional | xml>", (char *) NULL);
-
-  createArgument("traditional", CMD_CONFIG_LOGGING_AND_CUSTOM_FORMAT, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_LOGGING_CUSTOM_FORMAT_TRADITIONAL,
-                 "Custom logging in traditional format", (char *) NULL);
-
-  createArgument("xml", CMD_CONFIG_LOGGING_AND_CUSTOM_FORMAT, CLI_ARGV_CONSTANT,
-                 (char *) NULL, CMD_CONFIG_LOGGING_CUSTOM_FORMAT_XML, "Custom logging in XML", (char *) NULL);
+                 "Custom Logging <on | off>", (char *) NULL);
 
   createArgument("rolling", 1, CLI_ARGV_CONST_OPTION,
                  (char *) NULL, CMD_CONFIG_LOGGING_ROLLING,
@@ -4991,15 +4984,7 @@ ConfigLoggingCustomFormat(int arg_ref_on_off, int arg_ref_format, int setvar)
     if (Cli_PrintEnable("", int_val) == CLI_ERROR) {
       return CLI_ERROR;
     }
-    status = Cli_RecordGetInt("proxy.config.log.xml_logs_config", &int_val);
-    switch (int_val) {
-    case 0:
-      Cli_Printf("traditional\n");
-      break;
-    case 1:
-      Cli_Printf("xml\n");
-      break;
-    }
+    Cli_Printf("xml\n");
     return CLI_OK;
   case 1:
     {
@@ -5019,20 +5004,7 @@ ConfigLoggingCustomFormat(int arg_ref_on_off, int arg_ref_format, int setvar)
       if (status) {
         return status;
       }
-      switch (arg_ref_format) {
-      case CMD_CONFIG_LOGGING_CUSTOM_FORMAT_TRADITIONAL:
-        int_val = 0;
-        break;
-      case CMD_CONFIG_LOGGING_CUSTOM_FORMAT_XML:
-        int_val = 1;
-        break;
-      }
-      status = Cli_RecordSetInt("proxy.config.log.xml_logs_config", int_val, &action_need);
-      if (status) {
-        return status;
-      }
       return (Cli_ConfigEnactChanges(action_need));
-
     }
 
   default:

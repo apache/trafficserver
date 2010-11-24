@@ -158,8 +158,6 @@ LogConfig::setup_default_values()
   roll_log_files_now = FALSE;
 
   custom_logs_enabled = FALSE;
-  xml_logs_config = FALSE;
-  config_file = xstrdup("logs.config");
   xml_config_file = xstrdup("logs_xml.config");
   hosts_config_file = xstrdup("log_hosts.config");
 
@@ -496,17 +494,6 @@ LogConfig::read_configuration_variables()
     custom_logs_enabled = val;
   };
 
-  val = (int) LOG_ConfigReadInteger("proxy.config.log.xml_logs_config");
-  if (val == 0 || val == 1) {
-    xml_logs_config = val;
-  };
-
-  ptr = LOG_ConfigReadString("proxy.config.log.config_file");
-  if (ptr != NULL) {
-    xfree(config_file);
-    config_file = ptr;
-  };
-
   ptr = LOG_ConfigReadString("proxy.config.log.xml_config_file");
   if (ptr != NULL) {
     xfree(xml_config_file);
@@ -665,7 +652,6 @@ LogConfig::~LogConfig()
   xfree(extended2_log_header);
   xfree(collation_host);
   xfree(collation_secret);
-  xfree(config_file);
   xfree(xml_config_file);
   xfree(hosts_config_file);
   xfree(search_log_file_one);
@@ -834,7 +820,6 @@ LogConfig::display(FILE * fd)
   fprintf(fd, "   hostname = %s\n", hostname);
   fprintf(fd, "   logfile_dir = %s\n", logfile_dir);
   fprintf(fd, "   logfile_perm = 0%o\n", logfile_perm);
-  fprintf(fd, "   config_file = %s\n", config_file);
   fprintf(fd, "   xml_config_file = %s\n", xml_config_file);
   fprintf(fd, "   hosts_config_file = %s\n", hosts_config_file);
   fprintf(fd, "   squid_log_enabled = %d\n", squid_log_enabled);
@@ -1223,13 +1208,8 @@ LogConfig::setup_log_objects()
   }
 
   if (custom_logs_enabled) {
-
-    if (xml_logs_config) {
-      /* Read xml configuration from logs_xml.config file.             */
-      read_xml_log_config(0);
-    } else {
-      read_old_log_config();
-    }
+    /* Read xml configuration from logs_xml.config file.             */
+    read_xml_log_config(0);
   }
 
   /*                                                               */
@@ -1346,8 +1326,6 @@ LogConfig::register_config_callbacks()
 
   // CUSTOM LOGGING
   LOG_RegisterConfigUpdateFunc("proxy.config.log.custom_logs_enabled", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.xml_logs_config", &LogConfig::reconfigure, NULL);
-  LOG_RegisterConfigUpdateFunc("proxy.config.log.config_file", &LogConfig::reconfigure, NULL);
   LOG_RegisterConfigUpdateFunc("proxy.config.log.xml_config_file", &LogConfig::reconfigure, NULL);
   LOG_RegisterConfigUpdateFunc("proxy.config.log.hosts_config_file", &LogConfig::reconfigure, NULL);
 
@@ -1731,154 +1709,6 @@ LogConfig::update_space_used()
   }
 }
 
-
-/*-------------------------------------------------------------------------
-  LogConfig::read_old_log_config
-  -------------------------------------------------------------------------*/
-
-void
-LogConfig::read_old_log_config()
-{
-  char config_path[PATH_MAX];
-  char line[LOG_MAX_FORMAT_LINE];
-  char copy[LOG_MAX_FORMAT_LINE];
-  int line_num = 0;
-
-  if (config_file == NULL) {
-    Note("No log config file to read");
-    return;
-  }
-
-  snprintf(config_path, PATH_MAX, "%s/%s", system_config_directory, config_file);
-
-  Debug("log-config", "Reading log config file %s", config_path);
-
-  int fd =::open(config_path, O_RDONLY);
-  if (fd < 0) {
-    Warning("Traffic Server can't open %s for reading custom " "formats: %s.", config_path, strerror(errno));
-    return;
-  }
-
-  while (ink_file_fd_readline(fd, LOG_MAX_FORMAT_LINE, line) > 0) {
-
-    //
-    // Ignore blank Lines and lines that begin with a '#'.
-    //
-    line_num++;
-    if (*line == '\n' || *line == '#') {
-      continue;
-    }
-    //
-    // Tokenize the line; ':' is the field separator character
-    //
-    LogUtils::strip_trailing_newline(line);
-    ink_strncpy(copy, line, sizeof(copy));
-    char *entry_type = strtok(copy, ":");
-
-    if (entry_type) {
-
-      // format
-      //
-      if (strcasecmp(entry_type, "format") == 0) {
-
-        char *file_name = NULL;
-        char *file_header = NULL;
-        LogFileFormat file_type;
-
-        LogFormat *new_format = LogFormat::format_from_specification(line, &file_name, &file_header, &file_type);
-
-        bool valid_format = false;
-        if (new_format != NULL) {
-          if (global_format_list.find_by_name(new_format->name())) {
-            Status(DUP_FORMAT_MESSAGE, new_format->name());
-            valid_format = false;
-          } else {
-            valid_format = true;
-          }
-        }
-
-        if (valid_format) {
-          LogObject *obj = NEW(new LogObject(new_format,
-                                             logfile_dir,
-                                             file_name, file_type,
-                                             file_header,
-                                             rolling_enabled,
-                                             rolling_interval_sec,
-                                             rolling_offset_hr,
-                                             rolling_size_mb));
-
-          if (collation_mode == SEND_NON_XML_CUSTOM_FMTS || collation_mode == SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
-
-            LogHost *loghost = NEW(new LogHost(obj->get_full_filename(),
-                                               obj->get_signature()));
-            ink_assert(loghost != NULL);
-
-            loghost->set_name_port(collation_host, collation_port);
-            obj->add_loghost(loghost, false);
-
-          }
-
-          global_format_list.add(new_format, false);
-
-          // give object to object manager
-          //
-          log_object_manager.manage_object(obj);
-        }
-
-        xfree(file_name);
-        xfree(file_header);
-
-        if (valid_format) {
-          continue;
-        }
-      }
-      // filter
-      //
-      if (strcasecmp(entry_type, "filter") == 0) {
-        char *fmt_name = NULL;
-        LogFilter *filter = LogFilter::filter_from_specification(line, global_format_list, Log::global_field_list,
-                                                                 &fmt_name);
-        if (filter) {
-          if (global_filter_list.find_by_name(filter->name())) {
-            Warning("Ignoring duplicate filter definition at " "line %d", line_num);
-            delete filter;
-          } else {
-            LogObject *obj;
-            if (strcmp(fmt_name, "_global_") == 0) {
-              // apply filter to all objects
-              //
-              log_object_manager.add_filter_to_all(filter);
-            } else {
-              // apply filter to object with format fmt_name
-              //
-              obj = log_object_manager.find_by_format_name(fmt_name);
-              if (!obj) {
-                Warning("There is no format named %s for " "filter at line %d", fmt_name, line_num);
-                delete filter;
-                xfree(fmt_name);
-                continue;
-              } else {
-                obj->add_filter(filter);
-              }
-            }
-          }
-          if (fmt_name) {
-            xfree(fmt_name);
-          }
-          global_filter_list.add(filter, false);
-          continue;
-        }
-        if (fmt_name) {
-          xfree(fmt_name);
-        }
-      }
-    }
-
-    Warning("Traffic Server failed to parse line %d of the " "logging config file: %s.", line_num, config_path);
-  }
-
-  ::close(fd);
-}
 
 /*-------------------------------------------------------------------------
   LogConfig::read_xml_log_config
