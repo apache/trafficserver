@@ -2,6 +2,32 @@
 
 Changes with Apache Traffic Server 2.1.5
 
+  *) The old logs.config custom log format is no longer supported. Only
+   the XML custom logs are now supported. This eliminates the config
+
+       proxy.config.log.xml_logs_config
+
+   as well, since it's the only option for custom logs [TS-556].
+
+  *) All log configurations (and stats) are renamed from log2.* to
+   log.*. This is to avoid confusion, since Apache Traffic Server never
+   had the old (obsolete) log system. There's now only one log system,
+   log [TS-555].
+
+  *) Many fixes and improvements on the Stats pages subsystem. This now
+   properly supports (if configured) various internal URLs, like
+   http://{net}, http://{hostdb} etc. [TS-554]. 
+
+  *) The NewCacheVC is removed [TS-551].
+
+  *) Support for the Alpha processor is eliminated [TS-552].
+
+  *) A number of unecessary memory allocations are removed, improving
+   performance under heavy load. [TS-550, TS-549]
+
+  *) All streaming media (MIXT) configurations are now properly removed
+   from code and default configs [TS-544].
+
   *) URL scheme was case sensitive in the cache key [TS-474].
 
   *) Fixes for broken API signatures, additions / modifications to the
