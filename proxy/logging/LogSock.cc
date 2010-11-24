@@ -63,7 +63,7 @@ m_max_connections(max_connects + 1)
     init_cid(i, NULL, 0, -1, LogSock::LS_STATE_UNUSED);
   }
 
-  Debug("log2-sock", "LogSocket established");
+  Debug("log-sock", "LogSocket established");
 }
 
 /*-------------------------------------------------------------------------
@@ -74,7 +74,7 @@ m_max_connections(max_connects + 1)
 
 LogSock::~LogSock()
 {
-  Debug("log2-sock", "shutting down LogSocket on [%s:%d]", ct[0].host, ct[0].port);
+  Debug("log-sock", "shutting down LogSocket on [%s:%d]", ct[0].host, ct[0].port);
 
   this->close();                // close all connections
   this->close(0);               // close accept socket
@@ -100,7 +100,7 @@ LogSock::listen(int accept_port)
   int ret;
   SOCKET accept_sd;
 
-  Debug("log2-sock", "Listening ...");
+  Debug("log-sock", "Listening ...");
 
   //
   // create the socket for accepting new connections
@@ -180,7 +180,7 @@ LogSock::listen(int accept_port)
   init_cid(0, this_host, accept_port, accept_sd, LogSock::LS_STATE_INCOMING);
 
   m_accept_connections = true;
-  Debug("log2-sock", "LogSocket established on [%s:%d]", this_host, accept_port);
+  Debug("log-sock", "LogSocket established on [%s:%d]", this_host, accept_port);
 
   return 0;
 }
@@ -209,7 +209,7 @@ LogSock::accept()
     return LogSock::LS_ERROR_CONNECT_TABLE_FULL;
   }
 
-  Debug("log2-sock", "waiting to accept a new connection");
+  Debug("log-sock", "waiting to accept a new connection");
 
   connect_sd =::accept(ct[0].sd, (sockaddr *) & connect_addr,
                        (socklen_t *) & size
@@ -220,7 +220,7 @@ LogSock::accept()
 
   init_cid(cid, NULL, connect_addr.sin_port, connect_sd, LogSock::LS_STATE_INCOMING);
 
-  Debug("log2-sock", "new connection accepted, cid = %d, port = %d", cid, connect_addr.sin_port);
+  Debug("log-sock", "new connection accepted, cid = %d, port = %d", cid, connect_addr.sin_port);
 
   return cid;
 }
@@ -258,7 +258,7 @@ LogSock::connect(unsigned host_ip, int port)
 
   char ipstr[32];
   LogUtils::ip_to_str(host_ip, ipstr, sizeof(ipstr));
-  Debug("log2-sock", "connecting to [%s:%d]", ipstr, port);
+  Debug("log-sock", "connecting to [%s:%d]", ipstr, port);
 
   // get an index into the connection table
   cid = new_cid();
@@ -296,7 +296,7 @@ LogSock::connect(unsigned host_ip, int port)
 
   init_cid(cid, ipstr, port, connect_sd, LogSock::LS_STATE_OUTGOING);
 
-  Debug("log2-sock", "outgoing connection to [%s:%d] established, fd  = %d", ipstr, port, cid);
+  Debug("log-sock", "outgoing connection to [%s:%d] established, fd  = %d", ipstr, port, cid);
 
   return cid;
 }
@@ -369,7 +369,7 @@ bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
   if (ret == 0) {
     return false;               // timeout
   } else if (ret < 0) {
-    Debug("log2-sock", "error on poll");
+    Debug("log-sock", "error on poll");
     return false;               // error
   }
   //
@@ -381,12 +381,12 @@ bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
   for (i = 0; i < n_poll_fds; i++) {
     if (fds[i].revents & POLLIN) {
       *cid = fd_to_cid[i];
-      Debug("log2-sock", "poll successful on index %d", *cid);
+      Debug("log-sock", "poll successful on index %d", *cid);
       return true;
     }
   }
 
-  Debug("log2-sock", "invalid revents in the poll table");
+  Debug("log-sock", "invalid revents in the poll table");
   return false;
 }
 
@@ -462,7 +462,7 @@ LogSock::close(int cid)
 {
   ink_assert(cid >= 0 && cid < m_max_connections);
 
-  Debug("log2-sock", "closing connection for cid %d", cid);
+  Debug("log-sock", "closing connection for cid %d", cid);
 
   if (ct[cid].state != LogSock::LS_STATE_UNUSED) {
     ::close(ct[cid].sd);
@@ -504,12 +504,12 @@ LogSock::write(int cid, void *buf, int bytes)
     return LogSock::LS_ERROR_STATE;
   }
 
-  Debug("log2-sock", "Sending %d bytes to cid %d", bytes, cid);
+  Debug("log-sock", "Sending %d bytes to cid %d", bytes, cid);
 
   //
   // send the message header
   //
-  Debug("log2-sock", "   sending header (%d bytes)", sizeof(LogSock::MsgHeader));
+  Debug("log-sock", "   sending header (%d bytes)", sizeof(LogSock::MsgHeader));
   header.msg_bytes = htonl(bytes);
   ret =::send(ct[cid].sd, (char *) &header, sizeof(LogSock::MsgHeader), 0);
   if (ret != sizeof(LogSock::MsgHeader)) {
@@ -518,7 +518,7 @@ LogSock::write(int cid, void *buf, int bytes)
   //
   // send the actual data
   //
-  Debug("log2-sock", "   sending data (%d bytes)", bytes);
+  Debug("log-sock", "   sending data (%d bytes)", bytes);
   return::send(ct[cid].sd, (char *) buf, bytes, 0);
 }
 
@@ -543,7 +543,7 @@ LogSock::read(int cid, void *buf, unsigned maxsize)
     return LogSock::LS_ERROR_STATE;
   }
 
-  Debug("log2-sock", "reading data from cid %d", cid);
+  Debug("log-sock", "reading data from cid %d", cid);
 
   if (read_header(ct[cid].sd, &header) < 0) {
     return LogSock::LS_ERROR_READ;
@@ -574,7 +574,7 @@ LogSock::read_alloc(int cid, int *size)
     return NULL;
   }
 
-  Debug("log2-sock", "reading data from cid %d", cid);
+  Debug("log-sock", "reading data from cid %d", cid);
 
   if (read_header(ct[cid].sd, &header) < 0) {
     return NULL;
@@ -631,7 +631,7 @@ LogSock::check_connections()
   for (int i = 1; i < m_max_connections; i++) {
     if (ct[i].state == LogSock::LS_STATE_INCOMING) {
       if (!is_connected(i, true)) {
-        Debug("log2-sock", "Connection %d is no longer connected");
+        Debug("log-sock", "Connection %d is no longer connected");
         close(i);
       }
     }

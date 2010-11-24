@@ -697,44 +697,44 @@ proxy.process.hostdb.ttl
 # doc: average TTL of HostDB entries (minutes)
 # perfmonvar: hostdb_ttl
 #
-proxy.process.log2.event_log_access
+proxy.process.log.event_log_access
 # usage: counter
 # units: events
 # scale: 100000
 # doc: The current number of access events that have been written to log files. This counter represents one entry in one file, so that if multiple formats are being written, a single access will create multiple access event log entries.
 # shortdoc: # of events written to log files
-# perfmonvar: log2_event_log_access
+# perfmonvar: log_event_log_access
 #
-proxy.process.log2.event_log_access_skip
+proxy.process.log.event_log_access_skip
 # usage: counter
 # units: events
 # scale: 100000
 # doc: # of events skipped instead of written to log files
 # shortdoc: # of events not written to log files
-# perfmonvar: log2_event_log_access_skip
+# perfmonvar: log_event_log_access_skip
 #
-proxy.process.log2.event_log_error
+proxy.process.log.event_log_error
 # usage: counter
 # units: events
 # scale: 100000
 # doc: # of events written to error log
-# perfmonvar: log2_event_log_error
+# perfmonvar: log_event_log_error
 #
-proxy.process.log2.log_files_open
+proxy.process.log.log_files_open
 # usage: gauge
 # units: files
 # scale: 10
 # doc: How many access log files (formats) are currently being written
 # shortdoc: # of log files being written to
-# perfmonvar: log2_log_files_open
+# perfmonvar: log_log_files_open
 #
-proxy.process.log2.log_files_space_used
+proxy.process.log.log_files_space_used
 # usage: gauge
 # units: bytes
 # scale: 1000000
 # doc: The current amount of space being used by the logging directory, which contains all of the access and error logs
 # shortdoc: # of bytes used by logging directory
-# perfmonvar: log2_log_files_space_used
+# perfmonvar: log_log_files_space_used
 #
 proxy.process.socks.connections_currently_open
 # usage: gauge

@@ -317,13 +317,13 @@ DiagsConfig::DiagsConfig(char *bdt, char *bat, bool use_records)
   ////////////////////////
 
   if (access(system_log_dir, R_OK) == -1) {
-    REC_ReadConfigString(diags_logpath, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    REC_ReadConfigString(diags_logpath, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
     Layout::get()->relative(system_log_dir, PATH_NAME_MAX, diags_logpath);
 
     if (access(system_log_dir, R_OK) == -1) {
       fprintf(stderr,"unable to access() log dir'%s': %d, %s\n",
               system_log_dir, errno, strerror(errno));
-      fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+      fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
       _exit(1);
     }
   }

@@ -443,12 +443,12 @@ init_dirs(void)
   }
 
   if (access(system_log_dir, W_OK) == -1) {
-    REC_ReadConfigString(buf, "proxy.config.log2.logfile_dir", PATH_NAME_MAX);
+    REC_ReadConfigString(buf, "proxy.config.log.logfile_dir", PATH_NAME_MAX);
     Layout::get()->relative(system_log_dir, PATH_NAME_MAX, buf);
     if (access(system_log_dir, W_OK) == -1) {
       fprintf(stderr,"unable to access() log dir'%s':%d, %s\n",
               system_log_dir, errno, strerror(errno));
-      fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+      fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
       _exit(1);
     }
   }

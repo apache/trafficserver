@@ -6281,7 +6281,7 @@ REGRESSION_TEST(SDK_API_TSTextLog) (RegressionTest * test, int atype, int *pstat
 
   /* Generate a random log file name, so if we run the test several times, we won't use the
      same log file name. */
-  char *tmp = REC_ConfigReadString("proxy.config.log2.logfile_dir");
+  char *tmp = REC_ConfigReadString("proxy.config.log.logfile_dir");
   snprintf(logname, sizeof(logname), "RegressionTestLog%d.log", (int) getpid());
   snprintf(fullpath_logname, sizeof(fullpath_logname), "%s/%s", tmp, logname);
   // xfree(tmp);

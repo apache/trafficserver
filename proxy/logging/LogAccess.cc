@@ -1480,16 +1480,16 @@ char *
 resolve_logfield_string(LogAccess * context, const char *format_str)
 {
   if (!context) {
-    Debug("log2-resolve", "No context to resolve?");
+    Debug("log-resolve", "No context to resolve?");
     return NULL;
   }
 
   if (!format_str) {
-    Debug("log2-resolve", "No format to resolve?");
+    Debug("log-resolve", "No format to resolve?");
     return NULL;
   }
 
-  Debug("log2-resolve", "Resolving: %s", format_str);
+  Debug("log-resolve", "Resolving: %s", format_str);
 
   //
   // Divide the format string into two parts: one for the printf-style
@@ -1500,8 +1500,8 @@ resolve_logfield_string(LogAccess * context, const char *format_str)
   int n_fields = LogFormat::parse_format_string(format_str,
                                                 &printf_str, &fields_str);
 
-  Debug("log2-resolve", "%d fields: %s", n_fields, fields_str);
-  Debug("log2-resolve", "printf string: %s", printf_str);
+  Debug("log-resolve", "%d fields: %s", n_fields, fields_str);
+  Debug("log-resolve", "printf string: %s", printf_str);
 
   //
   // Make sure that we delete these strings no matter how we exit
@@ -1514,7 +1514,7 @@ resolve_logfield_string(LogAccess * context, const char *format_str)
   // format_str.
   //
   if (!n_fields) {
-    Debug("log2-resolve", "No fields found; returning copy of format_str");
+    Debug("log-resolve", "No fields found; returning copy of format_str");
     return xstrdup(format_str);
   }
 
@@ -1524,7 +1524,7 @@ resolve_logfield_string(LogAccess * context, const char *format_str)
                                                    &contains_aggregates);
 
   if (field_count != n_fields) {
-    Debug("log2-resolve", "format_str contains %d invalid field symbols", n_fields - field_count);
+    Debug("log-resolve", "format_str contains %d invalid field symbols", n_fields - field_count);
     return NULL;
   }
   //
@@ -1532,14 +1532,14 @@ resolve_logfield_string(LogAccess * context, const char *format_str)
   // temporary storage buffer.  Make sure the LogAccess context is
   // initialized first.
   //
-  Debug("log2-resolve", "Marshaling data from LogAccess into buffer ...");
+  Debug("log-resolve", "Marshaling data from LogAccess into buffer ...");
   context->init();
   unsigned bytes_needed = fields.marshal_len(context);
   char *buf = (char *) xmalloc(bytes_needed);
   ink_assert(buf != NULL);
   unsigned bytes_used = fields.marshal(context, buf);
   ink_assert(bytes_needed == bytes_used);
-  Debug("log2-resolve", "    %u bytes marshalled", bytes_used);
+  Debug("log-resolve", "    %u bytes marshalled", bytes_used);
 
   //
   // Now we can "unmarshal" the data from the buffer into a string,

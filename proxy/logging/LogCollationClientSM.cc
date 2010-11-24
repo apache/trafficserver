@@ -73,7 +73,7 @@ m_pending_event(NULL),
 m_buffer_send_list(NULL), m_buffer_in_iocore(NULL), m_flow(LOG_COLL_FLOW_ALLOW), m_log_host(log_host), m_id(ID++)
 {
 
-  Debug("log2-coll", "[%d]client::constructor", m_id);
+  Debug("log-coll", "[%d]client::constructor", m_id);
 
   ink_assert(m_log_host != NULL);
 
@@ -94,7 +94,7 @@ m_buffer_send_list(NULL), m_buffer_in_iocore(NULL), m_flow(LOG_COLL_FLOW_ALLOW),
 LogCollationClientSM::~LogCollationClientSM()
 {
 
-  Debug("log2-coll", "[%d]client::destructor", m_id);
+  Debug("log-coll", "[%d]client::destructor", m_id);
 
   ink_mutex_acquire(&(mutex->the_mutex));
   client_done(LOG_COLL_EVENT_SWITCH, NULL);
@@ -162,17 +162,17 @@ LogCollationClientSM::send(LogBuffer * log_buffer)
   // take lock (can block on call because we're on our own thread)
   ink_mutex_acquire(&(mutex->the_mutex));
 
-  Debug("log2-coll", "[%d]client::send", m_id);
+  Debug("log-coll", "[%d]client::send", m_id);
 
   // deny if state is DONE or FAIL
   if (m_client_state == LOG_COLL_CLIENT_DONE || m_client_state == LOG_COLL_CLIENT_FAIL) {
-    Debug("log2-coll", "[%d]client::send - DONE/FAIL state; rejecting", m_id);
+    Debug("log-coll", "[%d]client::send - DONE/FAIL state; rejecting", m_id);
     ink_mutex_release(&(mutex->the_mutex));
     return 0;
   }
   // only allow send if m_flow is ALLOW
   if (m_flow == LOG_COLL_FLOW_DENY) {
-    Debug("log2-coll", "[%d]client::send - m_flow = DENY; rejecting", m_id);
+    Debug("log-coll", "[%d]client::send - m_flow = DENY; rejecting", m_id);
     ink_mutex_release(&(mutex->the_mutex));
     return 0;
   }
@@ -180,12 +180,12 @@ LogCollationClientSM::send(LogBuffer * log_buffer)
   ink_assert(log_buffer != NULL);
   ink_assert(m_buffer_send_list != NULL);
   m_buffer_send_list->add(log_buffer);
-  Debug("log2-coll", "[%d]client::send - new log_buffer to send_list", m_id);
+  Debug("log-coll", "[%d]client::send - new log_buffer to send_list", m_id);
 
   // disable m_flow if there's too much work to do now
   ink_assert(m_flow == LOG_COLL_FLOW_ALLOW);
   if (m_buffer_send_list->get_size() >= Log::config->collation_max_send_buffers) {
-    Debug("log2-coll", "[%d]client::send - m_flow = DENY", m_id);
+    Debug("log-coll", "[%d]client::send - m_flow = DENY", m_id);
     Note("[log-coll] send-queue full; orphaning logs      "
          "[%d.%d.%d.%d:%d]",
          ((unsigned char *) (&(m_log_host->m_ip)))[0],
@@ -232,13 +232,13 @@ int
 LogCollationClientSM::client_auth(int event, VIO * vio)
 {
   NOWARN_UNUSED(vio);
-  Debug("log2-coll", "[%d]client::client_auth", m_id);
+  Debug("log-coll", "[%d]client::client_auth", m_id);
 
   switch (event) {
 
   case LOG_COLL_EVENT_SWITCH:
     {
-      Debug("log2-coll", "[%d]client::client_auth - SWITCH", m_id);
+      Debug("log-coll", "[%d]client::client_auth - SWITCH", m_id);
       m_client_state = LOG_COLL_CLIENT_AUTH;
 
       NetMsgHeader nmh;
@@ -251,7 +251,7 @@ LogCollationClientSM::client_auth(int event, VIO * vio)
       m_auth_buffer->write(Log::config->collation_secret, bytes_to_send);
       bytes_to_send += sizeof(NetMsgHeader);
 
-      Debug("log2-coll", "[%d]client::client_auth - do_io_write(%d)", m_id, bytes_to_send);
+      Debug("log-coll", "[%d]client::client_auth - do_io_write(%d)", m_id, bytes_to_send);
       ink_assert(m_host_vc != NULL);
       m_host_vio = m_host_vc->do_io_write(this, bytes_to_send, m_auth_reader);
       ink_assert(m_host_vio != NULL);
@@ -260,11 +260,11 @@ LogCollationClientSM::client_auth(int event, VIO * vio)
     }
 
   case VC_EVENT_WRITE_READY:
-    Debug("log2-coll", "[%d]client::client_auth - WRITE_READY", m_id);
+    Debug("log-coll", "[%d]client::client_auth - WRITE_READY", m_id);
     return EVENT_CONT;
 
   case VC_EVENT_WRITE_COMPLETE:
-    Debug("log2-coll", "[%d]client::client_auth - WRITE_COMPLETE", m_id);
+    Debug("log-coll", "[%d]client::client_auth - WRITE_COMPLETE", m_id);
 
     Note("[log-coll] host up [%d.%d.%d.%d:%d]",
          ((unsigned char *) (&(m_log_host->m_ip)))[0],
@@ -277,11 +277,11 @@ LogCollationClientSM::client_auth(int event, VIO * vio)
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
     {
-      Debug("log2-coll", "[%d]client::client_auth - EOS|ERROR", m_id);
+      Debug("log-coll", "[%d]client::client_auth - EOS|ERROR", m_id);
 
       int read_avail = m_auth_reader->read_avail();
       if (read_avail > 0) {
-        Debug("log2-coll", "[%d]client::client_auth - consuming unsent data", m_id);
+        Debug("log-coll", "[%d]client::client_auth - consuming unsent data", m_id);
         m_auth_reader->consume(read_avail);
       }
 
@@ -306,7 +306,7 @@ int
 LogCollationClientSM::client_dns(int event, HostDBInfo * hostdb_info)
 {
 
-  Debug("log2-coll", "[%d]client::client_dns", m_id);
+  Debug("log-coll", "[%d]client::client_dns", m_id);
 
   switch (event) {
 
@@ -347,7 +347,7 @@ int
 LogCollationClientSM::client_done(int event, void *data)
 {
   NOWARN_UNUSED(data);
-  Debug("log2-coll", "[%d]client::client_done", m_id);
+  Debug("log-coll", "[%d]client::client_done", m_id);
 
   switch (event) {
 
@@ -362,7 +362,7 @@ LogCollationClientSM::client_done(int event, void *data)
 
     // close connections
     if (m_host_vc) {
-      Debug("log2-coll", "[%d]client::client_done - disconnecting!", m_id);
+      Debug("log-coll", "[%d]client::client_done - disconnecting!", m_id);
       // do I need to delete this???
       m_host_vc->do_io_close(0);
       m_host_vc = 0;
@@ -418,12 +418,12 @@ int
 LogCollationClientSM::client_fail(int event, void *data)
 {
   NOWARN_UNUSED(data);
-  Debug("log2-coll", "[%d]client::client_fail", m_id);
+  Debug("log-coll", "[%d]client::client_fail", m_id);
 
   switch (event) {
 
   case LOG_COLL_EVENT_SWITCH:
-    Debug("log2-coll", "[%d]client::client_fail - SWITCH", m_id);
+    Debug("log-coll", "[%d]client::client_fail - SWITCH", m_id);
     m_client_state = LOG_COLL_CLIENT_FAIL;
 
     Note("[log-coll] host down [%d.%d.%d.%d:%d]",
@@ -456,7 +456,7 @@ LogCollationClientSM::client_fail(int event, void *data)
     return EVENT_CONT;
 
   case EVENT_INTERVAL:
-    Debug("log2-coll", "[%d]client::client_fail - INTERVAL", m_id);
+    Debug("log-coll", "[%d]client::client_fail - INTERVAL", m_id);
     m_pending_event = NULL;
     return client_open(LOG_COLL_EVENT_SWITCH, NULL);
 
@@ -477,7 +477,7 @@ int
 LogCollationClientSM::client_idle(int event, void *data)
 {
   NOWARN_UNUSED(data);
-  Debug("log2-coll", "[%d]client::client_idle", m_id);
+  Debug("log-coll", "[%d]client::client_idle", m_id);
 
   switch (event) {
 
@@ -487,7 +487,7 @@ LogCollationClientSM::client_idle(int event, void *data)
 
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
-    Debug("log2-coll", "[%d]client::client_idle - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]client::client_idle - EOS|ERROR", m_id);
     return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
 
   default:
@@ -507,7 +507,7 @@ int
 LogCollationClientSM::client_init(int event, void *data)
 {
   NOWARN_UNUSED(data);
-  Debug("log2-coll", "[%d]client::client_init", m_id);
+  Debug("log-coll", "[%d]client::client_init", m_id);
 
   switch (event) {
 
@@ -569,13 +569,13 @@ int
 LogCollationClientSM::client_open(int event, NetVConnection * net_vc)
 {
 
-  Debug("log2-coll", "[%d]client::client_open", m_id);
+  Debug("log-coll", "[%d]client::client_open", m_id);
 
   switch (event) {
 
   case LOG_COLL_EVENT_SWITCH:
 
-    Debug("log2-coll", "[%d]client::client_open - SWITCH", m_id);
+    Debug("log-coll", "[%d]client::client_open - SWITCH", m_id);
     m_client_state = LOG_COLL_CLIENT_OPEN;
 
     {
@@ -592,7 +592,7 @@ LogCollationClientSM::client_open(int event, NetVConnection * net_vc)
     return EVENT_CONT;
 
   case NET_EVENT_OPEN:
-    Debug("log2-coll", "[%d]client::client_open - %d.%d.%d.%d:%d",
+    Debug("log-coll", "[%d]client::client_open - %d.%d.%d.%d:%d",
           m_id,
           ((unsigned char *) (&(m_log_host->m_ip)))[0],
           ((unsigned char *) (&(m_log_host->m_ip)))[1],
@@ -613,7 +613,7 @@ LogCollationClientSM::client_open(int event, NetVConnection * net_vc)
     return client_auth(LOG_COLL_EVENT_SWITCH, NULL);
 
   case NET_EVENT_OPEN_FAILED:
-    Debug("log2-coll", "[%d]client::client_open - OPEN_FAILED", m_id);
+    Debug("log-coll", "[%d]client::client_open - OPEN_FAILED", m_id);
     // callback complete, reset m_pending_pending action
     m_pending_action = NULL;
     return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
@@ -635,12 +635,12 @@ int
 LogCollationClientSM::client_send(int event, VIO * vio)
 {
   NOWARN_UNUSED(vio);
-  Debug("log2-coll", "[%d]client::client_send", m_id);
+  Debug("log-coll", "[%d]client::client_send", m_id);
 
   switch (event) {
 
   case EVENT_IMMEDIATE:
-    Debug("log2-coll", "[%d]client::client_send - EVENT_IMMEDIATE", m_id);
+    Debug("log-coll", "[%d]client::client_send - EVENT_IMMEDIATE", m_id);
     // callback complete, reset m_pending_event
     m_pending_event = NULL;
 
@@ -648,7 +648,7 @@ LogCollationClientSM::client_send(int event, VIO * vio)
 
   case LOG_COLL_EVENT_SWITCH:
     {
-      Debug("log2-coll", "[%d]client::client_send - SWITCH", m_id);
+      Debug("log-coll", "[%d]client::client_send - SWITCH", m_id);
       m_client_state = LOG_COLL_CLIENT_SEND;
 
       // get a buffer off our queue
@@ -657,12 +657,12 @@ LogCollationClientSM::client_send(int event, VIO * vio)
       if ((m_buffer_in_iocore = m_buffer_send_list->get()) == NULL) {
         return client_idle(LOG_COLL_EVENT_SWITCH, NULL);
       }
-      Debug("log2-coll", "[%d]client::client_send - send_list to m_buffer_in_iocore", m_id);
-      Debug("log2-coll", "[%d]client::client_send - send_list_size(%d)", m_id, m_buffer_send_list->get_size());
+      Debug("log-coll", "[%d]client::client_send - send_list to m_buffer_in_iocore", m_id);
+      Debug("log-coll", "[%d]client::client_send - send_list_size(%d)", m_id, m_buffer_send_list->get_size());
 
       // enable m_flow if we're out of work to do
       if (m_flow == LOG_COLL_FLOW_DENY && m_buffer_send_list->get_size() == 0) {
-        Debug("log2-coll", "[%d]client::client_send - m_flow = ALLOW", m_id);
+        Debug("log-coll", "[%d]client::client_send - m_flow = ALLOW", m_id);
         Note("[log-coll] send-queue clear; resuming collation "
              "[%d.%d.%d.%d:%d]",
              ((unsigned char *) (&(m_log_host->m_ip)))[0],
@@ -677,7 +677,7 @@ LogCollationClientSM::client_send(int event, VIO * vio)
       // write the lame way.
 
 #if defined(LOG_BUFFER_TRACKING)
-      Debug("log2-buftrak", "[%d]client::client_send - network write begin", m_buffer_in_iocore->header()->id);
+      Debug("log-buftrak", "[%d]client::client_send - network write begin", m_buffer_in_iocore->header()->id);
 #endif // defined(LOG_BUFFER_TRACKING)
 
       // prepare to send data
@@ -696,7 +696,7 @@ LogCollationClientSM::client_send(int event, VIO * vio)
       bytes_to_send += sizeof(NetMsgHeader);
 
       // send m_send_buffer to iocore
-      Debug("log2-coll", "[%d]client::client_send - do_io_write(%d)", m_id, bytes_to_send);
+      Debug("log-coll", "[%d]client::client_send - do_io_write(%d)", m_id, bytes_to_send);
       ink_assert(m_host_vc != NULL);
       m_host_vio = m_host_vc->do_io_write(this, bytes_to_send, m_send_reader);
       ink_assert(m_host_vio != NULL);
@@ -704,21 +704,21 @@ LogCollationClientSM::client_send(int event, VIO * vio)
     return EVENT_CONT;
 
   case VC_EVENT_WRITE_READY:
-    Debug("log2-coll", "[%d]client::client_send - WRITE_READY", m_id);
+    Debug("log-coll", "[%d]client::client_send - WRITE_READY", m_id);
     return EVENT_CONT;
 
   case VC_EVENT_WRITE_COMPLETE:
-    Debug("log2-coll", "[%d]client::client_send - WRITE_COMPLETE", m_id);
+    Debug("log-coll", "[%d]client::client_send - WRITE_COMPLETE", m_id);
 
     ink_assert(m_buffer_in_iocore != NULL);
 #if defined(LOG_BUFFER_TRACKING)
-    Debug("log2-buftrak", "[%d]client::client_send - network write complete", m_buffer_in_iocore->header()->id);
+    Debug("log-buftrak", "[%d]client::client_send - network write complete", m_buffer_in_iocore->header()->id);
 #endif // defined(LOG_BUFFER_TRACKING)
 
     // done with the buffer, delete it
     delete m_buffer_in_iocore;
     m_buffer_in_iocore = NULL;
-    Debug("log2-coll", "[%d]client::client_send - m_buffer_in_iocore to delete_list", m_id);
+    Debug("log-coll", "[%d]client::client_send - m_buffer_in_iocore to delete_list", m_id);
 
     // switch back to client_send
     return client_send(LOG_COLL_EVENT_SWITCH, NULL);
@@ -726,11 +726,11 @@ LogCollationClientSM::client_send(int event, VIO * vio)
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
     {
-      Debug("log2-coll", "[%d]client::client_send - EOS|ERROR", m_id);
+      Debug("log-coll", "[%d]client::client_send - EOS|ERROR", m_id);
 
       int read_avail = m_send_reader->read_avail();
       if (read_avail > 0) {
-        Debug("log2-coll", "[%d]client::client_send - consuming unsent data", m_id);
+        Debug("log-coll", "[%d]client::client_send - consuming unsent data", m_id);
         m_send_reader->consume(read_avail);
       }
 
@@ -738,7 +738,7 @@ LogCollationClientSM::client_send(int event, VIO * vio)
     }
 
   default:
-    Debug("log2-coll", "[%d]client::client_send - default", m_id);
+    Debug("log-coll", "[%d]client::client_send - default", m_id);
     return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
 
   }
@@ -762,11 +762,11 @@ void
 LogCollationClientSM::flush_to_orphan()
 {
 
-  Debug("log2-coll", "[%d]client::flush_to_orphan", m_id);
+  Debug("log-coll", "[%d]client::flush_to_orphan", m_id);
 
   // if in middle of a write, flush buffer_in_iocore to orphan
   if (m_buffer_in_iocore != NULL) {
-    Debug("log2-coll", "[%d]client::flush_to_orphan - m_buffer_in_iocore to oprhan", m_id);
+    Debug("log-coll", "[%d]client::flush_to_orphan - m_buffer_in_iocore to oprhan", m_id);
     m_buffer_in_iocore->convert_to_host_order();
     m_log_host->orphan_write_and_delete(m_buffer_in_iocore);
     m_buffer_in_iocore = NULL;
@@ -775,7 +775,7 @@ LogCollationClientSM::flush_to_orphan()
   LogBuffer *log_buffer;
   ink_assert(m_buffer_send_list != NULL);
   while ((log_buffer = m_buffer_send_list->get()) != NULL) {
-    Debug("log2-coll", "[%d]client::flush_to_orphan - send_list to orphan", m_id);
+    Debug("log-coll", "[%d]client::flush_to_orphan - send_list to orphan", m_id);
     m_log_host->orphan_write_and_delete(log_buffer);
   }
 

@@ -70,7 +70,7 @@ m_pending_event(NULL),
 m_read_buffer(NULL), m_read_bytes_wanted(0), m_read_bytes_received(0), m_client_ip(0), m_client_port(0), m_id(ID++)
 {
 
-  Debug("log2-coll", "[%d]host::constructor", m_id);
+  Debug("log-coll", "[%d]host::constructor", m_id);
 
   ink_assert(m_client_vc != NULL);
 
@@ -156,17 +156,17 @@ int
 LogCollationHostSM::host_auth(int event, void *data)
 {
   NOWARN_UNUSED(data);
-  Debug("log2-coll", "[%d]host::host_auth", m_id);
+  Debug("log-coll", "[%d]host::host_auth", m_id);
 
   switch (event) {
 
   case LOG_COLL_EVENT_SWITCH:
-    Debug("log2-coll", "[%d]host::host_auth - SWITCH", m_id);
+    Debug("log-coll", "[%d]host::host_auth - SWITCH", m_id);
     m_host_state = LOG_COLL_HOST_AUTH;
     return read_start();
 
   case LOG_COLL_EVENT_READ_COMPLETE:
-    Debug("log2-coll", "[%d]host::host_auth - READ_COMPLETE", m_id);
+    Debug("log-coll", "[%d]host::host_auth - READ_COMPLETE", m_id);
     {
       // compare authorization secrets
       ink_assert(m_read_buffer != NULL);
@@ -175,10 +175,10 @@ LogCollationHostSM::host_auth(int event, void *data)
       delete[]m_read_buffer;
       m_read_buffer = 0;
       if (!diff) {
-        Debug("log2-coll", "[%d]host::host_auth - authenticated!", m_id);
+        Debug("log-coll", "[%d]host::host_auth - authenticated!", m_id);
         return host_recv(LOG_COLL_EVENT_SWITCH, NULL);
       } else {
-        Debug("log2-coll", "[%d]host::host_auth - authenticated failed!", m_id);
+        Debug("log-coll", "[%d]host::host_auth - authenticated failed!", m_id);
         Note("[log-coll] authentication failed [%d.%d.%d.%d:%d]",
              ((unsigned char *) (&m_client_ip))[0],
              ((unsigned char *) (&m_client_ip))[1],
@@ -189,7 +189,7 @@ LogCollationHostSM::host_auth(int event, void *data)
     }
 
   case LOG_COLL_EVENT_ERROR:
-    Debug("log2-coll", "[%d]host::host_auth - ERROR", m_id);
+    Debug("log-coll", "[%d]host::host_auth - ERROR", m_id);
     return host_done(LOG_COLL_EVENT_SWITCH, NULL);
 
   default:
@@ -210,11 +210,11 @@ LogCollationHostSM::host_done(int event, void *data)
 {
   NOWARN_UNUSED(event);
   NOWARN_UNUSED(data);
-  Debug("log2-coll", "[%d]host::host_done", m_id);
+  Debug("log-coll", "[%d]host::host_done", m_id);
 
   // close connections
   if (m_client_vc) {
-    Debug("log2-coll", "[%d]host::host_done - disconnecting!", m_id);
+    Debug("log-coll", "[%d]host::host_done - disconnecting!", m_id);
     m_client_vc->do_io_close();
     m_client_vc = 0;
     Note("[log-coll] client disconnected [%d.%d.%d.%d:%d]",
@@ -244,7 +244,7 @@ int
 LogCollationHostSM::host_init(int event, void *data)
 {
   NOWARN_UNUSED(data);
-  Debug("log2-coll", "[%d]host::host_init", m_id);
+  Debug("log-coll", "[%d]host::host_init", m_id);
 
   switch (event) {
 
@@ -278,17 +278,17 @@ int
 LogCollationHostSM::host_recv(int event, void *data)
 {
   NOWARN_UNUSED(data);
-  Debug("log2-coll", "[%d]host::host_recv", m_id);
+  Debug("log-coll", "[%d]host::host_recv", m_id);
 
   switch (event) {
 
   case LOG_COLL_EVENT_SWITCH:
-    Debug("log2-coll", "[%d]host::host_recv - SWITCH", m_id);
+    Debug("log-coll", "[%d]host::host_recv - SWITCH", m_id);
     m_host_state = LOG_COLL_HOST_RECV;
     return read_start();
 
   case LOG_COLL_EVENT_READ_COMPLETE:
-    Debug("log2-coll", "[%d]host::host_recv - READ_COMPLETE", m_id);
+    Debug("log-coll", "[%d]host::host_recv - READ_COMPLETE", m_id);
     {
       // grab the log_buffer
       LogBufferHeader *log_buffer_header;
@@ -317,7 +317,7 @@ LogCollationHostSM::host_recv(int event, void *data)
           log_object = Log::global_scrap_object;
         }
         log_format = log_object->m_format;
-        Debug("log2-coll", "[%d]host::host_recv - using format '%s'", m_id, log_format->name());
+        Debug("log-coll", "[%d]host::host_recv - using format '%s'", m_id, log_format->name());
 
         // make a new LogBuffer (log_buffer_header plus subsequent
         // buffer already converted to host order) and add it to the
@@ -332,7 +332,7 @@ LogCollationHostSM::host_recv(int event, void *data)
       }
 
 #if defined(LOG_BUFFER_TRACKING)
-      Debug("log2-buftrak", "[%d]host::host_recv - network read complete", log_buffer_header->id);
+      Debug("log-buftrak", "[%d]host::host_recv - network read complete", log_buffer_header->id);
 #endif // defined(LOG_BUFFER_TRACKING)
 
       // get ready for next read (memory may not be freed!!!)
@@ -343,7 +343,7 @@ LogCollationHostSM::host_recv(int event, void *data)
     }
 
   case LOG_COLL_EVENT_ERROR:
-    Debug("log2-coll", "[%d]host::host_recv - ERROR", m_id);
+    Debug("log-coll", "[%d]host::host_recv - ERROR", m_id);
     return host_done(LOG_COLL_EVENT_SWITCH, NULL);
 
   default:
@@ -371,7 +371,7 @@ int
 LogCollationHostSM::read_start()
 {
 
-  Debug("log2-coll", "[%d]host::read_start", m_id);
+  Debug("log-coll", "[%d]host::read_start", m_id);
 
   SET_HANDLER((LogCollationHostSMHandler) & LogCollationHostSM::read_handler);
   if (m_read_buffer) {
@@ -390,45 +390,45 @@ int
 LogCollationHostSM::read_hdr(int event, VIO * vio)
 {
 
-  Debug("log2-coll", "[%d]host::read_hdr", m_id);
+  Debug("log-coll", "[%d]host::read_hdr", m_id);
 
   switch (event) {
 
   case LOG_COLL_EVENT_SWITCH:
-    Debug("log2-coll", "[%d]host:read_hdr - SWITCH", m_id);
+    Debug("log-coll", "[%d]host:read_hdr - SWITCH", m_id);
     m_read_state = LOG_COLL_READ_HDR;
 
     m_read_bytes_wanted = sizeof(NetMsgHeader);
     m_read_bytes_received = 0;
     m_read_buffer = (char *) &m_net_msg_header;
     ink_assert(m_client_vc != NULL);
-    Debug("log2-coll", "[%d]host:read_hdr - do_io_read(%d)", m_id, m_read_bytes_wanted);
+    Debug("log-coll", "[%d]host:read_hdr - do_io_read(%d)", m_id, m_read_bytes_wanted);
     m_client_vio = m_client_vc->do_io_read(this, m_read_bytes_wanted, m_client_buffer);
     ink_assert(m_client_vio != NULL);
     return EVENT_CONT;
 
   case VC_EVENT_IMMEDIATE:
-    Debug("log2-coll", "[%d]host::read_hdr - IMMEDIATE", m_id);
+    Debug("log-coll", "[%d]host::read_hdr - IMMEDIATE", m_id);
     return EVENT_CONT;
 
   case VC_EVENT_READ_READY:
-    Debug("log2-coll", "[%d]host::read_hdr - READ_READY", m_id);
+    Debug("log-coll", "[%d]host::read_hdr - READ_READY", m_id);
     read_partial(vio);
     return EVENT_CONT;
 
   case VC_EVENT_READ_COMPLETE:
-    Debug("log2-coll", "[%d]host::read_hdr - READ_COMPLETE", m_id);
+    Debug("log-coll", "[%d]host::read_hdr - READ_COMPLETE", m_id);
     read_partial(vio);
     ink_assert(m_read_bytes_wanted == m_read_bytes_received);
     return read_body(LOG_COLL_EVENT_SWITCH, NULL);
 
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
-    Debug("log2-coll", "[%d]host::read_hdr - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]host::read_hdr - EOS|ERROR", m_id);
     return read_done(LOG_COLL_EVENT_ERROR, NULL);
 
   default:
-    Debug("log2-coll", "[%d]host::read_hdr - default %d", m_id, event);
+    Debug("log-coll", "[%d]host::read_hdr - default %d", m_id, event);
     return read_done(LOG_COLL_EVENT_ERROR, NULL);
 
   }
@@ -444,12 +444,12 @@ int
 LogCollationHostSM::read_body(int event, VIO * vio)
 {
 
-  Debug("log2-coll", "[%d]host::read_body", m_id);
+  Debug("log-coll", "[%d]host::read_body", m_id);
 
   switch (event) {
 
   case LOG_COLL_EVENT_SWITCH:
-    Debug("log2-coll", "[%d]host:read_body - SWITCH", m_id);
+    Debug("log-coll", "[%d]host:read_body - SWITCH", m_id);
     m_read_state = LOG_COLL_READ_BODY;
 
     m_read_bytes_wanted = ntohl(m_net_msg_header.htonl_size);
@@ -458,33 +458,33 @@ LogCollationHostSM::read_body(int event, VIO * vio)
     m_read_buffer = new char[m_read_bytes_wanted];
     ink_assert(m_read_buffer != NULL);
     ink_assert(m_client_vc != NULL);
-    Debug("log2-coll", "[%d]host:read_body - do_io_read(%d)", m_id, m_read_bytes_wanted);
+    Debug("log-coll", "[%d]host:read_body - do_io_read(%d)", m_id, m_read_bytes_wanted);
     m_client_vio = m_client_vc->do_io_read(this, m_read_bytes_wanted, m_client_buffer);
     ink_assert(m_client_vio != NULL);
     return EVENT_CONT;
 
   case VC_EVENT_IMMEDIATE:
-    Debug("log2-coll", "[%d]host::read_body - IMMEDIATE", m_id);
+    Debug("log-coll", "[%d]host::read_body - IMMEDIATE", m_id);
     return EVENT_CONT;
 
   case VC_EVENT_READ_READY:
-    Debug("log2-coll", "[%d]host::read_body - READ_READY", m_id);
+    Debug("log-coll", "[%d]host::read_body - READ_READY", m_id);
     read_partial(vio);
     return EVENT_CONT;
 
   case VC_EVENT_READ_COMPLETE:
-    Debug("log2-coll", "[%d]host::read_body - READ_COMPLETE", m_id);
+    Debug("log-coll", "[%d]host::read_body - READ_COMPLETE", m_id);
     read_partial(vio);
     ink_assert(m_read_bytes_wanted == m_read_bytes_received);
     return read_done(LOG_COLL_EVENT_READ_COMPLETE, NULL);
 
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
-    Debug("log2-coll", "[%d]host::read_body - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]host::read_body - EOS|ERROR", m_id);
     return read_done(LOG_COLL_EVENT_ERROR, NULL);
 
   default:
-    Debug("log2-coll", "[%d]host::read_body - default %d", m_id, event);
+    Debug("log-coll", "[%d]host::read_body - default %d", m_id, event);
     return read_done(LOG_COLL_EVENT_ERROR, NULL);
 
   }
@@ -526,6 +526,6 @@ LogCollationHostSM::read_partial(VIO * vio)
   m_read_bytes_received += bytes_received_now;
 
   // stats
-  LOG_SUM_DYN_STAT(log2_stat_bytes_received_from_network_stat, bytes_received_now);
+  LOG_SUM_DYN_STAT(log_stat_bytes_received_from_network_stat, bytes_received_now);
 
 }

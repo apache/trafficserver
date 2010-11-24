@@ -499,50 +499,50 @@ logging			Logging Configuration
   behavior:  Display Logging Configuration
 
   ts> show:logging
-  Logging Mode ------------- xxx       (proxy.config.log2.logging_enabled)
+  Logging Mode ------------- xxx       (proxy.config.log.logging_enabled)
 
   Management  
-    Log Space Limit -------- 2000 MB  (proxy.config.log2.max_space_mb_for_logs)
-    Log Space Headroom ----- 10 MB    (proxy.config.log2.max_space_mb_headroom)
+    Log Space Limit -------- 2000 MB  (proxy.config.log.max_space_mb_for_logs)
+    Log Space Headroom ----- 10 MB    (proxy.config.log.max_space_mb_headroom)
 
-  Log Collation ------------ off      (proxy.local.log2.collation_mode)
-    Host ------------------- NULL     (proxy.config.log2.collation_host)
-    Port ------------------- 8085     (proxy.config.log2.collation_port)
-    Secret ----------------- foobar   (proxy.config.log2.collation_secret)
-    Host Tagged ------------ off      (proxy.config.log2.collation_host_tagged)
-    Space Limit for Orphan Files -- 25 MB   (proxy.config.log2.max_space_mb_for_orphan_logs)
+  Log Collation ------------ off      (proxy.local.log.collation_mode)
+    Host ------------------- NULL     (proxy.config.log.collation_host)
+    Port ------------------- 8085     (proxy.config.log.collation_port)
+    Secret ----------------- foobar   (proxy.config.log.collation_secret)
+    Host Tagged ------------ off      (proxy.config.log.collation_host_tagged)
+    Space Limit for Orphan Files -- 25 MB   (proxy.config.log.max_space_mb_for_orphan_logs)
 
-  Squid Format ---- on             (proxy.config.log2.squid_log_enabled)
-    File Type ----- ASCII          (proxy.config.log2.squid_log_is_ascii)
-    File Name ----- squid          (proxy.config.log2.squid_log_name)
-    File Header --- NULL           (proxy.config.log2.squid_log_header)
+  Squid Format ---- on             (proxy.config.log.squid_log_enabled)
+    File Type ----- ASCII          (proxy.config.log.squid_log_is_ascii)
+    File Name ----- squid          (proxy.config.log.squid_log_name)
+    File Header --- NULL           (proxy.config.log.squid_log_header)
 
-  Netscape Common -- off         (proxy.config.log2.common_log_enabled)
-    File Type ------ ASCII       (proxy.config.log2.common_log_is_ascii)
-    File Name ------ common      (proxy.config.log2.common_log_name)
-    File Header ---- NULL        (proxy.config.log2.common_log_header)
+  Netscape Common -- off         (proxy.config.log.common_log_enabled)
+    File Type ------ ASCII       (proxy.config.log.common_log_is_ascii)
+    File Name ------ common      (proxy.config.log.common_log_name)
+    File Header ---- NULL        (proxy.config.log.common_log_header)
 
-  Netscape Extended -- off       (proxy.config.log2.extended_log_enabled)
-    File Type -------- ASCII     (proxy.config.log2.extended_log_is_ascii)
-    File Name -------- extended  (proxy.config.log2.extended_log_name)
-    File Header ------ NULL      (proxy.config.log2.extended_log_header)
+  Netscape Extended -- off       (proxy.config.log.extended_log_enabled)
+    File Type -------- ASCII     (proxy.config.log.extended_log_is_ascii)
+    File Name -------- extended  (proxy.config.log.extended_log_name)
+    File Header ------ NULL      (proxy.config.log.extended_log_header)
 
-  Netscape Extended2 -- off       (proxy.config.log2.extended2_log_enabled)
-    File Type --------- ASCII     (proxy.config.log2.extended2_log_is_ascii)
-    File Name --------- extended2 (proxy.config.log2.extended2_log_name)
-    File Header ------- NULL      (proxy.config.log2.extended2_log_header)
+  Netscape Extended2 -- off       (proxy.config.log.extended2_log_enabled)
+    File Type --------- ASCII     (proxy.config.log.extended2_log_is_ascii)
+    File Name --------- extended2 (proxy.config.log.extended2_log_name)
+    File Header ------- NULL      (proxy.config.log.extended2_log_header)
 
   Splitting
-    ICP Log Splitting -- off        (proxy.config.log2.separate_icp_logs)
-    HTTP Host Log Splitting -- off  (proxy.config.log2.separate_host_logs)
+    ICP Log Splitting -- off        (proxy.config.log.separate_icp_logs)
+    HTTP Host Log Splitting -- off  (proxy.config.log.separate_host_logs)
 
-  Custom Logs -- off              (proxy.config.log2.custom_logs_enabled)
-  Custom Log Definition Format -- Traditional (proxy.config.log2.xml_logs_config)
+  Custom Logs -- off              (proxy.config.log.custom_logs_enabled)
+  Custom Log Definition Format -- Traditional (proxy.config.log.xml_logs_config)
 
-  Rolling -------- on               (proxy.config.log2.rolling_enabled)
-    Roll Offset Hour --- 0          (proxy.config.log2.rolling_offset_hr)
-    Roll Interval ------ 86400 s               (proxy.config.log2.rolling_interval_sec)
-  Auto-delete rolled files when space is low -- on  (proxy.config.log2.auto_delete_rolled_files)
+  Rolling -------- on               (proxy.config.log.rolling_enabled)
+    Roll Offset Hour --- 0          (proxy.config.log.rolling_offset_hr)
+    Roll Interval ------ 86400 s               (proxy.config.log.rolling_interval_sec)
+  Auto-delete rolled files when space is low -- on  (proxy.config.log.auto_delete_rolled_files)
   ts>
 
 ssl			SSL Ports
@@ -810,11 +810,11 @@ logging-stats		Logging Statistics
   behavior:  Display Logging statistics.
 
   ts> show:logging-stats
-  Currently Open Log Files --------- 0       (proxy.process.log2.log_files_open)
-  Space Used For Log Files --------- 0       (proxy.process.log2.log_files_space_used)
-  Number of Access Events Logged --- 0       (proxy.process.log2.event_log_access)
-  Number of Access Events Skipped -- 0       (proxy.process.log2.event_log_access_skip)
-  Number of Error Events Logged ---- 0       (proxy.process.log2.event_log_error)
+  Currently Open Log Files --------- 0       (proxy.process.log.log_files_open)
+  Space Used For Log Files --------- 0       (proxy.process.log.log_files_space_used)
+  Number of Access Events Logged --- 0       (proxy.process.log.event_log_access)
+  Number of Access Events Skipped -- 0       (proxy.process.log.event_log_access_skip)
+  Number of Error Events Logged ---- 0       (proxy.process.log.event_log_error)
   ts>
 
 network                Network Settings
@@ -1242,7 +1242,7 @@ dns			DNS Configuration
 
 logging			Logging Configuration
   syntax:  config:logging event <enabled | trans-only | error-only | disabled>
-  records: proxy.config.log2.logging_enabled
+  records: proxy.config.log.logging_enabled
 
     ts# config:logging event enabled
     +OK
@@ -1253,7 +1253,7 @@ logging			Logging Configuration
     ts#
 
   syntax:  config:logging mgmt-directory <dir>
-  records: proxy.config.log2.logfile_dir
+  records: proxy.config.log.logfile_dir
 
     ts# config:logging mgmt-directory /usr/local/var/log/trafficserver
     +OK
@@ -1261,7 +1261,7 @@ logging			Logging Configuration
 
   syntax:  config:logging space-limit <mb>
   args:    <mb> = log space limit (MB)
-  records: proxy.config.log2.max_space_mb_for_logs
+  records: proxy.config.log.max_space_mb_for_logs
 
     ts# config:logging space-limit 10
     +OK
@@ -1269,7 +1269,7 @@ logging			Logging Configuration
 
   syntax:  config:logging space-headroom <mb>
   args:    <mb> = log space headroom (MB)
-  records: proxy.config.log2.max_space_mb_headroom
+  records: proxy.config.log.max_space_mb_headroom
 
     ts# config:logging space-headroom 100
     +OK
@@ -1277,7 +1277,7 @@ logging			Logging Configuration
 
   syntax:  config:logging collation-status <inactive | host | send-standard | send-custom | send-all>
   args:    inactive = 0, host = 1, send-standard = 2, send-custom = 3, send-all = 4
-  records: proxy.local.log2.collation_mode
+  records: proxy.local.log.collation_mode
 
     ts# config:logging collation-status inactive
     +OK
@@ -1289,7 +1289,7 @@ logging			Logging Configuration
 
   syntax:  config:logging collation-host <host>
   args:    <host> is a remote collation host
-  records: proxy.config.log2.collation_host
+  records: proxy.config.log.collation_host
 
     ts# config:log collation-host config1
     +OK
@@ -1298,9 +1298,9 @@ logging			Logging Configuration
   syntax:  config:logging collation secret <secret> tagged <on | off> orphan-limit <orphan>
   args:    <secret> = string
            <orphan> = size in MB
-  records: <secret> = proxy.config.log2.collation_port
-           tagged   = proxy.config.log2.collation_host_tagged
-           <orphan> = proxy.config.log2.collation_secret
+  records: <secret> = proxy.config.log.collation_port
+           tagged   = proxy.config.log.collation_host_tagged
+           <orphan> = proxy.config.log.collation_secret
 
     ts# config:logging collation secret foobar tagged on orphan-limit 10
     +OK
@@ -1310,50 +1310,50 @@ logging			Logging Configuration
                   <on | off> type <ascii | binary> file <file> header <header>
 
   squid
-    args:    <on | off> = proxy.config.log2.squid_log_enabled
-             type       = proxy.config.log2.squid_log_is_ascii <ascii=1, binary=0>
-             file       = proxy.config.log2.squid_log_name
-             header     = proxy.config.log2.squid_log_header
+    args:    <on | off> = proxy.config.log.squid_log_enabled
+             type       = proxy.config.log.squid_log_is_ascii <ascii=1, binary=0>
+             file       = proxy.config.log.squid_log_name
+             header     = proxy.config.log.squid_log_header
   netscape-common
-    args:    <on | off> = proxy.config.log2.common_log_enabled
-             type       = proxy.config.log2.common_log_is_ascii <ascii=1, binary=0>
-             file       = proxy.config.log2.common_log_name
-             header     = proxy.config.log2.common_log_header
+    args:    <on | off> = proxy.config.log.common_log_enabled
+             type       = proxy.config.log.common_log_is_ascii <ascii=1, binary=0>
+             file       = proxy.config.log.common_log_name
+             header     = proxy.config.log.common_log_header
   netscape-ext
-    args:    <on | off> = proxy.config.log2.extended_log_enabled
-             type       = proxy.config.log2.extended_log_is_ascii <ascii=1, binary=0>
-             file       = proxy.config.log2.extended_log_name
-             header     = proxy.config.log2.extended_log_header
+    args:    <on | off> = proxy.config.log.extended_log_enabled
+             type       = proxy.config.log.extended_log_is_ascii <ascii=1, binary=0>
+             file       = proxy.config.log.extended_log_name
+             header     = proxy.config.log.extended_log_header
   netscape-ext2
-    args:    <on | off> = proxy.config.log2.extended2_log_enabled
-             type       = proxy.config.log2.extended2_log_is_ascii <ascii=1, binary=0>
-             file       = proxy.config.log2.extended2_log_name
-             header     = proxy.config.log2.extended2_log_header
+    args:    <on | off> = proxy.config.log.extended2_log_enabled
+             type       = proxy.config.log.extended2_log_is_ascii <ascii=1, binary=0>
+             file       = proxy.config.log.extended2_log_name
+             header     = proxy.config.log.extended2_log_header
 
     ts# config:log format squid on type ascii file squid.log
     +OK
     ts#
 
   syntax:  config:logging splitting <icp | http> <on | off>
-  records:  proxy.config.log2.separate_icp_logs  <icp>
-            proxy.config.log2.separate_host_logs <http>
+  records:  proxy.config.log.separate_icp_logs  <icp>
+            proxy.config.log.separate_host_logs <http>
 
     ts# config:log split icp on
     +OK
     ts#
 
   syntax:  config:logging custom <on | off> format <traditional | xml>
-  records:  proxy.config.log2.custom_logs_enabled
-            proxy.config.log2.xml_logs_config <traditional=0, xml=1>
+  records:  proxy.config.log.custom_logs_enabled
+            proxy.config.log.xml_logs_config <traditional=0, xml=1>
 
     ts# config:logging custom on format xml
     +OK
     ts#
 
   syntax:  config:logging rolling <on | off> offset <hour> interval <num-hours> auto-delete <on | off>
-  records: proxy.config.log2.rolling_enabled
-           proxy.config.log2.rolling_offset_hr (24hour format)
-           proxy.config.log2.rolling_interval_sec (seconds)
+  records: proxy.config.log.rolling_enabled
+           proxy.config.log.rolling_offset_hr (24hour format)
+           proxy.config.log.rolling_interval_sec (seconds)
 
     ts# config:logging rolling on offset 0 interval 1 auto-delete off
     +OK

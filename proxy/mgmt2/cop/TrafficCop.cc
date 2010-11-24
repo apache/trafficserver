@@ -654,13 +654,13 @@ read_config()
       cop_log(COP_FATAL, "please set 'proxy.config.bin_path' \n");
     }
   }
-  read_config_string("proxy.config.log2.logfile_dir", log_dir, sizeof(log_dir));
+  read_config_string("proxy.config.log.logfile_dir", log_dir, sizeof(log_dir));
   Layout::get()->relative(log_dir, sizeof(log_dir), log_dir);
   if (access(log_dir, W_OK) == -1) {
     ink_strlcpy(log_dir, Layout::get()->logdir, sizeof(log_dir));
     if (access(log_dir, W_OK) == -1) {
       cop_log(COP_FATAL, "could not access() \"%s\"\n", log_dir);
-      cop_log(COP_FATAL, "please set 'proxy.config.log2.logfile_dir' \n");
+      cop_log(COP_FATAL, "please set 'proxy.config.log.logfile_dir' \n");
     }
   }
   read_config_string("proxy.config.output.logfile", log_filename, sizeof(log_filename));

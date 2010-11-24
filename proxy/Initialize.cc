@@ -137,7 +137,7 @@ init_system_dirs(void)
     if ((err = stat(system_log_dir, &s)) < 0) {
       fprintf(stderr,"unable to stat() log dir'%s': %d %d, %s\n",
               system_log_dir, err, errno, strerror(errno));
-      fprintf(stderr,"please set 'proxy.config.log2.logfile_dir'\n");
+      fprintf(stderr,"please set 'proxy.config.log.logfile_dir'\n");
       _exit(1);
     }
   }

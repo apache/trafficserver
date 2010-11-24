@@ -113,13 +113,13 @@ LogFilter::filter_from_specification(char *spec,
   //
   token = strtok(spec, ":");
   if (token == NULL) {
-    Debug("log2-filter", "token expected");
+    Debug("log-filter", "token expected");
     return NULL;
   }
   if (!strcasecmp(token, "filter")) {
-    Debug("log2-filter", "this is a filter");
+    Debug("log-filter", "this is a filter");
   } else {
-    Debug("log2-filter", "should be 'filter'");
+    Debug("log-filter", "should be 'filter'");
     return NULL;
   }
 
@@ -127,7 +127,7 @@ LogFilter::filter_from_specification(char *spec,
   //
   token = strtok(NULL, ":");
   if (token == NULL) {
-    Debug("log2-filter", "token expected");
+    Debug("log-filter", "token expected");
     return NULL;
   }
 
@@ -143,7 +143,7 @@ LogFilter::filter_from_specification(char *spec,
   //
   token = strtok(NULL, ":");
   if (token == NULL) {
-    Debug("log2-filter", "token expected");
+    Debug("log-filter", "token expected");
     return NULL;
   }
   field_name = token;
@@ -170,7 +170,7 @@ LogFilter::filter_from_specification(char *spec,
   //
   token = strtok(NULL, ":");
   if (token == NULL) {
-    Debug("log2-filter", "token expected");
+    Debug("log-filter", "token expected");
     return NULL;
   }
   int op;
@@ -196,7 +196,7 @@ LogFilter::filter_from_specification(char *spec,
   //
   token = strtok(NULL, ":");
   if (token == NULL) {
-    Debug("log2-filter", "token expected");
+    Debug("log-filter", "token expected");
     return NULL;
   }
   value = token;

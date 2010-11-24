@@ -121,7 +121,7 @@ LogHost::set_name_port(char *hostname, unsigned int pt)
   m_name = xstrdup(hostname);
   m_port = pt;
 
-  Debug("log2-host", "LogHost established as %s:%u", name(), port());
+  Debug("log-host", "LogHost established as %s:%u", name(), port());
 
   create_orphan_LogFile_object();
   return 0;
@@ -142,7 +142,7 @@ LogHost::set_ipstr_port(char *ipstr, unsigned int pt)
   m_name = xstrdup(ipstr);
   m_port = pt;
 
-  Debug("log2-host", "LogHost established as %s:%u", name(), port());
+  Debug("log-host", "LogHost established as %s:%u", name(), port());
 
   create_orphan_LogFile_object();
   return 0;
@@ -191,7 +191,7 @@ bool LogHost::connect()
     return true;
   }
 
-  Debug("log2-host", "Connecting to LogHost %s:%u", name(), port());
+  Debug("log-host", "Connecting to LogHost %s:%u", name(), port());
 
   disconnect();                 // make sure connection members are initialized
 
@@ -265,9 +265,9 @@ LogHost::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
     return orphan_write(lb);
   }
 
-  Debug("log2-host", "%d bytes sent to LogHost %s:%u", bytes_sent, name(), port());
+  Debug("log-host", "%d bytes sent to LogHost %s:%u", bytes_sent, name(), port());
   // BUGBUG:: fix this, Log Collation should work on NT as well
-  SUM_DYN_STAT(log2_stat_bytes_sent_to_network_stat, bytes_sent);
+  SUM_DYN_STAT(log_stat_bytes_sent_to_network_stat, bytes_sent);
   return bytes_sent;
 
 #else // !defined(IOCORE_LOG_COLLATION)
@@ -293,7 +293,7 @@ LogHost::write(LogBuffer * lb, size_t * to_disk, size_t * to_net, size_t * to_pi
 #ifndef TS_MICRO
     bytes_sent = orphan_write_and_delete(lb_copy, to_disk);
 #if defined(LOG_BUFFER_TRACKING)
-    Debug("log2-buftrak", "[%d]LogHost::write - orphan write complete", lb_copy->header()->id);
+    Debug("log-buftrak", "[%d]LogHost::write - orphan write complete", lb_copy->header()->id);
 #endif // defined(LOG_BUFFER_TRACKING)
 #else
     Note("Starting dropping log buffer due to overloading");
@@ -337,7 +337,7 @@ int
 LogHost::orphan_write(LogBuffer * lb, size_t * to_file)
 {
   if (!Log::config->logging_space_exhausted) {
-    Debug("log2-host", "Sending LogBuffer to orphan file %s", m_orphan_file->get_name());
+    Debug("log-host", "Sending LogBuffer to orphan file %s", m_orphan_file->get_name());
     return m_orphan_file->write(lb, to_file);
   } else {
     return 0;                   // nothing written
@@ -394,7 +394,7 @@ bool LogHost::authenticated()
     return false;
   }
 
-  Debug("log2-host", "Authenticating LogHost %s ...", name());
+  Debug("log-host", "Authenticating LogHost %s ...", name());
   char *
     auth_key = Log::config->collation_secret;
   unsigned
@@ -402,11 +402,11 @@ bool LogHost::authenticated()
   int
     bytes = m_sock->write(m_sock_fd, auth_key, auth_key_len);
   if ((unsigned) bytes != auth_key_len) {
-    Debug("log2-host", "... bad write on authenticate");
+    Debug("log-host", "... bad write on authenticate");
     return false;
   }
 
-  Debug("log2-host", "... authenticated");
+  Debug("log-host", "... authenticated");
   return true;
 }
 

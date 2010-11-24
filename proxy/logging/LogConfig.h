@@ -35,18 +35,18 @@
    */
 enum
 {
-  log2_stat_bytes_buffered_stat,
-  log2_stat_bytes_written_to_disk_stat,
-  log2_stat_bytes_sent_to_network_stat,
-  log2_stat_bytes_received_from_network_stat,
+  log_stat_bytes_buffered_stat,
+  log_stat_bytes_written_to_disk_stat,
+  log_stat_bytes_sent_to_network_stat,
+  log_stat_bytes_received_from_network_stat,
   // Logging I/O
-  log2_stat_log_files_open_stat,
-  log2_stat_log_files_space_used_stat,
+  log_stat_log_files_open_stat,
+  log_stat_log_files_space_used_stat,
   // Logging Events
-  log2_stat_event_log_error_stat,
-  log2_stat_event_log_access_stat,
-  log2_stat_event_log_access_fail_stat,
-  log2_stat_event_log_access_skip_stat,
+  log_stat_event_log_error_stat,
+  log_stat_event_log_access_stat,
+  log_stat_event_log_access_fail_stat,
+  log_stat_event_log_access_skip_stat,
   log_stat_count
 };
 
@@ -100,7 +100,7 @@ struct LogCollationAccept;
 
   To add a new config variable:
      1. Add a line in records.config for the new config variable.
-        The name in records.config should be "proxy.config.log2.xxx".
+        The name in records.config should be "proxy.config.log.xxx".
      2. Create a member variable to store the current value.
         The name of the member variable should be "xxx".
      3. If the member variable is a string, add a delete for it in the

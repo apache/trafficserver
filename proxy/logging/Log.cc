@@ -111,7 +111,7 @@ RecRawStatBlock *log_rsb;
 void
 Log::change_configuration()
 {
-  Debug("log2-config", "Changing configuration ...");
+  Debug("log-config", "Changing configuration ...");
 
   LogConfig *new_config = NEW(new LogConfig);
   ink_assert(new_config != NULL);
@@ -121,7 +121,7 @@ Log::change_configuration()
   // the new config
   //
   ink_mutex_acquire(Log::config->log_object_manager._APImutex);
-  Debug("log2-api-mutex", "Log::change_configuration acquired api mutex");
+  Debug("log-api-mutex", "Log::change_configuration acquired api mutex");
 
   new_config->init(Log::config);
 
@@ -136,9 +136,9 @@ Log::change_configuration()
   }
 
   ink_mutex_release(Log::config->log_object_manager._APImutex);
-  Debug("log2-api-mutex", "Log::change_configuration released api mutex");
+  Debug("log-api-mutex", "Log::change_configuration released api mutex");
 
-  Debug("log2-config", "... new configuration in place");
+  Debug("log-config", "... new configuration in place");
 }
 
 void
@@ -197,28 +197,28 @@ Log::periodic_tasks(long time_now)
   // it to be zero; we will get a chance to delete it next time
   //
 
-  Debug("log2-api-mutex", "entering Log::periodic_tasks");
+  Debug("log-api-mutex", "entering Log::periodic_tasks");
   if (numInactiveObjects) {
     ink_mutex_acquire(Log::config->log_object_manager._APImutex);
-    Debug("log2-api-mutex", "Log::periodic_tasks acquired api mutex");
-    Debug("log2-periodic", "Deleting inactive_objects");
+    Debug("log-api-mutex", "Log::periodic_tasks acquired api mutex");
+    Debug("log-periodic", "Deleting inactive_objects");
     for (size_t i = 0; i < numInactiveObjects; i++) {
       delete inactive_objects[i];
     }
     numInactiveObjects = 0;
     ink_mutex_release(Log::config->log_object_manager._APImutex);
-    Debug("log2-api-mutex", "Log::periodic_tasks released api mutex");
+    Debug("log-api-mutex", "Log::periodic_tasks released api mutex");
   }
 
   if (logging_mode_changed || Log::config->reconfiguration_needed) {
-    Debug("log2-config", "Performing reconfiguration, init status = %d", init_status);
+    Debug("log-config", "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
-      int val = (int) LOG_ConfigReadInteger("proxy.config.log2.logging_enabled");
+      int val = (int) LOG_ConfigReadInteger("proxy.config.log.logging_enabled");
 
       if (val<LOG_NOTHING || val> FULL_LOGGING) {
         logging_mode = FULL_LOGGING;
-        Warning("proxy.config.log2.logging_enabled has an invalid " "value setting it to %d", logging_mode);
+        Warning("proxy.config.log.logging_enabled has an invalid " "value setting it to %d", logging_mode);
       } else {
         logging_mode = (LoggingMode) val;
       }
@@ -230,7 +230,7 @@ Log::periodic_tasks(long time_now)
     change_configuration();
   } else if (logging_mode > LOG_NOTHING || config->collation_mode == LogConfig::COLLATION_HOST ||
              config->has_api_objects()) {
-    Debug("log2-periodic", "Performing periodic tasks");
+    Debug("log-periodic", "Performing periodic tasks");
 
     // Check if space is ok and update the space used
     //
@@ -957,7 +957,7 @@ Log::handle_logging_mode_change(const char *name, RecDataT data_type, RecData da
   NOWARN_UNUSED(data_type);
   NOWARN_UNUSED(data);
   NOWARN_UNUSED(cookie);
-  Debug("log2-config", "Enabled status changed");
+  Debug("log-config", "Enabled status changed");
   logging_mode_changed = true;
   return 0;
 }
@@ -994,7 +994,6 @@ Log::init(int flags)
   } else {
 
     log_rsb = RecAllocateRawStatBlock((int) log_stat_count);
-    LogConfig::register_configs();
     LogConfig::register_stat_callbacks();
 
     config->read_configuration_variables();
@@ -1004,10 +1003,10 @@ Log::init(int flags)
       logging_mode = LOG_TRANSACTIONS_ONLY;
       config->collation_mode = LogConfig::COLLATION_HOST;
     } else {
-      int val = (int) LOG_ConfigReadInteger("proxy.config.log2.logging_enabled");
+      int val = (int) LOG_ConfigReadInteger("proxy.config.log.logging_enabled");
       if (val<LOG_NOTHING || val> FULL_LOGGING) {
         logging_mode = FULL_LOGGING;
-        Warning("proxy.config.log2.logging_enabled has an invalid " "value, setting it to %d", logging_mode);
+        Warning("proxy.config.log.logging_enabled has an invalid " "value, setting it to %d", logging_mode);
       } else {
         logging_mode = (LoggingMode) val;
       }
@@ -1018,8 +1017,8 @@ Log::init(int flags)
 
     // Clear any stat values that need to be reset on startup
     //
-    LOG_CLEAR_DYN_STAT(log2_stat_log_files_open_stat);
-    LOG_CLEAR_DYN_STAT(log2_stat_log_files_space_used_stat);
+    LOG_CLEAR_DYN_STAT(log_stat_log_files_open_stat);
+    LOG_CLEAR_DYN_STAT(log_stat_log_files_space_used_stat);
 /*
         The following variables are not cleared at startup, although
 	we probably should because otherwise their meaning is not very
@@ -1027,21 +1026,21 @@ Log::init(int flags)
 	these values since the Traffic Server was setup on the
 	machine?
 
-	LOG_CLEAR_DYN_STAT(log2_stat_bytes_written_to_disk_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_bytes_sent_to_network_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_bytes_received_from_network_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_event_log_access_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_event_log_access_skip_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_event_log_access_fail_stat);
-	LOG_CLEAR_DYN_STAT(log2_stat_event_log_error_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_bytes_written_to_disk_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_bytes_sent_to_network_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_bytes_received_from_network_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_event_log_access_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_event_log_access_skip_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_event_log_access_fail_stat);
+	LOG_CLEAR_DYN_STAT(log_stat_event_log_error_stat);
 */
     // if remote management is enabled, do all necessary initialization to
     // be able to handle a logging mode change
     //
     if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
 
-      LOG_RegisterConfigUpdateFunc("proxy.config.log2.logging_enabled", &Log::handle_logging_mode_change, NULL);
-      LOG_RegisterLocalUpdateFunc("proxy.local.log2.collation_mode", &Log::handle_logging_mode_change, NULL);
+      LOG_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, NULL);
+      LOG_RegisterLocalUpdateFunc("proxy.local.log.collation_mode", &Log::handle_logging_mode_change, NULL);
     }
   }
 }
@@ -1087,7 +1086,7 @@ Log::_init()
   }
 
   Note("logging initialized[%d], logging_mode = %d", init_status, logging_mode);
-  if (is_debug_tag_set("log2-config")) {
+  if (is_debug_tag_set("log-config")) {
     config->display();
   }
 }
@@ -1156,17 +1155,17 @@ Log::access(LogAccess * lad)
   if (Log::config->sampling_frequency > 1) {
     this_sample = sample++;
     if (this_sample && this_sample % Log::config->sampling_frequency) {
-      Debug("log2", "sampling, skipping this entry ...");
+      Debug("log", "sampling, skipping this entry ...");
       ret = Log::SKIP;
       goto done;
     } else {
-      Debug("log2", "sampling, LOGGING this entry ...");
+      Debug("log", "sampling, LOGGING this entry ...");
       sample = 1;
     }
   }
 
   if (Log::config->log_object_manager.get_num_objects() == 0) {
-    Debug("log2", "no log objects, skipping this entry ...");
+    Debug("log", "no log objects, skipping this entry ...");
     ret = Log::SKIP;
     goto done;
   }
@@ -1206,7 +1205,7 @@ Log::error(const char *format, ...)
 
     if (ret_val == Log::LOG_OK) {
       ProxyMutex *mutex = this_ethread()->mutex;
-      LOG_INCREMENT_DYN_STAT(log2_stat_event_log_error_stat);
+      LOG_INCREMENT_DYN_STAT(log_stat_event_log_error_stat);
     }
   }
   return ret_val;
@@ -1223,7 +1222,7 @@ Log::va_error(char *format, va_list ap)
 
     if (ret_val == Log::LOG_OK) {
       ProxyMutex *mutex = this_ethread()->mutex;
-      LOG_INCREMENT_DYN_STAT(log2_stat_event_log_error_stat);
+      LOG_INCREMENT_DYN_STAT(log_stat_event_log_error_stat);
     }
   }
   return ret_val;
@@ -1243,7 +1242,7 @@ Log::flush_thread_main(void *args)
   time_t now, last_time = 0;
   size_t total_bytes, bytes_to_disk, bytes_to_net, bytes_to_pipe;
 
-  Debug("log2-flush", "Log flush thread is alive ...");
+  Debug("log-flush", "Log flush thread is alive ...");
 
   while (true) {
     ink_timestruc timeout_time;
@@ -1258,10 +1257,10 @@ Log::flush_thread_main(void *args)
 
     // Update statistics
     //
-    LOG_SUM_GLOBAL_DYN_STAT(log2_stat_bytes_written_to_disk_stat, bytes_to_disk);
-    LOG_SUM_GLOBAL_DYN_STAT(log2_stat_bytes_sent_to_network_stat, bytes_to_net);
+    LOG_SUM_GLOBAL_DYN_STAT(log_stat_bytes_written_to_disk_stat, bytes_to_disk);
+    LOG_SUM_GLOBAL_DYN_STAT(log_stat_bytes_sent_to_network_stat, bytes_to_net);
 
-    Debug("log2-flush", "%d bytes flushed this round [ %d to disk, %d to net, %d to pipe]",
+    Debug("log-flush", "%d bytes flushed this round [ %d to disk, %d to net, %d to pipe]",
           total_bytes, bytes_to_disk, bytes_to_net, bytes_to_pipe);
 
     // Time to work on periodic events??
@@ -1269,7 +1268,7 @@ Log::flush_thread_main(void *args)
     now = time(NULL);
     if (now > last_time) {
       if ((now % PERIODIC_TASKS_INTERVAL) == 0) {
-        Debug("log2-flush", "periodic tasks for %ld", now);
+        Debug("log-flush", "periodic tasks for %ld", now);
         periodic_tasks(now);
       }
       last_time = (now = time(NULL));
@@ -1316,7 +1315,7 @@ Log::collate_thread_main(void *args)
   int new_client;
 
 
-  Debug("log2-thread", "Log collation thread is alive ...");
+  Debug("log-thread", "Log collation thread is alive ...");
 
   while (true) {
     ink_assert(Log::config != NULL);
@@ -1333,7 +1332,7 @@ Log::collate_thread_main(void *args)
     // work.  We still need to keep checking whether we're a collation
     // host to account for a reconfiguration.
     //
-    Debug("log2-sock", "collation thread starting, creating LogSock");
+    Debug("log-sock", "collation thread starting, creating LogSock");
     sock = NEW(new LogSock(LogSock::LS_CONST_CLUSTER_MAX_MACHINES));
     ink_assert(sock != NULL);
 
@@ -1356,11 +1355,11 @@ Log::collate_thread_main(void *args)
       }
 
       if (sock->pending_connect(0)) {
-        Debug("log2-sock", "pending connection ...");
+        Debug("log-sock", "pending connection ...");
         if ((new_client = sock->accept()) < 0) {
-          Debug("log2-sock", "error accepting new collation client");
+          Debug("log-sock", "error accepting new collation client");
         } else {
-          Debug("log2-sock", "connection %d accepted", new_client);
+          Debug("log-sock", "connection %d accepted", new_client);
           if (!sock->authorized_client(new_client, Log::config->collation_secret)) {
             Warning("Unauthorized client connecting to " "log collation port; connection refused.");
             sock->close(new_client);
@@ -1374,10 +1373,10 @@ Log::collate_thread_main(void *args)
         continue;
       }
 
-      Debug("log2-sock", "pending message ...");
+      Debug("log-sock", "pending message ...");
       header = (LogBufferHeader *) sock->read_alloc(sock_id, &bytes_read);
       if (!header) {
-        Debug("log2-sock", "Error reading LogBuffer from collation client");
+        Debug("log-sock", "Error reading LogBuffer from collation client");
         continue;
       }
 
@@ -1389,8 +1388,8 @@ Log::collate_thread_main(void *args)
         continue;
       }
 
-      Debug("log2-sock", "message accepted, size = %d", bytes_read);
-      LOG_SUM_GLOBAL_DYN_STAT(log2_stat_bytes_received_from_network_stat, bytes_read);
+      Debug("log-sock", "message accepted, size = %d", bytes_read);
+      LOG_SUM_GLOBAL_DYN_STAT(log_stat_bytes_received_from_network_stat, bytes_read);
 
       obj = match_logobject(header);
       if (!obj) {
@@ -1399,7 +1398,7 @@ Log::collate_thread_main(void *args)
       }
 
       format = obj->m_format;
-      Debug("log2-sock", "Using format '%s'", format->name());
+      Debug("log-sock", "Using format '%s'", format->name());
 
       delete[]header;
 
@@ -1412,7 +1411,7 @@ Log::collate_thread_main(void *args)
 //          ink_mutex_release (&flush_mutex);
     }
 
-    Debug("log2", "no longer collation host, deleting LogSock");
+    Debug("log", "no longer collation host, deleting LogSock");
     delete sock;
   }
   /* NOTREACHED */
