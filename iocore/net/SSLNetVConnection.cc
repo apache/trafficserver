@@ -401,8 +401,12 @@ SSLNetVConnection::free(EThread * t) {
   this->mutex.clear();
   flags = 0;
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler) & SSLNetVConnection::startEvent);
-  ink_assert(con.fd == NO_FD);
   nh = NULL;
+  read.triggered = 0;
+  write.triggered = 0;
+  options.reset();
+  closed = 0;
+  ink_assert(con.fd == NO_FD);
   read_calls = 0;
   write_calls = 0;
   connect_calls = 0;
