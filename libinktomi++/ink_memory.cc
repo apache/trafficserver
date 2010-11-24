@@ -59,7 +59,7 @@ ink_malloc(size_t size)
    */
 
   // Useful for tracing bad mallocs
-  //ink_stack_trace_dump();
+  // ink_stack_trace_dump();
   if (likely(size > 0)) {
     if (unlikely((ptr = malloc(size)) == NULL)) {
       xdump();

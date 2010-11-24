@@ -159,7 +159,7 @@ new_HdrStrHeap(int requested_size)
     alloc_size = HDR_STR_HEAP_DEFAULT_SIZE;
     sh = (HdrStrHeap *) strHeapAllocator.alloc_void();
   } else {
-    alloc_size = ROUND(alloc_size, 2048);
+    alloc_size = ROUND(alloc_size, HDR_STR_HEAP_DEFAULT_SIZE*2);
     sh = (HdrStrHeap *) xmalloc(alloc_size);
   }
 

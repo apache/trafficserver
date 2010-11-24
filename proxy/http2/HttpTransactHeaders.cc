@@ -494,64 +494,6 @@ HttpTransactHeaders::downgrade_request(bool * origin_server_keep_alive, HTTPHdr 
 
   return true;
 }
-
-
-bool
-HttpTransactHeaders::generate_basic_authorization_from_request(Arena *arena, HTTPHdr *h, char **username, char **password)
-{
-  const char *auth_value;
-  const char *auth_end;
-  const char *ciphertext;
-  const char *name_password;
-  const char *name_password_end;
-  const char *password_p;
-  const char *username_p;
-  int auth_len, username_len, password_len;
-  int name_password_len;
-
-  *username = NULL;
-  *password = NULL;
-
-  auth_value = h->value_get(MIME_FIELD_AUTHORIZATION, MIME_LEN_AUTHORIZATION, &auth_len);
-  if (!auth_value)
-    return false;
-  auth_end = auth_value + auth_len;
-
-  // NOTE: strncasecmp_eow returns true on a match!
-  if (ParseRules::strncasecmp_eow(auth_value, "Basic ", min(6, auth_len)) == 0)
-    return (false);
-
-  // skip whitespace up to the start of the ciphertext
-  for (ciphertext = auth_value + 5; ((ciphertext < auth_end) && ParseRules::is_ws(*ciphertext)); ++ciphertext);
-
-  // decode the encoded name+password, placing it in xmalloc'd memory
-  if (!(name_password = ink_base64_decode((char *) ciphertext, (auth_end - ciphertext), &name_password_len)))
-    return (false);
-
-  name_password_end = name_password + name_password_len;
-
-  // search for last ':' in the name_password string
-  for (password_p = name_password_end - 1; (password_p >= name_password) && (*password_p != ':'); password_p--);
-  if (password_p < name_password) {
-    xfree((void *) name_password);
-    return (false);
-  }
-  // isolate name & password pieces
-  password_p += 1;
-  username_p = name_password;
-
-  username_len = password_p - username_p - 1;
-  password_len = name_password_end - password_p;
-
-  *username = arena->str_store(username_p, username_len);
-  *password = arena->str_store(password_p, password_len);
-
-  xfree((void *) name_password);
-
-  return (true);
-}
-
-
 bool
 HttpTransactHeaders::get_wuts_code(HTTPHdr * hdr, WUTSCode * w)
 {
@@ -1005,31 +947,20 @@ void
 HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, HTTPHdr *header, HTTPWarningCode code,
                                            const char *warn_text, int warn_text_len)
 {
-  char *p;
-  char *warning_text = NULL;
-  int bufsize, i, warning_text_len;
+  int bufsize, len;
 
   // + 23 for 20 possible digits of warning code (long long max
   //  digits) & 2 spaces & the string terminator
   bufsize = http_config_param->proxy_response_via_string_len + 23;
   if (warn_text != NULL)
     bufsize += warn_text_len;
+  else
+    warn_text_len = 0; // Make sure it's really zero
 
-  warning_text = (char *) xmalloc(bufsize);
-  snprintf(warning_text, bufsize, "%3d %s ", code, http_config_param->proxy_response_via_string);
+  char warning_text[bufsize];
 
-  p = warning_text + strlen(warning_text);
-
-  if (warn_text) {
-    for (i = 0; i < warn_text_len; i++)
-      *p++ = warn_text[i];
-  }
-
-  warning_text_len = p - warning_text;
-
-  header->value_set(MIME_FIELD_WARNING, MIME_LEN_WARNING, warning_text, warning_text_len);
-
-  xfree(warning_text);
+  len = snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
+  header->value_set(MIME_FIELD_WARNING, MIME_LEN_WARNING, warning_text, len);
 }
 
 
