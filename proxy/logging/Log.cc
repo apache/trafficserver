@@ -61,6 +61,7 @@
 
 #define FLUSH_THREAD_SLEEP_TIMEOUT (1)
 #define FLUSH_THREAD_MIN_FLUSH_COUNTER (FLUSH_ARRAY_SIZE/4)
+#define PERIODIC_TASKS_INTERVAL 5 // TODO: Maybe this should be done as a config option
 
 // Log global objects
 inkcoreapi TextLogObject *Log::error_log = NULL;
@@ -183,7 +184,7 @@ Log::add_to_inactive(LogObject * object)
   Log::periodic_tasks
 
   This function contains all of the tasks that need to be done each
-  second.
+  PERIODIC_TASKS_INTERVAL seconds.
   -------------------------------------------------------------------------*/
 
 void
@@ -210,11 +211,11 @@ Log::periodic_tasks(long time_now)
   }
 
   if (logging_mode_changed || Log::config->reconfiguration_needed) {
-
     Debug("log2-config", "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
       int val = (int) LOG_ConfigReadInteger("proxy.config.log2.logging_enabled");
+
       if (val<LOG_NOTHING || val> FULL_LOGGING) {
         logging_mode = FULL_LOGGING;
         Warning("proxy.config.log2.logging_enabled has an invalid " "value setting it to %d", logging_mode);
@@ -227,10 +228,8 @@ Log::periodic_tasks(long time_now)
     // so that log objects are flushed
     //
     change_configuration();
-
-  } else if (logging_mode > LOG_NOTHING ||
-             config->collation_mode == LogConfig::COLLATION_HOST || config->has_api_objects()) {
-
+  } else if (logging_mode > LOG_NOTHING || config->collation_mode == LogConfig::COLLATION_HOST ||
+             config->has_api_objects()) {
     Debug("log2-periodic", "Performing periodic tasks");
 
     // Check if space is ok and update the space used
@@ -248,6 +247,7 @@ Log::periodic_tasks(long time_now)
     // give objects a chance to roll if they need to
     //
     int num_rolled = 0;
+
     if (Log::config->roll_log_files_now) {
       if (error_log) {
         num_rolled += error_log->roll_files(time_now);
@@ -510,73 +510,72 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "pfsc", field);
 
   Ptr<LogFieldAliasTable> cache_code_map = NEW(new LogFieldAliasTable);
-  cache_code_map->
-    init(62,
-         SQUID_LOG_EMPTY, "UNDEFINED",
-         SQUID_LOG_TCP_HIT, "TCP_HIT",
-         SQUID_LOG_TCP_DISK_HIT, "TCP_DISK_HIT",
-         SQUID_LOG_TCP_MEM_HIT, "TCP_MEM_HIT",
-         SQUID_LOG_TCP_MISS, "TCP_MISS",
-         SQUID_LOG_TCP_EXPIRED_MISS, "TCP_EXPIRED_MISS",
-         SQUID_LOG_TCP_REFRESH_HIT, "TCP_REFRESH_HIT",
-         SQUID_LOG_TCP_REF_FAIL_HIT, "TCP_REF_FAIL_HIT",
-         SQUID_LOG_TCP_REFRESH_MISS, "TCP_REFRESH_MISS",
-         SQUID_LOG_TCP_CLIENT_REFRESH, "TCP_CLIENT_REFRESH",
-         SQUID_LOG_TCP_IMS_HIT, "TCP_IMS_HIT",
-         SQUID_LOG_TCP_IMS_MISS, "TCP_IMS_MISS",
-         SQUID_LOG_TCP_SWAPFAIL, "TCP_SWAPFAIL",
-         SQUID_LOG_TCP_DENIED, "TCP_DENIED",
-         SQUID_LOG_TCP_WEBFETCH_MISS, "TCP_WEBFETCH_MISS",
-         SQUID_LOG_TCP_SPIDER_BYPASS, "TCP_SPIDER_BYPASS",
-         SQUID_LOG_TCP_FUTURE_2, "TCP_FUTURE_2",
-         SQUID_LOG_TCP_HIT_REDIRECT, "TCP_HIT_REDIRECT",
-         SQUID_LOG_TCP_MISS_REDIRECT, "TCP_MISS_REDIRECT",
-         SQUID_LOG_TCP_HIT_X_REDIRECT, "TCP_HIT_X_REDIRECT",
-         SQUID_LOG_TCP_MISS_X_REDIRECT, "TCP_MISS_X_REDIRECT",
-         SQUID_LOG_UDP_HIT, "UDP_HIT",
-         SQUID_LOG_UDP_WEAK_HIT, "UDP_WEAK_HIT",
-         SQUID_LOG_UDP_HIT_OBJ, "UDP_HIT_OBJ",
-         SQUID_LOG_UDP_MISS, "UDP_MISS",
-         SQUID_LOG_UDP_DENIED, "UDP_DENIED",
-         SQUID_LOG_UDP_INVALID, "UDP_INVALID",
-         SQUID_LOG_UDP_RELOADING, "UDP_RELOADING",
-         SQUID_LOG_UDP_FUTURE_1, "UDP_FUTURE_1",
-         SQUID_LOG_UDP_FUTURE_2, "UDP_FUTURE_2",
-         SQUID_LOG_ERR_READ_TIMEOUT, "ERR_READ_TIMEOUT",
-         SQUID_LOG_ERR_LIFETIME_EXP, "ERR_LIFETIME_EXP",
-         SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ, "ERR_NO_CLIENTS_BIG_OBJ",
-         SQUID_LOG_ERR_READ_ERROR, "ERR_READ_ERROR",
-         SQUID_LOG_ERR_CLIENT_ABORT, "ERR_CLIENT_ABORT",
-         SQUID_LOG_ERR_CONNECT_FAIL, "ERR_CONNECT_FAIL",
-         SQUID_LOG_ERR_INVALID_REQ, "ERR_INVALID_REQ",
-         SQUID_LOG_ERR_UNSUP_REQ, "ERR_UNSUP_REQ",
-         SQUID_LOG_ERR_INVALID_URL, "ERR_INVALID_URL",
-         SQUID_LOG_ERR_NO_FDS, "ERR_NO_FDS",
-         SQUID_LOG_ERR_DNS_FAIL, "ERR_DNS_FAIL",
-         SQUID_LOG_ERR_NOT_IMPLEMENTED, "ERR_NOT_IMPLEMENTED",
-         SQUID_LOG_ERR_CANNOT_FETCH, "ERR_CANNOT_FETCH",
-         SQUID_LOG_ERR_NO_RELAY, "ERR_NO_RELAY",
-         SQUID_LOG_ERR_DISK_IO, "ERR_DISK_IO",
-         SQUID_LOG_ERR_ZERO_SIZE_OBJECT, "ERR_ZERO_SIZE_OBJECT",
-         SQUID_LOG_ERR_PROXY_DENIED, "ERR_PROXY_DENIED",
-         SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED",
-         SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1",
-         SQUID_LOG_ERR_SPIDER_MEMBER_ABORTED, "ERR_SPIDER_MEMBER_ABORTED",
-         SQUID_LOG_ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION, "ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION",
-         SQUID_LOG_ERR_SPIDER_UNSUPPORTED_HTTP_VERSION, "ERR_SPIDER_UNSUPPORTED_HTTP_VERSION",
-         SQUID_LOG_ERR_SPIDER_UIF, "ERR_SPIDER_UIF",
-         SQUID_LOG_ERR_SPIDER_FUTURE_USE_1, "ERR_SPIDER_FUTURE_USE_1",
-         SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_PASSING, "ERR_SPIDER_TIMEOUT_WHILE_PASSING",
-         SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING, "ERR_SPIDER_TIMEOUT_WHILE_DRAINING",
-         SQUID_LOG_ERR_SPIDER_GENERAL_TIMEOUT, "ERR_SPIDER_GENERAL_TIMEOUT",
-         SQUID_LOG_ERR_SPIDER_CONNECT_FAILED, "ERR_SPIDER_CONNECT_FAILED",
-         SQUID_LOG_ERR_SPIDER_FUTURE_USE_2, "ERR_SPIDER_FUTURE_USE_2",
-         SQUID_LOG_ERR_SPIDER_NO_RESOURCES, "ERR_SPIDER_NO_RESOURCES",
-         SQUID_LOG_ERR_SPIDER_INTERNAL_ERROR, "ERR_SPIDER_INTERNAL_ERROR",
-         SQUID_LOG_ERR_SPIDER_INTERNAL_IO_ERROR, "ERR_SPIDER_INTERNAL_IO_ERROR",
-         SQUID_LOG_ERR_SPIDER_DNS_TEMP_ERROR, "ERR_SPIDER_DNS_TEMP_ERROR",
-         SQUID_LOG_ERR_SPIDER_DNS_HOST_NOT_FOUND, "ERR_SPIDER_DNS_HOST_NOT_FOUND",
-         SQUID_LOG_ERR_SPIDER_DNS_NO_ADDRESS, "ERR_SPIDER_DNS_NO_ADDRESS", SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
+  cache_code_map->init(62,
+                       SQUID_LOG_EMPTY, "UNDEFINED",
+                       SQUID_LOG_TCP_HIT, "TCP_HIT",
+                       SQUID_LOG_TCP_DISK_HIT, "TCP_DISK_HIT",
+                       SQUID_LOG_TCP_MEM_HIT, "TCP_MEM_HIT",
+                       SQUID_LOG_TCP_MISS, "TCP_MISS",
+                       SQUID_LOG_TCP_EXPIRED_MISS, "TCP_EXPIRED_MISS",
+                       SQUID_LOG_TCP_REFRESH_HIT, "TCP_REFRESH_HIT",
+                       SQUID_LOG_TCP_REF_FAIL_HIT, "TCP_REF_FAIL_HIT",
+                       SQUID_LOG_TCP_REFRESH_MISS, "TCP_REFRESH_MISS",
+                       SQUID_LOG_TCP_CLIENT_REFRESH, "TCP_CLIENT_REFRESH",
+                       SQUID_LOG_TCP_IMS_HIT, "TCP_IMS_HIT",
+                       SQUID_LOG_TCP_IMS_MISS, "TCP_IMS_MISS",
+                       SQUID_LOG_TCP_SWAPFAIL, "TCP_SWAPFAIL",
+                       SQUID_LOG_TCP_DENIED, "TCP_DENIED",
+                       SQUID_LOG_TCP_WEBFETCH_MISS, "TCP_WEBFETCH_MISS",
+                       SQUID_LOG_TCP_SPIDER_BYPASS, "TCP_SPIDER_BYPASS",
+                       SQUID_LOG_TCP_FUTURE_2, "TCP_FUTURE_2",
+                       SQUID_LOG_TCP_HIT_REDIRECT, "TCP_HIT_REDIRECT",
+                       SQUID_LOG_TCP_MISS_REDIRECT, "TCP_MISS_REDIRECT",
+                       SQUID_LOG_TCP_HIT_X_REDIRECT, "TCP_HIT_X_REDIRECT",
+                       SQUID_LOG_TCP_MISS_X_REDIRECT, "TCP_MISS_X_REDIRECT",
+                       SQUID_LOG_UDP_HIT, "UDP_HIT",
+                       SQUID_LOG_UDP_WEAK_HIT, "UDP_WEAK_HIT",
+                       SQUID_LOG_UDP_HIT_OBJ, "UDP_HIT_OBJ",
+                       SQUID_LOG_UDP_MISS, "UDP_MISS",
+                       SQUID_LOG_UDP_DENIED, "UDP_DENIED",
+                       SQUID_LOG_UDP_INVALID, "UDP_INVALID",
+                       SQUID_LOG_UDP_RELOADING, "UDP_RELOADING",
+                       SQUID_LOG_UDP_FUTURE_1, "UDP_FUTURE_1",
+                       SQUID_LOG_UDP_FUTURE_2, "UDP_FUTURE_2",
+                       SQUID_LOG_ERR_READ_TIMEOUT, "ERR_READ_TIMEOUT",
+                       SQUID_LOG_ERR_LIFETIME_EXP, "ERR_LIFETIME_EXP",
+                       SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ, "ERR_NO_CLIENTS_BIG_OBJ",
+                       SQUID_LOG_ERR_READ_ERROR, "ERR_READ_ERROR",
+                       SQUID_LOG_ERR_CLIENT_ABORT, "ERR_CLIENT_ABORT",
+                       SQUID_LOG_ERR_CONNECT_FAIL, "ERR_CONNECT_FAIL",
+                       SQUID_LOG_ERR_INVALID_REQ, "ERR_INVALID_REQ",
+                       SQUID_LOG_ERR_UNSUP_REQ, "ERR_UNSUP_REQ",
+                       SQUID_LOG_ERR_INVALID_URL, "ERR_INVALID_URL",
+                       SQUID_LOG_ERR_NO_FDS, "ERR_NO_FDS",
+                       SQUID_LOG_ERR_DNS_FAIL, "ERR_DNS_FAIL",
+                       SQUID_LOG_ERR_NOT_IMPLEMENTED, "ERR_NOT_IMPLEMENTED",
+                       SQUID_LOG_ERR_CANNOT_FETCH, "ERR_CANNOT_FETCH",
+                       SQUID_LOG_ERR_NO_RELAY, "ERR_NO_RELAY",
+                       SQUID_LOG_ERR_DISK_IO, "ERR_DISK_IO",
+                       SQUID_LOG_ERR_ZERO_SIZE_OBJECT, "ERR_ZERO_SIZE_OBJECT",
+                       SQUID_LOG_ERR_PROXY_DENIED, "ERR_PROXY_DENIED",
+                       SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED",
+                       SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1",
+                       SQUID_LOG_ERR_SPIDER_MEMBER_ABORTED, "ERR_SPIDER_MEMBER_ABORTED",
+                       SQUID_LOG_ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION, "ERR_SPIDER_PARENTAL_CONTROL_RESTRICTION",
+                       SQUID_LOG_ERR_SPIDER_UNSUPPORTED_HTTP_VERSION, "ERR_SPIDER_UNSUPPORTED_HTTP_VERSION",
+                       SQUID_LOG_ERR_SPIDER_UIF, "ERR_SPIDER_UIF",
+                       SQUID_LOG_ERR_SPIDER_FUTURE_USE_1, "ERR_SPIDER_FUTURE_USE_1",
+                       SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_PASSING, "ERR_SPIDER_TIMEOUT_WHILE_PASSING",
+                       SQUID_LOG_ERR_SPIDER_TIMEOUT_WHILE_DRAINING, "ERR_SPIDER_TIMEOUT_WHILE_DRAINING",
+                       SQUID_LOG_ERR_SPIDER_GENERAL_TIMEOUT, "ERR_SPIDER_GENERAL_TIMEOUT",
+                       SQUID_LOG_ERR_SPIDER_CONNECT_FAILED, "ERR_SPIDER_CONNECT_FAILED",
+                       SQUID_LOG_ERR_SPIDER_FUTURE_USE_2, "ERR_SPIDER_FUTURE_USE_2",
+                       SQUID_LOG_ERR_SPIDER_NO_RESOURCES, "ERR_SPIDER_NO_RESOURCES",
+                       SQUID_LOG_ERR_SPIDER_INTERNAL_ERROR, "ERR_SPIDER_INTERNAL_ERROR",
+                       SQUID_LOG_ERR_SPIDER_INTERNAL_IO_ERROR, "ERR_SPIDER_INTERNAL_IO_ERROR",
+                       SQUID_LOG_ERR_SPIDER_DNS_TEMP_ERROR, "ERR_SPIDER_DNS_TEMP_ERROR",
+                       SQUID_LOG_ERR_SPIDER_DNS_HOST_NOT_FOUND, "ERR_SPIDER_DNS_HOST_NOT_FOUND",
+                       SQUID_LOG_ERR_SPIDER_DNS_NO_ADDRESS, "ERR_SPIDER_DNS_NO_ADDRESS", SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
   field = NEW(new LogField("cache_result_code", "crc",
                            LogField::sINT,
                            &LogAccess::marshal_cache_result_code,
@@ -621,44 +620,43 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "pqsi", field);
 
   Ptr<LogFieldAliasTable> hierarchy_map = NEW(new LogFieldAliasTable);
-  hierarchy_map->
-    init(36,
-         SQUID_HIER_EMPTY, "EMPTY",
-         SQUID_HIER_NONE, "NONE",
-         SQUID_HIER_DIRECT, "DIRECT",
-         SQUID_HIER_SIBLING_HIT, "SIBLING_HIT",
-         SQUID_HIER_PARENT_HIT, "PARENT_HIT",
-         SQUID_HIER_DEFAULT_PARENT, "DEFAULT_PARENT",
-         SQUID_HIER_SINGLE_PARENT, "SINGLE_PARENT",
-         SQUID_HIER_FIRST_UP_PARENT, "FIRST_UP_PARENT",
-         SQUID_HIER_NO_PARENT_DIRECT, "NO_PARENT_DIRECT",
-         SQUID_HIER_FIRST_PARENT_MISS, "FIRST_PARENT_MISS",
-         SQUID_HIER_LOCAL_IP_DIRECT, "LOCAL_IP_DIRECT",
-         SQUID_HIER_FIREWALL_IP_DIRECT, "FIREWALL_IP_DIRECT",
-         SQUID_HIER_NO_DIRECT_FAIL, "NO_DIRECT_FAIL",
-         SQUID_HIER_SOURCE_FASTEST, "SOURCE_FASTEST",
-         SQUID_HIER_SIBLING_UDP_HIT_OBJ, "SIBLING_UDP_HIT_OBJ",
-         SQUID_HIER_PARENT_UDP_HIT_OBJ, "PARENT_UDP_HIT_OBJ",
-         SQUID_HIER_PASSTHROUGH_PARENT, "PASSTHROUGH_PARENT",
-         SQUID_HIER_SSL_PARENT_MISS, "SSL_PARENT_MISS",
-         SQUID_HIER_INVALID_CODE, "INVALID_CODE",
-         SQUID_HIER_TIMEOUT_DIRECT, "TIMEOUT_DIRECT",
-         SQUID_HIER_TIMEOUT_SIBLING_HIT, "TIMEOUT_SIBLING_HIT",
-         SQUID_HIER_TIMEOUT_PARENT_HIT, "TIMEOUT_PARENT_HIT",
-         SQUID_HIER_TIMEOUT_DEFAULT_PARENT, "TIMEOUT_DEFAULT_PARENT",
-         SQUID_HIER_TIMEOUT_SINGLE_PARENT, "TIMEOUT_SINGLE_PARENT",
-         SQUID_HIER_TIMEOUT_FIRST_UP_PARENT, "TIMEOUT_FIRST_UP_PARENT",
-         SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT, "TIMEOUT_NO_PARENT_DIRECT",
-         SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS, "TIMEOUT_FIRST_PARENT_MISS",
-         SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT, "TIMEOUT_LOCAL_IP_DIRECT",
-         SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT, "TIMEOUT_FIREWALL_IP_DIRECT",
-         SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL, "TIMEOUT_NO_DIRECT_FAIL",
-         SQUID_HIER_TIMEOUT_SOURCE_FASTEST, "TIMEOUT_SOURCE_FASTEST",
-         SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ, "TIMEOUT_SIBLING_UDP_HIT_OBJ",
-         SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ, "TIMEOUT_PARENT_UDP_HIT_OBJ",
-         SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT, "TIMEOUT_PASSTHROUGH_PARENT",
-         SQUID_HIER_TIMEOUT_TIMEOUT_SSL_PARENT_MISS, "TIMEOUT_TIMEOUT_SSL_PARENT_MISS",
-         SQUID_HIER_INVALID_ASSIGNED_CODE, "INVALID_ASSIGNED_CODE");
+  hierarchy_map->init(36,
+                      SQUID_HIER_EMPTY, "EMPTY",
+                      SQUID_HIER_NONE, "NONE",
+                      SQUID_HIER_DIRECT, "DIRECT",
+                      SQUID_HIER_SIBLING_HIT, "SIBLING_HIT",
+                      SQUID_HIER_PARENT_HIT, "PARENT_HIT",
+                      SQUID_HIER_DEFAULT_PARENT, "DEFAULT_PARENT",
+                      SQUID_HIER_SINGLE_PARENT, "SINGLE_PARENT",
+                      SQUID_HIER_FIRST_UP_PARENT, "FIRST_UP_PARENT",
+                      SQUID_HIER_NO_PARENT_DIRECT, "NO_PARENT_DIRECT",
+                      SQUID_HIER_FIRST_PARENT_MISS, "FIRST_PARENT_MISS",
+                      SQUID_HIER_LOCAL_IP_DIRECT, "LOCAL_IP_DIRECT",
+                      SQUID_HIER_FIREWALL_IP_DIRECT, "FIREWALL_IP_DIRECT",
+                      SQUID_HIER_NO_DIRECT_FAIL, "NO_DIRECT_FAIL",
+                      SQUID_HIER_SOURCE_FASTEST, "SOURCE_FASTEST",
+                      SQUID_HIER_SIBLING_UDP_HIT_OBJ, "SIBLING_UDP_HIT_OBJ",
+                      SQUID_HIER_PARENT_UDP_HIT_OBJ, "PARENT_UDP_HIT_OBJ",
+                      SQUID_HIER_PASSTHROUGH_PARENT, "PASSTHROUGH_PARENT",
+                      SQUID_HIER_SSL_PARENT_MISS, "SSL_PARENT_MISS",
+                      SQUID_HIER_INVALID_CODE, "INVALID_CODE",
+                      SQUID_HIER_TIMEOUT_DIRECT, "TIMEOUT_DIRECT",
+                      SQUID_HIER_TIMEOUT_SIBLING_HIT, "TIMEOUT_SIBLING_HIT",
+                      SQUID_HIER_TIMEOUT_PARENT_HIT, "TIMEOUT_PARENT_HIT",
+                      SQUID_HIER_TIMEOUT_DEFAULT_PARENT, "TIMEOUT_DEFAULT_PARENT",
+                      SQUID_HIER_TIMEOUT_SINGLE_PARENT, "TIMEOUT_SINGLE_PARENT",
+                      SQUID_HIER_TIMEOUT_FIRST_UP_PARENT, "TIMEOUT_FIRST_UP_PARENT",
+                      SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT, "TIMEOUT_NO_PARENT_DIRECT",
+                      SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS, "TIMEOUT_FIRST_PARENT_MISS",
+                      SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT, "TIMEOUT_LOCAL_IP_DIRECT",
+                      SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT, "TIMEOUT_FIREWALL_IP_DIRECT",
+                      SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL, "TIMEOUT_NO_DIRECT_FAIL",
+                      SQUID_HIER_TIMEOUT_SOURCE_FASTEST, "TIMEOUT_SOURCE_FASTEST",
+                      SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ, "TIMEOUT_SIBLING_UDP_HIT_OBJ",
+                      SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ, "TIMEOUT_PARENT_UDP_HIT_OBJ",
+                      SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT, "TIMEOUT_PASSTHROUGH_PARENT",
+                      SQUID_HIER_TIMEOUT_TIMEOUT_SSL_PARENT_MISS, "TIMEOUT_TIMEOUT_SSL_PARENT_MISS",
+                      SQUID_HIER_INVALID_ASSIGNED_CODE, "INVALID_ASSIGNED_CODE");
   field = NEW(new LogField("proxy_hierarchy_route", "phr",
                            LogField::sINT,
                            &LogAccess::marshal_proxy_hierarchy_route,
@@ -1270,8 +1268,10 @@ Log::flush_thread_main(void *args)
     //
     now = time(NULL);
     if (now > last_time) {
-      Debug("log2-flush", "periodic tasks for %ld", now);
-      periodic_tasks(now);
+      if ((now % PERIODIC_TASKS_INTERVAL) == 0) {
+        Debug("log2-flush", "periodic tasks for %ld", now);
+        periodic_tasks(now);
+      }
       last_time = (now = time(NULL));
     }
     // wait for more work; a spurious wake-up is ok since we'll just
