@@ -140,11 +140,17 @@ LogAccessHttp::init()
 int
 LogAccessHttp::marshal_client_host_ip(char *buf)
 {
+  char *str = NULL;
+  int len = INK_MIN_ALIGN;
+  char buffer[INET6_ADDRSTRLEN];
+
+  str = const_cast<char*>(ink_inet_ntop(((struct sockaddr *)&(m_http_sm->t_state.client_info.addr)), buffer, sizeof(buffer)));
+  len = LogAccess::strlen(str);
+
   if (buf) {
-    unsigned int ip = m_http_sm->t_state.client_info.ip;
-    marshal_int(buf, (int64)ntohl(ip));
+    marshal_str (buf, str, len);
   }
-  return INK_MIN_ALIGN;
+  return len;
 }
 
 /*-------------------------------------------------------------------------

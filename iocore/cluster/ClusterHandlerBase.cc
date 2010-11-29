@@ -1388,7 +1388,7 @@ ClusterHandler::dump_write_msg(int res)
   // Debug support for inter cluster message trace
   unsigned char x[4];
   memset(x, 0, sizeof(x));
-  *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
+  *(uint32 *) & x = (uint32) ((struct sockaddr_in *)&(net_vc->get_remote_addr()))->sin_addr.s_addr;
 
   fprintf(stderr,
           "[W] %hhu.%hhu.%hhu.%hhu SeqNo=%u, Cnt=%d, CntlCnt=%d Todo=%d, Res=%d\n",
@@ -1407,7 +1407,7 @@ ClusterHandler::dump_read_msg()
   // Debug support for inter cluster message trace
   unsigned char x[4];
   memset(x, 0, sizeof(x));
-  *(uint32 *) & x = (uint32) net_vc->get_remote_addr().sin_addr.s_addr;
+  *(uint32 *) & x = (uint32) ((struct sockaddr_in *)&(net_vc->get_remote_addr()))->sin_addr.s_addr;
 
   fprintf(stderr, "[R] %hhu.%hhu.%hhu.%hhu  SeqNo=%u, Cnt=%d, CntlCnt=%d\n",
           x[0], x[1], x[2], x[3], read.sequence_number, read.msg.count, read.msg.control_bytes);

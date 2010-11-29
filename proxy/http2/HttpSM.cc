@@ -637,7 +637,8 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   t_state.client_info.port = netvc->get_local_port();
   t_state.client_info.is_transparent = netvc->get_is_transparent();
   t_state.backdoor_request = client_vc->backdoor_connect;
-
+  memset(&(t_state.client_info.addr), 0, sizeof(t_state.client_info.addr));
+  t_state.client_info.addr = client_vc->get_netvc()->get_remote_addr();
   t_state.client_info.port_attribute = (HttpPortTypes) netvc->attributes;
 
   HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);

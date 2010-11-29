@@ -5214,6 +5214,16 @@ TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   }
 }
 
+const struct sockaddr_storage *
+TSHttpTxnClientSockAddrGet (TSHttpTxn txnp)
+{
+  if (sdk_sanity_check_txn(txnp) != TS_SUCCESS) {
+    return NULL;
+  }
+  HttpSM *sm = (HttpSM*) txnp;
+  return &sm->t_state.client_info.addr;
+}
+
 unsigned int
 TSHttpTxnClientIPGet(TSHttpTxn txnp)
 {

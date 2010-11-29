@@ -186,6 +186,7 @@ parse_http_server_other_ports()
     Attributes attr;
     get_connection_attributes(attr_str, &attr);
     additional_ports_array[accept_index].type = attr.type;
+    additional_ports_array[accept_index].domain = attr.domain;
     additional_ports_array[accept_index].f_outbound_transparent = attr.f_outbound_transparent;
     additional_ports_array[accept_index].f_inbound_transparent = attr.f_inbound_transparent;
 
@@ -322,6 +323,7 @@ start_HttpProxyServer(int fd, int port, int ssl_fd, int accept_threads)
           Warning("additional port out of range ignored: %d", e.port);
         else {
           opt.port = e.port;
+          opt.domain = e.domain;
           opt.f_outbound_transparent = e.f_outbound_transparent;
           netProcessor.main_accept(NEW(new HttpAccept(e.type)), fd, NULL, NULL, false, opt);
         }

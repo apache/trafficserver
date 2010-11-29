@@ -85,7 +85,7 @@ LogAccess::init()
 int
 LogAccess::marshal_client_host_ip(char *buf)
 {
-  DEFAULT_INT_FIELD;
+  DEFAULT_STR_FIELD;
 }
 
 /*-------------------------------------------------------------------------

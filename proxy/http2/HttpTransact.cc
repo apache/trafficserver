@@ -5369,18 +5369,17 @@ HttpTransact::handle_msie_reload_badness(State * s, HTTPHdr * client_request)
 void
 HttpTransact::add_client_ip_to_outgoing_request(State * s, HTTPHdr * request)
 {
-  char ip_string[32];
-  size_t ip_string_size;
-  bool client_ip_set;
+  char ip_string[INET6_ADDRSTRLEN + 1] = {'\0'};
+  size_t ip_string_size = 0;
   unsigned char *p = (unsigned char *) &(s->client_info.ip);
 
   if (unlikely(!p))
     return;
 
-  // Always prepare the IP string. ip_to_str() expects host order instead of network order
-  if (LogUtils::ip_to_str(ntohl(s->client_info.ip), ip_string + 1, 30, &ip_string_size) == 0) {
+  // Always prepare the IP string.
+  if (ink_inet_ntop((struct sockaddr *)&(s->client_info.addr), ip_string + 1, sizeof(ip_string) - 1) != NULL) {
     ip_string[0] = ' ';         // Leading space always, in case we need to concatenate this IP
-    ip_string_size += 1;
+    ip_string_size += strlen(ip_string);
   } else {
     // Failure, omg
     ip_string_size = 0;
@@ -5391,7 +5390,7 @@ HttpTransact::add_client_ip_to_outgoing_request(State * s, HTTPHdr * request)
   // if we want client-ip headers, and there isn't one, add one //
   ////////////////////////////////////////////////////////////////
   if ((s->http_config_param->anonymize_insert_client_ip) && (!s->http_config_param->anonymize_remove_client_ip)) {
-    client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
+    bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
     Debug("http_trans", "client_ip_set = %d", client_ip_set);
 
     if (!client_ip_set && ip_string_size > 1) {

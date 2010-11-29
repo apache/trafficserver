@@ -44,7 +44,7 @@
 #include <sys/capability.h>
 #endif
 
-int bindProxyPort(int, in_addr_t, bool, int);
+int bindProxyPort(int, char*, int, bool, int);
 
 bool
 LocalManager::SetForDup(void *hIOCPort, long lTProcId, void *hTh)
@@ -325,9 +325,9 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
   // Bind proxy ports to incoming_ip_to_bind
   char *incoming_ip_to_bind_str = REC_readString("proxy.local.incoming_ip_to_bind", &found);
   if (found && incoming_ip_to_bind_str != NULL) {
-    proxy_server_incoming_ip_to_bind = inet_addr(incoming_ip_to_bind_str);
+    proxy_server_incoming_ip_to_bind_str = incoming_ip_to_bind_str;
   } else {
-    proxy_server_incoming_ip_to_bind = htonl(INADDR_ANY);
+    proxy_server_incoming_ip_to_bind_str = NULL;
   }
   config_path = REC_readString("proxy.config.config_dir", &found);
   char *absolute_config_path = Layout::get()->relative(config_path);
@@ -1164,20 +1164,32 @@ LocalManager::listenForProxy()
     if (proxy_server_port[i] != -1) {
 
       if (proxy_server_fd[i] < 0) {
-	bool transparent = false;
+        int domain = AF_INET;
+        int type = SOCK_STREAM;
+        bool transparent = false;
 
         switch (*proxy_server_port_attributes[i]) {
         case 'D':
           // D is for DNS proxy, udp only
-          proxy_server_fd[i] = bindProxyPort(proxy_server_port[i], proxy_server_incoming_ip_to_bind, transparent, SOCK_DGRAM);
+          type = SOCK_DGRAM;
           break;
-	case '>': // in-bound (client side) transparent
-	case '=': // fully transparent
-	  transparent = true;
-	  // *FALLTHROUGH*
+        case '>': // in-bound (client side) transparent
+        case '=': // fully transparent
+          transparent = true;
+          break;
         default:
-          proxy_server_fd[i] = bindProxyPort(proxy_server_port[i], proxy_server_incoming_ip_to_bind, transparent, SOCK_STREAM);
+          type = SOCK_STREAM;
         }
+
+        switch (*(proxy_server_port_attributes[i] + 1)) {
+        case '6':
+          domain = AF_INET6;
+          break;
+        default:
+          domain = AF_INET;
+        }
+
+        proxy_server_fd[i] = bindProxyPort(proxy_server_port[i], proxy_server_incoming_ip_to_bind_str, domain, transparent, type);
       }
 
       if (*proxy_server_port_attributes[i] != 'D') {
@@ -1266,11 +1278,14 @@ restoreRootPriv(uid_t *old_euid)
  *  Also, type specifies udp or tcp
  */
 int
-bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, bool transparent,  int type)
+bindProxyPort(int proxy_port, char *incoming_ip_to_bind_str, int domain, bool transparent, int type)
 {
   int one = 1;
-  struct sockaddr_in proxy_addr;
   int proxy_port_fd = -1;
+  struct addrinfo hints;
+  struct addrinfo *result = NULL;
+  char proxy_port_str[8] = {'\0'};
+  int err = 0;
 
 #if !TS_USE_POSIX_CAP
   bool privBoost = false;
@@ -1289,9 +1304,14 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, bool transparent,  
 #endif
 
   /* Setup reliable connection, for large config changes */
-  if ((proxy_port_fd = socket(AF_INET, type, 0)) < 0) {
+  if ((proxy_port_fd = socket(domain, type, 0)) < 0) {
     mgmt_elog(stderr, "[bindProxyPort] Unable to create socket : %s\n", strerror(errno));
     _exit(1);
+  }
+  if (domain == AF_INET6) {
+    if (setsockopt(proxy_port_fd, IPPROTO_IPV6, IPV6_V6ONLY, ON, sizeof(int)) < 0) {
+      mgmt_elog(stderr, "[bindProxyPort] Unable to set socket options: %d : %s\n", proxy_port, strerror(errno));
+    }
   }
   if (setsockopt(proxy_port_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
     mgmt_elog(stderr, "[bindProxyPort] Unable to set socket options: %d : %s\n", proxy_port, strerror(errno));
@@ -1311,15 +1331,24 @@ bindProxyPort(int proxy_port, in_addr_t incoming_ip_to_bind, bool transparent,  
 #endif
   }
 
-  memset(&proxy_addr, 0, sizeof(proxy_addr));
-  proxy_addr.sin_family = AF_INET;
-  proxy_addr.sin_addr.s_addr = incoming_ip_to_bind;
-  proxy_addr.sin_port = htons(proxy_port);
+  snprintf(proxy_port_str, sizeof(proxy_port_str), "%d", proxy_port);
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = domain;
+  hints.ai_socktype = type;
+  hints.ai_flags = AI_PASSIVE;
 
-  if ((bind(proxy_port_fd, (struct sockaddr *) &proxy_addr, sizeof(proxy_addr))) < 0) {
+  err = getaddrinfo(incoming_ip_to_bind_str, proxy_port_str, &hints, &result);
+  if (err != 0) {
+    mgmt_elog(stderr, "[bindProxyPort] Unable to get address info: %s : %s\n", incoming_ip_to_bind_str, gai_strerror(err));
+    _exit(1);
+  }
+
+  if((bind(proxy_port_fd, result->ai_addr, result->ai_addrlen)) < 0) {
     mgmt_elog(stderr, "[bindProxyPort] Unable to bind socket: %d : %s\n", proxy_port, strerror(errno));
     _exit(1);
   }
+
+  freeaddrinfo(result);
 
   Debug("lm", "[bindProxyPort] Successfully bound proxy port %d\n", proxy_port);
 

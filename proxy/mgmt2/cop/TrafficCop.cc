@@ -847,9 +847,12 @@ static int
 open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
 {
 
-  int sock;
-  struct sockaddr_in name;
-  int err;
+  int sock = 0;
+  struct addrinfo hints;
+  struct addrinfo *result = NULL;
+  struct addrinfo *result_to_bind = NULL;
+  char port_str[8] = {'\0'};
+  int err = 0;
 
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Entering open_socket(%d, %s, %s)\n", port, ip, ip_to_bind);
@@ -857,9 +860,21 @@ open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
   if (!ip) {
     ip = "127.0.0.1";
   }
+
+  snprintf(port_str, sizeof(port_str), "%d", port);
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  err = getaddrinfo(ip, port_str, &hints, &result);
+  if (err != 0) {
+    cop_log (COP_WARNING, "(test) unable to get address info [%d %s] at ip %s, port %s\n", err, gai_strerror(err), ip, port_str);
+    goto getaddrinfo_error;
+  }
+
   // Create a socket
   do {
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(result->ai_family, result->ai_socktype, 0);
   } while ((sock < 0) && (transient_error(errno, TRANSIENT_ERROR_WAIT_MS)));
 
   if (sock < 0) {
@@ -868,13 +883,22 @@ open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
   }
 
   if (ip_to_bind) {
-    memset(&name, 0, sizeof(name));
-    name.sin_family = AF_INET;
-    name.sin_addr.s_addr = inet_addr(ip_to_bind);
-    name.sin_port = 0;
-    if (safe_bind(sock, (struct sockaddr *) &name, sizeof(name)) < 0) {
-      cop_log(COP_WARNING, "(test) unable to bind socket [%d '%s']\n", errno, strerror(errno));
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = result->ai_family;
+    hints.ai_socktype = result->ai_socktype;
+
+    err = getaddrinfo(ip_to_bind, NULL, &hints, &result_to_bind);
+    if (err != 0) {
+      cop_log (COP_WARNING, "(test) unable to get address info [%d %s] at ip %s\n", err, gai_strerror(err), ip_to_bind);
+      freeaddrinfo(result_to_bind);
+      goto error;
     }
+
+    if (safe_bind(sock, result_to_bind->ai_addr, result_to_bind->ai_addrlen) < 0) {
+      cop_log (COP_WARNING, "(test) unable to bind socket [%d '%s']\n", errno, strerror (errno));
+    }
+
+    freeaddrinfo(result_to_bind);
   }
 
   // Put the socket in non-blocking mode...just to be extra careful
@@ -888,13 +912,8 @@ open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
     goto error;
   }
   // Connect to the specified port on the machine we're running on.
-  memset(&name, 0, sizeof(name));
-  name.sin_family = AF_INET;
-  name.sin_port = htons(port);
-  name.sin_addr.s_addr = inet_addr(ip);
-
   do {
-    err = connect(sock, (struct sockaddr *) &name, sizeof(name));
+    err = connect(sock, result->ai_addr, result->ai_addrlen);
   } while ((err < 0) && (transient_error(errno, TRANSIENT_ERROR_WAIT_MS)));
 
   if ((err < 0) && (errno != EINPROGRESS)) {
@@ -904,6 +923,7 @@ open_socket(int port, const char *ip = NULL, char *ip_to_bind = NULL)
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving open_socket(%d, %s, %s) --> %d\n", port, ip, ip_to_bind, sock);
 #endif
+  freeaddrinfo(result);
   return sock;
 
 error:
@@ -913,6 +933,8 @@ error:
 #ifdef TRACE_LOG_COP
   cop_log(COP_DEBUG, "Leaving open_socket(%d, %s, %s) --> %d\n", port, ip, ip_to_bind, -1);
 #endif
+getaddrinfo_error:
+  freeaddrinfo(result);
   return -1;
 }
 
@@ -1196,14 +1218,15 @@ test_http_port(int port, char *request, int timeout, char *ip = NULL, char *ip_t
 static int
 test_server_http_port()
 {
-  char request[1024];
-  char *ip;
+  char request[1024] = {'\0'};
+  char *ip = NULL;
+  char localhost[] = "127.0.0.1";
 
   // Generate a request for a the 'synthetic.txt' document the manager
   // servers up on the autoconf port.
   snprintf(request, sizeof(request), "GET http://127.0.0.1:%d/synthetic.txt HTTP/1.0\r\n\r\n", autoconf_port);
 
-  ip = (strcmp(http_backdoor_ip, "NULL") == 0) ? NULL : http_backdoor_ip;
+  ip = (strcmp(http_backdoor_ip, "NULL") == 0) ? localhost : http_backdoor_ip;
   return test_http_port(http_backdoor_port, request, server_timeout * 1000, ip, ip);
 }
 

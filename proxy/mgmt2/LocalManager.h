@@ -138,6 +138,7 @@ public:
   volatile char proxy_server_port_attributes[MAX_PROXY_SERVER_PORTS][MAX_ATTR_LEN];
   volatile int proxy_server_fd[MAX_PROXY_SERVER_PORTS];
   in_addr_t proxy_server_incoming_ip_to_bind;
+  char *proxy_server_incoming_ip_to_bind_str;
 
   int process_server_timeout_secs;
   int process_server_timeout_msecs;

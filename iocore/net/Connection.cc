@@ -69,7 +69,7 @@ Connection::Connection()
   , is_bound(false)
   , is_connected(false)
 {
-  memset(&sa, 0, sizeof(struct sockaddr_in));
+  memset(&sa, 0, sizeof(struct sockaddr_storage));
 }
 
 
@@ -223,12 +223,39 @@ Lerror:
 
 
 int
-Server::listen(int port_number, bool non_blocking, int recv_bufsize, int send_bufsize)
+Server::listen(int port_number, int domain, bool non_blocking, int recv_bufsize, int send_bufsize)
 {
   ink_assert(fd == NO_FD);
   int res = 0;
+  int gai_errno = 0;
 
-  res = socketManager.socket(AF_INET, SOCK_STREAM, 0);
+  char port[6] = {'\0'};
+  struct addrinfo hints;
+  struct addrinfo *ai_res = NULL;
+  struct addrinfo *ai = NULL;
+  socklen_t addrlen = 0;  // keep track of length of socket address info
+  snprintf(port, sizeof(port), "%d", port_number);
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = domain;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE|AI_NUMERICHOST|AI_ADDRCONFIG;
+  gai_errno = getaddrinfo(accept_ip_str, port, &hints, &ai_res);
+  if(0 != gai_errno) {
+    Error("getaddrinfo error %i: %s", gai_errno, gai_strerror(gai_errno));
+    return -1;
+  }
+
+  ai = ai_res;
+
+  res = socketManager.socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+
+  memset(&sa, 0, sizeof(sa));
+  addrlen = ai->ai_addrlen;  // save value for later since ai will be freed asap
+  memcpy(&sa, ai->ai_addr, ai->ai_addrlen);
+
+  freeaddrinfo(ai_res);
+
   if (res < 0)
     return res;
   fd = res;
@@ -279,14 +306,6 @@ Server::listen(int port_number, bool non_blocking, int recv_bufsize, int send_bu
     goto Lerror;
 #endif
 
-  memset(&sa, 0, sizeof(sa));
-  //
-  // Accept_ip should already be in network byte order..
-  //
-  sa.sin_addr.s_addr = accept_ip;
-  sa.sin_port = htons(port_number);
-  sa.sin_family = AF_INET;
-
 #ifdef SET_NO_LINGER
   {
     struct linger l;
@@ -297,10 +316,13 @@ Server::listen(int port_number, bool non_blocking, int recv_bufsize, int send_bu
   }
 #endif
 
+  if (domain == AF_INET6 && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, ON, sizeof(int))) < 0)
+    goto Lerror;
+
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, ON, sizeof(int))) < 0)
     goto Lerror;
 
-  if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &sa, sizeof(sa), IPPROTO_TCP)) < 0) {
+  if ((res = socketManager.ink_bind(fd, (struct sockaddr *) &sa, addrlen, IPPROTO_TCP)) < 0) {
     goto Lerror;
   }
 #ifdef SET_TCP_NO_DELAY

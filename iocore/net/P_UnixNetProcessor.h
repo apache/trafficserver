@@ -36,16 +36,15 @@ class UnixNetVConnection;
 struct UnixNetProcessor:public NetProcessor
 {
 public:
-  virtual Action * accept_internal(Continuation * cont,
-                                   int fd,
-                                   sockaddr * bound_sockaddr = NULL,
-                                   int *bound_sockaddr_size = NULL,
-                                   bool frequent_accept = true,
-                                   AcceptFunctionPtr fn = net_accept,
-                                   unsigned int accept_ip = INADDR_ANY,
-				   AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
-				   );
-
+virtual Action *accept_internal (Continuation * cont,
+				 int fd,
+				 sockaddr * bound_sockaddr = NULL,
+				 int *bound_sockaddr_size = NULL,
+				 bool frequent_accept = true,
+				 AcceptFunctionPtr fn = net_accept,
+				 unsigned int accept_ip = INADDR_ANY,
+				 char *accept_ip_str = NULL,
+				 AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS);
 
   Action *connect_re_internal(Continuation * cont, unsigned int ip, int port, NetVCOptions * options = NULL);
   Action *connect(Continuation * cont, UnixNetVConnection ** vc, unsigned int ip, int port, NetVCOptions * opt = NULL);

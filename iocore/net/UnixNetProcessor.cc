@@ -62,8 +62,10 @@ net_next_connection_number()
 Action *
 NetProcessor::accept(Continuation * cont,
                      int port,
+                     int domain,
                      bool frequent_accept,
                      unsigned int accept_ip,
+                     char *accept_ip_str,
                      bool callback_on_open,
                      SOCKET listen_socket_in,
                      int accept_pool_size,
@@ -84,6 +86,7 @@ NetProcessor::accept(Continuation * cont,
 
   AcceptOptions opt;
   opt.port = port;
+  opt.domain = domain;
   opt.etype = etype;
   opt.f_callback_on_open = callback_on_open;
   opt.recv_bufsize = recv_bufsize;
@@ -95,6 +98,7 @@ NetProcessor::accept(Continuation * cont,
                                                       frequent_accept,
                                                       net_accept,
                                                       accept_ip,
+                                                      accept_ip_str,
                                                       opt
                                                       );
 }
@@ -115,6 +119,7 @@ NetProcessor::main_accept(Continuation * cont, SOCKET fd,
                                                       true,
                                                       net_accept,
                                                       ((UnixNetProcessor *) this)->incoming_ip_to_bind_saddr,
+                                                      ((UnixNetProcessor *) this)->incoming_ip_to_bind,
                                                       opt
                                                       );
 }
@@ -129,6 +134,7 @@ UnixNetProcessor::accept_internal(Continuation * cont,
                                   bool frequent_accept,
                                   AcceptFunction fn,
                                   unsigned int accept_ip,
+                                  char *accept_ip_str,
                                   AcceptOptions const& opt
                                   )
 {
@@ -142,9 +148,11 @@ UnixNetProcessor::accept_internal(Continuation * cont,
 
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
   na->port = opt.port;
+  na->domain = opt.domain;
   na->accept_fn = fn;
   na->server.fd = fd;
   na->server.accept_ip = accept_ip;
+  na->server.accept_ip_str = accept_ip_str;
   na->server.f_outbound_transparent = opt.f_outbound_transparent;
   na->server.f_inbound_transparent = opt.f_inbound_transparent;
   if (opt.f_outbound_transparent) Debug("http_tproxy", "Marking accept server %x on port %d as outbound transparent.\n", na, opt.port);

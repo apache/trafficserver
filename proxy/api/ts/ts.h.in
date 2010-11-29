@@ -1969,6 +1969,24 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status);
 
   tsapi int TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset);
+
+  /**
+      Retrieves the socket address of the remote client that has
+      connected to Traffic Server for the current transaction. The
+      return structure is the generic socket address storage in
+      order to be address-family agnostic. The user of this function
+      can then go on to do the approriate thing with the type
+      specified in the ss_family field of the structure whether
+      that be for IPv4, IPv6, or any other address family.
+
+      @sa socket.h for description of struct sockaddr_storage
+
+      @param txnp HTTP transaction of the connection.
+      @return generic socket address storage.
+
+   */
+  tsapi const struct sockaddr_storage * INKHttpTxnClientSockAddrGet(TSHttpTxn txnp);
+
   tsapi unsigned int TSHttpTxnClientIPGet(TSHttpTxn txnp);
   tsapi int TSHttpTxnClientFdGet(TSHttpTxn txnp);
   tsapi TSReturnCode TSHttpTxnClientRemotePortGet(TSHttpTxn txnp, int *port);

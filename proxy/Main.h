@@ -122,6 +122,7 @@ extern AppVersionInfo appVersionInfo;
 struct HttpOtherPortEntry
 {
   int port;
+  int domain;
   HttpPortTypes type;
   /// Set if outbound connections (to origin servers) are transparent.
   bool f_outbound_transparent;

@@ -89,7 +89,14 @@ enum
   http_ua_msecs_counts_errors_early_hangups_stat,
 
   // Http Total Connections Stats
+  //
+  // it is assumed that this inequality will always be satisifed:
+  //   http_total_client_connections_stat >=
+  //     http_total_client_connections_ipv4_stat +
+  //     http_total_client_connections_ipv6_stat
   http_total_client_connections_stat,
+  http_total_client_connections_ipv4_stat,
+  http_total_client_connections_ipv6_stat,
   http_total_server_connections_stat,
   http_total_parent_proxy_connections_stat,
   http_current_parent_proxy_connections_stat,

@@ -162,3 +162,35 @@ ink_inet_addr(const char *s)
   }
   return htonl((uint32) - 1);
 }
+
+const char *ink_inet_ntop(const struct sockaddr *addr, char *dst, size_t size)
+{
+  void *address = NULL;
+
+  switch (addr->sa_family) {
+  case AF_INET:
+    address = &((struct sockaddr_in *)addr)->sin_addr;
+    break;
+  case AF_INET6:
+    address = &((struct sockaddr_in6 *)addr)->sin6_addr;
+    break;
+  }
+
+  return inet_ntop(addr->sa_family, address, dst, size);
+}
+
+uint16_t ink_inet_port(const struct sockaddr *addr)
+{
+  uint16_t port = 0;
+
+  switch (addr->sa_family) {
+  case AF_INET:
+    port = ntohs(((struct sockaddr_in *)addr)->sin_port);
+    break;
+  case AF_INET6:
+    port = ntohs(((struct sockaddr_in6 *)addr)->sin6_port);
+    break;
+  }
+
+  return port;
+}
