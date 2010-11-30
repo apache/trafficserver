@@ -6510,6 +6510,8 @@ HttpSM::set_next_state()
   
   case HttpTransact::DNS_LOOKUP:
     {
+      uint32 addr;
+
       if (url_remap_mode == 2 && t_state.first_dns_lookup) {
         Debug("cdn", "Skipping DNS Lookup");
         // skip the DNS lookup
