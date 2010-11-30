@@ -450,6 +450,7 @@ public:
   MgmtInt no_dns_forward_to_parent;
   MgmtInt uncacheable_requests_bypass_parent;
   MgmtInt no_origin_server_dns;
+  MgmtInt use_client_target_addr;
   MgmtInt maintain_pristine_host_hdr;
 
   MgmtInt snarf_username_from_authorization;
@@ -886,6 +887,7 @@ enable_url_expandomatic(0),
 no_dns_forward_to_parent(0),
 uncacheable_requests_bypass_parent(1),
 no_origin_server_dns(0),
+use_client_target_addr(0),
 maintain_pristine_host_hdr(0),
 //snarf_username_from_authorization(0),
 insert_request_via_string(0),

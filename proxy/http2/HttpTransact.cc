@@ -1192,11 +1192,13 @@ HttpTransact::HandleRequest(State * s)
   if (handle_trace_and_options_requests(s, &s->hdr_info.client_request)) {
     TRANSACT_RETURN(PROXY_INTERNAL_CACHE_NOOP, NULL);
   }
-  // for HTTPS requests, we must go directly to the
-  // origin server. Ignore the no_dns_just_forward_to_parent setting.
 
-  if (s->http_config_param->no_dns_forward_to_parent &&
-      s->scheme != URL_WKSIDX_HTTPS && strcmp(s->server_info.name, "127.0.0.1") != 0) {
+  if (s->http_config_param->no_dns_forward_to_parent
+    && s->scheme != URL_WKSIDX_HTTPS
+    && strcmp(s->server_info.name, "127.0.0.1") != 0
+  ) {
+    // for HTTPS requests, we must go directly to the
+    // origin server. Ignore the no_dns_just_forward_to_parent setting.
     // we need to see if the hostname is an
     //   ip address since the parent selection code result
     //   could change as a result of this ip address
@@ -5987,7 +5989,6 @@ HttpTransact::initialize_state_variables_from_response(State * s, HTTPHdr * inco
       s->hdr_info.trust_response_cl = false;
     }
   }
-
   initialize_bypass_variables(s);
 
   if (incoming_response->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {

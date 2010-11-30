@@ -1,5 +1,5 @@
 #
-# Makefile.am for the Enterprise Management module.
+# Makefile.am for TS Config module.
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,24 +18,34 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/librecords \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
   -I$(top_srcdir)/proxy/mgmt2/api2/include \
-  -I$(top_srcdir)/proxy/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
-  -I$(top_srcdir)/proxy
+  -DPKGSYSUSER=\"$(pkgsysuser)\"
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
+noinst_LIBRARIES = libtsconfig.a
+#noinst_PROGRAMS = test-cache
 
-noinst_LIBRARIES = libstats.a
+libtsconfig_a_SOURCES = \
+  Errata.cc \
+  Errata.h \
+  TsErrataUtil.cc \
+  TsErrata.h \
+  TsBuffer.h \
+  NumericType.h \
+  IntrusivePtr.h \
+  TsBuilder.cc \
+  TsBuilder.h \
+  TsValue.cc \
+  TsValue.h \
+  TsConfig.tab.c \
+  TsConfig.lex.c
 
-libstats_a_SOURCES = \
-  StatProcessor.cc \
-  StatProcessor.h \
-  StatType.cc \
-  StatType.h \
-  StatXML.cc \
-  StatXML.h
+TsConfig.tab.c TsConfig.tab.h: TsConfig.y
+	bison -d --name-prefix tsconfig TsConfig.y
+
+TsConfig.lex.c TsConfig.lex.h: TsConfig.flex
+	flex --outfile TsConfig.lex.c TsConfig.flex
+
+#test_cache_SOURCES = \
+#  wccp-test-cache.cc
+
+#test_cache_LDADD = ./libwccp.a -lconfig++ -lcrypto

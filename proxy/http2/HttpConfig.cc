@@ -1168,6 +1168,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.uncacheable_requests_bypass_parent,
                                     "proxy.config.http.uncacheable_requests_bypass_parent");
   HttpEstablishStaticConfigLongLong(c.no_origin_server_dns, "proxy.config.http.no_origin_server_dns");
+  HttpEstablishStaticConfigLongLong(c.use_client_target_addr, "proxy.config.http.use_client_target_addr");
   HttpEstablishStaticConfigLongLong(c.maintain_pristine_host_hdr, "proxy.config.url_remap.pristine_host_hdr");
 
   HttpEstablishStaticConfigLongLong(c.snarf_username_from_authorization,
@@ -1504,6 +1505,7 @@ HttpConfig::reconfigure()
   params->no_dns_forward_to_parent = INT_TO_BOOL(m_master.no_dns_forward_to_parent);
   params->uncacheable_requests_bypass_parent = INT_TO_BOOL(m_master.uncacheable_requests_bypass_parent);
   params->no_origin_server_dns = INT_TO_BOOL(m_master.no_origin_server_dns);
+  params->use_client_target_addr = INT_TO_BOOL(m_master.use_client_target_addr);
   params->maintain_pristine_host_hdr = INT_TO_BOOL(m_master.maintain_pristine_host_hdr);
 
   params->snarf_username_from_authorization = INT_TO_BOOL(m_master.snarf_username_from_authorization);

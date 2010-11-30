@@ -1,5 +1,5 @@
 #
-# Makefile.am for the Enterprise Management module.
+# Makefile.am for WCCP module.
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,24 +18,25 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/librecords \
-  -I$(top_srcdir)/proxy/mgmt2 \
-  -I$(top_srcdir)/proxy/mgmt2/cluster \
-  -I$(top_srcdir)/proxy/mgmt2/utils \
-  -I$(top_srcdir)/proxy/mgmt2/api2/include \
   -I$(top_srcdir)/proxy/tsconfig \
-  -I$(top_srcdir)/proxy/mgmt2/web2 \
-  -I$(top_srcdir)/proxy
+  -I$(top_srcdir)/proxy/api/ts
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
 
-noinst_LIBRARIES = libstats.a
+#WCCP_DEFS = @WCCP_DEFS@
+#DEFS += $(WCCP_DEFS)
 
-libstats_a_SOURCES = \
-  StatProcessor.cc \
-  StatProcessor.h \
-  StatType.cc \
-  StatType.h \
-  StatXML.cc \
-  StatXML.h
+noinst_LIBRARIES = libwccp.a
+#noinst_PROGRAMS = test-cache
+
+libwccp_a_SOURCES = \
+  Wccp.h \
+  WccpLocal.h \
+  WccpStatic.cc \
+  WccpMsg.cc \
+  WccpEndPoint.cc \
+  WccpConfig.cc
+
+#test_cache_SOURCES = \
+#  wccp-test-cache.cc
+
+#test_cache_LDADD = ./libwccp.a -lconfig++ -lcrypto

@@ -445,6 +445,29 @@ set_process_limits(int fds_throttle)
 
 }
 
+void
+Errata_Logger(ts::Errata const& err) {
+  size_t n;
+  static size_t const SIZE = 4096;
+  char buff[SIZE];
+  if (err.size()) {
+    ts::Errata::Code code = err.top().getCode();
+    n = err.write(buff, SIZE, 1, 0, 2, "> ");
+    // strip trailing newlines.
+    while (n && (buff[n-1] == '\n' || buff[n-1] == '\r'))
+      buff[--n] = 0;
+    // log it.
+    if (code > 1) mgmt_elog("[WCCP]%s", buff);
+    else if (code > 0) mgmt_log("[WCCP]%s", buff);
+    else Debug("WCCP", "%s", buff);
+  }
+}
+
+void
+Init_Errata_Logging() {
+  ts::Errata::registerSink(&Errata_Logger);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -683,6 +706,7 @@ main(int argc, char **argv)
 
   RecLocalInit();
   LibRecordsConfigInit();
+  Init_Errata_Logging();
   lmgmt = new LocalManager(mgmt_path, new LMRecords(mgmt_path, recs_conf, 0), proxy_on);
   RecLocalInitMessage();
   lmgmt->initAlarm();
@@ -1348,7 +1372,7 @@ fileUpdated(char *fname)
     @code
     prctl(PR_SET_KEEPCAPS, 1);
     @endcode
-    but that had no effect even though the call reported succes.
+    but that had no effect even though the call reported success.
     Only explicit capability manipulation was effective.
 
     It does not appear to be necessary to set the capabilities on the

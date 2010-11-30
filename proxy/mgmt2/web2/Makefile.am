@@ -26,6 +26,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/mgmt2/cli \
   -I$(top_srcdir)/proxy/mgmt2/cluster \
   -I$(top_srcdir)/proxy/mgmt2/utils \
+  -I$(top_srcdir)/proxy/tsconfig \
   -I$(top_srcdir)/proxy/mgmt2/tools \
   -I$(top_srcdir)/proxy/hdrs
 
