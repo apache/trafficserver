@@ -22,7 +22,11 @@ noinst_LIBRARIES = libTrafficServerStandalone.a
 bin_PROGRAMS =
 noinst_PROGRAMS =
 else
-SUBDIRS = congest http2 hdrs logging tsconfig wccp mgmt2 config stats
+SUBDIRS = congest http2 hdrs logging
+if BUILD_WCCP
+SUBDIRS += tsconfig wccp
+endif
+SUBDIRS += mgmt2 config stats
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \

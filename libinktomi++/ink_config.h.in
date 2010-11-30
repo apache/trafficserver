@@ -126,6 +126,7 @@
 #define TS_HAS_PURIFY                  @has_purify@
 #define TS_HAS_DEMANGLE                @has_demangle@
 #define TS_HAS_TESTS                   @has_tests@
+#define TS_HAS_WCCP                    @has_wccp@
 
 /* XXX: Should make those individually selectable ? */
 /* TODO: Use TS prefix instead no prefix or INK    */

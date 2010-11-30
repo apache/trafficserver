@@ -445,6 +445,7 @@ set_process_limits(int fds_throttle)
 
 }
 
+#if TS_HAS_WCCP
 void
 Errata_Logger(ts::Errata const& err) {
   size_t n;
@@ -467,6 +468,7 @@ void
 Init_Errata_Logging() {
   ts::Errata::registerSink(&Errata_Logger);
 }
+#endif
 
 int
 main(int argc, char **argv)
@@ -706,7 +708,9 @@ main(int argc, char **argv)
 
   RecLocalInit();
   LibRecordsConfigInit();
+#if TS_HAS_WCCP
   Init_Errata_Logging();
+#endif
   lmgmt = new LocalManager(mgmt_path, new LMRecords(mgmt_path, recs_conf, 0), proxy_on);
   RecLocalInitMessage();
   lmgmt->initAlarm();

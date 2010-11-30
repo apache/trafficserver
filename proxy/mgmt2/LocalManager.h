@@ -41,7 +41,9 @@
 #include "ClusterCom.h"
 #include "VMap.h"
 #include "WebPluginList.h"
+#if TS_HAS_WCCP
 #include "../wccp/Wccp.h"
+#endif
 
 #if !defined(WIN32)
 #define ink_get_hrtime ink_get_hrtime_internal
@@ -183,8 +185,9 @@ public:
 #endif
 
   WebPluginList plugin_list;
+#if TS_HAS_WCCP
   wccp::Cache wccp_cache;
-
+# endif
 private:
 
 };                              /* End class LocalManager */

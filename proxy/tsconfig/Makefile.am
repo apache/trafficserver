@@ -22,9 +22,10 @@ AM_CPPFLAGS = \
   -DPKGSYSUSER=\"$(pkgsysuser)\"
 
 noinst_LIBRARIES = libtsconfig.a
-#noinst_PROGRAMS = test-cache
 
 libtsconfig_a_SOURCES = \
+  TsConfig.lex.c TsConfig.lex.h \
+  TsConfig.tab.c TsConfig.tab.h \
   Errata.cc \
   Errata.h \
   TsErrataUtil.cc \
@@ -35,17 +36,10 @@ libtsconfig_a_SOURCES = \
   TsBuilder.cc \
   TsBuilder.h \
   TsValue.cc \
-  TsValue.h \
-  TsConfig.tab.c \
-  TsConfig.lex.c
+  TsValue.h
 
 TsConfig.tab.c TsConfig.tab.h: TsConfig.y
-	bison -d --name-prefix tsconfig TsConfig.y
+	$(YACC) -d -b TsConfig --name-prefix tsconfig TsConfig.y
 
 TsConfig.lex.c TsConfig.lex.h: TsConfig.flex
-	flex --outfile TsConfig.lex.c TsConfig.flex
-
-#test_cache_SOURCES = \
-#  wccp-test-cache.cc
-
-#test_cache_LDADD = ./libwccp.a -lconfig++ -lcrypto
+	$(LEX) --outfile TsConfig.lex.c TsConfig.flex

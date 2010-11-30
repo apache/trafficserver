@@ -289,4 +289,5 @@ errata::format(boost::format const& fmt, std::string const& glue) const {
 
 # endif
 
-} // namespace ngeo
+} // namespace ts
+

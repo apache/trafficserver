@@ -344,6 +344,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
     config_path = absolute_config_path;
   }
 
+#if TS_HAS_WCCP
   // Bind the WCCP address if present.
   xptr<char> wccp_addr_str(REC_readString("proxy.config.wccp.addr", &found));
   if (found && wccp_addr_str && *wccp_addr_str) {
@@ -366,6 +367,7 @@ BaseManager(), run_proxy(proxy_on), record_data(rd)
       mgmt_log("[LocalManager::LocalManager] WCCP service configuration file '%s' was specified but could not be found in the file system.\n", static_cast<char*>(wccp_config_str));
     }
   }
+#endif
 
   bin_path = REC_readString("proxy.config.bin_path", &found);
   process_server_timeout_secs = REC_readInteger("proxy.config.lm.pserver_timeout_secs", &found);
@@ -483,9 +485,11 @@ LocalManager::initMgmtProcessServer()
   int servlen, one = 1;
   struct sockaddr_un serv_addr;
 
+#if TS_HAS_WCCP
   if (wccp_cache.isConfigured()) {
     if (0 > wccp_cache.open()) mgmt_log("Failed to open WCCP socket\n");
   }
+#endif
 
   snprintf(fpath, sizeof(fpath), "%s/%s", pserver_path, LM_CONNECTION_SERVER);
   unlink(fpath);
@@ -532,13 +536,11 @@ LocalManager::pollMgmtProcessServer()
   struct timeval timeout;
   struct sockaddr_in clientAddr;
   fd_set fdlist;
+#if TS_HAS_WCCP
   int wccp_fd = wccp_cache.getSocket();
+#endif
 
   while (1) {
-    // Only run WCCP housekeeping while we have a server process.
-    // Note: The WCCP socket is opened iff WCCP is configured.
-    bool wccp_active = wccp_fd != ts::NO_FD && watched_process_fd != ts::NO_FD;
-
     // poll only
     timeout.tv_sec = process_server_timeout_secs;
     timeout.tv_usec = process_server_timeout_msecs * 1000;
@@ -546,25 +548,27 @@ LocalManager::pollMgmtProcessServer()
     FD_SET(process_server_sockfd, &fdlist);
     if (watched_process_fd != -1) FD_SET(watched_process_fd, &fdlist);
 
-    if (wccp_active) {
+#if TS_HAS_WCCP
+    // Only run WCCP housekeeping while we have a server process.
+    // Note: The WCCP socket is opened iff WCCP is configured.
+    if (wccp_fd != ts::NO_FD && watched_process_fd != ts::NO_FD) {
       wccp_cache.housekeeping();
       time_t wccp_wait = wccp_cache.waitTime();
       if (wccp_wait < process_server_timeout_secs) timeout.tv_sec = wccp_wait;
       FD_SET(wccp_cache.getSocket(), &fdlist);
     }
+#endif
 
     num = mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &timeout);
     if (num == 0) {             /* Have nothing */
-
       break;
-
     } else if (num > 0) {       /* Have something */
-
+#if TS_HAS_WCCP
       if (wccp_fd != ts::NO_FD && FD_ISSET(wccp_fd, &fdlist)) {
         wccp_cache.handleMessage();
         --num;
       }
-
+#endif
       if (FD_ISSET(process_server_sockfd, &fdlist)) {   /* New connection */
         int clientLen = sizeof(clientAddr);
         int new_sockfd = mgmt_accept(process_server_sockfd,

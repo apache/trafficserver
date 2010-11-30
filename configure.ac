@@ -327,6 +327,26 @@ AC_MSG_RESULT([$enable_v2stats])
 AC_SUBST(has_v2stats)
 AM_CONDITIONAL([BUILD_V2STATS], [test "x$enable_v2stats" = "xyes"])
 
+#
+# WCCP
+#
+has_wccp=0
+AC_MSG_CHECKING([whether to enable WCCP v2 support])
+AC_ARG_ENABLE([wccp],
+  [AS_HELP_STRING([--enable-wccp],[enable WCCP v2])],
+  [
+    has_wccp=1
+    AC_SUBST([LIBWCCP], ["\$(top_builddir)/proxy/wccp/libwccp.a"])
+    AC_SUBST([LIBTSCONFIG], ["\$(top_builddir)/proxy/tsconfig/libtsconfig.a"])
+  ],
+  [enable_wccp=no]
+)
+AC_MSG_RESULT([$enable_wccp])
+AC_SUBST(has_wccp)
+AC_SUBST(LIBWCCP)
+AC_SUBST(LIBTSCONFIG)
+AM_CONDITIONAL([BUILD_WCCP], [test "x$enable_wccp" = "xyes"])
+
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
 AC_ARG_WITH([profiler],
@@ -486,6 +506,12 @@ AC_CHECK_PROG(RM, rm, rm)
 AC_CHECK_PROG(ASCPP, cpp, cpp)
 AC_CHECK_TOOL(AR, ar, ar)
 AC_ISC_POSIX
+AS_IF([test "x$enable_wccp" = "xyes"],
+  [
+    AC_PROG_YACC
+    AC_PROG_LEX
+  ]
+)
 
 AC_PATH_PROG([DOXYGEN], [doxygen]) # needed for Doxygen
 AC_PATH_PROG([PERL],[perl],[not found])
