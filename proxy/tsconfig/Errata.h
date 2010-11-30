@@ -1,19 +1,5 @@
-# if !defined ATS_ERRATA_HEADER
-# define ATS_ERRATA_HEADER
-
-# include <memory>
-# include <string>
-# include <iosfwd>
-# include <deque>
-# include "NumericType.h"
-# include "IntrusivePtr.h"
-
-# if USING_BOOST
-#   include <boost/function.hpp>
-#   include <boost/format/format_fwd.hpp>
-# endif
-
-namespace ts {
+# if !defined TS_ERRATA_HEADER
+# define TS_ERRATA_HEADER
 
 /** @file
     Stacking error message handling.
@@ -60,7 +46,34 @@ namespace ts {
     deeply nested functions easy while preserving the ability of the
     top level logic to control such logging.
 
+    Copyright 2010 Network Geographics, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
  */
+
+# include <memory>
+# include <string>
+# include <iosfwd>
+# include <deque>
+# include "NumericType.h"
+# include "IntrusivePtr.h"
+
+# if USING_BOOST
+#   include <boost/function.hpp>
+#   include <boost/format/format_fwd.hpp>
+# endif
+
+namespace ts {
 
 /** Class to hold a stack of error messages (the "errata").
     This is a smart handle class, which wraps the actual data
@@ -923,6 +936,6 @@ Rv<T>::push(Rv<U> const& that) {
 }
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
-} // namespace ats
+} // namespace ts
 
-# endif // ATS_ERRATA_HEADER
+# endif // TS_ERRATA_HEADER

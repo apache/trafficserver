@@ -1,15 +1,6 @@
-/*      Copyright (c) 2006-2010 Network Geographics.
- *      All rights reserved.
- *      Licensed to the Apache Software Foundation.
- */
-/* ------------------------------------------------------------------------ */
 # if !defined(TS_NUMERIC_TYPE_HEADER)
 # define TS_NUMERIC_TYPE_HEADER
 
-# include <limits>
-/* ----------------------------------------------------------------------- */
-namespace ts {
-/* ----------------------------------------------------------------------- */
 /** @file
 
     Create a distinct type from a builtin numeric type.
@@ -30,7 +21,25 @@ namespace ts {
 
     It is not necessary to ever mention some_random_tag_name
     again. All we need is the entry in the symbol table.
+
+    Copyright 2010 Network Geographics, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
  */
+
+# include <limits>
+
+namespace ts {
 
 // Forward declare.
 template < typename T, typename X > class NumericType;
@@ -40,14 +49,14 @@ template < typename T, typename X > class NumericType;
 
     Not for client use.
 
-    @internal This resolves the problem when @a T is not @c int.
-    In that case, because raw numbers are @c int and the overloading
-    rule changes created an ambiguity, gcc won't distinguish between
-    class methods and builtins because @c NumericType has a user
-    conversion to @a T. So signature <tt>(NumericType, T)</tt>
-    and <tt>(T, int)</tt> are considered equivalent. This defines
-    the @c int operators explicitly. We inherit it so if @a T is
-    @c int, these are silently overridden.
+    @internal This resolves a problem when @a T is not @c int.  In
+    that case, because raw numbers are @c int the overloading rule
+    changes creates an ambiguity - gcc won't distinguish between class
+    methods and builtins because @c NumericType has a user conversion
+    to @a T. So signature <tt>(NumericType, T)</tt> and <tt>(T,
+    int)</tt> are considered equivalent. This defines the @c int
+    operators explicitly. We inherit it so if @a T is @c int, these
+    are silently overridden.
 
     @internal Note that we don't have to provide an actual implementation
     for these operators. Funky, isn't it?
@@ -55,7 +64,7 @@ template < typename T, typename X > class NumericType;
 template <
   typename T, ///< Base numeric type.
   typename X ///< Distinguishing tag type.
-> class NumericType_int_operators {
+> class NumericTypeIntOperators {
 public:
     NumericType<T,X>& operator += ( int t );
     NumericType<T,X>& operator -= ( int t );
@@ -68,27 +77,33 @@ public:
 };
 
 template < typename T, typename X > NumericType<T,X>
-operator + ( int t, NumericType_int_operators<T,X> const& );
+operator + ( int t, NumericTypeIntOperators<T,X> const& );
 
 template < typename T, typename X > NumericType<T,X>
-operator - ( int t, NumericType_int_operators<T,X> const& );
+operator - ( int t, NumericTypeIntOperators<T,X> const& );
 
 /// @endcond
 
 /** Numeric type template.
+
+    @internal One issue is that this is not a POD and so doesn't work
+    with @c printf. I will need to investigate what that would take.
  */
 template <
   typename T, ///< Base numeric type.
   typename X ///< Distinguishing tag type.
-> class NumericType : public NumericType_int_operators<T,X> {
+> class NumericType : public NumericTypeIntOperators<T,X> {
 public:
     typedef T raw_type; //!< Base builtin type.
     typedef NumericType self; //!< Self reference type.
 
-    using NumericType_int_operators<T,X>::operator +=;
-    using NumericType_int_operators<T,X>::operator -=;
-    using NumericType_int_operators<T,X>::operator +;
-    using NumericType_int_operators<T,X>::operator -;
+    /// @cond NOT_DOCUMENTED
+    // Need to import these to avoid compiler problems.
+    using NumericTypeIntOperators<T,X>::operator +=;
+    using NumericTypeIntOperators<T,X>::operator -=;
+    using NumericTypeIntOperators<T,X>::operator +;
+    using NumericTypeIntOperators<T,X>::operator -;
+    /// @endcond
 
     /// Default constructor, uninitialized.
     NumericType();

@@ -1,18 +1,6 @@
-/*      Copyright (c) 2006-2010 Network Geographics.
- *      All rights reserved.
- *      Licensed to the Apache Software Foundation.
- */
-/* ----------------------------------------------------------------------- */
-# if !defined(ATS_INTRUSIVE_PTR_HEADER)
-# define ATS_INTRUSIVE_PTR_HEADER
-/* ----------------------------------------------------------------------- */
-# include <sys/types.h>
-# include <assert.h>
-# include <functional>
+# if !defined(TS_INTRUSIVE_PTR_HEADER)
+# define TS_INTRUSIVE_PTR_HEADER
 
-namespace ts {
-/* ----------------------------------------------------------------------- */
-/* ----------------------------------------------------------------------- */
 /** @file
 
     This is a simple shared pointer class for restricted use. It is not a
@@ -24,9 +12,27 @@ namespace ts {
     This style of shared pointer also requires explicit support from the
     target class, which must provide an internal reference counter.
 
+    Copyright 2010 Network Geographics, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
  */
-/* ----------------------------------------------------------------------- */
-/* ----------------------------------------------------------------------- */
+
+# include <sys/types.h>
+# include <assert.h>
+# include <functional>
+
+namespace ts {
+
 class IntrusivePtrCounter;
 
 /** This class exists solely to be declared a friend of @c IntrusivePtrCounter.
@@ -596,5 +602,4 @@ IntrusivePtr<T>::useCount() const {
 /* ----------------------------------------------------------------------- */
 } // namespace ats
 /* ----------------------------------------------------------------------- */
-# endif // ATS_INTRUSIVE_PTR_HEADER
-
+# endif // TS_INTRUSIVE_PTR_HEADER

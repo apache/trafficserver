@@ -34,10 +34,7 @@ libwccp_a_SOURCES = \
   WccpStatic.cc \
   WccpMsg.cc \
   WccpEndPoint.cc \
-  WccpConfig.cc \
-  AtsBase.h \
-  AtsBaseStatic.cc \
-  AtsMeta.h
+  WccpConfig.cc
 
 #test_cache_SOURCES = \
 #  wccp-test-cache.cc
